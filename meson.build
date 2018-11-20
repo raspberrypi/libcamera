@@ -2,6 +2,11 @@ project('libcamera - supporting complex camera pipelines', 'c', 'cpp',
   version : '0.1',
   license : 'LGPL 2.1+')
 
+# TODO: Extract this from project.version.
+#       Ideally the version at Documentation/conf.py should be
+#       generated from this too.
+api_version = '0.1'
+
 common_arguments = [
     '-Wall',
     '-Wextra',
@@ -17,6 +22,7 @@ add_project_arguments(cpp_arguments, language: 'cpp')
 
 inc = include_directories('include')
 
+subdir('Documentation')
 subdir('include')
 subdir('lib')
 subdir('test')

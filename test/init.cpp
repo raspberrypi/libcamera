@@ -1,4 +1,4 @@
-#include <libcamera.h>
+#include <libcamera/libcamera.h>
 
 int main(void)
 {

@@ -4,6 +4,7 @@ project('libcamera - supporting complex camera pipelines', 'c', 'cpp',
 
 inc = include_directories('include')
 
+subdir('include')
 subdir('lib')
 subdir('test')
 subdir('utils')

@@ -1,5 +1,5 @@
 test_init = executable('test_init', 'init.cpp',
-		       link_with : libcamera,
-		       include_directories : inc)
+                       link_with : libcamera,
+                       include_directories : inc)
 
 test('Initialisation test', test_init)

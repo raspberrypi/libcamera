@@ -1,5 +1,5 @@
 public_api = [
-	'libcamera.h',
+    'libcamera.h',
 ]
 
 install_headers(public_api,

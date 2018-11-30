@@ -1,13 +1,10 @@
 #include <iostream>
-
-namespace libcamera {
+#include <libcamera/libcamera.h>
 
 using std::cout;
 using std::endl;
 
-void init_lib(void)
+void libcamera::init_lib(void)
 {
 	cout << "Lib Camera Init" << endl;
 }
-
-};

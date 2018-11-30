@@ -1,4 +1,5 @@
 project('libcamera - supporting complex camera pipelines', 'c', 'cpp',
+  meson_version: '>= 0.40',
   version : '0.1',
   license : 'LGPL 2.1+')
 

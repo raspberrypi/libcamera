@@ -1,4 +1,7 @@
-sources = ['main.cpp']
+sources = files([
+    'log.cpp',
+    'main.cpp',
+])
 
 includes = [
     libcamera_includes,

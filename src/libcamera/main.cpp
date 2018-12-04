@@ -5,13 +5,15 @@
  * main.cpp - libcamera main class
  */
 
-#include <iostream>
 #include <libcamera/libcamera.h>
 
-using std::cout;
-using std::endl;
+#include "log.h"
+
+namespace libcamera {
 
 void libcamera::init_lib(void)
 {
-	cout << "Lib Camera Init" << endl;
+	LOG(Info) << "Lib Camera Init";
 }
+
+};

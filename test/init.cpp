@@ -9,7 +9,7 @@
 
 int main(void)
 {
-	libcamera l = libcamera();
+	libcamera::libcamera l = libcamera::libcamera();
 	l.init_lib();
 
 	return 0;

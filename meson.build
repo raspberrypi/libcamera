@@ -21,11 +21,11 @@ cpp_arguments = common_arguments
 add_project_arguments(c_arguments, language: 'c')
 add_project_arguments(cpp_arguments, language: 'cpp')
 
-inc = include_directories('include')
+libcamera_includes = include_directories('include')
 
 subdir('Documentation')
 subdir('include')
-subdir('lib')
+subdir('src')
 subdir('test')
 subdir('utils')
 

@@ -17,6 +17,7 @@ libcamera_sources = files([
     'signal.cpp',
     'stream.cpp',
     'timer.cpp',
+    'utils.cpp',
     'v4l2_device.cpp',
     'v4l2_subdevice.cpp',
 ])

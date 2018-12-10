@@ -15,6 +15,8 @@ namespace libcamera {
 
 namespace utils {
 
+const char *basename(const char *path);
+
 /* C++11 doesn't provide std::make_unique */
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args)

@@ -438,7 +438,7 @@ void LogMessage::init(const char *fileName, unsigned int line)
 
 	msgStream_ << " " << log_severity_name(severity_);
 	msgStream_ << " " << category_.name();
-	msgStream_ << " " << basename(fileName) << ":" << line << " ";
+	msgStream_ << " " << utils::basename(fileName) << ":" << line << " ";
 }
 
 LogMessage::~LogMessage()

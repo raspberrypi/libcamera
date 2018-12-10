@@ -23,8 +23,8 @@ find_media_device() {
 	done
 
 	if [[ -z $mdev ]] ; then
-	       echo "IPU3 media device not found." >&2
-	       exit 1
+		echo "IPU3 media device not found." >&2
+		exit 1
 	fi
 
 	echo $mdev
@@ -173,7 +173,7 @@ fi
 out_size=${out_size:-$in_size}
 vf_size=${vf_size:-$in_size}
 
-mdev=$(find_media_device)
+mdev=$(find_media_device) || exit
 mediactl="media-ctl -d $mdev"
 echo "Using device $mdev"
 

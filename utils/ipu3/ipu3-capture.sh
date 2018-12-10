@@ -20,7 +20,8 @@ find_sensor() {
 
 	bus=$(grep "$sensor_name" /sys/class/video4linux/v4l-subdev*/name | cut -d ' ' -f 2)
 	if [[ -z $bus ]]; then
-		return
+		echo "Sensor '$sensor_name' not found." >&2
+		exit 1
 	fi
 
 	echo "$sensor_name $bus"
@@ -36,8 +37,8 @@ find_media_device() {
 	done
 
 	if [[ -z $mdev ]] ; then
-	       echo "IPU3 media device not found." >&2
-	       exit 1
+		echo "IPU3 media device not found." >&2
+		exit 1
 	fi
 
 	echo $mdev
@@ -170,13 +171,8 @@ fi
 
 sensor_name=$1
 
-sensor=$(find_sensor $sensor_name)
-if [[ -z $sensor ]] ; then
-	echo "Sensor '$sensor_name' not found." >&2
-	exit 1
-fi
-
-mdev=$(find_media_device)
+sensor=$(find_sensor $sensor_name) || exit
+mdev=$(find_media_device) || exit
 mediactl="media-ctl -d $mdev"
 
 parse_pipeline $sensor

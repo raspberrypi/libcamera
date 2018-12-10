@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * log.h - Logging infrastructure
+ * log.cpp - Logging infrastructure
  */
 
 #include <cstdio>
@@ -14,7 +14,7 @@
 #include "utils.h"
 
 /**
- * \file log.h
+ * \file log.cpp
  * \brief Logging infrastructure
  */
 
@@ -48,7 +48,7 @@ static const char *log_severity_name(LogSeverity severity)
 		" ERR",
 	};
 
-	if ((unsigned int)severity < ARRAY_SIZE(names))
+	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
 		return names[severity];
 	else
 		return "UNKN";
@@ -78,4 +78,4 @@ LogMessage::~LogMessage()
 	fflush(stderr);
 }
 
-};
+} /* namespace libcamera */

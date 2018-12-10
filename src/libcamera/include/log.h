@@ -33,6 +33,6 @@ private:
 
 #define LOG(severity) LogMessage(__FILE__, __LINE__, Log##severity).stream()
 
-};
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_LOG_H__ */

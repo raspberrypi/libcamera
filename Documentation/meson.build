@@ -41,6 +41,7 @@ endif
 
 if sphinx.found()
     docs_sources = [
+        'coding-style.rst',
         'conf.py',
         'contributing.rst',
         'index.rst',

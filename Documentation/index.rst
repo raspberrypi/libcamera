@@ -20,6 +20,7 @@ systems, including traditional Linux distributions, ChromeOS and Android.
    :maxdepth: 2
    :caption: Contents:
 
+   coding-style
    contributing
 
 

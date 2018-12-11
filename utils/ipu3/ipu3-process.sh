@@ -13,6 +13,8 @@
 # - raw2pnm (from nvt https://github.com/intel/nvt.git)
 # - yavta (from git://git.ideasonboard.org/yavta.git)
 
+imgu_entity="ipu3-imgu 0"
+
 # Locate the media device
 find_media_device() {
 	local mdev
@@ -35,12 +37,25 @@ configure_pipeline() {
 	local enable_3a=1
 	local enable_out=1
 	local enable_vf=1
+	local mode=0
 
+	# Configure the links
 	$mediactl -r
-	$mediactl -l "\"ipu3-imgu 0 input\":0 -> \"ipu3-imgu 0\":0[1]"
-	$mediactl -l "\"ipu3-imgu 0\":2 -> \"ipu3-imgu 0 output\":0[$enable_out]"
-	$mediactl -l "\"ipu3-imgu 0\":3 -> \"ipu3-imgu 0 viewfinder\":0[$enable_vf]"
-	$mediactl -l "\"ipu3-imgu 0\":4 -> \"ipu3-imgu 0 3a stat\":0[$enable_3a]"
+	$mediactl -l "\"$imgu_entity input\":0 -> \"$imgu_entity\":0[1]"
+	$mediactl -l "\"$imgu_entity\":2 -> \"$imgu_entity output\":0[$enable_out]"
+	$mediactl -l "\"$imgu_entity\":3 -> \"$imgu_entity viewfinder\":0[$enable_vf]"
+	$mediactl -l "\"$imgu_entity\":4 -> \"$imgu_entity 3a stat\":0[$enable_3a]"
+
+	# Select processing mode (0 for video, 1 for still image)
+	yavta --no-query -w "0x009819c1 $mode" $($mediactl -e "$imgu_entity")
+
+	# Set formats. The media bus code doesn't matter as it is ignored by the
+	# driver. We should use the FIXED format, but media-ctl doesn't support
+	# it.
+	$mediactl -V "\"$imgu_entity\":0 [fmt:SBGGR10_1X10/$out_size crop:(0,0)/$in_size compose:(0,0)/$in_size]"
+	$mediactl -V "\"$imgu_entity\":2 [fmt:SBGGR10_1X10/$out_size]"
+	$mediactl -V "\"$imgu_entity\":3 [fmt:SBGGR10_1X10/$vf_size]"
+	$mediactl -V "\"$imgu_entity\":4 [fmt:SBGGR10_1X10/$out_size]"
 }
 
 # Perform frame processing through the IMGU
@@ -53,17 +68,17 @@ process_frames() {
 	# statistics. Sleep 500ms between each execution of yavta to keep the
 	# stdout messages readable.
 	$yavta -f $IMGU_OUT_PIXELFORMAT -s $out_size "-F$output_dir/frame-out-#.bin" \
-		$($mediactl -e "ipu3-imgu 0 output") &
+		$($mediactl -e "$imgu_entity output") &
 	sleep 0.5
 	$yavta -f $IMGU_VF_PIXELFORMAT -s $vf_size "-F$output_dir/frame-vf-#.bin" \
-		$($mediactl -e "ipu3-imgu 0 viewfinder") &
+		$($mediactl -e "$imgu_entity viewfinder") &
 	sleep 0.5
-	$yavta $($mediactl -e "ipu3-imgu 0 3a stat") &
+	$yavta $($mediactl -e "$imgu_entity 3a stat") &
 	sleep 0.5
 
 	# Feed the IMGU input.
 	$yavta -f $IMGU_IN_PIXELFORMAT -s $in_size "-F$in_file" \
-		$($mediactl -e "ipu3-imgu 0 input")
+		$($mediactl -e "$imgu_entity input")
 }
 
 # Convert captured files to ppm

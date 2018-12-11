@@ -14,8 +14,7 @@ if sphinx.found()
                   command: [sphinx, '-W', '-b', 'html', meson.current_source_dir(), '@OUTPUT@'],
                   input: docs_sources,
                   output: 'html',
-                  build_by_default: true)
-
-    install_subdir(meson.current_build_dir() + '/html',
-                   install_dir: 'share/doc/libcamera-@0@'.format(api_version))
+                  build_by_default: true,
+                  install: true,
+                  install_dir: 'share/doc/libcamera-@0@'.format(api_version))
 endif

@@ -54,6 +54,20 @@ static const char *log_severity_name(LogSeverity severity)
 		return "UNKN";
 }
 
+/**
+ * \class LogMessage
+ * \brief Internal log message representation.
+ *
+ * The LogMessage class models a single message in the log. It serves as a
+ * helper to provide the std::ostream API for logging, and must never be used
+ * directly. Use the LOG() macro instead access the log infrastructure.
+ */
+
+/**
+ * Create a log message pertaining to line \a line of file \a fileName. The
+ * \a severity argument sets the message severity to control whether it will be
+ * output or dropped.
+ */
 LogMessage::LogMessage(const char *fileName, unsigned int line,
 		       LogSeverity severity)
 {
@@ -77,5 +91,13 @@ LogMessage::~LogMessage()
 	fwrite(msg.data(), msg.size(), 1, stderr);
 	fflush(stderr);
 }
+
+/**
+ * \fn std::ostream& LogMessage::stream()
+ *
+ * Data is added to a LogMessage through the stream returned by this function.
+ * The stream implements the std::ostream API and can be used for logging as
+ * std::cout.
+ */
 
 } /* namespace libcamera */

@@ -1,3 +1,5 @@
+doc_install_dir = join_paths(get_option('datadir'), 'doc', 'libcamera-@0@'.format(api_version))
+
 sphinx = find_program('sphinx-build-3', required: false)
 if not sphinx.found()
     sphinx = find_program('sphinx-build', required: false)
@@ -16,5 +18,5 @@ if sphinx.found()
                   output: 'html',
                   build_by_default: true,
                   install: true,
-                  install_dir: 'share/doc/libcamera-@0@'.format(api_version))
+                  install_dir: doc_install_dir)
 endif

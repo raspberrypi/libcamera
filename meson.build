@@ -23,11 +23,11 @@ add_project_arguments(cpp_arguments, language: 'cpp')
 
 libcamera_includes = include_directories('include')
 
-subdir('Documentation')
 subdir('include')
 subdir('src')
 subdir('test')
 subdir('utils')
+subdir('Documentation')
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : libcamera,

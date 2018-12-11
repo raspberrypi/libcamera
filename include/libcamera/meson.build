@@ -1,6 +1,6 @@
-public_api = [
+libcamera_api = files([
     'libcamera.h',
-]
+])
 
-install_headers(public_api,
+install_headers(libcamera_api,
                 subdir : 'libcamera')

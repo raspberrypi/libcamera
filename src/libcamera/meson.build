@@ -1,6 +1,11 @@
-sources = files([
+libcamera_sources = files([
     'log.cpp',
     'main.cpp',
+])
+
+libcamera_headers = files([
+    'include/log.h',
+    'include/utils.h',
 ])
 
 includes = [
@@ -9,6 +14,6 @@ includes = [
 ]
 
 libcamera = shared_library('camera',
-                           sources,
+                           libcamera_sources,
                            install : true,
                            include_directories : includes)

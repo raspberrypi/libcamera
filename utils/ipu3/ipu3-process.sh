@@ -52,7 +52,7 @@ process_frames() {
 	# Save the main and viewfinder outputs to disk, capture and drop 3A
 	# statistics. Sleep 500ms between each execution of yavta to keep the
 	# stdout messages readable.
-	$yavta -f $IMGU_OUT_PIXELFORMAT -s $out_size "-F$ouput_dir/frame-out-#.bin" \
+	$yavta -f $IMGU_OUT_PIXELFORMAT -s $out_size "-F$output_dir/frame-out-#.bin" \
 		$($mediactl -e "ipu3-imgu 0 output") &
 	sleep 0.5
 	$yavta -f $IMGU_VF_PIXELFORMAT -s $vf_size "-F$output_dir/frame-vf-#.bin" \

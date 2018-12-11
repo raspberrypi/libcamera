@@ -14,7 +14,7 @@
 #include "utils.h"
 
 /**
- * \file log.cpp
+ * \file log.h
  * \brief Logging infrastructure
  */
 
@@ -23,11 +23,11 @@ namespace libcamera {
 /**
  * \enum LogSeverity
  * Log message severity
- * \var Info
+ * \var LogInfo
  * Informational message
- * \var Warning
+ * \var LogWarning
  * Warning message, signals a potential issue
- * \var Error
+ * \var LogError
  * Error message, signals an unrecoverable issue
  */
 

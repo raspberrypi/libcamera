@@ -79,3 +79,116 @@ C++-11-specific features:
 * General-purpose smart pointers (std::unique_ptr), deprecating std::auto_ptr.
   Smart pointers, as well as shared pointers and weak pointers, shall not be
   overused.
+
+
+Tools
+-----
+
+The 'astyle' code formatting tool can be used to reformat source files with the
+libcamera coding style, defined by the following arguments.
+
+::
+
+  --style=linux
+  --indent=force-tab=8
+  --attach-namespaces
+  --attach-extern-c
+  --pad-oper
+  --align-pointer=name
+  --align-reference=name
+  --max-code-length=120
+
+As astyle is a code formatter, it operates on full files outputs reformatted
+source code. While it can be used to reformat code before sending patches, it
+may generate unrelated changes. To avoid this, libcamera provides a
+'checkstyle.py' script wrapping astyle to only retain related changes. This
+should be used to validate modifications before submitting them for review.
+
+The script operates on one or multiple git commits specified on the command
+line. It does not modify the git tree, the index or the working directory and
+is thus safe to run at any point.
+
+Commits are specified using the same revision range syntax as 'git log'. The
+most usual use cases are to specify a single commit by sha1, branch name or tag
+name, or a commit range with the <from>..<to> syntax. When no arguments are
+given, the topmost commit of the current branch is selected.
+
+::
+
+	$ ./utils/checkstyle.py cc7d204b2c51
+	----------------------------------------------------------------------------------
+	cc7d204b2c51853f7d963d144f5944e209e7ea29 libcamera: Use the logger instead of cout
+	----------------------------------------------------------------------------------
+	No style issue detected
+
+When operating on a range of commits, style checks are performed on each commit
+from oldest to newest.
+
+::
+
+	$ ../utils/checkstyle.py 3b56ddaa96fb~3..3b56ddaa96fb
+	----------------------------------------------------------------------------------
+	b4351e1a6b83a9cfbfc331af3753602a02dbe062 libcamera: log: Fix Doxygen documentation
+	----------------------------------------------------------------------------------
+	No style issue detected
+	
+	--------------------------------------------------------------------------------------
+	6ab3ff4501fcfa24db40fcccbce35bdded7cd4bc libcamera: log: Document the LogMessage class
+	--------------------------------------------------------------------------------------
+	No style issue detected
+	
+	---------------------------------------------------------------------------------
+	3b56ddaa96fbccf4eada05d378ddaa1cb6209b57 build: Add 'std=c++11' cpp compiler flag
+	---------------------------------------------------------------------------------
+	Commit doesn't touch source files, skipping
+
+Commits that do not touch any .c, .cpp or .h files are skipped.
+
+::
+
+	$ ./utils/checkstyle.py edbd2059d8a4
+	----------------------------------------------------------------------
+	edbd2059d8a4bd759302ada4368fa4055638fd7f libcamera: Add initial logger
+	----------------------------------------------------------------------
+	--- src/libcamera/include/log.h
+	+++ src/libcamera/include/log.h
+	@@ -21,11 +21,14 @@
+	 {
+	 public:
+	        LogMessage(const char *fileName, unsigned int line,
+	-                 LogSeverity severity);
+	-       LogMessage(const LogMessage&) = delete;
+	+                  LogSeverity severity);
+	+       LogMessage(const LogMessage &) = delete;
+	        ~LogMessage();
+	 
+	-       std::ostream& stream() { return msgStream; }
+	+       std::ostream &stream()
+	+       {
+	+               return msgStream;
+	+       }
+	 
+	 private:
+	        std::ostringstream msgStream;
+	 
+	--- src/libcamera/log.cpp
+	+++ src/libcamera/log.cpp
+	@@ -42,7 +42,7 @@
+	 
+	 static const char *log_severity_name(LogSeverity severity)
+	 {
+	-       static const char * const names[] = {
+	+       static const char *const names[] = {
+	                "INFO",
+	                "WARN",
+	                " ERR",
+	
+	---
+	2 potential style issues detected, please review
+
+When potential style issues are detected, they are displayed in the form of a
+diff that fixes the issues, on top of the corresponding commit. As the script is
+in early development false positive are expected. The flagged issues should be
+reviewed, but the diff doesn't need to be applied blindly.
+
+Happy hacking, libcamera awaits your patches!

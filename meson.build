@@ -17,6 +17,7 @@ common_arguments = [
 
 c_arguments = common_arguments
 cpp_arguments = common_arguments
+cpp_arguments += '-std=c++11'
 
 add_project_arguments(c_arguments, language: 'c')
 add_project_arguments(cpp_arguments, language: 'cpp')

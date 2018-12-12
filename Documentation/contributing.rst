@@ -49,3 +49,16 @@ Sphinx integration with Doxygen is planned, likely using `Breathe`_ and
 .. _Doxygen: http://www.doxygen.nl
 .. _Breathe: https://breathe.readthedocs.io/en/latest/
 .. _Exhale: https://exhale.readthedocs.io/en/latest/
+
+Submitting Patches
+------------------
+
+Patches submitted to the libcamera project must be certified as suitable for
+integration into an open source project. As such libcamera follows the same
+model as utilised by the Linux kernel, and requires the use of 'Signed-off-by:'
+tags in all patches.
+
+By signing your contributions you are certifying your work in accordance with
+the `Developer's Certificate of Origin`_
+
+.. _Developer's Certificate of Origin: https://developercertificate.org/

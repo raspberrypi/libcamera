@@ -44,6 +44,7 @@ if sphinx.found()
         'coding-style.rst',
         'conf.py',
         'contributing.rst',
+        'docs.rst',
         'index.rst',
     ]
 

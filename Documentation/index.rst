@@ -21,6 +21,7 @@ systems, including traditional Linux distributions, ChromeOS and Android.
    :caption: Contents:
 
    coding-style
+   docs
    contributing
 
 

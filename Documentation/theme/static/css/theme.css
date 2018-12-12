@@ -1,0 +1,274 @@
+html {
+	background-image: linear-gradient(to bottom right, #4895e1, #56c3ae);
+	background-size: cover;
+	background-repeat: no-repeat;
+	min-height: 100vh;
+}
+
+body {
+	color: rgb(0, 0, 0, 0.5);
+	font-family: Arial, sans-serif;
+	margin: 0px;
+}
+
+a {
+	color: unset;
+	font-weight: bold;
+	text-decoration: underline dotted;
+}
+
+a.headerlink {
+	color: rgba(0, 0, 0, 0.2);
+	font-size: 70%;
+	padding-left: 5px;
+	visibility: hidden;
+}
+
+h1:hover a.headerlink,
+h2:hover a.headerlink,
+h3:hover a.headerlink,
+h4:hover a.headerlink,
+h5:hover a.headerlink,
+h6:hover a.headerlink {
+	visibility: visible;
+}
+
+dt {
+	font-weight: bold;
+}
+
+.text-light {
+	color: rgba(255, 255, 255, 0.3);
+}
+
+div#navbar {
+	margin-top: 0px;
+}
+
+div.navbar-brand {
+	color: rgb(255, 255, 255, 1.0);
+	float: left;
+	font-size: 36px;
+	margin: 0px 24px 24px 24px;
+}
+
+div.navbar-logo {
+	float: left;
+	font-family: monospace;
+	font-size: 18px;
+	font-weight: bold;
+	white-space: pre;
+}
+
+div.navbar-name {
+	float: left;
+	color: rgb(255, 255, 255, 1.0);
+	font-size: 34px;
+	margin-top: 31px;
+	margin-left: 10px;
+	padding-top: 1px;
+}
+
+div.navbar {
+	float: right;
+}
+
+div.navbar p.caption {
+	height: 0px;
+	margin: 0px;
+	visibility: hidden;
+}
+
+div.navbar ul {
+	float: left;
+	font-size: 24px;
+	list-style: none;
+	margin-top: 42px;
+	margin-right: 20px;
+	padding-left: 0px;
+}
+
+div.navbar a {
+	font-weight: normal;
+	text-decoration: none;
+}
+
+div.navbar li {
+	float: left;
+	margin-left: 20px;
+	margin-right: 20px;
+	position: relative;
+}
+
+div.navbar li a {
+	color: rgb(255, 255, 255, 0.5);
+	position: relative;
+}
+
+div.navbar li a:before {
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 2px;
+	bottom: 0;
+	left: 0;
+	background-color: rgb(255, 255, 255, 0.5);
+	visibility: hidden;
+	transform: scaleX(0);
+	transition: all 0.3s ease-in-out 0s;
+}
+
+div.navbar li a:hover {
+	color: rgb(255, 255, 255, 1.0);
+}
+
+div.navbar li a:hover:before {
+	visibility: visible;
+	transform: scaleX(1);
+}
+
+div.navbar li.current a {
+	color: rgb(255, 255, 255, 1.0);
+}
+
+div.navbar li.current a:before {
+	visibility: visible;
+	transform: unset;
+	transition: unset;
+}
+
+div.navbar div.searchbox {
+	background-color: white;
+	float: right;
+	margin-right: 50px;
+	margin-top: 42px;
+}
+
+div.navbar input[type=text] {
+	border-width: 0;
+	height: 2em;
+	margin-left: 10px;
+	margin-right: 5px;
+}
+
+div.navbar input[type=submit] {
+	background-color: white;
+	background-image: url(../search.png);
+	background-repeat: no-repeat;
+	border-width: 0;
+	color: rgba(0, 0, 0, 0);
+	margin-right: 2px;
+	width: 20px;
+}
+
+div#frontpage {
+	clear: both;
+	padding-top: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	width: 75%;
+	display: flex;
+	justify-content: space-between;
+}
+
+div#frontpage > div.block {
+	background-color: white;
+	border-radius: 5px;
+	box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 40px 0 rgba(0, 0, 0, 0.19);
+	color: rgb(0, 0, 0, 0.5);
+	font-size: 20px;
+	margin-bottom: 40px;
+	margin-right: 20px;
+	margin-left: 20px;
+	padding: 20px 60px 20px 60px;
+	text-align: center;
+	width: 50%;
+}
+
+div#frontpage > div.block h1 {
+	font-size: 64px;
+	padding-left: 20%;
+	padding-right: 20%;
+	text-align: center;
+	text-shadow: 4px 4px 5px;
+}
+
+div#content {
+	background-color: white;
+	clear: both;
+	padding-top: 50px;
+	padding-bottom: 50px;
+	margin-left: 0px;
+	margin-right: 0px;
+	overflow: auto;
+}
+
+div#content > div.block {
+	font-size: 16px;
+	margin-right: 0px;
+	margin-left: 20px;
+	max-width: 800px;
+	padding: 20px 60px 0px 60px;
+	text-align: justify;
+	width: 70%;
+}
+
+div#content > div.block h1 {
+	color: black;
+	font-size: 40px;
+	text-align: left;
+}
+
+div.local-toc {
+	float: right;
+	background-color: #fcfcff;
+	border: 1px dotted #4896e0;
+	margin-right: 100px;
+	padding: 10px 20px 10px 10px;
+}
+
+div.toc-title {
+	font-weight: bold;
+}
+
+div.local-toc ul {
+	padding-left: 20px;
+	margin-bottom: 5px;
+}
+
+div.local-toc a {
+	font-weight: normal;
+	padding-left: 10px;
+	text-decoration: none;
+}
+
+div.highlight-shell > div.highlight > pre,
+pre.console {
+	background-color: #fcfcff;
+	border: 1px dotted #4896e0;
+	margin-left: 0em;
+	padding: 10px;
+	text-align: left;
+}
+
+div.highlight-default > div.highlight > pre,
+pre.diagram {
+	background-color: #fcfcff;
+	border: 1px dotted #4896e0;
+	font-size: 12px;
+	margin-left: 0em;
+	padding: 10px;
+	text-align: left;
+	width: 47em;
+}
+
+div#signature {
+	color: rgb(255, 255, 255, 0.5);
+	margin: 20px;
+	float: right;
+	font-size: 12px;
+}
+
+#libcamera div.toctree-wrapper {
+	visibility: hidden;
+}

@@ -20,13 +20,7 @@ systems, including traditional Linux distributions, ChromeOS and Android.
    :maxdepth: 2
    :caption: Contents:
 
-   coding-style
-   docs
-   contributing
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
+   Home <self>
+   Docs <docs>
+   Coding Style <coding-style>
+   Contribute <contributing>

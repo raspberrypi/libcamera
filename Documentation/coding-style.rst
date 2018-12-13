@@ -26,13 +26,13 @@ Even if the programming language in use is different, the project embraces the
 
 In particular, from the kernel style document, the following section are adopted:
 
-  * 1 "Indentation"
-  * 2 "Breaking Long Lines" striving to fit code within 80 columns and
-    accepting up to 120 columns when necessary
-  * 3 "Placing Braces and Spaces"
-  * 3.1 "Spaces"
-  * 8 "Commenting" with the exception that in-function comments are not
-    always un-welcome.
+* 1 "Indentation"
+* 2 "Breaking Long Lines" striving to fit code within 80 columns and
+  accepting up to 120 columns when necessary
+* 3 "Placing Braces and Spaces"
+* 3.1 "Spaces"
+* 8 "Commenting" with the exception that in-function comments are not
+  always un-welcome.
 
 While libcamera uses the kernel coding style for all typographic matters, the
 project is a user space library, developed in a different programming language,
@@ -47,19 +47,19 @@ few exceptions and relaxed limitations on some subjects.
 The following exceptions apply to the naming conventions specified in the
 document:
 
-  * File names: libcamera uses the .cpp extensions for C++ source files and
-    the .h extension for header files
-  * Variables, function parameters, function names and class members use
-    camel case style, with the first letter in lower-case (as in 'camelCase'
-    and not 'CamelCase')
-  * Types (classes, structs, type aliases, and type template parameters) use
-    camel case, with the first letter in capital case (as in 'CamelCase' and
-    not 'camelCase')
-  * Enum members use 'CamelCase', while macros are in capital case with
-    underscores in between
-  * All formatting rules specified in the selected sections of the Linux kernel
-    Code Style for indentation, braces, spacing, etc
-  * Header guards are formatted as '__LIBCAMERA_FILE_NAME_H__'
+* File names: libcamera uses the .cpp extensions for C++ source files and
+  the .h extension for header files
+* Variables, function parameters, function names and class members use
+  camel case style, with the first letter in lower-case (as in 'camelCase'
+  and not 'CamelCase')
+* Types (classes, structs, type aliases, and type template parameters) use
+  camel case, with the first letter in capital case (as in 'CamelCase' and
+  not 'camelCase')
+* Enum members use 'CamelCase', while macros are in capital case with
+  underscores in between
+* All formatting rules specified in the selected sections of the Linux kernel
+  Code Style for indentation, braces, spacing, etc
+* Header guards are formatted as '__LIBCAMERA_FILE_NAME_H__'
 
 
 C++ Specific Rules
@@ -68,14 +68,14 @@ C++ Specific Rules
 The code shall be implemented in C++03, extended with the following
 C++-11-specific features:
 
-  * Initializer lists
-  * Type inference (auto and decltype)
-    Type inference shall be used with caution, to avoid drifting towards an
-    untyped language.
-  * Range-based for loop
-  * Lambda functions
-  * Explicit overrides and final
-  * Null pointer constant
-  * General-purpose smart pointers (std::unique_ptr), deprecating std::auto_ptr.
-    Smart pointers, as well as shared pointers and weak pointers, shall not be
-    overused.
+* Initializer lists
+* Type inference (auto and decltype)
+  Type inference shall be used with caution, to avoid drifting towards an
+  untyped language.
+* Range-based for loop
+* Lambda functions
+* Explicit overrides and final
+* Null pointer constant
+* General-purpose smart pointers (std::unique_ptr), deprecating std::auto_ptr.
+  Smart pointers, as well as shared pointers and weak pointers, shall not be
+  overused.

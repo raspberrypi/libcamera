@@ -8,9 +8,11 @@ libcamera_headers = files([
     'include/utils.h',
 ])
 
+libcamera_internal_includes =  include_directories('include')
+
 includes = [
     libcamera_includes,
-    include_directories('include'),
+    libcamera_internal_includes,
 ]
 
 libcamera = shared_library('camera',

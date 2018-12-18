@@ -144,10 +144,11 @@ def parse_diff(diff):
     return hunks
 
 
-def check_file(commit, filename):
+def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
-    diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--', filename],
-                            stdout=subprocess.PIPE).stdout
+    diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
+                           '%s/%s' % (top_level, filename)],
+                          stdout=subprocess.PIPE).stdout
     diff = diff.decode('utf-8').splitlines(True)
     commit_diff = parse_diff(diff)
 
@@ -187,7 +188,7 @@ def check_file(commit, filename):
     return len(formatted_diff)
 
 
-def check_style(commit):
+def check_style(top_level, commit):
     # Get the commit title and list of files.
     ret = subprocess.run(['git', 'show', '--pretty=oneline','--name-only', commit],
                          stdout=subprocess.PIPE)
@@ -208,7 +209,7 @@ def check_style(commit):
 
     issues = 0
     for f in files:
-        issues += check_file(commit, f)
+        issues += check_file(top_level, commit, f)
 
     if issues == 0:
         print("No style issue detected")
@@ -240,6 +241,18 @@ def extract_revlist(revs):
     return revlist
 
 
+def git_top_level():
+    """Get the absolute path of the git top-level directory."""
+    ret = subprocess.run(['git', 'rev-parse', '--show-toplevel'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    if ret.returncode != 0:
+        print(ret.stderr.decode('utf-8').splitlines()[0])
+        return None
+
+    return ret.stdout.decode('utf-8').strip()
+
+
 def main(argv):
 
     # Parse command line arguments
@@ -256,11 +269,20 @@ def main(argv):
             print("Executable %s not found" % dependency)
             return 1
 
+    # Get the top level directory to pass absolute file names to git diff
+    # commands, in order to support execution from subdirectories of the git
+    # tree.
+    top_level = git_top_level()
+    if top_level is None:
+            return 1
+
     revlist = extract_revlist(args.revision_range)
 
     for commit in revlist:
-        check_style(commit)
+        check_style(top_level, commit)
         print('')
+
+    return 0
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ libcamera_sources = files([
     'device_enumerator.cpp',
     'log.cpp',
     'main.cpp',
+    'media_device.cpp',
     'media_object.cpp',
     'pipeline_handler.cpp',
 ])
@@ -11,6 +12,7 @@ libcamera_sources = files([
 libcamera_headers = files([
     'include/device_enumerator.h',
     'include/log.h',
+    'include/media_device.h',
     'include/media_object.h',
     'include/pipeline_handler.h',
     'include/utils.h',

@@ -38,6 +38,10 @@ source_extensions = (
     '.h'
 )
 
+# ------------------------------------------------------------------------------
+# Colour terminal handling
+#
+
 class Colours:
     Default = 0
     Black = 0
@@ -78,6 +82,10 @@ class Colours:
         else:
             return ''
 
+
+# ------------------------------------------------------------------------------
+# Diff parsing, handling and printing
+#
 
 class DiffHunkSide(object):
     """A side of a diff hunk, recording line numbers"""
@@ -179,6 +187,33 @@ def parse_diff(diff):
     return hunks
 
 
+# ------------------------------------------------------------------------------
+# Code reformatting
+#
+
+def formatter_astyle(data):
+    ret = subprocess.run(['astyle', *astyle_options],
+                         input=data.encode('utf-8'), stdout=subprocess.PIPE)
+    return ret.stdout.decode('utf-8')
+
+
+def formatter_strip_trailing_space(data):
+    lines = data.split('\n')
+    for i in range(len(lines)):
+        lines[i] = lines[i].rstrip() + '\n'
+    return ''.join(lines)
+
+
+formatters = [
+    formatter_astyle,
+    formatter_strip_trailing_space,
+]
+
+
+# ------------------------------------------------------------------------------
+# Style checking
+#
+
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
     diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
@@ -195,16 +230,18 @@ def check_file(top_level, commit, filename):
     if len(lines) == 0:
         return 0
 
-    # Format the file after the commit with astyle and compute the diff between
-    # the two files.
+    # Format the file after the commit with all formatters and compute the diff
+    # between the unformatted and formatted contents.
     after = subprocess.run(['git', 'show', '%s:%s' % (commit, filename)],
                            stdout=subprocess.PIPE).stdout
-    formatted = subprocess.run(['astyle', *astyle_options],
-                               input=after, stdout=subprocess.PIPE).stdout
+    after = after.decode('utf-8')
 
-    after = after.decode('utf-8').splitlines(True)
-    formatted = formatted.decode('utf-8').splitlines(True)
+    formatted = after
+    for formatter in formatters:
+        formatted = formatter(formatted)
 
+    after = after.splitlines(True)
+    formatted = formatted.splitlines(True)
     diff = difflib.unified_diff(after, formatted)
 
     # Split the diff in hunks, recording line number ranges for each hunk.

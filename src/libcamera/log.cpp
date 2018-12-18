@@ -23,6 +23,8 @@ namespace libcamera {
 /**
  * \enum LogSeverity
  * Log message severity
+ * \var LogDebug
+ * Debug message
  * \var LogInfo
  * Informational message
  * \var LogWarning
@@ -43,6 +45,7 @@ namespace libcamera {
 static const char *log_severity_name(LogSeverity severity)
 {
 	static const char * const names[] = {
+		" DBG",
 		"INFO",
 		"WARN",
 		" ERR",

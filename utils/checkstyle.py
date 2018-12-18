@@ -40,18 +40,43 @@ source_extensions = (
 
 class Colours:
     Default = 0
+    Black = 0
     Red = 31
     Green = 32
+    Yellow = 33
+    Blue = 34
+    Magenta = 35
     Cyan = 36
+    LightGrey = 37
+    DarkGrey = 90
+    LightRed = 91
+    LightGreen = 92
+    Lightyellow = 93
+    LightBlue = 94
+    LightMagenta = 95
+    LightCyan = 96
+    White = 97
 
-for attr in Colours.__dict__.keys():
-    if attr.startswith('_'):
-        continue
+    @staticmethod
+    def fg(colour):
+        if sys.stdout.isatty():
+            return '\033[%um' % colour
+        else:
+            return ''
 
-    if sys.stdout.isatty():
-        setattr(Colours, attr, '\033[0;%um' % getattr(Colours, attr))
-    else:
-        setattr(Colours, attr, '')
+    @staticmethod
+    def bg(colour):
+        if sys.stdout.isatty():
+            return '\033[%um' % (colour + 10)
+        else:
+            return ''
+
+    @staticmethod
+    def reset():
+        if sys.stdout.isatty():
+            return '\033[0m'
+        else:
+            return ''
 
 
 class DiffHunkSide(object):
@@ -82,20 +107,30 @@ class DiffHunk(object):
 
     def __repr__(self):
         s = '%s@@ -%u,%u +%u,%u @@\n' % \
-                (Colours.Cyan,
+                (Colours.fg(Colours.Cyan),
                  self.__from.start, len(self.__from),
                  self.__to.start, len(self.__to))
 
         for line in self.lines:
             if line[0] == '-':
-                s += Colours.Red
+                s += Colours.fg(Colours.Red)
             elif line[0] == '+':
-                s += Colours.Green
-            else:
-                s += Colours.Default
-            s += line
+                s += Colours.fg(Colours.Green)
 
-        s += Colours.Default
+            if line[0] == '-':
+                spaces = 0
+                for i in range(len(line)):
+                    if line[-i-1].isspace():
+                        spaces += 1
+                    else:
+                        break
+                spaces = len(line) - spaces
+                line = line[0:spaces] + Colours.bg(Colours.Red) + line[spaces:]
+
+            s += line
+            s += Colours.reset()
+            s += '\n'
+
         return s
 
     def append(self, line):
@@ -111,7 +146,7 @@ class DiffHunk(object):
             self.__to.touched.append(self.__to_line)
             self.__to_line += 1
 
-        self.lines.append(line)
+        self.lines.append(line.rstrip('\n'))
 
     def intersects(self, lines):
         for line in lines:
@@ -180,8 +215,8 @@ def check_file(top_level, commit, filename):
     if len(formatted_diff) == 0:
         return 0
 
-    print('%s---' % Colours.Red, filename)
-    print('%s+++' % Colours.Green, filename)
+    print('%s---' % Colours.fg(Colours.Red), filename)
+    print('%s+++' % Colours.fg(Colours.Green), filename)
     for hunk in formatted_diff:
         print(hunk)
 

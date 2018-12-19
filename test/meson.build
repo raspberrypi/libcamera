@@ -12,16 +12,11 @@ test_includes_internal = [
     libcamera_internal_includes,
 ]
 
-test_init = executable('test_init', 'init.cpp',
-                       link_with : test_libraries,
-                       include_directories : test_includes_public)
-
 list = executable('list', 'list.cpp',
                   link_with : test_libraries,
                   include_directories : test_includes_public)
 
 subdir('media_device')
 
-test('Initialisation test', test_init)
 test('List Camera API tests', list)
 test('Media Device Test', media_device_test)

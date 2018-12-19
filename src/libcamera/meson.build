@@ -3,7 +3,6 @@ libcamera_sources = files([
     'camera_manager.cpp',
     'device_enumerator.cpp',
     'log.cpp',
-    'main.cpp',
     'media_device.cpp',
     'media_object.cpp',
     'pipeline_handler.cpp',

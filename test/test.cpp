@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/*
+ * Copyright (C) 2018, Google Inc.
+ *
+ * test.cpp - libcamera test base class
+ */
+
+#include "test.h"
+
+Test::Test()
+{
+}
+
+Test::~Test()
+{
+	cleanup();
+}
+
+int Test::execute()
+{
+	int ret;
+
+	ret = init();
+	if (ret < 0)
+		return ret;
+
+	return run();
+}

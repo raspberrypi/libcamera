@@ -29,6 +29,9 @@ public:
 
 	Signal<Camera *> disconnected;
 
+	int acquire();
+	void release();
+
 private:
 	Camera(PipelineHandler *pipe, const std::string &name);
 	~Camera();
@@ -38,6 +41,8 @@ private:
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
+
+	bool acquired_;
 };
 
 } /* namespace libcamera */

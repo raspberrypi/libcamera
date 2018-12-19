@@ -102,12 +102,14 @@ const std::string &Camera::name() const
  */
 
 Camera::Camera(PipelineHandler *pipe, const std::string &name)
-	: pipe_(pipe->shared_from_this()), name_(name)
+	: pipe_(pipe->shared_from_this()), name_(name), acquired_(false)
 {
 }
 
 Camera::~Camera()
 {
+	if (acquired_)
+		LOG(Camera, Error) << "Removing camera while still in use";
 }
 
 /**
@@ -125,6 +127,41 @@ void Camera::disconnect()
 
 	/** \todo Block API calls when they will be implemented. */
 	disconnected.emit(this);
+}
+
+/**
+ * \brief Acquire the camera device for exclusive access
+ *
+ * After opening the device with open(), exclusive access must be obtained
+ * before performing operations that change the device state. This function is
+ * not blocking, if the device has already been acquired (by the same or another
+ * process) the -EBUSY error code is returned.
+ *
+ * Once exclusive access isn't needed anymore, the device should be released
+ * with a call to the release() function.
+ *
+ * \todo Implement exclusive access across processes.
+ *
+ * \return 0 on success or a negative error code on error.
+ */
+int Camera::acquire()
+{
+	if (acquired_)
+		return -EBUSY;
+
+	acquired_ = true;
+	return 0;
+}
+
+/**
+ * \brief Release exclusive access to the camera device
+ *
+ * Releasing the camera device allows other users to acquire exclusive access
+ * with the acquire() function.
+ */
+void Camera::release()
+{
+	acquired_ = false;
 }
 
 } /* namespace libcamera */

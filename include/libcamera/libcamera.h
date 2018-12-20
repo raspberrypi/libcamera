@@ -7,6 +7,8 @@
 #ifndef __LIBCAMERA_LIBCAMERA_H__
 #define __LIBCAMERA_LIBCAMERA_H__
 
+#include <libcamera/camera.h>
+
 namespace libcamera {
 
 class libcamera

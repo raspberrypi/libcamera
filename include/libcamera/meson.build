@@ -1,4 +1,5 @@
 libcamera_api = files([
+    'camera.h',
     'libcamera.h',
 ])
 

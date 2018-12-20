@@ -1,4 +1,5 @@
 libcamera_sources = files([
+    'camera.cpp',
     'log.cpp',
     'main.cpp',
 ])

@@ -21,6 +21,8 @@ includes = [
     libcamera_internal_includes,
 ]
 
+subdir('pipeline')
+
 libudev = dependency('libudev')
 
 libcamera = shared_library('camera',

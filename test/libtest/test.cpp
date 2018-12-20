@@ -20,7 +20,7 @@ int Test::execute()
 	int ret;
 
 	ret = init();
-	if (ret < 0)
+	if (ret)
 		return ret;
 
 	ret = run();

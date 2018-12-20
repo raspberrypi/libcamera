@@ -9,6 +9,12 @@
 
 #include <sstream>
 
+enum TestStatus {
+	TestPass = 0,
+	TestFail = -1,
+	TestSkip = 77,
+};
+
 class Test
 {
 public:

@@ -1,17 +1,24 @@
-libtest_sources = files([
-    'test.cpp',
-])
+subdir('libtest')
 
-libtest = static_library('libtest', libtest_sources)
-libtest_includes = include_directories('./')
+test_libraries = [libcamera, libtest]
+
+test_includes_public = [
+    libtest_includes,
+    libcamera_includes,
+]
+
+test_includes_internal = [
+    test_includes_public,
+    libcamera_internal_includes,
+]
 
 test_init = executable('test_init', 'init.cpp',
-                       link_with : libcamera,
-                       include_directories : libcamera_includes)
+                       link_with : test_libraries,
+                       include_directories : test_includes_public)
 
 list = executable('list', 'list.cpp',
-                    link_with : [libcamera, libtest],
-                    include_directories : libcamera_includes)
+                  link_with : test_libraries,
+                  include_directories : test_includes_public)
 
 subdir('media_device')
 

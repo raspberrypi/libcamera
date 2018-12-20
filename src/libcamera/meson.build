@@ -3,11 +3,13 @@ libcamera_sources = files([
     'device_enumerator.cpp',
     'log.cpp',
     'main.cpp',
+    'pipeline_handler.cpp',
 ])
 
 libcamera_headers = files([
     'include/device_enumerator.h',
     'include/log.h',
+    'include/pipeline_handler.h',
     'include/utils.h',
 ])
 

@@ -29,6 +29,7 @@ astyle_options = (
     '--pad-oper',
     '--align-pointer=name',
     '--align-reference=name',
+    '--keep-one-line-blocks',
     '--max-code-length=120'
 )
 

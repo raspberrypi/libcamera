@@ -1,5 +1,6 @@
 libcamera_sources = files([
     'camera.cpp',
+    'camera_manager.cpp',
     'device_enumerator.cpp',
     'log.cpp',
     'main.cpp',

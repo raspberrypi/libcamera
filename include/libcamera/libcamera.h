@@ -8,6 +8,7 @@
 #define __LIBCAMERA_LIBCAMERA_H__
 
 #include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 
 namespace libcamera {
 

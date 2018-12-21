@@ -53,6 +53,28 @@ private:
 	std::vector<std::string> entities_;
 };
 
+class DeviceEnumerator
+{
+public:
+	virtual ~DeviceEnumerator();
+
+	virtual int init() = 0;
+	virtual int enumerate() = 0;
+
+	DeviceInfo *search(DeviceMatch &dm) const;
+
+protected:
+	int addDevice(const std::string &devnode);
+
+private:
+	std::vector<DeviceInfo *> devices_;
+
+	int readInfo(int fd, struct media_device_info &info);
+	int readTopology(int fd, std::map<std::string, std::string> &entities);
+
+	virtual std::string lookupDevnode(int major, int minor) = 0;
+};
+
 } /* namespace libcamera */
 
 #endif	/* __LIBCAMERA_DEVICE_ENUMERATOR_H__ */

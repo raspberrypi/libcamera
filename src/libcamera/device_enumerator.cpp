@@ -266,4 +266,102 @@ DeviceInfo *DeviceEnumerator::search(DeviceMatch &dm) const
 	return info;
 }
 
+/* -----------------------------------------------------------------------------
+ * Enumerator Udev
+ */
+
+DeviceEnumeratorUdev::DeviceEnumeratorUdev()
+	: udev_(nullptr)
+{
+}
+
+DeviceEnumeratorUdev::~DeviceEnumeratorUdev()
+{
+	if (udev_)
+		udev_unref(udev_);
+}
+
+int DeviceEnumeratorUdev::init()
+{
+	if (udev_)
+		return -EBUSY;
+
+	udev_ = udev_new();
+	if (!udev_)
+		return -ENODEV;
+
+	return 0;
+}
+
+int DeviceEnumeratorUdev::enumerate()
+{
+	struct udev_enumerate *udev_enum = nullptr;
+	struct udev_list_entry *ents, *ent;
+	int ret;
+
+	udev_enum = udev_enumerate_new(udev_);
+	if (!udev_enum)
+		return -ENOMEM;
+
+	ret = udev_enumerate_add_match_subsystem(udev_enum, "media");
+	if (ret < 0)
+		goto done;
+
+	ret = udev_enumerate_scan_devices(udev_enum);
+	if (ret < 0)
+		goto done;
+
+	ents = udev_enumerate_get_list_entry(udev_enum);
+	if (!ents)
+		goto done;
+
+	udev_list_entry_foreach(ent, ents) {
+		struct udev_device *dev;
+		const char *devnode;
+		const char *syspath = udev_list_entry_get_name(ent);
+
+		dev = udev_device_new_from_syspath(udev_, syspath);
+		if (!dev) {
+			LOG(Error) << "Failed to get device for '" <<
+				   syspath << "', skipping";
+			continue;
+		}
+
+		devnode = udev_device_get_devnode(dev);
+		if (!devnode) {
+			udev_device_unref(dev);
+			ret = -ENODEV;
+			goto done;
+		}
+
+		addDevice(devnode);
+
+		udev_device_unref(dev);
+	}
+done:
+	udev_enumerate_unref(udev_enum);
+	return ret >= 0 ? 0 : ret;
+}
+
+std::string DeviceEnumeratorUdev::lookupDevnode(int major, int minor)
+{
+	struct udev_device *device;
+	const char *name;
+	dev_t devnum;
+	std::string devnode = std::string();
+
+	devnum = makedev(major, minor);
+	device = udev_device_new_from_devnum(udev_, 'c', devnum);
+	if (!device)
+		return std::string();
+
+	name = udev_device_get_devnode(device);
+	if (name)
+		devnode = name;
+
+	udev_device_unref(device);
+
+	return devnode;
+}
+
 } /* namespace libcamera */

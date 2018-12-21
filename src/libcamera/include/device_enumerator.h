@@ -75,6 +75,21 @@ private:
 	virtual std::string lookupDevnode(int major, int minor) = 0;
 };
 
+class DeviceEnumeratorUdev: public DeviceEnumerator
+{
+public:
+	DeviceEnumeratorUdev();
+	~DeviceEnumeratorUdev();
+
+	int init() final;
+	int enumerate() final;
+
+private:
+	struct udev *udev_;
+
+	std::string lookupDevnode(int major, int minor) final;
+};
+
 } /* namespace libcamera */
 
 #endif	/* __LIBCAMERA_DEVICE_ENUMERATOR_H__ */

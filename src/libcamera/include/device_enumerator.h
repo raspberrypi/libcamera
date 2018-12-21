@@ -56,6 +56,8 @@ private:
 class DeviceEnumerator
 {
 public:
+	static DeviceEnumerator *create();
+
 	virtual ~DeviceEnumerator();
 
 	virtual int init() = 0;

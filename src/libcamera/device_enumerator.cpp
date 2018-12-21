@@ -121,6 +121,25 @@ bool DeviceMatch::match(const DeviceInfo *info) const
  * Enumerator Base
  */
 
+DeviceEnumerator *DeviceEnumerator::create()
+{
+	DeviceEnumerator *enumerator;
+
+	/* TODO: add compile time checks to only try udev enumerator if libudev is available */
+	enumerator = new DeviceEnumeratorUdev();
+	if (!enumerator->init())
+		return enumerator;
+
+	/*
+	 * NOTE: Either udev is not available or initialization of it
+	 * failed, use/fallback on sysfs enumerator
+	 */
+
+	/* TODO: add a sysfs based enumerator */
+
+	return nullptr;
+}
+
 DeviceEnumerator::~DeviceEnumerator()
 {
 	for (DeviceInfo *dev : devices_) {

@@ -13,7 +13,6 @@ Test::Test()
 
 Test::~Test()
 {
-	cleanup();
 }
 
 int Test::execute()
@@ -24,5 +23,9 @@ int Test::execute()
 	if (ret < 0)
 		return ret;
 
-	return run();
+	ret = run();
+
+	cleanup();
+
+	return ret;
 }

@@ -756,4 +756,49 @@ void V4L2Device::bufferAvailable(EventNotifier *notifier)
  * \brief A Signal emitted when a buffer completes
  */
 
+/**
+ * \brief Start the video stream
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Device::streamOn()
+{
+	int ret;
+
+	ret = ioctl(fd_, VIDIOC_STREAMON, &bufferType_);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to start streaming: " << strerror(-ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Stop the video stream
+ *
+ * \todo Ensure completion notifications are sent for all queued buffers
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Device::streamOff()
+{
+	int ret;
+
+	ret = ioctl(fd_, VIDIOC_STREAMOFF, &bufferType_);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to stop streaming: " << strerror(-ret);
+		return ret;
+	}
+
+	queuedBuffersCount_ = 0;
+	fdEvent_->setEnabled(false);
+
+	return 0;
+}
+
 } /* namespace libcamera */

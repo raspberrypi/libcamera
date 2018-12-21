@@ -103,6 +103,9 @@ public:
 	int queueBuffer(Buffer *buffer);
 	Signal<Buffer *> bufferReady;
 
+	int streamOn();
+	int streamOff();
+
 private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);

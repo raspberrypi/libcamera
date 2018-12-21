@@ -75,4 +75,40 @@ int DeviceInfo::lookup(const std::string &name, std::string &devnode) const
 	return 0;
 }
 
+/* -----------------------------------------------------------------------------
+ * DeviceMatch
+ */
+
+DeviceMatch::DeviceMatch(const std::string &driver)
+	: driver_(driver)
+{
+}
+
+void DeviceMatch::add(const std::string &entity)
+{
+	entities_.push_back(entity);
+}
+
+bool DeviceMatch::match(const DeviceInfo *info) const
+{
+	if (driver_ != info->info().driver)
+		return false;
+
+	for (const std::string &name : entities_) {
+		bool found = false;
+
+		for (const std::string &entity : info->entities()) {
+			if (name == entity) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			return false;
+	}
+
+	return true;
+}
+
 } /* namespace libcamera */

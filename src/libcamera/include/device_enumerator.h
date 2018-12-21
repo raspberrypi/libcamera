@@ -39,6 +39,20 @@ private:
 	std::map<std::string, std::string> entities_;
 };
 
+class DeviceMatch
+{
+public:
+	DeviceMatch(const std::string &driver);
+
+	void add(const std::string &entity);
+
+	bool match(const DeviceInfo *info) const;
+
+private:
+	std::string driver_;
+	std::vector<std::string> entities_;
+};
+
 } /* namespace libcamera */
 
 #endif	/* __LIBCAMERA_DEVICE_ENUMERATOR_H__ */

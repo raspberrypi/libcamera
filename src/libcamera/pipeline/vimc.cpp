@@ -8,6 +8,7 @@
 #include <libcamera/camera.h>
 
 #include "device_enumerator.h"
+#include "media_device.h"
 #include "pipeline_handler.h"
 
 namespace libcamera {
@@ -24,12 +25,12 @@ public:
 	Camera *camera(unsigned int id) final;
 
 private:
-	DeviceInfo *info_;
+	MediaDevice *dev_;
 	Camera *camera_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc()
-	: info_(nullptr), camera_(nullptr)
+	: dev_(nullptr), camera_(nullptr)
 {
 }
 
@@ -38,8 +39,8 @@ PipeHandlerVimc::~PipeHandlerVimc()
 	if (camera_)
 		camera_->put();
 
-	if (info_)
-		info_->release();
+	if (dev_)
+		dev_->release();
 }
 
 unsigned int PipeHandlerVimc::count()
@@ -69,15 +70,15 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 	dm.add("RGB/YUV Input");
 	dm.add("Scaler");
 
-	info_ = enumerator->search(dm);
-	if (!info_)
+	dev_ = enumerator->search(dm);
+	if (!dev_)
 		return false;
 
-	info_->acquire();
+	dev_->acquire();
 
 	/*
 	 * NOTE: A more complete Camera implementation could
-	 * be passed the DeviceInfo(s) it controls here or
+	 * be passed the MediaDevice(s) it controls here or
 	 * a reference to the PipelineHandler. Which method
 	 * will be chosen depends on how the Camera
 	 * object is modeled.

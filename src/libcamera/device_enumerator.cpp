@@ -13,6 +13,7 @@
 
 #include "device_enumerator.h"
 #include "log.h"
+#include "media_device.h"
 
 /**
  * \file device_enumerator.h
@@ -28,8 +29,8 @@
  * for other parts of libcamera.
  *
  * The DeviceEnumerator can enumerate all or specific media devices in
- * the system. When a new media device is added the enumerator gathers
- * information about it and stores it in a DeviceInfo object.
+ * the system. When a new media device is added the enumerator creates a
+ * corresponding MediaDevice instance.
  *
  * The last functionality provided is the ability to search among the
  * enumerate media devices for one matching information known to the
@@ -41,135 +42,6 @@
  */
 
 namespace libcamera {
-
-/**
- * \class DeviceInfo
- * \brief Container of information for enumerated device
- *
- * The DeviceInfo class holds information about a media device. It provides
- * methods to retrieve the information stored and to lookup entity names
- * to device node paths. Furthermore it provides a scheme where a device
- * can be acquired and released to indicate if the device is in use.
- *
- * \todo Look into the possibility to replace this with a more complete MediaDevice model.
- */
-
-/**
- * \brief Construct a container of device information
- *
- * \param[in] devnode The path to the device node of the media device
- * \param[in] info Information retrieved from MEDIA_IOC_DEVICE_INFO IOCTL
- * \param[in] entities A map of media graph 'Entity name' -> 'devnode path'
- *
- * The caller is responsible to provide all information for the device.
- */
-DeviceInfo::DeviceInfo(const std::string &devnode, const struct media_device_info &info,
-		       const std::map<std::string, std::string> &entities)
-	: acquired_(false), devnode_(devnode), info_(info), entities_(entities)
-{
-	for (const auto &entity : entities_)
-		LOG(Info) << "Device: " << devnode_ << " Entity: '" << entity.first << "' -> " << entity.second;
-}
-
-/**
- * \brief Claim a device for exclusive use
- *
- * Once a device is successfully acquired the caller is responsible to
- * release it once it is done wit it.
- *
- * \retval 0 Device claimed
- * \retval -EBUSY Device already claimed by someone else
- */
-int DeviceInfo::acquire()
-{
-	if (acquired_)
-		return -EBUSY;
-
-	acquired_ = true;
-
-	return 0;
-}
-
-/**
- * \brief Release a device from exclusive use
- */
-void DeviceInfo::release()
-{
-	acquired_ = false;
-}
-
-/**
- * \brief Check if a device is in use
- *
- * \retval true Device is in use
- * \retval false Device is free
- */
-bool DeviceInfo::busy() const
-{
-	return acquired_;
-}
-
-/**
- * \brief Retrieve the devnode to the media device
- *
- * \return Path to the media device (example /dev/media0)
- */
-const std::string &DeviceInfo::devnode() const
-{
-	return devnode_;
-}
-
-/**
- * \brief Retrieve the media device v4l2 information
- *
- * \return v4l2 specific information structure
- */
-const struct media_device_info &DeviceInfo::info() const
-{
-	return info_;
-}
-
-/**
- * \brief List all entities of the device
- *
- * List all media entities names from the media graph which are known
- * and to which this instance can lookup the device node path.
- *
- * \return List of strings
- */
-std::vector<std::string> DeviceInfo::entities() const
-{
-	std::vector<std::string> entities;
-
-	for (const auto &entity : entities_)
-		entities.push_back(entity.first);
-
-	return entities;
-}
-
-/**
- * \brief Lookup a media entity name and retrieve its device node path
- *
- * \param[in] name Entity name to lookup
- * \param[out] devnode Path to \a name devnode if lookup is successful
- *
- * The caller is responsible to check the return code of the function
- * to determine if the entity name could be looked up.
- *
- * \return 0 on success none zero otherwise
- */
-int DeviceInfo::lookup(const std::string &name, std::string &devnode) const
-{
-	auto it = entities_.find(name);
-
-	if (it == entities_.end()) {
-		LOG(Error) << "Trying to lookup entity '" << name << "' which does not exist";
-		return -ENODEV;
-	}
-
-	devnode = it->second;
-	return 0;
-}
 
 /**
  * \class DeviceMatch
@@ -205,25 +77,23 @@ void DeviceMatch::add(const std::string &entity)
 
 /**
  * \brief Compare a search pattern with a media device
- *
- * \param[in] info Information about a enumerated media device
+ * \param[in] device The media device
  *
  * Matching is performed on the Linux device driver name and entity names
  * from the media graph.
  *
- * \retval true The device described in \a info matches search pattern
- * \retval false The device described in \a info do not match search pattern
+ * \return true if the media device matches the search pattern, false otherwise
  */
-bool DeviceMatch::match(const DeviceInfo *info) const
+bool DeviceMatch::match(const MediaDevice *device) const
 {
-	if (driver_ != info->info().driver)
+	if (driver_ != device->driver())
 		return false;
 
 	for (const std::string &name : entities_) {
 		bool found = false;
 
-		for (const std::string &entity : info->entities()) {
-			if (name == entity) {
+		for (const MediaEntity *entity : device->entities()) {
+			if (name == entity->name()) {
 				found = true;
 				break;
 			}
@@ -281,7 +151,7 @@ DeviceEnumerator *DeviceEnumerator::create()
 
 DeviceEnumerator::~DeviceEnumerator()
 {
-	for (DeviceInfo *dev : devices_) {
+	for (MediaDevice *dev : devices_) {
 		if (dev->busy())
 			LOG(Error) << "Removing device info while still in use";
 
@@ -300,171 +170,62 @@ DeviceEnumerator::~DeviceEnumerator()
  */
 int DeviceEnumerator::addDevice(const std::string &devnode)
 {
-	int fd, ret;
+	MediaDevice *media = new MediaDevice(devnode);
 
-	struct media_device_info info = {};
-	std::map<std::string, std::string> entities;
-
-	fd = open(devnode.c_str(), O_RDWR);
-	if (fd < 0) {
-		ret = -errno;
-		LOG(Info) << "Unable to open " << devnode <<
-			  " (" << strerror(-ret) << "), skipping";
+	int ret = media->open();
+	if (ret < 0)
 		return ret;
-	}
 
-	ret = readInfo(fd, info);
-	if (ret)
-		goto out;
-
-	ret = readTopology(fd, entities);
-	if (ret)
-		goto out;
-
-	devices_.push_back(new DeviceInfo(devnode, info, entities));
-out:
-	close(fd);
-
-	return ret;
-}
-
-/**
- * \brief Fetch the MEDIA_IOC_DEVICE_INFO from media device
- *
- * \param[in] fd File pointer to media device
- * \param[out] info Information retrieved from MEDIA_IOC_DEVICE_INFO IOCTL
- *
- * Opens the media device and quires its information.
- *
- * \return 0 on success none zero otherwise
- */
-int DeviceEnumerator::readInfo(int fd, struct media_device_info &info)
-{
-	int ret;
-
-	ret = ioctl(fd, MEDIA_IOC_DEVICE_INFO, &info);
+	ret = media->populate();
 	if (ret < 0) {
-		ret = -errno;
-		LOG(Info) << "Unable to read device info " <<
+		LOG(Info) << "Unable to populate media device " << devnode <<
 			  " (" << strerror(-ret) << "), skipping";
 		return ret;
 	}
+
+	/* Associate entities to device node paths. */
+	for (MediaEntity *entity : media->entities()) {
+		if (entity->major() == 0 && entity->minor() == 0)
+			continue;
+
+		std::string devnode = lookupDevnode(entity->major(), entity->minor());
+		if (devnode.empty())
+			return -EINVAL;
+
+		ret = entity->setDeviceNode(devnode);
+		if (ret)
+			return ret;
+	}
+
+	devices_.push_back(media);
+	media->close();
 
 	return 0;
 }
 
 /**
- * \brief Fetch the topology from media device
- *
- * \param[in] fd File pointer to media device
- * \param[out] entities Map of entity names to device node paths
- *
- * The media graph is retrieved using MEDIA_IOC_G_TOPOLOGY and the
- * result is transformed to a map where the entity name is the key
- * and the filesystem path for that entity device node is the value.
- *
- * \return 0 on success none zero otherwise
- */
-int DeviceEnumerator::readTopology(int fd, std::map<std::string, std::string> &entities)
-{
-	struct media_v2_topology topology;
-	struct media_v2_entity *ents = nullptr;
-	struct media_v2_interface *ifaces = nullptr;
-	struct media_v2_link *links = nullptr;
-	int ret;
-
-	while (true) {
-		topology = {};
-
-		ret = ioctl(fd, MEDIA_IOC_G_TOPOLOGY, &topology);
-		if (ret < 0)
-			return -errno;
-
-		__u64 version = topology.topology_version;
-
-		ents = new media_v2_entity[topology.num_entities]();
-		ifaces = new media_v2_interface[topology.num_interfaces]();
-		links = new media_v2_link[topology.num_links]();
-		topology.ptr_entities = reinterpret_cast<__u64>(ents);
-		topology.ptr_interfaces = reinterpret_cast<__u64>(ifaces);
-		topology.ptr_links = reinterpret_cast<__u64>(links);
-
-		ret = ioctl(fd, MEDIA_IOC_G_TOPOLOGY, &topology);
-		if (ret < 0) {
-			ret = -errno;
-			goto done;
-		}
-
-		if (version == topology.topology_version)
-			break;
-
-		delete[] links;
-		delete[] ifaces;
-		delete[] ents;
-	}
-
-	for (unsigned int link_id = 0; link_id < topology.num_links; link_id++) {
-		unsigned int iface_id, ent_id;
-		std::string devnode;
-
-		if ((links[link_id].flags & MEDIA_LNK_FL_LINK_TYPE) !=
-		    MEDIA_LNK_FL_INTERFACE_LINK)
-			continue;
-
-		for (iface_id = 0; iface_id < topology.num_interfaces; iface_id++)
-			if (links[link_id].source_id == ifaces[iface_id].id)
-				break;
-
-		for (ent_id = 0; ent_id < topology.num_entities; ent_id++)
-			if (links[link_id].sink_id == ents[ent_id].id)
-				break;
-
-		if (ent_id >= topology.num_entities ||
-		    iface_id >= topology.num_interfaces)
-			continue;
-
-		devnode = lookupDevnode(ifaces[iface_id].devnode.major,
-					ifaces[iface_id].devnode.minor);
-		if (devnode == "")
-			break;
-
-		entities[ents[ent_id].name] = devnode;
-	}
-done:
-	delete[] links;
-	delete[] ifaces;
-	delete[] ents;
-
-	return ret;
-}
-
-/**
  * \brief Search available media devices for a pattern match
  *
- * \param[in] dm search pattern
+ * \param[in] dm Search pattern
  *
- * Search the enumerated media devices who are not already in use
+ * Search in the enumerated media devices that are not already in use
  * for a match described in \a dm. If a match is found and the caller
- * intends to use it the caller is responsible to mark the DeviceInfo
+ * intends to use it the caller is responsible to mark the MediaDevice
  * object as in use and to release it when it's done with it.
  *
- * \return pointer to the matching DeviceInfo, nullptr if no match is found
+ * \return pointer to the matching MediaDevice, nullptr if no match is found
  */
-DeviceInfo *DeviceEnumerator::search(DeviceMatch &dm) const
+MediaDevice *DeviceEnumerator::search(DeviceMatch &dm) const
 {
-	DeviceInfo *info = nullptr;
-
-	for (DeviceInfo *dev : devices_) {
+	for (MediaDevice *dev : devices_) {
 		if (dev->busy())
 			continue;
 
-		if (dm.match(dev)) {
-			info = dev;
-			break;
-		}
+		if (dm.match(dev))
+			return dev;
 	}
 
-	return info;
+	return nullptr;
 }
 
 /**

@@ -208,6 +208,7 @@ int MediaDevice::populate()
 	struct media_v2_entity *ents = nullptr;
 	struct media_v2_link *links = nullptr;
 	struct media_v2_pad *pads = nullptr;
+	struct media_v2_interface *interfaces = nullptr;
 	__u64 version = -1;
 	int ret;
 
@@ -221,6 +222,7 @@ int MediaDevice::populate()
 		topology.ptr_entities = reinterpret_cast<__u64>(ents);
 		topology.ptr_links = reinterpret_cast<__u64>(links);
 		topology.ptr_pads = reinterpret_cast<__u64>(pads);
+		topology.ptr_interfaces = reinterpret_cast<__u64>(interfaces);
 
 		ret = ioctl(fd_, MEDIA_IOC_G_TOPOLOGY, &topology);
 		if (ret < 0) {
@@ -236,10 +238,12 @@ int MediaDevice::populate()
 		delete[] links;
 		delete[] ents;
 		delete[] pads;
+		delete[] interfaces;
 
 		ents = new media_v2_entity[topology.num_entities];
 		links = new media_v2_link[topology.num_links];
 		pads = new media_v2_pad[topology.num_pads];
+		interfaces = new media_v2_interface[topology.num_interfaces];
 
 		version = topology.topology_version;
 	}
@@ -253,6 +257,7 @@ int MediaDevice::populate()
 	delete[] links;
 	delete[] ents;
 	delete[] pads;
+	delete[] interfaces;
 
 	if (!valid_) {
 		clear();
@@ -367,6 +372,46 @@ void MediaDevice::clear()
  * \brief Global list of media entities in the media graph
  */
 
+/**
+ * \brief Find the interface associated with an entity
+ * \param topology The media topology as returned by MEDIA_IOC_G_TOPOLOGY
+ * \param entityId The entity id
+ * \return A pointer to the interface if found, or nullptr otherwise
+ */
+struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topology &topology,
+			       unsigned int entityId)
+{
+	struct media_v2_link *links = reinterpret_cast<struct media_v2_link *>
+						(topology.ptr_links);
+	unsigned int ifaceId = -1;
+
+	for (unsigned int i = 0; i < topology.num_links; ++i) {
+		/* Search for the interface to entity link. */
+		if (links[i].sink_id != entityId)
+			continue;
+
+		if ((links[i].flags & MEDIA_LNK_FL_LINK_TYPE) !=
+		    MEDIA_LNK_FL_INTERFACE_LINK)
+			continue;
+
+		ifaceId = links[i].source_id;
+		break;
+	}
+
+	if (ifaceId == static_cast<unsigned int>(-1))
+		return nullptr;
+
+	struct media_v2_interface *ifaces = reinterpret_cast<struct media_v2_interface *>
+						(topology.ptr_interfaces);
+
+	for (unsigned int i = 0; i < topology.num_interfaces; ++i) {
+		if (ifaces[i].id == ifaceId)
+			return &ifaces[i];
+	}
+
+	return nullptr;
+}
+
 /*
  * For each entity in the media graph create a MediaEntity and store a
  * reference in the media device objects map and entities list.
@@ -377,7 +422,21 @@ bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 					 (topology.ptr_entities);
 
 	for (unsigned int i = 0; i < topology.num_entities; ++i) {
-		MediaEntity *entity = new MediaEntity(&mediaEntities[i]);
+		/*
+		 * Find the interface linked to this entity to get the device
+		 * node major and minor numbers.
+		 */
+		struct media_v2_interface *iface =
+			findInterface(topology, mediaEntities[i].id);
+
+		MediaEntity *entity;
+		if (iface)
+			entity = new MediaEntity(&mediaEntities[i],
+						 iface->devnode.major,
+						 iface->devnode.minor);
+		else
+			entity = new MediaEntity(&mediaEntities[i]);
+
 		if (!addObject(entity)) {
 			delete entity;
 			return false;

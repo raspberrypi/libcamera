@@ -54,6 +54,8 @@ private:
 
 	std::vector<MediaEntity *> entities_;
 
+	struct media_v2_interface *findInterface(const struct media_v2_topology &topology,
+						 unsigned int entityId);
 	bool populateEntities(const struct media_v2_topology &topology);
 	bool populatePads(const struct media_v2_topology &topology);
 	bool populateLinks(const struct media_v2_topology &topology);

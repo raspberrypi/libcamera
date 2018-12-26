@@ -6,9 +6,8 @@
  */
 
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
-#include <sys/stat.h>
+#include <unistd.h>
 
 #include <string>
 #include <vector>
@@ -213,6 +212,20 @@ void MediaPad::addLink(MediaLink *link)
  */
 
 /**
+ * \fn MediaEntity::major()
+ * \brief Retrieve the major number of the interface associated with the entity
+ * \return The interface major number, or 0 if the entity isn't associated with
+ * an interface
+ */
+
+/**
+ * \fn MediaEntity::minor()
+ * \brief Retrieve the minor number of the interface associated with the entity
+ * \return The interface minor number, or 0 if the entity isn't associated with
+ * an interface
+ */
+
+/**
  * \fn MediaEntity::pads()
  * \brief Retrieve all pads of the entity
  * \return The list of the entity's pads
@@ -249,11 +262,35 @@ const MediaPad *MediaEntity::getPadById(unsigned int id) const
 }
 
 /**
+ * \brief Set the path to the device node for the associated interface
+ * \param devnode The interface device node path associated with this entity
+ * \return 0 on success, or a negative error code if the device node can't be
+ * accessed
+ */
+int MediaEntity::setDeviceNode(const std::string &devnode)
+{
+	/* Make sure the device node can be accessed. */
+	int ret = ::access(devnode.c_str(), R_OK | W_OK);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(Error) << "Device node " << devnode << " can't be accessed: "
+			   << strerror(-ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
  * \brief Construct a MediaEntity
  * \param entity The media entity kernel data
+ * \param major The major number of the entity associated interface
+ * \param minor The minor number of the entity associated interface
  */
-MediaEntity::MediaEntity(const struct media_v2_entity *entity)
-	: MediaObject(entity->id), name_(entity->name)
+MediaEntity::MediaEntity(const struct media_v2_entity *entity,
+			 unsigned int major, unsigned int minor)
+	: MediaObject(entity->id), name_(entity->name),
+	  major_(major), minor_(minor)
 {
 }
 

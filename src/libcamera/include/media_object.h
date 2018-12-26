@@ -80,21 +80,28 @@ class MediaEntity : public MediaObject
 {
 public:
 	const std::string &name() const { return name_; }
+	unsigned int major() const { return major_; }
+	unsigned int minor() const { return minor_; }
 
 	const std::vector<MediaPad *> &pads() const { return pads_; }
 
 	const MediaPad *getPadByIndex(unsigned int index) const;
 	const MediaPad *getPadById(unsigned int id) const;
 
+	int setDeviceNode(const std::string &devnode);
+
 private:
 	friend class MediaDevice;
 
-	MediaEntity(const struct media_v2_entity *entity);
+	MediaEntity(const struct media_v2_entity *entity,
+		    unsigned int major = 0, unsigned int minor = 0);
 	MediaEntity(const MediaEntity &) = delete;
 	~MediaEntity();
 
 	std::string name_;
 	std::string devnode_;
+	unsigned int major_;
+	unsigned int minor_;
 
 	std::vector<MediaPad *> pads_;
 

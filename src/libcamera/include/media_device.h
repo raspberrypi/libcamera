@@ -24,6 +24,10 @@ public:
 	MediaDevice(const std::string &devnode);
 	~MediaDevice();
 
+	bool acquire();
+	void release() { acquired_ = false; }
+	bool busy() const { return acquired_; }
+
 	int open();
 	void close();
 
@@ -41,6 +45,7 @@ private:
 	std::string devnode_;
 	int fd_;
 	bool valid_;
+	bool acquired_;
 
 	std::map<unsigned int, MediaObject *> objects_;
 	MediaObject *object(unsigned int id);

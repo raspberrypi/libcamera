@@ -53,6 +53,10 @@ namespace libcamera {
  * This will not invalidate the media graph and all cached media objects remain
  * valid and can be accessed normally. The device can then be later reopened if
  * needed to perform other operations that interact with the device node.
+ *
+ * Media device can be claimed for exclusive use with acquire(), released with
+ * release() and tested with busy(). This mechanism is aimed at pipeline
+ * managers to claim media devices they support during enumeration.
  */
 
 /**
@@ -63,7 +67,7 @@ namespace libcamera {
  * populated with open() and populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &devnode)
-	: devnode_(devnode), fd_(-1), valid_(false)
+	: devnode_(devnode), fd_(-1), valid_(false), acquired_(false)
 {
 }
 
@@ -73,6 +77,50 @@ MediaDevice::~MediaDevice()
 		::close(fd_);
 	clear();
 }
+
+/**
+ * \brief Claim a device for exclusive use
+ *
+ * The device claiming mechanism offers simple media device access arbitration
+ * between multiple users. When the media device is created, it is available to
+ * all users. Users can query the media graph to determine whether they can
+ * support the device and, if they do, claim the device for exclusive use. Other
+ * users are then expected to skip over media devices in use as reported by the
+ * busy() function.
+ *
+ * Once claimed the device shall be released by its user when not needed anymore
+ * by calling the release() function.
+ *
+ * Exclusive access is only guaranteed if all users of the media device abide by
+ * the device claiming mechanism, as it isn't enforced by the media device
+ * itself.
+ *
+ * \return true if the device was successfully claimed, or false if it was
+ * already in use
+ * \sa release(), busy()
+ */
+bool MediaDevice::acquire()
+{
+	if (acquired_)
+		return false;
+
+	acquired_ = true;
+	return true;
+}
+
+/**
+ * \fn MediaDevice::release()
+ * \brief Release a device previously claimed for exclusive use
+ * \sa acquire(), busy()
+ */
+
+/**
+ * \fn MediaDevice::busy()
+ * \brief Check if a device is in use
+ * \return true if the device has been claimed for exclusive use, or false if it
+ * is available
+ * \sa acquire(), release()
+ */
 
 /**
  * \brief Open a media device and retrieve device information

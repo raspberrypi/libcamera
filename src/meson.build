@@ -1,1 +1,2 @@
 subdir('libcamera')
+subdir('cam')

@@ -45,17 +45,17 @@ private:
 };
 
 #define REGISTER_PIPELINE_HANDLER(handler) \
-	class handler##Factory : public PipelineHandlerFactory { \
-	public: \
-		handler##Factory() \
-		{ \
-			PipelineHandlerFactory::registerType(#handler, this); \
-		} \
-		virtual PipelineHandler *create() { \
-			return new handler(); \
-		} \
-	}; \
-	static handler##Factory global_##handler##Factory;
+class handler##Factory : public PipelineHandlerFactory { \
+public: \
+	handler##Factory() \
+	{ \
+		PipelineHandlerFactory::registerType(#handler, this); \
+	} \
+	virtual PipelineHandler *create() { \
+		return new handler(); \
+	} \
+}; \
+static handler##Factory global_##handler##Factory;
 
 } /* namespace libcamera */
 

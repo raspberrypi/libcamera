@@ -302,8 +302,8 @@ int DeviceEnumeratorUdev::enumerate()
 
 		dev = udev_device_new_from_syspath(udev_, syspath);
 		if (!dev) {
-			LOG(Error) << "Failed to get device for '" <<
-				   syspath << "', skipping";
+			LOG(Warning) << "Failed to get device for '" <<
+				syspath << "', skipping";
 			continue;
 		}
 

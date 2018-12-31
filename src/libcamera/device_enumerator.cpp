@@ -17,27 +17,25 @@
 
 /**
  * \file device_enumerator.h
- * \brief Enumerating and matching of media devices
+ * \brief Enumeration and matching of media devices
  *
- * The purpose of device enumeration and matching is to find media
- * devices in the system and map one or more media devices to a pipeline
- * handler. During enumeration information about each media device is
- * gathered, transformed and stored.
+ * The purpose of device enumeration and matching is to find media devices in
+ * the system and map them to pipeline handlers.
  *
- * The core of the enumeration is DeviceEnumerator which is responsible
- * for all interactions with the operating system and the entry point
- * for other parts of libcamera.
+ * At the core of the enumeration is the DeviceEnumerator class, responsible
+ * for enumerating all media devices in the system. It handles all interactions
+ * with the operating system in a platform-specific way. For each media device
+ * found an instance of MediaDevice is created to store information about the
+ * device gathered from the kernel through the Media Controller API.
  *
- * The DeviceEnumerator can enumerate all or specific media devices in
- * the system. When a new media device is added the enumerator creates a
+ * The DeviceEnumerator can enumerate all or specific media devices in the
+ * system. When a new media device is added the enumerator creates a
  * corresponding MediaDevice instance.
  *
- * The last functionality provided is the ability to search among the
- * enumerate media devices for one matching information known to the
- * searcher. This is done by populating and passing a DeviceMatch object
- * to the DeviceEnumerator.
+ * The enumerator supports searching among enumerated devices based on criteria
+ * expressed in a DeviceMatch object.
  *
- * \todo Add sysfs based device enumerator
+ * \todo Add sysfs based device enumerator.
  * \todo Add support for hot-plug and hot-unplug.
  */
 
@@ -47,18 +45,17 @@ namespace libcamera {
  * \class DeviceMatch
  * \brief Description of a media device search pattern
  *
- * The DeviceMatch class describes a media device using properties from
- * the v4l2 struct media_device_info, entity names in the media graph or
- * other properties which can be used to identify a media device.
+ * The DeviceMatch class describes a media device using properties from the
+ * Media Controller struct media_device_info, entity names in the media graph
+ * or other properties that can be used to identify a media device.
  *
- * The description of a media device can then be passed to an enumerator
- * to try and find a matching media device.
+ * The description is meant to be filled by pipeline managers and passed to a
+ * device enumerator to find matching media devices.
  */
 
 /**
  * \brief Construct a media device search pattern
- *
- * \param[in] driver The Linux device driver name who created the media device
+ * \param[in] driver The Linux device driver name that created the media device
  */
 DeviceMatch::DeviceMatch(const std::string &driver)
 	: driver_(driver)
@@ -67,7 +64,6 @@ DeviceMatch::DeviceMatch(const std::string &driver)
 
 /**
  * \brief Add a media entity name to the search pattern
- *
  * \param[in] entity The name of the entity in the media graph
  */
 void DeviceMatch::add(const std::string &entity)
@@ -79,8 +75,9 @@ void DeviceMatch::add(const std::string &entity)
  * \brief Compare a search pattern with a media device
  * \param[in] device The media device
  *
- * Matching is performed on the Linux device driver name and entity names
- * from the media graph.
+ * Matching is performed on the Linux device driver name and entity names from
+ * the media graph. A match is found if both the driver name matches and the
+ * media device contains all the entities listed in the search pattern.
  *
  * \return true if the media device matches the search pattern, false otherwise
  */
@@ -108,43 +105,44 @@ bool DeviceMatch::match(const MediaDevice *device) const
 
 /**
  * \class DeviceEnumerator
- * \brief Enumerate, interrogate, store and search media device information
+ * \brief Enumerate, store and search media devices
  *
- * The DeviceEnumerator class is responsible for all interactions with
- * the operation system when searching and interrogating media devices.
+ * The DeviceEnumerator class is responsible for all interactions with the
+ * operating system related to media devices. It enumerates all media devices
+ * in the system, and for each device found creates an instance of the
+ * MediaDevice class and stores it internally. The list of media devices can
+ * then be searched using DeviceMatch search patterns.
  *
- * It is possible to automatically search and add all media devices in
- * the system or specify which media devices should be interrogated
- * in order for a specialized application to open as few resources
- * as possible to get hold of a specific camera.
- *
- * Once one or many media devices have been enumerated it is possible
- * to search among them to try and find a matching device using a
- * DeviceMatch object.
- *
+ * The enumerator also associates media device entities with device node paths.
  */
 
 /**
  * \brief Create a new device enumerator matching the systems capabilities
  *
- * Create a enumerator based on resource available to the system. Not all
- * different enumerator types are guaranteed to support all features.
+ * Depending on how the operating system handles device detection, hot-plug
+ * notification and device node lookup, different device enumerator
+ * implementations may be needed. This function creates the best enumerator for
+ * the operating system based on the available resources. Not all different
+ * enumerator types are guaranteed to support all features.
  */
 DeviceEnumerator *DeviceEnumerator::create()
 {
 	DeviceEnumerator *enumerator;
 
-	/* TODO: add compile time checks to only try udev enumerator if libudev is available */
+	/**
+	 * \todo Add compile time checks to only try udev enumerator if libudev
+	 * is available.
+	 */
 	enumerator = new DeviceEnumeratorUdev();
 	if (!enumerator->init())
 		return enumerator;
 
 	/*
-	 * NOTE: Either udev is not available or initialization of it
-	 * failed, use/fallback on sysfs enumerator
+	 * Either udev is not available or udev initialization failed. Fall back
+	 * on the sysfs enumerator.
 	 */
 
-	/* TODO: add a sysfs based enumerator */
+	/** \todo Add a sysfs-based enumerator. */
 
 	return nullptr;
 }
@@ -160,13 +158,38 @@ DeviceEnumerator::~DeviceEnumerator()
 }
 
 /**
- * \brief Add a media device to the enumerator
+ * \fn DeviceEnumerator::init()
+ * \brief Initialize the enumerator
+ * \return 0 on success, or a negative error code otherwise
+ * \retval -EBUSY the enumerator has already been initialized
+ * \retval -ENODEV the enumerator can't enumerate devices
+ */
+
+/**
+ * \fn DeviceEnumerator::enumerate()
+ * \brief Enumerate all media devices in the system
  *
+ * This function finds and add all media devices in the system to the
+ * enumerator. It shall be implemented by all subclasses of DeviceEnumerator
+ * using system-specific methods.
+ *
+ * Individual media devices that can't be properly enumerated shall be skipped
+ * with a warning message logged, without returning an error. Only errors that
+ * prevent enumeration altogether shall be fatal.
+ *
+ * \return 0 on success, or a negative error code on fatal errors.
+ */
+
+/**
+ * \brief Add a media device to the enumerator
  * \param[in] devnode path to the media device to add
  *
- * Opens the media device and quires its topology and other information.
+ * Create a media device for the \a devnode, open it, populate its media graph,
+ * and look up device nodes associated with all entities. Store the media device
+ * in the internal list for later matching with pipeline handlers.
  *
- * \return 0 on success none zero otherwise
+ * \return 0 on success, or a negative error code if the media device can't be
+ * created or populated
  */
 int DeviceEnumerator::addDevice(const std::string &devnode)
 {
@@ -205,15 +228,14 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
 
 /**
  * \brief Search available media devices for a pattern match
- *
  * \param[in] dm Search pattern
  *
- * Search in the enumerated media devices that are not already in use
- * for a match described in \a dm. If a match is found and the caller
- * intends to use it the caller is responsible to mark the MediaDevice
- * object as in use and to release it when it's done with it.
+ * Search in the enumerated media devices that are not already in use for a
+ * match described in \a dm. If a match is found and the caller intends to use
+ * it the caller is responsible for acquiring the MediaDevice object and
+ * releasing it when done with it.
  *
- * \return pointer to the matching MediaDevice, nullptr if no match is found
+ * \return pointer to the matching MediaDevice, or nullptr if no match is found
  */
 MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm) const
 {
@@ -229,10 +251,21 @@ MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm) const
 }
 
 /**
- * \class DeviceEnumeratorUdev
- * \brief Udev implementation of device enumeration
+ * \fn DeviceEnumerator::lookupDevnode(int major, int minor)
+ * \brief Lookup device node path from device number
+ * \param major The device major number
+ * \param minor The device minor number
  *
- * Implementation of system enumeration functions using libudev.
+ * Translate a device number given as \a major and \a minor to a device node
+ * path.
+ *
+ * \return the device node path on success, or an empty string if the lookup
+ * fails
+ */
+
+/**
+ * \class DeviceEnumeratorUdev
+ * \brief Device enumerator based on libudev
  */
 
 DeviceEnumeratorUdev::DeviceEnumeratorUdev()
@@ -246,13 +279,6 @@ DeviceEnumeratorUdev::~DeviceEnumeratorUdev()
 		udev_unref(udev_);
 }
 
-/**
- * \brief Initialize the enumerator
- *
- * \retval 0 Initialized
- * \retval -EBUSY Busy (already initialized)
- * \retval -ENODEV Failed to talk to udev
- */
 int DeviceEnumeratorUdev::init()
 {
 	if (udev_)
@@ -265,14 +291,6 @@ int DeviceEnumeratorUdev::init()
 	return 0;
 }
 
-/**
- * \brief Enumerate all media devices using udev
- *
- * Find, enumerate and add all media devices in the system to the
- * enumerator.
- *
- * \return 0 on success none zero otherwise
- */
 int DeviceEnumeratorUdev::enumerate()
 {
 	struct udev_enumerate *udev_enum = nullptr;
@@ -323,14 +341,6 @@ done:
 	return ret >= 0 ? 0 : ret;
 }
 
-/**
- * \brief Lookup device node from device number using udev
- *
- * Translate a device number (major, minor) to a device node path.
- *
- * \return device node path or empty string if lookup fails.
- *
- */
 std::string DeviceEnumeratorUdev::lookupDevnode(int major, int minor)
 {
 	struct udev_device *device;

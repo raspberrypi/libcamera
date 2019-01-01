@@ -71,38 +71,6 @@ MediaDevice::~MediaDevice()
 }
 
 /**
- * \fn MediaDevice::driver()
- * \brief Retrieve the media device driver name
- * \return The name of the kernel driver that handles the MediaDevice
- */
-
-/**
- * \fn MediaDevice::devnode()
- * \brief Retrieve the media device device node path
- * \return The MediaDevice devnode path
- */
-
-/**
- * \brief Delete all media objects in the MediaDevice.
- *
- * Delete all MediaEntities; entities will then delete their pads,
- * and each source pad will delete links.
- *
- * After this function has been called, the media graph will be unpopulated
- * and its media objects deleted. The media device has to be populated
- * before it could be used again.
- */
-void MediaDevice::clear()
-{
-	for (auto const &o : objects_)
-		delete o.second;
-
-	objects_.clear();
-	entities_.clear();
-	valid_ = false;
-}
-
-/**
  * \brief Open a media device and retrieve informations from it
  *
  * The function fails if the media device is already open or if either
@@ -152,152 +120,6 @@ void MediaDevice::close()
 
 	::close(fd_);
 	fd_ = -1;
-}
-
-/**
- * \fn MediaDevice::entities()
- * \brief Retrieve the list of entities in the media graph
- * \return The list of MediaEntities registered in the MediaDevice
- */
-
-/*
- * Add a new object to the global objects pool and fail if the object
- * has already been registered.
- */
-bool MediaDevice::addObject(MediaObject *obj)
-{
-
-	if (objects_.find(obj->id()) != objects_.end()) {
-		LOG(Error) << "Element with id " << obj->id()
-			   << " already enumerated.";
-		return false;
-	}
-
-	objects_[obj->id()] = obj;
-
-	return true;
-}
-
-/*
- * MediaObject pool lookup by id.
- */
-MediaObject *MediaDevice::object(unsigned int id)
-{
-	auto it = objects_.find(id);
-	return (it == objects_.end()) ? nullptr : it->second;
-}
-
-/**
- * \brief Return the MediaEntity with name \a name
- * \param name The entity name
- * \return The entity with \a name
- * \return nullptr if no entity with \a name is found
- */
-MediaEntity *MediaDevice::getEntityByName(const std::string &name)
-{
-	for (MediaEntity *e : entities_)
-		if (e->name() == name)
-			return e;
-
-	return nullptr;
-}
-
-bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
-{
-	media_v2_link *mediaLinks = reinterpret_cast<media_v2_link *>
-				    (topology.ptr_links);
-
-	for (unsigned int i = 0; i < topology.num_links; ++i) {
-		/*
-		 * Skip links between entities and interfaces: we only care
-		 * about pad-2-pad links here.
-		 */
-		if ((mediaLinks[i].flags & MEDIA_LNK_FL_LINK_TYPE) ==
-		    MEDIA_LNK_FL_INTERFACE_LINK)
-			continue;
-
-		/* Store references to source and sink pads in the link. */
-		unsigned int source_id = mediaLinks[i].source_id;
-		MediaPad *source = dynamic_cast<MediaPad *>
-				   (object(source_id));
-		if (!source) {
-			LOG(Error) << "Failed to find pad with id: "
-				   << source_id;
-			return false;
-		}
-
-		unsigned int sink_id = mediaLinks[i].sink_id;
-		MediaPad *sink = dynamic_cast<MediaPad *>
-				 (object(sink_id));
-		if (!sink) {
-			LOG(Error) << "Failed to find pad with id: "
-				   << sink_id;
-			return false;
-		}
-
-		MediaLink *link = new MediaLink(&mediaLinks[i], source, sink);
-		if (!addObject(link)) {
-			delete link;
-			return false;
-		}
-
-		source->addLink(link);
-		sink->addLink(link);
-	}
-
-	return true;
-}
-
-bool MediaDevice::populatePads(const struct media_v2_topology &topology)
-{
-	media_v2_pad *mediaPads = reinterpret_cast<media_v2_pad *>
-				  (topology.ptr_pads);
-
-	for (unsigned int i = 0; i < topology.num_pads; ++i) {
-		unsigned int entity_id = mediaPads[i].entity_id;
-
-		/* Store a reference to this MediaPad in entity. */
-		MediaEntity *mediaEntity = dynamic_cast<MediaEntity *>
-					   (object(entity_id));
-		if (!mediaEntity) {
-			LOG(Error) << "Failed to find entity with id: "
-				   << entity_id;
-			return false;
-		}
-
-		MediaPad *pad = new MediaPad(&mediaPads[i], mediaEntity);
-		if (!addObject(pad)) {
-			delete pad;
-			return false;
-		}
-
-		mediaEntity->addPad(pad);
-	}
-
-	return true;
-}
-
-/*
- * For each entity in the media graph create a MediaEntity and store a
- * reference in the MediaObject global pool and in the global vector of
- * entities.
- */
-bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
-{
-	media_v2_entity *mediaEntities = reinterpret_cast<media_v2_entity *>
-					 (topology.ptr_entities);
-
-	for (unsigned int i = 0; i < topology.num_entities; ++i) {
-		MediaEntity *entity = new MediaEntity(&mediaEntities[i]);
-		if (!addObject(entity)) {
-			delete entity;
-			return false;
-		}
-
-		entities_.push_back(entity);
-	}
-
-	return true;
 }
 
 /**
@@ -381,14 +203,192 @@ int MediaDevice::populate()
  */
 
 /**
+ * \fn MediaDevice::driver()
+ * \brief Retrieve the media device driver name
+ * \return The name of the kernel driver that handles the MediaDevice
+ */
+
+/**
+ * \fn MediaDevice::devnode()
+ * \brief Retrieve the media device device node path
+ * \return The MediaDevice devnode path
+ */
+
+/**
+ * \fn MediaDevice::entities()
+ * \brief Retrieve the list of entities in the media graph
+ * \return The list of MediaEntities registered in the MediaDevice
+ */
+
+/**
+ * \brief Return the MediaEntity with name \a name
+ * \param name The entity name
+ * \return The entity with \a name
+ * \return nullptr if no entity with \a name is found
+ */
+MediaEntity *MediaDevice::getEntityByName(const std::string &name)
+{
+	for (MediaEntity *e : entities_)
+		if (e->name() == name)
+			return e;
+
+	return nullptr;
+}
+
+/**
  * \var MediaDevice::objects_
  * \brief Global map of media objects (entities, pads, links) keyed by their
  * object id.
  */
 
+/*
+ * MediaObject pool lookup by id.
+ */
+MediaObject *MediaDevice::object(unsigned int id)
+{
+	auto it = objects_.find(id);
+	return (it == objects_.end()) ? nullptr : it->second;
+}
+
+/*
+ * Add a new object to the global objects pool and fail if the object
+ * has already been registered.
+ */
+bool MediaDevice::addObject(MediaObject *obj)
+{
+
+	if (objects_.find(obj->id()) != objects_.end()) {
+		LOG(Error) << "Element with id " << obj->id()
+			   << " already enumerated.";
+		return false;
+	}
+
+	objects_[obj->id()] = obj;
+
+	return true;
+}
+
+/**
+ * \brief Delete all media objects in the MediaDevice.
+ *
+ * Delete all MediaEntities; entities will then delete their pads,
+ * and each source pad will delete links.
+ *
+ * After this function has been called, the media graph will be unpopulated
+ * and its media objects deleted. The media device has to be populated
+ * before it could be used again.
+ */
+void MediaDevice::clear()
+{
+	for (auto const &o : objects_)
+		delete o.second;
+
+	objects_.clear();
+	entities_.clear();
+	valid_ = false;
+}
+
 /**
  * \var MediaDevice::entities_
  * \brief Global list of media entities in the media graph
  */
+
+/*
+ * For each entity in the media graph create a MediaEntity and store a
+ * reference in the MediaObject global pool and in the global vector of
+ * entities.
+ */
+bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
+{
+	media_v2_entity *mediaEntities = reinterpret_cast<media_v2_entity *>
+					 (topology.ptr_entities);
+
+	for (unsigned int i = 0; i < topology.num_entities; ++i) {
+		MediaEntity *entity = new MediaEntity(&mediaEntities[i]);
+		if (!addObject(entity)) {
+			delete entity;
+			return false;
+		}
+
+		entities_.push_back(entity);
+	}
+
+	return true;
+}
+
+bool MediaDevice::populatePads(const struct media_v2_topology &topology)
+{
+	media_v2_pad *mediaPads = reinterpret_cast<media_v2_pad *>
+				  (topology.ptr_pads);
+
+	for (unsigned int i = 0; i < topology.num_pads; ++i) {
+		unsigned int entity_id = mediaPads[i].entity_id;
+
+		/* Store a reference to this MediaPad in entity. */
+		MediaEntity *mediaEntity = dynamic_cast<MediaEntity *>
+					   (object(entity_id));
+		if (!mediaEntity) {
+			LOG(Error) << "Failed to find entity with id: "
+				   << entity_id;
+			return false;
+		}
+
+		MediaPad *pad = new MediaPad(&mediaPads[i], mediaEntity);
+		if (!addObject(pad)) {
+			delete pad;
+			return false;
+		}
+
+		mediaEntity->addPad(pad);
+	}
+
+	return true;
+}
+
+bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
+{
+	media_v2_link *mediaLinks = reinterpret_cast<media_v2_link *>
+				    (topology.ptr_links);
+
+	for (unsigned int i = 0; i < topology.num_links; ++i) {
+		/*
+		 * Skip links between entities and interfaces: we only care
+		 * about pad-2-pad links here.
+		 */
+		if ((mediaLinks[i].flags & MEDIA_LNK_FL_LINK_TYPE) ==
+		    MEDIA_LNK_FL_INTERFACE_LINK)
+			continue;
+
+		/* Store references to source and sink pads in the link. */
+		unsigned int source_id = mediaLinks[i].source_id;
+		MediaPad *source = dynamic_cast<MediaPad *>
+				   (object(source_id));
+		if (!source) {
+			LOG(Error) << "Failed to find pad with id: "
+				   << source_id;
+			return false;
+		}
+
+		unsigned int sink_id = mediaLinks[i].sink_id;
+		MediaPad *sink = dynamic_cast<MediaPad *>
+				 (object(sink_id));
+		if (!sink) {
+			LOG(Error) << "Failed to find pad with id: "
+				   << sink_id;
+			return false;
+		}
+
+		MediaLink *link = new MediaLink(&mediaLinks[i], source, sink);
+		if (!addObject(link)) {
+			delete link;
+			return false;
+		}
+
+		source->addLink(link);
+		sink->addLink(link);
+	}
+
+	return true;
+}
 
 } /* namespace libcamera */

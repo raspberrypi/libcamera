@@ -32,7 +32,9 @@ public:
 
 	const std::string driver() const { return driver_; }
 	const std::string devnode() const { return devnode_; }
+
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
+	MediaEntity *getEntityByName(const std::string &name);
 
 private:
 	std::string driver_;
@@ -46,7 +48,6 @@ private:
 	void clear();
 
 	std::vector<MediaEntity *> entities_;
-	MediaEntity *getEntityByName(const std::string &name);
 
 	bool populateEntities(const struct media_v2_topology &topology);
 	bool populatePads(const struct media_v2_topology &topology);

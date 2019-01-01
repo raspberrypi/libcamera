@@ -56,7 +56,7 @@ namespace libcamera {
  * \param devnode The media device node path
  */
 MediaDevice::MediaDevice(const std::string &devnode)
-	: devnode_(devnode), fd_(-1)
+	: devnode_(devnode), fd_(-1), valid_(false)
 {
 }
 
@@ -99,6 +99,7 @@ void MediaDevice::clear()
 
 	objects_.clear();
 	entities_.clear();
+	valid_ = false;
 }
 
 /**
@@ -163,18 +164,18 @@ void MediaDevice::close()
  * Add a new object to the global objects pool and fail if the object
  * has already been registered.
  */
-int MediaDevice::addObject(MediaObject *obj)
+bool MediaDevice::addObject(MediaObject *obj)
 {
 
 	if (objects_.find(obj->id()) != objects_.end()) {
 		LOG(Error) << "Element with id " << obj->id()
 			   << " already enumerated.";
-		return -EEXIST;
+		return false;
 	}
 
 	objects_[obj->id()] = obj;
 
-	return 0;
+	return true;
 }
 
 /*
@@ -201,7 +202,7 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name)
 	return nullptr;
 }
 
-int MediaDevice::populateLinks(const struct media_v2_topology &topology)
+bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 {
 	media_v2_link *mediaLinks = reinterpret_cast<media_v2_link *>
 				    (topology.ptr_links);
@@ -222,7 +223,7 @@ int MediaDevice::populateLinks(const struct media_v2_topology &topology)
 		if (!source) {
 			LOG(Error) << "Failed to find pad with id: "
 				   << source_id;
-			return -ENODEV;
+			return false;
 		}
 
 		unsigned int sink_id = mediaLinks[i].sink_id;
@@ -231,20 +232,23 @@ int MediaDevice::populateLinks(const struct media_v2_topology &topology)
 		if (!sink) {
 			LOG(Error) << "Failed to find pad with id: "
 				   << sink_id;
-			return -ENODEV;
+			return false;
 		}
 
 		MediaLink *link = new MediaLink(&mediaLinks[i], source, sink);
+		if (!addObject(link)) {
+			delete link;
+			return false;
+		}
+
 		source->addLink(link);
 		sink->addLink(link);
-
-		addObject(link);
 	}
 
-	return 0;
+	return true;
 }
 
-int MediaDevice::populatePads(const struct media_v2_topology &topology)
+bool MediaDevice::populatePads(const struct media_v2_topology &topology)
 {
 	media_v2_pad *mediaPads = reinterpret_cast<media_v2_pad *>
 				  (topology.ptr_pads);
@@ -258,16 +262,19 @@ int MediaDevice::populatePads(const struct media_v2_topology &topology)
 		if (!mediaEntity) {
 			LOG(Error) << "Failed to find entity with id: "
 				   << entity_id;
-			return -ENODEV;
+			return false;
 		}
 
 		MediaPad *pad = new MediaPad(&mediaPads[i], mediaEntity);
-		mediaEntity->addPad(pad);
+		if (!addObject(pad)) {
+			delete pad;
+			return false;
+		}
 
-		addObject(pad);
+		mediaEntity->addPad(pad);
 	}
 
-	return 0;
+	return true;
 }
 
 /*
@@ -275,17 +282,22 @@ int MediaDevice::populatePads(const struct media_v2_topology &topology)
  * reference in the MediaObject global pool and in the global vector of
  * entities.
  */
-void MediaDevice::populateEntities(const struct media_v2_topology &topology)
+bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 {
 	media_v2_entity *mediaEntities = reinterpret_cast<media_v2_entity *>
 					 (topology.ptr_entities);
 
 	for (unsigned int i = 0; i < topology.num_entities; ++i) {
 		MediaEntity *entity = new MediaEntity(&mediaEntities[i]);
+		if (!addObject(entity)) {
+			delete entity;
+			return false;
+		}
 
-		addObject(entity);
 		entities_.push_back(entity);
 	}
+
+	return true;
 }
 
 /**
@@ -310,6 +322,8 @@ int MediaDevice::populate()
 	struct media_v2_pad *pads = nullptr;
 	__u64 version = -1;
 	int ret;
+
+	clear();
 
 	/*
 	 * Keep calling G_TOPOLOGY until the version number stays stable.
@@ -343,23 +357,28 @@ int MediaDevice::populate()
 	}
 
 	/* Populate entities, pads and links. */
-	populateEntities(topology);
-
-	ret = populatePads(topology);
-	if (ret)
-		goto error_free_objs;
-
-	ret = populateLinks(topology);
-error_free_objs:
-	if (ret)
-		clear();
+	if (populateEntities(topology) &&
+	    populatePads(topology) &&
+	    populateLinks(topology))
+		valid_ = true;
 
 	delete[] links;
 	delete[] ents;
 	delete[] pads;
 
-	return ret;
+	if (!valid_) {
+		clear();
+		return -EINVAL;
+	}
+
+	return 0;
 }
+
+/**
+ * \fn MediaDevice::valid()
+ * \brief Query whether the media graph is valid
+ * \return true if the media graph is valid, false otherwise
+ */
 
 /**
  * \var MediaDevice::objects_

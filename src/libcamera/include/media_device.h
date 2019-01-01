@@ -28,6 +28,7 @@ public:
 	void close();
 
 	int populate();
+	bool valid() const { return valid_; }
 
 	const std::string driver() const { return driver_; }
 	const std::string devnode() const { return devnode_; }
@@ -37,18 +38,19 @@ private:
 	std::string driver_;
 	std::string devnode_;
 	int fd_;
+	bool valid_;
 
 	std::map<unsigned int, MediaObject *> objects_;
 	MediaObject *object(unsigned int id);
-	int addObject(MediaObject *obj);
+	bool addObject(MediaObject *obj);
 	void clear();
 
 	std::vector<MediaEntity *> entities_;
 	MediaEntity *getEntityByName(const std::string &name);
 
-	void populateEntities(const struct media_v2_topology &topology);
-	int populatePads(const struct media_v2_topology &topology);
-	int populateLinks(const struct media_v2_topology &topology);
+	bool populateEntities(const struct media_v2_topology &topology);
+	bool populatePads(const struct media_v2_topology &topology);
+	bool populateLinks(const struct media_v2_topology &topology);
 };
 
 } /* namespace libcamera */

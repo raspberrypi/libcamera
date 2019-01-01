@@ -19,4 +19,3 @@ list = executable('list', 'list.cpp',
 subdir('media_device')
 
 test('List Camera API tests', list)
-test('Media Device Test', media_device_test)

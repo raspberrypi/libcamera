@@ -32,37 +32,41 @@ namespace libcamera {
  * \brief The MediaDevice represents a Media Controller device with its full
  * graph of connected objects.
  *
- * Media devices are created with an empty graph, which must be populated from
+ * A MediaDevice instance is associated with a media controller device node when
+ * created, and that association is kept for the lifetime of the MediaDevice
+ * instance.
  *
+ * The instance is created with an empty media graph. Before performing any
+ * other operation, it must be opened with the open() function and the media
+ * graph populated by calling populate(). Instances of MediaEntity, MediaPad and
+ * MediaLink are created to model the media graph, and stored in a map indexed
+ * by object id.
  *
- * The caller is responsible for opening the MediaDevice explicitly before
- * operating on it, and shall close it when not needed anymore, as access
- * to the MediaDevice is exclusive.
+ * The graph is valid once successfully populated, as reported by the valid()
+ * function. It can be queried to list all entities(), or entities can be
+ * looked up by name with getEntityByName(). The graph can be traversed from
+ * entity to entity through pads and links as exposed by the corresponding
+ * classes.
  *
- * A MediaDevice is created empty and gets populated by inspecting the media
- * graph topology using the MEDIA_IOC_G_TOPOLOGY ioctls. Representation
- * of each entity, pad and link described are created using MediaObject
- * derived classes.
- *
- * All MediaObject are stored in a global pool, where they could be retrieved
- * from by their globally unique id.
- *
- * References to MediaEntity registered in the graph are stored in a vector
- * to allow easier by-name lookup, and the list of MediaEntities is accessible.
+ * An open media device will keep an open file handle for the underlying media
+ * controller device node. It can be closed at any time with a call to close().
+ * This will not invalidate the media graph and all cached media objects remain
+ * valid and can be accessed normally. The device can then be later reopened if
+ * needed to perform other operations that interact with the device node.
  */
 
 /**
  * \brief Construct a MediaDevice
  * \param devnode The media device node path
+ *
+ * Once constructed the media device is invalid, and must be opened and
+ * populated with open() and populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &devnode)
 	: devnode_(devnode), fd_(-1), valid_(false)
 {
 }
 
-/**
- * \brief Close the media device file descriptor and delete all object
- */
 MediaDevice::~MediaDevice()
 {
 	if (fd_ != -1)
@@ -71,11 +75,18 @@ MediaDevice::~MediaDevice()
 }
 
 /**
- * \brief Open a media device and retrieve informations from it
+ * \brief Open a media device and retrieve device information
  *
- * The function fails if the media device is already open or if either
- * open or the media device information retrieval operations fail.
- * \return 0 for success or a negative error number otherwise
+ * Before populating the media graph or performing any operation that interact
+ * with the device node associated with the media device, the device node must
+ * be opened.
+ *
+ * This function also retrieves media device information from the device node,
+ * which can be queried through driver().
+ *
+ * If the device is already open the function returns -EBUSY.
+ *
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaDevice::open()
 {
@@ -108,10 +119,17 @@ int MediaDevice::open()
 }
 
 /**
- * \brief Close the file descriptor associated with the media device.
+ * \brief Close the media device
  *
- * After this function has been called, for the MediaDevice to be operated on,
- * the caller shall open it again.
+ * This function closes the media device node. It does not invalidate the media
+ * graph and all cached media objects remain valid and can be accessed normally.
+ * Once closed no operation interacting with the media device node can be
+ * performed until the device is opened again.
+ *
+ * Closing an already closed device is allowed and will not perform any
+ * operation.
+ *
+ * \sa open()
  */
 void MediaDevice::close()
 {
@@ -130,9 +148,9 @@ void MediaDevice::close()
  * stored as MediaEntity, MediaPad and MediaLink respectively, with cross-
  * references between objects. Interfaces are not processed.
  *
- * MediaEntities are stored in a global list in the MediaDevice itself to ease
- * lookup, while MediaPads are accessible from the MediaEntity they belong
- * to only and MediaLinks from the MediaPad they connect.
+ * Entities are stored in a separate list in the MediaDevice to ease lookup,
+ * while pads are accessible from the entity they belong to and links from the
+ * pads they connect.
  *
  * \return 0 on success, a negative error code otherwise
  */
@@ -241,8 +259,9 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name)
  * object id.
  */
 
-/*
- * MediaObject pool lookup by id.
+/**
+ * \brief Retrieve the media graph object specified by \a id
+ * \return The graph object, or nullptr if no object with \a id is found
  */
 MediaObject *MediaDevice::object(unsigned int id)
 {
@@ -250,33 +269,40 @@ MediaObject *MediaDevice::object(unsigned int id)
 	return (it == objects_.end()) ? nullptr : it->second;
 }
 
-/*
- * Add a new object to the global objects pool and fail if the object
- * has already been registered.
+/**
+ * \brief Add a media object to the media graph
+ *
+ * If the \a object has a unique id it is added to the media graph, and its
+ * lifetime will be managed by the media device. Otherwise the object isn't
+ * added to the graph and the caller must delete it.
+ *
+ * \return true if the object was successfully added to the graph and false
+ * otherwise
  */
-bool MediaDevice::addObject(MediaObject *obj)
+bool MediaDevice::addObject(MediaObject *object)
 {
 
-	if (objects_.find(obj->id()) != objects_.end()) {
-		LOG(Error) << "Element with id " << obj->id()
+	if (objects_.find(object->id()) != objects_.end()) {
+		LOG(Error) << "Element with id " << object->id()
 			   << " already enumerated.";
 		return false;
 	}
 
-	objects_[obj->id()] = obj;
+	objects_[object->id()] = object;
 
 	return true;
 }
 
 /**
- * \brief Delete all media objects in the MediaDevice.
+ * \brief Delete all graph objects in the media device
  *
- * Delete all MediaEntities; entities will then delete their pads,
- * and each source pad will delete links.
+ * Clear the media graph and delete all the objects it contains. After this
+ * function returns any previously obtained pointer to a media graph object
+ * becomes invalid.
  *
- * After this function has been called, the media graph will be unpopulated
- * and its media objects deleted. The media device has to be populated
- * before it could be used again.
+ * The media device graph state is reset to invalid when the graph is cleared.
+ *
+ * \sa valid()
  */
 void MediaDevice::clear()
 {
@@ -295,8 +321,7 @@ void MediaDevice::clear()
 
 /*
  * For each entity in the media graph create a MediaEntity and store a
- * reference in the MediaObject global pool and in the global vector of
- * entities.
+ * reference in the media device objects map and entities list.
  */
 bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 {

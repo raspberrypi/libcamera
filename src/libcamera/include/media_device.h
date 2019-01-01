@@ -44,7 +44,7 @@ private:
 
 	std::map<unsigned int, MediaObject *> objects_;
 	MediaObject *object(unsigned int id);
-	bool addObject(MediaObject *obj);
+	bool addObject(MediaObject *object);
 	void clear();
 
 	std::vector<MediaEntity *> entities_;

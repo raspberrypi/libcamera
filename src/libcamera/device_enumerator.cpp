@@ -215,7 +215,7 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
  *
  * \return pointer to the matching MediaDevice, nullptr if no match is found
  */
-MediaDevice *DeviceEnumerator::search(DeviceMatch &dm) const
+MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm) const
 {
 	for (MediaDevice *dev : devices_) {
 		if (dev->busy())

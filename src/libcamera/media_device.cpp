@@ -379,13 +379,14 @@ void MediaDevice::clear()
  * \return A pointer to the interface if found, or nullptr otherwise
  */
 struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topology &topology,
-			       unsigned int entityId)
+						      unsigned int entityId)
 {
 	struct media_v2_link *links = reinterpret_cast<struct media_v2_link *>
-						(topology.ptr_links);
-	unsigned int ifaceId = -1;
+						      (topology.ptr_links);
+	unsigned int ifaceId;
+	unsigned int i;
 
-	for (unsigned int i = 0; i < topology.num_links; ++i) {
+	for (i = 0; i < topology.num_links; ++i) {
 		/* Search for the interface to entity link. */
 		if (links[i].sink_id != entityId)
 			continue;
@@ -397,14 +398,12 @@ struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topo
 		ifaceId = links[i].source_id;
 		break;
 	}
-
-	if (ifaceId == static_cast<unsigned int>(-1))
+	if (i == topology.num_links)
 		return nullptr;
 
 	struct media_v2_interface *ifaces = reinterpret_cast<struct media_v2_interface *>
-						(topology.ptr_interfaces);
-
-	for (unsigned int i = 0; i < topology.num_interfaces; ++i) {
+						            (topology.ptr_interfaces);
+	for (i = 0; i < topology.num_interfaces; ++i) {
 		if (ifaces[i].id == ifaceId)
 			return &ifaces[i];
 	}

@@ -26,7 +26,6 @@ public:
 
 	std::vector<std::string> list() const;
 	Camera *get(const std::string &name);
-	void put(Camera *camera);
 
 private:
 	DeviceEnumerator *enumerator_;

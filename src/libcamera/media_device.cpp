@@ -297,7 +297,7 @@ int MediaDevice::populate()
  * \return The entity with \a name
  * \return nullptr if no entity with \a name is found
  */
-MediaEntity *MediaDevice::getEntityByName(const std::string &name)
+MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
 {
 	for (MediaEntity *e : entities_)
 		if (e->name() == name)

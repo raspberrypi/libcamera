@@ -38,7 +38,7 @@ public:
 	const std::string devnode() const { return devnode_; }
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
-	MediaEntity *getEntityByName(const std::string &name);
+	MediaEntity *getEntityByName(const std::string &name) const;
 
 private:
 	std::string driver_;

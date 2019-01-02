@@ -153,7 +153,7 @@ DeviceEnumerator::~DeviceEnumerator()
 {
 	for (MediaDevice *dev : devices_) {
 		if (dev->busy())
-			LOG(Error) << "Removing device info while still in use";
+			LOG(Error) << "Removing media device while still in use";
 
 		delete dev;
 	}

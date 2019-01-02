@@ -269,7 +269,7 @@ int MediaDevice::populate()
 
 /**
  * \fn MediaDevice::valid()
- * \brief Query whether the media graph is valid
+ * \brief Query whether the media graph has been populated and is valid
  * \return true if the media graph is valid, false otherwise
  */
 

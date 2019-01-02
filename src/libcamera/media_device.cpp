@@ -206,9 +206,9 @@ int MediaDevice::populate()
 {
 	struct media_v2_topology topology = { };
 	struct media_v2_entity *ents = nullptr;
+	struct media_v2_interface *interfaces = nullptr;
 	struct media_v2_link *links = nullptr;
 	struct media_v2_pad *pads = nullptr;
-	struct media_v2_interface *interfaces = nullptr;
 	__u64 version = -1;
 	int ret;
 
@@ -220,9 +220,9 @@ int MediaDevice::populate()
 	while (true) {
 		topology.topology_version = 0;
 		topology.ptr_entities = reinterpret_cast<__u64>(ents);
+		topology.ptr_interfaces = reinterpret_cast<__u64>(interfaces);
 		topology.ptr_links = reinterpret_cast<__u64>(links);
 		topology.ptr_pads = reinterpret_cast<__u64>(pads);
-		topology.ptr_interfaces = reinterpret_cast<__u64>(interfaces);
 
 		ret = ioctl(fd_, MEDIA_IOC_G_TOPOLOGY, &topology);
 		if (ret < 0) {
@@ -235,15 +235,15 @@ int MediaDevice::populate()
 		if (version == topology.topology_version)
 			break;
 
-		delete[] links;
 		delete[] ents;
-		delete[] pads;
 		delete[] interfaces;
+		delete[] pads;
+		delete[] links;
 
-		ents = new media_v2_entity[topology.num_entities]();
-		links = new media_v2_link[topology.num_links]();
-		pads = new media_v2_pad[topology.num_pads]();
-		interfaces = new media_v2_interface[topology.num_interfaces]();
+		ents = new struct media_v2_entity[topology.num_entities]();
+		interfaces = new struct media_v2_interface[topology.num_interfaces]();
+		links = new struct media_v2_link[topology.num_links]();
+		pads = new struct media_v2_pad[topology.num_pads]();
 
 		version = topology.topology_version;
 	}
@@ -254,10 +254,10 @@ int MediaDevice::populate()
 	    populateLinks(topology))
 		valid_ = true;
 
-	delete[] links;
 	delete[] ents;
-	delete[] pads;
 	delete[] interfaces;
+	delete[] pads;
+	delete[] links;
 
 	if (!valid_) {
 		clear();
@@ -402,7 +402,7 @@ struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topo
 		return nullptr;
 
 	struct media_v2_interface *ifaces = reinterpret_cast<struct media_v2_interface *>
-						            (topology.ptr_interfaces);
+					    (topology.ptr_interfaces);
 	for (i = 0; i < topology.num_interfaces; ++i) {
 		if (ifaces[i].id == ifaceId)
 			return &ifaces[i];
@@ -417,8 +417,8 @@ struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topo
  */
 bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 {
-	media_v2_entity *mediaEntities = reinterpret_cast<media_v2_entity *>
-					 (topology.ptr_entities);
+	struct media_v2_entity *mediaEntities = reinterpret_cast<struct media_v2_entity *>
+						(topology.ptr_entities);
 
 	for (unsigned int i = 0; i < topology.num_entities; ++i) {
 		/*
@@ -449,8 +449,8 @@ bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 
 bool MediaDevice::populatePads(const struct media_v2_topology &topology)
 {
-	media_v2_pad *mediaPads = reinterpret_cast<media_v2_pad *>
-				  (topology.ptr_pads);
+	struct media_v2_pad *mediaPads = reinterpret_cast<struct media_v2_pad *>
+					 (topology.ptr_pads);
 
 	for (unsigned int i = 0; i < topology.num_pads; ++i) {
 		unsigned int entity_id = mediaPads[i].entity_id;
@@ -478,8 +478,8 @@ bool MediaDevice::populatePads(const struct media_v2_topology &topology)
 
 bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 {
-	media_v2_link *mediaLinks = reinterpret_cast<media_v2_link *>
-				    (topology.ptr_links);
+	struct media_v2_link *mediaLinks = reinterpret_cast<struct media_v2_link *>
+					   (topology.ptr_links);
 
 	for (unsigned int i = 0; i < topology.num_links; ++i) {
 		/*

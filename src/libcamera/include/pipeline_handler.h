@@ -16,7 +16,6 @@
 namespace libcamera {
 
 class DeviceEnumerator;
-class PipelineHandlerFactory;
 
 class PipelineHandler
 {

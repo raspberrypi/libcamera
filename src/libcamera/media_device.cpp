@@ -240,10 +240,10 @@ int MediaDevice::populate()
 		delete[] pads;
 		delete[] interfaces;
 
-		ents = new media_v2_entity[topology.num_entities];
-		links = new media_v2_link[topology.num_links];
-		pads = new media_v2_pad[topology.num_pads];
-		interfaces = new media_v2_interface[topology.num_interfaces];
+		ents = new media_v2_entity[topology.num_entities]();
+		links = new media_v2_link[topology.num_links]();
+		pads = new media_v2_pad[topology.num_pads]();
+		interfaces = new media_v2_interface[topology.num_interfaces]();
 
 		version = topology.topology_version;
 	}

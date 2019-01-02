@@ -7,8 +7,8 @@
 #ifndef __LIBCAMERA_CAMERA_MANAGER_H__
 #define __LIBCAMERA_CAMERA_MANAGER_H__
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace libcamera {
 

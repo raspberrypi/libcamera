@@ -430,11 +430,11 @@ bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 
 		MediaEntity *entity;
 		if (iface)
-			entity = new MediaEntity(&mediaEntities[i],
+			entity = new MediaEntity(this, &mediaEntities[i],
 						 iface->devnode.major,
 						 iface->devnode.minor);
 		else
-			entity = new MediaEntity(&mediaEntities[i]);
+			entity = new MediaEntity(this, &mediaEntities[i]);
 
 		if (!addObject(entity)) {
 			delete entity;

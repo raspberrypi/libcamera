@@ -21,14 +21,17 @@ class MediaPad;
 class MediaObject
 {
 public:
+	MediaDevice *device() { return dev_; }
 	unsigned int id() const { return id_; }
 
 protected:
 	friend class MediaDevice;
 
-	MediaObject(unsigned int id) : id_(id) { }
+	MediaObject(MediaDevice *dev, unsigned int id) :
+		dev_(dev), id_(id) { }
 	virtual ~MediaObject() { }
 
+	MediaDevice *dev_;
 	unsigned int id_;
 };
 
@@ -93,7 +96,7 @@ public:
 private:
 	friend class MediaDevice;
 
-	MediaEntity(const struct media_v2_entity *entity,
+	MediaEntity(MediaDevice *dev, const struct media_v2_entity *entity,
 		    unsigned int major = 0, unsigned int minor = 0);
 	MediaEntity(const MediaEntity &) = delete;
 	~MediaEntity();

@@ -42,16 +42,20 @@ namespace libcamera {
  * \class MediaObject
  * \brief Base class for all media objects
  *
- * MediaObject is an abstract base class for all media objects in the media
- * graph. Every media graph object is identified by an id unique in the media
- * device context, and this base class provides that.
+ * MediaObject is an abstract base class for all media objects in the
+ * media graph. Each object is identified by a reference to the media
+ * device it belongs to and a unique id within that media device.
+ * This base class provide helpers to media objects to keep track of
+ * these identifiers.
  *
  * \sa MediaEntity, MediaPad, MediaLink
  */
 
 /**
  * \fn MediaObject::MediaObject()
- * \brief Construct a MediaObject with \a id
+ * \brief Construct a MediaObject part of the MediaDevice \a dev,
+ * identified by the \a id unique within the device
+ * \param dev The media device this object belongs to
  * \param id The media object id
  *
  * The caller shall ensure unicity of the object id in the media device context.
@@ -59,9 +63,20 @@ namespace libcamera {
  */
 
 /**
+ * \fn MediaObject::device()
+ * \brief Retrieve the media device the media object belongs to
+ * \return The MediaDevice
+ */
+
+/**
  * \fn MediaObject::id()
  * \brief Retrieve the media object id
  * \return The media object id
+ */
+
+/**
+ * \var MediaObject::dev_
+ * \brief The media device the media object belongs to
  */
 
 /**
@@ -88,7 +103,7 @@ namespace libcamera {
  */
 MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
 		     MediaPad *sink)
-	: MediaObject(link->id), source_(source),
+	: MediaObject(source->device(), link->id), source_(source),
 	  sink_(sink), flags_(link->flags)
 {
 }
@@ -139,7 +154,7 @@ MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
  * \param entity The entity the pad belongs to
  */
 MediaPad::MediaPad(const struct media_v2_pad *pad, MediaEntity *entity)
-	: MediaObject(pad->id), index_(pad->index), entity_(entity),
+	: MediaObject(entity->device(), pad->id), index_(pad->index), entity_(entity),
 	  flags_(pad->flags)
 {
 }
@@ -283,13 +298,15 @@ int MediaEntity::setDeviceNode(const std::string &devnode)
 
 /**
  * \brief Construct a MediaEntity
+ * \param dev The media device this entity belongs to
  * \param entity The media entity kernel data
  * \param major The major number of the entity associated interface
  * \param minor The minor number of the entity associated interface
  */
-MediaEntity::MediaEntity(const struct media_v2_entity *entity,
+MediaEntity::MediaEntity(MediaDevice *dev,
+			 const struct media_v2_entity *entity,
 			 unsigned int major, unsigned int minor)
-	: MediaObject(entity->id), name_(entity->name),
+	: MediaObject(dev, entity->id), name_(entity->name),
 	  major_(major), minor_(minor)
 {
 }

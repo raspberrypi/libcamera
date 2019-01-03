@@ -74,20 +74,24 @@ int CameraManager::start()
 	 * file and only fallback on all handlers if there is no
 	 * configuration file.
 	 */
-	std::vector<std::string> handlers = PipelineHandlerFactory::handlers();
+	std::vector<PipelineHandlerFactory *> &handlers = PipelineHandlerFactory::handlers();
 
-	for (std::string const &handler : handlers) {
-		PipelineHandler *pipe;
-
+	for (PipelineHandlerFactory *factory : handlers) {
 		/*
 		 * Try each pipeline handler until it exhaust
 		 * all pipelines it can provide.
 		 */
-		do {
-			pipe = PipelineHandlerFactory::create(handler, enumerator_);
-			if (pipe)
-				pipes_.push_back(pipe);
-		} while (pipe);
+		while (1) {
+			PipelineHandler *pipe = factory->create();
+			if (!pipe->match(enumerator_)) {
+				delete pipe;
+				break;
+			}
+
+			LOG(Debug) << "Pipeline handler \"" << factory->name()
+				   << "\" matched";
+			pipes_.push_back(pipe);
+		}
 	}
 
 	/* TODO: register hot-plug callback here */

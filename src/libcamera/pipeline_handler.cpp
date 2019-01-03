@@ -5,7 +5,6 @@
  * pipeline_handler.cpp - Pipeline handler infrastructure
  */
 
-#include "device_enumerator.h"
 #include "log.h"
 #include "pipeline_handler.h"
 
@@ -40,7 +39,7 @@ namespace libcamera {
  * system
  *
  * This function is the main entry point of the pipeline handler. It is called
- * by the device enumerator with the \a enumerator passed as an argument. It
+ * by the camera manager with the \a enumerator passed as an argument. It
  * shall acquire from the \a enumerator all the media devices it needs for a
  * single pipeline and create one or multiple Camera instances.
  *
@@ -89,6 +88,21 @@ namespace libcamera {
  */
 
 /**
+ * \brief Construct a pipeline handler factory
+ * \param[in] name Name of the pipeline handler class
+ *
+ * Creating an instance of the factory registers is with the global list of
+ * factories, accessible through the handlers() function.
+ *
+ * The factory \a name is used for debug purpose and shall be unique.
+ */
+PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
+	: name_(name)
+{
+	registerType(this);
+}
+
+/**
  * \fn PipelineHandlerFactory::create()
  * \brief Create an instance of the PipelineHandler corresponding to the factory
  *
@@ -99,77 +113,25 @@ namespace libcamera {
  */
 
 /**
+ * \fn PipelineHandlerFactory::name()
+ * \brief Retrieve the factory name
+ * \return The factory name
+ */
+
+/**
  * \brief Add a pipeline handler class to the registry
- * \param[in] name Name of the pipeline handler class
  * \param[in] factory Factory to use to construct the pipeline handler
  *
  * The caller is responsible to guarantee the uniqueness of the pipeline handler
  * name.
  */
-void PipelineHandlerFactory::registerType(const std::string &name,
-					  PipelineHandlerFactory *factory)
+void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
 {
-	std::map<std::string, PipelineHandlerFactory *> &factories = registry();
+	std::vector<PipelineHandlerFactory *> &factories = handlers();
 
-	if (factories.count(name)) {
-		LOG(Error) <<  "Registering '" << name << "' pipeline twice";
-		return;
-	}
+	factories.push_back(factory);
 
-	LOG(Debug) << "Registered pipeline handler \"" << name << "\"";
-	factories[name] = factory;
-}
-
-/**
- * \brief Create an instance of a pipeline handler if it matches media devices
- * present in the system
- * \param[in] name Name of the pipeline handler to instantiate
- * \param[in] enumerator Device enumerator to search for a match for the handler
- *
- * This function matches the media devices required by pipeline \a name against
- * the devices enumerated by \a enumerator.
- *
- * \return the newly created pipeline handler instance if a match was found, or
- * nullptr otherwise
- */
-PipelineHandler *PipelineHandlerFactory::create(const std::string &name,
-						DeviceEnumerator *enumerator)
-{
-	std::map<std::string, PipelineHandlerFactory *> &factories = registry();
-
-	auto it = factories.find(name);
-	if (it == factories.end()) {
-		LOG(Error) << "Trying to create non-existing pipeline handler "
-			   << name;
-		return nullptr;
-	}
-
-	PipelineHandler *pipe = it->second->create();
-
-	if (pipe->match(enumerator)) {
-		LOG(Debug) << "Pipeline handler \"" << name << "\" matched";
-		return pipe;
-	}
-
-	delete pipe;
-	return nullptr;
-}
-
-/**
- * \brief Retrieve the names of all pipeline handlers registered with the
- * factory
- *
- * \return a list of all registered pipeline handler names
- */
-std::vector<std::string> PipelineHandlerFactory::handlers()
-{
-	std::map<std::string, PipelineHandlerFactory *> &factories = registry();
-	std::vector<std::string> handlers;
-
-	for (auto const &handler : factories)
-		handlers.push_back(handler.first);
-
-	return handlers;
+	LOG(Debug) << "Registered pipeline handler \"" << factory->name() << "\"";
 }
 
 /**
@@ -180,9 +142,9 @@ std::vector<std::string> PipelineHandlerFactory::handlers()
  *
  * \return the list of pipeline handler factories
  */
-std::map<std::string, PipelineHandlerFactory *> &PipelineHandlerFactory::registry()
+std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::handlers()
 {
-	static std::map<std::string, PipelineHandlerFactory *> factories;
+	static std::vector<PipelineHandlerFactory *> factories;
 	return factories;
 }
 

@@ -31,29 +31,28 @@ public:
 class PipelineHandlerFactory
 {
 public:
+	PipelineHandlerFactory(const char *name);
 	virtual ~PipelineHandlerFactory() { };
 
 	virtual PipelineHandler *create() = 0;
 
-	static void registerType(const std::string &name, PipelineHandlerFactory *factory);
-	static PipelineHandler *create(const std::string &name, DeviceEnumerator *enumerator);
-	static std::vector<std::string> handlers();
+	const std::string &name() const { return name_; }
+
+	static void registerType(PipelineHandlerFactory *factory);
+	static std::vector<PipelineHandlerFactory *> &handlers();
 
 private:
-	static std::map<std::string, PipelineHandlerFactory *> &registry();
+	std::string name_;
 };
 
-#define REGISTER_PIPELINE_HANDLER(handler) \
-class handler##Factory : public PipelineHandlerFactory { \
-public: \
-	handler##Factory() \
-	{ \
-		PipelineHandlerFactory::registerType(#handler, this); \
-	} \
-	virtual PipelineHandler *create() { \
-		return new handler(); \
-	} \
-}; \
+#define REGISTER_PIPELINE_HANDLER(handler)				\
+class handler##Factory : public PipelineHandlerFactory {		\
+public:									\
+	handler##Factory() : PipelineHandlerFactory(#handler) { }	\
+	PipelineHandler *create() final {				\
+		return new handler();					\
+	}								\
+};									\
 static handler##Factory global_##handler##Factory;
 
 } /* namespace libcamera */

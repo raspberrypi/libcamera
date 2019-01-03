@@ -45,6 +45,7 @@ public:
 	MediaLink *link(const MediaEntity *source, unsigned int sourceIdx,
 			const MediaEntity *sink, unsigned int sinkIdx);
 	MediaLink *link(const MediaPad *source, const MediaPad *sink);
+	int disableLinks();
 
 private:
 	std::string driver_;
@@ -65,6 +66,9 @@ private:
 	bool populateEntities(const struct media_v2_topology &topology);
 	bool populatePads(const struct media_v2_topology &topology);
 	bool populateLinks(const struct media_v2_topology &topology);
+
+	friend int MediaLink::setEnabled(bool enable);
+	int setupLink(const MediaLink *link, unsigned int flags);
 };
 
 } /* namespace libcamera */

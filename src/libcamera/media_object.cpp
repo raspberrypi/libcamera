@@ -15,6 +15,7 @@
 #include <linux/media.h>
 
 #include "log.h"
+#include "media_device.h"
 #include "media_object.h"
 
 /**
@@ -94,6 +95,34 @@ namespace libcamera {
  *
  * Each link is referenced in the link array of both of the pads it connect.
  */
+
+/**
+ * \brief Enable or disable a link
+ * \param enable True to enable the link, false to disable it
+ *
+ * Set the status of a link according to the value of \a enable.
+ * Links between two pads can be set to the enabled or disabled state freely,
+ * unless they're immutable links, whose status cannot be changed.
+ * Enabling an immutable link is not considered an error, while trying to
+ * disable it is.
+ *
+ * Enabling a link establishes a data connection between two pads, while
+ * disabling it interrupts that connection.
+ *
+ * \return 0 on success, or a negative error code otherwise
+ */
+int MediaLink::setEnabled(bool enable)
+{
+	unsigned int flags = enable ? MEDIA_LNK_FL_ENABLED : 0;
+
+	int ret = dev_->setupLink(this, flags);
+	if (ret)
+		return ret;
+
+	flags_ = flags;
+
+	return 0;
+}
 
 /**
  * \brief Construct a MediaLink

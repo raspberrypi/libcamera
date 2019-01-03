@@ -387,6 +387,35 @@ MediaLink *MediaDevice::link(const MediaPad *source, const MediaPad *sink)
 }
 
 /**
+ * \brief Disable all links in the media device
+ *
+ * Disable all the media device links, clearing the MEDIA_LNK_FL_ENABLED flag
+ * on links which are not flagged as IMMUTABLE.
+ *
+ * \return 0 on success, or a negative error code otherwise
+ */
+int MediaDevice::disableLinks()
+{
+	for (MediaEntity *entity : entities_) {
+		for (MediaPad *pad : entity->pads()) {
+			if (!(pad->flags() & MEDIA_PAD_FL_SOURCE))
+				continue;
+
+			for (MediaLink *link : pad->links()) {
+				if (link->flags() & MEDIA_LNK_FL_IMMUTABLE)
+					continue;
+
+				int ret = link->setEnabled(false);
+				if (ret)
+					return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
  * \var MediaDevice::objects_
  * \brief Global map of media objects (entities, pads, links) keyed by their
  * object id.
@@ -600,6 +629,52 @@ bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 	}
 
 	return true;
+}
+
+/**
+ * \brief Apply \a flags to a link between two pads
+ * \param link The link to apply flags to
+ * \param flags The flags to apply to the link
+ *
+ * This function applies the link \a flags (as defined by the MEDIA_LNK_FL_*
+ * macros from the Media Controller API) to the given \a link. It implements
+ * low-level link setup as it performs no checks on the validity of the \a
+ * flags, and assumes that the supplied \a flags are valid for the link (e.g.
+ * immutable links cannot be disabled).
+*
+ * \sa MediaLink::setEnabled(bool enable)
+ *
+ * \return 0 on success, or a negative error code otherwise
+ */
+int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
+{
+	struct media_link_desc linkDesc = { };
+	MediaPad *source = link->source();
+	MediaPad *sink = link->sink();
+
+	linkDesc.source.entity = source->entity()->id();
+	linkDesc.source.index = source->index();
+	linkDesc.source.flags = MEDIA_PAD_FL_SOURCE;
+
+	linkDesc.sink.entity = sink->entity()->id();
+	linkDesc.sink.index = sink->index();
+	linkDesc.sink.flags = MEDIA_PAD_FL_SINK;
+
+	linkDesc.flags = flags;
+
+	int ret = ioctl(fd_, MEDIA_IOC_SETUP_LINK, &linkDesc);
+	if (ret) {
+		ret = -errno;
+		LOG(Error) << "Failed to setup link: " << strerror(-ret);
+		return ret;
+	}
+
+	LOG(Debug) << source->entity()->name() << "["
+		   << source->index() << "] -> "
+		   << sink->entity()->name() << "["
+		   << sink->index() << "]: " << flags;
+
+	return 0;
 }
 
 } /* namespace libcamera */

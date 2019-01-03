@@ -41,6 +41,7 @@ public:
 	MediaPad *source() const { return source_; }
 	MediaPad *sink() const { return sink_; }
 	unsigned int flags() const { return flags_; }
+	int setEnabled(bool enable);
 
 private:
 	friend class MediaDevice;

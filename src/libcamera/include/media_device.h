@@ -40,6 +40,12 @@ public:
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;
 
+	MediaLink *link(const std::string &sourceName, unsigned int sourceIdx,
+			const std::string &sinkName, unsigned int sinkIdx);
+	MediaLink *link(const MediaEntity *source, unsigned int sourceIdx,
+			const MediaEntity *sink, unsigned int sinkIdx);
+	MediaLink *link(const MediaPad *source, const MediaPad *sink);
+
 private:
 	std::string driver_;
 	std::string devnode_;

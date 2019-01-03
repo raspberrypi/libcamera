@@ -307,6 +307,86 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
 }
 
 /**
+ * \brief Retrieve the MediaLink connecting two pads, identified by entity
+ * names and pad indexes
+ * \param sourceName The source entity name
+ * \param sourceIdx The index of the source pad
+ * \param sinkName The sink entity name
+ * \param sinkIdx The index of the sink pad
+ *
+ * Find the link that connects the pads at index \a sourceIdx of the source
+ * entity with name \a sourceName, to the pad at index \a sinkIdx of the
+ * sink entity with name \a sinkName, if any.
+ *
+ * \sa MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx, const MediaEntity *sink, unsigned int sinkIdx) const
+ * \sa MediaDevice::link(const MediaPad *source, const MediaPad *sink) const
+ *
+ * \return The link that connects the two pads, or nullptr if no such a link
+ * exists
+ */
+MediaLink *MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx,
+			     const std::string &sinkName, unsigned int sinkIdx)
+{
+	const MediaEntity *source = getEntityByName(sourceName);
+	const MediaEntity *sink = getEntityByName(sinkName);
+	if (!source || !sink)
+		return nullptr;
+
+	return link(source, sourceIdx, sink, sinkIdx);
+}
+
+/**
+ * \brief Retrieve the MediaLink connecting two pads, identified by the
+ * entities they belong to and pad indexes
+ * \param source The source entity
+ * \param sourceIdx The index of the source pad
+ * \param sink The sink entity
+ * \param sinkIdx The index of the sink pad
+ *
+ * Find the link that connects the pads at index \a sourceIdx of the source
+ * entity \a source, to the pad at index \a sinkIdx of the sink entity \a
+ * sink, if any.
+ *
+ * \sa MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx, const std::string &sinkName, unsigned int sinkIdx) const
+ * \sa MediaDevice::link(const MediaPad *source, const MediaPad *sink) const
+ *
+ * \return The link that connects the two pads, or nullptr if no such a link
+ * exists
+ */
+MediaLink *MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx,
+			     const MediaEntity *sink, unsigned int sinkIdx)
+{
+
+	const MediaPad *sourcePad = source->getPadByIndex(sourceIdx);
+	const MediaPad *sinkPad = sink->getPadByIndex(sinkIdx);
+	if (!sourcePad || !sinkPad)
+		return nullptr;
+
+	return link(sourcePad, sinkPad);
+}
+
+/**
+ * \brief Retrieve the MediaLink that connects two pads
+ * \param source The source pad
+ * \param sink The sink pad
+ *
+ * \sa MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx, const std::string &sinkName, unsigned int sinkIdx) const
+ * \sa MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx, const MediaEntity *sink, unsigned int sinkIdx) const
+ *
+ * \return The link that connects the two pads, or nullptr if no such a link
+ * exists
+ */
+MediaLink *MediaDevice::link(const MediaPad *source, const MediaPad *sink)
+{
+	for (MediaLink *link : source->links()) {
+		if (link->sink()->id() == sink->id())
+			return link;
+	}
+
+	return nullptr;
+}
+
+/**
  * \var MediaDevice::objects_
  * \brief Global map of media objects (entities, pads, links) keyed by their
  * object id.

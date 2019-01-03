@@ -94,7 +94,7 @@ int CameraManager::start()
 		 */
 		while (1) {
 			PipelineHandler *pipe = factory->create();
-			if (!pipe->match(enumerator_.get())) {
+			if (!pipe->match(this, enumerator_.get())) {
 				delete pipe;
 				break;
 			}
@@ -133,26 +133,14 @@ void CameraManager::stop()
 }
 
 /**
- * \brief List all detected cameras
+ * \fn CameraManager::cameras()
+ * \brief Retrieve all available cameras
  *
  * Before calling this function the caller is responsible for ensuring that
  * the camera manger is running.
  *
- * \return List of names for all detected cameras
+ * \return List of all available cameras
  */
-std::vector<std::string> CameraManager::list() const
-{
-	std::vector<std::string> list;
-
-	for (PipelineHandler *pipe : pipes_) {
-		for (unsigned int i = 0; i < pipe->count(); i++) {
-			Camera *cam = pipe->camera(i);
-			list.push_back(cam->name());
-		}
-	}
-
-	return list;
-}
 
 /**
  * \brief Get a camera based on name
@@ -168,17 +156,33 @@ std::vector<std::string> CameraManager::list() const
  */
 Camera *CameraManager::get(const std::string &name)
 {
-	for (PipelineHandler *pipe : pipes_) {
-		for (unsigned int i = 0; i < pipe->count(); i++) {
-			Camera *cam = pipe->camera(i);
-			if (cam->name() == name) {
-				cam->get();
-				return cam;
-			}
-		}
+	for (Camera *camera : cameras_) {
+		if (camera->name() == name)
+			return camera;
 	}
 
 	return nullptr;
+}
+
+/**
+ * \brief Add a camera to the camera manager
+ * \param[in] camera The camera to be added
+ *
+ * This function is called by pipeline handlers to register the cameras they
+ * handle with the camera manager. Registered cameras are immediately made
+ * available to the system.
+ */
+void CameraManager::addCamera(Camera *camera)
+{
+	for (Camera *c : cameras_) {
+		if (c->name() == camera->name()) {
+			LOG(Warning) << "Registering camera with duplicate name '"
+				     << camera->name() << "'";
+			break;
+		}
+	}
+
+	cameras_.push_back(camera);
 }
 
 /**

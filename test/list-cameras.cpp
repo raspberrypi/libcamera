@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
 #include "test.h"
@@ -29,8 +30,8 @@ protected:
 	{
 		unsigned int count = 0;
 
-		for (auto name : cm->list()) {
-			cout << "- " << name << endl;
+		for (Camera *camera : cm->cameras()) {
+			cout << "- " << camera->name() << endl;
 			count++;
 		}
 

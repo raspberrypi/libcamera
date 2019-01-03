@@ -24,8 +24,10 @@ public:
 	int start();
 	void stop();
 
-	std::vector<std::string> list() const;
+	const std::vector<Camera *> &cameras() const { return cameras_; }
 	Camera *get(const std::string &name);
+
+	void addCamera(Camera *camera);
 
 	static CameraManager *instance();
 
@@ -40,6 +42,7 @@ private:
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::vector<PipelineHandler *> pipes_;
+	std::vector<Camera *> cameras_;
 
 	std::unique_ptr<EventDispatcher> dispatcher_;
 };

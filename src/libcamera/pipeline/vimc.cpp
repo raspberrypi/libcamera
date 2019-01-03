@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 
 #include "device_enumerator.h"
 #include "media_device.h"
@@ -19,44 +20,24 @@ public:
 	PipeHandlerVimc();
 	~PipeHandlerVimc();
 
-	bool match(DeviceEnumerator *enumerator);
-
-	unsigned int count();
-	Camera *camera(unsigned int id) final;
+	bool match(CameraManager *manager, DeviceEnumerator *enumerator);
 
 private:
 	MediaDevice *dev_;
-	Camera *camera_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc()
-	: dev_(nullptr), camera_(nullptr)
+	: dev_(nullptr)
 {
 }
 
 PipeHandlerVimc::~PipeHandlerVimc()
 {
-	if (camera_)
-		camera_->put();
-
 	if (dev_)
 		dev_->release();
 }
 
-unsigned int PipeHandlerVimc::count()
-{
-	return 1;
-}
-
-Camera *PipeHandlerVimc::camera(unsigned int id)
-{
-	if (id != 0)
-		return nullptr;
-
-	return camera_;
-}
-
-bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
+bool PipeHandlerVimc::match(CameraManager *manager, DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("vimc");
 
@@ -83,7 +64,8 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 	 * will be chosen depends on how the Camera
 	 * object is modeled.
 	 */
-	camera_ = new Camera("Dummy VIMC Camera");
+	Camera *camera = new Camera("Dummy VIMC Camera");
+	manager->addCamera(camera);
 
 	return true;
 }

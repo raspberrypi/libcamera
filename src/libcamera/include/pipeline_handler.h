@@ -15,6 +15,7 @@
 
 namespace libcamera {
 
+class CameraManager;
 class DeviceEnumerator;
 
 class PipelineHandler
@@ -22,10 +23,7 @@ class PipelineHandler
 public:
 	virtual ~PipelineHandler() { };
 
-	virtual bool match(DeviceEnumerator *enumerator) = 0;
-
-	virtual unsigned int count() = 0;
-	virtual Camera *camera(unsigned int id) = 0;
+	virtual bool match(CameraManager *manager, DeviceEnumerator *enumerator) = 0;
 };
 
 class PipelineHandlerFactory

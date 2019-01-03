@@ -35,13 +35,15 @@ namespace libcamera {
 /**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
  * \brief Match media devices and create camera instances
+ * \param manager The camera manager
  * \param enumerator The enumerator providing all media devices found in the
  * system
  *
  * This function is the main entry point of the pipeline handler. It is called
- * by the camera manager with the \a enumerator passed as an argument. It
- * shall acquire from the \a enumerator all the media devices it needs for a
- * single pipeline and create one or multiple Camera instances.
+ * by the camera manager with the \a manager and \a enumerator passed as
+ * arguments. It shall acquire from the \a enumerator all the media devices it
+ * needs for a single pipeline, create one or multiple Camera instances and
+ * register them with the \a manager.
  *
  * If all media devices needed by the pipeline handler are found, they must all
  * be acquired by a call to MediaDevice::acquire(). This function shall then
@@ -60,19 +62,6 @@ namespace libcamera {
  *
  * \return true if media devices have been acquired and camera instances
  * created, or false otherwise
- */
-
-/**
- * \fn PipelineHandler::count()
- * \brief Retrieve the number of cameras handled by this pipeline handler
- * \return the number of cameras that were created by the match() function
- */
-
-/**
- * \fn PipelineHandler::camera(unsigned int id)
- * \brief Retrieve one of the cameras handled by this pipeline handler
- * \param[in] id the camera index
- * \return a pointer to the Camera identified by \a id
  */
 
 /**

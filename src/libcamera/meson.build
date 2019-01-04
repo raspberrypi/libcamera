@@ -6,6 +6,7 @@ libcamera_sources = files([
     'media_device.cpp',
     'media_object.cpp',
     'pipeline_handler.cpp',
+    'signal.cpp',
 ])
 
 libcamera_headers = files([

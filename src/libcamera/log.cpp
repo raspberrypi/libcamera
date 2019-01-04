@@ -48,6 +48,22 @@ namespace libcamera {
  * terminates immediately after printing the message.
  */
 
+/**
+ * \def ASSERT(condition)
+ * \brief Abort program execution if assertion fails
+ *
+ * If \a condition is false, ASSERT() logs an error message with the Fatal log
+ * level and aborts program execution.
+ *
+ * If the macro NDEBUG is defined before including log.h, ASSERT() generates no
+ * code.
+ *
+ * Using conditions that have side effects with ASSERT() is not recommended, as
+ * these effects would depend on whether NDEBUG is defined or not. Similarly,
+ * ASSERT() should not be used to check for errors that can occur under normal
+ * conditions as those checks would then be removed when compiling with NDEBUG.
+ */
+
 static const char *log_severity_name(LogSeverity severity)
 {
 	static const char * const names[] = {

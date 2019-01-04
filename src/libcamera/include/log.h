@@ -36,6 +36,15 @@ private:
 
 #define LOG(severity) LogMessage(__FILE__, __LINE__, Log##severity).stream()
 
+#ifndef NDEBUG
+#define ASSERT(condition) static_cast<void>(({				\
+	if (!(condition))							\
+		LOG(Fatal) << "assertion \"" #condition "\" failed";	\
+}))
+#else
+#define ASSERT(condition) static_cast<void>(false && (condition))
+#endif
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_LOG_H__ */

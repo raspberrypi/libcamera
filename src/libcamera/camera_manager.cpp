@@ -6,8 +6,10 @@
  */
 
 #include <libcamera/camera_manager.h>
+#include <libcamera/event_dispatcher.h>
 
 #include "device_enumerator.h"
+#include "log.h"
 #include "pipeline_handler.h"
 
 /**
@@ -37,8 +39,13 @@
 namespace libcamera {
 
 CameraManager::CameraManager()
-	: enumerator_(nullptr)
+	: enumerator_(nullptr), dispatcher_(nullptr)
 {
+}
+
+CameraManager::~CameraManager()
+{
+	delete dispatcher_;
 }
 
 /**
@@ -174,6 +181,38 @@ CameraManager *CameraManager::instance()
 {
 	static CameraManager manager;
 	return &manager;
+}
+
+/**
+ * \brief Set the event dispatcher
+ * \param dispatcher Pointer to the event dispatcher
+ *
+ * libcamera requires an event dispatcher to integrate event notification and
+ * timers with the application event loop. Applications shall call this function
+ * once and only once before the camera manager is started with start() to set
+ * the event dispatcher.
+ *
+ * The CameraManager takes ownership of the event dispatcher and will delete it
+ * when the application terminates.
+ */
+void CameraManager::setEventDispatcher(EventDispatcher *dispatcher)
+{
+	if (dispatcher_) {
+		LOG(Warning) << "Event dispatcher is already set";
+		return;
+	}
+
+	dispatcher_ = dispatcher;
+}
+
+/**
+ * \brief Retrieve the event dispatcher
+ * \return Pointer to the event dispatcher, or nullptr if no event dispatcher
+ * has been set
+ */
+EventDispatcher *CameraManager::eventDispatcher()
+{
+	return dispatcher_;
 }
 
 } /* namespace libcamera */

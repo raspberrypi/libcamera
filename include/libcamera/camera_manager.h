@@ -14,6 +14,7 @@ namespace libcamera {
 
 class Camera;
 class DeviceEnumerator;
+class EventDispatcher;
 class PipelineHandler;
 
 class CameraManager
@@ -27,13 +28,19 @@ public:
 
 	static CameraManager *instance();
 
+	void setEventDispatcher(EventDispatcher *dispatcher);
+	EventDispatcher *eventDispatcher();
+
 private:
 	CameraManager();
 	CameraManager(const CameraManager &) = delete;
 	void operator=(const CameraManager &) = delete;
+	~CameraManager();
 
 	DeviceEnumerator *enumerator_;
 	std::vector<PipelineHandler *> pipes_;
+
+	EventDispatcher *dispatcher_;
 };
 
 } /* namespace libcamera */

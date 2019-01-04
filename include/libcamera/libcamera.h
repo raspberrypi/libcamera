@@ -9,5 +9,6 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/event_dispatcher.h>
 
 #endif /* __LIBCAMERA_LIBCAMERA_H__ */

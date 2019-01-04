@@ -2,11 +2,14 @@ libcamera_sources = files([
     'camera.cpp',
     'camera_manager.cpp',
     'device_enumerator.cpp',
+    'event_dispatcher.cpp',
+    'event_notifier.cpp',
     'log.cpp',
     'media_device.cpp',
     'media_object.cpp',
     'pipeline_handler.cpp',
     'signal.cpp',
+    'timer.cpp',
 ])
 
 libcamera_headers = files([

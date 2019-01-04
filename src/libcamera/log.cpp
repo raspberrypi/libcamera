@@ -6,6 +6,7 @@
  */
 
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <iomanip>
 #include <string.h>
@@ -31,6 +32,8 @@ namespace libcamera {
  * Warning message, signals a potential issue
  * \var LogError
  * Error message, signals an unrecoverable issue
+ * \var LogFatal
+ * Fatal message, signals an unrecoverable issue and aborts execution
  */
 
 /**
@@ -40,15 +43,19 @@ namespace libcamera {
  * Return an std::ostream reference to which a message can be logged using the
  * iostream API. The \a severity controls whether the message is printed or
  * dropped, depending on the global log level.
+ *
+ * If the severity is set to Fatal, execution is aborted and the program
+ * terminates immediately after printing the message.
  */
 
 static const char *log_severity_name(LogSeverity severity)
 {
 	static const char * const names[] = {
-		" DBG",
-		"INFO",
-		"WARN",
-		" ERR",
+		"  DBG",
+		" INFO",
+		" WARN",
+		"  ERR",
+		"FATAL",
 	};
 
 	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
@@ -73,6 +80,7 @@ static const char *log_severity_name(LogSeverity severity)
  */
 LogMessage::LogMessage(const char *fileName, unsigned int line,
 		       LogSeverity severity)
+	: severity_(severity)
 {
 	/* Log the timestamp, severity and file information. */
 	struct timespec timestamp;
@@ -93,6 +101,9 @@ LogMessage::~LogMessage()
 	std::string msg(msgStream.str());
 	fwrite(msg.data(), msg.size(), 1, stderr);
 	fflush(stderr);
+
+	if (severity_ == LogSeverity::LogFatal)
+		std::abort();
 }
 
 /**

@@ -16,6 +16,7 @@ enum LogSeverity {
 	LogInfo,
 	LogWarning,
 	LogError,
+	LogFatal,
 };
 
 class LogMessage
@@ -30,6 +31,7 @@ public:
 
 private:
 	std::ostringstream msgStream;
+	LogSeverity severity_;
 };
 
 #define LOG(severity) LogMessage(__FILE__, __LINE__, Log##severity).stream()

@@ -3,6 +3,7 @@ libcamera_sources = files([
     'camera_manager.cpp',
     'device_enumerator.cpp',
     'event_dispatcher.cpp',
+    'event_dispatcher_poll.cpp',
     'event_notifier.cpp',
     'log.cpp',
     'media_device.cpp',
@@ -14,6 +15,7 @@ libcamera_sources = files([
 
 libcamera_headers = files([
     'include/device_enumerator.h',
+    'include/event_dispatcher_poll.h',
     'include/log.h',
     'include/media_device.h',
     'include/media_object.h',

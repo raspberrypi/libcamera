@@ -9,6 +9,7 @@
 #include <libcamera/event_dispatcher.h>
 
 #include "device_enumerator.h"
+#include "event_dispatcher_poll.h"
 #include "log.h"
 #include "pipeline_handler.h"
 
@@ -188,9 +189,10 @@ CameraManager *CameraManager::instance()
  * \param dispatcher Pointer to the event dispatcher
  *
  * libcamera requires an event dispatcher to integrate event notification and
- * timers with the application event loop. Applications shall call this function
- * once and only once before the camera manager is started with start() to set
- * the event dispatcher.
+ * timers with the application event loop. Applications that want to provide
+ * their own event dispatcher shall call this function once and only once before
+ * the camera manager is started with start(). If no event dispatcher is
+ * provided, a default poll-based implementation will be used.
  *
  * The CameraManager takes ownership of the event dispatcher and will delete it
  * when the application terminates.
@@ -207,11 +209,18 @@ void CameraManager::setEventDispatcher(EventDispatcher *dispatcher)
 
 /**
  * \brief Retrieve the event dispatcher
- * \return Pointer to the event dispatcher, or nullptr if no event dispatcher
- * has been set
+ *
+ * This function retrieves the event dispatcher set with setEventDispatcher().
+ * If no dispatcher has been set, a default poll-based implementation is created
+ * and returned, and no custom event dispatcher may be installed anymore.
+ *
+ * \return Pointer to the event dispatcher
  */
 EventDispatcher *CameraManager::eventDispatcher()
 {
+	if (!dispatcher_)
+		dispatcher_ = new EventDispatcherPoll();
+
 	return dispatcher_;
 }
 

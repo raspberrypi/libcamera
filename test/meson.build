@@ -3,7 +3,7 @@ subdir('libtest')
 subdir('media_device')
 
 public_tests = [
-    ['list',            'list.cpp'],
+    ['list-cameras',    'list-cameras.cpp'],
 ]
 
 internal_tests = [

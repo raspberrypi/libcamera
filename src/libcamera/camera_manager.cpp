@@ -161,4 +161,19 @@ Camera *CameraManager::get(const std::string &name)
 	return nullptr;
 }
 
+/**
+ * \brief Retrieve the camera manager instance
+ *
+ * The CameraManager is a singleton and can't be constructed manually. This
+ * function shall instead be used to retrieve the single global instance of the
+ * manager.
+ *
+ * \return The camera manager instance
+ */
+CameraManager *CameraManager::instance()
+{
+	static CameraManager manager;
+	return &manager;
+}
+
 } /* namespace libcamera */

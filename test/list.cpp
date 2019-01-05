@@ -19,10 +19,7 @@ class ListTest : public Test
 protected:
 	int init()
 	{
-		cm = new CameraManager();
-		if (!cm)
-			return -ENOMEM;
-
+		cm = CameraManager::instance();
 		cm->start();
 
 		return 0;
@@ -43,8 +40,6 @@ protected:
 	void cleanup()
 	{
 		cm->stop();
-
-		delete cm;
 	}
 
 private:

@@ -19,15 +19,19 @@ class PipelineHandler;
 class CameraManager
 {
 public:
-	CameraManager();
-
 	int start();
 	void stop();
 
 	std::vector<std::string> list() const;
 	Camera *get(const std::string &name);
 
+	static CameraManager *instance();
+
 private:
+	CameraManager();
+	CameraManager(const CameraManager &) = delete;
+	void operator=(const CameraManager &) = delete;
+
 	DeviceEnumerator *enumerator_;
 	std::vector<PipelineHandler *> pipes_;
 };

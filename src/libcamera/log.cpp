@@ -101,10 +101,12 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
 	/* Log the timestamp, severity and file information. */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_MONOTONIC, &timestamp);
+	msgStream.fill('0');
 	msgStream << "[" << timestamp.tv_sec / (60 * 60) << ":"
 		  << std::setw(2) << (timestamp.tv_sec / 60) % 60 << ":"
 		  << std::setw(2) << timestamp.tv_sec % 60 << "."
 		  << std::setw(9) << timestamp.tv_nsec << "]";
+	msgStream.fill(' ');
 
 	msgStream << " " << log_severity_name(severity);
 	msgStream << " " << basename(fileName) << ":" << line << " ";

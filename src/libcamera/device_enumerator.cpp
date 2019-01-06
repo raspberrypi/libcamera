@@ -11,6 +11,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include <libcamera/event_notifier.h>
+
 #include "device_enumerator.h"
 #include "log.h"
 #include "media_device.h"
@@ -243,9 +245,45 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 
 	media->close();
 
+	LOG(DeviceEnumerator, Debug)
+		<< "Added device " << deviceNode << ": " << media->driver();
+
 	devices_.push_back(std::move(media));
 
 	return 0;
+}
+
+/**
+ * \brief Remove a media device from the enumerator
+ * \param[in] deviceNode Path to the media device to remove
+ *
+ * Remove the media device identified by \a deviceNode previously added to the
+ * enumerator with addDevice(). The media device's MediaDevice::disconnected
+ * signal is emitted.
+ */
+void DeviceEnumerator::removeDevice(const std::string &deviceNode)
+{
+	std::shared_ptr<MediaDevice> media;
+
+	for (auto iter = devices_.begin(); iter != devices_.end(); ++iter) {
+		if ((*iter)->deviceNode() == deviceNode) {
+			media = std::move(*iter);
+			devices_.erase(iter);
+			break;
+		}
+	}
+
+	if (!media) {
+		LOG(DeviceEnumerator, Warning)
+			<< "Media device for node " << deviceNode
+			<< " not found";
+		return;
+	}
+
+	LOG(DeviceEnumerator, Debug)
+		<< "Media device for node " << deviceNode << " removed.";
+
+	media->disconnected.emit(media.get());
 }
 
 /**
@@ -301,18 +339,33 @@ DeviceEnumeratorUdev::DeviceEnumeratorUdev()
 
 DeviceEnumeratorUdev::~DeviceEnumeratorUdev()
 {
+	delete notifier_;
+
+	if (monitor_)
+		udev_monitor_unref(monitor_);
 	if (udev_)
 		udev_unref(udev_);
 }
 
 int DeviceEnumeratorUdev::init()
 {
+	int ret;
+
 	if (udev_)
 		return -EBUSY;
 
 	udev_ = udev_new();
 	if (!udev_)
 		return -ENODEV;
+
+	monitor_ = udev_monitor_new_from_netlink(udev_, "udev");
+	if (!monitor_)
+		return -ENODEV;
+
+	ret = udev_monitor_filter_add_match_subsystem_devtype(monitor_, "media",
+							      nullptr);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
@@ -365,7 +418,18 @@ int DeviceEnumeratorUdev::enumerate()
 	}
 done:
 	udev_enumerate_unref(udev_enum);
-	return ret >= 0 ? 0 : ret;
+	if (ret < 0)
+		return ret;
+
+	ret = udev_monitor_enable_receiving(monitor_);
+	if (ret < 0)
+		return ret;
+
+	int fd = udev_monitor_get_fd(monitor_);
+	notifier_ = new EventNotifier(fd, EventNotifier::Read);
+	notifier_->activated.connect(this, &DeviceEnumeratorUdev::udevNotify);
+
+	return 0;
 }
 
 std::string DeviceEnumeratorUdev::lookupDeviceNode(int major, int minor)
@@ -387,6 +451,23 @@ std::string DeviceEnumeratorUdev::lookupDeviceNode(int major, int minor)
 	udev_device_unref(device);
 
 	return deviceNode;
+}
+
+void DeviceEnumeratorUdev::udevNotify(EventNotifier *notifier)
+{
+	struct udev_device *dev = udev_monitor_receive_device(monitor_);
+	std::string action(udev_device_get_action(dev));
+	std::string deviceNode(udev_device_get_devnode(dev));
+
+	LOG(Debug) << action << " device " << udev_device_get_devnode(dev);
+
+	if (action == "add") {
+		addDevice(deviceNode);
+	} else if (action == "remove") {
+		removeDevice(deviceNode);
+	}
+
+	udev_device_unref(dev);
 }
 
 } /* namespace libcamera */

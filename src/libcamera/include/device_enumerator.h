@@ -16,6 +16,7 @@
 
 namespace libcamera {
 
+class EventNotifier;
 class MediaDevice;
 
 class DeviceMatch
@@ -46,6 +47,7 @@ public:
 
 protected:
 	int addDevice(const std::string &deviceNode);
+	void removeDevice(const std::string &deviceNode);
 
 private:
 	std::vector<std::shared_ptr<MediaDevice>> devices_;
@@ -64,8 +66,12 @@ public:
 
 private:
 	struct udev *udev_;
+	struct udev_monitor *monitor_;
+	EventNotifier *notifier_;
 
 	std::string lookupDeviceNode(int major, int minor) final;
+
+	void udevNotify(EventNotifier *notifier);
 };
 
 } /* namespace libcamera */

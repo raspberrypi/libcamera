@@ -3,6 +3,7 @@ subdir('libtest')
 subdir('media_device')
 
 public_tests = [
+    ['event',           'event.cpp'],
     ['list-cameras',    'list-cameras.cpp'],
     ['signal',          'signal.cpp'],
     ['timer',           'timer.cpp'],

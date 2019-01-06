@@ -4,6 +4,7 @@ subdir('media_device')
 
 public_tests = [
     ['list-cameras',    'list-cameras.cpp'],
+    ['signal',          'signal.cpp'],
 ]
 
 internal_tests = [

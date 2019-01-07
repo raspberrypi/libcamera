@@ -80,8 +80,8 @@ class MediaEntity : public MediaObject
 {
 public:
 	const std::string &name() const { return name_; }
-	unsigned int major() const { return major_; }
-	unsigned int minor() const { return minor_; }
+	unsigned int deviceMajor() const { return major_; }
+	unsigned int deviceMinor() const { return minor_; }
 
 	const std::vector<MediaPad *> &pads() const { return pads_; }
 

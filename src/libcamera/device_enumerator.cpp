@@ -208,10 +208,10 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
 
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {
-		if (entity->major() == 0 && entity->minor() == 0)
+		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
 			continue;
 
-		std::string devnode = lookupDevnode(entity->major(), entity->minor());
+		std::string devnode = lookupDevnode(entity->deviceMajor(), entity->deviceMinor());
 		if (devnode.empty())
 			return -EINVAL;
 

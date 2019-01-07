@@ -212,14 +212,14 @@ void MediaPad::addLink(MediaLink *link)
  */
 
 /**
- * \fn MediaEntity::major()
+ * \fn MediaEntity::deviceMajor()
  * \brief Retrieve the major number of the interface associated with the entity
  * \return The interface major number, or 0 if the entity isn't associated with
  * an interface
  */
 
 /**
- * \fn MediaEntity::minor()
+ * \fn MediaEntity::deviceMinor()
  * \brief Retrieve the minor number of the interface associated with the entity
  * \return The interface minor number, or 0 if the entity isn't associated with
  * an interface

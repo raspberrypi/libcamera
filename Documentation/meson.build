@@ -49,7 +49,7 @@ if sphinx.found()
     ]
 
     custom_target('documentation',
-                  command: [sphinx, '-W', '-b', 'html', meson.current_source_dir(), '@OUTPUT@'],
+                  command: [sphinx, '-q', '-W', '-b', 'html', meson.current_source_dir(), '@OUTPUT@'],
                   input: docs_sources,
                   output: 'html',
                   build_by_default: true,

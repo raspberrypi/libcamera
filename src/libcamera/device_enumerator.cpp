@@ -140,6 +140,8 @@ DeviceEnumerator *DeviceEnumerator::create()
 	if (!enumerator->init())
 		return enumerator;
 
+	delete enumerator;
+
 	/*
 	 * Either udev is not available or udev initialization failed. Fall back
 	 * on the sysfs enumerator.

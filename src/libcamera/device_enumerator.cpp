@@ -124,6 +124,9 @@ bool DeviceMatch::match(const MediaDevice *device) const
  * implementations may be needed. This function creates the best enumerator for
  * the operating system based on the available resources. Not all different
  * enumerator types are guaranteed to support all features.
+ *
+ * \return A pointer to the newly created device enumerator on success, or
+ * nullptr if an error occurs
  */
 DeviceEnumerator *DeviceEnumerator::create()
 {

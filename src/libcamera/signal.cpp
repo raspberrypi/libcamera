@@ -58,21 +58,26 @@ namespace libcamera {
 /**
  * \fn Signal::disconnect(T *object)
  * \brief Disconnect the signal from all slots of the \a object
+ * \param object The object pointer whose slots to disconnect
  */
 
 /**
  * \fn Signal::disconnect(T *object, void(T::*func)(Args...))
  * \brief Disconnect the signal from the \a object slot member function \a func
+ * \param object The object pointer whose slots to disconnect
+ * \param func The slot member function to disconnect
  */
 
 /**
  * \fn Signal::disconnect(void(*func)(Args...))
  * \brief Disconnect the signal from the slot static function \a func
+ * \param func The slot static function to disconnect
  */
 
 /**
  * \fn Signal::emit(Args... args)
  * \brief Emit the signal and call all connected slots
+ * \param args The arguments passed to the connected slots
  *
  * Emitting a signal calls all connected slots synchronously and sequentially in
  * the order the slots have been connected. The arguments passed to the emit()

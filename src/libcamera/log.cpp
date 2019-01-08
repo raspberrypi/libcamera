@@ -90,6 +90,11 @@ static const char *log_severity_name(LogSeverity severity)
  */
 
 /**
+ * \param fileName The file name where the message is logged from
+ * \param line The line number where the message is logged from
+ * \param severity The log message severity, controlling how the message will be
+ * displayed
+ *
  * Create a log message pertaining to line \a line of file \a fileName. The
  * \a severity argument sets the message severity to control whether it will be
  * output or dropped.
@@ -130,6 +135,8 @@ LogMessage::~LogMessage()
  * Data is added to a LogMessage through the stream returned by this function.
  * The stream implements the std::ostream API and can be used for logging as
  * std::cout.
+ *
+ * \return A reference to the log message stream
  */
 
 } /* namespace libcamera */

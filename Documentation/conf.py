@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'libcamera'
-copyright = '2018, The libcamera documentation authors'
+copyright = '2018-2019, The libcamera documentation authors'
 author = u'Kieran Bingham, Jacopo Mondi, Laurent Pinchart, Niklas Söderlund'
 
 # The short X.Y version

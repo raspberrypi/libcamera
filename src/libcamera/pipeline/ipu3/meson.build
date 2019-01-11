@@ -1,5 +1,3 @@
 libcamera_sources += files([
-    'vimc.cpp',
+    'ipu3.cpp',
 ])
-
-subdir('ipu3')

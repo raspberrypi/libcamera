@@ -77,7 +77,7 @@ static const char *log_severity_name(LogSeverity severity)
 	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
 		return names[severity];
 	else
-		return "UNKN";
+		return "UNKWN";
 }
 
 /**

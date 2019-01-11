@@ -211,6 +211,9 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
 		return ret;
 	}
 
+	LOG(Debug) << "New media device \"" << media->driver()
+		   << "\" created from " << devnode;
+
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {
 		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
@@ -248,8 +251,11 @@ MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm) const
 		if (dev->busy())
 			continue;
 
-		if (dm.match(dev))
+		if (dm.match(dev)) {
+			LOG(Debug) << "Successful match for media device "
+				   << dev->driver();
 			return dev;
+		}
 	}
 
 	return nullptr;

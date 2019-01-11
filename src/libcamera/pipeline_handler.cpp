@@ -116,6 +116,7 @@ void PipelineHandlerFactory::registerType(const std::string &name,
 		return;
 	}
 
+	LOG(Debug) << "Registered pipeline handler: \"" << name << "\"";
 	factories[name] = factory;
 }
 
@@ -145,8 +146,10 @@ PipelineHandler *PipelineHandlerFactory::create(const std::string &name,
 
 	PipelineHandler *pipe = it->second->create();
 
-	if (pipe->match(enumerator))
+	if (pipe->match(enumerator)) {
+		LOG(Debug) << "Pipeline handler \"" << name << "\" matched";
 		return pipe;
+	}
 
 	delete pipe;
 	return nullptr;

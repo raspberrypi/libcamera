@@ -15,29 +15,41 @@
 
 /**
  * \file camera_manager.h
- * \brief Manage all cameras handled by libcamera
- *
- * The responsibility of the camera manager is to control the lifetime
- * management of objects provided by libcamera.
- *
- * When a user wish to interact with libcamera it creates and starts a
- * CameraManager object. Once confirmed the camera manager is running
- * the application can list all cameras detected by the library, get
- * one or more of the cameras and interact with them.
- *
- * When the user is done with the camera it should be returned to the
- * camera manager. Once all cameras are returned to the camera manager
- * the user is free to stop the manager.
- *
- * \todo Add ability to add and remove media devices based on
- *       hot-(un)plug events coming from the device enumerator.
- *
- * \todo Add interface to register a notification callback to the user
- *       to be able to inform it new cameras have been hot-plugged or
- *       cameras have been removed due to hot-unplug.
+ * \brief The camera manager
  */
 
 namespace libcamera {
+
+/**
+ * \class CameraManager
+ * \brief Provide access and manage all cameras in the system
+ *
+ * The camera manager is the entry point to libcamera. It enumerates devices,
+ * associates them with pipeline managers, and provides access to the cameras
+ * in the system to applications. The manager owns all Camera objects and
+ * handles hot-plugging and hot-unplugging to manage the lifetime of cameras.
+ *
+ * To interact with libcamera, an application retrieves the camera manager
+ * instance with CameraManager::instance(). The manager is initially stopped,
+ * and shall be configured before being started. In particular a custom event
+ * dispatcher shall be installed if needed with
+ * CameraManager::setEventDispatcher().
+ *
+ * Once the camera manager is configured, it shall be started with start().
+ * This will enumerate all the cameras present in the system, which can then be
+ * listed with list() and retrieved with get().
+ *
+ * Cameras are reference-counted, and shall be returned to the camera manager
+ * with Camera::put() after being used. Once all cameras have been returned to
+ * the manager, it can be stopped with stop().
+ *
+ * \todo Add ability to add and remove media devices based on hot-(un)plug
+ * events coming from the device enumerator.
+ *
+ * \todo Add interface to register a notification callback to the user to be
+ * able to inform it new cameras have been hot-plugged or cameras have been
+ * removed due to hot-unplug.
+ */
 
 CameraManager::CameraManager()
 	: enumerator_(nullptr), dispatcher_(nullptr)
@@ -57,7 +69,7 @@ CameraManager::~CameraManager()
  * interact with cameras in the system until either the camera manager
  * is stopped or the camera is unplugged from the system.
  *
- * \return true on successful start false otherwise
+ * \return 0 on successful start, or a negative error code otherwise
  */
 int CameraManager::start()
 {
@@ -102,7 +114,7 @@ int CameraManager::start()
 /**
  * \brief Stop the camera manager
  *
- * Before stopping the camera manger the caller is responsible for making
+ * Before stopping the camera manager the caller is responsible for making
  * sure all cameras provided by the manager are returned to the manager.
  *
  * After the manager has been stopped no resource provided by the camera

@@ -39,7 +39,7 @@ public:
 	const std::string &name() const { return name_; }
 
 	static void registerType(PipelineHandlerFactory *factory);
-	static std::vector<PipelineHandlerFactory *> &handlers();
+	static std::vector<PipelineHandlerFactory *> &factories();
 
 private:
 	std::string name_;

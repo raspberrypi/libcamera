@@ -92,7 +92,7 @@ namespace libcamera {
  * \param[in] name Name of the pipeline handler class
  *
  * Creating an instance of the factory registers is with the global list of
- * factories, accessible through the handlers() function.
+ * factories, accessible through the factories() function.
  *
  * The factory \a name is used for debug purpose and shall be unique.
  */
@@ -127,7 +127,7 @@ PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
  */
 void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
 {
-	std::vector<PipelineHandlerFactory *> &factories = handlers();
+	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
 
 	factories.push_back(factory);
 
@@ -142,7 +142,7 @@ void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
  *
  * \return the list of pipeline handler factories
  */
-std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::handlers()
+std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
 {
 	static std::vector<PipelineHandlerFactory *> factories;
 	return factories;

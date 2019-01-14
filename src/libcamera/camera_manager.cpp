@@ -86,9 +86,9 @@ int CameraManager::start()
 	 * file and only fallback on all handlers if there is no
 	 * configuration file.
 	 */
-	std::vector<PipelineHandlerFactory *> &handlers = PipelineHandlerFactory::handlers();
+	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
 
-	for (PipelineHandlerFactory *factory : handlers) {
+	for (PipelineHandlerFactory *factory : factories) {
 		/*
 		 * Try each pipeline handler until it exhaust
 		 * all pipelines it can provide.

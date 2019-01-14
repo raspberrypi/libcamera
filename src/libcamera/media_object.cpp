@@ -166,7 +166,7 @@ MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
  * Pads are created from the information provided by the Media Controller API
  * in the media_v2_pad structure. They reference the entity() they belong to.
  *
- * In addition to its graph id, every media graph pad is identified by an index
+ * In addition to their graph id, media graph pads are identified by an index
  * unique in the context of the entity the pad belongs to.
  *
  * A pad can be either a 'source' pad or a 'sink' pad. This information is
@@ -242,17 +242,25 @@ void MediaPad::addLink(MediaLink *link)
  * Entities are created from the information provided by the Media Controller
  * API in the media_v2_entity structure. They reference the pads() they contain.
  *
- * In addition to its graph id, every media graph entity is identified by a
- * name() unique in the media device context.
- *
- * \todo Add support for associating a devnode to the entity when integrating
- * with DeviceEnumerator.
+ * In addition to their graph id, media graph entities are identified by a
+ * name() unique in the media device context. They implement a function() and
+ * may expose a devnode().
  */
 
 /**
  * \fn MediaEntity::name()
  * \brief Retrieve the entity name
  * \return The entity name
+ */
+
+/**
+ * \fn MediaEntity::function()
+ * \brief Retrieve the entity's main function
+ *
+ * Media entity functions are expressed using the MEDIA_ENT_F_* macros
+ * defined by the Media Controller API.
+ *
+ * \return The entity's function
  */
 
 /**
@@ -336,7 +344,7 @@ MediaEntity::MediaEntity(MediaDevice *dev,
 			 const struct media_v2_entity *entity,
 			 unsigned int major, unsigned int minor)
 	: MediaObject(dev, entity->id), name_(entity->name),
-	  major_(major), minor_(minor)
+	  function_(entity->function), major_(major), minor_(minor)
 {
 }
 

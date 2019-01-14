@@ -84,6 +84,7 @@ class MediaEntity : public MediaObject
 {
 public:
 	const std::string &name() const { return name_; }
+	unsigned int function() const { return function_; }
 	unsigned int deviceMajor() const { return major_; }
 	unsigned int deviceMinor() const { return minor_; }
 
@@ -103,6 +104,7 @@ private:
 	~MediaEntity();
 
 	std::string name_;
+	unsigned int function_;
 	std::string devnode_;
 	unsigned int major_;
 	unsigned int minor_;

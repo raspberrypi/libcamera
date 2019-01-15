@@ -41,7 +41,7 @@ private:
 	std::map<int, EventNotifierSetPoll> notifiers_;
 	std::list<Timer *> timers_;
 
-	void processNotifiers(std::vector<struct pollfd> &pollfds);
+	void processNotifiers(const std::vector<struct pollfd> &pollfds);
 	void processTimers();
 };
 

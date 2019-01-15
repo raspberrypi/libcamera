@@ -173,7 +173,7 @@ short EventDispatcherPoll::EventNotifierSetPoll::events() const
 	return events;
 }
 
-void EventDispatcherPoll::processNotifiers(std::vector<struct pollfd> &pollfds)
+void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pollfds)
 {
 	static const struct {
 		EventNotifier::Type type;

@@ -73,7 +73,6 @@ CameraManager::~CameraManager()
  */
 int CameraManager::start()
 {
-
 	if (enumerator_)
 		return -ENODEV;
 
@@ -95,7 +94,7 @@ int CameraManager::start()
 		 */
 		while (1) {
 			PipelineHandler *pipe = factory->create();
-			if (!pipe->match(enumerator_)) {
+			if (!pipe->match(enumerator_.get())) {
 				delete pipe;
 				break;
 			}
@@ -130,10 +129,7 @@ void CameraManager::stop()
 
 	pipes_.clear();
 
-	if (enumerator_)
-		delete enumerator_;
-
-	enumerator_ = nullptr;
+	enumerator_.reset(nullptr);
 }
 
 /**

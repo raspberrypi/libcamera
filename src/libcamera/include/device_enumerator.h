@@ -8,6 +8,7 @@
 #define __LIBCAMERA_DEVICE_ENUMERATOR_H__
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,7 +35,7 @@ private:
 class DeviceEnumerator
 {
 public:
-	static DeviceEnumerator *create();
+	static std::unique_ptr<DeviceEnumerator> create();
 
 	virtual ~DeviceEnumerator();
 

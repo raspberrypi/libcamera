@@ -14,6 +14,7 @@
 #include "device_enumerator.h"
 #include "log.h"
 #include "media_device.h"
+#include "utils.h"
 
 /**
  * \file device_enumerator.h
@@ -128,19 +129,17 @@ bool DeviceMatch::match(const MediaDevice *device) const
  * \return A pointer to the newly created device enumerator on success, or
  * nullptr if an error occurs
  */
-DeviceEnumerator *DeviceEnumerator::create()
+std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 {
-	DeviceEnumerator *enumerator;
+	std::unique_ptr<DeviceEnumerator> enumerator;
 
 	/**
 	 * \todo Add compile time checks to only try udev enumerator if libudev
 	 * is available.
 	 */
-	enumerator = new DeviceEnumeratorUdev();
+	enumerator = utils::make_unique<DeviceEnumeratorUdev>();
 	if (!enumerator->init())
 		return enumerator;
-
-	delete enumerator;
 
 	/*
 	 * Either udev is not available or udev initialization failed. Fall back

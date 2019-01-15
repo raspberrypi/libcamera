@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_CAMERA_MANAGER_H__
 #define __LIBCAMERA_CAMERA_MANAGER_H__
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,7 @@ private:
 	void operator=(const CameraManager &) = delete;
 	~CameraManager();
 
-	DeviceEnumerator *enumerator_;
+	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::vector<PipelineHandler *> pipes_;
 
 	EventDispatcher *dispatcher_;

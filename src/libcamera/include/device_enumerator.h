@@ -41,7 +41,7 @@ public:
 	virtual int init() = 0;
 	virtual int enumerate() = 0;
 
-	MediaDevice *search(const DeviceMatch &dm) const;
+	MediaDevice *search(const DeviceMatch &dm);
 
 protected:
 	int addDevice(const std::string &devnode);

@@ -252,8 +252,8 @@ MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm) const
 			continue;
 
 		if (dm.match(dev)) {
-			LOG(Debug) << "Successful match for media device "
-				   << dev->driver();
+			LOG(Debug) << "Successful match for media device \""
+				   << dev->driver() << "\"";
 			return dev;
 		}
 	}

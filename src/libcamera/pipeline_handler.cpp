@@ -116,7 +116,7 @@ void PipelineHandlerFactory::registerType(const std::string &name,
 		return;
 	}
 
-	LOG(Debug) << "Registered pipeline handler: \"" << name << "\"";
+	LOG(Debug) << "Registered pipeline handler \"" << name << "\"";
 	factories[name] = factory;
 }
 

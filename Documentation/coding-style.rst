@@ -79,6 +79,7 @@ C++-11-specific features:
 * General-purpose smart pointers (std::unique_ptr), deprecating std::auto_ptr.
   Smart pointers, as well as shared pointers and weak pointers, shall not be
   overused.
+* Variadic class and function templates
 
 
 Tools

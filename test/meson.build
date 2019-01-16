@@ -1,6 +1,7 @@
 subdir('libtest')
 
 subdir('media_device')
+subdir('pipeline')
 subdir('v4l2_device')
 
 public_tests = [

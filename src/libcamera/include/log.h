@@ -23,11 +23,11 @@ class LogMessage
 {
 public:
 	LogMessage(const char *fileName, unsigned int line,
-		  LogSeverity severity);
-	LogMessage(const LogMessage&) = delete;
+		   LogSeverity severity);
+	LogMessage(const LogMessage &) = delete;
 	~LogMessage();
 
-	std::ostream& stream() { return msgStream; }
+	std::ostream &stream() { return msgStream; }
 
 private:
 	std::ostringstream msgStream;

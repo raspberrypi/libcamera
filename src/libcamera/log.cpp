@@ -66,7 +66,7 @@ namespace libcamera {
 
 static const char *log_severity_name(LogSeverity severity)
 {
-	static const char * const names[] = {
+	static const char *const names[] = {
 		"  DBG",
 		" INFO",
 		" WARN",

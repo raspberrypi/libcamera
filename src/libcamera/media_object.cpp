@@ -264,6 +264,15 @@ void MediaPad::addLink(MediaLink *link)
  */
 
 /**
+ * \fn MediaEntity::devnode()
+ * \brief Retrieve the entity's device node path, if any
+ *
+ * \sa int setDeviceNode()
+ *
+ * \return The entity's device node path, or an empty string if it is not set
+ */
+
+/**
  * \fn MediaEntity::deviceMajor()
  * \brief Retrieve the major number of the interface associated with the entity
  * \return The interface major number, or 0 if the entity isn't associated with
@@ -329,6 +338,8 @@ int MediaEntity::setDeviceNode(const std::string &devnode)
 			   << strerror(-ret);
 		return ret;
 	}
+
+	devnode_ = devnode;
 
 	return 0;
 }

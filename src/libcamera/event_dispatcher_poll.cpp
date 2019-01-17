@@ -146,7 +146,7 @@ void EventDispatcherPoll::processEvents()
 			   << timeout.tv_nsec;
 	}
 
-	/* Wait for events and process notifers and timers. */
+	/* Wait for events and process notifiers and timers. */
 	ret = ppoll(pollfds.data(), pollfds.size(),
 		    nextTimer ? &timeout : nullptr, nullptr);
 	if (ret < 0) {

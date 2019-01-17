@@ -29,7 +29,7 @@ public:
 
 	static CameraManager *instance();
 
-	void setEventDispatcher(EventDispatcher *dispatcher);
+	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 	EventDispatcher *eventDispatcher();
 
 private:
@@ -41,7 +41,7 @@ private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::vector<PipelineHandler *> pipes_;
 
-	EventDispatcher *dispatcher_;
+	std::unique_ptr<EventDispatcher> dispatcher_;
 };
 
 } /* namespace libcamera */

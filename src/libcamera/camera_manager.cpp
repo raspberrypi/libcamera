@@ -12,6 +12,7 @@
 #include "event_dispatcher_poll.h"
 #include "log.h"
 #include "pipeline_handler.h"
+#include "utils.h"
 
 /**
  * \file camera_manager.h
@@ -58,7 +59,6 @@ CameraManager::CameraManager()
 
 CameraManager::~CameraManager()
 {
-	delete dispatcher_;
 }
 
 /**
@@ -209,14 +209,14 @@ CameraManager *CameraManager::instance()
  * The CameraManager takes ownership of the event dispatcher and will delete it
  * when the application terminates.
  */
-void CameraManager::setEventDispatcher(EventDispatcher *dispatcher)
+void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
 {
 	if (dispatcher_) {
 		LOG(Warning) << "Event dispatcher is already set";
 		return;
 	}
 
-	dispatcher_ = dispatcher;
+	dispatcher_ = std::move(dispatcher);
 }
 
 /**
@@ -226,14 +226,16 @@ void CameraManager::setEventDispatcher(EventDispatcher *dispatcher)
  * If no dispatcher has been set, a default poll-based implementation is created
  * and returned, and no custom event dispatcher may be installed anymore.
  *
+ * The returned event dispatcher is valid until the camera manager is destroyed.
+ *
  * \return Pointer to the event dispatcher
  */
 EventDispatcher *CameraManager::eventDispatcher()
 {
 	if (!dispatcher_)
-		dispatcher_ = new EventDispatcherPoll();
+		dispatcher_ = utils::make_unique<EventDispatcherPoll>();
 
-	return dispatcher_;
+	return dispatcher_.get();
 }
 
 } /* namespace libcamera */

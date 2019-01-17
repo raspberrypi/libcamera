@@ -54,6 +54,17 @@ LOG_DEFINE_CATEGORY(DeviceEnumerator)
  *
  * The description is meant to be filled by pipeline managers and passed to a
  * device enumerator to find matching media devices.
+ *
+ * A DeviceMatch is created with a specific Linux device driver in mind,
+ * therefore the name of the driver is a required property. One or more Entity
+ * names can be added as match criteria.
+ *
+ * Pipeline handlers are recommended to add entities to DeviceMatch as
+ * appropriare to ensure that the media device they need can be uniquely
+ * identified. This is useful when the corresponding kernel driver can produce
+ * different graphs, for instance as a result of different driver versions or
+ * hardware configurations, and not all those graphs are suitable for a pipeline
+ * handler.
  */
 
 /**

@@ -82,6 +82,90 @@ C++-11-specific features:
 * Variadic class and function templates
 * rvalue references, move constructor and move assignment
 
+Object Ownership
+~~~~~~~~~~~~~~~~
+
+libcamera creates and destroys many objects at runtime, for both objects
+internal to the library and objects exposed to the user. To guarantee proper
+operation without use after free, double free or memory leaks, knowing who owns
+each object at any time is crucial. The project has enacted a set of rules to
+make object ownership tracking as explicit and fool-proof as possible.
+
+In the context of this section, the terms object and instance are used
+interchangeably and both refer to an instance of a class. The term reference
+refers to both C++ references and C++ pointers in their capacity to refer to an
+object. Passing a reference means offering a way to a callee to obtain a
+reference to an object that the caller has a valid reference to. Borrowing a
+reference means using a reference passed by a caller without ownership transfer
+based on the assumption that the caller guarantees the validity of the
+reference for the duration of the operation that borrows it.
+
+#. Single Owner Objects
+
+   * By default an object has a single owner at any time.
+   * Storage of single owner objects varies depending on how the object
+     ownership will evolve through the lifetime of the object.
+
+     * Objects whose ownership needs to be transferred shall be stored as
+       std::unique_ptr<> as much as possible to emphasize the single ownership.
+     * Objects whose owner doesn't change may be embedded in other objects, or
+       stored as pointer or references. They may be stored as std::unique_ptr<>
+       for automatic deletion if desired.
+
+   * Ownership is transferred by passing the reference as a std::unique_ptr<>
+     and using std::move(). After ownership transfer the former owner has no
+     valid reference to the object anymore and shall not access it without first
+     obtaining a valid reference.
+   * Objects may be borrowed by passing an object reference from the owner to
+     the borrower, providing that
+
+     * the owner guarantees the validity of the reference for the whole duration
+       of the borrowing, and
+     * the borrower doesn't access the reference after the end of the borrowing.
+
+     When borrowing from caller to callee for the duration of a function call,
+     this implies that the callee shall not keep any stored reference after it
+     returns. These rules apply to the callee and all the functions it calls,
+     directly or indirectly.
+
+     When the object is stored in a std::unique_ptr<>, borrowing passes a
+     reference to the object, not to the std::unique_ptr<>, as
+
+     * a 'const &' when the object doesn't need to be modified and may not be
+       null.
+     * a pointer when the object may be modified or may be null. Unless
+       otherwise specified, pointers passed to functions are considered as
+       borrowed references valid for the duration of the function only.
+
+#. Shared Objects
+
+   * Objects that may have multiple owners at a given time are called shared
+     objects. They are reference-counted and live as long as any references to
+     the object exist.
+   * Shared objects are created with std::make_shared<> or
+     std::allocate_shared<> and stored in an std::shared_ptr<>.
+   * Ownership is shared by creating and passing copies of any valid
+     std::shared_ptr<>. Ownership is released by destroying the corresponding
+     std::shared_ptr<>.
+   * When passed to a function, std::shared_ptr<> are always passed by value,
+     never by reference. The caller can decide whether to transfer its ownership
+     of the std::shared_ptr<> with std::move() or retain it. The callee shall
+     use std::move() if it needs to store the shared pointer.
+   * Borrowed references to shared objects are passed as references to the
+     objects themselves, not to the std::shared_ptr<>, with the same rules as
+     for single owner objects.
+
+These rules match the `object ownership rules from the Chromium C++ Style Guide`_.
+
+.. _object ownership rules from the Chromium C++ Style Guide: https://chromium.googlesource.com/chromium/src/+/master/styleguide/c++/c++.md#object-ownership-and-calling-conventions
+
+.. attention:: Long term borrowing of single owner objects is allowed. Example
+   use cases are implementation of the singleton pattern (where the singleton
+   guarantees the validity of the reference forever), or returning references
+   to global objects whose lifetime matches the lifetime of the application. As
+   long term borrowing isn't marked through language constructs, it shall be
+   documented explicitly in details in the API.
+
 
 Tools
 -----

@@ -81,6 +81,19 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * 32 bit wrap test
+		 * Nanosecond resolution in a 32 bit value wraps at 4.294967
+		 * seconds (0xFFFFFFFF / 1000000)
+		 */
+		timer.start(4295);
+		dispatcher->processEvents();
+
+		if (timer.isRunning() || timer.jitter() > 50) {
+			cout << "Timer expiration test failed" << endl;
+			return TestFail;
+		}
+
 		/* Timer restart. */
 		timer.start(500);
 

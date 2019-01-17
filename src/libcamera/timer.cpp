@@ -36,6 +36,7 @@ namespace libcamera {
  * \brief Construct a timer
  */
 Timer::Timer()
+	: interval_(0), deadline_(0)
 {
 }
 
@@ -51,7 +52,7 @@ void Timer::start(unsigned int msec)
 	clock_gettime(CLOCK_MONOTONIC, &tp);
 
 	interval_ = msec;
-	deadline_ = tp.tv_sec * 1000000000ULL + tp.tv_nsec + msec * 1000000;
+	deadline_ = tp.tv_sec * 1000000000ULL + tp.tv_nsec + msec * 1000000ULL;
 
 	LOG(Debug) << "Starting timer " << this << " with interval " << msec
 		   << ": deadline " << deadline_;

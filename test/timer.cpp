@@ -19,7 +19,8 @@ using namespace libcamera;
 class ManagedTimer : public Timer
 {
 public:
-	ManagedTimer() : Timer()
+	ManagedTimer()
+		: Timer(), interval_(0)
 	{
 		timeout.connect(this, &ManagedTimer::timeoutHandler);
 	}

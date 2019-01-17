@@ -40,9 +40,11 @@ namespace libcamera {
  * This will enumerate all the cameras present in the system, which can then be
  * listed with list() and retrieved with get().
  *
- * Cameras are reference-counted, and shall be returned to the camera manager
- * with Camera::put() after being used. Once all cameras have been returned to
- * the manager, it can be stopped with stop().
+ * Cameras are shared through std::shared_ptr<>, ensuring that a camera will
+ * stay valid until the last reference is released without requiring any special
+ * action from the application. Once the application has released all the
+ * references it held to cameras, the camera manager can be stopped with
+ * stop().
  *
  * \todo Add ability to add and remove media devices based on hot-(un)plug
  * events coming from the device enumerator.
@@ -148,15 +150,13 @@ void CameraManager::stop()
  * \param[in] name Name of camera to get
  *
  * Before calling this function the caller is responsible for ensuring that
- * the camera manger is running. A camera fetched this way shall be
- * released by the user with the put() method of the Camera object once
- * it is done using the camera.
+ * the camera manger is running.
  *
- * \return Pointer to Camera object or nullptr if camera not found
+ * \return Shared pointer to Camera object or nullptr if camera not found
  */
-Camera *CameraManager::get(const std::string &name)
+std::shared_ptr<Camera> CameraManager::get(const std::string &name)
 {
-	for (Camera *camera : cameras_) {
+	for (std::shared_ptr<Camera> camera : cameras_) {
 		if (camera->name() == name)
 			return camera;
 	}
@@ -172,9 +172,9 @@ Camera *CameraManager::get(const std::string &name)
  * handle with the camera manager. Registered cameras are immediately made
  * available to the system.
  */
-void CameraManager::addCamera(Camera *camera)
+void CameraManager::addCamera(std::shared_ptr<Camera> camera)
 {
-	for (Camera *c : cameras_) {
+	for (std::shared_ptr<Camera> c : cameras_) {
 		if (c->name() == camera->name()) {
 			LOG(Warning) << "Registering camera with duplicate name '"
 				     << camera->name() << "'";
@@ -182,7 +182,7 @@ void CameraManager::addCamera(Camera *camera)
 		}
 	}
 
-	cameras_.push_back(camera);
+	cameras_.push_back(std::move(camera));
 }
 
 /**

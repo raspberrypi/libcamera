@@ -41,19 +41,36 @@ namespace libcamera {
  * streams from a single image source. It provides the main interface to
  * configuring and controlling the device, and capturing image streams. It is
  * the central object exposed by libcamera.
+ *
+ * To support the central nature of Camera objects, libcamera manages the
+ * lifetime of camera instances with std::shared_ptr<>. Instances shall be
+ * created with the create() function which returns a shared pointer. The
+ * Camera constructors and destructor are private, to prevent instances from
+ * being constructed and destroyed manually.
  */
 
 /**
- * \brief Construct a named camera device
+ * \brief Create a camera instance
+ * \param[in] name The name of the camera device
  *
- * \param[in] name The name to set on the camera device
+ * The caller is responsible for guaranteeing unicity of the camera name.
  *
- * The caller is responsible for guaranteeing unicity of the camera
- * device name.
+ * \return A shared pointer to the newly created camera object
  */
-Camera::Camera(const std::string &name)
-	: ref_(1), name_(name)
+std::shared_ptr<Camera> Camera::create(const std::string &name)
 {
+	struct Allocator : std::allocator<Camera> {
+		void construct(void *p, const std::string &name)
+		{
+			::new(p) Camera(name);
+		}
+		void destroy(Camera *p)
+		{
+			p->~Camera();
+		}
+	};
+
+	return std::allocate_shared<Camera>(Allocator(), name);
 }
 
 /**
@@ -66,24 +83,13 @@ const std::string &Camera::name() const
 	return name_;
 }
 
-/**
- * \brief Acquire a reference to the camera
- */
-void Camera::get()
+Camera::Camera(const std::string &name)
+	: name_(name)
 {
-	ref_++;
 }
 
-/**
- * \brief Release a reference to the camera
- *
- * When the last reference is released the camera device is deleted. Callers
- * shall not access the camera device after calling this function.
- */
-void Camera::put()
+Camera::~Camera()
 {
-	if (--ref_ == 0)
-		delete this;
 }
 
 } /* namespace libcamera */

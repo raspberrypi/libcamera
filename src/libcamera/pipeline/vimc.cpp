@@ -64,8 +64,8 @@ bool PipeHandlerVimc::match(CameraManager *manager, DeviceEnumerator *enumerator
 	 * will be chosen depends on how the Camera
 	 * object is modeled.
 	 */
-	Camera *camera = new Camera("Dummy VIMC Camera");
-	manager->addCamera(camera);
+	std::shared_ptr<Camera> camera = Camera::create("Dummy VIMC Camera");
+	manager->addCamera(std::move(camera));
 
 	return true;
 }

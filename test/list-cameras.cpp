@@ -30,7 +30,7 @@ protected:
 	{
 		unsigned int count = 0;
 
-		for (Camera *camera : cm->cameras()) {
+		for (const std::shared_ptr<Camera> &camera : cm->cameras()) {
 			cout << "- " << camera->name() << endl;
 			count++;
 		}

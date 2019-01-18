@@ -23,11 +23,8 @@ project = 'libcamera'
 copyright = '2018-2019, The libcamera documentation authors'
 author = u'Kieran Bingham, Jacopo Mondi, Laurent Pinchart, Niklas Söderlund'
 
-# The short X.Y version
-version = ''
-# The full version, including alpha/beta/rc tags
-release = '0.1'
-
+# Version information is provided by the build environment, through the
+# sphinx command line.
 
 # -- General configuration ---------------------------------------------------
 

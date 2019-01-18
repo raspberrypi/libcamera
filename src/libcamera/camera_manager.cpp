@@ -9,6 +9,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/event_dispatcher.h>
+#include <libcamera/version.h>
 
 #include "device_enumerator.h"
 #include "event_dispatcher_poll.h"
@@ -24,6 +25,11 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
+
+/**
+ * \brief The library global version string
+ */
+const std::string version(LIBCAMERA_VERSION);
 
 /**
  * \class CameraManager
@@ -78,6 +84,8 @@ int CameraManager::start()
 {
 	if (enumerator_)
 		return -EBUSY;
+
+	LOG(Camera, Info) << "libcamera " << version;
 
 	enumerator_ = DeviceEnumerator::create();
 	if (!enumerator_ || enumerator_->enumerate())

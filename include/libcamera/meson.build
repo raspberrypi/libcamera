@@ -16,6 +16,13 @@ libcamera_api = files([
     'timer.h',
 ])
 
+gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
+
+version_h = vcs_tag(command : [gen_version, meson.current_source_dir()],
+                    input : 'version.h.in',
+                    output : 'version.h',
+                    fallback : 'v0.0')
+
 gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',

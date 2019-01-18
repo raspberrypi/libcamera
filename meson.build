@@ -1,17 +1,14 @@
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.40',
-    version : '0.1',
+    version : run_command('utils/gen-version.sh',
+                          '@0@'.format(meson.source_root()),
+                          check : true).stdout().strip(),
     default_options : [
         'werror=true',
         'warning_level=2',
         'cpp_std=c++11',
     ],
     license : 'LGPL 2.1+')
-
-# TODO: Extract this from project.version.
-#       Ideally the version at Documentation/conf.py should be
-#       generated from this too.
-api_version = '0.1'
 
 cc = meson.get_compiler('c')
 config_h = configuration_data()

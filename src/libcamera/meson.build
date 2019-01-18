@@ -80,6 +80,7 @@ control_types_cpp = custom_target('control_types_cpp',
 libcamera_sources += control_types_cpp
 
 libcamera_deps = [
+    declare_dependency(sources : version_h),
     cc.find_library('dl'),
     libudev,
 ]

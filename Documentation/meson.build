@@ -1,4 +1,4 @@
-doc_install_dir = join_paths(get_option('datadir'), 'doc', 'libcamera-@0@'.format(api_version))
+doc_install_dir = join_paths(get_option('datadir'), 'doc', 'libcamera-@0@'.format(meson.project_version()))
 
 #
 # Doxygen
@@ -47,8 +47,11 @@ if sphinx.found()
         'index.rst',
     ]
 
+    release = 'release=' + meson.project_version()
+
     custom_target('documentation',
-                  command : [sphinx, '-q', '-W', '-b', 'html', meson.current_source_dir(), '@OUTPUT@'],
+                  command : [sphinx, '-D', release, '-q', '-W', '-b', 'html',
+                             meson.current_source_dir(), '@OUTPUT@'],
                   input : docs_sources,
                   output : 'html',
                   build_by_default : true,

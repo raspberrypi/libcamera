@@ -22,6 +22,8 @@
 
 namespace libcamera {
 
+LOG_DECLARE_CATEGORY(Event)
+
 static const char *notifierType(EventNotifier::Type type)
 {
 	if (type == EventNotifier::Read)
@@ -53,8 +55,9 @@ void EventDispatcherPoll::registerEventNotifier(EventNotifier *notifier)
 	EventNotifier::Type type = notifier->type();
 
 	if (set.notifiers[type] && set.notifiers[type] != notifier) {
-		LOG(Warning) << "Ignoring duplicate " << notifierType(type)
-			     << " notifier for fd " << notifier->fd();
+		LOG(Event, Warning)
+			<< "Ignoring duplicate " << notifierType(type)
+			<< " notifier for fd " << notifier->fd();
 		return;
 	}
 
@@ -74,8 +77,9 @@ void EventDispatcherPoll::unregisterEventNotifier(EventNotifier *notifier)
 		return;
 
 	if (set.notifiers[type] != notifier) {
-		LOG(Warning) << notifierType(type) << " notifier for fd "
-			     << notifier->fd() << " is not registered";
+		LOG(Event, Warning)
+			<< notifierType(type) << " notifier for fd "
+			<< notifier->fd() << " is not registered";
 		return;
 	}
 
@@ -141,9 +145,10 @@ void EventDispatcherPoll::processEvents()
 			timeout.tv_nsec = 0;
 		}
 
-		LOG(Debug) << "timeout " << timeout.tv_sec << "."
-			   << std::setfill('0') << std::setw(9)
-			   << timeout.tv_nsec;
+		LOG(Event, Debug)
+			<< "timeout " << timeout.tv_sec << "."
+			<< std::setfill('0') << std::setw(9)
+			<< timeout.tv_nsec;
 	}
 
 	/* Wait for events and process notifiers and timers. */
@@ -151,7 +156,7 @@ void EventDispatcherPoll::processEvents()
 		    nextTimer ? &timeout : nullptr, nullptr);
 	if (ret < 0) {
 		ret = -errno;
-		LOG(Warning) << "poll() failed with " << strerror(-ret);
+		LOG(Event, Warning) << "poll() failed with " << strerror(-ret);
 	} else if (ret > 0) {
 		processNotifiers(pollfds);
 	}
@@ -201,9 +206,10 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 			 * notifier immediately.
 			 */
 			if (pfd.revents & POLLNVAL) {
-				LOG(Warning) << "Disabling " << notifierType(event.type)
-					     << " due to invalid file descriptor "
-					     << pfd.fd;
+				LOG(Event, Warning)
+					<< "Disabling " << notifierType(event.type)
+					<< " due to invalid file descriptor "
+					<< pfd.fd;
 				unregisterEventNotifier(notifier);
 				continue;
 			}

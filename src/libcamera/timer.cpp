@@ -20,6 +20,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(Timer)
+
 /**
  * \class Timer
  * \brief Single-shot timer interface
@@ -54,8 +56,9 @@ void Timer::start(unsigned int msec)
 	interval_ = msec;
 	deadline_ = tp.tv_sec * 1000000000ULL + tp.tv_nsec + msec * 1000000ULL;
 
-	LOG(Debug) << "Starting timer " << this << " with interval " << msec
-		   << ": deadline " << deadline_;
+	LOG(Timer, Debug)
+		<< "Starting timer " << this << " with interval "
+		<< msec << ": deadline " << deadline_;
 
 	CameraManager::instance()->eventDispatcher()->registerTimer(this);
 }

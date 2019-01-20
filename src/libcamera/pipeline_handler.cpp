@@ -24,6 +24,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(Pipeline)
+
 /**
  * \class PipelineHandler
  * \brief Create and manage cameras based on a set of media devices
@@ -120,7 +122,8 @@ void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
 
 	factories.push_back(factory);
 
-	LOG(Debug) << "Registered pipeline handler \"" << factory->name() << "\"";
+	LOG(Pipeline, Debug)
+		<< "Registered pipeline handler \"" << factory->name() << "\"";
 }
 
 /**

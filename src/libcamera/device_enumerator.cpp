@@ -42,6 +42,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(DeviceEnumerator)
+
 /**
  * \class DeviceMatch
  * \brief Description of a media device search pattern
@@ -155,7 +157,8 @@ DeviceEnumerator::~DeviceEnumerator()
 {
 	for (MediaDevice *dev : devices_) {
 		if (dev->busy())
-			LOG(Error) << "Removing media device while still in use";
+			LOG(DeviceEnumerator, Error)
+				<< "Removing media device while still in use";
 
 		delete dev;
 	}
@@ -205,13 +208,15 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
 
 	ret = media->populate();
 	if (ret < 0) {
-		LOG(Info) << "Unable to populate media device " << devnode <<
-			  " (" << strerror(-ret) << "), skipping";
+		LOG(DeviceEnumerator, Info)
+			<< "Unable to populate media device " << devnode
+			<< " (" << strerror(-ret) << "), skipping";
 		return ret;
 	}
 
-	LOG(Debug) << "New media device \"" << media->driver()
-		   << "\" created from " << devnode;
+	LOG(DeviceEnumerator, Debug)
+		<< "New media device \"" << media->driver()
+		<< "\" created from " << devnode;
 
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {
@@ -251,8 +256,9 @@ MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm)
 			continue;
 
 		if (dm.match(dev)) {
-			LOG(Debug) << "Successful match for media device \""
-				   << dev->driver() << "\"";
+			LOG(DeviceEnumerator, Debug)
+				<< "Successful match for media device \""
+				<< dev->driver() << "\"";
 			return dev;
 		}
 	}
@@ -330,8 +336,9 @@ int DeviceEnumeratorUdev::enumerate()
 
 		dev = udev_device_new_from_syspath(udev_, syspath);
 		if (!dev) {
-			LOG(Warning) << "Failed to get device for '" <<
-				syspath << "', skipping";
+			LOG(DeviceEnumerator, Warning)
+				<< "Failed to get device for '"
+				<< syspath << "', skipping";
 			continue;
 		}
 

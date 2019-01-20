@@ -20,6 +20,8 @@
  */
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(V4L2)
+
 /**
  * \struct V4L2Capability
  * \brief struct v4l2_capability object wrapper and helpers
@@ -106,15 +108,16 @@ int V4L2Device::open()
 	int ret;
 
 	if (isOpen()) {
-		LOG(Error) << "Device already open";
+		LOG(V4L2, Error) << "Device already open";
 		return -EBUSY;
 	}
 
 	ret = ::open(devnode_.c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
-		LOG(Error) << "Failed to open V4L2 device '" << devnode_
-			   << "': " << strerror(-ret);
+		LOG(V4L2, Error)
+			<< "Failed to open V4L2 device '" << devnode_
+			<< "': " << strerror(-ret);
 		return ret;
 	}
 	fd_ = ret;
@@ -122,22 +125,24 @@ int V4L2Device::open()
 	ret = ioctl(fd_, VIDIOC_QUERYCAP, &caps_);
 	if (ret < 0) {
 		ret = -errno;
-		LOG(Error) << "Failed to query device capabilities: "
-			   << strerror(-ret);
+		LOG(V4L2, Error)
+			<< "Failed to query device capabilities: "
+			<< strerror(-ret);
 		return ret;
 	}
 
-	LOG(Debug) << "Opened '" << devnode_ << "' "
-		   << caps_.bus_info() << ": " << caps_.driver()
-		   << ": " << caps_.card();
+	LOG(V4L2, Debug)
+		<< "Opened '" << devnode_ << "' "
+		<< caps_.bus_info() << ": " << caps_.driver()
+		<< ": " << caps_.card();
 
 	if (!caps_.isCapture() && !caps_.isOutput()) {
-		LOG(Debug) << "Device is not a supported type";
+		LOG(V4L2, Debug) << "Device is not a supported type";
 		return -EINVAL;
 	}
 
 	if (!caps_.hasStreaming()) {
-		LOG(Error) << "Device does not support streaming I/O";
+		LOG(V4L2, Error) << "Device does not support streaming I/O";
 		return -EINVAL;
 	}
 

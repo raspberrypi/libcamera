@@ -39,6 +39,8 @@
 
 namespace libcamera {
 
+LOG_DECLARE_CATEGORY(MediaDevice)
+
 /**
  * \class MediaObject
  * \brief Base class for all media objects
@@ -334,8 +336,9 @@ int MediaEntity::setDeviceNode(const std::string &devnode)
 	int ret = ::access(devnode.c_str(), R_OK | W_OK);
 	if (ret < 0) {
 		ret = -errno;
-		LOG(Error) << "Device node " << devnode << " can't be accessed: "
-			   << strerror(-ret);
+		LOG(MediaDevice, Error)
+			<< "Device node " << devnode << " can't be accessed: "
+			<< strerror(-ret);
 		return ret;
 	}
 

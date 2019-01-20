@@ -27,6 +27,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(MediaDevice)
+
 /**
  * \class MediaDevice
  * \brief The MediaDevice represents a Media Controller device with its full
@@ -139,15 +141,16 @@ bool MediaDevice::acquire()
 int MediaDevice::open()
 {
 	if (fd_ != -1) {
-		LOG(Error) << "MediaDevice already open";
+		LOG(MediaDevice, Error) << "MediaDevice already open";
 		return -EBUSY;
 	}
 
 	int ret = ::open(devnode_.c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
-		LOG(Error) << "Failed to open media device at " << devnode_
-			   << ": " << strerror(-ret);
+		LOG(MediaDevice, Error)
+			<< "Failed to open media device at "
+			<< devnode_ << ": " << strerror(-ret);
 		return ret;
 	}
 	fd_ = ret;
@@ -156,8 +159,9 @@ int MediaDevice::open()
 	ret = ioctl(fd_, MEDIA_IOC_DEVICE_INFO, &info);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Failed to get media device info "
-			   << ": " << strerror(-ret);
+		LOG(MediaDevice, Error)
+			<< "Failed to get media device info "
+			<< ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -227,8 +231,9 @@ int MediaDevice::populate()
 		ret = ioctl(fd_, MEDIA_IOC_G_TOPOLOGY, &topology);
 		if (ret < 0) {
 			ret = -errno;
-			LOG(Error) << "Failed to enumerate topology: "
-				   << strerror(-ret);
+			LOG(MediaDevice, Error)
+				<< "Failed to enumerate topology: "
+				<< strerror(-ret);
 			return ret;
 		}
 
@@ -445,8 +450,9 @@ bool MediaDevice::addObject(MediaObject *object)
 {
 
 	if (objects_.find(object->id()) != objects_.end()) {
-		LOG(Error) << "Element with id " << object->id()
-			   << " already enumerated.";
+		LOG(MediaDevice, Error)
+			<< "Element with id " << object->id()
+			<< " already enumerated.";
 		return false;
 	}
 
@@ -568,8 +574,9 @@ bool MediaDevice::populatePads(const struct media_v2_topology &topology)
 		MediaEntity *mediaEntity = dynamic_cast<MediaEntity *>
 					   (object(entity_id));
 		if (!mediaEntity) {
-			LOG(Error) << "Failed to find entity with id: "
-				   << entity_id;
+			LOG(MediaDevice, Error)
+				<< "Failed to find entity with id: "
+				<< entity_id;
 			return false;
 		}
 
@@ -604,8 +611,9 @@ bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 		MediaPad *source = dynamic_cast<MediaPad *>
 				   (object(source_id));
 		if (!source) {
-			LOG(Error) << "Failed to find pad with id: "
-				   << source_id;
+			LOG(MediaDevice, Error)
+				<< "Failed to find pad with id: "
+				<< source_id;
 			return false;
 		}
 
@@ -613,8 +621,9 @@ bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 		MediaPad *sink = dynamic_cast<MediaPad *>
 				 (object(sink_id));
 		if (!sink) {
-			LOG(Error) << "Failed to find pad with id: "
-				   << sink_id;
+			LOG(MediaDevice, Error)
+				<< "Failed to find pad with id: "
+				<< sink_id;
 			return false;
 		}
 
@@ -665,14 +674,17 @@ int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 	int ret = ioctl(fd_, MEDIA_IOC_SETUP_LINK, &linkDesc);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Failed to setup link: " << strerror(-ret);
+		LOG(MediaDevice, Error)
+			<< "Failed to setup link: "
+			<< strerror(-ret);
 		return ret;
 	}
 
-	LOG(Debug) << source->entity()->name() << "["
-		   << source->index() << "] -> "
-		   << sink->entity()->name() << "["
-		   << sink->index() << "]: " << flags;
+	LOG(MediaDevice, Debug)
+		<< source->entity()->name() << "["
+		<< source->index() << "] -> "
+		<< sink->entity()->name() << "["
+		<< sink->index() << "]: " << flags;
 
 	return 0;
 }

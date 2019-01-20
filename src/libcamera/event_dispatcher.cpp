@@ -7,11 +7,15 @@
 
 #include <libcamera/event_dispatcher.h>
 
+#include "log.h"
+
 /**
  * \file event_dispatcher.h
  */
 
 namespace libcamera {
+
+LOG_DEFINE_CATEGORY(Event)
 
 /**
  * \class EventDispatcher

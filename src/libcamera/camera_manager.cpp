@@ -21,6 +21,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(Camera)
+
 /**
  * \class CameraManager
  * \brief Provide access and manage all cameras in the system
@@ -101,8 +103,9 @@ int CameraManager::start()
 				break;
 			}
 
-			LOG(Debug) << "Pipeline handler \"" << factory->name()
-				   << "\" matched";
+			LOG(Camera, Debug)
+				<< "Pipeline handler \"" << factory->name()
+				<< "\" matched";
 			pipes_.push_back(pipe);
 		}
 	}
@@ -176,8 +179,9 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera)
 {
 	for (std::shared_ptr<Camera> c : cameras_) {
 		if (c->name() == camera->name()) {
-			LOG(Warning) << "Registering camera with duplicate name '"
-				     << camera->name() << "'";
+			LOG(Camera, Warning)
+				<< "Registering camera with duplicate name '"
+				<< camera->name() << "'";
 			break;
 		}
 	}
@@ -216,7 +220,7 @@ CameraManager *CameraManager::instance()
 void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
 {
 	if (dispatcher_) {
-		LOG(Warning) << "Event dispatcher is already set";
+		LOG(Camera, Warning) << "Event dispatcher is already set";
 		return;
 	}
 

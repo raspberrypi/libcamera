@@ -19,26 +19,74 @@ enum LogSeverity {
 	LogFatal,
 };
 
+class LogCategory
+{
+public:
+	explicit LogCategory(const char *name);
+	~LogCategory();
+
+	const char *name() const { return name_; }
+	LogSeverity severity() const { return severity_; }
+	void setSeverity(LogSeverity severity);
+
+	static const LogCategory &defaultCategory();
+
+private:
+	const char *name_;
+	LogSeverity severity_;
+};
+
+#define LOG_DECLARE_CATEGORY(name)					\
+extern const LogCategory &_LOG_CATEGORY(name)();
+
+#define LOG_DEFINE_CATEGORY(name)					\
+const LogCategory &_LOG_CATEGORY(name)()				\
+{									\
+	static LogCategory category(#name);				\
+	return category;						\
+}
+
 class LogMessage
 {
 public:
 	LogMessage(const char *fileName, unsigned int line,
 		   LogSeverity severity);
+	LogMessage(const char *fileName, unsigned int line,
+		   const LogCategory &category, LogSeverity severity);
 	LogMessage(const LogMessage &) = delete;
 	~LogMessage();
 
-	std::ostream &stream() { return msgStream; }
+	std::ostream &stream() { return msgStream_; }
 
 private:
-	std::ostringstream msgStream;
+	void init(const char *fileName, unsigned int line);
+
+	std::ostringstream msgStream_;
+	const LogCategory &category_;
 	LogSeverity severity_;
 };
 
-#define LOG(severity) LogMessage(__FILE__, __LINE__, Log##severity).stream()
+#ifndef __DOXYGEN__
+#define _LOG_CATEGORY(name) logCategory##name
+
+#define _LOG1(severity) \
+	LogMessage(__FILE__, __LINE__, Log##severity).stream()
+#define _LOG2(category, severity) \
+	LogMessage(__FILE__, __LINE__, _LOG_CATEGORY(category)(), Log##severity).stream()
+
+/*
+ * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of
+ * arguments.
+ */
+#define _LOG_MACRO(_1, _2, NAME, ...) NAME
+#define LOG(...) _LOG_MACRO(__VA_ARGS__, _LOG2, _LOG1)(__VA_ARGS__)
+#else /* __DOXYGEN___ */
+#define LOG(category, severity)
+#endif /* __DOXYGEN__ */
 
 #ifndef NDEBUG
 #define ASSERT(condition) static_cast<void>(({				\
-	if (!(condition))							\
+	if (!(condition))						\
 		LOG(Fatal) << "assertion \"" #condition "\" failed";	\
 }))
 #else

@@ -80,6 +80,7 @@ C++-11-specific features:
   Smart pointers, as well as shared pointers and weak pointers, shall not be
   overused.
 * Variadic class and function templates
+* rvalue references, move constructor and move assignment
 
 
 Tools

@@ -287,7 +287,7 @@ int MediaDevice::populate()
 
 /**
  * \fn MediaDevice::deviceNode()
- * \brief Retrieve the media device device node path
+ * \brief Retrieve the media device node path
  * \return The MediaDevice deviceNode path
  */
 

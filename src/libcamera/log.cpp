@@ -9,7 +9,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
+#include <list>
 #include <string.h>
+#include <unordered_set>
 
 #include "log.h"
 #include "utils.h"
@@ -17,9 +19,207 @@
 /**
  * \file log.h
  * \brief Logging infrastructure
+ *
+ * libcamera includes a logging infrastructure used through the library that
+ * allows inspection of internal operation in a user-configurable way. The log
+ * messages are grouped in categories that represent areas of libcamera, and
+ * output of messages for each category can be controlled by independent log
+ * levels.
+ *
+ * The levels are configurable through the LIBCAMERA_LOG_LEVELS environment
+ * variable that contains a comma-separated list of 'category=level' pairs.
+ *
+ * The category names are strings and can include a wildcard ('*') character at
+ * the end to match multiple categories.
+ *
+ * The level are either numeric values, or strings containing the log level
+ * name. The available log levels are DEBUG, INFO, WARN, ERROR and FATAL. Log
+ * message with a level higher than or equal to the configured log level for
+ * their category are output to the log, while other messages are silently
+ * discarded.
  */
 
 namespace libcamera {
+
+/**
+ * \brief Message logger
+ *
+ * The Logger class handles log configuration.
+ */
+class Logger
+{
+public:
+	static Logger *instance();
+
+private:
+	Logger();
+
+	void parseLogLevels();
+	static LogSeverity parseLogLevel(const std::string &level);
+
+	friend LogCategory;
+	void registerCategory(LogCategory *category);
+	void unregisterCategory(LogCategory *category);
+
+	std::unordered_set<LogCategory *> categories_;
+	std::list<std::pair<std::string, LogSeverity>> levels_;
+};
+
+/**
+ * \brief Retrieve the logger instance
+ *
+ * The Logger is a singleton and can't be constructed manually. This function
+ * shall instead be used to retrieve the single global instance of the logger.
+ *
+ * \return The logger instance
+ */
+Logger *Logger::instance()
+{
+	static Logger instance;
+	return &instance;
+}
+
+/**
+ * \brief Construct a logger
+ */
+Logger::Logger()
+{
+	parseLogLevels();
+}
+
+/**
+ * \brief Parse the log levels from the environment
+ *
+ * The logr levels are stored in LIBCAMERA_LOG_LEVELS environement variable as a list
+ * of "category=level" pairs, separated by commas (','). Parse the variable and
+ * store the levels to configure all log categories.
+ */
+void Logger::parseLogLevels()
+{
+	const char *debug = secure_getenv("LIBCAMERA_LOG_LEVELS");
+	if (!debug)
+		return;
+
+	for (const char *pair = debug; *debug != '\0'; pair = debug) {
+		const char *comma = strchrnul(debug, ',');
+		size_t len = comma - pair;
+
+		/* Skip over the comma. */
+		debug = *comma == ',' ? comma + 1 : comma;
+
+		/* Skip to the next pair if the pair is empty. */
+		if (!len)
+			continue;
+
+		std::string category;
+		std::string level;
+
+		const char *colon = static_cast<const char *>(memchr(pair, ':', len));
+		if (!colon) {
+			/* 'x' is a shortcut for '*:x'. */
+			category = "*";
+			level = std::string(pair, len);
+		} else {
+			category = std::string(pair, colon - pair);
+			level = std::string(colon + 1, comma - colon - 1);
+		}
+
+		/* Both the category and the level must be specified. */
+		if (category.empty() || level.empty())
+			continue;
+
+		LogSeverity severity = parseLogLevel(level);
+		if (severity == -1)
+			continue;
+
+		levels_.push_back({ category, severity });
+	}
+}
+
+/**
+ * \brief Parse a log level string into a LogSeverity
+ * \param[in] level The log level string
+ *
+ * Log levels can be specified as an integer value in the range from LogDebug to
+ * LogFatal, or as a string corresponding to the severity name in uppercase. Any
+ * other value is invalid.
+ *
+ * \return The log severity, or -1 if the string is invalid
+ */
+LogSeverity Logger::parseLogLevel(const std::string &level)
+{
+	static const char *const names[] = {
+		"DEBUG",
+		"INFO",
+		"WARN",
+		"ERROR",
+		"FATAL",
+	};
+
+	int severity;
+
+	if (std::isdigit(level[0])) {
+		char *endptr;
+		severity = strtoul(level.c_str(), &endptr, 10);
+		if (*endptr != '\0' || severity > LogFatal)
+			severity = -1;
+	} else {
+		severity = -1;
+		for (unsigned int i = 0; i < ARRAY_SIZE(names); ++i) {
+			if (names[i] == level) {
+				severity = i;
+				break;
+			}
+		}
+	}
+
+	return static_cast<LogSeverity>(severity);
+}
+
+/**
+ * \brief Register a log category with the logger
+ * \param[in] category The log category
+ *
+ * Log categories must have unique names. If a category with the same name
+ * already exists this function performs no operation.
+ */
+void Logger::registerCategory(LogCategory *category)
+{
+	categories_.insert(category);
+
+	const std::string &name = category->name();
+	for (const std::pair<std::string, LogSeverity> &level : levels_) {
+		bool match = true;
+
+		for (unsigned int i = 0; i < level.first.size(); ++i) {
+			if (level.first[i] == '*')
+				break;
+
+			if (i >= name.size() ||
+			    name[i] != level.first[i]) {
+				match = false;
+				break;
+			}
+		}
+
+		if (match) {
+			category->setSeverity(level.second);
+			break;
+		}
+	}
+}
+
+/**
+ * \brief Unregister a log category from the logger
+ * \param[in] category The log category
+ *
+ * If the \a category hasn't been registered with the logger this function
+ * performs no operation.
+ */
+void Logger::unregisterCategory(LogCategory *category)
+{
+	categories_.erase(category);
+}
 
 /**
  * \enum LogSeverity
@@ -52,10 +252,12 @@ namespace libcamera {
 LogCategory::LogCategory(const char *name)
 	: name_(name), severity_(LogSeverity::LogInfo)
 {
+	Logger::instance()->registerCategory(this);
 }
 
 LogCategory::~LogCategory()
 {
+	Logger::instance()->unregisterCategory(this);
 }
 
 /**

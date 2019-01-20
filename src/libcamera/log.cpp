@@ -8,7 +8,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <list>
 #include <string.h>
 #include <unordered_set>
@@ -37,6 +39,12 @@
  * message with a level higher than or equal to the configured log level for
  * their category are output to the log, while other messages are silently
  * discarded.
+ *
+ * By default log messages are output to stderr. They can be redirected to a log
+ * file by setting the LIBCAMERA_LOG_FILE environment variable to the name of
+ * the file. The file must be writable and is truncated if it exists. If any
+ * error occurs when opening the file, the file is ignored and the log is output
+ * to stderr.
  */
 
 namespace libcamera {
@@ -51,9 +59,12 @@ class Logger
 public:
 	static Logger *instance();
 
+	void write(const std::string &msg);
+
 private:
 	Logger();
 
+	void parseLogFile();
 	void parseLogLevels();
 	static LogSeverity parseLogLevel(const std::string &level);
 
@@ -63,6 +74,9 @@ private:
 
 	std::unordered_set<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
+
+	std::ofstream file_;
+	std::ostream *output_;
 };
 
 /**
@@ -80,11 +94,41 @@ Logger *Logger::instance()
 }
 
 /**
+ * \brief Write a message to the configured logger output
+ * \param[in] msg The message string
+ */
+void Logger::write(const std::string &msg)
+{
+	output_->write(msg.c_str(), msg.size());
+	output_->flush();
+}
+
+/**
  * \brief Construct a logger
  */
 Logger::Logger()
+	: output_(&std::cerr)
 {
+	parseLogFile();
 	parseLogLevels();
+}
+
+/**
+ * \brief Parse the log output file from the environment
+ *
+ * If the LIBCAMERA_LOG_FILE environment variable is set, open the file it
+ * points to and redirect the logger output to it. Errors are silently ignored
+ * and don't affect the logger output (set to stderr).
+ */
+void Logger::parseLogFile()
+{
+	const char *file = secure_getenv("LIBCAMERA_LOG_FILE");
+	if (!file)
+		return;
+
+	file_.open(file);
+	if (file_.good())
+		output_ = &file_;
 }
 
 /**
@@ -384,8 +428,7 @@ LogMessage::~LogMessage()
 
 	if (severity_ >= category_.severity()) {
 		std::string msg(msgStream_.str());
-		fwrite(msg.data(), msg.size(), 1, stderr);
-		fflush(stderr);
+		Logger::instance()->write(msg);
 	}
 
 	if (severity_ == LogSeverity::LogFatal)

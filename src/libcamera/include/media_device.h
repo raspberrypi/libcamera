@@ -36,6 +36,7 @@ public:
 
 	const std::string driver() const { return driver_; }
 	const std::string deviceNode() const { return deviceNode_; }
+	const std::string model() const { return model_; }
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;
@@ -50,6 +51,7 @@ public:
 private:
 	std::string driver_;
 	std::string deviceNode_;
+	std::string model_;
 	int fd_;
 	bool valid_;
 	bool acquired_;

@@ -166,6 +166,7 @@ int MediaDevice::open()
 	}
 
 	driver_ = info.driver;
+	model_ = info.model;
 
 	return 0;
 }
@@ -288,6 +289,12 @@ int MediaDevice::populate()
  * \fn MediaDevice::deviceNode()
  * \brief Retrieve the media device device node path
  * \return The MediaDevice deviceNode path
+ */
+
+/**
+ * \fn MediaDevice::model()
+ * \brief Retrieve the media device model name
+ * \return The MediaDevice model name
  */
 
 /**

@@ -63,13 +63,13 @@ LOG_DEFINE_CATEGORY(MediaDevice)
 
 /**
  * \brief Construct a MediaDevice
- * \param devnode The media device node path
+ * \param deviceNode The media device node path
  *
  * Once constructed the media device is invalid, and must be opened and
  * populated with open() and populate() before the media graph can be queried.
  */
-MediaDevice::MediaDevice(const std::string &devnode)
-	: devnode_(devnode), fd_(-1), valid_(false), acquired_(false)
+MediaDevice::MediaDevice(const std::string &deviceNode)
+	: deviceNode_(deviceNode), fd_(-1), valid_(false), acquired_(false)
 {
 }
 
@@ -145,12 +145,12 @@ int MediaDevice::open()
 		return -EBUSY;
 	}
 
-	int ret = ::open(devnode_.c_str(), O_RDWR);
+	int ret = ::open(deviceNode_.c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(MediaDevice, Error)
 			<< "Failed to open media device at "
-			<< devnode_ << ": " << strerror(-ret);
+			<< deviceNode_ << ": " << strerror(-ret);
 		return ret;
 	}
 	fd_ = ret;
@@ -285,9 +285,9 @@ int MediaDevice::populate()
  */
 
 /**
- * \fn MediaDevice::devnode()
+ * \fn MediaDevice::deviceNode()
  * \brief Retrieve the media device device node path
- * \return The MediaDevice devnode path
+ * \return The MediaDevice deviceNode path
  */
 
 /**

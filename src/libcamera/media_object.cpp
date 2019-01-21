@@ -246,7 +246,7 @@ void MediaPad::addLink(MediaLink *link)
  *
  * In addition to their graph id, media graph entities are identified by a
  * name() unique in the media device context. They implement a function() and
- * may expose a devnode().
+ * may expose a deviceNode().
  */
 
 /**
@@ -266,7 +266,7 @@ void MediaPad::addLink(MediaLink *link)
  */
 
 /**
- * \fn MediaEntity::devnode()
+ * \fn MediaEntity::deviceNode()
  * \brief Retrieve the entity's device node path, if any
  *
  * \sa int setDeviceNode()
@@ -326,23 +326,23 @@ const MediaPad *MediaEntity::getPadById(unsigned int id) const
 
 /**
  * \brief Set the path to the device node for the associated interface
- * \param devnode The interface device node path associated with this entity
+ * \param deviceNode The interface device node path associated with this entity
  * \return 0 on success, or a negative error code if the device node can't be
  * accessed
  */
-int MediaEntity::setDeviceNode(const std::string &devnode)
+int MediaEntity::setDeviceNode(const std::string &deviceNode)
 {
 	/* Make sure the device node can be accessed. */
-	int ret = ::access(devnode.c_str(), R_OK | W_OK);
+	int ret = ::access(deviceNode.c_str(), R_OK | W_OK);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(MediaDevice, Error)
-			<< "Device node " << devnode << " can't be accessed: "
+			<< "Device node " << deviceNode << " can't be accessed: "
 			<< strerror(-ret);
 		return ret;
 	}
 
-	devnode_ = devnode;
+	deviceNode_ = deviceNode;
 
 	return 0;
 }

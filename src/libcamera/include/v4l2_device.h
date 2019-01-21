@@ -36,7 +36,7 @@ class MediaEntity;
 class V4L2Device
 {
 public:
-	explicit V4L2Device(const std::string &devnode);
+	explicit V4L2Device(const std::string &deviceNode);
 	explicit V4L2Device(const MediaEntity &entity);
 	V4L2Device(const V4L2Device &) = delete;
 	~V4L2Device();
@@ -52,7 +52,7 @@ public:
 	const char *busName() const { return caps_.bus_info(); }
 
 private:
-	std::string devnode_;
+	std::string deviceNode_;
 	int fd_;
 	V4L2Capability caps_;
 };

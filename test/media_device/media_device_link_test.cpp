@@ -55,7 +55,7 @@ class MediaDeviceLinkTest : public Test
 
 		if (dev_->open()) {
 			cerr << "Failed to open media device at "
-			     << dev_->devnode() << endl;
+			     << dev_->deviceNode() << endl;
 			return TestFail;
 		}
 

@@ -45,12 +45,12 @@ public:
 	MediaDevice *search(const DeviceMatch &dm);
 
 protected:
-	int addDevice(const std::string &devnode);
+	int addDevice(const std::string &deviceNode);
 
 private:
 	std::vector<MediaDevice *> devices_;
 
-	virtual std::string lookupDevnode(int major, int minor) = 0;
+	virtual std::string lookupDeviceNode(int major, int minor) = 0;
 };
 
 class DeviceEnumeratorUdev: public DeviceEnumerator
@@ -65,7 +65,7 @@ public:
 private:
 	struct udev *udev_;
 
-	std::string lookupDevnode(int major, int minor) final;
+	std::string lookupDeviceNode(int major, int minor) final;
 };
 
 } /* namespace libcamera */

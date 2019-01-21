@@ -35,7 +35,7 @@ protected:
 	void cleanup() { }
 
 private:
-	int testMediaDevice(string devnode);
+	int testMediaDevice(string deviceNode);
 
 	void printMediaGraph(const MediaDevice &media, ostream &os);
 	void printLinkFlags(const MediaLink *link, ostream &os);
@@ -68,7 +68,7 @@ void MediaDevicePrintTest::printLinkFlags(const MediaLink *link, ostream &os)
  */
 void MediaDevicePrintTest::printMediaGraph(const MediaDevice &media, ostream &os)
 {
-	os << "\n" << media.driver() << " - " << media.devnode() << "\n\n";
+	os << "\n" << media.driver() << " - " << media.deviceNode() << "\n\n";
 
 	for (auto const &entity : media.entities()) {
 		os << "\"" << entity->name() << "\"\n";
@@ -108,9 +108,9 @@ void MediaDevicePrintTest::printMediaGraph(const MediaDevice &media, ostream &os
 }
 
 /* Test a single media device. */
-int MediaDevicePrintTest::testMediaDevice(const string devnode)
+int MediaDevicePrintTest::testMediaDevice(const string deviceNode)
 {
-	MediaDevice dev(devnode);
+	MediaDevice dev(deviceNode);
 	int ret;
 
 	/* Fuzzy open/close sequence. */
@@ -144,7 +144,7 @@ int MediaDevicePrintTest::testMediaDevice(const string devnode)
 #define MAX_MEDIA_DEV 256
 int MediaDevicePrintTest::run()
 {
-	const string devnode("/dev/media");
+	const string deviceNode("/dev/media");
 	unsigned int i;
 	int ret = 77; /* skip test exit code */
 
@@ -153,7 +153,7 @@ int MediaDevicePrintTest::run()
 	 * system, if any.
 	 */
 	for (i = 0; i < MAX_MEDIA_DEV; i++) {
-		string mediadev = devnode + to_string(i);
+		string mediadev = deviceNode + to_string(i);
 		struct stat pstat = { };
 
 		if (stat(mediadev.c_str(), &pstat))

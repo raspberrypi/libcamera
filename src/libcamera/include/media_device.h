@@ -21,7 +21,7 @@ namespace libcamera {
 class MediaDevice
 {
 public:
-	MediaDevice(const std::string &devnode);
+	MediaDevice(const std::string &deviceNode);
 	~MediaDevice();
 
 	bool acquire();
@@ -35,7 +35,7 @@ public:
 	bool valid() const { return valid_; }
 
 	const std::string driver() const { return driver_; }
-	const std::string devnode() const { return devnode_; }
+	const std::string deviceNode() const { return deviceNode_; }
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;
@@ -49,7 +49,7 @@ public:
 
 private:
 	std::string driver_;
-	std::string devnode_;
+	std::string deviceNode_;
 	int fd_;
 	bool valid_;
 	bool acquired_;

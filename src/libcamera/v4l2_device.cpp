@@ -88,10 +88,10 @@ LOG_DEFINE_CATEGORY(V4L2)
 
 /**
  * \brief Construct a V4L2Device
- * \param devnode The file-system path to the video device node
+ * \param deviceNode The file-system path to the video device node
  */
-V4L2Device::V4L2Device(const std::string &devnode)
-	: devnode_(devnode), fd_(-1)
+V4L2Device::V4L2Device(const std::string &deviceNode)
+	: deviceNode_(deviceNode), fd_(-1)
 {
 }
 
@@ -102,7 +102,7 @@ V4L2Device::V4L2Device(const std::string &devnode)
  * Construct a V4L2Device from a MediaEntity's device node path.
  */
 V4L2Device::V4L2Device(const MediaEntity &entity)
-	: V4L2Device(entity.devnode())
+	: V4L2Device(entity.deviceNode())
 {
 }
 
@@ -124,11 +124,11 @@ int V4L2Device::open()
 		return -EBUSY;
 	}
 
-	ret = ::open(devnode_.c_str(), O_RDWR);
+	ret = ::open(deviceNode_.c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2, Error)
-			<< "Failed to open V4L2 device '" << devnode_
+			<< "Failed to open V4L2 device '" << deviceNode_
 			<< "': " << strerror(-ret);
 		return ret;
 	}
@@ -144,7 +144,7 @@ int V4L2Device::open()
 	}
 
 	LOG(V4L2, Debug)
-		<< "Opened '" << devnode_ << "' "
+		<< "Opened '" << deviceNode_ << "' "
 		<< caps_.bus_info() << ": " << caps_.driver()
 		<< ": " << caps_.card();
 

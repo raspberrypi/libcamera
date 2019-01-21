@@ -72,7 +72,7 @@ int IPU3PipelineTest::init()
 	}
 
 	if (cio2->open()) {
-		cerr << "Failed to open media device " << cio2->devnode() << endl;
+		cerr << "Failed to open media device " << cio2->deviceNode() << endl;
 		return TestFail;
 	}
 
@@ -84,7 +84,7 @@ int IPU3PipelineTest::init()
 	 */
 	int ret = cio2->populate();
 	if (ret) {
-		cerr << "Failed to populate media device " << cio2->devnode() << endl;
+		cerr << "Failed to populate media device " << cio2->deviceNode() << endl;
 		return TestFail;
 	}
 

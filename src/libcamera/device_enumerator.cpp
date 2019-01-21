@@ -189,18 +189,18 @@ DeviceEnumerator::~DeviceEnumerator()
 
 /**
  * \brief Add a media device to the enumerator
- * \param[in] devnode path to the media device to add
+ * \param[in] deviceNode path to the media device to add
  *
- * Create a media device for the \a devnode, open it, populate its media graph,
+ * Create a media device for the \a deviceNode, open it, populate its media graph,
  * and look up device nodes associated with all entities. Store the media device
  * in the internal list for later matching with pipeline handlers.
  *
  * \return 0 on success, or a negative error code if the media device can't be
  * created or populated
  */
-int DeviceEnumerator::addDevice(const std::string &devnode)
+int DeviceEnumerator::addDevice(const std::string &deviceNode)
 {
-	MediaDevice *media = new MediaDevice(devnode);
+	MediaDevice *media = new MediaDevice(deviceNode);
 
 	int ret = media->open();
 	if (ret < 0)
@@ -209,25 +209,25 @@ int DeviceEnumerator::addDevice(const std::string &devnode)
 	ret = media->populate();
 	if (ret < 0) {
 		LOG(DeviceEnumerator, Info)
-			<< "Unable to populate media device " << devnode
+			<< "Unable to populate media device " << deviceNode
 			<< " (" << strerror(-ret) << "), skipping";
 		return ret;
 	}
 
 	LOG(DeviceEnumerator, Debug)
 		<< "New media device \"" << media->driver()
-		<< "\" created from " << devnode;
+		<< "\" created from " << deviceNode;
 
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {
 		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
 			continue;
 
-		std::string devnode = lookupDevnode(entity->deviceMajor(), entity->deviceMinor());
-		if (devnode.empty())
+		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(), entity->deviceMinor());
+		if (deviceNode.empty())
 			return -EINVAL;
 
-		ret = entity->setDeviceNode(devnode);
+		ret = entity->setDeviceNode(deviceNode);
 		if (ret)
 			return ret;
 	}
@@ -267,7 +267,7 @@ MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm)
 }
 
 /**
- * \fn DeviceEnumerator::lookupDevnode(int major, int minor)
+ * \fn DeviceEnumerator::lookupDeviceNode(int major, int minor)
  * \brief Lookup device node path from device number
  * \param major The device major number
  * \param minor The device minor number
@@ -358,12 +358,12 @@ done:
 	return ret >= 0 ? 0 : ret;
 }
 
-std::string DeviceEnumeratorUdev::lookupDevnode(int major, int minor)
+std::string DeviceEnumeratorUdev::lookupDeviceNode(int major, int minor)
 {
 	struct udev_device *device;
 	const char *name;
 	dev_t devnum;
-	std::string devnode = std::string();
+	std::string deviceNode = std::string();
 
 	devnum = makedev(major, minor);
 	device = udev_device_new_from_devnum(udev_, 'c', devnum);
@@ -372,11 +372,11 @@ std::string DeviceEnumeratorUdev::lookupDevnode(int major, int minor)
 
 	name = udev_device_get_devnode(device);
 	if (name)
-		devnode = name;
+		deviceNode = name;
 
 	udev_device_unref(device);
 
-	return devnode;
+	return deviceNode;
 }
 
 } /* namespace libcamera */

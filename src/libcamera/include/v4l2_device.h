@@ -86,10 +86,20 @@ public:
 	const char *deviceName() const { return caps_.card(); }
 	const char *busName() const { return caps_.bus_info(); }
 
+	int format(V4L2DeviceFormat *fmt);
+	int setFormat(V4L2DeviceFormat *fmt);
+
 private:
+	int getFormatSingleplane(V4L2DeviceFormat *fmt);
+	int setFormatSingleplane(V4L2DeviceFormat *fmt);
+
+	int getFormatMultiplane(V4L2DeviceFormat *fmt);
+	int setFormatMultiplane(V4L2DeviceFormat *fmt);
+
 	std::string deviceNode_;
 	int fd_;
 	V4L2Capability caps_;
+	enum v4l2_buf_type bufferType_;
 };
 
 } /* namespace libcamera */

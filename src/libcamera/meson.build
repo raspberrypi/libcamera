@@ -10,6 +10,7 @@ libcamera_sources = files([
     'media_object.cpp',
     'pipeline_handler.cpp',
     'signal.cpp',
+    'stream.cpp',
     'timer.cpp',
     'v4l2_device.cpp',
 ])

@@ -5,6 +5,7 @@ libcamera_api = files([
     'event_notifier.h',
     'libcamera.h',
     'signal.h',
+    'stream.h',
     'timer.h',
 ])
 

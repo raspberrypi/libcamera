@@ -78,7 +78,7 @@ CameraManager::~CameraManager()
 int CameraManager::start()
 {
 	if (enumerator_)
-		return -ENODEV;
+		return -EBUSY;
 
 	enumerator_ = DeviceEnumerator::create();
 	if (enumerator_->enumerate())

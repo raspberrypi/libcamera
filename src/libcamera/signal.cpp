@@ -5,6 +5,11 @@
  * signal.cpp - Signal & slot implementation
  */
 
+/**
+ * \file signal.h
+ * \brief Signal & slot implementation
+ */
+
 namespace libcamera {
 
 /**

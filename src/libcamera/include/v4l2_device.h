@@ -32,10 +32,25 @@ struct V4L2Capability final : v4l2_capability {
 				    ? v4l2_capability::device_caps
 				    : v4l2_capability::capabilities;
 	}
-
-	bool isCapture() const { return device_caps() & V4L2_CAP_VIDEO_CAPTURE; }
-	bool isOutput() const { return device_caps() & V4L2_CAP_VIDEO_OUTPUT; }
-	bool hasStreaming() const { return device_caps() & V4L2_CAP_STREAMING; }
+	bool isMultiplanar() const
+	{
+		return device_caps() & (V4L2_CAP_VIDEO_CAPTURE_MPLANE |
+					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+	}
+	bool isCapture() const
+	{
+		return device_caps() & (V4L2_CAP_VIDEO_CAPTURE |
+					V4L2_CAP_VIDEO_CAPTURE_MPLANE);
+	}
+	bool isOutput() const
+	{
+		return device_caps() & (V4L2_CAP_VIDEO_OUTPUT |
+					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+	}
+	bool hasStreaming() const
+	{
+		return device_caps() & V4L2_CAP_STREAMING;
+	}
 };
 
 class MediaEntity;

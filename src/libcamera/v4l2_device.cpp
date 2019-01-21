@@ -57,6 +57,12 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
+ * \fn bool V4L2Capability::isMultiplanar()
+ * \brief Identify if the device implement V4L2 multiplanar APIs
+ * \return True if the device supports multiplanar APIs
+ */
+
+/**
  * \fn bool V4L2Capability::isCapture()
  * \brief Identify if the device is capable of capturing video
  * \return True if the device can capture video frames

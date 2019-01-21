@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "media_object.h"
 #include "v4l2_device.h"
 
 /**
@@ -91,6 +92,17 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 V4L2Device::V4L2Device(const std::string &devnode)
 	: devnode_(devnode), fd_(-1)
+{
+}
+
+/**
+ * \brief Construct a V4L2Device from a MediaEntity
+ * \param entity The MediaEntity to build the device from
+ *
+ * Construct a V4L2Device from a MediaEntity's device node path.
+ */
+V4L2Device::V4L2Device(const MediaEntity &entity)
+	: V4L2Device(entity.devnode())
 {
 }
 

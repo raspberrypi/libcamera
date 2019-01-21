@@ -32,10 +32,12 @@ struct V4L2Capability final : v4l2_capability {
 	bool hasStreaming() const { return capabilities & V4L2_CAP_STREAMING; }
 };
 
+class MediaEntity;
 class V4L2Device
 {
 public:
-	V4L2Device(const std::string &devnode);
+	explicit V4L2Device(const std::string &devnode);
+	explicit V4L2Device(const MediaEntity &entity);
 	V4L2Device(const V4L2Device &) = delete;
 	~V4L2Device();
 

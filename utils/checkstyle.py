@@ -4,11 +4,11 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# checkstyle.py - A patch style checker script based on astyle
+# checkstyle.py - A patch style checker script based on astyle or clang-format
 #
 # TODO:
 #
-# - Support other formatting tools (clang-format, ...)
+# - Support other formatting tools and checkers (cppcheck, cpplint, kwstyle, ...)
 # - Split large hunks to minimize context noise
 # - Improve style issues counting
 #
@@ -32,6 +32,12 @@ astyle_options = (
     '--keep-one-line-blocks',
     '--max-code-length=120'
 )
+
+dependencies = {
+    'astyle': False,
+    'clang-format': False,
+    'git': True,
+}
 
 source_extensions = (
     '.c',
@@ -192,30 +198,38 @@ def parse_diff(diff):
 # Code reformatting
 #
 
-def formatter_astyle(data):
+def formatter_astyle(filename, data):
     ret = subprocess.run(['astyle', *astyle_options],
                          input=data.encode('utf-8'), stdout=subprocess.PIPE)
     return ret.stdout.decode('utf-8')
 
 
-def formatter_strip_trailing_space(data):
+def formatter_clang_format(filename, data):
+    ret = subprocess.run(['clang-format', '-style=file',
+                          '-assume-filename=' + filename],
+                         input=data.encode('utf-8'), stdout=subprocess.PIPE)
+    return ret.stdout.decode('utf-8')
+
+
+def formatter_strip_trailing_space(filename, data):
     lines = data.split('\n')
     for i in range(len(lines)):
         lines[i] = lines[i].rstrip() + '\n'
     return ''.join(lines)
 
 
-formatters = [
-    formatter_astyle,
-    formatter_strip_trailing_space,
-]
+available_formatters = {
+    'astyle': formatter_astyle,
+    'clang-format': formatter_clang_format,
+    'strip-trailing-spaces': formatter_strip_trailing_space,
+}
 
 
 # ------------------------------------------------------------------------------
 # Style checking
 #
 
-def check_file(top_level, commit, filename):
+def check_file(top_level, commit, filename, formatters):
     # Extract the line numbers touched by the commit.
     diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
                            '%s/%s' % (top_level, filename)],
@@ -239,7 +253,8 @@ def check_file(top_level, commit, filename):
 
     formatted = after
     for formatter in formatters:
-        formatted = formatter(formatted)
+        formatter = available_formatters[formatter]
+        formatted = formatter(filename, formatted)
 
     after = after.splitlines(True)
     formatted = formatted.splitlines(True)
@@ -261,7 +276,7 @@ def check_file(top_level, commit, filename):
     return len(formatted_diff)
 
 
-def check_style(top_level, commit):
+def check_style(top_level, commit, formatters):
     # Get the commit title and list of files.
     ret = subprocess.run(['git', 'show', '--pretty=oneline','--name-only', commit],
                          stdout=subprocess.PIPE)
@@ -282,7 +297,7 @@ def check_style(top_level, commit):
 
     issues = 0
     for f in files:
-        issues += check_file(top_level, commit, f)
+        issues += check_file(top_level, commit, f, formatters)
 
     if issues == 0:
         print("No style issue detected")
@@ -330,17 +345,38 @@ def main(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
+    parser.add_argument('--formatter', '-f', type=str, choices=['astyle', 'clang-format'],
+                        help='Code formatter. Default to clang-format if not specified.')
     parser.add_argument('revision_range', type=str, default='HEAD', nargs='?',
                         help='Revision range (as defined by git rev-parse). Defaults to HEAD if not specified.')
     args = parser.parse_args(argv[1:])
 
     # Check for required dependencies.
-    dependencies = ('astyle', 'git')
-
-    for dependency in dependencies:
-        if not shutil.which(dependency):
-            print("Executable %s not found" % dependency)
+    for command, mandatory in dependencies.items():
+        found = shutil.which(command)
+        if mandatory and not found:
+            print("Executable %s not found" % command)
             return 1
+
+        dependencies[command] = found
+
+    if args.formatter:
+        if not args.formatter in dependencies or \
+           not dependencies[args.formatter]:
+            print("Formatter %s not available" % args.formatter)
+            return 1
+        formatter = args.formatter
+    else:
+        if dependencies['clang-format']:
+            formatter = 'clang-format'
+        elif dependencies['astyle']:
+            formatter = 'astyle'
+        else:
+            print("No formatter found, please install clang-format or astyle")
+            return 1
+
+    # Create the list of formatters to be applied.
+    formatters = [formatter, 'strip-trailing-spaces']
 
     # Get the top level directory to pass absolute file names to git diff
     # commands, in order to support execution from subdirectories of the git
@@ -352,7 +388,7 @@ def main(argv):
     revlist = extract_revlist(args.revision_range)
 
     for commit in revlist:
-        check_style(top_level, commit)
+        check_style(top_level, commit, formatters)
         print('')
 
     return 0

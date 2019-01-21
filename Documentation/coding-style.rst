@@ -170,8 +170,11 @@ These rules match the `object ownership rules from the Chromium C++ Style Guide`
 Tools
 -----
 
-The 'astyle' code formatting tool can be used to reformat source files with the
-libcamera coding style, defined by the following arguments.
+The 'clang-format' code formatting tool can be used to reformat source files
+with the libcamera coding style, defined in the .clang-format file at the root
+of the source tree.
+
+Alternatively the 'astyle' tool can also be used, with the following arguments.
 
 ::
 
@@ -184,11 +187,15 @@ libcamera coding style, defined by the following arguments.
   --align-reference=name
   --max-code-length=120
 
-As astyle is a code formatter, it operates on full files outputs reformatted
-source code. While it can be used to reformat code before sending patches, it
-may generate unrelated changes. To avoid this, libcamera provides a
-'checkstyle.py' script wrapping astyle to only retain related changes. This
-should be used to validate modifications before submitting them for review.
+Use of astyle is discouraged as clang-format better matches the libcamera coding
+style.
+
+As both astyle and clang-format are code formatters, they operate on full files
+and output reformatted source code. While they can be used to reformat code
+before sending patches, it may generate unrelated changes. To avoid this,
+libcamera provides a 'checkstyle.py' script wrapping the formatting tools to
+only retain related changes. This should be used to validate modifications
+before submitting them for review.
 
 The script operates on one or multiple git commits specified on the command
 line. It does not modify the git tree, the index or the working directory and
@@ -276,5 +283,9 @@ When potential style issues are detected, they are displayed in the form of a
 diff that fixes the issues, on top of the corresponding commit. As the script is
 in early development false positive are expected. The flagged issues should be
 reviewed, but the diff doesn't need to be applied blindly.
+
+The checkstyle.py script uses clang-format by default if found, and otherwise
+falls back to astyle. The formatter can be manually selected with the
+'--formatter' argument.
 
 Happy hacking, libcamera awaits your patches!

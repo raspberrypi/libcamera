@@ -13,6 +13,12 @@ class Stream final
 {
 };
 
+struct StreamConfiguration {
+	unsigned int width;
+	unsigned int height;
+	unsigned int pixelFormat;
+};
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_STREAM_H__ */

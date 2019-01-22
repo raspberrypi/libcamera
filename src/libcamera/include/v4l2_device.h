@@ -26,10 +26,16 @@ struct V4L2Capability final : v4l2_capability {
 	{
 		return reinterpret_cast<const char *>(v4l2_capability::bus_info);
 	}
+	unsigned int device_caps() const
+	{
+		return capabilities & V4L2_CAP_DEVICE_CAPS
+				    ? v4l2_capability::device_caps
+				    : v4l2_capability::capabilities;
+	}
 
-	bool isCapture() const { return capabilities & V4L2_CAP_VIDEO_CAPTURE; }
-	bool isOutput() const { return capabilities & V4L2_CAP_VIDEO_OUTPUT; }
-	bool hasStreaming() const { return capabilities & V4L2_CAP_STREAMING; }
+	bool isCapture() const { return device_caps() & V4L2_CAP_VIDEO_CAPTURE; }
+	bool isOutput() const { return device_caps() & V4L2_CAP_VIDEO_OUTPUT; }
+	bool hasStreaming() const { return device_caps() & V4L2_CAP_STREAMING; }
 };
 
 class MediaEntity;

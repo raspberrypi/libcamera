@@ -50,6 +50,13 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
+ * \fn unsigned int V4L2Capability::device_caps()
+ * \brief Retrieve the capabilities of the device
+ * \return The device specific capabilities if V4L2_CAP_DEVICE_CAPS is set or
+ * 	   driver capabilities otherwise
+ */
+
+/**
  * \fn bool V4L2Capability::isCapture()
  * \brief Identify if the device is capable of capturing video
  * \return True if the device can capture video frames

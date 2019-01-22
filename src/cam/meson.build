@@ -1,5 +1,6 @@
 cam_sources = files([
-    'cam.cpp',
+    'main.cpp',
+    'options.cpp',
 ])
 
 cam  = executable('cam', cam_sources,

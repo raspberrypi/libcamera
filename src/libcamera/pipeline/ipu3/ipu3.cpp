@@ -18,6 +18,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(IPU3)
+
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
@@ -172,9 +174,10 @@ void PipelineHandlerIPU3::registerCameras(CameraManager *manager)
 		std::shared_ptr<Camera> camera = Camera::create(cameraName);
 		manager->addCamera(std::move(camera));
 
-		LOG(Info) << "Registered Camera[" << numCameras << "] \""
-			  << cameraName << "\""
-			  << " connected to CSI-2 receiver " << id;
+		LOG(IPU3, Info)
+			<< "Registered Camera[" << numCameras << "] \""
+			<< cameraName << "\""
+			<< " connected to CSI-2 receiver " << id;
 
 		numCameras++;
 	}

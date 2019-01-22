@@ -32,11 +32,21 @@ LOG_DEFINE_CATEGORY(Pipeline)
  *
  * The PipelineHandler matches the media devices provided by a DeviceEnumerator
  * with the pipelines it supports and creates corresponding Camera devices.
+ *
+ * Pipeline handler instances are reference-counted through std::shared_ptr<>.
+ * They implement std::enable_shared_from_this<> in order to create new
+ * std::shared_ptr<> in code paths originating from member functions of the
+ * PipelineHandler class where only the 'this' pointer is available.
  */
 
 /**
  * \brief Construct a PipelineHandler instance
  * \param[in] manager The camera manager
+ *
+ * In order to honour the std::enable_shared_from_this<> contract,
+ * PipelineHandler instances shall never be constructed manually, but always
+ * through the PipelineHandlerFactory::create() method implemented by the
+ * respective factories.
  */
 PipelineHandler::PipelineHandler(CameraManager *manager)
 	: manager_(manager)

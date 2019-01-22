@@ -41,7 +41,7 @@ private:
 	~CameraManager();
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;
-	std::vector<PipelineHandler *> pipes_;
+	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::vector<std::shared_ptr<Camera>> cameras_;
 
 	std::unique_ptr<EventDispatcher> dispatcher_;

@@ -8,6 +8,7 @@
 #define __LIBCAMERA_PIPELINE_HANDLER_H__
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -16,7 +17,7 @@ namespace libcamera {
 class CameraManager;
 class DeviceEnumerator;
 
-class PipelineHandler
+class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>
 {
 public:
 	PipelineHandler(CameraManager *manager);
@@ -34,7 +35,7 @@ public:
 	PipelineHandlerFactory(const char *name);
 	virtual ~PipelineHandlerFactory() { };
 
-	virtual PipelineHandler *create(CameraManager *manager) = 0;
+	virtual std::shared_ptr<PipelineHandler> create(CameraManager *manager) = 0;
 
 	const std::string &name() const { return name_; }
 
@@ -50,9 +51,9 @@ class handler##Factory final : public PipelineHandlerFactory		\
 {									\
 public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
-	PipelineHandler *create(CameraManager *manager) 		\
+	std::shared_ptr<PipelineHandler> create(CameraManager *manager)	\
 	{								\
-		return new handler(manager);				\
+		return std::make_shared<handler>(manager);		\
 	}								\
 };									\
 static handler##Factory global_##handler##Factory;

@@ -171,7 +171,7 @@ void PipelineHandlerIPU3::registerCameras()
 			continue;
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
-		std::shared_ptr<Camera> camera = Camera::create(cameraName);
+		std::shared_ptr<Camera> camera = Camera::create(this, cameraName);
 		manager_->addCamera(std::move(camera));
 
 		LOG(IPU3, Info)

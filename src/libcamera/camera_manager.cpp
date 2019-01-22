@@ -98,16 +98,14 @@ int CameraManager::start()
 		 * all pipelines it can provide.
 		 */
 		while (1) {
-			PipelineHandler *pipe = factory->create(this);
-			if (!pipe->match(enumerator_.get())) {
-				delete pipe;
+			std::shared_ptr<PipelineHandler> pipe = factory->create(this);
+			if (!pipe->match(enumerator_.get()))
 				break;
-			}
 
 			LOG(Camera, Debug)
 				<< "Pipeline handler \"" << factory->name()
 				<< "\" matched";
-			pipes_.push_back(pipe);
+			pipes_.push_back(std::move(pipe));
 		}
 	}
 
@@ -130,10 +128,13 @@ void CameraManager::stop()
 {
 	/* TODO: unregister hot-plug callback here */
 
-	for (PipelineHandler *pipe : pipes_)
-		delete pipe;
-
+	/*
+	 * Release all references to cameras and pipeline handlers to ensure
+	 * they all get destroyed before the device enumerator deletes the
+	 * media devices.
+	 */
 	pipes_.clear();
+	cameras_.clear();
 
 	enumerator_.reset(nullptr);
 }

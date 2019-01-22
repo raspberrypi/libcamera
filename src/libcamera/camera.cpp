@@ -8,6 +8,7 @@
 #include <libcamera/camera.h>
 
 #include "log.h"
+#include "pipeline_handler.h"
 
 /**
  * \file camera.h
@@ -52,17 +53,20 @@ namespace libcamera {
 /**
  * \brief Create a camera instance
  * \param[in] name The name of the camera device
+ * \param[in] pipe The pipeline handler responsible for the camera device
  *
  * The caller is responsible for guaranteeing unicity of the camera name.
  *
  * \return A shared pointer to the newly created camera object
  */
-std::shared_ptr<Camera> Camera::create(const std::string &name)
+std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
+				       const std::string &name)
 {
 	struct Allocator : std::allocator<Camera> {
-		void construct(void *p, const std::string &name)
+		void construct(void *p, PipelineHandler *pipe,
+			       const std::string &name)
 		{
-			::new(p) Camera(name);
+			::new(p) Camera(pipe, name);
 		}
 		void destroy(Camera *p)
 		{
@@ -70,7 +74,7 @@ std::shared_ptr<Camera> Camera::create(const std::string &name)
 		}
 	};
 
-	return std::allocate_shared<Camera>(Allocator(), name);
+	return std::allocate_shared<Camera>(Allocator(), pipe, name);
 }
 
 /**
@@ -83,8 +87,8 @@ const std::string &Camera::name() const
 	return name_;
 }
 
-Camera::Camera(const std::string &name)
-	: name_(name)
+Camera::Camera(PipelineHandler *pipe, const std::string &name)
+	: pipe_(pipe->shared_from_this()), name_(name)
 {
 }
 

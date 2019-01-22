@@ -12,10 +12,13 @@
 
 namespace libcamera {
 
+class PipelineHandler;
+
 class Camera final
 {
 public:
-	static std::shared_ptr<Camera> create(const std::string &name);
+	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
+					      const std::string &name);
 
 	Camera(const Camera &) = delete;
 	void operator=(const Camera &) = delete;
@@ -23,9 +26,10 @@ public:
 	const std::string &name() const;
 
 private:
-	explicit Camera(const std::string &name);
+	Camera(PipelineHandler *pipe, const std::string &name);
 	~Camera();
 
+	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
 };
 

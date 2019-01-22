@@ -48,7 +48,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	dev_->acquire();
 
-	std::shared_ptr<Camera> camera = Camera::create(dev_->model());
+	std::shared_ptr<Camera> camera = Camera::create(this, dev_->model());
 	manager_->addCamera(std::move(camera));
 
 	return true;

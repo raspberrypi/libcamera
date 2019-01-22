@@ -57,14 +57,7 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	dev_->acquire();
 
-	/*
-	 * NOTE: A more complete Camera implementation could
-	 * be passed the MediaDevice(s) it controls here or
-	 * a reference to the PipelineHandler. Which method
-	 * will be chosen depends on how the Camera
-	 * object is modeled.
-	 */
-	std::shared_ptr<Camera> camera = Camera::create("Dummy VIMC Camera");
+	std::shared_ptr<Camera> camera = Camera::create(this, "Dummy VIMC Camera");
 	manager_->addCamera(std::move(camera));
 
 	return true;

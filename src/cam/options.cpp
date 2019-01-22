@@ -102,7 +102,7 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 		options.values_[c] = optarg ? optarg : "";
 	}
 
-	return std::move(options);
+	return options;
 }
 
 void OptionsParser::usage()
@@ -158,17 +158,6 @@ void OptionsParser::usage()
 
 OptionsParser::Options::Options()
 {
-}
-
-OptionsParser::Options::Options(Options &&other)
-	: values_(std::move(other.values_))
-{
-}
-
-OptionsParser::Options &OptionsParser::Options::operator=(Options &&other)
-{
-	values_ = other.values_;
-	return *this;
 }
 
 bool OptionsParser::Options::valid() const

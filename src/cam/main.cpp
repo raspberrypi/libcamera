@@ -33,7 +33,7 @@ static int parseOptions(int argc, char *argv[])
 	parser.addOption(OptHelp, "Display this help message", "help");
 	parser.addOption(OptList, "List all cameras", "list");
 
-	options = std::move(parser.parse(argc, argv));
+	options = parser.parse(argc, argv);
 	if (!options.valid())
 		return -EINVAL;
 

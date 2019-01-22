@@ -23,8 +23,6 @@ public:
 	class Options {
 	public:
 		Options();
-		Options(Options &&other);
-		Options &operator=(Options &&other);
 
 		bool valid() const;
 		bool isSet(int opt) const;

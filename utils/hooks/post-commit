@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Execute the checkstyle script after committing any code. This allows the
+# commit to succeed, but ensures that the developer is aware of any potential
+# issues immediately, and can resolve them and fix rapidly with:
+#   git commit --amend
+#
+# To utilise this hook, install this file with:
+#   cp utils/hooks/post-commit .git/hooks/post-commit
+
+./utils/checkstyle.py

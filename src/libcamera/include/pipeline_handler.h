@@ -16,6 +16,7 @@ namespace libcamera {
 
 class CameraManager;
 class DeviceEnumerator;
+class MediaDevice;
 
 class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>
 {
@@ -27,6 +28,15 @@ public:
 
 protected:
 	CameraManager *manager_;
+
+	void registerCamera(std::shared_ptr<Camera> camera);
+	void hotplugMediaDevice(MediaDevice *media);
+
+private:
+	virtual void disconnect();
+	void mediaDeviceDisconnected(MediaDevice *media);
+
+	std::vector<std::weak_ptr<Camera>> cameras_;
 };
 
 class PipelineHandlerFactory

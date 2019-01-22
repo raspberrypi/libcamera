@@ -6,7 +6,6 @@
  */
 
 #include <libcamera/camera.h>
-#include <libcamera/camera_manager.h>
 
 #include "device_enumerator.h"
 #include "media_device.h"
@@ -49,7 +48,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	dev_->acquire();
 
 	std::shared_ptr<Camera> camera = Camera::create(this, dev_->model());
-	manager_->addCamera(std::move(camera));
+	registerCamera(std::move(camera));
 
 	return true;
 }

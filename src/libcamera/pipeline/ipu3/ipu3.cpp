@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <libcamera/camera.h>
-#include <libcamera/camera_manager.h>
 
 #include "device_enumerator.h"
 #include "log.h"
@@ -169,7 +168,7 @@ void PipelineHandlerIPU3::registerCameras()
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
 		std::shared_ptr<Camera> camera = Camera::create(this, cameraName);
-		manager_->addCamera(std::move(camera));
+		registerCamera(std::move(camera));
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""

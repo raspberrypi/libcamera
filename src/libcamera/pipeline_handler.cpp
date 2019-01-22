@@ -5,7 +5,11 @@
  * pipeline_handler.cpp - Pipeline handler infrastructure
  */
 
+#include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
+
 #include "log.h"
+#include "media_device.h"
 #include "pipeline_handler.h"
 
 /**
@@ -96,6 +100,73 @@ PipelineHandler::~PipelineHandler()
  * convenience of pipeline handler implementations. It remains valid and
  * constant for the whole lifetime of the pipeline handler.
  */
+
+/**
+ * \brief Register a camera to the camera manager and pipeline handler
+ * \param[in] camera The camera to be added
+ *
+ * This function is called by pipeline handlers to register the cameras they
+ * handle with the camera manager.
+ */
+void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
+{
+	cameras_.push_back(camera);
+	manager_->addCamera(std::move(camera));
+}
+
+/**
+ * \brief Enable hotplug handling for a media device
+ * \param[in] media The media device
+ *
+ * This function enables hotplug handling, and especially hot-unplug handling,
+ * of the \a media device. It shall be called by pipeline handlers for all the
+ * media devices that can be disconnected.
+ *
+ * When a media device passed to this function is later unplugged, the pipeline
+ * handler gets notified and automatically disconnects all the cameras it has
+ * registered without requiring any manual intervention.
+ */
+void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
+{
+	media->disconnected.connect(this, &PipelineHandler::mediaDeviceDisconnected);
+}
+
+/**
+ * \brief Device disconnection handler
+ *
+ * This virtual function is called to notify the pipeline handler that the
+ * device it handles has been disconnected. It notifies all cameras created by
+ * the pipeline handler that they have been disconnected, and unregisters them
+ * from the camera manager.
+ *
+ * The function can be overloaded by pipeline handlers to perform custom
+ * operations at disconnection time. Any overloaded version shall call the
+ * PipelineHandler::disconnect() base function for proper hot-unplug operation.
+ */
+void PipelineHandler::disconnect()
+{
+	for (std::weak_ptr<Camera> ptr : cameras_) {
+		std::shared_ptr<Camera> camera = ptr.lock();
+		if (!camera)
+			continue;
+
+		camera->disconnect();
+		manager_->removeCamera(camera.get());
+	}
+
+	cameras_.clear();
+}
+
+/**
+ * \brief Slot for the MediaDevice disconnected signal
+ */
+void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
+{
+	if (cameras_.empty())
+		return;
+
+	disconnect();
+}
 
 /**
  * \class PipelineHandlerFactory

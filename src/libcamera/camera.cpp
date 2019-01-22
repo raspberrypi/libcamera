@@ -34,6 +34,8 @@
 
 namespace libcamera {
 
+LOG_DECLARE_CATEGORY(Camera)
+
 /**
  * \class Camera
  * \brief Camera device
@@ -87,6 +89,18 @@ const std::string &Camera::name() const
 	return name_;
 }
 
+/**
+ * \var Camera::disconnected
+ * \brief Signal emitted when the camera is disconnected from the system
+ *
+ * This signal is emitted when libcamera detects that the cameera has been
+ * removed from the system. For hot-pluggable devices this is usually caused by
+ * physical device disconnection. The media device is passed as a parameter.
+ *
+ * As soon as this signal is emitted the camera instance will refuse all new
+ * application API calls by returning errors immediately.
+ */
+
 Camera::Camera(PipelineHandler *pipe, const std::string &name)
 	: pipe_(pipe->shared_from_this()), name_(name)
 {
@@ -94,6 +108,23 @@ Camera::Camera(PipelineHandler *pipe, const std::string &name)
 
 Camera::~Camera()
 {
+}
+
+/**
+ * \brief Notify camera disconnection
+ *
+ * This method is used to notify the camera instance that the underlying
+ * hardware has been unplugged. In response to the disconnection the camera
+ * instance notifies the application by emitting the #disconnected signal, and
+ * ensures that all new calls to the application-facing Camera API return an
+ * error immediately.
+ */
+void Camera::disconnect()
+{
+	LOG(Camera, Debug) << "Disconnecting camera " << name_;
+
+	/** \todo Block API calls when they will be implemented. */
+	disconnected.emit(this);
 }
 
 } /* namespace libcamera */

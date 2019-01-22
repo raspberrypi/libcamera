@@ -10,6 +10,8 @@
 #include <memory>
 #include <string>
 
+#include <libcamera/signal.h>
+
 namespace libcamera {
 
 class PipelineHandler;
@@ -25,9 +27,14 @@ public:
 
 	const std::string &name() const;
 
+	Signal<Camera *> disconnected;
+
 private:
 	Camera(PipelineHandler *pipe, const std::string &name);
 	~Camera();
+
+	friend class PipelineHandler;
+	void disconnect();
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;

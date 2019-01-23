@@ -23,7 +23,7 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
-	MediaDevice *dev_;
+	std::shared_ptr<MediaDevice> dev_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
@@ -51,7 +51,7 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 	dm.add("RGB/YUV Input");
 	dm.add("Scaler");
 
-	dev_ = enumerator->search(dm);
+	dev_ = std::move(enumerator->search(dm));
 	if (!dev_)
 		return false;
 

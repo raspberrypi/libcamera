@@ -23,7 +23,7 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
-	MediaDevice *dev_;
+	std::shared_ptr<MediaDevice> dev_;
 };
 
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
@@ -41,7 +41,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("uvcvideo");
 
-	dev_ = enumerator->search(dm);
+	dev_ = std::move(enumerator->search(dm));
 
 	if (!dev_)
 		return false;

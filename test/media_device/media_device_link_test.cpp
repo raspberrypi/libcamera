@@ -240,7 +240,7 @@ class MediaDeviceLinkTest : public Test
 
 private:
 	unique_ptr<DeviceEnumerator> enumerator;
-	MediaDevice *dev_;
+	shared_ptr<MediaDevice> dev_;
 };
 
 TEST_REGISTER(MediaDeviceLinkTest);

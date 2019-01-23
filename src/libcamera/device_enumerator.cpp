@@ -166,12 +166,10 @@ std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 
 DeviceEnumerator::~DeviceEnumerator()
 {
-	for (MediaDevice *dev : devices_) {
-		if (dev->busy())
+	for (std::shared_ptr<MediaDevice> media : devices_) {
+		if (media->busy())
 			LOG(DeviceEnumerator, Error)
 				<< "Removing media device while still in use";
-
-		delete dev;
 	}
 }
 
@@ -211,7 +209,7 @@ DeviceEnumerator::~DeviceEnumerator()
  */
 int DeviceEnumerator::addDevice(const std::string &deviceNode)
 {
-	MediaDevice *media = new MediaDevice(deviceNode);
+	std::shared_ptr<MediaDevice> media = std::make_shared<MediaDevice>(deviceNode);
 
 	int ret = media->open();
 	if (ret < 0)
@@ -243,8 +241,9 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 			return ret;
 	}
 
-	devices_.push_back(media);
 	media->close();
+
+	devices_.push_back(std::move(media));
 
 	return 0;
 }
@@ -260,17 +259,17 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
  *
  * \return pointer to the matching MediaDevice, or nullptr if no match is found
  */
-MediaDevice *DeviceEnumerator::search(const DeviceMatch &dm)
+std::shared_ptr<MediaDevice> DeviceEnumerator::search(const DeviceMatch &dm)
 {
-	for (MediaDevice *dev : devices_) {
-		if (dev->busy())
+	for (std::shared_ptr<MediaDevice> media : devices_) {
+		if (media->busy())
 			continue;
 
-		if (dm.match(dev)) {
+		if (dm.match(media.get())) {
 			LOG(DeviceEnumerator, Debug)
 				<< "Successful match for media device \""
-				<< dev->driver() << "\"";
-			return dev;
+				<< media->driver() << "\"";
+			return std::move(media);
 		}
 	}
 

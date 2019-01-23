@@ -42,13 +42,13 @@ public:
 	virtual int init() = 0;
 	virtual int enumerate() = 0;
 
-	MediaDevice *search(const DeviceMatch &dm);
+	std::shared_ptr<MediaDevice> search(const DeviceMatch &dm);
 
 protected:
 	int addDevice(const std::string &deviceNode);
 
 private:
-	std::vector<MediaDevice *> devices_;
+	std::vector<std::shared_ptr<MediaDevice>> devices_;
 
 	virtual std::string lookupDeviceNode(int major, int minor) = 0;
 };

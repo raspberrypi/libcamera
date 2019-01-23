@@ -29,8 +29,8 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
-	MediaDevice *cio2_;
-	MediaDevice *imgu_;
+	std::shared_ptr<MediaDevice> cio2_;
+	std::shared_ptr<MediaDevice> imgu_;
 
 	void registerCameras();
 };
@@ -47,9 +47,6 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 
 	if (imgu_)
 		imgu_->release();
-
-	cio2_ = nullptr;
-	imgu_ = nullptr;
 }
 
 bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
@@ -78,11 +75,11 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	imgu_dm.add("ipu3-imgu 1 viewfinder");
 	imgu_dm.add("ipu3-imgu 1 3a stat");
 
-	cio2_ = enumerator->search(cio2_dm);
+	cio2_ = std::move(enumerator->search(cio2_dm));
 	if (!cio2_)
 		return false;
 
-	imgu_ = enumerator->search(imgu_dm);
+	imgu_ = std::move(enumerator->search(imgu_dm));
 	if (!imgu_)
 		return false;
 

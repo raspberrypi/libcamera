@@ -65,7 +65,7 @@ int IPU3PipelineTest::init()
 		return TestSkip;
 	}
 
-	MediaDevice *cio2 = enumerator->search(cio2_dm);
+	std::shared_ptr<MediaDevice> cio2 = enumerator->search(cio2_dm);
 	if (!cio2) {
 		cerr << "Failed to find IPU3 CIO2: test skip" << endl;
 		return TestSkip;

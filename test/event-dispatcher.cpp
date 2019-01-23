@@ -18,16 +18,23 @@
 using namespace std;
 using namespace libcamera;
 
+static EventDispatcher *dispatcher;
+static bool interrupt;
+
 class EventDispatcherTest : public Test
 {
 protected:
 	static void sigAlarmHandler(int)
 	{
 		cout << "SIGALARM received" << endl;
+		if (interrupt)
+			dispatcher->interrupt();
 	}
 
 	int init()
 	{
+		dispatcher = CameraManager::instance()->eventDispatcher();
+
 		struct sigaction sa = {};
 		sa.sa_handler = &sigAlarmHandler;
 		sigaction(SIGALRM, &sa, nullptr);
@@ -37,7 +44,6 @@ protected:
 
 	int run()
 	{
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
 		Timer timer;
 
 		/* Event processing interruption by signal. */
@@ -48,6 +54,7 @@ protected:
 
 		struct itimerval itimer = {};
 		itimer.it_value.tv_usec = 500000;
+		interrupt = false;
 		setitimer(ITIMER_REAL, &itimer, nullptr);
 
 		dispatcher->processEvents();
@@ -59,6 +66,29 @@ protected:
 
 		if (abs(duration - 1000) > 50) {
 			cout << "Event processing restart test failed" << endl;
+			return TestFail;
+		}
+
+		/* Event processing interruption. */
+		timer.start(1000);
+		dispatcher->interrupt();
+
+		dispatcher->processEvents();
+
+		if (!timer.isRunning()) {
+			cout << "Event processing immediate interruption failed" << endl;
+			return TestFail;
+		}
+
+		timer.start(1000);
+		itimer.it_value.tv_usec = 500000;
+		interrupt = true;
+		setitimer(ITIMER_REAL, &itimer, nullptr);
+
+		dispatcher->processEvents();
+
+		if (!timer.isRunning()) {
+			cout << "Event processing delayed interruption failed" << endl;
 			return TestFail;
 		}
 

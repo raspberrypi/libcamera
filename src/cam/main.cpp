@@ -7,10 +7,12 @@
 
 #include <iostream>
 #include <map>
+#include <signal.h>
 #include <string.h>
 
 #include <libcamera/libcamera.h>
 
+#include "event_loop.h"
 #include "options.h"
 
 using namespace libcamera;
@@ -22,6 +24,14 @@ enum {
 	OptHelp = 'h',
 	OptList = 'l',
 };
+
+EventLoop *loop;
+
+void signalHandler(int signal)
+{
+	std::cout << "Exiting" << std::endl;
+	loop->exit();
+}
 
 static int parseOptions(int argc, char *argv[])
 {
@@ -79,7 +89,17 @@ int main(int argc, char **argv)
 		}
 	}
 
+	loop = new EventLoop(cm->eventDispatcher());
+
+	struct sigaction sa = {};
+	sa.sa_handler = &signalHandler;
+	sigaction(SIGINT, &sa, nullptr);
+
+	ret = loop->exec();
+
+	delete loop;
+
 	cm->stop();
 
-	return 0;
+	return ret;
 }

@@ -1,4 +1,5 @@
 cam_sources = files([
+    'event_loop.cpp',
     'main.cpp',
     'options.cpp',
 ])

@@ -128,6 +128,37 @@ void EventDispatcherPoll::processEvents()
 	for (auto notifier : notifiers_)
 		pollfds.push_back({ notifier.first, notifier.second.events(), 0 });
 
+	/* Wait for events and process notifiers and timers. */
+	do {
+		ret = poll(&pollfds);
+	} while (ret == -1 && errno == EINTR);
+
+	if (ret < 0) {
+		ret = -errno;
+		LOG(Event, Warning) << "poll() failed with " << strerror(-ret);
+	} else if (ret > 0) {
+		processNotifiers(pollfds);
+	}
+
+	processTimers();
+}
+
+short EventDispatcherPoll::EventNotifierSetPoll::events() const
+{
+	short events = 0;
+
+	if (notifiers[EventNotifier::Read])
+		events |= POLLIN;
+	if (notifiers[EventNotifier::Write])
+		events |= POLLOUT;
+	if (notifiers[EventNotifier::Exception])
+		events |= POLLPRI;
+
+	return events;
+}
+
+int EventDispatcherPoll::poll(std::vector<struct pollfd> *pollfds)
+{
 	/* Compute the timeout. */
 	Timer *nextTimer = !timers_.empty() ? timers_.front() : nullptr;
 	struct timespec timeout;
@@ -151,31 +182,8 @@ void EventDispatcherPoll::processEvents()
 			<< timeout.tv_nsec;
 	}
 
-	/* Wait for events and process notifiers and timers. */
-	ret = ppoll(pollfds.data(), pollfds.size(),
-		    nextTimer ? &timeout : nullptr, nullptr);
-	if (ret < 0) {
-		ret = -errno;
-		LOG(Event, Warning) << "poll() failed with " << strerror(-ret);
-	} else if (ret > 0) {
-		processNotifiers(pollfds);
-	}
-
-	processTimers();
-}
-
-short EventDispatcherPoll::EventNotifierSetPoll::events() const
-{
-	short events = 0;
-
-	if (notifiers[EventNotifier::Read])
-		events |= POLLIN;
-	if (notifiers[EventNotifier::Write])
-		events |= POLLOUT;
-	if (notifiers[EventNotifier::Exception])
-		events |= POLLPRI;
-
-	return events;
+	return ppoll(pollfds->data(), pollfds->size(),
+		     nextTimer ? &timeout : nullptr, nullptr);
 }
 
 void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pollfds)

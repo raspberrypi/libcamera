@@ -29,7 +29,7 @@
  * levels.
  *
  * The levels are configurable through the LIBCAMERA_LOG_LEVELS environment
- * variable that contains a comma-separated list of 'category=level' pairs.
+ * variable that contains a comma-separated list of 'category:level' pairs.
  *
  * The category names are strings and can include a wildcard ('*') character at
  * the end to match multiple categories.
@@ -134,9 +134,9 @@ void Logger::parseLogFile()
 /**
  * \brief Parse the log levels from the environment
  *
- * The logr levels are stored in LIBCAMERA_LOG_LEVELS environement variable as a list
- * of "category=level" pairs, separated by commas (','). Parse the variable and
- * store the levels to configure all log categories.
+ * The log levels are stored in the LIBCAMERA_LOG_LEVELS environment variable
+ * as a list of "category:level" pairs, separated by commas (','). Parse the
+ * variable and store the levels to configure all log categories.
  */
 void Logger::parseLogLevels()
 {

@@ -110,6 +110,73 @@ PipelineHandler::~PipelineHandler()
  */
 
 /**
+ * \fn PipelineHandler::allocateBuffers()
+ * \brief Allocate buffers for a stream
+ * \param[in] camera The camera the \a stream belongs to
+ * \param[in] stream The stream to allocate buffers for
+ *
+ * This method allocates buffers internally in the pipeline handler and
+ * associates them with the stream's buffer pool.
+ *
+ * The intended caller of this method is the Camera class.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+
+/**
+ * \fn PipelineHandler::freeBuffers()
+ * \brief Free all buffers associated with a stream
+ * \param[in] camera The camera the \a stream belongs to
+ * \param[in] stream The stream to free buffers from
+ *
+ * After a capture session has been stopped all buffers associated with the
+ * stream shall be freed.
+ *
+ * The intended caller of this method is the Camera class.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+
+/**
+ * \fn PipelineHandler::start()
+ * \brief Start capturing from a group of streams
+ * \param[in] camera The camera to start
+ *
+ * Start the group of streams that have been configured for capture by
+ * \a configureStreams(). The intended caller of this method is the Camera
+ * class which will in turn be called from the application to indicate that it
+ * has configured the streams and is ready to capture.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+
+/**
+ * \fn PipelineHandler::stop()
+ * \brief Stop capturing from all running streams
+ * \param[in] camera The camera to stop
+ *
+ * This method stops capturing and processing requests immediately. All pending
+ * requests are cancelled and complete immediately in an error state.
+ *
+ * \todo Complete the pending requests immediately
+ */
+
+/**
+ * \fn PipelineHandler::queueRequest()
+ * \brief Queue a request to the camera
+ * \param[in] camera The camera to queue the request to
+ * \param[in] request The request to queue
+ *
+ * This method queues a capture request to the pipeline handler for processing.
+ * The request contains a set of buffers associated with streams and a set of
+ * parameters. The pipeline handler shall program the device to ensure that the
+ * parameters will be applied to the frames captured in the buffers provided in
+ * the request.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+
+/**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
  * \brief Match media devices and create camera instances
  * \param enumerator The enumerator providing all media devices found in the

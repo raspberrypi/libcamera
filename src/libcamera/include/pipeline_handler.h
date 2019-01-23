@@ -14,10 +14,12 @@
 
 namespace libcamera {
 
+class BufferPool;
 class Camera;
 class CameraManager;
 class DeviceEnumerator;
 class MediaDevice;
+class Request;
 class Stream;
 class StreamConfiguration;
 
@@ -44,6 +46,14 @@ public:
 	streamConfiguration(Camera *camera, std::vector<Stream *> &streams) = 0;
 	virtual int configureStreams(Camera *camera,
 				     std::map<Stream *, StreamConfiguration> &config) = 0;
+
+	virtual int allocateBuffers(Camera *camera, Stream *stream) = 0;
+	virtual int freeBuffers(Camera *camera, Stream *stream) = 0;
+
+	virtual int start(const Camera *camera) = 0;
+	virtual void stop(const Camera *camera) = 0;
+
+	virtual int queueRequest(const Camera *camera, Request *request) = 0;
 
 	virtual bool match(DeviceEnumerator *enumerator) = 0;
 

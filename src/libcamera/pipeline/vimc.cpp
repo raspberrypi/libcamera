@@ -30,6 +30,14 @@ public:
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
+	int allocateBuffers(Camera *camera, Stream *stream) override;
+	int freeBuffers(Camera *camera, Stream *stream) override;
+
+	int start(const Camera *camera) override;
+	void stop(const Camera *camera) override;
+
+	int queueRequest(const Camera *camera, Request *request) override;
+
 	bool match(DeviceEnumerator *enumerator);
 
 private:
@@ -74,6 +82,32 @@ int PipeHandlerVimc::configureStreams(Camera *camera,
 	LOG(VIMC, Info) << "TODO: Configure the camera for resolution "
 			<< cfg->width << "x" << cfg->height;
 
+	return 0;
+}
+
+int PipeHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
+{
+	return -ENOTRECOVERABLE;
+}
+
+int PipeHandlerVimc::freeBuffers(Camera *camera, Stream *stream)
+{
+	return 0;
+}
+
+int PipeHandlerVimc::start(const Camera *camera)
+{
+	LOG(VIMC, Error) << "TODO: start camera";
+	return 0;
+}
+
+void PipeHandlerVimc::stop(const Camera *camera)
+{
+	LOG(VIMC, Error) << "TODO: stop camera";
+}
+
+int PipeHandlerVimc::queueRequest(const Camera *camera, Request *request)
+{
 	return 0;
 }
 

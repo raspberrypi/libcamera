@@ -46,11 +46,11 @@ private:
 };
 
 #define REGISTER_PIPELINE_HANDLER(handler)				\
-class handler##Factory : public PipelineHandlerFactory			\
+class handler##Factory final : public PipelineHandlerFactory		\
 {									\
 public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
-	PipelineHandler *create(CameraManager *manager) final		\
+	PipelineHandler *create(CameraManager *manager) 		\
 	{								\
 		return new handler(manager);				\
 	}								\

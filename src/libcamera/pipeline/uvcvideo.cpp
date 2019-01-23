@@ -17,17 +17,17 @@ namespace libcamera {
 class PipelineHandlerUVC : public PipelineHandler
 {
 public:
-	PipelineHandlerUVC();
+	PipelineHandlerUVC(CameraManager *manager);
 	~PipelineHandlerUVC();
 
-	bool match(CameraManager *manager, DeviceEnumerator *enumerator);
+	bool match(DeviceEnumerator *enumerator);
 
 private:
 	MediaDevice *dev_;
 };
 
-PipelineHandlerUVC::PipelineHandlerUVC()
-	: dev_(nullptr)
+PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
+	: PipelineHandler(manager), dev_(nullptr)
 {
 }
 
@@ -37,7 +37,7 @@ PipelineHandlerUVC::~PipelineHandlerUVC()
 		dev_->release();
 }
 
-bool PipelineHandlerUVC::match(CameraManager *manager, DeviceEnumerator *enumerator)
+bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("uvcvideo");
 
@@ -49,7 +49,7 @@ bool PipelineHandlerUVC::match(CameraManager *manager, DeviceEnumerator *enumera
 	dev_->acquire();
 
 	std::shared_ptr<Camera> camera = Camera::create(dev_->model());
-	manager->addCamera(std::move(camera));
+	manager_->addCamera(std::move(camera));
 
 	return true;
 }

@@ -19,9 +19,13 @@ class DeviceEnumerator;
 class PipelineHandler
 {
 public:
-	virtual ~PipelineHandler() { };
+	PipelineHandler(CameraManager *manager);
+	virtual ~PipelineHandler();
 
-	virtual bool match(CameraManager *manager, DeviceEnumerator *enumerator) = 0;
+	virtual bool match(DeviceEnumerator *enumerator) = 0;
+
+protected:
+	CameraManager *manager_;
 };
 
 class PipelineHandlerFactory
@@ -30,7 +34,7 @@ public:
 	PipelineHandlerFactory(const char *name);
 	virtual ~PipelineHandlerFactory() { };
 
-	virtual PipelineHandler *create() = 0;
+	virtual PipelineHandler *create(CameraManager *manager) = 0;
 
 	const std::string &name() const { return name_; }
 
@@ -42,11 +46,13 @@ private:
 };
 
 #define REGISTER_PIPELINE_HANDLER(handler)				\
-class handler##Factory : public PipelineHandlerFactory {		\
+class handler##Factory : public PipelineHandlerFactory			\
+{									\
 public:									\
-	handler##Factory() : PipelineHandlerFactory(#handler) { }	\
-	PipelineHandler *create() final {				\
-		return new handler();					\
+	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
+	PipelineHandler *create(CameraManager *manager) final		\
+	{								\
+		return new handler(manager);				\
 	}								\
 };									\
 static handler##Factory global_##handler##Factory;

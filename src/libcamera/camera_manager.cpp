@@ -98,8 +98,8 @@ int CameraManager::start()
 		 * all pipelines it can provide.
 		 */
 		while (1) {
-			PipelineHandler *pipe = factory->create();
-			if (!pipe->match(this, enumerator_.get())) {
+			PipelineHandler *pipe = factory->create(this);
+			if (!pipe->match(enumerator_.get())) {
 				delete pipe;
 				break;
 			}

@@ -23,20 +23,20 @@ LOG_DEFINE_CATEGORY(IPU3)
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
-	PipelineHandlerIPU3();
+	PipelineHandlerIPU3(CameraManager *manager);
 	~PipelineHandlerIPU3();
 
-	bool match(CameraManager *manager, DeviceEnumerator *enumerator);
+	bool match(DeviceEnumerator *enumerator);
 
 private:
 	MediaDevice *cio2_;
 	MediaDevice *imgu_;
 
-	void registerCameras(CameraManager *manager);
+	void registerCameras();
 };
 
-PipelineHandlerIPU3::PipelineHandlerIPU3()
-	: cio2_(nullptr), imgu_(nullptr)
+PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
+	: PipelineHandler(manager), cio2_(nullptr), imgu_(nullptr)
 {
 }
 
@@ -52,7 +52,7 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 	imgu_ = nullptr;
 }
 
-bool PipelineHandlerIPU3::match(CameraManager *manager, DeviceEnumerator *enumerator)
+bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch cio2_dm("ipu3-cio2");
 	cio2_dm.add("ipu3-csi2 0");
@@ -106,7 +106,7 @@ bool PipelineHandlerIPU3::match(CameraManager *manager, DeviceEnumerator *enumer
 	if (cio2_->disableLinks())
 		goto error_close_cio2;
 
-	registerCameras(manager);
+	registerCameras();
 
 	cio2_->close();
 
@@ -127,7 +127,7 @@ error_release_mdev:
  * media entity with function MEDIA_ENT_F_CAM_SENSOR) to one of the four
  * CIO2 CSI-2 receivers.
  */
-void PipelineHandlerIPU3::registerCameras(CameraManager *manager)
+void PipelineHandlerIPU3::registerCameras()
 {
 	/*
 	 * For each CSI-2 receiver on the IPU3, create a Camera if an
@@ -172,7 +172,7 @@ void PipelineHandlerIPU3::registerCameras(CameraManager *manager)
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
 		std::shared_ptr<Camera> camera = Camera::create(cameraName);
-		manager->addCamera(std::move(camera));
+		manager_->addCamera(std::move(camera));
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""

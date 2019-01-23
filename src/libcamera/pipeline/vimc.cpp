@@ -17,17 +17,17 @@ namespace libcamera {
 class PipeHandlerVimc : public PipelineHandler
 {
 public:
-	PipeHandlerVimc();
+	PipeHandlerVimc(CameraManager *manager);
 	~PipeHandlerVimc();
 
-	bool match(CameraManager *manager, DeviceEnumerator *enumerator);
+	bool match(DeviceEnumerator *enumerator);
 
 private:
 	MediaDevice *dev_;
 };
 
-PipeHandlerVimc::PipeHandlerVimc()
-	: dev_(nullptr)
+PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
+	: PipelineHandler(manager), dev_(nullptr)
 {
 }
 
@@ -37,7 +37,7 @@ PipeHandlerVimc::~PipeHandlerVimc()
 		dev_->release();
 }
 
-bool PipeHandlerVimc::match(CameraManager *manager, DeviceEnumerator *enumerator)
+bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("vimc");
 
@@ -65,7 +65,7 @@ bool PipeHandlerVimc::match(CameraManager *manager, DeviceEnumerator *enumerator
 	 * object is modeled.
 	 */
 	std::shared_ptr<Camera> camera = Camera::create("Dummy VIMC Camera");
-	manager->addCamera(std::move(camera));
+	manager_->addCamera(std::move(camera));
 
 	return true;
 }

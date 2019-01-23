@@ -35,17 +35,29 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
+ * \brief Construct a PipelineHandler instance
+ * \param[in] manager The camera manager
+ */
+PipelineHandler::PipelineHandler(CameraManager *manager)
+	: manager_(manager)
+{
+}
+
+PipelineHandler::~PipelineHandler()
+{
+}
+
+/**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
  * \brief Match media devices and create camera instances
- * \param manager The camera manager
  * \param enumerator The enumerator providing all media devices found in the
  * system
  *
  * This function is the main entry point of the pipeline handler. It is called
- * by the camera manager with the \a manager and \a enumerator passed as
- * arguments. It shall acquire from the \a enumerator all the media devices it
- * needs for a single pipeline, create one or multiple Camera instances and
- * register them with the \a manager.
+ * by the camera manager with the \a enumerator passed as an argument. It shall
+ * acquire from the \a enumerator all the media devices it needs for a single
+ * pipeline, create one or multiple Camera instances and register them with the
+ * camera manager.
  *
  * If all media devices needed by the pipeline handler are found, they must all
  * be acquired by a call to MediaDevice::acquire(). This function shall then
@@ -64,6 +76,15 @@ LOG_DEFINE_CATEGORY(Pipeline)
  *
  * \return true if media devices have been acquired and camera instances
  * created, or false otherwise
+ */
+
+/**
+ * \var PipelineHandler::manager_
+ * \brief The Camera manager associated with the pipeline handler
+ *
+ * The camera manager pointer is stored in the pipeline handler for the
+ * convenience of pipeline handler implementations. It remains valid and
+ * constant for the whole lifetime of the pipeline handler.
  */
 
 /**
@@ -96,8 +117,11 @@ PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
 /**
  * \fn PipelineHandlerFactory::create()
  * \brief Create an instance of the PipelineHandler corresponding to the factory
+ * \param[in] manager The camera manager
  *
- * This virtual function is implemented by the REGISTER_PIPELINE_HANDLER() macro.
+ * This virtual function is implemented by the REGISTER_PIPELINE_HANDLER()
+ * macro. It creates a pipeline handler instance associated with the camera
+ * \a manager.
  *
  * \return a pointer to a newly constructed instance of the PipelineHandler
  * subclass corresponding to the factory

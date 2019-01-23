@@ -5,10 +5,11 @@ subdir('pipeline')
 subdir('v4l2_device')
 
 public_tests = [
-    ['event',           'event.cpp'],
-    ['list-cameras',    'list-cameras.cpp'],
-    ['signal',          'signal.cpp'],
-    ['timer',           'timer.cpp'],
+    ['event',                           'event.cpp'],
+    ['event-dispatcher',                'event-dispatcher.cpp'],
+    ['list-cameras',                    'list-cameras.cpp'],
+    ['signal',                          'signal.cpp'],
+    ['timer',                           'timer.cpp'],
 ]
 
 internal_tests = [

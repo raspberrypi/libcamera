@@ -266,6 +266,16 @@ void MediaPad::addLink(MediaLink *link)
  */
 
 /**
+ * \fn MediaEntity::flags()
+ * \brief Retrieve the entity's flags
+ *
+ * Media entity flags are expressed using the MEDIA_ENT_FL_* macros
+ * defined by the Media Controller API.
+ *
+ * \return The entity's flags
+ */
+
+/**
  * \fn MediaEntity::deviceNode()
  * \brief Retrieve the entity's device node path, if any
  *
@@ -358,7 +368,8 @@ MediaEntity::MediaEntity(MediaDevice *dev,
 			 const struct media_v2_entity *entity,
 			 unsigned int major, unsigned int minor)
 	: MediaObject(dev, entity->id), name_(entity->name),
-	  function_(entity->function), major_(major), minor_(minor)
+	  function_(entity->function), flags_(entity->flags),
+	  major_(major), minor_(minor)
 {
 }
 

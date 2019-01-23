@@ -192,6 +192,27 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera)
 }
 
 /**
+ * \brief Remove a camera from the camera manager
+ * \param[in] camera The camera to be removed
+ *
+ * This function is called by pipeline handlers to unregister cameras from the
+ * camera manager. Unregistered cameras won't be reported anymore by the
+ * cameras() and get() calls, but references may still exist in applications.
+ */
+void CameraManager::removeCamera(Camera *camera)
+{
+	for (auto iter = cameras_.begin(); iter != cameras_.end(); ++iter) {
+		if (iter->get() == camera) {
+			LOG(Camera, Debug)
+				<< "Unregistering camera '"
+				<< camera->name() << "'";
+			cameras_.erase(iter);
+			return;
+		}
+	}
+}
+
+/**
  * \brief Retrieve the camera manager instance
  *
  * The CameraManager is a singleton and can't be constructed manually. This

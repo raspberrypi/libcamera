@@ -28,6 +28,7 @@ public:
 	std::shared_ptr<Camera> get(const std::string &name);
 
 	void addCamera(std::shared_ptr<Camera> camera);
+	void removeCamera(Camera *camera);
 
 	static CameraManager *instance();
 

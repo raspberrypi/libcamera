@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/camera.h>
-
 namespace libcamera {
 
 class CameraManager;

@@ -5,6 +5,7 @@
  * camera_manager.h - Camera management
  */
 
+#include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 

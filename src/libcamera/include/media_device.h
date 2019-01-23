@@ -14,6 +14,8 @@
 
 #include <linux/media.h>
 
+#include <libcamera/signal.h>
+
 #include "media_object.h"
 
 namespace libcamera {
@@ -47,6 +49,8 @@ public:
 			const MediaEntity *sink, unsigned int sinkIdx);
 	MediaLink *link(const MediaPad *source, const MediaPad *sink);
 	int disableLinks();
+
+	Signal<MediaDevice *> disconnected;
 
 private:
 	std::string driver_;

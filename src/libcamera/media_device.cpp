@@ -428,6 +428,16 @@ int MediaDevice::disableLinks()
 }
 
 /**
+ * \var MediaDevice::disconnected
+ * \brief Signal emitted when the media device is disconnected from the system
+ *
+ * This signal is emitted when the device enumerator detects that the media
+ * device has been removed from the system. For hot-pluggable devices this is
+ * usually caused by physical device disconnection, but can also result from
+ * driver unloading for most devices. The media device is passed as a parameter.
+ */
+
+/**
  * \var MediaDevice::objects_
  * \brief Global map of media objects (entities, pads, links) keyed by their
  * object id.

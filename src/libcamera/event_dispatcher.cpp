@@ -104,4 +104,14 @@ EventDispatcher::~EventDispatcher()
  * it before returning.
  */
 
+/**
+ * \fn EventDispatcher::interrupt()
+ * \brief Interrupt any running processEvents() call as soon as possible
+ *
+ * Calling this function interrupts any blocking processEvents() call in
+ * progress. The processEvents() function will return as soon as possible,
+ * after processing pending timers and events. If processEvents() isn't in
+ * progress, it will be interrupted immediately the next time it gets called.
+ */
+
 } /* namespace libcamera */

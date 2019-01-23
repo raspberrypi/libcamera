@@ -8,7 +8,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <poll.h>
+#include <stdint.h>
 #include <string.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 #include <libcamera/event_notifier.h>
 #include <libcamera/timer.h>
@@ -43,10 +46,18 @@ static const char *notifierType(EventNotifier::Type type)
 
 EventDispatcherPoll::EventDispatcherPoll()
 {
+	/*
+	 * Create the event fd. Failures are fatal as we can't implement an
+	 * interruptible dispatcher without the fd.
+	 */
+	eventfd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+	if (eventfd_ < 0)
+		LOG(Event, Fatal) << "Unable to create eventfd";
 }
 
 EventDispatcherPoll::~EventDispatcherPoll()
 {
+	close(eventfd_);
 }
 
 void EventDispatcherPoll::registerEventNotifier(EventNotifier *notifier)
@@ -123,10 +134,12 @@ void EventDispatcherPoll::processEvents()
 
 	/* Create the pollfd array. */
 	std::vector<struct pollfd> pollfds;
-	pollfds.reserve(notifiers_.size());
+	pollfds.reserve(notifiers_.size() + 1);
 
 	for (auto notifier : notifiers_)
 		pollfds.push_back({ notifier.first, notifier.second.events(), 0 });
+
+	pollfds.push_back({ eventfd_, POLLIN, 0 });
 
 	/* Wait for events and process notifiers and timers. */
 	do {
@@ -137,10 +150,18 @@ void EventDispatcherPoll::processEvents()
 		ret = -errno;
 		LOG(Event, Warning) << "poll() failed with " << strerror(-ret);
 	} else if (ret > 0) {
+		processInterrupt(pollfds.back());
+		pollfds.pop_back();
 		processNotifiers(pollfds);
 	}
 
 	processTimers();
+}
+
+void EventDispatcherPoll::interrupt()
+{
+	uint64_t value = 1;
+	write(eventfd_, &value, sizeof(value));
 }
 
 short EventDispatcherPoll::EventNotifierSetPoll::events() const
@@ -184,6 +205,15 @@ int EventDispatcherPoll::poll(std::vector<struct pollfd> *pollfds)
 
 	return ppoll(pollfds->data(), pollfds->size(),
 		     nextTimer ? &timeout : nullptr, nullptr);
+}
+
+void EventDispatcherPoll::processInterrupt(const struct pollfd &pfd)
+{
+	if (!pfd.revents & POLLIN)
+		return;
+
+	uint64_t value;
+	read(eventfd_, &value, sizeof(value));
 }
 
 void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pollfds)

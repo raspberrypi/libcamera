@@ -31,6 +31,7 @@ public:
 	void unregisterTimer(Timer *timer);
 
 	void processEvents();
+	void interrupt();
 
 private:
 	struct EventNotifierSetPoll {
@@ -40,8 +41,10 @@ private:
 
 	std::map<int, EventNotifierSetPoll> notifiers_;
 	std::list<Timer *> timers_;
+	int eventfd_;
 
 	int poll(std::vector<struct pollfd> *pollfds);
+	void processInterrupt(const struct pollfd &pfd);
 	void processNotifiers(const std::vector<struct pollfd> &pollfds);
 	void processTimers();
 };

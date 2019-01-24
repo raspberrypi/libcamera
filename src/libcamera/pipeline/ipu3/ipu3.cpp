@@ -14,6 +14,8 @@
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
+#include "utils.h"
+#include "v4l2_device.h"
 
 namespace libcamera {
 
@@ -28,9 +30,19 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
+	class IPU3CameraData : public CameraData
+	{
+	public:
+		IPU3CameraData()
+			: dev_(nullptr) {}
+		~IPU3CameraData() { delete dev_; }
+		V4L2Device *dev_;
+	};
+
 	std::shared_ptr<MediaDevice> cio2_;
 	std::shared_ptr<MediaDevice> imgu_;
 
+	V4L2Device *createVideoDevice(unsigned int id);
 	void registerCameras();
 };
 
@@ -118,6 +130,24 @@ error_release_mdev:
 	return false;
 }
 
+/* Create video devices for the CIO2 unit associated with a camera. */
+V4L2Device *PipelineHandlerIPU3::createVideoDevice(unsigned int id)
+{
+	std::string cio2Name = "ipu3-cio2 " + std::to_string(id);
+	MediaEntity *cio2 = cio2_->getEntityByName(cio2Name);
+	if (!cio2)
+		return nullptr;
+
+	V4L2Device *dev = new V4L2Device(*cio2);
+	if (dev->open()) {
+		delete dev;
+		return nullptr;
+	}
+	dev->close();
+
+	return dev;
+}
+
 /*
  * Cameras are created associating an image sensor (represented by a
  * media entity with function MEDIA_ENT_F_CAM_SENSOR) to one of the four
@@ -168,6 +198,24 @@ void PipelineHandlerIPU3::registerCameras()
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
 		std::shared_ptr<Camera> camera = Camera::create(this, cameraName);
+
+		/*
+		 * If V4L2 device creation fails, the Camera instance won't be
+		 * registered. The 'camera' shared pointer goes out of scope
+		 * and deletes the Camera it manages.
+		 */
+		V4L2Device *videoDev = createVideoDevice(id);
+		if (!videoDev) {
+			LOG(IPU3, Error)
+				<< "Failed to register camera["
+				<< numCameras << "] \"" << cameraName << "\"";
+			continue;
+		}
+
+		IPU3CameraData *data = new IPU3CameraData();
+		data->dev_ = videoDev;
+		setCameraData(camera.get(),
+			      std::move(std::unique_ptr<IPU3CameraData>(data)));
 		registerCamera(std::move(camera));
 
 		LOG(IPU3, Info)

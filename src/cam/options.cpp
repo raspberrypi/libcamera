@@ -143,9 +143,10 @@ void OptionsParser::usage()
 		};
 
 		if (option.argument != ArgumentNone) {
-			argument += std::string(" ");
 			if (option.argument == ArgumentOptional)
-				argument += "[";
+				argument += "[=";
+			else
+				argument += " ";
 			argument += option.argumentName;
 			if (option.argument == ArgumentOptional)
 				argument += "]";

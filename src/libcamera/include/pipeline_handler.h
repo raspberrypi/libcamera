@@ -18,6 +18,20 @@ class CameraManager;
 class DeviceEnumerator;
 class MediaDevice;
 
+class Camera;
+class CameraData
+{
+public:
+	virtual ~CameraData() {}
+
+protected:
+	CameraData() {}
+
+private:
+	CameraData(const CameraData &) = delete;
+	void operator=(const CameraData &) = delete;
+};
+
 class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>
 {
 public:
@@ -32,11 +46,15 @@ protected:
 	void registerCamera(std::shared_ptr<Camera> camera);
 	void hotplugMediaDevice(MediaDevice *media);
 
+	CameraData *cameraData(const Camera *camera);
+	void setCameraData(const Camera *camera, std::unique_ptr<CameraData> data);
+
 private:
 	virtual void disconnect();
 	void mediaDeviceDisconnected(MediaDevice *media);
 
 	std::vector<std::weak_ptr<Camera>> cameras_;
+	std::map<const Camera *, std::unique_ptr<CameraData>> cameraData_;
 };
 
 class PipelineHandlerFactory

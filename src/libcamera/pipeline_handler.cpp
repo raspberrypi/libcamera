@@ -12,6 +12,8 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 
+#include <libcamera/camera.h>
+
 /**
  * \file pipeline_handler.h
  * \brief Create pipelines and cameras from a set of media devices
@@ -29,6 +31,20 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Pipeline)
+
+/**
+ * \class CameraData
+ * \brief Base class for platform-specific data associated with a camera
+ *
+ * The CameraData base abstract class represents platform specific-data
+ * a pipeline handler might want to associate with a Camera to access them
+ * at a later time.
+ *
+ * Pipeline handlers are expected to extend this base class with platform
+ * specific implementation, associate instances of the derived classes
+ * using the setCameraData() method, and access them at a later time
+ * with cameraData().
+ */
 
 /**
  * \class PipelineHandler
@@ -57,9 +73,16 @@ PipelineHandler::PipelineHandler(CameraManager *manager)
 {
 }
 
+/**
+ * \brief Delete the pipeline handler
+ *
+ * Release the cameraData_ map, causing all data there referenced to be
+ * deleted, as they are stored as unique_ptr<CameraData>
+ */
 PipelineHandler::~PipelineHandler()
 {
-}
+	cameraData_.clear();
+};
 
 /**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
@@ -166,6 +189,52 @@ void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
 		return;
 
 	disconnect();
+}
+
+/**
+ * \brief Retrieve the pipeline-specific data associated with a Camera
+ * \param camera The camera data is associate with
+ *
+ * \return A pointer to the pipeline-specific data set with setCameraData().
+ * The returned pointer lifetime is associated with the one of the pipeline
+ * handler, and caller of this function shall never release it manually.
+ */
+CameraData *PipelineHandler::cameraData(const Camera *camera)
+{
+	if (!cameraData_.count(camera)) {
+		LOG(Pipeline, Error)
+			<< "Cannot get data associated with camera "
+			<< camera->name();
+		return nullptr;
+	}
+
+	return cameraData_[camera].get();
+}
+
+/**
+ * \brief Set pipeline-specific data in the camera
+ * \param camera The camera to associate data to
+ * \param data The pipeline-specific data
+ *
+ * This method allows pipeline handlers to associate pipeline-specific
+ * information with \a camera. The \a data lifetime gets associated with
+ * the pipeline handler one, and gets released at deletion time.
+ *
+ * If pipeline-specific data has already been associated with the camera by a
+ * previous call to this method, is it replaced by \a data and the previous data
+ * are deleted, rendering all references to them invalid.
+ *
+ * The data can be retrieved by pipeline handlers using the cameraData() method.
+ */
+void PipelineHandler::setCameraData(const Camera *camera,
+				    std::unique_ptr<CameraData> data)
+{
+	if (cameraData_.count(camera))
+		LOG(Pipeline, Debug)
+			<< "Replacing data associated with "
+			<< camera->name();
+
+	cameraData_[camera] = std::move(data);
 }
 
 /**

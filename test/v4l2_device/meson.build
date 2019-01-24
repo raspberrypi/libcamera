@@ -2,6 +2,7 @@
 # They are not alphabetically sorted.
 v4l2_device_tests = [
   [ 'double_open',        'double_open.cpp' ],
+  [ 'request_buffers',    'request_buffers.cpp' ],
 ]
 
 foreach t : v4l2_device_tests

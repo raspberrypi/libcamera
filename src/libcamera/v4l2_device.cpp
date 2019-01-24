@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <vector>
 
@@ -723,7 +724,14 @@ Buffer *V4L2Device::dequeueBuffer()
 	if (--queuedBuffersCount_ == 0)
 		fdEvent_->setEnabled(false);
 
-	return &bufferPool_->buffers()[buf.index];
+	Buffer *buffer = &bufferPool_->buffers()[buf.index];
+
+	buffer->bytesused_ = buf.bytesused;
+	buffer->timestamp_ = buf.timestamp.tv_sec * 1000000000ULL
+			   + buf.timestamp.tv_usec * 1000ULL;
+	buffer->sequence_ = buf.sequence;
+
+	return buffer;
 }
 
 /**

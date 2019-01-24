@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_BUFFER_H__
 #define __LIBCAMERA_BUFFER_H__
 
+#include <stdint.h>
 #include <vector>
 
 #include <libcamera/signal.h>
@@ -42,14 +43,21 @@ public:
 	Buffer();
 
 	unsigned int index() const { return index_; }
+	unsigned int bytesused() const { return bytesused_; }
+	uint64_t timestamp() const { return timestamp_; }
+	unsigned int sequence() const { return sequence_; }
 	std::vector<Plane> &planes() { return planes_; }
 
 	Signal<Buffer *> completed;
 
 private:
 	friend class BufferPool;
+	friend class V4L2Device;
 
 	unsigned int index_;
+	unsigned int bytesused_;
+	uint64_t timestamp_;
+	unsigned int sequence_;
 
 	std::vector<Plane> planes_;
 };

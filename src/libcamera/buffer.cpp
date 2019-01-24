@@ -204,6 +204,32 @@ Buffer::Buffer()
  */
 
 /**
+ * \fn Buffer::bytesused()
+ * \brief Retrieve the number of bytes occupied by the data in the buffer
+ * \return Number of bytes occupied in the buffer
+ */
+
+/**
+ * \fn Buffer::timestamp()
+ * \brief Retrieve the time when the buffer was processed
+ *
+ * The timestamp is expressed as a number number of nanoseconds since the epoch.
+ *
+ * \return Timestamp when the buffer was processed
+ */
+
+/**
+ * \fn Buffer::sequence()
+ * \brief Retrieve the buffer sequence number
+ *
+ * The sequence number is a monotonically increasing number assigned to the
+ * buffer processed by the stream. Gaps in the sequence numbers indicate
+ * dropped frames.
+ *
+ * \return Sequence number of the buffer
+ */
+
+/**
  * \class BufferPool
  * \brief A pool of buffers
  *

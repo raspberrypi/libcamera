@@ -8,10 +8,15 @@
 #define __LIBCAMERA_V4L2_DEVICE_H__
 
 #include <string>
+#include <vector>
 
 #include <linux/videodev2.h>
 
 namespace libcamera {
+
+class Buffer;
+class BufferPool;
+class MediaEntity;
 
 struct V4L2Capability final : v4l2_capability {
 	const char *driver() const
@@ -67,7 +72,6 @@ public:
 	unsigned int planesCount;
 };
 
-class MediaEntity;
 class V4L2Device
 {
 public:
@@ -89,6 +93,9 @@ public:
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
 
+	int exportBuffers(unsigned int count, BufferPool *pool);
+	int releaseBuffers();
+
 private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);
@@ -96,10 +103,18 @@ private:
 	int getFormatMultiplane(V4L2DeviceFormat *format);
 	int setFormatMultiplane(V4L2DeviceFormat *format);
 
+	int requestBuffers(unsigned int count);
+	int createPlane(Buffer *buffer, unsigned int plane,
+			unsigned int length);
+
 	std::string deviceNode_;
 	int fd_;
 	V4L2Capability caps_;
+
 	enum v4l2_buf_type bufferType_;
+	enum v4l2_memory memoryType_;
+
+	BufferPool *bufferPool_;
 };
 
 } /* namespace libcamera */

@@ -10,6 +10,9 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <vector>
+
+#include <libcamera/buffer.h>
 
 #include "log.h"
 #include "media_object.h"
@@ -209,8 +212,14 @@ LOG_DEFINE_CATEGORY(V4L2)
  * \param deviceNode The file-system path to the video device node
  */
 V4L2Device::V4L2Device(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1)
+	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr)
 {
+	/*
+	 * We default to an MMAP based CAPTURE device, however this will be
+	 * updated based upon the device capabilities.
+	 */
+	bufferType_ = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+	memoryType_ = V4L2_MEMORY_MMAP;
 }
 
 /**
@@ -304,6 +313,8 @@ void V4L2Device::close()
 {
 	if (fd_ < 0)
 		return;
+
+	releaseBuffers();
 
 	::close(fd_);
 	fd_ = -1;
@@ -471,6 +482,151 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
+
+	return 0;
+}
+
+int V4L2Device::requestBuffers(unsigned int count)
+{
+	struct v4l2_requestbuffers rb = {};
+	int ret;
+
+	rb.count = count;
+	rb.type = bufferType_;
+	rb.memory = memoryType_;
+
+	ret = ioctl(fd_, VIDIOC_REQBUFS, &rb);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Unable to request " << count << " buffers: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	LOG(V4L2, Debug)
+		<< deviceNode_ << ":" << rb.count << " buffers requested.";
+
+	return rb.count;
+}
+
+/**
+ * \brief Request \a count buffers to be allocated from the device and stored in
+ * the buffer pool provided.
+ * \param[in] count Number of buffers to allocate
+ * \param[out] pool BufferPool to populate with buffers
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Device::exportBuffers(unsigned int count, BufferPool *pool)
+{
+	unsigned int allocatedBuffers;
+	unsigned int i;
+	int ret;
+
+	memoryType_ = V4L2_MEMORY_MMAP;
+
+	ret = requestBuffers(count);
+	if (ret < 0)
+		return ret;
+
+	allocatedBuffers = ret;
+	if (allocatedBuffers < count) {
+		LOG(V4L2, Error) << "Not enough buffers provided by V4L2Device";
+		requestBuffers(0);
+		return -ENOMEM;
+	}
+
+	count = ret;
+
+	/* Map the buffers. */
+	for (i = 0; i < count; ++i) {
+		struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
+		struct v4l2_buffer buf = {};
+		struct Buffer &buffer = pool->buffers()[i];
+
+		buf.index = i;
+		buf.type = bufferType_;
+		buf.memory = memoryType_;
+		buf.length = VIDEO_MAX_PLANES;
+		buf.m.planes = planes;
+
+		ret = ioctl(fd_, VIDIOC_QUERYBUF, &buf);
+		if (ret < 0) {
+			ret = -errno;
+			LOG(V4L2, Error)
+				<< "Unable to query buffer " << i << ": "
+				<< strerror(-ret);
+			break;
+		}
+
+		if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
+			for (unsigned int p = 0; p < buf.length; ++p) {
+				ret = createPlane(&buffer, p,
+						  buf.m.planes[p].length);
+				if (ret)
+					break;
+			}
+		} else {
+			ret = createPlane(&buffer, 0, buf.length);
+		}
+
+		if (ret) {
+			LOG(V4L2, Error) << "Failed to create plane";
+			break;
+		}
+	}
+
+	if (ret) {
+		requestBuffers(0);
+		pool->destroyBuffers();
+		return ret;
+	}
+
+	bufferPool_ = pool;
+
+	return 0;
+}
+
+int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
+			    unsigned int length)
+{
+	struct v4l2_exportbuffer expbuf = {};
+	int ret;
+
+	LOG(V4L2, Debug)
+		<< "Buffer " << buffer->index()
+		<< " plane " << planeIndex
+		<< ": length=" << length;
+
+	expbuf.type = bufferType_;
+	expbuf.index = buffer->index();
+	expbuf.plane = planeIndex;
+	expbuf.flags = O_RDWR;
+
+	ret = ioctl(fd_, VIDIOC_EXPBUF, &expbuf);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to export buffer: " << strerror(-ret);
+		return ret;
+	}
+
+	buffer->planes().emplace_back();
+	Plane &plane = buffer->planes().back();
+	plane.setDmabuf(expbuf.fd, length);
+
+	return 0;
+}
+
+/**
+ * \brief Release all internally allocated buffers
+ */
+int V4L2Device::releaseBuffers()
+{
+	LOG(V4L2, Debug) << "Releasing bufferPool";
+
+	requestBuffers(0);
+	bufferPool_ = nullptr;
 
 	return 0;
 }

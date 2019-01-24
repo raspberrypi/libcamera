@@ -49,6 +49,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	std::shared_ptr<Camera> camera = Camera::create(this, dev_->model());
 	registerCamera(std::move(camera));
+	hotplugMediaDevice(dev_.get());
 
 	return true;
 }

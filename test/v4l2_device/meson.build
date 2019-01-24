@@ -3,6 +3,7 @@
 v4l2_device_tests = [
   [ 'double_open',        'double_open.cpp' ],
   [ 'request_buffers',    'request_buffers.cpp' ],
+  [ 'stream_on_off',      'stream_on_off.cpp' ],
 ]
 
 foreach t : v4l2_device_tests

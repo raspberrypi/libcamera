@@ -210,18 +210,16 @@ void PipelineHandlerIPU3::registerCameras()
 		 * registered. The 'camera' shared pointer goes out of scope
 		 * and deletes the Camera it manages.
 		 */
-		V4L2Device *videoDev = createVideoDevice(id);
-		if (!videoDev) {
+		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>();
+		data->dev_ = createVideoDevice(id);
+		if (!data->dev_) {
 			LOG(IPU3, Error)
 				<< "Failed to register camera["
 				<< numCameras << "] \"" << cameraName << "\"";
 			continue;
 		}
 
-		IPU3CameraData *data = new IPU3CameraData();
-		data->dev_ = videoDev;
-		setCameraData(camera.get(),
-			      std::move(std::unique_ptr<IPU3CameraData>(data)));
+		setCameraData(camera.get(), std::move(data));
 		registerCamera(std::move(camera));
 
 		LOG(IPU3, Info)

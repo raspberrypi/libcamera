@@ -12,8 +12,6 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 
-#include <libcamera/camera.h>
-
 /**
  * \file pipeline_handler.h
  * \brief Create pipelines and cameras from a set of media devices

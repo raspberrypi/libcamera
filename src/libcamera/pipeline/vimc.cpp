@@ -22,18 +22,18 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
-	std::shared_ptr<MediaDevice> dev_;
+	std::shared_ptr<MediaDevice> media_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
-	: PipelineHandler(manager), dev_(nullptr)
+	: PipelineHandler(manager), media_(nullptr)
 {
 }
 
 PipeHandlerVimc::~PipeHandlerVimc()
 {
-	if (dev_)
-		dev_->release();
+	if (media_)
+		media_->release();
 }
 
 bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
@@ -50,11 +50,11 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 	dm.add("RGB/YUV Input");
 	dm.add("Scaler");
 
-	dev_ = std::move(enumerator->search(dm));
-	if (!dev_)
+	media_ = std::move(enumerator->search(dm));
+	if (!media_)
 		return false;
 
-	dev_->acquire();
+	media_->acquire();
 
 	std::shared_ptr<Camera> camera = Camera::create(this, "Dummy VIMC Camera");
 	registerCamera(std::move(camera));

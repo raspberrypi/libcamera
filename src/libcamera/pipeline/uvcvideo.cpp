@@ -22,34 +22,34 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
-	std::shared_ptr<MediaDevice> dev_;
+	std::shared_ptr<MediaDevice> media_;
 };
 
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
-	: PipelineHandler(manager), dev_(nullptr)
+	: PipelineHandler(manager), media_(nullptr)
 {
 }
 
 PipelineHandlerUVC::~PipelineHandlerUVC()
 {
-	if (dev_)
-		dev_->release();
+	if (media_)
+		media_->release();
 }
 
 bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("uvcvideo");
 
-	dev_ = std::move(enumerator->search(dm));
+	media_ = std::move(enumerator->search(dm));
 
-	if (!dev_)
+	if (!media_)
 		return false;
 
-	dev_->acquire();
+	media_->acquire();
 
-	std::shared_ptr<Camera> camera = Camera::create(this, dev_->model());
+	std::shared_ptr<Camera> camera = Camera::create(this, media_->model());
 	registerCamera(std::move(camera));
-	hotplugMediaDevice(dev_.get());
+	hotplugMediaDevice(media_.get());
 
 	return true;
 }

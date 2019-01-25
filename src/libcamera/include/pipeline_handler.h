@@ -29,7 +29,7 @@ protected:
 
 private:
 	CameraData(const CameraData &) = delete;
-	void operator=(const CameraData &) = delete;
+	CameraData &operator=(const CameraData &) = delete;
 };
 
 class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>

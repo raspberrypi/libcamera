@@ -100,7 +100,7 @@ PipelineHandler::~PipelineHandler()
  * one pipeline instance, until all compatible media devices are exhausted.
  *
  * If this function returns true, a new instance of the pipeline handler will
- * be created and its match() function called,
+ * be created and its match() function called.
  *
  * \return true if media devices have been acquired and camera instances
  * created, or false otherwise
@@ -184,11 +184,12 @@ void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
 
 /**
  * \brief Retrieve the pipeline-specific data associated with a Camera
- * \param camera The camera data is associate with
+ * \param camera The camera whose data to retrieve
  *
  * \return A pointer to the pipeline-specific data set with setCameraData().
- * The returned pointer lifetime is associated with the one of the pipeline
- * handler, and caller of this function shall never release it manually.
+ * The returned pointer is a borrowed reference and is guaranteed to remain
+ * valid until the pipeline handler is destroyed. It shall not be deleted
+ * manually by the caller.
  */
 CameraData *PipelineHandler::cameraData(const Camera *camera)
 {
@@ -203,13 +204,13 @@ CameraData *PipelineHandler::cameraData(const Camera *camera)
 }
 
 /**
- * \brief Set pipeline-specific data in the camera
+ * \brief Set pipeline-specific data for the camera
  * \param camera The camera to associate data to
  * \param data The pipeline-specific data
  *
  * This method allows pipeline handlers to associate pipeline-specific
- * information with \a camera. The \a data lifetime gets associated with
- * the pipeline handler one, and gets released at deletion time.
+ * information with \a camera. Ownership of \a data is transferred to
+ * the PipelineHandler.
  *
  * If pipeline-specific data has already been associated with the camera by a
  * previous call to this method, is it replaced by \a data and the previous data

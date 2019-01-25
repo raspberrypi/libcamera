@@ -42,6 +42,12 @@ private:
 	std::shared_ptr<MediaDevice> cio2_;
 	std::shared_ptr<MediaDevice> imgu_;
 
+	IPU3CameraData *cameraData(const Camera *camera)
+	{
+		return static_cast<IPU3CameraData *>(
+			PipelineHandler::cameraData(camera));
+	}
+
 	V4L2Device *createVideoDevice(unsigned int id);
 	void registerCameras();
 };

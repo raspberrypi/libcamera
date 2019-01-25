@@ -71,15 +71,8 @@ PipelineHandler::PipelineHandler(CameraManager *manager)
 {
 }
 
-/**
- * \brief Delete the pipeline handler
- *
- * Release the cameraData_ map, causing all data there referenced to be
- * deleted, as they are stored as unique_ptr<CameraData>
- */
 PipelineHandler::~PipelineHandler()
 {
-	cameraData_.clear();
 };
 
 /**

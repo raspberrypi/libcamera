@@ -212,19 +212,20 @@ CameraData *PipelineHandler::cameraData(const Camera *camera)
  * information with \a camera. Ownership of \a data is transferred to
  * the PipelineHandler.
  *
- * If pipeline-specific data has already been associated with the camera by a
- * previous call to this method, is it replaced by \a data and the previous data
- * are deleted, rendering all references to them invalid.
+ * Pipeline-specific data can only be set once. Any attempt to call
+ * this method after the first one with the same camera won't change
+ * the pipeline-specific data.
  *
  * The data can be retrieved by pipeline handlers using the cameraData() method.
  */
 void PipelineHandler::setCameraData(const Camera *camera,
 				    std::unique_ptr<CameraData> data)
 {
-	if (cameraData_.count(camera))
-		LOG(Pipeline, Debug)
-			<< "Replacing data associated with "
-			<< camera->name();
+	if (cameraData_.find(camera) != cameraData_.end()) {
+		LOG(Pipeline, Error)
+			<< "Replacing data associated with a camera is forbidden";
+		return;
+	}
 
 	cameraData_[camera] = std::move(data);
 }

@@ -167,6 +167,7 @@ int MediaDevice::open()
 
 	driver_ = info.driver;
 	model_ = info.model;
+	version_ = info.media_version;
 
 	return 0;
 }
@@ -553,20 +554,29 @@ bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 						(topology.ptr_entities);
 
 	for (unsigned int i = 0; i < topology.num_entities; ++i) {
+		struct media_v2_entity *ent = &mediaEntities[i];
+
+		/*
+		 * The media_v2_entity structure was missing the flag field before
+		 * v4.19.
+		 */
+		if (!MEDIA_V2_ENTITY_HAS_FLAGS(version_))
+			fixupEntityFlags(ent);
+
 		/*
 		 * Find the interface linked to this entity to get the device
 		 * node major and minor numbers.
 		 */
 		struct media_v2_interface *iface =
-			findInterface(topology, mediaEntities[i].id);
+			findInterface(topology, ent->id);
 
 		MediaEntity *entity;
 		if (iface)
-			entity = new MediaEntity(this, &mediaEntities[i],
+			entity = new MediaEntity(this, ent,
 						 iface->devnode.major,
 						 iface->devnode.minor);
 		else
-			entity = new MediaEntity(this, &mediaEntities[i]);
+			entity = new MediaEntity(this, ent);
 
 		if (!addObject(entity)) {
 			delete entity;
@@ -655,6 +665,31 @@ bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 	}
 
 	return true;
+}
+
+/**
+ * \brief Fixup entity flags using the legacy API
+ * \param[in] entity The entity
+ *
+ * This function is used as a fallback to query entity flags using the legacy
+ * MEDIA_IOC_ENUM_ENTITIES ioctl when running on a kernel version that doesn't
+ * provide them through the MEDIA_IOC_G_TOPOLOGY ioctl.
+ */
+void MediaDevice::fixupEntityFlags(struct media_v2_entity *entity)
+{
+	struct media_entity_desc desc = {};
+	desc.id = entity->id;
+
+	int ret = ioctl(fd_, MEDIA_IOC_ENUM_ENTITIES, &desc);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(MediaDevice, Debug)
+			<< "Failed to retrieve information for entity "
+			<< entity->id << ": " << strerror(-ret);
+		return;
+	}
+
+	entity->flags = desc.flags;
 }
 
 /**

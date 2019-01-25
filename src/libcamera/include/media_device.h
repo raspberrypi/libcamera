@@ -56,6 +56,8 @@ private:
 	std::string driver_;
 	std::string deviceNode_;
 	std::string model_;
+	unsigned int version_;
+
 	int fd_;
 	bool valid_;
 	bool acquired_;
@@ -72,6 +74,7 @@ private:
 	bool populateEntities(const struct media_v2_topology &topology);
 	bool populatePads(const struct media_v2_topology &topology);
 	bool populateLinks(const struct media_v2_topology &topology);
+	void fixupEntityFlags(struct media_v2_entity *entity);
 
 	friend int MediaLink::setEnabled(bool enable);
 	int setupLink(const MediaLink *link, unsigned int flags);

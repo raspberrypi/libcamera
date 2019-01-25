@@ -10,6 +10,7 @@
 #include "device_enumerator.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
+#include "v4l2_device.h"
 
 namespace libcamera {
 
@@ -23,15 +24,19 @@ public:
 
 private:
 	std::shared_ptr<MediaDevice> media_;
+	V4L2Device *video_;
 };
 
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
-	: PipelineHandler(manager), media_(nullptr)
+	: PipelineHandler(manager), media_(nullptr), video_(nullptr)
 {
 }
 
 PipelineHandlerUVC::~PipelineHandlerUVC()
 {
+	if (video_)
+		delete video_;
+
 	if (media_)
 		media_->release();
 }
@@ -46,6 +51,18 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 		return false;
 
 	media_->acquire();
+
+	for (MediaEntity *entity : media_->entities()) {
+		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
+			video_ = new V4L2Device(*entity);
+			break;
+		}
+	}
+
+	if (!video_ || video_->open()) {
+		media_->release();
+		return false;
+	}
 
 	std::shared_ptr<Camera> camera = Camera::create(this, media_->model());
 	registerCamera(std::move(camera));

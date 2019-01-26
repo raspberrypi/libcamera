@@ -153,7 +153,17 @@ void OptionsParser::usage()
 		}
 
 		std::cerr << std::setw(indent) << std::left << argument;
-		std::cerr << option.help << std::endl;
+
+		for (const char *help = option.help, *end = help; end; ) {
+			end = strchr(help, '\n');
+			if (end) {
+				std::cerr << std::string(help, end - help + 1);
+				std::cerr << std::setw(indent) << " ";
+				help = end + 1;
+			} else {
+				std::cerr << help << std::endl;
+			}
+		}
 	}
 }
 

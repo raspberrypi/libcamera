@@ -58,7 +58,7 @@ LOG_DEFINE_CATEGORY(V4L2)
 
 /**
  * \fn bool V4L2Capability::isMultiplanar()
- * \brief Identify if the device implement V4L2 multiplanar APIs
+ * \brief Identify if the device implements the V4L2 multiplanar APIs
  * \return True if the device supports multiplanar APIs
  */
 

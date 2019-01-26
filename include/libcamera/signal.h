@@ -37,7 +37,7 @@ public:
 	SlotMember(T *obj, void(T::*func)(Args...))
 		: SlotBase<Args...>(obj), func_(func) { }
 
-	void invoke(Args... args) { (reinterpret_cast<T *>(this->obj_)->*func_)(args...); }
+	void invoke(Args... args) { (static_cast<T *>(this->obj_)->*func_)(args...); }
 
 private:
 	friend class Signal<Args...>;
@@ -111,7 +111,7 @@ public:
 			 * match, so we can safely cast to SlotMember<T, Args>.
 			 */
 			if (slot->obj_ == object &&
-			    reinterpret_cast<SlotMember<T, Args...> *>(slot)->func_ == func) {
+			    static_cast<SlotMember<T, Args...> *>(slot)->func_ == func) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {
@@ -125,7 +125,7 @@ public:
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
 			SlotBase<Args...> *slot = *iter;
 			if (slot->obj_ == nullptr &&
-			    reinterpret_cast<SlotStatic<Args...> *>(slot)->func_ == func) {
+			    static_cast<SlotStatic<Args...> *>(slot)->func_ == func) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {

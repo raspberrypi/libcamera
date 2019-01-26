@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <libcamera/camera.h>
+#include <libcamera/stream.h>
 
 #include "device_enumerator.h"
 #include "log.h"
@@ -37,6 +38,7 @@ private:
 			: dev_(nullptr) {}
 		~IPU3CameraData() { delete dev_; }
 		V4L2Device *dev_;
+		Stream stream_;
 	};
 
 	std::shared_ptr<MediaDevice> cio2_;
@@ -202,15 +204,17 @@ void PipelineHandlerIPU3::registerCameras()
 		if (link->setEnabled(true))
 			continue;
 
+		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>();
+
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
-		std::shared_ptr<Camera> camera = Camera::create(this, cameraName);
+		std::vector<Stream *> streams{ &data->stream_ };
+		std::shared_ptr<Camera> camera = Camera::create(this, cameraName, streams);
 
 		/*
 		 * If V4L2 device creation fails, the Camera instance won't be
 		 * registered. The 'camera' shared pointer goes out of scope
 		 * and deletes the Camera it manages.
 		 */
-		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>();
 		data->dev_ = createVideoDevice(id);
 		if (!data->dev_) {
 			LOG(IPU3, Error)

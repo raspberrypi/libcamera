@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/stream.h>
 
 #include "device_enumerator.h"
 #include "media_device.h"
@@ -23,6 +24,7 @@ public:
 
 private:
 	std::shared_ptr<MediaDevice> media_;
+	Stream stream_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
@@ -56,7 +58,8 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	std::shared_ptr<Camera> camera = Camera::create(this, "Dummy VIMC Camera");
+	std::vector<Stream *> streams{ &stream_ };
+	std::shared_ptr<Camera> camera = Camera::create(this, "Dummy VIMC Camera", streams);
 	registerCamera(std::move(camera));
 
 	return true;

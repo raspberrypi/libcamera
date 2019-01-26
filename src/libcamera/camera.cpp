@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/stream.h>
 
 #include "log.h"
 #include "pipeline_handler.h"
@@ -56,13 +57,15 @@ LOG_DECLARE_CATEGORY(Camera)
  * \brief Create a camera instance
  * \param[in] name The name of the camera device
  * \param[in] pipe The pipeline handler responsible for the camera device
+ * \param[in] streams Array of streams the camera provides
  *
  * The caller is responsible for guaranteeing unicity of the camera name.
  *
  * \return A shared pointer to the newly created camera object
  */
 std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
-				       const std::string &name)
+				       const std::string &name,
+				       const std::vector<Stream *> &streams)
 {
 	struct Allocator : std::allocator<Camera> {
 		void construct(void *p, PipelineHandler *pipe,
@@ -76,7 +79,12 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 		}
 	};
 
-	return std::allocate_shared<Camera>(Allocator(), pipe, name);
+	std::shared_ptr<Camera> camera =
+		std::allocate_shared<Camera>(Allocator(), pipe, name);
+
+	camera->streams_ = streams;
+
+	return camera;
 }
 
 /**
@@ -162,6 +170,20 @@ int Camera::acquire()
 void Camera::release()
 {
 	acquired_ = false;
+}
+
+/**
+ * \brief Retrieve all the camera's stream information
+ *
+ * Retrieve all of the camera's static stream information. The static
+ * information describes among other things how many streams the camera
+ * supports and the capabilities of each stream.
+ *
+ * \return An array of all the camera's streams.
+ */
+const std::vector<Stream *> &Camera::streams() const
+{
+	return streams_;
 }
 
 } /* namespace libcamera */

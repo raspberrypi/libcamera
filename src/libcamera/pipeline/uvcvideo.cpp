@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/stream.h>
 
 #include "device_enumerator.h"
 #include "log.h"
@@ -28,6 +29,7 @@ public:
 private:
 	std::shared_ptr<MediaDevice> media_;
 	V4L2Device *video_;
+	Stream stream_;
 };
 
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
@@ -70,7 +72,8 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	std::shared_ptr<Camera> camera = Camera::create(this, media_->model());
+	std::vector<Stream *> streams{ &stream_ };
+	std::shared_ptr<Camera> camera = Camera::create(this, media_->model(), streams);
 	registerCamera(std::move(camera));
 	hotplugMediaDevice(media_.get());
 

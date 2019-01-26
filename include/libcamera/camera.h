@@ -15,12 +15,14 @@
 namespace libcamera {
 
 class PipelineHandler;
+class Stream;
 
 class Camera final
 {
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
-					      const std::string &name);
+					      const std::string &name,
+					      const std::vector<Stream *> &streams);
 
 	Camera(const Camera &) = delete;
 	Camera &operator=(const Camera &) = delete;
@@ -32,6 +34,8 @@ public:
 	int acquire();
 	void release();
 
+	const std::vector<Stream *> &streams() const;
+
 private:
 	Camera(PipelineHandler *pipe, const std::string &name);
 	~Camera();
@@ -41,6 +45,7 @@ private:
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
+	std::vector<Stream *> streams_;
 
 	bool acquired_;
 };

@@ -9,16 +9,25 @@
 #include <libcamera/stream.h>
 
 #include "device_enumerator.h"
+#include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
 
 namespace libcamera {
+
+LOG_DEFINE_CATEGORY(VIMC)
 
 class PipeHandlerVimc : public PipelineHandler
 {
 public:
 	PipeHandlerVimc(CameraManager *manager);
 	~PipeHandlerVimc();
+
+	std::map<Stream *, StreamConfiguration>
+	streamConfiguration(Camera *camera,
+			    std::vector<Stream *> &streams) override;
+	int configureStreams(Camera *camera,
+			     std::map<Stream *, StreamConfiguration> &config) override;
 
 	bool match(DeviceEnumerator *enumerator);
 
@@ -36,6 +45,32 @@ PipeHandlerVimc::~PipeHandlerVimc()
 {
 	if (media_)
 		media_->release();
+}
+
+std::map<Stream *, StreamConfiguration>
+PipeHandlerVimc::streamConfiguration(Camera *camera,
+				     std::vector<Stream *> &streams)
+{
+	std::map<Stream *, StreamConfiguration> configs;
+
+	StreamConfiguration config{};
+
+	LOG(VIMC, Info) << "TODO: Return a good default format";
+
+	configs[&stream_] = config;
+
+	return configs;
+}
+
+int PipeHandlerVimc::configureStreams(Camera *camera,
+				      std::map<Stream *, StreamConfiguration> &config)
+{
+	StreamConfiguration *cfg = &config[&stream_];
+
+	LOG(VIMC, Info) << "TODO: Configure the camera for resolution "
+			<< cfg->width << "x" << cfg->height;
+
+	return 0;
 }
 
 bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)

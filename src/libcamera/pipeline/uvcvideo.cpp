@@ -24,6 +24,12 @@ public:
 	PipelineHandlerUVC(CameraManager *manager);
 	~PipelineHandlerUVC();
 
+	std::map<Stream *, StreamConfiguration>
+	streamConfiguration(Camera *camera,
+			    std::vector<Stream *> &streams) override;
+	int configureStreams(Camera *camera,
+			     std::map<Stream *, StreamConfiguration> &config) override;
+
 	bool match(DeviceEnumerator *enumerator);
 
 private:
@@ -44,6 +50,32 @@ PipelineHandlerUVC::~PipelineHandlerUVC()
 
 	if (media_)
 		media_->release();
+}
+
+std::map<Stream *, StreamConfiguration>
+PipelineHandlerUVC::streamConfiguration(Camera *camera,
+					std::vector<Stream *> &streams)
+{
+	std::map<Stream *, StreamConfiguration> configs;
+
+	StreamConfiguration config{};
+
+	LOG(UVC, Info) << "TODO: Return a good default format";
+
+	configs[&stream_] = config;
+
+	return configs;
+}
+
+int PipelineHandlerUVC::configureStreams(Camera *camera,
+					 std::map<Stream *, StreamConfiguration> &config)
+{
+	StreamConfiguration *cfg = &config[&stream_];
+
+	LOG(UVC, Info) << "TODO: Configure the camera for resolution "
+		       << cfg->width << "x" << cfg->height;
+
+	return 0;
 }
 
 bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)

@@ -28,6 +28,12 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 	~PipelineHandlerIPU3();
 
+	std::map<Stream *, StreamConfiguration>
+	streamConfiguration(Camera *camera,
+			    std::vector<Stream *> &streams) override;
+	int configureStreams(Camera *camera,
+			     std::map<Stream *, StreamConfiguration> &config) override;
+
 	bool match(DeviceEnumerator *enumerator);
 
 private:
@@ -66,6 +72,36 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 
 	if (imgu_)
 		imgu_->release();
+}
+
+std::map<Stream *, StreamConfiguration>
+PipelineHandlerIPU3::streamConfiguration(Camera *camera,
+					 std::vector<Stream *> &streams)
+{
+	IPU3CameraData *data = cameraData(camera);
+
+	std::map<Stream *, StreamConfiguration> configs;
+
+	StreamConfiguration config{};
+
+	LOG(IPU3, Info) << "TODO: Return a good default format";
+
+	configs[&data->stream_] = config;
+
+	return configs;
+}
+
+int PipelineHandlerIPU3::configureStreams(Camera *camera,
+					  std::map<Stream *, StreamConfiguration> &config)
+{
+	IPU3CameraData *data = cameraData(camera);
+
+	StreamConfiguration *cfg = &config[&data->stream_];
+
+	LOG(IPU3, Info) << "TODO: Configure the camera for resolution "
+			<< cfg->width << "x" << cfg->height;
+
+	return 0;
 }
 
 bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)

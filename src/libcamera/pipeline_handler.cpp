@@ -75,6 +75,40 @@ PipelineHandler::~PipelineHandler()
 {
 };
 
+
+/**
+ * \fn PipelineHandler::streamConfiguration()
+ * \brief Retrieve a group of stream configurations for a specified camera
+ * \param[in] camera The camera to fetch default configuration from
+ * \param[in] streams An array of streams to fetch information about
+ *
+ * Retrieve the species camera's default configuration for a specified group of
+ * streams. The caller shall populate the \a streams array with the streams it
+ * wish to fetch the configuration from. The map of streams and configuration
+ * returned can then be examined by the caller to learn about the defualt
+ * parameters for the specified streams.
+ *
+ * The intended companion to this is \a configureStreams() which can be used to
+ * change the group of streams parameters.
+ *
+ * \return A map of successfully retrieved streams and configurations or an
+ * empty map on error.
+ */
+
+/**
+ * \fn PipelineHandler::configureStreams()
+ * \brief Configure a group of streams for capture
+ * \param[in] camera The camera to configure
+ * \param[in] config A map of stream configurations to apply
+ *
+ * Configure the specified group of streams for \a camera according to the
+ * configuration specified in \a configs. The intended caller of this interface
+ * is the Camera class which will receive configuration to apply from the
+ * application.
+ *
+ * \return 0 on success or a negative error code on error.
+ */
+
 /**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
  * \brief Match media devices and create camera instances

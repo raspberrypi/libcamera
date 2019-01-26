@@ -18,6 +18,8 @@ class Camera;
 class CameraManager;
 class DeviceEnumerator;
 class MediaDevice;
+class Stream;
+class StreamConfiguration;
 
 class CameraData
 {
@@ -37,6 +39,11 @@ class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>
 public:
 	PipelineHandler(CameraManager *manager);
 	virtual ~PipelineHandler();
+
+	virtual std::map<Stream *, StreamConfiguration>
+	streamConfiguration(Camera *camera, std::vector<Stream *> &streams) = 0;
+	virtual int configureStreams(Camera *camera,
+				     std::map<Stream *, StreamConfiguration> &config) = 0;
 
 	virtual bool match(DeviceEnumerator *enumerator) = 0;
 

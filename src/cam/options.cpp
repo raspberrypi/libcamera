@@ -38,7 +38,7 @@ void OptionsBase<T>::clear()
 
 template class OptionsBase<int>;
 
-void OptionsParser::addOption(int opt, const char *help, const char *name,
+bool OptionsParser::addOption(int opt, const char *help, const char *name,
 			      OptionArgument argument, const char *argumentName)
 {
 	/*
@@ -46,18 +46,19 @@ void OptionsParser::addOption(int opt, const char *help, const char *name,
 	 * If an argument is accepted, it must be described by argumentName.
 	 */
 	if (!isalnum(opt) && !name)
-		return;
+		return false;
 	if (!help || help[0] == '\0')
-		return;
+		return false;
 	if (argument != ArgumentNone && !argumentName)
-		return;
+		return false;
 
 	/* Reject duplicate options. */
 	if (optionsMap_.find(opt) != optionsMap_.end())
-		return;
+		return false;
 
 	options_.push_back(Option({ opt, name, argument, argumentName, help }));
 	optionsMap_[opt] = &options_.back();
+	return true;
 }
 
 OptionsParser::Options OptionsParser::parse(int argc, char **argv)

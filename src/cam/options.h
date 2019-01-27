@@ -49,7 +49,7 @@ public:
 	{
 	};
 
-	void addOption(int opt, const char *help, const char *name = nullptr,
+	bool addOption(int opt, const char *help, const char *name = nullptr,
 		       OptionArgument argument = ArgumentNone,
 		       const char *argumentName = nullptr);
 

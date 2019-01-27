@@ -81,6 +81,62 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
+ * \class V4L2DeviceFormat
+ * \brief The V4L2 device image format and sizes
+ *
+ * Describes the image format and image sizes to be programmed on a V4L2
+ * video device. The image format is defined by fourcc code as defined by
+ * the V4L2 APIs with the V4L2_PIX_FMT_ macros, a visible width and height
+ * and a variable number of planes (1 to 3) with variable sizes and line
+ * strides.
+ *
+ * Formats defined as 'single planar' by the V4L2 APIs are represented with
+ * V4L2DeviceFormat instances with a single plane
+ * (V4L2DeviceFormat::planes = 1). Semi-planar and multiplanar formats use
+ * 2 and 3 planes respectively.
+ *
+ * V4L2DeviceFormat defines the exchange format between components that
+ * receive image configuration requests from applications and a V4L2Device.
+ * The V4L2Device validates and applies the requested size and format to
+ * the device driver.
+ */
+
+/**
+ * \var V4L2DeviceFormat::width
+ * \brief The image width
+ */
+
+/**
+ * \var V4L2DeviceFormat::height
+ * \brief The image height
+ */
+
+/**
+ * \var V4L2DeviceFormat::fourcc
+ * \brief The pixel encoding scheme
+ *
+ * The fourcc code, as defined by the V4L2 APIs with the V4L2_PIX_FMT_ macros,
+ * that identifies the image format pixel encoding scheme.
+ */
+
+/**
+ * \var V4L2DeviceFormat::planesFmt
+ * \brief The per-plane size information
+ *
+ * Images are stored in memory in one or more data planes. Each data plane
+ * has a specific size and line length, which could differ from the image
+ * visible sizes to accommodate line or plane padding data.
+ *
+ * Only the first V4L2DeviceFormat::planes entries are considered valid.
+ *
+ */
+
+/**
+ * \var V4L2DeviceFormat::planes
+ * \brief The number of valid data planes
+ */
+
+/**
  * \class V4L2Device
  * \brief V4L2Device object and API
  *

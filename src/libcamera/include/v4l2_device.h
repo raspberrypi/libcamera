@@ -53,6 +53,20 @@ struct V4L2Capability final : v4l2_capability {
 	}
 };
 
+class V4L2DeviceFormat
+{
+public:
+	uint32_t width;
+	uint32_t height;
+	uint32_t fourcc;
+
+	struct {
+		uint32_t size;
+		uint32_t bpl;
+	} planesFmt[3];
+	unsigned int planes;
+};
+
 class MediaEntity;
 class V4L2Device
 {

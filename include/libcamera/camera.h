@@ -23,7 +23,7 @@ public:
 					      const std::string &name);
 
 	Camera(const Camera &) = delete;
-	void operator=(const Camera &) = delete;
+	Camera &operator=(const Camera &) = delete;
 
 	const std::string &name() const;
 

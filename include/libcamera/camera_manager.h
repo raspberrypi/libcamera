@@ -38,7 +38,7 @@ public:
 private:
 	CameraManager();
 	CameraManager(const CameraManager &) = delete;
-	void operator=(const CameraManager &) = delete;
+	CameraManager &operator=(const CameraManager &) = delete;
 	~CameraManager();
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;

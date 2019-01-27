@@ -62,7 +62,7 @@ public:
 	V4L2Device(const V4L2Device &) = delete;
 	~V4L2Device();
 
-	void operator=(const V4L2Device &) = delete;
+	V4L2Device &operator=(const V4L2Device &) = delete;
 
 	int open();
 	bool isOpen() const;

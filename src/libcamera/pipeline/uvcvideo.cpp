@@ -8,11 +8,14 @@
 #include <libcamera/camera.h>
 
 #include "device_enumerator.h"
+#include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "v4l2_device.h"
 
 namespace libcamera {
+
+LOG_DEFINE_CATEGORY(UVC)
 
 class PipelineHandlerUVC : public PipelineHandler
 {
@@ -60,6 +63,9 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	}
 
 	if (!video_ || video_->open()) {
+		if (!video_)
+			LOG(UVC, Error) << "Could not find a default video device";
+
 		media_->release();
 		return false;
 	}

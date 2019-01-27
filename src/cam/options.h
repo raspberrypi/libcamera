@@ -28,21 +28,25 @@ struct Option {
 	bool hasLongOption() const { return name != nullptr; }
 };
 
+template <typename T>
+class OptionsBase
+{
+public:
+	bool valid() const;
+	bool isSet(const T &opt) const;
+	const std::string &operator[](const T &opt) const;
+
+private:
+	friend class OptionsParser;
+	std::map<T, std::string> values_;
+	void clear();
+};
+
 class OptionsParser
 {
 public:
-	class Options {
-	public:
-		Options();
-
-		bool valid() const;
-		bool isSet(int opt) const;
-		const std::string &operator[](int opt) const;
-
-	private:
-		friend class OptionsParser;
-		std::map<int, std::string> values_;
-		void clear();
+	class Options : public OptionsBase<int>
+	{
 	};
 
 	void addOption(int opt, const char *help, const char *name = nullptr,

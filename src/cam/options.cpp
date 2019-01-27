@@ -12,6 +12,32 @@
 
 #include "options.h"
 
+template <typename T>
+bool OptionsBase<T>::valid() const
+{
+	return !values_.empty();
+}
+
+template <typename T>
+bool OptionsBase<T>::isSet(const T &opt) const
+{
+	return values_.find(opt) != values_.end();
+}
+
+template <typename T>
+const std::string &OptionsBase<T>::operator[](const T &opt) const
+{
+	return values_.find(opt)->second;
+}
+
+template <typename T>
+void OptionsBase<T>::clear()
+{
+	values_.clear();
+}
+
+template class OptionsBase<int>;
+
 void OptionsParser::addOption(int opt, const char *help, const char *name,
 			      OptionArgument argument, const char *argumentName)
 {
@@ -165,28 +191,4 @@ void OptionsParser::usage()
 			}
 		}
 	}
-}
-
-OptionsParser::Options::Options()
-{
-}
-
-bool OptionsParser::Options::valid() const
-{
-	return !values_.empty();
-}
-
-bool OptionsParser::Options::isSet(int opt) const
-{
-	return values_.find(opt) != values_.end();
-}
-
-const std::string &OptionsParser::Options::operator[](int opt) const
-{
-	return values_.find(opt)->second;
-}
-
-void OptionsParser::Options::clear()
-{
-	values_.clear();
 }

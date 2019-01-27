@@ -14,11 +14,11 @@
 
 namespace libcamera {
 
+class Camera;
 class CameraManager;
 class DeviceEnumerator;
 class MediaDevice;
 
-class Camera;
 class CameraData
 {
 public:

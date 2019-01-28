@@ -5,6 +5,7 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <signal.h>
@@ -18,15 +19,16 @@
 using namespace libcamera;
 
 OptionsParser::Options options;
+std::shared_ptr<Camera> camera;
+EventLoop *loop;
 
 enum {
 	OptCamera = 'c',
+	OptCapture = 'C',
 	OptFormat = 'f',
 	OptHelp = 'h',
 	OptList = 'l',
 };
-
-EventLoop *loop;
 
 void signalHandler(int signal)
 {
@@ -48,6 +50,8 @@ static int parseOptions(int argc, char *argv[])
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on", "camera",
 			 ArgumentRequired, "camera");
+	parser.addOption(OptCapture, OptionNone,
+			 "Capture until interrupted by user", "capture");
 	parser.addOption(OptFormat, &formatKeyValue,
 			 "Set format of the camera's first stream", "format");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
@@ -66,35 +70,113 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-bool configureStreams(Camera *camera, std::vector<Stream *> &streams)
+static bool configureStreams(Camera *camera, std::vector<Stream *> &streams)
 {
 	KeyValueParser::Options format = options[OptFormat];
-
-	if (streams.size() != 1) {
-		std::cout << "Camera has " << streams.size()
-			  << " streams, I only know how to work with 1"
-			  << std::endl;
-		return false;
-	}
 	Stream *id = streams.front();
 
 	std::map<Stream *, StreamConfiguration> config =
 		camera->streamConfiguration(streams);
 
-	if (format.isSet("width"))
-		config[id].width = format["width"];
+	if (options.isSet(OptFormat)) {
+		if (format.isSet("width"))
+			config[id].width = format["width"];
 
-	if (format.isSet("height"))
-		config[id].height = format["height"];
+		if (format.isSet("height"))
+			config[id].height = format["height"];
 
-	/* TODO: Translate 4CC string to ID. */
-	if (format.isSet("pixelformat"))
-		config[id].pixelFormat = format["pixelformat"];
+		/* TODO: Translate 4CC string to ID. */
+		if (format.isSet("pixelformat"))
+			config[id].pixelFormat = format["pixelformat"];
+	}
 
 	if (camera->configureStreams(config))
 		return false;
 
 	return true;
+}
+
+static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
+{
+	static uint64_t last = 0;
+
+	Buffer *buffer = buffers.begin()->second;
+
+	double fps = buffer->timestamp() - last;
+	fps = last && fps ? 1000000000.0 / fps : 0.0;
+	last = buffer->timestamp();
+
+	std::cout << "seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
+		  << " buf: " << buffer->index()
+		  << " bytesused: " << buffer->bytesused()
+		  << " timestamp: " << buffer->timestamp()
+		  << " fps: " << std::fixed << std::setprecision(2) << fps
+		  << std::endl;
+
+	request = camera->createRequest();
+	if (!request) {
+		std::cerr << "Can't create request" << std::endl;
+		return;
+	}
+
+	request->setBuffers(buffers);
+	camera->queueRequest(request);
+}
+
+static int capture()
+{
+	int ret;
+
+	std::vector<Stream *> streams = camera->streams();
+
+	ret = configureStreams(camera.get(), streams);
+	if (ret < 0) {
+		std::cout << "Failed to configure camera" << std::endl;
+		return ret;
+	}
+
+	Stream *stream = streams.front();
+
+	ret = camera->allocateBuffers();
+	if (ret) {
+		std::cerr << "Failed to allocate buffers"
+			  << std::endl;
+		return ret;
+	}
+
+	camera->requestCompleted.connect(requestComplete);
+
+	BufferPool &pool = stream->bufferPool();
+
+	for (Buffer &buffer : pool.buffers()) {
+		Request *request = camera->createRequest();
+		if (!request) {
+			std::cerr << "Can't create request" << std::endl;
+			return -ENOMEM;
+		}
+
+		std::map<Stream *, Buffer *> map;
+		map[stream] = &buffer;
+		ret = request->setBuffers(map);
+		if (ret < 0) {
+			std::cerr << "Can't set buffers for request" << std::endl;
+			return ret;
+		}
+
+		ret = camera->queueRequest(request);
+		if (ret < 0) {
+			std::cerr << "Can't queue request" << std::endl;
+			return ret;
+		}
+	}
+
+	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
+	camera->start();
+
+	ret = loop->exec();
+
+	camera->stop();
+	return ret;
 }
 
 int main(int argc, char **argv)
@@ -106,8 +188,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 
 	CameraManager *cm = CameraManager::instance();
-	std::shared_ptr<Camera> camera;
-	std::vector<Stream *> streams;
 
 	ret = cm->start();
 	if (ret) {
@@ -136,7 +216,13 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		streams = camera->streams();
+		const std::vector<Stream *> &streams = camera->streams();
+		if (streams.size() != 1) {
+			std::cout << "Camera has " << streams.size()
+				  << " streams, only 1 is supported"
+				  << std::endl;
+			goto out;
+		}
 
 		if (camera->acquire()) {
 			std::cout << "Failed to acquire camera" << std::endl;
@@ -146,22 +232,17 @@ int main(int argc, char **argv)
 		std::cout << "Using camera " << camera->name() << std::endl;
 	}
 
-	if (options.isSet(OptFormat)) {
+	if (options.isSet(OptCapture)) {
 		if (!camera) {
-			std::cout << "Can't configure stream, no camera selected"
+			std::cout << "Can't capture without a camera"
 				  << std::endl;
-			goto out_camera;
+			ret = EXIT_FAILURE;
+			goto out;
 		}
 
-		if (!configureStreams(camera.get(), streams)) {
-			std::cout << "Failed to configure camera" << std::endl;
-			goto out_camera;
-		}
+		capture();
 	}
 
-	ret = loop->exec();
-
-out_camera:
 	if (camera) {
 		camera->release();
 		camera.reset();

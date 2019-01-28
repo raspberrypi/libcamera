@@ -11,15 +11,15 @@
 #include <map>
 #include <vector>
 
+enum OptionArgument {
+	ArgumentNone,
+	ArgumentRequired,
+	ArgumentOptional,
+};
+
 class OptionsParser
 {
 public:
-	enum OptionArgument {
-		ArgumentNone,
-		ArgumentRequired,
-		ArgumentOptional,
-	};
-
 	class Options {
 	public:
 		Options();

@@ -38,8 +38,7 @@ static int parseOptions(int argc, char *argv[])
 	OptionsParser parser;
 
 	parser.addOption(OptCamera, "Specify which camera to operate on",
-			 "camera", OptionsParser::ArgumentRequired,
-			 "camera");
+			 "camera", ArgumentRequired, "camera");
 	parser.addOption(OptHelp, "Display this help message", "help");
 	parser.addOption(OptList, "List all cameras", "list");
 

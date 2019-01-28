@@ -13,6 +13,7 @@
 
 #include <libcamera/libcamera.h>
 
+#include "buffer_writer.h"
 #include "event_loop.h"
 #include "options.h"
 
@@ -21,10 +22,12 @@ using namespace libcamera;
 OptionsParser::Options options;
 std::shared_ptr<Camera> camera;
 EventLoop *loop;
+BufferWriter *writer;
 
 enum {
 	OptCamera = 'c',
 	OptCapture = 'C',
+	OptFile = 'F',
 	OptFormat = 'f',
 	OptHelp = 'h',
 	OptList = 'l',
@@ -52,6 +55,11 @@ static int parseOptions(int argc, char *argv[])
 			 ArgumentRequired, "camera");
 	parser.addOption(OptCapture, OptionNone,
 			 "Capture until interrupted by user", "capture");
+	parser.addOption(OptFile, OptionString,
+			 "Write captured frames to disk\n"
+			 "The first '#' character in the file name is expanded to the frame sequence number.\n"
+			 "The default file name is 'frame-#.bin'.",
+			 "file", ArgumentOptional, "filename");
 	parser.addOption(OptFormat, &formatKeyValue,
 			 "Set format of the camera's first stream", "format");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
@@ -112,6 +120,9 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 		  << " timestamp: " << buffer->timestamp()
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
+
+	if (writer)
+		writer->write(buffer);
 
 	request = camera->createRequest();
 	if (!request) {
@@ -240,7 +251,19 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
+		if (options.isSet(OptFile)) {
+			if (!options[OptFile].toString().empty())
+				writer = new BufferWriter(options[OptFile]);
+			else
+				writer = new BufferWriter();
+		}
+
 		capture();
+
+		if (options.isSet(OptFile)) {
+			delete writer;
+			writer = nullptr;
+		}
 	}
 
 	if (camera) {

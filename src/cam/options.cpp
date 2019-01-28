@@ -27,6 +27,9 @@ const char *Option::typeName() const
 
 	case OptionString:
 		return "string";
+
+	case OptionKeyValue:
+		return "key=value";
 	}
 
 	return "unknown";
@@ -82,6 +85,15 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 	case OptionString:
 		value = OptionValue(optarg ? optarg : "");
 		break;
+
+	case OptionKeyValue:
+		KeyValueParser *kvParser = option.keyValueParser;
+		KeyValueParser::Options keyValues = kvParser->parse(optarg);
+		if (!keyValues.valid())
+			return false;
+
+		value = OptionValue(keyValues);
+		break;
 	}
 
 	values_[opt] = value;
@@ -95,6 +107,141 @@ void OptionsBase<T>::clear()
 }
 
 template class OptionsBase<int>;
+template class OptionsBase<std::string>;
+
+/* -----------------------------------------------------------------------------
+ * KeyValueParser
+ */
+
+bool KeyValueParser::addOption(const char *name, OptionType type,
+			       const char *help, OptionArgument argument)
+{
+	if (!name)
+		return false;
+	if (!help || help[0] == '\0')
+		return false;
+	if (argument != ArgumentNone && type == OptionNone)
+		return false;
+
+	/* Reject duplicate options. */
+	if (optionsMap_.find(name) != optionsMap_.end())
+		return false;
+
+	optionsMap_[name] = Option({ 0, type, name, argument, nullptr,
+				     help, nullptr });
+	return true;
+}
+
+KeyValueParser::Options KeyValueParser::parse(const char *arguments)
+{
+	Options options;
+
+	for (const char *pair = arguments; *arguments != '\0'; pair = arguments) {
+		const char *comma = strchrnul(arguments, ',');
+		size_t len = comma - pair;
+
+		/* Skip over the comma. */
+		arguments = *comma == ',' ? comma + 1 : comma;
+
+		/* Skip to the next pair if the pair is empty. */
+		if (!len)
+			continue;
+
+		std::string key;
+		std::string value;
+
+		const char *separator = static_cast<const char *>(memchr(pair, '=', len));
+		if (!separator) {
+			key = std::string(pair, len);
+			value = "";
+		} else {
+			key = std::string(pair, separator - pair);
+			value = std::string(separator + 1, comma - separator - 1);
+		}
+
+		/* The key is mandatory, the value might be optional. */
+		if (key.empty())
+			continue;
+
+		if (optionsMap_.find(key) == optionsMap_.end()) {
+			std::cerr << "Invalid option " << key << std::endl;
+			options.clear();
+			break;
+		}
+
+		OptionArgument arg = optionsMap_[key].argument;
+		if (value.empty() && arg == ArgumentRequired) {
+			std::cerr << "Option " << key << " requires an argument"
+				  << std::endl;
+			options.clear();
+			break;
+		} else if (!value.empty() && arg == ArgumentNone) {
+			std::cerr << "Option " << key << " takes no argument"
+				  << std::endl;
+			options.clear();
+			break;
+		}
+
+		const Option &option = optionsMap_[key];
+		if (!options.parseValue(key, option, value.c_str())) {
+			std::cerr << "Failed to parse '" << value << "' as "
+				  << option.typeName() << " for option " << key
+				  << std::endl;
+			options.clear();
+			break;
+		}
+	}
+
+	return options;
+}
+
+void KeyValueParser::usage(int indent)
+{
+	unsigned int space = 0;
+
+	for (auto const &iter : optionsMap_) {
+		const Option &option = iter.second;
+		unsigned int length = 14;
+		if (option.argument != ArgumentNone)
+			length += 1 + strlen(option.typeName());
+		if (option.argument == ArgumentOptional)
+			length += 2;
+
+		if (length > space)
+			space = length;
+	}
+
+	space = (space + 7) / 8 * 8;
+
+	for (auto const &iter : optionsMap_) {
+		const Option &option = iter.second;
+		std::string argument = option.name;
+
+		if (option.argument != ArgumentNone) {
+			if (option.argument == ArgumentOptional)
+				argument += "[=";
+			else
+				argument += "=";
+			argument += option.typeName();
+			if (option.argument == ArgumentOptional)
+				argument += "]";
+		}
+
+		std::cerr << std::setw(indent) << std::right << " "
+			  << std::setw(space) << std::left << argument;
+
+		for (const char *help = option.help, *end = help; end;) {
+			end = strchr(help, '\n');
+			if (end) {
+				std::cerr << std::string(help, end - help + 1);
+				std::cerr << std::setw(indent + space) << " ";
+				help = end + 1;
+			} else {
+				std::cerr << help << std::endl;
+			}
+		}
+	}
+}
 
 /* -----------------------------------------------------------------------------
  * OptionValue
@@ -120,6 +267,11 @@ OptionValue::OptionValue(const std::string &value)
 {
 }
 
+OptionValue::OptionValue(const KeyValueParser::Options &value)
+	: type_(OptionKeyValue), keyValues_(value)
+{
+}
+
 OptionValue::operator int() const
 {
 	if (type_ != OptionInteger)
@@ -134,6 +286,14 @@ OptionValue::operator std::string() const
 		return std::string();
 
 	return string_;
+}
+
+OptionValue::operator KeyValueParser::Options() const
+{
+	if (type_ != OptionKeyValue)
+		return KeyValueParser::Options();
+
+	return keyValues_;
 }
 
 /* -----------------------------------------------------------------------------
@@ -160,8 +320,19 @@ bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 		return false;
 
 	options_.push_back(Option({ opt, type, name, argument, argumentName,
-				    help }));
+				    help, nullptr }));
 	optionsMap_[opt] = &options_.back();
+	return true;
+}
+
+bool OptionsParser::addOption(int opt, KeyValueParser *parser, const char *help,
+			      const char *name)
+{
+	if (!addOption(opt, OptionKeyValue, help, name, ArgumentRequired,
+		       "key=value[,key=value,...]"))
+		return false;
+
+	options_.back().keyValueParser = parser;
 	return true;
 }
 
@@ -301,6 +472,9 @@ void OptionsParser::usage()
 				std::cerr << help << std::endl;
 			}
 		}
+
+		if (option.keyValueParser)
+			option.keyValueParser->usage(indent);
 	}
 }
 

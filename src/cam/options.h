@@ -11,6 +11,9 @@
 #include <list>
 #include <map>
 
+class KeyValueParser;
+class OptionValue;
+
 enum OptionArgument {
 	ArgumentNone,
 	ArgumentRequired,
@@ -21,6 +24,7 @@ enum OptionType {
 	OptionNone,
 	OptionInteger,
 	OptionString,
+	OptionKeyValue,
 };
 
 struct Option {
@@ -30,13 +34,12 @@ struct Option {
 	OptionArgument argument;
 	const char *argumentName;
 	const char *help;
+	KeyValueParser *keyValueParser;
 
 	bool hasShortOption() const { return isalnum(opt); }
 	bool hasLongOption() const { return name != nullptr; }
 	const char *typeName() const;
 };
-
-class OptionValue;
 
 template <typename T>
 class OptionsBase
@@ -47,12 +50,30 @@ public:
 	const OptionValue &operator[](const T &opt) const;
 
 private:
+	friend class KeyValueParser;
 	friend class OptionsParser;
 
 	bool parseValue(const T &opt, const Option &option, const char *value);
 	void clear();
 
 	std::map<T, OptionValue> values_;
+};
+
+class KeyValueParser
+{
+public:
+	class Options : public OptionsBase<std::string>
+	{
+	};
+
+	bool addOption(const char *name, OptionType type, const char *help,
+		       OptionArgument argument = ArgumentNone);
+
+	Options parse(const char *arguments);
+	void usage(int indent);
+
+private:
+	std::map<std::string, Option> optionsMap_;
 };
 
 class OptionValue
@@ -62,16 +83,19 @@ public:
 	OptionValue(int value);
 	OptionValue(const char *value);
 	OptionValue(const std::string &value);
+	OptionValue(const KeyValueParser::Options &value);
 
 	OptionType type() const { return type_; }
 
 	operator int() const;
 	operator std::string() const;
+	operator KeyValueParser::Options() const;
 
 private:
 	OptionType type_;
 	int integer_;
 	std::string string_;
+	KeyValueParser::Options keyValues_;
 };
 
 class OptionsParser
@@ -85,6 +109,8 @@ public:
 		       const char *name = nullptr,
 		       OptionArgument argument = ArgumentNone,
 		       const char *argumentName = nullptr);
+	bool addOption(int opt, KeyValueParser *parser, const char *help,
+		       const char *name = nullptr);
 
 	Options parse(int argc, char *argv[]);
 	void usage();

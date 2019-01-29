@@ -7,7 +7,12 @@
 #ifndef __LIBCAMERA_V4L2_DEVICE_TEST_H_
 #define __LIBCAMERA_V4L2_DEVICE_TEST_H_
 
+#include <memory>
+
 #include "test.h"
+
+#include "device_enumerator.h"
+#include "media_device.h"
 #include "v4l2_device.h"
 
 using namespace libcamera;
@@ -21,6 +26,8 @@ protected:
 	int init();
 	void cleanup();
 
+	std::unique_ptr<DeviceEnumerator> enumerator_;
+	std::shared_ptr<MediaDevice> media_;
 	V4L2Device *dev_;
 };
 

@@ -10,6 +10,10 @@
 
 #include "v4l2_device_test.h"
 
+#include "device_enumerator.h"
+#include "media_device.h"
+
+using namespace std;
 using namespace libcamera;
 
 bool exists(const std::string &path)
@@ -24,20 +28,40 @@ bool exists(const std::string &path)
 
 int V4L2DeviceTest::init()
 {
-	const std::string device("/dev/video0");
-
-	/* Validate the device node exists. */
-	if (!exists(device)) {
-		std::cout << "No video device available" << std::endl;
-		return TestSkip;
+	enumerator_ = DeviceEnumerator::create();
+	if (!enumerator_) {
+		cerr << "Failed to create device enumerator" << endl;
+		return TestFail;
 	}
 
-	dev_ = new V4L2Device(device);
+	if (enumerator_->enumerate()) {
+		cerr << "Failed to enumerate media devices" << endl;
+		return TestFail;
+	}
+
+	DeviceMatch dm("uvcvideo");
+	media_ = std::move(enumerator_->search(dm));
+	if (!media_)
+		return TestSkip;
+
+	media_->acquire();
+
+	for (MediaEntity *entity : media_->entities()) {
+		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
+			dev_ = new V4L2Device(entity);
+			break;
+		}
+	}
+
+	if (!dev_)
+		return TestSkip;
 
 	return dev_->open();
 }
 
 void V4L2DeviceTest::cleanup()
 {
+	media_->release();
+
 	delete dev_;
 };

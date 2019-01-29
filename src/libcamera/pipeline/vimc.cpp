@@ -12,6 +12,7 @@
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
+#include "v4l2_device.h"
 
 namespace libcamera {
 
@@ -33,16 +34,19 @@ public:
 
 private:
 	std::shared_ptr<MediaDevice> media_;
+	V4L2Device *video_;
 	Stream stream_;
 };
 
 PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
-	: PipelineHandler(manager), media_(nullptr)
+	: PipelineHandler(manager), media_(nullptr), video_(nullptr)
 {
 }
 
 PipeHandlerVimc::~PipeHandlerVimc()
 {
+	delete video_;
+
 	if (media_)
 		media_->release();
 }
@@ -93,8 +97,16 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
+	video_ = new V4L2Device(*media_->getEntityByName("Raw Capture 1"));
+
+	if (video_->open()) {
+		media_->release();
+		return false;
+	}
+
 	std::vector<Stream *> streams{ &stream_ };
-	std::shared_ptr<Camera> camera = Camera::create(this, "Dummy VIMC Camera", streams);
+	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",
+							streams);
 	registerCamera(std::move(camera));
 
 	return true;

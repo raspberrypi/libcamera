@@ -169,8 +169,8 @@ V4L2Device::V4L2Device(const std::string &deviceNode)
  *
  * Construct a V4L2Device from a MediaEntity's device node path.
  */
-V4L2Device::V4L2Device(const MediaEntity &entity)
-	: V4L2Device(entity.deviceNode())
+V4L2Device::V4L2Device(const MediaEntity *entity)
+	: V4L2Device(entity->deviceNode())
 {
 }
 

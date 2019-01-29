@@ -97,7 +97,7 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	video_ = new V4L2Device(*media_->getEntityByName("Raw Capture 1"));
+	video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));
 
 	if (video_->open()) {
 		media_->release();

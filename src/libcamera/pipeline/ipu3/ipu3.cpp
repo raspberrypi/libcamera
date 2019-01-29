@@ -182,7 +182,7 @@ V4L2Device *PipelineHandlerIPU3::createVideoDevice(unsigned int id)
 	if (!cio2)
 		return nullptr;
 
-	V4L2Device *dev = new V4L2Device(*cio2);
+	V4L2Device *dev = new V4L2Device(cio2);
 	if (dev->open()) {
 		delete dev;
 		return nullptr;

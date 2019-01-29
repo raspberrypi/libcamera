@@ -72,7 +72,7 @@ class V4L2Device
 {
 public:
 	explicit V4L2Device(const std::string &deviceNode);
-	explicit V4L2Device(const MediaEntity &entity);
+	explicit V4L2Device(const MediaEntity *entity);
 	V4L2Device(const V4L2Device &) = delete;
 	~V4L2Device();
 

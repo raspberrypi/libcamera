@@ -95,7 +95,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	for (MediaEntity *entity : media_->entities()) {
 		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
-			video_ = new V4L2Device(*entity);
+			video_ = new V4L2Device(entity);
 			break;
 		}
 	}

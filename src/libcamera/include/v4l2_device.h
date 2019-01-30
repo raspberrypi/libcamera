@@ -100,6 +100,7 @@ public:
 	int setFormat(V4L2DeviceFormat *format);
 
 	int exportBuffers(BufferPool *pool);
+	int importBuffers(BufferPool *pool);
 	int releaseBuffers();
 
 	int queueBuffer(Buffer *buffer);

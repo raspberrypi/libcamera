@@ -643,6 +643,36 @@ int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
 }
 
 /**
+ * \brief Import the externally allocated \a pool of buffers
+ * \param[in] pool BufferPool of buffers to import
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Device::importBuffers(BufferPool *pool)
+{
+	unsigned int allocatedBuffers;
+	int ret;
+
+	memoryType_ = V4L2_MEMORY_DMABUF;
+
+	ret = requestBuffers(pool->count());
+	if (ret < 0)
+		return ret;
+
+	allocatedBuffers = ret;
+	if (allocatedBuffers < pool->count()) {
+		LOG(V4L2, Error)
+			<< "Not enough buffers provided by V4L2Device";
+		requestBuffers(0);
+		return -ENOMEM;
+	}
+
+	LOG(V4L2, Debug) << "provided pool of " << pool->count() << "buffers";
+	bufferPool_ = pool;
+
+	return 0;
+}
+
+/**
  * \brief Release all internally allocated buffers
  */
 int V4L2Device::releaseBuffers()
@@ -680,7 +710,20 @@ int V4L2Device::queueBuffer(Buffer *buffer)
 	buf.memory = memoryType_;
 	buf.field = V4L2_FIELD_NONE;
 
-	if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
+	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
+
+	if (buf.memory == V4L2_MEMORY_DMABUF) {
+		if (multiPlanar) {
+			for (unsigned int p = 0;
+			     p < buffer->planes().size();
+			     p++)
+				planes[p].m.fd = buffer->planes()[p].dmabuf();
+		} else {
+			buf.m.fd = buffer->planes()[0].dmabuf();
+		}
+	}
+
+	if (multiPlanar) {
 		buf.length = buffer->planes().size();
 		buf.m.planes = planes;
 	}

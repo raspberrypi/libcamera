@@ -110,7 +110,8 @@ const std::string &Camera::name() const
  */
 
 Camera::Camera(PipelineHandler *pipe, const std::string &name)
-	: pipe_(pipe->shared_from_this()), name_(name), acquired_(false)
+	: pipe_(pipe->shared_from_this()), name_(name), acquired_(false),
+	  disconnected_(false)
 {
 }
 
@@ -133,7 +134,7 @@ void Camera::disconnect()
 {
 	LOG(Camera, Debug) << "Disconnecting camera " << name_;
 
-	/** \todo Block API calls when they will be implemented. */
+	disconnected_ = true;
 	disconnected.emit(this);
 }
 
@@ -184,6 +185,67 @@ void Camera::release()
 const std::vector<Stream *> &Camera::streams() const
 {
 	return streams_;
+}
+
+/**
+ * \brief Retrieve a group of stream configurations
+ * \param[in] streams A map of stream IDs and configurations to setup
+ *
+ * Retrieve the camera's configuration for a specified group of streams. The
+ * caller can specifies which of the camera's streams to retrieve configuration
+ * from by populating \a streams.
+ *
+ * The easiest way to populate the array of streams to fetch configuration from
+ * is to first retrieve the camera's full array of stream with streams() and
+ * then potentially trim it down to only contain the streams the caller
+ * are interested in.
+ *
+ * \return A map of successfully retrieved stream IDs and configurations or an
+ * empty list on error.
+ */
+std::map<Stream *, StreamConfiguration>
+Camera::streamConfiguration(std::vector<Stream *> &streams)
+{
+	if (disconnected_ || !streams.size())
+		std::map<unsigned int, StreamConfiguration> {};
+
+	return pipe_->streamConfiguration(this, streams);
+}
+
+/**
+ * \brief Configure the camera's streams prior to capture
+ * \param[in] config A map of stream IDs and configurations to setup
+ *
+ * Prior to starting capture, the camera must be configured to select a
+ * group of streams to be involved in the capture and their configuration.
+ * The caller specifies which streams are to be involved and their configuration
+ * by populating \a config.
+ *
+ * The easiest way to populate the array of config is to fetch an initial
+ * configuration from the camera with streamConfiguration() and then change the
+ * parameters to fit the caller's need and once all the streams parameters are
+ * configured hand that over to configureStreams() to actually setup the camera.
+ *
+ * Exclusive access to the camera shall be ensured by a call to acquire() prior
+ * to calling this function, otherwise an -EACCES error will be returned.
+ *
+ * \return 0 on success or a negative error code on error.
+ * \retval -ENODEV The camera is not connected to any hardware
+ * \retval -EACCES The user has not acquired exclusive access to the camera
+ * \retval -EINVAL The configuration is not valid
+ */
+int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
+{
+	if (disconnected_)
+		return -ENODEV;
+
+	if (!acquired_)
+		return -EACCES;
+
+	if (!config.size())
+		return -EINVAL;
+
+	return pipe_->configureStreams(this, config);
 }
 
 } /* namespace libcamera */

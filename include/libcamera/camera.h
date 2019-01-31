@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_CAMERA_H__
 #define __LIBCAMERA_CAMERA_H__
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -16,6 +17,7 @@ namespace libcamera {
 
 class PipelineHandler;
 class Stream;
+class StreamConfiguration;
 
 class Camera final
 {
@@ -35,6 +37,9 @@ public:
 	void release();
 
 	const std::vector<Stream *> &streams() const;
+	std::map<Stream *, StreamConfiguration>
+	streamConfiguration(std::vector<Stream *> &streams);
+	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
 
 private:
 	Camera(PipelineHandler *pipe, const std::string &name);
@@ -48,6 +53,7 @@ private:
 	std::vector<Stream *> streams_;
 
 	bool acquired_;
+	bool disconnected_;
 };
 
 } /* namespace libcamera */

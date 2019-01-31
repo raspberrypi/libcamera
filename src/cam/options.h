@@ -8,8 +8,8 @@
 #define __CAM_OPTIONS_H__
 
 #include <ctype.h>
+#include <list>
 #include <map>
-#include <vector>
 
 enum OptionArgument {
 	ArgumentNone,
@@ -57,7 +57,7 @@ public:
 	void usage();
 
 private:
-	std::vector<Option> options_;
+	std::list<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
 };
 

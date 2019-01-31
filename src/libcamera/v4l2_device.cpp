@@ -305,7 +305,7 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *fmt)
 	int ret;
 
 	v4l2Fmt.type = bufferType_;
-	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Fmt);
+	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Fmt);
 	if (ret) {
 		ret = -errno;
 		LOG(Error) << "Unable to get format: " << strerror(-ret);

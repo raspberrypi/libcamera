@@ -86,7 +86,7 @@ public:
 	const char *deviceName() const { return caps_.card(); }
 	const char *busName() const { return caps_.bus_info(); }
 
-	int format(V4L2DeviceFormat *fmt);
+	int getFormat(V4L2DeviceFormat *fmt);
 	int setFormat(V4L2DeviceFormat *fmt);
 
 private:

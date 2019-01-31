@@ -282,7 +282,7 @@ void V4L2Device::close()
  * \brief Retrieve the image format set on the V4L2 device
  * \return 0 for success, a negative error code otherwise
  */
-int V4L2Device::format(V4L2DeviceFormat *fmt)
+int V4L2Device::getFormat(V4L2DeviceFormat *fmt)
 {
 	return caps_.isMultiplanar() ? getFormatMultiplane(fmt) :
 				       getFormatSingleplane(fmt);

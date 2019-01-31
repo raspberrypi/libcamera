@@ -17,8 +17,15 @@ enum OptionArgument {
 	ArgumentOptional,
 };
 
+enum OptionType {
+	OptionNone,
+	OptionInteger,
+	OptionString,
+};
+
 struct Option {
 	int opt;
+	OptionType type;
 	const char *name;
 	OptionArgument argument;
 	const char *argumentName;
@@ -26,7 +33,10 @@ struct Option {
 
 	bool hasShortOption() const { return isalnum(opt); }
 	bool hasLongOption() const { return name != nullptr; }
+	const char *typeName() const;
 };
+
+class OptionValue;
 
 template <typename T>
 class OptionsBase
@@ -34,12 +44,34 @@ class OptionsBase
 public:
 	bool valid() const;
 	bool isSet(const T &opt) const;
-	const std::string &operator[](const T &opt) const;
+	const OptionValue &operator[](const T &opt) const;
 
 private:
 	friend class OptionsParser;
-	std::map<T, std::string> values_;
+
+	bool parseValue(const T &opt, const Option &option, const char *value);
 	void clear();
+
+	std::map<T, OptionValue> values_;
+};
+
+class OptionValue
+{
+public:
+	OptionValue();
+	OptionValue(int value);
+	OptionValue(const char *value);
+	OptionValue(const std::string &value);
+
+	OptionType type() const { return type_; }
+
+	operator int() const;
+	operator std::string() const;
+
+private:
+	OptionType type_;
+	int integer_;
+	std::string string_;
 };
 
 class OptionsParser
@@ -49,7 +81,8 @@ public:
 	{
 	};
 
-	bool addOption(int opt, const char *help, const char *name = nullptr,
+	bool addOption(int opt, OptionType type, const char *help,
+		       const char *name = nullptr,
 		       OptionArgument argument = ArgumentNone,
 		       const char *argumentName = nullptr);
 
@@ -57,6 +90,8 @@ public:
 	void usage();
 
 private:
+	void parseValueError(const Option &option);
+
 	std::list<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
 };

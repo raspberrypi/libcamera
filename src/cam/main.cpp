@@ -37,10 +37,12 @@ static int parseOptions(int argc, char *argv[])
 {
 	OptionsParser parser;
 
-	parser.addOption(OptCamera, "Specify which camera to operate on",
-			 "camera", ArgumentRequired, "camera");
-	parser.addOption(OptHelp, "Display this help message", "help");
-	parser.addOption(OptList, "List all cameras", "list");
+	parser.addOption(OptCamera, OptionString,
+			 "Specify which camera to operate on", "camera",
+			 ArgumentRequired, "camera");
+	parser.addOption(OptHelp, OptionNone, "Display this help message",
+			 "help");
+	parser.addOption(OptList, OptionNone, "List all cameras", "list");
 
 	options = parser.parse(argc, argv);
 	if (!options.valid())

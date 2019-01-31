@@ -12,6 +12,30 @@
 
 #include "options.h"
 
+/* -----------------------------------------------------------------------------
+ * Option
+ */
+
+const char *Option::typeName() const
+{
+	switch (type) {
+	case OptionNone:
+		return "none";
+
+	case OptionInteger:
+		return "integer";
+
+	case OptionString:
+		return "string";
+	}
+
+	return "unknown";
+}
+
+/* -----------------------------------------------------------------------------
+ * OptionBase<T>
+ */
+
 template <typename T>
 bool OptionsBase<T>::valid() const
 {
@@ -25,9 +49,43 @@ bool OptionsBase<T>::isSet(const T &opt) const
 }
 
 template <typename T>
-const std::string &OptionsBase<T>::operator[](const T &opt) const
+const OptionValue &OptionsBase<T>::operator[](const T &opt) const
 {
 	return values_.find(opt)->second;
+}
+
+template <typename T>
+bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
+				const char *optarg)
+{
+	OptionValue value;
+
+	switch (option.type) {
+	case OptionNone:
+		break;
+
+	case OptionInteger:
+		unsigned int integer;
+
+		if (optarg) {
+			char *endptr;
+			integer = strtoul(optarg, &endptr, 10);
+			if (*endptr != '\0')
+				return false;
+		} else {
+			integer = 0;
+		}
+
+		value = OptionValue(integer);
+		break;
+
+	case OptionString:
+		value = OptionValue(optarg ? optarg : "");
+		break;
+	}
+
+	values_[opt] = value;
+	return true;
 }
 
 template <typename T>
@@ -38,8 +96,53 @@ void OptionsBase<T>::clear()
 
 template class OptionsBase<int>;
 
-bool OptionsParser::addOption(int opt, const char *help, const char *name,
-			      OptionArgument argument, const char *argumentName)
+/* -----------------------------------------------------------------------------
+ * OptionValue
+ */
+
+OptionValue::OptionValue()
+	: type_(OptionNone)
+{
+}
+
+OptionValue::OptionValue(int value)
+	: type_(OptionInteger), integer_(value)
+{
+}
+
+OptionValue::OptionValue(const char *value)
+	: type_(OptionString), string_(value)
+{
+}
+
+OptionValue::OptionValue(const std::string &value)
+	: type_(OptionString), string_(value)
+{
+}
+
+OptionValue::operator int() const
+{
+	if (type_ != OptionInteger)
+		return 0;
+
+	return integer_;
+}
+
+OptionValue::operator std::string() const
+{
+	if (type_ != OptionString)
+		return std::string();
+
+	return string_;
+}
+
+/* -----------------------------------------------------------------------------
+ * OptionsParser
+ */
+
+bool OptionsParser::addOption(int opt, OptionType type, const char *help,
+			      const char *name, OptionArgument argument,
+			      const char *argumentName)
 {
 	/*
 	 * Options must have at least a short or long name, and a text message.
@@ -56,7 +159,8 @@ bool OptionsParser::addOption(int opt, const char *help, const char *name,
 	if (optionsMap_.find(opt) != optionsMap_.end())
 		return false;
 
-	options_.push_back(Option({ opt, name, argument, argumentName, help }));
+	options_.push_back(Option({ opt, type, name, argument, argumentName,
+				    help }));
 	optionsMap_[opt] = &options_.back();
 	return true;
 }
@@ -126,7 +230,13 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 			break;
 		}
 
-		options.values_[c] = optarg ? optarg : "";
+		const Option &option = *optionsMap_[c];
+		if (!options.parseValue(c, option, optarg)) {
+			parseValueError(option);
+			usage();
+			options.clear();
+			break;
+		}
 	}
 
 	return options;
@@ -192,4 +302,17 @@ void OptionsParser::usage()
 			}
 		}
 	}
+}
+
+void OptionsParser::parseValueError(const Option &option)
+{
+	std::string optionName;
+
+	if (option.name)
+		optionName = "--" + std::string(option.name);
+	else
+		optionName = "-" + static_cast<char>(option.opt);
+
+	std::cerr << "Can't parse " << option.typeName()
+		  << " argument for option " << optionName << std::endl;
 }

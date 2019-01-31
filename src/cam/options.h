@@ -17,6 +17,17 @@ enum OptionArgument {
 	ArgumentOptional,
 };
 
+struct Option {
+	int opt;
+	const char *name;
+	OptionArgument argument;
+	const char *argumentName;
+	const char *help;
+
+	bool hasShortOption() const { return isalnum(opt); }
+	bool hasLongOption() const { return name != nullptr; }
+};
+
 class OptionsParser
 {
 public:
@@ -42,17 +53,6 @@ public:
 	void usage();
 
 private:
-	struct Option {
-		int opt;
-		const char *name;
-		OptionArgument argument;
-		const char *argumentName;
-		const char *help;
-
-		bool hasShortOption() const { return isalnum(opt); }
-		bool hasLongOption() const { return name != nullptr; }
-	};
-
 	std::vector<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
 };

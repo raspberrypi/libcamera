@@ -299,7 +299,7 @@ int V4L2Device::setFormat(V4L2DeviceFormat *format)
 
 int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 {
-	struct v4l2_format v4l2Format;
+	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
 	int ret;
 
@@ -323,7 +323,7 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 
 int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 {
-	struct v4l2_format v4l2Format;
+	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
 	int ret;
 
@@ -344,7 +344,7 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 
 int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 {
-	struct v4l2_format v4l2Format;
+	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format_mplane *pix = &v4l2Format.fmt.pix_mp;
 	int ret;
 
@@ -371,7 +371,7 @@ int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 
 int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 {
-	struct v4l2_format v4l2Format;
+	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format_mplane *pix = &v4l2Format.fmt.pix_mp;
 	int ret;
 

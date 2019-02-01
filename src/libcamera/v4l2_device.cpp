@@ -84,49 +84,99 @@ LOG_DEFINE_CATEGORY(V4L2)
  * \class V4L2DeviceFormat
  * \brief The V4L2 device image format and sizes
  *
- * Describes the image format and image sizes to be programmed on a V4L2
- * video device. The image format is defined by fourcc code as defined by
- * the V4L2 APIs with the V4L2_PIX_FMT_ macros, a visible width and height
- * and a variable number of planes (1 to 3) with variable sizes and line
- * strides.
+ * This class describes the image format and resolution to be programmed on a
+ * V4L2 video device. The image format is defined by a fourcc code (as specified
+ * by the V4L2 API with the V4L2_PIX_FMT_* macros), a resolution (width and
+ * height) and one to three planes with configurable line stride and a total
+ * per-plane size in bytes.
  *
- * Formats defined as 'single planar' by the V4L2 APIs are represented with
- * V4L2DeviceFormat instances with a single plane
- * (V4L2DeviceFormat::planesCount = 1). Semi-planar and multiplanar formats use
- * 2 and 3 planes respectively.
+ * Image formats, as defined by the V4L2 APIs, are categorized as packed,
+ * semi-planar and planar, and describe the layout of the image pixel components
+ * stored in memory.
  *
- * V4L2DeviceFormat defines the exchange format between components that
- * receive image configuration requests from applications and a V4L2Device.
- * The V4L2Device validates and applies the requested size and format to
- * the device driver.
+ * Packed image formats store pixel components one after the other, in a
+ * contiguous memory area. Examples of packed image formats are YUYV
+ * permutations, RGB with different pixel sub-sampling ratios such as RGB565 or
+ * RGB666 or Raw-Bayer formats such as SRGGB8 or SGRBG12.
+ *
+ * Semi-planar and planar image formats store the pixel components in separate
+ * and possibly non-contiguous memory areas, named planes, whose sizes depend on
+ * the pixel components sub-sampling ratios, which are defined by the format.
+ * Semi-planar formats use two planes to store pixel components and notable
+ * examples of such formats are the NV12 and NV16 formats, while planar formats
+ * use three planes to store pixel components and notable examples are YUV422
+ * and YUV420.
+ *
+ * Image formats supported by the V4L2 API are defined and described in Section
+ * number 2 of the "Part I - Video for Linux API" chapter of the "Linux Media
+ * Infrastructure userspace API", part of the Linux kernel documentation.
+ *
+ * In the context of this document, packed image formats are referred to as
+ * "packed formats" and semi-planar and planar image formats are referred to as
+ * "planar formats".
+ *
+ * V4L2 also defines two different sets of APIs to work with devices that store
+ * planes in contiguous or separate memory areas. They are named "Single-plane
+ * APIs" and "Multi-plane APIs" respectively and are documented in Section 2.1
+ * and Section 2.2 of the above mentioned "Part I - Video for Linux API"
+ * documentation.
+ *
+ * The single-plane API allows, among other parameters, the configuration of the
+ * image resolution, the pixel format and the stride length. In that case the
+ * stride applies to all planes (possibly sub-sampled). The multi-plane API
+ * allows configuring the resolution, the pixel format and a per-plane stride
+ * length and total size.
+ *
+ * Packed image formats, which occupy a single memory area, are easily described
+ * through the single-plane API. When used on a device that implements the
+ * multi-plane API, only the size and stride information contained in the first
+ * plane are taken into account.
+ *
+ * Planar image formats, which occupy distinct memory areas, are easily
+ * described through the multi-plane APIs. When used on a device that implements
+ * the single-plane API, all planes are stored one after the other in a
+ * contiguous memory area, and it is not possible to configure per-plane stride
+ * length and size, but only a global stride length which is applied to all
+ * planes.
+ *
+ * The V4L2DeviceFormat class describes both packed and planar image formats,
+ * regardless of the API type (single or multi plane) implemented by the device
+ * the format has to be applied to. The total size and bytes per line of images
+ * represented with packed formats are configured using the first entry of the
+ * V4L2DeviceFormat::planes array, while the per-plane size and per-plane stride
+ * length of images represented with planar image formats are configured using
+ * the opportune number of entries of the V4L2DeviceFormat::planes array, as
+ * prescribed by the image format definition (semi-planar formats use 2 entries,
+ * while planar formats use the whole 3 entries). The number of valid entries of
+ * the V4L2DeviceFormat::planes array is defined by the
+ * V4L2DeviceFormat::planesCount value.
  */
 
 /**
  * \var V4L2DeviceFormat::width
- * \brief The image width
+ * \brief The image width in pixels
  */
 
 /**
  * \var V4L2DeviceFormat::height
- * \brief The image height
+ * \brief The image height in pixels
  */
 
 /**
  * \var V4L2DeviceFormat::fourcc
- * \brief The pixel encoding scheme
+ * \brief The fourcc code describing the pixel encoding scheme
  *
- * The fourcc code, as defined by the V4L2 APIs with the V4L2_PIX_FMT_ macros,
+ * The fourcc code, as defined by the V4L2 API with the V4L2_PIX_FMT_* macros,
  * that identifies the image format pixel encoding scheme.
  */
 
 /**
  * \var V4L2DeviceFormat::planes
- * \brief The per-plane size information
+ * \brief The per-plane memory size information
  *
- * Images are stored in memory in one or more data planes. Each data plane
- * has a specific size and line length, which could differ from the image
- * visible sizes to accommodate line or plane padding data.
- *
+ * Images are stored in memory in one or more data planes. Each data plane has a
+ * specific line stride and memory size, which could differ from the image
+ * visible sizes to accommodate padding at the end of lines and end of planes.
  * Only the first \ref planesCount entries are considered valid.
  */
 

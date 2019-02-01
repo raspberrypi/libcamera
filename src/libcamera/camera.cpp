@@ -101,7 +101,7 @@ const std::string &Camera::name() const
  * \var Camera::disconnected
  * \brief Signal emitted when the camera is disconnected from the system
  *
- * This signal is emitted when libcamera detects that the cameera has been
+ * This signal is emitted when libcamera detects that the camera has been
  * removed from the system. For hot-pluggable devices this is usually caused by
  * physical device disconnection. The media device is passed as a parameter.
  *

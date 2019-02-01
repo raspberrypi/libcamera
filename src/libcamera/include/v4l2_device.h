@@ -86,15 +86,15 @@ public:
 	const char *deviceName() const { return caps_.card(); }
 	const char *busName() const { return caps_.bus_info(); }
 
-	int getFormat(V4L2DeviceFormat *fmt);
-	int setFormat(V4L2DeviceFormat *fmt);
+	int getFormat(V4L2DeviceFormat *format);
+	int setFormat(V4L2DeviceFormat *format);
 
 private:
-	int getFormatSingleplane(V4L2DeviceFormat *fmt);
-	int setFormatSingleplane(V4L2DeviceFormat *fmt);
+	int getFormatSingleplane(V4L2DeviceFormat *format);
+	int setFormatSingleplane(V4L2DeviceFormat *format);
 
-	int getFormatMultiplane(V4L2DeviceFormat *fmt);
-	int setFormatMultiplane(V4L2DeviceFormat *fmt);
+	int getFormatMultiplane(V4L2DeviceFormat *format);
+	int setFormatMultiplane(V4L2DeviceFormat *format);
 
 	std::string deviceNode_;
 	int fd_;

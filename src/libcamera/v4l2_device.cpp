@@ -331,6 +331,7 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	pix->width = format->width;
 	pix->height = format->height;
 	pix->pixelformat = format->fourcc;
+	pix->bytesperline = format->planes[0].bpl;
 
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {

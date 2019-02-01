@@ -63,8 +63,8 @@ public:
 	struct {
 		uint32_t size;
 		uint32_t bpl;
-	} planesFmt[3];
-	unsigned int planes;
+	} planes[3];
+	unsigned int planesCount;
 };
 
 class MediaEntity;

@@ -92,7 +92,7 @@ LOG_DEFINE_CATEGORY(V4L2)
  *
  * Formats defined as 'single planar' by the V4L2 APIs are represented with
  * V4L2DeviceFormat instances with a single plane
- * (V4L2DeviceFormat::planes = 1). Semi-planar and multiplanar formats use
+ * (V4L2DeviceFormat::planesCount = 1). Semi-planar and multiplanar formats use
  * 2 and 3 planes respectively.
  *
  * V4L2DeviceFormat defines the exchange format between components that
@@ -120,19 +120,18 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
- * \var V4L2DeviceFormat::planesFmt
+ * \var V4L2DeviceFormat::planes
  * \brief The per-plane size information
  *
  * Images are stored in memory in one or more data planes. Each data plane
  * has a specific size and line length, which could differ from the image
  * visible sizes to accommodate line or plane padding data.
  *
- * Only the first V4L2DeviceFormat::planes entries are considered valid.
- *
+ * Only the first \ref planesCount entries are considered valid.
  */
 
 /**
- * \var V4L2DeviceFormat::planes
+ * \var V4L2DeviceFormat::planesCount
  * \brief The number of valid data planes
  */
 
@@ -315,9 +314,9 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 	format->width = pix->width;
 	format->height = pix->height;
 	format->fourcc = pix->pixelformat;
-	format->planes = 1;
-	format->planesFmt[0].bpl = pix->bytesperline;
-	format->planesFmt[0].size = pix->sizeimage;
+	format->planesCount = 1;
+	format->planes[0].bpl = pix->bytesperline;
+	format->planes[0].size = pix->sizeimage;
 
 	return 0;
 }
@@ -360,11 +359,11 @@ int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 	format->width = pix->width;
 	format->height = pix->height;
 	format->fourcc = pix->pixelformat;
-	format->planes = pix->num_planes;
+	format->planesCount = pix->num_planes;
 
-	for (unsigned int i = 0; i < format->planes; ++i) {
-		format->planesFmt[i].bpl = pix->plane_fmt[i].bytesperline;
-		format->planesFmt[i].size = pix->plane_fmt[i].sizeimage;
+	for (unsigned int i = 0; i < format->planesCount; ++i) {
+		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
+		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
 
 	return 0;
@@ -380,11 +379,11 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	pix->width = format->width;
 	pix->height = format->height;
 	pix->pixelformat = format->fourcc;
-	pix->num_planes = format->planes;
+	pix->num_planes = format->planesCount;
 
 	for (unsigned int i = 0; i < pix->num_planes; ++i) {
-		pix->plane_fmt[i].bytesperline = format->planesFmt[i].bpl;
-		pix->plane_fmt[i].sizeimage = format->planesFmt[i].size;
+		pix->plane_fmt[i].bytesperline = format->planes[i].bpl;
+		pix->plane_fmt[i].sizeimage = format->planes[i].size;
 	}
 
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);

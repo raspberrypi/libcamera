@@ -274,13 +274,28 @@ OptionValue::OptionValue(const KeyValueParser::Options &value)
 
 OptionValue::operator int() const
 {
+	return toInteger();
+}
+
+OptionValue::operator std::string() const
+{
+	return toString();
+}
+
+OptionValue::operator KeyValueParser::Options() const
+{
+	return toKeyValues();
+}
+
+int OptionValue::toInteger() const
+{
 	if (type_ != OptionInteger)
 		return 0;
 
 	return integer_;
 }
 
-OptionValue::operator std::string() const
+std::string OptionValue::toString() const
 {
 	if (type_ != OptionString)
 		return std::string();
@@ -288,7 +303,7 @@ OptionValue::operator std::string() const
 	return string_;
 }
 
-OptionValue::operator KeyValueParser::Options() const
+KeyValueParser::Options OptionValue::toKeyValues() const
 {
 	if (type_ != OptionKeyValue)
 		return KeyValueParser::Options();

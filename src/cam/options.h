@@ -91,6 +91,10 @@ public:
 	operator std::string() const;
 	operator KeyValueParser::Options() const;
 
+	int toInteger() const;
+	std::string toString() const;
+	KeyValueParser::Options toKeyValues() const;
+
 private:
 	OptionType type_;
 	int integer_;

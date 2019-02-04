@@ -60,7 +60,11 @@ PipelineHandlerUVC::streamConfiguration(Camera *camera,
 
 	StreamConfiguration config{};
 
-	LOG(UVC, Info) << "TODO: Return a good default format";
+	LOG(UVC, Debug) << "Retrieving default format";
+	config.width = 640;
+	config.height = 480;
+	config.pixelFormat = V4L2_PIX_FMT_YUYV;
+	config.bufferCount = 4;
 
 	configs[&stream_] = config;
 

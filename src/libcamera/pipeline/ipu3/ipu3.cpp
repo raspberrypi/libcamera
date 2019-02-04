@@ -17,6 +17,7 @@
 #include "pipeline_handler.h"
 #include "utils.h"
 #include "v4l2_device.h"
+#include "v4l2_subdevice.h"
 
 namespace libcamera {
 
@@ -49,14 +50,21 @@ private:
 	{
 	public:
 		IPU3CameraData()
-			: dev_(nullptr) {}
-		~IPU3CameraData() { delete dev_; }
-		V4L2Device *dev_;
+			: cio2_(nullptr), csi2_(nullptr), sensor_(nullptr) {}
+
+		~IPU3CameraData()
+		{
+			delete cio2_;
+			delete csi2_;
+			delete sensor_;
+		}
+
+		V4L2Device *cio2_;
+		V4L2Subdevice *csi2_;
+		V4L2Subdevice *sensor_;
+
 		Stream stream_;
 	};
-
-	std::shared_ptr<MediaDevice> cio2_;
-	std::shared_ptr<MediaDevice> imgu_;
 
 	IPU3CameraData *cameraData(const Camera *camera)
 	{
@@ -64,8 +72,10 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
-	V4L2Device *createVideoDevice(unsigned int id);
 	void registerCameras();
+
+	std::shared_ptr<MediaDevice> cio2_;
+	std::shared_ptr<MediaDevice> imgu_;
 };
 
 PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
@@ -208,24 +218,6 @@ error_release_mdev:
 	return false;
 }
 
-/* Create video devices for the CIO2 unit associated with a camera. */
-V4L2Device *PipelineHandlerIPU3::createVideoDevice(unsigned int id)
-{
-	std::string cio2Name = "ipu3-cio2 " + std::to_string(id);
-	MediaEntity *cio2 = cio2_->getEntityByName(cio2Name);
-	if (!cio2)
-		return nullptr;
-
-	V4L2Device *dev = new V4L2Device(cio2);
-	if (dev->open()) {
-		delete dev;
-		return nullptr;
-	}
-	dev->close();
-
-	return dev;
-}
-
 /*
  * Cameras are created associating an image sensor (represented by a
  * media entity with function MEDIA_ENT_F_CAM_SENSOR) to one of the four
@@ -241,6 +233,7 @@ void PipelineHandlerIPU3::registerCameras()
 	for (unsigned int id = 0; id < 4; ++id) {
 		std::string csi2Name = "ipu3-csi2 " + std::to_string(id);
 		MediaEntity *csi2 = cio2_->getEntityByName(csi2Name);
+		int ret;
 
 		/*
 		 * This shall not happen, as the device enumerator matched
@@ -281,17 +274,36 @@ void PipelineHandlerIPU3::registerCameras()
 		std::shared_ptr<Camera> camera = Camera::create(this, cameraName, streams);
 
 		/*
-		 * If V4L2 device creation fails, the Camera instance won't be
-		 * registered. The 'camera' shared pointer goes out of scope
-		 * and deletes the Camera it manages.
+		 * Create and open video devices and subdevices associated with
+		 * the camera.
+		 *
+		 * If any of these operations fails, the Camera instance won't
+		 * be registered. The 'camera' shared pointer and the 'data'
+		 * unique pointers go out of scope and delete the objects they
+		 * manage.
 		 */
-		data->dev_ = createVideoDevice(id);
-		if (!data->dev_) {
+		std::string cio2Name = "ipu3-cio2 " + std::to_string(id);
+		MediaEntity *cio2 = cio2_->getEntityByName(cio2Name);
+		if (!cio2) {
 			LOG(IPU3, Error)
-				<< "Failed to register camera["
-				<< numCameras << "] \"" << cameraName << "\"";
+				<< "Failed to get entity '" << cio2Name << "'";
 			continue;
 		}
+
+		data->cio2_ = new V4L2Device(cio2);
+		ret = data->cio2_->open();
+		if (ret)
+			continue;
+
+		data->sensor_ = new V4L2Subdevice(sensor);
+		ret = data->sensor_->open();
+		if (ret)
+			continue;
+
+		data->csi2_ = new V4L2Subdevice(csi2);
+		ret = data->csi2_->open();
+		if (ret)
+			continue;
 
 		setCameraData(camera.get(), std::move(data));
 		registerCamera(std::move(camera));

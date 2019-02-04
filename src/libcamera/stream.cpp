@@ -73,4 +73,9 @@ namespace libcamera {
  * format described in V4L2 using the V4L2_PIX_FMT_* definitions.
  */
 
+/**
+ * \var StreamConfiguration::bufferCount
+ * \brief Requested number of buffers to allocate for the stream
+ */
+
 } /* namespace libcamera */

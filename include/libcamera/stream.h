@@ -17,6 +17,8 @@ struct StreamConfiguration {
 	unsigned int width;
 	unsigned int height;
 	unsigned int pixelFormat;
+
+	unsigned int bufferCount;
 };
 
 } /* namespace libcamera */

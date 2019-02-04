@@ -12,6 +12,7 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/event_notifier.h>
+#include <libcamera/request.h>
 #include <libcamera/signal.h>
 #include <libcamera/stream.h>
 #include <libcamera/timer.h>

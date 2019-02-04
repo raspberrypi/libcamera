@@ -11,10 +11,12 @@
 #include <memory>
 #include <string>
 
+#include <libcamera/request.h>
 #include <libcamera/signal.h>
 
 namespace libcamera {
 
+class Buffer;
 class PipelineHandler;
 class Stream;
 class StreamConfiguration;
@@ -31,6 +33,7 @@ public:
 
 	const std::string &name() const;
 
+	Signal<Request *, const std::map<Stream *, Buffer *> &> requestCompleted;
 	Signal<Camera *> disconnected;
 
 	int acquire();

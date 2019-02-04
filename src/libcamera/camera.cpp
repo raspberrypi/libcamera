@@ -98,6 +98,11 @@ const std::string &Camera::name() const
 }
 
 /**
+ * \var Camera::requestCompleted
+ * \brief Signal emitted when a request queued to the camera has completed
+ */
+
+/**
  * \var Camera::disconnected
  * \brief Signal emitted when the camera is disconnected from the system
  *

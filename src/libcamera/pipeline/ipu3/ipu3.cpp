@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <libcamera/camera.h>
+#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "device_enumerator.h"
@@ -97,12 +98,23 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 					 std::vector<Stream *> &streams)
 {
 	IPU3CameraData *data = cameraData(camera);
-
 	std::map<Stream *, StreamConfiguration> configs;
+	V4L2SubdeviceFormat format = {};
 
-	StreamConfiguration config{};
+	/*
+	 * FIXME: As of now, return the image format reported by the sensor.
+	 * In future good defaults should be provided for each stream.
+	 */
+	if (data->sensor_->getFormat(0, &format)) {
+		LOG(IPU3, Error) << "Failed to create stream configurations";
+		return configs;
+	}
 
-	LOG(IPU3, Info) << "TODO: Return a good default format";
+	StreamConfiguration config = {};
+	config.width = format.width;
+	config.height = format.height;
+	config.pixelFormat = V4L2_PIX_FMT_IPU3_SGRBG10;
+	config.bufferCount = 4;
 
 	configs[&data->stream_] = config;
 
@@ -113,38 +125,131 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 					  std::map<Stream *, StreamConfiguration> &config)
 {
 	IPU3CameraData *data = cameraData(camera);
-
 	StreamConfiguration *cfg = &config[&data->stream_];
+	V4L2Subdevice *sensor = data->sensor_;
+	V4L2Subdevice *csi2 = data->csi2_;
+	V4L2Device *cio2 = data->cio2_;
+	V4L2SubdeviceFormat subdevFormat = {};
+	V4L2DeviceFormat devFormat = {};
+	int ret;
 
-	LOG(IPU3, Info) << "TODO: Configure the camera for resolution "
-			<< cfg->width << "x" << cfg->height;
+	/*
+	 * FIXME: as of now, the format gets applied to the sensor and is
+	 * propagated along the pipeline. It should instead be applied on the
+	 * capture device and the sensor format calculated accordingly.
+	 */
+
+	ret = sensor->getFormat(0, &subdevFormat);
+	if (ret)
+		return ret;
+
+	subdevFormat.width = cfg->width;
+	subdevFormat.height = cfg->height;
+	ret = sensor->setFormat(0, &subdevFormat);
+	if (ret)
+		return ret;
+
+	/* Return error if the requested format cannot be applied to sensor. */
+	if (subdevFormat.width != cfg->width ||
+	    subdevFormat.height != cfg->height) {
+		LOG(IPU3, Error)
+			<< "Failed to apply image format "
+			<< subdevFormat.width << "x" << subdevFormat.height
+			<< " - got: " << cfg->width << "x" << cfg->height;
+		return -EINVAL;
+	}
+
+	ret = csi2->setFormat(0, &subdevFormat);
+	if (ret)
+		return ret;
+
+	ret = cio2->getFormat(&devFormat);
+	if (ret)
+		return ret;
+
+	devFormat.width = subdevFormat.width;
+	devFormat.height = subdevFormat.height;
+	devFormat.fourcc = cfg->pixelFormat;
+
+	ret = cio2->setFormat(&devFormat);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Info) << cio2->driverName() << ": "
+			<< devFormat.width << "x" << devFormat.height
+			<< "- 0x" << std::hex << devFormat.fourcc << " planes: "
+			<< devFormat.planes;
 
 	return 0;
 }
 
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 {
-	return -ENOTRECOVERABLE;
+	IPU3CameraData *data = cameraData(camera);
+	const StreamConfiguration &cfg = stream->configuration();
+
+	if (!cfg.bufferCount)
+		return -EINVAL;
+
+	int ret = data->cio2_->exportBuffers(cfg.bufferCount,
+					     &stream->bufferPool());
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to request memory";
+		return ret;
+	}
+
+	return 0;
 }
 
 int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 {
+	IPU3CameraData *data = cameraData(camera);
+
+	int ret = data->cio2_->releaseBuffers();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to release memory";
+		return ret;
+	}
+
 	return 0;
 }
 
 int PipelineHandlerIPU3::start(const Camera *camera)
 {
-	LOG(IPU3, Error) << "TODO: start camera";
+	IPU3CameraData *data = cameraData(camera);
+	int ret;
+
+	ret = data->cio2_->streamOn();
+	if (ret) {
+		LOG(IPU3, Info) << "Failed to start camera " << camera->name();
+		return ret;
+	}
+
 	return 0;
 }
 
 void PipelineHandlerIPU3::stop(const Camera *camera)
 {
-	LOG(IPU3, Error) << "TODO: stop camera";
+	IPU3CameraData *data = cameraData(camera);
+
+	if (data->cio2_->streamOff())
+		LOG(IPU3, Info) << "Failed to stop camera " << camera->name();
 }
 
 int PipelineHandlerIPU3::queueRequest(const Camera *camera, Request *request)
 {
+	IPU3CameraData *data = cameraData(camera);
+	Stream *stream = &data->stream_;
+
+	Buffer *buffer = request->findBuffer(stream);
+	if (!buffer) {
+		LOG(IPU3, Error)
+			<< "Attempt to queue request with invalid stream";
+		return -ENOENT;
+	}
+
+	data->cio2_->queueBuffer(buffer);
+
 	return 0;
 }
 

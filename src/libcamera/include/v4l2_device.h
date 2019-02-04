@@ -7,15 +7,19 @@
 #ifndef __LIBCAMERA_V4L2_DEVICE_H__
 #define __LIBCAMERA_V4L2_DEVICE_H__
 
+#include <atomic>
 #include <string>
 #include <vector>
 
 #include <linux/videodev2.h>
 
+#include <libcamera/signal.h>
+
 namespace libcamera {
 
 class Buffer;
 class BufferPool;
+class EventNotifier;
 class MediaEntity;
 
 struct V4L2Capability final : v4l2_capability {
@@ -96,6 +100,9 @@ public:
 	int exportBuffers(unsigned int count, BufferPool *pool);
 	int releaseBuffers();
 
+	int queueBuffer(Buffer *buffer);
+	Signal<Buffer *> bufferReady;
+
 private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);
@@ -107,6 +114,9 @@ private:
 	int createPlane(Buffer *buffer, unsigned int plane,
 			unsigned int length);
 
+	Buffer *dequeueBuffer();
+	void bufferAvailable(EventNotifier *notifier);
+
 	std::string deviceNode_;
 	int fd_;
 	V4L2Capability caps_;
@@ -115,6 +125,9 @@ private:
 	enum v4l2_memory memoryType_;
 
 	BufferPool *bufferPool_;
+	std::atomic<unsigned int> queuedBuffersCount_;
+
+	EventNotifier *fdEvent_;
 };
 
 } /* namespace libcamera */

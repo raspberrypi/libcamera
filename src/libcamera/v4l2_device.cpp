@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <libcamera/buffer.h>
+#include <libcamera/event_notifier.h>
 
 #include "log.h"
 #include "media_object.h"
@@ -203,6 +204,10 @@ LOG_DEFINE_CATEGORY(V4L2)
  * No API call other than open(), isOpen() and close() shall be called on an
  * unopened device instance.
  *
+ * The V4L2Device class tracks queued buffers and handles buffer events. It
+ * automatically dequeues completed buffers and emits the \ref bufferReady
+ * signal.
+ *
  * Upon destruction any device left open will be closed, and any resources
  * released.
  */
@@ -212,7 +217,8 @@ LOG_DEFINE_CATEGORY(V4L2)
  * \param deviceNode The file-system path to the video device node
  */
 V4L2Device::V4L2Device(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr)
+	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr),
+	  queuedBuffersCount_(0), fdEvent_(nullptr)
 {
 	/*
 	 * We default to an MMAP based CAPTURE device, however this will be
@@ -251,7 +257,7 @@ int V4L2Device::open()
 		return -EBUSY;
 	}
 
-	ret = ::open(deviceNode_.c_str(), O_RDWR);
+	ret = ::open(deviceNode_.c_str(), O_RDWR | O_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2, Error)
@@ -294,6 +300,10 @@ int V4L2Device::open()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
+	fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
+	fdEvent_->activated.connect(this, &V4L2Device::bufferAvailable);
+	fdEvent_->setEnabled(false);
+
 	return 0;
 }
 
@@ -315,6 +325,7 @@ void V4L2Device::close()
 		return;
 
 	releaseBuffers();
+	delete fdEvent_;
 
 	::close(fd_);
 	fd_ = -1;
@@ -630,5 +641,119 @@ int V4L2Device::releaseBuffers()
 
 	return 0;
 }
+
+/**
+ * \brief Queue a buffer into the device
+ * \param[in] buffer The buffer to be queued
+ *
+ * For capture devices the \a buffer will be filled with data by the device.
+ * For output devices the \a buffer shall contain valid data and will be
+ * processed by the device. Once the device has finished processing the buffer,
+ * it will be available for dequeue.
+ *
+ * \todo Support output devices (bytesused, ...)
+ * \todo Support imported buffers (dmabuf fd)
+ *
+ * \return 0 on success or a negative error number otherwise
+ */
+int V4L2Device::queueBuffer(Buffer *buffer)
+{
+	struct v4l2_buffer buf = {};
+	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
+	int ret;
+
+	buf.index = buffer->index();
+	buf.type = bufferType_;
+	buf.memory = memoryType_;
+
+	if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
+		buf.length = buffer->planes().size();
+		buf.m.planes = planes;
+	}
+
+	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;
+
+	ret = ioctl(fd_, VIDIOC_QBUF, &buf);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to queue buffer " << buf.index << ": "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	if (queuedBuffersCount_++ == 0)
+		fdEvent_->setEnabled(true);
+
+	return 0;
+}
+
+/**
+ * \brief Dequeue the next available buffer from the device
+ *
+ * This method dequeues the next available buffer from the device. If no buffer
+ * is available to be dequeued it will return nullptr immediately.
+ *
+ * \return A pointer to the dequeued buffer on succcess, or nullptr otherwise
+ */
+Buffer *V4L2Device::dequeueBuffer()
+{
+	struct v4l2_buffer buf = {};
+	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
+	int ret;
+
+	buf.type = bufferType_;
+	buf.memory = memoryType_;
+
+	if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
+		buf.length = VIDEO_MAX_PLANES;
+		buf.m.planes = planes;
+	}
+
+	ret = ioctl(fd_, VIDIOC_DQBUF, &buf);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to dequeue buffer: " << strerror(-ret);
+		return nullptr;
+	}
+
+	ASSERT(buf.index < bufferPool_->count());
+
+	if (--queuedBuffersCount_ == 0)
+		fdEvent_->setEnabled(false);
+
+	return &bufferPool_->buffers()[buf.index];
+}
+
+/**
+ * \brief Slot to handle completed buffer events from the V4L2 device
+ * \param[in] notifier The event notifier
+ *
+ * When this slot is called, a Buffer has become available from the device, and
+ * will be emitted through the bufferReady Signal.
+ *
+ * For Capture devices the Buffer will contain valid data.
+ * For Output devices the Buffer can be considered empty.
+ */
+void V4L2Device::bufferAvailable(EventNotifier *notifier)
+{
+	Buffer *buffer = dequeueBuffer();
+	if (!buffer)
+		return;
+
+	LOG(V4L2, Debug) << "Buffer " << buffer->index() << " is available";
+
+	/* Notify anyone listening to the device. */
+	bufferReady.emit(buffer);
+
+	/* Notify anyone listening to the buffer specifically. */
+	buffer->completed.emit(buffer);
+}
+
+/**
+ * \var V4L2Device::bufferReady
+ * \brief A Signal emitted when a buffer completes
+ */
 
 } /* namespace libcamera */

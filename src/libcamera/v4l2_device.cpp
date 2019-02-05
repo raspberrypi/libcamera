@@ -352,6 +352,8 @@ void V4L2Device::close()
 
 /**
  * \brief Retrieve the image format set on the V4L2 device
+ * \param[out] format The image format applied on the device
+ *
  * \return 0 for success, a negative error code otherwise
  */
 int V4L2Device::getFormat(V4L2DeviceFormat *format)
@@ -362,6 +364,7 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
 
 /**
  * \brief Configure an image format on the V4L2 device
+ * \param[in] format The image format to apply to the device
  *
  * Apply the supplied \a format to the device, and return the actually
  * applied format parameters, as \ref V4L2Device::getFormat would do.

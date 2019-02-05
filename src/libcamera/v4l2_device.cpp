@@ -289,6 +289,10 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
 
 /**
  * \brief Configure an image format on the V4L2 device
+ *
+ * Apply the supplied \a format to the device, and return the actually
+ * applied format parameters, as \ref V4L2Device::getFormat would do.
+ *
  * \return 0 for success, a negative error code otherwise
  */
 int V4L2Device::setFormat(V4L2DeviceFormat *format)
@@ -339,6 +343,17 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 		LOG(Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
+
+	/*
+	 * Return to caller the format actually applied on the device,
+	 * which might differ from the requested one.
+	 */
+	format->width = pix->width;
+	format->height = pix->height;
+	format->fourcc = pix->pixelformat;
+	format->planesCount = 1;
+	format->planes[0].bpl = pix->bytesperline;
+	format->planes[0].size = pix->sizeimage;
 
 	return 0;
 }
@@ -392,6 +407,19 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 		ret = -errno;
 		LOG(Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
+	}
+
+	/*
+	 * Return to caller the format actually applied on the device,
+	 * which might differ from the requested one.
+	 */
+	format->width = pix->width;
+	format->height = pix->height;
+	format->fourcc = pix->pixelformat;
+	format->planesCount = pix->num_planes;
+	for (unsigned int i = 0; i < format->planesCount; ++i) {
+		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
+		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
 
 	return 0;

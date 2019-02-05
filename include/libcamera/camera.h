@@ -18,6 +18,7 @@ namespace libcamera {
 
 class Buffer;
 class PipelineHandler;
+class Request;
 class Stream;
 class StreamConfiguration;
 
@@ -43,6 +44,15 @@ public:
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(std::vector<Stream *> &streams);
 	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
+
+	int allocateBuffers();
+	void freeBuffers();
+
+	Request *createRequest();
+	int queueRequest(Request *request);
+
+	int start();
+	int stop();
 
 private:
 	Camera(PipelineHandler *pipe, const std::string &name);

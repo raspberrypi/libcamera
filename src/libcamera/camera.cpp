@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "log.h"
@@ -264,7 +265,147 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 
 		stream->configuration_ = cfg;
 		activeStreams_.push_back(stream);
+
+		/*
+		 * Allocate buffer objects in the pool.
+		 * Memory will be allocated and assigned later.
+		 */
+		stream->bufferPool().createBuffers(cfg.bufferCount);
 	}
+
+	return 0;
+}
+
+/**
+ * \brief Allocate buffers for all configured streams
+ * \return 0 on success or a negative error code otherwise
+ */
+int Camera::allocateBuffers()
+{
+	int ret;
+
+	ret = exclusiveAccess();
+	if (ret)
+		return ret;
+
+	if (activeStreams_.empty()) {
+		LOG(Camera, Error)
+			<< "Can't allocate buffers without streams";
+		return -EINVAL;
+	}
+
+	for (Stream *stream : activeStreams_) {
+		ret = pipe_->allocateBuffers(this, stream);
+		if (ret) {
+			LOG(Camera, Error) << "Failed to allocate buffers";
+			freeBuffers();
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Release all buffers from allocated pools in each stream
+ */
+void Camera::freeBuffers()
+{
+	for (Stream *stream : activeStreams_) {
+		if (!stream->bufferPool().count())
+			continue;
+
+		pipe_->freeBuffers(this, stream);
+		stream->bufferPool().destroyBuffers();
+	}
+}
+
+/**
+ * \brief Create a request object for the camera
+ *
+ * This method creates an empty request for the application to fill with
+ * buffers and paramaters, and queue for capture.
+ *
+ * The ownership of the returned request is passed to the caller, which is
+ * responsible for either queueing the request or deleting it.
+ *
+ * \return A pointer to the newly created request, or nullptr on error
+ */
+Request *Camera::createRequest()
+{
+	if (exclusiveAccess())
+		return nullptr;
+
+	return new Request(this);
+}
+
+/**
+ * \brief Queue a request to the camera
+ * \param[in] request The request to queue to the camera
+ *
+ * This method queues a \a request allocated with createRequest() to the camera
+ * for capture. Once the request has been queued, the camera will notify its
+ * completion through the \ref requestCompleted signal.
+ *
+ * Ownership of the request is transferred to the camera. It will be deleted
+ * automatically after it completes.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+int Camera::queueRequest(Request *request)
+{
+	int ret;
+
+	ret = exclusiveAccess();
+	if (ret)
+		return ret;
+
+	ret = request->prepare();
+	if (ret) {
+		LOG(Camera, Error) << "Failed to prepare request";
+		return ret;
+	}
+
+	return pipe_->queueRequest(this, request);
+}
+
+/**
+ * \brief Start capture from camera
+ *
+ * Start the camera capture session. Once the camera is started the application
+ * can queue requests to the camera to process and return to the application
+ * until the capture session is terminated with \a stop().
+ *
+ * \return 0 on success or a negative error code on error
+ */
+int Camera::start()
+{
+	int ret = exclusiveAccess();
+	if (ret)
+		return ret;
+
+	LOG(Camera, Debug) << "Starting capture";
+
+	return pipe_->start(this);
+}
+
+/**
+ * \brief Stop capture from camera
+ *
+ * This method stops capturing and processing requests immediately. All pending
+ * requests are cancelled and complete synchronously in an error state.
+ *
+ * \return 0 on success or a negative error code on error
+ */
+int Camera::stop()
+{
+	int ret = exclusiveAccess();
+	if (ret)
+		return ret;
+
+	LOG(Camera, Debug) << "Stopping capture";
+
+	pipe_->stop(this);
 
 	return 0;
 }

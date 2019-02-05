@@ -104,7 +104,8 @@ int Request::prepare()
  * data.
  *
  * The request completes when all the buffers it contains are ready to be
- * presented to the application.
+ * presented to the application. It then emits the Camera::requestCompleted
+ * signal and is automatically deleted.
  */
 void Request::bufferCompleted(Buffer *buffer)
 {
@@ -113,10 +114,12 @@ void Request::bufferCompleted(Buffer *buffer)
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	if (pending_.empty()) {
-		std::map<Stream *, Buffer *> buffers(std::move(bufferMap_));
-		camera_->requestCompleted.emit(this, buffers);
-	}
+	if (!pending_.empty())
+		return;
+
+	std::map<Stream *, Buffer *> buffers(std::move(bufferMap_));
+	camera_->requestCompleted.emit(this, buffers);
+	delete this;
 }
 
 } /* namespace libcamera */

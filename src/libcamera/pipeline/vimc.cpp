@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/camera.h>
+#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "device_enumerator.h"
@@ -83,35 +84,53 @@ int PipeHandlerVimc::configureStreams(Camera *camera,
 {
 	StreamConfiguration *cfg = &config[&stream_];
 
-	LOG(VIMC, Info) << "TODO: Configure the camera for resolution "
-			<< cfg->width << "x" << cfg->height;
+	LOG(VIMC, Debug) << "Configure the camera for resolution "
+			 << cfg->width << "x" << cfg->height;
 
-	return 0;
+	V4L2DeviceFormat format = {};
+	format.width = cfg->width;
+	format.height = cfg->height;
+	format.fourcc = cfg->pixelFormat;
+
+	return video_->setFormat(&format);
 }
 
 int PipeHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
 {
-	return -ENOTRECOVERABLE;
+	const StreamConfiguration &cfg = stream->configuration();
+
+	LOG(VIMC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
+
+	return video_->exportBuffers(cfg.bufferCount, &stream->bufferPool());
 }
 
 int PipeHandlerVimc::freeBuffers(Camera *camera, Stream *stream)
 {
-	return 0;
+	return video_->releaseBuffers();
 }
 
 int PipeHandlerVimc::start(const Camera *camera)
 {
-	LOG(VIMC, Error) << "TODO: start camera";
-	return 0;
+	return video_->streamOn();
 }
 
 void PipeHandlerVimc::stop(const Camera *camera)
 {
-	LOG(VIMC, Error) << "TODO: stop camera";
+	video_->streamOff();
 }
 
 int PipeHandlerVimc::queueRequest(const Camera *camera, Request *request)
 {
+	Buffer *buffer = request->findBuffer(&stream_);
+	if (!buffer) {
+		LOG(VIMC, Error)
+			<< "Attempt to queue request with invalid stream";
+
+		return -ENOENT;
+	}
+
+	video_->queueBuffer(buffer);
+
 	return 0;
 }
 

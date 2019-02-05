@@ -48,6 +48,24 @@ namespace libcamera {
  */
 
 /**
+ * \brief Construct a stream with default parameters
+ */
+Stream::Stream()
+{
+}
+
+/**
+ * \fn Stream::bufferPool()
+ * \brief Retrieve the buffer pool for the stream
+ *
+ * The buffer pool handles the buffers used to capture frames at the output of
+ * the stream. It is initially created empty and shall be populated with
+ * buffers before being used.
+ *
+ * \return A reference to the buffer pool
+ */
+
+/**
  * \struct StreamConfiguration
  * \brief Configuration parameters for a stream
  *

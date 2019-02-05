@@ -7,10 +7,18 @@
 #ifndef __LIBCAMERA_STREAM_H__
 #define __LIBCAMERA_STREAM_H__
 
+#include <libcamera/buffer.h>
+
 namespace libcamera {
 
 class Stream final
 {
+public:
+	Stream();
+	BufferPool &bufferPool() { return bufferPool_; }
+
+private:
+	BufferPool bufferPool_;
 };
 
 struct StreamConfiguration {

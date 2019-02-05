@@ -50,6 +50,7 @@ private:
 
 	friend class PipelineHandler;
 	void disconnect();
+	int exclusiveAccess();
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;

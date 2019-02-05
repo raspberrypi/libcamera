@@ -241,16 +241,30 @@ Camera::streamConfiguration(std::vector<Stream *> &streams)
  */
 int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 {
+	int ret;
+
+	ret = exclusiveAccess();
+	if (ret)
+		return ret;
+
+	if (!config.size()) {
+		LOG(Camera, Error)
+			<< "Can't configure streams without a configuration";
+		return -EINVAL;
+	}
+
+	return pipe_->configureStreams(this, config);
+}
+
+int Camera::exclusiveAccess()
+{
 	if (disconnected_)
 		return -ENODEV;
 
 	if (!acquired_)
 		return -EACCES;
 
-	if (!config.size())
-		return -EINVAL;
-
-	return pipe_->configureStreams(this, config);
+	return 0;
 }
 
 } /* namespace libcamera */

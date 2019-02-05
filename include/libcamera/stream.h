@@ -11,15 +11,7 @@
 
 namespace libcamera {
 
-class Stream final
-{
-public:
-	Stream();
-	BufferPool &bufferPool() { return bufferPool_; }
-
-private:
-	BufferPool bufferPool_;
-};
+class Camera;
 
 struct StreamConfiguration {
 	unsigned int width;
@@ -28,6 +20,22 @@ struct StreamConfiguration {
 
 	unsigned int bufferCount;
 };
+
+class Stream final
+{
+public:
+	Stream();
+	BufferPool &bufferPool() { return bufferPool_; }
+	const StreamConfiguration &configuration() const { return configuration_; }
+
+private:
+	friend Camera;
+
+	BufferPool bufferPool_;
+	StreamConfiguration configuration_;
+};
+
+
 
 } /* namespace libcamera */
 

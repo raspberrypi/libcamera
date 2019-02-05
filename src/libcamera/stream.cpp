@@ -30,6 +30,37 @@
 namespace libcamera {
 
 /**
+ * \struct StreamConfiguration
+ * \brief Configuration parameters for a stream
+ *
+ * The StreamConfiguration structure models all information which can be
+ * configured for a single video stream.
+ */
+
+/**
+ * \var StreamConfiguration::width
+ * \brief Stream width in pixels
+ */
+
+/**
+ * \var StreamConfiguration::height
+ * \brief Stream height in pixels
+ */
+
+/**
+ * \var StreamConfiguration::pixelFormat
+ * \brief Stream pixel format
+ *
+ * This is a little endian four character code representation of the pixel
+ * format described in V4L2 using the V4L2_PIX_FMT_* definitions.
+ */
+
+/**
+ * \var StreamConfiguration::bufferCount
+ * \brief Requested number of buffers to allocate for the stream
+ */
+
+/**
  * \class Stream
  * \brief Video stream for a camera
  *
@@ -66,34 +97,9 @@ Stream::Stream()
  */
 
 /**
- * \struct StreamConfiguration
- * \brief Configuration parameters for a stream
- *
- * The StreamConfiguration structure models all information which can be
- * configured for a single video stream.
- */
-
-/**
- * \var StreamConfiguration::width
- * \brief Stream width in pixels
- */
-
-/**
- * \var StreamConfiguration::height
- * \brief Stream height in pixels
- */
-
-/**
- * \var StreamConfiguration::pixelFormat
- * \brief Stream pixel format
- *
- * This is a little endian four character code representation of the pixel
- * format described in V4L2 using the V4L2_PIX_FMT_* definitions.
- */
-
-/**
- * \var StreamConfiguration::bufferCount
- * \brief Requested number of buffers to allocate for the stream
+ * \fn Stream::configuration()
+ * \brief Retrieve the active configuration of the stream
+ * \return The active configuration of the stream
  */
 
 } /* namespace libcamera */

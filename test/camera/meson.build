@@ -1,0 +1,12 @@
+# Tests are listed in order of complexity.
+# They are not alphabetically sorted.
+camera_tests = [
+  [ 'configuration_default',  'configuration_default.cpp' ],
+]
+
+foreach t : camera_tests
+  exe = executable(t[0], [t[1], 'camera_test.cpp'],
+                   link_with : test_libraries,
+                   include_directories : test_includes_internal)
+  test(t[0], exe, suite: 'camera', is_parallel: false)
+endforeach

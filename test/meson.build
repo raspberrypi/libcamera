@@ -1,5 +1,6 @@
 subdir('libtest')
 
+subdir('camera')
 subdir('media_device')
 subdir('pipeline')
 subdir('v4l2_device')

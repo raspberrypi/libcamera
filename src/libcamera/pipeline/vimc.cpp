@@ -67,7 +67,11 @@ PipeHandlerVimc::streamConfiguration(Camera *camera,
 
 	StreamConfiguration config{};
 
-	LOG(VIMC, Info) << "TODO: Return a good default format";
+	LOG(VIMC, Debug) << "Retrieving default format";
+	config.width = 640;
+	config.height = 480;
+	config.pixelFormat = V4L2_PIX_FMT_RGB24;
+	config.bufferCount = 4;
 
 	configs[&stream_] = config;
 

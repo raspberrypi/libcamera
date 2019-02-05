@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_LIBCAMERA_H__
 #define __LIBCAMERA_LIBCAMERA_H__
 
+#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>

@@ -253,7 +253,20 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 		return -EINVAL;
 	}
 
-	return pipe_->configureStreams(this, config);
+	ret = pipe_->configureStreams(this, config);
+	if (ret)
+		return ret;
+
+	activeStreams_.clear();
+	for (auto const &iter : config) {
+		Stream *stream = iter.first;
+		const StreamConfiguration &cfg = iter.second;
+
+		stream->configuration_ = cfg;
+		activeStreams_.push_back(stream);
+	}
+
+	return 0;
 }
 
 int Camera::exclusiveAccess()

@@ -55,6 +55,7 @@ private:
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
 	std::vector<Stream *> streams_;
+	std::vector<Stream *> activeStreams_;
 
 	bool acquired_;
 	bool disconnected_;

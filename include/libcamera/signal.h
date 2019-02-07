@@ -20,8 +20,8 @@ class SlotBase
 {
 public:
 	SlotBase(void *obj)
-		: obj_(obj) { }
-	virtual ~SlotBase() { }
+		: obj_(obj) {}
+	virtual ~SlotBase() {}
 
 	virtual void invoke(Args... args) = 0;
 
@@ -34,35 +34,35 @@ template<typename T, typename... Args>
 class SlotMember : public SlotBase<Args...>
 {
 public:
-	SlotMember(T *obj, void(T::*func)(Args...))
-		: SlotBase<Args...>(obj), func_(func) { }
+	SlotMember(T *obj, void (T::*func)(Args...))
+		: SlotBase<Args...>(obj), func_(func) {}
 
 	void invoke(Args... args) { (static_cast<T *>(this->obj_)->*func_)(args...); }
 
 private:
 	friend class Signal<Args...>;
-	void(T::*func_)(Args...);
+	void (T::*func_)(Args...);
 };
 
 template<typename... Args>
 class SlotStatic : public SlotBase<Args...>
 {
 public:
-	SlotStatic(void(*func)(Args...))
-		: SlotBase<Args...>(nullptr), func_(func) { }
+	SlotStatic(void (*func)(Args...))
+		: SlotBase<Args...>(nullptr), func_(func) {}
 
 	void invoke(Args... args) { (*func_)(args...); }
 
 private:
 	friend class Signal<Args...>;
-	void(*func_)(Args...);
+	void (*func_)(Args...);
 };
 
 template<typename... Args>
 class Signal
 {
 public:
-	Signal() { }
+	Signal() {}
 	~Signal()
 	{
 		for (SlotBase<Args...> *slot : slots_)
@@ -70,12 +70,12 @@ public:
 	}
 
 	template<typename T>
-	void connect(T *object, void(T::*func)(Args...))
+	void connect(T *object, void (T::*func)(Args...))
 	{
 		slots_.push_back(new SlotMember<T, Args...>(object, func));
 	}
 
-	void connect(void(*func)(Args...))
+	void connect(void (*func)(Args...))
 	{
 		slots_.push_back(new SlotStatic<Args...>(func));
 	}
@@ -102,7 +102,7 @@ public:
 	}
 
 	template<typename T>
-	void disconnect(T *object, void(T::*func)(Args...))
+	void disconnect(T *object, void (T::*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
 			SlotBase<Args...> *slot = *iter;
@@ -120,7 +120,7 @@ public:
 		}
 	}
 
-	void disconnect(void(*func)(Args...))
+	void disconnect(void (*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
 			SlotBase<Args...> *slot = *iter;

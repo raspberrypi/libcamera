@@ -102,7 +102,7 @@ int PipelineHandlerUVC::allocateBuffers(Camera *camera, Stream *stream)
 
 	LOG(UVC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
 
-	return video_->exportBuffers(cfg.bufferCount, &stream->bufferPool());
+	return video_->exportBuffers(&stream->bufferPool());
 }
 
 int PipelineHandlerUVC::freeBuffers(Camera *camera, Stream *stream)

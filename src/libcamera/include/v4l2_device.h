@@ -99,7 +99,7 @@ public:
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
 
-	int exportBuffers(unsigned int count, BufferPool *pool);
+	int exportBuffers(BufferPool *pool);
 	int releaseBuffers();
 
 	int queueBuffer(Buffer *buffer);

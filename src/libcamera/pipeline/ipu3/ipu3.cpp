@@ -191,8 +191,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 	if (!cfg.bufferCount)
 		return -EINVAL;
 
-	int ret = data->cio2_->exportBuffers(cfg.bufferCount,
-					     &stream->bufferPool());
+	int ret = data->cio2_->exportBuffers(&stream->bufferPool());
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to request memory";
 		return ret;

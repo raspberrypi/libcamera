@@ -538,13 +538,12 @@ int V4L2Device::requestBuffers(unsigned int count)
 }
 
 /**
- * \brief Request \a count buffers to be allocated from the device and stored in
- * the buffer pool provided.
- * \param[in] count Number of buffers to allocate
+ * \brief Request buffers to be allocated from the device and stored in the
+ *  buffer pool provided.
  * \param[out] pool BufferPool to populate with buffers
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::exportBuffers(unsigned int count, BufferPool *pool)
+int V4L2Device::exportBuffers(BufferPool *pool)
 {
 	unsigned int allocatedBuffers;
 	unsigned int i;
@@ -552,21 +551,19 @@ int V4L2Device::exportBuffers(unsigned int count, BufferPool *pool)
 
 	memoryType_ = V4L2_MEMORY_MMAP;
 
-	ret = requestBuffers(count);
+	ret = requestBuffers(pool->count());
 	if (ret < 0)
 		return ret;
 
 	allocatedBuffers = ret;
-	if (allocatedBuffers < count) {
+	if (allocatedBuffers < pool->count()) {
 		LOG(V4L2, Error) << "Not enough buffers provided by V4L2Device";
 		requestBuffers(0);
 		return -ENOMEM;
 	}
 
-	count = ret;
-
 	/* Map the buffers. */
-	for (i = 0; i < count; ++i) {
+	for (i = 0; i < pool->count(); ++i) {
 		struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 		struct v4l2_buffer buf = {};
 		struct Buffer &buffer = pool->buffers()[i];

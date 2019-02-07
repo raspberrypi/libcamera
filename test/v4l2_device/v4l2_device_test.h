@@ -24,8 +24,6 @@ class V4L2DeviceTest : public Test
 public:
 	V4L2DeviceTest() : dev_(nullptr){};
 
-	void createBuffers(unsigned int qty) { pool_.createBuffers(qty); }
-
 protected:
 	int init();
 	void cleanup();

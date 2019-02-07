@@ -14,9 +14,9 @@ protected:
 	{
 		const unsigned int bufferCount = 8;
 
-		createBuffers(bufferCount);
+		pool_.createBuffers(bufferCount);
 
-		int ret = dev_->exportBuffers(bufferCount, &pool_);
+		int ret = dev_->exportBuffers(&pool_);
 		if (ret)
 			return TestFail;
 

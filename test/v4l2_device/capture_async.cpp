@@ -38,9 +38,9 @@ protected:
 		Timer timeout;
 		int ret;
 
-		createBuffers(bufferCount);
+		pool_.createBuffers(bufferCount);
 
-		ret = dev_->exportBuffers(bufferCount, &pool_);
+		ret = dev_->exportBuffers(&pool_);
 		if (ret)
 			return TestFail;
 

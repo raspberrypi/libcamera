@@ -47,6 +47,11 @@ namespace libcamera {
  * \brief Connect the signal to a member function slot
  * \param object The slot object pointer
  * \param func The slot member function
+ *
+ * If the typename T inherits from Object, the signal will be automatically
+ * disconnected from the \a func slot of \a object when \a object is destroyed.
+ * Otherwise the caller shall disconnect signals manually before destroying \a
+ * object.
  */
 
 /**

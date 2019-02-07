@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string.h>
 
+#include <libcamera/object.h>
 #include <libcamera/signal.h>
 
 #include "test.h"
@@ -21,6 +22,15 @@ static void slotStatic(int value)
 {
 	valueStatic_ = value;
 }
+
+class SlotObject : public Object
+{
+public:
+	void slot()
+	{
+		valueStatic_ = 1;
+	}
+};
 
 class SignalTest : public Test
 {
@@ -138,6 +148,33 @@ protected:
 			cout << "Signal disconnection from slot test failed" << endl;
 			return TestFail;
 		}
+
+		/*
+		 * Test automatic disconnection on object deletion. Connect the
+		 * slot twice to ensure all instances are disconnected.
+		 */
+		signalVoid_.disconnect();
+
+		SlotObject *slotObject = new SlotObject();
+		signalVoid_.connect(slotObject, &SlotObject::slot);
+		signalVoid_.connect(slotObject, &SlotObject::slot);
+		delete slotObject;
+		valueStatic_ = 0;
+		signalVoid_.emit();
+		if (valueStatic_ != 0) {
+			cout << "Signal disconnection on object deletion test failed" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Test that signal deletion disconnects objects. This shall
+		 * not generate any valgrind warning.
+		 */
+		Signal<> *signal = new Signal<>();
+		slotObject = new SlotObject();
+		signal->connect(slotObject, &SlotObject::slot);
+		delete signal;
+		delete slotObject;
 
 		return TestPass;
 	}

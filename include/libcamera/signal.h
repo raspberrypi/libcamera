@@ -10,32 +10,47 @@
 #include <list>
 #include <vector>
 
+#include <libcamera/object.h>
+
 namespace libcamera {
 
 template<typename... Args>
 class Signal;
 
-template<typename... Args>
 class SlotBase
 {
 public:
-	SlotBase(void *obj)
-		: obj_(obj) {}
+	SlotBase(void *obj, bool isObject)
+		: obj_(obj), isObject_(isObject) {}
 	virtual ~SlotBase() {}
+
+	void *obj() { return obj_; }
+	bool isObject() const { return isObject_; }
+
+protected:
+	void *obj_;
+	bool isObject_;
+};
+
+template<typename... Args>
+class SlotArgs : public SlotBase
+{
+public:
+	SlotArgs(void *obj, bool isObject)
+		: SlotBase(obj, isObject) {}
 
 	virtual void invoke(Args... args) = 0;
 
 protected:
 	friend class Signal<Args...>;
-	void *obj_;
 };
 
 template<typename T, typename... Args>
-class SlotMember : public SlotBase<Args...>
+class SlotMember : public SlotArgs<Args...>
 {
 public:
-	SlotMember(T *obj, void (T::*func)(Args...))
-		: SlotBase<Args...>(obj), func_(func) {}
+	SlotMember(T *obj, bool isObject, void (T::*func)(Args...))
+		: SlotArgs<Args...>(obj, isObject), func_(func) {}
 
 	void invoke(Args... args) { (static_cast<T *>(this->obj_)->*func_)(args...); }
 
@@ -45,11 +60,11 @@ private:
 };
 
 template<typename... Args>
-class SlotStatic : public SlotBase<Args...>
+class SlotStatic : public SlotArgs<Args...>
 {
 public:
 	SlotStatic(void (*func)(Args...))
-		: SlotBase<Args...>(nullptr), func_(func) {}
+		: SlotArgs<Args...>(nullptr, false), func_(func) {}
 
 	void invoke(Args... args) { (*func_)(args...); }
 
@@ -58,21 +73,57 @@ private:
 	void (*func_)(Args...);
 };
 
+class SignalBase
+{
+public:
+	template<typename T>
+	void disconnect(T *object)
+	{
+		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
+			SlotBase *slot = *iter;
+			if (slot->obj() == object) {
+				iter = slots_.erase(iter);
+				delete slot;
+			} else {
+				++iter;
+			}
+		}
+	}
+
+protected:
+	friend class Object;
+	std::list<SlotBase *> slots_;
+};
+
 template<typename... Args>
-class Signal
+class Signal : public SignalBase
 {
 public:
 	Signal() {}
 	~Signal()
 	{
-		for (SlotBase<Args...> *slot : slots_)
+		for (SlotBase *slot : slots_) {
+			if (slot->isObject())
+				static_cast<Object *>(slot->obj())->disconnect(this);
 			delete slot;
+		}
 	}
 
-	template<typename T>
+#ifndef __DOXYGEN__
+	template<typename T, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
 	void connect(T *object, void (T::*func)(Args...))
 	{
-		slots_.push_back(new SlotMember<T, Args...>(object, func));
+		object->connect(this);
+		slots_.push_back(new SlotMember<T, Args...>(object, true, func));
+	}
+
+	template<typename T, typename std::enable_if<!std::is_base_of<Object, T>::value>::type * = nullptr>
+#else
+	template<typename T>
+#endif
+	void connect(T *object, void (T::*func)(Args...))
+	{
+		slots_.push_back(new SlotMember<T, Args...>(object, false, func));
 	}
 
 	void connect(void (*func)(Args...))
@@ -82,7 +133,7 @@ public:
 
 	void disconnect()
 	{
-		for (SlotBase<Args...> *slot : slots_)
+		for (SlotBase *slot : slots_)
 			delete slot;
 		slots_.clear();
 	}
@@ -90,27 +141,21 @@ public:
 	template<typename T>
 	void disconnect(T *object)
 	{
-		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
-			SlotBase<Args...> *slot = *iter;
-			if (slot->obj_ == object) {
-				iter = slots_.erase(iter);
-				delete slot;
-			} else {
-				++iter;
-			}
-		}
+		SignalBase::disconnect(object);
 	}
 
 	template<typename T>
 	void disconnect(T *object, void (T::*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
-			SlotBase<Args...> *slot = *iter;
+			SlotArgs<Args...> *slot = static_cast<SlotArgs<Args...> *>(*iter);
 			/*
-			 * If the obj_ pointer matches the object types must
-			 * match, so we can safely cast to SlotMember<T, Args>.
+			 * If the obj() pointer matches the object, the slot is
+			 * guaranteed to be a member slot, so we can safely
+			 * cast it to SlotMember<T, Args...> and access its
+			 * func_ member.
 			 */
-			if (slot->obj_ == object &&
+			if (slot->obj() == object &&
 			    static_cast<SlotMember<T, Args...> *>(slot)->func_ == func) {
 				iter = slots_.erase(iter);
 				delete slot;
@@ -123,8 +168,8 @@ public:
 	void disconnect(void (*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
-			SlotBase<Args...> *slot = *iter;
-			if (slot->obj_ == nullptr &&
+			SlotArgs<Args...> *slot = *iter;
+			if (slot->obj() == nullptr &&
 			    static_cast<SlotStatic<Args...> *>(slot)->func_ == func) {
 				iter = slots_.erase(iter);
 				delete slot;
@@ -140,13 +185,11 @@ public:
 		 * Make a copy of the slots list as the slot could call the
 		 * disconnect operation, invalidating the iterator.
 		 */
-		std::vector<SlotBase<Args...> *> slots{ slots_.begin(), slots_.end() };
-		for (SlotBase<Args...> *slot : slots)
-			slot->invoke(args...);
+		std::vector<SlotBase *> slots{ slots_.begin(), slots_.end() };
+		for (SlotBase *slot : slots) {
+			static_cast<SlotArgs<Args...> *>(slot)->invoke(args...);
+		}
 	}
-
-private:
-	std::list<SlotBase<Args...> *> slots_;
 };
 
 } /* namespace libcamera */

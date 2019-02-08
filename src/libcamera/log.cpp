@@ -405,6 +405,25 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
 	init(fileName, line);
 }
 
+/**
+ * \brief Move-construct a log message
+ * \param[in] other The other message
+ *
+ * The move constructor is meant to support the _log() functions. Thanks to copy
+ * elision it will likely never be called, but C++11 only permits copy elision,
+ * it doesn't enforce it unlike C++17. To avoid potential link errors depending
+ * on the compiler type and version, and optimization level, the move
+ * constructor is defined even if it will likely never be called, and ensures
+ * that the destructor of the \a other message will not output anything to the
+ * log by setting the severity to -1.
+ */
+LogMessage::LogMessage(LogMessage &&other)
+	: msgStream_(std::move(other.msgStream_)), category_(other.category_),
+	  severity_(other.severity_)
+{
+	other.severity_ = static_cast<LogSeverity>(-1);
+}
+
 void LogMessage::init(const char *fileName, unsigned int line)
 {
 	/* Log the timestamp, severity and file information. */
@@ -424,6 +443,10 @@ void LogMessage::init(const char *fileName, unsigned int line)
 
 LogMessage::~LogMessage()
 {
+	/* Don't print anything if we have been moved to another LogMessage. */
+	if (severity_ == -1)
+		return;
+
 	msgStream_ << std::endl;
 
 	if (severity_ >= category_.severity()) {
@@ -444,6 +467,107 @@ LogMessage::~LogMessage()
  *
  * \return A reference to the log message stream
  */
+
+/**
+ * \class Loggable
+ * \brief Base class to support log message extensions
+ *
+ * The Loggable class allows classes to extend log messages without any change
+ * to the way the LOG() macro is invoked. By inheriting from Loggable and
+ * implementing the logPrefix() virtual method, a class can specify extra
+ * information to be automatically added to messages logged from class member
+ * methods.
+ */
+
+Loggable::~Loggable()
+{
+}
+
+/**
+ * \fn Loggable::logPrefix()
+ * \brief Retrieve a string to be prefixed to the log message
+ *
+ * This method allows classes inheriting from the Loggable class to extend the
+ * logger with an object-specific prefix output right before the log message
+ * contents.
+ *
+ * \return A string to be prefixed to the log message
+ */
+
+/**
+ * \brief Create a temporary LogMessage object to log a message
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
+ * \param[in] severity The log message severity
+ *
+ * This method is used as a backeng by the LOG() macro to create a log message
+ * for locations inheriting from the Loggable class.
+ *
+ * \return A log message
+ */
+LogMessage Loggable::_log(const char *fileName, unsigned int line,
+			  LogSeverity severity)
+{
+	LogMessage msg(fileName, line, severity);
+
+	msg.stream() << logPrefix() << ": ";
+	return msg;
+}
+
+/**
+ * \brief Create a temporary LogMessage object to log a message
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
+ * \param[in] category The log message category
+ * \param[in] severity The log message severity
+ *
+ * This method is used as a backeng by the LOG() macro to create a log message
+ * for locations inheriting from the Loggable class.
+ *
+ * \return A log message
+ */
+LogMessage Loggable::_log(const char *fileName, unsigned int line,
+			  const LogCategory &category, LogSeverity severity)
+{
+	LogMessage msg(fileName, line, category, severity);
+
+	msg.stream() << logPrefix() << ": ";
+	return msg;
+}
+
+/**
+ * \brief Create a temporary LogMessage object to log a message
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
+ * \param[in] severity The log message severity
+ *
+ * This function is used as a backeng by the LOG() macro to create a log
+ * message for locations not inheriting from the Loggable class.
+ *
+ * \return A log message
+ */
+LogMessage _log(const char *fileName, unsigned int line, LogSeverity severity)
+{
+	return LogMessage(fileName, line, severity);
+}
+
+/**
+ * \brief Create a temporary LogMessage object to log a message
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
+ * \param[in] category The log message category
+ * \param[in] severity The log message severity
+ *
+ * This function is used as a backeng by the LOG() macro to create a log
+ * message for locations not inheriting from the Loggable class.
+ *
+ * \return A log message
+ */
+LogMessage _log(const char *fileName, unsigned int line,
+		const LogCategory &category, LogSeverity severity)
+{
+	return LogMessage(fileName, line, category, severity);
+}
 
 /**
  * \def LOG_DECLARE_CATEGORY(name)

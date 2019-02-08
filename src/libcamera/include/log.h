@@ -54,6 +54,7 @@ public:
 	LogMessage(const char *fileName, unsigned int line,
 		   const LogCategory &category, LogSeverity severity);
 	LogMessage(const LogMessage &) = delete;
+	LogMessage(LogMessage &&);
 	~LogMessage();
 
 	std::ostream &stream() { return msgStream_; }
@@ -66,13 +67,31 @@ private:
 	LogSeverity severity_;
 };
 
+class Loggable
+{
+public:
+	virtual ~Loggable();
+
+protected:
+	virtual std::string logPrefix() const = 0;
+
+	LogMessage _log(const char *file, unsigned int line,
+			LogSeverity severity);
+	LogMessage _log(const char *file, unsigned int line,
+			const LogCategory &category, LogSeverity severity);
+};
+
+LogMessage _log(const char *file, unsigned int line, LogSeverity severity);
+LogMessage _log(const char *file, unsigned int line,
+		const LogCategory &category, LogSeverity severity);
+
 #ifndef __DOXYGEN__
 #define _LOG_CATEGORY(name) logCategory##name
 
 #define _LOG1(severity) \
-	LogMessage(__FILE__, __LINE__, Log##severity).stream()
+	_log(__FILE__, __LINE__, Log##severity).stream()
 #define _LOG2(category, severity) \
-	LogMessage(__FILE__, __LINE__, _LOG_CATEGORY(category)(), Log##severity).stream()
+	_log(__FILE__, __LINE__, _LOG_CATEGORY(category)(), Log##severity).stream()
 
 /*
  * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of

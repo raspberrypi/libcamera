@@ -241,6 +241,8 @@ void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
  */
 void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
 {
+	media->disconnected.disconnect(this);
+
 	if (cameras_.empty())
 		return;
 

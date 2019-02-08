@@ -42,6 +42,8 @@ public:
 	PipelineHandler(CameraManager *manager);
 	virtual ~PipelineHandler();
 
+	virtual bool match(DeviceEnumerator *enumerator) = 0;
+
 	virtual std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera, std::vector<Stream *> &streams) = 0;
 	virtual int configureStreams(Camera *camera,
@@ -55,20 +57,18 @@ public:
 
 	virtual int queueRequest(const Camera *camera, Request *request) = 0;
 
-	virtual bool match(DeviceEnumerator *enumerator) = 0;
-
 protected:
-	CameraManager *manager_;
-
 	void registerCamera(std::shared_ptr<Camera> camera);
 	void hotplugMediaDevice(MediaDevice *media);
 
 	CameraData *cameraData(const Camera *camera);
 	void setCameraData(const Camera *camera, std::unique_ptr<CameraData> data);
 
+	CameraManager *manager_;
+
 private:
-	virtual void disconnect();
 	void mediaDeviceDisconnected(MediaDevice *media);
+	virtual void disconnect();
 
 	std::vector<std::weak_ptr<Camera>> cameras_;
 	std::map<const Camera *, std::unique_ptr<CameraData>> cameraData_;

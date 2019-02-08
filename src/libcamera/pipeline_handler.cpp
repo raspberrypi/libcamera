@@ -75,6 +75,36 @@ PipelineHandler::~PipelineHandler()
 {
 };
 
+/**
+ * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
+ * \brief Match media devices and create camera instances
+ * \param enumerator The enumerator providing all media devices found in the
+ * system
+ *
+ * This function is the main entry point of the pipeline handler. It is called
+ * by the camera manager with the \a enumerator passed as an argument. It shall
+ * acquire from the \a enumerator all the media devices it needs for a single
+ * pipeline, create one or multiple Camera instances and register them with the
+ * camera manager.
+ *
+ * If all media devices needed by the pipeline handler are found, they must all
+ * be acquired by a call to MediaDevice::acquire(). This function shall then
+ * create the corresponding Camera instances, store them internally, and return
+ * true. Otherwise it shall not acquire any media device (or shall release all
+ * the media devices is has acquired by calling MediaDevice::release()) and
+ * return false.
+ *
+ * If multiple instances of a pipeline are available in the system, the
+ * PipelineHandler class will be instanciated once per instance, and its match()
+ * function called for every instance. Each call shall acquire media devices for
+ * one pipeline instance, until all compatible media devices are exhausted.
+ *
+ * If this function returns true, a new instance of the pipeline handler will
+ * be created and its match() function called.
+ *
+ * \return true if media devices have been acquired and camera instances
+ * created, or false otherwise
+ */
 
 /**
  * \fn PipelineHandler::streamConfiguration()
@@ -177,46 +207,6 @@ PipelineHandler::~PipelineHandler()
  */
 
 /**
- * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
- * \brief Match media devices and create camera instances
- * \param enumerator The enumerator providing all media devices found in the
- * system
- *
- * This function is the main entry point of the pipeline handler. It is called
- * by the camera manager with the \a enumerator passed as an argument. It shall
- * acquire from the \a enumerator all the media devices it needs for a single
- * pipeline, create one or multiple Camera instances and register them with the
- * camera manager.
- *
- * If all media devices needed by the pipeline handler are found, they must all
- * be acquired by a call to MediaDevice::acquire(). This function shall then
- * create the corresponding Camera instances, store them internally, and return
- * true. Otherwise it shall not acquire any media device (or shall release all
- * the media devices is has acquired by calling MediaDevice::release()) and
- * return false.
- *
- * If multiple instances of a pipeline are available in the system, the
- * PipelineHandler class will be instanciated once per instance, and its match()
- * function called for every instance. Each call shall acquire media devices for
- * one pipeline instance, until all compatible media devices are exhausted.
- *
- * If this function returns true, a new instance of the pipeline handler will
- * be created and its match() function called.
- *
- * \return true if media devices have been acquired and camera instances
- * created, or false otherwise
- */
-
-/**
- * \var PipelineHandler::manager_
- * \brief The Camera manager associated with the pipeline handler
- *
- * The camera manager pointer is stored in the pipeline handler for the
- * convenience of pipeline handler implementations. It remains valid and
- * constant for the whole lifetime of the pipeline handler.
- */
-
-/**
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
  *
@@ -247,6 +237,17 @@ void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
 }
 
 /**
+ * \brief Slot for the MediaDevice disconnected signal
+ */
+void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
+{
+	if (cameras_.empty())
+		return;
+
+	disconnect();
+}
+
+/**
  * \brief Device disconnection handler
  *
  * This virtual function is called to notify the pipeline handler that the
@@ -270,17 +271,6 @@ void PipelineHandler::disconnect()
 	}
 
 	cameras_.clear();
-}
-
-/**
- * \brief Slot for the MediaDevice disconnected signal
- */
-void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
-{
-	if (cameras_.empty())
-		return;
-
-	disconnect();
 }
 
 /**
@@ -330,6 +320,15 @@ void PipelineHandler::setCameraData(const Camera *camera,
 
 	cameraData_[camera] = std::move(data);
 }
+
+/**
+ * \var PipelineHandler::manager_
+ * \brief The Camera manager associated with the pipeline handler
+ *
+ * The camera manager pointer is stored in the pipeline handler for the
+ * convenience of pipeline handler implementations. It remains valid and
+ * constant for the whole lifetime of the pipeline handler.
+ */
 
 /**
  * \class PipelineHandlerFactory

@@ -15,6 +15,8 @@
 
 #include <libcamera/signal.h>
 
+#include "log.h"
+
 namespace libcamera {
 
 class Buffer;
@@ -76,7 +78,7 @@ public:
 	unsigned int planesCount;
 };
 
-class V4L2Device
+class V4L2Device : protected Loggable
 {
 public:
 	explicit V4L2Device(const std::string &deviceNode);
@@ -105,6 +107,9 @@ public:
 
 	int streamOn();
 	int streamOff();
+
+protected:
+	std::string logPrefix() const;
 
 private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);

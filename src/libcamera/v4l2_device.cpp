@@ -262,8 +262,7 @@ int V4L2Device::open()
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2, Error)
-			<< "Failed to open V4L2 device '" << deviceNode_
-			<< "': " << strerror(-ret);
+			<< "Failed to open V4L2 device: " << strerror(-ret);
 		return ret;
 	}
 	fd_ = ret;
@@ -278,9 +277,8 @@ int V4L2Device::open()
 	}
 
 	LOG(V4L2, Debug)
-		<< "Opened '" << deviceNode_ << "' "
-		<< caps_.bus_info() << ": " << caps_.driver()
-		<< ": " << caps_.card();
+		<< "Opened device " << caps_.bus_info() << ": "
+		<< caps_.driver() << ": " << caps_.card();
 
 	if (!caps_.isCapture() && !caps_.isOutput()) {
 		LOG(V4L2, Debug) << "Device is not a supported type";
@@ -349,6 +347,11 @@ void V4L2Device::close()
  * \brief Retrieve the location of the device in the system
  * \return The string containing the device location
  */
+
+std::string V4L2Device::logPrefix() const
+{
+	return deviceNode_;
+}
 
 /**
  * \brief Retrieve the image format set on the V4L2 device
@@ -519,8 +522,7 @@ int V4L2Device::requestBuffers(unsigned int count)
 		return ret;
 	}
 
-	LOG(V4L2, Debug)
-		<< deviceNode_ << ":" << rb.count << " buffers requested.";
+	LOG(V4L2, Debug) << rb.count << " buffers requested.";
 
 	return rb.count;
 }

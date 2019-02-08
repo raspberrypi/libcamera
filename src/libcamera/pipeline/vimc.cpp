@@ -19,11 +19,11 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(VIMC)
 
-class PipeHandlerVimc : public PipelineHandler
+class PipelineHandlerVimc : public PipelineHandler
 {
 public:
-	PipeHandlerVimc(CameraManager *manager);
-	~PipeHandlerVimc();
+	PipelineHandlerVimc(CameraManager *manager);
+	~PipelineHandlerVimc();
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
@@ -47,12 +47,12 @@ private:
 	Stream stream_;
 };
 
-PipeHandlerVimc::PipeHandlerVimc(CameraManager *manager)
+PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 	: PipelineHandler(manager), media_(nullptr), video_(nullptr)
 {
 }
 
-PipeHandlerVimc::~PipeHandlerVimc()
+PipelineHandlerVimc::~PipelineHandlerVimc()
 {
 	delete video_;
 
@@ -61,7 +61,7 @@ PipeHandlerVimc::~PipeHandlerVimc()
 }
 
 std::map<Stream *, StreamConfiguration>
-PipeHandlerVimc::streamConfiguration(Camera *camera,
+PipelineHandlerVimc::streamConfiguration(Camera *camera,
 				     std::vector<Stream *> &streams)
 {
 	std::map<Stream *, StreamConfiguration> configs;
@@ -79,7 +79,7 @@ PipeHandlerVimc::streamConfiguration(Camera *camera,
 	return configs;
 }
 
-int PipeHandlerVimc::configureStreams(Camera *camera,
+int PipelineHandlerVimc::configureStreams(Camera *camera,
 				      std::map<Stream *, StreamConfiguration> &config)
 {
 	StreamConfiguration *cfg = &config[&stream_];
@@ -95,7 +95,7 @@ int PipeHandlerVimc::configureStreams(Camera *camera,
 	return video_->setFormat(&format);
 }
 
-int PipeHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
 {
 	const StreamConfiguration &cfg = stream->configuration();
 
@@ -104,22 +104,22 @@ int PipeHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
 	return video_->exportBuffers(cfg.bufferCount, &stream->bufferPool());
 }
 
-int PipeHandlerVimc::freeBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerVimc::freeBuffers(Camera *camera, Stream *stream)
 {
 	return video_->releaseBuffers();
 }
 
-int PipeHandlerVimc::start(const Camera *camera)
+int PipelineHandlerVimc::start(const Camera *camera)
 {
 	return video_->streamOn();
 }
 
-void PipeHandlerVimc::stop(const Camera *camera)
+void PipelineHandlerVimc::stop(const Camera *camera)
 {
 	video_->streamOff();
 }
 
-int PipeHandlerVimc::queueRequest(const Camera *camera, Request *request)
+int PipelineHandlerVimc::queueRequest(const Camera *camera, Request *request)
 {
 	Buffer *buffer = request->findBuffer(&stream_);
 	if (!buffer) {
@@ -134,7 +134,7 @@ int PipeHandlerVimc::queueRequest(const Camera *camera, Request *request)
 	return 0;
 }
 
-bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
+bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("vimc");
 
@@ -169,6 +169,6 @@ bool PipeHandlerVimc::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipeHandlerVimc);
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc);
 
 } /* namespace libcamera */

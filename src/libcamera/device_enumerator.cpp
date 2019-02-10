@@ -234,7 +234,8 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
 			continue;
 
-		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(), entity->deviceMinor());
+		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(),
+							  entity->deviceMinor());
 		if (deviceNode.empty())
 			return -EINVAL;
 

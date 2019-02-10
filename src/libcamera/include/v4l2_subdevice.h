@@ -11,6 +11,7 @@
 
 namespace libcamera {
 
+class MediaEntity;
 struct Rectangle;
 
 struct V4L2SubdeviceFormat {

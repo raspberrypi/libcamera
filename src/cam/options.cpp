@@ -39,25 +39,25 @@ const char *Option::typeName() const
  * OptionBase<T>
  */
 
-template <typename T>
+template<typename T>
 bool OptionsBase<T>::valid() const
 {
 	return !values_.empty();
 }
 
-template <typename T>
+template<typename T>
 bool OptionsBase<T>::isSet(const T &opt) const
 {
 	return values_.find(opt) != values_.end();
 }
 
-template <typename T>
+template<typename T>
 const OptionValue &OptionsBase<T>::operator[](const T &opt) const
 {
 	return values_.find(opt)->second;
 }
 
-template <typename T>
+template<typename T>
 bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 				const char *optarg)
 {
@@ -100,7 +100,7 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 	return true;
 }
 
-template <typename T>
+template<typename T>
 void OptionsBase<T>::clear()
 {
 	values_.clear();

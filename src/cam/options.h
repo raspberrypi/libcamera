@@ -41,7 +41,7 @@ struct Option {
 	const char *typeName() const;
 };
 
-template <typename T>
+template<typename T>
 class OptionsBase
 {
 public:

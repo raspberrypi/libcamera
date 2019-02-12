@@ -151,6 +151,10 @@ reference for the duration of the operation that borrows it.
      never by reference. The caller can decide whether to transfer its ownership
      of the std::shared_ptr<> with std::move() or retain it. The callee shall
      use std::move() if it needs to store the shared pointer.
+   * Do not over-use std::move(), as it may prevent copy-elision. In particular
+     a function returning a std::shared_ptr<> value shall not use std::move() in
+     its return statements, and its callers shall not wrap the function call
+     with std::move().
    * Borrowed references to shared objects are passed as references to the
      objects themselves, not to the std::shared_ptr<>, with the same rules as
      for single owner objects.

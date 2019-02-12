@@ -459,7 +459,8 @@ void DeviceEnumeratorUdev::udevNotify(EventNotifier *notifier)
 	std::string action(udev_device_get_action(dev));
 	std::string deviceNode(udev_device_get_devnode(dev));
 
-	LOG(Debug) << action << " device " << udev_device_get_devnode(dev);
+	LOG(DeviceEnumerator, Debug)
+		<< action << " device " << udev_device_get_devnode(dev);
 
 	if (action == "add") {
 		addDevice(deviceNode);

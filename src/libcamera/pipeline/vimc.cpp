@@ -148,7 +148,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	dm.add("RGB/YUV Input");
 	dm.add("Scaler");
 
-	media_ = std::move(enumerator->search(dm));
+	media_ = enumerator->search(dm);
 	if (!media_)
 		return false;
 

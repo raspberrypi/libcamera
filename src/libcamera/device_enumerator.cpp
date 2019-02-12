@@ -308,7 +308,7 @@ std::shared_ptr<MediaDevice> DeviceEnumerator::search(const DeviceMatch &dm)
 			LOG(DeviceEnumerator, Debug)
 				<< "Successful match for media device \""
 				<< media->driver() << "\"";
-			return std::move(media);
+			return media;
 		}
 	}
 

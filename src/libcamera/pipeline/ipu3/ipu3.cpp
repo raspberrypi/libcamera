@@ -278,11 +278,11 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	imgu_dm.add("ipu3-imgu 1 viewfinder");
 	imgu_dm.add("ipu3-imgu 1 3a stat");
 
-	cio2_ = std::move(enumerator->search(cio2_dm));
+	cio2_ = enumerator->search(cio2_dm);
 	if (!cio2_)
 		return false;
 
-	imgu_ = std::move(enumerator->search(imgu_dm));
+	imgu_ = enumerator->search(imgu_dm);
 	if (!imgu_)
 		return false;
 

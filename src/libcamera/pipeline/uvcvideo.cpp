@@ -139,7 +139,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch dm("uvcvideo");
 
-	media_ = std::move(enumerator->search(dm));
+	media_ = enumerator->search(dm);
 
 	if (!media_)
 		return false;

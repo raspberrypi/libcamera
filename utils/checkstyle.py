@@ -146,7 +146,7 @@ class DiffHunk(object):
             s += Colours.reset()
             s += '\n'
 
-        return s
+        return s[:-1]
 
     def append(self, line):
         if line[0] == ' ':
@@ -229,6 +229,29 @@ available_formatters = {
 # Style checking
 #
 
+class LogCategoryChecker(object):
+    log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
+
+    def __init__(self, content):
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+        for line_number in line_numbers:
+            line = self.__content[line_number-1]
+            if not LogCategoryChecker.log_regex.search(line):
+                continue
+
+            issues.append([line_number, line, 'LOG() should use categories'])
+
+        return issues
+
+
+available_checkers = {
+    'log_category': LogCategoryChecker,
+}
+
+
 def check_file(top_level, commit, filename, formatters):
     # Extract the line numbers touched by the commit.
     diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
@@ -260,20 +283,36 @@ def check_file(top_level, commit, filename, formatters):
     formatted = formatted.splitlines(True)
     diff = difflib.unified_diff(after, formatted)
 
-    # Split the diff in hunks, recording line number ranges for each hunk.
+    # Split the diff in hunks, recording line number ranges for each hunk, and
+    # filter out hunks that are not touched by the commit.
     formatted_diff = parse_diff(diff)
-
-    # Filter out hunks that are not touched by the commit.
     formatted_diff = [hunk for hunk in formatted_diff if hunk.intersects(lines)]
-    if len(formatted_diff) == 0:
+
+    # Check for code issues not related to formatting.
+    issues = []
+    for checker in available_checkers:
+        checker = available_checkers[checker](after)
+        for hunk in commit_diff:
+            issues += checker.check(hunk.side('to').touched)
+
+    # Print the detected issues.
+    if len(issues) == 0 and len(formatted_diff) == 0:
         return 0
 
     print('%s---' % Colours.fg(Colours.Red), filename)
     print('%s+++' % Colours.fg(Colours.Green), filename)
-    for hunk in formatted_diff:
-        print(hunk)
 
-    return len(formatted_diff)
+    if len(formatted_diff):
+        for hunk in formatted_diff:
+            print(hunk)
+
+    if len(issues):
+        issues.sort()
+        for issue in issues:
+            print('%s#%u: %s' % (Colours.fg(Colours.Yellow), issue[0], issue[2]))
+            print('+%s%s' % (issue[1].rstrip(), Colours.reset()))
+
+    return len(formatted_diff) + len(issues)
 
 
 def check_style(top_level, commit, formatters):

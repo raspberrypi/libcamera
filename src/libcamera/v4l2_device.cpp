@@ -128,7 +128,7 @@ LOG_DEFINE_CATEGORY(V4L2)
  * height) and one to three planes with configurable line stride and a total
  * per-plane size in bytes.
  *
- * Image formats, as defined by the V4L2 APIs, are categorized as packed,
+ * Image formats, as defined by the V4L2 APIs, are categorised as packed,
  * semi-planar and planar, and describe the layout of the image pixel components
  * stored in memory.
  *
@@ -797,7 +797,7 @@ int V4L2Device::queueBuffer(Buffer *buffer)
  * This method dequeues the next available buffer from the device. If no buffer
  * is available to be dequeued it will return nullptr immediately.
  *
- * \return A pointer to the dequeued buffer on succcess, or nullptr otherwise
+ * \return A pointer to the dequeued buffer on success, or nullptr otherwise
  */
 Buffer *V4L2Device::dequeueBuffer()
 {

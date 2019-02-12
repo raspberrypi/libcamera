@@ -390,7 +390,7 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Unable to get format: " << strerror(-ret);
+		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
 		return ret;
 	}
 
@@ -419,7 +419,7 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Unable to set format: " << strerror(-ret);
+		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
 
@@ -447,7 +447,7 @@ int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Unable to get format: " << strerror(-ret);
+		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
 		return ret;
 	}
 
@@ -484,7 +484,7 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Unable to set format: " << strerror(-ret);
+		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
 

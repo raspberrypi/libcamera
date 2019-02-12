@@ -3,6 +3,7 @@ subdir('libtest')
 subdir('media_device')
 subdir('pipeline')
 subdir('v4l2_device')
+subdir('v4l2_subdevice')
 
 public_tests = [
     ['event',                           'event.cpp'],

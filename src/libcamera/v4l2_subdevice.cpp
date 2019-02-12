@@ -223,7 +223,8 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {
 		ret = -errno;
-		LOG(Error) << "Unable to set format: " << strerror(-ret);
+		LOG(V4L2Subdev, Error)
+			<< "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
 

@@ -299,7 +299,15 @@ int V4L2Device::open()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
+	/*
+	 *  We wait for Read notifications on CAPTURE devices (POLLIN), and
+	 *  Write notifications for OUTPUT devices (POLLOUT).
+	 */
+	if (caps_.isCapture())
+		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
+	else
+		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
+
 	fdEvent_->activated.connect(this, &V4L2Device::bufferAvailable);
 	fdEvent_->setEnabled(false);
 
@@ -675,6 +683,13 @@ int V4L2Device::queueBuffer(Buffer *buffer)
 	if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
 		buf.length = buffer->planes().size();
 		buf.m.planes = planes;
+	}
+
+	if (V4L2_TYPE_IS_OUTPUT(bufferType_)) {
+		buf.bytesused = buffer->bytesused_;
+		buf.sequence = buffer->sequence_;
+		buf.timestamp.tv_sec = buffer->timestamp_ / 1000000000;
+		buf.timestamp.tv_usec = (buffer->timestamp_ / 1000) % 1000000;
 	}
 
 	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;

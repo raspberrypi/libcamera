@@ -39,22 +39,22 @@ int V4L2DeviceTest::init()
 		return TestFail;
 	}
 
-	DeviceMatch dm("uvcvideo");
-	media_ = std::move(enumerator_->search(dm));
+	DeviceMatch dm("vivid");
+	dm.add("vivid-000-vid-cap");
+
+	media_ = enumerator_->search(dm);
 	if (!media_)
 		return TestSkip;
 
 	media_->acquire();
 
-	for (MediaEntity *entity : media_->entities()) {
-		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
-			dev_ = new V4L2Device(entity);
-			break;
-		}
-	}
-
-	if (!dev_)
+	MediaEntity *entity = media_->getEntityByName("vivid-000-vid-cap");
+	if (!entity)
 		return TestSkip;
+
+	dev_ = new V4L2Device(entity);
+	if (!dev_)
+		return TestFail;
 
 	return dev_->open();
 }

@@ -63,5 +63,9 @@ void V4L2DeviceTest::cleanup()
 {
 	media_->release();
 
+	capture_->streamOff();
+	capture_->releaseBuffers();
+	capture_->close();
+
 	delete capture_;
 };

@@ -22,10 +22,10 @@ protected:
 		 * Expect failure: The device has already been opened by the
 		 * V4L2DeviceTest base class
 		 */
-		ret = dev_->open();
+		ret = capture_->open();
 		if (!ret) {
 			std::cout << "Double open erroneously succeeded" << std::endl;
-			dev_->close();
+			capture_->close();
 			return TestFail;
 		}
 

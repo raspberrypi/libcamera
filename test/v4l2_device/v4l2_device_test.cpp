@@ -52,16 +52,16 @@ int V4L2DeviceTest::init()
 	if (!entity)
 		return TestSkip;
 
-	dev_ = new V4L2Device(entity);
-	if (!dev_)
+	capture_ = new V4L2Device(entity);
+	if (!capture_)
 		return TestFail;
 
-	return dev_->open();
+	return capture_->open();
 }
 
 void V4L2DeviceTest::cleanup()
 {
 	media_->release();
 
-	delete dev_;
+	delete capture_;
 };

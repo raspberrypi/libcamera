@@ -26,7 +26,7 @@ public:
 		frames++;
 
 		/* Requeue the buffer for further use. */
-		dev_->queueBuffer(buffer);
+		capture_->queueBuffer(buffer);
 	}
 
 protected:
@@ -40,19 +40,19 @@ protected:
 
 		pool_.createBuffers(bufferCount);
 
-		ret = dev_->exportBuffers(&pool_);
+		ret = capture_->exportBuffers(&pool_);
 		if (ret)
 			return TestFail;
 
-		dev_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
+		capture_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
 
 		/* Queue all the buffers to the device. */
 		for (Buffer &b : pool_.buffers()) {
-			if (dev_->queueBuffer(&b))
+			if (capture_->queueBuffer(&b))
 				return TestFail;
 		}
 
-		ret = dev_->streamOn();
+		ret = capture_->streamOn();
 		if (ret)
 			return TestFail;
 
@@ -75,7 +75,7 @@ protected:
 
 		std::cout << "Processed " << frames << " frames" << std::endl;
 
-		ret = dev_->streamOff();
+		ret = capture_->streamOff();
 		if (ret)
 			return TestFail;
 

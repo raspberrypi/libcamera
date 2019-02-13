@@ -16,15 +16,15 @@ protected:
 
 		pool_.createBuffers(bufferCount);
 
-		int ret = dev_->exportBuffers(&pool_);
+		int ret = capture_->exportBuffers(&pool_);
 		if (ret)
 			return TestFail;
 
-		ret = dev_->streamOn();
+		ret = capture_->streamOn();
 		if (ret)
 			return TestFail;
 
-		ret = dev_->streamOff();
+		ret = capture_->streamOff();
 		if (ret)
 			return TestFail;
 

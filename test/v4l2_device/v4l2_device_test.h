@@ -22,7 +22,10 @@ using namespace libcamera;
 class V4L2DeviceTest : public Test
 {
 public:
-	V4L2DeviceTest() : dev_(nullptr){};
+	V4L2DeviceTest()
+		: capture_(nullptr)
+	{
+	}
 
 protected:
 	int init();
@@ -30,7 +33,7 @@ protected:
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
-	V4L2Device *dev_;
+	V4L2Device *capture_;
 	BufferPool pool_;
 };
 

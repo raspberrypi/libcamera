@@ -56,9 +56,12 @@ protected:
 		if (ret)
 			return TestFail;
 
-		timeout.start(5000);
-		while (timeout.isRunning())
+		timeout.start(10000);
+		while (timeout.isRunning()) {
 			dispatcher->processEvents();
+			if (frames > 30)
+				break;
+		}
 
 		if (frames < 1) {
 			std::cout << "Failed to capture any frames within timeout." << std::endl;

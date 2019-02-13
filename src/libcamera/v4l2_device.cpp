@@ -423,6 +423,7 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	pix->height = format->height;
 	pix->pixelformat = format->fourcc;
 	pix->bytesperline = format->planes[0].bpl;
+	pix->field = V4L2_FIELD_NONE;
 
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
@@ -483,6 +484,7 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	pix->height = format->height;
 	pix->pixelformat = format->fourcc;
 	pix->num_planes = format->planesCount;
+	pix->field = V4L2_FIELD_NONE;
 
 	for (unsigned int i = 0; i < pix->num_planes; ++i) {
 		pix->plane_fmt[i].bytesperline = format->planes[i].bpl;
@@ -679,6 +681,7 @@ int V4L2Device::queueBuffer(Buffer *buffer)
 	buf.index = buffer->index();
 	buf.type = bufferType_;
 	buf.memory = memoryType_;
+	buf.field = V4L2_FIELD_NONE;
 
 	if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
 		buf.length = buffer->planes().size();

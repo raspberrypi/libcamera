@@ -250,7 +250,7 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 	sel.r.width = rect->w;
 	sel.r.height = rect->h;
 
-	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_SELECTION, sel);
+	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_SELECTION, &sel);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2Subdev, Error)

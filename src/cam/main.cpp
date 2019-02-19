@@ -230,7 +230,8 @@ int main(int argc, char **argv)
 	if (options.isSet(OptCamera)) {
 		camera = cm->get(options[OptCamera]);
 		if (!camera) {
-			std::cout << "Camera " << options[OptCamera]
+			std::cout << "Camera "
+				  << std::string(options[OptCamera])
 				  << " not found" << std::endl;
 			goto out;
 		}

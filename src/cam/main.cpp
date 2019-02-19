@@ -160,7 +160,8 @@ static int capture()
 		Request *request = camera->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;
-			return -ENOMEM;
+			ret = -ENOMEM;
+			goto out;
 		}
 
 		std::map<Stream *, Buffer *> map;
@@ -168,13 +169,13 @@ static int capture()
 		ret = request->setBuffers(map);
 		if (ret < 0) {
 			std::cerr << "Can't set buffers for request" << std::endl;
-			return ret;
+			goto out;
 		}
 
 		ret = camera->queueRequest(request);
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
-			return ret;
+			goto out;
 		}
 	}
 
@@ -184,6 +185,9 @@ static int capture()
 	ret = loop->exec();
 
 	camera->stop();
+out:
+	camera->freeBuffers();
+
 	return ret;
 }
 

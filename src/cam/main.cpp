@@ -180,11 +180,18 @@ static int capture()
 	}
 
 	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
-	camera->start();
+
+	ret = camera->start();
+	if (ret) {
+		std::cout << "Failed to start capture" << std::endl;
+		goto out;
+	}
 
 	ret = loop->exec();
 
-	camera->stop();
+	ret = camera->stop();
+	if (ret)
+		std::cout << "Failed to stop capture" << std::endl;
 out:
 	camera->freeBuffers();
 

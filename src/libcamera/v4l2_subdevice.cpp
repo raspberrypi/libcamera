@@ -184,6 +184,59 @@ int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
 }
 
 /**
+ * \brief List the sub-device image resolutions and formats on \a pad
+ * \param[in] pad The 0-indexed pad number to enumerate formats on
+ *
+ * Retrieve a list of image formats and sizes on the \a pad of a video
+ * subdevice. Subdevices can report either a list of discrete sizes they
+ * support or a list of intervals expressed as a [min-max] sizes range.
+ *
+ * Each image size list is associated with a media bus pixel code for which
+ * the reported resolutions are supported.
+ *
+ * \return A map of image formats associated with a list of image sizes, or
+ * an empty map on error or if the pad does not exist
+ */
+const std::map<unsigned int, std::vector<SizeRange>>
+V4L2Subdevice::formats(unsigned int pad)
+{
+	std::map<unsigned int, std::vector<SizeRange>> formatMap = {};
+	struct v4l2_subdev_mbus_code_enum mbusEnum = {};
+	int ret;
+
+	if (pad >= entity_->pads().size()) {
+		LOG(V4L2Subdev, Error) << "Invalid pad: " << pad;
+		return formatMap;
+	}
+
+	mbusEnum.pad = pad;
+	mbusEnum.index = 0;
+	mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	while (true) {
+		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbusEnum);
+		if (ret)
+			break;
+
+		ret = enumPadSizes(pad, mbusEnum.code,
+				   &formatMap[mbusEnum.code]);
+		if (ret)
+			break;
+
+		mbusEnum.index++;
+	}
+
+	if (ret && (errno != EINVAL && errno != ENOTTY)) {
+		ret = -errno;
+		LOG(V4L2Subdev, Error)
+			<< "Unable to enumerate formats on pad " << pad
+			<< ": " << strerror(-ret);
+		formatMap.clear();
+	}
+
+	return formatMap;
+}
+
+/**
  * \brief Retrieve the image format set on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
  * \param[out] format The image bus format
@@ -244,6 +297,40 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	format->width = subdevFmt.format.width;
 	format->height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
+
+	return 0;
+}
+
+int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,
+				std::vector<SizeRange> *sizes)
+{
+	struct v4l2_subdev_frame_size_enum sizeEnum = {};
+	int ret;
+
+	sizeEnum.index = 0;
+	sizeEnum.pad = pad;
+	sizeEnum.code = code;
+	sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	while (true) {
+		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &sizeEnum);
+		if (ret)
+			break;
+
+		sizes->emplace_back(sizeEnum.min_width, sizeEnum.min_height,
+				    sizeEnum.max_width, sizeEnum.max_height);
+
+		sizeEnum.index++;
+	}
+
+	if (ret && (errno != EINVAL && errno != ENOTTY)) {
+		ret = -errno;
+		LOG(V4L2Subdev, Error)
+			<< "Unable to enumerate sizes on pad " << pad
+			<< ": " << strerror(-ret);
+		sizes->clear();
+
+		return ret;
+	}
 
 	return 0;
 }

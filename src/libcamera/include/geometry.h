@@ -17,6 +17,18 @@ struct Rectangle {
 	unsigned int h;
 };
 
+struct SizeRange {
+	SizeRange(unsigned int minW, unsigned int minH,
+		  unsigned int maxW, unsigned int maxH)
+		: minWidth(minW), minHeight(minH), maxWidth(maxW),
+		  maxHeight(maxH) {}
+
+	unsigned int minWidth;
+	unsigned int minHeight;
+	unsigned int maxWidth;
+	unsigned int maxHeight;
+};
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_GEOMETRY_H__ */

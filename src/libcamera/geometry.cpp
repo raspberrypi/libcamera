@@ -46,4 +46,38 @@ namespace libcamera {
  * \brief The distance between the top and bottom sides
  */
 
+/**
+ * \struct SizeRange
+ * \brief Describe a range of image sizes
+ *
+ * SizeRange describes a range of image sizes included in the (minWidth,
+ * minHeight) - (maxWidth, maxHeight) interval. If the minimum and
+ * maximum sizes are identical it represents a single image resolution.
+ */
+
+/**
+ * \fn SizeRange::SizeRange()
+ * \brief Construct a size range
+ */
+
+/**
+ * \var SizeRange::minWidth
+ * \brief The minimum image width
+ */
+
+/**
+ * \var SizeRange::minHeight
+ * \brief The minimum image height
+ */
+
+/**
+ * \var SizeRange::maxWidth
+ * \brief The maximum image width
+ */
+
+/**
+ * \var SizeRange::maxHeight
+ * \brief The maximum image height
+ */
+
 } /* namespace libcamera */

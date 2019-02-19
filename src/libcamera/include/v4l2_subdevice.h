@@ -7,14 +7,15 @@
 #ifndef __LIBCAMERA_V4L2_SUBDEVICE_H__
 #define __LIBCAMERA_V4L2_SUBDEVICE_H__
 
+#include <map>
 #include <string>
+#include <vector>
 
+#include "geometry.h"
 #include "log.h"
 #include "media_object.h"
 
 namespace libcamera {
-
-struct Rectangle;
 
 struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
@@ -39,6 +40,9 @@ public:
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);
 
+	const std::map<unsigned int, std::vector<SizeRange>>
+						formats(unsigned int pad);
+
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 
@@ -46,6 +50,9 @@ protected:
 	std::string logPrefix() const;
 
 private:
+	int enumPadSizes(unsigned int pad, unsigned int code,
+			 std::vector<SizeRange> *size);
+
 	int setSelection(unsigned int pad, unsigned int target,
 			 Rectangle *rect);
 

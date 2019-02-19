@@ -88,7 +88,7 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
  * path
  */
 V4L2Subdevice::V4L2Subdevice(const MediaEntity *entity)
-	: deviceNode_(entity->deviceNode()), fd_(-1)
+	: entity_(entity), fd_(-1)
 {
 }
 
@@ -106,11 +106,11 @@ int V4L2Subdevice::open()
 		return -EBUSY;
 	}
 
-	ret = ::open(deviceNode_.c_str(), O_RDWR);
+	ret = ::open(deviceNode().c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
-			<< "Failed to open V4L2 subdevice '" << deviceNode_
+			<< "Failed to open V4L2 subdevice '" << deviceNode()
 			<< "': " << strerror(-ret);
 		return ret;
 	}
@@ -145,6 +145,13 @@ void V4L2Subdevice::close()
  * \brief Retrieve the path of the device node associated with the subdevice
  *
  * \return The subdevice's device node system path
+ */
+
+/**
+ * \fn V4L2Subdevice::deviceName()
+ * \brief Retrieve the name of the media entity associated with the subdevice
+ *
+ * \return The name of the media entity the subdevice is associated to
  */
 
 /**
@@ -189,7 +196,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
 			<< "Unable to get format on pad " << pad
-			<< " of " << deviceNode_ << ": " << strerror(-ret);
+			<< " of " << deviceNode() << ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -255,7 +262,7 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
 			<< "Unable to set rectangle " << target << " on pad "
-			<< pad << " of " << deviceNode_ << ": "
+			<< pad << " of " << deviceNode() << ": "
 			<< strerror(-ret);
 		return ret;
 	}

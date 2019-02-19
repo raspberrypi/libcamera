@@ -9,9 +9,10 @@
 
 #include <string>
 
+#include "media_object.h"
+
 namespace libcamera {
 
-class MediaEntity;
 struct Rectangle;
 
 struct V4L2SubdeviceFormat {
@@ -31,7 +32,8 @@ public:
 	bool isOpen() const;
 	void close();
 
-	std::string deviceNode() const { return deviceNode_; }
+	std::string deviceNode() const { return entity_->deviceNode(); }
+	std::string deviceName() const { return entity_->name(); }
 
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);
@@ -43,7 +45,7 @@ private:
 	int setSelection(unsigned int pad, unsigned int target,
 			 Rectangle *rect);
 
-	std::string deviceNode_;
+	const MediaEntity *entity_;
 	int fd_;
 };
 

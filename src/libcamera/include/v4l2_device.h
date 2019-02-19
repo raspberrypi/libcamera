@@ -51,12 +51,36 @@ struct V4L2Capability final : v4l2_capability {
 	bool isCapture() const
 	{
 		return device_caps() & (V4L2_CAP_VIDEO_CAPTURE |
-					V4L2_CAP_VIDEO_CAPTURE_MPLANE);
+					V4L2_CAP_VIDEO_CAPTURE_MPLANE |
+					V4L2_CAP_META_CAPTURE);
 	}
 	bool isOutput() const
 	{
 		return device_caps() & (V4L2_CAP_VIDEO_OUTPUT |
 					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+	}
+	bool isVideo() const
+	{
+		return device_caps() & (V4L2_CAP_VIDEO_CAPTURE |
+					V4L2_CAP_VIDEO_CAPTURE_MPLANE |
+					V4L2_CAP_VIDEO_OUTPUT |
+					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+	}
+	bool isMeta() const
+	{
+		return device_caps() & V4L2_CAP_META_CAPTURE;
+	}
+	bool isVideoCapture() const
+	{
+		return isVideo() && isCapture();
+	}
+	bool isVideoOutput() const
+	{
+		return isVideo() && isOutput();
+	}
+	bool isMetaCapture() const
+	{
+		return isMeta() && isCapture();
 	}
 	bool hasStreaming() const
 	{

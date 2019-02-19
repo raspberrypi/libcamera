@@ -69,14 +69,47 @@ LOG_DEFINE_CATEGORY(V4L2)
 
 /**
  * \fn bool V4L2Capability::isCapture()
- * \brief Identify if the device is capable of capturing video
- * \return True if the device can capture video frames
+ * \brief Identify if the device captures data
+ * \return True if the device can capture data
  */
 
 /**
  * \fn bool V4L2Capability::isOutput()
- * \brief Identify if the device is capable of outputting video
- * \return True if the device can output video frames
+ * \brief Identify if the device outputs data
+ * \return True if the device can output data
+ */
+
+/**
+ * \fn bool V4L2Capability::isVideo()
+ * \brief Identify if the device captures or outputs images
+ * \return True if the device can capture or output images
+ */
+
+/**
+ * \fn bool V4L2Capability::isMeta()
+ * \brief Identify if the device captures or outputs image meta-data
+ *
+ * \todo Add support for META_CAPTURE introduced in Linux v5.0
+ *
+ * \return True if the device can capture or output image meta-data
+ */
+
+/**
+ * \fn bool V4L2Capability::isVideoCapture()
+ * \brief Identify if the device captures images
+ * \return True if the device can capture images
+ */
+
+/**
+ * \fn bool V4L2Capability::isVideoOutput()
+ * \brief Identify if the device outputs images
+ * \return True if the device can output images
+ */
+
+/**
+ * \fn bool V4L2Capability::isMetaCapture()
+ * \brief Identify if the device captures image meta-data
+ * \return True if the device can capture image meta-data
  */
 
 /**
@@ -280,33 +313,32 @@ int V4L2Device::open()
 		<< "Opened device " << caps_.bus_info() << ": "
 		<< caps_.driver() << ": " << caps_.card();
 
-	if (!caps_.isCapture() && !caps_.isOutput()) {
-		LOG(V4L2, Debug) << "Device is not a supported type";
-		return -EINVAL;
-	}
-
 	if (!caps_.hasStreaming()) {
 		LOG(V4L2, Error) << "Device does not support streaming I/O";
 		return -EINVAL;
 	}
 
-	if (caps_.isCapture())
+	/*
+	 * Set buffer type and wait for read notifications on CAPTURE devices
+	 * (POLLIN), and write notifications for OUTPUT devices (POLLOUT).
+	 */
+	if (caps_.isVideoCapture()) {
+		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	else
+	} else if (caps_.isVideoOutput()) {
+		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
-
-	/*
-	 *  We wait for Read notifications on CAPTURE devices (POLLIN), and
-	 *  Write notifications for OUTPUT devices (POLLOUT).
-	 */
-	if (caps_.isCapture())
+	} else if (caps_.isMetaCapture()) {
 		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
-	else
-		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
+		bufferType_ = V4L2_BUF_TYPE_META_CAPTURE;
+	} else {
+		LOG(V4L2, Debug) << "Device is not a supported type";
+		return -EINVAL;
+	}
 
 	fdEvent_->activated.connect(this, &V4L2Device::bufferAvailable);
 	fdEvent_->setEnabled(false);

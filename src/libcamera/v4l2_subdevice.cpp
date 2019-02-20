@@ -258,8 +258,8 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 	sel.target = target;
 	sel.flags = 0;
 
-	sel.r.left = rect->y;
-	sel.r.top = rect->x;
+	sel.r.left = rect->x;
+	sel.r.top = rect->y;
 	sel.r.width = rect->w;
 	sel.r.height = rect->h;
 
@@ -271,6 +271,11 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 			<< pad << ": " << strerror(-ret);
 		return ret;
 	}
+
+	rect->x = sel.r.left;
+	rect->y = sel.r.top;
+	rect->w = sel.r.width;
+	rect->h = sel.r.height;
 
 	return 0;
 }

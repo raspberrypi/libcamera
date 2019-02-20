@@ -84,6 +84,7 @@ int PipelineHandlerUVC::configureStreams(Camera *camera,
 					 std::map<Stream *, StreamConfiguration> &config)
 {
 	StreamConfiguration *cfg = &config[&stream_];
+	int ret;
 
 	LOG(UVC, Debug) << "Configure the camera for resolution "
 			<< cfg->width << "x" << cfg->height;
@@ -93,7 +94,16 @@ int PipelineHandlerUVC::configureStreams(Camera *camera,
 	format.height = cfg->height;
 	format.fourcc = cfg->pixelFormat;
 
-	return video_->setFormat(&format);
+	ret = video_->setFormat(&format);
+	if (ret)
+		return ret;
+
+	if (format.width != cfg->width ||
+	    format.height != cfg->height ||
+	    format.fourcc != cfg->pixelFormat)
+		return -EINVAL;
+
+	return 0;
 }
 
 int PipelineHandlerUVC::allocateBuffers(Camera *camera, Stream *stream)

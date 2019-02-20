@@ -136,6 +136,14 @@ PipelineHandler::~PipelineHandler()
  * is the Camera class which will receive configuration to apply from the
  * application.
  *
+ * Each pipeline handler implementation is responsible for validating
+ * that the configuration requested in \a config can be achieved
+ * exactly. Any difference in pixel format, frame size or any other
+ * parameter shall result in the -EINVAL error being returned, and no
+ * change in configuration being applied to the pipeline. If
+ * configuration of a subset of the streams can't be satisfied, the
+ * whole configuration is considered invalid.
+ *
  * \return 0 on success or a negative error code on error.
  */
 

@@ -78,7 +78,7 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static bool configureStreams(Camera *camera, std::vector<Stream *> &streams)
+static int configureStreams(Camera *camera, std::vector<Stream *> &streams)
 {
 	KeyValueParser::Options format = options[OptFormat];
 	Stream *id = streams.front();
@@ -98,10 +98,7 @@ static bool configureStreams(Camera *camera, std::vector<Stream *> &streams)
 			config[id].pixelFormat = format["pixelformat"];
 	}
 
-	if (camera->configureStreams(config))
-		return false;
-
-	return true;
+	return camera->configureStreams(config);
 }
 
 static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)

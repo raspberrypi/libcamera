@@ -67,12 +67,9 @@ static int parseOptions(int argc, char *argv[])
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
 
 	options = parser.parse(argc, argv);
-	if (!options.valid())
-		return -EINVAL;
-
-	if (argc == 1 || options.isSet(OptHelp)) {
+	if (!options.valid() || options.isSet(OptHelp)) {
 		parser.usage();
-		return 1;
+		return !options.valid() ? -EINVAL : -EINTR;
 	}
 
 	return 0;
@@ -204,7 +201,7 @@ int main(int argc, char **argv)
 
 	ret = parseOptions(argc, argv);
 	if (ret < 0)
-		return EXIT_FAILURE;
+		return ret == -EINTR ? 0 : EXIT_FAILURE;
 
 	CameraManager *cm = CameraManager::instance();
 

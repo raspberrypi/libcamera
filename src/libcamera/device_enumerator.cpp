@@ -178,7 +178,7 @@ DeviceEnumerator::~DeviceEnumerator()
 /**
  * \fn DeviceEnumerator::init()
  * \brief Initialize the enumerator
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  * \retval -EBUSY the enumerator has already been initialized
  * \retval -ENODEV the enumerator can't enumerate devices
  */
@@ -195,7 +195,7 @@ DeviceEnumerator::~DeviceEnumerator()
  * with a warning message logged, without returning an error. Only errors that
  * prevent enumeration altogether shall be fatal.
  *
- * \return 0 on success, or a negative error code on fatal errors.
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**
@@ -206,8 +206,7 @@ DeviceEnumerator::~DeviceEnumerator()
  * and look up device nodes associated with all entities. Store the media device
  * in the internal list for later matching with pipeline handlers.
  *
- * \return 0 on success, or a negative error code if the media device can't be
- * created or populated
+ * \return 0 on success or a negative error code otherwise
  */
 int DeviceEnumerator::addDevice(const std::string &deviceNode)
 {

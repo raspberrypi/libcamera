@@ -71,7 +71,7 @@ Plane::~Plane()
  * The \a fd dmabuf file handle is duplicated and stored. The caller may close
  * the original file handle.
  *
- * \return 0 on success or a negative error value otherwise.
+ * \return 0 on success or a negative error code otherwise
  */
 int Plane::setDmabuf(int fd, unsigned int length)
 {
@@ -106,7 +106,7 @@ int Plane::setDmabuf(int fd, unsigned int length)
  *
  * \sa setDmaBuf()
  *
- * \return 0 on success or a negative error value otherwise.
+ * \return 0 on success or a negative error code otherwise
  */
 int Plane::mmap()
 {
@@ -133,7 +133,7 @@ int Plane::mmap()
  *
  * Unmap the memory mapped by an earlier call to mmap().
  *
- * \return 0 on success or a negative error value otherwise.
+ * \return 0 on success or a negative error code otherwise
  */
 int Plane::munmap()
 {

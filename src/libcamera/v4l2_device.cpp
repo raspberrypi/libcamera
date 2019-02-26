@@ -247,7 +247,7 @@ V4L2Device::~V4L2Device()
 
 /**
  * \brief Open a V4L2 device and query its capabilities
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::open()
 {
@@ -365,7 +365,7 @@ std::string V4L2Device::logPrefix() const
  * \brief Retrieve the image format set on the V4L2 device
  * \param[out] format The image format applied on the device
  *
- * \return 0 for success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::getFormat(V4L2DeviceFormat *format)
 {
@@ -380,7 +380,7 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
  * Apply the supplied \a format to the device, and return the actually
  * applied format parameters, as \ref V4L2Device::getFormat would do.
  *
- * \return 0 for success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::setFormat(V4L2DeviceFormat *format)
 {
@@ -697,7 +697,7 @@ int V4L2Device::releaseBuffers()
  * \todo Support output devices (bytesused, ...)
  * \todo Support imported buffers (dmabuf fd)
  *
- * \return 0 on success or a negative error number otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::queueBuffer(Buffer *buffer)
 {

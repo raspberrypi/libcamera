@@ -74,7 +74,7 @@ CameraManager::~CameraManager()
  * interact with cameras in the system until either the camera manager
  * is stopped or the camera is unplugged from the system.
  *
- * \return 0 on successful start, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int CameraManager::start()
 {

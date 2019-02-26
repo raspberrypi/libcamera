@@ -157,7 +157,7 @@ void Camera::disconnect()
  *
  * \todo Implement exclusive access across processes.
  *
- * \return 0 on success or a negative error code on error.
+ * \return 0 on success or a negative error code otherwise
  */
 int Camera::acquire()
 {
@@ -235,7 +235,7 @@ Camera::streamConfiguration(std::vector<Stream *> &streams)
  * Exclusive access to the camera shall be ensured by a call to acquire() prior
  * to calling this function, otherwise an -EACCES error will be returned.
  *
- * \return 0 on success or a negative error code on error.
+ * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera is not connected to any hardware
  * \retval -EACCES The user has not acquired exclusive access to the camera
  * \retval -EINVAL The configuration is not valid
@@ -350,7 +350,7 @@ Request *Camera::createRequest()
  * Ownership of the request is transferred to the camera. It will be deleted
  * automatically after it completes.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 int Camera::queueRequest(Request *request)
 {
@@ -376,7 +376,7 @@ int Camera::queueRequest(Request *request)
  * can queue requests to the camera to process and return to the application
  * until the capture session is terminated with \a stop().
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 int Camera::start()
 {
@@ -395,7 +395,7 @@ int Camera::start()
  * This method stops capturing and processing requests immediately. All pending
  * requests are cancelled and complete synchronously in an error state.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 int Camera::stop()
 {

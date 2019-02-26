@@ -95,7 +95,7 @@ V4L2Subdevice::V4L2Subdevice(const MediaEntity *entity)
 /**
  * \brief Open a V4L2 subdevice
  *
- * \return 0 on success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::open()
 {
@@ -152,7 +152,7 @@ void V4L2Subdevice::close()
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
  * \param[inout] rect The rectangle describing crop target area
  *
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::setCrop(unsigned int pad, Rectangle *rect)
 {
@@ -164,7 +164,7 @@ int V4L2Subdevice::setCrop(unsigned int pad, Rectangle *rect)
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
  * \param[inout] rect The rectangle describing the compose target area
  *
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
 {
@@ -176,7 +176,7 @@ int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
  * \param[out] format The image bus format
  *
- * \return 0 for success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 {
@@ -209,7 +209,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
  * actually applied format parameters, as \ref V4L2Subdevice::getFormat would
  * do.
  *
- * \return 0 for success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 {

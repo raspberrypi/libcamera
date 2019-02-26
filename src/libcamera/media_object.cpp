@@ -111,7 +111,7 @@ LOG_DECLARE_CATEGORY(MediaDevice)
  * Enabling a link establishes a data connection between two pads, while
  * disabling it interrupts that connection.
  *
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaLink::setEnabled(bool enable)
 {
@@ -337,8 +337,7 @@ const MediaPad *MediaEntity::getPadById(unsigned int id) const
 /**
  * \brief Set the path to the device node for the associated interface
  * \param deviceNode The interface device node path associated with this entity
- * \return 0 on success, or a negative error code if the device node can't be
- * accessed
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaEntity::setDeviceNode(const std::string &deviceNode)
 {

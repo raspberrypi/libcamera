@@ -206,7 +206,7 @@ void MediaDevice::close()
  * while pads are accessible from the entity they belong to and links from the
  * pads they connect.
  *
- * \return 0 on success, a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaDevice::populate()
 {
@@ -405,7 +405,7 @@ MediaLink *MediaDevice::link(const MediaPad *source, const MediaPad *sink)
  * Disable all the media device links, clearing the MEDIA_LNK_FL_ENABLED flag
  * on links which are not flagged as IMMUTABLE.
  *
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaDevice::disableLinks()
 {
@@ -705,7 +705,7 @@ void MediaDevice::fixupEntityFlags(struct media_v2_entity *entity)
 *
  * \sa MediaLink::setEnabled(bool enable)
  *
- * \return 0 on success, or a negative error code otherwise
+ * \return 0 on success or a negative error code otherwise
  */
 int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 {

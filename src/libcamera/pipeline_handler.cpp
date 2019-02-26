@@ -144,7 +144,7 @@ PipelineHandler::~PipelineHandler()
  * configuration of a subset of the streams can't be satisfied, the
  * whole configuration is considered invalid.
  *
- * \return 0 on success or a negative error code on error.
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**
@@ -158,7 +158,7 @@ PipelineHandler::~PipelineHandler()
  *
  * The intended caller of this method is the Camera class.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**
@@ -172,7 +172,7 @@ PipelineHandler::~PipelineHandler()
  *
  * The intended caller of this method is the Camera class.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**
@@ -185,7 +185,7 @@ PipelineHandler::~PipelineHandler()
  * class which will in turn be called from the application to indicate that it
  * has configured the streams and is ready to capture.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**
@@ -211,7 +211,7 @@ PipelineHandler::~PipelineHandler()
  * parameters will be applied to the frames captured in the buffers provided in
  * the request.
  *
- * \return 0 on success or a negative error code on error
+ * \return 0 on success or a negative error code otherwise
  */
 
 /**

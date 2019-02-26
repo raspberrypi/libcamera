@@ -39,7 +39,7 @@ public:
 	Signal<Camera *> disconnected;
 
 	int acquire();
-	void release();
+	int release();
 
 	const std::set<Stream *> &streams() const;
 	std::map<Stream *, StreamConfiguration>
@@ -47,7 +47,7 @@ public:
 	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
 
 	int allocateBuffers();
-	void freeBuffers();
+	int freeBuffers();
 
 	Request *createRequest();
 	int queueRequest(Request *request);
@@ -56,20 +56,30 @@ public:
 	int stop();
 
 private:
+	enum State {
+		CameraAvailable,
+		CameraAcquired,
+		CameraConfigured,
+		CameraPrepared,
+		CameraRunning,
+	};
+
 	Camera(PipelineHandler *pipe, const std::string &name);
 	~Camera();
 
+	bool stateBetween(State low, State high) const;
+	bool stateIs(State state) const;
+
 	friend class PipelineHandler;
 	void disconnect();
-	int exclusiveAccess();
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
 	std::set<Stream *> streams_;
 	std::set<Stream *> activeStreams_;
 
-	bool acquired_;
 	bool disconnected_;
+	State state_;
 };
 
 } /* namespace libcamera */

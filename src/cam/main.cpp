@@ -133,6 +133,7 @@ static int capture()
 	int ret;
 
 	std::vector<Stream *> streams = camera->streams();
+	std::vector<Request *> requests;
 
 	ret = configureStreams(camera.get(), streams);
 	if (ret < 0) {
@@ -169,6 +170,16 @@ static int capture()
 			goto out;
 		}
 
+		requests.push_back(request);
+	}
+
+	ret = camera->start();
+	if (ret) {
+		std::cout << "Failed to start capture" << std::endl;
+		goto out;
+	}
+
+	for (Request *request : requests) {
 		ret = camera->queueRequest(request);
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
@@ -177,13 +188,6 @@ static int capture()
 	}
 
 	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
-
-	ret = camera->start();
-	if (ret) {
-		std::cout << "Failed to start capture" << std::endl;
-		goto out;
-	}
-
 	ret = loop->exec();
 
 	ret = camera->stop();

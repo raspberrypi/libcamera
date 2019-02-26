@@ -366,6 +366,11 @@ Camera::streamConfiguration(std::set<Stream *> &streams)
 	if (disconnected_ || !streams.size())
 		return std::map<Stream *, StreamConfiguration>{};
 
+	for (Stream *stream : streams) {
+		if (streams_.find(stream) == streams_.end())
+			return std::map<Stream *, StreamConfiguration>{};
+	}
+
 	return pipe_->streamConfiguration(this, streams);
 }
 
@@ -407,6 +412,11 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 		LOG(Camera, Error)
 			<< "Can't configure streams without a configuration";
 		return -EINVAL;
+	}
+
+	for (auto const &iter : config) {
+		if (streams_.find(iter.first) == streams_.end())
+			return -EINVAL;
 	}
 
 	ret = pipe_->configureStreams(this, config);

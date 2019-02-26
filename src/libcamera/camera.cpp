@@ -213,7 +213,7 @@ std::map<Stream *, StreamConfiguration>
 Camera::streamConfiguration(std::vector<Stream *> &streams)
 {
 	if (disconnected_ || !streams.size())
-		std::map<unsigned int, StreamConfiguration> {};
+		return std::map<Stream *, StreamConfiguration>{};
 
 	return pipe_->streamConfiguration(this, streams);
 }

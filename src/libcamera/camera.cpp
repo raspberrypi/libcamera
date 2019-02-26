@@ -66,7 +66,7 @@ LOG_DECLARE_CATEGORY(Camera)
  */
 std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 				       const std::string &name,
-				       const std::vector<Stream *> &streams)
+				       const std::set<Stream *> &streams)
 {
 	struct Allocator : std::allocator<Camera> {
 		void construct(void *p, PipelineHandler *pipe,
@@ -188,7 +188,7 @@ void Camera::release()
  *
  * \return An array of all the camera's streams.
  */
-const std::vector<Stream *> &Camera::streams() const
+const std::set<Stream *> &Camera::streams() const
 {
 	return streams_;
 }
@@ -210,7 +210,7 @@ const std::vector<Stream *> &Camera::streams() const
  * empty list on error.
  */
 std::map<Stream *, StreamConfiguration>
-Camera::streamConfiguration(std::vector<Stream *> &streams)
+Camera::streamConfiguration(std::set<Stream *> &streams)
 {
 	if (disconnected_ || !streams.size())
 		return std::map<Stream *, StreamConfiguration>{};
@@ -264,7 +264,7 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 		const StreamConfiguration &cfg = iter.second;
 
 		stream->configuration_ = cfg;
-		activeStreams_.push_back(stream);
+		activeStreams_.insert(stream);
 
 		/*
 		 * Allocate buffer objects in the pool.

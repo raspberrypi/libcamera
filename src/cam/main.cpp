@@ -75,10 +75,10 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static int configureStreams(Camera *camera, std::vector<Stream *> &streams)
+static int configureStreams(Camera *camera, std::set<Stream *> &streams)
 {
 	KeyValueParser::Options format = options[OptFormat];
-	Stream *id = streams.front();
+	Stream *id = *streams.begin();
 
 	std::map<Stream *, StreamConfiguration> config =
 		camera->streamConfiguration(streams);
@@ -132,7 +132,7 @@ static int capture()
 {
 	int ret;
 
-	std::vector<Stream *> streams = camera->streams();
+	std::set<Stream *> streams = camera->streams();
 	std::vector<Request *> requests;
 
 	ret = configureStreams(camera.get(), streams);
@@ -141,7 +141,7 @@ static int capture()
 		return ret;
 	}
 
-	Stream *stream = streams.front();
+	Stream *stream = *streams.begin();
 
 	ret = camera->allocateBuffers();
 	if (ret) {
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		const std::vector<Stream *> &streams = camera->streams();
+		const std::set<Stream *> &streams = camera->streams();
 		if (streams.size() != 1) {
 			std::cout << "Camera has " << streams.size()
 				  << " streams, only 1 is supported"

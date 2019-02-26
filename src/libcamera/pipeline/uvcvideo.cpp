@@ -27,7 +27,7 @@ public:
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
-			    std::vector<Stream *> &streams) override;
+			    std::set<Stream *> &streams) override;
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
@@ -63,7 +63,7 @@ PipelineHandlerUVC::~PipelineHandlerUVC()
 
 std::map<Stream *, StreamConfiguration>
 PipelineHandlerUVC::streamConfiguration(Camera *camera,
-					std::vector<Stream *> &streams)
+					std::set<Stream *> &streams)
 {
 	std::map<Stream *, StreamConfiguration> configs;
 
@@ -171,7 +171,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	std::vector<Stream *> streams{ &stream_ };
+	std::set<Stream *> streams{ &stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, media_->model(), streams);
 	registerCamera(std::move(camera));
 	hotplugMediaDevice(media_.get());

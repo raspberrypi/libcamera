@@ -32,7 +32,7 @@ public:
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
-			    std::vector<Stream *> &streams) override;
+			    std::set<Stream *> &streams) override;
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
@@ -95,7 +95,7 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 
 std::map<Stream *, StreamConfiguration>
 PipelineHandlerIPU3::streamConfiguration(Camera *camera,
-					 std::vector<Stream *> &streams)
+					 std::set<Stream *> &streams)
 {
 	IPU3CameraData *data = cameraData(camera);
 	std::map<Stream *, StreamConfiguration> configs;
@@ -374,7 +374,7 @@ void PipelineHandlerIPU3::registerCameras()
 		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>();
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
-		std::vector<Stream *> streams{ &data->stream_ };
+		std::set<Stream *> streams{ &data->stream_ };
 		std::shared_ptr<Camera> camera = Camera::create(this, cameraName, streams);
 
 		/*

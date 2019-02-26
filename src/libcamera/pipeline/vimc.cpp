@@ -27,7 +27,7 @@ public:
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
-			    std::vector<Stream *> &streams) override;
+			    std::set<Stream *> &streams) override;
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
@@ -62,7 +62,7 @@ PipelineHandlerVimc::~PipelineHandlerVimc()
 
 std::map<Stream *, StreamConfiguration>
 PipelineHandlerVimc::streamConfiguration(Camera *camera,
-				     std::vector<Stream *> &streams)
+					 std::set<Stream *> &streams)
 {
 	std::map<Stream *, StreamConfiguration> configs;
 
@@ -171,7 +171,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	std::vector<Stream *> streams{ &stream_ };
+	std::set<Stream *> streams{ &stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",
 							streams);
 	registerCamera(std::move(camera));

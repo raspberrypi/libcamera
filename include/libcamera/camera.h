@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 
 #include <libcamera/request.h>
@@ -27,7 +28,7 @@ class Camera final
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
 					      const std::string &name,
-					      const std::vector<Stream *> &streams);
+					      const std::set<Stream *> &streams);
 
 	Camera(const Camera &) = delete;
 	Camera &operator=(const Camera &) = delete;
@@ -40,9 +41,9 @@ public:
 	int acquire();
 	void release();
 
-	const std::vector<Stream *> &streams() const;
+	const std::set<Stream *> &streams() const;
 	std::map<Stream *, StreamConfiguration>
-	streamConfiguration(std::vector<Stream *> &streams);
+	streamConfiguration(std::set<Stream *> &streams);
 	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
 
 	int allocateBuffers();
@@ -64,8 +65,8 @@ private:
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
-	std::vector<Stream *> streams_;
-	std::vector<Stream *> activeStreams_;
+	std::set<Stream *> streams_;
+	std::set<Stream *> activeStreams_;
 
 	bool acquired_;
 	bool disconnected_;

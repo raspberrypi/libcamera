@@ -154,6 +154,11 @@ void V4L2Subdevice::close()
  * \return The name of the media entity the subdevice is associated to
  */
 
+std::string V4L2Subdevice::logPrefix() const
+{
+	return "'" + deviceName() + "'";
+}
+
 /**
  * \brief Set a crop rectangle on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
@@ -196,7 +201,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
 			<< "Unable to get format on pad " << pad
-			<< " of " << deviceNode() << ": " << strerror(-ret);
+			<< ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -231,7 +236,8 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	if (ret) {
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
-			<< "Unable to set format: " << strerror(-ret);
+			<< "Unable to set format on pad " << pad
+			<< ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -262,8 +268,7 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
 			<< "Unable to set rectangle " << target << " on pad "
-			<< pad << " of " << deviceNode() << ": "
-			<< strerror(-ret);
+			<< pad << ": " << strerror(-ret);
 		return ret;
 	}
 

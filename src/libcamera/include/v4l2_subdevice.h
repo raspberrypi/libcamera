@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "log.h"
 #include "media_object.h"
 
 namespace libcamera {
@@ -21,7 +22,7 @@ struct V4L2SubdeviceFormat {
 	uint32_t height;
 };
 
-class V4L2Subdevice
+class V4L2Subdevice : protected Loggable
 {
 public:
 	explicit V4L2Subdevice(const MediaEntity *entity);
@@ -40,6 +41,9 @@ public:
 
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);
+
+protected:
+	std::string logPrefix() const;
 
 private:
 	int setSelection(unsigned int pad, unsigned int target,

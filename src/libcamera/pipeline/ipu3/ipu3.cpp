@@ -26,6 +26,43 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
+class ImgUDevice
+{
+public:
+	static constexpr unsigned int PAD_INPUT = 0;
+	static constexpr unsigned int PAD_OUTPUT = 2;
+	static constexpr unsigned int PAD_VF = 3;
+	static constexpr unsigned int PAD_STAT = 4;
+
+	ImgUDevice()
+		: imgu_(nullptr), input_(nullptr), output_(nullptr),
+		  viewfinder_(nullptr), stat_(nullptr)
+	{
+	}
+
+	~ImgUDevice()
+	{
+		delete imgu_;
+		delete input_;
+		delete output_;
+		delete viewfinder_;
+		delete stat_;
+	}
+
+	int init(MediaDevice *media, unsigned int index);
+
+	unsigned int index_;
+	std::string name_;
+	MediaDevice *media_;
+
+	V4L2Subdevice *imgu_;
+	V4L2Device *input_;
+	V4L2Device *output_;
+	V4L2Device *viewfinder_;
+	V4L2Device *stat_;
+	/* \todo Add param video device for 3A tuning */
+};
+
 class CIO2Device
 {
 public:
@@ -88,6 +125,7 @@ private:
 		void bufferReady(Buffer *buffer);
 
 		CIO2Device cio2_;
+		ImgUDevice *imgu_;
 
 		Stream stream_;
 	};
@@ -98,8 +136,10 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
-	void registerCameras();
+	int registerCameras();
 
+	ImgUDevice imgu0_;
+	ImgUDevice imgu1_;
 	std::shared_ptr<MediaDevice> cio2MediaDev_;
 	std::shared_ptr<MediaDevice> imguMediaDev_;
 };
@@ -290,6 +330,8 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 
 bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 {
+	int ret;
+
 	DeviceMatch cio2_dm("ipu3-cio2");
 	cio2_dm.add("ipu3-csi2 0");
 	cio2_dm.add("ipu3-cio2 0");
@@ -345,35 +387,67 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	registerCameras();
+	if (imguMediaDev_->open()) {
+		cio2MediaDev_->close();
+		return false;
+	}
 
+	if (imguMediaDev_->disableLinks())
+		goto error;
+
+	ret = registerCameras();
+
+error:
 	cio2MediaDev_->close();
+	imguMediaDev_->close();
 
-	return true;
+	return ret == 0;
 }
 
-/*
- * Cameras are created associating an image sensor (represented by a
- * media entity with function MEDIA_ENT_F_CAM_SENSOR) to one of the four
- * CIO2 CSI-2 receivers.
+/**
+ * \brief Initialise ImgU and CIO2 devices associated with cameras
+ *
+ * Initialise the two ImgU instances and create cameras with an associated
+ * CIO2 device instance.
+ *
+ * \return 0 on success or a negative error code for error or if no camera
+ * has been created
+ * \retval -ENODEV no camera has been created
  */
-void PipelineHandlerIPU3::registerCameras()
+int PipelineHandlerIPU3::registerCameras()
 {
+	int ret;
+
+	ret = imgu0_.init(imguMediaDev_.get(), 0);
+	if (ret)
+		return ret;
+
+	ret = imgu1_.init(imguMediaDev_.get(), 1);
+	if (ret)
+		return ret;
+
 	/*
 	 * For each CSI-2 receiver on the IPU3, create a Camera if an
 	 * image sensor is connected to it and the sensor can produce images
 	 * in a compatible format.
 	 */
 	unsigned int numCameras = 0;
-	for (unsigned int id = 0; id < 4; ++id) {
+	for (unsigned int id = 0; id < 4 && numCameras < 2; ++id) {
 		std::unique_ptr<IPU3CameraData> data =
 			utils::make_unique<IPU3CameraData>(this);
 		std::set<Stream *> streams{ &data->stream_ };
 		CIO2Device *cio2 = &data->cio2_;
 
-		int ret = cio2->init(cio2MediaDev_.get(), id);
+		ret = cio2->init(cio2MediaDev_.get(), id);
 		if (ret)
 			continue;
+
+		/**
+		 * \todo Dynamically assign ImgU devices; as of now, limit
+		 * support to two cameras only, and assign imgu0 to the first
+		 * one and imgu1 to the second.
+		 */
+		data->imgu_ = numCameras ? &imgu1_ : &imgu0_;
 
 		std::string cameraName = cio2->sensor_->entityName() + " "
 				       + std::to_string(id);
@@ -393,6 +467,8 @@ void PipelineHandlerIPU3::registerCameras()
 
 		numCameras++;
 	}
+
+	return numCameras ? 0 : -ENODEV;
 }
 
 void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
@@ -401,6 +477,64 @@ void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
 
 	pipe_->completeBuffer(camera_, request, buffer);
 	pipe_->completeRequest(camera_, request);
+}
+
+/* -----------------------------------------------------------------------------
+ * ImgU Device
+ */
+
+/**
+ * \brief Initialize components of the ImgU instance
+ * \param[in] mediaDevice The ImgU instance media device
+ * \param[in] index The ImgU instance index
+ *
+ * Create and open the V4L2 devices and subdevices of the ImgU instance
+ * with \a index.
+ *
+ * In case of errors the created V4L2Device and V4L2Subdevice instances
+ * are destroyed at pipeline handler delete time.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::init(MediaDevice *media, unsigned int index)
+{
+	int ret;
+
+	index_ = index;
+	name_ = "ipu3-imgu " + std::to_string(index_);
+	media_ = media;
+
+	/*
+	 * The media entities presence in the media device has been verified
+	 * by the match() function: no need to check for newly created
+	 * video devices and subdevice validity here.
+	 */
+	imgu_ = V4L2Subdevice::fromEntityName(media, name_);
+	ret = imgu_->open();
+	if (ret)
+		return ret;
+
+	input_ = V4L2Device::fromEntityName(media, name_ + " input");
+	ret = input_->open();
+	if (ret)
+		return ret;
+
+	output_ = V4L2Device::fromEntityName(media, name_ + " output");
+	ret = output_->open();
+	if (ret)
+		return ret;
+
+	viewfinder_ = V4L2Device::fromEntityName(media, name_ + " viewfinder");
+	ret = viewfinder_->open();
+	if (ret)
+		return ret;
+
+	stat_ = V4L2Device::fromEntityName(media, name_ + " 3a stat");
+	ret = stat_->open();
+	if (ret)
+		return ret;
+
+	return 0;
 }
 
 /*------------------------------------------------------------------------------

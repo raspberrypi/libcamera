@@ -169,6 +169,8 @@ private:
 		Stream stream_;
 	};
 
+	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
+
 	IPU3CameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<IPU3CameraData *>(
@@ -201,26 +203,20 @@ std::map<Stream *, StreamConfiguration>
 PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 					 std::set<Stream *> &streams)
 {
-	IPU3CameraData *data = cameraData(camera);
 	std::map<Stream *, StreamConfiguration> configs;
-	V4L2SubdeviceFormat format = {};
+	IPU3CameraData *data = cameraData(camera);
+	StreamConfiguration *config = &configs[&data->stream_];
+	Size *maxSize = &data->.cio2_.maxSize_;
 
-	/*
-	 * FIXME: As of now, return the image format reported by the sensor.
-	 * In future good defaults should be provided for each stream.
-	 */
-	if (data->cio2_.sensor_->getFormat(0, &format)) {
-		LOG(IPU3, Error) << "Failed to create stream configurations";
-		return configs;
-	}
+	config->width = maxSize->width;
+	config->height = maxSize->height;
+	config->pixelFormat = V4L2_PIX_FMT_NV12;
+	config->bufferCount = IPU3_BUFFER_COUNT;
 
-	StreamConfiguration config = {};
-	config.width = format.width;
-	config.height = format.height;
-	config.pixelFormat = V4L2_PIX_FMT_IPU3_SGRBG10;
-	config.bufferCount = 4;
-
-	configs[&data->stream_] = config;
+	LOG(IPU3, Debug)
+		<< "Stream format set to " << config->width << "x"
+		<< config->height << "-0x" << std::hex << std::setfill('0')
+		<< std::setw(8) << config->pixelFormat;
 
 	return configs;
 }

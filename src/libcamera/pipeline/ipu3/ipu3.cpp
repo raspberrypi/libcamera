@@ -39,10 +39,10 @@ public:
 	int allocateBuffers(Camera *camera, Stream *stream) override;
 	int freeBuffers(Camera *camera, Stream *stream) override;
 
-	int start(const Camera *camera) override;
-	void stop(const Camera *camera) override;
+	int start(Camera *camera) override;
+	void stop(Camera *camera) override;
 
-	int queueRequest(const Camera *camera, Request *request) override;
+	int queueRequest(Camera *camera, Request *request) override;
 
 	bool match(DeviceEnumerator *enumerator);
 
@@ -213,7 +213,7 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 	return 0;
 }
 
-int PipelineHandlerIPU3::start(const Camera *camera)
+int PipelineHandlerIPU3::start(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 	int ret;
@@ -227,7 +227,7 @@ int PipelineHandlerIPU3::start(const Camera *camera)
 	return 0;
 }
 
-void PipelineHandlerIPU3::stop(const Camera *camera)
+void PipelineHandlerIPU3::stop(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 
@@ -235,7 +235,7 @@ void PipelineHandlerIPU3::stop(const Camera *camera)
 		LOG(IPU3, Info) << "Failed to stop camera " << camera->name();
 }
 
-int PipelineHandlerIPU3::queueRequest(const Camera *camera, Request *request)
+int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
 	Stream *stream = &data->stream_;

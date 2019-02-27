@@ -52,10 +52,10 @@ public:
 	virtual int allocateBuffers(Camera *camera, Stream *stream) = 0;
 	virtual int freeBuffers(Camera *camera, Stream *stream) = 0;
 
-	virtual int start(const Camera *camera) = 0;
-	virtual void stop(const Camera *camera) = 0;
+	virtual int start(Camera *camera) = 0;
+	virtual void stop(Camera *camera) = 0;
 
-	virtual int queueRequest(const Camera *camera, Request *request) = 0;
+	virtual int queueRequest(Camera *camera, Request *request) = 0;
 
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera);

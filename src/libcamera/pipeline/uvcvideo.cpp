@@ -35,10 +35,10 @@ public:
 	int allocateBuffers(Camera *camera, Stream *stream) override;
 	int freeBuffers(Camera *camera, Stream *stream) override;
 
-	int start(const Camera *camera) override;
-	void stop(const Camera *camera) override;
+	int start(Camera *camera) override;
+	void stop(Camera *camera) override;
 
-	int queueRequest(const Camera *camera, Request *request) override;
+	int queueRequest(Camera *camera, Request *request) override;
 
 	bool match(DeviceEnumerator *enumerator);
 
@@ -143,19 +143,19 @@ int PipelineHandlerUVC::freeBuffers(Camera *camera, Stream *stream)
 	return data->video_->releaseBuffers();
 }
 
-int PipelineHandlerUVC::start(const Camera *camera)
+int PipelineHandlerUVC::start(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	return data->video_->streamOn();
 }
 
-void PipelineHandlerUVC::stop(const Camera *camera)
+void PipelineHandlerUVC::stop(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	data->video_->streamOff();
 }
 
-int PipelineHandlerUVC::queueRequest(const Camera *camera, Request *request)
+int PipelineHandlerUVC::queueRequest(Camera *camera, Request *request)
 {
 	UVCCameraData *data = cameraData(camera);
 	Buffer *buffer = request->findBuffer(&data->stream_);

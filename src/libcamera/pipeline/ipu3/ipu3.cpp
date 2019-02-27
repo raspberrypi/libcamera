@@ -24,6 +24,28 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
+class CIO2Device
+{
+public:
+	CIO2Device()
+		: output_(nullptr), csi2_(nullptr), sensor_(nullptr)
+	{
+	}
+
+	~CIO2Device()
+	{
+		delete output_;
+		delete csi2_;
+		delete sensor_;
+	}
+
+	int init(const MediaDevice *media, unsigned int index);
+
+	V4L2Device *output_;
+	V4L2Subdevice *csi2_;
+	V4L2Subdevice *sensor_;
+};
+
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
@@ -51,23 +73,13 @@ private:
 	{
 	public:
 		IPU3CameraData(PipelineHandler *pipe)
-			: CameraData(pipe), cio2_(nullptr), csi2_(nullptr),
-			  sensor_(nullptr)
+			: CameraData(pipe)
 		{
-		}
-
-		~IPU3CameraData()
-		{
-			delete cio2_;
-			delete csi2_;
-			delete sensor_;
 		}
 
 		void bufferReady(Buffer *buffer);
 
-		V4L2Device *cio2_;
-		V4L2Subdevice *csi2_;
-		V4L2Subdevice *sensor_;
+		CIO2Device cio2_;
 
 		Stream stream_;
 	};
@@ -80,22 +92,22 @@ private:
 
 	void registerCameras();
 
-	std::shared_ptr<MediaDevice> cio2_;
-	std::shared_ptr<MediaDevice> imgu_;
+	std::shared_ptr<MediaDevice> cio2MediaDev_;
+	std::shared_ptr<MediaDevice> imguMediaDev_;
 };
 
 PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
-	: PipelineHandler(manager), cio2_(nullptr), imgu_(nullptr)
+	: PipelineHandler(manager), cio2MediaDev_(nullptr), imguMediaDev_(nullptr)
 {
 }
 
 PipelineHandlerIPU3::~PipelineHandlerIPU3()
 {
-	if (cio2_)
-		cio2_->release();
+	if (cio2MediaDev_)
+		cio2MediaDev_->release();
 
-	if (imgu_)
-		imgu_->release();
+	if (imguMediaDev_)
+		imguMediaDev_->release();
 }
 
 std::map<Stream *, StreamConfiguration>
@@ -110,7 +122,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 	 * FIXME: As of now, return the image format reported by the sensor.
 	 * In future good defaults should be provided for each stream.
 	 */
-	if (data->sensor_->getFormat(0, &format)) {
+	if (data->cio2_.sensor_->getFormat(0, &format)) {
 		LOG(IPU3, Error) << "Failed to create stream configurations";
 		return configs;
 	}
@@ -131,9 +143,9 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 {
 	IPU3CameraData *data = cameraData(camera);
 	StreamConfiguration *cfg = &config[&data->stream_];
-	V4L2Subdevice *sensor = data->sensor_;
-	V4L2Subdevice *csi2 = data->csi2_;
-	V4L2Device *cio2 = data->cio2_;
+	V4L2Subdevice *sensor = data->cio2_.sensor_;
+	V4L2Subdevice *csi2 = data->cio2_.csi2_;
+	V4L2Device *cio2 = data->cio2_.output_;
 	V4L2SubdeviceFormat subdevFormat = {};
 	V4L2DeviceFormat devFormat = {};
 	int ret;
@@ -190,13 +202,14 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 {
-	IPU3CameraData *data = cameraData(camera);
 	const StreamConfiguration &cfg = stream->configuration();
+	IPU3CameraData *data = cameraData(camera);
+	V4L2Device *cio2 = data->cio2_.output_;
 
 	if (!cfg.bufferCount)
 		return -EINVAL;
 
-	int ret = data->cio2_->exportBuffers(&stream->bufferPool());
+	int ret = cio2->exportBuffers(&stream->bufferPool());
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to request memory";
 		return ret;
@@ -208,8 +221,9 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 {
 	IPU3CameraData *data = cameraData(camera);
+	V4L2Device *cio2 = data->cio2_.output_;
 
-	int ret = data->cio2_->releaseBuffers();
+	int ret = cio2->releaseBuffers();
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to release memory";
 		return ret;
@@ -221,9 +235,10 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerIPU3::start(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
+	V4L2Device *cio2 = data->cio2_.output_;
 	int ret;
 
-	ret = data->cio2_->streamOn();
+	ret = cio2->streamOn();
 	if (ret) {
 		LOG(IPU3, Info) << "Failed to start camera " << camera->name();
 		return ret;
@@ -235,8 +250,9 @@ int PipelineHandlerIPU3::start(Camera *camera)
 void PipelineHandlerIPU3::stop(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
+	V4L2Device *cio2 = data->cio2_.output_;
 
-	if (data->cio2_->streamOff())
+	if (cio2->streamOff())
 		LOG(IPU3, Info) << "Failed to stop camera " << camera->name();
 
 	PipelineHandler::stop(camera);
@@ -245,6 +261,7 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
+	V4L2Device *cio2 = data->cio2_.output_;
 	Stream *stream = &data->stream_;
 
 	Buffer *buffer = request->findBuffer(stream);
@@ -254,7 +271,7 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	int ret = data->cio2_->queueBuffer(buffer);
+	int ret = cio2->queueBuffer(buffer);
 	if (ret < 0)
 		return ret;
 
@@ -293,17 +310,17 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 * It is safe to acquire both media devices at this point as
 	 * DeviceEnumerator::search() skips the busy ones for us.
 	 */
-	cio2_ = enumerator->search(cio2_dm);
-	if (!cio2_)
+	cio2MediaDev_ = enumerator->search(cio2_dm);
+	if (!cio2MediaDev_)
 		return false;
 
-	cio2_->acquire();
+	cio2MediaDev_->acquire();
 
-	imgu_ = enumerator->search(imgu_dm);
-	if (!imgu_)
+	imguMediaDev_ = enumerator->search(imgu_dm);
+	if (!imguMediaDev_)
 		return false;
 
-	imgu_->acquire();
+	imguMediaDev_->acquire();
 
 	/*
 	 * Disable all links that are enabled by default on CIO2, as camera
@@ -312,17 +329,17 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 * Close the CIO2 media device after, as links are enabled and should
 	 * not need to be changed after.
 	 */
-	if (cio2_->open())
+	if (cio2MediaDev_->open())
 		return false;
 
-	if (cio2_->disableLinks()) {
-		cio2_->close();
+	if (cio2MediaDev_->disableLinks()) {
+		cio2MediaDev_->close();
 		return false;
 	}
 
 	registerCameras();
 
-	cio2_->close();
+	cio2MediaDev_->close();
 
 	return true;
 }
@@ -336,85 +353,28 @@ void PipelineHandlerIPU3::registerCameras()
 {
 	/*
 	 * For each CSI-2 receiver on the IPU3, create a Camera if an
-	 * image sensor is connected to it.
+	 * image sensor is connected to it and the sensor can produce images
+	 * in a compatible format.
 	 */
 	unsigned int numCameras = 0;
 	for (unsigned int id = 0; id < 4; ++id) {
-		std::string csi2Name = "ipu3-csi2 " + std::to_string(id);
-		MediaEntity *csi2 = cio2_->getEntityByName(csi2Name);
-		int ret;
-
-		/*
-		 * This shall not happen, as the device enumerator matched
-		 * all entities described in the cio2_dm DeviceMatch.
-		 *
-		 * As this check is basically free, better stay safe than sorry.
-		 */
-		if (!csi2)
-			continue;
-
-		const std::vector<MediaPad *> &pads = csi2->pads();
-		if (pads.empty())
-			continue;
-
-		/* IPU3 CSI-2 receivers have a single sink pad at index 0. */
-		MediaPad *sink = pads[0];
-		const std::vector<MediaLink *> &links = sink->links();
-		if (links.empty())
-			continue;
-
-		/*
-		 * Verify that the receiver is connected to a sensor, enable
-		 * the media link between the two, and create a Camera with
-		 * a unique name.
-		 */
-		MediaLink *link = links[0];
-		MediaEntity *sensor = link->source()->entity();
-		if (sensor->function() != MEDIA_ENT_F_CAM_SENSOR)
-			continue;
-
-		if (link->setEnabled(true))
-			continue;
-
-		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>(this);
-
-		std::string cameraName = sensor->name() + " " + std::to_string(id);
+		std::unique_ptr<IPU3CameraData> data =
+			utils::make_unique<IPU3CameraData>(this);
 		std::set<Stream *> streams{ &data->stream_ };
-		std::shared_ptr<Camera> camera = Camera::create(this, cameraName, streams);
+		CIO2Device *cio2 = &data->cio2_;
 
-		/*
-		 * Create and open video devices and subdevices associated with
-		 * the camera.
-		 *
-		 * If any of these operations fails, the Camera instance won't
-		 * be registered. The 'camera' shared pointer and the 'data'
-		 * unique pointers go out of scope and delete the objects they
-		 * manage.
-		 */
-		std::string cio2Name = "ipu3-cio2 " + std::to_string(id);
-		MediaEntity *cio2 = cio2_->getEntityByName(cio2Name);
-		if (!cio2) {
-			LOG(IPU3, Error)
-				<< "Failed to get entity '" << cio2Name << "'";
-			continue;
-		}
-
-		data->cio2_ = new V4L2Device(cio2);
-		ret = data->cio2_->open();
+		int ret = cio2->init(cio2MediaDev_.get(), id);
 		if (ret)
 			continue;
 
-		data->cio2_->bufferReady.connect(data.get(), &IPU3CameraData::bufferReady);
+		std::string cameraName = cio2->sensor_->entityName() + " "
+				       + std::to_string(id);
+		std::shared_ptr<Camera> camera = Camera::create(this,
+								cameraName,
+								streams);
 
-		data->sensor_ = new V4L2Subdevice(sensor);
-		ret = data->sensor_->open();
-		if (ret)
-			continue;
-
-		data->csi2_ = new V4L2Subdevice(csi2);
-		ret = data->csi2_->open();
-		if (ret)
-			continue;
+		cio2->output_->bufferReady.connect(data.get(),
+						   &IPU3CameraData::bufferReady);
 
 		registerCamera(std::move(camera), std::move(data));
 
@@ -433,6 +393,75 @@ void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
 
 	pipe_->completeBuffer(camera_, request, buffer);
 	pipe_->completeRequest(camera_, request);
+}
+
+/*------------------------------------------------------------------------------
+ * CIO2 Device
+ */
+
+/**
+ * \brief Initialize components of the CIO2 device with \a index
+ * \param[in] media The CIO2 media device
+ * \param[in] index The CIO2 device index
+ *
+ * Create and open the video device and subdevices in the CIO2 instance at \a
+ * index, if a supported image sensor is connected to the CSI-2 receiver of
+ * this CIO2 instance.  Enable the media links connecting the CIO2 components
+ * to prepare for capture operations.
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \retval -ENODEV No supported image sensor is connected to this CIO2 instance
+ */
+int CIO2Device::init(const MediaDevice *media, unsigned int index)
+{
+	int ret;
+
+	/*
+	 * Verify that a sensor subdevice is connected to this CIO2 instance
+	 * and enable the media link between the two.
+	 */
+	std::string csi2Name = "ipu3-csi2 " + std::to_string(index);
+	MediaEntity *csi2Entity = media->getEntityByName(csi2Name);
+	const std::vector<MediaPad *> &pads = csi2Entity->pads();
+	if (pads.empty())
+		return -ENODEV;
+
+	/* IPU3 CSI-2 receivers have a single sink pad at index 0. */
+	MediaPad *sink = pads[0];
+	const std::vector<MediaLink *> &links = sink->links();
+	if (links.empty())
+		return -ENODEV;
+
+	MediaLink *link = links[0];
+	MediaEntity *sensorEntity = link->source()->entity();
+	if (sensorEntity->function() != MEDIA_ENT_F_CAM_SENSOR)
+		return -ENODEV;
+
+	ret = link->setEnabled(true);
+	if (ret)
+		return ret;
+
+	/*
+	 * \todo Define when to open and close video device nodes, as they
+	 * might impact on power consumption.
+	 */
+	sensor_ = new V4L2Subdevice(sensorEntity);
+	ret = sensor_->open();
+	if (ret)
+		return ret;
+
+	csi2_ = new V4L2Subdevice(csi2Entity);
+	ret = csi2_->open();
+	if (ret)
+		return ret;
+
+	std::string cio2Name = "ipu3-cio2 " + std::to_string(index);
+	output_ = V4L2Device::fromEntityName(media, cio2Name);
+	ret = output_->open();
+	if (ret)
+		return ret;
+
+	return 0;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3);

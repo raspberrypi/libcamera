@@ -13,6 +13,7 @@
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
+#include "utils.h"
 #include "v4l2_device.h"
 
 namespace libcamera {
@@ -42,20 +43,38 @@ public:
 	bool match(DeviceEnumerator *enumerator);
 
 private:
+	class VimcCameraData : public CameraData
+	{
+	public:
+		VimcCameraData()
+		{
+		}
+
+		~VimcCameraData()
+		{
+			delete video_;
+		}
+
+		V4L2Device *video_;
+		Stream stream_;
+	};
+
+	VimcCameraData *cameraData(const Camera *camera)
+	{
+		return static_cast<VimcCameraData *>(
+			PipelineHandler::cameraData(camera));
+	}
+
 	std::shared_ptr<MediaDevice> media_;
-	V4L2Device *video_;
-	Stream stream_;
 };
 
 PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
-	: PipelineHandler(manager), media_(nullptr), video_(nullptr)
+	: PipelineHandler(manager), media_(nullptr)
 {
 }
 
 PipelineHandlerVimc::~PipelineHandlerVimc()
 {
-	delete video_;
-
 	if (media_)
 		media_->release();
 }
@@ -64,6 +83,7 @@ std::map<Stream *, StreamConfiguration>
 PipelineHandlerVimc::streamConfiguration(Camera *camera,
 					 std::set<Stream *> &streams)
 {
+	VimcCameraData *data = cameraData(camera);
 	std::map<Stream *, StreamConfiguration> configs;
 
 	StreamConfiguration config{};
@@ -74,7 +94,7 @@ PipelineHandlerVimc::streamConfiguration(Camera *camera,
 	config.pixelFormat = V4L2_PIX_FMT_RGB24;
 	config.bufferCount = 4;
 
-	configs[&stream_] = config;
+	configs[&data->stream_] = config;
 
 	return configs;
 }
@@ -82,7 +102,8 @@ PipelineHandlerVimc::streamConfiguration(Camera *camera,
 int PipelineHandlerVimc::configureStreams(Camera *camera,
 				      std::map<Stream *, StreamConfiguration> &config)
 {
-	StreamConfiguration *cfg = &config[&stream_];
+	VimcCameraData *data = cameraData(camera);
+	StreamConfiguration *cfg = &config[&data->stream_];
 	int ret;
 
 	LOG(VIMC, Debug) << "Configure the camera for resolution "
@@ -93,7 +114,7 @@ int PipelineHandlerVimc::configureStreams(Camera *camera,
 	format.height = cfg->height;
 	format.fourcc = cfg->pixelFormat;
 
-	ret = video_->setFormat(&format);
+	ret = data->video_->setFormat(&format);
 	if (ret)
 		return ret;
 
@@ -107,31 +128,36 @@ int PipelineHandlerVimc::configureStreams(Camera *camera,
 
 int PipelineHandlerVimc::allocateBuffers(Camera *camera, Stream *stream)
 {
+	VimcCameraData *data = cameraData(camera);
 	const StreamConfiguration &cfg = stream->configuration();
 
 	LOG(VIMC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
 
-	return video_->exportBuffers(&stream->bufferPool());
+	return data->video_->exportBuffers(&stream->bufferPool());
 }
 
 int PipelineHandlerVimc::freeBuffers(Camera *camera, Stream *stream)
 {
-	return video_->releaseBuffers();
+	VimcCameraData *data = cameraData(camera);
+	return data->video_->releaseBuffers();
 }
 
 int PipelineHandlerVimc::start(const Camera *camera)
 {
-	return video_->streamOn();
+	VimcCameraData *data = cameraData(camera);
+	return data->video_->streamOn();
 }
 
 void PipelineHandlerVimc::stop(const Camera *camera)
 {
-	video_->streamOff();
+	VimcCameraData *data = cameraData(camera);
+	data->video_->streamOff();
 }
 
 int PipelineHandlerVimc::queueRequest(const Camera *camera, Request *request)
 {
-	Buffer *buffer = request->findBuffer(&stream_);
+	VimcCameraData *data = cameraData(camera);
+	Buffer *buffer = request->findBuffer(&data->stream_);
 	if (!buffer) {
 		LOG(VIMC, Error)
 			<< "Attempt to queue request with invalid stream";
@@ -139,7 +165,7 @@ int PipelineHandlerVimc::queueRequest(const Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	video_->queueBuffer(buffer);
+	data->video_->queueBuffer(buffer);
 
 	return 0;
 }
@@ -164,13 +190,19 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));
-	if (video_->open())
+	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>();
+
+	/* Locate and open the capture video node. */
+	data->video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));
+	if (data->video_->open())
 		return false;
 
-	std::set<Stream *> streams{ &stream_ };
+	/* Create and register the camera. */
+	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",
 							streams);
+
+	setCameraData(camera.get(), std::move(data));
 	registerCamera(std::move(camera));
 
 	return true;

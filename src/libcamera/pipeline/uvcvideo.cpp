@@ -167,7 +167,6 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 		if (!video_)
 			LOG(UVC, Error) << "Could not find a default video device";
 
-		media_->release();
 		return false;
 	}
 

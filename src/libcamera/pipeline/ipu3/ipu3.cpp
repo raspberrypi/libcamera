@@ -278,19 +278,20 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	imgu_dm.add("ipu3-imgu 1 viewfinder");
 	imgu_dm.add("ipu3-imgu 1 3a stat");
 
+	/*
+	 * It is safe to acquire both media devices at this point as
+	 * DeviceEnumerator::search() skips the busy ones for us.
+	 */
 	cio2_ = enumerator->search(cio2_dm);
 	if (!cio2_)
 		return false;
+
+	cio2_->acquire();
 
 	imgu_ = enumerator->search(imgu_dm);
 	if (!imgu_)
 		return false;
 
-	/*
-	 * It is safe to acquire both media devices at this point as
-	 * DeviceEnumerator::search() skips the busy ones for us.
-	 */
-	cio2_->acquire();
 	imgu_->acquire();
 
 	/*
@@ -301,25 +302,18 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 * not need to be changed after.
 	 */
 	if (cio2_->open())
-		goto error_release_mdev;
+		return false;
 
-	if (cio2_->disableLinks())
-		goto error_close_cio2;
+	if (cio2_->disableLinks()) {
+		cio2_->close();
+		return false;
+	}
 
 	registerCameras();
 
 	cio2_->close();
 
 	return true;
-
-error_close_cio2:
-	cio2_->close();
-
-error_release_mdev:
-	cio2_->release();
-	imgu_->release();
-
-	return false;
 }
 
 /*

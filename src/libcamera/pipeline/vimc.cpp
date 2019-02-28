@@ -165,11 +165,8 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	media_->acquire();
 
 	video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));
-
-	if (video_->open()) {
-		media_->release();
+	if (video_->open())
 		return false;
-	}
 
 	std::set<Stream *> streams{ &stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",

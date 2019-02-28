@@ -181,6 +181,20 @@ void *Plane::mem()
  * objects if the image format is multi-planar.
  */
 
+/**
+ * \enum Buffer::Status
+ * Buffer completion status
+ * \var Buffer::BufferSuccess
+ * The buffer has completed with success and contains valid data. All its other
+ * metadata (such as bytesused(), timestamp() or sequence() number) are valid.
+ * \var Buffer::BufferError
+ * The buffer has completed with an error and doesn't contain valid data. Its
+ * other metadata are valid.
+ * \var Buffer::BufferCancelled
+ * The buffer has been cancelled due to capture stop. Its other metadata are
+ * invalid and shall not be used.
+ */
+
 Buffer::Buffer()
 	: index_(-1)
 {
@@ -228,6 +242,27 @@ Buffer::Buffer()
  *
  * \return Sequence number of the buffer
  */
+
+/**
+ * \fn Buffer::status()
+ * \brief Retrieve the buffer status
+ *
+ * The buffer status reports whether the buffer has completed successfully
+ * (BufferSuccess) or if an error occurred (BufferError).
+ *
+ * \return The buffer status
+ */
+
+/**
+ * \brief Mark a buffer as cancel by setting its status to BufferCancelled
+ */
+void Buffer::cancel()
+{
+	bytesused_ = 0;
+	timestamp_ = 0;
+	sequence_ = 0;
+	status_ = BufferCancelled;
+}
 
 /**
  * \class BufferPool

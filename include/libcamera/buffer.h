@@ -40,12 +40,19 @@ private:
 class Buffer final
 {
 public:
+	enum Status {
+		BufferSuccess,
+		BufferError,
+		BufferCancelled,
+	};
+
 	Buffer();
 
 	unsigned int index() const { return index_; }
 	unsigned int bytesused() const { return bytesused_; }
 	uint64_t timestamp() const { return timestamp_; }
 	unsigned int sequence() const { return sequence_; }
+	Status status() const { return status_; }
 	std::vector<Plane> &planes() { return planes_; }
 
 	Signal<Buffer *> completed;
@@ -54,10 +61,13 @@ private:
 	friend class BufferPool;
 	friend class V4L2Device;
 
+	void cancel();
+
 	unsigned int index_;
 	unsigned int bytesused_;
 	uint64_t timestamp_;
 	unsigned int sequence_;
+	Status status_;
 
 	std::vector<Plane> planes_;
 };

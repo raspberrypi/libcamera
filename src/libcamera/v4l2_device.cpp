@@ -799,6 +799,8 @@ Buffer *V4L2Device::dequeueBuffer()
 	buffer->timestamp_ = buf.timestamp.tv_sec * 1000000000ULL
 			   + buf.timestamp.tv_usec * 1000ULL;
 	buffer->sequence_ = buf.sequence;
+	buffer->status_ = buf.flags & V4L2_BUF_FLAG_ERROR
+			? Buffer::BufferError : Buffer::BufferSuccess;
 
 	return buffer;
 }

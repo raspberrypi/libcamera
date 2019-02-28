@@ -385,9 +385,10 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
-	V4L2Device *cio2 = data->cio2_.output_;
+	V4L2Device *output = data->imgu_->output_.dev;
 	Stream *stream = &data->stream_;
 
+	/* Queue a buffer to the ImgU output for capture. */
 	Buffer *buffer = request->findBuffer(stream);
 	if (!buffer) {
 		LOG(IPU3, Error)
@@ -395,7 +396,7 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	int ret = cio2->queueBuffer(buffer);
+	int ret = output->queueBuffer(buffer);
 	if (ret < 0)
 		return ret;
 

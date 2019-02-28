@@ -40,6 +40,7 @@ public:
 		V4L2Device *dev;
 		unsigned int pad;
 		std::string name;
+		BufferPool *pool;
 	};
 
 	ImgUDevice()
@@ -65,6 +66,10 @@ public:
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &config);
 
+	int importBuffers(BufferPool *pool);
+	int exportBuffers(ImgUOutput *output, BufferPool *pool);
+	void freeBuffers();
+
 	unsigned int index_;
 	std::string name_;
 	MediaDevice *media_;
@@ -75,11 +80,16 @@ public:
 	ImgUOutput viewfinder_;
 	ImgUOutput stat_;
 	/* \todo Add param video device for 3A tuning */
+
+	BufferPool vfPool_;
+	BufferPool statPool_;
 };
 
 class CIO2Device
 {
 public:
+	static constexpr unsigned int CIO2_BUFFER_COUNT = 4;
+
 	CIO2Device()
 		: output_(nullptr), csi2_(nullptr), sensor_(nullptr)
 	{
@@ -96,6 +106,9 @@ public:
 	int configure(const StreamConfiguration &config,
 		      V4L2DeviceFormat *outputFormat);
 
+	BufferPool *exportBuffers();
+	void freeBuffers();
+
 	static int mediaBusToFormat(unsigned int code);
 
 	V4L2Device *output_;
@@ -105,6 +118,8 @@ public:
 	/* Maximum sizes and the mbus code used to produce them. */
 	unsigned int mbusCode_;
 	Size maxSize_;
+
+	BufferPool pool_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler
@@ -268,18 +283,41 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 {
-	const StreamConfiguration &cfg = stream->configuration();
 	IPU3CameraData *data = cameraData(camera);
-	V4L2Device *cio2 = data->cio2_.output_;
+	CIO2Device *cio2 = &data->cio2_;
+	ImgUDevice *imgu = data->imgu_;
+	int ret;
 
-	if (!cfg.bufferCount)
-		return -EINVAL;
+	/* Share buffers between CIO2 output and ImgU input. */
+	BufferPool *pool = cio2->exportBuffers();
+	if (!pool)
+		return -ENOMEM;
 
-	int ret = cio2->exportBuffers(&stream->bufferPool());
-	if (ret) {
-		LOG(IPU3, Error) << "Failed to request memory";
+	ret = imgu->importBuffers(pool);
+	if (ret)
 		return ret;
-	}
+
+	/* Export ImgU output buffers to the stream's pool. */
+	ret = imgu->exportBuffers(&imgu->output_, &stream->bufferPool());
+	if (ret)
+		return ret;
+
+	/*
+	 * Reserve memory in viewfinder and stat output devices. Use the
+	 * same number of buffers as the ones requested for the output
+	 * stream.
+	 */
+	unsigned int bufferCount = stream->bufferPool().count();
+
+	imgu->viewfinder_.pool->createBuffers(bufferCount);
+	ret = imgu->exportBuffers(&imgu->viewfinder_, imgu->viewfinder_.pool);
+	if (ret)
+		return ret;
+
+	imgu->stat_.pool->createBuffers(bufferCount);
+	ret = imgu->exportBuffers(&imgu->stat_, imgu->stat_.pool);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -287,13 +325,9 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 {
 	IPU3CameraData *data = cameraData(camera);
-	V4L2Device *cio2 = data->cio2_.output_;
 
-	int ret = cio2->releaseBuffers();
-	if (ret) {
-		LOG(IPU3, Error) << "Failed to release memory";
-		return ret;
-	}
+	data->cio2_.freeBuffers();
+	data->imgu_->freeBuffers();
 
 	return 0;
 }
@@ -553,6 +587,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	viewfinder_.pad = PAD_VF;
 	viewfinder_.name = "viewfinder";
+	viewfinder_.pool = &vfPool_;
 
 	stat_.dev = V4L2Device::fromEntityName(media, name_ + " 3a stat");
 	ret = stat_.dev->open();
@@ -561,6 +596,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	stat_.pad = PAD_STAT;
 	stat_.name = "stat";
+	stat_.pool = &statPool_;
 
 	return 0;
 }
@@ -663,6 +699,69 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 			 << outputFormat.toString();
 
 	return 0;
+}
+
+/**
+ * \brief Import buffers from \a pool into the ImgU input
+ * \param[in] pool The buffer pool to import
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::importBuffers(BufferPool *pool)
+{
+	int ret = input_->importBuffers(pool);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Export buffers from \a output to the provided \a pool
+ * \param[in] output The ImgU output device
+ * \param[in] pool The buffer pool where to export buffers
+ *
+ * Export memory buffers reserved in the video device memory associated with
+ * \a output id to the buffer pool provided as argument.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::exportBuffers(ImgUOutput *output, BufferPool *pool)
+{
+	int ret = output->dev->exportBuffers(pool);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to export ImgU "
+				 << output->name << " buffers";
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Release buffers for all the ImgU video devices
+ */
+void ImgUDevice::freeBuffers()
+{
+	int ret;
+
+	ret = output_.dev->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU output buffers";
+
+	ret = stat_.dev->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU stat buffers";
+
+	ret = viewfinder_.dev->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
+
+	ret = input_->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU input buffers";
 }
 
 /*------------------------------------------------------------------------------
@@ -829,6 +928,33 @@ int CIO2Device::configure(const StreamConfiguration &config,
 	LOG(IPU3, Debug) << "CIO2 output format " << outputFormat->toString();
 
 	return 0;
+}
+
+/**
+ * \brief Allocate CIO2 memory buffers and export them in a BufferPool
+ *
+ * Allocate memory buffers in the CIO2 video device and export them to
+ * a buffer pool that can be imported by another device.
+ *
+ * \return The buffer pool with export buffers on success or nullptr otherwise
+ */
+BufferPool *CIO2Device::exportBuffers()
+{
+	pool_.createBuffers(CIO2_BUFFER_COUNT);
+
+	int ret = output_->exportBuffers(&pool_);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to export CIO2 buffers";
+		return nullptr;
+	}
+
+	return &pool_;
+}
+
+void CIO2Device::freeBuffers()
+{
+	if (output_->releaseBuffers())
+		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
 int CIO2Device::mediaBusToFormat(unsigned int code)

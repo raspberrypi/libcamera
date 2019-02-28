@@ -19,6 +19,7 @@ class Camera;
 class CameraManager;
 class DeviceEnumerator;
 class MediaDevice;
+class PipelineHandler;
 class Request;
 class Stream;
 class StreamConfiguration;
@@ -26,10 +27,14 @@ class StreamConfiguration;
 class CameraData
 {
 public:
+	explicit CameraData(PipelineHandler *pipe)
+		: pipe_(pipe)
+	{
+	}
 	virtual ~CameraData() {}
 
-protected:
-	CameraData() {}
+	Camera *camera_;
+	PipelineHandler *pipe_;
 
 private:
 	CameraData(const CameraData &) = delete;

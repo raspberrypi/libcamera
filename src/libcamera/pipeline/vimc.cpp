@@ -46,7 +46,8 @@ private:
 	class VimcCameraData : public CameraData
 	{
 	public:
-		VimcCameraData()
+		VimcCameraData(PipelineHandler *pipe)
+			: CameraData(pipe)
 		{
 		}
 
@@ -190,7 +191,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>();
+	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 
 	/* Locate and open the capture video node. */
 	data->video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));

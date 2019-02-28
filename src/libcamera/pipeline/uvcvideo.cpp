@@ -46,8 +46,8 @@ private:
 	class UVCCameraData : public CameraData
 	{
 	public:
-		UVCCameraData()
-			: video_(nullptr)
+		UVCCameraData(PipelineHandler *pipe)
+			: CameraData(pipe), video_(nullptr)
 		{
 		}
 
@@ -181,7 +181,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>();
+	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>(this);
 
 	/* Locate and open the default video node. */
 	for (MediaEntity *entity : media_->entities()) {

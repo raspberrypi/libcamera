@@ -50,8 +50,11 @@ private:
 	class IPU3CameraData : public CameraData
 	{
 	public:
-		IPU3CameraData()
-			: cio2_(nullptr), csi2_(nullptr), sensor_(nullptr) {}
+		IPU3CameraData(PipelineHandler *pipe)
+			: CameraData(pipe), cio2_(nullptr), csi2_(nullptr),
+			  sensor_(nullptr)
+		{
+		}
 
 		~IPU3CameraData()
 		{
@@ -365,7 +368,7 @@ void PipelineHandlerIPU3::registerCameras()
 		if (link->setEnabled(true))
 			continue;
 
-		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>();
+		std::unique_ptr<IPU3CameraData> data = utils::make_unique<IPU3CameraData>(this);
 
 		std::string cameraName = sensor->name() + " " + std::to_string(id);
 		std::set<Stream *> streams{ &data->stream_ };

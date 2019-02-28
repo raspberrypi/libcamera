@@ -11,6 +11,7 @@
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
+#include "utils.h"
 
 /**
  * \file pipeline_handler.h
@@ -42,6 +43,35 @@ LOG_DEFINE_CATEGORY(Pipeline)
  * specific implementation, associate instances of the derived classes
  * using the setCameraData() method, and access them at a later time
  * with cameraData().
+ */
+
+/**
+ * \fn CameraData::CameraData(PipelineHandler *pipe)
+ * \brief Construct a CameraData instance for the given pipeline handler
+ * \param[in] pipe The pipeline handler
+ *
+ * The reference to the pipeline handler is stored internally, the caller shall
+ * guarantee that the pointer remains valid as long as the CameraData instance
+ * exists.
+ */
+
+/**
+ * \var CameraData::camera_
+ * \brief The camera related to this CameraData instance
+ *
+ * The camera_ pointer provides access to the Camera object that this instance
+ * is related to. It is set when the Camera is registered with
+ * PipelineHandler::registerCamera() and remains valid until the CameraData
+ * instance is destroyed.
+ */
+
+/**
+ * \var CameraData::pipe_
+ * \brief The pipeline handler related to this CameraData instance
+ *
+ * The pipe_ pointer provides access to the PipelineHandler object that this
+ * instance is related to. It is set when the CameraData instance is created
+ * and remains valid until the instance is destroyed.
  */
 
 /**
@@ -218,11 +248,19 @@ PipelineHandler::~PipelineHandler()
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
  *
- * This function is called by pipeline handlers to register the cameras they
- * handle with the camera manager.
+ * This method is called by pipeline handlers to register the cameras they
+ * handle with the camera manager. If no CameraData has been associated with
+ * the camera with setCameraData() by the pipeline handler, the method creates
+ * a default CameraData instance for the \a camera.
  */
 void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 {
+	if (!cameraData_.count(camera.get())) {
+		std::unique_ptr<CameraData> data = utils::make_unique<CameraData>(this);
+		setCameraData(camera.get(), std::move(data));
+	}
+
+	cameraData(camera.get())->camera_ = camera.get();
 	cameras_.push_back(camera);
 	manager_->addCamera(std::move(camera));
 }
@@ -313,9 +351,10 @@ CameraData *PipelineHandler::cameraData(const Camera *camera)
  * information with \a camera. Ownership of \a data is transferred to
  * the PipelineHandler.
  *
- * Pipeline-specific data can only be set once. Any attempt to call
- * this method after the first one with the same camera won't change
- * the pipeline-specific data.
+ * Pipeline-specific data can only be set once, and shall be set before
+ * registering the camera with registerCamera(). Any attempt to call this
+ * method more than once for the same camera, or to call it after registering
+ * the camera, will not change the pipeline-specific data.
  *
  * The data can be retrieved by pipeline handlers using the cameraData() method.
  */

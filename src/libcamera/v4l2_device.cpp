@@ -825,9 +825,6 @@ void V4L2Device::bufferAvailable(EventNotifier *notifier)
 
 	/* Notify anyone listening to the device. */
 	bufferReady.emit(buffer);
-
-	/* Notify anyone listening to the buffer specifically. */
-	buffer->completed.emit(buffer);
 }
 
 /**

@@ -10,8 +10,6 @@
 #include <stdint.h>
 #include <vector>
 
-#include <libcamera/signal.h>
-
 namespace libcamera {
 
 class BufferPool;
@@ -55,10 +53,9 @@ public:
 	Status status() const { return status_; }
 	std::vector<Plane> &planes() { return planes_; }
 
-	Signal<Buffer *> completed;
-
 private:
 	friend class BufferPool;
+	friend class PipelineHandler;
 	friend class V4L2Device;
 
 	void cancel();

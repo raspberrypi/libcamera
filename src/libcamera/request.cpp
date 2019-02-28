@@ -113,7 +113,6 @@ int Request::prepare()
 {
 	for (auto const &pair : bufferMap_) {
 		Buffer *buffer = pair.second;
-		buffer->completed.connect(this, &Request::bufferCompleted);
 		pending_.insert(buffer);
 	}
 
@@ -133,31 +132,24 @@ void Request::complete(Status status)
 }
 
 /**
- * \brief Slot for the buffer completed signal
+ * \brief Complete a buffer for the request
+ * \param[in] buffer The buffer that has completed
  *
- * The bufferCompleted method serves as slot where to connect the
- * Buffer::completed signal that is emitted when a buffer has available
- * data.
+ * A request tracks the status of all buffers it contains through a set of
+ * pending buffers. This function removes the \a buffer from the set to mark it
+ * as complete. All buffers associate with the request shall be marked as
+ * complete by calling this function once and once only before reporting the
+ * request as complete with the complete() method.
  *
- * The request completes when all the buffers it contains are ready to be
- * presented to the application. It then emits the Camera::requestCompleted
- * signal and is automatically deleted.
+ * \return True if all buffers contained in the request have completed, false
+ * otherwise
  */
-void Request::bufferCompleted(Buffer *buffer)
+bool Request::completeBuffer(Buffer *buffer)
 {
-	buffer->completed.disconnect(this, &Request::bufferCompleted);
-
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	if (!pending_.empty())
-		return;
-
-	complete(RequestComplete);
-
-	std::map<Stream *, Buffer *> buffers(std::move(bufferMap_));
-	camera_->requestCompleted.emit(this, buffers);
-	delete this;
+	return pending_.empty();
 }
 
 } /* namespace libcamera */

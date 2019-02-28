@@ -213,11 +213,6 @@ Buffer::Buffer()
  */
 
 /**
- * \var Buffer::completed
- * \brief A Signal to provide notifications that the specific Buffer is ready
- */
-
-/**
  * \fn Buffer::bytesused()
  * \brief Retrieve the number of bytes occupied by the data in the buffer
  * \return Number of bytes occupied in the buffer

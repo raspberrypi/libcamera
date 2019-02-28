@@ -63,6 +63,8 @@ private:
 			delete sensor_;
 		}
 
+		void bufferReady(Buffer *buffer);
+
 		V4L2Device *cio2_;
 		V4L2Subdevice *csi2_;
 		V4L2Subdevice *sensor_;
@@ -236,6 +238,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 
 	if (data->cio2_->streamOff())
 		LOG(IPU3, Info) << "Failed to stop camera " << camera->name();
+
+	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
@@ -250,7 +254,11 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	data->cio2_->queueBuffer(buffer);
+	int ret = data->cio2_->queueBuffer(buffer);
+	if (ret < 0)
+		return ret;
+
+	PipelineHandler::queueRequest(camera, request);
 
 	return 0;
 }
@@ -396,6 +404,8 @@ void PipelineHandlerIPU3::registerCameras()
 		if (ret)
 			continue;
 
+		data->cio2_->bufferReady.connect(data.get(), &IPU3CameraData::bufferReady);
+
 		data->sensor_ = new V4L2Subdevice(sensor);
 		ret = data->sensor_->open();
 		if (ret)
@@ -415,6 +425,14 @@ void PipelineHandlerIPU3::registerCameras()
 
 		numCameras++;
 	}
+}
+
+void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
+{
+	Request *request = queuedRequests_.front();
+
+	pipe_->completeBuffer(camera_, request, buffer);
+	pipe_->completeRequest(camera_, request);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3);

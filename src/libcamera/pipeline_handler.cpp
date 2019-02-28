@@ -5,6 +5,7 @@
  * pipeline_handler.cpp - Pipeline handler infrastructure
  */
 
+#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
@@ -72,6 +73,17 @@ LOG_DEFINE_CATEGORY(Pipeline)
  * The pipe_ pointer provides access to the PipelineHandler object that this
  * instance is related to. It is set when the CameraData instance is created
  * and remains valid until the instance is destroyed.
+ */
+
+/**
+ * \var CameraData::queuedRequests_
+ * \brief The list of queued and not yet completed request
+ *
+ * The list of queued request is used to track requests queued in order to
+ * ensure completion of all requests when the pipeline handler is stopped.
+ *
+ * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
+ * PipelineHandler::completeRequest()
  */
 
 /**
@@ -226,8 +238,30 @@ PipelineHandler::~PipelineHandler()
  * This method stops capturing and processing requests immediately. All pending
  * requests are cancelled and complete immediately in an error state.
  *
- * \todo Complete the pending requests immediately
+ * Pipeline handlers shall override this method to stop the pipeline, ensure
+ * that all pending request completion signaled through completeRequest() have
+ * returned, and call the base implementation of the stop() method as the last
+ * step of their implementation. The base implementation cancels all requests
+ * queued but not yet complete.
  */
+void PipelineHandler::stop(Camera *camera)
+{
+	CameraData *data = cameraData(camera);
+
+	while (!data->queuedRequests_.empty()) {
+		Request *request = data->queuedRequests_.front();
+		data->queuedRequests_.pop_front();
+
+		while (!request->pending_.empty()) {
+			Buffer *buffer = *request->pending_.begin();
+			buffer->cancel();
+			completeBuffer(camera, request, buffer);
+		}
+
+		request->complete(Request::RequestCancelled);
+		camera->requestComplete(request);
+	}
+}
 
 /**
  * \fn PipelineHandler::queueRequest()
@@ -241,8 +275,65 @@ PipelineHandler::~PipelineHandler()
  * parameters will be applied to the frames captured in the buffers provided in
  * the request.
  *
+ * Pipeline handlers shall override this method. The base implementation in the
+ * PipelineHandler class keeps track of queued requests in order to ensure
+ * completion of all requests when the pipeline handler is stopped with stop().
+ * Requests completion shall be signaled by the pipeline handler using the
+ * completeRequest() method.
+ *
  * \return 0 on success or a negative error code otherwise
  */
+int PipelineHandler::queueRequest(Camera *camera, Request *request)
+{
+	CameraData *data = cameraData(camera);
+	data->queuedRequests_.push_back(request);
+
+	return 0;
+}
+
+/**
+ * \brief Complete a buffer for a request
+ * \param[in] camera The camera the request belongs to
+ * \param[in] request The request the buffer belongs to
+ * \param[in] buffer The buffer that has completed
+ *
+ * This method shall be called by pipeline handlers to signal completion of the
+ * \a buffer part of the \a request. It notifies applications of buffer
+ * completion and updates the request's internal buffer tracking. The request
+ * is not completed automatically when the last buffer completes, pipeline
+ * handlers shall complete requests explicitly with completeRequest().
+ *
+ * \return True if all buffers contained in the request have completed, false
+ * otherwise
+ */
+bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
+				     Buffer *buffer)
+{
+	camera->bufferCompleted.emit(request, buffer);
+	return request->completeBuffer(buffer);
+}
+
+/**
+ * \brief Signal request completion
+ * \param[in] camera The camera that the request belongs to
+ * \param[in] request The request that has completed
+ *
+ * The pipeline handler shall call this method to notify the \a camera that the
+ * request request has complete. The request is deleted and shall not be
+ * accessed once this method returns.
+ *
+ * The pipeline handler shall ensure that requests complete in the same order
+ * they are submitted.
+ */
+void PipelineHandler::completeRequest(Camera *camera, Request *request)
+{
+	CameraData *data = cameraData(camera);
+	ASSERT(request == data->queuedRequests_.front());
+	data->queuedRequests_.pop_front();
+
+	request->complete(Request::RequestComplete);
+	camera->requestComplete(request);
+}
 
 /**
  * \brief Register a camera to the camera manager and pipeline handler

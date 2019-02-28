@@ -39,10 +39,12 @@ public:
 
 private:
 	friend class Camera;
+	friend class PipelineHandler;
 
 	int prepare();
 	void complete(Status status);
-	void bufferCompleted(Buffer *buffer);
+
+	bool completeBuffer(Buffer *buffer);
 
 	Camera *camera_;
 	std::map<Stream *, Buffer *> bufferMap_;

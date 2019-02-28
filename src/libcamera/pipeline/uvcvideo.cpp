@@ -56,6 +56,8 @@ private:
 			delete video_;
 		}
 
+		void bufferReady(Buffer *buffer);
+
 		V4L2Device *video_;
 		Stream stream_;
 	};
@@ -153,6 +155,7 @@ void PipelineHandlerUVC::stop(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	data->video_->streamOff();
+	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerUVC::queueRequest(Camera *camera, Request *request)
@@ -166,7 +169,11 @@ int PipelineHandlerUVC::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	data->video_->queueBuffer(buffer);
+	int ret = data->video_->queueBuffer(buffer);
+	if (ret < 0)
+		return ret;
+
+	PipelineHandler::queueRequest(camera, request);
 
 	return 0;
 }
@@ -199,6 +206,8 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	if (data->video_->open())
 		return false;
 
+	data->video_->bufferReady.connect(data.get(), &UVCCameraData::bufferReady);
+
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, media_->model(), streams);
@@ -208,6 +217,14 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	hotplugMediaDevice(media_.get());
 
 	return true;
+}
+
+void PipelineHandlerUVC::UVCCameraData::bufferReady(Buffer *buffer)
+{
+	Request *request = queuedRequests_.front();
+
+	pipe_->completeBuffer(camera_, request, buffer);
+	pipe_->completeRequest(camera_, request);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC);

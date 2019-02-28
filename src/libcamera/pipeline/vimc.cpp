@@ -56,6 +56,8 @@ private:
 			delete video_;
 		}
 
+		void bufferReady(Buffer *buffer);
+
 		V4L2Device *video_;
 		Stream stream_;
 	};
@@ -153,6 +155,7 @@ void PipelineHandlerVimc::stop(Camera *camera)
 {
 	VimcCameraData *data = cameraData(camera);
 	data->video_->streamOff();
+	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
@@ -166,7 +169,11 @@ int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	data->video_->queueBuffer(buffer);
+	int ret = data->video_->queueBuffer(buffer);
+	if (ret < 0)
+		return ret;
+
+	PipelineHandler::queueRequest(camera, request);
 
 	return 0;
 }
@@ -198,6 +205,8 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (data->video_->open())
 		return false;
 
+	data->video_->bufferReady.connect(data.get(), &VimcCameraData::bufferReady);
+
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",
@@ -205,6 +214,14 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	registerCamera(std::move(camera), std::move(data));
 
 	return true;
+}
+
+void PipelineHandlerVimc::VimcCameraData::bufferReady(Buffer *buffer)
+{
+	Request *request = queuedRequests_.front();
+
+	pipe_->completeBuffer(camera_, request, buffer);
+	pipe_->completeRequest(camera_, request);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc);

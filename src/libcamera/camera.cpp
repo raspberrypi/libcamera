@@ -175,6 +175,12 @@ const std::string &Camera::name() const
 }
 
 /**
+ * \var Camera::bufferCompleted
+ * \brief Signal emitted when a buffer for a request queued to the camera has
+ * completed
+ */
+
+/**
  * \var Camera::requestCompleted
  * \brief Signal emitted when a request queued to the camera has completed
  */
@@ -604,6 +610,21 @@ int Camera::stop()
 	pipe_->stop(this);
 
 	return 0;
+}
+
+/**
+ * \brief Handle request completion and notify application
+ * \param[in] request The request that has completed
+ *
+ * This function is called by the pipeline handler to notify the camera that
+ * the request has completed. It emits the requestCompleted signal and deletes
+ * the request.
+ */
+void Camera::requestComplete(Request *request)
+{
+	std::map<Stream *, Buffer *> buffers(std::move(request->bufferMap_));
+	requestCompleted.emit(request, buffers);
+	delete request;
 }
 
 } /* namespace libcamera */

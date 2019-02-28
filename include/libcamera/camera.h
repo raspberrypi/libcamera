@@ -35,6 +35,7 @@ public:
 
 	const std::string &name() const;
 
+	Signal<Request *, Buffer *> bufferCompleted;
 	Signal<Request *, const std::map<Stream *, Buffer *> &> requestCompleted;
 	Signal<Camera *> disconnected;
 
@@ -72,6 +73,8 @@ private:
 
 	friend class PipelineHandler;
 	void disconnect();
+
+	void requestComplete(Request *request);
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;

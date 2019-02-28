@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_PIPELINE_HANDLER_H__
 #define __LIBCAMERA_PIPELINE_HANDLER_H__
 
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
@@ -14,6 +15,7 @@
 
 namespace libcamera {
 
+class Buffer;
 class BufferPool;
 class Camera;
 class CameraManager;
@@ -35,6 +37,7 @@ public:
 
 	Camera *camera_;
 	PipelineHandler *pipe_;
+	std::list<Request *> queuedRequests_;
 
 private:
 	CameraData(const CameraData &) = delete;
@@ -58,9 +61,12 @@ public:
 	virtual int freeBuffers(Camera *camera, Stream *stream) = 0;
 
 	virtual int start(Camera *camera) = 0;
-	virtual void stop(Camera *camera) = 0;
+	virtual void stop(Camera *camera);
 
-	virtual int queueRequest(Camera *camera, Request *request) = 0;
+	virtual int queueRequest(Camera *camera, Request *request);
+
+	bool completeBuffer(Camera *camera, Request *request, Buffer *buffer);
+	void completeRequest(Camera *camera, Request *request);
 
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera,

@@ -95,6 +95,7 @@ public:
 	const char *driverName() const { return caps_.driver(); }
 	const char *deviceName() const { return caps_.card(); }
 	const char *busName() const { return caps_.bus_info(); }
+	const std::string &deviceNode() const { return deviceNode_; }
 
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);

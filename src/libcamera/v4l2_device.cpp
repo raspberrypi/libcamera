@@ -356,6 +356,12 @@ void V4L2Device::close()
  * \return The string containing the device location
  */
 
+/**
+ * \fn V4L2Device::deviceNode()
+ * \brief Retrieve the video device node path
+ * \return The video device device node path
+ */
+
 std::string V4L2Device::logPrefix() const
 {
 	return deviceNode_;

@@ -18,9 +18,16 @@ class Buffer;
 class Camera;
 class Stream;
 
+
 class Request
 {
 public:
+	enum Status {
+		RequestPending,
+		RequestComplete,
+		RequestCancelled,
+	};
+
 	explicit Request(Camera *camera);
 	Request(const Request &) = delete;
 	Request &operator=(const Request &) = delete;
@@ -28,15 +35,20 @@ public:
 	int setBuffers(const std::map<Stream *, Buffer *> &streamMap);
 	Buffer *findBuffer(Stream *stream) const;
 
+	Status status() const { return status_; }
+
 private:
 	friend class Camera;
 
 	int prepare();
+	void complete(Status status);
 	void bufferCompleted(Buffer *buffer);
 
 	Camera *camera_;
 	std::map<Stream *, Buffer *> bufferMap_;
 	std::unordered_set<Buffer *> pending_;
+
+	Status status_;
 };
 
 } /* namespace libcamera */

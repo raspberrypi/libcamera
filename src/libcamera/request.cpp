@@ -24,6 +24,17 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Request)
 
 /**
+ * \enum Request::Status
+ * Request completion status
+ * \var Request::RequestPending
+ * The request hasn't completed yet
+ * \var Request::RequestComplete
+ * The request has completed
+ * \var Request::RequestCancelled
+ * The request has been cancelled due to capture stop
+ */
+
+/**
  * \class Request
  * \brief A frame capture request
  *
@@ -36,7 +47,7 @@ LOG_DEFINE_CATEGORY(Request)
  * \param[in] camera The camera that creates the request
  */
 Request::Request(Camera *camera)
-	: camera_(camera)
+	: camera_(camera), status_(RequestPending)
 {
 }
 
@@ -83,6 +94,19 @@ Buffer *Request::findBuffer(Stream *stream) const
 }
 
 /**
+ * \fn Request::status()
+ * \brief Retrieve the request completion status
+ *
+ * The request status indicates whether the request has completed successfully
+ * or with an error. When requests are created and before they complete the
+ * request status is set to RequestPending, and is updated at completion time
+ * to RequestComplete. If a request is cancelled at capture stop before it has
+ * completed, its status is set to RequestCancelled.
+ *
+ * \return The request completion status
+ */
+
+/**
  * \brief Prepare the resources for the completion handler
  */
 int Request::prepare()
@@ -94,6 +118,18 @@ int Request::prepare()
 	}
 
 	return 0;
+}
+
+/**
+ * \brief Complete a queued request
+ * \param[in] status The request completion status
+ *
+ * Mark the request as complete by updating its status to \a status.
+ */
+void Request::complete(Status status)
+{
+	ASSERT(pending_.empty());
+	status_ = status;
 }
 
 /**
@@ -116,6 +152,8 @@ void Request::bufferCompleted(Buffer *buffer)
 
 	if (!pending_.empty())
 		return;
+
+	complete(RequestComplete);
 
 	std::map<Stream *, Buffer *> buffers(std::move(bufferMap_));
 	camera_->requestCompleted.emit(this, buffers);

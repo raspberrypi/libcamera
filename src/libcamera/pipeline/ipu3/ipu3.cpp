@@ -159,7 +159,9 @@ private:
 		{
 		}
 
-		void bufferReady(Buffer *buffer);
+		void imguOutputBufferReady(Buffer *buffer);
+		void imguInputBufferReady(Buffer *buffer);
+		void cio2BufferReady(Buffer *buffer);
 
 		CIO2Device cio2_;
 		ImgUDevice *imgu_;
@@ -526,14 +528,27 @@ int PipelineHandlerIPU3::registerCameras()
 		 */
 		data->imgu_ = numCameras ? &imgu1_ : &imgu0_;
 
+		/*
+		 * Connect video devices' 'bufferReady' signals to their
+		 * slot to implement the image processing pipeline.
+		 *
+		 * Frames produced by the CIO2 unit are passed to the
+		 * associated ImgU input where they get processed and
+		 * returned through the ImgU main and secondary outputs.
+		 */
+		data->cio2_.output_->bufferReady.connect(data.get(),
+					&IPU3CameraData::cio2BufferReady);
+		data->imgu_->input_->bufferReady.connect(data.get(),
+					&IPU3CameraData::imguInputBufferReady);
+		data->imgu_->output_.dev->bufferReady.connect(data.get(),
+					&IPU3CameraData::imguOutputBufferReady);
+
+		/* Create and register the Camera instance. */
 		std::string cameraName = cio2->sensor_->entityName() + " "
 				       + std::to_string(id);
 		std::shared_ptr<Camera> camera = Camera::create(this,
 								cameraName,
 								streams);
-
-		cio2->output_->bufferReady.connect(data.get(),
-						   &IPU3CameraData::bufferReady);
 
 		registerCamera(std::move(camera), std::move(data));
 
@@ -548,12 +563,46 @@ int PipelineHandlerIPU3::registerCameras()
 	return numCameras ? 0 : -ENODEV;
 }
 
-void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
+/* -----------------------------------------------------------------------------
+ * Buffer Ready slots
+ */
+
+/**
+ * \brief Handle buffers completion at the ImgU input
+ * \param buffer The completed buffer
+ *
+ * Buffers completed from the ImgU input are immediately queued back to the
+ * CIO2 unit to continue frame capture.
+ */
+void PipelineHandlerIPU3::IPU3CameraData::imguInputBufferReady(Buffer *buffer)
+{
+	cio2_.output_->queueBuffer(buffer);
+}
+
+/**
+ * \brief Handle buffers completion at the ImgU output
+ * \param buffer The completed buffer
+ *
+ * Buffers completed from the ImgU output are directed to the application.
+ */
+void PipelineHandlerIPU3::IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 {
 	Request *request = queuedRequests_.front();
 
 	pipe_->completeBuffer(camera_, request, buffer);
 	pipe_->completeRequest(camera_, request);
+}
+
+/**
+ * \brief Handle buffers completion at the CIO2 output
+ * \param buffer The completed buffer
+ *
+ * Buffers completed from the CIO2 are immediately queued to the ImgU unit
+ * for further processing.
+ */
+void PipelineHandlerIPU3::IPU3CameraData::cio2BufferReady(Buffer *buffer)
+{
+	imgu_->input_->queueBuffer(buffer);
 }
 
 /* -----------------------------------------------------------------------------

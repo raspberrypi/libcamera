@@ -406,8 +406,7 @@ void PipelineHandlerIPU3::registerCameras()
 		if (ret)
 			continue;
 
-		setCameraData(camera.get(), std::move(data));
-		registerCamera(std::move(camera));
+		registerCamera(std::move(camera), std::move(data));
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""

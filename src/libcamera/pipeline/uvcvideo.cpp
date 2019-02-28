@@ -202,9 +202,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, media_->model(), streams);
-
-	setCameraData(camera.get(), std::move(data));
-	registerCamera(std::move(camera));
+	registerCamera(std::move(camera), std::move(data));
 
 	/* Enable hot-unplug notifications. */
 	hotplugMediaDevice(media_.get());

@@ -63,11 +63,11 @@ public:
 	virtual int queueRequest(Camera *camera, Request *request) = 0;
 
 protected:
-	void registerCamera(std::shared_ptr<Camera> camera);
+	void registerCamera(std::shared_ptr<Camera> camera,
+			    std::unique_ptr<CameraData> data);
 	void hotplugMediaDevice(MediaDevice *media);
 
 	CameraData *cameraData(const Camera *camera);
-	void setCameraData(const Camera *camera, std::unique_ptr<CameraData> data);
 
 	CameraManager *manager_;
 

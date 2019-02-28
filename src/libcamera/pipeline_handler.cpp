@@ -247,20 +247,18 @@ PipelineHandler::~PipelineHandler()
 /**
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
+ * \param[in] data Pipeline-specific data for the camera
  *
  * This method is called by pipeline handlers to register the cameras they
- * handle with the camera manager. If no CameraData has been associated with
- * the camera with setCameraData() by the pipeline handler, the method creates
- * a default CameraData instance for the \a camera.
+ * handle with the camera manager. It associates the pipeline-specific \a data
+ * with the camera, for later retrieval with cameraData(). Ownership of \a data
+ * is transferred to the PipelineHandler.
  */
-void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
+void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
+				     std::unique_ptr<CameraData> data)
 {
-	if (!cameraData_.count(camera.get())) {
-		std::unique_ptr<CameraData> data = utils::make_unique<CameraData>(this);
-		setCameraData(camera.get(), std::move(data));
-	}
-
-	cameraData(camera.get())->camera_ = camera.get();
+	data->camera_ = camera.get();
+	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
 	manager_->addCamera(std::move(camera));
 }
@@ -325,49 +323,15 @@ void PipelineHandler::disconnect()
  * \brief Retrieve the pipeline-specific data associated with a Camera
  * \param camera The camera whose data to retrieve
  *
- * \return A pointer to the pipeline-specific data set with setCameraData().
+ * \return A pointer to the pipeline-specific data passed to registerCamera().
  * The returned pointer is a borrowed reference and is guaranteed to remain
  * valid until the pipeline handler is destroyed. It shall not be deleted
  * manually by the caller.
  */
 CameraData *PipelineHandler::cameraData(const Camera *camera)
 {
-	if (!cameraData_.count(camera)) {
-		LOG(Pipeline, Error)
-			<< "Cannot get data associated with camera "
-			<< camera->name();
-		return nullptr;
-	}
-
+	ASSERT(cameraData_.count(camera));
 	return cameraData_[camera].get();
-}
-
-/**
- * \brief Set pipeline-specific data for the camera
- * \param camera The camera to associate data to
- * \param data The pipeline-specific data
- *
- * This method allows pipeline handlers to associate pipeline-specific
- * information with \a camera. Ownership of \a data is transferred to
- * the PipelineHandler.
- *
- * Pipeline-specific data can only be set once, and shall be set before
- * registering the camera with registerCamera(). Any attempt to call this
- * method more than once for the same camera, or to call it after registering
- * the camera, will not change the pipeline-specific data.
- *
- * The data can be retrieved by pipeline handlers using the cameraData() method.
- */
-void PipelineHandler::setCameraData(const Camera *camera,
-				    std::unique_ptr<CameraData> data)
-{
-	if (cameraData_.find(camera) != cameraData_.end()) {
-		LOG(Pipeline, Error)
-			<< "Replacing data associated with a camera is forbidden";
-		return;
-	}
-
-	cameraData_[camera] = std::move(data);
 }
 
 /**

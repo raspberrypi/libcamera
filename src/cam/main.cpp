@@ -102,6 +102,9 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 {
 	static uint64_t last = 0;
 
+	if (request->status() == Request::RequestCancelled)
+		return;
+
 	Buffer *buffer = buffers.begin()->second;
 
 	double fps = buffer->timestamp() - last;

@@ -70,6 +70,9 @@ public:
 	int exportBuffers(ImgUOutput *output, BufferPool *pool);
 	void freeBuffers();
 
+	int start();
+	int stop();
+
 	unsigned int index_;
 	std::string name_;
 	MediaDevice *media_;
@@ -108,6 +111,9 @@ public:
 
 	BufferPool *exportBuffers();
 	void freeBuffers();
+
+	int start();
+	int stop();
 
 	static int mediaBusToFormat(unsigned int code);
 
@@ -335,25 +341,43 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerIPU3::start(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
-	V4L2Device *cio2 = data->cio2_.output_;
+	CIO2Device *cio2 = &data->cio2_;
+	ImgUDevice *imgu = data->imgu_;
 	int ret;
 
-	ret = cio2->streamOn();
+	/*
+	 * Start the ImgU video devices, buffers will be queued to the
+	 * ImgU output and viewfinder when requests will be queued.
+	 */
+	ret = cio2->start();
+	if (ret)
+		goto error;
+
+	ret = imgu->start();
 	if (ret) {
-		LOG(IPU3, Info) << "Failed to start camera " << camera->name();
-		return ret;
+		imgu->stop();
+		cio2->stop();
+		goto error;
 	}
 
 	return 0;
+
+error:
+	LOG(IPU3, Error) << "Failed to start camera " << camera->name();
+
+	return ret;
 }
 
 void PipelineHandlerIPU3::stop(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
-	V4L2Device *cio2 = data->cio2_.output_;
+	int ret;
 
-	if (cio2->streamOff())
-		LOG(IPU3, Info) << "Failed to stop camera " << camera->name();
+	ret = data->cio2_.stop();
+	ret |= data->imgu_->stop();
+	if (ret)
+		LOG(IPU3, Warning) << "Failed to stop camera "
+				   << camera->name();
 
 	PipelineHandler::stop(camera);
 }
@@ -764,6 +788,50 @@ void ImgUDevice::freeBuffers()
 		LOG(IPU3, Error) << "Failed to release ImgU input buffers";
 }
 
+int ImgUDevice::start()
+{
+	int ret;
+
+	/* Start the ImgU video devices. */
+	ret = output_.dev->streamOn();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to start ImgU output";
+		return ret;
+	}
+
+	ret = viewfinder_.dev->streamOn();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to start ImgU viewfinder";
+		return ret;
+	}
+
+	ret = stat_.dev->streamOn();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to start ImgU stat";
+		return ret;
+	}
+
+	ret = input_->streamOn();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to start ImgU input";
+		return ret;
+	}
+
+	return 0;
+}
+
+int ImgUDevice::stop()
+{
+	int ret;
+
+	ret = output_.dev->streamOff();
+	ret |= viewfinder_.dev->streamOff();
+	ret |= stat_.dev->streamOff();
+	ret |= input_->streamOff();
+
+	return ret;
+}
+
 /*------------------------------------------------------------------------------
  * CIO2 Device
  */
@@ -955,6 +1023,28 @@ void CIO2Device::freeBuffers()
 {
 	if (output_->releaseBuffers())
 		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
+}
+
+int CIO2Device::start()
+{
+	int ret;
+
+	for (Buffer &buffer : pool_.buffers()) {
+		ret = output_->queueBuffer(&buffer);
+		if (ret)
+			return ret;
+	}
+
+	ret = output_->streamOn();
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+int CIO2Device::stop()
+{
+	return output_->streamOff();
 }
 
 int CIO2Device::mediaBusToFormat(unsigned int code)

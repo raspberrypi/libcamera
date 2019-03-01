@@ -37,56 +37,56 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
- * \fn const char *V4L2Capability::driver()
+ * \fn V4L2Capability::driver()
  * \brief Retrieve the driver module name
  * \return The string containing the name of the driver module
  */
 
 /**
- * \fn const char *V4L2Capability::card()
+ * \fn V4L2Capability::card()
  * \brief Retrieve the device card name
  * \return The string containing the device name
  */
 
 /**
- * \fn const char *V4L2Capability::bus_info()
+ * \fn V4L2Capability::bus_info()
  * \brief Retrieve the location of the device in the system
  * \return The string containing the device location
  */
 
 /**
- * \fn unsigned int V4L2Capability::device_caps()
+ * \fn V4L2Capability::device_caps()
  * \brief Retrieve the capabilities of the device
  * \return The device specific capabilities if V4L2_CAP_DEVICE_CAPS is set or
  * 	   driver capabilities otherwise
  */
 
 /**
- * \fn bool V4L2Capability::isMultiplanar()
+ * \fn V4L2Capability::isMultiplanar()
  * \brief Identify if the device implements the V4L2 multiplanar APIs
  * \return True if the device supports multiplanar APIs
  */
 
 /**
- * \fn bool V4L2Capability::isCapture()
+ * \fn V4L2Capability::isCapture()
  * \brief Identify if the device captures data
  * \return True if the device can capture data
  */
 
 /**
- * \fn bool V4L2Capability::isOutput()
+ * \fn V4L2Capability::isOutput()
  * \brief Identify if the device outputs data
  * \return True if the device can output data
  */
 
 /**
- * \fn bool V4L2Capability::isVideo()
+ * \fn V4L2Capability::isVideo()
  * \brief Identify if the device captures or outputs images
  * \return True if the device can capture or output images
  */
 
 /**
- * \fn bool V4L2Capability::isMeta()
+ * \fn V4L2Capability::isMeta()
  * \brief Identify if the device captures or outputs image meta-data
  *
  * \todo Add support for META_CAPTURE introduced in Linux v5.0
@@ -95,25 +95,25 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
- * \fn bool V4L2Capability::isVideoCapture()
+ * \fn V4L2Capability::isVideoCapture()
  * \brief Identify if the device captures images
  * \return True if the device can capture images
  */
 
 /**
- * \fn bool V4L2Capability::isVideoOutput()
+ * \fn V4L2Capability::isVideoOutput()
  * \brief Identify if the device outputs images
  * \return True if the device can output images
  */
 
 /**
- * \fn bool V4L2Capability::isMetaCapture()
+ * \fn V4L2Capability::isMetaCapture()
  * \brief Identify if the device captures image meta-data
  * \return True if the device can capture image meta-data
  */
 
 /**
- * \fn bool V4L2Capability::hasStreaming()
+ * \fn V4L2Capability::hasStreaming()
  * \brief Determine if the device can perform Streaming I/O
  * \return True if the device provides Streaming I/O IOCTLs
  */
@@ -371,19 +371,19 @@ void V4L2Device::close()
 }
 
 /**
- * \fn const char *V4L2Device::driverName()
+ * \fn V4L2Device::driverName()
  * \brief Retrieve the name of the V4L2 device driver
  * \return The string containing the driver name
  */
 
 /**
- * \fn const char *V4L2Device::deviceName()
+ * \fn V4L2Device::deviceName()
  * \brief Retrieve the name of the V4L2 device
  * \return The string containing the device name
  */
 
 /**
- * \fn const char *V4L2Device::busName()
+ * \fn V4L2Device::busName()
  * \brief Retrieve the location of the device in the system
  * \return The string containing the device location
  */

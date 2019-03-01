@@ -55,6 +55,11 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
  */
 
 /**
+ * \var V4L2SubdeviceFormat::mbus_code
+ * \brief The image format bus code
+ */
+
+/**
  * \var V4L2SubdeviceFormat::width
  * \brief The image width in pixels
  */
@@ -62,11 +67,6 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
 /**
  * \var V4L2SubdeviceFormat::height
  * \brief The image height in pixels
- */
-
-/**
- * \var V4L2SubdeviceFormat::mbus_code
- * \brief The image format bus code
  */
 
 /**
@@ -153,11 +153,6 @@ void V4L2Subdevice::close()
  *
  * \return The name of the media entity the subdevice is associated to
  */
-
-std::string V4L2Subdevice::logPrefix() const
-{
-	return "'" + deviceName() + "'";
-}
 
 /**
  * \brief Set a crop rectangle on one of the V4L2 subdevice pads
@@ -299,6 +294,11 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	format->mbus_code = subdevFmt.format.code;
 
 	return 0;
+}
+
+std::string V4L2Subdevice::logPrefix() const
+{
+	return "'" + deviceName() + "'";
 }
 
 int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,

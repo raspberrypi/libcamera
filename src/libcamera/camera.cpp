@@ -488,8 +488,12 @@ int Camera::freeBuffers()
 		if (!stream->bufferPool().count())
 			continue;
 
-		pipe_->freeBuffers(this, stream);
+		/*
+		 * All mappings must be destroyed before buffers can be freed
+		 * by the V4L2 device that has allocated them.
+		 */
 		stream->bufferPool().destroyBuffers();
+		pipe_->freeBuffers(this, stream);
 	}
 
 	state_ = CameraConfigured;

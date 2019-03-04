@@ -676,6 +676,7 @@ int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
 	buffer->planes().emplace_back();
 	Plane &plane = buffer->planes().back();
 	plane.setDmabuf(expbuf.fd, length);
+	::close(expbuf.fd);
 
 	return 0;
 }

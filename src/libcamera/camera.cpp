@@ -405,7 +405,7 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 	if (disconnected_)
 		return -ENODEV;
 
-	if (!stateBetween(CameraAvailable, CameraConfigured))
+	if (!stateBetween(CameraAcquired, CameraConfigured))
 		return -EACCES;
 
 	if (!config.size()) {

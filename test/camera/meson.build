@@ -2,6 +2,7 @@
 # They are not alphabetically sorted.
 camera_tests = [
   [ 'configuration_default',  'configuration_default.cpp' ],
+  [ 'configuration_set',      'configuration_set.cpp' ],
 ]
 
 foreach t : camera_tests

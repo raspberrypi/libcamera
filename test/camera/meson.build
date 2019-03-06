@@ -3,6 +3,7 @@
 camera_tests = [
   [ 'configuration_default',  'configuration_default.cpp' ],
   [ 'configuration_set',      'configuration_set.cpp' ],
+  [ 'capture',                'capture.cpp' ],
 ]
 
 foreach t : camera_tests

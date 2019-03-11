@@ -100,6 +100,8 @@ public:
 		uint32_t bpl;
 	} planes[3];
 	unsigned int planesCount;
+
+	const std::string toString() const;
 };
 
 class V4L2Device : protected Loggable

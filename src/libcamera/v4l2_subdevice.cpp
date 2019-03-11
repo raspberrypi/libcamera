@@ -6,6 +6,8 @@
  */
 
 #include <fcntl.h>
+#include <iomanip>
+#include <sstream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -68,6 +70,22 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
  * \var V4L2SubdeviceFormat::height
  * \brief The image height in pixels
  */
+
+/**
+ * \brief Assemble and return a string describing the format
+ *
+ * \return A string describing the V4L2SubdeviceFormat
+ */
+const std::string V4L2SubdeviceFormat::toString() const
+{
+	std::stringstream ss;
+
+	ss.fill(0);
+	ss << width << "x" << height << "-0x" << std::hex
+	   << std::setw(4) << mbus_code;
+
+	return ss.str();
+}
 
 /**
  * \class V4L2Subdevice

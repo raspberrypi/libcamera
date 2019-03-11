@@ -6,6 +6,8 @@
  */
 
 #include <fcntl.h>
+#include <iomanip>
+#include <sstream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -222,6 +224,22 @@ LOG_DEFINE_CATEGORY(V4L2)
  * \var V4L2DeviceFormat::planesCount
  * \brief The number of valid data planes
  */
+
+/**
+ * \brief Assemble and return a string describing the format
+ *
+ * \return A string describing the V4L2DeviceFormat
+ */
+const std::string V4L2DeviceFormat::toString() const
+{
+	std::stringstream ss;
+
+	ss.fill(0);
+	ss << width << "x" << height << "-0x" << std::hex
+	   << std::setw(8) << fourcc;
+
+	return ss.str();
+}
 
 /**
  * \class V4L2Device

@@ -21,6 +21,8 @@ struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
 	uint32_t width;
 	uint32_t height;
+
+	const std::string toString() const;
 };
 
 class V4L2Subdevice : protected Loggable

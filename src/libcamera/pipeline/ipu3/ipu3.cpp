@@ -206,10 +206,17 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 	std::map<Stream *, StreamConfiguration> configs;
 	IPU3CameraData *data = cameraData(camera);
 	StreamConfiguration *config = &configs[&data->stream_];
-	Size *maxSize = &data->.cio2_.maxSize_;
 
-	config->width = maxSize->width;
-	config->height = maxSize->height;
+	/*
+	 * FIXME: Soraka: the maximum resolution reported by both sensors
+	 * (2592x1944 for ov5670 and 4224x3136 for ov13858) are returned as
+	 * default configurations but they're not correctly processed by the
+	 * ImgU. Resolutions up tp 2560x1920 have been validated.
+	 *
+	 * \todo Clarify ImgU alignement requirements.
+	 */
+	config->width = 2560;
+	config->height = 1920;
 	config->pixelFormat = V4L2_PIX_FMT_NV12;
 	config->bufferCount = IPU3_BUFFER_COUNT;
 

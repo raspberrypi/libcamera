@@ -5,6 +5,7 @@
  * ipu3.cpp - Pipeline handler for Intel IPU3
  */
 
+#include <iomanip>
 #include <memory>
 #include <vector>
 
@@ -34,22 +35,35 @@ public:
 	static constexpr unsigned int PAD_VF = 3;
 	static constexpr unsigned int PAD_STAT = 4;
 
+	/* ImgU output descriptor: group data specific to an ImgU output. */
+	struct ImgUOutput {
+		V4L2Device *dev;
+		unsigned int pad;
+		std::string name;
+	};
+
 	ImgUDevice()
-		: imgu_(nullptr), input_(nullptr), output_(nullptr),
-		  viewfinder_(nullptr), stat_(nullptr)
+		: imgu_(nullptr), input_(nullptr)
 	{
+		output_.dev = nullptr;
+		viewfinder_.dev = nullptr;
+		stat_.dev = nullptr;
 	}
 
 	~ImgUDevice()
 	{
 		delete imgu_;
 		delete input_;
-		delete output_;
-		delete viewfinder_;
-		delete stat_;
+		delete output_.dev;
+		delete viewfinder_.dev;
+		delete stat_.dev;
 	}
 
 	int init(MediaDevice *media, unsigned int index);
+	int configureInput(const StreamConfiguration &config,
+			   V4L2DeviceFormat *inputFormat);
+	int configureOutput(ImgUOutput *output,
+			    const StreamConfiguration &config);
 
 	unsigned int index_;
 	std::string name_;
@@ -57,9 +71,9 @@ public:
 
 	V4L2Subdevice *imgu_;
 	V4L2Device *input_;
-	V4L2Device *output_;
-	V4L2Device *viewfinder_;
-	V4L2Device *stat_;
+	ImgUOutput output_;
+	ImgUOutput viewfinder_;
+	ImgUOutput stat_;
 	/* \todo Add param video device for 3A tuning */
 };
 
@@ -79,6 +93,8 @@ public:
 	}
 
 	int init(const MediaDevice *media, unsigned int index);
+	int configure(const StreamConfiguration &config,
+		      V4L2DeviceFormat *outputFormat);
 
 	static int mediaBusToFormat(unsigned int code);
 
@@ -190,60 +206,62 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 					  std::map<Stream *, StreamConfiguration> &config)
 {
 	IPU3CameraData *data = cameraData(camera);
-	StreamConfiguration *cfg = &config[&data->stream_];
-	V4L2Subdevice *sensor = data->cio2_.sensor_;
-	V4L2Subdevice *csi2 = data->cio2_.csi2_;
-	V4L2Device *cio2 = data->cio2_.output_;
-	V4L2SubdeviceFormat subdevFormat = {};
-	V4L2DeviceFormat devFormat = {};
+	const StreamConfiguration &cfg = config[&data->stream_];
+	CIO2Device *cio2 = &data->cio2_;
+	ImgUDevice *imgu = data->imgu_;
 	int ret;
 
+	LOG(IPU3, Info)
+		<< "Requested image format " << cfg.width << "x"
+		<< cfg.height << "-0x" << std::hex << std::setfill('0')
+		<< std::setw(8) << cfg.pixelFormat << " on camera '"
+		<< camera->name() << "'";
+
 	/*
-	 * FIXME: as of now, the format gets applied to the sensor and is
-	 * propagated along the pipeline. It should instead be applied on the
-	 * capture device and the sensor format calculated accordingly.
+	 * Verify that the requested size respects the IPU3 alignement
+	 * requirements (the image width shall be a multiple of 8 pixels and
+	 * its height a multiple of 4 pixels) and the camera maximum sizes.
+	 *
+	 * \todo: consider the BDS scaling factor requirements:
+	 * "the downscaling factor must be an integer value multiple of 1/32"
 	 */
-
-	ret = sensor->getFormat(0, &subdevFormat);
-	if (ret)
-		return ret;
-
-	subdevFormat.width = cfg->width;
-	subdevFormat.height = cfg->height;
-	ret = sensor->setFormat(0, &subdevFormat);
-	if (ret)
-		return ret;
-
-	/* Return error if the requested format cannot be applied to sensor. */
-	if (subdevFormat.width != cfg->width ||
-	    subdevFormat.height != cfg->height) {
-		LOG(IPU3, Error)
-			<< "Failed to apply image format "
-			<< subdevFormat.width << "x" << subdevFormat.height
-			<< " - got: " << cfg->width << "x" << cfg->height;
+	if (cfg.width % 8 || cfg.height % 4) {
+		LOG(IPU3, Error) << "Invalid stream size: bad alignment";
 		return -EINVAL;
 	}
 
-	ret = csi2->setFormat(0, &subdevFormat);
+	if (cfg.width > cio2->maxSize_.width ||
+	    cfg.height > cio2->maxSize_.height) {
+		LOG(IPU3, Error)
+			<< "Invalid stream size: larger than sensor resolution";
+		return -EINVAL;
+	}
+
+	/*
+	 * Pass the requested stream size to the CIO2 unit and get back the
+	 * adjusted format to be propagated to the ImgU output devices.
+	 */
+	V4L2DeviceFormat cio2Format = {};
+	ret = cio2->configure(cfg, &cio2Format);
 	if (ret)
 		return ret;
 
-	ret = cio2->getFormat(&devFormat);
+	ret = imgu->configureInput(cfg, &cio2Format);
 	if (ret)
 		return ret;
 
-	devFormat.width = subdevFormat.width;
-	devFormat.height = subdevFormat.height;
-	devFormat.fourcc = cfg->pixelFormat;
-
-	ret = cio2->setFormat(&devFormat);
+	/* Apply the format to the ImgU output, viewfinder and stat. */
+	ret = imgu->configureOutput(&imgu->output_, cfg);
 	if (ret)
 		return ret;
 
-	LOG(IPU3, Info) << cio2->driverName() << ": "
-			<< devFormat.width << "x" << devFormat.height
-			<< "- 0x" << std::hex << devFormat.fourcc << " planes: "
-			<< devFormat.planes;
+	ret = imgu->configureOutput(&imgu->viewfinder_, cfg);
+	if (ret)
+		return ret;
+
+	ret = imgu->configureOutput(&imgu->stat_, cfg);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -519,20 +537,130 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	if (ret)
 		return ret;
 
-	output_ = V4L2Device::fromEntityName(media, name_ + " output");
-	ret = output_->open();
+	output_.dev = V4L2Device::fromEntityName(media, name_ + " output");
+	ret = output_.dev->open();
 	if (ret)
 		return ret;
 
-	viewfinder_ = V4L2Device::fromEntityName(media, name_ + " viewfinder");
-	ret = viewfinder_->open();
+	output_.pad = PAD_OUTPUT;
+	output_.name = "output";
+
+	viewfinder_.dev = V4L2Device::fromEntityName(media,
+						     name_ + " viewfinder");
+	ret = viewfinder_.dev->open();
 	if (ret)
 		return ret;
 
-	stat_ = V4L2Device::fromEntityName(media, name_ + " 3a stat");
-	ret = stat_->open();
+	viewfinder_.pad = PAD_VF;
+	viewfinder_.name = "viewfinder";
+
+	stat_.dev = V4L2Device::fromEntityName(media, name_ + " 3a stat");
+	ret = stat_.dev->open();
 	if (ret)
 		return ret;
+
+	stat_.pad = PAD_STAT;
+	stat_.name = "stat";
+
+	return 0;
+}
+
+/**
+ * \brief Configure the ImgU unit input
+ * \param[in] config The requested stream configuration
+ * \param[in] inputFormat The format to be applied to ImgU input
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::configureInput(const StreamConfiguration &config,
+			       V4L2DeviceFormat *inputFormat)
+{
+	/* Configure the ImgU input video device with the requested sizes. */
+	int ret = input_->setFormat(inputFormat);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Debug) << "ImgU input format = " << inputFormat->toString();
+
+	/*
+	 * \todo The IPU3 driver implementation shall be changed to use the
+	 * input sizes as 'ImgU Input' subdevice sizes, and use the desired
+	 * GDC output sizes to configure the crop/compose rectangles.
+	 *
+	 * The current IPU3 driver implementation uses GDC sizes as the
+	 * 'ImgU Input' subdevice sizes, and the input video device sizes
+	 * to configure the crop/compose rectangles, contradicting the
+	 * V4L2 specification.
+	 */
+	Rectangle rect = {
+		.x = 0,
+		.y = 0,
+		.w = inputFormat->width,
+		.h = inputFormat->height,
+	};
+	ret = imgu_->setCrop(PAD_INPUT, &rect);
+	if (ret)
+		return ret;
+
+	ret = imgu_->setCompose(PAD_INPUT, &rect);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Debug) << "ImgU input feeder and BDS rectangle = "
+			 << rect.toString();
+
+	V4L2SubdeviceFormat imguFormat = {};
+	imguFormat.width = config.width;
+	imguFormat.height = config.height;
+	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
+
+	ret = imgu_->setFormat(PAD_INPUT, &imguFormat);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Debug) << "ImgU GDC format = " << imguFormat.toString();
+
+	return 0;
+}
+
+/**
+ * \brief Configure the ImgU unit \a id video output
+ * \param[in] output The ImgU output device to configure
+ * \param[in] config The requested configuration
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::configureOutput(ImgUOutput *output,
+				const StreamConfiguration &config)
+{
+	V4L2Device *dev = output->dev;
+	unsigned int pad = output->pad;
+
+	V4L2SubdeviceFormat imguFormat = {};
+	imguFormat.width = config.width;
+	imguFormat.height = config.height;
+	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
+
+	int ret = imgu_->setFormat(pad, &imguFormat);
+	if (ret)
+		return ret;
+
+	/* No need to apply format to the stat node. */
+	if (output == &stat_)
+		return 0;
+
+	V4L2DeviceFormat outputFormat = {};
+	outputFormat.width = config.width;
+	outputFormat.height = config.height;
+	outputFormat.fourcc = V4L2_PIX_FMT_NV12;
+	outputFormat.planesCount = 2;
+
+	ret = dev->setFormat(&outputFormat);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Debug) << "ImgU " << output->name << " format = "
+			 << outputFormat.toString();
 
 	return 0;
 }
@@ -627,6 +755,78 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	ret = output_->open();
 	if (ret)
 		return ret;
+
+	return 0;
+}
+
+/**
+ * \brief Configure the CIO2 unit
+ * \param[in] config The requested configuration
+ * \param[out] outputFormat The CIO2 unit output image format
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int CIO2Device::configure(const StreamConfiguration &config,
+			  V4L2DeviceFormat *outputFormat)
+{
+	unsigned int imageSize = config.width * config.height;
+	V4L2SubdeviceFormat sensorFormat = {};
+	unsigned int best = ~0;
+	int ret;
+
+	for (auto it : sensor_->formats(0)) {
+		/* Only consider formats consumable by the CIO2 unit. */
+		if (mediaBusToFormat(it.first) < 0)
+			continue;
+
+		for (const SizeRange &size : it.second) {
+			/*
+			 * Only select formats bigger than the requested sizes
+			 * as the IPU3 cannot up-scale.
+			 *
+			 * \todo: Unconditionally scale on the sensor as much
+			 * as possible. This will need to be revisited when
+			 * implementing the scaling policy.
+			 */
+			if (size.maxWidth < config.width ||
+			    size.maxHeight < config.height)
+				continue;
+
+			unsigned int diff = size.maxWidth * size.maxHeight
+					  - imageSize;
+			if (diff >= best)
+				continue;
+
+			best = diff;
+
+			sensorFormat.width = size.maxWidth;
+			sensorFormat.height = size.maxHeight;
+			sensorFormat.mbus_code = it.first;
+		}
+	}
+
+	/*
+	 * Apply the selected format to the sensor, the CSI-2 receiver and
+	 * the CIO2 output device.
+	 */
+	ret = sensor_->setFormat(0, &sensorFormat);
+	if (ret)
+		return ret;
+
+	ret = csi2_->setFormat(0, &sensorFormat);
+	if (ret)
+		return ret;
+
+	outputFormat->width = sensorFormat.width;
+	outputFormat->height = sensorFormat.height;
+	outputFormat->fourcc = mediaBusToFormat(sensorFormat.mbus_code);
+	outputFormat->planesCount = 1;
+
+	ret = output_->setFormat(outputFormat);
+	if (ret)
+		return ret;
+
+	LOG(IPU3, Debug) << "CIO2 output format " << outputFormat->toString();
 
 	return 0;
 }

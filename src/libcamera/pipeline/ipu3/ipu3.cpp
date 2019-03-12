@@ -73,6 +73,11 @@ public:
 	int start();
 	int stop();
 
+	int linkSetup(const std::string &source, unsigned int sourcePad,
+		      const std::string &sink, unsigned int sinkPad,
+		      bool enable);
+	int enableLinks(bool enable);
+
 	unsigned int index_;
 	std::string name_;
 	MediaDevice *media_;
@@ -262,6 +267,14 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 			<< "Invalid stream size: larger than sensor resolution";
 		return -EINVAL;
 	}
+
+	/*
+	 * \todo: Enable links selectively based on the requested streams.
+	 * As of now, enable all links unconditionally.
+	 */
+	ret = data->imgu_->enableLinks(true);
+	if (ret)
+		return ret;
 
 	/*
 	 * Pass the requested stream size to the CIO2 unit and get back the
@@ -474,6 +487,30 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
+	/*
+	 * FIXME: enabled links in one ImgU instance interfere with capture
+	 * operations on the other one. This can be easily triggered by
+	 * capturing from one camera and then trying to capture from the other
+	 * one right after, without disabling media links in the media graph
+	 * first.
+	 *
+	 * The tricky part here is where to disable links on the ImgU instance
+	 * which is currently not in use:
+	 * 1) Link enable/disable cannot be done at start/stop time as video
+	 * devices needs to be linked first before format can be configured on
+	 * them.
+	 * 2) As link enable has to be done at the least in configureStreams,
+	 * before configuring formats, the only place where to disable links
+	 * would be 'stop()', but the Camera class state machine allows
+	 * start()<->stop() sequences without any streamConfiguration() in
+	 * between.
+	 *
+	 * As of now, disable all links in the media graph at 'match()' time,
+	 * to allow testing different cameras in different test applications
+	 * runs. A test application that would use two distinct cameras without
+	 * going through a library teardown->match() sequence would fail
+	 * at the moment.
+	 */
 	if (imguMediaDev_->disableLinks())
 		goto error;
 
@@ -881,6 +918,71 @@ int ImgUDevice::stop()
 	ret |= viewfinder_.dev->streamOff();
 	ret |= stat_.dev->streamOff();
 	ret |= input_->streamOff();
+
+	return ret;
+}
+
+/**
+ * \brief Enable or disable a single link on the ImgU instance
+ *
+ * This method assumes the media device associated with the ImgU instance
+ * is open.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::linkSetup(const std::string &source, unsigned int sourcePad,
+			  const std::string &sink, unsigned int sinkPad,
+			  bool enable)
+{
+	MediaLink *link = media_->link(source, sourcePad, sink, sinkPad);
+	if (!link) {
+		LOG(IPU3, Error)
+			<< "Failed to get link: '" << source << "':"
+			<< sourcePad << " -> '" << sink << "':" << sinkPad;
+		return -ENODEV;
+	}
+
+	return link->setEnabled(enable);
+}
+
+/**
+ * \brief Enable or disable all media links in the ImgU instance to prepare
+ * for capture operations
+ *
+ * \todo This method will probably be removed or changed once links will be
+ * enabled or disabled selectively.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::enableLinks(bool enable)
+{
+	std::string viewfinderName = name_ + " viewfinder";
+	std::string outputName = name_ + " output";
+	std::string statName = name_ + " 3a stat";
+	std::string inputName = name_ + " input";
+	int ret;
+
+	/* \todo Establish rules to handle media devices open/close. */
+	ret = media_->open();
+	if (ret)
+		return ret;
+
+	ret = linkSetup(inputName, 0, name_, PAD_INPUT, enable);
+	if (ret)
+		goto done;
+
+	ret = linkSetup(name_, PAD_OUTPUT, outputName, 0, enable);
+	if (ret)
+		goto done;
+
+	ret = linkSetup(name_, PAD_VF, viewfinderName, 0, enable);
+	if (ret)
+		goto done;
+
+	ret = linkSetup(name_, PAD_STAT, statName, 0, enable);
+
+done:
+	media_->close();
 
 	return ret;
 }

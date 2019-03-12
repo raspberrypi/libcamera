@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "formats.h"
 #include "geometry.h"
 #include "log.h"
 #include "media_object.h"
@@ -42,8 +43,7 @@ public:
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);
 
-	const std::map<unsigned int, std::vector<SizeRange>>
-						formats(unsigned int pad);
+	FormatEnum formats(unsigned int pad);
 
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);

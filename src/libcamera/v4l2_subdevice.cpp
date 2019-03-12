@@ -210,10 +210,9 @@ int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
  * \return A map of image formats associated with a list of image sizes, or
  * an empty map on error or if the pad does not exist
  */
-const std::map<unsigned int, std::vector<SizeRange>>
-V4L2Subdevice::formats(unsigned int pad)
+FormatEnum V4L2Subdevice::formats(unsigned int pad)
 {
-	std::map<unsigned int, std::vector<SizeRange>> formatMap = {};
+	FormatEnum formatMap = {};
 	struct v4l2_subdev_mbus_code_enum mbusEnum = {};
 	int ret;
 

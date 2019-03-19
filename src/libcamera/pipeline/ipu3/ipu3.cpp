@@ -93,6 +93,7 @@ public:
 
 	BufferPool vfPool_;
 	BufferPool statPool_;
+	BufferPool outPool_;
 };
 
 class CIO2Device
@@ -440,11 +441,20 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	return 0;
 }
 
+/**
+ * \todo Clarify if 'viewfinder' and 'stat' nodes have to be set up and
+ * started even if not in use. As of now, if not properly configured and
+ * enabled, the ImgU processing pipeline stalls.
+ *
+ * In order to be able to start the 'viewfinder' and 'stat' nodes, we need
+ * memory to be reserved.
+ */
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 					 const std::set<Stream *> &streams)
 {
 	IPU3CameraData *data = cameraData(camera);
-	Stream *stream = *streams.begin();
+	IPU3Stream *outStream = &data->outStream_;
+	IPU3Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	unsigned int bufferCount;
@@ -459,27 +469,48 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	if (ret)
 		goto error;
 
-	/* Export ImgU output buffers to the stream's pool. */
-	ret = imgu->exportBuffers(&imgu->output_, &stream->bufferPool());
-	if (ret)
-		goto error;
-
 	/*
-	 * Reserve memory in viewfinder and stat output devices. Use the
-	 * same number of buffers as the ones requested for the output
-	 * stream.
+	 * Use for the stat's internal pool the same number of buffer as
+	 * for the input pool.
+	 * \todo To be revised when we'll actually use the stat node.
 	 */
-	bufferCount = stream->bufferPool().count();
-
-	imgu->viewfinder_.pool->createBuffers(bufferCount);
-	ret = imgu->exportBuffers(&imgu->viewfinder_, imgu->viewfinder_.pool);
-	if (ret)
-		goto error;
-
+	bufferCount = pool->count();
 	imgu->stat_.pool->createBuffers(bufferCount);
 	ret = imgu->exportBuffers(&imgu->stat_, imgu->stat_.pool);
 	if (ret)
 		goto error;
+
+	/* Allocate buffers for each active stream. */
+	for (Stream *s : streams) {
+		IPU3Stream *stream = static_cast<IPU3Stream *>(s);
+		ImgUDevice::ImgUOutput *dev = stream->device_;
+
+		ret = imgu->exportBuffers(dev, &stream->bufferPool());
+		if (ret)
+			goto error;
+	}
+
+	/*
+	 * Allocate buffers also on non-active outputs; use the same number
+	 * of buffers as the active ones.
+	 */
+	if (!outStream->active_) {
+		bufferCount = vfStream->bufferPool().count();
+		outStream->device_->pool->createBuffers(bufferCount);
+		ret = imgu->exportBuffers(outStream->device_,
+					  outStream->device_->pool);
+		if (ret)
+			goto error;
+	}
+
+	if (!vfStream->active_) {
+		bufferCount = outStream->bufferPool().count();
+		vfStream->device_->pool->createBuffers(bufferCount);
+		ret = imgu->exportBuffers(vfStream->device_,
+					  vfStream->device_->pool);
+		if (ret)
+			goto error;
+	}
 
 	return 0;
 
@@ -845,6 +876,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	output_.pad = PAD_OUTPUT;
 	output_.name = "output";
+	output_.pool = &outPool_;
 
 	viewfinder_.dev = V4L2Device::fromEntityName(media,
 						     name_ + " viewfinder");

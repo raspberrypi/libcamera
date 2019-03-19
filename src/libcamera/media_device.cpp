@@ -516,7 +516,7 @@ struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topo
 {
 	struct media_v2_link *links = reinterpret_cast<struct media_v2_link *>
 						      (topology.ptr_links);
-	unsigned int ifaceId;
+	unsigned int ifaceId = 0;
 	unsigned int i;
 
 	for (i = 0; i < topology.num_links; ++i) {

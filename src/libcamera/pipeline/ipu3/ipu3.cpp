@@ -761,6 +761,8 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguInputBufferReady);
 		data->imgu_->output_.dev->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
+		data->imgu_->viewfinder_.dev->bufferReady.connect(data.get(),
+					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
 		std::string cameraName = cio2->sensor_->entity()->name() + " "
@@ -806,10 +808,20 @@ void PipelineHandlerIPU3::IPU3CameraData::imguInputBufferReady(Buffer *buffer)
  */
 void PipelineHandlerIPU3::IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 {
-	Request *request = queuedRequests_.front();
+	Request *request = buffer->request();
 
-	pipe_->completeBuffer(camera_, request, buffer);
-	pipe_->completeRequest(camera_, request);
+	if (!pipe_->completeBuffer(camera_, request, buffer))
+		/* Request not completed yet, return here. */
+		return;
+
+	/* Complete the pending requests in queuing order. */
+	while (1) {
+		request = queuedRequests_.front();
+		if (request->hasPendingBuffers())
+			break;
+
+		pipe_->completeRequest(camera_, request);
+	}
 }
 
 /**

@@ -27,9 +27,15 @@ libcamera_includes = include_directories('include')
 
 subdir('include')
 subdir('src')
-subdir('test')
 subdir('utils')
-subdir('Documentation')
+
+if get_option('tests')
+	subdir('test')
+endif
+
+if get_option('documentation')
+	subdir('Documentation')
+endif
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : libcamera,

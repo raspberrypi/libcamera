@@ -36,6 +36,7 @@ struct Option {
 	const char *argumentName;
 	const char *help;
 	KeyValueParser *keyValueParser;
+	bool isArray;
 
 	bool hasShortOption() const { return isalnum(opt); }
 	bool hasLongOption() const { return name != nullptr; }
@@ -126,9 +127,9 @@ public:
 	bool addOption(int opt, OptionType type, const char *help,
 		       const char *name = nullptr,
 		       OptionArgument argument = ArgumentNone,
-		       const char *argumentName = nullptr);
+		       const char *argumentName = nullptr, bool array = false);
 	bool addOption(int opt, KeyValueParser *parser, const char *help,
-		       const char *name = nullptr);
+		       const char *name = nullptr, bool array = false);
 
 	Options parse(int argc, char *argv[]);
 	void usage();

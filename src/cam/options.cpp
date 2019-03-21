@@ -97,7 +97,11 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 		break;
 	}
 
-	values_[opt] = value;
+	if (option.isArray)
+		values_[opt].addValue(value);
+	else
+		values_[opt] = value;
+
 	return true;
 }
 
@@ -129,7 +133,7 @@ bool KeyValueParser::addOption(const char *name, OptionType type,
 		return false;
 
 	optionsMap_[name] = Option({ 0, type, name, argument, nullptr,
-				     help, nullptr });
+				     help, nullptr, false });
 	return true;
 }
 
@@ -339,7 +343,7 @@ std::vector<OptionValue> OptionValue::toArray() const
 
 bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 			      const char *name, OptionArgument argument,
-			      const char *argumentName)
+			      const char *argumentName, bool array)
 {
 	/*
 	 * Options must have at least a short or long name, and a text message.
@@ -357,16 +361,16 @@ bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 		return false;
 
 	options_.push_back(Option({ opt, type, name, argument, argumentName,
-				    help, nullptr }));
+				    help, nullptr, array }));
 	optionsMap_[opt] = &options_.back();
 	return true;
 }
 
 bool OptionsParser::addOption(int opt, KeyValueParser *parser, const char *help,
-			      const char *name)
+			      const char *name, bool array)
 {
 	if (!addOption(opt, OptionKeyValue, help, name, ArgumentRequired,
-		       "key=value[,key=value,...]"))
+		       "key=value[,key=value,...]", array))
 		return false;
 
 	options_.back().keyValueParser = parser;
@@ -464,6 +468,8 @@ void OptionsParser::usage()
 			length += 1 + strlen(option.argumentName);
 		if (option.argument == ArgumentOptional)
 			length += 2;
+		if (option.isArray)
+			length += 4;
 
 		if (length > indent)
 			indent = length;
@@ -496,6 +502,9 @@ void OptionsParser::usage()
 			if (option.argument == ArgumentOptional)
 				argument += "]";
 		}
+
+		if (option.isArray)
+			argument += " ...";
 
 		std::cerr << std::setw(indent) << std::left << argument;
 

@@ -73,7 +73,16 @@ const std::string Rectangle::toString() const
 
 /**
  * \fn SizeRange::SizeRange()
- * \brief Construct a size range
+ * \brief Construct a size range initialized to 0
+ */
+
+/**
+ * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH, unsigned int maxW, unsigned int maxH)
+ * \brief Construct an initialized size range
+ * \param minW The minimum width
+ * \param minH The minimum height
+ * \param maxW The maximum width
+ * \param maxH The maximum height
  */
 
 /**

@@ -19,6 +19,7 @@
 #include <libcamera/event_notifier.h>
 
 #include "log.h"
+#include "media_device.h"
 #include "media_object.h"
 #include "v4l2_device.h"
 
@@ -926,6 +927,27 @@ int V4L2Device::streamOff()
 	fdEvent_->setEnabled(false);
 
 	return 0;
+}
+
+/**
+ * \brief Create a new video device instance from \a entity in media device
+ * \a media
+ * \param[in] media The media device where the entity is registered
+ * \param[in] entity The media entity name
+ *
+ * Releasing memory of the newly created instance is responsibility of the
+ * caller of this function.
+ *
+ * \return A newly created V4L2Device on success, nullptr otherwise
+ */
+V4L2Device *V4L2Device::fromEntityName(const MediaDevice *media,
+				       const std::string &entity)
+{
+	MediaEntity *mediaEntity = media->getEntityByName(entity);
+	if (!mediaEntity)
+		return nullptr;
+
+	return new V4L2Device(mediaEntity);
 }
 
 } /* namespace libcamera */

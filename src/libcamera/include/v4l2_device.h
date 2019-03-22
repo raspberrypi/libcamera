@@ -22,6 +22,7 @@ namespace libcamera {
 class Buffer;
 class BufferPool;
 class EventNotifier;
+class MediaDevice;
 class MediaEntity;
 
 struct V4L2Capability final : v4l2_capability {
@@ -135,6 +136,9 @@ public:
 
 	int streamOn();
 	int streamOff();
+
+	static V4L2Device *fromEntityName(const MediaDevice *media,
+					  const std::string &entity);
 
 protected:
 	std::string logPrefix() const;

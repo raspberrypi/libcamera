@@ -16,6 +16,7 @@
 
 #include "geometry.h"
 #include "log.h"
+#include "media_device.h"
 #include "media_object.h"
 #include "v4l2_subdevice.h"
 
@@ -311,6 +312,27 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	format->mbus_code = subdevFmt.format.code;
 
 	return 0;
+}
+
+/**
+ * \brief Create a new video subdevice instance from \a entity in media device
+ * \a media
+ * \param[in] media The media device where the entity is registered
+ * \param[in] entity The media entity name
+ *
+ * Releasing memory of the newly created instance is responsibility of the
+ * caller of this function.
+ *
+ * \return A newly created V4L2Subdevice on success, nullptr otherwise
+ */
+V4L2Subdevice *V4L2Subdevice::fromEntityName(const MediaDevice *media,
+					     const std::string &entity)
+{
+	MediaEntity *mediaEntity = media->getEntityByName(entity);
+	if (!mediaEntity)
+		return nullptr;
+
+	return new V4L2Subdevice(mediaEntity);
 }
 
 std::string V4L2Subdevice::logPrefix() const

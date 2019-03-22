@@ -18,6 +18,8 @@
 
 namespace libcamera {
 
+class MediaDevice;
+
 struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
 	uint32_t width;
@@ -47,6 +49,9 @@ public:
 
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);
+
+	static V4L2Subdevice *fromEntityName(const MediaDevice *media,
+					     const std::string &entity);
 
 protected:
 	std::string logPrefix() const;

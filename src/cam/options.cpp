@@ -248,27 +248,27 @@ void KeyValueParser::usage(int indent)
  */
 
 OptionValue::OptionValue()
-	: type_(OptionNone)
+	: type_(ValueNone)
 {
 }
 
 OptionValue::OptionValue(int value)
-	: type_(OptionInteger), integer_(value)
+	: type_(ValueInteger), integer_(value)
 {
 }
 
 OptionValue::OptionValue(const char *value)
-	: type_(OptionString), string_(value)
+	: type_(ValueString), string_(value)
 {
 }
 
 OptionValue::OptionValue(const std::string &value)
-	: type_(OptionString), string_(value)
+	: type_(ValueString), string_(value)
 {
 }
 
 OptionValue::OptionValue(const KeyValueParser::Options &value)
-	: type_(OptionKeyValue), keyValues_(value)
+	: type_(ValueKeyValue), keyValues_(value)
 {
 }
 
@@ -289,7 +289,7 @@ OptionValue::operator KeyValueParser::Options() const
 
 int OptionValue::toInteger() const
 {
-	if (type_ != OptionInteger)
+	if (type_ != ValueInteger)
 		return 0;
 
 	return integer_;
@@ -297,7 +297,7 @@ int OptionValue::toInteger() const
 
 std::string OptionValue::toString() const
 {
-	if (type_ != OptionString)
+	if (type_ != ValueString)
 		return std::string();
 
 	return string_;
@@ -305,7 +305,7 @@ std::string OptionValue::toString() const
 
 KeyValueParser::Options OptionValue::toKeyValues() const
 {
-	if (type_ != OptionKeyValue)
+	if (type_ != ValueKeyValue)
 		return KeyValueParser::Options();
 
 	return keyValues_;

@@ -79,13 +79,20 @@ private:
 class OptionValue
 {
 public:
+	enum ValueType {
+		ValueNone,
+		ValueInteger,
+		ValueString,
+		ValueKeyValue,
+	};
+
 	OptionValue();
 	OptionValue(int value);
 	OptionValue(const char *value);
 	OptionValue(const std::string &value);
 	OptionValue(const KeyValueParser::Options &value);
 
-	OptionType type() const { return type_; }
+	ValueType type() const { return type_; }
 
 	operator int() const;
 	operator std::string() const;
@@ -96,7 +103,7 @@ public:
 	KeyValueParser::Options toKeyValues() const;
 
 private:
-	OptionType type_;
+	ValueType type_;
 	int integer_;
 	std::string string_;
 	KeyValueParser::Options keyValues_;

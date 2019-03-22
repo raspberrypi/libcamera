@@ -29,12 +29,15 @@ subdir('include')
 subdir('src')
 subdir('utils')
 
-if get_option('tests')
-	subdir('test')
-endif
+# The documentation and test components are optional and can be disabled
+# through configuration values. They are enabled by default.
 
 if get_option('documentation')
-	subdir('Documentation')
+  subdir('Documentation')
+endif
+
+if get_option('tests')
+  subdir('test')
 endif
 
 pkg_mod = import('pkgconfig')

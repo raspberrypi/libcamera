@@ -5,6 +5,7 @@
  * options.cpp - cam - Options parsing
  */
 
+#include <cassert>
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
@@ -272,6 +273,14 @@ OptionValue::OptionValue(const KeyValueParser::Options &value)
 {
 }
 
+void OptionValue::addValue(const OptionValue &value)
+{
+	assert(type_ == ValueNone || type_ == ValueArray);
+
+	type_ = ValueArray;
+	array_.push_back(value);
+}
+
 OptionValue::operator int() const
 {
 	return toInteger();
@@ -285,6 +294,11 @@ OptionValue::operator std::string() const
 OptionValue::operator KeyValueParser::Options() const
 {
 	return toKeyValues();
+}
+
+OptionValue::operator std::vector<OptionValue>() const
+{
+	return toArray();
 }
 
 int OptionValue::toInteger() const
@@ -309,6 +323,14 @@ KeyValueParser::Options OptionValue::toKeyValues() const
 		return KeyValueParser::Options();
 
 	return keyValues_;
+}
+
+std::vector<OptionValue> OptionValue::toArray() const
+{
+	if (type_ != ValueArray)
+		return std::vector<OptionValue>{};
+
+	return array_;
 }
 
 /* -----------------------------------------------------------------------------

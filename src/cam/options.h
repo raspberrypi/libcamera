@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <list>
 #include <map>
+#include <vector>
 
 class KeyValueParser;
 class OptionValue;
@@ -84,6 +85,7 @@ public:
 		ValueInteger,
 		ValueString,
 		ValueKeyValue,
+		ValueArray,
 	};
 
 	OptionValue();
@@ -92,21 +94,26 @@ public:
 	OptionValue(const std::string &value);
 	OptionValue(const KeyValueParser::Options &value);
 
+	void addValue(const OptionValue &value);
+
 	ValueType type() const { return type_; }
 
 	operator int() const;
 	operator std::string() const;
 	operator KeyValueParser::Options() const;
+	operator std::vector<OptionValue>() const;
 
 	int toInteger() const;
 	std::string toString() const;
 	KeyValueParser::Options toKeyValues() const;
+	std::vector<OptionValue> toArray() const;
 
 private:
 	ValueType type_;
 	int integer_;
 	std::string string_;
 	KeyValueParser::Options keyValues_;
+	std::vector<OptionValue> array_;
 };
 
 class OptionsParser

@@ -51,7 +51,7 @@ int ListFormatsTest::run()
 	formats = scaler_->formats(0);
 	if (formats.empty()) {
 		cerr << "Failed to list formats on pad 0 of subdevice "
-		     << scaler_->deviceName() << endl;
+		     << scaler_->entityName() << endl;
 		return TestFail;
 	}
 	for (auto it = formats.begin(); it != formats.end(); ++it)
@@ -60,7 +60,7 @@ int ListFormatsTest::run()
 	formats = scaler_->formats(1);
 	if (formats.empty()) {
 		cerr << "Failed to list formats on pad 1 of subdevice "
-		     << scaler_->deviceName() << endl;
+		     << scaler_->entityName() << endl;
 		return TestFail;
 	}
 	for (auto it = formats.begin(); it != formats.end(); ++it)
@@ -70,7 +70,7 @@ int ListFormatsTest::run()
 	formats = scaler_->formats(2);
 	if (!formats.empty()) {
 		cerr << "Listing formats on non-existing pad 2 of subdevice "
-		     << scaler_->deviceName()
+		     << scaler_->entityName()
 		     << " should return an empty format list" << endl;
 		return TestFail;
 	}

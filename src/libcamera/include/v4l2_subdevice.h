@@ -37,8 +37,8 @@ public:
 	bool isOpen() const;
 	void close();
 
-	std::string deviceNode() const { return entity_->deviceNode(); }
-	std::string deviceName() const { return entity_->name(); }
+	const std::string &deviceNode() const { return entity_->deviceNode(); }
+	const std::string &entityName() const { return entity_->name(); }
 
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);

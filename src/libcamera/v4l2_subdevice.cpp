@@ -166,7 +166,7 @@ void V4L2Subdevice::close()
  */
 
 /**
- * \fn V4L2Subdevice::deviceName()
+ * \fn V4L2Subdevice::entityName()
  * \brief Retrieve the name of the media entity associated with the subdevice
  *
  * \return The name of the media entity the subdevice is associated to
@@ -315,7 +315,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 
 std::string V4L2Subdevice::logPrefix() const
 {
-	return "'" + deviceName() + "'";
+	return "'" + entityName() + "'";
 }
 
 int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,

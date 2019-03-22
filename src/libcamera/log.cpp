@@ -122,7 +122,7 @@ Logger::Logger()
  */
 void Logger::parseLogFile()
 {
-	const char *file = secure_getenv("LIBCAMERA_LOG_FILE");
+	const char *file = utils::secure_getenv("LIBCAMERA_LOG_FILE");
 	if (!file)
 		return;
 
@@ -140,7 +140,7 @@ void Logger::parseLogFile()
  */
 void Logger::parseLogLevels()
 {
-	const char *debug = secure_getenv("LIBCAMERA_LOG_LEVELS");
+	const char *debug = utils::secure_getenv("LIBCAMERA_LOG_LEVELS");
 	if (!debug)
 		return;
 

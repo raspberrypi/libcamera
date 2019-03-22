@@ -42,6 +42,28 @@ const char *basename(const char *path)
 }
 
 /**
+ * \brief Get an environment variable
+ * \param[in] name The name of the variable to return
+ *
+ * The environment list is searched to find the variable 'name', and the
+ * corresponding string is returned.
+ *
+ * If 'secure execution' is required then this function always returns NULL to
+ * avoid vulnerabilities that could occur if set-user-ID or set-group-ID
+ * programs accidentally trust the environment.
+ *
+ * \returns A pointer to the value in the environment or NULL if the requested
+ * environment variable doesn't exist or if secure execution is required.
+ */
+char *secure_getenv(const char *name)
+{
+	if (getauxval(AT_SECURE))
+		return NULL;
+
+	return getenv(name);
+}
+
+/**
  * \fn libcamera::utils::make_unique(Args &&... args)
  * \brief Constructs an object of type T and wraps it in a std::unique_ptr.
  */

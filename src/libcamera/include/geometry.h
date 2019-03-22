@@ -8,6 +8,8 @@
 #ifndef __LIBCAMERA_GEOMETRY_H__
 #define __LIBCAMERA_GEOMETRY_H__
 
+#include <string>
+
 namespace libcamera {
 
 struct Rectangle {
@@ -15,6 +17,8 @@ struct Rectangle {
 	int y;
 	unsigned int w;
 	unsigned int h;
+
+	const std::string toString() const;
 };
 
 struct SizeRange {

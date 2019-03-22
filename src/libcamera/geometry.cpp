@@ -5,6 +5,8 @@
  * geometry.cpp - Geometry-related structures
  */
 
+#include <sstream>
+
 #include "geometry.h"
 
 /**
@@ -45,6 +47,20 @@ namespace libcamera {
  * \var Rectangle::h
  * \brief The distance between the top and bottom sides
  */
+
+/**
+ * \brief Assemble and return a string describing the rectangle
+ *
+ * \return A string describing the Rectangle
+ */
+const std::string Rectangle::toString() const
+{
+	std::stringstream ss;
+
+	ss << "(" << x << "x" << y << ")/" << w << "x" << h;
+
+	return ss.str();
+}
 
 /**
  * \struct SizeRange

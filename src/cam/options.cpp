@@ -41,9 +41,15 @@ const char *Option::typeName() const
  */
 
 template<typename T>
+bool OptionsBase<T>::empty() const
+{
+	return values_.empty();
+}
+
+template<typename T>
 bool OptionsBase<T>::valid() const
 {
-	return !values_.empty();
+	return valid_;
 }
 
 template<typename T>
@@ -105,12 +111,6 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 	return true;
 }
 
-template<typename T>
-void OptionsBase<T>::clear()
-{
-	values_.clear();
-}
-
 template class OptionsBase<int>;
 template class OptionsBase<std::string>;
 
@@ -170,21 +170,18 @@ KeyValueParser::Options KeyValueParser::parse(const char *arguments)
 
 		if (optionsMap_.find(key) == optionsMap_.end()) {
 			std::cerr << "Invalid option " << key << std::endl;
-			options.clear();
-			break;
+			return options;
 		}
 
 		OptionArgument arg = optionsMap_[key].argument;
 		if (value.empty() && arg == ArgumentRequired) {
 			std::cerr << "Option " << key << " requires an argument"
 				  << std::endl;
-			options.clear();
-			break;
+			return options;
 		} else if (!value.empty() && arg == ArgumentNone) {
 			std::cerr << "Option " << key << " takes no argument"
 				  << std::endl;
-			options.clear();
-			break;
+			return options;
 		}
 
 		const Option &option = optionsMap_[key];
@@ -192,11 +189,11 @@ KeyValueParser::Options KeyValueParser::parse(const char *arguments)
 			std::cerr << "Failed to parse '" << value << "' as "
 				  << option.typeName() << " for option " << key
 				  << std::endl;
-			options.clear();
-			break;
+			return options;
 		}
 	}
 
+	options.valid_ = true;
 	return options;
 }
 
@@ -438,19 +435,18 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 			std::cerr << argv[optind - 1] << std::endl;
 
 			usage();
-			options.clear();
-			break;
+			return options;
 		}
 
 		const Option &option = *optionsMap_[c];
 		if (!options.parseValue(c, option, optarg)) {
 			parseValueError(option);
 			usage();
-			options.clear();
-			break;
+			return options;
 		}
 	}
 
+	options.valid_ = true;
 	return options;
 }
 

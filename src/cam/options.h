@@ -47,6 +47,9 @@ template<typename T>
 class OptionsBase
 {
 public:
+	OptionsBase() : valid_(false) {}
+
+	bool empty() const;
 	bool valid() const;
 	bool isSet(const T &opt) const;
 	const OptionValue &operator[](const T &opt) const;
@@ -56,9 +59,9 @@ private:
 	friend class OptionsParser;
 
 	bool parseValue(const T &opt, const Option &option, const char *value);
-	void clear();
 
 	std::map<T, OptionValue> values_;
+	bool valid_;
 };
 
 class KeyValueParser

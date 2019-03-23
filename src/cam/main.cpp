@@ -67,9 +67,12 @@ static int parseOptions(int argc, char *argv[])
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
 
 	options = parser.parse(argc, argv);
-	if (!options.valid() || options.isSet(OptHelp)) {
+	if (!options.valid())
+		return -EINVAL;
+
+	if (options.empty() || options.isSet(OptHelp)) {
 		parser.usage();
-		return !options.valid() ? -EINVAL : -EINTR;
+		return options.empty() ? -EINVAL : -EINTR;
 	}
 
 	return 0;

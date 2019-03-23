@@ -46,8 +46,6 @@ private:
 	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::vector<std::shared_ptr<Camera>> cameras_;
 
-	std::unique_ptr<EventDispatcher> dispatcher_;
-
 	static const std::string version_;
 };
 

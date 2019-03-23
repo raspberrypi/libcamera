@@ -23,6 +23,7 @@ libcamera_sources = files([
     'request.cpp',
     'signal.cpp',
     'stream.cpp',
+    'thread.cpp',
     'timer.cpp',
     'utils.cpp',
     'v4l2_controls.cpp',
@@ -45,6 +46,7 @@ libcamera_headers = files([
     'include/media_device.h',
     'include/media_object.h',
     'include/pipeline_handler.h',
+    'include/thread.h',
     'include/utils.h',
     'include/v4l2_device.h',
     'include/v4l2_subdevice.h',
@@ -91,6 +93,7 @@ libcamera_sources += version_cpp
 libcamera_deps = [
     cc.find_library('dl'),
     libudev,
+    dependency('threads'),
 ]
 
 libcamera = shared_library('camera',

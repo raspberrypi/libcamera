@@ -14,6 +14,7 @@
 #include "event_dispatcher_poll.h"
 #include "log.h"
 #include "pipeline_handler.h"
+#include "thread.h"
 #include "utils.h"
 
 /**
@@ -56,7 +57,7 @@ LOG_DEFINE_CATEGORY(Camera)
  */
 
 CameraManager::CameraManager()
-	: enumerator_(nullptr), dispatcher_(nullptr)
+	: enumerator_(nullptr)
 {
 }
 
@@ -247,12 +248,7 @@ CameraManager *CameraManager::instance()
  */
 void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
 {
-	if (dispatcher_) {
-		LOG(Camera, Warning) << "Event dispatcher is already set";
-		return;
-	}
-
-	dispatcher_ = std::move(dispatcher);
+	Thread::current()->setEventDispatcher(std::move(dispatcher));
 }
 
 /**
@@ -268,10 +264,7 @@ void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatch
  */
 EventDispatcher *CameraManager::eventDispatcher()
 {
-	if (!dispatcher_)
-		dispatcher_ = utils::make_unique<EventDispatcherPoll>();
-
-	return dispatcher_.get();
+	return Thread::current()->eventDispatcher();
 }
 
 } /* namespace libcamera */

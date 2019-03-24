@@ -176,6 +176,18 @@ protected:
 		delete signal;
 		delete slotObject;
 
+		/* Exercise the Object slot code paths. */
+		slotObject = new SlotObject();
+		signalVoid_.connect(slotObject, &SlotObject::slot);
+		valueStatic_ = 0;
+		signalVoid_.emit();
+		if (valueStatic_ == 0) {
+			cout << "Signal delivery for Object test failed" << endl;
+			return TestFail;
+		}
+
+		delete slotObject;
+
 		return TestPass;
 	}
 

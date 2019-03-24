@@ -16,6 +16,8 @@
 namespace libcamera {
 
 class EventDispatcher;
+class Message;
+class Object;
 class ThreadData;
 class ThreadMain;
 
@@ -49,8 +51,15 @@ private:
 	void startThread();
 	void finishThread();
 
+	void postMessage(std::unique_ptr<Message> msg, Object *receiver);
+	void removeMessages(Object *receiver);
+	void dispatchMessages();
+
+	friend class Object;
 	friend class ThreadData;
 	friend class ThreadMain;
+
+	void moveObject(Object *object);
 
 	std::thread thread_;
 	ThreadData *data_;

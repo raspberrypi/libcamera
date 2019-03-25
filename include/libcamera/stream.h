@@ -8,6 +8,7 @@
 #define __LIBCAMERA_STREAM_H__
 
 #include <libcamera/buffer.h>
+#include <libcamera/geometry.h>
 
 namespace libcamera {
 
@@ -21,9 +22,48 @@ struct StreamConfiguration {
 	unsigned int bufferCount;
 };
 
+class StreamUsage
+{
+public:
+	enum Role {
+		StillCapture,
+		VideoRecording,
+		Viewfinder,
+	};
+
+	Role role() const { return role_; }
+	const Size &size() const { return size_; }
+
+protected:
+	explicit StreamUsage(Role role);
+	StreamUsage(Role role, int width, int height);
+
+private:
+	Role role_;
+	Size size_;
+};
+
 class Stream final
 {
 public:
+	class StillCapture : public StreamUsage
+	{
+	public:
+		StillCapture();
+	};
+
+	class VideoRecording : public StreamUsage
+	{
+	public:
+		VideoRecording();
+	};
+
+	class Viewfinder : public StreamUsage
+	{
+	public:
+		Viewfinder(int width, int height);
+	};
+
 	Stream();
 	BufferPool &bufferPool() { return bufferPool_; }
 	const StreamConfiguration &configuration() const { return configuration_; }

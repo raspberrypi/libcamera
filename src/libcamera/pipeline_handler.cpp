@@ -193,10 +193,11 @@ PipelineHandler::~PipelineHandler()
  * \fn PipelineHandler::allocateBuffers()
  * \brief Allocate buffers for a stream
  * \param[in] camera The camera the \a stream belongs to
- * \param[in] stream The stream to allocate buffers for
+ * \param[in] streams The set of streams to allocate buffers for
  *
- * This method allocates buffers internally in the pipeline handler and
- * associates them with the stream's buffer pool.
+ * This method allocates buffers internally in the pipeline handler for each
+ * stream in the \a streams buffer set, and associates them with the stream's
+ * buffer pool.
  *
  * The intended caller of this method is the Camera class.
  *
@@ -207,9 +208,9 @@ PipelineHandler::~PipelineHandler()
  * \fn PipelineHandler::freeBuffers()
  * \brief Free all buffers associated with a stream
  * \param[in] camera The camera the \a stream belongs to
- * \param[in] stream The stream to free buffers from
+ * \param[in] streams The set of streams to free buffers from
  *
- * After a capture session has been stopped all buffers associated with the
+ * After a capture session has been stopped all buffers associated with each
  * stream shall be freed.
  *
  * The intended caller of this method is the Camera class.

@@ -145,8 +145,10 @@ public:
 	int configureStreams(Camera *camera,
 			     const CameraConfiguration &config) override;
 
-	int allocateBuffers(Camera *camera, Stream *stream) override;
-	int freeBuffers(Camera *camera, Stream *stream) override;
+	int allocateBuffers(Camera *camera,
+			    const std::set<Stream *> &streams) override;
+	int freeBuffers(Camera *camera,
+			const std::set<Stream *> &streams) override;
 
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
@@ -305,9 +307,11 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	return 0;
 }
 
-int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
+					 const std::set<Stream *> &streams)
 {
 	IPU3CameraData *data = cameraData(camera);
+	Stream *stream = *streams.begin();
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	int ret;
@@ -346,7 +350,8 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera, Stream *stream)
 	return 0;
 }
 
-int PipelineHandlerIPU3::freeBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerIPU3::freeBuffers(Camera *camera,
+				     const std::set<Stream *> &streams)
 {
 	IPU3CameraData *data = cameraData(camera);
 

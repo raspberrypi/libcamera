@@ -32,8 +32,10 @@ public:
 	int configureStreams(Camera *camera,
 			     const CameraConfiguration &config) override;
 
-	int allocateBuffers(Camera *camera, Stream *stream) override;
-	int freeBuffers(Camera *camera, Stream *stream) override;
+	int allocateBuffers(Camera *camera,
+			    const std::set<Stream *> &streams) override;
+	int freeBuffers(Camera *camera,
+			const std::set<Stream *> &streams) override;
 
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
@@ -127,9 +129,11 @@ int PipelineHandlerUVC::configureStreams(Camera *camera,
 	return 0;
 }
 
-int PipelineHandlerUVC::allocateBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerUVC::allocateBuffers(Camera *camera,
+					const std::set<Stream *> &streams)
 {
 	UVCCameraData *data = cameraData(camera);
+	Stream *stream = *streams.begin();
 	const StreamConfiguration &cfg = stream->configuration();
 
 	LOG(UVC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
@@ -137,7 +141,8 @@ int PipelineHandlerUVC::allocateBuffers(Camera *camera, Stream *stream)
 	return data->video_->exportBuffers(&stream->bufferPool());
 }
 
-int PipelineHandlerUVC::freeBuffers(Camera *camera, Stream *stream)
+int PipelineHandlerUVC::freeBuffers(Camera *camera,
+				    const std::set<Stream *> &streams)
 {
 	UVCCameraData *data = cameraData(camera);
 	return data->video_->releaseBuffers();

@@ -58,8 +58,10 @@ public:
 	streamConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
 	virtual int configureStreams(Camera *camera, const CameraConfiguration &config) = 0;
 
-	virtual int allocateBuffers(Camera *camera, Stream *stream) = 0;
-	virtual int freeBuffers(Camera *camera, Stream *stream) = 0;
+	virtual int allocateBuffers(Camera *camera,
+				    const std::set<Stream *> &streams) = 0;
+	virtual int freeBuffers(Camera *camera,
+				const std::set<Stream *> &streams) = 0;
 
 	virtual int start(Camera *camera) = 0;
 	virtual void stop(Camera *camera);

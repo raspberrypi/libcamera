@@ -647,13 +647,11 @@ int Camera::allocateBuffers()
 		return -EINVAL;
 	}
 
-	for (Stream *stream : activeStreams_) {
-		int ret = pipe_->allocateBuffers(this, stream);
-		if (ret) {
-			LOG(Camera, Error) << "Failed to allocate buffers";
-			freeBuffers();
-			return ret;
-		}
+	int ret = pipe_->allocateBuffers(this, activeStreams_);
+	if (ret) {
+		LOG(Camera, Error) << "Failed to allocate buffers";
+		freeBuffers();
+		return ret;
 	}
 
 	state_ = CameraPrepared;
@@ -683,12 +681,11 @@ int Camera::freeBuffers()
 		 * by the V4L2 device that has allocated them.
 		 */
 		stream->bufferPool().destroyBuffers();
-		pipe_->freeBuffers(this, stream);
 	}
 
 	state_ = CameraConfigured;
 
-	return 0;
+	return pipe_->freeBuffers(this, activeStreams_);
 }
 
 /**

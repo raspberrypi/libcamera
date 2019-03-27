@@ -49,19 +49,6 @@ protected:
 			return TestFail;
 		}
 
-		/*
-		 * Test that asking for configuration for an array of bad streams
-		 * returns an empty list of configurations.
-		 */
-		Stream *stream_bad = reinterpret_cast<Stream *>(0xdeadbeef);
-		std::set<Stream *> streams_bad = { stream_bad };
-		conf = camera_->streamConfiguration(streams_bad);
-		if (!conf.empty()) {
-			cout << "Failed to retrieve configuration for bad streams"
-			     << endl;
-			return TestFail;
-		}
-
 		return TestPass;
 	}
 };

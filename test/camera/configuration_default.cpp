@@ -32,7 +32,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!configurationValid(streams, conf)) {
+		if (!configurationValid(conf)) {
 			cout << "Default configuration invalid" << endl;
 			return TestFail;
 		}

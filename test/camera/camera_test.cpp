@@ -46,27 +46,18 @@ void CameraTest::cleanup()
 	cm_->stop();
 };
 
-bool CameraTest::configurationValid(const std::set<Stream *> &streams,
-				    const std::map<Stream *, StreamConfiguration> &conf) const
+bool CameraTest::configurationValid(const std::map<Stream *, StreamConfiguration> &config) const
 {
-	/* Test that the numbers of streams matches that of configuration. */
-	if (streams.size() != conf.size())
+	/* Test that the configuration is not empty. */
+	if (config.empty())
 		return false;
 
-	/*
-	 * Test that stream can be found in configuration and that the
-	 * configuration is valid.
-	 */
-	for (Stream *stream : streams) {
-		std::map<Stream *, StreamConfiguration>::const_iterator it =
-			conf.find(stream);
+	/* Test that configuration is valid. */
+	for (auto const &it : config) {
+		const StreamConfiguration &conf = it.second;
 
-		if (it == conf.end())
-			return false;
-
-		const StreamConfiguration *sconf = &it->second;
-		if (sconf->width == 0 || sconf->height == 0 ||
-		    sconf->pixelFormat == 0 || sconf->bufferCount == 0)
+		if (conf.width == 0 || conf.height == 0 ||
+		    conf.pixelFormat == 0 || conf.bufferCount == 0)
 			return false;
 	}
 

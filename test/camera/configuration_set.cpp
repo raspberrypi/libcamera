@@ -23,7 +23,7 @@ protected:
 			camera_->streamConfiguration(streams);
 		StreamConfiguration *sconf = &conf.begin()->second;
 
-		if (!configurationValid(streams, conf)) {
+		if (!configurationValid(conf)) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}

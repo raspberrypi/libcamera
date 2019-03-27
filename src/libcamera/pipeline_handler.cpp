@@ -152,13 +152,13 @@ PipelineHandler::~PipelineHandler()
  * \fn PipelineHandler::streamConfiguration()
  * \brief Retrieve a group of stream configurations for a specified camera
  * \param[in] camera The camera to fetch default configuration from
- * \param[in] streams An array of streams to fetch information about
+ * \param[in] usages A list of stream usages
  *
  * Retrieve the species camera's default configuration for a specified group of
- * streams. The caller shall populate the \a streams array with the streams it
- * wish to fetch the configuration from. The map of streams and configuration
- * returned can then be examined by the caller to learn about the defualt
- * parameters for the specified streams.
+ * use-cases. The caller shall populate the \a usages array with the use-cases it
+ * wishes to fetch the default configuration for. The map of streams and
+ * configurations returned can then be examined by the caller to learn about
+ * the default parameters for the specified streams.
  *
  * The intended companion to this is \a configureStreams() which can be used to
  * change the group of streams parameters.

@@ -80,8 +80,7 @@ static int parseOptions(int argc, char *argv[])
 
 static int prepareCameraConfig(std::map<Stream *, StreamConfiguration> *config)
 {
-	std::set<Stream *> streams = camera->streams();
-	*config = camera->streamConfiguration(streams);
+	*config = camera->streamConfiguration({ Stream::VideoRecording() });
 	Stream *stream = config->begin()->first;
 
 	if (options.isSet(OptFormat)) {

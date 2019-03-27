@@ -345,33 +345,23 @@ const std::set<Stream *> &Camera::streams() const
 }
 
 /**
- * \brief Retrieve a group of stream configurations
- * \param[in] streams A map of stream IDs and configurations to setup
+ * \brief Retrieve a group of stream configurations according to stream usages
+ * \param[in] usages A list of stream usages
  *
- * Retrieve the camera's configuration for a specified group of streams. The
- * caller can specifies which of the camera's streams to retrieve configuration
- * from by populating \a streams.
+ * Retrieve configuration for a set of desired usages. The caller specifies a
+ * list of stream usages and the camera returns a map of suitable streams and
+ * their suggested default configurations.
  *
- * The easiest way to populate the array of streams to fetch configuration from
- * is to first retrieve the camera's full array of stream with streams() and
- * then potentially trim it down to only contain the streams the caller
- * are interested in.
- *
- * \return A map of successfully retrieved stream IDs and configurations or an
- * empty list on error.
+ * \return A map of streams to configurations if the requested usages can be
+ * satisfied, or an empty map otherwise
  */
 std::map<Stream *, StreamConfiguration>
-Camera::streamConfiguration(std::set<Stream *> &streams)
+Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
 {
-	if (disconnected_ || !streams.size())
+	if (disconnected_ || !usages.size() || usages.size() > streams_.size())
 		return std::map<Stream *, StreamConfiguration>{};
 
-	for (Stream *stream : streams) {
-		if (streams_.find(stream) == streams_.end())
-			return std::map<Stream *, StreamConfiguration>{};
-	}
-
-	return pipe_->streamConfiguration(this, streams);
+	return pipe_->streamConfiguration(this, usages);
 }
 
 /**

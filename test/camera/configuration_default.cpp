@@ -20,14 +20,10 @@ protected:
 	{
 		std::map<Stream *, StreamConfiguration> conf;
 
-		/*
-		 * Test that asking for default configuration for a valid
-		 * array of streams returns something valid.
-		 */
-		std::set<Stream *> streams = { *camera_->streams().begin() };
-		conf = camera_->streamConfiguration(streams);
+		/* Test asking for configuration for a video stream. */
+		conf = camera_->streamConfiguration({ Stream::VideoRecording() });
 		if (conf.empty()) {
-			cout << "Failed to retrieve configuration for valid streams"
+			cout << "Failed to retrieve configuration for video streams"
 			     << endl;
 			return TestFail;
 		}
@@ -39,12 +35,11 @@ protected:
 
 		/*
 		 * Test that asking for configuration for an empty array of
-		 * streams returns an empty list of configurations.
+		 * stream usages returns an empty list of configurations.
 		 */
-		std::set<Stream *> streams_empty = {};
-		conf = camera_->streamConfiguration(streams_empty);
+		conf = camera_->streamConfiguration({});
 		if (!conf.empty()) {
-			cout << "Failed to retrieve configuration for empty streams"
+			cout << "Failed to retrieve configuration for empty usage list"
 			     << endl;
 			return TestFail;
 		}

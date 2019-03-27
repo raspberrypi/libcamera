@@ -53,7 +53,7 @@ public:
 	virtual bool match(DeviceEnumerator *enumerator) = 0;
 
 	virtual std::map<Stream *, StreamConfiguration>
-	streamConfiguration(Camera *camera, std::set<Stream *> &streams) = 0;
+	streamConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
 	virtual int configureStreams(Camera *camera,
 				     std::map<Stream *, StreamConfiguration> &config) = 0;
 

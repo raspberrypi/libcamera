@@ -42,10 +42,9 @@ protected:
 
 	int run()
 	{
-		Stream *stream = *camera_->streams().begin();
-		std::set<Stream *> streams = { stream };
 		std::map<Stream *, StreamConfiguration> conf =
-			camera_->streamConfiguration(streams);
+			camera_->streamConfiguration({ Stream::VideoRecording() });
+		Stream *stream = conf.begin()->first;
 		StreamConfiguration *sconf = &conf.begin()->second;
 
 		if (!configurationValid(conf)) {

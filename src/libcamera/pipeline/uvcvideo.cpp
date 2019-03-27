@@ -28,7 +28,7 @@ public:
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
-			    std::set<Stream *> &streams) override;
+			    const std::vector<StreamUsage> &usages) override;
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
@@ -84,14 +84,12 @@ PipelineHandlerUVC::~PipelineHandlerUVC()
 
 std::map<Stream *, StreamConfiguration>
 PipelineHandlerUVC::streamConfiguration(Camera *camera,
-					std::set<Stream *> &streams)
+					const std::vector<StreamUsage> &usages)
 {
 	UVCCameraData *data = cameraData(camera);
-
 	std::map<Stream *, StreamConfiguration> configs;
 	StreamConfiguration config{};
 
-	LOG(UVC, Debug) << "Retrieving default format";
 	config.width = 640;
 	config.height = 480;
 	config.pixelFormat = V4L2_PIX_FMT_YUYV;

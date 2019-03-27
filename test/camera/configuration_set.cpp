@@ -18,9 +18,8 @@ class ConfigurationSet : public CameraTest
 protected:
 	int run()
 	{
-		std::set<Stream *> streams = { *camera_->streams().begin() };
 		std::map<Stream *, StreamConfiguration> conf =
-			camera_->streamConfiguration(streams);
+			camera_->streamConfiguration({ Stream::VideoRecording() });
 		StreamConfiguration *sconf = &conf.begin()->second;
 
 		if (!configurationValid(conf)) {

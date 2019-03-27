@@ -22,6 +22,7 @@ class PipelineHandler;
 class Request;
 class Stream;
 class StreamConfiguration;
+class StreamUsage;
 
 class Camera final
 {
@@ -44,7 +45,7 @@ public:
 
 	const std::set<Stream *> &streams() const;
 	std::map<Stream *, StreamConfiguration>
-	streamConfiguration(std::set<Stream *> &streams);
+	streamConfiguration(const std::vector<StreamUsage> &usage);
 	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
 
 	int allocateBuffers();

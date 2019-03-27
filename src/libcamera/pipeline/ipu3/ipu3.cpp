@@ -141,7 +141,7 @@ public:
 
 	std::map<Stream *, StreamConfiguration>
 	streamConfiguration(Camera *camera,
-			    std::set<Stream *> &streams) override;
+			    const std::vector<StreamUsage> &usages) override;
 	int configureStreams(Camera *camera,
 			     std::map<Stream *, StreamConfiguration> &config) override;
 
@@ -206,7 +206,7 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 
 std::map<Stream *, StreamConfiguration>
 PipelineHandlerIPU3::streamConfiguration(Camera *camera,
-					 std::set<Stream *> &streams)
+					 const std::vector<StreamUsage> &usages)
 {
 	std::map<Stream *, StreamConfiguration> configs;
 	IPU3CameraData *data = cameraData(camera);

@@ -235,9 +235,7 @@ protected:
 
 	int run()
 	{
-		Stream *stream = *camera_->streams().begin();
-		std::set<Stream *> streams = { stream };
-		defconf_ = camera_->streamConfiguration(streams);
+		defconf_ = camera_->streamConfiguration({ Stream::VideoRecording() });
 
 		if (testAvailable() != TestPass) {
 			cout << "State machine in Available state failed" << endl;

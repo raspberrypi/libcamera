@@ -322,14 +322,6 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		const std::set<Stream *> &streams = camera->streams();
-		if (streams.size() != 1) {
-			std::cout << "Camera has " << streams.size()
-				  << " streams, only 1 is supported"
-				  << std::endl;
-			goto out;
-		}
-
 		if (camera->acquire()) {
 			std::cout << "Failed to acquire camera" << std::endl;
 			goto out;

@@ -7,15 +7,22 @@
 #ifndef __QCAM_FORMAT_CONVERTER_H__
 #define __QCAM_FORMAT_CONVERTER_H__
 
+#include <stddef.h>
+
+class QImage;
+
 class FormatConverter
 {
 public:
 	int configure(unsigned int format, unsigned int width,
 		      unsigned int height);
 
-	void convert(const unsigned char *src, unsigned char *dst);
+	void convert(const unsigned char *src, size_t size, QImage *dst);
 
 private:
+	void convertYUV(const unsigned char *src, unsigned char *dst);
+
+	unsigned int format_;
 	unsigned int width_;
 	unsigned int height_;
 	unsigned int y_pos_;

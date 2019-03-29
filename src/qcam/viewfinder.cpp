@@ -16,9 +16,9 @@ ViewFinder::ViewFinder(QWidget *parent)
 {
 }
 
-void ViewFinder::display(const unsigned char *raw)
+void ViewFinder::display(const unsigned char *raw, size_t size)
 {
-	converter_.convert(raw, image_->bits());
+	converter_.convert(raw, size, image_);
 
 	QPixmap pixmap = QPixmap::fromImage(*image_);
 	setPixmap(pixmap);

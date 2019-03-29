@@ -222,7 +222,7 @@ int MainWindow::display(Buffer *buffer)
 
 	Plane &plane = buffer->planes().front();
 	unsigned char *raw = static_cast<unsigned char *>(plane.mem());
-	viewfinder_->display(raw);
+	viewfinder_->display(raw, buffer->bytesused());
 
 	return 0;
 }

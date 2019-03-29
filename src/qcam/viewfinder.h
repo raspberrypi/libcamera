@@ -20,7 +20,7 @@ public:
 
 	int setFormat(unsigned int format, unsigned int width,
 		      unsigned int height);
-	void display(const unsigned char *rgb);
+	void display(const unsigned char *rgb, size_t size);
 
 private:
 	unsigned int format_;

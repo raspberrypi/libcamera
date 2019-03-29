@@ -9,6 +9,8 @@
 
 #include <linux/videodev2.h>
 
+#include <QImage>
+
 #include "format_converter.h"
 
 #define RGBSHIFT		8
@@ -45,14 +47,26 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
+	case V4L2_PIX_FMT_MJPEG:
+		break;
 	default:
 		return -EINVAL;
 	};
 
+	format_ = format;
 	width_ = width;
 	height_ = height;
 
 	return 0;
+}
+
+void FormatConverter::convert(const unsigned char *src, size_t size,
+			      QImage *dst)
+{
+	if (format_ == V4L2_PIX_FMT_MJPEG)
+		dst->loadFromData(src, size, "JPEG");
+	else
+		convertYUV(src, dst->bits());
 }
 
 static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)
@@ -65,7 +79,7 @@ static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)
 	*b = CLIP(( 298 * c + 516 * d           + 128) >> RGBSHIFT);
 }
 
-void FormatConverter::convert(const unsigned char *src, unsigned char *dst)
+void FormatConverter::convertYUV(const unsigned char *src, unsigned char *dst)
 {
 	unsigned int src_x, src_y, dst_x, dst_y;
 	unsigned int src_stride;

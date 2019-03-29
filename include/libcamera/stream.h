@@ -35,8 +35,6 @@ private:
 	StreamConfiguration configuration_;
 };
 
-
-
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_STREAM_H__ */

@@ -29,7 +29,7 @@ public:
 	const StreamConfiguration &configuration() const { return configuration_; }
 
 private:
-	friend Camera;
+	friend class Camera;
 
 	BufferPool bufferPool_;
 	StreamConfiguration configuration_;

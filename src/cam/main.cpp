@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <map>
 #include <signal.h>
+#include <sstream>
 #include <string.h>
 
 #include <libcamera/libcamera.h>
@@ -23,6 +24,7 @@ using namespace libcamera;
 
 OptionsParser::Options options;
 std::shared_ptr<Camera> camera;
+std::map<Stream *, std::string> streamInfo;
 EventLoop *loop;
 BufferWriter *writer;
 
@@ -87,9 +89,12 @@ static int prepareCameraConfig(CameraConfiguration *config)
 {
 	std::vector<StreamUsage> roles;
 
+	streamInfo.clear();
+
 	/* If no configuration is provided assume a single video stream. */
 	if (!options.isSet(OptStream)) {
 		*config = camera->streamConfiguration({ Stream::VideoRecording() });
+		streamInfo[config->front()] = "stream0";
 		return 0;
 	}
 
@@ -142,31 +147,48 @@ static int prepareCameraConfig(CameraConfiguration *config)
 			(*config)[stream].pixelFormat = conf["pixelformat"];
 	}
 
+	unsigned int index = 0;
+	for (Stream *stream : *config) {
+		streamInfo[stream] = "stream" + std::to_string(index);
+		index++;
+	}
+
 	return 0;
 }
 
 static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
 {
-	static uint64_t last = 0;
+	static uint64_t now, last = 0;
+	double fps = 0.0;
 
 	if (request->status() == Request::RequestCancelled)
 		return;
 
-	Buffer *buffer = buffers.begin()->second;
+	struct timespec time;
+	clock_gettime(CLOCK_MONOTONIC, &time);
+	now = time.tv_sec * 1000 + time.tv_nsec / 1000000;
+	fps = now - last;
+	fps = last && fps ? 1000.0 / fps : 0.0;
+	last = now;
 
-	double fps = buffer->timestamp() - last;
-	fps = last && fps ? 1000000000.0 / fps : 0.0;
-	last = buffer->timestamp();
+	std::stringstream info;
+	info << "fps: " << std::fixed << std::setprecision(2) << fps;
 
-	std::cout << "seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
-		  << " buf: " << buffer->index()
-		  << " bytesused: " << buffer->bytesused()
-		  << " timestamp: " << buffer->timestamp()
-		  << " fps: " << std::fixed << std::setprecision(2) << fps
-		  << std::endl;
+	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
+		Stream *stream = it->first;
+		Buffer *buffer = it->second;
+		const std::string &name = streamInfo[stream];
 
-	if (writer)
-		writer->write(buffer, "stream0");
+		info << " " << name
+		     << " (" << buffer->index() << ")"
+		     << " seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
+		     << " bytesused: " << buffer->bytesused();
+
+		if (writer)
+			writer->write(buffer, name);
+	}
+
+	std::cout << info.str() << std::endl;
 
 	request = camera->createRequest();
 	if (!request) {

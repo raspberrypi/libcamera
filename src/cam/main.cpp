@@ -28,9 +28,9 @@ enum {
 	OptCamera = 'c',
 	OptCapture = 'C',
 	OptFile = 'F',
-	OptFormat = 'f',
 	OptHelp = 'h',
 	OptList = 'l',
+	OptStream = 's',
 };
 
 void signalHandler(int signal)
@@ -41,12 +41,12 @@ void signalHandler(int signal)
 
 static int parseOptions(int argc, char *argv[])
 {
-	KeyValueParser formatKeyValue;
-	formatKeyValue.addOption("width", OptionInteger, "Width in pixels",
+	KeyValueParser streamKeyValue;
+	streamKeyValue.addOption("width", OptionInteger, "Width in pixels",
 				 ArgumentRequired);
-	formatKeyValue.addOption("height", OptionInteger, "Height in pixels",
+	streamKeyValue.addOption("height", OptionInteger, "Height in pixels",
 				 ArgumentRequired);
-	formatKeyValue.addOption("pixelformat", OptionInteger, "Pixel format",
+	streamKeyValue.addOption("pixelformat", OptionInteger, "Pixel format",
 				 ArgumentRequired);
 
 	OptionsParser parser;
@@ -60,8 +60,8 @@ static int parseOptions(int argc, char *argv[])
 			 "The first '#' character in the file name is expanded to the frame sequence number.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename");
-	parser.addOption(OptFormat, &formatKeyValue,
-			 "Set format of the camera's first stream", "format");
+	parser.addOption(OptStream, &streamKeyValue,
+			 "Set configuration of a camera stream", "stream");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
@@ -83,18 +83,18 @@ static int prepareCameraConfig(CameraConfiguration *config)
 	*config = camera->streamConfiguration({ Stream::VideoRecording() });
 	Stream *stream = config->front();
 
-	if (options.isSet(OptFormat)) {
-		KeyValueParser::Options format = options[OptFormat];
+	if (options.isSet(OptStream)) {
+		KeyValueParser::Options conf = options[OptStream];
 
-		if (format.isSet("width"))
-			(*config)[stream].width = format["width"];
+		if (conf.isSet("width"))
+			(*config)[stream].width = conf["width"];
 
-		if (format.isSet("height"))
-			(*config)[stream].height = format["height"];
+		if (conf.isSet("height"))
+			(*config)[stream].height = conf["height"];
 
 		/* TODO: Translate 4CC string to ID. */
-		if (format.isSet("pixelformat"))
-			(*config)[stream].pixelFormat = format["pixelformat"];
+		if (conf.isSet("pixelformat"))
+			(*config)[stream].pixelFormat = conf["pixelformat"];
 	}
 
 	return 0;

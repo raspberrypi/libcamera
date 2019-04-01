@@ -78,27 +78,27 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static int configureStreams(Camera *camera, std::set<Stream *> &streams)
+static int prepareCameraConfig(std::map<Stream *, StreamConfiguration> *config)
 {
-	KeyValueParser::Options format = options[OptFormat];
-	Stream *id = *streams.begin();
-
-	std::map<Stream *, StreamConfiguration> config =
-		camera->streamConfiguration(streams);
+	std::set<Stream *> streams = camera->streams();
+	*config = camera->streamConfiguration(streams);
+	Stream *stream = config->begin()->first;
 
 	if (options.isSet(OptFormat)) {
+		KeyValueParser::Options format = options[OptFormat];
+
 		if (format.isSet("width"))
-			config[id].width = format["width"];
+			(*config)[stream].width = format["width"];
 
 		if (format.isSet("height"))
-			config[id].height = format["height"];
+			(*config)[stream].height = format["height"];
 
 		/* TODO: Translate 4CC string to ID. */
 		if (format.isSet("pixelformat"))
-			config[id].pixelFormat = format["pixelformat"];
+			(*config)[stream].pixelFormat = format["pixelformat"];
 	}
 
-	return camera->configureStreams(config);
+	return 0;
 }
 
 static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
@@ -136,18 +136,23 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 
 static int capture()
 {
+	std::map<Stream *, StreamConfiguration> config;
+	std::vector<Request *> requests;
 	int ret;
 
-	std::set<Stream *> streams = camera->streams();
-	std::vector<Request *> requests;
+	ret = prepareCameraConfig(&config);
+	if (ret) {
+		std::cout << "Failed to prepare camera configuration" << std::endl;
+		return ret;
+	}
 
-	ret = configureStreams(camera.get(), streams);
+	ret = camera->configureStreams(config);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;
 	}
 
-	Stream *stream = *streams.begin();
+	Stream *stream = config.begin()->first;
 
 	ret = camera->allocateBuffers();
 	if (ret) {

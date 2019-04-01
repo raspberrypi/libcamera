@@ -5,8 +5,10 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <limits.h>
 #include <map>
 #include <signal.h>
 #include <string.h>
@@ -42,6 +44,9 @@ void signalHandler(int signal)
 static int parseOptions(int argc, char *argv[])
 {
 	KeyValueParser streamKeyValue;
+	streamKeyValue.addOption("role", OptionString,
+				 "Role for the stream (viewfinder, video, still)",
+				 ArgumentRequired);
 	streamKeyValue.addOption("width", OptionInteger, "Width in pixels",
 				 ArgumentRequired);
 	streamKeyValue.addOption("height", OptionInteger, "Height in pixels",
@@ -61,7 +66,7 @@ static int parseOptions(int argc, char *argv[])
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename");
 	parser.addOption(OptStream, &streamKeyValue,
-			 "Set configuration of a camera stream", "stream");
+			 "Set configuration of a camera stream", "stream", true);
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
@@ -80,11 +85,51 @@ static int parseOptions(int argc, char *argv[])
 
 static int prepareCameraConfig(CameraConfiguration *config)
 {
-	*config = camera->streamConfiguration({ Stream::VideoRecording() });
-	Stream *stream = config->front();
+	std::vector<StreamUsage> roles;
 
-	if (options.isSet(OptStream)) {
-		KeyValueParser::Options conf = options[OptStream];
+	/* If no configuration is provided assume a single video stream. */
+	if (!options.isSet(OptStream)) {
+		*config = camera->streamConfiguration({ Stream::VideoRecording() });
+		return 0;
+	}
+
+	const std::vector<OptionValue> &streamOptions =
+		options[OptStream].toArray();
+
+	/* Use roles and get a default configuration. */
+	for (auto const &value : streamOptions) {
+		KeyValueParser::Options conf = value.toKeyValues();
+
+		if (!conf.isSet("role")) {
+			roles.push_back(Stream::VideoRecording());
+		} else if (conf["role"].toString() == "viewfinder") {
+			roles.push_back(Stream::Viewfinder(conf["width"],
+							   conf["height"]));
+		} else if (conf["role"].toString() == "video") {
+			roles.push_back(Stream::VideoRecording());
+		} else if (conf["role"].toString() == "still") {
+			roles.push_back(Stream::StillCapture());
+		} else {
+			std::cerr << "Unknown stream role "
+				  << conf["role"].toString() << std::endl;
+			return -EINVAL;
+		}
+	}
+
+	*config = camera->streamConfiguration(roles);
+
+	if (!config->isValid()) {
+		std::cerr << "Failed to get default stream configuration"
+			  << std::endl;
+		return -EINVAL;
+	}
+
+	/* Apply configuration explicitly requested. */
+	CameraConfiguration::iterator it = config->begin();
+	for (auto const &value : streamOptions) {
+		KeyValueParser::Options conf = value.toKeyValues();
+		Stream *stream = *it;
+		it++;
 
 		if (conf.isSet("width"))
 			(*config)[stream].width = conf["width"];
@@ -136,7 +181,6 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 static int capture()
 {
 	CameraConfiguration config;
-	std::vector<Request *> requests;
 	int ret;
 
 	ret = prepareCameraConfig(&config);
@@ -151,8 +195,6 @@ static int capture()
 		return ret;
 	}
 
-	Stream *stream = config.front();
-
 	ret = camera->allocateBuffers();
 	if (ret) {
 		std::cerr << "Failed to allocate buffers"
@@ -162,9 +204,18 @@ static int capture()
 
 	camera->requestCompleted.connect(requestComplete);
 
-	BufferPool &pool = stream->bufferPool();
+	/* Identify the stream with the least number of buffers. */
+	unsigned int nbuffers = UINT_MAX;
+	for (Stream *stream : config)
+		nbuffers = std::min(nbuffers, stream->bufferPool().count());
 
-	for (Buffer &buffer : pool.buffers()) {
+	/*
+	 * TODO: make cam tool smarter to support still capture by for
+	 * example pushing a button. For now run all streams all the time.
+	 */
+
+	std::vector<Request *> requests;
+	for (unsigned int i = 0; i < nbuffers; i++) {
 		Request *request = camera->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;
@@ -173,7 +224,9 @@ static int capture()
 		}
 
 		std::map<Stream *, Buffer *> map;
-		map[stream] = &buffer;
+		for (Stream *stream : config)
+			map[stream] = &stream->bufferPool().buffers()[i];
+
 		ret = request->setBuffers(map);
 		if (ret < 0) {
 			std::cerr << "Can't set buffers for request" << std::endl;

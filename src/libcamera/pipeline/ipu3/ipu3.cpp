@@ -8,6 +8,8 @@
 #include <memory>
 #include <vector>
 
+#include <linux/media-bus-format.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -41,9 +43,15 @@ public:
 
 	int init(const MediaDevice *media, unsigned int index);
 
+	static int mediaBusToFormat(unsigned int code);
+
 	V4L2Device *output_;
 	V4L2Subdevice *csi2_;
 	V4L2Subdevice *sensor_;
+
+	/* Maximum sizes and the mbus code used to produce them. */
+	unsigned int mbusCode_;
+	Size maxSize_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler
@@ -407,7 +415,7 @@ void PipelineHandlerIPU3::IPU3CameraData::bufferReady(Buffer *buffer)
  * Create and open the video device and subdevices in the CIO2 instance at \a
  * index, if a supported image sensor is connected to the CSI-2 receiver of
  * this CIO2 instance.  Enable the media links connecting the CIO2 components
- * to prepare for capture operations.
+ * to prepare for capture operations and cached the sensor maximum size.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV No supported image sensor is connected to this CIO2 instance
@@ -442,6 +450,10 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 		return ret;
 
 	/*
+	 * Now that we're sure a sensor subdevice is connected, make sure it
+	 * produces at least one image format compatible with CIO2 requirements
+	 * and cache the camera maximum size.
+	 *
 	 * \todo Define when to open and close video device nodes, as they
 	 * might impact on power consumption.
 	 */
@@ -449,6 +461,27 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	ret = sensor_->open();
 	if (ret)
 		return ret;
+
+	for (auto it : sensor_->formats(0)) {
+		int mbusCode = mediaBusToFormat(it.first);
+		if (mbusCode < 0)
+			continue;
+
+		for (const SizeRange &size : it.second) {
+			if (maxSize_.width < size.maxWidth &&
+			    maxSize_.height < size.maxHeight) {
+				maxSize_.width = size.maxWidth;
+				maxSize_.height = size.maxHeight;
+				mbusCode_ = mbusCode;
+			}
+		}
+	}
+	if (maxSize_.width == 0) {
+		LOG(IPU3, Info) << "Sensor '" << sensor_->entityName()
+				<< "' detected, but no supported image format "
+				<< " found: skip camera creation";
+		return -ENODEV;
+	}
 
 	csi2_ = new V4L2Subdevice(csi2Entity);
 	ret = csi2_->open();
@@ -462,6 +495,22 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 		return ret;
 
 	return 0;
+}
+
+int CIO2Device::mediaBusToFormat(unsigned int code)
+{
+	switch (code) {
+	case MEDIA_BUS_FMT_SBGGR10_1X10:
+		return V4L2_PIX_FMT_IPU3_SBGGR10;
+	case MEDIA_BUS_FMT_SGBRG10_1X10:
+		return V4L2_PIX_FMT_IPU3_SGBRG10;
+	case MEDIA_BUS_FMT_SGRBG10_1X10:
+		return V4L2_PIX_FMT_IPU3_SGRBG10;
+	case MEDIA_BUS_FMT_SRGGB10_1X10:
+		return V4L2_PIX_FMT_IPU3_SRGGB10;
+	default:
+		return -EINVAL;
+	}
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3);

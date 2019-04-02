@@ -40,6 +40,21 @@ struct SizeRange {
 	unsigned int maxHeight;
 };
 
+struct Size {
+	Size()
+		: Size(0, 0)
+	{
+	}
+
+	Size(unsigned int w, unsigned int h)
+		: width(w), height(h)
+	{
+	}
+
+	unsigned int width;
+	unsigned int height;
+};
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_GEOMETRY_H__ */

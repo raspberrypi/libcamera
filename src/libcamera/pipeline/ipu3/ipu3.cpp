@@ -511,7 +511,8 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 * going through a library teardown->match() sequence would fail
 	 * at the moment.
 	 */
-	if (imguMediaDev_->disableLinks())
+	ret = imguMediaDev_->disableLinks();
+	if (ret)
 		goto error;
 
 	ret = registerCameras();

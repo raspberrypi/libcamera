@@ -8,7 +8,10 @@ qcam_sources = files([
 ])
 
 import('qt5')
-qt5_dep = dependency('qt5', modules: ['Core', 'Gui', 'Widgets'], required : false)
+qt5_dep = dependency('qt5',
+                     method : 'pkg-config',
+                     modules : ['Core', 'Gui', 'Widgets'],
+                     required : false)
 
 if qt5_dep.found()
     qcam  = executable('qcam', qcam_sources,

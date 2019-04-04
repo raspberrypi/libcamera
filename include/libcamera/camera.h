@@ -24,6 +24,35 @@ class Stream;
 class StreamConfiguration;
 class StreamUsage;
 
+class CameraConfiguration
+{
+public:
+	using iterator = std::vector<Stream *>::iterator;
+	using const_iterator = std::vector<Stream *>::const_iterator;
+
+	CameraConfiguration();
+
+	iterator begin();
+	iterator end();
+	const_iterator begin() const;
+	const_iterator end() const;
+
+	bool isValid() const;
+	bool isEmpty() const;
+	std::size_t size() const;
+
+	Stream *front();
+	const Stream *front() const;
+
+	Stream *operator[](unsigned int index) const;
+	StreamConfiguration &operator[](Stream *stream);
+	const StreamConfiguration &operator[](Stream *stream) const;
+
+private:
+	std::vector<Stream *> order_;
+	std::map<Stream *, StreamConfiguration> config_;
+};
+
 class Camera final
 {
 public:

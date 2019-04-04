@@ -7,7 +7,7 @@
 
 #include <sstream>
 
-#include "geometry.h"
+#include <libcamera/geometry.h>
 
 /**
  * \file geometry.h

@@ -11,8 +11,9 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/geometry.h>
+
 #include "formats.h"
-#include "geometry.h"
 #include "log.h"
 #include "media_object.h"
 

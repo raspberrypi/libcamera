@@ -9,7 +9,8 @@
 #include <iostream>
 #include <vector>
 
-#include "geometry.h"
+#include <libcamera/geometry.h>
+
 #include "v4l2_subdevice.h"
 #include "v4l2_subdevice_test.h"
 

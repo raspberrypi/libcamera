@@ -14,7 +14,8 @@
 
 #include <linux/v4l2-subdev.h>
 
-#include "geometry.h"
+#include <libcamera/geometry.h>
+
 #include "log.h"
 #include "media_device.h"
 #include "media_object.h"

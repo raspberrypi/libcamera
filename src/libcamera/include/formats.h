@@ -11,7 +11,7 @@
 #include <map>
 #include <vector>
 
-#include "geometry.h"
+#include <libcamera/geometry.h>
 
 namespace libcamera {
 

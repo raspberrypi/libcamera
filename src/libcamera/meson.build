@@ -25,12 +25,14 @@ libcamera_sources = files([
 libcamera_headers = files([
     'include/device_enumerator.h',
     'include/event_dispatcher_poll.h',
+    'include/formats.h',
     'include/log.h',
     'include/media_device.h',
     'include/media_object.h',
     'include/pipeline_handler.h',
     'include/utils.h',
     'include/v4l2_device.h',
+    'include/v4l2_subdevice.h',
 ])
 
 libcamera_internal_includes =  include_directories('include')

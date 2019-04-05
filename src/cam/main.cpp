@@ -57,7 +57,7 @@ static int parseOptions(int argc, char *argv[])
 			 "Capture until interrupted by user", "capture");
 	parser.addOption(OptFile, OptionString,
 			 "Write captured frames to disk\n"
-			 "The first '#' character in the file name is expanded to the frame sequence number.\n"
+			 "The first '#' character in the file name is expanded to the stream name and frame sequence number.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename");
 	parser.addOption(OptStream, &streamKeyValue,
@@ -121,7 +121,7 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 		  << std::endl;
 
 	if (writer)
-		writer->write(buffer);
+		writer->write(buffer, "stream0");
 
 	request = camera->createRequest();
 	if (!request) {

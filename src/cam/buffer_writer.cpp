@@ -19,7 +19,8 @@ BufferWriter::BufferWriter(const std::string &pattern)
 {
 }
 
-int BufferWriter::write(libcamera::Buffer *buffer)
+int BufferWriter::write(libcamera::Buffer *buffer,
+			const std::string &streamName)
 {
 	std::string filename;
 	size_t pos;
@@ -29,7 +30,8 @@ int BufferWriter::write(libcamera::Buffer *buffer)
 	pos = filename.find_first_of('#');
 	if (pos != std::string::npos) {
 		std::stringstream ss;
-		ss << std::setw(6) << std::setfill('0') << buffer->sequence();
+		ss << streamName << "-" << std::setw(6)
+		   << std::setfill('0') << buffer->sequence();
 		filename.replace(pos, 1, ss.str());
 	}
 

@@ -16,7 +16,7 @@ class BufferWriter
 public:
 	BufferWriter(const std::string &pattern = "frame-#.bin");
 
-	int write(libcamera::Buffer *buffer);
+	int write(libcamera::Buffer *buffer, const std::string &streamName);
 
 private:
 	std::string pattern_;

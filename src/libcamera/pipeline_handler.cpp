@@ -163,15 +163,15 @@ PipelineHandler::~PipelineHandler()
  * The intended companion to this is \a configureStreams() which can be used to
  * change the group of streams parameters.
  *
- * \return A map of successfully retrieved streams and configurations or an
- * empty map on error.
+ * \return A valid CameraConfiguration if the requested usages can be satisfied,
+ * or a invalid configuration otherwise
  */
 
 /**
  * \fn PipelineHandler::configureStreams()
  * \brief Configure a group of streams for capture
  * \param[in] camera The camera to configure
- * \param[in] config A map of stream configurations to apply
+ * \param[in] config The camera configurations to setup
  *
  * Configure the specified group of streams for \a camera according to the
  * configuration specified in \a configs. The intended caller of this interface

@@ -78,10 +78,10 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static int prepareCameraConfig(std::map<Stream *, StreamConfiguration> *config)
+static int prepareCameraConfig(CameraConfiguration *config)
 {
 	*config = camera->streamConfiguration({ Stream::VideoRecording() });
-	Stream *stream = config->begin()->first;
+	Stream *stream = config->front();
 
 	if (options.isSet(OptFormat)) {
 		KeyValueParser::Options format = options[OptFormat];
@@ -135,7 +135,7 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 
 static int capture()
 {
-	std::map<Stream *, StreamConfiguration> config;
+	CameraConfiguration config;
 	std::vector<Request *> requests;
 	int ret;
 
@@ -151,7 +151,7 @@ static int capture()
 		return ret;
 	}
 
-	Stream *stream = config.begin()->first;
+	Stream *stream = config.front();
 
 	ret = camera->allocateBuffers();
 	if (ret) {

@@ -73,9 +73,9 @@ public:
 	int release();
 
 	const std::set<Stream *> &streams() const;
-	std::map<Stream *, StreamConfiguration>
+	CameraConfiguration
 	streamConfiguration(const std::vector<StreamUsage> &usage);
-	int configureStreams(std::map<Stream *, StreamConfiguration> &config);
+	int configureStreams(const CameraConfiguration &config);
 
 	int allocateBuffers();
 	int freeBuffers();

@@ -265,7 +265,7 @@ protected:
 		return TestPass;
 	}
 
-	std::map<Stream *, StreamConfiguration> defconf_;
+	CameraConfiguration defconf_;
 };
 
 } /* namespace */

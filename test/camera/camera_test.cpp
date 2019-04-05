@@ -45,21 +45,3 @@ void CameraTest::cleanup()
 
 	cm_->stop();
 };
-
-bool CameraTest::configurationValid(const std::map<Stream *, StreamConfiguration> &config) const
-{
-	/* Test that the configuration is not empty. */
-	if (config.empty())
-		return false;
-
-	/* Test that configuration is valid. */
-	for (auto const &it : config) {
-		const StreamConfiguration &conf = it.second;
-
-		if (conf.width == 0 || conf.height == 0 ||
-		    conf.pixelFormat == 0 || conf.bufferCount == 0)
-			return false;
-	}
-
-	return true;
-}

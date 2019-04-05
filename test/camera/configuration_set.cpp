@@ -18,11 +18,11 @@ class ConfigurationSet : public CameraTest
 protected:
 	int run()
 	{
-		std::map<Stream *, StreamConfiguration> conf =
+		CameraConfiguration conf =
 			camera_->streamConfiguration({ Stream::VideoRecording() });
-		StreamConfiguration *sconf = &conf.begin()->second;
+		StreamConfiguration *sconf = &conf[conf.front()];
 
-		if (!configurationValid(conf)) {
+		if (!conf.isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}

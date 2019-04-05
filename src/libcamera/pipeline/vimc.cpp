@@ -26,11 +26,11 @@ public:
 	PipelineHandlerVimc(CameraManager *manager);
 	~PipelineHandlerVimc();
 
-	std::map<Stream *, StreamConfiguration>
+	CameraConfiguration
 	streamConfiguration(Camera *camera,
 			    const std::vector<StreamUsage> &usages) override;
 	int configureStreams(Camera *camera,
-			     std::map<Stream *, StreamConfiguration> &config) override;
+			     const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera, Stream *stream) override;
 	int freeBuffers(Camera *camera, Stream *stream) override;
@@ -82,12 +82,12 @@ PipelineHandlerVimc::~PipelineHandlerVimc()
 		media_->release();
 }
 
-std::map<Stream *, StreamConfiguration>
+CameraConfiguration
 PipelineHandlerVimc::streamConfiguration(Camera *camera,
 					 const std::vector<StreamUsage> &usages)
 {
 	VimcCameraData *data = cameraData(camera);
-	std::map<Stream *, StreamConfiguration> configs;
+	CameraConfiguration configs;
 	StreamConfiguration config{};
 
 	config.width = 640;
@@ -101,10 +101,10 @@ PipelineHandlerVimc::streamConfiguration(Camera *camera,
 }
 
 int PipelineHandlerVimc::configureStreams(Camera *camera,
-				      std::map<Stream *, StreamConfiguration> &config)
+					  const CameraConfiguration &config)
 {
 	VimcCameraData *data = cameraData(camera);
-	StreamConfiguration *cfg = &config[&data->stream_];
+	const StreamConfiguration *cfg = &config[&data->stream_];
 	int ret;
 
 	LOG(VIMC, Debug) << "Configure the camera for resolution "

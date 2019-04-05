@@ -46,7 +46,7 @@ private:
 
 	std::shared_ptr<Camera> camera_;
 	bool isCapturing_;
-	std::map<Stream *, StreamConfiguration> config_;
+	CameraConfiguration config_;
 
 	ViewFinder *viewfinder_;
 };

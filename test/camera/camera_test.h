@@ -23,8 +23,6 @@ protected:
 	int init();
 	void cleanup();
 
-	bool configurationValid(const std::map<Stream *, StreamConfiguration> &config) const;
-
 	std::shared_ptr<Camera> camera_;
 
 private:

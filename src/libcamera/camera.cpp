@@ -543,21 +543,21 @@ const std::set<Stream *> &Camera::streams() const
  * list of stream usages and the camera returns a map of suitable streams and
  * their suggested default configurations.
  *
- * \return A map of streams to configurations if the requested usages can be
- * satisfied, or an empty map otherwise
+ * \return A valid CameraConfiguration if the requested usages can be satisfied,
+ * or a invalid one otherwise
  */
-std::map<Stream *, StreamConfiguration>
+CameraConfiguration
 Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
 {
 	if (disconnected_ || !usages.size() || usages.size() > streams_.size())
-		return std::map<Stream *, StreamConfiguration>{};
+		return CameraConfiguration();
 
 	return pipe_->streamConfiguration(this, usages);
 }
 
 /**
  * \brief Configure the camera's streams prior to capture
- * \param[in] config A map of stream IDs and configurations to setup
+ * \param[in] config The camera configurations to setup
  *
  * Prior to starting capture, the camera must be configured to select a
  * group of streams to be involved in the capture and their configuration.
@@ -579,7 +579,7 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
  * \retval -EACCES The camera is not in a state where it can be configured
  * \retval -EINVAL The configuration is not valid
  */
-int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
+int Camera::configureStreams(const CameraConfiguration &config)
 {
 	int ret;
 
@@ -589,14 +589,14 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 	if (!stateBetween(CameraAcquired, CameraConfigured))
 		return -EACCES;
 
-	if (!config.size()) {
+	if (!config.isValid()) {
 		LOG(Camera, Error)
-			<< "Can't configure streams without a configuration";
+			<< "Can't configure camera with invalid configuration";
 		return -EINVAL;
 	}
 
-	for (auto const &iter : config) {
-		if (streams_.find(iter.first) == streams_.end())
+	for (Stream *stream : config) {
+		if (streams_.find(stream) == streams_.end())
 			return -EINVAL;
 	}
 
@@ -605,9 +605,8 @@ int Camera::configureStreams(std::map<Stream *, StreamConfiguration> &config)
 		return ret;
 
 	activeStreams_.clear();
-	for (auto const &iter : config) {
-		Stream *stream = iter.first;
-		const StreamConfiguration &cfg = iter.second;
+	for (Stream *stream : config) {
+		const StreamConfiguration &cfg = config[stream];
 
 		stream->configuration_ = cfg;
 		activeStreams_.insert(stream);

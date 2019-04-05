@@ -42,12 +42,12 @@ protected:
 
 	int run()
 	{
-		std::map<Stream *, StreamConfiguration> conf =
+		CameraConfiguration conf =
 			camera_->streamConfiguration({ Stream::VideoRecording() });
-		Stream *stream = conf.begin()->first;
-		StreamConfiguration *sconf = &conf.begin()->second;
+		Stream *stream = conf.front();
+		StreamConfiguration *sconf = &conf[stream];
 
-		if (!configurationValid(conf)) {
+		if (!conf.isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}

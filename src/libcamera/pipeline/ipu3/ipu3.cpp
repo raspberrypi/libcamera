@@ -139,11 +139,11 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 	~PipelineHandlerIPU3();
 
-	std::map<Stream *, StreamConfiguration>
+	CameraConfiguration
 	streamConfiguration(Camera *camera,
 			    const std::vector<StreamUsage> &usages) override;
 	int configureStreams(Camera *camera,
-			     std::map<Stream *, StreamConfiguration> &config) override;
+			     const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera, Stream *stream) override;
 	int freeBuffers(Camera *camera, Stream *stream) override;
@@ -204,11 +204,11 @@ PipelineHandlerIPU3::~PipelineHandlerIPU3()
 		imguMediaDev_->release();
 }
 
-std::map<Stream *, StreamConfiguration>
+CameraConfiguration
 PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 					 const std::vector<StreamUsage> &usages)
 {
-	std::map<Stream *, StreamConfiguration> configs;
+	CameraConfiguration configs;
 	IPU3CameraData *data = cameraData(camera);
 	StreamConfiguration *config = &configs[&data->stream_];
 
@@ -234,7 +234,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 }
 
 int PipelineHandlerIPU3::configureStreams(Camera *camera,
-					  std::map<Stream *, StreamConfiguration> &config)
+					  const CameraConfiguration &config)
 {
 	IPU3CameraData *data = cameraData(camera);
 	const StreamConfiguration &cfg = config[&data->stream_];

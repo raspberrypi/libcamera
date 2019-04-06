@@ -4,3 +4,4 @@ libcamera_sources += files([
 ])
 
 subdir('ipu3')
+subdir('rkisp1')

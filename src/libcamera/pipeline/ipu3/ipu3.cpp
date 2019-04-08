@@ -62,7 +62,7 @@ public:
 	}
 
 	int init(MediaDevice *media, unsigned int index);
-	int configureInput(const StreamConfiguration &config,
+	int configureInput(const Size &size,
 			   V4L2DeviceFormat *inputFormat);
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &config);
@@ -112,7 +112,7 @@ public:
 	}
 
 	int init(const MediaDevice *media, unsigned int index);
-	int configure(const StreamConfiguration &config,
+	int configure(const Size &size,
 		      V4L2DeviceFormat *outputFormat);
 
 	BufferPool *exportBuffers();
@@ -128,6 +128,19 @@ public:
 	CameraSensor *sensor_;
 
 	BufferPool pool_;
+};
+
+class IPU3Stream : public Stream
+{
+public:
+	IPU3Stream()
+		: active_(false), device_(nullptr)
+	{
+	}
+
+	bool active_;
+	std::string name_;
+	ImgUDevice::ImgUOutput *device_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler
@@ -170,7 +183,8 @@ private:
 		CIO2Device cio2_;
 		ImgUDevice *imgu_;
 
-		Stream stream_;
+		IPU3Stream outStream_;
+		IPU3Stream vfStream_;
 	};
 
 	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
@@ -209,7 +223,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 {
 	CameraConfiguration configs;
 	IPU3CameraData *data = cameraData(camera);
-	StreamConfiguration *config = &configs[&data->stream_];
+	StreamConfiguration config = {};
 
 	/*
 	 * FIXME: Soraka: the maximum resolution reported by both sensors
@@ -219,12 +233,20 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 	 *
 	 * \todo Clarify ImgU alignement requirements.
 	 */
-	config->width = 2560;
-	config->height = 1920;
-	config->pixelFormat = V4L2_PIX_FMT_NV12;
-	config->bufferCount = IPU3_BUFFER_COUNT;
+	config.width = 2560;
+	config.height = 1920;
+	config.pixelFormat = V4L2_PIX_FMT_NV12;
+	config.bufferCount = IPU3_BUFFER_COUNT;
 
-	LOG(IPU3, Debug) << "Stream format set to " << config->toString();
+	configs[&data->outStream_] = config;
+	LOG(IPU3, Debug)
+		<< "Stream '" << data->outStream_.name_ << "' format set to "
+		<< config.toString();
+
+	configs[&data->vfStream_] = config;
+	LOG(IPU3, Debug)
+		<< "Stream '" << data->vfStream_.name_ << "' format set to "
+		<< config.toString();
 
 	return configs;
 }
@@ -233,30 +255,52 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 					  const CameraConfiguration &config)
 {
 	IPU3CameraData *data = cameraData(camera);
-	const StreamConfiguration &cfg = config[&data->stream_];
+	IPU3Stream *outStream = &data->outStream_;
+	IPU3Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
+	Size sensorSize = {};
 	int ret;
 
-	/*
-	 * Verify that the requested size respects the IPU3 alignement
-	 * requirements (the image width shall be a multiple of 8 pixels and
-	 * its height a multiple of 4 pixels) and the camera maximum sizes.
-	 *
-	 * \todo: consider the BDS scaling factor requirements:
-	 * "the downscaling factor must be an integer value multiple of 1/32"
-	 */
-	if (cfg.width % 8 || cfg.height % 4) {
-		LOG(IPU3, Error) << "Invalid stream size: bad alignment";
-		return -EINVAL;
-	}
+	outStream->active_ = false;
+	vfStream->active_ = false;
+	for (Stream *s : config) {
+		IPU3Stream *stream = static_cast<IPU3Stream *>(s);
+		const StreamConfiguration &cfg = config[stream];
 
-	const Size &resolution = cio2->sensor_->resolution();
-	if (cfg.width > resolution.width ||
-	    cfg.height > resolution.height) {
-		LOG(IPU3, Error)
-			<< "Invalid stream size: larger than sensor resolution";
-		return -EINVAL;
+		/*
+		 * Verify that the requested size respects the IPU3 alignment
+		 * requirements (the image width shall be a multiple of 8
+		 * pixels and its height a multiple of 4 pixels) and the camera
+		 * maximum sizes.
+		 *
+		 * \todo: Consider the BDS scaling factor requirements: "the
+		 * downscaling factor must be an integer value multiple of 1/32"
+		 */
+		if (cfg.width % 8 || cfg.height % 4) {
+			LOG(IPU3, Error)
+				<< "Invalid stream size: bad alignment";
+			return -EINVAL;
+		}
+
+		const Size &resolution = cio2->sensor_->resolution();
+		if (cfg.width > resolution.width ||
+		    cfg.height > resolution.height) {
+			LOG(IPU3, Error)
+				<< "Invalid stream size: larger than sensor resolution";
+			return -EINVAL;
+		}
+
+		/*
+		 * Collect the maximum width and height: IPU3 can downscale
+		 * only.
+		 */
+		if (cfg.width > sensorSize.width)
+			sensorSize.width = cfg.width;
+		if (cfg.height > sensorSize.height)
+			sensorSize.height = cfg.height;
+
+		stream->active_ = true;
 	}
 
 	/*
@@ -272,24 +316,51 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	 * adjusted format to be propagated to the ImgU output devices.
 	 */
 	V4L2DeviceFormat cio2Format = {};
-	ret = cio2->configure(cfg, &cio2Format);
+	ret = cio2->configure(sensorSize, &cio2Format);
 	if (ret)
 		return ret;
 
-	ret = imgu->configureInput(cfg, &cio2Format);
+	ret = imgu->configureInput(sensorSize, &cio2Format);
 	if (ret)
 		return ret;
 
-	/* Apply the format to the ImgU output, viewfinder and stat. */
-	ret = imgu->configureOutput(&imgu->output_, cfg);
-	if (ret)
-		return ret;
+	/* Apply the format to the configured streams output devices. */
+	for (Stream *s : config) {
+		IPU3Stream *stream = static_cast<IPU3Stream *>(s);
 
-	ret = imgu->configureOutput(&imgu->viewfinder_, cfg);
-	if (ret)
-		return ret;
+		ret = imgu->configureOutput(stream->device_, config[stream]);
+		if (ret)
+			return ret;
+	}
 
-	ret = imgu->configureOutput(&imgu->stat_, cfg);
+	/*
+	 * As we need to set format also on the non-active streams, use
+	 * the configuration of the active one for that purpose (there should
+	 * be at least one active stream in the configuration request).
+	 */
+	if (!outStream->active_) {
+		ret = imgu->configureOutput(outStream->device_,
+					    config[vfStream]);
+		if (ret)
+			return ret;
+	}
+
+	if (!vfStream->active_) {
+		ret = imgu->configureOutput(vfStream->device_,
+					    config[outStream]);
+		if (ret)
+			return ret;
+	}
+
+	/*
+	 * Apply the largest available format to the stat node.
+	 * \todo Revise this when we'll actually use the stat node.
+	 */
+	StreamConfiguration statConfig = {};
+	statConfig.width = cio2Format.width;
+	statConfig.height = cio2Format.height;
+
+	ret = imgu->configureOutput(&imgu->stat_, statConfig);
 	if (ret)
 		return ret;
 
@@ -404,7 +475,7 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
 	V4L2Device *output = data->imgu_->output_.dev;
-	Stream *stream = &data->stream_;
+	IPU3Stream *stream = &data->outStream_;
 
 	/* Queue a buffer to the ImgU output for capture. */
 	Buffer *buffer = request->findBuffer(stream);
@@ -555,7 +626,10 @@ int PipelineHandlerIPU3::registerCameras()
 	for (unsigned int id = 0; id < 4 && numCameras < 2; ++id) {
 		std::unique_ptr<IPU3CameraData> data =
 			utils::make_unique<IPU3CameraData>(this);
-		std::set<Stream *> streams{ &data->stream_ };
+		std::set<Stream *> streams = {
+			&data->outStream_,
+			&data->vfStream_,
+		};
 		CIO2Device *cio2 = &data->cio2_;
 
 		ret = cio2->init(cio2MediaDev_.get(), id);
@@ -563,11 +637,16 @@ int PipelineHandlerIPU3::registerCameras()
 			continue;
 
 		/**
-		 * \todo Dynamically assign ImgU devices; as of now, limit
-		 * support to two cameras only, and assign imgu0 to the first
-		 * one and imgu1 to the second.
+		 * \todo Dynamically assign ImgU and output devices to each
+		 * stream and camera; as of now, limit support to two cameras
+		 * only, and assign imgu0 to the first one and imgu1 to the
+		 * second.
 		 */
 		data->imgu_ = numCameras ? &imgu1_ : &imgu0_;
+		data->outStream_.device_ = &data->imgu_->output_;
+		data->outStream_.name_ = "output";
+		data->vfStream_.device_ = &data->imgu_->viewfinder_;
+		data->vfStream_.name_ = "viewfinder";
 
 		/*
 		 * Connect video devices' 'bufferReady' signals to their
@@ -718,11 +797,11 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 /**
  * \brief Configure the ImgU unit input
- * \param[in] config The requested stream configuration
+ * \param[in] size The ImgU input frame size
  * \param[in] inputFormat The format to be applied to ImgU input
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::configureInput(const StreamConfiguration &config,
+int ImgUDevice::configureInput(const Size &size,
 			       V4L2DeviceFormat *inputFormat)
 {
 	/* Configure the ImgU input video device with the requested sizes. */
@@ -760,8 +839,8 @@ int ImgUDevice::configureInput(const StreamConfiguration &config,
 			 << rect.toString();
 
 	V4L2SubdeviceFormat imguFormat = {};
-	imguFormat.width = config.width;
-	imguFormat.height = config.height;
+	imguFormat.width = size.width;
+	imguFormat.height = size.height;
 	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
 
 	ret = imgu_->setFormat(PAD_INPUT, &imguFormat);
@@ -1074,11 +1153,11 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 
 /**
  * \brief Configure the CIO2 unit
- * \param[in] config The requested configuration
+ * \param[in] size The requested CIO2 output frame size
  * \param[out] outputFormat The CIO2 unit output image format
  * \return 0 on success or a negative error code otherwise
  */
-int CIO2Device::configure(const StreamConfiguration &config,
+int CIO2Device::configure(const Size &size,
 			  V4L2DeviceFormat *outputFormat)
 {
 	V4L2SubdeviceFormat sensorFormat;
@@ -1092,7 +1171,7 @@ int CIO2Device::configure(const StreamConfiguration &config,
 					    MEDIA_BUS_FMT_SGBRG10_1X10,
 					    MEDIA_BUS_FMT_SGRBG10_1X10,
 					    MEDIA_BUS_FMT_SRGGB10_1X10 },
-					  Size(config.width, config.height));
+					  size);
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;

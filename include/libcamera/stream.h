@@ -43,7 +43,7 @@ private:
 	Size size_;
 };
 
-class Stream final
+class Stream
 {
 public:
 	class StillCapture : public StreamUsage
@@ -68,7 +68,7 @@ public:
 	BufferPool &bufferPool() { return bufferPool_; }
 	const StreamConfiguration &configuration() const { return configuration_; }
 
-private:
+protected:
 	friend class Camera;
 
 	BufferPool bufferPool_;

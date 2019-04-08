@@ -32,6 +32,7 @@ public:
 	Request(const Request &) = delete;
 	Request &operator=(const Request &) = delete;
 
+	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
 	int setBuffers(const std::map<Stream *, Buffer *> &streamMap);
 	Buffer *findBuffer(Stream *stream) const;
 

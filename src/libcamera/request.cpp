@@ -52,6 +52,16 @@ Request::Request(Camera *camera)
 }
 
 /**
+ * \fn Request::buffers()
+ * \brief Retrieve the request's streams to buffers map
+ *
+ * Return a reference to the map that associates each Stream part of the
+ * request to the Buffer the Stream output should be directed to.
+ *
+ * \return The map of Stream to Buffer
+ */
+
+/**
  * \brief Set the streams to capture with associated buffers
  * \param[in] streamMap The map of streams to buffers
  * \return 0 on success or a negative error code otherwise

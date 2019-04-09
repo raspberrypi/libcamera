@@ -107,6 +107,14 @@ Buffer *Request::findBuffer(Stream *stream) const
  */
 
 /**
+ * \fn Request::hasPendingBuffers()
+ * \brief Check if a request has buffers yet to be completed
+ *
+ * \return True if the request has buffers pending for completion, false
+ * otherwise
+ */
+
+/**
  * \brief Prepare the resources for the completion handler
  */
 int Request::prepare()
@@ -127,7 +135,7 @@ int Request::prepare()
  */
 void Request::complete(Status status)
 {
-	ASSERT(pending_.empty());
+	ASSERT(!hasPendingBuffers());
 	status_ = status;
 }
 
@@ -149,7 +157,7 @@ bool Request::completeBuffer(Buffer *buffer)
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	return pending_.empty();
+	return !hasPendingBuffers();
 }
 
 } /* namespace libcamera */

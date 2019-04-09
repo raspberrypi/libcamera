@@ -37,6 +37,8 @@ public:
 
 	Status status() const { return status_; }
 
+	bool hasPendingBuffers() const { return !pending_.empty(); }
+
 private:
 	friend class Camera;
 	friend class PipelineHandler;

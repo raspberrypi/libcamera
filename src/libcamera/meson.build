@@ -2,6 +2,7 @@ libcamera_sources = files([
     'buffer.cpp',
     'camera.cpp',
     'camera_manager.cpp',
+    'camera_sensor.cpp',
     'device_enumerator.cpp',
     'event_dispatcher.cpp',
     'event_dispatcher_poll.cpp',
@@ -23,6 +24,7 @@ libcamera_sources = files([
 ])
 
 libcamera_headers = files([
+    'include/camera_sensor.h',
     'include/device_enumerator.h',
     'include/event_dispatcher_poll.h',
     'include/formats.h',

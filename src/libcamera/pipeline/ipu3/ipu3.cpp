@@ -15,6 +15,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "camera_sensor.h"
 #include "device_enumerator.h"
 #include "log.h"
 #include "media_device.h"
@@ -124,11 +125,7 @@ public:
 
 	V4L2Device *output_;
 	V4L2Subdevice *csi2_;
-	V4L2Subdevice *sensor_;
-
-	/* Maximum sizes and the mbus code used to produce them. */
-	unsigned int mbusCode_;
-	Size maxSize_;
+	CameraSensor *sensor_;
 
 	BufferPool pool_;
 };
@@ -257,8 +254,9 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 		return -EINVAL;
 	}
 
-	if (cfg.width > cio2->maxSize_.width ||
-	    cfg.height > cio2->maxSize_.height) {
+	const Size &resolution = cio2->sensor_->resolution();
+	if (cfg.width > resolution.width ||
+	    cfg.height > resolution.height) {
 		LOG(IPU3, Error)
 			<< "Invalid stream size: larger than sensor resolution";
 		return -EINVAL;
@@ -1032,45 +1030,39 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 
 	MediaLink *link = links[0];
 	MediaEntity *sensorEntity = link->source()->entity();
-	if (sensorEntity->function() != MEDIA_ENT_F_CAM_SENSOR)
-		return -ENODEV;
+	sensor_ = new CameraSensor(sensorEntity);
+	ret = sensor_->init();
+	if (ret)
+		return ret;
 
 	ret = link->setEnabled(true);
 	if (ret)
 		return ret;
 
 	/*
-	 * Now that we're sure a sensor subdevice is connected, make sure it
-	 * produces at least one image format compatible with CIO2 requirements
-	 * and cache the camera maximum size.
+	 * Make sure the sensor produces at least one format compatible with
+	 * the CIO2 requirements.
 	 *
+	 * utils::set_overlap requires the ranges to be sorted, keep the
+	 * cio2Codes vector sorted in ascending order.
+	 */
+	const std::vector<unsigned int> cio2Codes{ MEDIA_BUS_FMT_SBGGR10_1X10,
+						   MEDIA_BUS_FMT_SGRBG10_1X10,
+						   MEDIA_BUS_FMT_SGBRG10_1X10,
+						   MEDIA_BUS_FMT_SRGGB10_1X10 };
+	const std::vector<unsigned int> &sensorCodes = sensor_->mbusCodes();
+	if (!utils::set_overlap(sensorCodes.begin(), sensorCodes.end(),
+				cio2Codes.begin(), cio2Codes.end())) {
+		LOG(IPU3, Error)
+			<< "Sensor " << sensor_->entity()->name()
+			<< " has not format compatible with the IPU3";
+		return -EINVAL;
+	}
+
+	/*
 	 * \todo Define when to open and close video device nodes, as they
 	 * might impact on power consumption.
 	 */
-	sensor_ = new V4L2Subdevice(sensorEntity);
-	ret = sensor_->open();
-	if (ret)
-		return ret;
-
-	for (auto it : sensor_->formats(0)) {
-		int mbusCode = mediaBusToFormat(it.first);
-		if (mbusCode < 0)
-			continue;
-
-		for (const SizeRange &size : it.second) {
-			if (maxSize_.width < size.max.width &&
-			    maxSize_.height < size.max.height) {
-				maxSize_ = size.max;
-				mbusCode_ = mbusCode;
-			}
-		}
-	}
-	if (maxSize_.width == 0) {
-		LOG(IPU3, Info) << "Sensor '" << sensor_->entity()->name()
-				<< "' detected, but no supported image format "
-				<< " found: skip camera creation";
-		return -ENODEV;
-	}
 
 	csi2_ = new V4L2Subdevice(csi2Entity);
 	ret = csi2_->open();
@@ -1096,47 +1088,19 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 int CIO2Device::configure(const StreamConfiguration &config,
 			  V4L2DeviceFormat *outputFormat)
 {
-	unsigned int imageSize = config.width * config.height;
-	V4L2SubdeviceFormat sensorFormat = {};
-	unsigned int best = ~0;
+	V4L2SubdeviceFormat sensorFormat;
 	int ret;
-
-	for (auto it : sensor_->formats(0)) {
-		/* Only consider formats consumable by the CIO2 unit. */
-		if (mediaBusToFormat(it.first) < 0)
-			continue;
-
-		for (const SizeRange &size : it.second) {
-			/*
-			 * Only select formats bigger than the requested sizes
-			 * as the IPU3 cannot up-scale.
-			 *
-			 * \todo: Unconditionally scale on the sensor as much
-			 * as possible. This will need to be revisited when
-			 * implementing the scaling policy.
-			 */
-			if (size.max.width < config.width ||
-			    size.max.height < config.height)
-				continue;
-
-			unsigned int diff = size.max.width * size.max.height
-					  - imageSize;
-			if (diff >= best)
-				continue;
-
-			best = diff;
-
-			sensorFormat.width = size.max.width;
-			sensorFormat.height = size.max.height;
-			sensorFormat.mbus_code = it.first;
-		}
-	}
 
 	/*
 	 * Apply the selected format to the sensor, the CSI-2 receiver and
 	 * the CIO2 output device.
 	 */
-	ret = sensor_->setFormat(0, &sensorFormat);
+	sensorFormat = sensor_->getFormat({ MEDIA_BUS_FMT_SBGGR10_1X10,
+					    MEDIA_BUS_FMT_SGBRG10_1X10,
+					    MEDIA_BUS_FMT_SGRBG10_1X10,
+					    MEDIA_BUS_FMT_SRGGB10_1X10 },
+					  Size(config.width, config.height));
+	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
 

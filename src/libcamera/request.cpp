@@ -115,10 +115,20 @@ Buffer *Request::findBuffer(Stream *stream) const
  */
 
 /**
- * \brief Prepare the resources for the completion handler
+ * \brief Validate the request and prepare it for the completion handler
+ *
+ * Requests that contain no buffers are invalid and are rejected.
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \retval -EINVAL The request is invalid
  */
 int Request::prepare()
 {
+	if (bufferMap_.empty()) {
+		LOG(Request, Error) << "Invalid request due to missing buffers";
+		return -EINVAL;
+	}
+
 	for (auto const &pair : bufferMap_) {
 		Buffer *buffer = pair.second;
 		pending_.insert(buffer);

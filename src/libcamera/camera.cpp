@@ -713,9 +713,14 @@ Request *Camera::createRequest()
  * \brief Queue a request to the camera
  * \param[in] request The request to queue to the camera
  *
- * This method queues a \a request allocated with createRequest() to the camera
- * for capture. Once the request has been queued, the camera will notify its
- * completion through the \ref requestCompleted signal.
+ * This method queues a \a request to the camera for capture.
+ *
+ * After allocating the request with createRequest(), the application shall
+ * fill it with at least one capture buffer before queuing it. Requests that
+ * contain no buffers are invalid and are rejected without being queued.
+ *
+ * Once the request has been queued, the camera will notify its completion
+ * through the \ref requestCompleted signal.
  *
  * Ownership of the request is transferred to the camera. It will be deleted
  * automatically after it completes.

@@ -196,7 +196,7 @@ void *Plane::mem()
  */
 
 Buffer::Buffer()
-	: index_(-1)
+	: index_(-1), request_(nullptr)
 {
 }
 
@@ -249,6 +249,22 @@ Buffer::Buffer()
  */
 
 /**
+ * \fn Buffer::request()
+ * \brief Retrieve the request this buffer belongs to
+ *
+ * The intended callers of this method are buffer completion handlers that
+ * need to associate a buffer to the request it belongs to.
+ *
+ * A Buffer is associated to a request by Request::prepare() and the
+ * association is valid until the buffer completes. The returned request
+ * pointer is valid only during that interval.
+ *
+ * \return The Request the Buffer belongs to, or nullptr if the buffer is
+ * either completed or not associated with a request
+ * \sa Buffer::setRequest()
+ */
+
+/**
  * \brief Mark a buffer as cancel by setting its status to BufferCancelled
  */
 void Buffer::cancel()
@@ -258,6 +274,13 @@ void Buffer::cancel()
 	sequence_ = 0;
 	status_ = BufferCancelled;
 }
+
+/**
+ * \fn Buffer::setRequest()
+ * \brief Set the request this buffer belongs to
+ *
+ * The intended callers are Request::prepare() and Request::completeBuffer().
+ */
 
 /**
  * \class BufferPool

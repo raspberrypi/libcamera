@@ -141,6 +141,7 @@ int Request::prepare()
 
 	for (auto const &pair : bufferMap_) {
 		Buffer *buffer = pair.second;
+		buffer->setRequest(this);
 		pending_.insert(buffer);
 	}
 
@@ -176,6 +177,8 @@ bool Request::completeBuffer(Buffer *buffer)
 {
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
+
+	buffer->setRequest(nullptr);
 
 	return !hasPendingBuffers();
 }

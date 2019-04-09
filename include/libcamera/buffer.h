@@ -13,6 +13,7 @@
 namespace libcamera {
 
 class BufferPool;
+class Request;
 
 class Plane final
 {
@@ -52,13 +53,17 @@ public:
 	unsigned int sequence() const { return sequence_; }
 	Status status() const { return status_; }
 	std::vector<Plane> &planes() { return planes_; }
+	Request *request() const { return request_; }
 
 private:
 	friend class BufferPool;
 	friend class PipelineHandler;
+	friend class Request;
 	friend class V4L2Device;
 
 	void cancel();
+
+	void setRequest(Request *request) { request_ = request; }
 
 	unsigned int index_;
 	unsigned int bytesused_;
@@ -67,6 +72,7 @@ private:
 	Status status_;
 
 	std::vector<Plane> planes_;
+	Request *request_;
 };
 
 class BufferPool final

@@ -1058,10 +1058,9 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 			continue;
 
 		for (const SizeRange &size : it.second) {
-			if (maxSize_.width < size.maxWidth &&
-			    maxSize_.height < size.maxHeight) {
-				maxSize_.width = size.maxWidth;
-				maxSize_.height = size.maxHeight;
+			if (maxSize_.width < size.max.width &&
+			    maxSize_.height < size.max.height) {
+				maxSize_ = size.max;
 				mbusCode_ = mbusCode;
 			}
 		}
@@ -1116,19 +1115,19 @@ int CIO2Device::configure(const StreamConfiguration &config,
 			 * as possible. This will need to be revisited when
 			 * implementing the scaling policy.
 			 */
-			if (size.maxWidth < config.width ||
-			    size.maxHeight < config.height)
+			if (size.max.width < config.width ||
+			    size.max.height < config.height)
 				continue;
 
-			unsigned int diff = size.maxWidth * size.maxHeight
+			unsigned int diff = size.max.width * size.max.height
 					  - imageSize;
 			if (diff >= best)
 				continue;
 
 			best = diff;
 
-			sensorFormat.width = size.maxWidth;
-			sensorFormat.height = size.maxHeight;
+			sensorFormat.width = size.max.width;
+			sensorFormat.height = size.max.height;
 			sensorFormat.mbus_code = it.first;
 		}
 	}

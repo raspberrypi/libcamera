@@ -93,11 +93,11 @@ const std::string Rectangle::toString() const
 
 /**
  * \struct SizeRange
- * \brief Describe a range of image sizes
+ * \brief Describe a range of sizes
  *
- * SizeRange describes a range of image sizes included in the (minWidth,
- * minHeight) - (maxWidth, maxHeight) interval. If the minimum and
- * maximum sizes are identical it represents a single image resolution.
+ * SizeRange describes a range of sizes included in the [min, max]
+ * interval for both the width and the height. If the minimum and
+ * maximum sizes are identical it represents a single size.
  */
 
 /**
@@ -115,23 +115,13 @@ const std::string Rectangle::toString() const
  */
 
 /**
- * \var SizeRange::minWidth
- * \brief The minimum image width
+ * \var SizeRange::min
+ * \brief The minimum size
  */
 
 /**
- * \var SizeRange::minHeight
- * \brief The minimum image height
- */
-
-/**
- * \var SizeRange::maxWidth
- * \brief The maximum image width
- */
-
-/**
- * \var SizeRange::maxHeight
- * \brief The maximum image height
+ * \var SizeRange::max
+ * \brief The maximum size
  */
 
 } /* namespace libcamera */

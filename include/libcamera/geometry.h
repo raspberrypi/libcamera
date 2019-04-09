@@ -38,21 +38,17 @@ struct Size {
 
 struct SizeRange {
 	SizeRange()
-		: SizeRange(0, 0, 0, 0)
 	{
 	}
 
 	SizeRange(unsigned int minW, unsigned int minH,
 		  unsigned int maxW, unsigned int maxH)
-		: minWidth(minW), minHeight(minH), maxWidth(maxW),
-		  maxHeight(maxH)
+		: min(minW, minH), max(maxW, maxH)
 	{
 	}
 
-	unsigned int minWidth;
-	unsigned int minHeight;
-	unsigned int maxWidth;
-	unsigned int maxHeight;
+	Size min;
+	Size max;
 };
 
 } /* namespace libcamera */

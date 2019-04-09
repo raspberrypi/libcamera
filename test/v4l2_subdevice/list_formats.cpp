@@ -37,10 +37,10 @@ void ListFormatsTest::printFormats(unsigned int pad,
 	for (SizeRange &size : sizes) {
 		cout << "	mbus code: 0x" << setfill('0') << setw(4)
 		     << hex << code << endl;
-		cout << "	min width: " << dec << size.minWidth << endl;
-		cout << "	min height: " << dec << size.minHeight << endl;
-		cout << "	max width: " << dec << size.maxWidth << endl;
-		cout << "	max height: " << dec << size.maxHeight << endl;
+		cout << "	min width: " << dec << size.min.width << endl;
+		cout << "	min height: " << dec << size.min.height << endl;
+		cout << "	max width: " << dec << size.max.width << endl;
+		cout << "	max height: " << dec << size.max.height << endl;
 	}
 }
 

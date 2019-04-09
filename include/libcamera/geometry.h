@@ -21,6 +21,21 @@ struct Rectangle {
 	const std::string toString() const;
 };
 
+struct Size {
+	Size()
+		: Size(0, 0)
+	{
+	}
+
+	Size(unsigned int w, unsigned int h)
+		: width(w), height(h)
+	{
+	}
+
+	unsigned int width;
+	unsigned int height;
+};
+
 struct SizeRange {
 	SizeRange()
 		: SizeRange(0, 0, 0, 0)
@@ -38,21 +53,6 @@ struct SizeRange {
 	unsigned int minHeight;
 	unsigned int maxWidth;
 	unsigned int maxHeight;
-};
-
-struct Size {
-	Size()
-		: Size(0, 0)
-	{
-	}
-
-	Size(unsigned int w, unsigned int h)
-		: width(w), height(h)
-	{
-	}
-
-	unsigned int width;
-	unsigned int height;
 };
 
 } /* namespace libcamera */

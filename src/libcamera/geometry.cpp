@@ -63,6 +63,35 @@ const std::string Rectangle::toString() const
 }
 
 /**
+ * \struct Size
+ * \brief Describe a two-dimensional size
+ *
+ * The Size structure defines a two-dimensional size with integer precision.
+ */
+
+/**
+ * \fn Size::Size()
+ * \brief Construct a Size with width and height set to 0
+ */
+
+/**
+ * \fn Size::Size(unsigned int width, unsigned int height)
+ * \brief Construct a Size with given \a width and \a height
+ * \param width The Size width
+ * \param height The Size height
+ */
+
+/**
+ * \var Size::width
+ * \brief The Size width
+ */
+
+/**
+ * \var Size::height
+ * \brief The Size height
+ */
+
+/**
  * \struct SizeRange
  * \brief Describe a range of image sizes
  *
@@ -103,35 +132,6 @@ const std::string Rectangle::toString() const
 /**
  * \var SizeRange::maxHeight
  * \brief The maximum image height
- */
-
-/**
- * \struct Size
- * \brief Describe a two-dimensional size
- *
- * The Size structure defines a two-dimensional size with integer precision.
- */
-
-/**
- * \fn Size::Size()
- * \brief Construct a Size with width and height set to 0
- */
-
-/**
- * \fn Size::Size(unsigned int width, unsigned int height)
- * \brief Construct a Size with given \a width and \a height
- * \param width The Size width
- * \param height The Size height
- */
-
-/**
- * \var Size::width
- * \brief The Size width
- */
-
-/**
- * \var Size::height
- * \brief The Size height
  */
 
 } /* namespace libcamera */

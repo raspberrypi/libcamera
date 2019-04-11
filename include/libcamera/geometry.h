@@ -21,6 +21,12 @@ struct Rectangle {
 	const std::string toString() const;
 };
 
+bool operator==(const Rectangle &lhs, const Rectangle &rhs);
+static inline bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
+{
+	return !(lhs == rhs);
+}
+
 struct Size {
 	Size()
 		: Size(0, 0)
@@ -36,6 +42,29 @@ struct Size {
 	unsigned int height;
 };
 
+bool operator==(const Size &lhs, const Size &rhs);
+bool operator<(const Size &lhs, const Size &rhs);
+
+static inline bool operator!=(const Size &lhs, const Size &rhs)
+{
+	return !(lhs == rhs);
+}
+
+static inline bool operator<=(const Size &lhs, const Size &rhs)
+{
+	return lhs < rhs || lhs == rhs;
+}
+
+static inline bool operator>(const Size &lhs, const Size &rhs)
+{
+	return !(lhs <= rhs);
+}
+
+static inline bool operator>=(const Size &lhs, const Size &rhs)
+{
+	return !(lhs < rhs);
+}
+
 struct SizeRange {
 	SizeRange()
 	{
@@ -50,6 +79,12 @@ struct SizeRange {
 	Size min;
 	Size max;
 };
+
+bool operator==(const SizeRange &lhs, const SizeRange &rhs);
+static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
+{
+	return !(lhs == rhs);
+}
 
 } /* namespace libcamera */
 

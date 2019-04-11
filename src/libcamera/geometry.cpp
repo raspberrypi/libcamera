@@ -6,6 +6,7 @@
  */
 
 #include <sstream>
+#include <stdint.h>
 
 #include <libcamera/geometry.h>
 
@@ -63,6 +64,22 @@ const std::string Rectangle::toString() const
 }
 
 /**
+ * \brief Compare rectangles for equality
+ * \return True if the two rectangles are equal, false otherwise
+ */
+bool operator==(const Rectangle &lhs, const Rectangle &rhs)
+{
+	return lhs.x == rhs.x && lhs.y == rhs.y &&
+	       lhs.w == rhs.w && lhs.h == rhs.h;
+}
+
+/**
+ * \fn bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
+ * \brief Compare rectangles for inequality
+ * \return True if the two rectangles are not equal, false otherwise
+ */
+
+/**
  * \struct Size
  * \brief Describe a two-dimensional size
  *
@@ -89,6 +106,72 @@ const std::string Rectangle::toString() const
 /**
  * \var Size::height
  * \brief The Size height
+ */
+
+/**
+ * \brief Compare sizes for equality
+ * \return True if the two sizes are equal, false otherwise
+ */
+bool operator==(const Size &lhs, const Size &rhs)
+{
+	return lhs.width == rhs.width && lhs.height == rhs.height;
+}
+
+/**
+ * \brief Compare sizes for smaller than order
+ *
+ * Sizes are compared on three criteria, in the following order.
+ *
+ * - A size with smaller width and smaller height is smaller.
+ * - A size with smaller area is smaller.
+ * - A size with smaller width is smaller.
+ *
+ * \return True if \a lhs is smaller than \a rhs, false otherwise
+ */
+bool operator<(const Size &lhs, const Size &rhs)
+{
+	if (lhs.width < rhs.width && lhs.height < rhs.height)
+		return true;
+	else if (lhs.width >= rhs.width && lhs.height >= rhs.height)
+		return false;
+
+	uint64_t larea = static_cast<uint64_t>(lhs.width) *
+			 static_cast<uint64_t>(lhs.height);
+	uint64_t rarea = static_cast<uint64_t>(rhs.width) *
+			 static_cast<uint64_t>(rhs.height);
+	if (larea < rarea)
+		return true;
+	else if (larea > rarea)
+		return false;
+
+	return lhs.width < rhs.width;
+}
+
+/**
+ * \fn bool operator!=(const Size &lhs, const Size &rhs)
+ * \brief Compare sizes for inequality
+ * \return True if the two sizes are not equal, false otherwise
+ */
+
+/**
+ * \fn bool operator<=(const Size &lhs, const Size &rhs)
+ * \brief Compare sizes for smaller than or equal to order
+ * \return True if \a lhs is smaller than or equal to \a rhs, false otherwise
+ * \sa bool operator<(const Size &lhs, const Size &rhs)
+ */
+
+/**
+ * \fn bool operator>(const Size &lhs, const Size &rhs)
+ * \brief Compare sizes for greater than order
+ * \return True if \a lhs is greater than \a rhs, false otherwise
+ * \sa bool operator<(const Size &lhs, const Size &rhs)
+ */
+
+/**
+ * \fn bool operator>=(const Size &lhs, const Size &rhs)
+ * \brief Compare sizes for greater than or equal to order
+ * \return True if \a lhs is greater than or equal to \a rhs, false otherwise
+ * \sa bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
@@ -122,6 +205,21 @@ const std::string Rectangle::toString() const
 /**
  * \var SizeRange::max
  * \brief The maximum size
+ */
+
+/**
+ * \brief Compare size ranges for equality
+ * \return True if the two size ranges are equal, false otherwise
+ */
+bool operator==(const SizeRange &lhs, const SizeRange &rhs)
+{
+	return lhs.min == rhs.min && lhs.max == rhs.max;
+}
+
+/**
+ * \fn bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
+ * \brief Compare size ranges for inequality
+ * \return True if the two size ranges are not equal, false otherwise
  */
 
 } /* namespace libcamera */

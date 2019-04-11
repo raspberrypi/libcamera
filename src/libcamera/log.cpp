@@ -506,7 +506,7 @@ Loggable::~Loggable()
  * \return A log message
  */
 LogMessage Loggable::_log(const char *fileName, unsigned int line,
-			  LogSeverity severity)
+			  LogSeverity severity) const
 {
 	LogMessage msg(fileName, line, severity);
 
@@ -527,7 +527,8 @@ LogMessage Loggable::_log(const char *fileName, unsigned int line,
  * \return A log message
  */
 LogMessage Loggable::_log(const char *fileName, unsigned int line,
-			  const LogCategory &category, LogSeverity severity)
+			  const LogCategory &category,
+			  LogSeverity severity) const
 {
 	LogMessage msg(fileName, line, category, severity);
 

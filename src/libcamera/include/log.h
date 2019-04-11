@@ -76,9 +76,10 @@ protected:
 	virtual std::string logPrefix() const = 0;
 
 	LogMessage _log(const char *file, unsigned int line,
-			LogSeverity severity);
+			LogSeverity severity) const;
 	LogMessage _log(const char *file, unsigned int line,
-			const LogCategory &category, LogSeverity severity);
+			const LogCategory &category,
+			LogSeverity severity) const;
 };
 
 LogMessage _log(const char *file, unsigned int line, LogSeverity severity);

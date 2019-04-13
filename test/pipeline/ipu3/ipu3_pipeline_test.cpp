@@ -71,11 +71,6 @@ int IPU3PipelineTest::init()
 		return TestSkip;
 	}
 
-	if (cio2->open()) {
-		cerr << "Failed to open media device " << cio2->deviceNode() << endl;
-		return TestFail;
-	}
-
 	/*
 	 * Camera sensor are connected to the CIO2 unit.
 	 * Count how many sensors are connected in the system

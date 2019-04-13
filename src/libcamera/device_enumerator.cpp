@@ -207,11 +207,7 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 {
 	std::shared_ptr<MediaDevice> media = std::make_shared<MediaDevice>(deviceNode);
 
-	int ret = media->open();
-	if (ret < 0)
-		return ret;
-
-	ret = media->populate();
+	int ret = media->populate();
 	if (ret < 0) {
 		LOG(DeviceEnumerator, Info)
 			<< "Unable to populate media device " << deviceNode
@@ -237,8 +233,6 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 		if (ret)
 			return ret;
 	}
-
-	media->close();
 
 	LOG(DeviceEnumerator, Debug)
 		<< "Added device " << deviceNode << ": " << media->driver();

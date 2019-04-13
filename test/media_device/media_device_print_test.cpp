@@ -124,18 +124,12 @@ int MediaDevicePrintTest::testMediaDevice(const string deviceNode)
 
 	dev.close();
 
-	ret = dev.open();
-	if (ret)
-		return ret;
-
 	ret = dev.populate();
 	if (ret)
 		return ret;
 
 	/* Print out the media graph. */
 	printMediaGraph(dev, cerr);
-
-	dev.close();
 
 	return 0;
 }

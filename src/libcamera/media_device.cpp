@@ -221,6 +221,10 @@ int MediaDevice::populate()
 
 	clear();
 
+	ret = open();
+	if (ret)
+		return ret;
+
 	/*
 	 * Keep calling G_TOPOLOGY until the version number stays stable.
 	 */
@@ -237,7 +241,7 @@ int MediaDevice::populate()
 			LOG(MediaDevice, Error)
 				<< "Failed to enumerate topology: "
 				<< strerror(-ret);
-			return ret;
+			goto done;
 		}
 
 		if (version == topology.topology_version)
@@ -262,6 +266,10 @@ int MediaDevice::populate()
 	    populateLinks(topology))
 		valid_ = true;
 
+	ret = 0;
+done:
+	close();
+
 	delete[] ents;
 	delete[] interfaces;
 	delete[] pads;
@@ -272,7 +280,7 @@ int MediaDevice::populate()
 		return -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 /**

@@ -126,18 +126,11 @@ bool MediaDevice::acquire()
  */
 
 /**
- * \brief Open a media device and retrieve device information
- *
- * Before populating the media graph or performing any operation that interact
- * with the device node associated with the media device, the device node must
- * be opened.
- *
- * This function also retrieves media device information from the device node,
- * which can be queried through driver().
- *
- * If the device is already open the function returns -EBUSY.
+ * \brief Open the media device
  *
  * \return 0 on success or a negative error code otherwise
+ * \retval -EBUSY Media device already open
+ * \sa close()
  */
 int MediaDevice::open()
 {
@@ -155,20 +148,6 @@ int MediaDevice::open()
 		return ret;
 	}
 	fd_ = ret;
-
-	struct media_device_info info = { };
-	ret = ioctl(fd_, MEDIA_IOC_DEVICE_INFO, &info);
-	if (ret) {
-		ret = -errno;
-		LOG(MediaDevice, Error)
-			<< "Failed to get media device info "
-			<< ": " << strerror(-ret);
-		return ret;
-	}
-
-	driver_ = info.driver;
-	model_ = info.model;
-	version_ = info.media_version;
 
 	return 0;
 }
@@ -196,12 +175,13 @@ void MediaDevice::close()
 }
 
 /**
- * \brief Populate the media graph with media objects
+ * \brief Populate the MediaDevice with device information and media objects
  *
- * This function enumerates all media objects in the media device graph and
- * creates their MediaObject representations. All entities, pads and links are
- * stored as MediaEntity, MediaPad and MediaLink respectively, with cross-
- * references between objects. Interfaces are not processed.
+ * This function retrieves the media device information and enumerates all
+ * media objects in the media device graph and creates their MediaObject
+ * representations. All entities, pads and links are stored as MediaEntity,
+ * MediaPad and MediaLink respectively, with cross-references between objects.
+ * Interfaces are not processed.
  *
  * Entities are stored in a separate list in the MediaDevice to ease lookup,
  * while pads are accessible from the entity they belong to and links from the
@@ -224,6 +204,19 @@ int MediaDevice::populate()
 	ret = open();
 	if (ret)
 		return ret;
+
+	struct media_device_info info = {};
+	ret = ioctl(fd_, MEDIA_IOC_DEVICE_INFO, &info);
+	if (ret) {
+		ret = -errno;
+		LOG(MediaDevice, Error)
+			<< "Failed to get media device info " << strerror(-ret);
+		goto done;
+	}
+
+	driver_ = info.driver;
+	model_ = info.model;
+	version_ = info.media_version;
 
 	/*
 	 * Keep calling G_TOPOLOGY until the version number stays stable.

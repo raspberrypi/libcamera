@@ -27,7 +27,7 @@ public:
 	~MediaDevice();
 
 	bool acquire();
-	void release() { acquired_ = false; }
+	void release();
 	bool busy() const { return acquired_; }
 
 	int open();

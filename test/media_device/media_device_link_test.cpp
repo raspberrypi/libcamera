@@ -57,12 +57,6 @@ class MediaDeviceLinkTest : public Test
 			return TestSkip;
 		}
 
-		if (dev_->open()) {
-			cerr << "Failed to open media device at "
-			     << dev_->deviceNode() << endl;
-			return TestFail;
-		}
-
 		return 0;
 	}
 
@@ -238,7 +232,6 @@ class MediaDeviceLinkTest : public Test
 
 	void cleanup()
 	{
-		dev_->close();
 		dev_->release();
 	}
 

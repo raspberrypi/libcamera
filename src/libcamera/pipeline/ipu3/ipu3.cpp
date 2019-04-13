@@ -631,22 +631,9 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	/*
 	 * Disable all links that are enabled by default on CIO2, as camera
 	 * creation enables all valid links it finds.
-	 *
-	 * Close the CIO2 media device after, as links are enabled and should
-	 * not need to be changed after.
 	 */
-	if (cio2MediaDev_->open())
+	if (cio2MediaDev_->disableLinks())
 		return false;
-
-	if (cio2MediaDev_->disableLinks()) {
-		cio2MediaDev_->close();
-		return false;
-	}
-
-	if (imguMediaDev_->open()) {
-		cio2MediaDev_->close();
-		return false;
-	}
 
 	/*
 	 * FIXME: enabled links in one ImgU instance interfere with capture
@@ -674,13 +661,9 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 */
 	ret = imguMediaDev_->disableLinks();
 	if (ret)
-		goto error;
+		return ret;
 
 	ret = registerCameras();
-
-error:
-	cio2MediaDev_->close();
-	imguMediaDev_->close();
 
 	return ret == 0;
 }
@@ -1139,29 +1122,19 @@ int ImgUDevice::enableLinks(bool enable)
 	std::string inputName = name_ + " input";
 	int ret;
 
-	/* \todo Establish rules to handle media devices open/close. */
-	ret = media_->open();
+	ret = linkSetup(inputName, 0, name_, PAD_INPUT, enable);
 	if (ret)
 		return ret;
 
-	ret = linkSetup(inputName, 0, name_, PAD_INPUT, enable);
-	if (ret)
-		goto done;
-
 	ret = linkSetup(name_, PAD_OUTPUT, outputName, 0, enable);
 	if (ret)
-		goto done;
+		return ret;
 
 	ret = linkSetup(name_, PAD_VF, viewfinderName, 0, enable);
 	if (ret)
-		goto done;
+		return ret;
 
-	ret = linkSetup(name_, PAD_STAT, statName, 0, enable);
-
-done:
-	media_->close();
-
-	return ret;
+	return linkSetup(name_, PAD_STAT, statName, 0, enable);
 }
 
 /*------------------------------------------------------------------------------

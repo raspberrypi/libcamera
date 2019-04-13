@@ -40,22 +40,15 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * instance.
  *
  * The instance is created with an empty media graph. Before performing any
- * other operation, it must be opened with the open() function and the media
- * graph populated by calling populate(). Instances of MediaEntity, MediaPad and
- * MediaLink are created to model the media graph, and stored in a map indexed
- * by object id.
+ * other operation, it must be populate by calling populate(). Instances of
+ * MediaEntity, MediaPad and MediaLink are created to model the media graph,
+ * and stored in a map indexed by object id.
  *
  * The graph is valid once successfully populated, as reported by the valid()
  * function. It can be queried to list all entities(), or entities can be
  * looked up by name with getEntityByName(). The graph can be traversed from
  * entity to entity through pads and links as exposed by the corresponding
  * classes.
- *
- * An open media device will keep an open file handle for the underlying media
- * controller device node. It can be closed at any time with a call to close().
- * This will not invalidate the media graph and all cached media objects remain
- * valid and can be accessed normally. The device can then be later reopened if
- * needed to perform other operations that interact with the device node.
  *
  * Media device can be claimed for exclusive use with acquire(), released with
  * release() and tested with busy(). This mechanism is aimed at pipeline
@@ -66,8 +59,8 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * \brief Construct a MediaDevice
  * \param[in] deviceNode The media device node path
  *
- * Once constructed the media device is invalid, and must be opened and
- * populated with open() and populate() before the media graph can be queried.
+ * Once constructed the media device is invalid, and must be populated with
+ * populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &deviceNode)
 	: deviceNode_(deviceNode), fd_(-1), valid_(false), acquired_(false)
@@ -92,7 +85,8 @@ MediaDevice::~MediaDevice()
  * busy() function.
  *
  * Once claimed the device shall be released by its user when not needed anymore
- * by calling the release() function.
+ * by calling the release() function. Acquiring the media device opens a file
+ * descriptor to the device which is kept open until release() is called.
  *
  * Exclusive access is only guaranteed if all users of the media device abide by
  * the device claiming mechanism, as it isn't enforced by the media device
@@ -107,15 +101,22 @@ bool MediaDevice::acquire()
 	if (acquired_)
 		return false;
 
+	if (open())
+		return false;
+
 	acquired_ = true;
 	return true;
 }
 
 /**
- * \fn MediaDevice::release()
  * \brief Release a device previously claimed for exclusive use
  * \sa acquire(), busy()
  */
+void MediaDevice::release()
+{
+	close();
+	acquired_ = false;
+}
 
 /**
  * \fn MediaDevice::busy()

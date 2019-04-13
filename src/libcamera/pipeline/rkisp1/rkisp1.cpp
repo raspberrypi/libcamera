@@ -148,10 +148,6 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 	 */
 	const MediaPad *pad = dphy_->entity()->getPadByIndex(0);
 
-	ret = media_->open();
-	if (ret < 0)
-		return ret;
-
 	for (MediaLink *link : pad->links()) {
 		bool enable = link->source()->entity() == sensor->entity();
 
@@ -168,8 +164,6 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 		if (ret < 0)
 			break;
 	}
-
-	media_->close();
 
 	if (ret < 0)
 		return ret;
@@ -352,7 +346,6 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 {
 	const MediaPad *pad;
-	int ret;
 
 	DeviceMatch dm("rkisp1");
 	dm.add("rkisp1-isp-subdev");
@@ -368,35 +361,27 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 
 	media_->acquire();
 
-	ret = media_->open();
-	if (ret < 0)
-		return ret;
-
 	/* Create the V4L2 subdevices we will need. */
 	dphy_ = V4L2Subdevice::fromEntityName(media_.get(),
 					      "rockchip-sy-mipi-dphy");
-	ret = dphy_->open();
-	if (ret < 0)
-		goto done;
+	if (dphy_->open() < 0)
+		return false;
 
 	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "rkisp1-isp-subdev");
-	ret = isp_->open();
-	if (ret < 0)
-		goto done;
+	if (isp_->open() < 0)
+		return false;
 
 	/* Locate and open the capture video node. */
 	video_ = V4L2Device::fromEntityName(media_.get(), "rkisp1_mainpath");
-	ret = video_->open();
-	if (ret < 0)
-		goto done;
+	if (video_->open() < 0)
+		return false;
 
 	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 
 	/* Configure default links. */
-	ret = initLinks();
-	if (ret < 0) {
+	if (initLinks() < 0) {
 		LOG(RkISP1, Error) << "Failed to setup links";
-		goto done;
+		return false;
 	}
 
 	/*
@@ -404,18 +389,13 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	 * camera instance for each of them.
 	 */
 	pad = dphy_->entity()->getPadByIndex(0);
-	if (!pad) {
-		ret = -EINVAL;
-		goto done;
-	}
+	if (!pad)
+		return false;
 
 	for (MediaLink *link : pad->links())
 		createCamera(link->source()->entity());
 
-done:
-	media_->close();
-
-	return ret == 0;
+	return true;
 }
 
 /* -----------------------------------------------------------------------------

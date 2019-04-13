@@ -81,7 +81,7 @@ private:
 	int createCamera(MediaEntity *sensor);
 	void bufferReady(Buffer *buffer);
 
-	std::shared_ptr<MediaDevice> media_;
+	MediaDevice *media_;
 	V4L2Subdevice *dphy_;
 	V4L2Subdevice *isp_;
 	V4L2Device *video_;
@@ -100,9 +100,6 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 	delete video_;
 	delete isp_;
 	delete dphy_;
-
-	if (media_)
-		media_->release();
 }
 
 /* -----------------------------------------------------------------------------
@@ -355,24 +352,21 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	dm.add("rkisp1-input-params");
 	dm.add("rockchip-sy-mipi-dphy");
 
-	media_ = enumerator->search(dm);
+	media_ = acquireMediaDevice(enumerator, dm);
 	if (!media_)
 		return false;
 
-	media_->acquire();
-
 	/* Create the V4L2 subdevices we will need. */
-	dphy_ = V4L2Subdevice::fromEntityName(media_.get(),
-					      "rockchip-sy-mipi-dphy");
+	dphy_ = V4L2Subdevice::fromEntityName(media_, "rockchip-sy-mipi-dphy");
 	if (dphy_->open() < 0)
 		return false;
 
-	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "rkisp1-isp-subdev");
+	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1-isp-subdev");
 	if (isp_->open() < 0)
 		return false;
 
 	/* Locate and open the capture video node. */
-	video_ = V4L2Device::fromEntityName(media_.get(), "rkisp1_mainpath");
+	video_ = V4L2Device::fromEntityName(media_, "rkisp1_mainpath");
 	if (video_->open() < 0)
 		return false;
 

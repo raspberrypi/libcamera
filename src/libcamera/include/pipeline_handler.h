@@ -22,6 +22,7 @@ class Camera;
 class CameraConfiguration;
 class CameraManager;
 class DeviceEnumerator;
+class DeviceMatch;
 class MediaDevice;
 class PipelineHandler;
 class Request;
@@ -53,6 +54,8 @@ public:
 	virtual ~PipelineHandler();
 
 	virtual bool match(DeviceEnumerator *enumerator) = 0;
+	MediaDevice *acquireMediaDevice(DeviceEnumerator *enumerator,
+					const DeviceMatch &dm);
 
 	virtual CameraConfiguration
 	streamConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
@@ -84,6 +87,7 @@ private:
 	void mediaDeviceDisconnected(MediaDevice *media);
 	virtual void disconnect();
 
+	std::vector<std::shared_ptr<MediaDevice>> mediaDevices_;
 	std::vector<std::weak_ptr<Camera>> cameras_;
 	std::map<const Camera *, std::unique_ptr<CameraData>> cameraData_;
 };

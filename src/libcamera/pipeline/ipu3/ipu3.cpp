@@ -149,7 +149,6 @@ class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
 	PipelineHandlerIPU3(CameraManager *manager);
-	~PipelineHandlerIPU3();
 
 	CameraConfiguration
 	streamConfiguration(Camera *camera,
@@ -201,22 +200,13 @@ private:
 
 	ImgUDevice imgu0_;
 	ImgUDevice imgu1_;
-	std::shared_ptr<MediaDevice> cio2MediaDev_;
-	std::shared_ptr<MediaDevice> imguMediaDev_;
+	MediaDevice *cio2MediaDev_;
+	MediaDevice *imguMediaDev_;
 };
 
 PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 	: PipelineHandler(manager), cio2MediaDev_(nullptr), imguMediaDev_(nullptr)
 {
-}
-
-PipelineHandlerIPU3::~PipelineHandlerIPU3()
-{
-	if (cio2MediaDev_)
-		cio2MediaDev_->release();
-
-	if (imguMediaDev_)
-		imguMediaDev_->release();
 }
 
 CameraConfiguration
@@ -614,18 +604,12 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	imgu_dm.add("ipu3-imgu 1 viewfinder");
 	imgu_dm.add("ipu3-imgu 1 3a stat");
 
-	cio2MediaDev_ = enumerator->search(cio2_dm);
+	cio2MediaDev_ = acquireMediaDevice(enumerator, cio2_dm);
 	if (!cio2MediaDev_)
 		return false;
 
-	if (!cio2MediaDev_->acquire())
-		return false;
-
-	imguMediaDev_ = enumerator->search(imgu_dm);
+	imguMediaDev_ = acquireMediaDevice(enumerator, imgu_dm);
 	if (!imguMediaDev_)
-		return false;
-
-	if (!imguMediaDev_->acquire())
 		return false;
 
 	/*
@@ -682,11 +666,11 @@ int PipelineHandlerIPU3::registerCameras()
 {
 	int ret;
 
-	ret = imgu0_.init(imguMediaDev_.get(), 0);
+	ret = imgu0_.init(imguMediaDev_, 0);
 	if (ret)
 		return ret;
 
-	ret = imgu1_.init(imguMediaDev_.get(), 1);
+	ret = imgu1_.init(imguMediaDev_, 1);
 	if (ret)
 		return ret;
 
@@ -705,7 +689,7 @@ int PipelineHandlerIPU3::registerCameras()
 		};
 		CIO2Device *cio2 = &data->cio2_;
 
-		ret = cio2->init(cio2MediaDev_.get(), id);
+		ret = cio2->init(cio2MediaDev_, id);
 		if (ret)
 			continue;
 

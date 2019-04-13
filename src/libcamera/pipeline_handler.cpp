@@ -11,6 +11,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
+#include "device_enumerator.h"
 #include "log.h"
 #include "media_device.h"
 #include "utils.h"
@@ -116,6 +117,8 @@ PipelineHandler::PipelineHandler(CameraManager *manager)
 
 PipelineHandler::~PipelineHandler()
 {
+	for (std::shared_ptr<MediaDevice> media : mediaDevices_)
+		media->release();
 };
 
 /**
@@ -148,6 +151,35 @@ PipelineHandler::~PipelineHandler()
  * \return true if media devices have been acquired and camera instances
  * created, or false otherwise
  */
+
+/**
+ * \brief Search and acquire a MediDevice matching a device pattern
+ * \param[in] enumerator Enumerator containing all media devices in the system
+ * \param[in] dm Device match pattern
+ *
+ * Search the device \a enumerator for an available media device matching the
+ * device match pattern \a dm. Matching media device that have previously been
+ * acquired by MediaDevice::acquire() are not considered. If a match is found,
+ * the media device is acquired and returned. The caller shall not release the
+ * device explicitly, it will be automatically released when the pipeline
+ * handler is destroyed.
+ *
+ * \return A pointer to the matching MediaDevice, or nullptr if no match is found
+ */
+MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
+						 const DeviceMatch &dm)
+{
+	std::shared_ptr<MediaDevice> media = enumerator->search(dm);
+	if (!media)
+		return nullptr;
+
+	if (!media->acquire())
+		return nullptr;
+
+	mediaDevices_.push_back(media);
+
+	return media.get();
+}
 
 /**
  * \fn PipelineHandler::streamConfiguration()

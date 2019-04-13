@@ -24,7 +24,6 @@ class PipelineHandlerUVC : public PipelineHandler
 {
 public:
 	PipelineHandlerUVC(CameraManager *manager);
-	~PipelineHandlerUVC();
 
 	CameraConfiguration
 	streamConfiguration(Camera *camera,
@@ -69,19 +68,11 @@ private:
 		return static_cast<UVCCameraData *>(
 			PipelineHandler::cameraData(camera));
 	}
-
-	std::shared_ptr<MediaDevice> media_;
 };
 
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
-	: PipelineHandler(manager), media_(nullptr)
+	: PipelineHandler(manager)
 {
-}
-
-PipelineHandlerUVC::~PipelineHandlerUVC()
-{
-	if (media_)
-		media_->release();
 }
 
 CameraConfiguration
@@ -177,19 +168,17 @@ int PipelineHandlerUVC::queueRequest(Camera *camera, Request *request)
 
 bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
+	MediaDevice *media;
 	DeviceMatch dm("uvcvideo");
 
-	media_ = enumerator->search(dm);
-	if (!media_)
-		return false;
-
-	if (!media_->acquire())
+	media = acquireMediaDevice(enumerator, dm);
+	if (!media)
 		return false;
 
 	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>(this);
 
 	/* Locate and open the default video node. */
-	for (MediaEntity *entity : media_->entities()) {
+	for (MediaEntity *entity : media->entities()) {
 		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
 			data->video_ = new V4L2Device(entity);
 			break;
@@ -208,11 +197,11 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
-	std::shared_ptr<Camera> camera = Camera::create(this, media_->model(), streams);
+	std::shared_ptr<Camera> camera = Camera::create(this, media->model(), streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	/* Enable hot-unplug notifications. */
-	hotplugMediaDevice(media_.get());
+	hotplugMediaDevice(media);
 
 	return true;
 }

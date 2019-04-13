@@ -24,7 +24,6 @@ class PipelineHandlerVimc : public PipelineHandler
 {
 public:
 	PipelineHandlerVimc(CameraManager *manager);
-	~PipelineHandlerVimc();
 
 	CameraConfiguration
 	streamConfiguration(Camera *camera,
@@ -69,19 +68,11 @@ private:
 		return static_cast<VimcCameraData *>(
 			PipelineHandler::cameraData(camera));
 	}
-
-	std::shared_ptr<MediaDevice> media_;
 };
 
 PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
-	: PipelineHandler(manager), media_(nullptr)
+	: PipelineHandler(manager)
 {
-}
-
-PipelineHandlerVimc::~PipelineHandlerVimc()
-{
-	if (media_)
-		media_->release();
 }
 
 CameraConfiguration
@@ -189,17 +180,14 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	dm.add("RGB/YUV Input");
 	dm.add("Scaler");
 
-	media_ = enumerator->search(dm);
-	if (!media_)
-		return false;
-
-	if (!media_->acquire())
+	MediaDevice *media = acquireMediaDevice(enumerator, dm);
+	if (!media)
 		return false;
 
 	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 
 	/* Locate and open the capture video node. */
-	data->video_ = new V4L2Device(media_->getEntityByName("Raw Capture 1"));
+	data->video_ = new V4L2Device(media->getEntityByName("Raw Capture 1"));
 	if (data->video_->open())
 		return false;
 

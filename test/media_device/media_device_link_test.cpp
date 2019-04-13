@@ -51,7 +51,11 @@ class MediaDeviceLinkTest : public Test
 			return TestSkip;
 		}
 
-		dev_->acquire();
+		if (!dev_->acquire()) {
+			cerr << "Unable to acquire media device "
+			     << dev_->deviceNode() << endl;
+			return TestSkip;
+		}
 
 		if (dev_->open()) {
 			cerr << "Failed to open media device at "

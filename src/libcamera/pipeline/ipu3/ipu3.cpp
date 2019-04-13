@@ -614,21 +614,19 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	imgu_dm.add("ipu3-imgu 1 viewfinder");
 	imgu_dm.add("ipu3-imgu 1 3a stat");
 
-	/*
-	 * It is safe to acquire both media devices at this point as
-	 * DeviceEnumerator::search() skips the busy ones for us.
-	 */
 	cio2MediaDev_ = enumerator->search(cio2_dm);
 	if (!cio2MediaDev_)
 		return false;
 
-	cio2MediaDev_->acquire();
+	if (!cio2MediaDev_->acquire())
+		return false;
 
 	imguMediaDev_ = enumerator->search(imgu_dm);
 	if (!imguMediaDev_)
 		return false;
 
-	imguMediaDev_->acquire();
+	if (!imguMediaDev_->acquire())
+		return false;
 
 	/*
 	 * Disable all links that are enabled by default on CIO2, as camera

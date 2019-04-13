@@ -183,7 +183,8 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	media_->acquire();
+	if (!media_->acquire())
+		return false;
 
 	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>(this);
 

@@ -193,7 +193,8 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	media_->acquire();
+	if (!media_->acquire())
+		return false;
 
 	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 

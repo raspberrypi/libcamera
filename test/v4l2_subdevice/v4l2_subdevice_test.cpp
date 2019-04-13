@@ -45,20 +45,16 @@ int V4L2SubdeviceTest::init()
 		return TestSkip;
 	}
 
-	media_->acquire();
-
 	int ret = media_->open();
 	if (ret) {
 		cerr << "Unable to open media device: " << media_->deviceNode()
 		     << ": " << strerror(ret) << endl;
-		media_->release();
 		return TestSkip;
 	}
 
 	MediaEntity *videoEntity = media_->getEntityByName("Scaler");
 	if (!videoEntity) {
 		cerr << "Unable to find media entity 'Scaler'" << endl;
-		media_->release();
 		return TestFail;
 	}
 
@@ -67,7 +63,6 @@ int V4L2SubdeviceTest::init()
 	if (ret) {
 		cerr << "Unable to open video subdevice "
 		     << scaler_->entity()->deviceNode() << endl;
-		media_->release();
 		return TestSkip;
 	}
 
@@ -76,7 +71,5 @@ int V4L2SubdeviceTest::init()
 
 void V4L2SubdeviceTest::cleanup()
 {
-	media_->release();
-
 	delete scaler_;
 }

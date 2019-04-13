@@ -46,8 +46,6 @@ int V4L2DeviceTest::init()
 	if (!media_)
 		return TestSkip;
 
-	media_->acquire();
-
 	MediaEntity *entity = media_->getEntityByName("vivid-000-vid-cap");
 	if (!entity)
 		return TestSkip;
@@ -61,8 +59,6 @@ int V4L2DeviceTest::init()
 
 void V4L2DeviceTest::cleanup()
 {
-	media_->release();
-
 	capture_->streamOff();
 	capture_->releaseBuffers();
 	capture_->close();

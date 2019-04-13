@@ -127,55 +127,6 @@ void MediaDevice::release()
  */
 
 /**
- * \brief Open the media device
- *
- * \return 0 on success or a negative error code otherwise
- * \retval -EBUSY Media device already open
- * \sa close()
- */
-int MediaDevice::open()
-{
-	if (fd_ != -1) {
-		LOG(MediaDevice, Error) << "MediaDevice already open";
-		return -EBUSY;
-	}
-
-	int ret = ::open(deviceNode_.c_str(), O_RDWR);
-	if (ret < 0) {
-		ret = -errno;
-		LOG(MediaDevice, Error)
-			<< "Failed to open media device at "
-			<< deviceNode_ << ": " << strerror(-ret);
-		return ret;
-	}
-	fd_ = ret;
-
-	return 0;
-}
-
-/**
- * \brief Close the media device
- *
- * This function closes the media device node. It does not invalidate the media
- * graph and all cached media objects remain valid and can be accessed normally.
- * Once closed no operation interacting with the media device node can be
- * performed until the device is opened again.
- *
- * Closing an already closed device is allowed and will not perform any
- * operation.
- *
- * \sa open()
- */
-void MediaDevice::close()
-{
-	if (fd_ == -1)
-		return;
-
-	::close(fd_);
-	fd_ = -1;
-}
-
-/**
  * \brief Populate the MediaDevice with device information and media objects
  *
  * This function retrieves the media device information and enumerates all
@@ -439,6 +390,55 @@ int MediaDevice::disableLinks()
  * usually caused by physical device disconnection, but can also result from
  * driver unloading for most devices. The media device is passed as a parameter.
  */
+
+/**
+ * \brief Open the media device
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \retval -EBUSY Media device already open
+ * \sa close()
+ */
+int MediaDevice::open()
+{
+	if (fd_ != -1) {
+		LOG(MediaDevice, Error) << "MediaDevice already open";
+		return -EBUSY;
+	}
+
+	int ret = ::open(deviceNode_.c_str(), O_RDWR);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(MediaDevice, Error)
+			<< "Failed to open media device at "
+			<< deviceNode_ << ": " << strerror(-ret);
+		return ret;
+	}
+	fd_ = ret;
+
+	return 0;
+}
+
+/**
+ * \brief Close the media device
+ *
+ * This function closes the media device node. It does not invalidate the media
+ * graph and all cached media objects remain valid and can be accessed normally.
+ * Once closed no operation interacting with the media device node can be
+ * performed until the device is opened again.
+ *
+ * Closing an already closed device is allowed and will not perform any
+ * operation.
+ *
+ * \sa open()
+ */
+void MediaDevice::close()
+{
+	if (fd_ == -1)
+		return;
+
+	::close(fd_);
+	fd_ = -1;
+}
 
 /**
  * \var MediaDevice::objects_

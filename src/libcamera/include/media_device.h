@@ -30,9 +30,6 @@ public:
 	void release();
 	bool busy() const { return acquired_; }
 
-	int open();
-	void close();
-
 	int populate();
 	bool valid() const { return valid_; }
 
@@ -61,6 +58,9 @@ private:
 	int fd_;
 	bool valid_;
 	bool acquired_;
+
+	int open();
+	void close();
 
 	std::map<unsigned int, MediaObject *> objects_;
 	MediaObject *object(unsigned int id);

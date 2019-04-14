@@ -182,6 +182,42 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
 }
 
 /**
+ * \brief Lock all media devices acquired by the pipeline
+ *
+ * This method shall not be called from pipeline handler implementation, as the
+ * Camera class handles locking directly.
+ *
+ * \return True if the devices could be locked, false otherwise
+ * \sa unlock()
+ * \sa MediaDevice::lock()
+ */
+bool PipelineHandler::lock()
+{
+	for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
+		if (!media->lock()) {
+			unlock();
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * \brief Unlock all media devices acquired by the pipeline
+ *
+ * This method shall not be called from pipeline handler implementation, as the
+ * Camera class handles locking directly.
+ *
+ * \sa lock()
+ */
+void PipelineHandler::unlock()
+{
+	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
+		media->unlock();
+}
+
+/**
  * \fn PipelineHandler::streamConfiguration()
  * \brief Retrieve a group of stream configurations for a specified camera
  * \param[in] camera The camera to fetch default configuration from

@@ -57,6 +57,9 @@ public:
 	MediaDevice *acquireMediaDevice(DeviceEnumerator *enumerator,
 					const DeviceMatch &dm);
 
+	bool lock();
+	void unlock();
+
 	virtual CameraConfiguration
 	streamConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
 	virtual int configureStreams(Camera *camera, const CameraConfiguration &config) = 0;

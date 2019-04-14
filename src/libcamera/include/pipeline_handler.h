@@ -26,6 +26,7 @@ class PipelineHandler;
 class Request;
 class Stream;
 class StreamConfiguration;
+class StreamUsage;
 
 class CameraData
 {

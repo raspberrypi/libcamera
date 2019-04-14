@@ -470,12 +470,16 @@ void Camera::disconnect()
  * not blocking, if the device has already been acquired (by the same or another
  * process) the -EBUSY error code is returned.
  *
+ * Acquiring a camera will limit usage of any other camera(s) provided by the
+ * same pipeline handler to the same instance of libcamera. The limit is in
+ * effect until all cameras from the pipeline handler are released. Other
+ * instances of libcamera can still list and examine the cameras but will fail
+ * if they attempt to acquire() any of them.
+ *
  * Once exclusive access isn't needed anymore, the device should be released
  * with a call to the release() function.
  *
  * This function affects the state of the camera, see \ref camera_operation.
- *
- * \todo Implement exclusive access across processes.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera has been disconnected from the system
@@ -488,6 +492,12 @@ int Camera::acquire()
 
 	if (!stateIs(CameraAvailable))
 		return -EBUSY;
+
+	if (!pipe_->lock()) {
+		LOG(Camera, Info)
+			<< "Pipeline handler in use by another process";
+		return -EBUSY;
+	}
 
 	state_ = CameraAcquired;
 
@@ -509,6 +519,8 @@ int Camera::release()
 {
 	if (!stateBetween(CameraAvailable, CameraConfigured))
 		return -EBUSY;
+
+	pipe_->unlock();
 
 	state_ = CameraAvailable;
 

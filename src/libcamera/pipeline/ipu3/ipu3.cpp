@@ -244,12 +244,6 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	ImgUDevice *imgu = data->imgu_;
 	int ret;
 
-	LOG(IPU3, Info)
-		<< "Requested image format " << cfg.width << "x"
-		<< cfg.height << "-0x" << std::hex << std::setfill('0')
-		<< std::setw(8) << cfg.pixelFormat << " on camera '"
-		<< camera->name() << "'";
-
 	/*
 	 * Verify that the requested size respects the IPU3 alignement
 	 * requirements (the image width shall be a multiple of 8 pixels and

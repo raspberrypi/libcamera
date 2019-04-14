@@ -5,6 +5,8 @@
  * camera.cpp - Camera device
  */
 
+#include <iomanip>
+
 #include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -595,10 +597,22 @@ int Camera::configureStreams(const CameraConfiguration &config)
 		return -EINVAL;
 	}
 
+	std::ostringstream msg("configuring streams:");
+	unsigned int index = 0;
+
 	for (Stream *stream : config) {
 		if (streams_.find(stream) == streams_.end())
 			return -EINVAL;
+
+		const StreamConfiguration &cfg = config[stream];
+		msg << " (" << index << ") " << cfg.width << "x"
+		    << cfg.height << "-0x" << std::hex << std::setfill('0')
+		    << std::setw(8) << cfg.pixelFormat;
+
+		index++;
 	}
+
+	LOG(Camera, Info) << msg.str();
 
 	ret = pipe_->configureStreams(this, config);
 	if (ret)

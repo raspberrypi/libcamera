@@ -590,7 +590,7 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
-		std::string cameraName = cio2->sensor_->entityName() + " "
+		std::string cameraName = cio2->sensor_->entity()->name() + " "
 				       + std::to_string(id);
 		std::shared_ptr<Camera> camera = Camera::create(this,
 								cameraName,
@@ -1066,7 +1066,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 		}
 	}
 	if (maxSize_.width == 0) {
-		LOG(IPU3, Info) << "Sensor '" << sensor_->entityName()
+		LOG(IPU3, Info) << "Sensor '" << sensor_->entity()->name()
 				<< "' detected, but no supported image format "
 				<< " found: skip camera creation";
 		return -ENODEV;

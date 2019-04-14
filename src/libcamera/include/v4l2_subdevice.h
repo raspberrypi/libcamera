@@ -41,8 +41,7 @@ public:
 	bool isOpen() const;
 	void close();
 
-	const std::string &deviceNode() const { return entity_->deviceNode(); }
-	const std::string &entityName() const { return entity_->name(); }
+	const MediaEntity *entity() const { return entity_; }
 
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);

@@ -66,7 +66,7 @@ int V4L2SubdeviceTest::init()
 	ret = scaler_->open();
 	if (ret) {
 		cerr << "Unable to open video subdevice "
-		     << scaler_->deviceNode() << endl;
+		     << scaler_->entity()->deviceNode() << endl;
 		media_->release();
 		return TestSkip;
 	}

@@ -131,12 +131,12 @@ int V4L2Subdevice::open()
 		return -EBUSY;
 	}
 
-	ret = ::open(deviceNode().c_str(), O_RDWR);
+	ret = ::open(entity_->deviceNode().c_str(), O_RDWR);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2Subdev, Error)
-			<< "Failed to open V4L2 subdevice '" << deviceNode()
-			<< "': " << strerror(-ret);
+			<< "Failed to open V4L2 subdevice '"
+			<< entity_->deviceNode() << "': " << strerror(-ret);
 		return ret;
 	}
 	fd_ = ret;
@@ -166,17 +166,9 @@ void V4L2Subdevice::close()
 }
 
 /**
- * \fn V4L2Subdevice::deviceNode()
- * \brief Retrieve the path of the device node associated with the subdevice
- *
- * \return The subdevice's device node system path
- */
-
-/**
- * \fn V4L2Subdevice::entityName()
- * \brief Retrieve the name of the media entity associated with the subdevice
- *
- * \return The name of the media entity the subdevice is associated to
+ * \fn V4L2Subdevice::entity()
+ * \brief Retrieve the media entity associated with the subdevice
+ * \return The subdevice's associated media entity.
  */
 
 /**
@@ -343,7 +335,7 @@ V4L2Subdevice *V4L2Subdevice::fromEntityName(const MediaDevice *media,
 
 std::string V4L2Subdevice::logPrefix() const
 {
-	return "'" + entityName() + "'";
+	return "'" + entity_->name() + "'";
 }
 
 int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,

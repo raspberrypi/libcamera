@@ -63,7 +63,8 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1), valid_(false), acquired_(false)
+	: deviceNode_(deviceNode), fd_(-1), valid_(false), acquired_(false),
+	  lockOwner_(false)
 {
 }
 
@@ -116,6 +117,62 @@ void MediaDevice::release()
 {
 	close();
 	acquired_ = false;
+}
+
+/**
+ * \brief Lock the device to prevent it from being used by other instances of
+ * libcamera
+ *
+ * Multiple instances of libcamera might be running on the same system, at the
+ * same time. To allow the different instances to coexist, system resources in
+ * the form of media devices must be accessible for enumerating the cameras
+ * they provide at all times, while still allowing an instance to lock a
+ * resource while it prepares to actively use a camera from the resource.
+ *
+ * This method shall not be called from a pipeline handler implementation
+ * directly, as the base PipelineHandler implementation handles this on the
+ * behalf of the specified implementation.
+ *
+ * \return True if the device could be locked, false otherwise
+ * \sa unlock()
+ */
+bool MediaDevice::lock()
+{
+	if (fd_ == -1)
+		return false;
+
+	/* Do not allow nested locking in the same libcamera instance. */
+	if (lockOwner_)
+		return false;
+
+	if (lockf(fd_, F_TLOCK, 0))
+		return false;
+
+	lockOwner_ = true;
+
+	return true;
+}
+
+/**
+ * \brief Unlock the device and free it for use for libcamera instances
+ *
+ * This method shall not be called from a pipeline handler implementation
+ * directly, as the base PipelineHandler implementation handles this on the
+ * behalf of the specified implementation.
+ *
+ * \sa lock()
+ */
+void MediaDevice::unlock()
+{
+	if (fd_ == -1)
+		return;
+
+	if (!lockOwner_)
+		return;
+
+	lockOwner_ = false;
+
+	lockf(fd_, F_ULOCK, 0);
 }
 
 /**

@@ -30,6 +30,9 @@ public:
 	void release();
 	bool busy() const { return acquired_; }
 
+	bool lock();
+	void unlock();
+
 	int populate();
 	bool valid() const { return valid_; }
 
@@ -58,6 +61,7 @@ private:
 	int fd_;
 	bool valid_;
 	bool acquired_;
+	bool lockOwner_;
 
 	int open();
 	void close();

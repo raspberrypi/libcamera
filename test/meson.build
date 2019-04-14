@@ -9,6 +9,7 @@ subdir('v4l2_subdevice')
 public_tests = [
     ['event',                           'event.cpp'],
     ['event-dispatcher',                'event-dispatcher.cpp'],
+    ['geometry',                        'geometry.cpp'],
     ['list-cameras',                    'list-cameras.cpp'],
     ['signal',                          'signal.cpp'],
     ['timer',                           'timer.cpp'],

@@ -7,4 +7,5 @@ cam_sources = files([
 
 cam  = executable('cam', cam_sources,
                   link_with : libcamera,
+                  install : true,
                   include_directories : libcamera_includes)

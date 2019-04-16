@@ -650,7 +650,6 @@ int Camera::allocateBuffers()
 	int ret = pipe_->allocateBuffers(this, activeStreams_);
 	if (ret) {
 		LOG(Camera, Error) << "Failed to allocate buffers";
-		freeBuffers();
 		return ret;
 	}
 

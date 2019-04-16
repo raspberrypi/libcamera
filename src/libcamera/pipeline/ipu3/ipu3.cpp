@@ -314,6 +314,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	Stream *stream = *streams.begin();
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
+	unsigned int bufferCount;
 	int ret;
 
 	/* Share buffers between CIO2 output and ImgU input. */
@@ -323,31 +324,36 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 
 	ret = imgu->importBuffers(pool);
 	if (ret)
-		return ret;
+		goto error;
 
 	/* Export ImgU output buffers to the stream's pool. */
 	ret = imgu->exportBuffers(&imgu->output_, &stream->bufferPool());
 	if (ret)
-		return ret;
+		goto error;
 
 	/*
 	 * Reserve memory in viewfinder and stat output devices. Use the
 	 * same number of buffers as the ones requested for the output
 	 * stream.
 	 */
-	unsigned int bufferCount = stream->bufferPool().count();
+	bufferCount = stream->bufferPool().count();
 
 	imgu->viewfinder_.pool->createBuffers(bufferCount);
 	ret = imgu->exportBuffers(&imgu->viewfinder_, imgu->viewfinder_.pool);
 	if (ret)
-		return ret;
+		goto error;
 
 	imgu->stat_.pool->createBuffers(bufferCount);
 	ret = imgu->exportBuffers(&imgu->stat_, imgu->stat_.pool);
 	if (ret)
-		return ret;
+		goto error;
 
 	return 0;
+
+error:
+	freeBuffers(camera, streams);
+
+	return ret;
 }
 
 int PipelineHandlerIPU3::freeBuffers(Camera *camera,

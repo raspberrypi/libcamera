@@ -35,6 +35,7 @@ public:
 	explicit V4L2Subdevice(const MediaEntity *entity);
 	V4L2Subdevice(const V4L2Subdevice &) = delete;
 	V4L2Subdevice &operator=(const V4L2Subdevice &) = delete;
+	~V4L2Subdevice();
 
 	int open();
 	bool isOpen() const;

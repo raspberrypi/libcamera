@@ -112,6 +112,11 @@ V4L2Subdevice::V4L2Subdevice(const MediaEntity *entity)
 {
 }
 
+V4L2Subdevice::~V4L2Subdevice()
+{
+	close();
+}
+
 /**
  * \brief Open a V4L2 subdevice
  *

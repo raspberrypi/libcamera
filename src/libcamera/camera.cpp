@@ -732,6 +732,7 @@ Request *Camera::createRequest()
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not running so requests can't be queued
+ * \retval -EINVAL The request is invalid
  */
 int Camera::queueRequest(Request *request)
 {
@@ -740,6 +741,14 @@ int Camera::queueRequest(Request *request)
 
 	if (!stateIs(CameraRunning))
 		return -EACCES;
+
+	for (auto const &it : request->buffers()) {
+		Stream *stream = it.first;
+		if (activeStreams_.find(stream) == activeStreams_.end()) {
+			LOG(Camera, Error) << "Invalid request";
+			return -EINVAL;
+		}
+	}
 
 	int ret = request->prepare();
 	if (ret) {

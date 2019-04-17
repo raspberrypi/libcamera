@@ -737,10 +737,9 @@ int V4L2Device::releaseBuffers()
 {
 	LOG(V4L2, Debug) << "Releasing bufferPool";
 
-	requestBuffers(0);
 	bufferPool_ = nullptr;
 
-	return 0;
+	return requestBuffers(0);
 }
 
 /**

@@ -90,7 +90,6 @@ int Request::setBuffers(const std::map<Stream *, Buffer *> &streamMap)
 /**
  * \brief Return the buffer associated with a stream
  * \param[in] stream The stream the buffer is associated to
- *
  * \return The buffer associated with the stream, or nullptr if the stream is
  * not part of this request
  */

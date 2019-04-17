@@ -317,8 +317,8 @@ std::shared_ptr<MediaDevice> DeviceEnumerator::search(const DeviceMatch &dm)
 /**
  * \fn DeviceEnumerator::lookupDeviceNode(int major, int minor)
  * \brief Lookup device node path from device number
- * \param major The device major number
- * \param minor The device minor number
+ * \param[in] major The device major number
+ * \param[in] minor The device minor number
  *
  * Translate a device number given as \a major and \a minor to a device node
  * path.

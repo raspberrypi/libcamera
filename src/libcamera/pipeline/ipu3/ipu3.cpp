@@ -613,7 +613,7 @@ int PipelineHandlerIPU3::registerCameras()
 
 /**
  * \brief Handle buffers completion at the ImgU input
- * \param buffer The completed buffer
+ * \param[in] buffer The completed buffer
  *
  * Buffers completed from the ImgU input are immediately queued back to the
  * CIO2 unit to continue frame capture.
@@ -625,7 +625,7 @@ void PipelineHandlerIPU3::IPU3CameraData::imguInputBufferReady(Buffer *buffer)
 
 /**
  * \brief Handle buffers completion at the ImgU output
- * \param buffer The completed buffer
+ * \param[in] buffer The completed buffer
  *
  * Buffers completed from the ImgU output are directed to the application.
  */
@@ -639,7 +639,7 @@ void PipelineHandlerIPU3::IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 
 /**
  * \brief Handle buffers completion at the CIO2 output
- * \param buffer The completed buffer
+ * \param[in] buffer The completed buffer
  *
  * Buffers completed from the CIO2 are immediately queued to the ImgU unit
  * for further processing.
@@ -723,7 +723,6 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
  * \brief Configure the ImgU unit input
  * \param[in] config The requested stream configuration
  * \param[in] inputFormat The format to be applied to ImgU input
- *
  * \return 0 on success or a negative error code otherwise
  */
 int ImgUDevice::configureInput(const StreamConfiguration &config,
@@ -781,7 +780,6 @@ int ImgUDevice::configureInput(const StreamConfiguration &config,
  * \brief Configure the ImgU unit \a id video output
  * \param[in] output The ImgU output device to configure
  * \param[in] config The requested configuration
- *
  * \return 0 on success or a negative error code otherwise
  */
 int ImgUDevice::configureOutput(ImgUOutput *output,
@@ -822,7 +820,6 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 /**
  * \brief Import buffers from \a pool into the ImgU input
  * \param[in] pool The buffer pool to import
- *
  * \return 0 on success or a negative error code otherwise
  */
 int ImgUDevice::importBuffers(BufferPool *pool)
@@ -1082,7 +1079,6 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
  * \brief Configure the CIO2 unit
  * \param[in] config The requested configuration
  * \param[out] outputFormat The CIO2 unit output image format
- *
  * \return 0 on success or a negative error code otherwise
  */
 int CIO2Device::configure(const StreamConfiguration &config,

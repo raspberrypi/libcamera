@@ -63,7 +63,7 @@ LOG_DEFINE_CATEGORY(MediaDevice)
 
 /**
  * \brief Construct a MediaDevice
- * \param deviceNode The media device node path
+ * \param[in] deviceNode The media device node path
  *
  * Once constructed the media device is invalid, and must be opened and
  * populated with open() and populate() before the media graph can be queried.
@@ -306,9 +306,8 @@ int MediaDevice::populate()
 
 /**
  * \brief Return the MediaEntity with name \a name
- * \param name The entity name
- * \return The entity with \a name
- * \return nullptr if no entity with \a name is found
+ * \param[in] name The entity name
+ * \return The entity with \a name, or nullptr if no such entity is found
  */
 MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
 {
@@ -322,10 +321,10 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
 /**
  * \brief Retrieve the MediaLink connecting two pads, identified by entity
  * names and pad indexes
- * \param sourceName The source entity name
- * \param sourceIdx The index of the source pad
- * \param sinkName The sink entity name
- * \param sinkIdx The index of the sink pad
+ * \param[in] sourceName The source entity name
+ * \param[in] sourceIdx The index of the source pad
+ * \param[in] sinkName The sink entity name
+ * \param[in] sinkIdx The index of the sink pad
  *
  * Find the link that connects the pads at index \a sourceIdx of the source
  * entity with name \a sourceName, to the pad at index \a sinkIdx of the
@@ -351,10 +350,10 @@ MediaLink *MediaDevice::link(const std::string &sourceName, unsigned int sourceI
 /**
  * \brief Retrieve the MediaLink connecting two pads, identified by the
  * entities they belong to and pad indexes
- * \param source The source entity
- * \param sourceIdx The index of the source pad
- * \param sink The sink entity
- * \param sinkIdx The index of the sink pad
+ * \param[in] source The source entity
+ * \param[in] sourceIdx The index of the source pad
+ * \param[in] sink The sink entity
+ * \param[in] sinkIdx The index of the sink pad
  *
  * Find the link that connects the pads at index \a sourceIdx of the source
  * entity \a source, to the pad at index \a sinkIdx of the sink entity \a
@@ -380,8 +379,8 @@ MediaLink *MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx,
 
 /**
  * \brief Retrieve the MediaLink that connects two pads
- * \param source The source pad
- * \param sink The sink pad
+ * \param[in] source The source pad
+ * \param[in] sink The sink pad
  *
  * \sa MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx, const std::string &sinkName, unsigned int sinkIdx) const
  * \sa MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx, const MediaEntity *sink, unsigned int sinkIdx) const
@@ -507,8 +506,8 @@ void MediaDevice::clear()
 
 /**
  * \brief Find the interface associated with an entity
- * \param topology The media topology as returned by MEDIA_IOC_G_TOPOLOGY
- * \param entityId The entity id
+ * \param[in] topology The media topology as returned by MEDIA_IOC_G_TOPOLOGY
+ * \param[in] entityId The entity id
  * \return A pointer to the interface if found, or nullptr otherwise
  */
 struct media_v2_interface *MediaDevice::findInterface(const struct media_v2_topology &topology,
@@ -694,8 +693,8 @@ void MediaDevice::fixupEntityFlags(struct media_v2_entity *entity)
 
 /**
  * \brief Apply \a flags to a link between two pads
- * \param link The link to apply flags to
- * \param flags The flags to apply to the link
+ * \param[in] link The link to apply flags to
+ * \param[in] flags The flags to apply to the link
  *
  * This function applies the link \a flags (as defined by the MEDIA_LNK_FL_*
  * macros from the Media Controller API) to the given \a link. It implements

@@ -88,14 +88,12 @@ namespace libcamera {
 /**
  * \fn StreamUsage::role()
  * \brief Retrieve the stream role
- *
  * \return The stream role
  */
 
 /**
  * \fn StreamUsage::size()
  * \brief Retrieve desired size
- *
  * \return The desired size
  */
 

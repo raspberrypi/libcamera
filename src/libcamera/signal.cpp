@@ -45,8 +45,8 @@ namespace libcamera {
 /**
  * \fn Signal::connect(T *object, void(T::*func)(Args...))
  * \brief Connect the signal to a member function slot
- * \param object The slot object pointer
- * \param func The slot member function
+ * \param[in] object The slot object pointer
+ * \param[in] func The slot member function
  *
  * If the typename T inherits from Object, the signal will be automatically
  * disconnected from the \a func slot of \a object when \a object is destroyed.
@@ -57,7 +57,7 @@ namespace libcamera {
 /**
  * \fn Signal::connect(void(*func)(Args...))
  * \brief Connect the signal to a static function slot
- * \param func The slot static function
+ * \param[in] func The slot static function
  */
 
 /**
@@ -68,20 +68,20 @@ namespace libcamera {
 /**
  * \fn Signal::disconnect(T *object)
  * \brief Disconnect the signal from all slots of the \a object
- * \param object The object pointer whose slots to disconnect
+ * \param[in] object The object pointer whose slots to disconnect
  */
 
 /**
  * \fn Signal::disconnect(T *object, void(T::*func)(Args...))
  * \brief Disconnect the signal from the \a object slot member function \a func
- * \param object The object pointer whose slots to disconnect
- * \param func The slot member function to disconnect
+ * \param[in] object The object pointer whose slots to disconnect
+ * \param[in] func The slot member function to disconnect
  */
 
 /**
  * \fn Signal::disconnect(void(*func)(Args...))
  * \brief Disconnect the signal from the slot static function \a func
- * \param func The slot static function to disconnect
+ * \param[in] func The slot static function to disconnect
  */
 
 /**

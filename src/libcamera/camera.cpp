@@ -77,7 +77,6 @@ CameraConfiguration::CameraConfiguration()
 
 /**
  * \brief Retrieve an iterator to the first stream in the sequence
- *
  * \return An iterator to the first stream
  */
 std::vector<Stream *>::iterator CameraConfiguration::begin()
@@ -88,7 +87,6 @@ std::vector<Stream *>::iterator CameraConfiguration::begin()
 /**
  * \brief Retrieve an iterator pointing to the past-the-end stream in the
  * sequence
- *
  * \return An iterator to the element following the last stream
  */
 std::vector<Stream *>::iterator CameraConfiguration::end()
@@ -98,7 +96,6 @@ std::vector<Stream *>::iterator CameraConfiguration::end()
 
 /**
  * \brief Retrieve a const iterator to the first element of the streams
- *
  * \return A const iterator to the first stream
  */
 std::vector<Stream *>::const_iterator CameraConfiguration::begin() const
@@ -109,7 +106,6 @@ std::vector<Stream *>::const_iterator CameraConfiguration::begin() const
 /**
  * \brief Retrieve a const iterator pointing to the past-the-end stream in the
  * sequence
- *
  * \return A const iterator to the element following the last stream
  */
 std::vector<Stream *>::const_iterator CameraConfiguration::end() const
@@ -144,7 +140,6 @@ bool CameraConfiguration::isValid() const
 
 /**
  * \brief Check if the camera configuration is empty
- *
  * \return True if the configuration is empty
  */
 bool CameraConfiguration::isEmpty() const
@@ -154,7 +149,6 @@ bool CameraConfiguration::isEmpty() const
 
 /**
  * \brief Retrieve the number of stream configurations
- *
  * \return Number of stream configurations
  */
 std::size_t CameraConfiguration::size() const
@@ -164,7 +158,6 @@ std::size_t CameraConfiguration::size() const
 
 /**
  * \brief Access the first stream in the configuration
- *
  * \return The first stream in the configuration
  */
 Stream *CameraConfiguration::front()
@@ -174,7 +167,6 @@ Stream *CameraConfiguration::front()
 
 /**
  * \brief Access the first stream in the configuration
- *
  * \return The first const stream pointer in the configuration
  */
 const Stream *CameraConfiguration::front() const
@@ -359,7 +351,6 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 
 /**
  * \brief Retrieve the name of the camera
- *
  * \return Name of the camera device
  */
 const std::string &Camera::name() const

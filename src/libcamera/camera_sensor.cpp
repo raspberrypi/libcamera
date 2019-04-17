@@ -242,7 +242,6 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 /**
  * \brief Set the sensor output format
  * \param[in] format The desired sensor output format
- *
  * \return 0 on success or a negative error code otherwise
  */
 int CameraSensor::setFormat(V4L2SubdeviceFormat *format)

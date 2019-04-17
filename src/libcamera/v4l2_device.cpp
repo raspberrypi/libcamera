@@ -228,7 +228,6 @@ LOG_DEFINE_CATEGORY(V4L2)
 
 /**
  * \brief Assemble and return a string describing the format
- *
  * \return A string describing the V4L2DeviceFormat
  */
 const std::string V4L2DeviceFormat::toString() const
@@ -267,7 +266,7 @@ const std::string V4L2DeviceFormat::toString() const
 
 /**
  * \brief Construct a V4L2Device
- * \param deviceNode The file-system path to the video device node
+ * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2Device::V4L2Device(const std::string &deviceNode)
 	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr),
@@ -283,7 +282,7 @@ V4L2Device::V4L2Device(const std::string &deviceNode)
 
 /**
  * \brief Construct a V4L2Device from a MediaEntity
- * \param entity The MediaEntity to build the device from
+ * \param[in] entity The MediaEntity to build the device from
  *
  * Construct a V4L2Device from a MediaEntity's device node path.
  */
@@ -421,7 +420,6 @@ std::string V4L2Device::logPrefix() const
 /**
  * \brief Retrieve the image format set on the V4L2 device
  * \param[out] format The image format applied on the device
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::getFormat(V4L2DeviceFormat *format)
@@ -432,7 +430,7 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
 
 /**
  * \brief Configure an image format on the V4L2 device
- * \param[in] format The image format to apply to the device
+ * \param[inout] format The image format to apply to the device
  *
  * Apply the supplied \a format to the device, and return the actually
  * applied format parameters, as \ref V4L2Device::getFormat would do.
@@ -885,7 +883,6 @@ void V4L2Device::bufferAvailable(EventNotifier *notifier)
 
 /**
  * \brief Start the video stream
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::streamOn()

@@ -55,8 +55,8 @@ namespace libcamera {
 
 /**
  * \brief Construct an event notifier with a file descriptor and event type
- * \param fd The file descriptor to monitor
- * \param type The event type to monitor
+ * \param[in] fd The file descriptor to monitor
+ * \param[in] type The event type to monitor
  */
 EventNotifier::EventNotifier(int fd, Type type)
 	: fd_(fd), type_(type), enabled_(false)
@@ -90,7 +90,7 @@ EventNotifier::~EventNotifier()
 
 /**
  * \brief Enable or disable the notifier
- * \param enable True to enable the notifier, false to disable it
+ * \param[in] enable True to enable the notifier, false to disable it
  *
  * This function enables or disables the notifier. A disabled notifier ignores
  * events and does not emit the \ref activated signal.

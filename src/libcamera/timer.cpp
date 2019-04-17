@@ -44,7 +44,7 @@ Timer::Timer()
 
 /**
  * \brief Start or restart the timer with a timeout of \a msec
- * \param msec The timer duration in milliseconds
+ * \param[in] msec The timer duration in milliseconds
  *
  * If the timer is already running it will be stopped and restarted.
  */

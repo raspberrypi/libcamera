@@ -171,6 +171,55 @@ These rules match the `object ownership rules from the Chromium C++ Style Guide`
    documented explicitly in details in the API.
 
 
+Documentation
+-------------
+
+All public and protected classes, structures, enumerations, macros, functions
+and variables shall be documented with a Doxygen comment block, using the
+Javadoc style with C-style comments. When documenting private member functions
+and variables the same Doxygen style shall be used as for public and protected
+members.
+
+Documentation relates to header files, but shall be stored in the .cpp source
+files in order to group the implementation and documentation. Every documented
+header file shall have a \file documentation block in the .cpp source file.
+
+The following comment block shows an example of correct documentation for a
+member function of the PipelineHandler class.
+
+::
+
+  /**
+   * \fn PipelineHandler::start()
+   * \brief Start capturing from a group of streams
+   * \param[in] camera The camera to start
+   *
+   * Start the group of streams that have been configured for capture by
+   * \a configureStreams(). The intended caller of this method is the Camera
+   * class which will in turn be called from the application to indicate that
+   * it has configured the streams and is ready to capture.
+   *
+   * \return 0 on success or a negative error code otherwise
+   */
+
+The comment block shall be placed right before the function it documents. If
+the function is defined inline in the class definition in the header file, the
+comment block shall be placed alone in the .cpp source file in the same order
+as the function definitions in the header file and shall start with an \fn
+line. Otherwise no \fn line shall be present.
+
+The \brief directive shall be present. If the function takes parameters, \param
+directives shall be present, with the appropriate [in], [out] or [inout]
+specifiers. Only when the direction of the parameters isn't known (for instance
+when defining a template function with variadic arguments) the direction
+specifier shall be omitted. The \return directive shall be present when the
+function returns a value, and shall be omitted otherwise.
+
+The long description is optional. When present it shall be surrounded by empty
+lines and may span multiple paragraphs. No blank lines shall otherwise be added
+between the \fn, \brief, \param and \return directives.
+
+
 Tools
 -----
 

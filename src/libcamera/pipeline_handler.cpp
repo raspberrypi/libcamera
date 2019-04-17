@@ -120,7 +120,7 @@ PipelineHandler::~PipelineHandler()
 /**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)
  * \brief Match media devices and create camera instances
- * \param enumerator The enumerator providing all media devices found in the
+ * \param[in] enumerator The enumerator providing all media devices found in the
  * system
  *
  * This function is the main entry point of the pipeline handler. It is called
@@ -413,8 +413,7 @@ void PipelineHandler::disconnect()
 
 /**
  * \brief Retrieve the pipeline-specific data associated with a Camera
- * \param camera The camera whose data to retrieve
- *
+ * \param[in] camera The camera whose data to retrieve
  * \return A pointer to the pipeline-specific data passed to registerCamera().
  * The returned pointer is a borrowed reference and is guaranteed to remain
  * valid until the pipeline handler is destroyed. It shall not be deleted

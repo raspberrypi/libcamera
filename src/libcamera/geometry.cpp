@@ -51,7 +51,6 @@ namespace libcamera {
 
 /**
  * \brief Assemble and return a string describing the rectangle
- *
  * \return A string describing the Rectangle
  */
 const std::string Rectangle::toString() const
@@ -94,8 +93,8 @@ bool operator==(const Rectangle &lhs, const Rectangle &rhs)
 /**
  * \fn Size::Size(unsigned int width, unsigned int height)
  * \brief Construct a Size with given \a width and \a height
- * \param width The Size width
- * \param height The Size height
+ * \param[in] width The Size width
+ * \param[in] height The Size height
  */
 
 /**
@@ -191,10 +190,10 @@ bool operator<(const Size &lhs, const Size &rhs)
 /**
  * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH, unsigned int maxW, unsigned int maxH)
  * \brief Construct an initialized size range
- * \param minW The minimum width
- * \param minH The minimum height
- * \param maxW The maximum width
- * \param maxH The maximum height
+ * \param[in] minW The minimum width
+ * \param[in] minH The minimum height
+ * \param[in] maxW The maximum width
+ * \param[in] maxH The maximum height
  */
 
 /**

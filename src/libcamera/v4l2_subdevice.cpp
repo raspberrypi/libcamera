@@ -75,7 +75,6 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
 
 /**
  * \brief Assemble and return a string describing the format
- *
  * \return A string describing the V4L2SubdeviceFormat
  */
 const std::string V4L2SubdeviceFormat::toString() const
@@ -119,7 +118,6 @@ V4L2Subdevice::~V4L2Subdevice()
 
 /**
  * \brief Open a V4L2 subdevice
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::open()
@@ -175,7 +173,6 @@ void V4L2Subdevice::close()
  * \brief Set a crop rectangle on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
  * \param[inout] rect The rectangle describing crop target area
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::setCrop(unsigned int pad, Rectangle *rect)
@@ -187,7 +184,6 @@ int V4L2Subdevice::setCrop(unsigned int pad, Rectangle *rect)
  * \brief Set a compose rectangle on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
  * \param[inout] rect The rectangle describing the compose target area
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
@@ -251,7 +247,6 @@ FormatEnum V4L2Subdevice::formats(unsigned int pad)
  * \brief Retrieve the image format set on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
  * \param[out] format The image bus format
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)

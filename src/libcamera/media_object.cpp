@@ -58,8 +58,8 @@ LOG_DECLARE_CATEGORY(MediaDevice)
  * \fn MediaObject::MediaObject()
  * \brief Construct a MediaObject part of the MediaDevice \a dev,
  * identified by the \a id unique within the device
- * \param dev The media device this object belongs to
- * \param id The media object id
+ * \param[in] dev The media device this object belongs to
+ * \param[in] id The media object id
  *
  * The caller shall ensure unicity of the object id in the media device context.
  * This constraint is neither enforced nor checked by the MediaObject.
@@ -100,7 +100,7 @@ LOG_DECLARE_CATEGORY(MediaDevice)
 
 /**
  * \brief Enable or disable a link
- * \param enable True to enable the link, false to disable it
+ * \param[in] enable True to enable the link, false to disable it
  *
  * Set the status of a link according to the value of \a enable.
  * Links between two pads can be set to the enabled or disabled state freely,
@@ -128,9 +128,9 @@ int MediaLink::setEnabled(bool enable)
 
 /**
  * \brief Construct a MediaLink
- * \param link The media link kernel data
- * \param source The source pad at the origin of the link
- * \param sink The sink pad at the destination of the link
+ * \param[in] link The media link kernel data
+ * \param[in] source The source pad at the origin of the link
+ * \param[in] sink The sink pad at the destination of the link
  */
 MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
 		     MediaPad *sink)
@@ -181,8 +181,8 @@ MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
 
 /**
  * \brief Construct a MediaPad
- * \param pad The media pad kernel data
- * \param entity The entity the pad belongs to
+ * \param[in] pad The media pad kernel data
+ * \param[in] entity The entity the pad belongs to
  */
 MediaPad::MediaPad(const struct media_v2_pad *pad, MediaEntity *entity)
 	: MediaObject(entity->device(), pad->id), index_(pad->index), entity_(entity),
@@ -230,7 +230,7 @@ MediaPad::~MediaPad()
 
 /**
  * \brief Add a new link to this pad
- * \param link The MediaLink to add
+ * \param[in] link The MediaLink to add
  */
 void MediaPad::addLink(MediaLink *link)
 {
@@ -278,10 +278,8 @@ void MediaPad::addLink(MediaLink *link)
 /**
  * \fn MediaEntity::deviceNode()
  * \brief Retrieve the entity's device node path, if any
- *
- * \sa int setDeviceNode()
- *
  * \return The entity's device node path, or an empty string if it is not set
+ * \sa int setDeviceNode()
  */
 
 /**
@@ -306,7 +304,7 @@ void MediaPad::addLink(MediaLink *link)
 
 /**
  * \brief Get a pad in this entity by its index
- * \param index The 0-based pad index
+ * \param[in] index The 0-based pad index
  * \return The pad identified by \a index, or nullptr if no such pad exist
  */
 const MediaPad *MediaEntity::getPadByIndex(unsigned int index) const
@@ -321,7 +319,7 @@ const MediaPad *MediaEntity::getPadByIndex(unsigned int index) const
 
 /**
  * \brief Get a pad in this entity by its object id
- * \param id The pad id
+ * \param[in] id The pad id
  * \return The pad identified by \a id, or nullptr if no such pad exist
  */
 const MediaPad *MediaEntity::getPadById(unsigned int id) const
@@ -336,7 +334,7 @@ const MediaPad *MediaEntity::getPadById(unsigned int id) const
 
 /**
  * \brief Set the path to the device node for the associated interface
- * \param deviceNode The interface device node path associated with this entity
+ * \param[in] deviceNode The interface device node path associated with this entity
  * \return 0 on success or a negative error code otherwise
  */
 int MediaEntity::setDeviceNode(const std::string &deviceNode)
@@ -358,10 +356,10 @@ int MediaEntity::setDeviceNode(const std::string &deviceNode)
 
 /**
  * \brief Construct a MediaEntity
- * \param dev The media device this entity belongs to
- * \param entity The media entity kernel data
- * \param major The major number of the entity associated interface
- * \param minor The minor number of the entity associated interface
+ * \param[in] dev The media device this entity belongs to
+ * \param[in] entity The media entity kernel data
+ * \param[in] major The major number of the entity associated interface
+ * \param[in] minor The minor number of the entity associated interface
  */
 MediaEntity::MediaEntity(MediaDevice *dev,
 			 const struct media_v2_entity *entity,
@@ -383,7 +381,7 @@ MediaEntity::~MediaEntity()
 
 /**
  * \brief Add \a pad to the entity's list of pads
- * \param pad The pad to add to the list
+ * \param[in] pad The pad to add to the list
  *
  * This function is meant to add pads to the entity during parsing of the media
  * graph, after the MediaPad objects are constructed and before the MediaDevice

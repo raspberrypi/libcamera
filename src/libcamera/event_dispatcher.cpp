@@ -42,7 +42,7 @@ EventDispatcher::~EventDispatcher()
 /**
  * \fn EventDispatcher::registerEventNotifier()
  * \brief Register an event notifier
- * \param notifier The event notifier to register
+ * \param[in] notifier The event notifier to register
  *
  * Once the \a notifier is registered with the dispatcher, the dispatcher will
  * emit the notifier \ref EventNotifier::activated signal whenever a
@@ -57,7 +57,7 @@ EventDispatcher::~EventDispatcher()
 /**
  * \fn EventDispatcher::unregisterEventNotifier()
  * \brief Unregister an event notifier
- * \param notifier The event notifier to unregister
+ * \param[in] notifier The event notifier to unregister
  *
  * After this function returns the \a notifier is guaranteed not to emit the
  * \ref EventNotifier::activated signal.
@@ -68,7 +68,7 @@ EventDispatcher::~EventDispatcher()
 /**
  * \fn EventDispatcher::registerTimer()
  * \brief Register a timer
- * \param timer The timer to register
+ * \param[in] timer The timer to register
  *
  * Once the \a timer is registered with the dispatcher, the dispatcher will emit
  * the timer \ref Timer::timeout signal when the timer times out. The timer can
@@ -86,7 +86,7 @@ EventDispatcher::~EventDispatcher()
 /**
  * \fn EventDispatcher::unregisterTimer()
  * \brief Unregister a timer
- * \param timer The timer to unregister
+ * \param[in] timer The timer to unregister
  *
  * After this function returns the \a timer is guaranteed not to emit the
  * \ref Timer::timeout signal.

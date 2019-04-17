@@ -151,7 +151,6 @@ void CameraManager::stop()
 
 /**
  * \brief Get a camera based on name
- *
  * \param[in] name Name of camera to get
  *
  * Before calling this function the caller is responsible for ensuring that
@@ -229,7 +228,7 @@ CameraManager *CameraManager::instance()
 
 /**
  * \brief Set the event dispatcher
- * \param dispatcher Pointer to the event dispatcher
+ * \param[in] dispatcher Pointer to the event dispatcher
  *
  * libcamera requires an event dispatcher to integrate event notification and
  * timers with the application event loop. Applications that want to provide

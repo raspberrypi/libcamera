@@ -5,6 +5,9 @@
  * stream.cpp - Video stream for a Camera
  */
 
+#include <iomanip>
+#include <sstream>
+
 #include <libcamera/stream.h>
 
 /**
@@ -59,6 +62,22 @@ namespace libcamera {
  * \var StreamConfiguration::bufferCount
  * \brief Requested number of buffers to allocate for the stream
  */
+
+/**
+ * \brief Assemble and return a string describing the configuration
+ *
+ * \return A string describing the StreamConfiguration
+ */
+std::string StreamConfiguration::toString() const
+{
+	std::stringstream ss;
+
+	ss.fill(0);
+	ss << width << "x" << height << "-0x" << std::hex
+	   << std::setw(8) << pixelFormat;
+
+	return ss.str();
+}
 
 /**
  * \class StreamUsage

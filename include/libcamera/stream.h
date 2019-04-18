@@ -7,6 +7,8 @@
 #ifndef __LIBCAMERA_STREAM_H__
 #define __LIBCAMERA_STREAM_H__
 
+#include <string>
+
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
 
@@ -20,6 +22,8 @@ struct StreamConfiguration {
 	unsigned int pixelFormat;
 
 	unsigned int bufferCount;
+
+	std::string toString() const;
 };
 
 class StreamUsage

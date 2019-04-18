@@ -124,10 +124,7 @@ CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
 
 	configs[&data->stream_] = config;
 
-	LOG(RkISP1, Debug)
-		<< "Stream format set to " << config.width << "x"
-		<< config.height << "-0x" << std::hex << std::setfill('0')
-		<< std::setw(8) << config.pixelFormat;
+	LOG(RkISP1, Debug) << "Stream format set to " << config.toString();
 
 	return configs;
 }
@@ -234,10 +231,7 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 	    outputFormat.height != cfg.height ||
 	    outputFormat.fourcc != cfg.pixelFormat) {
 		LOG(RkISP1, Error)
-			<< "Unable to configure capture in " << cfg.width
-			<< "x" << cfg.height << "-0x"
-			<< std::hex << std::setfill('0') << std::setw(8)
-			<< cfg.pixelFormat;
+			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;
 	}
 

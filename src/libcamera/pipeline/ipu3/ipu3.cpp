@@ -224,10 +224,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 	config->pixelFormat = V4L2_PIX_FMT_NV12;
 	config->bufferCount = IPU3_BUFFER_COUNT;
 
-	LOG(IPU3, Debug)
-		<< "Stream format set to " << config->width << "x"
-		<< config->height << "-0x" << std::hex << std::setfill('0')
-		<< std::setw(8) << config->pixelFormat;
+	LOG(IPU3, Debug) << "Stream format set to " << config->toString();
 
 	return configs;
 }

@@ -596,9 +596,7 @@ int Camera::configureStreams(const CameraConfiguration &config)
 			return -EINVAL;
 
 		const StreamConfiguration &cfg = config[stream];
-		msg << " (" << index << ") " << cfg.width << "x"
-		    << cfg.height << "-0x" << std::hex << std::setfill('0')
-		    << std::setw(8) << cfg.pixelFormat;
+		msg << " (" << index << ") " << cfg.toString();
 
 		index++;
 	}

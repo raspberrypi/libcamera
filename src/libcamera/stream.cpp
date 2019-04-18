@@ -211,4 +211,22 @@ Stream::Stream()
  * \return The active configuration of the stream
  */
 
+/**
+ * \var Stream::bufferPool_
+ * \brief The pool of buffers associated with the stream
+ *
+ * The stream buffer pool is populated by the Camera class after a succesfull
+ * stream configuration.
+ */
+
+/**
+ * \var Stream::configuration_
+ * \brief The stream configuration
+ *
+ * The configuration for the stream is set by any successful call to
+ * Camera::configureStreams() that includes the stream, and remains valid until
+ * the next call to Camera::configureStreams() regardless of if it includes the
+ * stream.
+ */
+
 } /* namespace libcamera */

@@ -5,11 +5,12 @@
  * timer.cpp - Generic timer
  */
 
+#include <libcamera/timer.h>
+
 #include <time.h>
 
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
-#include <libcamera/timer.h>
 
 #include "log.h"
 

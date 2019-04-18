@@ -14,6 +14,9 @@
 
 #include <linux/media.h>
 
+struct udev;
+struct udev_monitor;
+
 namespace libcamera {
 
 class EventNotifier;

@@ -5,10 +5,10 @@
  * utils.cpp - Miscellaneous utility functions
  */
 
+#include "utils.h"
+
 #include <string.h>
 #include <sys/auxv.h>
-
-#include "utils.h"
 
 /**
  * \file utils.h

@@ -5,6 +5,8 @@
  * media_device.cpp - Media device handler
  */
 
+#include "media_device.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -17,7 +19,6 @@
 #include <linux/media.h>
 
 #include "log.h"
-#include "media_device.h"
 
 /**
  * \file media_device.h

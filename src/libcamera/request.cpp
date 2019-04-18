@@ -5,11 +5,12 @@
  * request.cpp - Capture request handling
  */
 
+#include <libcamera/request.h>
+
 #include <map>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
-#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "log.h"

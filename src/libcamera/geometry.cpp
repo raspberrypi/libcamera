@@ -5,10 +5,10 @@
  * geometry.cpp - Geometry-related structures
  */
 
+#include <libcamera/geometry.h>
+
 #include <sstream>
 #include <stdint.h>
-
-#include <libcamera/geometry.h>
 
 /**
  * \file geometry.h

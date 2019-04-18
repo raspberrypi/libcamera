@@ -6,6 +6,7 @@
  */
 
 #include <libcamera/object.h>
+
 #include <libcamera/signal.h>
 
 /**

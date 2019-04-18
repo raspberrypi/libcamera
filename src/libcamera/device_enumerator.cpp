@@ -5,6 +5,8 @@
  * device_enumerator.cpp - Enumeration and matching
  */
 
+#include "device_enumerator.h"
+
 #include <fcntl.h>
 #include <libudev.h>
 #include <string.h>
@@ -13,7 +15,6 @@
 
 #include <libcamera/event_notifier.h>
 
-#include "device_enumerator.h"
 #include "log.h"
 #include "media_device.h"
 #include "utils.h"

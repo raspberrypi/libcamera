@@ -5,6 +5,8 @@
  * media_object.cpp - Media device objects: entities, pads and links
  */
 
+#include "media_object.h"
+
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -16,7 +18,6 @@
 
 #include "log.h"
 #include "media_device.h"
-#include "media_object.h"
 
 /**
  * \file media_object.h

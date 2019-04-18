@@ -5,13 +5,14 @@
  * pipeline_handler.cpp - Pipeline handler infrastructure
  */
 
+#include "pipeline_handler.h"
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
 #include "log.h"
 #include "media_device.h"
-#include "pipeline_handler.h"
 #include "utils.h"
 
 /**

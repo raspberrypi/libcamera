@@ -5,6 +5,8 @@
  * signal.cpp - Signal & slot implementation
  */
 
+#include <libcamera/signal.h>
+
 /**
  * \file signal.h
  * \brief Signal & slot implementation

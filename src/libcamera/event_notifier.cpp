@@ -5,9 +5,10 @@
  * event_notifier.cpp - File descriptor event notifier
  */
 
+#include <libcamera/event_notifier.h>
+
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
-#include <libcamera/event_notifier.h>
 
 /**
  * \file event_notifier.h

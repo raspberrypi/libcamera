@@ -5,9 +5,10 @@
  * camera.cpp - Camera device
  */
 
+#include <libcamera/camera.h>
+
 #include <iomanip>
 
-#include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 

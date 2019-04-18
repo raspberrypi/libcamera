@@ -5,6 +5,8 @@
  * log.cpp - Logging infrastructure
  */
 
+#include "log.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -15,7 +17,6 @@
 #include <string.h>
 #include <unordered_set>
 
-#include "log.h"
 #include "utils.h"
 
 /**

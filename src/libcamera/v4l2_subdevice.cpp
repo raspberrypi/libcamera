@@ -5,6 +5,8 @@
  * v4l2_subdevice.cpp - V4L2 Subdevice
  */
 
+#include "v4l2_subdevice.h"
+
 #include <fcntl.h>
 #include <iomanip>
 #include <sstream>
@@ -19,7 +21,6 @@
 #include "log.h"
 #include "media_device.h"
 #include "media_object.h"
-#include "v4l2_subdevice.h"
 
 /**
  * \file v4l2_subdevice.h

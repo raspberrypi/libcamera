@@ -5,10 +5,10 @@
  * stream.cpp - Video stream for a Camera
  */
 
+#include <libcamera/stream.h>
+
 #include <iomanip>
 #include <sstream>
-
-#include <libcamera/stream.h>
 
 /**
  * \file stream.h

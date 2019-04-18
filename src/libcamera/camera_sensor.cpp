@@ -5,13 +5,14 @@
  * camera_sensor.cpp - A camera sensor
  */
 
+#include "camera_sensor.h"
+
 #include <algorithm>
 #include <float.h>
 #include <iomanip>
 #include <limits.h>
 #include <math.h>
 
-#include "camera_sensor.h"
 #include "formats.h"
 #include "v4l2_subdevice.h"
 

@@ -13,6 +13,8 @@
 #include <map>
 #include <vector>
 
+struct pollfd;
+
 namespace libcamera {
 
 class EventNotifier;

@@ -223,7 +223,7 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 	V4L2DeviceFormat outputFormat = {};
 	outputFormat.width = cfg.width;
 	outputFormat.height = cfg.height;
-	outputFormat.fourcc = V4L2_PIX_FMT_NV12;
+	outputFormat.fourcc = cfg.pixelFormat;
 	outputFormat.planesCount = 2;
 
 	ret = video_->setFormat(&outputFormat);
@@ -232,12 +232,12 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 
 	if (outputFormat.width != cfg.width ||
 	    outputFormat.height != cfg.height ||
-	    outputFormat.fourcc != V4L2_PIX_FMT_NV12) {
+	    outputFormat.fourcc != cfg.pixelFormat) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << cfg.width
 			<< "x" << cfg.height << "-0x"
 			<< std::hex << std::setfill('0') << std::setw(8)
-			<< V4L2_PIX_FMT_NV12;
+			<< cfg.pixelFormat;
 		return -EINVAL;
 	}
 

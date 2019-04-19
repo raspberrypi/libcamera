@@ -316,10 +316,6 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 		streamConfig.bufferCount = IPU3_BUFFER_COUNT;
 
 		cameraConfig[stream] = streamConfig;
-
-		LOG(IPU3, Debug)
-			<< "Stream '" << stream->name_ << "' format set to "
-			<< streamConfig.toString();
 	}
 
 	return cameraConfig;

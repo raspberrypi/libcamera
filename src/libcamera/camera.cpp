@@ -546,7 +546,20 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
 	if (disconnected_ || !usages.size() || usages.size() > streams_.size())
 		return CameraConfiguration();
 
-	return pipe_->streamConfiguration(this, usages);
+	CameraConfiguration config = pipe_->streamConfiguration(this, usages);
+
+	std::ostringstream msg("streams configuration:");
+	unsigned int index = 0;
+
+	for (Stream *stream : config) {
+		const StreamConfiguration &cfg = config[stream];
+		msg << " (" << index << ") " << cfg.toString();
+		index++;
+	}
+
+	LOG(Camera, Debug) << msg.str();
+
+	return config;
 }
 
 /**

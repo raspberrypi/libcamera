@@ -124,8 +124,6 @@ CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
 
 	configs[&data->stream_] = config;
 
-	LOG(RkISP1, Debug) << "Stream format set to " << config.toString();
-
 	return configs;
 }
 

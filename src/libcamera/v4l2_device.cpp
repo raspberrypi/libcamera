@@ -349,7 +349,7 @@ int V4L2Device::open()
 		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
 		bufferType_ = V4L2_BUF_TYPE_META_CAPTURE;
 	} else {
-		LOG(V4L2, Debug) << "Device is not a supported type";
+		LOG(V4L2, Error) << "Device is not a supported type";
 		return -EINVAL;
 	}
 

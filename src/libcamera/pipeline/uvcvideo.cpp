@@ -42,7 +42,7 @@ public:
 
 	int queueRequest(Camera *camera, Request *request) override;
 
-	bool match(DeviceEnumerator *enumerator);
+	bool match(DeviceEnumerator *enumerator) override;
 
 private:
 	class UVCCameraData : public CameraData

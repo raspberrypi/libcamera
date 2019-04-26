@@ -90,6 +90,12 @@ LOG_DECLARE_CATEGORY(V4L2)
  */
 
 /**
+ * \fn V4L2Capability::isM2M()
+ * \brief Identify if the device is a Memory-to-Memory device
+ * \return True if the device can capture and output images using the M2M API
+ */
+
+/**
  * \fn V4L2Capability::isMeta()
  * \brief Identify if the video device captures or outputs image meta-data
  * \return True if the video device can capture or output image meta-data
@@ -295,7 +301,8 @@ V4L2VideoDevice::~V4L2VideoDevice()
 }
 
 /**
- * \brief Open a V4L2 video device and query its capabilities
+ * \brief Open the V4L2 video device node and query its capabilities
+ *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::open()
@@ -342,6 +349,92 @@ int V4L2VideoDevice::open()
 		bufferType_ = V4L2_BUF_TYPE_META_OUTPUT;
 	} else {
 		LOG(V4L2, Error) << "Device is not a supported type";
+		return -EINVAL;
+	}
+
+	fdEvent_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
+	fdEvent_->setEnabled(false);
+
+	LOG(V4L2, Debug)
+		<< "Opened device " << caps_.bus_info() << ": "
+		<< caps_.driver() << ": " << caps_.card();
+
+	return 0;
+}
+
+/**
+ * \brief Open a V4L2 video device from an opened file handle and query its
+ * capabilities
+ * \param[in] handle The file descriptor to set
+ * \param[in] type The device type to operate on
+ *
+ * This methods opens a video device from the existing file descriptor \a
+ * handle. Like open(), this method queries the capabilities of the device, but
+ * handles it according to the given device \a type instead of determining its
+ * type from the capabilities. This can be used to force a given device type for
+ * memory-to-memory devices.
+ *
+ * The file descriptor \a handle is duplicated, and the caller is responsible
+ * for closing the \a handle when it has no further use for it. The close()
+ * method will close the duplicated file descriptor, leaving \a handle
+ * untouched.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
+{
+	int ret;
+	int newFd;
+
+	newFd = dup(handle);
+	if (newFd < 0) {
+		ret = -errno;
+		LOG(V4L2, Error) << "Failed to duplicate file handle: "
+				 << strerror(-ret);
+		return ret;
+	}
+
+	ret = V4L2Device::setFd(newFd);
+	if (ret < 0) {
+		LOG(V4L2, Error) << "Failed to set file handle: "
+				 << strerror(-ret);
+		::close(newFd);
+		return ret;
+	}
+
+	ret = ioctl(VIDIOC_QUERYCAP, &caps_);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to query device capabilities: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	if (!caps_.hasStreaming()) {
+		LOG(V4L2, Error) << "Device does not support streaming I/O";
+		return -EINVAL;
+	}
+
+	/*
+	 * Set buffer type and wait for read notifications on CAPTURE video
+	 * devices (POLLIN), and write notifications for OUTPUT video devices
+	 * (POLLOUT).
+	 */
+	switch (type) {
+	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
+		bufferType_ = caps_.isMultiplanar()
+			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
+			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
+		break;
+	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
+		bufferType_ = caps_.isMultiplanar()
+			    ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+			    : V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		break;
+	default:
+		LOG(V4L2, Error) << "Unsupported buffer type";
 		return -EINVAL;
 	}
 
@@ -1141,6 +1234,106 @@ V4L2VideoDevice *V4L2VideoDevice::fromEntityName(const MediaDevice *media,
 		return nullptr;
 
 	return new V4L2VideoDevice(mediaEntity);
+}
+
+/**
+ * \class V4L2M2MDevice
+ * \brief Memory-to-Memory video device
+ *
+ * The V4L2M2MDevice manages two V4L2VideoDevice instances on the same
+ * deviceNode which operate together using two queues to implement the V4L2
+ * Memory to Memory API.
+ *
+ * The two devices should be opened by calling open() on the V4L2M2MDevice, and
+ * can be closed by calling close on the V4L2M2MDevice.
+ *
+ * Calling V4L2VideoDevice::open() and V4L2VideoDevice::close() on the capture
+ * or output V4L2VideoDevice is not permitted.
+ */
+
+/**
+ * \fn V4L2M2MDevice::output
+ * \brief Retrieve the output V4L2VideoDevice instance
+ * \return The output V4L2VideoDevice instance
+ */
+
+/**
+ * \fn V4L2M2MDevice::capture
+ * \brief Retrieve the capture V4L2VideoDevice instance
+ * \return The capture V4L2VideoDevice instance
+ */
+
+/**
+ * \brief Create a new V4L2M2MDevice from the \a deviceNode
+ * \param[in] deviceNode The file-system path to the video device node
+ */
+V4L2M2MDevice::V4L2M2MDevice(const std::string &deviceNode)
+	: deviceNode_(deviceNode)
+{
+	output_ = new V4L2VideoDevice(deviceNode);
+	capture_ = new V4L2VideoDevice(deviceNode);
+}
+
+V4L2M2MDevice::~V4L2M2MDevice()
+{
+	delete capture_;
+	delete output_;
+}
+
+/**
+ * \brief Open a V4L2 Memory to Memory device
+ *
+ * Open the device node and prepare the two V4L2VideoDevice instances to handle
+ * their respective buffer queues.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2M2MDevice::open()
+{
+	int fd;
+	int ret;
+
+	/*
+	 * The output and capture V4L2VideoDevice instances use the same file
+	 * handle for the same device node. The local file handle can be closed
+	 * as the V4L2VideoDevice::open() retains a handle by duplicating the
+	 * fd passed in.
+	 */
+	fd = ::open(deviceNode_.c_str(), O_RDWR | O_NONBLOCK);
+	if (fd < 0) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Failed to open V4L2 M2M device: " << strerror(-ret);
+		return ret;
+	}
+
+	ret = output_->open(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT);
+	if (ret)
+		goto err;
+
+	ret = capture_->open(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE);
+	if (ret)
+		goto err;
+
+	::close(fd);
+
+	return 0;
+
+err:
+	close();
+	::close(fd);
+
+	return ret;
+}
+
+/**
+ * \brief Close the memory-to-memory device, releasing any resources acquired by
+ * open()
+ */
+void V4L2M2MDevice::close()
+{
+	capture_->close();
+	output_->close();
 }
 
 } /* namespace libcamera */

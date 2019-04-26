@@ -71,6 +71,11 @@ struct V4L2Capability final : v4l2_capability {
 					V4L2_CAP_VIDEO_OUTPUT |
 					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
 	}
+	bool isM2M() const
+	{
+		return device_caps() & (V4L2_CAP_VIDEO_M2M |
+					V4L2_CAP_VIDEO_M2M_MPLANE);
+	}
 	bool isMeta() const
 	{
 		return device_caps() & (V4L2_CAP_META_CAPTURE |
@@ -124,6 +129,7 @@ public:
 	V4L2VideoDevice &operator=(const V4L2VideoDevice &) = delete;
 
 	int open();
+	int open(int handle, enum v4l2_buf_type type);
 	void close();
 
 	const char *driverName() const { return caps_.driver(); }
@@ -180,6 +186,25 @@ private:
 	std::map<unsigned int, Buffer *> queuedBuffers_;
 
 	EventNotifier *fdEvent_;
+};
+
+class V4L2M2MDevice
+{
+public:
+	V4L2M2MDevice(const std::string &deviceNode);
+	~V4L2M2MDevice();
+
+	int open();
+	void close();
+
+	V4L2VideoDevice *output() { return output_; }
+	V4L2VideoDevice *capture() { return capture_; }
+
+private:
+	std::string deviceNode_;
+
+	V4L2VideoDevice *output_;
+	V4L2VideoDevice *capture_;
 };
 
 } /* namespace libcamera */

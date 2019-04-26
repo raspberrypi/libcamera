@@ -210,7 +210,7 @@ int EventDispatcherPoll::poll(std::vector<struct pollfd> *pollfds)
 
 void EventDispatcherPoll::processInterrupt(const struct pollfd &pfd)
 {
-	if (!pfd.revents & POLLIN)
+	if (!(pfd.revents & POLLIN))
 		return;
 
 	uint64_t value;

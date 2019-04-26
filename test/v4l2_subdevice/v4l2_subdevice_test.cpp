@@ -39,7 +39,7 @@ int V4L2SubdeviceTest::init()
 	}
 
 	DeviceMatch dm("vimc");
-	media_ = std::move(enumerator_->search(dm));
+	media_ = enumerator_->search(dm);
 	if (!media_) {
 		cerr << "Unable to find \'vimc\' media device node" << endl;
 		return TestSkip;

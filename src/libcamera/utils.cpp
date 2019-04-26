@@ -7,8 +7,9 @@
 
 #include "utils.h"
 
+#include <stdlib.h>
 #include <string.h>
-#include <sys/auxv.h>
+#include <unistd.h>
 
 /**
  * \file utils.h
@@ -57,10 +58,14 @@ const char *basename(const char *path)
  */
 char *secure_getenv(const char *name)
 {
-	if (getauxval(AT_SECURE))
+#if HAVE_SECURE_GETENV
+	return ::secure_getenv(name);
+#else
+	if (issetugid())
 		return NULL;
 
 	return getenv(name);
+#endif
 }
 
 /**

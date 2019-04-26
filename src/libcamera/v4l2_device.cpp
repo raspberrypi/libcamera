@@ -622,7 +622,7 @@ int V4L2Device::exportBuffers(BufferPool *pool)
 	for (i = 0; i < pool->count(); ++i) {
 		struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 		struct v4l2_buffer buf = {};
-		struct Buffer &buffer = pool->buffers()[i];
+		Buffer &buffer = pool->buffers()[i];
 
 		buf.index = i;
 		buf.type = bufferType_;

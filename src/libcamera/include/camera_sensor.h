@@ -18,7 +18,8 @@ namespace libcamera {
 
 class MediaEntity;
 class V4L2Subdevice;
-class V4L2SubdeviceFormat;
+
+struct V4L2SubdeviceFormat;
 
 class CameraSensor : protected Loggable
 {

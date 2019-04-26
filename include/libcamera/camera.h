@@ -21,8 +21,9 @@ class Buffer;
 class PipelineHandler;
 class Request;
 class Stream;
-class StreamConfiguration;
 class StreamUsage;
+
+struct StreamConfiguration;
 
 class CameraConfiguration
 {

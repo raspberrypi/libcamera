@@ -750,9 +750,6 @@ int V4L2Device::releaseBuffers()
  * processed by the device. Once the device has finished processing the buffer,
  * it will be available for dequeue.
  *
- * \todo Support output devices (bytesused, ...)
- * \todo Support imported buffers (dmabuf fd)
- *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2Device::queueBuffer(Buffer *buffer)
@@ -904,7 +901,8 @@ int V4L2Device::streamOn()
 /**
  * \brief Stop the video stream
  *
- * \todo Ensure completion notifications are sent for all queued buffers
+ * Buffers that are still queued when the video stream is stopped are
+ * implicitly dequeued, but no bufferReady signal is emitted for them.
  *
  * \return 0 on success or a negative error code otherwise
  */

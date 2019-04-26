@@ -40,7 +40,6 @@
  * expressed in a DeviceMatch object.
  *
  * \todo Add sysfs based device enumerator.
- * \todo Add support for hot-plug and hot-unplug.
  */
 
 namespace libcamera {

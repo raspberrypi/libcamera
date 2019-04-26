@@ -50,9 +50,6 @@ LOG_DEFINE_CATEGORY(Camera)
  * references it held to cameras, the camera manager can be stopped with
  * stop().
  *
- * \todo Add ability to add and remove media devices based on hot-(un)plug
- * events coming from the device enumerator.
- *
  * \todo Add interface to register a notification callback to the user to be
  * able to inform it new cameras have been hot-plugged or cameras have been
  * removed due to hot-unplug.

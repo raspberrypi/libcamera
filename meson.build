@@ -13,8 +13,17 @@ project('libcamera', 'c', 'cpp',
 #       generated from this too.
 api_version = '0.1'
 
+cc = meson.get_compiler('c')
+config_h = configuration_data()
+
+if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix: '#define _GNU_SOURCE')
+    config_h.set('HAVE_SECURE_GETENV', 1)
+endif
+configure_file(output: 'config.h', configuration: config_h)
+
 common_arguments = [
     '-Wno-unused-parameter',
+    '-include', 'config.h',
 ]
 
 c_arguments = common_arguments

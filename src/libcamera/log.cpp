@@ -174,7 +174,7 @@ void Logger::parseLogLevels()
 			continue;
 
 		LogSeverity severity = parseLogLevel(level);
-		if (severity == -1)
+		if (severity == LogInvalid)
 			continue;
 
 		levels_.push_back({ category, severity });
@@ -189,7 +189,7 @@ void Logger::parseLogLevels()
  * LogFatal, or as a string corresponding to the severity name in uppercase. Any
  * other value is invalid.
  *
- * \return The log severity, or -1 if the string is invalid
+ * \return The log severity, or LogInvalid if the string is invalid
  */
 LogSeverity Logger::parseLogLevel(const std::string &level)
 {
@@ -207,9 +207,9 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
 		char *endptr;
 		severity = strtoul(level.c_str(), &endptr, 10);
 		if (*endptr != '\0' || severity > LogFatal)
-			severity = -1;
+			severity = LogInvalid;
 	} else {
-		severity = -1;
+		severity = LogInvalid;
 		for (unsigned int i = 0; i < ARRAY_SIZE(names); ++i) {
 			if (names[i] == level) {
 				severity = i;
@@ -416,13 +416,13 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
  * on the compiler type and version, and optimization level, the move
  * constructor is defined even if it will likely never be called, and ensures
  * that the destructor of the \a other message will not output anything to the
- * log by setting the severity to -1.
+ * log by setting the severity to LogInvalid.
  */
 LogMessage::LogMessage(LogMessage &&other)
 	: msgStream_(std::move(other.msgStream_)), category_(other.category_),
 	  severity_(other.severity_)
 {
-	other.severity_ = static_cast<LogSeverity>(-1);
+	other.severity_ = LogInvalid;
 }
 
 void LogMessage::init(const char *fileName, unsigned int line)
@@ -445,7 +445,7 @@ void LogMessage::init(const char *fileName, unsigned int line)
 LogMessage::~LogMessage()
 {
 	/* Don't print anything if we have been moved to another LogMessage. */
-	if (severity_ == -1)
+	if (severity_ == LogInvalid)
 		return;
 
 	msgStream_ << std::endl;

@@ -12,7 +12,8 @@
 namespace libcamera {
 
 enum LogSeverity {
-	LogDebug,
+	LogInvalid = -1,
+	LogDebug = 0,
 	LogInfo,
 	LogWarning,
 	LogError,

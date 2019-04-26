@@ -530,7 +530,7 @@ void OptionsParser::parseValueError(const Option &option)
 	if (option.name)
 		optionName = "--" + std::string(option.name);
 	else
-		optionName = "-" + static_cast<char>(option.opt);
+		optionName = "-" + std::string(1, option.opt);
 
 	std::cerr << "Can't parse " << option.typeName()
 		  << " argument for option " << optionName << std::endl;

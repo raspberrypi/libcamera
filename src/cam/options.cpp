@@ -382,8 +382,8 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 	 * Allocate short and long options arrays large enough to contain all
 	 * options.
 	 */
-	char shortOptions[options_.size() * 3 + 2] = {};
-	struct option longOptions[options_.size() + 1] = {};
+	char shortOptions[options_.size() * 3 + 2];
+	struct option longOptions[options_.size() + 1];
 	unsigned int ids = 0;
 	unsigned int idl = 0;
 
@@ -418,6 +418,9 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 			idl++;
 		}
 	}
+
+	shortOptions[ids] = '\0';
+	memset(&longOptions[idl], 0, sizeof(longOptions[idl]));
 
 	opterr = 0;
 

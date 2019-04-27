@@ -415,7 +415,7 @@ void V4L2Device::close()
 
 std::string V4L2Device::logPrefix() const
 {
-	return deviceNode_;
+	return deviceNode_ + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");
 }
 
 /**

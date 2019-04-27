@@ -80,7 +80,7 @@ int CameraManager::start()
 		return -EBUSY;
 
 	enumerator_ = DeviceEnumerator::create();
-	if (enumerator_->enumerate())
+	if (!enumerator_ || enumerator_->enumerate())
 		return -ENODEV;
 
 	/*

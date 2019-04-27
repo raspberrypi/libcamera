@@ -26,6 +26,7 @@ libcamera_sources = files([
 libcamera_headers = files([
     'include/camera_sensor.h',
     'include/device_enumerator.h',
+    'include/device_enumerator_udev.h',
     'include/event_dispatcher_poll.h',
     'include/formats.h',
     'include/log.h',
@@ -46,7 +47,14 @@ includes = [
 
 subdir('pipeline')
 
-libudev = dependency('libudev')
+libudev = dependency('libudev', required: false)
+
+if libudev.found()
+    config_h.set('HAVE_LIBUDEV', 1)
+    libcamera_sources += files([
+        'device_enumerator_udev.cpp',
+    ])
+endif
 
 libcamera = shared_library('camera',
                            libcamera_sources,

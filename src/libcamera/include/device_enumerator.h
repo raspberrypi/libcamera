@@ -7,19 +7,14 @@
 #ifndef __LIBCAMERA_DEVICE_ENUMERATOR_H__
 #define __LIBCAMERA_DEVICE_ENUMERATOR_H__
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <linux/media.h>
 
-struct udev;
-struct udev_monitor;
-
 namespace libcamera {
 
-class EventNotifier;
 class MediaDevice;
 
 class DeviceMatch
@@ -56,25 +51,6 @@ private:
 	std::vector<std::shared_ptr<MediaDevice>> devices_;
 
 	virtual std::string lookupDeviceNode(int major, int minor) = 0;
-};
-
-class DeviceEnumeratorUdev: public DeviceEnumerator
-{
-public:
-	DeviceEnumeratorUdev();
-	~DeviceEnumeratorUdev();
-
-	int init() final;
-	int enumerate() final;
-
-private:
-	struct udev *udev_;
-	struct udev_monitor *monitor_;
-	EventNotifier *notifier_;
-
-	std::string lookupDeviceNode(int major, int minor) final;
-
-	void udevNotify(EventNotifier *notifier);
 };
 
 } /* namespace libcamera */

@@ -19,7 +19,6 @@ config_h = configuration_data()
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix: '#define _GNU_SOURCE')
     config_h.set('HAVE_SECURE_GETENV', 1)
 endif
-configure_file(output: 'config.h', configuration: config_h)
 
 common_arguments = [
     '-Wno-unused-parameter',
@@ -48,6 +47,8 @@ endif
 if get_option('tests')
   subdir('test')
 endif
+
+configure_file(output: 'config.h', configuration: config_h)
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : libcamera,

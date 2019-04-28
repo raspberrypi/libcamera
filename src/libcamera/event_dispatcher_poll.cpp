@@ -162,7 +162,14 @@ void EventDispatcherPoll::processEvents()
 void EventDispatcherPoll::interrupt()
 {
 	uint64_t value = 1;
-	write(eventfd_, &value, sizeof(value));
+	ssize_t ret = write(eventfd_, &value, sizeof(value));
+	if (ret != sizeof(value)) {
+		if (ret < 0)
+			ret = -errno;
+		LOG(Event, Error)
+			<< "Failed to interrupt event dispatcher ("
+			<< ret << ")";
+	}
 }
 
 short EventDispatcherPoll::EventNotifierSetPoll::events() const
@@ -214,7 +221,13 @@ void EventDispatcherPoll::processInterrupt(const struct pollfd &pfd)
 		return;
 
 	uint64_t value;
-	read(eventfd_, &value, sizeof(value));
+	ssize_t ret = read(eventfd_, &value, sizeof(value));
+	if (ret != sizeof(value)) {
+		if (ret < 0)
+			ret = -errno;
+		LOG(Event, Error)
+			<< "Failed to process interrupt (" << ret << ")";
+	}
 }
 
 void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pollfds)

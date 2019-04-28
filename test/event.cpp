@@ -38,6 +38,7 @@ protected:
 		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
 		std::string data("H2G2");
 		Timer timeout;
+		ssize_t ret;
 
 		EventNotifier readNotifier(pipefd_[0], EventNotifier::Read);
 		readNotifier.activated.connect(this, &EventTest::readReady);
@@ -46,7 +47,11 @@ protected:
 		memset(data_, 0, sizeof(data_));
 		size_ = 0;
 
-		write(pipefd_[1], data.data(), data.size());
+		ret = write(pipefd_[1], data.data(), data.size());
+		if (ret < 0) {
+			cout << "Pipe write failed" << endl;
+			return TestFail;
+		}
 
 		timeout.start(100);
 		dispatcher->processEvents();
@@ -73,7 +78,11 @@ protected:
 		notified_ = false;
 		readNotifier.setEnabled(false);
 
-		write(pipefd_[1], data.data(), data.size());
+		ret = write(pipefd_[1], data.data(), data.size());
+		if (ret < 0) {
+			cout << "Pipe write failed" << endl;
+			return TestFail;
+		}
 
 		timeout.start(100);
 		dispatcher->processEvents();

@@ -14,16 +14,13 @@
 
 #include <libcamera/request.h>
 #include <libcamera/signal.h>
+#include <libcamera/stream.h>
 
 namespace libcamera {
 
 class Buffer;
 class PipelineHandler;
 class Request;
-class Stream;
-class StreamUsage;
-
-struct StreamConfiguration;
 
 class CameraConfiguration
 {
@@ -74,8 +71,7 @@ public:
 	int release();
 
 	const std::set<Stream *> &streams() const;
-	CameraConfiguration
-	generateConfiguration(const std::vector<StreamUsage> &usage);
+	CameraConfiguration generateConfiguration(const StreamRoles &roles);
 	int configure(const CameraConfiguration &config);
 
 	int allocateBuffers();

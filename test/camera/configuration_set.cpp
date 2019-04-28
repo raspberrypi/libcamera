@@ -19,7 +19,7 @@ protected:
 	int run()
 	{
 		CameraConfiguration config =
-			camera_->generateConfiguration({ Stream::VideoRecording() });
+			camera_->generateConfiguration({ StreamRole::VideoRecording });
 		StreamConfiguration *cfg = &config[config.front()];
 
 		if (!config.isValid()) {

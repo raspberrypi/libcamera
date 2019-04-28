@@ -542,23 +542,23 @@ const std::set<Stream *> &Camera::streams() const
 }
 
 /**
- * \brief Generate a default camera configuration according to stream usages
- * \param[in] usages A list of stream usages
+ * \brief Generate a default camera configuration according to stream roles
+ * \param[in] roles A list of stream roles
  *
- * Generate a camera configuration for a set of desired usages. The caller
- * specifies a list of stream usages and the camera returns a configuration
+ * Generate a camera configuration for a set of desired stream roles. The caller
+ * specifies a list of stream roles and the camera returns a configuration
  * containing suitable streams and their suggested default configurations.
  *
- * \return A valid CameraConfiguration if the requested usages can be satisfied,
+ * \return A valid CameraConfiguration if the requested roles can be satisfied,
  * or a invalid one otherwise
  */
 CameraConfiguration
-Camera::generateConfiguration(const std::vector<StreamUsage> &usages)
+Camera::generateConfiguration(const StreamRoles &roles)
 {
-	if (disconnected_ || !usages.size() || usages.size() > streams_.size())
+	if (disconnected_ || !roles.size() || roles.size() > streams_.size())
 		return CameraConfiguration();
 
-	CameraConfiguration config = pipe_->generateConfiguration(this, usages);
+	CameraConfiguration config = pipe_->generateConfiguration(this, roles);
 
 	std::ostringstream msg("streams configuration:", std::ios_base::ate);
 	unsigned int index = 0;

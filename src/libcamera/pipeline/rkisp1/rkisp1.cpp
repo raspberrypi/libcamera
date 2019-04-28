@@ -35,7 +35,7 @@ public:
 	~PipelineHandlerRkISP1();
 
 	CameraConfiguration generateConfiguration(Camera *camera,
-		const std::vector<StreamUsage> &usages) override;
+		const StreamRoles &roles) override;
 	int configure(Camera *camera,
 		const CameraConfiguration &config) override;
 
@@ -107,7 +107,7 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
  */
 
 CameraConfiguration PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
-	const std::vector<StreamUsage> &usages)
+	const StreamRoles &roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	CameraConfiguration config;

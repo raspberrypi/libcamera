@@ -221,18 +221,18 @@ void PipelineHandler::unlock()
  * \fn PipelineHandler::generateConfiguration()
  * \brief Generate a camera configuration for a specified camera
  * \param[in] camera The camera to generate a default configuration for
- * \param[in] usages A list of stream usages
+ * \param[in] roles A list of stream roles
  *
- * Generate a default configuration for the \a camera for a specified group of
- * use-cases. The caller shall populate the \a usages array with the use-cases
- * it wishes to fetch the default configuration for. The returned configuration
+ * Generate a default configuration for the \a camera for a specified list of
+ * stream roles. The caller shall populate the \a roles with the use-cases it
+ * wishes to fetch the default configuration for. The returned configuration
  * can then be examined by the caller to learn about the selected streams and
  * their default parameters.
  *
  * The intended companion to this is \a configure() which can be used to change
  * the group of streams parameters.
  *
- * \return A valid CameraConfiguration if the requested usages can be satisfied,
+ * \return A valid CameraConfiguration if the requested roles can be satisfied,
  * or a invalid configuration otherwise
  */
 

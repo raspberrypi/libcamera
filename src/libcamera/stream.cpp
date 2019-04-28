@@ -75,60 +75,30 @@ std::string StreamConfiguration::toString() const
 }
 
 /**
- * \class StreamUsage
- * \brief Stream usage information
- *
- * The StreamUsage class describes how an application intends to use a stream.
- * Usages are specified by applications and passed to cameras, that then select
- * the most appropriate streams and their default configurations.
- */
-
-/**
- * \enum StreamUsage::Role
+ * \enum StreamRole
  * \brief Identify the role a stream is intended to play
- * \var StreamUsage::StillCapture
+ *
+ * The StreamRole describes how an application intends to use a stream. Roles
+ * are specified by applications and passed to cameras, that then select the
+ * most appropriate streams and their default configurations.
+ *
+ * \var StillCapture
  * The stream is intended to capture high-resolution, high-quality still images
  * with low frame rate. The captured frames may be exposed with flash.
- * \var StreamUsage::VideoRecording
+ * \var VideoRecording
  * The stream is intended to capture video for the purpose of recording or
  * streaming. The video stream may produce a high frame rate and may be
  * enhanced with video stabilization.
- * \var StreamUsage::Viewfinder
+ * \var Viewfinder
  * The stream is intended to capture video for the purpose of display on the
- * local screen. The StreamUsage includes the desired resolution. Trade-offs
- * between quality and usage of system resources are acceptable.
+ * local screen. Trade-offs between quality and usage of system resources are
+ * acceptable.
  */
 
 /**
- * \fn StreamUsage::role()
- * \brief Retrieve the stream role
- * \return The stream role
+ * \typedef StreamRoles
+ * \brief A vector of StreamRole
  */
-
-/**
- * \fn StreamUsage::size()
- * \brief Retrieve desired size
- * \return The desired size
- */
-
-/**
- * \brief Create a stream usage
- * \param[in] role Stream role
- */
-StreamUsage::StreamUsage(Role role)
-	: role_(role)
-{
-}
-
-/**
- * \brief Create a stream usage with a desired size
- * \param[in] role Stream role
- * \param[in] size The desired size
- */
-StreamUsage::StreamUsage(Role role, const Size &size)
-	: role_(role), size_(size)
-{
-}
 
 /**
  * \class Stream
@@ -147,39 +117,6 @@ StreamUsage::StreamUsage(Role role, const Size &size)
  * capture from one or more streams even if they won't be able to select the
  * optimal stream for the task.
  */
-
-/**
- * \class Stream::StillCapture
- * \brief Describe a still capture usage
- */
-Stream::StillCapture::StillCapture()
-	: StreamUsage(Role::StillCapture)
-{
-}
-
-/**
- * \class Stream::VideoRecording
- * \brief Describe a video recording usage
- */
-Stream::VideoRecording::VideoRecording()
-	: StreamUsage(Role::VideoRecording)
-{
-}
-
-/**
- * \class Stream::Viewfinder
- * \brief Describe a viewfinder usage
- */
-
-/**
- * \brief Create a viewfinder usage with a desired dimension
- * \param[in] width The desired viewfinder width
- * \param[in] height The desired viewfinder height
- */
-Stream::Viewfinder::Viewfinder(int width, int height)
-	: StreamUsage(Role::Viewfinder, Size(width, height))
-{
-}
 
 /**
  * \brief Construct a stream with default parameters

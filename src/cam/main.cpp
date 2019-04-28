@@ -87,13 +87,13 @@ static int parseOptions(int argc, char *argv[])
 
 static int prepareCameraConfig(CameraConfiguration *config)
 {
-	std::vector<StreamUsage> roles;
+	StreamRoles roles;
 
 	streamInfo.clear();
 
 	/* If no configuration is provided assume a single video stream. */
 	if (!options.isSet(OptStream)) {
-		*config = camera->generateConfiguration({ Stream::VideoRecording() });
+		*config = camera->generateConfiguration({ StreamRole::VideoRecording });
 		streamInfo[config->front()] = "stream0";
 		return 0;
 	}
@@ -106,14 +106,13 @@ static int prepareCameraConfig(CameraConfiguration *config)
 		KeyValueParser::Options conf = value.toKeyValues();
 
 		if (!conf.isSet("role")) {
-			roles.push_back(Stream::VideoRecording());
+			roles.push_back(StreamRole::VideoRecording);
 		} else if (conf["role"].toString() == "viewfinder") {
-			roles.push_back(Stream::Viewfinder(conf["width"],
-							   conf["height"]));
+			roles.push_back(StreamRole::Viewfinder);
 		} else if (conf["role"].toString() == "video") {
-			roles.push_back(Stream::VideoRecording());
+			roles.push_back(StreamRole::VideoRecording);
 		} else if (conf["role"].toString() == "still") {
-			roles.push_back(Stream::StillCapture());
+			roles.push_back(StreamRole::StillCapture);
 		} else {
 			std::cerr << "Unknown stream role "
 				  << conf["role"].toString() << std::endl;

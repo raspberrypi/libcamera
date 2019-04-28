@@ -97,7 +97,7 @@ int MainWindow::startCapture()
 {
 	int ret;
 
-	config_ = camera_->generateConfiguration({ Stream::VideoRecording() });
+	config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 	Stream *stream = config_.front();
 	ret = camera_->configure(config_);
 	if (ret < 0) {

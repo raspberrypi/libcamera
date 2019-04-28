@@ -151,8 +151,7 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 
 	CameraConfiguration
-	generateConfiguration(Camera *camera,
-			      const std::vector<StreamUsage> &usages) override;
+	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
 	int configure(Camera *camera,
 		      const CameraConfiguration &config) override;
 
@@ -211,7 +210,7 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 
 CameraConfiguration
 PipelineHandlerIPU3::generateConfiguration(Camera *camera,
-					   const std::vector<StreamUsage> &usages)
+					   const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
 	CameraConfiguration config = {};
@@ -220,13 +219,12 @@ PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		&data->vfStream_,
 	};
 
-	for (const StreamUsage &usage : usages) {
+	for (const StreamRole role : roles) {
 		StreamConfiguration cfg = {};
-		StreamUsage::Role role = usage.role();
 		IPU3Stream *stream = nullptr;
 
 		switch (role) {
-		case StreamUsage::Role::StillCapture:
+		case StreamRole::StillCapture:
 			/*
 			 * Pick the output stream by default as the Viewfinder
 			 * and VideoRecording roles are not allowed on
@@ -256,11 +254,11 @@ PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 			break;
 
-		case StreamUsage::Role::Viewfinder:
-		case StreamUsage::Role::VideoRecording: {
+		case StreamRole::Viewfinder:
+		case StreamRole::VideoRecording: {
 			/*
 			 * We can't use the 'output' stream for viewfinder or
-			 * video capture usages.
+			 * video capture roles.
 			 *
 			 * \todo This is an artificial limitation until we
 			 * figure out the exact capabilities of the hardware.
@@ -275,15 +273,13 @@ PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			stream = &data->vfStream_;
 
 			/*
-			 * Align the requested viewfinder size to the
-			 * maximum available sensor resolution and to the
-			 * IPU3 alignment constraints.
+			 * Align the default viewfinder size to the maximum
+			 * available sensor resolution and to the IPU3
+			 * alignment constraints.
 			 */
 			const Size &res = data->cio2_.sensor_->resolution();
-			unsigned int width = std::min(usage.size().width,
-						      res.width);
-			unsigned int height = std::min(usage.size().height,
-						       res.height);
+			unsigned int width = std::min(1280U, res.width);
+			unsigned int height = std::min(720U, res.height);
 			cfg.size = { width & ~7, height & ~3 };
 
 			break;

@@ -235,7 +235,7 @@ protected:
 
 	int run()
 	{
-		defconf_ = camera_->generateConfiguration({ Stream::VideoRecording() });
+		defconf_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 
 		if (testAvailable() != TestPass) {
 			cout << "State machine in Available state failed" << endl;

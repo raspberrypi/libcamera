@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/stream.h>
+
 namespace libcamera {
 
 class Buffer;
@@ -26,8 +28,6 @@ class DeviceMatch;
 class MediaDevice;
 class PipelineHandler;
 class Request;
-class Stream;
-class StreamUsage;
 
 class CameraData
 {
@@ -61,7 +61,7 @@ public:
 	void unlock();
 
 	virtual CameraConfiguration
-	generateConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
+	generateConfiguration(Camera *camera, const StreamRoles &roles) = 0;
 	virtual int configure(Camera *camera, const CameraConfiguration &config) = 0;
 
 	virtual int allocateBuffers(Camera *camera,

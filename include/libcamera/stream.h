@@ -8,6 +8,7 @@
 #define __LIBCAMERA_STREAM_H__
 
 #include <string>
+#include <vector>
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
@@ -25,48 +26,17 @@ struct StreamConfiguration {
 	std::string toString() const;
 };
 
-class StreamUsage
-{
-public:
-	enum Role {
-		StillCapture,
-		VideoRecording,
-		Viewfinder,
-	};
-
-	Role role() const { return role_; }
-	const Size &size() const { return size_; }
-
-protected:
-	explicit StreamUsage(Role role);
-	StreamUsage(Role role, const Size &size);
-
-private:
-	Role role_;
-	Size size_;
+enum StreamRole {
+	StillCapture,
+	VideoRecording,
+	Viewfinder,
 };
+
+using StreamRoles = std::vector<StreamRole>;
 
 class Stream
 {
 public:
-	class StillCapture : public StreamUsage
-	{
-	public:
-		StillCapture();
-	};
-
-	class VideoRecording : public StreamUsage
-	{
-	public:
-		VideoRecording();
-	};
-
-	class Viewfinder : public StreamUsage
-	{
-	public:
-		Viewfinder(int width, int height);
-	};
-
 	Stream();
 	BufferPool &bufferPool() { return bufferPool_; }
 	const StreamConfiguration &configuration() const { return configuration_; }

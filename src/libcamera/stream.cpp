@@ -218,9 +218,8 @@ Stream::Stream()
  * \brief The stream configuration
  *
  * The configuration for the stream is set by any successful call to
- * Camera::configureStreams() that includes the stream, and remains valid until
- * the next call to Camera::configureStreams() regardless of if it includes the
- * stream.
+ * Camera::configure() that includes the stream, and remains valid until the
+ * next call to Camera::configure() regardless of if it includes the stream.
  */
 
 } /* namespace libcamera */

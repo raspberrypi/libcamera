@@ -34,9 +34,9 @@ public:
 	PipelineHandlerRkISP1(CameraManager *manager);
 	~PipelineHandlerRkISP1();
 
-	CameraConfiguration streamConfiguration(Camera *camera,
+	CameraConfiguration generateConfiguration(Camera *camera,
 		const std::vector<StreamUsage> &usages) override;
-	int configureStreams(Camera *camera,
+	int configure(Camera *camera,
 		const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
@@ -106,7 +106,7 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
  * Pipeline Operations
  */
 
-CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
+CameraConfiguration PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 	const std::vector<StreamUsage> &usages)
 {
 	RkISP1CameraData *data = cameraData(camera);
@@ -122,8 +122,8 @@ CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
 	return config;
 }
 
-int PipelineHandlerRkISP1::configureStreams(Camera *camera,
-					    const CameraConfiguration &config)
+int PipelineHandlerRkISP1::configure(Camera *camera,
+				     const CameraConfiguration &config)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	const StreamConfiguration &cfg = config[&data->stream_];

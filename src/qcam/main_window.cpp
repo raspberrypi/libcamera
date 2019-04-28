@@ -97,9 +97,9 @@ int MainWindow::startCapture()
 {
 	int ret;
 
-	config_ = camera_->streamConfiguration({ Stream::VideoRecording() });
+	config_ = camera_->generateConfiguration({ Stream::VideoRecording() });
 	Stream *stream = config_.front();
-	ret = camera_->configureStreams(config_);
+	ret = camera_->configure(config_);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;

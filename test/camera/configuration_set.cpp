@@ -19,7 +19,7 @@ protected:
 	int run()
 	{
 		CameraConfiguration config =
-			camera_->streamConfiguration({ Stream::VideoRecording() });
+			camera_->generateConfiguration({ Stream::VideoRecording() });
 		StreamConfiguration *cfg = &config[config.front()];
 
 		if (!config.isValid()) {
@@ -33,7 +33,7 @@ protected:
 		}
 
 		/* Test that setting the default configuration works. */
-		if (camera_->configureStreams(config)) {
+		if (camera_->configure(config)) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}
@@ -48,7 +48,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!camera_->configureStreams(config)) {
+		if (!camera_->configure(config)) {
 			cout << "Setting configuration on a camera not acquired succeeded when it should have failed"
 			     << endl;
 			return TestFail;
@@ -66,7 +66,7 @@ protected:
 		 */
 		cfg->size.width *= 2;
 		cfg->size.height *= 2;
-		if (camera_->configureStreams(config)) {
+		if (camera_->configure(config)) {
 			cout << "Failed to set modified configuration" << endl;
 			return TestFail;
 		}
@@ -75,7 +75,7 @@ protected:
 		 * Test that setting an invalid configuration fails.
 		 */
 		cfg->size = { 0, 0 };
-		if (!camera_->configureStreams(config)) {
+		if (!camera_->configure(config)) {
 			cout << "Invalid configuration incorrectly accepted" << endl;
 			return TestFail;
 		}

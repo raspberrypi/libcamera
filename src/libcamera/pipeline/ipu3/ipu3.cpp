@@ -151,10 +151,10 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 
 	CameraConfiguration
-	streamConfiguration(Camera *camera,
-			    const std::vector<StreamUsage> &usages) override;
-	int configureStreams(Camera *camera,
-			     const CameraConfiguration &config) override;
+	generateConfiguration(Camera *camera,
+			      const std::vector<StreamUsage> &usages) override;
+	int configure(Camera *camera,
+		      const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -210,8 +210,8 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 }
 
 CameraConfiguration
-PipelineHandlerIPU3::streamConfiguration(Camera *camera,
-					 const std::vector<StreamUsage> &usages)
+PipelineHandlerIPU3::generateConfiguration(Camera *camera,
+					   const std::vector<StreamUsage> &usages)
 {
 	IPU3CameraData *data = cameraData(camera);
 	CameraConfiguration config = {};
@@ -309,8 +309,8 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 	return config;
 }
 
-int PipelineHandlerIPU3::configureStreams(Camera *camera,
-					  const CameraConfiguration &config)
+int PipelineHandlerIPU3::configure(Camera *camera,
+				   const CameraConfiguration &config)
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3Stream *outStream = &data->outStream_;
@@ -631,11 +631,10 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	 * 1) Link enable/disable cannot be done at start/stop time as video
 	 * devices needs to be linked first before format can be configured on
 	 * them.
-	 * 2) As link enable has to be done at the least in configureStreams,
+	 * 2) As link enable has to be done at the least in configure(),
 	 * before configuring formats, the only place where to disable links
 	 * would be 'stop()', but the Camera class state machine allows
-	 * start()<->stop() sequences without any streamConfiguration() in
-	 * between.
+	 * start()<->stop() sequences without any configure() in between.
 	 *
 	 * As of now, disable all links in the media graph at 'match()' time,
 	 * to allow testing different cameras in different test applications

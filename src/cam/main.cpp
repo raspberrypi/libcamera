@@ -93,7 +93,7 @@ static int prepareCameraConfig(CameraConfiguration *config)
 
 	/* If no configuration is provided assume a single video stream. */
 	if (!options.isSet(OptStream)) {
-		*config = camera->streamConfiguration({ Stream::VideoRecording() });
+		*config = camera->generateConfiguration({ Stream::VideoRecording() });
 		streamInfo[config->front()] = "stream0";
 		return 0;
 	}
@@ -121,7 +121,7 @@ static int prepareCameraConfig(CameraConfiguration *config)
 		}
 	}
 
-	*config = camera->streamConfiguration(roles);
+	*config = camera->generateConfiguration(roles);
 
 	if (!config->isValid()) {
 		std::cerr << "Failed to get default stream configuration"
@@ -211,7 +211,7 @@ static int capture()
 		return ret;
 	}
 
-	ret = camera->configureStreams(config);
+	ret = camera->configure(config);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;

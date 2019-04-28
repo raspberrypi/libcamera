@@ -75,8 +75,8 @@ public:
 
 	const std::set<Stream *> &streams() const;
 	CameraConfiguration
-	streamConfiguration(const std::vector<StreamUsage> &usage);
-	int configureStreams(const CameraConfiguration &config);
+	generateConfiguration(const std::vector<StreamUsage> &usage);
+	int configure(const CameraConfiguration &config);
 
 	int allocateBuffers();
 	int freeBuffers();

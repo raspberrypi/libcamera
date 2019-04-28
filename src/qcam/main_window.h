@@ -35,7 +35,6 @@ private:
 	int openCamera();
 
 	int startCapture();
-	int configureStreams(Camera *camera, std::set<Stream *> &streams);
 	void stopCapture();
 
 	void requestComplete(Request *request,

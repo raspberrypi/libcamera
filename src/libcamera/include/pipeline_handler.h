@@ -61,8 +61,8 @@ public:
 	void unlock();
 
 	virtual CameraConfiguration
-	streamConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
-	virtual int configureStreams(Camera *camera, const CameraConfiguration &config) = 0;
+	generateConfiguration(Camera *camera, const std::vector<StreamUsage> &usages) = 0;
+	virtual int configure(Camera *camera, const CameraConfiguration &config) = 0;
 
 	virtual int allocateBuffers(Camera *camera,
 				    const std::set<Stream *> &streams) = 0;

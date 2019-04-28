@@ -19,7 +19,7 @@ protected:
 	int testAvailable()
 	{
 		/* Test operations which should fail. */
-		if (camera_->configureStreams(defconf_) != -EACCES)
+		if (camera_->configure(defconf_) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -84,7 +84,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configureStreams(defconf_))
+		if (camera_->configure(defconf_))
 			return TestFail;
 
 		return TestPass;
@@ -113,7 +113,7 @@ protected:
 			return TestFail;
 
 		/* Test operations which should pass. */
-		if (camera_->configureStreams(defconf_))
+		if (camera_->configure(defconf_))
 			return TestFail;
 
 		/* Test valid state transitions, end in Prepared state. */
@@ -123,7 +123,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configureStreams(defconf_))
+		if (camera_->configure(defconf_))
 			return TestFail;
 
 		if (camera_->allocateBuffers())
@@ -141,7 +141,7 @@ protected:
 		if (camera_->release() != -EBUSY)
 			return TestFail;
 
-		if (camera_->configureStreams(defconf_) != -EACCES)
+		if (camera_->configure(defconf_) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -172,7 +172,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configureStreams(defconf_))
+		if (camera_->configure(defconf_))
 			return TestFail;
 
 		if (camera_->allocateBuffers())
@@ -193,7 +193,7 @@ protected:
 		if (camera_->release() != -EBUSY)
 			return TestFail;
 
-		if (camera_->configureStreams(defconf_) != -EACCES)
+		if (camera_->configure(defconf_) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -235,7 +235,7 @@ protected:
 
 	int run()
 	{
-		defconf_ = camera_->streamConfiguration({ Stream::VideoRecording() });
+		defconf_ = camera_->generateConfiguration({ Stream::VideoRecording() });
 
 		if (testAvailable() != TestPass) {
 			cout << "State machine in Available state failed" << endl;

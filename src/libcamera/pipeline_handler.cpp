@@ -218,26 +218,26 @@ void PipelineHandler::unlock()
 }
 
 /**
- * \fn PipelineHandler::streamConfiguration()
- * \brief Retrieve a group of stream configurations for a specified camera
- * \param[in] camera The camera to fetch default configuration from
+ * \fn PipelineHandler::generateConfiguration()
+ * \brief Generate a camera configuration for a specified camera
+ * \param[in] camera The camera to generate a default configuration for
  * \param[in] usages A list of stream usages
  *
- * Retrieve the species camera's default configuration for a specified group of
- * use-cases. The caller shall populate the \a usages array with the use-cases it
- * wishes to fetch the default configuration for. The map of streams and
- * configurations returned can then be examined by the caller to learn about
- * the default parameters for the specified streams.
+ * Generate a default configuration for the \a camera for a specified group of
+ * use-cases. The caller shall populate the \a usages array with the use-cases
+ * it wishes to fetch the default configuration for. The returned configuration
+ * can then be examined by the caller to learn about the selected streams and
+ * their default parameters.
  *
- * The intended companion to this is \a configureStreams() which can be used to
- * change the group of streams parameters.
+ * The intended companion to this is \a configure() which can be used to change
+ * the group of streams parameters.
  *
  * \return A valid CameraConfiguration if the requested usages can be satisfied,
  * or a invalid configuration otherwise
  */
 
 /**
- * \fn PipelineHandler::configureStreams()
+ * \fn PipelineHandler::configure()
  * \brief Configure a group of streams for capture
  * \param[in] camera The camera to configure
  * \param[in] config The camera configurations to setup
@@ -293,9 +293,9 @@ void PipelineHandler::unlock()
  * \param[in] camera The camera to start
  *
  * Start the group of streams that have been configured for capture by
- * \a configureStreams(). The intended caller of this method is the Camera
- * class which will in turn be called from the application to indicate that it
- * has configured the streams and is ready to capture.
+ * \a configure(). The intended caller of this method is the Camera class which
+ * will in turn be called from the application to indicate that it has
+ * configured the streams and is ready to capture.
  *
  * \return 0 on success or a negative error code otherwise
  */

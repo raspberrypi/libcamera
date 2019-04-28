@@ -26,10 +26,10 @@ public:
 	PipelineHandlerVimc(CameraManager *manager);
 
 	CameraConfiguration
-	streamConfiguration(Camera *camera,
-			    const std::vector<StreamUsage> &usages) override;
-	int configureStreams(Camera *camera,
-			     const CameraConfiguration &config) override;
+	generateConfiguration(Camera *camera,
+			      const std::vector<StreamUsage> &usages) override;
+	int configure(Camera *camera,
+		      const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -76,8 +76,8 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 }
 
 CameraConfiguration
-PipelineHandlerVimc::streamConfiguration(Camera *camera,
-					 const std::vector<StreamUsage> &usages)
+PipelineHandlerVimc::generateConfiguration(Camera *camera,
+					   const std::vector<StreamUsage> &usages)
 {
 	VimcCameraData *data = cameraData(camera);
 	CameraConfiguration config;
@@ -92,8 +92,8 @@ PipelineHandlerVimc::streamConfiguration(Camera *camera,
 	return config;
 }
 
-int PipelineHandlerVimc::configureStreams(Camera *camera,
-					  const CameraConfiguration &config)
+int PipelineHandlerVimc::configure(Camera *camera,
+				   const CameraConfiguration &config)
 {
 	VimcCameraData *data = cameraData(camera);
 	const StreamConfiguration *cfg = &config[&data->stream_];

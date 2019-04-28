@@ -43,7 +43,7 @@ protected:
 	int run()
 	{
 		CameraConfiguration config =
-			camera_->streamConfiguration({ Stream::VideoRecording() });
+			camera_->generateConfiguration({ Stream::VideoRecording() });
 		Stream *stream = config.front();
 		StreamConfiguration *cfg = &config[stream];
 
@@ -57,7 +57,7 @@ protected:
 			return TestFail;
 		}
 
-		if (camera_->configureStreams(config)) {
+		if (camera_->configure(config)) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}

@@ -26,10 +26,10 @@ public:
 	PipelineHandlerUVC(CameraManager *manager);
 
 	CameraConfiguration
-	streamConfiguration(Camera *camera,
-			    const std::vector<StreamUsage> &usages) override;
-	int configureStreams(Camera *camera,
-			     const CameraConfiguration &config) override;
+	generateConfiguration(Camera *camera,
+			      const std::vector<StreamUsage> &usages) override;
+	int configure(Camera *camera,
+		      const CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -76,8 +76,8 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 }
 
 CameraConfiguration
-PipelineHandlerUVC::streamConfiguration(Camera *camera,
-					const std::vector<StreamUsage> &usages)
+PipelineHandlerUVC::generateConfiguration(Camera *camera,
+					  const std::vector<StreamUsage> &usages)
 {
 	UVCCameraData *data = cameraData(camera);
 	CameraConfiguration config;
@@ -92,8 +92,8 @@ PipelineHandlerUVC::streamConfiguration(Camera *camera,
 	return config;
 }
 
-int PipelineHandlerUVC::configureStreams(Camera *camera,
-					 const CameraConfiguration &config)
+int PipelineHandlerUVC::configure(Camera *camera,
+				  const CameraConfiguration &config)
 {
 	UVCCameraData *data = cameraData(camera);
 	const StreamConfiguration *cfg = &config[&data->stream_];

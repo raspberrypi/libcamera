@@ -21,7 +21,7 @@ protected:
 		CameraConfiguration config;
 
 		/* Test asking for configuration for a video stream. */
-		config = camera_->streamConfiguration({ Stream::VideoRecording() });
+		config = camera_->generateConfiguration({ Stream::VideoRecording() });
 		if (!config.isValid()) {
 			cout << "Default configuration invalid" << endl;
 			return TestFail;
@@ -31,7 +31,7 @@ protected:
 		 * Test that asking for configuration for an empty array of
 		 * stream usages returns an empty list of configurations.
 		 */
-		config = camera_->streamConfiguration({});
+		config = camera_->generateConfiguration({});
 		if (config.isValid()) {
 			cout << "Failed to retrieve configuration for empty usage list"
 			     << endl;

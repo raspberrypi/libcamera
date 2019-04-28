@@ -275,10 +275,10 @@ const StreamConfiguration &CameraConfiguration::operator[](Stream *stream) const
  *   Available -> Acquired [label = "acquire()"];
  *
  *   Acquired -> Available [label = "release()"];
- *   Acquired -> Configured [label = "configureStreams()"];
+ *   Acquired -> Configured [label = "configure()"];
  *
  *   Configured -> Available [label = "release()"];
- *   Configured -> Configured [label = "configureStreams()"];
+ *   Configured -> Configured [label = "configure()"];
  *   Configured -> Prepared [label = "allocateBuffers()"];
  *
  *   Prepared -> Configured [label = "freeBuffers()"];
@@ -542,23 +542,23 @@ const std::set<Stream *> &Camera::streams() const
 }
 
 /**
- * \brief Retrieve a group of stream configurations according to stream usages
+ * \brief Generate a default camera configuration according to stream usages
  * \param[in] usages A list of stream usages
  *
- * Retrieve configuration for a set of desired usages. The caller specifies a
- * list of stream usages and the camera returns a map of suitable streams and
- * their suggested default configurations.
+ * Generate a camera configuration for a set of desired usages. The caller
+ * specifies a list of stream usages and the camera returns a configuration
+ * containing suitable streams and their suggested default configurations.
  *
  * \return A valid CameraConfiguration if the requested usages can be satisfied,
  * or a invalid one otherwise
  */
 CameraConfiguration
-Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
+Camera::generateConfiguration(const std::vector<StreamUsage> &usages)
 {
 	if (disconnected_ || !usages.size() || usages.size() > streams_.size())
 		return CameraConfiguration();
 
-	CameraConfiguration config = pipe_->streamConfiguration(this, usages);
+	CameraConfiguration config = pipe_->generateConfiguration(this, usages);
 
 	std::ostringstream msg("streams configuration:", std::ios_base::ate);
 	unsigned int index = 0;
@@ -575,7 +575,7 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
 }
 
 /**
- * \brief Configure the camera's streams prior to capture
+ * \brief Configure the camera prior to capture
  * \param[in] config The camera configurations to setup
  *
  * Prior to starting capture, the camera must be configured to select a
@@ -584,9 +584,9 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
  * by populating \a config.
  *
  * The easiest way to populate the array of config is to fetch an initial
- * configuration from the camera with streamConfiguration() and then change the
- * parameters to fit the caller's need and once all the streams parameters are
- * configured hand that over to configureStreams() to actually setup the camera.
+ * configuration from the camera with generateConfiguration() and then change
+ * the parameters to fit the caller's need and once all the streams parameters
+ * are configured hand that over to configure() to actually setup the camera.
  *
  * Exclusive access to the camera shall be ensured by a call to acquire() prior
  * to calling this function, otherwise an -EACCES error will be returned.
@@ -598,7 +598,7 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
  * \retval -EACCES The camera is not in a state where it can be configured
  * \retval -EINVAL The configuration is not valid
  */
-int Camera::configureStreams(const CameraConfiguration &config)
+int Camera::configure(const CameraConfiguration &config)
 {
 	int ret;
 
@@ -629,7 +629,7 @@ int Camera::configureStreams(const CameraConfiguration &config)
 
 	LOG(Camera, Info) << msg.str();
 
-	ret = pipe_->configureStreams(this, config);
+	ret = pipe_->configure(this, config);
 	if (ret)
 		return ret;
 

@@ -11,6 +11,7 @@
 #include <libudev.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include <libcamera/event_notifier.h>

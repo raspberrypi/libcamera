@@ -14,8 +14,7 @@ if doxygen.found()
 
     doxyfile = configure_file(input: 'Doxyfile.in',
                               output: 'Doxyfile',
-                              configuration: cdata,
-                              install: false)
+                              configuration: cdata)
 
     custom_target('doxygen',
                   input: [

@@ -105,9 +105,9 @@ int MainWindow::startCapture()
 		return ret;
 	}
 
-	const StreamConfiguration &sconf = config_[stream];
-	ret = viewfinder_->setFormat(sconf.pixelFormat, sconf.size.width,
-				     sconf.size.height);
+	const StreamConfiguration &cfg = config_[stream];
+	ret = viewfinder_->setFormat(cfg.pixelFormat, cfg.size.width,
+				     cfg.size.height);
 	if (ret < 0) {
 		std::cout << "Failed to set viewfinder format" << std::endl;
 		return ret;

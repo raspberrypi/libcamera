@@ -113,17 +113,6 @@ int MediaDevicePrintTest::testMediaDevice(const string deviceNode)
 	MediaDevice dev(deviceNode);
 	int ret;
 
-	/* Fuzzy open/close sequence. */
-	ret = dev.open();
-	if (ret)
-		return ret;
-
-	ret = dev.open();
-	if (!ret)
-		return ret;
-
-	dev.close();
-
 	ret = dev.populate();
 	if (ret)
 		return ret;

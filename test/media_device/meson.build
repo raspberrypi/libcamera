@@ -3,6 +3,7 @@ lib_mdev_test_sources = files([
 ])
 
 media_device_tests = [
+    ['media_device_acquire',            'media_device_acquire.cpp'],
     ['media_device_print_test',         'media_device_print_test.cpp'],
     ['media_device_link_test',          'media_device_link_test.cpp'],
 ]

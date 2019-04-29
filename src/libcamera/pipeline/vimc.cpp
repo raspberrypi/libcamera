@@ -109,9 +109,6 @@ int PipelineHandlerVimc::configureStreams(Camera *camera,
 	const StreamConfiguration *cfg = &config[&data->stream_];
 	int ret;
 
-	LOG(VIMC, Debug) << "Configure the camera for resolution "
-			 << cfg->width << "x" << cfg->height;
-
 	V4L2DeviceFormat format = {};
 	format.width = cfg->width;
 	format.height = cfg->height;

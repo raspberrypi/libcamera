@@ -4,13 +4,10 @@
  *
  * media_device_link_test.cpp - Tests link handling on VIMC media device
  */
+
 #include <iostream>
-#include <memory>
 
-#include "device_enumerator.h"
-#include "media_device.h"
-
-#include "test.h"
+#include "media_device_test.h"
 
 using namespace libcamera;
 using namespace std;
@@ -29,35 +26,21 @@ using namespace std;
  * loaded) the test is skipped.
  */
 
-class MediaDeviceLinkTest : public Test
+class MediaDeviceLinkTest : public MediaDeviceTest
 {
 	int init()
 	{
-		enumerator = unique_ptr<DeviceEnumerator>(DeviceEnumerator::create());
-		if (!enumerator) {
-			cerr << "Failed to create device enumerator" << endl;
-			return TestFail;
-		}
+		int ret = MediaDeviceTest::init();
+		if (ret)
+			return ret;
 
-		if (enumerator->enumerate()) {
-			cerr << "Failed to enumerate media devices" << endl;
-			return TestFail;
-		}
-
-		DeviceMatch dm("vimc");
-		dev_ = enumerator->search(dm);
-		if (!dev_) {
-			cerr << "No VIMC media device found: skip test" << endl;
-			return TestSkip;
-		}
-
-		if (!dev_->acquire()) {
+		if (!media_->acquire()) {
 			cerr << "Unable to acquire media device "
-			     << dev_->deviceNode() << endl;
-			return TestSkip;
+			     << media_->deviceNode() << endl;
+			return TestFail;
 		}
 
-		return 0;
+		return TestPass;
 	}
 
 	int run()
@@ -66,7 +49,7 @@ class MediaDeviceLinkTest : public Test
 		 * First of all disable all links in the media graph to
 		 * ensure we start from a known state.
 		 */
-		if (dev_->disableLinks()) {
+		if (media_->disableLinks()) {
 			cerr << "Failed to disable all links in the media graph";
 			return TestFail;
 		}
@@ -76,26 +59,26 @@ class MediaDeviceLinkTest : public Test
 		 * different methods the media device offers.
 		 */
 		string linkName("'Debayer A':[1] -> 'Scaler':[0]'");
-		MediaLink *link = dev_->link("Debayer A", 1, "Scaler", 0);
+		MediaLink *link = media_->link("Debayer A", 1, "Scaler", 0);
 		if (!link) {
 			cerr << "Unable to find link: " << linkName
 			     << " using lookup by name" << endl;
 			return TestFail;
 		}
 
-		MediaEntity *source = dev_->getEntityByName("Debayer A");
+		MediaEntity *source = media_->getEntityByName("Debayer A");
 		if (!source) {
 			cerr << "Unable to find entity: 'Debayer A'" << endl;
 			return TestFail;
 		}
 
-		MediaEntity *sink = dev_->getEntityByName("Scaler");
+		MediaEntity *sink = media_->getEntityByName("Scaler");
 		if (!sink) {
 			cerr << "Unable to find entity: 'Scaler'" << endl;
 			return TestFail;
 		}
 
-		MediaLink *link2 = dev_->link(source, 1, sink, 0);
+		MediaLink *link2 = media_->link(source, 1, sink, 0);
 		if (!link2) {
 			cerr << "Unable to find link: " << linkName
 			     << " using lookup by entity" << endl;
@@ -108,7 +91,7 @@ class MediaDeviceLinkTest : public Test
 			return TestFail;
 		}
 
-		link2 = dev_->link(source->getPadByIndex(1),
+		link2 = media_->link(source->getPadByIndex(1),
 				   sink->getPadByIndex(0));
 		if (!link2) {
 			cerr << "Unable to find link: " << linkName
@@ -160,7 +143,7 @@ class MediaDeviceLinkTest : public Test
 
 		/* Try to get a non existing link. */
 		linkName = "'Sensor A':[1] -> 'Scaler':[0]";
-		link = dev_->link("Sensor A", 1, "Scaler", 0);
+		link = media_->link("Sensor A", 1, "Scaler", 0);
 		if (link) {
 			cerr << "Link lookup for " << linkName
 			     << " succeeded but link does not exist"
@@ -170,7 +153,7 @@ class MediaDeviceLinkTest : public Test
 
 		/* Now get an immutable link and try to disable it. */
 		linkName = "'Sensor A':[0] -> 'Raw Capture 0':[0]";
-		link = dev_->link("Sensor A", 0, "Raw Capture 0", 0);
+		link = media_->link("Sensor A", 0, "Raw Capture 0", 0);
 		if (!link) {
 			cerr << "Unable to find link: " << linkName
 			     << " using lookup by name" << endl;
@@ -195,7 +178,7 @@ class MediaDeviceLinkTest : public Test
 		 * after disabling all links in the media graph.
 		 */
 		linkName = "'Debayer B':[1] -> 'Scaler':[0]'";
-		link = dev_->link("Debayer B", 1, "Scaler", 0);
+		link = media_->link("Debayer B", 1, "Scaler", 0);
 		if (!link) {
 			cerr << "Unable to find link: " << linkName
 			     << " using lookup by name" << endl;
@@ -215,7 +198,7 @@ class MediaDeviceLinkTest : public Test
 			return TestFail;
 		}
 
-		if (dev_->disableLinks()) {
+		if (media_->disableLinks()) {
 			cerr << "Failed to disable all links in the media graph";
 			return TestFail;
 		}
@@ -232,12 +215,8 @@ class MediaDeviceLinkTest : public Test
 
 	void cleanup()
 	{
-		dev_->release();
+		media_->release();
 	}
-
-private:
-	unique_ptr<DeviceEnumerator> enumerator;
-	shared_ptr<MediaDevice> dev_;
 };
 
 TEST_REGISTER(MediaDeviceLinkTest);

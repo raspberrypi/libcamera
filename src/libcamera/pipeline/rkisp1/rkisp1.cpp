@@ -113,16 +113,16 @@ CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
 	const std::vector<StreamUsage> &usages)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	CameraConfiguration configs;
-	StreamConfiguration config{};
+	CameraConfiguration config;
+	StreamConfiguration cfg{};
 
-	config.pixelFormat = V4L2_PIX_FMT_NV12;
-	config.size = data->sensor_->resolution();
-	config.bufferCount = RKISP1_BUFFER_COUNT;
+	cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+	cfg.size = data->sensor_->resolution();
+	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
-	configs[&data->stream_] = config;
+	config[&data->stream_] = cfg;
 
-	return configs;
+	return config;
 }
 
 int PipelineHandlerRkISP1::configureStreams(Camera *camera,

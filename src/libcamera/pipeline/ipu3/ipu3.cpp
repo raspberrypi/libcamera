@@ -66,7 +66,7 @@ public:
 	int configureInput(const Size &size,
 			   V4L2DeviceFormat *inputFormat);
 	int configureOutput(ImgUOutput *output,
-			    const StreamConfiguration &config);
+			    const StreamConfiguration &cfg);
 
 	int importBuffers(BufferPool *pool);
 	int exportBuffers(ImgUOutput *output, BufferPool *pool);
@@ -224,14 +224,14 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 					 const std::vector<StreamUsage> &usages)
 {
 	IPU3CameraData *data = cameraData(camera);
-	CameraConfiguration cameraConfig = {};
+	CameraConfiguration config = {};
 	std::set<IPU3Stream *> streams = {
 		&data->outStream_,
 		&data->vfStream_,
 	};
 
 	for (const StreamUsage &usage : usages) {
-		StreamConfiguration streamConfig = {};
+		StreamConfiguration cfg = {};
 		StreamUsage::Role role = usage.role();
 		IPU3Stream *stream = nullptr;
 
@@ -262,7 +262,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 			 *
 			 * \todo Clarify ImgU alignment requirements.
 			 */
-			streamConfig.size = { 2560, 1920 };
+			cfg.size = { 2560, 1920 };
 
 			break;
 
@@ -294,7 +294,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 						      res.width);
 			unsigned int height = std::min(usage.size().height,
 						       res.height);
-			streamConfig.size = { width & ~7, height & ~3 };
+			cfg.size = { width & ~7, height & ~3 };
 
 			break;
 		}
@@ -310,13 +310,13 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 
 		streams.erase(stream);
 
-		streamConfig.pixelFormat = V4L2_PIX_FMT_NV12;
-		streamConfig.bufferCount = IPU3_BUFFER_COUNT;
+		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+		cfg.bufferCount = IPU3_BUFFER_COUNT;
 
-		cameraConfig[stream] = streamConfig;
+		config[stream] = cfg;
 	}
 
-	return cameraConfig;
+	return config;
 }
 
 int PipelineHandlerIPU3::configureStreams(Camera *camera,
@@ -424,10 +424,10 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	 * Apply the largest available format to the stat node.
 	 * \todo Revise this when we'll actually use the stat node.
 	 */
-	StreamConfiguration statConfig = {};
-	statConfig.size = cio2Format.size;
+	StreamConfiguration statCfg = {};
+	statCfg.size = cio2Format.size;
 
-	ret = imgu->configureOutput(&imgu->stat_, statConfig);
+	ret = imgu->configureOutput(&imgu->stat_, statCfg);
 	if (ret)
 		return ret;
 
@@ -959,18 +959,18 @@ int ImgUDevice::configureInput(const Size &size,
 /**
  * \brief Configure the ImgU unit \a id video output
  * \param[in] output The ImgU output device to configure
- * \param[in] config The requested configuration
+ * \param[in] cfg The requested configuration
  * \return 0 on success or a negative error code otherwise
  */
 int ImgUDevice::configureOutput(ImgUOutput *output,
-				const StreamConfiguration &config)
+				const StreamConfiguration &cfg)
 {
 	V4L2Device *dev = output->dev;
 	unsigned int pad = output->pad;
 
 	V4L2SubdeviceFormat imguFormat = {};
 	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
-	imguFormat.size = config.size;
+	imguFormat.size = cfg.size;
 
 	int ret = imgu_->setFormat(pad, &imguFormat);
 	if (ret)
@@ -982,7 +982,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 
 	V4L2DeviceFormat outputFormat = {};
 	outputFormat.fourcc = V4L2_PIX_FMT_NV12;
-	outputFormat.size = config.size;
+	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 
 	ret = dev->setFormat(&outputFormat);

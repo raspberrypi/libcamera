@@ -89,16 +89,16 @@ PipelineHandlerVimc::streamConfiguration(Camera *camera,
 					 const std::vector<StreamUsage> &usages)
 {
 	VimcCameraData *data = cameraData(camera);
-	CameraConfiguration configs;
-	StreamConfiguration config{};
+	CameraConfiguration config;
+	StreamConfiguration cfg{};
 
-	config.pixelFormat = V4L2_PIX_FMT_RGB24;
-	config.size = { 640, 480 };
-	config.bufferCount = 4;
+	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
+	cfg.size = { 640, 480 };
+	cfg.bufferCount = 4;
 
-	configs[&data->stream_] = config;
+	config[&data->stream_] = cfg;
 
-	return configs;
+	return config;
 }
 
 int PipelineHandlerVimc::configureStreams(Camera *camera,

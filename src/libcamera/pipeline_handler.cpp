@@ -175,7 +175,7 @@ PipelineHandler::~PipelineHandler()
  * \param[in] config The camera configurations to setup
  *
  * Configure the specified group of streams for \a camera according to the
- * configuration specified in \a configs. The intended caller of this interface
+ * configuration specified in \a config. The intended caller of this interface
  * is the Camera class which will receive configuration to apply from the
  * application.
  *

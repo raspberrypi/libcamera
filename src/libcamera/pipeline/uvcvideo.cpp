@@ -89,16 +89,16 @@ PipelineHandlerUVC::streamConfiguration(Camera *camera,
 					const std::vector<StreamUsage> &usages)
 {
 	UVCCameraData *data = cameraData(camera);
-	CameraConfiguration configs;
-	StreamConfiguration config{};
+	CameraConfiguration config;
+	StreamConfiguration cfg{};
 
-	config.pixelFormat = V4L2_PIX_FMT_YUYV;
-	config.size = { 640, 480 };
-	config.bufferCount = 4;
+	cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
+	cfg.size = { 640, 480 };
+	cfg.bufferCount = 4;
 
-	configs[&data->stream_] = config;
+	config[&data->stream_] = cfg;
 
-	return configs;
+	return config;
 }
 
 int PipelineHandlerUVC::configureStreams(Camera *camera,

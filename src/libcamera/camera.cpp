@@ -129,10 +129,10 @@ bool CameraConfiguration::isValid() const
 		return false;
 
 	for (auto const &it : config_) {
-		const StreamConfiguration &conf = it.second;
+		const StreamConfiguration &cfg = it.second;
 
-		if (conf.size.width == 0 || conf.size.height == 0 ||
-		    conf.pixelFormat == 0 || conf.bufferCount == 0)
+		if (cfg.size.width == 0 || cfg.size.height == 0 ||
+		    cfg.pixelFormat == 0 || cfg.bufferCount == 0)
 			return false;
 	}
 

@@ -18,11 +18,11 @@ class ConfigurationDefault : public CameraTest
 protected:
 	int run()
 	{
-		CameraConfiguration conf;
+		CameraConfiguration config;
 
 		/* Test asking for configuration for a video stream. */
-		conf = camera_->streamConfiguration({ Stream::VideoRecording() });
-		if (!conf.isValid()) {
+		config = camera_->streamConfiguration({ Stream::VideoRecording() });
+		if (!config.isValid()) {
 			cout << "Default configuration invalid" << endl;
 			return TestFail;
 		}
@@ -31,8 +31,8 @@ protected:
 		 * Test that asking for configuration for an empty array of
 		 * stream usages returns an empty list of configurations.
 		 */
-		conf = camera_->streamConfiguration({});
-		if (conf.isValid()) {
+		config = camera_->streamConfiguration({});
+		if (config.isValid()) {
 			cout << "Failed to retrieve configuration for empty usage list"
 			     << endl;
 			return TestFail;

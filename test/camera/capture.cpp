@@ -42,12 +42,12 @@ protected:
 
 	int run()
 	{
-		CameraConfiguration conf =
+		CameraConfiguration config =
 			camera_->streamConfiguration({ Stream::VideoRecording() });
-		Stream *stream = conf.front();
-		StreamConfiguration *sconf = &conf[stream];
+		Stream *stream = config.front();
+		StreamConfiguration *cfg = &config[stream];
 
-		if (!conf.isValid()) {
+		if (!config.isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}
@@ -57,7 +57,7 @@ protected:
 			return TestFail;
 		}
 
-		if (camera_->configureStreams(conf)) {
+		if (camera_->configureStreams(config)) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}
@@ -110,10 +110,10 @@ protected:
 		while (timer.isRunning())
 			dispatcher->processEvents();
 
-		if (completeRequestsCount_ <= sconf->bufferCount * 2) {
+		if (completeRequestsCount_ <= cfg->bufferCount * 2) {
 			cout << "Failed to capture enough frames (got "
 			     << completeRequestsCount_ << " expected at least "
-			     << sconf->bufferCount * 2 << ")" << endl;
+			     << cfg->bufferCount * 2 << ")" << endl;
 			return TestFail;
 		}
 

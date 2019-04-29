@@ -18,11 +18,11 @@ class ConfigurationSet : public CameraTest
 protected:
 	int run()
 	{
-		CameraConfiguration conf =
+		CameraConfiguration config =
 			camera_->streamConfiguration({ Stream::VideoRecording() });
-		StreamConfiguration *sconf = &conf[conf.front()];
+		StreamConfiguration *cfg = &config[config.front()];
 
-		if (!conf.isValid()) {
+		if (!config.isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}
@@ -33,7 +33,7 @@ protected:
 		}
 
 		/* Test that setting the default configuration works. */
-		if (camera_->configureStreams(conf)) {
+		if (camera_->configureStreams(config)) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}
@@ -48,7 +48,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!camera_->configureStreams(conf)) {
+		if (!camera_->configureStreams(config)) {
 			cout << "Setting configuration on a camera not acquired succeeded when it should have failed"
 			     << endl;
 			return TestFail;
@@ -64,9 +64,9 @@ protected:
 		 * the default configuration of the VIMC camera is known to
 		 * work.
 		 */
-		sconf->size.width *= 2;
-		sconf->size.height *= 2;
-		if (camera_->configureStreams(conf)) {
+		cfg->size.width *= 2;
+		cfg->size.height *= 2;
+		if (camera_->configureStreams(config)) {
 			cout << "Failed to set modified configuration" << endl;
 			return TestFail;
 		}
@@ -74,8 +74,8 @@ protected:
 		/*
 		 * Test that setting an invalid configuration fails.
 		 */
-		sconf->size = { 0, 0 };
-		if (!camera_->configureStreams(conf)) {
+		cfg->size = { 0, 0 };
+		if (!camera_->configureStreams(config)) {
 			cout << "Invalid configuration incorrectly accepted" << endl;
 			return TestFail;
 		}

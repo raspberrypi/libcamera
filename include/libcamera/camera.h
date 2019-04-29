@@ -77,8 +77,8 @@ public:
 	int release();
 
 	const std::set<Stream *> &streams() const;
-	CameraConfiguration generateConfiguration(const StreamRoles &roles);
-	int configure(CameraConfiguration &config);
+	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles);
+	int configure(CameraConfiguration *config);
 
 	int allocateBuffers();
 	int freeBuffers();

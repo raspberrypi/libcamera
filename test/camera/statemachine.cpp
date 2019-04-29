@@ -19,7 +19,7 @@ protected:
 	int testAvailable()
 	{
 		/* Test operations which should fail. */
-		if (camera_->configure(defconf_) != -EACCES)
+		if (camera_->configure(defconf_.get()) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -84,7 +84,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configure(defconf_))
+		if (camera_->configure(defconf_.get()))
 			return TestFail;
 
 		return TestPass;
@@ -113,7 +113,7 @@ protected:
 			return TestFail;
 
 		/* Test operations which should pass. */
-		if (camera_->configure(defconf_))
+		if (camera_->configure(defconf_.get()))
 			return TestFail;
 
 		/* Test valid state transitions, end in Prepared state. */
@@ -123,7 +123,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configure(defconf_))
+		if (camera_->configure(defconf_.get()))
 			return TestFail;
 
 		if (camera_->allocateBuffers())
@@ -141,7 +141,7 @@ protected:
 		if (camera_->release() != -EBUSY)
 			return TestFail;
 
-		if (camera_->configure(defconf_) != -EACCES)
+		if (camera_->configure(defconf_.get()) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -172,7 +172,7 @@ protected:
 		if (camera_->acquire())
 			return TestFail;
 
-		if (camera_->configure(defconf_))
+		if (camera_->configure(defconf_.get()))
 			return TestFail;
 
 		if (camera_->allocateBuffers())
@@ -193,7 +193,7 @@ protected:
 		if (camera_->release() != -EBUSY)
 			return TestFail;
 
-		if (camera_->configure(defconf_) != -EACCES)
+		if (camera_->configure(defconf_.get()) != -EACCES)
 			return TestFail;
 
 		if (camera_->allocateBuffers() != -EACCES)
@@ -233,10 +233,22 @@ protected:
 		return TestPass;
 	}
 
-	int run()
+	int init() override
 	{
-		defconf_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+		CameraTest::init();
 
+		defconf_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+		if (!defconf_) {
+			cout << "Failed to generate default configuration" << endl;
+			CameraTest::cleanup();
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
+	int run() override
+	{
 		if (testAvailable() != TestPass) {
 			cout << "State machine in Available state failed" << endl;
 			return TestFail;
@@ -265,7 +277,7 @@ protected:
 		return TestPass;
 	}
 
-	CameraConfiguration defconf_;
+	std::unique_ptr<CameraConfiguration> defconf_;
 };
 
 } /* namespace */

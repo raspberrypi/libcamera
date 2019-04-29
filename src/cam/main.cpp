@@ -85,15 +85,13 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static int prepareCameraConfig(CameraConfiguration *config)
+static std::unique_ptr<CameraConfiguration> prepareCameraConfig()
 {
 	StreamRoles roles;
 
 	/* If no configuration is provided assume a single video stream. */
-	if (!options.isSet(OptStream)) {
-		*config = camera->generateConfiguration({ StreamRole::VideoRecording });
-		return 0;
-	}
+	if (!options.isSet(OptStream))
+		return camera->generateConfiguration({ StreamRole::VideoRecording });
 
 	const std::vector<OptionValue> &streamOptions =
 		options[OptStream].toArray();
@@ -113,23 +111,22 @@ static int prepareCameraConfig(CameraConfiguration *config)
 		} else {
 			std::cerr << "Unknown stream role "
 				  << conf["role"].toString() << std::endl;
-			return -EINVAL;
+			return nullptr;
 		}
 	}
 
-	*config = camera->generateConfiguration(roles);
-
-	if (!config->isValid()) {
+	std::unique_ptr<CameraConfiguration> config = camera->generateConfiguration(roles);
+	if (!config || !config->isValid()) {
 		std::cerr << "Failed to get default stream configuration"
 			  << std::endl;
-		return -EINVAL;
+		return nullptr;
 	}
 
 	/* Apply configuration explicitly requested. */
 	unsigned int i = 0;
 	for (auto const &value : streamOptions) {
 		KeyValueParser::Options conf = value.toKeyValues();
-		StreamConfiguration &cfg = (*config)[i++];
+		StreamConfiguration &cfg = config->at(i++);
 
 		if (conf.isSet("width"))
 			cfg.size.width = conf["width"];
@@ -142,7 +139,7 @@ static int prepareCameraConfig(CameraConfiguration *config)
 			cfg.pixelFormat = conf["pixelformat"];
 	}
 
-	return 0;
+	return config;
 }
 
 static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
@@ -191,16 +188,15 @@ static void requestComplete(Request *request, const std::map<Stream *, Buffer *>
 
 static int capture()
 {
-	CameraConfiguration config;
 	int ret;
 
-	ret = prepareCameraConfig(&config);
-	if (ret) {
+	std::unique_ptr<CameraConfiguration> config = prepareCameraConfig();
+	if (!config) {
 		std::cout << "Failed to prepare camera configuration" << std::endl;
-		return ret;
+		return -EINVAL;
 	}
 
-	ret = camera->configure(config);
+	ret = camera->configure(config.get());
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;
@@ -208,8 +204,8 @@ static int capture()
 
 	streamInfo.clear();
 
-	for (unsigned int index = 0; index < config.size(); ++index) {
-		StreamConfiguration &cfg = config[index];
+	for (unsigned int index = 0; index < config->size(); ++index) {
+		StreamConfiguration &cfg = config->at(index);
 		streamInfo[cfg.stream()] = "stream" + std::to_string(index);
 	}
 
@@ -224,7 +220,7 @@ static int capture()
 
 	/* Identify the stream with the least number of buffers. */
 	unsigned int nbuffers = UINT_MAX;
-	for (StreamConfiguration &cfg : config) {
+	for (StreamConfiguration &cfg : *config) {
 		Stream *stream = cfg.stream();
 		nbuffers = std::min(nbuffers, stream->bufferPool().count());
 	}
@@ -244,7 +240,7 @@ static int capture()
 		}
 
 		std::map<Stream *, Buffer *> map;
-		for (StreamConfiguration &cfg : config) {
+		for (StreamConfiguration &cfg : *config) {
 			Stream *stream = cfg.stream();
 			map[stream] = &stream->bufferPool().buffers()[i];
 		}

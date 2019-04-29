@@ -16,13 +16,25 @@ namespace {
 class ConfigurationSet : public CameraTest
 {
 protected:
-	int run()
+	int init() override
 	{
-		CameraConfiguration config =
-			camera_->generateConfiguration({ StreamRole::VideoRecording });
-		StreamConfiguration *cfg = &config[0];
+		CameraTest::init();
 
-		if (!config.isValid()) {
+		config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+		if (!config_) {
+			cout << "Failed to generate default configuration" << endl;
+			CameraTest::cleanup();
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
+	int run() override
+	{
+		StreamConfiguration &cfg = config_->at(0);
+
+		if (!config_->isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}
@@ -33,7 +45,7 @@ protected:
 		}
 
 		/* Test that setting the default configuration works. */
-		if (camera_->configure(config)) {
+		if (camera_->configure(config_.get())) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}
@@ -48,7 +60,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!camera_->configure(config)) {
+		if (!camera_->configure(config_.get())) {
 			cout << "Setting configuration on a camera not acquired succeeded when it should have failed"
 			     << endl;
 			return TestFail;
@@ -64,9 +76,9 @@ protected:
 		 * the default configuration of the VIMC camera is known to
 		 * work.
 		 */
-		cfg->size.width *= 2;
-		cfg->size.height *= 2;
-		if (camera_->configure(config)) {
+		cfg.size.width *= 2;
+		cfg.size.height *= 2;
+		if (camera_->configure(config_.get())) {
 			cout << "Failed to set modified configuration" << endl;
 			return TestFail;
 		}
@@ -74,14 +86,16 @@ protected:
 		/*
 		 * Test that setting an invalid configuration fails.
 		 */
-		cfg->size = { 0, 0 };
-		if (!camera_->configure(config)) {
+		cfg.size = { 0, 0 };
+		if (!camera_->configure(config_.get())) {
 			cout << "Invalid configuration incorrectly accepted" << endl;
 			return TestFail;
 		}
 
 		return TestPass;
 	}
+
+	std::unique_ptr<CameraConfiguration> config_;
 };
 
 } /* namespace */

@@ -8,6 +8,7 @@
 #define __QCAM_MAIN_WINDOW_H__
 
 #include <map>
+#include <memory>
 
 #include <QMainWindow>
 
@@ -45,7 +46,7 @@ private:
 
 	std::shared_ptr<Camera> camera_;
 	bool isCapturing_;
-	CameraConfiguration config_;
+	std::unique_ptr<CameraConfiguration> config_;
 
 	ViewFinder *viewfinder_;
 };

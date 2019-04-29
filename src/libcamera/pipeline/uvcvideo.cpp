@@ -25,9 +25,9 @@ class PipelineHandlerUVC : public PipelineHandler
 public:
 	PipelineHandlerUVC(CameraManager *manager);
 
-	CameraConfiguration
-	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
-	int configure(Camera *camera, CameraConfiguration &config) override;
+	CameraConfiguration *generateConfiguration(Camera *camera,
+		const StreamRoles &roles) override;
+	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -73,26 +73,28 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 {
 }
 
-CameraConfiguration
-PipelineHandlerUVC::generateConfiguration(Camera *camera,
-					  const StreamRoles &roles)
+CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
+	const StreamRoles &roles)
 {
-	CameraConfiguration config;
-	StreamConfiguration cfg;
+	CameraConfiguration *config = new CameraConfiguration();
 
+	if (roles.empty())
+		return config;
+
+	StreamConfiguration cfg{};
 	cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
 	cfg.size = { 640, 480 };
 	cfg.bufferCount = 4;
 
-	config.addConfiguration(cfg);
+	config->addConfiguration(cfg);
 
 	return config;
 }
 
-int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration &config)
+int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration *config)
 {
 	UVCCameraData *data = cameraData(camera);
-	StreamConfiguration &cfg = config[0];
+	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
 	V4L2DeviceFormat format = {};

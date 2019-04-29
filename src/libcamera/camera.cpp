@@ -540,27 +540,37 @@ const std::set<Stream *> &Camera::streams() const
  *
  * Generate a camera configuration for a set of desired stream roles. The caller
  * specifies a list of stream roles and the camera returns a configuration
- * containing suitable streams and their suggested default configurations.
+ * containing suitable streams and their suggested default configurations. An
+ * empty list of roles is valid, and will generate an empty configuration that
+ * can be filled by the caller.
  *
- * \return A valid CameraConfiguration if the requested roles can be satisfied,
- * or a invalid one otherwise
+ * \return A CameraConfiguration if the requested roles can be satisfied, or a
+ * null pointer otherwise. The ownership of the returned configuration is
+ * passed to the caller.
  */
-CameraConfiguration
-Camera::generateConfiguration(const StreamRoles &roles)
+std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamRoles &roles)
 {
-	if (disconnected_ || !roles.size() || roles.size() > streams_.size())
-		return CameraConfiguration();
+	if (disconnected_ || roles.size() > streams_.size())
+		return nullptr;
 
-	CameraConfiguration config = pipe_->generateConfiguration(this, roles);
+	CameraConfiguration *config = pipe_->generateConfiguration(this, roles);
+	if (!config) {
+		LOG(Camera, Debug)
+			<< "Pipeline handler failed to generate configuration";
+		return nullptr;
+	}
 
 	std::ostringstream msg("streams configuration:", std::ios_base::ate);
 
-	for (unsigned int index = 0; index < config.size(); ++index)
-		msg << " (" << index << ") " << config[index].toString();
+	if (config->empty())
+		msg << " empty";
+
+	for (unsigned int index = 0; index < config->size(); ++index)
+		msg << " (" << index << ") " << config->at(index).toString();
 
 	LOG(Camera, Debug) << msg.str();
 
-	return config;
+	return std::unique_ptr<CameraConfiguration>(config);
 }
 
 /**
@@ -590,7 +600,7 @@ Camera::generateConfiguration(const StreamRoles &roles)
  * \retval -EACCES The camera is not in a state where it can be configured
  * \retval -EINVAL The configuration is not valid
  */
-int Camera::configure(CameraConfiguration &config)
+int Camera::configure(CameraConfiguration *config)
 {
 	int ret;
 
@@ -600,7 +610,7 @@ int Camera::configure(CameraConfiguration &config)
 	if (!stateBetween(CameraAcquired, CameraConfigured))
 		return -EACCES;
 
-	if (!config.isValid()) {
+	if (!config->isValid()) {
 		LOG(Camera, Error)
 			<< "Can't configure camera with invalid configuration";
 		return -EINVAL;
@@ -608,8 +618,8 @@ int Camera::configure(CameraConfiguration &config)
 
 	std::ostringstream msg("configuring streams:", std::ios_base::ate);
 
-	for (unsigned int index = 0; index < config.size(); ++index) {
-		StreamConfiguration &cfg = config[index];
+	for (unsigned int index = 0; index < config->size(); ++index) {
+		StreamConfiguration &cfg = config->at(index);
 		cfg.setStream(nullptr);
 		msg << " (" << index << ") " << cfg.toString();
 	}
@@ -621,7 +631,7 @@ int Camera::configure(CameraConfiguration &config)
 		return ret;
 
 	activeStreams_.clear();
-	for (const StreamConfiguration &cfg : config) {
+	for (const StreamConfiguration &cfg : *config) {
 		Stream *stream = cfg.stream();
 		if (!stream)
 			LOG(Camera, Fatal)

@@ -233,7 +233,8 @@ void PipelineHandler::unlock()
  * the group of streams parameters.
  *
  * \return A valid CameraConfiguration if the requested roles can be satisfied,
- * or a invalid configuration otherwise
+ * or a null pointer otherwise. The ownership of the returned configuration is
+ * passed to the caller.
  */
 
 /**

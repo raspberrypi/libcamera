@@ -150,9 +150,9 @@ class PipelineHandlerIPU3 : public PipelineHandler
 public:
 	PipelineHandlerIPU3(CameraManager *manager);
 
-	CameraConfiguration
-	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
-	int configure(Camera *camera, CameraConfiguration &config) override;
+	CameraConfiguration *generateConfiguration(Camera *camera,
+		const StreamRoles &roles) override;
+	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -207,12 +207,11 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 {
 }
 
-CameraConfiguration
-PipelineHandlerIPU3::generateConfiguration(Camera *camera,
-					   const StreamRoles &roles)
+CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
+	const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
-	CameraConfiguration config = {};
+	CameraConfiguration *config = new CameraConfiguration();
 	std::set<IPU3Stream *> streams = {
 		&data->outStream_,
 		&data->vfStream_,
@@ -290,21 +289,23 @@ PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			break;
 		}
 
-		if (!stream)
-			return CameraConfiguration{};
+		if (!stream) {
+			delete config;
+			return nullptr;
+		}
 
 		streams.erase(stream);
 
 		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
 		cfg.bufferCount = IPU3_BUFFER_COUNT;
 
-		config.addConfiguration(cfg);
+		config->addConfiguration(cfg);
 	}
 
 	return config;
 }
 
-int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration &config)
+int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *config)
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3Stream *outStream = &data->outStream_;
@@ -316,7 +317,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration &config)
 
 	outStream->active_ = false;
 	vfStream->active_ = false;
-	for (StreamConfiguration &cfg : config) {
+	for (StreamConfiguration &cfg : *config) {
 		/*
 		 * Pick a stream for the configuration entry.
 		 * \todo: This is a naive temporary implementation that will be
@@ -382,7 +383,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration &config)
 		return ret;
 
 	/* Apply the format to the configured streams output devices. */
-	for (StreamConfiguration &cfg : config) {
+	for (StreamConfiguration &cfg : *config) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(cfg.stream());
 		ret = imgu->configureOutput(stream->device_, cfg);
 		if (ret)
@@ -395,13 +396,13 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration &config)
 	 * be at least one active stream in the configuration request).
 	 */
 	if (!outStream->active_) {
-		ret = imgu->configureOutput(outStream->device_, config[0]);
+		ret = imgu->configureOutput(outStream->device_, config->at(0));
 		if (ret)
 			return ret;
 	}
 
 	if (!vfStream->active_) {
-		ret = imgu->configureOutput(vfStream->device_, config[0]);
+		ret = imgu->configureOutput(vfStream->device_, config->at(0));
 		if (ret)
 			return ret;
 	}

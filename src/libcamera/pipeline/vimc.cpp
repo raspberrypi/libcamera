@@ -25,9 +25,9 @@ class PipelineHandlerVimc : public PipelineHandler
 public:
 	PipelineHandlerVimc(CameraManager *manager);
 
-	CameraConfiguration
-	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
-	int configure(Camera *camera, CameraConfiguration &config) override;
+	CameraConfiguration *generateConfiguration(Camera *camera,
+		const StreamRoles &roles) override;
+	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -73,26 +73,28 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 {
 }
 
-CameraConfiguration
-PipelineHandlerVimc::generateConfiguration(Camera *camera,
-					   const StreamRoles &roles)
+CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
+	const StreamRoles &roles)
 {
-	CameraConfiguration config;
-	StreamConfiguration cfg;
+	CameraConfiguration *config = new CameraConfiguration();
 
+	if (roles.empty())
+		return config;
+
+	StreamConfiguration cfg{};
 	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
 	cfg.size = { 640, 480 };
 	cfg.bufferCount = 4;
 
-	config.addConfiguration(cfg);
+	config->addConfiguration(cfg);
 
 	return config;
 }
 
-int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration &config)
+int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 {
 	VimcCameraData *data = cameraData(camera);
-	StreamConfiguration &cfg = config[0];
+	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
 	V4L2DeviceFormat format = {};

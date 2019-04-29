@@ -60,9 +60,9 @@ public:
 	bool lock();
 	void unlock();
 
-	virtual CameraConfiguration
-	generateConfiguration(Camera *camera, const StreamRoles &roles) = 0;
-	virtual int configure(Camera *camera, CameraConfiguration &config) = 0;
+	virtual CameraConfiguration *generateConfiguration(Camera *camera,
+		const StreamRoles &roles) = 0;
+	virtual int configure(Camera *camera, CameraConfiguration *config) = 0;
 
 	virtual int allocateBuffers(Camera *camera,
 				    const std::set<Stream *> &streams) = 0;

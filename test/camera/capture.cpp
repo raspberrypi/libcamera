@@ -40,13 +40,25 @@ protected:
 		camera_->queueRequest(request);
 	}
 
-	int run()
+	int init() override
 	{
-		CameraConfiguration config =
-			camera_->generateConfiguration({ StreamRole::VideoRecording });
-		StreamConfiguration *cfg = &config[0];
+		CameraTest::init();
 
-		if (!config.isValid()) {
+		config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+		if (!config_) {
+			cout << "Failed to generate default configuration" << endl;
+			CameraTest::cleanup();
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
+	int run() override
+	{
+		StreamConfiguration &cfg = config_->at(0);
+
+		if (!config_->isValid()) {
 			cout << "Failed to read default configuration" << endl;
 			return TestFail;
 		}
@@ -56,7 +68,7 @@ protected:
 			return TestFail;
 		}
 
-		if (camera_->configure(config)) {
+		if (camera_->configure(config_.get())) {
 			cout << "Failed to set default configuration" << endl;
 			return TestFail;
 		}
@@ -66,7 +78,7 @@ protected:
 			return TestFail;
 		}
 
-		Stream *stream = cfg->stream();
+		Stream *stream = cfg.stream();
 		BufferPool &pool = stream->bufferPool();
 		std::vector<Request *> requests;
 		for (Buffer &buffer : pool.buffers()) {
@@ -110,10 +122,10 @@ protected:
 		while (timer.isRunning())
 			dispatcher->processEvents();
 
-		if (completeRequestsCount_ <= cfg->bufferCount * 2) {
+		if (completeRequestsCount_ <= cfg.bufferCount * 2) {
 			cout << "Failed to capture enough frames (got "
 			     << completeRequestsCount_ << " expected at least "
-			     << cfg->bufferCount * 2 << ")" << endl;
+			     << cfg.bufferCount * 2 << ")" << endl;
 			return TestFail;
 		}
 
@@ -134,6 +146,8 @@ protected:
 
 		return TestPass;
 	}
+
+	std::unique_ptr<CameraConfiguration> config_;
 };
 
 } /* namespace */

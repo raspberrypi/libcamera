@@ -18,21 +18,21 @@ class ConfigurationDefault : public CameraTest
 protected:
 	int run()
 	{
-		CameraConfiguration config;
+		std::unique_ptr<CameraConfiguration> config;
 
 		/* Test asking for configuration for a video stream. */
 		config = camera_->generateConfiguration({ StreamRole::VideoRecording });
-		if (!config.isValid()) {
+		if (!config || !config->isValid()) {
 			cout << "Default configuration invalid" << endl;
 			return TestFail;
 		}
 
 		/*
 		 * Test that asking for configuration for an empty array of
-		 * stream roles returns an empty list of configurations.
+		 * stream roles returns an empty camera configuration.
 		 */
 		config = camera_->generateConfiguration({});
-		if (config.isValid()) {
+		if (!config || config->isValid()) {
 			cout << "Failed to retrieve configuration for empty roles list"
 			     << endl;
 			return TestFail;

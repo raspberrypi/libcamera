@@ -59,6 +59,28 @@ namespace libcamera {
  */
 
 /**
+ * \fn StreamConfiguration::stream()
+ * \brief Retrieve the stream associated with the configuration
+ *
+ * When a camera is configured with Camera::configure() Stream instances are
+ * associated with each stream configuration entry. This method retrieves the
+ * associated Stream, which remains valid until the next call to
+ * Camera::configure() or Camera::release().
+ *
+ * \return The stream associated with the configuration
+ */
+
+/**
+ * \fn StreamConfiguration::setStream()
+ * \brief Associate a stream with a configuration
+ *
+ * This method is meant for the PipelineHandler::configure() method and shall
+ * not be called by applications.
+ *
+ * \param[in] stream The stream
+ */
+
+/**
  * \brief Assemble and return a string describing the configuration
  *
  * \return A string describing the StreamConfiguration

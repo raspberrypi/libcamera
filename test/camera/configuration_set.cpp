@@ -20,7 +20,7 @@ protected:
 	{
 		CameraConfiguration config =
 			camera_->generateConfiguration({ StreamRole::VideoRecording });
-		StreamConfiguration *cfg = &config[config.front()];
+		StreamConfiguration *cfg = &config[0];
 
 		if (!config.isValid()) {
 			cout << "Failed to read default configuration" << endl;

@@ -16,14 +16,26 @@
 namespace libcamera {
 
 class Camera;
+class Stream;
 
 struct StreamConfiguration {
+	StreamConfiguration()
+		: stream_(nullptr)
+	{
+	}
+
 	unsigned int pixelFormat;
 	Size size;
 
 	unsigned int bufferCount;
 
+	Stream *stream() const { return stream_; }
+	void setStream(Stream *stream) { stream_ = stream; }
+
 	std::string toString() const;
+
+private:
+	Stream *stream_;
 };
 
 enum StreamRole {

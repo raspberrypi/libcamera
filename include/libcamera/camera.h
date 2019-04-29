@@ -25,30 +25,36 @@ class Request;
 class CameraConfiguration
 {
 public:
-	using iterator = std::vector<Stream *>::iterator;
-	using const_iterator = std::vector<Stream *>::const_iterator;
+	using iterator = std::vector<StreamConfiguration>::iterator;
+	using const_iterator = std::vector<StreamConfiguration>::const_iterator;
 
 	CameraConfiguration();
 
-	iterator begin();
-	iterator end();
-	const_iterator begin() const;
-	const_iterator end() const;
+	void addConfiguration(const StreamConfiguration &cfg);
 
 	bool isValid() const;
-	bool isEmpty() const;
+
+	StreamConfiguration &at(unsigned int index);
+	const StreamConfiguration &at(unsigned int index) const;
+	StreamConfiguration &operator[](unsigned int index)
+	{
+		return at(index);
+	}
+	const StreamConfiguration &operator[](unsigned int index) const
+	{
+		return at(index);
+	}
+
+	iterator begin();
+	const_iterator begin() const;
+	iterator end();
+	const_iterator end() const;
+
+	bool empty() const;
 	std::size_t size() const;
 
-	Stream *front();
-	const Stream *front() const;
-
-	Stream *operator[](unsigned int index) const;
-	StreamConfiguration &operator[](Stream *stream);
-	const StreamConfiguration &operator[](Stream *stream) const;
-
 private:
-	std::vector<Stream *> order_;
-	std::map<Stream *, StreamConfiguration> config_;
+	std::vector<StreamConfiguration> config_;
 };
 
 class Camera final
@@ -72,7 +78,7 @@ public:
 
 	const std::set<Stream *> &streams() const;
 	CameraConfiguration generateConfiguration(const StreamRoles &roles);
-	int configure(const CameraConfiguration &config);
+	int configure(CameraConfiguration &config);
 
 	int allocateBuffers();
 	int freeBuffers();

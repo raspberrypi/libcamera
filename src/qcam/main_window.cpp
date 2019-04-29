@@ -98,14 +98,14 @@ int MainWindow::startCapture()
 	int ret;
 
 	config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
-	Stream *stream = config_.front();
 	ret = camera_->configure(config_);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;
 	}
 
-	const StreamConfiguration &cfg = config_[stream];
+	const StreamConfiguration &cfg = config_[0];
+	Stream *stream = cfg.stream();
 	ret = viewfinder_->setFormat(cfg.pixelFormat, cfg.size.width,
 				     cfg.size.height);
 	if (ret < 0) {

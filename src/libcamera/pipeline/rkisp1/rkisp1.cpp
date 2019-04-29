@@ -36,8 +36,7 @@ public:
 
 	CameraConfiguration generateConfiguration(Camera *camera,
 		const StreamRoles &roles) override;
-	int configure(Camera *camera,
-		const CameraConfiguration &config) override;
+	int configure(Camera *camera, CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
 		const std::set<Stream *> &streams) override;
@@ -117,16 +116,15 @@ CameraConfiguration PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 	cfg.size = data->sensor_->resolution();
 	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
-	config[&data->stream_] = cfg;
+	config.addConfiguration(cfg);
 
 	return config;
 }
 
-int PipelineHandlerRkISP1::configure(Camera *camera,
-				     const CameraConfiguration &config)
+int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration &config)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	const StreamConfiguration &cfg = config[&data->stream_];
+	StreamConfiguration &cfg = config[0];
 	CameraSensor *sensor = data->sensor_;
 	int ret;
 
@@ -216,6 +214,8 @@ int PipelineHandlerRkISP1::configure(Camera *camera,
 			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;
 	}
+
+	cfg.setStream(&data->stream_);
 
 	return 0;
 }

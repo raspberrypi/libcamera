@@ -27,8 +27,7 @@ public:
 
 	CameraConfiguration
 	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
-	int configure(Camera *camera,
-		      const CameraConfiguration &config) override;
+	int configure(Camera *camera, CameraConfiguration &config) override;
 
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
@@ -78,37 +77,37 @@ CameraConfiguration
 PipelineHandlerVimc::generateConfiguration(Camera *camera,
 					   const StreamRoles &roles)
 {
-	VimcCameraData *data = cameraData(camera);
 	CameraConfiguration config;
-	StreamConfiguration cfg{};
+	StreamConfiguration cfg;
 
 	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
 	cfg.size = { 640, 480 };
 	cfg.bufferCount = 4;
 
-	config[&data->stream_] = cfg;
+	config.addConfiguration(cfg);
 
 	return config;
 }
 
-int PipelineHandlerVimc::configure(Camera *camera,
-				   const CameraConfiguration &config)
+int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration &config)
 {
 	VimcCameraData *data = cameraData(camera);
-	const StreamConfiguration *cfg = &config[&data->stream_];
+	StreamConfiguration &cfg = config[0];
 	int ret;
 
 	V4L2DeviceFormat format = {};
-	format.fourcc = cfg->pixelFormat;
-	format.size = cfg->size;
+	format.fourcc = cfg.pixelFormat;
+	format.size = cfg.size;
 
 	ret = data->video_->setFormat(&format);
 	if (ret)
 		return ret;
 
-	if (format.size != cfg->size ||
-	    format.fourcc != cfg->pixelFormat)
+	if (format.size != cfg.size ||
+	    format.fourcc != cfg.pixelFormat)
 		return -EINVAL;
+
+	cfg.setStream(&data->stream_);
 
 	return 0;
 }

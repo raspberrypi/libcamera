@@ -46,72 +46,40 @@ LOG_DECLARE_CATEGORY(Camera)
  * \class CameraConfiguration
  * \brief Hold configuration for streams of the camera
 
- * The CameraConfiguration holds an ordered list of streams and their associated
- * StreamConfiguration. From a data storage point of view, the class operates as
- * a map of Stream pointers to StreamConfiguration, with entries accessed with
- * operator[](Stream *). Accessing an entry for a Stream pointer not yet stored
- * in the configuration inserts a new empty entry.
- *
- * The class also suppors iterators, and from that point of view operates as a
- * vector of Stream pointers. The streams are iterated in insertion order, and
- * the operator[](int) returns the Stream pointer based on its insertion index.
- * Accessing a stream with an invalid index returns a null pointer.
+ * The CameraConfiguration holds an ordered list of stream configurations. It
+ * supports iterators and operates as a vector of StreamConfiguration instances.
+ * The stream configurations are inserted by addConfiguration(), and the
+ * operator[](int) returns a reference to the StreamConfiguration based on its
+ * insertion index. Accessing a stream configuration with an invalid index
+ * results in undefined behaviour.
  */
 
 /**
  * \typedef CameraConfiguration::iterator
- * \brief Iterator for the streams in the configuration
+ * \brief Iterator for the stream configurations in the camera configuration
  */
 
 /**
  * \typedef CameraConfiguration::const_iterator
- * \brief Const iterator for the streams in the configuration
+ * \brief Const iterator for the stream configuration in the camera
+ * configuration
  */
 
 /**
  * \brief Create an empty camera configuration
  */
 CameraConfiguration::CameraConfiguration()
-	: order_({}), config_({})
+	: config_({})
 {
 }
 
 /**
- * \brief Retrieve an iterator to the first stream in the sequence
- * \return An iterator to the first stream
+ * \brief Add a stream configuration to the camera configuration
+ * \param[in] cfg The stream configuration
  */
-std::vector<Stream *>::iterator CameraConfiguration::begin()
+void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
 {
-	return order_.begin();
-}
-
-/**
- * \brief Retrieve an iterator pointing to the past-the-end stream in the
- * sequence
- * \return An iterator to the element following the last stream
- */
-std::vector<Stream *>::iterator CameraConfiguration::end()
-{
-	return order_.end();
-}
-
-/**
- * \brief Retrieve a const iterator to the first element of the streams
- * \return A const iterator to the first stream
- */
-std::vector<Stream *>::const_iterator CameraConfiguration::begin() const
-{
-	return order_.begin();
-}
-
-/**
- * \brief Retrieve a const iterator pointing to the past-the-end stream in the
- * sequence
- * \return A const iterator to the element following the last stream
- */
-std::vector<Stream *>::const_iterator CameraConfiguration::end() const
-{
-	return order_.end();
+	config_.push_back(cfg);
 }
 
 /**
@@ -125,12 +93,10 @@ std::vector<Stream *>::const_iterator CameraConfiguration::end() const
  */
 bool CameraConfiguration::isValid() const
 {
-	if (isEmpty())
+	if (empty())
 		return false;
 
-	for (auto const &it : config_) {
-		const StreamConfiguration &cfg = it.second;
-
+	for (const StreamConfiguration &cfg : config_) {
 		if (cfg.size.width == 0 || cfg.size.height == 0 ||
 		    cfg.pixelFormat == 0 || cfg.bufferCount == 0)
 			return false;
@@ -140,12 +106,107 @@ bool CameraConfiguration::isValid() const
 }
 
 /**
+ * \brief Retrieve a reference to a stream configuration
+ * \param[in] index Numerical index
+ *
+ * The \a index represents the zero based insertion order of stream
+ * configuration into the camera configuration with addConfiguration(). Calling
+ * this method with an invalid index results in undefined behaviour.
+ *
+ * \return The stream configuration
+ */
+StreamConfiguration &CameraConfiguration::at(unsigned int index)
+{
+	return config_[index];
+}
+
+/**
+ * \brief Retrieve a const reference to a stream configuration
+ * \param[in] index Numerical index
+ *
+ * The \a index represents the zero based insertion order of stream
+ * configuration into the camera configuration with addConfiguration(). Calling
+ * this method with an invalid index results in undefined behaviour.
+ *
+ * \return The stream configuration
+ */
+const StreamConfiguration &CameraConfiguration::at(unsigned int index) const
+{
+	return config_[index];
+}
+
+/**
+ * \fn StreamConfiguration &CameraConfiguration::operator[](unsigned int)
+ * \brief Retrieve a reference to a stream configuration
+ * \param[in] index Numerical index
+ *
+ * The \a index represents the zero based insertion order of stream
+ * configuration into the camera configuration with addConfiguration(). Calling
+ * this method with an invalid index results in undefined behaviour.
+ *
+ * \return The stream configuration
+ */
+
+/**
+ * \fn const StreamConfiguration &CameraConfiguration::operator[](unsigned int) const
+ * \brief Retrieve a const reference to a stream configuration
+ * \param[in] index Numerical index
+ *
+ * The \a index represents the zero based insertion order of stream
+ * configuration into the camera configuration with addConfiguration(). Calling
+ * this method with an invalid index results in undefined behaviour.
+ *
+ * \return The stream configuration
+ */
+
+/**
+ * \brief Retrieve an iterator to the first stream configuration in the
+ * sequence
+ * \return An iterator to the first stream configuration
+ */
+CameraConfiguration::iterator CameraConfiguration::begin()
+{
+	return config_.begin();
+}
+
+/**
+ * \brief Retrieve a const iterator to the first element of the stream
+ * configurations
+ * \return A const iterator to the first stream configuration
+ */
+CameraConfiguration::const_iterator CameraConfiguration::begin() const
+{
+	return config_.begin();
+}
+
+/**
+ * \brief Retrieve an iterator pointing to the past-the-end stream
+ * configuration in the sequence
+ * \return An iterator to the element following the last stream configuration
+ */
+CameraConfiguration::iterator CameraConfiguration::end()
+{
+	return config_.end();
+}
+
+/**
+ * \brief Retrieve a const iterator pointing to the past-the-end stream
+ * configuration in the sequence
+ * \return A const iterator to the element following the last stream
+ * configuration
+ */
+CameraConfiguration::const_iterator CameraConfiguration::end() const
+{
+	return config_.end();
+}
+
+/**
  * \brief Check if the camera configuration is empty
  * \return True if the configuration is empty
  */
-bool CameraConfiguration::isEmpty() const
+bool CameraConfiguration::empty() const
 {
-	return order_.empty();
+	return config_.empty();
 }
 
 /**
@@ -154,75 +215,7 @@ bool CameraConfiguration::isEmpty() const
  */
 std::size_t CameraConfiguration::size() const
 {
-	return order_.size();
-}
-
-/**
- * \brief Access the first stream in the configuration
- * \return The first stream in the configuration
- */
-Stream *CameraConfiguration::front()
-{
-	return order_.front();
-}
-
-/**
- * \brief Access the first stream in the configuration
- * \return The first const stream pointer in the configuration
- */
-const Stream *CameraConfiguration::front() const
-{
-	return order_.front();
-}
-
-/**
- * \brief Retrieve a stream pointer from index
- * \param[in] index Numerical index
- *
- * The \a index represents the zero based insertion order of stream and stream
- * configuration into the camera configuration.
- *
- * \return The stream pointer at index, or a nullptr if the index is out of
- * bounds
- */
-Stream *CameraConfiguration::operator[](unsigned int index) const
-{
-	if (index >= order_.size())
-		return nullptr;
-
-	return order_.at(index);
-}
-
-/**
- * \brief Retrieve a reference to a stream configuration
- * \param[in] stream Stream to retrieve configuration for
- *
- * If the camera configuration does not yet contain a configuration for
- * the requested stream, create and return an empty stream configuration.
- *
- * \return The configuration for the stream
- */
-StreamConfiguration &CameraConfiguration::operator[](Stream *stream)
-{
-	if (config_.find(stream) == config_.end())
-		order_.push_back(stream);
-
-	return config_[stream];
-}
-
-/**
- * \brief Retrieve a const reference to a stream configuration
- * \param[in] stream Stream to retrieve configuration for
- *
- * No new stream configuration is created if called with \a stream that is not
- * already part of the camera configuration, doing so is an invalid operation
- * and results in undefined behaviour.
- *
- * \return The configuration for the stream
- */
-const StreamConfiguration &CameraConfiguration::operator[](Stream *stream) const
-{
-	return config_.at(stream);
+	return config_.size();
 }
 
 /**
@@ -561,13 +554,9 @@ Camera::generateConfiguration(const StreamRoles &roles)
 	CameraConfiguration config = pipe_->generateConfiguration(this, roles);
 
 	std::ostringstream msg("streams configuration:", std::ios_base::ate);
-	unsigned int index = 0;
 
-	for (Stream *stream : config) {
-		const StreamConfiguration &cfg = config[stream];
-		msg << " (" << index << ") " << cfg.toString();
-		index++;
-	}
+	for (unsigned int index = 0; index < config.size(); ++index)
+		msg << " (" << index << ") " << config[index].toString();
 
 	LOG(Camera, Debug) << msg.str();
 
@@ -593,12 +582,15 @@ Camera::generateConfiguration(const StreamRoles &roles)
  *
  * This function affects the state of the camera, see \ref camera_operation.
  *
+ * Upon return the StreamConfiguration entries in \a config are associated with
+ * Stream instances which can be retrieved with StreamConfiguration::stream().
+ *
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not in a state where it can be configured
  * \retval -EINVAL The configuration is not valid
  */
-int Camera::configure(const CameraConfiguration &config)
+int Camera::configure(CameraConfiguration &config)
 {
 	int ret;
 
@@ -615,16 +607,11 @@ int Camera::configure(const CameraConfiguration &config)
 	}
 
 	std::ostringstream msg("configuring streams:", std::ios_base::ate);
-	unsigned int index = 0;
 
-	for (Stream *stream : config) {
-		if (streams_.find(stream) == streams_.end())
-			return -EINVAL;
-
-		const StreamConfiguration &cfg = config[stream];
-		msg << std::dec << " (" << index << ") " << cfg.toString();
-
-		index++;
+	for (unsigned int index = 0; index < config.size(); ++index) {
+		StreamConfiguration &cfg = config[index];
+		cfg.setStream(nullptr);
+		msg << " (" << index << ") " << cfg.toString();
 	}
 
 	LOG(Camera, Info) << msg.str();
@@ -634,8 +621,11 @@ int Camera::configure(const CameraConfiguration &config)
 		return ret;
 
 	activeStreams_.clear();
-	for (Stream *stream : config) {
-		const StreamConfiguration &cfg = config[stream];
+	for (const StreamConfiguration &cfg : config) {
+		Stream *stream = cfg.stream();
+		if (!stream)
+			LOG(Camera, Fatal)
+				<< "Pipeline handler failed to update stream configuration";
 
 		stream->configuration_ = cfg;
 		activeStreams_.insert(stream);

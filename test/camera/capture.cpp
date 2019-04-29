@@ -44,8 +44,7 @@ protected:
 	{
 		CameraConfiguration config =
 			camera_->generateConfiguration({ StreamRole::VideoRecording });
-		Stream *stream = config.front();
-		StreamConfiguration *cfg = &config[stream];
+		StreamConfiguration *cfg = &config[0];
 
 		if (!config.isValid()) {
 			cout << "Failed to read default configuration" << endl;
@@ -67,6 +66,7 @@ protected:
 			return TestFail;
 		}
 
+		Stream *stream = cfg->stream();
 		BufferPool &pool = stream->bufferPool();
 		std::vector<Request *> requests;
 		for (Buffer &buffer : pool.buffers()) {

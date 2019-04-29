@@ -89,12 +89,9 @@ static int prepareCameraConfig(CameraConfiguration *config)
 {
 	StreamRoles roles;
 
-	streamInfo.clear();
-
 	/* If no configuration is provided assume a single video stream. */
 	if (!options.isSet(OptStream)) {
 		*config = camera->generateConfiguration({ StreamRole::VideoRecording });
-		streamInfo[config->front()] = "stream0";
 		return 0;
 	}
 
@@ -129,27 +126,20 @@ static int prepareCameraConfig(CameraConfiguration *config)
 	}
 
 	/* Apply configuration explicitly requested. */
-	CameraConfiguration::iterator it = config->begin();
+	unsigned int i = 0;
 	for (auto const &value : streamOptions) {
 		KeyValueParser::Options conf = value.toKeyValues();
-		Stream *stream = *it;
-		it++;
+		StreamConfiguration &cfg = (*config)[i++];
 
 		if (conf.isSet("width"))
-			(*config)[stream].size.width = conf["width"];
+			cfg.size.width = conf["width"];
 
 		if (conf.isSet("height"))
-			(*config)[stream].size.height = conf["height"];
+			cfg.size.height = conf["height"];
 
 		/* TODO: Translate 4CC string to ID. */
 		if (conf.isSet("pixelformat"))
-			(*config)[stream].pixelFormat = conf["pixelformat"];
-	}
-
-	unsigned int index = 0;
-	for (Stream *stream : *config) {
-		streamInfo[stream] = "stream" + std::to_string(index);
-		index++;
+			cfg.pixelFormat = conf["pixelformat"];
 	}
 
 	return 0;
@@ -216,6 +206,13 @@ static int capture()
 		return ret;
 	}
 
+	streamInfo.clear();
+
+	for (unsigned int index = 0; index < config.size(); ++index) {
+		StreamConfiguration &cfg = config[index];
+		streamInfo[cfg.stream()] = "stream" + std::to_string(index);
+	}
+
 	ret = camera->allocateBuffers();
 	if (ret) {
 		std::cerr << "Failed to allocate buffers"
@@ -227,8 +224,10 @@ static int capture()
 
 	/* Identify the stream with the least number of buffers. */
 	unsigned int nbuffers = UINT_MAX;
-	for (Stream *stream : config)
+	for (StreamConfiguration &cfg : config) {
+		Stream *stream = cfg.stream();
 		nbuffers = std::min(nbuffers, stream->bufferPool().count());
+	}
 
 	/*
 	 * TODO: make cam tool smarter to support still capture by for
@@ -245,8 +244,10 @@ static int capture()
 		}
 
 		std::map<Stream *, Buffer *> map;
-		for (Stream *stream : config)
+		for (StreamConfiguration &cfg : config) {
+			Stream *stream = cfg.stream();
 			map[stream] = &stream->bufferPool().buffers()[i];
+		}
 
 		ret = request->setBuffers(map);
 		if (ret < 0) {

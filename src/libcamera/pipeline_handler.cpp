@@ -255,6 +255,10 @@ void PipelineHandler::unlock()
  * configuration of a subset of the streams can't be satisfied, the
  * whole configuration is considered invalid.
  *
+ * Once the configuration is validated and the camera configured, the pipeline
+ * handler shall associate a Stream instance to each StreamConfiguration entry
+ * in the CameraConfiguration with the StreamConfiguration::setStream() method.
+ *
  * \return 0 on success or a negative error code otherwise
  */
 

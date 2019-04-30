@@ -634,6 +634,33 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	return 0;
 }
 
+/**
+ * \brief Enumerate all pixel formats and frame sizes
+ *
+ * Enumerate all pixel formats and frame sizes supported by the video device.
+ *
+ * \return A list of the supported device formats
+ */
+ImageFormats V4L2Device::formats()
+{
+	ImageFormats formats;
+
+	for (unsigned int pixelformat : enumPixelformats()) {
+		std::vector<SizeRange> sizes = enumSizes(pixelformat);
+		if (sizes.empty())
+			return {};
+
+		if (formats.addFormat(pixelformat, sizes)) {
+			LOG(V4L2, Error)
+				<< "Could not add sizes for pixel format "
+				<< pixelformat;
+			return {};
+		}
+	}
+
+	return formats;
+}
+
 int V4L2Device::requestBuffers(unsigned int count)
 {
 	struct v4l2_requestbuffers rb = {};
@@ -761,6 +788,93 @@ int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
 	::close(expbuf.fd);
 
 	return 0;
+}
+
+std::vector<unsigned int> V4L2Device::enumPixelformats()
+{
+	std::vector<unsigned int> formats;
+	int ret;
+
+	for (unsigned int index = 0; ; index++) {
+		struct v4l2_fmtdesc pixelformatEnum = {};
+		pixelformatEnum.index = index;
+		pixelformatEnum.type = bufferType_;
+
+		ret = ioctl(fd_, VIDIOC_ENUM_FMT, &pixelformatEnum);
+		if (ret)
+			break;
+
+		formats.push_back(pixelformatEnum.pixelformat);
+	}
+
+	if (ret && errno != EINVAL) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Unable to enumerate pixel formats: "
+			<< strerror(-ret);
+		return {};
+	}
+
+	return formats;
+}
+
+std::vector<SizeRange> V4L2Device::enumSizes(unsigned int pixelFormat)
+{
+	std::vector<SizeRange> sizes;
+	int ret;
+
+	for (unsigned int index = 0;; index++) {
+		struct v4l2_frmsizeenum frameSize = {};
+		frameSize.index = index;
+		frameSize.pixel_format = pixelFormat;
+
+		ret = ioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frameSize);
+		if (ret)
+			break;
+
+		if (index != 0 &&
+		    frameSize.type != V4L2_FRMSIZE_TYPE_DISCRETE) {
+			LOG(V4L2, Error)
+				<< "Non-zero index for non discrete type";
+			return {};
+		}
+
+		switch (frameSize.type) {
+		case V4L2_FRMSIZE_TYPE_DISCRETE:
+			sizes.emplace_back(frameSize.discrete.width,
+					   frameSize.discrete.height);
+			break;
+		case V4L2_FRMSIZE_TYPE_CONTINUOUS:
+			sizes.emplace_back(frameSize.stepwise.min_width,
+					   frameSize.stepwise.min_height,
+					   frameSize.stepwise.max_width,
+					   frameSize.stepwise.max_height);
+			break;
+		case V4L2_FRMSIZE_TYPE_STEPWISE:
+			sizes.emplace_back(frameSize.stepwise.min_width,
+					   frameSize.stepwise.min_height,
+					   frameSize.stepwise.max_width,
+					   frameSize.stepwise.max_height,
+					   frameSize.stepwise.step_width,
+					   frameSize.stepwise.step_height);
+			break;
+		default:
+			LOG(V4L2, Error)
+				<< "Unknown VIDIOC_ENUM_FRAMESIZES type "
+				<< frameSize.type;
+			return {};
+		}
+	}
+
+	if (ret && errno != EINVAL) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Unable to enumerate frame sizes: "
+			<< strerror(-ret);
+		return {};
+	}
+
+	return sizes;
 }
 
 /**

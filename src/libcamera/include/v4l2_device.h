@@ -16,6 +16,7 @@
 #include <libcamera/geometry.h>
 #include <libcamera/signal.h>
 
+#include "formats.h"
 #include "log.h"
 
 namespace libcamera {
@@ -132,6 +133,7 @@ public:
 
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
+	ImageFormats formats();
 
 	int exportBuffers(BufferPool *pool);
 	int importBuffers(BufferPool *pool);
@@ -162,6 +164,9 @@ private:
 	int requestBuffers(unsigned int count);
 	int createPlane(Buffer *buffer, unsigned int plane,
 			unsigned int length);
+
+	std::vector<unsigned int> enumPixelformats();
+	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
 
 	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);

@@ -5,6 +5,9 @@
  * vimc.cpp - Pipeline handler for the vimc device
  */
 
+#include <algorithm>
+#include <array>
+
 #include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -39,6 +42,14 @@ public:
 	Stream stream_;
 };
 
+class VimcCameraConfiguration : public CameraConfiguration
+{
+public:
+	VimcCameraConfiguration();
+
+	Status validate() override;
+};
+
 class PipelineHandlerVimc : public PipelineHandler
 {
 public:
@@ -68,6 +79,57 @@ private:
 	}
 };
 
+VimcCameraConfiguration::VimcCameraConfiguration()
+	: CameraConfiguration()
+{
+}
+
+CameraConfiguration::Status VimcCameraConfiguration::validate()
+{
+	static const std::array<unsigned int, 3> formats{
+		V4L2_PIX_FMT_BGR24,
+		V4L2_PIX_FMT_RGB24,
+		V4L2_PIX_FMT_ARGB32,
+	};
+
+	Status status = Valid;
+
+	if (config_.empty())
+		return Invalid;
+
+	/* Cap the number of entries to the available streams. */
+	if (config_.size() > 1) {
+		config_.resize(1);
+		status = Adjusted;
+	}
+
+	StreamConfiguration &cfg = config_[0];
+
+	/* Adjust the pixel format. */
+	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
+	    formats.end()) {
+		LOG(VIMC, Debug) << "Adjusting format to RGB24";
+		cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
+		status = Adjusted;
+	}
+
+	/* Clamp the size based on the device limits. */
+	const Size size = cfg.size;
+
+	cfg.size.width = std::max(16U, std::min(4096U, cfg.size.width));
+	cfg.size.height = std::max(16U, std::min(2160U, cfg.size.height));
+
+	if (cfg.size != size) {
+		LOG(VIMC, Debug)
+			<< "Adjusting size to " << cfg.size.toString();
+		status = Adjusted;
+	}
+
+	cfg.bufferCount = 4;
+
+	return status;
+}
+
 PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 	: PipelineHandler(manager)
 {
@@ -76,7 +138,7 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
-	CameraConfiguration *config = new CameraConfiguration();
+	CameraConfiguration *config = new VimcCameraConfiguration();
 
 	if (roles.empty())
 		return config;
@@ -87,6 +149,8 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	cfg.bufferCount = 4;
 
 	config->addConfiguration(cfg);
+
+	config->validate();
 
 	return config;
 }

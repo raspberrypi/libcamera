@@ -5,6 +5,8 @@
  * rkisp1.cpp - Pipeline handler for Rockchip ISP1
  */
 
+#include <algorithm>
+#include <array>
 #include <iomanip>
 #include <memory>
 #include <vector>
@@ -45,6 +47,29 @@ public:
 	CameraSensor *sensor_;
 };
 
+class RkISP1CameraConfiguration : public CameraConfiguration
+{
+public:
+	RkISP1CameraConfiguration(Camera *camera, RkISP1CameraData *data);
+
+	Status validate() override;
+
+	const V4L2SubdeviceFormat &sensorFormat() { return sensorFormat_; }
+
+private:
+	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
+
+	/*
+	 * The RkISP1CameraData instance is guaranteed to be valid as long as the
+	 * corresponding Camera instance is valid. In order to borrow a
+	 * reference to the camera data, store a new reference to the camera.
+	 */
+	std::shared_ptr<Camera> camera_;
+	const RkISP1CameraData *data_;
+
+	V4L2SubdeviceFormat sensorFormat_;
+};
+
 class PipelineHandlerRkISP1 : public PipelineHandler
 {
 public:
@@ -68,8 +93,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
-
 	RkISP1CameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<RkISP1CameraData *>(
@@ -87,6 +110,95 @@ private:
 
 	Camera *activeCamera_;
 };
+
+RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
+						     RkISP1CameraData *data)
+	: CameraConfiguration()
+{
+	camera_ = camera->shared_from_this();
+	data_ = data;
+}
+
+CameraConfiguration::Status RkISP1CameraConfiguration::validate()
+{
+	static const std::array<unsigned int, 8> formats{
+		V4L2_PIX_FMT_YUYV,
+		V4L2_PIX_FMT_YVYU,
+		V4L2_PIX_FMT_VYUY,
+		V4L2_PIX_FMT_NV16,
+		V4L2_PIX_FMT_NV61,
+		V4L2_PIX_FMT_NV21,
+		V4L2_PIX_FMT_NV12,
+		V4L2_PIX_FMT_GREY,
+	};
+
+	const CameraSensor *sensor = data_->sensor_;
+	Status status = Valid;
+
+	if (config_.empty())
+		return Invalid;
+
+	/* Cap the number of entries to the available streams. */
+	if (config_.size() > 1) {
+		config_.resize(1);
+		status = Adjusted;
+	}
+
+	StreamConfiguration &cfg = config_[0];
+
+	/* Adjust the pixel format. */
+	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
+	    formats.end()) {
+		LOG(RkISP1, Debug) << "Adjusting format to NV12";
+		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+		status = Adjusted;
+	}
+
+	/* Select the sensor format. */
+	sensorFormat_ = sensor->getFormat({ MEDIA_BUS_FMT_SBGGR12_1X12,
+					    MEDIA_BUS_FMT_SGBRG12_1X12,
+					    MEDIA_BUS_FMT_SGRBG12_1X12,
+					    MEDIA_BUS_FMT_SRGGB12_1X12,
+					    MEDIA_BUS_FMT_SBGGR10_1X10,
+					    MEDIA_BUS_FMT_SGBRG10_1X10,
+					    MEDIA_BUS_FMT_SGRBG10_1X10,
+					    MEDIA_BUS_FMT_SRGGB10_1X10,
+					    MEDIA_BUS_FMT_SBGGR8_1X8,
+					    MEDIA_BUS_FMT_SGBRG8_1X8,
+					    MEDIA_BUS_FMT_SGRBG8_1X8,
+					    MEDIA_BUS_FMT_SRGGB8_1X8 },
+					  cfg.size);
+	if (!sensorFormat_.size.width || !sensorFormat_.size.height)
+		sensorFormat_.size = sensor->resolution();
+
+	/*
+	 * Provide a suitable default that matches the sensor aspect
+	 * ratio and clamp the size to the hardware bounds.
+	 *
+	 * \todo: Check the hardware alignment constraints.
+	 */
+	const Size size = cfg.size;
+
+	if (!cfg.size.width || !cfg.size.height) {
+		cfg.size.width = 1280;
+		cfg.size.height = 1280 * sensorFormat_.size.height
+				/ sensorFormat_.size.width;
+	}
+
+	cfg.size.width = std::max(32U, std::min(4416U, cfg.size.width));
+	cfg.size.height = std::max(16U, std::min(3312U, cfg.size.height));
+
+	if (cfg.size != size) {
+		LOG(RkISP1, Debug)
+			<< "Adjusting size from " << size.toString()
+			<< " to " << cfg.size.toString();
+		status = Adjusted;
+	}
+
+	cfg.bufferCount = RKISP1_BUFFER_COUNT;
+
+	return status;
+}
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
 	: PipelineHandler(manager), dphy_(nullptr), isp_(nullptr),
@@ -109,7 +221,7 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 	const StreamRoles &roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	CameraConfiguration *config = new CameraConfiguration();
+	CameraConfiguration *config = new RkISP1CameraConfiguration(camera, data);
 
 	if (roles.empty())
 		return config;
@@ -117,28 +229,22 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 	StreamConfiguration cfg{};
 	cfg.pixelFormat = V4L2_PIX_FMT_NV12;
 	cfg.size = data->sensor_->resolution();
-	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
 	config->addConfiguration(cfg);
+
+	config->validate();
 
 	return config;
 }
 
-int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *config)
+int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 {
+	RkISP1CameraConfiguration *config =
+		static_cast<RkISP1CameraConfiguration *>(c);
 	RkISP1CameraData *data = cameraData(camera);
 	StreamConfiguration &cfg = config->at(0);
 	CameraSensor *sensor = data->sensor_;
 	int ret;
-
-	/* Verify the configuration. */
-	const Size &resolution = sensor->resolution();
-	if (cfg.size.width > resolution.width ||
-	    cfg.size.height > resolution.height) {
-		LOG(RkISP1, Error)
-			<< "Invalid stream size: larger than sensor resolution";
-		return -EINVAL;
-	}
 
 	/*
 	 * Configure the sensor links: enable the link corresponding to this
@@ -167,21 +273,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *config
 	 * Configure the format on the sensor output and propagate it through
 	 * the pipeline.
 	 */
-	V4L2SubdeviceFormat format;
-	format = sensor->getFormat({ MEDIA_BUS_FMT_SBGGR12_1X12,
-				     MEDIA_BUS_FMT_SGBRG12_1X12,
-				     MEDIA_BUS_FMT_SGRBG12_1X12,
-				     MEDIA_BUS_FMT_SRGGB12_1X12,
-				     MEDIA_BUS_FMT_SBGGR10_1X10,
-				     MEDIA_BUS_FMT_SGBRG10_1X10,
-				     MEDIA_BUS_FMT_SGRBG10_1X10,
-				     MEDIA_BUS_FMT_SRGGB10_1X10,
-				     MEDIA_BUS_FMT_SBGGR8_1X8,
-				     MEDIA_BUS_FMT_SGBRG8_1X8,
-				     MEDIA_BUS_FMT_SGRBG8_1X8,
-				     MEDIA_BUS_FMT_SRGGB8_1X8 },
-				   cfg.size);
-
+	V4L2SubdeviceFormat format = config->sensorFormat();
 	LOG(RkISP1, Debug) << "Configuring sensor with " << format.toString();
 
 	ret = sensor->setFormat(&format);

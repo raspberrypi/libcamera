@@ -116,7 +116,7 @@ static std::unique_ptr<CameraConfiguration> prepareCameraConfig()
 	}
 
 	std::unique_ptr<CameraConfiguration> config = camera->generateConfiguration(roles);
-	if (!config || !config->isValid()) {
+	if (!config || config->size() != roles.size()) {
 		std::cerr << "Failed to get default stream configuration"
 			  << std::endl;
 		return nullptr;

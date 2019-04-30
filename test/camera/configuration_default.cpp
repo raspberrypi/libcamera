@@ -22,7 +22,7 @@ protected:
 
 		/* Test asking for configuration for a video stream. */
 		config = camera_->generateConfiguration({ StreamRole::VideoRecording });
-		if (!config || !config->isValid()) {
+		if (!config || config->size() != 1) {
 			cout << "Default configuration invalid" << endl;
 			return TestFail;
 		}
@@ -32,7 +32,7 @@ protected:
 		 * stream roles returns an empty camera configuration.
 		 */
 		config = camera_->generateConfiguration({});
-		if (!config || config->isValid()) {
+		if (!config || config->size() != 0) {
 			cout << "Failed to retrieve configuration for empty roles list"
 			     << endl;
 			return TestFail;

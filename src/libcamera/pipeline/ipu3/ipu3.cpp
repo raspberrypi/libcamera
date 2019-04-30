@@ -164,6 +164,33 @@ public:
 	IPU3Stream vfStream_;
 };
 
+class IPU3CameraConfiguration : public CameraConfiguration
+{
+public:
+	IPU3CameraConfiguration(Camera *camera, IPU3CameraData *data);
+
+	Status validate() override;
+
+	const V4L2SubdeviceFormat &sensorFormat() { return sensorFormat_; }
+	const std::vector<const IPU3Stream *> &streams() { return streams_; }
+
+private:
+	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
+
+	void adjustStream(StreamConfiguration &cfg, bool scale);
+
+	/*
+	 * The IPU3CameraData instance is guaranteed to be valid as long as the
+	 * corresponding Camera instance is valid. In order to borrow a
+	 * reference to the camera data, store a new reference to the camera.
+	 */
+	std::shared_ptr<Camera> camera_;
+	const IPU3CameraData *data_;
+
+	V4L2SubdeviceFormat sensorFormat_;
+	std::vector<const IPU3Stream *> streams_;
+};
+
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
@@ -186,8 +213,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
-
 	IPU3CameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<IPU3CameraData *>(
@@ -202,6 +227,151 @@ private:
 	MediaDevice *imguMediaDev_;
 };
 
+IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
+						 IPU3CameraData *data)
+	: CameraConfiguration()
+{
+	camera_ = camera->shared_from_this();
+	data_ = data;
+}
+
+void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
+{
+	/* The only pixel format the driver supports is NV12. */
+	cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+
+	if (scale) {
+		/*
+		 * Provide a suitable default that matches the sensor aspect
+		 * ratio.
+		 */
+		if (!cfg.size.width || !cfg.size.height) {
+			cfg.size.width = 1280;
+			cfg.size.height = 1280 * sensorFormat_.size.height
+					/ sensorFormat_.size.width;
+		}
+
+		/*
+		 * \todo: Clamp the size to the hardware bounds when we will
+		 * figure them out.
+		 *
+		 * \todo: Handle the scaler (BDS) restrictions. The BDS can
+		 * only scale with the same factor in both directions, and the
+		 * scaling factor is limited to a multiple of 1/32. At the
+		 * moment the ImgU driver hides these constraints by applying
+		 * additional cropping, this should be fixed on the driver
+		 * side, and cropping should be exposed to us.
+		 */
+	} else {
+		/*
+		 * \todo: Properly support cropping when the ImgU driver
+		 * interface will be cleaned up.
+		 */
+		cfg.size = sensorFormat_.size;
+	}
+
+	/*
+	 * Clamp the size to match the ImgU alignment constraints. The width
+	 * shall be a multiple of 8 pixels and the height a multiple of 4
+	 * pixels.
+	 */
+	if (cfg.size.width % 8 || cfg.size.height % 4) {
+		cfg.size.width &= ~7;
+		cfg.size.height &= ~3;
+	}
+
+	cfg.bufferCount = IPU3_BUFFER_COUNT;
+}
+
+CameraConfiguration::Status IPU3CameraConfiguration::validate()
+{
+	const CameraSensor *sensor = data_->cio2_.sensor_;
+	Status status = Valid;
+
+	if (config_.empty())
+		return Invalid;
+
+	/* Cap the number of entries to the available streams. */
+	if (config_.size() > 2) {
+		config_.resize(2);
+		status = Adjusted;
+	}
+
+	/*
+	 * Select the sensor format by collecting the maximum width and height
+	 * and picking the closest larger match, as the IPU3 can downscale
+	 * only. If no resolution is requested for any stream, or if no sensor
+	 * resolution is large enough, pick the largest one.
+	 */
+	Size size = {};
+
+	for (const StreamConfiguration &cfg : config_) {
+		if (cfg.size.width > size.width)
+			size.width = cfg.size.width;
+		if (cfg.size.height > size.height)
+			size.height = cfg.size.height;
+	}
+
+	if (!size.width || !size.height)
+		size = sensor->resolution();
+
+	sensorFormat_ = sensor->getFormat({ MEDIA_BUS_FMT_SBGGR10_1X10,
+					    MEDIA_BUS_FMT_SGBRG10_1X10,
+					    MEDIA_BUS_FMT_SGRBG10_1X10,
+					    MEDIA_BUS_FMT_SRGGB10_1X10 },
+					  size);
+	if (!sensorFormat_.size.width || !sensorFormat_.size.height)
+		sensorFormat_.size = sensor->resolution();
+
+	/*
+	 * Verify and update all configuration entries, and assign a stream to
+	 * each of them. The viewfinder stream can scale, while the output
+	 * stream can crop only, so select the output stream when the requested
+	 * resolution is equal to the sensor resolution, and the viewfinder
+	 * stream otherwise.
+	 */
+	std::set<const IPU3Stream *> availableStreams = {
+		&data_->outStream_,
+		&data_->vfStream_,
+	};
+
+	streams_.clear();
+	streams_.reserve(config_.size());
+
+	for (unsigned int i = 0; i < config_.size(); ++i) {
+		StreamConfiguration &cfg = config_[i];
+		const unsigned int pixelFormat = cfg.pixelFormat;
+		const Size size = cfg.size;
+		const IPU3Stream *stream;
+
+		if (cfg.size == sensorFormat_.size)
+			stream = &data_->outStream_;
+		else
+			stream = &data_->vfStream_;
+
+		if (availableStreams.find(stream) == availableStreams.end())
+			stream = *availableStreams.begin();
+
+		LOG(IPU3, Debug)
+			<< "Assigned '" << stream->name_ << "' to stream " << i;
+
+		bool scale = stream == &data_->vfStream_;
+		adjustStream(config_[i], scale);
+
+		if (cfg.pixelFormat != pixelFormat || cfg.size != size) {
+			LOG(IPU3, Debug)
+				<< "Stream " << i << " configuration adjusted to "
+				<< cfg.toString();
+			status = Adjusted;
+		}
+
+		streams_.push_back(stream);
+		availableStreams.erase(stream);
+	}
+
+	return status;
+}
+
 PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 	: PipelineHandler(manager), cio2MediaDev_(nullptr), imguMediaDev_(nullptr)
 {
@@ -211,11 +381,13 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
-	CameraConfiguration *config = new CameraConfiguration();
+	IPU3CameraConfiguration *config;
 	std::set<IPU3Stream *> streams = {
 		&data->outStream_,
 		&data->vfStream_,
 	};
+
+	config = new IPU3CameraConfiguration(camera, data);
 
 	for (const StreamRole role : roles) {
 		StreamConfiguration cfg = {};
@@ -296,70 +468,24 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 		streams.erase(stream);
 
-		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
-		cfg.bufferCount = IPU3_BUFFER_COUNT;
-
 		config->addConfiguration(cfg);
 	}
+
+	config->validate();
 
 	return config;
 }
 
-int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *config)
+int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 {
+	IPU3CameraConfiguration *config =
+		static_cast<IPU3CameraConfiguration *>(c);
 	IPU3CameraData *data = cameraData(camera);
 	IPU3Stream *outStream = &data->outStream_;
 	IPU3Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
-	Size sensorSize = {};
 	int ret;
-
-	outStream->active_ = false;
-	vfStream->active_ = false;
-	for (StreamConfiguration &cfg : *config) {
-		/*
-		 * Pick a stream for the configuration entry.
-		 * \todo: This is a naive temporary implementation that will be
-		 * reworked when implementing camera configuration validation.
-		 */
-		IPU3Stream *stream = vfStream->active_ ? outStream : vfStream;
-
-		/*
-		 * Verify that the requested size respects the IPU3 alignment
-		 * requirements (the image width shall be a multiple of 8
-		 * pixels and its height a multiple of 4 pixels) and the camera
-		 * maximum sizes.
-		 *
-		 * \todo: Consider the BDS scaling factor requirements: "the
-		 * downscaling factor must be an integer value multiple of 1/32"
-		 */
-		if (cfg.size.width % 8 || cfg.size.height % 4) {
-			LOG(IPU3, Error)
-				<< "Invalid stream size: bad alignment";
-			return -EINVAL;
-		}
-
-		const Size &resolution = cio2->sensor_->resolution();
-		if (cfg.size.width > resolution.width ||
-		    cfg.size.height > resolution.height) {
-			LOG(IPU3, Error)
-				<< "Invalid stream size: larger than sensor resolution";
-			return -EINVAL;
-		}
-
-		/*
-		 * Collect the maximum width and height: IPU3 can downscale
-		 * only.
-		 */
-		if (cfg.size.width > sensorSize.width)
-			sensorSize.width = cfg.size.width;
-		if (cfg.size.height > sensorSize.height)
-			sensorSize.height = cfg.size.height;
-
-		stream->active_ = true;
-		cfg.setStream(stream);
-	}
 
 	/*
 	 * \todo: Enable links selectively based on the requested streams.
@@ -373,6 +499,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *config)
 	 * Pass the requested stream size to the CIO2 unit and get back the
 	 * adjusted format to be propagated to the ImgU output devices.
 	 */
+	const Size &sensorSize = config->sensorFormat().size;
 	V4L2DeviceFormat cio2Format = {};
 	ret = cio2->configure(sensorSize, &cio2Format);
 	if (ret)
@@ -383,8 +510,22 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	/* Apply the format to the configured streams output devices. */
-	for (StreamConfiguration &cfg : *config) {
-		IPU3Stream *stream = static_cast<IPU3Stream *>(cfg.stream());
+	outStream->active_ = false;
+	vfStream->active_ = false;
+
+	for (unsigned int i = 0; i < config->size(); ++i) {
+		/*
+		 * Use a const_cast<> here instead of storing a mutable stream
+		 * pointer in the configuration to let the compiler catch
+		 * unwanted modifications of camera data in the configuration
+		 * validate() implementation.
+		 */
+		IPU3Stream *stream = const_cast<IPU3Stream *>(config->streams()[i]);
+		StreamConfiguration &cfg = (*config)[i];
+
+		stream->active_ = true;
+		cfg.setStream(stream);
+
 		ret = imgu->configureOutput(stream->device_, cfg);
 		if (ret)
 			return ret;

@@ -52,6 +52,28 @@ LOG_DECLARE_CATEGORY(Camera)
  * operator[](int) returns a reference to the StreamConfiguration based on its
  * insertion index. Accessing a stream configuration with an invalid index
  * results in undefined behaviour.
+ *
+ * CameraConfiguration instances are retrieved from the camera with
+ * Camera::generateConfiguration(). Applications may then inspect the
+ * configuration, modify it, and possibly add new stream configuration entries
+ * with addConfiguration(). Once the camera configuration satisfies the
+ * application, it shall be validated by a call to validate(). The validation
+ * implements "try" semantics: it adjusts invalid configurations to the closest
+ * achievable parameters instead of rejecting them completely. Applications
+ * then decide whether to accept the modified configuration, or try again with
+ * a different set of parameters. Once the configuration is valid, it is passed
+ * to Camera::configure().
+ */
+
+/**
+ * \enum CameraConfiguration::Status
+ * \brief Validity of a camera configuration
+ * \var CameraConfiguration::Valid
+ * The configuration is fully valid
+ * \var CameraConfiguration::Adjusted
+ * The configuration has been adjusted to a valid configuration
+ * \var CameraConfiguration::Invalid
+ * The configuration is invalid and can't be adjusted automatically
  */
 
 /**
@@ -73,6 +95,10 @@ CameraConfiguration::CameraConfiguration()
 {
 }
 
+CameraConfiguration::~CameraConfiguration()
+{
+}
+
 /**
  * \brief Add a stream configuration to the camera configuration
  * \param[in] cfg The stream configuration
@@ -83,27 +109,31 @@ void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
 }
 
 /**
- * \brief Check if the camera configuration is valid
+ * \fn CameraConfiguration::validate()
+ * \brief Validate and possibly adjust the camera configuration
  *
- * A camera configuration is deemed to be valid if it contains at least one
- * stream configuration and all stream configurations contain valid information.
- * Stream configurations are deemed to be valid if all fields are none zero.
+ * This method adjusts the camera configuration to the closest valid
+ * configuration and returns the validation status.
  *
- * \return True if the configuration is valid
+ * \todo: Define exactly when to return each status code. Should stream
+ * parameters set to 0 by the caller be adjusted without returning Adjusted ?
+ * This would potentially be useful for applications but would get in the way
+ * in Camera::configure(). Do we need an extra status code to signal this ?
+ *
+ * \todo: Handle validation of buffers count when refactoring the buffers API.
+ *
+ * \return A CameraConfiguration::Status value that describes the validation
+ * status.
+ * \retval CameraConfiguration::Invalid The configuration is invalid and can't
+ * be adjusted. This may only occur in extreme cases such as when the
+ * configuration is empty.
+ * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * and is now valid. Parameters may have changed for any stream, and stream
+ * configurations may have been removed. The caller shall check the
+ * configuration carefully.
+ * \retval CameraConfiguration::Valid The configuration was already valid and
+ * hasn't been adjusted.
  */
-bool CameraConfiguration::isValid() const
-{
-	if (empty())
-		return false;
-
-	for (const StreamConfiguration &cfg : config_) {
-		if (cfg.size.width == 0 || cfg.size.height == 0 ||
-		    cfg.pixelFormat == 0 || cfg.bufferCount == 0)
-			return false;
-	}
-
-	return true;
-}
 
 /**
  * \brief Retrieve a reference to a stream configuration
@@ -217,6 +247,11 @@ std::size_t CameraConfiguration::size() const
 {
 	return config_.size();
 }
+
+/**
+ * \var CameraConfiguration::config_
+ * \brief The vector of stream configurations
+ */
 
 /**
  * \class Camera
@@ -582,10 +617,9 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamR
  * The caller specifies which streams are to be involved and their configuration
  * by populating \a config.
  *
- * The easiest way to populate the array of config is to fetch an initial
- * configuration from the camera with generateConfiguration() and then change
- * the parameters to fit the caller's need and once all the streams parameters
- * are configured hand that over to configure() to actually setup the camera.
+ * The configuration is created by generateConfiguration(), and adjusted by the
+ * caller with CameraConfiguration::validate(). This method only accepts fully
+ * valid configurations and returns an error if \a config is not valid.
  *
  * Exclusive access to the camera shall be ensured by a call to acquire() prior
  * to calling this function, otherwise an -EACCES error will be returned.
@@ -610,7 +644,7 @@ int Camera::configure(CameraConfiguration *config)
 	if (!stateBetween(CameraAcquired, CameraConfigured))
 		return -EACCES;
 
-	if (!config->isValid()) {
+	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)
 			<< "Can't configure camera with invalid configuration";
 		return -EINVAL;

@@ -39,6 +39,14 @@ public:
 	Stream stream_;
 };
 
+class UVCCameraConfiguration : public CameraConfiguration
+{
+public:
+	UVCCameraConfiguration();
+
+	Status validate() override;
+};
+
 class PipelineHandlerUVC : public PipelineHandler
 {
 public:
@@ -68,6 +76,45 @@ private:
 	}
 };
 
+UVCCameraConfiguration::UVCCameraConfiguration()
+	: CameraConfiguration()
+{
+}
+
+CameraConfiguration::Status UVCCameraConfiguration::validate()
+{
+	Status status = Valid;
+
+	if (config_.empty())
+		return Invalid;
+
+	/* Cap the number of entries to the available streams. */
+	if (config_.size() > 1) {
+		config_.resize(1);
+		status = Adjusted;
+	}
+
+	StreamConfiguration &cfg = config_[0];
+
+	/* \todo: Validate the configuration against the device capabilities. */
+	const unsigned int pixelFormat = cfg.pixelFormat;
+	const Size size = cfg.size;
+
+	cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
+	cfg.size = { 640, 480 };
+
+	if (cfg.pixelFormat != pixelFormat || cfg.size != size) {
+		LOG(UVC, Debug)
+			<< "Adjusting configuration from " << cfg.toString()
+			<< " to " << cfg.size.toString() << "-YUYV";
+		status = Adjusted;
+	}
+
+	cfg.bufferCount = 4;
+
+	return status;
+}
+
 PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 	: PipelineHandler(manager)
 {
@@ -76,7 +123,7 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
-	CameraConfiguration *config = new CameraConfiguration();
+	CameraConfiguration *config = new UVCCameraConfiguration();
 
 	if (roles.empty())
 		return config;
@@ -87,6 +134,8 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	cfg.bufferCount = 4;
 
 	config->addConfiguration(cfg);
+
+	config->validate();
 
 	return config;
 }

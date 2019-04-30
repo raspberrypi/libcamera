@@ -25,14 +25,19 @@ class Request;
 class CameraConfiguration
 {
 public:
+	enum Status {
+		Valid,
+		Adjusted,
+		Invalid,
+	};
+
 	using iterator = std::vector<StreamConfiguration>::iterator;
 	using const_iterator = std::vector<StreamConfiguration>::const_iterator;
 
-	CameraConfiguration();
+	virtual ~CameraConfiguration();
 
 	void addConfiguration(const StreamConfiguration &cfg);
-
-	bool isValid() const;
+	virtual Status validate() = 0;
 
 	StreamConfiguration &at(unsigned int index);
 	const StreamConfiguration &at(unsigned int index) const;
@@ -53,11 +58,13 @@ public:
 	bool empty() const;
 	std::size_t size() const;
 
-private:
+protected:
+	CameraConfiguration();
+
 	std::vector<StreamConfiguration> config_;
 };
 
-class Camera final
+class Camera final : public std::enable_shared_from_this<Camera>
 {
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,

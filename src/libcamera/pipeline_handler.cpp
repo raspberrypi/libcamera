@@ -248,17 +248,14 @@ void PipelineHandler::unlock()
  * is the Camera class which will receive configuration to apply from the
  * application.
  *
- * Each pipeline handler implementation is responsible for validating
- * that the configuration requested in \a config can be achieved
- * exactly. Any difference in pixel format, frame size or any other
- * parameter shall result in the -EINVAL error being returned, and no
- * change in configuration being applied to the pipeline. If
- * configuration of a subset of the streams can't be satisfied, the
- * whole configuration is considered invalid.
+ * The configuration is guaranteed to have been validated with
+ * CameraConfiguration::valid(). The pipeline handler implementation shall not
+ * perform further validation and may rely on any custom field stored in its
+ * custom CameraConfiguration derived class.
  *
- * Once the configuration is validated and the camera configured, the pipeline
- * handler shall associate a Stream instance to each StreamConfiguration entry
- * in the CameraConfiguration with the StreamConfiguration::setStream() method.
+ * When configuring the camera the pipeline handler shall associate a Stream
+ * instance to each StreamConfiguration entry in the CameraConfiguration using
+ * the StreamConfiguration::setStream() method.
  *
  * \return 0 on success or a negative error code otherwise
  */

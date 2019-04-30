@@ -21,7 +21,7 @@ protected:
 		CameraTest::init();
 
 		config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
-		if (!config_) {
+		if (!config_ || config_->size() != 1) {
 			cout << "Failed to generate default configuration" << endl;
 			CameraTest::cleanup();
 			return TestFail;
@@ -33,11 +33,6 @@ protected:
 	int run() override
 	{
 		StreamConfiguration &cfg = config_->at(0);
-
-		if (!config_->isValid()) {
-			cout << "Failed to read default configuration" << endl;
-			return TestFail;
-		}
 
 		if (camera_->acquire()) {
 			cout << "Failed to acquire the camera" << endl;

@@ -4,6 +4,7 @@ subdir('camera')
 subdir('ipa')
 subdir('media_device')
 subdir('pipeline')
+subdir('stream')
 subdir('v4l2_device')
 subdir('v4l2_subdevice')
 

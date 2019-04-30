@@ -65,13 +65,8 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
  */
 
 /**
- * \var V4L2SubdeviceFormat::width
- * \brief The image width in pixels
- */
-
-/**
- * \var V4L2SubdeviceFormat::height
- * \brief The image height in pixels
+ * \var V4L2SubdeviceFormat::size
+ * \brief The image size in pixels
  */
 
 /**
@@ -83,8 +78,7 @@ const std::string V4L2SubdeviceFormat::toString() const
 	std::stringstream ss;
 
 	ss.fill(0);
-	ss << width << "x" << height << "-0x" << std::hex
-	   << std::setw(4) << mbus_code;
+	ss << size.toString() << "-0x" << std::hex << std::setw(4) << mbus_code;
 
 	return ss.str();
 }
@@ -265,8 +259,8 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 		return ret;
 	}
 
-	format->width = subdevFmt.format.width;
-	format->height = subdevFmt.format.height;
+	format->size.width = subdevFmt.format.width;
+	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
 
 	return 0;
@@ -288,8 +282,8 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	struct v4l2_subdev_format subdevFmt = {};
 	subdevFmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 	subdevFmt.pad = pad;
-	subdevFmt.format.width = format->width;
-	subdevFmt.format.height = format->height;
+	subdevFmt.format.width = format->size.width;
+	subdevFmt.format.height = format->size.height;
 	subdevFmt.format.code = format->mbus_code;
 
 	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_FMT, &subdevFmt);
@@ -301,8 +295,8 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 		return ret;
 	}
 
-	format->width = subdevFmt.format.width;
-	format->height = subdevFmt.format.height;
+	format->size.width = subdevFmt.format.width;
+	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
 
 	return 0;

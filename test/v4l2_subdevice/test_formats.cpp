@@ -44,8 +44,7 @@ int FormatHandlingTest::run()
 	/*
 	 * Set unrealistic image resolutions and make sure it gets updated.
 	 */
-	format.width = UINT_MAX;
-	format.height = UINT_MAX;
+	format.size = { UINT_MAX, UINT_MAX };
 	ret = scaler_->setFormat(0, &format);
 	if (ret) {
 		cerr << "Failed to set format: image resolution is wrong, but "
@@ -53,13 +52,13 @@ int FormatHandlingTest::run()
 		return TestFail;
 	}
 
-	if (format.width == UINT_MAX || format.height == UINT_MAX) {
+	if (format.size.width == UINT_MAX ||
+	    format.size.height == UINT_MAX) {
 		cerr << "Failed to update image format" << endl;
 		return TestFail;
 	}
 
-	format.width = 0;
-	format.height = 0;
+	format.size = { 0, 0 };
 	ret = scaler_->setFormat(0, &format);
 	if (ret) {
 		cerr << "Failed to set format: image resolution is wrong, but "
@@ -67,7 +66,7 @@ int FormatHandlingTest::run()
 		return TestFail;
 	}
 
-	if (format.width == 0 || format.height == 0) {
+	if (format.size.width == 0 || format.size.height == 0) {
 		cerr << "Failed to update image format" << endl;
 		return TestFail;
 	}

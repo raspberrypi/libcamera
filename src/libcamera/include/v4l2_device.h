@@ -13,6 +13,7 @@
 
 #include <linux/videodev2.h>
 
+#include <libcamera/geometry.h>
 #include <libcamera/signal.h>
 
 #include "log.h"
@@ -92,9 +93,8 @@ struct V4L2Capability final : v4l2_capability {
 class V4L2DeviceFormat
 {
 public:
-	uint32_t width;
-	uint32_t height;
 	uint32_t fourcc;
+	Size size;
 
 	struct {
 		uint32_t size;

@@ -137,10 +137,10 @@ static int prepareCameraConfig(CameraConfiguration *config)
 		it++;
 
 		if (conf.isSet("width"))
-			(*config)[stream].width = conf["width"];
+			(*config)[stream].size.width = conf["width"];
 
 		if (conf.isSet("height"))
-			(*config)[stream].height = conf["height"];
+			(*config)[stream].size.height = conf["height"];
 
 		/* TODO: Translate 4CC string to ID. */
 		if (conf.isSet("pixelformat"))

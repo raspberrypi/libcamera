@@ -41,13 +41,8 @@ namespace libcamera {
  */
 
 /**
- * \var StreamConfiguration::width
- * \brief Stream width in pixels
- */
-
-/**
- * \var StreamConfiguration::height
- * \brief Stream height in pixels
+ * \var StreamConfiguration::size
+ * \brief Stream size in pixels
  */
 
 /**
@@ -73,8 +68,8 @@ std::string StreamConfiguration::toString() const
 	std::stringstream ss;
 
 	ss.fill(0);
-	ss << width << "x" << height << "-0x" << std::hex
-	   << std::setw(8) << pixelFormat;
+	ss << size.toString() << "-0x" << std::hex << std::setw(8)
+	   << pixelFormat;
 
 	return ss.str();
 }
@@ -128,11 +123,10 @@ StreamUsage::StreamUsage(Role role)
 /**
  * \brief Create a stream usage with a desired size
  * \param[in] role Stream role
- * \param[in] width The desired width
- * \param[in] height The desired height
+ * \param[in] size The desired size
  */
-StreamUsage::StreamUsage(Role role, int width, int height)
-	: role_(role), size_(Size(width, height))
+StreamUsage::StreamUsage(Role role, const Size &size)
+	: role_(role), size_(size)
 {
 }
 
@@ -183,7 +177,7 @@ Stream::VideoRecording::VideoRecording()
  * \param[in] height The desired viewfinder height
  */
 Stream::Viewfinder::Viewfinder(int width, int height)
-	: StreamUsage(Role::Viewfinder, width, height)
+	: StreamUsage(Role::Viewfinder, Size(width, height))
 {
 }
 

@@ -131,7 +131,7 @@ bool CameraConfiguration::isValid() const
 	for (auto const &it : config_) {
 		const StreamConfiguration &conf = it.second;
 
-		if (conf.width == 0 || conf.height == 0 ||
+		if (conf.size.width == 0 || conf.size.height == 0 ||
 		    conf.pixelFormat == 0 || conf.bufferCount == 0)
 			return false;
 	}

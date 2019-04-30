@@ -23,8 +23,7 @@ class MediaDevice;
 
 struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
-	uint32_t width;
-	uint32_t height;
+	Size size;
 
 	const std::string toString() const;
 };

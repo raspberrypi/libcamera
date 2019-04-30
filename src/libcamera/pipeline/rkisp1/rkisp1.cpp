@@ -116,10 +116,8 @@ CameraConfiguration PipelineHandlerRkISP1::streamConfiguration(Camera *camera,
 	CameraConfiguration configs;
 	StreamConfiguration config{};
 
-	const Size &resolution = data->sensor_->resolution();
-	config.width = resolution.width;
-	config.height = resolution.height;
 	config.pixelFormat = V4L2_PIX_FMT_NV12;
+	config.size = data->sensor_->resolution();
 	config.bufferCount = RKISP1_BUFFER_COUNT;
 
 	configs[&data->stream_] = config;
@@ -137,8 +135,8 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 
 	/* Verify the configuration. */
 	const Size &resolution = sensor->resolution();
-	if (cfg.width > resolution.width ||
-	    cfg.height > resolution.height) {
+	if (cfg.size.width > resolution.width ||
+	    cfg.size.height > resolution.height) {
 		LOG(RkISP1, Error)
 			<< "Invalid stream size: larger than sensor resolution";
 		return -EINVAL;
@@ -193,7 +191,7 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 				     MEDIA_BUS_FMT_SGBRG8_1X8,
 				     MEDIA_BUS_FMT_SGRBG8_1X8,
 				     MEDIA_BUS_FMT_SRGGB8_1X8 },
-				   Size(cfg.width, cfg.height));
+				   cfg.size);
 
 	LOG(RkISP1, Debug) << "Configuring sensor with " << format.toString();
 
@@ -216,17 +214,15 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 		return ret;
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.width = cfg.width;
-	outputFormat.height = cfg.height;
 	outputFormat.fourcc = cfg.pixelFormat;
+	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 
 	ret = video_->setFormat(&outputFormat);
 	if (ret)
 		return ret;
 
-	if (outputFormat.width != cfg.width ||
-	    outputFormat.height != cfg.height ||
+	if (outputFormat.size != cfg.size ||
 	    outputFormat.fourcc != cfg.pixelFormat) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << cfg.toString();

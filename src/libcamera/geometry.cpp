@@ -108,6 +108,15 @@ bool operator==(const Rectangle &lhs, const Rectangle &rhs)
  */
 
 /**
+ * \brief Assemble and return a string describing the size
+ * \return A string describing the size
+ */
+const std::string Size::toString() const
+{
+	return std::to_string(width) + "x" + std::to_string(height);
+}
+
+/**
  * \brief Compare sizes for equality
  * \return True if the two sizes are equal, false otherwise
  */

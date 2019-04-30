@@ -262,8 +262,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 			 *
 			 * \todo Clarify ImgU alignment requirements.
 			 */
-			streamConfig.width = 2560;
-			streamConfig.height = 1920;
+			streamConfig.size = { 2560, 1920 };
 
 			break;
 
@@ -295,8 +294,7 @@ PipelineHandlerIPU3::streamConfiguration(Camera *camera,
 						      res.width);
 			unsigned int height = std::min(usage.size().height,
 						       res.height);
-			streamConfig.width = width & ~7;
-			streamConfig.height = height & ~3;
+			streamConfig.size = { width & ~7, height & ~3 };
 
 			break;
 		}
@@ -347,15 +345,15 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 		 * \todo: Consider the BDS scaling factor requirements: "the
 		 * downscaling factor must be an integer value multiple of 1/32"
 		 */
-		if (cfg.width % 8 || cfg.height % 4) {
+		if (cfg.size.width % 8 || cfg.size.height % 4) {
 			LOG(IPU3, Error)
 				<< "Invalid stream size: bad alignment";
 			return -EINVAL;
 		}
 
 		const Size &resolution = cio2->sensor_->resolution();
-		if (cfg.width > resolution.width ||
-		    cfg.height > resolution.height) {
+		if (cfg.size.width > resolution.width ||
+		    cfg.size.height > resolution.height) {
 			LOG(IPU3, Error)
 				<< "Invalid stream size: larger than sensor resolution";
 			return -EINVAL;
@@ -365,10 +363,10 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 		 * Collect the maximum width and height: IPU3 can downscale
 		 * only.
 		 */
-		if (cfg.width > sensorSize.width)
-			sensorSize.width = cfg.width;
-		if (cfg.height > sensorSize.height)
-			sensorSize.height = cfg.height;
+		if (cfg.size.width > sensorSize.width)
+			sensorSize.width = cfg.size.width;
+		if (cfg.size.height > sensorSize.height)
+			sensorSize.height = cfg.size.height;
 
 		stream->active_ = true;
 	}
@@ -427,8 +425,7 @@ int PipelineHandlerIPU3::configureStreams(Camera *camera,
 	 * \todo Revise this when we'll actually use the stat node.
 	 */
 	StreamConfiguration statConfig = {};
-	statConfig.width = cio2Format.width;
-	statConfig.height = cio2Format.height;
+	statConfig.size = cio2Format.size;
 
 	ret = imgu->configureOutput(&imgu->stat_, statConfig);
 	if (ret)
@@ -932,8 +929,8 @@ int ImgUDevice::configureInput(const Size &size,
 	Rectangle rect = {
 		.x = 0,
 		.y = 0,
-		.w = inputFormat->width,
-		.h = inputFormat->height,
+		.w = inputFormat->size.width,
+		.h = inputFormat->size.height,
 	};
 	ret = imgu_->setCrop(PAD_INPUT, &rect);
 	if (ret)
@@ -947,9 +944,8 @@ int ImgUDevice::configureInput(const Size &size,
 			 << rect.toString();
 
 	V4L2SubdeviceFormat imguFormat = {};
-	imguFormat.width = size.width;
-	imguFormat.height = size.height;
 	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
+	imguFormat.size = size;
 
 	ret = imgu_->setFormat(PAD_INPUT, &imguFormat);
 	if (ret)
@@ -973,9 +969,8 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 	unsigned int pad = output->pad;
 
 	V4L2SubdeviceFormat imguFormat = {};
-	imguFormat.width = config.width;
-	imguFormat.height = config.height;
 	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
+	imguFormat.size = config.size;
 
 	int ret = imgu_->setFormat(pad, &imguFormat);
 	if (ret)
@@ -986,9 +981,8 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 		return 0;
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.width = config.width;
-	outputFormat.height = config.height;
 	outputFormat.fourcc = V4L2_PIX_FMT_NV12;
+	outputFormat.size = config.size;
 	outputFormat.planesCount = 2;
 
 	ret = dev->setFormat(&outputFormat);
@@ -1288,9 +1282,8 @@ int CIO2Device::configure(const Size &size,
 	if (ret)
 		return ret;
 
-	outputFormat->width = sensorFormat.width;
-	outputFormat->height = sensorFormat.height;
 	outputFormat->fourcc = mediaBusToFormat(sensorFormat.mbus_code);
+	outputFormat->size = sensorFormat.size;
 	outputFormat->planesCount = 1;
 
 	ret = output_->setFormat(outputFormat);

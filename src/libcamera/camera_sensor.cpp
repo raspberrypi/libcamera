@@ -234,8 +234,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 		return format;
 	}
 
-	format.width = bestSize->width;
-	format.height = bestSize->height;
+	format.size = *bestSize;
 
 	return format;
 }

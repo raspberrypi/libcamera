@@ -195,13 +195,8 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
- * \var V4L2DeviceFormat::width
- * \brief The image width in pixels
- */
-
-/**
- * \var V4L2DeviceFormat::height
- * \brief The image height in pixels
+ * \var V4L2DeviceFormat::size
+ * \brief The image size in pixels
  */
 
 /**
@@ -236,8 +231,7 @@ const std::string V4L2DeviceFormat::toString() const
 	std::stringstream ss;
 
 	ss.fill(0);
-	ss << width << "x" << height << "-0x" << std::hex
-	   << std::setw(8) << fourcc;
+	ss << size.toString() << "-0x" << std::hex << std::setw(8) << fourcc;
 
 	return ss.str();
 }
@@ -458,8 +452,8 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 		return ret;
 	}
 
-	format->width = pix->width;
-	format->height = pix->height;
+	format->size.width = pix->width;
+	format->size.height = pix->height;
 	format->fourcc = pix->pixelformat;
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
@@ -475,8 +469,8 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	pix->width = format->width;
-	pix->height = format->height;
+	pix->width = format->size.width;
+	pix->height = format->size.height;
 	pix->pixelformat = format->fourcc;
 	pix->bytesperline = format->planes[0].bpl;
 	pix->field = V4L2_FIELD_NONE;
@@ -492,8 +486,8 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	 * Return to caller the format actually applied on the device,
 	 * which might differ from the requested one.
 	 */
-	format->width = pix->width;
-	format->height = pix->height;
+	format->size.width = pix->width;
+	format->size.height = pix->height;
 	format->fourcc = pix->pixelformat;
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
@@ -516,8 +510,8 @@ int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 		return ret;
 	}
 
-	format->width = pix->width;
-	format->height = pix->height;
+	format->size.width = pix->width;
+	format->size.height = pix->height;
 	format->fourcc = pix->pixelformat;
 	format->planesCount = pix->num_planes;
 
@@ -536,8 +530,8 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	pix->width = format->width;
-	pix->height = format->height;
+	pix->width = format->size.width;
+	pix->height = format->size.height;
 	pix->pixelformat = format->fourcc;
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
@@ -558,8 +552,8 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	 * Return to caller the format actually applied on the device,
 	 * which might differ from the requested one.
 	 */
-	format->width = pix->width;
-	format->height = pix->height;
+	format->size.width = pix->width;
+	format->size.height = pix->height;
 	format->fourcc = pix->pixelformat;
 	format->planesCount = pix->num_planes;
 	for (unsigned int i = 0; i < format->planesCount; ++i) {

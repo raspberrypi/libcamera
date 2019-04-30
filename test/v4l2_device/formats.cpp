@@ -31,8 +31,7 @@ int Format::run()
 		return TestFail;
 	}
 
-	format.width = UINT_MAX;
-	format.height = UINT_MAX;
+	format.size = { UINT_MAX, UINT_MAX };
 	ret = capture_->setFormat(&format);
 	if (ret) {
 		cerr << "Failed to set format: image resolution is invalid: "
@@ -41,7 +40,8 @@ int Format::run()
 		return TestFail;
 	}
 
-	if (format.width == UINT_MAX || format.height == UINT_MAX) {
+	if (format.size.width == UINT_MAX ||
+	    format.size.height == UINT_MAX) {
 		cerr << "Failed to update image format = (UINT_MAX x UINT_MAX)"
 		     << endl;
 		return TestFail;

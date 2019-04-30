@@ -40,6 +40,8 @@ struct Size {
 
 	unsigned int width;
 	unsigned int height;
+
+	const std::string toString() const;
 };
 
 bool operator==(const Size &lhs, const Size &rhs);

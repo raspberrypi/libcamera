@@ -64,8 +64,8 @@ protected:
 		 * the default configuration of the VIMC camera is known to
 		 * work.
 		 */
-		sconf->width *= 2;
-		sconf->height *= 2;
+		sconf->size.width *= 2;
+		sconf->size.height *= 2;
 		if (camera_->configureStreams(conf)) {
 			cout << "Failed to set modified configuration" << endl;
 			return TestFail;
@@ -74,8 +74,7 @@ protected:
 		/*
 		 * Test that setting an invalid configuration fails.
 		 */
-		sconf->width = 0;
-		sconf->height = 0;
+		sconf->size = { 0, 0 };
 		if (!camera_->configureStreams(conf)) {
 			cout << "Invalid configuration incorrectly accepted" << endl;
 			return TestFail;

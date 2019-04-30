@@ -17,9 +17,8 @@ namespace libcamera {
 class Camera;
 
 struct StreamConfiguration {
-	unsigned int width;
-	unsigned int height;
 	unsigned int pixelFormat;
+	Size size;
 
 	unsigned int bufferCount;
 
@@ -40,7 +39,7 @@ public:
 
 protected:
 	explicit StreamUsage(Role role);
-	StreamUsage(Role role, int width, int height);
+	StreamUsage(Role role, const Size &size);
 
 private:
 	Role role_;

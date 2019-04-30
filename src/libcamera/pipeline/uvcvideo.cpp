@@ -92,9 +92,8 @@ PipelineHandlerUVC::streamConfiguration(Camera *camera,
 	CameraConfiguration configs;
 	StreamConfiguration config{};
 
-	config.width = 640;
-	config.height = 480;
 	config.pixelFormat = V4L2_PIX_FMT_YUYV;
+	config.size = { 640, 480 };
 	config.bufferCount = 4;
 
 	configs[&data->stream_] = config;
@@ -110,16 +109,14 @@ int PipelineHandlerUVC::configureStreams(Camera *camera,
 	int ret;
 
 	V4L2DeviceFormat format = {};
-	format.width = cfg->width;
-	format.height = cfg->height;
 	format.fourcc = cfg->pixelFormat;
+	format.size = cfg->size;
 
 	ret = data->video_->setFormat(&format);
 	if (ret)
 		return ret;
 
-	if (format.width != cfg->width ||
-	    format.height != cfg->height ||
+	if (format.size != cfg->size ||
 	    format.fourcc != cfg->pixelFormat)
 		return -EINVAL;
 

@@ -31,23 +31,49 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 			       unsigned int height)
 {
 	switch (format) {
+	case V4L2_PIX_FMT_BGR24:
+		yuv_ = false;
+		r_pos_ = 2;
+		g_pos_ = 1;
+		b_pos_ = 0;
+		bpp_ = 3;
+		break;
+	case V4L2_PIX_FMT_RGB24:
+		yuv_ = false;
+		r_pos_ = 0;
+		g_pos_ = 1;
+		b_pos_ = 2;
+		bpp_ = 3;
+		break;
+	case V4L2_PIX_FMT_ARGB32:
+		yuv_ = false;
+		r_pos_ = 1;
+		g_pos_ = 2;
+		b_pos_ = 3;
+		bpp_ = 4;
+		break;
 	case V4L2_PIX_FMT_VYUY:
+		yuv_ = true;
 		y_pos_ = 1;
 		cb_pos_ = 2;
 		break;
 	case V4L2_PIX_FMT_YVYU:
+		yuv_ = true;
 		y_pos_ = 0;
 		cb_pos_ = 3;
 		break;
 	case V4L2_PIX_FMT_UYVY:
+		yuv_ = true;
 		y_pos_ = 1;
 		cb_pos_ = 0;
 		break;
 	case V4L2_PIX_FMT_YUYV:
+		yuv_ = true;
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
 	case V4L2_PIX_FMT_MJPEG:
+		yuv_ = false;
 		break;
 	default:
 		return -EINVAL;
@@ -65,8 +91,32 @@ void FormatConverter::convert(const unsigned char *src, size_t size,
 {
 	if (format_ == V4L2_PIX_FMT_MJPEG)
 		dst->loadFromData(src, size, "JPEG");
-	else
+	else if (yuv_)
 		convertYUV(src, dst->bits());
+	else
+		convertRGB(src, dst->bits());
+}
+
+void FormatConverter::convertRGB(const unsigned char *src, unsigned char *dst)
+{
+	unsigned int x, y;
+	int r, g, b;
+
+	for (y = 0; y < height_; y++) {
+		for (x = 0; x < width_; x++) {
+			r = src[bpp_ * x + r_pos_];
+			g = src[bpp_ * x + g_pos_];
+			b = src[bpp_ * x + b_pos_];
+
+			dst[4 * x + 0] = b;
+			dst[4 * x + 1] = g;
+			dst[4 * x + 2] = r;
+			dst[4 * x + 3] = 0xff;
+		}
+
+		src += width_ * bpp_;
+		dst += width_ * 4;
+	}
 }
 
 static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)

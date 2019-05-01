@@ -20,11 +20,19 @@ public:
 	void convert(const unsigned char *src, size_t size, QImage *dst);
 
 private:
+	void convertRGB(const unsigned char *src, unsigned char *dst);
 	void convertYUV(const unsigned char *src, unsigned char *dst);
 
 	unsigned int format_;
 	unsigned int width_;
 	unsigned int height_;
+
+	unsigned int bpp_;
+	unsigned int r_pos_;
+	unsigned int g_pos_;
+	unsigned int b_pos_;
+
+	bool yuv_;
 	unsigned int y_pos_;
 	unsigned int cb_pos_;
 };

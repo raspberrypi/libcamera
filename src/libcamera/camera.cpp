@@ -560,7 +560,7 @@ Camera::streamConfiguration(const std::vector<StreamUsage> &usages)
 
 	CameraConfiguration config = pipe_->streamConfiguration(this, usages);
 
-	std::ostringstream msg("streams configuration:");
+	std::ostringstream msg("streams configuration:", std::ios_base::ate);
 	unsigned int index = 0;
 
 	for (Stream *stream : config) {
@@ -614,7 +614,7 @@ int Camera::configureStreams(const CameraConfiguration &config)
 		return -EINVAL;
 	}
 
-	std::ostringstream msg("configuring streams:");
+	std::ostringstream msg("configuring streams:", std::ios_base::ate);
 	unsigned int index = 0;
 
 	for (Stream *stream : config) {

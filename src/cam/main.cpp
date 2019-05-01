@@ -243,6 +243,18 @@ int CamApp::prepareConfig()
 		}
 	}
 
+	switch (config_->validate()) {
+	case CameraConfiguration::Valid:
+		break;
+	case CameraConfiguration::Adjusted:
+		std::cout << "Camera configuration adjusted" << std::endl;
+		break;
+	case CameraConfiguration::Invalid:
+		std::cout << "Camera configuration invalid" << std::endl;
+		config_.reset();
+		return -EINVAL;
+	}
+
 	return 0;
 }
 

@@ -6,6 +6,7 @@
  */
 
 #include "device_enumerator.h"
+#include "device_enumerator_sysfs.h"
 #include "device_enumerator_udev.h"
 
 #include <string.h>
@@ -153,8 +154,9 @@ std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 	 * Either udev is not available or udev initialization failed. Fall back
 	 * on the sysfs enumerator.
 	 */
-
-	/** \todo Add a sysfs-based enumerator. */
+	enumerator = utils::make_unique<DeviceEnumeratorSysfs>();
+	if (!enumerator->init())
+		return enumerator;
 
 	return nullptr;
 }

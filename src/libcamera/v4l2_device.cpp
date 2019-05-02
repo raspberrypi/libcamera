@@ -717,7 +717,7 @@ int V4L2Device::importBuffers(BufferPool *pool)
 		return -ENOMEM;
 	}
 
-	LOG(V4L2, Debug) << "provided pool of " << pool->count() << "buffers";
+	LOG(V4L2, Debug) << "provided pool of " << pool->count() << " buffers";
 	bufferPool_ = pool;
 
 	return 0;

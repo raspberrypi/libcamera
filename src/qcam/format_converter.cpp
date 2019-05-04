@@ -32,48 +32,48 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 {
 	switch (format) {
 	case V4L2_PIX_FMT_BGR24:
-		yuv_ = false;
+		formatFamily_ = RGB;
 		r_pos_ = 2;
 		g_pos_ = 1;
 		b_pos_ = 0;
 		bpp_ = 3;
 		break;
 	case V4L2_PIX_FMT_RGB24:
-		yuv_ = false;
+		formatFamily_ = RGB;
 		r_pos_ = 0;
 		g_pos_ = 1;
 		b_pos_ = 2;
 		bpp_ = 3;
 		break;
 	case V4L2_PIX_FMT_ARGB32:
-		yuv_ = false;
+		formatFamily_ = RGB;
 		r_pos_ = 1;
 		g_pos_ = 2;
 		b_pos_ = 3;
 		bpp_ = 4;
 		break;
 	case V4L2_PIX_FMT_VYUY:
-		yuv_ = true;
+		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 2;
 		break;
 	case V4L2_PIX_FMT_YVYU:
-		yuv_ = true;
+		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 3;
 		break;
 	case V4L2_PIX_FMT_UYVY:
-		yuv_ = true;
+		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 0;
 		break;
 	case V4L2_PIX_FMT_YUYV:
-		yuv_ = true;
+		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
 	case V4L2_PIX_FMT_MJPEG:
-		yuv_ = false;
+		formatFamily_ = MJPEG;
 		break;
 	default:
 		return -EINVAL;
@@ -89,12 +89,17 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 void FormatConverter::convert(const unsigned char *src, size_t size,
 			      QImage *dst)
 {
-	if (format_ == V4L2_PIX_FMT_MJPEG)
+	switch (formatFamily_) {
+	case MJPEG:
 		dst->loadFromData(src, size, "JPEG");
-	else if (yuv_)
+		break;
+	case YUV:
 		convertYUV(src, dst->bits());
-	else
+		break;
+	case RGB:
 		convertRGB(src, dst->bits());
+		break;
+	};
 }
 
 void FormatConverter::convertRGB(const unsigned char *src, unsigned char *dst)

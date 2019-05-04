@@ -20,6 +20,12 @@ public:
 	void convert(const unsigned char *src, size_t size, QImage *dst);
 
 private:
+	enum FormatFamily {
+		MJPEG,
+		RGB,
+		YUV,
+	};
+
 	void convertRGB(const unsigned char *src, unsigned char *dst);
 	void convertYUV(const unsigned char *src, unsigned char *dst);
 
@@ -27,12 +33,15 @@ private:
 	unsigned int width_;
 	unsigned int height_;
 
+	enum FormatFamily formatFamily_;
+
+	/* RGB parameters */
 	unsigned int bpp_;
 	unsigned int r_pos_;
 	unsigned int g_pos_;
 	unsigned int b_pos_;
 
-	bool yuv_;
+	/* YUV parameters */
 	unsigned int y_pos_;
 	unsigned int cb_pos_;
 };

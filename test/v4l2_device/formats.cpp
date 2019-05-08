@@ -19,7 +19,7 @@ class Format : public V4L2DeviceTest
 {
 public:
 	Format()
-		: V4L2DeviceTest("vivid", "vivid-000-vid-cap") {}
+		: V4L2DeviceTest("vimc", "Raw Capture 0") {}
 protected:
 	int run()
 	{

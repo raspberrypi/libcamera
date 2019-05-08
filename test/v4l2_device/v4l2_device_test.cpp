@@ -54,7 +54,27 @@ int V4L2DeviceTest::init()
 	if (!capture_)
 		return TestFail;
 
-	return capture_->open();
+	if (!media_->acquire())
+		return TestFail;
+
+	int ret = media_->disableLinks();
+	media_->release();
+	if (ret)
+		return TestFail;
+
+	if (capture_->open())
+		return TestFail;
+
+	V4L2DeviceFormat format = {};
+	if (capture_->getFormat(&format))
+		return TestFail;
+
+	format.size.width = 640;
+	format.size.height = 480;
+	if (capture_->setFormat(&format))
+		return TestFail;
+
+	return TestPass;
 }
 
 void V4L2DeviceTest::cleanup()

@@ -23,9 +23,8 @@ class BufferSharingTest : public V4L2DeviceTest
 {
 public:
 	BufferSharingTest()
-		: output_(nullptr), framesCaptured_(0), framesOutput_(0)
-	{
-	}
+		: V4L2DeviceTest("vivid", "vivid-000-vid-cap"),
+		  output_(nullptr), framesCaptured_(0), framesOutput_(0) {}
 
 protected:
 	int init()

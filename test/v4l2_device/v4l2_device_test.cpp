@@ -39,14 +39,14 @@ int V4L2DeviceTest::init()
 		return TestFail;
 	}
 
-	DeviceMatch dm("vivid");
-	dm.add("vivid-000-vid-cap");
+	DeviceMatch dm(driver_);
+	dm.add(entity_);
 
 	media_ = enumerator_->search(dm);
 	if (!media_)
 		return TestSkip;
 
-	MediaEntity *entity = media_->getEntityByName("vivid-000-vid-cap");
+	MediaEntity *entity = media_->getEntityByName(entity_);
 	if (!entity)
 		return TestSkip;
 

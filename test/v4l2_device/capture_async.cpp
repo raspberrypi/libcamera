@@ -18,7 +18,7 @@ class CaptureAsyncTest : public V4L2DeviceTest
 {
 public:
 	CaptureAsyncTest()
-		: frames(0){};
+		: V4L2DeviceTest("vivid", "vivid-000-vid-cap"), frames(0) {}
 
 	void receiveBuffer(Buffer *buffer)
 	{

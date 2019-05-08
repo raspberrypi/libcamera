@@ -22,8 +22,8 @@ using namespace libcamera;
 class V4L2DeviceTest : public Test
 {
 public:
-	V4L2DeviceTest()
-		: capture_(nullptr)
+	V4L2DeviceTest(const char *driver, const char *entity)
+		: driver_(driver), entity_(entity), capture_(nullptr)
 	{
 	}
 
@@ -31,6 +31,8 @@ protected:
 	int init();
 	void cleanup();
 
+	std::string driver_;
+	std::string entity_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
 	V4L2Device *capture_;

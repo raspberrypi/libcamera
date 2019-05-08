@@ -13,6 +13,9 @@ namespace {
 
 class DoubleOpen : public V4L2DeviceTest
 {
+public:
+	DoubleOpen()
+		: V4L2DeviceTest("vivid", "vivid-000-vid-cap") {}
 protected:
 	int run()
 	{

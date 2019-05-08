@@ -27,14 +27,6 @@ public:
 	{
 	}
 
-private:
-	const unsigned int bufferCount = 4;
-
-	V4L2Device *output_;
-
-	unsigned int framesCaptured_;
-	unsigned int framesOutput_;
-
 protected:
 	int init()
 	{
@@ -182,6 +174,14 @@ protected:
 
 		V4L2DeviceTest::cleanup();
 	}
+
+private:
+	const unsigned int bufferCount = 4;
+
+	V4L2Device *output_;
+
+	unsigned int framesCaptured_;
+	unsigned int framesOutput_;
 };
 
 TEST_REGISTER(BufferSharingTest);

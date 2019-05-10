@@ -1,3 +1,8 @@
+option('android',
+        type : 'boolean',
+        value : false,
+        description : 'Compile libcamera with Android Camera3 HAL interface')
+
 option('documentation',
         type : 'boolean',
         description : 'Generate the project documentation')

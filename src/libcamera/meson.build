@@ -103,9 +103,18 @@ libcamera_deps = [
     dependency('threads'),
 ]
 
+libcamera_link_with = []
+
+if get_option('android')
+    libcamera_sources += android_hal_sources
+    includes += android_includes
+    libcamera_link_with += android_camera_metadata
+endif
+
 libcamera = shared_library('camera',
                            libcamera_sources,
                            install : true,
+                           link_with : libcamera_link_with,
                            include_directories : includes,
                            dependencies : libcamera_deps)
 

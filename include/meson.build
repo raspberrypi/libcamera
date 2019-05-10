@@ -1,1 +1,2 @@
+subdir('android')
 subdir('libcamera')

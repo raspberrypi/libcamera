@@ -145,6 +145,25 @@ public:
 	ImgUDevice::ImgUOutput *device_;
 };
 
+class IPU3CameraData : public CameraData
+{
+public:
+	IPU3CameraData(PipelineHandler *pipe)
+		: CameraData(pipe)
+	{
+	}
+
+	void imguOutputBufferReady(Buffer *buffer);
+	void imguInputBufferReady(Buffer *buffer);
+	void cio2BufferReady(Buffer *buffer);
+
+	CIO2Device cio2_;
+	ImgUDevice *imgu_;
+
+	IPU3Stream outStream_;
+	IPU3Stream vfStream_;
+};
+
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
@@ -167,25 +186,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	class IPU3CameraData : public CameraData
-	{
-	public:
-		IPU3CameraData(PipelineHandler *pipe)
-			: CameraData(pipe)
-		{
-		}
-
-		void imguOutputBufferReady(Buffer *buffer);
-		void imguInputBufferReady(Buffer *buffer);
-		void cio2BufferReady(Buffer *buffer);
-
-		CIO2Device cio2_;
-		ImgUDevice *imgu_;
-
-		IPU3Stream outStream_;
-		IPU3Stream vfStream_;
-	};
-
 	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
 
 	IPU3CameraData *cameraData(const Camera *camera)
@@ -749,7 +749,7 @@ int PipelineHandlerIPU3::registerCameras()
  * Buffers completed from the ImgU input are immediately queued back to the
  * CIO2 unit to continue frame capture.
  */
-void PipelineHandlerIPU3::IPU3CameraData::imguInputBufferReady(Buffer *buffer)
+void IPU3CameraData::imguInputBufferReady(Buffer *buffer)
 {
 	cio2_.output_->queueBuffer(buffer);
 }
@@ -760,7 +760,7 @@ void PipelineHandlerIPU3::IPU3CameraData::imguInputBufferReady(Buffer *buffer)
  *
  * Buffers completed from the ImgU output are directed to the application.
  */
-void PipelineHandlerIPU3::IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
+void IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 {
 	Request *request = buffer->request();
 
@@ -785,7 +785,7 @@ void PipelineHandlerIPU3::IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
  * Buffers completed from the CIO2 are immediately queued to the ImgU unit
  * for further processing.
  */
-void PipelineHandlerIPU3::IPU3CameraData::cio2BufferReady(Buffer *buffer)
+void IPU3CameraData::cio2BufferReady(Buffer *buffer)
 {
 	imgu_->input_->queueBuffer(buffer);
 }

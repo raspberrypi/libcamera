@@ -20,6 +20,25 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(VIMC)
 
+class VimcCameraData : public CameraData
+{
+public:
+	VimcCameraData(PipelineHandler *pipe)
+		: CameraData(pipe)
+	{
+	}
+
+	~VimcCameraData()
+	{
+		delete video_;
+	}
+
+	void bufferReady(Buffer *buffer);
+
+	V4L2Device *video_;
+	Stream stream_;
+};
+
 class PipelineHandlerVimc : public PipelineHandler
 {
 public:
@@ -42,25 +61,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	class VimcCameraData : public CameraData
-	{
-	public:
-		VimcCameraData(PipelineHandler *pipe)
-			: CameraData(pipe)
-		{
-		}
-
-		~VimcCameraData()
-		{
-			delete video_;
-		}
-
-		void bufferReady(Buffer *buffer);
-
-		V4L2Device *video_;
-		Stream stream_;
-	};
-
 	VimcCameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<VimcCameraData *>(
@@ -202,7 +202,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-void PipelineHandlerVimc::VimcCameraData::bufferReady(Buffer *buffer)
+void VimcCameraData::bufferReady(Buffer *buffer)
 {
 	Request *request = queuedRequests_.front();
 

@@ -20,6 +20,25 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(UVC)
 
+class UVCCameraData : public CameraData
+{
+public:
+	UVCCameraData(PipelineHandler *pipe)
+		: CameraData(pipe), video_(nullptr)
+	{
+	}
+
+	~UVCCameraData()
+	{
+		delete video_;
+	}
+
+	void bufferReady(Buffer *buffer);
+
+	V4L2Device *video_;
+	Stream stream_;
+};
+
 class PipelineHandlerUVC : public PipelineHandler
 {
 public:
@@ -42,25 +61,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	class UVCCameraData : public CameraData
-	{
-	public:
-		UVCCameraData(PipelineHandler *pipe)
-			: CameraData(pipe), video_(nullptr)
-		{
-		}
-
-		~UVCCameraData()
-		{
-			delete video_;
-		}
-
-		void bufferReady(Buffer *buffer);
-
-		V4L2Device *video_;
-		Stream stream_;
-	};
-
 	UVCCameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<UVCCameraData *>(
@@ -206,7 +206,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-void PipelineHandlerUVC::UVCCameraData::bufferReady(Buffer *buffer)
+void UVCCameraData::bufferReady(Buffer *buffer)
 {
 	Request *request = queuedRequests_.front();
 

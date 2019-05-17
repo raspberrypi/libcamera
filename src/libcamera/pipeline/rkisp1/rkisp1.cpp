@@ -28,6 +28,23 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RkISP1)
 
+class RkISP1CameraData : public CameraData
+{
+public:
+	RkISP1CameraData(PipelineHandler *pipe)
+		: CameraData(pipe), sensor_(nullptr)
+	{
+	}
+
+	~RkISP1CameraData()
+	{
+		delete sensor_;
+	}
+
+	Stream stream_;
+	CameraSensor *sensor_;
+};
+
 class PipelineHandlerRkISP1 : public PipelineHandler
 {
 public:
@@ -51,23 +68,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	class RkISP1CameraData : public CameraData
-	{
-	public:
-		RkISP1CameraData(PipelineHandler *pipe)
-			: CameraData(pipe), sensor_(nullptr)
-		{
-		}
-
-		~RkISP1CameraData()
-		{
-			delete sensor_;
-		}
-
-		Stream stream_;
-		CameraSensor *sensor_;
-	};
-
 	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
 	RkISP1CameraData *cameraData(const Camera *camera)

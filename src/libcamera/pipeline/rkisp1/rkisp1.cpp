@@ -159,11 +159,8 @@ int PipelineHandlerRkISP1::configureStreams(Camera *camera,
 
 		ret = link->setEnabled(enable);
 		if (ret < 0)
-			break;
+			return ret;
 	}
-
-	if (ret < 0)
-		return ret;
 
 	/*
 	 * Configure the format on the sensor output and propagate it through

@@ -98,19 +98,19 @@ static std::unique_ptr<CameraConfiguration> prepareCameraConfig()
 
 	/* Use roles and get a default configuration. */
 	for (auto const &value : streamOptions) {
-		KeyValueParser::Options conf = value.toKeyValues();
+		KeyValueParser::Options opt = value.toKeyValues();
 
-		if (!conf.isSet("role")) {
+		if (!opt.isSet("role")) {
 			roles.push_back(StreamRole::VideoRecording);
-		} else if (conf["role"].toString() == "viewfinder") {
+		} else if (opt["role"].toString() == "viewfinder") {
 			roles.push_back(StreamRole::Viewfinder);
-		} else if (conf["role"].toString() == "video") {
+		} else if (opt["role"].toString() == "video") {
 			roles.push_back(StreamRole::VideoRecording);
-		} else if (conf["role"].toString() == "still") {
+		} else if (opt["role"].toString() == "still") {
 			roles.push_back(StreamRole::StillCapture);
 		} else {
 			std::cerr << "Unknown stream role "
-				  << conf["role"].toString() << std::endl;
+				  << opt["role"].toString() << std::endl;
 			return nullptr;
 		}
 	}
@@ -125,18 +125,18 @@ static std::unique_ptr<CameraConfiguration> prepareCameraConfig()
 	/* Apply configuration explicitly requested. */
 	unsigned int i = 0;
 	for (auto const &value : streamOptions) {
-		KeyValueParser::Options conf = value.toKeyValues();
+		KeyValueParser::Options opt = value.toKeyValues();
 		StreamConfiguration &cfg = config->at(i++);
 
-		if (conf.isSet("width"))
-			cfg.size.width = conf["width"];
+		if (opt.isSet("width"))
+			cfg.size.width = opt["width"];
 
-		if (conf.isSet("height"))
-			cfg.size.height = conf["height"];
+		if (opt.isSet("height"))
+			cfg.size.height = opt["height"];
 
 		/* TODO: Translate 4CC string to ID. */
-		if (conf.isSet("pixelformat"))
-			cfg.pixelFormat = conf["pixelformat"];
+		if (opt.isSet("pixelformat"))
+			cfg.pixelFormat = opt["pixelformat"];
 	}
 
 	return config;

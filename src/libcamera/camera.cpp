@@ -358,24 +358,17 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 				       const std::string &name,
 				       const std::set<Stream *> &streams)
 {
-	struct Allocator : std::allocator<Camera> {
-		void construct(void *p, PipelineHandler *pipe,
-			       const std::string &name)
+	struct Deleter : std::default_delete<Camera> {
+		void operator()(Camera *camera)
 		{
-			::new(p) Camera(pipe, name);
-		}
-		void destroy(Camera *p)
-		{
-			p->~Camera();
+			delete camera;
 		}
 	};
 
-	std::shared_ptr<Camera> camera =
-		std::allocate_shared<Camera>(Allocator(), pipe, name);
-
+	Camera *camera = new Camera(pipe, name);
 	camera->streams_ = streams;
 
-	return camera;
+	return std::shared_ptr<Camera>(camera, Deleter());
 }
 
 /**

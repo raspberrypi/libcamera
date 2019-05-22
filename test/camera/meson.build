@@ -9,6 +9,7 @@ camera_tests = [
 
 foreach t : camera_tests
     exe = executable(t[0], [t[1], 'camera_test.cpp'],
+                     dependencies : libcamera_dep,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
     test(t[0], exe, suite : 'camera', is_parallel : false)

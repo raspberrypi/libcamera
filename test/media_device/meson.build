@@ -9,10 +9,12 @@ media_device_tests = [
 ]
 
 lib_mdev_test = static_library('lib_mdev_test', lib_mdev_test_sources,
+                               dependencies : libcamera_dep,
                                include_directories : test_includes_internal)
 
 foreach t : media_device_tests
     exe = executable(t[0], t[1],
+                     dependencies : libcamera_dep,
                      link_with : [test_libraries, lib_mdev_test],
                      include_directories : test_includes_internal)
 

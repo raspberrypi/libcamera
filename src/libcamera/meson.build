@@ -65,3 +65,7 @@ libcamera = shared_library('camera',
                            install : true,
                            include_directories : includes,
                            dependencies : libudev)
+
+libcamera_dep = declare_dependency(sources : libcamera_api,
+                                   include_directories : libcamera_includes,
+                                   link_with : libcamera)

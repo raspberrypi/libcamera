@@ -15,9 +15,7 @@ qt5_dep = dependency('qt5',
 
 if qt5_dep.found()
     qcam  = executable('qcam', qcam_sources,
-                       link_with : libcamera,
                        install : true,
-                       include_directories : libcamera_includes,
-                       dependencies : qt5_dep,
+                       dependencies : [libcamera_dep, qt5_dep],
                        cpp_args : '-DQT_NO_KEYWORDS')
 endif

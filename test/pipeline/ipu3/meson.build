@@ -4,6 +4,7 @@ ipu3_test = [
 
 foreach t : ipu3_test
     exe = executable(t[0], t[1],
+                     dependencies : libcamera_dep,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 

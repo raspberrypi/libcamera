@@ -1,5 +1,6 @@
 cam_sources = files([
     'buffer_writer.cpp',
+    'capture.cpp',
     'event_loop.cpp',
     'main.cpp',
     'options.cpp',

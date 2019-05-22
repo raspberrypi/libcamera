@@ -5,37 +5,22 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
-#include <algorithm>
-#include <iomanip>
 #include <iostream>
-#include <limits.h>
-#include <map>
 #include <signal.h>
-#include <sstream>
 #include <string.h>
 
 #include <libcamera/libcamera.h>
 
-#include "buffer_writer.h"
+#include "capture.h"
 #include "event_loop.h"
+#include "main.h"
 #include "options.h"
 
 using namespace libcamera;
 
 OptionsParser::Options options;
 std::shared_ptr<Camera> camera;
-std::map<Stream *, std::string> streamInfo;
 EventLoop *loop;
-BufferWriter *writer;
-
-enum {
-	OptCamera = 'c',
-	OptCapture = 'C',
-	OptFile = 'F',
-	OptHelp = 'h',
-	OptList = 'l',
-	OptStream = 's',
-};
 
 void signalHandler(int signal)
 {
@@ -85,201 +70,6 @@ static int parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-static std::unique_ptr<CameraConfiguration> prepareCameraConfig()
-{
-	StreamRoles roles;
-
-	/* If no configuration is provided assume a single video stream. */
-	if (!options.isSet(OptStream))
-		return camera->generateConfiguration({ StreamRole::VideoRecording });
-
-	const std::vector<OptionValue> &streamOptions =
-		options[OptStream].toArray();
-
-	/* Use roles and get a default configuration. */
-	for (auto const &value : streamOptions) {
-		KeyValueParser::Options opt = value.toKeyValues();
-
-		if (!opt.isSet("role")) {
-			roles.push_back(StreamRole::VideoRecording);
-		} else if (opt["role"].toString() == "viewfinder") {
-			roles.push_back(StreamRole::Viewfinder);
-		} else if (opt["role"].toString() == "video") {
-			roles.push_back(StreamRole::VideoRecording);
-		} else if (opt["role"].toString() == "still") {
-			roles.push_back(StreamRole::StillCapture);
-		} else {
-			std::cerr << "Unknown stream role "
-				  << opt["role"].toString() << std::endl;
-			return nullptr;
-		}
-	}
-
-	std::unique_ptr<CameraConfiguration> config = camera->generateConfiguration(roles);
-	if (!config || config->size() != roles.size()) {
-		std::cerr << "Failed to get default stream configuration"
-			  << std::endl;
-		return nullptr;
-	}
-
-	/* Apply configuration explicitly requested. */
-	unsigned int i = 0;
-	for (auto const &value : streamOptions) {
-		KeyValueParser::Options opt = value.toKeyValues();
-		StreamConfiguration &cfg = config->at(i++);
-
-		if (opt.isSet("width"))
-			cfg.size.width = opt["width"];
-
-		if (opt.isSet("height"))
-			cfg.size.height = opt["height"];
-
-		/* TODO: Translate 4CC string to ID. */
-		if (opt.isSet("pixelformat"))
-			cfg.pixelFormat = opt["pixelformat"];
-	}
-
-	return config;
-}
-
-static void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
-{
-	static uint64_t now, last = 0;
-	double fps = 0.0;
-
-	if (request->status() == Request::RequestCancelled)
-		return;
-
-	struct timespec time;
-	clock_gettime(CLOCK_MONOTONIC, &time);
-	now = time.tv_sec * 1000 + time.tv_nsec / 1000000;
-	fps = now - last;
-	fps = last && fps ? 1000.0 / fps : 0.0;
-	last = now;
-
-	std::stringstream info;
-	info << "fps: " << std::fixed << std::setprecision(2) << fps;
-
-	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		Stream *stream = it->first;
-		Buffer *buffer = it->second;
-		const std::string &name = streamInfo[stream];
-
-		info << " " << name
-		     << " (" << buffer->index() << ")"
-		     << " seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
-		     << " bytesused: " << buffer->bytesused();
-
-		if (writer)
-			writer->write(buffer, name);
-	}
-
-	std::cout << info.str() << std::endl;
-
-	request = camera->createRequest();
-	if (!request) {
-		std::cerr << "Can't create request" << std::endl;
-		return;
-	}
-
-	request->setBuffers(buffers);
-	camera->queueRequest(request);
-}
-
-static int capture()
-{
-	int ret;
-
-	std::unique_ptr<CameraConfiguration> config = prepareCameraConfig();
-	if (!config) {
-		std::cout << "Failed to prepare camera configuration" << std::endl;
-		return -EINVAL;
-	}
-
-	ret = camera->configure(config.get());
-	if (ret < 0) {
-		std::cout << "Failed to configure camera" << std::endl;
-		return ret;
-	}
-
-	streamInfo.clear();
-
-	for (unsigned int index = 0; index < config->size(); ++index) {
-		StreamConfiguration &cfg = config->at(index);
-		streamInfo[cfg.stream()] = "stream" + std::to_string(index);
-	}
-
-	ret = camera->allocateBuffers();
-	if (ret) {
-		std::cerr << "Failed to allocate buffers"
-			  << std::endl;
-		return ret;
-	}
-
-	camera->requestCompleted.connect(requestComplete);
-
-	/* Identify the stream with the least number of buffers. */
-	unsigned int nbuffers = UINT_MAX;
-	for (StreamConfiguration &cfg : *config) {
-		Stream *stream = cfg.stream();
-		nbuffers = std::min(nbuffers, stream->bufferPool().count());
-	}
-
-	/*
-	 * TODO: make cam tool smarter to support still capture by for
-	 * example pushing a button. For now run all streams all the time.
-	 */
-
-	std::vector<Request *> requests;
-	for (unsigned int i = 0; i < nbuffers; i++) {
-		Request *request = camera->createRequest();
-		if (!request) {
-			std::cerr << "Can't create request" << std::endl;
-			ret = -ENOMEM;
-			goto out;
-		}
-
-		std::map<Stream *, Buffer *> map;
-		for (StreamConfiguration &cfg : *config) {
-			Stream *stream = cfg.stream();
-			map[stream] = &stream->bufferPool().buffers()[i];
-		}
-
-		ret = request->setBuffers(map);
-		if (ret < 0) {
-			std::cerr << "Can't set buffers for request" << std::endl;
-			goto out;
-		}
-
-		requests.push_back(request);
-	}
-
-	ret = camera->start();
-	if (ret) {
-		std::cout << "Failed to start capture" << std::endl;
-		goto out;
-	}
-
-	for (Request *request : requests) {
-		ret = camera->queueRequest(request);
-		if (ret < 0) {
-			std::cerr << "Can't queue request" << std::endl;
-			goto out;
-		}
-	}
-
-	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
-	ret = loop->exec();
-
-	ret = camera->stop();
-	if (ret)
-		std::cout << "Failed to stop capture" << std::endl;
-out:
-	camera->freeBuffers();
-
-	return ret;
-}
-
 int main(int argc, char **argv)
 {
 	int ret;
@@ -327,26 +117,8 @@ int main(int argc, char **argv)
 	}
 
 	if (options.isSet(OptCapture)) {
-		if (!camera) {
-			std::cout << "Can't capture without a camera"
-				  << std::endl;
-			ret = EXIT_FAILURE;
-			goto out;
-		}
-
-		if (options.isSet(OptFile)) {
-			if (!options[OptFile].toString().empty())
-				writer = new BufferWriter(options[OptFile]);
-			else
-				writer = new BufferWriter();
-		}
-
-		capture();
-
-		if (options.isSet(OptFile)) {
-			delete writer;
-			writer = nullptr;
-		}
+		Capture capture(camera.get());
+		ret = capture.run(loop, options);
 	}
 
 	if (camera) {

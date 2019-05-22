@@ -51,7 +51,7 @@ includes = [
 
 subdir('pipeline')
 
-libudev = dependency('libudev', required: false)
+libudev = dependency('libudev', required : false)
 
 if libudev.found()
     config_h.set('HAVE_LIBUDEV', 1)

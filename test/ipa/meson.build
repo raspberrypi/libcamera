@@ -4,8 +4,8 @@ ipa_modules_sources = [
 ]
 
 foreach m : ipa_modules_sources
-    shared_library(m, name_prefix: '',
-                   include_directories: test_includes_public)
+    shared_library(m, name_prefix : '',
+                   include_directories : test_includes_public)
 endforeach
 
 ipa_test = [
@@ -17,5 +17,5 @@ foreach t : ipa_test
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite: 'ipa', is_parallel: false)
+    test(t[0], exe, suite : 'ipa', is_parallel : false)
 endforeach

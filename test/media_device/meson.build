@@ -16,5 +16,5 @@ foreach t : media_device_tests
                      link_with : [test_libraries, lib_mdev_test],
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite: 'media_device', is_parallel: false)
+    test(t[0], exe, suite : 'media_device', is_parallel : false)
 endforeach

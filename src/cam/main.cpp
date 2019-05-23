@@ -18,17 +18,115 @@
 
 using namespace libcamera;
 
-OptionsParser::Options options;
-std::shared_ptr<Camera> camera;
-EventLoop *loop;
-
-void signalHandler(int signal)
+class CamApp
 {
-	std::cout << "Exiting" << std::endl;
-	loop->exit();
+public:
+	CamApp();
+
+	static CamApp *instance();
+
+	int init(int argc, char **argv);
+	void cleanup();
+
+	int exec();
+	void quit();
+
+private:
+	int parseOptions(int argc, char *argv[]);
+	int run();
+
+	static CamApp *app_;
+	OptionsParser::Options options_;
+	CameraManager *cm_;
+	std::shared_ptr<Camera> camera_;
+	EventLoop *loop_;
+};
+
+CamApp *CamApp::app_ = nullptr;
+
+CamApp::CamApp()
+	: cm_(nullptr), camera_(nullptr), loop_(nullptr)
+{
+	CamApp::app_ = this;
 }
 
-static int parseOptions(int argc, char *argv[])
+CamApp *CamApp::instance()
+{
+	return CamApp::app_;
+}
+
+int CamApp::init(int argc, char **argv)
+{
+	int ret;
+
+	ret = parseOptions(argc, argv);
+	if (ret < 0)
+		return ret == -EINTR ? 0 : ret;
+
+	cm_ = CameraManager::instance();
+
+	ret = cm_->start();
+	if (ret) {
+		std::cout << "Failed to start camera manager: "
+			  << strerror(-ret) << std::endl;
+		return ret;
+	}
+
+	if (options_.isSet(OptCamera)) {
+		camera_ = cm_->get(options_[OptCamera]);
+		if (!camera_) {
+			std::cout << "Camera "
+				  << std::string(options_[OptCamera])
+				  << " not found" << std::endl;
+			cm_->stop();
+			return -ENODEV;
+		}
+
+		if (camera_->acquire()) {
+			std::cout << "Failed to acquire camera" << std::endl;
+			camera_.reset();
+			cm_->stop();
+			return -EINVAL;
+		}
+
+		std::cout << "Using camera " << camera_->name() << std::endl;
+	}
+
+	loop_ = new EventLoop(cm_->eventDispatcher());
+
+	return 0;
+}
+
+void CamApp::cleanup()
+{
+	delete loop_;
+	loop_ = nullptr;
+
+	if (camera_) {
+		camera_->release();
+		camera_.reset();
+	}
+
+	cm_->stop();
+}
+
+int CamApp::exec()
+{
+	int ret;
+
+	ret = run();
+	cleanup();
+
+	return ret;
+}
+
+void CamApp::quit()
+{
+	if (loop_)
+		loop_->exit();
+}
+
+int CamApp::parseOptions(int argc, char *argv[])
 {
 	KeyValueParser streamKeyValue;
 	streamKeyValue.addOption("role", OptionString,
@@ -58,77 +156,53 @@ static int parseOptions(int argc, char *argv[])
 			 "help");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
 
-	options = parser.parse(argc, argv);
-	if (!options.valid())
+	options_ = parser.parse(argc, argv);
+	if (!options_.valid())
 		return -EINVAL;
 
-	if (options.empty() || options.isSet(OptHelp)) {
+	if (options_.empty() || options_.isSet(OptHelp)) {
 		parser.usage();
-		return options.empty() ? -EINVAL : -EINTR;
+		return options_.empty() ? -EINVAL : -EINTR;
 	}
 
 	return 0;
 }
 
-int main(int argc, char **argv)
+int CamApp::run()
 {
-	int ret;
-
-	ret = parseOptions(argc, argv);
-	if (ret < 0)
-		return ret == -EINTR ? 0 : EXIT_FAILURE;
-
-	CameraManager *cm = CameraManager::instance();
-
-	ret = cm->start();
-	if (ret) {
-		std::cout << "Failed to start camera manager: "
-			  << strerror(-ret) << std::endl;
-		return EXIT_FAILURE;
+	if (options_.isSet(OptList)) {
+		std::cout << "Available cameras:" << std::endl;
+		for (const std::shared_ptr<Camera> &cam : cm_->cameras())
+			std::cout << "- " << cam->name() << std::endl;
 	}
 
-	loop = new EventLoop(cm->eventDispatcher());
+	if (options_.isSet(OptCapture)) {
+		Capture capture(camera_.get());
+		return capture.run(loop_, options_);
+	}
+
+	return 0;
+}
+
+void signalHandler(int signal)
+{
+	std::cout << "Exiting" << std::endl;
+	CamApp::instance()->quit();
+}
+
+int main(int argc, char **argv)
+{
+	CamApp app;
+
+	if (app.init(argc, argv))
+		return EXIT_FAILURE;
 
 	struct sigaction sa = {};
 	sa.sa_handler = &signalHandler;
 	sigaction(SIGINT, &sa, nullptr);
 
-	if (options.isSet(OptList)) {
-		std::cout << "Available cameras:" << std::endl;
-		for (const std::shared_ptr<Camera> &cam : cm->cameras())
-			std::cout << "- " << cam->name() << std::endl;
-	}
+	if (app.exec())
+		return EXIT_FAILURE;
 
-	if (options.isSet(OptCamera)) {
-		camera = cm->get(options[OptCamera]);
-		if (!camera) {
-			std::cout << "Camera "
-				  << std::string(options[OptCamera])
-				  << " not found" << std::endl;
-			goto out;
-		}
-
-		if (camera->acquire()) {
-			std::cout << "Failed to acquire camera" << std::endl;
-			goto out;
-		}
-
-		std::cout << "Using camera " << camera->name() << std::endl;
-	}
-
-	if (options.isSet(OptCapture)) {
-		Capture capture(camera.get());
-		ret = capture.run(loop, options);
-	}
-
-	if (camera) {
-		camera->release();
-		camera.reset();
-	}
-out:
-	delete loop;
-
-	cm->stop();
-
-	return ret;
+	return 0;
 }

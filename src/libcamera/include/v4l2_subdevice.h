@@ -58,8 +58,8 @@ protected:
 
 private:
 	std::vector<unsigned int> enumPadCodes(unsigned int pad);
-	int enumPadSizes(unsigned int pad, unsigned int code,
-			 std::vector<SizeRange> *size);
+	std::vector<SizeRange> enumPadSizes(unsigned int pad,
+					    unsigned int code);
 
 	int setSelection(unsigned int pad, unsigned int target,
 			 Rectangle *rect);

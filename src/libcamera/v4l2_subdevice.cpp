@@ -209,9 +209,13 @@ FormatEnum V4L2Subdevice::formats(unsigned int pad)
 		return {};
 	}
 
-	for (unsigned int code : enumPadCodes(pad))
-		if (enumPadSizes(pad, code, &formatMap[code]))
+	for (unsigned int code : enumPadCodes(pad)) {
+		std::vector<SizeRange> sizes = enumPadSizes(pad, code);
+		if (sizes.empty())
 			return {};
+
+		formatMap[code] = sizes;
+	}
 
 	return formatMap;
 }
@@ -335,25 +339,25 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 	return codes;
 }
 
-int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,
-				std::vector<SizeRange> *sizes)
+std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
+						   unsigned int code)
 {
-	struct v4l2_subdev_frame_size_enum sizeEnum = {};
+	std::vector<SizeRange> sizes;
 	int ret;
 
-	sizeEnum.index = 0;
-	sizeEnum.pad = pad;
-	sizeEnum.code = code;
-	sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	while (true) {
+	for (unsigned int index = 0;; index++) {
+		struct v4l2_subdev_frame_size_enum sizeEnum = {};
+		sizeEnum.index = index;
+		sizeEnum.pad = pad;
+		sizeEnum.code = code;
+		sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+
 		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &sizeEnum);
 		if (ret)
 			break;
 
-		sizes->emplace_back(sizeEnum.min_width, sizeEnum.min_height,
-				    sizeEnum.max_width, sizeEnum.max_height);
-
-		sizeEnum.index++;
+		sizes.emplace_back(sizeEnum.min_width, sizeEnum.min_height,
+				   sizeEnum.max_width, sizeEnum.max_height);
 	}
 
 	if (ret && (errno != EINVAL && errno != ENOTTY)) {
@@ -361,12 +365,10 @@ int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,
 		LOG(V4L2Subdev, Error)
 			<< "Unable to enumerate sizes on pad " << pad
 			<< ": " << strerror(-ret);
-		sizes->clear();
-
-		return ret;
+		return {};
 	}
 
-	return 0;
+	return sizes;
 }
 
 int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,

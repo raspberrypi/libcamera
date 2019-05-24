@@ -186,9 +186,29 @@ bool operator<(const Size &lhs, const Size &rhs)
  * \struct SizeRange
  * \brief Describe a range of sizes
  *
- * SizeRange describes a range of sizes included in the [min, max]
- * interval for both the width and the height. If the minimum and
- * maximum sizes are identical it represents a single size.
+ * A SizeRange describes a range of sizes included in the [min, max] interval
+ * for both the width and the height. If the minimum and maximum sizes are
+ * identical it represents a single size.
+ *
+ * Size ranges may further limit the valid sizes through steps in the horizontal
+ * and vertical direction. The step values represent the increase in pixels
+ * between two valid width or height values, starting from the minimum. Valid
+ * sizes within the range are thus expressed as
+ *
+ *	width = min.width + hStep * x
+ *	height = min.height + vStep * y
+ *
+ *	Where
+ *
+ *	width <= max.width
+ *	height < max.height
+ *
+ * Note that the step values are not equivalent to alignments, as the minimum
+ * width or height may not be a multiple of the corresponding step.
+ *
+ * The step values may be zero when the range describes only minimum and
+ * maximum sizes without implying that all, or any, intermediate size is valid.
+ * SizeRange instances the describe a single size have both set values set to 1.
  */
 
 /**
@@ -214,6 +234,19 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
+ * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH,
+ *			    unsigned int maxW, unsigned int maxH,
+ *			    unsigned int hstep, unsigned int vstep)
+ * \brief Construct an initialized size range
+ * \param[in] minW The minimum width
+ * \param[in] minH The minimum height
+ * \param[in] maxW The maximum width
+ * \param[in] maxH The maximum height
+ * \param[in] hstep The horizontal step
+ * \param[in] vstep The vertical step
+ */
+
+/**
  * \var SizeRange::min
  * \brief The minimum size
  */
@@ -221,6 +254,16 @@ bool operator<(const Size &lhs, const Size &rhs)
 /**
  * \var SizeRange::max
  * \brief The maximum size
+ */
+
+/**
+ * \var SizeRange::hStep
+ * \brief The horizontal step
+ */
+
+/**
+ * \var SizeRange::vStep
+ * \brief The vertical step
  */
 
 /**

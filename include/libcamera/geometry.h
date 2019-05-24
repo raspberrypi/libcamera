@@ -73,18 +73,27 @@ struct SizeRange {
 	}
 
 	SizeRange(unsigned int width, unsigned int height)
-		: min(width, height), max(width, height)
+		: min(width, height), max(width, height), hStep(1), vStep(1)
 	{
 	}
 
 	SizeRange(unsigned int minW, unsigned int minH,
 		  unsigned int maxW, unsigned int maxH)
-		: min(minW, minH), max(maxW, maxH)
+		: min(minW, minH), max(maxW, maxH), hStep(1), vStep(1)
+	{
+	}
+
+	SizeRange(unsigned int minW, unsigned int minH,
+		  unsigned int maxW, unsigned int maxH,
+		  unsigned int hstep, unsigned int vstep)
+		: min(minW, minH), max(maxW, maxH), hStep(hstep), vStep(vstep)
 	{
 	}
 
 	Size min;
 	Size max;
+	unsigned int hStep;
+	unsigned int vStep;
 };
 
 bool operator==(const SizeRange &lhs, const SizeRange &rhs);

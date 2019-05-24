@@ -203,37 +203,15 @@ int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
 FormatEnum V4L2Subdevice::formats(unsigned int pad)
 {
 	FormatEnum formatMap = {};
-	struct v4l2_subdev_mbus_code_enum mbusEnum = {};
-	int ret;
 
 	if (pad >= entity_->pads().size()) {
 		LOG(V4L2Subdev, Error) << "Invalid pad: " << pad;
-		return formatMap;
+		return {};
 	}
 
-	mbusEnum.pad = pad;
-	mbusEnum.index = 0;
-	mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	while (true) {
-		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbusEnum);
-		if (ret)
-			break;
-
-		ret = enumPadSizes(pad, mbusEnum.code,
-				   &formatMap[mbusEnum.code]);
-		if (ret)
-			break;
-
-		mbusEnum.index++;
-	}
-
-	if (ret && (errno != EINVAL && errno != ENOTTY)) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
-			<< "Unable to enumerate formats on pad " << pad
-			<< ": " << strerror(-ret);
-		formatMap.clear();
-	}
+	for (unsigned int code : enumPadCodes(pad))
+		if (enumPadSizes(pad, code, &formatMap[code]))
+			return {};
 
 	return formatMap;
 }
@@ -326,6 +304,35 @@ V4L2Subdevice *V4L2Subdevice::fromEntityName(const MediaDevice *media,
 std::string V4L2Subdevice::logPrefix() const
 {
 	return "'" + entity_->name() + "'";
+}
+
+std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
+{
+	std::vector<unsigned int> codes;
+	int ret;
+
+	for (unsigned int index = 0; ; index++) {
+		struct v4l2_subdev_mbus_code_enum mbusEnum = {};
+		mbusEnum.pad = pad;
+		mbusEnum.index = index;
+		mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+
+		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbusEnum);
+		if (ret)
+			break;
+
+		codes.push_back(mbusEnum.code);
+	}
+
+	if (ret && errno != EINVAL) {
+		ret = errno;
+		LOG(V4L2Subdev, Error)
+			<< "Unable to enumerate formats on pad " << pad
+			<< ": " << strerror(ret);
+		return {};
+	}
+
+	return codes;
 }
 
 int V4L2Subdevice::enumPadSizes(unsigned int pad,unsigned int code,

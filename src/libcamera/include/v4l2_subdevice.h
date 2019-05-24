@@ -57,6 +57,7 @@ protected:
 	std::string logPrefix() const;
 
 private:
+	std::vector<unsigned int> enumPadCodes(unsigned int pad);
 	int enumPadSizes(unsigned int pad, unsigned int code,
 			 std::vector<SizeRange> *size);
 

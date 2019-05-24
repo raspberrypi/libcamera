@@ -150,11 +150,14 @@ protected:
 	std::string logPrefix() const;
 
 private:
-	int getFormatSingleplane(V4L2DeviceFormat *format);
-	int setFormatSingleplane(V4L2DeviceFormat *format);
+	int getFormatMeta(V4L2DeviceFormat *format);
+	int setFormatMeta(V4L2DeviceFormat *format);
 
 	int getFormatMultiplane(V4L2DeviceFormat *format);
 	int setFormatMultiplane(V4L2DeviceFormat *format);
+
+	int getFormatSingleplane(V4L2DeviceFormat *format);
+	int setFormatSingleplane(V4L2DeviceFormat *format);
 
 	int requestBuffers(unsigned int count);
 	int createPlane(Buffer *buffer, unsigned int plane,

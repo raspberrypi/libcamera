@@ -428,8 +428,12 @@ std::string V4L2Device::logPrefix() const
  */
 int V4L2Device::getFormat(V4L2DeviceFormat *format)
 {
-	return caps_.isMultiplanar() ? getFormatMultiplane(format) :
-				       getFormatSingleplane(format);
+	if (caps_.isMeta())
+		return getFormatMeta(format);
+	else if (caps_.isMultiplanar())
+		return getFormatMultiplane(format);
+	else
+		return getFormatSingleplane(format);
 }
 
 /**
@@ -443,14 +447,18 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
  */
 int V4L2Device::setFormat(V4L2DeviceFormat *format)
 {
-	return caps_.isMultiplanar() ? setFormatMultiplane(format) :
-				       setFormatSingleplane(format);
+	if (caps_.isMeta())
+		return setFormatMeta(format);
+	else if (caps_.isMultiplanar())
+		return setFormatMultiplane(format);
+	else
+		return setFormatSingleplane(format);
 }
 
-int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
+int V4L2Device::getFormatMeta(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
-	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
+	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
 	int ret;
 
 	v4l2Format.type = bufferType_;
@@ -461,29 +469,25 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 		return ret;
 	}
 
-	format->size.width = pix->width;
-	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->size.width = 0;
+	format->size.height = 0;
+	format->fourcc = pix->dataformat;
 	format->planesCount = 1;
-	format->planes[0].bpl = pix->bytesperline;
-	format->planes[0].size = pix->sizeimage;
+	format->planes[0].bpl = pix->buffersize;
+	format->planes[0].size = pix->buffersize;
 
 	return 0;
 }
 
-int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
+int V4L2Device::setFormatMeta(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
-	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
+	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	pix->width = format->size.width;
-	pix->height = format->size.height;
-	pix->pixelformat = format->fourcc;
-	pix->bytesperline = format->planes[0].bpl;
-	pix->field = V4L2_FIELD_NONE;
-
+	pix->dataformat = format->fourcc;
+	pix->buffersize = format->planes[0].size;
 	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
 		ret = -errno;
@@ -495,12 +499,12 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
 	 * Return to caller the format actually applied on the device,
 	 * which might differ from the requested one.
 	 */
-	format->size.width = pix->width;
-	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->size.width = 0;
+	format->size.height = 0;
+	format->fourcc = format->fourcc;
 	format->planesCount = 1;
-	format->planes[0].bpl = pix->bytesperline;
-	format->planes[0].size = pix->sizeimage;
+	format->planes[0].bpl = pix->buffersize;
+	format->planes[0].size = pix->buffersize;
 
 	return 0;
 }
@@ -569,6 +573,63 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
+
+	return 0;
+}
+
+int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
+{
+	struct v4l2_format v4l2Format = {};
+	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
+	int ret;
+
+	v4l2Format.type = bufferType_;
+	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
+	if (ret) {
+		ret = -errno;
+		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
+		return ret;
+	}
+
+	format->size.width = pix->width;
+	format->size.height = pix->height;
+	format->fourcc = pix->pixelformat;
+	format->planesCount = 1;
+	format->planes[0].bpl = pix->bytesperline;
+	format->planes[0].size = pix->sizeimage;
+
+	return 0;
+}
+
+int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
+{
+	struct v4l2_format v4l2Format = {};
+	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
+	int ret;
+
+	v4l2Format.type = bufferType_;
+	pix->width = format->size.width;
+	pix->height = format->size.height;
+	pix->pixelformat = format->fourcc;
+	pix->bytesperline = format->planes[0].bpl;
+	pix->field = V4L2_FIELD_NONE;
+	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
+	if (ret) {
+		ret = -errno;
+		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
+		return ret;
+	}
+
+	/*
+	 * Return to caller the format actually applied on the device,
+	 * which might differ from the requested one.
+	 */
+	format->size.width = pix->width;
+	format->size.height = pix->height;
+	format->fourcc = pix->pixelformat;
+	format->planesCount = 1;
+	format->planes[0].bpl = pix->bytesperline;
+	format->planes[0].size = pix->sizeimage;
 
 	return 0;
 }

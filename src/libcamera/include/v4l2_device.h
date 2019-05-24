@@ -59,7 +59,8 @@ struct V4L2Capability final : v4l2_capability {
 	bool isOutput() const
 	{
 		return device_caps() & (V4L2_CAP_VIDEO_OUTPUT |
-					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+					V4L2_CAP_VIDEO_OUTPUT_MPLANE |
+					V4L2_CAP_META_OUTPUT);
 	}
 	bool isVideo() const
 	{
@@ -70,7 +71,8 @@ struct V4L2Capability final : v4l2_capability {
 	}
 	bool isMeta() const
 	{
-		return device_caps() & V4L2_CAP_META_CAPTURE;
+		return device_caps() & (V4L2_CAP_META_CAPTURE |
+					V4L2_CAP_META_OUTPUT);
 	}
 	bool isVideoCapture() const
 	{
@@ -83,6 +85,10 @@ struct V4L2Capability final : v4l2_capability {
 	bool isMetaCapture() const
 	{
 		return isMeta() && isCapture();
+	}
+	bool isMetaOutput() const
+	{
+		return isMeta() && isOutput();
 	}
 	bool hasStreaming() const
 	{

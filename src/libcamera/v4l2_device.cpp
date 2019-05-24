@@ -117,6 +117,12 @@ LOG_DEFINE_CATEGORY(V4L2)
  */
 
 /**
+ * \fn V4L2Capability::isMetaOutput()
+ * \brief Identify if the device outputs image meta-data
+ * \return True if the device can output image meta-data
+ */
+
+/**
  * \fn V4L2Capability::hasStreaming()
  * \brief Determine if the device can perform Streaming I/O
  * \return True if the device provides Streaming I/O IOCTLs
@@ -348,6 +354,9 @@ int V4L2Device::open()
 	} else if (caps_.isMetaCapture()) {
 		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
 		bufferType_ = V4L2_BUF_TYPE_META_CAPTURE;
+	} else if (caps_.isMetaOutput()) {
+		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
+		bufferType_ = V4L2_BUF_TYPE_META_OUTPUT;
 	} else {
 		LOG(V4L2, Error) << "Device is not a supported type";
 		return -EINVAL;

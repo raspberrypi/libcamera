@@ -187,22 +187,17 @@ int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
 }
 
 /**
- * \brief List the sub-device image resolutions and formats on \a pad
+ * \brief Enumerate all media bus codes and frame sizes on a \a pad
  * \param[in] pad The 0-indexed pad number to enumerate formats on
  *
- * Retrieve a list of image formats and sizes on the \a pad of a video
- * subdevice. Subdevices can report either a list of discrete sizes they
- * support or a list of intervals expressed as a [min-max] sizes range.
+ * Enumerate all media bus codes and frame sizes supported by the subdevice on
+ * a \a pad.
  *
- * Each image size list is associated with a media bus pixel code for which
- * the reported resolutions are supported.
- *
- * \return A map of image formats associated with a list of image sizes, or
- * an empty map on error or if the pad does not exist
+ * \return A list of the supported device formats
  */
-FormatEnum V4L2Subdevice::formats(unsigned int pad)
+ImageFormats V4L2Subdevice::formats(unsigned int pad)
 {
-	FormatEnum formatMap = {};
+	ImageFormats formats;
 
 	if (pad >= entity_->pads().size()) {
 		LOG(V4L2Subdev, Error) << "Invalid pad: " << pad;
@@ -214,10 +209,15 @@ FormatEnum V4L2Subdevice::formats(unsigned int pad)
 		if (sizes.empty())
 			return {};
 
-		formatMap[code] = sizes;
+		if (formats.addFormat(code, sizes)) {
+			LOG(V4L2Subdev, Error)
+				<< "Could not add sizes for media bus code "
+				<< code << " on pad " << pad;
+			return {};
+		}
 	}
 
-	return formatMap;
+	return formats;
 }
 
 /**

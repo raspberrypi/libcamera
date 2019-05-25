@@ -47,29 +47,29 @@ void ListFormatsTest::printFormats(unsigned int pad,
 int ListFormatsTest::run()
 {
 	/* List all formats available on existing "Scaler" pads. */
-	std::map<unsigned int, std::vector<SizeRange>> formats;
+	ImageFormats formats;
 
 	formats = scaler_->formats(0);
-	if (formats.empty()) {
+	if (formats.isEmpty()) {
 		cerr << "Failed to list formats on pad 0 of subdevice "
 		     << scaler_->entity()->name() << endl;
 		return TestFail;
 	}
-	for (auto it = formats.begin(); it != formats.end(); ++it)
-		printFormats(0, it->first, it->second);
+	for (unsigned int code : formats.formats())
+		printFormats(0, code, formats.sizes(code));
 
 	formats = scaler_->formats(1);
-	if (formats.empty()) {
+	if (formats.isEmpty()) {
 		cerr << "Failed to list formats on pad 1 of subdevice "
 		     << scaler_->entity()->name() << endl;
 		return TestFail;
 	}
-	for (auto it = formats.begin(); it != formats.end(); ++it)
-		printFormats(1, it->first, it->second);
+	for (unsigned int code : formats.formats())
+		printFormats(1, code, formats.sizes(code));
 
 	/* List format on a non-existing pad, format vector shall be empty. */
 	formats = scaler_->formats(2);
-	if (!formats.empty()) {
+	if (!formats.isEmpty()) {
 		cerr << "Listing formats on non-existing pad 2 of subdevice "
 		     << scaler_->entity()->name()
 		     << " should return an empty format list" << endl;

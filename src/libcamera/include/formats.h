@@ -15,8 +15,6 @@
 
 namespace libcamera {
 
-typedef std::map<unsigned int, std::vector<SizeRange>> FormatEnum;
-
 class ImageFormats
 {
 public:

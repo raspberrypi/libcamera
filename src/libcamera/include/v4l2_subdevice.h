@@ -45,7 +45,7 @@ public:
 	int setCrop(unsigned int pad, Rectangle *rect);
 	int setCompose(unsigned int pad, Rectangle *rect);
 
-	FormatEnum formats(unsigned int pad);
+	ImageFormats formats(unsigned int pad);
 
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);

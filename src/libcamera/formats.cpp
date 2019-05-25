@@ -15,16 +15,6 @@
 namespace libcamera {
 
 /**
- * \typedef FormatEnum
- * \brief Type definition for the map of image formats and sizes
- *
- * Type definition used to enumerate the supported pixel formats and image
- * frame sizes. The type associates in a map a pixel format (for memory
- * formats) or a media bus code (for bus formats), to a vector of image
- * resolutions represented by SizeRange items.
- */
-
-/**
  * \class ImageFormats
  * \brief Describe V4L2Device and V4L2SubDevice image formats
  *

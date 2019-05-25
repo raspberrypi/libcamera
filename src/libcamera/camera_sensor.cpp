@@ -90,27 +90,25 @@ int CameraSensor::init()
 		return ret;
 
 	/* Enumerate and cache media bus codes and sizes. */
-	const FormatEnum formats = subdev_->formats(0);
-	if (formats.empty()) {
+	const ImageFormats formats = subdev_->formats(0);
+	if (formats.isEmpty()) {
 		LOG(CameraSensor, Error) << "No image format found";
 		return -EINVAL;
 	}
 
-	std::transform(formats.begin(), formats.end(),
-		       std::back_inserter(mbusCodes_),
-		       [](decltype(*formats.begin()) f) { return f.first; });
+	mbusCodes_ = formats.formats();
 
 	/*
 	 * Extract the supported sizes from the first format as we only support
 	 * sensors that offer the same frame sizes for all media bus codes.
 	 * Verify this assumption and reject the sensor if it isn't true.
 	 */
-	const std::vector<SizeRange> &sizes = formats.begin()->second;
+	const std::vector<SizeRange> &sizes = formats.sizes(mbusCodes_[0]);
 	std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_),
 		       [](const SizeRange &range) { return range.max; });
 
-	for (auto it = ++formats.begin(); it != formats.end(); ++it) {
-		if (it->second != sizes) {
+	for (unsigned int code : mbusCodes_) {
+		if (formats.sizes(code) != sizes) {
 			LOG(CameraSensor, Error)
 				<< "Frame sizes differ between media bus codes";
 			return -EINVAL;

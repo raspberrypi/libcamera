@@ -7,8 +7,12 @@
 
 #include <libcamera/stream.h>
 
+#include <algorithm>
+#include <climits>
 #include <iomanip>
 #include <sstream>
+
+#include "log.h"
 
 /**
  * \file stream.h
@@ -31,6 +35,232 @@
  */
 
 namespace libcamera {
+
+LOG_DEFINE_CATEGORY(Stream)
+
+/**
+ * \class StreamFormats
+ * \brief Hold information about supported stream formats
+ *
+ * The StreamFormats class holds information about the pixel formats and frame
+ * sizes a stream supports. The class groups size information by the pixel
+ * format which can produce it.
+ *
+ * There are two ways to examine the size information, as a range or as a list
+ * of discrete sizes. When sizes are viewed as a range it describes the minimum
+ * and maximum width and height values. The range description can include
+ * horizontal and vertical steps.
+ *
+ * When sizes are viewed as a list of discrete sizes they describe the exact
+ * dimensions which can be selected and used.
+ *
+ * Pipeline handlers can create StreamFormats describing each pixel format using
+ * either a range or a list of discrete sizes. The StreamFormats class attempts
+ * to translate between the two different ways to view them. The translations
+ * are performed as:
+ *
+ *  - If the StreamFormat is constructed using a list of discrete image sizes
+ *    and a range is requested, it gets created by taking the minimum and
+ *    maximum width/height in the list. The step information is not recreated
+ *    and is set to 0 to indicate the range is generated.
+ *
+ *  - If the image sizes used to construct a StreamFormat are expressed as a
+ *    range and a list of discrete sizes is requested, one which fits inside
+ *    that range are selected from a list of common sizes. The step information
+ *    is taken into consideration when generating the sizes.
+ *
+ * Applications examining sizes as a range with step values of 0 shall be
+ * aware that the range are generated from a list of discrete sizes and there
+ * could be a large number of possible Size combinations that may not be
+ * supported by the Stream.
+ *
+ * All sizes retrieved from StreamFormats shall be treated as advisory and no
+ * size shall be considered to be supported until it has been verified using
+ * CameraConfiguration::validate().
+ *
+ * \todo Review the usage patterns of this class, and cache the computed
+ * pixelformats(), sizes() and range() if this would improve performances.
+ */
+
+StreamFormats::StreamFormats()
+{
+}
+
+/**
+ * \brief Construct a StreamFormats object with a map of image formats
+ * \param[in] formats A map of pixel formats to a sizes description
+ */
+StreamFormats::StreamFormats(const std::map<unsigned int, std::vector<SizeRange>> &formats)
+	: formats_(formats)
+{
+}
+
+/**
+ * \brief Retrieve the list of supported pixel formats
+ * \return The list of supported pixel formats
+ */
+std::vector<unsigned int> StreamFormats::pixelformats() const
+{
+	std::vector<unsigned int> formats;
+
+	for (auto const &it : formats_)
+		formats.push_back(it.first);
+
+	return formats;
+}
+
+/**
+ * \brief Retrieve the list of frame sizes supported for \a pixelformat
+ * \param[in] pixelformat Pixel format to retrieve sizes for
+ *
+ * If the sizes described for \a pixelformat are discrete they are returned
+ * directly.
+ *
+ * If the sizes are described as a range, a list of discrete sizes are computed
+ * from a list of common resolutions that fit inside the described range. When
+ * computing the discrete list step values are considered but there are no
+ * guarantees that all sizes computed are supported.
+ *
+ * \return A list of frame sizes or an empty list on error
+ */
+std::vector<Size> StreamFormats::sizes(unsigned int pixelformat) const
+{
+	/*
+	 * Sizes to try and extract from ranges.
+	 * \todo Verify list of resolutions are good, current list compiled
+	 * from v4l2 documentation and source code as well as lists of
+	 * common frame sizes.
+	 */
+	static const std::array<Size, 53> rangeDiscreteSizes = {
+		Size(160, 120),
+		Size(240, 160),
+		Size(320, 240),
+		Size(400, 240),
+		Size(480, 320),
+		Size(640, 360),
+		Size(640, 480),
+		Size(720, 480),
+		Size(720, 576),
+		Size(768, 480),
+		Size(800, 600),
+		Size(854, 480),
+		Size(960, 540),
+		Size(960, 640),
+		Size(1024, 576),
+		Size(1024, 600),
+		Size(1024, 768),
+		Size(1152, 864),
+		Size(1280, 1024),
+		Size(1280, 1080),
+		Size(1280, 720),
+		Size(1280, 800),
+		Size(1360, 768),
+		Size(1366, 768),
+		Size(1400, 1050),
+		Size(1440, 900),
+		Size(1536, 864),
+		Size(1600, 1200),
+		Size(1600, 900),
+		Size(1680, 1050),
+		Size(1920, 1080),
+		Size(1920, 1200),
+		Size(2048, 1080),
+		Size(2048, 1152),
+		Size(2048, 1536),
+		Size(2160, 1080),
+		Size(2560, 1080),
+		Size(2560, 1440),
+		Size(2560, 1600),
+		Size(2560, 2048),
+		Size(2960, 1440),
+		Size(3200, 1800),
+		Size(3200, 2048),
+		Size(3200, 2400),
+		Size(3440, 1440),
+		Size(3840, 1080),
+		Size(3840, 1600),
+		Size(3840, 2160),
+		Size(3840, 2400),
+		Size(4096, 2160),
+		Size(5120, 2160),
+		Size(5120, 2880),
+		Size(7680, 4320),
+	};
+	std::vector<Size> sizes;
+
+	/* Make sure pixel format exists. */
+	auto const &it = formats_.find(pixelformat);
+	if (it == formats_.end())
+		return {};
+
+	/* Try creating a list of discrete sizes. */
+	const std::vector<SizeRange> &ranges = it->second;
+	bool discrete = true;
+	for (const SizeRange &range : ranges) {
+		if (range.min != range.max) {
+			discrete = false;
+			break;
+		}
+		sizes.emplace_back(range.min);
+	}
+
+	/* If discrete not possible generate from range. */
+	if (!discrete) {
+		if (ranges.size() != 1) {
+			LOG(Stream, Error) << "Range format is ambiguous";
+			return {};
+		}
+
+		const SizeRange &limit = ranges.front();
+		sizes.clear();
+
+		for (const Size &size : rangeDiscreteSizes)
+			if (limit.contains(size))
+				sizes.push_back(size);
+	}
+
+	std::sort(sizes.begin(), sizes.end());
+
+	return sizes;
+}
+
+/**
+ * \brief Retrieve the range of minimum and maximum sizes
+ * \param[in] pixelformat Pixel format to retrieve range for
+ *
+ * If the size described for \a pixelformat is a range, that range is returned
+ * directly. If the sizes described are a list of discrete sizes, a range is
+ * created from the minimum and maximum sizes in the list. The step values of
+ * the range are set to 0 to indicate that the range is generated and that not
+ * all image sizes contained in the range might be supported.
+ *
+ * \return A range of valid image sizes or an empty range on error
+ */
+SizeRange StreamFormats::range(unsigned int pixelformat) const
+{
+	auto const it = formats_.find(pixelformat);
+	if (it == formats_.end())
+		return {};
+
+	const std::vector<SizeRange> &ranges = it->second;
+	if (ranges.size() == 1)
+		return ranges[0];
+
+	LOG(Stream, Debug) << "Building range from discrete sizes";
+	SizeRange range(UINT_MAX, UINT_MAX, 0, 0);
+	for (const SizeRange &limit : ranges) {
+		if (limit.min < range.min)
+			range.min = limit.min;
+
+		if (limit.max > range.max)
+			range.max = limit.max;
+	}
+
+	range.hStep = 0;
+	range.vStep = 0;
+
+	return range;
+}
 
 /**
  * \struct StreamConfiguration

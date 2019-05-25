@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_STREAM_H__
 #define __LIBCAMERA_STREAM_H__
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,21 @@ namespace libcamera {
 
 class Camera;
 class Stream;
+
+class StreamFormats
+{
+public:
+	StreamFormats();
+	StreamFormats(const std::map<unsigned int, std::vector<SizeRange>> &formats);
+
+	std::vector<unsigned int> pixelformats() const;
+	std::vector<Size> sizes(unsigned int pixelformat) const;
+
+	SizeRange range(unsigned int pixelformat) const;
+
+private:
+	std::map<unsigned int, std::vector<SizeRange>> formats_;
+};
 
 struct StreamConfiguration {
 	StreamConfiguration()

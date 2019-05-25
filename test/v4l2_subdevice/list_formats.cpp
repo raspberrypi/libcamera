@@ -26,15 +26,15 @@ protected:
 
 private:
 	void printFormats(unsigned int pad, unsigned code,
-			  std::vector<SizeRange> &formats);
+			  const std::vector<SizeRange> &sizes);
 };
 
 void ListFormatsTest::printFormats(unsigned int pad,
 				   unsigned int code,
-				   std::vector<SizeRange> &sizes)
+				   const std::vector<SizeRange> &sizes)
 {
 	cout << "Enumerate formats on pad " << pad << endl;
-	for (SizeRange &size : sizes) {
+	for (const SizeRange &size : sizes) {
 		cout << "	mbus code: 0x" << setfill('0') << setw(4)
 		     << hex << code << endl;
 		cout << "	min width: " << dec << size.min.width << endl;

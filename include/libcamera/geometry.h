@@ -72,6 +72,11 @@ struct SizeRange {
 	{
 	}
 
+	SizeRange(unsigned int width, unsigned int height)
+		: min(width, height), max(width, height)
+	{
+	}
+
 	SizeRange(unsigned int minW, unsigned int minH,
 		  unsigned int maxW, unsigned int maxH)
 		: min(minW, minH), max(maxW, maxH)

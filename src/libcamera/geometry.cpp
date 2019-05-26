@@ -197,6 +197,13 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
+ * \fn SizeRange::SizeRange(unsigned int width, unsigned int height)
+ * \brief Construct a size range representing a single size
+ * \param[in] width The size width
+ * \param[in] height The size height
+ */
+
+/**
  * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH,
  *			    unsigned int maxW, unsigned int maxH)
  * \brief Construct an initialized size range

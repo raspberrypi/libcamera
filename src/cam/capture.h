@@ -20,19 +20,18 @@
 class Capture
 {
 public:
-	Capture(libcamera::Camera *camera);
+	Capture(libcamera::Camera *camera,
+		libcamera::CameraConfiguration *config);
 
 	int run(EventLoop *loop, const OptionsParser::Options &options);
 private:
-	int prepareConfig(const OptionsParser::Options &options);
-
 	int capture(EventLoop *loop);
 
 	void requestComplete(libcamera::Request *request,
 			     const std::map<libcamera::Stream *, libcamera::Buffer *> &buffers);
 
 	libcamera::Camera *camera_;
-	std::unique_ptr<libcamera::CameraConfiguration> config_;
+	libcamera::CameraConfiguration *config_;
 
 	std::map<libcamera::Stream *, std::string> streamName_;
 	BufferWriter *writer_;

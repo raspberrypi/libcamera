@@ -15,8 +15,8 @@
 
 using namespace libcamera;
 
-Capture::Capture(Camera *camera)
-	: camera_(camera), writer_(nullptr), last_(0)
+Capture::Capture(Camera *camera, CameraConfiguration *config)
+	: camera_(camera), config_(config), writer_(nullptr), last_(0)
 {
 }
 
@@ -29,13 +29,13 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 		return -ENODEV;
 	}
 
-	ret = prepareConfig(options);
-	if (ret) {
-		std::cout << "Failed to prepare camera configuration" << std::endl;
-		return -EINVAL;
+	streamName_.clear();
+	for (unsigned int index = 0; index < config_->size(); ++index) {
+		StreamConfiguration &cfg = config_->at(index);
+		streamName_[cfg.stream()] = "stream" + std::to_string(index);
 	}
 
-	ret = camera_->configure(config_.get());
+	ret = camera_->configure(config_);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;
@@ -64,78 +64,8 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 	}
 
 	camera_->freeBuffers();
-	config_.reset();
 
 	return ret;
-}
-
-int Capture::prepareConfig(const OptionsParser::Options &options)
-{
-	StreamRoles roles;
-
-	if (options.isSet(OptStream)) {
-		const std::vector<OptionValue> &streamOptions =
-			options[OptStream].toArray();
-
-		/* Use roles and get a default configuration. */
-		for (auto const &value : streamOptions) {
-			KeyValueParser::Options opt = value.toKeyValues();
-
-			if (!opt.isSet("role")) {
-				roles.push_back(StreamRole::VideoRecording);
-			} else if (opt["role"].toString() == "viewfinder") {
-				roles.push_back(StreamRole::Viewfinder);
-			} else if (opt["role"].toString() == "video") {
-				roles.push_back(StreamRole::VideoRecording);
-			} else if (opt["role"].toString() == "still") {
-				roles.push_back(StreamRole::StillCapture);
-			} else {
-				std::cerr << "Unknown stream role "
-					  << opt["role"].toString() << std::endl;
-				return -EINVAL;
-			}
-		}
-	} else {
-		/* If no configuration is provided assume a single video stream. */
-		roles.push_back(StreamRole::VideoRecording);
-	}
-
-	config_ = camera_->generateConfiguration(roles);
-	if (!config_ || config_->size() != roles.size()) {
-		std::cerr << "Failed to get default stream configuration"
-			  << std::endl;
-		return -EINVAL;
-	}
-
-	/* Apply configuration if explicitly requested. */
-	if (options.isSet(OptStream)) {
-		const std::vector<OptionValue> &streamOptions =
-			options[OptStream].toArray();
-
-		unsigned int i = 0;
-		for (auto const &value : streamOptions) {
-			KeyValueParser::Options opt = value.toKeyValues();
-			StreamConfiguration &cfg = config_->at(i++);
-
-			if (opt.isSet("width"))
-				cfg.size.width = opt["width"];
-
-			if (opt.isSet("height"))
-				cfg.size.height = opt["height"];
-
-			/* TODO: Translate 4CC string to ID. */
-			if (opt.isSet("pixelformat"))
-				cfg.pixelFormat = opt["pixelformat"];
-		}
-	}
-
-	streamName_.clear();
-	for (unsigned int index = 0; index < config_->size(); ++index) {
-		StreamConfiguration &cfg = config_->at(index);
-		streamName_[cfg.stream()] = "stream" + std::to_string(index);
-	}
-
-	return 0;
 }
 
 int Capture::capture(EventLoop *loop)

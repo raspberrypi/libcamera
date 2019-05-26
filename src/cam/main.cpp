@@ -33,19 +33,21 @@ public:
 
 private:
 	int parseOptions(int argc, char *argv[]);
+	int prepareConfig();
 	int run();
 
 	static CamApp *app_;
 	OptionsParser::Options options_;
 	CameraManager *cm_;
 	std::shared_ptr<Camera> camera_;
+	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	EventLoop *loop_;
 };
 
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr), camera_(nullptr), loop_(nullptr)
+	: cm_(nullptr), camera_(nullptr), config_(nullptr), loop_(nullptr)
 {
 	CamApp::app_ = this;
 }
@@ -97,6 +99,10 @@ int CamApp::init(int argc, char **argv)
 		}
 
 		std::cout << "Using camera " << camera_->name() << std::endl;
+
+		ret = prepareConfig();
+		if (ret)
+			return ret;
 	}
 
 	loop_ = new EventLoop(cm_->eventDispatcher());
@@ -113,6 +119,8 @@ void CamApp::cleanup()
 		camera_->release();
 		camera_.reset();
 	}
+
+	config_.reset();
 
 	cm_->stop();
 }
@@ -175,6 +183,69 @@ int CamApp::parseOptions(int argc, char *argv[])
 	return 0;
 }
 
+int CamApp::prepareConfig()
+{
+	StreamRoles roles;
+
+	if (options_.isSet(OptStream)) {
+		const std::vector<OptionValue> &streamOptions =
+			options_[OptStream].toArray();
+
+		/* Use roles and get a default configuration. */
+		for (auto const &value : streamOptions) {
+			KeyValueParser::Options opt = value.toKeyValues();
+
+			if (!opt.isSet("role")) {
+				roles.push_back(StreamRole::VideoRecording);
+			} else if (opt["role"].toString() == "viewfinder") {
+				roles.push_back(StreamRole::Viewfinder);
+			} else if (opt["role"].toString() == "video") {
+				roles.push_back(StreamRole::VideoRecording);
+			} else if (opt["role"].toString() == "still") {
+				roles.push_back(StreamRole::StillCapture);
+			} else {
+				std::cerr << "Unknown stream role "
+					  << opt["role"].toString() << std::endl;
+				return -EINVAL;
+			}
+		}
+	} else {
+		/* If no configuration is provided assume a single video stream. */
+		roles.push_back(StreamRole::VideoRecording);
+	}
+
+	config_ = camera_->generateConfiguration(roles);
+	if (!config_ || config_->size() != roles.size()) {
+		std::cerr << "Failed to get default stream configuration"
+			  << std::endl;
+		return -EINVAL;
+	}
+
+	/* Apply configuration if explicitly requested. */
+	if (options_.isSet(OptStream)) {
+		const std::vector<OptionValue> &streamOptions =
+			options_[OptStream].toArray();
+
+		unsigned int i = 0;
+		for (auto const &value : streamOptions) {
+			KeyValueParser::Options opt = value.toKeyValues();
+			StreamConfiguration &cfg = config_->at(i++);
+
+			if (opt.isSet("width"))
+				cfg.size.width = opt["width"];
+
+			if (opt.isSet("height"))
+				cfg.size.height = opt["height"];
+
+			/* TODO: Translate 4CC string to ID. */
+			if (opt.isSet("pixelformat"))
+				cfg.pixelFormat = opt["pixelformat"];
+		}
+	}
+
+	return 0;
+}
+
 int CamApp::run()
 {
 	if (options_.isSet(OptList)) {
@@ -188,7 +259,7 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		Capture capture(camera_.get());
+		Capture capture(camera_.get(), config_.get());
 		return capture.run(loop_, options_);
 	}
 

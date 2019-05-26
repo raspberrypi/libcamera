@@ -12,6 +12,7 @@ enum {
 	OptCapture = 'C',
 	OptFile = 'F',
 	OptHelp = 'h',
+	OptInfo = 'I',
 	OptList = 'l',
 	OptStream = 's',
 };

@@ -5,6 +5,7 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
+#include <iomanip>
 #include <iostream>
 #include <signal.h>
 #include <string.h>
@@ -34,6 +35,7 @@ public:
 private:
 	int parseOptions(int argc, char *argv[]);
 	int prepareConfig();
+	int infoConfiguration();
 	int run();
 
 	static CamApp *app_;
@@ -169,6 +171,8 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "Set configuration of a camera stream", "stream", true);
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
+	parser.addOption(OptInfo, OptionNone,
+			 "Display information about stream(s)", "info");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
 
 	options_ = parser.parse(argc, argv);
@@ -258,8 +262,40 @@ int CamApp::prepareConfig()
 	return 0;
 }
 
+int CamApp::infoConfiguration()
+{
+	if (!config_) {
+		std::cout << "Cannot print stream information without a camera"
+			  << std::endl;
+		return -EINVAL;
+	}
+
+	unsigned int index = 0;
+	for (const StreamConfiguration &cfg : *config_) {
+		std::cout << index << ": " << cfg.toString() << std::endl;
+
+		const StreamFormats &formats = cfg.formats();
+		for (unsigned int pixelformat : formats.pixelformats()) {
+			std::cout << " * Pixelformat: 0x" << std::hex
+				  << std::setw(8) << pixelformat << " "
+				  << formats.range(pixelformat).toString()
+				  << std::endl;
+
+			for (const Size &size : formats.sizes(pixelformat))
+				std::cout << "  - " << size.toString()
+					  << std::endl;
+		}
+
+		index++;
+	}
+
+	return 0;
+}
+
 int CamApp::run()
 {
+	int ret;
+
 	if (options_.isSet(OptList)) {
 		std::cout << "Available cameras:" << std::endl;
 
@@ -268,6 +304,12 @@ int CamApp::run()
 			std::cout << index << ": " << cam->name() << std::endl;
 			index++;
 		}
+	}
+
+	if (options_.isSet(OptInfo)) {
+		ret = infoConfiguration();
+		if (ret)
+			return ret;
 	}
 
 	if (options_.isSet(OptCapture)) {

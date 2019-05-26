@@ -35,10 +35,8 @@ private:
 };
 
 struct StreamConfiguration {
-	StreamConfiguration()
-		: stream_(nullptr)
-	{
-	}
+	StreamConfiguration();
+	StreamConfiguration(const StreamFormats &formats);
 
 	unsigned int pixelFormat;
 	Size size;
@@ -47,11 +45,13 @@ struct StreamConfiguration {
 
 	Stream *stream() const { return stream_; }
 	void setStream(Stream *stream) { stream_ = stream; }
+	const StreamFormats &formats() const { return formats_; }
 
 	std::string toString() const;
 
 private:
 	Stream *stream_;
+	StreamFormats formats_;
 };
 
 enum StreamRole {

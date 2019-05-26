@@ -271,6 +271,23 @@ SizeRange StreamFormats::range(unsigned int pixelformat) const
  */
 
 /**
+ * \todo This method is deprecated and should be removed once all pipeline
+ * handlers provied StreamFormats.
+ */
+StreamConfiguration::StreamConfiguration()
+	: stream_(nullptr)
+{
+}
+
+/**
+ * \brief Construct a configuration with stream formats
+ */
+StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
+	: stream_(nullptr), formats_(formats)
+{
+}
+
+/**
  * \var StreamConfiguration::size
  * \brief Stream size in pixels
  */
@@ -308,6 +325,18 @@ SizeRange StreamFormats::range(unsigned int pixelformat) const
  * not be called by applications.
  *
  * \param[in] stream The stream
+ */
+
+/**
+ * \fn StreamConfiguration::formats()
+ * \brief Retrieve advisory stream format information
+ *
+ * This method retrieves information about the pixel formats and sizes supported
+ * by the stream configuration. The sizes are advisory and not all of them are
+ * guaranteed to be supported by the stream. Users shall always inspect the size
+ * in the stream configuration after calling CameraConfiguration::validate().
+ *
+ * \return Stream formats information
  */
 
 /**

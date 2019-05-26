@@ -5,6 +5,8 @@
  * uvcvideo.cpp - Pipeline handler for uvcvideo devices
  */
 
+#include <algorithm>
+
 #include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -95,18 +97,33 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 	}
 
 	StreamConfiguration &cfg = config_[0];
-
-	/* \todo: Validate the configuration against the device capabilities. */
+	const StreamFormats &formats = cfg.formats();
 	const unsigned int pixelFormat = cfg.pixelFormat;
 	const Size size = cfg.size;
 
-	cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
-	cfg.size = { 640, 480 };
-
-	if (cfg.pixelFormat != pixelFormat || cfg.size != size) {
+	const std::vector<unsigned int> pixelFormats = formats.pixelformats();
+	auto iter = std::find(pixelFormats.begin(), pixelFormats.end(), pixelFormat);
+	if (iter == pixelFormats.end()) {
+		cfg.pixelFormat = pixelFormats.front();
 		LOG(UVC, Debug)
-			<< "Adjusting configuration from " << cfg.toString()
-			<< " to " << cfg.size.toString() << "-YUYV";
+			<< "Adjusting pixel format from " << pixelFormat
+			<< " to " << cfg.pixelFormat;
+		status = Adjusted;
+	}
+
+	const std::vector<Size> &formatSizes = formats.sizes(cfg.pixelFormat);
+	cfg.size = formatSizes.front();
+	for (const Size &formatsSize : formatSizes) {
+		if (formatsSize > size)
+			break;
+
+		cfg.size = formatsSize;
+	}
+
+	if (cfg.size != size) {
+		LOG(UVC, Debug)
+			<< "Adjusting size from " << size.toString()
+			<< " to " << cfg.size.toString();
 		status = Adjusted;
 	}
 
@@ -123,14 +140,18 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
+	UVCCameraData *data = cameraData(camera);
 	CameraConfiguration *config = new UVCCameraConfiguration();
 
 	if (roles.empty())
 		return config;
 
-	StreamConfiguration cfg{};
-	cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
-	cfg.size = { 640, 480 };
+	ImageFormats v4l2formats = data->video_->formats();
+	StreamFormats formats(v4l2formats.data());
+	StreamConfiguration cfg(formats);
+
+	cfg.pixelFormat = formats.pixelformats().front();
+	cfg.size = formats.sizes(cfg.pixelFormat).back();
 	cfg.bufferCount = 4;
 
 	config->addConfiguration(cfg);

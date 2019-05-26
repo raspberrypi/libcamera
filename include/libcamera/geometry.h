@@ -67,7 +67,9 @@ static inline bool operator>=(const Size &lhs, const Size &rhs)
 	return !(lhs < rhs);
 }
 
-struct SizeRange {
+class SizeRange
+{
+public:
 	SizeRange()
 	{
 	}
@@ -89,6 +91,8 @@ struct SizeRange {
 		: min(minW, minH), max(maxW, maxH), hStep(hstep), vStep(vstep)
 	{
 	}
+
+	std::string toString() const;
 
 	Size min;
 	Size max;

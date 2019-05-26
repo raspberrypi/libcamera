@@ -267,6 +267,20 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
+ * \brief Assemble and return a string describing the size range
+ * \return A string describing the SizeRange
+ */
+std::string SizeRange::toString() const
+{
+	std::stringstream ss;
+
+	ss << "(" << min.toString() << ")-(" << max.toString() << ")/(+"
+	   << hStep << ",+" << vStep << ")";
+
+	return ss.str();
+}
+
+/**
  * \brief Compare size ranges for equality
  * \return True if the two size ranges are equal, false otherwise
  */

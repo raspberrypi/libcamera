@@ -7,6 +7,7 @@
 
 #include "ipa_module.h"
 
+#include <dlfcn.h>
 #include <elf.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -226,18 +227,23 @@ int elfLoadSymbol(void *dst, size_t size, void *map, size_t soSize,
  * The IPA module shared object file must be of the same endianness and
  * bitness as libcamera.
  *
- * \todo load funtions from the IPA to be used by pipelines
- *
  * The caller shall call the isValid() method after constructing an
  * IPAModule instance to verify the validity of the IPAModule.
  */
 IPAModule::IPAModule(const std::string &libPath)
-	: libPath_(libPath), valid_(false)
+	: libPath_(libPath), valid_(false), loaded_(false),
+	  dlHandle_(nullptr), ipaCreate_(nullptr)
 {
 	if (loadIPAModuleInfo() < 0)
 		return;
 
 	valid_ = true;
+}
+
+IPAModule::~IPAModule()
+{
+	if (dlHandle_)
+		dlclose(dlHandle_);
 }
 
 int IPAModule::loadIPAModuleInfo()
@@ -312,6 +318,77 @@ bool IPAModule::isValid() const
 const struct IPAModuleInfo &IPAModule::info() const
 {
 	return info_;
+}
+
+/**
+ * \brief Load the IPA implementation factory from the shared object
+ *
+ * The IPA module shared object implements an IPAInterface class to be used
+ * by pipeline handlers. This method loads the factory function from the
+ * shared object. Later, createInstance() can be called to instantiate the
+ * IPAInterface.
+ *
+ * This method only needs to be called successfully once, after which
+ * createInstance() can be called as many times as IPAInterface instances are
+ * needed.
+ *
+ * Calling this function on an invalid module (as returned by isValid()) is
+ * an error.
+ *
+ * \return True if load was successful, or already loaded, and false otherwise
+ */
+bool IPAModule::load()
+{
+	if (!valid_)
+		return false;
+
+	if (loaded_)
+		return true;
+
+	dlHandle_ = dlopen(libPath_.c_str(), RTLD_LAZY);
+	if (!dlHandle_) {
+		LOG(IPAModule, Error)
+			<< "Failed to open IPA module shared object: "
+			<< dlerror();
+		return false;
+	}
+
+	void *symbol = dlsym(dlHandle_, "ipaCreate");
+	if (!symbol) {
+		LOG(IPAModule, Error)
+			<< "Failed to load ipaCreate() from IPA module shared object: "
+			<< dlerror();
+		dlclose(dlHandle_);
+		dlHandle_ = nullptr;
+		return false;
+	}
+
+	ipaCreate_ = reinterpret_cast<IPAIntfFactory>(symbol);
+
+	loaded_ = true;
+
+	return true;
+}
+
+/**
+ * \brief Instantiate an IPAInterface
+ *
+ * After loading the IPA module with load(), this method creates an
+ * instance of the IPA module interface.
+ *
+ * Calling this function on a module that has not yet been loaded, or an
+ * invalid module (as returned by load() and isValid(), respectively) is
+ * an error.
+ *
+ * \return The IPA implementation as a new IPAInterface instance on success,
+ * or nullptr on error
+ */
+std::unique_ptr<IPAInterface> IPAModule::createInstance()
+{
+	if (!valid_ || !loaded_)
+		return nullptr;
+
+	return std::unique_ptr<IPAInterface>(ipaCreate_());
 }
 
 } /* namespace libcamera */

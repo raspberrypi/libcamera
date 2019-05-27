@@ -7,8 +7,10 @@
 #ifndef __LIBCAMERA_IPA_MODULE_H__
 #define __LIBCAMERA_IPA_MODULE_H__
 
+#include <memory>
 #include <string>
 
+#include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
 namespace libcamera {
@@ -17,16 +19,26 @@ class IPAModule
 {
 public:
 	explicit IPAModule(const std::string &libPath);
+	~IPAModule();
 
 	bool isValid() const;
 
 	const struct IPAModuleInfo &info() const;
+
+	bool load();
+
+	std::unique_ptr<IPAInterface> createInstance();
 
 private:
 	struct IPAModuleInfo info_;
 
 	std::string libPath_;
 	bool valid_;
+	bool loaded_;
+
+	void *dlHandle_;
+	typedef IPAInterface *(*IPAIntfFactory)(void);
+	IPAIntfFactory ipaCreate_;
 
 	int loadIPAModuleInfo();
 };

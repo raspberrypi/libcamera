@@ -7,14 +7,20 @@
 #ifndef __LIBCAMERA_IPA_MODULE_INFO_H__
 #define __LIBCAMERA_IPA_MODULE_INFO_H__
 
+#include <stdint.h>
+
+#define IPA_MODULE_API_VERSION 1
+
 #ifdef __cplusplus
 namespace libcamera {
 #endif
 
 struct IPAModuleInfo {
+	int moduleAPIVersion;
+	uint32_t pipelineVersion;
+	char pipelineName[256];
 	char name[256];
-	unsigned int version;
-};
+} __attribute__((packed));
 
 #ifdef __cplusplus
 extern "C" {

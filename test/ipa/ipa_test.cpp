@@ -33,18 +33,17 @@ protected:
 
 		const struct IPAModuleInfo &info = ll->info();
 
-		if (strcmp(info.name, testInfo.name)) {
-			cerr << "test IPA module has incorrect name" << endl;
-			cerr << "expected \"" << testInfo.name << "\", got \""
-			     << info.name << "\"" << endl;
-			ret = -1;
-		}
-
-		if (info.version != testInfo.version) {
-			cerr << "test IPA module has incorrect version" << endl;
-			cerr << "expected \"" << testInfo.version << "\", got \""
-			     << info.version << "\"" << endl;
-			ret = -1;
+		if (memcmp(&info, &testInfo, sizeof(info))) {
+			cerr << "IPA module information mismatch: expected:" << endl
+			     << "moduleAPIVersion = "     << testInfo.moduleAPIVersion << endl
+			     << "pipelineVersion = "      << testInfo.pipelineVersion << endl
+			     << "pipelineName = "         << testInfo.pipelineName << endl
+			     << "name = "                 << testInfo.name
+			     << "got: " << endl
+			     << "moduleAPIVersion = "     << info.moduleAPIVersion << endl
+			     << "pipelineVersion = "      << info.pipelineVersion << endl
+			     << "pipelineName = "         << info.pipelineName << endl
+			     << "name = "                 << info.name << endl;
 		}
 
 		delete ll;
@@ -56,8 +55,10 @@ protected:
 		int count = 0;
 
 		const struct IPAModuleInfo testInfo = {
-			"It's over nine thousand!",
+			IPA_MODULE_API_VERSION,
 			9001,
+			"bleep",
+			"It's over nine thousand!",
 		};
 
 		count += runTest("test/ipa/ipa-dummy-cpp.so", testInfo);

@@ -170,20 +170,40 @@ int elfLoadSymbol(void *dst, size_t size, void *map, size_t soSize,
 } /* namespace */
 
 /**
+ * \def IPA_MODULE_API_VERSION
+ * \brief The IPA module API version
+ *
+ * This version number specifies the version for the layout of
+ * struct IPAModuleInfo. The IPA module shall use this macro to
+ * set its moduleAPIVersion field.
+ *
+ * \sa IPAModuleInfo::moduleAPIVersion
+ */
+
+/**
  * \struct IPAModuleInfo
  * \brief Information of an IPA module
  *
  * This structure contains the information of an IPA module. It is loaded,
  * read, and validated before anything else is loaded from the shared object.
  *
+ * \var IPAModuleInfo::moduleAPIVersion
+ * \brief The IPA module API version that the IPA module implements
+ *
+ * This version number specifies the version for the layout of
+ * struct IPAModuleInfo. The IPA module shall report here the version that
+ * it was built for, using the macro IPA_MODULE_API_VERSION.
+ *
+ * \var IPAModuleInfo::pipelineVersion
+ * \brief The pipeline handler version that the IPA module is for
+ *
+ * \var IPAModuleInfo::pipelineName
+ * \brief The name of the pipeline handler that the IPA module is for
+ *
+ * This name is used to match a pipeline handler with the module.
+ *
  * \var IPAModuleInfo::name
  * \brief The name of the IPA module
- *
- * \var IPAModuleInfo::version
- * \brief The version of the IPA module
- *
- * \todo abi compatability version
- * \todo pipeline compatability matcher
  */
 
 /**

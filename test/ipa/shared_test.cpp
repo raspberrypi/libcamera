@@ -4,8 +4,10 @@ namespace libcamera {
 
 extern "C" {
 const struct libcamera::IPAModuleInfo ipaModuleInfo = {
-	"It's over nine thousand!",
+	IPA_MODULE_API_VERSION,
 	9001,
+	"bleep",
+	"It's over nine thousand!",
 };
 };
 

@@ -9,10 +9,13 @@
 #include <array>
 
 #include <libcamera/camera.h>
+#include <libcamera/ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "device_enumerator.h"
+#include "ipa_manager.h"
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
@@ -77,6 +80,8 @@ private:
 		return static_cast<VimcCameraData *>(
 			PipelineHandler::cameraData(camera));
 	}
+
+	std::unique_ptr<IPAInterface> ipa_;
 };
 
 VimcCameraConfiguration::VimcCameraConfiguration()
@@ -247,6 +252,12 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	MediaDevice *media = acquireMediaDevice(enumerator, dm);
 	if (!media)
 		return false;
+
+	ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
+	if (ipa_ == nullptr)
+		LOG(VIMC, Warning) << "no matching IPA found";
+	else
+		ipa_->init();
 
 	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 

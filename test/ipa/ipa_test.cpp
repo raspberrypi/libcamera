@@ -56,12 +56,12 @@ protected:
 
 		const struct IPAModuleInfo testInfo = {
 			IPA_MODULE_API_VERSION,
-			9001,
-			"bleep",
-			"It's over nine thousand!",
+			0,
+			"PipelineHandlerVimc",
+			"Dummy IPA for Vimc",
 		};
 
-		count += runTest("test/ipa/ipa-dummy-cpp.so", testInfo);
+		count += runTest("src/ipa/ipa_dummy.so", testInfo);
 
 		if (count < 0)
 			return TestFail;

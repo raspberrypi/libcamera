@@ -1,13 +1,3 @@
-ipa_modules_sources = [
-    ['ipa-dummy-cpp', 'shared_test.cpp'],
-]
-
-foreach m : ipa_modules_sources
-    shared_library(m, name_prefix : '',
-                   dependencies : libcamera_dep,
-                   include_directories : test_includes_public)
-endforeach
-
 ipa_test = [
     ['ipa_test', 'ipa_test.cpp'],
 ]

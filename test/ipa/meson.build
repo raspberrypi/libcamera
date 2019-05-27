@@ -1,5 +1,4 @@
 ipa_modules_sources = [
-    ['ipa-dummy-c',   'shared_test.c'],
     ['ipa-dummy-cpp', 'shared_test.cpp'],
 ]
 

@@ -60,8 +60,6 @@ protected:
 			9001,
 		};
 
-		count += runTest("test/ipa/ipa-dummy-c.so", testInfo);
-
 		count += runTest("test/ipa/ipa-dummy-cpp.so", testInfo);
 
 		if (count < 0)

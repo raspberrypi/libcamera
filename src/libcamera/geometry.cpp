@@ -197,7 +197,8 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
- * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH, unsigned int maxW, unsigned int maxH)
+ * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH,
+ *			    unsigned int maxW, unsigned int maxH)
  * \brief Construct an initialized size range
  * \param[in] minW The minimum width
  * \param[in] minH The minimum height

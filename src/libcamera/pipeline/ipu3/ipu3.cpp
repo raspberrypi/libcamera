@@ -909,7 +909,7 @@ void IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 		/* Request not completed yet, return here. */
 		return;
 
-	/* Complete the pending requests in queuing order. */
+	/* Complete the pending requests in queueing order. */
 	while (1) {
 		request = queuedRequests_.front();
 		if (request->hasPendingBuffers())

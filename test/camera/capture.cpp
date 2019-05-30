@@ -42,7 +42,9 @@ protected:
 
 	int init() override
 	{
-		CameraTest::init();
+		int ret = CameraTest::init();
+		if (ret)
+			return ret;
 
 		config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 		if (!config_ || config_->size() != 1) {

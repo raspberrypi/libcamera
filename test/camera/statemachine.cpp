@@ -235,7 +235,9 @@ protected:
 
 	int init() override
 	{
-		CameraTest::init();
+		int ret = CameraTest::init();
+		if (ret)
+			return ret;
 
 		defconf_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 		if (!defconf_) {

@@ -1,6 +1,7 @@
 subdir('libtest')
 
 subdir('camera')
+subdir('controls')
 subdir('ipa')
 subdir('ipc')
 subdir('media_device')

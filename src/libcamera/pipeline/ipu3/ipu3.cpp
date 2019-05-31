@@ -22,6 +22,7 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
+#include "v4l2_controls.h"
 #include "v4l2_subdevice.h"
 #include "v4l2_videodevice.h"
 
@@ -194,6 +195,12 @@ private:
 class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
+	static constexpr unsigned int V4L2_CID_IPU3_PIPE_MODE = 0x009819c1;
+	enum IPU3PipeModes {
+		IPU3PipeModeVideo = 0,
+		IPU3PipeModeStillCapture = 1,
+	};
+
 	PipelineHandlerIPU3(CameraManager *manager);
 
 	CameraConfiguration *generateConfiguration(Camera *camera,
@@ -558,6 +565,17 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	ret = imgu->configureOutput(&imgu->stat_, statCfg);
 	if (ret)
 		return ret;
+
+	/* Apply the "pipe_mode" control to the ImgU subdevice. */
+	V4L2ControlList ctrls;
+	ctrls.add(V4L2_CID_IPU3_PIPE_MODE, vfStream->active_ ?
+					   IPU3PipeModeVideo :
+					   IPU3PipeModeStillCapture);
+	ret = imgu->imgu_->setControls(&ctrls);
+	if (ret) {
+		LOG(IPU3, Error) << "Unable to set pipe_mode control";
+		return ret;
+	}
 
 	return 0;
 }

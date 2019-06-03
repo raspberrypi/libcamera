@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "pipeline_handler.h"
 
 /**
  * \file ipa_module.h
@@ -389,6 +390,25 @@ std::unique_ptr<IPAInterface> IPAModule::createInstance()
 		return nullptr;
 
 	return std::unique_ptr<IPAInterface>(ipaCreate_());
+}
+
+/**
+ * \brief Verify if the IPA module maches a given pipeline handler
+ * \param[in] pipe Pipeline handler to match with
+ * \param[in] minVersion Minimum acceptable version of IPA module
+ * \param[in] maxVersion Maximum acceptable version of IPA module
+ *
+ * This method checks if this IPA module matches the \a pipe pipeline handler,
+ * and the input version range.
+ *
+ * \return True if the pipeline handler matches the IPA module, or false otherwise
+ */
+bool IPAModule::match(PipelineHandler *pipe,
+		      uint32_t minVersion, uint32_t maxVersion) const
+{
+	return info_.pipelineVersion >= minVersion &&
+	       info_.pipelineVersion <= maxVersion &&
+	       !strcmp(info_.pipelineName, pipe->name());
 }
 
 } /* namespace libcamera */

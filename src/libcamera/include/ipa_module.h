@@ -13,6 +13,8 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
+#include "pipeline_handler.h"
+
 namespace libcamera {
 
 class IPAModule
@@ -28,6 +30,9 @@ public:
 	bool load();
 
 	std::unique_ptr<IPAInterface> createInstance();
+
+	bool match(PipelineHandler *pipe,
+		   uint32_t minVersion, uint32_t maxVersion) const;
 
 private:
 	struct IPAModuleInfo info_;

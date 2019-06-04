@@ -274,6 +274,11 @@ int IPAModule::loadIPAModuleInfo()
 		ret = elfLoadSymbol<Elf64_Ehdr, Elf64_Shdr, Elf64_Sym>
 				   (&info_, sizeof(info_), map, soSize, "ipaModuleInfo");
 
+	if (info_.moduleAPIVersion != IPA_MODULE_API_VERSION) {
+		LOG(IPAModule, Error) << "IPA module API version mismatch";
+		ret = -EINVAL;
+	}
+
 unmap:
 	munmap(map, soSize);
 close:

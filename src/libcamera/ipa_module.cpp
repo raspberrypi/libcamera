@@ -214,6 +214,29 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
  *
  * \var IPAModuleInfo::name
  * \brief The name of the IPA module
+ *
+ * \var IPAModuleInfo::license
+ * \brief License of the IPA module
+ *
+ * This license is used to determine whether to force isolation of the IPA in
+ * a separate process. If the license is "Proprietary", then the IPA will
+ * be isolated. If the license is open-source, then the IPA will be allowed to
+ * run without isolation if the user enables it. The license should be an
+ * SPDX license string. The following licenses are currently available to
+ * allow the IPA to run unisolated:
+ *
+ * - GPL-2.0-only
+ * - GPL-2.0-or-later
+ * - GPL-3.0-only
+ * - GPL-3.0-or-later
+ * - LGPL-2.1-only
+ * - LGPL-2.1-or-later
+ * - LGPL-3.0-only
+ * - LGPL-3.0-or-later
+ *
+ * Any other license will cause the IPA to be run isolated.
+ *
+ * \todo Allow user to choose to isolate open source IPAs
  */
 
 /**

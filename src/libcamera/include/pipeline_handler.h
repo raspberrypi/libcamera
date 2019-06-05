@@ -107,17 +107,16 @@ public:
 	PipelineHandlerFactory(const char *name);
 	virtual ~PipelineHandlerFactory() { };
 
-	virtual std::shared_ptr<PipelineHandler> create(CameraManager *manager) = 0;
+	std::shared_ptr<PipelineHandler> create(CameraManager *manager);
 
 	const std::string &name() const { return name_; }
 
 	static void registerType(PipelineHandlerFactory *factory);
 	static std::vector<PipelineHandlerFactory *> &factories();
 
-protected:
-	void setInfo(PipelineHandler *handler, const char *name);
-
 private:
+	virtual PipelineHandler *createInstance(CameraManager *manager) = 0;
+
 	std::string name_;
 };
 
@@ -126,12 +125,11 @@ class handler##Factory final : public PipelineHandlerFactory		\
 {									\
 public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
-	std::shared_ptr<PipelineHandler> create(CameraManager *manager)	\
+									\
+private:								\
+	PipelineHandler *createInstance(CameraManager *manager)		\
 	{								\
-		std::shared_ptr<handler> h =				\
-			std::make_shared<handler>(manager);		\
-		setInfo(h.get(), #handler);				\
-		return h;						\
+		return new handler(manager);				\
 	}								\
 };									\
 static handler##Factory global_##handler##Factory;

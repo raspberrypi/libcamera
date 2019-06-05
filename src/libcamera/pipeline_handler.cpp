@@ -539,17 +539,18 @@ PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
 }
 
 /**
- * \fn PipelineHandlerFactory::create()
  * \brief Create an instance of the PipelineHandler corresponding to the factory
  * \param[in] manager The camera manager
  *
- * This virtual function is implemented by the REGISTER_PIPELINE_HANDLER()
- * macro. It creates a pipeline handler instance associated with the camera
- * \a manager.
- *
- * \return a pointer to a newly constructed instance of the PipelineHandler
- * subclass corresponding to the factory
+ * \return A shared pointer to a new instance of the PipelineHandler subclass
+ * corresponding to the factory
  */
+std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *manager)
+{
+	PipelineHandler *handler = createInstance(manager);
+	handler->name_ = name_.c_str();
+	return std::shared_ptr<PipelineHandler>(handler);
+}
 
 /**
  * \fn PipelineHandlerFactory::name()
@@ -589,15 +590,17 @@ std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
 }
 
 /**
- * \brief Set the information of a given pipeline handler
- * \param[in] handler The handler whose info is to be set
- * \param[in] name The name of the pipeline handler
+ * \fn PipelineHandlerFactory::createInstance()
+ * \brief Create an instance of the PipelineHandler corresponding to the factory
+ * \param[in] manager The camera manager
+ *
+ * This virtual function is implemented by the REGISTER_PIPELINE_HANDLER()
+ * macro. It creates a pipeline handler instance associated with the camera
+ * \a manager.
+ *
+ * \return a pointer to a newly constructed instance of the PipelineHandler
+ * subclass corresponding to the factory
  */
-void PipelineHandlerFactory::setInfo(PipelineHandler *handler,
-				     const char *name)
-{
-	handler->name_ = name;
-}
 
 /**
  * \def REGISTER_PIPELINE_HANDLER

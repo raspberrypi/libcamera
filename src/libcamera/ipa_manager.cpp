@@ -12,6 +12,7 @@
 #include <sys/types.h>
 
 #include "ipa_module.h"
+#include "ipa_proxy.h"
 #include "log.h"
 #include "pipeline_handler.h"
 #include "utils.h"
@@ -129,7 +130,7 @@ int IPAManager::addDir(const char *libDir)
  * \param[in] maxVersion Maximum acceptable version of IPA module
  *
  * \return A newly created IPA interface, or nullptr if no matching
- * IPA module is found
+ * IPA module is found or if the IPA interface fails to initialize
  */
 std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 						    uint32_t maxVersion,
@@ -144,7 +145,36 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 		}
 	}
 
-	if (!m || !m->load())
+	if (!m)
+		return nullptr;
+
+	if (!m->isOpenSource()) {
+		IPAProxyFactory *pf = nullptr;
+		std::vector<IPAProxyFactory *> &factories = IPAProxyFactory::factories();
+
+		for (IPAProxyFactory *factory : factories) {
+			/* TODO: Better matching */
+			if (!strcmp(factory->name().c_str(), "IPAProxyLinux")) {
+				pf = factory;
+				break;
+			}
+		}
+
+		if (!pf) {
+			LOG(IPAManager, Error) << "Failed to get proxy factory";
+			return nullptr;
+		}
+
+		std::unique_ptr<IPAProxy> proxy = pf->create(m);
+		if (!proxy->isValid()) {
+			LOG(IPAManager, Error) << "Failed to load proxy";
+			return nullptr;
+		}
+
+		return proxy;
+	}
+
+	if (!m->load())
 		return nullptr;
 
 	return m->createInstance();

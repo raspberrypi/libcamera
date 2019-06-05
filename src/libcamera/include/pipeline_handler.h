@@ -77,6 +77,8 @@ public:
 	bool completeBuffer(Camera *camera, Request *request, Buffer *buffer);
 	void completeRequest(Camera *camera, Request *request);
 
+	const char *name() const { return name_; }
+
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera,
 			    std::unique_ptr<CameraData> data);
@@ -93,6 +95,10 @@ private:
 	std::vector<std::shared_ptr<MediaDevice>> mediaDevices_;
 	std::vector<std::weak_ptr<Camera>> cameras_;
 	std::map<const Camera *, std::unique_ptr<CameraData>> cameraData_;
+
+	const char *name_;
+
+	friend class PipelineHandlerFactory;
 };
 
 class PipelineHandlerFactory
@@ -108,6 +114,9 @@ public:
 	static void registerType(PipelineHandlerFactory *factory);
 	static std::vector<PipelineHandlerFactory *> &factories();
 
+protected:
+	void setInfo(PipelineHandler *handler, const char *name);
+
 private:
 	std::string name_;
 };
@@ -119,7 +128,10 @@ public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
 	std::shared_ptr<PipelineHandler> create(CameraManager *manager)	\
 	{								\
-		return std::make_shared<handler>(manager);		\
+		std::shared_ptr<handler> h =				\
+			std::make_shared<handler>(manager);		\
+		setInfo(h.get(), #handler);				\
+		return h;						\
 	}								\
 };									\
 static handler##Factory global_##handler##Factory;

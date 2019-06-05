@@ -506,6 +506,12 @@ CameraData *PipelineHandler::cameraData(const Camera *camera)
  */
 
 /**
+ * \fn PipelineHandler::name()
+ * \brief Retrieve the pipeline handler name
+ * \return The pipeline handler name
+ */
+
+/**
  * \class PipelineHandlerFactory
  * \brief Registration of PipelineHandler classes and creation of instances
  *
@@ -580,6 +586,17 @@ std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
 {
 	static std::vector<PipelineHandlerFactory *> factories;
 	return factories;
+}
+
+/**
+ * \brief Set the information of a given pipeline handler
+ * \param[in] handler The handler whose info is to be set
+ * \param[in] name The name of the pipeline handler
+ */
+void PipelineHandlerFactory::setInfo(PipelineHandler *handler,
+				     const char *name)
+{
+	handler->name_ = name;
 }
 
 /**

@@ -322,6 +322,19 @@ const struct IPAModuleInfo &IPAModule::info() const
 }
 
 /**
+ * \brief Retrieve the IPA module path
+ *
+ * The IPA module path is the file name and path of the IPA module shared
+ * object from which the IPA module was created.
+ *
+ * \return The IPA module path
+ */
+const std::string &IPAModule::path() const
+{
+	return libPath_;
+}
+
+/**
  * \brief Load the IPA implementation factory from the shared object
  *
  * The IPA module shared object implements an IPAInterface class to be used

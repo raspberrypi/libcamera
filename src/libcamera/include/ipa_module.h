@@ -26,6 +26,7 @@ public:
 	bool isValid() const;
 
 	const struct IPAModuleInfo &info() const;
+	const std::string &path() const;
 
 	bool load();
 

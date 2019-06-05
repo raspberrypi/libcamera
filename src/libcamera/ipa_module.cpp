@@ -289,6 +289,10 @@ int IPAModule::loadIPAModuleInfo()
 unmap:
 	munmap(map, soSize);
 close:
+	if (ret)
+		LOG(IPAModule, Error)
+			<< "Error loading IPA module info for " << libPath_;
+
 	close(fd);
 	return ret;
 }

@@ -63,12 +63,16 @@ if libudev.found()
     ])
 endif
 
+libcamera_deps = [
+    cc.find_library('dl'),
+    libudev,
+]
+
 libcamera = shared_library('camera',
                            libcamera_sources,
                            install : true,
                            include_directories : includes,
-                           dependencies : libudev,
-                           link_args : '-ldl')
+                           dependencies : libcamera_deps)
 
 libcamera_dep = declare_dependency(sources : [libcamera_api, libcamera_h],
                                    include_directories : libcamera_includes,

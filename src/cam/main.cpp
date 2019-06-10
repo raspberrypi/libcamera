@@ -61,7 +61,7 @@ int CamApp::init(int argc, char **argv)
 
 	ret = parseOptions(argc, argv);
 	if (ret < 0)
-		return ret == -EINTR ? 0 : ret;
+		return ret;
 
 	cm_ = CameraManager::instance();
 
@@ -193,9 +193,11 @@ void signalHandler(int signal)
 int main(int argc, char **argv)
 {
 	CamApp app;
+	int ret;
 
-	if (app.init(argc, argv))
-		return EXIT_FAILURE;
+	ret = app.init(argc, argv);
+	if (ret)
+		return ret == -EINTR ? 0 : EXIT_FAILURE;
 
 	struct sigaction sa = {};
 	sa.sa_handler = &signalHandler;

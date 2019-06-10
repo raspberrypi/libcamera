@@ -241,7 +241,7 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 		{ EventNotifier::Exception, POLLPRI },
 	};
 
-	for (const struct pollfd &pfd : pollfds) {
+	for (const pollfd &pfd : pollfds) {
 		auto iter = notifiers_.find(pfd.fd);
 		ASSERT(iter != notifiers_.end());
 

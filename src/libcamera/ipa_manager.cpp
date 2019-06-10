@@ -34,19 +34,23 @@ IPAManager::IPAManager()
 {
 	addDir(IPA_MODULE_DIR);
 
-	std::string modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
-	if (modulePaths.empty())
+	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
+	if (!modulePaths)
 		return;
 
-	for (size_t pos = 0, delim = 0; delim != std::string::npos;
-	     pos = delim + 1) {
-		delim = modulePaths.find(':', pos);
-		size_t count = delim == std::string::npos ? delim : delim - pos;
-		std::string path = modulePaths.substr(pos, count);
-		if (path.empty())
-			continue;
+	while (1) {
+		const char *delim = strchrnul(modulePaths, ':');
+		size_t count = delim - modulePaths;
 
-		addDir(path.c_str());
+		if (count) {
+			std::string path(modulePaths, count);
+			addDir(path.c_str());
+		}
+
+		if (*delim == '\0')
+			break;
+
+		modulePaths += count + 1;
 	}
 }
 

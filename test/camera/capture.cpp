@@ -115,7 +115,7 @@ protected:
 		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
 
 		Timer timer;
-		timer.start(100);
+		timer.start(1000);
 		while (timer.isRunning())
 			dispatcher->processEvents();
 

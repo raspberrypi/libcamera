@@ -191,8 +191,8 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 {
 	V4L2SubdeviceFormat format{};
 
-	for (unsigned int code : mbusCodes_) {
-		if (std::any_of(mbusCodes.begin(), mbusCodes.end(),
+	for (unsigned int code : mbusCodes) {
+		if (std::any_of(mbusCodes_.begin(), mbusCodes_.end(),
 				[code](unsigned int c) { return c == code; })) {
 			format.mbus_code = code;
 			break;

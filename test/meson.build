@@ -17,6 +17,7 @@ public_tests = [
 ]
 
 internal_tests = [
+    ['camera-sensor',                   'camera-sensor.cpp'],
 ]
 
 foreach t : public_tests

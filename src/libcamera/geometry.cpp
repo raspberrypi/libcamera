@@ -267,6 +267,22 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
+ * \brief Test if a size is contained in the range
+ * \param[in] size Size to check
+ * \returns True if \a size is contained in the range
+ */
+bool SizeRange::contains(const Size &size) const
+{
+	if (size.width < min.width || size.width > max.width ||
+	    size.height < min.height || size.height > max.height ||
+	    (hStep && (size.width - min.width) % hStep) ||
+	    (vStep && (size.height - min.height) % vStep))
+		return false;
+
+	return true;
+}
+
+/**
  * \brief Assemble and return a string describing the size range
  * \return A string describing the SizeRange
  */

@@ -92,6 +92,8 @@ public:
 	{
 	}
 
+	bool contains(const Size &size) const;
+
 	std::string toString() const;
 
 	Size min;

@@ -126,6 +126,163 @@ const V4L2ControlInfo *V4L2Device::getControlInfo(unsigned int id) const
 }
 
 /**
+ * \brief Read controls from the device
+ * \param[inout] ctrls The list of controls to read
+ *
+ * This method reads the value of all controls contained in \a ctrls, and stores
+ * their values in the corresponding \a ctrls entry.
+ *
+ * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is a compound control, or if any
+ * other error occurs during validation of the requested controls, no control is
+ * read and this method returns -EINVAL.
+ *
+ * If an error occurs while reading the controls, the index of the first control
+ * that couldn't be read is returned. The value of all controls below that index
+ * are updated in \a ctrls, while the value of all the other controls are not
+ * changed.
+ *
+ * \return 0 on success or an error code otherwise
+ * \retval -EINVAL One of the control is not supported or not accessible
+ * \retval i The index of the control that failed
+ */
+int V4L2Device::getControls(V4L2ControlList *ctrls)
+{
+	unsigned int count = ctrls->size();
+	if (count == 0)
+		return 0;
+
+	const V4L2ControlInfo *controlInfo[count] = {};
+	struct v4l2_ext_control v4l2Ctrls[count] = {};
+	for (unsigned int i = 0; i < count; ++i) {
+		const V4L2Control *ctrl = ctrls->getByIndex(i);
+		const V4L2ControlInfo *info = getControlInfo(ctrl->id());
+		if (!info) {
+			LOG(V4L2, Error)
+				<< "Control '" << ctrl->id() << "' not found";
+			return -EINVAL;
+		}
+
+		controlInfo[i] = info;
+		v4l2Ctrls[i].id = info->id();
+	}
+
+	struct v4l2_ext_controls v4l2ExtCtrls = {};
+	v4l2ExtCtrls.which = V4L2_CTRL_WHICH_CUR_VAL;
+	v4l2ExtCtrls.controls = v4l2Ctrls;
+	v4l2ExtCtrls.count = count;
+
+	int ret = ioctl(VIDIOC_G_EXT_CTRLS, &v4l2ExtCtrls);
+	if (ret) {
+		unsigned int errorIdx = v4l2ExtCtrls.error_idx;
+
+		/* Generic validation error. */
+		if (errorIdx == 0 || errorIdx >= count) {
+			LOG(V4L2, Error) << "Unable to read controls: "
+					 << strerror(ret);
+			return -EINVAL;
+		}
+
+		/* A specific control failed. */
+		LOG(V4L2, Error) << "Unable to read control " << errorIdx
+				 << ": " << strerror(ret);
+		count = errorIdx - 1;
+		ret = errorIdx;
+	}
+
+	updateControls(ctrls, controlInfo, v4l2Ctrls, count);
+
+	return ret;
+}
+
+/**
+ * \brief Write controls to the device
+ * \param[in] ctrls The list of controls to write
+ *
+ * This method writes the value of all controls contained in \a ctrls, and
+ * stores the values actually applied to the device in the corresponding
+ * \a ctrls entry.
+ *
+ * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, is a
+ * compound control, or if any other error occurs during validation of
+ * the requested controls, no control is written and this method returns
+ * -EINVAL.
+ *
+ * If an error occurs while writing the controls, the index of the first
+ * control that couldn't be written is returned. All controls below that index
+ * are written and their values are updated in \a ctrls, while all other
+ * controls are not written and their values are not changed.
+ *
+ * \return 0 on success or an error code otherwise
+ * \retval -EINVAL One of the control is not supported or not accessible
+ * \retval i The index of the control that failed
+ */
+int V4L2Device::setControls(V4L2ControlList *ctrls)
+{
+	unsigned int count = ctrls->size();
+	if (count == 0)
+		return 0;
+
+	const V4L2ControlInfo *controlInfo[count] = {};
+	struct v4l2_ext_control v4l2Ctrls[count] = {};
+
+	for (unsigned int i = 0; i < count; ++i) {
+		const V4L2Control *ctrl = ctrls->getByIndex(i);
+		const V4L2ControlInfo *info = getControlInfo(ctrl->id());
+		if (!info) {
+			LOG(V4L2, Error)
+				<< "Control '" << ctrl->id() << "' not found";
+			return -EINVAL;
+		}
+
+		controlInfo[i] = info;
+		v4l2Ctrls[i].id = info->id();
+
+		/* Set the v4l2_ext_control value for the write operation. */
+		switch (info->type()) {
+		case V4L2_CTRL_TYPE_INTEGER64:
+			v4l2Ctrls[i].value64 = ctrl->value();
+			break;
+		default:
+			/*
+			 * \todo To be changed when support for string and
+			 * compound controls will be added.
+			 */
+			v4l2Ctrls[i].value = ctrl->value();
+			break;
+		}
+	}
+
+	struct v4l2_ext_controls v4l2ExtCtrls = {};
+	v4l2ExtCtrls.which = V4L2_CTRL_WHICH_CUR_VAL;
+	v4l2ExtCtrls.controls = v4l2Ctrls;
+	v4l2ExtCtrls.count = count;
+
+	int ret = ioctl(VIDIOC_S_EXT_CTRLS, &v4l2ExtCtrls);
+	if (ret) {
+		unsigned int errorIdx = v4l2ExtCtrls.error_idx;
+
+		/* Generic validation error. */
+		if (errorIdx == 0 || errorIdx >= count) {
+			LOG(V4L2, Error) << "Unable to read controls: "
+					 << strerror(ret);
+			return -EINVAL;
+		}
+
+		/* A specific control failed. */
+		LOG(V4L2, Error) << "Unable to read control " << errorIdx
+				 << ": " << strerror(ret);
+		count = errorIdx - 1;
+		ret = errorIdx;
+	}
+
+	updateControls(ctrls, controlInfo, v4l2Ctrls, count);
+
+	return ret;
+}
+
+/**
  * \brief Perform an IOCTL system call on the device node
  * \param[in] request The IOCTL request code
  * \param[in] argp A pointer to the IOCTL argument
@@ -191,6 +348,39 @@ void V4L2Device::listControls()
 
 		controls_.emplace(ctrl.id, info);
 		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+	}
+}
+
+/*
+ * \brief Update the value of the first \a count V4L2 controls in \a ctrls using
+ * values in \a v4l2Ctrls
+ * \param[inout] ctrls List of V4L2 controls to update
+ * \param[in] controlInfo List of V4L2 control information
+ * \param[in] v4l2Ctrls List of V4L2 extended controls as returned by the driver
+ * \param[in] count The number of controls to update
+ */
+void V4L2Device::updateControls(V4L2ControlList *ctrls,
+				const V4L2ControlInfo **controlInfo,
+				const struct v4l2_ext_control *v4l2Ctrls,
+				unsigned int count)
+{
+	for (unsigned int i = 0; i < count; ++i) {
+		const struct v4l2_ext_control *v4l2Ctrl = &v4l2Ctrls[i];
+		const V4L2ControlInfo *info = controlInfo[i];
+		V4L2Control *ctrl = ctrls->getByIndex(i);
+
+		switch (info->type()) {
+		case V4L2_CTRL_TYPE_INTEGER64:
+			ctrl->setValue(v4l2Ctrl->value64);
+			break;
+		default:
+			/*
+			 * \todo To be changed when support for string and
+			 * compound controls will be added.
+			 */
+			ctrl->setValue(v4l2Ctrl->value);
+			break;
+		}
 	}
 }
 

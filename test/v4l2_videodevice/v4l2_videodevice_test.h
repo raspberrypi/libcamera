@@ -15,14 +15,14 @@
 
 #include "device_enumerator.h"
 #include "media_device.h"
-#include "v4l2_device.h"
+#include "v4l2_videodevice.h"
 
 using namespace libcamera;
 
-class V4L2DeviceTest : public Test
+class V4L2VideoDeviceTest : public Test
 {
 public:
-	V4L2DeviceTest(const char *driver, const char *entity)
+	V4L2VideoDeviceTest(const char *driver, const char *entity)
 		: driver_(driver), entity_(entity), capture_(nullptr)
 	{
 	}
@@ -35,7 +35,7 @@ protected:
 	std::string entity_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
-	V4L2Device *capture_;
+	V4L2VideoDevice *capture_;
 	BufferPool pool_;
 };
 

@@ -20,7 +20,7 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
-#include "v4l2_device.h"
+#include "v4l2_videodevice.h"
 
 namespace libcamera {
 
@@ -41,7 +41,7 @@ public:
 
 	void bufferReady(Buffer *buffer);
 
-	V4L2Device *video_;
+	V4L2VideoDevice *video_;
 	Stream stream_;
 };
 
@@ -262,7 +262,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 
 	/* Locate and open the capture video node. */
-	data->video_ = new V4L2Device(media->getEntityByName("Raw Capture 1"));
+	data->video_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
 	if (data->video_->open())
 		return false;
 

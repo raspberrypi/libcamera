@@ -23,8 +23,8 @@ libcamera_sources = files([
     'stream.cpp',
     'timer.cpp',
     'utils.cpp',
-    'v4l2_device.cpp',
     'v4l2_subdevice.cpp',
+    'v4l2_videodevice.cpp',
 ])
 
 libcamera_headers = files([
@@ -41,8 +41,8 @@ libcamera_headers = files([
     'include/media_object.h',
     'include/pipeline_handler.h',
     'include/utils.h',
-    'include/v4l2_device.h',
     'include/v4l2_subdevice.h',
+    'include/v4l2_videodevice.h',
 ])
 
 libcamera_internal_includes =  include_directories('include')

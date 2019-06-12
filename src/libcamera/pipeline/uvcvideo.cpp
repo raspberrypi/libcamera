@@ -16,7 +16,7 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
-#include "v4l2_device.h"
+#include "v4l2_videodevice.h"
 
 namespace libcamera {
 
@@ -37,7 +37,7 @@ public:
 
 	void bufferReady(Buffer *buffer);
 
-	V4L2Device *video_;
+	V4L2VideoDevice *video_;
 	Stream stream_;
 };
 
@@ -250,7 +250,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	/* Locate and open the default video node. */
 	for (MediaEntity *entity : media->entities()) {
 		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
-			data->video_ = new V4L2Device(entity);
+			data->video_ = new V4L2VideoDevice(entity);
 			break;
 		}
 	}

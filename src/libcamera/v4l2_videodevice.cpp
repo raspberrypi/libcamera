@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_device.cpp - V4L2 Device
+ * v4l2_videodevice.cpp - V4L2 Video Device
  */
 
-#include "v4l2_device.h"
+#include "v4l2_videodevice.h"
 
 #include <fcntl.h>
 #include <iomanip>
@@ -25,8 +25,8 @@
 #include "media_object.h"
 
 /**
- * \file v4l2_device.h
- * \brief V4L2 Device API
+ * \file v4l2_videodevice.h
+ * \brief V4L2 Video Device API
  */
 namespace libcamera {
 
@@ -243,8 +243,8 @@ const std::string V4L2DeviceFormat::toString() const
 }
 
 /**
- * \class V4L2Device
- * \brief V4L2Device object and API
+ * \class V4L2VideoDevice
+ * \brief V4L2VideoDevice object and API
  *
  * The V4L2 Device API class models an instance of a V4L2 device node.
  * It is constructed with the path to a V4L2 video device node. The device node
@@ -257,7 +257,7 @@ const std::string V4L2DeviceFormat::toString() const
  * No API call other than open(), isOpen() and close() shall be called on an
  * unopened device instance.
  *
- * The V4L2Device class tracks queued buffers and handles buffer events. It
+ * The V4L2VideoDevice class tracks queued buffers and handles buffer events. It
  * automatically dequeues completed buffers and emits the \ref bufferReady
  * signal.
  *
@@ -266,10 +266,10 @@ const std::string V4L2DeviceFormat::toString() const
  */
 
 /**
- * \brief Construct a V4L2Device
+ * \brief Construct a V4L2VideoDevice
  * \param[in] deviceNode The file-system path to the video device node
  */
-V4L2Device::V4L2Device(const std::string &deviceNode)
+V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr),
 	  queuedBuffersCount_(0), fdEvent_(nullptr)
 {
@@ -282,17 +282,17 @@ V4L2Device::V4L2Device(const std::string &deviceNode)
 }
 
 /**
- * \brief Construct a V4L2Device from a MediaEntity
+ * \brief Construct a V4L2VideoDevice from a MediaEntity
  * \param[in] entity The MediaEntity to build the device from
  *
- * Construct a V4L2Device from a MediaEntity's device node path.
+ * Construct a V4L2VideoDevice from a MediaEntity's device node path.
  */
-V4L2Device::V4L2Device(const MediaEntity *entity)
-	: V4L2Device(entity->deviceNode())
+V4L2VideoDevice::V4L2VideoDevice(const MediaEntity *entity)
+	: V4L2VideoDevice(entity->deviceNode())
 {
 }
 
-V4L2Device::~V4L2Device()
+V4L2VideoDevice::~V4L2VideoDevice()
 {
 	close();
 }
@@ -301,7 +301,7 @@ V4L2Device::~V4L2Device()
  * \brief Open a V4L2 device and query its capabilities
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::open()
+int V4L2VideoDevice::open()
 {
 	int ret;
 
@@ -362,7 +362,7 @@ int V4L2Device::open()
 		return -EINVAL;
 	}
 
-	fdEvent_->activated.connect(this, &V4L2Device::bufferAvailable);
+	fdEvent_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdEvent_->setEnabled(false);
 
 	return 0;
@@ -372,7 +372,7 @@ int V4L2Device::open()
  * \brief Check if device is successfully opened
  * \return True if the device is open, false otherwise
  */
-bool V4L2Device::isOpen() const
+bool V4L2VideoDevice::isOpen() const
 {
 	return fd_ != -1;
 }
@@ -380,7 +380,7 @@ bool V4L2Device::isOpen() const
 /**
  * \brief Close the device, releasing any resources acquired by open()
  */
-void V4L2Device::close()
+void V4L2VideoDevice::close()
 {
 	if (fd_ < 0)
 		return;
@@ -393,30 +393,30 @@ void V4L2Device::close()
 }
 
 /**
- * \fn V4L2Device::driverName()
+ * \fn V4L2VideoDevice::driverName()
  * \brief Retrieve the name of the V4L2 device driver
  * \return The string containing the driver name
  */
 
 /**
- * \fn V4L2Device::deviceName()
+ * \fn V4L2VideoDevice::deviceName()
  * \brief Retrieve the name of the V4L2 device
  * \return The string containing the device name
  */
 
 /**
- * \fn V4L2Device::busName()
+ * \fn V4L2VideoDevice::busName()
  * \brief Retrieve the location of the device in the system
  * \return The string containing the device location
  */
 
 /**
- * \fn V4L2Device::deviceNode()
+ * \fn V4L2VideoDevice::deviceNode()
  * \brief Retrieve the video device node path
  * \return The video device device node path
  */
 
-std::string V4L2Device::logPrefix() const
+std::string V4L2VideoDevice::logPrefix() const
 {
 	return deviceNode_ + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");
 }
@@ -426,7 +426,7 @@ std::string V4L2Device::logPrefix() const
  * \param[out] format The image format applied on the device
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::getFormat(V4L2DeviceFormat *format)
+int V4L2VideoDevice::getFormat(V4L2DeviceFormat *format)
 {
 	if (caps_.isMeta())
 		return getFormatMeta(format);
@@ -441,11 +441,11 @@ int V4L2Device::getFormat(V4L2DeviceFormat *format)
  * \param[inout] format The image format to apply to the device
  *
  * Apply the supplied \a format to the device, and return the actually
- * applied format parameters, as \ref V4L2Device::getFormat would do.
+ * applied format parameters, as \ref V4L2VideoDevice::getFormat would do.
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::setFormat(V4L2DeviceFormat *format)
+int V4L2VideoDevice::setFormat(V4L2DeviceFormat *format)
 {
 	if (caps_.isMeta())
 		return setFormatMeta(format);
@@ -455,7 +455,7 @@ int V4L2Device::setFormat(V4L2DeviceFormat *format)
 		return setFormatSingleplane(format);
 }
 
-int V4L2Device::getFormatMeta(V4L2DeviceFormat *format)
+int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
@@ -479,7 +479,7 @@ int V4L2Device::getFormatMeta(V4L2DeviceFormat *format)
 	return 0;
 }
 
-int V4L2Device::setFormatMeta(V4L2DeviceFormat *format)
+int V4L2VideoDevice::setFormatMeta(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
@@ -509,7 +509,7 @@ int V4L2Device::setFormatMeta(V4L2DeviceFormat *format)
 	return 0;
 }
 
-int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
+int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format_mplane *pix = &v4l2Format.fmt.pix_mp;
@@ -536,7 +536,7 @@ int V4L2Device::getFormatMultiplane(V4L2DeviceFormat *format)
 	return 0;
 }
 
-int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
+int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format_mplane *pix = &v4l2Format.fmt.pix_mp;
@@ -577,7 +577,7 @@ int V4L2Device::setFormatMultiplane(V4L2DeviceFormat *format)
 	return 0;
 }
 
-int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
+int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
@@ -601,7 +601,7 @@ int V4L2Device::getFormatSingleplane(V4L2DeviceFormat *format)
 	return 0;
 }
 
-int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
+int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
 	struct v4l2_pix_format *pix = &v4l2Format.fmt.pix;
@@ -641,7 +641,7 @@ int V4L2Device::setFormatSingleplane(V4L2DeviceFormat *format)
  *
  * \return A list of the supported device formats
  */
-ImageFormats V4L2Device::formats()
+ImageFormats V4L2VideoDevice::formats()
 {
 	ImageFormats formats;
 
@@ -661,7 +661,7 @@ ImageFormats V4L2Device::formats()
 	return formats;
 }
 
-int V4L2Device::requestBuffers(unsigned int count)
+int V4L2VideoDevice::requestBuffers(unsigned int count)
 {
 	struct v4l2_requestbuffers rb = {};
 	int ret;
@@ -690,7 +690,7 @@ int V4L2Device::requestBuffers(unsigned int count)
  * \param[out] pool BufferPool to populate with buffers
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::exportBuffers(BufferPool *pool)
+int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 {
 	unsigned int allocatedBuffers;
 	unsigned int i;
@@ -704,7 +704,8 @@ int V4L2Device::exportBuffers(BufferPool *pool)
 
 	allocatedBuffers = ret;
 	if (allocatedBuffers < pool->count()) {
-		LOG(V4L2, Error) << "Not enough buffers provided by V4L2Device";
+		LOG(V4L2, Error)
+			<< "Not enough buffers provided by V4L2VideoDevice";
 		requestBuffers(0);
 		return -ENOMEM;
 	}
@@ -758,8 +759,8 @@ int V4L2Device::exportBuffers(BufferPool *pool)
 	return 0;
 }
 
-int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
-			    unsigned int length)
+int V4L2VideoDevice::createPlane(Buffer *buffer, unsigned int planeIndex,
+				 unsigned int length)
 {
 	struct v4l2_exportbuffer expbuf = {};
 	int ret;
@@ -790,7 +791,7 @@ int V4L2Device::createPlane(Buffer *buffer, unsigned int planeIndex,
 	return 0;
 }
 
-std::vector<unsigned int> V4L2Device::enumPixelformats()
+std::vector<unsigned int> V4L2VideoDevice::enumPixelformats()
 {
 	std::vector<unsigned int> formats;
 	int ret;
@@ -818,7 +819,7 @@ std::vector<unsigned int> V4L2Device::enumPixelformats()
 	return formats;
 }
 
-std::vector<SizeRange> V4L2Device::enumSizes(unsigned int pixelFormat)
+std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
 {
 	std::vector<SizeRange> sizes;
 	int ret;
@@ -882,7 +883,7 @@ std::vector<SizeRange> V4L2Device::enumSizes(unsigned int pixelFormat)
  * \param[in] pool BufferPool of buffers to import
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::importBuffers(BufferPool *pool)
+int V4L2VideoDevice::importBuffers(BufferPool *pool)
 {
 	unsigned int allocatedBuffers;
 	int ret;
@@ -896,7 +897,7 @@ int V4L2Device::importBuffers(BufferPool *pool)
 	allocatedBuffers = ret;
 	if (allocatedBuffers < pool->count()) {
 		LOG(V4L2, Error)
-			<< "Not enough buffers provided by V4L2Device";
+			<< "Not enough buffers provided by V4L2VideoDevice";
 		requestBuffers(0);
 		return -ENOMEM;
 	}
@@ -910,7 +911,7 @@ int V4L2Device::importBuffers(BufferPool *pool)
 /**
  * \brief Release all internally allocated buffers
  */
-int V4L2Device::releaseBuffers()
+int V4L2VideoDevice::releaseBuffers()
 {
 	LOG(V4L2, Debug) << "Releasing bufferPool";
 
@@ -930,7 +931,7 @@ int V4L2Device::releaseBuffers()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::queueBuffer(Buffer *buffer)
+int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 {
 	struct v4l2_buffer buf = {};
 	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
@@ -991,7 +992,7 @@ int V4L2Device::queueBuffer(Buffer *buffer)
  *
  * \return A pointer to the dequeued buffer on success, or nullptr otherwise
  */
-Buffer *V4L2Device::dequeueBuffer()
+Buffer *V4L2VideoDevice::dequeueBuffer()
 {
 	struct v4l2_buffer buf = {};
 	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
@@ -1040,7 +1041,7 @@ Buffer *V4L2Device::dequeueBuffer()
  * For Capture devices the Buffer will contain valid data.
  * For Output devices the Buffer can be considered empty.
  */
-void V4L2Device::bufferAvailable(EventNotifier *notifier)
+void V4L2VideoDevice::bufferAvailable(EventNotifier *notifier)
 {
 	Buffer *buffer = dequeueBuffer();
 	if (!buffer)
@@ -1053,7 +1054,7 @@ void V4L2Device::bufferAvailable(EventNotifier *notifier)
 }
 
 /**
- * \var V4L2Device::bufferReady
+ * \var V4L2VideoDevice::bufferReady
  * \brief A Signal emitted when a buffer completes
  */
 
@@ -1061,7 +1062,7 @@ void V4L2Device::bufferAvailable(EventNotifier *notifier)
  * \brief Start the video stream
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::streamOn()
+int V4L2VideoDevice::streamOn()
 {
 	int ret;
 
@@ -1084,7 +1085,7 @@ int V4L2Device::streamOn()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::streamOff()
+int V4L2VideoDevice::streamOff()
 {
 	int ret;
 
@@ -1111,16 +1112,16 @@ int V4L2Device::streamOff()
  * Releasing memory of the newly created instance is responsibility of the
  * caller of this function.
  *
- * \return A newly created V4L2Device on success, nullptr otherwise
+ * \return A newly created V4L2VideoDevice on success, nullptr otherwise
  */
-V4L2Device *V4L2Device::fromEntityName(const MediaDevice *media,
-				       const std::string &entity)
+V4L2VideoDevice *V4L2VideoDevice::fromEntityName(const MediaDevice *media,
+						 const std::string &entity)
 {
 	MediaEntity *mediaEntity = media->getEntityByName(entity);
 	if (!mediaEntity)
 		return nullptr;
 
-	return new V4L2Device(mediaEntity);
+	return new V4L2VideoDevice(mediaEntity);
 }
 
 } /* namespace libcamera */

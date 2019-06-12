@@ -5,16 +5,22 @@
  * libcamera V4L2 API tests
  */
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
-class StreamOnStreamOffTest : public V4L2DeviceTest
+class RequestBuffersTest : public V4L2VideoDeviceTest
 {
 public:
-	StreamOnStreamOffTest()
-		: V4L2DeviceTest("vimc", "Raw Capture 0") {}
+	RequestBuffersTest()
+		: V4L2VideoDeviceTest("vimc", "Raw Capture 0") {}
+
 protected:
 	int run()
 	{
+		/*
+		 * TODO:
+		 *  Test invalid requests
+		 *  Test different buffer allocations
+		 */
 		const unsigned int bufferCount = 8;
 
 		pool_.createBuffers(bufferCount);
@@ -23,16 +29,8 @@ protected:
 		if (ret)
 			return TestFail;
 
-		ret = capture_->streamOn();
-		if (ret)
-			return TestFail;
-
-		ret = capture_->streamOff();
-		if (ret)
-			return TestFail;
-
 		return TestPass;
 	}
 };
 
-TEST_REGISTER(StreamOnStreamOffTest);
+TEST_REGISTER(RequestBuffersTest);

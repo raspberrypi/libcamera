@@ -7,15 +7,15 @@
 
 #include <iostream>
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
 namespace {
 
-class DoubleOpen : public V4L2DeviceTest
+class DoubleOpen : public V4L2VideoDeviceTest
 {
 public:
 	DoubleOpen()
-		: V4L2DeviceTest("vimc", "Raw Capture 0") {}
+		: V4L2VideoDeviceTest("vimc", "Raw Capture 0") {}
 protected:
 	int run()
 	{
@@ -23,7 +23,7 @@ protected:
 
 		/*
 		 * Expect failure: The device has already been opened by the
-		 * V4L2DeviceTest base class
+		 * V4L2VideoDeviceTest base class
 		 */
 		ret = capture_->open();
 		if (!ret) {

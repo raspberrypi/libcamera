@@ -8,7 +8,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
 #include "device_enumerator.h"
 #include "media_device.h"
@@ -26,7 +26,7 @@ bool exists(const std::string &path)
 	return false;
 }
 
-int V4L2DeviceTest::init()
+int V4L2VideoDeviceTest::init()
 {
 	enumerator_ = DeviceEnumerator::create();
 	if (!enumerator_) {
@@ -50,7 +50,7 @@ int V4L2DeviceTest::init()
 	if (!entity)
 		return TestSkip;
 
-	capture_ = new V4L2Device(entity);
+	capture_ = new V4L2VideoDevice(entity);
 	if (!capture_)
 		return TestFail;
 
@@ -77,7 +77,7 @@ int V4L2DeviceTest::init()
 	return TestPass;
 }
 
-void V4L2DeviceTest::cleanup()
+void V4L2VideoDeviceTest::cleanup()
 {
 	capture_->streamOff();
 	capture_->releaseBuffers();

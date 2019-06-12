@@ -44,7 +44,7 @@ LOG_DEFINE_CATEGORY(V4L2Subdev)
  * as the "media bus format", and it is identified by a resolution and a pixel
  * format identification code, known as the "media bus code", not to be confused
  * with the fourcc code that identify the format of images when stored in memory
- * (see V4L2Device::V4L2DeviceFormat).
+ * (see V4L2VideoDevice::V4L2DeviceFormat).
  *
  * Media Bus formats supported by the V4L2 APIs are described in Section
  * 4.15.3.4.1 of the "Part I - Video for Linux API" chapter of the "Linux Media

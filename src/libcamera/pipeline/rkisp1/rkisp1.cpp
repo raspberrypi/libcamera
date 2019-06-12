@@ -23,8 +23,8 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
-#include "v4l2_device.h"
 #include "v4l2_subdevice.h"
+#include "v4l2_videodevice.h"
 
 namespace libcamera {
 
@@ -106,7 +106,7 @@ private:
 	MediaDevice *media_;
 	V4L2Subdevice *dphy_;
 	V4L2Subdevice *isp_;
-	V4L2Device *video_;
+	V4L2VideoDevice *video_;
 
 	Camera *activeCamera_;
 };
@@ -458,7 +458,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Locate and open the capture video node. */
-	video_ = V4L2Device::fromEntityName(media_, "rkisp1_mainpath");
+	video_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_mainpath");
 	if (video_->open() < 0)
 		return false;
 

@@ -5,8 +5,8 @@ subdir('ipa')
 subdir('media_device')
 subdir('pipeline')
 subdir('stream')
-subdir('v4l2_device')
 subdir('v4l2_subdevice')
+subdir('v4l2_videodevice')
 
 public_tests = [
     ['event',                           'event.cpp'],

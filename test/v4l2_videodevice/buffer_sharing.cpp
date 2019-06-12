@@ -4,8 +4,8 @@
  *
  * libcamera V4L2 API tests
  *
- * Validate the function of exporting buffers from a V4L2Device and
- * the ability to import them to another V4L2Device instance.
+ * Validate the function of exporting buffers from a V4L2VideoDevice and
+ * the ability to import them to another V4L2VideoDevice instance.
  * Ensure that the Buffers can successfully be queued and dequeued
  * between both devices.
  */
@@ -17,19 +17,19 @@
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
-class BufferSharingTest : public V4L2DeviceTest
+class BufferSharingTest : public V4L2VideoDeviceTest
 {
 public:
 	BufferSharingTest()
-		: V4L2DeviceTest("vivid", "vivid-000-vid-cap"),
+		: V4L2VideoDeviceTest("vivid", "vivid-000-vid-cap"),
 		  output_(nullptr), framesCaptured_(0), framesOutput_(0) {}
 
 protected:
 	int init()
 	{
-		int ret = V4L2DeviceTest::init();
+		int ret = V4L2VideoDeviceTest::init();
 		if (ret)
 			return ret;
 
@@ -38,7 +38,7 @@ protected:
 		if (!entity)
 			return TestSkip;
 
-		output_ = new V4L2Device(entity);
+		output_ = new V4L2VideoDevice(entity);
 		if (!output_) {
 			std::cout << "Failed to create output device" << std::endl;
 			return TestFail;
@@ -171,13 +171,13 @@ protected:
 
 		delete output_;
 
-		V4L2DeviceTest::cleanup();
+		V4L2VideoDeviceTest::cleanup();
 	}
 
 private:
 	const unsigned int bufferCount = 4;
 
-	V4L2Device *output_;
+	V4L2VideoDevice *output_;
 
 	unsigned int framesCaptured_;
 	unsigned int framesOutput_;

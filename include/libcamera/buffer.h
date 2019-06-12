@@ -59,7 +59,7 @@ private:
 	friend class BufferPool;
 	friend class PipelineHandler;
 	friend class Request;
-	friend class V4L2Device;
+	friend class V4L2VideoDevice;
 
 	void cancel();
 

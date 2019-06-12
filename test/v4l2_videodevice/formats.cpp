@@ -8,18 +8,18 @@
 #include <climits>
 #include <iostream>
 
-#include "v4l2_device.h"
+#include "v4l2_videodevice.h"
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
 using namespace std;
 using namespace libcamera;
 
-class Format : public V4L2DeviceTest
+class Format : public V4L2VideoDeviceTest
 {
 public:
 	Format()
-		: V4L2DeviceTest("vimc", "Raw Capture 0") {}
+		: V4L2VideoDeviceTest("vimc", "Raw Capture 0") {}
 protected:
 	int run()
 	{

@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_device.h - V4L2 Device
+ * v4l2_videodevice.h - V4L2 Video Device
  */
-#ifndef __LIBCAMERA_V4L2_DEVICE_H__
-#define __LIBCAMERA_V4L2_DEVICE_H__
+#ifndef __LIBCAMERA_V4L2_VIDEODEVICE_H__
+#define __LIBCAMERA_V4L2_VIDEODEVICE_H__
 
 #include <atomic>
 #include <string>
@@ -112,15 +112,15 @@ public:
 	const std::string toString() const;
 };
 
-class V4L2Device : protected Loggable
+class V4L2VideoDevice : protected Loggable
 {
 public:
-	explicit V4L2Device(const std::string &deviceNode);
-	explicit V4L2Device(const MediaEntity *entity);
-	V4L2Device(const V4L2Device &) = delete;
-	~V4L2Device();
+	explicit V4L2VideoDevice(const std::string &deviceNode);
+	explicit V4L2VideoDevice(const MediaEntity *entity);
+	V4L2VideoDevice(const V4L2VideoDevice &) = delete;
+	~V4L2VideoDevice();
 
-	V4L2Device &operator=(const V4L2Device &) = delete;
+	V4L2VideoDevice &operator=(const V4L2VideoDevice &) = delete;
 
 	int open();
 	bool isOpen() const;
@@ -145,8 +145,8 @@ public:
 	int streamOn();
 	int streamOff();
 
-	static V4L2Device *fromEntityName(const MediaDevice *media,
-					  const std::string &entity);
+	static V4L2VideoDevice *fromEntityName(const MediaDevice *media,
+					       const std::string &entity);
 
 protected:
 	std::string logPrefix() const;
@@ -186,4 +186,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_V4L2_DEVICE_H__ */
+#endif /* __LIBCAMERA_V4L2_VIDEODEVICE_H__ */

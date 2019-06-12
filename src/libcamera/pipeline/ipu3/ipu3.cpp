@@ -22,8 +22,8 @@
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
-#include "v4l2_device.h"
 #include "v4l2_subdevice.h"
+#include "v4l2_videodevice.h"
 
 namespace libcamera {
 
@@ -39,7 +39,7 @@ public:
 
 	/* ImgU output descriptor: group data specific to an ImgU output. */
 	struct ImgUOutput {
-		V4L2Device *dev;
+		V4L2VideoDevice *dev;
 		unsigned int pad;
 		std::string name;
 		BufferPool *pool;
@@ -85,7 +85,7 @@ public:
 	MediaDevice *media_;
 
 	V4L2Subdevice *imgu_;
-	V4L2Device *input_;
+	V4L2VideoDevice *input_;
 	ImgUOutput output_;
 	ImgUOutput viewfinder_;
 	ImgUOutput stat_;
@@ -125,7 +125,7 @@ public:
 
 	static int mediaBusToFormat(unsigned int code);
 
-	V4L2Device *output_;
+	V4L2VideoDevice *output_;
 	V4L2Subdevice *csi2_;
 	CameraSensor *sensor_;
 
@@ -943,7 +943,7 @@ void IPU3CameraData::cio2BufferReady(Buffer *buffer)
  * Create and open the V4L2 devices and subdevices of the ImgU instance
  * with \a index.
  *
- * In case of errors the created V4L2Device and V4L2Subdevice instances
+ * In case of errors the created V4L2VideoDevice and V4L2Subdevice instances
  * are destroyed at pipeline handler delete time.
  *
  * \return 0 on success or a negative error code otherwise
@@ -966,12 +966,12 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	if (ret)
 		return ret;
 
-	input_ = V4L2Device::fromEntityName(media, name_ + " input");
+	input_ = V4L2VideoDevice::fromEntityName(media, name_ + " input");
 	ret = input_->open();
 	if (ret)
 		return ret;
 
-	output_.dev = V4L2Device::fromEntityName(media, name_ + " output");
+	output_.dev = V4L2VideoDevice::fromEntityName(media, name_ + " output");
 	ret = output_.dev->open();
 	if (ret)
 		return ret;
@@ -980,8 +980,8 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	output_.name = "output";
 	output_.pool = &outPool_;
 
-	viewfinder_.dev = V4L2Device::fromEntityName(media,
-						     name_ + " viewfinder");
+	viewfinder_.dev = V4L2VideoDevice::fromEntityName(media,
+							  name_ + " viewfinder");
 	ret = viewfinder_.dev->open();
 	if (ret)
 		return ret;
@@ -990,7 +990,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	viewfinder_.name = "viewfinder";
 	viewfinder_.pool = &vfPool_;
 
-	stat_.dev = V4L2Device::fromEntityName(media, name_ + " 3a stat");
+	stat_.dev = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
 	ret = stat_.dev->open();
 	if (ret)
 		return ret;
@@ -1067,7 +1067,7 @@ int ImgUDevice::configureInput(const Size &size,
 int ImgUDevice::configureOutput(ImgUOutput *output,
 				const StreamConfiguration &cfg)
 {
-	V4L2Device *dev = output->dev;
+	V4L2VideoDevice *dev = output->dev;
 	unsigned int pad = output->pad;
 
 	V4L2SubdeviceFormat imguFormat = {};
@@ -1337,7 +1337,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 		return ret;
 
 	std::string cio2Name = "ipu3-cio2 " + std::to_string(index);
-	output_ = V4L2Device::fromEntityName(media, cio2Name);
+	output_ = V4L2VideoDevice::fromEntityName(media, cio2Name);
 	ret = output_->open();
 	if (ret)
 		return ret;

@@ -12,13 +12,13 @@
 
 #include <iostream>
 
-#include "v4l2_device_test.h"
+#include "v4l2_videodevice_test.h"
 
-class CaptureAsyncTest : public V4L2DeviceTest
+class CaptureAsyncTest : public V4L2VideoDeviceTest
 {
 public:
 	CaptureAsyncTest()
-		: V4L2DeviceTest("vimc", "Raw Capture 0"), frames(0) {}
+		: V4L2VideoDeviceTest("vimc", "Raw Capture 0"), frames(0) {}
 
 	void receiveBuffer(Buffer *buffer)
 	{

@@ -29,7 +29,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(V4L2Subdev)
+LOG_DECLARE_CATEGORY(V4L2)
 
 /**
  * \struct V4L2SubdeviceFormat
@@ -102,7 +102,7 @@ const std::string V4L2SubdeviceFormat::toString() const
  * path
  */
 V4L2Subdevice::V4L2Subdevice(const MediaEntity *entity)
-	: entity_(entity), fd_(-1)
+	: V4L2Device(entity->deviceNode()), entity_(entity)
 {
 }
 
@@ -117,45 +117,7 @@ V4L2Subdevice::~V4L2Subdevice()
  */
 int V4L2Subdevice::open()
 {
-	int ret;
-
-	if (isOpen()) {
-		LOG(V4L2Subdev, Error) << "Device already open";
-		return -EBUSY;
-	}
-
-	ret = ::open(entity_->deviceNode().c_str(), O_RDWR);
-	if (ret < 0) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
-			<< "Failed to open V4L2 subdevice '"
-			<< entity_->deviceNode() << "': " << strerror(-ret);
-		return ret;
-	}
-	fd_ = ret;
-
-	return 0;
-}
-
-/**
- * \brief Check if the subdevice is open
- * \return True if the subdevice is open, false otherwise
- */
-bool V4L2Subdevice::isOpen() const
-{
-	return fd_ != -1;
-}
-
-/**
- * \brief Close the subdevice, releasing any resources acquired by open()
- */
-void V4L2Subdevice::close()
-{
-	if (!isOpen())
-		return;
-
-	::close(fd_);
-	fd_ = -1;
+	return V4L2Device::open(O_RDWR);
 }
 
 /**
@@ -200,7 +162,7 @@ ImageFormats V4L2Subdevice::formats(unsigned int pad)
 	ImageFormats formats;
 
 	if (pad >= entity_->pads().size()) {
-		LOG(V4L2Subdev, Error) << "Invalid pad: " << pad;
+		LOG(V4L2, Error) << "Invalid pad: " << pad;
 		return {};
 	}
 
@@ -210,7 +172,7 @@ ImageFormats V4L2Subdevice::formats(unsigned int pad)
 			return {};
 
 		if (formats.addFormat(code, sizes)) {
-			LOG(V4L2Subdev, Error)
+			LOG(V4L2, Error)
 				<< "Could not add sizes for media bus code "
 				<< code << " on pad " << pad;
 			return {};
@@ -232,10 +194,9 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	subdevFmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 	subdevFmt.pad = pad;
 
-	int ret = ioctl(fd_, VIDIOC_SUBDEV_G_FMT, &subdevFmt);
+	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
 	if (ret) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
+		LOG(V4L2, Error)
 			<< "Unable to get format on pad " << pad
 			<< ": " << strerror(-ret);
 		return ret;
@@ -268,10 +229,9 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
 	subdevFmt.format.height = format->size.height;
 	subdevFmt.format.code = format->mbus_code;
 
-	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_FMT, &subdevFmt);
+	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
+		LOG(V4L2, Error)
 			<< "Unable to set format on pad " << pad
 			<< ": " << strerror(-ret);
 		return ret;
@@ -321,18 +281,17 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 		mbusEnum.index = index;
 		mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
-		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbusEnum);
+		ret = ioctl(VIDIOC_SUBDEV_ENUM_MBUS_CODE, &mbusEnum);
 		if (ret)
 			break;
 
 		codes.push_back(mbusEnum.code);
 	}
 
-	if (ret && errno != EINVAL) {
-		ret = errno;
-		LOG(V4L2Subdev, Error)
+	if (ret < 0 && ret != -EINVAL) {
+		LOG(V4L2, Error)
 			<< "Unable to enumerate formats on pad " << pad
-			<< ": " << strerror(ret);
+			<< ": " << strerror(-ret);
 		return {};
 	}
 
@@ -352,7 +311,7 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 		sizeEnum.code = code;
 		sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
-		ret = ioctl(fd_, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &sizeEnum);
+		ret = ioctl(VIDIOC_SUBDEV_ENUM_FRAME_SIZE, &sizeEnum);
 		if (ret)
 			break;
 
@@ -360,9 +319,8 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 				   sizeEnum.max_width, sizeEnum.max_height);
 	}
 
-	if (ret && (errno != EINVAL && errno != ENOTTY)) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
+	if (ret < 0 && ret != -EINVAL && ret != -ENOTTY) {
+		LOG(V4L2, Error)
 			<< "Unable to enumerate sizes on pad " << pad
 			<< ": " << strerror(-ret);
 		return {};
@@ -386,10 +344,9 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 	sel.r.width = rect->w;
 	sel.r.height = rect->h;
 
-	int ret = ioctl(fd_, VIDIOC_SUBDEV_S_SELECTION, &sel);
+	int ret = ioctl(VIDIOC_SUBDEV_S_SELECTION, &sel);
 	if (ret < 0) {
-		ret = -errno;
-		LOG(V4L2Subdev, Error)
+		LOG(V4L2, Error)
 			<< "Unable to set rectangle " << target << " on pad "
 			<< pad << ": " << strerror(-ret);
 		return ret;

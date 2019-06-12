@@ -30,7 +30,7 @@
  */
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(V4L2)
+LOG_DECLARE_CATEGORY(V4L2)
 
 /**
  * \struct V4L2Capability
@@ -270,7 +270,7 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1), bufferPool_(nullptr),
+	: V4L2Device(deviceNode), bufferPool_(nullptr),
 	  queuedBuffersCount_(0), fdEvent_(nullptr)
 {
 	/*
@@ -305,23 +305,12 @@ int V4L2VideoDevice::open()
 {
 	int ret;
 
-	if (isOpen()) {
-		LOG(V4L2, Error) << "Device already open";
-		return -EBUSY;
-	}
-
-	ret = ::open(deviceNode_.c_str(), O_RDWR | O_NONBLOCK);
-	if (ret < 0) {
-		ret = -errno;
-		LOG(V4L2, Error)
-			<< "Failed to open V4L2 device: " << strerror(-ret);
+	ret = V4L2Device::open(O_RDWR | O_NONBLOCK);
+	if (ret < 0)
 		return ret;
-	}
-	fd_ = ret;
 
-	ret = ioctl(fd_, VIDIOC_QUERYCAP, &caps_);
+	ret = ioctl(VIDIOC_QUERYCAP, &caps_);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to query device capabilities: "
 			<< strerror(-ret);
@@ -342,20 +331,20 @@ int V4L2VideoDevice::open()
 	 * (POLLIN), and write notifications for OUTPUT devices (POLLOUT).
 	 */
 	if (caps_.isVideoCapture()) {
-		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	} else if (caps_.isVideoOutput()) {
-		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
 	} else if (caps_.isMetaCapture()) {
-		fdEvent_ = new EventNotifier(fd_, EventNotifier::Read);
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
 		bufferType_ = V4L2_BUF_TYPE_META_CAPTURE;
 	} else if (caps_.isMetaOutput()) {
-		fdEvent_ = new EventNotifier(fd_, EventNotifier::Write);
+		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
 		bufferType_ = V4L2_BUF_TYPE_META_OUTPUT;
 	} else {
 		LOG(V4L2, Error) << "Device is not a supported type";
@@ -369,27 +358,17 @@ int V4L2VideoDevice::open()
 }
 
 /**
- * \brief Check if device is successfully opened
- * \return True if the device is open, false otherwise
- */
-bool V4L2VideoDevice::isOpen() const
-{
-	return fd_ != -1;
-}
-
-/**
  * \brief Close the device, releasing any resources acquired by open()
  */
 void V4L2VideoDevice::close()
 {
-	if (fd_ < 0)
+	if (!isOpen())
 		return;
 
 	releaseBuffers();
 	delete fdEvent_;
 
-	::close(fd_);
-	fd_ = -1;
+	V4L2Device::close();
 }
 
 /**
@@ -410,15 +389,9 @@ void V4L2VideoDevice::close()
  * \return The string containing the device location
  */
 
-/**
- * \fn V4L2VideoDevice::deviceNode()
- * \brief Retrieve the video device node path
- * \return The video device device node path
- */
-
 std::string V4L2VideoDevice::logPrefix() const
 {
-	return deviceNode_ + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");
+	return deviceNode() + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");
 }
 
 /**
@@ -462,9 +435,8 @@ int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_G_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
 		return ret;
 	}
@@ -488,9 +460,8 @@ int V4L2VideoDevice::setFormatMeta(V4L2DeviceFormat *format)
 	v4l2Format.type = bufferType_;
 	pix->dataformat = format->fourcc;
 	pix->buffersize = format->planes[0].size;
-	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
@@ -516,9 +487,8 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_G_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
 		return ret;
 	}
@@ -554,9 +524,8 @@ int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 		pix->plane_fmt[i].sizeimage = format->planes[i].size;
 	}
 
-	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
@@ -584,9 +553,8 @@ int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	ret = ioctl(fd_, VIDIOC_G_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_G_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to get format: " << strerror(-ret);
 		return ret;
 	}
@@ -613,9 +581,8 @@ int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
 	pix->pixelformat = format->fourcc;
 	pix->bytesperline = format->planes[0].bpl;
 	pix->field = V4L2_FIELD_NONE;
-	ret = ioctl(fd_, VIDIOC_S_FMT, &v4l2Format);
+	ret = ioctl(VIDIOC_S_FMT, &v4l2Format);
 	if (ret) {
-		ret = -errno;
 		LOG(V4L2, Error) << "Unable to set format: " << strerror(-ret);
 		return ret;
 	}
@@ -670,9 +637,8 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
 	rb.type = bufferType_;
 	rb.memory = memoryType_;
 
-	ret = ioctl(fd_, VIDIOC_REQBUFS, &rb);
+	ret = ioctl(VIDIOC_REQBUFS, &rb);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Unable to request " << count << " buffers: "
 			<< strerror(-ret);
@@ -722,9 +688,8 @@ int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 		buf.length = VIDEO_MAX_PLANES;
 		buf.m.planes = planes;
 
-		ret = ioctl(fd_, VIDIOC_QUERYBUF, &buf);
+		ret = ioctl(VIDIOC_QUERYBUF, &buf);
 		if (ret < 0) {
-			ret = -errno;
 			LOG(V4L2, Error)
 				<< "Unable to query buffer " << i << ": "
 				<< strerror(-ret);
@@ -775,9 +740,8 @@ int V4L2VideoDevice::createPlane(Buffer *buffer, unsigned int planeIndex,
 	expbuf.plane = planeIndex;
 	expbuf.flags = O_RDWR;
 
-	ret = ioctl(fd_, VIDIOC_EXPBUF, &expbuf);
+	ret = ioctl(VIDIOC_EXPBUF, &expbuf);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to export buffer: " << strerror(-ret);
 		return ret;
@@ -801,15 +765,14 @@ std::vector<unsigned int> V4L2VideoDevice::enumPixelformats()
 		pixelformatEnum.index = index;
 		pixelformatEnum.type = bufferType_;
 
-		ret = ioctl(fd_, VIDIOC_ENUM_FMT, &pixelformatEnum);
+		ret = ioctl(VIDIOC_ENUM_FMT, &pixelformatEnum);
 		if (ret)
 			break;
 
 		formats.push_back(pixelformatEnum.pixelformat);
 	}
 
-	if (ret && errno != EINVAL) {
-		ret = -errno;
+	if (ret && ret != -EINVAL) {
 		LOG(V4L2, Error)
 			<< "Unable to enumerate pixel formats: "
 			<< strerror(-ret);
@@ -829,7 +792,7 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
 		frameSize.index = index;
 		frameSize.pixel_format = pixelFormat;
 
-		ret = ioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frameSize);
+		ret = ioctl(VIDIOC_ENUM_FRAMESIZES, &frameSize);
 		if (ret)
 			break;
 
@@ -867,8 +830,7 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
 		}
 	}
 
-	if (ret && errno != EINVAL) {
-		ret = -errno;
+	if (ret && ret != -EINVAL) {
 		LOG(V4L2, Error)
 			<< "Unable to enumerate frame sizes: "
 			<< strerror(-ret);
@@ -969,9 +931,8 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 
 	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;
 
-	ret = ioctl(fd_, VIDIOC_QBUF, &buf);
+	ret = ioctl(VIDIOC_QBUF, &buf);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to queue buffer " << buf.index << ": "
 			<< strerror(-ret);
@@ -1006,9 +967,8 @@ Buffer *V4L2VideoDevice::dequeueBuffer()
 		buf.m.planes = planes;
 	}
 
-	ret = ioctl(fd_, VIDIOC_DQBUF, &buf);
+	ret = ioctl(VIDIOC_DQBUF, &buf);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to dequeue buffer: " << strerror(-ret);
 		return nullptr;
@@ -1066,9 +1026,8 @@ int V4L2VideoDevice::streamOn()
 {
 	int ret;
 
-	ret = ioctl(fd_, VIDIOC_STREAMON, &bufferType_);
+	ret = ioctl(VIDIOC_STREAMON, &bufferType_);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to start streaming: " << strerror(-ret);
 		return ret;
@@ -1089,9 +1048,8 @@ int V4L2VideoDevice::streamOff()
 {
 	int ret;
 
-	ret = ioctl(fd_, VIDIOC_STREAMOFF, &bufferType_);
+	ret = ioctl(VIDIOC_STREAMOFF, &bufferType_);
 	if (ret < 0) {
-		ret = -errno;
 		LOG(V4L2, Error)
 			<< "Failed to stop streaming: " << strerror(-ret);
 		return ret;

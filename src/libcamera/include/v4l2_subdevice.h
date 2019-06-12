@@ -16,6 +16,7 @@
 #include "formats.h"
 #include "log.h"
 #include "media_object.h"
+#include "v4l2_device.h"
 
 namespace libcamera {
 
@@ -28,7 +29,7 @@ struct V4L2SubdeviceFormat {
 	const std::string toString() const;
 };
 
-class V4L2Subdevice : protected Loggable
+class V4L2Subdevice : public V4L2Device
 {
 public:
 	explicit V4L2Subdevice(const MediaEntity *entity);
@@ -37,8 +38,6 @@ public:
 	~V4L2Subdevice();
 
 	int open();
-	bool isOpen() const;
-	void close();
 
 	const MediaEntity *entity() const { return entity_; }
 
@@ -65,7 +64,6 @@ private:
 			 Rectangle *rect);
 
 	const MediaEntity *entity_;
-	int fd_;
 };
 
 } /* namespace libcamera */

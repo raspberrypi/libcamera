@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "v4l2_controls.h"
 
 /**
  * \file v4l2_device.h
@@ -82,6 +83,8 @@ int V4L2Device::open(unsigned int flags)
 
 	fd_ = ret;
 
+	listControls();
+
 	return 0;
 }
 
@@ -106,6 +109,21 @@ void V4L2Device::close()
  * \brief Check if the V4L2 device node is open
  * \return True if the V4L2 device node is open, false otherwise
  */
+
+/**
+ * \brief Retrieve information about a control
+ * \param[in] id The control ID
+ * \return A pointer to the V4L2ControlInfo for control \a id, or nullptr
+ * if the device doesn't have such a control
+ */
+const V4L2ControlInfo *V4L2Device::getControlInfo(unsigned int id) const
+{
+	auto it = controls_.find(id);
+	if (it == controls_.end())
+		return nullptr;
+
+	return &it->second;
+}
 
 /**
  * \brief Perform an IOCTL system call on the device node
@@ -136,5 +154,44 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
  * \brief Retrieve the V4L2 device file descriptor
  * \return The V4L2 device file descriptor, -1 if the device node is not open
  */
+
+/*
+ * \brief List and store information about all controls supported by the
+ * V4L2 device
+ */
+void V4L2Device::listControls()
+{
+	struct v4l2_query_ext_ctrl ctrl = {};
+
+	/* \todo Add support for menu and compound controls. */
+	ctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+	while (ioctl(VIDIOC_QUERY_EXT_CTRL, &ctrl) == 0) {
+		if (ctrl.type == V4L2_CTRL_TYPE_CTRL_CLASS ||
+		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
+			ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+			continue;
+		}
+
+		V4L2ControlInfo info(ctrl);
+		switch (info.type()) {
+		case V4L2_CTRL_TYPE_INTEGER:
+		case V4L2_CTRL_TYPE_BOOLEAN:
+		case V4L2_CTRL_TYPE_MENU:
+		case V4L2_CTRL_TYPE_BUTTON:
+		case V4L2_CTRL_TYPE_INTEGER64:
+		case V4L2_CTRL_TYPE_BITMASK:
+		case V4L2_CTRL_TYPE_INTEGER_MENU:
+			break;
+		/* \todo Support compound controls. */
+		default:
+			LOG(V4L2, Error) << "Control type '" << info.type()
+					 << "' not supported";
+			continue;
+		}
+
+		controls_.emplace(ctrl.id, info);
+		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+	}
+}
 
 } /* namespace libcamera */

@@ -247,6 +247,75 @@ int CameraSensor::setFormat(V4L2SubdeviceFormat *format)
 	return subdev_->setFormat(0, format);
 }
 
+/**
+ * \brief Retrieve information about a control
+ * \param[in] id The control ID
+ * \return A pointer to the V4L2ControlInfo for control \a id, or nullptr
+ * if the sensor doesn't have such a control
+ */
+const V4L2ControlInfo *CameraSensor::getControlInfo(unsigned int id) const
+{
+	return subdev_->getControlInfo(id);
+}
+
+/**
+ * \brief Read controls from the sensor
+ * \param[inout] ctrls The list of controls to read
+ *
+ * This method reads the value of all controls contained in \a ctrls, and stores
+ * their values in the corresponding \a ctrls entry.
+ *
+ * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is a compound control, or if any
+ * other error occurs during validation of the requested controls, no control is
+ * read and this method returns -EINVAL.
+ *
+ * If an error occurs while reading the controls, the index of the first control
+ * that couldn't be read is returned. The value of all controls below that index
+ * are updated in \a ctrls, while the value of all the other controls are not
+ * changed.
+ *
+ * \sa V4L2Device::getControls()
+ *
+ * \return 0 on success or an error code otherwise
+ * \retval -EINVAL One of the control is not supported or not accessible
+ * \retval i The index of the control that failed
+ */
+int CameraSensor::getControls(V4L2ControlList *ctrls)
+{
+	return subdev_->getControls(ctrls);
+}
+
+/**
+ * \brief Write controls to the sensor
+ * \param[in] ctrls The list of controls to write
+ *
+ * This method writes the value of all controls contained in \a ctrls, and
+ * stores the values actually applied to the device in the corresponding
+ * \a ctrls entry.
+ *
+ * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, is a
+ * compound control, or if any other error occurs during validation of
+ * the requested controls, no control is written and this method returns
+ * -EINVAL.
+ *
+ * If an error occurs while writing the controls, the index of the first
+ * control that couldn't be written is returned. All controls below that index
+ * are written and their values are updated in \a ctrls, while all other
+ * controls are not written and their values are not changed.
+ *
+ * \sa V4L2Device::setControls()
+ *
+ * \return 0 on success or an error code otherwise
+ * \retval -EINVAL One of the control is not supported or not accessible
+ * \retval i The index of the control that failed
+ */
+int CameraSensor::setControls(V4L2ControlList *ctrls)
+{
+	return subdev_->setControls(ctrls);
+}
+
 std::string CameraSensor::logPrefix() const
 {
 	return "'" + subdev_->entity()->name() + "'";

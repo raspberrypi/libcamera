@@ -17,6 +17,8 @@
 namespace libcamera {
 
 class MediaEntity;
+class V4L2ControlInfo;
+class V4L2ControlList;
 class V4L2Subdevice;
 
 struct V4L2SubdeviceFormat;
@@ -40,6 +42,10 @@ public:
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
 	int setFormat(V4L2SubdeviceFormat *format);
+
+	const V4L2ControlInfo *getControlInfo(unsigned int id) const;
+	int getControls(V4L2ControlList *ctrls);
+	int setControls(V4L2ControlList *ctrls);
 
 protected:
 	std::string logPrefix() const;

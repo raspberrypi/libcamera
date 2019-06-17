@@ -73,7 +73,14 @@ int CamApp::init(int argc, char **argv)
 	}
 
 	if (options_.isSet(OptCamera)) {
-		camera_ = cm_->get(options_[OptCamera]);
+		const std::string &cameraName = options_[OptCamera];
+		char *endptr;
+		unsigned long index = strtoul(cameraName.c_str(), &endptr, 10);
+		if (*endptr == '\0' && index > 0 && index <= cm_->cameras().size())
+			camera_ = cm_->cameras()[index - 1];
+		else
+			camera_ = cm_->get(cameraName);
+
 		if (!camera_) {
 			std::cout << "Camera "
 				  << std::string(options_[OptCamera])
@@ -141,7 +148,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
-			 "Specify which camera to operate on", "camera",
+			 "Specify which camera to operate on, by name or by index", "camera",
 			 ArgumentRequired, "camera");
 	parser.addOption(OptCapture, OptionNone,
 			 "Capture until interrupted by user", "capture");
@@ -172,8 +179,12 @@ int CamApp::run()
 {
 	if (options_.isSet(OptList)) {
 		std::cout << "Available cameras:" << std::endl;
-		for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-			std::cout << "- " << cam->name() << std::endl;
+
+		unsigned int index = 1;
+		for (const std::shared_ptr<Camera> &cam : cm_->cameras()) {
+			std::cout << index << ": " << cam->name() << std::endl;
+			index++;
+		}
 	}
 
 	if (options_.isSet(OptCapture)) {

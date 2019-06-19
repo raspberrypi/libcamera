@@ -26,7 +26,7 @@
 
 /**
  * \file v4l2_videodevice.h
- * \brief V4L2 Video Device API
+ * \brief V4L2 Video Device
  */
 namespace libcamera {
 
@@ -48,89 +48,86 @@ LOG_DECLARE_CATEGORY(V4L2)
 
 /**
  * \fn V4L2Capability::card()
- * \brief Retrieve the device card name
- * \return The string containing the device name
+ * \brief Retrieve the video device card name
+ * \return The string containing the video device name
  */
 
 /**
  * \fn V4L2Capability::bus_info()
- * \brief Retrieve the location of the device in the system
- * \return The string containing the device location
+ * \brief Retrieve the location of the video device in the system
+ * \return The string containing the video device location
  */
 
 /**
  * \fn V4L2Capability::device_caps()
- * \brief Retrieve the capabilities of the device
- * \return The device specific capabilities if V4L2_CAP_DEVICE_CAPS is set or
- * 	   driver capabilities otherwise
+ * \brief Retrieve the capabilities of the video device
+ * \return The video device specific capabilities if V4L2_CAP_DEVICE_CAPS is
+ * set or driver capabilities otherwise
  */
 
 /**
  * \fn V4L2Capability::isMultiplanar()
- * \brief Identify if the device implements the V4L2 multiplanar APIs
- * \return True if the device supports multiplanar APIs
+ * \brief Identify if the video device implements the V4L2 multiplanar APIs
+ * \return True if the video device supports multiplanar APIs
  */
 
 /**
  * \fn V4L2Capability::isCapture()
- * \brief Identify if the device captures data
- * \return True if the device can capture data
+ * \brief Identify if the video device captures data
+ * \return True if the video device can capture data
  */
 
 /**
  * \fn V4L2Capability::isOutput()
- * \brief Identify if the device outputs data
- * \return True if the device can output data
+ * \brief Identify if the video device outputs data
+ * \return True if the video device can output data
  */
 
 /**
  * \fn V4L2Capability::isVideo()
- * \brief Identify if the device captures or outputs images
- * \return True if the device can capture or output images
+ * \brief Identify if the video device captures or outputs images
+ * \return True if the video device can capture or output images
  */
 
 /**
  * \fn V4L2Capability::isMeta()
- * \brief Identify if the device captures or outputs image meta-data
- *
- * \todo Add support for META_CAPTURE introduced in Linux v5.0
- *
- * \return True if the device can capture or output image meta-data
+ * \brief Identify if the video device captures or outputs image meta-data
+ * \return True if the video device can capture or output image meta-data
  */
 
 /**
  * \fn V4L2Capability::isVideoCapture()
- * \brief Identify if the device captures images
- * \return True if the device can capture images
+ * \brief Identify if the video device captures images
+ * \return True if the video device can capture images
  */
 
 /**
  * \fn V4L2Capability::isVideoOutput()
- * \brief Identify if the device outputs images
- * \return True if the device can output images
+ * \brief Identify if the video device outputs images
+ * \return True if the video device can output images
  */
 
 /**
  * \fn V4L2Capability::isMetaCapture()
- * \brief Identify if the device captures image meta-data
- * \return True if the device can capture image meta-data
+ * \brief Identify if the video device captures image meta-data
+ * \return True if the video device can capture image meta-data
  */
 
 /**
  * \fn V4L2Capability::isMetaOutput()
- * \brief Identify if the device outputs image meta-data
- * \return True if the device can output image meta-data
+ * \brief Identify if the video device outputs image meta-data
+ * \return True if the video device can output image meta-data
  */
 
 /**
  * \fn V4L2Capability::hasStreaming()
- * \brief Determine if the device can perform Streaming I/O
- * \return True if the device provides Streaming I/O IOCTLs
+ * \brief Determine if the video device can perform Streaming I/O
+ * \return True if the video device provides Streaming I/O IOCTLs
  */
 
 /**
  * \class V4L2DeviceFormat
- * \brief The V4L2 device image format and sizes
+ * \brief The V4L2 video device image format and sizes
  *
  * This class describes the image format and resolution to be programmed on a
  * V4L2 video device. The image format is defined by a fourcc code (as specified
@@ -176,27 +173,28 @@ LOG_DECLARE_CATEGORY(V4L2)
  * length and total size.
  *
  * Packed image formats, which occupy a single memory area, are easily described
- * through the single-plane API. When used on a device that implements the
+ * through the single-plane API. When used on a video device that implements the
  * multi-plane API, only the size and stride information contained in the first
  * plane are taken into account.
  *
  * Planar image formats, which occupy distinct memory areas, are easily
- * described through the multi-plane APIs. When used on a device that implements
- * the single-plane API, all planes are stored one after the other in a
- * contiguous memory area, and it is not possible to configure per-plane stride
- * length and size, but only a global stride length which is applied to all
- * planes.
+ * described through the multi-plane APIs. When used on a video device that
+ * implements the single-plane API, all planes are stored one after the other
+ * in a contiguous memory area, and it is not possible to configure per-plane
+ * stride length and size, but only a global stride length which is applied to
+ * all planes.
  *
  * The V4L2DeviceFormat class describes both packed and planar image formats,
- * regardless of the API type (single or multi plane) implemented by the device
- * the format has to be applied to. The total size and bytes per line of images
- * represented with packed formats are configured using the first entry of the
- * V4L2DeviceFormat::planes array, while the per-plane size and per-plane stride
- * length of images represented with planar image formats are configured using
- * the opportune number of entries of the V4L2DeviceFormat::planes array, as
- * prescribed by the image format definition (semi-planar formats use 2 entries,
- * while planar formats use the whole 3 entries). The number of valid entries of
- * the V4L2DeviceFormat::planes array is defined by the
+ * regardless of the API type (single or multi plane) implemented by the video
+ * device the format has to be applied to. The total size and bytes per line
+ * of images represented with packed formats are configured using the first
+ * entry of the V4L2DeviceFormat::planes array, while the per-plane size and
+ * per-plane stride length of images represented with planar image formats are
+ * configured using the opportune number of entries of the
+ * V4L2DeviceFormat::planes array, as prescribed by the image format
+ * definition (semi-planar formats use 2 entries, while planar formats use the
+ * whole 3 entries). The number of valid entries of the
+ * V4L2DeviceFormat::planes array is defined by the
  * V4L2DeviceFormat::planesCount value.
  */
 
@@ -246,13 +244,13 @@ const std::string V4L2DeviceFormat::toString() const
  * \class V4L2VideoDevice
  * \brief V4L2VideoDevice object and API
  *
- * The V4L2 Device API class models an instance of a V4L2 device node.
+ * The V4L2VideoDevice class models an instance of a V4L2 video device.
  * It is constructed with the path to a V4L2 video device node. The device node
  * is only opened upon a call to open() which must be checked for success.
  *
- * The device capabilities are validated when the device is opened and the
- * device is rejected if it is not a suitable V4L2 capture or output device, or
- * if the device does not support streaming I/O.
+ * The video device capabilities are validated when the device is opened and the
+ * device is rejected if it is not a suitable V4L2 capture or output video
+ * device, or if the video device does not support streaming I/O.
  *
  * No API call other than open(), isOpen() and close() shall be called on an
  * unopened device instance.
@@ -274,8 +272,8 @@ V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 	  queuedBuffersCount_(0), fdEvent_(nullptr)
 {
 	/*
-	 * We default to an MMAP based CAPTURE device, however this will be
-	 * updated based upon the device capabilities.
+	 * We default to an MMAP based CAPTURE video device, however this will
+	 * be updated based upon the device capabilities.
 	 */
 	bufferType_ = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 	memoryType_ = V4L2_MEMORY_MMAP;
@@ -283,7 +281,7 @@ V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 
 /**
  * \brief Construct a V4L2VideoDevice from a MediaEntity
- * \param[in] entity The MediaEntity to build the device from
+ * \param[in] entity The MediaEntity to build the video device from
  *
  * Construct a V4L2VideoDevice from a MediaEntity's device node path.
  */
@@ -298,7 +296,7 @@ V4L2VideoDevice::~V4L2VideoDevice()
 }
 
 /**
- * \brief Open a V4L2 device and query its capabilities
+ * \brief Open a V4L2 video device and query its capabilities
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::open()
@@ -327,8 +325,9 @@ int V4L2VideoDevice::open()
 	}
 
 	/*
-	 * Set buffer type and wait for read notifications on CAPTURE devices
-	 * (POLLIN), and write notifications for OUTPUT devices (POLLOUT).
+	 * Set buffer type and wait for read notifications on CAPTURE video
+	 * devices (POLLIN), and write notifications for OUTPUT video devices
+	 * (POLLOUT).
 	 */
 	if (caps_.isVideoCapture()) {
 		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
@@ -358,7 +357,7 @@ int V4L2VideoDevice::open()
 }
 
 /**
- * \brief Close the device, releasing any resources acquired by open()
+ * \brief Close the video device, releasing any resources acquired by open()
  */
 void V4L2VideoDevice::close()
 {
@@ -379,7 +378,7 @@ void V4L2VideoDevice::close()
 
 /**
  * \fn V4L2VideoDevice::deviceName()
- * \brief Retrieve the name of the V4L2 device
+ * \brief Retrieve the name of the V4L2 video device
  * \return The string containing the device name
  */
 
@@ -395,8 +394,8 @@ std::string V4L2VideoDevice::logPrefix() const
 }
 
 /**
- * \brief Retrieve the image format set on the V4L2 device
- * \param[out] format The image format applied on the device
+ * \brief Retrieve the image format set on the V4L2 video device
+ * \param[out] format The image format applied on the video device
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::getFormat(V4L2DeviceFormat *format)
@@ -410,10 +409,10 @@ int V4L2VideoDevice::getFormat(V4L2DeviceFormat *format)
 }
 
 /**
- * \brief Configure an image format on the V4L2 device
- * \param[inout] format The image format to apply to the device
+ * \brief Configure an image format on the V4L2 video device
+ * \param[inout] format The image format to apply to the video device
  *
- * Apply the supplied \a format to the device, and return the actually
+ * Apply the supplied \a format to the video device, and return the actually
  * applied format parameters, as \ref V4L2VideoDevice::getFormat would do.
  *
  * \return 0 on success or a negative error code otherwise
@@ -467,7 +466,7 @@ int V4L2VideoDevice::setFormatMeta(V4L2DeviceFormat *format)
 	}
 
 	/*
-	 * Return to caller the format actually applied on the device,
+	 * Return to caller the format actually applied on the video device,
 	 * which might differ from the requested one.
 	 */
 	format->size.width = 0;
@@ -531,7 +530,7 @@ int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 	}
 
 	/*
-	 * Return to caller the format actually applied on the device,
+	 * Return to caller the format actually applied on the video device,
 	 * which might differ from the requested one.
 	 */
 	format->size.width = pix->width;
@@ -606,7 +605,7 @@ int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
  *
  * Enumerate all pixel formats and frame sizes supported by the video device.
  *
- * \return A list of the supported device formats
+ * \return A list of the supported video device formats
  */
 ImageFormats V4L2VideoDevice::formats()
 {
@@ -651,8 +650,8 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
 }
 
 /**
- * \brief Request buffers to be allocated from the device and stored in the
- *  buffer pool provided.
+ * \brief Request buffers to be allocated from the video device and stored in
+ * the buffer pool provided.
  * \param[out] pool BufferPool to populate with buffers
  * \return 0 on success or a negative error code otherwise
  */
@@ -883,13 +882,13 @@ int V4L2VideoDevice::releaseBuffers()
 }
 
 /**
- * \brief Queue a buffer into the device
+ * \brief Queue a buffer into the video device
  * \param[in] buffer The buffer to be queued
  *
- * For capture devices the \a buffer will be filled with data by the device.
- * For output devices the \a buffer shall contain valid data and will be
- * processed by the device. Once the device has finished processing the buffer,
- * it will be available for dequeue.
+ * For capture video devices the \a buffer will be filled with data by the
+ * device. For output video devices the \a buffer shall contain valid data and
+ * will be processed by the device. Once the device has finished processing the
+ * buffer, it will be available for dequeue.
  *
  * \return 0 on success or a negative error code otherwise
  */
@@ -946,7 +945,7 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 }
 
 /**
- * \brief Dequeue the next available buffer from the device
+ * \brief Dequeue the next available buffer from the video device
  *
  * This method dequeues the next available buffer from the device. If no buffer
  * is available to be dequeued it will return nullptr immediately.
@@ -992,14 +991,14 @@ Buffer *V4L2VideoDevice::dequeueBuffer()
 }
 
 /**
- * \brief Slot to handle completed buffer events from the V4L2 device
+ * \brief Slot to handle completed buffer events from the V4L2 video device
  * \param[in] notifier The event notifier
  *
  * When this slot is called, a Buffer has become available from the device, and
  * will be emitted through the bufferReady Signal.
  *
- * For Capture devices the Buffer will contain valid data.
- * For Output devices the Buffer can be considered empty.
+ * For Capture video devices the Buffer will contain valid data.
+ * For Output video devices the Buffer can be considered empty.
  */
 void V4L2VideoDevice::bufferAvailable(EventNotifier *notifier)
 {

@@ -79,7 +79,7 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 
 		if (optarg) {
 			char *endptr;
-			integer = strtoul(optarg, &endptr, 10);
+			integer = strtoul(optarg, &endptr, 0);
 			if (*endptr != '\0')
 				return false;
 		} else {

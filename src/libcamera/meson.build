@@ -3,6 +3,7 @@ libcamera_sources = files([
     'camera.cpp',
     'camera_manager.cpp',
     'camera_sensor.cpp',
+    'controls.cpp',
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',
     'event_dispatcher.cpp',
@@ -67,6 +68,16 @@ if libudev.found()
         'device_enumerator_udev.cpp',
     ])
 endif
+
+gen_controls = files('gen-controls.awk')
+
+control_types_cpp = custom_target('control_types_cpp',
+                                  input : files('controls.cpp'),
+                                  output : 'control_types.cpp',
+                                  depend_files : gen_controls,
+                                  command : [gen_controls, '@INPUT@', '--code', '@OUTPUT@'])
+
+libcamera_sources += control_types_cpp
 
 libcamera_deps = [
     cc.find_library('dl'),

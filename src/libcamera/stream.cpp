@@ -8,6 +8,7 @@
 #include <libcamera/stream.h>
 
 #include <algorithm>
+#include <array>
 #include <climits>
 #include <iomanip>
 #include <sstream>

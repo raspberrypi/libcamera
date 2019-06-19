@@ -7,6 +7,8 @@
 
 #include "formats.h"
 
+#include <errno.h>
+
 /**
  * \file formats.h
  * \brief Types and helper methods to handle libcamera image formats

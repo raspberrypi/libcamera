@@ -10,7 +10,10 @@
 #include <map>
 #include <memory>
 
+#include <QElapsedTimer>
 #include <QMainWindow>
+#include <QObject>
+#include <QTimer>
 
 #include <libcamera/camera.h>
 #include <libcamera/stream.h>
@@ -28,9 +31,14 @@ enum {
 
 class MainWindow : public QMainWindow
 {
+	Q_OBJECT
+
 public:
 	MainWindow(const OptionsParser::Options &options);
 	~MainWindow();
+
+private Q_SLOTS:
+	void updateTitle();
 
 private:
 	int openCamera();
@@ -43,6 +51,8 @@ private:
 	int display(Buffer *buffer);
 
 	QString title_;
+	QTimer titleTimer_;
+
 	const OptionsParser::Options &options_;
 
 	std::shared_ptr<Camera> camera_;
@@ -50,6 +60,10 @@ private:
 	std::unique_ptr<CameraConfiguration> config_;
 
 	uint64_t lastBufferTime_;
+
+	QElapsedTimer frameRateInterval_;
+	uint32_t previousFrames_;
+	uint32_t framesCaptured_;
 
 	ViewFinder *viewfinder_;
 };

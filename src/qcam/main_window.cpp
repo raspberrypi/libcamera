@@ -28,6 +28,7 @@ MainWindow::MainWindow(const OptionsParser::Options &options)
 
 	title_ = "QCam " + QString::fromStdString(libcamera::version);
 	setWindowTitle(title_);
+	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
 
 	viewfinder_ = new ViewFinder(this);
 	setCentralWidget(viewfinder_);
@@ -52,6 +53,19 @@ MainWindow::~MainWindow()
 	}
 
 	CameraManager::instance()->stop();
+}
+
+void MainWindow::updateTitle()
+{
+	unsigned int duration = frameRateInterval_.elapsed();
+	unsigned int frames = framesCaptured_ - previousFrames_;
+	double fps = frames * 1000.0 / duration;
+
+	/* Restart counters. */
+	frameRateInterval_.start();
+	previousFrames_ = framesCaptured_;
+
+	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
 }
 
 int MainWindow::openCamera()
@@ -148,6 +162,10 @@ int MainWindow::startCapture()
 		requests.push_back(request);
 	}
 
+	titleTimer_.start(2000);
+	frameRateInterval_.start();
+	previousFrames_ = 0;
+	framesCaptured_ = 0;
 	lastBufferTime_ = 0;
 
 	ret = camera_->start();
@@ -188,6 +206,9 @@ void MainWindow::stopCapture()
 	isCapturing_ = false;
 
 	config_.reset();
+
+	titleTimer_.stop();
+	setWindowTitle(title_);
 }
 
 void MainWindow::requestComplete(Request *request,
@@ -195,6 +216,8 @@ void MainWindow::requestComplete(Request *request,
 {
 	if (request->status() == Request::RequestCancelled)
 		return;
+
+	framesCaptured_++;
 
 	Buffer *buffer = buffers.begin()->second;
 

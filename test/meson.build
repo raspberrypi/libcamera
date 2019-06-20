@@ -2,6 +2,7 @@ subdir('libtest')
 
 subdir('camera')
 subdir('ipa')
+subdir('ipc')
 subdir('media_device')
 subdir('pipeline')
 subdir('stream')

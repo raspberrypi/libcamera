@@ -10,6 +10,7 @@
 #include <map>
 #include <unordered_set>
 
+#include <libcamera/controls.h>
 #include <libcamera/signal.h>
 
 namespace libcamera {
@@ -32,6 +33,7 @@ public:
 	Request(const Request &) = delete;
 	Request &operator=(const Request &) = delete;
 
+	ControlList &controls() { return controls_; }
 	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
 	int setBuffers(const std::map<Stream *, Buffer *> &streamMap);
 	Buffer *findBuffer(Stream *stream) const;
@@ -50,6 +52,7 @@ private:
 	bool completeBuffer(Buffer *buffer);
 
 	Camera *camera_;
+	ControlList controls_;
 	std::map<Stream *, Buffer *> bufferMap_;
 	std::unordered_set<Buffer *> pending_;
 

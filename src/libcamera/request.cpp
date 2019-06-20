@@ -48,9 +48,25 @@ LOG_DEFINE_CATEGORY(Request)
  * \param[in] camera The camera that creates the request
  */
 Request::Request(Camera *camera)
-	: camera_(camera), status_(RequestPending)
+	: camera_(camera), controls_(camera), status_(RequestPending)
 {
 }
+
+/**
+ * \fn Request::controls()
+ * \brief Retrieve the request's ControlList
+ *
+ * Requests store a list of controls to be applied to all frames captured for
+ * the request. They are created with an empty list of controls that can be
+ * accessed through this method and updated with ControlList::operator[]() or
+ * ControlList::update().
+ *
+ * Only controls supported by the camera to which this request will be
+ * submitted shall be included in the controls list. Attempting to add an
+ * unsupported control causes undefined behaviour.
+ *
+ * \return A reference to the ControlList in this request
+ */
 
 /**
  * \fn Request::buffers()

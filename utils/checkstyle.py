@@ -15,6 +15,8 @@
 
 import argparse
 import difflib
+import fnmatch
+import os.path
 import re
 import shutil
 import subprocess
@@ -38,12 +40,6 @@ dependencies = {
     'clang-format': False,
     'git': True,
 }
-
-source_extensions = (
-    '.c',
-    '.cpp',
-    '.h'
-)
 
 # ------------------------------------------------------------------------------
 # Colour terminal handling
@@ -195,44 +191,61 @@ def parse_diff(diff):
 
 
 # ------------------------------------------------------------------------------
-# Code reformatting
+# Style Checkers
 #
 
-def formatter_astyle(filename, data):
-    ret = subprocess.run(['astyle', *astyle_options],
-                         input=data.encode('utf-8'), stdout=subprocess.PIPE)
-    return ret.stdout.decode('utf-8')
+_style_checkers = []
+
+class StyleCheckerRegistry(type):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(StyleCheckerRegistry, cls).__new__(cls, clsname, bases, attrs)
+        if clsname != 'StyleChecker':
+            _style_checkers.append(newclass)
+        return newclass
 
 
-def formatter_clang_format(filename, data):
-    ret = subprocess.run(['clang-format', '-style=file',
-                          '-assume-filename=' + filename],
-                         input=data.encode('utf-8'), stdout=subprocess.PIPE)
-    return ret.stdout.decode('utf-8')
+class StyleChecker(metaclass=StyleCheckerRegistry):
+    def __init__(self):
+        pass
+
+    #
+    # Class methods
+    #
+    @classmethod
+    def checkers(cls, filename):
+        for checker in _style_checkers:
+            if checker.supports(filename):
+                yield checker
+
+    @classmethod
+    def supports(cls, filename):
+        for pattern in cls.patterns:
+            if fnmatch.fnmatch(os.path.basename(filename), pattern):
+                return True
+        return False
+
+    @classmethod
+    def all_patterns(cls):
+        patterns = set()
+        for checker in _style_checkers:
+            patterns.update(checker.patterns)
+
+        return patterns
 
 
-def formatter_strip_trailing_space(filename, data):
-    lines = data.split('\n')
-    for i in range(len(lines)):
-        lines[i] = lines[i].rstrip() + '\n'
-    return ''.join(lines)
+class StyleIssue(object):
+    def __init__(self, line_number, line, msg):
+        self.line_number = line_number
+        self.line = line
+        self.msg = msg
 
 
-available_formatters = {
-    'astyle': formatter_astyle,
-    'clang-format': formatter_clang_format,
-    'strip-trailing-spaces': formatter_strip_trailing_space,
-}
-
-
-# ------------------------------------------------------------------------------
-# Style checking
-#
-
-class LogCategoryChecker(object):
+class LogCategoryChecker(StyleChecker):
     log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
+    patterns = ('*.cpp',)
 
     def __init__(self, content):
+        super().__init__()
         self.__content = content
 
     def check(self, line_numbers):
@@ -242,17 +255,101 @@ class LogCategoryChecker(object):
             if not LogCategoryChecker.log_regex.search(line):
                 continue
 
-            issues.append([line_number, line, 'LOG() should use categories'])
+            issues.append(StyleIssue(line_number, line, 'LOG() should use categories'))
 
         return issues
 
 
-available_checkers = {
-    'log_category': LogCategoryChecker,
-}
+# ------------------------------------------------------------------------------
+# Formatters
+#
+
+_formatters = []
+
+class FormatterRegistry(type):
+    def __new__(cls, clsname, bases, attrs):
+        newclass = super(FormatterRegistry, cls).__new__(cls, clsname, bases, attrs)
+        if clsname != 'Formatter':
+            _formatters.append(newclass)
+        return newclass
 
 
-def check_file(top_level, commit, filename, formatters):
+class Formatter(metaclass=FormatterRegistry):
+    enabled = True
+
+    def __init__(self):
+        pass
+
+    #
+    # Class methods
+    #
+    @classmethod
+    def formatters(cls, filename):
+        for formatter in _formatters:
+            if not cls.enabled:
+                continue
+            if formatter.supports(filename):
+                yield formatter
+
+    @classmethod
+    def supports(cls, filename):
+        if not cls.enabled:
+            return False
+        for pattern in cls.patterns:
+            if fnmatch.fnmatch(os.path.basename(filename), pattern):
+                return True
+        return False
+
+    @classmethod
+    def all_patterns(cls):
+        patterns = set()
+        for formatter in _formatters:
+            if not cls.enabled:
+                continue
+            patterns.update(formatter.patterns)
+
+        return patterns
+
+
+class AStyleFormatter(Formatter):
+    enabled = False
+    patterns = ('*.c', '*.cpp', '*.h')
+
+    @classmethod
+    def format(cls, filename, data):
+        ret = subprocess.run(['astyle', *astyle_options],
+                             input=data.encode('utf-8'), stdout=subprocess.PIPE)
+        return ret.stdout.decode('utf-8')
+
+
+class CLangFormatter(Formatter):
+    enabled = False
+    patterns = ('*.c', '*.cpp', '*.h')
+
+    @classmethod
+    def format(cls, filename, data):
+        ret = subprocess.run(['clang-format', '-style=file',
+                              '-assume-filename=' + filename],
+                             input=data.encode('utf-8'), stdout=subprocess.PIPE)
+        return ret.stdout.decode('utf-8')
+
+
+class StripTrailingSpaceFormatter(Formatter):
+    patterns = ('*.c', '*.cpp', '*.h', '*.py', 'meson.build')
+
+    @classmethod
+    def format(cls, filename, data):
+        lines = data.split('\n')
+        for i in range(len(lines)):
+            lines[i] = lines[i].rstrip() + '\n'
+        return ''.join(lines)
+
+
+# ------------------------------------------------------------------------------
+# Style checking
+#
+
+def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
     diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
                            '%s/%s' % (top_level, filename)],
@@ -275,9 +372,8 @@ def check_file(top_level, commit, filename, formatters):
     after = after.decode('utf-8')
 
     formatted = after
-    for formatter in formatters:
-        formatter = available_formatters[formatter]
-        formatted = formatter(filename, formatted)
+    for formatter in Formatter.formatters(filename):
+        formatted = formatter.format(filename, formatted)
 
     after = after.splitlines(True)
     formatted = formatted.splitlines(True)
@@ -290,8 +386,8 @@ def check_file(top_level, commit, filename, formatters):
 
     # Check for code issues not related to formatting.
     issues = []
-    for checker in available_checkers:
-        checker = available_checkers[checker](after)
+    for checker in StyleChecker.checkers(filename):
+        checker = checker(after)
         for hunk in commit_diff:
             issues += checker.check(hunk.side('to').touched)
 
@@ -307,15 +403,15 @@ def check_file(top_level, commit, filename, formatters):
             print(hunk)
 
     if len(issues):
-        issues.sort()
+        issues = sorted(issues, key=lambda i: i.line_number)
         for issue in issues:
-            print('%s#%u: %s' % (Colours.fg(Colours.Yellow), issue[0], issue[2]))
-            print('+%s%s' % (issue[1].rstrip(), Colours.reset()))
+            print('%s#%u: %s' % (Colours.fg(Colours.Yellow), issue.line_number, issue.msg))
+            print('+%s%s' % (issue.line.rstrip(), Colours.reset()))
 
     return len(formatted_diff) + len(issues)
 
 
-def check_style(top_level, commit, formatters):
+def check_style(top_level, commit):
     # Get the commit title and list of files.
     ret = subprocess.run(['git', 'show', '--pretty=oneline','--name-only', commit],
                          stdout=subprocess.PIPE)
@@ -328,15 +424,18 @@ def check_style(top_level, commit, formatters):
     print(title)
     print(separator)
 
-    # Filter out non C/C++ files.
-    files = [f for f in files if f.endswith(source_extensions)]
+    # Filter out files we have no checker for.
+    patterns = set()
+    patterns.update(StyleChecker.all_patterns())
+    patterns.update(Formatter.all_patterns())
+    files = [f for f in files if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
     if len(files) == 0:
         print("Commit doesn't touch source files, skipping")
         return
 
     issues = 0
     for f in files:
-        issues += check_file(top_level, commit, f, formatters)
+        issues += check_file(top_level, commit, f)
 
     if issues == 0:
         print("No style issue detected")
@@ -407,15 +506,12 @@ def main(argv):
         formatter = args.formatter
     else:
         if dependencies['clang-format']:
-            formatter = 'clang-format'
+            CLangFormatter.enabled = True
         elif dependencies['astyle']:
-            formatter = 'astyle'
+            AStyleFormatter.enabled = True
         else:
             print("No formatter found, please install clang-format or astyle")
             return 1
-
-    # Create the list of formatters to be applied.
-    formatters = [formatter, 'strip-trailing-spaces']
 
     # Get the top level directory to pass absolute file names to git diff
     # commands, in order to support execution from subdirectories of the git
@@ -427,7 +523,7 @@ def main(argv):
     revlist = extract_revlist(args.revision_range)
 
     for commit in revlist:
-        check_style(top_level, commit, formatters)
+        check_style(top_level, commit)
         print('')
 
     return 0

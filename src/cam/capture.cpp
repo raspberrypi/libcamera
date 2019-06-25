@@ -117,6 +117,7 @@ int Capture::capture(EventLoop *loop)
 		ret = camera_->queueRequest(request);
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
+			camera_->stop();
 			return ret;
 		}
 	}

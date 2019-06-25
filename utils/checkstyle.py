@@ -260,6 +260,22 @@ class LogCategoryChecker(StyleChecker):
         return issues
 
 
+class MesonChecker(StyleChecker):
+    patterns = ('meson.build',)
+
+    def __init__(self, content):
+        super().__init__()
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+        for line_number in line_numbers:
+            line = self.__content[line_number-1]
+            if line.find('\t') != -1:
+                issues.append(StyleIssue(line_number, line, 'meson.build should use spaces for indentation'))
+        return issues
+
+
 # ------------------------------------------------------------------------------
 # Formatters
 #

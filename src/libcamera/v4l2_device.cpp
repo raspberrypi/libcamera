@@ -321,13 +321,14 @@ void V4L2Device::listControls()
 	struct v4l2_query_ext_ctrl ctrl = {};
 
 	/* \todo Add support for menu and compound controls. */
-	ctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
-	while (ioctl(VIDIOC_QUERY_EXT_CTRL, &ctrl) == 0) {
+	while (1) {
+		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+		if (ioctl(VIDIOC_QUERY_EXT_CTRL, &ctrl))
+			break;
+
 		if (ctrl.type == V4L2_CTRL_TYPE_CTRL_CLASS ||
-		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
-			ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 			continue;
-		}
 
 		V4L2ControlInfo info(ctrl);
 		switch (info.type()) {
@@ -341,13 +342,12 @@ void V4L2Device::listControls()
 			break;
 		/* \todo Support compound controls. */
 		default:
-			LOG(V4L2, Error) << "Control type '" << info.type()
+			LOG(V4L2, Debug) << "Control type '" << info.type()
 					 << "' not supported";
 			continue;
 		}
 
 		controls_.emplace(ctrl.id, info);
-		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 }
 

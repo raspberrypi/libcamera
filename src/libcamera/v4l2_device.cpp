@@ -152,8 +152,10 @@ int V4L2Device::getControls(V4L2ControlList *ctrls)
 	if (count == 0)
 		return 0;
 
-	const V4L2ControlInfo *controlInfo[count] = {};
-	struct v4l2_ext_control v4l2Ctrls[count] = {};
+	const V4L2ControlInfo *controlInfo[count];
+	struct v4l2_ext_control v4l2Ctrls[count];
+	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
+
 	for (unsigned int i = 0; i < count; ++i) {
 		const V4L2Control *ctrl = ctrls->getByIndex(i);
 		const V4L2ControlInfo *info = getControlInfo(ctrl->id());
@@ -224,8 +226,9 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 	if (count == 0)
 		return 0;
 
-	const V4L2ControlInfo *controlInfo[count] = {};
-	struct v4l2_ext_control v4l2Ctrls[count] = {};
+	const V4L2ControlInfo *controlInfo[count];
+	struct v4l2_ext_control v4l2Ctrls[count];
+	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
 	for (unsigned int i = 0; i < count; ++i) {
 		const V4L2Control *ctrl = ctrls->getByIndex(i);

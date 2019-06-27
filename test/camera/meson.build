@@ -3,6 +3,7 @@
 camera_tests = [
     [ 'configuration_default',  'configuration_default.cpp' ],
     [ 'configuration_set',      'configuration_set.cpp' ],
+    [ 'buffer_import',          'buffer_import.cpp' ],
     [ 'statemachine',           'statemachine.cpp' ],
     [ 'capture',                'capture.cpp' ],
 ]

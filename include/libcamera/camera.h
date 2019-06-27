@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 
+#include <libcamera/controls.h>
 #include <libcamera/request.h>
 #include <libcamera/signal.h>
 #include <libcamera/stream.h>
@@ -82,6 +83,8 @@ public:
 
 	int acquire();
 	int release();
+
+	const ControlInfoMap &controls();
 
 	const std::set<Stream *> &streams() const;
 	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles);

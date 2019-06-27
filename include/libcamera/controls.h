@@ -99,6 +99,8 @@ static inline bool operator!=(const ControlInfo &lhs, const ControlId &rhs)
 	return !(lhs == rhs);
 }
 
+using ControlInfoMap = std::unordered_map<ControlId, ControlInfo>;
+
 class ControlList
 {
 private:

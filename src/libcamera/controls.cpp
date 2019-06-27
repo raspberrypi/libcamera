@@ -326,6 +326,11 @@ bool operator==(const ControlInfo &lhs, const ControlId &rhs)
 }
 
 /**
+ * \typedef ControlInfoMap
+ * \brief A map of ControlId to ControlInfo
+ */
+
+/**
  * \class ControlList
  * \brief Associate a list of ControlId with their values for a camera
  *

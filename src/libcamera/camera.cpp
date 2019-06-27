@@ -549,6 +549,18 @@ int Camera::release()
 }
 
 /**
+ * \brief Retrieve the list of controls supported by the camera
+ *
+ * Camera controls remain constant through the lifetime of the camera.
+ *
+ * \return A ControlInfoMap listing the controls supported by the camera
+ */
+const ControlInfoMap &Camera::controls()
+{
+	return pipe_->controls(this);
+}
+
+/**
  * \brief Retrieve all the camera's stream information
  *
  * Retrieve all of the camera's static stream information. The static

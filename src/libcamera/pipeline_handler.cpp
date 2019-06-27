@@ -89,6 +89,14 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
+ * \var CameraData::controlInfo_
+ * \brief The set of controls supported by the camera
+ *
+ * The control information shall be initialised by the pipeline handler when
+ * creating the camera, and shall not be modified afterwards.
+ */
+
+/**
  * \class PipelineHandler
  * \brief Create and manage cameras based on a set of media devices
  *
@@ -215,6 +223,17 @@ void PipelineHandler::unlock()
 {
 	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
 		media->unlock();
+}
+
+/**
+ * \brief Retrieve the list of controls for a camera
+ * \param[in] camera The camera
+ * \return A ControlInfoMap listing the controls support by \a camera
+ */
+const ControlInfoMap &PipelineHandler::controls(Camera *camera)
+{
+	CameraData *data = cameraData(camera);
+	return data->controlInfo_;
 }
 
 /**

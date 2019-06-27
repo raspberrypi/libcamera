@@ -14,7 +14,7 @@ libcamera_api = files([
     'timer.h',
 ])
 
-gen_header = join_paths(meson.current_source_dir(), 'gen-header.sh')
+gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',
                             input : 'meson.build',

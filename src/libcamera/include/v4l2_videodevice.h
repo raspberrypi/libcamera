@@ -160,12 +160,12 @@ private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);
 
+	std::vector<unsigned int> enumPixelformats();
+	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
+
 	int requestBuffers(unsigned int count);
 	int createPlane(Buffer *buffer, unsigned int plane,
 			unsigned int length);
-
-	std::vector<unsigned int> enumPixelformats();
-	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
 
 	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);

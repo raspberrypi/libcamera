@@ -683,7 +683,7 @@ int Camera::configure(CameraConfiguration *config)
 		 * Allocate buffer objects in the pool.
 		 * Memory will be allocated and assigned later.
 		 */
-		stream->createBuffers(cfg.bufferCount);
+		stream->createBuffers(cfg.memoryType, cfg.bufferCount);
 	}
 
 	state_ = CameraConfigured;

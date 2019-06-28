@@ -264,6 +264,17 @@ SizeRange StreamFormats::range(unsigned int pixelformat) const
 }
 
 /**
+ * \enum MemoryType
+ * \brief Define the memory type used by a Stream
+ * \var MemoryType::InternalMemory
+ * The Stream uses memory allocated internally by the library and exported to
+ * applications.
+ * \var MemoryType::ExternalMemory
+ * The Stream uses memory allocated externally by application and imported in
+ * the library.
+ */
+
+/**
  * \struct StreamConfiguration
  * \brief Configuration parameters for a stream
  *
@@ -276,7 +287,7 @@ SizeRange StreamFormats::range(unsigned int pixelformat) const
  * handlers provied StreamFormats.
  */
 StreamConfiguration::StreamConfiguration()
-	: stream_(nullptr)
+	: memoryType(InternalMemory), stream_(nullptr)
 {
 }
 
@@ -284,7 +295,7 @@ StreamConfiguration::StreamConfiguration()
  * \brief Construct a configuration with stream formats
  */
 StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
-	: stream_(nullptr), formats_(formats)
+	: memoryType(InternalMemory), stream_(nullptr), formats_(formats)
 {
 }
 
@@ -299,6 +310,11 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  *
  * This is a little endian four character code representation of the pixel
  * format described in V4L2 using the V4L2_PIX_FMT_* definitions.
+ */
+
+/**
+ * \var StreamConfiguration::memoryType
+ * \brief The memory type the stream shall use
  */
 
 /**
@@ -455,17 +471,25 @@ std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
  */
 
 /**
+ * \fn Stream::memoryType()
+ * \brief Retrieve the stream memory type
+ * \return The memory type used by the stream
+ */
+
+/**
  * \brief Create buffers for the stream
  * \param[in] count The number of buffers to create
+ * \param[in] memory The stream memory type
  *
  * Create \a count empty buffers in the Stream's buffer pool.
  */
-void Stream::createBuffers(unsigned int count)
+void Stream::createBuffers(MemoryType memory, unsigned int count)
 {
 	destroyBuffers();
 	if (count == 0)
 		return;
 
+	memoryType_ = memory;
 	bufferPool_.createBuffers(count);
 }
 
@@ -495,6 +519,11 @@ void Stream::destroyBuffers()
  * The configuration for the stream is set by any successful call to
  * Camera::configure() that includes the stream, and remains valid until the
  * next call to Camera::configure() regardless of if it includes the stream.
+ */
+
+/**
+ * \var Stream::memoryType_
+ * \brief The stream memory type
  */
 
 } /* namespace libcamera */

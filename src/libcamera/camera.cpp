@@ -683,7 +683,7 @@ int Camera::configure(CameraConfiguration *config)
 		 * Allocate buffer objects in the pool.
 		 * Memory will be allocated and assigned later.
 		 */
-		stream->bufferPool().createBuffers(cfg.bufferCount);
+		stream->createBuffers(cfg.bufferCount);
 	}
 
 	state_ = CameraConfigured;
@@ -744,7 +744,7 @@ int Camera::freeBuffers()
 		 * All mappings must be destroyed before buffers can be freed
 		 * by the V4L2 device that has allocated them.
 		 */
-		stream->bufferPool().destroyBuffers();
+		stream->destroyBuffers();
 	}
 
 	state_ = CameraConfigured;

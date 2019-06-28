@@ -435,11 +435,17 @@ std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
  * \fn Stream::bufferPool()
  * \brief Retrieve the buffer pool for the stream
  *
- * The buffer pool handles the buffers used to capture frames at the output of
- * the stream. It is initially created empty and shall be populated with
+ * The buffer pool handles the memory buffers used to store frames for the
+ * stream. It is initially created empty and shall be populated with
  * buffers before being used.
  *
  * \return A reference to the buffer pool
+ */
+
+/**
+ * \fn Stream::buffers()
+ * \brief Retrieve the memory buffers in the Stream's buffer pool
+ * \return The list of stream's memory buffers
  */
 
 /**
@@ -447,6 +453,32 @@ std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
  * \brief Retrieve the active configuration of the stream
  * \return The active configuration of the stream
  */
+
+/**
+ * \brief Create buffers for the stream
+ * \param[in] count The number of buffers to create
+ *
+ * Create \a count empty buffers in the Stream's buffer pool.
+ */
+void Stream::createBuffers(unsigned int count)
+{
+	destroyBuffers();
+	if (count == 0)
+		return;
+
+	bufferPool_.createBuffers(count);
+}
+
+/**
+ * \brief Destroy buffers in the stream
+ *
+ * If no buffers have been created or if buffers have already been destroyed no
+ * operation is performed.
+ */
+void Stream::destroyBuffers()
+{
+	bufferPool_.destroyBuffers();
+}
 
 /**
  * \var Stream::bufferPool_

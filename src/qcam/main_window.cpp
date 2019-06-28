@@ -235,7 +235,7 @@ void MainWindow::requestComplete(Request *request,
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
 
-	BufferMemory *mem = &stream->bufferPool().buffers()[buffer->index()];
+	BufferMemory *mem = &stream->buffers()[buffer->index()];
 	display(buffer, mem);
 
 	request = camera_->createRequest();

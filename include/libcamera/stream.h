@@ -71,10 +71,14 @@ public:
 	std::unique_ptr<Buffer> createBuffer(unsigned int index);
 
 	BufferPool &bufferPool() { return bufferPool_; }
+	std::vector<BufferMemory> &buffers() { return bufferPool_.buffers(); }
 	const StreamConfiguration &configuration() const { return configuration_; }
 
 protected:
 	friend class Camera;
+
+	void createBuffers(unsigned int count);
+	void destroyBuffers();
 
 	BufferPool bufferPool_;
 	StreamConfiguration configuration_;

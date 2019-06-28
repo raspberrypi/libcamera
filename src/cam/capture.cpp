@@ -154,7 +154,7 @@ void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
 		Buffer *buffer = it->second;
-		BufferMemory *mem = &stream->bufferPool().buffers()[buffer->index()];
+		BufferMemory *mem = &stream->buffers()[buffer->index()];
 		const std::string &name = streamName_[stream];
 
 		info << " " << name

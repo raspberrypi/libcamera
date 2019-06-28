@@ -30,6 +30,8 @@ public:
 	unsigned int length() const { return length_; }
 
 private:
+	friend class Stream;
+
 	int mmap();
 	int munmap();
 

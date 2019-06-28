@@ -85,12 +85,18 @@ public:
 protected:
 	friend class Camera;
 
+	int mapBuffer(const Buffer *buffer);
+	void unmapBuffer(const Buffer *buffer);
+
 	void createBuffers(MemoryType memory, unsigned int count);
 	void destroyBuffers();
 
 	BufferPool bufferPool_;
 	StreamConfiguration configuration_;
 	MemoryType memoryType_;
+
+private:
+	std::vector<std::pair<std::array<int, 3>, unsigned int>> bufferCache_;
 };
 
 } /* namespace libcamera */

@@ -800,6 +800,7 @@ Request *Camera::createRequest(uint64_t cookie)
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not running so requests can't be queued
  * \retval -EINVAL The request is invalid
+ * \retval -ENOMEM No buffer memory was available to handle the request
  */
 int Camera::queueRequest(Request *request)
 {
@@ -816,6 +817,16 @@ int Camera::queueRequest(Request *request)
 		if (activeStreams_.find(stream) == activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";
 			return -EINVAL;
+		}
+
+		if (stream->memoryType() == ExternalMemory) {
+			int index = stream->mapBuffer(buffer);
+			if (index < 0) {
+				LOG(Camera, Error) << "No buffer memory available";
+				return -ENOMEM;
+			}
+
+			buffer->index_ = index;
 		}
 
 		buffer->mem_ = &stream->buffers()[buffer->index_];
@@ -901,7 +912,14 @@ int Camera::stop()
  */
 void Camera::requestComplete(Request *request)
 {
-	requestCompleted.emit(request, request->bufferMap_);
+	for (auto it : request->buffers()) {
+		Stream *stream = it.first;
+		Buffer *buffer = it.second;
+		if (stream->memoryType() == ExternalMemory)
+			stream->unmapBuffer(buffer);
+	}
+
+	requestCompleted.emit(request, request->buffers());
 	delete request;
 }
 

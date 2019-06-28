@@ -13,6 +13,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include <libcamera/request.h>
+
 #include "log.h"
 
 /**
@@ -476,6 +478,8 @@ std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
  * will return a null pointer when called on streams using the InternalMemory
  * type.
  *
+ * \sa Stream::mapBuffer()
+ *
  * \return A newly created Buffer on success or nullptr otherwise
  */
 std::unique_ptr<Buffer> Stream::createBuffer(const std::array<int, 3> &fds)
@@ -522,6 +526,86 @@ std::unique_ptr<Buffer> Stream::createBuffer(const std::array<int, 3> &fds)
  */
 
 /**
+ * \brief Map a Buffer to a buffer memory index
+ * \param[in] buffer The buffer to map to a buffer memory index
+ *
+ * Streams configured to use externally allocated memory need to maintain a
+ * best-effort association between the memory area the \a buffer represents
+ * and the associated buffer memory in the Stream's pool.
+ *
+ * The buffer memory to use, once the \a buffer reaches the video device,
+ * is selected using the index assigned to the \a buffer and to minimize
+ * relocations in the V4L2 back-end, this operation provides a best-effort
+ * caching mechanism that associates to the dmabuf file descriptors contained
+ * in the \a buffer the index of the buffer memory that was lastly queued with
+ * those file descriptors set.
+ *
+ * If the Stream uses internally allocated memory, the index of the memory
+ * buffer to use will match the one request at Stream::createBuffer(unsigned int)
+ * time, and no mapping is thus required.
+ *
+ * \return The buffer memory index for the buffer on success, or a negative
+ * error code otherwise
+ * \retval -ENOMEM No buffer memory was available to map the buffer
+ */
+int Stream::mapBuffer(const Buffer *buffer)
+{
+	ASSERT(memoryType_ == ExternalMemory);
+
+	if (bufferCache_.empty())
+		return -ENOMEM;
+
+	const std::array<int, 3> &dmabufs = buffer->dmabufs();
+
+	/*
+	 * Try to find a previously mapped buffer in the cache. If we miss, use
+	 * the oldest entry in the cache.
+	 */
+	auto map = std::find_if(bufferCache_.begin(), bufferCache_.end(),
+				[&](std::pair<std::array<int, 3>, unsigned int> &entry) {
+					return entry.first == dmabufs;
+				});
+	if (map == bufferCache_.end())
+		map = bufferCache_.begin();
+
+	/*
+	 * Update the dmabuf file descriptors of the entry. We can't assume that
+	 * identical file descriptor numbers refer to the same dmabuf object as
+	 * it may have been closed and its file descriptor reused. We thus need
+	 * to update the plane's internally cached mmap()ed memory.
+	 */
+	unsigned int index = map->second;
+	BufferMemory *mem = &bufferPool_.buffers()[index];
+	mem->planes().clear();
+
+	for (unsigned int i = 0; i < dmabufs.size(); ++i) {
+		if (dmabufs[i] == -1)
+			break;
+
+		mem->planes().emplace_back();
+		mem->planes().back().setDmabuf(dmabufs[i], 0);
+	}
+
+	/* Remove the buffer from the cache and return its index. */
+	bufferCache_.erase(map);
+	return index;
+}
+
+/**
+ * \brief Unmap a Buffer from its buffer memory
+ * \param[in] buffer The buffer to unmap
+ *
+ * This method releases the buffer memory entry that was mapped by mapBuffer(),
+ * making it available for new mappings.
+ */
+void Stream::unmapBuffer(const Buffer *buffer)
+{
+	ASSERT(memoryType_ == ExternalMemory);
+
+	bufferCache_.emplace_back(buffer->dmabufs(), buffer->index());
+}
+
+/**
  * \brief Create buffers for the stream
  * \param[in] count The number of buffers to create
  * \param[in] memory The stream memory type
@@ -536,6 +620,18 @@ void Stream::createBuffers(MemoryType memory, unsigned int count)
 
 	memoryType_ = memory;
 	bufferPool_.createBuffers(count);
+
+	/* Streams with internal memory usage do not need buffer mapping. */
+	if (memoryType_ == InternalMemory)
+		return;
+
+	/*
+	 * Prepare for buffer mapping by adding all buffer memory entries to the
+	 * cache.
+	 */
+	bufferCache_.clear();
+	for (unsigned int i = 0; i < bufferPool_.count(); ++i)
+		bufferCache_.emplace_back(std::array<int, 3>{ -1, -1, -1 }, i);
 }
 
 /**

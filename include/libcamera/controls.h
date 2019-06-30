@@ -117,11 +117,13 @@ public:
 	const_iterator begin() const { return controls_.begin(); }
 	const_iterator end() const { return controls_.end(); }
 
+	bool contains(ControlId id) const;
 	bool contains(const ControlInfo *info) const;
 	bool empty() const { return controls_.empty(); }
 	std::size_t size() const { return controls_.size(); }
 	void clear() { controls_.clear(); }
 
+	ControlValue &operator[](ControlId id);
 	ControlValue &operator[](const ControlInfo *info) { return controls_[info]; }
 
 	void update(const ControlList &list);

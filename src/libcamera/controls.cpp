@@ -10,6 +10,8 @@
 #include <sstream>
 #include <string>
 
+#include <libcamera/camera.h>
+
 #include "log.h"
 #include "utils.h"
 
@@ -388,6 +390,30 @@ ControlList::ControlList(Camera *camera)
  */
 
 /**
+ * \brief Check if the list contains a control with the specified \a id
+ * \param[in] id The control ID
+ *
+ * The behaviour is undefined if the control \a id is not supported by the
+ * camera that the ControlList refers to.
+ *
+ * \return True if the list contains a matching control, false otherwise
+ */
+bool ControlList::contains(ControlId id) const
+{
+	const ControlInfoMap &controls = camera_->controls();
+	const auto iter = controls.find(id);
+	if (iter == controls.end()) {
+		LOG(Controls, Error)
+			<< "Camera " << camera_->name()
+			<< " does not support control " << id;
+
+		return false;
+	}
+
+	return controls_.find(&iter->second) != controls_.end();
+}
+
+/**
  * \brief Check if the list contains a control with the specified \a info
  * \param[in] info The control info
  * \return True if the list contains a matching control, false otherwise
@@ -413,6 +439,34 @@ bool ControlList::contains(const ControlInfo *info) const
  * \fn ControlList::clear()
  * \brief Removes all controls from the list
  */
+
+/**
+ * \brief Access or insert the control specified by \a id
+ * \param[in] id The control ID
+ *
+ * This method returns a reference to the control identified by \a id, inserting
+ * it in the list if the ID is not already present.
+ *
+ * The behaviour is undefined if the control \a id is not supported by the
+ * camera that the ControlList refers to.
+ *
+ * \return A reference to the value of the control identified by \a id
+ */
+ControlValue &ControlList::operator[](ControlId id)
+{
+	const ControlInfoMap &controls = camera_->controls();
+	const auto iter = controls.find(id);
+	if (iter == controls.end()) {
+		LOG(Controls, Error)
+			<< "Camera " << camera_->name()
+			<< " does not support control " << id;
+
+		static ControlValue empty;
+		return empty;
+	}
+
+	return controls_[&iter->second];
+}
 
 /**
  * \fn ControlList::operator[](const ControlInfo *info)

@@ -7,19 +7,24 @@
 
 #include <algorithm>
 #include <array>
+#include <iomanip>
+#include <tuple>
 
 #include <libcamera/camera.h>
+#include <libcamera/controls.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "camera_sensor.h"
 #include "device_enumerator.h"
 #include "ipa_manager.h"
 #include "log.h"
 #include "media_device.h"
 #include "pipeline_handler.h"
 #include "utils.h"
+#include "v4l2_controls.h"
 #include "v4l2_videodevice.h"
 
 namespace libcamera {
@@ -36,12 +41,15 @@ public:
 
 	~VimcCameraData()
 	{
+		delete sensor_;
 		delete video_;
 	}
 
+	int init(MediaDevice *media);
 	void bufferReady(Buffer *buffer);
 
 	V4L2VideoDevice *video_;
+	CameraSensor *sensor_;
 	Stream stream_;
 };
 
@@ -75,6 +83,8 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
+	int processControls(VimcCameraData *data, Request *request);
+
 	VimcCameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<VimcCameraData *>(
@@ -215,6 +225,47 @@ void PipelineHandlerVimc::stop(Camera *camera)
 	PipelineHandler::stop(camera);
 }
 
+int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
+{
+	V4L2ControlList controls;
+
+	for (auto it : request->controls()) {
+		const ControlInfo *ci = it.first;
+		ControlValue &value = it.second;
+
+		switch (ci->id()) {
+		case Brightness:
+			controls.add(V4L2_CID_BRIGHTNESS, value.getInt());
+			break;
+
+		case Contrast:
+			controls.add(V4L2_CID_CONTRAST, value.getInt());
+			break;
+
+		case Saturation:
+			controls.add(V4L2_CID_SATURATION, value.getInt());
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	for (const V4L2Control &ctrl : controls)
+		LOG(VIMC, Debug)
+			<< "Setting control 0x"
+			<< std::hex << std::setw(8) << ctrl.id() << std::dec
+			<< " to " << ctrl.value();
+
+	int ret = data->sensor_->setControls(&controls);
+	if (ret) {
+		LOG(VIMC, Error) << "Failed to set controls: " << ret;
+		return ret < 0 ? ret : -EINVAL;
+	}
+
+	return ret;
+}
+
 int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
 {
 	VimcCameraData *data = cameraData(camera);
@@ -226,7 +277,11 @@ int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	int ret = data->video_->queueBuffer(buffer);
+	int ret = processControls(data, request);
+	if (ret < 0)
+		return ret;
+
+	ret = data->video_->queueBuffer(buffer);
 	if (ret < 0)
 		return ret;
 
@@ -262,11 +317,8 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
 
 	/* Locate and open the capture video node. */
-	data->video_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
-	if (data->video_->open())
+	if (data->init(media))
 		return false;
-
-	data->video_->bufferReady.connect(data.get(), &VimcCameraData::bufferReady);
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
@@ -275,6 +327,51 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	registerCamera(std::move(camera), std::move(data));
 
 	return true;
+}
+
+int VimcCameraData::init(MediaDevice *media)
+{
+	int ret;
+
+	/* Create and open the video device and the camera sensor. */
+	video_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
+	if (video_->open())
+		return -ENODEV;
+
+	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
+
+	sensor_ = new CameraSensor(media->getEntityByName("Sensor B"));
+	ret = sensor_->init();
+	if (ret)
+		return ret;
+
+	/* Initialise the supported controls. */
+	const V4L2ControlInfoMap &controls = sensor_->controls();
+	for (const auto &ctrl : controls) {
+		unsigned int v4l2Id = ctrl.first;
+		const V4L2ControlInfo &info = ctrl.second;
+		ControlId id;
+
+		switch (v4l2Id) {
+		case V4L2_CID_BRIGHTNESS:
+			id = Brightness;
+			break;
+		case V4L2_CID_CONTRAST:
+			id = Contrast;
+			break;
+		case V4L2_CID_SATURATION:
+			id = Saturation;
+			break;
+		default:
+			continue;
+		}
+
+		controlInfo_.emplace(std::piecewise_construct,
+				     std::forward_as_tuple(id),
+				     std::forward_as_tuple(id, info.min(), info.max()));
+	}
+
+	return 0;
 }
 
 void VimcCameraData::bufferReady(Buffer *buffer)

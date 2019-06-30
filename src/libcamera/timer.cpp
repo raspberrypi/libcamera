@@ -43,6 +43,11 @@ Timer::Timer()
 {
 }
 
+Timer::~Timer()
+{
+	stop();
+}
+
 /**
  * \brief Start or restart the timer with a timeout of \a msec
  * \param[in] msec The timer duration in milliseconds

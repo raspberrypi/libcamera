@@ -17,6 +17,7 @@ class Timer
 {
 public:
 	Timer();
+	~Timer();
 
 	void start(unsigned int msec);
 	void stop();

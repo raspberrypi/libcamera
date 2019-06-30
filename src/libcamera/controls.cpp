@@ -187,6 +187,48 @@ std::string ControlValue::toString() const
  */
 
 /**
+ * \var AwbEnable
+ * ControlType: Bool
+ *
+ * Enables or disables the AWB. See also \a libcamera::ControlId::ManualGain
+ */
+
+/**
+ * \var Brightness
+ * ControlType: Integer
+ *
+ * Specify a fixed brightness parameter.
+ */
+
+/**
+ * \var Contrast
+ * ControlType: Integer
+ *
+ * Specify a fixed constrast parameter.
+ */
+
+/**
+ * \var Saturation
+ * ControlType: Integer
+ *
+ * Specify a fixed saturation parameter.
+ */
+
+/**
+ * \var ManualExposure
+ * ControlType: Integer
+ *
+ * Specify a fixed exposure time in milli-seconds
+ */
+
+/**
+ * \var ManualGain
+ * ControlType: Integer
+ *
+ * Specify a fixed gain parameter
+ */
+
+/**
  * \struct ControlIdentifier
  * \brief Describe a ControlId with control specific constant meta-data
  *

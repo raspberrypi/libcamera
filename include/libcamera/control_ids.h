@@ -13,6 +13,12 @@
 namespace libcamera {
 
 enum ControlId {
+	AwbEnable,
+	Brightness,
+	Contrast,
+	Saturation,
+	ManualExposure,
+	ManualGain,
 };
 
 } /* namespace libcamera */

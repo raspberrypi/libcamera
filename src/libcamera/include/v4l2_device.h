@@ -13,11 +13,9 @@
 #include <linux/videodev2.h>
 
 #include "log.h"
+#include "v4l2_controls.h"
 
 namespace libcamera {
-
-class V4L2ControlInfo;
-class V4L2ControlList;
 
 class V4L2Device : protected Loggable
 {
@@ -25,7 +23,8 @@ public:
 	void close();
 	bool isOpen() const { return fd_ != -1; }
 
-	const V4L2ControlInfo *getControlInfo(unsigned int id) const;
+	const V4L2ControlInfoMap &controls() const { return controls_; }
+
 	int getControls(V4L2ControlList *ctrls);
 	int setControls(V4L2ControlList *ctrls);
 
@@ -48,7 +47,7 @@ private:
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);
 
-	std::map<unsigned int, V4L2ControlInfo> controls_;
+	V4L2ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;
 };

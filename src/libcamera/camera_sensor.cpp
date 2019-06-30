@@ -248,14 +248,12 @@ int CameraSensor::setFormat(V4L2SubdeviceFormat *format)
 }
 
 /**
- * \brief Retrieve information about a control
- * \param[in] id The control ID
- * \return A pointer to the V4L2ControlInfo for control \a id, or nullptr
- * if the sensor doesn't have such a control
+ * \brief Retrieve the supported V4L2 controls and their information
+ * \return A map of the V4L2 controls supported by the sensor
  */
-const V4L2ControlInfo *CameraSensor::getControlInfo(unsigned int id) const
+const V4L2ControlInfoMap &CameraSensor::controls() const
 {
-	return subdev_->getControlInfo(id);
+	return subdev_->controls();
 }
 
 /**

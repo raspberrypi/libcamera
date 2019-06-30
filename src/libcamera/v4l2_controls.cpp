@@ -115,6 +115,11 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  */
 
 /**
+ * \typedef V4L2ControlInfoMap
+ * \brief A map of control ID to V4L2ControlInfo
+ */
+
+/**
  * \class V4L2Control
  * \brief A V4L2 control value
  *

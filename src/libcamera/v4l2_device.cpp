@@ -111,19 +111,10 @@ void V4L2Device::close()
  */
 
 /**
- * \brief Retrieve information about a control
- * \param[in] id The control ID
- * \return A pointer to the V4L2ControlInfo for control \a id, or nullptr
- * if the device doesn't have such a control
+ * \fn V4L2Device::controls()
+ * \brief Retrieve the supported V4L2 controls and their information
+ * \return A map of the V4L2 controls supported by the device
  */
-const V4L2ControlInfo *V4L2Device::getControlInfo(unsigned int id) const
-{
-	auto it = controls_.find(id);
-	if (it == controls_.end())
-		return nullptr;
-
-	return &it->second;
-}
 
 /**
  * \brief Read controls from the device
@@ -158,13 +149,14 @@ int V4L2Device::getControls(V4L2ControlList *ctrls)
 
 	for (unsigned int i = 0; i < count; ++i) {
 		const V4L2Control *ctrl = ctrls->getByIndex(i);
-		const V4L2ControlInfo *info = getControlInfo(ctrl->id());
-		if (!info) {
+		const auto iter = controls_.find(ctrl->id());
+		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
 				<< "Control '" << ctrl->id() << "' not found";
 			return -EINVAL;
 		}
 
+		const V4L2ControlInfo *info = &iter->second;
 		controlInfo[i] = info;
 		v4l2Ctrls[i].id = info->id();
 	}
@@ -232,13 +224,14 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 
 	for (unsigned int i = 0; i < count; ++i) {
 		const V4L2Control *ctrl = ctrls->getByIndex(i);
-		const V4L2ControlInfo *info = getControlInfo(ctrl->id());
-		if (!info) {
+		const auto iter = controls_.find(ctrl->id());
+		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
 				<< "Control '" << ctrl->id() << "' not found";
 			return -EINVAL;
 		}
 
+		const V4L2ControlInfo *info = &iter->second;
 		controlInfo[i] = info;
 		v4l2Ctrls[i].id = info->id();
 

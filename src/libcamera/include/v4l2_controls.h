@@ -8,10 +8,10 @@
 #ifndef __LIBCAMERA_V4L2_CONTROLS_H__
 #define __LIBCAMERA_V4L2_CONTROLS_H__
 
+#include <map>
+#include <stdint.h>
 #include <string>
 #include <vector>
-
-#include <stdint.h>
 
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
@@ -40,6 +40,8 @@ private:
 	int64_t min_;
 	int64_t max_;
 };
+
+using V4L2ControlInfoMap = std::map<unsigned int, V4L2ControlInfo>;
 
 class V4L2Control
 {

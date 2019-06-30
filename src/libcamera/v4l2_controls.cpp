@@ -74,6 +74,8 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 	type_ = ctrl.type;
 	name_ = static_cast<const char *>(ctrl.name);
 	size_ = ctrl.elem_size * ctrl.elems;
+	min_ = ctrl.minimum;
+	max_ = ctrl.maximum;
 }
 
 /**
@@ -98,6 +100,18 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  * \fn V4L2ControlInfo::name()
  * \brief Retrieve the control user readable name
  * \return The V4L2 control user readable name
+ */
+
+/**
+ * \fn V4L2ControlInfo::min()
+ * \brief Retrieve the control minimum value
+ * \return The V4L2 control minimum value
+ */
+
+/**
+ * \fn V4L2ControlInfo::max()
+ * \brief Retrieve the control maximum value
+ * \return The V4L2 control maximum value
  */
 
 /**

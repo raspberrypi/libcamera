@@ -28,11 +28,17 @@ public:
 	size_t size() const { return size_; }
 	const std::string &name() const { return name_; }
 
+	int64_t min() const { return min_; }
+	int64_t max() const { return max_; }
+
 private:
 	unsigned int id_;
 	unsigned int type_;
 	size_t size_;
 	std::string name_;
+
+	int64_t min_;
+	int64_t max_;
 };
 
 class V4L2Control

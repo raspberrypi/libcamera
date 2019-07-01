@@ -152,6 +152,17 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * Test that dynamically allocated timers are stopped when
+		 * deleted. This will result in a crash on failure.
+		 */
+		ManagedTimer *dyntimer = new ManagedTimer();
+		dyntimer->start(100);
+		delete dyntimer;
+
+		timer.start(200);
+		dispatcher->processEvents();
+
 		return TestPass;
 	}
 

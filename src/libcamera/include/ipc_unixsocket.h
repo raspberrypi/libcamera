@@ -49,6 +49,8 @@ private:
 	void dataNotifier(EventNotifier *notifier);
 
 	int fd_;
+	bool headerReceived_;
+	struct Header header_;
 	EventNotifier *notifier_;
 };
 

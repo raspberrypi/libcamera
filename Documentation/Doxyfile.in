@@ -837,7 +837,8 @@ EXCLUDE                = @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp 
 			 @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
 			 @TOP_SRCDIR@/src/libcamera/include/device_enumerator_sysfs.h \
 			 @TOP_SRCDIR@/src/libcamera/include/device_enumerator_udev.h \
-			 @TOP_SRCDIR@/src/libcamera/pipeline/
+			 @TOP_SRCDIR@/src/libcamera/pipeline/ \
+			 @TOP_SRCDIR@/src/libcamera/proxy/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

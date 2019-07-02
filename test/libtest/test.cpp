@@ -25,6 +25,10 @@ int Test::execute()
 	if (ret)
 		return errno;
 
+	ret = setenv("LIBCAMERA_IPA_PROXY_PATH", "src/libcamera/proxy/worker", 1);
+	if (ret)
+		return errno;
+
 	ret = init();
 	if (ret)
 		return ret;

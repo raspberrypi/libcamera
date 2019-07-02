@@ -14,6 +14,7 @@ libcamera_sources = files([
     'ipa_interface.cpp',
     'ipa_manager.cpp',
     'ipa_module.cpp',
+    'ipa_proxy.cpp',
     'ipc_unixsocket.cpp',
     'log.cpp',
     'media_device.cpp',
@@ -43,6 +44,7 @@ libcamera_headers = files([
     'include/formats.h',
     'include/ipa_manager.h',
     'include/ipa_module.h',
+    'include/ipa_proxy.h',
     'include/ipc_unixsocket.h',
     'include/log.h',
     'include/media_device.h',
@@ -65,6 +67,10 @@ includes = [
 ]
 
 subdir('pipeline')
+
+proxy_install_dir = join_paths(get_option('libdir'), 'libcamera', 'proxy')
+config_h.set('IPA_PROXY_DIR',
+             '"' + join_paths(get_option('prefix'), proxy_install_dir) + '"')
 
 libudev = dependency('libudev', required : false)
 

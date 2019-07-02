@@ -42,6 +42,7 @@ private:
 			     const std::map<Stream *, Buffer *> &buffers);
 	int display(Buffer *buffer);
 
+	QString title_;
 	const OptionsParser::Options &options_;
 
 	std::shared_ptr<Camera> camera_;

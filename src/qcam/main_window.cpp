@@ -14,6 +14,7 @@
 #include <QTimer>
 
 #include <libcamera/camera_manager.h>
+#include <libcamera/version.h>
 
 #include "main_window.h"
 #include "viewfinder.h"
@@ -24,6 +25,9 @@ MainWindow::MainWindow(const OptionsParser::Options &options)
 	: options_(options), isCapturing_(false)
 {
 	int ret;
+
+	title_ = "QCam " + QString::fromStdString(libcamera::version);
+	setWindowTitle(title_);
 
 	viewfinder_ = new ViewFinder(this);
 	setCentralWidget(viewfinder_);

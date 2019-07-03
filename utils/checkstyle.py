@@ -350,6 +350,34 @@ class CLangFormatter(Formatter):
         return ret.stdout.decode('utf-8')
 
 
+class DoxygenFormatter(Formatter):
+    patterns = ('*.c', '*.cpp')
+
+    return_regex = re.compile(' +\\* +\\\\return +[a-z]')
+
+    @classmethod
+    def format(cls, filename, data):
+        lines = []
+        in_doxygen = False
+
+        for line in data.split('\n'):
+            if line.find('/**') != -1:
+                in_doxygen = True
+
+            if not in_doxygen:
+                lines.append(line)
+                continue
+
+            line = cls.return_regex.sub(lambda m: m.group(0)[:-1] + m.group(0)[-1].upper(), line)
+
+            if line.find('*/') != -1:
+                in_doxygen = False
+
+            lines.append(line)
+
+        return '\n'.join(lines)
+
+
 class StripTrailingSpaceFormatter(Formatter):
     patterns = ('*.c', '*.cpp', '*.h', '*.py', 'meson.build')
 

@@ -276,6 +276,39 @@ class MesonChecker(StyleChecker):
         return issues
 
 
+class Pep8Checker(StyleChecker):
+    patterns = ('*.py',)
+    results_regex = re.compile('stdin:([0-9]+):([0-9]+)(.*)')
+
+    def __init__(self, content):
+        super().__init__()
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+        data = ''.join(self.__content).encode('utf-8')
+
+        try:
+            ret = subprocess.run(['pep8', '--ignore=E501', '-'],
+                                 input=data, stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            issues.append(StyleIssue(0, None, "Please install pep8 to validate python additions"))
+            return issues
+
+        results = ret.stdout.decode('utf-8').splitlines()
+        for item in results:
+            search = re.search(Pep8Checker.results_regex, item)
+            line_number = int(search.group(1))
+            position = int(search.group(2))
+            msg = search.group(3)
+
+            if line_number in line_numbers:
+                line = self.__content[line_number - 1]
+                issues.append(StyleIssue(line_number, line, msg))
+
+        return issues
+
+
 # ------------------------------------------------------------------------------
 # Formatters
 #
@@ -450,7 +483,8 @@ def check_file(top_level, commit, filename):
         issues = sorted(issues, key=lambda i: i.line_number)
         for issue in issues:
             print('%s#%u: %s' % (Colours.fg(Colours.Yellow), issue.line_number, issue.msg))
-            print('+%s%s' % (issue.line.rstrip(), Colours.reset()))
+            if issue.line is not None:
+                print('+%s%s' % (issue.line.rstrip(), Colours.reset()))
 
     return len(formatted_diff) + len(issues)
 

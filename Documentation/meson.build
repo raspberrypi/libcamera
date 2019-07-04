@@ -1,4 +1,5 @@
-doc_install_dir = join_paths(get_option('datadir'), 'doc', 'libcamera-@0@'.format(meson.project_version()))
+doc_install_dir = join_paths(get_option('datadir'), 'doc',
+                             'libcamera-@0@'.format(meson.project_version()))
 
 #
 # Doxygen

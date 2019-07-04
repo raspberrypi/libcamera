@@ -144,6 +144,8 @@ int MainWindow::startCapture()
 		requests.push_back(request);
 	}
 
+	lastBufferTime_ = 0;
+
 	ret = camera_->start();
 	if (ret) {
 		std::cout << "Failed to start capture" << std::endl;
@@ -187,16 +189,14 @@ void MainWindow::stopCapture()
 void MainWindow::requestComplete(Request *request,
 				 const std::map<Stream *, Buffer *> &buffers)
 {
-	static uint64_t last = 0;
-
 	if (request->status() == Request::RequestCancelled)
 		return;
 
 	Buffer *buffer = buffers.begin()->second;
 
-	double fps = buffer->timestamp() - last;
-	fps = last && fps ? 1000000000.0 / fps : 0.0;
-	last = buffer->timestamp();
+	double fps = buffer->timestamp() - lastBufferTime_;
+	fps = lastBufferTime_ && fps ? 1000000000.0 / fps : 0.0;
+	lastBufferTime_ = buffer->timestamp();
 
 	std::cout << "seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
 		  << " buf: " << buffer->index()

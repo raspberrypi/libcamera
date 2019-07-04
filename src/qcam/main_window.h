@@ -48,6 +48,8 @@ private:
 	bool isCapturing_;
 	std::unique_ptr<CameraConfiguration> config_;
 
+	uint64_t lastBufferTime_;
+
 	ViewFinder *viewfinder_;
 };
 

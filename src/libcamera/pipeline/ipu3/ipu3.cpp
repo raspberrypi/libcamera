@@ -69,8 +69,9 @@ public:
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &cfg);
 
-	int importBuffers(BufferPool *pool);
-	int exportBuffers(ImgUOutput *output, BufferPool *pool);
+	int importInputBuffers(BufferPool *pool);
+	int importOutputBuffers(ImgUOutput *output, BufferPool *pool);
+	int exportOutputBuffers(ImgUOutput *output, BufferPool *pool);
 	void freeBuffers();
 
 	int start();
@@ -605,7 +606,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	if (!pool)
 		return -ENOMEM;
 
-	ret = imgu->importBuffers(pool);
+	ret = imgu->importInputBuffers(pool);
 	if (ret)
 		goto error;
 
@@ -616,7 +617,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	 */
 	bufferCount = pool->count();
 	imgu->stat_.pool->createBuffers(bufferCount);
-	ret = imgu->exportBuffers(&imgu->stat_, imgu->stat_.pool);
+	ret = imgu->exportOutputBuffers(&imgu->stat_, imgu->stat_.pool);
 	if (ret)
 		goto error;
 
@@ -625,7 +626,10 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 		IPU3Stream *stream = static_cast<IPU3Stream *>(s);
 		ImgUDevice::ImgUOutput *dev = stream->device_;
 
-		ret = imgu->exportBuffers(dev, &stream->bufferPool());
+		if (stream->memoryType() == InternalMemory)
+			ret = imgu->exportOutputBuffers(dev, &stream->bufferPool());
+		else
+			ret = imgu->importOutputBuffers(dev, &stream->bufferPool());
 		if (ret)
 			goto error;
 	}
@@ -637,8 +641,8 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	if (!outStream->active_) {
 		bufferCount = vfStream->configuration().bufferCount;
 		outStream->device_->pool->createBuffers(bufferCount);
-		ret = imgu->exportBuffers(outStream->device_,
-					  outStream->device_->pool);
+		ret = imgu->exportOutputBuffers(outStream->device_,
+						outStream->device_->pool);
 		if (ret)
 			goto error;
 	}
@@ -646,8 +650,8 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	if (!vfStream->active_) {
 		bufferCount = outStream->configuration().bufferCount;
 		vfStream->device_->pool->createBuffers(bufferCount);
-		ret = imgu->exportBuffers(vfStream->device_,
-					  vfStream->device_->pool);
+		ret = imgu->exportOutputBuffers(vfStream->device_,
+						vfStream->device_->pool);
 		if (ret)
 			goto error;
 	}
@@ -1113,7 +1117,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
  * \param[in] pool The buffer pool to import
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::importBuffers(BufferPool *pool)
+int ImgUDevice::importInputBuffers(BufferPool *pool)
 {
 	int ret = input_->importBuffers(pool);
 	if (ret) {
@@ -1134,12 +1138,35 @@ int ImgUDevice::importBuffers(BufferPool *pool)
  *
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::exportBuffers(ImgUOutput *output, BufferPool *pool)
+int ImgUDevice::exportOutputBuffers(ImgUOutput *output, BufferPool *pool)
 {
 	int ret = output->dev->exportBuffers(pool);
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to export ImgU "
 				 << output->name << " buffers";
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Reserve buffers in \a output from the provided \a pool
+ * \param[in] output The ImgU output device
+ * \param[in] pool The buffer pool used to reserve buffers in \a output
+ *
+ * Reserve a number of buffers equal to the number of buffers in \a pool
+ * in the \a output device.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int ImgUDevice::importOutputBuffers(ImgUOutput *output, BufferPool *pool)
+{
+	int ret = output->dev->importBuffers(pool);
+	if (ret) {
+		LOG(IPU3, Error)
+			<< "Failed to import buffer in " << output->name
+			<< " ImgU device";
 		return ret;
 	}
 

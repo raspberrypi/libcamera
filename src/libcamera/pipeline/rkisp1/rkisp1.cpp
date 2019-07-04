@@ -319,7 +319,11 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 					   const std::set<Stream *> &streams)
 {
 	Stream *stream = *streams.begin();
-	return video_->exportBuffers(&stream->bufferPool());
+
+	if (stream->memoryType() == InternalMemory)
+		return video_->exportBuffers(&stream->bufferPool());
+	else
+		return video_->importBuffers(&stream->bufferPool());
 }
 
 int PipelineHandlerRkISP1::freeBuffers(Camera *camera,

@@ -202,7 +202,10 @@ int PipelineHandlerVimc::allocateBuffers(Camera *camera,
 
 	LOG(VIMC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
 
-	return data->video_->exportBuffers(&stream->bufferPool());
+	if (stream->memoryType() == InternalMemory)
+		return data->video_->exportBuffers(&stream->bufferPool());
+	else
+		return data->video_->importBuffers(&stream->bufferPool());
 }
 
 int PipelineHandlerVimc::freeBuffers(Camera *camera,

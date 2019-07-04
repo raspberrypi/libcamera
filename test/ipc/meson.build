@@ -8,5 +8,5 @@ foreach t : ipc_tests
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite : 'ipc', is_parallel : false)
+    test(t[0], exe, suite : 'ipc')
 endforeach

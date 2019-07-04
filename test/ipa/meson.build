@@ -8,5 +8,5 @@ foreach t : ipa_test
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite : 'ipa', is_parallel : false)
+    test(t[0], exe, suite : 'ipa')
 endforeach

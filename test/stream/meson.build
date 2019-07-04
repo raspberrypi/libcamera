@@ -7,5 +7,5 @@ foreach t : stream_tests
                    dependencies : libcamera_dep,
                    link_with : test_libraries,
                    include_directories : test_includes_internal)
-  test(t[0], exe, suite: 'stream', is_parallel: false)
+  test(t[0], exe, suite: 'stream')
 endforeach

@@ -1,8 +1,6 @@
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.40',
-    version : run_command('utils/gen-version.sh',
-                          '@0@'.format(meson.source_root()),
-                          check : true).stdout().strip(),
+    version : '0.0.0',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -10,6 +8,21 @@ project('libcamera', 'c', 'cpp',
     ],
     license : 'LGPL 2.1+')
 
+# Generate version information. The libcamera_git_version variable contains the
+# full version with git patch count and SHA1 (e.g. 1.2.3+211-c94a24f4), while
+# the libcamera_version variable contains the major.minor.patch (e.g. 1.2.3)
+# only. If the source tree isn't under git control, or if it matches the last
+# git version tag, the build metadata (e.g. +211-c94a24f4) is omitted from
+# libcamera_git_version.
+libcamera_git_version = run_command('utils/gen-version.sh',
+                                    meson.source_root()).stdout().strip()
+if libcamera_git_version == ''
+    libcamera_git_version = meson.project_version()
+endif
+
+libcamera_version = libcamera_git_version.split('+')[0]
+
+# Configure the build environment.
 cc = meson.get_compiler('c')
 config_h = configuration_data()
 

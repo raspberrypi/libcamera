@@ -26,7 +26,7 @@ MainWindow::MainWindow(const OptionsParser::Options &options)
 {
 	int ret;
 
-	title_ = "QCam " + QString::fromStdString(libcamera::version);
+	title_ = "QCam " + QString::fromStdString(CameraManager::version());
 	setWindowTitle(title_);
 	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
 

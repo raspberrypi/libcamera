@@ -9,14 +9,8 @@
 #ifndef __LIBCAMERA_VERSION_H__
 #define __LIBCAMERA_VERSION_H__
 
-#include <string>
-
-#define LIBCAMERA_VERSION "@VCS_TAG@"
-
-namespace libcamera {
-
-extern const std::string version;
-
-} /* namespace libcamera */
+#define LIBCAMERA_VERSION_MAJOR		@LIBCAMERA_VERSION_MAJOR@
+#define LIBCAMERA_VERSION_MINOR		@LIBCAMERA_VERSION_MINOR@
+#define LIBCAMERA_VERSION_PATCH		@LIBCAMERA_VERSION_PATCH@
 
 #endif /* __LIBCAMERA_VERSION_H__ */

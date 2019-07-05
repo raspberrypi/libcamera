@@ -79,8 +79,16 @@ control_types_cpp = custom_target('control_types_cpp',
 
 libcamera_sources += control_types_cpp
 
+gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
+
+version_cpp = vcs_tag(command : [gen_version, meson.source_root()],
+                      input : 'version.cpp.in',
+                      output : 'version.cpp',
+                      fallback : meson.project_version())
+
+libcamera_sources += version_cpp
+
 libcamera_deps = [
-    declare_dependency(sources : version_h),
     cc.find_library('dl'),
     libudev,
 ]

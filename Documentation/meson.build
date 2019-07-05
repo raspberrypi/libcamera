@@ -1,5 +1,5 @@
 doc_install_dir = join_paths(get_option('datadir'), 'doc',
-                             'libcamera-@0@'.format(meson.project_version()))
+                             'libcamera-@0@'.format(libcamera_version))
 
 #
 # Doxygen
@@ -9,7 +9,7 @@ doxygen = find_program('doxygen', required : false)
 
 if doxygen.found()
     cdata = configuration_data()
-    cdata.set('VERSION', meson.project_version())
+    cdata.set('VERSION', 'v@0@'.format(libcamera_git_version))
     cdata.set('TOP_SRCDIR', meson.source_root())
     cdata.set('TOP_BUILDDIR', meson.build_root())
 
@@ -48,7 +48,7 @@ if sphinx.found()
         'index.rst',
     ]
 
-    release = 'release=' + meson.project_version()
+    release = 'release=v' + libcamera_git_version
 
     custom_target('documentation',
                   command : [sphinx, '-D', release, '-q', '-W', '-b', 'html',

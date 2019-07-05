@@ -31,6 +31,7 @@ public:
 	void removeCamera(Camera *camera);
 
 	static CameraManager *instance();
+	static const std::string &version() { return version_; }
 
 	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 	EventDispatcher *eventDispatcher();
@@ -46,6 +47,8 @@ private:
 	std::vector<std::shared_ptr<Camera>> cameras_;
 
 	std::unique_ptr<EventDispatcher> dispatcher_;
+
+	static const std::string version_;
 };
 
 } /* namespace libcamera */

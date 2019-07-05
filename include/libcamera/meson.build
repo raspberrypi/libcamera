@@ -16,13 +16,6 @@ libcamera_api = files([
     'timer.h',
 ])
 
-gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
-
-version_h = vcs_tag(command : [gen_version, meson.current_source_dir()],
-                    input : 'version.h.in',
-                    output : 'version.h',
-                    fallback : 'v0.0')
-
 gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',
@@ -31,6 +24,17 @@ libcamera_h = custom_target('gen-header',
                             command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
                             install : true,
                             install_dir : 'include/libcamera')
+
+version = libcamera_version.split('.')
+libcamera_version_config = configuration_data()
+libcamera_version_config.set('LIBCAMERA_VERSION_MAJOR', version[0])
+libcamera_version_config.set('LIBCAMERA_VERSION_MINOR', version[1])
+libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
+
+configure_file(input : 'version.h.in',
+               output : 'version.h',
+               configuration : libcamera_version_config,
+               install_dir : 'include/libcamera')
 
 install_headers(libcamera_api,
                 subdir : 'libcamera')

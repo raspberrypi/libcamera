@@ -894,8 +894,7 @@ int Camera::stop()
  */
 void Camera::requestComplete(Request *request)
 {
-	std::map<Stream *, Buffer *> buffers(std::move(request->bufferMap_));
-	requestCompleted.emit(request, buffers);
+	requestCompleted.emit(request, request->bufferMap_);
 	delete request;
 }
 

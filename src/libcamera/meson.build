@@ -67,10 +67,7 @@ includes = [
 ]
 
 subdir('pipeline')
-
-proxy_install_dir = join_paths(get_option('libdir'), 'libcamera', 'proxy')
-config_h.set('IPA_PROXY_DIR',
-             '"' + join_paths(get_option('prefix'), proxy_install_dir) + '"')
+subdir('proxy')
 
 libudev = dependency('libudev', required : false)
 
@@ -115,3 +112,5 @@ libcamera = shared_library('camera',
 libcamera_dep = declare_dependency(sources : [libcamera_api, libcamera_h],
                                    include_directories : libcamera_includes,
                                    link_with : libcamera)
+
+subdir('proxy/worker')

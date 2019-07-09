@@ -173,12 +173,78 @@ void *Plane::mem()
  */
 
 /**
- * \class Buffer
+ * \class BufferMemory
  * \brief A memory buffer to store an image
  *
- * The Buffer class represents the memory buffers used to store a
- * full frame image, which may contain multiple separate memory Plane
- * objects if the image format is multi-planar.
+ * The BufferMemory class represents the memory buffers used to store full frame
+ * images, which may contain multiple separate memory Plane objects if the
+ * image format is multi-planar.
+ */
+
+/**
+ * \fn BufferMemory::planes()
+ * \brief Retrieve the planes within the buffer
+ * \return A reference to a vector holding all Planes within the buffer
+ */
+
+/**
+ * \class BufferPool
+ * \brief A pool of buffers
+ *
+ * The BufferPool class groups together a collection of Buffers to store frames.
+ * The buffers must be exported by a device before they can be imported into
+ * another device for further use.
+ */
+
+BufferPool::~BufferPool()
+{
+	destroyBuffers();
+}
+
+/**
+ * \brief Create buffers in the Pool
+ * \param[in] count The number of buffers to create
+ */
+void BufferPool::createBuffers(unsigned int count)
+{
+	buffers_.resize(count);
+}
+
+/**
+ * \brief Release all buffers from pool
+ *
+ * If no buffers have been created or if buffers have already been released no
+ * operation is performed.
+ */
+void BufferPool::destroyBuffers()
+{
+	buffers_.resize(0);
+}
+
+/**
+ * \fn BufferPool::count()
+ * \brief Retrieve the number of buffers contained within the pool
+ * \return The number of buffers contained in the pool
+ */
+
+/**
+ * \fn BufferPool::buffers()
+ * \brief Retrieve all the buffers in the pool
+ * \return A vector containing all the buffers in the pool.
+ */
+
+/**
+ * \class Buffer
+ * \brief A buffer handle and dynamic metadata
+ *
+ * The Buffer class references a buffer memory and associates dynamic metadata
+ * related to the frame contained in the buffer. It allows referencing buffer
+ * memory through a single interface regardless of whether the memory is
+ * allocated internally in libcamera or provided externally through dmabuf.
+ *
+ * Buffer instances are allocated dynamically for a stream through
+ * Stream::createBuffer(), added to a request with Request::addBuffer() and
+ * deleted automatically after the request complete handler returns.
  */
 
 /**
@@ -195,21 +261,32 @@ void *Plane::mem()
  * invalid and shall not be used.
  */
 
-Buffer::Buffer()
-	: index_(-1), request_(nullptr)
+/**
+ * \brief Construct a buffer not associated with any stream
+ *
+ * This method constructs an orphaned buffer not associated with any stream. It
+ * is not meant to be called by applications, they should instead create buffers
+ * for a stream with Stream::createBuffer().
+ */
+Buffer::Buffer(unsigned int index, const Buffer *metadata)
+	: index_(index), status_(Buffer::BufferSuccess), request_(nullptr),
+	  stream_(nullptr)
 {
+	if (metadata) {
+		bytesused_ = metadata->bytesused_;
+		sequence_ = metadata->sequence_;
+		timestamp_ = metadata->timestamp_;
+	} else {
+		bytesused_ = 0;
+		sequence_ = 0;
+		timestamp_ = 0;
+	}
 }
 
 /**
  * \fn Buffer::index()
  * \brief Retrieve the Buffer index
  * \return The buffer index
- */
-
-/**
- * \fn Buffer::planes()
- * \brief Retrieve the planes within the buffer
- * \return A reference to a vector holding all Planes within the buffer
  */
 
 /**
@@ -265,6 +342,19 @@ Buffer::Buffer()
  */
 
 /**
+ * \fn Buffer::stream()
+ * \brief Retrieve the stream this buffer is associated with
+ *
+ * A Buffer is associated to the stream that created it with
+ * Stream::createBuffer() and the association is valid until the buffer is
+ * destroyed. Buffer instances that are created directly are not associated
+ * with any stream.
+ *
+ * \return The Stream the Buffer is associated with, or nullptr if the buffer
+ * is not associated with a stream
+ */
+
+/**
  * \brief Mark a buffer as cancel by setting its status to BufferCancelled
  */
 void Buffer::cancel()
@@ -280,56 +370,6 @@ void Buffer::cancel()
  * \brief Set the request this buffer belongs to
  *
  * The intended callers are Request::prepare() and Request::completeBuffer().
- */
-
-/**
- * \class BufferPool
- * \brief A pool of buffers
- *
- * The BufferPool class groups together a collection of Buffers to store frames.
- * The buffers must be exported by a device before they can be imported into
- * another device for further use.
- */
-
-BufferPool::~BufferPool()
-{
-	destroyBuffers();
-}
-
-/**
- * \brief Create buffers in the Pool
- * \param[in] count The number of buffers to create
- */
-void BufferPool::createBuffers(unsigned int count)
-{
-	unsigned int index = 0;
-
-	buffers_.resize(count);
-	for (Buffer &buffer : buffers_)
-		buffer.index_ = index++;
-}
-
-/**
- * \brief Release all buffers from pool
- *
- * If no buffers have been created or if buffers have already been released no
- * operation is performed.
- */
-void BufferPool::destroyBuffers()
-{
-	buffers_.resize(0);
-}
-
-/**
- * \fn BufferPool::count()
- * \brief Retrieve the number of buffers contained within the pool
- * \return The number of buffers contained in the pool
- */
-
-/**
- * \fn BufferPool::buffers()
- * \brief Retrieve all the buffers in the pool
- * \return A vector containing all the buffers in the pool.
  */
 
 } /* namespace libcamera */

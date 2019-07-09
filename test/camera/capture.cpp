@@ -34,9 +34,13 @@ protected:
 
 		completeRequestsCount_++;
 
-		/* Reuse the buffers for a new request. */
+		/* Create a new request. */
+		Stream *stream = buffers.begin()->first;
+		Buffer *buffer = buffers.begin()->second;
+		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(buffer->index());
+
 		request = camera_->createRequest();
-		request->setBuffers(buffers);
+		request->addBuffer(std::move(newBuffer));
 		camera_->queueRequest(request);
 	}
 
@@ -78,15 +82,20 @@ protected:
 		Stream *stream = cfg.stream();
 		BufferPool &pool = stream->bufferPool();
 		std::vector<Request *> requests;
-		for (Buffer &buffer : pool.buffers()) {
+		for (unsigned int i = 0; i < pool.count(); ++i) {
 			Request *request = camera_->createRequest();
 			if (!request) {
 				cout << "Failed to create request" << endl;
 				return TestFail;
 			}
 
-			std::map<Stream *, Buffer *> map = { { stream, &buffer } };
-			if (request->setBuffers(map)) {
+			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
+			if (!buffer) {
+				cout << "Failed to create buffer " << i << endl;
+				return TestFail;
+			}
+
+			if (request->addBuffer(std::move(buffer))) {
 				cout << "Failed to associating buffer with request" << endl;
 				return TestFail;
 			}

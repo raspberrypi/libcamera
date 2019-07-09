@@ -60,6 +60,14 @@ Request::Request(Camera *camera, uint64_t cookie)
 {
 }
 
+Request::~Request()
+{
+	for (auto it : bufferMap_) {
+		Buffer *buffer = it.second;
+		delete buffer;
+	}
+}
+
 /**
  * \fn Request::controls()
  * \brief Retrieve the request's ControlList
@@ -87,19 +95,30 @@ Request::Request(Camera *camera, uint64_t cookie)
  */
 
 /**
- * \brief Set the streams to capture with associated buffers
- * \param[in] streamMap The map of streams to buffers
+ * \brief Store a Buffer with its associated Stream in the Request
+ * \param[in] buffer The Buffer to store in the request
+ *
+ * Ownership of the buffer is passed to the request. It will be deleted when
+ * the request is destroyed after completing.
+ *
+ * A request can only contain one buffer per stream. If a buffer has already
+ * been added to the request for the same stream, this method returns -EEXIST.
+ *
  * \return 0 on success or a negative error code otherwise
- * \retval -EBUSY Buffers have already been set
+ * \retval -EEXIST The request already contains a buffer for the stream
  */
-int Request::setBuffers(const std::map<Stream *, Buffer *> &streamMap)
+int Request::addBuffer(std::unique_ptr<Buffer> buffer)
 {
-	if (!bufferMap_.empty()) {
-		LOG(Request, Error) << "Buffers already set";
-		return -EBUSY;
+	Stream *stream = buffer->stream();
+
+	auto it = bufferMap_.find(stream);
+	if (it != bufferMap_.end()) {
+		LOG(Request, Error) << "Buffer already set for stream";
+		return -EEXIST;
 	}
 
-	bufferMap_ = streamMap;
+	bufferMap_[stream] = buffer.release();
+
 	return 0;
 }
 

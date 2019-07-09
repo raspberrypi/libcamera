@@ -95,13 +95,14 @@ int Capture::capture(EventLoop *loop)
 		std::map<Stream *, Buffer *> map;
 		for (StreamConfiguration &cfg : *config_) {
 			Stream *stream = cfg.stream();
-			map[stream] = &stream->bufferPool().buffers()[i];
-		}
+			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
 
-		ret = request->setBuffers(map);
-		if (ret < 0) {
-			std::cerr << "Can't set buffers for request" << std::endl;
-			return ret;
+			ret = request->addBuffer(std::move(buffer));
+			if (ret < 0) {
+				std::cerr << "Can't set buffer for request"
+					  << std::endl;
+				return ret;
+			}
 		}
 
 		requests.push_back(request);
@@ -155,6 +156,7 @@ void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
 		Buffer *buffer = it->second;
+		BufferMemory *mem = &stream->bufferPool().buffers()[buffer->index()];
 		const std::string &name = streamName_[stream];
 
 		info << " " << name
@@ -163,17 +165,34 @@ void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer 
 		     << " bytesused: " << buffer->bytesused();
 
 		if (writer_)
-			writer_->write(buffer, name);
+			writer_->write(buffer, mem, name);
 	}
 
 	std::cout << info.str() << std::endl;
 
+	/*
+	 * Create a new request and populate it with one buffer for each
+	 * stream.
+	 */
 	request = camera_->createRequest();
 	if (!request) {
 		std::cerr << "Can't create request" << std::endl;
 		return;
 	}
 
-	request->setBuffers(buffers);
+	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
+		Stream *stream = it->first;
+		Buffer *buffer = it->second;
+		unsigned int index = buffer->index();
+
+		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
+		if (!newBuffer) {
+			std::cerr << "Can't create buffer " << index << std::endl;
+			return;
+		}
+
+		request->addBuffer(std::move(newBuffer));
+	}
+
 	camera_->queueRequest(request);
 }

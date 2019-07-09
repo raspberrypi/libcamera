@@ -8,6 +8,7 @@
 #define __LIBCAMERA_REQUEST_H__
 
 #include <map>
+#include <memory>
 #include <stdint.h>
 #include <unordered_set>
 
@@ -33,10 +34,11 @@ public:
 	Request(Camera *camera, uint64_t cookie = 0);
 	Request(const Request &) = delete;
 	Request &operator=(const Request &) = delete;
+	~Request();
 
 	ControlList &controls() { return controls_; }
 	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
-	int setBuffers(const std::map<Stream *, Buffer *> &streamMap);
+	int addBuffer(std::unique_ptr<Buffer> buffer);
 	Buffer *findBuffer(Stream *stream) const;
 
 	uint64_t cookie() const { return cookie_; }

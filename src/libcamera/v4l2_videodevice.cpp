@@ -268,8 +268,7 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: V4L2Device(deviceNode), bufferPool_(nullptr),
-	  queuedBuffersCount_(0), fdEvent_(nullptr)
+	: V4L2Device(deviceNode), bufferPool_(nullptr), fdEvent_(nullptr)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -764,7 +763,7 @@ int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 	for (i = 0; i < pool->count(); ++i) {
 		struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 		struct v4l2_buffer buf = {};
-		Buffer &buffer = pool->buffers()[i];
+		BufferMemory &buffer = pool->buffers()[i];
 
 		buf.index = i;
 		buf.type = bufferType_;
@@ -782,13 +781,13 @@ int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 
 		if (V4L2_TYPE_IS_MULTIPLANAR(buf.type)) {
 			for (unsigned int p = 0; p < buf.length; ++p) {
-				ret = createPlane(&buffer, p,
+				ret = createPlane(&buffer, i, p,
 						  buf.m.planes[p].length);
 				if (ret)
 					break;
 			}
 		} else {
-			ret = createPlane(&buffer, 0, buf.length);
+			ret = createPlane(&buffer, i, 0, buf.length);
 		}
 
 		if (ret) {
@@ -808,19 +807,19 @@ int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 	return 0;
 }
 
-int V4L2VideoDevice::createPlane(Buffer *buffer, unsigned int planeIndex,
-				 unsigned int length)
+int V4L2VideoDevice::createPlane(BufferMemory *buffer, unsigned int index,
+				 unsigned int planeIndex, unsigned int length)
 {
 	struct v4l2_exportbuffer expbuf = {};
 	int ret;
 
 	LOG(V4L2, Debug)
-		<< "Buffer " << buffer->index()
+		<< "Buffer " << index
 		<< " plane " << planeIndex
 		<< ": length=" << length;
 
 	expbuf.type = bufferType_;
-	expbuf.index = buffer->index();
+	expbuf.index = index;
 	expbuf.plane = planeIndex;
 	expbuf.flags = O_RDWR;
 
@@ -904,7 +903,8 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 	buf.field = V4L2_FIELD_NONE;
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
-	const std::vector<Plane> &planes = buffer->planes();
+	BufferMemory *mem = &bufferPool_->buffers()[buf.index];
+	const std::vector<Plane> &planes = mem->planes();
 
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
@@ -937,8 +937,10 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 		return ret;
 	}
 
-	if (queuedBuffersCount_++ == 0)
+	if (queuedBuffers_.empty())
 		fdEvent_->setEnabled(true);
+
+	queuedBuffers_[buf.index] = buffer;
 
 	return 0;
 }
@@ -970,7 +972,7 @@ std::vector<std::unique_ptr<Buffer>> V4L2VideoDevice::queueAllBuffers()
 {
 	int ret;
 
-	if (queuedBuffersCount_)
+	if (!queuedBuffers_.empty())
 		return {};
 
 	if (V4L2_TYPE_IS_OUTPUT(bufferType_))
@@ -979,8 +981,7 @@ std::vector<std::unique_ptr<Buffer>> V4L2VideoDevice::queueAllBuffers()
 	std::vector<std::unique_ptr<Buffer>> buffers;
 
 	for (unsigned int i = 0; i < bufferPool_->count(); ++i) {
-		Buffer *buffer = new Buffer();
-		buffer->index_ = i;
+		Buffer *buffer = new Buffer(i);
 		buffers.emplace_back(buffer);
 		ret = queueBuffer(buffer);
 		if (ret)
@@ -1021,11 +1022,14 @@ Buffer *V4L2VideoDevice::dequeueBuffer()
 
 	ASSERT(buf.index < bufferPool_->count());
 
-	if (--queuedBuffersCount_ == 0)
+	auto it = queuedBuffers_.find(buf.index);
+	Buffer *buffer = it->second;
+	queuedBuffers_.erase(it);
+
+	if (queuedBuffers_.empty())
 		fdEvent_->setEnabled(false);
 
-	Buffer *buffer = &bufferPool_->buffers()[buf.index];
-
+	buffer->index_ = buf.index;
 	buffer->bytesused_ = buf.bytesused;
 	buffer->timestamp_ = buf.timestamp.tv_sec * 1000000000ULL
 			   + buf.timestamp.tv_usec * 1000ULL;
@@ -1100,7 +1104,7 @@ int V4L2VideoDevice::streamOff()
 		return ret;
 	}
 
-	queuedBuffersCount_ = 0;
+	queuedBuffers_.clear();
 	fdEvent_->setEnabled(false);
 
 	return 0;

@@ -211,10 +211,8 @@ protected:
 			return TestFail;
 
 		Stream *stream = *camera_->streams().begin();
-		BufferPool &pool = stream->bufferPool();
-		Buffer &buffer = pool.buffers().front();
-		std::map<Stream *, Buffer *> map = { { stream, &buffer } };
-		if (request->setBuffers(map))
+		std::unique_ptr<Buffer> buffer = stream->createBuffer(0);
+		if (request->addBuffer(std::move(buffer)))
 			return TestFail;
 
 		if (camera_->queueRequest(request))

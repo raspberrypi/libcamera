@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_V4L2_VIDEODEVICE_H__
 #define __LIBCAMERA_V4L2_VIDEODEVICE_H__
 
-#include <atomic>
 #include <string>
 #include <vector>
 
@@ -23,6 +22,7 @@
 namespace libcamera {
 
 class Buffer;
+class BufferMemory;
 class BufferPool;
 class EventNotifier;
 class MediaDevice;
@@ -165,8 +165,8 @@ private:
 	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
 
 	int requestBuffers(unsigned int count);
-	int createPlane(Buffer *buffer, unsigned int plane,
-			unsigned int length);
+	int createPlane(BufferMemory *buffer, unsigned int index,
+			unsigned int plane, unsigned int length);
 
 	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);
@@ -177,7 +177,7 @@ private:
 	enum v4l2_memory memoryType_;
 
 	BufferPool *bufferPool_;
-	std::atomic<unsigned int> queuedBuffersCount_;
+	std::map<unsigned int, Buffer *> queuedBuffers_;
 
 	EventNotifier *fdEvent_;
 };

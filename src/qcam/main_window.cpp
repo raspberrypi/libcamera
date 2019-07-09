@@ -142,8 +142,7 @@ int MainWindow::startCapture()
 
 	BufferPool &pool = stream->bufferPool();
 	std::vector<Request *> requests;
-
-	for (Buffer &buffer : pool.buffers()) {
+	for (unsigned int i = 0; i < pool.count(); ++i) {
 		Request *request = camera_->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;
@@ -151,11 +150,15 @@ int MainWindow::startCapture()
 			goto error;
 		}
 
-		std::map<Stream *, Buffer *> map;
-		map[stream] = &buffer;
-		ret = request->setBuffers(map);
+		std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
+		if (!buffer) {
+			std::cerr << "Can't create buffer " << i << std::endl;
+			goto error;
+		}
+
+		ret = request->addBuffer(std::move(buffer));
 		if (ret < 0) {
-			std::cerr << "Can't set buffers for request" << std::endl;
+			std::cerr << "Can't set buffer for request" << std::endl;
 			goto error;
 		}
 
@@ -219,6 +222,7 @@ void MainWindow::requestComplete(Request *request,
 
 	framesCaptured_++;
 
+	Stream *stream = buffers.begin()->first;
 	Buffer *buffer = buffers.begin()->second;
 
 	double fps = buffer->timestamp() - lastBufferTime_;
@@ -232,7 +236,8 @@ void MainWindow::requestComplete(Request *request,
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
 
-	display(buffer);
+	BufferMemory *mem = &stream->bufferPool().buffers()[buffer->index()];
+	display(buffer, mem);
 
 	request = camera_->createRequest();
 	if (!request) {
@@ -240,16 +245,29 @@ void MainWindow::requestComplete(Request *request,
 		return;
 	}
 
-	request->setBuffers(buffers);
+	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
+		Stream *stream = it->first;
+		Buffer *buffer = it->second;
+		unsigned int index = buffer->index();
+
+		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
+		if (!newBuffer) {
+			std::cerr << "Can't create buffer " << index << std::endl;
+			return;
+		}
+
+		request->addBuffer(std::move(newBuffer));
+	}
+
 	camera_->queueRequest(request);
 }
 
-int MainWindow::display(Buffer *buffer)
+int MainWindow::display(Buffer *buffer, BufferMemory *mem)
 {
-	if (buffer->planes().size() != 1)
+	if (mem->planes().size() != 1)
 		return -EINVAL;
 
-	Plane &plane = buffer->planes().front();
+	Plane &plane = mem->planes().front();
 	unsigned char *raw = static_cast<unsigned char *>(plane.mem());
 	viewfinder_->display(raw, buffer->bytesused());
 

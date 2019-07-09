@@ -48,7 +48,7 @@ private:
 
 	void requestComplete(Request *request,
 			     const std::map<Stream *, Buffer *> &buffers);
-	int display(Buffer *buffer);
+	int display(Buffer *buffer, BufferMemory *mem);
 
 	QString title_;
 	QTimer titleTimer_;

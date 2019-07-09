@@ -14,6 +14,7 @@ namespace libcamera {
 
 class BufferPool;
 class Request;
+class Stream;
 
 class Plane final
 {
@@ -36,43 +37,13 @@ private:
 	void *mem_;
 };
 
-class Buffer final
+class BufferMemory final
 {
 public:
-	enum Status {
-		BufferSuccess,
-		BufferError,
-		BufferCancelled,
-	};
-
-	Buffer();
-
-	unsigned int index() const { return index_; }
-	unsigned int bytesused() const { return bytesused_; }
-	uint64_t timestamp() const { return timestamp_; }
-	unsigned int sequence() const { return sequence_; }
-	Status status() const { return status_; }
 	std::vector<Plane> &planes() { return planes_; }
-	Request *request() const { return request_; }
 
 private:
-	friend class BufferPool;
-	friend class PipelineHandler;
-	friend class Request;
-	friend class V4L2VideoDevice;
-
-	void cancel();
-
-	void setRequest(Request *request) { request_ = request; }
-
-	unsigned int index_;
-	unsigned int bytesused_;
-	uint64_t timestamp_;
-	unsigned int sequence_;
-	Status status_;
-
 	std::vector<Plane> planes_;
-	Request *request_;
 };
 
 class BufferPool final
@@ -84,10 +55,54 @@ public:
 	void destroyBuffers();
 
 	unsigned int count() const { return buffers_.size(); }
-	std::vector<Buffer> &buffers() { return buffers_; }
+	std::vector<BufferMemory> &buffers() { return buffers_; }
 
 private:
-	std::vector<Buffer> buffers_;
+	std::vector<BufferMemory> buffers_;
+};
+
+class Buffer final
+{
+public:
+	enum Status {
+		BufferSuccess,
+		BufferError,
+		BufferCancelled,
+	};
+
+	Buffer(unsigned int index = -1, const Buffer *metadata = nullptr);
+	Buffer(const Buffer &) = delete;
+	Buffer &operator=(const Buffer &) = delete;
+
+	unsigned int index() const { return index_; }
+
+	unsigned int bytesused() const { return bytesused_; }
+	uint64_t timestamp() const { return timestamp_; }
+	unsigned int sequence() const { return sequence_; }
+
+	Status status() const { return status_; }
+	Request *request() const { return request_; }
+	Stream *stream() const { return stream_; }
+
+private:
+	friend class PipelineHandler;
+	friend class Request;
+	friend class Stream;
+	friend class V4L2VideoDevice;
+
+	void cancel();
+
+	void setRequest(Request *request) { request_ = request; }
+
+	unsigned int index_;
+
+	unsigned int bytesused_;
+	uint64_t timestamp_;
+	unsigned int sequence_;
+
+	Status status_;
+	Request *request_;
+	Stream *stream_;
 };
 
 } /* namespace libcamera */

@@ -408,6 +408,30 @@ Stream::Stream()
 }
 
 /**
+ * \brief Create a Buffer instance
+ * \param[in] index The desired buffer index
+ *
+ * This method creates a Buffer instance that references a BufferMemory from
+ * the stream's buffers pool by its \a index. The index shall be lower than the
+ * number of buffers in the pool.
+ *
+ * \return A newly created Buffer on success or nullptr otherwise
+ */
+std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
+{
+	if (index >= bufferPool_.count()) {
+		LOG(Stream, Error) << "Invalid buffer index " << index;
+		return nullptr;
+	}
+
+	Buffer *buffer = new Buffer();
+	buffer->index_ = index;
+	buffer->stream_ = this;
+
+	return std::unique_ptr<Buffer>(buffer);
+}
+
+/**
  * \fn Stream::bufferPool()
  * \brief Retrieve the buffer pool for the stream
  *

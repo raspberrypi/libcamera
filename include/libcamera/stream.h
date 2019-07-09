@@ -8,6 +8,7 @@
 #define __LIBCAMERA_STREAM_H__
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -66,6 +67,9 @@ class Stream
 {
 public:
 	Stream();
+
+	std::unique_ptr<Buffer> createBuffer(unsigned int index);
+
 	BufferPool &bufferPool() { return bufferPool_; }
 	const StreamConfiguration &configuration() const { return configuration_; }
 

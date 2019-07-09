@@ -131,6 +131,7 @@ public:
 	CameraSensor *sensor_;
 
 	BufferPool pool_;
+	std::vector<std::unique_ptr<Buffer>> buffers_;
 };
 
 class IPU3Stream : public Stream
@@ -1430,11 +1431,9 @@ int CIO2Device::start()
 {
 	int ret;
 
-	for (Buffer &buffer : pool_.buffers()) {
-		ret = output_->queueBuffer(&buffer);
-		if (ret)
-			return ret;
-	}
+	buffers_ = output_->queueAllBuffers();
+	if (buffers_.empty())
+		return -EINVAL;
 
 	ret = output_->streamOn();
 	if (ret)
@@ -1445,7 +1444,9 @@ int CIO2Device::start()
 
 int CIO2Device::stop()
 {
-	return output_->streamOff();
+	int ret = output_->streamOff();
+	buffers_.clear();
+	return ret;
 }
 
 int CIO2Device::mediaBusToFormat(unsigned int code)

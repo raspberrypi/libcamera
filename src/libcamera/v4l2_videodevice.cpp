@@ -894,8 +894,8 @@ int V4L2VideoDevice::releaseBuffers()
  */
 int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 {
+	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
 	struct v4l2_buffer buf = {};
-	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
 	int ret;
 
 	buf.index = buffer->index();
@@ -904,21 +904,20 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 	buf.field = V4L2_FIELD_NONE;
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
+	const std::vector<Plane> &planes = buffer->planes();
 
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
-			for (unsigned int p = 0;
-			     p < buffer->planes().size();
-			     p++)
-				planes[p].m.fd = buffer->planes()[p].dmabuf();
+			for (unsigned int p = 0; p < planes.size(); ++p)
+				v4l2Planes[p].m.fd = planes[p].dmabuf();
 		} else {
-			buf.m.fd = buffer->planes()[0].dmabuf();
+			buf.m.fd = planes[0].dmabuf();
 		}
 	}
 
 	if (multiPlanar) {
-		buf.length = buffer->planes().size();
-		buf.m.planes = planes;
+		buf.length = planes.size();
+		buf.m.planes = v4l2Planes;
 	}
 
 	if (V4L2_TYPE_IS_OUTPUT(bufferType_)) {
@@ -942,6 +941,53 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 		fdEvent_->setEnabled(true);
 
 	return 0;
+}
+
+/**
+ * \brief Queue all buffers into the video device
+ *
+ * When starting video capture users of the video device often need to queue
+ * all allocated buffers to the device. This helper method simplifies the
+ * implementation of the user by queuing all buffers and returning a vector of
+ * Buffer instances for each queued buffer.
+ *
+ * This method is meant to be used with video capture devices internal to a
+ * pipeline handler, such as ISP statistics capture devices, or raw CSI-2
+ * receivers. For video capture devices facing applications, buffers shall
+ * instead be queued when requests are received, and for video output devices,
+ * buffers shall be queued when frames are ready to be output.
+ *
+ * The caller shall ensure that the returned buffers vector remains valid until
+ * all the queued buffers are dequeued, either during capture, or by stopping
+ * the video device.
+ *
+ * Calling this method on an output device or on a device that has buffers
+ * already queued is an error and will return an empty vector.
+ *
+ * \return A vector of queued buffers, which will be empty if an error occurs
+ */
+std::vector<std::unique_ptr<Buffer>> V4L2VideoDevice::queueAllBuffers()
+{
+	int ret;
+
+	if (queuedBuffersCount_)
+		return {};
+
+	if (V4L2_TYPE_IS_OUTPUT(bufferType_))
+		return {};
+
+	std::vector<std::unique_ptr<Buffer>> buffers;
+
+	for (unsigned int i = 0; i < bufferPool_->count(); ++i) {
+		Buffer *buffer = new Buffer();
+		buffer->index_ = i;
+		buffers.emplace_back(buffer);
+		ret = queueBuffer(buffer);
+		if (ret)
+			return {};
+	}
+
+	return buffers;
 }
 
 /**

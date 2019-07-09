@@ -117,11 +117,10 @@ protected:
 		capture_->bufferReady.connect(this, &BufferSharingTest::captureBufferReady);
 		output_->bufferReady.connect(this, &BufferSharingTest::outputBufferReady);
 
-		/* Queue all the buffers to the capture device. */
-		for (Buffer &buffer : pool_.buffers()) {
-			if (capture_->queueBuffer(&buffer))
-				return TestFail;
-		}
+		std::vector<std::unique_ptr<Buffer>> buffers;
+		buffers = capture_->queueAllBuffers();
+		if (buffers.empty())
+			return TestFail;
 
 		ret = capture_->streamOn();
 		if (ret) {

@@ -46,11 +46,10 @@ protected:
 
 		capture_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
 
-		/* Queue all the buffers to the device. */
-		for (Buffer &b : pool_.buffers()) {
-			if (capture_->queueBuffer(&b))
-				return TestFail;
-		}
+		std::vector<std::unique_ptr<Buffer>> buffers;
+		buffers = capture_->queueAllBuffers();
+		if (buffers.empty())
+			return TestFail;
 
 		ret = capture_->streamOn();
 		if (ret)

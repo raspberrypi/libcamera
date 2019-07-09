@@ -139,6 +139,7 @@ public:
 	int releaseBuffers();
 
 	int queueBuffer(Buffer *buffer);
+	std::vector<std::unique_ptr<Buffer>> queueAllBuffers();
 	Signal<Buffer *> bufferReady;
 
 	int streamOn();

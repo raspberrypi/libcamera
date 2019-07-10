@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_BUFFER_H__
 #define __LIBCAMERA_BUFFER_H__
 
+#include <array>
 #include <stdint.h>
 #include <vector>
 
@@ -75,6 +76,7 @@ public:
 	Buffer &operator=(const Buffer &) = delete;
 
 	unsigned int index() const { return index_; }
+	const std::array<int, 3> &dmabufs() const { return dmabuf_; }
 
 	unsigned int bytesused() const { return bytesused_; }
 	uint64_t timestamp() const { return timestamp_; }
@@ -95,6 +97,7 @@ private:
 	void setRequest(Request *request) { request_ = request; }
 
 	unsigned int index_;
+	std::array<int, 3> dmabuf_;
 
 	unsigned int bytesused_;
 	uint64_t timestamp_;

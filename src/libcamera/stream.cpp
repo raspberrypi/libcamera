@@ -424,17 +424,26 @@ Stream::Stream()
 }
 
 /**
- * \brief Create a Buffer instance
+ * \brief Create a Buffer instance referencing the memory buffer \a index
  * \param[in] index The desired buffer index
  *
  * This method creates a Buffer instance that references a BufferMemory from
  * the stream's buffers pool by its \a index. The index shall be lower than the
  * number of buffers in the pool.
  *
+ * This method is only valid for streams that use the InternalMemory type. It
+ * will return a null pointer when called on streams using the ExternalMemory
+ * type.
+ *
  * \return A newly created Buffer on success or nullptr otherwise
  */
 std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
 {
+	if (memoryType_ != InternalMemory) {
+		LOG(Stream, Error) << "Invalid stream memory type";
+		return nullptr;
+	}
+
 	if (index >= bufferPool_.count()) {
 		LOG(Stream, Error) << "Invalid buffer index " << index;
 		return nullptr;
@@ -442,6 +451,42 @@ std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
 
 	Buffer *buffer = new Buffer();
 	buffer->index_ = index;
+	buffer->stream_ = this;
+
+	return std::unique_ptr<Buffer>(buffer);
+}
+
+/**
+ * \brief Create a Buffer instance that represents a memory area identified by
+ * dmabuf file descriptors
+ * \param[in] fds The dmabuf file descriptors for each plane
+ *
+ * This method creates a Buffer instance that references buffer memory
+ * allocated outside of libcamera through dmabuf file descriptors. The \a
+ * dmabuf array shall contain a file descriptor for each plane in the buffer,
+ * and unused entries shall be set to -1.
+ *
+ * The buffer is created without a valid index, as it does not yet map to any of
+ * the stream's BufferMemory instances. An index will be assigned at the time
+ * the buffer is queued to the camera in a request. Applications may thus
+ * create any number of Buffer instances, providing that no more than the
+ * number of buffers allocated for the stream are queued at any given time.
+ *
+ * This method is only valid for streams that use the ExternalMemory type. It
+ * will return a null pointer when called on streams using the InternalMemory
+ * type.
+ *
+ * \return A newly created Buffer on success or nullptr otherwise
+ */
+std::unique_ptr<Buffer> Stream::createBuffer(const std::array<int, 3> &fds)
+{
+	if (memoryType_ != ExternalMemory) {
+		LOG(Stream, Error) << "Invalid stream memory type";
+		return nullptr;
+	}
+
+	Buffer *buffer = new Buffer();
+	buffer->dmabuf_ = fds;
 	buffer->stream_ = this;
 
 	return std::unique_ptr<Buffer>(buffer);

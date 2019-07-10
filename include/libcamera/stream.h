@@ -75,6 +75,7 @@ public:
 	Stream();
 
 	std::unique_ptr<Buffer> createBuffer(unsigned int index);
+	std::unique_ptr<Buffer> createBuffer(const std::array<int, 3> &fds);
 
 	BufferPool &bufferPool() { return bufferPool_; }
 	std::vector<BufferMemory> &buffers() { return bufferPool_.buffers(); }

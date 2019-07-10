@@ -106,10 +106,15 @@ Request::~Request()
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -EEXIST The request already contains a buffer for the stream
+ * \retval -EINVAL The buffer does not reference a valid Stream
  */
 int Request::addBuffer(std::unique_ptr<Buffer> buffer)
 {
 	Stream *stream = buffer->stream();
+	if (!stream) {
+		LOG(Request, Error) << "Invalid stream reference";
+		return -EINVAL;
+	}
 
 	auto it = bufferMap_.find(stream);
 	if (it != bufferMap_.end()) {

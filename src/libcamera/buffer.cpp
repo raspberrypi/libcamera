@@ -269,7 +269,8 @@ void BufferPool::destroyBuffers()
  * for a stream with Stream::createBuffer().
  */
 Buffer::Buffer(unsigned int index, const Buffer *metadata)
-	: index_(index), status_(Buffer::BufferSuccess), request_(nullptr),
+	: index_(index), dmabuf_({ -1, -1, -1 }),
+	  status_(Buffer::BufferSuccess), request_(nullptr),
 	  stream_(nullptr)
 {
 	if (metadata) {
@@ -287,6 +288,16 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  * \fn Buffer::index()
  * \brief Retrieve the Buffer index
  * \return The buffer index
+ */
+
+/**
+ * \fn Buffer::dmabufs()
+ * \brief Retrieve the dmabuf file descriptors for all buffer planes
+ *
+ * The dmabufs array contains one dmabuf file descriptor per plane. Unused
+ * entries are set to -1.
+ *
+ * \return The dmabuf file descriptors
  */
 
 /**

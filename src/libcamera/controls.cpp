@@ -204,7 +204,7 @@ std::string ControlValue::toString() const
  * \var Contrast
  * ControlType: Integer
  *
- * Specify a fixed constrast parameter.
+ * Specify a fixed contrast parameter.
  */
 
 /**

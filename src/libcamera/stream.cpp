@@ -649,7 +649,7 @@ void Stream::destroyBuffers()
  * \var Stream::bufferPool_
  * \brief The pool of buffers associated with the stream
  *
- * The stream buffer pool is populated by the Camera class after a succesfull
+ * The stream buffer pool is populated by the Camera class after a successful
  * stream configuration.
  */
 

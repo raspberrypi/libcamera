@@ -149,7 +149,7 @@ PipelineHandler::~PipelineHandler()
  * return false.
  *
  * If multiple instances of a pipeline are available in the system, the
- * PipelineHandler class will be instanciated once per instance, and its match()
+ * PipelineHandler class will be instantiated once per instance, and its match()
  * function called for every instance. Each call shall acquire media devices for
  * one pipeline instance, until all compatible media devices are exhausted.
  *

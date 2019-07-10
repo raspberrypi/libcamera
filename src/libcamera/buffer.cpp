@@ -321,7 +321,7 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  * \fn Buffer::timestamp()
  * \brief Retrieve the time when the buffer was processed
  *
- * The timestamp is expressed as a number number of nanoseconds since the epoch.
+ * The timestamp is expressed as a number of nanoseconds since the epoch.
  *
  * \return Timestamp when the buffer was processed
  */

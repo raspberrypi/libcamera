@@ -348,7 +348,7 @@ close:
  * the IPA module information it contains was successfully retrieved and
  * validated.
  *
- * \return true if the the IPAModule is valid, false otherwise
+ * \return True if the IPAModule is valid, false otherwise
  */
 bool IPAModule::isValid() const
 {

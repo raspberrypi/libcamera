@@ -30,7 +30,7 @@ LOG_DEFINE_CATEGORY(V4L2)
  *
  * The V4L2Device class groups together the methods and fields common to
  * both the V4L2VideoDevice and V4L2Subdevice classes, and provides a base
- * class whith methods to open and close the device node associated with the
+ * class with methods to open and close the device node associated with the
  * device and to perform IOCTL system calls on it.
  *
  * The V4L2Device class cannot be instantiated directly, as its constructor

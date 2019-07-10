@@ -757,7 +757,7 @@ int Camera::freeBuffers()
  * \param[in] cookie Opaque cookie for application use
  *
  * This method creates an empty request for the application to fill with
- * buffers and paramaters, and queue for capture.
+ * buffers and parameters, and queue for capture.
  *
  * The \a cookie is stored in the request and is accessible through the
  * Request::cookie() method at any time. It is typically used by applications

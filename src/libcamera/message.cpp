@@ -68,4 +68,26 @@ Message::~Message()
  * \return The message receiver
  */
 
+/**
+ * \class SignalMessage
+ * \brief A message carrying a Signal across threads
+ */
+
+/**
+ * \fn SignalMessage::SignalMessage()
+ * \brief Construct a SignalMessage
+ * \param[in] slot The slot that the signal targets
+ * \param[in] pack The signal arguments
+ */
+
+/**
+ * \var SignalMessage::slot_
+ * \brief The slot that the signal targets
+ */
+
+/**
+ * \var SignalMessage::pack_
+ * \brief The signal arguments
+ */
+
 }; /* namespace libcamera */

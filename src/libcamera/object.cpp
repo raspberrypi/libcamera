@@ -10,6 +10,7 @@
 #include <libcamera/signal.h>
 
 #include "log.h"
+#include "message.h"
 #include "thread.h"
 
 /**
@@ -31,6 +32,10 @@ namespace libcamera {
  * message is posted to an object, its handler will run in the object's thread.
  * This allows implementing easy message passing between threads by inheriting
  * from the Object class.
+ *
+ * Object slots connected to signals will also run in the context of the
+ * object's thread, regardless of whether the signal is emitted in the same or
+ * in another thread.
  *
  * \sa Message, Signal, Thread
  */
@@ -82,6 +87,16 @@ void Object::postMessage(std::unique_ptr<Message> msg)
  */
 void Object::message(Message *msg)
 {
+	switch (msg->type()) {
+	case Message::SignalMessage: {
+		SignalMessage *smsg = static_cast<SignalMessage *>(msg);
+		smsg->slot_->invokePack(smsg->pack_);
+		break;
+	}
+
+	default:
+		break;
+	}
 }
 
 /**

@@ -8,6 +8,8 @@
 #define __LIBCAMERA_SIGNAL_H__
 
 #include <list>
+#include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include <libcamera/object.h>
@@ -27,6 +29,9 @@ public:
 	void *obj() { return obj_; }
 	bool isObject() const { return isObject_; }
 
+	void activatePack(void *pack);
+	virtual void invokePack(void *pack) = 0;
+
 protected:
 	void *obj_;
 	bool isObject_;
@@ -35,24 +40,70 @@ protected:
 template<typename... Args>
 class SlotArgs : public SlotBase
 {
+private:
+#ifndef __DOXYGEN__
+	/*
+	 * This is a cheap partial implementation of std::integer_sequence<>
+	 * from C++14.
+	 */
+	template<int...>
+	struct sequence {
+	};
+
+	template<int N, int... S>
+	struct generator : generator<N-1, N-1, S...> {
+	};
+
+	template<int... S>
+	struct generator<0, S...> {
+		typedef sequence<S...> type;
+	};
+#endif
+
+	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
+
+	template<int... S>
+	void invokePack(void *pack, sequence<S...>)
+	{
+		PackType *args = static_cast<PackType *>(pack);
+		invoke(std::get<S>(*args)...);
+		delete args;
+	}
+
 public:
 	SlotArgs(void *obj, bool isObject)
 		: SlotBase(obj, isObject) {}
 
-	virtual void invoke(Args... args) = 0;
+	void invokePack(void *pack) override
+	{
+		invokePack(pack, typename generator<sizeof...(Args)>::type());
+	}
 
-protected:
-	friend class Signal<Args...>;
+	virtual void activate(Args... args) = 0;
+	virtual void invoke(Args... args) = 0;
 };
 
 template<typename T, typename... Args>
 class SlotMember : public SlotArgs<Args...>
 {
 public:
+	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
+
 	SlotMember(T *obj, bool isObject, void (T::*func)(Args...))
 		: SlotArgs<Args...>(obj, isObject), func_(func) {}
 
-	void invoke(Args... args) { (static_cast<T *>(this->obj_)->*func_)(args...); }
+	void activate(Args... args)
+	{
+		if (this->isObject_)
+			SlotBase::activatePack(new PackType{ args... });
+		else
+			(static_cast<T *>(this->obj_)->*func_)(args...);
+	}
+
+	void invoke(Args... args)
+	{
+		(static_cast<T *>(this->obj_)->*func_)(args...);
+	}
 
 private:
 	friend class Signal<Args...>;
@@ -66,7 +117,8 @@ public:
 	SlotStatic(void (*func)(Args...))
 		: SlotArgs<Args...>(nullptr, false), func_(func) {}
 
-	void invoke(Args... args) { (*func_)(args...); }
+	void activate(Args... args) { (*func_)(args...); }
+	void invoke(Args... args) {}
 
 private:
 	friend class Signal<Args...>;
@@ -186,9 +238,8 @@ public:
 		 * disconnect operation, invalidating the iterator.
 		 */
 		std::vector<SlotBase *> slots{ slots_.begin(), slots_.end() };
-		for (SlotBase *slot : slots) {
-			static_cast<SlotArgs<Args...> *>(slot)->invoke(args...);
-		}
+		for (SlotBase *slot : slots)
+			static_cast<SlotArgs<Args...> *>(slot)->activate(args...);
 	}
 };
 

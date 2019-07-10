@@ -10,6 +10,7 @@
 namespace libcamera {
 
 class Object;
+class SlotBase;
 class Thread;
 
 class Message
@@ -17,6 +18,7 @@ class Message
 public:
 	enum Type {
 		None = 0,
+		SignalMessage = 1,
 	};
 
 	Message(Type type);
@@ -30,6 +32,18 @@ private:
 
 	Type type_;
 	Object *receiver_;
+};
+
+class SignalMessage : public Message
+{
+public:
+	SignalMessage(SlotBase *slot, void *pack)
+		: Message(Message::SignalMessage), slot_(slot), pack_(pack)
+	{
+	}
+
+	SlotBase *slot_;
+	void *pack_;
 };
 
 } /* namespace libcamera */

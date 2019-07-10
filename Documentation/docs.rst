@@ -379,5 +379,5 @@ features required by Android and missing from libcamera, such as JPEG encoding
 support.
 
 The Android camera HAL implementation will initially target the
-LIMITED harware level, with support for the FULL level then being gradually
+LIMITED hardware level, with support for the FULL level then being gradually
 implemented.

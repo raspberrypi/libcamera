@@ -27,9 +27,8 @@ public:
 		: obj_(obj), object_(object) {}
 	virtual ~SlotBase() {}
 
-	template<typename T>
+	template<typename T, typename std::enable_if<!std::is_same<Object, T>::value>::type * = nullptr>
 	bool match(T *obj) { return obj == obj_; }
-	template<>
 	bool match(Object *object) { return object == object_; }
 
 	void disconnect(SignalBase *signal);

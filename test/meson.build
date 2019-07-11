@@ -21,6 +21,7 @@ public_tests = [
 
 internal_tests = [
     ['camera-sensor',                   'camera-sensor.cpp'],
+    ['log',                             'log.cpp'],
     ['message',                         'message.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],
     ['threads',                         'threads.cpp'],

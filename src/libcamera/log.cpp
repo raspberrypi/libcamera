@@ -69,6 +69,9 @@ private:
 	void parseLogLevels();
 	static LogSeverity parseLogLevel(const std::string &level);
 
+	friend int logSetFile(const char *file);
+	friend void logSetLevel(const char *category, const char *level);
+
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
 	void unregisterCategory(LogCategory *category);
@@ -79,6 +82,68 @@ private:
 	std::ofstream file_;
 	std::ostream *output_;
 };
+
+/**
+ * \brief Set the log file
+ * \param[in] file Full path to the log file
+ *
+ * This function sets the logging output file to \a file. The previous log file,
+ * if any, is closed, and all new log messages will be written to the new log
+ * file.
+ *
+ * If \a file is a null pointer, the log is directed to stderr. If the
+ * function returns an error, the log file is not changed.
+ *
+ * \return Zero on success, or a negative error code otherwise.
+ */
+int logSetFile(const char *file)
+{
+	Logger *logger = Logger::instance();
+
+	if (!file) {
+		logger->output_ = &std::cerr;
+		logger->file_.close();
+		return 0;
+	}
+
+	std::ofstream logFile(file);
+	if (!logFile.good())
+		return -EINVAL;
+
+	if (logger->output_ != &std::cerr)
+		logger->file_.close();
+	logger->file_ = std::move(logFile);
+	logger->output_ = &logger->file_;
+	return 0;
+}
+
+/**
+ * \brief Set the log level
+ * \param[in] category Logging category
+ * \param[in] level Log level
+ *
+ * This function sets the log level of \a category to \a level.
+ * \a level shall be one of the following strings:
+ * - "DEBUG"
+ * - "INFO"
+ * - "WARN"
+ * - "ERROR"
+ * - "FATAL"
+ *
+ * "*" is not a valid \a category for this function.
+ */
+void logSetLevel(const char *category, const char *level)
+{
+	Logger *logger = Logger::instance();
+
+	LogSeverity severity = Logger::parseLogLevel(level);
+	if (severity == LogInvalid)
+		return;
+
+	for (LogCategory *c : logger->categories_)
+		if (!strcmp(c->name(), category))
+			c->setSeverity(severity);
+}
 
 /**
  * \brief Retrieve the logger instance

@@ -9,6 +9,7 @@ libcamera_api = files([
     'geometry.h',
     'ipa/ipa_interface.h',
     'ipa/ipa_module_info.h',
+    'logging.h',
     'object.h',
     'request.h',
     'signal.h',

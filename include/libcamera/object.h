@@ -13,9 +13,10 @@
 namespace libcamera {
 
 class Message;
-class SignalBase;
 template<typename... Args>
 class Signal;
+class SignalBase;
+class SlotBase;
 class Thread;
 
 class Object
@@ -33,6 +34,7 @@ public:
 private:
 	template<typename... Args>
 	friend class Signal;
+	friend class SlotBase;
 	friend class Thread;
 
 	void connect(SignalBase *signal);

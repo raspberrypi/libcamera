@@ -57,9 +57,15 @@ namespace libcamera {
  * passed through the signal will remain valid after the signal is emitted.
  */
 
+void SlotBase::disconnect(SignalBase *signal)
+{
+	if (object_)
+		object_->disconnect(signal);
+}
+
 void SlotBase::activatePack(void *pack)
 {
-	Object *obj = static_cast<Object *>(obj_);
+	Object *obj = static_cast<Object *>(object_);
 
 	if (Thread::current() == obj->thread()) {
 		invokePack(pack);

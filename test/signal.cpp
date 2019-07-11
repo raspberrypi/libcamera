@@ -32,6 +32,29 @@ public:
 	}
 };
 
+class BaseClass
+{
+public:
+	/*
+	 * A virtual method is required in the base class, otherwise the compiler
+	 * will always store Object before BaseClass in memory.
+	 */
+	virtual ~BaseClass()
+	{
+	}
+
+	unsigned int data_[32];
+};
+
+class SlotMulti : public BaseClass, public Object
+{
+public:
+	void slot()
+	{
+		valueStatic_ = 1;
+	}
+};
+
 class SignalTest : public Test
 {
 protected:
@@ -69,6 +92,8 @@ protected:
 
 	int run()
 	{
+		/* ----------------- Signal -> !Object tests ---------------- */
+
 		/* Test signal emission and reception. */
 		called_ = false;
 		signalVoid_.connect(this, &SignalTest::slotVoid);
@@ -149,6 +174,8 @@ protected:
 			return TestFail;
 		}
 
+		/* ----------------- Signal -> Object tests ----------------- */
+
 		/*
 		 * Test automatic disconnection on object deletion. Connect the
 		 * slot twice to ensure all instances are disconnected.
@@ -170,10 +197,10 @@ protected:
 		 * Test that signal deletion disconnects objects. This shall
 		 * not generate any valgrind warning.
 		 */
-		Signal<> *signal = new Signal<>();
+		Signal<> *dynamicSignal = new Signal<>();
 		slotObject = new SlotObject();
-		signal->connect(slotObject, &SlotObject::slot);
-		delete signal;
+		dynamicSignal->connect(slotObject, &SlotObject::slot);
+		delete dynamicSignal;
 		delete slotObject;
 
 		/* Exercise the Object slot code paths. */
@@ -187,6 +214,47 @@ protected:
 		}
 
 		delete slotObject;
+
+		/* --------- Signal -> Object (multiple inheritance) -------- */
+
+		/*
+		 * Test automatic disconnection on object deletion. Connect the
+		 * slot twice to ensure all instances are disconnected.
+		 */
+		signalVoid_.disconnect();
+
+		SlotMulti *slotMulti = new SlotMulti();
+		signalVoid_.connect(slotMulti, &SlotMulti::slot);
+		signalVoid_.connect(slotMulti, &SlotMulti::slot);
+		delete slotMulti;
+		valueStatic_ = 0;
+		signalVoid_.emit();
+		if (valueStatic_ != 0) {
+			cout << "Signal disconnection on object deletion test failed" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Test that signal deletion disconnects objects. This shall
+		 * not generate any valgrind warning.
+		 */
+		dynamicSignal = new Signal<>();
+		slotMulti = new SlotMulti();
+		dynamicSignal->connect(slotMulti, &SlotMulti::slot);
+		delete dynamicSignal;
+		delete slotMulti;
+
+		/* Exercise the Object slot code paths. */
+		slotMulti = new SlotMulti();
+		signalVoid_.connect(slotMulti, &SlotMulti::slot);
+		valueStatic_ = 0;
+		signalVoid_.emit();
+		if (valueStatic_ == 0) {
+			cout << "Signal delivery for Object test failed" << endl;
+			return TestFail;
+		}
+
+		delete slotMulti;
 
 		return TestPass;
 	}

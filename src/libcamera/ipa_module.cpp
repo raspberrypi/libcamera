@@ -7,6 +7,8 @@
 
 #include "ipa_module.h"
 
+#include <algorithm>
+#include <array>
 #include <dlfcn.h>
 #include <elf.h>
 #include <errno.h>
@@ -467,6 +469,28 @@ bool IPAModule::match(PipelineHandler *pipe,
 	return info_.pipelineVersion >= minVersion &&
 	       info_.pipelineVersion <= maxVersion &&
 	       !strcmp(info_.pipelineName, pipe->name());
+}
+
+/**
+ * \brief Verify if the IPA module is open source
+ *
+ * \sa IPAModuleInfo::license
+ */
+bool IPAModule::isOpenSource() const
+{
+	static std::array<const char *, sizeof(char *)> osLicenses = {
+		"GPL-2.0-only",
+		"GPL-2.0-or-later",
+		"GPL-3.0-only",
+		"GPL-3.0-or-later",
+		"LGPL-2.1-only",
+		"LGPL-2.1-or-later",
+		"LGPL-3.0-only",
+		"LGPL-3.0-or-later",
+	};
+
+	return std::find(osLicenses.begin(), osLicenses.end(), info_.license)
+	       != osLicenses.end();
 }
 
 } /* namespace libcamera */

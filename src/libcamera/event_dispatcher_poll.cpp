@@ -46,6 +46,7 @@ static const char *notifierType(EventNotifier::Type type)
  */
 
 EventDispatcherPoll::EventDispatcherPoll()
+	: processingEvents_(false)
 {
 	/*
 	 * Create the event fd. Failures are fatal as we can't implement an
@@ -96,6 +97,15 @@ void EventDispatcherPoll::unregisterEventNotifier(EventNotifier *notifier)
 	}
 
 	set.notifiers[type] = nullptr;
+
+	/*
+	 * Don't race with event processing if this method is called from an
+	 * event notifier. The notifiers_ entry will be erased by
+	 * processEvents().
+	 */
+	if (processingEvents_)
+		return;
+
 	if (!set.notifiers[0] && !set.notifiers[1] && !set.notifiers[2])
 		notifiers_.erase(iter);
 }
@@ -241,6 +251,8 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 		{ EventNotifier::Exception, POLLPRI },
 	};
 
+	processingEvents_ = true;
+
 	for (const pollfd &pfd : pollfds) {
 		auto iter = notifiers_.find(pfd.fd);
 		ASSERT(iter != notifiers_.end());
@@ -269,7 +281,13 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 			if (pfd.revents & event.events)
 				notifier->activated.emit(notifier);
 		}
+
+		/* Erase the notifiers_ entry if it is now empty. */
+		if (!set.notifiers[0] && !set.notifiers[1] && !set.notifiers[2])
+			notifiers_.erase(iter);
 	}
+
+	processingEvents_ = false;
 }
 
 void EventDispatcherPoll::processTimers()

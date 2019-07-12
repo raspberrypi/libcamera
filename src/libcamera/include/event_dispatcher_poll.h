@@ -45,6 +45,8 @@ private:
 	std::list<Timer *> timers_;
 	int eventfd_;
 
+	bool processingEvents_;
+
 	int poll(std::vector<struct pollfd> *pollfds);
 	void processInterrupt(const struct pollfd &pfd);
 	void processNotifiers(const std::vector<struct pollfd> &pollfds);

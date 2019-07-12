@@ -391,8 +391,9 @@ int PipelineHandler::queueRequest(Camera *camera, Request *request)
  * This method shall be called by pipeline handlers to signal completion of the
  * \a buffer part of the \a request. It notifies applications of buffer
  * completion and updates the request's internal buffer tracking. The request
- * is not completed automatically when the last buffer completes, pipeline
- * handlers shall complete requests explicitly with completeRequest().
+ * is not completed automatically when the last buffer completes to give
+ * pipeline handlers a chance to perform any operation that may still be
+ * needed. They shall complete requests explicitly with completeRequest().
  *
  * \return True if all buffers contained in the request have completed, false
  * otherwise
@@ -413,17 +414,24 @@ bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
  * request has completed. The request is deleted and shall not be accessed once
  * this method returns.
  *
- * The pipeline handler shall ensure that requests complete in the same order
- * they are submitted.
+ * This method ensures that requests will be returned to the application in
+ * submission order, the pipeline handler may call it on any complete request
+ * without any ordering constraint.
  */
 void PipelineHandler::completeRequest(Camera *camera, Request *request)
 {
-	CameraData *data = cameraData(camera);
-	ASSERT(request == data->queuedRequests_.front());
-	data->queuedRequests_.pop_front();
-
 	request->complete(Request::RequestComplete);
-	camera->requestComplete(request);
+
+	CameraData *data = cameraData(camera);
+
+	while (!data->queuedRequests_.empty()) {
+		request = data->queuedRequests_.front();
+		if (request->hasPendingBuffers())
+			break;
+
+		data->queuedRequests_.pop_front();
+		camera->requestComplete(request);
+	}
 }
 
 /**

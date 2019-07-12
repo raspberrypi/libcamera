@@ -376,7 +376,7 @@ int VimcCameraData::init(MediaDevice *media)
 
 void VimcCameraData::bufferReady(Buffer *buffer)
 {
-	Request *request = queuedRequests_.front();
+	Request *request = buffer->request();
 
 	pipe_->completeBuffer(camera_, request, buffer);
 	pipe_->completeRequest(camera_, request);

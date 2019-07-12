@@ -382,7 +382,7 @@ int UVCCameraData::init(MediaEntity *entity)
 
 void UVCCameraData::bufferReady(Buffer *buffer)
 {
-	Request *request = queuedRequests_.front();
+	Request *request = buffer->request();
 
 	pipe_->completeBuffer(camera_, request, buffer);
 	pipe_->completeRequest(camera_, request);

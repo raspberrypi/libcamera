@@ -740,9 +740,6 @@ int Camera::freeBuffers()
 		return -EACCES;
 
 	for (Stream *stream : activeStreams_) {
-		if (!stream->bufferPool().count())
-			continue;
-
 		/*
 		 * All mappings must be destroyed before buffers can be freed
 		 * by the V4L2 device that has allocated them.

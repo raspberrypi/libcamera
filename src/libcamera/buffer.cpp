@@ -311,6 +311,9 @@ void BufferPool::createBuffers(unsigned int count)
 
 /**
  * \brief Release all buffers from pool
+ *
+ * If no buffers have been created or if buffers have already been released no
+ * operation is performed.
  */
 void BufferPool::destroyBuffers()
 {

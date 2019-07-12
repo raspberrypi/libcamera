@@ -59,7 +59,10 @@ protected:
 		char buf[1000];
 		memset(buf, 0, sizeof(buf));
 		lseek(fd, 0, SEEK_SET);
-		read(fd, buf, sizeof(buf));
+		if (read(fd, buf, sizeof(buf)) < 0) {
+			cerr << "Failed to read tmp log file" << endl;
+			return TestFail;
+		}
 		close(fd);
 
 		std::list<int> goodList = { 1, 3, 5 };

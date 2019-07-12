@@ -4,6 +4,7 @@ subdir('camera')
 subdir('controls')
 subdir('ipa')
 subdir('ipc')
+subdir('log')
 subdir('media_device')
 subdir('pipeline')
 subdir('process')
@@ -22,8 +23,6 @@ public_tests = [
 
 internal_tests = [
     ['camera-sensor',                   'camera-sensor.cpp'],
-    ['log',                             'log.cpp'],
-    ['log_process',                     'log_process.cpp'],
     ['message',                         'message.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],
     ['threads',                         'threads.cpp'],

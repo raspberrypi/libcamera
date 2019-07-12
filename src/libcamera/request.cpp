@@ -46,9 +46,17 @@ LOG_DEFINE_CATEGORY(Request)
 /**
  * \brief Create a capture request for a camera
  * \param[in] camera The camera that creates the request
+ * \param[in] cookie Opaque cookie for application use
+ *
+ * The \a cookie is stored in the request and is accessible through the
+ * cookie() method at any time. It is typically used by applications to map the
+ * request to an external resource in the request completion handler, and is
+ * completely opaque to libcamera.
+ *
  */
-Request::Request(Camera *camera)
-	: camera_(camera), controls_(camera), status_(RequestPending)
+Request::Request(Camera *camera, uint64_t cookie)
+	: camera_(camera), controls_(camera), cookie_(cookie),
+	  status_(RequestPending)
 {
 }
 
@@ -118,6 +126,12 @@ Buffer *Request::findBuffer(Stream *stream) const
 
 	return it->second;
 }
+
+/**
+ * \fn Request::cookie()
+ * \brief Retrieve the cookie set when the request was created
+ * \return The request cookie
+ */
 
 /**
  * \fn Request::status()

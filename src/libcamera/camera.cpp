@@ -754,9 +754,15 @@ int Camera::freeBuffers()
 
 /**
  * \brief Create a request object for the camera
+ * \param[in] cookie Opaque cookie for application use
  *
  * This method creates an empty request for the application to fill with
  * buffers and paramaters, and queue for capture.
+ *
+ * The \a cookie is stored in the request and is accessible through the
+ * Request::cookie() method at any time. It is typically used by applications
+ * to map the request to an external resource in the request completion
+ * handler, and is completely opaque to libcamera.
  *
  * The ownership of the returned request is passed to the caller, which is
  * responsible for either queueing the request or deleting it.
@@ -766,12 +772,12 @@ int Camera::freeBuffers()
  *
  * \return A pointer to the newly created request, or nullptr on error
  */
-Request *Camera::createRequest()
+Request *Camera::createRequest(uint64_t cookie)
 {
 	if (disconnected_ || !stateBetween(CameraPrepared, CameraRunning))
 		return nullptr;
 
-	return new Request(this);
+	return new Request(this, cookie);
 }
 
 /**

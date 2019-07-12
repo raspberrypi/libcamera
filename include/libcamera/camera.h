@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdint.h>
 #include <string>
 
 #include <libcamera/controls.h>
@@ -93,7 +94,7 @@ public:
 	int allocateBuffers();
 	int freeBuffers();
 
-	Request *createRequest();
+	Request *createRequest(uint64_t cookie = 0);
 	int queueRequest(Request *request);
 
 	int start();

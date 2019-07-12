@@ -29,19 +29,8 @@ LOG_DEFINE_CATEGORY(LogAPITest)
 class LogAPITest : public Test
 {
 protected:
-	int run() override
+	void doLogging()
 	{
-		int fd = open("/tmp", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
-		if (fd < 0) {
-			cerr << "Failed to open tmp log file" << endl;
-			return TestFail;
-		}
-
-		char path[32];
-		snprintf(path, sizeof(path), "/proc/self/fd/%u", fd);
-
-		logSetFile(path);
-
 		logSetLevel("LogAPITest", "DEBUG");
 		LOG(LogAPITest, Info) << "good 1";
 
@@ -55,20 +44,13 @@ protected:
 		logSetLevel("LogAPITest", "WARN");
 		LOG(LogAPITest, Warning) << "good 5";
 		LOG(LogAPITest, Info) << "bad";
+	}
 
-		char buf[1000];
-		memset(buf, 0, sizeof(buf));
-		lseek(fd, 0, SEEK_SET);
-		if (read(fd, buf, sizeof(buf)) < 0) {
-			cerr << "Failed to read tmp log file" << endl;
-			return TestFail;
-		}
-		close(fd);
-
-		std::list<int> goodList = { 1, 3, 5 };
-		std::basic_istringstream<char> iss((std::string(buf)));
-		std::string line;
-		while (getline(iss, line)) {
+	int verifyOutput(istream &is)
+	{
+		list<int> goodList = { 1, 3, 5 };
+		string line;
+		while (getline(is, line)) {
 			if (goodList.empty()) {
 				cout << "Too many log lines" << endl;
 				return TestFail;
@@ -87,6 +69,80 @@ protected:
 			cout << "Too few log lines" << endl;
 			return TestFail;
 		}
+
+		return TestPass;
+	}
+
+	int testFile()
+	{
+		int fd = open("/tmp", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
+		if (fd < 0) {
+			cerr << "Failed to open tmp log file" << endl;
+			return TestFail;
+		}
+
+		char path[32];
+		snprintf(path, sizeof(path), "/proc/self/fd/%u", fd);
+
+		if (logSetFile(path) < 0) {
+			cerr << "Failed to set log file" << endl;
+			return TestFail;
+		}
+
+		doLogging();
+
+		char buf[1000];
+		memset(buf, 0, sizeof(buf));
+		lseek(fd, 0, SEEK_SET);
+		if (read(fd, buf, sizeof(buf)) < 0) {
+			cerr << "Failed to read tmp log file" << endl;
+			return TestFail;
+		}
+		close(fd);
+
+		istringstream iss(buf);
+		return verifyOutput(iss);
+	}
+
+	int testStream()
+	{
+		stringstream log;
+		/* Never fails, so no need to check return value */
+		logSetStream(&log);
+
+		doLogging();
+
+		return verifyOutput(log);
+	}
+
+	int testTarget()
+	{
+		logSetTarget(LoggingTargetNone);
+		logSetLevel("LogAPITest", "DEBUG");
+		LOG(LogAPITest, Info) << "don't crash please";
+
+		if (!logSetTarget(LoggingTargetFile))
+			return TestFail;
+
+		if (!logSetTarget(LoggingTargetStream))
+			return TestFail;
+
+		return TestPass;
+	}
+
+	int run() override
+	{
+		int ret = testFile();
+		if (ret != TestPass)
+			return TestFail;
+
+		ret = testStream();
+		if (ret != TestPass)
+			return TestFail;
+
+		ret = testTarget();
+		if (ret != TestPass)
+			return TestFail;
 
 		return TestPass;
 	}

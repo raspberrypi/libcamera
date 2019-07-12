@@ -140,9 +140,8 @@ int MainWindow::startCapture()
 		return ret;
 	}
 
-	BufferPool &pool = stream->bufferPool();
 	std::vector<Request *> requests;
-	for (unsigned int i = 0; i < pool.count(); ++i) {
+	for (unsigned int i = 0; i < cfg.bufferCount; ++i) {
 		Request *request = camera_->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;

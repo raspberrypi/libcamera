@@ -80,9 +80,8 @@ protected:
 		}
 
 		Stream *stream = cfg.stream();
-		BufferPool &pool = stream->bufferPool();
 		std::vector<Request *> requests;
-		for (unsigned int i = 0; i < pool.count(); ++i) {
+		for (unsigned int i = 0; i < cfg.bufferCount; ++i) {
 			Request *request = camera_->createRequest();
 			if (!request) {
 				cout << "Failed to create request" << endl;

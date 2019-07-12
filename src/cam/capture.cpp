@@ -74,10 +74,8 @@ int Capture::capture(EventLoop *loop)
 
 	/* Identify the stream with the least number of buffers. */
 	unsigned int nbuffers = UINT_MAX;
-	for (StreamConfiguration &cfg : *config_) {
-		Stream *stream = cfg.stream();
-		nbuffers = std::min(nbuffers, stream->bufferPool().count());
-	}
+	for (StreamConfiguration &cfg : *config_)
+		nbuffers = std::min(nbuffers, cfg.bufferCount);
 
 	/*
 	 * TODO: make cam tool smarter to support still capture by for

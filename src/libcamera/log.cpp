@@ -15,7 +15,10 @@
 #include <iostream>
 #include <list>
 #include <string.h>
+#include <syslog.h>
 #include <unordered_set>
+
+#include <libcamera/logging.h>
 
 #include "utils.h"
 
@@ -48,7 +51,178 @@
  * to stderr.
  */
 
+/**
+ * \file logging.h
+ * \brief Logging management
+ *
+ * API to change the logging output destination and log levels programatically.
+ */
+
 namespace libcamera {
+
+static int log_severity_to_syslog(LogSeverity severity)
+{
+	switch (severity) {
+	case LogDebug:
+		return LOG_DEBUG;
+	case LogInfo:
+		return LOG_INFO;
+	case LogWarning:
+		return LOG_WARNING;
+	case LogError:
+		return LOG_ERR;
+	case LogFatal:
+		return LOG_ALERT;
+	default:
+		return LOG_NOTICE;
+	}
+}
+
+static std::string log_timespec_to_string(const struct timespec &timestamp)
+{
+	std::ostringstream ossTimestamp;
+	ossTimestamp.fill('0');
+	ossTimestamp << "[" << timestamp.tv_sec / (60 * 60) << ":"
+		     << std::setw(2) << (timestamp.tv_sec / 60) % 60 << ":"
+		     << std::setw(2) << timestamp.tv_sec % 60 << "."
+		     << std::setw(9) << timestamp.tv_nsec << "]";
+	return ossTimestamp.str();
+}
+
+static const char *log_severity_name(LogSeverity severity)
+{
+	static const char *const names[] = {
+		"  DBG",
+		" INFO",
+		" WARN",
+		"  ERR",
+		"FATAL",
+	};
+
+	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
+		return names[severity];
+	else
+		return "UNKWN";
+}
+
+/**
+ * \brief Log output
+ *
+ * The LogOutput class models a log output destination
+ */
+class LogOutput
+{
+public:
+	LogOutput(const char *path);
+	LogOutput(std::ostream *stream);
+	LogOutput();
+	~LogOutput();
+
+	bool isValid() const;
+	void write(const LogMessage &msg);
+
+private:
+	void writeSyslog(const LogMessage &msg);
+	void writeStream(const LogMessage &msg);
+
+	std::ostream *stream_;
+	LoggingTarget target_;
+};
+
+/**
+ * \brief Construct a log output based on a file
+ * \param[in] path Full path to log file
+ */
+LogOutput::LogOutput(const char *path)
+	: target_(LoggingTargetFile)
+{
+	stream_ = new std::ofstream(path);
+}
+
+/**
+ * \brief Construct a log output based on a stream
+ * \param[in] stream Stream to send log output to
+ */
+LogOutput::LogOutput(std::ostream *stream)
+	: stream_(stream), target_(LoggingTargetStream)
+{
+}
+
+/**
+ * \brief Construct a log output to syslog
+ */
+LogOutput::LogOutput()
+	: stream_(nullptr), target_(LoggingTargetSyslog)
+{
+	openlog("libcamera", LOG_PID, 0);
+}
+
+LogOutput::~LogOutput()
+{
+	switch (target_) {
+	case LoggingTargetFile:
+		delete stream_;
+		break;
+	case LoggingTargetSyslog:
+		closelog();
+		break;
+	default:
+		break;
+	}
+}
+
+/**
+ * \brief Check if the log output is valid
+ * \return True if the log output is valid
+ */
+bool LogOutput::isValid() const
+{
+	switch (target_) {
+	case LoggingTargetFile:
+		return stream_->good();
+	case LoggingTargetStream:
+		return stream_ != nullptr;
+	default:
+		return true;
+	}
+}
+
+/**
+ * \brief Write message to log output
+ * \param[in] msg Message to write
+ */
+void LogOutput::write(const LogMessage &msg)
+{
+	switch (target_) {
+	case LoggingTargetSyslog:
+		writeSyslog(msg);
+		break;
+	case LoggingTargetStream:
+	case LoggingTargetFile:
+		writeStream(msg);
+		break;
+	default:
+		break;
+	}
+}
+
+void LogOutput::writeSyslog(const LogMessage &msg)
+{
+	std::string str = std::string(log_severity_name(msg.severity())) + " " +
+	      		  msg.category().name() + " " + msg.fileInfo() + " " +
+			  msg.msg();
+	syslog(log_severity_to_syslog(msg.severity()), "%s", str.c_str());
+}
+
+void LogOutput::writeStream(const LogMessage &msg)
+{
+	std::string str = std::string(log_timespec_to_string(msg.timestamp()) +
+	      		  log_severity_name(msg.severity()) + " " +
+			  msg.category().name() + " " + msg.fileInfo() + " " +
+			  msg.msg());
+	stream_->write(str.c_str(), str.size());
+	stream_->flush();
+}
 
 /**
  * \brief Message logger
@@ -60,7 +234,12 @@ class Logger
 public:
 	static Logger *instance();
 
-	void write(const std::string &msg);
+	void write(const LogMessage &msg);
+
+	int logSetFile(const char *path);
+	int logSetStream(std::ostream *stream);
+	int logSetTarget(LoggingTarget target);
+	void logSetLevel(const char *category, const char *level);
 
 private:
 	Logger();
@@ -69,52 +248,91 @@ private:
 	void parseLogLevels();
 	static LogSeverity parseLogLevel(const std::string &level);
 
-	friend int logSetFile(const char *file);
-	friend void logSetLevel(const char *category, const char *level);
-
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
 	void unregisterCategory(LogCategory *category);
 
+	void writeSyslog(const LogMessage &msg);
+	void writeStream(const LogMessage &msg);
+
 	std::unordered_set<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
-	std::ofstream file_;
-	std::ostream *output_;
+	std::shared_ptr<LogOutput> output_;
 };
 
 /**
- * \brief Set the log file
- * \param[in] file Full path to the log file
+ * \enum LoggingTarget
+ * \brief Log destination type
+ * \var LoggingTargetNone
+ * \brief No logging destination
+ * \sa Logger::logSetTarget
+ * \var LoggingTargetSyslog
+ * \brief Log to syslog
+ * \sa Logger::logSetTarget
+ * \var LoggingTargetFile
+ * \brief Log to file
+ * \sa Logger::logSetFile
+ * \var LoggingTargetStream
+ * \brief Log to stream
+ * \sa Logger::logSetStream
+ */
+
+/**
+ * \brief Direct logging to a file
+ * \param[in] path Full path to the log file
  *
- * This function sets the logging output file to \a file. The previous log file,
+ * This function directs the log output to the file identified by \a path. The
+ * previous log target, if any, is closed, and all new log messages will be
+ * written to the new log file.
+ *
+ * If the function returns an error, the log target is not changed.
+ *
+ * \return Zero on success, or a negative error code otherwise
+ */
+int logSetFile(const char *path)
+{
+	return Logger::instance()->logSetFile(path);
+}
+
+/**
+ * \brief Direct logging to a stream
+ * \param[in] stream Stream to send log output to
+ *
+ * This function directs the log output to \a stream. The previous log target,
  * if any, is closed, and all new log messages will be written to the new log
- * file.
+ * stream.
  *
- * If \a file is a null pointer, the log is directed to stderr. If the
- * function returns an error, the log file is not changed.
+ * If the function returns an error, the log file is not changed
  *
  * \return Zero on success, or a negative error code otherwise.
  */
-int logSetFile(const char *file)
+int logSetStream(std::ostream *stream)
 {
-	Logger *logger = Logger::instance();
+	return Logger::instance()->logSetStream(stream);
+}
 
-	if (!file) {
-		logger->output_ = &std::cerr;
-		logger->file_.close();
-		return 0;
-	}
-
-	std::ofstream logFile(file);
-	if (!logFile.good())
-		return -EINVAL;
-
-	if (logger->output_ != &std::cerr)
-		logger->file_.close();
-	logger->file_ = std::move(logFile);
-	logger->output_ = &logger->file_;
-	return 0;
+/**
+ * \brief Set the logging target
+ * \param[in] target Logging destination
+ *
+ * This function sets the logging output to the target specified by \a target.
+ * The allowed values of \a target are LoggingTargetNone and
+ * LoggingTargetSyslog. LoggingTargetNone will send the log output to nowhere,
+ * and LoggingTargetSyslog will send the log output to syslog. The previous
+ * log target, if any, is closed, and all new log messages will be written to
+ * the new log destination.
+ *
+ * LoggingTargetFile and LoggingTargetStream are not valid values for \a target.
+ * Use logSetFile() and logSetStream() instead, respectively.
+ *
+ * If the function returns an error, the log file is not changed.
+ *
+ * \return Zero on success, or a negative error code otherwise.
+ */
+int logSetTarget(LoggingTarget target)
+{
+	return Logger::instance()->logSetTarget(target);
 }
 
 /**
@@ -134,15 +352,7 @@ int logSetFile(const char *file)
  */
 void logSetLevel(const char *category, const char *level)
 {
-	Logger *logger = Logger::instance();
-
-	LogSeverity severity = Logger::parseLogLevel(level);
-	if (severity == LogInvalid)
-		return;
-
-	for (LogCategory *c : logger->categories_)
-		if (!strcmp(c->name(), category))
-			c->setSeverity(severity);
+	Logger::instance()->logSetLevel(category, level);
 }
 
 /**
@@ -161,19 +371,103 @@ Logger *Logger::instance()
 
 /**
  * \brief Write a message to the configured logger output
- * \param[in] msg The message string
+ * \param[in] msg The message object
  */
-void Logger::write(const std::string &msg)
+void Logger::write(const LogMessage &msg)
 {
-	output_->write(msg.c_str(), msg.size());
-	output_->flush();
+	std::shared_ptr<LogOutput> output = std::atomic_load(&output_);
+	if (!output)
+		return;
+
+	output->write(msg);
+}
+
+/**
+ * \brief Set the log file
+ * \param[in] path Full path to the log file
+ *
+ * \sa libcamera::logSetFile()
+ *
+ * \return Zero on success, or a negative error code otherwise.
+ */
+int Logger::logSetFile(const char *path)
+{
+	std::shared_ptr<LogOutput> output = std::make_shared<LogOutput>(path);
+	if (!output->isValid())
+		return -EINVAL;
+
+	std::atomic_store(&output_, output);
+	return 0;
+}
+
+/**
+ * \brief Set the log stream
+ * \param[in] stream Stream to send log output to
+ *
+ * \sa libcamera::logSetStream()
+ *
+ * \return Zero on success, or a negative error code otherwise.
+ */
+int Logger::logSetStream(std::ostream *stream)
+{
+	std::shared_ptr<LogOutput> output = std::make_shared<LogOutput>(stream);
+	std::atomic_store(&output_, output);
+	return 0;
+}
+
+/**
+ * \brief Set the log target
+ * \param[in] target Log destination
+ *
+ * \sa libcamera::logSetTarget()
+ *
+ * \return Zero on success, or a negative error code otherwise.
+ */
+int Logger::logSetTarget(enum LoggingTarget target)
+{
+	std::shared_ptr<LogOutput> output;
+
+	switch (target) {
+	case LoggingTargetSyslog:
+		output = std::make_shared<LogOutput>();
+		std::atomic_store(&output_, output);
+		break;
+	case LoggingTargetNone:
+		output = nullptr;
+		std::atomic_store(&output_, std::shared_ptr<LogOutput>());
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Set the log level
+ * \param[in] category Logging category
+ * \param[in] level Log level
+ *
+ * \sa libcamera::logSetLevel()
+ */
+void Logger::logSetLevel(const char *category, const char *level)
+{
+	LogSeverity severity = parseLogLevel(level);
+	if (severity == LogInvalid)
+		return;
+
+	for (LogCategory *c : categories_) {
+		if (!strcmp(c->name(), category)) {
+			c->setSeverity(severity);
+			break;
+		}
+	}
 }
 
 /**
  * \brief Construct a logger
  */
 Logger::Logger()
-	: output_(&std::cerr)
 {
 	parseLogFile();
 	parseLogLevels();
@@ -183,18 +477,24 @@ Logger::Logger()
  * \brief Parse the log output file from the environment
  *
  * If the LIBCAMERA_LOG_FILE environment variable is set, open the file it
- * points to and redirect the logger output to it. Errors are silently ignored
- * and don't affect the logger output (set to stderr).
+ * points to and redirect the logger output to it. If the environment variable
+ * is set to "syslog", then the logger output will be directed to syslog. Errors
+ * are silently ignored and don't affect the logger output (set to stderr).
  */
 void Logger::parseLogFile()
 {
 	const char *file = utils::secure_getenv("LIBCAMERA_LOG_FILE");
-	if (!file)
+	if (!file) {
+		logSetStream(&std::cerr);
 		return;
+	}
 
-	file_.open(file);
-	if (file_.good())
-		output_ = &file_;
+	if (!strcmp(file, "syslog")) {
+		logSetTarget(LoggingTargetSyslog);
+		return;
+	}
+
+	logSetFile(file);
 }
 
 /**
@@ -408,22 +708,6 @@ const LogCategory &LogCategory::defaultCategory()
 	return category;
 }
 
-static const char *log_severity_name(LogSeverity severity)
-{
-	static const char *const names[] = {
-		"  DBG",
-		" INFO",
-		" WARN",
-		"  ERR",
-		"FATAL",
-	};
-
-	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
-		return names[severity];
-	else
-		return "UNKWN";
-}
-
 /**
  * \class LogMessage
  * \brief Internal log message representation.
@@ -493,18 +777,11 @@ LogMessage::LogMessage(LogMessage &&other)
 void LogMessage::init(const char *fileName, unsigned int line)
 {
 	/* Log the timestamp, severity and file information. */
-	struct timespec timestamp;
-	clock_gettime(CLOCK_MONOTONIC, &timestamp);
-	msgStream_.fill('0');
-	msgStream_ << "[" << timestamp.tv_sec / (60 * 60) << ":"
-		   << std::setw(2) << (timestamp.tv_sec / 60) % 60 << ":"
-		   << std::setw(2) << timestamp.tv_sec % 60 << "."
-		   << std::setw(9) << timestamp.tv_nsec << "]";
-	msgStream_.fill(' ');
+	clock_gettime(CLOCK_MONOTONIC, &timestamp_);
 
-	msgStream_ << " " << log_severity_name(severity_);
-	msgStream_ << " " << category_.name();
-	msgStream_ << " " << utils::basename(fileName) << ":" << line << " ";
+	std::ostringstream ossFileInfo;
+	ossFileInfo << utils::basename(fileName) << ":" << line;
+	fileInfo_ = ossFileInfo.str();
 }
 
 LogMessage::~LogMessage()
@@ -515,10 +792,8 @@ LogMessage::~LogMessage()
 
 	msgStream_ << std::endl;
 
-	if (severity_ >= category_.severity()) {
-		std::string msg(msgStream_.str());
-		Logger::instance()->write(msg);
-	}
+	if (severity_ >= category_.severity())
+		Logger::instance()->write(*this);
 
 	if (severity_ == LogSeverity::LogFatal)
 		std::abort();
@@ -532,6 +807,36 @@ LogMessage::~LogMessage()
  * std::cout.
  *
  * \return A reference to the log message stream
+ */
+
+/**
+ * \fn LogMessage::timestamp()
+ * \brief Retrieve the timestamp of the log message
+ * \return The timestamp of the message
+ */
+
+/**
+ * \fn LogMessage::severity()
+ * \brief Retrieve the severity of the log message
+ * \return The severity of the message
+ */
+
+/**
+ * \fn LogMessage::category()
+ * \brief Retrieve the category of the log message
+ * \return The category of the message
+ */
+
+/**
+ * \fn LogMessage::fileInfo()
+ * \brief Retrieve the file info of the log message
+ * \return The file info of the message
+ */
+
+/**
+ * \fn LogMessage::msg()
+ * \brief Retrieve the message text of the log message
+ * \return The message text of the message, as a string
  */
 
 /**

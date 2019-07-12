@@ -60,12 +60,20 @@ public:
 
 	std::ostream &stream() { return msgStream_; }
 
+	const struct timespec &timestamp() const { return timestamp_; }
+	LogSeverity severity() const { return severity_; }
+	const LogCategory &category() const { return category_; }
+	const std::string &fileInfo() const { return fileInfo_; }
+	const std::string msg() const { return msgStream_.str(); }
+
 private:
 	void init(const char *fileName, unsigned int line);
 
 	std::ostringstream msgStream_;
 	const LogCategory &category_;
 	LogSeverity severity_;
+	struct timespec timestamp_;
+	std::string fileInfo_;
 };
 
 class Loggable

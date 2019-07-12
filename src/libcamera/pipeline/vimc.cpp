@@ -222,7 +222,6 @@ void PipelineHandlerVimc::stop(Camera *camera)
 {
 	VimcCameraData *data = cameraData(camera);
 	data->video_->streamOff();
-	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)

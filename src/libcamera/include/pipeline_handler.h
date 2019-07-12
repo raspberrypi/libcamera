@@ -74,7 +74,7 @@ public:
 				const std::set<Stream *> &streams) = 0;
 
 	virtual int start(Camera *camera) = 0;
-	virtual void stop(Camera *camera);
+	virtual void stop(Camera *camera) = 0;
 
 	virtual int queueRequest(Camera *camera, Request *request);
 

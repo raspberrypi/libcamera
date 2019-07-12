@@ -51,7 +51,7 @@ private:
 	friend class PipelineHandler;
 
 	int prepare();
-	void complete(Status status);
+	void complete();
 
 	bool completeBuffer(Buffer *buffer);
 
@@ -62,6 +62,7 @@ private:
 
 	const uint64_t cookie_;
 	Status status_;
+	bool cancelled_;
 };
 
 } /* namespace libcamera */

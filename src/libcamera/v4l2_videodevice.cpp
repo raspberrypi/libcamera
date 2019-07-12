@@ -1089,7 +1089,9 @@ int V4L2VideoDevice::streamOn()
  * \brief Stop the video stream
  *
  * Buffers that are still queued when the video stream is stopped are
- * implicitly dequeued, but no bufferReady signal is emitted for them.
+ * immediately dequeued with their status set to Buffer::BufferError,
+ * and the bufferReady signal is emitted for them. The order in which those
+ * buffers are dequeued is not specified.
  *
  * \return 0 on success or a negative error code otherwise
  */
@@ -1102,6 +1104,16 @@ int V4L2VideoDevice::streamOff()
 		LOG(V4L2, Error)
 			<< "Failed to stop streaming: " << strerror(-ret);
 		return ret;
+	}
+
+	/* Send back all queued buffers. */
+	for (auto it : queuedBuffers_) {
+		unsigned int index = it.first;
+		Buffer *buffer = it.second;
+
+		buffer->index_ = index;
+		buffer->cancel();
+		bufferReady.emit(buffer);
 	}
 
 	queuedBuffers_.clear();

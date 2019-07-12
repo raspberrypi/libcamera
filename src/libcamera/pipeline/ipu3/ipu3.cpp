@@ -711,8 +711,6 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera "
 				   << camera->name();
-
-	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)

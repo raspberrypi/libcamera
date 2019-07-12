@@ -354,8 +354,6 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 		LOG(RkISP1, Warning)
 			<< "Failed to stop camera " << camera->name();
 
-	PipelineHandler::stop(camera);
-
 	activeCamera_ = nullptr;
 }
 

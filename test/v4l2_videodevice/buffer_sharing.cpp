@@ -95,6 +95,9 @@ protected:
 		std::cout << "Received capture buffer: " << buffer->index()
 			  << " sequence " << buffer->sequence() << std::endl;
 
+		if (buffer->status() != Buffer::BufferSuccess)
+			return;
+
 		output_->queueBuffer(buffer);
 		framesCaptured_++;
 	}
@@ -103,6 +106,9 @@ protected:
 	{
 		std::cout << "Received output buffer: " << buffer->index()
 			  << " sequence " << buffer->sequence() << std::endl;
+
+		if (buffer->status() != Buffer::BufferSuccess)
+			return;
 
 		capture_->queueBuffer(buffer);
 		framesOutput_++;

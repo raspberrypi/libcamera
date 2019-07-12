@@ -328,31 +328,7 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  *
  * This method stops capturing and processing requests immediately. All pending
  * requests are cancelled and complete immediately in an error state.
- *
- * Pipeline handlers shall override this method to stop the pipeline, ensure
- * that all pending request completion signaled through completeRequest() have
- * returned, and call the base implementation of the stop() method as the last
- * step of their implementation. The base implementation cancels all requests
- * queued but not yet complete.
  */
-void PipelineHandler::stop(Camera *camera)
-{
-	CameraData *data = cameraData(camera);
-
-	while (!data->queuedRequests_.empty()) {
-		Request *request = data->queuedRequests_.front();
-		data->queuedRequests_.pop_front();
-
-		while (!request->pending_.empty()) {
-			Buffer *buffer = *request->pending_.begin();
-			buffer->cancel();
-			completeBuffer(camera, request, buffer);
-		}
-
-		request->complete(Request::RequestCancelled);
-		camera->requestComplete(request);
-	}
-}
 
 /**
  * \fn PipelineHandler::queueRequest()
@@ -420,15 +396,16 @@ bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
  */
 void PipelineHandler::completeRequest(Camera *camera, Request *request)
 {
-	request->complete(Request::RequestComplete);
+	request->complete();
 
 	CameraData *data = cameraData(camera);
 
 	while (!data->queuedRequests_.empty()) {
 		request = data->queuedRequests_.front();
-		if (request->hasPendingBuffers())
+		if (request->status() == Request::RequestPending)
 			break;
 
+		ASSERT(!request->hasPendingBuffers());
 		data->queuedRequests_.pop_front();
 		camera->requestComplete(request);
 	}

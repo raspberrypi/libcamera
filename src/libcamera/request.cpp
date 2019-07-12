@@ -56,7 +56,7 @@ LOG_DEFINE_CATEGORY(Request)
  */
 Request::Request(Camera *camera, uint64_t cookie)
 	: camera_(camera), controls_(camera), cookie_(cookie),
-	  status_(RequestPending)
+	  status_(RequestPending), cancelled_(false)
 {
 }
 
@@ -199,14 +199,15 @@ int Request::prepare()
 
 /**
  * \brief Complete a queued request
- * \param[in] status The request completion status
  *
- * Mark the request as complete by updating its status to \a status.
+ * Mark the request as complete by updating its status to RequestComplete,
+ * unless buffers have been cancelled in which case the status is set to
+ * RequestCancelled.
  */
-void Request::complete(Status status)
+void Request::complete()
 {
 	ASSERT(!hasPendingBuffers());
-	status_ = status;
+	status_ = cancelled_ ? RequestCancelled : RequestComplete;
 }
 
 /**
@@ -228,6 +229,9 @@ bool Request::completeBuffer(Buffer *buffer)
 	ASSERT(ret == 1);
 
 	buffer->setRequest(nullptr);
+
+	if (buffer->status() == Buffer::BufferCancelled)
+		cancelled_ = true;
 
 	return !hasPendingBuffers();
 }

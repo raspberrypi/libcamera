@@ -220,7 +220,6 @@ void PipelineHandlerUVC::stop(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	data->video_->streamOff();
-	PipelineHandler::stop(camera);
 }
 
 int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)

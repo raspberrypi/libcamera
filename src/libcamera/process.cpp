@@ -87,7 +87,8 @@ void sigact(int signal, siginfo_t *info, void *ucontext)
 void ProcessManager::sighandler(EventNotifier *notifier)
 {
 	char data;
-	if (read(pipe_[0], &data, sizeof(data))) {
+	ssize_t ret = read(pipe_[0], &data, sizeof(data));
+	if (ret < 0) {
 		LOG(Process, Error)
 			<< "Failed to read byte from signal handler pipe";
 		return;

@@ -69,7 +69,9 @@ namespace {
 void sigact(int signal, siginfo_t *info, void *ucontext)
 {
 	char data = 0;
-	write(ProcessManager::instance()->writePipe(), &data, sizeof(data));
+	/* We're in a signal handler so we can't log any message,
+	 * and we need to continue anyway. */
+	(void)write(ProcessManager::instance()->writePipe(), &data, sizeof(data));
 
 	const struct sigaction &oldsa = ProcessManager::instance()->oldsa();
 	if (oldsa.sa_flags & SA_SIGINFO) {
@@ -85,7 +87,11 @@ void sigact(int signal, siginfo_t *info, void *ucontext)
 void ProcessManager::sighandler(EventNotifier *notifier)
 {
 	char data;
-	read(pipe_[0], &data, sizeof(data));
+	if (read(pipe_[0], &data, sizeof(data))) {
+		LOG(Process, Error)
+			<< "Failed to read byte from signal handler pipe";
+		return;
+	}
 
 	for (auto it = processes_.begin(); it != processes_.end(); ) {
 		Process *process = *it;
@@ -128,7 +134,9 @@ ProcessManager::ProcessManager()
 
 	sigaction(SIGCHLD, &sa, NULL);
 
-	pipe2(pipe_, O_CLOEXEC | O_DIRECT | O_NONBLOCK);
+	if (pipe2(pipe_, O_CLOEXEC | O_DIRECT | O_NONBLOCK))
+		LOG(Process, Fatal)
+			<< "Failed to initialize pipe for signal handling";
 	sigEvent_ = new EventNotifier(pipe_[0], EventNotifier::Read);
 	sigEvent_->activated.connect(this, &ProcessManager::sighandler);
 }

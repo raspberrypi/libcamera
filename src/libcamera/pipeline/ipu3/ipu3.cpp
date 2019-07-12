@@ -635,7 +635,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	 * of buffers as the active ones.
 	 */
 	if (!outStream->active_) {
-		bufferCount = vfStream->bufferPool().count();
+		bufferCount = vfStream->configuration().bufferCount;
 		outStream->device_->pool->createBuffers(bufferCount);
 		ret = imgu->exportBuffers(outStream->device_,
 					  outStream->device_->pool);
@@ -644,7 +644,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	}
 
 	if (!vfStream->active_) {
-		bufferCount = outStream->bufferPool().count();
+		bufferCount = outStream->configuration().bufferCount;
 		vfStream->device_->pool->createBuffers(bufferCount);
 		ret = imgu->exportBuffers(vfStream->device_,
 					  vfStream->device_->pool);

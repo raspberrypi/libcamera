@@ -22,6 +22,7 @@
 
 #include "log.h"
 #include "pipeline_handler.h"
+#include "utils.h"
 
 /**
  * \file ipa_module.h
@@ -478,7 +479,7 @@ bool IPAModule::match(PipelineHandler *pipe,
  */
 bool IPAModule::isOpenSource() const
 {
-	static std::array<const char *, sizeof(char *)> osLicenses = {
+	static const char *osLicenses[] = {
 		"GPL-2.0-only",
 		"GPL-2.0-or-later",
 		"GPL-3.0-only",
@@ -489,8 +490,11 @@ bool IPAModule::isOpenSource() const
 		"LGPL-3.0-or-later",
 	};
 
-	return std::find(osLicenses.begin(), osLicenses.end(), info_.license)
-	       != osLicenses.end();
+	for (unsigned int i = 0; i < ARRAY_SIZE(osLicenses); i++)
+		if (!strcmp(osLicenses[i], info_.license))
+			return true;
+
+	return false;
 }
 
 } /* namespace libcamera */

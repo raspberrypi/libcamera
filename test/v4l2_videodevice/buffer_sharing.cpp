@@ -58,6 +58,15 @@ protected:
 			return TestFail;
 		}
 
+		format.size.width = 320;
+		format.size.height = 180;
+
+		ret = capture_->setFormat(&format);
+		if (ret) {
+			std::cout << "Failed to set capture format" << std::endl;
+			return TestFail;
+		}
+
 		ret = output_->setFormat(&format);
 		if (ret) {
 			std::cout << "Failed to set output format" << std::endl;

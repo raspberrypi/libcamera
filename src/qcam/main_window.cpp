@@ -221,7 +221,6 @@ void MainWindow::requestComplete(Request *request,
 
 	framesCaptured_++;
 
-	Stream *stream = buffers.begin()->first;
 	Buffer *buffer = buffers.begin()->second;
 
 	double fps = buffer->timestamp() - lastBufferTime_;
@@ -235,8 +234,7 @@ void MainWindow::requestComplete(Request *request,
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
 
-	BufferMemory *mem = &stream->buffers()[buffer->index()];
-	display(buffer, mem);
+	display(buffer);
 
 	request = camera_->createRequest();
 	if (!request) {
@@ -261,8 +259,9 @@ void MainWindow::requestComplete(Request *request,
 	camera_->queueRequest(request);
 }
 
-int MainWindow::display(Buffer *buffer, BufferMemory *mem)
+int MainWindow::display(Buffer *buffer)
 {
+	BufferMemory *mem = buffer->mem();
 	if (mem->planes().size() != 1)
 		return -EINVAL;
 

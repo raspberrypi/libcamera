@@ -301,6 +301,17 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  */
 
 /**
+ * \fn Buffer::mem()
+ * \brief Retrieve the BufferMemory this buffer is associated with
+ *
+ * The association between the buffer and a BufferMemory instance is valid from
+ * the time the request containing this buffer is queued to a camera to the end
+ * of that request's completion handler.
+ *
+ * \return The BufferMemory this buffer is associated with
+ */
+
+/**
  * \fn Buffer::bytesused()
  * \brief Retrieve the number of bytes occupied by the data in the buffer
  * \return Number of bytes occupied in the buffer

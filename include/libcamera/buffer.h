@@ -77,6 +77,7 @@ public:
 
 	unsigned int index() const { return index_; }
 	const std::array<int, 3> &dmabufs() const { return dmabuf_; }
+	BufferMemory *mem() { return mem_; }
 
 	unsigned int bytesused() const { return bytesused_; }
 	uint64_t timestamp() const { return timestamp_; }
@@ -87,6 +88,7 @@ public:
 	Stream *stream() const { return stream_; }
 
 private:
+	friend class Camera;
 	friend class PipelineHandler;
 	friend class Request;
 	friend class Stream;
@@ -98,6 +100,7 @@ private:
 
 	unsigned int index_;
 	std::array<int, 3> dmabuf_;
+	BufferMemory *mem_;
 
 	unsigned int bytesused_;
 	uint64_t timestamp_;

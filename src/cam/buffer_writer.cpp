@@ -19,8 +19,7 @@ BufferWriter::BufferWriter(const std::string &pattern)
 {
 }
 
-int BufferWriter::write(libcamera::Buffer *buffer, libcamera::BufferMemory *mem,
-			const std::string &streamName)
+int BufferWriter::write(libcamera::Buffer *buffer, const std::string &streamName)
 {
 	std::string filename;
 	size_t pos;
@@ -41,6 +40,7 @@ int BufferWriter::write(libcamera::Buffer *buffer, libcamera::BufferMemory *mem,
 	if (fd == -1)
 		return -errno;
 
+	libcamera::BufferMemory *mem = buffer->mem();
 	for (libcamera::Plane &plane : mem->planes()) {
 		void *data = plane.mem();
 		unsigned int length = plane.length();

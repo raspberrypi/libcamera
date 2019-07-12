@@ -154,7 +154,6 @@ void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
 		Buffer *buffer = it->second;
-		BufferMemory *mem = &stream->buffers()[buffer->index()];
 		const std::string &name = streamName_[stream];
 
 		info << " " << name
@@ -163,7 +162,7 @@ void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer 
 		     << " bytesused: " << buffer->bytesused();
 
 		if (writer_)
-			writer_->write(buffer, mem, name);
+			writer_->write(buffer, name);
 	}
 
 	std::cout << info.str() << std::endl;

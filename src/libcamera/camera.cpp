@@ -811,10 +811,14 @@ int Camera::queueRequest(Request *request)
 
 	for (auto const &it : request->buffers()) {
 		Stream *stream = it.first;
+		Buffer *buffer = it.second;
+
 		if (activeStreams_.find(stream) == activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";
 			return -EINVAL;
 		}
+
+		buffer->mem_ = &stream->buffers()[buffer->index_];
 	}
 
 	int ret = request->prepare();

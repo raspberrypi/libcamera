@@ -500,6 +500,37 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	int ret;
 
 	/*
+	 * FIXME: enabled links in one ImgU pipe interfere with capture
+	 * operations on the other one. This can be easily triggered by
+	 * capturing from one camera and then trying to capture from the other
+	 * one right after, without disabling media links on the first used
+	 * pipe.
+	 *
+	 * The tricky part here is where to disable links on the ImgU instance
+	 * which is currently not in use:
+	 * 1) Link enable/disable cannot be done at start()/stop() time as video
+	 * devices needs to be linked first before format can be configured on
+	 * them.
+	 * 2) As link enable has to be done at the least in configure(),
+	 * before configuring formats, the only place where to disable links
+	 * would be 'stop()', but the Camera class state machine allows
+	 * start()<->stop() sequences without any configure() in between.
+	 *
+	 * As of now, disable all links in the ImgU media graph before
+	 * configuring the device, to allow alternate the usage of the two
+	 * ImgU pipes.
+	 *
+	 * As a consequence, a Camera using an ImgU shall be configured before
+	 * any start()/stop() sequence. An application that wants to
+	 * pre-configure all the camera and then start/stop them alternatively
+	 * without going through any re-configuration (a sequence that is
+	 * allowed by the Camera state machine) would now fail on the IPU3.
+	 */
+	ret = imguMediaDev_->disableLinks();
+	if (ret)
+		return ret;
+
+	/*
 	 * \todo: Enable links selectively based on the requested streams.
 	 * As of now, enable all links unconditionally.
 	 */
@@ -784,29 +815,6 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 	if (cio2MediaDev_->disableLinks())
 		return false;
 
-	/*
-	 * FIXME: enabled links in one ImgU instance interfere with capture
-	 * operations on the other one. This can be easily triggered by
-	 * capturing from one camera and then trying to capture from the other
-	 * one right after, without disabling media links in the media graph
-	 * first.
-	 *
-	 * The tricky part here is where to disable links on the ImgU instance
-	 * which is currently not in use:
-	 * 1) Link enable/disable cannot be done at start/stop time as video
-	 * devices needs to be linked first before format can be configured on
-	 * them.
-	 * 2) As link enable has to be done at the least in configure(),
-	 * before configuring formats, the only place where to disable links
-	 * would be 'stop()', but the Camera class state machine allows
-	 * start()<->stop() sequences without any configure() in between.
-	 *
-	 * As of now, disable all links in the media graph at 'match()' time,
-	 * to allow testing different cameras in different test applications
-	 * runs. A test application that would use two distinct cameras without
-	 * going through a library teardown->match() sequence would fail
-	 * at the moment.
-	 */
 	ret = imguMediaDev_->disableLinks();
 	if (ret)
 		return ret;

@@ -27,6 +27,7 @@ class ViewFinder;
 enum {
 	OptCamera = 'c',
 	OptHelp = 'h',
+	OptSize = 's',
 };
 
 class MainWindow : public QMainWindow

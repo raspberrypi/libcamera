@@ -116,13 +116,41 @@ int MainWindow::startCapture()
 	int ret;
 
 	config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+
+	StreamConfiguration &cfg = config_->at(0);
+	if (options_.isSet(OptSize)) {
+		const std::vector<OptionValue> &sizeOptions =
+			options_[OptSize].toArray();
+
+		/* Set desired stream size if requested. */
+		for (const auto &value : sizeOptions) {
+			KeyValueParser::Options opt = value.toKeyValues();
+
+			if (opt.isSet("width"))
+				cfg.size.width = opt["width"];
+
+			if (opt.isSet("height"))
+				cfg.size.height = opt["height"];
+		}
+	}
+
+	CameraConfiguration::Status validation = config_->validate();
+	if (validation == CameraConfiguration::Invalid) {
+		std::cerr << "Failed to create valid camera configuration";
+		return -EINVAL;
+	}
+
+	if (validation == CameraConfiguration::Adjusted) {
+		std::cout << "Stream size adjusted to "
+			  << cfg.size.toString() << std::endl;
+	}
+
 	ret = camera_->configure(config_.get());
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;
 	}
 
-	const StreamConfiguration &cfg = config_->at(0);
 	Stream *stream = cfg.stream();
 	ret = viewfinder_->setFormat(cfg.pixelFormat, cfg.size.width,
 				     cfg.size.height);

@@ -25,12 +25,20 @@ void signalHandler(int signal)
 
 OptionsParser::Options parseOptions(int argc, char *argv[])
 {
+	KeyValueParser sizeParser;
+	sizeParser.addOption("width", OptionInteger, "Width in pixels",
+			     ArgumentRequired);
+	sizeParser.addOption("height", OptionInteger, "Height in pixels",
+			     ArgumentRequired);
+
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on", "camera",
 			 ArgumentRequired, "camera");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
+	parser.addOption(OptSize, &sizeParser, "Set the stream size",
+			 "size", true);
 
 	OptionsParser::Options options = parser.parse(argc, argv);
 	if (options.isSet(OptHelp))

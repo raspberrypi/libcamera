@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_UTILS_H__
 #define __LIBCAMERA_UTILS_H__
 
+#include <algorithm>
 #include <memory>
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
@@ -43,6 +44,13 @@ unsigned int set_overlap(InputIt1 first1, InputIt1 last1,
 	}
 
 	return count;
+}
+
+/* C++11 doesn't provide std::clamp */
+template <typename T>
+const T& clamp(const T& v, const T& lo, const T& hi)
+{
+	return std::max(lo, std::min(v, hi));
 }
 
 } /* namespace utils */

@@ -85,6 +85,14 @@ char *secure_getenv(const char *name)
  * \return The number of elements in the intersection of the two ranges
  */
 
+/**
+ * \fn libcamera::utils::clamp(const T& v, const T& lo, const T& hi)
+ * \param[in] v The value to clamp
+ * \param[in] lo The lower boundary to clamp v to
+ * \param[in] hi The higher boundary to clamp v to
+ * \return lo if v is less than lo, hi if v is greater than hi, otherwise v
+ */
+
 } /* namespace utils */
 
 } /* namespace libcamera */

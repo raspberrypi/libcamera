@@ -31,6 +31,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Message)
 
+std::atomic_uint Message::nextUserType_{ Message::UserMessage };
+
 /**
  * \class Message
  * \brief A message that can be posted to a Thread
@@ -43,6 +45,8 @@ LOG_DEFINE_CATEGORY(Message)
  * \brief Invalid message type
  * \var Message::SignalMessage
  * \brief Asynchronous signal delivery across threads
+ * \var Message::UserMessage
+ * \brief First value available for user-defined messages
  */
 
 /**
@@ -69,6 +73,38 @@ Message::~Message()
  * \brief Retrieve the message receiver
  * \return The message receiver
  */
+
+/**
+ * \brief Reserve and register a custom user-defined message type
+ *
+ * Custom message types use values starting at Message::UserMessage. Assigning
+ * custom types manually may lead to accidental duplicated types. To avoid this
+ * problem, this method reserves and returns the next available user-defined
+ * message type.
+ *
+ * The recommended way to use this method is to subclass Message and provide a
+ * static accessor for the custom message type.
+ *
+ * \code{.cpp}
+ * class MyCustomMessage : public Message
+ * {
+ * public:
+ *	MyCustomMessage() : Message(type()) { }
+ *
+ *	static Message::Type type()
+ *	{
+ *		static MessageType type = registerMessageType();
+ *		return type;
+ *	}
+ * };
+ * \endcode
+ *
+ * \return A new unique message type
+ */
+Message::Type Message::registerMessageType()
+{
+	return static_cast<Message::Type>(nextUserType_++);
+}
 
 /**
  * \class SignalMessage

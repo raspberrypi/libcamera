@@ -52,6 +52,17 @@ class MessageTest : public Test
 protected:
 	int run()
 	{
+		Message::Type msgType[2] = {
+			Message::registerMessageType(),
+			Message::registerMessageType(),
+		};
+
+		if (msgType[0] != Message::UserMessage ||
+		    msgType[1] != Message::UserMessage + 1) {
+			cout << "Failed to register message types" << endl;
+			return TestFail;
+		}
+
 		MessageReceiver receiver;
 		receiver.moveToThread(&thread_);
 

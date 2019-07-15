@@ -7,6 +7,8 @@
 #ifndef __LIBCAMERA_MESSAGE_H__
 #define __LIBCAMERA_MESSAGE_H__
 
+#include <atomic>
+
 namespace libcamera {
 
 class Object;
@@ -19,6 +21,7 @@ public:
 	enum Type {
 		None = 0,
 		SignalMessage = 1,
+		UserMessage = 1000,
 	};
 
 	Message(Type type);
@@ -27,11 +30,15 @@ public:
 	Type type() const { return type_; }
 	Object *receiver() const { return receiver_; }
 
+	static Type registerMessageType();
+
 private:
 	friend class Thread;
 
 	Type type_;
 	Object *receiver_;
+
+	static std::atomic_uint nextUserType_;
 };
 
 class SignalMessage : public Message

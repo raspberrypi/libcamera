@@ -41,6 +41,8 @@ LOG_DEFINE_CATEGORY(Message)
  * \brief The message type
  * \var Message::None
  * \brief Invalid message type
+ * \var Message::SignalMessage
+ * \brief Asynchronous signal delivery across threads
  */
 
 /**

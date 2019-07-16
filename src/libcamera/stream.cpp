@@ -289,7 +289,7 @@ SizeRange StreamFormats::range(unsigned int pixelformat) const
  * handlers provied StreamFormats.
  */
 StreamConfiguration::StreamConfiguration()
-	: memoryType(InternalMemory), stream_(nullptr)
+	: pixelFormat(0), memoryType(InternalMemory), stream_(nullptr)
 {
 }
 
@@ -297,7 +297,8 @@ StreamConfiguration::StreamConfiguration()
  * \brief Construct a configuration with stream formats
  */
 StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
-	: memoryType(InternalMemory), stream_(nullptr), formats_(formats)
+	: pixelFormat(0), memoryType(InternalMemory), stream_(nullptr),
+	  formats_(formats)
 {
 }
 

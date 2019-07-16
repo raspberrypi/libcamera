@@ -122,7 +122,7 @@ public:
 	BufferPool *exportBuffers();
 	void freeBuffers();
 
-	int start();
+	int start(std::vector<std::unique_ptr<Buffer>> *buffer);
 	int stop();
 
 	static int mediaBusToFormat(unsigned int code);
@@ -132,7 +132,6 @@ public:
 	CameraSensor *sensor_;
 
 	BufferPool pool_;
-	std::vector<std::unique_ptr<Buffer>> buffers_;
 };
 
 class IPU3Stream : public Stream
@@ -165,6 +164,8 @@ public:
 
 	IPU3Stream outStream_;
 	IPU3Stream vfStream_;
+
+	std::vector<std::unique_ptr<Buffer>> rawBuffers_;
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -688,7 +689,7 @@ int PipelineHandlerIPU3::start(Camera *camera)
 	 * Start the ImgU video devices, buffers will be queued to the
 	 * ImgU output and viewfinder when requests will be queued.
 	 */
-	ret = cio2->start();
+	ret = cio2->start(&data->rawBuffers_);
 	if (ret)
 		goto error;
 
@@ -704,6 +705,7 @@ int PipelineHandlerIPU3::start(Camera *camera)
 error:
 	LOG(IPU3, Error) << "Failed to start camera " << camera->name();
 
+	data->rawBuffers_.clear();
 	return ret;
 }
 
@@ -717,6 +719,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera "
 				   << camera->name();
+
+	data->rawBuffers_.clear();
 }
 
 int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
@@ -1454,26 +1458,18 @@ void CIO2Device::freeBuffers()
 		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
-int CIO2Device::start()
+int CIO2Device::start(std::vector<std::unique_ptr<Buffer>> *buffers)
 {
-	int ret;
-
-	buffers_ = output_->queueAllBuffers();
-	if (buffers_.empty())
+	*buffers = output_->queueAllBuffers();
+	if (buffers->empty())
 		return -EINVAL;
 
-	ret = output_->streamOn();
-	if (ret)
-		return ret;
-
-	return 0;
+	return output_->streamOn();
 }
 
 int CIO2Device::stop()
 {
-	int ret = output_->streamOff();
-	buffers_.clear();
-	return ret;
+	return output_->streamOff();
 }
 
 int CIO2Device::mediaBusToFormat(unsigned int code)

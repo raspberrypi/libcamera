@@ -402,6 +402,8 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		StreamConfiguration cfg = {};
 		IPU3Stream *stream = nullptr;
 
+		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+
 		switch (role) {
 		case StreamRole::StillCapture:
 			/*

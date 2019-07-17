@@ -122,7 +122,7 @@ public:
 	BufferPool *exportBuffers();
 	void freeBuffers();
 
-	int start(std::vector<std::unique_ptr<Buffer>> *buffer);
+	int start(std::vector<std::unique_ptr<Buffer>> *buffers);
 	int stop();
 
 	static int mediaBusToFormat(unsigned int code);

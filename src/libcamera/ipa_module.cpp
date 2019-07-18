@@ -291,7 +291,7 @@ int IPAModule::loadIPAModuleInfo()
 		return ret;
 	}
 
-	void *data;
+	void *data = nullptr;
 	size_t dataSize;
 	void *map;
 	size_t soSize;

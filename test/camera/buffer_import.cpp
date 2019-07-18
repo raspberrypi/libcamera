@@ -109,7 +109,9 @@ public:
 			video_->streamOff();
 			video_->releaseBuffers();
 			video_->close();
+
 			delete video_;
+			video_ = nullptr;
 		}
 
 		if (media_)

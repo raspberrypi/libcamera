@@ -286,6 +286,8 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
+	LOG(RkISP1, Debug) << "Configuring ISP input pad with " << format.toString();
+
 	ret = dphy_->getFormat(1, &format);
 	if (ret < 0)
 		return ret;
@@ -293,6 +295,18 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	ret = isp_->setFormat(0, &format);
 	if (ret < 0)
 		return ret;
+
+	LOG(RkISP1, Debug) << "ISP input pad configured with " << format.toString();
+
+	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
+	format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
+	LOG(RkISP1, Debug) << "Configuring ISP output pad with " << format.toString();
+
+	ret = isp_->setFormat(2, &format);
+	if (ret < 0)
+		return ret;
+
+	LOG(RkISP1, Debug) << "ISP output pad configured with " << format.toString();
 
 	V4L2DeviceFormat outputFormat = {};
 	outputFormat.fourcc = cfg.pixelFormat;

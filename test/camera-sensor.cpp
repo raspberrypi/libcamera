@@ -83,7 +83,8 @@ protected:
 			return TestFail;
 		}
 
-		V4L2SubdeviceFormat format = sensor_->getFormat({ MEDIA_BUS_FMT_UYVY8_2X8,
+		/* Use an invalid format and make sure it's not selected. */
+		V4L2SubdeviceFormat format = sensor_->getFormat({ 0xdeadbeef,
 								  MEDIA_BUS_FMT_SBGGR10_1X10,
 								  MEDIA_BUS_FMT_BGR888_1X24 },
 								Size(1024, 768));

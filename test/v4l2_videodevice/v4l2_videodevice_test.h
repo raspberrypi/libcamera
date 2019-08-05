@@ -13,8 +13,10 @@
 
 #include "test.h"
 
+#include "camera_sensor.h"
 #include "device_enumerator.h"
 #include "media_device.h"
+#include "v4l2_subdevice.h"
 #include "v4l2_videodevice.h"
 
 using namespace libcamera;
@@ -23,7 +25,8 @@ class V4L2VideoDeviceTest : public Test
 {
 public:
 	V4L2VideoDeviceTest(const char *driver, const char *entity)
-		: driver_(driver), entity_(entity), capture_(nullptr)
+		: driver_(driver), entity_(entity), sensor_(nullptr),
+		  debayer_(nullptr), capture_(nullptr)
 	{
 	}
 
@@ -35,6 +38,8 @@ protected:
 	std::string entity_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
+	CameraSensor *sensor_;
+	V4L2Subdevice *debayer_;
 	V4L2VideoDevice *capture_;
 	BufferPool pool_;
 };

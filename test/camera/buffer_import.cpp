@@ -72,12 +72,12 @@ public:
 			return ret;
 		}
 
-		format_.size.width = 640;
-		format_.size.height = 480;
+		format_.size.width = 1920;
+		format_.size.height = 1080;
 		format_.fourcc = V4L2_PIX_FMT_RGB24;
 		format_.planesCount = 1;
-		format_.planes[0].size = 640 * 480 * 3;
-		format_.planes[0].bpl = 640 * 3;
+		format_.planes[0].size = 1920 * 1080 * 3;
+		format_.planes[0].bpl = 1920 * 3;
 
 		if (video_->setFormat(&format_)) {
 			cleanup();
@@ -378,7 +378,7 @@ protected:
 		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
 
 		Timer timer;
-		timer.start(3000);
+		timer.start(5000);
 		while (timer.isRunning() && !sink_.done())
 			dispatcher->processEvents();
 

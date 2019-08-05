@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <tuple>
 
+#include <linux/media-bus-format.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>
 #include <libcamera/ipa/ipa_interface.h>
@@ -25,6 +27,7 @@
 #include "pipeline_handler.h"
 #include "utils.h"
 #include "v4l2_controls.h"
+#include "v4l2_subdevice.h"
 #include "v4l2_videodevice.h"
 
 namespace libcamera {
@@ -35,21 +38,28 @@ class VimcCameraData : public CameraData
 {
 public:
 	VimcCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), video_(nullptr), sensor_(nullptr)
+		: CameraData(pipe), sensor_(nullptr), debayer_(nullptr),
+		  scaler_(nullptr), video_(nullptr), raw_(nullptr)
 	{
 	}
 
 	~VimcCameraData()
 	{
 		delete sensor_;
+		delete debayer_;
+		delete scaler_;
 		delete video_;
+		delete raw_;
 	}
 
 	int init(MediaDevice *media);
 	void bufferReady(Buffer *buffer);
 
-	V4L2VideoDevice *video_;
 	CameraSensor *sensor_;
+	V4L2Subdevice *debayer_;
+	V4L2Subdevice *scaler_;
+	V4L2VideoDevice *video_;
+	V4L2VideoDevice *raw_;
 	Stream stream_;
 };
 
@@ -131,8 +141,11 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	/* Clamp the size based on the device limits. */
 	const Size size = cfg.size;
 
-	cfg.size.width = std::max(16U, std::min(4096U, cfg.size.width));
-	cfg.size.height = std::max(16U, std::min(2160U, cfg.size.height));
+	/* The scaler hardcodes a x3 scale-up ratio. */
+	cfg.size.width = std::max(48U, std::min(4096U, cfg.size.width));
+	cfg.size.height = std::max(48U, std::min(2160U, cfg.size.height));
+	cfg.size.width -= cfg.size.width % 3;
+	cfg.size.height -= cfg.size.height % 3;
 
 	if (cfg.size != size) {
 		LOG(VIMC, Debug)
@@ -160,7 +173,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	StreamConfiguration cfg{};
 	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
-	cfg.size = { 640, 480 };
+	cfg.size = { 1920, 1080 };
 	cfg.bufferCount = 4;
 
 	config->addConfiguration(cfg);
@@ -176,6 +189,33 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
+	/* The scaler hardcodes a x3 scale-up ratio. */
+	V4L2SubdeviceFormat subformat = {};
+	subformat.mbus_code = MEDIA_BUS_FMT_SGRBG8_1X8;
+	subformat.size = { cfg.size.width / 3, cfg.size.height / 3 };
+
+	ret = data->sensor_->setFormat(&subformat);
+	if (ret)
+		return ret;
+
+	ret = data->debayer_->setFormat(0, &subformat);
+	if (ret)
+		return ret;
+
+	subformat.mbus_code = MEDIA_BUS_FMT_RGB888_1X24;
+	ret = data->debayer_->setFormat(1, &subformat);
+	if (ret)
+		return ret;
+
+	ret = data->scaler_->setFormat(0, &subformat);
+	if (ret)
+		return ret;
+
+	subformat.size = cfg.size;
+	ret = data->scaler_->setFormat(1, &subformat);
+	if (ret)
+		return ret;
+
 	V4L2DeviceFormat format = {};
 	format.fourcc = cfg.pixelFormat;
 	format.size = cfg.size;
@@ -187,6 +227,17 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	if (format.size != cfg.size ||
 	    format.fourcc != cfg.pixelFormat)
 		return -EINVAL;
+
+	/*
+	 * Format has to be set on the raw capture video node, otherwise the
+	 * vimc driver will fail pipeline validation.
+	 */
+	format.fourcc = V4L2_PIX_FMT_SGRBG8;
+	format.size = { cfg.size.width / 3, cfg.size.height / 3 };
+
+	ret = data->raw_->setFormat(&format);
+	if (ret)
+		return ret;
 
 	cfg.setStream(&data->stream_);
 
@@ -335,17 +386,41 @@ int VimcCameraData::init(MediaDevice *media)
 {
 	int ret;
 
-	/* Create and open the video device and the camera sensor. */
-	video_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
+	ret = media->disableLinks();
+	if (ret < 0)
+		return ret;
+
+	MediaLink *link = media->link("Debayer B", 1, "Scaler", 0);
+	if (!link)
+		return -ENODEV;
+
+	ret = link->setEnabled(true);
+	if (ret < 0)
+		return ret;
+
+	/* Create and open the camera sensor, debayer, scaler and video device. */
+	sensor_ = new CameraSensor(media->getEntityByName("Sensor B"));
+	ret = sensor_->init();
+	if (ret)
+		return ret;
+
+	debayer_ = new V4L2Subdevice(media->getEntityByName("Debayer B"));
+	if (debayer_->open())
+		return -ENODEV;
+
+	scaler_ = new V4L2Subdevice(media->getEntityByName("Scaler"));
+	if (scaler_->open())
+		return -ENODEV;
+
+	video_ = new V4L2VideoDevice(media->getEntityByName("RGB/YUV Capture"));
 	if (video_->open())
 		return -ENODEV;
 
 	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
 
-	sensor_ = new CameraSensor(media->getEntityByName("Sensor B"));
-	ret = sensor_->init();
-	if (ret)
-		return ret;
+	raw_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
+	if (raw_->open())
+		return -ENODEV;
 
 	/* Initialise the supported controls. */
 	const V4L2ControlInfoMap &controls = sensor_->controls();

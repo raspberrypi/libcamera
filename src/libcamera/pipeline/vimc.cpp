@@ -35,7 +35,7 @@ class VimcCameraData : public CameraData
 {
 public:
 	VimcCameraData(PipelineHandler *pipe)
-		: CameraData(pipe)
+		: CameraData(pipe), video_(nullptr), sensor_(nullptr)
 	{
 	}
 

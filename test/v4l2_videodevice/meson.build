@@ -7,6 +7,7 @@ v4l2_videodevice_tests = [
     [ 'stream_on_off',      'stream_on_off.cpp' ],
     [ 'capture_async',      'capture_async.cpp' ],
     [ 'buffer_sharing',     'buffer_sharing.cpp' ],
+    [ 'v4l2_m2mdevice',     'v4l2_m2mdevice.cpp' ],
 ]
 
 foreach t : v4l2_videodevice_tests

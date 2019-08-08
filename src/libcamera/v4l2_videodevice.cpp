@@ -314,10 +314,6 @@ int V4L2VideoDevice::open()
 		return ret;
 	}
 
-	LOG(V4L2, Debug)
-		<< "Opened device " << caps_.bus_info() << ": "
-		<< caps_.driver() << ": " << caps_.card();
-
 	if (!caps_.hasStreaming()) {
 		LOG(V4L2, Error) << "Device does not support streaming I/O";
 		return -EINVAL;
@@ -351,6 +347,10 @@ int V4L2VideoDevice::open()
 
 	fdEvent_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdEvent_->setEnabled(false);
+
+	LOG(V4L2, Debug)
+		<< "Opened device " << caps_.bus_info() << ": "
+		<< caps_.driver() << ": " << caps_.card();
 
 	return 0;
 }

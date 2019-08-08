@@ -6,7 +6,6 @@
  */
 
 #include <iostream>
-#include <sys/stat.h>
 
 #include <linux/media-bus-format.h>
 
@@ -17,16 +16,6 @@
 
 using namespace std;
 using namespace libcamera;
-
-bool exists(const std::string &path)
-{
-	struct stat sb;
-
-	if (stat(path.c_str(), &sb) == 0)
-		return true;
-
-	return false;
-}
 
 int V4L2VideoDeviceTest::init()
 {

@@ -89,6 +89,32 @@ int V4L2Device::open(unsigned int flags)
 }
 
 /**
+ * \brief Set the file descriptor of a V4L2 device
+ * \param[in] fd The file descriptor handle
+ *
+ * This method allows a device to provide an already opened file descriptor
+ * referring to the V4L2 device node, instead of opening it with open(). This
+ * can be used for V4L2 M2M devices where a single video device node is used for
+ * both the output and capture devices, or when receiving an open file
+ * descriptor in a context that doesn't have permission to open the device node
+ * itself.
+ *
+ * This method and the open() method are mutually exclusive, only one of the two
+ * shall be used for a V4L2Device instance.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Device::setFd(int fd)
+{
+	if (isOpen())
+		return -EBUSY;
+
+	fd_ = fd;
+
+	return 0;
+}
+
+/**
  * \brief Close the device node
  *
  * Reset the file descriptor to -1

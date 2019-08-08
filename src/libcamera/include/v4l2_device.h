@@ -35,6 +35,7 @@ protected:
 	~V4L2Device();
 
 	int open(unsigned int flags);
+	int setFd(int fd);
 
 	int ioctl(unsigned long request, void *argp);
 

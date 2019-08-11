@@ -13,6 +13,8 @@
 #include <libcamera/event_dispatcher.h>
 
 #include "log.h"
+#include "message.h"
+#include "thread.h"
 
 /**
  * \file timer.h
@@ -66,7 +68,7 @@ void Timer::start(unsigned int msec)
 		<< "Starting timer " << this << " with interval "
 		<< msec << ": deadline " << deadline_;
 
-	CameraManager::instance()->eventDispatcher()->registerTimer(this);
+	registerTimer();
 }
 
 /**
@@ -79,9 +81,19 @@ void Timer::start(unsigned int msec)
  */
 void Timer::stop()
 {
-	CameraManager::instance()->eventDispatcher()->unregisterTimer(this);
+	unregisterTimer();
 
 	deadline_ = 0;
+}
+
+void Timer::registerTimer()
+{
+	thread()->eventDispatcher()->registerTimer(this);
+}
+
+void Timer::unregisterTimer()
+{
+	thread()->eventDispatcher()->unregisterTimer(this);
 }
 
 /**
@@ -111,5 +123,17 @@ bool Timer::isRunning() const
  *
  * The timer pointer is passed as a parameter.
  */
+
+void Timer::message(Message *msg)
+{
+	if (msg->type() == Message::ThreadMoveMessage) {
+		if (deadline_) {
+			unregisterTimer();
+			invokeMethod(&Timer::registerTimer);
+		}
+	}
+
+	Object::message(msg);
+}
 
 } /* namespace libcamera */

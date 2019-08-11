@@ -9,11 +9,14 @@
 
 #include <cstdint>
 
+#include <libcamera/object.h>
 #include <libcamera/signal.h>
 
 namespace libcamera {
 
-class Timer
+class Message;
+
+class Timer : public Object
 {
 public:
 	Timer();
@@ -28,7 +31,13 @@ public:
 
 	Signal<Timer *> timeout;
 
+protected:
+	void message(Message *msg) override;
+
 private:
+	void registerTimer();
+	void unregisterTimer();
+
 	unsigned int interval_;
 	uint64_t deadline_;
 };

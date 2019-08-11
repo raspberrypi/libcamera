@@ -7,11 +7,14 @@
 #ifndef __LIBCAMERA_EVENT_NOTIFIER_H__
 #define __LIBCAMERA_EVENT_NOTIFIER_H__
 
+#include <libcamera/object.h>
 #include <libcamera/signal.h>
 
 namespace libcamera {
 
-class EventNotifier
+class Message;
+
+class EventNotifier : public Object
 {
 public:
 	enum Type {
@@ -30,6 +33,9 @@ public:
 	void setEnabled(bool enable);
 
 	Signal<EventNotifier *> activated;
+
+protected:
+	void message(Message *msg) override;
 
 private:
 	int fd_;

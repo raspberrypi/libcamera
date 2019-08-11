@@ -135,6 +135,10 @@ void Object::invokeMethod(BoundMethodBase *method, void *args)
  * This method moves the object from the current thread to the new \a thread.
  * It shall be called from the thread in which the object currently lives,
  * otherwise the behaviour is undefined.
+ *
+ * Before the object is moved, a Message::ThreadMoveMessage message is sent to
+ * it. The message() method can be reimplement in derived classes to be notified
+ * of the upcoming thread move and perform any required processing.
  */
 void Object::moveToThread(Thread *thread)
 {
@@ -143,7 +147,15 @@ void Object::moveToThread(Thread *thread)
 	if (thread_ == thread)
 		return;
 
+	notifyThreadMove();
+
 	thread->moveObject(this);
+}
+
+void Object::notifyThreadMove()
+{
+	Message msg(Message::ThreadMoveMessage);
+	message(&msg);
 }
 
 void Object::connect(SignalBase *signal)

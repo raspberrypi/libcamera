@@ -52,6 +52,8 @@ private:
 
 	void invokeMethod(BoundMethodBase *method, void *pack);
 
+	void notifyThreadMove();
+
 	void connect(SignalBase *signal);
 	void disconnect(SignalBase *signal);
 

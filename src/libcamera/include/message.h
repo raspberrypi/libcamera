@@ -23,6 +23,7 @@ public:
 	enum Type {
 		None = 0,
 		InvokeMessage = 1,
+		ThreadMoveMessage = 2,
 		UserMessage = 1000,
 	};
 

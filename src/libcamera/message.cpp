@@ -47,6 +47,8 @@ std::atomic_uint Message::nextUserType_{ Message::UserMessage };
  * \brief Invalid message type
  * \var Message::InvokeMessage
  * \brief Asynchronous method invocation across threads
+ * \var Message::ThreadMoveMessage
+ * \brief Object is being moved to a different thread
  * \var Message::UserMessage
  * \brief First value available for user-defined messages
  */

@@ -13,12 +13,6 @@
 
 namespace libcamera {
 
-void BoundMethodBase::disconnect(SignalBase *signal)
-{
-	if (object_)
-		object_->disconnect(signal);
-}
-
 void BoundMethodBase::activatePack(void *pack)
 {
 	if (Thread::current() == object_->thread()) {

@@ -46,7 +46,9 @@ public:
 	~Signal()
 	{
 		for (BoundMethodBase *slot : slots_) {
-			slot->disconnect(this);
+			Object *object = slot->object();
+			if (object)
+				object->disconnect(this);
 			delete slot;
 		}
 	}
@@ -95,11 +97,11 @@ public:
 			/*
 			 * If the object matches the slot, the slot is
 			 * guaranteed to be a member slot, so we can safely
-			 * cast it to BoundMemberMethod<T, Args...> and access its
-			 * func_ member.
+			 * cast it to BoundMemberMethod<T, Args...> to match
+			 * func.
 			 */
 			if (slot->match(obj) &&
-			    static_cast<BoundMemberMethod<T, Args...> *>(slot)->func_ == func) {
+			    static_cast<BoundMemberMethod<T, Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {
@@ -113,7 +115,7 @@ public:
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
 			BoundMethodArgs<Args...> *slot = *iter;
 			if (slot->match(nullptr) &&
-			    static_cast<BoundStaticMethod<Args...> *>(slot)->func_ == func) {
+			    static_cast<BoundStaticMethod<Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {

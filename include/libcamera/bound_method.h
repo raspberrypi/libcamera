@@ -13,9 +13,6 @@
 namespace libcamera {
 
 class Object;
-template<typename... Args>
-class Signal;
-class SignalBase;
 
 class BoundMethodBase
 {
@@ -28,7 +25,7 @@ public:
 	bool match(T *obj) { return obj == obj_; }
 	bool match(Object *object) { return object == object_; }
 
-	void disconnect(SignalBase *signal);
+	Object *object() const { return object_; }
 
 	void activatePack(void *pack);
 	virtual void invokePack(void *pack) = 0;
@@ -93,6 +90,8 @@ public:
 	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...))
 		: BoundMethodArgs<Args...>(obj, object), func_(func) {}
 
+	bool match(void (T::*func)(Args...)) const { return func == func_; }
+
 	void activate(Args... args)
 	{
 		if (this->object_)
@@ -107,7 +106,6 @@ public:
 	}
 
 private:
-	friend class Signal<Args...>;
 	void (T::*func_)(Args...);
 };
 
@@ -118,11 +116,12 @@ public:
 	BoundStaticMethod(void (*func)(Args...))
 		: BoundMethodArgs<Args...>(nullptr, nullptr), func_(func) {}
 
+	bool match(void (*func)(Args...)) const { return func == func_; }
+
 	void activate(Args... args) { (*func_)(args...); }
 	void invoke(Args... args) {}
 
 private:
-	friend class Signal<Args...>;
 	void (*func_)(Args...);
 };
 

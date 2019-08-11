@@ -23,6 +23,7 @@ public_tests = [
 
 internal_tests = [
     ['camera-sensor',                   'camera-sensor.cpp'],
+    ['event-thread',                    'event-thread.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
     ['object-invoke',                   'object-invoke.cpp'],

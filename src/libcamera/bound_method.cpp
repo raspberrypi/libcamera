@@ -19,7 +19,7 @@ void BoundMethodBase::activatePack(void *pack)
 		invokePack(pack);
 	} else {
 		std::unique_ptr<Message> msg =
-			utils::make_unique<SignalMessage>(this, pack);
+			utils::make_unique<InvokeMessage>(this, pack);
 		object_->postMessage(std::move(msg));
 	}
 }

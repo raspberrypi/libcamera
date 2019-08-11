@@ -9,6 +9,8 @@
 
 #include <atomic>
 
+#include <libcamera/bound_method.h>
+
 namespace libcamera {
 
 class BoundMethodBase;
@@ -20,7 +22,7 @@ class Message
 public:
 	enum Type {
 		None = 0,
-		SignalMessage = 1,
+		InvokeMessage = 1,
 		UserMessage = 1000,
 	};
 
@@ -41,16 +43,19 @@ private:
 	static std::atomic_uint nextUserType_;
 };
 
-class SignalMessage : public Message
+class InvokeMessage : public Message
 {
 public:
-	SignalMessage(BoundMethodBase *method, void *pack)
-		: Message(Message::SignalMessage), method_(method), pack_(pack)
-	{
-	}
+	InvokeMessage(BoundMethodBase *method, void *pack,
+		      bool deleteMethod = false);
+	~InvokeMessage();
 
+	void invoke();
+
+private:
 	BoundMethodBase *method_;
 	void *pack_;
+	bool deleteMethod_;
 };
 
 } /* namespace libcamera */

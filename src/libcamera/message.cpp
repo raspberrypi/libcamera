@@ -7,6 +7,8 @@
 
 #include "message.h"
 
+#include <libcamera/signal.h>
+
 #include "log.h"
 
 /**
@@ -43,8 +45,8 @@ std::atomic_uint Message::nextUserType_{ Message::UserMessage };
  * \brief The message type
  * \var Message::None
  * \brief Invalid message type
- * \var Message::SignalMessage
- * \brief Asynchronous signal delivery across threads
+ * \var Message::InvokeMessage
+ * \brief Asynchronous method invocation across threads
  * \var Message::UserMessage
  * \brief First value available for user-defined messages
  */
@@ -107,25 +109,47 @@ Message::Type Message::registerMessageType()
 }
 
 /**
- * \class SignalMessage
- * \brief A message carrying a Signal across threads
+ * \class InvokeMessage
+ * \brief A message carrying a method invocation across threads
  */
 
 /**
- * \fn SignalMessage::SignalMessage()
- * \brief Construct a SignalMessage
- * \param[in] method The slot that the signal targets
- * \param[in] pack The signal arguments
+ * \brief Construct an InvokeMessage for method invocation on an Object
+ * \param[in] method The bound method
+ * \param[in] pack The packed method arguments
+ * \param[in] deleteMethod True to delete the \a method when the message is
+ * destroyed
+ */
+InvokeMessage::InvokeMessage(BoundMethodBase *method, void *pack,
+			     bool deleteMethod)
+	: Message(Message::InvokeMessage), method_(method), pack_(pack),
+	  deleteMethod_(deleteMethod)
+{
+}
+
+InvokeMessage::~InvokeMessage()
+{
+	if (deleteMethod_)
+		delete method_;
+}
+
+/**
+ * \brief Invoke the method bound to InvokeMessage::method_ with arguments
+ * InvokeMessage::pack_
+ */
+void InvokeMessage::invoke()
+{
+	method_->invokePack(pack_);
+}
+
+/**
+ * \var InvokeMessage::method_
+ * \brief The method to be invoked
  */
 
 /**
- * \var SignalMessage::method_
- * \brief The slot that the signal targets
- */
-
-/**
- * \var SignalMessage::pack_
- * \brief The signal arguments
+ * \var InvokeMessage::pack_
+ * \brief The packed method invocation arguments
  */
 
 }; /* namespace libcamera */

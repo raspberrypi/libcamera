@@ -12,6 +12,7 @@
 #include "log.h"
 #include "message.h"
 #include "thread.h"
+#include "utils.h"
 
 /**
  * \file object.h
@@ -88,15 +89,37 @@ void Object::postMessage(std::unique_ptr<Message> msg)
 void Object::message(Message *msg)
 {
 	switch (msg->type()) {
-	case Message::SignalMessage: {
-		SignalMessage *smsg = static_cast<SignalMessage *>(msg);
-		smsg->method_->invokePack(smsg->pack_);
+	case Message::InvokeMessage: {
+		InvokeMessage *iMsg = static_cast<InvokeMessage *>(msg);
+		iMsg->invoke();
 		break;
 	}
 
 	default:
 		break;
 	}
+}
+
+/**
+ * \fn void Object::invokeMethod(void (T::*func)(Args...), Args... args)
+ * \brief Invoke a method asynchronously on an Object instance
+ * \param[in] func The object method to invoke
+ * \param[in] args The method arguments
+ *
+ * This method invokes the member method \a func when control returns to the
+ * event loop of the object's thread. The method is executed in the object's
+ * thread with arguments \a args.
+ *
+ * Arguments \a args passed by value or reference are copied, while pointers
+ * are passed untouched. The caller shall ensure that any pointer argument
+ * remains valid until the method is invoked.
+ */
+
+void Object::invokeMethod(BoundMethodBase *method, void *args)
+{
+	std::unique_ptr<Message> msg =
+		utils::make_unique<InvokeMessage>(method, args, true);
+	postMessage(std::move(msg));
 }
 
 /**

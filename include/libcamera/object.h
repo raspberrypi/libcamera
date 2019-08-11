@@ -28,6 +28,16 @@ public:
 
 	void postMessage(std::unique_ptr<Message> msg);
 
+	template<typename T, typename... Args, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
+	void invokeMethod(void (T::*func)(Args...), Args... args)
+	{
+		T *obj = static_cast<T *>(this);
+		BoundMethodBase *method = new BoundMemberMethod<T, Args...>(obj, this, func);
+		void *pack = new typename BoundMemberMethod<T, Args...>::PackType{ args... };
+
+		invokeMethod(method, pack);
+	}
+
 	Thread *thread() const { return thread_; }
 	void moveToThread(Thread *thread);
 
@@ -39,6 +49,8 @@ private:
 	friend class Signal;
 	friend class BoundMethodBase;
 	friend class Thread;
+
+	void invokeMethod(BoundMethodBase *method, void *pack);
 
 	void connect(SignalBase *signal);
 	void disconnect(SignalBase *signal);

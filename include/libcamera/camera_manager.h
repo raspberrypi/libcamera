@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/object.h>
+
 namespace libcamera {
 
 class Camera;
@@ -18,7 +20,7 @@ class DeviceEnumerator;
 class EventDispatcher;
 class PipelineHandler;
 
-class CameraManager
+class CameraManager : public Object
 {
 public:
 	int start();

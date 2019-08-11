@@ -248,7 +248,7 @@ CameraManager *CameraManager::instance()
  */
 void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
 {
-	Thread::current()->setEventDispatcher(std::move(dispatcher));
+	thread()->setEventDispatcher(std::move(dispatcher));
 }
 
 /**
@@ -264,7 +264,7 @@ void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatch
  */
 EventDispatcher *CameraManager::eventDispatcher()
 {
-	return Thread::current()->eventDispatcher();
+	return thread()->eventDispatcher();
 }
 
 } /* namespace libcamera */

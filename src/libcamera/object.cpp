@@ -90,7 +90,7 @@ void Object::message(Message *msg)
 	switch (msg->type()) {
 	case Message::SignalMessage: {
 		SignalMessage *smsg = static_cast<SignalMessage *>(msg);
-		smsg->slot_->invokePack(smsg->pack_);
+		smsg->method_->invokePack(smsg->pack_);
 		break;
 	}
 

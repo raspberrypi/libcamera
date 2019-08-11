@@ -10,13 +10,14 @@
 #include <list>
 #include <memory>
 
+#include <libcamera/bound_method.h>
+
 namespace libcamera {
 
 class Message;
 template<typename... Args>
 class Signal;
 class SignalBase;
-class SlotBase;
 class Thread;
 
 class Object
@@ -36,7 +37,7 @@ protected:
 private:
 	template<typename... Args>
 	friend class Signal;
-	friend class SlotBase;
+	friend class BoundMethodBase;
 	friend class Thread;
 
 	void connect(SignalBase *signal);

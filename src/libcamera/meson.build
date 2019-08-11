@@ -1,4 +1,5 @@
 libcamera_sources = files([
+    'bound_method.cpp',
     'buffer.cpp',
     'camera.cpp',
     'camera_manager.cpp',

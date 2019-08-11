@@ -114,12 +114,12 @@ Message::Type Message::registerMessageType()
 /**
  * \fn SignalMessage::SignalMessage()
  * \brief Construct a SignalMessage
- * \param[in] slot The slot that the signal targets
+ * \param[in] method The slot that the signal targets
  * \param[in] pack The signal arguments
  */
 
 /**
- * \var SignalMessage::slot_
+ * \var SignalMessage::method_
  * \brief The slot that the signal targets
  */
 

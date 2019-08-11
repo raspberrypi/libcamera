@@ -1,4 +1,5 @@
 libcamera_api = files([
+    'bound_method.h',
     'buffer.h',
     'camera.h',
     'camera_manager.h',

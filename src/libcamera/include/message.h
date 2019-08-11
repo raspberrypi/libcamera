@@ -11,8 +11,8 @@
 
 namespace libcamera {
 
+class BoundMethodBase;
 class Object;
-class SlotBase;
 class Thread;
 
 class Message
@@ -44,12 +44,12 @@ private:
 class SignalMessage : public Message
 {
 public:
-	SignalMessage(SlotBase *slot, void *pack)
-		: Message(Message::SignalMessage), slot_(slot), pack_(pack)
+	SignalMessage(BoundMethodBase *method, void *pack)
+		: Message(Message::SignalMessage), method_(method), pack_(pack)
 	{
 	}
 
-	SlotBase *slot_;
+	BoundMethodBase *method_;
 	void *pack_;
 };
 

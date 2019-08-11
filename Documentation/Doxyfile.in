@@ -865,11 +865,11 @@ EXCLUDE_PATTERNS       =
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        = libcamera::SignalBase \
-                         libcamera::SlotArgs \
-                         libcamera::SlotBase \
-                         libcamera::SlotMember \
-                         libcamera::SlotStatic \
+EXCLUDE_SYMBOLS        = libcamera::BoundMemberMethod \
+                         libcamera::BoundMethodArgs \
+                         libcamera::BoundMethodBase \
+                         libcamera::BoundStaticMethod \
+                         libcamera::SignalBase \
                          std::*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories

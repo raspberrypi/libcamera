@@ -7,10 +7,6 @@
 
 #include <libcamera/signal.h>
 
-#include "message.h"
-#include "thread.h"
-#include "utils.h"
-
 /**
  * \file signal.h
  * \brief Signal & slot implementation
@@ -56,25 +52,6 @@ namespace libcamera {
  * arguments. The emitter shall thus ensure that any pointer or reference
  * passed through the signal will remain valid after the signal is emitted.
  */
-
-void SlotBase::disconnect(SignalBase *signal)
-{
-	if (object_)
-		object_->disconnect(signal);
-}
-
-void SlotBase::activatePack(void *pack)
-{
-	Object *obj = static_cast<Object *>(object_);
-
-	if (Thread::current() == obj->thread()) {
-		invokePack(pack);
-	} else {
-		std::unique_ptr<Message> msg =
-			utils::make_unique<SignalMessage>(this, pack);
-		obj->postMessage(std::move(msg));
-	}
-}
 
 /**
  * \fn Signal::connect(T *object, void(T::*func)(Args...))

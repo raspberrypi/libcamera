@@ -29,6 +29,7 @@ internal_tests = [
     ['object-invoke',                   'object-invoke.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],
     ['threads',                         'threads.cpp'],
+    ['timer-thread',                    'timer-thread.cpp'],
 ]
 
 foreach t : public_tests

@@ -26,10 +26,12 @@ public:
 	virtual ~Object();
 
 	void postMessage(std::unique_ptr<Message> msg);
-	virtual void message(Message *msg);
 
 	Thread *thread() const { return thread_; }
 	void moveToThread(Thread *thread);
+
+protected:
+	virtual void message(Message *msg);
 
 private:
 	template<typename... Args>

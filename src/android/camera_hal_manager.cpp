@@ -86,7 +86,7 @@ void CameraHalManager::run()
 CameraProxy *CameraHalManager::open(unsigned int id,
 				    const hw_module_t *hardwareModule)
 {
-	if (id < 0 || id >= numCameras()) {
+	if (id >= numCameras()) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
 		return nullptr;
 	}

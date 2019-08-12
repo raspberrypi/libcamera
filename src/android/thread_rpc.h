@@ -12,9 +12,6 @@
 
 #include <hardware/camera3.h>
 
-#include "message.h"
-#include "thread.h"
-
 class ThreadRpc
 {
 public:
@@ -37,18 +34,6 @@ private:
 	bool delivered_;
 	std::mutex mutex_;
 	std::condition_variable cv_;
-};
-
-class ThreadRpcMessage : public libcamera::Message
-{
-public:
-	ThreadRpcMessage();
-	ThreadRpc *rpc;
-
-	static Message::Type type();
-
-private:
-	static libcamera::Message::Type rpcType_;
 };
 
 #endif /* __ANDROID_THREAD_RPC_H__ */

@@ -70,14 +70,8 @@ CameraDevice::~CameraDevice()
 /*
  * Handle RPC request received from the associated proxy.
  */
-void CameraDevice::message(Message *message)
+void CameraDevice::call(ThreadRpc *rpc)
 {
-	if (message->type() != ThreadRpcMessage::type())
-		return Object::message(message);
-
-	ThreadRpcMessage *rpcMessage = static_cast<ThreadRpcMessage *>(message);
-	ThreadRpc *rpc = rpcMessage->rpc;
-
 	switch (rpc->tag) {
 	case ThreadRpc::ProcessCaptureRequest:
 		processCaptureRequest(rpc->request);

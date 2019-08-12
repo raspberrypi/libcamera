@@ -26,13 +26,15 @@
 		return nullptr;		\
 	} while(0);
 
+class ThreadRpc;
+
 class CameraDevice : public libcamera::Object
 {
 public:
 	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> &camera);
 	~CameraDevice();
 
-	void message(libcamera::Message *message);
+	void call(ThreadRpc *rpc);
 
 	int open();
 	void close();

@@ -9,6 +9,8 @@
 
 #include <system/camera_metadata.h>
 
+#include <libcamera/object.h>
+
 #include "log.h"
 #include "message.h"
 #include "utils.h"
@@ -185,10 +187,6 @@ int CameraProxy::processCaptureRequest(camera3_capture_request_t *request)
 
 void CameraProxy::threadRpcCall(ThreadRpc &rpcRequest)
 {
-	std::unique_ptr<ThreadRpcMessage> message =
-				utils::make_unique<ThreadRpcMessage>();
-	message->rpc = &rpcRequest;
-
-	cameraDevice_->postMessage(std::move(message));
+	cameraDevice_->invokeMethod(&CameraDevice::call, &rpcRequest);
 	rpcRequest.waitDelivery();
 }

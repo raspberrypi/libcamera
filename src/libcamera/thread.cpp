@@ -464,6 +464,8 @@ void Thread::moveObject(Object *object)
 
 	/* Move pending messages to the message queue of the new thread. */
 	if (object->pendingMessages_) {
+		unsigned int movedMessages = 0;
+
 		for (std::unique_ptr<Message> &msg : currentData->messages_.list_) {
 			if (!msg)
 				continue;
@@ -471,6 +473,14 @@ void Thread::moveObject(Object *object)
 				continue;
 
 			targetData->messages_.list_.push_back(std::move(msg));
+			movedMessages++;
+		}
+
+		if (movedMessages) {
+			EventDispatcher *dispatcher =
+				targetData->dispatcher_.load(std::memory_order_acquire);
+			if (dispatcher)
+				dispatcher->interrupt();
 		}
 	}
 

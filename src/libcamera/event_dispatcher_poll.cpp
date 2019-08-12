@@ -19,6 +19,7 @@
 #include <libcamera/timer.h>
 
 #include "log.h"
+#include "thread.h"
 
 /**
  * \file event_dispatcher_poll.h
@@ -142,6 +143,8 @@ void EventDispatcherPoll::unregisterTimer(Timer *timer)
 void EventDispatcherPoll::processEvents()
 {
 	int ret;
+
+	Thread::current()->dispatchMessages();
 
 	/* Create the pollfd array. */
 	std::vector<struct pollfd> pollfds;

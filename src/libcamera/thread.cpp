@@ -212,10 +212,8 @@ int Thread::exec()
 
 	locker.unlock();
 
-	while (!data_->exit_.load(std::memory_order_acquire)) {
-		dispatchMessages();
+	while (!data_->exit_.load(std::memory_order_acquire))
 		dispatcher->processEvents();
-	}
 
 	locker.lock();
 

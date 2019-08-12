@@ -448,7 +448,7 @@ void Thread::dispatchMessages()
 }
 
 /**
- * \brief Move an \a object to the thread
+ * \brief Move an \a object and all its children to the thread
  * \param[in] object The object
  */
 void Thread::moveObject(Object *object)
@@ -460,6 +460,12 @@ void Thread::moveObject(Object *object)
 	MutexLocker lockerTo(targetData->mutex_, std::defer_lock);
 	std::lock(lockerFrom, lockerTo);
 
+	moveObject(object, currentData, targetData);
+}
+
+void Thread::moveObject(Object *object, ThreadData *currentData,
+			ThreadData *targetData)
+{
 	/* Move pending messages to the message queue of the new thread. */
 	if (object->pendingMessages_) {
 		unsigned int movedMessages = 0;
@@ -483,6 +489,10 @@ void Thread::moveObject(Object *object)
 	}
 
 	object->thread_ = this;
+
+	/* Move all children. */
+	for (auto child : object->children_)
+		moveObject(child, currentData, targetData);
 }
 
 }; /* namespace libcamera */

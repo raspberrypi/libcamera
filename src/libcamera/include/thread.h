@@ -61,6 +61,8 @@ private:
 	friend class ThreadMain;
 
 	void moveObject(Object *object);
+	void moveObject(Object *object, ThreadData *currentData,
+			ThreadData *targetData);
 
 	std::thread thread_;
 	ThreadData *data_;

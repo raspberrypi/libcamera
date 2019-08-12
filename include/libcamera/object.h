@@ -9,6 +9,7 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 #include <libcamera/bound_method.h>
 
@@ -23,7 +24,7 @@ class Thread;
 class Object
 {
 public:
-	Object();
+	Object(Object *parent = nullptr);
 	virtual ~Object();
 
 	void postMessage(std::unique_ptr<Message> msg);
@@ -41,6 +42,8 @@ public:
 	Thread *thread() const { return thread_; }
 	void moveToThread(Thread *thread);
 
+	Object *parent() const { return parent_; }
+
 protected:
 	virtual void message(Message *msg);
 
@@ -56,6 +59,9 @@ private:
 
 	void connect(SignalBase *signal);
 	void disconnect(SignalBase *signal);
+
+	Object *parent_;
+	std::vector<Object *> children_;
 
 	Thread *thread_;
 	std::list<SignalBase *> signals_;

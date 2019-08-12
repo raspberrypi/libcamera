@@ -20,7 +20,7 @@ class TimeoutHandler : public Object
 {
 public:
 	TimeoutHandler()
-		: timeout_(false)
+		: timer_(this), timeout_(false)
 	{
 		timer_.timeout.connect(this, &TimeoutHandler::timeoutHandler);
 		timer_.start(100);
@@ -29,12 +29,6 @@ public:
 	bool timeout() const
 	{
 		return timeout_;
-	}
-
-	void moveToThread(Thread *thread)
-	{
-		Object::moveToThread(thread);
-		timer_.moveToThread(thread);
 	}
 
 private:

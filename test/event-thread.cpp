@@ -27,7 +27,7 @@ public:
 	{
 		pipe(pipefd_);
 
-		notifier_ = new EventNotifier(pipefd_[0], EventNotifier::Read);
+		notifier_ = new EventNotifier(pipefd_[0], EventNotifier::Read, this);
 		notifier_->activated.connect(this, &EventHandler::readReady);
 	}
 
@@ -59,12 +59,6 @@ public:
 	bool notified() const
 	{
 		return notified_;
-	}
-
-	void moveToThread(Thread *thread)
-	{
-		Object::moveToThread(thread);
-		notifier_->moveToThread(thread);
 	}
 
 private:

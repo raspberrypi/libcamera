@@ -30,7 +30,7 @@ public:
 	int close(CameraProxy *proxy);
 
 	unsigned int numCameras() const;
-	int getCameraInfo(int id, struct camera_info *info);
+	int getCameraInfo(unsigned int id, struct camera_info *info);
 
 private:
 	void run() override;

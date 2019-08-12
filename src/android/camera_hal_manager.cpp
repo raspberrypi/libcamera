@@ -113,12 +113,12 @@ unsigned int CameraHalManager::numCameras() const
 	return cameraManager_->cameras().size();
 }
 
-int CameraHalManager::getCameraInfo(int id, struct camera_info *info)
+int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 {
 	if (!info)
 		return -EINVAL;
 
-	if (id >= numCameras() || id < 0) {
+	if (id >= numCameras()) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
 		return -EINVAL;
 	}

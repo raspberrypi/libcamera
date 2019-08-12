@@ -23,7 +23,7 @@ public:
 		Exception,
 	};
 
-	EventNotifier(int fd, Type type);
+	EventNotifier(int fd, Type type, Object *parent = nullptr);
 	virtual ~EventNotifier();
 
 	Type type() const { return type_; }

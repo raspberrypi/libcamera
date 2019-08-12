@@ -19,7 +19,7 @@ class Message;
 class Timer : public Object
 {
 public:
-	Timer();
+	Timer(Object *parent = nullptr);
 	~Timer();
 
 	void start(unsigned int msec);

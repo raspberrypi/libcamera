@@ -39,9 +39,10 @@ LOG_DEFINE_CATEGORY(Timer)
 
 /**
  * \brief Construct a timer
+ * \param[in] parent The parent Object
  */
-Timer::Timer()
-	: interval_(0), deadline_(0)
+Timer::Timer(Object *parent)
+	: Object(parent), interval_(0), deadline_(0)
 {
 }
 

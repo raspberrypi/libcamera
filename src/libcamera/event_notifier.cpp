@@ -61,9 +61,10 @@ namespace libcamera {
  * \brief Construct an event notifier with a file descriptor and event type
  * \param[in] fd The file descriptor to monitor
  * \param[in] type The event type to monitor
+ * \param[in] parent The parent Object
  */
-EventNotifier::EventNotifier(int fd, Type type)
-	: fd_(fd), type_(type), enabled_(false)
+EventNotifier::EventNotifier(int fd, Type type, Object *parent)
+	: Object(parent), fd_(fd), type_(type), enabled_(false)
 {
 	setEnabled(true);
 }

@@ -29,3 +29,24 @@ To build and install:
   cd build
   ninja
   ninja install
+
+Dependencies
+------------
+
+The following Debian/Ubuntu packages are required for building libcamera.
+Other distributions may have differing package names:
+
+A C++ toolchain: [required]
+	Either {g++, clang}
+
+for libcamera: [required]
+	meson ninja-build
+
+for device hotplug enumeration: [optional]
+	pkg-config libudev-dev
+
+for qcam: [optional]
+	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+
+for documentation: [optional]
+	python3-sphinx doxygen

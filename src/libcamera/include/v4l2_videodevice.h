@@ -50,7 +50,8 @@ struct V4L2Capability final : v4l2_capability {
 	bool isMultiplanar() const
 	{
 		return device_caps() & (V4L2_CAP_VIDEO_CAPTURE_MPLANE |
-					V4L2_CAP_VIDEO_OUTPUT_MPLANE);
+					V4L2_CAP_VIDEO_OUTPUT_MPLANE |
+					V4L2_CAP_VIDEO_M2M_MPLANE);
 	}
 	bool isCapture() const
 	{

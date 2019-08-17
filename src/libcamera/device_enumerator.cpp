@@ -166,7 +166,8 @@ DeviceEnumerator::~DeviceEnumerator()
 	for (std::shared_ptr<MediaDevice> media : devices_) {
 		if (media->busy())
 			LOG(DeviceEnumerator, Error)
-				<< "Removing media device while still in use";
+				<< "Removing media device " << media->deviceNode()
+				<< " while still in use";
 	}
 }
 

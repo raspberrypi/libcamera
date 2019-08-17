@@ -90,6 +90,10 @@ void CameraHalManager::run()
 
 	/* Now start processing events and messages. */
 	exec();
+
+	/* Clean up the resources we have allocated. */
+	proxies_.clear();
+	cameraManager_->stop();
 }
 
 CameraProxy *CameraHalManager::open(unsigned int id,

@@ -29,7 +29,6 @@ public:
 	int init();
 
 	CameraProxy *open(unsigned int id, const hw_module_t *module);
-	int close(CameraProxy *proxy);
 
 	unsigned int numCameras() const;
 	int getCameraInfo(unsigned int id, struct camera_info *info);

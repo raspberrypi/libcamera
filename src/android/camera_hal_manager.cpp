@@ -25,7 +25,7 @@ LOG_DECLARE_CATEGORY(HAL);
  * and spawns its own thread where libcamera related events are dispatched to.
  * It wraps the libcamera CameraManager operations and provides helpers for the
  * camera_module_t operations, to retrieve the number of cameras in the system,
- * their static information and to open and close camera devices.
+ * their static information and to open camera devices.
  */
 
 CameraHalManager::~CameraHalManager()
@@ -107,14 +107,6 @@ CameraProxy *CameraHalManager::open(unsigned int id,
 	LOG(HAL, Info) << "Open camera '" << id << "'";
 
 	return proxy;
-}
-
-int CameraHalManager::close(CameraProxy *proxy)
-{
-	proxy->close();
-	LOG(HAL, Info) << "Close camera '" << proxy->id() << "'";
-
-	return 0;
 }
 
 unsigned int CameraHalManager::numCameras() const

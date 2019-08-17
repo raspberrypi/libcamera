@@ -28,6 +28,15 @@ LOG_DECLARE_CATEGORY(HAL);
  * their static information and to open and close camera devices.
  */
 
+CameraHalManager::~CameraHalManager()
+{
+	if (isRunning()) {
+		exit(0);
+		/* \todo Wait with a timeout, just in case. */
+		wait();
+	}
+}
+
 int CameraHalManager::init()
 {
 	/*

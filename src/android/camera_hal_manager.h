@@ -24,6 +24,8 @@ class CameraProxy;
 class CameraHalManager : public libcamera::Thread
 {
 public:
+	~CameraHalManager();
+
 	int init();
 
 	CameraProxy *open(unsigned int id, const hw_module_t *module);

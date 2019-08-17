@@ -25,7 +25,11 @@ public:
 	EventHandler()
 		: notified_(false)
 	{
-		pipe(pipefd_);
+		int ret = pipe(pipefd_);
+		if (ret < 0) {
+			ret = errno;
+			cout << "pipe() failed: " << strerror(ret) << endl;
+		}
 
 		notifier_ = new EventNotifier(pipefd_[0], EventNotifier::Read, this);
 		notifier_->activated.connect(this, &EventHandler::readReady);

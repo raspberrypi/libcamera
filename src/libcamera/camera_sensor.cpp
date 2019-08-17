@@ -13,6 +13,8 @@
 #include <limits.h>
 #include <math.h>
 
+#include <libcamera/property_ids.h>
+
 #include "formats.h"
 #include "utils.h"
 #include "v4l2_subdevice.h"
@@ -47,7 +49,7 @@ LOG_DEFINE_CATEGORY(CameraSensor);
  * Once constructed the instance must be initialized with init().
  */
 CameraSensor::CameraSensor(const MediaEntity *entity)
-	: entity_(entity)
+	: entity_(entity), properties_(properties::properties)
 {
 	subdev_ = new V4L2Subdevice(entity);
 }
@@ -88,6 +90,45 @@ int CameraSensor::init()
 	ret = subdev_->open();
 	if (ret < 0)
 		return ret;
+
+	/* Retrieve and store the camera sensor properties. */
+	const ControlInfoMap &controls = subdev_->controls();
+	int32_t propertyValue;
+
+	/* Camera Location: default is front location. */
+	const auto &locationControl = controls.find(V4L2_CID_CAMERA_SENSOR_LOCATION);
+	if (locationControl != controls.end()) {
+		int32_t v4l2Location =
+			locationControl->second.def().get<int32_t>();
+
+		switch (v4l2Location) {
+		default:
+			LOG(CameraSensor, Warning)
+				<< "Unsupported camera location "
+				<< v4l2Location << ", setting to Front";
+			/* Fall-through */
+		case V4L2_LOCATION_FRONT:
+			propertyValue = properties::CameraLocationFront;
+			break;
+		case V4L2_LOCATION_BACK:
+			propertyValue = properties::CameraLocationBack;
+			break;
+		case V4L2_LOCATION_EXTERNAL:
+			propertyValue = properties::CameraLocationExternal;
+			break;
+		}
+	} else {
+		propertyValue = properties::CameraLocationFront;
+	}
+	properties_.set(properties::Location, propertyValue);
+
+	/* Camera Rotation: default is 0 degrees. */
+	const auto &rotationControl = controls.find(V4L2_CID_CAMERA_SENSOR_ROTATION);
+	if (rotationControl != controls.end())
+		propertyValue = rotationControl->second.def().get<int32_t>();
+	else
+		propertyValue = 0;
+	properties_.set(properties::Rotation, propertyValue);
 
 	/* Enumerate and cache media bus codes and sizes. */
 	const ImageFormats formats = subdev_->formats(0);
@@ -283,6 +324,12 @@ int CameraSensor::getControls(ControlList *ctrls)
 {
 	return subdev_->getControls(ctrls);
 }
+
+/**
+ * \fn CameraSensor::properties()
+ * \brief Retrieve the camera sensor properties
+ * \return The list of camera sensor properties
+ */
 
 /**
  * \brief Write controls to the sensor

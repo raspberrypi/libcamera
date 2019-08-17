@@ -10,14 +10,13 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include "log.h"
 
 namespace libcamera {
 
-class ControlInfoMap;
-class ControlList;
 class MediaEntity;
 class V4L2Subdevice;
 
@@ -47,6 +46,8 @@ public:
 	int getControls(ControlList *ctrls);
 	int setControls(ControlList *ctrls);
 
+	const ControlList &properties() const { return properties_; }
+
 protected:
 	std::string logPrefix() const;
 
@@ -56,6 +57,8 @@ private:
 
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
+
+	ControlList properties_;
 };
 
 } /* namespace libcamera */

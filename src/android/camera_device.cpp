@@ -49,7 +49,7 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  * to the framework using the designated callbacks.
  */
 
-CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> &camera)
+CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
 	: running_(false), camera_(camera), staticMetadata_(nullptr),
 	  requestTemplate_(nullptr)
 {

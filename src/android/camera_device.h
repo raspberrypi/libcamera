@@ -31,7 +31,7 @@ class ThreadRpc;
 class CameraDevice : public libcamera::Object
 {
 public:
-	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> &camera);
+	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
 	~CameraDevice();
 
 	void call(ThreadRpc *rpc);

@@ -113,7 +113,7 @@ static camera3_device_ops hal_dev_ops = {
 	.reserved = { nullptr },
 };
 
-CameraProxy::CameraProxy(unsigned int id, std::shared_ptr<Camera> camera)
+CameraProxy::CameraProxy(unsigned int id, const std::shared_ptr<Camera> &camera)
 	: id_(id)
 {
 	cameraDevice_ = new CameraDevice(id, camera);

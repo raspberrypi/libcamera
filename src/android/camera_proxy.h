@@ -19,7 +19,7 @@ class ThreadRpc;
 class CameraProxy
 {
 public:
-	CameraProxy(unsigned int id, std::shared_ptr<libcamera::Camera> camera);
+	CameraProxy(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
 	~CameraProxy();
 
 	int open(const hw_module_t *hardwareModule);

@@ -51,8 +51,6 @@ MainWindow::~MainWindow()
 		camera_->release();
 		camera_.reset();
 	}
-
-	CameraManager::instance()->stop();
 }
 
 void MainWindow::updateTitle()

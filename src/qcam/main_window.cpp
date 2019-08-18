@@ -21,7 +21,7 @@
 
 using namespace libcamera;
 
-MainWindow::MainWindow(const OptionsParser::Options &options)
+MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	: options_(options), isCapturing_(false)
 {
 	int ret;
@@ -35,7 +35,7 @@ MainWindow::MainWindow(const OptionsParser::Options &options)
 	viewfinder_->setFixedSize(500, 500);
 	adjustSize();
 
-	ret = openCamera();
+	ret = openCamera(cm);
 	if (!ret)
 		ret = startCapture();
 
@@ -66,9 +66,8 @@ void MainWindow::updateTitle()
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
 }
 
-int MainWindow::openCamera()
+int MainWindow::openCamera(CameraManager *cm)
 {
-	CameraManager *cm = CameraManager::instance();
 	std::string cameraName;
 
 	if (!options_.isSet(OptCamera)) {

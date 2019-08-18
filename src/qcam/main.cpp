@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	MainWindow *mainWindow = new MainWindow(options);
+	MainWindow *mainWindow = new MainWindow(cm, options);
 	mainWindow->show();
 	ret = app.exec();
 	delete mainWindow;

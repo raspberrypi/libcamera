@@ -16,6 +16,7 @@
 #include <QTimer>
 
 #include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 #include <libcamera/stream.h>
 
 #include "../cam/options.h"
@@ -35,14 +36,14 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(const OptionsParser::Options &options);
+	MainWindow(CameraManager *cm, const OptionsParser::Options &options);
 	~MainWindow();
 
 private Q_SLOTS:
 	void updateTitle();
 
 private:
-	int openCamera();
+	int openCamera(CameraManager *cm);
 
 	int startCapture();
 	void stopCapture();

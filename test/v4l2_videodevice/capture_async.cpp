@@ -6,12 +6,12 @@
  */
 
 #include <libcamera/buffer.h>
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include <iostream>
 
+#include "thread.h"
 #include "v4l2_videodevice_test.h"
 
 class CaptureAsyncTest : public V4L2VideoDeviceTest
@@ -34,7 +34,7 @@ protected:
 	{
 		const unsigned int bufferCount = 8;
 
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		Timer timeout;
 		int ret;
 

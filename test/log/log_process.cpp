@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/logging.h>
 #include <libcamera/timer.h>
@@ -22,6 +21,7 @@
 #include "log.h"
 #include "process.h"
 #include "test.h"
+#include "thread.h"
 #include "utils.h"
 
 using namespace std;
@@ -65,7 +65,7 @@ protected:
 
 	int run()
 	{
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		Timer timeout;
 
 		int exitCode = 42;

@@ -15,12 +15,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include "ipc_unixsocket.h"
 #include "test.h"
+#include "thread.h"
 #include "utils.h"
 
 #define CMD_CLOSE	0
@@ -47,7 +47,7 @@ public:
 	UnixSocketTestSlave()
 		: exitCode_(EXIT_FAILURE), exit_(false)
 	{
-		dispatcher_ = CameraManager::instance()->eventDispatcher();
+		dispatcher_ = Thread::current()->eventDispatcher();
 		ipc_.readyRead.connect(this, &UnixSocketTestSlave::readyRead);
 	}
 
@@ -436,7 +436,7 @@ private:
 				return -ETIMEDOUT;
 			}
 
-			CameraManager::instance()->eventDispatcher()->processEvents();
+			Thread::current()->eventDispatcher()->processEvents();
 		}
 
 		callResponse_ = nullptr;

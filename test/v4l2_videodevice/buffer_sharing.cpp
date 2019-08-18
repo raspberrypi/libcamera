@@ -13,10 +13,10 @@
 #include <iostream>
 
 #include <libcamera/buffer.h>
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
+#include "thread.h"
 #include "v4l2_videodevice_test.h"
 
 class BufferSharingTest : public V4L2VideoDeviceTest
@@ -116,7 +116,7 @@ protected:
 
 	int run()
 	{
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		Timer timeout;
 		int ret;
 

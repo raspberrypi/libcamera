@@ -8,12 +8,12 @@
 #include <iostream>
 
 #include <libcamera/buffer.h>
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include "device_enumerator.h"
 #include "media_device.h"
+#include "thread.h"
 #include "v4l2_videodevice.h"
 
 #include "test.h"
@@ -80,7 +80,7 @@ protected:
 	{
 		constexpr unsigned int bufferCount = 4;
 
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		int ret;
 
 		MediaEntity *entity = media_->getEntityByName("vim2m-source");

@@ -9,11 +9,11 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include "test.h"
+#include "thread.h"
 
 using namespace std;
 using namespace libcamera;
@@ -33,7 +33,7 @@ protected:
 
 	int init()
 	{
-		dispatcher = CameraManager::instance()->eventDispatcher();
+		dispatcher = Thread::current()->eventDispatcher();
 
 		struct sigaction sa = {};
 		sa.sa_handler = &sigAlarmHandler;

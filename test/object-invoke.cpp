@@ -9,12 +9,11 @@
 #include <iostream>
 #include <thread>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/object.h>
 
-#include "thread.h"
 #include "test.h"
+#include "thread.h"
 
 using namespace std;
 using namespace libcamera;
@@ -61,7 +60,7 @@ class ObjectInvokeTest : public Test
 protected:
 	int run()
 	{
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		InvokedObject object;
 
 		/*

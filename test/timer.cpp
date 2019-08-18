@@ -7,11 +7,11 @@
 
 #include <iostream>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include "test.h"
+#include "thread.h"
 
 using namespace std;
 using namespace libcamera;
@@ -62,7 +62,7 @@ protected:
 
 	int run()
 	{
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 		ManagedTimer timer;
 		ManagedTimer timer2;
 

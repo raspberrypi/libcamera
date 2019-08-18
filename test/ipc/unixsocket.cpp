@@ -370,7 +370,7 @@ protected:
 
 		/* Test reversing a string, this test sending only data. */
 		if (testReverse()) {
-			cerr << "Reveres array test failed" << endl;
+			cerr << "Reverse array test failed" << endl;
 			return TestFail;
 		}
 

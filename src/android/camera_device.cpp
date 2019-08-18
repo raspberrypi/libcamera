@@ -131,14 +131,14 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	/* \todo Use correct sizes */
 	#define STATIC_ENTRY_CAP 256
 	#define STATIC_DATA_CAP 6688
-	camera_metadata_t *staticMetadata =
-		allocate_camera_metadata(STATIC_ENTRY_CAP, STATIC_DATA_CAP);
+	staticMetadata_ = allocate_camera_metadata(STATIC_ENTRY_CAP,
+						   STATIC_DATA_CAP);
 
 	/* Sensor static metadata. */
 	int32_t pixelArraySize[] = {
 		2592, 1944,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
 				&pixelArraySize, 2);
 	METADATA_ASSERT(ret);
@@ -146,7 +146,7 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	int32_t sensorSizes[] = {
 		0, 0, 2560, 1920,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
 				&sensorSizes, 4);
 	METADATA_ASSERT(ret);
@@ -154,13 +154,13 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	int32_t sensitivityRange[] = {
 		32, 2400,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_INFO_SENSITIVITY_RANGE,
 				&sensitivityRange, 2);
 	METADATA_ASSERT(ret);
 
 	uint16_t filterArr = ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_GRBG;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT,
 				&filterArr, 1);
 	METADATA_ASSERT(ret);
@@ -168,33 +168,33 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	int64_t exposureTimeRange[] = {
 		100000, 200000000,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
 				&exposureTimeRange, 2);
 	METADATA_ASSERT(ret);
 
 	int32_t orientation = 0;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_SENSOR_ORIENTATION,
 				&orientation, 1);
 	METADATA_ASSERT(ret);
 
 	/* Flash static metadata. */
 	char flashAvailable = ANDROID_FLASH_INFO_AVAILABLE_FALSE;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_FLASH_INFO_AVAILABLE,
 			&flashAvailable, 1);
 	METADATA_ASSERT(ret);
 
 	/* Lens static metadata. */
 	float fn = 2.53 / 100;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 				ANDROID_LENS_INFO_AVAILABLE_APERTURES, &fn, 1);
 	METADATA_ASSERT(ret);
 
 	/* Control metadata. */
 	char controlMetadata = ANDROID_CONTROL_MODE_AUTO;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_CONTROL_AVAILABLE_MODES,
 			&controlMetadata, 1);
 	METADATA_ASSERT(ret);
@@ -205,7 +205,7 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AE_ANTIBANDING_MODE_60HZ,
 		ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_CONTROL_AE_AVAILABLE_ANTIBANDING_MODES,
 			availableAntiBandingModes, 4);
 	METADATA_ASSERT(ret);
@@ -214,19 +214,19 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AE_MODE_ON,
 		ANDROID_CONTROL_AE_MODE_OFF,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_CONTROL_AE_AVAILABLE_MODES,
 			aeAvailableModes, 2);
 	METADATA_ASSERT(ret);
 
 	controlMetadata = ANDROID_CONTROL_AE_LOCK_AVAILABLE_TRUE;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_CONTROL_AE_LOCK_AVAILABLE,
 			&controlMetadata, 1);
 	METADATA_ASSERT(ret);
 
 	uint8_t awbLockAvailable = ANDROID_CONTROL_AWB_LOCK_AVAILABLE_FALSE;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
 			&awbLockAvailable, 1);
 
@@ -236,7 +236,7 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
 		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_SCALER_AVAILABLE_FORMATS,
 			availableStreamFormats.data(),
 			availableStreamFormats.size());
@@ -250,7 +250,7 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED, 2560, 1920,
 		ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 			availableStreamConfigurations.data(),
 			availableStreamConfigurations.size());
@@ -259,7 +259,7 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	std::vector<int64_t> availableStallDurations = {
 		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB, 2560, 1920, 33333333,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_SCALER_AVAILABLE_STALL_DURATIONS,
 			availableStallDurations.data(),
 			availableStallDurations.size());
@@ -270,18 +270,18 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED, 2560, 1920, 33333333,
 		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888, 2560, 1920, 33333333,
 	};
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
 			minFrameDurations.data(), minFrameDurations.size());
 	METADATA_ASSERT(ret);
 
 	/* Info static metadata. */
 	uint8_t supportedHWLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
-	ret = add_camera_metadata_entry(staticMetadata,
+	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL,
 			&supportedHWLevel, 1);
 
-	return staticMetadata;
+	return staticMetadata_;
 }
 
 /*

@@ -38,12 +38,22 @@ common_arguments = [
 c_arguments = common_arguments
 cpp_arguments = common_arguments
 
-# Use libc++ by default if available instead of libstdc++ when compiling with
-# clang.
-if cc.get_id() == 'clang' and cc.find_library('libc++', required: false).found()
-    cpp_arguments += [
-        '-stdlib=libc++',
-    ]
+if cc.get_id() == 'clang'
+    # Turn _FORTIFY_SOURCE by default on optimised builds (as it requires -O1
+    # or higher). This is needed on clang only as gcc enables it by default.
+    if get_option('optimization') != '0'
+        common_arguments += [
+            '-D_FORTIFY_SOURCE=2',
+        ]
+    endif
+
+    # Use libc++ by default if available instead of libstdc++ when compiling
+    # with clang.
+    if cc.find_library('libc++', required: false).found()
+        cpp_arguments += [
+            '-stdlib=libc++',
+        ]
+    endif
 endif
 
 add_project_arguments(c_arguments, language : 'c')

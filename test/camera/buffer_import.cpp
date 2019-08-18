@@ -375,7 +375,7 @@ protected:
 			return TestFail;
 		}
 
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = cm_->eventDispatcher();
 
 		Timer timer;
 		timer.start(5000);

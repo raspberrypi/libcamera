@@ -120,7 +120,7 @@ protected:
 			}
 		}
 
-		EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+		EventDispatcher *dispatcher = cm_->eventDispatcher();
 
 		Timer timer;
 		timer.start(1000);

@@ -23,10 +23,8 @@ protected:
 	int init();
 	void cleanup();
 
-	std::shared_ptr<Camera> camera_;
-
-private:
 	CameraManager *cm_;
+	std::shared_ptr<Camera> camera_;
 };
 
 #endif /* __LIBCAMERA_CAMERA_TEST_H__ */

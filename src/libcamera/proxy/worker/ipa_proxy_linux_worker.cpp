@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/logging.h>
@@ -17,6 +16,7 @@
 #include "ipa_module.h"
 #include "ipc_unixsocket.h"
 #include "log.h"
+#include "thread.h"
 #include "utils.h"
 
 using namespace libcamera;
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	LOG(IPAProxyLinuxWorker, Debug) << "Proxy worker successfully started";
 
 	/* \todo upgrade listening loop */
-	EventDispatcher *dispatcher = CameraManager::instance()->eventDispatcher();
+	EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 	while (1)
 		dispatcher->processEvents();
 

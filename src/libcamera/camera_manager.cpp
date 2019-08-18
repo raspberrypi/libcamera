@@ -35,11 +35,14 @@ LOG_DEFINE_CATEGORY(Camera)
  * in the system to applications. The manager owns all Camera objects and
  * handles hot-plugging and hot-unplugging to manage the lifetime of cameras.
  *
- * To interact with libcamera, an application retrieves the camera manager
- * instance with CameraManager::instance(). The manager is initially stopped,
- * and shall be configured before being started. In particular a custom event
- * dispatcher shall be installed if needed with
- * CameraManager::setEventDispatcher().
+ * To interact with libcamera, an application starts by creating a camera
+ * manager instance. Only a single instance of the camera manager may exist at
+ * a time. Attempting to create a second instance without first deleting the
+ * existing instance results in undefined behaviour.
+ *
+ * The manager is initially stopped, and shall be configured before being
+ * started. In particular a custom event dispatcher shall be installed if
+ * needed with CameraManager::setEventDispatcher().
  *
  * Once the camera manager is configured, it shall be started with start().
  * This will enumerate all the cameras present in the system, which can then be
@@ -56,13 +59,21 @@ LOG_DEFINE_CATEGORY(Camera)
  * removed due to hot-unplug.
  */
 
+CameraManager *CameraManager::self_ = nullptr;
+
 CameraManager::CameraManager()
 	: enumerator_(nullptr)
 {
+	if (self_)
+		LOG(Camera, Fatal)
+			<< "Multiple CameraManager objects are not allowed";
+
+	self_ = this;
 }
 
 CameraManager::~CameraManager()
 {
+	self_ = nullptr;
 }
 
 /**
@@ -210,21 +221,6 @@ void CameraManager::removeCamera(Camera *camera)
 			return;
 		}
 	}
-}
-
-/**
- * \brief Retrieve the camera manager instance
- *
- * The CameraManager is a singleton and can't be constructed manually. This
- * function shall instead be used to retrieve the single global instance of the
- * manager.
- *
- * \return The camera manager instance
- */
-CameraManager *CameraManager::instance()
-{
-	static CameraManager manager;
-	return &manager;
 }
 
 /**

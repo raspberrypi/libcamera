@@ -21,7 +21,7 @@ class ControlListTest : public Test
 protected:
 	int init()
 	{
-		cm_ = CameraManager::instance();
+		cm_ = new CameraManager();
 
 		if (cm_->start()) {
 			cout << "Failed to start camera manager" << endl;
@@ -203,6 +203,7 @@ protected:
 		}
 
 		cm_->stop();
+		delete cm_;
 	}
 
 private:

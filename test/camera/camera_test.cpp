@@ -14,7 +14,7 @@ using namespace std;
 
 int CameraTest::init()
 {
-	cm_ = CameraManager::instance();
+	cm_ = new CameraManager();
 
 	if (cm_->start()) {
 		cout << "Failed to start camera manager" << endl;
@@ -44,4 +44,5 @@ void CameraTest::cleanup()
 	}
 
 	cm_->stop();
+	delete cm_;
 };

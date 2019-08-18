@@ -20,8 +20,8 @@ class ListTest : public Test
 protected:
 	int init()
 	{
-		cm = CameraManager::instance();
-		cm->start();
+		cm_ = new CameraManager();
+		cm_->start();
 
 		return 0;
 	}
@@ -30,7 +30,7 @@ protected:
 	{
 		unsigned int count = 0;
 
-		for (const std::shared_ptr<Camera> &camera : cm->cameras()) {
+		for (const std::shared_ptr<Camera> &camera : cm_->cameras()) {
 			cout << "- " << camera->name() << endl;
 			count++;
 		}
@@ -40,11 +40,12 @@ protected:
 
 	void cleanup()
 	{
-		cm->stop();
+		cm_->stop();
+		delete cm_;
 	}
 
 private:
-	CameraManager *cm;
+	CameraManager *cm_;
 };
 
 TEST_REGISTER(ListTest)

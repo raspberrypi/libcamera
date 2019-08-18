@@ -92,7 +92,7 @@ int IPU3PipelineTest::init()
 
 	enumerator.reset(nullptr);
 
-	cameraManager_ = CameraManager::instance();
+	cameraManager_ = new CameraManager();
 	ret = cameraManager_->start();
 	if (ret) {
 		cerr << "Failed to start the CameraManager" << endl;
@@ -120,6 +120,7 @@ int IPU3PipelineTest::run()
 void IPU3PipelineTest::cleanup()
 {
 	cameraManager_->stop();
+	delete cameraManager_;
 }
 
 TEST_REGISTER(IPU3PipelineTest)

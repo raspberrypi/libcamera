@@ -23,6 +23,7 @@ class CamApp
 {
 public:
 	CamApp();
+	~CamApp();
 
 	static CamApp *instance();
 
@@ -54,6 +55,11 @@ CamApp::CamApp()
 	CamApp::app_ = this;
 }
 
+CamApp::~CamApp()
+{
+	delete cm_;
+}
+
 CamApp *CamApp::instance()
 {
 	return CamApp::app_;
@@ -67,7 +73,7 @@ int CamApp::init(int argc, char **argv)
 	if (ret < 0)
 		return ret;
 
-	cm_ = CameraManager::instance();
+	cm_ = new CameraManager();
 
 	ret = cm_->start();
 	if (ret) {

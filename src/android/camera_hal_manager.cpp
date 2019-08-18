@@ -59,7 +59,7 @@ void CameraHalManager::run()
 	 * order to bind them to the camera HAL manager thread that
 	 * executes the event dispatcher.
 	 */
-	cameraManager_ = libcamera::CameraManager::instance();
+	cameraManager_ = new CameraManager();
 
 	int ret = cameraManager_->start();
 	if (ret) {
@@ -93,7 +93,10 @@ void CameraHalManager::run()
 
 	/* Clean up the resources we have allocated. */
 	proxies_.clear();
+
 	cameraManager_->stop();
+	delete cameraManager_;
+	cameraManager_ = nullptr;
 }
 
 CameraProxy *CameraHalManager::open(unsigned int id,

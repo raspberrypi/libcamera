@@ -23,6 +23,11 @@ class PipelineHandler;
 class CameraManager : public Object
 {
 public:
+	CameraManager();
+	CameraManager(const CameraManager &) = delete;
+	CameraManager &operator=(const CameraManager &) = delete;
+	~CameraManager();
+
 	int start();
 	void stop();
 
@@ -32,23 +37,18 @@ public:
 	void addCamera(std::shared_ptr<Camera> camera);
 	void removeCamera(Camera *camera);
 
-	static CameraManager *instance();
 	static const std::string &version() { return version_; }
 
 	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 	EventDispatcher *eventDispatcher();
 
 private:
-	CameraManager();
-	CameraManager(const CameraManager &) = delete;
-	CameraManager &operator=(const CameraManager &) = delete;
-	~CameraManager();
-
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::vector<std::shared_ptr<Camera>> cameras_;
 
 	static const std::string version_;
+	static CameraManager *self_;
 };
 
 } /* namespace libcamera */

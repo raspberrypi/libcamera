@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sa, nullptr);
 
 	std::unique_ptr<EventDispatcher> dispatcher(new QtEventDispatcher());
-	CameraManager *cm = CameraManager::instance();
+	CameraManager *cm = new CameraManager();
 	cm->setEventDispatcher(std::move(dispatcher));
 
 	ret = cm->start();
@@ -79,5 +79,7 @@ int main(int argc, char **argv)
 	delete mainWindow;
 
 	cm->stop();
+	delete cm;
+
 	return ret;
 }

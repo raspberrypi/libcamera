@@ -68,10 +68,15 @@ namespace {
 
 void sigact(int signal, siginfo_t *info, void *ucontext)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+	/*
+	 * We're in a signal handler so we can't log any message, and we need
+	 * to continue anyway.
+	 */
 	char data = 0;
-	/* We're in a signal handler so we can't log any message,
-	 * and we need to continue anyway. */
-	(void)write(ProcessManager::instance()->writePipe(), &data, sizeof(data));
+	write(ProcessManager::instance()->writePipe(), &data, sizeof(data));
+#pragma GCC diagnostic pop
 
 	const struct sigaction &oldsa = ProcessManager::instance()->oldsa();
 	if (oldsa.sa_flags & SA_SIGINFO) {

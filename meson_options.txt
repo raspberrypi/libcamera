@@ -7,6 +7,6 @@ option('documentation',
         type : 'boolean',
         description : 'Generate the project documentation')
 
-option('tests',
+option('test',
         type : 'boolean',
         description: 'Compile and include the tests')

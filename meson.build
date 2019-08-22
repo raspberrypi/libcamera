@@ -73,7 +73,7 @@ if get_option('documentation')
     subdir('Documentation')
 endif
 
-if get_option('tests')
+if get_option('test')
     subdir('test')
 endif
 

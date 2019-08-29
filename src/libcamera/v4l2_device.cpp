@@ -287,13 +287,13 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 
 		/* Generic validation error. */
 		if (errorIdx == 0 || errorIdx >= count) {
-			LOG(V4L2, Error) << "Unable to read controls: "
+			LOG(V4L2, Error) << "Unable to set controls: "
 					 << strerror(ret);
 			return -EINVAL;
 		}
 
 		/* A specific control failed. */
-		LOG(V4L2, Error) << "Unable to read control " << errorIdx
+		LOG(V4L2, Error) << "Unable to set control " << errorIdx
 				 << ": " << strerror(ret);
 		count = errorIdx - 1;
 		ret = errorIdx;

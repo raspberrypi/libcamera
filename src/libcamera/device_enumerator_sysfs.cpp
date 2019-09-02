@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "log.h"
+#include "media_device.h"
 
 namespace libcamera {
 
@@ -32,6 +33,7 @@ int DeviceEnumeratorSysfs::enumerate()
 {
 	struct dirent *ent;
 	DIR *dir;
+	int ret = 0;
 
 	static const char * const sysfs_dirs[] = {
 		"/sys/subsystem/media/devices",
@@ -71,10 +73,41 @@ int DeviceEnumeratorSysfs::enumerate()
 			continue;
 		}
 
-		addDevice(devnode);
+		std::shared_ptr<MediaDevice> media = createDevice(devnode);
+		if (!media) {
+			ret = -ENODEV;
+			break;
+		}
+
+		if (populateMediaDevice(media) < 0) {
+			ret = -ENODEV;
+			break;
+		}
+
+		addDevice(media);
 	}
 
 	closedir(dir);
+
+	return ret;
+}
+
+int DeviceEnumeratorSysfs::populateMediaDevice(const std::shared_ptr<MediaDevice> &media)
+{
+	/* Associate entities to device node paths. */
+	for (MediaEntity *entity : media->entities()) {
+		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
+			continue;
+
+		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(),
+							  entity->deviceMinor());
+		if (deviceNode.empty())
+			return -EINVAL;
+
+		int ret = entity->setDeviceNode(deviceNode);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }

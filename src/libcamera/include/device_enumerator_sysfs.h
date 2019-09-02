@@ -7,9 +7,12 @@
 #ifndef __LIBCAMERA_DEVICE_ENUMERATOR_SYSFS_H__
 #define __LIBCAMERA_DEVICE_ENUMERATOR_SYSFS_H__
 
+#include <memory>
 #include <string>
 
 #include "device_enumerator.h"
+
+class MediaDevice;
 
 namespace libcamera {
 
@@ -20,7 +23,8 @@ public:
 	int enumerate();
 
 private:
-	std::string lookupDeviceNode(int major, int minor);
+	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);
+	std::string lookupDeviceNode(int major, int minor) final;
 };
 
 } /* namespace libcamera */

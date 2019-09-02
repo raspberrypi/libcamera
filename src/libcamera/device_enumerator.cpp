@@ -195,16 +195,21 @@ DeviceEnumerator::~DeviceEnumerator()
  */
 
 /**
- * \brief Add a media device to the enumerator
- * \param[in] deviceNode path to the media device to add
+ * \brief Create a media device instance
+ * \param[in] deviceNode path to the media device to create
  *
- * Create a media device for the \a deviceNode, open it, populate its media graph,
- * and look up device nodes associated with all entities. Store the media device
- * in the internal list for later matching with pipeline handlers.
+ * Create a media device for the \a deviceNode, open it, and populate its
+ * media graph. The device enumerator shall then populate the media device by
+ * associating device nodes with entities using MediaEntity::setDeviceNode().
+ * This process is specific to each device enumerator, and the device enumerator
+ * shall ensure that device nodes are ready to be used (for instance, if
+ * applicable, by waiting for device nodes to be created and access permissions
+ * to be set by the system). Once done, it shall add the media device to the
+ * system with addDevice().
  *
- * \return 0 on success or a negative error code otherwise
+ * \return Created media device instance on success, or nullptr otherwise
  */
-int DeviceEnumerator::addDevice(const std::string &deviceNode)
+std::shared_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &deviceNode)
 {
 	std::shared_ptr<MediaDevice> media = std::make_shared<MediaDevice>(deviceNode);
 
@@ -213,34 +218,31 @@ int DeviceEnumerator::addDevice(const std::string &deviceNode)
 		LOG(DeviceEnumerator, Info)
 			<< "Unable to populate media device " << deviceNode
 			<< " (" << strerror(-ret) << "), skipping";
-		return ret;
+		return nullptr;
 	}
 
 	LOG(DeviceEnumerator, Debug)
 		<< "New media device \"" << media->driver()
 		<< "\" created from " << deviceNode;
 
-	/* Associate entities to device node paths. */
-	for (MediaEntity *entity : media->entities()) {
-		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
-			continue;
+	return media;
+}
 
-		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(),
-							  entity->deviceMinor());
-		if (deviceNode.empty())
-			return -EINVAL;
-
-		ret = entity->setDeviceNode(deviceNode);
-		if (ret)
-			return ret;
-	}
-
+/**
+ * \brief Add a media device to the enumerator
+ * \param[in] media media device instance to add
+ *
+ * Store the media device in the internal list for later matching with
+ * pipeline handlers. \a media shall be created with createDevice() first.
+ * This method shall be called after all members of the entities of the
+ * media graph have been confirmed to be initialized.
+ */
+void DeviceEnumerator::addDevice(const std::shared_ptr<MediaDevice> &media)
+{
 	LOG(DeviceEnumerator, Debug)
-		<< "Added device " << deviceNode << ": " << media->driver();
+		<< "Added device " << media->deviceNode() << ": " << media->driver();
 
-	devices_.push_back(std::move(media));
-
-	return 0;
+	devices_.push_back(media);
 }
 
 /**

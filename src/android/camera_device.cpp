@@ -611,6 +611,17 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 			&faceDetectMode, 1);
 	METADATA_ASSERT(ret);
 
+	uint8_t noiseReduction = ANDROID_NOISE_REDUCTION_MODE_OFF;
+	ret = add_camera_metadata_entry(requestTemplate_,
+			ANDROID_NOISE_REDUCTION_MODE, &noiseReduction, 1);
+	METADATA_ASSERT(ret);
+
+	uint8_t aberrationMode = ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF;
+	ret = add_camera_metadata_entry(requestTemplate_,
+			ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
+			&aberrationMode, 1);
+	METADATA_ASSERT(ret);
+
 	ret = add_camera_metadata_entry(requestTemplate_,
 			ANDROID_CONTROL_CAPTURE_INTENT,
 			&captureIntent, 1);

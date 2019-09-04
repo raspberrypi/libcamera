@@ -128,11 +128,11 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	 * more.
 	 */
 
-	/* \todo Use correct sizes */
-	#define STATIC_ENTRY_CAP 256
-	#define STATIC_DATA_CAP 6688
-	staticMetadata_ = allocate_camera_metadata(STATIC_ENTRY_CAP,
-						   STATIC_DATA_CAP);
+	/*
+	 * \todo Keep this in sync with the actual number of entries.
+	 * Currently: 46 entries, 390 bytes
+	 */
+	staticMetadata_ = allocate_camera_metadata(50, 500);
 
 	/* Color correction static metadata. */
 	std::vector<uint8_t> aberrationModes = {
@@ -966,11 +966,11 @@ camera_metadata_t *CameraDevice::getResultMetadata(int frame_number,
 {
 	int ret;
 
-	/* \todo Use correct sizes */
-	#define RESULT_ENTRY_CAP 256
-	#define RESULT_DATA_CAP 6688
-	camera_metadata_t *resultMetadata =
-		allocate_camera_metadata(STATIC_ENTRY_CAP, STATIC_DATA_CAP);
+	/*
+	 * \todo Keep this in sync with the actual number of entries.
+	 * Currently: 13 entries, 36 bytes
+	 */
+	camera_metadata_t *resultMetadata = allocate_camera_metadata(15, 50);
 
 	const uint8_t ae_state = ANDROID_CONTROL_AE_STATE_CONVERGED;
 	ret = add_camera_metadata_entry(resultMetadata, ANDROID_CONTROL_AE_STATE,

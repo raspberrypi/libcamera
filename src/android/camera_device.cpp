@@ -134,6 +134,149 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_ = allocate_camera_metadata(STATIC_ENTRY_CAP,
 						   STATIC_DATA_CAP);
 
+	/* Color correction static metadata. */
+	std::vector<uint8_t> aberrationModes = {
+		ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_COLOR_CORRECTION_AVAILABLE_ABERRATION_MODES,
+			aberrationModes.data(), aberrationModes.size());
+	METADATA_ASSERT(ret);
+
+	/* Control static metadata. */
+	std::vector<uint8_t> aeAvailableAntiBandingModes = {
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF,
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE_50HZ,
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE_60HZ,
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_AVAILABLE_ANTIBANDING_MODES,
+			aeAvailableAntiBandingModes.data(),
+			aeAvailableAntiBandingModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> aeAvailableModes = {
+		ANDROID_CONTROL_AE_MODE_ON,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_AVAILABLE_MODES,
+			aeAvailableModes.data(), aeAvailableModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<int32_t> availableAeFpsTarget = {
+		15, 30,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+			availableAeFpsTarget.data(),
+			availableAeFpsTarget.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<int32_t> aeCompensationRange = {
+		0, 0,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_COMPENSATION_RANGE,
+			aeCompensationRange.data(),
+			aeCompensationRange.size());
+	METADATA_ASSERT(ret);
+
+	const camera_metadata_rational_t aeCompensationStep[] = {
+		{ 0, 1 }
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_COMPENSATION_STEP,
+			aeCompensationStep, 1);
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableAfModes = {
+		ANDROID_CONTROL_AF_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AF_AVAILABLE_MODES,
+			availableAfModes.data(), availableAfModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableEffects = {
+		ANDROID_CONTROL_EFFECT_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AVAILABLE_EFFECTS,
+			availableEffects.data(), availableEffects.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableSceneModes = {
+		ANDROID_CONTROL_SCENE_MODE_DISABLED,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AVAILABLE_SCENE_MODES,
+			availableSceneModes.data(), availableSceneModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableStabilizationModes = {
+		ANDROID_CONTROL_VIDEO_STABILIZATION_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES,
+			availableStabilizationModes.data(),
+			availableStabilizationModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableAwbModes = {
+		ANDROID_CONTROL_AWB_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AWB_AVAILABLE_MODES,
+			availableAwbModes.data(), availableAwbModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<int32_t> availableMaxRegions = {
+		0, 0, 0,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_MAX_REGIONS,
+			availableMaxRegions.data(), availableMaxRegions.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> sceneModesOverride = {
+		ANDROID_CONTROL_AE_MODE_ON,
+		ANDROID_CONTROL_AWB_MODE_AUTO,
+		ANDROID_CONTROL_AF_MODE_AUTO,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_SCENE_MODE_OVERRIDES,
+			sceneModesOverride.data(), sceneModesOverride.size());
+	METADATA_ASSERT(ret);
+
+	uint8_t aeLockAvailable = ANDROID_CONTROL_AE_LOCK_AVAILABLE_FALSE;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AE_LOCK_AVAILABLE,
+			&aeLockAvailable, 1);
+	METADATA_ASSERT(ret);
+
+	uint8_t awbLockAvailable = ANDROID_CONTROL_AWB_LOCK_AVAILABLE_FALSE;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
+			&awbLockAvailable, 1);
+	METADATA_ASSERT(ret);
+
+	char availableControlModes = ANDROID_CONTROL_MODE_AUTO;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_CONTROL_AVAILABLE_MODES,
+			&availableControlModes, 1);
+	METADATA_ASSERT(ret);
+
+	/* JPEG static metadata. */
+	std::vector<int32_t> availableThumbnailSizes = {
+		0, 0,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
+			availableThumbnailSizes.data(),
+			availableThumbnailSizes.size());
+	METADATA_ASSERT(ret);
+
 	/* Sensor static metadata. */
 	int32_t pixelArraySize[] = {
 		2592, 1944,
@@ -179,6 +322,47 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 				&orientation, 1);
 	METADATA_ASSERT(ret);
 
+	std::vector<int32_t> testPatterModes = {
+		ANDROID_SENSOR_TEST_PATTERN_MODE_OFF,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+				ANDROID_SENSOR_AVAILABLE_TEST_PATTERN_MODES,
+				testPatterModes.data(), testPatterModes.size());
+	METADATA_ASSERT(ret);
+
+	std::vector<float> physicalSize = {
+		2592, 1944,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+				ANDROID_SENSOR_INFO_PHYSICAL_SIZE,
+				physicalSize.data(), physicalSize.size());
+	METADATA_ASSERT(ret);
+
+	uint8_t timestampSource = ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE,
+			&timestampSource, 1);
+	METADATA_ASSERT(ret);
+
+	/* Statistics static metadata. */
+	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
+			&faceDetectMode, 1);
+	METADATA_ASSERT(ret);
+
+	int32_t maxFaceCount = 0;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_STATISTICS_INFO_MAX_FACE_COUNT,
+			&maxFaceCount, 1);
+	METADATA_ASSERT(ret);
+
+	/* Sync static metadata. */
+	int32_t maxLatency = ANDROID_SYNC_MAX_LATENCY_UNKNOWN;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_SYNC_MAX_LATENCY, &maxLatency, 1);
+	METADATA_ASSERT(ret);
+
 	/* Flash static metadata. */
 	char flashAvailable = ANDROID_FLASH_INFO_AVAILABLE_FALSE;
 	ret = add_camera_metadata_entry(staticMetadata_,
@@ -187,50 +371,63 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 	METADATA_ASSERT(ret);
 
 	/* Lens static metadata. */
-	float fn = 2.53 / 100;
-	ret = add_camera_metadata_entry(staticMetadata_,
-				ANDROID_LENS_INFO_AVAILABLE_APERTURES, &fn, 1);
-	METADATA_ASSERT(ret);
-
-	/* Control metadata. */
-	char controlMetadata = ANDROID_CONTROL_MODE_AUTO;
-	ret = add_camera_metadata_entry(staticMetadata_,
-			ANDROID_CONTROL_AVAILABLE_MODES,
-			&controlMetadata, 1);
-	METADATA_ASSERT(ret);
-
-	char availableAntiBandingModes[] = {
-		ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF,
-		ANDROID_CONTROL_AE_ANTIBANDING_MODE_50HZ,
-		ANDROID_CONTROL_AE_ANTIBANDING_MODE_60HZ,
-		ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO,
+	std::vector<float> lensApertures = {
+		2.53 / 100,
 	};
 	ret = add_camera_metadata_entry(staticMetadata_,
-			ANDROID_CONTROL_AE_AVAILABLE_ANTIBANDING_MODES,
-			availableAntiBandingModes, 4);
+				ANDROID_LENS_INFO_AVAILABLE_APERTURES,
+				lensApertures.data(), lensApertures.size());
 	METADATA_ASSERT(ret);
 
-	char aeAvailableModes[] = {
-		ANDROID_CONTROL_AE_MODE_ON,
-		ANDROID_CONTROL_AE_MODE_OFF,
+	uint8_t lensFacing = ANDROID_LENS_FACING_FRONT;
+	ret = add_camera_metadata_entry(staticMetadata_,
+				ANDROID_LENS_FACING, &lensFacing, 1);
+	METADATA_ASSERT(ret);
+
+	std::vector<float> lensFocalLenghts = {
+		1,
 	};
 	ret = add_camera_metadata_entry(staticMetadata_,
-			ANDROID_CONTROL_AE_AVAILABLE_MODES,
-			aeAvailableModes, 2);
+				ANDROID_LENS_INFO_AVAILABLE_FOCAL_LENGTHS,
+				lensFocalLenghts.data(),
+				lensFocalLenghts.size());
 	METADATA_ASSERT(ret);
 
-	controlMetadata = ANDROID_CONTROL_AE_LOCK_AVAILABLE_TRUE;
+	std::vector<uint8_t> opticalStabilizations = {
+		ANDROID_LENS_OPTICAL_STABILIZATION_MODE_OFF,
+	};
 	ret = add_camera_metadata_entry(staticMetadata_,
-			ANDROID_CONTROL_AE_LOCK_AVAILABLE,
-			&controlMetadata, 1);
+				ANDROID_LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION,
+				opticalStabilizations.data(),
+				opticalStabilizations.size());
 	METADATA_ASSERT(ret);
 
-	uint8_t awbLockAvailable = ANDROID_CONTROL_AWB_LOCK_AVAILABLE_FALSE;
+	float hypeFocalDistance = 0;
 	ret = add_camera_metadata_entry(staticMetadata_,
-			ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
-			&awbLockAvailable, 1);
+				ANDROID_LENS_INFO_HYPERFOCAL_DISTANCE,
+				&hypeFocalDistance, 1);
+	METADATA_ASSERT(ret);
+
+	float minFocusDistance = 0;
+	ret = add_camera_metadata_entry(staticMetadata_,
+				ANDROID_LENS_INFO_MINIMUM_FOCUS_DISTANCE,
+				&minFocusDistance, 1);
+	METADATA_ASSERT(ret);
+
+	/* Noise reduction modes. */
+	uint8_t noiseReductionModes = ANDROID_NOISE_REDUCTION_MODE_OFF;
+	ret = add_camera_metadata_entry(staticMetadata_,
+				ANDROID_NOISE_REDUCTION_AVAILABLE_NOISE_REDUCTION_MODES,
+				&noiseReductionModes, 1);
+	METADATA_ASSERT(ret);
 
 	/* Scaler static metadata. */
+	float maxDigitalZoom = 1;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
+			&maxDigitalZoom, 1);
+	METADATA_ASSERT(ret);
+
 	std::vector<uint32_t> availableStreamFormats = {
 		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB,
 		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
@@ -275,11 +472,38 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
 			minFrameDurations.data(), minFrameDurations.size());
 	METADATA_ASSERT(ret);
 
+	uint8_t croppingType = ANDROID_SCALER_CROPPING_TYPE_CENTER_ONLY;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_SCALER_CROPPING_TYPE, &croppingType, 1);
+	METADATA_ASSERT(ret);
+
 	/* Info static metadata. */
 	uint8_t supportedHWLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
 	ret = add_camera_metadata_entry(staticMetadata_,
 			ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL,
 			&supportedHWLevel, 1);
+
+	/* Request static metadata. */
+	int32_t partialResultCount = 1;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
+			&partialResultCount, 1);
+	METADATA_ASSERT(ret);
+
+	uint8_t maxPipelineDepth = 2;
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
+			&maxPipelineDepth, 1);
+	METADATA_ASSERT(ret);
+
+	std::vector<uint8_t> availableCapabilities = {
+		ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
+	};
+	ret = add_camera_metadata_entry(staticMetadata_,
+			ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
+			availableCapabilities.data(),
+			availableCapabilities.size());
+	METADATA_ASSERT(ret);
 
 	return staticMetadata_;
 }

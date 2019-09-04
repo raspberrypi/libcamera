@@ -50,8 +50,7 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  */
 
 CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
-	: running_(false), camera_(camera), staticMetadata_(nullptr),
-	  requestTemplate_(nullptr)
+	: running_(false), camera_(camera), staticMetadata_(nullptr)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
 }
@@ -61,8 +60,8 @@ CameraDevice::~CameraDevice()
 	if (staticMetadata_)
 		delete staticMetadata_;
 
-	if (requestTemplate_)
-		delete requestTemplate_;
+	for (auto &it : requestTemplates_)
+		delete it.second;
 }
 
 /*
@@ -441,10 +440,11 @@ camera_metadata_t *CameraDevice::getStaticMetadata()
  */
 const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 {
-	/*
-	 * \todo Inspect type and pick the right metadata pack.
-	 * As of now just use a single one for all templates.
-	 */
+	auto it = requestTemplates_.find(type);
+	if (it != requestTemplates_.end())
+		return it->second->get();
+
+	/* Use the capture intent matching the requested template type. */
 	uint8_t captureIntent;
 	switch (type) {
 	case CAMERA3_TEMPLATE_PREVIEW:
@@ -470,76 +470,72 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		return nullptr;
 	}
 
-	if (requestTemplate_)
-		return requestTemplate_->get();
-
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 12 entries, 15 bytes
 	 */
-	requestTemplate_ = new CameraMetadata(15, 20);
-	if (!requestTemplate_) {
+	CameraMetadata *requestTemplate = new CameraMetadata(15, 20);
+	if (!requestTemplate->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate template metadata";
-		delete requestTemplate_;
-		requestTemplate_ = nullptr;
+		delete requestTemplate;
 		return nullptr;
 	}
 
 	uint8_t aeMode = ANDROID_CONTROL_AE_MODE_ON;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AE_MODE,
-				   &aeMode, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_MODE,
+				  &aeMode, 1);
 
 	int32_t aeExposureCompensation = 0;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION,
-				   &aeExposureCompensation, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION,
+				  &aeExposureCompensation, 1);
 
 	uint8_t aePrecaptureTrigger = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
-				   &aePrecaptureTrigger, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
+				  &aePrecaptureTrigger, 1);
 
 	uint8_t aeLock = ANDROID_CONTROL_AE_LOCK_OFF;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AE_LOCK,
-				   &aeLock, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_LOCK,
+				  &aeLock, 1);
 
 	uint8_t afTrigger = ANDROID_CONTROL_AF_TRIGGER_IDLE;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AF_TRIGGER,
-				   &afTrigger, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AF_TRIGGER,
+				  &afTrigger, 1);
 
 	uint8_t awbMode = ANDROID_CONTROL_AWB_MODE_AUTO;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AWB_MODE,
-				   &awbMode, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AWB_MODE,
+				  &awbMode, 1);
 
 	uint8_t awbLock = ANDROID_CONTROL_AWB_LOCK_OFF;
-	requestTemplate_->addEntry(ANDROID_CONTROL_AWB_LOCK,
-				   &awbLock, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_AWB_LOCK,
+				  &awbLock, 1);
 
 	uint8_t flashMode = ANDROID_FLASH_MODE_OFF;
-	requestTemplate_->addEntry(ANDROID_FLASH_MODE,
-				   &flashMode, 1);
+	requestTemplate->addEntry(ANDROID_FLASH_MODE,
+				  &flashMode, 1);
 
 	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
-	requestTemplate_->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE,
-				   &faceDetectMode, 1);
+	requestTemplate->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE,
+				  &faceDetectMode, 1);
 
 	uint8_t noiseReduction = ANDROID_NOISE_REDUCTION_MODE_OFF;
-	requestTemplate_->addEntry(ANDROID_NOISE_REDUCTION_MODE,
-				   &noiseReduction, 1);
+	requestTemplate->addEntry(ANDROID_NOISE_REDUCTION_MODE,
+				  &noiseReduction, 1);
 
 	uint8_t aberrationMode = ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF;
-	requestTemplate_->addEntry(ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
-				   &aberrationMode, 1);
+	requestTemplate->addEntry(ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
+				  &aberrationMode, 1);
 
-	requestTemplate_->addEntry(ANDROID_CONTROL_CAPTURE_INTENT,
-				   &captureIntent, 1);
+	requestTemplate->addEntry(ANDROID_CONTROL_CAPTURE_INTENT,
+				  &captureIntent, 1);
 
-	if (!requestTemplate_->isValid()) {
+	if (!requestTemplate->isValid()) {
 		LOG(HAL, Error) << "Failed to construct request template";
-		delete requestTemplate_;
-		requestTemplate_ = nullptr;
+		delete requestTemplate;
 		return nullptr;
 	}
 
-	return requestTemplate_->get();
+	requestTemplates_[type] = requestTemplate;
+	return requestTemplate->get();
 }
 
 /*

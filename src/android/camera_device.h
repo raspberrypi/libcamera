@@ -61,7 +61,7 @@ private:
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
 	CameraMetadata *staticMetadata_;
-	CameraMetadata *requestTemplate_;
+	std::map<unsigned int, CameraMetadata *> requestTemplates_;
 	const camera3_callback_ops_t *callbacks_;
 };
 

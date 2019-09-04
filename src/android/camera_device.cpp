@@ -557,39 +557,6 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		return nullptr;
 	}
 
-	/* Set to 0 the number of 'processed and stalling' streams (ie JPEG). */
-	int32_t maxOutStream[] = { 0, 2, 0 };
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_MAX_NUM_OUTPUT_STREAMS,
-			maxOutStream, 3);
-	METADATA_ASSERT(ret);
-
-	uint8_t maxPipelineDepth = 5;
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
-			&maxPipelineDepth, 1);
-	METADATA_ASSERT(ret);
-
-	int32_t inputStreams = 0;
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS,
-			&inputStreams, 1);
-	METADATA_ASSERT(ret);
-
-	int32_t partialResultCount = 1;
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
-			&partialResultCount, 1);
-	METADATA_ASSERT(ret);
-
-	uint8_t availableCapabilities[] = {
-		ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
-	};
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
-			availableCapabilities, 1);
-	METADATA_ASSERT(ret);
-
 	uint8_t aeMode = ANDROID_CONTROL_AE_MODE_ON;
 	ret = add_camera_metadata_entry(requestTemplate_,
 			ANDROID_CONTROL_AE_MODE,
@@ -632,12 +599,6 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 			&awbLock, 1);
 	METADATA_ASSERT(ret);
 
-	uint8_t awbLockAvailable = ANDROID_CONTROL_AWB_LOCK_AVAILABLE_FALSE;
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
-			&awbLockAvailable, 1);
-	METADATA_ASSERT(ret);
-
 	uint8_t flashMode = ANDROID_FLASH_MODE_OFF;
 	ret = add_camera_metadata_entry(requestTemplate_,
 			ANDROID_FLASH_MODE,
@@ -653,64 +614,6 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	ret = add_camera_metadata_entry(requestTemplate_,
 			ANDROID_CONTROL_CAPTURE_INTENT,
 			&captureIntent, 1);
-	METADATA_ASSERT(ret);
-
-	/*
-	 * This is quite hard to list at the moment wihtout knowing what
-	 * we could control.
-	 *
-	 * For now, just list in the available Request keys and in the available
-	 * result keys the control and reporting of the AE algorithm.
-	 */
-	std::vector<int32_t> availableRequestKeys = {
-		ANDROID_CONTROL_AE_MODE,
-		ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION,
-		ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
-		ANDROID_CONTROL_AE_LOCK,
-		ANDROID_CONTROL_AF_TRIGGER,
-		ANDROID_CONTROL_AWB_MODE,
-		ANDROID_CONTROL_AWB_LOCK,
-		ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
-		ANDROID_CONTROL_CAPTURE_INTENT,
-		ANDROID_FLASH_MODE,
-		ANDROID_STATISTICS_FACE_DETECT_MODE,
-	};
-
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_AVAILABLE_REQUEST_KEYS,
-			availableRequestKeys.data(),
-			availableRequestKeys.size());
-	METADATA_ASSERT(ret);
-
-	std::vector<int32_t> availableResultKeys = {
-		ANDROID_CONTROL_AE_MODE,
-		ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION,
-		ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
-		ANDROID_CONTROL_AE_LOCK,
-		ANDROID_CONTROL_AF_TRIGGER,
-		ANDROID_CONTROL_AWB_MODE,
-		ANDROID_CONTROL_AWB_LOCK,
-		ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
-		ANDROID_CONTROL_CAPTURE_INTENT,
-		ANDROID_FLASH_MODE,
-		ANDROID_STATISTICS_FACE_DETECT_MODE,
-	};
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_AVAILABLE_RESULT_KEYS,
-			availableResultKeys.data(),
-			availableResultKeys.size());
-	METADATA_ASSERT(ret);
-
-	/*
-	 * \todo The available characteristics are be the tags reported
-	 * as part of the static metadata reported at hal_get_camera_info()
-	 * time. As of now, report an empty list.
-	 */
-	std::vector<int32_t> availableCharacteristicsKeys = {};
-	ret = add_camera_metadata_entry(requestTemplate_,
-			ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS,
-			availableCharacteristicsKeys.data(),
-			availableCharacteristicsKeys.size());
 	METADATA_ASSERT(ret);
 
 	return requestTemplate_;

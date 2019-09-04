@@ -547,11 +547,11 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	if (requestTemplate_)
 		return requestTemplate_;
 
-	/* \todo Use correct sizes */
-	#define REQUEST_TEMPLATE_ENTRIES	  30
-	#define REQUEST_TEMPLATE_DATA		2048
-	requestTemplate_ = allocate_camera_metadata(REQUEST_TEMPLATE_ENTRIES,
-						    REQUEST_TEMPLATE_DATA);
+	/*
+	 * \todo Keep this in sync with the actual number of entries.
+	 * Currently: 12 entries, 15 bytes
+	 */
+	requestTemplate_ = allocate_camera_metadata(15, 20);
 	if (!requestTemplate_) {
 		LOG(HAL, Error) << "Failed to allocate template metadata";
 		return nullptr;

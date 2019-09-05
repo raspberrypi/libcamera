@@ -19,13 +19,7 @@
 
 #include "message.h"
 
-#define METADATA_ASSERT(_r)		\
-	do {				\
-		if (!(_r)) break;	\
-		LOG(HAL, Error) << "Error: " << __func__ << ":" << __LINE__; \
-		return nullptr;		\
-	} while(0);
-
+class CameraMetadata;
 class ThreadRpc;
 
 class CameraDevice : public libcamera::Object
@@ -59,14 +53,15 @@ private:
 
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
-	camera_metadata_t *getResultMetadata(int frame_number, int64_t timestamp);
+	std::unique_ptr<CameraMetadata> getResultMetadata(int frame_number,
+							  int64_t timestamp);
 
 	bool running_;
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
-	camera_metadata_t *staticMetadata_;
-	camera_metadata_t *requestTemplate_;
+	CameraMetadata *staticMetadata_;
+	CameraMetadata *requestTemplate_;
 	const camera3_callback_ops_t *callbacks_;
 };
 

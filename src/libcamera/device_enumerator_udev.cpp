@@ -170,8 +170,8 @@ done:
 
 int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice> &media)
 {
-	unsigned int pendingNodes = 0;
-	int ret;
+	std::set<dev_t> children;
+	DependencyMap deps;
 
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {
@@ -181,28 +181,50 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 		dev_t devnum = makedev(entity->deviceMajor(),
 				       entity->deviceMinor());
 
-		/* Take device from orphan list first, if it is in the list. */
-		auto orphan = std::find(orphans_.begin(), orphans_.end(), devnum);
-		if (orphan != orphans_.end()) {
-			std::string deviceNode = lookupDeviceNode(devnum);
-			if (deviceNode.empty())
-				return -EINVAL;
-
-			ret = entity->setDeviceNode(deviceNode);
-			if (ret)
-				return ret;
-
-			orphans_.erase(orphan);
+		/*
+		 * If the devnum isn't in the orphans list, add it to the unmet
+		 * dependencies.
+		 */
+		if (orphans_.find(devnum) == orphans_.end()) {
+			deps[devnum].push_back(entity);
 			continue;
 		}
 
-		deps_[media].push_back(devnum);
-		devnumToDevice_[devnum] = media;
-		devnumToEntity_[devnum] = entity;
-		pendingNodes++;
+		/*
+		 * Otherwise take it from the orphans list. Don't remove the
+		 * entry from the list yet as other entities in this media
+		 * device may need the same device.
+		 */
+		std::string deviceNode = lookupDeviceNode(devnum);
+		if (deviceNode.empty())
+			return -EINVAL;
+
+		int ret = entity->setDeviceNode(deviceNode);
+		if (ret)
+			return ret;
+
+		children.insert(devnum);
 	}
 
-	return pendingNodes;
+	/* Remove all found children from the orphans list. */
+	for (auto it = orphans_.begin(), last = orphans_.end(); it != last;) {
+		if (children.find(*it) != children.end())
+			it = orphans_.erase(it);
+		else
+			++it;
+	}
+
+	/*
+	 * If the media device has unmet dependencies, add it to the pending
+	 * list and update the devnum map accordingly.
+	 */
+	if (!deps.empty()) {
+		pending_.emplace_back(media, deps);
+		for (const auto &dep : deps)
+			devMap_[dep.first] = &pending_.back();
+	}
+
+	return deps.size();
 }
 
 /**
@@ -247,28 +269,42 @@ std::string DeviceEnumeratorUdev::lookupDeviceNode(dev_t devnum)
  */
 int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 {
-	MediaEntity *entity = devnumToEntity_[devnum];
-	if (!entity) {
-		orphans_.push_back(devnum);
+	/*
+	 * If the devnum doesn't belong to any media device, add it to the
+	 * orphans list.
+	 */
+	auto it = devMap_.find(devnum);
+	if (it == devMap_.end()) {
+		orphans_.insert(devnum);
 		return 0;
 	}
 
+	/*
+	 * Set the device node for all entities matching the devnum. Multiple
+	 * entities can share the same device node, for instance for V4L2 M2M
+	 * devices.
+	 */
 	std::string deviceNode = lookupDeviceNode(devnum);
 	if (deviceNode.empty())
 		return -EINVAL;
 
-	int ret = entity->setDeviceNode(deviceNode);
-	if (ret)
-		return ret;
+	MediaDeviceDeps *deps = it->second;
+	for (MediaEntity *entity : deps->deps_[devnum]) {
+		int ret = entity->setDeviceNode(deviceNode);
+		if (ret)
+			return ret;
+	}
 
-	std::shared_ptr<MediaDevice> media = devnumToDevice_[devnum];
-	deps_[media].remove(devnum);
-	devnumToDevice_.erase(devnum);
-	devnumToEntity_.erase(devnum);
+	/*
+	 * Remove the devnum from the unmet dependencies for this media device.
+	 * If no more dependency is unmet, add the media device to the
+	 * enumerator.
+	 */
+	deps->deps_.erase(devnum);
 
-	if (deps_[media].empty()) {
-		addDevice(media);
-		deps_.erase(media);
+	if (deps->deps_.empty()) {
+		addDevice(deps->media_);
+		pending_.remove(*deps);
 	}
 
 	return 0;

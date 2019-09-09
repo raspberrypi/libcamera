@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <sys/types.h>
 
@@ -39,11 +40,27 @@ private:
 	struct udev_monitor *monitor_;
 	EventNotifier *notifier_;
 
-	std::map<std::shared_ptr<MediaDevice>, std::list<dev_t>> deps_;
-	std::map<dev_t, std::shared_ptr<MediaDevice>> devnumToDevice_;
-	std::map<dev_t, MediaEntity *> devnumToEntity_;
+	using DependencyMap = std::map<dev_t, std::list<MediaEntity *>>;
 
-	std::list<dev_t> orphans_;
+	struct MediaDeviceDeps {
+		MediaDeviceDeps(const std::shared_ptr<MediaDevice> &media,
+				const DependencyMap &deps)
+			: media_(media), deps_(deps)
+		{
+		}
+
+		bool operator==(const MediaDeviceDeps &other) const
+		{
+			return media_ == other.media_;
+		}
+
+		std::shared_ptr<MediaDevice> media_;
+		DependencyMap deps_;
+	};
+
+	std::set<dev_t> orphans_;
+	std::list<MediaDeviceDeps> pending_;
+	std::map<dev_t, MediaDeviceDeps *> devMap_;
 
 	int addUdevDevice(struct udev_device *dev);
 	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);

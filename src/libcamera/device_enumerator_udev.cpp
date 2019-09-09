@@ -180,10 +180,10 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 
 		dev_t devnum = makedev(entity->deviceMajor(),
 				       entity->deviceMinor());
-		std::string deviceNode = lookupDeviceNode(devnum);
 
 		/* Take device from orphan list first, if it is in the list. */
 		if (std::find(orphans_.begin(), orphans_.end(), devnum) != orphans_.end()) {
+			std::string deviceNode = lookupDeviceNode(devnum);
 			if (deviceNode.empty())
 				return -EINVAL;
 

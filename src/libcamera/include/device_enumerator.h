@@ -50,8 +50,6 @@ protected:
 
 private:
 	std::vector<std::shared_ptr<MediaDevice>> devices_;
-
-	virtual std::string lookupDeviceNode(int major, int minor) = 0;
 };
 
 } /* namespace libcamera */

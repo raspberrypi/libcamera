@@ -112,6 +112,17 @@ int DeviceEnumeratorSysfs::populateMediaDevice(const std::shared_ptr<MediaDevice
 	return 0;
 }
 
+/**
+ * \brief Lookup device node path from device number
+ * \param[in] major The device major number
+ * \param[in] minor The device minor number
+ *
+ * Translate a device number given as \a major and \a minor to a device node
+ * path.
+ *
+ * \return The device node path on success, or an empty string if the lookup
+ * fails
+ */
 std::string DeviceEnumeratorSysfs::lookupDeviceNode(int major, int minor)
 {
 	std::string deviceNode;

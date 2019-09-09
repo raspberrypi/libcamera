@@ -178,10 +178,9 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 		if (entity->deviceMajor() == 0 && entity->deviceMinor() == 0)
 			continue;
 
-		std::string deviceNode = lookupDeviceNode(entity->deviceMajor(),
-							  entity->deviceMinor());
 		dev_t devnum = makedev(entity->deviceMajor(),
 				       entity->deviceMinor());
+		std::string deviceNode = lookupDeviceNode(devnum);
 
 		/* Take device from orphan list first, if it is in the list. */
 		if (std::find(orphans_.begin(), orphans_.end(), devnum) != orphans_.end()) {
@@ -205,14 +204,21 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 	return pendingNodes;
 }
 
-std::string DeviceEnumeratorUdev::lookupDeviceNode(int major, int minor)
+/**
+ * \brief Lookup device node path from device number
+ * \param[in] devnum The device number
+ *
+ * Translate a device number given as \a devnum to a device node path.
+ *
+ * \return The device node path on success, or an empty string if the lookup
+ * fails
+ */
+std::string DeviceEnumeratorUdev::lookupDeviceNode(dev_t devnum)
 {
 	struct udev_device *device;
 	const char *name;
-	dev_t devnum;
 	std::string deviceNode = std::string();
 
-	devnum = makedev(major, minor);
 	device = udev_device_new_from_devnum(udev_, 'c', devnum);
 	if (!device)
 		return std::string();
@@ -246,8 +252,7 @@ int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 		return 0;
 	}
 
-	std::string deviceNode = lookupDeviceNode(entity->deviceMajor(),
-						  entity->deviceMinor());
+	std::string deviceNode = lookupDeviceNode(devnum);
 	if (deviceNode.empty())
 		return -EINVAL;
 

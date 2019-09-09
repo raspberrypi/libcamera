@@ -24,7 +24,7 @@ public:
 
 private:
 	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);
-	std::string lookupDeviceNode(int major, int minor) final;
+	std::string lookupDeviceNode(int major, int minor);
 };
 
 } /* namespace libcamera */

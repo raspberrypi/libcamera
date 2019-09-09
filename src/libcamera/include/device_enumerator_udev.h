@@ -47,7 +47,7 @@ private:
 
 	int addUdevDevice(struct udev_device *dev);
 	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);
-	std::string lookupDeviceNode(int major, int minor) final;
+	std::string lookupDeviceNode(dev_t devnum);
 
 	int addV4L2Device(dev_t devnum);
 	void udevNotify(EventNotifier *notifier);

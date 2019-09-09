@@ -182,7 +182,8 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 				       entity->deviceMinor());
 
 		/* Take device from orphan list first, if it is in the list. */
-		if (std::find(orphans_.begin(), orphans_.end(), devnum) != orphans_.end()) {
+		auto orphan = std::find(orphans_.begin(), orphans_.end(), devnum);
+		if (orphan != orphans_.end()) {
 			std::string deviceNode = lookupDeviceNode(devnum);
 			if (deviceNode.empty())
 				return -EINVAL;
@@ -191,7 +192,7 @@ int DeviceEnumeratorUdev::populateMediaDevice(const std::shared_ptr<MediaDevice>
 			if (ret)
 				return ret;
 
-			orphans_.remove(devnum);
+			orphans_.erase(orphan);
 			continue;
 		}
 

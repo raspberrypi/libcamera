@@ -35,6 +35,7 @@ class ProcessTest : public Test
 {
 public:
 	ProcessTest()
+		: exitStatus_(Process::NotExited), exitCode_(-1)
 	{
 	}
 

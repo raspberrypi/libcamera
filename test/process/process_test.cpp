@@ -56,8 +56,8 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(100);
-		while (timeout.isRunning())
+		timeout.start(2000);
+		while (timeout.isRunning() && exitStatus_ == Process::NotExited)
 			dispatcher->processEvents();
 
 		if (exitStatus_ != Process::NormalExit) {

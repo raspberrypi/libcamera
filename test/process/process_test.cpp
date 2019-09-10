@@ -47,12 +47,13 @@ protected:
 		int exitCode = 42;
 		vector<std::string> args;
 		args.push_back(to_string(exitCode));
+		proc_.finished.connect(this, &ProcessTest::procFinished);
+
 		int ret = proc_.start("/proc/self/exe", args);
 		if (ret) {
 			cerr << "failed to start process" << endl;
 			return TestFail;
 		}
-		proc_.finished.connect(this, &ProcessTest::procFinished);
 
 		timeout.start(100);
 		while (timeout.isRunning())

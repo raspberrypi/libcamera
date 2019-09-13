@@ -25,13 +25,12 @@ if qt5_dep.found()
     qt5_cpp_args = [ '-DQT_NO_KEYWORDS' ]
 
     # gcc 9 introduced a deprecated-copy warning that is triggered by Qt until
-    # Qt 5.13. Disable it manually.
-    if cc.get_id() == 'gcc'
-        gcc_version = cc.version().split('.')
-        qt5_version = qt5_dep.version().split('.')
-        if qt5_version[1].to_int() < 13 and gcc_version[0].to_int() >= 9
-            qt5_cpp_args += [ '-Wno-deprecated-copy' ]
-        endif
+    # Qt 5.13. clang 10 introduced the same warning, but detects more issues
+    # that are not fixed in Qt yet. Disable the warning manually in both cases.
+    if ((cc.get_id() == 'gcc' and cc.version().version_compare('>=9.0') and
+         qt5_dep.version().version_compare('<5.13')) or
+        (cc.get_id() == 'clang' and cc.version().version_compare('>=10.0')))
+        qt5_cpp_args += [ '-Wno-deprecated-copy' ]
     endif
 
     resources = qt5.preprocess(moc_headers: qcam_moc_headers,

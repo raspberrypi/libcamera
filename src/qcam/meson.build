@@ -18,11 +18,23 @@ qt5_dep = dependency('qt5',
                      required : false)
 
 if qt5_dep.found()
+    qt5_cpp_args = [ '-DQT_NO_KEYWORDS' ]
+
+    # gcc 9 introduced a deprecated-copy warning that is triggered by Qt until
+    # Qt 5.13. Disable it manually.
+    if cc.get_id() == 'gcc'
+        gcc_version = cc.version().split('.')
+        qt5_version = qt5_dep.version().split('.')
+        if qt5_version[1].to_int() < 13 and gcc_version[0].to_int() >= 9
+            qt5_cpp_args += [ '-Wno-deprecated-copy' ]
+        endif
+    endif
+
     moc_files = qt5.preprocess(moc_headers: qcam_moc_headers,
                                dependencies: qt5_dep)
 
     qcam  = executable('qcam', qcam_sources, moc_files,
                        install : true,
                        dependencies : [libcamera_dep, qt5_dep],
-                       cpp_args : '-DQT_NO_KEYWORDS')
+                       cpp_args : qt5_cpp_args)
 endif

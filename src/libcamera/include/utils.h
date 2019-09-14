@@ -8,7 +8,10 @@
 #define __LIBCAMERA_UTILS_H__
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
+#include <string>
+#include <sys/time.h>
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
 
@@ -52,6 +55,13 @@ const T& clamp(const T& v, const T& lo, const T& hi)
 {
 	return std::max(lo, std::min(v, hi));
 }
+
+using clock = std::chrono::steady_clock;
+using duration = std::chrono::steady_clock::duration;
+using time_point = std::chrono::steady_clock::time_point;
+
+struct timespec duration_to_timespec(const duration &value);
+std::string time_point_to_string(const time_point &time);
 
 } /* namespace utils */
 

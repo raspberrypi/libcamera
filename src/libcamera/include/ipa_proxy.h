@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/ipa/ipa_interface.h>
+#include <ipa/ipa_interface.h>
 
 #include "ipa_module.h"
 #include "utils.h"

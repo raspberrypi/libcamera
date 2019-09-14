@@ -12,10 +12,10 @@
 
 #include <linux/media-bus-format.h>
 
+#include <ipa/ipa_interface.h>
+#include <ipa/ipa_module_info.h>
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>
-#include <libcamera/ipa/ipa_interface.h>
-#include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 

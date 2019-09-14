@@ -5,7 +5,7 @@
  * ipa_interface.cpp - Image Processing Algorithm interface
  */
 
-#include <libcamera/ipa/ipa_interface.h>
+#include <ipa/ipa_interface.h>
 
 /**
  * \file ipa_interface.h

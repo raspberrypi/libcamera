@@ -8,8 +8,6 @@ libcamera_api = files([
     'event_dispatcher.h',
     'event_notifier.h',
     'geometry.h',
-    'ipa/ipa_interface.h',
-    'ipa/ipa_module_info.h',
     'logging.h',
     'object.h',
     'request.h',
@@ -18,6 +16,8 @@ libcamera_api = files([
     'timer.h',
 ])
 
+include_dir = join_paths(libcamera_include_dir, 'libcamera')
+
 gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',
@@ -25,7 +25,7 @@ libcamera_h = custom_target('gen-header',
                             output : 'libcamera.h',
                             command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
                             install : true,
-                            install_dir : 'include/libcamera')
+                            install_dir : join_paths('include', include_dir))
 
 version = libcamera_version.split('.')
 libcamera_version_config = configuration_data()
@@ -36,7 +36,7 @@ libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
 configure_file(input : 'version.h.in',
                output : 'version.h',
                configuration : libcamera_version_config,
-               install_dir : 'include/libcamera')
+               install_dir : join_paths('include', include_dir))
 
 install_headers(libcamera_api,
-                subdir : 'libcamera')
+                subdir : include_dir)

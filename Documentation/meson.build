@@ -21,6 +21,7 @@ if doxygen.found()
                   input : [
                       doxyfile,
                       libcamera_api,
+                      libcamera_ipa_api,
                       libcamera_headers,
                       libcamera_sources,
                   ],

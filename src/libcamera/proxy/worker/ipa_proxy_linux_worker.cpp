@@ -9,8 +9,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <ipa/ipa_interface.h>
 #include <libcamera/event_dispatcher.h>
-#include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/logging.h>
 
 #include "ipa_module.h"

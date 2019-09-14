@@ -7,7 +7,10 @@
 #ifndef __LIBCAMERA_LOG_H__
 #define __LIBCAMERA_LOG_H__
 
+#include <chrono>
 #include <sstream>
+
+#include "utils.h"
 
 namespace libcamera {
 
@@ -60,7 +63,7 @@ public:
 
 	std::ostream &stream() { return msgStream_; }
 
-	const struct timespec &timestamp() const { return timestamp_; }
+	const utils::time_point &timestamp() const { return timestamp_; }
 	LogSeverity severity() const { return severity_; }
 	const LogCategory &category() const { return category_; }
 	const std::string &fileInfo() const { return fileInfo_; }
@@ -72,7 +75,7 @@ private:
 	std::ostringstream msgStream_;
 	const LogCategory &category_;
 	LogSeverity severity_;
-	struct timespec timestamp_;
+	utils::time_point timestamp_;
 	std::string fileInfo_;
 };
 

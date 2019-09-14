@@ -5,6 +5,7 @@
  * capture.cpp - Cam capture
  */
 
+#include <chrono>
 #include <climits>
 #include <iomanip>
 #include <iostream>
@@ -16,7 +17,7 @@
 using namespace libcamera;
 
 Capture::Capture(Camera *camera, CameraConfiguration *config)
-	: camera_(camera), config_(config), writer_(nullptr), last_(0)
+	: camera_(camera), config_(config), writer_(nullptr)
 {
 }
 
@@ -135,17 +136,13 @@ int Capture::capture(EventLoop *loop)
 
 void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
 {
-	double fps = 0.0;
-	uint64_t now;
-
 	if (request->status() == Request::RequestCancelled)
 		return;
 
-	struct timespec time;
-	clock_gettime(CLOCK_MONOTONIC, &time);
-	now = time.tv_sec * 1000 + time.tv_nsec / 1000000;
-	fps = now - last_;
-	fps = last_ && fps ? 1000.0 / fps : 0.0;
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	double fps = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_).count();
+	fps = last_ != std::chrono::steady_clock::time_point() && fps
+	    ? 1000.0 / fps : 0.0;
 	last_ = now;
 
 	std::stringstream info;

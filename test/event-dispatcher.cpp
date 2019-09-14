@@ -5,6 +5,7 @@
  * event-dispatcher.cpp - Event dispatcher test
  */
 
+#include <chrono>
 #include <iostream>
 #include <signal.h>
 #include <sys/time.h>
@@ -47,8 +48,7 @@ protected:
 		Timer timer;
 
 		/* Event processing interruption by signal. */
-		struct timespec start;
-		clock_gettime(CLOCK_MONOTONIC, &start);
+		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 		timer.start(1000);
 
@@ -59,12 +59,11 @@ protected:
 
 		dispatcher->processEvents();
 
-		struct timespec stop;
-		clock_gettime(CLOCK_MONOTONIC, &stop);
-		int duration = (stop.tv_sec - start.tv_sec) * 1000;
-		duration += (stop.tv_nsec - start.tv_nsec) / 1000000;
+		std::chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
+		std::chrono::steady_clock::duration duration = stop - start;
+		int msecs = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 
-		if (abs(duration - 1000) > 50) {
+		if (abs(msecs - 1000) > 50) {
 			cout << "Event processing restart test failed" << endl;
 			return TestFail;
 		}

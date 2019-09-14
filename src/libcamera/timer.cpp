@@ -7,7 +7,7 @@
 
 #include <libcamera/timer.h>
 
-#include <time.h>
+#include <chrono>
 
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
@@ -15,6 +15,7 @@
 #include "log.h"
 #include "message.h"
 #include "thread.h"
+#include "utils.h"
 
 /**
  * \file timer.h
@@ -42,7 +43,7 @@ LOG_DEFINE_CATEGORY(Timer)
  * \param[in] parent The parent Object
  */
 Timer::Timer(Object *parent)
-	: Object(parent), interval_(0), deadline_(0)
+	: Object(parent)
 {
 }
 
@@ -52,22 +53,28 @@ Timer::~Timer()
 }
 
 /**
+ * \fn Timer::start(unsigned int msec)
  * \brief Start or restart the timer with a timeout of \a msec
  * \param[in] msec The timer duration in milliseconds
  *
  * If the timer is already running it will be stopped and restarted.
  */
-void Timer::start(unsigned int msec)
-{
-	struct timespec tp;
-	clock_gettime(CLOCK_MONOTONIC, &tp);
 
-	interval_ = msec;
-	deadline_ = tp.tv_sec * 1000000000ULL + tp.tv_nsec + msec * 1000000ULL;
+/**
+ * \brief Start or restart the timer with a timeout of \a interval
+ * \param[in] interval The timer duration in milliseconds
+ *
+ * If the timer is already running it will be stopped and restarted.
+ */
+void Timer::start(std::chrono::milliseconds interval)
+{
+	interval_ = interval;
+	deadline_ = utils::clock::now() + interval;
 
 	LOG(Timer, Debug)
 		<< "Starting timer " << this << " with interval "
-		<< msec << ": deadline " << deadline_;
+		<< interval.count() << ": deadline "
+		<< utils::time_point_to_string(deadline_);
 
 	registerTimer();
 }
@@ -84,7 +91,7 @@ void Timer::stop()
 {
 	unregisterTimer();
 
-	deadline_ = 0;
+	deadline_ = utils::time_point();
 }
 
 void Timer::registerTimer()
@@ -103,7 +110,7 @@ void Timer::unregisterTimer()
  */
 bool Timer::isRunning() const
 {
-	return deadline_ != 0;
+	return deadline_ != utils::time_point();
 }
 
 /**
@@ -115,7 +122,7 @@ bool Timer::isRunning() const
 /**
  * \fn Timer::deadline()
  * \brief Retrieve the timer deadline
- * \return The timer deadline in nanoseconds
+ * \return The timer deadline
  */
 
 /**
@@ -128,7 +135,7 @@ bool Timer::isRunning() const
 void Timer::message(Message *msg)
 {
 	if (msg->type() == Message::ThreadMoveMessage) {
-		if (deadline_) {
+		if (isRunning()) {
 			unregisterTimer();
 			invokeMethod(&Timer::registerTimer);
 		}

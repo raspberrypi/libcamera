@@ -8,6 +8,7 @@
 #include "event_dispatcher_poll.h"
 
 #include <algorithm>
+#include <chrono>
 #include <iomanip>
 #include <poll.h>
 #include <stdint.h>
@@ -20,6 +21,7 @@
 
 #include "log.h"
 #include "thread.h"
+#include "utils.h"
 
 /**
  * \file event_dispatcher_poll.h
@@ -206,17 +208,12 @@ int EventDispatcherPoll::poll(std::vector<struct pollfd> *pollfds)
 	struct timespec timeout;
 
 	if (nextTimer) {
-		clock_gettime(CLOCK_MONOTONIC, &timeout);
-		uint64_t now = timeout.tv_sec * 1000000000ULL + timeout.tv_nsec;
+		utils::time_point now = utils::clock::now();
 
-		if (nextTimer->deadline() > now) {
-			uint64_t delta = nextTimer->deadline() - now;
-			timeout.tv_sec = delta / 1000000000ULL;
-			timeout.tv_nsec = delta % 1000000000ULL;
-		} else {
-			timeout.tv_sec = 0;
-			timeout.tv_nsec = 0;
-		}
+		if (nextTimer->deadline() > now)
+			timeout = utils::duration_to_timespec(nextTimer->deadline() - now);
+		else
+			timeout = { 0, 0 };
 
 		LOG(Event, Debug)
 			<< "timeout " << timeout.tv_sec << "."
@@ -295,10 +292,7 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 
 void EventDispatcherPoll::processTimers()
 {
-	struct timespec ts;
-	uint64_t now;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	now = ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+	utils::time_point now = utils::clock::now();
 
 	while (!timers_.empty()) {
 		Timer *timer = timers_.front();

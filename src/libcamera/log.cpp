@@ -11,7 +11,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <list>
 #include <string.h>
@@ -76,17 +75,6 @@ static int log_severity_to_syslog(LogSeverity severity)
 	default:
 		return LOG_NOTICE;
 	}
-}
-
-static std::string log_timespec_to_string(const struct timespec &timestamp)
-{
-	std::ostringstream ossTimestamp;
-	ossTimestamp.fill('0');
-	ossTimestamp << "[" << timestamp.tv_sec / (60 * 60) << ":"
-		     << std::setw(2) << (timestamp.tv_sec / 60) % 60 << ":"
-		     << std::setw(2) << timestamp.tv_sec % 60 << "."
-		     << std::setw(9) << timestamp.tv_nsec << "]";
-	return ossTimestamp.str();
 }
 
 static const char *log_severity_name(LogSeverity severity)
@@ -216,10 +204,10 @@ void LogOutput::writeSyslog(const LogMessage &msg)
 
 void LogOutput::writeStream(const LogMessage &msg)
 {
-	std::string str = std::string(log_timespec_to_string(msg.timestamp()) +
-	      		  log_severity_name(msg.severity()) + " " +
+	std::string str = "[" + utils::time_point_to_string(msg.timestamp()) +
+			  "]" + log_severity_name(msg.severity()) + " " +
 			  msg.category().name() + " " + msg.fileInfo() + " " +
-			  msg.msg());
+			  msg.msg();
 	stream_->write(str.c_str(), str.size());
 	stream_->flush();
 }
@@ -777,7 +765,7 @@ LogMessage::LogMessage(LogMessage &&other)
 void LogMessage::init(const char *fileName, unsigned int line)
 {
 	/* Log the timestamp, severity and file information. */
-	clock_gettime(CLOCK_MONOTONIC, &timestamp_);
+	timestamp_ = utils::clock::now();
 
 	std::ostringstream ossFileInfo;
 	ossFileInfo << utils::basename(fileName) << ":" << line;

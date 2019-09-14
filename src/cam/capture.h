@@ -7,6 +7,7 @@
 #ifndef __CAM_CAPTURE_H__
 #define __CAM_CAPTURE_H__
 
+#include <chrono>
 #include <memory>
 
 #include <libcamera/camera.h>
@@ -35,7 +36,7 @@ private:
 
 	std::map<libcamera::Stream *, std::string> streamName_;
 	BufferWriter *writer_;
-	uint64_t last_;
+	std::chrono::steady_clock::time_point last_;
 };
 
 #endif /* __CAM_CAPTURE_H__ */

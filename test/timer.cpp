@@ -5,6 +5,7 @@
  * timer.cpp - Timer test
  */
 
+#include <chrono>
 #include <iostream>
 
 #include <libcamera/event_dispatcher.h>
@@ -28,28 +29,28 @@ public:
 	void start(int msec)
 	{
 		interval_ = msec;
-		clock_gettime(CLOCK_MONOTONIC, &start_);
-		expiration_ = { 0, 0 };
+		start_ = std::chrono::steady_clock::now();
+		expiration_ = std::chrono::steady_clock::time_point();
 
 		Timer::start(msec);
 	}
 
 	int jitter()
 	{
-		int duration = (expiration_.tv_sec - start_.tv_sec) * 1000;
-		duration += (expiration_.tv_nsec - start_.tv_nsec) / 1000000;
-		return abs(duration - interval_);
+		std::chrono::steady_clock::duration duration = expiration_ - start_;
+		int msecs = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+		return abs(msecs - interval_);
 	}
 
 private:
 	void timeoutHandler(Timer *timer)
 	{
-		clock_gettime(CLOCK_MONOTONIC, &expiration_);
+		expiration_ = std::chrono::steady_clock::now();
 	}
 
 	int interval_;
-	struct timespec start_;
-	struct timespec expiration_;
+	std::chrono::steady_clock::time_point start_;
+	std::chrono::steady_clock::time_point expiration_;
 };
 
 class TimerTest : public Test

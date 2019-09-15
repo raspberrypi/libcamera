@@ -36,29 +36,7 @@ libcamera_sources = files([
     'v4l2_videodevice.cpp',
 ])
 
-libcamera_headers = files([
-    'include/camera_sensor.h',
-    'include/device_enumerator.h',
-    'include/device_enumerator_sysfs.h',
-    'include/device_enumerator_udev.h',
-    'include/event_dispatcher_poll.h',
-    'include/formats.h',
-    'include/ipa_manager.h',
-    'include/ipa_module.h',
-    'include/ipa_proxy.h',
-    'include/ipc_unixsocket.h',
-    'include/log.h',
-    'include/media_device.h',
-    'include/media_object.h',
-    'include/message.h',
-    'include/pipeline_handler.h',
-    'include/process.h',
-    'include/thread.h',
-    'include/utils.h',
-    'include/v4l2_device.h',
-    'include/v4l2_subdevice.h',
-    'include/v4l2_videodevice.h',
-])
+subdir('include')
 
 libcamera_internal_includes =  include_directories('include')
 

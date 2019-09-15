@@ -19,6 +19,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/request.h>
+#include <libipa/ipa_interface_wrapper.h>
 
 #include "log.h"
 #include "utils.h"
@@ -247,9 +248,9 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	"LGPL-2.1-or-later",
 };
 
-IPAInterface *ipaCreate()
+struct ipa_context *ipaCreate()
 {
-	return new IPARkISP1();
+	return new IPAInterfaceWrapper(utils::make_unique<IPARkISP1>());
 }
 }
 

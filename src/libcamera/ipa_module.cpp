@@ -385,13 +385,13 @@ const std::string &IPAModule::path() const
 /**
  * \brief Load the IPA implementation factory from the shared object
  *
- * The IPA module shared object implements an IPAInterface class to be used
+ * The IPA module shared object implements an ipa_context object to be used
  * by pipeline handlers. This method loads the factory function from the
- * shared object. Later, createInstance() can be called to instantiate the
- * IPAInterface.
+ * shared object. Later, createContext() can be called to instantiate the
+ * ipa_context.
  *
  * This method only needs to be called successfully once, after which
- * createInstance() can be called as many times as IPAInterface instances are
+ * createContext() can be called as many times as ipa_context instances are
  * needed.
  *
  * Calling this function on an invalid module (as returned by isValid()) is
@@ -433,24 +433,25 @@ bool IPAModule::load()
 }
 
 /**
- * \brief Instantiate an IPAInterface
+ * \brief Instantiate an IPA context
  *
- * After loading the IPA module with load(), this method creates an
- * instance of the IPA module interface.
+ * After loading the IPA module with load(), this method creates an instance of
+ * the IPA module context. Ownership of the context is passed to the caller, and
+ * the context shall be destroyed by calling the \ref ipa_context_ops::destroy
+ * "ipa_context::ops::destroy()" function.
  *
  * Calling this function on a module that has not yet been loaded, or an
  * invalid module (as returned by load() and isValid(), respectively) is
  * an error.
  *
- * \return The IPA implementation as a new IPAInterface instance on success,
- * or nullptr on error
+ * \return The IPA context on success, or nullptr on error
  */
-std::unique_ptr<IPAInterface> IPAModule::createInstance()
+struct ipa_context *IPAModule::createContext()
 {
 	if (!valid_ || !loaded_)
 		return nullptr;
 
-	return std::unique_ptr<IPAInterface>(ipaCreate_());
+	return ipaCreate_();
 }
 
 /**

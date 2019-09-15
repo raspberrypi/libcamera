@@ -9,6 +9,7 @@ libcamera_headers = files([
     'device_enumerator_udev.h',
     'event_dispatcher_poll.h',
     'formats.h',
+    'ipa_context_wrapper.h',
     'ipa_manager.h',
     'ipa_module.h',
     'ipa_proxy.h',

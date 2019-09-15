@@ -793,6 +793,7 @@ WARN_LOGFILE           =
 
 INPUT                  = "@TOP_SRCDIR@/include/ipa" \
 			 "@TOP_SRCDIR@/include/libcamera" \
+			 "@TOP_SRCDIR@/src/ipa/libipa" \
 			 "@TOP_SRCDIR@/src/libcamera" \
 			 "@TOP_BUILDDIR@/include/libcamera" \
 			 "@TOP_BUILDDIR@/src/libcamera"

@@ -72,9 +72,9 @@ int main(int argc, char **argv)
 	}
 	socket.readyRead.connect(&readyRead);
 
-	std::unique_ptr<IPAInterface> ipa = ipam->createInstance();
-	if (!ipa) {
-		LOG(IPAProxyLinuxWorker, Error) << "Failed to create IPA interface";
+	struct ipa_context *ipac = ipam->createContext();
+	if (!ipac) {
+		LOG(IPAProxyLinuxWorker, Error) << "Failed to create IPA context";
 		return EXIT_FAILURE;
 	}
 
@@ -84,6 +84,8 @@ int main(int argc, char **argv)
 	EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 	while (1)
 		dispatcher->processEvents();
+
+	ipac->ops->destroy(ipac);
 
 	return 0;
 }

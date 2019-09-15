@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_IPA_MODULE_H__
 #define __LIBCAMERA_IPA_MODULE_H__
 
-#include <memory>
 #include <string>
 
 #include <ipa/ipa_interface.h>
@@ -30,7 +29,7 @@ public:
 
 	bool load();
 
-	std::unique_ptr<IPAInterface> createInstance();
+	struct ipa_context *createContext();
 
 	bool match(PipelineHandler *pipe,
 		   uint32_t minVersion, uint32_t maxVersion) const;
@@ -45,7 +44,7 @@ private:
 	bool loaded_;
 
 	void *dlHandle_;
-	typedef IPAInterface *(*IPAIntfFactory)(void);
+	typedef struct ipa_context *(*IPAIntfFactory)(void);
 	IPAIntfFactory ipaCreate_;
 
 	int loadIPAModuleInfo();

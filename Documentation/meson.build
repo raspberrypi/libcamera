@@ -24,6 +24,8 @@ if doxygen.found()
                       libcamera_ipa_api,
                       libcamera_headers,
                       libcamera_sources,
+                      libipa_headers,
+                      libipa_sources,
                   ],
                   output : 'api-html',
                   command : [doxygen, doxyfile],

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "ipa_context_wrapper.h"
 #include "ipa_module.h"
 #include "ipa_proxy.h"
 #include "log.h"
@@ -30,6 +31,66 @@ LOG_DEFINE_CATEGORY(IPAManager)
 /**
  * \class IPAManager
  * \brief Manager for IPA modules
+ *
+ * The IPA module manager discovers IPA modules from disk, queries and loads
+ * them, and creates IPA contexts. It supports isolation of the modules in a
+ * separate process with IPC communication and offers a unified IPAInterface
+ * view of the IPA contexts to pipeline handlers regardless of whether the
+ * modules are isolated or loaded in the same process.
+ *
+ * Module isolation is based on the module licence. Open-source modules are
+ * loaded without isolation, while closed-source module are forcefully isolated.
+ * The isolation mechanism ensures that no code from a closed-source module is
+ * ever run in the libcamera process.
+ *
+ * To create an IPA context, pipeline handlers call the IPAManager::ipaCreate()
+ * method. For a directly loaded module, the manager calls the module's
+ * ipaCreate() function directly and wraps the returned context in an
+ * IPAContextWrapper that exposes an IPAInterface.
+ *
+ * ~~~~
+ * +---------------+
+ * |   Pipeline    |
+ * |    Handler    |
+ * +---------------+
+ *         |
+ *         v
+ * +---------------+                   +---------------+
+ * |      IPA      |                   |  Open Source  |
+ * |   Interface   |                   |  IPA Module   |
+ * | - - - - - - - |                   | - - - - - - - |
+ * |  IPA Context  |  ipa_context_ops  |  ipa_context  |
+ * |    Wrapper    | ----------------> |               |
+ * +---------------+                   +---------------+
+ * ~~~~
+ *
+ * For an isolated module, the manager instantiates an IPAProxy which spawns a
+ * new process for an IPA proxy worker. The worker loads the IPA module and
+ * creates the IPA context. The IPAProxy alse exposes an IPAInterface.
+ *
+ * ~~~~
+ * +---------------+                   +---------------+
+ * |   Pipeline    |                   | Closed Source |
+ * |    Handler    |                   |  IPA Module   |
+ * +---------------+                   | - - - - - - - |
+ *         |                           |  ipa_context  |
+ *         v                           |               |
+ * +---------------+                   +---------------+
+ * |      IPA      |           ipa_context_ops ^
+ * |   Interface   |                           |
+ * | - - - - - - - |                   +---------------+
+ * |   IPA Proxy   |     operations    |   IPA Proxy   |
+ * |               | ----------------> |    Worker     |
+ * +---------------+      over IPC     +---------------+
+ * ~~~~
+ *
+ * The IPAInterface implemented by the IPAContextWrapper or IPAProxy is
+ * returned to the pipeline handler, and all interactions with the IPA context
+ * go the same interface regardless of process isolation.
+ *
+ * In all cases the data passed to the IPAInterface methods is serialized to
+ * Plain Old Data, either for the purpose of passing it to the IPA context
+ * plain C API, or to transmit the data to the isolated process through IPC.
  */
 
 IPAManager::IPAManager()
@@ -199,7 +260,11 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 	if (!m->load())
 		return nullptr;
 
-	return m->createInstance();
+	struct ipa_context *ctx = m->createContext();
+	if (!ctx)
+		return nullptr;
+
+	return utils::make_unique<IPAContextWrapper>(ctx);
 }
 
 } /* namespace libcamera */

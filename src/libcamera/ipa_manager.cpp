@@ -33,26 +33,43 @@ LOG_DEFINE_CATEGORY(IPAManager)
 
 IPAManager::IPAManager()
 {
-	addDir(IPA_MODULE_DIR);
+	unsigned int ipaCount = 0;
+	int ret;
+
+	ret = addDir(IPA_MODULE_DIR);
+	if (ret > 0)
+		ipaCount += ret;
 
 	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
-	if (!modulePaths)
+	if (!modulePaths) {
+		if (!ipaCount)
+			LOG(IPAManager, Warning)
+				<< "No IPA found in '" IPA_MODULE_DIR "'";
 		return;
+	}
 
+	const char *paths = modulePaths;
 	while (1) {
-		const char *delim = strchrnul(modulePaths, ':');
-		size_t count = delim - modulePaths;
+		const char *delim = strchrnul(paths, ':');
+		size_t count = delim - paths;
 
 		if (count) {
-			std::string path(modulePaths, count);
-			addDir(path.c_str());
+			std::string path(paths, count);
+			ret = addDir(path.c_str());
+			if (ret > 0)
+				ipaCount += ret;
 		}
 
 		if (*delim == '\0')
 			break;
 
-		modulePaths += count + 1;
+		paths += count + 1;
 	}
+
+	if (!ipaCount)
+		LOG(IPAManager, Warning)
+			<< "No IPA found in '" IPA_MODULE_DIR "' and '"
+			<< modulePaths << "'";
 }
 
 IPAManager::~IPAManager()
@@ -92,13 +109,8 @@ int IPAManager::addDir(const char *libDir)
 	DIR *dir;
 
 	dir = opendir(libDir);
-	if (!dir) {
-		int ret = -errno;
-		LOG(IPAManager, Error)
-			<< "Invalid path " << libDir << " for IPA modules: "
-			<< strerror(-ret);
-		return ret;
-	}
+	if (!dir)
+		return -errno;
 
 	unsigned int count = 0;
 	while ((ent = readdir(dir)) != nullptr) {

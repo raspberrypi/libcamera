@@ -34,7 +34,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	0,
 	"PipelineHandlerVimc",
 	"Dummy IPA for Vimc",
-	"LGPL-2.1-or-later",
+	LICENSE,
 };
 
 IPAInterface *ipaCreate()

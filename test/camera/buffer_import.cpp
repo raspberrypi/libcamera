@@ -28,6 +28,11 @@ static constexpr unsigned int CAMERA_BUFFER_COUNT = 4;
 class FrameSink
 {
 public:
+	FrameSink()
+		: video_(nullptr)
+	{
+	}
+
 	int init()
 	{
 		int ret;

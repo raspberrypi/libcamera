@@ -17,6 +17,7 @@ class ViewFinder : public QLabel
 {
 public:
 	ViewFinder(QWidget *parent);
+	~ViewFinder();
 
 	int setFormat(unsigned int format, unsigned int width,
 		      unsigned int height);

@@ -16,6 +16,11 @@ ViewFinder::ViewFinder(QWidget *parent)
 {
 }
 
+ViewFinder::~ViewFinder()
+{
+	delete image_;
+}
+
 void ViewFinder::display(const unsigned char *raw, size_t size)
 {
 	converter_.convert(raw, size, image_);

@@ -130,10 +130,8 @@ void QtEventDispatcher::unregisterTimer(Timer *timer)
 
 void QtEventDispatcher::timerEvent(QTimerEvent *event)
 {
-	auto it = timers_.find(event->timerId());
-	timerIds_.erase(it->second);
-	killTimer(it->first);
-	timers_.erase(it);
+	Timer *timer = timers_[event->timerId()];
+	timer->stop();
 }
 
 void QtEventDispatcher::processEvents()

@@ -8,11 +8,8 @@
 #ifndef __LIBCAMERA_CONTROLS_H__
 #define __LIBCAMERA_CONTROLS_H__
 
-#include <stdint.h>
 #include <string>
 #include <unordered_map>
-
-#include <libcamera/control_ids.h>
 
 namespace libcamera {
 
@@ -53,55 +50,75 @@ private:
 	};
 };
 
-struct ControlIdentifier {
-	ControlId id;
-	const char *name;
-	ControlType type;
+class ControlId
+{
+public:
+	unsigned int id() const { return id_; }
+	const char *name() const { return name_; }
+	ControlType type() const { return type_; }
+
+protected:
+	ControlId(unsigned int id, const char *name, ControlType type)
+		: id_(id), name_(name), type_(type)
+	{
+	}
+
+private:
+	ControlId(const ControlId &) = delete;
+	ControlId &operator=(const ControlId &) = delete;
+
+	unsigned int id_;
+	const char *name_;
+	ControlType type_;
+};
+
+static inline bool operator==(const ControlId &lhs, const ControlId &rhs)
+{
+	return lhs.id() == rhs.id();
+}
+
+static inline bool operator!=(const ControlId &lhs, const ControlId &rhs)
+{
+	return !(lhs == rhs);
+}
+
+template<typename T>
+class Control : public ControlId
+{
+public:
+	using type = T;
+
+	Control(unsigned int id, const char *name);
+
+private:
+	Control(const Control &) = delete;
+	Control &operator=(const Control &) = delete;
 };
 
 class ControlInfo
 {
 public:
-	explicit ControlInfo(ControlId id, const ControlValue &min = 0,
+	explicit ControlInfo(const ControlId &id, const ControlValue &min = 0,
 			     const ControlValue &max = 0);
 
-	ControlId id() const { return ident_->id; }
-	const char *name() const { return ident_->name; }
-	ControlType type() const { return ident_->type; }
-
+	const ControlId &id() const { return id_; }
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
 
 	std::string toString() const;
 
 private:
-	const struct ControlIdentifier *ident_;
+	const ControlId &id_;
 	ControlValue min_;
 	ControlValue max_;
 };
 
-bool operator==(const ControlInfo &lhs, const ControlInfo &rhs);
-bool operator==(const ControlId &lhs, const ControlInfo &rhs);
-bool operator==(const ControlInfo &lhs, const ControlId &rhs);
-static inline bool operator!=(const ControlInfo &lhs, const ControlInfo &rhs)
-{
-	return !(lhs == rhs);
-}
-static inline bool operator!=(const ControlId &lhs, const ControlInfo &rhs)
-{
-	return !(lhs == rhs);
-}
-static inline bool operator!=(const ControlInfo &lhs, const ControlId &rhs)
-{
-	return !(lhs == rhs);
-}
-
-using ControlInfoMap = std::unordered_map<ControlId, ControlInfo>;
+using ControlInfoMap = std::unordered_map<const ControlId *, ControlInfo>;
 
 class ControlList
 {
 private:
-	using ControlListMap = std::unordered_map<const ControlInfo *, ControlValue>;
+	using ControlListMap = std::unordered_map<const ControlId *, ControlValue>;
 
 public:
 	ControlList(Camera *camera);
@@ -114,18 +131,39 @@ public:
 	const_iterator begin() const { return controls_.begin(); }
 	const_iterator end() const { return controls_.end(); }
 
-	bool contains(ControlId id) const;
-	bool contains(const ControlInfo *info) const;
+	bool contains(const ControlId &id) const;
 	bool empty() const { return controls_.empty(); }
 	std::size_t size() const { return controls_.size(); }
 	void clear() { controls_.clear(); }
 
-	ControlValue &operator[](ControlId id);
-	ControlValue &operator[](const ControlInfo *info) { return controls_[info]; }
+	template<typename T>
+	const T &get(const Control<T> &ctrl) const
+	{
+		const ControlValue *val = find(ctrl);
+		if (!val) {
+			static T t(0);
+			return t;
+		}
+
+		return val->get<T>();
+	}
+
+	template<typename T>
+	void set(const Control<T> &ctrl, const T &value)
+	{
+		ControlValue *val = find(ctrl);
+		if (!val)
+			return;
+
+		val->set<T>(value);
+	}
 
 	void update(const ControlList &list);
 
 private:
+	const ControlValue *find(const ControlId &id) const;
+	ControlValue *find(const ControlId &id);
+
 	Camera *camera_;
 	ControlListMap controls_;
 };

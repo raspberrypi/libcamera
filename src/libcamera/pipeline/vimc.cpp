@@ -15,6 +15,7 @@
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -283,24 +284,15 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 	V4L2ControlList controls;
 
 	for (auto it : request->controls()) {
-		const ControlInfo *ci = it.first;
+		const ControlId &id = *it.first;
 		ControlValue &value = it.second;
 
-		switch (ci->id()) {
-		case Brightness:
+		if (id == controls::Brightness) {
 			controls.add(V4L2_CID_BRIGHTNESS, value.get<int32_t>());
-			break;
-
-		case Contrast:
+		} else if (id == controls::Contrast) {
 			controls.add(V4L2_CID_CONTRAST, value.get<int32_t>());
-			break;
-
-		case Saturation:
+		} else if (id == controls::Saturation) {
 			controls.add(V4L2_CID_SATURATION, value.get<int32_t>());
-			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -427,17 +419,17 @@ int VimcCameraData::init(MediaDevice *media)
 	for (const auto &ctrl : controls) {
 		unsigned int v4l2Id = ctrl.first;
 		const V4L2ControlInfo &info = ctrl.second;
-		ControlId id;
+		const ControlId *id;
 
 		switch (v4l2Id) {
 		case V4L2_CID_BRIGHTNESS:
-			id = Brightness;
+			id = &controls::Brightness;
 			break;
 		case V4L2_CID_CONTRAST:
-			id = Contrast;
+			id = &controls::Contrast;
 			break;
 		case V4L2_CID_SATURATION:
-			id = Saturation;
+			id = &controls::Saturation;
 			break;
 		default:
 			continue;
@@ -445,7 +437,7 @@ int VimcCameraData::init(MediaDevice *media)
 
 		controlInfo_.emplace(std::piecewise_construct,
 				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(id, info.min(), info.max()));
+				     std::forward_as_tuple(*id, info.min(), info.max()));
 	}
 
 	return 0;

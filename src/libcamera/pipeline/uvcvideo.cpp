@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -230,33 +231,20 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 	V4L2ControlList controls;
 
 	for (auto it : request->controls()) {
-		const ControlInfo *ci = it.first;
+		const ControlId &id = *it.first;
 		ControlValue &value = it.second;
 
-		switch (ci->id()) {
-		case Brightness:
+		if (id == controls::Brightness) {
 			controls.add(V4L2_CID_BRIGHTNESS, value.get<int32_t>());
-			break;
-
-		case Contrast:
+		} else if (id == controls::Contrast) {
 			controls.add(V4L2_CID_CONTRAST, value.get<int32_t>());
-			break;
-
-		case Saturation:
+		} else if (id == controls::Saturation) {
 			controls.add(V4L2_CID_SATURATION, value.get<int32_t>());
-			break;
-
-		case ManualExposure:
+		} else if (id == controls::ManualExposure) {
 			controls.add(V4L2_CID_EXPOSURE_AUTO, 1);
 			controls.add(V4L2_CID_EXPOSURE_ABSOLUTE, value.get<int32_t>());
-			break;
-
-		case ManualGain:
+		} else if (id == controls::ManualGain) {
 			controls.add(V4L2_CID_GAIN, value.get<int32_t>());
-			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -352,23 +340,23 @@ int UVCCameraData::init(MediaEntity *entity)
 	for (const auto &ctrl : controls) {
 		unsigned int v4l2Id = ctrl.first;
 		const V4L2ControlInfo &info = ctrl.second;
-		ControlId id;
+		const ControlId *id;
 
 		switch (v4l2Id) {
 		case V4L2_CID_BRIGHTNESS:
-			id = Brightness;
+			id = &controls::Brightness;
 			break;
 		case V4L2_CID_CONTRAST:
-			id = Contrast;
+			id = &controls::Contrast;
 			break;
 		case V4L2_CID_SATURATION:
-			id = Saturation;
+			id = &controls::Saturation;
 			break;
 		case V4L2_CID_EXPOSURE_ABSOLUTE:
-			id = ManualExposure;
+			id = &controls::ManualExposure;
 			break;
 		case V4L2_CID_GAIN:
-			id = ManualGain;
+			id = &controls::ManualGain;
 			break;
 		default:
 			continue;
@@ -376,7 +364,7 @@ int UVCCameraData::init(MediaEntity *entity)
 
 		controlInfo_.emplace(std::piecewise_construct,
 				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(id, info.min(), info.max()));
+				     std::forward_as_tuple(*id, info.min(), info.max()));
 	}
 
 	return 0;

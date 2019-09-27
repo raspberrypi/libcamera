@@ -8,34 +8,32 @@
 #ifndef __LIBCAMERA_CONTROL_IDS_H__
 #define __LIBCAMERA_CONTROL_IDS_H__
 
-#include <functional>
+#include <stdint.h>
+
+#include <libcamera/controls.h>
 
 namespace libcamera {
 
-enum ControlId {
-	AwbEnable,
-	Brightness,
-	Contrast,
-	Saturation,
-	ManualExposure,
-	ManualGain,
+namespace controls {
+
+enum {
+	AWB_ENABLE = 1,
+	BRIGHTNESS = 2,
+	CONTRAST = 3,
+	SATURATION = 4,
+	MANUAL_EXPOSURE = 5,
+	MANUAL_GAIN = 6,
 };
+
+extern const Control<bool> AwbEnable;
+extern const Control<int32_t> Brightness;
+extern const Control<int32_t> Contrast;
+extern const Control<int32_t> Saturation;
+extern const Control<int32_t> ManualExposure;
+extern const Control<int32_t> ManualGain;
+
+} /* namespace controls */
 
 } /* namespace libcamera */
-
-namespace std {
-
-template<>
-struct hash<libcamera::ControlId> {
-	using argument_type = libcamera::ControlId;
-	using result_type = std::size_t;
-
-	result_type operator()(const argument_type &key) const noexcept
-	{
-		return std::hash<std::underlying_type<argument_type>::type>()(key);
-	}
-};
-
-} /* namespace std */
 
 #endif // __LIBCAMERA_CONTROL_IDS_H__

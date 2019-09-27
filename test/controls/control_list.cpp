@@ -9,6 +9,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
 #include "test.h"
@@ -52,7 +53,7 @@ protected:
 			return TestFail;
 		}
 
-		if (list.contains(Brightness)) {
+		if (list.contains(controls::Brightness)) {
 			cout << "List should not contain Brightness control" << endl;
 			return TestFail;
 		}
@@ -70,7 +71,7 @@ protected:
 		 * Set a control, and verify that the list now contains it, and
 		 * nothing else.
 		 */
-		list[Brightness] = 255;
+		list.set(controls::Brightness, 255);
 
 		if (list.empty()) {
 			cout << "List should not be empty" << endl;
@@ -82,7 +83,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!list.contains(Brightness)) {
+		if (!list.contains(controls::Brightness)) {
 			cout << "List should contain Brightness control" << endl;
 			return TestFail;
 		}
@@ -96,54 +97,45 @@ protected:
 			return TestFail;
 		}
 
-		if (list[Brightness].get<int32_t>() != 255) {
+		if (list.get(controls::Brightness) != 255) {
 			cout << "Incorrest Brightness control value" << endl;
 			return TestFail;
 		}
 
-		if (list.contains(Contrast)) {
+		if (list.contains(controls::Contrast)) {
 			cout << "List should not contain Contract control" << endl;
 			return TestFail;
 		}
 
-		/*
-		 * Set a second control through ControlInfo and retrieve it
-		 * through both controlId and ControlInfo.
-		 */
-		const ControlInfoMap &controls = camera_->controls();
-		const ControlInfo *brightness = &controls.find(Brightness)->second;
-		const ControlInfo *contrast = &controls.find(Contrast)->second;
+		/* Update the first control and set a second one. */
+		list.set(controls::Brightness, 64);
+		list.set(controls::Contrast, 128);
 
-		list[brightness] = 64;
-		list[contrast] = 128;
-
-		if (!list.contains(Contrast) || !list.contains(contrast)) {
+		if (!list.contains(controls::Contrast) ||
+		    !list.contains(controls::Contrast)) {
 			cout << "List should contain Contrast control" << endl;
 			return TestFail;
 		}
 
-		/*
-		 * Test control value retrieval and update through ControlInfo.
-		 */
-		if (list[brightness].get<int32_t>() != 64 ||
-		    list[contrast].get<int32_t>() != 128) {
+		if (list.get(controls::Brightness) != 64 ||
+		    list.get(controls::Contrast) != 128) {
 			cout << "Failed to retrieve control value" << endl;
 			return TestFail;
 		}
 
-		list[brightness] = 10;
-		list[contrast] = 20;
+		/*
+		 * Update both controls and verify that the container doesn't
+		 * grow.
+		 */
+		list.set(controls::Brightness, 10);
+		list.set(controls::Contrast, 20);
 
-		if (list[brightness].get<int32_t>() != 10 ||
-		    list[contrast].get<int32_t>() != 20) {
+		if (list.get(controls::Brightness) != 10 ||
+		    list.get(controls::Contrast) != 20) {
 			cout << "Failed to update control value" << endl;
 			return TestFail;
 		}
 
-		/*
-		 * Assert that the container has not grown with the control
-		 * updated.
-		 */
 		if (list.size() != 2) {
 			cout << "List should contain two elements" << endl;
 			return TestFail;
@@ -157,8 +149,8 @@ protected:
 		 */
 		ControlList newList(camera_.get());
 
-		newList[Brightness] = 128;
-		newList[Saturation] = 255;
+		newList.set(controls::Brightness, 128);
+		newList.set(controls::Saturation, 255);
 		newList.update(list);
 
 		list.clear();
@@ -178,16 +170,16 @@ protected:
 			return TestFail;
 		}
 
-		if (!newList.contains(Brightness) ||
-		    !newList.contains(Contrast) ||
-		    !newList.contains(Saturation)) {
+		if (!newList.contains(controls::Brightness) ||
+		    !newList.contains(controls::Contrast) ||
+		    !newList.contains(controls::Saturation)) {
 			cout << "New list contains incorrect items" << endl;
 			return TestFail;
 		}
 
-		if (newList[Brightness].get<int32_t>() != 10 ||
-		    newList[Contrast].get<int32_t>() != 20 ||
-		    newList[Saturation].get<int32_t>() != 255) {
+		if (newList.get(controls::Brightness) != 10 ||
+		    newList.get(controls::Contrast) != 20 ||
+		    newList.get(controls::Saturation) != 255) {
 			cout << "New list contains incorrect values" << endl;
 			return TestFail;
 		}

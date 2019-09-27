@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
 #include "test.h"
@@ -23,17 +24,17 @@ protected:
 		 * Test information retrieval from a control with no minimum
 		 * and maximum.
 		 */
-		ControlInfo info(Brightness);
+		ControlInfo brightness(controls::Brightness);
 
-		if (info.id() != Brightness ||
-		    info.type() != ControlTypeInteger32 ||
-		    info.name() != std::string("Brightness")) {
+		if (brightness.id() != controls::Brightness ||
+		    brightness.id().type() != ControlTypeInteger32 ||
+		    brightness.id().name() != std::string("Brightness")) {
 			cout << "Invalid control identification for Brightness" << endl;
 			return TestFail;
 		}
 
-		if (info.min().get<int32_t>() != 0 ||
-		    info.max().get<int32_t>() != 0) {
+		if (brightness.min().get<int32_t>() != 0 ||
+		    brightness.max().get<int32_t>() != 0) {
 			cout << "Invalid control range for Brightness" << endl;
 			return TestFail;
 		}
@@ -42,17 +43,17 @@ protected:
 		 * Test information retrieval from a control with a minimum and
 		 * a maximum value.
 		 */
-		info = ControlInfo(Contrast, 10, 200);
+		ControlInfo contrast(controls::Contrast, 10, 200);
 
-		if (info.id() != Contrast ||
-		    info.type() != ControlTypeInteger32 ||
-		    info.name() != std::string("Contrast")) {
+		if (contrast.id() != controls::Contrast ||
+		    contrast.id().type() != ControlTypeInteger32 ||
+		    contrast.id().name() != std::string("Contrast")) {
 			cout << "Invalid control identification for Contrast" << endl;
 			return TestFail;
 		}
 
-		if (info.min().get<int32_t>() != 10 ||
-		    info.max().get<int32_t>() != 200) {
+		if (contrast.min().get<int32_t>() != 10 ||
+		    contrast.max().get<int32_t>() != 200) {
 			cout << "Invalid control range for Contrast" << endl;
 			return TestFail;
 		}

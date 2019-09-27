@@ -26,7 +26,7 @@ protected:
 		ControlInfo info(Brightness);
 
 		if (info.id() != Brightness ||
-		    info.type() != ControlValueInteger ||
+		    info.type() != ControlTypeInteger ||
 		    info.name() != std::string("Brightness")) {
 			cout << "Invalid control identification for Brightness" << endl;
 			return TestFail;
@@ -44,7 +44,7 @@ protected:
 		info = ControlInfo(Contrast, 10, 200);
 
 		if (info.id() != Contrast ||
-		    info.type() != ControlValueInteger ||
+		    info.type() != ControlTypeInteger ||
 		    info.name() != std::string("Contrast")) {
 			cout << "Invalid control identification for Contrast" << endl;
 			return TestFail;

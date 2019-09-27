@@ -25,16 +25,16 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Controls)
 
 /**
- * \enum ControlValueType
- * \brief Define the data type of value represented by a ControlValue
- * \var ControlValueNone
- * Identifies an unset control value
- * \var ControlValueBool
- * Identifies controls storing a boolean value
- * \var ControlValueInteger
- * Identifies controls storing an integer value
- * \var ControlValueInteger64
- * Identifies controls storing a 64-bit integer value
+ * \enum ControlType
+ * \brief Define the data type of a Control
+ * \var ControlTypeNone
+ * Invalid type, for empty values
+ * \var ControlTypeBool
+ * The control stores a boolean value
+ * \var ControlTypeInteger
+ * The control stores an integer value
+ * \var ControlTypeInteger64
+ * The control stores a 64-bit integer value
  */
 
 /**
@@ -46,7 +46,7 @@ LOG_DEFINE_CATEGORY(Controls)
  * \brief Construct an empty ControlValue.
  */
 ControlValue::ControlValue()
-	: type_(ControlValueNone)
+	: type_(ControlTypeNone)
 {
 }
 
@@ -55,7 +55,7 @@ ControlValue::ControlValue()
  * \param[in] value Boolean value to store
  */
 ControlValue::ControlValue(bool value)
-	: type_(ControlValueBool), bool_(value)
+	: type_(ControlTypeBool), bool_(value)
 {
 }
 
@@ -64,7 +64,7 @@ ControlValue::ControlValue(bool value)
  * \param[in] value Integer value to store
  */
 ControlValue::ControlValue(int value)
-	: type_(ControlValueInteger), integer_(value)
+	: type_(ControlTypeInteger), integer_(value)
 {
 }
 
@@ -73,7 +73,7 @@ ControlValue::ControlValue(int value)
  * \param[in] value Integer value to store
  */
 ControlValue::ControlValue(int64_t value)
-	: type_(ControlValueInteger64), integer64_(value)
+	: type_(ControlTypeInteger64), integer64_(value)
 {
 }
 
@@ -86,7 +86,7 @@ ControlValue::ControlValue(int64_t value)
 /**
  * \fn ControlValue::isNone()
  * \brief Determine if the value is not initialised
- * \return True if the value type is ControlValueNone, false otherwise
+ * \return True if the value type is ControlTypeNone, false otherwise
  */
 
 /**
@@ -95,7 +95,7 @@ ControlValue::ControlValue(int64_t value)
  */
 void ControlValue::set(bool value)
 {
-	type_ = ControlValueBool;
+	type_ = ControlTypeBool;
 	bool_ = value;
 }
 
@@ -105,7 +105,7 @@ void ControlValue::set(bool value)
  */
 void ControlValue::set(int value)
 {
-	type_ = ControlValueInteger;
+	type_ = ControlTypeInteger;
 	integer_ = value;
 }
 
@@ -115,7 +115,7 @@ void ControlValue::set(int value)
  */
 void ControlValue::set(int64_t value)
 {
-	type_ = ControlValueInteger64;
+	type_ = ControlTypeInteger64;
 	integer64_ = value;
 }
 
@@ -128,7 +128,7 @@ void ControlValue::set(int64_t value)
  */
 bool ControlValue::getBool() const
 {
-	ASSERT(type_ == ControlValueBool);
+	ASSERT(type_ == ControlTypeBool);
 
 	return bool_;
 }
@@ -142,7 +142,7 @@ bool ControlValue::getBool() const
  */
 int ControlValue::getInt() const
 {
-	ASSERT(type_ == ControlValueInteger || type_ == ControlValueInteger64);
+	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
 
 	return integer_;
 }
@@ -156,7 +156,7 @@ int ControlValue::getInt() const
  */
 int64_t ControlValue::getInt64() const
 {
-	ASSERT(type_ == ControlValueInteger || type_ == ControlValueInteger64);
+	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
 
 	return integer64_;
 }
@@ -168,13 +168,13 @@ int64_t ControlValue::getInt64() const
 std::string ControlValue::toString() const
 {
 	switch (type_) {
-	case ControlValueNone:
+	case ControlTypeNone:
 		return "<None>";
-	case ControlValueBool:
+	case ControlTypeBool:
 		return bool_ ? "True" : "False";
-	case ControlValueInteger:
+	case ControlTypeInteger:
 		return std::to_string(integer_);
-	case ControlValueInteger64:
+	case ControlTypeInteger64:
 		return std::to_string(integer64_);
 	}
 

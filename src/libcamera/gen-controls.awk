@@ -92,7 +92,7 @@ function GenerateTable(file) {
 	print "extern const std::unordered_map<ControlId, ControlIdentifier>" > file
 	print "controlTypes {" > file
 	for (i=1; i <= id; ++i) {
-		printf "\t{ %s, { %s, \"%s\", ControlValue%s } },\n", names[i], names[i], names[i], types[i] > file
+		printf "\t{ %s, { %s, \"%s\", ControlType%s } },\n", names[i], names[i], names[i], types[i] > file
 	}
 	print "};" > file
 	ExitNameSpace(file)

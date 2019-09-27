@@ -18,11 +18,11 @@ namespace libcamera {
 
 class Camera;
 
-enum ControlValueType {
-	ControlValueNone,
-	ControlValueBool,
-	ControlValueInteger,
-	ControlValueInteger64,
+enum ControlType {
+	ControlTypeNone,
+	ControlTypeBool,
+	ControlTypeInteger,
+	ControlTypeInteger64,
 };
 
 class ControlValue
@@ -33,8 +33,8 @@ public:
 	ControlValue(int value);
 	ControlValue(int64_t value);
 
-	ControlValueType type() const { return type_; };
-	bool isNone() const { return type_ == ControlValueNone; };
+	ControlType type() const { return type_; };
+	bool isNone() const { return type_ == ControlTypeNone; };
 
 	void set(bool value);
 	void set(int value);
@@ -47,7 +47,7 @@ public:
 	std::string toString() const;
 
 private:
-	ControlValueType type_;
+	ControlType type_;
 
 	union {
 		bool bool_;
@@ -59,7 +59,7 @@ private:
 struct ControlIdentifier {
 	ControlId id;
 	const char *name;
-	ControlValueType type;
+	ControlType type;
 };
 
 class ControlInfo
@@ -70,7 +70,7 @@ public:
 
 	ControlId id() const { return ident_->id; }
 	const char *name() const { return ident_->name; }
-	ControlValueType type() const { return ident_->type; }
+	ControlType type() const { return ident_->type; }
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }

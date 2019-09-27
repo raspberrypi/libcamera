@@ -19,8 +19,8 @@ namespace libcamera {
 
 class Buffer;
 class Camera;
+class CameraControlValidator;
 class Stream;
-
 
 class Request
 {
@@ -36,7 +36,7 @@ public:
 	Request &operator=(const Request &) = delete;
 	~Request();
 
-	ControlList &controls() { return controls_; }
+	ControlList &controls() { return *controls_; }
 	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
 	int addBuffer(std::unique_ptr<Buffer> buffer);
 	Buffer *findBuffer(Stream *stream) const;
@@ -56,7 +56,8 @@ private:
 	bool completeBuffer(Buffer *buffer);
 
 	Camera *camera_;
-	ControlList controls_;
+	CameraControlValidator *validator_;
+	ControlList *controls_;
 	std::map<Stream *, Buffer *> bufferMap_;
 	std::unordered_set<Buffer *> pending_;
 

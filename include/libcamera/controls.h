@@ -13,7 +13,7 @@
 
 namespace libcamera {
 
-class Camera;
+class ControlValidator;
 
 enum ControlType {
 	ControlTypeNone,
@@ -119,7 +119,7 @@ private:
 	using ControlListMap = std::unordered_map<const ControlId *, ControlValue>;
 
 public:
-	ControlList(Camera *camera);
+	ControlList(ControlValidator *validator);
 
 	using iterator = ControlListMap::iterator;
 	using const_iterator = ControlListMap::const_iterator;
@@ -160,7 +160,7 @@ private:
 	const ControlValue *find(const ControlId &id) const;
 	ControlValue *find(const ControlId &id);
 
-	Camera *camera_;
+	ControlValidator *validator_;
 	ControlListMap controls_;
 };
 

@@ -12,6 +12,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
+#include "camera_controls.h"
 #include "test.h"
 
 using namespace std;
@@ -40,7 +41,8 @@ protected:
 
 	int run()
 	{
-		ControlList list(camera_.get());
+		CameraControlValidator validator(camera_.get());
+		ControlList list(&validator);
 
 		/* Test that the list is initially empty. */
 		if (!list.empty()) {
@@ -138,6 +140,17 @@ protected:
 
 		if (list.size() != 2) {
 			cout << "List should contain two elements" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Attempt to set an invalid control and verify that the
+		 * operation failed.
+		 */
+		list.set(controls::AwbEnable, true);
+
+		if (list.contains(controls::AwbEnable)) {
+			cout << "List shouldn't contain AwbEnable control" << endl;
 			return TestFail;
 		}
 

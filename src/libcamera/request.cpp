@@ -13,6 +13,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/stream.h>
 
+#include "camera_controls.h"
 #include "log.h"
 
 /**
@@ -55,9 +56,15 @@ LOG_DEFINE_CATEGORY(Request)
  *
  */
 Request::Request(Camera *camera, uint64_t cookie)
-	: camera_(camera), controls_(camera), cookie_(cookie),
-	  status_(RequestPending), cancelled_(false)
+	: camera_(camera), cookie_(cookie), status_(RequestPending),
+	  cancelled_(false)
 {
+	/**
+	 * \todo Should the Camera expose a validator instance, to avoid
+	 * creating a new instance for each request?
+	 */
+	validator_ = new CameraControlValidator(camera);
+	controls_ = new ControlList(validator_);
 }
 
 Request::~Request()
@@ -66,6 +73,9 @@ Request::~Request()
 		Buffer *buffer = it.second;
 		delete buffer;
 	}
+
+	delete controls_;
+	delete validator_;
 }
 
 /**

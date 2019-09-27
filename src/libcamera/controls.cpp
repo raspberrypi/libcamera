@@ -10,8 +10,7 @@
 #include <sstream>
 #include <string>
 
-#include <libcamera/camera.h>
-
+#include "control_validator.h"
 #include "log.h"
 #include "utils.h"
 
@@ -365,20 +364,16 @@ std::string ControlRange::toString() const
  * \class ControlList
  * \brief Associate a list of ControlId with their values for a camera
  *
- * A ControlList wraps a map of ControlId to ControlValue and provide
- * additional validation against the control information exposed by a Camera.
- *
- * A list is only valid for as long as the camera it refers to is valid. After
- * that calling any method of the ControlList class other than its destructor
- * will cause undefined behaviour.
+ * A ControlList wraps a map of ControlId to ControlValue and optionally
+ * validates controls against a ControlValidator.
  */
 
 /**
- * \brief Construct a ControlList with a reference to the Camera it applies on
- * \param[in] camera The camera
+ * \brief Construct a ControlList with an optional control validator
+ * \param[in] validator The validator (may be null)
  */
-ControlList::ControlList(Camera *camera)
-	: camera_(camera)
+ControlList::ControlList(ControlValidator *validator)
+	: validator_(validator)
 {
 }
 
@@ -493,12 +488,10 @@ const ControlValue *ControlList::find(const ControlId &id) const
 
 ControlValue *ControlList::find(const ControlId &id)
 {
-	const ControlInfoMap &controls = camera_->controls();
-	const auto iter = controls.find(&id);
-	if (iter == controls.end()) {
+	if (validator_ && !validator_->validate(id)) {
 		LOG(Controls, Error)
-			<< "Camera " << camera_->name()
-			<< " does not support control " << id.name();
+			<< "Control " << id.name()
+			<< " is not valid for " << validator_->name();
 		return nullptr;
 	}
 

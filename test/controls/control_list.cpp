@@ -141,49 +141,6 @@ protected:
 			return TestFail;
 		}
 
-		/*
-		 * Test list merging. Create a new list, add two controls with
-		 * one overlapping the existing list, merge the lists and clear
-		 * the old list. Verify that the new list is empty and that the
-		 * new list contains the expected items and values.
-		 */
-		ControlList newList(camera_.get());
-
-		newList.set(controls::Brightness, 128);
-		newList.set(controls::Saturation, 255);
-		newList.update(list);
-
-		list.clear();
-
-		if (list.size() != 0) {
-			cout << "Old List should contain zero items" << endl;
-			return TestFail;
-		}
-
-		if (!list.empty()) {
-			cout << "Old List should be empty" << endl;
-			return TestFail;
-		}
-
-		if (newList.size() != 3) {
-			cout << "New list has incorrect size" << endl;
-			return TestFail;
-		}
-
-		if (!newList.contains(controls::Brightness) ||
-		    !newList.contains(controls::Contrast) ||
-		    !newList.contains(controls::Saturation)) {
-			cout << "New list contains incorrect items" << endl;
-			return TestFail;
-		}
-
-		if (newList.get(controls::Brightness) != 10 ||
-		    newList.get(controls::Contrast) != 20 ||
-		    newList.get(controls::Saturation) != 255) {
-			cout << "New list contains incorrect values" << endl;
-			return TestFail;
-		}
-
 		return TestPass;
 	}
 

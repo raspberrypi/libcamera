@@ -512,32 +512,4 @@ ControlValue *ControlList::find(const ControlId &id)
 	return &controls_[&id];
 }
 
-/**
- * \brief Update the list with a union of itself and \a other
- * \param other The other list
- *
- * Update the control list to include all values from the \a other list.
- * Elements in the list whose control IDs are contained in \a other are updated
- * with the value from \a other. Elements in the \a other list that have no
- * corresponding element in the list are added to the list with their value.
- *
- * The behaviour is undefined if the two lists refer to different Camera
- * instances.
- */
-void ControlList::update(const ControlList &other)
-{
-	if (other.camera_ != camera_) {
-		LOG(Controls, Error)
-			<< "Can't update ControlList from a different camera";
-		return;
-	}
-
-	for (auto it : other) {
-		const ControlId *id = it.first;
-		const ControlValue &value = it.second;
-
-		controls_[id] = value;
-	}
-}
-
 } /* namespace libcamera */

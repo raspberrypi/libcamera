@@ -158,8 +158,6 @@ public:
 		val->set<T>(value);
 	}
 
-	void update(const ControlList &list);
-
 private:
 	const ControlValue *find(const ControlId &id) const;
 	ControlValue *find(const ControlId &id);

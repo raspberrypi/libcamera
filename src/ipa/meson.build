@@ -22,3 +22,5 @@ endforeach
 
 config_h.set('IPA_MODULE_DIR',
              '"' + join_paths(get_option('prefix'), ipa_install_dir) + '"')
+
+subdir('rkisp1')

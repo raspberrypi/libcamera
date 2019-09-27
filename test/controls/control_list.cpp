@@ -96,7 +96,7 @@ protected:
 			return TestFail;
 		}
 
-		if (list[Brightness].getInt() != 255) {
+		if (list[Brightness].get<int>() != 255) {
 			cout << "Incorrest Brightness control value" << endl;
 			return TestFail;
 		}
@@ -125,8 +125,8 @@ protected:
 		/*
 		 * Test control value retrieval and update through ControlInfo.
 		 */
-		if (list[brightness].getInt() != 64 ||
-		    list[contrast].getInt() != 128) {
+		if (list[brightness].get<int>() != 64 ||
+		    list[contrast].get<int>() != 128) {
 			cout << "Failed to retrieve control value" << endl;
 			return TestFail;
 		}
@@ -134,8 +134,8 @@ protected:
 		list[brightness] = 10;
 		list[contrast] = 20;
 
-		if (list[brightness].getInt() != 10 ||
-		    list[contrast].getInt() != 20) {
+		if (list[brightness].get<int>() != 10 ||
+		    list[contrast].get<int>() != 20) {
 			cout << "Failed to update control value" << endl;
 			return TestFail;
 		}
@@ -185,9 +185,9 @@ protected:
 			return TestFail;
 		}
 
-		if (newList[Brightness].getInt() != 10 ||
-		    newList[Contrast].getInt() != 20 ||
-		    newList[Saturation].getInt() != 255) {
+		if (newList[Brightness].get<int>() != 10 ||
+		    newList[Contrast].get<int>() != 20 ||
+		    newList[Saturation].get<int>() != 255) {
 			cout << "New list contains incorrect values" << endl;
 			return TestFail;
 		}

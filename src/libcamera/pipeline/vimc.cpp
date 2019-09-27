@@ -288,15 +288,15 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 
 		switch (ci->id()) {
 		case Brightness:
-			controls.add(V4L2_CID_BRIGHTNESS, value.getInt());
+			controls.add(V4L2_CID_BRIGHTNESS, value.get<int>());
 			break;
 
 		case Contrast:
-			controls.add(V4L2_CID_CONTRAST, value.getInt());
+			controls.add(V4L2_CID_CONTRAST, value.get<int>());
 			break;
 
 		case Saturation:
-			controls.add(V4L2_CID_SATURATION, value.getInt());
+			controls.add(V4L2_CID_SATURATION, value.get<int>());
 			break;
 
 		default:

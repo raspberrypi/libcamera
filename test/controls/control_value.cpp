@@ -27,12 +27,12 @@ protected:
 		     << " Bool: " << boolean.toString()
 		     << endl;
 
-		if (integer.getInt() != 1234) {
+		if (integer.get<int>() != 1234) {
 			cerr << "Failed to get Integer" << endl;
 			return TestFail;
 		}
 
-		if (boolean.getBool() != true) {
+		if (boolean.get<bool>() != true) {
 			cerr << "Failed to get Boolean" << endl;
 			return TestFail;
 		}
@@ -45,19 +45,19 @@ protected:
 			return TestFail;
 		}
 
-		value.set(true);
+		value.set<bool>(true);
 		if (value.isNone()) {
 			cerr << "Failed to set an empty object" << endl;
 			return TestFail;
 		}
 
-		if (value.getBool() != true) {
+		if (value.get<bool>() != true) {
 			cerr << "Failed to get Booleans" << endl;
 			return TestFail;
 		}
 
-		value.set(10);
-		if (value.getInt() != 10) {
+		value.set<int>(10);
+		if (value.get<int>() != 10) {
 			cerr << "Failed to get Integer" << endl;
 			return TestFail;
 		}

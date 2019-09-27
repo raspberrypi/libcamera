@@ -90,76 +90,67 @@ ControlValue::ControlValue(int64_t value)
  */
 
 /**
- * \brief Set the value with a boolean
- * \param[in] value Boolean value to store
- */
-void ControlValue::set(bool value)
-{
-	type_ = ControlTypeBool;
-	bool_ = value;
-}
-
-/**
- * \brief Set the value with an integer
- * \param[in] value Integer value to store
- */
-void ControlValue::set(int value)
-{
-	type_ = ControlTypeInteger;
-	integer_ = value;
-}
-
-/**
- * \brief Set the value with a 64 bit integer
- * \param[in] value 64 bit integer value to store
- */
-void ControlValue::set(int64_t value)
-{
-	type_ = ControlTypeInteger64;
-	integer64_ = value;
-}
-
-/**
- * \brief Get the boolean value
+ * \fn template<typename T> const T &ControlValue::get() const
+ * \brief Get the control value
  *
- * The value type must be Boolean.
+ * The control value type shall match the type T, otherwise the behaviour is
+ * undefined.
  *
- * \return The boolean value
+ * \return The control value
  */
-bool ControlValue::getBool() const
+
+/**
+ * \fn template<typename T> void ControlValue::set(const T &value)
+ * \brief Set the control value to \a value
+ * \param[in] value The control value
+ */
+
+#ifndef __DOXYGEN__
+template<>
+const bool &ControlValue::get<bool>() const
 {
 	ASSERT(type_ == ControlTypeBool);
 
 	return bool_;
 }
 
-/**
- * \brief Get the integer value
- *
- * The value type must be Integer or Integer64.
- *
- * \return The integer value
- */
-int ControlValue::getInt() const
+template<>
+const int &ControlValue::get<int>() const
 {
 	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
 
 	return integer_;
 }
 
-/**
- * \brief Get the 64-bit integer value
- *
- * The value type must be Integer or Integer64.
- *
- * \return The 64-bit integer value
- */
-int64_t ControlValue::getInt64() const
+template<>
+const int64_t &ControlValue::get<int64_t>() const
 {
 	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
 
 	return integer64_;
 }
+
+template<>
+void ControlValue::set<bool>(const bool &value)
+{
+	type_ = ControlTypeBool;
+	bool_ = value;
+}
+
+template<>
+void ControlValue::set<int>(const int &value)
+{
+	type_ = ControlTypeInteger;
+	integer_ = value;
+}
+
+template<>
+void ControlValue::set<int64_t>(const int64_t &value)
+{
+	type_ = ControlTypeInteger64;
+	integer64_ = value;
+}
+#endif /* __DOXYGEN__ */
 
 /**
  * \brief Assemble and return a string describing the value

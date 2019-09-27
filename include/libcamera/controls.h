@@ -36,13 +36,10 @@ public:
 	ControlType type() const { return type_; };
 	bool isNone() const { return type_ == ControlTypeNone; };
 
-	void set(bool value);
-	void set(int value);
-	void set(int64_t value);
-
-	bool getBool() const;
-	int getInt() const;
-	int64_t getInt64() const;
+	template<typename T>
+	const T &get() const;
+	template<typename T>
+	void set(const T &value);
 
 	std::string toString() const;
 

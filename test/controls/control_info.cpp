@@ -32,7 +32,7 @@ protected:
 			return TestFail;
 		}
 
-		if (info.min().getInt() != 0 || info.max().getInt() != 0) {
+		if (info.min().get<int>() != 0 || info.max().get<int>() != 0) {
 			cout << "Invalid control range for Brightness" << endl;
 			return TestFail;
 		}
@@ -50,7 +50,7 @@ protected:
 			return TestFail;
 		}
 
-		if (info.min().getInt() != 10 || info.max().getInt() != 200) {
+		if (info.min().get<int>() != 10 || info.max().get<int>() != 200) {
 			cout << "Invalid control range for Contrast" << endl;
 			return TestFail;
 		}

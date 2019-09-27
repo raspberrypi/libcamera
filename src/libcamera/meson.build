@@ -2,6 +2,7 @@ libcamera_sources = files([
     'bound_method.cpp',
     'buffer.cpp',
     'camera.cpp',
+    'camera_controls.cpp',
     'camera_manager.cpp',
     'camera_sensor.cpp',
     'controls.cpp',

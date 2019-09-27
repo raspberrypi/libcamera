@@ -31,8 +31,8 @@ LOG_DEFINE_CATEGORY(Controls)
  * Invalid type, for empty values
  * \var ControlTypeBool
  * The control stores a boolean value
- * \var ControlTypeInteger
- * The control stores an integer value
+ * \var ControlTypeInteger32
+ * The control stores a 32-bit integer value
  * \var ControlTypeInteger64
  * The control stores a 64-bit integer value
  */
@@ -63,8 +63,8 @@ ControlValue::ControlValue(bool value)
  * \brief Construct an integer ControlValue
  * \param[in] value Integer value to store
  */
-ControlValue::ControlValue(int value)
-	: type_(ControlTypeInteger), integer_(value)
+ControlValue::ControlValue(int32_t value)
+	: type_(ControlTypeInteger32), integer32_(value)
 {
 }
 
@@ -115,17 +115,17 @@ const bool &ControlValue::get<bool>() const
 }
 
 template<>
-const int &ControlValue::get<int>() const
+const int32_t &ControlValue::get<int32_t>() const
 {
-	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
+	ASSERT(type_ == ControlTypeInteger32 || type_ == ControlTypeInteger64);
 
-	return integer_;
+	return integer32_;
 }
 
 template<>
 const int64_t &ControlValue::get<int64_t>() const
 {
-	ASSERT(type_ == ControlTypeInteger || type_ == ControlTypeInteger64);
+	ASSERT(type_ == ControlTypeInteger32 || type_ == ControlTypeInteger64);
 
 	return integer64_;
 }
@@ -138,10 +138,10 @@ void ControlValue::set<bool>(const bool &value)
 }
 
 template<>
-void ControlValue::set<int>(const int &value)
+void ControlValue::set<int32_t>(const int32_t &value)
 {
-	type_ = ControlTypeInteger;
-	integer_ = value;
+	type_ = ControlTypeInteger32;
+	integer32_ = value;
 }
 
 template<>
@@ -163,8 +163,8 @@ std::string ControlValue::toString() const
 		return "<None>";
 	case ControlTypeBool:
 		return bool_ ? "True" : "False";
-	case ControlTypeInteger:
-		return std::to_string(integer_);
+	case ControlTypeInteger32:
+		return std::to_string(integer32_);
 	case ControlTypeInteger64:
 		return std::to_string(integer64_);
 	}
@@ -186,35 +186,35 @@ std::string ControlValue::toString() const
 
 /**
  * \var Brightness
- * ControlType: Integer
+ * ControlType: Integer32
  *
  * Specify a fixed brightness parameter.
  */
 
 /**
  * \var Contrast
- * ControlType: Integer
+ * ControlType: Integer32
  *
  * Specify a fixed contrast parameter.
  */
 
 /**
  * \var Saturation
- * ControlType: Integer
+ * ControlType: Integer32
  *
  * Specify a fixed saturation parameter.
  */
 
 /**
  * \var ManualExposure
- * ControlType: Integer
+ * ControlType: Integer32
  *
  * Specify a fixed exposure time in milli-seconds
  */
 
 /**
  * \var ManualGain
- * ControlType: Integer
+ * ControlType: Integer32
  *
  * Specify a fixed gain parameter
  */

@@ -21,7 +21,7 @@ class Camera;
 enum ControlType {
 	ControlTypeNone,
 	ControlTypeBool,
-	ControlTypeInteger,
+	ControlTypeInteger32,
 	ControlTypeInteger64,
 };
 
@@ -30,7 +30,7 @@ class ControlValue
 public:
 	ControlValue();
 	ControlValue(bool value);
-	ControlValue(int value);
+	ControlValue(int32_t value);
 	ControlValue(int64_t value);
 
 	ControlType type() const { return type_; };
@@ -48,7 +48,7 @@ private:
 
 	union {
 		bool bool_;
-		int integer_;
+		int32_t integer32_;
 		int64_t integer64_;
 	};
 };

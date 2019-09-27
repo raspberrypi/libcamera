@@ -27,7 +27,7 @@ protected:
 		     << " Bool: " << boolean.toString()
 		     << endl;
 
-		if (integer.get<int>() != 1234) {
+		if (integer.get<int32_t>() != 1234) {
 			cerr << "Failed to get Integer" << endl;
 			return TestFail;
 		}
@@ -56,8 +56,8 @@ protected:
 			return TestFail;
 		}
 
-		value.set<int>(10);
-		if (value.get<int>() != 10) {
+		value.set<int32_t>(10);
+		if (value.get<int32_t>() != 10) {
 			cerr << "Failed to get Integer" << endl;
 			return TestFail;
 		}

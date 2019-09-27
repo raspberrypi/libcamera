@@ -26,13 +26,14 @@ protected:
 		ControlInfo info(Brightness);
 
 		if (info.id() != Brightness ||
-		    info.type() != ControlTypeInteger ||
+		    info.type() != ControlTypeInteger32 ||
 		    info.name() != std::string("Brightness")) {
 			cout << "Invalid control identification for Brightness" << endl;
 			return TestFail;
 		}
 
-		if (info.min().get<int>() != 0 || info.max().get<int>() != 0) {
+		if (info.min().get<int32_t>() != 0 ||
+		    info.max().get<int32_t>() != 0) {
 			cout << "Invalid control range for Brightness" << endl;
 			return TestFail;
 		}
@@ -44,13 +45,14 @@ protected:
 		info = ControlInfo(Contrast, 10, 200);
 
 		if (info.id() != Contrast ||
-		    info.type() != ControlTypeInteger ||
+		    info.type() != ControlTypeInteger32 ||
 		    info.name() != std::string("Contrast")) {
 			cout << "Invalid control identification for Contrast" << endl;
 			return TestFail;
 		}
 
-		if (info.min().get<int>() != 10 || info.max().get<int>() != 200) {
+		if (info.min().get<int32_t>() != 10 ||
+		    info.max().get<int32_t>() != 200) {
 			cout << "Invalid control range for Contrast" << endl;
 			return TestFail;
 		}

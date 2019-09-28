@@ -364,7 +364,7 @@ int UVCCameraData::init(MediaEntity *entity)
 
 		controlInfo_.emplace(std::piecewise_construct,
 				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(info.min(), info.max()));
+				     std::forward_as_tuple(info.range()));
 	}
 
 	return 0;

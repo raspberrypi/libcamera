@@ -74,8 +74,13 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 	type_ = ctrl.type;
 	name_ = static_cast<const char *>(ctrl.name);
 	size_ = ctrl.elem_size * ctrl.elems;
-	min_ = ctrl.minimum;
-	max_ = ctrl.maximum;
+
+	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
+		range_ = ControlRange(static_cast<int64_t>(ctrl.minimum),
+				      static_cast<int64_t>(ctrl.maximum));
+	else
+		range_ = ControlRange(static_cast<int32_t>(ctrl.minimum),
+				      static_cast<int32_t>(ctrl.maximum));
 }
 
 /**
@@ -103,15 +108,9 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  */
 
 /**
- * \fn V4L2ControlInfo::min()
- * \brief Retrieve the control minimum value
- * \return The V4L2 control minimum value
- */
-
-/**
- * \fn V4L2ControlInfo::max()
- * \brief Retrieve the control maximum value
- * \return The V4L2 control maximum value
+ * \fn V4L2ControlInfo::range()
+ * \brief Retrieve the control value range
+ * \return The V4L2 control value range
  */
 
 /**

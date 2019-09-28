@@ -16,6 +16,8 @@
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
 
+#include <libcamera/controls.h>
+
 namespace libcamera {
 
 class V4L2ControlInfo
@@ -46,17 +48,18 @@ using V4L2ControlInfoMap = std::map<unsigned int, V4L2ControlInfo>;
 class V4L2Control
 {
 public:
-	V4L2Control(unsigned int id, int value = 0)
-		: id_(id), value_(value) {}
-
-	int64_t value() const { return value_; }
-	void setValue(int64_t value) { value_ = value; }
+	V4L2Control(unsigned int id, const ControlValue &value = ControlValue())
+		: id_(id), value_(value)
+	{
+	}
 
 	unsigned int id() const { return id_; }
+	const ControlValue &value() const { return value_; }
+	ControlValue &value() { return value_; }
 
 private:
 	unsigned int id_;
-	int64_t value_;
+	ControlValue value_;
 };
 
 class V4L2ControlList

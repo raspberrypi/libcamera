@@ -144,6 +144,16 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  */
 
 /**
+ * \fn V4L2Control::value() const
+ * \brief Retrieve the value of the control
+ *
+ * This method is a const version of V4L2Control::value(), returning a const
+ * reference to the value.
+ *
+ * \return The V4L2 control value
+ */
+
+/**
  * \fn V4L2Control::value()
  * \brief Retrieve the value of the control
  *
@@ -152,15 +162,6 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  * written with V4L2Device::getControls() and V4L2Device::setControls().
  *
  * \return The V4L2 control value
- */
-
-/**
- * \fn V4L2Control::setValue()
- * \brief Set the value of the control
- * \param value The new V4L2 control value
- *
- * This method stores the control value, which will be applied to the
- * device when calling V4L2Device::setControls().
  */
 
 /**

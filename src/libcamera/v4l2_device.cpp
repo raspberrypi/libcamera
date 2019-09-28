@@ -264,14 +264,14 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 		/* Set the v4l2_ext_control value for the write operation. */
 		switch (info->type()) {
 		case V4L2_CTRL_TYPE_INTEGER64:
-			v4l2Ctrls[i].value64 = ctrl->value();
+			v4l2Ctrls[i].value64 = ctrl->value().get<int64_t>();
 			break;
 		default:
 			/*
 			 * \todo To be changed when support for string and
 			 * compound controls will be added.
 			 */
-			v4l2Ctrls[i].value = ctrl->value();
+			v4l2Ctrls[i].value = ctrl->value().get<int32_t>();
 			break;
 		}
 	}
@@ -393,14 +393,14 @@ void V4L2Device::updateControls(V4L2ControlList *ctrls,
 
 		switch (info->type()) {
 		case V4L2_CTRL_TYPE_INTEGER64:
-			ctrl->setValue(v4l2Ctrl->value64);
+			ctrl->value().set<int64_t>(v4l2Ctrl->value64);
 			break;
 		default:
 			/*
 			 * \todo To be changed when support for string and
 			 * compound controls will be added.
 			 */
-			ctrl->setValue(v4l2Ctrl->value);
+			ctrl->value().set<int32_t>(v4l2Ctrl->value);
 			break;
 		}
 	}

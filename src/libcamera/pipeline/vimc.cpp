@@ -300,7 +300,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 		LOG(VIMC, Debug)
 			<< "Setting control 0x"
 			<< std::hex << std::setw(8) << ctrl.id() << std::dec
-			<< " to " << ctrl.value();
+			<< " to " << ctrl.value().toString();
 
 	int ret = data->sensor_->setControls(&controls);
 	if (ret) {

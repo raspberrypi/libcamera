@@ -252,7 +252,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 		LOG(UVC, Debug)
 			<< "Setting control 0x"
 			<< std::hex << std::setw(8) << ctrl.id() << std::dec
-			<< " to " << ctrl.value();
+			<< " to " << ctrl.value().toString();
 
 	int ret = data->video_->setControls(&controls);
 	if (ret) {

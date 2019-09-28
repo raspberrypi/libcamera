@@ -72,6 +72,13 @@ void IPAInterfaceWrapper::destroy(struct ipa_context *_ctx)
 	delete ctx;
 }
 
+void *IPAInterfaceWrapper::get_interface(struct ipa_context *_ctx)
+{
+	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
+
+	return ctx->ipa_.get();
+}
+
 void IPAInterfaceWrapper::init(struct ipa_context *_ctx)
 {
 	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
@@ -228,6 +235,7 @@ void IPAInterfaceWrapper::queueFrameAction(unsigned int frame,
  */
 const struct ipa_context_ops IPAInterfaceWrapper::operations_ = {
 	.destroy = &IPAInterfaceWrapper::destroy,
+	.get_interface = &IPAInterfaceWrapper::get_interface,
 	.init = &IPAInterfaceWrapper::init,
 	.register_callbacks = &IPAInterfaceWrapper::register_callbacks,
 	.configure = &IPAInterfaceWrapper::configure,

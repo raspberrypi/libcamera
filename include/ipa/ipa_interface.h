@@ -62,6 +62,7 @@ struct ipa_callback_ops {
 
 struct ipa_context_ops {
 	void (*destroy)(struct ipa_context *ctx);
+	void *(*get_interface)(struct ipa_context *ctx);
 	void (*init)(struct ipa_context *ctx);
 	void (*register_callbacks)(struct ipa_context *ctx,
 				   const struct ipa_callback_ops *callbacks,

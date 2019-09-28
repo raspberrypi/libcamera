@@ -33,7 +33,11 @@ private:
 				       struct ipa_operation_data &data);
 	static const struct ipa_callback_ops callbacks_;
 
+	void doQueueFrameAction(unsigned int frame,
+				const IPAOperationData &data);
+
 	struct ipa_context *ctx_;
+	IPAInterface *intf_;
 
 	ControlSerializer serializer_;
 };

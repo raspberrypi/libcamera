@@ -22,6 +22,7 @@ public:
 
 private:
 	static void destroy(struct ipa_context *ctx);
+	static void *get_interface(struct ipa_context *ctx);
 	static void init(struct ipa_context *ctx);
 	static void register_callbacks(struct ipa_context *ctx,
 				       const struct ipa_callback_ops *callbacks,

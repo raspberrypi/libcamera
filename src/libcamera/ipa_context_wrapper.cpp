@@ -12,6 +12,7 @@
 #include <libcamera/controls.h>
 
 #include "byte_stream_buffer.h"
+#include "utils.h"
 
 /**
  * \file ipa_context_wrapper.h
@@ -43,10 +44,18 @@ namespace libcamera {
  * with it.
  */
 IPAContextWrapper::IPAContextWrapper(struct ipa_context *context)
-	: ctx_(context)
+	: ctx_(context), intf_(nullptr)
 {
 	if (!ctx_)
 		return;
+
+	bool forceCApi = !!utils::secure_getenv("LIBCAMERA_IPA_FORCE_C_API");
+
+	if (!forceCApi && ctx_ && ctx_->ops->get_interface) {
+		intf_ = reinterpret_cast<IPAInterface *>(ctx_->ops->get_interface(ctx_));
+		intf_->queueFrameAction.connect(this, &IPAContextWrapper::doQueueFrameAction);
+		return;
+	}
 
 	ctx_->ops->register_callbacks(ctx_, &IPAContextWrapper::callbacks_,
 				      this);
@@ -62,6 +71,9 @@ IPAContextWrapper::~IPAContextWrapper()
 
 int IPAContextWrapper::init()
 {
+	if (intf_)
+		return intf_->init();
+
 	if (!ctx_)
 		return 0;
 
@@ -73,6 +85,9 @@ int IPAContextWrapper::init()
 void IPAContextWrapper::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 				  const std::map<unsigned int, const ControlInfoMap &> &entityControls)
 {
+	if (intf_)
+		return intf_->configure(streamConfig, entityControls);
+
 	if (!ctx_)
 		return;
 
@@ -123,6 +138,9 @@ void IPAContextWrapper::configure(const std::map<unsigned int, IPAStream> &strea
 
 void IPAContextWrapper::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
+	if (intf_)
+		return intf_->mapBuffers(buffers);
+
 	if (!ctx_)
 		return;
 
@@ -148,6 +166,9 @@ void IPAContextWrapper::mapBuffers(const std::vector<IPABuffer> &buffers)
 
 void IPAContextWrapper::unmapBuffers(const std::vector<unsigned int> &ids)
 {
+	if (intf_)
+		return intf_->unmapBuffers(ids);
+
 	if (!ctx_)
 		return;
 
@@ -156,6 +177,9 @@ void IPAContextWrapper::unmapBuffers(const std::vector<unsigned int> &ids)
 
 void IPAContextWrapper::processEvent(const IPAOperationData &data)
 {
+	if (intf_)
+		return intf_->processEvent(data);
+
 	if (!ctx_)
 		return;
 
@@ -189,6 +213,12 @@ void IPAContextWrapper::processEvent(const IPAOperationData &data)
 	ctx_->ops->process_event(ctx_, &c_data);
 }
 
+void IPAContextWrapper::doQueueFrameAction(unsigned int frame,
+					   const IPAOperationData &data)
+{
+	IPAInterface::queueFrameAction.emit(frame, data);
+}
+
 void IPAContextWrapper::queue_frame_action(void *ctx, unsigned int frame,
 					   struct ipa_operation_data &data)
 {
@@ -205,7 +235,7 @@ void IPAContextWrapper::queue_frame_action(void *ctx, unsigned int frame,
 		opData.controls.push_back(_this->serializer_.deserialize<ControlList>(b));
 	}
 
-	_this->queueFrameAction.emit(frame, opData);
+	_this->doQueueFrameAction(frame, opData);
 }
 
 #ifndef __DOXYGEN__

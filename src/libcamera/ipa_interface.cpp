@@ -62,6 +62,12 @@
  * handlers to communicate with IPA modules. IPA modules may use the
  * IPAInterface API internally if they want to benefit from the data and helper
  * classes offered by libcamera.
+ *
+ * When an IPA module is loaded directly into the libcamera process and uses
+ * the IPAInterface API internally, short-circuiting the path to the
+ * ipa_context_ops and back to IPAInterface is desirable. To support this, IPA
+ * modules may implement the ipa_context_ops::get_interface function to return a
+ * pointer to their internal IPAInterface.
  */
 
 /**
@@ -207,6 +213,18 @@
  * \var ipa_context_ops::destroy
  * \brief Destroy the IPA context created by the module's ipaCreate() function
  * \param[in] ctx The IPA context
+ */
+
+/**
+ * \var ipa_context_ops::get_interface
+ * \brief Retrieve the IPAInterface implemented by the ipa_context (optional)
+ * \param[in] ctx The IPA context
+ *
+ * IPA modules may implement this function to expose their internal
+ * IPAInterface, if any. When implemented, libcamera may at its sole discretion
+ * call it and then bypass the ipa_context_ops API by calling the IPAInterface
+ * methods directly. IPA modules shall still implement and support the full
+ * ipa_context_ops API.
  */
 
 /**

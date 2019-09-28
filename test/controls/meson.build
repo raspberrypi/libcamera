@@ -1,6 +1,6 @@
 control_tests = [
-    [ 'control_info',   'control_info.cpp' ],
     [ 'control_list',   'control_list.cpp' ],
+    [ 'control_range',  'control_range.cpp' ],
     [ 'control_value',  'control_value.cpp' ],
 ]
 

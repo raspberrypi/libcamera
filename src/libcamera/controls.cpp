@@ -312,42 +312,42 @@ Control<int64_t>::Control(unsigned int id, const char *name)
 #endif /* __DOXYGEN__ */
 
 /**
- * \class ControlInfo
- * \brief Describe the information and capabilities of a Control
+ * \class ControlRange
+ * \brief Describe the limits of valid values for a Control
  *
- * The ControlInfo represents control specific meta-data which is constant on a
- * per camera basis. ControlInfo classes are constructed by pipeline handlers
- * to expose the controls they support and the metadata needed to utilise those
- * controls.
+ * The ControlRange expresses the constraints on valid values for a control.
+ * The constraints depend on the object the control applies to, and are
+ * constant for the lifetime of that object. They are typically constructed by
+ * pipeline handlers to describe the controls they support.
  */
 
 /**
- * \brief Construct a ControlInfo with minimum and maximum range parameters
+ * \brief Construct a ControlRange with minimum and maximum range parameters
  * \param[in] min The control minimum value
  * \param[in] max The control maximum value
  */
-ControlInfo::ControlInfo(const ControlValue &min,
-			 const ControlValue &max)
+ControlRange::ControlRange(const ControlValue &min,
+			   const ControlValue &max)
 	: min_(min), max_(max)
 {
 }
 
 /**
- * \fn ControlInfo::min()
+ * \fn ControlRange::min()
  * \brief Retrieve the minimum value of the control
  * \return A ControlValue with the minimum value for the control
  */
 
 /**
- * \fn ControlInfo::max()
+ * \fn ControlRange::max()
  * \brief Retrieve the maximum value of the control
  * \return A ControlValue with the maximum value for the control
  */
 
 /**
- * \brief Provide a string representation of the ControlInfo
+ * \brief Provide a string representation of the ControlRange
  */
-std::string ControlInfo::toString() const
+std::string ControlRange::toString() const
 {
 	std::stringstream ss;
 
@@ -358,7 +358,7 @@ std::string ControlInfo::toString() const
 
 /**
  * \typedef ControlInfoMap
- * \brief A map of ControlId to ControlInfo
+ * \brief A map of ControlId to ControlRange
  */
 
 /**

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_info.cpp - ControlInfo tests
+ * control_range.cpp - ControlRange tests
  */
 
 #include <iostream>
@@ -15,16 +15,16 @@
 using namespace std;
 using namespace libcamera;
 
-class ControlInfoTest : public Test
+class ControlRangeTest : public Test
 {
 protected:
 	int run()
 	{
 		/*
-		 * Test information retrieval from a control with no minimum
-		 * and maximum.
+		 * Test information retrieval from a range with no minimum and
+		 * maximum.
 		 */
-		ControlInfo brightness;
+		ControlRange brightness;
 
 		if (brightness.min().get<int32_t>() != 0 ||
 		    brightness.max().get<int32_t>() != 0) {
@@ -36,7 +36,7 @@ protected:
 		 * Test information retrieval from a control with a minimum and
 		 * a maximum value.
 		 */
-		ControlInfo contrast(10, 200);
+		ControlRange contrast(10, 200);
 
 		if (contrast.min().get<int32_t>() != 10 ||
 		    contrast.max().get<int32_t>() != 200) {
@@ -48,4 +48,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(ControlInfoTest)
+TEST_REGISTER(ControlRangeTest)

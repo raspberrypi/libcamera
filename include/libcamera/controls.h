@@ -95,11 +95,11 @@ private:
 	Control &operator=(const Control &) = delete;
 };
 
-class ControlInfo
+class ControlRange
 {
 public:
-	explicit ControlInfo(const ControlValue &min = 0,
-			     const ControlValue &max = 0);
+	explicit ControlRange(const ControlValue &min = 0,
+			      const ControlValue &max = 0);
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
@@ -111,7 +111,7 @@ private:
 	ControlValue max_;
 };
 
-using ControlInfoMap = std::unordered_map<const ControlId *, ControlInfo>;
+using ControlInfoMap = std::unordered_map<const ControlId *, ControlRange>;
 
 class ControlList
 {

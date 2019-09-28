@@ -323,21 +323,14 @@ Control<int64_t>::Control(unsigned int id, const char *name)
 
 /**
  * \brief Construct a ControlInfo with minimum and maximum range parameters
- * \param[in] id The control ID
  * \param[in] min The control minimum value
  * \param[in] max The control maximum value
  */
-ControlInfo::ControlInfo(const ControlId &id, const ControlValue &min,
+ControlInfo::ControlInfo(const ControlValue &min,
 			 const ControlValue &max)
-	: id_(id), min_(min), max_(max)
+	: min_(min), max_(max)
 {
 }
-
-/**
- * \fn ControlInfo::id()
- * \brief Retrieve the control ID
- * \return The control ID
- */
 
 /**
  * \fn ControlInfo::min()
@@ -358,7 +351,7 @@ std::string ControlInfo::toString() const
 {
 	std::stringstream ss;
 
-	ss << id_.name() << "[" << min_.toString() << ".." << max_.toString() << "]";
+	ss << "[" << min_.toString() << ".." << max_.toString() << "]";
 
 	return ss.str();
 }

@@ -98,17 +98,15 @@ private:
 class ControlInfo
 {
 public:
-	explicit ControlInfo(const ControlId &id, const ControlValue &min = 0,
+	explicit ControlInfo(const ControlValue &min = 0,
 			     const ControlValue &max = 0);
 
-	const ControlId &id() const { return id_; }
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
 
 	std::string toString() const;
 
 private:
-	const ControlId &id_;
 	ControlValue min_;
 	ControlValue max_;
 };

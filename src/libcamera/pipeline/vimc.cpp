@@ -437,7 +437,7 @@ int VimcCameraData::init(MediaDevice *media)
 
 		controlInfo_.emplace(std::piecewise_construct,
 				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(*id, info.min(), info.max()));
+				     std::forward_as_tuple(info.min(), info.max()));
 	}
 
 	return 0;

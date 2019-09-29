@@ -40,7 +40,7 @@ A C++ toolchain: [required]
 	Either {g++, clang}
 
 for libcamera: [required]
-	meson ninja-build
+	meson ninja-build python3-yaml
 
 for device hotplug enumeration: [optional]
 	pkg-config libudev-dev

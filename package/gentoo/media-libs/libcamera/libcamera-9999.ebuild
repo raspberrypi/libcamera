@@ -2,7 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-inherit git-r3 meson
+PYTHON_COMPAT=( python3_{5,6,7} )
+
+inherit git-r3 meson python-any-r1
 
 DESCRIPTION="Camera support library for Linux"
 HOMEPAGE="http://libcamera.org"
@@ -15,7 +17,10 @@ KEYWORDS="*"
 IUSE="udev"
 
 RDEPEND="udev? ( virtual/libudev )"
-DEPEND="${RDEPEND}"
+DEPEND="
+	${RDEPEND}
+	$(python_gen_any_dep 'dev-python/pyyaml[${PYTHON_USEDEP}]')
+"
 
 src_configure() {
 	local emesonargs=(

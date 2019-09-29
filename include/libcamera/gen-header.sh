@@ -19,7 +19,7 @@ EOF
 headers=$(for header in "$src_dir"/*.h ; do
 	header=$(basename "$header")
 	echo "$header"
-done ; echo "version.h" | sort)
+done ; echo "control_ids.h" ; echo "version.h" | sort)
 
 for header in $headers ; do
 	echo "#include <libcamera/$header>" >> "$dst_file"

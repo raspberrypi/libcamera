@@ -5,7 +5,6 @@ libcamera_sources = files([
     'camera_manager.cpp',
     'camera_sensor.cpp',
     'controls.cpp',
-    'control_ids.cpp',
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',
     'event_dispatcher.cpp',
@@ -57,6 +56,17 @@ if libudev.found()
         'device_enumerator_udev.cpp',
     ])
 endif
+
+gen_controls = files('gen-controls.py')
+
+control_ids_cpp = custom_target('control_ids_cpp',
+                                input : files('control_ids.yaml', 'control_ids.cpp.in'),
+                                output : 'control_ids.cpp',
+                                depend_files : gen_controls,
+                                command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'])
+
+libcamera_sources += control_ids_cpp
+libcamera_sources += control_ids_h
 
 gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
 

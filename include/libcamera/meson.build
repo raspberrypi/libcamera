@@ -3,7 +3,6 @@ libcamera_api = files([
     'buffer.h',
     'camera.h',
     'camera_manager.h',
-    'control_ids.h',
     'controls.h',
     'event_dispatcher.h',
     'event_notifier.h',
@@ -17,6 +16,20 @@ libcamera_api = files([
 ])
 
 include_dir = join_paths(libcamera_include_dir, 'libcamera')
+
+install_headers(libcamera_api,
+                subdir : include_dir)
+
+gen_controls = files('../../src/libcamera/gen-controls.py')
+
+control_ids_h = custom_target('control_ids_h',
+                              input : files('../../src/libcamera/control_ids.yaml', 'control_ids.h.in'),
+                              output : 'control_ids.h',
+                              depend_files : gen_controls,
+                              command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
+                              install_dir : join_paths('include', include_dir))
+
+libcamera_api += control_ids_h
 
 gen_header = files('gen-header.sh')
 
@@ -37,6 +50,3 @@ configure_file(input : 'version.h.in',
                output : 'version.h',
                configuration : libcamera_version_config,
                install_dir : join_paths('include', include_dir))
-
-install_headers(libcamera_api,
-                subdir : include_dir)

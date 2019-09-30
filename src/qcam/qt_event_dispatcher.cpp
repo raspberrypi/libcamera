@@ -132,6 +132,7 @@ void QtEventDispatcher::timerEvent(QTimerEvent *event)
 {
 	Timer *timer = timers_[event->timerId()];
 	timer->stop();
+	timer->timeout.emit(timer);
 }
 
 void QtEventDispatcher::processEvents()

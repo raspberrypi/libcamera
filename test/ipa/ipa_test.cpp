@@ -62,7 +62,7 @@ protected:
 			"GPL-2.0-or-later",
 		};
 
-		count += runTest("src/ipa/ipa_dummy.so", testInfo);
+		count += runTest("src/ipa/ipa_vimc.so", testInfo);
 
 		if (count < 0)
 			return TestFail;

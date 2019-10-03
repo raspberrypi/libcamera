@@ -1,12 +1,12 @@
-ipa_dummy_sources = [
-    ['ipa_dummy',         'LGPL-2.1-or-later'],
-    ['ipa_dummy_isolate', 'Proprietary'],
+ipa_vimc_sources = [
+    ['ipa_vimc',         'LGPL-2.1-or-later'],
+    ['ipa_vimc_isolate', 'Proprietary'],
 ]
 
 ipa_install_dir = join_paths(get_option('libdir'), 'libcamera')
 
-foreach t : ipa_dummy_sources
-    ipa = shared_module(t[0], 'ipa_dummy.cpp',
+foreach t : ipa_vimc_sources
+    ipa = shared_module(t[0], 'ipa_vimc.cpp',
                         name_prefix : '',
                         include_directories : libcamera_includes,
                         install : true,

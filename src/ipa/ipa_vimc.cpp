@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_dummy.cpp - Dummy Image Processing Algorithm module
+ * ipa_vimc.cpp - Vimc Image Processing Algorithm module
  */
 
 #include <iostream>
@@ -12,15 +12,15 @@
 
 namespace libcamera {
 
-class IPADummy : public IPAInterface
+class IPAVimc : public IPAInterface
 {
 public:
 	int init();
 };
 
-int IPADummy::init()
+int IPAVimc::init()
 {
-	std::cout << "initializing dummy IPA!" << std::endl;
+	std::cout << "initializing vimc IPA!" << std::endl;
 	return 0;
 }
 
@@ -39,7 +39,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 
 IPAInterface *ipaCreate()
 {
-	return new IPADummy();
+	return new IPAVimc();
 }
 };
 

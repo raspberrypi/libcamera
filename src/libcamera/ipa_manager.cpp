@@ -136,6 +136,8 @@ int IPAManager::addDir(const char *libDir)
 			continue;
 		}
 
+		LOG(IPAManager, Debug) << "Loaded IPA module '" << path << "'";
+
 		modules_.push_back(ipaModule);
 		count++;
 	}

@@ -1,5 +1,6 @@
 ipa_test = [
-    ['ipa_module_test', 'ipa_module_test.cpp'],
+    ['ipa_module_test',     'ipa_module_test.cpp'],
+    ['ipa_interface_test',  'ipa_interface_test.cpp'],
 ]
 
 foreach t : ipa_test

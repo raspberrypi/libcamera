@@ -7,6 +7,7 @@
 
 #include "ipa_manager.h"
 
+#include <algorithm>
 #include <dirent.h>
 #include <string.h>
 #include <sys/types.h>
@@ -112,7 +113,7 @@ int IPAManager::addDir(const char *libDir)
 	if (!dir)
 		return -errno;
 
-	unsigned int count = 0;
+	std::vector<std::string> paths;
 	while ((ent = readdir(dir)) != nullptr) {
 		int offset = strlen(ent->d_name) - 3;
 		if (offset < 0)
@@ -120,8 +121,16 @@ int IPAManager::addDir(const char *libDir)
 		if (strcmp(&ent->d_name[offset], ".so"))
 			continue;
 
-		IPAModule *ipaModule = new IPAModule(std::string(libDir) +
-						     "/" + ent->d_name);
+		paths.push_back(std::string(libDir) + "/" + ent->d_name);
+	}
+	closedir(dir);
+
+	/* Ensure a stable ordering of modules. */
+	std::sort(paths.begin(), paths.end());
+
+	unsigned int count = 0;
+	for (const std::string &path : paths) {
+		IPAModule *ipaModule = new IPAModule(path);
 		if (!ipaModule->isValid()) {
 			delete ipaModule;
 			continue;
@@ -131,7 +140,6 @@ int IPAManager::addDir(const char *libDir)
 		count++;
 	}
 
-	closedir(dir);
 	return count;
 }
 

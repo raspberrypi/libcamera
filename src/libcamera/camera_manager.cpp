@@ -156,7 +156,7 @@ void CameraManager::stop()
  * \brief Retrieve all available cameras
  *
  * Before calling this function the caller is responsible for ensuring that
- * the camera manger is running.
+ * the camera manager is running.
  *
  * \return List of all available cameras
  */
@@ -166,7 +166,7 @@ void CameraManager::stop()
  * \param[in] name Name of camera to get
  *
  * Before calling this function the caller is responsible for ensuring that
- * the camera manger is running.
+ * the camera manager is running.
  *
  * \return Shared pointer to Camera object or nullptr if camera not found
  */

@@ -5,10 +5,16 @@ ipa_vimc_sources = [
 
 ipa_install_dir = join_paths(get_option('libdir'), 'libcamera')
 
+ipa_includes = [
+    libcamera_includes,
+    libcamera_internal_includes,
+]
+
 foreach t : ipa_vimc_sources
     ipa = shared_module(t[0], 'ipa_vimc.cpp',
                         name_prefix : '',
-                        include_directories : libcamera_includes,
+                        include_directories : ipa_includes,
+                        dependencies : libcamera_dep,
                         install : true,
                         install_dir : ipa_install_dir,
                         cpp_args : '-DLICENSE="' + t[1] + '"')

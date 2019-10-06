@@ -31,6 +31,13 @@ ${controls_doc}
 ${controls_def}
 #endif
 
+/**
+ * \brief List of all supported libcamera controls
+ */
+extern const ControlIdMap controls {
+${controls_map}
+};
+
 } /* namespace controls */
 
 } /* namespace libcamera */

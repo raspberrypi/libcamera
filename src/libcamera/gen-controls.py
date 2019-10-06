@@ -25,6 +25,7 @@ ${description}
 
     ctrls_doc = []
     ctrls_def = []
+    ctrls_map = []
 
     for ctrl in controls:
         name, ctrl = ctrl.popitem()
@@ -43,10 +44,12 @@ ${description}
 
         ctrls_doc.append(doc_template.substitute(info))
         ctrls_def.append(def_template.substitute(info))
+        ctrls_map.append('\t{ ' + id_name + ', &' + name + ' },')
 
     return {
         'controls_doc': '\n\n'.join(ctrls_doc),
         'controls_def': '\n'.join(ctrls_def),
+        'controls_map': '\n'.join(ctrls_map),
     }
 
 

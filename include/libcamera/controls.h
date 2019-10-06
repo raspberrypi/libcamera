@@ -111,6 +111,7 @@ private:
 	ControlValue max_;
 };
 
+using ControlIdMap = std::unordered_map<unsigned int, const ControlId *>;
 using ControlInfoMap = std::unordered_map<const ControlId *, ControlRange>;
 
 class ControlList

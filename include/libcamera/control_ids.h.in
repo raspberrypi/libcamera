@@ -24,6 +24,8 @@ ${ids}
 
 ${controls}
 
+extern const ControlIdMap controls;
+
 } /* namespace controls */
 
 } /* namespace libcamera */

@@ -356,6 +356,15 @@ std::string ControlRange::toString() const
 }
 
 /**
+ * \typedef ControlIdMap
+ * \brief A map of numerical control ID to ControlId
+ *
+ * The map is used by ControlList instances to access controls by numerical
+ * IDs. A global map of all libcamera controls is provided by
+ * controls::controls.
+ */
+
+/**
  * \typedef ControlInfoMap
  * \brief A map of ControlId to ControlRange
  */

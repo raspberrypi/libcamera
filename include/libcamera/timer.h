@@ -25,6 +25,7 @@ public:
 
 	void start(unsigned int msec) { start(std::chrono::milliseconds(msec)); }
 	void start(std::chrono::milliseconds duration);
+	void start(std::chrono::steady_clock::time_point deadline);
 	void stop();
 	bool isRunning() const;
 

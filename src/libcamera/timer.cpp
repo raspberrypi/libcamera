@@ -37,6 +37,11 @@ LOG_DEFINE_CATEGORY(Timer)
  * stop(), and once it times out or is stopped, can be started again with
  * start().
  *
+ * The timer deadline is specified as either a duration in milliseconds or an
+ * absolute time point. If the deadline is set to the current time or to the
+ * past, the timer will time out immediately when execution returns to the
+ * event loop of the timer's thread.
+ *
  * Timers run in the thread they belong to, and thus emit the \a ref timeout
  * signal from that thread. To avoid race conditions they must not be started
  * or stopped from a different thread, attempts to do so will be rejected and
@@ -75,16 +80,27 @@ Timer::~Timer()
  */
 void Timer::start(std::chrono::milliseconds duration)
 {
+	start(utils::clock::now() + duration);
+}
+
+/**
+ * \brief Start or restart the timer with a \a deadline
+ * \param[in] deadline The timer deadline
+ *
+ * This method shall be called from the thread the timer is associated with. If
+ * the timer is already running it will be stopped and restarted.
+ */
+void Timer::start(std::chrono::steady_clock::time_point deadline)
+{
 	if (Thread::current() != thread()) {
 		LOG(Timer, Error) << "Timer can't be started from another thread";
 		return;
 	}
 
-	deadline_ = utils::clock::now() + duration;
+	deadline_ = deadline;
 
 	LOG(Timer, Debug)
-		<< "Starting timer " << this << " with duration "
-		<< duration.count() << ": deadline "
+		<< "Starting timer " << this << ": deadline "
 		<< utils::time_point_to_string(deadline_);
 
 	if (isRunning())

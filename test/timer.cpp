@@ -35,6 +35,15 @@ public:
 		Timer::start(msec);
 	}
 
+	void start(std::chrono::steady_clock::time_point deadline)
+	{
+		count_ = 0;
+		start_ = std::chrono::steady_clock::now();
+		expiration_ = std::chrono::steady_clock::time_point();
+
+		Timer::start(deadline);
+	}
+
 	int jitter()
 	{
 		std::chrono::steady_clock::duration duration = expiration_ - deadline();
@@ -124,6 +133,16 @@ protected:
 
 		if (timer.hasFailed()) {
 			cout << "Timer restart before expiration test failed" << endl;
+			return TestFail;
+		}
+
+		/* Timer with absolute deadline. */
+		timer.start(std::chrono::steady_clock::now() + std::chrono::milliseconds(200));
+
+		dispatcher->processEvents();
+
+		if (timer.hasFailed()) {
+			cout << "Absolute deadline test failed" << endl;
 			return TestFail;
 		}
 

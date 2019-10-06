@@ -42,7 +42,7 @@ protected:
 	int run()
 	{
 		CameraControlValidator validator(camera_.get());
-		ControlList list(&validator);
+		ControlList list(controls::controls, &validator);
 
 		/* Test that the list is initially empty. */
 		if (!list.empty()) {

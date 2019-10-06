@@ -7,6 +7,7 @@
 
 #include <libcamera/controls.h>
 
+#include <iomanip>
 #include <sstream>
 #include <string>
 
@@ -16,13 +17,13 @@
 
 /**
  * \file controls.h
- * \brief Describes control framework and controls supported by a camera
+ * \brief Framework to manage controls related to an object
  *
- * A control is a mean to govern or influence the operation of a camera. Every
- * control is defined by a unique numerical ID, a name string and the data type
- * of the value it stores. The libcamera API defines a set of standard controls
- * in the libcamera::controls namespace, as a set of instances of the Control
- * class.
+ * A control is a mean to govern or influence the operation of an object, and in
+ * particular of a camera. Every control is defined by a unique numerical ID, a
+ * name string and the data type of the value it stores. The libcamera API
+ * defines a set of standard controls in the libcamera::controls namespace, as
+ * a set of instances of the Control class.
  *
  * The main way for applications to interact with controls is through the
  * ControlList stored in the Request class:
@@ -274,7 +275,7 @@ bool ControlValue::operator==(const ControlValue &other) const
  * \class Control
  * \brief Describe a control and its intrinsic properties
  *
- * The Control class models a control exposed by a camera. Its template type
+ * The Control class models a control exposed by an object. Its template type
  * name T refers to the control data type, and allows methods that operate on
  * control values to be defined as template methods using the same type T for
  * the control value. See for instance how the ControlList::get() method
@@ -293,8 +294,8 @@ bool ControlValue::operator==(const ControlValue &other) const
  * long int).
  *
  * Controls IDs shall be unique. While nothing prevents multiple instances of
- * the Control class to be created with the same ID, this may lead to undefined
- * behaviour.
+ * the Control class to be created with the same ID for the same object, doing
+ * so may cause undefined behaviour.
  */
 
 /**
@@ -398,18 +399,28 @@ std::string ControlRange::toString() const
 
 /**
  * \class ControlList
- * \brief Associate a list of ControlId with their values for a camera
+ * \brief Associate a list of ControlId with their values for an object
  *
- * A ControlList wraps a map of ControlId to ControlValue and optionally
- * validates controls against a ControlValidator.
+ * The ControlList class stores values of controls exposed by an object. The
+ * lists returned by the Request::controls() and Request::metadata() methods
+ * refer to the camera that the request belongs to.
+ *
+ * Control lists are constructed with a map of all the controls supported by
+ * their object, and an optional ControlValidator to further validate the
+ * controls.
  */
 
 /**
  * \brief Construct a ControlList with an optional control validator
+ * \param[in] idmap The ControlId map for the control list target object
  * \param[in] validator The validator (may be null)
+ *
+ * For ControlList containing libcamera controls, a global map of all libcamera
+ * controls is provided by controls::controls and can be used as the \a idmap
+ * argument.
  */
-ControlList::ControlList(ControlValidator *validator)
-	: validator_(validator)
+ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
+	: validator_(validator), idmap_(&idmap)
 {
 }
 
@@ -450,20 +461,6 @@ ControlList::ControlList(ControlValidator *validator)
  */
 
 /**
- * \brief Check if the list contains a control with the specified \a id
- * \param[in] id The control ID
- *
- * The behaviour is undefined if the control \a id is not supported by the
- * camera that the ControlList refers to.
- *
- * \return True if the list contains a matching control, false otherwise
- */
-bool ControlList::contains(const ControlId &id) const
-{
-	return controls_.find(&id) != controls_.end();
-}
-
-/**
  * \fn ControlList::empty()
  * \brief Identify if the list is empty
  * \return True if the list does not contain any control, false otherwise
@@ -481,8 +478,34 @@ bool ControlList::contains(const ControlId &id) const
  */
 
 /**
- * \fn template<typename T> const T &ControlList::get() const
- * \brief Get the value of a control
+ * \brief Check if the list contains a control with the specified \a id
+ * \param[in] id The control ID
+ *
+ * \return True if the list contains a matching control, false otherwise
+ */
+bool ControlList::contains(const ControlId &id) const
+{
+	return controls_.find(&id) != controls_.end();
+}
+
+/**
+ * \brief Check if the list contains a control with the specified \a id
+ * \param[in] id The control numerical ID
+ *
+ * \return True if the list contains a matching control, false otherwise
+ */
+bool ControlList::contains(unsigned int id) const
+{
+	const auto iter = idmap_->find(id);
+	if (iter == idmap_->end())
+		return false;
+
+	return contains(*iter->second);
+}
+
+/**
+ * \fn template<typename T> const T &ControlList::get(const Control<T> &ctrl) const
+ * \brief Get the value of control \a ctrl
  * \param[in] ctrl The control
  *
  * The behaviour is undefined if the control \a ctrl is not present in the
@@ -496,8 +519,8 @@ bool ControlList::contains(const ControlId &id) const
  */
 
 /**
- * \fn template<typename T> void ControlList::set()
- * \brief Set the control value to \a value
+ * \fn template<typename T> void ControlList::set(const Control<T> &ctrl, const T &value)
+ * \brief Set the control \a ctrl value to \a value
  * \param[in] ctrl The control
  * \param[in] value The control value
  *
@@ -506,8 +529,68 @@ bool ControlList::contains(const ControlId &id) const
  * to the list.
  *
  * The behaviour is undefined if the control \a ctrl is not supported by the
- * camera that the list refers to.
+ * object that the list refers to.
  */
+
+/**
+ * \brief Get the value of control \a id
+ * \param[in] id The control numerical ID
+ *
+ * The behaviour is undefined if the control \a id is not present in the list.
+ * Use ControlList::contains() to test for the presence of a control in the
+ * list before retrieving its value.
+ *
+ * \return The control value
+ */
+const ControlValue &ControlList::get(unsigned int id) const
+{
+	static ControlValue zero;
+
+	const auto ctrl = idmap_->find(id);
+	if (ctrl == idmap_->end()) {
+		LOG(Controls, Error)
+			<< std::hex << std::setfill('0')
+			<< "Control 0x" << std::setw(8) << id
+			<< " is not supported";
+		return zero;
+	}
+
+	const ControlValue *val = find(*ctrl->second);
+	if (!val)
+		return zero;
+
+	return *val;
+}
+
+/**
+ * \brief Set the value of control \a id to \a value
+ * \param[in] id The control ID
+ * \param[in] value The control value
+ *
+ * This method sets the value of a control in the control list. If the control
+ * is already present in the list, its value is updated, otherwise it is added
+ * to the list.
+ *
+ * The behaviour is undefined if the control \a id is not supported by the
+ * object that the list refers to.
+ */
+void ControlList::set(unsigned int id, const ControlValue &value)
+{
+	const auto ctrl = idmap_->find(id);
+	if (ctrl == idmap_->end()) {
+		LOG(Controls, Error)
+			<< std::hex << std::setfill('0')
+			<< "Control 0x" << std::setw(8) << id
+			<< " is not supported";
+		return;
+	}
+
+	ControlValue *val = find(*ctrl->second);
+	if (!val)
+		return;
+
+	*val = value;
+}
 
 const ControlValue *ControlList::find(const ControlId &id) const
 {

@@ -220,7 +220,7 @@ void IPARkISP1::setControls(unsigned int frame)
 
 void IPARkISP1::metadataReady(unsigned int frame, unsigned int aeState)
 {
-	ControlList ctrls;
+	ControlList ctrls(controls::controls);
 
 	if (aeState)
 		ctrls.set(controls::AeLocked, aeState == 2);

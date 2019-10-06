@@ -11,6 +11,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/stream.h>
 
 #include "camera_controls.h"
@@ -64,12 +65,12 @@ Request::Request(Camera *camera, uint64_t cookie)
 	 * creating a new instance for each request?
 	 */
 	validator_ = new CameraControlValidator(camera);
-	controls_ = new ControlList(validator_);
+	controls_ = new ControlList(controls::controls, validator_);
 
 	/**
 	 * \todo: Add a validator for metadata controls.
 	 */
-	metadata_ = new ControlList();
+	metadata_ = new ControlList(controls::controls);
 }
 
 Request::~Request()

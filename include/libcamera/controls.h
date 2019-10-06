@@ -126,7 +126,7 @@ private:
 	using ControlListMap = std::unordered_map<const ControlId *, ControlValue>;
 
 public:
-	ControlList(ControlValidator *validator = nullptr);
+	ControlList(const ControlIdMap &idmap, ControlValidator *validator = nullptr);
 
 	using iterator = ControlListMap::iterator;
 	using const_iterator = ControlListMap::const_iterator;
@@ -136,10 +136,12 @@ public:
 	const_iterator begin() const { return controls_.begin(); }
 	const_iterator end() const { return controls_.end(); }
 
-	bool contains(const ControlId &id) const;
 	bool empty() const { return controls_.empty(); }
 	std::size_t size() const { return controls_.size(); }
 	void clear() { controls_.clear(); }
+
+	bool contains(const ControlId &id) const;
+	bool contains(unsigned int id) const;
 
 	template<typename T>
 	const T &get(const Control<T> &ctrl) const
@@ -163,11 +165,15 @@ public:
 		val->set<T>(value);
 	}
 
+	const ControlValue &get(unsigned int id) const;
+	void set(unsigned int id, const ControlValue &value);
+
 private:
 	const ControlValue *find(const ControlId &id) const;
 	ControlValue *find(const ControlId &id);
 
 	ControlValidator *validator_;
+	const ControlIdMap *idmap_;
 	ControlListMap controls_;
 };
 

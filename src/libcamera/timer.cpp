@@ -75,6 +75,9 @@ void Timer::start(std::chrono::milliseconds duration)
 		<< duration.count() << ": deadline "
 		<< utils::time_point_to_string(deadline_);
 
+	if (isRunning())
+		unregisterTimer();
+
 	registerTimer();
 }
 
@@ -88,6 +91,9 @@ void Timer::start(std::chrono::milliseconds duration)
  */
 void Timer::stop()
 {
+	if (!isRunning())
+		return;
+
 	unregisterTimer();
 }
 

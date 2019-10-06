@@ -5,6 +5,7 @@
  * qt_event_dispatcher.cpp - qcam - Qt-based event dispatcher
  */
 
+#include <chrono>
 #include <iostream>
 
 #include <QAbstractEventDispatcher>
@@ -112,7 +113,11 @@ void QtEventDispatcher::exceptionNotifierActivated(int socket)
 
 void QtEventDispatcher::registerTimer(Timer *timer)
 {
-	int timerId = startTimer(timer->interval());
+	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::duration duration = timer->deadline() - now;
+	std::chrono::milliseconds msec =
+		std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+	int timerId = startTimer(msec);
 	timers_[timerId] = timer;
 	timerIds_[timer] = timerId;
 }

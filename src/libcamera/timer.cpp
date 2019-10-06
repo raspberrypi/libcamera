@@ -61,19 +61,18 @@ Timer::~Timer()
  */
 
 /**
- * \brief Start or restart the timer with a timeout of \a interval
- * \param[in] interval The timer duration in milliseconds
+ * \brief Start or restart the timer with a timeout of \a duration
+ * \param[in] duration The timer duration in milliseconds
  *
  * If the timer is already running it will be stopped and restarted.
  */
-void Timer::start(std::chrono::milliseconds interval)
+void Timer::start(std::chrono::milliseconds duration)
 {
-	interval_ = interval;
-	deadline_ = utils::clock::now() + interval;
+	deadline_ = utils::clock::now() + duration;
 
 	LOG(Timer, Debug)
-		<< "Starting timer " << this << " with interval "
-		<< interval.count() << ": deadline "
+		<< "Starting timer " << this << " with duration "
+		<< duration.count() << ": deadline "
 		<< utils::time_point_to_string(deadline_);
 
 	registerTimer();
@@ -112,12 +111,6 @@ bool Timer::isRunning() const
 {
 	return deadline_ != utils::time_point();
 }
-
-/**
- * \fn Timer::interval()
- * \brief Retrieve the timer interval
- * \return The timer interval in milliseconds
- */
 
 /**
  * \fn Timer::deadline()

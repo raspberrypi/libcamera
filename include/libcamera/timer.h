@@ -24,11 +24,10 @@ public:
 	~Timer();
 
 	void start(unsigned int msec) { start(std::chrono::milliseconds(msec)); }
-	void start(std::chrono::milliseconds interval);
+	void start(std::chrono::milliseconds duration);
 	void stop();
 	bool isRunning() const;
 
-	std::chrono::milliseconds interval() const { return interval_; }
 	std::chrono::steady_clock::time_point deadline() const { return deadline_; }
 
 	Signal<Timer *> timeout;
@@ -40,7 +39,6 @@ private:
 	void registerTimer();
 	void unregisterTimer();
 
-	std::chrono::milliseconds interval_;
 	std::chrono::steady_clock::time_point deadline_;
 };
 

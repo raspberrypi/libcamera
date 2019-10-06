@@ -21,13 +21,14 @@ class ManagedTimer : public Timer
 {
 public:
 	ManagedTimer()
-		: Timer()
+		: Timer(), count_(0)
 	{
 		timeout.connect(this, &ManagedTimer::timeoutHandler);
 	}
 
 	void start(int msec)
 	{
+		count_ = 0;
 		start_ = std::chrono::steady_clock::now();
 		expiration_ = std::chrono::steady_clock::time_point();
 
@@ -40,12 +41,19 @@ public:
 		return abs(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 	}
 
+	bool hasFailed()
+	{
+		return isRunning() || count_ != 1 || jitter() > 50;
+	}
+
 private:
 	void timeoutHandler(Timer *timer)
 	{
 		expiration_ = std::chrono::steady_clock::now();
+		count_++;
 	}
 
+	unsigned int count_;
 	std::chrono::steady_clock::time_point start_;
 	std::chrono::steady_clock::time_point expiration_;
 };
@@ -74,7 +82,7 @@ protected:
 
 		dispatcher->processEvents();
 
-		if (timer.isRunning() || timer.jitter() > 50) {
+		if (timer.hasFailed()) {
 			cout << "Timer expiration test failed" << endl;
 			return TestFail;
 		}
@@ -87,7 +95,7 @@ protected:
 		timer.start(4295);
 		dispatcher->processEvents();
 
-		if (timer.isRunning() || timer.jitter() > 50) {
+		if (timer.hasFailed()) {
 			cout << "Timer expiration test failed" << endl;
 			return TestFail;
 		}
@@ -102,8 +110,20 @@ protected:
 
 		dispatcher->processEvents();
 
-		if (timer.isRunning() || timer.jitter() > 50) {
+		if (timer.hasFailed()) {
 			cout << "Timer restart test failed" << endl;
+			return TestFail;
+		}
+
+		/* Timer restart before expiration. */
+		timer.start(50);
+		timer.start(100);
+		timer.start(150);
+
+		dispatcher->processEvents();
+
+		if (timer.hasFailed()) {
+			cout << "Timer restart before expiration test failed" << endl;
 			return TestFail;
 		}
 

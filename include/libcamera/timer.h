@@ -39,6 +39,7 @@ private:
 	void registerTimer();
 	void unregisterTimer();
 
+	bool running_;
 	std::chrono::steady_clock::time_point deadline_;
 };
 

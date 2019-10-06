@@ -43,7 +43,7 @@ LOG_DEFINE_CATEGORY(Timer)
  * \param[in] parent The parent Object
  */
 Timer::Timer(Object *parent)
-	: Object(parent)
+	: Object(parent), running_(false)
 {
 }
 
@@ -89,17 +89,17 @@ void Timer::start(std::chrono::milliseconds duration)
 void Timer::stop()
 {
 	unregisterTimer();
-
-	deadline_ = utils::time_point();
 }
 
 void Timer::registerTimer()
 {
 	thread()->eventDispatcher()->registerTimer(this);
+	running_ = true;
 }
 
 void Timer::unregisterTimer()
 {
+	running_ = false;
 	thread()->eventDispatcher()->unregisterTimer(this);
 }
 
@@ -109,7 +109,7 @@ void Timer::unregisterTimer()
  */
 bool Timer::isRunning() const
 {
-	return deadline_ != utils::time_point();
+	return running_;
 }
 
 /**

@@ -21,14 +21,13 @@ class ManagedTimer : public Timer
 {
 public:
 	ManagedTimer()
-		: Timer(), interval_(0)
+		: Timer()
 	{
 		timeout.connect(this, &ManagedTimer::timeoutHandler);
 	}
 
 	void start(int msec)
 	{
-		interval_ = msec;
 		start_ = std::chrono::steady_clock::now();
 		expiration_ = std::chrono::steady_clock::time_point();
 
@@ -37,9 +36,8 @@ public:
 
 	int jitter()
 	{
-		std::chrono::steady_clock::duration duration = expiration_ - start_;
-		int msecs = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-		return abs(msecs - interval_);
+		std::chrono::steady_clock::duration duration = expiration_ - deadline();
+		return abs(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 	}
 
 private:
@@ -48,7 +46,6 @@ private:
 		expiration_ = std::chrono::steady_clock::now();
 	}
 
-	int interval_;
 	std::chrono::steady_clock::time_point start_;
 	std::chrono::steady_clock::time_point expiration_;
 };

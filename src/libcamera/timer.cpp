@@ -36,6 +36,11 @@ LOG_DEFINE_CATEGORY(Timer)
  * Once started the timer will run until it times out. It can be stopped with
  * stop(), and once it times out or is stopped, can be started again with
  * start().
+ *
+ * Timers run in the thread they belong to, and thus emit the \a ref timeout
+ * signal from that thread. To avoid race conditions they must not be started
+ * or stopped from a different thread, attempts to do so will be rejected and
+ * logged, and may cause undefined behaviour.
  */
 
 /**
@@ -57,17 +62,24 @@ Timer::~Timer()
  * \brief Start or restart the timer with a timeout of \a msec
  * \param[in] msec The timer duration in milliseconds
  *
- * If the timer is already running it will be stopped and restarted.
+ * This method shall be called from the thread the timer is associated with. If
+ * the timer is already running it will be stopped and restarted.
  */
 
 /**
  * \brief Start or restart the timer with a timeout of \a duration
  * \param[in] duration The timer duration in milliseconds
  *
- * If the timer is already running it will be stopped and restarted.
+ * This method shall be called from the thread the timer is associated with. If
+ * the timer is already running it will be stopped and restarted.
  */
 void Timer::start(std::chrono::milliseconds duration)
 {
+	if (Thread::current() != thread()) {
+		LOG(Timer, Error) << "Timer can't be started from another thread";
+		return;
+	}
+
 	deadline_ = utils::clock::now() + duration;
 
 	LOG(Timer, Debug)
@@ -87,12 +99,18 @@ void Timer::start(std::chrono::milliseconds duration)
  * After this function returns the timer is guaranteed not to emit the
  * \ref timeout signal.
  *
- * If the timer is not running this function performs no operation.
+ * This method shall be called from the thread the timer is associated with. If
+ * the timer is not running this function performs no operation.
  */
 void Timer::stop()
 {
 	if (!isRunning())
 		return;
+
+	if (Thread::current() != thread()) {
+		LOG(Timer, Error) << "Timer can't be stopped from another thread";
+		return;
+	}
 
 	unregisterTimer();
 }

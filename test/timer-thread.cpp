@@ -8,6 +8,7 @@
 #include <chrono>
 #include <iostream>
 
+#include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
 #include "test.h"
@@ -23,6 +24,12 @@ public:
 		: timer_(this), timeout_(false)
 	{
 		timer_.timeout.connect(this, &TimeoutHandler::timeoutHandler);
+		timer_.start(100);
+	}
+
+	void restart()
+	{
+		timeout_ = false;
 		timer_.start(100);
 	}
 
@@ -44,29 +51,56 @@ private:
 class TimerThreadTest : public Test
 {
 protected:
+	int init()
+	{
+		thread_.start();
+		timeout_.moveToThread(&thread_);
+
+		return TestPass;
+	}
+
 	int run()
 	{
-		Thread thread;
-		thread.start();
+		/*
+		 * Test that the timer expires and emits the timeout signal in
+		 * the thread it belongs to.
+		 */
+		this_thread::sleep_for(chrono::milliseconds(200));
 
-		TimeoutHandler timeout;
-		timeout.moveToThread(&thread);
-
-		this_thread::sleep_for(chrono::milliseconds(100));
-
-		/* Must stop thread before destroying timeout. */
-		thread.exit(0);
-		thread.wait();
-
-		if (!timeout.timeout()) {
+		if (!timeout_.timeout()) {
 			cout << "Timer expiration test failed" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Test that starting the timer from another thread fails. We
+		 * need to interrupt the event dispatcher to make sure we don't
+		 * succeed simply because the event dispatcher hasn't noticed
+		 * the timer restart.
+		 */
+		timeout_.restart();
+		thread_.eventDispatcher()->interrupt();
+
+		this_thread::sleep_for(chrono::milliseconds(200));
+
+		if (timeout_.timeout()) {
+			cout << "Timer restart test failed" << endl;
 			return TestFail;
 		}
 
 		return TestPass;
 	}
 
+	void cleanup()
+	{
+		/* Must stop thread before destroying timeout. */
+		thread_.exit(0);
+		thread_.wait();
+	}
+
 private:
+	TimeoutHandler timeout_;
+	Thread thread_;
 };
 
 TEST_REGISTER(TimerThreadTest)

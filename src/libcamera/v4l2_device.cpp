@@ -352,8 +352,7 @@ void V4L2Device::listControls()
 		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 			continue;
 
-		V4L2ControlInfo info(ctrl);
-		switch (info.type()) {
+		switch (ctrl.type) {
 		case V4L2_CTRL_TYPE_INTEGER:
 		case V4L2_CTRL_TYPE_BOOLEAN:
 		case V4L2_CTRL_TYPE_MENU:
@@ -364,12 +363,14 @@ void V4L2Device::listControls()
 			break;
 		/* \todo Support compound controls. */
 		default:
-			LOG(V4L2, Debug) << "Control type '" << info.type()
+			LOG(V4L2, Debug) << "Control type '" << ctrl.type
 					 << "' not supported";
 			continue;
 		}
 
-		controls_.emplace(ctrl.id, info);
+		controls_.emplace(std::piecewise_construct,
+				  std::forward_as_tuple(ctrl.id),
+				  std::forward_as_tuple(ctrl));
 	}
 }
 

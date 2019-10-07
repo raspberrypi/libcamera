@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
 
 #include <libcamera/controls.h>
@@ -57,47 +56,20 @@ public:
 	using std::map<unsigned int, V4L2ControlInfo>::size;
 	using std::map<unsigned int, V4L2ControlInfo>::count;
 	using std::map<unsigned int, V4L2ControlInfo>::find;
+
+	const ControlIdMap &idmap() const { return idmap_; }
+
+private:
+	ControlIdMap idmap_;
 };
 
-class V4L2Control
+class V4L2ControlList : public ControlList
 {
 public:
-	V4L2Control(unsigned int id, const ControlValue &value = ControlValue())
-		: id_(id), value_(value)
+	V4L2ControlList(const V4L2ControlInfoMap &info)
+		: ControlList(info.idmap())
 	{
 	}
-
-	unsigned int id() const { return id_; }
-	const ControlValue &value() const { return value_; }
-	ControlValue &value() { return value_; }
-
-private:
-	unsigned int id_;
-	ControlValue value_;
-};
-
-class V4L2ControlList
-{
-public:
-	using iterator = std::vector<V4L2Control>::iterator;
-	using const_iterator = std::vector<V4L2Control>::const_iterator;
-
-	iterator begin() { return controls_.begin(); }
-	const_iterator begin() const { return controls_.begin(); }
-	iterator end() { return controls_.end(); }
-	const_iterator end() const { return controls_.end(); }
-
-	bool empty() const { return controls_.empty(); }
-	std::size_t size() const { return controls_.size(); }
-
-	void clear() { controls_.clear(); }
-	void add(unsigned int id, int64_t value = 0);
-
-	V4L2Control *getByIndex(unsigned int index);
-	V4L2Control *operator[](unsigned int id);
-
-private:
-	std::vector<V4L2Control> controls_;
 };
 
 } /* namespace libcamera */

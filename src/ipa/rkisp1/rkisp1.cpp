@@ -49,6 +49,8 @@ private:
 
 	std::map<unsigned int, BufferMemory> bufferInfo_;
 
+	V4L2ControlInfoMap ctrls_;
+
 	/* Camera sensor controls. */
 	bool autoExposure_;
 	uint32_t exposure_;
@@ -65,16 +67,16 @@ void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 	if (entityControls.empty())
 		return;
 
-	const V4L2ControlInfoMap &ctrls = entityControls.at(0);
+	ctrls_ = entityControls.at(0);
 
-	const auto itExp = ctrls.find(V4L2_CID_EXPOSURE);
-	if (itExp == ctrls.end()) {
+	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
+	if (itExp == ctrls_.end()) {
 		LOG(IPARkISP1, Error) << "Can't find exposure control";
 		return;
 	}
 
-	const auto itGain = ctrls.find(V4L2_CID_ANALOGUE_GAIN);
-	if (itGain == ctrls.end()) {
+	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
+	if (itGain == ctrls_.end()) {
 		LOG(IPARkISP1, Error) << "Can't find gain control";
 		return;
 	}
@@ -210,9 +212,9 @@ void IPARkISP1::setControls(unsigned int frame)
 	IPAOperationData op;
 	op.operation = RKISP1_IPA_ACTION_V4L2_SET;
 
-	V4L2ControlList ctrls;
-	ctrls.add(V4L2_CID_EXPOSURE, exposure_);
-	ctrls.add(V4L2_CID_ANALOGUE_GAIN, gain_);
+	V4L2ControlList ctrls(ctrls_);
+	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
+	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
 	op.v4l2controls.push_back(ctrls);
 
 	queueFrameAction.emit(frame, op);

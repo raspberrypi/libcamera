@@ -40,7 +40,7 @@
  * sizes.
  *
  * The libcamera V4L2 Controls framework operates on lists of controls, wrapped
- * by the V4L2ControlList class, to match the V4L2 extended controls API. The
+ * by the ControlList class, to match the V4L2 extended controls API. The
  * interface to set and get control is implemented by the V4L2Device class, and
  * this file only provides the data type definitions.
  *
@@ -175,194 +175,42 @@ V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<unsigned int, V4L2Con
 {
 	std::map<unsigned int, V4L2ControlInfo>::operator=(std::move(info));
 
+	idmap_.clear();
+	for (const auto &ctrl : *this)
+		idmap_[ctrl.first] = &ctrl.second.id();
+
 	return *this;
 }
 
 /**
- * \class V4L2Control
- * \brief A V4L2 control value
+ * \fn const ControlIdMap &V4L2ControlInfoMap::idmap() const
+ * \brief Retrieve the ControlId map
  *
- * The V4L2Control class represent the value of a V4L2 control. The class
- * stores values that have been read from or will be applied to a V4L2 device.
+ * Constructing ControlList instances for V4L2 controls requires a ControlIdMap
+ * for the V4L2 device that the control list targets. This helper method
+ * returns a suitable idmap for that purpose.
  *
- * The value stored in the class instances does not reflect what is actually
- * applied to the hardware but is a pure software cache optionally initialized
- * at control creation time and modified by a control read or write operation.
- *
- * The write and read controls the V4L2Control class instances are not meant
- * to be directly used but are instead intended to be grouped in
- * V4L2ControlList instances, which are then passed as parameters to
- * V4L2Device::setControls() and V4L2Device::getControls() operations.
- */
-
-/**
- * \fn V4L2Control::V4L2Control
- * \brief Construct a V4L2 control with \a id and \a value
- * \param id The V4L2 control ID
- * \param value The control value
- */
-
-/**
- * \fn V4L2Control::value() const
- * \brief Retrieve the value of the control
- *
- * This method is a const version of V4L2Control::value(), returning a const
- * reference to the value.
- *
- * \return The V4L2 control value
- */
-
-/**
- * \fn V4L2Control::value()
- * \brief Retrieve the value of the control
- *
- * This method returns the cached control value, initially set by
- * V4L2ControlList::add() and then updated when the controls are read or
- * written with V4L2Device::getControls() and V4L2Device::setControls().
- *
- * \return The V4L2 control value
- */
-
-/**
- * \fn V4L2Control::id()
- * \brief Retrieve the control ID this instance refers to
- * \return The V4L2Control ID
+ * \return The ControlId map
  */
 
 /**
  * \class V4L2ControlList
- * \brief Container of V4L2Control instances
+ * \brief A list of controls for a V4L2 device
  *
- * The V4L2ControlList class works as a container for a list of V4L2Control
- * instances. The class provides operations to add a new control to the list,
- * get back a control value, and reset the list of controls it contains.
+ * This class specialises the ControList class for use with V4L2 devices. It
+ * offers a convenience API to create a ControlList from a V4L2ControlInfoMap.
  *
- * In order to set and get controls, user of the libcamera V4L2 control
- * framework should operate on instances of the V4L2ControlList class, and use
- * them as argument for the V4L2Device::setControls() and
- * V4L2Device::getControls() operations, which write and read a list of
- * controls to or from a V4L2 device (a video device or a subdevice).
- *
- * Controls are added to a V4L2ControlList instance with the add() method, with
- * or without a value.
- *
- * To write controls to a device, the controls of interest shall be added with
- * an initial value by calling V4L2ControlList::add(unsigned int id, int64_t
- * value) to prepare for a write operation. Once the values of all controls of
- * interest have been added, the V4L2ControlList instance is passed to the
- * V4L2Device::setControls(), which sets the controls on the device.
- *
- * To read controls from a device, the desired controls are added with
- * V4L2ControlList::add(unsigned int id) to prepare for a read operation. The
- * V4L2ControlList instance is then passed to V4L2Device::getControls(), which
- * reads the controls from the device and updates the values stored in
- * V4L2ControlList.
- *
- * V4L2ControlList instances can be reset to remove all controls they contain
- * and prepare to be re-used for a new control write/read sequence.
+ * V4L2ControlList allows easy construction of a ControlList containing V4L2
+ * controls for a device. It can be used to construct the list of controls
+ * passed to the V4L2Device::getControls() and V4L2Device::setControls()
+ * methods. The class should however not be used in place of ControlList in
+ * APIs.
  */
 
 /**
- * \typedef V4L2ControlList::iterator
- * \brief Iterator on the V4L2 controls contained in the instance
+ * \fn V4L2ControlList::V4L2ControlList(const V4L2ControlInfoMap &info)
+ * \brief Construct a V4L2ControlList associated with a V4L2 device
+ * \param[in] info The V4L2 device control info map
  */
-
-/**
- * \typedef V4L2ControlList::const_iterator
- * \brief Const iterator on the V4L2 controls contained in the instance
- */
-
-/**
- * \fn iterator V4L2ControlList::begin()
- * \brief Retrieve an iterator to the first V4L2Control in the instance
- * \return An iterator to the first V4L2 control
- */
-
-/**
- * \fn const_iterator V4L2ControlList::begin() const
- * \brief Retrieve a constant iterator to the first V4L2Control in the instance
- * \return A constant iterator to the first V4L2 control
- */
-
-/**
- * \fn iterator V4L2ControlList::end()
- * \brief Retrieve an iterator pointing to the past-the-end V4L2Control in the
- * instance
- * \return An iterator to the element following the last V4L2 control in the
- * instance
- */
-
-/**
- * \fn const_iterator V4L2ControlList::end() const
- * \brief Retrieve a constant iterator pointing to the past-the-end V4L2Control
- * in the instance
- * \return A constant iterator to the element following the last V4L2 control
- * in the instance
- */
-
-/**
- * \fn V4L2ControlList::empty()
- * \brief Verify if the instance does not contain any control
- * \return True if the instance does not contain any control, false otherwise
- */
-
-/**
- * \fn V4L2ControlList::size()
- * \brief Retrieve the number on controls in the instance
- * \return The number of V4L2Control stored in the instance
- */
-
-/**
- * \fn V4L2ControlList::clear()
- * \brief Remove all controls in the instance
- */
-
-/**
- * \brief Add control with \a id and optional \a value to the instance
- * \param id The V4L2 control ID (V4L2_CID_*)
- * \param value The V4L2 control value
- *
- * This method adds a new V4L2 control to the V4L2ControlList. The newly
- * inserted control shall not already be present in the control lists, otherwise
- * this method, and further use of the control list lead to undefined behaviour.
- */
-void V4L2ControlList::add(unsigned int id, int64_t value)
-{
-	controls_.emplace_back(id, value);
-}
-
-/**
- * \brief Retrieve the control at \a index
- * \param[in] index The control index
- *
- * Controls are stored in a V4L2ControlList in order of insertion and this
- * method retrieves the control at \a index.
- *
- * \return A pointer to the V4L2Control at \a index or nullptr if the
- * index is larger than the number of controls
- */
-V4L2Control *V4L2ControlList::getByIndex(unsigned int index)
-{
-	if (index >= controls_.size())
-		return nullptr;
-
-	return &controls_[index];
-}
-
-/**
- * \brief Retrieve the control with \a id
- * \param[in] id The V4L2 control ID (V4L2_CID_xx)
- * \return A pointer to the V4L2Control with \a id or nullptr if the
- * control ID is not part of this instance.
- */
-V4L2Control *V4L2ControlList::operator[](unsigned int id)
-{
-	for (V4L2Control &ctrl : controls_) {
-		if (ctrl.id() == id)
-			return &ctrl;
-	}
-
-	return nullptr;
-}
 
 } /* namespace libcamera */

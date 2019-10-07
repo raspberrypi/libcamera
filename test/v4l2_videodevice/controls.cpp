@@ -46,10 +46,10 @@ protected:
 		const V4L2ControlInfo &saturation = info.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
-		V4L2ControlList ctrls;
-		ctrls.add(V4L2_CID_BRIGHTNESS);
-		ctrls.add(V4L2_CID_CONTRAST);
-		ctrls.add(V4L2_CID_SATURATION);
+		V4L2ControlList ctrls(info);
+		ctrls.set(V4L2_CID_BRIGHTNESS, -1);
+		ctrls.set(V4L2_CID_CONTRAST, -1);
+		ctrls.set(V4L2_CID_SATURATION, -1);
 
 		int ret = capture_->getControls(&ctrls);
 		if (ret) {
@@ -57,10 +57,17 @@ protected:
 			return TestFail;
 		}
 
+		if (ctrls.get(V4L2_CID_BRIGHTNESS).get<int32_t>() == -1 ||
+		    ctrls.get(V4L2_CID_CONTRAST).get<int32_t>() == -1 ||
+		    ctrls.get(V4L2_CID_SATURATION).get<int32_t>() == -1) {
+			cerr << "Incorrect value for retrieved controls" << endl;
+			return TestFail;
+		}
+
 		/* Test setting controls. */
-		ctrls[V4L2_CID_BRIGHTNESS]->value() = brightness.range().min();
-		ctrls[V4L2_CID_CONTRAST]->value() = contrast.range().max();
-		ctrls[V4L2_CID_SATURATION]->value() = saturation.range().min();
+		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.range().min());
+		ctrls.set(V4L2_CID_CONTRAST, contrast.range().max());
+		ctrls.set(V4L2_CID_SATURATION, saturation.range().min());
 
 		ret = capture_->setControls(&ctrls);
 		if (ret) {
@@ -69,9 +76,9 @@ protected:
 		}
 
 		/* Test setting controls outside of range. */
-		ctrls[V4L2_CID_BRIGHTNESS]->value() = brightness.range().min().get<int32_t>() - 1;
-		ctrls[V4L2_CID_CONTRAST]->value() = contrast.range().max().get<int32_t>() + 1;
-		ctrls[V4L2_CID_SATURATION]->value() = saturation.range().min().get<int32_t>() + 1;
+		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.range().min().get<int32_t>() - 1);
+		ctrls.set(V4L2_CID_CONTRAST, contrast.range().max().get<int32_t>() + 1);
+		ctrls.set(V4L2_CID_SATURATION, saturation.range().min().get<int32_t>() + 1);
 
 		ret = capture_->setControls(&ctrls);
 		if (ret) {
@@ -79,9 +86,9 @@ protected:
 			return TestFail;
 		}
 
-		if (ctrls[V4L2_CID_BRIGHTNESS]->value() != brightness.range().min() ||
-		    ctrls[V4L2_CID_CONTRAST]->value() != brightness.range().max() ||
-		    ctrls[V4L2_CID_SATURATION]->value() != saturation.range().min().get<int32_t>() + 1) {
+		if (ctrls.get(V4L2_CID_BRIGHTNESS) != brightness.range().min() ||
+		    ctrls.get(V4L2_CID_CONTRAST) != brightness.range().max() ||
+		    ctrls.get(V4L2_CID_SATURATION) != saturation.range().min().get<int32_t>() + 1) {
 			cerr << "Controls not updated when set" << endl;
 			return TestFail;
 		}

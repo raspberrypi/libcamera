@@ -199,6 +199,7 @@ class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
 	static constexpr unsigned int V4L2_CID_IPU3_PIPE_MODE = 0x009819c1;
+
 	enum IPU3PipeModes {
 		IPU3PipeModeVideo = 0,
 		IPU3PipeModeStillCapture = 1,
@@ -603,10 +604,10 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
-	V4L2ControlList ctrls;
-	ctrls.add(V4L2_CID_IPU3_PIPE_MODE, vfStream->active_ ?
-					   IPU3PipeModeVideo :
-					   IPU3PipeModeStillCapture);
+	V4L2ControlList ctrls(imgu->imgu_->controls());
+	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,
+		  static_cast<int32_t>(vfStream->active_ ? IPU3PipeModeVideo :
+				       IPU3PipeModeStillCapture));
 	ret = imgu->imgu_->setControls(&ctrls);
 	if (ret) {
 		LOG(IPU3, Error) << "Unable to set pipe_mode control";

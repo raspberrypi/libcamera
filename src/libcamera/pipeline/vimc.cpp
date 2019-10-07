@@ -279,26 +279,24 @@ void PipelineHandlerVimc::stop(Camera *camera)
 
 int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 {
-	V4L2ControlList controls;
+	V4L2ControlList controls(data->sensor_->controls());
 
 	for (auto it : request->controls()) {
 		const ControlId &id = *it.first;
 		ControlValue &value = it.second;
 
-		if (id == controls::Brightness) {
-			controls.add(V4L2_CID_BRIGHTNESS, value.get<int32_t>());
-		} else if (id == controls::Contrast) {
-			controls.add(V4L2_CID_CONTRAST, value.get<int32_t>());
-		} else if (id == controls::Saturation) {
-			controls.add(V4L2_CID_SATURATION, value.get<int32_t>());
-		}
+		if (id == controls::Brightness)
+			controls.set(V4L2_CID_BRIGHTNESS, value);
+		else if (id == controls::Contrast)
+			controls.set(V4L2_CID_CONTRAST, value);
+		else if (id == controls::Saturation)
+			controls.set(V4L2_CID_SATURATION, value);
 	}
 
-	for (const V4L2Control &ctrl : controls)
+	for (const auto &ctrl : controls)
 		LOG(VIMC, Debug)
-			<< "Setting control 0x"
-			<< std::hex << std::setw(8) << ctrl.id() << std::dec
-			<< " to " << ctrl.value().toString();
+			<< "Setting control " << ctrl.first->name()
+			<< " to " << ctrl.second.toString();
 
 	int ret = data->sensor_->setControls(&controls);
 	if (ret) {
@@ -415,11 +413,10 @@ int VimcCameraData::init(MediaDevice *media)
 	/* Initialise the supported controls. */
 	const V4L2ControlInfoMap &controls = sensor_->controls();
 	for (const auto &ctrl : controls) {
-		unsigned int v4l2Id = ctrl.first;
 		const V4L2ControlInfo &info = ctrl.second;
 		const ControlId *id;
 
-		switch (v4l2Id) {
+		switch (info.id().id()) {
 		case V4L2_CID_BRIGHTNESS:
 			id = &controls::Brightness;
 			break;

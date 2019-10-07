@@ -25,8 +25,8 @@ public:
 
 	const V4L2ControlInfoMap &controls() const { return controls_; }
 
-	int getControls(V4L2ControlList *ctrls);
-	int setControls(V4L2ControlList *ctrls);
+	int getControls(ControlList *ctrls);
+	int setControls(ControlList *ctrls);
 
 	const std::string &deviceNode() const { return deviceNode_; }
 
@@ -43,7 +43,7 @@ protected:
 
 private:
 	void listControls();
-	void updateControls(V4L2ControlList *ctrls,
+	void updateControls(ControlList *ctrls,
 			    const V4L2ControlInfo **controlInfo,
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);

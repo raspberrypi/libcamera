@@ -228,31 +228,30 @@ void PipelineHandlerUVC::stop(Camera *camera)
 
 int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 {
-	V4L2ControlList controls;
+	V4L2ControlList controls(data->video_->controls());
 
 	for (auto it : request->controls()) {
 		const ControlId &id = *it.first;
 		ControlValue &value = it.second;
 
 		if (id == controls::Brightness) {
-			controls.add(V4L2_CID_BRIGHTNESS, value.get<int32_t>());
+			controls.set(V4L2_CID_BRIGHTNESS, value);
 		} else if (id == controls::Contrast) {
-			controls.add(V4L2_CID_CONTRAST, value.get<int32_t>());
+			controls.set(V4L2_CID_CONTRAST, value);
 		} else if (id == controls::Saturation) {
-			controls.add(V4L2_CID_SATURATION, value.get<int32_t>());
+			controls.set(V4L2_CID_SATURATION, value);
 		} else if (id == controls::ManualExposure) {
-			controls.add(V4L2_CID_EXPOSURE_AUTO, 1);
-			controls.add(V4L2_CID_EXPOSURE_ABSOLUTE, value.get<int32_t>());
+			controls.set(V4L2_CID_EXPOSURE_AUTO, static_cast<int32_t>(1));
+			controls.set(V4L2_CID_EXPOSURE_ABSOLUTE, value);
 		} else if (id == controls::ManualGain) {
-			controls.add(V4L2_CID_GAIN, value.get<int32_t>());
+			controls.set(V4L2_CID_GAIN, value);
 		}
 	}
 
-	for (const V4L2Control &ctrl : controls)
+	for (const auto &ctrl : controls)
 		LOG(UVC, Debug)
-			<< "Setting control 0x"
-			<< std::hex << std::setw(8) << ctrl.id() << std::dec
-			<< " to " << ctrl.value().toString();
+			<< "Setting control " << ctrl.first->name()
+			<< " to " << ctrl.second.toString();
 
 	int ret = data->video_->setControls(&controls);
 	if (ret) {
@@ -338,11 +337,10 @@ int UVCCameraData::init(MediaEntity *entity)
 	/* Initialise the supported controls. */
 	const V4L2ControlInfoMap &controls = video_->controls();
 	for (const auto &ctrl : controls) {
-		unsigned int v4l2Id = ctrl.first;
 		const V4L2ControlInfo &info = ctrl.second;
 		const ControlId *id;
 
-		switch (v4l2Id) {
+		switch (info.id().id()) {
 		case V4L2_CID_BRIGHTNESS:
 			id = &controls::Brightness;
 			break;

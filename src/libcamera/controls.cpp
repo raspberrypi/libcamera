@@ -232,7 +232,7 @@ bool ControlValue::operator==(const ControlValue &other) const
  */
 
 /**
- * \fn ControlId::ControlId(unsigned int id, const char *name, ControlType type)
+ * \fn ControlId::ControlId(unsigned int id, const std::string &name, ControlType type)
  * \brief Construct a ControlId instance
  * \param[in] id The control numerical ID
  * \param[in] name The control name

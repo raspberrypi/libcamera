@@ -60,11 +60,11 @@ class ControlId
 {
 public:
 	unsigned int id() const { return id_; }
-	const char *name() const { return name_; }
+	const std::string &name() const { return name_; }
 	ControlType type() const { return type_; }
 
 protected:
-	ControlId(unsigned int id, const char *name, ControlType type)
+	ControlId(unsigned int id, const std::string &name, ControlType type)
 		: id_(id), name_(name), type_(type)
 	{
 	}
@@ -74,7 +74,7 @@ private:
 	ControlId &operator=(const ControlId &) = delete;
 
 	unsigned int id_;
-	const char *name_;
+	std::string name_;
 	ControlType type_;
 };
 

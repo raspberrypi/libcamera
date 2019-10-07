@@ -262,8 +262,8 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 		v4l2Ctrls[i].id = ctrl->id();
 
 		/* Set the v4l2_ext_control value for the write operation. */
-		switch (info->type()) {
-		case V4L2_CTRL_TYPE_INTEGER64:
+		switch (info->id().type()) {
+		case ControlTypeInteger64:
 			v4l2Ctrls[i].value64 = ctrl->value().get<int64_t>();
 			break;
 		default:
@@ -392,8 +392,8 @@ void V4L2Device::updateControls(V4L2ControlList *ctrls,
 		const V4L2ControlInfo *info = controlInfo[i];
 		V4L2Control *ctrl = ctrls->getByIndex(i);
 
-		switch (info->type()) {
-		case V4L2_CTRL_TYPE_INTEGER64:
+		switch (info->id().type()) {
+		case ControlTypeInteger64:
 			ctrl->value().set<int64_t>(v4l2Ctrl->value64);
 			break;
 		default:

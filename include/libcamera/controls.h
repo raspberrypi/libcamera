@@ -68,11 +68,12 @@ protected:
 		: id_(id), name_(name), type_(type)
 	{
 	}
+#ifndef __DOXYGEN__
+	ControlId &operator=(const ControlId &) = default;
+	ControlId(const ControlId &) = default;
+#endif
 
 private:
-	ControlId(const ControlId &) = delete;
-	ControlId &operator=(const ControlId &) = delete;
-
 	unsigned int id_;
 	std::string name_;
 	ControlType type_;

@@ -20,23 +20,27 @@
 
 namespace libcamera {
 
+class V4L2ControlId : public ControlId
+{
+public:
+	V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl);
+};
+
 class V4L2ControlInfo
 {
 public:
 	V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl);
 
-	unsigned int id() const { return id_; }
+	const ControlId &id() const { return id_; }
 	unsigned int type() const { return type_; }
 	size_t size() const { return size_; }
-	const std::string &name() const { return name_; }
 
 	const ControlRange &range() const { return range_; }
 
 private:
-	unsigned int id_;
+	V4L2ControlId id_;
 	unsigned int type_;
 	size_t size_;
-	std::string name_;
 
 	ControlRange range_;
 };

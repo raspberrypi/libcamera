@@ -184,7 +184,7 @@ int V4L2Device::getControls(V4L2ControlList *ctrls)
 
 		const V4L2ControlInfo *info = &iter->second;
 		controlInfo[i] = info;
-		v4l2Ctrls[i].id = info->id();
+		v4l2Ctrls[i].id = ctrl->id();
 	}
 
 	struct v4l2_ext_controls v4l2ExtCtrls = {};
@@ -259,7 +259,7 @@ int V4L2Device::setControls(V4L2ControlList *ctrls)
 
 		const V4L2ControlInfo *info = &iter->second;
 		controlInfo[i] = info;
-		v4l2Ctrls[i].id = info->id();
+		v4l2Ctrls[i].id = ctrl->id();
 
 		/* Set the v4l2_ext_control value for the write operation. */
 		switch (info->type()) {

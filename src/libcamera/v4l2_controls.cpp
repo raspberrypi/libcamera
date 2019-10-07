@@ -7,6 +7,8 @@
 
 #include "v4l2_controls.h"
 
+#include <string.h>
+
 /**
  * \file v4l2_controls.h
  * \brief Support for V4L2 Controls using the V4L2 Extended Controls APIs
@@ -47,6 +49,60 @@
 
 namespace libcamera {
 
+namespace {
+
+std::string v4l2_ctrl_name(const struct v4l2_query_ext_ctrl &ctrl)
+{
+	size_t len = strnlen(ctrl.name, sizeof(ctrl.name));
+	return std::string(static_cast<const char *>(ctrl.name), len);
+}
+
+ControlType v4l2_ctrl_type(const struct v4l2_query_ext_ctrl &ctrl)
+{
+	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		return ControlTypeBool;
+
+	case V4L2_CTRL_TYPE_INTEGER:
+		return ControlTypeInteger32;
+
+	case V4L2_CTRL_TYPE_INTEGER64:
+		return ControlTypeInteger64;
+
+	case V4L2_CTRL_TYPE_MENU:
+	case V4L2_CTRL_TYPE_BUTTON:
+	case V4L2_CTRL_TYPE_BITMASK:
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+		/*
+		 * More precise types may be needed, for now use a 32-bit
+		 * integer type.
+		 */
+		return ControlTypeInteger32;
+
+	default:
+		return ControlTypeNone;
+	}
+}
+
+} /* namespace */
+
+/**
+ * \class V4L2ControlId
+ * \brief V4L2 control static metadata
+ *
+ * The V4L2ControlId class is a specialisation of the ControlId for V4L2
+ * controls.
+ */
+
+/**
+ * \brief Construct a V4L2ControlId from a struct v4l2_query_ext_ctrl
+ * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
+ */
+V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
+	: ControlId(ctrl.id, v4l2_ctrl_name(ctrl), v4l2_ctrl_type(ctrl))
+{
+}
+
 /**
  * \class V4L2ControlInfo
  * \brief Information on a V4L2 control
@@ -66,13 +122,12 @@ namespace libcamera {
 
 /**
  * \brief Construct a V4L2ControlInfo from a struct v4l2_query_ext_ctrl
- * \param ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
+ * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
  */
 V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
+	: id_(ctrl)
 {
-	id_ = ctrl.id;
 	type_ = ctrl.type;
-	name_ = static_cast<const char *>(ctrl.name);
 	size_ = ctrl.elem_size * ctrl.elems;
 
 	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
@@ -99,12 +154,6 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  * \fn V4L2ControlInfo::size()
  * \brief Retrieve the control value data size (in bytes)
  * \return The V4L2 control value data size
- */
-
-/**
- * \fn V4L2ControlInfo::name()
- * \brief Retrieve the control user readable name
- * \return The V4L2 control user readable name
  */
 
 /**

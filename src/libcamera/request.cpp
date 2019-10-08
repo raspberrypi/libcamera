@@ -65,6 +65,11 @@ Request::Request(Camera *camera, uint64_t cookie)
 	 */
 	validator_ = new CameraControlValidator(camera);
 	controls_ = new ControlList(validator_);
+
+	/**
+	 * \todo: Add a validator for metadata controls.
+	 */
+	metadata_ = new ControlList(nullptr);
 }
 
 Request::~Request()
@@ -74,6 +79,7 @@ Request::~Request()
 		delete buffer;
 	}
 
+	delete metadata_;
 	delete controls_;
 	delete validator_;
 }
@@ -160,6 +166,14 @@ Buffer *Request::findBuffer(Stream *stream) const
 
 	return it->second;
 }
+
+/**
+ * \fn Request::metadata()
+ * \brief Retrieve the request's metadata
+ * \todo Offer a read-only API towards applications while keeping a read/write
+ * API internally.
+ * \return The metadata associated with the request
+ */
 
 /**
  * \fn Request::cookie()

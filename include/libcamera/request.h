@@ -37,6 +37,7 @@ public:
 	~Request();
 
 	ControlList &controls() { return *controls_; }
+	ControlList &metadata() { return *metadata_; }
 	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
 	int addBuffer(std::unique_ptr<Buffer> buffer);
 	Buffer *findBuffer(Stream *stream) const;
@@ -58,6 +59,7 @@ private:
 	Camera *camera_;
 	CameraControlValidator *validator_;
 	ControlList *controls_;
+	ControlList *metadata_;
 	std::map<Stream *, Buffer *> bufferMap_;
 	std::unordered_set<Buffer *> pending_;
 

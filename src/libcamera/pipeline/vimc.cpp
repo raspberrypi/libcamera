@@ -101,8 +101,6 @@ private:
 		return static_cast<VimcCameraData *>(
 			PipelineHandler::cameraData(camera));
 	}
-
-	std::unique_ptr<IPAInterface> ipa_;
 };
 
 VimcCameraConfiguration::VimcCameraConfiguration()
@@ -353,13 +351,13 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (!media)
 		return false;
 
-	ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
-	if (ipa_ == nullptr)
+	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
+
+	data->ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
+	if (data->ipa_ == nullptr)
 		LOG(VIMC, Warning) << "no matching IPA found";
 	else
-		ipa_->init();
-
-	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
+		data->ipa_->init();
 
 	/* Locate and open the capture video node. */
 	if (data->init(media))

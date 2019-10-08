@@ -97,6 +97,14 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
+ * \var CameraData::ipa_
+ * \brief The IPA module used by the camera
+ *
+ * Reference to the Image Processing Algorithms (IPA) operating on the camera's
+ * stream(s). If no IPA exists for the camera, this field is set to nullptr.
+ */
+
+/**
  * \class PipelineHandler
  * \brief Create and manage cameras based on a set of media devices
  *

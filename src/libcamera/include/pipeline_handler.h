@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include <ipa/ipa_interface.h>
 #include <libcamera/controls.h>
 #include <libcamera/stream.h>
 
@@ -43,6 +44,7 @@ public:
 	PipelineHandler *pipe_;
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
+	std::unique_ptr<IPAInterface> ipa_;
 
 private:
 	CameraData(const CameraData &) = delete;

@@ -8,7 +8,7 @@ controls:
   - AwbEnable:
       type: bool
       description: |
-        Enables or disables the AWB.
+        Enable or disable the AWB.
 
         \sa ManualGain
 

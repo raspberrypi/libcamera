@@ -29,7 +29,12 @@ public:
 	IPAVimc();
 	~IPAVimc();
 
-	int init();
+	int init() override;
+	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+		       const std::map<unsigned int, V4L2ControlInfoMap> &entityControls) override {}
+	void mapBuffers(const std::vector<IPABuffer> &buffers) override {}
+	void unmapBuffers(const std::vector<unsigned int> &ids) override {}
+	void processEvent(const IPAOperationData &event) override {}
 
 private:
 	void initTrace();

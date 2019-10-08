@@ -26,7 +26,12 @@ public:
 	IPAProxyLinux(IPAModule *ipam);
 	~IPAProxyLinux();
 
-	int init();
+	int init() override { return 0; }
+	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+		       const std::map<unsigned int, V4L2ControlInfoMap> &entityControls) override {}
+	void mapBuffers(const std::vector<IPABuffer> &buffers) override {}
+	void unmapBuffers(const std::vector<unsigned int> &ids) override {}
+	void processEvent(const IPAOperationData &event) override {}
 
 private:
 	void readyRead(IPCUnixSocket *ipc);
@@ -35,13 +40,6 @@ private:
 
 	IPCUnixSocket *socket_;
 };
-
-int IPAProxyLinux::init()
-{
-	LOG(IPAProxy, Debug) << "initializing IPA via dummy proxy!";
-
-	return 0;
-}
 
 IPAProxyLinux::IPAProxyLinux(IPAModule *ipam)
 	: proc_(nullptr), socket_(nullptr)

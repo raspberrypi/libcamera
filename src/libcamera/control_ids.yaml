@@ -5,6 +5,13 @@
 %YAML 1.2
 ---
 controls:
+  - AeEnable:
+      type: bool
+      description: |
+        Enable or disable the AE.
+
+        \sa ManualExposure
+
   - AwbEnable:
       type: bool
       description: |

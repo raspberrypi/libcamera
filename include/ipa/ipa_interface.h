@@ -33,7 +33,6 @@ struct IPAOperationData {
 	unsigned int operation;
 	std::vector<uint32_t> data;
 	std::vector<ControlList> controls;
-	std::vector<V4L2ControlList> v4l2controls;
 };
 
 class IPAInterface

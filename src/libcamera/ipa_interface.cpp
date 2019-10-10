@@ -121,14 +121,6 @@ namespace libcamera {
  */
 
 /**
- * \var IPAOperationData::v4l2controls
- * \brief Operation V4L2 controls data
- *
- * The interpretation and position of different values in the array are defined
- * by the IPA protocol.
- */
-
-/**
  * \class IPAInterface
  * \brief Interface for IPA implementation
  *

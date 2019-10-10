@@ -324,7 +324,7 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 class RkISP1ActionSetSensor : public FrameAction
 {
 public:
-	RkISP1ActionSetSensor(unsigned int frame, CameraSensor *sensor, V4L2ControlList controls)
+	RkISP1ActionSetSensor(unsigned int frame, CameraSensor *sensor, const ControlList &controls)
 		: FrameAction(frame, SetSensor), sensor_(sensor), controls_(controls) {}
 
 protected:
@@ -335,7 +335,7 @@ protected:
 
 private:
 	CameraSensor *sensor_;
-	V4L2ControlList controls_;
+	ControlList controls_;
 };
 
 class RkISP1ActionQueueBuffers : public FrameAction
@@ -387,7 +387,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 {
 	switch (action.operation) {
 	case RKISP1_IPA_ACTION_V4L2_SET: {
-		V4L2ControlList controls = action.v4l2controls[0];
+		const ControlList &controls = action.controls[0];
 		timeline_.scheduleAction(utils::make_unique<RkISP1ActionSetSensor>(frame,
 										   sensor_,
 										   controls));

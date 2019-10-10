@@ -777,7 +777,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	};
 
 	std::map<unsigned int, V4L2ControlInfoMap> entityControls;
-	entityControls[0] = data->sensor_->controls();
+	entityControls.emplace(0, data->sensor_->controls());
 
 	data->ipa_->configure(streamConfig, entityControls);
 

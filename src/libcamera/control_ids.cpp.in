@@ -16,9 +16,20 @@
 
 namespace libcamera {
 
+/**
+ * \brief Namespace for libcamera controls
+ */
 namespace controls {
 
-${controls}
+${controls_doc}
+
+#ifndef __DOXYGEN__
+/*
+ * Keep the controls definitions hidden from doxygen as it incorrectly parses
+ * them as functions.
+ */
+${controls_def}
+#endif
 
 } /* namespace controls */
 

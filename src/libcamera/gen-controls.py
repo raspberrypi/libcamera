@@ -17,12 +17,14 @@ def snake_case(s):
 
 
 def generate_cpp(controls):
-    template = string.Template('''/**
+    doc_template = string.Template('''/**
+ * \\var extern const Control<${type}> ${name}
 ${description}
- */
-extern const Control<${type}> ${name}(${id_name}, "${name}");''')
+ */''')
+    def_template = string.Template('extern const Control<${type}> ${name}(${id_name}, "${name}");')
 
-    ctrls = []
+    ctrls_doc = []
+    ctrls_def = []
 
     for ctrl in controls:
         name, ctrl = ctrl.popitem()
@@ -39,9 +41,13 @@ extern const Control<${type}> ${name}(${id_name}, "${name}");''')
             'id_name': id_name,
         }
 
-        ctrls.append(template.substitute(info))
+        ctrls_doc.append(doc_template.substitute(info))
+        ctrls_def.append(def_template.substitute(info))
 
-    return {'controls': '\n\n'.join(ctrls)}
+    return {
+        'controls_doc': '\n\n'.join(ctrls_doc),
+        'controls_def': '\n'.join(ctrls_def),
+    }
 
 
 def generate_h(controls):

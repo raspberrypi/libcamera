@@ -98,7 +98,7 @@ void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 
 void IPARkISP1::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
-	for (IPABuffer buffer : buffers) {
+	for (const IPABuffer &buffer : buffers) {
 		bufferInfo_[buffer.id] = buffer.memory;
 		bufferInfo_[buffer.id].planes()[0].mem();
 	}

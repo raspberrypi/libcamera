@@ -123,7 +123,7 @@ void Timeline::scheduleAction(std::unique_ptr<FrameAction> action)
 			<< ", run now " << utils::time_point_to_string(now);
 		action->run();
 	} else {
-		actions_.insert({ deadline, std::move(action) });
+		actions_.emplace(deadline, std::move(action));
 		updateDeadline();
 	}
 }

@@ -126,7 +126,7 @@ private:
 	using ControlListMap = std::unordered_map<const ControlId *, ControlValue>;
 
 public:
-	ControlList(ControlValidator *validator);
+	ControlList(ControlValidator *validator = nullptr);
 
 	using iterator = ControlListMap::iterator;
 	using const_iterator = ControlListMap::const_iterator;

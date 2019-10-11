@@ -69,7 +69,7 @@ Request::Request(Camera *camera, uint64_t cookie)
 	/**
 	 * \todo: Add a validator for metadata controls.
 	 */
-	metadata_ = new ControlList(nullptr);
+	metadata_ = new ControlList();
 }
 
 Request::~Request()

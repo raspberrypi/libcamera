@@ -156,9 +156,27 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  */
 
 /**
- * \typedef V4L2ControlInfoMap
+ * \class V4L2ControlInfoMap
  * \brief A map of control ID to V4L2ControlInfo
  */
+
+/**
+ * \brief Move assignment operator from plain map
+ * \param[in] info The control info map
+ *
+ * Populate the map by replacing its contents with those of \a info using move
+ * semantics. Upon return the \a info map will be empty.
+ *
+ * This is the only supported way to populate a V4L2ControlInfoMap.
+ *
+ * \return The populated V4L2ControlInfoMap
+ */
+V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<unsigned int, V4L2ControlInfo> &&info)
+{
+	std::map<unsigned int, V4L2ControlInfo>::operator=(std::move(info));
+
+	return *this;
+}
 
 /**
  * \class V4L2Control

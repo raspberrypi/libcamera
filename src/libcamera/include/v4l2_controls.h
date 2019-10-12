@@ -43,7 +43,21 @@ private:
 	ControlRange range_;
 };
 
-using V4L2ControlInfoMap = std::map<unsigned int, V4L2ControlInfo>;
+class V4L2ControlInfoMap : private std::map<unsigned int, V4L2ControlInfo>
+{
+public:
+	V4L2ControlInfoMap &operator=(std::map<unsigned int, V4L2ControlInfo> &&info);
+
+	using std::map<unsigned int, V4L2ControlInfo>::begin;
+	using std::map<unsigned int, V4L2ControlInfo>::cbegin;
+	using std::map<unsigned int, V4L2ControlInfo>::end;
+	using std::map<unsigned int, V4L2ControlInfo>::cend;
+	using std::map<unsigned int, V4L2ControlInfo>::at;
+	using std::map<unsigned int, V4L2ControlInfo>::empty;
+	using std::map<unsigned int, V4L2ControlInfo>::size;
+	using std::map<unsigned int, V4L2ControlInfo>::count;
+	using std::map<unsigned int, V4L2ControlInfo>::find;
+};
 
 class V4L2Control
 {

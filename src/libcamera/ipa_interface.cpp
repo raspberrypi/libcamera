@@ -11,27 +11,254 @@
  * \file ipa_interface.h
  * \brief Image Processing Algorithm interface
  *
- * Pipeline handlers communicate with IPAs through a C++ interface defined by
- * the IPAInterface class. The class defines high-level methods and signals to
- * configure the IPA, notify it of events, and receive actions back from the
- * IPA.
+ * Every pipeline handler in libcamera may attach some or all of its cameras to
+ * an Image Processing Algorithm (IPA) module. An IPA module is developed for a
+ * specific pipeline handler and each pipeline handler may be compatible with
+ * multiple IPA implementations, both open and closed source. To support this,
+ * libcamera communicates with IPA modules through a standard plain C interface.
  *
- * Pipeline handlers define the set of events and actions used to communicate
- * with their IPA. These are collectively referred to as IPA operations and
- * define the pipeline handler-specific IPA protocol. Each operation defines the
- * data that it carries, and how the data is encoded in the IPAOperationData
- * structure.
+ * IPA modules shall expose a public function named ipaCreate() with the
+ * following prototype.
  *
- * IPAs can be isolated in a separate process. This implies that all arguments
- * to the IPA interface may need to be transferred over IPC. The IPA interface
- * thus uses serialisable data types only. The IPA interface defines custom data
- * structures that mirror core libcamera structures when the latter are not
- * suitable, such as IPAStream to carry StreamConfiguration data.
+ * \code{.c}
+ * struct ipa_context *ipaCreate();
+ * \endcode
+ *
+ * The ipaCreate() function creates an instance of an IPA context, which models
+ * a context of execution for the IPA. IPA modules shall support creating one
+ * context per camera, as required by their associated pipeline handler.
+ *
+ * The IPA module context operations are defined in the struct ipa_context_ops.
+ * They model a low-level interface to configure the IPA, notify it of events,
+ * and receive IPA actions through callbacks. An IPA module stores a pointer to
+ * the operations corresponding to its context in the ipa_context::ops field.
+ * That pointer is immutable for the lifetime of the context, and may differ
+ * between different contexts created by the same IPA module.
+ *
+ * The IPA interface defines base data types and functions to exchange data. On
+ * top of this, each pipeline handler is responsible for defining the set of
+ * events and actions used to communicate with their IPA. These are collectively
+ * referred to as IPA operations and define the pipeline handler-specific IPA
+ * protocol. Each operation defines the data that it carries, and how that data
+ * is encoded in the ipa_context_ops functions arguments.
+ *
+ * \todo Add reference to how pipelines shall document their protocol.
+ *
+ * IPAs can be isolated in a separate process. This implies that arguments to
+ * the IPA interface functions may need to be transferred over IPC. All
+ * arguments use Plain Old Data types and are documented either in the form of C
+ * data types, or as a textual description of byte arrays for types that can't
+ * be expressed using C data types (such as arrays of mixed data types). IPA
+ * modules can thus use the C API without calling into libcamera to access the
+ * data passed to the IPA context operations.
  *
  * Due to IPC, synchronous communication between pipeline handlers and IPAs can
  * be costly. For that reason, the interface operates asynchronously. This
- * implies that methods don't return a status, and that both methods and signals
- * may copy their arguments.
+ * implies that methods don't return a status, and that all methods may copy
+ * their arguments.
+ *
+ * The IPAInterface class is a C++ representation of the ipa_context_ops, using
+ * C++ data classes provided by libcamera. This is the API exposed to pipeline
+ * handlers to communicate with IPA modules. IPA modules may use the
+ * IPAInterface API internally if they want to benefit from the data and helper
+ * classes offered by libcamera.
+ */
+
+/**
+ * \struct ipa_context
+ * \brief IPA module context of execution
+ *
+ * This structure models a context of execution for an IPA module. It is
+ * instantiated by the IPA module ipaCreate() function. IPA modules allocate
+ * context instances in an implementation-defined way, contexts shall thus be
+ * destroyed using the ipa_operation::destroy function only.
+ *
+ * The ipa_context structure provides a pointer to the IPA context operations.
+ * It shall otherwise be treated as a constant black-box cookie and passed
+ * unmodified to the functions defined in struct ipa_context_ops.
+ *
+ * IPA modules are expected to extend struct ipa_context by inheriting from it,
+ * either through structure embedding to model inheritance in plain C, or
+ * through C++ class inheritance. A simple example of the latter is available
+ * in the IPAContextWrapper class implementation.
+ *
+ * \var ipa_context::ops
+ * \brief The IPA context operations
+ */
+
+/**
+ * \struct ipa_stream
+ * \brief Stream information for the IPA context operations
+ *
+ * \var ipa_stream::id
+ * \brief Identifier for the stream, defined by the IPA protocol
+ *
+ * \var ipa_stream::pixel_format
+ * \brief The stream pixel format, as defined by the PixelFormat class
+ *
+ * \var ipa_stream::width
+ * \brief The stream width in pixels
+ *
+ * \var ipa_stream::height
+ * \brief The stream height in pixels
+ */
+
+/**
+ * \struct ipa_control_info_map
+ * \brief ControlInfoMap description for the IPA context operations
+ *
+ * \var ipa_control_info_map::id
+ * \brief Identifier for the ControlInfoMap, defined by the IPA protocol
+ *
+ * \var ipa_control_info_map::data
+ * \brief Pointer to a control packet for the ControlInfoMap
+ * \sa ipa_controls.h
+ *
+ * \var ipa_control_info_map::size
+ * \brief The size of the control packet in bytes
+ */
+
+/**
+ * \struct ipa_buffer_plane
+ * \brief A plane for an ipa_buffer
+ *
+ * \var ipa_buffer_plane::dmabuf
+ * \brief The dmabuf file descriptor for the plane (-1 for unused planes)
+ *
+ * \var ipa_buffer_plane::length
+ * \brief The plane length in bytes (0 for unused planes)
+ */
+
+/**
+ * \struct ipa_buffer
+ * \brief Buffer information for the IPA context operations
+ *
+ * \var ipa_buffer::id
+ * \brief The buffer unique ID (see \ref libcamera::IPABuffer::id)
+ *
+ * \var ipa_buffer::num_planes
+ * \brief The number of used planes in the ipa_buffer::planes array
+ *
+ * \var ipa_buffer::planes
+ * \brief The buffer planes (up to 3)
+ */
+
+/**
+ * \struct ipa_control_list
+ * \brief ControlList description for the IPA context operations
+ *
+ * \var ipa_control_list::data
+ * \brief Pointer to a control packet for the ControlList
+ * \sa ipa_controls.h
+ *
+ * \var ipa_control_list::size
+ * \brief The size of the control packet in bytes
+ */
+
+/**
+ * \struct ipa_operation_data
+ * \brief IPA operation data for the IPA context operations
+ * \sa libcamera::IPAOperationData
+ *
+ * \var ipa_operation_data::operation
+ * \brief IPA protocol operation
+ *
+ * \var ipa_operation_data::data
+ * \brief Pointer to the operation data array
+ *
+ * \var ipa_operation_data::num_data
+ * \brief Number of entries in the ipa_operation_data::data array
+ *
+ * \var ipa_operation_data::lists
+ * \brief Pointer to an array of ipa_control_list
+ *
+ * \var ipa_operation_data::num_lists
+ * \brief Number of entries in the ipa_control_list array
+ */
+
+/**
+ * \struct ipa_callback_ops
+ * \brief IPA context operations as a set of function pointers
+ */
+
+/**
+ * \var ipa_callback_ops::queue_frame_action
+ * \brief Queue an action associated with a frame to the pipeline handler
+ * \param[in] cb_ctx The callback context registered with
+ * ipa_context_ops::register_callbacks
+ * \param[in] frame The frame number
+ *
+ * \sa libcamera::IPAInterface::queueFrameAction
+ */
+
+/**
+ * \struct ipa_context_ops
+ * \brief IPA context operations as a set of function pointers
+ *
+ * To allow for isolation of IPA modules in separate processes, the functions
+ * defined in the ipa_context_ops structure return only data related to the
+ * libcamera side of the operations. In particular, error related to the
+ * libcamera side of the IPC may be returned. Data returned by the IPA,
+ * including status information, shall be provided through callbacks from the
+ * IPA to libcamera.
+ */
+
+/**
+ * \var ipa_context_ops::destroy
+ * \brief Destroy the IPA context created by the module's ipaCreate() function
+ * \param[in] ctx The IPA context
+ */
+
+/**
+ * \var ipa_context_ops::init
+ * \brief Initialise the IPA context
+ * \param[in] ctx The IPA context
+ *
+ * \sa libcamera::IPAInterface::init()
+ */
+
+/**
+ * \var ipa_context_ops::register_callbacks
+ * \brief Register callback operation from the IPA to the pipeline handler
+ * \param[in] ctx The IPA context
+ * \param[in] callback The IPA callback operations
+ * \param[in] cb_ctx The callback context, passed to all callback operations
+ */
+
+/**
+ * \var ipa_context_ops::configure
+ * \brief Configure the IPA stream and sensor settings
+ * \param[in] ctx The IPA context
+ *
+ * \sa libcamera::IPAInterface::configure()
+ */
+
+/**
+ * \var ipa_context_ops::map_buffers
+ * \brief Map buffers shared between the pipeline handler and the IPA
+ * \param[in] ctx The IPA context
+ * \param[in] buffers The buffers to map
+ * \param[in] num_buffers The number of entries in the \a buffers array
+ *
+ * \sa libcamera::IPAInterface::mapBuffers()
+ */
+
+/**
+ * \var ipa_context_ops::unmap_buffers
+ * \brief Unmap buffers shared by the pipeline to the IPA
+ * \param[in] ctx The IPA context
+ * \param[in] ids The IDs of the buffers to unmap
+ * \param[in] num_buffers The number of entries in the \a ids array
+ *
+ * \sa libcamera::IPAInterface::unmapBuffers()
+ */
+
+/**
+ * \var ipa_context_ops::process_event
+ * \brief Process an event from the pipeline handler
+ * \param[in] ctx The IPA context
+ *
+ * \sa libcamera::IPAInterface::processEvent()
  */
 
 namespace libcamera {
@@ -122,26 +349,30 @@ namespace libcamera {
 
 /**
  * \class IPAInterface
- * \brief Interface for IPA implementation
+ * \brief C++ Interface for IPA implementation
  *
- * Every pipeline handler in libcamera may attach all or some of its cameras to
- * an Image Processing Algorithm (IPA) module. An IPA module is developed for a
- * specific pipeline handler and each pipeline handler may have multiple
- * compatible IPA implementations, both open and closed source.
+ * This pure virtual class defines a C++ API corresponding to the ipa_context,
+ * ipa_context_ops and ipa_callback_ops API. It is used by pipeline handlers to
+ * interact with IPA modules, and may be used internally in IPA modules if
+ * desired to benefit from the data and helper classes provided by libcamera.
  *
- * To allow for multiple IPA modules for the same pipeline handler, a standard
- * interface for the pipeline handler and IPA communication is needed.
- * IPAInterface is this interface.
+ * Functions defined in the ipa_context_ops structure are mapped to IPAInterface
+ * methods, while functions defined in the ipa_callback_ops are mapped to
+ * IPAInterface signals. As with the C API, the IPA C++ interface uses
+ * serializable data types only. It reuses structures defined by the C API, or
+ * defines corresponding classes using C++ containers when required.
  *
- * The interface defines base data types and methods to exchange data. On top of
- * this, each pipeline handler is responsible for defining specific operations
- * that make up its IPA protocol, shared by all IPA modules compatible with the
- * pipeline handler.
+ * Due to process isolation all arguments to the IPAInterface methods and
+ * signals may need to be transferred over IPC. The class thus uses serializable
+ * data types only. The IPA C++ interface defines custom data structures that
+ * mirror core libcamera structures when the latter are not suitable, such as
+ * IPAStream to carry StreamConfiguration data.
+ *
+ * As for the functions defined in struct ipa_context_ops, the methods defined
+ * by this class shall not return data from the IPA.
  *
  * The pipeline handler shall use the IPAManager to locate a compatible
  * IPAInterface. The interface may then be used to interact with the IPA module.
- *
- * \todo Add reference to how pipelines shall document their protocol.
  */
 
 /**

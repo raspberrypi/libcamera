@@ -182,6 +182,12 @@ void *Plane::mem()
  */
 
 /**
+ * \fn BufferMemory::planes() const
+ * \brief Retrieve the planes within the buffer
+ * \return A const reference to a vector holding all Planes within the buffer
+ */
+
+/**
  * \fn BufferMemory::planes()
  * \brief Retrieve the planes within the buffer
  * \return A reference to a vector holding all Planes within the buffer

@@ -40,6 +40,7 @@ private:
 class BufferMemory final
 {
 public:
+	const std::vector<Plane> &planes() const { return planes_; }
 	std::vector<Plane> &planes() { return planes_; }
 
 private:

@@ -122,10 +122,12 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 
 /**
  * \brief Construct a V4L2ControlInfo from a struct v4l2_query_ext_ctrl
+ * \param[in] id The V4L2 control ID
  * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
  */
-V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
-	: id_(ctrl)
+V4L2ControlInfo::V4L2ControlInfo(const V4L2ControlId &id,
+				 const struct v4l2_query_ext_ctrl &ctrl)
+	: id_(&id)
 {
 	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
 		range_ = ControlRange(static_cast<int64_t>(ctrl.minimum),

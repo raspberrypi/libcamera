@@ -386,9 +386,10 @@ void V4L2Device::listControls()
 			continue;
 		}
 
+		controlIds_.emplace_back(utils::make_unique<V4L2ControlId>(ctrl));
 		ctrls.emplace(std::piecewise_construct,
 			      std::forward_as_tuple(ctrl.id),
-			      std::forward_as_tuple(ctrl));
+			      std::forward_as_tuple(*controlIds_.back().get(), ctrl));
 	}
 
 	controls_ = std::move(ctrls);

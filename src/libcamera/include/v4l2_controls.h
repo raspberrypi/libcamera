@@ -28,13 +28,14 @@ public:
 class V4L2ControlInfo
 {
 public:
-	V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl);
+	V4L2ControlInfo(const V4L2ControlId &id,
+			const struct v4l2_query_ext_ctrl &ctrl);
 
-	const ControlId &id() const { return id_; }
+	const ControlId &id() const { return *id_; }
 	const ControlRange &range() const { return range_; }
 
 private:
-	V4L2ControlId id_;
+	const V4L2ControlId *id_;
 	ControlRange range_;
 };
 

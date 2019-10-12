@@ -8,7 +8,8 @@
 #define __LIBCAMERA_V4L2_DEVICE_H__
 
 #include <map>
-#include <string>
+#include <memory>
+#include <vector>
 
 #include <linux/videodev2.h>
 
@@ -48,6 +49,7 @@ private:
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);
 
+	std::vector<std::unique_ptr<V4L2ControlId>> controlIds_;
 	V4L2ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;

@@ -40,6 +40,12 @@ public:
 
 	std::string toString() const;
 
+	bool operator==(const ControlValue &other) const;
+	bool operator!=(const ControlValue &other) const
+	{
+		return !(*this == other);
+	}
+
 private:
 	ControlType type_;
 

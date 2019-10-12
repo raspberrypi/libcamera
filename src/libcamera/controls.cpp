@@ -195,6 +195,33 @@ std::string ControlValue::toString() const
 }
 
 /**
+ * \brief Compare ControlValue instances for equality
+ * \return True if the values have identical types and values, false otherwise
+ */
+bool ControlValue::operator==(const ControlValue &other) const
+{
+	if (type_ != other.type_)
+		return false;
+
+	switch (type_) {
+	case ControlTypeBool:
+		return bool_ == other.bool_;
+	case ControlTypeInteger32:
+		return integer32_ == other.integer32_;
+	case ControlTypeInteger64:
+		return integer64_ == other.integer64_;
+	default:
+		return false;
+	}
+}
+
+/**
+ * \fn bool ControlValue::operator!=()
+ * \brief Compare ControlValue instances for non equality
+ * \return False if the values have identical types and values, true otherwise
+ */
+
+/**
  * \class ControlId
  * \brief Control static metadata
  *

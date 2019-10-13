@@ -104,45 +104,31 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 }
 
 /**
- * \class V4L2ControlInfo
- * \brief Information on a V4L2 control
+ * \class V4L2ControlRange
+ * \brief Convenience specialisation of ControlRange for V4L2 controls
  *
- * The V4L2ControlInfo class represents all the information related to a V4L2
- * control, such as its ID, its type, its user-readable name and the expected
- * size of its value data.
- *
- * V4L2ControlInfo instances are created by inspecting the fieldS of a struct
- * v4l2_query_ext_ctrl structure, after it has been filled by the device driver
- * as a consequence of a VIDIOC_QUERY_EXT_CTRL ioctl call.
- *
- * This class does not contain the control value, but only static information on
- * the control, which shall be cached by the caller at initialisation time or
- * the first time the control information is accessed.
+ * The V4L2ControlRange class is a specialisation of the ControlRange for V4L2
+ * controls. It offers a convenience constructor from a struct
+ * v4l2_query_ext_ctrl, and is otherwise equivalent to the ControlRange class.
  */
 
 /**
- * \brief Construct a V4L2ControlInfo from a struct v4l2_query_ext_ctrl
+ * \brief Construct a V4L2ControlRange from a struct v4l2_query_ext_ctrl
  * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
  */
-V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
+V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
-		range_ = ControlRange(static_cast<int64_t>(ctrl.minimum),
-				      static_cast<int64_t>(ctrl.maximum));
+		ControlRange::operator=(ControlRange(static_cast<int64_t>(ctrl.minimum),
+						     static_cast<int64_t>(ctrl.maximum)));
 	else
-		range_ = ControlRange(static_cast<int32_t>(ctrl.minimum),
-				      static_cast<int32_t>(ctrl.maximum));
+		ControlRange::operator=(ControlRange(static_cast<int32_t>(ctrl.minimum),
+						     static_cast<int32_t>(ctrl.maximum)));
 }
 
 /**
- * \fn V4L2ControlInfo::range()
- * \brief Retrieve the control value range
- * \return The V4L2 control value range
- */
-
-/**
  * \class V4L2ControlInfoMap
- * \brief A map of controlID to V4L2ControlInfo
+ * \brief A map of controlID to V4L2ControlRange
  */
 
 /**
@@ -156,9 +142,9 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  *
  * \return The populated V4L2ControlInfoMap
  */
-V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, V4L2ControlInfo> &&info)
+V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, V4L2ControlRange> &&info)
 {
-	std::map<const ControlId *, V4L2ControlInfo>::operator=(std::move(info));
+	std::map<const ControlId *, V4L2ControlRange>::operator=(std::move(info));
 
 	idmap_.clear();
 	for (const auto &ctrl : *this)

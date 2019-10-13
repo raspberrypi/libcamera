@@ -41,9 +41,9 @@ protected:
 			return TestFail;
 		}
 
-		const V4L2ControlInfo &brightness = info.find(V4L2_CID_BRIGHTNESS)->second;
-		const V4L2ControlInfo &contrast = info.find(V4L2_CID_CONTRAST)->second;
-		const V4L2ControlInfo &saturation = info.find(V4L2_CID_SATURATION)->second;
+		const V4L2ControlRange &brightness = info.find(V4L2_CID_BRIGHTNESS)->second;
+		const V4L2ControlRange &contrast = info.find(V4L2_CID_CONTRAST)->second;
+		const V4L2ControlRange &saturation = info.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
 		V4L2ControlList ctrls(info);
@@ -65,9 +65,9 @@ protected:
 		}
 
 		/* Test setting controls. */
-		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.range().min());
-		ctrls.set(V4L2_CID_CONTRAST, contrast.range().max());
-		ctrls.set(V4L2_CID_SATURATION, saturation.range().min());
+		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.min());
+		ctrls.set(V4L2_CID_CONTRAST, contrast.max());
+		ctrls.set(V4L2_CID_SATURATION, saturation.min());
 
 		ret = capture_->setControls(&ctrls);
 		if (ret) {
@@ -76,9 +76,9 @@ protected:
 		}
 
 		/* Test setting controls outside of range. */
-		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.range().min().get<int32_t>() - 1);
-		ctrls.set(V4L2_CID_CONTRAST, contrast.range().max().get<int32_t>() + 1);
-		ctrls.set(V4L2_CID_SATURATION, saturation.range().min().get<int32_t>() + 1);
+		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.min().get<int32_t>() - 1);
+		ctrls.set(V4L2_CID_CONTRAST, contrast.max().get<int32_t>() + 1);
+		ctrls.set(V4L2_CID_SATURATION, saturation.min().get<int32_t>() + 1);
 
 		ret = capture_->setControls(&ctrls);
 		if (ret) {
@@ -86,9 +86,9 @@ protected:
 			return TestFail;
 		}
 
-		if (ctrls.get(V4L2_CID_BRIGHTNESS) != brightness.range().min() ||
-		    ctrls.get(V4L2_CID_CONTRAST) != contrast.range().max() ||
-		    ctrls.get(V4L2_CID_SATURATION) != saturation.range().min().get<int32_t>() + 1) {
+		if (ctrls.get(V4L2_CID_BRIGHTNESS) != brightness.min() ||
+		    ctrls.get(V4L2_CID_CONTRAST) != contrast.max() ||
+		    ctrls.get(V4L2_CID_SATURATION) != saturation.min().get<int32_t>() + 1) {
 			cerr << "Controls not updated when set" << endl;
 			return TestFail;
 		}

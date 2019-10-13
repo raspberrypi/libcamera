@@ -337,7 +337,7 @@ int UVCCameraData::init(MediaEntity *entity)
 	/* Initialise the supported controls. */
 	const V4L2ControlInfoMap &controls = video_->controls();
 	for (const auto &ctrl : controls) {
-		const V4L2ControlInfo &info = ctrl.second;
+		const V4L2ControlRange &range = ctrl.second;
 		const ControlId *id;
 
 		switch (ctrl.first->id()) {
@@ -362,7 +362,7 @@ int UVCCameraData::init(MediaEntity *entity)
 
 		controlInfo_.emplace(std::piecewise_construct,
 				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(info.range()));
+				     std::forward_as_tuple(range));
 	}
 
 	return 0;

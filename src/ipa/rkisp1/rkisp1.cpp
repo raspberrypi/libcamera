@@ -83,12 +83,12 @@ void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 
 	autoExposure_ = true;
 
-	minExposure_ = std::max<uint32_t>(itExp->second.range().min().get<int32_t>(), 1);
-	maxExposure_ = itExp->second.range().max().get<int32_t>();
+	minExposure_ = std::max<uint32_t>(itExp->second.min().get<int32_t>(), 1);
+	maxExposure_ = itExp->second.max().get<int32_t>();
 	exposure_ = minExposure_;
 
-	minGain_ = std::max<uint32_t>(itGain->second.range().min().get<int32_t>(), 1);
-	maxGain_ = itGain->second.range().max().get<int32_t>();
+	minGain_ = std::max<uint32_t>(itGain->second.min().get<int32_t>(), 1);
+	maxGain_ = itGain->second.max().get<int32_t>();
 	gain_ = minGain_;
 
 	LOG(IPARkISP1, Info)

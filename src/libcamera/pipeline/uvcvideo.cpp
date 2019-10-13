@@ -337,7 +337,7 @@ int UVCCameraData::init(MediaEntity *entity)
 	/* Initialise the supported controls. */
 	const V4L2ControlInfoMap &controls = video_->controls();
 	for (const auto &ctrl : controls) {
-		const V4L2ControlRange &range = ctrl.second;
+		const ControlRange &range = ctrl.second;
 		const ControlId *id;
 
 		switch (ctrl.first->id()) {

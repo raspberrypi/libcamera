@@ -41,9 +41,9 @@ protected:
 			return TestFail;
 		}
 
-		const V4L2ControlRange &brightness = info.find(V4L2_CID_BRIGHTNESS)->second;
-		const V4L2ControlRange &contrast = info.find(V4L2_CID_CONTRAST)->second;
-		const V4L2ControlRange &saturation = info.find(V4L2_CID_SATURATION)->second;
+		const ControlRange &brightness = info.find(V4L2_CID_BRIGHTNESS)->second;
+		const ControlRange &contrast = info.find(V4L2_CID_CONTRAST)->second;
+		const ControlRange &saturation = info.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
 		V4L2ControlList ctrls(info);

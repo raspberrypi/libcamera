@@ -342,7 +342,7 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
  */
 void V4L2Device::listControls()
 {
-	std::map<const ControlId *, V4L2ControlRange> ctrls;
+	std::map<const ControlId *, ControlRange> ctrls;
 	struct v4l2_query_ext_ctrl ctrl = {};
 
 	/* \todo Add support for menu and compound controls. */
@@ -380,9 +380,7 @@ void V4L2Device::listControls()
 		}
 
 		controlIds_.emplace_back(utils::make_unique<V4L2ControlId>(ctrl));
-		ctrls.emplace(std::piecewise_construct,
-			      std::forward_as_tuple(controlIds_.back().get()),
-			      std::forward_as_tuple(ctrl));
+		ctrls.emplace(controlIds_.back().get(), V4L2ControlRange(ctrl));
 	}
 
 	controls_ = std::move(ctrls);

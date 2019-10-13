@@ -128,7 +128,7 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
 
 /**
  * \class V4L2ControlInfoMap
- * \brief A map of controlID to V4L2ControlRange
+ * \brief A map of controlID to ControlRange for V4L2 controls
  */
 
 /**
@@ -142,9 +142,9 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
  *
  * \return The populated V4L2ControlInfoMap
  */
-V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, V4L2ControlRange> &&info)
+V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, ControlRange> &&info)
 {
-	std::map<const ControlId *, V4L2ControlRange>::operator=(std::move(info));
+	std::map<const ControlId *, ControlRange>::operator=(std::move(info));
 
 	idmap_.clear();
 	for (const auto &ctrl : *this)

@@ -212,7 +212,7 @@ void IPARkISP1::setControls(unsigned int frame)
 	IPAOperationData op;
 	op.operation = RKISP1_IPA_ACTION_V4L2_SET;
 
-	V4L2ControlList ctrls(ctrls_);
+	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
 	op.controls.push_back(ctrls);

@@ -562,6 +562,16 @@ ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
 }
 
 /**
+ * \brief Construct a ControlList with the idmap of a control info map
+ * \param[in] info The ControlInfoMap for the control list target object
+ * \param[in] validator The validator (may be null)
+ */
+ControlList::ControlList(const ControlInfoMap &info, ControlValidator *validator)
+	: validator_(validator), idmap_(&info.idmap())
+{
+}
+
+/**
  * \typedef ControlList::iterator
  * \brief Iterator for the controls contained within the list
  */

@@ -279,7 +279,7 @@ void PipelineHandlerVimc::stop(Camera *camera)
 
 int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 {
-	V4L2ControlList controls(data->sensor_->controls());
+	ControlList controls(data->sensor_->controls());
 
 	for (auto it : request->controls()) {
 		const ControlId &id = *it.first;

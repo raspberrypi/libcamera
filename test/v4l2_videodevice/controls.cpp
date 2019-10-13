@@ -46,7 +46,7 @@ protected:
 		const ControlRange &saturation = info.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
-		V4L2ControlList ctrls(info);
+		ControlList ctrls(info);
 		ctrls.set(V4L2_CID_BRIGHTNESS, -1);
 		ctrls.set(V4L2_CID_CONTRAST, -1);
 		ctrls.set(V4L2_CID_SATURATION, -1);

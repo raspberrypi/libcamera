@@ -228,7 +228,7 @@ void PipelineHandlerUVC::stop(Camera *camera)
 
 int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 {
-	V4L2ControlList controls(data->video_->controls());
+	ControlList controls(data->video_->controls());
 
 	for (auto it : request->controls()) {
 		const ControlId &id = *it.first;

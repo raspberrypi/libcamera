@@ -604,7 +604,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
-	V4L2ControlList ctrls(imgu->imgu_->controls());
+	ControlList ctrls(imgu->imgu_->controls());
 	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,
 		  static_cast<int32_t>(vfStream->active_ ? IPU3PipeModeVideo :
 				       IPU3PipeModeStillCapture));

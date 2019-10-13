@@ -8,11 +8,6 @@
 #ifndef __LIBCAMERA_V4L2_CONTROLS_H__
 #define __LIBCAMERA_V4L2_CONTROLS_H__
 
-#include <map>
-#include <stdint.h>
-#include <string>
-#include <vector>
-
 #include <linux/videodev2.h>
 
 #include <libcamera/controls.h>
@@ -29,15 +24,6 @@ class V4L2ControlRange : public ControlRange
 {
 public:
 	V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl);
-};
-
-class V4L2ControlList : public ControlList
-{
-public:
-	V4L2ControlList(const ControlInfoMap &info)
-		: ControlList(info.idmap())
-	{
-	}
 };
 
 } /* namespace libcamera */

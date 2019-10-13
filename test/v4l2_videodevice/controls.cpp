@@ -87,7 +87,7 @@ protected:
 		}
 
 		if (ctrls.get(V4L2_CID_BRIGHTNESS) != brightness.range().min() ||
-		    ctrls.get(V4L2_CID_CONTRAST) != brightness.range().max() ||
+		    ctrls.get(V4L2_CID_CONTRAST) != contrast.range().max() ||
 		    ctrls.get(V4L2_CID_SATURATION) != saturation.range().min().get<int32_t>() + 1) {
 			cerr << "Controls not updated when set" << endl;
 			return TestFail;

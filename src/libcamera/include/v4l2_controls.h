@@ -31,27 +31,27 @@ public:
 	V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl);
 };
 
-class V4L2ControlInfoMap : private std::map<const ControlId *, ControlRange>
+class V4L2ControlInfoMap : private ControlInfoMap
 {
 public:
-	V4L2ControlInfoMap &operator=(std::map<const ControlId *, ControlRange> &&info);
+	V4L2ControlInfoMap &operator=(ControlInfoMap &&info);
 
-	using std::map<const ControlId *, ControlRange>::key_type;
-	using std::map<const ControlId *, ControlRange>::mapped_type;
-	using std::map<const ControlId *, ControlRange>::value_type;
-	using std::map<const ControlId *, ControlRange>::size_type;
-	using std::map<const ControlId *, ControlRange>::iterator;
-	using std::map<const ControlId *, ControlRange>::const_iterator;
+	using ControlInfoMap::key_type;
+	using ControlInfoMap::mapped_type;
+	using ControlInfoMap::value_type;
+	using ControlInfoMap::size_type;
+	using ControlInfoMap::iterator;
+	using ControlInfoMap::const_iterator;
 
-	using std::map<const ControlId *, ControlRange>::begin;
-	using std::map<const ControlId *, ControlRange>::cbegin;
-	using std::map<const ControlId *, ControlRange>::end;
-	using std::map<const ControlId *, ControlRange>::cend;
-	using std::map<const ControlId *, ControlRange>::at;
-	using std::map<const ControlId *, ControlRange>::empty;
-	using std::map<const ControlId *, ControlRange>::size;
-	using std::map<const ControlId *, ControlRange>::count;
-	using std::map<const ControlId *, ControlRange>::find;
+	using ControlInfoMap::begin;
+	using ControlInfoMap::cbegin;
+	using ControlInfoMap::end;
+	using ControlInfoMap::cend;
+	using ControlInfoMap::at;
+	using ControlInfoMap::empty;
+	using ControlInfoMap::size;
+	using ControlInfoMap::count;
+	using ControlInfoMap::find;
 
 	mapped_type &at(unsigned int key);
 	const mapped_type &at(unsigned int key) const;

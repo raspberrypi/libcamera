@@ -132,7 +132,7 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
  */
 
 /**
- * \brief Move assignment operator from plain map
+ * \brief Move assignment operator from a ControlInfoMap
  * \param[in] info The control info map
  *
  * Populate the map by replacing its contents with those of \a info using move
@@ -142,9 +142,9 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
  *
  * \return The populated V4L2ControlInfoMap
  */
-V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, ControlRange> &&info)
+V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(ControlInfoMap &&info)
 {
-	std::map<const ControlId *, ControlRange>::operator=(std::move(info));
+	ControlInfoMap::operator=(std::move(info));
 
 	idmap_.clear();
 	for (const auto &ctrl : *this)

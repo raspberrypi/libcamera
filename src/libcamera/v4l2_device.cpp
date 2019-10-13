@@ -342,7 +342,7 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
  */
 void V4L2Device::listControls()
 {
-	std::map<const ControlId *, ControlRange> ctrls;
+	ControlInfoMap ctrls;
 	struct v4l2_query_ext_ctrl ctrl = {};
 
 	/* \todo Add support for menu and compound controls. */

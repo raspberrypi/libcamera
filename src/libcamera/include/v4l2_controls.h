@@ -31,14 +31,10 @@ public:
 	V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl);
 
 	const ControlId &id() const { return id_; }
-	size_t size() const { return size_; }
-
 	const ControlRange &range() const { return range_; }
 
 private:
 	V4L2ControlId id_;
-	size_t size_;
-
 	ControlRange range_;
 };
 

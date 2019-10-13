@@ -127,8 +127,6 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 	: id_(ctrl)
 {
-	size_ = ctrl.elem_size * ctrl.elems;
-
 	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
 		range_ = ControlRange(static_cast<int64_t>(ctrl.minimum),
 				      static_cast<int64_t>(ctrl.maximum));
@@ -141,12 +139,6 @@ V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
  * \fn V4L2ControlInfo::id()
  * \brief Retrieve the control ID
  * \return The V4L2 control ID
- */
-
-/**
- * \fn V4L2ControlInfo::size()
- * \brief Retrieve the control value data size (in bytes)
- * \return The V4L2 control value data size
  */
 
 /**

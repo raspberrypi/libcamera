@@ -362,6 +362,13 @@ void V4L2Device::listControls()
 		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 			continue;
 
+		if (ctrl.elems != 1 || ctrl.nr_of_dims) {
+			LOG(V4L2, Debug)
+				<< "Array control " << utils::hex(ctrl.id)
+				<< " not supported";
+			continue;
+		}
+
 		switch (ctrl.type) {
 		case V4L2_CTRL_TYPE_INTEGER:
 		case V4L2_CTRL_TYPE_BOOLEAN:

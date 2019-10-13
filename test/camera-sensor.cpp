@@ -13,6 +13,7 @@
 #include "camera_sensor.h"
 #include "device_enumerator.h"
 #include "media_device.h"
+#include "utils.h"
 #include "v4l2_subdevice.h"
 
 #include "test.h"
@@ -91,7 +92,7 @@ protected:
 		if (format.mbus_code != MEDIA_BUS_FMT_SBGGR10_1X10 ||
 		    format.size != Size(4096, 2160)) {
 			cerr << "Failed to get a suitable format, expected 4096x2160-0x"
-			     << std::hex << MEDIA_BUS_FMT_SBGGR10_1X10
+			     << utils::hex(MEDIA_BUS_FMT_SBGGR10_1X10)
 			     << ", got " << format.toString() << endl;
 			return TestFail;
 		}

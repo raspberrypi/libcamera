@@ -30,6 +30,7 @@ internal_tests = [
     ['threads',                         'threads.cpp'],
     ['timer',                           'timer.cpp'],
     ['timer-thread',                    'timer-thread.cpp'],
+    ['utils',                           'utils.cpp'],
 ]
 
 foreach t : public_tests

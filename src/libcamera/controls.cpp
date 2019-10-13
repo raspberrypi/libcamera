@@ -549,8 +549,7 @@ const ControlValue &ControlList::get(unsigned int id) const
 	const auto ctrl = idmap_->find(id);
 	if (ctrl == idmap_->end()) {
 		LOG(Controls, Error)
-			<< std::hex << std::setfill('0')
-			<< "Control 0x" << std::setw(8) << id
+			<< "Control " << utils::hex(id)
 			<< " is not supported";
 		return zero;
 	}
@@ -579,8 +578,7 @@ void ControlList::set(unsigned int id, const ControlValue &value)
 	const auto ctrl = idmap_->find(id);
 	if (ctrl == idmap_->end()) {
 		LOG(Controls, Error)
-			<< std::hex << std::setfill('0')
-			<< "Control 0x" << std::setw(8) << id
+			<< "Control 0x" << utils::hex(id)
 			<< " is not supported";
 		return;
 	}

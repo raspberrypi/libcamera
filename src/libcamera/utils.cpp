@@ -143,6 +143,45 @@ std::string time_point_to_string(const time_point &time)
 	return ossTimestamp.str();
 }
 
+std::basic_ostream<char, std::char_traits<char>> &
+operator<<(std::basic_ostream<char, std::char_traits<char>> &stream, const _hex &h)
+{
+	stream << "0x";
+
+	std::ostream::fmtflags flags = stream.setf(std::ios_base::hex,
+						   std::ios_base::basefield);
+	std::streamsize width = stream.width(h.w);
+	char fill = stream.fill('0');
+
+	stream << h.v;
+
+	stream.flags(flags);
+	stream.width(width);
+	stream.fill(fill);
+
+	return stream;
+}
+
+/**
+ * \fn hex(T value, unsigned int width)
+ * \brief Write an hexadecimal value to an output string
+ * \param value The value
+ * \param width The width
+ *
+ * Return an object of unspecified type such that, if \a os is the name of an
+ * output stream of type std::ostream, and T is an integer type, then the
+ * expression
+ *
+ * \code{.cpp}
+ * os << utils::hex(value)
+ * \endcode
+ *
+ * will output the \a value to the stream in hexadecimal form with the base
+ * prefix and the filling character set to '0'. The field width is set to \a
+ * width if specified to a non-zero value, or to the native width of type T
+ * otherwise. The \a os stream configuration is not modified.
+ */
+
 } /* namespace utils */
 
 } /* namespace libcamera */

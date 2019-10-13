@@ -640,7 +640,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			       << ", direction: " << stream->stream_type
 			       << ", width: " << stream->width
 			       << ", height: " << stream->height
-			       << ", format: " << std::hex << stream->format;
+			       << ", format: " << utils::hex(stream->format);
 	}
 
 	/* Hardcode viewfinder role, collecting sizes from the stream config. */

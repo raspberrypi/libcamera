@@ -23,6 +23,7 @@
 #include "log.h"
 #include "media_device.h"
 #include "media_object.h"
+#include "utils.h"
 
 /**
  * \file v4l2_videodevice.h
@@ -239,10 +240,7 @@ LOG_DECLARE_CATEGORY(V4L2)
 const std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
-
-	ss.fill(0);
-	ss << size.toString() << "-0x" << std::hex << std::setw(8) << fourcc;
-
+	ss << size.toString() << "-" << utils::hex(fourcc);
 	return ss.str();
 }
 

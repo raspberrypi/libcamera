@@ -16,6 +16,7 @@
 #include <libcamera/request.h>
 
 #include "log.h"
+#include "utils.h"
 
 /**
  * \file stream.h
@@ -367,11 +368,7 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
 std::string StreamConfiguration::toString() const
 {
 	std::stringstream ss;
-
-	ss.fill(0);
-	ss << size.toString() << "-0x" << std::hex << std::setw(8)
-	   << pixelFormat;
-
+	ss << size.toString() << "-" << utils::hex(pixelFormat);
 	return ss.str();
 }
 

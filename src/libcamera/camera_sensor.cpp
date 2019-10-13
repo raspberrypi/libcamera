@@ -14,6 +14,7 @@
 #include <math.h>
 
 #include "formats.h"
+#include "utils.h"
 #include "v4l2_subdevice.h"
 
 /**
@@ -79,9 +80,8 @@ int CameraSensor::init()
 
 	if (entity_->function() != MEDIA_ENT_F_CAM_SENSOR) {
 		LOG(CameraSensor, Error)
-			<< "Invalid sensor function 0x"
-			<< std::hex << std::setfill('0') << std::setw(8)
-			<< entity_->function();
+			<< "Invalid sensor function "
+			<< utils::hex(entity_->function());
 		return -EINVAL;
 	}
 

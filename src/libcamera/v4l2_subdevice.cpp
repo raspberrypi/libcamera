@@ -21,6 +21,7 @@
 #include "log.h"
 #include "media_device.h"
 #include "media_object.h"
+#include "utils.h"
 
 /**
  * \file v4l2_subdevice.h
@@ -76,10 +77,7 @@ LOG_DECLARE_CATEGORY(V4L2)
 const std::string V4L2SubdeviceFormat::toString() const
 {
 	std::stringstream ss;
-
-	ss.fill(0);
-	ss << size.toString() << "-0x" << std::hex << std::setw(4) << mbus_code;
-
+	ss << size.toString() << "-" << utils::hex(mbus_code, 4);
 	return ss.str();
 }
 

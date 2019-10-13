@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <sys/time.h>
 
@@ -62,6 +63,45 @@ using time_point = std::chrono::steady_clock::time_point;
 
 struct timespec duration_to_timespec(const duration &value);
 std::string time_point_to_string(const time_point &time);
+
+#ifndef __DOXYGEN__
+struct _hex {
+	uint64_t v;
+	unsigned int w;
+};
+
+std::basic_ostream<char, std::char_traits<char>> &
+operator<<(std::basic_ostream<char, std::char_traits<char>> &stream, const _hex &h);
+#endif
+
+template<typename T>
+_hex hex(T value, unsigned int width = 0);
+
+#ifndef __DOXYGEN__
+template<>
+inline _hex hex<int32_t>(int32_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 8 };
+}
+
+template<>
+inline _hex hex<uint32_t>(uint32_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 8 };
+}
+
+template<>
+inline _hex hex<int64_t>(int64_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 16 };
+}
+
+template<>
+inline _hex hex<uint64_t>(uint64_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 16 };
+}
+#endif
 
 } /* namespace utils */
 

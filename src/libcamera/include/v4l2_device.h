@@ -45,7 +45,6 @@ protected:
 private:
 	void listControls();
 	void updateControls(ControlList *ctrls,
-			    const V4L2ControlInfo **controlInfo,
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);
 

@@ -171,7 +171,6 @@ int V4L2Device::getControls(ControlList *ctrls)
 	if (count == 0)
 		return 0;
 
-	const V4L2ControlInfo *controlInfo[count];
 	struct v4l2_ext_control v4l2Ctrls[count];
 	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
@@ -185,10 +184,7 @@ int V4L2Device::getControls(ControlList *ctrls)
 			return -EINVAL;
 		}
 
-		const V4L2ControlInfo *info = &iter->second;
-		controlInfo[i] = info;
 		v4l2Ctrls[i].id = id->id();
-
 		i++;
 	}
 
@@ -215,7 +211,7 @@ int V4L2Device::getControls(ControlList *ctrls)
 		ret = errorIdx;
 	}
 
-	updateControls(ctrls, controlInfo, v4l2Ctrls, count);
+	updateControls(ctrls, v4l2Ctrls, count);
 
 	return ret;
 }
@@ -249,7 +245,6 @@ int V4L2Device::setControls(ControlList *ctrls)
 	if (count == 0)
 		return 0;
 
-	const V4L2ControlInfo *controlInfo[count];
 	struct v4l2_ext_control v4l2Ctrls[count];
 	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
@@ -263,13 +258,11 @@ int V4L2Device::setControls(ControlList *ctrls)
 			return -EINVAL;
 		}
 
-		const V4L2ControlInfo *info = &iter->second;
-		controlInfo[i] = info;
 		v4l2Ctrls[i].id = id->id();
 
 		/* Set the v4l2_ext_control value for the write operation. */
 		const ControlValue &value = ctrl.second;
-		switch (info->id().type()) {
+		switch (id->type()) {
 		case ControlTypeInteger64:
 			v4l2Ctrls[i].value64 = value.get<int64_t>();
 			break;
@@ -308,7 +301,7 @@ int V4L2Device::setControls(ControlList *ctrls)
 		ret = errorIdx;
 	}
 
-	updateControls(ctrls, controlInfo, v4l2Ctrls, count);
+	updateControls(ctrls, v4l2Ctrls, count);
 
 	return ret;
 }
@@ -349,7 +342,7 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
  */
 void V4L2Device::listControls()
 {
-	std::map<unsigned int, V4L2ControlInfo> ctrls;
+	std::map<const ControlId *, V4L2ControlInfo> ctrls;
 	struct v4l2_query_ext_ctrl ctrl = {};
 
 	/* \todo Add support for menu and compound controls. */
@@ -388,8 +381,8 @@ void V4L2Device::listControls()
 
 		controlIds_.emplace_back(utils::make_unique<V4L2ControlId>(ctrl));
 		ctrls.emplace(std::piecewise_construct,
-			      std::forward_as_tuple(ctrl.id),
-			      std::forward_as_tuple(*controlIds_.back().get(), ctrl));
+			      std::forward_as_tuple(controlIds_.back().get()),
+			      std::forward_as_tuple(ctrl));
 	}
 
 	controls_ = std::move(ctrls);
@@ -399,12 +392,10 @@ void V4L2Device::listControls()
  * \brief Update the value of the first \a count V4L2 controls in \a ctrls using
  * values in \a v4l2Ctrls
  * \param[inout] ctrls List of V4L2 controls to update
- * \param[in] controlInfo List of V4L2 control information
  * \param[in] v4l2Ctrls List of V4L2 extended controls as returned by the driver
  * \param[in] count The number of controls to update
  */
 void V4L2Device::updateControls(ControlList *ctrls,
-				const V4L2ControlInfo **controlInfo,
 				const struct v4l2_ext_control *v4l2Ctrls,
 				unsigned int count)
 {
@@ -414,10 +405,10 @@ void V4L2Device::updateControls(ControlList *ctrls,
 			break;
 
 		const struct v4l2_ext_control *v4l2Ctrl = &v4l2Ctrls[i];
-		const V4L2ControlInfo *info = controlInfo[i];
+		const ControlId *id = ctrl.first;
 		ControlValue &value = ctrl.second;
 
-		switch (info->id().type()) {
+		switch (id->type()) {
 		case ControlTypeInteger64:
 			value.set<int64_t>(v4l2Ctrl->value64);
 			break;

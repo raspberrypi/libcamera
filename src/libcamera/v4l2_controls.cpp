@@ -122,12 +122,9 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 
 /**
  * \brief Construct a V4L2ControlInfo from a struct v4l2_query_ext_ctrl
- * \param[in] id The V4L2 control ID
  * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
  */
-V4L2ControlInfo::V4L2ControlInfo(const V4L2ControlId &id,
-				 const struct v4l2_query_ext_ctrl &ctrl)
-	: id_(&id)
+V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
 		range_ = ControlRange(static_cast<int64_t>(ctrl.minimum),
@@ -138,12 +135,6 @@ V4L2ControlInfo::V4L2ControlInfo(const V4L2ControlId &id,
 }
 
 /**
- * \fn V4L2ControlInfo::id()
- * \brief Retrieve the control ID
- * \return The V4L2 control ID
- */
-
-/**
  * \fn V4L2ControlInfo::range()
  * \brief Retrieve the control value range
  * \return The V4L2 control value range
@@ -151,7 +142,7 @@ V4L2ControlInfo::V4L2ControlInfo(const V4L2ControlId &id,
 
 /**
  * \class V4L2ControlInfoMap
- * \brief A map of control ID to V4L2ControlInfo
+ * \brief A map of controlID to V4L2ControlInfo
  */
 
 /**
@@ -165,15 +156,67 @@ V4L2ControlInfo::V4L2ControlInfo(const V4L2ControlId &id,
  *
  * \return The populated V4L2ControlInfoMap
  */
-V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<unsigned int, V4L2ControlInfo> &&info)
+V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(std::map<const ControlId *, V4L2ControlInfo> &&info)
 {
-	std::map<unsigned int, V4L2ControlInfo>::operator=(std::move(info));
+	std::map<const ControlId *, V4L2ControlInfo>::operator=(std::move(info));
 
 	idmap_.clear();
 	for (const auto &ctrl : *this)
-		idmap_[ctrl.first] = &ctrl.second.id();
+		idmap_[ctrl.first->id()] = ctrl.first;
 
 	return *this;
+}
+
+/**
+ * \brief Access specified element by numerical ID
+ * \param[in] id The numerical ID
+ * \return A reference to the element whose ID is equal to \a id
+ */
+V4L2ControlInfoMap::mapped_type &V4L2ControlInfoMap::at(unsigned int id)
+{
+	return at(idmap_.at(id));
+}
+
+/**
+ * \brief Access specified element by numerical ID
+ * \param[in] id The numerical ID
+ * \return A const reference to the element whose ID is equal to \a id
+ */
+const V4L2ControlInfoMap::mapped_type &V4L2ControlInfoMap::at(unsigned int id) const
+{
+	return at(idmap_.at(id));
+}
+
+/**
+ * \brief Count the number of elements matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return The number of elements matching the numerical \a id
+ */
+V4L2ControlInfoMap::size_type V4L2ControlInfoMap::count(unsigned int id) const
+{
+	return count(idmap_.at(id));
+}
+
+/**
+ * \brief Find the element matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return An iterator pointing to the element matching the numerical \a id, or
+ * end() if no such element exists
+ */
+V4L2ControlInfoMap::iterator V4L2ControlInfoMap::find(unsigned int id)
+{
+	return find(idmap_.at(id));
+}
+
+/**
+ * \brief Find the element matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return A const iterator pointing to the element matching the numerical
+ * \a id, or end() if no such element exists
+ */
+V4L2ControlInfoMap::const_iterator V4L2ControlInfoMap::find(unsigned int id) const
+{
+	return find(idmap_.at(id));
 }
 
 /**

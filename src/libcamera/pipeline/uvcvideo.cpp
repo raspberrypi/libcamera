@@ -340,7 +340,7 @@ int UVCCameraData::init(MediaEntity *entity)
 		const V4L2ControlInfo &info = ctrl.second;
 		const ControlId *id;
 
-		switch (info.id().id()) {
+		switch (ctrl.first->id()) {
 		case V4L2_CID_BRIGHTNESS:
 			id = &controls::Brightness;
 			break;

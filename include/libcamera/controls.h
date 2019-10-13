@@ -118,7 +118,50 @@ private:
 };
 
 using ControlIdMap = std::unordered_map<unsigned int, const ControlId *>;
-using ControlInfoMap = std::unordered_map<const ControlId *, ControlRange>;
+
+class ControlInfoMap : private std::unordered_map<const ControlId *, ControlRange>
+{
+public:
+	using Map = std::unordered_map<const ControlId *, ControlRange>;
+
+	ControlInfoMap() = default;
+	ControlInfoMap(const ControlInfoMap &other) = default;
+	ControlInfoMap(std::initializer_list<Map::value_type> init);
+
+	ControlInfoMap &operator=(const ControlInfoMap &other) = default;
+	ControlInfoMap &operator=(std::initializer_list<Map::value_type> init);
+	ControlInfoMap &operator=(Map &&info);
+
+	using Map::key_type;
+	using Map::mapped_type;
+	using Map::value_type;
+	using Map::size_type;
+	using Map::iterator;
+	using Map::const_iterator;
+
+	using Map::begin;
+	using Map::cbegin;
+	using Map::end;
+	using Map::cend;
+	using Map::at;
+	using Map::empty;
+	using Map::size;
+	using Map::count;
+	using Map::find;
+
+	mapped_type &at(unsigned int key);
+	const mapped_type &at(unsigned int key) const;
+	size_type count(unsigned int key) const;
+	iterator find(unsigned int key);
+	const_iterator find(unsigned int key) const;
+
+	const ControlIdMap &idmap() const { return idmap_; }
+
+private:
+	void generateIdmap();
+
+	ControlIdMap idmap_;
+};
 
 class ControlList
 {

@@ -16,9 +16,9 @@
 
 namespace libcamera {
 
+class ControlInfoMap;
 class ControlList;
 class MediaEntity;
-class V4L2ControlInfoMap;
 class V4L2Subdevice;
 
 struct V4L2SubdeviceFormat;
@@ -43,7 +43,7 @@ public:
 				      const Size &size) const;
 	int setFormat(V4L2SubdeviceFormat *format);
 
-	const V4L2ControlInfoMap &controls() const;
+	const ControlInfoMap &controls() const;
 	int getControls(ControlList *ctrls);
 	int setControls(ControlList *ctrls);
 

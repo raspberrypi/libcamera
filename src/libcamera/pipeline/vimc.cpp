@@ -411,7 +411,9 @@ int VimcCameraData::init(MediaDevice *media)
 		return -ENODEV;
 
 	/* Initialise the supported controls. */
-	const V4L2ControlInfoMap &controls = sensor_->controls();
+	const ControlInfoMap &controls = sensor_->controls();
+	ControlInfoMap::Map ctrls;
+
 	for (const auto &ctrl : controls) {
 		const ControlRange &range = ctrl.second;
 		const ControlId *id;
@@ -430,11 +432,12 @@ int VimcCameraData::init(MediaDevice *media)
 			continue;
 		}
 
-		controlInfo_.emplace(std::piecewise_construct,
-				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(range));
+		ctrls.emplace(std::piecewise_construct,
+			      std::forward_as_tuple(id),
+			      std::forward_as_tuple(range));
 	}
 
+	controlInfo_ = std::move(ctrls);
 	return 0;
 }
 

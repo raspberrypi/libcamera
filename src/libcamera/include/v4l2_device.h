@@ -24,7 +24,7 @@ public:
 	void close();
 	bool isOpen() const { return fd_ != -1; }
 
-	const V4L2ControlInfoMap &controls() const { return controls_; }
+	const ControlInfoMap &controls() const { return controls_; }
 
 	int getControls(ControlList *ctrls);
 	int setControls(ControlList *ctrls);
@@ -49,7 +49,7 @@ private:
 			    unsigned int count);
 
 	std::vector<std::unique_ptr<V4L2ControlId>> controlIds_;
-	V4L2ControlInfoMap controls_;
+	ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;
 };

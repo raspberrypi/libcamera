@@ -393,9 +393,146 @@ std::string ControlRange::toString() const
  */
 
 /**
- * \typedef ControlInfoMap
+ * \class ControlInfoMap
  * \brief A map of ControlId to ControlRange
+ *
+ * The ControlInfoMap class describes controls supported by an object as an
+ * unsorted map of ControlId pointers to ControlRange instances. Unlike the
+ * standard std::unsorted_map<> class, it is designed the be immutable once
+ * constructed, and thus only exposes the read accessors of the
+ * std::unsorted_map<> base class.
+ *
+ * In addition to the features of the standard unsorted map, this class also
+ * provides access to the mapped elements using numerical ID keys. It maintains
+ * an internal map of numerical ID to ControlId for this purpose, and exposes it
+ * through the idmap() method to help construction of ControlList instances.
  */
+
+/**
+ * \typedef ControlInfoMap::Map
+ * \brief The base std::unsorted_map<> container
+ */
+
+/**
+ * \fn ControlInfoMap::ControlInfoMap(const ControlInfoMap &other)
+ * \brief Copy constructor, construct a ControlInfoMap from a copy of \a other
+ * \param[in] other The other ControlInfoMap
+ */
+
+/**
+ * \brief Construct a ControlInfoMap from an initializer list
+ * \param[in] init The initializer list
+ */
+ControlInfoMap::ControlInfoMap(std::initializer_list<Map::value_type> init)
+	: Map(init)
+{
+	generateIdmap();
+}
+
+/**
+ * \fn ControlInfoMap &ControlInfoMap::operator=(const ControlInfoMap &other)
+ * \brief Copy assignment operator, replace the contents with a copy of \a other
+ * \param[in] other The other ControlInfoMap
+ * \return A reference to the ControlInfoMap
+ */
+
+/**
+ * \brief Replace the contents with those from the initializer list
+ * \param[in] init The initializer list
+ * \return A reference to the ControlInfoMap
+ */
+ControlInfoMap &ControlInfoMap::operator=(std::initializer_list<Map::value_type> init)
+{
+	Map::operator=(init);
+	generateIdmap();
+	return *this;
+}
+
+/**
+ * \brief Move assignment operator from a plain map
+ * \param[in] info The control info plain map
+ *
+ * Populate the map by replacing its contents with those of \a info using move
+ * semantics. Upon return the \a info map will be empty.
+ *
+ * \return A reference to the populated ControlInfoMap
+ */
+ControlInfoMap &ControlInfoMap::operator=(Map &&info)
+{
+	Map::operator=(std::move(info));
+	generateIdmap();
+	return *this;
+}
+
+/**
+ * \brief Access specified element by numerical ID
+ * \param[in] id The numerical ID
+ * \return A reference to the element whose ID is equal to \a id
+ */
+ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id)
+{
+	return at(idmap_.at(id));
+}
+
+/**
+ * \brief Access specified element by numerical ID
+ * \param[in] id The numerical ID
+ * \return A const reference to the element whose ID is equal to \a id
+ */
+const ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id) const
+{
+	return at(idmap_.at(id));
+}
+
+/**
+ * \brief Count the number of elements matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return The number of elements matching the numerical \a id
+ */
+ControlInfoMap::size_type ControlInfoMap::count(unsigned int id) const
+{
+	return count(idmap_.at(id));
+}
+
+/**
+ * \brief Find the element matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return An iterator pointing to the element matching the numerical \a id, or
+ * end() if no such element exists
+ */
+ControlInfoMap::iterator ControlInfoMap::find(unsigned int id)
+{
+	return find(idmap_.at(id));
+}
+
+/**
+ * \brief Find the element matching a numerical ID
+ * \param[in] id The numerical ID
+ * \return A const iterator pointing to the element matching the numerical
+ * \a id, or end() if no such element exists
+ */
+ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
+{
+	return find(idmap_.at(id));
+}
+
+/**
+ * \fn const ControlIdMap &ControlInfoMap::idmap() const
+ * \brief Retrieve the ControlId map
+ *
+ * Constructing ControlList instances for V4L2 controls requires a ControlIdMap
+ * for the V4L2 device that the control list targets. This helper method
+ * returns a suitable idmap for that purpose.
+ *
+ * \return The ControlId map
+ */
+
+void ControlInfoMap::generateIdmap()
+{
+	idmap_.clear();
+	for (const auto &ctrl : *this)
+		idmap_[ctrl.first->id()] = ctrl.first;
+}
 
 /**
  * \class ControlList

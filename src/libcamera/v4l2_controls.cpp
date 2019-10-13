@@ -127,101 +127,11 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
 }
 
 /**
- * \class V4L2ControlInfoMap
- * \brief A map of controlID to ControlRange for V4L2 controls
- */
-
-/**
- * \brief Move assignment operator from a ControlInfoMap
- * \param[in] info The control info map
- *
- * Populate the map by replacing its contents with those of \a info using move
- * semantics. Upon return the \a info map will be empty.
- *
- * This is the only supported way to populate a V4L2ControlInfoMap.
- *
- * \return The populated V4L2ControlInfoMap
- */
-V4L2ControlInfoMap &V4L2ControlInfoMap::operator=(ControlInfoMap &&info)
-{
-	ControlInfoMap::operator=(std::move(info));
-
-	idmap_.clear();
-	for (const auto &ctrl : *this)
-		idmap_[ctrl.first->id()] = ctrl.first;
-
-	return *this;
-}
-
-/**
- * \brief Access specified element by numerical ID
- * \param[in] id The numerical ID
- * \return A reference to the element whose ID is equal to \a id
- */
-V4L2ControlInfoMap::mapped_type &V4L2ControlInfoMap::at(unsigned int id)
-{
-	return at(idmap_.at(id));
-}
-
-/**
- * \brief Access specified element by numerical ID
- * \param[in] id The numerical ID
- * \return A const reference to the element whose ID is equal to \a id
- */
-const V4L2ControlInfoMap::mapped_type &V4L2ControlInfoMap::at(unsigned int id) const
-{
-	return at(idmap_.at(id));
-}
-
-/**
- * \brief Count the number of elements matching a numerical ID
- * \param[in] id The numerical ID
- * \return The number of elements matching the numerical \a id
- */
-V4L2ControlInfoMap::size_type V4L2ControlInfoMap::count(unsigned int id) const
-{
-	return count(idmap_.at(id));
-}
-
-/**
- * \brief Find the element matching a numerical ID
- * \param[in] id The numerical ID
- * \return An iterator pointing to the element matching the numerical \a id, or
- * end() if no such element exists
- */
-V4L2ControlInfoMap::iterator V4L2ControlInfoMap::find(unsigned int id)
-{
-	return find(idmap_.at(id));
-}
-
-/**
- * \brief Find the element matching a numerical ID
- * \param[in] id The numerical ID
- * \return A const iterator pointing to the element matching the numerical
- * \a id, or end() if no such element exists
- */
-V4L2ControlInfoMap::const_iterator V4L2ControlInfoMap::find(unsigned int id) const
-{
-	return find(idmap_.at(id));
-}
-
-/**
- * \fn const ControlIdMap &V4L2ControlInfoMap::idmap() const
- * \brief Retrieve the ControlId map
- *
- * Constructing ControlList instances for V4L2 controls requires a ControlIdMap
- * for the V4L2 device that the control list targets. This helper method
- * returns a suitable idmap for that purpose.
- *
- * \return The ControlId map
- */
-
-/**
  * \class V4L2ControlList
  * \brief A list of controls for a V4L2 device
  *
  * This class specialises the ControList class for use with V4L2 devices. It
- * offers a convenience API to create a ControlList from a V4L2ControlInfoMap.
+ * offers a convenience API to create a ControlList from a ControlInfoMap.
  *
  * V4L2ControlList allows easy construction of a ControlList containing V4L2
  * controls for a device. It can be used to construct the list of controls
@@ -231,7 +141,7 @@ V4L2ControlInfoMap::const_iterator V4L2ControlInfoMap::find(unsigned int id) con
  */
 
 /**
- * \fn V4L2ControlList::V4L2ControlList(const V4L2ControlInfoMap &info)
+ * \fn V4L2ControlList::V4L2ControlList(const ControlInfoMap &info)
  * \brief Construct a V4L2ControlList associated with a V4L2 device
  * \param[in] info The V4L2 device control info map
  */

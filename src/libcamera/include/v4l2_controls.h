@@ -31,44 +31,10 @@ public:
 	V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl);
 };
 
-class V4L2ControlInfoMap : private ControlInfoMap
-{
-public:
-	V4L2ControlInfoMap &operator=(ControlInfoMap &&info);
-
-	using ControlInfoMap::key_type;
-	using ControlInfoMap::mapped_type;
-	using ControlInfoMap::value_type;
-	using ControlInfoMap::size_type;
-	using ControlInfoMap::iterator;
-	using ControlInfoMap::const_iterator;
-
-	using ControlInfoMap::begin;
-	using ControlInfoMap::cbegin;
-	using ControlInfoMap::end;
-	using ControlInfoMap::cend;
-	using ControlInfoMap::at;
-	using ControlInfoMap::empty;
-	using ControlInfoMap::size;
-	using ControlInfoMap::count;
-	using ControlInfoMap::find;
-
-	mapped_type &at(unsigned int key);
-	const mapped_type &at(unsigned int key) const;
-	size_type count(unsigned int key) const;
-	iterator find(unsigned int key);
-	const_iterator find(unsigned int key) const;
-
-	const ControlIdMap &idmap() const { return idmap_; }
-
-private:
-	ControlIdMap idmap_;
-};
-
 class V4L2ControlList : public ControlList
 {
 public:
-	V4L2ControlList(const V4L2ControlInfoMap &info)
+	V4L2ControlList(const ControlInfoMap &info)
 		: ControlList(info.idmap())
 	{
 	}

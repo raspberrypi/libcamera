@@ -776,7 +776,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		.size = data->stream_.configuration().size,
 	};
 
-	std::map<unsigned int, V4L2ControlInfoMap> entityControls;
+	std::map<unsigned int, ControlInfoMap> entityControls;
 	entityControls.emplace(0, data->sensor_->controls());
 
 	data->ipa_->configure(streamConfig, entityControls);
@@ -875,9 +875,12 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	std::unique_ptr<RkISP1CameraData> data =
 		utils::make_unique<RkISP1CameraData>(this);
 
-	data->controlInfo_.emplace(std::piecewise_construct,
-				   std::forward_as_tuple(&controls::AeEnable),
-				   std::forward_as_tuple(false, true));
+	ControlInfoMap::Map ctrls;
+	ctrls.emplace(std::piecewise_construct,
+		      std::forward_as_tuple(&controls::AeEnable),
+		      std::forward_as_tuple(false, true));
+
+	data->controlInfo_ = std::move(ctrls);
 
 	data->sensor_ = new CameraSensor(sensor);
 	ret = data->sensor_->init();

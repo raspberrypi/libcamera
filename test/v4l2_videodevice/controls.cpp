@@ -26,7 +26,7 @@ public:
 protected:
 	int run()
 	{
-		const V4L2ControlInfoMap &info = capture_->controls();
+		const ControlInfoMap &info = capture_->controls();
 
 		/* Test control enumeration. */
 		if (info.empty()) {

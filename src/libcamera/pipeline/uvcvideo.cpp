@@ -335,7 +335,9 @@ int UVCCameraData::init(MediaEntity *entity)
 	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
 
 	/* Initialise the supported controls. */
-	const V4L2ControlInfoMap &controls = video_->controls();
+	const ControlInfoMap &controls = video_->controls();
+	ControlInfoMap::Map ctrls;
+
 	for (const auto &ctrl : controls) {
 		const ControlRange &range = ctrl.second;
 		const ControlId *id;
@@ -360,10 +362,12 @@ int UVCCameraData::init(MediaEntity *entity)
 			continue;
 		}
 
-		controlInfo_.emplace(std::piecewise_construct,
-				     std::forward_as_tuple(id),
-				     std::forward_as_tuple(range));
+		ctrls.emplace(std::piecewise_construct,
+			      std::forward_as_tuple(id),
+			      std::forward_as_tuple(range));
 	}
+
+	controlInfo_ = std::move(ctrls);
 
 	return 0;
 }

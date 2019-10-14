@@ -353,7 +353,7 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  * Pipeline handlers shall override this method. The base implementation in the
  * PipelineHandler class keeps track of queued requests in order to ensure
  * completion of all requests when the pipeline handler is stopped with stop().
- * Requests completion shall be signaled by the pipeline handler using the
+ * Requests completion shall be signalled by the pipeline handler using the
  * completeRequest() method.
  *
  * \return 0 on success or a negative error code otherwise

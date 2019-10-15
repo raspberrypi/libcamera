@@ -8,11 +8,13 @@
 #include "v4l2_device.h"
 
 #include <fcntl.h>
+#include <iomanip>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "log.h"
+#include "utils.h"
 #include "v4l2_controls.h"
 
 /**
@@ -371,8 +373,9 @@ void V4L2Device::listControls()
 			break;
 		/* \todo Support compound controls. */
 		default:
-			LOG(V4L2, Debug) << "Control type '" << ctrl.type
-					 << "' not supported";
+			LOG(V4L2, Debug)
+				<< "Control " << utils::hex(ctrl.id)
+				<< " has unsupported type " << ctrl.type;
 			continue;
 		}
 

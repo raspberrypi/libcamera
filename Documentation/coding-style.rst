@@ -1,9 +1,7 @@
+.. _coding-style-guidelines:
+
 Coding Style Guidelines
 =======================
-
-The libcamera project has high standards of stability, efficiency and
-reliability. To achieve those, the project goes to great length to produce
-code that is as easy to read, understand and maintain as possible.
 
 These coding guidelines are meant to ensure code quality. As a contributor
 you are expected to follow them in all code submitted to the project. While

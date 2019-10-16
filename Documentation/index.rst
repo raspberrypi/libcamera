@@ -7,6 +7,5 @@
 
    Home <self>
    Docs <docs>
-   Coding Style <coding-style>
    Contribute <contributing>
    API <api-html/index>

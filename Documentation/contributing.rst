@@ -53,6 +53,12 @@ Sphinx integration with Doxygen is planned, likely using `Breathe`_ and
 Submitting Patches
 ------------------
 
+The libcamera project has high standards of stability, efficiency and
+reliability. To achieve those, the project goes to great length to produce
+code that is as easy to read, understand and maintain as possible. This is
+made possible by a set of :ref:`coding-style-guidelines` that all submissions
+are expected to follow.
+
 Patches submitted to the libcamera project must be certified as suitable for
 integration into an open source project. As such libcamera follows the same
 model as utilised by the Linux kernel, and requires the use of 'Signed-off-by:'
@@ -62,3 +68,8 @@ By signing your contributions you are certifying your work in accordance with
 the `Developer's Certificate of Origin`_
 
 .. _Developer's Certificate of Origin: https://developercertificate.org/
+
+.. toctree::
+   :hidden:
+
+   Coding Style <coding-style>

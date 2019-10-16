@@ -1,3 +1,5 @@
+.. section-begin-libcamera
+
 ===========
  libcamera
 ===========
@@ -18,6 +20,9 @@ open-source-friendly while still protecting vendor core IP. libcamera was born
 out of that collaboration and will offer modern camera support to Linux-based
 systems, including traditional Linux distributions, ChromeOS and Android.
 
+.. section-end-libcamera
+.. section-begin-getting-started
+
 Getting Started
 ---------------
 
@@ -31,7 +36,7 @@ To build and install:
   ninja install
 
 Dependencies
-------------
+~~~~~~~~~~~~
 
 The following Debian/Ubuntu packages are required for building libcamera.
 Other distributions may have differing package names:
@@ -50,3 +55,5 @@ for qcam: [optional]
 
 for documentation: [optional]
 	python3-sphinx doxygen
+
+.. section-end-getting-started

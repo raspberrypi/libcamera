@@ -117,7 +117,7 @@ void QtEventDispatcher::registerTimer(Timer *timer)
 	std::chrono::steady_clock::duration duration = timer->deadline() - now;
 	std::chrono::milliseconds msec =
 		std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-	int timerId = startTimer(msec);
+	int timerId = startTimer(msec.count());
 	timers_[timerId] = timer;
 	timerIds_[timer] = timerId;
 }

@@ -42,13 +42,8 @@ Documentation
 Project documentation is created using `Sphinx`_.  Source level documentation
 uses `Doxygen`_.  Please make sure to document all code during development.
 
-Sphinx integration with Doxygen is planned, likely using `Breathe`_ and
-`Exhale`_.
-
 .. _Sphinx: http://www.sphinx-doc.org
 .. _Doxygen: http://www.doxygen.nl
-.. _Breathe: https://breathe.readthedocs.io/en/latest/
-.. _Exhale: https://exhale.readthedocs.io/en/latest/
 
 Submitting Patches
 ------------------

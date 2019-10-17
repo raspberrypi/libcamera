@@ -1,3 +1,6 @@
+.. contents::
+   :local:
+
 *************
 Documentation
 *************

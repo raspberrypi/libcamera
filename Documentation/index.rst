@@ -8,4 +8,3 @@
    Home <self>
    Docs <docs>
    Contribute <contributing>
-   API <api-html/index>

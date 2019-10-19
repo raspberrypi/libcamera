@@ -6,7 +6,7 @@ html {
 }
 
 body {
-	color: rgb(0, 0, 0, 0.5);
+	color: rgb(0, 0, 0, 0.65);
 	font-family: Arial, sans-serif;
 	margin: 0px;
 }
@@ -217,7 +217,6 @@ div#content > div.block {
 }
 
 div#content > div.block h1 {
-	color: black;
 	font-size: 40px;
 	margin-top: 0px;
 	text-align: left;

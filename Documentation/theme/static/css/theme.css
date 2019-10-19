@@ -204,7 +204,6 @@ div#content {
 	padding-bottom: 50px;
 	margin-left: 0px;
 	margin-right: 0px;
-	overflow: auto;
 }
 
 div#content > div.block {
@@ -283,5 +282,8 @@ div#signature {
 }
 
 #libcamera div.toctree-wrapper {
+	height: 0px;
+	margin: 0px;
+	padding: 0px;
 	visibility: hidden;
 }

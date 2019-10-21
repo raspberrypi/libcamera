@@ -30,8 +30,8 @@ public:
 	ControlValue(int32_t value);
 	ControlValue(int64_t value);
 
-	ControlType type() const { return type_; };
-	bool isNone() const { return type_ == ControlTypeNone; };
+	ControlType type() const { return type_; }
+	bool isNone() const { return type_ == ControlTypeNone; }
 
 	template<typename T>
 	const T &get() const;

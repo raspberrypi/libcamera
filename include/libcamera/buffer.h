@@ -13,7 +13,6 @@
 
 namespace libcamera {
 
-class BufferPool;
 class Request;
 class Stream;
 

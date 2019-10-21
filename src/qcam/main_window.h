@@ -7,7 +7,6 @@
 #ifndef __QCAM_MAIN_WINDOW_H__
 #define __QCAM_MAIN_WINDOW_H__
 
-#include <map>
 #include <memory>
 
 #include <QElapsedTimer>
@@ -49,8 +48,7 @@ private:
 	int startCapture();
 	void stopCapture();
 
-	void requestComplete(Request *request,
-			     const std::map<Stream *, Buffer *> &buffers);
+	void requestComplete(Request *request);
 	int display(Buffer *buffer);
 
 	QString title_;

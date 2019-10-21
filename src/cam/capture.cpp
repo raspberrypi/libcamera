@@ -133,10 +133,12 @@ int Capture::capture(EventLoop *loop)
 	return ret;
 }
 
-void Capture::requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
+void Capture::requestComplete(Request *request)
 {
 	if (request->status() == Request::RequestCancelled)
 		return;
+
+	const std::map<Stream *, Buffer *> &buffers = request->buffers();
 
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	double fps = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_).count();

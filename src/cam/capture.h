@@ -28,8 +28,7 @@ public:
 private:
 	int capture(EventLoop *loop);
 
-	void requestComplete(libcamera::Request *request,
-			     const std::map<libcamera::Stream *, libcamera::Buffer *> &buffers);
+	void requestComplete(libcamera::Request *request);
 
 	libcamera::Camera *camera_;
 	libcamera::CameraConfiguration *config_;

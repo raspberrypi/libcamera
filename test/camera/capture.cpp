@@ -27,10 +27,12 @@ protected:
 		completeBuffersCount_++;
 	}
 
-	void requestComplete(Request *request, const std::map<Stream *, Buffer *> &buffers)
+	void requestComplete(Request *request)
 	{
 		if (request->status() != Request::RequestComplete)
 			return;
+
+		const std::map<Stream *, Buffer *> &buffers = request->buffers();
 
 		completeRequestsCount_++;
 

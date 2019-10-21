@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_CAMERA_H__
 #define __LIBCAMERA_CAMERA_H__
 
-#include <map>
 #include <memory>
 #include <set>
 #include <stdint.h>
@@ -79,7 +78,7 @@ public:
 	const std::string &name() const;
 
 	Signal<Request *, Buffer *> bufferCompleted;
-	Signal<Request *, const std::map<Stream *, Buffer *> &> requestCompleted;
+	Signal<Request *> requestCompleted;
 	Signal<Camera *> disconnected;
 
 	int acquire();

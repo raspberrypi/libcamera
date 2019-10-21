@@ -248,11 +248,12 @@ void MainWindow::stopCapture()
 	setWindowTitle(title_);
 }
 
-void MainWindow::requestComplete(Request *request,
-				 const std::map<Stream *, Buffer *> &buffers)
+void MainWindow::requestComplete(Request *request)
 {
 	if (request->status() == Request::RequestCancelled)
 		return;
+
+	const std::map<Stream *, Buffer *> &buffers = request->buffers();
 
 	framesCaptured_++;
 

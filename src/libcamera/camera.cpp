@@ -919,7 +919,7 @@ void Camera::requestComplete(Request *request)
 			stream->unmapBuffer(buffer);
 	}
 
-	requestCompleted.emit(request, request->buffers());
+	requestCompleted.emit(request);
 	delete request;
 }
 

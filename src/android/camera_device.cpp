@@ -769,9 +769,9 @@ error:
 	delete descriptor;
 }
 
-void CameraDevice::requestComplete(Request *request,
-				   const std::map<Stream *, Buffer *> &buffers)
+void CameraDevice::requestComplete(Request *request)
 {
+	const std::map<Stream *, Buffer *> &buffers = request->buffers();
 	Buffer *libcameraBuffer = buffers.begin()->second;
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;

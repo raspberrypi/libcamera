@@ -1,4 +1,5 @@
 libcamera_ipa_api = files([
+    'ipa_controls.h',
     'ipa_interface.h',
     'ipa_module_info.h',
 ])

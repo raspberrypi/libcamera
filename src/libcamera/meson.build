@@ -14,6 +14,7 @@ libcamera_sources = files([
     'event_notifier.cpp',
     'formats.cpp',
     'geometry.cpp',
+    'ipa_controls.cpp',
     'ipa_interface.cpp',
     'ipa_manager.cpp',
     'ipa_module.cpp',

@@ -88,7 +88,6 @@ public:
 
 private:
 	friend class Camera;
-	friend class PipelineHandler;
 	friend class Request;
 	friend class Stream;
 	friend class V4L2VideoDevice;

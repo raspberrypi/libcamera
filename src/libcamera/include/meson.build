@@ -1,4 +1,5 @@
 libcamera_headers = files([
+    'byte_stream_buffer.h',
     'camera_controls.h',
     'camera_sensor.h',
     'control_validator.h',

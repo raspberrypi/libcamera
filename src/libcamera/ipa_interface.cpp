@@ -261,6 +261,16 @@
  * \sa libcamera::IPAInterface::processEvent()
  */
 
+/**
+ * \fn ipaCreate()
+ * \brief Entry point to the IPA modules
+ *
+ * This function is the entry point to the IPA modules. It is implemented by
+ * every IPA module, and called by libcamera to create a new IPA context.
+ *
+ * \return A newly created IPA context
+ */
+
 namespace libcamera {
 
 /**

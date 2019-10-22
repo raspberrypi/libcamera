@@ -80,6 +80,8 @@ struct ipa_context_ops {
 			      const struct ipa_operation_data *data);
 };
 
+struct ipa_context *ipaCreate();
+
 #ifdef __cplusplus
 }
 

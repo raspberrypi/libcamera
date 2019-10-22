@@ -33,6 +33,7 @@ namespace utils {
 const char *basename(const char *path);
 
 char *secure_getenv(const char *name);
+std::string dirname(const std::string &path);
 
 template<class InputIt1, class InputIt2>
 unsigned int set_overlap(InputIt1 first1, InputIt1 last1,

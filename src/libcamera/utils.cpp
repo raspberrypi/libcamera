@@ -71,6 +71,54 @@ char *secure_getenv(const char *name)
 }
 
 /**
+ * \brief Identify the dirname portion of a path
+ * \param[in] path The full path to parse
+ *
+ * This function conforms with the behaviour of the %dirname() function as
+ * defined by POSIX.
+ *
+ * \return A string of the directory component of the path
+ */
+std::string dirname(const std::string &path)
+{
+	if (path.empty())
+		return ".";
+
+	/*
+	 * Skip all trailing slashes. If the path is only made of slashes,
+	 * return "/".
+	 */
+	size_t pos = path.size() - 1;
+	while (path[pos] == '/') {
+		if (!pos)
+			return "/";
+		pos--;
+	}
+
+	/*
+	 * Find the previous slash. If the path contains no non-trailing slash,
+	 * return ".".
+	 */
+	while (path[pos] != '/') {
+		if (!pos)
+			return ".";
+		pos--;
+	}
+
+	/*
+	 * Return the directory name up to (but not including) any trailing
+	 * slash. If this would result in an empty string, return "/".
+	 */
+	while (path[pos] == '/') {
+		if (!pos)
+			return "/";
+		pos--;
+	}
+
+	return path.substr(0, pos + 1);
+}
+
+/**
  * \fn libcamera::utils::set_overlap(InputIt1 first1, InputIt1 last1,
  *				     InputIt2 first2, InputIt2 last2)
  * \brief Count the number of elements in the intersection of two ranges

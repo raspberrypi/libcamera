@@ -19,6 +19,56 @@ using namespace libcamera;
 class UtilsTest : public Test
 {
 protected:
+	int testDirname()
+	{
+		static const std::vector<std::string> paths = {
+			"",
+			"///",
+			"/bin",
+			"/usr/bin",
+			"//etc////",
+			"//tmp//d//",
+			"current_file",
+			"./current_file",
+			"./current_dir/",
+			"current_dir/",
+		};
+
+		static const std::vector<std::string> expected = {
+			".",
+			"/",
+			"/",
+			"/usr",
+			"/",
+			"//tmp",
+			".",
+			".",
+			".",
+			".",
+		};
+
+		std::vector<std::string> results;
+
+		for (const auto &path : paths)
+			results.push_back(utils::dirname(path));
+
+		if (results != expected) {
+			cerr << "utils::dirname() tests failed" << endl;
+
+			cerr << "expected: " << endl;
+			for (const auto &path : expected)
+				cerr << "\t" << path << endl;
+
+			cerr << "results: " << endl;
+			for (const auto &path : results)
+				cerr << "\t" << path << endl;
+
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
 	int run()
 	{
 		/* utils::hex() test. */
@@ -70,6 +120,10 @@ protected:
 			cerr << "utils::split() test failed" << endl;
 			return TestFail;
 		}
+
+		/* utils::dirname() tests. */
+		if (TestPass != testDirname())
+			return TestFail;
 
 		return TestPass;
 	}

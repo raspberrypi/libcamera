@@ -61,6 +61,29 @@ document:
   Code Style for indentation, braces, spacing, etc
 * Header guards are formatted as '__LIBCAMERA_FILE_NAME_H__'
 
+Order of Includes
+~~~~~~~~~~~~~~~~~
+
+Headers shall be included at the beginning of .c, .cpp and .h files, right
+after the file description comment block and, for .h files, the header guard
+macro. For .cpp files, if the file implements an API declared in a header file,
+that header file shall be included first in order to ensure it is
+self-contained.
+
+The headers shall be grouped and ordered as follows.
+
+ # The header declaring the API being implemented (if any)
+ # The C and C++ system and standard library headers
+ # Other libraries' headers, with one group per library
+ # Other project's headers
+
+Groups of headers shall be separated by a single blank line. Headers within
+each group shall be sorted alphabetically.
+
+System and library headers shall be included with angle brackets. Project
+headers shall be included with angle brackets for the libcamera public API
+headers, and with double quotes for other libcamera headers.
+
 
 C++ Specific Rules
 ------------------

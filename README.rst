@@ -26,10 +26,12 @@ systems, including traditional Linux distributions, ChromeOS and Android.
 Getting Started
 ---------------
 
-To build and install:
+To fetch the sources, build and install:
 
 ::
 
+  git clone git://linuxtv.org/libcamera.git
+  cd libcamera
   meson build
   cd build
   ninja

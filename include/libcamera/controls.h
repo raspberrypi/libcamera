@@ -147,6 +147,7 @@ public:
 	ControlInfoMap() = default;
 	ControlInfoMap(const ControlInfoMap &other) = default;
 	ControlInfoMap(std::initializer_list<Map::value_type> init);
+	ControlInfoMap(Map &&info);
 
 	ControlInfoMap &operator=(const ControlInfoMap &other) = default;
 	ControlInfoMap &operator=(std::initializer_list<Map::value_type> init);

@@ -447,6 +447,19 @@ ControlInfoMap::ControlInfoMap(std::initializer_list<Map::value_type> init)
 }
 
 /**
+ * \brief Construct a ControlInfoMap from a plain map
+ * \param[in] info The control info plain map
+ *
+ * Construct a new ControlInfoMap and populate its contents with those of
+ * \a info using move semantics. Upon return the \a info map will be empty.
+ */
+ControlInfoMap::ControlInfoMap(Map &&info)
+	: Map(std::move(info))
+{
+	generateIdmap();
+}
+
+/**
  * \fn ControlInfoMap &ControlInfoMap::operator=(const ControlInfoMap &other)
  * \brief Copy assignment operator, replace the contents with a copy of \a other
  * \param[in] other The other ControlInfoMap

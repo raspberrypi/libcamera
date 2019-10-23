@@ -240,6 +240,38 @@ class StyleIssue(object):
         self.msg = msg
 
 
+class IncludeChecker(StyleChecker):
+    patterns = ('*.cpp', '*.h')
+
+    headers = ('assert', 'ctype', 'errno', 'fenv', 'float', 'inttypes',
+               'limits', 'locale', 'math', 'setjmp', 'signal', 'stdarg',
+               'stddef', 'stdint', 'stdio', 'stdlib', 'string', 'time', 'uchar',
+               'wchar', 'wctype')
+    include_regex = re.compile('^#include <c([a-z]*)>')
+
+    def __init__(self, content):
+        super().__init__()
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+
+        for line_number in line_numbers:
+            line = self.__content[line_number - 1]
+            match = IncludeChecker.include_regex.match(line)
+            if not match:
+                continue
+
+            header = match.group(1)
+            if header not in IncludeChecker.headers:
+                continue
+
+            issues.append(StyleIssue(line_number, line,
+                                     'C compatibility header <%s.h> is preferred' % header))
+
+        return issues
+
+
 class LogCategoryChecker(StyleChecker):
     log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
     patterns = ('*.cpp',)

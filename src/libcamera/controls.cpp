@@ -597,7 +597,7 @@ void ControlInfoMap::generateIdmap()
  * be used directly by application.
  */
 ControlList::ControlList()
-	: validator_(nullptr), idmap_(nullptr)
+	: validator_(nullptr), idmap_(nullptr), infoMap_(nullptr)
 {
 }
 
@@ -611,7 +611,7 @@ ControlList::ControlList()
  * argument.
  */
 ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
-	: validator_(validator), idmap_(&idmap)
+	: validator_(validator), idmap_(&idmap), infoMap_(nullptr)
 {
 }
 
@@ -621,7 +621,7 @@ ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
  * \param[in] validator The validator (may be null)
  */
 ControlList::ControlList(const ControlInfoMap &info, ControlValidator *validator)
-	: validator_(validator), idmap_(&info.idmap())
+	: validator_(validator), idmap_(&info.idmap()), infoMap_(&info)
 {
 }
 
@@ -770,6 +770,16 @@ void ControlList::set(unsigned int id, const ControlValue &value)
 
 	*val = value;
 }
+
+/**
+ * \fn ControlList::infoMap()
+ * \brief Retrieve the ControlInfoMap used to construct the ControlList
+ *
+ * \return The ControlInfoMap used to construct the ControlList. ControlList
+ * instances constructed with ControlList() or
+ * ControlList(const ControlIdMap &idmap, ControlValidator *validator) have no
+ * associated ControlInfoMap, nullptr is returned in that case.
+ */
 
 const ControlValue *ControlList::find(unsigned int id) const
 {

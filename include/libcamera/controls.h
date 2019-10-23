@@ -233,12 +233,16 @@ public:
 	const ControlValue &get(unsigned int id) const;
 	void set(unsigned int id, const ControlValue &value);
 
+	const ControlInfoMap *infoMap() const { return infoMap_; }
+
 private:
 	const ControlValue *find(unsigned int id) const;
 	ControlValue *find(unsigned int id);
 
 	ControlValidator *validator_;
 	const ControlIdMap *idmap_;
+	const ControlInfoMap *infoMap_;
+
 	ControlListMap controls_;
 };
 

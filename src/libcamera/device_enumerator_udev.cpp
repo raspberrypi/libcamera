@@ -8,11 +8,10 @@
 #include "device_enumerator_udev.h"
 
 #include <algorithm>
-#include <list>
-#include <map>
-
 #include <fcntl.h>
 #include <libudev.h>
+#include <list>
+#include <map>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/sysmacros.h>

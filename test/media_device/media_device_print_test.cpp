@@ -4,8 +4,8 @@
  *
  * media_device_print_test.cpp - Print out media devices
  */
-#include <iostream>
 
+#include <iostream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

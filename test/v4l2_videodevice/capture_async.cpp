@@ -5,11 +5,11 @@
  * libcamera V4L2 API tests
  */
 
+#include <iostream>
+
 #include <libcamera/buffer.h>
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
-
-#include <iostream>
 
 #include "thread.h"
 #include "v4l2_videodevice_test.h"

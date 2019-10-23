@@ -5,8 +5,8 @@
  * controls.cpp - V4L2 device controls handling test
  */
 
-#include <climits>
 #include <iostream>
+#include <limits.h>
 
 #include "v4l2_videodevice.h"
 

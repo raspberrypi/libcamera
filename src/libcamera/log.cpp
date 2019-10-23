@@ -7,14 +7,14 @@
 
 #include "log.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <time.h>
 #include <unordered_set>
 
 #include <libcamera/logging.h>

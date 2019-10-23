@@ -5,8 +5,8 @@
  * libcamera V4L2 Subdevice format handling test
  */
 
-#include <climits>
 #include <iostream>
+#include <limits.h>
 
 #include "v4l2_subdevice.h"
 #include "v4l2_subdevice_test.h"

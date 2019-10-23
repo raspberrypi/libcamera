@@ -6,9 +6,9 @@
  */
 
 #include <chrono>
-#include <climits>
 #include <iomanip>
 #include <iostream>
+#include <limits.h>
 #include <sstream>
 
 #include "capture.h"

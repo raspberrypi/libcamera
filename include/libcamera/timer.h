@@ -8,7 +8,7 @@
 #define __LIBCAMERA_TIMER_H__
 
 #include <chrono>
-#include <cstdint>
+#include <stdint.h>
 
 #include <libcamera/object.h>
 #include <libcamera/signal.h>

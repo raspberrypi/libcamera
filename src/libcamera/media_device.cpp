@@ -9,11 +9,10 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <string>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-#include <string>
 #include <vector>
 
 #include <linux/media.h>

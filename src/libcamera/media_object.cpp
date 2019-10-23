@@ -8,10 +8,9 @@
 #include "media_object.h"
 
 #include <errno.h>
+#include <string>
 #include <string.h>
 #include <unistd.h>
-
-#include <string>
 #include <vector>
 
 #include <linux/media.h>

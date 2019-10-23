@@ -6,12 +6,11 @@
  */
 
 #include <fcntl.h>
+#include <iostream>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <iostream>
 
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/event_notifier.h>

@@ -7,11 +7,11 @@
 #ifndef __LIBCAMERA_EVENT_DISPATCHER_POLL_H__
 #define __LIBCAMERA_EVENT_DISPATCHER_POLL_H__
 
-#include <libcamera/event_dispatcher.h>
-
 #include <list>
 #include <map>
 #include <vector>
+
+#include <libcamera/event_dispatcher.h>
 
 struct pollfd;
 

@@ -5,8 +5,8 @@
  * libcamera V4L2 device format handling test
  */
 
-#include <climits>
 #include <iostream>
+#include <limits.h>
 
 #include "v4l2_videodevice.h"
 

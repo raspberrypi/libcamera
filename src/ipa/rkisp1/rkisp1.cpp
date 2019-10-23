@@ -6,9 +6,9 @@
  */
 
 #include <algorithm>
-#include <cstdint>
 #include <math.h>
 #include <queue>
+#include <stdint.h>
 #include <string.h>
 
 #include <linux/rkisp1-config.h>

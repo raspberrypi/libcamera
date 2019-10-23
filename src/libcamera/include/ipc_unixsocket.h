@@ -8,7 +8,7 @@
 #ifndef __LIBCAMERA_IPC_UNIXSOCKET_H__
 #define __LIBCAMERA_IPC_UNIXSOCKET_H__
 
-#include <cstdint>
+#include <stdint.h>
 #include <sys/types.h>
 #include <vector>
 

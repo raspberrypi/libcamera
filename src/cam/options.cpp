@@ -5,7 +5,7 @@
  * options.cpp - cam - Options parsing
  */
 
-#include <cassert>
+#include <assert.h>
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>

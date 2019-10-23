@@ -9,8 +9,8 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
 #include <iomanip>
+#include <limits.h>
 #include <sstream>
 
 #include <libcamera/request.h>

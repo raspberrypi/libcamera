@@ -170,6 +170,18 @@ These rules match the `object ownership rules from the Chromium C++ Style Guide`
    long term borrowing isn't marked through language constructs, it shall be
    documented explicitly in details in the API.
 
+C Compatibility Headers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The C++ standard defines a set of C++ standard library headers, and for some of
+them, defines C compatibility headers. The former have a name of the form
+<cxxx> while the later are named <xxx.h>. The C++ headers declare names in the
+std namespace, and may declare the same names in the global namespace. The C
+compatibility headers declare names in the global namespace, and may declare
+the same names in the std namespace. Usage of the C compatibility headers is
+strongly preferred. Code shall not rely on the optional declaration of names in
+the global or std namespace.
+
 
 Documentation
 -------------

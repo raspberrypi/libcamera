@@ -103,6 +103,16 @@ private:
 	}
 };
 
+namespace {
+
+constexpr std::array<unsigned int, 3> pixelformats{
+	V4L2_PIX_FMT_BGR24,
+	V4L2_PIX_FMT_RGB24,
+	V4L2_PIX_FMT_ARGB32,
+};
+
+} /* namespace */
+
 VimcCameraConfiguration::VimcCameraConfiguration()
 	: CameraConfiguration()
 {
@@ -110,12 +120,6 @@ VimcCameraConfiguration::VimcCameraConfiguration()
 
 CameraConfiguration::Status VimcCameraConfiguration::validate()
 {
-	static const std::array<unsigned int, 3> formats{
-		V4L2_PIX_FMT_BGR24,
-		V4L2_PIX_FMT_RGB24,
-		V4L2_PIX_FMT_ARGB32,
-	};
-
 	Status status = Valid;
 
 	if (config_.empty())
@@ -130,8 +134,8 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	StreamConfiguration &cfg = config_[0];
 
 	/* Adjust the pixel format. */
-	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
-	    formats.end()) {
+	if (std::find(pixelformats.begin(), pixelformats.end(), cfg.pixelFormat) ==
+	    pixelformats.end()) {
 		LOG(VIMC, Debug) << "Adjusting format to RGB24";
 		cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
 		status = Adjusted;
@@ -170,7 +174,18 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	if (roles.empty())
 		return config;
 
-	StreamConfiguration cfg{};
+	ImageFormats formats;
+
+	for (unsigned int pixelformat : pixelformats) {
+		/* The scaler hardcodes a x3 scale-up ratio. */
+		std::vector<SizeRange> sizes{
+			SizeRange{ 48, 48, 4096, 2160 }
+		};
+		formats.addFormat(pixelformat, sizes);
+	}
+
+	StreamConfiguration cfg(formats.data());
+
 	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
 	cfg.size = { 1920, 1080 };
 	cfg.bufferCount = 4;

@@ -14,12 +14,14 @@
 
 #include "buffer_writer.h"
 
+using namespace libcamera;
+
 BufferWriter::BufferWriter(const std::string &pattern)
 	: pattern_(pattern)
 {
 }
 
-int BufferWriter::write(libcamera::Buffer *buffer, const std::string &streamName)
+int BufferWriter::write(Buffer *buffer, const std::string &streamName)
 {
 	std::string filename;
 	size_t pos;
@@ -40,8 +42,8 @@ int BufferWriter::write(libcamera::Buffer *buffer, const std::string &streamName
 	if (fd == -1)
 		return -errno;
 
-	libcamera::BufferMemory *mem = buffer->mem();
-	for (libcamera::Plane &plane : mem->planes()) {
+	BufferMemory *mem = buffer->mem();
+	for (Plane &plane : mem->planes()) {
 		void *data = plane.mem();
 		unsigned int length = plane.length();
 

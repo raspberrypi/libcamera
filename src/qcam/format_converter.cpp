@@ -7,7 +7,7 @@
 
 #include <errno.h>
 
-#include <linux/videodev2.h>
+#include <linux/drm_fourcc.h>
 
 #include <QImage>
 
@@ -31,84 +31,84 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 			       unsigned int height)
 {
 	switch (format) {
-	case V4L2_PIX_FMT_NV12:
+	case DRM_FORMAT_NV12:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = false;
 		break;
-	case V4L2_PIX_FMT_NV21:
+	case DRM_FORMAT_NV21:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = true;
 		break;
-	case V4L2_PIX_FMT_NV16:
+	case DRM_FORMAT_NV16:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
-	case V4L2_PIX_FMT_NV61:
+	case DRM_FORMAT_NV61:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
-	case V4L2_PIX_FMT_NV24:
+	case DRM_FORMAT_NV24:
 		formatFamily_ = NV;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
-	case V4L2_PIX_FMT_NV42:
+	case DRM_FORMAT_NV42:
 		formatFamily_ = NV;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
-	case V4L2_PIX_FMT_BGR24:
+	case DRM_FORMAT_RGB888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;
 		g_pos_ = 1;
 		b_pos_ = 0;
 		bpp_ = 3;
 		break;
-	case V4L2_PIX_FMT_RGB24:
+	case DRM_FORMAT_BGR888:
 		formatFamily_ = RGB;
 		r_pos_ = 0;
 		g_pos_ = 1;
 		b_pos_ = 2;
 		bpp_ = 3;
 		break;
-	case V4L2_PIX_FMT_ARGB32:
+	case DRM_FORMAT_BGRA8888:
 		formatFamily_ = RGB;
 		r_pos_ = 1;
 		g_pos_ = 2;
 		b_pos_ = 3;
 		bpp_ = 4;
 		break;
-	case V4L2_PIX_FMT_VYUY:
+	case DRM_FORMAT_VYUY:
 		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 2;
 		break;
-	case V4L2_PIX_FMT_YVYU:
+	case DRM_FORMAT_YVYU:
 		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 3;
 		break;
-	case V4L2_PIX_FMT_UYVY:
+	case DRM_FORMAT_UYVY:
 		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 0;
 		break;
-	case V4L2_PIX_FMT_YUYV:
+	case DRM_FORMAT_YUYV:
 		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
-	case V4L2_PIX_FMT_MJPEG:
+	case DRM_FORMAT_MJPEG:
 		formatFamily_ = MJPEG;
 		break;
 	default:

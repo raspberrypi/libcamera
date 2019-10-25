@@ -19,8 +19,10 @@ namespace libcamera {
  * \brief libcamera image pixel format
  *
  * The PixelFormat type describes the format of images in the public libcamera
- * API. It stores a FourCC value in a 32-bit unsigned integer. The values are
- * defined in the Linux kernel V4L2 API (see linux/videodev2.h).
+ * API. It stores a FourCC value as a 32-bit unsigned integer. The values are
+ * defined in the Linux kernel DRM/KMS API (see linux/drm_fourcc.h).
+ *
+ * \todo Add support for format modifiers
  */
 
 } /* namespace libcamera */

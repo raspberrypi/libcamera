@@ -176,7 +176,7 @@ int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration *config)
 	int ret;
 
 	V4L2DeviceFormat format = {};
-	format.fourcc = cfg.pixelFormat;
+	format.fourcc = data->video_->toV4L2Fourcc(cfg.pixelFormat);
 	format.size = cfg.size;
 
 	ret = data->video_->setFormat(&format);
@@ -184,7 +184,7 @@ int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	if (format.size != cfg.size ||
-	    format.fourcc != cfg.pixelFormat)
+	    format.fourcc != data->video_->toV4L2Fourcc(cfg.pixelFormat))
 		return -EINVAL;
 
 	cfg.setStream(&data->stream_);

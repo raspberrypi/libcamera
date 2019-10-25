@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <tuple>
 
+#include <linux/drm_fourcc.h>
 #include <linux/media-bus-format.h>
 
 #include <ipa/ipa_interface.h>
@@ -106,9 +107,9 @@ private:
 namespace {
 
 constexpr std::array<unsigned int, 3> pixelformats{
-	V4L2_PIX_FMT_BGR24,
-	V4L2_PIX_FMT_RGB24,
-	V4L2_PIX_FMT_ARGB32,
+	DRM_FORMAT_RGB888,
+	DRM_FORMAT_BGR888,
+	DRM_FORMAT_BGRA8888,
 };
 
 } /* namespace */
@@ -137,7 +138,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	if (std::find(pixelformats.begin(), pixelformats.end(), cfg.pixelFormat) ==
 	    pixelformats.end()) {
 		LOG(VIMC, Debug) << "Adjusting format to RGB24";
-		cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
+		cfg.pixelFormat = DRM_FORMAT_BGR888;
 		status = Adjusted;
 	}
 
@@ -186,7 +187,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	StreamConfiguration cfg(formats.data());
 
-	cfg.pixelFormat = V4L2_PIX_FMT_RGB24;
+	cfg.pixelFormat = DRM_FORMAT_BGR888;
 	cfg.size = { 1920, 1080 };
 	cfg.bufferCount = 4;
 
@@ -231,7 +232,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	V4L2DeviceFormat format = {};
-	format.fourcc = cfg.pixelFormat;
+	format.fourcc = data->video_->toV4L2Fourcc(cfg.pixelFormat);
 	format.size = cfg.size;
 
 	ret = data->video_->setFormat(&format);
@@ -239,7 +240,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	if (format.size != cfg.size ||
-	    format.fourcc != cfg.pixelFormat)
+	    format.fourcc != data->video_->toV4L2Fourcc(cfg.pixelFormat))
 		return -EINVAL;
 
 	/*

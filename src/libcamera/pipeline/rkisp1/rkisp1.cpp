@@ -11,6 +11,7 @@
 #include <memory>
 #include <queue>
 
+#include <linux/drm_fourcc.h>
 #include <linux/media-bus-format.h>
 
 #include <ipa/rkisp1.h>
@@ -434,14 +435,14 @@ RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
 	static const std::array<unsigned int, 8> formats{
-		V4L2_PIX_FMT_YUYV,
-		V4L2_PIX_FMT_YVYU,
-		V4L2_PIX_FMT_VYUY,
-		V4L2_PIX_FMT_NV16,
-		V4L2_PIX_FMT_NV61,
-		V4L2_PIX_FMT_NV21,
-		V4L2_PIX_FMT_NV12,
-		V4L2_PIX_FMT_GREY,
+		DRM_FORMAT_YUYV,
+		DRM_FORMAT_YVYU,
+		DRM_FORMAT_VYUY,
+		DRM_FORMAT_NV16,
+		DRM_FORMAT_NV61,
+		DRM_FORMAT_NV21,
+		DRM_FORMAT_NV12,
+		/* \todo Add support for 8-bit greyscale to DRM formats */
 	};
 
 	const CameraSensor *sensor = data_->sensor_;
@@ -462,7 +463,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
 	    formats.end()) {
 		LOG(RkISP1, Debug) << "Adjusting format to NV12";
-		cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+		cfg.pixelFormat = DRM_FORMAT_NV12,
 		status = Adjusted;
 	}
 
@@ -541,7 +542,7 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 		return config;
 
 	StreamConfiguration cfg{};
-	cfg.pixelFormat = V4L2_PIX_FMT_NV12;
+	cfg.pixelFormat = DRM_FORMAT_NV12;
 	cfg.size = data->sensor_->resolution();
 
 	config->addConfiguration(cfg);
@@ -623,7 +624,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	LOG(RkISP1, Debug) << "ISP output pad configured with " << format.toString();
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = cfg.pixelFormat;
+	outputFormat.fourcc = video_->toV4L2Fourcc(cfg.pixelFormat);
 	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 
@@ -632,7 +633,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	if (outputFormat.size != cfg.size ||
-	    outputFormat.fourcc != cfg.pixelFormat) {
+	    outputFormat.fourcc != video_->toV4L2Fourcc(cfg.pixelFormat)) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;

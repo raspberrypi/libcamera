@@ -155,7 +155,16 @@ public:
 	}
 
 	bool done() const { return done_; }
-	const V4L2DeviceFormat &format() const { return format_; }
+
+	PixelFormat format() const
+	{
+		return video_->toPixelFormat(format_.fourcc);
+	}
+
+	const Size &size() const
+	{
+		return format_.size;
+	}
 
 	Signal<uint64_t, int> requestReady;
 
@@ -314,11 +323,9 @@ protected:
 			return TestFail;
 		}
 
-		const V4L2DeviceFormat &format = sink_.format();
-
 		StreamConfiguration &cfg = config->at(0);
-		cfg.size = format.size;
-		cfg.pixelFormat = format.fourcc;
+		cfg.size = sink_.size();
+		cfg.pixelFormat = sink_.format();
 		cfg.bufferCount = CAMERA_BUFFER_COUNT;
 		cfg.memoryType = ExternalMemory;
 

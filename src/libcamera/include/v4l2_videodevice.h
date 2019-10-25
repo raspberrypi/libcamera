@@ -13,6 +13,7 @@
 #include <linux/videodev2.h>
 
 #include <libcamera/geometry.h>
+#include <libcamera/pixelformats.h>
 #include <libcamera/signal.h>
 
 #include "formats.h"
@@ -154,6 +155,10 @@ public:
 
 	static V4L2VideoDevice *fromEntityName(const MediaDevice *media,
 					       const std::string &entity);
+
+	static PixelFormat toPixelFormat(uint32_t v4l2Fourcc);
+	uint32_t toV4L2Fourcc(PixelFormat pixelFormat);
+	static uint32_t toV4L2Fourcc(PixelFormat pixelFormat, bool multiplanar);
 
 protected:
 	std::string logPrefix() const;

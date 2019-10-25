@@ -66,27 +66,37 @@ void MainWindow::updateTitle()
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
 }
 
+std::string MainWindow::chooseCamera(CameraManager *cm)
+{
+	QStringList cameras;
+	bool result;
+
+	if (cm->cameras().size() == 1)
+		return cm->cameras()[0]->name();
+
+	for (const std::shared_ptr<Camera> &cam : cm->cameras())
+		cameras.append(QString::fromStdString(cam->name()));
+
+	QString name = QInputDialog::getItem(this, "Select Camera",
+					     "Camera:", cameras, 0,
+					     false, &result);
+	if (!result)
+		return std::string();
+
+	return name.toStdString();
+}
+
 int MainWindow::openCamera(CameraManager *cm)
 {
 	std::string cameraName;
 
-	if (!options_.isSet(OptCamera)) {
-		QStringList cameras;
-		bool result;
-
-		for (const std::shared_ptr<Camera> &cam : cm->cameras())
-			cameras.append(QString::fromStdString(cam->name()));
-
-		QString name = QInputDialog::getItem(this, "Select Camera",
-						     "Camera:", cameras, 0,
-						     false, &result);
-		if (!result)
-			return -EINVAL;
-
-		cameraName = name.toStdString();
-	} else {
+	if (options_.isSet(OptCamera))
 		cameraName = static_cast<std::string>(options_[OptCamera]);
-	}
+	else
+		cameraName = chooseCamera(cm);
+
+	if (cameraName == "")
+		return -EINVAL;
 
 	camera_ = cm->get(cameraName);
 	if (!camera_) {

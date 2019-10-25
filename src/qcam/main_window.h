@@ -43,6 +43,7 @@ private Q_SLOTS:
 	void updateTitle();
 
 private:
+	std::string chooseCamera(CameraManager *cm);
 	int openCamera(CameraManager *cm);
 
 	int startCapture();

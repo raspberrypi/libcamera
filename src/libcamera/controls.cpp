@@ -491,7 +491,12 @@ const ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id) const
  */
 ControlInfoMap::size_type ControlInfoMap::count(unsigned int id) const
 {
-	return count(idmap_.at(id));
+	/*
+	 * The ControlInfoMap and its idmap have a 1:1 mapping between their
+	 * entries, we can thus just count the matching entries in idmap to
+	 * avoid an additional lookup.
+	 */
+	return idmap_.count(id);
 }
 
 /**
@@ -502,7 +507,11 @@ ControlInfoMap::size_type ControlInfoMap::count(unsigned int id) const
  */
 ControlInfoMap::iterator ControlInfoMap::find(unsigned int id)
 {
-	return find(idmap_.at(id));
+	auto iter = idmap_.find(id);
+	if (iter == idmap_.end())
+		return end();
+
+	return find(iter->second);
 }
 
 /**
@@ -513,7 +522,11 @@ ControlInfoMap::iterator ControlInfoMap::find(unsigned int id)
  */
 ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
 {
-	return find(idmap_.at(id));
+	auto iter = idmap_.find(id);
+	if (iter == idmap_.end())
+		return end();
+
+	return find(iter->second);
 }
 
 /**

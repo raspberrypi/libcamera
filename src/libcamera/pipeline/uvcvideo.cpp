@@ -231,7 +231,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 	ControlList controls(data->video_->controls());
 
 	for (auto it : request->controls()) {
-		const ControlId &id = *it.first;
+		unsigned int id = it.first;
 		ControlValue &value = it.second;
 
 		if (id == controls::Brightness) {
@@ -250,7 +250,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 
 	for (const auto &ctrl : controls)
 		LOG(UVC, Debug)
-			<< "Setting control " << ctrl.first->name()
+			<< "Setting control " << utils::hex(ctrl.first)
 			<< " to " << ctrl.second.toString();
 
 	int ret = data->video_->setControls(&controls);

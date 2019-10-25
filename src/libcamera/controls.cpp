@@ -259,16 +259,21 @@ bool ControlValue::operator==(const ControlValue &other) const
  */
 
 /**
- * \fn bool operator==(const ControlId &lhs, const ControlId &rhs)
- * \brief Compare two ControlId instances for equality
- * \param[in] lhs Left-hand side ControlId
+ * \fn bool operator==(unsigned int lhs, const ControlId &rhs)
+ * \brief Compare a ControlId with a control numerical ID
+ * \param[in] lhs Left-hand side numerical ID
  * \param[in] rhs Right-hand side ControlId
  *
- * ControlId instances are compared based on the numerical ControlId::id()
- * only, as an object may not have two separate controls with the same
- * numerical ID.
+ * \return True if \a lhs is equal to \a rhs.id(), false otherwise
+ */
+
+/**
+ * \fn bool operator==(const ControlId &lhs, unsigned int rhs)
+ * \brief Compare a ControlId with a control numerical ID
+ * \param[in] lhs Left-hand side ControlId
+ * \param[in] rhs Right-hand side numerical ID
  *
- * \return True if \a lhs and \a rhs have equal control IDs, false otherwise
+ * \return True if \a lhs.id() is equal to \a rhs, false otherwise
  */
 
 /**
@@ -657,7 +662,7 @@ ControlList::ControlList(const ControlInfoMap &info, ControlValidator *validator
  */
 bool ControlList::contains(const ControlId &id) const
 {
-	return controls_.find(&id) != controls_.end();
+	return controls_.find(id.id()) != controls_.end();
 }
 
 /**
@@ -668,11 +673,7 @@ bool ControlList::contains(const ControlId &id) const
  */
 bool ControlList::contains(unsigned int id) const
 {
-	const auto iter = idmap_->find(id);
-	if (iter == idmap_->end())
-		return false;
-
-	return contains(*iter->second);
+	return controls_.find(id) != controls_.end();
 }
 
 /**
@@ -718,15 +719,7 @@ const ControlValue &ControlList::get(unsigned int id) const
 {
 	static ControlValue zero;
 
-	const auto ctrl = idmap_->find(id);
-	if (ctrl == idmap_->end()) {
-		LOG(Controls, Error)
-			<< "Control " << utils::hex(id)
-			<< " is not supported";
-		return zero;
-	}
-
-	const ControlValue *val = find(*ctrl->second);
+	const ControlValue *val = find(id);
 	if (!val)
 		return zero;
 
@@ -747,27 +740,19 @@ const ControlValue &ControlList::get(unsigned int id) const
  */
 void ControlList::set(unsigned int id, const ControlValue &value)
 {
-	const auto ctrl = idmap_->find(id);
-	if (ctrl == idmap_->end()) {
-		LOG(Controls, Error)
-			<< "Control 0x" << utils::hex(id)
-			<< " is not supported";
-		return;
-	}
-
-	ControlValue *val = find(*ctrl->second);
+	ControlValue *val = find(id);
 	if (!val)
 		return;
 
 	*val = value;
 }
 
-const ControlValue *ControlList::find(const ControlId &id) const
+const ControlValue *ControlList::find(unsigned int id) const
 {
-	const auto iter = controls_.find(&id);
+	const auto iter = controls_.find(id);
 	if (iter == controls_.end()) {
 		LOG(Controls, Error)
-			<< "Control " << id.name() << " not found";
+			<< "Control " << utils::hex(id) << " not found";
 
 		return nullptr;
 	}
@@ -775,16 +760,16 @@ const ControlValue *ControlList::find(const ControlId &id) const
 	return &iter->second;
 }
 
-ControlValue *ControlList::find(const ControlId &id)
+ControlValue *ControlList::find(unsigned int id)
 {
 	if (validator_ && !validator_->validate(id)) {
 		LOG(Controls, Error)
-			<< "Control " << id.name()
+			<< "Control " << utils::hex(id)
 			<< " is not valid for " << validator_->name();
 		return nullptr;
 	}
 
-	return &controls_[&id];
+	return &controls_[id];
 }
 
 } /* namespace libcamera */

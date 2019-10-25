@@ -176,15 +176,15 @@ int V4L2Device::getControls(ControlList *ctrls)
 
 	unsigned int i = 0;
 	for (const auto &ctrl : *ctrls) {
-		const ControlId *id = ctrl.first;
-		const auto iter = controls_.find(id->id());
+		unsigned int id = ctrl.first;
+		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
-				<< "Control '" << id->name() << "' not found";
+				<< "Control " << utils::hex(id) << " not found";
 			return -EINVAL;
 		}
 
-		v4l2Ctrls[i].id = id->id();
+		v4l2Ctrls[i].id = id;
 		i++;
 	}
 
@@ -250,19 +250,19 @@ int V4L2Device::setControls(ControlList *ctrls)
 
 	unsigned int i = 0;
 	for (const auto &ctrl : *ctrls) {
-		const ControlId *id = ctrl.first;
-		const auto iter = controls_.find(id->id());
+		unsigned int id = ctrl.first;
+		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
-				<< "Control '" << id->name() << "' not found";
+				<< "Control " << utils::hex(id) << " not found";
 			return -EINVAL;
 		}
 
-		v4l2Ctrls[i].id = id->id();
+		v4l2Ctrls[i].id = id;
 
 		/* Set the v4l2_ext_control value for the write operation. */
 		const ControlValue &value = ctrl.second;
-		switch (id->type()) {
+		switch (iter->first->type()) {
 		case ControlTypeInteger64:
 			v4l2Ctrls[i].value64 = value.get<int64_t>();
 			break;
@@ -403,10 +403,11 @@ void V4L2Device::updateControls(ControlList *ctrls,
 			break;
 
 		const struct v4l2_ext_control *v4l2Ctrl = &v4l2Ctrls[i];
-		const ControlId *id = ctrl.first;
+		unsigned int id = ctrl.first;
 		ControlValue &value = ctrl.second;
 
-		switch (id->type()) {
+		const auto iter = controls_.find(id);
+		switch (iter->first->type()) {
 		case ControlTypeInteger64:
 			value.set<int64_t>(v4l2Ctrl->value64);
 			break;

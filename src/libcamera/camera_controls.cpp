@@ -44,10 +44,10 @@ const std::string &CameraControlValidator::name() const
  * \param[in] id The control ID
  * \return True if the control is valid, false otherwise
  */
-bool CameraControlValidator::validate(const ControlId &id) const
+bool CameraControlValidator::validate(unsigned int id) const
 {
 	const ControlInfoMap &controls = camera_->controls();
-	return controls.find(&id) != controls.end();
+	return controls.find(id) != controls.end();
 }
 
 } /* namespace libcamera */

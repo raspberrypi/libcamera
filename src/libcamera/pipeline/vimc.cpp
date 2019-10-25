@@ -298,7 +298,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 	ControlList controls(data->sensor_->controls());
 
 	for (auto it : request->controls()) {
-		const ControlId &id = *it.first;
+		unsigned int id = it.first;
 		ControlValue &value = it.second;
 
 		if (id == controls::Brightness)
@@ -311,7 +311,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 
 	for (const auto &ctrl : controls)
 		LOG(VIMC, Debug)
-			<< "Setting control " << ctrl.first->name()
+			<< "Setting control " << utils::hex(ctrl.first)
 			<< " to " << ctrl.second.toString();
 
 	int ret = data->sensor_->setControls(&controls);

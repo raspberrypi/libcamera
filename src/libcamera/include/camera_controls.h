@@ -19,7 +19,7 @@ public:
 	CameraControlValidator(Camera *camera);
 
 	const std::string &name() const override;
-	bool validate(const ControlId &id) const override;
+	bool validate(unsigned int id) const override;
 
 private:
 	Camera *camera_;

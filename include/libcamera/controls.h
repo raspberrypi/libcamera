@@ -78,12 +78,22 @@ private:
 	ControlType type_;
 };
 
-static inline bool operator==(const ControlId &lhs, const ControlId &rhs)
+static inline bool operator==(unsigned int lhs, const ControlId &rhs)
 {
-	return lhs.id() == rhs.id();
+	return lhs == rhs.id();
 }
 
-static inline bool operator!=(const ControlId &lhs, const ControlId &rhs)
+static inline bool operator!=(unsigned int lhs, const ControlId &rhs)
+{
+	return !(lhs == rhs);
+}
+
+static inline bool operator==(const ControlId &lhs, unsigned int rhs)
+{
+	return lhs.id() == rhs;
+}
+
+static inline bool operator!=(const ControlId &lhs, unsigned int rhs)
 {
 	return !(lhs == rhs);
 }
@@ -176,7 +186,7 @@ private:
 class ControlList
 {
 private:
-	using ControlListMap = std::unordered_map<const ControlId *, ControlValue>;
+	using ControlListMap = std::unordered_map<unsigned int, ControlValue>;
 
 public:
 	ControlList(const ControlIdMap &idmap, ControlValidator *validator = nullptr);
@@ -200,7 +210,7 @@ public:
 	template<typename T>
 	const T &get(const Control<T> &ctrl) const
 	{
-		const ControlValue *val = find(ctrl);
+		const ControlValue *val = find(ctrl.id());
 		if (!val) {
 			static T t(0);
 			return t;
@@ -212,7 +222,7 @@ public:
 	template<typename T>
 	void set(const Control<T> &ctrl, const T &value)
 	{
-		ControlValue *val = find(ctrl);
+		ControlValue *val = find(ctrl.id());
 		if (!val)
 			return;
 
@@ -223,8 +233,8 @@ public:
 	void set(unsigned int id, const ControlValue &value);
 
 private:
-	const ControlValue *find(const ControlId &id) const;
-	ControlValue *find(const ControlId &id);
+	const ControlValue *find(unsigned int id) const;
+	ControlValue *find(unsigned int id);
 
 	ControlValidator *validator_;
 	const ControlIdMap *idmap_;

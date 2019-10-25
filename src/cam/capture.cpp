@@ -91,7 +91,6 @@ int Capture::capture(EventLoop *loop)
 			return -ENOMEM;
 		}
 
-		std::map<Stream *, Buffer *> map;
 		for (StreamConfiguration &cfg : *config_) {
 			Stream *stream = cfg.stream();
 			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);

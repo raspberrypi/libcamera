@@ -821,9 +821,16 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
 		return ret;
 	}
 
+	if (rb.count < count) {
+		LOG(V4L2, Error)
+			<< "Not enough buffers provided by V4L2VideoDevice";
+		requestBuffers(0);
+		return -ENOMEM;
+	}
+
 	LOG(V4L2, Debug) << rb.count << " buffers requested.";
 
-	return rb.count;
+	return 0;
 }
 
 /**
@@ -834,23 +841,14 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
  */
 int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 {
-	unsigned int allocatedBuffers;
 	unsigned int i;
 	int ret;
 
 	memoryType_ = V4L2_MEMORY_MMAP;
 
 	ret = requestBuffers(pool->count());
-	if (ret < 0)
+	if (ret)
 		return ret;
-
-	allocatedBuffers = ret;
-	if (allocatedBuffers < pool->count()) {
-		LOG(V4L2, Error)
-			<< "Not enough buffers provided by V4L2VideoDevice";
-		requestBuffers(0);
-		return -ENOMEM;
-	}
 
 	/* Map the buffers. */
 	for (i = 0; i < pool->count(); ++i) {
@@ -938,22 +936,13 @@ int V4L2VideoDevice::createPlane(BufferMemory *buffer, unsigned int index,
  */
 int V4L2VideoDevice::importBuffers(BufferPool *pool)
 {
-	unsigned int allocatedBuffers;
 	int ret;
 
 	memoryType_ = V4L2_MEMORY_DMABUF;
 
 	ret = requestBuffers(pool->count());
-	if (ret < 0)
+	if (ret)
 		return ret;
-
-	allocatedBuffers = ret;
-	if (allocatedBuffers < pool->count()) {
-		LOG(V4L2, Error)
-			<< "Not enough buffers provided by V4L2VideoDevice";
-		requestBuffers(0);
-		return -ENOMEM;
-	}
 
 	LOG(V4L2, Debug) << "provided pool of " << pool->count() << " buffers";
 	bufferPool_ = pool;

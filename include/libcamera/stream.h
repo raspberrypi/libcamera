@@ -14,6 +14,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
+#include <libcamera/pixelformats.h>
 
 namespace libcamera {
 
@@ -24,15 +25,15 @@ class StreamFormats
 {
 public:
 	StreamFormats();
-	StreamFormats(const std::map<unsigned int, std::vector<SizeRange>> &formats);
+	StreamFormats(const std::map<PixelFormat, std::vector<SizeRange>> &formats);
 
-	std::vector<unsigned int> pixelformats() const;
-	std::vector<Size> sizes(unsigned int pixelformat) const;
+	std::vector<PixelFormat> pixelformats() const;
+	std::vector<Size> sizes(PixelFormat pixelformat) const;
 
-	SizeRange range(unsigned int pixelformat) const;
+	SizeRange range(PixelFormat pixelformat) const;
 
 private:
-	std::map<unsigned int, std::vector<SizeRange>> formats_;
+	std::map<PixelFormat, std::vector<SizeRange>> formats_;
 };
 
 enum MemoryType {
@@ -44,7 +45,7 @@ struct StreamConfiguration {
 	StreamConfiguration();
 	StreamConfiguration(const StreamFormats &formats);
 
-	unsigned int pixelFormat;
+	PixelFormat pixelFormat;
 	Size size;
 
 	MemoryType memoryType;

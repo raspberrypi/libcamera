@@ -94,7 +94,7 @@ StreamFormats::StreamFormats()
  * \brief Construct a StreamFormats object with a map of image formats
  * \param[in] formats A map of pixel formats to a sizes description
  */
-StreamFormats::StreamFormats(const std::map<unsigned int, std::vector<SizeRange>> &formats)
+StreamFormats::StreamFormats(const std::map<PixelFormat, std::vector<SizeRange>> &formats)
 	: formats_(formats)
 {
 }
@@ -103,9 +103,9 @@ StreamFormats::StreamFormats(const std::map<unsigned int, std::vector<SizeRange>
  * \brief Retrieve the list of supported pixel formats
  * \return The list of supported pixel formats
  */
-std::vector<unsigned int> StreamFormats::pixelformats() const
+std::vector<PixelFormat> StreamFormats::pixelformats() const
 {
-	std::vector<unsigned int> formats;
+	std::vector<PixelFormat> formats;
 
 	for (auto const &it : formats_)
 		formats.push_back(it.first);
@@ -115,7 +115,7 @@ std::vector<unsigned int> StreamFormats::pixelformats() const
 
 /**
  * \brief Retrieve the list of frame sizes supported for \a pixelformat
- * \param[in] pixelformat Pixel format to retrieve sizes for
+ * \param[in] pixelformat PixelFormat to retrieve sizes for
  *
  * If the sizes described for \a pixelformat are discrete they are returned
  * directly.
@@ -127,7 +127,7 @@ std::vector<unsigned int> StreamFormats::pixelformats() const
  *
  * \return A list of frame sizes or an empty list on error
  */
-std::vector<Size> StreamFormats::sizes(unsigned int pixelformat) const
+std::vector<Size> StreamFormats::sizes(PixelFormat pixelformat) const
 {
 	/*
 	 * Sizes to try and extract from ranges.
@@ -230,7 +230,7 @@ std::vector<Size> StreamFormats::sizes(unsigned int pixelformat) const
 
 /**
  * \brief Retrieve the range of minimum and maximum sizes
- * \param[in] pixelformat Pixel format to retrieve range for
+ * \param[in] pixelformat PixelFormat to retrieve range for
  *
  * If the size described for \a pixelformat is a range, that range is returned
  * directly. If the sizes described are a list of discrete sizes, a range is
@@ -240,7 +240,7 @@ std::vector<Size> StreamFormats::sizes(unsigned int pixelformat) const
  *
  * \return A range of valid image sizes or an empty range on error
  */
-SizeRange StreamFormats::range(unsigned int pixelformat) const
+SizeRange StreamFormats::range(PixelFormat pixelformat) const
 {
 	auto const it = formats_.find(pixelformat);
 	if (it == formats_.end())
@@ -311,9 +311,6 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
 /**
  * \var StreamConfiguration::pixelFormat
  * \brief Stream pixel format
- *
- * This is a little endian four character code representation of the pixel
- * format described in V4L2 using the V4L2_PIX_FMT_* definitions.
  */
 
 /**

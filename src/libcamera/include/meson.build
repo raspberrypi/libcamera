@@ -2,6 +2,7 @@ libcamera_headers = files([
     'byte_stream_buffer.h',
     'camera_controls.h',
     'camera_sensor.h',
+    'control_serializer.h',
     'control_validator.h',
     'device_enumerator.h',
     'device_enumerator_sysfs.h',

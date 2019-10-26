@@ -7,6 +7,7 @@ libcamera_sources = files([
     'camera_manager.cpp',
     'camera_sensor.cpp',
     'controls.cpp',
+    'control_serializer.cpp',
     'control_validator.cpp',
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',

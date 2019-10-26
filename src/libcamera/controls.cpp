@@ -591,6 +591,17 @@ void ControlInfoMap::generateIdmap()
  */
 
 /**
+ * \brief Construct a ControlList not associated with any object
+ *
+ * This constructor is meant to support ControlList serialization and shall not
+ * be used directly by application.
+ */
+ControlList::ControlList()
+	: validator_(nullptr), idmap_(nullptr)
+{
+}
+
+/**
  * \brief Construct a ControlList with an optional control validator
  * \param[in] idmap The ControlId map for the control list target object
  * \param[in] validator The validator (may be null)

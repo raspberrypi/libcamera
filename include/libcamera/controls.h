@@ -189,6 +189,7 @@ private:
 	using ControlListMap = std::unordered_map<unsigned int, ControlValue>;
 
 public:
+	ControlList();
 	ControlList(const ControlIdMap &idmap, ControlValidator *validator = nullptr);
 	ControlList(const ControlInfoMap &info, ControlValidator *validator = nullptr);
 

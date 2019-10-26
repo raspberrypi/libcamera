@@ -297,7 +297,7 @@ namespace libcamera {
  *
  * The IPAStream structure stores stream configuration parameters needed by the
  * IPAInterface::configure() method. It mirrors the StreamConfiguration class
- * that is not suitable for this purpose due to not being serialisable.
+ * that is not suitable for this purpose due to not being serializable.
  */
 
 /**

@@ -777,7 +777,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		.size = data->stream_.configuration().size,
 	};
 
-	std::map<unsigned int, ControlInfoMap> entityControls;
+	std::map<unsigned int, const ControlInfoMap &> entityControls;
 	entityControls.emplace(0, data->sensor_->controls());
 
 	data->ipa_->configure(streamConfig, entityControls);

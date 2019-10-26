@@ -43,7 +43,7 @@ public:
 	virtual int init() = 0;
 
 	virtual void configure(const std::map<unsigned int, IPAStream> &streamConfig,
-			       const std::map<unsigned int, ControlInfoMap> &entityControls) = 0;
+			       const std::map<unsigned int, const ControlInfoMap &> &entityControls) = 0;
 
 	virtual void mapBuffers(const std::vector<IPABuffer> &buffers) = 0;
 	virtual void unmapBuffers(const std::vector<unsigned int> &ids) = 0;

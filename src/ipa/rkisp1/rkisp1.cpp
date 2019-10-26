@@ -33,7 +33,7 @@ public:
 	int init() override { return 0; }
 
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, ControlInfoMap> &entityControls) override;
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void processEvent(const IPAOperationData &event) override;
@@ -62,7 +62,7 @@ private:
 };
 
 void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
-			  const std::map<unsigned int, ControlInfoMap> &entityControls)
+			  const std::map<unsigned int, const ControlInfoMap &> &entityControls)
 {
 	if (entityControls.empty())
 		return;

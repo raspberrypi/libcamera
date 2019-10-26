@@ -215,7 +215,7 @@ void packScanlineIPU3(void *output, const void *input, unsigned int width)
 	}
 }
 
-void thumbScanlineIPU3(const FormatInfo &info, void *output,
+void thumbScanlineIPU3([[maybe_unused]] const FormatInfo &info, void *output,
 		       const void *input, unsigned int width,
 		       unsigned int stride)
 {
@@ -350,7 +350,8 @@ static const std::map<PixelFormat, FormatInfo> formatInfo = {
 int DNGWriter::write(const char *filename, const Camera *camera,
 		     const StreamConfiguration &config,
 		     const ControlList &metadata,
-		     const FrameBuffer *buffer, const void *data)
+		     [[maybe_unused]] const FrameBuffer *buffer,
+		     const void *data)
 {
 	const auto it = formatInfo.find(config.pixelFormat);
 	if (it == formatInfo.cend()) {

@@ -758,7 +758,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	return ret;
 }
 
-int PipelineHandlerRPi::exportFrameBuffers(Camera *camera, Stream *stream,
+int PipelineHandlerRPi::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
 					   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	RPiStream *s = static_cast<RPiStream *>(stream);
@@ -1182,7 +1182,8 @@ int RPiCameraData::configureIPA()
 	return 0;
 }
 
-void RPiCameraData::queueFrameAction(unsigned int frame, const IPAOperationData &action)
+void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
+				     const IPAOperationData &action)
 {
 	/*
 	 * The following actions can be handled when the pipeline handler is in

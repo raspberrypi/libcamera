@@ -61,11 +61,12 @@ static int hal_dev_process_capture_request(const struct camera3_device *dev,
 	return camera->processCaptureRequest(request);
 }
 
-static void hal_dev_dump(const struct camera3_device *dev, int fd)
+static void hal_dev_dump([[maybe_unused]] const struct camera3_device *dev,
+			 [[maybe_unused]] int fd)
 {
 }
 
-static int hal_dev_flush(const struct camera3_device *dev)
+static int hal_dev_flush([[maybe_unused]] const struct camera3_device *dev)
 {
 	return 0;
 }

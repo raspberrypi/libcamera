@@ -214,7 +214,7 @@ public:
 
 	bool match(R (*func)(Args...)) const { return func == func_; }
 
-	R activate(Args... args, bool deleteMethod = false) override
+	R activate(Args... args, [[maybe_unused]] bool deleteMethod = false) override
 	{
 		return (*func_)(args...);
 	}

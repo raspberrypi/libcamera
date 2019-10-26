@@ -89,7 +89,7 @@ gst_libcamera_device_set_property(GObject *object, guint prop_id,
 }
 
 static void
-gst_libcamera_device_init(GstLibcameraDevice *self)
+gst_libcamera_device_init([[maybe_unused]] GstLibcameraDevice *self)
 {
 }
 

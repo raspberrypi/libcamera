@@ -378,7 +378,7 @@ int CamApp::run()
 	return 0;
 }
 
-void signalHandler(int signal)
+void signalHandler([[maybe_unused]] int signal)
 {
 	std::cout << "Exiting" << std::endl;
 	CamApp::instance()->quit();

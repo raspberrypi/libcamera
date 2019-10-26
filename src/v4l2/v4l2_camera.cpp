@@ -158,7 +158,7 @@ int V4L2Camera::validateConfiguration(const PixelFormat &pixelFormat,
 	return 0;
 }
 
-int V4L2Camera::allocBuffers(unsigned int count)
+int V4L2Camera::allocBuffers([[maybe_unused]] unsigned int count)
 {
 	Stream *stream = config_->at(0).stream();
 

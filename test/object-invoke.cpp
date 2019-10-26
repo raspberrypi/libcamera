@@ -50,7 +50,7 @@ public:
 		value_ = value;
 	}
 
-	void methodWithReference(const int &value)
+	void methodWithReference([[maybe_unused]] const int &value)
 	{
 	}
 

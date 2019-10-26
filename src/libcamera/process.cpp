@@ -89,7 +89,7 @@ void sigact(int signal, siginfo_t *info, void *ucontext)
 
 } /* namespace */
 
-void ProcessManager::sighandler(EventNotifier *notifier)
+void ProcessManager::sighandler([[maybe_unused]] EventNotifier *notifier)
 {
 	char data;
 	ssize_t ret = read(pipe_[0], &data, sizeof(data));

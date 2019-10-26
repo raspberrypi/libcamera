@@ -26,7 +26,8 @@ protected:
 	unsigned int completeBuffersCount_;
 	unsigned int completeRequestsCount_;
 
-	void bufferComplete(Request *request, FrameBuffer *buffer)
+	void bufferComplete([[maybe_unused]] Request *request,
+			    FrameBuffer *buffer)
 	{
 		if (buffer->metadata().status != FrameMetadata::FrameSuccess)
 			return;

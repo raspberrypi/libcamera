@@ -204,7 +204,7 @@ void Timeline::updateDeadline()
 	timer_.start(deadline);
 }
 
-void Timeline::timeout(Timer *timer)
+void Timeline::timeout([[maybe_unused]] Timer *timer)
 {
 	utils::time_point now = std::chrono::steady_clock::now();
 

@@ -196,7 +196,7 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
  * \return The V4L2PixelFormat corresponding to \a pixelFormat
  */
 V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
-						 bool multiplanar)
+						 [[maybe_unused]] bool multiplanar)
 {
 	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid())

@@ -32,20 +32,23 @@ static int hal_get_camera_info(int id, struct camera_info *info)
 	return cameraManager.getCameraInfo(id, info);
 }
 
-static int hal_set_callbacks(const camera_module_callbacks_t *callbacks)
+static int hal_set_callbacks([[maybe_unused]] const camera_module_callbacks_t *callbacks)
 {
 	cameraManager.setCallbacks(callbacks);
 
 	return 0;
 }
 
-static int hal_open_legacy(const struct hw_module_t *module, const char *id,
-			   uint32_t halVersion, struct hw_device_t **device)
+static int hal_open_legacy([[maybe_unused]] const struct hw_module_t *module,
+			   [[maybe_unused]] const char *id,
+			   [[maybe_unused]] uint32_t halVersion,
+			   [[maybe_unused]] struct hw_device_t **device)
 {
 	return -ENOSYS;
 }
 
-static int hal_set_torch_mode(const char *camera_id, bool enabled)
+static int hal_set_torch_mode([[maybe_unused]] const char *camera_id,
+			      [[maybe_unused]] bool enabled)
 {
 	return -ENOSYS;
 }

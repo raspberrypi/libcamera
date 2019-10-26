@@ -80,7 +80,8 @@ protected:
 	}
 
 private:
-	void procFinished(Process *proc, enum Process::ExitStatus exitStatus, int exitCode)
+	void procFinished([[maybe_unused]] Process *proc,
+			  enum Process::ExitStatus exitStatus, int exitCode)
 	{
 		exitStatus_ = exitStatus;
 		exitCode_ = exitCode;

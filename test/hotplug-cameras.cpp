@@ -26,12 +26,12 @@ using namespace libcamera;
 class HotplugTest : public Test
 {
 protected:
-	void cameraAddedHandler(std::shared_ptr<Camera> cam)
+	void cameraAddedHandler([[maybe_unused]] std::shared_ptr<Camera> cam)
 	{
 		cameraAdded_ = true;
 	}
 
-	void cameraRemovedHandler(std::shared_ptr<Camera> cam)
+	void cameraRemovedHandler([[maybe_unused]] std::shared_ptr<Camera> cam)
 	{
 		cameraRemoved_ = true;
 	}

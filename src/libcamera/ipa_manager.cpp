@@ -300,7 +300,7 @@ std::unique_ptr<IPAProxy> IPAManager::createIPA(PipelineHandler *pipe,
 	return proxy;
 }
 
-bool IPAManager::isSignatureValid(IPAModule *ipa) const
+bool IPAManager::isSignatureValid([[maybe_unused]] IPAModule *ipa) const
 {
 #if HAVE_IPA_PUBKEY
 	File file{ ipa->path() };

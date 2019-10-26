@@ -1548,8 +1548,9 @@ void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
 /*
  * Produce a set of fixed result metadata.
  */
-std::unique_ptr<CameraMetadata> CameraDevice::getResultMetadata(int frame_number,
-								int64_t timestamp)
+std::unique_ptr<CameraMetadata>
+CameraDevice::getResultMetadata([[maybe_unused]] int frame_number,
+				int64_t timestamp)
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.

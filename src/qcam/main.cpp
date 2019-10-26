@@ -17,7 +17,7 @@
 #include "../cam/stream_options.h"
 #include "main_window.h"
 
-void signalHandler(int signal)
+void signalHandler([[maybe_unused]] int signal)
 {
 	qInfo() << "Exiting";
 	qApp->quit();

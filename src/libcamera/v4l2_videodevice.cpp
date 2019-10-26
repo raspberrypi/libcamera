@@ -1462,7 +1462,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
  * For Capture video devices the FrameBuffer will contain valid data.
  * For Output video devices the FrameBuffer can be considered empty.
  */
-void V4L2VideoDevice::bufferAvailable(EventNotifier *notifier)
+void V4L2VideoDevice::bufferAvailable([[maybe_unused]] EventNotifier *notifier)
 {
 	FrameBuffer *buffer = dequeueBuffer();
 	if (!buffer)
@@ -1539,7 +1539,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
  * When this slot is called, a V4L2 event is available to be dequeued from the
  * device.
  */
-void V4L2VideoDevice::eventAvailable(EventNotifier *notifier)
+void V4L2VideoDevice::eventAvailable([[maybe_unused]] EventNotifier *notifier)
 {
 	struct v4l2_event event{};
 	int ret = ioctl(VIDIOC_DQEVENT, &event);

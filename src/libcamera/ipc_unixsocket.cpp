@@ -308,7 +308,7 @@ int IPCUnixSocket::recvData(void *buffer, size_t length,
 	return 0;
 }
 
-void IPCUnixSocket::dataNotifier(EventNotifier *notifier)
+void IPCUnixSocket::dataNotifier([[maybe_unused]] EventNotifier *notifier)
 {
 	int ret;
 

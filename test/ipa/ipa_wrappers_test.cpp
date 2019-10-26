@@ -70,8 +70,8 @@ public:
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *result) override
+		       [[maybe_unused]] const IPAOperationData &ipaConfig,
+		       [[maybe_unused]] IPAOperationData *result) override
 	{
 		/* Verify sensorInfo. */
 		if (sensorInfo.outputSize.width != 2560 ||

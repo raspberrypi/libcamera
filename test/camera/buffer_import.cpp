@@ -33,7 +33,8 @@ public:
 	}
 
 protected:
-	void bufferComplete(Request *request, FrameBuffer *buffer)
+	void bufferComplete([[maybe_unused]] Request *request,
+			    FrameBuffer *buffer)
 	{
 		if (buffer->metadata().status != FrameMetadata::FrameSuccess)
 			return;

@@ -637,7 +637,8 @@ void MainWindow::captureRaw()
 	captureRaw_ = true;
 }
 
-void MainWindow::processRaw(FrameBuffer *buffer, const ControlList &metadata)
+void MainWindow::processRaw(FrameBuffer *buffer,
+			    [[maybe_unused]] const ControlList &metadata)
 {
 #ifdef HAVE_DNG
 	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);

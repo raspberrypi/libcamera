@@ -113,12 +113,12 @@ public:
 	{
 	}
 
-	constexpr Span(pointer ptr, size_type count)
+	constexpr Span(pointer ptr, [[maybe_unused]] size_type count)
 		: data_(ptr)
 	{
 	}
 
-	constexpr Span(pointer first, pointer last)
+	constexpr Span(pointer first, [[maybe_unused]] pointer last)
 		: data_(first)
 	{
 	}

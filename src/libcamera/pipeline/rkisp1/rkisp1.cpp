@@ -700,7 +700,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	return 0;
 }
 
-int PipelineHandlerRkISP1::exportFrameBuffers(Camera *camera, Stream *stream,
+int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
 					      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	unsigned int count = stream->configuration().bufferCount;

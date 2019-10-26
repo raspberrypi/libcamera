@@ -70,7 +70,7 @@ public:
 
 	void disconnect()
 	{
-		SignalBase::disconnect([](SlotList::iterator &iter) {
+		SignalBase::disconnect([]([[maybe_unused]] SlotList::iterator &iter) {
 			return true;
 		});
 	}

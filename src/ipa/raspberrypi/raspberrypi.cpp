@@ -191,7 +191,7 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 }
 
 void IPARPi::configure(const CameraSensorInfo &sensorInfo,
-		       const std::map<unsigned int, IPAStream> &streamConfig,
+		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
 		       const IPAOperationData &ipaConfig,
 		       IPAOperationData *result)

@@ -32,7 +32,10 @@ LOG_DEFINE_CATEGORY(IPARkISP1)
 class IPARkISP1 : public IPAInterface
 {
 public:
-	int init(const IPASettings &settings) override { return 0; }
+	int init([[maybe_unused]] const IPASettings &settings) override
+	{
+		return 0;
+	}
 	int start() override { return 0; }
 	void stop() override {}
 
@@ -75,11 +78,11 @@ private:
  * assemble one. Make sure the reported sensor information are relevant
  * before accessing them.
  */
-void IPARkISP1::configure(const CameraSensorInfo &info,
-			  const std::map<unsigned int, IPAStream> &streamConfig,
+void IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
+			  [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 			  const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-			  const IPAOperationData &ipaConfig,
-			  IPAOperationData *result)
+			  [[maybe_unused]] const IPAOperationData &ipaConfig,
+			  [[maybe_unused]] IPAOperationData *result)
 {
 	if (entityControls.empty())
 		return;

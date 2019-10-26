@@ -26,17 +26,20 @@ public:
 	IPAProxyLinux(IPAModule *ipam);
 	~IPAProxyLinux();
 
-	int init(const IPASettings &settings) override { return 0; }
+	int init([[maybe_unused]] const IPASettings &settings) override
+	{
+		return 0;
+	}
 	int start() override { return 0; }
 	void stop() override {}
-	void configure(const CameraSensorInfo &sensorInfo,
-		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *result) override {}
-	void mapBuffers(const std::vector<IPABuffer> &buffers) override {}
-	void unmapBuffers(const std::vector<unsigned int> &ids) override {}
-	void processEvent(const IPAOperationData &event) override {}
+	void configure([[maybe_unused]] const CameraSensorInfo &sensorInfo,
+		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
+		       [[maybe_unused]] const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       [[maybe_unused]] const IPAOperationData &ipaConfig,
+		       [[maybe_unused]] IPAOperationData *result) override {}
+	void mapBuffers([[maybe_unused]] const std::vector<IPABuffer> &buffers) override {}
+	void unmapBuffers([[maybe_unused]] const std::vector<unsigned int> &ids) override {}
+	void processEvent([[maybe_unused]] const IPAOperationData &event) override {}
 
 private:
 	void readyRead(IPCUnixSocket *ipc);
@@ -91,7 +94,7 @@ IPAProxyLinux::~IPAProxyLinux()
 	delete socket_;
 }
 
-void IPAProxyLinux::readyRead(IPCUnixSocket *ipc)
+void IPAProxyLinux::readyRead([[maybe_unused]] IPCUnixSocket *ipc)
 {
 }
 

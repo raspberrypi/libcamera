@@ -338,7 +338,8 @@ gst_libcamera_src_task_run(gpointer user_data)
 }
 
 static void
-gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
+gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
+			     gpointer user_data)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
 	GLibRecLocker lock(&self->stream_lock);
@@ -467,7 +468,9 @@ done:
 }
 
 static void
-gst_libcamera_src_task_leave(GstTask *task, GThread *thread, gpointer user_data)
+gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
+			     [[maybe_unused]] GThread *thread,
+			     gpointer user_data)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
 	GstLibcameraSrcState *state = self->state;

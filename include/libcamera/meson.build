@@ -27,6 +27,7 @@ control_ids_h = custom_target('control_ids_h',
                               output : 'control_ids.h',
                               depend_files : gen_controls,
                               command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
+                              install : true,
                               install_dir : join_paths('include', include_dir))
 
 libcamera_api += control_ids_h

@@ -119,7 +119,7 @@ public:
 	bool match(void (*func)(Args...)) const { return func == func_; }
 
 	void activate(Args... args) { (*func_)(args...); }
-	void invoke(Args... args) {}
+	void invoke(Args...) {}
 
 private:
 	void (*func_)(Args...);

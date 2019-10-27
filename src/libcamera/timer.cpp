@@ -170,7 +170,8 @@ void Timer::message(Message *msg)
 	if (msg->type() == Message::ThreadMoveMessage) {
 		if (isRunning()) {
 			unregisterTimer();
-			invokeMethod(&Timer::registerTimer);
+			invokeMethod(&Timer::registerTimer,
+				     ConnectionTypeQueued);
 		}
 	}
 

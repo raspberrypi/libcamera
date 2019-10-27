@@ -64,10 +64,11 @@ protected:
 		InvokedObject object;
 
 		/*
-		 * Test that method invocation in the same thread goes through
-		 * the event dispatcher.
+		 * Test that queued method invocation in the same thread goes
+		 * through the event dispatcher.
 		 */
-		object.invokeMethod(&InvokedObject::method, 42);
+		object.invokeMethod(&InvokedObject::method,
+				    ConnectionTypeQueued, 42);
 
 		if (object.status() != InvokedObject::NoCall) {
 			cerr << "Method not invoked asynchronously" << endl;
@@ -93,15 +94,16 @@ protected:
 		}
 
 		/*
-		 * Move the object to a thread and verify that the method is
-		 * delivered in the correct thread.
+		 * Move the object to a thread and verify that auto method
+		 * invocation is delivered in the correct thread.
 		 */
 		object.reset();
 		object.moveToThread(&thread_);
 
 		thread_.start();
 
-		object.invokeMethod(&InvokedObject::method, 42);
+		object.invokeMethod(&InvokedObject::method,
+				    ConnectionTypeAuto, 42);
 		this_thread::sleep_for(chrono::milliseconds(100));
 
 		switch (object.status()) {

@@ -139,14 +139,15 @@ void Object::message(Message *msg)
 }
 
 /**
- * \fn void Object::invokeMethod(void (T::*func)(Args...), Args... args)
+ * \fn void Object::invokeMethod()
  * \brief Invoke a method asynchronously on an Object instance
  * \param[in] func The object method to invoke
+ * \param[in] type Connection type for method invocation
  * \param[in] args The method arguments
  *
- * This method invokes the member method \a func when control returns to the
- * event loop of the object's thread. The method is executed in the object's
- * thread with arguments \a args.
+ * This method invokes the member method \a func with arguments \a args, based
+ * on the connection \a type. Depending on the type, the method will be called
+ * synchronously in the same thread or asynchronously in the object's thread.
  *
  * Arguments \a args passed by value or reference are copied, while pointers
  * are passed untouched. The caller shall ensure that any pointer argument

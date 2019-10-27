@@ -128,7 +128,8 @@ void EventNotifier::message(Message *msg)
 	if (msg->type() == Message::ThreadMoveMessage) {
 		if (enabled_) {
 			setEnabled(false);
-			invokeMethod(&EventNotifier::setEnabled, true);
+			invokeMethod(&EventNotifier::setEnabled,
+				     ConnectionTypeQueued, true);
 		}
 	}
 

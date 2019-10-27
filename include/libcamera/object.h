@@ -30,12 +30,11 @@ public:
 	void postMessage(std::unique_ptr<Message> msg);
 
 	template<typename T, typename... Args, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
-	void invokeMethod(void (T::*func)(Args...), Args... args)
+	void invokeMethod(void (T::*func)(Args...), ConnectionType type, Args... args)
 	{
 		T *obj = static_cast<T *>(this);
 		BoundMethodBase *method =
-			new BoundMemberMethod<T, Args...>(obj, this, func,
-							  ConnectionTypeQueued);
+			new BoundMemberMethod<T, Args...>(obj, this, func, type);
 		void *pack = new typename BoundMemberMethod<T, Args...>::PackType{ args... };
 
 		method->activatePack(pack, true);

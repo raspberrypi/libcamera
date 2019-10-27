@@ -187,6 +187,7 @@ int CameraProxy::processCaptureRequest(camera3_capture_request_t *request)
 
 void CameraProxy::threadRpcCall(ThreadRpc &rpcRequest)
 {
-	cameraDevice_->invokeMethod(&CameraDevice::call, &rpcRequest);
+	cameraDevice_->invokeMethod(&CameraDevice::call, ConnectionTypeQueued,
+				    &rpcRequest);
 	rpcRequest.waitDelivery();
 }

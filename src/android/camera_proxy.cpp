@@ -16,7 +16,6 @@
 #include "utils.h"
 
 #include "camera_device.h"
-#include "thread_rpc.h"
 
 using namespace libcamera;
 
@@ -148,10 +147,8 @@ int CameraProxy::open(const hw_module_t *hardwareModule)
 
 void CameraProxy::close()
 {
-	ThreadRpc rpcRequest;
-	rpcRequest.tag = ThreadRpc::Close;
-
-	threadRpcCall(rpcRequest);
+	cameraDevice_->invokeMethod(&CameraDevice::close,
+				    ConnectionTypeBlocking);
 }
 
 void CameraProxy::initialize(const camera3_callback_ops_t *callbacks)
@@ -176,18 +173,8 @@ int CameraProxy::configureStreams(camera3_stream_configuration_t *stream_list)
 
 int CameraProxy::processCaptureRequest(camera3_capture_request_t *request)
 {
-	ThreadRpc rpcRequest;
-	rpcRequest.tag = ThreadRpc::ProcessCaptureRequest;
-	rpcRequest.request = request;
-
-	threadRpcCall(rpcRequest);
+	cameraDevice_->invokeMethod(&CameraDevice::processCaptureRequest,
+				    ConnectionTypeBlocking, request);
 
 	return 0;
-}
-
-void CameraProxy::threadRpcCall(ThreadRpc &rpcRequest)
-{
-	cameraDevice_->invokeMethod(&CameraDevice::call, ConnectionTypeQueued,
-				    &rpcRequest);
-	rpcRequest.waitDelivery();
 }

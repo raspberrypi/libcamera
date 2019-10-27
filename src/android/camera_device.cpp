@@ -11,7 +11,6 @@
 #include "utils.h"
 
 #include "camera_metadata.h"
-#include "thread_rpc.h"
 
 using namespace libcamera;
 
@@ -62,25 +61,6 @@ CameraDevice::~CameraDevice()
 
 	for (auto &it : requestTemplates_)
 		delete it.second;
-}
-
-/*
- * Handle RPC request received from the associated proxy.
- */
-void CameraDevice::call(ThreadRpc *rpc)
-{
-	switch (rpc->tag) {
-	case ThreadRpc::ProcessCaptureRequest:
-		processCaptureRequest(rpc->request);
-		break;
-	case ThreadRpc::Close:
-		close();
-		break;
-	default:
-		LOG(HAL, Error) << "Unknown RPC operation: " << rpc->tag;
-	}
-
-	rpc->notifyReception();
 }
 
 int CameraDevice::open()
@@ -698,7 +678,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
-int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
+void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
 	StreamConfiguration *streamConfiguration = &config_->at(0);
 	Stream *stream = streamConfiguration->stream();
@@ -706,7 +686,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	if (camera3Request->num_output_buffers != 1) {
 		LOG(HAL, Error) << "Invalid number of output buffers: "
 				<< camera3Request->num_output_buffers;
-		return -EINVAL;
+		return;
 	}
 
 	/* Start the camera if that's the first request we handle. */
@@ -714,14 +694,14 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		int ret = camera_->allocateBuffers();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to allocate buffers";
-			return ret;
+			return;
 		}
 
 		ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";
 			camera_->freeBuffers();
-			return ret;
+			return;
 		}
 
 		running_ = true;
@@ -769,7 +749,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	if (!buffer) {
 		LOG(HAL, Error) << "Failed to create buffer";
 		delete descriptor;
-		return -EINVAL;
+		return;
 	}
 
 	Request *request =
@@ -782,13 +762,11 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		goto error;
 	}
 
-	return 0;
+	return;
 
 error:
 	delete request;
 	delete descriptor;
-
-	return ret;
 }
 
 void CameraDevice::requestComplete(Request *request,

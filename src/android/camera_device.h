@@ -20,7 +20,6 @@
 #include "message.h"
 
 class CameraMetadata;
-class ThreadRpc;
 
 class CameraDevice : public libcamera::Object
 {
@@ -28,15 +27,13 @@ public:
 	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
 	~CameraDevice();
 
-	void call(ThreadRpc *rpc);
-
 	int open();
 	void close();
 	void setCallbacks(const camera3_callback_ops_t *callbacks);
 	camera_metadata_t *getStaticMetadata();
 	const camera_metadata_t *constructDefaultRequestSettings(int type);
 	int configureStreams(camera3_stream_configuration_t *stream_list);
-	int processCaptureRequest(camera3_capture_request_t *request);
+	void processCaptureRequest(camera3_capture_request_t *request);
 	void requestComplete(libcamera::Request *request,
 			     const std::map<libcamera::Stream *, libcamera::Buffer *> &buffers);
 

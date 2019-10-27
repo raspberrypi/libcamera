@@ -14,7 +14,6 @@
 #include <libcamera/camera.h>
 
 class CameraDevice;
-class ThreadRpc;
 
 class CameraProxy
 {
@@ -35,8 +34,6 @@ public:
 	camera3_device_t *camera3Device() { return &camera3Device_; }
 
 private:
-	void threadRpcCall(ThreadRpc &rpcRequest);
-
 	unsigned int id_;
 	CameraDevice *cameraDevice_;
 	camera3_device_t camera3Device_;

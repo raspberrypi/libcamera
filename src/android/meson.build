@@ -4,7 +4,6 @@ android_hal_sources = files([
     'camera_device.cpp',
     'camera_metadata.cpp',
     'camera_proxy.cpp',
-    'thread_rpc.cpp'
 ])
 
 android_camera_metadata_sources = files([

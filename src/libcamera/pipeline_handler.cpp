@@ -409,13 +409,13 @@ void PipelineHandler::completeRequest(Camera *camera, Request *request)
 	CameraData *data = cameraData(camera);
 
 	while (!data->queuedRequests_.empty()) {
-		request = data->queuedRequests_.front();
-		if (request->status() == Request::RequestPending)
+		Request *req = data->queuedRequests_.front();
+		if (req->status() == Request::RequestPending)
 			break;
 
-		ASSERT(!request->hasPendingBuffers());
+		ASSERT(!req->hasPendingBuffers());
 		data->queuedRequests_.pop_front();
-		camera->requestComplete(request);
+		camera->requestComplete(req);
 	}
 }
 

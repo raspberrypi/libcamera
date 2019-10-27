@@ -7,6 +7,7 @@ libcamera_api = files([
     'event_dispatcher.h',
     'event_notifier.h',
     'file_descriptor.h',
+    'framebuffer_allocator.h',
     'geometry.h',
     'logging.h',
     'object.h',

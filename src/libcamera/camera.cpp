@@ -9,6 +9,7 @@
 
 #include <iomanip>
 
+#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -405,7 +406,7 @@ const std::string &Camera::name() const
 
 Camera::Camera(PipelineHandler *pipe, const std::string &name)
 	: pipe_(pipe->shared_from_this()), name_(name), disconnected_(false),
-	  state_(CameraAvailable)
+	  state_(CameraAvailable), allocator_(nullptr)
 {
 }
 
@@ -541,6 +542,16 @@ int Camera::release()
 	if (!stateBetween(CameraAvailable, CameraConfigured))
 		return -EBUSY;
 
+	if (allocator_) {
+		/*
+		 * \todo Try to find a better API that would make this error
+		 * impossible.
+		 */
+		LOG(Camera, Error)
+			<< "Buffers must be freed before the camera can be reconfigured";
+		return -EBUSY;
+	}
+
 	pipe_->unlock();
 
 	state_ = CameraAvailable;
@@ -648,6 +659,12 @@ int Camera::configure(CameraConfiguration *config)
 
 	if (!stateBetween(CameraAcquired, CameraConfigured))
 		return -EACCES;
+
+	if (allocator_ && allocator_->allocated()) {
+		LOG(Camera, Error)
+			<< "Allocator must be deleted before camera can be reconfigured";
+		return -EBUSY;
+	}
 
 	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)

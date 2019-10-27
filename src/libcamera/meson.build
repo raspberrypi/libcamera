@@ -16,6 +16,7 @@ libcamera_sources = files([
     'event_notifier.cpp',
     'file_descriptor.cpp',
     'formats.cpp',
+    'framebuffer_allocator.cpp',
     'geometry.cpp',
     'ipa_context_wrapper.cpp',
     'ipa_controls.cpp',

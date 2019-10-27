@@ -20,6 +20,7 @@
 namespace libcamera {
 
 class Buffer;
+class FrameBufferAllocator;
 class PipelineHandler;
 class Request;
 
@@ -126,6 +127,10 @@ private:
 
 	bool disconnected_;
 	State state_;
+
+	/* Needed to update allocator_ and to read state_ and activeStreams_. */
+	friend class FrameBufferAllocator;
+	FrameBufferAllocator *allocator_;
 };
 
 } /* namespace libcamera */

@@ -118,12 +118,22 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
  */
 V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
 {
-	if (ctrl.type == V4L2_CTRL_TYPE_INTEGER64)
+	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		ControlRange::operator=(ControlRange(static_cast<bool>(ctrl.minimum),
+						     static_cast<bool>(ctrl.maximum)));
+		break;
+
+	case V4L2_CTRL_TYPE_INTEGER64:
 		ControlRange::operator=(ControlRange(static_cast<int64_t>(ctrl.minimum),
 						     static_cast<int64_t>(ctrl.maximum)));
-	else
+		break;
+
+	default:
 		ControlRange::operator=(ControlRange(static_cast<int32_t>(ctrl.minimum),
 						     static_cast<int32_t>(ctrl.maximum)));
+		break;
+	}
 }
 
 } /* namespace libcamera */

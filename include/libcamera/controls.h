@@ -112,6 +112,16 @@ public:
 
 	std::string toString() const;
 
+	bool operator==(const ControlRange &other) const
+	{
+		return min_ == other.min_ && max_ == other.max_;
+	}
+
+	bool operator!=(const ControlRange &other) const
+	{
+		return !(*this == other);
+	}
+
 private:
 	ControlValue min_;
 	ControlValue max_;

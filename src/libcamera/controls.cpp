@@ -384,6 +384,18 @@ std::string ControlRange::toString() const
 }
 
 /**
+ * \fn bool ControlRange::operator==()
+ * \brief Compare ControlRange instances for equality
+ * \return True if the ranges have identical min and max, false otherwise
+ */
+
+/**
+ * \fn bool ControlRange::operator!=()
+ * \brief Compare ControlRange instances for non equality
+ * \return False if the ranges have identical min and max, true otherwise
+ */
+
+/**
  * \typedef ControlIdMap
  * \brief A map of numerical control ID to ControlId
  *

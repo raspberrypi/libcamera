@@ -573,8 +573,19 @@ ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
 void ControlInfoMap::generateIdmap()
 {
 	idmap_.clear();
-	for (const auto &ctrl : *this)
+
+	for (const auto &ctrl : *this) {
+		if (ctrl.first->type() != ctrl.second.min().type()) {
+			LOG(Controls, Error)
+				<< "Control " << utils::hex(ctrl.first->id())
+				<< " type and range type mismatch";
+			idmap_.clear();
+			clear();
+			return;
+		}
+
 		idmap_[ctrl.first->id()] = ctrl.first;
+	}
 }
 
 /**

@@ -20,7 +20,6 @@
 
 #include <linux/drm_fourcc.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/event_notifier.h>
 #include <libcamera/file_descriptor.h>
 
@@ -135,6 +134,141 @@ LOG_DECLARE_CATEGORY(V4L2)
  * \brief Determine if the video device can perform Streaming I/O
  * \return True if the video device provides Streaming I/O IOCTLs
  */
+
+/**
+ * \class V4L2BufferCache
+ * \brief Hot cache of associations between V4L2 buffer indexes and FrameBuffer
+ *
+ * When importing buffers, V4L2 performs lazy mapping of dmabuf instances at
+ * VIDIOC_QBUF (or VIDIOC_PREPARE_BUF) time and keeps the mapping associated
+ * with the V4L2 buffer, as identified by its index. If the same V4L2 buffer is
+ * then reused and queued with different dmabufs, the old dmabufs will be
+ * unmapped and the new ones mapped. To keep this process efficient, it is
+ * crucial to consistently use the same V4L2 buffer for given dmabufs through
+ * the whole duration of a capture cycle.
+ *
+ * The V4L2BufferCache class keeps a map of previous dmabufs to V4L2 buffer
+ * index associations to help selecting V4L2 buffers. It tracks, for every
+ * entry, if the V4L2 buffer is in use, and offers lookup of the best free V4L2
+ * buffer for a set of dmabufs.
+ */
+
+/**
+ * \brief Create an empty cache with \a numEntries entries
+ * \param[in] numEntries Number of entries to reserve in the cache
+ *
+ * Create a cache with \a numEntries entries all marked as unused. The entries
+ * will be populated as the cache is used. This is typically used to implement
+ * buffer import, with buffers added to the cache as they are queued.
+ */
+V4L2BufferCache::V4L2BufferCache(unsigned int numEntries)
+	: missCounter_(0)
+{
+	cache_.resize(numEntries);
+}
+
+/**
+ * \brief Create a pre-populated cache
+ * \param[in] buffers Array of buffers to pre-populated with
+ *
+ * Create a cache pre-populated with \a buffers. This is typically used to
+ * implement buffer export, with all buffers added to the cache when they are
+ * allocated.
+ */
+V4L2BufferCache::V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers)
+	: missCounter_(0)
+{
+	for (const std::unique_ptr<FrameBuffer> &buffer : buffers)
+		cache_.emplace_back(true, buffer->planes());
+}
+
+V4L2BufferCache::~V4L2BufferCache()
+{
+	if (missCounter_ > cache_.size())
+		LOG(V4L2, Debug) << "Cache misses: " << missCounter_;
+}
+
+/**
+ * \brief Find the best V4L2 buffer for a FrameBuffer
+ * \param[in] buffer The FrameBuffer
+ *
+ * Find the best V4L2 buffer index to be used for the FrameBuffer \a buffer
+ * based on previous mappings of frame buffers to V4L2 buffers. If a free V4L2
+ * buffer previously used with the same dmabufs as \a buffer is found in the
+ * cache, return its index. Otherwise return the index of the first free V4L2
+ * buffer and record its association with the dmabufs of \a buffer.
+ *
+ * \return The index of the best V4L2 buffer, or -ENOENT if no free V4L2 buffer
+ * is available
+ */
+int V4L2BufferCache::get(const FrameBuffer &buffer)
+{
+	bool hit = false;
+	int use = -1;
+
+	for (unsigned int index = 0; index < cache_.size(); index++) {
+		const Entry &entry = cache_[index];
+
+		if (!entry.free)
+			continue;
+
+		if (use < 0)
+			use = index;
+
+		/* Try to find a cache hit by comparing the planes. */
+		if (cache_[index] == buffer) {
+			hit = true;
+			use = index;
+			break;
+		}
+	}
+
+	if (!hit)
+		missCounter_++;
+
+	if (use < 0)
+		return -ENOENT;
+
+	cache_[use] = Entry(false, buffer);
+
+	return use;
+}
+
+/**
+ * \brief Mark buffer \a index as free in the cache
+ * \param[in] index The V4L2 buffer index
+ */
+void V4L2BufferCache::put(unsigned int index)
+{
+	ASSERT(index < cache_.size());
+	cache_[index].free = true;
+}
+
+V4L2BufferCache::Entry::Entry()
+	: free(true)
+{
+}
+
+V4L2BufferCache::Entry::Entry(bool free, const FrameBuffer &buffer)
+	: free(free)
+{
+	for (const FrameBuffer::Plane &plane : buffer.planes())
+		planes_.emplace_back(plane);
+}
+
+bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer)
+{
+	const std::vector<FrameBuffer::Plane> &planes = buffer.planes();
+
+	if (planes_.size() != planes.size())
+		return false;
+
+	for (unsigned int i = 0; i < planes.size(); i++)
+		if (planes_[i].fd != planes[i].fd.fd() ||
+		    planes_[i].length != planes[i].length)
+			return false;
+	return true;
+}
 
 /**
  * \class V4L2DeviceFormat

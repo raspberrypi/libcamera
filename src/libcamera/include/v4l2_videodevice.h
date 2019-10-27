@@ -11,7 +11,9 @@
 #include <vector>
 
 #include <linux/videodev2.h>
+#include <memory>
 
+#include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixelformats.h>
 #include <libcamera/signal.h>
@@ -22,9 +24,6 @@
 
 namespace libcamera {
 
-class Buffer;
-class BufferMemory;
-class BufferPool;
 class EventNotifier;
 class FileDescriptor;
 class MediaDevice;
@@ -104,6 +103,46 @@ struct V4L2Capability final : v4l2_capability {
 	{
 		return device_caps() & V4L2_CAP_STREAMING;
 	}
+};
+
+class V4L2BufferCache
+{
+public:
+	V4L2BufferCache(unsigned int numEntries);
+	V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers);
+	~V4L2BufferCache();
+
+	int get(const FrameBuffer &buffer);
+	void put(unsigned int index);
+
+private:
+	class Entry
+	{
+	public:
+		Entry();
+		Entry(bool free, const FrameBuffer &buffer);
+
+		bool operator==(const FrameBuffer &buffer);
+
+		bool free;
+
+	private:
+		struct Plane {
+			Plane(const FrameBuffer::Plane &plane)
+				: fd(plane.fd.fd()), length(plane.length)
+			{
+			}
+
+			int fd;
+			unsigned int length;
+		};
+
+		std::vector<Plane> planes_;
+	};
+
+	std::vector<Entry> cache_;
+	/* \todo Expose the miss counter through an instrumentation API. */
+	unsigned int missCounter_;
 };
 
 class V4L2DeviceFormat

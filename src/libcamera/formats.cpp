@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * formats.cpp - Libcamera image formats
+ * formats.cpp - libcamera image formats
  */
 
 #include "formats.h"

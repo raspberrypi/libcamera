@@ -14,6 +14,13 @@ namespace libcamera {
 
 class Object;
 
+enum ConnectionType {
+	ConnectionTypeAuto,
+	ConnectionTypeDirect,
+	ConnectionTypeQueued,
+	ConnectionTypeBlocking,
+};
+
 class BoundMethodBase
 {
 public:

@@ -220,7 +220,7 @@ public:
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
-	int queueRequest(Camera *camera, Request *request) override;
+	int queueRequestDevice(Camera *camera, Request *request) override;
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -756,7 +756,7 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	data->rawBuffers_.clear();
 }
 
-int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
+int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 {
 	int error = 0;
 
@@ -768,8 +768,6 @@ int PipelineHandlerIPU3::queueRequest(Camera *camera, Request *request)
 		if (ret < 0)
 			error = ret;
 	}
-
-	PipelineHandler::queueRequest(camera, request);
 
 	return error;
 }

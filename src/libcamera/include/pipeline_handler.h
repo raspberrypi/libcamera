@@ -77,7 +77,7 @@ public:
 	virtual int start(Camera *camera) = 0;
 	virtual void stop(Camera *camera) = 0;
 
-	virtual int queueRequest(Camera *camera, Request *request);
+	int queueRequest(Camera *camera, Request *request);
 
 	bool completeBuffer(Camera *camera, Request *request, Buffer *buffer);
 	void completeRequest(Camera *camera, Request *request);
@@ -88,6 +88,8 @@ protected:
 	void registerCamera(std::shared_ptr<Camera> camera,
 			    std::unique_ptr<CameraData> data);
 	void hotplugMediaDevice(MediaDevice *media);
+
+	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
 
 	CameraData *cameraData(const Camera *camera);
 

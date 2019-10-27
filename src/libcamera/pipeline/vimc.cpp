@@ -90,7 +90,7 @@ public:
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
-	int queueRequest(Camera *camera, Request *request) override;
+	int queueRequestDevice(Camera *camera, Request *request) override;
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -323,7 +323,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 	return ret;
 }
 
-int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
+int PipelineHandlerVimc::queueRequestDevice(Camera *camera, Request *request)
 {
 	VimcCameraData *data = cameraData(camera);
 	Buffer *buffer = request->findBuffer(&data->stream_);
@@ -341,8 +341,6 @@ int PipelineHandlerVimc::queueRequest(Camera *camera, Request *request)
 	ret = data->video_->queueBuffer(buffer);
 	if (ret < 0)
 		return ret;
-
-	PipelineHandler::queueRequest(camera, request);
 
 	return 0;
 }

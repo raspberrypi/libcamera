@@ -345,16 +345,12 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  * \param[in] request The request to queue
  *
  * This method queues a capture request to the pipeline handler for processing.
- * The request contains a set of buffers associated with streams and a set of
- * parameters. The pipeline handler shall program the device to ensure that the
- * parameters will be applied to the frames captured in the buffers provided in
- * the request.
+ * The request is first added to the internal list of queued requests, and
+ * then passed to the pipeline handler with a call to queueRequestDevice().
  *
- * Pipeline handlers shall override this method. The base implementation in the
- * PipelineHandler class keeps track of queued requests in order to ensure
- * completion of all requests when the pipeline handler is stopped with stop().
- * Requests completion shall be signalled by the pipeline handler using the
- * completeRequest() method.
+ * Keeping track of queued requests ensures automatic completion of all requests
+ * when the pipeline handler is stopped with stop(). Request completion shall be
+ * signalled by the pipeline handler using the completeRequest() method.
  *
  * \return 0 on success or a negative error code otherwise
  */
@@ -363,8 +359,27 @@ int PipelineHandler::queueRequest(Camera *camera, Request *request)
 	CameraData *data = cameraData(camera);
 	data->queuedRequests_.push_back(request);
 
-	return 0;
+	int ret = queueRequestDevice(camera, request);
+	if (ret)
+		data->queuedRequests_.remove(request);
+
+	return ret;
 }
+
+/**
+ * \fn PipelineHandler::queueRequestDevice()
+ * \brief Queue a request to the device
+ * \param[in] camera The camera to queue the request to
+ * \param[in] request The request to queue
+ *
+ * This method queues a capture request to the device for processing. The
+ * request contains a set of buffers associated with streams and a set of
+ * parameters. The pipeline handler shall program the device to ensure that the
+ * parameters will be applied to the frames captured in the buffers provided in
+ * the request.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
 
 /**
  * \brief Complete a buffer for a request

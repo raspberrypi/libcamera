@@ -184,7 +184,7 @@ public:
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
-	int queueRequest(Camera *camera, Request *request) override;
+	int queueRequestDevice(Camera *camera, Request *request) override;
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -810,12 +810,11 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	activeCamera_ = nullptr;
 }
 
-int PipelineHandlerRkISP1::queueRequest(Camera *camera, Request *request)
+int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera,
+					      Request *request)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	Stream *stream = &data->stream_;
-
-	PipelineHandler::queueRequest(camera, request);
 
 	RkISP1FrameInfo *info = data->frameInfo_.create(data->frame_, request,
 							stream);

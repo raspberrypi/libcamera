@@ -5,7 +5,6 @@
  * object-invoke.cpp - Cross-thread Object method invocation test
  */
 
-#include <chrono>
 #include <iostream>
 #include <thread>
 
@@ -103,8 +102,7 @@ protected:
 		thread_.start();
 
 		object.invokeMethod(&InvokedObject::method,
-				    ConnectionTypeAuto, 42);
-		this_thread::sleep_for(chrono::milliseconds(100));
+				    ConnectionTypeBlocking, 42);
 
 		switch (object.status()) {
 		case InvokedObject::NoCall:

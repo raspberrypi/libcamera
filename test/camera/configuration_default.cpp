@@ -8,15 +8,27 @@
 #include <iostream>
 
 #include "camera_test.h"
+#include "test.h"
 
 using namespace std;
 
 namespace {
 
-class ConfigurationDefault : public CameraTest
+class ConfigurationDefault : public CameraTest, public Test
 {
+public:
+	ConfigurationDefault()
+		: CameraTest("VIMC Sensor B")
+	{
+	}
+
 protected:
-	int run()
+	int init() override
+	{
+		return status_;
+	}
+
+	int run() override
 	{
 		std::unique_ptr<CameraConfiguration> config;
 

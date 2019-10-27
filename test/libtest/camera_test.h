@@ -9,22 +9,18 @@
 
 #include <libcamera/libcamera.h>
 
-#include "test.h"
-
 using namespace libcamera;
 
-class CameraTest : public Test
+class CameraTest
 {
 public:
-	CameraTest()
-		: cm_(nullptr) {}
+	CameraTest(const char *name);
+	~CameraTest();
 
 protected:
-	int init();
-	void cleanup();
-
 	CameraManager *cm_;
 	std::shared_ptr<Camera> camera_;
+	int status_;
 };
 
 #endif /* __LIBCAMERA_CAMERA_TEST_H__ */

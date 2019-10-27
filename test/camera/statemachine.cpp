@@ -8,13 +8,20 @@
 #include <iostream>
 
 #include "camera_test.h"
+#include "test.h"
 
 using namespace std;
 
 namespace {
 
-class Statemachine : public CameraTest
+class Statemachine : public CameraTest, public Test
 {
+public:
+	Statemachine()
+		: CameraTest("VIMC Sensor B")
+	{
+	}
+
 protected:
 	int testAvailable()
 	{
@@ -233,14 +240,12 @@ protected:
 
 	int init() override
 	{
-		int ret = CameraTest::init();
-		if (ret)
-			return ret;
+		if (status_ != TestPass)
+			return status_;
 
 		defconf_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 		if (!defconf_) {
 			cout << "Failed to generate default configuration" << endl;
-			CameraTest::cleanup();
 			return TestFail;
 		}
 

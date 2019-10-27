@@ -18,6 +18,7 @@
 #include "v4l2_videodevice.h"
 
 #include "camera_test.h"
+#include "test.h"
 
 using namespace libcamera;
 
@@ -254,11 +255,11 @@ private:
 	bool done_;
 };
 
-class BufferImportTest : public CameraTest
+class BufferImportTest : public CameraTest, public Test
 {
 public:
 	BufferImportTest()
-		: CameraTest()
+		: CameraTest("VIMC Sensor B")
 	{
 	}
 
@@ -350,11 +351,10 @@ protected:
 
 	int init()
 	{
-		int ret = CameraTest::init();
-		if (ret)
-			return ret;
+		if (status_ != TestPass)
+			return status_;
 
-		ret = sink_.init();
+		int ret = sink_.init();
 		if (ret != TestPass) {
 			cleanup();
 			return ret;
@@ -422,8 +422,6 @@ protected:
 
 		camera_->stop();
 		camera_->freeBuffers();
-
-		CameraTest::cleanup();
 	}
 
 private:

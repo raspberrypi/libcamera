@@ -1,4 +1,5 @@
 libtest_sources = files([
+    'camera_test.cpp',
     'test.cpp',
 ])
 

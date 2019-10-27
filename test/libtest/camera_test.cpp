@@ -8,35 +8,39 @@
 #include <iostream>
 
 #include "camera_test.h"
+#include "test.h"
 
 using namespace libcamera;
 using namespace std;
 
-int CameraTest::init()
+CameraTest::CameraTest(const char *name)
 {
 	cm_ = new CameraManager();
 
 	if (cm_->start()) {
-		cout << "Failed to start camera manager" << endl;
-		return TestFail;
+		cerr << "Failed to start camera manager" << endl;
+		status_ = TestFail;
+		return;
 	}
 
-	camera_ = cm_->get("VIMC Sensor B");
+	camera_ = cm_->get(name);
 	if (!camera_) {
-		cout << "Can not find VIMC camera" << endl;
-		return TestSkip;
+		cerr << "Can not find '" << name << "' camera" << endl;
+		status_ = TestSkip;
+		return;
 	}
 
 	/* Sanity check that the camera has streams. */
 	if (camera_->streams().empty()) {
-		cout << "Camera has no stream" << endl;
-		return TestFail;
+		cerr << "Camera has no stream" << endl;
+		status_ = TestFail;
+		return;
 	}
 
-	return TestPass;
+	status_ = TestPass;
 }
 
-void CameraTest::cleanup()
+CameraTest::~CameraTest()
 {
 	if (camera_) {
 		camera_->release();

@@ -8,24 +8,29 @@
 #include <iostream>
 
 #include "camera_test.h"
+#include "test.h"
 
 using namespace std;
 
 namespace {
 
-class ConfigurationSet : public CameraTest
+class ConfigurationSet : public CameraTest, public Test
 {
+public:
+	ConfigurationSet()
+		: CameraTest("VIMC Sensor B")
+	{
+	}
+
 protected:
 	int init() override
 	{
-		int ret = CameraTest::init();
-		if (ret)
-			return ret;
+		if (status_ != TestPass)
+			return status_;
 
 		config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
 		if (!config_ || config_->size() != 1) {
 			cout << "Failed to generate default configuration" << endl;
-			CameraTest::cleanup();
 			return TestFail;
 		}
 

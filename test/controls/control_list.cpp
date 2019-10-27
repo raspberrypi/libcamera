@@ -13,32 +13,22 @@
 #include <libcamera/controls.h>
 
 #include "camera_controls.h"
+
+#include "camera_test.h"
 #include "test.h"
 
 using namespace std;
 using namespace libcamera;
 
-class ControlListTest : public Test
+class ControlListTest : public CameraTest, public Test
 {
-protected:
-	int init()
+public:
+	ControlListTest()
+		: CameraTest("VIMC Sensor B")
 	{
-		cm_ = new CameraManager();
-
-		if (cm_->start()) {
-			cout << "Failed to start camera manager" << endl;
-			return TestFail;
-		}
-
-		camera_ = cm_->get("VIMC Sensor B");
-		if (!camera_) {
-			cout << "Can not find VIMC camera" << endl;
-			return TestSkip;
-		}
-
-		return TestPass;
 	}
 
+protected:
 	int run()
 	{
 		CameraControlValidator validator(camera_.get());
@@ -156,21 +146,6 @@ protected:
 
 		return TestPass;
 	}
-
-	void cleanup()
-	{
-		if (camera_) {
-			camera_->release();
-			camera_.reset();
-		}
-
-		cm_->stop();
-		delete cm_;
-	}
-
-private:
-	CameraManager *cm_;
-	std::shared_ptr<Camera> camera_;
 };
 
 TEST_REGISTER(ControlListTest)

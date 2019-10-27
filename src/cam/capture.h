@@ -21,7 +21,7 @@
 class Capture
 {
 public:
-	Capture(libcamera::Camera *camera,
+	Capture(std::shared_ptr<libcamera::Camera> camera,
 		libcamera::CameraConfiguration *config);
 
 	int run(EventLoop *loop, const OptionsParser::Options &options);
@@ -30,7 +30,7 @@ private:
 
 	void requestComplete(libcamera::Request *request);
 
-	libcamera::Camera *camera_;
+	std::shared_ptr<libcamera::Camera> camera_;
 	libcamera::CameraConfiguration *config_;
 
 	std::map<libcamera::Stream *, std::string> streamName_;

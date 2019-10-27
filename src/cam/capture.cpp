@@ -16,7 +16,7 @@
 
 using namespace libcamera;
 
-Capture::Capture(Camera *camera, CameraConfiguration *config)
+Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config)
 	: camera_(camera), config_(config), writer_(nullptr)
 {
 }

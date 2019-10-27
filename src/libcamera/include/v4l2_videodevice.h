@@ -184,11 +184,17 @@ public:
 
 	int exportBuffers(BufferPool *pool);
 	int importBuffers(BufferPool *pool);
+	int exportBuffers(unsigned int count,
+			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+	int importBuffers(unsigned int count);
 	int releaseBuffers();
 
 	int queueBuffer(Buffer *buffer);
 	std::vector<std::unique_ptr<Buffer>> queueAllBuffers();
 	Signal<Buffer *> bufferReady;
+	int queueBuffer(FrameBuffer *buffer);
+	/* todo Rename to bufferReady when the Buffer version is removed */
+	Signal<FrameBuffer *> frameBufferReady;
 
 	int streamOn();
 	int streamOff();
@@ -219,10 +225,13 @@ private:
 	int requestBuffers(unsigned int count);
 	int createPlane(BufferMemory *buffer, unsigned int index,
 			unsigned int plane, unsigned int length);
+	std::unique_ptr<FrameBuffer> createFrameBuffer(const struct v4l2_buffer &buf);
 	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 
 	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);
+	/* todo Rename to dequeueBuffer() when the Buffer version is removed */
+	FrameBuffer *dequeueFrameBuffer();
 
 	V4L2Capability caps_;
 
@@ -230,7 +239,10 @@ private:
 	enum v4l2_memory memoryType_;
 
 	BufferPool *bufferPool_;
+	V4L2BufferCache *cache_;
 	std::map<unsigned int, Buffer *> queuedBuffers_;
+	/* todo Rename to queuedBuffers_ when the Buffer version is removed */
+	std::map<unsigned int, FrameBuffer *> queuedFrameBuffers_;
 
 	EventNotifier *fdEvent_;
 };

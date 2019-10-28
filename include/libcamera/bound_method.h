@@ -24,8 +24,10 @@ enum ConnectionType {
 class BoundMethodBase
 {
 public:
-	BoundMethodBase(void *obj, Object *object)
-		: obj_(obj), object_(object) {}
+	BoundMethodBase(void *obj, Object *object, ConnectionType type)
+		: obj_(obj), object_(object), connectionType_(type)
+	{
+	}
 	virtual ~BoundMethodBase() {}
 
 	template<typename T, typename std::enable_if<!std::is_same<Object, T>::value>::type * = nullptr>
@@ -33,6 +35,7 @@ public:
 	bool match(Object *object) { return object == object_; }
 
 	Object *object() const { return object_; }
+	ConnectionType connectionType() const { return connectionType_; }
 
 	void activatePack(void *pack);
 	virtual void invokePack(void *pack) = 0;
@@ -40,6 +43,7 @@ public:
 protected:
 	void *obj_;
 	Object *object_;
+	ConnectionType connectionType_;
 };
 
 template<typename... Args>
@@ -76,8 +80,8 @@ private:
 	}
 
 public:
-	BoundMethodArgs(void *obj, Object *object)
-		: BoundMethodBase(obj, object) {}
+	BoundMethodArgs(void *obj, Object *object, ConnectionType type)
+		: BoundMethodBase(obj, object, type) {}
 
 	void invokePack(void *pack) override
 	{
@@ -94,8 +98,11 @@ class BoundMemberMethod : public BoundMethodArgs<Args...>
 public:
 	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
 
-	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...))
-		: BoundMethodArgs<Args...>(obj, object), func_(func) {}
+	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...),
+			  ConnectionType type = ConnectionTypeAuto)
+		: BoundMethodArgs<Args...>(obj, object, type), func_(func)
+	{
+	}
 
 	bool match(void (T::*func)(Args...)) const { return func == func_; }
 
@@ -121,7 +128,10 @@ class BoundStaticMethod : public BoundMethodArgs<Args...>
 {
 public:
 	BoundStaticMethod(void (*func)(Args...))
-		: BoundMethodArgs<Args...>(nullptr, nullptr), func_(func) {}
+		: BoundMethodArgs<Args...>(nullptr, nullptr, ConnectionTypeAuto),
+		  func_(func)
+	{
+	}
 
 	bool match(void (*func)(Args...)) const { return func == func_; }
 

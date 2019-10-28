@@ -55,11 +55,12 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
-	void connect(T *obj, void (T::*func)(Args...))
+	void connect(T *obj, void (T::*func)(Args...),
+		     ConnectionType type = ConnectionTypeAuto)
 	{
 		Object *object = static_cast<Object *>(obj);
 		object->connect(this);
-		slots_.push_back(new BoundMemberMethod<T, Args...>(obj, object, func));
+		slots_.push_back(new BoundMemberMethod<T, Args...>(obj, object, func, type));
 	}
 
 	template<typename T, typename std::enable_if<!std::is_base_of<Object, T>::value>::type * = nullptr>

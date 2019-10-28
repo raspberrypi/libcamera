@@ -153,13 +153,6 @@ void Object::message(Message *msg)
  * remains valid until the method is invoked.
  */
 
-void Object::invokeMethod(BoundMethodBase *method, void *args)
-{
-	std::unique_ptr<Message> msg =
-		utils::make_unique<InvokeMessage>(method, args, nullptr, true);
-	postMessage(std::move(msg));
-}
-
 /**
  * \fn Object::thread()
  * \brief Retrieve the thread the object is bound to

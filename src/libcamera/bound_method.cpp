@@ -48,7 +48,7 @@ namespace libcamera {
  * deadlock will occur.
  */
 
-void BoundMethodBase::activatePack(void *pack)
+void BoundMethodBase::activatePack(void *pack, bool deleteMethod)
 {
 	ConnectionType type = connectionType_;
 	if (type == ConnectionTypeAuto) {
@@ -66,7 +66,7 @@ void BoundMethodBase::activatePack(void *pack)
 
 	case ConnectionTypeQueued: {
 		std::unique_ptr<Message> msg =
-			utils::make_unique<InvokeMessage>(this, pack);
+			utils::make_unique<InvokeMessage>(this, pack, nullptr, deleteMethod);
 		object_->postMessage(std::move(msg));
 		break;
 	}
@@ -75,7 +75,7 @@ void BoundMethodBase::activatePack(void *pack)
 		Semaphore semaphore;
 
 		std::unique_ptr<Message> msg =
-			utils::make_unique<InvokeMessage>(this, pack, &semaphore);
+			utils::make_unique<InvokeMessage>(this, pack, &semaphore, deleteMethod);
 		object_->postMessage(std::move(msg));
 
 		semaphore.acquire();

@@ -37,7 +37,7 @@ public:
 	Object *object() const { return object_; }
 	ConnectionType connectionType() const { return connectionType_; }
 
-	void activatePack(void *pack);
+	void activatePack(void *pack, bool deleteMethod);
 	virtual void invokePack(void *pack) = 0;
 
 protected:
@@ -109,7 +109,7 @@ public:
 	void activate(Args... args)
 	{
 		if (this->object_)
-			BoundMethodBase::activatePack(new PackType{ args... });
+			BoundMethodBase::activatePack(new PackType{ args... }, false);
 		else
 			(static_cast<T *>(this->obj_)->*func_)(args...);
 	}

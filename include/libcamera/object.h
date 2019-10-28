@@ -33,10 +33,12 @@ public:
 	void invokeMethod(void (T::*func)(Args...), Args... args)
 	{
 		T *obj = static_cast<T *>(this);
-		BoundMethodBase *method = new BoundMemberMethod<T, Args...>(obj, this, func);
+		BoundMethodBase *method =
+			new BoundMemberMethod<T, Args...>(obj, this, func,
+							  ConnectionTypeQueued);
 		void *pack = new typename BoundMemberMethod<T, Args...>::PackType{ args... };
 
-		invokeMethod(method, pack);
+		method->activatePack(pack, true);
 	}
 
 	Thread *thread() const { return thread_; }
@@ -52,8 +54,6 @@ private:
 	friend class Signal;
 	friend class BoundMethodBase;
 	friend class Thread;
-
-	void invokeMethod(BoundMethodBase *method, void *pack);
 
 	void notifyThreadMove();
 

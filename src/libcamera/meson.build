@@ -28,6 +28,7 @@ libcamera_sources = files([
     'pixelformats.cpp',
     'process.cpp',
     'request.cpp',
+    'semaphore.cpp',
     'signal.cpp',
     'stream.cpp',
     'thread.cpp',

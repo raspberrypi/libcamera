@@ -17,6 +17,7 @@ libcamera_headers = files([
     'message.h',
     'pipeline_handler.h',
     'process.h',
+    'semaphore.h',
     'thread.h',
     'utils.h',
     'v4l2_controls.h',

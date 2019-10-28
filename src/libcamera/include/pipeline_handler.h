@@ -21,7 +21,6 @@
 namespace libcamera {
 
 class Buffer;
-class BufferPool;
 class Camera;
 class CameraConfiguration;
 class CameraManager;

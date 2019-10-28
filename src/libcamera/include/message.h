@@ -15,6 +15,7 @@ namespace libcamera {
 
 class BoundMethodBase;
 class Object;
+class Semaphore;
 class Thread;
 
 class Message
@@ -48,14 +49,18 @@ class InvokeMessage : public Message
 {
 public:
 	InvokeMessage(BoundMethodBase *method, void *pack,
+		      Semaphore *semaphore = nullptr,
 		      bool deleteMethod = false);
 	~InvokeMessage();
+
+	Semaphore *semaphore() const { return semaphore_; }
 
 	void invoke();
 
 private:
 	BoundMethodBase *method_;
 	void *pack_;
+	Semaphore *semaphore_;
 	bool deleteMethod_;
 };
 

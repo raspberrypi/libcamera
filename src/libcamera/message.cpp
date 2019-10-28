@@ -119,13 +119,14 @@ Message::Type Message::registerMessageType()
  * \brief Construct an InvokeMessage for method invocation on an Object
  * \param[in] method The bound method
  * \param[in] pack The packed method arguments
+ * \param[in] semaphore The semaphore used to signal message delivery
  * \param[in] deleteMethod True to delete the \a method when the message is
  * destroyed
  */
 InvokeMessage::InvokeMessage(BoundMethodBase *method, void *pack,
-			     bool deleteMethod)
+			     Semaphore *semaphore, bool deleteMethod)
 	: Message(Message::InvokeMessage), method_(method), pack_(pack),
-	  deleteMethod_(deleteMethod)
+	  semaphore_(semaphore), deleteMethod_(deleteMethod)
 {
 }
 
@@ -134,6 +135,12 @@ InvokeMessage::~InvokeMessage()
 	if (deleteMethod_)
 		delete method_;
 }
+
+/**
+ * \fn InvokeMessage::semaphore()
+ * \brief Retrieve the message semaphore passed to the constructor
+ * \return The message semaphore
+ */
 
 /**
  * \brief Invoke the method bound to InvokeMessage::method_ with arguments

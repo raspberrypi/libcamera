@@ -8,6 +8,7 @@
 #include <libcamera/bound_method.h>
 
 #include "message.h"
+#include "semaphore.h"
 #include "thread.h"
 #include "utils.h"
 
@@ -49,12 +50,37 @@ namespace libcamera {
 
 void BoundMethodBase::activatePack(void *pack)
 {
-	if (Thread::current() == object_->thread()) {
+	ConnectionType type = connectionType_;
+	if (type == ConnectionTypeAuto) {
+		if (Thread::current() == object_->thread())
+			type = ConnectionTypeDirect;
+		else
+			type = ConnectionTypeQueued;
+	}
+
+	switch (type) {
+	case ConnectionTypeDirect:
+	default:
 		invokePack(pack);
-	} else {
+		break;
+
+	case ConnectionTypeQueued: {
 		std::unique_ptr<Message> msg =
 			utils::make_unique<InvokeMessage>(this, pack);
 		object_->postMessage(std::move(msg));
+		break;
+	}
+
+	case ConnectionTypeBlocking: {
+		Semaphore semaphore;
+
+		std::unique_ptr<Message> msg =
+			utils::make_unique<InvokeMessage>(this, pack, &semaphore);
+		object_->postMessage(std::move(msg));
+
+		semaphore.acquire();
+		break;
+	}
 	}
 }
 

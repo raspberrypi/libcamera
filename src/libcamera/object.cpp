@@ -13,6 +13,7 @@
 
 #include "log.h"
 #include "message.h"
+#include "semaphore.h"
 #include "thread.h"
 #include "utils.h"
 
@@ -123,7 +124,12 @@ void Object::message(Message *msg)
 	switch (msg->type()) {
 	case Message::InvokeMessage: {
 		InvokeMessage *iMsg = static_cast<InvokeMessage *>(msg);
+		Semaphore *semaphore = iMsg->semaphore();
 		iMsg->invoke();
+
+		if (semaphore)
+			semaphore->release();
+
 		break;
 	}
 
@@ -150,7 +156,7 @@ void Object::message(Message *msg)
 void Object::invokeMethod(BoundMethodBase *method, void *args)
 {
 	std::unique_ptr<Message> msg =
-		utils::make_unique<InvokeMessage>(method, args, true);
+		utils::make_unique<InvokeMessage>(method, args, nullptr, true);
 	postMessage(std::move(msg));
 }
 

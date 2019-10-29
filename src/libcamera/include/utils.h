@@ -16,6 +16,15 @@
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
 
+#ifndef __DOXYGEN__
+
+/* uClibc and uClibc-ng don't provide O_TMPFILE */
+#ifndef O_TMPFILE
+#define O_TMPFILE	(020000000 | O_DIRECTORY)
+#endif
+
+#endif
+
 namespace libcamera {
 
 namespace utils {

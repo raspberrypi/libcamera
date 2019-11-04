@@ -36,7 +36,7 @@ class IPAProxyFactory
 {
 public:
 	IPAProxyFactory(const char *name);
-	virtual ~IPAProxyFactory(){};
+	virtual ~IPAProxyFactory() {}
 
 	virtual std::unique_ptr<IPAProxy> create(IPAModule *ipam) = 0;
 

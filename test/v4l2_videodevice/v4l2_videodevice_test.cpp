@@ -99,4 +99,4 @@ void V4L2VideoDeviceTest::cleanup()
 	delete debayer_;
 	delete sensor_;
 	delete capture_;
-};
+}

@@ -23,8 +23,8 @@ struct IPAModuleInfo {
 
 extern "C" {
 extern const struct IPAModuleInfo ipaModuleInfo;
-};
+}
 
-}; /* namespace libcamera */
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_IPA_MODULE_INFO_H__ */

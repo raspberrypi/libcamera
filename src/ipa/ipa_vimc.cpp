@@ -112,6 +112,6 @@ IPAInterface *ipaCreate()
 {
 	return new IPAVimc();
 }
-};
+}
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

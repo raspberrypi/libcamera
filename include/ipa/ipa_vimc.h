@@ -17,6 +17,6 @@ enum IPAOperationCode {
 	IPAOperationInit,
 };
 
-}; /* namespace libcamera */
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_IPA_VIMC_H__ */

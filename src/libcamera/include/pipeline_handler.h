@@ -111,7 +111,7 @@ class PipelineHandlerFactory
 {
 public:
 	PipelineHandlerFactory(const char *name);
-	virtual ~PipelineHandlerFactory() { };
+	virtual ~PipelineHandlerFactory() {}
 
 	std::shared_ptr<PipelineHandler> create(CameraManager *manager);
 

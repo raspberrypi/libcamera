@@ -13,7 +13,7 @@
 
 namespace libcamera {
 class EventDispatcher;
-};
+}
 
 class EventLoop
 {

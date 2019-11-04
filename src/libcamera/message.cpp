@@ -161,4 +161,4 @@ void InvokeMessage::invoke()
  * \brief The packed method invocation arguments
  */
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

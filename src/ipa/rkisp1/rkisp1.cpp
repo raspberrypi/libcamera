@@ -251,6 +251,6 @@ IPAInterface *ipaCreate()
 {
 	return new IPARkISP1();
 }
-};
+}
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

@@ -67,6 +67,6 @@ private:
 	unsigned int pendingMessages_;
 };
 
-}; /* namespace libcamera */
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_OBJECT_H__ */

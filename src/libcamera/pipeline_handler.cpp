@@ -135,7 +135,7 @@ PipelineHandler::~PipelineHandler()
 {
 	for (std::shared_ptr<MediaDevice> media : mediaDevices_)
 		media->release();
-};
+}
 
 /**
  * \fn PipelineHandler::match(DeviceEnumerator *enumerator)

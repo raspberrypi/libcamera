@@ -92,4 +92,4 @@ void IPAProxyLinux::readyRead(IPCUnixSocket *ipc)
 
 REGISTER_IPA_PROXY(IPAProxyLinux)
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

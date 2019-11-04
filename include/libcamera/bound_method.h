@@ -142,6 +142,6 @@ private:
 	void (*func_)(Args...);
 };
 
-}; /* namespace libcamera */
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_BOUND_METHOD_H__ */

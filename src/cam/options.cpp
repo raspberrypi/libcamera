@@ -490,7 +490,7 @@ void OptionsParser::usage()
 			else
 				argument += "  ";
 			argument += std::string("--") + option.name;
-		};
+		}
 
 		if (option.argument != ArgumentNone) {
 			if (option.argument == ArgumentOptional)

@@ -223,4 +223,4 @@ void Object::disconnect(SignalBase *signal)
 	}
 }
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

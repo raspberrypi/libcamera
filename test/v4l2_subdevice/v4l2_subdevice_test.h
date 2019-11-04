@@ -21,7 +21,9 @@ class V4L2SubdeviceTest : public Test
 {
 public:
 	V4L2SubdeviceTest()
-		: scaler_(nullptr){};
+		: scaler_(nullptr)
+	{
+	}
 
 protected:
 	int init() override;

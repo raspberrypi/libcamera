@@ -45,4 +45,4 @@ void CameraTest::cleanup()
 
 	cm_->stop();
 	delete cm_;
-};
+}

@@ -495,4 +495,4 @@ void Thread::moveObject(Object *object, ThreadData *currentData,
 		moveObject(child, currentData, targetData);
 }
 
-}; /* namespace libcamera */
+} /* namespace libcamera */

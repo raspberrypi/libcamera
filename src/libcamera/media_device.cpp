@@ -199,7 +199,7 @@ void MediaDevice::unlock()
  */
 int MediaDevice::populate()
 {
-	struct media_v2_topology topology = { };
+	struct media_v2_topology topology = {};
 	struct media_v2_entity *ents = nullptr;
 	struct media_v2_interface *interfaces = nullptr;
 	struct media_v2_link *links = nullptr;
@@ -767,7 +767,7 @@ void MediaDevice::fixupEntityFlags(struct media_v2_entity *entity)
  */
 int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 {
-	struct media_link_desc linkDesc = { };
+	struct media_link_desc linkDesc = {};
 	MediaPad *source = link->source();
 	MediaPad *sink = link->sink();
 

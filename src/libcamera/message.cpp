@@ -93,7 +93,7 @@ Message::~Message()
  * class MyCustomMessage : public Message
  * {
  * public:
- *	MyCustomMessage() : Message(type()) { }
+ *	MyCustomMessage() : Message(type()) {}
  *
  *	static Message::Type type()
  *	{

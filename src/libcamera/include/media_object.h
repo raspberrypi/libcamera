@@ -27,9 +27,11 @@ public:
 protected:
 	friend class MediaDevice;
 
-	MediaObject(MediaDevice *dev, unsigned int id) :
-		dev_(dev), id_(id) { }
-	virtual ~MediaObject() { }
+	MediaObject(MediaDevice *dev, unsigned int id)
+		: dev_(dev), id_(id)
+	{
+	}
+	virtual ~MediaObject() {}
 
 	MediaDevice *dev_;
 	unsigned int id_;
@@ -49,7 +51,7 @@ private:
 	MediaLink(const struct media_v2_link *link,
 		  MediaPad *source, MediaPad *sink);
 	MediaLink(const MediaLink &) = delete;
-	~MediaLink() { }
+	~MediaLink() {}
 
 	MediaPad *source_;
 	MediaPad *sink_;

@@ -26,7 +26,7 @@ public:
 protected:
 	virtual int init() { return 0; }
 	virtual int run() = 0;
-	virtual void cleanup() { }
+	virtual void cleanup() {}
 };
 
 #define TEST_REGISTER(klass)						\

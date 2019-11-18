@@ -16,7 +16,18 @@ def snake_case(s):
     return ''.join([c.isupper() and ('_' + c) or c for c in s]).strip('_')
 
 
+def format_description(description):
+    description = description.strip('\n').split('\n')
+    description[0] = '\\brief ' + description[0]
+    return '\n'.join([(line and ' * ' or ' *') + line for line in description])
+
+
 def generate_cpp(controls):
+    enum_doc_start_template = string.Template('''/**
+ * \\enum ${name}Values
+ * \\brief Supported ${name} values''')
+    enum_doc_value_template = string.Template(''' * \\var ${name}Values::${value}
+${description}''')
     doc_template = string.Template('''/**
  * \\var extern const Control<${type}> ${name}
 ${description}
@@ -31,16 +42,29 @@ ${description}
         name, ctrl = ctrl.popitem()
         id_name = snake_case(name).upper()
 
-        description = ctrl['description'].strip('\n').split('\n')
-        description[0] = '\\brief ' + description[0]
-        description = '\n'.join([(line and ' * ' or ' *') + line for line in description])
-
         info = {
             'name': name,
             'type': ctrl['type'],
-            'description': description,
+            'description': format_description(ctrl['description']),
             'id_name': id_name,
         }
+
+        enum = ctrl.get('enum')
+        if enum:
+            enum_doc = []
+            enum_doc.append(enum_doc_start_template.substitute(info))
+
+            for entry in enum:
+                value_info = {
+                    'name' : name,
+                    'value': entry['name'],
+                    'description': format_description(entry['description']),
+                }
+                enum_doc.append(enum_doc_value_template.substitute(value_info))
+
+            enum_doc = '\n *\n'.join(enum_doc)
+            enum_doc += '\n */'
+            ctrls_doc.append(enum_doc)
 
         ctrls_doc.append(doc_template.substitute(info))
         ctrls_def.append(def_template.substitute(info))
@@ -54,6 +78,8 @@ ${description}
 
 
 def generate_h(controls):
+    enum_template_start = string.Template('''enum ${name}Values {''')
+    enum_value_template = string.Template('''\t${name} = ${value},''')
     template = string.Template('''extern const Control<${type}> ${name};''')
 
     ctrls = []
@@ -70,6 +96,18 @@ def generate_h(controls):
             'name': name,
             'type': ctrl['type'],
         }
+
+        enum = ctrl.get('enum')
+        if enum:
+            ctrls.append(enum_template_start.substitute(info))
+
+            for entry in enum:
+                value_info = {
+                    'name': entry['name'],
+                    'value': entry['value'],
+                }
+                ctrls.append(enum_value_template.substitute(value_info))
+            ctrls.append("};")
 
         ctrls.append(template.substitute(info))
         id_value += 1

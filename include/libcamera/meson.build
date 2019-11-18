@@ -25,15 +25,23 @@ install_headers(libcamera_api,
 
 gen_controls = files('../../src/libcamera/gen-controls.py')
 
-control_ids_h = custom_target('control_ids_h',
-                              input : files('../../src/libcamera/control_ids.yaml', 'control_ids.h.in'),
-                              output : 'control_ids.h',
-                              depend_files : gen_controls,
-                              command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
-                              install : true,
-                              install_dir : join_paths('include', include_dir))
+control_source_files = [
+    'control_ids',
+    'property_ids',
+]
 
-libcamera_api += control_ids_h
+control_headers = []
+
+foreach header : control_source_files
+    input_files = files('../../src/libcamera/' + header +'.yaml', header + '.h.in')
+    control_headers += custom_target(header + '_h',
+                                     input : input_files,
+                                     output : header + '.h',
+                                     depend_files : gen_controls,
+                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
+                                     install : true,
+                                     install_dir : join_paths('include', include_dir))
+endforeach
 
 gen_header = files('gen-header.sh')
 

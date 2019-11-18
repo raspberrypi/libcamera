@@ -69,14 +69,19 @@ endif
 
 gen_controls = files('gen-controls.py')
 
-control_ids_cpp = custom_target('control_ids_cpp',
-                                input : files('control_ids.yaml', 'control_ids.cpp.in'),
-                                output : 'control_ids.cpp',
-                                depend_files : gen_controls,
-                                command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'])
+control_sources = []
 
-libcamera_sources += control_ids_cpp
-libcamera_sources += control_ids_h
+foreach source : control_source_files
+    input_files = files(source +'.yaml', source + '.cpp.in')
+    control_sources += custom_target(source + '_cpp',
+                                     input : input_files,
+                                     output : source + '.cpp',
+                                     depend_files : gen_controls,
+                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'])
+endforeach
+
+libcamera_sources += control_headers
+libcamera_sources += control_sources
 
 gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
 

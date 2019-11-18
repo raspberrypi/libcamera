@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2019, Google Inc.
+#
+%YAML 1.2
+---
+controls:
+  - Location:
+      type: int32_t
+      description: |
+        Camera mounting location
+      enum:
+        - name: CameraLocationFront
+          value: 0
+          description: |
+            The camera is mounted on the front side of the device, facing the
+            user
+        - name: CameraLocationBack
+          value: 1
+          description: |
+            The camera is mounted on the back side of the device, facing away
+            from the user
+        - name: CameraLocationExternal
+          value: 2
+          description: |
+            The camera is attached to the device in a way that allows it to
+            be moved freely
+...

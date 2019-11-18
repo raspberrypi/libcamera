@@ -1,0 +1,43 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2019, Google Inc.
+ *
+ * property_ids.cpp : Property ID list
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <libcamera/property_ids.h>
+
+/**
+ * \file property_ids.h
+ * \brief Camera property identifiers
+ */
+
+namespace libcamera {
+
+/**
+ * \brief Namespace for libcamera properties
+ */
+namespace properties {
+
+${controls_doc}
+
+#ifndef __DOXYGEN__
+/*
+ * Keep the properties definitions hidden from doxygen as it incorrectly parses
+ * them as functions.
+ */
+${controls_def}
+#endif
+
+/**
+ * \brief List of all supported libcamera properties
+ */
+extern const ControlIdMap properties {
+${controls_map}
+};
+
+} /* namespace properties */
+
+} /* namespace libcamera */

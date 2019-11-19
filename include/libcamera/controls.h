@@ -114,10 +114,12 @@ class ControlRange
 {
 public:
 	explicit ControlRange(const ControlValue &min = 0,
-			      const ControlValue &max = 0);
+			      const ControlValue &max = 0,
+			      const ControlValue &def = 0);
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
+	const ControlValue &def() const { return def_; }
 
 	std::string toString() const;
 
@@ -134,6 +136,7 @@ public:
 private:
 	ControlValue min_;
 	ControlValue max_;
+	ControlValue def_;
 };
 
 using ControlIdMap = std::unordered_map<unsigned int, const ControlId *>;

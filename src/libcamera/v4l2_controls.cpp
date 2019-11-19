@@ -121,17 +121,20 @@ V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
 	switch (ctrl.type) {
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		ControlRange::operator=(ControlRange(static_cast<bool>(ctrl.minimum),
-						     static_cast<bool>(ctrl.maximum)));
+						     static_cast<bool>(ctrl.maximum),
+						     static_cast<bool>(ctrl.default_value)));
 		break;
 
 	case V4L2_CTRL_TYPE_INTEGER64:
 		ControlRange::operator=(ControlRange(static_cast<int64_t>(ctrl.minimum),
-						     static_cast<int64_t>(ctrl.maximum)));
+						     static_cast<int64_t>(ctrl.maximum),
+						     static_cast<int64_t>(ctrl.default_value)));
 		break;
 
 	default:
 		ControlRange::operator=(ControlRange(static_cast<int32_t>(ctrl.minimum),
-						     static_cast<int32_t>(ctrl.maximum)));
+						     static_cast<int32_t>(ctrl.maximum),
+						     static_cast<int32_t>(ctrl.default_value)));
 		break;
 	}
 }

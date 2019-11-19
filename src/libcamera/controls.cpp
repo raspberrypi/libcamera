@@ -357,10 +357,12 @@ Control<int64_t>::Control(unsigned int id, const char *name)
  * \brief Construct a ControlRange with minimum and maximum range parameters
  * \param[in] min The control minimum value
  * \param[in] max The control maximum value
+ * \param[in] def The control default value
  */
 ControlRange::ControlRange(const ControlValue &min,
-			   const ControlValue &max)
-	: min_(min), max_(max)
+			   const ControlValue &max,
+			   const ControlValue &def)
+	: min_(min), max_(max), def_(def)
 {
 }
 
@@ -374,6 +376,12 @@ ControlRange::ControlRange(const ControlValue &min,
  * \fn ControlRange::max()
  * \brief Retrieve the maximum value of the control
  * \return A ControlValue with the maximum value for the control
+ */
+
+/**
+ * \fn ControlRange::def()
+ * \brief Retrieve the default value of the control
+ * \return A ControlValue with the default value for the control
  */
 
 /**

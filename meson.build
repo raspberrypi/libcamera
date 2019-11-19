@@ -35,8 +35,8 @@ common_arguments = [
     '-include', 'config.h',
 ]
 
-c_arguments = common_arguments
-cpp_arguments = common_arguments
+c_arguments = []
+cpp_arguments = []
 
 if cc.get_id() == 'clang'
     # Turn _FORTIFY_SOURCE by default on optimised builds (as it requires -O1
@@ -55,6 +55,9 @@ if cc.get_id() == 'clang'
         ]
     endif
 endif
+
+c_arguments += common_arguments
+cpp_arguments += common_arguments
 
 add_project_arguments(c_arguments, language : 'c')
 add_project_arguments(cpp_arguments, language : 'cpp')

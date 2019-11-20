@@ -101,6 +101,9 @@ add_project_link_arguments(cpp_arguments, language : 'cpp')
 
 libcamera_includes = include_directories('include')
 
+# Sub-directories fill py_modules with their dependencies.
+py_modules = []
+
 # Utilities are parsed first to provide support for other components.
 subdir('utils')
 
@@ -142,6 +145,10 @@ pkg_mod.generate(libraries : libcamera,
                  filebase : 'camera',
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')
+
+# Check for python installation and modules.
+py_mod = import('python')
+py_mod.find_installation('python3', modules: py_modules)
 
 ## Summarise Configurations
 message('Enabled pipelines: ' + ', '.join(get_option('pipelines')))

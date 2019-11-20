@@ -912,6 +912,9 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	if (ret)
 		return ret;
 
+	/* Initialize the camera properties. */
+	data->properties_ = data->sensor_->properties();
+
 	ret = data->loadIPA();
 	if (ret)
 		return ret;

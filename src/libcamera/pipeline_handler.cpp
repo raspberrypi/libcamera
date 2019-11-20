@@ -99,6 +99,14 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
+ * \var CameraData::properties_
+ * \brief The list of properties supported by the camera
+ *
+ * The list of camera properties shall be initialised by the pipeline handler
+ * when creating the camera, and shall not be modified afterwards.
+ */
+
+/**
  * \var CameraData::ipa_
  * \brief The IPA module used by the camera
  *
@@ -253,6 +261,17 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
 {
 	CameraData *data = cameraData(camera);
 	return data->controlInfo_;
+}
+
+/**
+ * \brief Retrieve the list of properties for a camera
+ * \param[in] camera The camera
+ * \return A ControlList of properties supported by \a camera
+ */
+const ControlList &PipelineHandler::properties(Camera *camera)
+{
+	CameraData *data = cameraData(camera);
+	return data->properties_;
 }
 
 /**

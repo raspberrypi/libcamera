@@ -452,6 +452,10 @@ int VimcCameraData::init(MediaDevice *media)
 	}
 
 	controlInfo_ = std::move(ctrls);
+
+	/* Initialize the camera properties. */
+	properties_ = sensor_->properties();
+
 	return 0;
 }
 

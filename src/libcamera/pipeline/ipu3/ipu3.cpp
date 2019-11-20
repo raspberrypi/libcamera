@@ -887,6 +887,9 @@ int PipelineHandlerIPU3::registerCameras()
 		if (ret)
 			continue;
 
+		/* Initialize the camera properties. */
+		data->properties_ = cio2->sensor_->properties();
+
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each
 		 * stream and camera; as of now, limit support to two cameras

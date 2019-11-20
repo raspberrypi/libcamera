@@ -45,6 +45,7 @@ public:
 	PipelineHandler *pipe_;
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
+	ControlList properties_;
 	std::unique_ptr<IPAInterface> ipa_;
 
 private:
@@ -67,6 +68,7 @@ public:
 	void unlock();
 
 	const ControlInfoMap &controls(Camera *camera);
+	const ControlList &properties(Camera *camera);
 
 	virtual CameraConfiguration *generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;

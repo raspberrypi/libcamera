@@ -86,6 +86,7 @@ public:
 	int release();
 
 	const ControlInfoMap &controls();
+	const ControlList &properties();
 
 	const std::set<Stream *> &streams() const;
 	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles);

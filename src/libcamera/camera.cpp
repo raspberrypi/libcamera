@@ -652,7 +652,8 @@ int Camera::release()
 /**
  * \brief Retrieve the list of controls supported by the camera
  *
- * Camera controls remain constant through the lifetime of the camera.
+ * The list of controls supported by the camera and their associated
+ * constraints remain constant through the lifetime of the Camera object.
  *
  * \context This function is \threadsafe.
  *
@@ -661,6 +662,19 @@ int Camera::release()
 const ControlInfoMap &Camera::controls()
 {
 	return p_->pipe_->controls(this);
+}
+
+/**
+ * \brief Retrieve the list of properties of the camera
+ *
+ * Camera properties are static information that describe the capabilities of
+ * the camera. They remain constant through the lifetime of the Camera object.
+ *
+ * \return A ControlList of properties supported by the camera
+ */
+const ControlList &Camera::properties()
+{
+	return p_->pipe_->properties(this);
 }
 
 /**

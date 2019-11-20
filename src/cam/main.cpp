@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <libcamera/libcamera.h>
+#include <libcamera/property_ids.h>
 
 #include "capture.h"
 #include "event_loop.h"
@@ -36,6 +37,7 @@ public:
 private:
 	int parseOptions(int argc, char *argv[]);
 	int prepareConfig();
+	int listProperties();
 	int infoConfiguration();
 	int run();
 
@@ -180,6 +182,8 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptInfo, OptionNone,
 			 "Display information about stream(s)", "info");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
+	parser.addOption(OptProps, OptionNone, "List cameras properties",
+			 "list-properties");
 
 	options_ = parser.parse(argc, argv);
 	if (!options_.valid())
@@ -268,6 +272,24 @@ int CamApp::prepareConfig()
 	return 0;
 }
 
+int CamApp::listProperties()
+{
+	if (!camera_) {
+		std::cout << "Cannot list properties without a camera"
+			  << std::endl;
+		return -EINVAL;
+	}
+
+	for (const auto &prop : camera_->properties()) {
+		const ControlId *id = properties::properties.at(prop.first);
+		const ControlValue &value = prop.second;
+
+		std::cout << "Property: " << id->name() << " = " << value.toString();
+	}
+
+	return 0;
+}
+
 int CamApp::infoConfiguration()
 {
 	if (!config_) {
@@ -310,6 +332,12 @@ int CamApp::run()
 			std::cout << index << ": " << cam->name() << std::endl;
 			index++;
 		}
+	}
+
+	if (options_.isSet(OptProps)) {
+		ret = listProperties();
+		if (ret)
+			return ret;
 	}
 
 	if (options_.isSet(OptInfo)) {

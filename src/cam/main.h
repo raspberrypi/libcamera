@@ -14,6 +14,7 @@ enum {
 	OptHelp = 'h',
 	OptInfo = 'I',
 	OptList = 'l',
+	OptProps = 'p',
 	OptStream = 's',
 };
 

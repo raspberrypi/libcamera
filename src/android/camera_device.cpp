@@ -8,6 +8,9 @@
 #include "camera_device.h"
 #include "camera_ops.h"
 
+#include <libcamera/controls.h>
+#include <libcamera/property_ids.h>
+
 #include "log.h"
 #include "utils.h"
 
@@ -108,6 +111,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 {
 	if (staticMetadata_)
 		return staticMetadata_->get();
+
+	const ControlList &properties = camera_->properties();
 
 	/*
 	 * The here reported metadata are enough to implement a basic capture
@@ -273,9 +278,15 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
 				  &exposureTimeRange, 2);
 
+	/*
+	 * The Android orientation metadata and libcamera rotation property are
+	 * defined differently but have identical numerical values for Android
+	 * devices such as phones and tablets.
+	 */
 	int32_t orientation = 0;
-	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION,
-				  &orientation, 1);
+	if (properties.contains(properties::Rotation))
+		orientation = properties.get(properties::Rotation);
+	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION, &orientation, 1);
 
 	std::vector<int32_t> testPatterModes = {
 		ANDROID_SENSOR_TEST_PATTERN_MODE_OFF,
@@ -322,6 +333,20 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  lensApertures.size());
 
 	uint8_t lensFacing = ANDROID_LENS_FACING_FRONT;
+	if (properties.contains(properties::Location)) {
+		int32_t location = properties.get(properties::Location);
+		switch (location) {
+		case properties::CameraLocationFront:
+			lensFacing = ANDROID_LENS_FACING_FRONT;
+			break;
+		case properties::CameraLocationBack:
+			lensFacing = ANDROID_LENS_FACING_BACK;
+			break;
+		case properties::CameraLocationExternal:
+			lensFacing = ANDROID_LENS_FACING_EXTERNAL;
+			break;
+		}
+	}
 	staticMetadata_->addEntry(ANDROID_LENS_FACING, &lensFacing, 1);
 
 	std::vector<float> lensFocalLenghts = {

@@ -16,6 +16,23 @@ namespace libcamera {
 class Request;
 class Stream;
 
+struct FrameMetadata {
+	enum Status {
+		FrameSuccess,
+		FrameError,
+		FrameCancelled,
+	};
+
+	struct Plane {
+		unsigned int bytesused;
+	};
+
+	Status status;
+	unsigned int sequence;
+	uint64_t timestamp;
+	std::vector<Plane> planes;
+};
+
 class Plane final
 {
 public:

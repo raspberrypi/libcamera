@@ -24,6 +24,79 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Buffer)
 
 /**
+ * \struct FrameMetadata
+ * \brief Metadata related to a captured frame
+ *
+ * The FrameMetadata structure stores all metadata related to a captured frame,
+ * as stored in a FrameBuffer, such as capture status, timestamp and bytesused.
+ */
+
+/**
+ * \enum FrameMetadata::Status
+ * \brief Define the frame completion status
+ * \var FrameMetadata::FrameSuccess
+ * The frame has been captured with success and contains valid data. All fields
+ * of the FrameMetadata structure are valid.
+ * \var FrameMetadata::FrameError
+ * An error occurred during capture of the frame. The frame data may be partly
+ * or fully invalid. The sequence and timestamp fields of the FrameMetadata
+ * structure is valid, the other fields may be invalid.
+ * \var FrameMetadata::FrameCancelled
+ * Capture stopped before the frame completed. The frame data is not valid. All
+ * fields of the FrameMetadata structure but the status field are invalid.
+ */
+
+/**
+ * \struct FrameMetadata::Plane
+ * \brief Per-plane frame metadata
+ *
+ * Frames are stored in memory in one or multiple planes. The
+ * FrameMetadata::Plane structure stores per-plane metadata.
+ */
+
+/**
+ * \var FrameMetadata::Plane::bytesused
+ * \brief Number of bytes occupied by the data in the plane, including line
+ * padding
+ *
+ * This value may vary per frame for compressed formats. For uncompressed
+ * formats it will be constant for all frames, but may be smaller than the
+ * FrameBuffer size.
+ */
+
+/**
+ * \var FrameMetadata::status
+ * \brief Status of the frame
+ *
+ * The validity of other fields of the FrameMetadata structure depends on the
+ * status value.
+ */
+
+/**
+ * \var FrameMetadata::sequence
+ * \brief Frame sequence number
+ *
+ * The sequence number is a monotonically increasing number assigned to the
+ * frames captured by the stream. The value is increased by one for each frame.
+ * Gaps in the sequence numbers indicate dropped frames.
+ */
+
+/**
+ * \var FrameMetadata::timestamp
+ * \brief Time when the frame was captured
+ *
+ * The timestamp is expressed as a number of nanoseconds relative to the system
+ * clock since an unspecified time point.
+ *
+ * \todo Be more precise on what timestamps refer to.
+ */
+
+/**
+ * \var FrameMetadata::planes
+ * \brief Array of per-plane metadata
+ */
+
+/**
  * \class Plane
  * \brief A memory region to store a single plane of a frame
  *

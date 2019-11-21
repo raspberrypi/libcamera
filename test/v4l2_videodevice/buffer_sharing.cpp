@@ -92,8 +92,7 @@ protected:
 
 	void captureBufferReady(Buffer *buffer)
 	{
-		std::cout << "Received capture buffer: " << buffer->index()
-			  << " sequence " << buffer->sequence() << std::endl;
+		std::cout << "Received capture buffer" << std::endl;
 
 		if (buffer->status() != Buffer::BufferSuccess)
 			return;
@@ -104,8 +103,7 @@ protected:
 
 	void outputBufferReady(Buffer *buffer)
 	{
-		std::cout << "Received output buffer: " << buffer->index()
-			  << " sequence " << buffer->sequence() << std::endl;
+		std::cout << "Received output buffer" << std::endl;
 
 		if (buffer->status() != Buffer::BufferSuccess)
 			return;

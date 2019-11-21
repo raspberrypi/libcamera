@@ -1102,6 +1102,7 @@ Buffer *V4L2VideoDevice::dequeueBuffer()
 		return nullptr;
 	}
 
+	LOG(V4L2, Debug) << "Dequeuing buffer " << buf.index;
 	ASSERT(buf.index < bufferPool_->count());
 
 	auto it = queuedBuffers_.find(buf.index);
@@ -1137,8 +1138,6 @@ void V4L2VideoDevice::bufferAvailable(EventNotifier *notifier)
 	Buffer *buffer = dequeueBuffer();
 	if (!buffer)
 		return;
-
-	LOG(V4L2, Debug) << "Buffer " << buffer->index() << " is available";
 
 	/* Notify anyone listening to the device. */
 	bufferReady.emit(buffer);

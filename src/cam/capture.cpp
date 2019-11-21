@@ -155,7 +155,6 @@ void Capture::requestComplete(Request *request)
 		const std::string &name = streamName_[stream];
 
 		info << " " << name
-		     << " (" << buffer->index() << ")"
 		     << " seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
 		     << " bytesused: " << buffer->bytesused();
 
@@ -182,7 +181,7 @@ void Capture::requestComplete(Request *request)
 
 		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
 		if (!newBuffer) {
-			std::cerr << "Can't create buffer " << index << std::endl;
+			std::cerr << "Can't create buffer" << std::endl;
 			return;
 		}
 

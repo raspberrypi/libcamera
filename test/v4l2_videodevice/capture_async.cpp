@@ -22,7 +22,7 @@ public:
 
 	void receiveBuffer(Buffer *buffer)
 	{
-		std::cout << "Received buffer " << buffer->index() << std::endl;
+		std::cout << "Buffer received" << std::endl;
 		frames++;
 
 		/* Requeue the buffer for further use. */

@@ -31,7 +31,7 @@ public:
 
 	void outputBufferComplete(Buffer *buffer)
 	{
-		cout << "Received output buffer " << buffer->index() << endl;
+		cout << "Received output buffer" << endl;
 
 		outputFrames_++;
 
@@ -41,7 +41,7 @@ public:
 
 	void receiveCaptureBuffer(Buffer *buffer)
 	{
-		cout << "Received capture buffer " << buffer->index() << endl;
+		cout << "Received capture buffer" << endl;
 
 		captureFrames_++;
 

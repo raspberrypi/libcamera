@@ -264,7 +264,6 @@ void MainWindow::requestComplete(Request *request)
 	lastBufferTime_ = buffer->timestamp();
 
 	std::cout << "seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
-		  << " buf: " << buffer->index()
 		  << " bytesused: " << buffer->bytesused()
 		  << " timestamp: " << buffer->timestamp()
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
@@ -285,7 +284,7 @@ void MainWindow::requestComplete(Request *request)
 
 		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
 		if (!newBuffer) {
-			std::cerr << "Can't create buffer " << index << std::endl;
+			std::cerr << "Can't create buffer" << std::endl;
 			return;
 		}
 

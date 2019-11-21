@@ -22,6 +22,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/event_notifier.h>
+#include <libcamera/file_descriptor.h>
 
 #include "log.h"
 #include "media_device.h"
@@ -902,31 +903,19 @@ int V4L2VideoDevice::exportBuffers(BufferPool *pool)
 int V4L2VideoDevice::createPlane(BufferMemory *buffer, unsigned int index,
 				 unsigned int planeIndex, unsigned int length)
 {
-	struct v4l2_exportbuffer expbuf = {};
-	int ret;
-
 	LOG(V4L2, Debug)
 		<< "Buffer " << index
 		<< " plane " << planeIndex
 		<< ": length=" << length;
 
-	expbuf.type = bufferType_;
-	expbuf.index = index;
-	expbuf.plane = planeIndex;
-	expbuf.flags = O_RDWR;
-
-	ret = ioctl(VIDIOC_EXPBUF, &expbuf);
-	if (ret < 0) {
-		LOG(V4L2, Error)
-			<< "Failed to export buffer: " << strerror(-ret);
-		return ret;
-	}
+	FileDescriptor fd = exportDmabufFd(index, planeIndex);
+	if (!fd.isValid())
+		return -EINVAL;
 
 	FrameBuffer::Plane plane;
-	plane.fd = FileDescriptor(expbuf.fd);
+	plane.fd = fd;
 	plane.length = length;
 	buffer->planes().push_back(plane);
-	::close(expbuf.fd);
 
 	return 0;
 }
@@ -950,6 +939,27 @@ int V4L2VideoDevice::importBuffers(BufferPool *pool)
 	bufferPool_ = pool;
 
 	return 0;
+}
+
+FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,
+					       unsigned int plane)
+{
+	struct v4l2_exportbuffer expbuf = {};
+	int ret;
+
+	expbuf.type = bufferType_;
+	expbuf.index = index;
+	expbuf.plane = plane;
+	expbuf.flags = O_RDWR;
+
+	ret = ioctl(VIDIOC_EXPBUF, &expbuf);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to export buffer: " << strerror(-ret);
+		return FileDescriptor();
+	}
+
+	return FileDescriptor(expbuf.fd);
 }
 
 /**

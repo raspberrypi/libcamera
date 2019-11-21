@@ -26,6 +26,7 @@ class Buffer;
 class BufferMemory;
 class BufferPool;
 class EventNotifier;
+class FileDescriptor;
 class MediaDevice;
 class MediaEntity;
 
@@ -179,6 +180,7 @@ private:
 	int requestBuffers(unsigned int count);
 	int createPlane(BufferMemory *buffer, unsigned int index,
 			unsigned int plane, unsigned int length);
+	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 
 	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);

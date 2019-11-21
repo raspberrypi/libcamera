@@ -139,7 +139,7 @@ int Request::addBuffer(std::unique_ptr<Buffer> buffer)
 		return -EEXIST;
 	}
 
-	buffer->setRequest(this);
+	buffer->request_ = this;
 	pending_.insert(buffer.get());
 	bufferMap_[stream] = buffer.release();
 
@@ -236,7 +236,7 @@ bool Request::completeBuffer(Buffer *buffer)
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	buffer->setRequest(nullptr);
+	buffer->request_ = nullptr;
 
 	if (buffer->status() == Buffer::BufferCancelled)
 		cancelled_ = true;

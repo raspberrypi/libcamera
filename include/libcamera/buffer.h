@@ -129,8 +129,6 @@ private:
 
 	void cancel();
 
-	void setRequest(Request *request) { request_ = request; }
-
 	unsigned int index_;
 	std::array<int, 3> dmabuf_;
 	BufferMemory *mem_;

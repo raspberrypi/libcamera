@@ -290,7 +290,6 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  *
  * \return The Request the Buffer belongs to, or nullptr if the buffer is
  * either completed or not associated with a request
- * \sa Buffer::setRequest()
  */
 
 /**
@@ -318,10 +317,11 @@ void Buffer::cancel()
 }
 
 /**
- * \fn Buffer::setRequest()
- * \brief Set the request this buffer belongs to
+ * \var Buffer::request_
+ * \brief The request this buffer belongs to
  *
- * The intended callers are Request::addBuffer() and Request::completeBuffer().
+ * This member is intended to be set by Request::addBuffer() and
+ * Request::completeBuffer().
  */
 
 /**

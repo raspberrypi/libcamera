@@ -250,7 +250,7 @@ void KeyValueParser::usage(int indent)
  */
 
 OptionValue::OptionValue()
-	: type_(ValueNone)
+	: type_(ValueNone), integer_(0)
 {
 }
 
@@ -260,17 +260,17 @@ OptionValue::OptionValue(int value)
 }
 
 OptionValue::OptionValue(const char *value)
-	: type_(ValueString), string_(value)
+	: type_(ValueString), integer_(0), string_(value)
 {
 }
 
 OptionValue::OptionValue(const std::string &value)
-	: type_(ValueString), string_(value)
+	: type_(ValueString), integer_(0), string_(value)
 {
 }
 
 OptionValue::OptionValue(const KeyValueParser::Options &value)
-	: type_(ValueKeyValue), keyValues_(value)
+	: type_(ValueKeyValue), integer_(0), keyValues_(value)
 {
 }
 

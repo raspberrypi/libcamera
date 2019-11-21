@@ -1004,7 +1004,7 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 		buf.m.planes = v4l2Planes;
 	}
 
-	if (V4L2_TYPE_IS_OUTPUT(bufferType_)) {
+	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
 		buf.bytesused = buffer->bytesused_;
 		buf.sequence = buffer->sequence_;
 		buf.timestamp.tv_sec = buffer->timestamp_ / 1000000000;

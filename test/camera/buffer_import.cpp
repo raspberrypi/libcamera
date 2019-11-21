@@ -275,7 +275,7 @@ public:
 protected:
 	void bufferComplete(Request *request, Buffer *buffer)
 	{
-		if (buffer->status() != Buffer::BufferSuccess)
+		if (buffer->metadata().status != FrameMetadata::FrameSuccess)
 			return;
 
 		unsigned int index = buffer->index();

@@ -192,7 +192,7 @@ void V4L2CameraProxy::updateBuffers()
 		struct v4l2_buffer &buf = buffers_[fmd.index()];
 
 		switch (fmd.status()) {
-		case Buffer::Status::BufferSuccess:
+		case FrameMetadata::FrameSuccess:
 			buf.bytesused = fmd.bytesused();
 			buf.field = V4L2_FIELD_NONE;
 			buf.timestamp.tv_sec = fmd.timestamp() / 1000000000;
@@ -201,7 +201,7 @@ void V4L2CameraProxy::updateBuffers()
 
 			buf.flags |= V4L2_BUF_FLAG_DONE;
 			break;
-		case Buffer::Status::BufferError:
+		case FrameMetadata::FrameError:
 			buf.flags |= V4L2_BUF_FLAG_ERROR;
 			break;
 		default:

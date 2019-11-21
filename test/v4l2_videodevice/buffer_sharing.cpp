@@ -92,9 +92,11 @@ protected:
 
 	void captureBufferReady(Buffer *buffer)
 	{
+		const FrameMetadata &metadata = buffer->metadata();
+
 		std::cout << "Received capture buffer" << std::endl;
 
-		if (buffer->status() != Buffer::BufferSuccess)
+		if (metadata.status != FrameMetadata::FrameSuccess)
 			return;
 
 		output_->queueBuffer(buffer);
@@ -103,9 +105,11 @@ protected:
 
 	void outputBufferReady(Buffer *buffer)
 	{
+		const FrameMetadata &metadata = buffer->metadata();
+
 		std::cout << "Received output buffer" << std::endl;
 
-		if (buffer->status() != Buffer::BufferSuccess)
+		if (metadata.status != FrameMetadata::FrameSuccess)
 			return;
 
 		capture_->queueBuffer(buffer);

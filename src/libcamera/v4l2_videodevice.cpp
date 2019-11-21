@@ -1015,10 +1015,13 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 	}
 
 	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
-		buf.bytesused = buffer->bytesused_;
-		buf.sequence = buffer->sequence_;
-		buf.timestamp.tv_sec = buffer->timestamp_ / 1000000000;
-		buf.timestamp.tv_usec = (buffer->timestamp_ / 1000) % 1000000;
+		const FrameMetadata &metadata = buffer->metadata();
+
+		if (!metadata.planes.empty())
+			buf.bytesused = metadata.planes[0].bytesused;
+		buf.sequence = metadata.sequence;
+		buf.timestamp.tv_sec = metadata.timestamp / 1000000000;
+		buf.timestamp.tv_usec = (metadata.timestamp / 1000) % 1000000;
 	}
 
 	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;
@@ -1125,12 +1128,14 @@ Buffer *V4L2VideoDevice::dequeueBuffer()
 		fdEvent_->setEnabled(false);
 
 	buffer->index_ = buf.index;
-	buffer->bytesused_ = buf.bytesused;
-	buffer->timestamp_ = buf.timestamp.tv_sec * 1000000000ULL
-			   + buf.timestamp.tv_usec * 1000ULL;
-	buffer->sequence_ = buf.sequence;
-	buffer->status_ = buf.flags & V4L2_BUF_FLAG_ERROR
-			? Buffer::BufferError : Buffer::BufferSuccess;
+
+	buffer->metadata_.status = buf.flags & V4L2_BUF_FLAG_ERROR
+				 ? FrameMetadata::FrameError
+				 : FrameMetadata::FrameSuccess;
+	buffer->metadata_.sequence = buf.sequence;
+	buffer->metadata_.timestamp = buf.timestamp.tv_sec * 1000000000ULL
+				    + buf.timestamp.tv_usec * 1000ULL;
+	buffer->metadata_.planes = { { buf.bytesused } };
 
 	return buffer;
 }

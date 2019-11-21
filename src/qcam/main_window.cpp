@@ -259,14 +259,15 @@ void MainWindow::requestComplete(Request *request)
 	framesCaptured_++;
 
 	Buffer *buffer = buffers.begin()->second;
+	const FrameMetadata &metadata = buffer->metadata();
 
-	double fps = buffer->timestamp() - lastBufferTime_;
+	double fps = metadata.timestamp - lastBufferTime_;
 	fps = lastBufferTime_ && fps ? 1000000000.0 / fps : 0.0;
-	lastBufferTime_ = buffer->timestamp();
+	lastBufferTime_ = metadata.timestamp;
 
-	std::cout << "seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
-		  << " bytesused: " << buffer->bytesused()
-		  << " timestamp: " << buffer->timestamp()
+	std::cout << "seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
+		  << " bytesused: " << metadata.planes[0].bytesused
+		  << " timestamp: " << metadata.timestamp
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
 
@@ -306,7 +307,7 @@ int MainWindow::display(Buffer *buffer)
 			    plane.fd.fd(), 0);
 
 	unsigned char *raw = static_cast<unsigned char *>(memory);
-	viewfinder_->display(raw, buffer->bytesused());
+	viewfinder_->display(raw, buffer->metadata().planes[0].bytesused);
 
 	munmap(memory, plane.length);
 

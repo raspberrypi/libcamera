@@ -17,9 +17,11 @@ using namespace libcamera;
 LOG_DECLARE_CATEGORY(V4L2Compat);
 
 V4L2FrameMetadata::V4L2FrameMetadata(Buffer *buffer)
-	: index_(buffer->index()), bytesused_(buffer->bytesused()),
-	  timestamp_(buffer->timestamp()), sequence_(buffer->sequence()),
-	  status_(buffer->status())
+	: index_(buffer->index()),
+	  bytesused_(buffer->metadata().planes[0].bytesused),
+	  timestamp_(buffer->metadata().timestamp),
+	  sequence_(buffer->metadata().sequence),
+	  status_(buffer->metadata().status)
 {
 }
 

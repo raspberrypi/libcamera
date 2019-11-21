@@ -154,9 +154,18 @@ void Capture::requestComplete(Request *request)
 		Buffer *buffer = it->second;
 		const std::string &name = streamName_[stream];
 
+		const FrameMetadata &metadata = buffer->metadata();
+
 		info << " " << name
-		     << " seq: " << std::setw(6) << std::setfill('0') << buffer->sequence()
-		     << " bytesused: " << buffer->bytesused();
+		     << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
+		     << " bytesused: ";
+
+		unsigned int nplane = 0;
+		for (const FrameMetadata::Plane &plane : metadata.planes) {
+			info << plane.bytesused;
+			if (++nplane < metadata.planes.size())
+				info << "/";
+		}
 
 		if (writer_)
 			writer_->write(buffer, name);

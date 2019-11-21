@@ -178,20 +178,6 @@ void BufferPool::destroyBuffers()
  */
 
 /**
- * \enum Buffer::Status
- * Buffer completion status
- * \var Buffer::BufferSuccess
- * The buffer has completed with success and contains valid data. All its other
- * metadata (such as bytesused(), timestamp() or sequence() number) are valid.
- * \var Buffer::BufferError
- * The buffer has completed with an error and doesn't contain valid data. Its
- * other metadata are valid.
- * \var Buffer::BufferCancelled
- * The buffer has been cancelled due to capture stop. Its other metadata are
- * invalid and shall not be used.
- */
-
-/**
  * \brief Construct a buffer not associated with any stream
  *
  * This method constructs an orphaned buffer not associated with any stream. It
@@ -199,19 +185,15 @@ void BufferPool::destroyBuffers()
  * for a stream with Stream::createBuffer().
  */
 Buffer::Buffer(unsigned int index, const Buffer *metadata)
-	: index_(index), dmabuf_({ -1, -1, -1 }),
-	  status_(Buffer::BufferSuccess), request_(nullptr),
+	: index_(index), dmabuf_({ -1, -1, -1 }), request_(nullptr),
 	  stream_(nullptr)
 {
-	if (metadata) {
-		bytesused_ = metadata->bytesused_;
-		sequence_ = metadata->sequence_;
-		timestamp_ = metadata->timestamp_;
-	} else {
-		bytesused_ = 0;
-		sequence_ = 0;
-		timestamp_ = 0;
-	}
+	if (metadata)
+		metadata_ = metadata->metadata();
+	else
+		metadata_ = {};
+
+	metadata_.status = FrameMetadata::FrameSuccess;
 }
 
 /**
@@ -242,39 +224,13 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  */
 
 /**
- * \fn Buffer::bytesused()
- * \brief Retrieve the number of bytes occupied by the data in the buffer
- * \return Number of bytes occupied in the buffer
- */
-
-/**
- * \fn Buffer::timestamp()
- * \brief Retrieve the time when the buffer was processed
+ * \fn Buffer::metadata()
+ * \brief Retrieve the buffer metadata
  *
- * The timestamp is expressed as a number of nanoseconds since the epoch.
+ * The buffer metadata is updated when the buffer contents are modified, for
+ * example when a frame has been captured to the buffer by the hardware.
  *
- * \return Timestamp when the buffer was processed
- */
-
-/**
- * \fn Buffer::sequence()
- * \brief Retrieve the buffer sequence number
- *
- * The sequence number is a monotonically increasing number assigned to the
- * buffer processed by the stream. Gaps in the sequence numbers indicate
- * dropped frames.
- *
- * \return Sequence number of the buffer
- */
-
-/**
- * \fn Buffer::status()
- * \brief Retrieve the buffer status
- *
- * The buffer status reports whether the buffer has completed successfully
- * (BufferSuccess) or if an error occurred (BufferError).
- *
- * \return The buffer status
+ * \return Metadata for the buffer
  */
 
 /**
@@ -310,10 +266,10 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  */
 void Buffer::cancel()
 {
-	bytesused_ = 0;
-	timestamp_ = 0;
-	sequence_ = 0;
-	status_ = BufferCancelled;
+	metadata_.status = FrameMetadata::FrameCancelled;
+	metadata_.sequence = 0;
+	metadata_.timestamp = 0;
+	metadata_.planes = {};
 }
 
 /**

@@ -238,7 +238,7 @@ bool Request::completeBuffer(Buffer *buffer)
 
 	buffer->request_ = nullptr;
 
-	if (buffer->status() == Buffer::BufferCancelled)
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		cancelled_ = true;
 
 	return !hasPendingBuffers();

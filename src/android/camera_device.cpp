@@ -803,11 +803,11 @@ void CameraDevice::requestComplete(Request *request)
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
 		notifyShutter(descriptor->frameNumber,
-			      libcameraBuffer->timestamp());
+			      libcameraBuffer->metadata().timestamp);
 
 		captureResult.partial_result = 1;
 		resultMetadata = getResultMetadata(descriptor->frameNumber,
-						   libcameraBuffer->timestamp());
+						   libcameraBuffer->metadata().timestamp);
 		captureResult.result = resultMetadata->get();
 	}
 

@@ -31,7 +31,7 @@ public:
 	uint64_t timestamp() const { return timestamp_; }
 	unsigned int sequence() const { return sequence_; }
 
-	Buffer::Status status() const { return status_; }
+	FrameMetadata::Status status() const { return status_; }
 
 private:
 	int index_;
@@ -40,7 +40,7 @@ private:
 	uint64_t timestamp_;
 	unsigned int sequence_;
 
-	Buffer::Status status_;
+	FrameMetadata::Status status_;
 };
 
 class V4L2Camera : public Object

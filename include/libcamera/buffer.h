@@ -99,12 +99,6 @@ private:
 class Buffer final
 {
 public:
-	enum Status {
-		BufferSuccess,
-		BufferError,
-		BufferCancelled,
-	};
-
 	Buffer(unsigned int index = -1, const Buffer *metadata = nullptr);
 	Buffer(const Buffer &) = delete;
 	Buffer &operator=(const Buffer &) = delete;
@@ -113,11 +107,8 @@ public:
 	const std::array<int, 3> &dmabufs() const { return dmabuf_; }
 	BufferMemory *mem() { return mem_; }
 
-	unsigned int bytesused() const { return bytesused_; }
-	uint64_t timestamp() const { return timestamp_; }
-	unsigned int sequence() const { return sequence_; }
+	const FrameMetadata &metadata() const { return metadata_; };
 
-	Status status() const { return status_; }
 	Request *request() const { return request_; }
 	Stream *stream() const { return stream_; }
 
@@ -133,11 +124,8 @@ private:
 	std::array<int, 3> dmabuf_;
 	BufferMemory *mem_;
 
-	unsigned int bytesused_;
-	uint64_t timestamp_;
-	unsigned int sequence_;
+	FrameMetadata metadata_;
 
-	Status status_;
 	Request *request_;
 	Stream *stream_;
 };

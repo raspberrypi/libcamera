@@ -100,10 +100,10 @@ public:
 		ASSERT(frameOffset(SOE) == 0);
 
 		utils::time_point soe = std::chrono::time_point<utils::clock>()
-			+ std::chrono::nanoseconds(buffer->timestamp())
+			+ std::chrono::nanoseconds(buffer->metadata().timestamp)
 			+ timeOffset(SOE);
 
-		notifyStartOfExposure(buffer->sequence(), soe);
+		notifyStartOfExposure(buffer->metadata().sequence, soe);
 	}
 
 	void setDelay(unsigned int type, int frame, int msdelay)
@@ -994,8 +994,8 @@ void PipelineHandlerRkISP1::bufferReady(Buffer *buffer)
 
 	data->timeline_.bufferReady(buffer);
 
-	if (data->frame_ <= buffer->sequence())
-		data->frame_ = buffer->sequence() + 1;
+	if (data->frame_ <= buffer->metadata().sequence)
+		data->frame_ = buffer->metadata().sequence + 1;
 
 	completeBuffer(activeCamera_, request, buffer);
 	tryCompleteRequest(request);

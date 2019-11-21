@@ -928,7 +928,7 @@ int PipelineHandlerIPU3::registerCameras()
 void IPU3CameraData::imguInputBufferReady(Buffer *buffer)
 {
 	/* \todo Handle buffer failures when state is set to BufferError. */
-	if (buffer->status() == Buffer::BufferCancelled)
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		return;
 
 	cio2_.output_->queueBuffer(buffer);
@@ -962,7 +962,7 @@ void IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
 void IPU3CameraData::cio2BufferReady(Buffer *buffer)
 {
 	/* \todo Handle buffer failures when state is set to BufferError. */
-	if (buffer->status() == Buffer::BufferCancelled)
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		return;
 
 	imgu_->input_->queueBuffer(buffer);

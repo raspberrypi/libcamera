@@ -33,7 +33,7 @@ int BufferWriter::write(Buffer *buffer, const std::string &streamName)
 	if (pos != std::string::npos) {
 		std::stringstream ss;
 		ss << streamName << "-" << std::setw(6)
-		   << std::setfill('0') << buffer->sequence();
+		   << std::setfill('0') << buffer->metadata().sequence;
 		filename.replace(pos, 1, ss.str());
 	}
 

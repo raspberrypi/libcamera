@@ -219,7 +219,7 @@ protected:
 
 		Stream *stream = *camera_->streams().begin();
 		std::unique_ptr<Buffer> buffer = stream->createBuffer(0);
-		if (request->addBuffer(std::move(buffer)))
+		if (request->addBuffer(stream, std::move(buffer)))
 			return TestFail;
 
 		if (camera_->queueRequest(request))

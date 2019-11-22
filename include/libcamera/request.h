@@ -39,7 +39,7 @@ public:
 	ControlList &controls() { return *controls_; }
 	ControlList &metadata() { return *metadata_; }
 	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
-	int addBuffer(std::unique_ptr<Buffer> buffer);
+	int addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer);
 	Buffer *findBuffer(Stream *stream) const;
 
 	uint64_t cookie() const { return cookie_; }

@@ -113,6 +113,7 @@ Request::~Request()
 
 /**
  * \brief Store a Buffer with its associated Stream in the Request
+ * \param[in] stream The stream the buffer belongs to
  * \param[in] buffer The Buffer to store in the request
  *
  * Ownership of the buffer is passed to the request. It will be deleted when
@@ -125,9 +126,8 @@ Request::~Request()
  * \retval -EEXIST The request already contains a buffer for the stream
  * \retval -EINVAL The buffer does not reference a valid Stream
  */
-int Request::addBuffer(std::unique_ptr<Buffer> buffer)
+int Request::addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer)
 {
-	Stream *stream = buffer->stream();
 	if (!stream) {
 		LOG(Request, Error) << "Invalid stream reference";
 		return -EINVAL;

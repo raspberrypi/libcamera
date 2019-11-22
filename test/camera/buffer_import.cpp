@@ -268,7 +268,7 @@ public:
 		Request *request = camera_->createRequest(cookie);
 
 		std::unique_ptr<Buffer> buffer = stream_->createBuffer({ dmabuf, -1, -1 });
-		request->addBuffer(move(buffer));
+		request->addBuffer(stream_, move(buffer));
 		camera_->queueRequest(request);
 	}
 

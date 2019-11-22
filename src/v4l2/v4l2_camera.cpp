@@ -192,7 +192,7 @@ int V4L2Camera::qbuf(unsigned int index)
 		return -ENOMEM;
 	}
 
-	int ret = request->addBuffer(std::move(buffer));
+	int ret = request->addBuffer(stream, std::move(buffer));
 	if (ret < 0) {
 		LOG(V4L2Compat, Error) << "Can't set buffer for request";
 		return -ENOMEM;

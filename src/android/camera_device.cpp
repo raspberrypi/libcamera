@@ -754,7 +754,7 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 
 	Request *request =
 		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
-	request->addBuffer(std::move(buffer));
+	request->addBuffer(stream, std::move(buffer));
 
 	int ret = camera_->queueRequest(request);
 	if (ret) {

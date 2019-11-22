@@ -191,7 +191,7 @@ int MainWindow::startCapture()
 			goto error;
 		}
 
-		ret = request->addBuffer(std::move(buffer));
+		ret = request->addBuffer(stream, std::move(buffer));
 		if (ret < 0) {
 			std::cerr << "Can't set buffer for request" << std::endl;
 			goto error;
@@ -289,7 +289,7 @@ void MainWindow::requestComplete(Request *request)
 			return;
 		}
 
-		request->addBuffer(std::move(newBuffer));
+		request->addBuffer(stream, std::move(newBuffer));
 	}
 
 	camera_->queueRequest(request);

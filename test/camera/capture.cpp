@@ -49,7 +49,7 @@ protected:
 		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(buffer->index());
 
 		request = camera_->createRequest();
-		request->addBuffer(std::move(newBuffer));
+		request->addBuffer(stream, std::move(newBuffer));
 		camera_->queueRequest(request);
 	}
 
@@ -101,7 +101,7 @@ protected:
 				return TestFail;
 			}
 
-			if (request->addBuffer(std::move(buffer))) {
+			if (request->addBuffer(stream, std::move(buffer))) {
 				cout << "Failed to associating buffer with request" << endl;
 				return TestFail;
 			}

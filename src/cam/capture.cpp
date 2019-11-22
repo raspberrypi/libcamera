@@ -95,7 +95,7 @@ int Capture::capture(EventLoop *loop)
 			Stream *stream = cfg.stream();
 			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
 
-			ret = request->addBuffer(std::move(buffer));
+			ret = request->addBuffer(stream, std::move(buffer));
 			if (ret < 0) {
 				std::cerr << "Can't set buffer for request"
 					  << std::endl;
@@ -185,7 +185,7 @@ void Capture::requestComplete(Request *request)
 			return;
 		}
 
-		request->addBuffer(std::move(newBuffer));
+		request->addBuffer(stream, std::move(newBuffer));
 	}
 
 	camera_->queueRequest(request);

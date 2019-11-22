@@ -14,8 +14,10 @@
 #include <QObject>
 #include <QTimer>
 
+#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/stream.h>
 
 #include "../cam/options.h"
@@ -49,7 +51,7 @@ private:
 	void stopCapture();
 
 	void requestComplete(Request *request);
-	int display(Buffer *buffer);
+	int display(FrameBuffer *buffer);
 
 	QString title_;
 	QTimer titleTimer_;
@@ -57,6 +59,8 @@ private:
 	const OptionsParser::Options &options_;
 
 	std::shared_ptr<Camera> camera_;
+	FrameBufferAllocator *allocator_;
+
 	bool isCapturing_;
 	std::unique_ptr<CameraConfiguration> config_;
 

@@ -19,7 +19,7 @@
 
 namespace libcamera {
 
-class Buffer;
+class FrameBuffer;
 class FrameBufferAllocator;
 class PipelineHandler;
 class Request;
@@ -78,7 +78,7 @@ public:
 
 	const std::string &name() const;
 
-	Signal<Request *, Buffer *> bufferCompleted;
+	Signal<Request *, FrameBuffer *> bufferCompleted;
 	Signal<Request *> requestCompleted;
 	Signal<Camera *> disconnected;
 

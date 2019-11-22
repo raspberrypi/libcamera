@@ -31,6 +31,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
+class IPU3CameraData;
+
 class ImgUDevice
 {
 public:
@@ -44,7 +46,6 @@ public:
 		V4L2VideoDevice *dev;
 		unsigned int pad;
 		std::string name;
-		BufferPool *pool;
 		std::vector<std::unique_ptr<FrameBuffer>> buffers;
 	};
 
@@ -71,9 +72,7 @@ public:
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &cfg);
 
-	int importOutputBuffers(ImgUOutput *output, BufferPool *pool);
-	int exportOutputBuffers(ImgUOutput *output, BufferPool *pool);
-	void freeBuffers();
+	void freeBuffers(IPU3CameraData *data);
 
 	int start();
 	int stop();
@@ -93,9 +92,6 @@ public:
 	ImgUOutput viewfinder_;
 	ImgUOutput stat_;
 	/* \todo Add param video device for 3A tuning */
-
-	BufferPool vfPool_;
-	BufferPool outPool_;
 };
 
 class CIO2Device
@@ -156,7 +152,7 @@ public:
 	{
 	}
 
-	void imguOutputBufferReady(Buffer *buffer);
+	void imguOutputBufferReady(FrameBuffer *buffer);
 	void imguInputBufferReady(FrameBuffer *buffer);
 	void cio2BufferReady(FrameBuffer *buffer);
 
@@ -691,39 +687,30 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 		goto error;
 	}
 
-	/* Allocate buffers for each active stream. */
-	for (Stream *s : streams) {
-		IPU3Stream *stream = static_cast<IPU3Stream *>(s);
-		ImgUDevice::ImgUOutput *dev = stream->device_;
-
-		if (stream->memoryType() == InternalMemory)
-			ret = imgu->exportOutputBuffers(dev, &stream->bufferPool());
-		else
-			ret = imgu->importOutputBuffers(dev, &stream->bufferPool());
-		if (ret)
-			goto error;
-	}
-
 	/*
 	 * Allocate buffers also on non-active outputs; use the same number
 	 * of buffers as the active ones.
 	 */
 	if (!outStream->active_) {
-		bufferCount = vfStream->configuration().bufferCount;
-		outStream->device_->pool->createBuffers(bufferCount);
-		ret = imgu->exportOutputBuffers(outStream->device_,
-						outStream->device_->pool);
-		if (ret)
+		ImgUDevice::ImgUOutput *output = outStream->device_;
+
+		ret = output->dev->exportBuffers(bufferCount, &output->buffers);
+		if (ret < 0) {
+			LOG(IPU3, Error) << "Failed to allocate ImgU "
+					 << output->name << " buffers";
 			goto error;
+		}
 	}
 
 	if (!vfStream->active_) {
-		bufferCount = outStream->configuration().bufferCount;
-		vfStream->device_->pool->createBuffers(bufferCount);
-		ret = imgu->exportOutputBuffers(vfStream->device_,
-						vfStream->device_->pool);
-		if (ret)
+		ImgUDevice::ImgUOutput *output = vfStream->device_;
+
+		ret = output->dev->exportBuffers(bufferCount, &output->buffers);
+		if (ret < 0) {
+			LOG(IPU3, Error) << "Failed to allocate ImgU "
+					 << output->name << " buffers";
 			goto error;
+		}
 	}
 
 	return 0;
@@ -740,7 +727,7 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera,
 	IPU3CameraData *data = cameraData(camera);
 
 	data->cio2_.freeBuffers();
-	data->imgu_->freeBuffers();
+	data->imgu_->freeBuffers(data);
 
 	return 0;
 }
@@ -793,7 +780,7 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 
 	for (auto it : request->buffers()) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
-		Buffer *buffer = it.second;
+		FrameBuffer *buffer = it.second;
 
 		int ret = stream->device_->dev->queueBuffer(buffer);
 		if (ret < 0)
@@ -920,9 +907,9 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::cio2BufferReady);
 		data->imgu_->input_->frameBufferReady.connect(data.get(),
 					&IPU3CameraData::imguInputBufferReady);
-		data->imgu_->output_.dev->bufferReady.connect(data.get(),
+		data->imgu_->output_.dev->frameBufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
-		data->imgu_->viewfinder_.dev->bufferReady.connect(data.get(),
+		data->imgu_->viewfinder_.dev->frameBufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
@@ -971,7 +958,7 @@ void IPU3CameraData::imguInputBufferReady(FrameBuffer *buffer)
  *
  * Buffers completed from the ImgU output are directed to the application.
  */
-void IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
+void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
@@ -1046,7 +1033,6 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	output_.pad = PAD_OUTPUT;
 	output_.name = "output";
-	output_.pool = &outPool_;
 
 	viewfinder_.dev = V4L2VideoDevice::fromEntityName(media,
 							  name_ + " viewfinder");
@@ -1056,7 +1042,6 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	viewfinder_.pad = PAD_VF;
 	viewfinder_.name = "viewfinder";
-	viewfinder_.pool = &vfPool_;
 
 	stat_.dev = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
 	ret = stat_.dev->open();
@@ -1165,68 +1150,27 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 }
 
 /**
- * \brief Export buffers from \a output to the provided \a pool
- * \param[in] output The ImgU output device
- * \param[in] pool The buffer pool where to export buffers
- *
- * Export memory buffers reserved in the video device memory associated with
- * \a output id to the buffer pool provided as argument.
- *
- * \return 0 on success or a negative error code otherwise
- */
-int ImgUDevice::exportOutputBuffers(ImgUOutput *output, BufferPool *pool)
-{
-	int ret = output->dev->exportBuffers(pool);
-	if (ret) {
-		LOG(IPU3, Error) << "Failed to export ImgU "
-				 << output->name << " buffers";
-		return ret;
-	}
-
-	return 0;
-}
-
-/**
- * \brief Reserve buffers in \a output from the provided \a pool
- * \param[in] output The ImgU output device
- * \param[in] pool The buffer pool used to reserve buffers in \a output
- *
- * Reserve a number of buffers equal to the number of buffers in \a pool
- * in the \a output device.
- *
- * \return 0 on success or a negative error code otherwise
- */
-int ImgUDevice::importOutputBuffers(ImgUOutput *output, BufferPool *pool)
-{
-	int ret = output->dev->importBuffers(pool);
-	if (ret) {
-		LOG(IPU3, Error)
-			<< "Failed to import buffer in " << output->name
-			<< " ImgU device";
-		return ret;
-	}
-
-	return 0;
-}
-
-/**
  * \brief Release buffers for all the ImgU video devices
  */
-void ImgUDevice::freeBuffers()
+void ImgUDevice::freeBuffers(IPU3CameraData *data)
 {
 	int ret;
 
-	ret = output_.dev->releaseBuffers();
-	if (ret)
-		LOG(IPU3, Error) << "Failed to release ImgU output buffers";
+	if (!data->outStream_.active_) {
+		ret = output_.dev->releaseBuffers();
+		if (ret)
+			LOG(IPU3, Error) << "Failed to release ImgU output buffers";
+	}
 
 	ret = stat_.dev->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU stat buffers";
 
-	ret = viewfinder_.dev->releaseBuffers();
-	if (ret)
-		LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
+	if (!data->vfStream_.active_) {
+		ret = viewfinder_.dev->releaseBuffers();
+		if (ret)
+			LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
+	}
 
 	ret = input_->releaseBuffers();
 	if (ret)

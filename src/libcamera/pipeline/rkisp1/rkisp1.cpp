@@ -51,7 +51,7 @@ struct RkISP1FrameInfo {
 
 	FrameBuffer *paramBuffer;
 	FrameBuffer *statBuffer;
-	Buffer *videoBuffer;
+	FrameBuffer *videoBuffer;
 
 	bool paramFilled;
 	bool paramDequeued;
@@ -67,7 +67,6 @@ public:
 	int destroy(unsigned int frame);
 
 	RkISP1FrameInfo *find(unsigned int frame);
-	RkISP1FrameInfo *find(Buffer *buffer);
 	RkISP1FrameInfo *find(FrameBuffer *buffer);
 	RkISP1FrameInfo *find(Request *request);
 
@@ -87,7 +86,7 @@ public:
 		setDelay(QueueBuffers, -1, 10);
 	}
 
-	void bufferReady(Buffer *buffer)
+	void bufferReady(FrameBuffer *buffer)
 	{
 		/*
 		 * Calculate SOE by taking the end of DMA set by the kernel and applying
@@ -205,7 +204,7 @@ private:
 	int initLinks();
 	int createCamera(MediaEntity *sensor);
 	void tryCompleteRequest(Request *request);
-	void bufferReady(Buffer *buffer);
+	void bufferReady(FrameBuffer *buffer);
 	void paramReady(FrameBuffer *buffer);
 	void statReady(FrameBuffer *buffer);
 
@@ -243,7 +242,7 @@ RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stre
 	}
 	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
-	Buffer *videoBuffer = request->findBuffer(stream);
+	FrameBuffer *videoBuffer = request->findBuffer(stream);
 	if (!videoBuffer) {
 		LOG(RkISP1, Error)
 			<< "Attempt to queue request with invalid stream";
@@ -296,26 +295,14 @@ RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)
 	return nullptr;
 }
 
-RkISP1FrameInfo *RkISP1Frames::find(Buffer *buffer)
-{
-	for (auto &itInfo : frameInfo_) {
-		RkISP1FrameInfo *info = itInfo.second;
-
-		if (info->videoBuffer == buffer)
-			return info;
-	}
-
-	LOG(RkISP1, Error) << "Can't locate info from buffer";
-	return nullptr;
-}
-
 RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 {
 	for (auto &itInfo : frameInfo_) {
 		RkISP1FrameInfo *info = itInfo.second;
 
 		if (info->paramBuffer == buffer ||
-		    info->statBuffer == buffer)
+		    info->statBuffer == buffer ||
+		    info->videoBuffer == buffer)
 			return info;
 	}
 
@@ -692,17 +679,8 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 					   const std::set<Stream *> &streams)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	Stream *stream = *streams.begin();
 	unsigned int count = 1;
 	int ret;
-
-	if (stream->memoryType() == InternalMemory)
-		ret = video_->exportBuffers(&stream->bufferPool());
-	else
-		ret = video_->importBuffers(&stream->bufferPool());
-
-	if (ret)
-		return ret;
 
 	unsigned int maxBuffers = 0;
 	for (const Stream *s : camera->streams())
@@ -768,9 +746,6 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera,
 
 	if (stat_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release stat buffers";
-
-	if (video_->releaseBuffers())
-		LOG(RkISP1, Error) << "Failed to release video buffers";
 
 	return 0;
 }
@@ -975,7 +950,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (param_->open() < 0)
 		return false;
 
-	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	video_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 
@@ -1024,7 +999,7 @@ void PipelineHandlerRkISP1::tryCompleteRequest(Request *request)
 	completeRequest(activeCamera_, request);
 }
 
-void PipelineHandlerRkISP1::bufferReady(Buffer *buffer)
+void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
 	RkISP1CameraData *data = cameraData(activeCamera_);

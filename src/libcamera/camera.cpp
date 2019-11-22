@@ -695,12 +695,6 @@ int Camera::configure(CameraConfiguration *config)
 
 		stream->configuration_ = cfg;
 		activeStreams_.insert(stream);
-
-		/*
-		 * Allocate buffer objects in the pool.
-		 * Memory will be allocated and assigned later.
-		 */
-		stream->createBuffers(cfg.memoryType, cfg.bufferCount);
 	}
 
 	state_ = CameraConfigured;
@@ -755,14 +749,6 @@ int Camera::freeBuffers()
 {
 	if (!stateIs(CameraPrepared))
 		return -EACCES;
-
-	for (Stream *stream : activeStreams_) {
-		/*
-		 * All mappings must be destroyed before buffers can be freed
-		 * by the V4L2 device that has allocated them.
-		 */
-		stream->destroyBuffers();
-	}
 
 	state_ = CameraConfigured;
 
@@ -834,24 +820,11 @@ int Camera::queueRequest(Request *request)
 
 	for (auto const &it : request->buffers()) {
 		Stream *stream = it.first;
-		Buffer *buffer = it.second;
 
 		if (activeStreams_.find(stream) == activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";
 			return -EINVAL;
 		}
-
-		if (stream->memoryType() == ExternalMemory) {
-			int index = stream->mapBuffer(buffer);
-			if (index < 0) {
-				LOG(Camera, Error) << "No buffer memory available";
-				return -ENOMEM;
-			}
-
-			buffer->index_ = index;
-		}
-
-		buffer->mem_ = &stream->buffers()[buffer->index_];
 	}
 
 	return pipe_->queueRequest(this, request);
@@ -879,6 +852,13 @@ int Camera::start()
 		return -EACCES;
 
 	LOG(Camera, Debug) << "Starting capture";
+
+	for (Stream *stream : activeStreams_) {
+		if (allocator_ && !allocator_->buffers(stream).empty())
+			continue;
+
+		pipe_->importFrameBuffers(this, stream);
+	}
 
 	int ret = pipe_->start(this);
 	if (ret)
@@ -915,6 +895,13 @@ int Camera::stop()
 
 	pipe_->stop(this);
 
+	for (Stream *stream : activeStreams_) {
+		if (allocator_ && !allocator_->buffers(stream).empty())
+			continue;
+
+		pipe_->freeFrameBuffers(this, stream);
+	}
+
 	return 0;
 }
 
@@ -928,13 +915,6 @@ int Camera::stop()
  */
 void Camera::requestComplete(Request *request)
 {
-	for (auto it : request->buffers()) {
-		Stream *stream = it.first;
-		Buffer *buffer = it.second;
-		if (stream->memoryType() == ExternalMemory)
-			stream->unmapBuffer(buffer);
-	}
-
 	requestCompleted.emit(request);
 	delete request;
 }

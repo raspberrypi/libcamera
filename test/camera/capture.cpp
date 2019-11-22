@@ -26,7 +26,7 @@ protected:
 	unsigned int completeBuffersCount_;
 	unsigned int completeRequestsCount_;
 
-	void bufferComplete(Request *request, Buffer *buffer)
+	void bufferComplete(Request *request, FrameBuffer *buffer)
 	{
 		if (buffer->metadata().status != FrameMetadata::FrameSuccess)
 			return;
@@ -39,17 +39,16 @@ protected:
 		if (request->status() != Request::RequestComplete)
 			return;
 
-		const std::map<Stream *, Buffer *> &buffers = request->buffers();
+		const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 
 		completeRequestsCount_++;
 
 		/* Create a new request. */
 		Stream *stream = buffers.begin()->first;
-		Buffer *buffer = buffers.begin()->second;
-		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(buffer->index());
+		FrameBuffer *buffer = buffers.begin()->second;
 
 		request = camera_->createRequest();
-		request->addBuffer(stream, std::move(newBuffer));
+		request->addBuffer(stream, buffer);
 		camera_->queueRequest(request);
 	}
 
@@ -64,7 +63,14 @@ protected:
 			return TestFail;
 		}
 
+		allocator_ = FrameBufferAllocator::create(camera_);
+
 		return TestPass;
+	}
+
+	void cleanup() override
+	{
+		delete allocator_;
 	}
 
 	int run() override
@@ -87,21 +93,20 @@ protected:
 		}
 
 		Stream *stream = cfg.stream();
+
+		int ret = allocator_->allocate(stream);
+		if (ret < 0)
+			return TestFail;
+
 		std::vector<Request *> requests;
-		for (unsigned int i = 0; i < cfg.bufferCount; ++i) {
+		for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
 			Request *request = camera_->createRequest();
 			if (!request) {
 				cout << "Failed to create request" << endl;
 				return TestFail;
 			}
 
-			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
-			if (!buffer) {
-				cout << "Failed to create buffer " << i << endl;
-				return TestFail;
-			}
-
-			if (request->addBuffer(stream, std::move(buffer))) {
+			if (request->addBuffer(stream, buffer.get())) {
 				cout << "Failed to associating buffer with request" << endl;
 				return TestFail;
 			}
@@ -134,10 +139,12 @@ protected:
 		while (timer.isRunning())
 			dispatcher->processEvents();
 
-		if (completeRequestsCount_ <= cfg.bufferCount * 2) {
+		unsigned int nbuffers = allocator_->buffers(stream).size();
+
+		if (completeRequestsCount_ <= nbuffers * 2) {
 			cout << "Failed to capture enough frames (got "
 			     << completeRequestsCount_ << " expected at least "
-			     << cfg.bufferCount * 2 << ")" << endl;
+			     << nbuffers * 2 << ")" << endl;
 			return TestFail;
 		}
 
@@ -160,6 +167,7 @@ protected:
 	}
 
 	std::unique_ptr<CameraConfiguration> config_;
+	FrameBufferAllocator *allocator_;
 };
 
 } /* namespace */

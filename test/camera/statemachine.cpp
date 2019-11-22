@@ -185,6 +185,12 @@ protected:
 		if (camera_->allocateBuffers())
 			return TestFail;
 
+		/* Use internally allocated buffers. */
+		allocator_ = FrameBufferAllocator::create(camera_);
+		Stream *stream = *camera_->streams().begin();
+		if (allocator_->allocate(stream) < 0)
+			return TestFail;
+
 		if (camera_->start())
 			return TestFail;
 
@@ -218,8 +224,7 @@ protected:
 			return TestFail;
 
 		Stream *stream = *camera_->streams().begin();
-		std::unique_ptr<Buffer> buffer = stream->createBuffer(0);
-		if (request->addBuffer(stream, std::move(buffer)))
+		if (request->addBuffer(stream, allocator_->buffers(stream)[0].get()))
 			return TestFail;
 
 		if (camera_->queueRequest(request))
@@ -228,6 +233,8 @@ protected:
 		/* Test valid state transitions, end in Available state. */
 		if (camera_->stop())
 			return TestFail;
+
+		delete allocator_;
 
 		if (camera_->freeBuffers())
 			return TestFail;
@@ -283,6 +290,7 @@ protected:
 	}
 
 	std::unique_ptr<CameraConfiguration> defconf_;
+	FrameBufferAllocator *allocator_;
 };
 
 } /* namespace */

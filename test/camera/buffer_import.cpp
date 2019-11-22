@@ -120,7 +120,7 @@ public:
 	}
 
 protected:
-	void bufferComplete(Request *request, Buffer *buffer)
+	void bufferComplete(Request *request, FrameBuffer *buffer)
 	{
 		if (buffer->metadata().status != FrameMetadata::FrameSuccess)
 			return;
@@ -133,17 +133,16 @@ protected:
 		if (request->status() != Request::RequestComplete)
 			return;
 
-		const std::map<Stream *, Buffer *> &buffers = request->buffers();
+		const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 
 		completeRequestsCount_++;
 
 		/* Create a new request. */
 		Stream *stream = buffers.begin()->first;
-		int dmabuf = buffers.begin()->second->dmabufs()[0];
-		std::unique_ptr<Buffer> buffer = stream->createBuffer({ dmabuf, -1, -1 });
+		FrameBuffer *buffer = buffers.begin()->second;
 
 		request = camera_->createRequest();
-		request->addBuffer(stream, std::move(buffer));
+		request->addBuffer(stream, buffer);
 		camera_->queueRequest(request);
 	}
 
@@ -157,9 +156,6 @@ protected:
 			std::cout << "Failed to generate default configuration" << std::endl;
 			return TestFail;
 		}
-
-		StreamConfiguration &cfg = config_->at(0);
-		cfg.memoryType = ExternalMemory;
 
 		return TestPass;
 	}
@@ -191,17 +187,14 @@ protected:
 			return TestFail;
 
 		std::vector<Request *> requests;
-		for (const std::unique_ptr<FrameBuffer> &framebuffer : source.buffers()) {
-			int dmabuf = framebuffer->planes()[0].fd.fd();
-
+		for (const std::unique_ptr<FrameBuffer> &buffer : source.buffers()) {
 			Request *request = camera_->createRequest();
 			if (!request) {
 				std::cout << "Failed to create request" << std::endl;
 				return TestFail;
 			}
 
-			std::unique_ptr<Buffer> buffer = stream->createBuffer({ dmabuf, -1, -1 });
-			if (request->addBuffer(stream, std::move(buffer))) {
+			if (request->addBuffer(stream, buffer.get())) {
 				std::cout << "Failed to associating buffer with request" << std::endl;
 				return TestFail;
 			}

@@ -22,7 +22,7 @@ BufferWriter::BufferWriter(const std::string &pattern)
 {
 }
 
-int BufferWriter::write(Buffer *buffer, const std::string &streamName)
+int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 {
 	std::string filename;
 	size_t pos;
@@ -43,8 +43,7 @@ int BufferWriter::write(Buffer *buffer, const std::string &streamName)
 	if (fd == -1)
 		return -errno;
 
-	BufferMemory *mem = buffer->mem();
-	for (const FrameBuffer::Plane &plane : mem->planes()) {
+	for (const FrameBuffer::Plane &plane : buffer->planes()) {
 		/* \todo Once the FrameBuffer is done cache mapped memory. */
 		void *data = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
 				  plane.fd.fd(), 0);

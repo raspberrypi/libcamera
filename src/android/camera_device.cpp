@@ -739,13 +739,21 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 	 * and (currently) only supported request buffer.
 	 */
 	const buffer_handle_t camera3Handle = *camera3Buffers[0].buffer;
-	std::array<int, 3> fds = {
-		camera3Handle->data[0],
-		camera3Handle->data[1],
-		camera3Handle->data[2],
-	};
 
-	std::unique_ptr<Buffer> buffer = stream->createBuffer(fds);
+	std::vector<FrameBuffer::Plane> planes;
+	for (int i = 0; i < 3; i++) {
+		FrameBuffer::Plane plane;
+		plane.fd = FileDescriptor(camera3Handle->data[i]);
+		/*
+		 * Setting length to zero here is OK as the length is only used
+		 * to map the memory of the plane. Libcamera do not need to poke
+		 * at the memory content queued by the HAL.
+		 */
+		plane.length = 0;
+		planes.push_back(std::move(plane));
+	}
+
+	FrameBuffer *buffer = new FrameBuffer(std::move(planes));
 	if (!buffer) {
 		LOG(HAL, Error) << "Failed to create buffer";
 		delete descriptor;
@@ -754,7 +762,7 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 
 	Request *request =
 		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
-	request->addBuffer(stream, std::move(buffer));
+	request->addBuffer(stream, buffer);
 
 	int ret = camera_->queueRequest(request);
 	if (ret) {
@@ -771,8 +779,8 @@ error:
 
 void CameraDevice::requestComplete(Request *request)
 {
-	const std::map<Stream *, Buffer *> &buffers = request->buffers();
-	Buffer *libcameraBuffer = buffers.begin()->second;
+	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+	FrameBuffer *buffer = buffers.begin()->second;
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;
 
@@ -803,11 +811,11 @@ void CameraDevice::requestComplete(Request *request)
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
 		notifyShutter(descriptor->frameNumber,
-			      libcameraBuffer->metadata().timestamp);
+			      buffer->metadata().timestamp);
 
 		captureResult.partial_result = 1;
 		resultMetadata = getResultMetadata(descriptor->frameNumber,
-						   libcameraBuffer->metadata().timestamp);
+						   buffer->metadata().timestamp);
 		captureResult.result = resultMetadata->get();
 	}
 
@@ -825,6 +833,7 @@ void CameraDevice::requestComplete(Request *request)
 	callbacks_->process_capture_result(callbacks_, &captureResult);
 
 	delete descriptor;
+	delete buffer;
 }
 
 void CameraDevice::notifyShutter(uint32_t frameNumber, uint64_t timestamp)

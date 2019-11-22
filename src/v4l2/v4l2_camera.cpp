@@ -16,24 +16,15 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(V4L2Compat);
 
-V4L2FrameMetadata::V4L2FrameMetadata(Buffer *buffer)
-	: index_(buffer->index()),
-	  bytesused_(buffer->metadata().planes[0].bytesused),
-	  timestamp_(buffer->metadata().timestamp),
-	  sequence_(buffer->metadata().sequence),
-	  status_(buffer->metadata().status)
-{
-}
-
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
-	: camera_(camera), isRunning_(false)
+	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr)
 {
 	camera_->requestCompleted.connect(this, &V4L2Camera::requestComplete);
 }
 
 V4L2Camera::~V4L2Camera()
 {
-	camera_->release();
+	close();
 }
 
 int V4L2Camera::open()
@@ -50,11 +41,16 @@ int V4L2Camera::open()
 		return -EINVAL;
 	}
 
+	bufferAllocator_ = FrameBufferAllocator::create(camera_);
+
 	return 0;
 }
 
 void V4L2Camera::close()
 {
+	delete bufferAllocator_;
+	bufferAllocator_ = nullptr;
+
 	camera_->release();
 }
 
@@ -63,12 +59,12 @@ void V4L2Camera::getStreamConfig(StreamConfiguration *streamConfig)
 	*streamConfig = config_->at(0);
 }
 
-std::vector<V4L2FrameMetadata> V4L2Camera::completedBuffers()
+std::vector<V4L2Camera::Buffer> V4L2Camera::completedBuffers()
 {
-	std::vector<V4L2FrameMetadata> v;
+	std::vector<Buffer> v;
 
 	bufferLock_.lock();
-	for (std::unique_ptr<V4L2FrameMetadata> &metadata : completedBuffers_)
+	for (std::unique_ptr<Buffer> &metadata : completedBuffers_)
 		v.push_back(*metadata.get());
 	completedBuffers_.clear();
 	bufferLock_.unlock();
@@ -83,9 +79,9 @@ void V4L2Camera::requestComplete(Request *request)
 
 	/* We only have one stream at the moment. */
 	bufferLock_.lock();
-	Buffer *buffer = request->buffers().begin()->second;
-	std::unique_ptr<V4L2FrameMetadata> metadata =
-		utils::make_unique<V4L2FrameMetadata>(buffer);
+	FrameBuffer *buffer = request->buffers().begin()->second;
+	std::unique_ptr<Buffer> metadata =
+		utils::make_unique<Buffer>(request->cookie(), buffer->metadata());
 	completedBuffers_.push_back(std::move(metadata));
 	bufferLock_.unlock();
 
@@ -126,18 +122,31 @@ int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
 int V4L2Camera::allocBuffers(unsigned int count)
 {
 	int ret = camera_->allocateBuffers();
-	return ret == -EACCES ? -EBUSY : ret;
+	if (ret)
+		return ret == -EACCES ? -EBUSY : ret;
+
+	Stream *stream = *camera_->streams().begin();
+
+	return bufferAllocator_->allocate(stream);
 }
 
 void V4L2Camera::freeBuffers()
 {
+	Stream *stream = *camera_->streams().begin();
+	bufferAllocator_->free(stream);
 	camera_->freeBuffers();
 }
 
 FileDescriptor V4L2Camera::getBufferFd(unsigned int index)
 {
 	Stream *stream = *camera_->streams().begin();
-	return stream->buffers()[index].planes()[0].fd;
+	const std::vector<std::unique_ptr<FrameBuffer>> &buffers =
+		bufferAllocator_->buffers(stream);
+
+	if (buffers.size() <= index)
+		return FileDescriptor();
+
+	return buffers[index]->planes()[0].fd;
 }
 
 int V4L2Camera::streamOn()
@@ -180,21 +189,16 @@ int V4L2Camera::streamOff()
 
 int V4L2Camera::qbuf(unsigned int index)
 {
-	Stream *stream = config_->at(0).stream();
-	std::unique_ptr<Buffer> buffer = stream->createBuffer(index);
-	if (!buffer) {
-		LOG(V4L2Compat, Error) << "Can't create buffer";
-		return -ENOMEM;
-	}
-
 	std::unique_ptr<Request> request =
-		std::unique_ptr<Request>(camera_->createRequest());
+		std::unique_ptr<Request>(camera_->createRequest(index));
 	if (!request) {
 		LOG(V4L2Compat, Error) << "Can't create request";
 		return -ENOMEM;
 	}
 
-	int ret = request->addBuffer(stream, std::move(buffer));
+	Stream *stream = config_->at(0).stream();
+	FrameBuffer *buffer = bufferAllocator_->buffers(stream)[index].get();
+	int ret = request->addBuffer(stream, buffer);
 	if (ret < 0) {
 		LOG(V4L2Compat, Error) << "Can't set buffer for request";
 		return -ENOMEM;

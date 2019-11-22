@@ -472,7 +472,7 @@ int PipelineHandler::queueRequest(Camera *camera, Request *request)
  * otherwise
  */
 bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
-				     Buffer *buffer)
+				     FrameBuffer *buffer)
 {
 	camera->bufferCompleted.emit(request, buffer);
 	return request->completeBuffer(buffer);

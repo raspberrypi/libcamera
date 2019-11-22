@@ -42,7 +42,7 @@ public:
 	}
 
 	int init(MediaEntity *entity);
-	void bufferReady(Buffer *buffer);
+	void bufferReady(FrameBuffer *buffer);
 
 	V4L2VideoDevice *video_;
 	Stream stream_;
@@ -225,23 +225,13 @@ void PipelineHandlerUVC::freeFrameBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerUVC::allocateBuffers(Camera *camera,
 					const std::set<Stream *> &streams)
 {
-	UVCCameraData *data = cameraData(camera);
-	Stream *stream = *streams.begin();
-	const StreamConfiguration &cfg = stream->configuration();
-
-	LOG(UVC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
-
-	if (stream->memoryType() == InternalMemory)
-		return data->video_->exportBuffers(&stream->bufferPool());
-	else
-		return data->video_->importBuffers(&stream->bufferPool());
+	return 0;
 }
 
 int PipelineHandlerUVC::freeBuffers(Camera *camera,
 				    const std::set<Stream *> &streams)
 {
-	UVCCameraData *data = cameraData(camera);
-	return data->video_->releaseBuffers();
+	return 0;
 }
 
 int PipelineHandlerUVC::start(Camera *camera)
@@ -295,7 +285,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 int PipelineHandlerUVC::queueRequestDevice(Camera *camera, Request *request)
 {
 	UVCCameraData *data = cameraData(camera);
-	Buffer *buffer = request->findBuffer(&data->stream_);
+	FrameBuffer *buffer = request->findBuffer(&data->stream_);
 	if (!buffer) {
 		LOG(UVC, Error)
 			<< "Attempt to queue request with invalid stream";
@@ -362,7 +352,7 @@ int UVCCameraData::init(MediaEntity *entity)
 	if (ret)
 		return ret;
 
-	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
+	video_->frameBufferReady.connect(this, &UVCCameraData::bufferReady);
 
 	/* Initialise the supported controls. */
 	const ControlInfoMap &controls = video_->controls();
@@ -402,7 +392,7 @@ int UVCCameraData::init(MediaEntity *entity)
 	return 0;
 }
 
-void UVCCameraData::bufferReady(Buffer *buffer)
+void UVCCameraData::bufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 

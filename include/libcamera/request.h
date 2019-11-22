@@ -17,9 +17,9 @@
 
 namespace libcamera {
 
-class Buffer;
 class Camera;
 class CameraControlValidator;
+class FrameBuffer;
 class Stream;
 
 class Request
@@ -38,9 +38,9 @@ public:
 
 	ControlList &controls() { return *controls_; }
 	ControlList &metadata() { return *metadata_; }
-	const std::map<Stream *, Buffer *> &buffers() const { return bufferMap_; }
-	int addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer);
-	Buffer *findBuffer(Stream *stream) const;
+	const std::map<Stream *, FrameBuffer *> &buffers() const { return bufferMap_; }
+	int addBuffer(Stream *stream, FrameBuffer *buffer);
+	FrameBuffer *findBuffer(Stream *stream) const;
 
 	uint64_t cookie() const { return cookie_; }
 	Status status() const { return status_; }
@@ -52,14 +52,14 @@ private:
 
 	void complete();
 
-	bool completeBuffer(Buffer *buffer);
+	bool completeBuffer(FrameBuffer *buffer);
 
 	Camera *camera_;
 	CameraControlValidator *validator_;
 	ControlList *controls_;
 	ControlList *metadata_;
-	std::map<Stream *, Buffer *> bufferMap_;
-	std::unordered_set<Buffer *> pending_;
+	std::map<Stream *, FrameBuffer *> bufferMap_;
+	std::unordered_set<FrameBuffer *> pending_;
 
 	const uint64_t cookie_;
 	Status status_;

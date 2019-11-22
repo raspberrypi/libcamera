@@ -10,7 +10,9 @@
 #include <chrono>
 #include <memory>
 
+#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -26,7 +28,8 @@ public:
 
 	int run(EventLoop *loop, const OptionsParser::Options &options);
 private:
-	int capture(EventLoop *loop);
+	int capture(EventLoop *loop,
+		    libcamera::FrameBufferAllocator *allocator);
 
 	void requestComplete(libcamera::Request *request);
 

@@ -9,50 +9,38 @@
 #define __V4L2_CAMERA_H__
 
 #include <deque>
-#include <linux/videodev2.h>
 #include <mutex>
+#include <utility>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/file_descriptor.h>
+#include <libcamera/framebuffer_allocator.h>
 
 #include "semaphore.h"
 
 using namespace libcamera;
 
-class V4L2FrameMetadata
-{
-public:
-	V4L2FrameMetadata(Buffer *buffer);
-
-	int index() const { return index_; }
-
-	unsigned int bytesused() const { return bytesused_; }
-	uint64_t timestamp() const { return timestamp_; }
-	unsigned int sequence() const { return sequence_; }
-
-	FrameMetadata::Status status() const { return status_; }
-
-private:
-	int index_;
-
-	unsigned int bytesused_;
-	uint64_t timestamp_;
-	unsigned int sequence_;
-
-	FrameMetadata::Status status_;
-};
-
 class V4L2Camera : public Object
 {
 public:
+	struct Buffer {
+		Buffer(unsigned int index, const FrameMetadata &data)
+			: index(index), data(data)
+		{
+		}
+
+		unsigned int index;
+		FrameMetadata data;
+	};
+
 	V4L2Camera(std::shared_ptr<Camera> camera);
 	~V4L2Camera();
 
 	int open();
 	void close();
 	void getStreamConfig(StreamConfiguration *streamConfig);
-	std::vector<V4L2FrameMetadata> completedBuffers();
+	std::vector<Buffer> completedBuffers();
 
 	int configure(StreamConfiguration *streamConfigOut,
 		      const Size &size, PixelFormat pixelformat,
@@ -78,9 +66,10 @@ private:
 	bool isRunning_;
 
 	std::mutex bufferLock_;
+	FrameBufferAllocator *bufferAllocator_;
 
 	std::deque<std::unique_ptr<Request>> pendingRequests_;
-	std::deque<std::unique_ptr<V4L2FrameMetadata>> completedBuffers_;
+	std::deque<std::unique_ptr<Buffer>> completedBuffers_;
 };
 
 #endif /* __V4L2_CAMERA_H__ */

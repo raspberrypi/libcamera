@@ -57,7 +57,10 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 			writer_ = new BufferWriter();
 	}
 
-	ret = capture(loop);
+
+	FrameBufferAllocator *allocator = FrameBufferAllocator::create(camera_);
+
+	ret = capture(loop, allocator);
 
 	if (options.isSet(OptFile)) {
 		delete writer_;
@@ -66,17 +69,27 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 
 	camera_->freeBuffers();
 
+	delete allocator;
+
 	return ret;
 }
 
-int Capture::capture(EventLoop *loop)
+int Capture::capture(EventLoop *loop, FrameBufferAllocator *allocator)
 {
 	int ret;
 
 	/* Identify the stream with the least number of buffers. */
 	unsigned int nbuffers = UINT_MAX;
-	for (StreamConfiguration &cfg : *config_)
-		nbuffers = std::min(nbuffers, cfg.bufferCount);
+	for (StreamConfiguration &cfg : *config_) {
+		ret = allocator->allocate(cfg.stream());
+		if (ret < 0) {
+			std::cerr << "Can't allocate buffers" << std::endl;
+			return -ENOMEM;
+		}
+
+		unsigned int allocated = allocator->buffers(cfg.stream()).size();
+		nbuffers = std::min(nbuffers, allocated);
+	}
 
 	/*
 	 * TODO: make cam tool smarter to support still capture by for
@@ -93,9 +106,11 @@ int Capture::capture(EventLoop *loop)
 
 		for (StreamConfiguration &cfg : *config_) {
 			Stream *stream = cfg.stream();
-			std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
+			const std::vector<std::unique_ptr<FrameBuffer>> &buffers =
+				allocator->buffers(stream);
+			const std::unique_ptr<FrameBuffer> &buffer = buffers[i];
 
-			ret = request->addBuffer(stream, std::move(buffer));
+			ret = request->addBuffer(stream, buffer.get());
 			if (ret < 0) {
 				std::cerr << "Can't set buffer for request"
 					  << std::endl;
@@ -138,7 +153,7 @@ void Capture::requestComplete(Request *request)
 	if (request->status() == Request::RequestCancelled)
 		return;
 
-	const std::map<Stream *, Buffer *> &buffers = request->buffers();
+	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	double fps = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_).count();
@@ -151,7 +166,7 @@ void Capture::requestComplete(Request *request)
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
-		Buffer *buffer = it->second;
+		FrameBuffer *buffer = it->second;
 		const std::string &name = streamName_[stream];
 
 		const FrameMetadata &metadata = buffer->metadata();
@@ -185,16 +200,9 @@ void Capture::requestComplete(Request *request)
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
-		Buffer *buffer = it->second;
-		unsigned int index = buffer->index();
+		FrameBuffer *buffer = it->second;
 
-		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
-		if (!newBuffer) {
-			std::cerr << "Can't create buffer" << std::endl;
-			return;
-		}
-
-		request->addBuffer(stream, std::move(newBuffer));
+		request->addBuffer(stream, buffer);
 	}
 
 	camera_->queueRequest(request);

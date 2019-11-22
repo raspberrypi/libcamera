@@ -21,12 +21,12 @@
 
 namespace libcamera {
 
-class Buffer;
 class Camera;
 class CameraConfiguration;
 class CameraManager;
 class DeviceEnumerator;
 class DeviceMatch;
+class FrameBuffer;
 class MediaDevice;
 class PipelineHandler;
 class Request;
@@ -85,7 +85,8 @@ public:
 
 	int queueRequest(Camera *camera, Request *request);
 
-	bool completeBuffer(Camera *camera, Request *request, Buffer *buffer);
+	bool completeBuffer(Camera *camera, Request *request,
+			    FrameBuffer *buffer);
 	void completeRequest(Camera *camera, Request *request);
 
 	const char *name() const { return name_; }

@@ -55,7 +55,7 @@ public:
 	}
 
 	int init(MediaDevice *media);
-	void bufferReady(Buffer *buffer);
+	void bufferReady(FrameBuffer *buffer);
 
 	CameraSensor *sensor_;
 	V4L2Subdevice *debayer_;
@@ -291,23 +291,13 @@ void PipelineHandlerVimc::freeFrameBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerVimc::allocateBuffers(Camera *camera,
 					 const std::set<Stream *> &streams)
 {
-	VimcCameraData *data = cameraData(camera);
-	Stream *stream = *streams.begin();
-	const StreamConfiguration &cfg = stream->configuration();
-
-	LOG(VIMC, Debug) << "Requesting " << cfg.bufferCount << " buffers";
-
-	if (stream->memoryType() == InternalMemory)
-		return data->video_->exportBuffers(&stream->bufferPool());
-	else
-		return data->video_->importBuffers(&stream->bufferPool());
+	return 0;
 }
 
 int PipelineHandlerVimc::freeBuffers(Camera *camera,
 				     const std::set<Stream *> &streams)
 {
-	VimcCameraData *data = cameraData(camera);
-	return data->video_->releaseBuffers();
+	return 0;
 }
 
 int PipelineHandlerVimc::start(Camera *camera)
@@ -355,7 +345,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 int PipelineHandlerVimc::queueRequestDevice(Camera *camera, Request *request)
 {
 	VimcCameraData *data = cameraData(camera);
-	Buffer *buffer = request->findBuffer(&data->stream_);
+	FrameBuffer *buffer = request->findBuffer(&data->stream_);
 	if (!buffer) {
 		LOG(VIMC, Error)
 			<< "Attempt to queue request with invalid stream";
@@ -447,7 +437,7 @@ int VimcCameraData::init(MediaDevice *media)
 	if (video_->open())
 		return -ENODEV;
 
-	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
+	video_->frameBufferReady.connect(this, &VimcCameraData::bufferReady);
 
 	raw_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
 	if (raw_->open())
@@ -484,7 +474,7 @@ int VimcCameraData::init(MediaDevice *media)
 	return 0;
 }
 
-void VimcCameraData::bufferReady(Buffer *buffer)
+void VimcCameraData::bufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 

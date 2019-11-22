@@ -187,17 +187,18 @@ void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
 
 void V4L2CameraProxy::updateBuffers()
 {
-	std::vector<V4L2FrameMetadata> completedBuffers = vcam_->completedBuffers();
-	for (V4L2FrameMetadata &fmd : completedBuffers) {
-		struct v4l2_buffer &buf = buffers_[fmd.index()];
+	std::vector<V4L2Camera::Buffer> completedBuffers = vcam_->completedBuffers();
+	for (const V4L2Camera::Buffer &buffer : completedBuffers) {
+		const FrameMetadata &fmd = buffer.data;
+		struct v4l2_buffer &buf = buffers_[buffer.index];
 
-		switch (fmd.status()) {
+		switch (fmd.status) {
 		case FrameMetadata::FrameSuccess:
-			buf.bytesused = fmd.bytesused();
+			buf.bytesused = fmd.planes[0].bytesused;
 			buf.field = V4L2_FIELD_NONE;
-			buf.timestamp.tv_sec = fmd.timestamp() / 1000000000;
-			buf.timestamp.tv_usec = fmd.timestamp() % 1000000;
-			buf.sequence = fmd.sequence();
+			buf.timestamp.tv_sec = fmd.timestamp / 1000000000;
+			buf.timestamp.tv_usec = fmd.timestamp % 1000000;
+			buf.sequence = fmd.sequence;
 
 			buf.flags |= V4L2_BUF_FLAG_DONE;
 			break;

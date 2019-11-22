@@ -23,7 +23,7 @@
 using namespace libcamera;
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
-	: options_(options), isCapturing_(false)
+	: options_(options), allocator_(nullptr), isCapturing_(false)
 {
 	int ret;
 
@@ -37,8 +37,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	adjustSize();
 
 	ret = openCamera(cm);
-	if (!ret)
+	if (!ret) {
+		allocator_ = FrameBufferAllocator::create(camera_);
 		ret = startCapture();
+	}
 
 	if (ret < 0)
 		QTimer::singleShot(0, QCoreApplication::instance(),
@@ -49,6 +51,7 @@ MainWindow::~MainWindow()
 {
 	if (camera_) {
 		stopCapture();
+		delete allocator_;
 		camera_->release();
 		camera_.reset();
 	}
@@ -176,8 +179,14 @@ int MainWindow::startCapture()
 		return ret;
 	}
 
+	ret = allocator_->allocate(stream);
+	if (ret < 0) {
+		std::cerr << "Failed to allocate capture buffers" << std::endl;
+		return ret;
+	}
+
 	std::vector<Request *> requests;
-	for (unsigned int i = 0; i < cfg.bufferCount; ++i) {
+	for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
 		Request *request = camera_->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;
@@ -185,13 +194,7 @@ int MainWindow::startCapture()
 			goto error;
 		}
 
-		std::unique_ptr<Buffer> buffer = stream->createBuffer(i);
-		if (!buffer) {
-			std::cerr << "Can't create buffer " << i << std::endl;
-			goto error;
-		}
-
-		ret = request->addBuffer(stream, std::move(buffer));
+		ret = request->addBuffer(stream, buffer.get());
 		if (ret < 0) {
 			std::cerr << "Can't set buffer for request" << std::endl;
 			goto error;
@@ -254,11 +257,11 @@ void MainWindow::requestComplete(Request *request)
 	if (request->status() == Request::RequestCancelled)
 		return;
 
-	const std::map<Stream *, Buffer *> &buffers = request->buffers();
+	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 
 	framesCaptured_++;
 
-	Buffer *buffer = buffers.begin()->second;
+	FrameBuffer *buffer = buffers.begin()->second;
 	const FrameMetadata &metadata = buffer->metadata();
 
 	double fps = metadata.timestamp - lastBufferTime_;
@@ -281,28 +284,21 @@ void MainWindow::requestComplete(Request *request)
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
-		Buffer *buffer = it->second;
-		unsigned int index = buffer->index();
+		FrameBuffer *buffer = it->second;
 
-		std::unique_ptr<Buffer> newBuffer = stream->createBuffer(index);
-		if (!newBuffer) {
-			std::cerr << "Can't create buffer" << std::endl;
-			return;
-		}
-
-		request->addBuffer(stream, std::move(newBuffer));
+		request->addBuffer(stream, buffer);
 	}
 
 	camera_->queueRequest(request);
 }
 
-int MainWindow::display(Buffer *buffer)
+int MainWindow::display(FrameBuffer *buffer)
 {
-	if (buffer->mem()->planes().size() != 1)
+	if (buffer->planes().size() != 1)
 		return -EINVAL;
 
 	/* \todo Once the FrameBuffer is done cache mapped memory. */
-	const FrameBuffer::Plane &plane = buffer->mem()->planes().front();
+	const FrameBuffer::Plane &plane = buffer->planes().front();
 	void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
 			    plane.fd.fd(), 0);
 

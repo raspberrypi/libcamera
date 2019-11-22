@@ -75,11 +75,6 @@ Request::Request(Camera *camera, uint64_t cookie)
 
 Request::~Request()
 {
-	for (auto it : bufferMap_) {
-		Buffer *buffer = it.second;
-		delete buffer;
-	}
-
 	delete metadata_;
 	delete controls_;
 	delete validator_;
@@ -106,18 +101,19 @@ Request::~Request()
  * \brief Retrieve the request's streams to buffers map
  *
  * Return a reference to the map that associates each Stream part of the
- * request to the Buffer the Stream output should be directed to.
+ * request to the FrameBuffer the Stream output should be directed to.
  *
- * \return The map of Stream to Buffer
+ * \return The map of Stream to FrameBuffer
  */
 
 /**
- * \brief Store a Buffer with its associated Stream in the Request
+ * \brief Add a FrameBuffer with its associated Stream to the Request
  * \param[in] stream The stream the buffer belongs to
- * \param[in] buffer The Buffer to store in the request
+ * \param[in] buffer The FrameBuffer to add to the request
  *
- * Ownership of the buffer is passed to the request. It will be deleted when
- * the request is destroyed after completing.
+ * A reference to the buffer is stored in the request. The caller is responsible
+ * for ensuring that the buffer will remain valid until the request complete
+ * callback is called.
  *
  * A request can only contain one buffer per stream. If a buffer has already
  * been added to the request for the same stream, this method returns -EEXIST.
@@ -126,7 +122,7 @@ Request::~Request()
  * \retval -EEXIST The request already contains a buffer for the stream
  * \retval -EINVAL The buffer does not reference a valid Stream
  */
-int Request::addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer)
+int Request::addBuffer(Stream *stream, FrameBuffer *buffer)
 {
 	if (!stream) {
 		LOG(Request, Error) << "Invalid stream reference";
@@ -135,13 +131,13 @@ int Request::addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer)
 
 	auto it = bufferMap_.find(stream);
 	if (it != bufferMap_.end()) {
-		LOG(Request, Error) << "Buffer already set for stream";
+		LOG(Request, Error) << "FrameBuffer already set for stream";
 		return -EEXIST;
 	}
 
 	buffer->request_ = this;
-	pending_.insert(buffer.get());
-	bufferMap_[stream] = buffer.release();
+	pending_.insert(buffer);
+	bufferMap_[stream] = buffer;
 
 	return 0;
 }
@@ -161,7 +157,7 @@ int Request::addBuffer(Stream *stream, std::unique_ptr<Buffer> buffer)
  * \return The buffer associated with the stream, or nullptr if the stream is
  * not part of this request
  */
-Buffer *Request::findBuffer(Stream *stream) const
+FrameBuffer *Request::findBuffer(Stream *stream) const
 {
 	auto it = bufferMap_.find(stream);
 	if (it == bufferMap_.end())
@@ -231,7 +227,7 @@ void Request::complete()
  * \return True if all buffers contained in the request have completed, false
  * otherwise
  */
-bool Request::completeBuffer(Buffer *buffer)
+bool Request::completeBuffer(FrameBuffer *buffer)
 {
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);

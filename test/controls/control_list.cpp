@@ -29,7 +29,12 @@ public:
 	}
 
 protected:
-	int run()
+	int init() override
+	{
+		return status_;
+	}
+
+	int run() override
 	{
 		CameraControlValidator validator(camera_.get());
 		ControlList list(controls::controls, &validator);

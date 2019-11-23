@@ -26,6 +26,10 @@ libcamera_version = libcamera_git_version.split('+')[0]
 cc = meson.get_compiler('c')
 config_h = configuration_data()
 
+if cc.has_header_symbol('execinfo.h', 'backtrace')
+    config_h.set('HAVE_BACKTRACE', 1)
+endif
+
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_SECURE_GETENV', 1)
 endif

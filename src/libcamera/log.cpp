@@ -7,6 +7,9 @@
 
 #include "log.h"
 
+#if HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -108,10 +111,11 @@ public:
 
 	bool isValid() const;
 	void write(const LogMessage &msg);
+	void write(const std::string &msg);
 
 private:
-	void writeSyslog(const LogMessage &msg);
-	void writeStream(const LogMessage &msg);
+	void writeSyslog(LogSeverity severity, const std::string &msg);
+	void writeStream(const std::string &msg);
 
 	std::ostream *stream_;
 	LoggingTarget target_;
@@ -181,33 +185,54 @@ bool LogOutput::isValid() const
  */
 void LogOutput::write(const LogMessage &msg)
 {
+	std::string str;
+
 	switch (target_) {
 	case LoggingTargetSyslog:
-		writeSyslog(msg);
+		str = std::string(log_severity_name(msg.severity())) + " "
+		    + msg.category().name() + " " + msg.fileInfo() + " "
+		    + msg.msg();
+		writeSyslog(msg.severity(), str);
 		break;
 	case LoggingTargetStream:
 	case LoggingTargetFile:
-		writeStream(msg);
+		str = "[" + utils::time_point_to_string(msg.timestamp()) + "]"
+		    + log_severity_name(msg.severity()) + " "
+		    + msg.category().name() + " " + msg.fileInfo() + " "
+		    + msg.msg();
+		writeStream(str);
 		break;
 	default:
 		break;
 	}
 }
 
-void LogOutput::writeSyslog(const LogMessage &msg)
+/**
+ * \brief Write string to log output
+ * \param[in] str String to write
+ */
+void LogOutput::write(const std::string &str)
 {
-	std::string str = std::string(log_severity_name(msg.severity())) + " " +
-	      		  msg.category().name() + " " + msg.fileInfo() + " " +
-			  msg.msg();
-	syslog(log_severity_to_syslog(msg.severity()), "%s", str.c_str());
+	switch (target_) {
+	case LoggingTargetSyslog:
+		writeSyslog(LogDebug, str);
+		break;
+	case LoggingTargetStream:
+	case LoggingTargetFile:
+		writeStream(str);
+		break;
+	default:
+		break;
+	}
 }
 
-void LogOutput::writeStream(const LogMessage &msg)
+void LogOutput::writeSyslog(LogSeverity severity, const std::string &str)
 {
-	std::string str = "[" + utils::time_point_to_string(msg.timestamp()) +
-			  "]" + log_severity_name(msg.severity()) + " " +
-			  msg.category().name() + " " + msg.fileInfo() + " " +
-			  msg.msg();
+	syslog(log_severity_to_syslog(severity), "%s", str.c_str());
+}
+
+void LogOutput::writeStream(const std::string &str)
+{
 	stream_->write(str.c_str(), str.size());
 	stream_->flush();
 }
@@ -223,6 +248,7 @@ public:
 	static Logger *instance();
 
 	void write(const LogMessage &msg);
+	void backtrace();
 
 	int logSetFile(const char *path);
 	int logSetStream(std::ostream *stream);
@@ -239,9 +265,6 @@ private:
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
 	void unregisterCategory(LogCategory *category);
-
-	void writeSyslog(const LogMessage &msg);
-	void writeStream(const LogMessage &msg);
 
 	std::unordered_set<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
@@ -368,6 +391,38 @@ void Logger::write(const LogMessage &msg)
 		return;
 
 	output->write(msg);
+}
+
+/**
+ * \brief Write a backtrace to the log
+ */
+void Logger::backtrace()
+{
+#if HAVE_BACKTRACE
+	std::shared_ptr<LogOutput> output = std::atomic_load(&output_);
+	if (!output)
+		return;
+
+	void *buffer[32];
+	int num_entries = ::backtrace(buffer, ARRAY_SIZE(buffer));
+	char **strings = backtrace_symbols(buffer, num_entries);
+	if (!strings)
+		return;
+
+	std::ostringstream msg;
+	msg << "Backtrace:" << std::endl;
+
+	/*
+	 * Skip the first two entries that correspond to this method and
+	 * ~LogMessage().
+	 */
+	for (int i = 2; i < num_entries; ++i)
+		msg << strings[i] << std::endl;
+
+	output->write(msg.str());
+
+	free(strings);
+#endif
 }
 
 /**
@@ -783,8 +838,10 @@ LogMessage::~LogMessage()
 	if (severity_ >= category_.severity())
 		Logger::instance()->write(*this);
 
-	if (severity_ == LogSeverity::LogFatal)
+	if (severity_ == LogSeverity::LogFatal) {
+		Logger::instance()->backtrace();
 		std::abort();
+	}
 }
 
 /**

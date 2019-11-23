@@ -7,6 +7,11 @@ option('documentation',
         type : 'boolean',
         description : 'Generate the project documentation')
 
+option('gstreamer',
+        type : 'feature',
+        value : 'auto',
+        description : 'Compile libcamera GStreamer plugin')
+
 option('test',
         type : 'boolean',
         description: 'Compile and include the tests')

@@ -456,8 +456,8 @@ void Thread::moveObject(Object *object)
 	ThreadData *currentData = object->thread_->data_;
 	ThreadData *targetData = data_;
 
-	MutexLocker lockerFrom(currentData->mutex_, std::defer_lock);
-	MutexLocker lockerTo(targetData->mutex_, std::defer_lock);
+	MutexLocker lockerFrom(currentData->messages_.mutex_, std::defer_lock);
+	MutexLocker lockerTo(targetData->messages_.mutex_, std::defer_lock);
 	std::lock(lockerFrom, lockerTo);
 
 	moveObject(object, currentData, targetData);

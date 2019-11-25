@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include "buffer_writer.h"
@@ -43,9 +44,11 @@ int BufferWriter::write(Buffer *buffer, const std::string &streamName)
 		return -errno;
 
 	BufferMemory *mem = buffer->mem();
-	for (Plane &plane : mem->planes()) {
-		void *data = plane.mem();
-		unsigned int length = plane.length();
+	for (const FrameBuffer::Plane &plane : mem->planes()) {
+		/* \todo Once the FrameBuffer is done cache mapped memory. */
+		void *data = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+				  plane.fd.fd(), 0);
+		unsigned int length = plane.length;
 
 		ret = ::write(fd, data, length);
 		if (ret < 0) {
@@ -59,6 +62,8 @@ int BufferWriter::write(Buffer *buffer, const std::string &streamName)
 				  << length << std::endl;
 			break;
 		}
+
+		munmap(data, length);
 	}
 
 	close(fd);

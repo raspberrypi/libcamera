@@ -95,11 +95,11 @@ private:
 class BufferMemory final
 {
 public:
-	const std::vector<Plane> &planes() const { return planes_; }
-	std::vector<Plane> &planes() { return planes_; }
+	const std::vector<FrameBuffer::Plane> &planes() const { return planes_; }
+	std::vector<FrameBuffer::Plane> &planes() { return planes_; }
 
 private:
-	std::vector<Plane> planes_;
+	std::vector<FrameBuffer::Plane> planes_;
 };
 
 class BufferPool final

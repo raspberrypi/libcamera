@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <sys/mman.h>
 
 #include <QCoreApplication>
 #include <QInputDialog>
@@ -296,13 +297,18 @@ void MainWindow::requestComplete(Request *request)
 
 int MainWindow::display(Buffer *buffer)
 {
-	BufferMemory *mem = buffer->mem();
-	if (mem->planes().size() != 1)
+	if (buffer->mem()->planes().size() != 1)
 		return -EINVAL;
 
-	Plane &plane = mem->planes().front();
-	unsigned char *raw = static_cast<unsigned char *>(plane.mem());
+	/* \todo Once the FrameBuffer is done cache mapped memory. */
+	const FrameBuffer::Plane &plane = buffer->mem()->planes().front();
+	void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+			    plane.fd.fd(), 0);
+
+	unsigned char *raw = static_cast<unsigned char *>(memory);
 	viewfinder_->display(raw, buffer->bytesused());
+
+	munmap(memory, plane.length);
 
 	return 0;
 }

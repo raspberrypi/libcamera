@@ -577,8 +577,10 @@ int Stream::mapBuffer(const Buffer *buffer)
 		if (dmabufs[i] == -1)
 			break;
 
-		mem->planes().emplace_back();
-		mem->planes().back().setDmabuf(dmabufs[i], 0);
+		FrameBuffer::Plane plane;
+		plane.fd = FileDescriptor(dmabufs[i]);
+		plane.length = 0;
+		mem->planes().push_back(plane);
 	}
 
 	/* Remove the buffer from the cache and return its index. */

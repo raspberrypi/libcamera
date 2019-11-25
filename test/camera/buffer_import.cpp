@@ -178,7 +178,7 @@ private:
 
 		uint64_t cookie = index;
 		BufferMemory &mem = pool_.buffers()[index];
-		int dmabuf = mem.planes()[0].dmabuf();
+		int dmabuf = mem.planes()[0].fd.fd();
 
 		requestReady.emit(cookie, dmabuf);
 

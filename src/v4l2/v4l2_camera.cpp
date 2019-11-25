@@ -135,7 +135,7 @@ void V4L2Camera::freeBuffers()
 FileDescriptor V4L2Camera::getBufferFd(unsigned int index)
 {
 	Stream *stream = *camera_->streams().begin();
-	return FileDescriptor(stream->buffers()[index].planes()[0].dmabuf());
+	return stream->buffers()[index].planes()[0].fd;
 }
 
 int V4L2Camera::streamOn()

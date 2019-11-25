@@ -922,9 +922,10 @@ int V4L2VideoDevice::createPlane(BufferMemory *buffer, unsigned int index,
 		return ret;
 	}
 
-	buffer->planes().emplace_back();
-	Plane &plane = buffer->planes().back();
-	plane.setDmabuf(expbuf.fd, length);
+	FrameBuffer::Plane plane;
+	plane.fd = FileDescriptor(expbuf.fd);
+	plane.length = length;
+	buffer->planes().push_back(plane);
 	::close(expbuf.fd);
 
 	return 0;
@@ -987,14 +988,14 @@ int V4L2VideoDevice::queueBuffer(Buffer *buffer)
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
 	BufferMemory *mem = &bufferPool_->buffers()[buf.index];
-	const std::vector<Plane> &planes = mem->planes();
+	const std::vector<FrameBuffer::Plane> &planes = mem->planes();
 
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
 			for (unsigned int p = 0; p < planes.size(); ++p)
-				v4l2Planes[p].m.fd = planes[p].dmabuf();
+				v4l2Planes[p].m.fd = planes[p].fd.fd();
 		} else {
-			buf.m.fd = planes[0].dmabuf();
+			buf.m.fd = planes[0].fd.fd();
 		}
 	}
 

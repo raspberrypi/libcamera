@@ -71,27 +71,6 @@ private:
 	unsigned int cookie_;
 };
 
-class Plane final
-{
-public:
-	Plane();
-	~Plane();
-
-	int dmabuf() const { return fd_; }
-	int setDmabuf(int fd, unsigned int length);
-
-	void *mem();
-	unsigned int length() const { return length_; }
-
-private:
-	int mmap();
-	int munmap();
-
-	int fd_;
-	unsigned int length_;
-	void *mem_;
-};
-
 class BufferMemory final
 {
 public:

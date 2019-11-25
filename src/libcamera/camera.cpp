@@ -275,15 +275,13 @@ std::size_t CameraConfiguration::size() const
  * \section camera_operation Operating the Camera
  *
  * An application needs to perform a sequence of operations on a camera before
- * it is ready to process requests. The camera needs to be acquired, configured
- * and resources allocated or imported to prepare the camera for capture. Once
- * started the camera can process requests until it is stopped. When an
- * application is done with a camera all resources allocated need to be freed
- * and the camera released.
+ * it is ready to process requests. The camera needs to be acquired and
+ * configured to prepare the camera for capture. Once started the camera can
+ * process requests until it is stopped. When an application is done with a
+ * camera, the camera needs to be released.
  *
  * An application may start and stop a camera multiple times as long as it is
- * not released. The camera may also be reconfigured provided that all
- * resources allocated are freed prior to the reconfiguration.
+ * not released. The camera may also be reconfigured.
  *
  * \subsection Camera States
  *
@@ -297,7 +295,6 @@ std::size_t CameraConfiguration::size() const
  *   node [shape = doublecircle ]; Available;
  *   node [shape = circle ]; Acquired;
  *   node [shape = circle ]; Configured;
- *   node [shape = circle ]; Prepared;
  *   node [shape = circle ]; Running;
  *
  *   Available -> Available [label = "release()"];
@@ -307,14 +304,10 @@ std::size_t CameraConfiguration::size() const
  *   Acquired -> Configured [label = "configure()"];
  *
  *   Configured -> Available [label = "release()"];
- *   Configured -> Configured [label = "configure()"];
- *   Configured -> Prepared [label = "allocateBuffers()"];
+ *   Configured -> Configured [label = "configure(), createRequest()"];
+ *   Configured -> Running [label = "start()"];
  *
- *   Prepared -> Configured [label = "freeBuffers()"];
- *   Prepared -> Prepared [label = "createRequest()"];
- *   Prepared -> Running [label = "start()"];
- *
- *   Running -> Prepared [label = "stop()"];
+ *   Running -> Configured [label = "stop()"];
  *   Running -> Running [label = "createRequest(), queueRequest()"];
  * }
  * \enddot
@@ -330,19 +323,14 @@ std::size_t CameraConfiguration::size() const
  * Configured state.
  *
  * \subsubsection Configured
- * The camera is configured and ready for the application to prepare it with
- * resources. The camera may be reconfigured multiple times until resources
- * are provided and the state progresses to Prepared.
- *
- * \subsubsection Prepared
- * The camera has been configured and provided with resources and is ready to be
- * started. The application may free the camera's resources to get back to the
- * Configured state or start() it to progress to the Running state.
+ * The camera is configured and ready to be started. The application may
+ * release() the camera and to get back to the Available state or start()
+ * it to progress to the Running state.
  *
  * \subsubsection Running
  * The camera is running and ready to process requests queued by the
  * application. The camera remains in this state until it is stopped and moved
- * to the Prepared state.
+ * to the Configured state.
  */
 
 /**
@@ -420,7 +408,6 @@ static const char *const camera_state_names[] = {
 	"Available",
 	"Acquired",
 	"Configured",
-	"Prepared",
 	"Running",
 };
 
@@ -465,8 +452,6 @@ bool Camera::stateIs(State state) const
  *
  * \todo Deal with pending requests if the camera is disconnected in a
  * running state.
- * \todo Update comment about Running state when importing buffers as well as
- * allocating them are supported.
  */
 void Camera::disconnect()
 {
@@ -474,11 +459,11 @@ void Camera::disconnect()
 
 	/*
 	 * If the camera was running when the hardware was removed force the
-	 * state to Prepared to allow applications to call freeBuffers() and
-	 * release() before deleting the camera.
+	 * state to Configured state to allow applications to free resources
+	 * and call release() before deleting the camera.
 	 */
 	if (state_ == CameraRunning)
-		state_ = CameraPrepared;
+		state_ = CameraConfigured;
 
 	disconnected_ = true;
 	disconnected.emit(this);
@@ -703,53 +688,6 @@ int Camera::configure(CameraConfiguration *config)
 }
 
 /**
- * \brief Allocate buffers for all configured streams
- *
- * This function affects the state of the camera, see \ref camera_operation.
- *
- * \return 0 on success or a negative error code otherwise
- * \retval -ENODEV The camera has been disconnected from the system
- * \retval -EACCES The camera is not in a state where buffers can be allocated
- * \retval -EINVAL The configuration is not valid
- */
-int Camera::allocateBuffers()
-{
-	if (disconnected_)
-		return -ENODEV;
-
-	if (!stateIs(CameraConfigured))
-		return -EACCES;
-
-	if (activeStreams_.empty()) {
-		LOG(Camera, Error)
-			<< "Can't allocate buffers without streams";
-		return -EINVAL;
-	}
-
-	state_ = CameraPrepared;
-
-	return 0;
-}
-
-/**
- * \brief Release all buffers from allocated pools in each stream
- *
- * This function affects the state of the camera, see \ref camera_operation.
- *
- * \return 0 on success or a negative error code otherwise
- * \retval -EACCES The camera is not in a state where buffers can be freed
- */
-int Camera::freeBuffers()
-{
-	if (!stateIs(CameraPrepared))
-		return -EACCES;
-
-	state_ = CameraConfigured;
-
-	return 0;
-}
-
-/**
  * \brief Create a request object for the camera
  * \param[in] cookie Opaque cookie for application use
  *
@@ -764,14 +702,14 @@ int Camera::freeBuffers()
  * The ownership of the returned request is passed to the caller, which is
  * responsible for either queueing the request or deleting it.
  *
- * This function shall only be called when the camera is in the Prepared
+ * This function shall only be called when the camera is in the Configured
  * or Running state, see \ref camera_operation.
  *
  * \return A pointer to the newly created request, or nullptr on error
  */
 Request *Camera::createRequest(uint64_t cookie)
 {
-	if (disconnected_ || !stateBetween(CameraPrepared, CameraRunning))
+	if (disconnected_ || !stateBetween(CameraConfigured, CameraRunning))
 		return nullptr;
 
 	return new Request(this, cookie);
@@ -842,7 +780,7 @@ int Camera::start()
 	if (disconnected_)
 		return -ENODEV;
 
-	if (!stateIs(CameraPrepared))
+	if (!stateIs(CameraConfigured))
 		return -EACCES;
 
 	LOG(Camera, Debug) << "Starting capture";
@@ -885,7 +823,7 @@ int Camera::stop()
 
 	LOG(Camera, Debug) << "Stopping capture";
 
-	state_ = CameraPrepared;
+	state_ = CameraConfigured;
 
 	pipe_->stop(this);
 

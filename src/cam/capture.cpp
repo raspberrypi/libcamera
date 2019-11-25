@@ -42,12 +42,6 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 		return ret;
 	}
 
-	ret = camera_->allocateBuffers();
-	if (ret) {
-		std::cerr << "Failed to allocate buffers" << std::endl;
-		return ret;
-	}
-
 	camera_->requestCompleted.connect(this, &Capture::requestComplete);
 
 	if (options.isSet(OptFile)) {
@@ -66,8 +60,6 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 		delete writer_;
 		writer_ = nullptr;
 	}
-
-	camera_->freeBuffers();
 
 	delete allocator;
 

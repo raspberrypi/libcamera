@@ -174,11 +174,6 @@ protected:
 			return TestFail;
 		}
 
-		if (camera_->allocateBuffers()) {
-			std::cout << "Failed to allocate buffers" << std::endl;
-			return TestFail;
-		}
-
 		Stream *stream = cfg.stream();
 
 		BufferSource source;
@@ -241,11 +236,6 @@ protected:
 
 		if (camera_->stop()) {
 			std::cout << "Failed to stop camera" << std::endl;
-			return TestFail;
-		}
-
-		if (camera_->freeBuffers()) {
-			std::cout << "Failed to free buffers" << std::endl;
 			return TestFail;
 		}
 

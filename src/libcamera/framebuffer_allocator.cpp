@@ -116,8 +116,7 @@ FrameBufferAllocator::~FrameBufferAllocator()
  */
 int FrameBufferAllocator::allocate(Stream *stream)
 {
-	if (camera_->state_ != Camera::CameraConfigured &&
-	    camera_->state_ != Camera::CameraPrepared) {
+	if (camera_->state_ != Camera::CameraConfigured) {
 		LOG(Allocator, Error)
 			<< "Camera must be in the configured state to allocate buffers";
 		return -EACCES;
@@ -163,7 +162,7 @@ int FrameBufferAllocator::allocate(Stream *stream)
  */
 int FrameBufferAllocator::free(Stream *stream)
 {
-	if (camera_->state_ != Camera::CameraConfigured && camera_->state_ != Camera::CameraPrepared) {
+	if (camera_->state_ != Camera::CameraConfigured) {
 		LOG(Allocator, Error)
 			<< "Camera must be in the configured state to free buffers";
 		return -EACCES;

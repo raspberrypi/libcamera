@@ -77,8 +77,6 @@ int CameraDevice::open()
 void CameraDevice::close()
 {
 	camera_->stop();
-
-	camera_->freeBuffers();
 	camera_->release();
 
 	running_ = false;
@@ -690,16 +688,9 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 
 	/* Start the camera if that's the first request we handle. */
 	if (!running_) {
-		int ret = camera_->allocateBuffers();
-		if (ret) {
-			LOG(HAL, Error) << "Failed to allocate buffers";
-			return;
-		}
-
-		ret = camera_->start();
+		int ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";
-			camera_->freeBuffers();
 			return;
 		}
 

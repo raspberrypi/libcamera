@@ -172,13 +172,6 @@ int MainWindow::startCapture()
 
 	adjustSize();
 
-	ret = camera_->allocateBuffers();
-	if (ret) {
-		std::cerr << "Failed to allocate buffers"
-			  << std::endl;
-		return ret;
-	}
-
 	ret = allocator_->allocate(stream);
 	if (ret < 0) {
 		std::cerr << "Failed to allocate capture buffers" << std::endl;
@@ -244,7 +237,6 @@ error:
 	}
 	mappedBuffers_.clear();
 
-	camera_->freeBuffers();
 	return ret;
 }
 
@@ -264,7 +256,6 @@ void MainWindow::stopCapture()
 	}
 	mappedBuffers_.clear();
 
-	camera_->freeBuffers();
 	isCapturing_ = false;
 
 	config_.reset();

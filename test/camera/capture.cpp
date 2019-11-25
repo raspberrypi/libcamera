@@ -87,11 +87,6 @@ protected:
 			return TestFail;
 		}
 
-		if (camera_->allocateBuffers()) {
-			cout << "Failed to allocate buffers" << endl;
-			return TestFail;
-		}
-
 		Stream *stream = cfg.stream();
 
 		int ret = allocator_->allocate(stream);
@@ -155,11 +150,6 @@ protected:
 
 		if (camera_->stop()) {
 			cout << "Failed to stop camera" << endl;
-			return TestFail;
-		}
-
-		if (camera_->freeBuffers()) {
-			cout << "Failed to free buffers" << endl;
 			return TestFail;
 		}
 

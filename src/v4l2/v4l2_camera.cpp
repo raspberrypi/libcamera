@@ -121,10 +121,6 @@ int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
 
 int V4L2Camera::allocBuffers(unsigned int count)
 {
-	int ret = camera_->allocateBuffers();
-	if (ret)
-		return ret == -EACCES ? -EBUSY : ret;
-
 	Stream *stream = *camera_->streams().begin();
 
 	return bufferAllocator_->allocate(stream);
@@ -134,7 +130,6 @@ void V4L2Camera::freeBuffers()
 {
 	Stream *stream = *camera_->streams().begin();
 	bufferAllocator_->free(stream);
-	camera_->freeBuffers();
 }
 
 FileDescriptor V4L2Camera::getBufferFd(unsigned int index)

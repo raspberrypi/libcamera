@@ -91,9 +91,6 @@ public:
 	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles);
 	int configure(CameraConfiguration *config);
 
-	int allocateBuffers();
-	int freeBuffers();
-
 	Request *createRequest(uint64_t cookie = 0);
 	int queueRequest(Request *request);
 
@@ -105,7 +102,6 @@ private:
 		CameraAvailable,
 		CameraAcquired,
 		CameraConfigured,
-		CameraPrepared,
 		CameraRunning,
 	};
 

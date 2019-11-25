@@ -29,12 +29,6 @@ protected:
 		if (camera_->configure(defconf_.get()) != -EACCES)
 			return TestFail;
 
-		if (camera_->allocateBuffers() != -EACCES)
-			return TestFail;
-
-		if (camera_->freeBuffers() != -EACCES)
-			return TestFail;
-
 		if (camera_->createRequest())
 			return TestFail;
 
@@ -63,12 +57,6 @@ protected:
 	{
 		/* Test operations which should fail. */
 		if (camera_->acquire() != -EBUSY)
-			return TestFail;
-
-		if (camera_->allocateBuffers() != -EACCES)
-			return TestFail;
-
-		if (camera_->freeBuffers() != -EACCES)
 			return TestFail;
 
 		if (camera_->createRequest())
@@ -103,57 +91,6 @@ protected:
 		if (camera_->acquire() != -EBUSY)
 			return TestFail;
 
-		if (camera_->freeBuffers() != -EACCES)
-			return TestFail;
-
-		if (camera_->createRequest())
-			return TestFail;
-
-		Request request(camera_.get());
-		if (camera_->queueRequest(&request) != -EACCES)
-			return TestFail;
-
-		if (camera_->start() != -EACCES)
-			return TestFail;
-
-		if (camera_->stop() != -EACCES)
-			return TestFail;
-
-		/* Test operations which should pass. */
-		if (camera_->configure(defconf_.get()))
-			return TestFail;
-
-		/* Test valid state transitions, end in Prepared state. */
-		if (camera_->release())
-			return TestFail;
-
-		if (camera_->acquire())
-			return TestFail;
-
-		if (camera_->configure(defconf_.get()))
-			return TestFail;
-
-		if (camera_->allocateBuffers())
-			return TestFail;
-
-		return TestPass;
-	}
-
-	int testPrepared()
-	{
-		/* Test operations which should fail. */
-		if (camera_->acquire() != -EBUSY)
-			return TestFail;
-
-		if (camera_->release() != -EBUSY)
-			return TestFail;
-
-		if (camera_->configure(defconf_.get()) != -EACCES)
-			return TestFail;
-
-		if (camera_->allocateBuffers() != -EACCES)
-			return TestFail;
-
 		Request request1(camera_.get());
 		if (camera_->queueRequest(&request1) != -EACCES)
 			return TestFail;
@@ -170,9 +107,6 @@ protected:
 		delete request2;
 
 		/* Test valid state transitions, end in Running state. */
-		if (camera_->freeBuffers())
-			return TestFail;
-
 		if (camera_->release())
 			return TestFail;
 
@@ -180,9 +114,6 @@ protected:
 			return TestFail;
 
 		if (camera_->configure(defconf_.get()))
-			return TestFail;
-
-		if (camera_->allocateBuffers())
 			return TestFail;
 
 		/* Use internally allocated buffers. */
@@ -209,12 +140,6 @@ protected:
 		if (camera_->configure(defconf_.get()) != -EACCES)
 			return TestFail;
 
-		if (camera_->allocateBuffers() != -EACCES)
-			return TestFail;
-
-		if (camera_->freeBuffers() != -EACCES)
-			return TestFail;
-
 		if (camera_->start() != -EACCES)
 			return TestFail;
 
@@ -235,9 +160,6 @@ protected:
 			return TestFail;
 
 		delete allocator_;
-
-		if (camera_->freeBuffers())
-			return TestFail;
 
 		if (camera_->release())
 			return TestFail;
@@ -273,11 +195,6 @@ protected:
 
 		if (testConfigured() != TestPass) {
 			cout << "State machine in Configured state failed" << endl;
-			return TestFail;
-		}
-
-		if (testPrepared() != TestPass) {
-			cout << "State machine in Prepared state failed" << endl;
 			return TestFail;
 		}
 

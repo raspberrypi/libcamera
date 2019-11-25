@@ -149,15 +149,15 @@ void IPAContextWrapper::mapBuffers(const std::vector<IPABuffer> &buffers)
 	for (unsigned int i = 0; i < buffers.size(); ++i) {
 		struct ipa_buffer &c_buffer = c_buffers[i];
 		const IPABuffer &buffer = buffers[i];
-		const std::vector<Plane> &planes = buffer.memory.planes();
+		const std::vector<FrameBuffer::Plane> &planes = buffer.planes;
 
 		c_buffer.id = buffer.id;
 		c_buffer.num_planes = planes.size();
 
 		for (unsigned int j = 0; j < planes.size(); ++j) {
-			const Plane &plane = planes[j];
-			c_buffer.planes[j].dmabuf = plane.dmabuf();
-			c_buffer.planes[j].length = plane.length();
+			const FrameBuffer::Plane &plane = planes[j];
+			c_buffer.planes[j].dmabuf = plane.fd.fd();
+			c_buffer.planes[j].length = plane.length;
 		}
 	}
 

@@ -334,11 +334,10 @@ namespace libcamera {
  */
 
 /**
- * \var IPABuffer::memory
- * \brief The buffer memory description
+ * \var IPABuffer::planes
+ * \brief The buffer planes description
  *
- * The memory field stores the dmabuf handle and size for each plane of the
- * buffer.
+ * Stores the dmabuf handle and length for each plane of the buffer.
  */
 
 /**

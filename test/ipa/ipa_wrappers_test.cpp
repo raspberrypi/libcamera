@@ -115,28 +115,28 @@ public:
 			return report(Op_mapBuffers, TestFail);
 		}
 
-		if (buffers[0].memory.planes().size() != 3 ||
-		    buffers[1].memory.planes().size() != 3) {
+		if (buffers[0].planes.size() != 3 ||
+		    buffers[1].planes.size() != 3) {
 			cerr << "mapBuffers(): Invalid number of planes" << endl;
 			return report(Op_mapBuffers, TestFail);
 		}
 
-		if (buffers[0].memory.planes()[0].length() != 4096 ||
-		    buffers[0].memory.planes()[1].length() != 0 ||
-		    buffers[0].memory.planes()[2].length() != 0 ||
-		    buffers[0].memory.planes()[0].length() != 4096 ||
-		    buffers[1].memory.planes()[1].length() != 4096 ||
-		    buffers[1].memory.planes()[2].length() != 0) {
+		if (buffers[0].planes[0].length != 4096 ||
+		    buffers[0].planes[1].length != 0 ||
+		    buffers[0].planes[2].length != 0 ||
+		    buffers[0].planes[0].length != 4096 ||
+		    buffers[1].planes[1].length != 4096 ||
+		    buffers[1].planes[2].length != 0) {
 			cerr << "mapBuffers(): Invalid length" << endl;
 			return report(Op_mapBuffers, TestFail);
 		}
 
-		if (buffers[0].memory.planes()[0].dmabuf() == -1 ||
-		    buffers[0].memory.planes()[1].dmabuf() != -1 ||
-		    buffers[0].memory.planes()[2].dmabuf() != -1 ||
-		    buffers[0].memory.planes()[0].dmabuf() == -1 ||
-		    buffers[1].memory.planes()[1].dmabuf() == -1 ||
-		    buffers[1].memory.planes()[2].dmabuf() != -1) {
+		if (buffers[0].planes[0].fd.fd() == -1 ||
+		    buffers[0].planes[1].fd.fd() != -1 ||
+		    buffers[0].planes[2].fd.fd() != -1 ||
+		    buffers[0].planes[0].fd.fd() == -1 ||
+		    buffers[1].planes[1].fd.fd() == -1 ||
+		    buffers[1].planes[2].fd.fd() != -1) {
 			cerr << "mapBuffers(): Invalid dmabuf" << endl;
 			return report(Op_mapBuffers, TestFail);
 		}
@@ -287,13 +287,16 @@ protected:
 
 		/* Test mapBuffers(). */
 		std::vector<IPABuffer> buffers(2);
-		buffers[0].memory.planes().resize(3);
+		buffers[0].planes.resize(3);
 		buffers[0].id = 10;
-		buffers[0].memory.planes()[0].setDmabuf(fd_, 4096);
+		buffers[0].planes[0].fd = FileDescriptor(fd_);
+		buffers[0].planes[0].length = 4096;
 		buffers[1].id = 11;
-		buffers[1].memory.planes().resize(3);
-		buffers[1].memory.planes()[0].setDmabuf(fd_, 4096);
-		buffers[1].memory.planes()[1].setDmabuf(fd_, 4096);
+		buffers[1].planes.resize(3);
+		buffers[1].planes[0].fd = FileDescriptor(fd_);
+		buffers[1].planes[0].length = 4096;
+		buffers[1].planes[1].fd = FileDescriptor(fd_);
+		buffers[1].planes[1].length = 4096;
 
 		ret = INVOKE(mapBuffers, buffers);
 		if (ret == TestFail)

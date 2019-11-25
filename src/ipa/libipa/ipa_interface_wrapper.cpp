@@ -144,17 +144,14 @@ void IPAInterfaceWrapper::map_buffers(struct ipa_context *_ctx,
 	for (unsigned int i = 0; i < num_buffers; ++i) {
 		const struct ipa_buffer &_buffer = _buffers[i];
 		IPABuffer &buffer = buffers[i];
-		std::vector<Plane> &planes = buffer.memory.planes();
+		std::vector<FrameBuffer::Plane> &planes = buffer.planes;
 
 		buffer.id = _buffer.id;
 
 		planes.resize(_buffer.num_planes);
 		for (unsigned int j = 0; j < _buffer.num_planes; ++j) {
-			if (_buffer.planes[j].dmabuf != -1)
-				planes[j].setDmabuf(_buffer.planes[j].dmabuf,
-						    _buffer.planes[j].length);
-			/** \todo Create a Dmabuf class to implement RAII. */
-			::close(_buffer.planes[j].dmabuf);
+			planes[j].fd = FileDescriptor(_buffer.planes[j].dmabuf);
+			planes[j].length = _buffer.planes[j].length;
 		}
 	}
 

@@ -687,14 +687,22 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 	}
 
 	for (unsigned int i = 0; i < stream->configuration().bufferCount + 1; i++) {
+		FrameBuffer::Plane plane;
+		plane.fd = FileDescriptor(paramPool_.buffers()[i].planes()[0].dmabuf());
+		plane.length = paramPool_.buffers()[i].planes()[0].length();
+
 		data->ipaBuffers_.push_back({ .id = RKISP1_PARAM_BASE | i,
-					      .memory = paramPool_.buffers()[i] });
+					      .planes = { plane } });
 		paramBuffers_.push(new Buffer(i));
 	}
 
 	for (unsigned int i = 0; i < stream->configuration().bufferCount + 1; i++) {
+		FrameBuffer::Plane plane;
+		plane.fd = FileDescriptor(statPool_.buffers()[i].planes()[0].dmabuf());
+		plane.length = statPool_.buffers()[i].planes()[0].length();
+
 		data->ipaBuffers_.push_back({ .id = RKISP1_STAT_BASE | i,
-					      .memory = statPool_.buffers()[i] });
+					      .planes = { plane } });
 		statBuffers_.push(new Buffer(i));
 	}
 

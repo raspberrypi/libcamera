@@ -105,7 +105,7 @@ struct IPAStream {
 
 struct IPABuffer {
 	unsigned int id;
-	BufferMemory memory;
+	std::vector<FrameBuffer::Plane> planes;
 };
 
 struct IPAOperationData {

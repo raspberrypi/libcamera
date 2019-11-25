@@ -10,6 +10,7 @@
 #include <queue>
 #include <stdint.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #include <linux/rkisp1-config.h>
 
@@ -48,7 +49,8 @@ private:
 	void setControls(unsigned int frame);
 	void metadataReady(unsigned int frame, unsigned int aeState);
 
-	std::map<unsigned int, BufferMemory> bufferInfo_;
+	std::map<unsigned int, FrameBuffer> buffers_;
+	std::map<unsigned int, void *> buffersMemory_;
 
 	ControlInfoMap ctrls_;
 
@@ -102,15 +104,39 @@ void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 void IPARkISP1::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
-		bufferInfo_[buffer.id] = buffer.memory;
-		bufferInfo_[buffer.id].planes()[0].mem();
+		auto elem = buffers_.emplace(buffer.id, buffer.planes);
+		const FrameBuffer &fb = elem.first->second;
+
+		/*
+		 * \todo Provide a helper to mmap() buffers (possibly exposed
+		 * to applications).
+		 */
+		buffersMemory_[buffer.id] = mmap(NULL,
+						 fb.planes()[0].length,
+						 PROT_READ | PROT_WRITE,
+						 MAP_SHARED,
+						 fb.planes()[0].fd.fd(),
+						 0);
+
+		if (buffersMemory_[buffer.id] == MAP_FAILED) {
+			int ret = -errno;
+			LOG(IPARkISP1, Fatal) << "Failed to mmap buffer: "
+					      << strerror(-ret);
+		}
 	}
 }
 
 void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 {
-	for (unsigned int id : ids)
-		bufferInfo_.erase(id);
+	for (unsigned int id : ids) {
+		const auto fb = buffers_.find(id);
+		if (fb == buffers_.end())
+			continue;
+
+		munmap(buffersMemory_[id], fb->second.planes()[0].length);
+		buffersMemory_.erase(id);
+		buffers_.erase(id);
+	}
 }
 
 void IPARkISP1::processEvent(const IPAOperationData &event)
@@ -121,7 +147,7 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 		unsigned int bufferId = event.data[1];
 
 		const rkisp1_stat_buffer *stats =
-			static_cast<rkisp1_stat_buffer *>(bufferInfo_[bufferId].planes()[0].mem());
+			static_cast<rkisp1_stat_buffer *>(buffersMemory_[bufferId]);
 
 		updateStatistics(frame, stats);
 		break;
@@ -131,7 +157,7 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 		unsigned int bufferId = event.data[1];
 
 		rkisp1_isp_params_cfg *params =
-			static_cast<rkisp1_isp_params_cfg *>(bufferInfo_[bufferId].planes()[0].mem());
+			static_cast<rkisp1_isp_params_cfg *>(buffersMemory_[bufferId]);
 
 		queueRequest(frame, params, event.controls[0]);
 		break;

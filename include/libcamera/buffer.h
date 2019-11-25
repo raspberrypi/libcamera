@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <libcamera/file_descriptor.h>
+
 namespace libcamera {
 
 class Request;
@@ -31,6 +33,42 @@ struct FrameMetadata {
 	unsigned int sequence;
 	uint64_t timestamp;
 	std::vector<Plane> planes;
+};
+
+class FrameBuffer final
+{
+public:
+	struct Plane {
+		FileDescriptor fd;
+		unsigned int length;
+	};
+
+	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
+
+	FrameBuffer(const FrameBuffer &) = delete;
+	FrameBuffer(FrameBuffer &&) = delete;
+
+	FrameBuffer &operator=(const FrameBuffer &) = delete;
+	FrameBuffer &operator=(FrameBuffer &&) = delete;
+
+	const std::vector<Plane> &planes() const { return planes_; }
+
+	Request *request() const { return request_; }
+	const FrameMetadata &metadata() const { return metadata_; };
+
+	unsigned int cookie() const { return cookie_; }
+	void setCookie(unsigned int cookie) { cookie_ = cookie; }
+
+private:
+	friend class Request; /* Needed to update request_. */
+	friend class V4L2VideoDevice; /* Needed to update metadata_. */
+
+	std::vector<Plane> planes_;
+
+	Request *request_;
+	FrameMetadata metadata_;
+
+	unsigned int cookie_;
 };
 
 class Plane final

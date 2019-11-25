@@ -362,35 +362,6 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  */
 
 /**
- * \fn PipelineHandler::allocateBuffers()
- * \brief Allocate buffers for a stream
- * \param[in] camera The camera the \a stream belongs to
- * \param[in] streams The set of streams to allocate buffers for
- *
- * This method allocates buffers internally in the pipeline handler for each
- * stream in the \a streams buffer set, and associates them with the stream's
- * buffer pool.
- *
- * The intended caller of this method is the Camera class.
- *
- * \return 0 on success or a negative error code otherwise
- */
-
-/**
- * \fn PipelineHandler::freeBuffers()
- * \brief Free all buffers associated with a stream
- * \param[in] camera The camera the \a stream belongs to
- * \param[in] streams The set of streams to free buffers from
- *
- * After a capture session has been stopped all buffers associated with each
- * stream shall be freed.
- *
- * The intended caller of this method is the Camera class.
- *
- * \return 0 on success or a negative error code otherwise
- */
-
-/**
  * \fn PipelineHandler::start()
  * \brief Start capturing from a group of streams
  * \param[in] camera The camera to start

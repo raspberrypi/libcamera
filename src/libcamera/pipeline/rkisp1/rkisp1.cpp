@@ -178,11 +178,6 @@ public:
 	int importFrameBuffers(Camera *camera, Stream *stream) override;
 	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
-	int allocateBuffers(Camera *camera,
-		const std::set<Stream *> &streams) override;
-	int freeBuffers(Camera *camera,
-		const std::set<Stream *> &streams) override;
-
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
@@ -207,6 +202,9 @@ private:
 	void bufferReady(FrameBuffer *buffer);
 	void paramReady(FrameBuffer *buffer);
 	void statReady(FrameBuffer *buffer);
+
+	int allocateBuffers(Camera *camera);
+	int freeBuffers(Camera *camera);
 
 	MediaDevice *media_;
 	V4L2Subdevice *dphy_;
@@ -675,8 +673,7 @@ void PipelineHandlerRkISP1::freeFrameBuffers(Camera *camera, Stream *stream)
 	video_->releaseBuffers();
 }
 
-int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
-					   const std::set<Stream *> &streams)
+int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	unsigned int count = 1;
@@ -720,8 +717,7 @@ error:
 	return ret;
 }
 
-int PipelineHandlerRkISP1::freeBuffers(Camera *camera,
-				       const std::set<Stream *> &streams)
+int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
 
@@ -755,10 +751,16 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;
 
+	/* Allocate buffers for internal pipeline usage. */
+	ret = allocateBuffers(camera);
+	if (ret)
+		return ret;
+
 	data->frame_ = 0;
 
 	ret = param_->streamOn();
 	if (ret) {
+		freeBuffers(camera);
 		LOG(RkISP1, Error)
 			<< "Failed to start parameters " << camera->name();
 		return ret;
@@ -767,6 +769,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	ret = stat_->streamOn();
 	if (ret) {
 		param_->streamOff();
+		freeBuffers(camera);
 		LOG(RkISP1, Error)
 			<< "Failed to start statistics " << camera->name();
 		return ret;
@@ -776,6 +779,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	if (ret) {
 		param_->streamOff();
 		stat_->streamOff();
+		freeBuffers(camera);
 
 		LOG(RkISP1, Error)
 			<< "Failed to start camera " << camera->name();
@@ -819,6 +823,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 			<< "Failed to stop parameters " << camera->name();
 
 	data->timeline_.reset();
+
+	freeBuffers(camera);
 
 	activeCamera_ = nullptr;
 }

@@ -70,11 +70,6 @@ public:
 	int importFrameBuffers(Camera *camera, Stream *stream) override;
 	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
-	int allocateBuffers(Camera *camera,
-			    const std::set<Stream *> &streams) override;
-	int freeBuffers(Camera *camera,
-			const std::set<Stream *> &streams) override;
-
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
@@ -220,18 +215,6 @@ void PipelineHandlerUVC::freeFrameBuffers(Camera *camera, Stream *stream)
 	UVCCameraData *data = cameraData(camera);
 
 	data->video_->releaseBuffers();
-}
-
-int PipelineHandlerUVC::allocateBuffers(Camera *camera,
-					const std::set<Stream *> &streams)
-{
-	return 0;
-}
-
-int PipelineHandlerUVC::freeBuffers(Camera *camera,
-				    const std::set<Stream *> &streams)
-{
-	return 0;
 }
 
 int PipelineHandlerUVC::start(Camera *camera)

@@ -211,11 +211,6 @@ public:
 	int importFrameBuffers(Camera *camera, Stream *stream) override;
 	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
-	int allocateBuffers(Camera *camera,
-			    const std::set<Stream *> &streams) override;
-	int freeBuffers(Camera *camera,
-			const std::set<Stream *> &streams) override;
-
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
@@ -231,6 +226,9 @@ private:
 	}
 
 	int registerCameras();
+
+	int allocateBuffers(Camera *camera);
+	int freeBuffers(Camera *camera);
 
 	ImgUDevice imgu0_;
 	ImgUDevice imgu1_;
@@ -652,8 +650,7 @@ void PipelineHandlerIPU3::freeFrameBuffers(Camera *camera, Stream *stream)
  * In order to be able to start the 'viewfinder' and 'stat' nodes, we need
  * memory to be reserved.
  */
-int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
-					 const std::set<Stream *> &streams)
+int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3Stream *outStream = &data->outStream_;
@@ -716,13 +713,12 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	return 0;
 
 error:
-	freeBuffers(camera, streams);
+	freeBuffers(camera);
 
 	return ret;
 }
 
-int PipelineHandlerIPU3::freeBuffers(Camera *camera,
-				     const std::set<Stream *> &streams)
+int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 
@@ -738,6 +734,11 @@ int PipelineHandlerIPU3::start(Camera *camera)
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	int ret;
+
+	/* Allocate buffers for internal pipeline usage. */
+	ret = allocateBuffers(camera);
+	if (ret)
+		return ret;
 
 	/*
 	 * Start the ImgU video devices, buffers will be queued to the
@@ -757,6 +758,7 @@ int PipelineHandlerIPU3::start(Camera *camera)
 	return 0;
 
 error:
+	freeBuffers(camera);
 	LOG(IPU3, Error) << "Failed to start camera " << camera->name();
 
 	return ret;
@@ -772,6 +774,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera "
 				   << camera->name();
+
+	freeBuffers(camera);
 }
 
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)

@@ -75,11 +75,6 @@ public:
 	virtual int importFrameBuffers(Camera *camera, Stream *stream) = 0;
 	virtual void freeFrameBuffers(Camera *camera, Stream *stream) = 0;
 
-	virtual int allocateBuffers(Camera *camera,
-				    const std::set<Stream *> &streams) = 0;
-	virtual int freeBuffers(Camera *camera,
-				const std::set<Stream *> &streams) = 0;
-
 	virtual int start(Camera *camera) = 0;
 	virtual void stop(Camera *camera) = 0;
 

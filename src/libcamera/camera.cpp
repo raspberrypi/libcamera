@@ -726,12 +726,6 @@ int Camera::allocateBuffers()
 		return -EINVAL;
 	}
 
-	int ret = pipe_->allocateBuffers(this, activeStreams_);
-	if (ret) {
-		LOG(Camera, Error) << "Failed to allocate buffers";
-		return ret;
-	}
-
 	state_ = CameraPrepared;
 
 	return 0;
@@ -752,7 +746,7 @@ int Camera::freeBuffers()
 
 	state_ = CameraConfigured;
 
-	return pipe_->freeBuffers(this, activeStreams_);
+	return 0;
 }
 
 /**

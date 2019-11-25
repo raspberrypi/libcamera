@@ -87,11 +87,6 @@ public:
 	int importFrameBuffers(Camera *camera, Stream *stream) override;
 	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
-	int allocateBuffers(Camera *camera,
-			    const std::set<Stream *> &streams) override;
-	int freeBuffers(Camera *camera,
-			const std::set<Stream *> &streams) override;
-
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
 
@@ -286,18 +281,6 @@ void PipelineHandlerVimc::freeFrameBuffers(Camera *camera, Stream *stream)
 	VimcCameraData *data = cameraData(camera);
 
 	data->video_->releaseBuffers();
-}
-
-int PipelineHandlerVimc::allocateBuffers(Camera *camera,
-					 const std::set<Stream *> &streams)
-{
-	return 0;
-}
-
-int PipelineHandlerVimc::freeBuffers(Camera *camera,
-				     const std::set<Stream *> &streams)
-{
-	return 0;
 }
 
 int PipelineHandlerVimc::start(Camera *camera)

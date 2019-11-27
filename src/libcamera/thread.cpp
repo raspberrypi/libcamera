@@ -439,11 +439,11 @@ void Thread::dispatchMessages()
 		Object *receiver = msg->receiver_;
 		ASSERT(data_ == receiver->thread()->data_);
 
+		receiver->pendingMessages_--;
+
 		locker.unlock();
 		receiver->message(msg.get());
 		locker.lock();
-
-		receiver->pendingMessages_--;
 	}
 }
 

@@ -40,6 +40,10 @@ LOG_DEFINE_CATEGORY(Object)
  * implementing easy message passing between threads by inheriting from the
  * Object class.
  *
+ * Deleting an object from a thread other than the one the object is bound to is
+ * unsafe, unless the caller ensures that the object isn't processing any
+ * message concurrently.
+ *
  * Object slots connected to signals will also run in the context of the
  * object's thread, regardless of whether the signal is emitted in the same or
  * in another thread.

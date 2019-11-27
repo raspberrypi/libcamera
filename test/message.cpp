@@ -52,6 +52,25 @@ private:
 	Status status_;
 };
 
+class SlowMessageReceiver : public Object
+{
+protected:
+	void message(Message *msg)
+	{
+		if (msg->type() != Message::None) {
+			Object::message(msg);
+			return;
+		}
+
+		/*
+		 * Don't access any member of the object here (including the
+		 * vtable) as the object will be deleted by the main thread
+		 * while we're sleeping.
+		 */
+		this_thread::sleep_for(chrono::milliseconds(100));
+	}
+};
+
 class MessageTest : public Test
 {
 protected:
@@ -87,6 +106,19 @@ protected:
 		default:
 			break;
 		}
+
+		/*
+		 * Test for races between message delivery and object deletion.
+		 * Failures result in assertion errors, there is no need for
+		 * explicit checks.
+		 */
+		SlowMessageReceiver *slowReceiver = new SlowMessageReceiver();
+		slowReceiver->moveToThread(&thread_);
+		slowReceiver->postMessage(utils::make_unique<Message>(Message::None));
+
+		this_thread::sleep_for(chrono::milliseconds(10));
+
+		delete slowReceiver;
 
 		return TestPass;
 	}

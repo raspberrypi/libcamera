@@ -60,23 +60,22 @@ protected:
 	int run()
 	{
 		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
-		InvokedObject object;
 
 		/*
 		 * Test that queued method invocation in the same thread goes
 		 * through the event dispatcher.
 		 */
-		object.invokeMethod(&InvokedObject::method,
-				    ConnectionTypeQueued, 42);
+		object_.invokeMethod(&InvokedObject::method,
+				     ConnectionTypeQueued, 42);
 
-		if (object.status() != InvokedObject::NoCall) {
+		if (object_.status() != InvokedObject::NoCall) {
 			cerr << "Method not invoked asynchronously" << endl;
 			return TestFail;
 		}
 
 		dispatcher->processEvents();
 
-		switch (object.status()) {
+		switch (object_.status()) {
 		case InvokedObject::NoCall:
 			cout << "Method not invoked for main thread" << endl;
 			return TestFail;
@@ -87,7 +86,7 @@ protected:
 			break;
 		}
 
-		if (object.value() != 42) {
+		if (object_.value() != 42) {
 			cout << "Method invoked with incorrect value for main thread" << endl;
 			return TestFail;
 		}
@@ -96,15 +95,15 @@ protected:
 		 * Move the object to a thread and verify that auto method
 		 * invocation is delivered in the correct thread.
 		 */
-		object.reset();
-		object.moveToThread(&thread_);
+		object_.reset();
+		object_.moveToThread(&thread_);
 
 		thread_.start();
 
-		object.invokeMethod(&InvokedObject::method,
-				    ConnectionTypeBlocking, 42);
+		object_.invokeMethod(&InvokedObject::method,
+				     ConnectionTypeBlocking, 42);
 
-		switch (object.status()) {
+		switch (object_.status()) {
 		case InvokedObject::NoCall:
 			cout << "Method not invoked for custom thread" << endl;
 			return TestFail;
@@ -115,7 +114,7 @@ protected:
 			break;
 		}
 
-		if (object.value() != 42) {
+		if (object_.value() != 42) {
 			cout << "Method invoked with incorrect value for custom thread" << endl;
 			return TestFail;
 		}
@@ -131,6 +130,7 @@ protected:
 
 private:
 	Thread thread_;
+	InvokedObject object_;
 };
 
 TEST_REGISTER(ObjectInvokeTest)

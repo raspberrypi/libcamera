@@ -37,6 +37,11 @@ public:
 protected:
 	void message(Message *msg)
 	{
+		if (msg->type() != Message::None) {
+			Object::message(msg);
+			return;
+		}
+
 		if (thread() != Thread::current())
 			status_ = InvalidThread;
 		else

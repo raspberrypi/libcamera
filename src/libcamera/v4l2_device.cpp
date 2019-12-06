@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #include "log.h"
@@ -75,7 +76,7 @@ int V4L2Device::open(unsigned int flags)
 		return -EBUSY;
 	}
 
-	int ret = ::open(deviceNode_.c_str(), flags);
+	int ret = syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(), flags);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(V4L2, Error) << "Failed to open V4L2 device: "

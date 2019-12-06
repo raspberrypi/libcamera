@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <vector>
@@ -1426,7 +1427,8 @@ int V4L2M2MDevice::open()
 	 * as the V4L2VideoDevice::open() retains a handle by duplicating the
 	 * fd passed in.
 	 */
-	fd = ::open(deviceNode_.c_str(), O_RDWR | O_NONBLOCK);
+	fd = syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
+		     O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
 		ret = -errno;
 		LOG(V4L2, Error)

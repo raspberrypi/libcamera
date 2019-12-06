@@ -10,3 +10,8 @@ option('documentation',
 option('test',
         type : 'boolean',
         description: 'Compile and include the tests')
+
+option('v4l2',
+        type : 'boolean',
+        value : false,
+        description : 'Compile the V4L2 compatibility layer')

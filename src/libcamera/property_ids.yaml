@@ -386,4 +386,258 @@ controls:
                               |                    |
                               |                    |
                               +--------------------+
+
+  - UnitCellSize:
+      type: Size
+      description: |
+        The pixel unit cell physical size, in nanometers.
+
+        The UnitCellSize properties defines the horizontal and vertical sizes of
+        a single pixel unit, including its active and non-active parts. In
+        other words, it expresses the horizontal and vertical distance between
+        the top-left corners of adjacent pixels.
+
+        The property can be used to calculate the physical size of the sensor's
+        pixel array area and for calibration purposes.
+
+  - PixelArraySize:
+      type: Size
+      description: |
+        The camera sensor pixel array readable area vertical and horizontal
+        sizes, in pixels.
+
+        The PixelArraySize property defines the size in pixel units of the
+        readable part of full pixel array matrix, including optical black
+        pixels used for calibration, pixels which are not considered valid for
+        capture and active pixels containing valid image data.
+
+        The property describes the maximum size of the raw data captured by the
+        camera, which might not correspond to the physical size of the sensor
+        pixel array matrix, as some portions of the physical pixel array matrix
+        are not accessible and cannot be transmitted out.
+
+        For example, let's consider a pixel array matrix assembled as follows
+
+             +--------------------------------------------------+
+             |xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx|
+             |xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             ...          ...           ...      ...          ...
+
+             ...          ...           ...      ...          ...
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDxx|
+             |xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx|
+             |xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx|
+             +--------------------------------------------------+
+
+        starting with two lines of non-readable pixels (x), followed by N lines
+        of readable data (D) surrounded by two columns of non-readable pixels on
+        each side, and ending with two more lines of non-readable pixels. Only
+        the readable portion is transmitted to the receiving side, defining the
+        sizes of the largest possible buffer of raw data that can be presented
+        to applications.
+
+                             PixelArraySize.width
+               /----------------------------------------------/
+               +----------------------------------------------+ /
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| | PixelArraySize.height
+               ...        ...           ...      ...        ...
+               ...        ...           ...      ...        ...
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               |DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD| |
+               +----------------------------------------------+ /
+
+        This defines a rectangle whose top-left corner is placed in position (0,
+        0) and whose vertical and horizontal sizes are defined by this property.
+        All other rectangles that describe portions of the pixel array, such as
+        the optical black pixels rectangles and active pixel areas, are defined
+        relatively to this rectangle.
+
+        All the coordinates are expressed relative to the default sensor readout
+        direction, without any transformation (such as horizontal and vertical
+        flipping) applied. When mapping them to the raw pixel buffer,
+        applications shall take any configured transformation into account.
+
+        \todo Rename this property to Size once we will have property
+              categories (i.e. Properties::PixelArray::Size)
+
+  - PixelArrayOpticalBlackRectangles:
+      type: Rectangle
+      size: [n]
+      description: |
+        The pixel array region(s) which contain optical black pixels
+        considered valid for calibration purposes.
+
+        This property describes the position and size of optical black pixel
+        regions in the raw data buffer as stored in memory, which might differ
+        from their actual physical location in the pixel array matrix.
+
+        It is important to note, in fact, that camera sensors might
+        automatically reorder or skip portions of their pixels array matrix when
+        transmitting data to the receiver. For instance, a sensor may merge the
+        top and bottom optical black rectangles into a single rectangle,
+        transmitted at the beginning of the frame.
+
+        The pixel array contains several areas with different purposes,
+        interleaved by lines and columns which are said not to be valid for
+        capturing purposes. Invalid lines and columns are defined as invalid as
+        they could be positioned too close to the chip margins or to the optical
+        black shielding placed on top of optical black pixels.
+
+                             PixelArraySize.width
+               /----------------------------------------------/
+                  x1                                       x2
+               +--o---------------------------------------o---+ /
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+            y1 oIIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII| |
+               |IIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII| |
+               |IIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII| |
+            y2 oIIOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOII| |
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+            y3 |IIOOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOOII| |
+               |IIOOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOOII| | PixelArraySize.height
+               |IIOOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOOII| |
+               ...          ...           ...     ...       ...
+               ...          ...           ...     ...       ...
+            y4 |IIOOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOOII| |
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+               |IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII| |
+               +----------------------------------------------+ /
+
+        The readable pixel array matrix is composed by
+        2 invalid lines (I)
+        4 lines of valid optical black pixels (O)
+        2 invalid lines (I)
+        n lines of valid pixel data (P)
+        2 invalid lines (I)
+
+        And the position of the optical black pixel rectangles is defined by
+
+            PixelArrayOpticalBlackRectangles = {
+               { x1, y1, x2 - x1 + 1, y2 - y1 + 1 },
+               { x1, y3, 2, y4 - y3 + 1 },
+               { x2, y3, 2, y4 - y3 + 1 },
+            };
+
+        If the camera, when capturing the full pixel array matrix, automatically
+        skips the invalid lines and columns, producing the following data
+        buffer, when captured to memory
+
+                             PixelArraySize.width
+               /----------------------------------------------/
+                                                           x1
+               +--------------------------------------------o-+ /
+               |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO| |
+               |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO| |
+               |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO| |
+               |OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO| |
+            y1 oOOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOO| |
+               |OOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOO| |
+               |OOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOO| | PixelArraySize.height
+               ...       ...          ...       ...         ... |
+               ...       ...          ...       ...         ... |
+               |OOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOO| |
+               |OOPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPOO| |
+               +----------------------------------------------+ /
+
+        then the invalid lines and columns should not be reported as part of the
+        PixelArraySize property in first place.
+
+        In this case, the position of the black pixel rectangles will be
+
+            PixelArrayOpticalBlackRectangles = {
+               { 0, 0, y1 + 1, PixelArraySize[0] },
+               { 0, y1, 2, PixelArraySize[1] - y1 + 1 },
+               { x1, y1, 2, PixelArraySize[1] - y1 + 1 },
+            };
+
+        \todo Rename this property to Size once we will have property
+              categories (i.e. Properties::PixelArray::OpticalBlackRectangles)
+
+  - PixelArrayActiveAreas:
+      type: Rectangle
+      size: [n]
+      description: |
+        The PixelArrayActiveAreas property defines the (possibly multiple and
+        overlapping) portions of the camera sensor readable pixel matrix
+        which are considered valid for image acquisition purposes.
+
+        This property describes an arbitrary number of overlapping rectangles,
+        with each rectangle representing the maximum image size that the camera
+        sensor can produce for a particular aspect ratio. They are defined
+        relatively to the PixelArraySize rectangle.
+
+        When multiple rectangles are reported, they shall be ordered from the
+        tallest to the shortest.
+
+        Example 1
+        A camera sensor which only produces images in the 4:3 image resolution
+        will report a single PixelArrayActiveAreas rectangle, from which all
+        other image formats are obtained by either cropping the field-of-view
+        and/or applying pixel sub-sampling techniques such as pixel skipping or
+        binning.
+
+                   PixelArraySize.width
+                    /----------------/
+                      x1          x2
+            (0,0)-> +-o------------o-+  /
+                 y1 o +------------+ |  |
+                    | |////////////| |  |
+                    | |////////////| |  | PixelArraySize.height
+                    | |////////////| |  |
+                 y2 o +------------+ |  |
+                    +----------------+  /
+
+        The property reports a single rectangle
+
+                 PixelArrayActiveAreas = (x1, y1, x2 - x1 + 1, y2 - y1 + 1)
+
+        Example 2
+        A camera sensor which can produce images in different native
+        resolutions will report several overlapping rectangles, one for each
+        natively supported resolution.
+
+                     PixelArraySize.width
+                    /------------------/
+                      x1  x2    x3  x4
+            (0,0)-> +o---o------o---o+  /
+                 y1 o    +------+    |  |
+                    |    |//////|    |  |
+                 y2 o+---+------+---+|  |
+                    ||///|//////|///||  | PixelArraySize.height
+                 y3 o+---+------+---+|  |
+                    |    |//////|    |  |
+                 y4 o    +------+    |  |
+                    +----+------+----+  /
+
+        The property reports two rectangles
+
+                PixelArrayActiveAreas = ((x2, y1, x3 - x2 + 1, y4 - y1 + 1),
+                                         (x1, y2, x4 - x1 + 1, y3 - y2 + 1))
+
+        The first rectangle describes the maximum field-of-view of all image
+        formats in the 4:3 resolutions, while the second one describes the
+        maximum field of view for all image formats in the 16:9 resolutions.
+
+        Multiple rectangles shall only be reported when the sensor can't capture
+        the pixels in the corner regions. If all the pixels in the (x1,y1) -
+        (x4,y4) area can be captured, the PixelArrayActiveAreas property shall
+        contains the single rectangle (x1,y1) - (x4,y4).
+
+        \todo Rename this property to ActiveAreas once we will have property
+              categories (i.e. Properties::PixelArray::ActiveAreas)
+
 ...

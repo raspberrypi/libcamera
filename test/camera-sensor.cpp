@@ -52,8 +52,8 @@ protected:
 			return TestFail;
 		}
 
-		sensor_ = new CameraSensor(entity);
-		if (sensor_->init() < 0) {
+		sensor_ = CameraSensorFactoryBase::create(entity);
+		if (!sensor_) {
 			cerr << "Unable to initialise camera sensor" << endl;
 			return TestFail;
 		}
@@ -118,13 +118,12 @@ protected:
 
 	void cleanup()
 	{
-		delete sensor_;
 	}
 
 private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
-	CameraSensor *sensor_;
+	std::unique_ptr<CameraSensor> sensor_;
 	CameraLens *lens_;
 };
 

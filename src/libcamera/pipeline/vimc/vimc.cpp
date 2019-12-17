@@ -510,10 +510,9 @@ int VimcCameraData::init()
 		return ret;
 
 	/* Create and open the camera sensor, debayer, scaler and video device. */
-	sensor_ = std::make_unique<CameraSensor>(media_->getEntityByName("Sensor B"));
-	ret = sensor_->init();
-	if (ret)
-		return ret;
+	sensor_ = CameraSensorFactoryBase::create(media_->getEntityByName("Sensor B"));
+	if (!sensor_)
+		return -ENODEV;
 
 	debayer_ = V4L2Subdevice::fromEntityName(media_, "Debayer B");
 	if (debayer_->open())

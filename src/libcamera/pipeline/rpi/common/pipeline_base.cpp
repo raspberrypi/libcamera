@@ -772,11 +772,8 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	CameraData *data = cameraData.get();
 	int ret;
 
-	data->sensor_ = std::make_unique<CameraSensor>(sensorEntity);
+	data->sensor_ = CameraSensorFactoryBase::create(sensorEntity);
 	if (!data->sensor_)
-		return -EINVAL;
-
-	if (data->sensor_->init())
 		return -EINVAL;
 
 	/* Populate the map of sensor supported formats and sizes. */

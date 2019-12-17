@@ -36,7 +36,7 @@ protected:
 	std::string entity_;
 	std::unique_ptr<libcamera::DeviceEnumerator> enumerator_;
 	std::shared_ptr<libcamera::MediaDevice> media_;
-	libcamera::CameraSensor *sensor_;
+	std::unique_ptr<libcamera::CameraSensor> sensor_;
 	libcamera::V4L2Subdevice *debayer_;
 	libcamera::V4L2VideoDevice *capture_;
 	std::vector<std::unique_ptr<libcamera::FrameBuffer>> buffers_;

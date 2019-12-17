@@ -12,6 +12,7 @@
 #include <float.h>
 #include <iomanip>
 #include <limits.h>
+#include <map>
 #include <math.h>
 #include <string.h>
 
@@ -1203,5 +1204,166 @@ std::string CameraSensor::logPrefix() const
 {
 	return "'" + entity_->name() + "'";
 }
+
+namespace {
+
+/* Transitory default camera sensor implementation */
+class CameraSensorDefault : public CameraSensor
+{
+public:
+	CameraSensorDefault(MediaEntity *entity)
+		: CameraSensor(entity)
+	{
+	}
+
+	static bool match([[maybe_unused]] const MediaEntity *entity)
+	{
+		return true;
+	}
+
+	static std::unique_ptr<CameraSensorDefault> create(MediaEntity *entity)
+	{
+		std::unique_ptr<CameraSensorDefault> sensor =
+			std::make_unique<CameraSensorDefault>(entity);
+
+		if (sensor->init())
+			return nullptr;
+
+		return sensor;
+	}
+};
+
+REGISTER_CAMERA_SENSOR(CameraSensorDefault)
+
+}; /* namespace */
+
+/**
+ * \class CameraSensorFactoryBase
+ * \brief Base class for camera sensor factories
+ *
+ * The CameraSensorFactoryBase class is the base of all specializations of
+ * the CameraSensorFactory class template. It implements the factory
+ * registration, maintains a registry of factories, and provides access to the
+ * registered factories.
+ */
+
+/**
+ * \brief Construct a camera sensor factory base
+ *
+ * Creating an instance of the factory base registers it with the global list of
+ * factories, accessible through the factories() function.
+ */
+CameraSensorFactoryBase::CameraSensorFactoryBase()
+{
+	registerFactory(this);
+}
+
+/**
+ * \brief Create an instance of the CameraSensor corresponding to a media entity
+ * \param[in] entity The media entity on the source end of the sensor
+ *
+ * \return A unique pointer to a new instance of the CameraSensor subclass
+ * matching the entity, or a null pointer if no such factory exists
+ */
+std::unique_ptr<CameraSensor> CameraSensorFactoryBase::create(MediaEntity *entity)
+{
+	const std::vector<CameraSensorFactoryBase *> &factories =
+		CameraSensorFactoryBase::factories();
+
+	for (const CameraSensorFactoryBase *factory : factories) {
+		if (!factory->match(entity))
+			continue;
+
+		std::unique_ptr<CameraSensor> sensor = factory->createInstance(entity);
+		if (!sensor) {
+			LOG(CameraSensor, Error)
+				<< "Failed to create sensor for '"
+				<< entity->name();
+			return nullptr;
+		}
+
+		return sensor;
+	}
+
+	return nullptr;
+}
+
+/**
+ * \brief Retrieve the list of all camera sensor factories
+ * \return The list of camera sensor factories
+ */
+std::vector<CameraSensorFactoryBase *> &CameraSensorFactoryBase::factories()
+{
+	/*
+	 * The static factories map is defined inside the function to ensure
+	 * it gets initialized on first use, without any dependency on link
+	 * order.
+	 */
+	static std::vector<CameraSensorFactoryBase *> factories;
+	return factories;
+}
+
+/**
+ * \brief Add a camera sensor class to the registry
+ * \param[in] factory Factory to use to construct the camera sensor
+ */
+void CameraSensorFactoryBase::registerFactory(CameraSensorFactoryBase *factory)
+{
+	std::vector<CameraSensorFactoryBase *> &factories =
+		CameraSensorFactoryBase::factories();
+
+	factories.push_back(factory);
+}
+
+/**
+ * \class CameraSensorFactory
+ * \brief Registration of CameraSensorFactory classes and creation of instances
+ * \tparam _CameraSensor The camera sensor class type for this factory
+ *
+ * To facilitate discovery and instantiation of CameraSensor classes, the
+ * CameraSensorFactory class implements auto-registration of camera sensors.
+ * Each CameraSensor subclass shall register itself using the
+ * REGISTER_CAMERA_SENSOR() macro, which will create a corresponding instance
+ * of a CameraSensorFactory subclass and register it with the static list of
+ * factories.
+ */
+
+/**
+ * \fn CameraSensorFactory::CameraSensorFactory()
+ * \brief Construct a camera sensor factory
+ *
+ * Creating an instance of the factory registers it with the global list of
+ * factories, accessible through the CameraSensorFactoryBase::factories()
+ * function.
+ */
+
+/**
+ * \fn CameraSensorFactory::createInstance() const
+ * \brief Create an instance of the CameraSensor corresponding to the factory
+ *
+ * \return A unique pointer to a newly constructed instance of the CameraSensor
+ * subclass corresponding to the factory
+ */
+
+/**
+ * \def REGISTER_CAMERA_SENSOR(sensor)
+ * \brief Register a camera sensor type to the sensor factory
+ * \param[in] sensor Class name of the CameraSensor derived class to register
+ *
+ * Register a CameraSensor subclass with the factory and make it available to
+ * try and match sensors. The subclass needs to implement two static functions:
+ *
+ * \code{.cpp}
+ * static bool match(const MediaEntity *entity);
+ * static std::unique_ptr<sensor> create(MediaEntity *entity);
+ * \endcode
+ *
+ * The match() function tests if the sensor class supports the camera sensor
+ * identified by a MediaEntity.
+ *
+ * The create() function creates a new instance of the sensor class. It may
+ * return a null pointer if initialization of the instance fails. It will only
+ * be called if the match() function has returned true for the given entity.
+ */
 
 } /* namespace libcamera */

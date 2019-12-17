@@ -1109,10 +1109,9 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 		std::make_unique<RkISP1CameraData>(this, &mainPath_,
 						   hasSelfPath_ ? &selfPath_ : nullptr);
 
-	data->sensor_ = std::make_unique<CameraSensor>(sensor);
-	ret = data->sensor_->init();
-	if (ret)
-		return ret;
+	data->sensor_ = CameraSensorFactoryBase::create(sensor);
+	if (!data->sensor_)
+		return -ENODEV;
 
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();

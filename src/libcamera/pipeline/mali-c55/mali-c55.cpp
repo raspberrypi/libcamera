@@ -141,9 +141,8 @@ int MaliC55CameraData::init()
 	 * Register a CameraSensor if we connect to a sensor and create
 	 * an entity for the connected CSI-2 receiver.
 	 */
-	sensor_ = std::make_unique<CameraSensor>(entity_);
-	ret = sensor_->init();
-	if (ret)
+	sensor_ = CameraSensorFactoryBase::create(entity_);
+	if (!sensor_)
 		return ret;
 
 	const MediaPad *sourcePad = entity_->getPadByIndex(0);

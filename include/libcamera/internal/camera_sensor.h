@@ -38,7 +38,6 @@ enum class Orientation;
 class CameraSensor : protected Loggable
 {
 public:
-	explicit CameraSensor(const MediaEntity *entity);
 	~CameraSensor();
 
 	int init();
@@ -81,6 +80,7 @@ public:
 	int setTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 protected:
+	explicit CameraSensor(const MediaEntity *entity);
 	std::string logPrefix() const override;
 
 private:
@@ -121,5 +121,51 @@ private:
 
 	std::unique_ptr<CameraLens> focusLens_;
 };
+
+class CameraSensorFactoryBase
+{
+public:
+	CameraSensorFactoryBase();
+	virtual ~CameraSensorFactoryBase() = default;
+
+	static std::unique_ptr<CameraSensor> create(MediaEntity *entity);
+
+private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorFactoryBase)
+
+	static std::vector<CameraSensorFactoryBase *> &factories();
+
+	static void registerFactory(CameraSensorFactoryBase *factory);
+
+	virtual bool match(const MediaEntity *entity) const = 0;
+
+	virtual std::unique_ptr<CameraSensor>
+	createInstance(MediaEntity *entity) const = 0;
+};
+
+template<typename _CameraSensor>
+class CameraSensorFactory final : public CameraSensorFactoryBase
+{
+public:
+	CameraSensorFactory()
+		: CameraSensorFactoryBase()
+	{
+	}
+
+private:
+	bool match(const MediaEntity *entity) const override
+	{
+		return _CameraSensor::match(entity);
+	}
+
+	std::unique_ptr<CameraSensor>
+	createInstance(MediaEntity *entity) const override
+	{
+		return _CameraSensor::create(entity);
+	}
+};
+
+#define REGISTER_CAMERA_SENSOR(sensor) \
+static CameraSensorFactory<sensor> global_##sensor##Factory{};
 
 } /* namespace libcamera */

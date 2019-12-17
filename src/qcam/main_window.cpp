@@ -201,6 +201,13 @@ int MainWindow::startCapture()
 		}
 
 		requests.push_back(request);
+
+		/* Map memory buffers and cache the mappings. */
+		const FrameBuffer::Plane &plane = buffer->planes().front();
+		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+				    plane.fd.fd(), 0);
+		mappedBuffers_[plane.fd.fd()] =
+			std::make_pair(memory, plane.length);
 	}
 
 	titleTimer_.start(2000);
@@ -230,6 +237,13 @@ error:
 	for (Request *request : requests)
 		delete request;
 
+	for (auto &iter : mappedBuffers_) {
+		void *memory = iter.second.first;
+		unsigned int length = iter.second.second;
+		munmap(memory, length);
+	}
+	mappedBuffers_.clear();
+
 	camera_->freeBuffers();
 	return ret;
 }
@@ -242,6 +256,13 @@ void MainWindow::stopCapture()
 	int ret = camera_->stop();
 	if (ret)
 		std::cout << "Failed to stop capture" << std::endl;
+
+	for (auto &iter : mappedBuffers_) {
+		void *memory = iter.second.first;
+		unsigned int length = iter.second.second;
+		munmap(memory, length);
+	}
+	mappedBuffers_.clear();
 
 	camera_->freeBuffers();
 	isCapturing_ = false;
@@ -297,15 +318,10 @@ int MainWindow::display(FrameBuffer *buffer)
 	if (buffer->planes().size() != 1)
 		return -EINVAL;
 
-	/* \todo Once the FrameBuffer is done cache mapped memory. */
 	const FrameBuffer::Plane &plane = buffer->planes().front();
-	void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
-			    plane.fd.fd(), 0);
-
+	void *memory = mappedBuffers_[plane.fd.fd()].first;
 	unsigned char *raw = static_cast<unsigned char *>(memory);
 	viewfinder_->display(raw, buffer->metadata().planes[0].bytesused);
-
-	munmap(memory, plane.length);
 
 	return 0;
 }

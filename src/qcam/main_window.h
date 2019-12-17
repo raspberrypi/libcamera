@@ -71,6 +71,7 @@ private:
 	uint32_t framesCaptured_;
 
 	ViewFinder *viewfinder_;
+	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
 };
 
 #endif /* __QCAM_MAIN_WINDOW__ */

@@ -641,7 +641,6 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	StreamConfiguration *streamConfiguration = &config_->at(0);
 	streamConfiguration->size.width = camera3Stream->width;
 	streamConfiguration->size.height = camera3Stream->height;
-	streamConfiguration->memoryType = ExternalMemory;
 
 	/*
 	 * \todo We'll need to translate from Android defined pixel format codes

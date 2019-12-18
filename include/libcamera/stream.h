@@ -36,11 +36,6 @@ private:
 	std::map<PixelFormat, std::vector<SizeRange>> formats_;
 };
 
-enum MemoryType {
-	InternalMemory,
-	ExternalMemory,
-};
-
 struct StreamConfiguration {
 	StreamConfiguration();
 	StreamConfiguration(const StreamFormats &formats);
@@ -48,7 +43,6 @@ struct StreamConfiguration {
 	PixelFormat pixelFormat;
 	Size size;
 
-	MemoryType memoryType;
 	unsigned int bufferCount;
 
 	Stream *stream() const { return stream_; }
@@ -75,29 +69,12 @@ class Stream
 public:
 	Stream();
 
-	std::unique_ptr<Buffer> createBuffer(unsigned int index);
-	std::unique_ptr<Buffer> createBuffer(const std::array<int, 3> &fds);
-
-	BufferPool &bufferPool() { return bufferPool_; }
-	std::vector<BufferMemory> &buffers() { return bufferPool_.buffers(); }
 	const StreamConfiguration &configuration() const { return configuration_; }
-	MemoryType memoryType() const { return memoryType_; }
 
 protected:
 	friend class Camera;
 
-	int mapBuffer(const Buffer *buffer);
-	void unmapBuffer(const Buffer *buffer);
-
-	void createBuffers(MemoryType memory, unsigned int count);
-	void destroyBuffers();
-
-	BufferPool bufferPool_;
 	StreamConfiguration configuration_;
-	MemoryType memoryType_;
-
-private:
-	std::vector<std::pair<std::array<int, 3>, unsigned int>> bufferCache_;
 };
 
 } /* namespace libcamera */

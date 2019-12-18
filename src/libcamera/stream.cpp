@@ -267,17 +267,6 @@ SizeRange StreamFormats::range(PixelFormat pixelformat) const
 }
 
 /**
- * \enum MemoryType
- * \brief Define the memory type used by a Stream
- * \var MemoryType::InternalMemory
- * The Stream uses memory allocated internally by the library and exported to
- * applications.
- * \var MemoryType::ExternalMemory
- * The Stream uses memory allocated externally by application and imported in
- * the library.
- */
-
-/**
  * \struct StreamConfiguration
  * \brief Configuration parameters for a stream
  *
@@ -290,7 +279,7 @@ SizeRange StreamFormats::range(PixelFormat pixelformat) const
  * handlers provied StreamFormats.
  */
 StreamConfiguration::StreamConfiguration()
-	: pixelFormat(0), memoryType(InternalMemory), stream_(nullptr)
+	: pixelFormat(0), stream_(nullptr)
 {
 }
 
@@ -298,8 +287,7 @@ StreamConfiguration::StreamConfiguration()
  * \brief Construct a configuration with stream formats
  */
 StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
-	: pixelFormat(0), memoryType(InternalMemory), stream_(nullptr),
-	  formats_(formats)
+	: pixelFormat(0), stream_(nullptr), formats_(formats)
 {
 }
 
@@ -311,11 +299,6 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
 /**
  * \var StreamConfiguration::pixelFormat
  * \brief Stream pixel format
- */
-
-/**
- * \var StreamConfiguration::memoryType
- * \brief The memory type the stream shall use
  */
 
 /**
@@ -421,233 +404,9 @@ Stream::Stream()
 }
 
 /**
- * \brief Create a Buffer instance referencing the memory buffer \a index
- * \param[in] index The desired buffer index
- *
- * This method creates a Buffer instance that references a BufferMemory from
- * the stream's buffers pool by its \a index. The index shall be lower than the
- * number of buffers in the pool.
- *
- * This method is only valid for streams that use the InternalMemory type. It
- * will return a null pointer when called on streams using the ExternalMemory
- * type.
- *
- * \return A newly created Buffer on success or nullptr otherwise
- */
-std::unique_ptr<Buffer> Stream::createBuffer(unsigned int index)
-{
-	if (memoryType_ != InternalMemory) {
-		LOG(Stream, Error) << "Invalid stream memory type";
-		return nullptr;
-	}
-
-	if (index >= bufferPool_.count()) {
-		LOG(Stream, Error) << "Invalid buffer index " << index;
-		return nullptr;
-	}
-
-	Buffer *buffer = new Buffer();
-	buffer->index_ = index;
-	buffer->stream_ = this;
-
-	return std::unique_ptr<Buffer>(buffer);
-}
-
-/**
- * \brief Create a Buffer instance that represents a memory area identified by
- * dmabuf file descriptors
- * \param[in] fds The dmabuf file descriptors for each plane
- *
- * This method creates a Buffer instance that references buffer memory
- * allocated outside of libcamera through dmabuf file descriptors. The \a
- * dmabuf array shall contain a file descriptor for each plane in the buffer,
- * and unused entries shall be set to -1.
- *
- * The buffer is created without a valid index, as it does not yet map to any of
- * the stream's BufferMemory instances. An index will be assigned at the time
- * the buffer is queued to the camera in a request. Applications may thus
- * create any number of Buffer instances, providing that no more than the
- * number of buffers allocated for the stream are queued at any given time.
- *
- * This method is only valid for streams that use the ExternalMemory type. It
- * will return a null pointer when called on streams using the InternalMemory
- * type.
- *
- * \sa Stream::mapBuffer()
- *
- * \return A newly created Buffer on success or nullptr otherwise
- */
-std::unique_ptr<Buffer> Stream::createBuffer(const std::array<int, 3> &fds)
-{
-	if (memoryType_ != ExternalMemory) {
-		LOG(Stream, Error) << "Invalid stream memory type";
-		return nullptr;
-	}
-
-	Buffer *buffer = new Buffer();
-	buffer->dmabuf_ = fds;
-	buffer->stream_ = this;
-
-	return std::unique_ptr<Buffer>(buffer);
-}
-
-/**
- * \fn Stream::bufferPool()
- * \brief Retrieve the buffer pool for the stream
- *
- * The buffer pool handles the memory buffers used to store frames for the
- * stream. It is initially created empty and shall be populated with
- * buffers before being used.
- *
- * \return A reference to the buffer pool
- */
-
-/**
- * \fn Stream::buffers()
- * \brief Retrieve the memory buffers in the Stream's buffer pool
- * \return The list of stream's memory buffers
- */
-
-/**
  * \fn Stream::configuration()
  * \brief Retrieve the active configuration of the stream
  * \return The active configuration of the stream
- */
-
-/**
- * \fn Stream::memoryType()
- * \brief Retrieve the stream memory type
- * \return The memory type used by the stream
- */
-
-/**
- * \brief Map a Buffer to a buffer memory index
- * \param[in] buffer The buffer to map to a buffer memory index
- *
- * Streams configured to use externally allocated memory need to maintain a
- * best-effort association between the memory area the \a buffer represents
- * and the associated buffer memory in the Stream's pool.
- *
- * The buffer memory to use, once the \a buffer reaches the video device,
- * is selected using the index assigned to the \a buffer and to minimize
- * relocations in the V4L2 back-end, this operation provides a best-effort
- * caching mechanism that associates to the dmabuf file descriptors contained
- * in the \a buffer the index of the buffer memory that was lastly queued with
- * those file descriptors set.
- *
- * If the Stream uses internally allocated memory, the index of the memory
- * buffer to use will match the one request at Stream::createBuffer(unsigned int)
- * time, and no mapping is thus required.
- *
- * \return The buffer memory index for the buffer on success, or a negative
- * error code otherwise
- * \retval -ENOMEM No buffer memory was available to map the buffer
- */
-int Stream::mapBuffer(const Buffer *buffer)
-{
-	ASSERT(memoryType_ == ExternalMemory);
-
-	if (bufferCache_.empty())
-		return -ENOMEM;
-
-	const std::array<int, 3> &dmabufs = buffer->dmabufs();
-
-	/*
-	 * Try to find a previously mapped buffer in the cache. If we miss, use
-	 * the oldest entry in the cache.
-	 */
-	auto map = std::find_if(bufferCache_.begin(), bufferCache_.end(),
-				[&](std::pair<std::array<int, 3>, unsigned int> &entry) {
-					return entry.first == dmabufs;
-				});
-	if (map == bufferCache_.end())
-		map = bufferCache_.begin();
-
-	/*
-	 * Update the dmabuf file descriptors of the entry. We can't assume that
-	 * identical file descriptor numbers refer to the same dmabuf object as
-	 * it may have been closed and its file descriptor reused. We thus need
-	 * to update the plane's internally cached mmap()ed memory.
-	 */
-	unsigned int index = map->second;
-	BufferMemory *mem = &bufferPool_.buffers()[index];
-	mem->planes().clear();
-
-	for (unsigned int i = 0; i < dmabufs.size(); ++i) {
-		if (dmabufs[i] == -1)
-			break;
-
-		FrameBuffer::Plane plane;
-		plane.fd = FileDescriptor(dmabufs[i]);
-		plane.length = 0;
-		mem->planes().push_back(plane);
-	}
-
-	/* Remove the buffer from the cache and return its index. */
-	bufferCache_.erase(map);
-	return index;
-}
-
-/**
- * \brief Unmap a Buffer from its buffer memory
- * \param[in] buffer The buffer to unmap
- *
- * This method releases the buffer memory entry that was mapped by mapBuffer(),
- * making it available for new mappings.
- */
-void Stream::unmapBuffer(const Buffer *buffer)
-{
-	ASSERT(memoryType_ == ExternalMemory);
-
-	bufferCache_.emplace_back(buffer->dmabufs(), buffer->index());
-}
-
-/**
- * \brief Create buffers for the stream
- * \param[in] count The number of buffers to create
- * \param[in] memory The stream memory type
- *
- * Create \a count empty buffers in the Stream's buffer pool.
- */
-void Stream::createBuffers(MemoryType memory, unsigned int count)
-{
-	destroyBuffers();
-	if (count == 0)
-		return;
-
-	memoryType_ = memory;
-	bufferPool_.createBuffers(count);
-
-	/* Streams with internal memory usage do not need buffer mapping. */
-	if (memoryType_ == InternalMemory)
-		return;
-
-	/*
-	 * Prepare for buffer mapping by adding all buffer memory entries to the
-	 * cache.
-	 */
-	bufferCache_.clear();
-	for (unsigned int i = 0; i < bufferPool_.count(); ++i)
-		bufferCache_.emplace_back(std::array<int, 3>{ -1, -1, -1 }, i);
-}
-
-/**
- * \brief Destroy buffers in the stream
- *
- * If no buffers have been created or if buffers have already been destroyed no
- * operation is performed.
- */
-void Stream::destroyBuffers()
-{
-	bufferPool_.destroyBuffers();
-}
-
-/**
- * \var Stream::bufferPool_
- * \brief The pool of buffers associated with the stream
- *
- * The stream buffer pool is populated by the Camera class after a successful
- * stream configuration.
  */
 
 /**
@@ -657,11 +416,6 @@ void Stream::destroyBuffers()
  * The configuration for the stream is set by any successful call to
  * Camera::configure() that includes the stream, and remains valid until the
  * next call to Camera::configure() regardless of if it includes the stream.
- */
-
-/**
- * \var Stream::memoryType_
- * \brief The stream memory type
  */
 
 } /* namespace libcamera */

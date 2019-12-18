@@ -45,6 +45,7 @@ public:
 		unsigned int pad;
 		std::string name;
 		BufferPool *pool;
+		std::vector<std::unique_ptr<FrameBuffer>> buffers;
 	};
 
 	ImgUDevice()
@@ -70,7 +71,6 @@ public:
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &cfg);
 
-	int importInputBuffers(BufferPool *pool);
 	int importOutputBuffers(ImgUOutput *output, BufferPool *pool);
 	int exportOutputBuffers(ImgUOutput *output, BufferPool *pool);
 	void freeBuffers();
@@ -95,7 +95,6 @@ public:
 	/* \todo Add param video device for 3A tuning */
 
 	BufferPool vfPool_;
-	BufferPool statPool_;
 	BufferPool outPool_;
 };
 
@@ -120,10 +119,10 @@ public:
 	int configure(const Size &size,
 		      V4L2DeviceFormat *outputFormat);
 
-	BufferPool *exportBuffers();
+	int allocateBuffers();
 	void freeBuffers();
 
-	int start(std::vector<std::unique_ptr<Buffer>> *buffers);
+	int start();
 	int stop();
 
 	static int mediaBusToFormat(unsigned int code);
@@ -132,7 +131,8 @@ public:
 	V4L2Subdevice *csi2_;
 	CameraSensor *sensor_;
 
-	BufferPool pool_;
+private:
+	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
 };
 
 class IPU3Stream : public Stream
@@ -157,16 +157,14 @@ public:
 	}
 
 	void imguOutputBufferReady(Buffer *buffer);
-	void imguInputBufferReady(Buffer *buffer);
-	void cio2BufferReady(Buffer *buffer);
+	void imguInputBufferReady(FrameBuffer *buffer);
+	void cio2BufferReady(FrameBuffer *buffer);
 
 	CIO2Device cio2_;
 	ImgUDevice *imgu_;
 
 	IPU3Stream outStream_;
 	IPU3Stream vfStream_;
-
-	std::vector<std::unique_ptr<Buffer>> rawBuffers_;
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -638,24 +636,28 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera,
 	int ret;
 
 	/* Share buffers between CIO2 output and ImgU input. */
-	BufferPool *pool = cio2->exportBuffers();
-	if (!pool)
-		return -ENOMEM;
+	ret = cio2->allocateBuffers();
+	if (ret < 0)
+		return ret;
 
-	ret = imgu->importInputBuffers(pool);
-	if (ret)
+	bufferCount = ret;
+
+	ret = imgu->input_->importBuffers(bufferCount);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
 		goto error;
+	}
 
 	/*
-	 * Use for the stat's internal pool the same number of buffer as
-	 * for the input pool.
+	 * Use for the stat's internal pool the same number of buffers as for
+	 * the input pool.
 	 * \todo To be revised when we'll actually use the stat node.
 	 */
-	bufferCount = pool->count();
-	imgu->stat_.pool->createBuffers(bufferCount);
-	ret = imgu->exportOutputBuffers(&imgu->stat_, imgu->stat_.pool);
-	if (ret)
+	ret = imgu->stat_.dev->exportBuffers(bufferCount, &imgu->stat_.buffers);
+	if (ret < 0) {
+		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
 		goto error;
+	}
 
 	/* Allocate buffers for each active stream. */
 	for (Stream *s : streams) {
@@ -722,7 +724,7 @@ int PipelineHandlerIPU3::start(Camera *camera)
 	 * Start the ImgU video devices, buffers will be queued to the
 	 * ImgU output and viewfinder when requests will be queued.
 	 */
-	ret = cio2->start(&data->rawBuffers_);
+	ret = cio2->start();
 	if (ret)
 		goto error;
 
@@ -738,7 +740,6 @@ int PipelineHandlerIPU3::start(Camera *camera)
 error:
 	LOG(IPU3, Error) << "Failed to start camera " << camera->name();
 
-	data->rawBuffers_.clear();
 	return ret;
 }
 
@@ -752,8 +753,6 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera "
 				   << camera->name();
-
-	data->rawBuffers_.clear();
 }
 
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
@@ -885,9 +884,9 @@ int PipelineHandlerIPU3::registerCameras()
 		 * associated ImgU input where they get processed and
 		 * returned through the ImgU main and secondary outputs.
 		 */
-		data->cio2_.output_->bufferReady.connect(data.get(),
+		data->cio2_.output_->frameBufferReady.connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
-		data->imgu_->input_->bufferReady.connect(data.get(),
+		data->imgu_->input_->frameBufferReady.connect(data.get(),
 					&IPU3CameraData::imguInputBufferReady);
 		data->imgu_->output_.dev->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
@@ -925,7 +924,7 @@ int PipelineHandlerIPU3::registerCameras()
  * Buffers completed from the ImgU input are immediately queued back to the
  * CIO2 unit to continue frame capture.
  */
-void IPU3CameraData::imguInputBufferReady(Buffer *buffer)
+void IPU3CameraData::imguInputBufferReady(FrameBuffer *buffer)
 {
 	/* \todo Handle buffer failures when state is set to BufferError. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
@@ -959,7 +958,7 @@ void IPU3CameraData::imguOutputBufferReady(Buffer *buffer)
  * Buffers completed from the CIO2 are immediately queued to the ImgU unit
  * for further processing.
  */
-void IPU3CameraData::cio2BufferReady(Buffer *buffer)
+void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 {
 	/* \todo Handle buffer failures when state is set to BufferError. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
@@ -1034,7 +1033,6 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 
 	stat_.pad = PAD_STAT;
 	stat_.name = "stat";
-	stat_.pool = &statPool_;
 
 	return 0;
 }
@@ -1130,22 +1128,6 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 
 	LOG(IPU3, Debug) << "ImgU " << output->name << " format = "
 			 << outputFormat.toString();
-
-	return 0;
-}
-
-/**
- * \brief Import buffers from \a pool into the ImgU input
- * \param[in] pool The buffer pool to import
- * \return 0 on success or a negative error code otherwise
- */
-int ImgUDevice::importInputBuffers(BufferPool *pool)
-{
-	int ret = input_->importBuffers(pool);
-	if (ret) {
-		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
-		return ret;
-	}
 
 	return 0;
 }
@@ -1448,37 +1430,40 @@ int CIO2Device::configure(const Size &size,
 }
 
 /**
- * \brief Allocate CIO2 memory buffers and export them in a BufferPool
+ * \brief Allocate frame buffers for the CIO2 output
  *
- * Allocate memory buffers in the CIO2 video device and export them to
- * a buffer pool that can be imported by another device.
+ * Allocate frame buffers in the CIO2 video device to be used to capture frames
+ * from the CIO2 output. The buffers are stored in the CIO2Device::buffers_
+ * vector.
  *
- * \return The buffer pool with export buffers on success or nullptr otherwise
+ * \return Number of buffers allocated or negative error code
  */
-BufferPool *CIO2Device::exportBuffers()
+int CIO2Device::allocateBuffers()
 {
-	pool_.createBuffers(CIO2_BUFFER_COUNT);
-
-	int ret = output_->exportBuffers(&pool_);
-	if (ret) {
+	int ret = output_->exportBuffers(CIO2_BUFFER_COUNT, &buffers_);
+	if (ret < 0)
 		LOG(IPU3, Error) << "Failed to export CIO2 buffers";
-		return nullptr;
-	}
 
-	return &pool_;
+	return ret;
 }
 
 void CIO2Device::freeBuffers()
 {
+	buffers_.clear();
+
 	if (output_->releaseBuffers())
 		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
-int CIO2Device::start(std::vector<std::unique_ptr<Buffer>> *buffers)
+int CIO2Device::start()
 {
-	*buffers = output_->queueAllBuffers();
-	if (buffers->empty())
-		return -EINVAL;
+	for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
+		int ret = output_->queueBuffer(buffer.get());
+		if (ret) {
+			LOG(IPU3, Error) << "Failed to queue CIO2 buffer";
+			return ret;
+		}
+	}
 
 	return output_->streamOn();
 }

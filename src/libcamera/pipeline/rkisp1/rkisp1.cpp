@@ -32,9 +32,6 @@
 #include "v4l2_subdevice.h"
 #include "v4l2_videodevice.h"
 
-#define RKISP1_PARAM_BASE 0x100
-#define RKISP1_STAT_BASE 0x200
-
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RkISP1)
@@ -52,8 +49,8 @@ struct RkISP1FrameInfo {
 	unsigned int frame;
 	Request *request;
 
-	Buffer *paramBuffer;
-	Buffer *statBuffer;
+	FrameBuffer *paramBuffer;
+	FrameBuffer *statBuffer;
 	Buffer *videoBuffer;
 
 	bool paramFilled;
@@ -71,6 +68,7 @@ public:
 
 	RkISP1FrameInfo *find(unsigned int frame);
 	RkISP1FrameInfo *find(Buffer *buffer);
+	RkISP1FrameInfo *find(FrameBuffer *buffer);
 	RkISP1FrameInfo *find(Request *request);
 
 private:
@@ -203,8 +201,8 @@ private:
 	int createCamera(MediaEntity *sensor);
 	void tryCompleteRequest(Request *request);
 	void bufferReady(Buffer *buffer);
-	void paramReady(Buffer *buffer);
-	void statReady(Buffer *buffer);
+	void paramReady(FrameBuffer *buffer);
+	void statReady(FrameBuffer *buffer);
 
 	MediaDevice *media_;
 	V4L2Subdevice *dphy_;
@@ -213,11 +211,10 @@ private:
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
 
-	BufferPool paramPool_;
-	BufferPool statPool_;
-
-	std::queue<Buffer *> paramBuffers_;
-	std::queue<Buffer *> statBuffers_;
+	std::vector<std::unique_ptr<FrameBuffer>> paramBuffers_;
+	std::vector<std::unique_ptr<FrameBuffer>> statBuffers_;
+	std::queue<FrameBuffer *> availableParamBuffers_;
+	std::queue<FrameBuffer *> availableStatBuffers_;
 
 	Camera *activeCamera_;
 };
@@ -229,17 +226,17 @@ RkISP1Frames::RkISP1Frames(PipelineHandler *pipe)
 
 RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stream *stream)
 {
-	if (pipe_->paramBuffers_.empty()) {
+	if (pipe_->availableParamBuffers_.empty()) {
 		LOG(RkISP1, Error) << "Parameters buffer underrun";
 		return nullptr;
 	}
-	Buffer *paramBuffer = pipe_->paramBuffers_.front();
+	FrameBuffer *paramBuffer = pipe_->availableParamBuffers_.front();
 
-	if (pipe_->statBuffers_.empty()) {
+	if (pipe_->availableStatBuffers_.empty()) {
 		LOG(RkISP1, Error) << "Statisitc buffer underrun";
 		return nullptr;
 	}
-	Buffer *statBuffer = pipe_->statBuffers_.front();
+	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
 	Buffer *videoBuffer = request->findBuffer(stream);
 	if (!videoBuffer) {
@@ -248,8 +245,8 @@ RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stre
 		return nullptr;
 	}
 
-	pipe_->paramBuffers_.pop();
-	pipe_->statBuffers_.pop();
+	pipe_->availableParamBuffers_.pop();
+	pipe_->availableStatBuffers_.pop();
 
 	RkISP1FrameInfo *info = new RkISP1FrameInfo;
 
@@ -273,8 +270,8 @@ int RkISP1Frames::destroy(unsigned int frame)
 	if (!info)
 		return -ENOENT;
 
-	pipe_->paramBuffers_.push(info->paramBuffer);
-	pipe_->statBuffers_.push(info->statBuffer);
+	pipe_->availableParamBuffers_.push(info->paramBuffer);
+	pipe_->availableStatBuffers_.push(info->statBuffer);
 
 	frameInfo_.erase(info->frame);
 
@@ -299,9 +296,21 @@ RkISP1FrameInfo *RkISP1Frames::find(Buffer *buffer)
 	for (auto &itInfo : frameInfo_) {
 		RkISP1FrameInfo *info = itInfo.second;
 
+		if (info->videoBuffer == buffer)
+			return info;
+	}
+
+	LOG(RkISP1, Error) << "Can't locate info from buffer";
+	return nullptr;
+}
+
+RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
+{
+	for (auto &itInfo : frameInfo_) {
+		RkISP1FrameInfo *info = itInfo.second;
+
 		if (info->paramBuffer == buffer ||
-		    info->statBuffer == buffer ||
-		    info->videoBuffer == buffer)
+		    info->statBuffer == buffer)
 			return info;
 	}
 
@@ -661,6 +670,7 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 {
 	RkISP1CameraData *data = cameraData(camera);
 	Stream *stream = *streams.begin();
+	unsigned int count = 1;
 	int ret;
 
 	if (stream->memoryType() == InternalMemory)
@@ -671,34 +681,40 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 	if (ret)
 		return ret;
 
-	paramPool_.createBuffers(stream->configuration().bufferCount);
-	ret = param_->exportBuffers(&paramPool_);
-	if (ret) {
-		video_->releaseBuffers();
-		return ret;
+	unsigned int maxBuffers = 0;
+	for (const Stream *s : camera->streams())
+		maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
+
+	ret = param_->exportBuffers(maxBuffers, &paramBuffers_);
+	if (ret < 0)
+		goto error;
+
+	ret = stat_->exportBuffers(maxBuffers, &statBuffers_);
+	if (ret < 0)
+		goto error;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {
+		buffer->setCookie(count++);
+		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
+					      .planes = buffer->planes() });
+		availableParamBuffers_.push(buffer.get());
 	}
 
-	statPool_.createBuffers(stream->configuration().bufferCount);
-	ret = stat_->exportBuffers(&statPool_);
-	if (ret) {
-		param_->releaseBuffers();
-		video_->releaseBuffers();
-		return ret;
-	}
-
-	for (unsigned int i = 0; i < stream->configuration().bufferCount; i++) {
-		data->ipaBuffers_.push_back({ .id = RKISP1_PARAM_BASE | i,
-					      .planes = paramPool_.buffers()[i].planes() });
-		paramBuffers_.push(new Buffer(i));
-	}
-
-	for (unsigned int i = 0; i < stream->configuration().bufferCount; i++) {
-		data->ipaBuffers_.push_back({ .id = RKISP1_STAT_BASE | i,
-					      .planes = statPool_.buffers()[i].planes() });
-		statBuffers_.push(new Buffer(i));
+	for (std::unique_ptr<FrameBuffer> &buffer : statBuffers_) {
+		buffer->setCookie(count++);
+		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
+					      .planes = buffer->planes() });
+		availableStatBuffers_.push(buffer.get());
 	}
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
+
+	return 0;
+
+error:
+	paramBuffers_.clear();
+	statBuffers_.clear();
+	video_->releaseBuffers();
 
 	return ret;
 }
@@ -708,15 +724,14 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera,
 {
 	RkISP1CameraData *data = cameraData(camera);
 
-	while (!statBuffers_.empty()) {
-		delete statBuffers_.front();
-		statBuffers_.pop();
-	}
+	while (!availableStatBuffers_.empty())
+		availableStatBuffers_.pop();
 
-	while (!paramBuffers_.empty()) {
-		delete paramBuffers_.front();
-		paramBuffers_.pop();
-	}
+	while (!availableParamBuffers_.empty())
+		availableParamBuffers_.pop();
+
+	paramBuffers_.clear();
+	statBuffers_.clear();
 
 	std::vector<unsigned int> ids;
 	for (IPABuffer &ipabuf : data->ipaBuffers_)
@@ -823,7 +838,7 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera,
 
 	IPAOperationData op;
 	op.operation = RKISP1_IPA_EVENT_QUEUE_REQUEST;
-	op.data = { data->frame_, RKISP1_PARAM_BASE | info->paramBuffer->index() };
+	op.data = { data->frame_, info->paramBuffer->cookie() };
 	op.controls = { request->controls() };
 	data->ipa_->processEvent(op);
 
@@ -938,8 +953,8 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 		return false;
 
 	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
-	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
-	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
+	stat_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
+	param_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 
 	/* Configure default links. */
 	if (initLinks() < 0) {
@@ -1001,7 +1016,7 @@ void PipelineHandlerRkISP1::bufferReady(Buffer *buffer)
 	tryCompleteRequest(request);
 }
 
-void PipelineHandlerRkISP1::paramReady(Buffer *buffer)
+void PipelineHandlerRkISP1::paramReady(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
 	RkISP1CameraData *data = cameraData(activeCamera_);
@@ -1012,7 +1027,7 @@ void PipelineHandlerRkISP1::paramReady(Buffer *buffer)
 	tryCompleteRequest(info->request);
 }
 
-void PipelineHandlerRkISP1::statReady(Buffer *buffer)
+void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
 	RkISP1CameraData *data = cameraData(activeCamera_);
@@ -1021,12 +1036,9 @@ void PipelineHandlerRkISP1::statReady(Buffer *buffer)
 	if (!info)
 		return;
 
-	unsigned int frame = info->frame;
-	unsigned int statid = RKISP1_STAT_BASE | info->statBuffer->index();
-
 	IPAOperationData op;
 	op.operation = RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER;
-	op.data = { frame, statid };
+	op.data = { info->frame, info->statBuffer->cookie() };
 	data->ipa_->processEvent(op);
 }
 

@@ -120,8 +120,8 @@ protected:
 		Timer timeout;
 		int ret;
 
-		capture_->frameBufferReady.connect(this, &BufferSharingTest::captureBufferReady);
-		output_->frameBufferReady.connect(this, &BufferSharingTest::outputBufferReady);
+		capture_->bufferReady.connect(this, &BufferSharingTest::captureBufferReady);
+		output_->bufferReady.connect(this, &BufferSharingTest::outputBufferReady);
 
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
 			if (capture_->queueBuffer(buffer.get())) {

@@ -124,8 +124,8 @@ protected:
 			return TestFail;
 		}
 
-		capture->frameBufferReady.connect(this, &V4L2M2MDeviceTest::receiveCaptureBuffer);
-		output->frameBufferReady.connect(this, &V4L2M2MDeviceTest::outputBufferComplete);
+		capture->bufferReady.connect(this, &V4L2M2MDeviceTest::receiveCaptureBuffer);
+		output->bufferReady.connect(this, &V4L2M2MDeviceTest::outputBufferComplete);
 
 		for (const std::unique_ptr<FrameBuffer> &buffer : captureBuffers_) {
 			if (capture->queueBuffer(buffer.get())) {

@@ -437,7 +437,7 @@ int VimcCameraData::init(MediaDevice *media)
 	if (video_->open())
 		return -ENODEV;
 
-	video_->frameBufferReady.connect(this, &VimcCameraData::bufferReady);
+	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
 
 	raw_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
 	if (raw_->open())

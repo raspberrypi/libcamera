@@ -182,19 +182,13 @@ public:
 	int setFormat(V4L2DeviceFormat *format);
 	ImageFormats formats();
 
-	int exportBuffers(BufferPool *pool);
-	int importBuffers(BufferPool *pool);
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	int importBuffers(unsigned int count);
 	int releaseBuffers();
 
-	int queueBuffer(Buffer *buffer);
-	std::vector<std::unique_ptr<Buffer>> queueAllBuffers();
-	Signal<Buffer *> bufferReady;
 	int queueBuffer(FrameBuffer *buffer);
-	/* todo Rename to bufferReady when the Buffer version is removed */
-	Signal<FrameBuffer *> frameBufferReady;
+	Signal<FrameBuffer *> bufferReady;
 
 	int streamOn();
 	int streamOff();
@@ -223,26 +217,19 @@ private:
 	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
 
 	int requestBuffers(unsigned int count);
-	int createPlane(BufferMemory *buffer, unsigned int index,
-			unsigned int plane, unsigned int length);
-	std::unique_ptr<FrameBuffer> createFrameBuffer(const struct v4l2_buffer &buf);
+	std::unique_ptr<FrameBuffer> createBuffer(const struct v4l2_buffer &buf);
 	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 
-	Buffer *dequeueBuffer();
 	void bufferAvailable(EventNotifier *notifier);
-	/* todo Rename to dequeueBuffer() when the Buffer version is removed */
-	FrameBuffer *dequeueFrameBuffer();
+	FrameBuffer *dequeueBuffer();
 
 	V4L2Capability caps_;
 
 	enum v4l2_buf_type bufferType_;
 	enum v4l2_memory memoryType_;
 
-	BufferPool *bufferPool_;
 	V4L2BufferCache *cache_;
-	std::map<unsigned int, Buffer *> queuedBuffers_;
-	/* todo Rename to queuedBuffers_ when the Buffer version is removed */
-	std::map<unsigned int, FrameBuffer *> queuedFrameBuffers_;
+	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
 
 	EventNotifier *fdEvent_;
 };

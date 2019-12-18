@@ -352,7 +352,7 @@ int UVCCameraData::init(MediaEntity *entity)
 	if (ret)
 		return ret;
 
-	video_->frameBufferReady.connect(this, &UVCCameraData::bufferReady);
+	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
 
 	/* Initialise the supported controls. */
 	const ControlInfoMap &controls = video_->controls();

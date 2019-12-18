@@ -950,9 +950,9 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (param_->open() < 0)
 		return false;
 
-	video_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
-	stat_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
-	param_->frameBufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
+	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
+	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 
 	/* Configure default links. */
 	if (initLinks() < 0) {

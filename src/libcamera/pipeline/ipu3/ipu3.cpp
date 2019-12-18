@@ -903,13 +903,13 @@ int PipelineHandlerIPU3::registerCameras()
 		 * associated ImgU input where they get processed and
 		 * returned through the ImgU main and secondary outputs.
 		 */
-		data->cio2_.output_->frameBufferReady.connect(data.get(),
+		data->cio2_.output_->bufferReady.connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
-		data->imgu_->input_->frameBufferReady.connect(data.get(),
+		data->imgu_->input_->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguInputBufferReady);
-		data->imgu_->output_.dev->frameBufferReady.connect(data.get(),
+		data->imgu_->output_.dev->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
-		data->imgu_->viewfinder_.dev->frameBufferReady.connect(data.get(),
+		data->imgu_->viewfinder_.dev->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */

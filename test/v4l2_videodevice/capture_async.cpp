@@ -42,7 +42,7 @@ protected:
 		if (ret < 0)
 			return TestFail;
 
-		capture_->frameBufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
+		capture_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
 
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
 			if (capture_->queueBuffer(buffer.get())) {

@@ -671,14 +671,14 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 	if (ret)
 		return ret;
 
-	paramPool_.createBuffers(stream->configuration().bufferCount + 1);
+	paramPool_.createBuffers(stream->configuration().bufferCount);
 	ret = param_->exportBuffers(&paramPool_);
 	if (ret) {
 		video_->releaseBuffers();
 		return ret;
 	}
 
-	statPool_.createBuffers(stream->configuration().bufferCount + 1);
+	statPool_.createBuffers(stream->configuration().bufferCount);
 	ret = stat_->exportBuffers(&statPool_);
 	if (ret) {
 		param_->releaseBuffers();
@@ -686,13 +686,13 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,
 		return ret;
 	}
 
-	for (unsigned int i = 0; i < stream->configuration().bufferCount + 1; i++) {
+	for (unsigned int i = 0; i < stream->configuration().bufferCount; i++) {
 		data->ipaBuffers_.push_back({ .id = RKISP1_PARAM_BASE | i,
 					      .planes = paramPool_.buffers()[i].planes() });
 		paramBuffers_.push(new Buffer(i));
 	}
 
-	for (unsigned int i = 0; i < stream->configuration().bufferCount + 1; i++) {
+	for (unsigned int i = 0; i < stream->configuration().bufferCount; i++) {
 		data->ipaBuffers_.push_back({ .id = RKISP1_STAT_BASE | i,
 					      .planes = statPool_.buffers()[i].planes() });
 		statBuffers_.push(new Buffer(i));
@@ -981,9 +981,9 @@ void PipelineHandlerRkISP1::tryCompleteRequest(Request *request)
 	if (!info->paramDequeued)
 		return;
 
-	completeRequest(activeCamera_, request);
-
 	data->frameInfo_.destroy(info->frame);
+
+	completeRequest(activeCamera_, request);
 }
 
 void PipelineHandlerRkISP1::bufferReady(Buffer *buffer)

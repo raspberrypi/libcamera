@@ -20,7 +20,7 @@ public:
 	CaptureAsyncTest()
 		: V4L2VideoDeviceTest("vimc", "Raw Capture 0"), frames(0) {}
 
-	void receiveBuffer(Buffer *buffer)
+	void receiveBuffer(FrameBuffer *buffer)
 	{
 		std::cout << "Buffer received" << std::endl;
 		frames++;
@@ -38,18 +38,18 @@ protected:
 		Timer timeout;
 		int ret;
 
-		pool_.createBuffers(bufferCount);
-
-		ret = capture_->exportBuffers(&pool_);
-		if (ret)
+		ret = capture_->exportBuffers(bufferCount, &buffers_);
+		if (ret < 0)
 			return TestFail;
 
-		capture_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
+		capture_->frameBufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
 
-		std::vector<std::unique_ptr<Buffer>> buffers;
-		buffers = capture_->queueAllBuffers();
-		if (buffers.empty())
-			return TestFail;
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
+			if (capture_->queueBuffer(buffer.get())) {
+				std::cout << "Failed to queue buffer" << std::endl;
+				return TestFail;
+			}
+		}
 
 		ret = capture_->streamOn();
 		if (ret)

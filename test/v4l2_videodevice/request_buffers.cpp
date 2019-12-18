@@ -16,17 +16,10 @@ public:
 protected:
 	int run()
 	{
-		/*
-		 * TODO:
-		 *  Test invalid requests
-		 *  Test different buffer allocations
-		 */
 		const unsigned int bufferCount = 8;
 
-		pool_.createBuffers(bufferCount);
-
-		int ret = capture_->exportBuffers(&pool_);
-		if (ret)
+		int ret = capture_->exportBuffers(bufferCount, &buffers_);
+		if (ret != bufferCount)
 			return TestFail;
 
 		return TestPass;

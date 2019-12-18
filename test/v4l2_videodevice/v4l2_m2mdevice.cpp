@@ -29,7 +29,7 @@ public:
 	{
 	}
 
-	void outputBufferComplete(Buffer *buffer)
+	void outputBufferComplete(FrameBuffer *buffer)
 	{
 		cout << "Received output buffer" << endl;
 
@@ -39,7 +39,7 @@ public:
 		vim2m_->output()->queueBuffer(buffer);
 	}
 
-	void receiveCaptureBuffer(Buffer *buffer)
+	void receiveCaptureBuffer(FrameBuffer *buffer)
 	{
 		cout << "Received capture buffer" << endl;
 
@@ -112,39 +112,31 @@ protected:
 			return TestFail;
 		}
 
-		capturePool_.createBuffers(bufferCount);
-		outputPool_.createBuffers(bufferCount);
-
-		ret = capture->exportBuffers(&capturePool_);
-		if (ret) {
+		ret = capture->exportBuffers(bufferCount, &captureBuffers_);
+		if (ret < 0) {
 			cerr << "Failed to export Capture Buffers" << endl;
 			return TestFail;
 		}
 
-		ret = output->exportBuffers(&outputPool_);
-		if (ret) {
+		ret = output->exportBuffers(bufferCount, &outputBuffers_);
+		if (ret < 0) {
 			cerr << "Failed to export Output Buffers" << endl;
 			return TestFail;
 		}
 
-		capture->bufferReady.connect(this, &V4L2M2MDeviceTest::receiveCaptureBuffer);
-		output->bufferReady.connect(this, &V4L2M2MDeviceTest::outputBufferComplete);
+		capture->frameBufferReady.connect(this, &V4L2M2MDeviceTest::receiveCaptureBuffer);
+		output->frameBufferReady.connect(this, &V4L2M2MDeviceTest::outputBufferComplete);
 
-		std::vector<std::unique_ptr<Buffer>> captureBuffers;
-		captureBuffers = capture->queueAllBuffers();
-		if (captureBuffers.empty()) {
-			cerr << "Failed to queue all Capture Buffers" << endl;
-			return TestFail;
+		for (const std::unique_ptr<FrameBuffer> &buffer : captureBuffers_) {
+			if (capture->queueBuffer(buffer.get())) {
+				std::cout << "Failed to queue capture buffer" << std::endl;
+				return TestFail;
+			}
 		}
 
-		/* We can't "queueAllBuffers()" on an output device, so we do it manually */
-		std::vector<std::unique_ptr<Buffer>> outputBuffers;
-		for (unsigned int i = 0; i < outputPool_.count(); ++i) {
-			Buffer *buffer = new Buffer(i);
-			outputBuffers.emplace_back(buffer);
-			ret = output->queueBuffer(buffer);
-			if (ret) {
-				cerr << "Failed to queue output buffer" << i << endl;
+		for (const std::unique_ptr<FrameBuffer> &buffer : outputBuffers_) {
+			if (output->queueBuffer(buffer.get())) {
+				std::cout << "Failed to queue output buffer" << std::endl;
 				return TestFail;
 			}
 		}
@@ -202,8 +194,8 @@ private:
 	std::shared_ptr<MediaDevice> media_;
 	V4L2M2MDevice *vim2m_;
 
-	BufferPool capturePool_;
-	BufferPool outputPool_;
+	std::vector<std::unique_ptr<FrameBuffer>> captureBuffers_;
+	std::vector<std::unique_ptr<FrameBuffer>> outputBuffers_;
 
 	unsigned int outputFrames_;
 	unsigned int captureFrames_;

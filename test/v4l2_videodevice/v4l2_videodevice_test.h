@@ -41,7 +41,7 @@ protected:
 	CameraSensor *sensor_;
 	V4L2Subdevice *debayer_;
 	V4L2VideoDevice *capture_;
-	BufferPool pool_;
+	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
 };
 
 #endif /* __LIBCAMERA_V4L2_DEVICE_TEST_H_ */

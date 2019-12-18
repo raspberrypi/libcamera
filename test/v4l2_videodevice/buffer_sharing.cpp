@@ -73,16 +73,14 @@ protected:
 			return TestFail;
 		}
 
-		pool_.createBuffers(bufferCount);
-
-		ret = capture_->exportBuffers(&pool_);
-		if (ret) {
-			std::cout << "Failed to export buffers" << std::endl;
+		ret = capture_->exportBuffers(bufferCount, &buffers_);
+		if (ret < 0) {
+			std::cout << "Failed to allocate buffers" << std::endl;
 			return TestFail;
 		}
 
-		ret = output_->importBuffers(&pool_);
-		if (ret) {
+		ret = output_->importBuffers(bufferCount);
+		if (ret < 0) {
 			std::cout << "Failed to import buffers" << std::endl;
 			return TestFail;
 		}
@@ -90,7 +88,7 @@ protected:
 		return 0;
 	}
 
-	void captureBufferReady(Buffer *buffer)
+	void captureBufferReady(FrameBuffer *buffer)
 	{
 		const FrameMetadata &metadata = buffer->metadata();
 
@@ -103,7 +101,7 @@ protected:
 		framesCaptured_++;
 	}
 
-	void outputBufferReady(Buffer *buffer)
+	void outputBufferReady(FrameBuffer *buffer)
 	{
 		const FrameMetadata &metadata = buffer->metadata();
 
@@ -122,13 +120,15 @@ protected:
 		Timer timeout;
 		int ret;
 
-		capture_->bufferReady.connect(this, &BufferSharingTest::captureBufferReady);
-		output_->bufferReady.connect(this, &BufferSharingTest::outputBufferReady);
+		capture_->frameBufferReady.connect(this, &BufferSharingTest::captureBufferReady);
+		output_->frameBufferReady.connect(this, &BufferSharingTest::outputBufferReady);
 
-		std::vector<std::unique_ptr<Buffer>> buffers;
-		buffers = capture_->queueAllBuffers();
-		if (buffers.empty())
-			return TestFail;
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
+			if (capture_->queueBuffer(buffer.get())) {
+				std::cout << "Failed to queue buffer" << std::endl;
+				return TestFail;
+			}
+		}
 
 		ret = capture_->streamOn();
 		if (ret) {

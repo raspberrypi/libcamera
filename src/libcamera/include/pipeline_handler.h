@@ -12,6 +12,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <sys/sysmacros.h>
 #include <vector>
 
 #include <ipa/ipa_interface.h>
@@ -86,7 +87,7 @@ public:
 
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera,
-			    std::unique_ptr<CameraData> data);
+			    std::unique_ptr<CameraData> data, dev_t devnum = 0);
 	void hotplugMediaDevice(MediaDevice *media);
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;

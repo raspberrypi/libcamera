@@ -7,6 +7,8 @@
 
 #include "pipeline_handler.h"
 
+#include <sys/sysmacros.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
@@ -438,19 +440,26 @@ void PipelineHandler::completeRequest(Camera *camera, Request *request)
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
  * \param[in] data Pipeline-specific data for the camera
+ * \param[in] devnum Device number of the camera (optional)
  *
  * This method is called by pipeline handlers to register the cameras they
  * handle with the camera manager. It associates the pipeline-specific \a data
  * with the camera, for later retrieval with cameraData(). Ownership of \a data
  * is transferred to the PipelineHandler.
+ *
+ * \a devnum is the device number (as returned by makedev) that the \a camera
+ * is to be associated with. This is for the V4L2 compatibility layer to map
+ * device nodes to Camera instances based on the device number
+ * registered by this method in \a devnum.
  */
 void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
-				     std::unique_ptr<CameraData> data)
+				     std::unique_ptr<CameraData> data,
+				     dev_t devnum)
 {
 	data->camera_ = camera.get();
 	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
-	manager_->addCamera(std::move(camera));
+	manager_->addCamera(std::move(camera), devnum);
 }
 
 /**

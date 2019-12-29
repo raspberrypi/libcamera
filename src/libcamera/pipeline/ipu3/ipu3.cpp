@@ -210,6 +210,11 @@ public:
 		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
+	int exportFrameBuffers(Camera *camera, Stream *stream,
+			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
+	int importFrameBuffers(Camera *camera, Stream *stream) override;
+	void freeFrameBuffers(Camera *camera, Stream *stream) override;
+
 	int allocateBuffers(Camera *camera,
 			    const std::set<Stream *> &streams) override;
 	int freeBuffers(Camera *camera,
@@ -614,6 +619,33 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	}
 
 	return 0;
+}
+
+int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
+					    std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
+	V4L2VideoDevice *video = ipu3stream->device_->dev;
+	unsigned int count = stream->configuration().bufferCount;
+
+	return video->exportBuffers(count, buffers);
+}
+
+int PipelineHandlerIPU3::importFrameBuffers(Camera *camera, Stream *stream)
+{
+	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
+	V4L2VideoDevice *video = ipu3stream->device_->dev;
+	unsigned int count = stream->configuration().bufferCount;
+
+	return video->importBuffers(count);
+}
+
+void PipelineHandlerIPU3::freeFrameBuffers(Camera *camera, Stream *stream)
+{
+	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
+	V4L2VideoDevice *video = ipu3stream->device_->dev;
+
+	video->releaseBuffers();
 }
 
 /**

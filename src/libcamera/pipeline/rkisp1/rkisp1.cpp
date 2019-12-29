@@ -174,6 +174,11 @@ public:
 		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
+	int exportFrameBuffers(Camera *camera, Stream *stream,
+			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
+	int importFrameBuffers(Camera *camera, Stream *stream) override;
+	void freeFrameBuffers(Camera *camera, Stream *stream) override;
+
 	int allocateBuffers(Camera *camera,
 		const std::set<Stream *> &streams) override;
 	int freeBuffers(Camera *camera,
@@ -663,6 +668,24 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	cfg.setStream(&data->stream_);
 
 	return 0;
+}
+
+int PipelineHandlerRkISP1::exportFrameBuffers(Camera *camera, Stream *stream,
+					      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	unsigned int count = stream->configuration().bufferCount;
+	return video_->exportBuffers(count, buffers);
+}
+
+int PipelineHandlerRkISP1::importFrameBuffers(Camera *camera, Stream *stream)
+{
+	unsigned int count = stream->configuration().bufferCount;
+	return video_->importBuffers(count);
+}
+
+void PipelineHandlerRkISP1::freeFrameBuffers(Camera *camera, Stream *stream)
+{
+	video_->releaseBuffers();
 }
 
 int PipelineHandlerRkISP1::allocateBuffers(Camera *camera,

@@ -70,6 +70,11 @@ public:
 		const StreamRoles &roles) = 0;
 	virtual int configure(Camera *camera, CameraConfiguration *config) = 0;
 
+	virtual int exportFrameBuffers(Camera *camera, Stream *stream,
+				       std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
+	virtual int importFrameBuffers(Camera *camera, Stream *stream) = 0;
+	virtual void freeFrameBuffers(Camera *camera, Stream *stream) = 0;
+
 	virtual int allocateBuffers(Camera *camera,
 				    const std::set<Stream *> &streams) = 0;
 	virtual int freeBuffers(Camera *camera,

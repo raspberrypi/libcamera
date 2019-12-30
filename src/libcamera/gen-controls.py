@@ -42,9 +42,14 @@ ${description}
         name, ctrl = ctrl.popitem()
         id_name = snake_case(name).upper()
 
+        if ctrl.get('size'):
+            ctrl_type = 'Span<const %s>' % ctrl['type']
+        else:
+            ctrl_type = ctrl['type']
+
         info = {
             'name': name,
-            'type': ctrl['type'],
+            'type': ctrl_type,
             'description': format_description(ctrl['description']),
             'id_name': id_name,
         }
@@ -92,9 +97,14 @@ def generate_h(controls):
 
         ids.append('\t' + id_name + ' = ' + str(id_value) + ',')
 
+        if ctrl.get('size'):
+            ctrl_type = 'Span<const %s>' % ctrl['type']
+        else:
+            ctrl_type = ctrl['type']
+
         info = {
             'name': name,
-            'type': ctrl['type'],
+            'type': ctrl_type,
         }
 
         enum = ctrl.get('enum')

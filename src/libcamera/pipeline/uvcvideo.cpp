@@ -296,18 +296,18 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>(this);
 
 	/* Locate and initialise the camera data with the default video node. */
-	for (MediaEntity *entity : media->entities()) {
-		if (entity->flags() & MEDIA_ENT_FL_DEFAULT) {
-			if (data->init(entity))
-				return false;
-			break;
-		}
-	}
-
-	if (!data) {
+	const std::vector<MediaEntity *> &entities = media->entities();
+	auto entity = std::find_if(entities.begin(), entities.end(),
+				   [](MediaEntity *entity) {
+					   return entity->flags() & MEDIA_ENT_FL_DEFAULT;
+				   });
+	if (entity == entities.end()) {
 		LOG(UVC, Error) << "Could not find a default video device";
 		return false;
 	}
+
+	if (data->init(*entity))
+		return false;
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };

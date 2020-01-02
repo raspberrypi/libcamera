@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <string.h>
 
 #include "control_validator.h"
 #include "log.h"
@@ -50,7 +51,7 @@ LOG_DEFINE_CATEGORY(Controls)
 namespace {
 
 static constexpr size_t ControlValueSize[] = {
-	[ControlTypeNone]		= 1,
+	[ControlTypeNone]		= 0,
 	[ControlTypeBool]		= sizeof(bool),
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
@@ -80,15 +81,59 @@ static constexpr size_t ControlValueSize[] = {
  * \brief Construct an empty ControlValue.
  */
 ControlValue::ControlValue()
-	: type_(ControlTypeNone)
+	: type_(ControlTypeNone), isArray_(false), numElements_(0)
 {
 }
 
 /**
- * \fn template<typename T> T ControlValue::ControlValue(T value)
+ * \fn template<typename T> T ControlValue::ControlValue(const T &value)
  * \brief Construct a ControlValue of type T
  * \param[in] value Initial value
+ *
+ * This function constructs a new instance of ControlValue and stores the \a
+ * value inside it. If the type \a T is equivalent to Span<R>, the instance
+ * stores an array of values of type \a R. Otherwise the instance stores a
+ * single value of type \a T. The numElements() and type() are updated to
+ * reflect the stored value.
  */
+
+void ControlValue::release()
+{
+	std::size_t size = numElements_ * ControlValueSize[type_];
+
+	if (size > sizeof(storage_)) {
+		delete[] *reinterpret_cast<char **>(&storage_);
+		storage_ = 0;
+	}
+}
+
+ControlValue::~ControlValue()
+{
+	release();
+}
+
+/**
+ * \brief Construct a ControlValue with the content of \a other
+ * \param[in] other The ControlValue to copy content from
+ */
+ControlValue::ControlValue(const ControlValue &other)
+	: type_(ControlTypeNone), numElements_(0)
+{
+	*this = other;
+}
+
+/**
+ * \brief Replace the content of the ControlValue with a copy of the content
+ * of \a other
+ * \param[in] other The ControlValue to copy content from
+ * \return The ControlValue with its content replaced with the one of \a other
+ */
+ControlValue &ControlValue::operator=(const ControlValue &other)
+{
+	set(other.type_, other.isArray_, other.data().data(),
+	    other.numElements_, ControlValueSize[other.type_]);
+	return *this;
+}
 
 /**
  * \fn ControlValue::type()
@@ -103,15 +148,32 @@ ControlValue::ControlValue()
  */
 
 /**
+ * \fn ControlValue::isArray()
+ * \brief Determine if the value stores an array
+ * \return True if the value stores an array, false otherwise
+ */
+
+/**
+ * \fn ControlValue::numElements()
+ * \brief Retrieve the number of elements stored in the ControlValue
+ *
+ * For instances storing an array, this function returns the number of elements
+ * in the array. Otherwise, it returns 1.
+ *
+ * \return The number of elements stored in the ControlValue
+ */
+
+/**
  * \brief Retrieve the raw data of a control value
  * \return The raw data of the control value as a span of uint8_t
  */
 Span<const uint8_t> ControlValue::data() const
 {
-	return {
-		reinterpret_cast<const uint8_t *>(&bool_),
-		ControlValueSize[type_]
-	};
+	std::size_t size = numElements_ * ControlValueSize[type_];
+	const uint8_t *data = size > sizeof(storage_)
+			    ? *reinterpret_cast<const uint8_t * const *>(&storage_)
+			    : reinterpret_cast<const uint8_t *>(&storage_);
+	return { data, size };
 }
 
 /**
@@ -120,18 +182,43 @@ Span<const uint8_t> ControlValue::data() const
  */
 std::string ControlValue::toString() const
 {
-	switch (type_) {
-	case ControlTypeNone:
-		return "<None>";
-	case ControlTypeBool:
-		return bool_ ? "True" : "False";
-	case ControlTypeInteger32:
-		return std::to_string(integer32_);
-	case ControlTypeInteger64:
-		return std::to_string(integer64_);
+	if (type_ == ControlTypeNone)
+		return "<ValueType Error>";
+
+	const uint8_t *data = ControlValue::data().data();
+	std::string str(isArray_ ? "[ " : "");
+
+	for (unsigned int i = 0; i < numElements_; ++i) {
+		switch (type_) {
+		case ControlTypeBool: {
+			const bool *value = reinterpret_cast<const bool *>(data);
+			str += *value ? "True" : "False";
+			break;
+		}
+		case ControlTypeInteger32: {
+			const int32_t *value = reinterpret_cast<const int32_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeInteger64: {
+			const int64_t *value = reinterpret_cast<const int64_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeNone:
+			break;
+		}
+
+		if (i + 1 != numElements_)
+			str += ", ";
+
+		data += ControlValueSize[type_];
 	}
 
-	return "<ValueType Error>";
+	if (isArray_)
+		str += " ]";
+
+	return str;
 }
 
 /**
@@ -143,16 +230,13 @@ bool ControlValue::operator==(const ControlValue &other) const
 	if (type_ != other.type_)
 		return false;
 
-	switch (type_) {
-	case ControlTypeBool:
-		return bool_ == other.bool_;
-	case ControlTypeInteger32:
-		return integer32_ == other.integer32_;
-	case ControlTypeInteger64:
-		return integer64_ == other.integer64_;
-	default:
+	if (numElements_ != other.numElements())
 		return false;
-	}
+
+	if (isArray_ != other.isArray_)
+		return false;
+
+	return memcmp(data().data(), other.data().data(), data().size()) == 0;
 }
 
 /**
@@ -165,8 +249,16 @@ bool ControlValue::operator==(const ControlValue &other) const
  * \fn template<typename T> T ControlValue::get() const
  * \brief Get the control value
  *
- * The control value type shall match the type T, otherwise the behaviour is
- * undefined.
+ * This function returns the contained value as an instance of \a T. If the
+ * ControlValue instance stores a single value, the type \a T shall match the
+ * stored value type(). If the instance stores an array of values, the type
+ * \a T should be equal to Span<const R>, and the type \a R shall match the
+ * stored value type(). The behaviour is undefined otherwise.
+ *
+ * Note that a ControlValue instance that stores a non-array value is not
+ * equivalent to an instance that stores an array value containing a single
+ * element. The latter shall be accessed through a Span<const R> type, while
+ * the former shall be accessed through a type \a T corresponding to type().
  *
  * \return The control value
  */
@@ -175,7 +267,40 @@ bool ControlValue::operator==(const ControlValue &other) const
  * \fn template<typename T> void ControlValue::set(const T &value)
  * \brief Set the control value to \a value
  * \param[in] value The control value
+ *
+ * This function stores the \a value in the instance. If the type \a T is
+ * equivalent to Span<R>, the instance stores an array of values of type \a R.
+ * Otherwise the instance stores a single value of type \a T. The numElements()
+ * and type() are updated to reflect the stored value.
+ *
+ * The entire content of \a value is copied to the instance, no reference to \a
+ * value or to the data it references is retained. This may be an expensive
+ * operation for Span<> values that refer to large arrays.
  */
+
+void ControlValue::set(ControlType type, bool isArray, const void *data,
+		       std::size_t numElements, std::size_t elementSize)
+{
+	ASSERT(elementSize == ControlValueSize[type]);
+
+	release();
+
+	type_ = type;
+	numElements_ = numElements;
+	isArray_ = isArray;
+
+	std::size_t size = elementSize * numElements;
+	void *storage;
+
+	if (size > sizeof(storage_)) {
+		storage = reinterpret_cast<void *>(new char[size]);
+		*reinterpret_cast<void **>(&storage_) = storage;
+	} else {
+		storage = reinterpret_cast<void *>(&storage_);
+	}
+
+	memcpy(storage, data, size);
+}
 
 /**
  * \class ControlId

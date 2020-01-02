@@ -9,6 +9,7 @@
 #define __LIBCAMERA_CONTROLS_H__
 
 #include <assert.h>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 
@@ -51,6 +52,10 @@ struct control_type<int64_t> {
 	static constexpr ControlType value = ControlTypeInteger64;
 };
 
+template<typename T, std::size_t N>
+struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
+};
+
 } /* namespace details */
 
 class ControlValue
@@ -58,15 +63,35 @@ class ControlValue
 public:
 	ControlValue();
 
-	template<typename T>
-	ControlValue(T value)
-		: type_(details::control_type<std::remove_cv_t<T>>::value)
+#ifndef __DOXYGEN__
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
+	ControlValue(const T &value)
+		: type_(ControlTypeNone), numElements_(0)
 	{
-		*reinterpret_cast<T *>(&bool_) = value;
+		set(details::control_type<std::remove_cv_t<T>>::value, false,
+		    &value, 1, sizeof(T));
 	}
+
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+#else
+	template<typename T>
+#endif
+	ControlValue(const T &value)
+		: type_(ControlTypeNone), numElements_(0)
+	{
+		set(details::control_type<std::remove_cv_t<T>>::value, true,
+		    value.data(), value.size(), sizeof(typename T::value_type));
+	}
+
+	~ControlValue();
+
+	ControlValue(const ControlValue &other);
+	ControlValue &operator=(const ControlValue &other);
 
 	ControlType type() const { return type_; }
 	bool isNone() const { return type_ == ControlTypeNone; }
+	bool isArray() const { return isArray_; }
+	std::size_t numElements() const { return numElements_; }
 	Span<const uint8_t> data() const;
 
 	std::string toString() const;
@@ -77,30 +102,60 @@ public:
 		return !(*this == other);
 	}
 
-	template<typename T>
+#ifndef __DOXYGEN__
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
 	T get() const
 	{
 		assert(type_ == details::control_type<std::remove_cv_t<T>>::value);
+		assert(!isArray_);
 
-		return *reinterpret_cast<const T *>(&bool_);
+		return *reinterpret_cast<const T *>(data().data());
 	}
 
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+#else
 	template<typename T>
+#endif
+	T get() const
+	{
+		assert(type_ == details::control_type<std::remove_cv_t<T>>::value);
+		assert(isArray_);
+
+		using V = typename T::value_type;
+		const V *value = reinterpret_cast<const V *>(data().data());
+		return { value, numElements_ };
+	}
+
+#ifndef __DOXYGEN__
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
 	void set(const T &value)
 	{
-		type_ = details::control_type<std::remove_cv_t<T>>::value;
-		*reinterpret_cast<T *>(&bool_) = value;
+		set(details::control_type<std::remove_cv_t<T>>::value, false,
+		    reinterpret_cast<const void *>(&value), 1, sizeof(T));
+	}
+
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+#else
+	template<typename T>
+#endif
+	void set(const T &value)
+	{
+		set(details::control_type<std::remove_cv_t<T>>::value, true,
+		    value.data(), value.size(), sizeof(typename T::value_type));
 	}
 
 private:
-	ControlType type_;
+	ControlType type_ : 8;
+	bool isArray_ : 1;
+	std::size_t numElements_ : 16;
+	uint64_t storage_;
 
-	union {
-		bool bool_;
-		int32_t integer32_;
-		int64_t integer64_;
-	};
+	void release();
+	void set(ControlType type, bool isArray, const void *data,
+		 std::size_t numElements, std::size_t elementSize);
 };
+
+static_assert(sizeof(ControlValue) == 16, "Invalid size of ControlValue class");
 
 class ControlId
 {

@@ -33,11 +33,6 @@ public:
 	ControlType type() const { return type_; }
 	bool isNone() const { return type_ == ControlTypeNone; }
 
-	template<typename T>
-	const T &get() const;
-	template<typename T>
-	void set(const T &value);
-
 	std::string toString() const;
 
 	bool operator==(const ControlValue &other) const;
@@ -45,6 +40,11 @@ public:
 	{
 		return !(*this == other);
 	}
+
+	template<typename T>
+	const T &get() const;
+	template<typename T>
+	void set(const T &value);
 
 private:
 	ControlType type_;

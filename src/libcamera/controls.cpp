@@ -113,6 +113,53 @@ ControlValue::ControlValue(int64_t value)
  */
 
 /**
+ * \brief Assemble and return a string describing the value
+ * \return A string describing the ControlValue
+ */
+std::string ControlValue::toString() const
+{
+	switch (type_) {
+	case ControlTypeNone:
+		return "<None>";
+	case ControlTypeBool:
+		return bool_ ? "True" : "False";
+	case ControlTypeInteger32:
+		return std::to_string(integer32_);
+	case ControlTypeInteger64:
+		return std::to_string(integer64_);
+	}
+
+	return "<ValueType Error>";
+}
+
+/**
+ * \brief Compare ControlValue instances for equality
+ * \return True if the values have identical types and values, false otherwise
+ */
+bool ControlValue::operator==(const ControlValue &other) const
+{
+	if (type_ != other.type_)
+		return false;
+
+	switch (type_) {
+	case ControlTypeBool:
+		return bool_ == other.bool_;
+	case ControlTypeInteger32:
+		return integer32_ == other.integer32_;
+	case ControlTypeInteger64:
+		return integer64_ == other.integer64_;
+	default:
+		return false;
+	}
+}
+
+/**
+ * \fn bool ControlValue::operator!=()
+ * \brief Compare ControlValue instances for non equality
+ * \return False if the values have identical types and values, true otherwise
+ */
+
+/**
  * \fn template<typename T> const T &ControlValue::get() const
  * \brief Get the control value
  *
@@ -174,53 +221,6 @@ void ControlValue::set<int64_t>(const int64_t &value)
 	integer64_ = value;
 }
 #endif /* __DOXYGEN__ */
-
-/**
- * \brief Assemble and return a string describing the value
- * \return A string describing the ControlValue
- */
-std::string ControlValue::toString() const
-{
-	switch (type_) {
-	case ControlTypeNone:
-		return "<None>";
-	case ControlTypeBool:
-		return bool_ ? "True" : "False";
-	case ControlTypeInteger32:
-		return std::to_string(integer32_);
-	case ControlTypeInteger64:
-		return std::to_string(integer64_);
-	}
-
-	return "<ValueType Error>";
-}
-
-/**
- * \brief Compare ControlValue instances for equality
- * \return True if the values have identical types and values, false otherwise
- */
-bool ControlValue::operator==(const ControlValue &other) const
-{
-	if (type_ != other.type_)
-		return false;
-
-	switch (type_) {
-	case ControlTypeBool:
-		return bool_ == other.bool_;
-	case ControlTypeInteger32:
-		return integer32_ == other.integer32_;
-	case ControlTypeInteger64:
-		return integer64_ == other.integer64_;
-	default:
-		return false;
-	}
-}
-
-/**
- * \fn bool ControlValue::operator!=()
- * \brief Compare ControlValue instances for non equality
- * \return False if the values have identical types and values, true otherwise
- */
 
 /**
  * \class ControlId

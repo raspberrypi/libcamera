@@ -49,6 +49,10 @@ public:
 		value_ = value;
 	}
 
+	void methodWithReference(const int &value)
+	{
+	}
+
 private:
 	Status status_;
 	int value_;
@@ -118,6 +122,14 @@ protected:
 			cout << "Method invoked with incorrect value for custom thread" << endl;
 			return TestFail;
 		}
+
+		/*
+		 * Test invoking a method that takes reference arguments. This
+		 * targets compilation, there's no need to check runtime
+		 * results.
+		 */
+		object_.invokeMethod(&InvokedObject::methodWithReference,
+				     ConnectionTypeBlocking, 42);
 
 		return TestPass;
 	}

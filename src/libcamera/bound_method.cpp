@@ -48,7 +48,22 @@ namespace libcamera {
  * deadlock will occur.
  */
 
-void BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
+/**
+ * \brief Invoke the bound method with packed arguments
+ * \param[in] pack Packed arguments
+ * \param[in] deleteMethod True to delete \a this bound method instance when
+ * method invocation completes
+ *
+ * The bound method stores its return value, if any, in the arguments \a pack.
+ * For direct and blocking invocations, this is performed synchronously, and
+ * the return value contained in the pack may be used. For queued invocations,
+ * the return value is stored at an undefined point of time and shall thus not
+ * be used by the caller.
+ *
+ * \return True if the return value contained in the \a pack may be used by the
+ * caller, false otherwise
+ */
+bool BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 				   bool deleteMethod)
 {
 	ConnectionType type = connectionType_;
@@ -65,13 +80,13 @@ void BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 		invokePack(pack.get());
 		if (deleteMethod)
 			delete this;
-		break;
+		return true;
 
 	case ConnectionTypeQueued: {
 		std::unique_ptr<Message> msg =
 			utils::make_unique<InvokeMessage>(this, pack, nullptr, deleteMethod);
 		object_->postMessage(std::move(msg));
-		break;
+		return false;
 	}
 
 	case ConnectionTypeBlocking: {
@@ -82,7 +97,7 @@ void BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 		object_->postMessage(std::move(msg));
 
 		semaphore.acquire();
-		break;
+		return true;
 	}
 	}
 }

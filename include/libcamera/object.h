@@ -31,12 +31,12 @@ public:
 
 	template<typename T, typename R, typename... FuncArgs, typename... Args,
 		 typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
-	void invokeMethod(R (T::*func)(FuncArgs...), ConnectionType type,
-			  Args... args)
+	R invokeMethod(R (T::*func)(FuncArgs...), ConnectionType type,
+		       Args... args)
 	{
 		T *obj = static_cast<T *>(this);
 		auto *method = new BoundMemberMethod<T, R, FuncArgs...>(obj, this, func, type);
-		method->activate(args..., true);
+		return method->activate(args..., true);
 	}
 
 	Thread *thread() const { return thread_; }

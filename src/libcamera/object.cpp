@@ -143,7 +143,7 @@ void Object::message(Message *msg)
 }
 
 /**
- * \fn void Object::invokeMethod()
+ * \fn R Object::invokeMethod()
  * \brief Invoke a method asynchronously on an Object instance
  * \param[in] func The object method to invoke
  * \param[in] type Connection type for method invocation
@@ -156,6 +156,10 @@ void Object::message(Message *msg)
  * Arguments \a args passed by value or reference are copied, while pointers
  * are passed untouched. The caller shall ensure that any pointer argument
  * remains valid until the method is invoked.
+ *
+ * \return For connection types ConnectionTypeDirect and
+ * ConnectionTypeBlocking, return the return value of the invoked method. For
+ * connection type ConnectionTypeQueued, return a default-constructed R value.
  */
 
 /**

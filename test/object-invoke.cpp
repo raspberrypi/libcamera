@@ -53,6 +53,11 @@ public:
 	{
 	}
 
+	int methodWithReturn()
+	{
+		return 42;
+	}
+
 private:
 	Status status_;
 	int value_;
@@ -151,6 +156,15 @@ protected:
 		 */
 		object_.invokeMethod(&InvokedObject::methodWithReference,
 				     ConnectionTypeBlocking, 42);
+
+		/* Test invoking a method that returns a value. */
+		int ret = object_.invokeMethod(&InvokedObject::methodWithReturn,
+					       ConnectionTypeBlocking);
+		if (ret != 42) {
+			cout << "Method invoked return incorrect value (" << ret
+			     << ")" << endl;
+			return TestFail;
+		}
 
 		return TestPass;
 	}

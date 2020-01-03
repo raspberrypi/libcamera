@@ -29,13 +29,13 @@ public:
 
 	void postMessage(std::unique_ptr<Message> msg);
 
-	template<typename T, typename... FuncArgs, typename... Args,
+	template<typename T, typename R, typename... FuncArgs, typename... Args,
 		 typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
-	void invokeMethod(void (T::*func)(FuncArgs...), ConnectionType type,
+	void invokeMethod(R (T::*func)(FuncArgs...), ConnectionType type,
 			  Args... args)
 	{
 		T *obj = static_cast<T *>(this);
-		auto *method = new BoundMemberMethod<T, FuncArgs...>(obj, this, func, type);
+		auto *method = new BoundMemberMethod<T, R, FuncArgs...>(obj, this, func, type);
 		method->activate(args..., true);
 	}
 

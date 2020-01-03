@@ -54,27 +54,28 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
-	void connect(T *obj, void (T::*func)(Args...),
+	template<typename T, typename R, typename std::enable_if<std::is_base_of<Object, T>::value>::type * = nullptr>
+	void connect(T *obj, R (T::*func)(Args...),
 		     ConnectionType type = ConnectionTypeAuto)
 	{
 		Object *object = static_cast<Object *>(obj);
 		object->connect(this);
-		slots_.push_back(new BoundMemberMethod<T, Args...>(obj, object, func, type));
+		slots_.push_back(new BoundMemberMethod<T, void, Args...>(obj, object, func, type));
 	}
 
-	template<typename T, typename std::enable_if<!std::is_base_of<Object, T>::value>::type * = nullptr>
+	template<typename T, typename R, typename std::enable_if<!std::is_base_of<Object, T>::value>::type * = nullptr>
 #else
-	template<typename T>
+	template<typename T, typename R>
 #endif
-	void connect(T *obj, void (T::*func)(Args...))
+	void connect(T *obj, R (T::*func)(Args...))
 	{
-		slots_.push_back(new BoundMemberMethod<T, Args...>(obj, nullptr, func));
+		slots_.push_back(new BoundMemberMethod<T, R, Args...>(obj, nullptr, func));
 	}
 
-	void connect(void (*func)(Args...))
+	template<typename R>
+	void connect(R (*func)(Args...))
 	{
-		slots_.push_back(new BoundStaticMethod<Args...>(func));
+		slots_.push_back(new BoundStaticMethod<R, Args...>(func));
 	}
 
 	void disconnect()
@@ -90,11 +91,12 @@ public:
 		SignalBase::disconnect(obj);
 	}
 
-	template<typename T>
-	void disconnect(T *obj, void (T::*func)(Args...))
+	template<typename T, typename R>
+	void disconnect(T *obj, R (T::*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
-			BoundMethodArgs<Args...> *slot = static_cast<BoundMethodArgs<Args...> *>(*iter);
+			BoundMethodArgs<R, Args...> *slot =
+				static_cast<BoundMethodArgs<R, Args...> *>(*iter);
 			/*
 			 * If the object matches the slot, the slot is
 			 * guaranteed to be a member slot, so we can safely
@@ -102,7 +104,7 @@ public:
 			 * func.
 			 */
 			if (slot->match(obj) &&
-			    static_cast<BoundMemberMethod<T, Args...> *>(slot)->match(func)) {
+			    static_cast<BoundMemberMethod<T, R, Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {
@@ -111,12 +113,13 @@ public:
 		}
 	}
 
-	void disconnect(void (*func)(Args...))
+	template<typename R>
+	void disconnect(R (*func)(Args...))
 	{
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
-			BoundMethodArgs<Args...> *slot = *iter;
+			BoundMethodArgs<R, Args...> *slot = *iter;
 			if (slot->match(nullptr) &&
-			    static_cast<BoundStaticMethod<Args...> *>(slot)->match(func)) {
+			    static_cast<BoundStaticMethod<R, Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {
@@ -133,7 +136,7 @@ public:
 		 */
 		std::vector<BoundMethodBase *> slots{ slots_.begin(), slots_.end() };
 		for (BoundMethodBase *slot : slots)
-			static_cast<BoundMethodArgs<Args...> *>(slot)->activate(args...);
+			static_cast<BoundMethodArgs<void, Args...> *>(slot)->activate(args...);
 	}
 };
 

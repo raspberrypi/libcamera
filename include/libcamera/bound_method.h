@@ -79,7 +79,7 @@ public:
 	std::tuple<typename std::remove_reference<Args>::type...> args_;
 };
 
-template<typename... Args>
+template<typename R, typename... Args>
 class BoundMethodArgs : public BoundMethodBase
 {
 public:
@@ -107,19 +107,19 @@ public:
 	virtual void invoke(Args... args) = 0;
 };
 
-template<typename T, typename... Args>
-class BoundMemberMethod : public BoundMethodArgs<Args...>
+template<typename T, typename R, typename... Args>
+class BoundMemberMethod : public BoundMethodArgs<R, Args...>
 {
 public:
-	using PackType = typename BoundMethodArgs<Args...>::PackType;
+	using PackType = typename BoundMethodArgs<R, Args...>::PackType;
 
-	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...),
+	BoundMemberMethod(T *obj, Object *object, R (T::*func)(Args...),
 			  ConnectionType type = ConnectionTypeAuto)
-		: BoundMethodArgs<Args...>(obj, object, type), func_(func)
+		: BoundMethodArgs<R, Args...>(obj, object, type), func_(func)
 	{
 	}
 
-	bool match(void (T::*func)(Args...)) const { return func == func_; }
+	bool match(R (T::*func)(Args...)) const { return func == func_; }
 
 	void activate(Args... args, bool deleteMethod = false) override
 	{
@@ -135,20 +135,20 @@ public:
 	}
 
 private:
-	void (T::*func_)(Args...);
+	R (T::*func_)(Args...);
 };
 
-template<typename... Args>
-class BoundStaticMethod : public BoundMethodArgs<Args...>
+template<typename R, typename... Args>
+class BoundStaticMethod : public BoundMethodArgs<R, Args...>
 {
 public:
-	BoundStaticMethod(void (*func)(Args...))
-		: BoundMethodArgs<Args...>(nullptr, nullptr, ConnectionTypeAuto),
+	BoundStaticMethod(R (*func)(Args...))
+		: BoundMethodArgs<R, Args...>(nullptr, nullptr, ConnectionTypeAuto),
 		  func_(func)
 	{
 	}
 
-	bool match(void (*func)(Args...)) const { return func == func_; }
+	bool match(R (*func)(Args...)) const { return func == func_; }
 
 	void activate(Args... args, bool deleteMethod = false) override
 	{
@@ -158,7 +158,7 @@ public:
 	void invoke(Args...) override {}
 
 private:
-	void (*func_)(Args...);
+	R (*func_)(Args...);
 };
 
 } /* namespace libcamera */

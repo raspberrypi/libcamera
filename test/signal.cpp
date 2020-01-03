@@ -23,6 +23,11 @@ static void slotStatic(int value)
 	valueStatic_ = value;
 }
 
+static int slotStaticReturn()
+{
+	return 0;
+}
+
 class SlotObject : public Object
 {
 public:
@@ -83,6 +88,11 @@ protected:
 	{
 		values_[2] = value;
 		name_ = name;
+	}
+
+	int slotReturn()
+	{
+		return 0;
 	}
 
 	int init()
@@ -173,6 +183,13 @@ protected:
 			cout << "Signal disconnection from slot test failed" << endl;
 			return TestFail;
 		}
+
+		/*
+		 * Test connecting to slots that return a value. This targets
+		 * compilation, there's no need to check runtime results.
+		 */
+		signalVoid_.connect(slotStaticReturn);
+		signalVoid_.connect(this, &SignalTest::slotReturn);
 
 		/* ----------------- Signal -> Object tests ----------------- */
 

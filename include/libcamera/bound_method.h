@@ -68,16 +68,29 @@ private:
 };
 
 template<typename... Args>
+class BoundMethodPack
+{
+public:
+	BoundMethodPack(const Args &... args)
+		: args_(args...)
+	{
+	}
+
+	std::tuple<typename std::remove_reference<Args>::type...> args_;
+};
+
+template<typename... Args>
 class BoundMethodArgs : public BoundMethodBase
 {
-private:
-	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
+public:
+	using PackType = BoundMethodPack<Args...>;
 
+private:
 	template<int... S>
 	void invokePack(void *pack, BoundMethodBase::sequence<S...>)
 	{
 		PackType *args = static_cast<PackType *>(pack);
-		invoke(std::get<S>(*args)...);
+		invoke(std::get<S>(args->args_)...);
 		delete args;
 	}
 
@@ -98,7 +111,7 @@ template<typename T, typename... Args>
 class BoundMemberMethod : public BoundMethodArgs<Args...>
 {
 public:
-	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
+	using PackType = typename BoundMethodArgs<Args...>::PackType;
 
 	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...),
 			  ConnectionType type = ConnectionTypeAuto)

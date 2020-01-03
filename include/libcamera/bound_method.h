@@ -39,19 +39,6 @@ public:
 	virtual void invokePack(void *pack) = 0;
 
 protected:
-	void activatePack(void *pack, bool deleteMethod);
-
-	void *obj_;
-	Object *object_;
-
-private:
-	ConnectionType connectionType_;
-};
-
-template<typename... Args>
-class BoundMethodArgs : public BoundMethodBase
-{
-private:
 #ifndef __DOXYGEN__
 	/*
 	 * This is a cheap partial implementation of std::integer_sequence<>
@@ -71,10 +58,23 @@ private:
 	};
 #endif
 
+	void activatePack(void *pack, bool deleteMethod);
+
+	void *obj_;
+	Object *object_;
+
+private:
+	ConnectionType connectionType_;
+};
+
+template<typename... Args>
+class BoundMethodArgs : public BoundMethodBase
+{
+private:
 	using PackType = std::tuple<typename std::remove_reference<Args>::type...>;
 
 	template<int... S>
-	void invokePack(void *pack, sequence<S...>)
+	void invokePack(void *pack, BoundMethodBase::sequence<S...>)
 	{
 		PackType *args = static_cast<PackType *>(pack);
 		invoke(std::get<S>(*args)...);
@@ -87,7 +87,7 @@ public:
 
 	void invokePack(void *pack) override
 	{
-		invokePack(pack, typename generator<sizeof...(Args)>::type());
+		invokePack(pack, typename BoundMethodBase::generator<sizeof...(Args)>::type());
 	}
 
 	virtual void activate(Args... args, bool deleteMethod = false) = 0;

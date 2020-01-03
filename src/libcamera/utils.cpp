@@ -182,6 +182,28 @@ operator<<(std::basic_ostream<char, std::char_traits<char>> &stream, const _hex 
  * otherwise. The \a os stream configuration is not modified.
  */
 
+/**
+ * \brief Copy a string with a size limit
+ * \param[in] dst The destination string
+ * \param[in] src The source string
+ * \param[in] size The size of the destination string
+ *
+ * This function copies the null-terminated string \a src to \a dst with a limit
+ * of \a size - 1 characters, and null-terminates the result if \a size is
+ * larger than 0. If \a src is larger than \a size - 1, \a dst is truncated.
+ *
+ * \return The size of \a src
+ */
+size_t strlcpy(char *dst, const char *src, size_t size)
+{
+	if (size) {
+		strncpy(dst, src, size);
+		dst[size - 1] = '\0';
+	}
+
+	return strlen(src);
+}
+
 } /* namespace utils */
 
 } /* namespace libcamera */

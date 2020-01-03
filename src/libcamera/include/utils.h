@@ -12,6 +12,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <string.h>
 #include <sys/time.h>
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
@@ -111,6 +112,8 @@ inline _hex hex<uint64_t>(uint64_t value, unsigned int width)
 	return { static_cast<uint64_t>(value), width ? width : 16 };
 }
 #endif
+
+size_t strlcpy(char *dst, const char *src, size_t size);
 
 } /* namespace utils */
 

@@ -39,7 +39,10 @@ LIBCAMERA_PUBLIC int open(const char *path, int oflag, ...)
 }
 
 /* _FORTIFY_SOURCE redirects open to __open_2 */
-LIBCAMERA_PUBLIC extern __typeof(open) __open_2 __attribute__ ((alias("open")));
+LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
+{
+	return open(path, oflag);
+}
 
 LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 {
@@ -50,7 +53,10 @@ LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 	return V4L2CompatManager::instance()->openat(dirfd, path, oflag, mode);
 }
 
-LIBCAMERA_PUBLIC extern __typeof(openat) __openat_2 __attribute__ ((alias("openat")));
+LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
+{
+	return openat(dirfd, path, oflag);
+}
 
 LIBCAMERA_PUBLIC int dup(int oldfd)
 {

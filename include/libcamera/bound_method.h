@@ -156,12 +156,12 @@ public:
 };
 
 template<typename T, typename R, typename... Args>
-class BoundMemberMethod : public BoundMethodArgs<R, Args...>
+class BoundMethodMember : public BoundMethodArgs<R, Args...>
 {
 public:
 	using PackType = typename BoundMethodArgs<R, Args...>::PackType;
 
-	BoundMemberMethod(T *obj, Object *object, R (T::*func)(Args...),
+	BoundMethodMember(T *obj, Object *object, R (T::*func)(Args...),
 			  ConnectionType type = ConnectionTypeAuto)
 		: BoundMethodArgs<R, Args...>(obj, object, type), func_(func)
 	{
@@ -189,12 +189,12 @@ private:
 };
 
 template<typename T, typename... Args>
-class BoundMemberMethod<T, void, Args...> : public BoundMethodArgs<void, Args...>
+class BoundMethodMember<T, void, Args...> : public BoundMethodArgs<void, Args...>
 {
 public:
 	using PackType = typename BoundMethodArgs<void *, Args...>::PackType;
 
-	BoundMemberMethod(T *obj, Object *object, void (T::*func)(Args...),
+	BoundMethodMember(T *obj, Object *object, void (T::*func)(Args...),
 			  ConnectionType type = ConnectionTypeAuto)
 		: BoundMethodArgs<void, Args...>(obj, object, type), func_(func)
 	{
@@ -221,10 +221,10 @@ private:
 };
 
 template<typename R, typename... Args>
-class BoundStaticMethod : public BoundMethodArgs<R, Args...>
+class BoundMethodStatic : public BoundMethodArgs<R, Args...>
 {
 public:
-	BoundStaticMethod(R (*func)(Args...))
+	BoundMethodStatic(R (*func)(Args...))
 		: BoundMethodArgs<R, Args...>(nullptr, nullptr, ConnectionTypeAuto),
 		  func_(func)
 	{

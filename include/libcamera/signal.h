@@ -60,7 +60,7 @@ public:
 	{
 		Object *object = static_cast<Object *>(obj);
 		object->connect(this);
-		slots_.push_back(new BoundMemberMethod<T, void, Args...>(obj, object, func, type));
+		slots_.push_back(new BoundMethodMember<T, void, Args...>(obj, object, func, type));
 	}
 
 	template<typename T, typename R, typename std::enable_if<!std::is_base_of<Object, T>::value>::type * = nullptr>
@@ -69,13 +69,13 @@ public:
 #endif
 	void connect(T *obj, R (T::*func)(Args...))
 	{
-		slots_.push_back(new BoundMemberMethod<T, R, Args...>(obj, nullptr, func));
+		slots_.push_back(new BoundMethodMember<T, R, Args...>(obj, nullptr, func));
 	}
 
 	template<typename R>
 	void connect(R (*func)(Args...))
 	{
-		slots_.push_back(new BoundStaticMethod<R, Args...>(func));
+		slots_.push_back(new BoundMethodStatic<R, Args...>(func));
 	}
 
 	void disconnect()
@@ -100,11 +100,11 @@ public:
 			/*
 			 * If the object matches the slot, the slot is
 			 * guaranteed to be a member slot, so we can safely
-			 * cast it to BoundMemberMethod<T, Args...> to match
+			 * cast it to BoundMethodMember<T, Args...> to match
 			 * func.
 			 */
 			if (slot->match(obj) &&
-			    static_cast<BoundMemberMethod<T, R, Args...> *>(slot)->match(func)) {
+			    static_cast<BoundMethodMember<T, R, Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {
@@ -119,7 +119,7 @@ public:
 		for (auto iter = slots_.begin(); iter != slots_.end(); ) {
 			BoundMethodArgs<R, Args...> *slot = *iter;
 			if (slot->match(nullptr) &&
-			    static_cast<BoundStaticMethod<R, Args...> *>(slot)->match(func)) {
+			    static_cast<BoundMethodStatic<R, Args...> *>(slot)->match(func)) {
 				iter = slots_.erase(iter);
 				delete slot;
 			} else {

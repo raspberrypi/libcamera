@@ -35,7 +35,7 @@ public:
 		       Args... args)
 	{
 		T *obj = static_cast<T *>(this);
-		auto *method = new BoundMemberMethod<T, R, FuncArgs...>(obj, this, func, type);
+		auto *method = new BoundMethodMember<T, R, FuncArgs...>(obj, this, func, type);
 		return method->activate(args..., true);
 	}
 

@@ -870,12 +870,12 @@ EXCLUDE_PATTERNS       =
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        = libcamera::BoundMemberMethod \
-                         libcamera::BoundMethodArgs \
+EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          libcamera::BoundMethodBase \
+                         libcamera::BoundMethodMember \
                          libcamera::BoundMethodPack \
                          libcamera::BoundMethodPackBase \
-                         libcamera::BoundStaticMethod \
+                         libcamera::BoundMethodStatic \
                          libcamera::SignalBase \
                          std::*
 

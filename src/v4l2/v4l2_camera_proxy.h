@@ -39,7 +39,7 @@ public:
 private:
 	bool validateBufferType(uint32_t type);
 	bool validateMemoryType(uint32_t memory);
-	void setFmtFromConfig(StreamConfiguration &streamConfig);
+	void setFmtFromConfig(const StreamConfiguration &streamConfig);
 	void querycap(std::shared_ptr<Camera> camera);
 	int tryFormat(struct v4l2_format *arg);
 	enum v4l2_priority maxPriority();

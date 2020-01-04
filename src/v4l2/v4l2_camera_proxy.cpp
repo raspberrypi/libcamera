@@ -162,10 +162,10 @@ bool V4L2CameraProxy::validateMemoryType(uint32_t memory)
 	return memory == V4L2_MEMORY_MMAP;
 }
 
-void V4L2CameraProxy::setFmtFromConfig(StreamConfiguration &streamConfig)
+void V4L2CameraProxy::setFmtFromConfig(const StreamConfiguration &streamConfig)
 {
 	const PixelFormatInfo &info = PixelFormatInfo::info(streamConfig.pixelFormat);
-	Size size = streamConfig.size;
+	const Size &size = streamConfig.size;
 
 	curV4L2Format_.fmt.pix.width        = size.width;
 	curV4L2Format_.fmt.pix.height       = size.height;

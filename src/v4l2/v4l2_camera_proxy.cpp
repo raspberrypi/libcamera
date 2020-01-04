@@ -92,8 +92,7 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 		return MAP_FAILED;
 	}
 
-	FileDescriptor fd = vcam_->invokeMethod(&V4L2Camera::getBufferFd,
-						ConnectionTypeBlocking, index);
+	FileDescriptor fd = vcam_->getBufferFd(index);
 	if (!fd.isValid()) {
 		errno = EINVAL;
 		return MAP_FAILED;

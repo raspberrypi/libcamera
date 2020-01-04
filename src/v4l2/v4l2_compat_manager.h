@@ -26,11 +26,30 @@ using namespace libcamera;
 class V4L2CompatManager : public Thread
 {
 public:
+	struct FileOperations {
+		using openat_func_t = int (*)(int dirfd, const char *path,
+					      int oflag, ...);
+		using dup_func_t = int (*)(int oldfd);
+		using close_func_t = int (*)(int fd);
+		using ioctl_func_t = int (*)(int fd, unsigned long request, ...);
+		using mmap_func_t = void *(*)(void *addr, size_t length, int prot,
+					      int flags, int fd, off_t offset);
+		using munmap_func_t = int (*)(void *addr, size_t length);
+
+		openat_func_t openat;
+		dup_func_t dup;
+		close_func_t close;
+		ioctl_func_t ioctl;
+		mmap_func_t mmap;
+		munmap_func_t munmap;
+	};
+
 	static V4L2CompatManager *instance();
 
 	int init();
 
 	V4L2CameraProxy *getProxy(int fd);
+	const FileOperations &fops() const { return fops_; }
 
 	int openat(int dirfd, const char *path, int oflag, mode_t mode);
 
@@ -48,20 +67,7 @@ private:
 	void run() override;
 	int getCameraIndex(int fd);
 
-	typedef int (*openat_func_t)(int dirfd, const char *path, int oflag, ...);
-	typedef int (*dup_func_t)(int oldfd);
-	typedef int (*close_func_t)(int fd);
-	typedef int (*ioctl_func_t)(int fd, unsigned long request, ...);
-	typedef void *(*mmap_func_t)(void *addr, size_t length, int prot,
-				     int flags, int fd, off_t offset);
-	typedef int (*munmap_func_t)(void *addr, size_t length);
-
-	openat_func_t openat_func_;
-	dup_func_t    dup_func_;
-	close_func_t  close_func_;
-	ioctl_func_t  ioctl_func_;
-	mmap_func_t   mmap_func_;
-	munmap_func_t munmap_func_;
+	FileOperations fops_;
 
 	CameraManager *cm_;
 

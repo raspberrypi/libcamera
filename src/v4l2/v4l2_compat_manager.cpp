@@ -28,15 +28,23 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(V4L2Compat)
 
+namespace {
+template<typename T>
+void get_symbol(T &func, const char *name)
+{
+	func = reinterpret_cast<T>(dlsym(RTLD_NEXT, name));
+}
+} /* namespace */
+
 V4L2CompatManager::V4L2CompatManager()
 	: cm_(nullptr), initialized_(false)
 {
-	openat_func_ = (openat_func_t)dlsym(RTLD_NEXT, "openat");
-	dup_func_    = (dup_func_t   )dlsym(RTLD_NEXT, "dup");
-	close_func_  = (close_func_t )dlsym(RTLD_NEXT, "close");
-	ioctl_func_  = (ioctl_func_t )dlsym(RTLD_NEXT, "ioctl");
-	mmap_func_   = (mmap_func_t  )dlsym(RTLD_NEXT, "mmap");
-	munmap_func_ = (munmap_func_t)dlsym(RTLD_NEXT, "munmap");
+	get_symbol(fops_.openat, "openat");
+	get_symbol(fops_.dup, "dup");
+	get_symbol(fops_.close, "close");
+	get_symbol(fops_.ioctl, "ioctl");
+	get_symbol(fops_.mmap, "mmap");
+	get_symbol(fops_.munmap, "munmap");
 }
 
 V4L2CompatManager::~V4L2CompatManager()
@@ -141,7 +149,7 @@ int V4L2CompatManager::getCameraIndex(int fd)
 
 int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mode)
 {
-	int fd = openat_func_(dirfd, path, oflag, mode);
+	int fd = fops_.openat(dirfd, path, oflag, mode);
 	if (fd < 0)
 		return fd;
 
@@ -160,7 +168,7 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 		return fd;
 	}
 
-	close_func_(fd);
+	fops_.close(fd);
 
 	unsigned int camera_index = static_cast<unsigned int>(ret);
 
@@ -182,7 +190,7 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 
 int V4L2CompatManager::dup(int oldfd)
 {
-	int newfd = dup_func_(oldfd);
+	int newfd = fops_.dup(oldfd);
 	if (newfd < 0)
 		return newfd;
 
@@ -205,7 +213,7 @@ int V4L2CompatManager::close(int fd)
 		return 0;
 	}
 
-	return close_func_(fd);
+	return fops_.close(fd);
 }
 
 void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
@@ -213,7 +221,7 @@ void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
 {
 	V4L2CameraProxy *proxy = getProxy(fd);
 	if (!proxy)
-		return mmap_func_(addr, length, prot, flags, fd, offset);
+		return fops_.mmap(addr, length, prot, flags, fd, offset);
 
 	void *map = proxy->mmap(length, prot, flags, offset);
 	if (map == MAP_FAILED)
@@ -227,7 +235,7 @@ int V4L2CompatManager::munmap(void *addr, size_t length)
 {
 	auto device = mmaps_.find(addr);
 	if (device == mmaps_.end())
-		return munmap_func_(addr, length);
+		return fops_.munmap(addr, length);
 
 	V4L2CameraProxy *proxy = device->second;
 
@@ -244,7 +252,7 @@ int V4L2CompatManager::ioctl(int fd, unsigned long request, void *arg)
 {
 	V4L2CameraProxy *proxy = getProxy(fd);
 	if (!proxy)
-		return ioctl_func_(fd, request, arg);
+		return fops_.ioctl(fd, request, arg);
 
 	return proxy->ioctl(request, arg);
 }

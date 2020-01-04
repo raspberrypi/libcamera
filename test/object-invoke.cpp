@@ -123,6 +123,27 @@ protected:
 			return TestFail;
 		}
 
+		/* Test that direct method invocation bypasses threads. */
+		object_.reset();
+		object_.invokeMethod(&InvokedObject::method,
+				     ConnectionTypeDirect, 42);
+
+		switch (object_.status()) {
+		case InvokedObject::NoCall:
+			cout << "Method not invoked for custom thread" << endl;
+			return TestFail;
+		case InvokedObject::CallReceived:
+			cout << "Method invoked in incorrect thread for direct call" << endl;
+			return TestFail;
+		default:
+			break;
+		}
+
+		if (object_.value() != 42) {
+			cout << "Method invoked with incorrect value for direct call" << endl;
+			return TestFail;
+		}
+
 		/*
 		 * Test invoking a method that takes reference arguments. This
 		 * targets compilation, there's no need to check runtime

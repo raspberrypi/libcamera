@@ -37,10 +37,11 @@ public:
 	Object *object() const { return object_; }
 	ConnectionType connectionType() const { return connectionType_; }
 
-	void activatePack(void *pack, bool deleteMethod);
 	virtual void invokePack(void *pack) = 0;
 
 protected:
+	void activatePack(void *pack, bool deleteMethod);
+
 	void *obj_;
 	Object *object_;
 	ConnectionType connectionType_;
@@ -88,7 +89,7 @@ public:
 		invokePack(pack, typename generator<sizeof...(Args)>::type());
 	}
 
-	virtual void activate(Args... args) = 0;
+	virtual void activate(Args... args, bool deleteMethod = false) = 0;
 	virtual void invoke(Args... args) = 0;
 };
 
@@ -106,10 +107,10 @@ public:
 
 	bool match(void (T::*func)(Args...)) const { return func == func_; }
 
-	void activate(Args... args)
+	void activate(Args... args, bool deleteMethod = false)
 	{
 		if (this->object_)
-			BoundMethodBase::activatePack(new PackType{ args... }, false);
+			BoundMethodBase::activatePack(new PackType{ args... }, deleteMethod);
 		else
 			(static_cast<T *>(this->obj_)->*func_)(args...);
 	}
@@ -135,7 +136,11 @@ public:
 
 	bool match(void (*func)(Args...)) const { return func == func_; }
 
-	void activate(Args... args) { (*func_)(args...); }
+	void activate(Args... args, bool deleteMethod = false)
+	{
+		(*func_)(args...);
+	}
+
 	void invoke(Args...) {}
 
 private:

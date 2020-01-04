@@ -35,11 +35,8 @@ public:
 			  Args... args)
 	{
 		T *obj = static_cast<T *>(this);
-		BoundMethodBase *method =
-			new BoundMemberMethod<T, FuncArgs...>(obj, this, func, type);
-		void *pack = new typename BoundMemberMethod<T, FuncArgs...>::PackType{ args... };
-
-		method->activatePack(pack, true);
+		auto *method = new BoundMemberMethod<T, FuncArgs...>(obj, this, func, type);
+		method->activate(args..., true);
 	}
 
 	Thread *thread() const { return thread_; }

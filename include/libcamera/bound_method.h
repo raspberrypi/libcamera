@@ -107,7 +107,7 @@ public:
 
 	bool match(void (T::*func)(Args...)) const { return func == func_; }
 
-	void activate(Args... args, bool deleteMethod = false)
+	void activate(Args... args, bool deleteMethod = false) override
 	{
 		if (this->object_)
 			BoundMethodBase::activatePack(new PackType{ args... }, deleteMethod);
@@ -115,7 +115,7 @@ public:
 			(static_cast<T *>(this->obj_)->*func_)(args...);
 	}
 
-	void invoke(Args... args)
+	void invoke(Args... args) override
 	{
 		(static_cast<T *>(this->obj_)->*func_)(args...);
 	}
@@ -136,12 +136,12 @@ public:
 
 	bool match(void (*func)(Args...)) const { return func == func_; }
 
-	void activate(Args... args, bool deleteMethod = false)
+	void activate(Args... args, bool deleteMethod = false) override
 	{
 		(*func_)(args...);
 	}
 
-	void invoke(Args...) {}
+	void invoke(Args...) override {}
 
 private:
 	void (*func_)(Args...);

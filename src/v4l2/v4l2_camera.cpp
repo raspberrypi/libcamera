@@ -34,23 +34,21 @@ V4L2Camera::~V4L2Camera()
 	camera_->release();
 }
 
-void V4L2Camera::open(int *ret)
+int V4L2Camera::open()
 {
 	/* \todo Support multiple open. */
 	if (camera_->acquire() < 0) {
 		LOG(V4L2Compat, Error) << "Failed to acquire camera";
-		*ret = -EINVAL;
-		return;
+		return -EINVAL;
 	}
 
 	config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
 	if (!config_) {
 		camera_->release();
-		*ret = -EINVAL;
-		return;
+		return -EINVAL;
 	}
 
-	*ret = 0;
+	return 0;
 }
 
 void V4L2Camera::close()
@@ -92,9 +90,9 @@ void V4L2Camera::requestComplete(Request *request)
 	bufferSema_.release();
 }
 
-void V4L2Camera::configure(int *ret, StreamConfiguration *streamConfigOut,
-			   const Size &size, PixelFormat pixelformat,
-			   unsigned int bufferCount)
+int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
+			  const Size &size, PixelFormat pixelformat,
+			  unsigned int bufferCount)
 {
 	StreamConfiguration &streamConfig = config_->at(0);
 	streamConfig.size.width = size.width;
@@ -106,8 +104,7 @@ void V4L2Camera::configure(int *ret, StreamConfiguration *streamConfigOut,
 	CameraConfiguration::Status validation = config_->validate();
 	if (validation == CameraConfiguration::Invalid) {
 		LOG(V4L2Compat, Debug) << "Configuration invalid";
-		*ret = -EINVAL;
-		return;
+		return -EINVAL;
 	}
 	if (validation == CameraConfiguration::Adjusted)
 		LOG(V4L2Compat, Debug) << "Configuration adjusted";
@@ -115,24 +112,25 @@ void V4L2Camera::configure(int *ret, StreamConfiguration *streamConfigOut,
 	LOG(V4L2Compat, Debug) << "Validated configuration is: "
 			      << streamConfig.toString();
 
-	*ret = camera_->configure(config_.get());
-	if (*ret < 0)
-		return;
+	int ret = camera_->configure(config_.get());
+	if (ret < 0)
+		return ret;
 
 	*streamConfigOut = config_->at(0);
+
+	return 0;
 }
 
-void V4L2Camera::mmap(void **ret, unsigned int index)
+void *V4L2Camera::mmap(unsigned int index)
 {
 	Stream *stream = *camera_->streams().begin();
-	*ret = stream->buffers()[index].planes()[0].mem();
+	return stream->buffers()[index].planes()[0].mem();
 }
 
-void V4L2Camera::allocBuffers(int *ret, unsigned int count)
+int V4L2Camera::allocBuffers(unsigned int count)
 {
-	*ret = camera_->allocateBuffers();
-	if (*ret == -EACCES)
-		*ret = -EBUSY;
+	int ret = camera_->allocateBuffers();
+	return ret == -EACCES ? -EBUSY : ret;
 }
 
 void V4L2Camera::freeBuffers()
@@ -140,85 +138,76 @@ void V4L2Camera::freeBuffers()
 	camera_->freeBuffers();
 }
 
-void V4L2Camera::streamOn(int *ret)
+int V4L2Camera::streamOn()
 {
-	*ret = 0;
-
 	if (isRunning_)
-		return;
+		return 0;
 
-	*ret = camera_->start();
-	if (*ret < 0) {
-		if (*ret == -EACCES)
-			*ret = -EBUSY;
-		return;
-	}
+	int ret = camera_->start();
+	if (ret < 0)
+		return ret == -EACCES ? -EBUSY : ret;
+
 	isRunning_ = true;
 
 	for (std::unique_ptr<Request> &req : pendingRequests_) {
 		/* \todo What should we do if this returns -EINVAL? */
-		*ret = camera_->queueRequest(req.release());
-		if (*ret < 0) {
-			if (*ret == -EACCES)
-				*ret = -EBUSY;
-			return;
-		}
+		ret = camera_->queueRequest(req.release());
+		if (ret < 0)
+			return ret == -EACCES ? -EBUSY : ret;
 	}
 
 	pendingRequests_.clear();
+
+	return 0;
 }
 
-void V4L2Camera::streamOff(int *ret)
+int V4L2Camera::streamOff()
 {
-	*ret = 0;
-
 	/* \todo Restore buffers to reqbufs state? */
 	if (!isRunning_)
-		return;
+		return 0;
 
-	*ret = camera_->stop();
-	if (*ret < 0) {
-		if (*ret == -EACCES)
-			*ret = -EBUSY;
-		return;
-	}
+	int ret = camera_->stop();
+	if (ret < 0)
+		return ret == -EACCES ? -EBUSY : ret;
+
 	isRunning_ = false;
+
+	return 0;
 }
 
-void V4L2Camera::qbuf(int *ret, unsigned int index)
+int V4L2Camera::qbuf(unsigned int index)
 {
 	Stream *stream = config_->at(0).stream();
 	std::unique_ptr<Buffer> buffer = stream->createBuffer(index);
 	if (!buffer) {
 		LOG(V4L2Compat, Error) << "Can't create buffer";
-		*ret = -ENOMEM;
-		return;
+		return -ENOMEM;
 	}
 
 	std::unique_ptr<Request> request =
 		std::unique_ptr<Request>(camera_->createRequest());
 	if (!request) {
 		LOG(V4L2Compat, Error) << "Can't create request";
-		*ret = -ENOMEM;
-		return;
+		return -ENOMEM;
 	}
 
-	*ret = request->addBuffer(std::move(buffer));
-	if (*ret < 0) {
+	int ret = request->addBuffer(std::move(buffer));
+	if (ret < 0) {
 		LOG(V4L2Compat, Error) << "Can't set buffer for request";
-		*ret = -ENOMEM;
-		return;
+		return -ENOMEM;
 	}
 
 	if (!isRunning_) {
 		pendingRequests_.push_back(std::move(request));
-		return;
+		return 0;
 	}
 
-	*ret = camera_->queueRequest(request.release());
-	if (*ret < 0) {
+	ret = camera_->queueRequest(request.release());
+	if (ret < 0) {
 		LOG(V4L2Compat, Error) << "Can't queue request";
-		if (*ret == -EACCES)
-			*ret = -EBUSY;
+		return ret == -EACCES ? -EBUSY : ret;
 	}
+
+	return 0;
 }

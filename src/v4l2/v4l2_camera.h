@@ -48,23 +48,23 @@ public:
 	V4L2Camera(std::shared_ptr<Camera> camera);
 	~V4L2Camera();
 
-	void open(int *ret);
+	int open();
 	void close();
 	void getStreamConfig(StreamConfiguration *streamConfig);
 	std::vector<FrameMetadata> completedBuffers();
 
-	void mmap(void **ret, unsigned int index);
+	void *mmap(unsigned int index);
 
-	void configure(int *ret, StreamConfiguration *streamConfigOut,
-		       const Size &size, PixelFormat pixelformat,
-		       unsigned int bufferCount);
+	int configure(StreamConfiguration *streamConfigOut,
+		      const Size &size, PixelFormat pixelformat,
+		      unsigned int bufferCount);
 
-	void allocBuffers(int *ret, unsigned int count);
+	int allocBuffers(unsigned int count);
 	void freeBuffers();
-	void streamOn(int *ret);
-	void streamOff(int *ret);
+	int streamOn();
+	int streamOff();
 
-	void qbuf(int *ret, unsigned int index);
+	int qbuf(unsigned int index);
 
 	Semaphore bufferSema_;
 

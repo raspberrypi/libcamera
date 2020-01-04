@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_BOUND_METHOD_H__
 #define __LIBCAMERA_BOUND_METHOD_H__
 
+#include <memory>
 #include <tuple>
 #include <type_traits>
 
@@ -19,6 +20,24 @@ enum ConnectionType {
 	ConnectionTypeDirect,
 	ConnectionTypeQueued,
 	ConnectionTypeBlocking,
+};
+
+class BoundMethodPackBase
+{
+public:
+	virtual ~BoundMethodPackBase() {}
+};
+
+template<typename... Args>
+class BoundMethodPack : public BoundMethodPackBase
+{
+public:
+	BoundMethodPack(const Args &... args)
+		: args_(args...)
+	{
+	}
+
+	std::tuple<typename std::remove_reference<Args>::type...> args_;
 };
 
 class BoundMethodBase
@@ -36,7 +55,7 @@ public:
 
 	Object *object() const { return object_; }
 
-	virtual void invokePack(void *pack) = 0;
+	virtual void invokePack(BoundMethodPackBase *pack) = 0;
 
 protected:
 #ifndef __DOXYGEN__
@@ -58,25 +77,14 @@ protected:
 	};
 #endif
 
-	void activatePack(void *pack, bool deleteMethod);
+	void activatePack(std::shared_ptr<BoundMethodPackBase> pack,
+			  bool deleteMethod);
 
 	void *obj_;
 	Object *object_;
 
 private:
 	ConnectionType connectionType_;
-};
-
-template<typename... Args>
-class BoundMethodPack
-{
-public:
-	BoundMethodPack(const Args &... args)
-		: args_(args...)
-	{
-	}
-
-	std::tuple<typename std::remove_reference<Args>::type...> args_;
 };
 
 template<typename R, typename... Args>
@@ -87,18 +95,18 @@ public:
 
 private:
 	template<int... S>
-	void invokePack(void *pack, BoundMethodBase::sequence<S...>)
+	void invokePack(BoundMethodPackBase *pack, BoundMethodBase::sequence<S...>)
 	{
-		PackType *args = static_cast<PackType *>(pack);
+		/* args is effectively unused when the sequence S is empty. */
+		PackType *args [[gnu::unused]] = static_cast<PackType *>(pack);
 		invoke(std::get<S>(args->args_)...);
-		delete args;
 	}
 
 public:
 	BoundMethodArgs(void *obj, Object *object, ConnectionType type)
 		: BoundMethodBase(obj, object, type) {}
 
-	void invokePack(void *pack) override
+	void invokePack(BoundMethodPackBase *pack) override
 	{
 		invokePack(pack, typename BoundMethodBase::generator<sizeof...(Args)>::type());
 	}
@@ -123,10 +131,14 @@ public:
 
 	void activate(Args... args, bool deleteMethod = false) override
 	{
-		if (this->object_)
-			BoundMethodBase::activatePack(new PackType{ args... }, deleteMethod);
-		else
+		if (!this->object_) {
 			(static_cast<T *>(this->obj_)->*func_)(args...);
+			return;
+		}
+
+		std::shared_ptr<BoundMethodPackBase> pack =
+			std::make_shared<typename BoundMemberMethod<T, R, Args...>::PackType>(args...);
+		BoundMethodBase::activatePack(pack, deleteMethod);
 	}
 
 	void invoke(Args... args) override

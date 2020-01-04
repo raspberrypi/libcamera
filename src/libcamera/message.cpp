@@ -123,7 +123,8 @@ Message::Type Message::registerMessageType()
  * \param[in] deleteMethod True to delete the \a method when the message is
  * destroyed
  */
-InvokeMessage::InvokeMessage(BoundMethodBase *method, void *pack,
+InvokeMessage::InvokeMessage(BoundMethodBase *method,
+			     std::shared_ptr<BoundMethodPackBase> pack,
 			     Semaphore *semaphore, bool deleteMethod)
 	: Message(Message::InvokeMessage), method_(method), pack_(pack),
 	  semaphore_(semaphore), deleteMethod_(deleteMethod)
@@ -148,7 +149,7 @@ InvokeMessage::~InvokeMessage()
  */
 void InvokeMessage::invoke()
 {
-	method_->invokePack(pack_);
+	method_->invokePack(pack_.get());
 }
 
 /**

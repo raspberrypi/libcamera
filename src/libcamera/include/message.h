@@ -48,7 +48,8 @@ private:
 class InvokeMessage : public Message
 {
 public:
-	InvokeMessage(BoundMethodBase *method, void *pack,
+	InvokeMessage(BoundMethodBase *method,
+		      std::shared_ptr<BoundMethodPackBase> pack,
 		      Semaphore *semaphore = nullptr,
 		      bool deleteMethod = false);
 	~InvokeMessage();
@@ -59,7 +60,7 @@ public:
 
 private:
 	BoundMethodBase *method_;
-	void *pack_;
+	std::shared_ptr<BoundMethodPackBase> pack_;
 	Semaphore *semaphore_;
 	bool deleteMethod_;
 };

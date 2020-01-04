@@ -874,6 +874,7 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMemberMethod \
                          libcamera::BoundMethodArgs \
                          libcamera::BoundMethodBase \
                          libcamera::BoundMethodPack \
+                         libcamera::BoundMethodPackBase \
                          libcamera::BoundStaticMethod \
                          libcamera::SignalBase \
                          std::*

@@ -48,7 +48,8 @@ namespace libcamera {
  * deadlock will occur.
  */
 
-void BoundMethodBase::activatePack(void *pack, bool deleteMethod)
+void BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
+				   bool deleteMethod)
 {
 	ConnectionType type = connectionType_;
 	if (type == ConnectionTypeAuto) {
@@ -61,7 +62,7 @@ void BoundMethodBase::activatePack(void *pack, bool deleteMethod)
 	switch (type) {
 	case ConnectionTypeDirect:
 	default:
-		invokePack(pack);
+		invokePack(pack.get());
 		if (deleteMethod)
 			delete this;
 		break;

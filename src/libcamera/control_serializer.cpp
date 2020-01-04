@@ -84,6 +84,11 @@ static constexpr size_t ControlValueSize[] = {
  * proceed with care to avoid stale references.
  */
 
+ControlSerializer::ControlSerializer()
+	: serial_(0)
+{
+}
+
 /**
  * \brief Reset the serializer
  *

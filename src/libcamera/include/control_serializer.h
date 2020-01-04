@@ -20,6 +20,8 @@ class ByteStreamBuffer;
 class ControlSerializer
 {
 public:
+	ControlSerializer();
+
 	void reset();
 
 	static size_t binarySize(const ControlInfoMap &info);

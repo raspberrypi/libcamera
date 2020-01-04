@@ -35,7 +35,6 @@ public:
 	bool match(Object *object) { return object == object_; }
 
 	Object *object() const { return object_; }
-	ConnectionType connectionType() const { return connectionType_; }
 
 	virtual void invokePack(void *pack) = 0;
 
@@ -44,6 +43,8 @@ protected:
 
 	void *obj_;
 	Object *object_;
+
+private:
 	ConnectionType connectionType_;
 };
 

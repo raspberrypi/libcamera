@@ -172,7 +172,7 @@ int IPCUnixSocket::send(const Payload &payload)
 	if (!isBound())
 		return -ENOTCONN;
 
-	Header hdr;
+	Header hdr = {};
 	hdr.data = payload.data.size();
 	hdr.fds = payload.fds.size();
 

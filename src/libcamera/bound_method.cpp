@@ -62,6 +62,8 @@ void BoundMethodBase::activatePack(void *pack, bool deleteMethod)
 	case ConnectionTypeDirect:
 	default:
 		invokePack(pack);
+		if (deleteMethod)
+			delete this;
 		break;
 
 	case ConnectionTypeQueued: {

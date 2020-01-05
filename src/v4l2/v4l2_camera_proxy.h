@@ -73,12 +73,13 @@ private:
 	unsigned int refcount_;
 	unsigned int index_;
 
-	struct v4l2_format curV4L2Format_;
 	StreamConfiguration streamConfig_;
-	struct v4l2_capability capabilities_;
 	unsigned int bufferCount_;
 	unsigned int currentBuf_;
 	unsigned int sizeimage_;
+
+	struct v4l2_capability capabilities_;
+	struct v4l2_pix_format v4l2PixFormat_;
 
 	std::vector<struct v4l2_buffer> buffers_;
 	std::map<void *, unsigned int> mmaps_;

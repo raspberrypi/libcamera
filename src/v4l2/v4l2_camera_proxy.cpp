@@ -167,17 +167,17 @@ void V4L2CameraProxy::setFmtFromConfig(const StreamConfiguration &streamConfig)
 	const PixelFormatInfo &info = PixelFormatInfo::info(streamConfig.pixelFormat);
 	const Size &size = streamConfig.size;
 
-	curV4L2Format_.fmt.pix.width        = size.width;
-	curV4L2Format_.fmt.pix.height       = size.height;
-	curV4L2Format_.fmt.pix.pixelformat  = info.v4l2Format;
-	curV4L2Format_.fmt.pix.field        = V4L2_FIELD_NONE;
-	curV4L2Format_.fmt.pix.bytesperline = streamConfig.stride;
-	curV4L2Format_.fmt.pix.sizeimage    = streamConfig.frameSize;
-	curV4L2Format_.fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
-	curV4L2Format_.fmt.pix.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
-	curV4L2Format_.fmt.pix.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
-	curV4L2Format_.fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
-	curV4L2Format_.fmt.pix.xfer_func    = V4L2_XFER_FUNC_DEFAULT;
+	v4l2PixFormat_.width        = size.width;
+	v4l2PixFormat_.height       = size.height;
+	v4l2PixFormat_.pixelformat  = info.v4l2Format;
+	v4l2PixFormat_.field        = V4L2_FIELD_NONE;
+	v4l2PixFormat_.bytesperline = streamConfig.stride;
+	v4l2PixFormat_.sizeimage    = streamConfig.frameSize;
+	v4l2PixFormat_.colorspace   = V4L2_COLORSPACE_SRGB;
+	v4l2PixFormat_.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
+	v4l2PixFormat_.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
+	v4l2PixFormat_.quantization = V4L2_QUANTIZATION_DEFAULT;
+	v4l2PixFormat_.xfer_func    = V4L2_XFER_FUNC_DEFAULT;
 
 	sizeimage_ = streamConfig.frameSize;
 }
@@ -291,7 +291,7 @@ int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 		return -EINVAL;
 
 	memset(&arg->fmt, 0, sizeof(arg->fmt));
-	arg->fmt.pix = curV4L2Format_.fmt.pix;
+	arg->fmt.pix = v4l2PixFormat_;
 
 	return 0;
 }
@@ -488,8 +488,8 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	if (bufferCount_ > 0)
 		freeBuffers();
 
-	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
-	V4L2PixelFormat v4l2Format = V4L2PixelFormat(curV4L2Format_.fmt.pix.pixelformat);
+	Size size(v4l2PixFormat_.width, v4l2PixFormat_.height);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat(v4l2PixFormat_.pixelformat);
 	int ret = vcam_->configure(&streamConfig_, size,
 				   PixelFormatInfo::info(v4l2Format).format,
 				   arg->count);
@@ -511,9 +511,9 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	for (unsigned int i = 0; i < arg->count; i++) {
 		struct v4l2_buffer buf = {};
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.length = curV4L2Format_.fmt.pix.sizeimage;
+		buf.length = v4l2PixFormat_.sizeimage;
 		buf.memory = V4L2_MEMORY_MMAP;
-		buf.m.offset = i * curV4L2Format_.fmt.pix.sizeimage;
+		buf.m.offset = i * v4l2PixFormat_.sizeimage;
 		buf.index = i;
 		buf.flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
 

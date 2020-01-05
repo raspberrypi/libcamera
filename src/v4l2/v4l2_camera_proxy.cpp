@@ -508,134 +508,94 @@ int V4L2CameraProxy::ioctl(unsigned long request, void *arg)
 	return ret;
 }
 
+struct PixelFormatPlaneInfo {
+	unsigned int bitsPerPixel;
+	unsigned int hSubSampling;
+	unsigned int vSubSampling;
+};
+
+struct PixelFormatInfo {
+	PixelFormat format;
+	uint32_t v4l2Format;
+	unsigned int numPlanes;
+	std::array<PixelFormatPlaneInfo, 3> planes;
+};
+
+namespace {
+
+constexpr std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
+	/* RGB formats. */
+	{ DRM_FORMAT_RGB888,	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_BGR888,	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_BGRA8888,	V4L2_PIX_FMT_ARGB32,	1, {{ { 32, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	/* YUV packed formats. */
+	{ DRM_FORMAT_UYVY,	V4L2_PIX_FMT_UYVY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_VYUY,	V4L2_PIX_FMT_VYUY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_YUYV,	V4L2_PIX_FMT_YUYV,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_YVYU,	V4L2_PIX_FMT_YVYU,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	/* YUY planar formats. */
+	{ DRM_FORMAT_NV12,	V4L2_PIX_FMT_NV12,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_NV21,	V4L2_PIX_FMT_NV21,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_NV16,	V4L2_PIX_FMT_NV16,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_NV61,	V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_NV24,	V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ DRM_FORMAT_NV42,	V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
+}};
+
+} /* namespace */
+
 /* \todo make libcamera export these */
 unsigned int V4L2CameraProxy::bplMultiplier(uint32_t format)
 {
-	switch (format) {
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV16:
-	case V4L2_PIX_FMT_NV61:
-	case V4L2_PIX_FMT_NV24:
-	case V4L2_PIX_FMT_NV42:
-		return 1;
-	case V4L2_PIX_FMT_BGR24:
-	case V4L2_PIX_FMT_RGB24:
-		return 3;
-	case V4L2_PIX_FMT_ARGB32:
-		return 4;
-	case V4L2_PIX_FMT_VYUY:
-	case V4L2_PIX_FMT_YVYU:
-	case V4L2_PIX_FMT_UYVY:
-	case V4L2_PIX_FMT_YUYV:
-		return 2;
-	default:
+	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
+				 [format](const PixelFormatInfo &info) {
+					 return info.v4l2Format == format;
+				 });
+	if (info == pixelFormatInfo.end())
 		return 0;
-	};
+
+	return info->planes[0].bitsPerPixel / 8;
 }
 
 unsigned int V4L2CameraProxy::imageSize(uint32_t format, unsigned int width,
 					unsigned int height)
 {
-	switch (format) {
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV21:
-		return width * height * 3 / 2;
-	case V4L2_PIX_FMT_NV16:
-	case V4L2_PIX_FMT_NV61:
-		return width * height * 2;
-	case V4L2_PIX_FMT_NV24:
-	case V4L2_PIX_FMT_NV42:
-		return width * height * 3;
-	case V4L2_PIX_FMT_BGR24:
-	case V4L2_PIX_FMT_RGB24:
-		return width * height * 3;
-	case V4L2_PIX_FMT_ARGB32:
-		return width * height * 4;
-	case V4L2_PIX_FMT_VYUY:
-	case V4L2_PIX_FMT_YVYU:
-	case V4L2_PIX_FMT_UYVY:
-	case V4L2_PIX_FMT_YUYV:
-		return width * height * 2;
-	default:
+	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
+				 [format](const PixelFormatInfo &info) {
+					 return info.v4l2Format == format;
+				 });
+	if (info == pixelFormatInfo.end())
 		return 0;
-	};
+
+	unsigned int multiplier = 0;
+	for (unsigned int i = 0; i < info->numPlanes; ++i)
+		multiplier += info->planes[i].bitsPerPixel
+			    / info->planes[i].hSubSampling
+			    / info->planes[i].vSubSampling;
+
+	return width * height * multiplier / 8;
 }
 
 PixelFormat V4L2CameraProxy::v4l2ToDrm(uint32_t format)
 {
-	switch (format) {
-	/* RGB formats. */
-	case V4L2_PIX_FMT_RGB24:
-		return DRM_FORMAT_BGR888;
-	case V4L2_PIX_FMT_BGR24:
-		return DRM_FORMAT_RGB888;
-	case V4L2_PIX_FMT_ARGB32:
-		return DRM_FORMAT_BGRA8888;
-
-	/* YUV packed formats. */
-	case V4L2_PIX_FMT_YUYV:
-		return DRM_FORMAT_YUYV;
-	case V4L2_PIX_FMT_YVYU:
-		return DRM_FORMAT_YVYU;
-	case V4L2_PIX_FMT_UYVY:
-		return DRM_FORMAT_UYVY;
-	case V4L2_PIX_FMT_VYUY:
-		return DRM_FORMAT_VYUY;
-
-	/* YUY planar formats. */
-	case V4L2_PIX_FMT_NV16:
-		return DRM_FORMAT_NV16;
-	case V4L2_PIX_FMT_NV61:
-		return DRM_FORMAT_NV61;
-	case V4L2_PIX_FMT_NV12:
-		return DRM_FORMAT_NV12;
-	case V4L2_PIX_FMT_NV21:
-		return DRM_FORMAT_NV21;
-	case V4L2_PIX_FMT_NV24:
-		return DRM_FORMAT_NV24;
-	case V4L2_PIX_FMT_NV42:
-		return DRM_FORMAT_NV42;
-	default:
+	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
+				 [format](const PixelFormatInfo &info) {
+					 return info.v4l2Format == format;
+				 });
+	if (info == pixelFormatInfo.end())
 		return format;
-	};
+
+	return info->format;
 }
 
 uint32_t V4L2CameraProxy::drmToV4L2(PixelFormat format)
 {
-	switch (format) {
-	/* RGB formats. */
-	case DRM_FORMAT_BGR888:
-		return V4L2_PIX_FMT_RGB24;
-	case DRM_FORMAT_RGB888:
-		return V4L2_PIX_FMT_BGR24;
-	case DRM_FORMAT_BGRA8888:
-		return V4L2_PIX_FMT_ARGB32;
-
-	/* YUV packed formats. */
-	case DRM_FORMAT_YUYV:
-		return V4L2_PIX_FMT_YUYV;
-	case DRM_FORMAT_YVYU:
-		return V4L2_PIX_FMT_YVYU;
-	case DRM_FORMAT_UYVY:
-		return V4L2_PIX_FMT_UYVY;
-	case DRM_FORMAT_VYUY:
-		return V4L2_PIX_FMT_VYUY;
-
-	/* YUY planar formats. */
-	case DRM_FORMAT_NV16:
-		return V4L2_PIX_FMT_NV16;
-	case DRM_FORMAT_NV61:
-		return V4L2_PIX_FMT_NV61;
-	case DRM_FORMAT_NV12:
-		return V4L2_PIX_FMT_NV12;
-	case DRM_FORMAT_NV21:
-		return V4L2_PIX_FMT_NV21;
-	case DRM_FORMAT_NV24:
-		return V4L2_PIX_FMT_NV24;
-	case DRM_FORMAT_NV42:
-		return V4L2_PIX_FMT_NV42;
-	default:
+	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
+				 [format](const PixelFormatInfo &info) {
+					 return info.format == format;
+				 });
+	if (info == pixelFormatInfo.end())
 		return format;
-	}
+
+	return info->v4l2Format;
 }

@@ -54,12 +54,12 @@ private:
 	int vidioc_streamon(int *arg);
 	int vidioc_streamoff(int *arg);
 
-	static int bplMultiplier(unsigned int format);
-	static int imageSize(unsigned int format, unsigned int width,
-			     unsigned int height);
+	static unsigned int bplMultiplier(uint32_t format);
+	static unsigned int imageSize(uint32_t format, unsigned int width,
+				      unsigned int height);
 
-	static unsigned int v4l2ToDrm(unsigned int pixelformat);
-	static unsigned int drmToV4L2(unsigned int pixelformat);
+	static PixelFormat v4l2ToDrm(uint32_t format);
+	static uint32_t drmToV4L2(PixelFormat format);
 
 	unsigned int refcount_;
 	unsigned int index_;

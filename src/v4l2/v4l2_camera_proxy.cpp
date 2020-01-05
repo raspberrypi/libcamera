@@ -509,7 +509,7 @@ int V4L2CameraProxy::ioctl(unsigned long request, void *arg)
 }
 
 /* \todo make libcamera export these */
-int V4L2CameraProxy::bplMultiplier(unsigned int format)
+unsigned int V4L2CameraProxy::bplMultiplier(uint32_t format)
 {
 	switch (format) {
 	case V4L2_PIX_FMT_NV12:
@@ -534,8 +534,8 @@ int V4L2CameraProxy::bplMultiplier(unsigned int format)
 	};
 }
 
-int V4L2CameraProxy::imageSize(unsigned int format,
-			       unsigned int width, unsigned int height)
+unsigned int V4L2CameraProxy::imageSize(uint32_t format, unsigned int width,
+					unsigned int height)
 {
 	switch (format) {
 	case V4L2_PIX_FMT_NV12:
@@ -562,9 +562,9 @@ int V4L2CameraProxy::imageSize(unsigned int format,
 	};
 }
 
-unsigned int V4L2CameraProxy::v4l2ToDrm(unsigned int pixelformat)
+PixelFormat V4L2CameraProxy::v4l2ToDrm(uint32_t format)
 {
-	switch (pixelformat) {
+	switch (format) {
 	/* RGB formats. */
 	case V4L2_PIX_FMT_RGB24:
 		return DRM_FORMAT_BGR888;
@@ -597,13 +597,13 @@ unsigned int V4L2CameraProxy::v4l2ToDrm(unsigned int pixelformat)
 	case V4L2_PIX_FMT_NV42:
 		return DRM_FORMAT_NV42;
 	default:
-		return pixelformat;
+		return format;
 	};
 }
 
-unsigned int V4L2CameraProxy::drmToV4L2(unsigned int pixelformat)
+uint32_t V4L2CameraProxy::drmToV4L2(PixelFormat format)
 {
-	switch (pixelformat) {
+	switch (format) {
 	/* RGB formats. */
 	case DRM_FORMAT_BGR888:
 		return V4L2_PIX_FMT_RGB24;
@@ -636,6 +636,6 @@ unsigned int V4L2CameraProxy::drmToV4L2(unsigned int pixelformat)
 	case DRM_FORMAT_NV42:
 		return V4L2_PIX_FMT_NV42;
 	default:
-		return pixelformat;
+		return format;
 	}
 }

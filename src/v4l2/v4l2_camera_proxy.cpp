@@ -63,13 +63,12 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 	 * with count = 0.
 	 */
 
-	int ret = vcam_->open();
+	int ret = vcam_->open(&streamConfig_);
 	if (ret < 0) {
 		refcount_--;
 		return ret;
 	}
 
-	vcam_->getStreamConfig(&streamConfig_);
 	setFmtFromConfig(streamConfig_);
 
 	files_.insert(file);

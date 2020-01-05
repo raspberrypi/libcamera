@@ -37,11 +37,11 @@ public:
 	V4L2Camera(std::shared_ptr<Camera> camera);
 	~V4L2Camera();
 
-	int open();
+	int open(StreamConfiguration *streamConfig);
 	void close();
 	void bind(int efd);
 	void unbind();
-	void getStreamConfig(StreamConfiguration *streamConfig);
+
 	std::vector<Buffer> completedBuffers();
 
 	int configure(StreamConfiguration *streamConfigOut,

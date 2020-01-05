@@ -28,7 +28,7 @@ V4L2Camera::~V4L2Camera()
 	close();
 }
 
-int V4L2Camera::open()
+int V4L2Camera::open(StreamConfiguration *streamConfig)
 {
 	if (camera_->acquire() < 0) {
 		LOG(V4L2Compat, Error) << "Failed to acquire camera";
@@ -43,6 +43,7 @@ int V4L2Camera::open()
 
 	bufferAllocator_ = new FrameBufferAllocator(camera_);
 
+	*streamConfig = config_->at(0);
 	return 0;
 }
 
@@ -62,11 +63,6 @@ void V4L2Camera::bind(int efd)
 void V4L2Camera::unbind()
 {
 	efd_ = -1;
-}
-
-void V4L2Camera::getStreamConfig(StreamConfiguration *streamConfig)
-{
-	*streamConfig = config_->at(0);
 }
 
 std::vector<V4L2Camera::Buffer> V4L2Camera::completedBuffers()

@@ -8,6 +8,7 @@
 #include "v4l2_camera_proxy.h"
 
 #include <algorithm>
+#include <array>
 #include <errno.h>
 #include <linux/drm_fourcc.h>
 #include <linux/videodev2.h>

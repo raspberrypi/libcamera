@@ -282,7 +282,7 @@ int V4L2CameraProxy::vidioc_try_fmt(struct v4l2_format *arg)
 
 	arg->fmt.pix.width        = size.width;
 	arg->fmt.pix.height       = size.height;
-	arg->fmt.pix.pixelformat  = v4l2ToDrm(format);
+	arg->fmt.pix.pixelformat  = drmToV4L2(format);
 	arg->fmt.pix.field        = V4L2_FIELD_NONE;
 	arg->fmt.pix.bytesperline = bplMultiplier(drmToV4L2(format)) *
 				    arg->fmt.pix.width;

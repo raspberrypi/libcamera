@@ -39,6 +39,7 @@ private:
 	void setFmtFromConfig(StreamConfiguration &streamConfig);
 	unsigned int calculateSizeImage(StreamConfiguration &streamConfig);
 	void querycap(std::shared_ptr<Camera> camera);
+	void tryFormat(struct v4l2_format *arg);
 	void updateBuffers();
 	int freeBuffers();
 

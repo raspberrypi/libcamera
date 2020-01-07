@@ -235,13 +235,39 @@ int V4L2CameraProxy::vidioc_g_fmt(struct v4l2_format *arg)
 	return 0;
 }
 
+void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
+{
+	PixelFormat format = v4l2ToDrm(arg->fmt.pix.pixelformat);
+	const std::vector<PixelFormat> &formats =
+		streamConfig_.formats().pixelformats();
+	if (std::find(formats.begin(), formats.end(), format) == formats.end())
+		format = streamConfig_.formats().pixelformats()[0];
+
+	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
+	const std::vector<Size> &sizes = streamConfig_.formats().sizes(format);
+	if (std::find(sizes.begin(), sizes.end(), size) == sizes.end())
+		size = streamConfig_.formats().sizes(format)[0];
+
+	arg->fmt.pix.width        = size.width;
+	arg->fmt.pix.height       = size.height;
+	arg->fmt.pix.pixelformat  = drmToV4L2(format);
+	arg->fmt.pix.field        = V4L2_FIELD_NONE;
+	arg->fmt.pix.bytesperline = bplMultiplier(drmToV4L2(format)) *
+				    arg->fmt.pix.width;
+	arg->fmt.pix.sizeimage    = imageSize(drmToV4L2(format),
+					      arg->fmt.pix.width,
+					      arg->fmt.pix.height);
+	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
+}
+
 int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_fmt";
 
-	int ret = vidioc_try_fmt(arg);
-	if (ret < 0)
-		return ret;
+	if (!validateBufferType(arg->type))
+		return -EINVAL;
+
+	tryFormat(arg);
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
 	ret = vcam_->invokeMethod(&V4L2Camera::configure,
@@ -269,27 +295,7 @@ int V4L2CameraProxy::vidioc_try_fmt(struct v4l2_format *arg)
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
 
-	PixelFormat format = v4l2ToDrm(arg->fmt.pix.pixelformat);
-	const std::vector<PixelFormat> &formats =
-		streamConfig_.formats().pixelformats();
-	if (std::find(formats.begin(), formats.end(), format) == formats.end())
-		format = streamConfig_.formats().pixelformats()[0];
-
-	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
-	const std::vector<Size> &sizes = streamConfig_.formats().sizes(format);
-	if (std::find(sizes.begin(), sizes.end(), size) == sizes.end())
-		size = streamConfig_.formats().sizes(format)[0];
-
-	arg->fmt.pix.width        = size.width;
-	arg->fmt.pix.height       = size.height;
-	arg->fmt.pix.pixelformat  = drmToV4L2(format);
-	arg->fmt.pix.field        = V4L2_FIELD_NONE;
-	arg->fmt.pix.bytesperline = bplMultiplier(drmToV4L2(format)) *
-				    arg->fmt.pix.width;
-	arg->fmt.pix.sizeimage    = imageSize(drmToV4L2(format),
-					      arg->fmt.pix.width,
-					      arg->fmt.pix.height);
-	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
+	tryFormat(arg);
 
 	return 0;
 }

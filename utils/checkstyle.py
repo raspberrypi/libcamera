@@ -102,7 +102,7 @@ class DiffHunkSide(object):
 
 
 class DiffHunk(object):
-    diff_header_regex = re.compile('@@ -([0-9]+),([0-9]+) \+([0-9]+),([0-9]+) @@')
+    diff_header_regex = re.compile(r'@@ -([0-9]+),([0-9]+) \+([0-9]+),([0-9]+) @@')
 
     def __init__(self, line):
         match = DiffHunk.diff_header_regex.match(line)

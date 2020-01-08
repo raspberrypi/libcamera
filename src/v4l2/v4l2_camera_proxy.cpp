@@ -270,11 +270,11 @@ int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
 	tryFormat(arg);
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
-	ret = vcam_->invokeMethod(&V4L2Camera::configure,
-				  ConnectionTypeBlocking,
-				  &streamConfig_, size,
-				  v4l2ToDrm(arg->fmt.pix.pixelformat),
-				  bufferCount_);
+	int ret = vcam_->invokeMethod(&V4L2Camera::configure,
+				      ConnectionTypeBlocking,
+				      &streamConfig_, size,
+				      v4l2ToDrm(arg->fmt.pix.pixelformat),
+				      bufferCount_);
 	if (ret < 0)
 		return -EINVAL;
 

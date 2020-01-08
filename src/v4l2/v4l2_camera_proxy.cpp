@@ -292,6 +292,7 @@ int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
 int V4L2CameraProxy::vidioc_try_fmt(struct v4l2_format *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_try_fmt";
+
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
 
@@ -321,6 +322,7 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 	int ret;
 
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_reqbufs";
+
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
 		return -EINVAL;

@@ -55,6 +55,7 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeBool]		= sizeof(bool),
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
+	[ControlTypeFloat]		= sizeof(float),
 };
 
 } /* namespace */
@@ -70,6 +71,8 @@ static constexpr size_t ControlValueSize[] = {
  * The control stores a 32-bit integer value
  * \var ControlTypeInteger64
  * The control stores a 64-bit integer value
+ * \var ControlTypeFloat
+ * The control stores a 32-bit floating point value
  */
 
 /**
@@ -202,6 +205,11 @@ std::string ControlValue::toString() const
 		}
 		case ControlTypeInteger64: {
 			const int64_t *value = reinterpret_cast<const int64_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeFloat: {
+			const float *value = reinterpret_cast<const float *>(data);
 			str += std::to_string(*value);
 			break;
 		}
@@ -374,9 +382,9 @@ void ControlValue::set(ControlType type, bool isArray, const void *data,
  * instead of Control.
  *
  * Controls of any type can be defined through template specialisation, but
- * libcamera only supports the bool, int32_t and int64_t types natively (this
- * includes types that are equivalent to the supported types, such as int and
- * long int).
+ * libcamera only supports the bool, int32_t, int64_t and float types natively
+ * (this includes types that are equivalent to the supported types, such as int
+ * and long int).
  *
  * Controls IDs shall be unique. While nothing prevents multiple instances of
  * the Control class to be created with the same ID for the same object, doing

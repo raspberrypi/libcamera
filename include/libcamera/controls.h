@@ -24,6 +24,7 @@ enum ControlType {
 	ControlTypeBool,
 	ControlTypeInteger32,
 	ControlTypeInteger64,
+	ControlTypeFloat,
 };
 
 namespace details {
@@ -50,6 +51,11 @@ struct control_type<int32_t> {
 template<>
 struct control_type<int64_t> {
 	static constexpr ControlType value = ControlTypeInteger64;
+};
+
+template<>
+struct control_type<float> {
+	static constexpr ControlType value = ControlTypeFloat;
 };
 
 template<typename T, std::size_t N>

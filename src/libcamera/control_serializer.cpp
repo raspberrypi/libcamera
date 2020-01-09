@@ -165,6 +165,12 @@ void ControlSerializer::store(const ControlValue &value,
 		break;
 	}
 
+	case ControlTypeFloat: {
+		float data = value.get<float>();
+		buffer.write(&data);
+		break;
+	}
+
 	default:
 		break;
 	}
@@ -333,6 +339,12 @@ ControlValue ControlSerializer::load<ControlValue>(ControlType type,
 
 	case ControlTypeInteger64: {
 		int64_t value;
+		b.read(&value);
+		return ControlValue(value);
+	}
+
+	case ControlTypeFloat: {
+		float value;
 		b.read(&value);
 		return ControlValue(value);
 	}

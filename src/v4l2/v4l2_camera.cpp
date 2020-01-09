@@ -121,12 +121,6 @@ int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
 	return 0;
 }
 
-void *V4L2Camera::mmap(unsigned int index)
-{
-	Stream *stream = *camera_->streams().begin();
-	return stream->buffers()[index].planes()[0].mem();
-}
-
 int V4L2Camera::allocBuffers(unsigned int count)
 {
 	int ret = camera_->allocateBuffers();
@@ -136,6 +130,12 @@ int V4L2Camera::allocBuffers(unsigned int count)
 void V4L2Camera::freeBuffers()
 {
 	camera_->freeBuffers();
+}
+
+FileDescriptor V4L2Camera::getBufferFd(unsigned int index)
+{
+	Stream *stream = *camera_->streams().begin();
+	return FileDescriptor(stream->buffers()[index].planes()[0].dmabuf());
 }
 
 int V4L2Camera::streamOn()

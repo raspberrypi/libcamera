@@ -75,7 +75,8 @@ void V4L2CameraProxy::close()
 	vcam_->invokeMethod(&V4L2Camera::close, ConnectionTypeBlocking);
 }
 
-void *V4L2CameraProxy::mmap(size_t length, int prot, int flags, off_t offset)
+void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
+			    off_t offset)
 {
 	LOG(V4L2Compat, Debug) << "Servicing mmap";
 
@@ -91,13 +92,22 @@ void *V4L2CameraProxy::mmap(size_t length, int prot, int flags, off_t offset)
 		return MAP_FAILED;
 	}
 
-	void *val = vcam_->invokeMethod(&V4L2Camera::mmap,
-					ConnectionTypeBlocking, index);
+	FileDescriptor fd = vcam_->invokeMethod(&V4L2Camera::getBufferFd,
+						ConnectionTypeBlocking, index);
+	if (!fd.isValid()) {
+		errno = EINVAL;
+		return MAP_FAILED;
+	}
+
+	void *map = V4L2CompatManager::instance()->fops().mmap(addr, length, prot,
+							       flags, fd.fd(), 0);
+	if (map == MAP_FAILED)
+		return map;
 
 	buffers_[index].flags |= V4L2_BUF_FLAG_MAPPED;
-	mmaps_[val] = index;
+	mmaps_[map] = index;
 
-	return val;
+	return map;
 }
 
 int V4L2CameraProxy::munmap(void *addr, size_t length)
@@ -109,6 +119,10 @@ int V4L2CameraProxy::munmap(void *addr, size_t length)
 		errno = EINVAL;
 		return -1;
 	}
+
+	if (V4L2CompatManager::instance()->fops().munmap(addr, length))
+		LOG(V4L2Compat, Error) << "Failed to unmap " << addr
+				       << " with length " << length;
 
 	buffers_[iter->second].flags &= ~V4L2_BUF_FLAG_MAPPED;
 	mmaps_.erase(iter);

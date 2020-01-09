@@ -28,7 +28,7 @@ public:
 	int open(bool nonBlocking);
 	void dup();
 	void close();
-	void *mmap(size_t length, int prot, int flags, off_t offset);
+	void *mmap(void *addr, size_t length, int prot, int flags, off_t offset);
 	int munmap(void *addr, size_t length);
 
 	int ioctl(unsigned long request, void *arg);

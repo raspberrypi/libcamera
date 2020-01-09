@@ -223,7 +223,7 @@ void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
 	if (!proxy)
 		return fops_.mmap(addr, length, prot, flags, fd, offset);
 
-	void *map = proxy->mmap(length, prot, flags, offset);
+	void *map = proxy->mmap(addr, length, prot, flags, offset);
 	if (map == MAP_FAILED)
 		return map;
 

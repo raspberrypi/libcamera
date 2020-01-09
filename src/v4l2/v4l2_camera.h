@@ -14,6 +14,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/file_descriptor.h>
 
 #include "semaphore.h"
 
@@ -53,14 +54,14 @@ public:
 	void getStreamConfig(StreamConfiguration *streamConfig);
 	std::vector<V4L2FrameMetadata> completedBuffers();
 
-	void *mmap(unsigned int index);
-
 	int configure(StreamConfiguration *streamConfigOut,
 		      const Size &size, PixelFormat pixelformat,
 		      unsigned int bufferCount);
 
 	int allocBuffers(unsigned int count);
 	void freeBuffers();
+	FileDescriptor getBufferFd(unsigned int index);
+
 	int streamOn();
 	int streamOff();
 

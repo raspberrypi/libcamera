@@ -19,10 +19,10 @@
 
 using namespace libcamera;
 
-class FrameMetadata
+class V4L2FrameMetadata
 {
 public:
-	FrameMetadata(Buffer *buffer);
+	V4L2FrameMetadata(Buffer *buffer);
 
 	int index() const { return index_; }
 
@@ -51,7 +51,7 @@ public:
 	int open();
 	void close();
 	void getStreamConfig(StreamConfiguration *streamConfig);
-	std::vector<FrameMetadata> completedBuffers();
+	std::vector<V4L2FrameMetadata> completedBuffers();
 
 	void *mmap(unsigned int index);
 
@@ -79,7 +79,7 @@ private:
 	std::mutex bufferLock_;
 
 	std::deque<std::unique_ptr<Request>> pendingRequests_;
-	std::deque<std::unique_ptr<FrameMetadata>> completedBuffers_;
+	std::deque<std::unique_ptr<V4L2FrameMetadata>> completedBuffers_;
 };
 
 #endif /* __V4L2_CAMERA_H__ */

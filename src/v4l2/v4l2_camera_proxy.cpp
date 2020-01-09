@@ -174,8 +174,8 @@ void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
 
 void V4L2CameraProxy::updateBuffers()
 {
-	std::vector<FrameMetadata> completedBuffers = vcam_->completedBuffers();
-	for (FrameMetadata &fmd : completedBuffers) {
+	std::vector<V4L2FrameMetadata> completedBuffers = vcam_->completedBuffers();
+	for (V4L2FrameMetadata &fmd : completedBuffers) {
 		struct v4l2_buffer &buf = buffers_[fmd.index()];
 
 		switch (fmd.status()) {

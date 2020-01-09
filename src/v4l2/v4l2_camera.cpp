@@ -16,7 +16,7 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(V4L2Compat);
 
-FrameMetadata::FrameMetadata(Buffer *buffer)
+V4L2FrameMetadata::V4L2FrameMetadata(Buffer *buffer)
 	: index_(buffer->index()), bytesused_(buffer->bytesused()),
 	  timestamp_(buffer->timestamp()), sequence_(buffer->sequence()),
 	  status_(buffer->status())
@@ -61,12 +61,12 @@ void V4L2Camera::getStreamConfig(StreamConfiguration *streamConfig)
 	*streamConfig = config_->at(0);
 }
 
-std::vector<FrameMetadata> V4L2Camera::completedBuffers()
+std::vector<V4L2FrameMetadata> V4L2Camera::completedBuffers()
 {
-	std::vector<FrameMetadata> v;
+	std::vector<V4L2FrameMetadata> v;
 
 	bufferLock_.lock();
-	for (std::unique_ptr<FrameMetadata> &metadata : completedBuffers_)
+	for (std::unique_ptr<V4L2FrameMetadata> &metadata : completedBuffers_)
 		v.push_back(*metadata.get());
 	completedBuffers_.clear();
 	bufferLock_.unlock();
@@ -82,8 +82,8 @@ void V4L2Camera::requestComplete(Request *request)
 	/* We only have one stream at the moment. */
 	bufferLock_.lock();
 	Buffer *buffer = request->buffers().begin()->second;
-	std::unique_ptr<FrameMetadata> metadata =
-		utils::make_unique<FrameMetadata>(buffer);
+	std::unique_ptr<V4L2FrameMetadata> metadata =
+		utils::make_unique<V4L2FrameMetadata>(buffer);
 	completedBuffers_.push_back(std::move(metadata));
 	bufferLock_.unlock();
 

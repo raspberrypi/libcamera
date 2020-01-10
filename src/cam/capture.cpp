@@ -116,6 +116,9 @@ int Capture::capture(EventLoop *loop, FrameBufferAllocator *allocator)
 					  << std::endl;
 				return ret;
 			}
+
+			if (writer_)
+				writer_->mapBuffer(buffer.get());
 		}
 
 		requests.push_back(request);

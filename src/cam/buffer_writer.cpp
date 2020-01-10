@@ -22,6 +22,27 @@ BufferWriter::BufferWriter(const std::string &pattern)
 {
 }
 
+BufferWriter::~BufferWriter()
+{
+	for (auto &iter : mappedBuffers_) {
+		void *memory = iter.second.first;
+		unsigned int length = iter.second.second;
+		munmap(memory, length);
+	}
+	mappedBuffers_.clear();
+}
+
+void BufferWriter::mapBuffer(FrameBuffer *buffer)
+{
+	for (const FrameBuffer::Plane &plane : buffer->planes()) {
+		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+				    plane.fd.fd(), 0);
+
+		mappedBuffers_[plane.fd.fd()] =
+			std::make_pair(memory, plane.length);
+	}
+}
+
 int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 {
 	std::string filename;
@@ -44,9 +65,7 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 		return -errno;
 
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		/* \todo Once the FrameBuffer is done cache mapped memory. */
-		void *data = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
-				  plane.fd.fd(), 0);
+		void *data = mappedBuffers_[plane.fd.fd()].first;
 		unsigned int length = plane.length;
 
 		ret = ::write(fd, data, length);
@@ -61,8 +80,6 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 				  << length << std::endl;
 			break;
 		}
-
-		munmap(data, length);
 	}
 
 	close(fd);

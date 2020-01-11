@@ -187,7 +187,7 @@ const bool &ControlValue::get<bool>() const
 template<>
 const int32_t &ControlValue::get<int32_t>() const
 {
-	ASSERT(type_ == ControlTypeInteger32 || type_ == ControlTypeInteger64);
+	ASSERT(type_ == ControlTypeInteger32);
 
 	return integer32_;
 }
@@ -195,7 +195,7 @@ const int32_t &ControlValue::get<int32_t>() const
 template<>
 const int64_t &ControlValue::get<int64_t>() const
 {
-	ASSERT(type_ == ControlTypeInteger32 || type_ == ControlTypeInteger64);
+	ASSERT(type_ == ControlTypeInteger64);
 
 	return integer64_;
 }

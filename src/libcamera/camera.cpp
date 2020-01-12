@@ -810,6 +810,11 @@ int Camera::queueRequest(Request *request)
 	if (!stateIs(CameraRunning))
 		return -EACCES;
 
+	if (request->buffers().empty()) {
+		LOG(Camera, Error) << "Request contains no buffers";
+		return -EINVAL;
+	}
+
 	for (auto const &it : request->buffers()) {
 		Stream *stream = it.first;
 		Buffer *buffer = it.second;
@@ -830,12 +835,6 @@ int Camera::queueRequest(Request *request)
 		}
 
 		buffer->mem_ = &stream->buffers()[buffer->index_];
-	}
-
-	int ret = request->prepare();
-	if (ret) {
-		LOG(Camera, Error) << "Failed to prepare request";
-		return ret;
 	}
 
 	return pipe_->queueRequest(this, request);

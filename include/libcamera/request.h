@@ -48,10 +48,8 @@ public:
 	bool hasPendingBuffers() const { return !pending_.empty(); }
 
 private:
-	friend class Camera;
 	friend class PipelineHandler;
 
-	int prepare();
 	void complete();
 
 	bool completeBuffer(Buffer *buffer);

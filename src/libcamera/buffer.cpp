@@ -360,7 +360,7 @@ Buffer::Buffer(unsigned int index, const Buffer *metadata)
  * The intended callers of this method are buffer completion handlers that
  * need to associate a buffer to the request it belongs to.
  *
- * A Buffer is associated to a request by Request::prepare() and the
+ * A Buffer is associated to a request by Request::addBuffer() and the
  * association is valid until the buffer completes. The returned request
  * pointer is valid only during that interval.
  *
@@ -397,7 +397,7 @@ void Buffer::cancel()
  * \fn Buffer::setRequest()
  * \brief Set the request this buffer belongs to
  *
- * The intended callers are Request::prepare() and Request::completeBuffer().
+ * The intended callers are Request::addBuffer() and Request::completeBuffer().
  */
 
 } /* namespace libcamera */

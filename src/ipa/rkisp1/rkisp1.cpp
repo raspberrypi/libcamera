@@ -104,7 +104,9 @@ void IPARkISP1::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 void IPARkISP1::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
-		auto elem = buffers_.emplace(buffer.id, buffer.planes);
+		auto elem = buffers_.emplace(std::piecewise_construct,
+					     std::forward_as_tuple(buffer.id),
+					     std::forward_as_tuple(buffer.planes));
 		const FrameBuffer &fb = elem.first->second;
 
 		/*

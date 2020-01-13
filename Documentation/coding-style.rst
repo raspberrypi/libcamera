@@ -86,22 +86,17 @@ headers, and with double quotes for other libcamera headers.
 C++ Specific Rules
 ------------------
 
-The code shall be implemented in C++03, extended with the following
-C++-11-specific features:
+The code shall be implemented in C++14, with the following caveats:
 
-* Initializer lists
-* Type inference (auto and decltype)
-  Type inference shall be used with caution, to avoid drifting towards an
-  untyped language.
-* Range-based for loop
-* Lambda functions
-* Explicit overrides and final
-* Null pointer constant
-* General-purpose smart pointers (std::unique_ptr), deprecating std::auto_ptr.
+* Type inference (auto and decltype) shall be used with caution, to avoid
+  drifting towards an untyped language.
+* The explicit, override and final specifiers are to be used where applicable.
+* General-purpose smart pointers (std::unique_ptr) deprecate std::auto_ptr.
   Smart pointers, as well as shared pointers and weak pointers, shall not be
   overused.
-* Variadic class and function templates
-* rvalue references, move constructor and move assignment
+* Classes are encouraged to define move constructors and assignment operators
+  where applicable, and generally make use of the features offered by rvalue
+  references.
 
 Object Ownership
 ~~~~~~~~~~~~~~~~

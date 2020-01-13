@@ -4,7 +4,7 @@ project('libcamera', 'c', 'cpp',
     default_options : [
         'werror=true',
         'warning_level=2',
-        'cpp_std=c++11',
+        'cpp_std=c++14',
     ],
     license : 'LGPL 2.1+')
 

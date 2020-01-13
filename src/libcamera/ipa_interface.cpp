@@ -261,7 +261,7 @@
  * The dmabuf file descriptors provided in \a buffers are borrowed from the
  * caller and are only guaranteed to be valid during the map_buffers() call.
  * Should the callee need to store a copy of the file descriptors, it shall
- * duplicate them first with ::dup().
+ * duplicate them first with ::%dup().
  *
  * \sa libcamera::IPAInterface::mapBuffers()
  */

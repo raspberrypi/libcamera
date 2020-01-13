@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <libcamera/span.h>
+
 namespace libcamera {
 
 class ByteStreamBuffer
@@ -33,10 +35,25 @@ public:
 	{
 		return read(reinterpret_cast<uint8_t *>(t), sizeof(*t));
 	}
+
+	template<typename T>
+	int read(const Span<T> &data)
+	{
+		return read(reinterpret_cast<uint8_t *>(data.data()),
+			    data.size_bytes());
+	}
+
 	template<typename T>
 	int write(const T *t)
 	{
 		return write(reinterpret_cast<const uint8_t *>(t), sizeof(*t));
+	}
+
+	template<typename T>
+	int write(const Span<T> &data)
+	{
+		return write(reinterpret_cast<const uint8_t *>(data.data()),
+			     data.size_bytes());
 	}
 
 private:

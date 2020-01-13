@@ -233,9 +233,27 @@ int ByteStreamBuffer::skip(size_t size)
  */
 
 /**
+ * \fn template<typename T> int ByteStreamBuffer::read(const Span<T> &data)
+ * \brief Read data from the managed memory buffer into Span \a data
+ * \param[out] data Span representing the destination memory
+ * \return 0 on success, a negative error code otherwise
+ * \retval -EACCES attempting to read from a write buffer
+ * \retval -ENOSPC no more space is available in the managed memory buffer
+ */
+
+/**
  * \fn template<typename T> int ByteStreamBuffer::write(const T *t)
  * \brief Write \a t to the managed memory buffer
  * \param[in] t The data to write to memory
+ * \return 0 on success, a negative error code otherwise
+ * \retval -EACCES attempting to write to a read buffer
+ * \retval -ENOSPC no more space is available in the managed memory buffer
+ */
+
+/**
+ * \fn template<typename T> int ByteStreamBuffer::write(const Span<T> &data)
+ * \brief Write \a data to the managed memory buffer
+ * \param[in] data The data to write to memory
  * \return 0 on success, a negative error code otherwise
  * \retval -EACCES attempting to write to a read buffer
  * \retval -ENOSPC no more space is available in the managed memory buffer

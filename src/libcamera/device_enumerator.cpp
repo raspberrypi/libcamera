@@ -13,7 +13,6 @@
 
 #include "log.h"
 #include "media_device.h"
-#include "utils.h"
 
 /**
  * \file device_enumerator.h
@@ -145,7 +144,7 @@ std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 	std::unique_ptr<DeviceEnumerator> enumerator;
 
 #ifdef HAVE_LIBUDEV
-	enumerator = utils::make_unique<DeviceEnumeratorUdev>();
+	enumerator = std::make_unique<DeviceEnumeratorUdev>();
 	if (!enumerator->init())
 		return enumerator;
 #endif
@@ -154,7 +153,7 @@ std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 	 * Either udev is not available or udev initialization failed. Fall back
 	 * on the sysfs enumerator.
 	 */
-	enumerator = utils::make_unique<DeviceEnumeratorSysfs>();
+	enumerator = std::make_unique<DeviceEnumeratorSysfs>();
 	if (!enumerator->init())
 		return enumerator;
 

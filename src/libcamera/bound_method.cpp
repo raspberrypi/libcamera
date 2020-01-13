@@ -10,7 +10,6 @@
 #include "message.h"
 #include "semaphore.h"
 #include "thread.h"
-#include "utils.h"
 
 /**
  * \file bound_method.h
@@ -84,7 +83,7 @@ bool BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 
 	case ConnectionTypeQueued: {
 		std::unique_ptr<Message> msg =
-			utils::make_unique<InvokeMessage>(this, pack, nullptr, deleteMethod);
+			std::make_unique<InvokeMessage>(this, pack, nullptr, deleteMethod);
 		object_->postMessage(std::move(msg));
 		return false;
 	}
@@ -93,7 +92,7 @@ bool BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 		Semaphore semaphore;
 
 		std::unique_ptr<Message> msg =
-			utils::make_unique<InvokeMessage>(this, pack, &semaphore, deleteMethod);
+			std::make_unique<InvokeMessage>(this, pack, &semaphore, deleteMethod);
 		object_->postMessage(std::move(msg));
 
 		semaphore.acquire();

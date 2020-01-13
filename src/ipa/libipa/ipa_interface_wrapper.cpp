@@ -45,7 +45,7 @@ namespace libcamera {
  *
  * struct ipa_context *ipaCreate()
  * {
- * 	return new IPAInterfaceWrapper(utils::make_unique<MyIPA>());
+ * 	return new IPAInterfaceWrapper(std::make_unique<MyIPA>());
  * }
  * \endcode
  *

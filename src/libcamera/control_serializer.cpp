@@ -414,7 +414,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		 * \todo Find a way to preserve the control name for debugging
 		 * purpose.
 		 */
-		controlIds_.emplace_back(utils::make_unique<ControlId>(entry.id, "", type));
+		controlIds_.emplace_back(std::make_unique<ControlId>(entry.id, "", type));
 
 		if (entry.offset != values.offset()) {
 			LOG(Serializer, Error)

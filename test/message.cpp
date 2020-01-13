@@ -12,7 +12,6 @@
 #include "message.h"
 #include "thread.h"
 #include "test.h"
-#include "utils.h"
 
 using namespace std;
 using namespace libcamera;
@@ -92,7 +91,7 @@ protected:
 
 		thread_.start();
 
-		receiver.postMessage(utils::make_unique<Message>(Message::None));
+		receiver.postMessage(std::make_unique<Message>(Message::None));
 
 		this_thread::sleep_for(chrono::milliseconds(100));
 
@@ -114,7 +113,7 @@ protected:
 		 */
 		SlowMessageReceiver *slowReceiver = new SlowMessageReceiver();
 		slowReceiver->moveToThread(&thread_);
-		slowReceiver->postMessage(utils::make_unique<Message>(Message::None));
+		slowReceiver->postMessage(std::make_unique<Message>(Message::None));
 
 		this_thread::sleep_for(chrono::milliseconds(10));
 

@@ -17,7 +17,6 @@
 #include "ipc_unixsocket.h"
 #include "log.h"
 #include "thread.h"
-#include "utils.h"
 
 using namespace libcamera;
 
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
 		<< "Starting worker for IPA module " << argv[1]
 		<< " with IPC fd = " << fd;
 
-	std::unique_ptr<IPAModule> ipam = utils::make_unique<IPAModule>(argv[1]);
+	std::unique_ptr<IPAModule> ipam = std::make_unique<IPAModule>(argv[1]);
 	if (!ipam->isValid() || !ipam->load()) {
 		LOG(IPAProxyLinuxWorker, Error)
 			<< "IPAModule " << argv[1] << " should be valid but isn't";

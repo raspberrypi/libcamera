@@ -296,7 +296,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	if (!media)
 		return false;
 
-	std::unique_ptr<UVCCameraData> data = utils::make_unique<UVCCameraData>(this);
+	std::unique_ptr<UVCCameraData> data = std::make_unique<UVCCameraData>(this);
 
 	/* Locate and initialise the camera data with the default video node. */
 	const std::vector<MediaEntity *> &entities = media->entities();

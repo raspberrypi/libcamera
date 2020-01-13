@@ -71,11 +71,6 @@ char *secure_getenv(const char *name)
 }
 
 /**
- * \fn libcamera::utils::make_unique(Args &&... args)
- * \brief Constructs an object of type T and wraps it in a std::unique_ptr.
- */
-
-/**
  * \fn libcamera::utils::set_overlap(InputIt1 first1, InputIt1 last1,
  *				     InputIt2 first2, InputIt2 last2)
  * \brief Count the number of elements in the intersection of two ranges

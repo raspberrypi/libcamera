@@ -388,9 +388,9 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 	switch (action.operation) {
 	case RKISP1_IPA_ACTION_V4L2_SET: {
 		const ControlList &controls = action.controls[0];
-		timeline_.scheduleAction(utils::make_unique<RkISP1ActionSetSensor>(frame,
-										   sensor_,
-										   controls));
+		timeline_.scheduleAction(std::make_unique<RkISP1ActionSetSensor>(frame,
+										 sensor_,
+										 controls));
 		break;
 	}
 	case RKISP1_IPA_ACTION_PARAM_FILLED: {
@@ -846,9 +846,9 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera,
 	op.controls = { request->controls() };
 	data->ipa_->processEvent(op);
 
-	data->timeline_.scheduleAction(utils::make_unique<RkISP1ActionQueueBuffers>(data->frame_,
-										    data,
-										    this));
+	data->timeline_.scheduleAction(std::make_unique<RkISP1ActionQueueBuffers>(data->frame_,
+										  data,
+										  this));
 
 	data->frame_++;
 
@@ -892,7 +892,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		utils::make_unique<RkISP1CameraData>(this);
+		std::make_unique<RkISP1CameraData>(this);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,

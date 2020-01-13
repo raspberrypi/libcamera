@@ -20,7 +20,6 @@
 #include "libipa/ipa_interface_wrapper.h"
 
 #include "log.h"
-#include "utils.h"
 
 namespace libcamera {
 
@@ -113,7 +112,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 
 struct ipa_context *ipaCreate()
 {
-	return new IPAInterfaceWrapper(utils::make_unique<IPAVimc>());
+	return new IPAInterfaceWrapper(std::make_unique<IPAVimc>());
 }
 }
 

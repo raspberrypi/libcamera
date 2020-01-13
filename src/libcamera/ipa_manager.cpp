@@ -264,7 +264,7 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 	if (!ctx)
 		return nullptr;
 
-	return utils::make_unique<IPAContextWrapper>(ctx);
+	return std::make_unique<IPAContextWrapper>(ctx);
 }
 
 } /* namespace libcamera */

@@ -860,7 +860,7 @@ std::unique_ptr<CameraMetadata> CameraDevice::getResultMetadata(int frame_number
 	 * Currently: 12 entries, 36 bytes
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		utils::make_unique<CameraMetadata>(15, 50);
+		std::make_unique<CameraMetadata>(15, 50);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;

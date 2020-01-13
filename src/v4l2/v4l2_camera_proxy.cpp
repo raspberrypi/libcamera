@@ -32,7 +32,7 @@ LOG_DECLARE_CATEGORY(V4L2Compat);
 V4L2CameraProxy::V4L2CameraProxy(unsigned int index,
 				 std::shared_ptr<Camera> camera)
 	: refcount_(0), index_(index), bufferCount_(0), currentBuf_(0),
-	  vcam_(utils::make_unique<V4L2Camera>(camera))
+	  vcam_(std::make_unique<V4L2Camera>(camera))
 {
 	querycap(camera);
 }

@@ -10,7 +10,6 @@
 #include <errno.h>
 
 #include "log.h"
-#include "utils.h"
 
 using namespace libcamera;
 
@@ -81,7 +80,7 @@ void V4L2Camera::requestComplete(Request *request)
 	bufferLock_.lock();
 	FrameBuffer *buffer = request->buffers().begin()->second;
 	std::unique_ptr<Buffer> metadata =
-		utils::make_unique<Buffer>(request->cookie(), buffer->metadata());
+		std::make_unique<Buffer>(request->cookie(), buffer->metadata());
 	completedBuffers_.push_back(std::move(metadata));
 	bufferLock_.unlock();
 

@@ -876,7 +876,7 @@ int PipelineHandlerIPU3::registerCameras()
 	unsigned int numCameras = 0;
 	for (unsigned int id = 0; id < 4 && numCameras < 2; ++id) {
 		std::unique_ptr<IPU3CameraData> data =
-			utils::make_unique<IPU3CameraData>(this);
+			std::make_unique<IPU3CameraData>(this);
 		std::set<Stream *> streams = {
 			&data->outStream_,
 			&data->vfStream_,

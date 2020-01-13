@@ -278,7 +278,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 
 struct ipa_context *ipaCreate()
 {
-	return new IPAInterfaceWrapper(utils::make_unique<IPARkISP1>());
+	return new IPAInterfaceWrapper(std::make_unique<IPARkISP1>());
 }
 }
 

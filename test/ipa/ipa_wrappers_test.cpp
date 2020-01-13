@@ -18,7 +18,6 @@
 #include "device_enumerator.h"
 #include "ipa_context_wrapper.h"
 #include "media_device.h"
-#include "utils.h"
 #include "v4l2_subdevice.h"
 
 #include "test.h"
@@ -254,7 +253,7 @@ protected:
 		if (ret)
 			return TestFail;
 
-		std::unique_ptr<IPAInterface> intf = utils::make_unique<TestIPAInterface>();
+		std::unique_ptr<IPAInterface> intf = std::make_unique<TestIPAInterface>();
 		wrapper_ = new IPAContextWrapper(new IPAInterfaceWrapper(std::move(intf)));
 		wrapper_->queueFrameAction.connect(this, &IPAWrappersTest::queueFrameAction);
 

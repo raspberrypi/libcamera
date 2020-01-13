@@ -14,7 +14,6 @@
 #include <ipa/ipa_interface.h>
 
 #include "ipa_module.h"
-#include "utils.h"
 
 namespace libcamera {
 
@@ -56,7 +55,7 @@ public:							\
 	proxy##Factory() : IPAProxyFactory(#proxy) {}	\
 	std::unique_ptr<IPAProxy> create(IPAModule *ipam)	\
 	{						\
-		return utils::make_unique<proxy>(ipam);	\
+		return std::make_unique<proxy>(ipam);	\
 	}						\
 };							\
 static proxy##Factory global_##proxy##Factory;

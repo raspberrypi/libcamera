@@ -1054,7 +1054,7 @@ V4L2VideoDevice::createBuffer(const struct v4l2_buffer &buf)
 		planes.push_back(std::move(plane));
 	}
 
-	return utils::make_unique<FrameBuffer>(std::move(planes));
+	return std::make_unique<FrameBuffer>(std::move(planes));
 }
 
 FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,

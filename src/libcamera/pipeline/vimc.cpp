@@ -365,7 +365,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (!media)
 		return false;
 
-	std::unique_ptr<VimcCameraData> data = utils::make_unique<VimcCameraData>(this);
+	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this);
 
 	data->ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
 	if (data->ipa_ == nullptr)

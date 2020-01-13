@@ -41,7 +41,11 @@ private:
 	static void store(const ControlRange &range, ByteStreamBuffer &buffer);
 
 	template<typename T>
-	T load(ControlType type, ByteStreamBuffer &b);
+	ControlValue loadControlValue(ByteStreamBuffer &buffer, bool isArray,
+				      unsigned int count);
+	ControlValue loadControlValue(ControlType type, ByteStreamBuffer &buffer,
+				      bool isArray = false, unsigned int count = 1);
+	ControlRange loadControlRange(ControlType type, ByteStreamBuffer &buffer);
 
 	unsigned int serial_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;

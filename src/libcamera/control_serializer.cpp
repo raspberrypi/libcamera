@@ -14,6 +14,7 @@
 #include <ipa/ipa_controls.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/span.h>
 
 #include "byte_stream_buffer.h"
 #include "log.h"
@@ -279,8 +280,9 @@ int ControlSerializer::serialize(const ControlList &list,
 
 		struct ipa_control_value_entry entry;
 		entry.id = id;
-		entry.count = 1;
 		entry.type = value.type();
+		entry.is_array = value.isArray();
+		entry.count = value.numElements();
 		entry.offset = values.offset();
 		entries.write(&entry);
 
@@ -293,40 +295,45 @@ int ControlSerializer::serialize(const ControlList &list,
 	return 0;
 }
 
-template<>
-ControlValue ControlSerializer::load<ControlValue>(ControlType type,
-						   ByteStreamBuffer &b)
+template<typename T>
+ControlValue ControlSerializer::loadControlValue(ByteStreamBuffer &buffer,
+						 bool isArray,
+						 unsigned int count)
+{
+	ControlValue value;
+
+	const T *data = buffer.read<T>(count);
+	if (!data)
+		return value;
+
+	if (isArray)
+		value.set(Span<const T>{ data, count });
+	else
+		value.set(*data);
+
+	return value;
+}
+
+ControlValue ControlSerializer::loadControlValue(ControlType type,
+						 ByteStreamBuffer &buffer,
+						 bool isArray,
+						 unsigned int count)
 {
 	switch (type) {
-	case ControlTypeBool: {
-		bool value;
-		b.read(&value);
-		return ControlValue(value);
-	}
+	case ControlTypeBool:
+		return loadControlValue<bool>(buffer, isArray, count);
 
-	case ControlTypeByte: {
-		uint8_t value;
-		b.read(&value);
-		return ControlValue(value);
-	}
+	case ControlTypeByte:
+		return loadControlValue<uint8_t>(buffer, isArray, count);
 
-	case ControlTypeInteger32: {
-		int32_t value;
-		b.read(&value);
-		return ControlValue(value);
-	}
+	case ControlTypeInteger32:
+		return loadControlValue<int32_t>(buffer, isArray, count);
 
-	case ControlTypeInteger64: {
-		int64_t value;
-		b.read(&value);
-		return ControlValue(value);
-	}
+	case ControlTypeInteger64:
+		return loadControlValue<int64_t>(buffer, isArray, count);
 
-	case ControlTypeFloat: {
-		float value;
-		b.read(&value);
-		return ControlValue(value);
-	}
+	case ControlTypeFloat:
+		return loadControlValue<float>(buffer, isArray, count);
 
 	case ControlTypeNone:
 		return ControlValue();
@@ -335,12 +342,11 @@ ControlValue ControlSerializer::load<ControlValue>(ControlType type,
 	return ControlValue();
 }
 
-template<>
-ControlRange ControlSerializer::load<ControlRange>(ControlType type,
-						   ByteStreamBuffer &b)
+ControlRange ControlSerializer::loadControlRange(ControlType type,
+						 ByteStreamBuffer &b)
 {
-	ControlValue min = load<ControlValue>(type, b);
-	ControlValue max = load<ControlValue>(type, b);
+	ControlValue min = loadControlValue(type, b);
+	ControlValue max = loadControlValue(type, b);
 
 	return ControlRange(min, max);
 }
@@ -414,7 +420,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 
 		/* Create and store the ControlRange. */
 		ctrls.emplace(controlIds_.back().get(),
-			      load<ControlRange>(type, values));
+			      loadControlRange(type, values));
 	}
 
 	/*
@@ -502,7 +508,9 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 		}
 
 		ControlType type = static_cast<ControlType>(entry->type);
-		ctrls.set(entry->id, load<ControlValue>(type, values));
+		ctrls.set(entry->id,
+			  loadControlValue(type, values, entry->is_array,
+					   entry->count));
 	}
 
 	return ctrls;

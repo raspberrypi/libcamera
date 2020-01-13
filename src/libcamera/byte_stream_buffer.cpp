@@ -225,7 +225,7 @@ int ByteStreamBuffer::skip(size_t size)
 
 /**
  * \fn template<typename T> int ByteStreamBuffer::read(T *t)
- * \brief Read \a size \a data from the managed memory buffer
+ * \brief Read data from the managed memory buffer into \a t
  * \param[out] t Pointer to the memory containing the read data
  * \return 0 on success, a negative error code otherwise
  * \retval -EACCES attempting to read from a write buffer
@@ -234,7 +234,7 @@ int ByteStreamBuffer::skip(size_t size)
 
 /**
  * \fn template<typename T> int ByteStreamBuffer::write(const T *t)
- * \brief Write \a data of \a size to the managed memory buffer
+ * \brief Write \a t to the managed memory buffer
  * \param[in] t The data to write to memory
  * \return 0 on success, a negative error code otherwise
  * \retval -EACCES attempting to write to a read buffer

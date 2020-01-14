@@ -8,11 +8,25 @@
 
 #include "gstlibcamerasrc.h"
 
+#include "gstlibcamerapad.h"
+
 struct _GstLibcameraSrc {
 	GstElement parent;
 };
 
 G_DEFINE_TYPE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT);
+
+#define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg")
+
+/* For the simple case, we have a src pad that is always present. */
+GstStaticPadTemplate src_template = {
+	"src", GST_PAD_SRC, GST_PAD_ALWAYS, TEMPLATE_CAPS
+};
+
+/* More pads can be requested in state < PAUSED */
+GstStaticPadTemplate request_src_template = {
+	"src_%s", GST_PAD_SRC, GST_PAD_REQUEST, TEMPLATE_CAPS
+};
 
 static void
 gst_libcamera_src_init(GstLibcameraSrc *self)
@@ -28,4 +42,10 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 				       "libcamera Source", "Source/Video",
 				       "Linux Camera source using libcamera",
 				       "Nicolas Dufresne <nicolas.dufresne@collabora.com");
+	gst_element_class_add_static_pad_template_with_gtype(element_class,
+							     &src_template,
+							     GST_TYPE_LIBCAMERA_PAD);
+	gst_element_class_add_static_pad_template_with_gtype(element_class,
+							     &request_src_template,
+							     GST_TYPE_LIBCAMERA_PAD);
 }

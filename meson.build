@@ -1,5 +1,5 @@
 project('libcamera', 'c', 'cpp',
-    meson_version : '>= 0.40',
+    meson_version : '>= 0.47',
     version : '0.0.0',
     default_options : [
         'werror=true',

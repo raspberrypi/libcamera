@@ -1,4 +1,5 @@
 libcamera_gst_sources = [
+    'gstlibcamera-utils.cpp',
     'gstlibcamera.c',
     'gstlibcamerasrc.cpp',
 ]

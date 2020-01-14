@@ -365,9 +365,7 @@ int UVCCameraData::init(MediaEntity *entity)
 			continue;
 		}
 
-		ctrls.emplace(std::piecewise_construct,
-			      std::forward_as_tuple(id),
-			      std::forward_as_tuple(range));
+		ctrls.emplace(id, range);
 	}
 
 	controlInfo_ = std::move(ctrls);

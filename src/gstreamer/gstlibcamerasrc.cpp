@@ -12,6 +12,7 @@
 
 struct _GstLibcameraSrc {
 	GstElement parent;
+	GstPad *srcpad;
 };
 
 G_DEFINE_TYPE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT);
@@ -31,6 +32,10 @@ GstStaticPadTemplate request_src_template = {
 static void
 gst_libcamera_src_init(GstLibcameraSrc *self)
 {
+	GstPadTemplate *templ = gst_element_get_pad_template(GST_ELEMENT(self), "src");
+
+	self->srcpad = gst_pad_new_from_template(templ, "src");
+	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);
 }
 
 static void

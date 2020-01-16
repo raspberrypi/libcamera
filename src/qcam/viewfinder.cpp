@@ -6,13 +6,13 @@
  */
 
 #include <QImage>
-#include <QPixmap>
+#include <QPainter>
 
 #include "format_converter.h"
 #include "viewfinder.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
-	: QLabel(parent), format_(0), width_(0), height_(0), image_(nullptr)
+	: QWidget(parent), format_(0), width_(0), height_(0), image_(nullptr)
 {
 }
 
@@ -24,9 +24,7 @@ ViewFinder::~ViewFinder()
 void ViewFinder::display(const unsigned char *raw, size_t size)
 {
 	converter_.convert(raw, size, image_);
-
-	QPixmap pixmap = QPixmap::fromImage(*image_);
-	setPixmap(pixmap);
+	update();
 }
 
 int ViewFinder::setFormat(unsigned int format, unsigned int width,
@@ -42,10 +40,20 @@ int ViewFinder::setFormat(unsigned int format, unsigned int width,
 	width_ = width;
 	height_ = height;
 
-	setFixedSize(width, height);
-
 	delete image_;
 	image_ = new QImage(width, height, QImage::Format_RGB32);
 
+	updateGeometry();
 	return 0;
+}
+
+void ViewFinder::paintEvent(QPaintEvent *)
+{
+	QPainter painter(this);
+	painter.drawImage(rect(), *image_, image_->rect());
+}
+
+QSize ViewFinder::sizeHint() const
+{
+	return image_ ? image_->size() : QSize(640, 480);
 }

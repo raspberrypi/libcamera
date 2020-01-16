@@ -7,13 +7,13 @@
 #ifndef __QCAM_VIEWFINDER_H__
 #define __QCAM_VIEWFINDER_H__
 
-#include <QLabel>
+#include <QWidget>
 
 #include "format_converter.h"
 
 class QImage;
 
-class ViewFinder : public QLabel
+class ViewFinder : public QWidget
 {
 public:
 	ViewFinder(QWidget *parent);
@@ -22,6 +22,10 @@ public:
 	int setFormat(unsigned int format, unsigned int width,
 		      unsigned int height);
 	void display(const unsigned char *rgb, size_t size);
+
+protected:
+	void paintEvent(QPaintEvent *) override;
+	QSize sizeHint() const override;
 
 private:
 	unsigned int format_;

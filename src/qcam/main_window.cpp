@@ -33,7 +33,6 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 
 	viewfinder_ = new ViewFinder(this);
 	setCentralWidget(viewfinder_);
-	viewfinder_->setFixedSize(500, 500);
 	adjustSize();
 
 	ret = openCamera(cm);

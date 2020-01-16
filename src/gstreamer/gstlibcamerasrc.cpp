@@ -11,6 +11,9 @@
 #include "gstlibcamerapad.h"
 #include "gstlibcamera-utils.h"
 
+GST_DEBUG_CATEGORY_STATIC(source_debug);
+#define GST_CAT_DEFAULT source_debug
+
 struct _GstLibcameraSrc {
 	GstElement parent;
 	GstPad *srcpad;
@@ -22,7 +25,9 @@ enum {
 	PROP_CAMERA_NAME
 };
 
-G_DEFINE_TYPE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT);
+G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
+			GST_DEBUG_CATEGORY_INIT(source_debug, "libcamerasrc", 0,
+						"libcamera Source"));
 
 #define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg")
 

@@ -45,7 +45,6 @@ A C++ toolchain: [required]
 	Either {g++, clang}
 
 for libcamera: [required]
-	meson ninja-build python3-yaml
         meson (>= 0.47) ninja-build python3-yaml
 
         If your distribution doesn't provide a recent enough version of meson,

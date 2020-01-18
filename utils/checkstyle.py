@@ -541,7 +541,7 @@ def check_style(top_level, commit):
     files = [f for f in files if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
     if len(files) == 0:
         print("Commit doesn't touch source files, skipping")
-        return
+        return 0
 
     issues = 0
     for f in files:
@@ -553,6 +553,8 @@ def check_style(top_level, commit):
         print('---')
         print("%u potential style %s detected, please review" % \
                 (issues, 'issue' if issues == 1 else 'issues'))
+
+    return issues
 
 
 def extract_revlist(revs):
@@ -632,11 +634,15 @@ def main(argv):
 
     revlist = extract_revlist(args.revision_range)
 
+    issues = 0
     for commit in revlist:
-        check_style(top_level, commit)
+        issues += check_style(top_level, commit)
         print('')
 
-    return 0
+    if issues:
+        return 1
+    else:
+        return 0
 
 
 if __name__ == '__main__':

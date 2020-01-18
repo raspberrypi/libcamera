@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <mutex>
+#include <sys/types.h>
 #include <thread>
 
 #include <libcamera/signal.h>
@@ -39,6 +40,7 @@ public:
 	Signal<Thread *> finished;
 
 	static Thread *current();
+	static pid_t currentId();
 
 	EventDispatcher *eventDispatcher();
 	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);

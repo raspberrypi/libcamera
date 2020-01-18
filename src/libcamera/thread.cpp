@@ -9,6 +9,9 @@
 
 #include <atomic>
 #include <list>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 
 #include <libcamera/event_dispatcher.h>
 
@@ -62,6 +65,7 @@ private:
 
 	Thread *thread_;
 	bool running_;
+	pid_t tid_;
 
 	Mutex mutex_;
 
@@ -108,6 +112,7 @@ ThreadData *ThreadData::current()
 	 * started, set it here.
 	 */
 	ThreadData *data = mainThread.data_;
+	data->tid_ = syscall(SYS_gettid);
 	currentThreadData = data;
 	return data;
 }
@@ -189,6 +194,7 @@ void Thread::startThread()
 	 */
 	thread_local ThreadCleaner cleaner(this, &Thread::finishThread);
 
+	data_->tid_ = syscall(SYS_gettid);
 	currentThreadData = data_;
 
 	run();
@@ -306,6 +312,20 @@ Thread *Thread::current()
 {
 	ThreadData *data = ThreadData::current();
 	return data->thread_;
+}
+
+/**
+ * \brief Retrieve the ID of the current thread
+ *
+ * The thread ID corresponds to the Linux thread ID (TID) as returned by the
+ * gettid system call.
+ *
+ * \return The ID of the current thread
+ */
+pid_t Thread::currentId()
+{
+	ThreadData *data = ThreadData::current();
+	return data->tid_;
 }
 
 /**

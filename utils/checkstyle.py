@@ -481,6 +481,21 @@ class Commit:
                               stdout=subprocess.PIPE).stdout.decode('utf-8')
 
 
+class StagedChanges(Commit):
+    def __init__(self):
+        Commit.__init__(self, '')
+
+    def get_info(self):
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-only'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return "Staged changes", ret.splitlines()
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '--staged', '--',
+                               '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
     diff = commit.get_diff(top_level, filename)
@@ -611,7 +626,9 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--formatter', '-f', type=str, choices=['astyle', 'clang-format'],
                         help='Code formatter. Default to clang-format if not specified.')
-    parser.add_argument('revision_range', type=str, default='HEAD', nargs='?',
+    parser.add_argument('--staged', '-s', action='store_true',
+                        help='Include the changes in the index. Defaults to False')
+    parser.add_argument('revision_range', type=str, default=None, nargs='?',
                         help='Revision range (as defined by git rev-parse). Defaults to HEAD if not specified.')
     args = parser.parse_args(argv[1:])
 
@@ -646,7 +663,18 @@ def main(argv):
     if top_level is None:
             return 1
 
-    commits = extract_commits(args.revision_range)
+    commits = []
+    if args.staged:
+        commits.append(StagedChanges())
+
+    # If not --staged
+    if len(commits) == 0:
+        # And no revisions were passed, then default to HEAD
+        if not args.revision_range:
+            args.revision_range = 'HEAD'
+
+    if args.revision_range:
+        commits += extract_commits(args.revision_range)
 
     issues = 0
     for commit in commits:

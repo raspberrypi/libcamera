@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Execute the checkstyle script before committing any code. This will fail the
+# commit in case of style issues, ensuring that the developer will notice them.
+# The pre-commit hook can be bypassed with git commit -n to ignore selective
+# changes.
+#
+# To utilise this hook, install this file with:
+#   cp utils/hooks/pre-commit .git/hooks/pre-commit
+
+if ps -ocommand= -p $PPID | grep -- "--amend"
+then
+	args="--amend"
+else
+	args="--staged"
+fi
+
+./utils/checkstyle.py $args

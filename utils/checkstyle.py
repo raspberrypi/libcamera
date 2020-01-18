@@ -321,10 +321,10 @@ class Pep8Checker(StyleChecker):
         data = ''.join(self.__content).encode('utf-8')
 
         try:
-            ret = subprocess.run(['pep8', '--ignore=E501', '-'],
+            ret = subprocess.run(['pycodestyle', '--ignore=E501', '-'],
                                  input=data, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            issues.append(StyleIssue(0, None, "Please install pep8 to validate python additions"))
+            issues.append(StyleIssue(0, None, "Please install pycodestyle to validate python additions"))
             return issues
 
         results = ret.stdout.decode('utf-8').splitlines()

@@ -179,7 +179,7 @@ void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
 		       sizeof(capabilities_.bus_info));
 	/* \todo Put this in a header/config somewhere. */
 	capabilities_.version = KERNEL_VERSION(5, 2, 0);
-	capabilities_.device_caps = V4L2_CAP_VIDEO_CAPTURE;
+	capabilities_.device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
 	capabilities_.capabilities = capabilities_.device_caps
 				   | V4L2_CAP_DEVICE_CAPS;
 	memset(capabilities_.reserved, 0, sizeof(capabilities_.reserved));

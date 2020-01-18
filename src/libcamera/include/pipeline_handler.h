@@ -17,6 +17,7 @@
 
 #include <ipa/ipa_interface.h>
 #include <libcamera/controls.h>
+#include <libcamera/object.h>
 #include <libcamera/stream.h>
 
 namespace libcamera {
@@ -51,7 +52,8 @@ private:
 	CameraData &operator=(const CameraData &) = delete;
 };
 
-class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>
+class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>,
+			public Object
 {
 public:
 	PipelineHandler(CameraManager *manager);

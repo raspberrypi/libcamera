@@ -458,12 +458,33 @@ class StripTrailingSpaceFormatter(Formatter):
 # Style checking
 #
 
+class Commit:
+    def __init__(self, commit):
+        self.commit = commit
+
+    def get_info(self):
+        # Get the commit title and list of files.
+        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-only',
+                              self.commit],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        files = ret.splitlines()
+        # Returning title and files list as a tuple
+        return files[0], files[1:]
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
+                               '--', '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+    def get_file(self, filename):
+        return subprocess.run(['git', 'show', '%s:%s' % (self.commit, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
-    diff = subprocess.run(['git', 'diff', '%s~..%s' % (commit, commit), '--',
-                           '%s/%s' % (top_level, filename)],
-                          stdout=subprocess.PIPE).stdout
-    diff = diff.decode('utf-8').splitlines(True)
+    diff = commit.get_diff(top_level, filename)
+    diff = diff.splitlines(True)
     commit_diff = parse_diff(diff)
 
     lines = []
@@ -476,9 +497,7 @@ def check_file(top_level, commit, filename):
 
     # Format the file after the commit with all formatters and compute the diff
     # between the unformatted and formatted contents.
-    after = subprocess.run(['git', 'show', '%s:%s' % (commit, filename)],
-                           stdout=subprocess.PIPE).stdout
-    after = after.decode('utf-8')
+    after = commit.get_file(filename)
 
     formatted = after
     for formatter in Formatter.formatters(filename):
@@ -522,12 +541,7 @@ def check_file(top_level, commit, filename):
 
 
 def check_style(top_level, commit):
-    # Get the commit title and list of files.
-    ret = subprocess.run(['git', 'show', '--pretty=oneline','--name-only', commit],
-                         stdout=subprocess.PIPE)
-    files = ret.stdout.decode('utf-8').splitlines()
-    title = files[0]
-    files = files[1:]
+    title, files = commit.get_info()
 
     separator = '-' * len(title)
     print(separator)
@@ -557,7 +571,7 @@ def check_style(top_level, commit):
     return issues
 
 
-def extract_revlist(revs):
+def extract_commits(revs):
     """Extract a list of commits on which to operate from a revision or revision
     range.
     """
@@ -576,7 +590,7 @@ def extract_revlist(revs):
         revlist = ret.stdout.decode('utf-8').splitlines()
         revlist.reverse()
 
-    return revlist
+    return [Commit(x) for x in revlist]
 
 
 def git_top_level():
@@ -632,10 +646,10 @@ def main(argv):
     if top_level is None:
             return 1
 
-    revlist = extract_revlist(args.revision_range)
+    commits = extract_commits(args.revision_range)
 
     issues = 0
-    for commit in revlist:
+    for commit in commits:
         issues += check_style(top_level, commit)
         print('')
 

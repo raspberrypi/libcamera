@@ -101,6 +101,26 @@ protected:
 		}
 
 		/*
+		 * Test that blocking invocation is delivered directly when the
+		 * caller and callee live in the same thread.
+		 */
+		object_.reset();
+
+		object_.invokeMethod(&InvokedObject::method,
+				     ConnectionTypeBlocking, 42);
+
+		switch (object_.status()) {
+		case InvokedObject::NoCall:
+			cout << "Method not invoked for main thread (blocking)" << endl;
+			return TestFail;
+		case InvokedObject::InvalidThread:
+			cout << "Method invoked in incorrect thread for main thread (blocking)" << endl;
+			return TestFail;
+		default:
+			break;
+		}
+
+		/*
 		 * Move the object to a thread and verify that auto method
 		 * invocation is delivered in the correct thread.
 		 */

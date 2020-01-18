@@ -35,16 +35,19 @@ namespace libcamera {
  * thread.
  *
  * \var ConnectionType::ConnectionTypeQueued
- * \brief The receiver is invoked asynchronously in its thread when control
- * returns to the thread's event loop. The sender proceeds without waiting for
- * the invocation to complete.
+ * \brief The receiver is invoked asynchronously
+ *
+ * Invoke the receiver asynchronously in its thread when control returns to the
+ * thread's event loop. The sender proceeds without waiting for the invocation
+ * to complete.
  *
  * \var ConnectionType::ConnectionTypeBlocking
- * \brief The receiver is invoked asynchronously in its thread when control
- * returns to the thread's event loop. The sender blocks until the receiver
- * signals the completion of the invocation. This connection type shall not be
- * used when the sender and receiver live in the same thread, otherwise
- * deadlock will occur.
+ * \brief The receiver is invoked synchronously
+ *
+ * If the sender and the receiver live in the same thread, this is equivalent to
+ * ConnectionTypeDirect. Otherwise, the receiver is invoked asynchronously in
+ * its thread when control returns to the thread's event loop. The sender
+ * blocks until the receiver signals the completion of the invocation.
  */
 
 /**
@@ -71,6 +74,9 @@ bool BoundMethodBase::activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 			type = ConnectionTypeDirect;
 		else
 			type = ConnectionTypeQueued;
+	} else if (type == ConnectionTypeBlocking) {
+		if (Thread::current() == object_->thread())
+			type = ConnectionTypeDirect;
 	}
 
 	switch (type) {

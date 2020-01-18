@@ -496,6 +496,26 @@ class StagedChanges(Commit):
                               stdout=subprocess.PIPE).stdout.decode('utf-8')
 
 
+class Amendment(StagedChanges):
+    def __init__(self):
+        StagedChanges.__init__(self)
+
+    def get_info(self):
+        # Create a title using HEAD commit
+        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--no-patch'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        title = 'Amendment of ' + ret.strip()
+        # Extract the list of modified files
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-only', 'HEAD~'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return title, ret.splitlines()
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
+                               '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
     diff = commit.get_diff(top_level, filename)
@@ -628,6 +648,8 @@ def main(argv):
                         help='Code formatter. Default to clang-format if not specified.')
     parser.add_argument('--staged', '-s', action='store_true',
                         help='Include the changes in the index. Defaults to False')
+    parser.add_argument('--amend', '-a', action='store_true',
+                        help='Include changes in the index and the previous patch combined. Defaults to False')
     parser.add_argument('revision_range', type=str, default=None, nargs='?',
                         help='Revision range (as defined by git rev-parse). Defaults to HEAD if not specified.')
     args = parser.parse_args(argv[1:])
@@ -666,8 +688,10 @@ def main(argv):
     commits = []
     if args.staged:
         commits.append(StagedChanges())
+    if args.amend:
+        commits.append(Amendment())
 
-    # If not --staged
+    # If none of --staged or --amend was passed
     if len(commits) == 0:
         # And no revisions were passed, then default to HEAD
         if not args.revision_range:

@@ -752,7 +752,7 @@ bool ControlList::contains(unsigned int id) const
  */
 const ControlValue &ControlList::get(unsigned int id) const
 {
-	static ControlValue zero;
+	static const ControlValue zero;
 
 	const ControlValue *val = find(id);
 	if (!val)

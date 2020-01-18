@@ -749,7 +749,7 @@ void LogCategory::setSeverity(LogSeverity severity)
  */
 const LogCategory &LogCategory::defaultCategory()
 {
-	static LogCategory category("default");
+	static const LogCategory category("default");
 	return category;
 }
 

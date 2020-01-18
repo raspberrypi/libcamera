@@ -86,7 +86,7 @@ std::vector<unsigned int> ImageFormats::formats() const
  */
 const std::vector<SizeRange> &ImageFormats::sizes(unsigned int format) const
 {
-	static std::vector<SizeRange> empty;
+	static const std::vector<SizeRange> empty;
 
 	auto const &it = data_.find(format);
 	if (it == data_.end())

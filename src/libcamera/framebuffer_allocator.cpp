@@ -203,7 +203,7 @@ int FrameBufferAllocator::free(Stream *stream)
 const std::vector<std::unique_ptr<FrameBuffer>> &
 FrameBufferAllocator::buffers(Stream *stream) const
 {
-	static std::vector<std::unique_ptr<FrameBuffer>> empty;
+	static const std::vector<std::unique_ptr<FrameBuffer>> empty;
 
 	auto iter = buffers_.find(stream);
 	if (iter == buffers_.end())

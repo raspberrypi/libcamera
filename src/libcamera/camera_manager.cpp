@@ -7,6 +7,8 @@
 
 #include <libcamera/camera_manager.h>
 
+#include <map>
+
 #include <libcamera/camera.h>
 #include <libcamera/event_dispatcher.h>
 
@@ -25,6 +27,124 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
+
+class CameraManager::Private
+{
+public:
+	Private(CameraManager *cm);
+
+	int start();
+	void stop();
+
+	void addCamera(std::shared_ptr<Camera> &camera, dev_t devnum);
+	void removeCamera(Camera *camera);
+
+	std::vector<std::shared_ptr<Camera>> cameras_;
+	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_;
+
+private:
+	CameraManager *cm_;
+
+	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
+	std::unique_ptr<DeviceEnumerator> enumerator_;
+};
+
+CameraManager::Private::Private(CameraManager *cm)
+	: cm_(cm)
+{
+}
+
+int CameraManager::Private::start()
+{
+	enumerator_ = DeviceEnumerator::create();
+	if (!enumerator_ || enumerator_->enumerate())
+		return -ENODEV;
+
+	/*
+	 * TODO: Try to read handlers and order from configuration
+	 * file and only fallback on all handlers if there is no
+	 * configuration file.
+	 */
+	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
+
+	for (PipelineHandlerFactory *factory : factories) {
+		/*
+		 * Try each pipeline handler until it exhaust
+		 * all pipelines it can provide.
+		 */
+		while (1) {
+			std::shared_ptr<PipelineHandler> pipe = factory->create(cm_);
+			if (!pipe->match(enumerator_.get()))
+				break;
+
+			LOG(Camera, Debug)
+				<< "Pipeline handler \"" << factory->name()
+				<< "\" matched";
+			pipes_.push_back(std::move(pipe));
+		}
+	}
+
+	/* TODO: register hot-plug callback here */
+
+	return 0;
+}
+
+void CameraManager::Private::stop()
+{
+	/* TODO: unregister hot-plug callback here */
+
+	/*
+	 * Release all references to cameras and pipeline handlers to ensure
+	 * they all get destroyed before the device enumerator deletes the
+	 * media devices.
+	 */
+	pipes_.clear();
+	cameras_.clear();
+
+	enumerator_.reset(nullptr);
+}
+
+void CameraManager::Private::addCamera(std::shared_ptr<Camera> &camera,
+				       dev_t devnum)
+{
+	for (std::shared_ptr<Camera> c : cameras_) {
+		if (c->name() == camera->name()) {
+			LOG(Camera, Warning)
+				<< "Registering camera with duplicate name '"
+				<< camera->name() << "'";
+			break;
+		}
+	}
+
+	cameras_.push_back(std::move(camera));
+
+	if (devnum) {
+		unsigned int index = cameras_.size() - 1;
+		camerasByDevnum_[devnum] = cameras_[index];
+	}
+}
+
+void CameraManager::Private::removeCamera(Camera *camera)
+{
+	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
+				 [camera](std::shared_ptr<Camera> &c) {
+					 return c.get() == camera;
+				 });
+	if (iter == cameras_.end())
+		return;
+
+	LOG(Camera, Debug)
+		<< "Unregistering camera '" << camera->name() << "'";
+
+	auto iter_d = std::find_if(camerasByDevnum_.begin(), camerasByDevnum_.end(),
+				   [camera](const std::pair<dev_t, std::weak_ptr<Camera>> &p) {
+					   return p.second.lock().get() == camera;
+				   });
+	if (iter_d != camerasByDevnum_.end())
+		camerasByDevnum_.erase(iter_d);
+
+	cameras_.erase(iter);
+}
 
 /**
  * \class CameraManager
@@ -62,7 +182,7 @@ LOG_DEFINE_CATEGORY(Camera)
 CameraManager *CameraManager::self_ = nullptr;
 
 CameraManager::CameraManager()
-	: enumerator_(nullptr)
+	: p_(new CameraManager::Private(this))
 {
 	if (self_)
 		LOG(Camera, Fatal)
@@ -73,6 +193,8 @@ CameraManager::CameraManager()
 
 CameraManager::~CameraManager()
 {
+	stop();
+
 	self_ = nullptr;
 }
 
@@ -88,42 +210,14 @@ CameraManager::~CameraManager()
  */
 int CameraManager::start()
 {
-	if (enumerator_)
-		return -EBUSY;
-
 	LOG(Camera, Info) << "libcamera " << version_;
 
-	enumerator_ = DeviceEnumerator::create();
-	if (!enumerator_ || enumerator_->enumerate())
-		return -ENODEV;
+	int ret = p_->start();
+	if (ret)
+		LOG(Camera, Error) << "Failed to start camera manager: "
+				   << strerror(-ret);
 
-	/*
-	 * TODO: Try to read handlers and order from configuration
-	 * file and only fallback on all handlers if there is no
-	 * configuration file.
-	 */
-	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
-
-	for (PipelineHandlerFactory *factory : factories) {
-		/*
-		 * Try each pipeline handler until it exhaust
-		 * all pipelines it can provide.
-		 */
-		while (1) {
-			std::shared_ptr<PipelineHandler> pipe = factory->create(this);
-			if (!pipe->match(enumerator_.get()))
-				break;
-
-			LOG(Camera, Debug)
-				<< "Pipeline handler \"" << factory->name()
-				<< "\" matched";
-			pipes_.push_back(std::move(pipe));
-		}
-	}
-
-	/* TODO: register hot-plug callback here */
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -138,17 +232,7 @@ int CameraManager::start()
  */
 void CameraManager::stop()
 {
-	/* TODO: unregister hot-plug callback here */
-
-	/*
-	 * Release all references to cameras and pipeline handlers to ensure
-	 * they all get destroyed before the device enumerator deletes the
-	 * media devices.
-	 */
-	pipes_.clear();
-	cameras_.clear();
-
-	enumerator_.reset(nullptr);
+	p_->stop();
 }
 
 /**
@@ -160,6 +244,10 @@ void CameraManager::stop()
  *
  * \return List of all available cameras
  */
+const std::vector<std::shared_ptr<Camera>> &CameraManager::cameras() const
+{
+	return p_->cameras_;
+}
 
 /**
  * \brief Get a camera based on name
@@ -172,7 +260,7 @@ void CameraManager::stop()
  */
 std::shared_ptr<Camera> CameraManager::get(const std::string &name)
 {
-	for (std::shared_ptr<Camera> camera : cameras_) {
+	for (std::shared_ptr<Camera> camera : p_->cameras_) {
 		if (camera->name() == name)
 			return camera;
 	}
@@ -196,8 +284,8 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &name)
  */
 std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 {
-	auto iter = camerasByDevnum_.find(devnum);
-	if (iter == camerasByDevnum_.end())
+	auto iter = p_->camerasByDevnum_.find(devnum);
+	if (iter == p_->camerasByDevnum_.end())
 		return nullptr;
 
 	return iter->second.lock();
@@ -217,21 +305,8 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
  */
 void CameraManager::addCamera(std::shared_ptr<Camera> camera, dev_t devnum)
 {
-	for (std::shared_ptr<Camera> c : cameras_) {
-		if (c->name() == camera->name()) {
-			LOG(Camera, Warning)
-				<< "Registering camera with duplicate name '"
-				<< camera->name() << "'";
-			break;
-		}
-	}
 
-	cameras_.push_back(std::move(camera));
-
-	if (devnum) {
-		unsigned int index = cameras_.size() - 1;
-		camerasByDevnum_[devnum] = cameras_[index];
-	}
+	p_->addCamera(camera, devnum);
 }
 
 /**
@@ -244,24 +319,7 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera, dev_t devnum)
  */
 void CameraManager::removeCamera(Camera *camera)
 {
-	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
-				 [camera](std::shared_ptr<Camera> &c) {
-					 return c.get() == camera;
-				 });
-	if (iter == cameras_.end())
-		return;
-
-	LOG(Camera, Debug)
-		<< "Unregistering camera '" << camera->name() << "'";
-
-	auto iter_d = std::find_if(camerasByDevnum_.begin(), camerasByDevnum_.end(),
-				   [camera](const std::pair<dev_t, std::weak_ptr<Camera>> &p) {
-					   return p.second.lock().get() == camera;
-				   });
-	if (iter_d != camerasByDevnum_.end())
-		camerasByDevnum_.erase(iter_d);
-
-	cameras_.erase(iter);
+	p_->removeCamera(camera);
 }
 
 /**

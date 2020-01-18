@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_CAMERA_MANAGER_H__
 #define __LIBCAMERA_CAMERA_MANAGER_H__
 
-#include <map>
 #include <memory>
 #include <string>
 #include <sys/types.h>
@@ -18,9 +17,7 @@
 namespace libcamera {
 
 class Camera;
-class DeviceEnumerator;
 class EventDispatcher;
-class PipelineHandler;
 
 class CameraManager : public Object
 {
@@ -33,7 +30,7 @@ public:
 	int start();
 	void stop();
 
-	const std::vector<std::shared_ptr<Camera>> &cameras() const { return cameras_; }
+	const std::vector<std::shared_ptr<Camera>> &cameras() const;
 	std::shared_ptr<Camera> get(const std::string &name);
 	std::shared_ptr<Camera> get(dev_t devnum);
 
@@ -46,13 +43,11 @@ public:
 	EventDispatcher *eventDispatcher();
 
 private:
-	std::unique_ptr<DeviceEnumerator> enumerator_;
-	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
-	std::vector<std::shared_ptr<Camera>> cameras_;
-	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_;
-
 	static const std::string version_;
 	static CameraManager *self_;
+
+	class Private;
+	std::unique_ptr<Private> p_;
 };
 
 } /* namespace libcamera */

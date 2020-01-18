@@ -22,6 +22,7 @@
 
 #include <libcamera/logging.h>
 
+#include "thread.h"
 #include "utils.h"
 
 /**
@@ -196,7 +197,8 @@ void LogOutput::write(const LogMessage &msg)
 		break;
 	case LoggingTargetStream:
 	case LoggingTargetFile:
-		str = "[" + utils::time_point_to_string(msg.timestamp()) + "]"
+		str = "[" + utils::time_point_to_string(msg.timestamp()) + "] ["
+		    + std::to_string(Thread::currentId()) + "]"
 		    + log_severity_name(msg.severity()) + " "
 		    + msg.category().name() + " " + msg.fileInfo() + " "
 		    + msg.msg();

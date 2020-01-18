@@ -49,8 +49,6 @@ public:
 
 	int allocate(const StreamConfiguration &config)
 	{
-		int ret;
-
 		/* Locate and open the video device. */
 		std::string videoDeviceName = "vivid-000-vid-out";
 
@@ -86,18 +84,24 @@ public:
 
 		/* Configure the format. */
 		V4L2DeviceFormat format;
-		ret = video_->getFormat(&format);
-		if (ret) {
+		if (video_->getFormat(&format)) {
 			std::cout << "Failed to get format on output device" << std::endl;
-			return ret;
+			return TestFail;
 		}
 
 		format.size = config.size;
 		format.fourcc = V4L2VideoDevice::toV4L2Fourcc(config.pixelFormat, false);
-		if (video_->setFormat(&format))
+		if (video_->setFormat(&format)) {
+			std::cout << "Failed to set format on output device" << std::endl;
 			return TestFail;
+		}
 
-		return video_->exportBuffers(config.bufferCount, &buffers_);
+		if (video_->exportBuffers(config.bufferCount, &buffers_) < 0) {
+			std::cout << "Failed to export buffers" << std::endl;
+			return TestFail;
+		}
+
+		return TestPass;
 	}
 
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers()
@@ -178,8 +182,8 @@ protected:
 
 		BufferSource source;
 		int ret = source.allocate(cfg);
-		if (ret < 0)
-			return TestFail;
+		if (ret != TestPass)
+			return ret;
 
 		std::vector<Request *> requests;
 		for (const std::unique_ptr<FrameBuffer> &buffer : source.buffers()) {

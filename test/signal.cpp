@@ -220,6 +220,30 @@ protected:
 		delete dynamicSignal;
 		delete slotObject;
 
+		/*
+		 * Test that signal manual disconnection from Object removes
+		 * the signal for the object. This shall not generate any
+		 * valgrind warning.
+		 */
+		dynamicSignal = new Signal<>();
+		slotObject = new SlotObject();
+		dynamicSignal->connect(slotObject, &SlotObject::slot);
+		dynamicSignal->disconnect(slotObject);
+		delete dynamicSignal;
+		delete slotObject;
+
+		/*
+		 * Test that signal manual disconnection from all slots removes
+		 * the signal for the object. This shall not generate any
+		 * valgrind warning.
+		 */
+		dynamicSignal = new Signal<>();
+		slotObject = new SlotObject();
+		dynamicSignal->connect(slotObject, &SlotObject::slot);
+		dynamicSignal->disconnect();
+		delete dynamicSignal;
+		delete slotObject;
+
 		/* Exercise the Object slot code paths. */
 		slotObject = new SlotObject();
 		signalVoid_.connect(slotObject, &SlotObject::slot);

@@ -314,7 +314,7 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  * exportFrameBuffers() and importFrameBuffers() for the streams contained in
  * any camera configuration.
  *
- * The only intended caller is the FrameBufferAllocator helper.
+ * The only intended caller is Camera::exportFrameBuffers().
  *
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
@@ -358,8 +358,7 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  * called only after a successful call to either of these two methods, and only
  * once per stream.
  *
- * The only intended callers are Camera::stop() and the FrameBufferAllocator
- * helper.
+ * The only intended callers are Camera::stop() and Camera::freeFrameBuffers().
  */
 
 /**

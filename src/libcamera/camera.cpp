@@ -266,15 +266,21 @@ public:
 
 	Private(PipelineHandler *pipe, const std::string &name,
 		const std::set<Stream *> &streams);
+	~Private();
 
-	bool stateBetween(State low, State high) const;
-	bool stateIs(State state) const;
+	int isAccessAllowed(State state, bool allowDisconnected = false) const;
+	int isAccessAllowed(State low, State high,
+			    bool allowDisconnected = false) const;
+
+	void disconnect();
+	void setState(State state);
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string name_;
 	std::set<Stream *> streams_;
 	std::set<Stream *> activeStreams_;
 
+private:
 	bool disconnected_;
 	State state_;
 };
@@ -286,6 +292,12 @@ Camera::Private::Private(PipelineHandler *pipe, const std::string &name,
 {
 }
 
+Camera::Private::~Private()
+{
+	if (state_ != Private::CameraAvailable)
+		LOG(Camera, Error) << "Removing camera while still in use";
+}
+
 static const char *const camera_state_names[] = {
 	"Available",
 	"Acquired",
@@ -293,10 +305,31 @@ static const char *const camera_state_names[] = {
 	"Running",
 };
 
-bool Camera::Private::stateBetween(State low, State high) const
+int Camera::Private::isAccessAllowed(State state, bool allowDisconnected) const
 {
+	if (!allowDisconnected && disconnected_)
+		return -ENODEV;
+
+	if (state_ == state)
+		return 0;
+
+	ASSERT(static_cast<unsigned int>(state) < ARRAY_SIZE(camera_state_names));
+
+	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
+			   << " state trying operation requiring state "
+			   << camera_state_names[state];
+
+	return -EACCES;
+}
+
+int Camera::Private::isAccessAllowed(State low, State high,
+				     bool allowDisconnected) const
+{
+	if (!allowDisconnected && disconnected_)
+		return -ENODEV;
+
 	if (state_ >= low && state_ <= high)
-		return true;
+		return 0;
 
 	ASSERT(static_cast<unsigned int>(low) < ARRAY_SIZE(camera_state_names) &&
 	       static_cast<unsigned int>(high) < ARRAY_SIZE(camera_state_names));
@@ -306,21 +339,20 @@ bool Camera::Private::stateBetween(State low, State high) const
 			   << camera_state_names[low] << " and "
 			   << camera_state_names[high];
 
-	return false;
+	return -EACCES;
 }
 
-bool Camera::Private::stateIs(State state) const
+void Camera::Private::disconnect()
 {
-	if (state_ == state)
-		return true;
+	if (state_ == Private::CameraRunning)
+		state_ = Private::CameraConfigured;
 
-	ASSERT(static_cast<unsigned int>(state) < ARRAY_SIZE(camera_state_names));
+	disconnected_ = true;
+}
 
-	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
-			   << " state trying operation requiring state "
-			   << camera_state_names[state];
-
-	return false;
+void Camera::Private::setState(State state)
+{
+	state_ = state;
 }
 
 /**
@@ -468,8 +500,6 @@ Camera::Camera(PipelineHandler *pipe, const std::string &name,
 
 Camera::~Camera()
 {
-	if (!p_->stateIs(Private::CameraAvailable))
-		LOG(Camera, Error) << "Removing camera while still in use";
 }
 
 /**
@@ -488,23 +518,16 @@ void Camera::disconnect()
 {
 	LOG(Camera, Debug) << "Disconnecting camera " << name();
 
-	/*
-	 * If the camera was running when the hardware was removed force the
-	 * state to Configured state to allow applications to free resources
-	 * and call release() before deleting the camera.
-	 */
-	if (p_->state_ == Private::CameraRunning)
-		p_->state_ = Private::CameraConfigured;
-
-	p_->disconnected_ = true;
+	p_->disconnect();
 	disconnected.emit(this);
 }
 
 int Camera::exportFrameBuffers(Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	if (!p_->stateIs(Private::CameraConfigured))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraConfigured);
+	if (ret < 0)
+		return ret;
 
 	if (streams().find(stream) == streams().end())
 		return -EINVAL;
@@ -517,8 +540,9 @@ int Camera::exportFrameBuffers(Stream *stream,
 
 int Camera::freeFrameBuffers(Stream *stream)
 {
-	if (!p_->stateIs(Private::CameraConfigured))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraConfigured, true);
+	if (ret < 0)
+		return ret;
 
 	p_->pipe_->freeFrameBuffers(this, stream);
 
@@ -550,11 +574,9 @@ int Camera::freeFrameBuffers(Stream *stream)
  */
 int Camera::acquire()
 {
-	if (p_->disconnected_)
-		return -ENODEV;
-
-	if (!p_->stateIs(Private::CameraAvailable))
-		return -EBUSY;
+	int ret = p_->isAccessAllowed(Private::CameraAvailable);
+	if (ret < 0)
+		return ret == -EACCES ? -EBUSY : ret;
 
 	if (!p_->pipe_->lock()) {
 		LOG(Camera, Info)
@@ -562,7 +584,7 @@ int Camera::acquire()
 		return -EBUSY;
 	}
 
-	p_->state_ = Private::CameraAcquired;
+	p_->setState(Private::CameraAcquired);
 
 	return 0;
 }
@@ -580,9 +602,10 @@ int Camera::acquire()
  */
 int Camera::release()
 {
-	if (!p_->stateBetween(Private::CameraAvailable,
-			      Private::CameraConfigured))
-		return -EBUSY;
+	int ret = p_->isAccessAllowed(Private::CameraAvailable,
+				      Private::CameraConfigured, true);
+	if (ret < 0)
+		return ret == -EACCES ? -EBUSY : ret;
 
 	if (allocator_) {
 		/*
@@ -596,7 +619,7 @@ int Camera::release()
 
 	p_->pipe_->unlock();
 
-	p_->state_ = Private::CameraAvailable;
+	p_->setState(Private::CameraAvailable);
 
 	return 0;
 }
@@ -643,7 +666,12 @@ const std::set<Stream *> &Camera::streams() const
  */
 std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamRoles &roles)
 {
-	if (p_->disconnected_ || roles.size() > streams().size())
+	int ret = p_->isAccessAllowed(Private::CameraAvailable,
+				      Private::CameraRunning);
+	if (ret < 0)
+		return nullptr;
+
+	if (roles.size() > streams().size())
 		return nullptr;
 
 	CameraConfiguration *config = p_->pipe_->generateConfiguration(this, roles);
@@ -694,14 +722,10 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamR
  */
 int Camera::configure(CameraConfiguration *config)
 {
-	int ret;
-
-	if (p_->disconnected_)
-		return -ENODEV;
-
-	if (!p_->stateBetween(Private::CameraAcquired,
-			      Private::CameraConfigured))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraAcquired,
+				      Private::CameraConfigured);
+	if (ret < 0)
+		return ret;
 
 	if (allocator_ && allocator_->allocated()) {
 		LOG(Camera, Error)
@@ -740,7 +764,7 @@ int Camera::configure(CameraConfiguration *config)
 		p_->activeStreams_.insert(stream);
 	}
 
-	p_->state_ = Private::CameraConfigured;
+	p_->setState(Private::CameraConfigured);
 
 	return 0;
 }
@@ -767,9 +791,9 @@ int Camera::configure(CameraConfiguration *config)
  */
 Request *Camera::createRequest(uint64_t cookie)
 {
-	if (p_->disconnected_ ||
-	    !p_->stateBetween(Private::CameraConfigured,
-			      Private::CameraRunning))
+	int ret = p_->isAccessAllowed(Private::CameraConfigured,
+				      Private::CameraRunning);
+	if (ret < 0)
 		return nullptr;
 
 	return new Request(this, cookie);
@@ -799,11 +823,9 @@ Request *Camera::createRequest(uint64_t cookie)
  */
 int Camera::queueRequest(Request *request)
 {
-	if (p_->disconnected_)
-		return -ENODEV;
-
-	if (!p_->stateIs(Private::CameraRunning))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraRunning);
+	if (ret < 0)
+		return ret;
 
 	if (request->buffers().empty()) {
 		LOG(Camera, Error) << "Request contains no buffers";
@@ -837,11 +859,9 @@ int Camera::queueRequest(Request *request)
  */
 int Camera::start()
 {
-	if (p_->disconnected_)
-		return -ENODEV;
-
-	if (!p_->stateIs(Private::CameraConfigured))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraConfigured);
+	if (ret < 0)
+		return ret;
 
 	LOG(Camera, Debug) << "Starting capture";
 
@@ -852,11 +872,11 @@ int Camera::start()
 		p_->pipe_->importFrameBuffers(this, stream);
 	}
 
-	int ret = p_->pipe_->start(this);
+	ret = p_->pipe_->start(this);
 	if (ret)
 		return ret;
 
-	p_->state_ = Private::CameraRunning;
+	p_->setState(Private::CameraRunning);
 
 	return 0;
 }
@@ -875,15 +895,13 @@ int Camera::start()
  */
 int Camera::stop()
 {
-	if (p_->disconnected_)
-		return -ENODEV;
-
-	if (!p_->stateIs(Private::CameraRunning))
-		return -EACCES;
+	int ret = p_->isAccessAllowed(Private::CameraRunning);
+	if (ret < 0)
+		return ret;
 
 	LOG(Camera, Debug) << "Stopping capture";
 
-	p_->state_ = Private::CameraConfigured;
+	p_->setState(Private::CameraConfigured);
 
 	p_->pipe_->stop(this);
 

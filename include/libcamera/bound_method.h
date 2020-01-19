@@ -10,6 +10,7 @@
 #include <memory>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace libcamera {
 
@@ -71,25 +72,6 @@ public:
 	virtual void invokePack(BoundMethodPackBase *pack) = 0;
 
 protected:
-#ifndef __DOXYGEN__
-	/*
-	 * This is a cheap partial implementation of std::integer_sequence<>
-	 * from C++14.
-	 */
-	template<int...>
-	struct sequence {
-	};
-
-	template<int N, int... S>
-	struct generator : generator<N-1, N-1, S...> {
-	};
-
-	template<int... S>
-	struct generator<0, S...> {
-		typedef sequence<S...> type;
-	};
-#endif
-
 	bool activatePack(std::shared_ptr<BoundMethodPackBase> pack,
 			  bool deleteMethod);
 
@@ -107,11 +89,11 @@ public:
 	using PackType = BoundMethodPack<R, Args...>;
 
 private:
-	template<int... S>
-	void invokePack(BoundMethodPackBase *pack, BoundMethodBase::sequence<S...>)
+	template<std::size_t... I>
+	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
 	{
 		PackType *args = static_cast<PackType *>(pack);
-		args->ret_ = invoke(std::get<S>(args->args_)...);
+		args->ret_ = invoke(std::get<I>(args->args_)...);
 	}
 
 public:
@@ -120,7 +102,7 @@ public:
 
 	void invokePack(BoundMethodPackBase *pack) override
 	{
-		invokePack(pack, typename BoundMethodBase::generator<sizeof...(Args)>::type());
+		invokePack(pack, std::make_index_sequence<sizeof...(Args)>{});
 	}
 
 	virtual R activate(Args... args, bool deleteMethod = false) = 0;
@@ -134,12 +116,12 @@ public:
 	using PackType = BoundMethodPack<void, Args...>;
 
 private:
-	template<int... S>
-	void invokePack(BoundMethodPackBase *pack, BoundMethodBase::sequence<S...>)
+	template<std::size_t... I>
+	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
 	{
-		/* args is effectively unused when the sequence S is empty. */
+		/* args is effectively unused when the sequence I is empty. */
 		PackType *args [[gnu::unused]] = static_cast<PackType *>(pack);
-		invoke(std::get<S>(args->args_)...);
+		invoke(std::get<I>(args->args_)...);
 	}
 
 public:
@@ -148,7 +130,7 @@ public:
 
 	void invokePack(BoundMethodPackBase *pack) override
 	{
-		invokePack(pack, typename BoundMethodBase::generator<sizeof...(Args)>::type());
+		invokePack(pack, std::make_index_sequence<sizeof...(Args)>{});
 	}
 
 	virtual void activate(Args... args, bool deleteMethod = false) = 0;

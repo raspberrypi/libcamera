@@ -62,6 +62,8 @@ LOG_DEFINE_CATEGORY(IPCUnixSocket)
  * communication method. The remote side then instantiates a socket, and binds
  * it to the other side by passing the file descriptor to bind(). At that point
  * the channel is operation and communication is bidirectional and symmmetrical.
+ *
+ * \context This class is \threadbound.
  */
 
 IPCUnixSocket::IPCUnixSocket()

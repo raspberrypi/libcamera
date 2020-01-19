@@ -99,6 +99,8 @@ EventNotifier::~EventNotifier()
  *
  * This function enables or disables the notifier. A disabled notifier ignores
  * events and does not emit the \ref activated signal.
+ *
+ * \context This function is \threadbound.
  */
 void EventNotifier::setEnabled(bool enable)
 {

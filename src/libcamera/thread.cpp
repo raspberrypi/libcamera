@@ -222,6 +222,8 @@ ThreadData *ThreadData::current()
  * called. A custom event dispatcher may be installed with
  * setEventDispatcher(), otherwise a poll-based event dispatcher is used. This
  * behaviour can be overriden by overloading the run() method.
+ *
+ * \context This class is \threadsafe.
  */
 
 /**

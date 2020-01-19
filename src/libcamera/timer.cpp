@@ -67,16 +67,18 @@ Timer::~Timer()
  * \brief Start or restart the timer with a timeout of \a msec
  * \param[in] msec The timer duration in milliseconds
  *
- * This method shall be called from the thread the timer is associated with. If
- * the timer is already running it will be stopped and restarted.
+ * If the timer is already running it will be stopped and restarted.
+ *
+ * \context This function is \threadbound.
  */
 
 /**
  * \brief Start or restart the timer with a timeout of \a duration
  * \param[in] duration The timer duration in milliseconds
  *
- * This method shall be called from the thread the timer is associated with. If
- * the timer is already running it will be stopped and restarted.
+ * If the timer is already running it will be stopped and restarted.
+ *
+ * \context This function is \threadbound.
  */
 void Timer::start(std::chrono::milliseconds duration)
 {
@@ -87,8 +89,9 @@ void Timer::start(std::chrono::milliseconds duration)
  * \brief Start or restart the timer with a \a deadline
  * \param[in] deadline The timer deadline
  *
- * This method shall be called from the thread the timer is associated with. If
- * the timer is already running it will be stopped and restarted.
+ * If the timer is already running it will be stopped and restarted.
+ *
+ * \context This function is \threadbound.
  */
 void Timer::start(std::chrono::steady_clock::time_point deadline)
 {
@@ -115,8 +118,9 @@ void Timer::start(std::chrono::steady_clock::time_point deadline)
  * After this function returns the timer is guaranteed not to emit the
  * \ref timeout signal.
  *
- * This method shall be called from the thread the timer is associated with. If
- * the timer is not running this function performs no operation.
+ * If the timer is not running this function performs no operation.
+ *
+ * \context This function is \threadbound.
  */
 void Timer::stop()
 {

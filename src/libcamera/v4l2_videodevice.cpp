@@ -403,6 +403,8 @@ const std::string V4L2DeviceFormat::toString() const
  *
  * Upon destruction any device left open will be closed, and any resources
  * released.
+ *
+ * \context This class is \threadbound.
  */
 
 /**

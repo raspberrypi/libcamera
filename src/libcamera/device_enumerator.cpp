@@ -190,6 +190,8 @@ DeviceEnumerator::~DeviceEnumerator()
  * with a warning message logged, without returning an error. Only errors that
  * prevent enumeration altogether shall be fatal.
  *
+ * \context This function is \threadbound.
+ *
  * \return 0 on success or a negative error code otherwise
  */
 

@@ -76,7 +76,12 @@ Object::Object(Object *parent)
  */
 Object::~Object()
 {
-	for (SignalBase *signal : signals_)
+	/*
+	 * Move signals to a private list to avoid concurrent iteration and
+	 * deletion of items from Signal::disconnect().
+	 */
+	std::list<SignalBase *> signals(std::move(signals_));
+	for (SignalBase *signal : signals)
 		signal->disconnect(this);
 
 	if (pendingMessages_)

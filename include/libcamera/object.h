@@ -48,9 +48,7 @@ protected:
 	virtual void message(Message *msg);
 
 private:
-	template<typename... Args>
-	friend class Signal;
-	friend class BoundMethodBase;
+	friend class SignalBase;
 	friend class Thread;
 
 	void notifyThreadMove();

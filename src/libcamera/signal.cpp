@@ -14,6 +14,42 @@
 
 namespace libcamera {
 
+void SignalBase::connect(BoundMethodBase *slot)
+{
+	Object *object = slot->object();
+	if (object)
+		object->connect(this);
+	slots_.push_back(slot);
+}
+
+void SignalBase::disconnect(Object *object)
+{
+	disconnect([object](SlotList::iterator &iter) {
+		return (*iter)->match(object);
+	});
+}
+
+void SignalBase::disconnect(std::function<bool(SlotList::iterator &)> match)
+{
+	for (auto iter = slots_.begin(); iter != slots_.end(); ) {
+		if (match(iter)) {
+			Object *object = (*iter)->object();
+			if (object)
+				object->disconnect(this);
+
+			delete *iter;
+			iter = slots_.erase(iter);
+		} else {
+			++iter;
+		}
+	}
+}
+
+SignalBase::SlotList SignalBase::slots()
+{
+	return slots_;
+}
+
 /**
  * \class Signal
  * \brief Generic signal and slot communication mechanism

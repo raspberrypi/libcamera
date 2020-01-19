@@ -21,7 +21,7 @@
 
 using namespace libcamera;
 
-class V4L2Camera : public Object
+class V4L2Camera
 {
 public:
 	struct Buffer {

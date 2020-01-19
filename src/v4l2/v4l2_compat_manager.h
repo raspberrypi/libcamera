@@ -8,22 +8,19 @@
 #ifndef __V4L2_COMPAT_MANAGER_H__
 #define __V4L2_COMPAT_MANAGER_H__
 
-#include <condition_variable>
 #include <fcntl.h>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <sys/types.h>
 #include <vector>
 
 #include <libcamera/camera_manager.h>
 
-#include "thread.h"
 #include "v4l2_camera_proxy.h"
 
 using namespace libcamera;
 
-class V4L2CompatManager : public Thread
+class V4L2CompatManager
 {
 public:
 	struct FileOperations {
@@ -46,8 +43,6 @@ public:
 
 	static V4L2CompatManager *instance();
 
-	int init();
-
 	V4L2CameraProxy *getProxy(int fd);
 	const FileOperations &fops() const { return fops_; }
 
@@ -64,16 +59,12 @@ private:
 	V4L2CompatManager();
 	~V4L2CompatManager();
 
-	void run() override;
+	int start();
 	int getCameraIndex(int fd);
 
 	FileOperations fops_;
 
 	CameraManager *cm_;
-
-	std::mutex mutex_;
-	std::condition_variable cv_;
-	bool initialized_;
 
 	std::vector<std::unique_ptr<V4L2CameraProxy>> proxies_;
 	std::map<int, V4L2CameraProxy *> devices_;

@@ -41,8 +41,7 @@ int V4L2CameraProxy::open(bool nonBlocking)
 {
 	LOG(V4L2Compat, Debug) << "Servicing open";
 
-	int ret = vcam_->invokeMethod(&V4L2Camera::open,
-				      ConnectionTypeBlocking);
+	int ret = vcam_->open();
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -50,8 +49,7 @@ int V4L2CameraProxy::open(bool nonBlocking)
 
 	nonBlocking_ = nonBlocking;
 
-	vcam_->invokeMethod(&V4L2Camera::getStreamConfig,
-			    ConnectionTypeBlocking, &streamConfig_);
+	vcam_->getStreamConfig(&streamConfig_);
 	setFmtFromConfig(streamConfig_);
 	sizeimage_ = calculateSizeImage(streamConfig_);
 
@@ -72,7 +70,7 @@ void V4L2CameraProxy::close()
 	if (--refcount_ > 0)
 		return;
 
-	vcam_->invokeMethod(&V4L2Camera::close, ConnectionTypeBlocking);
+	vcam_->close();
 }
 
 void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
@@ -284,11 +282,9 @@ int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
 	tryFormat(arg);
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
-	int ret = vcam_->invokeMethod(&V4L2Camera::configure,
-				      ConnectionTypeBlocking,
-				      &streamConfig_, size,
-				      v4l2ToDrm(arg->fmt.pix.pixelformat),
-				      bufferCount_);
+	int ret = vcam_->configure(&streamConfig_, size,
+				   v4l2ToDrm(arg->fmt.pix.pixelformat),
+				   bufferCount_);
 	if (ret < 0)
 		return -EINVAL;
 
@@ -319,13 +315,12 @@ int V4L2CameraProxy::freeBuffers()
 {
 	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
 
-	int ret = vcam_->invokeMethod(&V4L2Camera::streamOff,
-				      ConnectionTypeBlocking);
+	int ret = vcam_->streamOff();
 	if (ret < 0) {
 		LOG(V4L2Compat, Error) << "Failed to stop stream";
 		return ret;
 	}
-	vcam_->invokeMethod(&V4L2Camera::freeBuffers, ConnectionTypeBlocking);
+	vcam_->freeBuffers();
 	bufferCount_ = 0;
 
 	return 0;
@@ -349,11 +344,9 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 		return freeBuffers();
 
 	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
-	ret = vcam_->invokeMethod(&V4L2Camera::configure,
-				  ConnectionTypeBlocking,
-				  &streamConfig_, size,
-				  v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),
-				  arg->count);
+	ret = vcam_->configure(&streamConfig_, size,
+			       v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),
+			       arg->count);
 	if (ret < 0)
 		return -EINVAL;
 
@@ -366,8 +359,7 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 	arg->count = streamConfig_.bufferCount;
 	bufferCount_ = arg->count;
 
-	ret = vcam_->invokeMethod(&V4L2Camera::allocBuffers,
-				  ConnectionTypeBlocking, arg->count);
+	ret = vcam_->allocBuffers(arg->count);
 	if (ret < 0) {
 		arg->count = 0;
 		return ret;
@@ -415,8 +407,7 @@ int V4L2CameraProxy::vidioc_qbuf(struct v4l2_buffer *arg)
 	    arg->index >= bufferCount_)
 		return -EINVAL;
 
-	int ret = vcam_->invokeMethod(&V4L2Camera::qbuf, ConnectionTypeBlocking,
-				      arg->index);
+	int ret = vcam_->qbuf(arg->index);
 	if (ret < 0)
 		return ret;
 
@@ -459,10 +450,7 @@ int V4L2CameraProxy::vidioc_streamon(int *arg)
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 
-	int ret = vcam_->invokeMethod(&V4L2Camera::streamOn,
-				      ConnectionTypeBlocking);
-
-	return ret;
+	return vcam_->streamOn();
 }
 
 int V4L2CameraProxy::vidioc_streamoff(int *arg)
@@ -472,8 +460,7 @@ int V4L2CameraProxy::vidioc_streamoff(int *arg)
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 
-	int ret = vcam_->invokeMethod(&V4L2Camera::streamOff,
-				      ConnectionTypeBlocking);
+	int ret = vcam_->streamOff();
 
 	for (struct v4l2_buffer &buf : buffers_)
 		buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);

@@ -37,7 +37,7 @@ void get_symbol(T &func, const char *name)
 } /* namespace */
 
 V4L2CompatManager::V4L2CompatManager()
-	: cm_(nullptr), initialized_(false)
+	: cm_(nullptr)
 {
 	get_symbol(fops_.openat, "openat");
 	get_symbol(fops_.dup, "dup");
@@ -52,24 +52,15 @@ V4L2CompatManager::~V4L2CompatManager()
 	devices_.clear();
 	mmaps_.clear();
 
-	if (isRunning()) {
-		exit(0);
-		/* \todo Wait with a timeout, just in case. */
-		wait();
+	if (cm_) {
+		proxies_.clear();
+		cm_->stop();
+		delete cm_;
+		cm_ = nullptr;
 	}
 }
 
-int V4L2CompatManager::init()
-{
-	start();
-
-	MutexLocker locker(mutex_);
-	cv_.wait(locker, [&] { return initialized_; });
-
-	return 0;
-}
-
-void V4L2CompatManager::run()
+int V4L2CompatManager::start()
 {
 	cm_ = new CameraManager();
 
@@ -77,7 +68,9 @@ void V4L2CompatManager::run()
 	if (ret) {
 		LOG(V4L2Compat, Error) << "Failed to start camera manager: "
 				       << strerror(-ret);
-		return;
+		delete cm_;
+		cm_ = nullptr;
+		return ret;
 	}
 
 	LOG(V4L2Compat, Debug) << "Started camera manager";
@@ -93,22 +86,7 @@ void V4L2CompatManager::run()
 		++index;
 	}
 
-	/*
-	 * libcamera has been initialized. Unlock the init() caller as we're
-	 * now ready to handle calls from the framework.
-	 */
-	mutex_.lock();
-	initialized_ = true;
-	mutex_.unlock();
-	cv_.notify_one();
-
-	/* Now start processing events and messages. */
-	exec();
-
-	proxies_.clear();
-	cm_->stop();
-	delete cm_;
-	cm_ = nullptr;
+	return 0;
 }
 
 V4L2CompatManager *V4L2CompatManager::instance()
@@ -159,8 +137,8 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 	    major(statbuf.st_rdev) != 81)
 		return fd;
 
-	if (!isRunning())
-		init();
+	if (!cm_)
+		start();
 
 	ret = getCameraIndex(fd);
 	if (ret < 0) {

@@ -254,6 +254,75 @@ std::size_t CameraConfiguration::size() const
  * \brief The vector of stream configurations
  */
 
+class Camera::Private
+{
+public:
+	enum State {
+		CameraAvailable,
+		CameraAcquired,
+		CameraConfigured,
+		CameraRunning,
+	};
+
+	Private(PipelineHandler *pipe, const std::string &name,
+		const std::set<Stream *> &streams);
+
+	bool stateBetween(State low, State high) const;
+	bool stateIs(State state) const;
+
+	std::shared_ptr<PipelineHandler> pipe_;
+	std::string name_;
+	std::set<Stream *> streams_;
+	std::set<Stream *> activeStreams_;
+
+	bool disconnected_;
+	State state_;
+};
+
+Camera::Private::Private(PipelineHandler *pipe, const std::string &name,
+			 const std::set<Stream *> &streams)
+	: pipe_(pipe->shared_from_this()), name_(name), streams_(streams),
+	  disconnected_(false), state_(CameraAvailable)
+{
+}
+
+static const char *const camera_state_names[] = {
+	"Available",
+	"Acquired",
+	"Configured",
+	"Running",
+};
+
+bool Camera::Private::stateBetween(State low, State high) const
+{
+	if (state_ >= low && state_ <= high)
+		return true;
+
+	ASSERT(static_cast<unsigned int>(low) < ARRAY_SIZE(camera_state_names) &&
+	       static_cast<unsigned int>(high) < ARRAY_SIZE(camera_state_names));
+
+	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
+			   << " state trying operation requiring state between "
+			   << camera_state_names[low] << " and "
+			   << camera_state_names[high];
+
+	return false;
+}
+
+bool Camera::Private::stateIs(State state) const
+{
+	if (state_ == state)
+		return true;
+
+	ASSERT(static_cast<unsigned int>(state) < ARRAY_SIZE(camera_state_names));
+
+	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
+			   << " state trying operation requiring state "
+			   << camera_state_names[state];
+
+	return false;
+}
+
 /**
  * \class Camera
  * \brief Camera device
@@ -354,8 +423,7 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 		}
 	};
 
-	Camera *camera = new Camera(pipe, name);
-	camera->streams_ = streams;
+	Camera *camera = new Camera(pipe, name, streams);
 
 	return std::shared_ptr<Camera>(camera, Deleter());
 }
@@ -366,7 +434,7 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
  */
 const std::string &Camera::name() const
 {
-	return name_;
+	return p_->name_;
 }
 
 /**
@@ -392,53 +460,16 @@ const std::string &Camera::name() const
  * application API calls by returning errors immediately.
  */
 
-Camera::Camera(PipelineHandler *pipe, const std::string &name)
-	: pipe_(pipe->shared_from_this()), name_(name), disconnected_(false),
-	  state_(CameraAvailable), allocator_(nullptr)
+Camera::Camera(PipelineHandler *pipe, const std::string &name,
+	       const std::set<Stream *> &streams)
+	: p_(new Private(pipe, name, streams)), allocator_(nullptr)
 {
 }
 
 Camera::~Camera()
 {
-	if (!stateIs(CameraAvailable))
+	if (!p_->stateIs(Private::CameraAvailable))
 		LOG(Camera, Error) << "Removing camera while still in use";
-}
-
-static const char *const camera_state_names[] = {
-	"Available",
-	"Acquired",
-	"Configured",
-	"Running",
-};
-
-bool Camera::stateBetween(State low, State high) const
-{
-	if (state_ >= low && state_ <= high)
-		return true;
-
-	ASSERT(static_cast<unsigned int>(low) < ARRAY_SIZE(camera_state_names) &&
-	       static_cast<unsigned int>(high) < ARRAY_SIZE(camera_state_names));
-
-	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
-			   << " state trying operation requiring state between "
-			   << camera_state_names[low] << " and "
-			   << camera_state_names[high];
-
-	return false;
-}
-
-bool Camera::stateIs(State state) const
-{
-	if (state_ == state)
-		return true;
-
-	ASSERT(static_cast<unsigned int>(state) < ARRAY_SIZE(camera_state_names));
-
-	LOG(Camera, Debug) << "Camera in " << camera_state_names[state_]
-			   << " state trying operation requiring state "
-			   << camera_state_names[state];
-
-	return false;
 }
 
 /**
@@ -455,18 +486,43 @@ bool Camera::stateIs(State state) const
  */
 void Camera::disconnect()
 {
-	LOG(Camera, Debug) << "Disconnecting camera " << name_;
+	LOG(Camera, Debug) << "Disconnecting camera " << name();
 
 	/*
 	 * If the camera was running when the hardware was removed force the
 	 * state to Configured state to allow applications to free resources
 	 * and call release() before deleting the camera.
 	 */
-	if (state_ == CameraRunning)
-		state_ = CameraConfigured;
+	if (p_->state_ == Private::CameraRunning)
+		p_->state_ = Private::CameraConfigured;
 
-	disconnected_ = true;
+	p_->disconnected_ = true;
 	disconnected.emit(this);
+}
+
+int Camera::exportFrameBuffers(Stream *stream,
+			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	if (!p_->stateIs(Private::CameraConfigured))
+		return -EACCES;
+
+	if (streams().find(stream) == streams().end())
+		return -EINVAL;
+
+	if (p_->activeStreams_.find(stream) == p_->activeStreams_.end())
+		return -EINVAL;
+
+	return p_->pipe_->exportFrameBuffers(this, stream, buffers);
+}
+
+int Camera::freeFrameBuffers(Stream *stream)
+{
+	if (!p_->stateIs(Private::CameraConfigured))
+		return -EACCES;
+
+	p_->pipe_->freeFrameBuffers(this, stream);
+
+	return 0;
 }
 
 /**
@@ -494,19 +550,19 @@ void Camera::disconnect()
  */
 int Camera::acquire()
 {
-	if (disconnected_)
+	if (p_->disconnected_)
 		return -ENODEV;
 
-	if (!stateIs(CameraAvailable))
+	if (!p_->stateIs(Private::CameraAvailable))
 		return -EBUSY;
 
-	if (!pipe_->lock()) {
+	if (!p_->pipe_->lock()) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;
 	}
 
-	state_ = CameraAcquired;
+	p_->state_ = Private::CameraAcquired;
 
 	return 0;
 }
@@ -524,7 +580,8 @@ int Camera::acquire()
  */
 int Camera::release()
 {
-	if (!stateBetween(CameraAvailable, CameraConfigured))
+	if (!p_->stateBetween(Private::CameraAvailable,
+			      Private::CameraConfigured))
 		return -EBUSY;
 
 	if (allocator_) {
@@ -537,9 +594,9 @@ int Camera::release()
 		return -EBUSY;
 	}
 
-	pipe_->unlock();
+	p_->pipe_->unlock();
 
-	state_ = CameraAvailable;
+	p_->state_ = Private::CameraAvailable;
 
 	return 0;
 }
@@ -553,7 +610,7 @@ int Camera::release()
  */
 const ControlInfoMap &Camera::controls()
 {
-	return pipe_->controls(this);
+	return p_->pipe_->controls(this);
 }
 
 /**
@@ -567,7 +624,7 @@ const ControlInfoMap &Camera::controls()
  */
 const std::set<Stream *> &Camera::streams() const
 {
-	return streams_;
+	return p_->streams_;
 }
 
 /**
@@ -586,10 +643,10 @@ const std::set<Stream *> &Camera::streams() const
  */
 std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamRoles &roles)
 {
-	if (disconnected_ || roles.size() > streams_.size())
+	if (p_->disconnected_ || roles.size() > streams().size())
 		return nullptr;
 
-	CameraConfiguration *config = pipe_->generateConfiguration(this, roles);
+	CameraConfiguration *config = p_->pipe_->generateConfiguration(this, roles);
 	if (!config) {
 		LOG(Camera, Debug)
 			<< "Pipeline handler failed to generate configuration";
@@ -639,10 +696,11 @@ int Camera::configure(CameraConfiguration *config)
 {
 	int ret;
 
-	if (disconnected_)
+	if (p_->disconnected_)
 		return -ENODEV;
 
-	if (!stateBetween(CameraAcquired, CameraConfigured))
+	if (!p_->stateBetween(Private::CameraAcquired,
+			      Private::CameraConfigured))
 		return -EACCES;
 
 	if (allocator_ && allocator_->allocated()) {
@@ -667,11 +725,11 @@ int Camera::configure(CameraConfiguration *config)
 
 	LOG(Camera, Info) << msg.str();
 
-	ret = pipe_->configure(this, config);
+	ret = p_->pipe_->configure(this, config);
 	if (ret)
 		return ret;
 
-	activeStreams_.clear();
+	p_->activeStreams_.clear();
 	for (const StreamConfiguration &cfg : *config) {
 		Stream *stream = cfg.stream();
 		if (!stream)
@@ -679,10 +737,10 @@ int Camera::configure(CameraConfiguration *config)
 				<< "Pipeline handler failed to update stream configuration";
 
 		stream->configuration_ = cfg;
-		activeStreams_.insert(stream);
+		p_->activeStreams_.insert(stream);
 	}
 
-	state_ = CameraConfigured;
+	p_->state_ = Private::CameraConfigured;
 
 	return 0;
 }
@@ -709,7 +767,9 @@ int Camera::configure(CameraConfiguration *config)
  */
 Request *Camera::createRequest(uint64_t cookie)
 {
-	if (disconnected_ || !stateBetween(CameraConfigured, CameraRunning))
+	if (p_->disconnected_ ||
+	    !p_->stateBetween(Private::CameraConfigured,
+			      Private::CameraRunning))
 		return nullptr;
 
 	return new Request(this, cookie);
@@ -739,10 +799,10 @@ Request *Camera::createRequest(uint64_t cookie)
  */
 int Camera::queueRequest(Request *request)
 {
-	if (disconnected_)
+	if (p_->disconnected_)
 		return -ENODEV;
 
-	if (!stateIs(CameraRunning))
+	if (!p_->stateIs(Private::CameraRunning))
 		return -EACCES;
 
 	if (request->buffers().empty()) {
@@ -753,13 +813,13 @@ int Camera::queueRequest(Request *request)
 	for (auto const &it : request->buffers()) {
 		Stream *stream = it.first;
 
-		if (activeStreams_.find(stream) == activeStreams_.end()) {
+		if (p_->activeStreams_.find(stream) == p_->activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";
 			return -EINVAL;
 		}
 	}
 
-	return pipe_->queueRequest(this, request);
+	return p_->pipe_->queueRequest(this, request);
 }
 
 /**
@@ -777,26 +837,26 @@ int Camera::queueRequest(Request *request)
  */
 int Camera::start()
 {
-	if (disconnected_)
+	if (p_->disconnected_)
 		return -ENODEV;
 
-	if (!stateIs(CameraConfigured))
+	if (!p_->stateIs(Private::CameraConfigured))
 		return -EACCES;
 
 	LOG(Camera, Debug) << "Starting capture";
 
-	for (Stream *stream : activeStreams_) {
+	for (Stream *stream : p_->activeStreams_) {
 		if (allocator_ && !allocator_->buffers(stream).empty())
 			continue;
 
-		pipe_->importFrameBuffers(this, stream);
+		p_->pipe_->importFrameBuffers(this, stream);
 	}
 
-	int ret = pipe_->start(this);
+	int ret = p_->pipe_->start(this);
 	if (ret)
 		return ret;
 
-	state_ = CameraRunning;
+	p_->state_ = Private::CameraRunning;
 
 	return 0;
 }
@@ -815,23 +875,23 @@ int Camera::start()
  */
 int Camera::stop()
 {
-	if (disconnected_)
+	if (p_->disconnected_)
 		return -ENODEV;
 
-	if (!stateIs(CameraRunning))
+	if (!p_->stateIs(Private::CameraRunning))
 		return -EACCES;
 
 	LOG(Camera, Debug) << "Stopping capture";
 
-	state_ = CameraConfigured;
+	p_->state_ = Private::CameraConfigured;
 
-	pipe_->stop(this);
+	p_->pipe_->stop(this);
 
-	for (Stream *stream : activeStreams_) {
+	for (Stream *stream : p_->activeStreams_) {
 		if (allocator_ && !allocator_->buffers(stream).empty())
 			continue;
 
-		pipe_->freeFrameBuffers(this, stream);
+		p_->pipe_->freeFrameBuffers(this, stream);
 	}
 
 	return 0;

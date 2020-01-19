@@ -98,34 +98,22 @@ public:
 	int stop();
 
 private:
-	enum State {
-		CameraAvailable,
-		CameraAcquired,
-		CameraConfigured,
-		CameraRunning,
-	};
-
-	Camera(PipelineHandler *pipe, const std::string &name);
+	Camera(PipelineHandler *pipe, const std::string &name,
+	       const std::set<Stream *> &streams);
 	~Camera();
 
-	bool stateBetween(State low, State high) const;
-	bool stateIs(State state) const;
+	class Private;
+	std::unique_ptr<Private> p_;
 
 	friend class PipelineHandler;
 	void disconnect();
-
 	void requestComplete(Request *request);
 
-	std::shared_ptr<PipelineHandler> pipe_;
-	std::string name_;
-	std::set<Stream *> streams_;
-	std::set<Stream *> activeStreams_;
-
-	bool disconnected_;
-	State state_;
-
-	/* Needed to update allocator_ and to read state_ and activeStreams_. */
 	friend class FrameBufferAllocator;
+	int exportFrameBuffers(Stream *stream,
+			       std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+	int freeFrameBuffers(Stream *stream);
+	/* \todo Remove allocator_ from the exposed API */
 	FrameBufferAllocator *allocator_;
 };
 

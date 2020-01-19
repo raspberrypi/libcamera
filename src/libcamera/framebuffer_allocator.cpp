@@ -89,7 +89,7 @@ FrameBufferAllocator::~FrameBufferAllocator()
 {
 	for (auto &value : buffers_) {
 		Stream *stream = value.first;
-		camera_->pipe_->freeFrameBuffers(camera_.get(), stream);
+		camera_->freeFrameBuffers(stream);
 	}
 
 	buffers_.clear();
@@ -117,32 +117,17 @@ FrameBufferAllocator::~FrameBufferAllocator()
  */
 int FrameBufferAllocator::allocate(Stream *stream)
 {
-	if (camera_->state_ != Camera::CameraConfigured) {
-		LOG(Allocator, Error)
-			<< "Camera must be in the configured state to allocate buffers";
-		return -EACCES;
-	}
-
-	if (camera_->streams().find(stream) == camera_->streams().end()) {
-		LOG(Allocator, Error)
-			<< "Stream does not belong to " << camera_->name();
-		return -EINVAL;
-	}
-
-	if (camera_->activeStreams_.find(stream) == camera_->activeStreams_.end()) {
-		LOG(Allocator, Error)
-			<< "Stream is not part of " << camera_->name()
-			<< " active configuration";
-		return -EINVAL;
-	}
-
 	if (buffers_.count(stream)) {
 		LOG(Allocator, Error) << "Buffers already allocated for stream";
 		return -EBUSY;
 	}
 
-	return camera_->pipe_->exportFrameBuffers(camera_.get(), stream,
-						  &buffers_[stream]);
+	int ret = camera_->exportFrameBuffers(stream, &buffers_[stream]);
+	if (ret == -EINVAL)
+		LOG(Allocator, Error)
+			<< "Stream is not part of " << camera_->name()
+			<< " active configuration";
+	return ret;
 }
 
 /**
@@ -159,22 +144,16 @@ int FrameBufferAllocator::allocate(Stream *stream)
  */
 int FrameBufferAllocator::free(Stream *stream)
 {
-	if (camera_->state_ != Camera::CameraConfigured) {
-		LOG(Allocator, Error)
-			<< "Camera must be in the configured state to free buffers";
-		return -EACCES;
-	}
-
 	auto iter = buffers_.find(stream);
 	if (iter == buffers_.end())
 		return -EINVAL;
 
+	int ret = camera_->freeFrameBuffers(stream);
+	if (ret < 0)
+		return ret;
+
 	std::vector<std::unique_ptr<FrameBuffer>> &buffers = iter->second;
-
 	buffers.clear();
-
-	camera_->pipe_->freeFrameBuffers(camera_.get(), stream);
-
 	buffers_.erase(iter);
 
 	return 0;

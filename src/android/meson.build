@@ -3,7 +3,7 @@ android_hal_sources = files([
     'camera_hal_manager.cpp',
     'camera_device.cpp',
     'camera_metadata.cpp',
-    'camera_proxy.cpp',
+    'camera_ops.cpp',
 ])
 
 android_camera_metadata_sources = files([

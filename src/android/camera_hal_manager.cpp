@@ -12,7 +12,6 @@
 #include "log.h"
 
 #include "camera_device.h"
-#include "camera_proxy.h"
 
 using namespace libcamera;
 
@@ -28,92 +27,67 @@ LOG_DECLARE_CATEGORY(HAL);
  * their static information and to open camera devices.
  */
 
+CameraHalManager::CameraHalManager()
+	: cameraManager_(nullptr)
+{
+}
+
 CameraHalManager::~CameraHalManager()
 {
-	if (isRunning()) {
-		exit(0);
-		/* \todo Wait with a timeout, just in case. */
-		wait();
+	cameras_.clear();
+
+	if (cameraManager_) {
+		cameraManager_->stop();
+		delete cameraManager_;
+		cameraManager_ = nullptr;
 	}
 }
 
 int CameraHalManager::init()
 {
-	/*
-	 * Start the camera HAL manager thread and wait until its
-	 * initialisation completes to be fully operational before
-	 * receiving calls from the camera stack.
-	 */
-	start();
-
-	MutexLocker locker(mutex_);
-	cv_.wait(locker);
-
-	return 0;
-}
-
-void CameraHalManager::run()
-{
-	/*
-	 * All the libcamera components must be initialised here, in
-	 * order to bind them to the camera HAL manager thread that
-	 * executes the event dispatcher.
-	 */
 	cameraManager_ = new CameraManager();
 
 	int ret = cameraManager_->start();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to start camera manager: "
 				<< strerror(-ret);
-		return;
+		delete cameraManager_;
+		cameraManager_ = nullptr;
+		return ret;
 	}
 
 	/*
-	 * For each Camera registered in the system, a CameraProxy
-	 * gets created here to wraps a camera device.
+	 * For each Camera registered in the system, a CameraDevice
+	 * gets created here to wraps a libcamera Camera instance.
 	 *
 	 * \todo Support camera hotplug.
 	 */
 	unsigned int index = 0;
-	for (auto &camera : cameraManager_->cameras()) {
-		CameraProxy *proxy = new CameraProxy(index, camera);
-		proxies_.emplace_back(proxy);
+	for (auto &cam : cameraManager_->cameras()) {
+		CameraDevice *camera = new CameraDevice(index, cam);
+		cameras_.emplace_back(camera);
 
 		++index;
 	}
 
-	/*
-	 * libcamera has been initialized. Unlock the init() caller
-	 * as we're now ready to handle calls from the framework.
-	 */
-	cv_.notify_one();
-
-	/* Now start processing events and messages. */
-	exec();
-
-	/* Clean up the resources we have allocated. */
-	proxies_.clear();
-
-	cameraManager_->stop();
-	delete cameraManager_;
-	cameraManager_ = nullptr;
+	return 0;
 }
 
-CameraProxy *CameraHalManager::open(unsigned int id,
-				    const hw_module_t *hardwareModule)
+CameraDevice *CameraHalManager::open(unsigned int id,
+				     const hw_module_t *hardwareModule)
 {
 	if (id >= numCameras()) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
 		return nullptr;
 	}
 
-	CameraProxy *proxy = proxies_[id].get();
-	if (proxy->open(hardwareModule))
+	CameraDevice *camera = cameras_[id].get();
+	if (camera->open(hardwareModule))
 		return nullptr;
 
 	LOG(HAL, Info) << "Open camera '" << id << "'";
 
-	return proxy;
+	return camera;
 }
 
 unsigned int CameraHalManager::numCameras() const
@@ -131,14 +105,14 @@ int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 		return -EINVAL;
 	}
 
-	CameraProxy *proxy = proxies_[id].get();
+	CameraDevice *camera = cameras_[id].get();
 
 	/* \todo Get these info dynamically inspecting the camera module. */
 	info->facing = id ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
 	info->orientation = 0;
 	info->device_version = 0;
 	info->resource_cost = 0;
-	info->static_camera_characteristics = proxy->getStaticMetadata();
+	info->static_camera_characteristics = camera->getStaticMetadata();
 	info->conflicting_devices = nullptr;
 	info->conflicting_devices_length = 0;
 

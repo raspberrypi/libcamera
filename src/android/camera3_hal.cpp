@@ -7,8 +7,8 @@
 
 #include <hardware/camera_common.h>
 
+#include "camera_device.h"
 #include "camera_hal_manager.h"
-#include "camera_proxy.h"
 #include "log.h"
 
 using namespace libcamera;
@@ -71,14 +71,14 @@ static int hal_dev_open(const hw_module_t *module, const char *name,
 	LOG(HAL, Debug) << "Open camera " << name;
 
 	int id = atoi(name);
-	CameraProxy *proxy = cameraManager.open(id, module);
-	if (!proxy) {
+	CameraDevice *camera = cameraManager.open(id, module);
+	if (!camera) {
 		LOG(HAL, Error)
 			<< "Failed to open camera module '" << id << "'";
 		return -ENODEV;
 	}
 
-	*device = &proxy->camera3Device()->common;
+	*device = &camera->camera3Device()->common;
 
 	return 0;
 }

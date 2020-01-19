@@ -6,6 +6,7 @@
  */
 
 #include "camera_device.h"
+#include "camera_ops.h"
 
 #include "log.h"
 #include "utils.h"
@@ -39,13 +40,13 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  * \class CameraDevice
  *
  * The CameraDevice class wraps a libcamera::Camera instance, and implements
- * the camera_device_t interface by handling RPC requests received from its
- * associated CameraProxy.
+ * the camera3_device_t interface, bridging calls received from the Android
+ * camera service to the CameraDevice.
  *
- * It translate parameters and operations from Camera HALv3 API to the libcamera
- * ones to provide static information for a Camera, create request templates
- * for it, process capture requests and then deliver capture results back
- * to the framework using the designated callbacks.
+ * The class translates parameters and operations from the Camera HALv3 API to
+ * the libcamera API to provide static information for a Camera, create request
+ * templates for it, process capture requests and then deliver capture results
+ * back to the framework using the designated callbacks.
  */
 
 CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
@@ -63,13 +64,26 @@ CameraDevice::~CameraDevice()
 		delete it.second;
 }
 
-int CameraDevice::open()
+int CameraDevice::open(const hw_module_t *hardwareModule)
 {
 	int ret = camera_->acquire();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to acquire the camera";
 		return ret;
 	}
+
+	/* Initialize the hw_device_t in the instance camera3_module_t. */
+	camera3Device_.common.tag = HARDWARE_DEVICE_TAG;
+	camera3Device_.common.version = CAMERA_DEVICE_API_VERSION_3_3;
+	camera3Device_.common.module = (hw_module_t *)hardwareModule;
+	camera3Device_.common.close = hal_dev_close;
+
+	/*
+	 * The camera device operations. These actually implement
+	 * the Android Camera HALv3 interface.
+	 */
+	camera3Device_.ops = &hal_dev_ops;
+	camera3Device_.priv = this;
 
 	return 0;
 }
@@ -90,7 +104,7 @@ void CameraDevice::setCallbacks(const camera3_callback_ops_t *callbacks)
 /*
  * Return static information for the camera.
  */
-camera_metadata_t *CameraDevice::getStaticMetadata()
+const camera_metadata_t *CameraDevice::getStaticMetadata()
 {
 	if (staticMetadata_)
 		return staticMetadata_->get();
@@ -675,7 +689,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
-void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
+int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
 	StreamConfiguration *streamConfiguration = &config_->at(0);
 	Stream *stream = streamConfiguration->stream();
@@ -683,7 +697,7 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 	if (camera3Request->num_output_buffers != 1) {
 		LOG(HAL, Error) << "Invalid number of output buffers: "
 				<< camera3Request->num_output_buffers;
-		return;
+		return -EINVAL;
 	}
 
 	/* Start the camera if that's the first request we handle. */
@@ -691,7 +705,7 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 		int ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";
-			return;
+			return ret;
 		}
 
 		running_ = true;
@@ -747,7 +761,7 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 	if (!buffer) {
 		LOG(HAL, Error) << "Failed to create buffer";
 		delete descriptor;
-		return;
+		return -ENOMEM;
 	}
 
 	Request *request =
@@ -757,14 +771,12 @@ void CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reque
 	int ret = camera_->queueRequest(request);
 	if (ret) {
 		LOG(HAL, Error) << "Failed to queue request";
-		goto error;
+		delete request;
+		delete descriptor;
+		return ret;
 	}
 
-	return;
-
-error:
-	delete request;
-	delete descriptor;
+	return 0;
 }
 
 void CameraDevice::requestComplete(Request *request)

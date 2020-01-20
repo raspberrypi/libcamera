@@ -973,7 +973,8 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
  * \brief Allocate buffers from the video device
  * \param[in] count Number of buffers to allocate
  * \param[out] buffers Vector to store allocated buffers
- * \return 0 on success or a negative error code otherwise
+ * \return The number of allocated buffers on success or a negative error code
+ * otherwise
  */
 int V4L2VideoDevice::exportBuffers(unsigned int count,
 				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)

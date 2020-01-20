@@ -316,7 +316,8 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  *
  * The only intended caller is the FrameBufferAllocator helper.
  *
- * \return 0 on success or a negative error code otherwise
+ * \return The number of allocated buffers on success or a negative error code
+ * otherwise
  */
 
 /**

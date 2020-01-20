@@ -108,7 +108,8 @@ FrameBufferAllocator::~FrameBufferAllocator()
  * Upon successful allocation, the allocated buffers can be retrieved with the
  * buffers() method.
  *
- * \return 0 on success or a negative error code otherwise
+ * \return The number of allocated buffers on success or a negative error code
+ * otherwise
  * \retval -EACCES The camera is not in a state where buffers can be allocated
  * \retval -EINVAL The \a stream does not belong to the camera or the stream is
  * not part of the active camera configuration
@@ -140,12 +141,8 @@ int FrameBufferAllocator::allocate(Stream *stream)
 		return -EBUSY;
 	}
 
-	int ret = camera_->pipe_->exportFrameBuffers(camera_.get(), stream,
-						     &buffers_[stream]);
-	if (ret)
-		return ret;
-
-	return 0;
+	return camera_->pipe_->exportFrameBuffers(camera_.get(), stream,
+						  &buffers_[stream]);
 }
 
 /**

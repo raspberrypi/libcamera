@@ -27,7 +27,11 @@ struct GstLibcameraSrcState {
 
 struct _GstLibcameraSrc {
 	GstElement parent;
+
+	GRecMutex stream_lock;
+	GstTask *task;
 	GstPad *srcpad;
+
 	gchar *camera_name;
 
 	GstLibcameraSrcState *state;
@@ -114,6 +118,30 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 }
 
 static void
+gst_libcamera_src_task_run(gpointer user_data)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
+
+	GST_DEBUG_OBJECT(self, "Streaming thread is now capturing");
+}
+
+static void
+gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
+
+	GST_DEBUG_OBJECT(self, "Streaming thread has started");
+}
+
+static void
+gst_libcamera_src_task_leave(GstTask *task, GThread *thread, gpointer user_data)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
+
+	GST_DEBUG_OBJECT(self, "Streaming thread is about to stop");
+}
+
+static void
 gst_libcamera_src_close(GstLibcameraSrc *self)
 {
 	GstLibcameraSrcState *state = self->state;
@@ -183,8 +211,23 @@ gst_libcamera_src_change_state(GstElement *element, GstStateChange transition)
 			return GST_STATE_CHANGE_FAILURE;
 		break;
 	case GST_STATE_CHANGE_READY_TO_PAUSED:
+		/* This needs to be called after pads activation.*/
+		if (!gst_task_pause(self->task))
+			return GST_STATE_CHANGE_FAILURE;
+		ret = GST_STATE_CHANGE_NO_PREROLL;
+		break;
 	case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
 		ret = GST_STATE_CHANGE_NO_PREROLL;
+		break;
+	case GST_STATE_CHANGE_PAUSED_TO_READY:
+		/*
+		 * \todo this might require some thread unblocking in the future
+		 * if the streaming thread starts doing any kind of blocking
+		 * operations. If this was the case, we would need to do so
+		 * before pad deactivation, so before chaining to the parent
+		 * change_state function.
+		 */
+		gst_task_join(self->task);
 		break;
 	case GST_STATE_CHANGE_READY_TO_NULL:
 		gst_libcamera_src_close(self);
@@ -202,6 +245,8 @@ gst_libcamera_src_finalize(GObject *object)
 	GObjectClass *klass = G_OBJECT_CLASS(gst_libcamera_src_parent_class);
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(object);
 
+	g_rec_mutex_clear(&self->stream_lock);
+	g_clear_object(&self->task);
 	g_free(self->camera_name);
 	delete self->state;
 
@@ -213,6 +258,12 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 {
 	GstLibcameraSrcState *state = new GstLibcameraSrcState();
 	GstPadTemplate *templ = gst_element_get_pad_template(GST_ELEMENT(self), "src");
+
+	g_rec_mutex_init(&self->stream_lock);
+	self->task = gst_task_new(gst_libcamera_src_task_run, self, nullptr);
+	gst_task_set_enter_callback(self->task, gst_libcamera_src_task_enter, self, nullptr);
+	gst_task_set_leave_callback(self->task, gst_libcamera_src_task_leave, self, nullptr);
+	gst_task_set_lock(self->task, &self->stream_lock);
 
 	self->srcpad = gst_pad_new_from_template(templ, "src");
 	gst_element_add_pad(GST_ELEMENT(self), self->srcpad);

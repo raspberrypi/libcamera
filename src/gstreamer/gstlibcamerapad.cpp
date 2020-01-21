@@ -100,3 +100,11 @@ gst_libcamera_pad_class_init(GstLibcameraPadClass *klass)
 						     | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_STREAM_ROLE, spec);
 }
+
+StreamRole
+gst_libcamera_pad_get_role(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+	GLibLocker lock(GST_OBJECT(self));
+	return self->role;
+}

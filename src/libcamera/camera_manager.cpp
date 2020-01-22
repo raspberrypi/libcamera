@@ -7,6 +7,7 @@
 
 #include <libcamera/camera_manager.h>
 
+#include <condition_variable>
 #include <map>
 
 #include <libcamera/camera.h>
@@ -28,33 +29,92 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
 
-class CameraManager::Private
+class CameraManager::Private : public Thread
 {
 public:
 	Private(CameraManager *cm);
 
 	int start();
-	void stop();
-
 	void addCamera(std::shared_ptr<Camera> &camera, dev_t devnum);
 	void removeCamera(Camera *camera);
 
+	/*
+	 * This mutex protects
+	 *
+	 * - initialized_ and status_ during initialization
+	 * - cameras_ and camerasByDevnum_ after initialization
+	 */
+	Mutex mutex_;
 	std::vector<std::shared_ptr<Camera>> cameras_;
 	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_;
 
+protected:
+	void run() override;
+
 private:
+	int init();
+	void cleanup();
+
 	CameraManager *cm_;
+
+	std::condition_variable cv_;
+	bool initialized_;
+	int status_;
 
 	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 };
 
 CameraManager::Private::Private(CameraManager *cm)
-	: cm_(cm)
+	: cm_(cm), initialized_(false)
 {
 }
 
 int CameraManager::Private::start()
+{
+	int status;
+
+	/* Start the thread and wait for initialization to complete. */
+	Thread::start();
+
+	{
+		MutexLocker locker(mutex_);
+		cv_.wait(locker, [&] { return initialized_; });
+		status = status_;
+	}
+
+	/* If a failure happened during initialization, stop the thread. */
+	if (status < 0) {
+		exit();
+		wait();
+		return status;
+	}
+
+	return 0;
+}
+
+void CameraManager::Private::run()
+{
+	LOG(Camera, Debug) << "Starting camera manager";
+
+	int ret = init();
+
+	mutex_.lock();
+	status_ = ret;
+	initialized_ = true;
+	mutex_.unlock();
+	cv_.notify_one();
+
+	if (ret < 0)
+		return;
+
+	/* Now start processing events and messages. */
+	exec();
+
+	cleanup();
+}
+
+int CameraManager::Private::init()
 {
 	enumerator_ = DeviceEnumerator::create();
 	if (!enumerator_ || enumerator_->enumerate())
@@ -89,7 +149,7 @@ int CameraManager::Private::start()
 	return 0;
 }
 
-void CameraManager::Private::stop()
+void CameraManager::Private::cleanup()
 {
 	/* TODO: unregister hot-plug callback here */
 
@@ -107,6 +167,8 @@ void CameraManager::Private::stop()
 void CameraManager::Private::addCamera(std::shared_ptr<Camera> &camera,
 				       dev_t devnum)
 {
+	MutexLocker locker(mutex_);
+
 	for (std::shared_ptr<Camera> c : cameras_) {
 		if (c->name() == camera->name()) {
 			LOG(Camera, Warning)
@@ -126,6 +188,8 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> &camera,
 
 void CameraManager::Private::removeCamera(Camera *camera)
 {
+	MutexLocker locker(mutex_);
+
 	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
 				 [camera](std::shared_ptr<Camera> &c) {
 					 return c.get() == camera;
@@ -232,7 +296,8 @@ int CameraManager::start()
  */
 void CameraManager::stop()
 {
-	p_->stop();
+	p_->exit();
+	p_->wait();
 }
 
 /**
@@ -242,10 +307,14 @@ void CameraManager::stop()
  * Before calling this function the caller is responsible for ensuring that
  * the camera manager is running.
  *
+ * \context This function is \threadsafe.
+ *
  * \return List of all available cameras
  */
 std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
 {
+	MutexLocker locker(p_->mutex_);
+
 	return p_->cameras_;
 }
 
@@ -256,10 +325,14 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
  * Before calling this function the caller is responsible for ensuring that
  * the camera manager is running.
  *
+ * \context This function is \threadsafe.
+ *
  * \return Shared pointer to Camera object or nullptr if camera not found
  */
 std::shared_ptr<Camera> CameraManager::get(const std::string &name)
 {
+	MutexLocker locker(p_->mutex_);
+
 	for (std::shared_ptr<Camera> camera : p_->cameras_) {
 		if (camera->name() == name)
 			return camera;
@@ -279,11 +352,15 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &name)
  * Before calling this function the caller is responsible for ensuring that
  * the camera manager is running.
  *
+ * \context This function is \threadsafe.
+ *
  * \return Shared pointer to Camera object, which is empty if the camera is
  * not found
  */
 std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 {
+	MutexLocker locker(p_->mutex_);
+
 	auto iter = p_->camerasByDevnum_.find(devnum);
 	if (iter == p_->camerasByDevnum_.end())
 		return nullptr;
@@ -302,9 +379,12 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
  *
  * \a devnum is used by the V4L2 compatibility layer to map V4L2 device nodes
  * to Camera instances.
+ *
+ * \context This function shall be called from the CameraManager thread.
  */
 void CameraManager::addCamera(std::shared_ptr<Camera> camera, dev_t devnum)
 {
+	ASSERT(Thread::current() == p_.get());
 
 	p_->addCamera(camera, devnum);
 }
@@ -316,15 +396,20 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera, dev_t devnum)
  * This function is called by pipeline handlers to unregister cameras from the
  * camera manager. Unregistered cameras won't be reported anymore by the
  * cameras() and get() calls, but references may still exist in applications.
+ *
+ * \context This function shall be called from the CameraManager thread.
  */
 void CameraManager::removeCamera(Camera *camera)
 {
+	ASSERT(Thread::current() == p_.get());
+
 	p_->removeCamera(camera);
 }
 
 /**
  * \fn const std::string &CameraManager::version()
  * \brief Retrieve the libcamera version string
+ * \context This function is \a threadsafe.
  * \return The libcamera version string
  */
 

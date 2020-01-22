@@ -30,7 +30,7 @@ public:
 	int start();
 	void stop();
 
-	const std::vector<std::shared_ptr<Camera>> &cameras() const;
+	std::vector<std::shared_ptr<Camera>> cameras() const;
 	std::shared_ptr<Camera> get(const std::string &name);
 	std::shared_ptr<Camera> get(dev_t devnum);
 

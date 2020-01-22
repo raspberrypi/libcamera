@@ -244,7 +244,7 @@ void CameraManager::stop()
  *
  * \return List of all available cameras
  */
-const std::vector<std::shared_ptr<Camera>> &CameraManager::cameras() const
+std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
 {
 	return p_->cameras_;
 }

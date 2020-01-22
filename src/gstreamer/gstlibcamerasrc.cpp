@@ -205,6 +205,11 @@ gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
 			flow_ret = GST_FLOW_NOT_NEGOTIATED;
 			break;
 		}
+
+		/* Send an open segment event with time format. */
+		GstSegment segment;
+		gst_segment_init(&segment, GST_FORMAT_TIME);
+		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
 	}
 
 	ret = state->cam_->configure(state->config_.get());

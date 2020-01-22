@@ -131,8 +131,19 @@ static void
 gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
+	GLibRecLocker lock(&self->stream_lock);
+	GstLibcameraSrcState *state = self->state;
 
 	GST_DEBUG_OBJECT(self, "Streaming thread has started");
+
+	guint group_id = gst_util_group_id_next();
+	for (GstPad *srcpad : state->srcpads_) {
+		/* Create stream-id and push stream-start. */
+		g_autofree gchar *stream_id = gst_pad_create_stream_id(srcpad, GST_ELEMENT(self), nullptr);
+		GstEvent *event = gst_event_new_stream_start(stream_id);
+		gst_event_set_group_id(event, group_id);
+		gst_pad_push_event(srcpad, event);
+	}
 }
 
 static void

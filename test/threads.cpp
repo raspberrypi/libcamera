@@ -15,24 +15,22 @@
 using namespace std;
 using namespace libcamera;
 
-class InstrumentedThread : public Thread
+class DelayThread : public Thread
 {
 public:
-	InstrumentedThread(unsigned int iterations)
-		: iterations_(iterations)
+	DelayThread(chrono::steady_clock::duration duration)
+		: duration_(duration)
 	{
 	}
 
 protected:
 	void run()
 	{
-		for (unsigned int i = 0; i < iterations_; ++i) {
-			this_thread::sleep_for(chrono::milliseconds(50));
-		}
+		this_thread::sleep_for(duration_);
 	}
 
 private:
-	unsigned int iterations_;
+	chrono::steady_clock::duration duration_;
 };
 
 class ThreadTest : public Test
@@ -77,6 +75,27 @@ protected:
 		if (thread->isRunning()) {
 			cout << "Thread is still running after finishing"
 			     << endl;
+			return TestFail;
+		}
+
+		delete thread;
+
+		/* Test waiting for completion with a timeout. */
+		thread = new DelayThread(chrono::milliseconds(500));
+		thread->start();
+		thread->exit(0);
+
+		bool timeout = !thread->wait(chrono::milliseconds(100));
+
+		if (!timeout) {
+			cout << "Waiting for thread didn't time out" << endl;
+			return TestFail;
+		}
+
+		timeout = !thread->wait(chrono::milliseconds(1000));
+
+		if (timeout) {
+			cout << "Waiting for thread timed out" << endl;
 			return TestFail;
 		}
 

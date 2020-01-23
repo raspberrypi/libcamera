@@ -8,6 +8,7 @@
 #include "thread.h"
 
 #include <atomic>
+#include <condition_variable>
 #include <list>
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -155,6 +156,7 @@ private:
 
 	std::atomic<EventDispatcher *> dispatcher_;
 
+	std::condition_variable cv_;
 	std::atomic<bool> exit_;
 	int exitCode_;
 
@@ -334,6 +336,7 @@ void Thread::finishThread()
 	data_->mutex_.unlock();
 
 	finished.emit(this);
+	data_->cv_.notify_all();
 }
 
 /**
@@ -360,14 +363,33 @@ void Thread::exit(int code)
 
 /**
  * \brief Wait for the thread to finish
+ * \param[in] duration Maximum wait duration
  *
- * This method waits until the thread finishes, or returns immediately if the
- * thread is not running.
+ * This function waits until the thread finishes or the \a duration has
+ * elapsed, whichever happens first. If \a duration is equal to
+ * utils::duration::max(), the wait never times out. If the thread is not
+ * running the function returns immediately.
+ *
+ * \return True if the thread has finished, or false if the wait timed out
  */
-void Thread::wait()
+bool Thread::wait(utils::duration duration)
 {
+	bool finished = true;
+
+	{
+		MutexLocker locker(data_->mutex_);
+
+		if (duration == utils::duration::max())
+			data_->cv_.wait(locker, [&]() { return !data_->running_; });
+		else
+			finished = data_->cv_.wait_for(locker, duration,
+						       [&]() { return !data_->running_; });
+	}
+
 	if (thread_.joinable())
 		thread_.join();
+
+	return finished;
 }
 
 /**

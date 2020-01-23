@@ -14,6 +14,8 @@
 
 #include <libcamera/signal.h>
 
+#include "utils.h"
+
 namespace libcamera {
 
 class EventDispatcher;
@@ -33,7 +35,7 @@ public:
 
 	void start();
 	void exit(int code = 0);
-	void wait();
+	bool wait(utils::duration duration = utils::duration::max());
 
 	bool isRunning();
 

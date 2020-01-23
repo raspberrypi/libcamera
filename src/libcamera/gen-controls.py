@@ -29,7 +29,7 @@ def generate_cpp(controls):
     enum_doc_value_template = string.Template(''' * \\var ${name}Values::${value}
 ${description}''')
     doc_template = string.Template('''/**
- * \\var extern const Control<${type}> ${name}
+ * \\var ${name}
 ${description}
  */''')
     def_template = string.Template('extern const Control<${type}> ${name}(${id_name}, "${name}");')

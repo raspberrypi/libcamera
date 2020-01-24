@@ -207,8 +207,8 @@ private:
 	int freeBuffers(Camera *camera);
 
 	MediaDevice *media_;
-	V4L2Subdevice *dphy_;
 	V4L2Subdevice *isp_;
+	V4L2Subdevice *resizer_;
 	V4L2VideoDevice *video_;
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
@@ -513,7 +513,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), dphy_(nullptr), isp_(nullptr),
+	: PipelineHandler(manager), isp_(nullptr), resizer_(nullptr),
 	  video_(nullptr), param_(nullptr), stat_(nullptr)
 {
 }
@@ -523,8 +523,8 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 	delete param_;
 	delete stat_;
 	delete video_;
+	delete resizer_;
 	delete isp_;
-	delete dphy_;
 }
 
 /* -----------------------------------------------------------------------------
@@ -564,7 +564,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	 * Configure the sensor links: enable the link corresponding to this
 	 * camera and disable all the other sensor links.
 	 */
-	const MediaPad *pad = dphy_->entity()->getPadByIndex(0);
+	const MediaPad *pad = isp_->entity()->getPadByIndex(0);
 
 	for (MediaLink *link : pad->links()) {
 		bool enable = link->source()->entity() == sensor->entity();
@@ -576,7 +576,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			<< (enable ? "Enabling" : "Disabling")
 			<< " link from sensor '"
 			<< link->source()->entity()->name()
-			<< "' to CSI-2 receiver";
+			<< "' to ISP";
 
 		ret = link->setEnabled(enable);
 		if (ret < 0)
@@ -596,16 +596,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "Sensor configured with " << format.toString();
 
-	ret = dphy_->setFormat(0, &format);
-	if (ret < 0)
-		return ret;
-
-	LOG(RkISP1, Debug) << "Configuring ISP input pad with " << format.toString();
-
-	ret = dphy_->getFormat(1, &format);
-	if (ret < 0)
-		return ret;
-
 	ret = isp_->setFormat(0, &format);
 	if (ret < 0)
 		return ret;
@@ -621,6 +611,22 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	LOG(RkISP1, Debug) << "ISP output pad configured with " << format.toString();
+
+	ret = resizer_->setFormat(0, &format);
+	if (ret < 0)
+		return ret;
+
+	LOG(RkISP1, Debug) << "Resizer input pad configured with " << format.toString();
+
+	format.size = cfg.size;
+
+	LOG(RkISP1, Debug) << "Configuring resizer output pad with " << format.toString();
+
+	ret = resizer_->setFormat(1, &format);
+	if (ret < 0)
+		return ret;
+
+	LOG(RkISP1, Debug) << "Resizer output pad configured with " << format.toString();
 
 	V4L2DeviceFormat outputFormat = {};
 	outputFormat.fourcc = video_->toV4L2Fourcc(cfg.pixelFormat);
@@ -868,7 +874,7 @@ int PipelineHandlerRkISP1::initLinks()
 	if (ret < 0)
 		return ret;
 
-	link = media_->link("rockchip-sy-mipi-dphy", 1, "rkisp1-isp-subdev", 0);
+	link = media_->link("rkisp1_isp", 2, "rkisp1_resizer_mainpath", 0);
 	if (!link)
 		return -ENODEV;
 
@@ -876,7 +882,7 @@ int PipelineHandlerRkISP1::initLinks()
 	if (ret < 0)
 		return ret;
 
-	link = media_->link("rkisp1-isp-subdev", 2, "rkisp1_mainpath", 0);
+	link = media_->link("rkisp1_resizer_mainpath", 1, "rkisp1_mainpath", 0);
 	if (!link)
 		return -ENODEV;
 
@@ -923,24 +929,25 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	const MediaPad *pad;
 
 	DeviceMatch dm("rkisp1");
-	dm.add("rkisp1-isp-subdev");
+	dm.add("rkisp1_isp");
+	dm.add("rkisp1_resizer_selfpath");
+	dm.add("rkisp1_resizer_mainpath");
 	dm.add("rkisp1_selfpath");
 	dm.add("rkisp1_mainpath");
-	dm.add("rkisp1-statistics");
-	dm.add("rkisp1-input-params");
-	dm.add("rockchip-sy-mipi-dphy");
+	dm.add("rkisp1_stats");
+	dm.add("rkisp1_params");
 
 	media_ = acquireMediaDevice(enumerator, dm);
 	if (!media_)
 		return false;
 
 	/* Create the V4L2 subdevices we will need. */
-	dphy_ = V4L2Subdevice::fromEntityName(media_, "rockchip-sy-mipi-dphy");
-	if (dphy_->open() < 0)
+	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_isp");
+	if (isp_->open() < 0)
 		return false;
 
-	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1-isp-subdev");
-	if (isp_->open() < 0)
+	resizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_mainpath");
+	if (resizer_->open() < 0)
 		return false;
 
 	/* Locate and open the capture video node. */
@@ -948,11 +955,11 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (video_->open() < 0)
 		return false;
 
-	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1-statistics");
+	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
 	if (stat_->open() < 0)
 		return false;
 
-	param_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1-input-params");
+	param_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_params");
 	if (param_->open() < 0)
 		return false;
 
@@ -967,10 +974,10 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	}
 
 	/*
-	 * Enumerate all sensors connected to the CSI-2 receiver and create one
+	 * Enumerate all sensors connected to the ISP and create one
 	 * camera instance for each of them.
 	 */
-	pad = dphy_->entity()->getPadByIndex(0);
+	pad = isp_->entity()->getPadByIndex(0);
 	if (!pad)
 		return false;
 

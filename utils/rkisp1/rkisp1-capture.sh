@@ -68,14 +68,15 @@ configure_pipeline() {
 
 	$mediactl -r
 
-	$mediactl -l "'$sensor':0 -> 'rockchip-sy-mipi-dphy':0 [1]"
-	$mediactl -l "'rockchip-sy-mipi-dphy':1 -> 'rkisp1-isp-subdev':0 [1]"
-	$mediactl -l "'rkisp1-isp-subdev':2 -> 'rkisp1_mainpath':0 [1]"
+	$mediactl -l "'$sensor':0 -> 'rkisp1_isp':0 [1]"
+	$mediactl -l "'rkisp1_isp':2 -> 'rkisp1_resizer_mainpath':0 [1]"
+	$mediactl -l "'rkisp1_resizer_mainpath':1 -> 'rkisp1_mainpath':0 [1]"
 
 	$mediactl -V "\"$sensor\":0 [$format]"
-	$mediactl -V "'rockchip-sy-mipi-dphy':1 [$format]"
-	$mediactl -V "'rkisp1-isp-subdev':0 [$format crop:(0,0)/$sensor_size]"
-	$mediactl -V "'rkisp1-isp-subdev':2 [fmt:$capture_mbus_code/$capture_size crop:(0,0)/$capture_size]"
+	$mediactl -V "'rkisp1_isp':0 [$format crop:(0,0)/$sensor_size]"
+	$mediactl -V "'rkisp1_isp':2 [fmt:$capture_mbus_code/$sensor_size crop:(0,0)/$sensor_size]"
+	$mediactl -V "'rkisp1_resizer_mainpath':0 [fmt:$capture_mbus_code/$sensor_size crop:(0,0)/$sensor_size]"
+	$mediactl -V "'rkisp1_resizer_mainpath':1 [fmt:$capture_mbus_code/$capture_size]"
 }
 
 # Capture frames
@@ -161,8 +162,8 @@ fi
 
 sensor_name=$1
 
-modprobe mipi_dphy_sy
-modprobe video_rkisp1
+modprobe phy_rockchip_dphy_rx0
+modprobe rockchip_isp1
 
 sensor=$(find_sensor $sensor_name) || exit
 mdev=$(find_media_device rkisp1) || exit

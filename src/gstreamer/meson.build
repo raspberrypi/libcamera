@@ -1,7 +1,9 @@
 libcamera_gst_sources = [
     'gstlibcamera-utils.cpp',
     'gstlibcamera.c',
+    'gstlibcameraallocator.cpp',
     'gstlibcamerapad.cpp',
+    'gstlibcamerapool.cpp',
     'gstlibcameraprovider.cpp',
     'gstlibcamerasrc.cpp',
 ]
@@ -13,10 +15,13 @@ libcamera_gst_c_args = [
 
 glib_dep = dependency('glib', required : get_option('gstreamer'))
 
-gst_dep = dependency('gstreamer-video-1.0', version : '>=1.14.0',
-                     required : get_option('gstreamer'))
+gst_dep_version = '>=1.14.0'
+gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_dep_version,
+                          required : get_option('gstreamer'))
+gstallocator_dep = dependency('gstreamer-allocators-1.0', version : gst_dep_version,
+                              required : get_option('gstreamer'))
 
-if glib_dep.found() and gst_dep.found()
+if glib_dep.found() and gstvideo_dep.found() and gstallocator_dep.found()
     # The G_DECLARE_FINAL_TYPE macro creates static inline functions that were
     # not marked as possibly unused prior to GLib v2.63.0. This causes clang to
     # complain about the ones we are not using. Silence the -Wunused-function
@@ -28,7 +33,7 @@ if glib_dep.found() and gst_dep.found()
     libcamera_gst = shared_library('gstlibcamera',
         libcamera_gst_sources,
         c_args : libcamera_gst_c_args,
-        dependencies : [libcamera_dep, gst_dep],
+        dependencies : [libcamera_dep, gstvideo_dep, gstallocator_dep],
         install: true,
         install_dir : '@0@/gstreamer-1.0'.format(get_option('libdir')),
     )

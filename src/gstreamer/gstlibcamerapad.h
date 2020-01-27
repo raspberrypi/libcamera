@@ -24,4 +24,6 @@ GstLibcameraPool *gst_libcamera_pad_get_pool(GstPad *pad);
 
 void gst_libcamera_pad_set_pool(GstPad *pad, GstLibcameraPool *pool);
 
+libcamera::Stream *gst_libcamera_pad_get_stream(GstPad *pad);
+
 #endif /* __GST_LIBCAMERA_PAD_H__ */

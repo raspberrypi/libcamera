@@ -108,3 +108,23 @@ gst_libcamera_pool_new(GstLibcameraAllocator *allocator, Stream *stream)
 
 	return pool;
 }
+
+Stream *
+gst_libcamera_pool_get_stream(GstLibcameraPool *self)
+{
+	return self->stream;
+}
+
+Stream *
+gst_libcamera_buffer_get_stream(GstBuffer *buffer)
+{
+	auto *self = (GstLibcameraPool *)buffer->pool;
+	return self->stream;
+}
+
+FrameBuffer *
+gst_libcamera_buffer_get_frame_buffer(GstBuffer *buffer)
+{
+	GstMemory *mem = gst_buffer_peek_memory(buffer, 0);
+	return gst_libcamera_memory_get_frame_buffer(mem);
+}

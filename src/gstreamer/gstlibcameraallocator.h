@@ -27,4 +27,6 @@ bool gst_libcamera_allocator_prepare_buffer(GstLibcameraAllocator *self,
 gsize gst_libcamera_allocator_get_pool_size(GstLibcameraAllocator *allocator,
 					    libcamera::Stream *stream);
 
+libcamera::FrameBuffer *gst_libcamera_memory_get_frame_buffer(GstMemory *mem);
+
 #endif /* __GST_LIBCAMERA_ALLOCATOR_H__ */

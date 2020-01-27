@@ -24,4 +24,11 @@ G_DECLARE_FINAL_TYPE(GstLibcameraPool, gst_libcamera_pool, GST_LIBCAMERA, POOL, 
 GstLibcameraPool *gst_libcamera_pool_new(GstLibcameraAllocator *allocator,
 					 libcamera::Stream *stream);
 
+libcamera::Stream *gst_libcamera_pool_get_stream(GstLibcameraPool *self);
+
+libcamera::Stream *gst_libcamera_buffer_get_stream(GstBuffer *buffer);
+
+libcamera::FrameBuffer *gst_libcamera_buffer_get_frame_buffer(GstBuffer *buffer);
+
+
 #endif /* __GST_LIBCAMERA_POOL_H__ */

@@ -126,3 +126,14 @@ gst_libcamera_pad_set_pool(GstPad *pad, GstLibcameraPool *pool)
 		g_object_unref(self->pool);
 	self->pool = pool;
 }
+
+Stream *
+gst_libcamera_pad_get_stream(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+
+	if (self->pool)
+		return gst_libcamera_pool_get_stream(self->pool);
+
+	return nullptr;
+}

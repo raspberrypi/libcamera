@@ -19,7 +19,9 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
+#include "gstlibcameraallocator.h"
 #include "gstlibcamerapad.h"
+#include "gstlibcamerapool.h"
 #include "gstlibcamera-utils.h"
 
 using namespace libcamera;
@@ -44,6 +46,7 @@ struct _GstLibcameraSrc {
 	gchar *camera_name;
 
 	GstLibcameraSrcState *state;
+	GstLibcameraAllocator *allocator;
 };
 
 enum {
@@ -221,6 +224,23 @@ gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
 		return;
 	}
 
+	self->allocator = gst_libcamera_allocator_new(state->cam_);
+	if (!self->allocator) {
+		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
+				  ("Failed to allocate memory"),
+				  ("gst_libcamera_allocator_new() failed."));
+		gst_task_stop(task);
+		return;
+	}
+
+	for (gsize i = 0; i < state->srcpads_.size(); i++) {
+		GstPad *srcpad = state->srcpads_[i];
+		const StreamConfiguration &stream_cfg = state->config_->at(i);
+		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
+								stream_cfg.stream());
+		gst_libcamera_pad_set_pool(srcpad, pool);
+	}
+
 done:
 	switch (flow_ret) {
 	case GST_FLOW_NOT_NEGOTIATED:
@@ -236,8 +256,14 @@ static void
 gst_libcamera_src_task_leave(GstTask *task, GThread *thread, gpointer user_data)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
+	GstLibcameraSrcState *state = self->state;
 
 	GST_DEBUG_OBJECT(self, "Streaming thread is about to stop");
+
+	for (GstPad *srcpad : state->srcpads_)
+		gst_libcamera_pad_set_pool(srcpad, nullptr);
+
+	g_clear_object(&self->allocator);
 }
 
 static void
@@ -245,6 +271,8 @@ gst_libcamera_src_close(GstLibcameraSrc *self)
 {
 	GstLibcameraSrcState *state = self->state;
 	gint ret;
+
+	GST_DEBUG_OBJECT(self, "Releasing resources");
 
 	ret = state->cam_->release();
 	if (ret) {

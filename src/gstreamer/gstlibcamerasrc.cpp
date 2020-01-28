@@ -154,6 +154,26 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 	for (GstPad *srcpad : srcpads_) {
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		buffer = wrap->detachBuffer(stream);
+
+		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
+
+		if (GST_ELEMENT_CLOCK(src_)) {
+			GstClockTime gst_base_time = GST_ELEMENT(src_)->base_time;
+			GstClockTime gst_now = gst_clock_get_time(GST_ELEMENT_CLOCK(src_));
+			/* \todo Need to expose which reference clock the timestamp relates to. */
+			GstClockTime sys_now = g_get_monotonic_time() * 1000;
+
+			/* Deduced from: sys_now - sys_base_time == gst_now - gst_base_time */
+			GstClockTime sys_base_time = sys_now - (gst_now - gst_base_time);
+			GST_BUFFER_PTS(buffer) = fb->metadata().timestamp - sys_base_time;
+			gst_libcamera_pad_set_latency(srcpad, sys_now - fb->metadata().timestamp);
+		} else {
+			GST_BUFFER_PTS(buffer) = 0;
+		}
+
+		GST_BUFFER_OFFSET(buffer) = fb->metadata().sequence;
+		GST_BUFFER_OFFSET_END(buffer) = fb->metadata().sequence;
+
 		gst_libcamera_pad_queue_buffer(srcpad, buffer);
 	}
 

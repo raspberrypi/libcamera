@@ -7,6 +7,25 @@
  */
 
 /**
+ * \todo The following is a list of items that needs implementation in the GStreamer plugin
+ *  - Implement GstElement::send_event
+ *    + Allowing application to send EOS
+ *    + Allowing application to use FLUSH/FLUSH_STOP
+ *    + Prevent the main thread from accessing streaming thread
+ *  - Implement renegotiation (even if slow)
+ *  - Implement GstElement::request-new-pad (multi stream)
+ *    + Evaluate if a single streaming thread is fine
+ *  - Add application driven request (snapshot)
+ *  - Add framerate control
+ *  - Add buffer importation support
+ *
+ *  Requires new libcamera API:
+ *  - Add framerate negotiation support
+ *  - Add colorimetry support
+ *  - Add timestamp support
+ *  - Use unique names to select the camera devices
+ *  - Add GstVideoMeta support (strides and offsets)
+ *
  * \todo libcamera UVC drivers picks the lowest possible resolution first, this
  * should be fixed so that we get a decent resolution and framerate for the
  * role by default.

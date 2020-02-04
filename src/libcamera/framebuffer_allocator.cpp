@@ -33,7 +33,7 @@ LOG_DEFINE_CATEGORY(Allocator)
  * FrameBuffer instances. This makes libcamera a user of buffers exported by
  * other devices (such as displays or video encoders), or allocated from an
  * external allocator (such as ION on Android platforms). In some situations,
- * applications do not have any mean to allocate or get hold of suitable
+ * applications do not have any means to allocate or get hold of suitable
  * buffers, for instance when no other device is involved, on Linux platforms
  * that lack a centralized allocator. The FrameBufferAllocator class provides a
  * buffer allocator that can be used in these situations.
@@ -168,7 +168,7 @@ int FrameBufferAllocator::free(Stream *stream)
 
 /**
  * \brief Retrieve the buffers allocated for a \a stream
- * \param[in] stream The stream to retrive buffers for
+ * \param[in] stream The stream to retrieve buffers for
  *
  * This method shall only be called after successfully allocating buffers for
  * \a stream with allocate(). The returned buffers are valid until free() is

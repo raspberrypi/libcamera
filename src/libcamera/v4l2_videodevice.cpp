@@ -942,6 +942,54 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
 	return sizes;
 }
 
+/**
+ * \brief Set a crop rectangle on the V4L2 video device node
+ * \param[inout] rect The rectangle describing the crop target area
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::setCrop(Rectangle *rect)
+{
+	return setSelection(V4L2_SEL_TGT_CROP, rect);
+}
+
+/**
+ * \brief Set a compose rectangle on the V4L2 video device node
+ * \param[inout] rect The rectangle describing the compose target area
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::setCompose(Rectangle *rect)
+{
+	return setSelection(V4L2_SEL_TGT_COMPOSE, rect);
+}
+
+int V4L2VideoDevice::setSelection(unsigned int target, Rectangle *rect)
+{
+	struct v4l2_selection sel = {};
+
+	sel.type = bufferType_;
+	sel.target = target;
+	sel.flags = 0;
+
+	sel.r.left = rect->x;
+	sel.r.top = rect->y;
+	sel.r.width = rect->w;
+	sel.r.height = rect->h;
+
+	int ret = ioctl(VIDIOC_S_SELECTION, &sel);
+	if (ret < 0) {
+		LOG(V4L2, Error) << "Unable to set rectangle " << target
+				 << ": " << strerror(-ret);
+		return ret;
+	}
+
+	rect->x = sel.r.left;
+	rect->y = sel.r.top;
+	rect->w = sel.r.width;
+	rect->h = sel.r.height;
+
+	return 0;
+}
+
 int V4L2VideoDevice::requestBuffers(unsigned int count)
 {
 	struct v4l2_requestbuffers rb = {};

@@ -182,6 +182,9 @@ public:
 	int setFormat(V4L2DeviceFormat *format);
 	ImageFormats formats();
 
+	int setCrop(Rectangle *rect);
+	int setCompose(Rectangle *rect);
+
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	int importBuffers(unsigned int count);
@@ -215,6 +218,8 @@ private:
 
 	std::vector<unsigned int> enumPixelformats();
 	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
+
+	int setSelection(unsigned int target, Rectangle *rect);
 
 	int requestBuffers(unsigned int count);
 	std::unique_ptr<FrameBuffer> createBuffer(const struct v4l2_buffer &buf);

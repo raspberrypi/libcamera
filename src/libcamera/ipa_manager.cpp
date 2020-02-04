@@ -9,6 +9,9 @@
 
 #include <algorithm>
 #include <dirent.h>
+#include <dlfcn.h>
+#include <elf.h>
+#include <link.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -23,6 +26,35 @@
  * \file ipa_manager.h
  * \brief Image Processing Algorithm module manager
  */
+
+static bool isLibcameraInstalled()
+{
+	/* musl doesn't declare _DYNAMIC in link.h, declare it manually. */
+	extern ElfW(Dyn) _DYNAMIC[];
+
+	/*
+	 * DT_RUNPATH (DT_RPATH when the linker uses old dtags) is removed on
+	 * install.
+	 */
+	for (const ElfW(Dyn) *dyn = _DYNAMIC; dyn->d_tag != DT_NULL; ++dyn) {
+		if (dyn->d_tag == DT_RUNPATH || dyn->d_tag == DT_RPATH)
+			return false;
+	}
+
+	return true;
+}
+
+static std::string libcameraPath()
+{
+	Dl_info info;
+
+	/* Look up our own symbol. */
+	int ret = dladdr(reinterpret_cast<void *>(libcameraPath), &info);
+	if (ret == 0)
+		return nullptr;
+
+	return info.dli_fname;
+}
 
 namespace libcamera {
 
@@ -112,7 +144,25 @@ IPAManager::IPAManager()
 				<< "No IPA found in '" << modulePaths << "'";
 	}
 
-	/* Load IPAs from the installed system path. */
+	/*
+	 * When libcamera is used before it is installed, load IPAs from the
+	 * same build directory as the libcamera library itself. This requires
+	 * identifying the path of the libcamera.so, and referencing a relative
+	 * path for the IPA from that point. We need to recurse one level of
+	 * sub-directories to match the build tree.
+	 */
+	if (!isLibcameraInstalled()) {
+		std::string ipaBuildPath = utils::dirname(libcameraPath()) + "/../ipa";
+		constexpr int maxDepth = 1;
+
+		LOG(IPAManager, Info)
+			<< "libcamera is not installed. Adding '"
+			<< ipaBuildPath << "' to the IPA search path";
+
+		ipaCount += addDir(ipaBuildPath.c_str(), maxDepth);
+	}
+
+	/* Finally try to load IPAs from the installed system path. */
 	ipaCount += addDir(IPA_MODULE_DIR);
 
 	if (!ipaCount)

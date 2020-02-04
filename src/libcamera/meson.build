@@ -107,11 +107,17 @@ if get_option('android')
     libcamera_link_with += android_camera_metadata
 endif
 
+# We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.
+# The build_rpath is stripped at install time by meson, so we determine at
+# runtime if the library is running from an installed location by checking
+# for the presence or abscence of the dynamic tag.
+
 libcamera = shared_library('camera',
                            libcamera_sources,
                            install : true,
                            link_with : libcamera_link_with,
                            include_directories : includes,
+                           build_rpath : '/',
                            dependencies : libcamera_deps)
 
 libcamera_dep = declare_dependency(sources : [libcamera_api, libcamera_ipa_api, libcamera_h],

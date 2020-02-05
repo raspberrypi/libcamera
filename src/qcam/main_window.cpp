@@ -12,6 +12,7 @@
 
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QIcon>
 #include <QInputDialog>
 #include <QTimer>
 #include <QToolBar>
@@ -66,7 +67,7 @@ int MainWindow::createToolbars()
 	/* Disable right click context menu. */
 	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
 
-	action = toolbar_->addAction("Quit");
+	action = toolbar_->addAction(QIcon(":x-circle.svg"), "Quit");
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selection. */
@@ -80,6 +81,12 @@ int MainWindow::createToolbars()
 	toolbar_->addWidget(cameraCombo);
 
 	toolbar_->addSeparator();
+
+	action = toolbar_->addAction(QIcon(":play-circle.svg"), "start");
+	connect(action, &QAction::triggered, this, &MainWindow::startCapture);
+
+	action = toolbar_->addAction(QIcon(":stop-circle.svg"), "stop");
+	connect(action, &QAction::triggered, this, &MainWindow::stopCapture);
 
 	return 0;
 }

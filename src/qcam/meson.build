@@ -11,6 +11,10 @@ qcam_moc_headers = files([
     'main_window.h',
 ])
 
+qcam_resources = files([
+    'assets/feathericons/feathericons.qrc',
+])
+
 qt5 = import('qt5')
 qt5_dep = dependency('qt5',
                      method : 'pkg-config',
@@ -30,10 +34,11 @@ if qt5_dep.found()
         endif
     endif
 
-    moc_files = qt5.preprocess(moc_headers: qcam_moc_headers,
+    resources = qt5.preprocess(moc_headers: qcam_moc_headers,
+                               qresources : qcam_resources,
                                dependencies: qt5_dep)
 
-    qcam  = executable('qcam', qcam_sources, moc_files,
+    qcam  = executable('qcam', qcam_sources, resources,
                        install : true,
                        dependencies : [libcamera_dep, qt5_dep],
                        cpp_args : qt5_cpp_args)

@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+<file>./play-circle.svg</file>
+<file>./stop-circle.svg</file>
+<file>./x-circle.svg</file>
+</qresource>
+</RCC>

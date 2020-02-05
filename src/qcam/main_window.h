@@ -46,13 +46,13 @@ private Q_SLOTS:
 
 	void switchCamera(int index);
 
+	int startCapture();
+	void stopCapture();
+
 private:
 	int createToolbars();
 	std::string chooseCamera();
 	int openCamera();
-
-	int startCapture();
-	void stopCapture();
 
 	void requestComplete(Request *request);
 	int display(FrameBuffer *buffer);

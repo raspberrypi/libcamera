@@ -49,6 +49,8 @@ private Q_SLOTS:
 	int startCapture();
 	void stopCapture();
 
+	void saveImageAs();
+
 private:
 	int createToolbars();
 	std::string chooseCamera();

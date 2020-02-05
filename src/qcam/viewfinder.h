@@ -7,6 +7,7 @@
 #ifndef __QCAM_VIEWFINDER_H__
 #define __QCAM_VIEWFINDER_H__
 
+#include <QMutex>
 #include <QWidget>
 
 #include "format_converter.h"
@@ -23,6 +24,8 @@ public:
 		      unsigned int height);
 	void display(const unsigned char *rgb, size_t size);
 
+	QImage getCurrentImage();
+
 protected:
 	void paintEvent(QPaintEvent *) override;
 	QSize sizeHint() const override;
@@ -33,7 +36,9 @@ private:
 	unsigned int height_;
 
 	FormatConverter converter_;
+
 	QImage *image_;
+	QMutex mutex_; /* Prevent concurrent access to image_ */
 };
 
 #endif /* __QCAM_VIEWFINDER__ */

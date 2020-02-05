@@ -6,6 +6,8 @@
  */
 
 #include <QImage>
+#include <QImageWriter>
+#include <QMutexLocker>
 #include <QPainter>
 
 #include "format_converter.h"
@@ -23,8 +25,23 @@ ViewFinder::~ViewFinder()
 
 void ViewFinder::display(const unsigned char *raw, size_t size)
 {
+	QMutexLocker locker(&mutex_);
+
+	/*
+	 * \todo We're not supposed to block the pipeline handler thread
+	 * for long, implement a better way to save images without
+	 * impacting performances.
+	 */
+
 	converter_.convert(raw, size, image_);
 	update();
+}
+
+QImage ViewFinder::getCurrentImage()
+{
+	QMutexLocker locker(&mutex_);
+
+	return image_->copy();
 }
 
 int ViewFinder::setFormat(unsigned int format, unsigned int width,

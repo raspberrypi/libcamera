@@ -12,7 +12,10 @@
 
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QFileDialog>
 #include <QIcon>
+#include <QImage>
+#include <QImageWriter>
 #include <QInputDialog>
 #include <QTimer>
 #include <QToolBar>
@@ -87,6 +90,9 @@ int MainWindow::createToolbars()
 
 	action = toolbar_->addAction(QIcon(":stop-circle.svg"), "stop");
 	connect(action, &QAction::triggered, this, &MainWindow::stopCapture);
+
+	action = toolbar_->addAction(QIcon(":save.svg"), "saveAs");
+	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
 
 	return 0;
 }
@@ -337,6 +343,22 @@ void MainWindow::stopCapture()
 
 	titleTimer_.stop();
 	setWindowTitle(title_);
+}
+
+void MainWindow::saveImageAs()
+{
+	QImage image = viewfinder_->getCurrentImage();
+
+	QString filename = QFileDialog::getSaveFileName(this, "Save Image", "",
+							"Image Files (*.png *.jpg *.jpeg)");
+
+	std::cout << "Save image to " << filename.toStdString() << std::endl;
+
+	if (filename.isEmpty())
+		return;
+
+	QImageWriter writer(filename);
+	writer.write(image);
 }
 
 void MainWindow::requestComplete(Request *request)

@@ -32,7 +32,9 @@ private:
 	IPAManager();
 	~IPAManager();
 
-	unsigned int addDir(const char *libDir);
+	void parseDir(const char *libDir, unsigned int maxDepth,
+		      std::vector<std::string> &files);
+	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);
 };
 
 } /* namespace libcamera */

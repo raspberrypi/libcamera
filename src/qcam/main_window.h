@@ -41,9 +41,13 @@ public:
 	~MainWindow();
 
 private Q_SLOTS:
+	void quit();
 	void updateTitle();
 
+	void switchCamera(int index);
+
 private:
+	int createToolbars();
 	std::string chooseCamera();
 	int openCamera();
 
@@ -71,6 +75,7 @@ private:
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
 
+	QToolBar *toolbar_;
 	ViewFinder *viewfinder_;
 	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
 };

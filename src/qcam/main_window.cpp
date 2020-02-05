@@ -10,9 +10,12 @@
 #include <string>
 #include <sys/mman.h>
 
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QInputDialog>
 #include <QTimer>
+#include <QToolBar>
+#include <QToolButton>
 
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
@@ -27,6 +30,8 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 {
 	int ret;
 
+	createToolbars();
+
 	title_ = "QCam " + QString::fromStdString(CameraManager::version());
 	setWindowTitle(title_);
 	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
@@ -40,8 +45,7 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 		ret = startCapture();
 
 	if (ret < 0)
-		QTimer::singleShot(0, QCoreApplication::instance(),
-				   &QCoreApplication::quit);
+		quit();
 }
 
 MainWindow::~MainWindow()
@@ -51,6 +55,39 @@ MainWindow::~MainWindow()
 		camera_->release();
 		camera_.reset();
 	}
+}
+
+int MainWindow::createToolbars()
+{
+	QAction *action;
+
+	toolbar_ = addToolBar("Main");
+
+	/* Disable right click context menu. */
+	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
+
+	action = toolbar_->addAction("Quit");
+	connect(action, &QAction::triggered, this, &MainWindow::quit);
+
+	/* Camera selection. */
+	QComboBox *cameraCombo = new QComboBox();
+	connect(cameraCombo, QOverload<int>::of(&QComboBox::activated),
+		this, &MainWindow::switchCamera);
+
+	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
+		cameraCombo->addItem(QString::fromStdString(cam->name()));
+
+	toolbar_->addWidget(cameraCombo);
+
+	toolbar_->addSeparator();
+
+	return 0;
+}
+
+void MainWindow::quit()
+{
+	QTimer::singleShot(0, QCoreApplication::instance(),
+			   &QCoreApplication::quit);
 }
 
 void MainWindow::updateTitle()
@@ -64,6 +101,29 @@ void MainWindow::updateTitle()
 	previousFrames_ = framesCaptured_;
 
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
+}
+
+void MainWindow::switchCamera(int index)
+{
+	const auto &cameras = cm_->cameras();
+	if (static_cast<unsigned int>(index) >= cameras.size())
+		return;
+
+	const std::shared_ptr<Camera> &cam = cameras[index];
+
+	if (cam->acquire()) {
+		std::cout << "Failed to acquire camera " << cam->name() << std::endl;
+		return;
+	}
+
+	std::cout << "Switching to camera " << cam->name() << std::endl;
+
+	stopCapture();
+
+	camera_->release();
+	camera_ = cam;
+
+	startCapture();
 }
 
 std::string MainWindow::chooseCamera()

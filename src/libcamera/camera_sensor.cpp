@@ -119,8 +119,7 @@ LOG_DEFINE_CATEGORY(CameraSensor);
  * information.
  *
  * The implementation is currently limited to sensors that expose a single V4L2
- * subdevice with a single pad, and support the same frame sizes for all
- * supported media bus codes. It will be extended to support more complex
+ * subdevice with a single pad. It will be extended to support more complex
  * devices as the needs arise.
  */
 
@@ -245,35 +244,33 @@ int CameraSensor::init()
 		propertyValue = 0;
 	properties_.set(properties::Rotation, propertyValue);
 
-	/* Enumerate and cache media bus codes and sizes. */
-	const ImageFormats formats = subdev_->formats(pad_);
-	if (formats.isEmpty()) {
+	/* Enumerate, sort and cache media bus codes and sizes. */
+	formats_ = subdev_->formats(pad_);
+	if (formats_.isEmpty()) {
 		LOG(CameraSensor, Error) << "No image format found";
 		return -EINVAL;
 	}
 
-	mbusCodes_ = formats.formats();
+	mbusCodes_ = formats_.formats();
+	std::sort(mbusCodes_.begin(), mbusCodes_.end());
 
-	/*
-	 * Extract the supported sizes from the first format as we only support
-	 * sensors that offer the same frame sizes for all media bus codes.
-	 * Verify this assumption and reject the sensor if it isn't true.
-	 */
-	const std::vector<SizeRange> &sizes = formats.sizes(mbusCodes_[0]);
-	std::transform(sizes.begin(), sizes.end(), std::back_inserter(sizes_),
-		       [](const SizeRange &range) { return range.max; });
-
-	for (unsigned int code : mbusCodes_) {
-		if (formats.sizes(code) != sizes) {
-			LOG(CameraSensor, Error)
-				<< "Frame sizes differ between media bus codes";
-			return -EINVAL;
-		}
+	for (const auto &format : formats_.data()) {
+		const std::vector<SizeRange> &ranges = format.second;
+		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes_),
+			       [](const SizeRange &range) { return range.max; });
 	}
 
-	/* Sort the media bus codes and sizes. */
-	std::sort(mbusCodes_.begin(), mbusCodes_.end());
 	std::sort(sizes_.begin(), sizes_.end());
+
+	/* Remove duplicates. */
+	auto last = std::unique(sizes_.begin(), sizes_.end());
+	sizes_.erase(last, sizes_.end());
+
+	/*
+	 * The sizes_ vector is sorted in ascending order, the resolution is
+	 * thus the last element of the vector.
+	 */
+	resolution_ = sizes_.back();
 
 	return 0;
 }
@@ -303,21 +300,18 @@ int CameraSensor::init()
 /**
  * \fn CameraSensor::sizes()
  * \brief Retrieve the frame sizes supported by the camera sensor
+ *
+ * The reported sizes span all media bus codes supported by the camera sensor.
+ * Not all sizes may be supported by all media bus codes.
+ *
  * \return The supported frame sizes sorted in increasing order
  */
 
 /**
+ * \fn CameraSensor::resolution()
  * \brief Retrieve the camera sensor resolution
  * \return The camera sensor resolution in pixels
  */
-const Size &CameraSensor::resolution() const
-{
-	/*
-	 * The sizes_ vector is sorted in ascending order, the resolution is
-	 * thus the last element of the vector.
-	 */
-	return sizes_.back();
-}
 
 /**
  * \brief Retrieve the best sensor format for a desired output
@@ -325,13 +319,13 @@ const Size &CameraSensor::resolution() const
  * \param[in] size The desired size
  *
  * Media bus codes are selected from \a mbusCodes, which lists all acceptable
- * codes in decreasing order of preference. This method selects the first code
- * from the list that is supported by the sensor. If none of the desired codes
- * is supported, it returns an error.
+ * codes in decreasing order of preference. Media bus codes supported by the
+ * sensor but not listed in \a mbusCodes are ignored. If none of the desired
+ * codes is supported, it returns an error.
  *
  * \a size indicates the desired size at the output of the sensor. This method
- * selects the best size supported by the sensor according to the following
- * criteria.
+ * selects the best media bus code and size supported by the sensor according
+ * to the following criteria.
  *
  * - The desired \a size shall fit in the sensor output size to avoid the need
  *   to up-scale.
@@ -339,6 +333,11 @@ const Size &CameraSensor::resolution() const
  *   need to crop the field of view.
  * - The sensor output size shall be as small as possible to lower the required
  *   bandwidth.
+ * - The desired \a size shall be supported by one of the media bus code listed
+ *   in \a mbusCodes.
+ *
+ * When multiple media bus codes can produce the same size, the code at the
+ * lowest position in \a mbusCodes is selected.
  *
  * The use of this method is optional, as the above criteria may not match the
  * needs of all pipeline handlers. Pipeline handlers may implement custom
@@ -353,52 +352,48 @@ const Size &CameraSensor::resolution() const
 V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbusCodes,
 					    const Size &size) const
 {
-	V4L2SubdeviceFormat format{};
-
-	for (unsigned int code : mbusCodes) {
-		if (std::any_of(mbusCodes_.begin(), mbusCodes_.end(),
-				[code](unsigned int c) { return c == code; })) {
-			format.mbus_code = code;
-			break;
-		}
-	}
-
-	if (!format.mbus_code) {
-		LOG(CameraSensor, Debug) << "No supported format found";
-		return format;
-	}
-
 	unsigned int desiredArea = size.width * size.height;
 	unsigned int bestArea = UINT_MAX;
 	float desiredRatio = static_cast<float>(size.width) / size.height;
 	float bestRatio = FLT_MAX;
 	const Size *bestSize = nullptr;
+	uint32_t bestCode = 0;
 
-	for (const Size &sz : sizes_) {
-		if (sz.width < size.width || sz.height < size.height)
-			continue;
+	for (unsigned int code : mbusCodes) {
+		const std::vector<SizeRange> &ranges = formats_.sizes(code);
 
-		float ratio = static_cast<float>(sz.width) / sz.height;
-		float ratioDiff = fabsf(ratio - desiredRatio);
-		unsigned int area = sz.width * sz.height;
-		unsigned int areaDiff = area - desiredArea;
+		for (const SizeRange &range : ranges) {
+			const Size &sz = range.max;
 
-		if (ratioDiff > bestRatio)
-			continue;
+			if (sz.width < size.width || sz.height < size.height)
+				continue;
 
-		if (ratioDiff < bestRatio || areaDiff < bestArea) {
-			bestRatio = ratioDiff;
-			bestArea = areaDiff;
-			bestSize = &sz;
+			float ratio = static_cast<float>(sz.width) / sz.height;
+			float ratioDiff = fabsf(ratio - desiredRatio);
+			unsigned int area = sz.width * sz.height;
+			unsigned int areaDiff = area - desiredArea;
+
+			if (ratioDiff > bestRatio)
+				continue;
+
+			if (ratioDiff < bestRatio || areaDiff < bestArea) {
+				bestRatio = ratioDiff;
+				bestArea = areaDiff;
+				bestSize = &sz;
+				bestCode = code;
+			}
 		}
 	}
 
 	if (!bestSize) {
-		LOG(CameraSensor, Debug) << "No supported size found";
-		return format;
+		LOG(CameraSensor, Debug) << "No supported format or size found";
+		return {};
 	}
 
-	format.size = *bestSize;
+	V4L2SubdeviceFormat format{
+		.mbus_code = bestCode,
+		.size = *bestSize,
+	};
 
 	return format;
 }
@@ -424,7 +419,7 @@ const ControlInfoMap &CameraSensor::controls() const
 
 /**
  * \brief Read controls from the sensor
- * \param[in] ids The list of control to read, specified by their ID
+ * \param[in] ids The list of controls to read, specified by their ID
  *
  * This method reads the value of all controls contained in \a ids, and returns
  * their values as a ControlList.

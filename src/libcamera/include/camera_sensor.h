@@ -14,6 +14,7 @@
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
+#include "formats.h"
 #include "log.h"
 
 namespace libcamera {
@@ -51,7 +52,7 @@ public:
 	const MediaEntity *entity() const { return entity_; }
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> &sizes() const { return sizes_; }
-	const Size &resolution() const;
+	const Size &resolution() const { return resolution_; }
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
@@ -74,6 +75,8 @@ private:
 
 	std::string model_;
 
+	ImageFormats formats_;
+	Size resolution_;
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
 

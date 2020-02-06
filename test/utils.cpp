@@ -7,6 +7,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "test.h"
 #include "utils.h"
@@ -19,6 +21,7 @@ class UtilsTest : public Test
 protected:
 	int run()
 	{
+		/* utils::hex() test. */
 		std::ostringstream os;
 		std::string ref;
 
@@ -43,6 +46,28 @@ protected:
 		if (s != ref) {
 			cerr << "utils::hex() test failed, expected '" << ref
 			     << "', got '" << s << "'";
+			return TestFail;
+		}
+
+		/* utils::split() test. */
+		std::vector<std::string> elements = {
+			"/bin",
+			"/usr/bin",
+			"",
+			"",
+		};
+
+		std::string path;
+		for (const auto &element : elements)
+			path += (path.empty() ? "" : ":") + element;
+
+		std::vector<std::string> dirs;
+
+		for (const auto &dir : utils::split(path, ":"))
+			dirs.push_back(dir);
+
+		if (dirs != elements) {
+			cerr << "utils::split() test failed" << endl;
 			return TestFail;
 		}
 

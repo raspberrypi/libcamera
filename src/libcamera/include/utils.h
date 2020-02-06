@@ -108,6 +108,40 @@ inline _hex hex<uint64_t>(uint64_t value, unsigned int width)
 
 size_t strlcpy(char *dst, const char *src, size_t size);
 
+namespace details {
+
+class StringSplitter
+{
+public:
+	StringSplitter(const std::string &str, const std::string &delim);
+
+	class iterator
+	{
+	public:
+		iterator(const StringSplitter *ss, std::string::size_type pos);
+
+		iterator &operator++();
+		std::string operator*() const;
+		bool operator!=(const iterator &other) const;
+
+	private:
+		const StringSplitter *ss_;
+		std::string::size_type pos_;
+		std::string::size_type next_;
+	};
+
+	iterator begin() const;
+	iterator end() const;
+
+private:
+	std::string str_;
+	std::string delim_;
+};
+
+} /* namespace details */
+
+details::StringSplitter split(const std::string &str, const std::string &delim);
+
 } /* namespace utils */
 
 } /* namespace libcamera */

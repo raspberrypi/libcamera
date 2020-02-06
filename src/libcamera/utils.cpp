@@ -199,6 +199,69 @@ size_t strlcpy(char *dst, const char *src, size_t size)
 	return strlen(src);
 }
 
+details::StringSplitter::StringSplitter(const std::string &str, const std::string &delim)
+	: str_(str), delim_(delim)
+{
+}
+
+details::StringSplitter::iterator::iterator(const details::StringSplitter *ss, std::string::size_type pos)
+	: ss_(ss), pos_(pos)
+{
+	next_ = ss_->str_.find(ss_->delim_, pos_);
+}
+
+details::StringSplitter::iterator &details::StringSplitter::iterator::operator++()
+{
+	pos_ = next_;
+	if (pos_ != std::string::npos) {
+		pos_ += ss_->delim_.length();
+		next_ = ss_->str_.find(ss_->delim_, pos_);
+	}
+
+	return *this;
+}
+
+std::string details::StringSplitter::iterator::operator*() const
+{
+	std::string::size_type count;
+	count = next_ != std::string::npos ? next_ - pos_ : next_;
+	return ss_->str_.substr(pos_, count);
+}
+
+bool details::StringSplitter::iterator::operator!=(const details::StringSplitter::iterator &other) const
+{
+	return pos_ != other.pos_;
+}
+
+details::StringSplitter::iterator details::StringSplitter::begin() const
+{
+	return iterator(this, 0);
+}
+
+details::StringSplitter::iterator details::StringSplitter::end() const
+{
+	return iterator(this, std::string::npos);
+}
+
+/**
+ * \fn split(const std::string &str, const std::string &delim)
+ * \brief Split a string based on a delimiter
+ * \param[in] str The string to split
+ * \param[in] delim The delimiter string
+ *
+ * This function splits the string \a str into substrings based on the
+ * delimiter \a delim. It returns an object of unspecified type that can be
+ * used in a range-based for loop and yields the substrings in sequence.
+ *
+ * \return An object that can be used in a range-based for loop to iterate over
+ * the substrings
+ */
+details::StringSplitter split(const std::string &str, const std::string &delim)
+{
+	/** \todo Try to avoid copies of str and delim */
+	return details::StringSplitter(str, delim);
+}
+
 } /* namespace utils */
 
 } /* namespace libcamera */

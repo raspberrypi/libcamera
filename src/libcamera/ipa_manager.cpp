@@ -110,22 +110,13 @@ IPAManager::IPAManager()
 		return;
 	}
 
-	const char *paths = modulePaths;
-	while (1) {
-		const char *delim = strchrnul(paths, ':');
-		size_t count = delim - paths;
+	for (const auto &dir : utils::split(modulePaths, ":")) {
+		if (dir.empty())
+			continue;
 
-		if (count) {
-			std::string path(paths, count);
-			ret = addDir(path.c_str());
-			if (ret > 0)
-				ipaCount += ret;
-		}
-
-		if (*delim == '\0')
-			break;
-
-		paths += count + 1;
+		int ret = addDir(dir.c_str());
+		if (ret > 0)
+			ipaCount += ret;
 	}
 
 	if (!ipaCount)

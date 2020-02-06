@@ -13,6 +13,7 @@
 #include <elf.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <link.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -94,25 +95,24 @@ int elfVerifyIdent(void *map, size_t soSize)
  * \return zero or error code, address or nullptr, size of symbol or zero,
  * respectively
  */
-template<class ElfHeader, class SecHeader, class SymHeader>
 std::tuple<void *, size_t>
 elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 {
-	ElfHeader *eHdr = elfPointer<ElfHeader>(map, 0, soSize);
+	ElfW(Ehdr) *eHdr = elfPointer<ElfW(Ehdr)>(map, 0, soSize);
 	if (!eHdr)
 		return std::make_tuple(nullptr, 0);
 
 	off_t offset = eHdr->e_shoff + eHdr->e_shentsize * eHdr->e_shstrndx;
-	SecHeader *sHdr = elfPointer<SecHeader>(map, offset, soSize);
+	ElfW(Shdr) *sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
 	if (!sHdr)
 		return std::make_tuple(nullptr, 0);
 	off_t shnameoff = sHdr->sh_offset;
 
 	/* Locate .dynsym section header. */
-	SecHeader *dynsym = nullptr;
+	ElfW(Shdr) *dynsym = nullptr;
 	for (unsigned int i = 0; i < eHdr->e_shnum; i++) {
 		offset = eHdr->e_shoff + eHdr->e_shentsize * i;
-		sHdr = elfPointer<SecHeader>(map, offset, soSize);
+		sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
 		if (!sHdr)
 			return std::make_tuple(nullptr, 0);
 
@@ -133,17 +133,17 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 	}
 
 	offset = eHdr->e_shoff + eHdr->e_shentsize * dynsym->sh_link;
-	sHdr = elfPointer<SecHeader>(map, offset, soSize);
+	sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
 	if (!sHdr)
 		return std::make_tuple(nullptr, 0);
 	off_t dynsym_nameoff = sHdr->sh_offset;
 
 	/* Locate symbol in the .dynsym section. */
-	SymHeader *targetSymbol = nullptr;
+	ElfW(Sym) *targetSymbol = nullptr;
 	unsigned int dynsym_num = dynsym->sh_size / dynsym->sh_entsize;
 	for (unsigned int i = 0; i < dynsym_num; i++) {
 		offset = dynsym->sh_offset + dynsym->sh_entsize * i;
-		SymHeader *sym = elfPointer<SymHeader>(map, offset, soSize);
+		ElfW(Sym) *sym = elfPointer<ElfW(Sym)>(map, offset, soSize);
 		if (!sym)
 			return std::make_tuple(nullptr, 0);
 
@@ -169,7 +169,7 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 	if (targetSymbol->st_shndx >= eHdr->e_shnum)
 		return std::make_tuple(nullptr, 0);
 	offset = eHdr->e_shoff + targetSymbol->st_shndx * eHdr->e_shentsize;
-	sHdr = elfPointer<SecHeader>(map, offset, soSize);
+	sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
 	if (!sHdr)
 		return std::make_tuple(nullptr, 0);
 	offset = sHdr->sh_offset + (targetSymbol->st_value - sHdr->sh_addr);
@@ -310,14 +310,7 @@ int IPAModule::loadIPAModuleInfo()
 	if (ret)
 		goto unmap;
 
-	if (sizeof(unsigned long) == 4)
-		std::tie(data, dataSize) =
-			elfLoadSymbol<Elf32_Ehdr, Elf32_Shdr, Elf32_Sym>
-				     (map, soSize, "ipaModuleInfo");
-	else
-		std::tie(data, dataSize) =
-			elfLoadSymbol<Elf64_Ehdr, Elf64_Shdr, Elf64_Sym>
-				     (map, soSize, "ipaModuleInfo");
+	std::tie(data, dataSize) = elfLoadSymbol(map, soSize, "ipaModuleInfo");
 
 	if (data && dataSize == sizeof(info_))
 		memcpy(&info_, data, dataSize);

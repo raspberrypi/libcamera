@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 ipa_name = 'ipa_rpi'
 
 rpi_ipa_deps = [

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 libipa_headers = files([
     'ipa_interface_wrapper.h',
 ])

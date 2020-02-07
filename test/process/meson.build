@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 process_tests = [
     [ 'process_test',  'process_test.cpp' ],
 ]

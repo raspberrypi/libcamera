@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 lib_mdev_test_sources = files([
     'media_device_test.cpp',
 ])

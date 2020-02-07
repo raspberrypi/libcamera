@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 android_hal_sources = files([
     'camera3_hal.cpp',
     'camera_hal_manager.cpp',

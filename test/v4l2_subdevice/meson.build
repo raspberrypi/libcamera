@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 v4l2_subdevice_tests = [
   [ 'list_formats',             'list_formats.cpp'],
   [ 'test_formats',             'test_formats.cpp'],

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 if get_option('android')
     subdir('android')
 endif

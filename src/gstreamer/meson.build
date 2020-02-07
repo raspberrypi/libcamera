@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 libcamera_gst_sources = [
     'gstlibcamera-utils.cpp',
     'gstlibcamera.cpp',

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 control_tests = [
     [ 'control_info',               'control_info.cpp' ],
     [ 'control_info_map',           'control_info_map.cpp' ],

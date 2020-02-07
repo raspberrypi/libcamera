@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 ipu3_test = [
     ['ipu3_pipeline_test',            'ipu3_pipeline_test.cpp'],
 ]

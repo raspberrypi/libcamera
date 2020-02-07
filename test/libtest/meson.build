@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 libtest_sources = files([
     'buffer_source.cpp',
     'camera_test.cpp',

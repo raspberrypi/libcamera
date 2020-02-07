@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 # Tests are listed in order of complexity.
 # They are not alphabetically sorted.
 camera_tests = [

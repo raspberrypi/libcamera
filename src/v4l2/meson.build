@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 v4l2_compat_sources = files([
     'v4l2_camera.cpp',
     'v4l2_camera_proxy.cpp',

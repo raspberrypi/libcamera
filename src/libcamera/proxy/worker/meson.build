@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 ipa_proxy_sources = [
     ['ipa_proxy_linux', 'ipa_proxy_linux_worker.cpp']
 ]

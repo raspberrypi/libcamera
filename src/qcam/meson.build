@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 qcam_sources = files([
     '../cam/options.cpp',
     '../cam/stream_options.cpp',

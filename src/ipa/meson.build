@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 ipa_install_dir = join_paths(get_option('libdir'), 'libcamera')
 ipa_data_dir = join_paths(get_option('datadir'), 'libcamera', 'ipa')
 ipa_sysconf_dir = join_paths(get_option('sysconfdir'), 'libcamera', 'ipa')

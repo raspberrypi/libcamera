@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 log_test = [
     ['log_api',     'log_api.cpp'],
     ['log_process', 'log_process.cpp'],

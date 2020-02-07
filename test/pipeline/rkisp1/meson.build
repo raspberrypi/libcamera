@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 rkisp1_test = [
     ['rkisp1_pipeline_test',            'rkisp1_pipeline_test.cpp'],
 ]

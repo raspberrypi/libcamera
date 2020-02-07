@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: CC-BY-SA-4.0
+
 .. _coding-style-guidelines:
 
 Coding Style Guidelines

@@ -44,8 +44,8 @@ private Q_SLOTS:
 	void updateTitle();
 
 private:
-	std::string chooseCamera(CameraManager *cm);
-	int openCamera(CameraManager *cm);
+	std::string chooseCamera();
+	int openCamera();
 
 	int startCapture();
 	void stopCapture();
@@ -58,6 +58,7 @@ private:
 
 	const OptionsParser::Options &options_;
 
+	CameraManager *cm_;
 	std::shared_ptr<Camera> camera_;
 	FrameBufferAllocator *allocator_;
 

@@ -23,7 +23,7 @@
 using namespace libcamera;
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
-	: options_(options), allocator_(nullptr), isCapturing_(false)
+	: options_(options), cm_(cm), allocator_(nullptr), isCapturing_(false)
 {
 	int ret;
 
@@ -35,7 +35,7 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	setCentralWidget(viewfinder_);
 	adjustSize();
 
-	ret = openCamera(cm);
+	ret = openCamera();
 	if (!ret)
 		ret = startCapture();
 
@@ -66,15 +66,15 @@ void MainWindow::updateTitle()
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
 }
 
-std::string MainWindow::chooseCamera(CameraManager *cm)
+std::string MainWindow::chooseCamera()
 {
 	QStringList cameras;
 	bool result;
 
-	if (cm->cameras().size() == 1)
-		return cm->cameras()[0]->name();
+	if (cm_->cameras().size() == 1)
+		return cm_->cameras()[0]->name();
 
-	for (const std::shared_ptr<Camera> &cam : cm->cameras())
+	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
 		cameras.append(QString::fromStdString(cam->name()));
 
 	QString name = QInputDialog::getItem(this, "Select Camera",
@@ -86,19 +86,19 @@ std::string MainWindow::chooseCamera(CameraManager *cm)
 	return name.toStdString();
 }
 
-int MainWindow::openCamera(CameraManager *cm)
+int MainWindow::openCamera()
 {
 	std::string cameraName;
 
 	if (options_.isSet(OptCamera))
 		cameraName = static_cast<std::string>(options_[OptCamera]);
 	else
-		cameraName = chooseCamera(cm);
+		cameraName = chooseCamera();
 
 	if (cameraName == "")
 		return -EINVAL;
 
-	camera_ = cm->get(cameraName);
+	camera_ = cm_->get(cameraName);
 	if (!camera_) {
 		std::cout << "Camera " << cameraName << " not found"
 			  << std::endl;

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
 # -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.

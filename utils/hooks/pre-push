@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # A hook script to prevent pushing unsuitable commits to the master branch.
 # Unsuitable commits are commits that contain a local changelog below a '---'
 # line. The criteria may get extended later.

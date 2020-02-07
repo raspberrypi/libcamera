@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Execute the checkstyle script before committing any code. This will fail the
 # commit in case of style issues, ensuring that the developer will notice them.
 # The pre-commit hook can be bypassed with git commit -n to ignore selective

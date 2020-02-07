@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Execute the checkstyle script after committing any code. This allows the
 # commit to succeed, but ensures that the developer is aware of any potential
 # issues immediately, and can resolve them and fix rapidly with:

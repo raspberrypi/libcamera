@@ -1,5 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # Copyright 2019 Google Inc.
-# Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
 PYTHON_COMPAT=( python3_{5,6,7} )

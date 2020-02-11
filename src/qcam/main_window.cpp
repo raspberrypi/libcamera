@@ -125,7 +125,7 @@ int MainWindow::startCapture()
 {
 	int ret;
 
-	config_ = camera_->generateConfiguration({ StreamRole::VideoRecording });
+	config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
 
 	StreamConfiguration &cfg = config_->at(0);
 	if (options_.isSet(OptSize)) {

@@ -55,7 +55,7 @@ const char *basename(const char *path)
  * avoid vulnerabilities that could occur if set-user-ID or set-group-ID
  * programs accidentally trust the environment.
  *
- * \returns A pointer to the value in the environment or NULL if the requested
+ * \return A pointer to the value in the environment or NULL if the requested
  * environment variable doesn't exist or if secure execution is required.
  */
 char *secure_getenv(const char *name)

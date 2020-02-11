@@ -269,7 +269,7 @@ bool operator<(const Size &lhs, const Size &rhs)
 /**
  * \brief Test if a size is contained in the range
  * \param[in] size Size to check
- * \returns True if \a size is contained in the range
+ * \return True if \a size is contained in the range
  */
 bool SizeRange::contains(const Size &size) const
 {

@@ -60,6 +60,15 @@ if cc.get_id() == 'clang'
     endif
 endif
 
+# We use C99 designated initializers for arrays as C++ has no equivalent
+# feature. Both gcc and clang support this extension, but recent
+# versions of clang generate a warning that needs to be disabled.
+if cc.has_argument('-Wno-c99-designator')
+    common_arguments += [
+        '-Wno-c99-designator',
+    ]
+endif
+
 c_arguments += common_arguments
 cpp_arguments += common_arguments
 

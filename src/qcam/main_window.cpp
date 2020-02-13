@@ -113,8 +113,6 @@ int MainWindow::openCamera(CameraManager *cm)
 
 	std::cout << "Using camera " << camera_->name() << std::endl;
 
-	camera_->requestCompleted.connect(this, &MainWindow::requestComplete);
-
 	return 0;
 }
 
@@ -212,16 +210,22 @@ int MainWindow::startCapture()
 		goto error;
 	}
 
+	camera_->requestCompleted.connect(this, &MainWindow::requestComplete);
+
 	for (Request *request : requests) {
 		ret = camera_->queueRequest(request);
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
-			goto error;
+			goto error_disconnect;
 		}
 	}
 
 	isCapturing_ = true;
 	return 0;
+
+error_disconnect:
+	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
+	camera_->stop();
 
 error:
 	for (Request *request : requests)
@@ -248,6 +252,8 @@ void MainWindow::stopCapture()
 	int ret = camera_->stop();
 	if (ret)
 		std::cout << "Failed to stop capture" << std::endl;
+
+	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
 
 	for (auto &iter : mappedBuffers_) {
 		void *memory = iter.second.first;

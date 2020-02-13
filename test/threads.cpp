@@ -101,6 +101,25 @@ protected:
 
 		delete thread;
 
+		/* Test waiting on a thread that isn't running. */
+		thread = new Thread();
+
+		timeout = !thread->wait();
+		if (timeout) {
+			cout << "Waiting for non-started thread timed out" << endl;
+			return TestFail;
+		}
+
+		thread->start();
+		thread->exit(0);
+		thread->wait();
+
+		timeout = !thread->wait();
+		if (timeout) {
+			cout << "Waiting for already stopped thread timed out" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 

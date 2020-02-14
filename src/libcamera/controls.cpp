@@ -74,31 +74,10 @@ ControlValue::ControlValue()
 }
 
 /**
- * \brief Construct a Boolean ControlValue
- * \param[in] value Boolean value to store
+ * \fn template<typename T> T ControlValue::ControlValue(T value)
+ * \brief Construct a ControlValue of type T
+ * \param[in] value Initial value
  */
-ControlValue::ControlValue(bool value)
-	: type_(ControlTypeBool), bool_(value)
-{
-}
-
-/**
- * \brief Construct an integer ControlValue
- * \param[in] value Integer value to store
- */
-ControlValue::ControlValue(int32_t value)
-	: type_(ControlTypeInteger32), integer32_(value)
-{
-}
-
-/**
- * \brief Construct a 64 bit integer ControlValue
- * \param[in] value Integer value to store
- */
-ControlValue::ControlValue(int64_t value)
-	: type_(ControlTypeInteger64), integer64_(value)
-{
-}
 
 /**
  * \fn ControlValue::type()

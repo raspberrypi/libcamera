@@ -55,9 +55,13 @@ class ControlValue
 {
 public:
 	ControlValue();
-	ControlValue(bool value);
-	ControlValue(int32_t value);
-	ControlValue(int64_t value);
+
+	template<typename T>
+	ControlValue(T value)
+		: type_(details::control_type<std::remove_cv_t<T>>::value)
+	{
+		*reinterpret_cast<T *>(&bool_) = value;
+	}
 
 	ControlType type() const { return type_; }
 	bool isNone() const { return type_ == ControlTypeNone; }

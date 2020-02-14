@@ -22,6 +22,34 @@ enum ControlType {
 	ControlTypeInteger64,
 };
 
+namespace details {
+
+template<typename T>
+struct control_type {
+};
+
+template<>
+struct control_type<void> {
+	static constexpr ControlType value = ControlTypeNone;
+};
+
+template<>
+struct control_type<bool> {
+	static constexpr ControlType value = ControlTypeBool;
+};
+
+template<>
+struct control_type<int32_t> {
+	static constexpr ControlType value = ControlTypeInteger32;
+};
+
+template<>
+struct control_type<int64_t> {
+	static constexpr ControlType value = ControlTypeInteger64;
+};
+
+} /* namespace details */
+
 class ControlValue
 {
 public:

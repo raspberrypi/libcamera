@@ -735,7 +735,7 @@ bool ControlList::contains(unsigned int id) const
  */
 
 /**
- * \fn template<typename T> void ControlList::set(const Control<T> &ctrl, const T &value)
+ * \fn template<typename T, typename V> void ControlList::set(const Control<T> &ctrl, const V &value)
  * \brief Set the control \a ctrl value to \a value
  * \param[in] ctrl The control
  * \param[in] value The control value

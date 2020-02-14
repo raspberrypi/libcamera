@@ -223,8 +223,8 @@ public:
 		return val->get<T>();
 	}
 
-	template<typename T>
-	void set(const Control<T> &ctrl, const T &value)
+	template<typename T, typename V>
+	void set(const Control<T> &ctrl, const V &value)
 	{
 		ControlValue *val = find(ctrl.id());
 		if (!val)

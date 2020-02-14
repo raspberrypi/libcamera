@@ -82,8 +82,15 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 			return -ENODEV;
 
 		int ret = populateMediaDevice(media);
-		if (ret == 0)
-			addDevice(media);
+		if (ret < 0) {
+			LOG(DeviceEnumerator, Warning)
+				<< "Failed to populate media device "
+				<< media->deviceNode()
+				<< " (" << media->driver() << "), skipping";
+			return ret;
+		}
+
+		addDevice(media);
 		return 0;
 	}
 
@@ -141,14 +148,18 @@ int DeviceEnumeratorUdev::enumerate()
 		devnode = udev_device_get_devnode(dev);
 		if (!devnode) {
 			udev_device_unref(dev);
-			ret = -ENODEV;
-			goto done;
+			LOG(DeviceEnumerator, Warning)
+				<< "Failed to get device node for '"
+				<< syspath << "', skipping";
+			continue;
 		}
 
-		ret = addUdevDevice(dev);
+		if (addUdevDevice(dev) < 0)
+			LOG(DeviceEnumerator, Warning)
+				<< "Failed to add device for '"
+				<< syspath << "', skipping";
+
 		udev_device_unref(dev);
-		if (ret < 0)
-			break;
 	}
 
 done:

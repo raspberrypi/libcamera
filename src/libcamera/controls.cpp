@@ -175,53 +175,6 @@ bool ControlValue::operator==(const ControlValue &other) const
  * \param[in] value The control value
  */
 
-#ifndef __DOXYGEN__
-template<>
-bool ControlValue::get<bool>() const
-{
-	ASSERT(type_ == ControlTypeBool);
-
-	return bool_;
-}
-
-template<>
-int32_t ControlValue::get<int32_t>() const
-{
-	ASSERT(type_ == ControlTypeInteger32);
-
-	return integer32_;
-}
-
-template<>
-int64_t ControlValue::get<int64_t>() const
-{
-	ASSERT(type_ == ControlTypeInteger64);
-
-	return integer64_;
-}
-
-template<>
-void ControlValue::set<bool>(const bool &value)
-{
-	type_ = ControlTypeBool;
-	bool_ = value;
-}
-
-template<>
-void ControlValue::set<int32_t>(const int32_t &value)
-{
-	type_ = ControlTypeInteger32;
-	integer32_ = value;
-}
-
-template<>
-void ControlValue::set<int64_t>(const int64_t &value)
-{
-	type_ = ControlTypeInteger64;
-	integer64_ = value;
-}
-#endif /* __DOXYGEN__ */
-
 /**
  * \class ControlId
  * \brief Control static metadata

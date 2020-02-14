@@ -8,6 +8,7 @@
 #ifndef __LIBCAMERA_CONTROLS_H__
 #define __LIBCAMERA_CONTROLS_H__
 
+#include <assert.h>
 #include <string>
 #include <unordered_map>
 
@@ -70,9 +71,19 @@ public:
 	}
 
 	template<typename T>
-	T get() const;
+	T get() const
+	{
+		assert(type_ == details::control_type<std::remove_cv_t<T>>::value);
+
+		return *reinterpret_cast<const T *>(&bool_);
+	}
+
 	template<typename T>
-	void set(const T &value);
+	void set(const T &value)
+	{
+		type_ = details::control_type<std::remove_cv_t<T>>::value;
+		*reinterpret_cast<T *>(&bool_) = value;
+	}
 
 private:
 	ControlType type_;

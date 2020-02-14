@@ -146,7 +146,10 @@ class Control : public ControlId
 public:
 	using type = T;
 
-	Control(unsigned int id, const char *name);
+	Control(unsigned int id, const char *name)
+		: ControlId(id, name, details::control_type<std::remove_cv_t<T>>::value)
+	{
+	}
 
 private:
 	Control(const Control &) = delete;

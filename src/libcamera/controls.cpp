@@ -249,32 +249,6 @@ bool ControlValue::operator==(const ControlValue &other) const
  * \brief The Control template type T
  */
 
-#ifndef __DOXYGEN__
-template<>
-Control<void>::Control(unsigned int id, const char *name)
-	: ControlId(id, name, ControlTypeNone)
-{
-}
-
-template<>
-Control<bool>::Control(unsigned int id, const char *name)
-	: ControlId(id, name, ControlTypeBool)
-{
-}
-
-template<>
-Control<int32_t>::Control(unsigned int id, const char *name)
-	: ControlId(id, name, ControlTypeInteger32)
-{
-}
-
-template<>
-Control<int64_t>::Control(unsigned int id, const char *name)
-	: ControlId(id, name, ControlTypeInteger64)
-{
-}
-#endif /* __DOXYGEN__ */
-
 /**
  * \class ControlRange
  * \brief Describe the limits of valid values for a Control

@@ -160,7 +160,7 @@ bool ControlValue::operator==(const ControlValue &other) const
  */
 
 /**
- * \fn template<typename T> const T &ControlValue::get() const
+ * \fn template<typename T> T ControlValue::get() const
  * \brief Get the control value
  *
  * The control value type shall match the type T, otherwise the behaviour is
@@ -177,7 +177,7 @@ bool ControlValue::operator==(const ControlValue &other) const
 
 #ifndef __DOXYGEN__
 template<>
-const bool &ControlValue::get<bool>() const
+bool ControlValue::get<bool>() const
 {
 	ASSERT(type_ == ControlTypeBool);
 
@@ -185,7 +185,7 @@ const bool &ControlValue::get<bool>() const
 }
 
 template<>
-const int32_t &ControlValue::get<int32_t>() const
+int32_t ControlValue::get<int32_t>() const
 {
 	ASSERT(type_ == ControlTypeInteger32);
 
@@ -193,7 +193,7 @@ const int32_t &ControlValue::get<int32_t>() const
 }
 
 template<>
-const int64_t &ControlValue::get<int64_t>() const
+int64_t ControlValue::get<int64_t>() const
 {
 	ASSERT(type_ == ControlTypeInteger64);
 
@@ -720,7 +720,7 @@ bool ControlList::contains(unsigned int id) const
 }
 
 /**
- * \fn template<typename T> const T &ControlList::get(const Control<T> &ctrl) const
+ * \fn template<typename T> T ControlList::get(const Control<T> &ctrl) const
  * \brief Get the value of control \a ctrl
  * \param[in] ctrl The control
  *

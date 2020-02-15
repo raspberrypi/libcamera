@@ -42,7 +42,7 @@ public:
 	}
 
 	template<typename T>
-	const T &get() const;
+	T get() const;
 	template<typename T>
 	void set(const T &value);
 
@@ -212,13 +212,11 @@ public:
 	bool contains(unsigned int id) const;
 
 	template<typename T>
-	const T &get(const Control<T> &ctrl) const
+	T get(const Control<T> &ctrl) const
 	{
 		const ControlValue *val = find(ctrl.id());
-		if (!val) {
-			static T t(0);
-			return t;
-		}
+		if (!val)
+			return T{};
 
 		return val->get<T>();
 	}

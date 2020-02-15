@@ -146,40 +146,7 @@ size_t ControlSerializer::binarySize(const ControlList &list)
 void ControlSerializer::store(const ControlValue &value,
 			      ByteStreamBuffer &buffer)
 {
-	switch (value.type()) {
-	case ControlTypeBool: {
-		bool data = value.get<bool>();
-		buffer.write(&data);
-		break;
-	}
-
-	case ControlTypeByte: {
-		uint8_t data = value.get<uint8_t>();
-		buffer.write(&data);
-		break;
-	}
-
-	case ControlTypeInteger32: {
-		int32_t data = value.get<int32_t>();
-		buffer.write(&data);
-		break;
-	}
-
-	case ControlTypeInteger64: {
-		uint64_t data = value.get<int64_t>();
-		buffer.write(&data);
-		break;
-	}
-
-	case ControlTypeFloat: {
-		float data = value.get<float>();
-		buffer.write(&data);
-		break;
-	}
-
-	default:
-		break;
-	}
+	buffer.write(value.data());
 }
 
 void ControlSerializer::store(const ControlRange &range,

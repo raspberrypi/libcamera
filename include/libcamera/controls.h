@@ -12,6 +12,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <libcamera/span.h>
+
 namespace libcamera {
 
 class ControlValidator;
@@ -65,6 +67,7 @@ public:
 
 	ControlType type() const { return type_; }
 	bool isNone() const { return type_ == ControlTypeNone; }
+	Span<const uint8_t> data() const;
 
 	std::string toString() const;
 

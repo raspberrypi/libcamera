@@ -27,17 +27,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Serializer)
 
-namespace {
-
-static constexpr size_t ControlValueSize[] = {
-	[ControlTypeNone]	= 1,
-	[ControlTypeBool]	= sizeof(bool),
-	[ControlTypeInteger32]	= sizeof(int32_t),
-	[ControlTypeInteger64]	= sizeof(int64_t),
-};
-
-} /* namespace */
-
 /**
  * \class ControlSerializer
  * \brief Serializer and deserializer for control-related classes
@@ -106,7 +95,7 @@ void ControlSerializer::reset()
 
 size_t ControlSerializer::binarySize(const ControlValue &value)
 {
-	return ControlValueSize[value.type()];
+	return value.data().size_bytes();
 }
 
 size_t ControlSerializer::binarySize(const ControlRange &range)

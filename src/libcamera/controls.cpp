@@ -47,6 +47,17 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Controls)
 
+namespace {
+
+static constexpr size_t ControlValueSize[] = {
+	[ControlTypeNone]		= 1,
+	[ControlTypeBool]		= sizeof(bool),
+	[ControlTypeInteger32]		= sizeof(int32_t),
+	[ControlTypeInteger64]		= sizeof(int64_t),
+};
+
+} /* namespace */
+
 /**
  * \enum ControlType
  * \brief Define the data type of a Control
@@ -90,6 +101,18 @@ ControlValue::ControlValue()
  * \brief Determine if the value is not initialised
  * \return True if the value type is ControlTypeNone, false otherwise
  */
+
+/**
+ * \brief Retrieve the raw data of a control value
+ * \return The raw data of the control value as a span of uint8_t
+ */
+Span<const uint8_t> ControlValue::data() const
+{
+	return {
+		reinterpret_cast<const uint8_t *>(&bool_),
+		ControlValueSize[type_]
+	};
+}
 
 /**
  * \brief Assemble and return a string describing the value

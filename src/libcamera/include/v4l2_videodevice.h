@@ -7,11 +7,12 @@
 #ifndef __LIBCAMERA_V4L2_VIDEODEVICE_H__
 #define __LIBCAMERA_V4L2_VIDEODEVICE_H__
 
+#include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <linux/videodev2.h>
-#include <memory>
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
@@ -120,11 +121,12 @@ private:
 	{
 	public:
 		Entry();
-		Entry(bool free, const FrameBuffer &buffer);
+		Entry(bool free, uint64_t lastUsed, const FrameBuffer &buffer);
 
 		bool operator==(const FrameBuffer &buffer) const;
 
 		bool free;
+		uint64_t lastUsed;
 
 	private:
 		struct Plane {
@@ -140,6 +142,7 @@ private:
 		std::vector<Plane> planes_;
 	};
 
+	std::atomic_uint64_t lastUsedCounter_;
 	std::vector<Entry> cache_;
 	/* \todo Expose the miss counter through an instrumentation API. */
 	unsigned int missCounter_;

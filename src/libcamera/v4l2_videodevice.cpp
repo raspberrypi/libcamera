@@ -162,7 +162,7 @@ LOG_DECLARE_CATEGORY(V4L2)
  * buffer import, with buffers added to the cache as they are queued.
  */
 V4L2BufferCache::V4L2BufferCache(unsigned int numEntries)
-	: missCounter_(0)
+	: lastUsedCounter_(1), missCounter_(0)
 {
 	cache_.resize(numEntries);
 }
@@ -176,10 +176,12 @@ V4L2BufferCache::V4L2BufferCache(unsigned int numEntries)
  * allocated.
  */
 V4L2BufferCache::V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers)
-	: missCounter_(0)
+	: lastUsedCounter_(1), missCounter_(0)
 {
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers)
-		cache_.emplace_back(true, buffer->planes());
+		cache_.emplace_back(true,
+				    lastUsedCounter_.fetch_add(1, std::memory_order_acq_rel),
+				    buffer->planes());
 }
 
 V4L2BufferCache::~V4L2BufferCache()
@@ -205,6 +207,7 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 {
 	bool hit = false;
 	int use = -1;
+	uint64_t oldest = UINT64_MAX;
 
 	for (unsigned int index = 0; index < cache_.size(); index++) {
 		const Entry &entry = cache_[index];
@@ -219,8 +222,10 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 			break;
 		}
 
-		if (use < 0)
+		if (entry.lastUsed < oldest) {
 			use = index;
+			oldest = entry.lastUsed;
+		}
 	}
 
 	if (!hit)
@@ -229,7 +234,9 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 	if (use < 0)
 		return -ENOENT;
 
-	cache_[use] = Entry(false, buffer);
+	cache_[use] = Entry(false,
+			    lastUsedCounter_.fetch_add(1, std::memory_order_acq_rel),
+			    buffer);
 
 	return use;
 }
@@ -245,12 +252,12 @@ void V4L2BufferCache::put(unsigned int index)
 }
 
 V4L2BufferCache::Entry::Entry()
-	: free(true)
+	: free(true), lastUsed(0)
 {
 }
 
-V4L2BufferCache::Entry::Entry(bool free, const FrameBuffer &buffer)
-	: free(free)
+V4L2BufferCache::Entry::Entry(bool free, uint64_t lastUsed, const FrameBuffer &buffer)
+	: free(free), lastUsed(lastUsed)
 {
 	for (const FrameBuffer::Plane &plane : buffer.planes())
 		planes_.emplace_back(plane);

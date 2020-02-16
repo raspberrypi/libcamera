@@ -42,20 +42,20 @@ LOG_DEFINE_CATEGORY(IPAModule)
 namespace {
 
 template<typename T>
-typename std::remove_extent<T>::type *elfPointer(void *map, off_t offset,
-						 size_t fileSize, size_t objSize)
+typename std::remove_extent_t<T> *elfPointer(void *map, off_t offset,
+					     size_t fileSize, size_t objSize)
 {
 	size_t size = offset + objSize;
 	if (size > fileSize || size < objSize)
 		return nullptr;
 
-	return reinterpret_cast<typename std::remove_extent<T>::type *>
+	return reinterpret_cast<typename std::remove_extent_t<T> *>
 		(static_cast<char *>(map) + offset);
 }
 
 template<typename T>
-typename std::remove_extent<T>::type *elfPointer(void *map, off_t offset,
-						 size_t fileSize)
+typename std::remove_extent_t<T> *elfPointer(void *map, off_t offset,
+					     size_t fileSize)
 {
 	return elfPointer<T>(map, offset, fileSize, sizeof(T));
 }

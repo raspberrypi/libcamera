@@ -38,7 +38,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference<Args>::type...> args_;
+	std::tuple<typename std::remove_reference_t<Args>...> args_;
 	R ret_;
 };
 
@@ -51,7 +51,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference<Args>::type...> args_;
+	std::tuple<typename std::remove_reference_t<Args>...> args_;
 };
 
 class BoundMethodBase
@@ -63,7 +63,7 @@ public:
 	}
 	virtual ~BoundMethodBase() {}
 
-	template<typename T, typename std::enable_if<!std::is_same<Object, T>::value>::type * = nullptr>
+	template<typename T, typename std::enable_if_t<!std::is_same<Object, T>::value> * = nullptr>
 	bool match(T *obj) { return obj == obj_; }
 	bool match(Object *object) { return object == object_; }
 

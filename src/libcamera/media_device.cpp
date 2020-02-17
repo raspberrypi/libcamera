@@ -75,6 +75,11 @@ MediaDevice::~MediaDevice()
 	clear();
 }
 
+std::string MediaDevice::logPrefix() const
+{
+	return deviceNode() + "[" + driver() + "]";
+}
+
 /**
  * \brief Claim a device for exclusive use
  *

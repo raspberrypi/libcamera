@@ -16,11 +16,12 @@
 
 #include <libcamera/signal.h>
 
+#include "log.h"
 #include "media_object.h"
 
 namespace libcamera {
 
-class MediaDevice
+class MediaDevice : protected Loggable
 {
 public:
 	MediaDevice(const std::string &deviceNode);
@@ -51,6 +52,9 @@ public:
 	int disableLinks();
 
 	Signal<MediaDevice *> disconnected;
+
+protected:
+	std::string logPrefix() const;
 
 private:
 	std::string driver_;

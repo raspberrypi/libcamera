@@ -17,6 +17,7 @@
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -348,8 +349,9 @@ void MainWindow::stopCapture()
 void MainWindow::saveImageAs()
 {
 	QImage image = viewfinder_->getCurrentImage();
+	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 
-	QString filename = QFileDialog::getSaveFileName(this, "Save Image", "",
+	QString filename = QFileDialog::getSaveFileName(this, "Save Image", defaultPath,
 							"Image Files (*.png *.jpg *.jpeg)");
 
 	std::cout << "Save image to " << filename.toStdString() << std::endl;

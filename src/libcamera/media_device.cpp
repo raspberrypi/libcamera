@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <string>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -231,10 +232,10 @@ int MediaDevice::populate()
 	 */
 	while (true) {
 		topology.topology_version = 0;
-		topology.ptr_entities = reinterpret_cast<__u64>(ents);
-		topology.ptr_interfaces = reinterpret_cast<__u64>(interfaces);
-		topology.ptr_links = reinterpret_cast<__u64>(links);
-		topology.ptr_pads = reinterpret_cast<__u64>(pads);
+		topology.ptr_entities = reinterpret_cast<uintptr_t>(ents);
+		topology.ptr_interfaces = reinterpret_cast<uintptr_t>(interfaces);
+		topology.ptr_links = reinterpret_cast<uintptr_t>(links);
+		topology.ptr_pads = reinterpret_cast<uintptr_t>(pads);
 
 		ret = ioctl(fd_, MEDIA_IOC_G_TOPOLOGY, &topology);
 		if (ret < 0) {

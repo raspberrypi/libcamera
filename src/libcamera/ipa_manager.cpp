@@ -98,31 +98,31 @@ IPAManager::IPAManager()
 	unsigned int ipaCount = 0;
 	int ret;
 
+	/* User-specified paths take precedence. */
+	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
+	if (modulePaths) {
+		for (const auto &dir : utils::split(modulePaths, ":")) {
+			if (dir.empty())
+				continue;
+
+			int ret = addDir(dir.c_str());
+			if (ret > 0)
+				ipaCount += ret;
+		}
+
+		if (!ipaCount)
+			LOG(IPAManager, Warning)
+				<< "No IPA found in '" << modulePaths << "'";
+	}
+
+	/* Load IPAs from the installed system path. */
 	ret = addDir(IPA_MODULE_DIR);
 	if (ret > 0)
 		ipaCount += ret;
 
-	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
-	if (!modulePaths) {
-		if (!ipaCount)
-			LOG(IPAManager, Warning)
-				<< "No IPA found in '" IPA_MODULE_DIR "'";
-		return;
-	}
-
-	for (const auto &dir : utils::split(modulePaths, ":")) {
-		if (dir.empty())
-			continue;
-
-		int ret = addDir(dir.c_str());
-		if (ret > 0)
-			ipaCount += ret;
-	}
-
 	if (!ipaCount)
 		LOG(IPAManager, Warning)
-			<< "No IPA found in '" IPA_MODULE_DIR "' and '"
-			<< modulePaths << "'";
+			<< "No IPA found in '" IPA_MODULE_DIR "'";
 }
 
 IPAManager::~IPAManager()

@@ -67,6 +67,7 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
+
 	case DRM_FORMAT_RGB888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;
@@ -81,6 +82,27 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 		b_pos_ = 2;
 		bpp_ = 3;
 		break;
+	case DRM_FORMAT_ARGB8888:
+		formatFamily_ = RGB;
+		r_pos_ = 2;
+		g_pos_ = 1;
+		b_pos_ = 0;
+		bpp_ = 4;
+		break;
+	case DRM_FORMAT_RGBA8888:
+		formatFamily_ = RGB;
+		r_pos_ = 3;
+		g_pos_ = 2;
+		b_pos_ = 1;
+		bpp_ = 4;
+		break;
+	case DRM_FORMAT_ABGR8888:
+		formatFamily_ = RGB;
+		r_pos_ = 0;
+		g_pos_ = 1;
+		b_pos_ = 2;
+		bpp_ = 4;
+		break;
 	case DRM_FORMAT_BGRA8888:
 		formatFamily_ = RGB;
 		r_pos_ = 1;
@@ -88,6 +110,7 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 		b_pos_ = 3;
 		bpp_ = 4;
 		break;
+
 	case DRM_FORMAT_VYUY:
 		formatFamily_ = YUV;
 		y_pos_ = 1;
@@ -108,9 +131,11 @@ int FormatConverter::configure(unsigned int format, unsigned int width,
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
+
 	case DRM_FORMAT_MJPEG:
 		formatFamily_ = MJPEG;
 		break;
+
 	default:
 		return -EINVAL;
 	};

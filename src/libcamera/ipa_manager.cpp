@@ -96,7 +96,6 @@ LOG_DEFINE_CATEGORY(IPAManager)
 IPAManager::IPAManager()
 {
 	unsigned int ipaCount = 0;
-	int ret;
 
 	/* User-specified paths take precedence. */
 	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
@@ -105,9 +104,7 @@ IPAManager::IPAManager()
 			if (dir.empty())
 				continue;
 
-			int ret = addDir(dir.c_str());
-			if (ret > 0)
-				ipaCount += ret;
+			ipaCount += addDir(dir.c_str());
 		}
 
 		if (!ipaCount)
@@ -116,9 +113,7 @@ IPAManager::IPAManager()
 	}
 
 	/* Load IPAs from the installed system path. */
-	ret = addDir(IPA_MODULE_DIR);
-	if (ret > 0)
-		ipaCount += ret;
+	ipaCount += addDir(IPA_MODULE_DIR);
 
 	if (!ipaCount)
 		LOG(IPAManager, Warning)
@@ -153,17 +148,16 @@ IPAManager *IPAManager::instance()
  * This method tries to create an IPAModule instance for every shared object
  * found in \a libDir, and skips invalid IPA modules.
  *
- * \return Number of modules loaded by this call, or a negative error code
- * otherwise
+ * \return Number of modules loaded by this call
  */
-int IPAManager::addDir(const char *libDir)
+unsigned int IPAManager::addDir(const char *libDir)
 {
 	struct dirent *ent;
 	DIR *dir;
 
 	dir = opendir(libDir);
 	if (!dir)
-		return -errno;
+		return 0;
 
 	std::vector<std::string> paths;
 	while ((ent = readdir(dir)) != nullptr) {

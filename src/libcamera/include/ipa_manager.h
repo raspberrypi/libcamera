@@ -32,7 +32,7 @@ private:
 	IPAManager();
 	~IPAManager();
 
-	int addDir(const char *libDir);
+	unsigned int addDir(const char *libDir);
 };
 
 } /* namespace libcamera */

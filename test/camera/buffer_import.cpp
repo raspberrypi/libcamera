@@ -74,12 +74,15 @@ public:
 
 		video_ = V4L2VideoDevice::fromEntityName(media_.get(), videoDeviceName);
 		if (!video_) {
-			std::cout << "Unable to open " << videoDeviceName << std::endl;
+			std::cout << "Failed to get video device from entity "
+				  << videoDeviceName << std::endl;
 			return TestFail;
 		}
 
-		if (video_->open())
+		if (video_->open()) {
+			std::cout << "Unable to open " << videoDeviceName << std::endl;
 			return TestFail;
+		}
 
 		/* Configure the format. */
 		V4L2DeviceFormat format;

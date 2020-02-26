@@ -335,6 +335,16 @@ public:
 		val->set<T>(value);
 	}
 
+	template<typename T, typename V>
+	void set(const Control<T> &ctrl, const std::initializer_list<V> &value)
+	{
+		ControlValue *val = find(ctrl.id());
+		if (!val)
+			return;
+
+		val->set<T>(Span<const typename std::remove_cv_t<V>>{ value.begin(), value.size() });
+	}
+
 	const ControlValue &get(unsigned int id) const;
 	void set(unsigned int id, const ControlValue &value);
 

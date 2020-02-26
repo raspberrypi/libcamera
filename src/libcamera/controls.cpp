@@ -803,6 +803,12 @@ bool ControlList::contains(unsigned int id) const
  */
 
 /**
+ * \fn template<typename T, typename V> \
+ * void ControlList::set(const Control<T> &ctrl, const std::initializer_list<V> &value)
+ * \copydoc ControlList::set(const Control<T> &ctrl, const V &value)
+ */
+
+/**
  * \brief Get the value of control \a id
  * \param[in] id The control numerical ID
  *

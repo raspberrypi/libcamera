@@ -100,8 +100,22 @@
  *
  * Entries are described by the ipa_control_range_entry structure. They contain
  * the numerical ID and type of the control. The control range data is stored
- * in the data section as described by the ipa_control_range_data structure.
- * The ipa_control_range_entry::offset field stores the offset from the
+ * in the data section as described by the following diagram.
+ *
+ * ~~~~
+ *           +-------------------------+       .
+ *         / | ...                     |       | entry[n].offset
+ *         | +-------------------------+ <-----´
+ *    Data | | minimum value (#n)      | \
+ * section | +-------------------------+ | Entry #n
+ *         | | maximum value (#n)      | /
+ *         | +-------------------------+
+ *         \ | ...                     |
+ *           +-------------------------+
+ * ~~~~
+ *
+ * The minimum and maximum value are stored in the platform's native data
+ * format. The ipa_control_range_entry::offset field stores the offset from the
  * beginning of the data section to the range data.
  *
  * Range data in the data section shall be stored in the same order as the
@@ -163,24 +177,4 @@
  * range data (shall be a multiple of 8 bytes)
  * \var ipa_control_range_entry::padding
  * Padding bytes (shall be set to 0)
- */
-
-/**
- * \union ipa_control_value_data
- * \brief Serialized control value
- * \var ipa_control_value_data::b
- * Value for ControlTypeBool controls
- * \var ipa_control_value_data::i32
- * Value for ControlTypeInteger32 controls
- * \var ipa_control_value_data::i64
- * Value for ControlTypeInteger64 controls
- */
-
-/**
- * \struct ipa_control_range_data
- * \brief Serialized control range
- * \var ipa_control_range_data::min
- * The control minimum value
- * \var ipa_control_range_data::max
- * The control maximum value
  */

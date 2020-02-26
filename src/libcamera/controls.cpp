@@ -53,6 +53,7 @@ namespace {
 static constexpr size_t ControlValueSize[] = {
 	[ControlTypeNone]		= 0,
 	[ControlTypeBool]		= sizeof(bool),
+	[ControlTypeByte]		= sizeof(uint8_t),
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
 	[ControlTypeFloat]		= sizeof(float),
@@ -67,6 +68,8 @@ static constexpr size_t ControlValueSize[] = {
  * Invalid type, for empty values
  * \var ControlTypeBool
  * The control stores a boolean value
+ * \var ControlTypeByte
+ * The control stores a byte value as an unsigned 8-bit integer
  * \var ControlTypeInteger32
  * The control stores a 32-bit integer value
  * \var ControlTypeInteger64
@@ -196,6 +199,11 @@ std::string ControlValue::toString() const
 		case ControlTypeBool: {
 			const bool *value = reinterpret_cast<const bool *>(data);
 			str += *value ? "True" : "False";
+			break;
+		}
+		case ControlTypeByte: {
+			const uint8_t *value = reinterpret_cast<const uint8_t *>(data);
+			str += std::to_string(*value);
 			break;
 		}
 		case ControlTypeInteger32: {
@@ -382,9 +390,9 @@ void ControlValue::set(ControlType type, bool isArray, const void *data,
  * instead of Control.
  *
  * Controls of any type can be defined through template specialisation, but
- * libcamera only supports the bool, int32_t, int64_t and float types natively
- * (this includes types that are equivalent to the supported types, such as int
- * and long int).
+ * libcamera only supports the bool, uint8_t, int32_t, int64_t and float types
+ * natively (this includes types that are equivalent to the supported types,
+ * such as int and long int).
  *
  * Controls IDs shall be unique. While nothing prevents multiple instances of
  * the Control class to be created with the same ID for the same object, doing

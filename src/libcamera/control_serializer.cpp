@@ -153,6 +153,12 @@ void ControlSerializer::store(const ControlValue &value,
 		break;
 	}
 
+	case ControlTypeByte: {
+		uint8_t data = value.get<uint8_t>();
+		buffer.write(&data);
+		break;
+	}
+
 	case ControlTypeInteger32: {
 		int32_t data = value.get<int32_t>();
 		buffer.write(&data);
@@ -327,6 +333,12 @@ ControlValue ControlSerializer::load<ControlValue>(ControlType type,
 	switch (type) {
 	case ControlTypeBool: {
 		bool value;
+		b.read(&value);
+		return ControlValue(value);
+	}
+
+	case ControlTypeByte: {
+		uint8_t value;
 		b.read(&value);
 		return ControlValue(value);
 	}

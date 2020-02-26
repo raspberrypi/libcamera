@@ -22,6 +22,7 @@ class ControlValidator;
 enum ControlType {
 	ControlTypeNone,
 	ControlTypeBool,
+	ControlTypeByte,
 	ControlTypeInteger32,
 	ControlTypeInteger64,
 	ControlTypeFloat,
@@ -41,6 +42,11 @@ struct control_type<void> {
 template<>
 struct control_type<bool> {
 	static constexpr ControlType value = ControlTypeBool;
+};
+
+template<>
+struct control_type<uint8_t> {
+	static constexpr ControlType value = ControlTypeByte;
 };
 
 template<>

@@ -201,13 +201,13 @@ int V4L2Device::getControls(ControlList *ctrls)
 		/* Generic validation error. */
 		if (errorIdx == 0 || errorIdx >= count) {
 			LOG(V4L2, Error) << "Unable to read controls: "
-					 << strerror(ret);
+					 << strerror(-ret);
 			return -EINVAL;
 		}
 
 		/* A specific control failed. */
 		LOG(V4L2, Error) << "Unable to read control " << errorIdx
-				 << ": " << strerror(ret);
+				 << ": " << strerror(-ret);
 		count = errorIdx - 1;
 		ret = errorIdx;
 	}
@@ -291,13 +291,13 @@ int V4L2Device::setControls(ControlList *ctrls)
 		/* Generic validation error. */
 		if (errorIdx == 0 || errorIdx >= count) {
 			LOG(V4L2, Error) << "Unable to set controls: "
-					 << strerror(ret);
+					 << strerror(-ret);
 			return -EINVAL;
 		}
 
 		/* A specific control failed. */
 		LOG(V4L2, Error) << "Unable to set control " << errorIdx
-				 << ": " << strerror(ret);
+				 << ": " << strerror(-ret);
 		count = errorIdx - 1;
 		ret = errorIdx;
 	}

@@ -14,6 +14,13 @@
 
 using namespace libcamera;
 
+enum {
+	SIGNAL_BUFFER_NOTIFY,
+	N_SIGNALS
+};
+
+static guint signals[N_SIGNALS];
+
 struct _GstLibcameraPool {
 	GstBufferPool parent;
 
@@ -55,7 +62,12 @@ static void
 gst_libcamera_pool_release_buffer(GstBufferPool *pool, GstBuffer *buffer)
 {
 	GstLibcameraPool *self = GST_LIBCAMERA_POOL(pool);
+	bool do_notify = gst_atomic_queue_length(self->queue) == 0;
+
 	gst_atomic_queue_push(self->queue, buffer);
+
+	if (do_notify)
+		g_signal_emit(self, signals[SIGNAL_BUFFER_NOTIFY], 0);
 }
 
 static void
@@ -90,6 +102,11 @@ gst_libcamera_pool_class_init(GstLibcameraPoolClass *klass)
 	pool_class->acquire_buffer = gst_libcamera_pool_acquire_buffer;
 	pool_class->reset_buffer = gst_libcamera_pool_reset_buffer;
 	pool_class->release_buffer = gst_libcamera_pool_release_buffer;
+
+	signals[SIGNAL_BUFFER_NOTIFY] = g_signal_new("buffer-notify",
+						     G_OBJECT_CLASS_TYPE(klass), G_SIGNAL_RUN_LAST,
+						     0, nullptr, nullptr, nullptr,
+						     G_TYPE_NONE, 0);
 }
 
 GstLibcameraPool *

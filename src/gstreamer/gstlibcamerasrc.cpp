@@ -439,6 +439,9 @@ gst_libcamera_src_task_enter(GstTask *task, GThread *thread, gpointer user_data)
 		const StreamConfiguration &stream_cfg = state->config_->at(i);
 		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
 								stream_cfg.stream());
+		g_signal_connect_swapped(pool, "buffer-notify",
+					 G_CALLBACK(gst_libcamera_resume_task), task);
+
 		gst_libcamera_pad_set_pool(srcpad, pool);
 		gst_flow_combiner_add_pad(self->flow_combiner, srcpad);
 	}

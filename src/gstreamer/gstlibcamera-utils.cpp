@@ -167,3 +167,14 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 	stream_cfg.size.width = width;
 	stream_cfg.size.height = height;
 }
+
+void
+gst_libcamera_resume_task(GstTask *task)
+{
+	/* We only want to resume the task if it's paused. */
+	GLibLocker lock(GST_OBJECT(task));
+	if (GST_TASK_STATE(task) == GST_TASK_PAUSED) {
+		GST_TASK_STATE(task) = GST_TASK_STARTED;
+		GST_TASK_SIGNAL(task);
+	}
+}

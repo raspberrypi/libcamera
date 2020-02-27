@@ -196,15 +196,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		gst_libcamera_pad_queue_buffer(srcpad, buffer);
 	}
 
-	{
-		/* We only want to resume the task if it's paused. */
-		GstTask *task = src_->task;
-		GLibLocker lock(GST_OBJECT(task));
-		if (GST_TASK_STATE(task) == GST_TASK_PAUSED) {
-			GST_TASK_STATE(task) = GST_TASK_STARTED;
-			GST_TASK_SIGNAL(task);
-		}
-	}
+	gst_libcamera_resume_task(this->src_->task);
 }
 
 static bool

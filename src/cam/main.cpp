@@ -155,7 +155,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 {
 	KeyValueParser streamKeyValue;
 	streamKeyValue.addOption("role", OptionString,
-				 "Role for the stream (viewfinder, video, still)",
+				 "Role for the stream (viewfinder, video, still, stillraw)",
 				 ArgumentRequired);
 	streamKeyValue.addOption("width", OptionInteger, "Width in pixels",
 				 ArgumentRequired);
@@ -219,6 +219,8 @@ int CamApp::prepareConfig()
 				roles.push_back(StreamRole::VideoRecording);
 			} else if (role == "still") {
 				roles.push_back(StreamRole::StillCapture);
+			} else if (role == "stillraw") {
+				roles.push_back(StreamRole::StillCaptureRaw);
 			} else {
 				std::cerr << "Unknown stream role "
 					  << role << std::endl;

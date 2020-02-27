@@ -70,7 +70,6 @@ configure_pipeline() {
 
 	$mediactl -l "'$sensor':0 -> 'rkisp1_isp':0 [1]"
 	$mediactl -l "'rkisp1_isp':2 -> 'rkisp1_resizer_mainpath':0 [1]"
-	$mediactl -l "'rkisp1_resizer_mainpath':1 -> 'rkisp1_mainpath':0 [1]"
 
 	$mediactl -V "\"$sensor\":0 [$format]"
 	$mediactl -V "'rkisp1_isp':0 [$format crop:(0,0)/$sensor_size]"

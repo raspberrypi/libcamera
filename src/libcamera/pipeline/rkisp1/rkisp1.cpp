@@ -872,14 +872,6 @@ int PipelineHandlerRkISP1::initLinks()
 	if (ret < 0)
 		return ret;
 
-	link = media_->link("rkisp1_resizer_mainpath", 1, "rkisp1_mainpath", 0);
-	if (!link)
-		return -ENODEV;
-
-	ret = link->setEnabled(true);
-	if (ret < 0)
-		return ret;
-
 	return 0;
 }
 

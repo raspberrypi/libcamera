@@ -48,6 +48,7 @@ private:
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);
 
+	std::map<unsigned int, struct v4l2_query_ext_ctrl> controlInfo_;
 	std::vector<std::unique_ptr<V4L2ControlId>> controlIds_;
 	ControlInfoMap controls_;
 	std::string deviceNode_;

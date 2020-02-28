@@ -107,10 +107,10 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 
 	StreamConfiguration &cfg = config_[0];
 	const StreamFormats &formats = cfg.formats();
-	const unsigned int pixelFormat = cfg.pixelFormat;
+	const PixelFormat pixelFormat = cfg.pixelFormat;
 	const Size size = cfg.size;
 
-	const std::vector<unsigned int> pixelFormats = formats.pixelformats();
+	const std::vector<PixelFormat> pixelFormats = formats.pixelformats();
 	auto iter = std::find(pixelFormats.begin(), pixelFormats.end(), pixelFormat);
 	if (iter == pixelFormats.end()) {
 		cfg.pixelFormat = pixelFormats.front();

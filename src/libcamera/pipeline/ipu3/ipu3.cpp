@@ -349,7 +349,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 	for (unsigned int i = 0; i < config_.size(); ++i) {
 		StreamConfiguration &cfg = config_[i];
-		const unsigned int pixelFormat = cfg.pixelFormat;
+		const PixelFormat pixelFormat = cfg.pixelFormat;
 		const Size size = cfg.size;
 		const IPU3Stream *stream;
 

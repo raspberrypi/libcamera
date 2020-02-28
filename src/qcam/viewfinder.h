@@ -10,6 +10,8 @@
 #include <QMutex>
 #include <QWidget>
 
+#include <libcamera/pixelformats.h>
+
 #include "format_converter.h"
 
 class QImage;
@@ -20,7 +22,7 @@ public:
 	ViewFinder(QWidget *parent);
 	~ViewFinder();
 
-	int setFormat(unsigned int format, unsigned int width,
+	int setFormat(libcamera::PixelFormat format, unsigned int width,
 		      unsigned int height);
 	void display(const unsigned char *rgb, size_t size);
 
@@ -31,7 +33,7 @@ protected:
 	QSize sizeHint() const override;
 
 private:
-	unsigned int format_;
+	libcamera::PixelFormat format_;
 	unsigned int width_;
 	unsigned int height_;
 

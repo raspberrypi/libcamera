@@ -44,7 +44,7 @@ QImage ViewFinder::getCurrentImage()
 	return image_->copy();
 }
 
-int ViewFinder::setFormat(unsigned int format, unsigned int width,
+int ViewFinder::setFormat(libcamera::PixelFormat format, unsigned int width,
 			  unsigned int height)
 {
 	int ret;

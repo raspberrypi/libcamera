@@ -79,16 +79,16 @@ gst_libcamera_stream_formats_to_caps(const StreamFormats &formats)
 {
 	GstCaps *caps = gst_caps_new_empty();
 
-	for (unsigned int fourcc : formats.pixelformats()) {
-		g_autoptr(GstStructure) bare_s = bare_structure_from_fourcc(fourcc);
+	for (PixelFormat pixelformat : formats.pixelformats()) {
+		g_autoptr(GstStructure) bare_s = bare_structure_from_fourcc(pixelformat);
 
 		if (!bare_s) {
 			GST_WARNING("Unsupported DRM format %" GST_FOURCC_FORMAT,
-				    GST_FOURCC_ARGS(fourcc));
+				    GST_FOURCC_ARGS(pixelformat));
 			continue;
 		}
 
-		for (const Size &size : formats.sizes(fourcc)) {
+		for (const Size &size : formats.sizes(pixelformat)) {
 			GstStructure *s = gst_structure_copy(bare_s);
 			gst_structure_set(s,
 					  "width", G_TYPE_INT, size.width,
@@ -97,7 +97,7 @@ gst_libcamera_stream_formats_to_caps(const StreamFormats &formats)
 			gst_caps_append_structure(caps, s);
 		}
 
-		const SizeRange &range = formats.range(fourcc);
+		const SizeRange &range = formats.range(pixelformat);
 		if (range.hStep && range.vStep) {
 			GstStructure *s = gst_structure_copy(bare_s);
 			GValue val = G_VALUE_INIT;

@@ -106,7 +106,7 @@ private:
 
 namespace {
 
-constexpr std::array<unsigned int, 3> pixelformats{
+constexpr std::array<PixelFormat, 3> pixelformats{
 	DRM_FORMAT_RGB888,
 	DRM_FORMAT_BGR888,
 	DRM_FORMAT_BGRA8888,
@@ -177,7 +177,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	ImageFormats formats;
 
-	for (unsigned int pixelformat : pixelformats) {
+	for (PixelFormat pixelformat : pixelformats) {
 		/* The scaler hardcodes a x3 scale-up ratio. */
 		std::vector<SizeRange> sizes{
 			SizeRange{ 48, 48, 4096, 2160 }

@@ -303,7 +303,7 @@ int CamApp::infoConfiguration()
 		std::cout << index << ": " << cfg.toString() << std::endl;
 
 		const StreamFormats &formats = cfg.formats();
-		for (unsigned int pixelformat : formats.pixelformats()) {
+		for (PixelFormat pixelformat : formats.pixelformats()) {
 			std::cout << " * Pixelformat: 0x" << std::hex
 				  << std::setw(8) << pixelformat << " "
 				  << formats.range(pixelformat).toString()

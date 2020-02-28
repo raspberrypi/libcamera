@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <type_traits>
 
 #include <libcamera/span.h>
 
@@ -44,6 +45,13 @@ public:
 	}
 
 	template<typename T>
+	const std::remove_reference_t<T> *read(size_t count = 1)
+	{
+		using return_type = const std::remove_reference_t<T> *;
+		return reinterpret_cast<return_type>(read(sizeof(T), count));
+	}
+
+	template<typename T>
 	int write(const T *t)
 	{
 		return write(reinterpret_cast<const uint8_t *>(t), sizeof(*t));
@@ -63,6 +71,7 @@ private:
 	void setOverflow();
 
 	int read(uint8_t *data, size_t size);
+	const uint8_t *read(size_t size, size_t count);
 	int write(const uint8_t *data, size_t size);
 
 	ByteStreamBuffer *parent_;

@@ -242,6 +242,19 @@ int ByteStreamBuffer::skip(size_t size)
  */
 
 /**
+ * \fn template<typename T> const T *ByteStreamBuffer::read(size_t count)
+ * \brief Read data from the managed memory buffer without performing a copy
+ * \param[in] count Number of data items to read
+ *
+ * This function reads \a count elements of type \a T from the buffer. Unlike
+ * the other read variants, it doesn't copy the data but returns a pointer to
+ * the first element. If data can't be read for any reason (usually due to
+ * reading more data than available), the function returns nullptr.
+ *
+ * \return A pointer to the data on success, or nullptr otherwise
+ */
+
+/**
  * \fn template<typename T> int ByteStreamBuffer::write(const T *t)
  * \brief Write \a t to the managed memory buffer
  * \param[in] t The data to write to memory
@@ -258,6 +271,32 @@ int ByteStreamBuffer::skip(size_t size)
  * \retval -EACCES attempting to write to a read buffer
  * \retval -ENOSPC no more space is available in the managed memory buffer
  */
+
+const uint8_t *ByteStreamBuffer::read(size_t size, size_t count)
+{
+	if (!read_)
+		return nullptr;
+
+	if (overflow_)
+		return nullptr;
+
+	size_t bytes;
+	if (__builtin_mul_overflow(size, count, &bytes)) {
+		setOverflow();
+		return nullptr;
+	}
+
+	if (read_ + bytes > base_ + size_) {
+		LOG(Serialization, Error)
+			<< "Unable to read " << bytes << " bytes: out of bounds";
+		setOverflow();
+		return nullptr;
+	}
+
+	const uint8_t *data = read_;
+	read_ += bytes;
+	return data;
+}
 
 int ByteStreamBuffer::read(uint8_t *data, size_t size)
 {

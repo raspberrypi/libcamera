@@ -190,6 +190,15 @@ Span<const uint8_t> ControlValue::data() const
 }
 
 /**
+ * \copydoc ControlValue::data() const
+ */
+Span<uint8_t> ControlValue::data()
+{
+	Span<const uint8_t> data = const_cast<const ControlValue *>(this)->data();
+	return { const_cast<uint8_t *>(data.data()), data.size() };
+}
+
+/**
  * \brief Assemble and return a string describing the value
  * \return A string describing the ControlValue
  */
@@ -312,23 +321,44 @@ void ControlValue::set(ControlType type, bool isArray, const void *data,
 {
 	ASSERT(elementSize == ControlValueSize[type]);
 
-	release();
+	reserve(type, isArray, numElements);
+
+	Span<uint8_t> storage = ControlValue::data();
+	memcpy(storage.data(), data, storage.size());
+}
+
+/**
+ * \brief Set the control type and reserve memory
+ * \param[in] type The control type
+ * \param[in] isArray True to make the value an array
+ * \param[in] numElements The number of elements
+ *
+ * This function sets the type of the control value to \a type, and reserves
+ * memory to store the control value. If \a isArray is true, the instance
+ * becomes an array control and storage for \a numElements is reserved.
+ * Otherwise the instance becomes a simple control, numElements is ignored, and
+ * storage for the single element is reserved.
+ */
+void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElements)
+{
+	if (!isArray)
+		numElements = 1;
+
+	std::size_t oldSize = numElements_ * ControlValueSize[type_];
+	std::size_t newSize = numElements * ControlValueSize[type];
+
+	if (oldSize != newSize)
+		release();
 
 	type_ = type;
-	numElements_ = numElements;
 	isArray_ = isArray;
+	numElements_ = numElements;
 
-	std::size_t size = elementSize * numElements;
-	void *storage;
+	if (oldSize == newSize)
+		return;
 
-	if (size > sizeof(value_)) {
-		storage_ = reinterpret_cast<void *>(new uint8_t[size]);
-		storage = storage_;
-	} else {
-		storage = reinterpret_cast<void *>(&value_);
-	}
-
-	memcpy(storage, data, size);
+	if (newSize > sizeof(value_))
+		storage_ = reinterpret_cast<void *>(new uint8_t[newSize]);
 }
 
 /**

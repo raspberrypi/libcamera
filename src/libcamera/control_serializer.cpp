@@ -295,70 +295,17 @@ int ControlSerializer::serialize(const ControlList &list,
 	return 0;
 }
 
-template<typename T>
-ControlValue ControlSerializer::loadControlValue(ByteStreamBuffer &buffer,
-						 bool isArray,
-						 unsigned int count)
-{
-	ControlValue value;
-
-	const T *data = buffer.read<T>(count);
-	if (!data)
-		return value;
-
-	if (isArray)
-		value.set(Span<const T>{ data, count });
-	else
-		value.set(*data);
-
-	return value;
-}
-
-template<>
-ControlValue ControlSerializer::loadControlValue<std::string>(ByteStreamBuffer &buffer,
-						 bool isArray,
-						 unsigned int count)
-{
-	ControlValue value;
-
-	const char *data = buffer.read<char>(count);
-	if (!data)
-		return value;
-
-	value.set(std::string{ data, count });
-
-	return value;
-}
-
 ControlValue ControlSerializer::loadControlValue(ControlType type,
 						 ByteStreamBuffer &buffer,
 						 bool isArray,
 						 unsigned int count)
 {
-	switch (type) {
-	case ControlTypeBool:
-		return loadControlValue<bool>(buffer, isArray, count);
+	ControlValue value;
 
-	case ControlTypeByte:
-		return loadControlValue<uint8_t>(buffer, isArray, count);
+	value.reserve(type, isArray, count);
+	buffer.read(value.data());
 
-	case ControlTypeInteger32:
-		return loadControlValue<int32_t>(buffer, isArray, count);
-
-	case ControlTypeInteger64:
-		return loadControlValue<int64_t>(buffer, isArray, count);
-
-	case ControlTypeFloat:
-		return loadControlValue<float>(buffer, isArray, count);
-
-	case ControlTypeString:
-		return loadControlValue<std::string>(buffer, isArray, count);
-
-	case ControlTypeNone:
-		return ControlValue();
-	}
-
-	return ControlValue();
+	return value;
 }
 
 ControlInfo ControlSerializer::loadControlInfo(ControlType type,

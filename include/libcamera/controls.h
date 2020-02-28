@@ -115,6 +115,7 @@ public:
 	bool isArray() const { return isArray_; }
 	std::size_t numElements() const { return numElements_; }
 	Span<const uint8_t> data() const;
+	Span<uint8_t> data();
 
 	std::string toString() const;
 
@@ -173,6 +174,9 @@ public:
 		set(details::control_type<std::remove_cv_t<T>>::value, true,
 		    value.data(), value.size(), sizeof(typename T::value_type));
 	}
+
+	void reserve(ControlType type, bool isArray = false,
+		     std::size_t numElements = 1);
 
 private:
 	ControlType type_ : 8;

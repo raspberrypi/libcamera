@@ -40,9 +40,6 @@ private:
 	static void store(const ControlValue &value, ByteStreamBuffer &buffer);
 	static void store(const ControlInfo &info, ByteStreamBuffer &buffer);
 
-	template<typename T>
-	ControlValue loadControlValue(ByteStreamBuffer &buffer, bool isArray,
-				      unsigned int count);
 	ControlValue loadControlValue(ControlType type, ByteStreamBuffer &buffer,
 				      bool isArray = false, unsigned int count = 1);
 	ControlInfo loadControlInfo(ControlType type, ByteStreamBuffer &buffer);

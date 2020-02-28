@@ -289,6 +289,62 @@ extern "C" {
 #define DRM_FORMAT_MJPEG	fourcc_code('M', 'J', 'P', 'G') /* Motion-JPEG */
 
 /*
+ * Bayer formats
+ *
+ * Bayer formats contain green, red and blue components, with alternating lines
+ * of red and green, and blue and green pixels in different orders. For each
+ * block of 2x2 pixels there is one pixel with a red filter, two with a green
+ * filter, and one with a blue filter. The filters can be arranged in different
+ * patterns.
+ *
+ * For example, RGGB:
+ *	row0: RGRGRGRG...
+ *	row1: GBGBGBGB...
+ *	row3: RGRGRGRG...
+ *	row4: GBGBGBGB...
+ *	...
+ *
+ * Vendors have different methods to pack the sampling formats to increase data
+ * density. For this reason the fourcc only describes pixel sample size and the
+ * filter pattern for each block of 2x2 pixels. A modifier is needed to
+ * describe the memory layout.
+ *
+ * In addition to vendor modifiers for memory layout DRM_FORMAT_MOD_LINEAR may
+ * be used to describe a layout where all samples are placed consecutively in
+ * memory. If the sample does not fit inside a single byte, the sample storage
+ * is extended to the minimum number of (little endian) bytes that can hold the
+ * sample and any unused most-significant bits are defined as padding.
+ *
+ * For example, SRGGB10:
+ * Each 10-bit sample is contained in 2 consecutive little endian bytes, where
+ * the 6 most-significant bits are unused.
+ */
+
+/* 8-bit Bayer formats */
+#define DRM_FORMAT_SRGGB8	fourcc_code('R', 'G', 'G', 'B')
+#define DRM_FORMAT_SGRBG8	fourcc_code('G', 'R', 'B', 'G')
+#define DRM_FORMAT_SGBRG8	fourcc_code('G', 'B', 'R', 'G')
+#define DRM_FORMAT_SBGGR8	fourcc_code('B', 'A', '8', '1')
+
+/* 10-bit Bayer formats */
+#define DRM_FORMAT_SRGGB10	fourcc_code('R', 'G', '1', '0')
+#define DRM_FORMAT_SGRBG10	fourcc_code('B', 'A', '1', '0')
+#define DRM_FORMAT_SGBRG10	fourcc_code('G', 'B', '1', '0')
+#define DRM_FORMAT_SBGGR10	fourcc_code('B', 'G', '1', '0')
+
+/* 12-bit Bayer formats */
+#define DRM_FORMAT_SRGGB12	fourcc_code('R', 'G', '1', '2')
+#define DRM_FORMAT_SGRBG12	fourcc_code('B', 'A', '1', '2')
+#define DRM_FORMAT_SGBRG12	fourcc_code('G', 'B', '1', '2')
+#define DRM_FORMAT_SBGGR12	fourcc_code('B', 'G', '1', '2')
+
+/* 14-bit Bayer formats */
+#define DRM_FORMAT_SRGGB14	fourcc_code('R', 'G', '1', '4')
+#define DRM_FORMAT_SGRBG14	fourcc_code('B', 'A', '1', '4')
+#define DRM_FORMAT_SGBRG14	fourcc_code('G', 'B', '1', '4')
+#define DRM_FORMAT_SBGGR14	fourcc_code('B', 'G', '1', '4')
+
+/*
  * Format Modifiers:
  *
  * Format modifiers describe, typically, a re-ordering or modification
@@ -311,6 +367,7 @@ extern "C" {
 #define DRM_FORMAT_MOD_VENDOR_BROADCOM 0x07
 #define DRM_FORMAT_MOD_VENDOR_ARM     0x08
 #define DRM_FORMAT_MOD_VENDOR_ALLWINNER 0x09
+#define DRM_FORMAT_MOD_VENDOR_MIPI 0x0a
 
 /* add more to the end as needed */
 
@@ -411,6 +468,16 @@ extern "C" {
  */
 #define I915_FORMAT_MOD_Y_TILED_CCS	fourcc_mod_code(INTEL, 4)
 #define I915_FORMAT_MOD_Yf_TILED_CCS	fourcc_mod_code(INTEL, 5)
+
+/*
+ * IPU3 Bayer packing layout
+ *
+ * The IPU3 raw Bayer formats use a custom packing layout where there are no
+ * gaps between each 10-bit sample. It packs 25 pixels into 32 bytes leaving
+ * the 6 most significant bits in the last byte unused. The format is little
+ * endian.
+ */
+#define IPU3_FORMAT_MOD_PACKED fourcc_mod_code(INTEL, 8)
 
 /*
  * Tiled, NV12MT, grouped in 64 (pixels) x 32 (lines) -sized macroblocks
@@ -757,6 +824,33 @@ extern "C" {
  * both in row-major order.
  */
 #define DRM_FORMAT_MOD_ALLWINNER_TILED fourcc_mod_code(ALLWINNER, 1)
+
+/* Mobile Industry Processor Interface (MIPI) modifiers */
+
+/*
+ * MIPI CSI-2 packing layout
+ *
+ * The CSI-2 RAW formats (for example Bayer) use a different packing layout
+ * depenindg on the sample size.
+ *
+ * - 10-bits per sample
+ *   Every four consecutive samples are packed into 5 bytes. Each of the first 4
+ *   bytes contain the 8 high order bits of the pixels, and the 5th byte
+ *   contains the 2 least-significant bits of each pixel, in the same order.
+ *
+ * - 12-bits per sample
+ *   Every two consecutive samples are packed into three bytes. Each of the
+ *   first two bytes contain the 8 high order bits of the pixels, and the third
+ *   byte contains the four least-significant bits of each pixel, in the same
+ *   order.
+ *
+ * - 14-bits per sample
+ *   Every four consecutive samples are packed into seven bytes. Each of the
+ *   first four bytes contain the eight high order bits of the pixels, and the
+ *   three following bytes contains the six least-significant bits of each
+ *   pixel, in the same order.
+ */
+#define MIPI_FORMAT_MOD_CSI2_PACKED fourcc_mod_code(MIPI, 1)
 
 #if defined(__cplusplus)
 }

@@ -7,6 +7,8 @@
 #ifndef __LIBCAMERA_IPA_CONTROLS_H__
 #define __LIBCAMERA_IPA_CONTROLS_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

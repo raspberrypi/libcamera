@@ -2,8 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_controls.h - IPA control handling
+ * ipa_controls.cpp - IPA control handling
  */
+
+#include <ipa/ipa_controls.h>
 
 /**
  * \file ipa_controls.h

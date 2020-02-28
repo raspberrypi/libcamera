@@ -366,39 +366,46 @@ ControlRange ControlSerializer::load<ControlRange>(ControlType type,
 template<>
 ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &buffer)
 {
-	struct ipa_controls_header hdr;
-	buffer.read(&hdr);
-
-	if (hdr.version != IPA_CONTROLS_FORMAT_VERSION) {
-		LOG(Serializer, Error)
-			<< "Unsupported controls format version "
-			<< hdr.version;
+	const struct ipa_controls_header *hdr = buffer.read<decltype(*hdr)>();
+	if (!hdr) {
+		LOG(Serializer, Error) << "Out of data";
 		return {};
 	}
 
-	ByteStreamBuffer entries = buffer.carveOut(hdr.data_offset - sizeof(hdr));
-	ByteStreamBuffer values = buffer.carveOut(hdr.size - hdr.data_offset);
+	if (hdr->version != IPA_CONTROLS_FORMAT_VERSION) {
+		LOG(Serializer, Error)
+			<< "Unsupported controls format version "
+			<< hdr->version;
+		return {};
+	}
+
+	ByteStreamBuffer entries = buffer.carveOut(hdr->data_offset - sizeof(*hdr));
+	ByteStreamBuffer values = buffer.carveOut(hdr->size - hdr->data_offset);
 
 	if (buffer.overflow()) {
-		LOG(Serializer, Error) << "Serialized packet too small";
+		LOG(Serializer, Error) << "Out of data";
 		return {};
 	}
 
 	ControlInfoMap::Map ctrls;
 
-	for (unsigned int i = 0; i < hdr.entries; ++i) {
-		struct ipa_control_range_entry entry;
-		entries.read(&entry);
+	for (unsigned int i = 0; i < hdr->entries; ++i) {
+		const struct ipa_control_range_entry *entry =
+			entries.read<decltype(*entry)>();
+		if (!entry) {
+			LOG(Serializer, Error) << "Out of data";
+			return {};
+		}
 
 		/* Create and cache the individual ControlId. */
-		ControlType type = static_cast<ControlType>(entry.type);
+		ControlType type = static_cast<ControlType>(entry->type);
 		/**
 		 * \todo Find a way to preserve the control name for debugging
 		 * purpose.
 		 */
-		controlIds_.emplace_back(std::make_unique<ControlId>(entry.id, "", type));
+		controlIds_.emplace_back(std::make_unique<ControlId>(entry->id, "", type));
 
-		if (entry.offset != values.offset()) {
+		if (entry->offset != values.offset()) {
 			LOG(Serializer, Error)
 				<< "Bad data, entry offset mismatch (entry "
 				<< i << ")";
@@ -414,8 +421,8 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	 * Create the ControlInfoMap in the cache, and store the map to handle
 	 * association.
 	 */
-	ControlInfoMap &map = infoMaps_[hdr.handle] = std::move(ctrls);
-	infoMapHandles_[&map] = hdr.handle;
+	ControlInfoMap &map = infoMaps_[hdr->handle] = std::move(ctrls);
+	infoMapHandles_[&map] = hdr->handle;
 
 	return map;
 }
@@ -432,21 +439,24 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 template<>
 ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer)
 {
-	struct ipa_controls_header hdr;
-	buffer.read(&hdr);
-
-	if (hdr.version != IPA_CONTROLS_FORMAT_VERSION) {
-		LOG(Serializer, Error)
-			<< "Unsupported controls format version "
-			<< hdr.version;
+	const struct ipa_controls_header *hdr = buffer.read<decltype(*hdr)>();
+	if (!hdr) {
+		LOG(Serializer, Error) << "Out of data";
 		return {};
 	}
 
-	ByteStreamBuffer entries = buffer.carveOut(hdr.data_offset - sizeof(hdr));
-	ByteStreamBuffer values = buffer.carveOut(hdr.size - hdr.data_offset);
+	if (hdr->version != IPA_CONTROLS_FORMAT_VERSION) {
+		LOG(Serializer, Error)
+			<< "Unsupported controls format version "
+			<< hdr->version;
+		return {};
+	}
+
+	ByteStreamBuffer entries = buffer.carveOut(hdr->data_offset - sizeof(*hdr));
+	ByteStreamBuffer values = buffer.carveOut(hdr->size - hdr->data_offset);
 
 	if (buffer.overflow()) {
-		LOG(Serializer, Error) << "Serialized packet too small";
+		LOG(Serializer, Error) << "Out of data";
 		return {};
 	}
 
@@ -458,10 +468,10 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 	 * use the global control::control idmap.
 	 */
 	const ControlInfoMap *infoMap;
-	if (hdr.handle) {
+	if (hdr->handle) {
 		auto iter = std::find_if(infoMapHandles_.begin(), infoMapHandles_.end(),
 					 [&](decltype(infoMapHandles_)::value_type &entry) {
-						 return entry.second == hdr.handle;
+						 return entry.second == hdr->handle;
 					 });
 		if (iter == infoMapHandles_.end()) {
 			LOG(Serializer, Error)
@@ -476,19 +486,23 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 
 	ControlList ctrls(infoMap ? infoMap->idmap() : controls::controls);
 
-	for (unsigned int i = 0; i < hdr.entries; ++i) {
-		struct ipa_control_value_entry entry;
-		entries.read(&entry);
+	for (unsigned int i = 0; i < hdr->entries; ++i) {
+		const struct ipa_control_value_entry *entry =
+			entries.read<decltype(*entry)>();
+		if (!entry) {
+			LOG(Serializer, Error) << "Out of data";
+			return {};
+		}
 
-		if (entry.offset != values.offset()) {
+		if (entry->offset != values.offset()) {
 			LOG(Serializer, Error)
 				<< "Bad data, entry offset mismatch (entry "
 				<< i << ")";
 			return {};
 		}
 
-		ControlType type = static_cast<ControlType>(entry.type);
-		ctrls.set(entry.id, load<ControlValue>(type, values));
+		ControlType type = static_cast<ControlType>(entry->type);
+		ctrls.set(entry->id, load<ControlValue>(type, values));
 	}
 
 	return ctrls;

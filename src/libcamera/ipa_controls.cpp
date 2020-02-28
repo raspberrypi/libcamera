@@ -153,6 +153,9 @@
  * Reserved for future extensions
  */
 
+static_assert(sizeof(ipa_controls_header) == 32,
+	      "Invalid ABI size change for struct ipa_control_header");
+
 /**
  * \struct ipa_control_value_entry
  * \brief Description of a serialized ControlValue entry
@@ -167,6 +170,9 @@
  * value data (shall be a multiple of 8 bytes).
  */
 
+static_assert(sizeof(ipa_control_value_entry) == 16,
+	      "Invalid ABI size change for struct ipa_control_value_entry");
+
 /**
  * \struct ipa_control_range_entry
  * \brief Description of a serialized ControlRange entry
@@ -180,3 +186,6 @@
  * \var ipa_control_range_entry::padding
  * Padding bytes (shall be set to 0)
  */
+
+static_assert(sizeof(ipa_control_range_entry) == 16,
+	      "Invalid ABI size change for struct ipa_control_range_entry");

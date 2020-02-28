@@ -26,9 +26,11 @@ struct ipa_controls_header {
 
 struct ipa_control_value_entry {
 	uint32_t id;
-	uint32_t type;
-	uint32_t count;
+	uint8_t type;
+	uint8_t is_array;
+	uint16_t count;
 	uint32_t offset;
+	uint32_t padding[1];
 };
 
 struct ipa_control_range_entry {

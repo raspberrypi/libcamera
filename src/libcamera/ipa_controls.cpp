@@ -163,11 +163,15 @@ static_assert(sizeof(ipa_controls_header) == 32,
  * The numerical ID of the control
  * \var ipa_control_value_entry::type
  * The type of the control (defined by enum ControlType)
+ * \var ipa_control_value_entry::is_array
+ * True if the control value stores an array, false otherwise
  * \var ipa_control_value_entry::count
  * The number of control array entries for array controls (1 otherwise)
  * \var ipa_control_value_entry::offset
  * The offset in bytes from the beginning of the data section to the control
  * value data (shall be a multiple of 8 bytes).
+ * \var ipa_control_value_entry::padding
+ * Padding bytes (shall be set to 0)
  */
 
 static_assert(sizeof(ipa_control_value_entry) == 16,

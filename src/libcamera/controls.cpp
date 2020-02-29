@@ -58,6 +58,8 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeInteger64]		= sizeof(int64_t),
 	[ControlTypeFloat]		= sizeof(float),
 	[ControlTypeString]		= sizeof(char),
+	[ControlTypeRectangle]		= sizeof(Rectangle),
+	[ControlTypeSize]		= sizeof(Size),
 };
 
 } /* namespace */
@@ -240,6 +242,16 @@ std::string ControlValue::toString() const
 		case ControlTypeFloat: {
 			const float *value = reinterpret_cast<const float *>(data);
 			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeRectangle: {
+			const Rectangle *value = reinterpret_cast<const Rectangle *>(data);
+			str += value->toString();
+			break;
+		}
+		case ControlTypeSize: {
+			const Size *value = reinterpret_cast<const Size *>(data);
+			str += value->toString();
 			break;
 		}
 		case ControlTypeNone:

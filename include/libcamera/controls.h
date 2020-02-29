@@ -13,6 +13,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <libcamera/geometry.h>
 #include <libcamera/span.h>
 
 namespace libcamera {
@@ -27,6 +28,8 @@ enum ControlType {
 	ControlTypeInteger64,
 	ControlTypeFloat,
 	ControlTypeString,
+	ControlTypeRectangle,
+	ControlTypeSize,
 };
 
 namespace details {
@@ -68,6 +71,16 @@ struct control_type<float> {
 template<>
 struct control_type<std::string> {
 	static constexpr ControlType value = ControlTypeString;
+};
+
+template<>
+struct control_type<Rectangle> {
+	static constexpr ControlType value = ControlTypeRectangle;
+};
+
+template<>
+struct control_type<Size> {
+	static constexpr ControlType value = ControlTypeSize;
 };
 
 template<typename T, std::size_t N>

@@ -57,6 +57,7 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
 	[ControlTypeFloat]		= sizeof(float),
+	[ControlTypeString]		= sizeof(char),
 };
 
 } /* namespace */
@@ -76,6 +77,8 @@ static constexpr size_t ControlValueSize[] = {
  * The control stores a 64-bit integer value
  * \var ControlTypeFloat
  * The control stores a 32-bit floating point value
+ * \var ControlTypeString
+ * The control stores a string value as an array of char
  */
 
 /**
@@ -164,7 +167,8 @@ ControlValue &ControlValue::operator=(const ControlValue &other)
  * \brief Retrieve the number of elements stored in the ControlValue
  *
  * For instances storing an array, this function returns the number of elements
- * in the array. Otherwise, it returns 1.
+ * in the array. For instances storing a string, it returns the length of the
+ * string, not counting the terminating '\0'. Otherwise, it returns 1.
  *
  * \return The number of elements stored in the ControlValue
  */
@@ -192,6 +196,11 @@ std::string ControlValue::toString() const
 		return "<ValueType Error>";
 
 	const uint8_t *data = ControlValue::data().data();
+
+	if (type_ == ControlTypeString)
+		return std::string(reinterpret_cast<const char *>(data),
+				   numElements_);
+
 	std::string str(isArray_ ? "[ " : "");
 
 	for (unsigned int i = 0; i < numElements_; ++i) {
@@ -222,6 +231,7 @@ std::string ControlValue::toString() const
 			break;
 		}
 		case ControlTypeNone:
+		case ControlTypeString:
 			break;
 		}
 
@@ -439,12 +449,22 @@ ControlInfo::ControlInfo(const ControlValue &min,
 /**
  * \fn ControlInfo::min()
  * \brief Retrieve the minimum value of the control
+ *
+ * For string controls, this is the minimum length of the string, not counting
+ * the terminating '\0'. For all other control types, this is the minimum value
+ * of each element.
+ *
  * \return A ControlValue with the minimum value for the control
  */
 
 /**
  * \fn ControlInfo::max()
  * \brief Retrieve the maximum value of the control
+ *
+ * For string controls, this is the maximum length of the string, not counting
+ * the terminating '\0'. For all other control types, this is the maximum value
+ * of each element.
+ *
  * \return A ControlValue with the maximum value for the control
  */
 
@@ -653,7 +673,16 @@ void ControlInfoMap::generateIdmap()
 	idmap_.clear();
 
 	for (const auto &ctrl : *this) {
-		if (ctrl.first->type() != ctrl.second.min().type()) {
+		/*
+		 * For string controls, min and max define the valid
+		 * range for the string size, not for the individual
+		 * values.
+		 */
+		ControlType rangeType = ctrl.first->type() == ControlTypeString
+				      ? ControlTypeInteger32 : ctrl.first->type();
+		const ControlInfo &info = ctrl.second;
+
+		if (info.min().type() != rangeType) {
 			LOG(Controls, Error)
 				<< "Control " << utils::hex(ctrl.first->id())
 				<< " type and info type mismatch";

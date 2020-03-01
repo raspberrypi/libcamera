@@ -42,10 +42,11 @@ ${description}
         name, ctrl = ctrl.popitem()
         id_name = snake_case(name).upper()
 
-        if ctrl.get('size'):
-            ctrl_type = 'Span<const %s>' % ctrl['type']
-        else:
-            ctrl_type = ctrl['type']
+        ctrl_type = ctrl['type']
+        if ctrl_type == 'string':
+            ctrl_type = 'std::string'
+        elif ctrl.get('size'):
+            ctrl_type = 'Span<const %s>' % ctrl_type
 
         info = {
             'name': name,
@@ -97,10 +98,11 @@ def generate_h(controls):
 
         ids.append('\t' + id_name + ' = ' + str(id_value) + ',')
 
-        if ctrl.get('size'):
-            ctrl_type = 'Span<const %s>' % ctrl['type']
-        else:
-            ctrl_type = ctrl['type']
+        ctrl_type = ctrl['type']
+        if ctrl_type == 'string':
+            ctrl_type = 'std::string'
+        elif ctrl.get('size'):
+            ctrl_type = 'Span<const %s>' % ctrl_type
 
         info = {
             'name': name,

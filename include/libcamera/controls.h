@@ -26,6 +26,7 @@ enum ControlType {
 	ControlTypeInteger32,
 	ControlTypeInteger64,
 	ControlTypeFloat,
+	ControlTypeString,
 };
 
 namespace details {
@@ -64,6 +65,11 @@ struct control_type<float> {
 	static constexpr ControlType value = ControlTypeFloat;
 };
 
+template<>
+struct control_type<std::string> {
+	static constexpr ControlType value = ControlTypeString;
+};
+
 template<typename T, std::size_t N>
 struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
 };
@@ -76,7 +82,9 @@ public:
 	ControlValue();
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 	ControlValue(const T &value)
 		: type_(ControlTypeNone), numElements_(0)
 	{
@@ -84,7 +92,9 @@ public:
 		    &value, 1, sizeof(T));
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>
 #endif
@@ -115,7 +125,9 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 	T get() const
 	{
 		assert(type_ == details::control_type<std::remove_cv_t<T>>::value);
@@ -124,7 +136,9 @@ public:
 		return *reinterpret_cast<const T *>(data().data());
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>
 #endif
@@ -139,14 +153,18 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 	void set(const T &value)
 	{
 		set(details::control_type<std::remove_cv_t<T>>::value, false,
 		    reinterpret_cast<const void *>(&value), 1, sizeof(T));
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span<T>::value, std::nullptr_t> = nullptr>
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
+						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>
 #endif

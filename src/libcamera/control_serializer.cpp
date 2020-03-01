@@ -314,6 +314,22 @@ ControlValue ControlSerializer::loadControlValue(ByteStreamBuffer &buffer,
 	return value;
 }
 
+template<>
+ControlValue ControlSerializer::loadControlValue<std::string>(ByteStreamBuffer &buffer,
+						 bool isArray,
+						 unsigned int count)
+{
+	ControlValue value;
+
+	const char *data = buffer.read<char>(count);
+	if (!data)
+		return value;
+
+	value.set(std::string{ data, count });
+
+	return value;
+}
+
 ControlValue ControlSerializer::loadControlValue(ControlType type,
 						 ByteStreamBuffer &buffer,
 						 bool isArray,
@@ -335,6 +351,9 @@ ControlValue ControlSerializer::loadControlValue(ControlType type,
 	case ControlTypeFloat:
 		return loadControlValue<float>(buffer, isArray, count);
 
+	case ControlTypeString:
+		return loadControlValue<std::string>(buffer, isArray, count);
+
 	case ControlTypeNone:
 		return ControlValue();
 	}
@@ -345,6 +364,9 @@ ControlValue ControlSerializer::loadControlValue(ControlType type,
 ControlInfo ControlSerializer::loadControlInfo(ControlType type,
 					       ByteStreamBuffer &b)
 {
+	if (type == ControlTypeString)
+		type = ControlTypeInteger32;
+
 	ControlValue min = loadControlValue(type, b);
 	ControlValue max = loadControlValue(type, b);
 

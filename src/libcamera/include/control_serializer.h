@@ -24,10 +24,10 @@ public:
 
 	void reset();
 
-	static size_t binarySize(const ControlInfoMap &info);
+	static size_t binarySize(const ControlInfoMap &infoMap);
 	static size_t binarySize(const ControlList &list);
 
-	int serialize(const ControlInfoMap &info, ByteStreamBuffer &buffer);
+	int serialize(const ControlInfoMap &infoMap, ByteStreamBuffer &buffer);
 	int serialize(const ControlList &list, ByteStreamBuffer &buffer);
 
 	template<typename T>

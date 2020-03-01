@@ -313,7 +313,7 @@ private:
 public:
 	ControlList();
 	ControlList(const ControlIdMap &idmap, ControlValidator *validator = nullptr);
-	ControlList(const ControlInfoMap &info, ControlValidator *validator = nullptr);
+	ControlList(const ControlInfoMap &infoMap, ControlValidator *validator = nullptr);
 
 	using iterator = ControlListMap::iterator;
 	using const_iterator = ControlListMap::const_iterator;

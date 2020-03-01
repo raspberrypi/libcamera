@@ -26,27 +26,27 @@ public:
 protected:
 	int run()
 	{
-		const ControlInfoMap &info = capture_->controls();
+		const ControlInfoMap &infoMap = capture_->controls();
 
 		/* Test control enumeration. */
-		if (info.empty()) {
+		if (infoMap.empty()) {
 			cerr << "Failed to enumerate controls" << endl;
 			return TestFail;
 		}
 
-		if (info.find(V4L2_CID_BRIGHTNESS) == info.end() ||
-		    info.find(V4L2_CID_CONTRAST) == info.end() ||
-		    info.find(V4L2_CID_SATURATION) == info.end()) {
+		if (infoMap.find(V4L2_CID_BRIGHTNESS) == infoMap.end() ||
+		    infoMap.find(V4L2_CID_CONTRAST) == infoMap.end() ||
+		    infoMap.find(V4L2_CID_SATURATION) == infoMap.end()) {
 			cerr << "Missing controls" << endl;
 			return TestFail;
 		}
 
-		const ControlRange &brightness = info.find(V4L2_CID_BRIGHTNESS)->second;
-		const ControlRange &contrast = info.find(V4L2_CID_CONTRAST)->second;
-		const ControlRange &saturation = info.find(V4L2_CID_SATURATION)->second;
+		const ControlRange &brightness = infoMap.find(V4L2_CID_BRIGHTNESS)->second;
+		const ControlRange &contrast = infoMap.find(V4L2_CID_CONTRAST)->second;
+		const ControlRange &saturation = infoMap.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
-		ControlList ctrls(info);
+		ControlList ctrls(infoMap);
 		ctrls.set(V4L2_CID_BRIGHTNESS, -1);
 		ctrls.set(V4L2_CID_CONTRAST, -1);
 		ctrls.set(V4L2_CID_SATURATION, -1);

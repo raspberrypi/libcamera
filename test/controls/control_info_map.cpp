@@ -36,41 +36,41 @@ protected:
 
 	int run() override
 	{
-		const ControlInfoMap &info = camera_->controls();
+		const ControlInfoMap &infoMap = camera_->controls();
 
 		/* Test looking up a valid control by ControlId. */
-		if (info.count(&controls::Brightness) != 1) {
+		if (infoMap.count(&controls::Brightness) != 1) {
 			cerr << "count() on valid control failed" << endl;
 			return TestFail;
 		}
 
-		if (info.find(&controls::Brightness) == info.end()) {
+		if (infoMap.find(&controls::Brightness) == infoMap.end()) {
 			cerr << "find() on valid control failed" << endl;
 			return TestFail;
 		}
 
-		info.at(&controls::Brightness);
+		infoMap.at(&controls::Brightness);
 
 		/* Test looking up a valid control by numerical ID. */
-		if (info.count(controls::Brightness.id()) != 1) {
+		if (infoMap.count(controls::Brightness.id()) != 1) {
 			cerr << "count() on valid ID failed" << endl;
 			return TestFail;
 		}
 
-		if (info.find(controls::Brightness.id()) == info.end()) {
+		if (infoMap.find(controls::Brightness.id()) == infoMap.end()) {
 			cerr << "find() on valid ID failed" << endl;
 			return TestFail;
 		}
 
-		info.at(controls::Brightness.id());
+		infoMap.at(controls::Brightness.id());
 
 		/* Test looking up an invalid control by numerical ID. */
-		if (info.count(12345) != 0) {
+		if (infoMap.count(12345) != 0) {
 			cerr << "count() on invalid ID failed" << endl;
 			return TestFail;
 		}
 
-		if (info.find(12345) != info.end()) {
+		if (infoMap.find(12345) != infoMap.end()) {
 			cerr << "find() on invalid ID failed" << endl;
 			return TestFail;
 		}

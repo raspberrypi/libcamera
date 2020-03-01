@@ -106,19 +106,19 @@ size_t ControlSerializer::binarySize(const ControlRange &range)
 
 /**
  * \brief Retrieve the size in bytes required to serialize a ControlInfoMap
- * \param[in] info The control info map
+ * \param[in] infoMap The control info map
  *
  * Compute and return the size in bytes required to store the serialized
  * ControlInfoMap.
  *
  * \return The size in bytes required to store the serialized ControlInfoMap
  */
-size_t ControlSerializer::binarySize(const ControlInfoMap &info)
+size_t ControlSerializer::binarySize(const ControlInfoMap &infoMap)
 {
 	size_t size = sizeof(struct ipa_controls_header)
-		    + info.size() * sizeof(struct ipa_control_range_entry);
+		    + infoMap.size() * sizeof(struct ipa_control_range_entry);
 
-	for (const auto &ctrl : info)
+	for (const auto &ctrl : infoMap)
 		size += binarySize(ctrl.second);
 
 	return size;
@@ -159,32 +159,33 @@ void ControlSerializer::store(const ControlRange &range,
 
 /**
  * \brief Serialize a ControlInfoMap in a buffer
- * \param[in] info The control info map to serialize
+ * \param[in] infoMap The control info map to serialize
  * \param[in] buffer The memory buffer where to serialize the ControlInfoMap
  *
- * Serialize the \a info map into the \a buffer using the serialization format
+ * Serialize the \a infoMap into the \a buffer using the serialization format
  * defined by the IPA context interface in ipa_controls.h.
  *
- * The serializer stores a reference to the \a info internally. The caller
- * shall ensure that \a info stays valid until the serializer is reset().
+ * The serializer stores a reference to the \a infoMap internally. The caller
+ * shall ensure that \a infoMap stays valid until the serializer is reset().
  *
  * \return 0 on success, a negative error code otherwise
  * \retval -ENOSPC Not enough space is available in the buffer
  */
-int ControlSerializer::serialize(const ControlInfoMap &info,
+int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 				 ByteStreamBuffer &buffer)
 {
 	/* Compute entries and data required sizes. */
-	size_t entriesSize = info.size() * sizeof(struct ipa_control_range_entry);
+	size_t entriesSize = infoMap.size()
+			   * sizeof(struct ipa_control_range_entry);
 	size_t valuesSize = 0;
-	for (const auto &ctrl : info)
+	for (const auto &ctrl : infoMap)
 		valuesSize += binarySize(ctrl.second);
 
 	/* Prepare the packet header, assign a handle to the ControlInfoMap. */
 	struct ipa_controls_header hdr;
 	hdr.version = IPA_CONTROLS_FORMAT_VERSION;
 	hdr.handle = ++serial_;
-	hdr.entries = info.size();
+	hdr.entries = infoMap.size();
 	hdr.size = sizeof(hdr) + entriesSize + valuesSize;
 	hdr.data_offset = sizeof(hdr) + entriesSize;
 
@@ -197,7 +198,7 @@ int ControlSerializer::serialize(const ControlInfoMap &info,
 	ByteStreamBuffer entries = buffer.carveOut(entriesSize);
 	ByteStreamBuffer values = buffer.carveOut(valuesSize);
 
-	for (const auto &ctrl : info) {
+	for (const auto &ctrl : infoMap) {
 		const ControlId *id = ctrl.first;
 		const ControlRange &range = ctrl.second;
 
@@ -217,7 +218,7 @@ int ControlSerializer::serialize(const ControlInfoMap &info,
 	 * Store the map to handle association, to be used to serialize and
 	 * deserialize control lists.
 	 */
-	infoMapHandles_[&info] = hdr.handle;
+	infoMapHandles_[&infoMap] = hdr.handle;
 
 	return 0;
 }

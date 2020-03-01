@@ -361,9 +361,11 @@ ControlValue ControlSerializer::load<ControlValue>(ControlType type,
 		return ControlValue(value);
 	}
 
-	default:
+	case ControlTypeNone:
 		return ControlValue();
 	}
+
+	return ControlValue();
 }
 
 template<>

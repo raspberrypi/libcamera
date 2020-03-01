@@ -19,46 +19,112 @@ class ControlValueTest : public Test
 protected:
 	int run()
 	{
-		ControlValue integer(1234);
-		ControlValue boolean(true);
-
-		/* Just a string conversion output test... no validation */
-		cout << "Int: " << integer.toString()
-		     << " Bool: " << boolean.toString()
-		     << endl;
-
-		if (integer.get<int32_t>() != 1234) {
-			cerr << "Failed to get Integer" << endl;
-			return TestFail;
-		}
-
-		if (boolean.get<bool>() != true) {
-			cerr << "Failed to get Boolean" << endl;
-			return TestFail;
-		}
-
-		/* Test an uninitialised value, and updating it. */
-
+		/*
+		 * None type.
+		 */
 		ControlValue value;
-		if (!value.isNone()) {
+		if (!value.isNone() || value.isArray()) {
 			cerr << "Empty value is non-null" << endl;
 			return TestFail;
 		}
 
-		value.set<bool>(true);
-		if (value.isNone()) {
-			cerr << "Failed to set an empty object" << endl;
+		/*
+		 * Bool type.
+		 */
+		value.set(true);
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeBool) {
+			cerr << "Control type mismatch after setting to bool" << endl;
 			return TestFail;
 		}
 
 		if (value.get<bool>() != true) {
-			cerr << "Failed to get Booleans" << endl;
+			cerr << "Control value mismatch after setting to bool" << endl;
 			return TestFail;
 		}
 
-		value.set<int32_t>(10);
-		if (value.get<int32_t>() != 10) {
-			cerr << "Failed to get Integer" << endl;
+		if (value.toString() != "true") {
+			cerr << "Control string mismatch after setting to bool" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Integer8 type.
+		 */
+		value.set(static_cast<uint8_t>(42));
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeByte) {
+			cerr << "Control type mismatch after setting to uint8_t" << endl;
+			return TestFail;
+		}
+
+		if (value.get<uint8_t>() != 42) {
+			cerr << "Control value mismatch after setting to uint8_t" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "42") {
+			cerr << "Control string mismatch after setting to uint8_t" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Integer32 type.
+		 */
+		value.set(0x42000000);
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeInteger32) {
+			cerr << "Control type mismatch after setting to int32_t" << endl;
+			return TestFail;
+		}
+
+		if (value.get<int32_t>() != 0x42000000) {
+			cerr << "Control value mismatch after setting to int32_t" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "1107296256") {
+			cerr << "Control string mismatch after setting to int32_t" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Integer64 type.
+		 */
+		value.set(static_cast<int64_t>(-42));
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeInteger64) {
+			cerr << "Control type mismatch after setting to int64_t" << endl;
+			return TestFail;
+		}
+
+		if (value.get<int64_t>() != -42) {
+			cerr << "Control value mismatch after setting to int64_t" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "-42") {
+			cerr << "Control string mismatch after setting to int64_t" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Float type.
+		 */
+		value.set(-0.42f);
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeFloat) {
+			cerr << "Control type mismatch after setting to float" << endl;
+			return TestFail;
+		}
+
+		if (value.get<float>() != -0.42f) {
+			cerr << "Control value mismatch after setting to float" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "-0.420000") {
+			cerr << "Control string mismatch after setting to float" << endl;
 			return TestFail;
 		}
 

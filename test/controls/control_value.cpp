@@ -235,6 +235,28 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * String type.
+		 */
+		std::string string{ "libcamera" };
+		value.set(string);
+		if (value.isNone() || !value.isArray() ||
+		    value.type() != ControlTypeString ||
+		    value.numElements() != string.size()) {
+			cerr << "Control type mismatch after setting to string" << endl;
+			return TestFail;
+		}
+
+		if (value.get<std::string>() != string) {
+			cerr << "Control value mismatch after setting to string" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != string) {
+			cerr << "Control string mismatch after setting to string" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

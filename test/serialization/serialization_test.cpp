@@ -22,7 +22,7 @@ using namespace libcamera;
 
 bool SerializationTest::equals(const ControlInfoMap &lhs, const ControlInfoMap &rhs)
 {
-	std::map<unsigned int, ControlRange> rlhs;
+	std::map<unsigned int, ControlInfo> rlhs;
 	std::transform(lhs.begin(), lhs.end(), std::inserter(rlhs, rlhs.end()),
 			[](const ControlInfoMap::value_type &v)
 				-> decltype(rlhs)::value_type
@@ -30,7 +30,7 @@ bool SerializationTest::equals(const ControlInfoMap &lhs, const ControlInfoMap &
 				return { v.first->id(), v.second };
 			});
 
-	std::map<unsigned int, ControlRange> rrhs;
+	std::map<unsigned int, ControlInfo> rrhs;
 	std::transform(rhs.begin(), rhs.end(), std::inserter(rrhs, rrhs.end()),
 			[](const ControlInfoMap::value_type &v)
 				-> decltype(rrhs)::value_type

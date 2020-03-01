@@ -426,7 +426,7 @@ int VimcCameraData::init(MediaDevice *media)
 	ControlInfoMap::Map ctrls;
 
 	for (const auto &ctrl : controls) {
-		const ControlRange &range = ctrl.second;
+		const ControlInfo &info = ctrl.second;
 		const ControlId *id;
 
 		switch (ctrl.first->id()) {
@@ -443,7 +443,7 @@ int VimcCameraData::init(MediaDevice *media)
 			continue;
 		}
 
-		ctrls.emplace(id, range);
+		ctrls.emplace(id, info);
 	}
 
 	controlInfo_ = std::move(ctrls);

@@ -99,9 +99,9 @@ size_t ControlSerializer::binarySize(const ControlValue &value)
 	return value.data().size_bytes();
 }
 
-size_t ControlSerializer::binarySize(const ControlRange &range)
+size_t ControlSerializer::binarySize(const ControlInfo &info)
 {
-	return binarySize(range.min()) + binarySize(range.max());
+	return binarySize(info.min()) + binarySize(info.max());
 }
 
 /**
@@ -116,7 +116,7 @@ size_t ControlSerializer::binarySize(const ControlRange &range)
 size_t ControlSerializer::binarySize(const ControlInfoMap &infoMap)
 {
 	size_t size = sizeof(struct ipa_controls_header)
-		    + infoMap.size() * sizeof(struct ipa_control_range_entry);
+		    + infoMap.size() * sizeof(struct ipa_control_info_entry);
 
 	for (const auto &ctrl : infoMap)
 		size += binarySize(ctrl.second);
@@ -150,11 +150,10 @@ void ControlSerializer::store(const ControlValue &value,
 	buffer.write(value.data());
 }
 
-void ControlSerializer::store(const ControlRange &range,
-			      ByteStreamBuffer &buffer)
+void ControlSerializer::store(const ControlInfo &info, ByteStreamBuffer &buffer)
 {
-	store(range.min(), buffer);
-	store(range.max(), buffer);
+	store(info.min(), buffer);
+	store(info.max(), buffer);
 }
 
 /**
@@ -176,7 +175,7 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 {
 	/* Compute entries and data required sizes. */
 	size_t entriesSize = infoMap.size()
-			   * sizeof(struct ipa_control_range_entry);
+			   * sizeof(struct ipa_control_info_entry);
 	size_t valuesSize = 0;
 	for (const auto &ctrl : infoMap)
 		valuesSize += binarySize(ctrl.second);
@@ -200,15 +199,15 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 
 	for (const auto &ctrl : infoMap) {
 		const ControlId *id = ctrl.first;
-		const ControlRange &range = ctrl.second;
+		const ControlInfo &info = ctrl.second;
 
-		struct ipa_control_range_entry entry;
+		struct ipa_control_info_entry entry;
 		entry.id = id->id();
 		entry.type = id->type();
 		entry.offset = values.offset();
 		entries.write(&entry);
 
-		store(range, values);
+		store(info, values);
 	}
 
 	if (buffer.overflow())
@@ -343,13 +342,13 @@ ControlValue ControlSerializer::loadControlValue(ControlType type,
 	return ControlValue();
 }
 
-ControlRange ControlSerializer::loadControlRange(ControlType type,
-						 ByteStreamBuffer &b)
+ControlInfo ControlSerializer::loadControlInfo(ControlType type,
+					       ByteStreamBuffer &b)
 {
 	ControlValue min = loadControlValue(type, b);
 	ControlValue max = loadControlValue(type, b);
 
-	return ControlRange(min, max);
+	return ControlInfo(min, max);
 }
 
 /**
@@ -397,7 +396,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	ControlInfoMap::Map ctrls;
 
 	for (unsigned int i = 0; i < hdr->entries; ++i) {
-		const struct ipa_control_range_entry *entry =
+		const struct ipa_control_info_entry *entry =
 			entries.read<decltype(*entry)>();
 		if (!entry) {
 			LOG(Serializer, Error) << "Out of data";
@@ -419,9 +418,9 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 			return {};
 		}
 
-		/* Create and store the ControlRange. */
+		/* Create and store the ControlInfo. */
 		ctrls.emplace(controlIds_.back().get(),
-			      loadControlRange(type, values));
+			      loadControlInfo(type, values));
 	}
 
 	/*

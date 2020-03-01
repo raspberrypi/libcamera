@@ -104,37 +104,37 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 }
 
 /**
- * \class V4L2ControlRange
- * \brief Convenience specialisation of ControlRange for V4L2 controls
+ * \class V4L2ControlInfo
+ * \brief Convenience specialisation of ControlInfo for V4L2 controls
  *
- * The V4L2ControlRange class is a specialisation of the ControlRange for V4L2
+ * The V4L2ControlInfo class is a specialisation of the ControlInfo for V4L2
  * controls. It offers a convenience constructor from a struct
- * v4l2_query_ext_ctrl, and is otherwise equivalent to the ControlRange class.
+ * v4l2_query_ext_ctrl, and is otherwise equivalent to the ControlInfo class.
  */
 
 /**
- * \brief Construct a V4L2ControlRange from a struct v4l2_query_ext_ctrl
+ * \brief Construct a V4L2ControlInfo from a struct v4l2_query_ext_ctrl
  * \param[in] ctrl The struct v4l2_query_ext_ctrl as returned by the kernel
  */
-V4L2ControlRange::V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl)
+V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	switch (ctrl.type) {
 	case V4L2_CTRL_TYPE_BOOLEAN:
-		ControlRange::operator=(ControlRange(static_cast<bool>(ctrl.minimum),
-						     static_cast<bool>(ctrl.maximum),
-						     static_cast<bool>(ctrl.default_value)));
+		ControlInfo::operator=(ControlInfo(static_cast<bool>(ctrl.minimum),
+						   static_cast<bool>(ctrl.maximum),
+						   static_cast<bool>(ctrl.default_value)));
 		break;
 
 	case V4L2_CTRL_TYPE_INTEGER64:
-		ControlRange::operator=(ControlRange(static_cast<int64_t>(ctrl.minimum),
-						     static_cast<int64_t>(ctrl.maximum),
-						     static_cast<int64_t>(ctrl.default_value)));
+		ControlInfo::operator=(ControlInfo(static_cast<int64_t>(ctrl.minimum),
+						   static_cast<int64_t>(ctrl.maximum),
+						   static_cast<int64_t>(ctrl.default_value)));
 		break;
 
 	default:
-		ControlRange::operator=(ControlRange(static_cast<int32_t>(ctrl.minimum),
-						     static_cast<int32_t>(ctrl.maximum),
-						     static_cast<int32_t>(ctrl.default_value)));
+		ControlInfo::operator=(ControlInfo(static_cast<int32_t>(ctrl.minimum),
+						   static_cast<int32_t>(ctrl.maximum),
+						   static_cast<int32_t>(ctrl.default_value)));
 		break;
 	}
 }

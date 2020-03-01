@@ -381,7 +381,7 @@ void V4L2Device::listControls()
 		}
 
 		controlIds_.emplace_back(std::make_unique<V4L2ControlId>(ctrl));
-		ctrls.emplace(controlIds_.back().get(), V4L2ControlRange(ctrl));
+		ctrls.emplace(controlIds_.back().get(), V4L2ControlInfo(ctrl));
 	}
 
 	controls_ = std::move(ctrls);

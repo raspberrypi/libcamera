@@ -35,17 +35,17 @@ public:
 
 private:
 	static size_t binarySize(const ControlValue &value);
-	static size_t binarySize(const ControlRange &range);
+	static size_t binarySize(const ControlInfo &info);
 
 	static void store(const ControlValue &value, ByteStreamBuffer &buffer);
-	static void store(const ControlRange &range, ByteStreamBuffer &buffer);
+	static void store(const ControlInfo &info, ByteStreamBuffer &buffer);
 
 	template<typename T>
 	ControlValue loadControlValue(ByteStreamBuffer &buffer, bool isArray,
 				      unsigned int count);
 	ControlValue loadControlValue(ControlType type, ByteStreamBuffer &buffer,
 				      bool isArray = false, unsigned int count = 1);
-	ControlRange loadControlRange(ControlType type, ByteStreamBuffer &buffer);
+	ControlInfo loadControlInfo(ControlType type, ByteStreamBuffer &buffer);
 
 	unsigned int serial_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;

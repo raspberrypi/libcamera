@@ -20,10 +20,10 @@ public:
 	V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl);
 };
 
-class V4L2ControlRange : public ControlRange
+class V4L2ControlInfo : public ControlInfo
 {
 public:
-	V4L2ControlRange(const struct v4l2_query_ext_ctrl &ctrl);
+	V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl);
 };
 
 } /* namespace libcamera */

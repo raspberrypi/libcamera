@@ -18,7 +18,7 @@
  * transfer them through the IPA C interface and IPA IPC transports.
  *
  * A control packet contains a list of entries, each of them describing a single
- * control range or control value. The packet starts with a fixed-size header
+ * control info or control value. The packet starts with a fixed-size header
  * described by the ipa_controls_header structure, followed by an array of
  * fixed-size entries. Each entry is associated with data, stored either
  * directly in the entry, or in a data section after the entries array.
@@ -79,19 +79,19 @@
  *         | |                         |    |                      |
  *         \ |                         |    |                      |
  *           +-------------------------+    |                      |
- *         / | ipa_control_range_entry |    | hdr.data_offset      |
+ *         / | ipa_control_info_entry  |    | hdr.data_offset      |
  *         | | #0                      |    |                      |
  * Control | +-------------------------+    |                      |
- *   range | | ...                     |    |                      |
+ *    info | | ...                     |    |                      |
  * entries | +-------------------------+    |                      |
- *         | | ipa_control_range_entry |    |             hdr.size |
+ *         | | ipa_control_info_entry  |    |             hdr.size |
  *         \ | #hdr.entries - 1        |    |                      |
  *           +-------------------------+    |                      |
  *           | empty space (optional)  |    |                      |
  *           +-------------------------+ <--´  .                   |
  *         / | ...                     |       | entry[n].offset   |
  *    Data | | ...                     |       |                   |
- * section | | range data for entry #n | <-----´                   |
+ * section | | info data for entry #n  | <-----´                   |
  *         \ | ...                     |                           |
  *           +-------------------------+                           |
  *           | empty space (optional)  |                           |
@@ -100,8 +100,8 @@
  *
  * The packet header is identical to the ControlList packet header.
  *
- * Entries are described by the ipa_control_range_entry structure. They contain
- * the numerical ID and type of the control. The control range data is stored
+ * Entries are described by the ipa_control_info_entry structure. They contain
+ * the numerical ID and type of the control. The control info data is stored
  * in the data section as described by the following diagram.
  *
  * ~~~~
@@ -117,10 +117,10 @@
  * ~~~~
  *
  * The minimum and maximum value are stored in the platform's native data
- * format. The ipa_control_range_entry::offset field stores the offset from the
- * beginning of the data section to the range data.
+ * format. The ipa_control_info_entry::offset field stores the offset from the
+ * beginning of the data section to the info data.
  *
- * Range data in the data section shall be stored in the same order as the
+ * Info data in the data section shall be stored in the same order as the
  * entries array, shall be aligned to a multiple of 8 bytes, and shall be
  * contiguous in memory.
  *
@@ -178,18 +178,18 @@ static_assert(sizeof(ipa_control_value_entry) == 16,
 	      "Invalid ABI size change for struct ipa_control_value_entry");
 
 /**
- * \struct ipa_control_range_entry
- * \brief Description of a serialized ControlRange entry
- * \var ipa_control_range_entry::id
+ * \struct ipa_control_info_entry
+ * \brief Description of a serialized ControlInfo entry
+ * \var ipa_control_info_entry::id
  * The numerical ID of the control
- * \var ipa_control_range_entry::type
+ * \var ipa_control_info_entry::type
  * The type of the control (defined by enum ControlType)
- * \var ipa_control_range_entry::offset
+ * \var ipa_control_info_entry::offset
  * The offset in bytes from the beginning of the data section to the control
- * range data (shall be a multiple of 8 bytes)
- * \var ipa_control_range_entry::padding
+ * info data (shall be a multiple of 8 bytes)
+ * \var ipa_control_info_entry::padding
  * Padding bytes (shall be set to 0)
  */
 
-static_assert(sizeof(ipa_control_range_entry) == 16,
-	      "Invalid ABI size change for struct ipa_control_range_entry");
+static_assert(sizeof(ipa_control_info_entry) == 16,
+	      "Invalid ABI size change for struct ipa_control_info_entry");

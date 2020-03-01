@@ -229,12 +229,12 @@ private:
 	Control &operator=(const Control &) = delete;
 };
 
-class ControlRange
+class ControlInfo
 {
 public:
-	explicit ControlRange(const ControlValue &min = 0,
-			      const ControlValue &max = 0,
-			      const ControlValue &def = 0);
+	explicit ControlInfo(const ControlValue &min = 0,
+			     const ControlValue &max = 0,
+			     const ControlValue &def = 0);
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
@@ -242,12 +242,12 @@ public:
 
 	std::string toString() const;
 
-	bool operator==(const ControlRange &other) const
+	bool operator==(const ControlInfo &other) const
 	{
 		return min_ == other.min_ && max_ == other.max_;
 	}
 
-	bool operator!=(const ControlRange &other) const
+	bool operator!=(const ControlInfo &other) const
 	{
 		return !(*this == other);
 	}
@@ -260,10 +260,10 @@ private:
 
 using ControlIdMap = std::unordered_map<unsigned int, const ControlId *>;
 
-class ControlInfoMap : private std::unordered_map<const ControlId *, ControlRange>
+class ControlInfoMap : private std::unordered_map<const ControlId *, ControlInfo>
 {
 public:
-	using Map = std::unordered_map<const ControlId *, ControlRange>;
+	using Map = std::unordered_map<const ControlId *, ControlInfo>;
 
 	ControlInfoMap() = default;
 	ControlInfoMap(const ControlInfoMap &other) = default;

@@ -414,50 +414,50 @@ void ControlValue::set(ControlType type, bool isArray, const void *data,
  */
 
 /**
- * \class ControlRange
+ * \class ControlInfo
  * \brief Describe the limits of valid values for a Control
  *
- * The ControlRange expresses the constraints on valid values for a control.
+ * The ControlInfo expresses the constraints on valid values for a control.
  * The constraints depend on the object the control applies to, and are
  * constant for the lifetime of that object. They are typically constructed by
  * pipeline handlers to describe the controls they support.
  */
 
 /**
- * \brief Construct a ControlRange with minimum and maximum range parameters
+ * \brief Construct a ControlInfo with minimum and maximum range parameters
  * \param[in] min The control minimum value
  * \param[in] max The control maximum value
  * \param[in] def The control default value
  */
-ControlRange::ControlRange(const ControlValue &min,
-			   const ControlValue &max,
-			   const ControlValue &def)
+ControlInfo::ControlInfo(const ControlValue &min,
+			 const ControlValue &max,
+			 const ControlValue &def)
 	: min_(min), max_(max), def_(def)
 {
 }
 
 /**
- * \fn ControlRange::min()
+ * \fn ControlInfo::min()
  * \brief Retrieve the minimum value of the control
  * \return A ControlValue with the minimum value for the control
  */
 
 /**
- * \fn ControlRange::max()
+ * \fn ControlInfo::max()
  * \brief Retrieve the maximum value of the control
  * \return A ControlValue with the maximum value for the control
  */
 
 /**
- * \fn ControlRange::def()
+ * \fn ControlInfo::def()
  * \brief Retrieve the default value of the control
  * \return A ControlValue with the default value for the control
  */
 
 /**
- * \brief Provide a string representation of the ControlRange
+ * \brief Provide a string representation of the ControlInfo
  */
-std::string ControlRange::toString() const
+std::string ControlInfo::toString() const
 {
 	std::stringstream ss;
 
@@ -467,15 +467,15 @@ std::string ControlRange::toString() const
 }
 
 /**
- * \fn bool ControlRange::operator==()
- * \brief Compare ControlRange instances for equality
- * \return True if the ranges have identical min and max, false otherwise
+ * \fn bool ControlInfo::operator==()
+ * \brief Compare ControlInfo instances for equality
+ * \return True if the constraints have identical min and max, false otherwise
  */
 
 /**
- * \fn bool ControlRange::operator!=()
- * \brief Compare ControlRange instances for non equality
- * \return False if the ranges have identical min and max, true otherwise
+ * \fn bool ControlInfo::operator!=()
+ * \brief Compare ControlInfo instances for non equality
+ * \return True if the constraints have different min and max, false otherwise
  */
 
 /**
@@ -489,10 +489,10 @@ std::string ControlRange::toString() const
 
 /**
  * \class ControlInfoMap
- * \brief A map of ControlId to ControlRange
+ * \brief A map of ControlId to ControlInfo
  *
  * The ControlInfoMap class describes controls supported by an object as an
- * unsorted map of ControlId pointers to ControlRange instances. Unlike the
+ * unsorted map of ControlId pointers to ControlInfo instances. Unlike the
  * standard std::unsorted_map<> class, it is designed the be immutable once
  * constructed, and thus only exposes the read accessors of the
  * std::unsorted_map<> base class.
@@ -656,7 +656,7 @@ void ControlInfoMap::generateIdmap()
 		if (ctrl.first->type() != ctrl.second.min().type()) {
 			LOG(Controls, Error)
 				<< "Control " << utils::hex(ctrl.first->id())
-				<< " type and range type mismatch";
+				<< " type and info type mismatch";
 			idmap_.clear();
 			clear();
 			return;

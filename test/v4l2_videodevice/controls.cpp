@@ -41,9 +41,9 @@ protected:
 			return TestFail;
 		}
 
-		const ControlRange &brightness = infoMap.find(V4L2_CID_BRIGHTNESS)->second;
-		const ControlRange &contrast = infoMap.find(V4L2_CID_CONTRAST)->second;
-		const ControlRange &saturation = infoMap.find(V4L2_CID_SATURATION)->second;
+		const ControlInfo &brightness = infoMap.find(V4L2_CID_BRIGHTNESS)->second;
+		const ControlInfo &contrast = infoMap.find(V4L2_CID_CONTRAST)->second;
+		const ControlInfo &saturation = infoMap.find(V4L2_CID_SATURATION)->second;
 
 		/* Test getting controls. */
 		ControlList ctrls(infoMap);

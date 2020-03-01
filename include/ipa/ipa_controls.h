@@ -33,7 +33,7 @@ struct ipa_control_value_entry {
 	uint32_t padding[1];
 };
 
-struct ipa_control_range_entry {
+struct ipa_control_info_entry {
 	uint32_t id;
 	uint32_t type;
 	uint32_t offset;

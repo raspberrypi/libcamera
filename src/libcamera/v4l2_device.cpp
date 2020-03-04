@@ -176,13 +176,38 @@ int V4L2Device::getControls(ControlList *ctrls)
 	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
 	unsigned int i = 0;
-	for (const auto &ctrl : *ctrls) {
+	for (auto &ctrl : *ctrls) {
 		unsigned int id = ctrl.first;
 		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
 				<< "Control " << utils::hex(id) << " not found";
 			return -EINVAL;
+		}
+
+		const struct v4l2_query_ext_ctrl &info = controlInfo_[id];
+		ControlValue &value = ctrl.second;
+
+		if (info.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD) {
+			ControlType type;
+
+			switch (info.type) {
+			case V4L2_CTRL_TYPE_U8:
+				type = ControlTypeByte;
+				break;
+
+			default:
+				LOG(V4L2, Error)
+					<< "Unsupported payload control type "
+					<< info.type;
+				return -EINVAL;
+			}
+
+			value.reserve(type, true, info.elems);
+			Span<uint8_t> data = value.data();
+
+			v4l2Ctrls[i].p_u8 = data.data();
+			v4l2Ctrls[i].size = data.size();
 		}
 
 		v4l2Ctrls[i].id = id;

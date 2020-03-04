@@ -60,6 +60,9 @@ std::string v4l2_ctrl_name(const struct v4l2_query_ext_ctrl &ctrl)
 ControlType v4l2_ctrl_type(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_U8:
+		return ControlTypeByte;
+
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		return ControlTypeBool;
 
@@ -119,6 +122,12 @@ V4L2ControlId::V4L2ControlId(const struct v4l2_query_ext_ctrl &ctrl)
 V4L2ControlInfo::V4L2ControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_U8:
+		ControlInfo::operator=(ControlInfo(static_cast<uint8_t>(ctrl.minimum),
+						   static_cast<uint8_t>(ctrl.maximum),
+						   static_cast<uint8_t>(ctrl.default_value)));
+		break;
+
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		ControlInfo::operator=(ControlInfo(static_cast<bool>(ctrl.minimum),
 						   static_cast<bool>(ctrl.maximum),

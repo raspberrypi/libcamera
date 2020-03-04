@@ -256,7 +256,7 @@ V4L2BufferCache::Entry::Entry(bool free, const FrameBuffer &buffer)
 		planes_.emplace_back(plane);
 }
 
-bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer)
+bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 {
 	const std::vector<FrameBuffer::Plane> &planes = buffer.planes();
 

@@ -122,7 +122,7 @@ private:
 		Entry();
 		Entry(bool free, const FrameBuffer &buffer);
 
-		bool operator==(const FrameBuffer &buffer);
+		bool operator==(const FrameBuffer &buffer) const;
 
 		bool free;
 

@@ -250,7 +250,7 @@ int V4L2Device::setControls(ControlList *ctrls)
 	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
 	unsigned int i = 0;
-	for (const auto &ctrl : *ctrls) {
+	for (auto &ctrl : *ctrls) {
 		unsigned int id = ctrl.first;
 		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
@@ -262,16 +262,29 @@ int V4L2Device::setControls(ControlList *ctrls)
 		v4l2Ctrls[i].id = id;
 
 		/* Set the v4l2_ext_control value for the write operation. */
-		const ControlValue &value = ctrl.second;
+		ControlValue &value = ctrl.second;
 		switch (iter->first->type()) {
 		case ControlTypeInteger64:
 			v4l2Ctrls[i].value64 = value.get<int64_t>();
 			break;
+
+		case ControlTypeByte: {
+			if (!value.isArray()) {
+				LOG(V4L2, Error)
+					<< "Control " << utils::hex(id)
+					<< " requires an array value";
+				return -EINVAL;
+			}
+
+			Span<uint8_t> data = value.data();
+			v4l2Ctrls[i].p_u8 = data.data();
+			v4l2Ctrls[i].size = data.size();
+
+			break;
+		}
+
 		default:
-			/*
-			 * \todo To be changed when support for string and
-			 * compound controls will be added.
-			 */
+			/* \todo To be changed to support strings. */
 			v4l2Ctrls[i].value = value.get<int32_t>();
 			break;
 		}
@@ -414,6 +427,14 @@ void V4L2Device::updateControls(ControlList *ctrls,
 		case ControlTypeInteger64:
 			value.set<int64_t>(v4l2Ctrl->value64);
 			break;
+
+		case ControlTypeByte:
+			/*
+			 * No action required, the VIDIOC_[GS]_EXT_CTRLS ioctl
+			 * accessed the ControlValue storage directly.
+			 */
+			break;
+
 		default:
 			/*
 			 * \todo To be changed when support for string and

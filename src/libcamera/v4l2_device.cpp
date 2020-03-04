@@ -386,20 +386,14 @@ void V4L2Device::listControls()
 
 	/* \todo Add support for menu and compound controls. */
 	while (1) {
-		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL |
+			   V4L2_CTRL_FLAG_NEXT_COMPOUND;
 		if (ioctl(VIDIOC_QUERY_EXT_CTRL, &ctrl))
 			break;
 
 		if (ctrl.type == V4L2_CTRL_TYPE_CTRL_CLASS ||
 		    ctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 			continue;
-
-		if (ctrl.elems != 1 || ctrl.nr_of_dims) {
-			LOG(V4L2, Debug)
-				<< "Array control " << utils::hex(ctrl.id)
-				<< " not supported";
-			continue;
-		}
 
 		switch (ctrl.type) {
 		case V4L2_CTRL_TYPE_INTEGER:
@@ -409,8 +403,9 @@ void V4L2Device::listControls()
 		case V4L2_CTRL_TYPE_INTEGER64:
 		case V4L2_CTRL_TYPE_BITMASK:
 		case V4L2_CTRL_TYPE_INTEGER_MENU:
+		case V4L2_CTRL_TYPE_U8:
 			break;
-		/* \todo Support compound controls. */
+		/* \todo Support other control types. */
 		default:
 			LOG(V4L2, Debug)
 				<< "Control " << utils::hex(ctrl.id)

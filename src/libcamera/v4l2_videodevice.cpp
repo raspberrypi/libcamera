@@ -216,7 +216,7 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 			use = index;
 
 		/* Try to find a cache hit by comparing the planes. */
-		if (cache_[index] == buffer) {
+		if (entry == buffer) {
 			hit = true;
 			use = index;
 			break;

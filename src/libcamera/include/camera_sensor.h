@@ -61,6 +61,7 @@ public:
 	int setControls(ControlList *ctrls);
 
 	const ControlList &properties() const { return properties_; }
+	int sensorInfo(CameraSensorInfo *info) const;
 
 protected:
 	std::string logPrefix() const;

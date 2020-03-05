@@ -475,6 +475,68 @@ int CameraSensor::setControls(ControlList *ctrls)
 	return subdev_->setControls(ctrls);
 }
 
+/**
+ * \brief Assemble and return the camera sensor info
+ * \param[out] info The camera sensor info
+ *
+ * The CameraSensorInfo content is assembled by inspecting the currently
+ * applied sensor configuration and the sensor static properties.
+ *
+ * \return 0 on success, a negative error code otherwise
+ */
+int CameraSensor::sensorInfo(CameraSensorInfo *info) const
+{
+	info->model = model();
+
+	/* Get the active area size. */
+	Rectangle rect = {};
+	int ret = subdev_->getSelection(0, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
+	if (ret) {
+		LOG(CameraSensor, Error)
+			<< "Failed to construct camera sensor info: "
+			<< "the camera sensor does not report the active area";
+
+		return ret;
+	}
+	info->activeAreaSize = { rect.width, rect.height };
+
+	/* It's mandatory for the subdevice to report its crop rectangle. */
+	ret = subdev_->getSelection(0, V4L2_SEL_TGT_CROP, &info->analogCrop);
+	if (ret) {
+		LOG(CameraSensor, Error)
+			<< "Failed to construct camera sensor info: "
+			<< "the camera sensor does not report the crop rectangle";
+		return ret;
+	}
+
+	/* The bit depth and image size depend on the currently applied format. */
+	V4L2SubdeviceFormat format{};
+	ret = subdev_->getFormat(0, &format);
+	if (ret)
+		return ret;
+	info->bitsPerPixel = format.bitsPerPixel();
+	info->outputSize = format.size;
+
+	/*
+	 * Retrieve the pixel rate and the line length through V4L2 controls.
+	 * Support for the V4L2_CID_PIXEL_RATE and V4L2_CID_HBLANK controls is
+	 * mandatory.
+	 */
+	ControlList ctrls = subdev_->getControls({ V4L2_CID_PIXEL_RATE,
+						   V4L2_CID_HBLANK });
+	if (ctrls.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Failed to retrieve camera info controls";
+		return -EINVAL;
+	}
+
+	int32_t hblank = ctrls.get(V4L2_CID_HBLANK).get<int32_t>();
+	info->lineLength = info->outputSize.width + hblank;
+	info->pixelRate = ctrls.get(V4L2_CID_PIXEL_RATE).get<int64_t>();
+
+	return 0;
+}
+
 std::string CameraSensor::logPrefix() const
 {
 	return "'" + subdev_->entity()->name() + "'";

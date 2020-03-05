@@ -22,6 +22,19 @@ class V4L2Subdevice;
 
 struct V4L2SubdeviceFormat;
 
+struct CameraSensorInfo {
+	std::string model;
+
+	uint32_t bitsPerPixel;
+
+	Size activeAreaSize;
+	Rectangle analogCrop;
+	Size outputSize;
+
+	uint64_t pixelRate;
+	uint32_t lineLength;
+};
+
 class CameraSensor : protected Loggable
 {
 public:

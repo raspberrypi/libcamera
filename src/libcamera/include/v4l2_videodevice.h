@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -142,7 +143,7 @@ private:
 		std::vector<Plane> planes_;
 	};
 
-	std::atomic_uint64_t lastUsedCounter_;
+	std::atomic<uint64_t> lastUsedCounter_;
 	std::vector<Entry> cache_;
 	/* \todo Expose the miss counter through an instrumentation API. */
 	unsigned int missCounter_;

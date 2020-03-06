@@ -64,4 +64,23 @@ for qcam: [optional]
 for documentation: [optional]
 	python3-sphinx doxygen
 
+for gstreamer: [optional]
+	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+Using GStreamer plugin
+~~~~~~~~~~~~~~~~~~~~~~
+
+To use GStreamer plugin from source tree, set the following environment so that
+GStreamer can find it.
+
+  export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
+
+The debugging tool `gst-launch-1.0` can be used to construct and pipeline and test
+it. The following pipeline will stream from the camera named "Camera 1" onto the
+default video display element on your system.
+
+.. code::
+
+  gst-launch-1.0 libcamerasrc camera-name="Camera 1" ! videoconvert ! autovideosink
+
 .. section-end-getting-started

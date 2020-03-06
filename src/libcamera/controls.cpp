@@ -198,7 +198,7 @@ std::string ControlValue::toString() const
 		switch (type_) {
 		case ControlTypeBool: {
 			const bool *value = reinterpret_cast<const bool *>(data);
-			str += *value ? "True" : "False";
+			str += *value ? "true" : "false";
 			break;
 		}
 		case ControlTypeByte: {

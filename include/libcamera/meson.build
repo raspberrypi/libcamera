@@ -44,6 +44,8 @@ foreach header : control_source_files
                                      install_dir : join_paths('include', include_dir))
 endforeach
 
+libcamera_api += control_headers
+
 gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',

@@ -14,6 +14,7 @@
 #include <libcamera/file_descriptor.h>
 
 #include "test.h"
+#include "utils.h"
 
 using namespace libcamera;
 using namespace std;

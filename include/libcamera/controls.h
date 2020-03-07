@@ -160,7 +160,10 @@ private:
 	ControlType type_ : 8;
 	bool isArray_ : 1;
 	std::size_t numElements_ : 16;
-	uint64_t storage_;
+	union {
+		uint64_t value_;
+		void *storage_;
+	};
 
 	void release();
 	void set(ControlType type, bool isArray, const void *data,

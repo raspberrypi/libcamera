@@ -107,9 +107,9 @@ void ControlValue::release()
 {
 	std::size_t size = numElements_ * ControlValueSize[type_];
 
-	if (size > sizeof(storage_)) {
-		delete[] *reinterpret_cast<char **>(&storage_);
-		storage_ = 0;
+	if (size > sizeof(value_)) {
+		delete[] reinterpret_cast<uint8_t *>(storage_);
+		storage_ = nullptr;
 	}
 }
 
@@ -176,9 +176,9 @@ ControlValue &ControlValue::operator=(const ControlValue &other)
 Span<const uint8_t> ControlValue::data() const
 {
 	std::size_t size = numElements_ * ControlValueSize[type_];
-	const uint8_t *data = size > sizeof(storage_)
-			    ? *reinterpret_cast<const uint8_t * const *>(&storage_)
-			    : reinterpret_cast<const uint8_t *>(&storage_);
+	const uint8_t *data = size > sizeof(value_)
+			    ? reinterpret_cast<const uint8_t *>(storage_)
+			    : reinterpret_cast<const uint8_t *>(&value_);
 	return { data, size };
 }
 
@@ -308,11 +308,11 @@ void ControlValue::set(ControlType type, bool isArray, const void *data,
 	std::size_t size = elementSize * numElements;
 	void *storage;
 
-	if (size > sizeof(storage_)) {
-		storage = reinterpret_cast<void *>(new char[size]);
-		*reinterpret_cast<void **>(&storage_) = storage;
+	if (size > sizeof(value_)) {
+		storage_ = reinterpret_cast<void *>(new uint8_t[size]);
+		storage = storage_;
 	} else {
-		storage = reinterpret_cast<void *>(&storage_);
+		storage = reinterpret_cast<void *>(&value_);
 	}
 
 	memcpy(storage, data, size);

@@ -5,11 +5,6 @@ v4l2_compat_sources = files([
     'v4l2_compat_manager.cpp',
 ])
 
-v4l2_compat_includes = [
-    libcamera_includes,
-    libcamera_internal_includes,
-]
-
 v4l2_compat_cpp_args = [
     # Meson enables large file support unconditionally, which redirect file
     # operations to 64-bit versions. This results in some symbols being
@@ -25,7 +20,6 @@ v4l2_compat = shared_library('v4l2-compat',
                              v4l2_compat_sources,
                              name_prefix : '',
                              install : true,
-                             link_with : libcamera,
-                             include_directories : v4l2_compat_includes,
-                             dependencies : libcamera_deps,
+                             include_directories : libcamera_internal_includes,
+                             dependencies : [ libcamera_dep, libdl ],
                              cpp_args : v4l2_compat_cpp_args)

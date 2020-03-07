@@ -13,7 +13,7 @@ libcamera_gst_cpp_args = [
     '-DPACKAGE="@0@"'.format(meson.project_name()),
 ]
 
-glib_dep = dependency('glib', required : get_option('gstreamer'))
+glib_dep = dependency('glib-2.0', required : get_option('gstreamer'))
 
 gst_dep_version = '>=1.14.0'
 gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_dep_version,

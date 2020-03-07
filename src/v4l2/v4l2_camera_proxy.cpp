@@ -85,7 +85,8 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 	}
 
 	unsigned int index = offset / sizeimage_;
-	if (index * sizeimage_ != offset || length != sizeimage_) {
+	if (static_cast<off_t>(index * sizeimage_) != offset ||
+	    length != sizeimage_) {
 		errno = EINVAL;
 		return MAP_FAILED;
 	}

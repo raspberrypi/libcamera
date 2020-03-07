@@ -55,6 +55,8 @@ libcamera_h = custom_target('gen-header',
                             install : true,
                             install_dir : join_paths('include', include_dir))
 
+libcamera_api += libcamera_h
+
 version = libcamera_version.split('.')
 libcamera_version_config = configuration_data()
 libcamera_version_config.set('LIBCAMERA_VERSION_MAJOR', version[0])

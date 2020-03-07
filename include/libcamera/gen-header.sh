@@ -16,10 +16,11 @@ cat <<EOF > "$dst_file"
 
 EOF
 
-headers=$(for header in "$src_dir"/*.h ; do
+headers=$(for header in "$src_dir"/*.h "$src_dir"/*.h.in ; do
 	header=$(basename "$header")
+	header="${header%.in}"
 	echo "$header"
-done ; echo "control_ids.h" ; echo "version.h" | sort)
+done | sort)
 
 for header in $headers ; do
 	echo "#include <libcamera/$header>" >> "$dst_file"

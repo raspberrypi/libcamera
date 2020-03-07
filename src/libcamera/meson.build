@@ -58,6 +58,8 @@ includes = [
 subdir('pipeline')
 subdir('proxy')
 
+libatomic = cc.find_library('atomic', required : false)
+libdl = cc.find_library('dl')
 libudev = dependency('libudev', required : false)
 
 if libudev.found()
@@ -93,8 +95,8 @@ version_cpp = vcs_tag(command : [gen_version, meson.build_root()],
 libcamera_sources += version_cpp
 
 libcamera_deps = [
-    cc.find_library('atomic', required: false),
-    cc.find_library('dl'),
+    libatomic,
+    libdl,
     libudev,
     dependency('threads'),
 ]

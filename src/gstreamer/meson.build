@@ -1,6 +1,6 @@
 libcamera_gst_sources = [
     'gstlibcamera-utils.cpp',
-    'gstlibcamera.c',
+    'gstlibcamera.cpp',
     'gstlibcameraallocator.cpp',
     'gstlibcamerapad.cpp',
     'gstlibcamerapool.cpp',
@@ -8,7 +8,7 @@ libcamera_gst_sources = [
     'gstlibcamerasrc.cpp',
 ]
 
-libcamera_gst_c_args = [
+libcamera_gst_cpp_args = [
     '-DVERSION="@0@"'.format(libcamera_git_version),
     '-DPACKAGE="@0@"'.format(meson.project_name()),
 ]
@@ -27,12 +27,12 @@ if glib_dep.found() and gstvideo_dep.found() and gstallocator_dep.found()
     # complain about the ones we are not using. Silence the -Wunused-function
     # warning in that case.
     if cc.get_id() == 'clang' and glib_dep.version().version_compare('<2.63.0')
-        libcamera_gst_c_args += [ '-Wno-unused-function' ]
+        libcamera_gst_cpp_args += [ '-Wno-unused-function' ]
     endif
 
     libcamera_gst = shared_library('gstlibcamera',
         libcamera_gst_sources,
-        c_args : libcamera_gst_c_args,
+        cpp_args : libcamera_gst_cpp_args,
         dependencies : [libcamera_dep, gstvideo_dep, gstallocator_dep],
         install: true,
         install_dir : '@0@/gstreamer-1.0'.format(get_option('libdir')),

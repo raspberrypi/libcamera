@@ -96,6 +96,15 @@ const std::string V4L2SubdeviceFormat::toString() const
  */
 
 /**
+ * \enum V4L2Subdevice::Whence
+ * \brief Specify the type of format for getFormat() and setFormat() operations
+ * \var V4L2Subdevice::ActiveFormat
+ * \brief The format operation applies to ACTIVE formats
+ * \var V4L2Subdevice::TryFormat
+ * \brief The format operation applies to TRY formats
+ */
+
+/**
  * \brief Create a V4L2 subdevice from a MediaEntity using its device node
  * path
  */
@@ -184,12 +193,16 @@ ImageFormats V4L2Subdevice::formats(unsigned int pad)
  * \brief Retrieve the image format set on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
  * \param[out] format The image bus format
+ * \param[in] whence The format to get, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
+int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	subdevFmt.which = whence == ActiveFormat ? V4L2_SUBDEV_FORMAT_ACTIVE
+			: V4L2_SUBDEV_FORMAT_TRY;
 	subdevFmt.pad = pad;
 
 	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
@@ -211,6 +224,8 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
  * \brief Set an image format on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be applied to
  * \param[inout] format The image bus format to apply to the subdevice's pad
+ * \param[in] whence The format to set, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
  *
  * Apply the requested image format to the desired media pad and return the
  * actually applied format parameters, as \ref V4L2Subdevice::getFormat would
@@ -218,10 +233,12 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format)
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format)
+int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	subdevFmt.which = whence == ActiveFormat ? V4L2_SUBDEV_FORMAT_ACTIVE
+			: V4L2_SUBDEV_FORMAT_TRY;
 	subdevFmt.pad = pad;
 	subdevFmt.format.width = format->size.width;
 	subdevFmt.format.height = format->size.height;

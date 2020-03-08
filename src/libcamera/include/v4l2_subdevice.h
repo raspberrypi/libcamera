@@ -32,6 +32,11 @@ struct V4L2SubdeviceFormat {
 class V4L2Subdevice : public V4L2Device
 {
 public:
+	enum Whence {
+		ActiveFormat,
+		TryFormat,
+	};
+
 	explicit V4L2Subdevice(const MediaEntity *entity);
 	V4L2Subdevice(const V4L2Subdevice &) = delete;
 	V4L2Subdevice &operator=(const V4L2Subdevice &) = delete;
@@ -46,8 +51,10 @@ public:
 
 	ImageFormats formats(unsigned int pad);
 
-	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format);
-	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format);
+	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+		      Whence whence = ActiveFormat);
+	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+		      Whence whence = ActiveFormat);
 
 	static V4L2Subdevice *fromEntityName(const MediaDevice *media,
 					     const std::string &entity);

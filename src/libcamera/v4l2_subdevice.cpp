@@ -228,8 +228,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
  * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
  *
  * Apply the requested image format to the desired media pad and return the
- * actually applied format parameters, as \ref V4L2Subdevice::getFormat would
- * do.
+ * actually applied format parameters, as getFormat() would do.
  *
  * \return 0 on success or a negative error code otherwise
  */

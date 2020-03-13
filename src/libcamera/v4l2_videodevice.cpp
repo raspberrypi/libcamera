@@ -1701,7 +1701,7 @@ PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
 		 * class. Until we fix the logger, work around it.
 		 */
 		libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(),
-				LogError).stream()
+				LogWarning).stream()
 			<< "Unsupported V4L2 pixel format "
 			<< v4l2Fourcc.toString();
 		return PixelFormat();
@@ -1789,7 +1789,8 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 	 * \todo We can't use LOG() in a static method of a Loggable
 	 * class. Until we fix the logger, work around it.
 	 */
-	libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(), LogError).stream()
+	libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(),
+			LogWarning).stream()
 		<< "Unsupported V4L2 pixel format " << pixelFormat.toString();
 	return {};
 }

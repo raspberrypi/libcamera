@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <string.h>
 #include <sys/time.h>
@@ -108,6 +109,49 @@ inline _hex hex<uint64_t>(uint64_t value, unsigned int width)
 #endif
 
 size_t strlcpy(char *dst, const char *src, size_t size);
+
+#ifndef __DOXYGEN__
+template<typename Container, typename UnaryOp>
+std::string join(const Container &items, const std::string &sep, UnaryOp op)
+{
+	std::ostringstream ss;
+	bool first = true;
+
+	for (typename Container::const_iterator it = std::begin(items);
+	     it != std::end(items); ++it) {
+		if (!first)
+			ss << sep;
+		else
+			first = false;
+
+		ss << op(*it);
+	}
+
+	return ss.str();
+}
+
+template<typename Container>
+std::string join(const Container &items, const std::string &sep)
+{
+	std::ostringstream ss;
+	bool first = true;
+
+	for (typename Container::const_iterator it = std::begin(items);
+	     it != std::end(items); ++it) {
+		if (!first)
+			ss << sep;
+		else
+			first = false;
+
+		ss << *it;
+	}
+
+	return ss.str();
+}
+#else
+template<typename Container, typename UnaryOp>
+std::string join(const Container &items, const std::string &sep, UnaryOp op = nullptr);
+#endif
 
 namespace details {
 

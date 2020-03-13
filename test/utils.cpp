@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/geometry.h>
+
 #include "test.h"
 #include "utils.h"
 
@@ -99,7 +101,7 @@ protected:
 			return TestFail;
 		}
 
-		/* utils::split() test. */
+		/* utils::join() and utils::split() test. */
 		std::vector<std::string> elements = {
 			"/bin",
 			"/usr/bin",
@@ -111,6 +113,11 @@ protected:
 		for (const auto &element : elements)
 			path += (path.empty() ? "" : ":") + element;
 
+		if (path != utils::join(elements, ":")) {
+			cerr << "utils::join() test failed" << endl;
+			return TestFail;
+		}
+
 		std::vector<std::string> dirs;
 
 		for (const auto &dir : utils::split(path, ":"))
@@ -118,6 +125,17 @@ protected:
 
 		if (dirs != elements) {
 			cerr << "utils::split() test failed" << endl;
+			return TestFail;
+		}
+
+		/* utils::join() with conversion function test. */
+		std::vector<Size> sizes = { { 0, 0 }, { 100, 100 } };
+		s = utils::join(sizes, "/", [](const Size &size) {
+					return size.toString();
+				});
+
+		if (s != "0x0/100x100") {
+			cerr << "utils::join() with conversion test failed" << endl;
 			return TestFail;
 		}
 

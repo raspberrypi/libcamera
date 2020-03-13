@@ -298,6 +298,22 @@ details::StringSplitter::iterator details::StringSplitter::end() const
 }
 
 /**
+ * \fn template<typename Container, typename UnaryOp> \
+ * std::string utils::join(const Container &items, const std::string &sep, UnaryOp op)
+ * \brief Join elements of a container in a string with a separator
+ * \param[in] items The container
+ * \param[in] sep The separator to add between elements
+ * \param[in] op A function that converts individual elements to strings
+ *
+ * This function joins all elements in the \a items container into a string and
+ * returns it. The \a sep separator is added between elements. If the container
+ * elements are not implicitly convertible to std::string, the \a op function
+ * shall be provided to perform conversion of elements to std::string.
+ *
+ * \return A string that concatenates all elements in the container
+ */
+
+/**
  * \fn split(const std::string &str, const std::string &delim)
  * \brief Split a string based on a delimiter
  * \param[in] str The string to split

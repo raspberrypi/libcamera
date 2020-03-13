@@ -1689,12 +1689,15 @@ PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
 	case V4L2_PIX_FMT_NV21M:
 		return PixelFormat(DRM_FORMAT_NV21);
 
+	/* Greyscale formats. */
+	case V4L2_PIX_FMT_GREY:
+		return PixelFormat(DRM_FORMAT_R8);
+
 	/* Compressed formats. */
 	case V4L2_PIX_FMT_MJPEG:
 		return PixelFormat(DRM_FORMAT_MJPEG);
 
 	/* V4L2 formats not yet supported by DRM. */
-	case V4L2_PIX_FMT_GREY:
 	default:
 		/*
 		 * \todo We can't use LOG() in a static method of a Loggable
@@ -1779,6 +1782,10 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 		return V4L2PixelFormat(V4L2_PIX_FMT_NV12);
 	case DRM_FORMAT_NV21:
 		return V4L2PixelFormat(V4L2_PIX_FMT_NV21);
+
+	/* Greyscale formats. */
+	case DRM_FORMAT_R8:
+		return V4L2PixelFormat(V4L2_PIX_FMT_GREY);
 
 	/* Compressed formats. */
 	case DRM_FORMAT_MJPEG:

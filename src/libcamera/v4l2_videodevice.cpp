@@ -759,6 +759,12 @@ void V4L2VideoDevice::close()
  * \return The string containing the device location
  */
 
+/**
+ * \fn V4L2VideoDevice::caps()
+ * \brief Retrieve the device V4L2 capabilities
+ * \return The device V4L2 capabilities
+ */
+
 std::string V4L2VideoDevice::logPrefix() const
 {
 	return deviceNode() + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");

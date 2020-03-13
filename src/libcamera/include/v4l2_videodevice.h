@@ -205,6 +205,8 @@ public:
 	const char *deviceName() const { return caps_.card(); }
 	const char *busName() const { return caps_.bus_info(); }
 
+	const V4L2Capability &caps() const { return caps_; }
+
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
 	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats();

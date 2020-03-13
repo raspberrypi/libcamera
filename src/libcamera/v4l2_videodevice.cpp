@@ -917,16 +917,19 @@ int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
 
 /**
  * \brief Enumerate all pixel formats and frame sizes
+ * \param[in] code Restrict formats to this media bus code.
  *
  * Enumerate all pixel formats and frame sizes supported by the video device.
+ * If the \a code argument is not zero, only formats compatible with that media
+ * bus code will be enumerated.
  *
  * \return A list of the supported video device formats
  */
-std::map<V4L2PixelFormat, std::vector<SizeRange>> V4L2VideoDevice::formats()
+std::map<V4L2PixelFormat, std::vector<SizeRange>> V4L2VideoDevice::formats(uint32_t code)
 {
 	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats;
 
-	for (V4L2PixelFormat pixelFormat : enumPixelformats()) {
+	for (V4L2PixelFormat pixelFormat : enumPixelformats(code)) {
 		std::vector<SizeRange> sizes = enumSizes(pixelFormat);
 		if (sizes.empty())
 			return {};
@@ -944,15 +947,22 @@ std::map<V4L2PixelFormat, std::vector<SizeRange>> V4L2VideoDevice::formats()
 	return formats;
 }
 
-std::vector<V4L2PixelFormat> V4L2VideoDevice::enumPixelformats()
+std::vector<V4L2PixelFormat> V4L2VideoDevice::enumPixelformats(uint32_t code)
 {
 	std::vector<V4L2PixelFormat> formats;
 	int ret;
+
+	if (code && !(caps_.device_caps() & V4L2_CAP_IO_MC)) {
+		LOG(V4L2, Error)
+			<< "Media bus code filtering not supported by the device";
+		return {};
+	}
 
 	for (unsigned int index = 0; ; index++) {
 		struct v4l2_fmtdesc pixelformatEnum = {};
 		pixelformatEnum.index = index;
 		pixelformatEnum.type = bufferType_;
+		pixelformatEnum.mbus_code = code;
 
 		ret = ioctl(VIDIOC_ENUM_FMT, &pixelformatEnum);
 		if (ret)

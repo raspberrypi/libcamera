@@ -187,7 +187,7 @@ public:
 
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
-	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats();
+	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats(uint32_t code = 0);
 
 	int setSelection(unsigned int target, Rectangle *rect);
 
@@ -225,7 +225,7 @@ private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);
 
-	std::vector<V4L2PixelFormat> enumPixelformats();
+	std::vector<V4L2PixelFormat> enumPixelformats(uint32_t code);
 	std::vector<SizeRange> enumSizes(V4L2PixelFormat pixelFormat);
 
 	int requestBuffers(unsigned int count, enum v4l2_memory memoryType);

@@ -1037,60 +1037,64 @@ int V4L2VideoDevice::requestBuffers(unsigned int count,
 int V4L2VideoDevice::allocateBuffers(unsigned int count,
 				     std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
+	int ret = createBuffers(count, buffers);
+	if (ret < 0)
+		return ret;
+
+	cache_ = new V4L2BufferCache(*buffers);
+	memoryType_ = V4L2_MEMORY_MMAP;
+
+	return ret;
+}
+
+int V4L2VideoDevice::createBuffers(unsigned int count,
+				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
 	if (cache_) {
 		LOG(V4L2, Error) << "Buffers already allocated";
 		return -EINVAL;
 	}
-
-	memoryType_ = V4L2_MEMORY_MMAP;
 
 	int ret = requestBuffers(count, V4L2_MEMORY_MMAP);
 	if (ret < 0)
 		return ret;
 
 	for (unsigned i = 0; i < count; ++i) {
-		struct v4l2_buffer buf = {};
-		struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
-
-		buf.index = i;
-		buf.type = bufferType_;
-		buf.memory = memoryType_;
-		buf.length = ARRAY_SIZE(planes);
-		buf.m.planes = planes;
-
-		ret = ioctl(VIDIOC_QUERYBUF, &buf);
-		if (ret < 0) {
-			LOG(V4L2, Error)
-				<< "Unable to query buffer " << i << ": "
-				<< strerror(-ret);
-			goto err_buf;
-		}
-
-		std::unique_ptr<FrameBuffer> buffer = createBuffer(buf);
+		std::unique_ptr<FrameBuffer> buffer = createBuffer(i);
 		if (!buffer) {
 			LOG(V4L2, Error) << "Unable to create buffer";
-			ret = -EINVAL;
-			goto err_buf;
+
+			requestBuffers(0, V4L2_MEMORY_MMAP);
+			buffers->clear();
+
+			return -EINVAL;
 		}
 
 		buffers->push_back(std::move(buffer));
 	}
 
-	cache_ = new V4L2BufferCache(*buffers);
-
 	return count;
-
-err_buf:
-	requestBuffers(0, V4L2_MEMORY_MMAP);
-
-	buffers->clear();
-
-	return ret;
 }
 
-std::unique_ptr<FrameBuffer>
-V4L2VideoDevice::createBuffer(const struct v4l2_buffer &buf)
+std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 {
+	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
+	struct v4l2_buffer buf = {};
+
+	buf.index = index;
+	buf.type = bufferType_;
+	buf.memory = V4L2_MEMORY_MMAP;
+	buf.length = ARRAY_SIZE(v4l2Planes);
+	buf.m.planes = v4l2Planes;
+
+	int ret = ioctl(VIDIOC_QUERYBUF, &buf);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Unable to query buffer " << index << ": "
+			<< strerror(-ret);
+		return nullptr;
+	}
+
 	const bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
 	const unsigned int numPlanes = multiPlanar ? buf.length : 1;
 

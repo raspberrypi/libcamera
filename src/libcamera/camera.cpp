@@ -931,8 +931,10 @@ int Camera::start()
 		if (allocator_ && !allocator_->buffers(stream).empty())
 			continue;
 
-		p_->pipe_->invokeMethod(&PipelineHandler::importFrameBuffers,
-					ConnectionTypeDirect, this, stream);
+		ret = p_->pipe_->invokeMethod(&PipelineHandler::importFrameBuffers,
+					      ConnectionTypeDirect, this, stream);
+		if (ret < 0)
+			return ret;
 	}
 
 	ret = p_->pipe_->invokeMethod(&PipelineHandler::start,

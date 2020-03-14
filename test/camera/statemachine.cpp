@@ -117,7 +117,7 @@ protected:
 			return TestFail;
 
 		/* Use internally allocated buffers. */
-		allocator_ = FrameBufferAllocator::create(camera_);
+		allocator_ = new FrameBufferAllocator(camera_);
 		Stream *stream = *camera_->streams().begin();
 		if (allocator_->allocate(stream) < 0)
 			return TestFail;

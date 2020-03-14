@@ -40,7 +40,7 @@ int V4L2Camera::open()
 		return -EINVAL;
 	}
 
-	bufferAllocator_ = FrameBufferAllocator::create(camera_);
+	bufferAllocator_ = new FrameBufferAllocator(camera_);
 
 	return 0;
 }

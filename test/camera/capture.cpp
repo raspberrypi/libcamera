@@ -63,7 +63,7 @@ protected:
 			return TestFail;
 		}
 
-		allocator_ = FrameBufferAllocator::create(camera_);
+		allocator_ = new FrameBufferAllocator(camera_);
 
 		return TestPass;
 	}

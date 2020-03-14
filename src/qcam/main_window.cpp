@@ -240,7 +240,7 @@ int MainWindow::startCapture()
 
 	adjustSize();
 
-	allocator_ = FrameBufferAllocator::create(camera_);
+	allocator_ = new FrameBufferAllocator(camera_);
 	ret = allocator_->allocate(stream);
 	if (ret < 0) {
 		std::cerr << "Failed to allocate capture buffers" << std::endl;

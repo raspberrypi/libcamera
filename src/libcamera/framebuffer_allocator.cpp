@@ -54,29 +54,6 @@ LOG_DEFINE_CATEGORY(Allocator)
  */
 
 /**
- * \brief Create a FrameBuffer allocator
- * \param[in] camera The camera the allocator serves
- *
- * A single allocator may be created for a Camera instance.
- *
- * The caller is responsible for deleting the allocator before the camera is
- * released.
- *
- * \return A pointer to the newly created allocator object or nullptr on error
- */
-FrameBufferAllocator *
-FrameBufferAllocator::create(std::shared_ptr<Camera> camera)
-{
-	if (camera->allocator_) {
-		LOG(Allocator, Error) << "Camera already has an allocator";
-		return nullptr;
-	}
-
-	camera->allocator_ = new FrameBufferAllocator(camera);
-	return camera->allocator_;
-}
-
-/**
  * \brief Construct a FrameBufferAllocator serving a camera
  * \param[in] camera The camera
  */
@@ -88,8 +65,6 @@ FrameBufferAllocator::FrameBufferAllocator(std::shared_ptr<Camera> camera)
 FrameBufferAllocator::~FrameBufferAllocator()
 {
 	buffers_.clear();
-
-	camera_->allocator_ = nullptr;
 }
 
 /**

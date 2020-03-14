@@ -52,7 +52,7 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 	}
 
 
-	FrameBufferAllocator *allocator = FrameBufferAllocator::create(camera_);
+	FrameBufferAllocator *allocator = new FrameBufferAllocator(camera_);
 
 	ret = capture(loop, allocator);
 

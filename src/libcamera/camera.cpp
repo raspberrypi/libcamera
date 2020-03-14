@@ -508,7 +508,7 @@ const std::string &Camera::name() const
 
 Camera::Camera(PipelineHandler *pipe, const std::string &name,
 	       const std::set<Stream *> &streams)
-	: p_(new Private(pipe, name, streams)), allocator_(nullptr)
+	: p_(new Private(pipe, name, streams))
 {
 }
 
@@ -619,16 +619,6 @@ int Camera::release()
 				      Private::CameraConfigured, true);
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
-
-	if (allocator_) {
-		/*
-		 * \todo Try to find a better API that would make this error
-		 * impossible.
-		 */
-		LOG(Camera, Error)
-			<< "Buffers must be freed before the camera can be reconfigured";
-		return -EBUSY;
-	}
 
 	p_->pipe_->unlock();
 
@@ -762,12 +752,6 @@ int Camera::configure(CameraConfiguration *config)
 				      Private::CameraConfigured);
 	if (ret < 0)
 		return ret;
-
-	if (allocator_ && allocator_->allocated()) {
-		LOG(Camera, Error)
-			<< "Allocator must be deleted before camera can be reconfigured";
-		return -EBUSY;
-	}
 
 	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)

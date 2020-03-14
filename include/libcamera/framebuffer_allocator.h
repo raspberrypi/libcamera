@@ -20,8 +20,7 @@ class Stream;
 class FrameBufferAllocator
 {
 public:
-	static FrameBufferAllocator *create(std::shared_ptr<Camera> camera);
-
+	FrameBufferAllocator(std::shared_ptr<Camera> camera);
 	FrameBufferAllocator(const Camera &) = delete;
 	FrameBufferAllocator &operator=(const Camera &) = delete;
 
@@ -34,8 +33,6 @@ public:
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers(Stream *stream) const;
 
 private:
-	FrameBufferAllocator(std::shared_ptr<Camera> camera);
-
 	std::shared_ptr<Camera> camera_;
 	std::map<Stream *, std::vector<std::unique_ptr<FrameBuffer>>> buffers_;
 };

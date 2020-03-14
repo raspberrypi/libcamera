@@ -76,8 +76,8 @@ int BufferSource::allocate(const StreamConfiguration &config)
 		return TestFail;
 	}
 
-	if (video->exportBuffers(config.bufferCount, &buffers_) < 0) {
-		std::cout << "Failed to export buffers" << std::endl;
+	if (video->allocateBuffers(config.bufferCount, &buffers_) < 0) {
+		std::cout << "Failed to allocate buffers" << std::endl;
 		return TestFail;
 	}
 

@@ -38,9 +38,11 @@ protected:
 		Timer timeout;
 		int ret;
 
-		ret = capture_->exportBuffers(bufferCount, &buffers_);
-		if (ret < 0)
+		ret = capture_->allocateBuffers(bufferCount, &buffers_);
+		if (ret < 0) {
+			std::cout << "Failed to allocate buffers" << std::endl;
 			return TestFail;
+		}
 
 		capture_->bufferReady.connect(this, &CaptureAsyncTest::receiveBuffer);
 

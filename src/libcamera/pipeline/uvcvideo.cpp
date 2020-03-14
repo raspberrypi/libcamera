@@ -211,7 +211,7 @@ int PipelineHandlerUVC::exportFrameBuffers(Camera *camera, Stream *stream,
 	UVCCameraData *data = cameraData(camera);
 	unsigned int count = stream->configuration().bufferCount;
 
-	return data->video_->exportBuffers(count, buffers);
+	return data->video_->allocateBuffers(count, buffers);
 }
 
 int PipelineHandlerUVC::importFrameBuffers(Camera *camera, Stream *stream)

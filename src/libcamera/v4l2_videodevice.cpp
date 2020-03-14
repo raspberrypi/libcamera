@@ -1033,8 +1033,8 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
  */
-int V4L2VideoDevice::exportBuffers(unsigned int count,
-				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+int V4L2VideoDevice::allocateBuffers(unsigned int count,
+				     std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	if (cache_) {
 		LOG(V4L2, Error) << "Buffers already allocated";

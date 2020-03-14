@@ -17,7 +17,7 @@ protected:
 	{
 		const unsigned int bufferCount = 8;
 
-		int ret = capture_->exportBuffers(bufferCount, &buffers_);
+		int ret = capture_->allocateBuffers(bufferCount, &buffers_);
 		if (ret < 0)
 			return TestFail;
 

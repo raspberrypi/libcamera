@@ -621,7 +621,7 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 	V4L2VideoDevice *video = ipu3stream->device_->dev;
 	unsigned int count = stream->configuration().bufferCount;
 
-	return video->exportBuffers(count, buffers);
+	return video->allocateBuffers(count, buffers);
 }
 
 int PipelineHandlerIPU3::importFrameBuffers(Camera *camera, Stream *stream)
@@ -677,7 +677,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	 * the input pool.
 	 * \todo To be revised when we'll actually use the stat node.
 	 */
-	ret = imgu->stat_.dev->exportBuffers(bufferCount, &imgu->stat_.buffers);
+	ret = imgu->stat_.dev->allocateBuffers(bufferCount, &imgu->stat_.buffers);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
 		goto error;
@@ -690,7 +690,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	if (!outStream->active_) {
 		ImgUDevice::ImgUOutput *output = outStream->device_;
 
-		ret = output->dev->exportBuffers(bufferCount, &output->buffers);
+		ret = output->dev->allocateBuffers(bufferCount, &output->buffers);
 		if (ret < 0) {
 			LOG(IPU3, Error) << "Failed to allocate ImgU "
 					 << output->name << " buffers";
@@ -701,7 +701,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	if (!vfStream->active_) {
 		ImgUDevice::ImgUOutput *output = vfStream->device_;
 
-		ret = output->dev->exportBuffers(bufferCount, &output->buffers);
+		ret = output->dev->allocateBuffers(bufferCount, &output->buffers);
 		if (ret < 0) {
 			LOG(IPU3, Error) << "Failed to allocate ImgU "
 					 << output->name << " buffers";
@@ -1422,9 +1422,9 @@ int CIO2Device::configure(const Size &size,
  */
 int CIO2Device::allocateBuffers()
 {
-	int ret = output_->exportBuffers(CIO2_BUFFER_COUNT, &buffers_);
+	int ret = output_->allocateBuffers(CIO2_BUFFER_COUNT, &buffers_);
 	if (ret < 0)
-		LOG(IPU3, Error) << "Failed to export CIO2 buffers";
+		LOG(IPU3, Error) << "Failed to allocate CIO2 buffers";
 
 	return ret;
 }

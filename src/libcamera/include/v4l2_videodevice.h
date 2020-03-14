@@ -189,8 +189,8 @@ public:
 	int setCrop(Rectangle *rect);
 	int setCompose(Rectangle *rect);
 
-	int exportBuffers(unsigned int count,
-			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+	int allocateBuffers(unsigned int count,
+			    std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	int importBuffers(unsigned int count);
 	int releaseBuffers();
 

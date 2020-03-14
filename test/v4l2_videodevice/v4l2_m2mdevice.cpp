@@ -112,15 +112,15 @@ protected:
 			return TestFail;
 		}
 
-		ret = capture->exportBuffers(bufferCount, &captureBuffers_);
+		ret = capture->allocateBuffers(bufferCount, &captureBuffers_);
 		if (ret < 0) {
-			cerr << "Failed to export Capture Buffers" << endl;
+			cerr << "Failed to allocate Capture Buffers" << endl;
 			return TestFail;
 		}
 
-		ret = output->exportBuffers(bufferCount, &outputBuffers_);
+		ret = output->allocateBuffers(bufferCount, &outputBuffers_);
 		if (ret < 0) {
-			cerr << "Failed to export Output Buffers" << endl;
+			cerr << "Failed to allocate Output Buffers" << endl;
 			return TestFail;
 		}
 

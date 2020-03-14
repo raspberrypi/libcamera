@@ -264,7 +264,7 @@ int PipelineHandlerVimc::exportFrameBuffers(Camera *camera, Stream *stream,
 	VimcCameraData *data = cameraData(camera);
 	unsigned int count = stream->configuration().bufferCount;
 
-	return data->video_->exportBuffers(count, buffers);
+	return data->video_->allocateBuffers(count, buffers);
 }
 
 int PipelineHandlerVimc::importFrameBuffers(Camera *camera, Stream *stream)

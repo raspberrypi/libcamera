@@ -337,16 +337,7 @@ const ControlList &PipelineHandler::properties(Camera *camera)
  *
  * The method may only be called after the Camera has been configured and before
  * it gets started, or after it gets stopped. It shall be called only for
- * streams that are part of the active camera configuration, and at most once
- * per stream until buffers for the stream are freed with freeFrameBuffers().
- *
- * exportFrameBuffers() shall also allocate all other resources required by
- * the pipeline handler for the stream to prepare for starting the Camera. This
- * responsibility is shared with importFrameBuffers(), and one and only one of
- * those two methods shall be called for each stream until the buffers are
- * freed. The pipeline handler shall support all combinations of
- * exportFrameBuffers() and importFrameBuffers() for the streams contained in
- * any camera configuration.
+ * streams that are part of the active camera configuration.
  *
  * The only intended caller is Camera::exportFrameBuffers().
  *
@@ -371,12 +362,7 @@ const ControlList &PipelineHandler::properties(Camera *camera)
  * per stream until buffers for the stream are freed with freeFrameBuffers().
  *
  * importFrameBuffers() shall also allocate all other resources required by the
- * pipeline handler for the stream to prepare for starting the Camera. This
- * responsibility is shared with exportFrameBuffers(), and one and only one of
- * those two methods shall be called for each stream until the buffers are
- * freed. The pipeline handler shall support all combinations of
- * exportFrameBuffers() and importFrameBuffers() for the streams contained in
- * any camera configuration.
+ * pipeline handler for the stream to prepare for starting the Camera.
  *
  * The only intended caller is Camera::start().
  *
@@ -391,10 +377,9 @@ const ControlList &PipelineHandler::properties(Camera *camera)
  * \param[in] camera The camera
  * \param[in] stream The stream to free buffers for
  *
- * This method shall free all buffers and all other resources allocated for the
- * \a stream by exportFrameBuffers() or importFrameBuffers(). It shall be
- * called only after a successful call to either of these two methods, and only
- * once per stream.
+ * This method shall release all resources allocated for the \a stream by
+ * importFrameBuffers(). It shall be called only after a successful call that
+ * method, and only once per stream.
  *
  * The only intended callers are Camera::stop() and Camera::freeFrameBuffers().
  *

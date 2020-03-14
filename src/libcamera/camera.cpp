@@ -554,18 +554,6 @@ int Camera::exportFrameBuffers(Stream *stream,
 				       buffers);
 }
 
-int Camera::freeFrameBuffers(Stream *stream)
-{
-	int ret = p_->isAccessAllowed(Private::CameraConfigured, true);
-	if (ret < 0)
-		return ret;
-
-	p_->pipe_->invokeMethod(&PipelineHandler::freeFrameBuffers,
-				ConnectionTypeBlocking, this, stream);
-
-	return 0;
-}
-
 /**
  * \brief Acquire the camera device for exclusive access
  *
@@ -928,9 +916,6 @@ int Camera::start()
 	LOG(Camera, Debug) << "Starting capture";
 
 	for (Stream *stream : p_->activeStreams_) {
-		if (allocator_ && !allocator_->buffers(stream).empty())
-			continue;
-
 		ret = p_->pipe_->invokeMethod(&PipelineHandler::importFrameBuffers,
 					      ConnectionTypeDirect, this, stream);
 		if (ret < 0)
@@ -974,13 +959,9 @@ int Camera::stop()
 	p_->pipe_->invokeMethod(&PipelineHandler::stop, ConnectionTypeBlocking,
 				this);
 
-	for (Stream *stream : p_->activeStreams_) {
-		if (allocator_ && !allocator_->buffers(stream).empty())
-			continue;
-
+	for (Stream *stream : p_->activeStreams_)
 		p_->pipe_->invokeMethod(&PipelineHandler::freeFrameBuffers,
 					ConnectionTypeBlocking, this, stream);
-	}
 
 	return 0;
 }

@@ -113,7 +113,6 @@ private:
 	friend class FrameBufferAllocator;
 	int exportFrameBuffers(Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers);
-	int freeFrameBuffers(Stream *stream);
 	/* \todo Remove allocator_ from the exposed API */
 	FrameBufferAllocator *allocator_;
 };

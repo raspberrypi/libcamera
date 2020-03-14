@@ -664,7 +664,7 @@ int PipelineHandlerRkISP1::exportFrameBuffers(Camera *camera, Stream *stream,
 					      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	unsigned int count = stream->configuration().bufferCount;
-	return video_->allocateBuffers(count, buffers);
+	return video_->exportBuffers(count, buffers);
 }
 
 int PipelineHandlerRkISP1::importFrameBuffers(Camera *camera, Stream *stream)

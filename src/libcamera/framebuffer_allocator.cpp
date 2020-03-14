@@ -87,11 +87,6 @@ FrameBufferAllocator::FrameBufferAllocator(std::shared_ptr<Camera> camera)
 
 FrameBufferAllocator::~FrameBufferAllocator()
 {
-	for (auto &value : buffers_) {
-		Stream *stream = value.first;
-		camera_->freeFrameBuffers(stream);
-	}
-
 	buffers_.clear();
 
 	camera_->allocator_ = nullptr;
@@ -147,10 +142,6 @@ int FrameBufferAllocator::free(Stream *stream)
 	auto iter = buffers_.find(stream);
 	if (iter == buffers_.end())
 		return -EINVAL;
-
-	int ret = camera_->freeFrameBuffers(stream);
-	if (ret < 0)
-		return ret;
 
 	std::vector<std::unique_ptr<FrameBuffer>> &buffers = iter->second;
 	buffers.clear();

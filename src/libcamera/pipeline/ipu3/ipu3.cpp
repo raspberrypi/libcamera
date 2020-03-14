@@ -621,7 +621,7 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 	V4L2VideoDevice *video = ipu3stream->device_->dev;
 	unsigned int count = stream->configuration().bufferCount;
 
-	return video->allocateBuffers(count, buffers);
+	return video->exportBuffers(count, buffers);
 }
 
 int PipelineHandlerIPU3::importFrameBuffers(Camera *camera, Stream *stream)

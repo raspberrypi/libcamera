@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
 #include <string>
 #include <string.h>
@@ -31,17 +32,24 @@
 #include "v4l2_subdevice.h"
 #include "v4l2_videodevice.h"
 
+#include "converter.h"
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(SimplePipeline)
 
 class SimplePipelineHandler;
 
+struct SimplePipelineInfo {
+	const char *driver;
+	const char *converter;
+};
+
 namespace {
 
-static const char * const drivers[] = {
-	"imx7-csi",
-	"sun6i-csi",
+static const SimplePipelineInfo supportedDevices[] = {
+	{ "imx7-csi", "pxp" },
+	{ "sun6i-csi", nullptr },
 };
 
 } /* namespace */
@@ -88,6 +96,8 @@ public:
 
 	const V4L2SubdeviceFormat &sensorFormat() { return sensorFormat_; }
 
+	bool needConversion() const { return needConversion_; }
+
 private:
 	/*
 	 * The SimpleCameraData instance is guaranteed to be valid as long as
@@ -98,6 +108,7 @@ private:
 	const SimpleCameraData *data_;
 
 	V4L2SubdeviceFormat sensorFormat_;
+	bool needConversion_;
 };
 
 class SimplePipelineHandler : public PipelineHandler
@@ -120,6 +131,7 @@ public:
 
 	V4L2VideoDevice *video() { return video_; }
 	V4L2Subdevice *subdev(const MediaEntity *entity);
+	SimpleConverter *converter() { return converter_; }
 
 protected:
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -136,10 +148,16 @@ private:
 	int createCamera(MediaEntity *sensor);
 
 	void bufferReady(FrameBuffer *buffer);
+	void converterDone(FrameBuffer *input, FrameBuffer *output);
 
 	MediaDevice *media_;
 	V4L2VideoDevice *video_;
 	std::map<const MediaEntity *, V4L2Subdevice> subdevs_;
+
+	SimpleConverter *converter_;
+	bool useConverter_;
+	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
+	std::queue<FrameBuffer *> converterQueue_;
 
 	Camera *activeCamera_;
 };
@@ -222,6 +240,7 @@ int SimpleCameraData::init()
 {
 	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(pipe_);
 	V4L2VideoDevice *video = pipe->video();
+	SimpleConverter *converter = pipe->converter();
 	int ret;
 
 	/*
@@ -278,7 +297,13 @@ int SimpleCameraData::init()
 			config.pixelFormat = pixelFormat;
 			config.size = format.size;
 
-			formats_[pixelFormat] = config;
+			if (!converter) {
+				formats_[pixelFormat] = config;
+				continue;
+			}
+
+			for (PixelFormat format : converter->formats(pixelFormat))
+				formats_[format] = config;
 		}
 	}
 
@@ -417,6 +442,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		status = Adjusted;
 	}
 
+	needConversion_ = cfg.pixelFormat != pipeConfig.pixelFormat;
+
 	cfg.bufferCount = 3;
 
 	return status;
@@ -427,13 +454,14 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
  */
 
 SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
-	: PipelineHandler(manager), video_(nullptr)
+	: PipelineHandler(manager), video_(nullptr), converter_(nullptr)
 {
 }
 
 SimplePipelineHandler::~SimplePipelineHandler()
 {
 	delete video_;
+	delete converter_;
 }
 
 CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera,
@@ -499,20 +527,35 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Configure the video node. */
-	V4L2PixelFormat videoFormat = video_->toV4L2PixelFormat(cfg.pixelFormat);
+	V4L2PixelFormat videoFormat = video_->toV4L2PixelFormat(pipeConfig.pixelFormat);
 
-	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = videoFormat;
-	outputFormat.size = cfg.size;
+	V4L2DeviceFormat captureFormat = {};
+	captureFormat.fourcc = videoFormat;
+	captureFormat.size = cfg.size;
 
-	ret = video_->setFormat(&outputFormat);
+	ret = video_->setFormat(&captureFormat);
 	if (ret)
 		return ret;
 
-	if (outputFormat.size != cfg.size || outputFormat.fourcc != videoFormat) {
+	if (captureFormat.fourcc != videoFormat || captureFormat.size != cfg.size) {
 		LOG(SimplePipeline, Error)
 			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;
+	}
+
+	/* Configure the converter if required. */
+	useConverter_ = config->needConversion();
+
+	if (useConverter_) {
+		int ret = converter_->configure(pipeConfig.pixelFormat,
+						cfg.pixelFormat, cfg.size);
+		if (ret < 0) {
+			LOG(SimplePipeline, Error)
+				<< "Unable to configure converter";
+			return ret;
+		}
+
+		LOG(SimplePipeline, Debug) << "Using format converter";
 	}
 
 	cfg.setStream(&data->stream_);
@@ -525,22 +568,45 @@ int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 {
 	unsigned int count = stream->configuration().bufferCount;
 
-	return video_->exportBuffers(count, buffers);
+	/*
+	 * Export buffers on the converter or capture video node, depending on
+	 * whether the converter is used or not.
+	 */
+	if (useConverter_)
+		return converter_->exportBuffers(count, buffers);
+	else
+		return video_->exportBuffers(count, buffers);
 }
 
 int SimplePipelineHandler::start(Camera *camera)
 {
 	SimpleCameraData *data = cameraData(camera);
 	unsigned int count = data->stream_.configuration().bufferCount;
+	int ret;
 
-	int ret = video_->importBuffers(count);
+	if (useConverter_)
+		ret = video_->allocateBuffers(count, &converterBuffers_);
+	else
+		ret = video_->importBuffers(count);
 	if (ret < 0)
 		return ret;
 
 	ret = video_->streamOn();
 	if (ret < 0) {
-		video_->releaseBuffers();
+		stop(camera);
 		return ret;
+	}
+
+	if (useConverter_) {
+		ret = converter_->start(count);
+		if (ret < 0) {
+			stop(camera);
+			return ret;
+		}
+
+		/* Queue all internal buffers for capture. */
+		for (std::unique_ptr<FrameBuffer> &buffer : converterBuffers_)
+			video_->queueBuffer(buffer.get());
 	}
 
 	activeCamera_ = camera;
@@ -550,8 +616,13 @@ int SimplePipelineHandler::start(Camera *camera)
 
 void SimplePipelineHandler::stop(Camera *camera)
 {
+	if (useConverter_)
+		converter_->stop();
+
 	video_->streamOff();
 	video_->releaseBuffers();
+
+	converterBuffers_.clear();
 	activeCamera_ = nullptr;
 }
 
@@ -567,6 +638,15 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
+	/*
+	 * If conversion is needed, push the buffer to the converter queue, it
+	 * will be handed to the converter in the capture completion handler.
+	 */
+	if (useConverter_) {
+		converterQueue_.push(buffer);
+		return 0;
+	}
+
 	return video_->queueBuffer(buffer);
 }
 
@@ -576,11 +656,20 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
-	for (const char *driver : drivers) {
-		DeviceMatch dm(driver);
+	MediaDevice *converter = nullptr;
+
+	for (const SimplePipelineInfo &info : supportedDevices) {
+		DeviceMatch dm(info.driver);
 		media_ = acquireMediaDevice(enumerator, dm);
-		if (media_)
+		if (!media_)
+			continue;
+
+		if (!info.converter)
 			break;
+
+		DeviceMatch converterMatch(info.converter);
+		converter = acquireMediaDevice(enumerator, converterMatch);
+		break;
 	}
 
 	if (!media_)
@@ -634,6 +723,19 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	}
 
 	video_->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
+
+	/* Open the converter, if any. */
+	if (converter) {
+		converter_ = new SimpleConverter(converter);
+		if (converter_->open() < 0) {
+			LOG(SimplePipeline, Warning)
+				<< "Failed to open converter, disabling format conversion";
+			delete converter_;
+			converter_ = nullptr;
+		}
+
+		converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);
+	}
 
 	/*
 	 * Create one camera data instance for each sensor and gather all
@@ -709,10 +811,68 @@ V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)
 
 void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 {
-	ASSERT(activeCamera_);
+	/*
+	 * If an error occurred during capture, or if the buffer was cancelled,
+	 * complete the request, even if the converter is in use as there's no
+	 * point converting an erroneous buffer.
+	 */
+	if (buffer->metadata().status != FrameMetadata::FrameSuccess) {
+		if (useConverter_) {
+			/* Requeue the buffer for capture. */
+			video_->queueBuffer(buffer);
+
+			/*
+			 * Get the next user-facing buffer to complete the
+			 * request.
+			 */
+			if (converterQueue_.empty())
+				return;
+
+			buffer = converterQueue_.front();
+			converterQueue_.pop();
+		}
+
+		Request *request = buffer->request();
+		completeBuffer(activeCamera_, request, buffer);
+		completeRequest(activeCamera_, request);
+		return;
+	}
+
+	/*
+	 * Queue the captured and the request buffer to the converter if format
+	 * conversion is needed. If there's no queued request, just requeue the
+	 * captured buffer for capture.
+	 */
+	if (useConverter_) {
+		if (converterQueue_.empty()) {
+			video_->queueBuffer(buffer);
+			return;
+		}
+
+		FrameBuffer *output = converterQueue_.front();
+		converterQueue_.pop();
+
+		converter_->queueBuffers(buffer, output);
+		return;
+	}
+
+	/* Otherwise simply complete the request. */
 	Request *request = buffer->request();
 	completeBuffer(activeCamera_, request, buffer);
 	completeRequest(activeCamera_, request);
+}
+
+void SimplePipelineHandler::converterDone(FrameBuffer *input,
+					  FrameBuffer *output)
+{
+	/* Complete the request. */
+	ASSERT(activeCamera_);
+	Request *request = output->request();
+	completeBuffer(activeCamera_, request, output);
+	completeRequest(activeCamera_, request);
+
+	/* Queue the input buffer back for capture. */
+	video_->queueBuffer(input);
 }
 
 REGISTER_PIPELINE_HANDLER(SimplePipelineHandler);

@@ -191,6 +191,8 @@ public:
 
 	int allocateBuffers(unsigned int count,
 			    std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+	int exportBuffers(unsigned int count,
+			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	int importBuffers(unsigned int count);
 	int releaseBuffers();
 

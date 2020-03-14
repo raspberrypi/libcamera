@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <linux/drm_fourcc.h>
+#include <linux/version.h>
 
 #include <libcamera/event_notifier.h>
 #include <libcamera/file_descriptor.h>
@@ -404,6 +405,53 @@ const std::string V4L2DeviceFormat::toString() const
  * No API call other than open(), isOpen() and close() shall be called on an
  * unopened device instance.
  *
+ * The V4L2VideoDevice class supports the V4L2 MMAP and DMABUF memory types:
+ *
+ * - The allocateBuffers() function wraps buffer allocation with the V4L2 MMAP
+ *   memory type. It requests buffers from the driver, allocating the
+ *   corresponding memory, and exports them as a set of FrameBuffer objects.
+ *   Upon successful return the driver's internal buffer management is
+ *   initialized in MMAP mode, and the video device is ready to accept
+ *   queueBuffer() calls.
+ *
+ *   This is the most traditional V4L2 buffer management, and is mostly useful
+ *   to support internal buffer pools in pipeline handlers, either for CPU
+ *   consumption (such as statistics or parameters pools), or for internal
+ *   image buffers shared between devices.
+ *
+ * - The exportBuffers() function operates similarly to allocateBuffers(), but
+ *   leaves the driver's internal buffer management uninitialized. It uses the
+ *   V4L2 buffer orphaning support to allocate buffers with the MMAP method,
+ *   export them as a set of FrameBuffer objects, and reset the driver's
+ *   internal buffer management. The video device shall be initialized with
+ *   importBuffers() or allocateBuffers() before it can accept queueBuffer()
+ *   calls. The exported buffers are directly usable with any V4L2 video device
+ *   in DMABUF mode, or with other dmabuf importers.
+ *
+ *   This method is mostly useful to implement buffer allocation helpers or to
+ *   allocate ancillary buffers, when a V4L2 video device is used in DMABUF
+ *   mode but no other source of buffers is available. An example use case
+ *   would be allocation of scratch buffers to be used in case of buffer
+ *   underruns on a video device that is otherwise supplied with external
+ *   buffers.
+ *
+ * - The importBuffers() function initializes the driver's buffer management to
+ *   import buffers in DMABUF mode. It requests buffers from the driver, but
+ *   doesn't allocate memory. Upon successful return, the video device is ready
+ *   to accept queueBuffer() calls. The buffers to be imported are provided to
+ *   queueBuffer(), and may be supplied externally, or come from a previous
+ *   exportBuffers() call.
+ *
+ *   This is the usual buffers initialization method for video devices whose
+ *   buffers are exposed outside of libcamera. It is also typically used on one
+ *   of the two video device that participate in buffer sharing inside
+ *   pipelines, the other video device typically using allocateBuffers().
+ *
+ * - The releaseBuffers() function resets the driver's internal buffer
+ *   management that was initialized by a previous call to allocateBuffers() or
+ *   importBuffers(). Any memory allocated by allocateBuffers() is freed.
+ *   Buffer exported by exportBuffers() are not affected by this function.
+ *
  * The V4L2VideoDevice class tracks queued buffers and handles buffer events. It
  * automatically dequeues completed buffers and emits the \ref bufferReady
  * signal.
@@ -464,6 +512,15 @@ int V4L2VideoDevice::open()
 			<< "Failed to query device capabilities: "
 			<< strerror(-ret);
 		return ret;
+	}
+
+	if (caps_.version < KERNEL_VERSION(5, 0, 0)) {
+		LOG(V4L2, Error)
+			<< "V4L2 API v" << (caps_.version >> 16)
+			<< "." << ((caps_.version >> 8) & 0xff)
+			<< "." << (caps_.version & 0xff)
+			<< " too old, v5.0.0 or later is required";
+		return -EINVAL;
 	}
 
 	if (!caps_.hasStreaming()) {
@@ -1028,11 +1085,27 @@ int V4L2VideoDevice::requestBuffers(unsigned int count,
 }
 
 /**
- * \brief Allocate buffers from the video device
+ * \brief Allocate and export buffers from the video device
  * \param[in] count Number of buffers to allocate
  * \param[out] buffers Vector to store allocated buffers
+ *
+ * This function wraps buffer allocation with the V4L2 MMAP memory type. It
+ * requests \a count buffers from the driver, allocating the corresponding
+ * memory, and exports them as a set of FrameBuffer objects in \a buffers. Upon
+ * successful return the driver's internal buffer management is initialized in
+ * MMAP mode, and the video device is ready to accept queueBuffer() calls.
+ *
+ * The number of planes and the plane sizes for the allocation are determined
+ * by the currently active format on the device as set by setFormat().
+ *
+ * Buffers allocated with this function shall later be free with
+ * releaseBuffers(). If buffers have already been allocated with
+ * allocateBuffers() or imported with importBuffers(), this function returns
+ * -EBUSY.
+ *
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
+ * \retval -EBUSY buffers have already been allocated or imported
  */
 int V4L2VideoDevice::allocateBuffers(unsigned int count,
 				     std::vector<std::unique_ptr<FrameBuffer>> *buffers)
@@ -1043,6 +1116,49 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
 
 	cache_ = new V4L2BufferCache(*buffers);
 	memoryType_ = V4L2_MEMORY_MMAP;
+
+	return ret;
+}
+
+/**
+ * \brief Export buffers from the video device
+ * \param[in] count Number of buffers to allocate
+ * \param[out] buffers Vector to store allocated buffers
+ *
+ * This function allocates \a count buffer from the video device and exports
+ * them as dmabuf objects, stored in \a buffers. Unlike allocateBuffers(), this
+ * function leaves the driver's internal buffer management uninitialized. The
+ * video device shall be initialized with importBuffers() or allocateBuffers()
+ * before it can accept queueBuffer() calls. The exported buffers are directly
+ * usable with any V4L2 video device in DMABUF mode, or with other dmabuf
+ * importers.
+ *
+ * The number of planes and the plane sizes for the allocation are determined
+ * by the currently active format on the device as set by setFormat().
+ *
+ * Multiple independent sets of buffers can be allocated with multiple calls to
+ * this function. Device-specific limitations may apply regarding the minimum
+ * and maximum number of buffers per set, or to total amount of allocated
+ * memory. The exported dmabuf lifetime is tied to the returned \a buffers. To
+ * free a buffer, the caller shall delete the corresponding FrameBuffer
+ * instance. No bookkeeping and automatic free is performed by the
+ * V4L2VideoDevice class.
+ *
+ * If buffers have already been allocated with allocateBuffers() or imported
+ * with importBuffers(), this function returns -EBUSY.
+ *
+ * \return The number of allocated buffers on success or a negative error code
+ * otherwise
+ * \retval -EBUSY buffers have already been allocated or imported
+ */
+int V4L2VideoDevice::exportBuffers(unsigned int count,
+				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	int ret = createBuffers(count, buffers);
+	if (ret < 0)
+		return ret;
+
+	requestBuffers(0, V4L2_MEMORY_MMAP);
 
 	return ret;
 }
@@ -1144,7 +1260,22 @@ FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,
 /**
  * \brief Prepare the device to import \a count buffers
  * \param[in] count Number of buffers to prepare to import
+ *
+ * This function initializes the driver's buffer management to import buffers
+ * in DMABUF mode. It requests buffers from the driver, but doesn't allocate
+ * memory.
+ *
+ * Upon successful return, the video device is ready to accept queueBuffer()
+ * calls. The buffers to be imported are provided to queueBuffer(), and may be
+ * supplied externally, or come from a previous exportBuffers() call.
+ *
+ * Device initialization performed by this function shall later be cleaned up
+ * with releaseBuffers(). If buffers have already been allocated with
+ * allocateBuffers() or imported with importBuffers(), this function returns
+ * -EBUSY.
+ *
  * \return 0 on success or a negative error code otherwise
+ * \retval -EBUSY buffers have already been allocated or imported
  */
 int V4L2VideoDevice::importBuffers(unsigned int count)
 {
@@ -1167,7 +1298,12 @@ int V4L2VideoDevice::importBuffers(unsigned int count)
 }
 
 /**
- * \brief Release all internally allocated buffers
+ * \brief Release resources allocated by allocateBuffers() or importBuffers()
+ *
+ * This function resets the driver's internal buffer management that was
+ * initialized by a previous call to allocateBuffers() or importBuffers(). Any
+ * memory allocated by allocateBuffers() is freed. Buffer exported by
+ * exportBuffers(), if any, are not affected.
  */
 int V4L2VideoDevice::releaseBuffers()
 {

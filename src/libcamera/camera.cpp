@@ -915,13 +915,6 @@ int Camera::start()
 
 	LOG(Camera, Debug) << "Starting capture";
 
-	for (Stream *stream : p_->activeStreams_) {
-		ret = p_->pipe_->invokeMethod(&PipelineHandler::importFrameBuffers,
-					      ConnectionTypeDirect, this, stream);
-		if (ret < 0)
-			return ret;
-	}
-
 	ret = p_->pipe_->invokeMethod(&PipelineHandler::start,
 				      ConnectionTypeBlocking, this);
 	if (ret)
@@ -958,10 +951,6 @@ int Camera::stop()
 
 	p_->pipe_->invokeMethod(&PipelineHandler::stop, ConnectionTypeBlocking,
 				this);
-
-	for (Stream *stream : p_->activeStreams_)
-		p_->pipe_->invokeMethod(&PipelineHandler::freeFrameBuffers,
-					ConnectionTypeBlocking, this, stream);
 
 	return 0;
 }

@@ -325,7 +325,7 @@ const ControlList &PipelineHandler::properties(Camera *camera)
 
 /**
  * \fn PipelineHandler::exportFrameBuffers()
- * \brief Allocate buffers for \a stream
+ * \brief Allocate and export buffers for \a stream
  * \param[in] camera The camera
  * \param[in] stream The stream to allocate buffers for
  * \param[out] buffers Array of buffers successfully allocated
@@ -345,45 +345,6 @@ const ControlList &PipelineHandler::properties(Camera *camera)
  *
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
- */
-
-/**
- * \fn PipelineHandler::importFrameBuffers()
- * \brief Prepare \a stream to use external buffers
- * \param[in] camera The camera
- * \param[in] stream The stream to prepare for import
- *
- * This method prepares the pipeline handler to use buffers provided by the
- * application for the \a stream.
- *
- * The method may only be called after the Camera has been configured and before
- * it gets started, or after it gets stopped. It shall be called only for
- * streams that are part of the active camera configuration, and at most once
- * per stream until buffers for the stream are freed with freeFrameBuffers().
- *
- * importFrameBuffers() shall also allocate all other resources required by the
- * pipeline handler for the stream to prepare for starting the Camera.
- *
- * The only intended caller is Camera::start().
- *
- * \context This function is called from the CameraManager thread.
- *
- * \return 0 on success or a negative error code otherwise
- */
-
-/**
- * \fn PipelineHandler::freeFrameBuffers()
- * \brief Free buffers allocated from the stream
- * \param[in] camera The camera
- * \param[in] stream The stream to free buffers for
- *
- * This method shall release all resources allocated for the \a stream by
- * importFrameBuffers(). It shall be called only after a successful call that
- * method, and only once per stream.
- *
- * The only intended callers are Camera::stop() and Camera::freeFrameBuffers().
- *
- * \context This function is called from the CameraManager thread.
  */
 
 /**

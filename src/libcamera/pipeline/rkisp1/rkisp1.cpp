@@ -174,8 +174,6 @@ public:
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
-	int importFrameBuffers(Camera *camera, Stream *stream) override;
-	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
@@ -667,17 +665,6 @@ int PipelineHandlerRkISP1::exportFrameBuffers(Camera *camera, Stream *stream,
 	return video_->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerRkISP1::importFrameBuffers(Camera *camera, Stream *stream)
-{
-	unsigned int count = stream->configuration().bufferCount;
-	return video_->importBuffers(count);
-}
-
-void PipelineHandlerRkISP1::freeFrameBuffers(Camera *camera, Stream *stream)
-{
-	video_->releaseBuffers();
-}
-
 int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
@@ -687,6 +674,10 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	unsigned int maxBuffers = 0;
 	for (const Stream *s : camera->streams())
 		maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
+
+	ret = video_->importBuffers(count);
+	if (ret < 0)
+		goto error;
 
 	ret = param_->allocateBuffers(maxBuffers, &paramBuffers_);
 	if (ret < 0)
@@ -747,6 +738,9 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 
 	if (stat_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release stat buffers";
+
+	if (video_->releaseBuffers())
+		LOG(RkISP1, Error) << "Failed to release video buffers";
 
 	return 0;
 }

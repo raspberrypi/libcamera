@@ -67,8 +67,6 @@ public:
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
-	int importFrameBuffers(Camera *camera, Stream *stream) override;
-	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
@@ -214,31 +212,29 @@ int PipelineHandlerUVC::exportFrameBuffers(Camera *camera, Stream *stream,
 	return data->video_->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerUVC::importFrameBuffers(Camera *camera, Stream *stream)
-{
-	UVCCameraData *data = cameraData(camera);
-	unsigned int count = stream->configuration().bufferCount;
-
-	return data->video_->importBuffers(count);
-}
-
-void PipelineHandlerUVC::freeFrameBuffers(Camera *camera, Stream *stream)
-{
-	UVCCameraData *data = cameraData(camera);
-
-	data->video_->releaseBuffers();
-}
-
 int PipelineHandlerUVC::start(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
-	return data->video_->streamOn();
+	unsigned int count = data->stream_.configuration().bufferCount;
+
+	int ret = data->video_->importBuffers(count);
+	if (ret < 0)
+		return ret;
+
+	ret = data->video_->streamOn();
+	if (ret < 0) {
+		data->video_->releaseBuffers();
+		return ret;
+	}
+
+	return 0;
 }
 
 void PipelineHandlerUVC::stop(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	data->video_->streamOff();
+	data->video_->releaseBuffers();
 }
 
 int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)

@@ -71,6 +71,7 @@ public:
 	int configureOutput(ImgUOutput *output,
 			    const StreamConfiguration &cfg);
 
+	int allocateBuffers(IPU3CameraData *data, unsigned int bufferCount);
 	void freeBuffers(IPU3CameraData *data);
 
 	int start();
@@ -207,8 +208,6 @@ public:
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
-	int importFrameBuffers(Camera *camera, Stream *stream) override;
-	void freeFrameBuffers(Camera *camera, Stream *stream) override;
 
 	int start(Camera *camera) override;
 	void stop(Camera *camera) override;
@@ -624,23 +623,6 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 	return video->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerIPU3::importFrameBuffers(Camera *camera, Stream *stream)
-{
-	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
-	V4L2VideoDevice *video = ipu3stream->device_->dev;
-	unsigned int count = stream->configuration().bufferCount;
-
-	return video->importBuffers(count);
-}
-
-void PipelineHandlerIPU3::freeFrameBuffers(Camera *camera, Stream *stream)
-{
-	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
-	V4L2VideoDevice *video = ipu3stream->device_->dev;
-
-	video->releaseBuffers();
-}
-
 /**
  * \todo Clarify if 'viewfinder' and 'stat' nodes have to be set up and
  * started even if not in use. As of now, if not properly configured and
@@ -652,69 +634,24 @@ void PipelineHandlerIPU3::freeFrameBuffers(Camera *camera, Stream *stream)
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
-	IPU3Stream *outStream = &data->outStream_;
-	IPU3Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	unsigned int bufferCount;
 	int ret;
 
-	/* Share buffers between CIO2 output and ImgU input. */
 	ret = cio2->allocateBuffers();
 	if (ret < 0)
 		return ret;
 
 	bufferCount = ret;
 
-	ret = imgu->input_->importBuffers(bufferCount);
-	if (ret) {
-		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
-		goto error;
-	}
-
-	/*
-	 * Use for the stat's internal pool the same number of buffers as for
-	 * the input pool.
-	 * \todo To be revised when we'll actually use the stat node.
-	 */
-	ret = imgu->stat_.dev->allocateBuffers(bufferCount, &imgu->stat_.buffers);
+	ret = imgu->allocateBuffers(data, bufferCount);
 	if (ret < 0) {
-		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
-		goto error;
-	}
-
-	/*
-	 * Allocate buffers also on non-active outputs; use the same number
-	 * of buffers as the active ones.
-	 */
-	if (!outStream->active_) {
-		ImgUDevice::ImgUOutput *output = outStream->device_;
-
-		ret = output->dev->allocateBuffers(bufferCount, &output->buffers);
-		if (ret < 0) {
-			LOG(IPU3, Error) << "Failed to allocate ImgU "
-					 << output->name << " buffers";
-			goto error;
-		}
-	}
-
-	if (!vfStream->active_) {
-		ImgUDevice::ImgUOutput *output = vfStream->device_;
-
-		ret = output->dev->allocateBuffers(bufferCount, &output->buffers);
-		if (ret < 0) {
-			LOG(IPU3, Error) << "Failed to allocate ImgU "
-					 << output->name << " buffers";
-			goto error;
-		}
+		cio2->freeBuffers();
+		return ret;
 	}
 
 	return 0;
-
-error:
-	freeBuffers(camera);
-
-	return ret;
 }
 
 int PipelineHandlerIPU3::freeBuffers(Camera *camera)
@@ -1156,27 +1093,82 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 }
 
 /**
+ * \brief Allocate buffers for all the ImgU video devices
+ */
+int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
+{
+	IPU3Stream *outStream = &data->outStream_;
+	IPU3Stream *vfStream = &data->vfStream_;
+
+	/* Share buffers between CIO2 output and ImgU input. */
+	int ret = input_->importBuffers(bufferCount);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
+		return ret;
+	}
+
+	/*
+	 * Use for the stat's internal pool the same number of buffers as for
+	 * the input pool.
+	 * \todo To be revised when we'll actually use the stat node.
+	 */
+	ret = stat_.dev->allocateBuffers(bufferCount, &stat_.buffers);
+	if (ret < 0) {
+		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
+		goto error;
+	}
+
+	/*
+	 * Allocate buffers for both outputs. If an output is active, prepare
+	 * for buffer import, otherwise allocate internal buffers. Use the same
+	 * number of buffers in either case.
+	 */
+	if (outStream->active_)
+		ret = output_.dev->importBuffers(bufferCount);
+	else
+		ret = output_.dev->allocateBuffers(bufferCount,
+						   &output_.buffers);
+	if (ret < 0) {
+		LOG(IPU3, Error) << "Failed to allocate ImgU output buffers";
+		goto error;
+	}
+
+	if (vfStream->active_)
+		ret = viewfinder_.dev->importBuffers(bufferCount);
+	else
+		ret = viewfinder_.dev->allocateBuffers(bufferCount,
+						       &viewfinder_.buffers);
+	if (ret < 0) {
+		LOG(IPU3, Error) << "Failed to allocate ImgU viewfinder buffers";
+		goto error;
+	}
+
+	return 0;
+
+error:
+	freeBuffers(data);
+
+	return ret;
+}
+
+/**
  * \brief Release buffers for all the ImgU video devices
  */
 void ImgUDevice::freeBuffers(IPU3CameraData *data)
 {
 	int ret;
 
-	if (!data->outStream_.active_) {
-		ret = output_.dev->releaseBuffers();
-		if (ret)
-			LOG(IPU3, Error) << "Failed to release ImgU output buffers";
-	}
+	ret = output_.dev->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU output buffers";
 
 	ret = stat_.dev->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU stat buffers";
 
-	if (!data->vfStream_.active_) {
-		ret = viewfinder_.dev->releaseBuffers();
-		if (ret)
-			LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
-	}
+	ret = viewfinder_.dev->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
 
 	ret = input_->releaseBuffers();
 	if (ret)

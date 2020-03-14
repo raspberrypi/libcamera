@@ -8,26 +8,18 @@
 #include "buffer_source.h"
 
 #include <iostream>
+#include <memory>
 
 #include "device_enumerator.h"
 
 #include "test.h"
 
 BufferSource::BufferSource()
-	: video_(nullptr)
 {
 }
 
 BufferSource::~BufferSource()
 {
-	if (video_) {
-		video_->releaseBuffers();
-		video_->close();
-	}
-
-	delete video_;
-	video_ = nullptr;
-
 	if (media_)
 		media_->release();
 }
@@ -58,36 +50,38 @@ int BufferSource::allocate(const StreamConfiguration &config)
 		return TestSkip;
 	}
 
-	video_ = V4L2VideoDevice::fromEntityName(media_.get(), videoDeviceName);
-	if (!video_) {
+	std::unique_ptr<V4L2VideoDevice> video{ V4L2VideoDevice::fromEntityName(media_.get(), videoDeviceName) };
+	if (!video) {
 		std::cout << "Failed to get video device from entity "
 			  << videoDeviceName << std::endl;
 		return TestFail;
 	}
 
-	if (video_->open()) {
+	if (video->open()) {
 		std::cout << "Unable to open " << videoDeviceName << std::endl;
 		return TestFail;
 	}
 
 	/* Configure the format. */
 	V4L2DeviceFormat format;
-	if (video_->getFormat(&format)) {
+	if (video->getFormat(&format)) {
 		std::cout << "Failed to get format on output device" << std::endl;
 		return TestFail;
 	}
 
 	format.size = config.size;
 	format.fourcc = V4L2VideoDevice::toV4L2Fourcc(config.pixelFormat, false);
-	if (video_->setFormat(&format)) {
+	if (video->setFormat(&format)) {
 		std::cout << "Failed to set format on output device" << std::endl;
 		return TestFail;
 	}
 
-	if (video_->exportBuffers(config.bufferCount, &buffers_) < 0) {
+	if (video->exportBuffers(config.bufferCount, &buffers_) < 0) {
 		std::cout << "Failed to export buffers" << std::endl;
 		return TestFail;
 	}
+
+	video->close();
 
 	return TestPass;
 }

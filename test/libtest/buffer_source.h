@@ -25,7 +25,6 @@ public:
 
 private:
 	std::shared_ptr<MediaDevice> media_;
-	V4L2VideoDevice *video_;
 	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
 };
 

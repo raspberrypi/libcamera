@@ -226,7 +226,7 @@ private:
 
 	int setSelection(unsigned int target, Rectangle *rect);
 
-	int requestBuffers(unsigned int count);
+	int requestBuffers(unsigned int count, enum v4l2_memory memoryType);
 	std::unique_ptr<FrameBuffer> createBuffer(const struct v4l2_buffer &buf);
 	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 

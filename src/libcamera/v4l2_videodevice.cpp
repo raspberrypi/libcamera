@@ -997,14 +997,15 @@ int V4L2VideoDevice::setSelection(unsigned int target, Rectangle *rect)
 	return 0;
 }
 
-int V4L2VideoDevice::requestBuffers(unsigned int count)
+int V4L2VideoDevice::requestBuffers(unsigned int count,
+				    enum v4l2_memory memoryType)
 {
 	struct v4l2_requestbuffers rb = {};
 	int ret;
 
 	rb.count = count;
 	rb.type = bufferType_;
-	rb.memory = memoryType_;
+	rb.memory = memoryType;
 
 	ret = ioctl(VIDIOC_REQBUFS, &rb);
 	if (ret < 0) {
@@ -1017,7 +1018,7 @@ int V4L2VideoDevice::requestBuffers(unsigned int count)
 	if (rb.count < count) {
 		LOG(V4L2, Error)
 			<< "Not enough buffers provided by V4L2VideoDevice";
-		requestBuffers(0);
+		requestBuffers(0, memoryType);
 		return -ENOMEM;
 	}
 
@@ -1043,7 +1044,7 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
 
 	memoryType_ = V4L2_MEMORY_MMAP;
 
-	int ret = requestBuffers(count);
+	int ret = requestBuffers(count, V4L2_MEMORY_MMAP);
 	if (ret < 0)
 		return ret;
 
@@ -1080,7 +1081,7 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
 	return count;
 
 err_buf:
-	requestBuffers(0);
+	requestBuffers(0, V4L2_MEMORY_MMAP);
 
 	buffers->clear();
 
@@ -1150,7 +1151,7 @@ int V4L2VideoDevice::importBuffers(unsigned int count)
 
 	memoryType_ = V4L2_MEMORY_DMABUF;
 
-	int ret = requestBuffers(count);
+	int ret = requestBuffers(count, V4L2_MEMORY_DMABUF);
 	if (ret)
 		return ret;
 
@@ -1171,7 +1172,7 @@ int V4L2VideoDevice::releaseBuffers()
 	delete cache_;
 	cache_ = nullptr;
 
-	return requestBuffers(0);
+	return requestBuffers(0, memoryType_);
 }
 
 /**

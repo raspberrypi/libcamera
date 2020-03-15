@@ -174,17 +174,17 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	if (roles.empty())
 		return config;
 
-	ImageFormats formats;
+	std::map<PixelFormat, std::vector<SizeRange>> formats;
 
 	for (PixelFormat pixelformat : pixelformats) {
 		/* The scaler hardcodes a x3 scale-up ratio. */
 		std::vector<SizeRange> sizes{
 			SizeRange{ 48, 48, 4096, 2160 }
 		};
-		formats.addFormat(pixelformat, sizes);
+		formats[pixelformat] = sizes;
 	}
 
-	StreamConfiguration cfg(formats.data());
+	StreamConfiguration cfg(formats);
 
 	cfg.pixelFormat = DRM_FORMAT_BGR888;
 	cfg.size = { 1920, 1080 };

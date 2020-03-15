@@ -1551,8 +1551,7 @@ uint32_t V4L2VideoDevice::toV4L2Fourcc(PixelFormat pixelFormat, bool multiplanar
 	 * class. Until we fix the logger, work around it.
 	 */
 	libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(), LogError).stream()
-		<< "Unsupported V4L2 pixel format "
-		<< utils::hex(pixelFormat);
+		<< "Unsupported V4L2 pixel format " << pixelFormat.toString();
 	return 0;
 }
 

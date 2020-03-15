@@ -253,7 +253,7 @@ int CamApp::prepareConfig()
 
 			/* TODO: Translate 4CC string to ID. */
 			if (opt.isSet("pixelformat"))
-				cfg.pixelFormat = opt["pixelformat"];
+				cfg.pixelFormat = PixelFormat(opt["pixelformat"]);
 		}
 	}
 
@@ -304,8 +304,8 @@ int CamApp::infoConfiguration()
 
 		const StreamFormats &formats = cfg.formats();
 		for (PixelFormat pixelformat : formats.pixelformats()) {
-			std::cout << " * Pixelformat: 0x" << std::hex
-				  << std::setw(8) << pixelformat << " "
+			std::cout << " * Pixelformat: "
+				  << pixelformat.toString() << " "
 				  << formats.range(pixelformat).toString()
 				  << std::endl;
 

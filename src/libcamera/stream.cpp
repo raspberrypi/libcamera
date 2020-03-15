@@ -347,9 +347,7 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  */
 std::string StreamConfiguration::toString() const
 {
-	std::stringstream ss;
-	ss << size.toString() << "-" << utils::hex(pixelFormat);
-	return ss.str();
+	return size.toString() + "-" + pixelFormat.toString();
 }
 
 /**

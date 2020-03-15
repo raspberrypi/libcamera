@@ -105,7 +105,7 @@ private:
 
 namespace {
 
-constexpr std::array<PixelFormat, 3> pixelformats{
+static const std::array<PixelFormat, 3> pixelformats{
 	DRM_FORMAT_RGB888,
 	DRM_FORMAT_BGR888,
 	DRM_FORMAT_BGRA8888,

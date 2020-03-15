@@ -533,7 +533,7 @@ struct PixelFormatInfo {
 
 namespace {
 
-constexpr std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
+static const std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
 	/* RGB formats. */
 	{ DRM_FORMAT_RGB888,	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 	{ DRM_FORMAT_BGR888,	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },

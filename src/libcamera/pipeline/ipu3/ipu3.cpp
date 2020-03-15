@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <memory>
+#include <queue>
 #include <vector>
 
 #include <linux/media-bus-format.h>
@@ -118,6 +119,9 @@ public:
 	int allocateBuffers();
 	void freeBuffers();
 
+	FrameBuffer *getBuffer();
+	void putBuffer(FrameBuffer *buffer);
+
 	int start();
 	int stop();
 
@@ -129,6 +133,7 @@ public:
 
 private:
 	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
+	std::queue<FrameBuffer *> availableBuffers_;
 };
 
 class IPU3Stream : public Stream
@@ -716,11 +721,21 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 {
+	IPU3CameraData *data = cameraData(camera);
+	FrameBuffer *buffer;
 	int error = 0;
+
+	/* Get a CIO2 buffer, associate it with the request and queue it. */
+	buffer = data->cio2_.getBuffer();
+	if (!buffer)
+		return -EINVAL;
+
+	buffer->setRequest(request);
+	data->cio2_.output_->queueBuffer(buffer);
 
 	for (auto it : request->buffers()) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
-		FrameBuffer *buffer = it.second;
+		buffer = it.second;
 
 		int ret = stream->device_->dev->queueBuffer(buffer);
 		if (ret < 0)
@@ -892,7 +907,7 @@ void IPU3CameraData::imguInputBufferReady(FrameBuffer *buffer)
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		return;
 
-	cio2_.output_->queueBuffer(buffer);
+	cio2_.putBuffer(buffer);
 }
 
 /**
@@ -1416,29 +1431,45 @@ int CIO2Device::allocateBuffers()
 {
 	int ret = output_->allocateBuffers(CIO2_BUFFER_COUNT, &buffers_);
 	if (ret < 0)
-		LOG(IPU3, Error) << "Failed to allocate CIO2 buffers";
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : buffers_)
+		availableBuffers_.push(buffer.get());
 
 	return ret;
 }
 
 void CIO2Device::freeBuffers()
 {
+	availableBuffers_ = {};
+
 	buffers_.clear();
 
 	if (output_->releaseBuffers())
 		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
-int CIO2Device::start()
+FrameBuffer *CIO2Device::getBuffer()
 {
-	for (const std::unique_ptr<FrameBuffer> &buffer : buffers_) {
-		int ret = output_->queueBuffer(buffer.get());
-		if (ret) {
-			LOG(IPU3, Error) << "Failed to queue CIO2 buffer";
-			return ret;
-		}
+	if (availableBuffers_.empty()) {
+		LOG(IPU3, Error) << "CIO2 buffer underrun";
+		return nullptr;
 	}
 
+	FrameBuffer *buffer = availableBuffers_.front();
+
+	availableBuffers_.pop();
+
+	return buffer;
+}
+
+void CIO2Device::putBuffer(FrameBuffer *buffer)
+{
+	availableBuffers_.push(buffer);
+}
+
+int CIO2Device::start()
+{
 	return output_->streamOn();
 }
 

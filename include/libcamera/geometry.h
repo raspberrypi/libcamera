@@ -74,21 +74,19 @@ public:
 	{
 	}
 
-	SizeRange(unsigned int width, unsigned int height)
-		: min(width, height), max(width, height), hStep(1), vStep(1)
+	SizeRange(const Size &size)
+		: min(size), max(size), hStep(1), vStep(1)
 	{
 	}
 
-	SizeRange(unsigned int minW, unsigned int minH,
-		  unsigned int maxW, unsigned int maxH)
-		: min(minW, minH), max(maxW, maxH), hStep(1), vStep(1)
+	SizeRange(const Size &minSize, const Size &maxSize)
+		: min(minSize), max(maxSize), hStep(1), vStep(1)
 	{
 	}
 
-	SizeRange(unsigned int minW, unsigned int minH,
-		  unsigned int maxW, unsigned int maxH,
+	SizeRange(const Size &minSize, const Size &maxSize,
 		  unsigned int hstep, unsigned int vstep)
-		: min(minW, minH), max(maxW, maxH), hStep(hstep), vStep(vstep)
+		: min(minSize), max(maxSize), hStep(hstep), vStep(vstep)
 	{
 	}
 

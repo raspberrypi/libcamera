@@ -971,20 +971,20 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
 
 		switch (frameSize.type) {
 		case V4L2_FRMSIZE_TYPE_DISCRETE:
-			sizes.emplace_back(frameSize.discrete.width,
-					   frameSize.discrete.height);
+			sizes.emplace_back(Size{ frameSize.discrete.width,
+						 frameSize.discrete.height });
 			break;
 		case V4L2_FRMSIZE_TYPE_CONTINUOUS:
-			sizes.emplace_back(frameSize.stepwise.min_width,
-					   frameSize.stepwise.min_height,
-					   frameSize.stepwise.max_width,
-					   frameSize.stepwise.max_height);
+			sizes.emplace_back(Size{ frameSize.stepwise.min_width,
+						 frameSize.stepwise.min_height },
+					   Size{ frameSize.stepwise.max_width,
+						 frameSize.stepwise.max_height });
 			break;
 		case V4L2_FRMSIZE_TYPE_STEPWISE:
-			sizes.emplace_back(frameSize.stepwise.min_width,
-					   frameSize.stepwise.min_height,
-					   frameSize.stepwise.max_width,
-					   frameSize.stepwise.max_height,
+			sizes.emplace_back(Size{ frameSize.stepwise.min_width,
+						 frameSize.stepwise.min_height },
+					   Size{ frameSize.stepwise.max_width,
+						 frameSize.stepwise.max_height },
 					   frameSize.stepwise.step_width,
 					   frameSize.stepwise.step_height);
 			break;

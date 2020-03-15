@@ -217,31 +217,24 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
- * \fn SizeRange::SizeRange(unsigned int width, unsigned int height)
+ * \fn SizeRange::SizeRange(const Size &size)
  * \brief Construct a size range representing a single size
- * \param[in] width The size width
- * \param[in] height The size height
+ * \param[in] size The size
  */
 
 /**
- * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH,
- *			    unsigned int maxW, unsigned int maxH)
- * \brief Construct an initialized size range
- * \param[in] minW The minimum width
- * \param[in] minH The minimum height
- * \param[in] maxW The maximum width
- * \param[in] maxH The maximum height
+ * \fn SizeRange::SizeRange(const Size &minSize, const Size &maxSize)
+ * \brief Construct a size range with specified min and max, and steps of 1
+ * \param[in] minSize The minimum size
+ * \param[in] maxSize The maximum size
  */
 
 /**
- * \fn SizeRange::SizeRange(unsigned int minW, unsigned int minH,
- *			    unsigned int maxW, unsigned int maxH,
+ * \fn SizeRange::SizeRange(const Size &minSize, const Size &maxSize,
  *			    unsigned int hstep, unsigned int vstep)
- * \brief Construct an initialized size range
- * \param[in] minW The minimum width
- * \param[in] minH The minimum height
- * \param[in] maxW The maximum width
- * \param[in] maxH The maximum height
+ * \brief Construct a size range with specified min, max and step
+ * \param[in] minSize The minimum size
+ * \param[in] maxSize The maximum size
  * \param[in] hstep The horizontal step
  * \param[in] vstep The vertical step
  */

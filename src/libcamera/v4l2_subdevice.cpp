@@ -313,8 +313,8 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 		if (ret)
 			break;
 
-		sizes.emplace_back(sizeEnum.min_width, sizeEnum.min_height,
-				   sizeEnum.max_width, sizeEnum.max_height);
+		sizes.emplace_back(Size{ sizeEnum.min_width, sizeEnum.min_height },
+				   Size{ sizeEnum.max_width, sizeEnum.max_height });
 	}
 
 	if (ret < 0 && ret != -EINVAL && ret != -ENOTTY) {

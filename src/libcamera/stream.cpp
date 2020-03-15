@@ -251,7 +251,7 @@ SizeRange StreamFormats::range(const PixelFormat &pixelformat) const
 		return ranges[0];
 
 	LOG(Stream, Debug) << "Building range from discrete sizes";
-	SizeRange range(UINT_MAX, UINT_MAX, 0, 0);
+	SizeRange range({ UINT_MAX, UINT_MAX }, { 0, 0 });
 	for (const SizeRange &limit : ranges) {
 		if (limit.min < range.min)
 			range.min = limit.min;

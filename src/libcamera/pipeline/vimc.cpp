@@ -177,7 +177,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	for (PixelFormat pixelformat : pixelformats) {
 		/* The scaler hardcodes a x3 scale-up ratio. */
 		std::vector<SizeRange> sizes{
-			SizeRange{ 48, 48, 4096, 2160 }
+			SizeRange{ { 48, 48 }, { 4096, 2160 } }
 		};
 		formats[pixelformat] = sizes;
 	}

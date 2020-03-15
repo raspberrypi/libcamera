@@ -55,8 +55,8 @@ protected:
 	{
 		/* Test discrete sizes */
 		StreamFormats discrete({
-			{ PixelFormat(1), { SizeRange(100, 100), SizeRange(200, 200) } },
-			{ PixelFormat(2), { SizeRange(300, 300), SizeRange(400, 400) } },
+			{ PixelFormat(1), { SizeRange({ 100, 100 }), SizeRange({ 200, 200 }) } },
+			{ PixelFormat(2), { SizeRange({ 300, 300 }), SizeRange({ 400, 400 }) } },
 		});
 
 		if (testSizes("discrete 1", discrete.sizes(PixelFormat(1)),
@@ -68,10 +68,10 @@ protected:
 
 		/* Test range sizes */
 		StreamFormats range({
-			{ PixelFormat(1), { SizeRange(640, 480, 640, 480) } },
-			{ PixelFormat(2), { SizeRange(640, 480, 800, 600, 8, 8) } },
-			{ PixelFormat(3), { SizeRange(640, 480, 800, 600, 16, 16) } },
-			{ PixelFormat(4), { SizeRange(128, 128, 4096, 4096, 128, 128) } },
+			{ PixelFormat(1), { SizeRange({ 640, 480 }, { 640, 480 }) } },
+			{ PixelFormat(2), { SizeRange({ 640, 480 }, { 800, 600 }, 8, 8) } },
+			{ PixelFormat(3), { SizeRange({ 640, 480 }, { 800, 600 }, 16, 16) } },
+			{ PixelFormat(4), { SizeRange({ 128, 128 }, { 4096, 4096 }, 128, 128) } },
 		});
 
 		if (testSizes("range 1", range.sizes(PixelFormat(1)), { Size(640, 480) }))

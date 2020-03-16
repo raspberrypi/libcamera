@@ -535,21 +535,21 @@ namespace {
 
 static const std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
 	/* RGB formats. */
-	{ DRM_FORMAT_RGB888,	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_BGR888,	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_BGRA8888,	V4L2_PIX_FMT_ARGB32,	1, {{ { 32, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_RGB888),	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_BGR888),	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_BGRA8888),	V4L2_PIX_FMT_ARGB32,	1, {{ { 32, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 	/* YUV packed formats. */
-	{ DRM_FORMAT_UYVY,	V4L2_PIX_FMT_UYVY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_VYUY,	V4L2_PIX_FMT_VYUY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_YUYV,	V4L2_PIX_FMT_YUYV,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_YVYU,	V4L2_PIX_FMT_YVYU,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_UYVY),		V4L2_PIX_FMT_UYVY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_VYUY),		V4L2_PIX_FMT_VYUY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_YUYV),		V4L2_PIX_FMT_YUYV,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_YVYU),		V4L2_PIX_FMT_YVYU,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 	/* YUY planar formats. */
-	{ DRM_FORMAT_NV12,	V4L2_PIX_FMT_NV12,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_NV21,	V4L2_PIX_FMT_NV21,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_NV16,	V4L2_PIX_FMT_NV16,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_NV61,	V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_NV24,	V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ DRM_FORMAT_NV42,	V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV12),		V4L2_PIX_FMT_NV12,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV21),		V4L2_PIX_FMT_NV21,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV16),		V4L2_PIX_FMT_NV16,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV61),		V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV24),		V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV42),		V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
 }};
 
 } /* namespace */
@@ -593,7 +593,7 @@ PixelFormat V4L2CameraProxy::v4l2ToDrm(uint32_t format)
 					 return info.v4l2Format == format;
 				 });
 	if (info == pixelFormatInfo.end())
-		return format;
+		return PixelFormat();
 
 	return info->format;
 }

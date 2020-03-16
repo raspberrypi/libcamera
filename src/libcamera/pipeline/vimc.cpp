@@ -106,9 +106,9 @@ private:
 namespace {
 
 static const std::array<PixelFormat, 3> pixelformats{
-	DRM_FORMAT_RGB888,
-	DRM_FORMAT_BGR888,
-	DRM_FORMAT_BGRA8888,
+	PixelFormat(DRM_FORMAT_RGB888),
+	PixelFormat(DRM_FORMAT_BGR888),
+	PixelFormat(DRM_FORMAT_BGRA8888),
 };
 
 } /* namespace */
@@ -137,7 +137,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	if (std::find(pixelformats.begin(), pixelformats.end(), cfg.pixelFormat) ==
 	    pixelformats.end()) {
 		LOG(VIMC, Debug) << "Adjusting format to RGB24";
-		cfg.pixelFormat = DRM_FORMAT_BGR888;
+		cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
 		status = Adjusted;
 	}
 
@@ -186,7 +186,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	StreamConfiguration cfg(formats);
 
-	cfg.pixelFormat = DRM_FORMAT_BGR888;
+	cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
 	cfg.size = { 1920, 1080 };
 	cfg.bufferCount = 4;
 

@@ -19,7 +19,7 @@ class PixelFormat
 {
 public:
 	PixelFormat();
-	PixelFormat(uint32_t fourcc, const std::set<uint64_t> &modifiers = {});
+	explicit PixelFormat(uint32_t fourcc, const std::set<uint64_t> &modifiers = {});
 
 	bool operator==(const PixelFormat &other) const;
 	bool operator!=(const PixelFormat &other) const { return !(*this == other); }

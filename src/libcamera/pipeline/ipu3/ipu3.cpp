@@ -246,7 +246,7 @@ IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
 void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 {
 	/* The only pixel format the driver supports is NV12. */
-	cfg.pixelFormat = DRM_FORMAT_NV12;
+	cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
 
 	if (scale) {
 		/*
@@ -401,7 +401,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		StreamConfiguration cfg = {};
 		IPU3Stream *stream = nullptr;
 
-		cfg.pixelFormat = DRM_FORMAT_NV12;
+		cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
 
 		switch (role) {
 		case StreamRole::StillCapture:
@@ -1141,7 +1141,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 		return 0;
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = dev->toV4L2Fourcc(DRM_FORMAT_NV12);
+	outputFormat.fourcc = dev->toV4L2Fourcc(PixelFormat(DRM_FORMAT_NV12));
 	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 

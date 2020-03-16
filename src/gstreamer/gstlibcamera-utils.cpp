@@ -154,9 +154,9 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 	if (gst_structure_has_name(s, "video/x-raw")) {
 		const gchar *format = gst_structure_get_string(s, "format");
 		gst_format = gst_video_format_from_string(format);
-		stream_cfg.pixelFormat = gst_format_to_drm(gst_format);
+		stream_cfg.pixelFormat = PixelFormat(gst_format_to_drm(gst_format));
 	} else if (gst_structure_has_name(s, "image/jpeg")) {
-		stream_cfg.pixelFormat = DRM_FORMAT_MJPEG;
+		stream_cfg.pixelFormat = PixelFormat(DRM_FORMAT_MJPEG);
 	} else {
 		g_critical("Unsupported media type: %s", gst_structure_get_name(s));
 	}

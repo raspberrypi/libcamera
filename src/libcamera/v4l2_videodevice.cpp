@@ -1427,39 +1427,39 @@ PixelFormat V4L2VideoDevice::toPixelFormat(uint32_t v4l2Fourcc)
 	switch (v4l2Fourcc) {
 	/* RGB formats. */
 	case V4L2_PIX_FMT_RGB24:
-		return DRM_FORMAT_BGR888;
+		return PixelFormat(DRM_FORMAT_BGR888);
 	case V4L2_PIX_FMT_BGR24:
-		return DRM_FORMAT_RGB888;
+		return PixelFormat(DRM_FORMAT_RGB888);
 	case V4L2_PIX_FMT_ARGB32:
-		return DRM_FORMAT_BGRA8888;
+		return PixelFormat(DRM_FORMAT_BGRA8888);
 
 	/* YUV packed formats. */
 	case V4L2_PIX_FMT_YUYV:
-		return DRM_FORMAT_YUYV;
+		return PixelFormat(DRM_FORMAT_YUYV);
 	case V4L2_PIX_FMT_YVYU:
-		return DRM_FORMAT_YVYU;
+		return PixelFormat(DRM_FORMAT_YVYU);
 	case V4L2_PIX_FMT_UYVY:
-		return DRM_FORMAT_UYVY;
+		return PixelFormat(DRM_FORMAT_UYVY);
 	case V4L2_PIX_FMT_VYUY:
-		return DRM_FORMAT_VYUY;
+		return PixelFormat(DRM_FORMAT_VYUY);
 
 	/* YUY planar formats. */
 	case V4L2_PIX_FMT_NV16:
 	case V4L2_PIX_FMT_NV16M:
-		return DRM_FORMAT_NV16;
+		return PixelFormat(DRM_FORMAT_NV16);
 	case V4L2_PIX_FMT_NV61:
 	case V4L2_PIX_FMT_NV61M:
-		return DRM_FORMAT_NV61;
+		return PixelFormat(DRM_FORMAT_NV61);
 	case V4L2_PIX_FMT_NV12:
 	case V4L2_PIX_FMT_NV12M:
-		return DRM_FORMAT_NV12;
+		return PixelFormat(DRM_FORMAT_NV12);
 	case V4L2_PIX_FMT_NV21:
 	case V4L2_PIX_FMT_NV21M:
-		return DRM_FORMAT_NV21;
+		return PixelFormat(DRM_FORMAT_NV21);
 
 	/* Compressed formats. */
 	case V4L2_PIX_FMT_MJPEG:
-		return DRM_FORMAT_MJPEG;
+		return PixelFormat(DRM_FORMAT_MJPEG);
 
 	/* V4L2 formats not yet supported by DRM. */
 	case V4L2_PIX_FMT_GREY:
@@ -1472,7 +1472,7 @@ PixelFormat V4L2VideoDevice::toPixelFormat(uint32_t v4l2Fourcc)
 				LogError).stream()
 			<< "Unsupported V4L2 pixel format "
 			<< utils::hex(v4l2Fourcc);
-		return 0;
+		return PixelFormat();
 	}
 }
 

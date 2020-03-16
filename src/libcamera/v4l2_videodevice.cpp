@@ -1689,9 +1689,9 @@ PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
  *
  * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
  */
-V4L2PixelFormat V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat)
+V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat)
 {
-	return V4L2VideoDevice::toV4L2Fourcc(pixelFormat, caps_.isMultiplanar());
+	return toV4L2PixelFormat(pixelFormat, caps_.isMultiplanar());
 }
 
 /**
@@ -1707,8 +1707,8 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat)
  *
  * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
  */
-V4L2PixelFormat V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat,
-					      bool multiplanar)
+V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat,
+						   bool multiplanar)
 {
 	switch (pixelFormat) {
 	/* RGB formats. */

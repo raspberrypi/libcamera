@@ -1078,7 +1078,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 		return 0;
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = dev->toV4L2Fourcc(PixelFormat(DRM_FORMAT_NV12));
+	outputFormat.fourcc = dev->toV4L2PixelFormat(PixelFormat(DRM_FORMAT_NV12));
 	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 

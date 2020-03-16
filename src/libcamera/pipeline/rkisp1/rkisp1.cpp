@@ -626,7 +626,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	LOG(RkISP1, Debug) << "Resizer output pad configured with " << format.toString();
 
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = video_->toV4L2Fourcc(cfg.pixelFormat);
+	outputFormat.fourcc = video_->toV4L2PixelFormat(cfg.pixelFormat);
 	outputFormat.size = cfg.size;
 	outputFormat.planesCount = 2;
 
@@ -635,7 +635,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	if (outputFormat.size != cfg.size ||
-	    outputFormat.fourcc != video_->toV4L2Fourcc(cfg.pixelFormat)) {
+	    outputFormat.fourcc != video_->toV4L2PixelFormat(cfg.pixelFormat)) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;

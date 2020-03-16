@@ -149,10 +149,33 @@ private:
 	unsigned int missCounter_;
 };
 
+class V4L2PixelFormat
+{
+public:
+	V4L2PixelFormat()
+		: fourcc_(0)
+	{
+	}
+
+	V4L2PixelFormat(uint32_t fourcc)
+		: fourcc_(fourcc)
+	{
+	}
+
+	bool isValid() const { return fourcc_ != 0; }
+	uint32_t fourcc() const { return fourcc_; }
+	operator uint32_t() const { return fourcc_; }
+
+	std::string toString() const;
+
+private:
+	uint32_t fourcc_;
+};
+
 class V4L2DeviceFormat
 {
 public:
-	uint32_t fourcc;
+	V4L2PixelFormat fourcc;
 	Size size;
 
 	struct {
@@ -184,7 +207,7 @@ public:
 
 	int getFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
-	ImageFormats formats();
+	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats();
 
 	int setCrop(Rectangle *rect);
 	int setCompose(Rectangle *rect);
@@ -205,10 +228,10 @@ public:
 	static V4L2VideoDevice *fromEntityName(const MediaDevice *media,
 					       const std::string &entity);
 
-	static PixelFormat toPixelFormat(uint32_t v4l2Fourcc);
-	uint32_t toV4L2Fourcc(const PixelFormat &pixelFormat);
-	static uint32_t toV4L2Fourcc(const PixelFormat &pixelFormat,
-				     bool multiplanar);
+	static PixelFormat toPixelFormat(V4L2PixelFormat v4l2Fourcc);
+	V4L2PixelFormat toV4L2Fourcc(const PixelFormat &pixelFormat);
+	static V4L2PixelFormat toV4L2Fourcc(const PixelFormat &pixelFormat,
+					    bool multiplanar);
 
 protected:
 	std::string logPrefix() const;
@@ -223,8 +246,8 @@ private:
 	int getFormatSingleplane(V4L2DeviceFormat *format);
 	int setFormatSingleplane(V4L2DeviceFormat *format);
 
-	std::vector<unsigned int> enumPixelformats();
-	std::vector<SizeRange> enumSizes(unsigned int pixelFormat);
+	std::vector<V4L2PixelFormat> enumPixelformats();
+	std::vector<SizeRange> enumSizes(V4L2PixelFormat pixelFormat);
 
 	int setSelection(unsigned int target, Rectangle *rect);
 

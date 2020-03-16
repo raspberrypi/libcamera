@@ -279,6 +279,65 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 }
 
 /**
+ * \class V4L2PixelFormat
+ * \brief V4L2 pixel format FourCC wrapper
+ *
+ * The V4L2PixelFormat class describes the pixel format of a V4L2 buffer. It
+ * wraps the V4L2 numerical FourCC, and shall be used in all APIs that deal with
+ * V4L2 pixel formats. Its purpose is to prevent unintentional confusion of
+ * V4L2 and DRM FourCCs in code by catching implicit conversion attempts at
+ * compile time.
+ */
+
+/**
+ * \fn V4L2PixelFormat::V4L2PixelFormat()
+ * \brief Construct a V4L2PixelFormat with an invalid format
+ *
+ * V4L2PixelFormat instances constructed with the default constructor are
+ * invalid, calling the isValid() function returns false.
+ */
+
+/**
+ * \fn V4L2PixelFormat::V4L2PixelFormat(uint32_t fourcc)
+ * \brief Construct a V4L2PixelFormat from a FourCC value
+ * \param[in] fourcc The pixel format FourCC numerical value
+ */
+
+/**
+ * \fn bool V4L2PixelFormat::isValid() const
+ * \brief Check if the pixel format is valid
+ *
+ * V4L2PixelFormat instances constructed with the default constructor are
+ * invalid. Instances constructed with a FourCC defined in the V4L2 API are
+ * valid. The behaviour is undefined otherwise.
+ *
+ * \return True if the pixel format is valid, false otherwise
+ */
+
+/**
+ * \fn uint32_t V4L2PixelFormat::fourcc() const
+ * \brief Retrieve the pixel format FourCC numerical value
+ * \return The pixel format FourCC numerical value
+ */
+
+/**
+ * \fn V4L2PixelFormat::operator uint32_t() const
+ * \brief Convert to the pixel format FourCC numerical value
+ * \return The pixel format FourCC numerical value
+ */
+
+/**
+ * \brief Assemble and return a string describing the pixel format
+ * \return A string describing the pixel format
+ */
+std::string V4L2PixelFormat::toString() const
+{
+	char str[11];
+	snprintf(str, 11, "0x%08x", fourcc_);
+	return str;
+}
+
+/**
  * \class V4L2DeviceFormat
  * \brief The V4L2 video device image format and sizes
  *
@@ -386,7 +445,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 const std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
-	ss << size.toString() << "-" << utils::hex(fourcc);
+	ss << size.toString() << "-" << fourcc.toString();
 	return ss.str();
 }
 
@@ -901,29 +960,31 @@ int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
  *
  * \return A list of the supported video device formats
  */
-ImageFormats V4L2VideoDevice::formats()
+std::map<V4L2PixelFormat, std::vector<SizeRange>> V4L2VideoDevice::formats()
 {
-	ImageFormats formats;
+	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats;
 
-	for (unsigned int pixelformat : enumPixelformats()) {
-		std::vector<SizeRange> sizes = enumSizes(pixelformat);
+	for (V4L2PixelFormat pixelFormat : enumPixelformats()) {
+		std::vector<SizeRange> sizes = enumSizes(pixelFormat);
 		if (sizes.empty())
 			return {};
 
-		if (formats.addFormat(pixelformat, sizes)) {
+		if (formats.find(pixelFormat) != formats.end()) {
 			LOG(V4L2, Error)
 				<< "Could not add sizes for pixel format "
-				<< pixelformat;
+				<< pixelFormat;
 			return {};
 		}
+
+		formats.emplace(pixelFormat, sizes);
 	}
 
 	return formats;
 }
 
-std::vector<unsigned int> V4L2VideoDevice::enumPixelformats()
+std::vector<V4L2PixelFormat> V4L2VideoDevice::enumPixelformats()
 {
-	std::vector<unsigned int> formats;
+	std::vector<V4L2PixelFormat> formats;
 	int ret;
 
 	for (unsigned int index = 0; ; index++) {
@@ -948,7 +1009,7 @@ std::vector<unsigned int> V4L2VideoDevice::enumPixelformats()
 	return formats;
 }
 
-std::vector<SizeRange> V4L2VideoDevice::enumSizes(unsigned int pixelFormat)
+std::vector<SizeRange> V4L2VideoDevice::enumSizes(V4L2PixelFormat pixelFormat)
 {
 	std::vector<SizeRange> sizes;
 	int ret;
@@ -1563,7 +1624,7 @@ V4L2VideoDevice *V4L2VideoDevice::fromEntityName(const MediaDevice *media,
  * \param[in] v4l2Fourcc The V4L2 pixel format (V4L2_PIX_FORMAT_*)
  * \return The PixelFormat corresponding to \a v4l2Fourcc
  */
-PixelFormat V4L2VideoDevice::toPixelFormat(uint32_t v4l2Fourcc)
+PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
 {
 	switch (v4l2Fourcc) {
 	/* RGB formats. */
@@ -1612,7 +1673,7 @@ PixelFormat V4L2VideoDevice::toPixelFormat(uint32_t v4l2Fourcc)
 		libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(),
 				LogError).stream()
 			<< "Unsupported V4L2 pixel format "
-			<< utils::hex(v4l2Fourcc);
+			<< v4l2Fourcc.toString();
 		return PixelFormat();
 	}
 }
@@ -1628,7 +1689,7 @@ PixelFormat V4L2VideoDevice::toPixelFormat(uint32_t v4l2Fourcc)
  *
  * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
  */
-uint32_t V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat)
+V4L2PixelFormat V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat)
 {
 	return V4L2VideoDevice::toV4L2Fourcc(pixelFormat, caps_.isMultiplanar());
 }
@@ -1646,8 +1707,8 @@ uint32_t V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat)
  *
  * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
  */
-uint32_t V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat,
-				       bool multiplanar)
+V4L2PixelFormat V4L2VideoDevice::toV4L2Fourcc(const PixelFormat &pixelFormat,
+					      bool multiplanar)
 {
 	switch (pixelFormat) {
 	/* RGB formats. */

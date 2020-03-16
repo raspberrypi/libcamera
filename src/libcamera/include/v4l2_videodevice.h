@@ -157,7 +157,7 @@ public:
 	{
 	}
 
-	V4L2PixelFormat(uint32_t fourcc)
+	explicit V4L2PixelFormat(uint32_t fourcc)
 		: fourcc_(fourcc)
 	{
 	}

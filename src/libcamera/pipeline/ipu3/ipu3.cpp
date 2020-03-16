@@ -121,7 +121,7 @@ public:
 	int start();
 	int stop();
 
-	static int mediaBusToFormat(unsigned int code);
+	static V4L2PixelFormat mediaBusToFormat(unsigned int code);
 
 	V4L2VideoDevice *output_;
 	V4L2Subdevice *csi2_;
@@ -1447,19 +1447,19 @@ int CIO2Device::stop()
 	return output_->streamOff();
 }
 
-int CIO2Device::mediaBusToFormat(unsigned int code)
+V4L2PixelFormat CIO2Device::mediaBusToFormat(unsigned int code)
 {
 	switch (code) {
 	case MEDIA_BUS_FMT_SBGGR10_1X10:
-		return V4L2_PIX_FMT_IPU3_SBGGR10;
+		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10);
 	case MEDIA_BUS_FMT_SGBRG10_1X10:
-		return V4L2_PIX_FMT_IPU3_SGBRG10;
+		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10);
 	case MEDIA_BUS_FMT_SGRBG10_1X10:
-		return V4L2_PIX_FMT_IPU3_SGRBG10;
+		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10);
 	case MEDIA_BUS_FMT_SRGGB10_1X10:
-		return V4L2_PIX_FMT_IPU3_SRGGB10;
+		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10);
 	default:
-		return -EINVAL;
+		return {};
 	}
 }
 

@@ -69,7 +69,7 @@ int V4L2VideoDeviceTest::init()
 		if (debayer_->open())
 			return TestFail;
 
-		format.fourcc = V4L2_PIX_FMT_SBGGR8;
+		format.fourcc = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8);
 
 		V4L2SubdeviceFormat subformat = {};
 		subformat.mbus_code = MEDIA_BUS_FMT_SBGGR8_1X8;

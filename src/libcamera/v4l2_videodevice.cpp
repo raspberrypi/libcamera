@@ -287,6 +287,10 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  * V4L2 pixel formats. Its purpose is to prevent unintentional confusion of
  * V4L2 and DRM FourCCs in code by catching implicit conversion attempts at
  * compile time.
+ *
+ * To achieve this goal, construction of a V4L2PixelFormat from an integer value
+ * is explicit. To retrieve the integer value of a V4L2PixelFormat, both the
+ * explicit value() and implicit uint32_t conversion operators may be used.
  */
 
 /**
@@ -795,7 +799,7 @@ int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 
 	format->size.width = 0;
 	format->size.height = 0;
-	format->fourcc = pix->dataformat;
+	format->fourcc = V4L2PixelFormat(pix->dataformat);
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->buffersize;
 	format->planes[0].size = pix->buffersize;
@@ -847,7 +851,7 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 
 	format->size.width = pix->width;
 	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
 
 	for (unsigned int i = 0; i < format->planesCount; ++i) {
@@ -888,7 +892,7 @@ int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 	 */
 	format->size.width = pix->width;
 	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
 	for (unsigned int i = 0; i < format->planesCount; ++i) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
@@ -913,7 +917,7 @@ int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 
 	format->size.width = pix->width;
 	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
@@ -945,7 +949,7 @@ int V4L2VideoDevice::setFormatSingleplane(V4L2DeviceFormat *format)
 	 */
 	format->size.width = pix->width;
 	format->size.height = pix->height;
-	format->fourcc = pix->pixelformat;
+	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
@@ -996,7 +1000,7 @@ std::vector<V4L2PixelFormat> V4L2VideoDevice::enumPixelformats()
 		if (ret)
 			break;
 
-		formats.push_back(pixelformatEnum.pixelformat);
+		formats.push_back(V4L2PixelFormat(pixelformatEnum.pixelformat));
 	}
 
 	if (ret && ret != -EINVAL) {
@@ -1713,21 +1717,21 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 	switch (pixelFormat) {
 	/* RGB formats. */
 	case DRM_FORMAT_BGR888:
-		return V4L2_PIX_FMT_RGB24;
+		return V4L2PixelFormat(V4L2_PIX_FMT_RGB24);
 	case DRM_FORMAT_RGB888:
-		return V4L2_PIX_FMT_BGR24;
+		return V4L2PixelFormat(V4L2_PIX_FMT_BGR24);
 	case DRM_FORMAT_BGRA8888:
-		return V4L2_PIX_FMT_ARGB32;
+		return V4L2PixelFormat(V4L2_PIX_FMT_ARGB32);
 
 	/* YUV packed formats. */
 	case DRM_FORMAT_YUYV:
-		return V4L2_PIX_FMT_YUYV;
+		return V4L2PixelFormat(V4L2_PIX_FMT_YUYV);
 	case DRM_FORMAT_YVYU:
-		return V4L2_PIX_FMT_YVYU;
+		return V4L2PixelFormat(V4L2_PIX_FMT_YVYU);
 	case DRM_FORMAT_UYVY:
-		return V4L2_PIX_FMT_UYVY;
+		return V4L2PixelFormat(V4L2_PIX_FMT_UYVY);
 	case DRM_FORMAT_VYUY:
-		return V4L2_PIX_FMT_VYUY;
+		return V4L2PixelFormat(V4L2_PIX_FMT_VYUY);
 
 	/*
 	 * YUY planar formats.
@@ -1736,17 +1740,17 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 	 * also take into account the formats supported by the device.
 	 */
 	case DRM_FORMAT_NV16:
-		return V4L2_PIX_FMT_NV16;
+		return V4L2PixelFormat(V4L2_PIX_FMT_NV16);
 	case DRM_FORMAT_NV61:
-		return V4L2_PIX_FMT_NV61;
+		return V4L2PixelFormat(V4L2_PIX_FMT_NV61);
 	case DRM_FORMAT_NV12:
-		return V4L2_PIX_FMT_NV12;
+		return V4L2PixelFormat(V4L2_PIX_FMT_NV12);
 	case DRM_FORMAT_NV21:
-		return V4L2_PIX_FMT_NV21;
+		return V4L2PixelFormat(V4L2_PIX_FMT_NV21);
 
 	/* Compressed formats. */
 	case DRM_FORMAT_MJPEG:
-		return V4L2_PIX_FMT_MJPEG;
+		return V4L2PixelFormat(V4L2_PIX_FMT_MJPEG);
 	}
 
 	/*
@@ -1755,7 +1759,7 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 	 */
 	libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(), LogError).stream()
 		<< "Unsupported V4L2 pixel format " << pixelFormat.toString();
-	return 0;
+	return {};
 }
 
 /**

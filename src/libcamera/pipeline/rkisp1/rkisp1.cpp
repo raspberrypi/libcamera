@@ -642,13 +642,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	}
 
 	V4L2DeviceFormat paramFormat = {};
-	paramFormat.fourcc = V4L2_META_FMT_RK_ISP1_PARAMS;
+	paramFormat.fourcc = V4L2PixelFormat(V4L2_META_FMT_RK_ISP1_PARAMS);
 	ret = param_->setFormat(&paramFormat);
 	if (ret)
 		return ret;
 
 	V4L2DeviceFormat statFormat = {};
-	statFormat.fourcc = V4L2_META_FMT_RK_ISP1_STAT_3A;
+	statFormat.fourcc = V4L2PixelFormat(V4L2_META_FMT_RK_ISP1_STAT_3A);
 	ret = stat_->setFormat(&statFormat);
 	if (ret)
 		return ret;

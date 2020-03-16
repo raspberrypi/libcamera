@@ -244,7 +244,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	 * Format has to be set on the raw capture video node, otherwise the
 	 * vimc driver will fail pipeline validation.
 	 */
-	format.fourcc = V4L2_PIX_FMT_SGRBG8;
+	format.fourcc = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8);
 	format.size = { cfg.size.width / 3, cfg.size.height / 3 };
 
 	ret = data->raw_->setFormat(&format);

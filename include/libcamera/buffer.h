@@ -57,6 +57,7 @@ public:
 	unsigned int cookie() const { return cookie_; }
 	void setCookie(unsigned int cookie) { cookie_ = cookie; }
 
+	int copyFrom(const FrameBuffer *src);
 private:
 	friend class Request; /* Needed to update request_. */
 	friend class V4L2VideoDevice; /* Needed to update metadata_. */

@@ -341,6 +341,44 @@ class Pep8Checker(StyleChecker):
         return issues
 
 
+class ShellChecker(StyleChecker):
+    patterns = ('*.sh',)
+    results_line_regex = re.compile('In - line ([0-9]+):')
+
+    def __init__(self, content):
+        super().__init__()
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+        data = ''.join(self.__content).encode('utf-8')
+
+        try:
+            ret = subprocess.run(['shellcheck', '-Cnever', '-'],
+                                 input=data, stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            issues.append(StyleIssue(0, None, "Please install shellcheck to validate shell script additions"))
+            return issues
+
+        results = ret.stdout.decode('utf-8').splitlines()
+        for nr, item in enumerate(results):
+            search = re.search(ShellChecker.results_line_regex, item)
+            if search is None:
+                continue
+
+            line_number = int(search.group(1))
+            line = results[nr + 1]
+            msg = results[nr + 2]
+
+            # Determined, but not yet used
+            position = msg.find('^') + 1
+
+            if line_number in line_numbers:
+                issues.append(StyleIssue(line_number, line, msg))
+
+        return issues
+
+
 # ------------------------------------------------------------------------------
 # Formatters
 #

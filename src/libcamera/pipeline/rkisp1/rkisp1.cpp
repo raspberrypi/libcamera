@@ -11,7 +11,6 @@
 #include <memory>
 #include <queue>
 
-#include <linux/drm_fourcc.h>
 #include <linux/media-bus-format.h>
 
 #include <ipa/rkisp1.h>

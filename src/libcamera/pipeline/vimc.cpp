@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <tuple>
 
-#include <linux/drm_fourcc.h>
 #include <linux/media-bus-format.h>
 
 #include <ipa/ipa_interface.h>

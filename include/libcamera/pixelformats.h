@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include <linux/drm_fourcc.h>
+
 namespace libcamera {
 
 using PixelFormat = uint32_t;

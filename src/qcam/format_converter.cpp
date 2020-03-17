@@ -7,8 +7,6 @@
 
 #include <errno.h>
 
-#include <linux/drm_fourcc.h>
-
 #include <QImage>
 
 #include "format_converter.h"

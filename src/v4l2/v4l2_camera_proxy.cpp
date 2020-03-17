@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <array>
 #include <errno.h>
-#include <linux/drm_fourcc.h>
 #include <linux/videodev2.h>
 #include <string.h>
 #include <sys/mman.h>

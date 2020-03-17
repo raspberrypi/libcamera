@@ -10,7 +10,6 @@
 #include <memory>
 #include <vector>
 
-#include <linux/drm_fourcc.h>
 #include <linux/media-bus-format.h>
 
 #include <libcamera/camera.h>

@@ -142,7 +142,7 @@ public:
 		const unsigned int numBuffers = 8;
 
 		StreamConfiguration cfg;
-		cfg.pixelFormat = V4L2_PIX_FMT_YUYV;
+		cfg.pixelFormat = DRM_FORMAT_YUYV;
 		cfg.size = Size(600, 800);
 		cfg.bufferCount = numBuffers;
 

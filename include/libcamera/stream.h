@@ -28,9 +28,9 @@ public:
 	StreamFormats(const std::map<PixelFormat, std::vector<SizeRange>> &formats);
 
 	std::vector<PixelFormat> pixelformats() const;
-	std::vector<Size> sizes(PixelFormat pixelformat) const;
+	std::vector<Size> sizes(const PixelFormat &pixelformat) const;
 
-	SizeRange range(PixelFormat pixelformat) const;
+	SizeRange range(const PixelFormat &pixelformat) const;
 
 private:
 	std::map<PixelFormat, std::vector<SizeRange>> formats_;

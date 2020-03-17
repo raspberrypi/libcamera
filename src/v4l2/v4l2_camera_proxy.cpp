@@ -598,7 +598,7 @@ PixelFormat V4L2CameraProxy::v4l2ToDrm(uint32_t format)
 	return info->format;
 }
 
-uint32_t V4L2CameraProxy::drmToV4L2(PixelFormat format)
+uint32_t V4L2CameraProxy::drmToV4L2(const PixelFormat &format)
 {
 	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
 				 [format](const PixelFormatInfo &info) {

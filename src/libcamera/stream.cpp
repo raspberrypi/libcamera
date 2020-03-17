@@ -127,7 +127,7 @@ std::vector<PixelFormat> StreamFormats::pixelformats() const
  *
  * \return A list of frame sizes or an empty list on error
  */
-std::vector<Size> StreamFormats::sizes(PixelFormat pixelformat) const
+std::vector<Size> StreamFormats::sizes(const PixelFormat &pixelformat) const
 {
 	/*
 	 * Sizes to try and extract from ranges.
@@ -240,7 +240,7 @@ std::vector<Size> StreamFormats::sizes(PixelFormat pixelformat) const
  *
  * \return A range of valid image sizes or an empty range on error
  */
-SizeRange StreamFormats::range(PixelFormat pixelformat) const
+SizeRange StreamFormats::range(const PixelFormat &pixelformat) const
 {
 	auto const it = formats_.find(pixelformat);
 	if (it == formats_.end())

@@ -22,7 +22,7 @@ public:
 	ViewFinder(QWidget *parent);
 	~ViewFinder();
 
-	int setFormat(libcamera::PixelFormat format, unsigned int width,
+	int setFormat(const libcamera::PixelFormat &format, unsigned int width,
 		      unsigned int height);
 	void display(const unsigned char *rgb, size_t size);
 

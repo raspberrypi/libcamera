@@ -25,8 +25,8 @@
 #define CLIP(x)			CLAMP(x,0,255)
 #endif
 
-int FormatConverter::configure(libcamera::PixelFormat format, unsigned int width,
-			       unsigned int height)
+int FormatConverter::configure(const libcamera::PixelFormat &format,
+			       unsigned int width, unsigned int height)
 {
 	switch (format) {
 	case DRM_FORMAT_NV12:

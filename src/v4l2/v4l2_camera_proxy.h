@@ -60,7 +60,7 @@ private:
 				      unsigned int height);
 
 	static PixelFormat v4l2ToDrm(uint32_t format);
-	static uint32_t drmToV4L2(PixelFormat format);
+	static uint32_t drmToV4L2(const PixelFormat &format);
 
 	unsigned int refcount_;
 	unsigned int index_;

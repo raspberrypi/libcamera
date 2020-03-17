@@ -16,7 +16,7 @@ class QImage;
 class FormatConverter
 {
 public:
-	int configure(libcamera::PixelFormat format, unsigned int width,
+	int configure(const libcamera::PixelFormat &format, unsigned int width,
 		      unsigned int height);
 
 	void convert(const unsigned char *src, size_t size, QImage *dst);

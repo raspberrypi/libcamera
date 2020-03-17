@@ -204,8 +204,9 @@ public:
 					       const std::string &entity);
 
 	static PixelFormat toPixelFormat(uint32_t v4l2Fourcc);
-	uint32_t toV4L2Fourcc(PixelFormat pixelFormat);
-	static uint32_t toV4L2Fourcc(PixelFormat pixelFormat, bool multiplanar);
+	uint32_t toV4L2Fourcc(const PixelFormat &pixelFormat);
+	static uint32_t toV4L2Fourcc(const PixelFormat &pixelFormat,
+				     bool multiplanar);
 
 protected:
 	std::string logPrefix() const;

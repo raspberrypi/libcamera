@@ -83,21 +83,16 @@ std::string IPAProxy::resolvePath(const std::string &file) const
 
 	/* No exec target in install directory; check env variable. */
 	const char *execPaths = utils::secure_getenv("LIBCAMERA_IPA_PROXY_PATH");
-	while (execPaths) {
-		const char *delim = strchrnul(execPaths, ':');
-		size_t count = delim - execPaths;
+	if (execPaths) {
+		for (const auto &dir : utils::split(execPaths, ":")) {
+			if (dir.empty())
+				continue;
 
-		if (count) {
-			std::string proxyPath(execPaths, count);
+			std::string proxyPath = dir;
 			proxyPath += proxyFile;
 			if (!access(proxyPath.c_str(), X_OK))
 				return proxyPath;
 		}
-
-		if (*delim == '\0')
-			break;
-
-		execPaths += count + 1;
 	}
 
 	return std::string();

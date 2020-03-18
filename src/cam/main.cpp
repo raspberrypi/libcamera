@@ -284,7 +284,8 @@ int CamApp::listProperties()
 		const ControlId *id = properties::properties.at(prop.first);
 		const ControlValue &value = prop.second;
 
-		std::cout << "Property: " << id->name() << " = " << value.toString();
+		std::cout << "Property: " << id->name() << " = "
+			  << value.toString() << std::endl;
 	}
 
 	return 0;

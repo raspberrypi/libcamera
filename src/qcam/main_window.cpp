@@ -360,6 +360,7 @@ void MainWindow::saveImageAs()
 		return;
 
 	QImageWriter writer(filename);
+	writer.setQuality(95);
 	writer.write(image);
 }
 

@@ -9,9 +9,6 @@
 
 #include <algorithm>
 #include <dirent.h>
-#include <dlfcn.h>
-#include <elf.h>
-#include <link.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -26,35 +23,6 @@
  * \file ipa_manager.h
  * \brief Image Processing Algorithm module manager
  */
-
-static bool isLibcameraInstalled()
-{
-	/* musl doesn't declare _DYNAMIC in link.h, declare it manually. */
-	extern ElfW(Dyn) _DYNAMIC[];
-
-	/*
-	 * DT_RUNPATH (DT_RPATH when the linker uses old dtags) is removed on
-	 * install.
-	 */
-	for (const ElfW(Dyn) *dyn = _DYNAMIC; dyn->d_tag != DT_NULL; ++dyn) {
-		if (dyn->d_tag == DT_RUNPATH || dyn->d_tag == DT_RPATH)
-			return false;
-	}
-
-	return true;
-}
-
-static std::string libcameraPath()
-{
-	Dl_info info;
-
-	/* Look up our own symbol. */
-	int ret = dladdr(reinterpret_cast<void *>(libcameraPath), &info);
-	if (ret == 0)
-		return nullptr;
-
-	return info.dli_fname;
-}
 
 namespace libcamera {
 
@@ -151,8 +119,8 @@ IPAManager::IPAManager()
 	 * path for the IPA from that point. We need to recurse one level of
 	 * sub-directories to match the build tree.
 	 */
-	if (!isLibcameraInstalled()) {
-		std::string ipaBuildPath = utils::dirname(libcameraPath()) + "/../ipa";
+	if (!utils::isLibcameraInstalled()) {
+		std::string ipaBuildPath = utils::dirname(utils::libcameraPath()) + "/../ipa";
 		constexpr int maxDepth = 1;
 
 		LOG(IPAManager, Info)

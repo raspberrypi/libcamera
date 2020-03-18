@@ -7,7 +7,10 @@
 
 #include "utils.h"
 
+#include <dlfcn.h>
+#include <elf.h>
 #include <iomanip>
+#include <link.h>
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +20,9 @@
  * \file utils.h
  * \brief Miscellaneous utility functions
  */
+
+/* musl doesn't declare _DYNAMIC in link.h, declare it manually. */
+extern ElfW(Dyn) _DYNAMIC[];
 
 namespace libcamera {
 
@@ -308,6 +314,49 @@ details::StringSplitter split(const std::string &str, const std::string &delim)
 {
 	/** \todo Try to avoid copies of str and delim */
 	return details::StringSplitter(str, delim);
+}
+
+/**
+ * \brief Check if libcamera is installed or not
+ *
+ * Utilise the build_rpath dynamic tag which is stripped out by meson at
+ * install time to determine at runtime if the library currently executing
+ * has been installed or not.
+ *
+ * \return True if libcamera is installed, false otherwise
+ */
+bool isLibcameraInstalled()
+{
+	/*
+	 * DT_RUNPATH (DT_RPATH when the linker uses old dtags) is removed on
+	 * install.
+	 */
+	for (const ElfW(Dyn) *dyn = _DYNAMIC; dyn->d_tag != DT_NULL; ++dyn) {
+		if (dyn->d_tag == DT_RUNPATH || dyn->d_tag == DT_RPATH)
+			return false;
+	}
+
+	return true;
+}
+
+/**
+ * \brief Identify the libcamera.so path
+ *
+ * This function locates the running libcamera.so and returns its full path,
+ * including the file name.
+ *
+ * \return A string stating the path
+ */
+std::string libcameraPath()
+{
+	Dl_info info;
+
+	/* Look up our own symbol. */
+	int ret = dladdr(reinterpret_cast<void *>(libcameraPath), &info);
+	if (ret == 0)
+		return nullptr;
+
+	return info.dli_fname;
 }
 
 } /* namespace utils */

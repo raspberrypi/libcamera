@@ -119,8 +119,9 @@ IPAManager::IPAManager()
 	 * path for the IPA from that point. We need to recurse one level of
 	 * sub-directories to match the build tree.
 	 */
-	if (!utils::isLibcameraInstalled()) {
-		std::string ipaBuildPath = utils::dirname(utils::libcameraPath()) + "/../ipa";
+	std::string root = utils::libcameraBuildPath();
+	if (!root.empty()) {
+		std::string ipaBuildPath = root + "src/ipa";
 		constexpr int maxDepth = 1;
 
 		LOG(IPAManager, Info)

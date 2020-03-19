@@ -97,9 +97,9 @@ std::string IPAProxy::resolvePath(const std::string &file) const
 	 * This requires identifying the path of the libcamera.so, and
 	 * referencing a relative path for the proxy workers from that point.
 	 */
-	if (!utils::isLibcameraInstalled()) {
-		std::string ipaProxyDir = utils::dirname(utils::libcameraPath())
-					  + "/proxy/worker";
+	std::string root = utils::libcameraBuildPath();
+	if (!root.empty()) {
+		std::string ipaProxyDir = root + "src/libcamera/proxy/worker";
 
 		LOG(IPAProxy, Info)
 			<< "libcamera is not installed. Loading proxy workers from'"

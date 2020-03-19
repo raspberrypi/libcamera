@@ -340,23 +340,33 @@ bool isLibcameraInstalled()
 }
 
 /**
- * \brief Identify the libcamera.so path
+ * \brief Retrieve the path to the build directory
  *
- * This function locates the running libcamera.so and returns its full path,
- * including the file name.
+ * During development, it is useful to run libcamera binaries directly from the
+ * build directory without installing them. This function helps components that
+ * need to locate resources, such as IPA modules or IPA proxy workers, by
+ * providing them with the path to the root of the build directory. Callers can
+ * then use it to complement or override searches in system-wide directories.
  *
- * \return A string stating the path
+ * If libcamera has been installed, the build directory path is not available
+ * and this function returns an empty string.
+ *
+ * \return The path to the build directory if running from a build, or an empty
+ * string otherwise
  */
-std::string libcameraPath()
+std::string libcameraBuildPath()
 {
+	if (isLibcameraInstalled())
+		return std::string();
+
 	Dl_info info;
 
 	/* Look up our own symbol. */
-	int ret = dladdr(reinterpret_cast<void *>(libcameraPath), &info);
+	int ret = dladdr(reinterpret_cast<void *>(libcameraBuildPath), &info);
 	if (ret == 0)
-		return nullptr;
+		return std::string();
 
-	return info.dli_fname;
+	return dirname(info.dli_fname) + "/../../";
 }
 
 } /* namespace utils */

@@ -143,9 +143,7 @@ private:
 
 details::StringSplitter split(const std::string &str, const std::string &delim);
 
-bool isLibcameraInstalled();
-
-std::string libcameraPath();
+std::string libcameraBuildPath();
 
 } /* namespace utils */
 

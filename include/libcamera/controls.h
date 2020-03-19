@@ -188,8 +188,6 @@ private:
 		 std::size_t numElements, std::size_t elementSize);
 };
 
-static_assert(sizeof(ControlValue) == 16, "Invalid size of ControlValue class");
-
 class ControlId
 {
 public:

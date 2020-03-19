@@ -281,6 +281,7 @@ int MainWindow::startCapture()
 	config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
 
 	StreamConfiguration &cfg = config_->at(0);
+
 	if (options_.isSet(OptSize)) {
 		const std::vector<OptionValue> &sizeOptions =
 			options_[OptSize].toArray();
@@ -316,10 +317,9 @@ int MainWindow::startCapture()
 		return -EINVAL;
 	}
 
-	if (validation == CameraConfiguration::Adjusted) {
-		qInfo() << "Stream size adjusted to"
-			<< cfg.size.toString().c_str();
-	}
+	if (validation == CameraConfiguration::Adjusted)
+		qInfo() << "Stream configuration adjusted to "
+			<< cfg.toString().c_str();
 
 	ret = camera_->configure(config_.get());
 	if (ret < 0) {

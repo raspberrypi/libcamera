@@ -668,34 +668,31 @@ int PipelineHandlerRkISP1::exportFrameBuffers(Camera *camera, Stream *stream,
 int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	unsigned int count = 1;
+	unsigned int count = data->stream_.configuration().bufferCount;
+	unsigned int ipaBufferId = 1;
 	int ret;
-
-	unsigned int maxBuffers = 0;
-	for (const Stream *s : camera->streams())
-		maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
 
 	ret = video_->importBuffers(count);
 	if (ret < 0)
 		goto error;
 
-	ret = param_->allocateBuffers(maxBuffers, &paramBuffers_);
+	ret = param_->allocateBuffers(count, &paramBuffers_);
 	if (ret < 0)
 		goto error;
 
-	ret = stat_->allocateBuffers(maxBuffers, &statBuffers_);
+	ret = stat_->allocateBuffers(count, &statBuffers_);
 	if (ret < 0)
 		goto error;
 
 	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {
-		buffer->setCookie(count++);
+		buffer->setCookie(ipaBufferId++);
 		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
 					      .planes = buffer->planes() });
 		availableParamBuffers_.push(buffer.get());
 	}
 
 	for (std::unique_ptr<FrameBuffer> &buffer : statBuffers_) {
-		buffer->setCookie(count++);
+		buffer->setCookie(ipaBufferId++);
 		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
 					      .planes = buffer->planes() });
 		availableStatBuffers_.push(buffer.get());

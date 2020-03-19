@@ -86,6 +86,7 @@ static constexpr size_t ControlValueSize[] = {
  * \brief Abstract type representing the value of a control
  */
 
+/** \todo Revisit the ControlValue layout when stabilizing the ABI */
 static_assert(sizeof(ControlValue) == 16, "Invalid size of ControlValue class");
 
 /**

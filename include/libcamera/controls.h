@@ -176,8 +176,8 @@ public:
 
 private:
 	ControlType type_ : 8;
-	bool isArray_ : 1;
-	std::size_t numElements_ : 16;
+	bool isArray_;
+	std::size_t numElements_ : 32;
 	union {
 		uint64_t value_;
 		void *storage_;

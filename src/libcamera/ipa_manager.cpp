@@ -12,7 +12,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "ipa_context_wrapper.h"
 #include "ipa_module.h"
 #include "ipa_proxy.h"
 #include "log.h"
@@ -271,40 +270,35 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 	if (!m)
 		return nullptr;
 
-	if (!m->isOpenSource()) {
-		IPAProxyFactory *pf = nullptr;
-		std::vector<IPAProxyFactory *> &factories = IPAProxyFactory::factories();
+	/*
+	 * Load and run the IPA module in a thread if it is open-source, or
+	 * isolate it in a separate process otherwise.
+	 *
+	 * \todo Implement a better proxy selection
+	 */
+	const char *proxyName = m->isOpenSource()
+			      ? "IPAProxyThread" : "IPAProxyLinux";
+	IPAProxyFactory *pf = nullptr;
 
-		for (IPAProxyFactory *factory : factories) {
-			/* TODO: Better matching */
-			if (!strcmp(factory->name().c_str(), "IPAProxyLinux")) {
-				pf = factory;
-				break;
-			}
+	for (IPAProxyFactory *factory : IPAProxyFactory::factories()) {
+		if (!strcmp(factory->name().c_str(), proxyName)) {
+			pf = factory;
+			break;
 		}
-
-		if (!pf) {
-			LOG(IPAManager, Error) << "Failed to get proxy factory";
-			return nullptr;
-		}
-
-		std::unique_ptr<IPAProxy> proxy = pf->create(m);
-		if (!proxy->isValid()) {
-			LOG(IPAManager, Error) << "Failed to load proxy";
-			return nullptr;
-		}
-
-		return proxy;
 	}
 
-	if (!m->load())
+	if (!pf) {
+		LOG(IPAManager, Error) << "Failed to get proxy factory";
 		return nullptr;
+	}
 
-	struct ipa_context *ctx = m->createContext();
-	if (!ctx)
+	std::unique_ptr<IPAProxy> proxy = pf->create(m);
+	if (!proxy->isValid()) {
+		LOG(IPAManager, Error) << "Failed to load proxy";
 		return nullptr;
+	}
 
-	return std::make_unique<IPAContextWrapper>(ctx);
+	return proxy;
 }
 
 } /* namespace libcamera */

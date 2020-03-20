@@ -528,6 +528,9 @@ namespace libcamera {
  * \a data.operation field, as defined by the IPA protocol, and the rest of the
  * \a data is interpreted accordingly. The pipeline handler shall queue the
  * action and execute it as appropriate.
+ *
+ * The signal is only emitted when the IPA is running, that is after start() and
+ * before stop() have been called.
  */
 
 } /* namespace libcamera */

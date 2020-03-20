@@ -90,8 +90,7 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 			return ret;
 		}
 
-		if (!ret)
-			addDevice(media);
+		addDevice(media);
 		return 0;
 	}
 

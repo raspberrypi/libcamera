@@ -33,8 +33,6 @@
  *
  * The enumerator supports searching among enumerated devices based on criteria
  * expressed in a DeviceMatch object.
- *
- * \todo Add sysfs based device enumerator.
  */
 
 namespace libcamera {

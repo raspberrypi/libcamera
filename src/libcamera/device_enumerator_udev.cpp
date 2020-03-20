@@ -90,6 +90,13 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 			return ret;
 		}
 
+		if (ret) {
+			LOG(DeviceEnumerator, Debug)
+				<< "Defer media device " << media->deviceNode()
+				<< " due to " << ret << " missing dependencies";
+			return 0;
+		}
+
 		addDevice(media);
 		return 0;
 	}
@@ -313,6 +320,9 @@ int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 	deps->deps_.erase(devnum);
 
 	if (deps->deps_.empty()) {
+		LOG(DeviceEnumerator, Debug)
+			<< "All dependencies for media device "
+			<< deps->media_->deviceNode() << " found";
 		addDevice(deps->media_);
 		pending_.remove(*deps);
 	}

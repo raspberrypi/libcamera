@@ -10,9 +10,9 @@
 #include <atomic>
 #include <condition_variable>
 #include <list>
-#include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <libcamera/event_dispatcher.h>
 

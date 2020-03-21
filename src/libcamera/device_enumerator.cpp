@@ -208,9 +208,9 @@ DeviceEnumerator::~DeviceEnumerator()
  *
  * \return Created media device instance on success, or nullptr otherwise
  */
-std::shared_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &deviceNode)
+std::unique_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &deviceNode)
 {
-	std::shared_ptr<MediaDevice> media = std::make_shared<MediaDevice>(deviceNode);
+	std::unique_ptr<MediaDevice> media = std::make_unique<MediaDevice>(deviceNode);
 
 	int ret = media->populate();
 	if (ret < 0) {
@@ -236,12 +236,12 @@ std::shared_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &d
  * This method shall be called after all members of the entities of the
  * media graph have been confirmed to be initialized.
  */
-void DeviceEnumerator::addDevice(const std::shared_ptr<MediaDevice> &media)
+void DeviceEnumerator::addDevice(std::unique_ptr<MediaDevice> &&media)
 {
 	LOG(DeviceEnumerator, Debug)
 		<< "Added device " << media->deviceNode() << ": " << media->driver();
 
-	devices_.push_back(media);
+	devices_.push_back(std::move(media));
 }
 
 /**
@@ -290,7 +290,7 @@ void DeviceEnumerator::removeDevice(const std::string &deviceNode)
  */
 std::shared_ptr<MediaDevice> DeviceEnumerator::search(const DeviceMatch &dm)
 {
-	for (std::shared_ptr<MediaDevice> media : devices_) {
+	for (std::shared_ptr<MediaDevice> &media : devices_) {
 		if (media->busy())
 			continue;
 

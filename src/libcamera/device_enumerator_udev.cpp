@@ -76,7 +76,7 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 		return -ENODEV;
 
 	if (!strcmp(subsystem, "media")) {
-		std::shared_ptr<MediaDevice> media =
+		std::unique_ptr<MediaDevice> media =
 			createDevice(udev_device_get_devnode(dev));
 		if (!media)
 			return -ENODEV;
@@ -96,7 +96,7 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 				<< "Defer media device " << media->deviceNode()
 				<< " due to " << ret << " missing dependencies";
 
-			pending_.emplace_back(media, deps);
+			pending_.emplace_back(std::move(media), std::move(deps));
 			MediaDeviceDeps *mediaDeps = &pending_.back();
 			for (const auto &dep : mediaDeps->deps_)
 				devMap_[dep.first] = mediaDeps;
@@ -104,7 +104,7 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 			return 0;
 		}
 
-		addDevice(media);
+		addDevice(std::move(media));
 		return 0;
 	}
 
@@ -319,7 +319,7 @@ int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 		LOG(DeviceEnumerator, Debug)
 			<< "All dependencies for media device "
 			<< deps->media_->deviceNode() << " found";
-		addDevice(deps->media_);
+		addDevice(std::move(deps->media_));
 		pending_.remove(*deps);
 	}
 

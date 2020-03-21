@@ -72,11 +72,11 @@ int DeviceEnumeratorSysfs::enumerate()
 			continue;
 		}
 
-		std::shared_ptr<MediaDevice> media = createDevice(devnode);
+		std::unique_ptr<MediaDevice> media = createDevice(devnode);
 		if (!media)
 			continue;
 
-		if (populateMediaDevice(media) < 0) {
+		if (populateMediaDevice(media.get()) < 0) {
 			LOG(DeviceEnumerator, Warning)
 				<< "Failed to populate media device "
 				<< media->deviceNode()
@@ -84,7 +84,7 @@ int DeviceEnumeratorSysfs::enumerate()
 			continue;
 		}
 
-		addDevice(media);
+		addDevice(std::move(media));
 	}
 
 	closedir(dir);
@@ -92,7 +92,7 @@ int DeviceEnumeratorSysfs::enumerate()
 	return 0;
 }
 
-int DeviceEnumeratorSysfs::populateMediaDevice(const std::shared_ptr<MediaDevice> &media)
+int DeviceEnumeratorSysfs::populateMediaDevice(MediaDevice *media)
 {
 	/* Associate entities to device node paths. */
 	for (MediaEntity *entity : media->entities()) {

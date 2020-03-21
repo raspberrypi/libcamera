@@ -23,7 +23,7 @@ public:
 	int enumerate();
 
 private:
-	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);
+	int populateMediaDevice(MediaDevice *media);
 	std::string lookupDeviceNode(int major, int minor);
 };
 

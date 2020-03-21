@@ -44,8 +44,8 @@ public:
 	std::shared_ptr<MediaDevice> search(const DeviceMatch &dm);
 
 protected:
-	std::shared_ptr<MediaDevice> createDevice(const std::string &deviceNode);
-	void addDevice(const std::shared_ptr<MediaDevice> &media);
+	std::unique_ptr<MediaDevice> createDevice(const std::string &deviceNode);
+	void addDevice(std::unique_ptr<MediaDevice> &&media);
 	void removeDevice(const std::string &deviceNode);
 
 private:

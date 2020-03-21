@@ -3,7 +3,6 @@ qcam_sources = files([
     'main.cpp',
     'main_window.cpp',
     '../cam/options.cpp',
-    'qt_event_dispatcher.cpp',
     'viewfinder.cpp',
 ])
 

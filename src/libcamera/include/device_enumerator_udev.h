@@ -63,7 +63,7 @@ private:
 	std::map<dev_t, MediaDeviceDeps *> devMap_;
 
 	int addUdevDevice(struct udev_device *dev);
-	int populateMediaDevice(const std::shared_ptr<MediaDevice> &media);
+	int populateMediaDevice(MediaDevice *media, DependencyMap *deps);
 	std::string lookupDeviceNode(dev_t devnum);
 
 	int addV4L2Device(dev_t devnum);

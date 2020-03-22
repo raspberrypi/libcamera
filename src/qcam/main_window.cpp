@@ -410,9 +410,6 @@ void MainWindow::saveImageAs()
 
 	QString filename = QFileDialog::getSaveFileName(this, "Save Image", defaultPath,
 							"Image Files (*.png *.jpg *.jpeg)");
-
-	std::cout << "Save image to " << filename.toStdString() << std::endl;
-
 	if (filename.isEmpty())
 		return;
 

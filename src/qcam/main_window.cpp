@@ -31,6 +31,9 @@
 
 using namespace libcamera;
 
+/**
+ * \brief Custom QEvent to signal capture completion
+ */
 class CaptureEvent : public QEvent
 {
 public:
@@ -51,6 +54,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 {
 	int ret;
 
+	/*
+	 * Initialize the UI: Create the toolbar, set the window title and
+	 * create the viewfinder widget.
+	 */
 	createToolbars();
 
 	title_ = "QCam " + QString::fromStdString(CameraManager::version());
@@ -61,6 +68,7 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	setCentralWidget(viewfinder_);
 	adjustSize();
 
+	/* Open the camera and start capture. */
 	ret = openCamera();
 	if (ret < 0)
 		quit();
@@ -96,13 +104,14 @@ int MainWindow::createToolbars()
 	/* Disable right click context menu. */
 	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
 
+	/* Quit action. */
 	action = toolbar_->addAction(QIcon::fromTheme("application-exit",
 						      QIcon(":x-circle.svg")),
 				     "Quit");
 	action->setShortcut(Qt::CTRL | Qt::Key_Q);
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
-	/* Camera selection. */
+	/* Camera selector. */
 	QComboBox *cameraCombo = new QComboBox();
 	connect(cameraCombo, QOverload<int>::of(&QComboBox::activated),
 		this, &MainWindow::switchCamera);
@@ -114,6 +123,7 @@ int MainWindow::createToolbars()
 
 	toolbar_->addSeparator();
 
+	/* Start/Stop action. */
 	iconPlay_ = QIcon::fromTheme("media-playback-start",
 				     QIcon(":play-circle.svg"));
 	iconStop_ = QIcon::fromTheme("media-playback-stop",
@@ -125,6 +135,7 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::toggled, this, &MainWindow::toggleCapture);
 	startStopAction_ = action;
 
+	/* Save As... action. */
 	action = toolbar_->addAction(QIcon::fromTheme("document-save-as",
 						      QIcon(":save.svg")),
 				     "Save As...");
@@ -142,6 +153,7 @@ void MainWindow::quit()
 
 void MainWindow::updateTitle()
 {
+	/* Calculate the average frame rate over the last period. */
 	unsigned int duration = frameRateInterval_.elapsed();
 	unsigned int frames = framesCaptured_ - previousFrames_;
 	double fps = frames * 1000.0 / duration;
@@ -153,8 +165,13 @@ void MainWindow::updateTitle()
 	setWindowTitle(title_ + " : " + QString::number(fps, 'f', 2) + " fps");
 }
 
+/* -----------------------------------------------------------------------------
+ * Camera Selection
+ */
+
 void MainWindow::switchCamera(int index)
 {
+	/* Get and acquire the new camera. */
 	const auto &cameras = cm_->cameras();
 	if (static_cast<unsigned int>(index) >= cameras.size())
 		return;
@@ -168,6 +185,10 @@ void MainWindow::switchCamera(int index)
 
 	std::cout << "Switching to camera " << cam->name() << std::endl;
 
+	/*
+	 * Stop the capture session, release the current camera, replace it with
+	 * the new camera and start a new capture session.
+	 */
 	startStopAction_->setChecked(false);
 
 	camera_->release();
@@ -181,9 +202,11 @@ std::string MainWindow::chooseCamera()
 	QStringList cameras;
 	bool result;
 
+	/* If only one camera is available, use it automatically. */
 	if (cm_->cameras().size() == 1)
 		return cm_->cameras()[0]->name();
 
+	/* Present a dialog box to pick a camera. */
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
 		cameras.append(QString::fromStdString(cam->name()));
 
@@ -200,6 +223,10 @@ int MainWindow::openCamera()
 {
 	std::string cameraName;
 
+	/*
+	 * Use the camera specified on the command line, if any, or display the
+	 * camera selection dialog box otherwise.
+	 */
 	if (options_.isSet(OptCamera))
 		cameraName = static_cast<std::string>(options_[OptCamera]);
 	else
@@ -208,6 +235,7 @@ int MainWindow::openCamera()
 	if (cameraName == "")
 		return -EINVAL;
 
+	/* Get and acquire the camera. */
 	camera_ = cm_->get(cameraName);
 	if (!camera_) {
 		std::cout << "Camera " << cameraName << " not found"
@@ -226,6 +254,10 @@ int MainWindow::openCamera()
 	return 0;
 }
 
+/* -----------------------------------------------------------------------------
+ * Capture Start & Stop
+ */
+
 void MainWindow::toggleCapture(bool start)
 {
 	if (start) {
@@ -239,10 +271,16 @@ void MainWindow::toggleCapture(bool start)
 	}
 }
 
+/**
+ * \brief Start capture with the current camera
+ *
+ * This function shall not be called directly, use toggleCapture() instead.
+ */
 int MainWindow::startCapture()
 {
 	int ret;
 
+	/* Configure the camera. */
 	config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
 
 	StreamConfiguration &cfg = config_->at(0);
@@ -279,6 +317,7 @@ int MainWindow::startCapture()
 		return ret;
 	}
 
+	/* Configure the viewfinder. */
 	Stream *stream = cfg.stream();
 	ret = viewfinder_->setFormat(cfg.pixelFormat,
 				     QSize(cfg.size.width, cfg.size.height));
@@ -289,6 +328,7 @@ int MainWindow::startCapture()
 
 	adjustSize();
 
+	/* Allocate buffers and requests. */
 	allocator_ = new FrameBufferAllocator(camera_);
 	ret = allocator_->allocate(stream);
 	if (ret < 0) {
@@ -321,6 +361,7 @@ int MainWindow::startCapture()
 			std::make_pair(memory, plane.length);
 	}
 
+	/* Start the title timer and the camera. */
 	titleTimer_.start(2000);
 	frameRateInterval_.start();
 	previousFrames_ = 0;
@@ -335,6 +376,7 @@ int MainWindow::startCapture()
 
 	camera_->requestCompleted.connect(this, &MainWindow::requestComplete);
 
+	/* Queue all requests. */
 	for (Request *request : requests) {
 		ret = camera_->queueRequest(request);
 		if (ret < 0) {
@@ -368,6 +410,12 @@ error:
 	return ret;
 }
 
+/**
+ * \brief Stop ongoing capture
+ *
+ * This function may be called directly when tearing down the MainWindow. Use
+ * toggleCapture() instead in all other cases.
+ */
 void MainWindow::stopCapture()
 {
 	if (!isCapturing_)
@@ -403,6 +451,10 @@ void MainWindow::stopCapture()
 	setWindowTitle(title_);
 }
 
+/* -----------------------------------------------------------------------------
+ * Image Save
+ */
+
 void MainWindow::saveImageAs()
 {
 	QImage image = viewfinder_->getCurrentImage();
@@ -418,11 +470,20 @@ void MainWindow::saveImageAs()
 	writer.write(image);
 }
 
+/* -----------------------------------------------------------------------------
+ * Request Completion Handling
+ */
+
 void MainWindow::requestComplete(Request *request)
 {
 	if (request->status() == Request::RequestCancelled)
 		return;
 
+	/*
+	 * We're running in the libcamera thread context, expensive operations
+	 * are not allowed. Add the buffer to the done queue and post a
+	 * CaptureEvent for the application thread to handle.
+	 */
 	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 	FrameBuffer *buffer = buffers.begin()->second;
 
@@ -436,6 +497,11 @@ void MainWindow::requestComplete(Request *request)
 
 void MainWindow::processCapture()
 {
+	/*
+	 * Retrieve the next buffer from the done queue. The queue may be empty
+	 * if stopCapture() has been called while a CaptureEvent was posted but
+	 * not processed yet. Return immediately in that case.
+	 */
 	FrameBuffer *buffer;
 
 	{
@@ -460,6 +526,7 @@ void MainWindow::processCapture()
 		  << " fps: " << std::fixed << std::setprecision(2) << fps
 		  << std::endl;
 
+	/* Display the buffer and requeue it to the camera. */
 	display(buffer);
 
 	queueRequest(buffer);

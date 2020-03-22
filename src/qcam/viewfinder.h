@@ -7,15 +7,23 @@
 #ifndef __QCAM_VIEWFINDER_H__
 #define __QCAM_VIEWFINDER_H__
 
+#include <stddef.h>
+
 #include <QMutex>
 #include <QSize>
 #include <QWidget>
 
+#include <libcamera/buffer.h>
 #include <libcamera/pixelformats.h>
 
 #include "format_converter.h"
 
 class QImage;
+
+struct MappedBuffer {
+	void *memory;
+	size_t size;
+};
 
 class ViewFinder : public QWidget
 {
@@ -24,7 +32,7 @@ public:
 	~ViewFinder();
 
 	int setFormat(const libcamera::PixelFormat &format, const QSize &size);
-	void display(const unsigned char *rgb, size_t size);
+	void display(const libcamera::FrameBuffer *buffer, MappedBuffer *map);
 
 	QImage getCurrentImage();
 

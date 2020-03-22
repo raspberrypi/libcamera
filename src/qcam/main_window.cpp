@@ -27,8 +27,6 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
 
-#include "viewfinder.h"
-
 using namespace libcamera;
 
 /**
@@ -354,8 +352,7 @@ int MainWindow::startCapture()
 		const FrameBuffer::Plane &plane = buffer->planes().front();
 		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
 				    plane.fd.fd(), 0);
-		mappedBuffers_[plane.fd.fd()] =
-			std::make_pair(memory, plane.length);
+		mappedBuffers_[buffer.get()] = { memory, plane.length };
 	}
 
 	/* Start the title timer and the camera. */
@@ -395,9 +392,8 @@ error:
 		delete request;
 
 	for (auto &iter : mappedBuffers_) {
-		void *memory = iter.second.first;
-		unsigned int length = iter.second.second;
-		munmap(memory, length);
+		const MappedBuffer &buffer = iter.second;
+		munmap(buffer.memory, buffer.size);
 	}
 	mappedBuffers_.clear();
 
@@ -425,9 +421,8 @@ void MainWindow::stopCapture()
 	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
 
 	for (auto &iter : mappedBuffers_) {
-		void *memory = iter.second.first;
-		unsigned int length = iter.second.second;
-		munmap(memory, length);
+		const MappedBuffer &buffer = iter.second;
+		munmap(buffer.memory, buffer.size);
 	}
 	mappedBuffers_.clear();
 
@@ -534,10 +529,7 @@ int MainWindow::display(FrameBuffer *buffer)
 	if (buffer->planes().size() != 1)
 		return -EINVAL;
 
-	const FrameBuffer::Plane &plane = buffer->planes().front();
-	void *memory = mappedBuffers_[plane.fd.fd()].first;
-	unsigned char *raw = static_cast<unsigned char *>(memory);
-	viewfinder_->display(raw, buffer->metadata().planes[0].bytesused);
+	viewfinder_->display(buffer, &mappedBuffers_[buffer]);
 
 	return 0;
 }

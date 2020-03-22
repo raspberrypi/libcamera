@@ -24,7 +24,8 @@ ViewFinder::~ViewFinder()
 	delete image_;
 }
 
-void ViewFinder::display(const unsigned char *raw, size_t size)
+void ViewFinder::display(const libcamera::FrameBuffer *buffer,
+			 MappedBuffer *map)
 {
 	QMutexLocker locker(&mutex_);
 
@@ -34,7 +35,8 @@ void ViewFinder::display(const unsigned char *raw, size_t size)
 	 * impacting performances.
 	 */
 
-	converter_.convert(raw, size, image_);
+	converter_.convert(static_cast<unsigned char *>(map->memory),
+			   buffer->metadata().planes[0].bytesused, image_);
 	update();
 }
 

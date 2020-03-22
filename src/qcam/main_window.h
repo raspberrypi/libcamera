@@ -24,11 +24,11 @@
 #include <libcamera/stream.h>
 
 #include "../cam/options.h"
+#include "viewfinder.h"
 
 using namespace libcamera;
 
 class QAction;
-class ViewFinder;
 
 enum {
 	OptCamera = 'c',
@@ -89,7 +89,7 @@ private:
 	FrameBufferAllocator *allocator_;
 
 	std::unique_ptr<CameraConfiguration> config_;
-	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
+	std::map<FrameBuffer *, MappedBuffer> mappedBuffers_;
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;

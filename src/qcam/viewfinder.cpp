@@ -11,6 +11,7 @@
 #include <QImageWriter>
 #include <QMutexLocker>
 #include <QPainter>
+#include <QtDebug>
 
 #include "format_converter.h"
 
@@ -27,6 +28,11 @@ ViewFinder::~ViewFinder()
 void ViewFinder::display(const libcamera::FrameBuffer *buffer,
 			 MappedBuffer *map)
 {
+	if (buffer->planes().size() != 1) {
+		qWarning() << "Multi-planar buffers are not supported";
+		return;
+	}
+
 	QMutexLocker locker(&mutex_);
 
 	/*

@@ -524,14 +524,9 @@ void MainWindow::processCapture()
 	queueRequest(buffer);
 }
 
-int MainWindow::display(FrameBuffer *buffer)
+void MainWindow::display(FrameBuffer *buffer)
 {
-	if (buffer->planes().size() != 1)
-		return -EINVAL;
-
 	viewfinder_->display(buffer, &mappedBuffers_[buffer]);
-
-	return 0;
 }
 
 void MainWindow::queueRequest(FrameBuffer *buffer)

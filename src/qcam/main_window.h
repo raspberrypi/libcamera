@@ -66,7 +66,7 @@ private:
 
 	void requestComplete(Request *request);
 	void processCapture();
-	int display(FrameBuffer *buffer);
+	void display(FrameBuffer *buffer);
 	void queueRequest(FrameBuffer *buffer);
 
 	/* UI elements */

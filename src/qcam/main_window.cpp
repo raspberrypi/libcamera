@@ -389,20 +389,7 @@ void MainWindow::requestComplete(Request *request)
 
 	display(buffer);
 
-	request = camera_->createRequest();
-	if (!request) {
-		std::cerr << "Can't create request" << std::endl;
-		return;
-	}
-
-	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		Stream *stream = it->first;
-		FrameBuffer *buffer = it->second;
-
-		request->addBuffer(stream, buffer);
-	}
-
-	camera_->queueRequest(request);
+	queueRequest(buffer);
 }
 
 int MainWindow::display(FrameBuffer *buffer)
@@ -416,4 +403,18 @@ int MainWindow::display(FrameBuffer *buffer)
 	viewfinder_->display(raw, buffer->metadata().planes[0].bytesused);
 
 	return 0;
+}
+
+void MainWindow::queueRequest(FrameBuffer *buffer)
+{
+	Request *request = camera_->createRequest();
+	if (!request) {
+		std::cerr << "Can't create request" << std::endl;
+		return;
+	}
+
+	Stream *stream = config_->at(0).stream();
+	request->addBuffer(stream, buffer);
+
+	camera_->queueRequest(request);
 }

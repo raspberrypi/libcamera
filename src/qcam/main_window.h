@@ -58,6 +58,7 @@ private:
 
 	void requestComplete(Request *request);
 	int display(FrameBuffer *buffer);
+	void queueRequest(FrameBuffer *buffer);
 
 	QString title_;
 	QTimer titleTimer_;

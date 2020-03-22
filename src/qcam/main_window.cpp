@@ -15,7 +15,6 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QFileDialog>
-#include <QIcon>
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
@@ -63,11 +62,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	adjustSize();
 
 	ret = openCamera();
-	if (!ret)
-		ret = startCapture();
-
 	if (ret < 0)
 		quit();
+
+	startStopAction_->setChecked(true);
 }
 
 MainWindow::~MainWindow()
@@ -113,11 +111,13 @@ int MainWindow::createToolbars()
 
 	toolbar_->addSeparator();
 
-	action = toolbar_->addAction(QIcon(":play-circle.svg"), "start");
-	connect(action, &QAction::triggered, this, &MainWindow::startCapture);
+	iconPlay_ = QIcon(":play-circle.svg");
+	iconStop_ = QIcon(":stop-circle.svg");
 
-	action = toolbar_->addAction(QIcon(":stop-circle.svg"), "stop");
-	connect(action, &QAction::triggered, this, &MainWindow::stopCapture);
+	action = toolbar_->addAction(iconPlay_, "Start Capture");
+	action->setCheckable(true);
+	connect(action, &QAction::toggled, this, &MainWindow::toggleCapture);
+	startStopAction_ = action;
 
 	action = toolbar_->addAction(QIcon(":save.svg"), "saveAs");
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
@@ -159,12 +159,12 @@ void MainWindow::switchCamera(int index)
 
 	std::cout << "Switching to camera " << cam->name() << std::endl;
 
-	stopCapture();
+	startStopAction_->setChecked(false);
 
 	camera_->release();
 	camera_ = cam;
 
-	startCapture();
+	startStopAction_->setChecked(true);
 }
 
 std::string MainWindow::chooseCamera()
@@ -215,6 +215,19 @@ int MainWindow::openCamera()
 	std::cout << "Using camera " << camera_->name() << std::endl;
 
 	return 0;
+}
+
+void MainWindow::toggleCapture(bool start)
+{
+	if (start) {
+		startCapture();
+		startStopAction_->setIcon(iconStop_);
+		startStopAction_->setText("Stop Capture");
+	} else {
+		stopCapture();
+		startStopAction_->setIcon(iconPlay_);
+		startStopAction_->setText("Start Capture");
+	}
 }
 
 int MainWindow::startCapture()
@@ -322,6 +335,7 @@ int MainWindow::startCapture()
 	}
 
 	isCapturing_ = true;
+
 	return 0;
 
 error_disconnect:

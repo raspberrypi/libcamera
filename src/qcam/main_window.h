@@ -10,6 +10,7 @@
 #include <memory>
 
 #include <QElapsedTimer>
+#include <QIcon>
 #include <QMainWindow>
 #include <QMutex>
 #include <QObject>
@@ -26,6 +27,7 @@
 
 using namespace libcamera;
 
+class QAction;
 class ViewFinder;
 
 enum {
@@ -49,9 +51,7 @@ private Q_SLOTS:
 	void updateTitle();
 
 	void switchCamera(int index);
-
-	int startCapture();
-	void stopCapture();
+	void toggleCapture(bool start);
 
 	void saveImageAs();
 
@@ -60,10 +60,16 @@ private:
 	std::string chooseCamera();
 	int openCamera();
 
+	int startCapture();
+	void stopCapture();
+
 	void requestComplete(Request *request);
 	void processCapture();
 	int display(FrameBuffer *buffer);
 	void queueRequest(FrameBuffer *buffer);
+
+	QIcon iconPlay_;
+	QIcon iconStop_;
 
 	QString title_;
 	QTimer titleTimer_;
@@ -87,6 +93,7 @@ private:
 	QQueue<FrameBuffer *> doneQueue_;
 
 	QToolBar *toolbar_;
+	QAction *startStopAction_;
 	ViewFinder *viewfinder_;
 	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
 };

@@ -5,11 +5,11 @@
  * format_convert.cpp - qcam - Convert buffer to RGB
  */
 
+#include "format_converter.h"
+
 #include <errno.h>
 
 #include <QImage>
-
-#include "format_converter.h"
 
 #define RGBSHIFT		8
 #ifndef MAX

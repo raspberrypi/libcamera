@@ -5,6 +5,8 @@
  * main_window.cpp - qcam - Main application window
  */
 
+#include "main_window.h"
+
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -25,7 +27,6 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
 
-#include "main_window.h"
 #include "viewfinder.h"
 
 using namespace libcamera;

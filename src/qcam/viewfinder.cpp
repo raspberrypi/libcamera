@@ -5,13 +5,14 @@
  * viewfinder.cpp - qcam - Viewfinder
  */
 
+#include "viewfinder.h"
+
 #include <QImage>
 #include <QImageWriter>
 #include <QMutexLocker>
 #include <QPainter>
 
 #include "format_converter.h"
-#include "viewfinder.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
 	: QWidget(parent), format_(0), width_(0), height_(0), image_(nullptr)

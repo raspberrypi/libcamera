@@ -11,7 +11,9 @@
 
 #include <QElapsedTimer>
 #include <QMainWindow>
+#include <QMutex>
 #include <QObject>
+#include <QQueue>
 #include <QTimer>
 
 #include <libcamera/buffer.h>
@@ -40,6 +42,8 @@ public:
 	MainWindow(CameraManager *cm, const OptionsParser::Options &options);
 	~MainWindow();
 
+	bool event(QEvent *e) override;
+
 private Q_SLOTS:
 	void quit();
 	void updateTitle();
@@ -57,6 +61,7 @@ private:
 	int openCamera();
 
 	void requestComplete(Request *request);
+	void processCapture();
 	int display(FrameBuffer *buffer);
 	void queueRequest(FrameBuffer *buffer);
 
@@ -77,6 +82,9 @@ private:
 	QElapsedTimer frameRateInterval_;
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
+
+	QMutex mutex_;
+	QQueue<FrameBuffer *> doneQueue_;
 
 	QToolBar *toolbar_;
 	ViewFinder *viewfinder_;

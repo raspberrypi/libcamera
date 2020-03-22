@@ -19,6 +19,7 @@
 #include <QImage>
 #include <QImageWriter>
 #include <QInputDialog>
+#include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTimer>
 #include <QToolBar>
@@ -30,6 +31,21 @@
 #include "viewfinder.h"
 
 using namespace libcamera;
+
+class CaptureEvent : public QEvent
+{
+public:
+	CaptureEvent()
+		: QEvent(type())
+	{
+	}
+
+	static Type type()
+	{
+		static int type = QEvent::registerEventType();
+		return static_cast<Type>(type);
+	}
+};
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	: options_(options), cm_(cm), allocator_(nullptr), isCapturing_(false)
@@ -61,6 +77,16 @@ MainWindow::~MainWindow()
 		camera_->release();
 		camera_.reset();
 	}
+}
+
+bool MainWindow::event(QEvent *e)
+{
+	if (e->type() == CaptureEvent::type()) {
+		processCapture();
+		return true;
+	}
+
+	return QMainWindow::event(e);
 }
 
 int MainWindow::createToolbars()
@@ -343,6 +369,13 @@ void MainWindow::stopCapture()
 
 	config_.reset();
 
+	/*
+	 * A CaptureEvent may have been posted before we stopped the camera,
+	 * but not processed yet. Clear the queue of done buffers to avoid
+	 * racing with the event handler.
+	 */
+	doneQueue_.clear();
+
 	titleTimer_.stop();
 	setWindowTitle(title_);
 }
@@ -371,10 +404,30 @@ void MainWindow::requestComplete(Request *request)
 		return;
 
 	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+	FrameBuffer *buffer = buffers.begin()->second;
+
+	{
+		QMutexLocker locker(&mutex_);
+		doneQueue_.enqueue(buffer);
+	}
+
+	QCoreApplication::postEvent(this, new CaptureEvent);
+}
+
+void MainWindow::processCapture()
+{
+	FrameBuffer *buffer;
+
+	{
+		QMutexLocker locker(&mutex_);
+		if (doneQueue_.isEmpty())
+			return;
+
+		buffer = doneQueue_.dequeue();
+	}
 
 	framesCaptured_++;
 
-	FrameBuffer *buffer = buffers.begin()->second;
 	const FrameMetadata &metadata = buffer->metadata();
 
 	double fps = metadata.timestamp - lastBufferTime_;

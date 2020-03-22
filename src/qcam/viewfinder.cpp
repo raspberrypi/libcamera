@@ -15,7 +15,7 @@
 #include "format_converter.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
-	: QWidget(parent), format_(0), width_(0), height_(0), image_(nullptr)
+	: QWidget(parent), format_(0), image_(nullptr)
 {
 }
 
@@ -46,20 +46,19 @@ QImage ViewFinder::getCurrentImage()
 }
 
 int ViewFinder::setFormat(const libcamera::PixelFormat &format,
-			  unsigned int width, unsigned int height)
+			  const QSize &size)
 {
 	int ret;
 
-	ret = converter_.configure(format, width, height);
+	ret = converter_.configure(format, size);
 	if (ret < 0)
 		return ret;
 
 	format_ = format;
-	width_ = width;
-	height_ = height;
+	size_ = size;
 
 	delete image_;
-	image_ = new QImage(width, height, QImage::Format_RGB32);
+	image_ = new QImage(size_, QImage::Format_RGB32);
 
 	updateGeometry();
 	return 0;
@@ -73,5 +72,5 @@ void ViewFinder::paintEvent(QPaintEvent *)
 
 QSize ViewFinder::sizeHint() const
 {
-	return image_ ? image_->size() : QSize(640, 480);
+	return size_.isValid() ? size_ : QSize(640, 480);
 }

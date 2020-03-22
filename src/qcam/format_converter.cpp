@@ -26,7 +26,7 @@
 #endif
 
 int FormatConverter::configure(const libcamera::PixelFormat &format,
-			       unsigned int width, unsigned int height)
+			       const QSize &size)
 {
 	switch (format) {
 	case DRM_FORMAT_NV12:
@@ -139,8 +139,8 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 	};
 
 	format_ = format;
-	width_ = width;
-	height_ = height;
+	width_ = size.width();
+	height_ = size.height();
 
 	return 0;
 }

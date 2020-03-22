@@ -8,6 +8,7 @@
 #define __QCAM_VIEWFINDER_H__
 
 #include <QMutex>
+#include <QSize>
 #include <QWidget>
 
 #include <libcamera/pixelformats.h>
@@ -22,8 +23,7 @@ public:
 	ViewFinder(QWidget *parent);
 	~ViewFinder();
 
-	int setFormat(const libcamera::PixelFormat &format, unsigned int width,
-		      unsigned int height);
+	int setFormat(const libcamera::PixelFormat &format, const QSize &size);
 	void display(const unsigned char *rgb, size_t size);
 
 	QImage getCurrentImage();
@@ -33,11 +33,10 @@ protected:
 	QSize sizeHint() const override;
 
 private:
-	libcamera::PixelFormat format_;
-	unsigned int width_;
-	unsigned int height_;
-
 	FormatConverter converter_;
+
+	libcamera::PixelFormat format_;
+	QSize size_;
 
 	QImage *image_;
 	QMutex mutex_; /* Prevent concurrent access to image_ */

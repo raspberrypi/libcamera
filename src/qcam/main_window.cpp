@@ -232,8 +232,8 @@ int MainWindow::startCapture()
 	}
 
 	Stream *stream = cfg.stream();
-	ret = viewfinder_->setFormat(cfg.pixelFormat, cfg.size.width,
-				     cfg.size.height);
+	ret = viewfinder_->setFormat(cfg.pixelFormat,
+				     QSize(cfg.size.width, cfg.size.height));
 	if (ret < 0) {
 		std::cout << "Failed to set viewfinder format" << std::endl;
 		return ret;

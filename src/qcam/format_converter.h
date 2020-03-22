@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 
+#include <QSize>
+
 #include <libcamera/pixelformats.h>
 
 class QImage;
@@ -16,8 +18,7 @@ class QImage;
 class FormatConverter
 {
 public:
-	int configure(const libcamera::PixelFormat &format, unsigned int width,
-		      unsigned int height);
+	int configure(const libcamera::PixelFormat &format, const QSize &size);
 
 	void convert(const unsigned char *src, size_t size, QImage *dst);
 

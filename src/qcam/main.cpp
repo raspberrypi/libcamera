@@ -5,11 +5,11 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
-#include <iostream>
 #include <signal.h>
 #include <string.h>
 
 #include <QApplication>
+#include <QtDebug>
 
 #include <libcamera/camera_manager.h>
 
@@ -18,7 +18,7 @@
 
 void signalHandler(int signal)
 {
-	std::cout << "Exiting" << std::endl;
+	qInfo() << "Exiting";
 	qApp->quit();
 }
 
@@ -65,8 +65,8 @@ int main(int argc, char **argv)
 
 	ret = cm->start();
 	if (ret) {
-		std::cout << "Failed to start camera manager: "
-			  << strerror(-ret) << std::endl;
+		qInfo() << "Failed to start camera manager:"
+			<< strerror(-ret);
 		return EXIT_FAILURE;
 	}
 

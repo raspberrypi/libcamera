@@ -8,7 +8,6 @@
 #include "main_window.h"
 
 #include <iomanip>
-#include <iostream>
 #include <string>
 #include <sys/mman.h>
 
@@ -23,6 +22,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QtDebug>
 
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
@@ -179,11 +179,11 @@ void MainWindow::switchCamera(int index)
 	const std::shared_ptr<Camera> &cam = cameras[index];
 
 	if (cam->acquire()) {
-		std::cout << "Failed to acquire camera " << cam->name() << std::endl;
+		qInfo() << "Failed to acquire camera" << cam->name().c_str();
 		return;
 	}
 
-	std::cout << "Switching to camera " << cam->name() << std::endl;
+	qInfo() << "Switching to camera" << cam->name().c_str();
 
 	/*
 	 * Stop the capture session, release the current camera, replace it with
@@ -238,13 +238,12 @@ int MainWindow::openCamera()
 	/* Get and acquire the camera. */
 	camera_ = cm_->get(cameraName);
 	if (!camera_) {
-		std::cout << "Camera " << cameraName << " not found"
-			  << std::endl;
+		qInfo() << "Camera" << cameraName.c_str() << "not found";
 		return -ENODEV;
 	}
 
 	if (camera_->acquire()) {
-		std::cout << "Failed to acquire camera" << std::endl;
+		qInfo() << "Failed to acquire camera";
 		camera_.reset();
 		return -EBUSY;
 	}
@@ -300,18 +299,18 @@ int MainWindow::startCapture()
 
 	CameraConfiguration::Status validation = config_->validate();
 	if (validation == CameraConfiguration::Invalid) {
-		std::cerr << "Failed to create valid camera configuration";
+		qWarning() << "Failed to create valid camera configuration";
 		return -EINVAL;
 	}
 
 	if (validation == CameraConfiguration::Adjusted) {
-		std::cout << "Stream size adjusted to "
-			  << cfg.size.toString() << std::endl;
+		qInfo() << "Stream size adjusted to"
+			<< cfg.size.toString().c_str();
 	}
 
 	ret = camera_->configure(config_.get());
 	if (ret < 0) {
-		std::cout << "Failed to configure camera" << std::endl;
+		qInfo() << "Failed to configure camera";
 		return ret;
 	}
 
@@ -320,7 +319,7 @@ int MainWindow::startCapture()
 	ret = viewfinder_->setFormat(cfg.pixelFormat,
 				     QSize(cfg.size.width, cfg.size.height));
 	if (ret < 0) {
-		std::cout << "Failed to set viewfinder format" << std::endl;
+		qInfo() << "Failed to set viewfinder format";
 		return ret;
 	}
 
@@ -330,7 +329,7 @@ int MainWindow::startCapture()
 	allocator_ = new FrameBufferAllocator(camera_);
 	ret = allocator_->allocate(stream);
 	if (ret < 0) {
-		std::cerr << "Failed to allocate capture buffers" << std::endl;
+		qWarning() << "Failed to allocate capture buffers";
 		return ret;
 	}
 
@@ -338,14 +337,14 @@ int MainWindow::startCapture()
 	for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
 		Request *request = camera_->createRequest();
 		if (!request) {
-			std::cerr << "Can't create request" << std::endl;
+			qWarning() << "Can't create request";
 			ret = -ENOMEM;
 			goto error;
 		}
 
 		ret = request->addBuffer(stream, buffer.get());
 		if (ret < 0) {
-			std::cerr << "Can't set buffer for request" << std::endl;
+			qWarning() << "Can't set buffer for request";
 			goto error;
 		}
 
@@ -368,7 +367,7 @@ int MainWindow::startCapture()
 
 	ret = camera_->start();
 	if (ret) {
-		std::cout << "Failed to start capture" << std::endl;
+		qInfo() << "Failed to start capture";
 		goto error;
 	}
 
@@ -378,7 +377,7 @@ int MainWindow::startCapture()
 	for (Request *request : requests) {
 		ret = camera_->queueRequest(request);
 		if (ret < 0) {
-			std::cerr << "Can't queue request" << std::endl;
+			qWarning() << "Can't queue request";
 			goto error_disconnect;
 		}
 	}
@@ -421,7 +420,7 @@ void MainWindow::stopCapture()
 
 	int ret = camera_->stop();
 	if (ret)
-		std::cout << "Failed to stop capture" << std::endl;
+		qInfo() << "Failed to stop capture";
 
 	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
 
@@ -518,11 +517,11 @@ void MainWindow::processCapture()
 	fps = lastBufferTime_ && fps ? 1000000000.0 / fps : 0.0;
 	lastBufferTime_ = metadata.timestamp;
 
-	std::cout << "seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
-		  << " bytesused: " << metadata.planes[0].bytesused
-		  << " timestamp: " << metadata.timestamp
-		  << " fps: " << std::fixed << std::setprecision(2) << fps
-		  << std::endl;
+	qInfo() << "seq:" << qSetFieldWidth(6) << qSetPadChar('0')
+		<< metadata.sequence << reset
+		<< "bytesused:" << metadata.planes[0].bytesused
+		<< "timestamp:" << metadata.timestamp
+		<< "fps:" << fixed << qSetRealNumberPrecision(2) << fps;
 
 	/* Display the buffer and requeue it to the camera. */
 	display(buffer);
@@ -547,7 +546,7 @@ void MainWindow::queueRequest(FrameBuffer *buffer)
 {
 	Request *request = camera_->createRequest();
 	if (!request) {
-		std::cerr << "Can't create request" << std::endl;
+		qWarning() << "Can't create request";
 		return;
 	}
 

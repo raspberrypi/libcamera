@@ -99,6 +99,7 @@ int MainWindow::createToolbars()
 	action = toolbar_->addAction(QIcon::fromTheme("application-exit",
 						      QIcon(":x-circle.svg")),
 				     "Quit");
+	action->setShortcut(Qt::CTRL | Qt::Key_Q);
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selection. */
@@ -120,12 +121,14 @@ int MainWindow::createToolbars()
 
 	action = toolbar_->addAction(iconPlay_, "Start Capture");
 	action->setCheckable(true);
+	action->setShortcut(Qt::Key_Space);
 	connect(action, &QAction::toggled, this, &MainWindow::toggleCapture);
 	startStopAction_ = action;
 
 	action = toolbar_->addAction(QIcon::fromTheme("document-save-as",
 						      QIcon(":save.svg")),
 				     "Save As...");
+	action->setShortcut(QKeySequence::SaveAs);
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
 
 	return 0;

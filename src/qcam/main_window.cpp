@@ -96,7 +96,9 @@ int MainWindow::createToolbars()
 	/* Disable right click context menu. */
 	toolbar_->setContextMenuPolicy(Qt::PreventContextMenu);
 
-	action = toolbar_->addAction(QIcon(":x-circle.svg"), "Quit");
+	action = toolbar_->addAction(QIcon::fromTheme("application-exit",
+						      QIcon(":x-circle.svg")),
+				     "Quit");
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selection. */
@@ -111,15 +113,19 @@ int MainWindow::createToolbars()
 
 	toolbar_->addSeparator();
 
-	iconPlay_ = QIcon(":play-circle.svg");
-	iconStop_ = QIcon(":stop-circle.svg");
+	iconPlay_ = QIcon::fromTheme("media-playback-start",
+				     QIcon(":play-circle.svg"));
+	iconStop_ = QIcon::fromTheme("media-playback-stop",
+				     QIcon(":stop-circle.svg"));
 
 	action = toolbar_->addAction(iconPlay_, "Start Capture");
 	action->setCheckable(true);
 	connect(action, &QAction::toggled, this, &MainWindow::toggleCapture);
 	startStopAction_ = action;
 
-	action = toolbar_->addAction(QIcon(":save.svg"), "saveAs");
+	action = toolbar_->addAction(QIcon::fromTheme("document-save-as",
+						      QIcon(":save.svg")),
+				     "Save As...");
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
 
 	return 0;

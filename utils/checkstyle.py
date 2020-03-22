@@ -481,6 +481,47 @@ class DoxygenFormatter(Formatter):
         return '\n'.join(lines)
 
 
+class IncludeOrderFormatter(Formatter):
+    patterns = ('*.cpp', '*.h')
+
+    include_regex = re.compile('^#include ["<]([^">]*)[">]')
+
+    @classmethod
+    def format(cls, filename, data):
+        lines = []
+        includes = []
+
+        # Parse blocks of #include statements, and output them as a sorted list
+        # when we reach a non #include statement.
+        for line in data.split('\n'):
+            match = IncludeOrderFormatter.include_regex.match(line)
+            if match:
+                # If the current line is an #include statement, add it to the
+                # includes group and continue to the next line.
+                includes.append((line, match.group(1)))
+                continue
+
+            # The current line is not an #include statement, output the sorted
+            # stashed includes first, and then the current line.
+            if len(includes):
+                includes.sort(key=lambda i: i[1])
+                for include in includes:
+                    lines.append(include[0])
+                includes = []
+
+            lines.append(line)
+
+        # In the unlikely case the file ends with an #include statement, make
+        # sure we output the stashed includes.
+        if len(includes):
+            includes.sort(key=lambda i: i[1])
+            for include in includes:
+                lines.append(include[0])
+            includes = []
+
+        return '\n'.join(lines)
+
+
 class StripTrailingSpaceFormatter(Formatter):
     patterns = ('*.c', '*.cpp', '*.h', '*.py', 'meson.build')
 

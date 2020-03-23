@@ -7,6 +7,8 @@
 
 #include "viewfinder.h"
 
+#include <utility>
+
 #include <QImage>
 #include <QImageWriter>
 #include <QMutexLocker>
@@ -16,7 +18,7 @@
 #include "format_converter.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
-	: QWidget(parent)
+	: QWidget(parent), buffer_(nullptr)
 {
 }
 
@@ -27,16 +29,22 @@ ViewFinder::~ViewFinder()
 int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 			  const QSize &size)
 {
-	int ret;
+	image_ = QImage();
 
-	ret = converter_.configure(format, size);
-	if (ret < 0)
-		return ret;
+	/*
+	 * If format conversion is needed, configure the converter and allocate
+	 * the destination image.
+	 */
+	if (format != DRM_FORMAT_ARGB8888) {
+		int ret = converter_.configure(format, size);
+		if (ret < 0)
+			return ret;
+
+		image_ = QImage(size, QImage::Format_RGB32);
+	}
 
 	format_ = format;
 	size_ = size;
-
-	image_ = QImage(size_, QImage::Format_RGB32);
 
 	updateGeometry();
 	return 0;
@@ -49,19 +57,51 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 		return;
 	}
 
-	QMutexLocker locker(&mutex_);
+	unsigned char *memory = static_cast<unsigned char *>(map->memory);
+	size_t size = buffer->metadata().planes[0].bytesused;
 
-	/*
-	 * \todo We're not supposed to block the pipeline handler thread
-	 * for long, implement a better way to save images without
-	 * impacting performances.
-	 */
+	{
+		QMutexLocker locker(&mutex_);
 
-	converter_.convert(static_cast<unsigned char *>(map->memory),
-			   buffer->metadata().planes[0].bytesused, &image_);
+		if (format_ == DRM_FORMAT_ARGB8888) {
+			/*
+			 * If the frame format is identical to the display
+			 * format, create a QImage that references the frame
+			 * and store a reference to the frame buffer. The
+			 * previously stored frame buffer, if any, will be
+			 * released.
+			 *
+			 * \todo Get the stride from the buffer instead of
+			 * computing it naively
+			 */
+			image_ = QImage(memory, size_.width(), size_.height(),
+					size / size_.height(), QImage::Format_RGB32);
+			std::swap(buffer, buffer_);
+		} else {
+			/*
+			 * Otherwise, convert the format and release the frame
+			 * buffer immediately.
+			 */
+			converter_.convert(memory, size, &image_);
+		}
+	}
+
 	update();
 
-	renderComplete(buffer);
+	if (buffer)
+		renderComplete(buffer);
+}
+
+void ViewFinder::stop()
+{
+	image_ = QImage();
+
+	if (buffer_) {
+		renderComplete(buffer_);
+		buffer_ = nullptr;
+	}
+
+	update();
 }
 
 QImage ViewFinder::getCurrentImage()

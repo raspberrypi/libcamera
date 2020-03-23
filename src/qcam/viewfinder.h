@@ -36,6 +36,7 @@ public:
 
 	int setFormat(const libcamera::PixelFormat &format, const QSize &size);
 	void render(libcamera::FrameBuffer *buffer, MappedBuffer *map);
+	void stop();
 
 	QImage getCurrentImage();
 
@@ -52,6 +53,7 @@ private:
 	libcamera::PixelFormat format_;
 	QSize size_;
 
+	libcamera::FrameBuffer *buffer_;
 	QImage image_;
 	QMutex mutex_; /* Prevent concurrent access to image_ */
 };

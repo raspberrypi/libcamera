@@ -416,6 +416,8 @@ void MainWindow::stopCapture()
 	if (!isCapturing_)
 		return;
 
+	viewfinder_->stop();
+
 	int ret = camera_->stop();
 	if (ret)
 		qInfo() << "Failed to stop capture";

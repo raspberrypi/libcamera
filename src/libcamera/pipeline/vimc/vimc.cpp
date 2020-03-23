@@ -6,8 +6,8 @@
  */
 
 #include <algorithm>
-#include <array>
 #include <iomanip>
+#include <map>
 #include <math.h>
 #include <tuple>
 
@@ -107,10 +107,10 @@ private:
 
 namespace {
 
-static const std::array<PixelFormat, 3> pixelformats{
-	PixelFormat(DRM_FORMAT_RGB888),
-	PixelFormat(DRM_FORMAT_BGR888),
-	PixelFormat(DRM_FORMAT_BGRA8888),
+static const std::map<PixelFormat, uint32_t> pixelformats{
+	{ PixelFormat(DRM_FORMAT_RGB888), MEDIA_BUS_FMT_BGR888_1X24 },
+	{ PixelFormat(DRM_FORMAT_BGR888), MEDIA_BUS_FMT_RGB888_1X24 },
+	{ PixelFormat(DRM_FORMAT_BGRA8888), MEDIA_BUS_FMT_ARGB8888_1X32 },
 };
 
 } /* namespace */
@@ -136,8 +136,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	StreamConfiguration &cfg = config_[0];
 
 	/* Adjust the pixel format. */
-	if (std::find(pixelformats.begin(), pixelformats.end(), cfg.pixelFormat) ==
-	    pixelformats.end()) {
+	if (pixelformats.find(cfg.pixelFormat) == pixelformats.end()) {
 		LOG(VIMC, Debug) << "Adjusting format to RGB24";
 		cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
 		status = Adjusted;
@@ -178,12 +177,12 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	std::map<PixelFormat, std::vector<SizeRange>> formats;
 
-	for (PixelFormat pixelformat : pixelformats) {
+	for (const auto &pixelformat : pixelformats) {
 		/* The scaler hardcodes a x3 scale-up ratio. */
 		std::vector<SizeRange> sizes{
 			SizeRange{ { 48, 48 }, { 4096, 2160 } }
 		};
-		formats[pixelformat] = sizes;
+		formats[pixelformat.first] = sizes;
 	}
 
 	StreamConfiguration cfg(formats);
@@ -218,7 +217,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	subformat.mbus_code = MEDIA_BUS_FMT_RGB888_1X24;
+	subformat.mbus_code = pixelformats.find(cfg.pixelFormat)->second;
 	ret = data->debayer_->setFormat(1, &subformat);
 	if (ret)
 		return ret;

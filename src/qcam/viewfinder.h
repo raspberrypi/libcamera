@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 
+#include <QImage>
 #include <QMutex>
 #include <QSize>
 #include <QWidget>
@@ -51,7 +52,7 @@ private:
 	libcamera::PixelFormat format_;
 	QSize size_;
 
-	QImage *image_;
+	QImage image_;
 	QMutex mutex_; /* Prevent concurrent access to image_ */
 };
 

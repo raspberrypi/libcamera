@@ -16,13 +16,12 @@
 #include "format_converter.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
-	: QWidget(parent), format_(0), image_(nullptr)
+	: QWidget(parent), format_(0)
 {
 }
 
 ViewFinder::~ViewFinder()
 {
-	delete image_;
 }
 
 void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
@@ -41,7 +40,7 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 	 */
 
 	converter_.convert(static_cast<unsigned char *>(map->memory),
-			   buffer->metadata().planes[0].bytesused, image_);
+			   buffer->metadata().planes[0].bytesused, &image_);
 	update();
 
 	renderComplete(buffer);
@@ -51,7 +50,7 @@ QImage ViewFinder::getCurrentImage()
 {
 	QMutexLocker locker(&mutex_);
 
-	return image_->copy();
+	return image_.copy();
 }
 
 int ViewFinder::setFormat(const libcamera::PixelFormat &format,
@@ -66,8 +65,7 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 	format_ = format;
 	size_ = size;
 
-	delete image_;
-	image_ = new QImage(size_, QImage::Format_RGB32);
+	image_ = QImage(size_, QImage::Format_RGB32);
 
 	updateGeometry();
 	return 0;
@@ -76,7 +74,7 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 void ViewFinder::paintEvent(QPaintEvent *)
 {
 	QPainter painter(this);
-	painter.drawImage(rect(), *image_, image_->rect());
+	painter.drawImage(rect(), image_, image_.rect());
 }
 
 QSize ViewFinder::sizeHint() const

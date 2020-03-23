@@ -20,6 +20,7 @@
 ViewFinder::ViewFinder(QWidget *parent)
 	: QWidget(parent), buffer_(nullptr)
 {
+	icon_ = QIcon(":camera-off.svg");
 }
 
 ViewFinder::~ViewFinder()
@@ -114,7 +115,36 @@ QImage ViewFinder::getCurrentImage()
 void ViewFinder::paintEvent(QPaintEvent *)
 {
 	QPainter painter(this);
-	painter.drawImage(rect(), image_, image_.rect());
+
+	/* If we have an image, draw it. */
+	if (!image_.isNull()) {
+		painter.drawImage(rect(), image_, image_.rect());
+		return;
+	}
+
+	/*
+	 * Otherwise, draw the camera stopped icon. Render it to the pixmap if
+	 * the size has changed.
+	 */
+	constexpr int margin = 20;
+
+	if (vfSize_ != size() || pixmap_.isNull()) {
+		QSize vfSize = size() - QSize{ 2 * margin, 2 * margin };
+		QSize pixmapSize{ 1, 1 };
+		pixmapSize.scale(vfSize, Qt::KeepAspectRatio);
+		pixmap_ = icon_.pixmap(pixmapSize);
+
+		vfSize_ = size();
+	}
+
+	QPoint point{ margin, margin };
+	if (pixmap_.width() < width() - 2 * margin)
+		point.setX((width() - pixmap_.width()) / 2);
+	else
+		point.setY((height() - pixmap_.height()) / 2);
+
+	painter.setBackgroundMode(Qt::OpaqueMode);
+	painter.drawPixmap(point, pixmap_);
 }
 
 QSize ViewFinder::sizeHint() const

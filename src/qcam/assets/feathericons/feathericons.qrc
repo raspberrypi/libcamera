@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+<file>./camera-off.svg</file>
 <file>./play-circle.svg</file>
 <file>./save.svg</file>
 <file>./stop-circle.svg</file>

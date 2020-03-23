@@ -24,6 +24,24 @@ ViewFinder::~ViewFinder()
 {
 }
 
+int ViewFinder::setFormat(const libcamera::PixelFormat &format,
+			  const QSize &size)
+{
+	int ret;
+
+	ret = converter_.configure(format, size);
+	if (ret < 0)
+		return ret;
+
+	format_ = format;
+	size_ = size;
+
+	image_ = QImage(size_, QImage::Format_RGB32);
+
+	updateGeometry();
+	return 0;
+}
+
 void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 {
 	if (buffer->planes().size() != 1) {
@@ -51,24 +69,6 @@ QImage ViewFinder::getCurrentImage()
 	QMutexLocker locker(&mutex_);
 
 	return image_.copy();
-}
-
-int ViewFinder::setFormat(const libcamera::PixelFormat &format,
-			  const QSize &size)
-{
-	int ret;
-
-	ret = converter_.configure(format, size);
-	if (ret < 0)
-		return ret;
-
-	format_ = format;
-	size_ = size;
-
-	image_ = QImage(size_, QImage::Format_RGB32);
-
-	updateGeometry();
-	return 0;
 }
 
 void ViewFinder::paintEvent(QPaintEvent *)

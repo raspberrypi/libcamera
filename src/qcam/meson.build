@@ -8,6 +8,7 @@ qcam_sources = files([
 
 qcam_moc_headers = files([
     'main_window.h',
+    'viewfinder.h',
 ])
 
 qcam_resources = files([

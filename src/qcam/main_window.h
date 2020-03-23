@@ -55,6 +55,8 @@ private Q_SLOTS:
 
 	void saveImageAs();
 
+	void queueRequest(FrameBuffer *buffer);
+
 private:
 	int createToolbars();
 
@@ -66,8 +68,6 @@ private:
 
 	void requestComplete(Request *request);
 	void processCapture();
-	void display(FrameBuffer *buffer);
-	void queueRequest(FrameBuffer *buffer);
 
 	/* UI elements */
 	QToolBar *toolbar_;

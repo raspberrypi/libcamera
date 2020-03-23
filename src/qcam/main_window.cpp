@@ -63,6 +63,8 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
 
 	viewfinder_ = new ViewFinder(this);
+	connect(viewfinder_, &ViewFinder::renderComplete,
+		this, &MainWindow::queueRequest);
 	setCentralWidget(viewfinder_);
 	adjustSize();
 
@@ -518,15 +520,8 @@ void MainWindow::processCapture()
 		<< "timestamp:" << metadata.timestamp
 		<< "fps:" << fixed << qSetRealNumberPrecision(2) << fps;
 
-	/* Display the buffer and requeue it to the camera. */
-	display(buffer);
-
-	queueRequest(buffer);
-}
-
-void MainWindow::display(FrameBuffer *buffer)
-{
-	viewfinder_->display(buffer, &mappedBuffers_[buffer]);
+	/* Render the frame on the viewfinder. */
+	viewfinder_->render(buffer, &mappedBuffers_[buffer]);
 }
 
 void MainWindow::queueRequest(FrameBuffer *buffer)

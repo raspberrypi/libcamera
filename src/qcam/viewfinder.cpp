@@ -25,8 +25,7 @@ ViewFinder::~ViewFinder()
 	delete image_;
 }
 
-void ViewFinder::display(const libcamera::FrameBuffer *buffer,
-			 MappedBuffer *map)
+void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
@@ -44,6 +43,8 @@ void ViewFinder::display(const libcamera::FrameBuffer *buffer,
 	converter_.convert(static_cast<unsigned char *>(map->memory),
 			   buffer->metadata().planes[0].bytesused, image_);
 	update();
+
+	renderComplete(buffer);
 }
 
 QImage ViewFinder::getCurrentImage()

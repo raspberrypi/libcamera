@@ -27,14 +27,19 @@ struct MappedBuffer {
 
 class ViewFinder : public QWidget
 {
+	Q_OBJECT
+
 public:
 	ViewFinder(QWidget *parent);
 	~ViewFinder();
 
 	int setFormat(const libcamera::PixelFormat &format, const QSize &size);
-	void display(const libcamera::FrameBuffer *buffer, MappedBuffer *map);
+	void render(libcamera::FrameBuffer *buffer, MappedBuffer *map);
 
 	QImage getCurrentImage();
+
+Q_SIGNALS:
+	void renderComplete(libcamera::FrameBuffer *buffer);
 
 protected:
 	void paintEvent(QPaintEvent *) override;

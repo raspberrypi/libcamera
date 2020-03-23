@@ -249,8 +249,6 @@ int MainWindow::openCamera()
 		return -EBUSY;
 	}
 
-	std::cout << "Using camera " << camera_->name() << std::endl;
-
 	return 0;
 }
 

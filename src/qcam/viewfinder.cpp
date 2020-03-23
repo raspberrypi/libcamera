@@ -7,15 +7,29 @@
 
 #include "viewfinder.h"
 
+#include <stdint.h>
 #include <utility>
 
 #include <QImage>
 #include <QImageWriter>
+#include <QMap>
 #include <QMutexLocker>
 #include <QPainter>
 #include <QtDebug>
 
 #include "format_converter.h"
+
+static const QMap<uint32_t, QImage::Format> nativeFormats
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+	{ DRM_FORMAT_ABGR8888, QImage::Format_RGBA8888 },
+#endif
+	{ DRM_FORMAT_ARGB8888, QImage::Format_RGB32 },
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	{ DRM_FORMAT_BGR888, QImage::Format_BGR888 },
+#endif
+	{ DRM_FORMAT_RGB888, QImage::Format_RGB888 },
+};
 
 ViewFinder::ViewFinder(QWidget *parent)
 	: QWidget(parent), buffer_(nullptr)
@@ -36,7 +50,7 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 	 * If format conversion is needed, configure the converter and allocate
 	 * the destination image.
 	 */
-	if (format != DRM_FORMAT_ARGB8888) {
+	if (!nativeFormats.contains(format)) {
 		int ret = converter_.configure(format, size);
 		if (ret < 0)
 			return ret;
@@ -64,7 +78,7 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 	{
 		QMutexLocker locker(&mutex_);
 
-		if (format_ == DRM_FORMAT_ARGB8888) {
+		if (nativeFormats.contains(format_)) {
 			/*
 			 * If the frame format is identical to the display
 			 * format, create a QImage that references the frame
@@ -76,7 +90,8 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 			 * computing it naively
 			 */
 			image_ = QImage(memory, size_.width(), size_.height(),
-					size / size_.height(), QImage::Format_RGB32);
+					size / size_.height(),
+					nativeFormats[format_]);
 			std::swap(buffer, buffer_);
 		} else {
 			/*

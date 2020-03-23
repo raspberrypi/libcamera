@@ -56,6 +56,11 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 			return ret;
 
 		image_ = QImage(size, QImage::Format_RGB32);
+
+		qInfo() << "Using software format conversion from"
+			<< format.toString().c_str();
+	} else {
+		qInfo() << "Zero-copy enabled";
 	}
 
 	format_ = format;

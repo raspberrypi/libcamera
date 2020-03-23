@@ -183,6 +183,17 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  */
 
 /**
+ * \fn FrameBuffer::setRequest()
+ * \brief Set the request this buffer belongs to
+ * \param[in] request Request to set
+ *
+ * The intended callers of this method are pipeline handlers and only for
+ * buffers that are internal to the pipeline.
+ *
+ * \todo Shall be hidden from applications with a d-pointer design.
+ */
+
+/**
  * \fn FrameBuffer::metadata()
  * \brief Retrieve the dynamic metadata
  * \return Dynamic metadata for the frame contained in the buffer

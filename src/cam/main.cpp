@@ -209,17 +209,19 @@ int CamApp::prepareConfig()
 		for (auto const &value : streamOptions) {
 			KeyValueParser::Options opt = value.toKeyValues();
 
-			if (!opt.isSet("role")) {
-				roles.push_back(StreamRole::VideoRecording);
-			} else if (opt["role"].toString() == "viewfinder") {
+			std::string role = opt.isSet("role")
+					 ? opt["role"].toString()
+					 : "viewfinder";
+
+			if (role == "viewfinder") {
 				roles.push_back(StreamRole::Viewfinder);
-			} else if (opt["role"].toString() == "video") {
+			} else if (role == "video") {
 				roles.push_back(StreamRole::VideoRecording);
-			} else if (opt["role"].toString() == "still") {
+			} else if (role == "still") {
 				roles.push_back(StreamRole::StillCapture);
 			} else {
 				std::cerr << "Unknown stream role "
-					  << opt["role"].toString() << std::endl;
+					  << role << std::endl;
 				return -EINVAL;
 			}
 		}

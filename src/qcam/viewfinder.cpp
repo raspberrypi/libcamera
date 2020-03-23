@@ -16,7 +16,7 @@
 #include "format_converter.h"
 
 ViewFinder::ViewFinder(QWidget *parent)
-	: QWidget(parent), format_(0)
+	: QWidget(parent)
 {
 }
 

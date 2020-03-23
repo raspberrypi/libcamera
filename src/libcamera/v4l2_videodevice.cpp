@@ -1636,8 +1636,14 @@ PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
 		return PixelFormat(DRM_FORMAT_BGR888);
 	case V4L2_PIX_FMT_BGR24:
 		return PixelFormat(DRM_FORMAT_RGB888);
+	case V4L2_PIX_FMT_RGBA32:
+		return PixelFormat(DRM_FORMAT_ABGR8888);
+	case V4L2_PIX_FMT_ABGR32:
+		return PixelFormat(DRM_FORMAT_ARGB8888);
 	case V4L2_PIX_FMT_ARGB32:
 		return PixelFormat(DRM_FORMAT_BGRA8888);
+	case V4L2_PIX_FMT_BGRA32:
+		return PixelFormat(DRM_FORMAT_RGBA8888);
 
 	/* YUV packed formats. */
 	case V4L2_PIX_FMT_YUYV:
@@ -1720,8 +1726,14 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 		return V4L2PixelFormat(V4L2_PIX_FMT_RGB24);
 	case DRM_FORMAT_RGB888:
 		return V4L2PixelFormat(V4L2_PIX_FMT_BGR24);
+	case DRM_FORMAT_ABGR8888:
+		return V4L2PixelFormat(V4L2_PIX_FMT_RGBA32);
+	case DRM_FORMAT_ARGB8888:
+		return V4L2PixelFormat(V4L2_PIX_FMT_ABGR32);
 	case DRM_FORMAT_BGRA8888:
 		return V4L2PixelFormat(V4L2_PIX_FMT_ARGB32);
+	case DRM_FORMAT_RGBA8888:
+		return V4L2PixelFormat(V4L2_PIX_FMT_BGRA32);
 
 	/* YUV packed formats. */
 	case DRM_FORMAT_YUYV:

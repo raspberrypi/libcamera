@@ -19,16 +19,16 @@
 
 #include "format_converter.h"
 
-static const QMap<uint32_t, QImage::Format> nativeFormats
+static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-	{ DRM_FORMAT_ABGR8888, QImage::Format_RGBA8888 },
+	{ libcamera::PixelFormat{ DRM_FORMAT_ABGR8888 }, QImage::Format_RGBA8888 },
 #endif
-	{ DRM_FORMAT_ARGB8888, QImage::Format_RGB32 },
+	{ libcamera::PixelFormat{ DRM_FORMAT_ARGB8888 }, QImage::Format_RGB32 },
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-	{ DRM_FORMAT_BGR888, QImage::Format_BGR888 },
+	{ libcamera::PixelFormat{ DRM_FORMAT_BGR888 }, QImage::Format_BGR888 },
 #endif
-	{ DRM_FORMAT_RGB888, QImage::Format_RGB888 },
+	{ libcamera::PixelFormat{ DRM_FORMAT_RGB888 }, QImage::Format_RGB888 },
 };
 
 ViewFinder::ViewFinder(QWidget *parent)
@@ -41,6 +41,12 @@ ViewFinder::~ViewFinder()
 {
 }
 
+const QList<libcamera::PixelFormat> &ViewFinder::nativeFormats() const
+{
+	static const QList<libcamera::PixelFormat> formats = ::nativeFormats.keys();
+	return formats;
+}
+
 int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 			  const QSize &size)
 {
@@ -50,7 +56,7 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 	 * If format conversion is needed, configure the converter and allocate
 	 * the destination image.
 	 */
-	if (!nativeFormats.contains(format)) {
+	if (!::nativeFormats.contains(format)) {
 		int ret = converter_.configure(format, size);
 		if (ret < 0)
 			return ret;
@@ -83,7 +89,7 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 	{
 		QMutexLocker locker(&mutex_);
 
-		if (nativeFormats.contains(format_)) {
+		if (::nativeFormats.contains(format_)) {
 			/*
 			 * If the frame format is identical to the display
 			 * format, create a QImage that references the frame
@@ -96,7 +102,7 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 			 */
 			image_ = QImage(memory, size_.width(), size_.height(),
 					size / size_.height(),
-					nativeFormats[format_]);
+					::nativeFormats[format_]);
 			std::swap(buffer, buffer_);
 		} else {
 			/*

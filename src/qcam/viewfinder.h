@@ -10,6 +10,7 @@
 #include <stddef.h>
 
 #include <QIcon>
+#include <QList>
 #include <QImage>
 #include <QMutex>
 #include <QSize>
@@ -34,6 +35,8 @@ class ViewFinder : public QWidget
 public:
 	ViewFinder(QWidget *parent);
 	~ViewFinder();
+
+	const QList<libcamera::PixelFormat> &nativeFormats() const;
 
 	int setFormat(const libcamera::PixelFormat &format, const QSize &size);
 	void render(libcamera::FrameBuffer *buffer, MappedBuffer *map);

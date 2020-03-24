@@ -351,13 +351,23 @@ protected:
 		if (!info)
 			LOG(RkISP1, Fatal) << "Frame not known";
 
-		if (info->paramFilled)
-			pipe_->param_->queueBuffer(info->paramBuffer);
-		else
+		/*
+		 * \todo: If parameters are not filled a better method to handle
+		 * the situation than queuing a buffer with unknown content
+		 * should be used.
+		 *
+		 * It seems excessive to keep an internal zeroed scratch
+		 * parameters buffer around as this should not happen unless the
+		 * devices is under too much load. Perhaps failing the request
+		 * and returning it to the application with an error code is
+		 * better than queue it to hardware?
+		 */
+		if (!info->paramFilled)
 			LOG(RkISP1, Error)
 				<< "Parameters not ready on time for frame "
-				<< frame() << ", ignore parameters.";
+				<< frame();
 
+		pipe_->param_->queueBuffer(info->paramBuffer);
 		pipe_->stat_->queueBuffer(info->statBuffer);
 		pipe_->video_->queueBuffer(info->videoBuffer);
 	}

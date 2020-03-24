@@ -297,6 +297,19 @@ int MainWindow::startCapture()
 		}
 	}
 
+	/* Use a format supported by the viewfinder if available. */
+	std::vector<PixelFormat> formats = cfg.formats().pixelformats();
+	for (const PixelFormat &format : viewfinder_->nativeFormats()) {
+		auto match = std::find_if(formats.begin(), formats.end(),
+					  [&](const PixelFormat &f) {
+						  return f == format;
+					  });
+		if (match != formats.end()) {
+			cfg.pixelFormat = format;
+			break;
+		}
+	}
+
 	CameraConfiguration::Status validation = config_->validate();
 	if (validation == CameraConfiguration::Invalid) {
 		qWarning() << "Failed to create valid camera configuration";

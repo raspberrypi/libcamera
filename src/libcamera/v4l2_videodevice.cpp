@@ -544,7 +544,8 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr)
+	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr),
+	  fdEventNotifier_(nullptr), frameStartEnabled_(false)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -637,6 +638,10 @@ int V4L2VideoDevice::open()
 	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdBufferNotifier_->setEnabled(false);
 
+	fdEventNotifier_ = new EventNotifier(fd(), EventNotifier::Exception);
+	fdEventNotifier_->activated.connect(this, &V4L2VideoDevice::eventAvailable);
+	fdEventNotifier_->setEnabled(false);
+
 	LOG(V4L2, Debug)
 		<< "Opened device " << caps_.bus_info() << ": "
 		<< caps_.driver() << ": " << caps_.card();
@@ -726,6 +731,10 @@ int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdBufferNotifier_->setEnabled(false);
 
+	fdEventNotifier_ = new EventNotifier(fd(), EventNotifier::Exception);
+	fdEventNotifier_->activated.connect(this, &V4L2VideoDevice::eventAvailable);
+	fdEventNotifier_->setEnabled(false);
+
 	LOG(V4L2, Debug)
 		<< "Opened device " << caps_.bus_info() << ": "
 		<< caps_.driver() << ": " << caps_.card();
@@ -743,6 +752,7 @@ void V4L2VideoDevice::close()
 
 	releaseBuffers();
 	delete fdBufferNotifier_;
+	delete fdEventNotifier_;
 
 	V4L2Device::close();
 }
@@ -1571,8 +1581,71 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 }
 
 /**
+ * \brief Slot to handle V4L2 events from the V4L2 video device
+ * \param[in] notifier The event notifier
+ *
+ * When this slot is called, a V4L2 event is available to be dequeued from the
+ * device.
+ */
+void V4L2VideoDevice::eventAvailable(EventNotifier *notifier)
+{
+	struct v4l2_event event{};
+	int ret = ioctl(VIDIOC_DQEVENT, &event);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to dequeue event, disabling event notifier";
+		fdEventNotifier_->setEnabled(false);
+		return;
+	}
+
+	if (event.type != V4L2_EVENT_FRAME_SYNC) {
+		LOG(V4L2, Error)
+			<< "Spurious event (" << event.type
+			<< "), disabling event notifier";
+		fdEventNotifier_->setEnabled(false);
+		return;
+	}
+
+	frameStart.emit(event.u.frame_sync.frame_sequence);
+}
+
+/**
  * \var V4L2VideoDevice::bufferReady
  * \brief A Signal emitted when a framebuffer completes
+ */
+
+/**
+ * \brief Enable or disable frame start event notification
+ * \param[in] enable True to enable frame start events, false to disable them
+ *
+ * This function enables or disables generation of frame start events. Once
+ * enabled, the events are signalled through the frameStart signal.
+ *
+ * \return 0 on success, a negative error code otherwise
+ */
+int V4L2VideoDevice::setFrameStartEnabled(bool enable)
+{
+	if (frameStartEnabled_ == enable)
+		return 0;
+
+	struct v4l2_event_subscription event{};
+	event.type = V4L2_EVENT_FRAME_SYNC;
+
+	unsigned long request = enable ? VIDIOC_SUBSCRIBE_EVENT
+			      : VIDIOC_UNSUBSCRIBE_EVENT;
+	int ret = ioctl(request, &event);
+	if (enable && ret)
+		return ret;
+
+	fdEventNotifier_->setEnabled(enable);
+	frameStartEnabled_ = enable;
+
+	return ret;
+}
+
+/**
+ * \var V4L2VideoDevice::frameStart
+ * \brief A Signal emitted when capture of a frame has started
  */
 
 /**

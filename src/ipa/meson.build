@@ -9,5 +9,11 @@ config_h.set('IPA_MODULE_DIR',
              '"' + join_paths(get_option('prefix'), ipa_install_dir) + '"')
 
 subdir('libipa')
-subdir('rkisp1')
-subdir('vimc')
+
+ipas = ['rkisp1', 'vimc']
+
+foreach pipeline : get_option('pipelines')
+    if ipas.contains(pipeline)
+        subdir(pipeline)
+    endif
+endforeach

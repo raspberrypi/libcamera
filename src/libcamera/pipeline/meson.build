@@ -1,4 +1,3 @@
-subdir('ipu3')
-subdir('rkisp1')
-subdir('uvcvideo')
-subdir('vimc')
+foreach pipeline : get_option('pipelines')
+    subdir(pipeline)
+endforeach

@@ -12,6 +12,11 @@ option('gstreamer',
         value : 'auto',
         description : 'Compile libcamera GStreamer plugin')
 
+option('pipelines',
+        type : 'array',
+        choices : ['ipu3', 'rkisp1', 'uvcvideo', 'vimc'],
+        description : 'Select which pipeline handlers to include')
+
 option('test',
         type : 'boolean',
         description: 'Compile and include the tests')

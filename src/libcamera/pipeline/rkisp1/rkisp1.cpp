@@ -386,6 +386,8 @@ int RkISP1CameraData::loadIPA()
 	ipa_->queueFrameAction.connect(this,
 				       &RkISP1CameraData::queueFrameAction);
 
+	ipa_->init();
+
 	return 0;
 }
 

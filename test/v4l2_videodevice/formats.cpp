@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits.h>
 
+#include "utils.h"
 #include "v4l2_videodevice.h"
 
 #include "v4l2_videodevice_test.h"
@@ -43,6 +44,28 @@ protected:
 		if (format.size.width == UINT_MAX ||
 		    format.size.height == UINT_MAX) {
 			cerr << "Failed to update image format = (UINT_MAX x UINT_MAX)"
+			     << endl;
+			return TestFail;
+		}
+
+		std::vector<std::pair<uint32_t, const char *>> formats{
+			{ V4L2_PIX_FMT_YUYV, "YUYV" },
+			{ 0, "<INVALID>" },
+			{ v4l2_fourcc(0, 1, 2, 3), "...." },
+			{ V4L2_PIX_FMT_Y16_BE, "Y16 -BE" }
+		};
+
+		for (const auto &format : formats) {
+			if (V4L2PixelFormat(format.first).toString() != format.second) {
+				cerr << "Failed to convert V4L2PixelFormat"
+				     << utils::hex(format.first) << "to string"
+				     << endl;
+				return TestFail;
+			}
+		}
+
+		if (V4L2PixelFormat().toString() != "<INVALID>") {
+			cerr << "Failed to convert default V4L2PixelFormat to string"
 			     << endl;
 			return TestFail;
 		}

@@ -336,9 +336,23 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  */
 std::string V4L2PixelFormat::toString() const
 {
-	char str[11];
-	snprintf(str, 11, "0x%08x", fourcc_);
-	return str;
+	if (fourcc_ == 0)
+		return "<INVALID>";
+
+	char ss[8] = { static_cast<char>(fourcc_ & 0x7f),
+		       static_cast<char>((fourcc_ >> 8) & 0x7f),
+		       static_cast<char>((fourcc_ >> 16) & 0x7f),
+		       static_cast<char>((fourcc_ >> 24) & 0x7f) };
+
+	for (unsigned int i = 0; i < 4; i++) {
+		if (!isprint(ss[i]))
+			ss[i] = '.';
+	}
+
+	if (fourcc_ & (1 << 31))
+		strcat(ss, "-BE");
+
+	return ss;
 }
 
 /**

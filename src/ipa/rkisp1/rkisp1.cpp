@@ -33,6 +33,8 @@ class IPARkISP1 : public IPAInterface
 {
 public:
 	int init() override { return 0; }
+	int start() override { return 0; }
+	void stop() override {}
 
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;

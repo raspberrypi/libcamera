@@ -82,6 +82,28 @@ int IPAContextWrapper::init()
 	return 0;
 }
 
+int IPAContextWrapper::start()
+{
+	if (intf_)
+		return intf_->start();
+
+	if (!ctx_)
+		return 0;
+
+	return ctx_->ops->start(ctx_);
+}
+
+void IPAContextWrapper::stop()
+{
+	if (intf_)
+		return intf_->stop();
+
+	if (!ctx_)
+		return;
+
+	ctx_->ops->stop(ctx_);
+}
+
 void IPAContextWrapper::configure(const std::map<unsigned int, IPAStream> &streamConfig,
 				  const std::map<unsigned int, const ControlInfoMap &> &entityControls)
 {

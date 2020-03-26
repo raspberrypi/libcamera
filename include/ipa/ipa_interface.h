@@ -64,6 +64,8 @@ struct ipa_context_ops {
 	void (*destroy)(struct ipa_context *ctx);
 	void *(*get_interface)(struct ipa_context *ctx);
 	void (*init)(struct ipa_context *ctx);
+	int (*start)(struct ipa_context *ctx);
+	void (*stop)(struct ipa_context *ctx);
 	void (*register_callbacks)(struct ipa_context *ctx,
 				   const struct ipa_callback_ops *callbacks,
 				   void *cb_ctx);
@@ -120,6 +122,8 @@ public:
 	virtual ~IPAInterface() {}
 
 	virtual int init() = 0;
+	virtual int start() = 0;
+	virtual void stop() = 0;
 
 	virtual void configure(const std::map<unsigned int, IPAStream> &streamConfig,
 			       const std::map<unsigned int, const ControlInfoMap &> &entityControls) = 0;

@@ -86,6 +86,20 @@ void IPAInterfaceWrapper::init(struct ipa_context *_ctx)
 	ctx->ipa_->init();
 }
 
+int IPAInterfaceWrapper::start(struct ipa_context *_ctx)
+{
+	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
+
+	return ctx->ipa_->start();
+}
+
+void IPAInterfaceWrapper::stop(struct ipa_context *_ctx)
+{
+	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
+
+	ctx->ipa_->stop();
+}
+
 void IPAInterfaceWrapper::register_callbacks(struct ipa_context *_ctx,
 					     const struct ipa_callback_ops *callbacks,
 					     void *cb_ctx)
@@ -234,6 +248,8 @@ const struct ipa_context_ops IPAInterfaceWrapper::operations_ = {
 	.destroy = &IPAInterfaceWrapper::destroy,
 	.get_interface = &IPAInterfaceWrapper::get_interface,
 	.init = &IPAInterfaceWrapper::init,
+	.start = &IPAInterfaceWrapper::start,
+	.stop = &IPAInterfaceWrapper::stop,
 	.register_callbacks = &IPAInterfaceWrapper::register_callbacks,
 	.configure = &IPAInterfaceWrapper::configure,
 	.map_buffers = &IPAInterfaceWrapper::map_buffers,

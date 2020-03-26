@@ -236,6 +236,20 @@
  */
 
 /**
+ * \var ipa_context_ops::start
+ * \brief Start the IPA context
+ *
+ * \sa libcamera::IPAInterface::start()
+ */
+
+/**
+ * \var ipa_context_ops::stop
+ * \brief Stop the IPA context
+ *
+ * \sa libcamera::IPAInterface::stop()
+ */
+
+/**
  * \var ipa_context_ops::register_callbacks
  * \brief Register callback operation from the IPA to the pipeline handler
  * \param[in] ctx The IPA context
@@ -410,6 +424,24 @@ namespace libcamera {
 /**
  * \fn IPAInterface::init()
  * \brief Initialise the IPAInterface
+ */
+
+/**
+ * \fn IPAInterface::start()
+ * \brief Start the IPA
+ *
+ * This method informs the IPA module that the camera is about to be started.
+ * The IPA module shall prepare any resources it needs to operate.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn IPAInterface::stop()
+ * \brief Stop the IPA
+ *
+ * This method informs the IPA module that the camera is stopped. The IPA module
+ * shall release resources prepared in start().
  */
 
 /**

@@ -109,6 +109,28 @@ protected:
 			return TestFail;
 		}
 
+		/* Test start of IPA module. */
+		ipa_->start();
+		timer.start(1000);
+		while (timer.isRunning() && trace_ != IPAOperationStart)
+			dispatcher->processEvents();
+
+		if (trace_ != IPAOperationStart) {
+			cerr << "Failed to test IPA start sequence" << endl;
+			return TestFail;
+		}
+
+		/* Test stop of IPA module. */
+		ipa_->stop();
+		timer.start(1000);
+		while (timer.isRunning() && trace_ != IPAOperationStop)
+			dispatcher->processEvents();
+
+		if (trace_ != IPAOperationStop) {
+			cerr << "Failed to test IPA stop sequence" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 

@@ -32,6 +32,10 @@ public:
 	~IPAVimc();
 
 	int init() override;
+
+	int start() override;
+	void stop() override;
+
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override {}
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override {}
@@ -64,6 +68,22 @@ int IPAVimc::init()
 	LOG(IPAVimc, Debug) << "initializing vimc IPA!";
 
 	return 0;
+}
+
+int IPAVimc::start()
+{
+	trace(IPAOperationStart);
+
+	LOG(IPAVimc, Debug) << "start vimc IPA!";
+
+	return 0;
+}
+
+void IPAVimc::stop()
+{
+	trace(IPAOperationStop);
+
+	LOG(IPAVimc, Debug) << "stop vimc IPA!";
 }
 
 void IPAVimc::initTrace()

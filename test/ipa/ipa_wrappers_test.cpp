@@ -27,6 +27,8 @@ using namespace std;
 
 enum Operation {
 	Op_init,
+	Op_start,
+	Op_stop,
 	Op_configure,
 	Op_mapBuffers,
 	Op_unmapBuffers,
@@ -45,6 +47,17 @@ public:
 	{
 		report(Op_init, TestPass);
 		return 0;
+	}
+
+	int start() override
+	{
+		report(Op_start, TestPass);
+		return 0;
+	}
+
+	void stop() override
+	{
+		report(Op_stop, TestPass);
 	}
 
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
@@ -323,12 +336,26 @@ protected:
 			return TestFail;
 
 		/*
-		 * Test init() last to ensure nothing in the wrappers or
-		 * serializer depends on init() being called first.
+		 * Test init(), start() and stop() last to ensure nothing in the
+		 * wrappers or serializer depends on them being called first.
 		 */
 		ret = INVOKE(init);
-		if (ret == TestFail)
+		if (ret == TestFail) {
+			cerr << "Failed to run init()";
 			return TestFail;
+		}
+
+		ret = INVOKE(start);
+		if (ret == TestFail) {
+			cerr << "Failed to run start()";
+			return TestFail;
+		}
+
+		ret = INVOKE(stop);
+		if (ret == TestFail) {
+			cerr << "Failed to run stop()";
+			return TestFail;
+		}
 
 		return TestPass;
 	}

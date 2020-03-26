@@ -15,6 +15,8 @@ namespace libcamera {
 enum IPAOperationCode {
 	IPAOperationNone,
 	IPAOperationInit,
+	IPAOperationStart,
+	IPAOperationStop,
 };
 
 } /* namespace libcamera */

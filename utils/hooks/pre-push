@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# A hook script to prevent pushing unsuitable commits to the master branch.
+# Unsuitable commits are commits that contain a local changelog below a '---'
+# line. The criteria may get extended later.
+#
+# Information about the commits which are being pushed is supplied as lines to
+# the standard input in the form:
+#
+#   <local ref> <local sha1> <remote ref> <remote sha1>
+
+z40=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha
+do
+	if [ "$remote_ref" != refs/heads/master ]
+	then
+		continue
+	fi
+
+	# The remote master branch should never get deleted by this push, so we
+	# can assume that local_sha is not 0's. We may however be creating the
+	# remote branch, when pushing to a new empty repository for instance.
+	if [ "$remote_sha" = $z40 ]
+	then
+		# New branch, examine all commits
+		range="$local_sha"
+	else
+		# Update to existing branch, examine new commits
+		range="$remote_sha..$local_sha"
+	fi
+
+	# Find invalid commits.
+	commit=$(git rev-list -n 1 --grep '^---' "$range")
+	if [ -n "$commit" ]
+	then
+		echo >&2 "Found local changelog in $local_ref, not pushing"
+		echo >&2 "Check commit $commit"
+		exit 1
+	fi
+done
+
+exit 0

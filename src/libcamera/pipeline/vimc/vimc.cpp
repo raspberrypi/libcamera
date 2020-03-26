@@ -274,8 +274,15 @@ int PipelineHandlerVimc::start(Camera *camera)
 	if (ret < 0)
 		return ret;
 
+	ret = data->ipa_->start();
+	if (ret) {
+		data->video_->releaseBuffers();
+		return ret;
+	}
+
 	ret = data->video_->streamOn();
 	if (ret < 0) {
+		data->ipa_->stop();
 		data->video_->releaseBuffers();
 		return ret;
 	}
@@ -287,6 +294,7 @@ void PipelineHandlerVimc::stop(Camera *camera)
 {
 	VimcCameraData *data = cameraData(camera);
 	data->video_->streamOff();
+	data->ipa_->stop();
 	data->video_->releaseBuffers();
 }
 

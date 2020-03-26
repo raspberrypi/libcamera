@@ -1032,6 +1032,12 @@ void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 	RkISP1CameraData *data = cameraData(activeCamera_);
 	Request *request = buffer->request();
 
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
+		completeBuffer(activeCamera_, request, buffer);
+		completeRequest(activeCamera_, request);
+		return;
+	}
+
 	data->timeline_.bufferReady(buffer);
 
 	if (data->frame_ <= buffer->metadata().sequence)
@@ -1043,6 +1049,9 @@ void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 
 void PipelineHandlerRkISP1::paramReady(FrameBuffer *buffer)
 {
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
+		return;
+
 	ASSERT(activeCamera_);
 	RkISP1CameraData *data = cameraData(activeCamera_);
 
@@ -1054,6 +1063,9 @@ void PipelineHandlerRkISP1::paramReady(FrameBuffer *buffer)
 
 void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 {
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
+		return;
+
 	ASSERT(activeCamera_);
 	RkISP1CameraData *data = cameraData(activeCamera_);
 

@@ -1532,7 +1532,8 @@ int CIO2Device::allocateBuffers()
 
 void CIO2Device::freeBuffers()
 {
-	availableBuffers_ = {};
+	/* The default std::queue constructor is explicit with gcc 5 and 6. */
+	availableBuffers_ = std::queue<FrameBuffer *>{};
 
 	buffers_.clear();
 

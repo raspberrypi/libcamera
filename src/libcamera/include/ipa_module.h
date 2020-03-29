@@ -7,7 +7,9 @@
 #ifndef __LIBCAMERA_IPA_MODULE_H__
 #define __LIBCAMERA_IPA_MODULE_H__
 
+#include <stdint.h>
 #include <string>
+#include <vector>
 
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
@@ -25,6 +27,7 @@ public:
 	bool isValid() const;
 
 	const struct IPAModuleInfo &info() const;
+	const std::vector<uint8_t> signature() const;
 	const std::string &path() const;
 
 	bool load();
@@ -38,6 +41,7 @@ public:
 
 private:
 	struct IPAModuleInfo info_;
+	std::vector<uint8_t> signature_;
 
 	std::string libPath_;
 	bool valid_;

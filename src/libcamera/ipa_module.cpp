@@ -308,6 +308,20 @@ int IPAModule::loadIPAModuleInfo()
 		return -EINVAL;
 	}
 
+	/* Load the signature. Failures are not fatal. */
+	File sign{ libPath_ + ".sign" };
+	if (!sign.open(File::ReadOnly)) {
+		LOG(IPAModule, Debug)
+			<< "IPA module " << libPath_ << " is not signed";
+		return 0;
+	}
+
+	data = sign.map(0, -1, File::MapPrivate);
+	signature_.resize(data.size());
+	memcpy(signature_.data(), data.data(), data.size());
+
+	LOG(IPAModule, Debug) << "IPA module " << libPath_ << " is signed";
+
 	return 0;
 }
 
@@ -337,6 +351,21 @@ bool IPAModule::isValid() const
 const struct IPAModuleInfo &IPAModule::info() const
 {
 	return info_;
+}
+
+/**
+ * \brief Retrieve the IPA module signature
+ *
+ * The IPA module signature is stored alongside the IPA module in a file with a
+ * '.sign' suffix, and is loaded when the IPAModule instance is created. This
+ * function returns the signature without verifying it. If the signature is
+ * missing, the returned vector will be empty.
+ *
+ * \return The IPA module signature
+ */
+const std::vector<uint8_t> IPAModule::signature() const
+{
+	return signature_;
 }
 
 /**

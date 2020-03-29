@@ -26,6 +26,7 @@ internal_tests = [
     ['event',                           'event.cpp'],
     ['event-dispatcher',                'event-dispatcher.cpp'],
     ['event-thread',                    'event-thread.cpp'],
+    ['file',                            'file.cpp'],
     ['file-descriptor',                 'file-descriptor.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],

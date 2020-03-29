@@ -127,7 +127,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	0,
 	"PipelineHandlerVimc",
 	"Dummy IPA for Vimc",
-	LICENSE,
 };
 
 struct ipa_context *ipaCreate()

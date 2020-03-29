@@ -275,7 +275,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	1,
 	"PipelineHandlerRkISP1",
 	"RkISP1 IPA",
-	"LGPL-2.1-or-later",
 };
 
 struct ipa_context *ipaCreate()

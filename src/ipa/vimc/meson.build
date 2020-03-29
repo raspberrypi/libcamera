@@ -7,8 +7,7 @@ mod = shared_module(ipa_name,
                     dependencies : libcamera_dep,
                     link_with : libipa,
                     install : true,
-                    install_dir : ipa_install_dir,
-                    cpp_args : '-DLICENSE="LGPL-2.1-or-later"')
+                    install_dir : ipa_install_dir)
 
 custom_target(ipa_name + '.so.sign',
               input : mod,

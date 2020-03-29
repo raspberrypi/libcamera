@@ -18,8 +18,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <tuple>
 #include <unistd.h>
+
+#include <libcamera/span.h>
 
 #include "file.h"
 #include "log.h"
@@ -43,27 +44,26 @@ LOG_DEFINE_CATEGORY(IPAModule)
 namespace {
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(void *map, off_t offset,
-					     size_t fileSize, size_t objSize)
+typename std::remove_extent_t<T> *elfPointer(Span<uint8_t> elf, off_t offset,
+					     size_t objSize)
 {
 	size_t size = offset + objSize;
-	if (size > fileSize || size < objSize)
+	if (size > elf.size() || size < objSize)
 		return nullptr;
 
 	return reinterpret_cast<typename std::remove_extent_t<T> *>
-		(static_cast<char *>(map) + offset);
+		(reinterpret_cast<char *>(elf.data()) + offset);
 }
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(void *map, off_t offset,
-					     size_t fileSize)
+typename std::remove_extent_t<T> *elfPointer(Span<uint8_t> elf, off_t offset)
 {
-	return elfPointer<T>(map, offset, fileSize, sizeof(T));
+	return elfPointer<T>(elf, offset, sizeof(T));
 }
 
-int elfVerifyIdent(void *map, size_t soSize)
+int elfVerifyIdent(Span<uint8_t> elf)
 {
-	char *e_ident = elfPointer<char[EI_NIDENT]>(map, 0, soSize);
+	char *e_ident = elfPointer<char[EI_NIDENT]>(elf, 0);
 	if (!e_ident)
 		return -ENOEXEC;
 
@@ -89,38 +89,36 @@ int elfVerifyIdent(void *map, size_t soSize)
 
 /**
  * \brief Retrieve address and size of a symbol from an mmap'ed ELF file
- * \param[in] map Address of mmap'ed ELF file
- * \param[in] soSize Size of mmap'ed ELF file (in bytes)
+ * \param[in] elf Address and size of mmap'ed ELF file
  * \param[in] symbol Symbol name
  *
- * \return zero or error code, address or nullptr, size of symbol or zero,
- * respectively
+ * \return The memory region storing the symbol on success, or an empty span
+ * otherwise
  */
-std::tuple<void *, size_t>
-elfLoadSymbol(void *map, size_t soSize, const char *symbol)
+Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 {
-	ElfW(Ehdr) *eHdr = elfPointer<ElfW(Ehdr)>(map, 0, soSize);
+	ElfW(Ehdr) *eHdr = elfPointer<ElfW(Ehdr)>(elf, 0);
 	if (!eHdr)
-		return std::make_tuple(nullptr, 0);
+		return {};
 
 	off_t offset = eHdr->e_shoff + eHdr->e_shentsize * eHdr->e_shstrndx;
-	ElfW(Shdr) *sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
+	ElfW(Shdr) *sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
 	if (!sHdr)
-		return std::make_tuple(nullptr, 0);
+		return {};
 	off_t shnameoff = sHdr->sh_offset;
 
 	/* Locate .dynsym section header. */
 	ElfW(Shdr) *dynsym = nullptr;
 	for (unsigned int i = 0; i < eHdr->e_shnum; i++) {
 		offset = eHdr->e_shoff + eHdr->e_shentsize * i;
-		sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
+		sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
 		if (!sHdr)
-			return std::make_tuple(nullptr, 0);
+			return {};
 
 		offset = shnameoff + sHdr->sh_name;
-		char *name = elfPointer<char[8]>(map, offset, soSize);
+		char *name = elfPointer<char[8]>(elf, offset);
 		if (!name)
-			return std::make_tuple(nullptr, 0);
+			return {};
 
 		if (sHdr->sh_type == SHT_DYNSYM && !strcmp(name, ".dynsym")) {
 			dynsym = sHdr;
@@ -130,13 +128,13 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 
 	if (dynsym == nullptr) {
 		LOG(IPAModule, Error) << "ELF has no .dynsym section";
-		return std::make_tuple(nullptr, 0);
+		return {};
 	}
 
 	offset = eHdr->e_shoff + eHdr->e_shentsize * dynsym->sh_link;
-	sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
+	sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
 	if (!sHdr)
-		return std::make_tuple(nullptr, 0);
+		return {};
 	off_t dynsym_nameoff = sHdr->sh_offset;
 
 	/* Locate symbol in the .dynsym section. */
@@ -144,15 +142,14 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 	unsigned int dynsym_num = dynsym->sh_size / dynsym->sh_entsize;
 	for (unsigned int i = 0; i < dynsym_num; i++) {
 		offset = dynsym->sh_offset + dynsym->sh_entsize * i;
-		ElfW(Sym) *sym = elfPointer<ElfW(Sym)>(map, offset, soSize);
+		ElfW(Sym) *sym = elfPointer<ElfW(Sym)>(elf, offset);
 		if (!sym)
-			return std::make_tuple(nullptr, 0);
+			return {};
 
 		offset = dynsym_nameoff + sym->st_name;
-		char *name = elfPointer<char>(map, offset, soSize,
-					      strlen(symbol) + 1);
+		char *name = elfPointer<char>(elf, offset, strlen(symbol) + 1);
 		if (!name)
-			return std::make_tuple(nullptr, 0);
+			return {};
 
 		if (!strcmp(name, symbol) &&
 		    sym->st_info & STB_GLOBAL) {
@@ -163,22 +160,22 @@ elfLoadSymbol(void *map, size_t soSize, const char *symbol)
 
 	if (targetSymbol == nullptr) {
 		LOG(IPAModule, Error) << "Symbol " << symbol << " not found";
-		return std::make_tuple(nullptr, 0);
+		return {};
 	}
 
 	/* Locate and return data of symbol. */
 	if (targetSymbol->st_shndx >= eHdr->e_shnum)
-		return std::make_tuple(nullptr, 0);
+		return {};
 	offset = eHdr->e_shoff + targetSymbol->st_shndx * eHdr->e_shentsize;
-	sHdr = elfPointer<ElfW(Shdr)>(map, offset, soSize);
+	sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
 	if (!sHdr)
-		return std::make_tuple(nullptr, 0);
+		return {};
 	offset = sHdr->sh_offset + (targetSymbol->st_value - sHdr->sh_addr);
-	char *data = elfPointer<char>(map, offset, soSize, targetSymbol->st_size);
+	uint8_t *data = elfPointer<uint8_t>(elf, offset, targetSymbol->st_size);
 	if (!data)
-		return std::make_tuple(nullptr, 0);
+		return {};
 
-	return std::make_tuple(data, targetSymbol->st_size);
+	return { data, targetSymbol->st_size };
 }
 
 } /* namespace */
@@ -292,23 +289,19 @@ int IPAModule::loadIPAModuleInfo()
 	}
 
 	Span<uint8_t> data = file.map(0, -1, File::MapPrivate);
-	int ret = elfVerifyIdent(data.data(), data.size());
+	int ret = elfVerifyIdent(data);
 	if (ret) {
 		LOG(IPAModule, Error) << "IPA module is not an ELF file";
 		return ret;
 	}
 
-	void *info = nullptr;
-	size_t infoSize;
-
-	std::tie(info, infoSize) = elfLoadSymbol(data.data(), data.size(),
-						 "ipaModuleInfo");
-	if (!info || infoSize != sizeof(info_)) {
+	Span<uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
+	if (info.size() != sizeof(info_)) {
 		LOG(IPAModule, Error) << "IPA module has no valid info";
 		return -EINVAL;
 	}
 
-	memcpy(&info_, info, infoSize);
+	memcpy(&info_, info.data(), info.size());
 
 	if (info_.moduleAPIVersion != IPA_MODULE_API_VERSION) {
 		LOG(IPAModule, Error) << "IPA module API version mismatch";

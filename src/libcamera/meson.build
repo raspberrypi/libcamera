@@ -34,6 +34,7 @@ libcamera_sources = files([
     'pipeline_handler.cpp',
     'pixelformats.cpp',
     'process.cpp',
+    'pub_key.cpp',
     'request.cpp',
     'semaphore.cpp',
     'signal.cpp',
@@ -61,7 +62,12 @@ subdir('proxy')
 
 libatomic = cc.find_library('atomic', required : false)
 libdl = cc.find_library('dl')
+libgnutls = cc.find_library('gnutls', required : false)
 libudev = dependency('libudev', required : false)
+
+if libgnutls.found()
+    config_h.set('HAVE_GNUTLS', 1)
+endif
 
 if libudev.found()
     config_h.set('HAVE_LIBUDEV', 1)
@@ -98,6 +104,7 @@ libcamera_sources += version_cpp
 libcamera_deps = [
     libatomic,
     libdl,
+    libgnutls,
     libudev,
     dependency('threads'),
 ]

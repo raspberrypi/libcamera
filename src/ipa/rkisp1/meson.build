@@ -1,8 +1,17 @@
-rkisp1_ipa = shared_module('ipa_rkisp1',
-                           'rkisp1.cpp',
-                           name_prefix : '',
-                           include_directories : [ipa_includes, libipa_includes],
-                           dependencies : libcamera_dep,
-                           link_with : libipa,
-                           install : true,
-                           install_dir : ipa_install_dir)
+ipa_name = 'ipa_rkisp1'
+
+mod = shared_module(ipa_name,
+                    'rkisp1.cpp',
+                    name_prefix : '',
+                    include_directories : [ipa_includes, libipa_includes],
+                    dependencies : libcamera_dep,
+                    link_with : libipa,
+                    install : true,
+                    install_dir : ipa_install_dir)
+
+custom_target(ipa_name + '.so.sign',
+              input : mod,
+              output : ipa_name + '.so.sign',
+              command : [ ipa_sign, ipa_priv_key, '@INPUT@', '@OUTPUT@' ],
+              install : true,
+              install_dir : ipa_install_dir)

@@ -10,6 +10,8 @@ config_h.set('IPA_MODULE_DIR',
 
 subdir('libipa')
 
+ipa_sign = find_program('ipa-sign.sh')
+
 ipas = ['rkisp1', 'vimc']
 
 foreach pipeline : get_option('pipelines')

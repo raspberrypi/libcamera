@@ -8,6 +8,7 @@ libcamera_headers = files([
     'device_enumerator_sysfs.h',
     'device_enumerator_udev.h',
     'event_dispatcher_poll.h',
+    'file.h',
     'formats.h',
     'ipa_context_wrapper.h',
     'ipa_manager.h',

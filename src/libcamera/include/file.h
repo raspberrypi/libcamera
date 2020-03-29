@@ -1,0 +1,71 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * file.h - File I/O operations
+ */
+#ifndef __LIBCAMERA_FILE_H__
+#define __LIBCAMERA_FILE_H__
+
+#include <map>
+#include <string>
+#include <sys/types.h>
+
+#include <libcamera/span.h>
+
+namespace libcamera {
+
+class File
+{
+public:
+	enum MapFlag {
+		MapNoOption = 0,
+		MapPrivate = (1 << 0),
+	};
+
+	enum OpenMode {
+		NotOpen = 0,
+		ReadOnly = (1 << 0),
+		WriteOnly = (1 << 1),
+		ReadWrite = ReadOnly | WriteOnly,
+	};
+
+	File(const std::string &name);
+	File();
+	~File();
+
+	File(const File &) = delete;
+	File &operator=(const File &) = delete;
+
+	const std::string &fileName() const { return name_; }
+	void setFileName(const std::string &name);
+	bool exists() const;
+
+	bool open(OpenMode mode);
+	bool isOpen() const { return fd_ != -1; }
+	OpenMode openMode() const { return mode_; }
+	void close();
+
+	int error() const { return error_; }
+	ssize_t size() const;
+
+	Span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
+			  MapFlag flags = MapNoOption);
+	bool unmap(uint8_t *addr);
+
+	static bool exists(const std::string &name);
+
+private:
+	void unmapAll();
+
+	std::string name_;
+	int fd_;
+	OpenMode mode_;
+
+	int error_;
+	std::map<void *, size_t> maps_;
+};
+
+} /* namespace libcamera */
+
+#endif /* __LIBCAMERA_FILE_H__ */

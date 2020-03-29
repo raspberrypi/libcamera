@@ -21,6 +21,7 @@
 #include <tuple>
 #include <unistd.h>
 
+#include "file.h"
 #include "log.h"
 #include "pipeline_handler.h"
 #include "utils.h"
@@ -283,55 +284,38 @@ IPAModule::~IPAModule()
 
 int IPAModule::loadIPAModuleInfo()
 {
-	int fd = open(libPath_.c_str(), O_RDONLY);
-	if (fd < 0) {
-		int ret = -errno;
+	File file{ libPath_ };
+	if (!file.open(File::ReadOnly)) {
 		LOG(IPAModule, Error) << "Failed to open IPA library: "
-				      << strerror(-ret);
+				      << strerror(-file.error());
+		return file.error();
+	}
+
+	Span<uint8_t> data = file.map(0, -1, File::MapPrivate);
+	int ret = elfVerifyIdent(data.data(), data.size());
+	if (ret) {
+		LOG(IPAModule, Error) << "IPA module is not an ELF file";
 		return ret;
 	}
 
-	void *data = nullptr;
-	size_t dataSize;
-	void *map;
-	size_t soSize;
-	struct stat st;
-	int ret = fstat(fd, &st);
-	if (ret < 0)
-		goto close;
-	soSize = st.st_size;
-	map = mmap(NULL, soSize, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (map == MAP_FAILED) {
-		ret = -errno;
-		goto close;
+	void *info = nullptr;
+	size_t infoSize;
+
+	std::tie(info, infoSize) = elfLoadSymbol(data.data(), data.size(),
+						 "ipaModuleInfo");
+	if (!info || infoSize != sizeof(info_)) {
+		LOG(IPAModule, Error) << "IPA module has no valid info";
+		return -EINVAL;
 	}
 
-	ret = elfVerifyIdent(map, soSize);
-	if (ret)
-		goto unmap;
-
-	std::tie(data, dataSize) = elfLoadSymbol(map, soSize, "ipaModuleInfo");
-
-	if (data && dataSize == sizeof(info_))
-		memcpy(&info_, data, dataSize);
-
-	if (!data)
-		goto unmap;
+	memcpy(&info_, info, infoSize);
 
 	if (info_.moduleAPIVersion != IPA_MODULE_API_VERSION) {
 		LOG(IPAModule, Error) << "IPA module API version mismatch";
-		ret = -EINVAL;
+		return -EINVAL;
 	}
 
-unmap:
-	munmap(map, soSize);
-close:
-	if (ret || !data)
-		LOG(IPAModule, Error)
-			<< "Error loading IPA module info for " << libPath_;
-
-	close(fd);
-	return ret;
+	return 0;
 }
 
 /**

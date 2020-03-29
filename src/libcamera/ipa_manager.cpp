@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "file.h"
 #include "ipa_module.h"
 #include "ipa_proxy.h"
 #include "log.h"
@@ -271,12 +272,12 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 		return nullptr;
 
 	/*
-	 * Load and run the IPA module in a thread if it is open-source, or
-	 * isolate it in a separate process otherwise.
+	 * Load and run the IPA module in a thread if it has a valid signature,
+	 * or isolate it in a separate process otherwise.
 	 *
 	 * \todo Implement a better proxy selection
 	 */
-	const char *proxyName = m->isOpenSource()
+	const char *proxyName = isSignatureValid(m)
 			      ? "IPAProxyThread" : "IPAProxyLinux";
 	IPAProxyFactory *pf = nullptr;
 
@@ -299,6 +300,25 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 	}
 
 	return proxy;
+}
+
+bool IPAManager::isSignatureValid(IPAModule *ipa) const
+{
+	File file{ ipa->path() };
+	if (!file.open(File::ReadOnly))
+		return false;
+
+	Span<uint8_t> data = file.map();
+	if (data.empty())
+		return false;
+
+	bool valid = pubKey_.verify(data, ipa->signature());
+
+	LOG(IPAManager, Debug)
+		<< "IPA module " << ipa->path() << " signature is "
+		<< (valid ? "valid" : "not valid");
+
+	return valid;
 }
 
 } /* namespace libcamera */

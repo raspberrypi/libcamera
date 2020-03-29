@@ -472,29 +472,4 @@ bool IPAModule::match(PipelineHandler *pipe,
 	       !strcmp(info_.pipelineName, pipe->name());
 }
 
-/**
- * \brief Verify if the IPA module is open source
- *
- * \sa IPAModuleInfo::license
- */
-bool IPAModule::isOpenSource() const
-{
-	static const char *osLicenses[] = {
-		"GPL-2.0-only",
-		"GPL-2.0-or-later",
-		"GPL-3.0-only",
-		"GPL-3.0-or-later",
-		"LGPL-2.1-only",
-		"LGPL-2.1-or-later",
-		"LGPL-3.0-only",
-		"LGPL-3.0-or-later",
-	};
-
-	for (unsigned int i = 0; i < ARRAY_SIZE(osLicenses); i++)
-		if (!strcmp(osLicenses[i], info_.license))
-			return true;
-
-	return false;
-}
-
 } /* namespace libcamera */

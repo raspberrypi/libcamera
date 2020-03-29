@@ -38,6 +38,8 @@ private:
 		      std::vector<std::string> &files);
 	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);
 
+	bool isSignatureValid(IPAModule *ipa) const;
+
 	static const uint8_t publicKeyData_[];
 	static const PubKey pubKey_;
 };

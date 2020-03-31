@@ -14,6 +14,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include <linux/media-bus-format.h>
 #include <linux/v4l2-subdev.h>
 
 #include <libcamera/geometry.h>
@@ -31,6 +32,90 @@
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(V4L2)
+
+namespace {
+
+/*
+ * \var formatInfoMap
+ * \brief A map that associates bits per pixel to V4L2 media bus codes
+ */
+const std::map<uint32_t, unsigned int> formatInfoMap = {
+	{ V4L2_MBUS_FMT_RGB444_2X8_PADHI_BE, 16 },
+	{ V4L2_MBUS_FMT_RGB444_2X8_PADHI_LE, 16 },
+	{ V4L2_MBUS_FMT_RGB555_2X8_PADHI_BE, 16 },
+	{ V4L2_MBUS_FMT_RGB555_2X8_PADHI_LE, 16 },
+	{ V4L2_MBUS_FMT_BGR565_2X8_BE, 16 },
+	{ V4L2_MBUS_FMT_BGR565_2X8_LE, 16 },
+	{ V4L2_MBUS_FMT_RGB565_2X8_BE, 16 },
+	{ V4L2_MBUS_FMT_RGB565_2X8_LE, 16 },
+	{ V4L2_MBUS_FMT_RGB666_1X18, 18 },
+	{ V4L2_MBUS_FMT_RGB888_1X24, 24 },
+	{ V4L2_MBUS_FMT_RGB888_2X12_BE, 24 },
+	{ V4L2_MBUS_FMT_RGB888_2X12_LE, 24 },
+	{ V4L2_MBUS_FMT_ARGB8888_1X32, 32 },
+	{ V4L2_MBUS_FMT_Y8_1X8, 8 },
+	{ V4L2_MBUS_FMT_UV8_1X8, 8 },
+	{ V4L2_MBUS_FMT_UYVY8_1_5X8, 12 },
+	{ V4L2_MBUS_FMT_VYUY8_1_5X8, 12 },
+	{ V4L2_MBUS_FMT_YUYV8_1_5X8, 12 },
+	{ V4L2_MBUS_FMT_YVYU8_1_5X8, 12 },
+	{ V4L2_MBUS_FMT_UYVY8_2X8, 16 },
+	{ V4L2_MBUS_FMT_VYUY8_2X8, 16 },
+	{ V4L2_MBUS_FMT_YUYV8_2X8, 16 },
+	{ V4L2_MBUS_FMT_YVYU8_2X8, 16 },
+	{ V4L2_MBUS_FMT_Y10_1X10, 10 },
+	{ V4L2_MBUS_FMT_UYVY10_2X10, 20 },
+	{ V4L2_MBUS_FMT_VYUY10_2X10, 20 },
+	{ V4L2_MBUS_FMT_YUYV10_2X10, 20 },
+	{ V4L2_MBUS_FMT_YVYU10_2X10, 20 },
+	{ V4L2_MBUS_FMT_Y12_1X12, 12 },
+	{ V4L2_MBUS_FMT_UYVY8_1X16, 16 },
+	{ V4L2_MBUS_FMT_VYUY8_1X16, 16 },
+	{ V4L2_MBUS_FMT_YUYV8_1X16, 16 },
+	{ V4L2_MBUS_FMT_YVYU8_1X16, 16 },
+	{ V4L2_MBUS_FMT_YDYUYDYV8_1X16, 16 },
+	{ V4L2_MBUS_FMT_UYVY10_1X20, 20 },
+	{ V4L2_MBUS_FMT_VYUY10_1X20, 20 },
+	{ V4L2_MBUS_FMT_YUYV10_1X20, 20 },
+	{ V4L2_MBUS_FMT_YVYU10_1X20, 20 },
+	{ V4L2_MBUS_FMT_YUV10_1X30, 30 },
+	{ V4L2_MBUS_FMT_AYUV8_1X32, 32 },
+	{ V4L2_MBUS_FMT_UYVY12_2X12, 24 },
+	{ V4L2_MBUS_FMT_VYUY12_2X12, 24 },
+	{ V4L2_MBUS_FMT_YUYV12_2X12, 24 },
+	{ V4L2_MBUS_FMT_YVYU12_2X12, 24 },
+	{ V4L2_MBUS_FMT_UYVY12_1X24, 24 },
+	{ V4L2_MBUS_FMT_VYUY12_1X24, 24 },
+	{ V4L2_MBUS_FMT_YUYV12_1X24, 24 },
+	{ V4L2_MBUS_FMT_YVYU12_1X24, 24 },
+	{ V4L2_MBUS_FMT_SBGGR8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGBRG8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGRBG8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SRGGB8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SBGGR10_ALAW8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGBRG10_ALAW8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGRBG10_ALAW8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SRGGB10_ALAW8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SBGGR10_DPCM8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGBRG10_DPCM8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SGRBG10_DPCM8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SRGGB10_DPCM8_1X8, 8 },
+	{ V4L2_MBUS_FMT_SBGGR10_2X8_PADHI_BE, 16 },
+	{ V4L2_MBUS_FMT_SBGGR10_2X8_PADHI_LE, 16 },
+	{ V4L2_MBUS_FMT_SBGGR10_2X8_PADLO_BE, 16 },
+	{ V4L2_MBUS_FMT_SBGGR10_2X8_PADLO_LE, 16 },
+	{ V4L2_MBUS_FMT_SBGGR10_1X10, 10 },
+	{ V4L2_MBUS_FMT_SGBRG10_1X10, 10 },
+	{ V4L2_MBUS_FMT_SGRBG10_1X10, 10 },
+	{ V4L2_MBUS_FMT_SRGGB10_1X10, 10 },
+	{ V4L2_MBUS_FMT_SBGGR12_1X12, 12 },
+	{ V4L2_MBUS_FMT_SGBRG12_1X12, 12 },
+	{ V4L2_MBUS_FMT_SGRBG12_1X12, 12 },
+	{ V4L2_MBUS_FMT_SRGGB12_1X12, 12 },
+	{ V4L2_MBUS_FMT_AHSV8888_1X32, 32 },
+};
+
+} /* namespace */
 
 /**
  * \struct V4L2SubdeviceFormat
@@ -79,6 +164,23 @@ const std::string V4L2SubdeviceFormat::toString() const
 	std::stringstream ss;
 	ss << size.toString() << "-" << utils::hex(mbus_code, 4);
 	return ss.str();
+}
+
+/**
+ * \brief Retrieve the number of bits per pixel for the V4L2 subdevice format
+ * \return The number of bits per pixel for the format, or 0 if the format is
+ * not supported
+ */
+uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
+{
+	const auto it = formatInfoMap.find(mbus_code);
+	if (it == formatInfoMap.end()) {
+		LOG(V4L2, Error) << "No information available for format '"
+				 << toString() << "'";
+		return 0;
+	}
+
+	return it->second;
 }
 
 /**

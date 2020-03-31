@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_V4L2_SUBDEVICE_H__
 #define __LIBCAMERA_V4L2_SUBDEVICE_H__
 
-#include <map>
 #include <string>
 #include <vector>
 
@@ -27,6 +26,7 @@ struct V4L2SubdeviceFormat {
 	Size size;
 
 	const std::string toString() const;
+	uint8_t bitsPerPixel() const;
 };
 
 class V4L2Subdevice : public V4L2Device

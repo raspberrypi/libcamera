@@ -34,10 +34,10 @@ LOG_DEFINE_CATEGORY(IPU3)
 class IPU3CameraData;
 
 static const std::map<uint32_t, PixelFormat> sensorMbusToPixel = {
-	{ MEDIA_BUS_FMT_SBGGR10_1X10, PixelFormat(DRM_FORMAT_SBGGR10, { IPU3_FORMAT_MOD_PACKED }) },
-	{ MEDIA_BUS_FMT_SGBRG10_1X10, PixelFormat(DRM_FORMAT_SGBRG10, { IPU3_FORMAT_MOD_PACKED }) },
-	{ MEDIA_BUS_FMT_SGRBG10_1X10, PixelFormat(DRM_FORMAT_SGRBG10, { IPU3_FORMAT_MOD_PACKED }) },
-	{ MEDIA_BUS_FMT_SRGGB10_1X10, PixelFormat(DRM_FORMAT_SRGGB10, { IPU3_FORMAT_MOD_PACKED }) },
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, PixelFormat(DRM_FORMAT_SBGGR10, IPU3_FORMAT_MOD_PACKED) },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, PixelFormat(DRM_FORMAT_SGBRG10, IPU3_FORMAT_MOD_PACKED) },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, PixelFormat(DRM_FORMAT_SGRBG10, IPU3_FORMAT_MOD_PACKED) },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, PixelFormat(DRM_FORMAT_SRGGB10, IPU3_FORMAT_MOD_PACKED) },
 };
 
 class ImgUDevice
@@ -365,7 +365,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		const Size size = cfg.size;
 		const IPU3Stream *stream;
 
-		if (cfg.pixelFormat.modifiers().count(IPU3_FORMAT_MOD_PACKED))
+		if (cfg.pixelFormat.modifier() == IPU3_FORMAT_MOD_PACKED)
 			stream = &data_->rawStream_;
 		else if (cfg.size == sensorFormat_.size)
 			stream = &data_->outStream_;

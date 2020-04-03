@@ -19,7 +19,7 @@ class PixelFormat
 {
 public:
 	PixelFormat();
-	explicit PixelFormat(uint32_t fourcc, const std::set<uint64_t> &modifiers = {});
+	explicit PixelFormat(uint32_t fourcc, uint64_t modifier = 0);
 
 	bool operator==(const PixelFormat &other) const;
 	bool operator!=(const PixelFormat &other) const { return !(*this == other); }
@@ -29,13 +29,13 @@ public:
 
 	operator uint32_t() const { return fourcc_; }
 	uint32_t fourcc() const { return fourcc_; }
-	const std::set<uint64_t> &modifiers() const { return modifiers_; }
+	uint64_t modifier() const { return modifier_; }
 
 	std::string toString() const;
 
 private:
 	uint32_t fourcc_;
-	std::set<uint64_t> modifiers_;
+	uint64_t modifier_;
 };
 
 } /* namespace libcamera */

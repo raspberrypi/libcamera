@@ -19,9 +19,9 @@ namespace libcamera {
  * \brief libcamera image pixel format
  *
  * The PixelFormat type describes the format of images in the public libcamera
- * API. It stores a FourCC value as a 32-bit unsigned integer and a set of
- * modifiers. The FourCC and modifiers values are defined in the Linux kernel
- * DRM/KMS API (see linux/drm_fourcc.h).
+ * API. It stores a FourCC value as a 32-bit unsigned integer and a modifier.
+ * The FourCC and modifier values are defined in the Linux kernel DRM/KMS API
+ * (see linux/drm_fourcc.h).
  */
 
 /**
@@ -36,12 +36,12 @@ PixelFormat::PixelFormat()
 }
 
 /**
- * \brief Construct a PixelFormat from a DRM FourCC and a set of modifiers
+ * \brief Construct a PixelFormat from a DRM FourCC and a modifier
  * \param[in] fourcc A DRM FourCC
- * \param[in] modifiers A set of DRM FourCC modifiers
+ * \param[in] modifier A DRM FourCC modifier
  */
-PixelFormat::PixelFormat(uint32_t fourcc, const std::set<uint64_t> &modifiers)
-	: fourcc_(fourcc), modifiers_(modifiers)
+PixelFormat::PixelFormat(uint32_t fourcc, uint64_t modifier)
+	: fourcc_(fourcc), modifier_(modifier)
 {
 }
 
@@ -51,7 +51,7 @@ PixelFormat::PixelFormat(uint32_t fourcc, const std::set<uint64_t> &modifiers)
  */
 bool PixelFormat::operator==(const PixelFormat &other) const
 {
-	return fourcc_ == other.fourcc() && modifiers_ == other.modifiers_;
+	return fourcc_ == other.fourcc() && modifier_ == other.modifier_;
 }
 
 /**
@@ -70,7 +70,7 @@ bool PixelFormat::operator<(const PixelFormat &other) const
 		return true;
 	if (fourcc_ > other.fourcc_)
 		return false;
-	return modifiers_ < modifiers_;
+	return modifier_ < other.modifier_;
 }
 
 /**
@@ -97,9 +97,9 @@ bool PixelFormat::operator<(const PixelFormat &other) const
  */
 
 /**
- * \fn PixelFormat::modifiers() const
- * \brief Retrieve the pixel format modifiers
- * \return Set of DRM modifiers
+ * \fn PixelFormat::modifier() const
+ * \brief Retrieve the pixel format modifier
+ * \return DRM modifier
  */
 
 /**

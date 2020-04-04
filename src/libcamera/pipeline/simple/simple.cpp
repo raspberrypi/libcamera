@@ -57,8 +57,7 @@ static const SimplePipelineInfo supportedDevices[] = {
 class SimpleCameraData : public CameraData
 {
 public:
-	SimpleCameraData(PipelineHandler *pipe, MediaEntity *sensor,
-			 MediaEntity *video);
+	SimpleCameraData(SimplePipelineHandler *pipe, MediaEntity *sensor);
 
 	bool isValid() const { return sensor_ != nullptr; }
 	std::set<Stream *> streams() { return { &stream_ }; }
@@ -82,6 +81,7 @@ public:
 	Stream stream_;
 	std::unique_ptr<CameraSensor> sensor_;
 	std::list<Entity> entities_;
+	V4L2VideoDevice *video_;
 
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, Configuration> formats_;
@@ -129,7 +129,7 @@ public:
 
 	bool match(DeviceEnumerator *enumerator) override;
 
-	V4L2VideoDevice *video() { return video_; }
+	V4L2VideoDevice *video(const MediaEntity *entity);
 	V4L2Subdevice *subdev(const MediaEntity *entity);
 	SimpleConverter *converter() { return converter_; }
 
@@ -151,7 +151,7 @@ private:
 	void converterDone(FrameBuffer *input, FrameBuffer *output);
 
 	MediaDevice *media_;
-	V4L2VideoDevice *video_;
+	std::map<const MediaEntity *, std::unique_ptr<V4L2VideoDevice>> videos_;
 	std::map<const MediaEntity *, V4L2Subdevice> subdevs_;
 
 	SimpleConverter *converter_;
@@ -166,8 +166,8 @@ private:
  * Camera Data
  */
 
-SimpleCameraData::SimpleCameraData(PipelineHandler *pipe, MediaEntity *sensor,
-				   MediaEntity *video)
+SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
+				   MediaEntity *sensor)
 	: CameraData(pipe)
 {
 	int ret;
@@ -179,8 +179,8 @@ SimpleCameraData::SimpleCameraData(PipelineHandler *pipe, MediaEntity *sensor,
 	MediaEntity *source = sensor;
 
 	while (source) {
-		/* If we have reached the video node, we're done. */
-		if (source == video)
+		/* If we have reached a video node, we're done. */
+		if (source->function() == MEDIA_ENT_F_IO_V4L)
 			break;
 
 		/* Use the first output pad that has links. */
@@ -227,7 +227,14 @@ SimpleCameraData::SimpleCameraData(PipelineHandler *pipe, MediaEntity *sensor,
 		}
 	}
 
-	/* We have a valid pipeline, create the camera sensor. */
+	/*
+	 * We have a valid pipeline, get the video device and create the camera
+	 * sensor.
+	 */
+	video_ = pipe->video(source);
+	if (!video_)
+		return;
+
 	sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = sensor_->init();
 	if (ret) {
@@ -239,7 +246,6 @@ SimpleCameraData::SimpleCameraData(PipelineHandler *pipe, MediaEntity *sensor,
 int SimpleCameraData::init()
 {
 	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(pipe_);
-	V4L2VideoDevice *video = pipe->video();
 	SimpleConverter *converter = pipe->converter();
 	int ret;
 
@@ -269,7 +275,7 @@ int SimpleCameraData::init()
 		}
 
 		std::map<V4L2PixelFormat, std::vector<SizeRange>> videoFormats =
-			video->formats(format.mbus_code);
+			video_->formats(format.mbus_code);
 
 		LOG(SimplePipeline, Debug)
 			<< "Adding configuration for " << format.size.toString()
@@ -454,13 +460,12 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
  */
 
 SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
-	: PipelineHandler(manager), video_(nullptr), converter_(nullptr)
+	: PipelineHandler(manager), converter_(nullptr)
 {
 }
 
 SimplePipelineHandler::~SimplePipelineHandler()
 {
-	delete video_;
 	delete converter_;
 }
 
@@ -506,6 +511,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	SimpleCameraConfiguration *config =
 		static_cast<SimpleCameraConfiguration *>(c);
 	SimpleCameraData *data = cameraData(camera);
+	V4L2VideoDevice *video = data->video_;
 	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
@@ -527,13 +533,13 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Configure the video node. */
-	V4L2PixelFormat videoFormat = video_->toV4L2PixelFormat(pipeConfig.pixelFormat);
+	V4L2PixelFormat videoFormat = video->toV4L2PixelFormat(pipeConfig.pixelFormat);
 
 	V4L2DeviceFormat captureFormat = {};
 	captureFormat.fourcc = videoFormat;
 	captureFormat.size = cfg.size;
 
-	ret = video_->setFormat(&captureFormat);
+	ret = video->setFormat(&captureFormat);
 	if (ret)
 		return ret;
 
@@ -566,6 +572,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 					      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
+	SimpleCameraData *data = cameraData(camera);
 	unsigned int count = stream->configuration().bufferCount;
 
 	/*
@@ -575,23 +582,24 @@ int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 	if (useConverter_)
 		return converter_->exportBuffers(count, buffers);
 	else
-		return video_->exportBuffers(count, buffers);
+		return data->video_->exportBuffers(count, buffers);
 }
 
 int SimplePipelineHandler::start(Camera *camera)
 {
 	SimpleCameraData *data = cameraData(camera);
+	V4L2VideoDevice *video = data->video_;
 	unsigned int count = data->stream_.configuration().bufferCount;
 	int ret;
 
 	if (useConverter_)
-		ret = video_->allocateBuffers(count, &converterBuffers_);
+		ret = video->allocateBuffers(count, &converterBuffers_);
 	else
-		ret = video_->importBuffers(count);
+		ret = video->importBuffers(count);
 	if (ret < 0)
 		return ret;
 
-	ret = video_->streamOn();
+	ret = video->streamOn();
 	if (ret < 0) {
 		stop(camera);
 		return ret;
@@ -606,7 +614,7 @@ int SimplePipelineHandler::start(Camera *camera)
 
 		/* Queue all internal buffers for capture. */
 		for (std::unique_ptr<FrameBuffer> &buffer : converterBuffers_)
-			video_->queueBuffer(buffer.get());
+			video->queueBuffer(buffer.get());
 	}
 
 	activeCamera_ = camera;
@@ -616,11 +624,14 @@ int SimplePipelineHandler::start(Camera *camera)
 
 void SimplePipelineHandler::stop(Camera *camera)
 {
+	SimpleCameraData *data = cameraData(camera);
+	V4L2VideoDevice *video = data->video_;
+
 	if (useConverter_)
 		converter_->stop();
 
-	video_->streamOff();
-	video_->releaseBuffers();
+	video->streamOff();
+	video->releaseBuffers();
 
 	converterBuffers_.clear();
 	activeCamera_ = nullptr;
@@ -647,7 +658,7 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 		return 0;
 	}
 
-	return video_->queueBuffer(buffer);
+	return data->video_->queueBuffer(buffer);
 }
 
 /* -----------------------------------------------------------------------------
@@ -675,23 +686,13 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	/*
-	 * Locate sensors and video nodes. We only support pipelines with at
-	 * least one sensor and exactly one video capture node.
-	 */
+	/* Locate the sensors. */
 	std::vector<MediaEntity *> sensors;
-	std::vector<MediaEntity *> videos;
 
 	for (MediaEntity *entity : media_->entities()) {
 		switch (entity->function()) {
 		case MEDIA_ENT_F_CAM_SENSOR:
 			sensors.push_back(entity);
-			break;
-
-		case MEDIA_ENT_F_IO_V4L:
-			if (entity->pads().size() == 1 &&
-			    (entity->pads()[0]->flags() & MEDIA_PAD_FL_SINK))
-				videos.push_back(entity);
 			break;
 
 		default:
@@ -703,26 +704,6 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 		LOG(SimplePipeline, Error) << "No sensor found";
 		return false;
 	}
-
-	if (videos.size() != 1) {
-		LOG(SimplePipeline, Error)
-			<< "Pipeline with " << videos.size()
-			<< " video capture nodes is not supported";
-		return false;
-	}
-
-	/* Locate and open the capture video node. */
-	video_ = new V4L2VideoDevice(videos[0]);
-	if (video_->open() < 0)
-		return false;
-
-	if (video_->caps().isMultiplanar()) {
-		LOG(SimplePipeline, Error)
-			<< "V4L2 multiplanar devices are not supported";
-		return false;
-	}
-
-	video_->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
 
 	/* Open the converter, if any. */
 	if (converter) {
@@ -748,8 +729,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 	for (MediaEntity *sensor : sensors) {
 		std::unique_ptr<SimpleCameraData> data =
-			std::make_unique<SimpleCameraData>(this, sensor,
-							   videos[0]);
+			std::make_unique<SimpleCameraData>(this, sensor);
 		if (!data->isValid()) {
 			LOG(SimplePipeline, Error)
 				<< "No valid pipeline for sensor '"
@@ -796,6 +776,35 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
+V4L2VideoDevice *SimplePipelineHandler::video(const MediaEntity *entity)
+{
+	/*
+	 * Return the V4L2VideoDevice corresponding to the media entity, either
+	 * as a previously constructed device if available from the cache, or
+	 * by constructing a new one.
+	 */
+
+	auto iter = videos_.find(entity);
+	if (iter != videos_.end())
+		return iter->second.get();
+
+	std::unique_ptr<V4L2VideoDevice> video =
+		std::make_unique<V4L2VideoDevice>(entity);
+	if (video->open() < 0)
+		return nullptr;
+
+	if (video->caps().isMultiplanar()) {
+		LOG(SimplePipeline, Error)
+			<< "V4L2 multiplanar devices are not supported";
+		return nullptr;
+	}
+
+	video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
+
+	auto element = videos_.emplace(entity, std::move(video));
+	return element.first->second.get();
+}
+
 V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)
 {
 	auto iter = subdevs_.find(entity);
@@ -811,6 +820,9 @@ V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)
 
 void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 {
+	ASSERT(activeCamera_);
+	SimpleCameraData *data = cameraData(activeCamera_);
+
 	/*
 	 * If an error occurred during capture, or if the buffer was cancelled,
 	 * complete the request, even if the converter is in use as there's no
@@ -819,7 +831,7 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	if (buffer->metadata().status != FrameMetadata::FrameSuccess) {
 		if (useConverter_) {
 			/* Requeue the buffer for capture. */
-			video_->queueBuffer(buffer);
+			data->video_->queueBuffer(buffer);
 
 			/*
 			 * Get the next user-facing buffer to complete the
@@ -845,7 +857,7 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	 */
 	if (useConverter_) {
 		if (converterQueue_.empty()) {
-			video_->queueBuffer(buffer);
+			data->video_->queueBuffer(buffer);
 			return;
 		}
 
@@ -865,14 +877,16 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 void SimplePipelineHandler::converterDone(FrameBuffer *input,
 					  FrameBuffer *output)
 {
-	/* Complete the request. */
 	ASSERT(activeCamera_);
+	SimpleCameraData *data = cameraData(activeCamera_);
+
+	/* Complete the request. */
 	Request *request = output->request();
 	completeBuffer(activeCamera_, request, output);
 	completeRequest(activeCamera_, request);
 
 	/* Queue the input buffer back for capture. */
-	video_->queueBuffer(input);
+	data->video_->queueBuffer(input);
 }
 
 REGISTER_PIPELINE_HANDLER(SimplePipelineHandler);

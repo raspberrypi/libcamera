@@ -28,7 +28,9 @@ def main(argv):
         print('Please install openssl to sign IPA modules')
         return 1
 
-    ipa_key = ', '.join(['0x%02x' % c for c in ret.stdout])
+    ipa_key = ['0x%02x' % c for c in ret.stdout]
+    ipa_key = [', '.join(ipa_key[bound:bound + 8]) for bound in range(0, len(ipa_key), 8)]
+    ipa_key = ',\n\t'.join(ipa_key)
     data = {'ipa_key': ipa_key}
 
     template = open(template, 'rb').read()

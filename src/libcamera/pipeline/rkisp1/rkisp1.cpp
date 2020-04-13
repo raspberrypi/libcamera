@@ -64,6 +64,7 @@ public:
 
 	RkISP1FrameInfo *create(unsigned int frame, Request *request, Stream *stream);
 	int destroy(unsigned int frame);
+	void clear();
 
 	RkISP1FrameInfo *find(unsigned int frame);
 	RkISP1FrameInfo *find(FrameBuffer *buffer);
@@ -277,6 +278,20 @@ int RkISP1Frames::destroy(unsigned int frame)
 	delete info;
 
 	return 0;
+}
+
+void RkISP1Frames::clear()
+{
+	for (const auto &entry : frameInfo_) {
+		RkISP1FrameInfo *info = entry.second;
+
+		pipe_->availableParamBuffers_.push(info->paramBuffer);
+		pipe_->availableStatBuffers_.push(info->statBuffer);
+
+		delete info;
+	}
+
+	frameInfo_.clear();
 }
 
 RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)
@@ -831,6 +846,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 			<< "Failed to stop parameters " << camera->name();
 
 	data->timeline_.reset();
+
+	data->frameInfo_.clear();
 
 	freeBuffers(camera);
 

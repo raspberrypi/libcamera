@@ -21,7 +21,10 @@ protected:
 	int init()
 	{
 		cm_ = new CameraManager();
-		cm_->start();
+		if (cm_->start()) {
+			std::cout << "Failed to start camera" << std::endl;
+			return TestFail;
+		}
 
 		return 0;
 	}

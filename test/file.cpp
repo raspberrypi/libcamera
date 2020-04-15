@@ -30,11 +30,9 @@ protected:
 		if (fd == -1)
 			return TestFail;
 
-		ssize_t ret = write(fd, "libcamera", 9);
-
 		close(fd);
 
-		return ret == 9 ? TestPass : TestFail;
+		return TestPass;
 	}
 
 	int run()
@@ -191,7 +189,68 @@ protected:
 			return TestFail;
 		}
 
+		file.close();
+
+		/* Test read and write. */
+		std::array<uint8_t, 256> buffer = { 0 };
+
+		strncpy(reinterpret_cast<char *>(buffer.data()), "libcamera",
+			buffer.size());
+
+		file.setFileName(fileName_);
+
+		if (file.read(buffer) >= 0) {
+			cerr << "Read succeeded on closed file" << endl;
+			return TestFail;
+		}
+
+		if (file.write(buffer) >= 0) {
+			cerr << "Write succeeded on closed file" << endl;
+			return TestFail;
+		}
+
+		file.open(File::ReadOnly);
+
+		if (file.write(buffer) >= 0) {
+			cerr << "Write succeeded on read-only file" << endl;
+			return TestFail;
+		}
+
+		file.close();
+
+		file.open(File::ReadWrite);
+
+		if (file.write({ buffer.data(), 9 }) != 9) {
+			cerr << "Write test failed" << endl;
+			return TestFail;
+		}
+
+		if (file.read(buffer) != 0) {
+			cerr << "Read at end of file test failed" << endl;
+			return TestFail;
+		}
+
+		if (file.seek(0) != 0) {
+			cerr << "Seek test failed" << endl;
+			return TestFail;
+		}
+
+		if (file.read(buffer) != 9) {
+			cerr << "Read test failed" << endl;
+			return TestFail;
+		}
+
+		if (file.pos() != 9) {
+			cerr << "Position test failed" << endl;
+			return TestFail;
+		}
+
+		file.close();
+
 		/* Test mapping and unmapping. */
+		file.setFileName("/proc/self/exe");
+		file.open(File::ReadOnly);
+
 		Span<uint8_t> data = file.map();
 		if (data.empty()) {
 			cerr << "Mapping of complete file failed" << endl;

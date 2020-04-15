@@ -40,8 +40,10 @@ private:
 
 	bool isSignatureValid(IPAModule *ipa) const;
 
+#if HAVE_IPA_PUBKEY
 	static const uint8_t publicKeyData_[];
 	static const PubKey pubKey_;
+#endif
 };
 
 } /* namespace libcamera */

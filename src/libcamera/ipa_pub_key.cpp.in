@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
  *
- * ipa_key.cpp - IPA module signing public key
+ * ipa_pub_key.cpp - IPA module signing public key
  *
  * This file is auto-generated. Do not edit.
  */
@@ -11,10 +11,12 @@
 
 namespace libcamera {
 
+#if HAVE_IPA_PUBKEY
 const uint8_t IPAManager::publicKeyData_[] = {
 	${ipa_key}
 };
 
 const PubKey IPAManager::pubKey_{ { IPAManager::publicKeyData_ } };
+#endif
 
 } /* namespace libcamera */

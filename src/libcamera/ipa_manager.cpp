@@ -304,6 +304,7 @@ std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
 
 bool IPAManager::isSignatureValid(IPAModule *ipa) const
 {
+#if HAVE_IPA_PUBKEY
 	File file{ ipa->path() };
 	if (!file.open(File::ReadOnly))
 		return false;
@@ -319,6 +320,9 @@ bool IPAManager::isSignatureValid(IPAModule *ipa) const
 		<< (valid ? "valid" : "not valid");
 
 	return valid;
+#else
+	return false;
+#endif
 }
 
 } /* namespace libcamera */

@@ -60,14 +60,17 @@ for libcamera: [required]
 for device hotplug enumeration: [optional]
 	pkg-config libudev-dev
 
-for qcam: [optional]
-	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
-
 for documentation: [optional]
 	python3-sphinx doxygen
 
 for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+for IPA module signing: [optional]
+        libgnutls28-dev openssl
+
+for qcam: [optional]
+	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
 
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -49,6 +49,12 @@ public:
 	int error() const { return error_; }
 	ssize_t size() const;
 
+	off_t pos() const;
+	off_t seek(off_t pos);
+
+	ssize_t read(const Span<uint8_t> &data);
+	ssize_t write(const Span<const uint8_t> &data);
+
 	Span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
 			  MapFlag flags = MapNoOption);
 	bool unmap(uint8_t *addr);

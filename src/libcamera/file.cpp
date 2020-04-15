@@ -238,6 +238,115 @@ ssize_t File::size() const
 }
 
 /**
+ * \brief Return current read or write position
+ *
+ * If the file is closed, this function returns 0.
+ *
+ * \return The current read or write position
+ */
+off_t File::pos() const
+{
+	if (!isOpen())
+		return 0;
+
+	return lseek(fd_, 0, SEEK_CUR);
+}
+
+/**
+ * \brief Set the read or write position
+ * \param[in] pos The desired position
+ * \return The resulting offset from the beginning of the file on success, or a
+ * negative error code otherwise
+ */
+off_t File::seek(off_t pos)
+{
+	if (!isOpen())
+		return -EINVAL;
+
+	off_t ret = lseek(fd_, pos, SEEK_SET);
+	if (ret < 0)
+		return -errno;
+
+	return ret;
+}
+
+/**
+ * \brief Read data from the file
+ * \param[in] data Memory to read data into
+ *
+ * Read at most \a data.size() bytes from the file into \a data.data(), and
+ * return the number of bytes read. If less data than requested is available,
+ * the returned byte count may be smaller than the requested size. If no more
+ * data is available, 0 is returned.
+ *
+ * The position of the file as returned by pos() is advanced by the number of
+ * bytes read. If an error occurs, the position isn't modified.
+ *
+ * \return The number of bytes read on success, or a negative error code
+ * otherwise
+ */
+ssize_t File::read(const Span<uint8_t> &data)
+{
+	if (!isOpen())
+		return -EINVAL;
+
+	size_t readBytes = 0;
+	ssize_t ret = 0;
+
+	/* Retry in case of interrupted system calls. */
+	while (readBytes < data.size()) {
+		ret = ::read(fd_, data.data() + readBytes,
+			     data.size() - readBytes);
+		if (ret <= 0)
+			break;
+
+		readBytes += ret;
+	}
+
+	if (ret < 0 && !readBytes)
+		return -errno;
+
+	return readBytes;
+}
+
+/**
+ * \brief Write data to the file
+ * \param[in] data Memory containing data to be written
+ *
+ * Write at most \a data.size() bytes from \a data.data() to the file, and
+ * return the number of bytes written. If the file system doesn't have enough
+ * space for the data, the returned byte count may be less than requested.
+ *
+ * The position of the file as returned by pos() is advanced by the number of
+ * bytes written. If an error occurs, the position isn't modified.
+ *
+ * \return The number of bytes written on success, or a negative error code
+ * otherwise
+ */
+ssize_t File::write(const Span<const uint8_t> &data)
+{
+	if (!isOpen())
+		return -EINVAL;
+
+	size_t writtenBytes = 0;
+
+	/* Retry in case of interrupted system calls. */
+	while (writtenBytes < data.size()) {
+		ssize_t ret = ::write(fd_, data.data() + writtenBytes,
+				      data.size() - writtenBytes);
+		if (ret <= 0)
+			break;
+
+		writtenBytes += ret;
+	}
+
+	if (data.size() && !writtenBytes)
+		return -errno;
+
+	return writtenBytes;
+}
+
+/**
  * \brief Map a region of the file in the process memory
  * \param[in] offset The region offset within the file
  * \param[in] size The region sise

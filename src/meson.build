@@ -2,7 +2,7 @@ if get_option('android')
     subdir('android')
 endif
 
-openssl = find_program('openssl', required : false)
+openssl = find_program('openssl', required : true)
 if openssl.found()
     ipa_gen_priv_key = find_program('ipa/gen-ipa-priv-key.sh')
     ipa_priv_key = custom_target('ipa-priv-key',

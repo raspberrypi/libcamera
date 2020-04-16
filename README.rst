@@ -66,7 +66,7 @@ for documentation: [optional]
 for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
-for IPA module signing: [optional]
+for IPA module signing: [required]
         libgnutls28-dev openssl
 
 for qcam: [optional]

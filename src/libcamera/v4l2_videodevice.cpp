@@ -848,7 +848,7 @@ int V4L2VideoDevice::setFormatMeta(V4L2DeviceFormat *format)
 	 */
 	format->size.width = 0;
 	format->size.height = 0;
-	format->fourcc = format->fourcc;
+	format->fourcc = V4L2PixelFormat(pix->dataformat);
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->buffersize;
 	format->planes[0].size = pix->buffersize;

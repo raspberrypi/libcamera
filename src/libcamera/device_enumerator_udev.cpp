@@ -94,7 +94,8 @@ int DeviceEnumeratorUdev::addUdevDevice(struct udev_device *dev)
 		if (!deps.empty()) {
 			LOG(DeviceEnumerator, Debug)
 				<< "Defer media device " << media->deviceNode()
-				<< " due to " << ret << " missing dependencies";
+				<< " due to " << deps.size()
+				<< " missing dependencies";
 
 			pending_.emplace_back(std::move(media), std::move(deps));
 			MediaDeviceDeps *mediaDeps = &pending_.back();

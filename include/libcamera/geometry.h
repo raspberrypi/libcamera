@@ -15,8 +15,8 @@ namespace libcamera {
 struct Rectangle {
 	int x;
 	int y;
-	unsigned int w;
-	unsigned int h;
+	unsigned int width;
+	unsigned int height;
 
 	const std::string toString() const;
 };

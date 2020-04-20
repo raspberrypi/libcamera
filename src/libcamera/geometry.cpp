@@ -40,12 +40,12 @@ namespace libcamera {
  */
 
 /**
- * \var Rectangle::w
+ * \var Rectangle::width
  * \brief The distance between the left and right sides
  */
 
 /**
- * \var Rectangle::h
+ * \var Rectangle::height
  * \brief The distance between the top and bottom sides
  */
 
@@ -57,7 +57,7 @@ const std::string Rectangle::toString() const
 {
 	std::stringstream ss;
 
-	ss << "(" << x << "x" << y << ")/" << w << "x" << h;
+	ss << "(" << x << "x" << y << ")/" << width << "x" << height;
 
 	return ss.str();
 }
@@ -69,7 +69,7 @@ const std::string Rectangle::toString() const
 bool operator==(const Rectangle &lhs, const Rectangle &rhs)
 {
 	return lhs.x == rhs.x && lhs.y == rhs.y &&
-	       lhs.w == rhs.w && lhs.h == rhs.h;
+	       lhs.width == rhs.width && lhs.height == rhs.height;
 }
 
 /**

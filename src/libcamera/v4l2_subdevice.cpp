@@ -355,8 +355,8 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 
 	sel.r.left = rect->x;
 	sel.r.top = rect->y;
-	sel.r.width = rect->w;
-	sel.r.height = rect->h;
+	sel.r.width = rect->width;
+	sel.r.height = rect->height;
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_SELECTION, &sel);
 	if (ret < 0) {
@@ -368,8 +368,8 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 
 	rect->x = sel.r.left;
 	rect->y = sel.r.top;
-	rect->w = sel.r.width;
-	rect->h = sel.r.height;
+	rect->width = sel.r.width;
+	rect->height = sel.r.height;
 
 	return 0;
 }

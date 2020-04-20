@@ -1132,8 +1132,8 @@ int ImgUDevice::configureInput(const Size &size,
 	Rectangle rect = {
 		.x = 0,
 		.y = 0,
-		.w = inputFormat->size.width,
-		.h = inputFormat->size.height,
+		.width = inputFormat->size.width,
+		.height = inputFormat->size.height,
 	};
 	ret = imgu_->setCrop(PAD_INPUT, &rect);
 	if (ret)

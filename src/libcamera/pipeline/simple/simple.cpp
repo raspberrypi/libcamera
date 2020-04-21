@@ -269,10 +269,11 @@ int SimpleCameraData::init()
 
 		ret = setupFormats(&format, V4L2Subdevice::TryFormat);
 		if (ret < 0) {
-			LOG(SimplePipeline, Error)
-				<< "Failed to setup pipeline for media bus code "
-				<< utils::hex(code, 4);
-			return ret;
+			LOG(SimplePipeline, Debug)
+				<< "Media bus code " << utils::hex(code, 4)
+				<< " not supported for this pipeline";
+			/* Try next mbus_code supported by the sensor */
+			continue;
 		}
 
 		V4L2VideoDevice::Formats videoFormats =

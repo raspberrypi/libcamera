@@ -388,10 +388,24 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 		}
 
 		if (sink->entity()->function() != MEDIA_ENT_F_IO_V4L) {
+			V4L2SubdeviceFormat sourceFormat = *format;
+
 			V4L2Subdevice *subdev = pipe->subdev(sink->entity());
 			ret = subdev->setFormat(sink->index(), format, whence);
 			if (ret < 0)
 				return ret;
+
+			if (format->mbus_code != sourceFormat.mbus_code ||
+			    format->size != sourceFormat.size) {
+				LOG(SimplePipeline, Debug)
+					<< "Source '" << source->entity()->name()
+					<< "':" << source->index()
+					<< " produces " << sourceFormat.toString()
+					<< ", sink '" << sink->entity()->name()
+					<< "':" << sink->index()
+					<< " requires " << format->toString();
+				return -EINVAL;
+			}
 		}
 
 		LOG(SimplePipeline, Debug)

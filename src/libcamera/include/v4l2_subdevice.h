@@ -46,6 +46,8 @@ public:
 
 	const MediaEntity *entity() const { return entity_; }
 
+	int getSelection(unsigned int pad, unsigned int target,
+			 Rectangle *rect);
 	int setSelection(unsigned int pad, unsigned int target,
 			 Rectangle *rect);
 

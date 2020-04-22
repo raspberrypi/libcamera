@@ -134,6 +134,42 @@ int V4L2Subdevice::open()
  */
 
 /**
+ * \brief Get selection rectangle \a rect for \a target
+ * \param[in] pad The 0-indexed pad number the rectangle is retrieved from
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[out] rect The retrieved selection rectangle
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
+				Rectangle *rect)
+{
+	struct v4l2_subdev_selection sel = {};
+
+	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	sel.pad = pad;
+	sel.target = target;
+	sel.flags = 0;
+
+	int ret = ioctl(VIDIOC_SUBDEV_G_SELECTION, &sel);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Unable to get rectangle " << target << " on pad "
+			<< pad << ": " << strerror(-ret);
+		return ret;
+	}
+
+	rect->x = sel.r.left;
+	rect->y = sel.r.top;
+	rect->width = sel.r.width;
+	rect->height = sel.r.height;
+
+	return 0;
+}
+
+/**
  * \brief Set selection rectangle \a rect for \a target
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags

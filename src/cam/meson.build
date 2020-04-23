@@ -4,6 +4,7 @@ cam_sources = files([
     'event_loop.cpp',
     'main.cpp',
     'options.cpp',
+    'stream_options.cpp',
 ])
 
 cam  = executable('cam', cam_sources,

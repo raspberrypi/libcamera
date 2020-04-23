@@ -153,9 +153,9 @@ void V4L2Device::close()
  * their values in the corresponding \a ctrls entry.
  *
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is a compound control, or if any
- * other error occurs during validation of the requested controls, no control is
- * read and this method returns -EINVAL.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
+ * during validation of the requested controls, no control is read and this
+ * method returns -EINVAL.
  *
  * If an error occurs while reading the controls, the index of the first control
  * that couldn't be read is returned. The value of all controls below that index
@@ -251,10 +251,9 @@ int V4L2Device::getControls(ControlList *ctrls)
  * \a ctrls entry.
  *
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, is a
- * compound control, or if any other error occurs during validation of
- * the requested controls, no control is written and this method returns
- * -EINVAL.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, if any other error
+ * occurs during validation of the requested controls, no control is written and
+ * this method returns -EINVAL.
  *
  * If an error occurs while writing the controls, the index of the first
  * control that couldn't be written is returned. All controls below that index
@@ -384,7 +383,7 @@ void V4L2Device::listControls()
 	ControlInfoMap::Map ctrls;
 	struct v4l2_query_ext_ctrl ctrl = {};
 
-	/* \todo Add support for menu and compound controls. */
+	/* \todo Add support for menu controls. */
 	while (1) {
 		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL |
 			   V4L2_CTRL_FLAG_NEXT_COMPOUND;
@@ -457,8 +456,8 @@ void V4L2Device::updateControls(ControlList *ctrls,
 
 		default:
 			/*
-			 * \todo To be changed when support for string and
-			 * compound controls will be added.
+			 * \todo To be changed when support for string controls
+			 * will be added.
 			 */
 			value.set<int32_t>(v4l2Ctrl->value);
 			break;

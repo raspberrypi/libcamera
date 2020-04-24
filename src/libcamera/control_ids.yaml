@@ -169,6 +169,61 @@ controls:
       description: |
         Enable or disable the AWB.
 
+        \sa ColourGains
+
+  # AwbMode needs further attention:
+  # - Auto-generate max enum value.
+  # - Better handling of custom types.
+  - AwbMode:
+      type: int32_t
+      description: |
+        Specify the range of illuminants to use for the AWB algorithm. The modes
+        supported are platform specific, and not all modes may be supported.
+      enum:
+        - name: AwbAuto
+          value: 0
+          description: Search over the whole colour temperature range.
+        - name: AwbIncandescent
+          value: 1
+          description: Incandescent AWB lamp mode.
+        - name: AwbTungsten
+          value: 2
+          description: Tungsten AWB lamp mode.
+        - name: AwbFluorescent
+          value: 3
+          description: Fluorescent AWB lamp mode.
+        - name: AwbIndoor
+          value: 4
+          description: Indoor AWB lighting mode.
+        - name: AwbDaylight
+          value: 5
+          description: Daylight AWB lighting mode.
+        - name: AwbCloudy
+          value: 6
+          description: Cloudy AWB lighting mode.
+        - name: AwbCustom
+          value: 7
+          description: Custom AWB mode.
+        - name: AwbModeMax
+          value: 7
+          description: Maximum allowed value (place any new values above here).
+
+  - ColourGains:
+      type: float
+      description: |
+        Pair of gain values for the Red and Blue colour channels, in that
+        order. ColourGains can only be applied in a Request when the AWB is
+        disabled.
+
+        \sa AwbEnable
+      size: [2]
+
+  - ColourTemperature:
+      type: int32_t
+      description: Report the current estimate of the colour temperature, in
+        kelvin, for this frame. The ColourTemperature control can only be
+        returned in metadata.
+
   - Saturation:
       type: float
       description:  |

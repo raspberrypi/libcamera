@@ -252,6 +252,8 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		cid = V4L2_CID_CONTRAST;
 	else if (id == controls::Saturation)
 		cid = V4L2_CID_SATURATION;
+	else if (id == controls::AeEnable)
+		cid = V4L2_CID_EXPOSURE_AUTO;
 	else if (id == controls::ManualExposure)
 		cid = V4L2_CID_EXPOSURE_ABSOLUTE;
 	else if (id == controls::ManualGain)
@@ -259,12 +261,21 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 	else
 		return -EINVAL;
 
-	if (cid == V4L2_CID_EXPOSURE_ABSOLUTE)
-		controls->set(V4L2_CID_EXPOSURE_AUTO, static_cast<int32_t>(1));
+	switch (cid) {
+	case V4L2_CID_EXPOSURE_AUTO: {
+		int32_t ivalue = value.get<bool>()
+			       ? V4L2_EXPOSURE_APERTURE_PRIORITY
+			       : V4L2_EXPOSURE_MANUAL;
+		controls->set(V4L2_CID_EXPOSURE_AUTO, ivalue);
+		break;
+	}
 
-	int32_t ivalue = value.get<int32_t>();
-
-	controls->set(cid, ivalue);
+	default: {
+		int32_t ivalue = value.get<int32_t>();
+		controls->set(cid, ivalue);
+		break;
+	}
+	}
 
 	return 0;
 }
@@ -385,6 +396,7 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 			       ControlInfoMap::Map *ctrls)
 {
 	const ControlId *id;
+	ControlInfo info;
 
 	/* Map the control ID. */
 	switch (cid) {
@@ -397,6 +409,9 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	case V4L2_CID_SATURATION:
 		id = &controls::Saturation;
 		break;
+	case V4L2_CID_EXPOSURE_AUTO:
+		id = &controls::AeEnable;
+		break;
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
 		id = &controls::ManualExposure;
 		break;
@@ -407,7 +422,18 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		return;
 	}
 
-	ctrls->emplace(id, v4l2Info);
+	/* Map the control info. */
+	switch (cid) {
+	case V4L2_CID_EXPOSURE_AUTO:
+		info = ControlInfo{ false, true, true };
+		break;
+
+	default:
+		info = v4l2Info;
+		break;
+	}
+
+	ctrls->emplace(id, info);
 }
 
 void UVCCameraData::bufferReady(FrameBuffer *buffer)

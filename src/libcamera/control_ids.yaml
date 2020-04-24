@@ -25,6 +25,109 @@ controls:
 
         \sa AeEnable
 
+  # AeMeteringMode needs further attention:
+  # - Auto-generate max enum value.
+  # - Better handling of custom types.
+  - AeMeteringMode:
+      type: int32_t
+      description: |
+        Specify a metering mode for the AE algorithm to use. The metering
+        modes determine which parts of the image are used to determine the
+        scene brightness. Metering modes may be platform specific and not
+        all metering modes may be supported.
+      enum:
+        - name: MeteringCentreWeighted
+          value: 0
+          description: Centre-weighted metering mode.
+        - name: MeteringSpot
+          value: 1
+          description: Spot metering mode.
+        - name: MeteringMatrix
+          value: 2
+          description: Matrix metering mode.
+        - name: MeteringCustom
+          value: 3
+          description: Custom metering mode.
+        - name: MeteringModeMax
+          value: 3
+          description: Maximum allowed value (place any new values above here).
+
+  # AeConstraintMode needs further attention:
+  # - Auto-generate max enum value.
+  # - Better handling of custom types.
+  - AeConstraintMode:
+      type: int32_t
+      description: |
+        Specify a constraint mode for the AE algorithm to use. These determine
+        how the measured scene brightness is adjusted to reach the desired
+        target exposure. Constraint modes may be platform specific, and not
+        all constraint modes may be supported.
+      enum:
+        - name: ConstraintNormal
+          value: 0
+          description: Default constraint mode.
+            This mode aims to balance the exposure of different parts of the
+            image so as to reach a reasonable average level. However, highlights
+            in the image may appear over-exposed and lowlights may appear
+            under-exposed.
+        - name: ConstraintHighlight
+          value: 1
+          description: Highlight constraint mode.
+            This mode adjusts the exposure levels in order to try and avoid
+            over-exposing the brightest parts (highlights) of an image.
+            Other non-highlight parts of the image may appear under-exposed.
+        - name: ConstraintShadows
+          value: 2
+          description: Shadows constraint mode.
+            This mode adjusts the exposure levels in order to try and avoid
+            under-exposing the dark parts (shadows) of an image. Other normally
+            exposed parts of the image may appear over-exposed.
+        - name: ConstraintCustom
+          value: 3
+          description: Custom constraint mode.
+        - name: ConstraintModeMax
+          value: 3
+          description: Maximum allowed value (place any new values above here).
+
+  # AeExposureMode needs further attention:
+  # - Auto-generate max enum value.
+  # - Better handling of custom types.
+  - AeExposureMode:
+      type: int32_t
+      description: |
+        Specify an exposure mode for the AE algorithm to use. These specify
+        how the desired total exposure is divided between the shutter time
+        and the sensor's analogue gain. The exposure modes are platform
+        specific, and not all exposure modes may be supported.
+      enum:
+        - name: ExposureNormal
+          value: 0
+          description: Default exposure mode.
+        - name: ExposureShort
+          value: 1
+          description: Exposure mode allowing only short exposure times.
+        - name: ExposureLong
+          value: 2
+          description: Exposure mode allowing long exposure times.
+        - name: ExposureCustom
+          value: 3
+          description: Custom exposure mode.
+        - name: ExposureModeMax
+          value: 3
+          description: Maximum allowed value (place any new values above here).
+
+  - ExposureValue:
+      type: float
+      description: |
+        Specify an Exposure Value (EV) parameter. The EV parameter will only be
+        applied if the AE algorithm is currently enabled.
+
+        By convention EV adjusts the exposure as log2. For example
+        EV = [-2, -1, 0.5, 0, 0.5, 1, 2] results in an exposure adjustment
+        of [1/4x, 1/2x, 1/sqrt(2)x, 1x, sqrt(2)x, 2x, 4x].
+
+        \sa AeEnable
+
   - ExposureTime:
       type: int32_t
       description: |
@@ -54,6 +157,12 @@ controls:
       description:  |
         Specify a fixed contrast parameter. Normal contrast is given by the
         value 1.0; larger values produce images with more contrast.
+
+  - Lux:
+      type: float
+      description: |
+        Report an estimate of the current illuminance level in lux. The Lux
+        control can only be returned in metadata.
 
   - AwbEnable:
       type: bool

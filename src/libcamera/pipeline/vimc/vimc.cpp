@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
+#include <math.h>
 #include <tuple>
 
 #include <linux/media-bus-format.h>
@@ -304,14 +305,24 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 
 	for (auto it : request->controls()) {
 		unsigned int id = it.first;
-		ControlValue &value = it.second;
+		unsigned int offset;
+		uint32_t cid;
 
-		if (id == controls::Brightness)
-			controls.set(V4L2_CID_BRIGHTNESS, value);
-		else if (id == controls::Contrast)
-			controls.set(V4L2_CID_CONTRAST, value);
-		else if (id == controls::Saturation)
-			controls.set(V4L2_CID_SATURATION, value);
+		if (id == controls::Brightness) {
+			cid = V4L2_CID_BRIGHTNESS;
+			offset = 128;
+		} else if (id == controls::Contrast) {
+			cid = V4L2_CID_CONTRAST;
+			offset = 0;
+		} else if (id == controls::Saturation) {
+			cid = V4L2_CID_SATURATION;
+			offset = 0;
+		} else {
+			continue;
+		}
+
+		int32_t value = lroundf(it.second.get<float>() * 128 + offset);
+		controls.set(cid, utils::clamp(value, 0, 255));
 	}
 
 	for (const auto &ctrl : controls)
@@ -434,18 +445,21 @@ int VimcCameraData::init(MediaDevice *media)
 	ControlInfoMap::Map ctrls;
 
 	for (const auto &ctrl : controls) {
-		const ControlInfo &info = ctrl.second;
 		const ControlId *id;
+		ControlInfo info;
 
 		switch (ctrl.first->id()) {
 		case V4L2_CID_BRIGHTNESS:
 			id = &controls::Brightness;
+			info = ControlInfo{ { -1.0f }, { 1.0f }, { 0.0f } };
 			break;
 		case V4L2_CID_CONTRAST:
 			id = &controls::Contrast;
+			info = ControlInfo{ { 0.0f }, { 2.0f }, { 1.0f } };
 			break;
 		case V4L2_CID_SATURATION:
 			id = &controls::Saturation;
+			info = ControlInfo{ { 0.0f }, { 2.0f }, { 1.0f } };
 			break;
 		default:
 			continue;

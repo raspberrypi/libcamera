@@ -25,23 +25,6 @@ controls:
 
         \sa AeEnable
 
-  - AwbEnable:
-      type: bool
-      description: |
-        Enable or disable the AWB.
-
-  - Brightness:
-      type: int32_t
-      description: Specify a fixed brightness parameter
-
-  - Contrast:
-      type: int32_t
-      description: Specify a fixed contrast parameter
-
-  - Saturation:
-      type: int32_t
-      description: Specify a fixed saturation parameter
-
   - ExposureTime:
       type: int32_t
       description: |
@@ -58,4 +41,29 @@ controls:
         colour channels. This value cannot be lower than 1.0.
 
         \sa ExposureTime AeEnable
+
+  - Brightness:
+      type: float
+      description: |
+        Specify a fixed brightness parameter. Positive values (up to 1.0)
+        produce brighter images; negative values (up to -1.0) produce darker
+        images and 0.0 leaves pixels unchanged.
+
+  - Contrast:
+      type: float
+      description:  |
+        Specify a fixed contrast parameter. Normal contrast is given by the
+        value 1.0; larger values produce images with more contrast.
+
+  - AwbEnable:
+      type: bool
+      description: |
+        Enable or disable the AWB.
+
+  - Saturation:
+      type: float
+      description:  |
+        Specify a fixed saturation parameter. Normal saturation is given by
+        the value 1.0; larger values produce more saturated colours; 0.0
+        produces a greyscale image.
 ...

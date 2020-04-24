@@ -263,12 +263,29 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		return -EINVAL;
 
 	const ControlInfo &v4l2Info = controls->infoMap()->at(cid);
+	int32_t min = v4l2Info.min().get<int32_t>();
+	int32_t def = v4l2Info.def().get<int32_t>();
+	int32_t max = v4l2Info.max().get<int32_t>();
 
 	/*
 	 * See UVCCameraData::addControl() for explanations of the different
 	 * value mappings.
 	 */
 	switch (cid) {
+	case V4L2_CID_BRIGHTNESS: {
+		float scale = std::max(max - def, def - min);
+		float fvalue = value.get<float>() * scale + def;
+		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
+		break;
+	}
+
+	case V4L2_CID_SATURATION: {
+		float scale = def - min;
+		float fvalue = value.get<float>() * scale + min;
+		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
+		break;
+	}
+
 	case V4L2_CID_EXPOSURE_AUTO: {
 		int32_t ivalue = value.get<bool>()
 			       ? V4L2_EXPOSURE_APERTURE_PRIORITY
@@ -281,11 +298,8 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		controls->set(cid, value.get<int32_t>() / 100);
 		break;
 
+	case V4L2_CID_CONTRAST:
 	case V4L2_CID_GAIN: {
-		int32_t min = v4l2Info.min().get<int32_t>();
-		int32_t max = v4l2Info.max().get<int32_t>();
-		int32_t def = v4l2Info.def().get<int32_t>();
-
 		float m = (4.0f - 1.0f) / (max - def);
 		float p = 1.0f - m * def;
 
@@ -457,6 +471,38 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	int32_t def = v4l2Info.def().get<int32_t>();
 
 	switch (cid) {
+	case V4L2_CID_BRIGHTNESS: {
+		/*
+		 * The Brightness control is a float, with 0.0 mapped to the
+		 * default value. The control range is [-1.0, 1.0], but the V4L2
+		 * default may not be in the middle of the V4L2 range.
+		 * Accommodate this by restricting the range of the libcamera
+		 * control, but always within the maximum limits.
+		 */
+		float scale = std::max(max - def, def - min);
+
+		info = ControlInfo{
+			{ static_cast<float>(min - def) / scale },
+			{ static_cast<float>(max - def) / scale },
+			{ 0.0f }
+		};
+		break;
+	}
+
+	case V4L2_CID_SATURATION:
+		/*
+		 * The Saturation control is a float, with 0.0 mapped to the
+		 * minimum value (corresponding to a fully desaturated image)
+		 * and 1.0 mapped to the default value. Calculate the maximum
+		 * value accordingly.
+		 */
+		info = ControlInfo{
+			{ 0.0f },
+			{ static_cast<float>(max - min) / (def - min) },
+			{ 1.0f }
+		};
+		break;
+
 	case V4L2_CID_EXPOSURE_AUTO:
 		info = ControlInfo{ false, true, true };
 		break;
@@ -473,14 +519,15 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		};
 		break;
 
+	case V4L2_CID_CONTRAST:
 	case V4L2_CID_GAIN: {
 		/*
-		 * The AnalogueGain control is a float, with 1.0 mapped to the
-		 * default value. UVC doesn't specify units, and cameras have
-		 * been seen to expose very different ranges for the gain
-		 * control. Arbitrarily assume that the minimum and maximum
-		 * values are respectively no lower than 0.5 and no higher than
-		 * 4.0.
+		 * The Contrast and AnalogueGain controls are floats, with 1.0
+		 * mapped to the default value. UVC doesn't specify units, and
+		 * cameras have been seen to expose very different ranges for
+		 * the controls. Arbitrarily assume that the minimum and
+		 * maximum values are respectively no lower than 0.5 and no
+		 * higher than 4.0.
 		 */
 		float m = (4.0f - 1.0f) / (max - def);
 		float p = 1.0f - m * def;

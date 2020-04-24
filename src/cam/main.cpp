@@ -182,7 +182,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptInfo, OptionNone,
 			 "Display information about stream(s)", "info");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
-	parser.addOption(OptProps, OptionNone, "List cameras properties",
+	parser.addOption(OptListProperties, OptionNone, "List cameras properties",
 			 "list-properties");
 
 	options_ = parser.parse(argc, argv);
@@ -339,7 +339,7 @@ int CamApp::run()
 		}
 	}
 
-	if (options_.isSet(OptProps)) {
+	if (options_.isSet(OptListProperties)) {
 		ret = listProperties();
 		if (ret)
 			return ret;

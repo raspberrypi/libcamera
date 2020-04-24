@@ -12,7 +12,7 @@ controls:
       description: |
         Enable or disable the AE.
 
-        \sa ManualExposure
+        \sa ExposureTime AnalogueGain
 
   - AeLocked:
       type: bool
@@ -30,8 +30,6 @@ controls:
       description: |
         Enable or disable the AWB.
 
-        \sa ManualGain
-
   - Brightness:
       type: int32_t
       description: Specify a fixed brightness parameter
@@ -44,12 +42,20 @@ controls:
       type: int32_t
       description: Specify a fixed saturation parameter
 
-  - ManualExposure:
+  - ExposureTime:
       type: int32_t
-      description: Specify a fixed exposure time in milli-seconds
+      description: |
+        Exposure time (shutter speed) for the frame applied in the sensor
+        device. This value is specified in micro-seconds.
 
-  - ManualGain:
-      type: int32_t
-      description: Specify a fixed gain parameter
+        \sa AnalogueGain AeEnable
 
+  - AnalogueGain:
+      type: float
+      description: |
+        Analogue gain value applied in the sensor device.
+        The value of the control specifies the gain multiplier applied to all
+        colour channels. This value cannot be lower than 1.0.
+
+        \sa ExposureTime AeEnable
 ...

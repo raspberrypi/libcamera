@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <math.h>
 #include <sys/sysmacros.h>
 #include <tuple>
 
@@ -254,19 +255,47 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		cid = V4L2_CID_SATURATION;
 	else if (id == controls::AeEnable)
 		cid = V4L2_CID_EXPOSURE_AUTO;
-	else if (id == controls::ManualExposure)
+	else if (id == controls::ExposureTime)
 		cid = V4L2_CID_EXPOSURE_ABSOLUTE;
-	else if (id == controls::ManualGain)
+	else if (id == controls::AnalogueGain)
 		cid = V4L2_CID_GAIN;
 	else
 		return -EINVAL;
 
+	const ControlInfo &v4l2Info = controls->infoMap()->at(cid);
+
+	/*
+	 * See UVCCameraData::addControl() for explanations of the different
+	 * value mappings.
+	 */
 	switch (cid) {
 	case V4L2_CID_EXPOSURE_AUTO: {
 		int32_t ivalue = value.get<bool>()
 			       ? V4L2_EXPOSURE_APERTURE_PRIORITY
 			       : V4L2_EXPOSURE_MANUAL;
 		controls->set(V4L2_CID_EXPOSURE_AUTO, ivalue);
+		break;
+	}
+
+	case V4L2_CID_EXPOSURE_ABSOLUTE:
+		controls->set(cid, value.get<int32_t>() / 100);
+		break;
+
+	case V4L2_CID_GAIN: {
+		int32_t min = v4l2Info.min().get<int32_t>();
+		int32_t max = v4l2Info.max().get<int32_t>();
+		int32_t def = v4l2Info.def().get<int32_t>();
+
+		float m = (4.0f - 1.0f) / (max - def);
+		float p = 1.0f - m * def;
+
+		if (m * min + p < 0.5f) {
+			m = (1.0f - 0.5f) / (def - min);
+			p = 1.0f - m * def;
+		}
+
+		float fvalue = (value.get<float>() - p) / m;
+		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
 		break;
 	}
 
@@ -413,20 +442,61 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		id = &controls::AeEnable;
 		break;
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
-		id = &controls::ManualExposure;
+		id = &controls::ExposureTime;
 		break;
 	case V4L2_CID_GAIN:
-		id = &controls::ManualGain;
+		id = &controls::AnalogueGain;
 		break;
 	default:
 		return;
 	}
 
 	/* Map the control info. */
+	int32_t min = v4l2Info.min().get<int32_t>();
+	int32_t max = v4l2Info.max().get<int32_t>();
+	int32_t def = v4l2Info.def().get<int32_t>();
+
 	switch (cid) {
 	case V4L2_CID_EXPOSURE_AUTO:
 		info = ControlInfo{ false, true, true };
 		break;
+
+	case V4L2_CID_EXPOSURE_ABSOLUTE:
+		/*
+		 * ExposureTime is in units of 1 µs, and UVC expects
+		 * V4L2_CID_EXPOSURE_ABSOLUTE in units of 100 µs.
+		 */
+		info = ControlInfo{
+			{ min * 100 },
+			{ max * 100 },
+			{ def * 100 }
+		};
+		break;
+
+	case V4L2_CID_GAIN: {
+		/*
+		 * The AnalogueGain control is a float, with 1.0 mapped to the
+		 * default value. UVC doesn't specify units, and cameras have
+		 * been seen to expose very different ranges for the gain
+		 * control. Arbitrarily assume that the minimum and maximum
+		 * values are respectively no lower than 0.5 and no higher than
+		 * 4.0.
+		 */
+		float m = (4.0f - 1.0f) / (max - def);
+		float p = 1.0f - m * def;
+
+		if (m * min + p < 0.5f) {
+			m = (1.0f - 0.5f) / (def - min);
+			p = 1.0f - m * def;
+		}
+
+		info = ControlInfo{
+			{ m * min + p },
+			{ m * max + p },
+			{ 1.0f }
+		};
+		break;
+	}
 
 	default:
 		info = v4l2Info;

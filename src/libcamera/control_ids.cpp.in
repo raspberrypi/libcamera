@@ -33,6 +33,9 @@ ${controls_def}
 
 /**
  * \brief List of all supported libcamera controls
+ *
+ * Unless otherwise stated, all controls are bi-directional, i.e. they can be
+ * set through Request::controls() and returned out through Request::metadata().
  */
 extern const ControlIdMap controls {
 ${controls_map}

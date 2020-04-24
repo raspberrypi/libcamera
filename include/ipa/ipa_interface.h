@@ -22,6 +22,27 @@ struct ipa_settings {
 	const char *configuration_file;
 };
 
+struct ipa_sensor_info {
+	const char *model;
+	uint8_t bits_per_pixel;
+	struct {
+		uint32_t width;
+		uint32_t height;
+	} active_area;
+	struct {
+		int32_t left;
+		int32_t top;
+		uint32_t width;
+		uint32_t height;
+	} analog_crop;
+	struct {
+		uint32_t width;
+		uint32_t height;
+	} output_size;
+	uint64_t pixel_rate;
+	uint32_t line_length;
+};
+
 struct ipa_stream {
 	unsigned int id;
 	unsigned int pixel_format;
@@ -75,6 +96,7 @@ struct ipa_context_ops {
 				   const struct ipa_callback_ops *callbacks,
 				   void *cb_ctx);
 	void (*configure)(struct ipa_context *ctx,
+			  const struct ipa_sensor_info *sensor_info,
 			  const struct ipa_stream *streams,
 			  unsigned int num_streams,
 			  const struct ipa_control_info_map *maps,
@@ -125,6 +147,8 @@ struct IPAOperationData {
 	std::vector<ControlList> controls;
 };
 
+struct CameraSensorInfo;
+
 class IPAInterface
 {
 public:
@@ -134,7 +158,8 @@ public:
 	virtual int start() = 0;
 	virtual void stop() = 0;
 
-	virtual void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+	virtual void configure(const CameraSensorInfo &sensorInfo,
+			       const std::map<unsigned int, IPAStream> &streamConfig,
 			       const std::map<unsigned int, const ControlInfoMap &> &entityControls) = 0;
 
 	virtual void mapBuffers(const std::vector<IPABuffer> &buffers) = 0;

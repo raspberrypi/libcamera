@@ -15,6 +15,7 @@
 #include <libcamera/controls.h>
 #include <libipa/ipa_interface_wrapper.h>
 
+#include "camera_sensor.h"
 #include "device_enumerator.h"
 #include "ipa_context_wrapper.h"
 #include "media_device.h"
@@ -66,9 +67,17 @@ public:
 		report(Op_stop, TestPass);
 	}
 
-	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+	void configure(const CameraSensorInfo &sensorInfo,
+		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override
 	{
+		/* Verify sensorInfo. */
+		if (sensorInfo.outputSize.width != 2560 ||
+		    sensorInfo.outputSize.height != 1940) {
+			cerr << "configure(): Invalid sensor info size "
+			     << sensorInfo.outputSize.toString();
+		}
+
 		/* Verify streamConfig. */
 		if (streamConfig.size() != 2) {
 			cerr << "configure(): Invalid number of streams "
@@ -293,13 +302,22 @@ protected:
 		int ret;
 
 		/* Test configure(). */
+		CameraSensorInfo sensorInfo{
+			.model = "sensor",
+			.bitsPerPixel = 8,
+			.activeAreaSize = { 2576, 1956 },
+			.analogCrop = { 8, 8, 2560, 1940 },
+			.outputSize = { 2560, 1940 },
+			.pixelRate = 96000000,
+			.lineLength = 2918,
+		};
 		std::map<unsigned int, IPAStream> config{
 			{ 1, { V4L2_PIX_FMT_YUYV, { 1024, 768 } } },
 			{ 2, { V4L2_PIX_FMT_NV12, { 800, 600 } } },
 		};
 		std::map<unsigned int, const ControlInfoMap &> controlInfo;
 		controlInfo.emplace(42, subdev_->controls());
-		ret = INVOKE(configure, config, controlInfo);
+		ret = INVOKE(configure, sensorInfo, config, controlInfo);
 		if (ret == TestFail)
 			return TestFail;
 

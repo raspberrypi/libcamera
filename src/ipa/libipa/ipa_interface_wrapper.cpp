@@ -15,6 +15,7 @@
 #include <ipa/ipa_interface.h>
 
 #include "byte_stream_buffer.h"
+#include "camera_sensor.h"
 
 /**
  * \file ipa_interface_wrapper.h
@@ -115,6 +116,7 @@ void IPAInterfaceWrapper::register_callbacks(struct ipa_context *_ctx,
 }
 
 void IPAInterfaceWrapper::configure(struct ipa_context *_ctx,
+				    const struct ipa_sensor_info *sensor_info,
 				    const struct ipa_stream *streams,
 				    unsigned int num_streams,
 				    const struct ipa_control_info_map *maps,
@@ -123,6 +125,21 @@ void IPAInterfaceWrapper::configure(struct ipa_context *_ctx,
 	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
 
 	ctx->serializer_.reset();
+
+	/* Translate the IPA sensor info. */
+	CameraSensorInfo sensorInfo{};
+	sensorInfo.model = sensor_info->model;
+	sensorInfo.bitsPerPixel = sensor_info->bits_per_pixel;
+	sensorInfo.activeAreaSize = { sensor_info->active_area.width,
+				      sensor_info->active_area.height };
+	sensorInfo.analogCrop = { sensor_info->analog_crop.left,
+				  sensor_info->analog_crop.top,
+				  sensor_info->analog_crop.width,
+				  sensor_info->analog_crop.height };
+	sensorInfo.outputSize = { sensor_info->output_size.width,
+				  sensor_info->output_size.height };
+	sensorInfo.pixelRate = sensor_info->pixel_rate;
+	sensorInfo.lineLength = sensor_info->line_length;
 
 	/* Translate the IPA stream configurations map. */
 	std::map<unsigned int, IPAStream> ipaStreams;
@@ -149,7 +166,7 @@ void IPAInterfaceWrapper::configure(struct ipa_context *_ctx,
 		entityControls.emplace(id, infoMaps[id]);
 	}
 
-	ctx->ipa_->configure(ipaStreams, entityControls);
+	ctx->ipa_->configure(sensorInfo, ipaStreams, entityControls);
 }
 
 void IPAInterfaceWrapper::map_buffers(struct ipa_context *_ctx,

@@ -29,7 +29,8 @@ public:
 	int start() override;
 	void stop() override;
 
-	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+	void configure(const CameraSensorInfo &sensorInfo,
+		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
@@ -126,10 +127,11 @@ void IPAProxyThread::stop()
 	thread_.wait();
 }
 
-void IPAProxyThread::configure(const std::map<unsigned int, IPAStream> &streamConfig,
+void IPAProxyThread::configure(const CameraSensorInfo &sensorInfo,
+			       const std::map<unsigned int, IPAStream> &streamConfig,
 			       const std::map<unsigned int, const ControlInfoMap &> &entityControls)
 {
-	ipa_->configure(streamConfig, entityControls);
+	ipa_->configure(sensorInfo, streamConfig, entityControls);
 }
 
 void IPAProxyThread::mapBuffers(const std::vector<IPABuffer> &buffers)

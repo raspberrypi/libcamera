@@ -29,7 +29,8 @@ public:
 	int init(const IPASettings &settings) override { return 0; }
 	int start() override { return 0; }
 	void stop() override {}
-	void configure(const std::map<unsigned int, IPAStream> &streamConfig,
+	void configure(const CameraSensorInfo &sensorInfo,
+		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override {}
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override {}
 	void unmapBuffers(const std::vector<unsigned int> &ids) override {}

@@ -37,6 +37,7 @@ public:
 private:
 	int parseOptions(int argc, char *argv[]);
 	int prepareConfig();
+	int listControls();
 	int listProperties();
 	int infoConfiguration();
 	int run();
@@ -182,6 +183,8 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptInfo, OptionNone,
 			 "Display information about stream(s)", "info");
 	parser.addOption(OptList, OptionNone, "List all cameras", "list");
+	parser.addOption(OptListControls, OptionNone, "List cameras controls",
+			 "list-controls");
 	parser.addOption(OptListProperties, OptionNone, "List cameras properties",
 			 "list-properties");
 
@@ -276,6 +279,25 @@ int CamApp::prepareConfig()
 	return 0;
 }
 
+int CamApp::listControls()
+{
+	if (!camera_) {
+		std::cout << "Cannot list controls without a camera"
+			  << std::endl;
+		return -EINVAL;
+	}
+
+	for (const auto &ctrl : camera_->controls()) {
+		const ControlId *id = ctrl.first;
+		const ControlInfo &info = ctrl.second;
+
+		std::cout << "Control: " << id->name() << ": "
+			  << info.toString() << std::endl;
+	}
+
+	return 0;
+}
+
 int CamApp::listProperties()
 {
 	if (!camera_) {
@@ -337,6 +359,12 @@ int CamApp::run()
 			std::cout << index << ": " << cam->name() << std::endl;
 			index++;
 		}
+	}
+
+	if (options_.isSet(OptListControls)) {
+		ret = listControls();
+		if (ret)
+			return ret;
 	}
 
 	if (options_.isSet(OptListProperties)) {

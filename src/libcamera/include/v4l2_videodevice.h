@@ -211,8 +211,7 @@ public:
 	int setFormat(V4L2DeviceFormat *format);
 	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats();
 
-	int setCrop(Rectangle *rect);
-	int setCompose(Rectangle *rect);
+	int setSelection(unsigned int target, Rectangle *rect);
 
 	int allocateBuffers(unsigned int count,
 			    std::vector<std::unique_ptr<FrameBuffer>> *buffers);
@@ -253,8 +252,6 @@ private:
 
 	std::vector<V4L2PixelFormat> enumPixelformats();
 	std::vector<SizeRange> enumSizes(V4L2PixelFormat pixelFormat);
-
-	int setSelection(unsigned int target, Rectangle *rect);
 
 	int requestBuffers(unsigned int count, enum v4l2_memory memoryType);
 	int createBuffers(unsigned int count,

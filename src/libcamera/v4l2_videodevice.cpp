@@ -1108,25 +1108,14 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(V4L2PixelFormat pixelFormat)
 }
 
 /**
- * \brief Set a crop rectangle on the V4L2 video device node
- * \param[inout] rect The rectangle describing the crop target area
+ * \brief Set a selection rectangle \a rect for \a target
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[inout] rect The selection rectangle to be applied
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2VideoDevice::setCrop(Rectangle *rect)
-{
-	return setSelection(V4L2_SEL_TGT_CROP, rect);
-}
-
-/**
- * \brief Set a compose rectangle on the V4L2 video device node
- * \param[inout] rect The rectangle describing the compose target area
- * \return 0 on success or a negative error code otherwise
- */
-int V4L2VideoDevice::setCompose(Rectangle *rect)
-{
-	return setSelection(V4L2_SEL_TGT_COMPOSE, rect);
-}
-
 int V4L2VideoDevice::setSelection(unsigned int target, Rectangle *rect)
 {
 	struct v4l2_selection sel = {};

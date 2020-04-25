@@ -299,30 +299,24 @@ const ControlInfoMap &CameraSensor::controls() const
 
 /**
  * \brief Read controls from the sensor
- * \param[inout] ctrls The list of controls to read
+ * \param[in] ids The list of control to read, specified by their ID
  *
- * This method reads the value of all controls contained in \a ctrls, and stores
- * their values in the corresponding \a ctrls entry.
+ * This method reads the value of all controls contained in \a ids, and returns
+ * their values as a ControlList.
  *
- * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is a compound control, or if any
- * other error occurs during validation of the requested controls, no control is
- * read and this method returns -EINVAL.
- *
- * If an error occurs while reading the controls, the index of the first control
- * that couldn't be read is returned. The value of all controls below that index
- * are updated in \a ctrls, while the value of all the other controls are not
- * changed.
+ * If any control in \a ids is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
+ * during validation of the requested controls, no control is read and this
+ * method returns an empty control list.
  *
  * \sa V4L2Device::getControls()
  *
- * \return 0 on success or an error code otherwise
- * \retval -EINVAL One of the control is not supported or not accessible
- * \retval i The index of the control that failed
+ * \return The control values in a ControlList on success, or an empty list on
+ * error
  */
-int CameraSensor::getControls(ControlList *ctrls)
+ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
 {
-	return subdev_->getControls(ctrls);
+	return subdev_->getControls(ids);
 }
 
 /**
@@ -340,10 +334,9 @@ int CameraSensor::getControls(ControlList *ctrls)
  * \a ctrls entry.
  *
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, is a
- * compound control, or if any other error occurs during validation of
- * the requested controls, no control is written and this method returns
- * -EINVAL.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
+ * error occurs during validation of the requested controls, no control is
+ * written and this method returns -EINVAL.
  *
  * If an error occurs while writing the controls, the index of the first
  * control that couldn't be written is returned. All controls below that index

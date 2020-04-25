@@ -147,46 +147,51 @@ void V4L2Device::close()
 
 /**
  * \brief Read controls from the device
- * \param[inout] ctrls The list of controls to read
+ * \param[in] ids The list of controls to read, specified by their ID
  *
- * This method reads the value of all controls contained in \a ctrls, and stores
- * their values in the corresponding \a ctrls entry.
+ * This method reads the value of all controls contained in \a ids, and returns
+ * their values as a ControlList.
  *
- * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * If any control in \a ids is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
  * during validation of the requested controls, no control is read and this
- * method returns -EINVAL.
+ * method returns an empty control list.
  *
- * If an error occurs while reading the controls, the index of the first control
- * that couldn't be read is returned. The value of all controls below that index
- * are updated in \a ctrls, while the value of all the other controls are not
- * changed.
- *
- * \return 0 on success or an error code otherwise
- * \retval -EINVAL One of the control is not supported or not accessible
- * \retval i The index of the control that failed
+ * \return The control values in a ControlList on success, or an empty list on
+ * error
  */
-int V4L2Device::getControls(ControlList *ctrls)
+ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 {
-	unsigned int count = ctrls->size();
+	unsigned int count = ids.size();
 	if (count == 0)
-		return 0;
+		return {};
+
+	ControlList ctrls{ controls_ };
+
+	/*
+	 * Start by filling the ControlList. This can't be combined with filling
+	 * v4l2Ctrls, as updateControls() relies on both containers having the
+	 * same order, and the control list is based on a map, which is not
+	 * sorted by insertion order.
+	 */
+	for (uint32_t id : ids) {
+		const auto iter = controls_.find(id);
+		if (iter == controls_.end()) {
+			LOG(V4L2, Error)
+				<< "Control " << utils::hex(id) << " not found";
+			return {};
+		}
+
+		ctrls.set(id, {});
+	}
 
 	struct v4l2_ext_control v4l2Ctrls[count];
 	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
 
 	unsigned int i = 0;
-	for (auto &ctrl : *ctrls) {
+	for (auto &ctrl : ctrls) {
 		unsigned int id = ctrl.first;
-		const auto iter = controls_.find(id);
-		if (iter == controls_.end()) {
-			LOG(V4L2, Error)
-				<< "Control " << utils::hex(id) << " not found";
-			return -EINVAL;
-		}
-
 		const struct v4l2_query_ext_ctrl &info = controlInfo_[id];
-		ControlValue &value = ctrl.second;
 
 		if (info.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD) {
 			ControlType type;
@@ -200,9 +205,10 @@ int V4L2Device::getControls(ControlList *ctrls)
 				LOG(V4L2, Error)
 					<< "Unsupported payload control type "
 					<< info.type;
-				return -EINVAL;
+				return {};
 			}
 
+			ControlValue &value = ctrl.second;
 			value.reserve(type, true, info.elems);
 			Span<uint8_t> data = value.data();
 
@@ -227,7 +233,7 @@ int V4L2Device::getControls(ControlList *ctrls)
 		if (errorIdx == 0 || errorIdx >= count) {
 			LOG(V4L2, Error) << "Unable to read controls: "
 					 << strerror(-ret);
-			return -EINVAL;
+			return {};
 		}
 
 		/* A specific control failed. */
@@ -237,9 +243,9 @@ int V4L2Device::getControls(ControlList *ctrls)
 		ret = errorIdx;
 	}
 
-	updateControls(ctrls, v4l2Ctrls, count);
+	updateControls(&ctrls, v4l2Ctrls, count);
 
-	return ret;
+	return ctrls;
 }
 
 /**

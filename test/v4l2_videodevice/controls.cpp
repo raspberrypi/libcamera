@@ -57,15 +57,17 @@ protected:
 		const ControlInfo &u8 = infoMap.find(VIVID_CID_U8_4D_ARRAY)->second;
 
 		/* Test getting controls. */
-		ControlList ctrls(infoMap);
-		ctrls.set(V4L2_CID_BRIGHTNESS, -1);
-		ctrls.set(V4L2_CID_CONTRAST, -1);
-		ctrls.set(V4L2_CID_SATURATION, -1);
-		ctrls.set(VIVID_CID_U8_4D_ARRAY, 0);
-
-		int ret = capture_->getControls(&ctrls);
-		if (ret) {
+		ControlList ctrls = capture_->getControls({ V4L2_CID_BRIGHTNESS,
+							    V4L2_CID_CONTRAST,
+							    V4L2_CID_SATURATION,
+							    VIVID_CID_U8_4D_ARRAY });
+		if (ctrls.empty()) {
 			cerr << "Failed to get controls" << endl;
+			return TestFail;
+		}
+
+		if (ctrls.infoMap() != &infoMap) {
+			cerr << "Incorrect infoMap for retrieved controls" << endl;
 			return TestFail;
 		}
 
@@ -97,7 +99,7 @@ protected:
 		std::fill(u8Values.begin(), u8Values.end(), u8.min().get<uint8_t>());
 		ctrls.set(VIVID_CID_U8_4D_ARRAY, Span<const uint8_t>(u8Values));
 
-		ret = capture_->setControls(&ctrls);
+		int ret = capture_->setControls(&ctrls);
 		if (ret) {
 			cerr << "Failed to set controls" << endl;
 			return TestFail;

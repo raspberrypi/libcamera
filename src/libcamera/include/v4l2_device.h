@@ -26,7 +26,7 @@ public:
 
 	const ControlInfoMap &controls() const { return controls_; }
 
-	int getControls(ControlList *ctrls);
+	ControlList getControls(const std::vector<uint32_t> &ids);
 	int setControls(ControlList *ctrls);
 
 	const std::string &deviceNode() const { return deviceNode_; }

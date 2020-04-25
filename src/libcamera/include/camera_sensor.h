@@ -43,7 +43,7 @@ public:
 	int setFormat(V4L2SubdeviceFormat *format);
 
 	const ControlInfoMap &controls() const;
-	int getControls(ControlList *ctrls);
+	ControlList getControls(const std::vector<uint32_t> &ids);
 	int setControls(ControlList *ctrls);
 
 	const ControlList &properties() const { return properties_; }

@@ -134,27 +134,45 @@ int V4L2Subdevice::open()
  */
 
 /**
- * \brief Set a crop rectangle on one of the V4L2 subdevice pads
+ * \brief Set selection rectangle \a rect for \a target
  * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
- * \param[inout] rect The rectangle describing crop target area
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[inout] rect The selection rectangle to be applied
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setCrop(unsigned int pad, Rectangle *rect)
+int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
+				Rectangle *rect)
 {
-	return setSelection(pad, V4L2_SEL_TGT_CROP, rect);
-}
+	struct v4l2_subdev_selection sel = {};
 
-/**
- * \brief Set a compose rectangle on one of the V4L2 subdevice pads
- * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
- * \param[inout] rect The rectangle describing the compose target area
- * \return 0 on success or a negative error code otherwise
- */
-int V4L2Subdevice::setCompose(unsigned int pad, Rectangle *rect)
-{
-	return setSelection(pad, V4L2_SEL_TGT_COMPOSE, rect);
-}
+	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	sel.pad = pad;
+	sel.target = target;
+	sel.flags = 0;
 
+	sel.r.left = rect->x;
+	sel.r.top = rect->y;
+	sel.r.width = rect->width;
+	sel.r.height = rect->height;
+
+	int ret = ioctl(VIDIOC_SUBDEV_S_SELECTION, &sel);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Unable to set rectangle " << target << " on pad "
+			<< pad << ": " << strerror(-ret);
+		return ret;
+	}
+
+	rect->x = sel.r.left;
+	rect->y = sel.r.top;
+	rect->width = sel.r.width;
+	rect->height = sel.r.height;
+
+	return 0;
+}
 /**
  * \brief Enumerate all media bus codes and frame sizes on a \a pad
  * \param[in] pad The 0-indexed pad number to enumerate formats on
@@ -341,37 +359,6 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 	}
 
 	return sizes;
-}
-
-int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
-				Rectangle *rect)
-{
-	struct v4l2_subdev_selection sel = {};
-
-	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	sel.pad = pad;
-	sel.target = target;
-	sel.flags = 0;
-
-	sel.r.left = rect->x;
-	sel.r.top = rect->y;
-	sel.r.width = rect->width;
-	sel.r.height = rect->height;
-
-	int ret = ioctl(VIDIOC_SUBDEV_S_SELECTION, &sel);
-	if (ret < 0) {
-		LOG(V4L2, Error)
-			<< "Unable to set rectangle " << target << " on pad "
-			<< pad << ": " << strerror(-ret);
-		return ret;
-	}
-
-	rect->x = sel.r.left;
-	rect->y = sel.r.top;
-	rect->width = sel.r.width;
-	rect->height = sel.r.height;
-
-	return 0;
 }
 
 } /* namespace libcamera */

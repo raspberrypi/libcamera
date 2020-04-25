@@ -46,8 +46,8 @@ public:
 
 	const MediaEntity *entity() const { return entity_; }
 
-	int setCrop(unsigned int pad, Rectangle *rect);
-	int setCompose(unsigned int pad, Rectangle *rect);
+	int setSelection(unsigned int pad, unsigned int target,
+			 Rectangle *rect);
 
 	ImageFormats formats(unsigned int pad);
 
@@ -66,9 +66,6 @@ private:
 	std::vector<unsigned int> enumPadCodes(unsigned int pad);
 	std::vector<SizeRange> enumPadSizes(unsigned int pad,
 					    unsigned int code);
-
-	int setSelection(unsigned int pad, unsigned int target,
-			 Rectangle *rect);
 
 	const MediaEntity *entity_;
 };

@@ -1135,11 +1135,11 @@ int ImgUDevice::configureInput(const Size &size,
 		.width = inputFormat->size.width,
 		.height = inputFormat->size.height,
 	};
-	ret = imgu_->setCrop(PAD_INPUT, &rect);
+	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_CROP, &rect);
 	if (ret)
 		return ret;
 
-	ret = imgu_->setCompose(PAD_INPUT, &rect);
+	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_COMPOSE, &rect);
 	if (ret)
 		return ret;
 

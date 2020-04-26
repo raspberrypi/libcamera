@@ -70,8 +70,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 
 	/* Open the camera and start capture. */
 	ret = openCamera();
-	if (ret < 0)
+	if (ret < 0) {
 		quit();
+		return;
+	}
 
 	startStopAction_->setChecked(true);
 }

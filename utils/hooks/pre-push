@@ -32,12 +32,35 @@ do
 		range="$remote_sha..$local_sha"
 	fi
 
+	#
 	# Find invalid commits.
-	commit=$(git rev-list -n 1 --grep '^---' "$range")
-	if [ -n "$commit" ]
+	#
+	errors=0
+	for commit in $(git rev-list "$range")
+	do
+		msg=$(git cat-file commit "$commit")
+
+		# 1. The commit message shall not contain a local changelog.
+		if echo "$msg" | grep -q '^--- *$'
+		then
+			echo >&2 "Found local changelog in commit $commit"
+			errors=$((errors+1))
+		fi
+
+		# 2. The commit message shall have a Signed-off-by line
+		# corresponding the committer.
+		committer=$(echo "$msg" | grep '^committer ' | head -1 | \
+				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
+		if ! echo "$msg" | grep -F -q "Signed-off-by: ${committer}"
+		then
+			echo >&2 "Missing committer Signed-off-by in commit $commit"
+			errors=$((errors+1))
+		fi
+	done
+
+	if [ $errors != 0 ]
 	then
-		echo >&2 "Found local changelog in $local_ref, not pushing"
-		echo >&2 "Check commit $commit"
+		echo >&2 "Found $errors errors in $local_ref, not pushing"
 		exit 1
 	fi
 done

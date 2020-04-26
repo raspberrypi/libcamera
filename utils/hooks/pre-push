@@ -56,6 +56,13 @@ do
 			echo >&2 "Missing committer Signed-off-by in commit $commit"
 			errors=$((errors+1))
 		fi
+
+		# 3. A Reviewed-by is required.
+		if ! echo "$msg" | grep -q '^Reviewed-by: '
+		then
+			echo >&2 "No Reviewed-by in commit $commit"
+			errors=$((errors+1))
+		fi
 	done
 
 	if [ $errors != 0 ]

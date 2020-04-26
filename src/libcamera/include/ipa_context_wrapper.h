@@ -19,7 +19,7 @@ public:
 	IPAContextWrapper(struct ipa_context *context);
 	~IPAContextWrapper();
 
-	int init() override;
+	int init(const IPASettings &settings) override;
 	int start() override;
 	void stop() override;
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,

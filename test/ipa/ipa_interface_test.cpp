@@ -98,7 +98,8 @@ protected:
 		}
 
 		/* Test initialization of IPA module. */
-		ipa_->init();
+		IPASettings settings;
+		ipa_->init(settings);
 		timer.start(1000);
 		while (timer.isRunning() && trace_ != IPAOperationInit)
 			dispatcher->processEvents();

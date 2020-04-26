@@ -79,11 +79,15 @@ void *IPAInterfaceWrapper::get_interface(struct ipa_context *_ctx)
 	return ctx->ipa_.get();
 }
 
-void IPAInterfaceWrapper::init(struct ipa_context *_ctx)
+void IPAInterfaceWrapper::init(struct ipa_context *_ctx,
+			       const struct ipa_settings *settings)
 {
 	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
 
-	ctx->ipa_->init();
+	IPASettings ipaSettings{
+		.configurationFile = settings->configuration_file
+	};
+	ctx->ipa_->init(ipaSettings);
 }
 
 int IPAInterfaceWrapper::start(struct ipa_context *_ctx)

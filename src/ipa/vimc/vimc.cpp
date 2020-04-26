@@ -31,7 +31,7 @@ public:
 	IPAVimc();
 	~IPAVimc();
 
-	int init() override;
+	int init(const IPASettings &settings) override;
 
 	int start() override;
 	void stop() override;
@@ -61,7 +61,7 @@ IPAVimc::~IPAVimc()
 		::close(fd_);
 }
 
-int IPAVimc::init()
+int IPAVimc::init(const IPASettings &settings)
 {
 	trace(IPAOperationInit);
 

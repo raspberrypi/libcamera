@@ -25,7 +25,7 @@ class IPAProxyThread : public IPAProxy, public Object
 public:
 	IPAProxyThread(IPAModule *ipam);
 
-	int init() override;
+	int init(const IPASettings &settings) override;
 	int start() override;
 	void stop() override;
 
@@ -97,9 +97,9 @@ IPAProxyThread::IPAProxyThread(IPAModule *ipam)
 	valid_ = true;
 }
 
-int IPAProxyThread::init()
+int IPAProxyThread::init(const IPASettings &settings)
 {
-	int ret = ipa_->init();
+	int ret = ipa_->init(settings);
 	if (ret)
 		return ret;
 

@@ -385,7 +385,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (data->ipa_ == nullptr)
 		LOG(VIMC, Warning) << "no matching IPA found";
 	else
-		data->ipa_->init();
+		data->ipa_->init(IPASettings{});
 
 	/* Locate and open the capture video node. */
 	if (data->init(media))

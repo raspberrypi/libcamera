@@ -43,8 +43,14 @@ public:
 	{
 	}
 
-	int init() override
+	int init(const IPASettings &settings) override
 	{
+		if (settings.configurationFile != "/ipa/configuration/file") {
+			cerr << "init(): Invalid configuration file" << endl;
+			report(Op_init, TestFail);
+			return 0;
+		}
+
 		report(Op_init, TestPass);
 		return 0;
 	}
@@ -339,7 +345,10 @@ protected:
 		 * Test init(), start() and stop() last to ensure nothing in the
 		 * wrappers or serializer depends on them being called first.
 		 */
-		ret = INVOKE(init);
+		IPASettings settings{
+			.configurationFile = "/ipa/configuration/file"
+		};
+		ret = INVOKE(init, settings);
 		if (ret == TestFail) {
 			cerr << "Failed to run init()";
 			return TestFail;

@@ -18,6 +18,10 @@ struct ipa_context {
 	const struct ipa_context_ops *ops;
 };
 
+struct ipa_settings {
+	const char *configuration_file;
+};
+
 struct ipa_stream {
 	unsigned int id;
 	unsigned int pixel_format;
@@ -63,7 +67,8 @@ struct ipa_callback_ops {
 struct ipa_context_ops {
 	void (*destroy)(struct ipa_context *ctx);
 	void *(*get_interface)(struct ipa_context *ctx);
-	void (*init)(struct ipa_context *ctx);
+	void (*init)(struct ipa_context *ctx,
+		     const struct ipa_settings *settings);
 	int (*start)(struct ipa_context *ctx);
 	void (*stop)(struct ipa_context *ctx);
 	void (*register_callbacks)(struct ipa_context *ctx,
@@ -100,6 +105,10 @@ struct ipa_context *ipaCreate();
 
 namespace libcamera {
 
+struct IPASettings {
+	std::string configurationFile;
+};
+
 struct IPAStream {
 	unsigned int pixelFormat;
 	Size size;
@@ -121,7 +130,7 @@ class IPAInterface
 public:
 	virtual ~IPAInterface() {}
 
-	virtual int init() = 0;
+	virtual int init(const IPASettings &settings) = 0;
 	virtual int start() = 0;
 	virtual void stop() = 0;
 

@@ -32,7 +32,7 @@ LOG_DEFINE_CATEGORY(IPARkISP1)
 class IPARkISP1 : public IPAInterface
 {
 public:
-	int init() override { return 0; }
+	int init(const IPASettings &settings) override { return 0; }
 	int start() override { return 0; }
 	void stop() override {}
 

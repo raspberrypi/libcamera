@@ -26,7 +26,7 @@ public:
 	IPAProxyLinux(IPAModule *ipam);
 	~IPAProxyLinux();
 
-	int init() override { return 0; }
+	int init(const IPASettings &settings) override { return 0; }
 	int start() override { return 0; }
 	void stop() override {}
 	void configure(const std::map<unsigned int, IPAStream> &streamConfig,

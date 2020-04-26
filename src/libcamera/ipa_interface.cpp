@@ -93,6 +93,16 @@
  */
 
 /**
+ * \struct ipa_settings
+ * \brief IPA initialization settings for the IPA context operations
+ * \sa IPASettings
+ *
+ * \var ipa_settings::configuration_file
+ * \brief The name of the IPA configuration file (may be null or point to an
+ * empty string)
+ */
+
+/**
  * \struct ipa_stream
  * \brief Stream information for the IPA context operations
  *
@@ -231,6 +241,7 @@
  * \var ipa_context_ops::init
  * \brief Initialise the IPA context
  * \param[in] ctx The IPA context
+ * \param[in] settings The IPA initialization settings
  *
  * \sa libcamera::IPAInterface::init()
  */
@@ -309,6 +320,24 @@
  */
 
 namespace libcamera {
+
+/**
+ * \struct IPASettings
+ * \brief IPA interface initialization settings
+ *
+ * The IPASettings structure stores data passed to the IPAInterface::init()
+ * function. The data contains settings that don't depend on a particular camera
+ * or pipeline configuration and are valid for the whole life time of the IPA
+ * interface.
+ */
+
+/**
+ * \var IPASettings::configurationFile
+ * \brief The name of the IPA configuration file
+ *
+ * This field may be an empty string if the IPA doesn't require a configuration
+ * file.
+ */
 
 /**
  * \struct IPAStream
@@ -424,6 +453,11 @@ namespace libcamera {
 /**
  * \fn IPAInterface::init()
  * \brief Initialise the IPAInterface
+ * \param[in] settings The IPA initialization settings
+ *
+ * This function initializes the IPA interface. It shall be called before any
+ * other function of the IPAInterface. The \a settings carry initialization
+ * parameters that are valid for the whole life time of the IPA interface.
  */
 
 /**

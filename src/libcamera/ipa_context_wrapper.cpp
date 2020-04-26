@@ -69,15 +69,18 @@ IPAContextWrapper::~IPAContextWrapper()
 	ctx_->ops->destroy(ctx_);
 }
 
-int IPAContextWrapper::init()
+int IPAContextWrapper::init(const IPASettings &settings)
 {
 	if (intf_)
-		return intf_->init();
+		return intf_->init(settings);
 
 	if (!ctx_)
 		return 0;
 
-	ctx_->ops->init(ctx_);
+	struct ipa_settings c_settings;
+	c_settings.configuration_file = settings.configurationFile.c_str();
+
+	ctx_->ops->init(ctx_, &c_settings);
 
 	return 0;
 }

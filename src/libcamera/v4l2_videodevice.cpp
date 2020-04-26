@@ -544,7 +544,7 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: V4L2Device(deviceNode), cache_(nullptr), fdEvent_(nullptr)
+	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -610,29 +610,32 @@ int V4L2VideoDevice::open()
 	 * devices (POLLIN), and write notifications for OUTPUT video devices
 	 * (POLLOUT).
 	 */
+	EventNotifier::Type notifierType;
+
 	if (caps_.isVideoCapture()) {
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
+		notifierType = EventNotifier::Read;
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	} else if (caps_.isVideoOutput()) {
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
+		notifierType = EventNotifier::Write;
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
 	} else if (caps_.isMetaCapture()) {
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
+		notifierType = EventNotifier::Read;
 		bufferType_ = V4L2_BUF_TYPE_META_CAPTURE;
 	} else if (caps_.isMetaOutput()) {
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
+		notifierType = EventNotifier::Write;
 		bufferType_ = V4L2_BUF_TYPE_META_OUTPUT;
 	} else {
 		LOG(V4L2, Error) << "Device is not a supported type";
 		return -EINVAL;
 	}
 
-	fdEvent_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
-	fdEvent_->setEnabled(false);
+	fdBufferNotifier_ = new EventNotifier(fd(), notifierType);
+	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
+	fdBufferNotifier_->setEnabled(false);
 
 	LOG(V4L2, Debug)
 		<< "Opened device " << caps_.bus_info() << ": "
@@ -699,15 +702,17 @@ int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 	 * devices (POLLIN), and write notifications for OUTPUT video devices
 	 * (POLLOUT).
 	 */
+	EventNotifier::Type notifierType;
+
 	switch (type) {
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT:
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Write);
+		notifierType = EventNotifier::Write;
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_OUTPUT;
 		break;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE:
-		fdEvent_ = new EventNotifier(fd(), EventNotifier::Read);
+		notifierType = EventNotifier::Read;
 		bufferType_ = caps_.isMultiplanar()
 			    ? V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
 			    : V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -717,8 +722,9 @@ int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 		return -EINVAL;
 	}
 
-	fdEvent_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
-	fdEvent_->setEnabled(false);
+	fdBufferNotifier_ = new EventNotifier(fd(), notifierType);
+	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
+	fdBufferNotifier_->setEnabled(false);
 
 	LOG(V4L2, Debug)
 		<< "Opened device " << caps_.bus_info() << ": "
@@ -736,7 +742,7 @@ void V4L2VideoDevice::close()
 		return;
 
 	releaseBuffers();
-	delete fdEvent_;
+	delete fdBufferNotifier_;
 
 	V4L2Device::close();
 }
@@ -1477,7 +1483,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	}
 
 	if (queuedBuffers_.empty())
-		fdEvent_->setEnabled(true);
+		fdBufferNotifier_->setEnabled(true);
 
 	queuedBuffers_[buf.index] = buffer;
 
@@ -1544,7 +1550,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	queuedBuffers_.erase(it);
 
 	if (queuedBuffers_.empty())
-		fdEvent_->setEnabled(false);
+		fdBufferNotifier_->setEnabled(false);
 
 	buffer->metadata_.status = buf.flags & V4L2_BUF_FLAG_ERROR
 				 ? FrameMetadata::FrameError
@@ -1617,7 +1623,7 @@ int V4L2VideoDevice::streamOff()
 	}
 
 	queuedBuffers_.clear();
-	fdEvent_->setEnabled(false);
+	fdBufferNotifier_->setEnabled(false);
 
 	return 0;
 }

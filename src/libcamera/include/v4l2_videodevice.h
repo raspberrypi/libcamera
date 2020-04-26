@@ -270,7 +270,7 @@ private:
 	V4L2BufferCache *cache_;
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
 
-	EventNotifier *fdEvent_;
+	EventNotifier *fdBufferNotifier_;
 };
 
 class V4L2M2MDevice

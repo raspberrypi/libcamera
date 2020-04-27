@@ -102,7 +102,7 @@ std::string IPAProxy::resolvePath(const std::string &file) const
 		std::string ipaProxyDir = root + "src/libcamera/proxy/worker";
 
 		LOG(IPAProxy, Info)
-			<< "libcamera is not installed. Loading proxy workers from'"
+			<< "libcamera is not installed. Loading proxy workers from '"
 			<< ipaProxyDir << "'";
 
 		std::string proxyPath = ipaProxyDir + proxyFile;

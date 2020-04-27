@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <limits.h>
 #include <math.h>
+#include <regex>
 
 #include <libcamera/property_ids.h>
 
@@ -87,6 +88,35 @@ int CameraSensor::init()
 		return -EINVAL;
 	}
 
+	/*
+	 * Extract the camera sensor model name from the media entity name.
+	 *
+	 * There is no standardized naming scheme for sensor entities in the
+	 * Linux kernel at the moment.
+	 *
+	 * - The most common rule, used by I2C sensors, associates the model
+	 *   name with the I2C bus number and address (e.g. 'imx219 0-0010').
+	 *
+	 * - When the sensor exposes multiple subdevs, the model name is
+	 *   usually followed by a function name, as in the smiapp driver (e.g.
+	 *   'jt8ew9 pixel_array 0-0010').
+	 *
+	 * - The vimc driver names its sensors 'Sensor A' and 'Sensor B'.
+	 *
+	 * Other schemes probably exist. As a best effort heuristic, use the
+	 * part of the entity name before the first space if the name contains
+	 * an I2C address, and use the full entity name otherwise.
+	 */
+	std::string entityName = entity_->name();
+	std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
+	std::smatch match;
+
+	if (std::regex_search(entityName, match, i2cRegex))
+		model_ = entityName.substr(0, entityName.find(' '));
+	else
+		model_ = entityName;
+
+	/* Open the subdev. */
 	ret = subdev_->open();
 	if (ret < 0)
 		return ret;
@@ -162,6 +192,16 @@ int CameraSensor::init()
 
 	return 0;
 }
+
+/**
+ * \fn CameraSensor::model()
+ * \brief Retrieve the sensor model name
+ *
+ * The sensor model name is a free-formed string that uniquely identifies the
+ * sensor model.
+ *
+ * \return The sensor model name
+ */
 
 /**
  * \fn CameraSensor::entity()

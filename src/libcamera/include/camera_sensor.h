@@ -33,6 +33,7 @@ public:
 
 	int init();
 
+	const std::string &model() const { return model_; }
 	const MediaEntity *entity() const { return entity_; }
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> &sizes() const { return sizes_; }
@@ -54,6 +55,7 @@ protected:
 private:
 	const MediaEntity *entity_;
 	V4L2Subdevice *subdev_;
+	std::string model_;
 
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;

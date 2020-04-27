@@ -98,8 +98,13 @@ protected:
 		}
 
 		/* Test initialization of IPA module. */
-		IPASettings settings;
-		ipa_->init(settings);
+		std::string conf = ipa_->configurationFile("vimc.conf");
+		int ret = ipa_->init(IPASettings{ conf });
+		if (ret < 0) {
+			cerr << "IPA interface init() failed" << endl;
+			return TestFail;
+		}
+
 		timer.start(1000);
 		while (timer.isRunning() && trace_ != IPAOperationInit)
 			dispatcher->processEvents();
@@ -155,7 +160,7 @@ private:
 	}
 
 	std::shared_ptr<PipelineHandler> pipe_;
-	std::unique_ptr<IPAInterface> ipa_;
+	std::unique_ptr<IPAProxy> ipa_;
 	enum IPAOperationCode trace_;
 	EventNotifier *notifier_;
 	int fd_;

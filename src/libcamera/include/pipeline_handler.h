@@ -15,10 +15,11 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <ipa/ipa_interface.h>
 #include <libcamera/controls.h>
 #include <libcamera/object.h>
 #include <libcamera/stream.h>
+
+#include "ipa_proxy.h"
 
 namespace libcamera {
 
@@ -46,7 +47,7 @@ public:
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
 	ControlList properties_;
-	std::unique_ptr<IPAInterface> ipa_;
+	std::unique_ptr<IPAProxy> ipa_;
 
 private:
 	CameraData(const CameraData &) = delete;

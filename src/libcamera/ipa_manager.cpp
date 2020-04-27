@@ -247,17 +247,17 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
 }
 
 /**
- * \brief Create an IPA interface that matches a given pipeline handler
- * \param[in] pipe The pipeline handler that wants a matching IPA interface
+ * \brief Create an IPA proxy that matches a given pipeline handler
+ * \param[in] pipe The pipeline handler that wants a matching IPA proxy
  * \param[in] minVersion Minimum acceptable version of IPA module
  * \param[in] maxVersion Maximum acceptable version of IPA module
  *
- * \return A newly created IPA interface, or nullptr if no matching
- * IPA module is found or if the IPA interface fails to initialize
+ * \return A newly created IPA proxy, or nullptr if no matching IPA module is
+ * found or if the IPA proxy fails to initialize
  */
-std::unique_ptr<IPAInterface> IPAManager::createIPA(PipelineHandler *pipe,
-						    uint32_t maxVersion,
-						    uint32_t minVersion)
+std::unique_ptr<IPAProxy> IPAManager::createIPA(PipelineHandler *pipe,
+						uint32_t maxVersion,
+						uint32_t minVersion)
 {
 	IPAModule *m = nullptr;
 

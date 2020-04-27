@@ -274,7 +274,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
 	"PipelineHandlerRkISP1",
-	"RkISP1 IPA",
+	"rkisp1",
 };
 
 struct ipa_context *ipaCreate()

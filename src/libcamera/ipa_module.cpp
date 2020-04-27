@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <array>
+#include <ctype.h>
 #include <dlfcn.h>
 #include <elf.h>
 #include <errno.h>
@@ -216,6 +217,11 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
  * \var IPAModuleInfo::name
  * \brief The name of the IPA module
  *
+ * The name may be used to build file system paths to IPA-specific resources.
+ * It shall only contain printable characters, and may not contain '/', '*',
+ * '?' or '\'. For IPA modules included in libcamera, it shall match the
+ * directory of the IPA module in the source tree.
+ *
  * \todo Allow user to choose to isolate open source IPAs
  */
 
@@ -284,6 +290,20 @@ int IPAModule::loadIPAModuleInfo()
 
 	if (info_.moduleAPIVersion != IPA_MODULE_API_VERSION) {
 		LOG(IPAModule, Error) << "IPA module API version mismatch";
+		return -EINVAL;
+	}
+
+	/* Validate the IPA module name. */
+	std::string ipaName = info_.name;
+	auto iter = std::find_if_not(ipaName.begin(), ipaName.end(),
+				     [](unsigned char c) -> bool {
+					     return isprint(c) && c != '/' &&
+						    c != '?' && c != '*' &&
+						    c != '\\';
+				     });
+	if (iter != ipaName.end()) {
+		LOG(IPAModule, Error)
+			<< "Invalid IPA module name '" << ipaName << "'";
 		return -EINVAL;
 	}
 

@@ -58,7 +58,7 @@ protected:
 			IPA_MODULE_API_VERSION,
 			0,
 			"PipelineHandlerVimc",
-			"Dummy IPA for Vimc",
+			"vimc",
 		};
 
 		count += runTest("src/ipa/vimc/ipa_vimc.so", testInfo);

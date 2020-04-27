@@ -13,8 +13,6 @@
 #include "log.h"
 #include "utils.h"
 
-#include <iostream>
-
 /**
  * \file ipa_proxy.h
  * \brief IPA Proxy

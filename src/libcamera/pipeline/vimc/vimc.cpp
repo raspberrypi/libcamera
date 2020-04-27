@@ -382,10 +382,12 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this);
 
 	data->ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
-	if (data->ipa_ == nullptr)
+	if (data->ipa_ != nullptr) {
+		std::string conf = data->ipa_->configurationFile("vimc.conf");
+		data->ipa_->init(IPASettings{ conf });
+	} else {
 		LOG(VIMC, Warning) << "no matching IPA found";
-	else
-		data->ipa_->init(IPASettings{});
+	}
 
 	/* Locate and open the capture video node. */
 	if (data->init(media))

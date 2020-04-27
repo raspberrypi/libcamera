@@ -13,22 +13,27 @@
 
 #include <ipa/ipa_interface.h>
 
-#include "ipa_module.h"
-
 namespace libcamera {
+
+class IPAModule;
 
 class IPAProxy : public IPAInterface
 {
 public:
-	IPAProxy();
+	IPAProxy(IPAModule *ipam);
 	~IPAProxy();
 
 	bool isValid() const { return valid_; }
+
+	std::string configurationFile(const std::string &file) const;
 
 protected:
 	std::string resolvePath(const std::string &file) const;
 
 	bool valid_;
+
+private:
+	IPAModule *ipam_;
 };
 
 class IPAProxyFactory

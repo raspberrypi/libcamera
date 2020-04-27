@@ -73,7 +73,7 @@ private:
 };
 
 IPAProxyThread::IPAProxyThread(IPAModule *ipam)
-	: running_(false)
+	: IPAProxy(ipam), running_(false)
 {
 	if (!ipam->load())
 		return;

@@ -44,7 +44,7 @@ private:
 };
 
 IPAProxyLinux::IPAProxyLinux(IPAModule *ipam)
-	: proc_(nullptr), socket_(nullptr)
+	: IPAProxy(ipam), proc_(nullptr), socket_(nullptr)
 {
 	LOG(IPAProxy, Debug)
 		<< "initializing dummy proxy: loading IPA from "

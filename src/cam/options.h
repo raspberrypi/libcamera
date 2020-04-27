@@ -71,10 +71,12 @@ public:
 	{
 	};
 
+	virtual ~KeyValueParser() {}
+
 	bool addOption(const char *name, OptionType type, const char *help,
 		       OptionArgument argument = ArgumentNone);
 
-	Options parse(const char *arguments);
+	virtual Options parse(const char *arguments);
 	void usage(int indent);
 
 private:

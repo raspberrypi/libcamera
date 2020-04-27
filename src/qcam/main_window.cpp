@@ -280,28 +280,24 @@ void MainWindow::toggleCapture(bool start)
  */
 int MainWindow::startCapture()
 {
+	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
 	int ret;
 
+	/* Verify roles are supported. */
+	if (roles.size() != 1) {
+		qCritical() << "Only one stream supported";
+		return -EINVAL;
+	}
+
+	if (roles[0] != StreamRole::Viewfinder) {
+		qCritical() << "Only viewfinder supported";
+		return -EINVAL;
+	}
+
 	/* Configure the camera. */
-	config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
+	config_ = camera_->generateConfiguration(roles);
 
 	StreamConfiguration &cfg = config_->at(0);
-
-	if (options_.isSet(OptSize)) {
-		const std::vector<OptionValue> &sizeOptions =
-			options_[OptSize].toArray();
-
-		/* Set desired stream size if requested. */
-		for (const auto &value : sizeOptions) {
-			KeyValueParser::Options opt = value.toKeyValues();
-
-			if (opt.isSet("width"))
-				cfg.size.width = opt["width"];
-
-			if (opt.isSet("height"))
-				cfg.size.height = opt["height"];
-		}
-	}
 
 	/* Use a format supported by the viewfinder if available. */
 	std::vector<PixelFormat> formats = cfg.formats().pixelformats();
@@ -314,6 +310,13 @@ int MainWindow::startCapture()
 			cfg.pixelFormat = format;
 			break;
 		}
+	}
+
+	/* Allow user to override configuration. */
+	if (StreamKeyValueParser::updateConfiguration(config_.get(),
+						      options_[OptStream])) {
+		qWarning() << "Failed to update configuration";
+		return -EINVAL;
 	}
 
 	CameraConfiguration::Status validation = config_->validate();

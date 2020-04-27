@@ -23,7 +23,7 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/stream.h>
 
-#include "../cam/options.h"
+#include "../cam/stream_options.h"
 #include "viewfinder.h"
 
 using namespace libcamera;
@@ -34,7 +34,7 @@ class QComboBox;
 enum {
 	OptCamera = 'c',
 	OptHelp = 'h',
-	OptSize = 's',
+	OptStream = 's',
 };
 
 class MainWindow : public QMainWindow

@@ -13,8 +13,9 @@
 
 #include <libcamera/camera_manager.h>
 
-#include "main_window.h"
 #include "../cam/options.h"
+#include "../cam/stream_options.h"
+#include "main_window.h"
 
 void signalHandler(int signal)
 {
@@ -24,11 +25,7 @@ void signalHandler(int signal)
 
 OptionsParser::Options parseOptions(int argc, char *argv[])
 {
-	KeyValueParser sizeParser;
-	sizeParser.addOption("width", OptionInteger, "Width in pixels",
-			     ArgumentRequired);
-	sizeParser.addOption("height", OptionInteger, "Height in pixels",
-			     ArgumentRequired);
+	StreamKeyValueParser streamKeyValue;
 
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
@@ -36,8 +33,8 @@ OptionsParser::Options parseOptions(int argc, char *argv[])
 			 ArgumentRequired, "camera");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
-	parser.addOption(OptSize, &sizeParser, "Set the stream size",
-			 "size", true);
+	parser.addOption(OptStream, &streamKeyValue,
+			 "Set configuration of a camera stream", "stream", true);
 
 	OptionsParser::Options options = parser.parse(argc, argv);
 	if (options.isSet(OptHelp))

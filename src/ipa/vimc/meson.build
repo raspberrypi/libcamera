@@ -17,3 +17,5 @@ if ipa_sign_module
                   install : true,
                   install_dir : ipa_install_dir)
 endif
+
+subdir('data')

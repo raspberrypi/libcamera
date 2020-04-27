@@ -42,9 +42,9 @@ protected:
 		const ControlInfoMap &infoMap = camera_->controls();
 		ControlList list(infoMap);
 
-		list.set(controls::Brightness, 255);
-		list.set(controls::Contrast, 128);
-		list.set(controls::Saturation, 50);
+		list.set(controls::Brightness, 0.5f);
+		list.set(controls::Contrast, 1.2f);
+		list.set(controls::Saturation, 0.2f);
 
 		/*
 		 * Serialize the control list, this should fail as the control

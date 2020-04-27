@@ -68,7 +68,7 @@ protected:
 		 * Set a control, and verify that the list now contains it, and
 		 * nothing else.
 		 */
-		list.set(controls::Brightness, 255);
+		list.set(controls::Brightness, -0.5f);
 
 		if (list.empty()) {
 			cout << "List should not be empty" << endl;
@@ -94,7 +94,7 @@ protected:
 			return TestFail;
 		}
 
-		if (list.get(controls::Brightness) != 255) {
+		if (list.get(controls::Brightness) != -0.5f) {
 			cout << "Incorrest Brightness control value" << endl;
 			return TestFail;
 		}
@@ -105,8 +105,8 @@ protected:
 		}
 
 		/* Update the first control and set a second one. */
-		list.set(controls::Brightness, 64);
-		list.set(controls::Contrast, 128);
+		list.set(controls::Brightness, 0.0f);
+		list.set(controls::Contrast, 1.5f);
 
 		if (!list.contains(controls::Contrast) ||
 		    !list.contains(controls::Contrast)) {
@@ -114,8 +114,8 @@ protected:
 			return TestFail;
 		}
 
-		if (list.get(controls::Brightness) != 64 ||
-		    list.get(controls::Contrast) != 128) {
+		if (list.get(controls::Brightness) != 0.0f ||
+		    list.get(controls::Contrast) != 1.5f) {
 			cout << "Failed to retrieve control value" << endl;
 			return TestFail;
 		}
@@ -124,11 +124,11 @@ protected:
 		 * Update both controls and verify that the container doesn't
 		 * grow.
 		 */
-		list.set(controls::Brightness, 10);
-		list.set(controls::Contrast, 20);
+		list.set(controls::Brightness, 0.5f);
+		list.set(controls::Contrast, 1.1f);
 
-		if (list.get(controls::Brightness) != 10 ||
-		    list.get(controls::Contrast) != 20) {
+		if (list.get(controls::Brightness) != 0.5f ||
+		    list.get(controls::Contrast) != 1.1f) {
 			cout << "Failed to update control value" << endl;
 			return TestFail;
 		}

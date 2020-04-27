@@ -188,6 +188,7 @@ private:
 details::StringSplitter split(const std::string &str, const std::string &delim);
 
 std::string libcameraBuildPath();
+std::string libcameraSourcePath();
 
 } /* namespace utils */
 

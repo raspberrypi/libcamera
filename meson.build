@@ -93,6 +93,12 @@ if get_option('test')
     subdir('test')
 endif
 
+# Create a symlink from the build root to the source root. This is used when
+# running libcamera from the build directory to locate resources in the source
+# directory (such as IPA configuration files).
+run_command('ln', '-fsT', meson.source_root(),
+            join_paths(meson.build_root(), 'source'))
+
 configure_file(output : 'config.h', configuration : config_h)
 
 pkg_mod = import('pkgconfig')

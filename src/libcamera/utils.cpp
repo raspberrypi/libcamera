@@ -10,10 +10,13 @@
 #include <dlfcn.h>
 #include <elf.h>
 #include <iomanip>
+#include <limits.h>
 #include <link.h>
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 /**
@@ -360,9 +363,10 @@ bool isLibcameraInstalled()
  *
  * During development, it is useful to run libcamera binaries directly from the
  * build directory without installing them. This function helps components that
- * need to locate resources, such as IPA modules or IPA proxy workers, by
- * providing them with the path to the root of the build directory. Callers can
- * then use it to complement or override searches in system-wide directories.
+ * need to locate resources in the build tree, such as IPA modules or IPA proxy
+ * workers, by providing them with the path to the root of the build directory.
+ * Callers can then use it to complement or override searches in system-wide
+ * directories.
  *
  * If libcamera has been installed, the build directory path is not available
  * and this function returns an empty string.
@@ -383,6 +387,45 @@ std::string libcameraBuildPath()
 		return std::string();
 
 	return dirname(info.dli_fname) + "/../../";
+}
+
+/**
+ * \brief Retrieve the path to the source directory
+ *
+ * During development, it is useful to run libcamera binaries directly from the
+ * build directory without installing them. This function helps components that
+ * need to locate resources in the source tree, such as IPA configuration
+ * files, by providing them with the path to the root of the source directory.
+ * Callers can then use it to complement or override searches in system-wide
+ * directories.
+ *
+ * If libcamera has been installed, the source directory path is not available
+ * and this function returns an empty string.
+ *
+ * \return The path to the source directory if running from a build directory,
+ * or an empty string otherwise
+ */
+std::string libcameraSourcePath()
+{
+	std::string path = libcameraBuildPath();
+	if (path.empty())
+		return std::string();
+
+	path += "source";
+
+	char *real = realpath(path.c_str(), nullptr);
+	if (!real)
+		return std::string();
+
+	path = real;
+	free(real);
+
+	struct stat statbuf;
+	int ret = stat(path.c_str(), &statbuf);
+	if (ret < 0 || (statbuf.st_mode & S_IFMT) != S_IFDIR)
+		return std::string();
+
+	return path + "/";
 }
 
 } /* namespace utils */

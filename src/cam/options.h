@@ -54,6 +54,8 @@ public:
 	bool isSet(const T &opt) const;
 	const OptionValue &operator[](const T &opt) const;
 
+	void invalidate();
+
 private:
 	friend class KeyValueParser;
 	friend class OptionsParser;

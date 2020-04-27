@@ -65,6 +65,12 @@ const OptionValue &OptionsBase<T>::operator[](const T &opt) const
 }
 
 template<typename T>
+void OptionsBase<T>::invalidate()
+{
+	valid_ = false;
+}
+
+template<typename T>
 bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 				const char *optarg)
 {

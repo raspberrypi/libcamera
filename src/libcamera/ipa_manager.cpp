@@ -114,10 +114,7 @@ IPAManager::IPAManager()
 
 	/*
 	 * When libcamera is used before it is installed, load IPAs from the
-	 * same build directory as the libcamera library itself. This requires
-	 * identifying the path of the libcamera.so, and referencing a relative
-	 * path for the IPA from that point. We need to recurse one level of
-	 * sub-directories to match the build tree.
+	 * same build directory as the libcamera library itself.
 	 */
 	std::string root = utils::libcameraBuildPath();
 	if (!root.empty()) {

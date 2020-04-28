@@ -230,4 +230,13 @@ controls:
         Specify a fixed saturation parameter. Normal saturation is given by
         the value 1.0; larger values produce more saturated colours; 0.0
         produces a greyscale image.
+
+  - SensorBlackLevels:
+      type: int32_t
+      description: |
+        Reports the sensor black levels used for processing a frame, in the
+        order R, Gr, Gb, B. These values are returned as numbers out of a 16-bit
+        pixel range (as if pixels ranged from 0 to 65535). The SensorBlackLevels
+        control can only be returned in metadata.
+      size: [4]
 ...

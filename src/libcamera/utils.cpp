@@ -386,7 +386,16 @@ std::string libcameraBuildPath()
 	if (ret == 0)
 		return std::string();
 
-	return dirname(info.dli_fname) + "/../../";
+	std::string path = dirname(info.dli_fname) + "/../../";
+
+	char *real = realpath(path.c_str(), nullptr);
+	if (!real)
+		return std::string();
+
+	path = real;
+	free(real);
+
+	return path + "/";
 }
 
 /**

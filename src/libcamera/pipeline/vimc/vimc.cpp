@@ -394,9 +394,9 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Create and register the camera. */
+	std::string name{ "VIMC " + data->sensor_->model() };
 	std::set<Stream *> streams{ &data->stream_ };
-	std::shared_ptr<Camera> camera = Camera::create(this, "VIMC Sensor B",
-							streams);
+	std::shared_ptr<Camera> camera = Camera::create(this, name, streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	return true;

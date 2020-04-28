@@ -61,6 +61,12 @@ protected:
 
 	int run()
 	{
+		if (sensor_->model() != "Sensor A") {
+			cerr << "Incorrect sensor model '" << sensor_->model()
+			     << "'" << endl;
+			return TestFail;
+		}
+
 		const std::vector<unsigned int> &codes = sensor_->mbusCodes();
 		auto iter = std::find(codes.begin(), codes.end(),
 				      MEDIA_BUS_FMT_ARGB8888_1X32);

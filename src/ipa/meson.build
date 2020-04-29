@@ -25,3 +25,12 @@ foreach pipeline : get_option('pipelines')
         subdir(pipeline)
     endif
 endforeach
+
+if ipa_sign_module
+    # Regenerate the signatures for all IPA modules. We can't simply install the
+    # .sign files, as meson strips the DT_RPATH and DT_RUNPATH from binaries at
+    # install time, which invalidates the signatures.
+    meson.add_install_script('ipa-sign-install.sh',
+                             ipa_install_dir,
+                             ipa_priv_key.full_path())
+endif

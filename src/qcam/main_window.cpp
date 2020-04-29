@@ -296,6 +296,10 @@ int MainWindow::startCapture()
 
 	/* Configure the camera. */
 	config_ = camera_->generateConfiguration(roles);
+	if (!config_) {
+		qWarning() << "Failed to generate configuration from roles";
+		return -EINVAL;
+	}
 
 	StreamConfiguration &cfg = config_->at(0);
 

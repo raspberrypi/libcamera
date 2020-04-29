@@ -69,6 +69,7 @@ private:
 
 	void requestComplete(Request *request);
 	void processCapture();
+	void processViewfinder(FrameBuffer *buffer);
 
 	/* UI elements */
 	QToolBar *toolbar_;
@@ -95,8 +96,11 @@ private:
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;
-	QQueue<FrameBuffer *> doneQueue_;
-	QMutex mutex_;	/* Protects doneQueue_ */
+	Stream *vfStream_;
+	Stream *rawStream_;
+	std::map<Stream *, QQueue<FrameBuffer *>> freeBuffers_;
+	QQueue<std::map<Stream *, FrameBuffer *>> doneQueue_;
+	QMutex mutex_; /* Protects freeBuffers_ and doneQueue_ */
 
 	uint64_t lastBufferTime_;
 	QElapsedTimer frameRateInterval_;

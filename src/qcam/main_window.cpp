@@ -281,17 +281,30 @@ void MainWindow::toggleCapture(bool start)
 int MainWindow::startCapture()
 {
 	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
+	std::vector<Request *> requests;
 	int ret;
 
 	/* Verify roles are supported. */
-	if (roles.size() != 1) {
-		qCritical() << "Only one stream supported";
-		return -EINVAL;
-	}
-
-	if (roles[0] != StreamRole::Viewfinder) {
-		qCritical() << "Only viewfinder supported";
-		return -EINVAL;
+	switch (roles.size()) {
+	case 1:
+		if (roles[0] != StreamRole::Viewfinder) {
+			qWarning() << "Only viewfinder supported for single stream";
+			return -EINVAL;
+		}
+		break;
+	case 2:
+		if (roles[0] != StreamRole::Viewfinder ||
+		    roles[1] != StreamRole::StillCaptureRaw) {
+			qWarning() << "Only viewfinder + raw supported for dual streams";
+			return -EINVAL;
+		}
+		break;
+	default:
+		if (roles.size() != 1) {
+			qWarning() << "Unsuported stream configuration";
+			return -EINVAL;
+		}
+		break;
 	}
 
 	/* Configure the camera. */
@@ -301,17 +314,17 @@ int MainWindow::startCapture()
 		return -EINVAL;
 	}
 
-	StreamConfiguration &cfg = config_->at(0);
+	StreamConfiguration &vfConfig = config_->at(0);
 
 	/* Use a format supported by the viewfinder if available. */
-	std::vector<PixelFormat> formats = cfg.formats().pixelformats();
+	std::vector<PixelFormat> formats = vfConfig.formats().pixelformats();
 	for (const PixelFormat &format : viewfinder_->nativeFormats()) {
 		auto match = std::find_if(formats.begin(), formats.end(),
 					  [&](const PixelFormat &f) {
 						  return f == format;
 					  });
 		if (match != formats.end()) {
-			cfg.pixelFormat = format;
+			vfConfig.pixelFormat = format;
 			break;
 		}
 	}
@@ -331,7 +344,7 @@ int MainWindow::startCapture()
 
 	if (validation == CameraConfiguration::Adjusted)
 		qInfo() << "Stream configuration adjusted to "
-			<< cfg.toString().c_str();
+			<< vfConfig.toString().c_str();
 
 	ret = camera_->configure(config_.get());
 	if (ret < 0) {
@@ -339,10 +352,16 @@ int MainWindow::startCapture()
 		return ret;
 	}
 
+	/* Store stream allocation. */
+	vfStream_ = config_->at(0).stream();
+	if (config_->size() == 2)
+		rawStream_ = config_->at(1).stream();
+	else
+		rawStream_ = nullptr;
+
 	/* Configure the viewfinder. */
-	Stream *stream = cfg.stream();
-	ret = viewfinder_->setFormat(cfg.pixelFormat,
-				     QSize(cfg.size.width, cfg.size.height));
+	ret = viewfinder_->setFormat(vfConfig.pixelFormat,
+				     QSize(vfConfig.size.width, vfConfig.size.height));
 	if (ret < 0) {
 		qInfo() << "Failed to set viewfinder format";
 		return ret;
@@ -350,16 +369,33 @@ int MainWindow::startCapture()
 
 	adjustSize();
 
-	/* Allocate buffers and requests. */
+	/* Allocate and map buffers. */
 	allocator_ = new FrameBufferAllocator(camera_);
-	ret = allocator_->allocate(stream);
-	if (ret < 0) {
-		qWarning() << "Failed to allocate capture buffers";
-		return ret;
+	for (StreamConfiguration &config : *config_) {
+		Stream *stream = config.stream();
+
+		ret = allocator_->allocate(stream);
+		if (ret < 0) {
+			qWarning() << "Failed to allocate capture buffers";
+			goto error;
+		}
+
+		for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
+			/* Map memory buffers and cache the mappings. */
+			const FrameBuffer::Plane &plane = buffer->planes().front();
+			void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+					    plane.fd.fd(), 0);
+			mappedBuffers_[buffer.get()] = { memory, plane.length };
+
+			/* Store buffers on the free list. */
+			freeBuffers_[stream].enqueue(buffer.get());
+		}
 	}
 
-	std::vector<Request *> requests;
-	for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
+	/* Create requests and fill them with buffers from the viewfinder. */
+	while (!freeBuffers_[vfStream_].isEmpty()) {
+		FrameBuffer *buffer = freeBuffers_[vfStream_].dequeue();
+
 		Request *request = camera_->createRequest();
 		if (!request) {
 			qWarning() << "Can't create request";
@@ -367,19 +403,13 @@ int MainWindow::startCapture()
 			goto error;
 		}
 
-		ret = request->addBuffer(stream, buffer.get());
+		ret = request->addBuffer(vfStream_, buffer);
 		if (ret < 0) {
 			qWarning() << "Can't set buffer for request";
 			goto error;
 		}
 
 		requests.push_back(request);
-
-		/* Map memory buffers and cache the mappings. */
-		const FrameBuffer::Plane &plane = buffer->planes().front();
-		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
-				    plane.fd.fd(), 0);
-		mappedBuffers_[buffer.get()] = { memory, plane.length };
 	}
 
 	/* Start the title timer and the camera. */
@@ -424,6 +454,8 @@ error:
 	}
 	mappedBuffers_.clear();
 
+	freeBuffers_.clear();
+
 	delete allocator_;
 	allocator_ = nullptr;
 
@@ -466,6 +498,7 @@ void MainWindow::stopCapture()
 	 * but not processed yet. Clear the queue of done buffers to avoid
 	 * racing with the event handler.
 	 */
+	freeBuffers_.clear();
 	doneQueue_.clear();
 
 	titleTimer_.stop();
@@ -505,12 +538,9 @@ void MainWindow::requestComplete(Request *request)
 	 * are not allowed. Add the buffer to the done queue and post a
 	 * CaptureEvent for the application thread to handle.
 	 */
-	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
-	FrameBuffer *buffer = buffers.begin()->second;
-
 	{
 		QMutexLocker locker(&mutex_);
-		doneQueue_.enqueue(buffer);
+		doneQueue_.enqueue(request->buffers());
 	}
 
 	QCoreApplication::postEvent(this, new CaptureEvent);
@@ -523,16 +553,23 @@ void MainWindow::processCapture()
 	 * if stopCapture() has been called while a CaptureEvent was posted but
 	 * not processed yet. Return immediately in that case.
 	 */
-	FrameBuffer *buffer;
+	std::map<Stream *, FrameBuffer *> buffers;
 
 	{
 		QMutexLocker locker(&mutex_);
 		if (doneQueue_.isEmpty())
 			return;
 
-		buffer = doneQueue_.dequeue();
+		buffers = doneQueue_.dequeue();
 	}
 
+	/* Process buffers. */
+	if (buffers.count(vfStream_))
+		processViewfinder(buffers[vfStream_]);
+}
+
+void MainWindow::processViewfinder(FrameBuffer *buffer)
+{
 	framesCaptured_++;
 
 	const FrameMetadata &metadata = buffer->metadata();
@@ -559,8 +596,7 @@ void MainWindow::queueRequest(FrameBuffer *buffer)
 		return;
 	}
 
-	Stream *stream = config_->at(0).stream();
-	request->addBuffer(stream, buffer);
+	request->addBuffer(vfStream_, buffer);
 
 	camera_->queueRequest(request);
 }

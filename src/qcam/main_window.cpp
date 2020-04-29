@@ -531,8 +531,8 @@ void MainWindow::processCapture()
 	fps = lastBufferTime_ && fps ? 1000000000.0 / fps : 0.0;
 	lastBufferTime_ = metadata.timestamp;
 
-	qInfo() << "seq:" << qSetFieldWidth(6) << qSetPadChar('0')
-		<< metadata.sequence << reset
+	qInfo().noquote()
+		<< QString("seq: %1").arg(metadata.sequence, 6, 10, QLatin1Char('0'))
 		<< "bytesused:" << metadata.planes[0].bytesused
 		<< "timestamp:" << metadata.timestamp
 		<< "fps:" << fixed << qSetRealNumberPrecision(2) << fps;

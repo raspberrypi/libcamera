@@ -14,11 +14,12 @@
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
 
+#include "log.h"
 #include "pipeline_handler.h"
 
 namespace libcamera {
 
-class IPAModule
+class IPAModule : public Loggable
 {
 public:
 	explicit IPAModule(const std::string &libPath);
@@ -36,6 +37,9 @@ public:
 
 	bool match(PipelineHandler *pipe,
 		   uint32_t minVersion, uint32_t maxVersion) const;
+
+protected:
+	std::string logPrefix() const override;
 
 private:
 	struct IPAModuleInfo info_;

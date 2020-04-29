@@ -471,4 +471,9 @@ bool IPAModule::match(PipelineHandler *pipe,
 	       !strcmp(info_.pipelineName, pipe->name());
 }
 
+std::string IPAModule::logPrefix() const
+{
+	return utils::basename(libPath_.c_str());
+}
+
 } /* namespace libcamera */

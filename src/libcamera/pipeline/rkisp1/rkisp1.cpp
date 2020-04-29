@@ -828,6 +828,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		/* \todo Turn this in an hard failure. */
 		LOG(RkISP1, Warning) << "Camera sensor information not available";
 		sensorInfo = {};
+		ret = 0;
 	}
 
 	std::map<unsigned int, IPAStream> streamConfig;

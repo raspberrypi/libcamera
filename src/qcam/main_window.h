@@ -55,6 +55,8 @@ private Q_SLOTS:
 	void toggleCapture(bool start);
 
 	void saveImageAs();
+	void captureRaw();
+	void processRaw(FrameBuffer *buffer);
 
 	void queueRequest(FrameBuffer *buffer);
 
@@ -75,6 +77,7 @@ private:
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
 	QComboBox *cameraCombo_;
+	QAction *saveRaw_;
 	ViewFinder *viewfinder_;
 
 	QIcon iconPlay_;
@@ -96,6 +99,7 @@ private:
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;
+	bool captureRaw_;
 	Stream *vfStream_;
 	Stream *rawStream_;
 	std::map<Stream *, QQueue<FrameBuffer *>> freeBuffers_;

@@ -27,6 +27,8 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
 
+#include "dng_writer.h"
+
 using namespace libcamera;
 
 /**
@@ -48,7 +50,8 @@ public:
 };
 
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
-	: options_(options), cm_(cm), allocator_(nullptr), isCapturing_(false)
+	: saveRaw_(nullptr), options_(options), cm_(cm), allocator_(nullptr),
+	  isCapturing_(false), captureRaw_(false)
 {
 	int ret;
 
@@ -143,6 +146,16 @@ int MainWindow::createToolbars()
 				     "Save As...");
 	action->setShortcut(QKeySequence::SaveAs);
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
+
+#ifdef HAVE_DNG
+	/* Save Raw action. */
+	action = toolbar_->addAction(QIcon::fromTheme("camera-photo",
+						      QIcon(":aperture.svg")),
+				     "Save Raw");
+	action->setEnabled(false);
+	connect(action, &QAction::triggered, this, &MainWindow::captureRaw);
+	saveRaw_ = action;
+#endif
 
 	return 0;
 }
@@ -369,6 +382,10 @@ int MainWindow::startCapture()
 
 	adjustSize();
 
+	/* Configure the raw capture button. */
+	if (saveRaw_)
+		saveRaw_->setEnabled(config_->size() == 2);
+
 	/* Allocate and map buffers. */
 	allocator_ = new FrameBufferAllocator(camera_);
 	for (StreamConfiguration &config : *config_) {
@@ -474,6 +491,9 @@ void MainWindow::stopCapture()
 		return;
 
 	viewfinder_->stop();
+	if (saveRaw_)
+		saveRaw_->setEnabled(false);
+	captureRaw_ = false;
 
 	int ret = camera_->stop();
 	if (ret)
@@ -524,6 +544,32 @@ void MainWindow::saveImageAs()
 	writer.write(image);
 }
 
+void MainWindow::captureRaw()
+{
+	captureRaw_ = true;
+}
+
+void MainWindow::processRaw(FrameBuffer *buffer)
+{
+#ifdef HAVE_DNG
+	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+	QString filename = QFileDialog::getSaveFileName(this, "Save DNG", defaultPath,
+							"DNG Files (*.dng)");
+
+	if (!filename.isEmpty()) {
+		const MappedBuffer &mapped = mappedBuffers_[buffer];
+		DNGWriter::write(filename.toStdString().c_str(), camera_.get(),
+				 rawStream_->configuration(), buffer,
+				 mapped.memory);
+	}
+#endif
+
+	{
+		QMutexLocker locker(&mutex_);
+		freeBuffers_[rawStream_].enqueue(buffer);
+	}
+}
+
 /* -----------------------------------------------------------------------------
  * Request Completion Handling
  */
@@ -566,6 +612,9 @@ void MainWindow::processCapture()
 	/* Process buffers. */
 	if (buffers.count(vfStream_))
 		processViewfinder(buffers[vfStream_]);
+
+	if (buffers.count(rawStream_))
+		processRaw(buffers[rawStream_]);
 }
 
 void MainWindow::processViewfinder(FrameBuffer *buffer)
@@ -597,6 +646,23 @@ void MainWindow::queueRequest(FrameBuffer *buffer)
 	}
 
 	request->addBuffer(vfStream_, buffer);
+
+	if (captureRaw_) {
+		FrameBuffer *buffer = nullptr;
+
+		{
+			QMutexLocker locker(&mutex_);
+			if (!freeBuffers_[rawStream_].isEmpty())
+				buffer = freeBuffers_[rawStream_].dequeue();
+		}
+
+		if (buffer) {
+			request->addBuffer(rawStream_, buffer);
+			captureRaw_ = false;
+		} else {
+			qWarning() << "No free buffer available for RAW capture";
+		}
+	}
 
 	camera_->queueRequest(request);
 }

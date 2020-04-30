@@ -14,5 +14,6 @@ if ipa_sign_module
                   input : mod,
                   output : ipa_name + '.so.sign',
                   command : [ ipa_sign, ipa_priv_key, '@INPUT@', '@OUTPUT@' ],
-                  install : false)
+                  install : false,
+                  build_by_default : true)
 endif

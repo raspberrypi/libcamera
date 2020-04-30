@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include <linux/drm_fourcc.h>
 #include <linux/version.h>
 
 #include <libcamera/event_notifier.h>
@@ -1635,74 +1634,6 @@ V4L2VideoDevice *V4L2VideoDevice::fromEntityName(const MediaDevice *media,
 }
 
 /**
- * \brief Convert a \a v4l2Fourcc to the corresponding PixelFormat
- * \param[in] v4l2Fourcc The V4L2 pixel format (V4L2_PIX_FORMAT_*)
- * \return The PixelFormat corresponding to \a v4l2Fourcc
- */
-PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
-{
-	switch (v4l2Fourcc) {
-	/* RGB formats. */
-	case V4L2_PIX_FMT_RGB24:
-		return PixelFormat(DRM_FORMAT_BGR888);
-	case V4L2_PIX_FMT_BGR24:
-		return PixelFormat(DRM_FORMAT_RGB888);
-	case V4L2_PIX_FMT_RGBA32:
-		return PixelFormat(DRM_FORMAT_ABGR8888);
-	case V4L2_PIX_FMT_ABGR32:
-		return PixelFormat(DRM_FORMAT_ARGB8888);
-	case V4L2_PIX_FMT_ARGB32:
-		return PixelFormat(DRM_FORMAT_BGRA8888);
-	case V4L2_PIX_FMT_BGRA32:
-		return PixelFormat(DRM_FORMAT_RGBA8888);
-
-	/* YUV packed formats. */
-	case V4L2_PIX_FMT_YUYV:
-		return PixelFormat(DRM_FORMAT_YUYV);
-	case V4L2_PIX_FMT_YVYU:
-		return PixelFormat(DRM_FORMAT_YVYU);
-	case V4L2_PIX_FMT_UYVY:
-		return PixelFormat(DRM_FORMAT_UYVY);
-	case V4L2_PIX_FMT_VYUY:
-		return PixelFormat(DRM_FORMAT_VYUY);
-
-	/* YUY planar formats. */
-	case V4L2_PIX_FMT_NV16:
-	case V4L2_PIX_FMT_NV16M:
-		return PixelFormat(DRM_FORMAT_NV16);
-	case V4L2_PIX_FMT_NV61:
-	case V4L2_PIX_FMT_NV61M:
-		return PixelFormat(DRM_FORMAT_NV61);
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV12M:
-		return PixelFormat(DRM_FORMAT_NV12);
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV21M:
-		return PixelFormat(DRM_FORMAT_NV21);
-
-	/* Greyscale formats. */
-	case V4L2_PIX_FMT_GREY:
-		return PixelFormat(DRM_FORMAT_R8);
-
-	/* Compressed formats. */
-	case V4L2_PIX_FMT_MJPEG:
-		return PixelFormat(DRM_FORMAT_MJPEG);
-
-	/* V4L2 formats not yet supported by DRM. */
-	default:
-		/*
-		 * \todo We can't use LOG() in a static method of a Loggable
-		 * class. Until we fix the logger, work around it.
-		 */
-		libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(),
-				LogWarning).stream()
-			<< "Unsupported V4L2 pixel format "
-			<< v4l2Fourcc.toString();
-		return PixelFormat();
-	}
-}
-
-/**
  * \brief Convert \a PixelFormat to its corresponding V4L2 FourCC
  * \param[in] pixelFormat The PixelFormat to convert
  *
@@ -1715,82 +1646,8 @@ PixelFormat V4L2VideoDevice::toPixelFormat(V4L2PixelFormat v4l2Fourcc)
  */
 V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat)
 {
-	return toV4L2PixelFormat(pixelFormat, caps_.isMultiplanar());
-}
-
-/**
- * \brief Convert \a pixelFormat to its corresponding V4L2 FourCC
- * \param[in] pixelFormat The PixelFormat to convert
- * \param[in] multiplanar V4L2 Multiplanar API support flag
- *
- * Multiple V4L2 formats may exist for one PixelFormat when the format uses
- * multiple planes, as V4L2 defines separate 4CCs for contiguous and separate
- * planes formats. Set the \a multiplanar parameter to false to select a format
- * with contiguous planes, or to true to select a format with non-contiguous
- * planes.
- *
- * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
- */
-V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat,
-						   bool multiplanar)
-{
-	switch (pixelFormat) {
-	/* RGB formats. */
-	case DRM_FORMAT_BGR888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_RGB24);
-	case DRM_FORMAT_RGB888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_BGR24);
-	case DRM_FORMAT_ABGR8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_RGBA32);
-	case DRM_FORMAT_ARGB8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_ABGR32);
-	case DRM_FORMAT_BGRA8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_ARGB32);
-	case DRM_FORMAT_RGBA8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_BGRA32);
-
-	/* YUV packed formats. */
-	case DRM_FORMAT_YUYV:
-		return V4L2PixelFormat(V4L2_PIX_FMT_YUYV);
-	case DRM_FORMAT_YVYU:
-		return V4L2PixelFormat(V4L2_PIX_FMT_YVYU);
-	case DRM_FORMAT_UYVY:
-		return V4L2PixelFormat(V4L2_PIX_FMT_UYVY);
-	case DRM_FORMAT_VYUY:
-		return V4L2PixelFormat(V4L2_PIX_FMT_VYUY);
-
-	/*
-	 * YUY planar formats.
-	 * \todo Add support for non-contiguous memory planes
-	 * \todo Select the format variant not only based on \a multiplanar but
-	 * also take into account the formats supported by the device.
-	 */
-	case DRM_FORMAT_NV16:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV16);
-	case DRM_FORMAT_NV61:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV61);
-	case DRM_FORMAT_NV12:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV12);
-	case DRM_FORMAT_NV21:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV21);
-
-	/* Greyscale formats. */
-	case DRM_FORMAT_R8:
-		return V4L2PixelFormat(V4L2_PIX_FMT_GREY);
-
-	/* Compressed formats. */
-	case DRM_FORMAT_MJPEG:
-		return V4L2PixelFormat(V4L2_PIX_FMT_MJPEG);
-	}
-
-	/*
-	 * \todo We can't use LOG() in a static method of a Loggable
-	 * class. Until we fix the logger, work around it.
-	 */
-	libcamera::_log(__FILE__, __LINE__, _LOG_CATEGORY(V4L2)(),
-			LogWarning).stream()
-		<< "Unsupported V4L2 pixel format " << pixelFormat.toString();
-	return {};
+	return V4L2PixelFormat::fromPixelFormat(pixelFormat,
+						caps_.isMultiplanar());
 }
 
 /**

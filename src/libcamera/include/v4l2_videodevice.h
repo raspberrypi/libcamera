@@ -210,10 +210,7 @@ public:
 	static V4L2VideoDevice *fromEntityName(const MediaDevice *media,
 					       const std::string &entity);
 
-	static PixelFormat toPixelFormat(V4L2PixelFormat v4l2Fourcc);
 	V4L2PixelFormat toV4L2PixelFormat(const PixelFormat &pixelFormat);
-	static V4L2PixelFormat toV4L2PixelFormat(const PixelFormat &pixelFormat,
-						 bool multiplanar);
 
 protected:
 	std::string logPrefix() const;

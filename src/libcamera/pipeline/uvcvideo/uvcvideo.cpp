@@ -166,7 +166,7 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 		       std::inserter(deviceFormats, deviceFormats.begin()),
 		       [&](const decltype(v4l2Formats)::value_type &format) {
 			       return decltype(deviceFormats)::value_type{
-				       data->video_->toPixelFormat(format.first),
+				       format.first.toPixelFormat(),
 				       format.second
 			       };
 		       });

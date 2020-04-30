@@ -36,6 +36,10 @@ public:
 
 	std::string toString() const;
 
+	PixelFormat toPixelFormat() const;
+	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat,
+					       bool multiplanar);
+
 private:
 	uint32_t fourcc_;
 };

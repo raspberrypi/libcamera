@@ -35,6 +35,12 @@ private:
 class PixelFormatInfo
 {
 public:
+	enum ColourEncoding {
+		ColourEncodingRGB,
+		ColourEncodingYUV,
+		ColourEncodingRAW,
+	};
+
 	bool isValid() const { return format.isValid(); }
 
 	static const PixelFormatInfo &info(const PixelFormat &format);
@@ -42,6 +48,9 @@ public:
 	/* \todo Add support for non-contiguous memory planes */
 	PixelFormat format;
 	V4L2PixelFormat v4l2Format;
+	unsigned int bitsPerPixel;
+	enum ColourEncoding colourEncoding;
+	bool packed;
 };
 
 } /* namespace libcamera */

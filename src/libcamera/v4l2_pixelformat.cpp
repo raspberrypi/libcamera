@@ -16,6 +16,7 @@
 
 #include <libcamera/pixelformats.h>
 
+#include "formats.h"
 #include "log.h"
 
 /**
@@ -42,71 +43,6 @@ LOG_DECLARE_CATEGORY(V4L2)
  */
 
 namespace {
-
-struct PixelFormatInfo {
-	/* \todo Add support for non-contiguous memory planes */
-	V4L2PixelFormat v4l2Format;
-};
-
-const std::map<PixelFormat, PixelFormatInfo> pf2vpf{
-	/* RGB formats. */
-	{ PixelFormat(DRM_FORMAT_BGR888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB24),
-	} },
-	{ PixelFormat(DRM_FORMAT_RGB888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGR24),
-	} },
-	{ PixelFormat(DRM_FORMAT_ABGR8888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGBA32),
-	} },
-	{ PixelFormat(DRM_FORMAT_ARGB8888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ABGR32),
-	} },
-	{ PixelFormat(DRM_FORMAT_BGRA8888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ARGB32),
-	} },
-	{ PixelFormat(DRM_FORMAT_RGBA8888), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGRA32),
-	} },
-
-	/* YUV packed formats. */
-	{ PixelFormat(DRM_FORMAT_YUYV), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUYV),
-	} },
-	{ PixelFormat(DRM_FORMAT_YVYU), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVYU),
-	} },
-	{ PixelFormat(DRM_FORMAT_UYVY), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_UYVY),
-	} },
-	{ PixelFormat(DRM_FORMAT_VYUY), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_VYUY),
-	} },
-
-	/* YUV planar formats. */
-	{ PixelFormat(DRM_FORMAT_NV16), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV16),
-	} },
-	{ PixelFormat(DRM_FORMAT_NV61), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV61),
-	} },
-	{ PixelFormat(DRM_FORMAT_NV12), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
-	} },
-	{ PixelFormat(DRM_FORMAT_NV21), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
-	} },
-
-	/* Greyscale formats. */
-	{ PixelFormat(DRM_FORMAT_R8), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_GREY),
-	} },
-
-	/* Compressed formats. */
-	{ PixelFormat(DRM_FORMAT_MJPEG), {
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
-	} },
-};
 
 const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	/* RGB formats. */
@@ -233,15 +169,10 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
 V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
 						 bool multiplanar)
 {
-	const auto iter = pf2vpf.find(pixelFormat);
-	if (iter == pf2vpf.end()) {
-		LOG(V4L2, Warning)
-			<< "Unsupported pixel format "
-			<< pixelFormat.toString();
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+	if (!info.isValid())
 		return V4L2PixelFormat();
-	}
 
-	const PixelFormatInfo &info = iter->second;
 	return info.v4l2Format;
 }
 

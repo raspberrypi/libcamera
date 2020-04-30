@@ -12,6 +12,9 @@
 #include <vector>
 
 #include <libcamera/geometry.h>
+#include <libcamera/pixelformats.h>
+
+#include "v4l2_pixelformat.h"
 
 namespace libcamera {
 
@@ -27,6 +30,18 @@ public:
 
 private:
 	std::map<unsigned int, std::vector<SizeRange>> data_;
+};
+
+class PixelFormatInfo
+{
+public:
+	bool isValid() const { return format.isValid(); }
+
+	static const PixelFormatInfo &info(const PixelFormat &format);
+
+	/* \todo Add support for non-contiguous memory planes */
+	PixelFormat format;
+	V4L2PixelFormat v4l2Format;
 };
 
 } /* namespace libcamera */

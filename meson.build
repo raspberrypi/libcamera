@@ -69,6 +69,16 @@ if cc.has_argument('-Wno-c99-designator')
     ]
 endif
 
+# gcc 7.1 introduced processor-specific ABI breakages related to parameter
+# passing on ARM platforms. This generates a large number of messages during
+# compilation with gcc >=7.1 until gcc 9. Silence them.
+if (host_machine.cpu_family() == 'arm' and cc.get_id() == 'gcc' and
+    cc.version().version_compare('>=7.1') and cc.version().version_compare('<9'))
+    cpp_arguments += [
+        '-Wno-psabi',
+    ]
+endif
+
 c_arguments += common_arguments
 cpp_arguments += common_arguments
 

@@ -250,6 +250,9 @@ int MainWindow::openCamera()
 		return -EBUSY;
 	}
 
+	/* Set the combo-box entry with the currently selected Camera. */
+	cameraCombo_->setCurrentText(QString::fromStdString(cameraName));
+
 	return 0;
 }
 

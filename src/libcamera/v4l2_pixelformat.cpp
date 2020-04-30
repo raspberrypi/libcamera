@@ -41,6 +41,103 @@ LOG_DECLARE_CATEGORY(V4L2)
  * explicit value() and implicit uint32_t conversion operators may be used.
  */
 
+namespace {
+
+struct PixelFormatInfo {
+	/* \todo Add support for non-contiguous memory planes */
+	V4L2PixelFormat v4l2Format;
+};
+
+const std::map<PixelFormat, PixelFormatInfo> pf2vpf{
+	/* RGB formats. */
+	{ PixelFormat(DRM_FORMAT_BGR888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB24),
+	} },
+	{ PixelFormat(DRM_FORMAT_RGB888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGR24),
+	} },
+	{ PixelFormat(DRM_FORMAT_ABGR8888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGBA32),
+	} },
+	{ PixelFormat(DRM_FORMAT_ARGB8888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ABGR32),
+	} },
+	{ PixelFormat(DRM_FORMAT_BGRA8888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ARGB32),
+	} },
+	{ PixelFormat(DRM_FORMAT_RGBA8888), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGRA32),
+	} },
+
+	/* YUV packed formats. */
+	{ PixelFormat(DRM_FORMAT_YUYV), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUYV),
+	} },
+	{ PixelFormat(DRM_FORMAT_YVYU), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVYU),
+	} },
+	{ PixelFormat(DRM_FORMAT_UYVY), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_UYVY),
+	} },
+	{ PixelFormat(DRM_FORMAT_VYUY), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_VYUY),
+	} },
+
+	/* YUV planar formats. */
+	{ PixelFormat(DRM_FORMAT_NV16), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV16),
+	} },
+	{ PixelFormat(DRM_FORMAT_NV61), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV61),
+	} },
+	{ PixelFormat(DRM_FORMAT_NV12), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
+	} },
+	{ PixelFormat(DRM_FORMAT_NV21), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
+	} },
+
+	/* Greyscale formats. */
+	{ PixelFormat(DRM_FORMAT_R8), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_GREY),
+	} },
+
+	/* Compressed formats. */
+	{ PixelFormat(DRM_FORMAT_MJPEG), {
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
+	} },
+};
+
+const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
+	/* RGB formats. */
+	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB24), PixelFormat(DRM_FORMAT_BGR888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_BGR24), PixelFormat(DRM_FORMAT_RGB888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBA32), PixelFormat(DRM_FORMAT_ABGR8888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_ABGR32), PixelFormat(DRM_FORMAT_ARGB8888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_ARGB32), PixelFormat(DRM_FORMAT_BGRA8888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_BGRA32), PixelFormat(DRM_FORMAT_RGBA8888) },
+
+	/* YUV packed formats. */
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUYV), PixelFormat(DRM_FORMAT_YUYV) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YVYU), PixelFormat(DRM_FORMAT_YVYU) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_UYVY), PixelFormat(DRM_FORMAT_UYVY) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_VYUY), PixelFormat(DRM_FORMAT_VYUY) },
+
+	/* YUV planar formats. */
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16), PixelFormat(DRM_FORMAT_NV16) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61), PixelFormat(DRM_FORMAT_NV61) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12), PixelFormat(DRM_FORMAT_NV12) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21), PixelFormat(DRM_FORMAT_NV21) },
+
+	/* Greyscale formats. */
+	{ V4L2PixelFormat(V4L2_PIX_FMT_GREY), PixelFormat(DRM_FORMAT_R8) },
+
+	/* Compressed formats. */
+	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG), PixelFormat(DRM_FORMAT_MJPEG) },
+};
+
+} /* namespace */
+
 /**
  * \fn V4L2PixelFormat::V4L2PixelFormat()
  * \brief Construct a V4L2PixelFormat with an invalid format
@@ -109,60 +206,15 @@ std::string V4L2PixelFormat::toString() const
  */
 PixelFormat V4L2PixelFormat::toPixelFormat() const
 {
-	switch (fourcc_) {
-	/* RGB formats. */
-	case V4L2_PIX_FMT_RGB24:
-		return PixelFormat(DRM_FORMAT_BGR888);
-	case V4L2_PIX_FMT_BGR24:
-		return PixelFormat(DRM_FORMAT_RGB888);
-	case V4L2_PIX_FMT_RGBA32:
-		return PixelFormat(DRM_FORMAT_ABGR8888);
-	case V4L2_PIX_FMT_ABGR32:
-		return PixelFormat(DRM_FORMAT_ARGB8888);
-	case V4L2_PIX_FMT_ARGB32:
-		return PixelFormat(DRM_FORMAT_BGRA8888);
-	case V4L2_PIX_FMT_BGRA32:
-		return PixelFormat(DRM_FORMAT_RGBA8888);
-
-	/* YUV packed formats. */
-	case V4L2_PIX_FMT_YUYV:
-		return PixelFormat(DRM_FORMAT_YUYV);
-	case V4L2_PIX_FMT_YVYU:
-		return PixelFormat(DRM_FORMAT_YVYU);
-	case V4L2_PIX_FMT_UYVY:
-		return PixelFormat(DRM_FORMAT_UYVY);
-	case V4L2_PIX_FMT_VYUY:
-		return PixelFormat(DRM_FORMAT_VYUY);
-
-	/* YUY planar formats. */
-	case V4L2_PIX_FMT_NV16:
-	case V4L2_PIX_FMT_NV16M:
-		return PixelFormat(DRM_FORMAT_NV16);
-	case V4L2_PIX_FMT_NV61:
-	case V4L2_PIX_FMT_NV61M:
-		return PixelFormat(DRM_FORMAT_NV61);
-	case V4L2_PIX_FMT_NV12:
-	case V4L2_PIX_FMT_NV12M:
-		return PixelFormat(DRM_FORMAT_NV12);
-	case V4L2_PIX_FMT_NV21:
-	case V4L2_PIX_FMT_NV21M:
-		return PixelFormat(DRM_FORMAT_NV21);
-
-	/* Greyscale formats. */
-	case V4L2_PIX_FMT_GREY:
-		return PixelFormat(DRM_FORMAT_R8);
-
-	/* Compressed formats. */
-	case V4L2_PIX_FMT_MJPEG:
-		return PixelFormat(DRM_FORMAT_MJPEG);
-
-	/* V4L2 formats not yet supported by DRM. */
-	default:
+	const auto iter = vpf2pf.find(*this);
+	if (iter == vpf2pf.end()) {
 		LOG(V4L2, Warning)
 			<< "Unsupported V4L2 pixel format "
 			<< toString();
 		return PixelFormat();
 	}
+
+	return iter->second;
 }
 
 /**
@@ -181,60 +233,16 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
 V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
 						 bool multiplanar)
 {
-	switch (pixelFormat) {
-	/* RGB formats. */
-	case DRM_FORMAT_BGR888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_RGB24);
-	case DRM_FORMAT_RGB888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_BGR24);
-	case DRM_FORMAT_ABGR8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_RGBA32);
-	case DRM_FORMAT_ARGB8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_ABGR32);
-	case DRM_FORMAT_BGRA8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_ARGB32);
-	case DRM_FORMAT_RGBA8888:
-		return V4L2PixelFormat(V4L2_PIX_FMT_BGRA32);
-
-	/* YUV packed formats. */
-	case DRM_FORMAT_YUYV:
-		return V4L2PixelFormat(V4L2_PIX_FMT_YUYV);
-	case DRM_FORMAT_YVYU:
-		return V4L2PixelFormat(V4L2_PIX_FMT_YVYU);
-	case DRM_FORMAT_UYVY:
-		return V4L2PixelFormat(V4L2_PIX_FMT_UYVY);
-	case DRM_FORMAT_VYUY:
-		return V4L2PixelFormat(V4L2_PIX_FMT_VYUY);
-
-	/*
-	 * YUY planar formats.
-	 * \todo Add support for non-contiguous memory planes
-	 * \todo Select the format variant not only based on \a multiplanar but
-	 * also take into account the formats supported by the device.
-	 */
-	case DRM_FORMAT_NV16:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV16);
-	case DRM_FORMAT_NV61:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV61);
-	case DRM_FORMAT_NV12:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV12);
-	case DRM_FORMAT_NV21:
-		return V4L2PixelFormat(V4L2_PIX_FMT_NV21);
-
-	/* Greyscale formats. */
-	case DRM_FORMAT_R8:
-		return V4L2PixelFormat(V4L2_PIX_FMT_GREY);
-
-	/* Compressed formats. */
-	case DRM_FORMAT_MJPEG:
-		return V4L2PixelFormat(V4L2_PIX_FMT_MJPEG);
-
-	default:
+	const auto iter = pf2vpf.find(pixelFormat);
+	if (iter == pf2vpf.end()) {
 		LOG(V4L2, Warning)
 			<< "Unsupported pixel format "
 			<< pixelFormat.toString();
 		return V4L2PixelFormat();
 	}
+
+	const PixelFormatInfo &info = iter->second;
+	return info.v4l2Format;
 }
 
 } /* namespace libcamera */

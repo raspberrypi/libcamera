@@ -194,6 +194,88 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_GREY),
 	} },
 
+	/* Bayer formats. */
+	{ PixelFormat(DRM_FORMAT_SBGGR8), {
+		.format = PixelFormat(DRM_FORMAT_SBGGR8),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGBRG8), {
+		.format = PixelFormat(DRM_FORMAT_SGBRG8),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGRBG8), {
+		.format = PixelFormat(DRM_FORMAT_SGRBG8),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8),
+	} },
+	{ PixelFormat(DRM_FORMAT_SRGGB8), {
+		.format = PixelFormat(DRM_FORMAT_SRGGB8),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8),
+	} },
+	{ PixelFormat(DRM_FORMAT_SBGGR10), {
+		.format = PixelFormat(DRM_FORMAT_SBGGR10),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGBRG10), {
+		.format = PixelFormat(DRM_FORMAT_SGBRG10),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGRBG10), {
+		.format = PixelFormat(DRM_FORMAT_SGRBG10),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10),
+	} },
+	{ PixelFormat(DRM_FORMAT_SRGGB10), {
+		.format = PixelFormat(DRM_FORMAT_SRGGB10),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10),
+	} },
+	{ PixelFormat(DRM_FORMAT_SBGGR10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SBGGR10, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGBRG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SGBRG10, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGRBG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SGRBG10, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SRGGB10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SRGGB10, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SBGGR12), {
+		.format = PixelFormat(DRM_FORMAT_SBGGR12),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGBRG12), {
+		.format = PixelFormat(DRM_FORMAT_SGBRG12),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGRBG12), {
+		.format = PixelFormat(DRM_FORMAT_SGRBG12),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12),
+	} },
+	{ PixelFormat(DRM_FORMAT_SRGGB12), {
+		.format = PixelFormat(DRM_FORMAT_SRGGB12),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12),
+	} },
+	{ PixelFormat(DRM_FORMAT_SBGGR12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SBGGR12, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGBRG12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SGBRG12, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SGRBG12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SGRBG12, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P),
+	} },
+	{ PixelFormat(DRM_FORMAT_SRGGB12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+		.format = PixelFormat(DRM_FORMAT_SRGGB12, MIPI_FORMAT_MOD_CSI2_PACKED),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P),
+	} },
+
 	/* Compressed formats. */
 	{ PixelFormat(DRM_FORMAT_MJPEG), {
 		.format = PixelFormat(DRM_FORMAT_MJPEG),

@@ -23,6 +23,7 @@
 #include "formats.h"
 #include "log.h"
 #include "v4l2_device.h"
+#include "v4l2_pixelformat.h"
 
 namespace libcamera {
 
@@ -147,29 +148,6 @@ private:
 	std::vector<Entry> cache_;
 	/* \todo Expose the miss counter through an instrumentation API. */
 	unsigned int missCounter_;
-};
-
-class V4L2PixelFormat
-{
-public:
-	V4L2PixelFormat()
-		: fourcc_(0)
-	{
-	}
-
-	explicit V4L2PixelFormat(uint32_t fourcc)
-		: fourcc_(fourcc)
-	{
-	}
-
-	bool isValid() const { return fourcc_ != 0; }
-	uint32_t fourcc() const { return fourcc_; }
-	operator uint32_t() const { return fourcc_; }
-
-	std::string toString() const;
-
-private:
-	uint32_t fourcc_;
 };
 
 class V4L2DeviceFormat

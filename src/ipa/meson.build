@@ -18,7 +18,7 @@ subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')
 
-ipas = ['rkisp1', 'vimc']
+ipas = ['raspberrypi', 'rkisp1', 'vimc']
 
 foreach pipeline : get_option('pipelines')
     if ipas.contains(pipeline)

@@ -114,14 +114,14 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selector. */
-	QComboBox *cameraCombo = new QComboBox();
-	connect(cameraCombo, QOverload<int>::of(&QComboBox::activated),
+	cameraCombo_ = new QComboBox();
+	connect(cameraCombo_, QOverload<int>::of(&QComboBox::activated),
 		this, &MainWindow::switchCamera);
 
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameraCombo->addItem(QString::fromStdString(cam->name()));
+		cameraCombo_->addItem(QString::fromStdString(cam->name()));
 
-	toolbar_->addWidget(cameraCombo);
+	toolbar_->addWidget(cameraCombo_);
 
 	toolbar_->addSeparator();
 

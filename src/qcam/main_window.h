@@ -29,6 +29,7 @@
 using namespace libcamera;
 
 class QAction;
+class QComboBox;
 
 enum {
 	OptCamera = 'c',
@@ -72,6 +73,7 @@ private:
 	/* UI elements */
 	QToolBar *toolbar_;
 	QAction *startStopAction_;
+	QComboBox *cameraCombo_;
 	ViewFinder *viewfinder_;
 
 	QIcon iconPlay_;

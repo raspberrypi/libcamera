@@ -302,10 +302,6 @@ public:
 			vcsm_.free(lsTable_);
 			lsTable_ = nullptr;
 		}
-
-		/* Stop the IPA proxy thread. */
-		if (ipa_)
-			ipa_->stop();
 	}
 
 	void frameStarted(uint32_t sequence);
@@ -802,6 +798,16 @@ int PipelineHandlerRPi::start(Camera *camera)
 	ret = queueAllBuffers(camera);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to queue buffers";
+		stop(camera);
+		return ret;
+	}
+
+	/* Start the IPA. */
+	ret = data->ipa_->start();
+	if (ret) {
+		LOG(RPI, Error)
+			<< "Failed to start IPA for " << camera->name();
+		stop(camera);
 		return ret;
 	}
 
@@ -812,8 +818,10 @@ int PipelineHandlerRPi::start(Camera *camera)
 	V4L2DeviceFormat sensorFormat;
 	data->unicam_[Unicam::Image].dev()->getFormat(&sensorFormat);
 	ret = data->isp_[Isp::Input].dev()->setFormat(&sensorFormat);
-	if (ret)
+	if (ret) {
+		stop(camera);
 		return ret;
+	}
 
 	/* Enable SOF event generation. */
 	data->unicam_[Unicam::Image].dev()->setFrameStartEnabled(true);
@@ -856,6 +864,9 @@ void PipelineHandlerRPi::stop(Camera *camera)
 	/* The default std::queue constructor is explicit with gcc 5 and 6. */
 	data->bayerQueue_ = std::queue<FrameBuffer *>{};
 	data->embeddedQueue_ = std::queue<FrameBuffer *>{};
+
+	/* Stop the IPA. */
+	data->ipa_->stop();
 
 	freeBuffers(camera);
 }
@@ -1106,15 +1117,7 @@ int RPiCameraData::loadIPA()
 		.configurationFile = ipa_->configurationFile(sensor_->model() + ".json")
 	};
 
-	ipa_->init(settings);
-
-	/*
-	 * Startup the IPA thread now. Without this call, none of the IPA API
-	 * functions will run.
-	 *
-	 * It only gets stopped in the class destructor.
-	 */
-	return ipa_->start();
+	return ipa_->init(settings);
 }
 
 int RPiCameraData::configureIPA()

@@ -12,6 +12,7 @@
 #include <tuple>
 
 #include <linux/media-bus-format.h>
+#include <linux/version.h>
 
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
@@ -225,6 +226,18 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	ret = data->scaler_->setFormat(0, &subformat);
 	if (ret)
 		return ret;
+
+	if (data->media_->version() >= KERNEL_VERSION(5, 6, 0)) {
+		Rectangle crop = {
+			.x = 0,
+			.y = 0,
+			.width = subformat.size.width,
+			.height = subformat.size.height,
+		};
+		ret = data->scaler_->setSelection(0, V4L2_SEL_TGT_CROP, &crop);
+		if (ret)
+			return ret;
+	}
 
 	subformat.size = cfg.size;
 	ret = data->scaler_->setFormat(1, &subformat);

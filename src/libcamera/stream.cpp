@@ -302,6 +302,19 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  */
 
 /**
+ * \var StreamConfiguration::stride
+ * \brief Image stride for the stream, in bytes
+ *
+ * The stride value reports the number of bytes between the beginning of
+ * successive lines in an image buffer for this stream. The value is
+ * valid after successfully configuring the camera with this
+ * configuration with a call to Camera::Configure().
+ *
+ * \todo Update this value when configuration is validated instead of when
+ * the camera is configured.
+ */
+
+/**
  * \var StreamConfiguration::bufferCount
  * \brief Requested number of buffers to allocate for the stream
  */

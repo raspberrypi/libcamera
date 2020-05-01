@@ -681,6 +681,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	cfg.setStream(&data->stream_);
+	cfg.stride = outputFormat.planes[0].bpl;
 
 	return 0;
 }

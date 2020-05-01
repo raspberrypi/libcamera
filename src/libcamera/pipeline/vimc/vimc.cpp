@@ -253,6 +253,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	cfg.setStream(&data->stream_);
+	cfg.stride = format.planes[0].bpl;
 
 	return 0;
 }

@@ -42,6 +42,7 @@ struct StreamConfiguration {
 
 	PixelFormat pixelFormat;
 	Size size;
+	unsigned int stride;
 
 	unsigned int bufferCount;
 

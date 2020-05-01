@@ -77,7 +77,8 @@ public:
 	int configureInput(const Size &size,
 			   V4L2DeviceFormat *inputFormat);
 	int configureOutput(ImgUOutput *output,
-			    const StreamConfiguration &cfg);
+			    const StreamConfiguration &cfg,
+			    V4L2DeviceFormat *outputFormat);
 
 	int allocateBuffers(IPU3CameraData *data, unsigned int bufferCount);
 	void freeBuffers(IPU3CameraData *data);
@@ -546,6 +547,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	IPU3Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
+	V4L2DeviceFormat outputFormat;
 	int ret;
 
 	/*
@@ -625,12 +627,16 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		 * The RAW still capture stream just copies buffers from the
 		 * internal queue and doesn't need any specific configuration.
 		 */
-		if (stream->raw_)
-			continue;
+		if (stream->raw_) {
+			cfg.stride = cio2Format.planes[0].bpl;
+		} else {
+			ret = imgu->configureOutput(stream->device_, cfg,
+						    &outputFormat);
+			if (ret)
+				return ret;
 
-		ret = imgu->configureOutput(stream->device_, cfg);
-		if (ret)
-			return ret;
+			cfg.stride = outputFormat.planes[0].bpl;
+		}
 	}
 
 	/*
@@ -639,13 +645,15 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * be at least one active stream in the configuration request).
 	 */
 	if (!outStream->active_) {
-		ret = imgu->configureOutput(outStream->device_, config->at(0));
+		ret = imgu->configureOutput(outStream->device_, config->at(0),
+					    &outputFormat);
 		if (ret)
 			return ret;
 	}
 
 	if (!vfStream->active_) {
-		ret = imgu->configureOutput(vfStream->device_, config->at(0));
+		ret = imgu->configureOutput(vfStream->device_, config->at(0),
+					    &outputFormat);
 		if (ret)
 			return ret;
 	}
@@ -657,7 +665,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	StreamConfiguration statCfg = {};
 	statCfg.size = cio2Format.size;
 
-	ret = imgu->configureOutput(&imgu->stat_, statCfg);
+	ret = imgu->configureOutput(&imgu->stat_, statCfg, &outputFormat);
 	if (ret)
 		return ret;
 
@@ -1166,7 +1174,8 @@ int ImgUDevice::configureInput(const Size &size,
  * \return 0 on success or a negative error code otherwise
  */
 int ImgUDevice::configureOutput(ImgUOutput *output,
-				const StreamConfiguration &cfg)
+				const StreamConfiguration &cfg,
+				V4L2DeviceFormat *outputFormat)
 {
 	V4L2VideoDevice *dev = output->dev;
 	unsigned int pad = output->pad;
@@ -1183,17 +1192,17 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 	if (output == &stat_)
 		return 0;
 
-	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = dev->toV4L2PixelFormat(PixelFormat(DRM_FORMAT_NV12));
-	outputFormat.size = cfg.size;
-	outputFormat.planesCount = 2;
+	*outputFormat = {};
+	outputFormat->fourcc = dev->toV4L2PixelFormat(PixelFormat(DRM_FORMAT_NV12));
+	outputFormat->size = cfg.size;
+	outputFormat->planesCount = 2;
 
-	ret = dev->setFormat(&outputFormat);
+	ret = dev->setFormat(outputFormat);
 	if (ret)
 		return ret;
 
 	LOG(IPU3, Debug) << "ImgU " << output->name << " format = "
-			 << outputFormat.toString();
+			 << outputFormat->toString();
 
 	return 0;
 }

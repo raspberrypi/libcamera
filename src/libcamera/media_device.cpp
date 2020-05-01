@@ -315,6 +315,15 @@ done:
  */
 
 /**
+ * \fn MediaDevice::version()
+ * \brief Retrieve the media device API version
+ *
+ * The version is formatted with the KERNEL_VERSION() macro.
+ *
+ * \return The MediaDevice API version
+ */
+
+/**
  * \fn MediaDevice::entities()
  * \brief Retrieve the list of entities in the media graph
  * \return The list of MediaEntities registered in the MediaDevice

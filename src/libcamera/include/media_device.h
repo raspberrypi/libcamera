@@ -40,6 +40,7 @@ public:
 	const std::string driver() const { return driver_; }
 	const std::string deviceNode() const { return deviceNode_; }
 	const std::string model() const { return model_; }
+	unsigned int version() const { return version_; }
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;

@@ -39,9 +39,10 @@ LOG_DEFINE_CATEGORY(VIMC)
 class VimcCameraData : public CameraData
 {
 public:
-	VimcCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), sensor_(nullptr), debayer_(nullptr),
-		  scaler_(nullptr), video_(nullptr), raw_(nullptr)
+	VimcCameraData(PipelineHandler *pipe, MediaDevice *media)
+		: CameraData(pipe), media_(media), sensor_(nullptr),
+		  debayer_(nullptr), scaler_(nullptr), video_(nullptr),
+		  raw_(nullptr)
 	{
 	}
 
@@ -54,9 +55,10 @@ public:
 		delete raw_;
 	}
 
-	int init(MediaDevice *media);
+	int init();
 	void bufferReady(FrameBuffer *buffer);
 
+	MediaDevice *media_;
 	CameraSensor *sensor_;
 	V4L2Subdevice *debayer_;
 	V4L2Subdevice *scaler_;
@@ -380,7 +382,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (!media)
 		return false;
 
-	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this);
+	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this, media);
 
 	data->ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
 	if (data->ipa_ != nullptr) {
@@ -391,7 +393,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	}
 
 	/* Locate and open the capture video node. */
-	if (data->init(media))
+	if (data->init())
 		return false;
 
 	/* Create and register the camera. */
@@ -403,15 +405,15 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-int VimcCameraData::init(MediaDevice *media)
+int VimcCameraData::init()
 {
 	int ret;
 
-	ret = media->disableLinks();
+	ret = media_->disableLinks();
 	if (ret < 0)
 		return ret;
 
-	MediaLink *link = media->link("Debayer B", 1, "Scaler", 0);
+	MediaLink *link = media_->link("Debayer B", 1, "Scaler", 0);
 	if (!link)
 		return -ENODEV;
 
@@ -420,26 +422,26 @@ int VimcCameraData::init(MediaDevice *media)
 		return ret;
 
 	/* Create and open the camera sensor, debayer, scaler and video device. */
-	sensor_ = new CameraSensor(media->getEntityByName("Sensor B"));
+	sensor_ = new CameraSensor(media_->getEntityByName("Sensor B"));
 	ret = sensor_->init();
 	if (ret)
 		return ret;
 
-	debayer_ = new V4L2Subdevice(media->getEntityByName("Debayer B"));
+	debayer_ = new V4L2Subdevice(media_->getEntityByName("Debayer B"));
 	if (debayer_->open())
 		return -ENODEV;
 
-	scaler_ = new V4L2Subdevice(media->getEntityByName("Scaler"));
+	scaler_ = new V4L2Subdevice(media_->getEntityByName("Scaler"));
 	if (scaler_->open())
 		return -ENODEV;
 
-	video_ = new V4L2VideoDevice(media->getEntityByName("RGB/YUV Capture"));
+	video_ = new V4L2VideoDevice(media_->getEntityByName("RGB/YUV Capture"));
 	if (video_->open())
 		return -ENODEV;
 
 	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
 
-	raw_ = new V4L2VideoDevice(media->getEntityByName("Raw Capture 1"));
+	raw_ = new V4L2VideoDevice(media_->getEntityByName("Raw Capture 1"));
 	if (raw_->open())
 		return -ENODEV;
 

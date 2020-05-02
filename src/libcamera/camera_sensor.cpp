@@ -539,7 +539,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 
 std::string CameraSensor::logPrefix() const
 {
-	return "'" + subdev_->entity()->name() + "'";
+	return "'" + entity_->name() + "'";
 }
 
 } /* namespace libcamera */

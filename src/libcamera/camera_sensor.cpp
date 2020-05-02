@@ -131,7 +131,7 @@ LOG_DEFINE_CATEGORY(CameraSensor);
  * Once constructed the instance must be initialized with init().
  */
 CameraSensor::CameraSensor(const MediaEntity *entity)
-	: entity_(entity), properties_(properties::properties)
+	: entity_(entity), pad_(UINT_MAX), properties_(properties::properties)
 {
 }
 
@@ -152,9 +152,14 @@ CameraSensor::~CameraSensor()
  */
 int CameraSensor::init()
 {
-	int ret;
+	for (const MediaPad *pad : entity_->pads()) {
+		if (pad->flags() & MEDIA_PAD_FL_SOURCE) {
+			pad_ = pad->index();
+			break;
+		}
+	}
 
-	if (entity_->pads().size() != 1) {
+	if (pad_ == UINT_MAX) {
 		LOG(CameraSensor, Error)
 			<< "Sensors with more than one pad are not supported";
 		return -EINVAL;
@@ -197,7 +202,7 @@ int CameraSensor::init()
 
 	/* Create and open the subdev. */
 	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
-	ret = subdev_->open();
+	int ret = subdev_->open();
 	if (ret < 0)
 		return ret;
 
@@ -241,7 +246,7 @@ int CameraSensor::init()
 	properties_.set(properties::Rotation, propertyValue);
 
 	/* Enumerate and cache media bus codes and sizes. */
-	const ImageFormats formats = subdev_->formats(0);
+	const ImageFormats formats = subdev_->formats(pad_);
 	if (formats.isEmpty()) {
 		LOG(CameraSensor, Error) << "No image format found";
 		return -EINVAL;
@@ -405,7 +410,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
  */
 int CameraSensor::setFormat(V4L2SubdeviceFormat *format)
 {
-	return subdev_->setFormat(0, format);
+	return subdev_->setFormat(pad_, format);
 }
 
 /**
@@ -489,7 +494,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 
 	/* Get the active area size. */
 	Rectangle rect = {};
-	int ret = subdev_->getSelection(0, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
+	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
 	if (ret) {
 		LOG(CameraSensor, Error)
 			<< "Failed to construct camera sensor info: "
@@ -500,7 +505,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	info->activeAreaSize = { rect.width, rect.height };
 
 	/* It's mandatory for the subdevice to report its crop rectangle. */
-	ret = subdev_->getSelection(0, V4L2_SEL_TGT_CROP, &info->analogCrop);
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
 	if (ret) {
 		LOG(CameraSensor, Error)
 			<< "Failed to construct camera sensor info: "
@@ -510,7 +515,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 
 	/* The bit depth and image size depend on the currently applied format. */
 	V4L2SubdeviceFormat format{};
-	ret = subdev_->getFormat(0, &format);
+	ret = subdev_->getFormat(pad_, &format);
 	if (ret)
 		return ret;
 	info->bitsPerPixel = format.bitsPerPixel();

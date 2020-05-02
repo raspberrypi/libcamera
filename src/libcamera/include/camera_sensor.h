@@ -70,6 +70,8 @@ protected:
 private:
 	const MediaEntity *entity_;
 	std::unique_ptr<V4L2Subdevice> subdev_;
+	unsigned int pad_;
+
 	std::string model_;
 
 	std::vector<unsigned int> mbusCodes_;

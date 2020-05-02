@@ -54,7 +54,7 @@ void packScanlineSBGGR12P(void *output, const void *input, unsigned int width)
 	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
 
-	/* \todo: Can this be made more efficient? */
+	/* \todo Can this be made more efficient? */
 	for (unsigned int i = 0; i < width; i += 2) {
 		*out++ = in[0];
 		*out++ = (in[2] & 0x0f) << 4 | in[1] >> 4;

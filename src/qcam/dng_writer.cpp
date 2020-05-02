@@ -23,7 +23,8 @@ enum CFAPatternColour : uint8_t {
 struct FormatInfo {
 	uint8_t bitsPerSample;
 	CFAPatternColour pattern[4];
-	void (*packScanline)(void *, const void *, unsigned int);
+	void (*packScanline)(void *output, const void *input,
+			     unsigned int width);
 };
 
 void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)

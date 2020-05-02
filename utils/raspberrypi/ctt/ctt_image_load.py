@@ -45,11 +45,11 @@ class Image:
         Channel order depending on bayer pattern
         """
         bayer_case = {
-            0: (0, 1, 2, 3), #red
-            1: (2, 0, 3, 1), #green next to red
-            2: (3, 2, 1, 0), #green next to blue
-            3: (1, 0, 3, 2), #blue
-            128: (0, 1, 2, 3) #arbitrary order for greyscale casw
+            0: (0, 1, 2, 3),   # red
+            1: (2, 0, 3, 1),   # green next to red
+            2: (3, 2, 1, 0),   # green next to blue
+            3: (1, 0, 3, 2),   # blue
+            128: (0, 1, 2, 3)  # arbitrary order for greyscale casw
         }
         self.order = bayer_case[self.pattern]
 

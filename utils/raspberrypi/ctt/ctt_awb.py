@@ -330,7 +330,7 @@ def get_alsc_patches(Img, colour_cals, grey=True):
         """
         this works because -0 = 0 = first and -1 = last index
         """
-        col_tabs =  np.array(colour_cals[cts[-pos//len(cts)]])
+        col_tabs = np.array(colour_cals[cts[-pos//len(cts)]])
         """
     else, perform linear interpolation between existing alsc colour
     calibration tables

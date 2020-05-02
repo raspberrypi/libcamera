@@ -739,7 +739,7 @@ def run_ctt(json_output, directory, config, log_output):
     do_alsc_colour = get_config(alsc_d, "do_alsc_colour", 1, 'bool')
     luminance_strength = get_config(alsc_d, "luminance_strength", 0.5, 'num')
     blacklevel = get_config(configs, "blacklevel", -1, 'num')
-    macbeth_d =  get_config(configs, "macbeth", {}, 'dict')
+    macbeth_d = get_config(configs, "macbeth", {}, 'dict')
     mac_small = get_config(macbeth_d, "small", 0, 'bool')
     mac_show = get_config(macbeth_d, "show", 0, 'bool')
     mac_config = (mac_small, mac_show)

@@ -331,7 +331,7 @@ def dng_load_image(Cam, im_str):
         c3 = np.left_shift(raw_data[1::2, 1::2].astype(np.int64), shift)
         Img.channels = [c0, c1, c2, c3]
 
-    except:
+    except Exception:
         print("\nERROR: failed to load DNG file", im_str)
         print("Either file does not exist or is incompatible")
         Cam.log += '\nERROR: DNG file does not exist or is incompatible'

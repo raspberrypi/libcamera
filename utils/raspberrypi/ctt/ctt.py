@@ -78,78 +78,78 @@ class Camera:
         initial json dict populated by uncalibrated values
         """
         self.json = {
-            "rpi.black_level" : {
-                "black_level" : 4096
+            "rpi.black_level": {
+                "black_level": 4096
             },
-            "rpi.dpc" : {
+            "rpi.dpc": {
             },
-            "rpi.lux" : {
+            "rpi.lux": {
                 "reference_shutter_speed": 10000,
                 "reference_gain": 1,
                 "reference_aperture": 1.0
                 },
-            "rpi.noise" : {
+            "rpi.noise": {
             },
-            "rpi.geq" : {
+            "rpi.geq": {
             },
             "rpi.sdn": {
             },
             "rpi.awb": {
-                "priors" : [
+                "priors": [
                     {"lux": 0, "prior": [2000, 1.0, 3000, 0.0, 13000, 0.0]},
                     {"lux": 800, "prior": [2000, 0.0, 6000, 2.0, 13000, 2.0]},
                     {"lux": 1500, "prior": [2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
                 ],
-                "modes" : {
-                    "auto" : {"lo" : 2500, "hi" : 8000},
-                    "incandescent" : {"lo" : 2500, "hi" : 3000},
-                    "tungsten" : {"lo" : 3000, "hi" : 3500},
-                    "fluorescent" : {"lo" : 4000, "hi" : 4700},
-                    "indoor" : {"lo" : 3000, "hi" : 5000},
-                    "daylight" : {"lo" : 5500, "hi" : 6500},
-                    "cloudy" : {"lo" : 7000, "hi" : 8600}
+                "modes": {
+                    "auto": {"lo": 2500, "hi": 8000},
+                    "incandescent": {"lo": 2500, "hi": 3000},
+                    "tungsten": {"lo": 3000, "hi": 3500},
+                    "fluorescent": {"lo": 4000, "hi": 4700},
+                    "indoor": {"lo": 3000, "hi": 5000},
+                    "daylight": {"lo": 5500, "hi": 6500},
+                    "cloudy": {"lo": 7000, "hi": 8600}
                 },
-                "bayes" : 1
+                "bayes": 1
             },
-            "rpi.agc" : {
-                "metering_modes" : {
-                    "centre-weighted" : {
-                        "weights" : [3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0]
+            "rpi.agc": {
+                "metering_modes": {
+                    "centre-weighted": {
+                        "weights": [3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0]
                     },
-                    "spot" : {
-                        "weights" : [2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    "spot": {
+                        "weights": [2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                     },
                     "matrix": {
-                        "weights" : [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                        "weights": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
                     }
                 },
-                "exposure_modes" : {
-                    "normal" : {
-                        "shutter" : [100, 10000, 30000, 60000, 120000],
-                        "gain"    : [1.0, 2.0,   4.0,   6.0,   6.0]
+                "exposure_modes": {
+                    "normal": {
+                        "shutter": [100, 10000, 30000, 60000, 120000],
+                        "gain": [1.0, 2.0,   4.0,   6.0,   6.0]
                     },
                     "sport": {
                         "shutter": [100, 5000, 10000, 20000, 120000],
                         "gain":    [1.0, 2.0,  4.0,   6.0,   6.0   ]
                     }
                 },
-                "constraint_modes" : {
-                    "normal" : [
-                        {"bound" : "LOWER", "q_lo" : 0.98, "q_hi" : 1.0, "y_target" : [0, 0.5, 1000, 0.5]}
+                "constraint_modes": {
+                    "normal": [
+                        {"bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.5, 1000, 0.5]}
                     ],
                     "highlight": [
                         {"bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.5, 1000, 0.5]},
                         {"bound": "UPPER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.8, 1000, 0.8]}
                     ]
                 },
-                "y_target" : [0, 0.16, 1000, 0.165, 10000, 0.17]
+                "y_target": [0, 0.16, 1000, 0.165, 10000, 0.17]
             },
             "rpi.alsc": {
-                'omega' : 1.3,
-                'n_iter' : 100,
-                'luminance_strength' : 0.7,
+                'omega': 1.3,
+                'n_iter': 100,
+                'luminance_strength': 0.7,
             },
-            "rpi.contrast" : {
+            "rpi.contrast": {
                 "ce_enable": 1,
                 "gamma_curve": [
                     0,     0,

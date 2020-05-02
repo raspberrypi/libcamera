@@ -197,7 +197,7 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
     iterate backwards over list for easier indexing
     """
     i = len(c_fit) - 1
-    while i > 0 :
+    while i > 0:
         if c_fit[i] > c_fit[i-1]:
             Cam.log += '\nColour temperature increase found\n'
             Cam.log += '{} K at r = {} to '.format(c_fit[i-1], r_fit[i-1])

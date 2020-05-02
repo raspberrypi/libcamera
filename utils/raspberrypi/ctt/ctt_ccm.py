@@ -148,8 +148,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
     ccms = []
     for i in sorted_ccms:
         ccms.append({
-            'ct' : i[0],
-            'ccm' : i[1]
+            'ct': i[0],
+            'ccm': i[1]
         })
     return ccms
 

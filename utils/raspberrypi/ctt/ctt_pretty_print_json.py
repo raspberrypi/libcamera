@@ -61,7 +61,7 @@ def process_char(c, fout, state):
     state["skipnewline"] = (c == '[')
 
 def pretty_print_json(str_in, output_filename):
-    state = {"indent": 0, "inarray": [False], "arraycount": [], "skipnewline" : True}
+    state = {"indent": 0, "inarray": [False], "arraycount": [], "skipnewline": True}
     with open(output_filename, "w") as fout:
         process_file(str_in, fout, state)
 

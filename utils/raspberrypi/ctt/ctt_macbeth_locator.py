@@ -180,7 +180,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
 
     if small_chart:
 
-        if cor < 0.75 and d_best > 1 :
+        if cor < 0.75 and d_best > 1:
             imgs = []
             shape = list(img.shape[:2])
             w, h = shape

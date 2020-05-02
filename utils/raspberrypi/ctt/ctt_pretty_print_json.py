@@ -17,7 +17,8 @@ def print_newline(fout, state):
 
 def process_char(c, fout, state):
     if c == '{':
-        if not state["skipnewline"]: print_newline(fout, state)
+        if not state["skipnewline"]:
+            print_newline(fout, state)
         fout.write(c)
         state["indent"] += 1
         print_newline(fout, state)

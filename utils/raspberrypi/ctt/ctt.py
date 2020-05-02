@@ -380,7 +380,7 @@ class Camera:
         if len(self.imgs_alsc) == 1:
             self.json['rpi.alsc']['sigma'] = 0.005
             self.json['rpi.alsc']['sigma_Cb'] = 0.005
-            print('\nWarning:\nOnly one alsc calibration found' +
+            print('\nWarning:\nOnly one alsc calibration found'
                   '\nStandard sigmas used for adaptive algorithm.')
             print('Finished ALSC calibrations')
             self.log += '\nWARNING: Only one colour temperature found in '

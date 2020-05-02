@@ -42,8 +42,8 @@ def get_col_lux(string):
     """
     Extract colour and lux values from filename
     """
-    col = re.search('([0-9]+)[kK](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
-    lux = re.search('([0-9]+)[lL](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
+    col = re.search(r'([0-9]+)[kK](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
+    lux = re.search(r'([0-9]+)[lL](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
     try:
         col = col.group(1)
     except AttributeError:

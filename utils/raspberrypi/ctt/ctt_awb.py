@@ -257,8 +257,8 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
         plt.scatter(rbs_hat[0], rbs_hat[1], color='red')
         for i, ct in enumerate(rbs_hat[2]):
             plt.annotate(str(ct), (rbs_hat[0][i], rbs_hat[1][i]))
-        plt.xlabel('$\hat{r}$')
-        plt.ylabel('$\hat{b}$')
+        plt.xlabel('$\\hat{r}$')
+        plt.ylabel('$\\hat{b}$')
         """
         optional set axes equal to shortest distance so line really does
         looks perpendicular and everybody is happy

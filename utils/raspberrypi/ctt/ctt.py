@@ -216,7 +216,7 @@ class Camera:
         Check if alsc tables have been generated, if not then do ccm without
         alsc
         """
-        if (not "rpi.alsc" in self.disable) and do_alsc_colour:
+        if ("rpi.alsc" not in self.disable) and do_alsc_colour:
             """
             case where ALSC colour has been done, so no errors should be
             expected...
@@ -285,7 +285,7 @@ class Camera:
         Check if alsc tables have been generated, if not then do awb without
         alsc correction
         """
-        if (not "rpi.alsc" in self.disable) and do_alsc_colour:
+        if ("rpi.alsc" not in self.disable) and do_alsc_colour:
             try:
                 cal_cr_list = self.json['rpi.alsc']['calibrations_Cr']
                 cal_cb_list = self.json['rpi.alsc']['calibrations_Cb']

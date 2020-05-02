@@ -450,14 +450,14 @@ def get_macbeth_chart(img, ref_data):
                 """
                 in_border = True
                 # for p in mac_guess[0]:
-                    # pptest = cv2.pointPolygonTest(
-                        # img_con,
-                        # tuple(p),
-                        # False
-                    # )
-                    # if pptest == -1:
-                        # in_border = False
-                        # break
+                #     pptest = cv2.pointPolygonTest(
+                #         img_con,
+                #         tuple(p),
+                #         False
+                #     )
+                #     if pptest == -1:
+                #         in_border = False
+                #         break
 
                 if in_border:
                     mac_mid = np.mean(mac_guess,
@@ -499,9 +499,9 @@ def get_macbeth_chart(img, ref_data):
         else:
             clustering.fit(mac_mids_list)
             # try:
-                # clustering.fit(mac_mids_list)
+            #     clustering.fit(mac_mids_list)
             # except RuntimeWarning as error:
-                # return(0, None, None, error)
+            #     return(0, None, None, error)
 
             """
             create list of all clusters
@@ -549,9 +549,9 @@ def get_macbeth_chart(img, ref_data):
         # copy = cv2.cvtColor(copy, cv2.COLOR_GRAY2RGB)
         # copy = cv2.resize(copy, None, fx=2, fy=2)
         # for clus in clus_list:
-            # centroid = tuple(2*np.round(clus[2]).astype(np.int32))
-            # cv2.circle(copy, centroid, 7, (255, 0, 0), -1)
-            # cv2.circle(copy, centroid, 2, (0, 0, 255), -1)
+        #     centroid = tuple(2*np.round(clus[2]).astype(np.int32))
+        #     cv2.circle(copy, centroid, 7, (255, 0, 0), -1)
+        #     cv2.circle(copy, centroid, 2, (0, 0, 255), -1)
         # represent(copy)
 
         """

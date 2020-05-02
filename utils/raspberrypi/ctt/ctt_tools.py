@@ -99,11 +99,11 @@ display image for debugging... read at your own risk...
 """
 def represent(img, name='image'):
     # if type(img) == tuple or type(img) == list:
-        # for i in range(len(img)):
-            # name = 'image {}'.format(i)
-            # cv2.imshow(name, img[i])
+    #     for i in range(len(img)):
+    #         name = 'image {}'.format(i)
+    #         cv2.imshow(name, img[i])
     # else:
-        # cv2.imshow(name, img)
+    #     cv2.imshow(name, img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     # return 0

@@ -58,7 +58,7 @@ def get_col_lux(string):
         Still returns colour if that has been found.
         """
         return col, None
-    return int( col ), int( lux )
+    return int(col), int(lux)
 
 """
 Camera object that is the backbone of the tuning tool.
@@ -96,18 +96,18 @@ class Camera:
             },
             "rpi.awb": {
                 "priors" : [
-                    {"lux": 0, "prior": [ 2000, 1.0, 3000, 0.0, 13000, 0.0]},
-                    {"lux": 800, "prior": [ 2000, 0.0, 6000, 2.0, 13000, 2.0]},
-                    {"lux": 1500, "prior": [ 2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
+                    {"lux": 0, "prior": [2000, 1.0, 3000, 0.0, 13000, 0.0]},
+                    {"lux": 800, "prior": [2000, 0.0, 6000, 2.0, 13000, 2.0]},
+                    {"lux": 1500, "prior": [2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
                 ],
                 "modes" : {
-                    "auto" : { "lo" : 2500, "hi" : 8000 },
-                    "incandescent" : { "lo" : 2500, "hi" : 3000 },
-                    "tungsten" : { "lo" : 3000, "hi" : 3500 },
-                    "fluorescent" : { "lo" : 4000, "hi" : 4700 },
-                    "indoor" : { "lo" : 3000, "hi" : 5000 },
-                    "daylight" : { "lo" : 5500, "hi" : 6500 },
-                    "cloudy" : { "lo" : 7000, "hi" : 8600 }
+                    "auto" : {"lo" : 2500, "hi" : 8000},
+                    "incandescent" : {"lo" : 2500, "hi" : 3000},
+                    "tungsten" : {"lo" : 3000, "hi" : 3500},
+                    "fluorescent" : {"lo" : 4000, "hi" : 4700},
+                    "indoor" : {"lo" : 3000, "hi" : 5000},
+                    "daylight" : {"lo" : 5500, "hi" : 6500},
+                    "cloudy" : {"lo" : 7000, "hi" : 8600}
                 },
                 "bayes" : 1
             },
@@ -129,8 +129,8 @@ class Camera:
                         "gain"    : [1.0, 2.0,   4.0,   6.0,   6.0]
                     },
                     "sport": {
-                        "shutter": [ 100, 5000, 10000, 20000, 120000 ],
-                        "gain":    [ 1.0, 2.0,  4.0,   6.0,   6.0    ]
+                        "shutter": [100, 5000, 10000, 20000, 120000],
+                        "gain":    [1.0, 2.0,  4.0,   6.0,   6.0   ]
                     }
                 },
                 "constraint_modes" : {
@@ -138,8 +138,8 @@ class Camera:
                         {"bound" : "LOWER", "q_lo" : 0.98, "q_hi" : 1.0, "y_target" : [0, 0.5, 1000, 0.5]}
                     ],
                     "highlight": [
-                        { "bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [ 0, 0.5, 1000, 0.5 ] },
-                        { "bound": "UPPER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [ 0, 0.8, 1000, 0.8 ] }
+                        {"bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.5, 1000, 0.5]},
+                        {"bound": "UPPER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.8, 1000, 0.8]}
                     ]
                 },
                 "y_target" : [0, 0.16, 1000, 0.165, 10000, 0.17]

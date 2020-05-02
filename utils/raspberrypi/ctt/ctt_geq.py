@@ -20,7 +20,7 @@ def geq_fit(Cam, plot):
     Fits geq model by looking at difference
     between greens in macbeth patches
     """
-    geqs = np.array([ geq(Cam, Img)*Img.againQ8_norm for Img in imgs ])
+    geqs = np.array([geq(Cam, Img)*Img.againQ8_norm for Img in imgs])
     Cam.log += '\nProcessed all images'
     geqs = geqs.reshape((-1, 2))
     """

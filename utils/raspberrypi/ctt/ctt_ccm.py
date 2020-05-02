@@ -168,12 +168,12 @@ def do_ccm(r, g, b, m_srgb):
     rb_gbs = (rb*gb)
     gb_2s = (gb*gb)
 
-    r_rbs = ( rb * (m_srgb[..., 0] - b) )
-    r_gbs = ( gb * (m_srgb[..., 0] - b) )
-    g_rbs = ( rb * (m_srgb[..., 1] - b) )
-    g_gbs = ( gb * (m_srgb[..., 1] - b) )
-    b_rbs = ( rb * (m_srgb[..., 2] - b) )
-    b_gbs = ( gb * (m_srgb[..., 2] - b) )
+    r_rbs = rb * (m_srgb[..., 0] - b)
+    r_gbs = gb * (m_srgb[..., 0] - b)
+    g_rbs = rb * (m_srgb[..., 1] - b)
+    g_gbs = gb * (m_srgb[..., 1] - b)
+    b_rbs = rb * (m_srgb[..., 2] - b)
+    b_gbs = gb * (m_srgb[..., 2] - b)
 
     """
     Obtain least squares fit

@@ -25,7 +25,7 @@ def get_square_verts(c_err = 0.05, scale = scale):
     c3 = (x_max, y_max)
     c4 = (x_max, 0)
     mac_norm = np.array((c1, c2, c3, c4), np.float32)
-    mac_norm = np.array([ mac_norm ])
+    mac_norm = np.array([mac_norm])
 
     square_verts = []
     square_0 = np.array(((0, 0), (0, side),

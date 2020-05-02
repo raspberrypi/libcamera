@@ -27,7 +27,7 @@ def geq_fit(Cam, plot):
     data is sorted by green difference and top half is selected since higher
     green difference data define the decision boundary.
     """
-    geqs = np.array(sorted(geqs, key = lambda r: np.abs((r[1]-r[0])/r[0])))
+    geqs = np.array(sorted(geqs, key=lambda r: np.abs((r[1]-r[0])/r[0])))
 
     length = len(geqs)
     g0 = geqs[length//2:, 0]

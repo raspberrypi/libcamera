@@ -131,7 +131,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False):
     """
     average the green channels into one
     """
-    av_ch_g = np.mean((channels[1:2]), axis = 0)
+    av_ch_g = np.mean((channels[1:2]), axis=0)
     if do_alsc_colour:
         """
         obtain 16x12 grid of intensities for each channel and subtract black level

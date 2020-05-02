@@ -487,8 +487,8 @@ def get_macbeth_chart(img, ref_data):
         """
         clustering = cluster.AgglomerativeClustering(
             n_clusters=None,
-            compute_full_tree = True,
-            distance_threshold = side*2
+            compute_full_tree=True,
+            distance_threshold=side*2
         )
         mac_mids_list = [x[0] for x in mac_mids]
 

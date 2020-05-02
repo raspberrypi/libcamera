@@ -102,7 +102,7 @@ def noise(Cam, Img, plot):
             plt.plot(x, fit_plot_2, label='fit 0 intercept', color='green', ls='--')
         plt.plot(0, 0)
         plt.title('Noise Plot\nImg: {}'.format(Img.str))
-        plt.legend(loc = 'upper left')
+        plt.legend(loc='upper left')
         plt.xlabel('Sqrt Pixel Value')
         plt.ylabel('Noise Standard Deviation')
         plt.grid()

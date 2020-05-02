@@ -474,7 +474,7 @@ class Camera:
         run calibration on all images and sort by slope.
         """
         plot = "rpi.noise" in self.plot
-        noise_out = sorted([noise(self, Img, plot) for Img in self.imgs], key = lambda x: x[0])
+        noise_out = sorted([noise(self, Img, plot) for Img in self.imgs], key=lambda x: x[0])
         self.log += '\nFinished processing images'
         """
         take the average of the interquartile

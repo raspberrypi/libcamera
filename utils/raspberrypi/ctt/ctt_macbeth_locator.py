@@ -258,7 +258,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     """
     extract data from coords_fit and plot on original image
     """
-    if show and coords_fit != None:
+    if show and coords_fit is not None:
         copy = img.copy()
         verts = coords_fit[0][0]
         cents = coords_fit[1][0]

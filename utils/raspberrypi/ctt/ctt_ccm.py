@@ -64,7 +64,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
     reformat alsc correction tables or set colour_cals to None if alsc is
     deactivated
     """
-    if cal_cr_list == None:
+    if cal_cr_list is None:
         colour_cals = None
     else:
         colour_cals = {}

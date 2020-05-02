@@ -534,17 +534,17 @@ class Camera:
         self.log_new_sec('User Arguments', cal=False)
         self.log += '\nJson file output: ' + json_output
         self.log += '\nCalibration images directory: ' + directory
-        if config == None:
+        if config is None:
             self.log += '\nNo configuration file input... using default options'
-        elif config == False:
+        elif config is False:
             self.log += '\nWARNING: Invalid configuration file path...'
             self.log += ' using default options'
-        elif config == True:
+        elif config is True:
             self.log += '\nWARNING: Invalid syntax in configuration file...'
             self.log += ' using default options'
         else:
             self.log += '\nConfiguration file: ' + config
-        if log_output == None:
+        if log_output is None:
             self.log += '\nNo log file path input... using default: ctt_log.txt'
         else:
             self.log += '\nLog file output: ' + log_output
@@ -555,7 +555,7 @@ class Camera:
     write log file
     """
     def write_log(self, filename):
-        if filename == None:
+        if filename is None:
             filename = 'ctt_log.txt'
         self.log += '\n' + self.log_separator
         with open(filename, 'w') as logfile:
@@ -604,7 +604,7 @@ class Camera:
                     """
                 check that image colour temperature has been successfuly obtained
                 """
-                elif col != None:
+                elif col is not None:
                     """
                     if successful, append to list and continue to next image
                     """
@@ -627,7 +627,7 @@ class Camera:
                 if image isn't an alsc correction then it must have a lux and a
                 colour temperature value to be useful
                 """
-                if lux == None:
+                if lux is None:
                     print('DISCARDED')
                     self.log += '\nWARNING: Error reading lux value'
                     self.log += '\nImage discarded!'
@@ -707,7 +707,7 @@ def run_ctt(json_output, directory, config, log_output):
     """
     if json_output[-5:] != '.json':
         raise ArgError('\n\nError: Output must be a json file!')
-    if config != None:
+    if config is not None:
         """
         check if config file is actually a json
         """
@@ -790,7 +790,7 @@ def run_ctt(json_output, directory, config, log_output):
         Cam.write_json()
         Cam.write_log(log_output)
         print('\nCalibrations written to: '+json_output)
-        if log_output == None:
+        if log_output is None:
             log_output = 'ctt_log.txt'
         print('Log file written to: '+log_output)
         pass

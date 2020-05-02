@@ -232,7 +232,7 @@ def brcm_load_image(Cam, im_str):
     """
     return error if problem reading file
     """
-    if f == None:
+    if f is None:
         print('\nERROR:\nProblem reading file')
         Cam.log += '\nWARNING: Problem readin file'
         return 0
@@ -376,7 +376,7 @@ def load_image(Cam, im_str, mac_config=None, show=False, mac=True, show_meta=Fal
             """
             if no macbeth found return error
             """
-            if macbeth == None:
+            if macbeth is None:
                 print('\nERROR: No macbeth chart found')
                 return 0
             mac_cen_coords = macbeth[1]

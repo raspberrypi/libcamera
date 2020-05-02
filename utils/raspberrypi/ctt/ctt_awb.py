@@ -17,7 +17,7 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
     """
     condense alsc calibration tables into one dictionary
     """
-    if cal_cr_list == None:
+    if cal_cr_list is None:
         colour_cals = None
     else:
         colour_cals = {}
@@ -315,7 +315,7 @@ def get_alsc_patches(Img, colour_cals, grey=True):
         b_patchs = patches[3] - Img.blacklevel_16
         g_patchs = (patches[1]+patches[2])/2 - Img.blacklevel_16
 
-    if colour_cals == None:
+    if colour_cals is None:
         return r_patchs, b_patchs, g_patchs
     """
     find where image colour fits in alsc colour calibration tables

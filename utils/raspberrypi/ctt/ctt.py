@@ -193,7 +193,6 @@ class Camera:
             }
         }
 
-
     """
     Perform colour correction calibrations by comparing macbeth patch colours
     to standard macbeth chart colours.
@@ -769,7 +768,6 @@ def run_ctt(json_output, directory, config, log_output):
         Cam.add_imgs(directory, mac_config, blacklevel)
     except FileNotFoundError:
         raise ArgError('\n\nError: Input image directory not found!')
-
 
     """
     preform calibrations as long as check_imgs returns True

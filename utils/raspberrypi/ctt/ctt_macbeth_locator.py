@@ -144,7 +144,6 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
                     w_best, h_best = w_inc, h_inc
                     d_best = 1
 
-
     """
     scale 2
     """
@@ -697,7 +696,6 @@ def get_macbeth_chart(img, ref_data):
             Following code is mostly representation for debugging purposes
             """
 
-
         """
         draw macbeth corners and centres on image
         """
@@ -730,7 +728,6 @@ def get_macbeth_chart(img, ref_data):
         )
         # cv2.imshow('Macbeth', best_map_col)
         # represent(copy)
-
 
         """
         rescale coordinates to original image size

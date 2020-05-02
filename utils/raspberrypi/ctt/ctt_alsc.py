@@ -253,7 +253,6 @@ def get_sigma(Cam, cal_cr_list, cal_cb_list):
     sigma_b = max(sigma_bs) if sigma_bs else 0.005
     Cam.log += '\nMaximum sigmas: Red = {} Blue = {}'.format(sigma_r, sigma_b)
 
-
     # print(sigma_rs, sigma_bs)
     # print(sigma_r, sigma_b)
     return sigma_r, sigma_b

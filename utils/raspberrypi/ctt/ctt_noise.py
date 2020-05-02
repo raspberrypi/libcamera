@@ -39,7 +39,6 @@ def noise(Cam, Img, plot):
     means = np.clip(np.array(means), 0, None)
     sq_means = np.sqrt(means)
 
-
     """
     least squares fit model
     """

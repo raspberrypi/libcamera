@@ -13,6 +13,7 @@ NOTE: some custom functions have been used here to make the code more readable.
 These are defined in tools.py if they are needed for reference.
 """
 
+
 """
 Some inconsistencies between packages cause runtime warnings when running
 the clustering algorithm. This catches these warnings so they don't flood the
@@ -290,6 +291,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
         represent(copy)
 
     return(coords_fit)
+
 
 def get_macbeth_chart(img, ref_data):
     """

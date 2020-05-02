@@ -210,6 +210,7 @@ class Image:
         self.patches = all_patches
         return 1
 
+
 def brcm_load_image(Cam, im_str):
     """
     Load image where raw data and metadata is in the BRCM format
@@ -289,6 +290,7 @@ def brcm_load_image(Cam, im_str):
     # print('Raw image data obtained successfully')
 
     return Img
+
 
 def dng_load_image(Cam, im_str):
     try:

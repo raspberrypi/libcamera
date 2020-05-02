@@ -34,6 +34,7 @@ blank json file. This has been done to avoid reproducing the entire json file
 in the code here, thereby avoiding unecessary clutter.
 """
 
+
 """
 Get the colour and lux values from the strings of each inidvidual image
 """
@@ -701,6 +702,7 @@ class Camera:
             print('\nERROR: Images from different cameras')
             self.log += '\nERROR: Images are from different cameras'
             return 0
+
 
 def run_ctt(json_output, directory, config, log_output):
     """

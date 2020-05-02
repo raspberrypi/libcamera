@@ -22,6 +22,7 @@ understanding of the code. They ar collated here to attempt to improve code
 readability in the main files.
 """
 
+
 """
 obtain config values, unless it doesnt exist, in which case pick default
 Furthermore, it can check if the input is the correct type

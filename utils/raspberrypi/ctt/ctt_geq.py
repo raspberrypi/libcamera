@@ -8,6 +8,7 @@ from ctt_tools import *
 import matplotlib.pyplot as plt
 import scipy.optimize as optimize
 
+
 """
 Uses green differences in macbeth patches to fit green equalisation threshold
 model. Ideally, all macbeth chart centres would fall below the threshold as

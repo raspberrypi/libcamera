@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from bisect import bisect_left
 from scipy.optimize import fmin
 
+
 """
 obtain piecewise linear approximation for colour curve
 """

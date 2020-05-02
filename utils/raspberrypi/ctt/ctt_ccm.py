@@ -7,6 +7,7 @@
 from ctt_image_load import *
 from ctt_awb import get_alsc_patches
 
+
 """
 takes 8-bit macbeth chart values, degammas and returns 16 bit
 """

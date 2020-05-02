@@ -8,6 +8,7 @@ import numpy as np
 
 scale = 2
 
+
 """
 constructs normalised macbeth chart corners for ransac algorithm
 """
@@ -56,6 +57,7 @@ def get_square_verts(c_err=0.05, scale=scale):
     # print('square_verts')
     # print(square_verts)
     return np.array(square_verts, np.float32), mac_norm
+
 
 def get_square_centres(c_err=0.05, scale=scale):
     """

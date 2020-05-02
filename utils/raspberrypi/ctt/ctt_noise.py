@@ -7,6 +7,7 @@
 from ctt_image_load import *
 import matplotlib.pyplot as plt
 
+
 """
 Find noise standard deviation and fit to model:
 

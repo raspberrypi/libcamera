@@ -4,6 +4,7 @@
 #
 # ctt_pretty_print_json.py - camera tuning tool JSON formatter
 
+
 """
 takes a collapsed json file and makes it more readable
 """
@@ -11,9 +12,11 @@ def process_file(string, fout, state):
     for c in string:
         process_char(c, fout, state)
 
+
 def print_newline(fout, state):
     fout.write('\n')
     fout.write(' '*state["indent"]*4)
+
 
 def process_char(c, fout, state):
     if c == '{':
@@ -60,6 +63,7 @@ def process_char(c, fout, state):
     else:
         fout.write(c)
     state["skipnewline"] = (c == '[')
+
 
 def pretty_print_json(str_in, output_filename):
     state = {"indent": 0, "inarray": [False], "arraycount": [], "skipnewline": True}

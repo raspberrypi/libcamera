@@ -36,10 +36,10 @@ def get_config(dictt, key, default, ttype):
                 if 'float' not in str(type(val)):
                     raise ValueError
         elif ttype == 'dict':
-            if type(val) != type(dictt):
+            if not isinstance(val, dict):
                 raise ValueError
         elif ttype == 'list':
-            if type(val) != type([]):
+            if not isinstance(val, list):
                 raise ValueError
         elif ttype == 'bool':
             ttype = int(bool(ttype))

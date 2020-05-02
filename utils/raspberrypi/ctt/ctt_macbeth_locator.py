@@ -21,6 +21,7 @@ output to the console
 def fxn():
     warnings.warn("runtime", RuntimeWarning)
 
+
 """
 Define the success message
 """

@@ -60,6 +60,7 @@ def get_col_lux(string):
         return col, None
     return int(col), int(lux)
 
+
 """
 Camera object that is the backbone of the tuning tool.
 Input is the desired path of the output json.
@@ -796,6 +797,7 @@ def run_ctt(json_output, directory, config, log_output):
         pass
     else:
         Cam.write_log(log_output)
+
 
 if __name__ == '__main__':
     """

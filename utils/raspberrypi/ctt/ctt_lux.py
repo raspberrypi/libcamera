@@ -19,6 +19,7 @@ def lux(Cam, Img):
     channels = [Img.channels[i] for i in Img.order]
     return lux_calc(Cam, Img, patches, channels), shutter_speed, gain
 
+
 """
 perform lux calibration on bayer channels
 """

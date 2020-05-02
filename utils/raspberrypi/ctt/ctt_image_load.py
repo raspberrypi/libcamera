@@ -418,6 +418,7 @@ def load_image(Cam, im_str, mac_config=None, show=False, mac=True, show_meta=Fal
         # print('\nERROR:\nInvalid file extension')
         return 0
 
+
 """
 bytearray splice to number little endian
 """

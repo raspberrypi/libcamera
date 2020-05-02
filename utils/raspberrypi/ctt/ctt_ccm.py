@@ -16,6 +16,7 @@ def degamma(x):
     x = x * ((2**16)-1)
     return x
 
+
 """
 FInds colour correction matrices for list of images
 """
@@ -152,6 +153,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
             'ccm': i[1]
         })
     return ccms
+
 
 """
 calculates the ccm for an individual image.

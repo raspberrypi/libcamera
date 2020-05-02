@@ -48,6 +48,8 @@ def get_config(dictt, key, default, ttype):
     except (KeyError, ValueError):
         val = default
     return val
+
+
 """
 argument parser
 """
@@ -67,6 +69,8 @@ def parse_input():
     if json_output is None:
         raise ArgError('\n\nERROR! No output json given.')
     return json_output, directory, config, log_path
+
+
 """
 custom arg and macbeth error class
 """
@@ -74,6 +78,7 @@ class ArgError(Exception):
     pass
 class MacbethError(Exception):
     pass
+
 
 """
 correlation function to quantify match
@@ -84,6 +89,7 @@ def correlate(im1, im2):
     cor = np.corrcoef(f1, f2)
     return cor[0][1]
 
+
 """
 get list of files from directory
 """
@@ -93,6 +99,7 @@ def get_photos(directory='photos'):
         if 'jp' in filename or '.dng' in filename:
             filename_list.append(filename)
     return filename_list
+
 
 """
 display image for debugging... read at your own risk...

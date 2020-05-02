@@ -288,6 +288,7 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
     """
     return(ct_curve, np.round(transverse_pos, 5), np.round(transverse_neg, 5))
 
+
 """
 obtain greyscale patches and perform alsc colour correction
 """

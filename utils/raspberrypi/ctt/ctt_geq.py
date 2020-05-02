@@ -165,6 +165,7 @@ def geq_fit(Cam, plot):
 
     return round(slope, 5), int(offset)
 
+
 """"
 Return green channels of macbeth patches
 returns g0, g1 where

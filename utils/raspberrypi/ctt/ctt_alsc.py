@@ -218,6 +218,7 @@ def get_16x12_grid(chan, dx, dy):
     """
     return np.array(grid)
 
+
 """
 obtains sigmas for red and blue, effectively a measure of the 'error'
 """
@@ -256,6 +257,7 @@ def get_sigma(Cam, cal_cr_list, cal_cb_list):
     # print(sigma_rs, sigma_bs)
     # print(sigma_r, sigma_b)
     return sigma_r, sigma_b
+
 
 """
 calculate sigma from two adjacent gain tables

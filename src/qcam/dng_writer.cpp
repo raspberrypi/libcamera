@@ -65,7 +65,7 @@ static const std::map<PixelFormat, FormatInfo> formatInfo = {
 	{ PixelFormat(DRM_FORMAT_SGBRG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
-		packScanlineSBGGR10P,
+		.packScanline = packScanlineSBGGR10P,
 	} },
 	{ PixelFormat(DRM_FORMAT_SGRBG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
 		.bitsPerSample = 10,

@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_CAMERA_SENSOR_H__
 #define __LIBCAMERA_CAMERA_SENSOR_H__
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -68,7 +69,7 @@ protected:
 
 private:
 	const MediaEntity *entity_;
-	V4L2Subdevice *subdev_;
+	std::unique_ptr<V4L2Subdevice> subdev_;
 	std::string model_;
 
 	std::vector<unsigned int> mbusCodes_;

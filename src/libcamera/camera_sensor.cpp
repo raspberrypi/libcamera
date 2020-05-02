@@ -133,7 +133,6 @@ LOG_DEFINE_CATEGORY(CameraSensor);
 CameraSensor::CameraSensor(const MediaEntity *entity)
 	: entity_(entity), properties_(properties::properties)
 {
-	subdev_ = new V4L2Subdevice(entity);
 }
 
 /**
@@ -141,7 +140,6 @@ CameraSensor::CameraSensor(const MediaEntity *entity)
  */
 CameraSensor::~CameraSensor()
 {
-	delete subdev_;
 }
 
 /**
@@ -197,7 +195,8 @@ int CameraSensor::init()
 	else
 		model_ = entityName;
 
-	/* Open the subdev. */
+	/* Create and open the subdev. */
+	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
 	ret = subdev_->open();
 	if (ret < 0)
 		return ret;

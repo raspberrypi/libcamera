@@ -87,7 +87,7 @@ class Camera:
                 "reference_shutter_speed": 10000,
                 "reference_gain": 1,
                 "reference_aperture": 1.0
-                },
+            },
             "rpi.noise": {
             },
             "rpi.geq": {

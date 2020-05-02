@@ -49,7 +49,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         [121, 121, 122],  # neutral 5
         [82, 84, 86],     # neutral 3.5
         [49, 49, 51]      # black 2
-                  ])
+    ])
 
     """
     convert reference colours from srgb to rgb

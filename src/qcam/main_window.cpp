@@ -549,7 +549,7 @@ void MainWindow::captureRaw()
 	captureRaw_ = true;
 }
 
-void MainWindow::processRaw(FrameBuffer *buffer)
+void MainWindow::processRaw(FrameBuffer *buffer, const ControlList &metadata)
 {
 #ifdef HAVE_DNG
 	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
@@ -559,7 +559,7 @@ void MainWindow::processRaw(FrameBuffer *buffer)
 	if (!filename.isEmpty()) {
 		const MappedBuffer &mapped = mappedBuffers_[buffer];
 		DNGWriter::write(filename.toStdString().c_str(), camera_.get(),
-				 rawStream_->configuration(), buffer,
+				 rawStream_->configuration(), metadata, buffer,
 				 mapped.memory);
 	}
 #endif
@@ -586,7 +586,7 @@ void MainWindow::requestComplete(Request *request)
 	 */
 	{
 		QMutexLocker locker(&mutex_);
-		doneQueue_.enqueue(request->buffers());
+		doneQueue_.enqueue({ request->buffers(), request->metadata() });
 	}
 
 	QCoreApplication::postEvent(this, new CaptureEvent);
@@ -599,22 +599,22 @@ void MainWindow::processCapture()
 	 * if stopCapture() has been called while a CaptureEvent was posted but
 	 * not processed yet. Return immediately in that case.
 	 */
-	std::map<Stream *, FrameBuffer *> buffers;
+	CaptureRequest request;
 
 	{
 		QMutexLocker locker(&mutex_);
 		if (doneQueue_.isEmpty())
 			return;
 
-		buffers = doneQueue_.dequeue();
+		request = doneQueue_.dequeue();
 	}
 
 	/* Process buffers. */
-	if (buffers.count(vfStream_))
-		processViewfinder(buffers[vfStream_]);
+	if (request.buffers_.count(vfStream_))
+		processViewfinder(request.buffers_[vfStream_]);
 
-	if (buffers.count(rawStream_))
-		processRaw(buffers[rawStream_]);
+	if (request.buffers_.count(rawStream_))
+		processRaw(request.buffers_[rawStream_], request.metadata_);
 }
 
 void MainWindow::processViewfinder(FrameBuffer *buffer)

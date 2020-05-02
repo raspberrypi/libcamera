@@ -20,6 +20,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/stream.h>
 
@@ -35,6 +36,23 @@ enum {
 	OptCamera = 'c',
 	OptHelp = 'h',
 	OptStream = 's',
+};
+
+class CaptureRequest
+{
+public:
+	CaptureRequest()
+	{
+	}
+
+	CaptureRequest(const std::map<Stream *, FrameBuffer *> &buffers,
+		       const ControlList &metadata)
+		: buffers_(buffers), metadata_(metadata)
+	{
+	}
+
+	std::map<Stream *, FrameBuffer *> buffers_;
+	ControlList metadata_;
 };
 
 class MainWindow : public QMainWindow
@@ -56,7 +74,7 @@ private Q_SLOTS:
 
 	void saveImageAs();
 	void captureRaw();
-	void processRaw(FrameBuffer *buffer);
+	void processRaw(FrameBuffer *buffer, const ControlList &metadata);
 
 	void queueRequest(FrameBuffer *buffer);
 
@@ -103,7 +121,7 @@ private:
 	Stream *vfStream_;
 	Stream *rawStream_;
 	std::map<Stream *, QQueue<FrameBuffer *>> freeBuffers_;
-	QQueue<std::map<Stream *, FrameBuffer *>> doneQueue_;
+	QQueue<CaptureRequest> doneQueue_;
 	QMutex mutex_; /* Protects freeBuffers_ and doneQueue_ */
 
 	uint64_t lastBufferTime_;

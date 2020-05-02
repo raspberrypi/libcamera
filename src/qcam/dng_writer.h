@@ -12,6 +12,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/controls.h>
 #include <libcamera/stream.h>
 
 using namespace libcamera;
@@ -21,6 +22,7 @@ class DNGWriter
 public:
 	static int write(const char *filename, const Camera *camera,
 			 const StreamConfiguration &config,
+			 const ControlList &metadata,
 			 const FrameBuffer *buffer, const void *data);
 };
 

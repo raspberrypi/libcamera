@@ -101,6 +101,7 @@ static const std::map<PixelFormat, FormatInfo> formatInfo = {
 
 int DNGWriter::write(const char *filename, const Camera *camera,
 		     const StreamConfiguration &config,
+		     const ControlList &metadata,
 		     const FrameBuffer *buffer, const void *data)
 {
 	const auto it = formatInfo.find(config.pixelFormat);

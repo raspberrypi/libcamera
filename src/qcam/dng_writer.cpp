@@ -74,7 +74,10 @@ void thumbScanlineSBGGRxxP(const FormatInfo &info, void *output,
 	unsigned int skip = info.bitsPerSample * 16 / 8;
 
 	for (unsigned int x = 0; x < width; x++) {
-		*out++ = (in[0] + in[1] + in[stride] + in[stride + 1]) >> 2;
+		uint8_t value = (in[0] + in[1] + in[stride] + in[stride + 1]) >> 2;
+		*out++ = value;
+		*out++ = value;
+		*out++ = value;
 		in += skip;
 	}
 }
@@ -175,16 +178,17 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
 	/*
-	 * Thumbnail-specific tags. The thumbnail is stored as a greyscale image
-	 * with 1/16 of the raw image resolution.
+	 * Thumbnail-specific tags. The thumbnail is stored as an RGB image
+	 * with 1/16 of the raw image resolution. Greyscale would save space,
+	 * but doesn't seem well supported by RawTherapee.
 	 */
 	TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_REDUCEDIMAGE);
 	TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, config.size.width / 16);
 	TIFFSetField(tif, TIFFTAG_IMAGELENGTH, config.size.height / 16);
 	TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
 	TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+	TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
 

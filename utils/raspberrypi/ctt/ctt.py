@@ -478,8 +478,8 @@ class Camera:
         """
         take the average of the interquartile
         """
-        l = len(noise_out)
-        noise_out = np.mean(noise_out[l//4:1+3*l//4], axis=0)
+        length = len(noise_out)
+        noise_out = np.mean(noise_out[length//4:1+3*length//4], axis=0)
         self.log += '\nAverage noise profile: constant = {} '.format(int(noise_out[1]))
         self.log += 'slope = {:.3f}'.format(noise_out[0])
         """

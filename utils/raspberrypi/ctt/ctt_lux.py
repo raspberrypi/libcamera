@@ -8,7 +8,7 @@ from ctt_tools import *
 """
 Find lux values from metadata and calculate Y
 """
-def lux(Cam,Img):
+def lux(Cam, Img):
     shutter_speed = Img.exposure
     gain = Img.againQ8_norm
     aperture = 1
@@ -17,12 +17,12 @@ def lux(Cam,Img):
     Cam.log += '\nAperture = {}'.format(aperture)
     patches = [Img.patches[i] for i in Img.order]
     channels = [Img.channels[i] for i in Img.order]
-    return lux_calc(Cam,Img,patches,channels),shutter_speed,gain
+    return lux_calc(Cam, Img, patches, channels), shutter_speed, gain
 
 """
 perform lux calibration on bayer channels
 """
-def lux_calc(Cam,Img,patches,channels):
+def lux_calc(Cam, Img, patches, channels):
     """
     find means color channels on grey patches
     """
@@ -30,14 +30,14 @@ def lux_calc(Cam,Img,patches,channels):
     ap_g = (np.mean(patches[1][3::4])+np.mean(patches[2][3::4]))/2
     ap_b = np.mean(patches[3][3::4])
     Cam.log += '\nAverage channel values on grey patches:'
-    Cam.log += '\nRed = {:.0f} Green = {:.0f} Blue = {:.0f}'.format(ap_r,ap_b,ap_g)
-    # print(ap_r,ap_g,ap_b)
+    Cam.log += '\nRed = {:.0f} Green = {:.0f} Blue = {:.0f}'.format(ap_r, ap_b, ap_g)
+    # print(ap_r, ap_g, ap_b)
     """
     calculate channel gains
     """
     gr = ap_g/ap_r
     gb = ap_g/ap_b
-    Cam.log += '\nChannel gains: Red = {:.3f} Blue = {:.3f}'.format(gr,gb)
+    Cam.log += '\nChannel gains: Red = {:.3f} Blue = {:.3f}'.format(gr, gb)
 
     """
     find means color channels on image and scale by gain
@@ -47,8 +47,8 @@ def lux_calc(Cam,Img,patches,channels):
     a_g = (np.mean(channels[1])+np.mean(channels[2]))/2
     a_b = np.mean(channels[3])*gb
     Cam.log += '\nAverage channel values over entire image scaled by channel gains:'
-    Cam.log += '\nRed = {:.0f} Green = {:.0f} Blue = {:.0f}'.format(a_r,a_b,a_g)
-    # print(a_r,a_g,a_b)
+    Cam.log += '\nRed = {:.0f} Green = {:.0f} Blue = {:.0f}'.format(a_r, a_b, a_g)
+    # print(a_r, a_g, a_b)
     """
     Calculate y with top row of yuv matrix
     """

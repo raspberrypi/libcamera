@@ -19,7 +19,7 @@ def degamma(x):
 """
 FInds colour correction matrices for list of images
 """
-def ccm(Cam,cal_cr_list,cal_cb_list):
+def ccm(Cam, cal_cr_list, cal_cb_list):
     imgs = Cam.imgs
     """
     standard macbeth chart colour values
@@ -32,7 +32,7 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
         [130, 128, 176],  # blue flower
         [92, 190, 172],   # bluish green
         [224, 124, 47],   # orange
-        [68, 91,170],     # purplish blue
+        [68, 91, 170],     # purplish blue
         [198, 82, 97],    # moderate red
         [94, 58, 106],    # purple
         [159, 189, 63],   # yellow green
@@ -58,7 +58,7 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
     """
     reorder reference values to match how patches are ordered
     """
-    m_srgb = np.array([m_srgb[i::6] for i in range(6)]).reshape((24,3))
+    m_srgb = np.array([m_srgb[i::6] for i in range(6)]).reshape((24, 3))
 
     """
     reformat alsc correction tables or set colour_cals to None if alsc is
@@ -68,7 +68,7 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
         colour_cals = None
     else:
         colour_cals = {}
-        for cr,cb in zip(cal_cr_list,cal_cb_list):
+        for cr, cb in zip(cal_cr_list, cal_cb_list):
             cr_tab = cr['table']
             cb_tab = cb['table']
             """
@@ -76,7 +76,7 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
             """
             cr_tab= cr_tab/np.min(cr_tab)
             cb_tab= cb_tab/np.min(cb_tab)
-            colour_cals[cr['ct']] = [cr_tab,cb_tab]
+            colour_cals[cr['ct']] = [cr_tab, cb_tab]
 
     """
     for each image, perform awb and alsc corrections.
@@ -91,14 +91,14 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
         Note: if alsc is disabled then colour_cals will be set to None and no
         the function will simply return the macbeth patches
         """
-        r,b,g = get_alsc_patches(Img,colour_cals,grey=False)
+        r, b, g = get_alsc_patches(Img, colour_cals, grey=False)
         """
         do awb
         Note: awb is done by measuring the macbeth chart in the image, rather
         than from the awb calibration. This is done so the awb will be perfect
         and the ccm matrices will be more accurate.
         """
-        r_greys,b_greys,g_greys = r[3::4],b[3::4],g[3::4]
+        r_greys, b_greys, g_greys = r[3::4], b[3::4], g[3::4]
         r_g = np.mean(r_greys/g_greys)
         b_g = np.mean(b_greys/g_greys)
         r = r / r_g
@@ -108,16 +108,16 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
         normalise brightness wrt reference macbeth colours and then average
         each channel for each patch
         """
-        gain = np.mean(m_srgb)/np.mean((r,g,b))
+        gain = np.mean(m_srgb)/np.mean((r, g, b))
         Cam.log += '\nGain with respect to standard colours: {:.3f}'.format(gain)
-        r = np.mean(gain*r,axis=1)
-        b = np.mean(gain*b,axis=1)
-        g = np.mean(gain*g,axis=1)
+        r = np.mean(gain*r, axis=1)
+        b = np.mean(gain*b, axis=1)
+        g = np.mean(gain*g, axis=1)
 
         """
         calculate ccm matrix
         """
-        ccm = do_ccm(r,g,b,m_srgb)
+        ccm = do_ccm(r, g, b, m_srgb)
 
         """
         if a ccm has already been calculated for that temperature then don't
@@ -133,18 +133,18 @@ def ccm(Cam,cal_cr_list,cal_cb_list):
     """
     average any ccms that share a colour temperature
     """
-    for k,v in ccm_tab.items():
-        tab = np.mean(v,axis=0)
-        tab = np.where((10000*tab)%1<=0.05,tab+0.00001,tab)
-        tab = np.where((10000*tab)%1>=0.95,tab-0.00001,tab)
-        ccm_tab[k] = list(np.round(tab,5))
+    for k, v in ccm_tab.items():
+        tab = np.mean(v, axis=0)
+        tab = np.where((10000*tab)%1<=0.05, tab+0.00001, tab)
+        tab = np.where((10000*tab)%1>=0.95, tab-0.00001, tab)
+        ccm_tab[k] = list(np.round(tab, 5))
         Cam.log += '\nMatrix calculated for colour temperature of {} K'.format(k)
 
     """
     return all ccms with respective colour temperature in the correct format,
     sorted by their colour temperature
     """
-    sorted_ccms = sorted(ccm_tab.items(),key=lambda kv: kv[0])
+    sorted_ccms = sorted(ccm_tab.items(), key=lambda kv: kv[0])
     ccms = []
     for i in sorted_ccms:
         ccms.append({
@@ -161,19 +161,19 @@ calculation.
 Should you want to fit them in another space (e.g. LAB) we wish you the best of
 luck and send us the code when you are done! :-)
 """
-def do_ccm(r,g,b,m_srgb):
+def do_ccm(r, g, b, m_srgb):
     rb = r-b
     gb = g-b
     rb_2s = (rb*rb)
     rb_gbs = (rb*gb)
     gb_2s = (gb*gb)
 
-    r_rbs = ( rb * (m_srgb[...,0] - b) )
-    r_gbs = ( gb * (m_srgb[...,0] - b) )
-    g_rbs = ( rb * (m_srgb[...,1] - b) )
-    g_gbs = ( gb * (m_srgb[...,1] - b) )
-    b_rbs = ( rb * (m_srgb[...,2] - b) )
-    b_gbs = ( gb * (m_srgb[...,2] - b) )
+    r_rbs = ( rb * (m_srgb[..., 0] - b) )
+    r_gbs = ( gb * (m_srgb[..., 0] - b) )
+    g_rbs = ( rb * (m_srgb[..., 1] - b) )
+    g_gbs = ( gb * (m_srgb[..., 1] - b) )
+    b_rbs = ( rb * (m_srgb[..., 2] - b) )
+    b_gbs = ( gb * (m_srgb[..., 2] - b) )
 
     """
     Obtain least squares fit
@@ -216,6 +216,6 @@ def do_ccm(r,g,b,m_srgb):
     """
     format ccm
     """
-    ccm = [r_a,r_b,r_c,g_a,g_b,g_c,b_a,b_b,b_c]
+    ccm = [r_a, r_b, r_c, g_a, g_b, g_c, b_a, b_b, b_c]
 
     return ccm

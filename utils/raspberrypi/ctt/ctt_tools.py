@@ -26,7 +26,7 @@ readability in the main files.
 obtain config values, unless it doesnt exist, in which case pick default
 Furthermore, it can check if the input is the correct type
 """
-def get_config(dictt,key,default,ttype):
+def get_config(dictt, key, default, ttype):
     try:
         val = dictt[key]
         if ttype == 'string':
@@ -57,16 +57,16 @@ def parse_input():
         raise ArgError('\n\nERROR! Enter value for each arguent passed.')
     params = arguments [0::2]
     vals = arguments [1::2]
-    args_dict = dict(zip(params,vals))
-    json_output = get_config(args_dict,'-o',None,'string')
-    directory = get_config(args_dict,'-i',None,'string')
-    config = get_config(args_dict,'-c',None,'string')
-    log_path = get_config(args_dict,'-l',None,'string')
+    args_dict = dict(zip(params, vals))
+    json_output = get_config(args_dict, '-o', None, 'string')
+    directory = get_config(args_dict, '-i', None, 'string')
+    config = get_config(args_dict, '-c', None, 'string')
+    log_path = get_config(args_dict, '-l', None, 'string')
     if directory == None:
         raise ArgError('\n\nERROR! No input directory given.')
     if json_output == None:
         raise ArgError('\n\nERROR! No output json given.')
-    return json_output,directory,config,log_path
+    return json_output, directory, config, log_path
 """
 custom arg and macbeth error class
 """
@@ -78,10 +78,10 @@ class MacbethError(Exception):
 """
 correlation function to quantify match
 """
-def correlate(im1,im2):
+def correlate(im1, im2):
     f1 = im1.flatten()
     f2 = im2.flatten()
-    cor = np.corrcoef(f1,f2)
+    cor = np.corrcoef(f1, f2)
     return cor[0][1]
 
 """
@@ -97,13 +97,13 @@ def get_photos(directory='photos'):
 """
 display image for debugging... read at your own risk...
 """
-def represent(img,name='image'):
+def represent(img, name='image'):
     # if type(img) == tuple or type(img) == list:
         # for i in range(len(img)):
             # name = 'image {}'.format(i)
-            # cv2.imshow(name,img[i])
+            # cv2.imshow(name, img[i])
     # else:
-        # cv2.imshow(name,img)
+        # cv2.imshow(name, img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     # return 0
@@ -112,11 +112,11 @@ def represent(img,name='image'):
     with their mouse to close the window....  therefore matplotlib is used....
     (thanks a lot opencv)
     """
-    grid = plt.GridSpec(22,1)
-    plt.subplot(grid[:19,0])
-    plt.imshow(img,cmap='gray')
+    grid = plt.GridSpec(22, 1)
+    plt.subplot(grid[:19, 0])
+    plt.imshow(img, cmap='gray')
     plt.axis('off')
-    plt.subplot(grid[21,0])
+    plt.subplot(grid[21, 0])
     plt.title('press \'q\' to continue')
     plt.axis('off')
     plt.show()
@@ -124,7 +124,7 @@ def represent(img,name='image'):
     # f = plt.figure()
     # ax = f.add_subplot(211)
     # ax2 = f.add_subplot(122)
-    # ax.imshow(img,cmap='gray')
+    # ax.imshow(img, cmap='gray')
     # ax.axis('off')
     # ax2.set_figheight(2)
     # ax2.title('press \'q\' to continue')
@@ -136,6 +136,6 @@ def represent(img,name='image'):
 reshape image to fixed width without distorting
 returns image and scale factor
 """
-def reshape(img,width):
+def reshape(img, width):
     factor = width/img.shape[0]
-    return cv2.resize(img,None,fx=factor,fy=factor),factor
+    return cv2.resize(img, None, fx=factor, fy=factor), factor

@@ -12,7 +12,7 @@ from scipy.optimize import fmin
 """
 obtain piecewise linear approximation for colour curve
 """
-def awb(Cam,cal_cr_list,cal_cb_list,plot):
+def awb(Cam, cal_cr_list, cal_cb_list, plot):
     imgs = Cam.imgs
     """
     condense alsc calibration tables into one dictionary
@@ -21,7 +21,7 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
         colour_cals = None
     else:
         colour_cals = {}
-        for cr,cb in zip(cal_cr_list,cal_cb_list):
+        for cr, cb in zip(cal_cr_list, cal_cb_list):
             cr_tab = cr['table']
             cb_tab = cb['table']
             """
@@ -29,7 +29,7 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
             """
             cr_tab= cr_tab/np.min(cr_tab)
             cb_tab= cb_tab/np.min(cb_tab)
-            colour_cals[cr['ct']] = [cr_tab,cb_tab]
+            colour_cals[cr['ct']] = [cr_tab, cb_tab]
     """
     obtain data from greyscale macbeth patches
     """
@@ -42,17 +42,17 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
         Note: if alsc is disabled then colour_cals will be set to None and the
         function will just return the greyscale patches
         """
-        r_patchs,b_patchs,g_patchs = get_alsc_patches(Img,colour_cals)
+        r_patchs, b_patchs, g_patchs = get_alsc_patches(Img, colour_cals)
         """
-        calculate ratio of r,b to g
+        calculate ratio of r, b to g
         """
         r_g = np.mean(r_patchs/g_patchs)
         b_g = np.mean(b_patchs/g_patchs)
-        Cam.log += '\n       r : {:.4f}       b : {:.4f}'.format(r_g,b_g)
+        Cam.log += '\n       r : {:.4f}       b : {:.4f}'.format(r_g, b_g)
         """
         The curve tends to be better behaved in so-called hatspace.
-        R,B,G represent the individual channels. The colour curve is plotted in
-        r,b space, where:
+        R, B, G represent the individual channels. The colour curve is plotted in
+        r, b space, where:
             r = R/G
             b = B/G
         This will be referred to as dehatspace... (sorry)
@@ -71,18 +71,18 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
         """
         r_g_hat = r_g/(1+r_g+b_g)
         b_g_hat = b_g/(1+r_g+b_g)
-        Cam.log += '\n   r_hat : {:.4f}   b_hat : {:.4f}'.format(r_g_hat,b_g_hat)
-        rbs_hat.append((r_g_hat,b_g_hat,Img.col))
-        rb_raw.append((r_g,b_g))
+        Cam.log += '\n   r_hat : {:.4f}   b_hat : {:.4f}'.format(r_g_hat, b_g_hat)
+        rbs_hat.append((r_g_hat, b_g_hat, Img.col))
+        rb_raw.append((r_g, b_g))
         Cam.log += '\n'
 
     Cam.log += '\nFinished processing images'
     """
     sort all lits simultaneously by r_hat
     """
-    rbs_zip = list(zip(rbs_hat,rb_raw))
-    rbs_zip.sort(key=lambda x:x[0][0])
-    rbs_hat,rb_raw = list(zip(*rbs_zip))
+    rbs_zip = list(zip(rbs_hat, rb_raw))
+    rbs_zip.sort(key=lambda x: x[0][0])
+    rbs_hat, rb_raw = list(zip(*rbs_zip))
     """
     unzip tuples ready for processing
     """
@@ -91,7 +91,7 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     """
     fit quadratic fit to r_g hat and b_g_hat
     """
-    a,b,c = np.polyfit(rbs_hat[0],rbs_hat[1],2)
+    a, b, c = np.polyfit(rbs_hat[0], rbs_hat[1], 2)
     Cam.log += '\nFit quadratic curve in hatspace'
     """
     the algorithm now approximates the shortest distance from each point to the
@@ -113,11 +113,11 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     def f(x):
         return a*x**2 + b*x + c
     """
-    iterate over points (R,B are x and y coordinates of points) and calculate
+    iterate over points (R, B are x and y coordinates of points) and calculate
     distance to line in dehatspace
     """
     dists = []
-    for i, (R,B) in enumerate(zip(rbs_hat[0],rbs_hat[1])):
+    for i, (R, B) in enumerate(zip(rbs_hat[0], rbs_hat[1])):
         """
         define function to minimise as square distance between datapoint and
         point on curve. Squaring is monotonic so minimising radius squared is
@@ -129,7 +129,7 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
         """
         perform optimisation with scipy.optmisie.fmin
         """
-        x_hat = fmin(f_min,R,disp=0)[0]
+        x_hat = fmin(f_min, R, disp=0)[0]
         y_hat = f(x_hat)
         """
         dehat
@@ -179,16 +179,16 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     """
     r_fit = r_hat_fit/(1-r_hat_fit-b_hat_fit)
     b_fit = b_hat_fit/(1-r_hat_fit-b_hat_fit)
-    c_fit = np.round(rbs_hat[2],0)
+    c_fit = np.round(rbs_hat[2], 0)
     """
     round to 4dp
     """
-    r_fit = np.where((1000*r_fit)%1<=0.05,r_fit+0.0001,r_fit)
-    r_fit = np.where((1000*r_fit)%1>=0.95,r_fit-0.0001,r_fit)
-    b_fit = np.where((1000*b_fit)%1<=0.05,b_fit+0.0001,b_fit)
-    b_fit = np.where((1000*b_fit)%1>=0.95,b_fit-0.0001,b_fit)
-    r_fit = np.round(r_fit,4)
-    b_fit = np.round(b_fit,4)
+    r_fit = np.where((1000*r_fit)%1<=0.05, r_fit+0.0001, r_fit)
+    r_fit = np.where((1000*r_fit)%1>=0.95, r_fit-0.0001, r_fit)
+    b_fit = np.where((1000*b_fit)%1<=0.05, b_fit+0.0001, b_fit)
+    b_fit = np.where((1000*b_fit)%1>=0.95, b_fit-0.0001, b_fit)
+    r_fit = np.round(r_fit, 4)
+    b_fit = np.round(b_fit, 4)
     """
     The following code ensures that colour temperature decreases with
     increasing r/g
@@ -200,8 +200,8 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     while i > 0 :
         if c_fit[i] > c_fit[i-1]:
             Cam.log += '\nColour temperature increase found\n'
-            Cam.log += '{} K at r = {} to '.format(c_fit[i-1],r_fit[i-1])
-            Cam.log += '{} K at r = {}'.format(c_fit[i],r_fit[i])
+            Cam.log += '{} K at r = {} to '.format(c_fit[i-1], r_fit[i-1])
+            Cam.log += '{} K at r = {}'.format(c_fit[i], r_fit[i])
             """
             if colour temperature increases then discard point furthest from
             the transformed fit (dehatspace)
@@ -209,8 +209,8 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
             error_1 = abs(dists[i-1])
             error_2 = abs(dists[i])
             Cam.log += '\nDistances from fit:\n'
-            Cam.log += '{} K : {:.5f} , '.format(c_fit[i],error_1)
-            Cam.log += '{} K : {:.5f}'.format(c_fit[i-1],error_2)
+            Cam.log += '{} K : {:.5f} , '.format(c_fit[i], error_1)
+            Cam.log += '{} K : {:.5f}'.format(c_fit[i-1], error_2)
             """
             find bad index
             note that in python false = 0 and true = 1
@@ -221,9 +221,9 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
             """
             delete bad point
             """
-            r_fit = np.delete(r_fit,bad)
-            b_fit = np.delete(b_fit,bad)
-            c_fit = np.delete(c_fit,bad).astype(np.uint16)
+            r_fit = np.delete(r_fit, bad)
+            b_fit = np.delete(b_fit, bad)
+            c_fit = np.delete(c_fit, bad).astype(np.uint16)
         """
         note that if a point has been discarded then the length has decreased
         by one, meaning that decreasing the index by one will reassess the kept
@@ -235,7 +235,7 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     """
     return formatted ct curve, ordered by increasing colour temperature
     """
-    ct_curve = list(np.array(list(zip(b_fit,r_fit,c_fit))).flatten())[::-1]
+    ct_curve = list(np.array(list(zip(b_fit, r_fit, c_fit))).flatten())[::-1]
     Cam.log += '\nFinal CT curve:'
     for i in range(len(ct_curve)//3):
         j = 3*i
@@ -247,15 +247,15 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     plotting code for debug
     """
     if plot:
-        x = np.linspace(np.min(rbs_hat[0]),np.max(rbs_hat[0]),100)
+        x = np.linspace(np.min(rbs_hat[0]), np.max(rbs_hat[0]), 100)
         y = a*x**2 + b*x + c
-        plt.subplot(2,1,1)
+        plt.subplot(2, 1, 1)
         plt.title('hatspace')
-        plt.plot(rbs_hat[0],rbs_hat[1],ls='--',color='blue')
-        plt.plot(x,y,color='green',ls='-')
-        plt.scatter(rbs_hat[0],rbs_hat[1],color='red')
+        plt.plot(rbs_hat[0], rbs_hat[1], ls='--', color='blue')
+        plt.plot(x, y, color='green', ls='-')
+        plt.scatter(rbs_hat[0], rbs_hat[1], color='red')
         for i, ct in enumerate(rbs_hat[2]):
-            plt.annotate(str(ct),(rbs_hat[0][i],rbs_hat[1][i]))
+            plt.annotate(str(ct), (rbs_hat[0][i], rbs_hat[1][i]))
         plt.xlabel('$\hat{r}$')
         plt.ylabel('$\hat{b}$')
         """
@@ -265,13 +265,13 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
         # ax = plt.gca()
         # ax.set_aspect('equal')
         plt.grid()
-        plt.subplot(2,1,2)
+        plt.subplot(2, 1, 2)
         plt.title('dehatspace - indoors?')
-        plt.plot(r_fit,b_fit,color='blue')
-        plt.scatter(rb_raw[0],rb_raw[1],color='green')
-        plt.scatter(r_fit,b_fit,color='red')
-        for i,ct in enumerate(c_fit):
-            plt.annotate(str(ct),(r_fit[i],b_fit[i]))
+        plt.plot(r_fit, b_fit, color='blue')
+        plt.scatter(rb_raw[0], rb_raw[1], color='green')
+        plt.scatter(r_fit, b_fit, color='red')
+        for i, ct in enumerate(c_fit):
+            plt.annotate(str(ct), (r_fit[i], b_fit[i]))
         plt.xlabel('$r$')
         plt.ylabel('$b$')
         """
@@ -286,15 +286,15 @@ def awb(Cam,cal_cr_list,cal_cb_list,plot):
     """
     end of plotting code
     """
-    return(ct_curve,np.round(transverse_pos,5),np.round(transverse_neg,5))
+    return(ct_curve, np.round(transverse_pos, 5), np.round(transverse_neg, 5))
 
 """
 obtain greyscale patches and perform alsc colour correction
 """
-def get_alsc_patches(Img,colour_cals,grey=True):
+def get_alsc_patches(Img, colour_cals, grey=True):
     """
     get patch centre coordinates, image colour and the actual
-    patches for each channel,remembering to subtract blacklevel
+    patches for each channel, remembering to subtract blacklevel
     If grey then only greyscale patches considered
     """
     if grey:
@@ -316,12 +316,12 @@ def get_alsc_patches(Img,colour_cals,grey=True):
         g_patchs = (patches[1]+patches[2])/2 - Img.blacklevel_16
 
     if colour_cals == None:
-        return r_patchs,b_patchs,g_patchs
+        return r_patchs, b_patchs, g_patchs
     """
     find where image colour fits in alsc colour calibration tables
     """
     cts = list(colour_cals.keys())
-    pos = bisect_left(cts,col)
+    pos = bisect_left(cts, col)
     """
     if img colour is below minimum or above maximum alsc calibration colour, simply
     pick extreme closest to img colour
@@ -343,32 +343,32 @@ def get_alsc_patches(Img,colour_cals,grey=True):
         bef_tabs = np.array(colour_cals[bef])
         aft_tabs = np.array(colour_cals[aft])
         col_tabs = (bef_tabs*db + aft_tabs*da)/(da+db)
-    col_tabs = np.reshape(col_tabs,(2,12,16))
+    col_tabs = np.reshape(col_tabs, (2, 12, 16))
     """
-    calculate dx,dy used to calculate alsc table
+    calculate dx, dy used to calculate alsc table
     """
-    w,h = Img.w/2,Img.h/2
-    dx,dy = int(-(-(w-1)//16)),int(-(-(h-1)//12))
+    w, h = Img.w/2, Img.h/2
+    dx, dy = int(-(-(w-1)//16)), int(-(-(h-1)//12))
     """
     make list of pairs of gains for each patch by selecting the correct value
     in alsc colour calibration table
     """
     patch_gains = []
     for cen in cen_coords:
-        x,y = cen[0]//dx, cen[1]//dy
+        x, y = cen[0]//dx, cen[1]//dy
         # We could probably do with some better spatial interpolation here?
-        col_gains = (col_tabs[0][y][x],col_tabs[1][y][x])
+        col_gains = (col_tabs[0][y][x], col_tabs[1][y][x])
         patch_gains.append(col_gains)
 
     """
     multiply the r and b channels in each patch by the respective gain, finally
     performing the alsc colour correction
     """
-    for i,gains in enumerate(patch_gains):
+    for i, gains in enumerate(patch_gains):
         r_patchs[i] = r_patchs[i] * gains[0]
         b_patchs[i] = b_patchs[i] * gains[1]
 
     """
-    return greyscale patches, g channel and correct r,b channels
+    return greyscale patches, g channel and correct r, b channels
     """
-    return r_patchs,b_patchs,g_patchs
+    return r_patchs, b_patchs, g_patchs

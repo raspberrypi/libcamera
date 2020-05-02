@@ -12,7 +12,7 @@ Find noise standard deviation and fit to model:
 
     noise std = a + b*sqrt(pixel mean)
 """
-def noise(Cam,Img,plot):
+def noise(Cam, Img, plot):
     Cam.log += '\nProcessing image: {}'.format(Img.name)
     stds = []
     means = []
@@ -36,14 +36,14 @@ def noise(Cam,Img,plot):
     """
     stds = np.array(stds)
     means = np.array(means)
-    means = np.clip(np.array(means),0,None)
+    means = np.clip(np.array(means), 0, None)
     sq_means = np.sqrt(means)
 
 
     """
     least squares fit model
     """
-    fit = np.polyfit(sq_means,stds,1)
+    fit = np.polyfit(sq_means, stds, 1)
     Cam.log += '\nBlack level = {}'.format(Img.blacklevel_16)
     Cam.log += '\nNoise profile: offset = {}'.format(int(fit[1]))
     Cam.log += ' slope = {:.3f}'.format(fit[0])
@@ -59,8 +59,8 @@ def noise(Cam,Img,plot):
     fit_score_norm = fit_score - fit_std
     anom_ind = np.where(fit_score_norm > 1)
     fit_score_norm.sort()
-    sq_means_clean = np.delete(sq_means,anom_ind)
-    stds_clean = np.delete(stds,anom_ind)
+    sq_means_clean = np.delete(sq_means, anom_ind)
+    stds_clean = np.delete(stds, anom_ind)
     removed = len(stds) - len(stds_clean)
     if removed != 0:
         Cam.log += '\nIdentified and removed {} anomalies.'.format(removed)
@@ -68,7 +68,7 @@ def noise(Cam,Img,plot):
         """
         recalculate fit with outliers removed
         """
-        fit = np.polyfit(sq_means_clean,stds_clean,1)
+        fit = np.polyfit(sq_means_clean, stds_clean, 1)
         Cam.log += '\nNoise profile: offset = {}'.format(int(fit[1]))
         Cam.log += ' slope = {:.3f}'.format(fit[0])
 
@@ -81,7 +81,7 @@ def noise(Cam,Img,plot):
         corrected = 1
         ones = np.ones(len(means))
         y_data = stds/sq_means
-        fit2 = np.polyfit(ones,y_data,0)
+        fit2 = np.polyfit(ones, y_data, 0)
         Cam.log += '\nOffset below zero. Fit recalculated with zero offset'
         Cam.log += '\nNoise profile: offset = 0'
         Cam.log += ' slope = {:.3f}'.format(fit2[0])
@@ -94,13 +94,13 @@ def noise(Cam,Img,plot):
     if plot:
         x = np.arange(sq_means.max()//0.88)
         fit_plot = x*fit[0] + fit[1]
-        plt.scatter(sq_means,stds,label='data',color='blue')
-        plt.scatter(sq_means[anom_ind],stds[anom_ind],color='orange',label='anomalies')
-        plt.plot(x,fit_plot,label='fit',color='red',ls=':')
+        plt.scatter(sq_means, stds, label='data', color='blue')
+        plt.scatter(sq_means[anom_ind], stds[anom_ind], color='orange', label='anomalies')
+        plt.plot(x, fit_plot, label='fit', color='red', ls=':')
         if fit[1] < 0:
             fit_plot_2 = x*fit2[0]
-            plt.plot(x,fit_plot_2,label='fit 0 intercept',color='green',ls='--')
-        plt.plot(0,0)
+            plt.plot(x, fit_plot_2, label='fit 0 intercept', color='green', ls='--')
+        plt.plot(0, 0)
         plt.title('Noise Plot\nImg: {}'.format(Img.str))
         plt.legend(loc = 'upper left')
         plt.xlabel('Sqrt Pixel Value')
@@ -116,7 +116,7 @@ def noise(Cam,Img,plot):
     """
     Cam.log += '\n'
     if corrected:
-        fit = [fit2[0],0]
+        fit = [fit2[0], 0]
         return fit
 
     else:

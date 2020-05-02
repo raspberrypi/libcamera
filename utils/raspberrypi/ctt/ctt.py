@@ -41,15 +41,15 @@ def get_col_lux(string):
     """
     Extract colour and lux values from filename
     """
-    col = re.search('([0-9]+)[kK](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$',string)
-    lux = re.search('([0-9]+)[lL](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$',string)
+    col = re.search('([0-9]+)[kK](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
+    lux = re.search('([0-9]+)[lL](\.(jpg|jpeg|brcm|dng)|_.*\.(jpg|jpeg|brcm|dng))$', string)
     try:
         col = col.group(1)
     except AttributeError:
         """
         Catch error if images labelled incorrectly and pass reasonable defaults
         """
-        return None,None
+        return None, None
     try:
         lux = lux.group(1)
     except AttributeError:
@@ -57,15 +57,15 @@ def get_col_lux(string):
         Catch error if images labelled incorrectly and pass reasonable defaults
         Still returns colour if that has been found.
         """
-        return col,None
-    return int( col ),int( lux )
+        return col, None
+    return int( col ), int( lux )
 
 """
 Camera object that is the backbone of the tuning tool.
 Input is the desired path of the output json.
 """
 class Camera:
-    def __init__(self,jfile):
+    def __init__(self, jfile):
         self.path = os.path.dirname(os.path.expanduser(__file__)) + '/'
         if self.path == '/':
             self.path = ''
@@ -96,9 +96,9 @@ class Camera:
             },
             "rpi.awb": {
                 "priors" : [
-                    {"lux": 0,"prior":[ 2000, 1.0, 3000, 0.0, 13000, 0.0]},
-                    {"lux": 800,"prior":[ 2000, 0.0, 6000, 2.0, 13000, 2.0]},
-                    {"lux": 1500,"prior":[ 2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
+                    {"lux": 0, "prior": [ 2000, 1.0, 3000, 0.0, 13000, 0.0]},
+                    {"lux": 800, "prior": [ 2000, 0.0, 6000, 2.0, 13000, 2.0]},
+                    {"lux": 1500, "prior": [ 2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
                 ],
                 "modes" : {
                     "auto" : { "lo" : 2500, "hi" : 8000 },
@@ -189,7 +189,7 @@ class Camera:
             },
             "rpi.ccm": {
             },
-            "rpi.sharpen":{
+            "rpi.sharpen": {
             }
         }
 
@@ -198,7 +198,7 @@ class Camera:
     Perform colour correction calibrations by comparing macbeth patch colours
     to standard macbeth chart colours.
     """
-    def ccm_cal(self,do_alsc_colour):
+    def ccm_cal(self, do_alsc_colour):
         if 'rpi.ccm' in self.disable:
             return 1
         print('\nStarting CCM calibration')
@@ -227,7 +227,7 @@ class Camera:
                 cal_cb_list = self.json['rpi.alsc']['calibrations_Cb']
                 self.log += '\nALSC tables found successfully'
             except KeyError:
-                cal_cr_list,cal_cb_list=None,None
+                cal_cr_list, cal_cb_list=None, None
                 print('WARNING! No ALSC tables found for CCM!')
                 print('Performing CCM calibrations without ALSC correction...')
                 self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
@@ -236,7 +236,7 @@ class Camera:
             """
             case where config options result in CCM done without ALSC colour tables
             """
-            cal_cr_list,cal_cb_list=None,None
+            cal_cr_list, cal_cb_list=None, None
             self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
             self.log += 'performed without ALSC correction...'
 
@@ -244,7 +244,7 @@ class Camera:
         Do CCM calibration
         """
         try:
-            ccms = ccm(self,cal_cr_list,cal_cb_list)
+            ccms = ccm(self, cal_cr_list, cal_cb_list)
         except ArithmeticError:
             print('ERROR: Matrix is singular!\nTake new pictures and try again...')
             self.log += '\nERROR: Singular matrix encountered during fit!'
@@ -262,7 +262,7 @@ class Camera:
     various colour temperatures, as well as providing a maximum 'wiggle room'
     distance from this curve (transverse_neg/pos).
     """
-    def awb_cal(self,greyworld,do_alsc_colour):
+    def awb_cal(self, greyworld, do_alsc_colour):
         if 'rpi.awb' in self.disable:
             return 1
         print('\nStarting AWB calibration')
@@ -292,21 +292,21 @@ class Camera:
                 cal_cb_list = self.json['rpi.alsc']['calibrations_Cb']
                 self.log += '\nALSC tables found successfully'
             except KeyError:
-                cal_cr_list,cal_cb_list=None,None
+                cal_cr_list, cal_cb_list=None, None
                 print('ERROR, no ALSC calibrations found for AWB')
                 print('Performing AWB without ALSC tables')
                 self.log += '\nWARNING: No ALSC tables found.\nAWB calibration '
                 self.log += 'performed without ALSC correction...'
         else:
-            cal_cr_list,cal_cb_list=None,None
+            cal_cr_list, cal_cb_list=None, None
             self.log += '\nWARNING: No ALSC tables found.\nAWB calibration '
             self.log += 'performed without ALSC correction...'
         """
         call calibration function
         """
         plot = "rpi.awb" in self.plot
-        awb_out = awb(self,cal_cr_list,cal_cb_list,plot)
-        ct_curve,transverse_neg,transverse_pos = awb_out
+        awb_out = awb(self, cal_cr_list, cal_cb_list, plot)
+        ct_curve, transverse_neg, transverse_pos = awb_out
         """
         write output to json
         """
@@ -323,7 +323,7 @@ class Camera:
     colour channel seperately, and then partially corrects for vignetting.
     The extent of the correction depends on the 'luminance_strength' parameter.
     """
-    def alsc_cal(self,luminance_strength,do_alsc_colour):
+    def alsc_cal(self, luminance_strength, do_alsc_colour):
         if 'rpi.alsc' in self.disable:
             return 1
         print('\nStarting ALSC calibration')
@@ -346,8 +346,8 @@ class Camera:
         call calibration function
         """
         plot = "rpi.alsc" in self.plot
-        alsc_out = alsc_all(self,do_alsc_colour,plot)
-        cal_cr_list,cal_cb_list,luminance_lut,av_corn = alsc_out
+        alsc_out = alsc_all(self, do_alsc_colour, plot)
+        cal_cr_list, cal_cb_list, luminance_lut, av_corn = alsc_out
         """
         write ouput to json and finish if not do_alsc_colour
         """
@@ -392,12 +392,12 @@ class Camera:
         """
         obtain worst-case scenario residual sigmas
         """
-        sigma_r,sigma_b = get_sigma(self,cal_cr_list,cal_cb_list)
+        sigma_r, sigma_b = get_sigma(self, cal_cr_list, cal_cb_list)
         """
         write output to json
         """
-        self.json['rpi.alsc']['sigma'] = np.round(sigma_r,5)
-        self.json['rpi.alsc']['sigma_Cb'] = np.round(sigma_b,5)
+        self.json['rpi.alsc']['sigma'] = np.round(sigma_r, 5)
+        self.json['rpi.alsc']['sigma_Cb'] = np.round(sigma_b, 5)
         self.log += '\nCalibrated sigmas written to json file'
         print('Finished ALSC calibrations')
 
@@ -417,7 +417,7 @@ class Camera:
         perform calibration
         """
         plot = 'rpi.geq' in self.plot
-        slope,offset = geq_fit(self,plot)
+        slope, offset = geq_fit(self, plot)
         """
         write output to json
         """
@@ -441,7 +441,7 @@ class Camera:
         image with lux level closest to 1000 is chosen.
         """
         luxes = [Img.lux for Img in self.imgs]
-        argmax = luxes.index(min(luxes, key=lambda l:abs(1000-l)))
+        argmax = luxes.index(min(luxes, key=lambda l: abs(1000-l)))
         Img = self.imgs[argmax]
         self.log += '\nLux found closest to 1000: {} lx'.format(Img.lux)
         self.log += '\nImage used: ' + Img.name
@@ -450,7 +450,7 @@ class Camera:
         """
         do calibration
         """
-        lux_out,shutter_speed,gain = lux(self,Img)
+        lux_out, shutter_speed, gain = lux(self, Img)
         """
         write output to json
         """
@@ -474,28 +474,28 @@ class Camera:
         run calibration on all images and sort by slope.
         """
         plot = "rpi.noise" in self.plot
-        noise_out = sorted([noise(self,Img,plot) for Img in self.imgs], key = lambda x:x[0])
+        noise_out = sorted([noise(self, Img, plot) for Img in self.imgs], key = lambda x: x[0])
         self.log += '\nFinished processing images'
         """
         take the average of the interquartile
         """
         l = len(noise_out)
-        noise_out = np.mean(noise_out[l//4:1+3*l//4],axis=0)
+        noise_out = np.mean(noise_out[l//4:1+3*l//4], axis=0)
         self.log += '\nAverage noise profile: constant = {} '.format(int(noise_out[1]))
         self.log += 'slope = {:.3f}'.format(noise_out[0])
         """
         write to json
         """
         self.json['rpi.noise']['reference_constant'] = int(noise_out[1])
-        self.json['rpi.noise']['reference_slope'] = round(noise_out[0],3)
+        self.json['rpi.noise']['reference_slope'] = round(noise_out[0], 3)
         self.log += '\nNOISE calibrations written to json'
         print('Finished NOISE calibrations')
 
     """
     Removes json entries that are turned off
     """
-    def json_remove(self,disable):
-        self.log_new_sec('Disabling Options',cal=False)
+    def json_remove(self, disable):
+        self.log_new_sec('Disabling Options', cal=False)
         if len(self.disable) == 0:
             self.log += '\nNothing disabled!'
             return 1
@@ -512,16 +512,16 @@ class Camera:
         """
         Write json dictionary to file
         """
-        jstring = json.dumps(self.json,sort_keys=False)
+        jstring = json.dumps(self.json, sort_keys=False)
         """
         make it pretty :)
         """
-        pretty_print_json(jstring,self.jf)
+        pretty_print_json(jstring, self.jf)
 
     """
     add a new section to the log file
     """
-    def log_new_sec(self,section,cal=True):
+    def log_new_sec(self, section, cal=True):
         self.log += '\n'+self.log_separator
         self.log += section
         if cal:
@@ -531,8 +531,8 @@ class Camera:
     """
     write script arguments to log file
     """
-    def log_user_input(self,json_output,directory,config,log_output):
-        self.log_new_sec('User Arguments',cal=False)
+    def log_user_input(self, json_output, directory, config, log_output):
+        self.log_new_sec('User Arguments', cal=False)
         self.log += '\nJson file output: ' + json_output
         self.log += '\nCalibration images directory: ' + directory
         if config == None:
@@ -555,19 +555,19 @@ class Camera:
     """
     write log file
     """
-    def write_log(self,filename):
+    def write_log(self, filename):
         if filename == None:
             filename = 'ctt_log.txt'
         self.log += '\n' + self.log_separator
-        with open(filename,'w') as logfile:
+        with open(filename, 'w') as logfile:
             logfile.write(self.log)
 
     """
     Add all images from directory, pass into relevant list of images and
     extrace lux and temperature values.
     """
-    def add_imgs(self,directory,mac_config,blacklevel=-1):
-        self.log_new_sec('Image Loading',cal=False)
+    def add_imgs(self, directory, mac_config, blacklevel=-1):
+        self.log_new_sec('Image Loading', cal=False)
         img_suc_msg = 'Image loaded successfully!'
         print('\n\nLoading images from '+directory)
         self.log += '\nDirectory: ' + directory
@@ -588,12 +588,12 @@ class Camera:
             """
             obtain colour and lux value
             """
-            col,lux = get_col_lux(filename)
+            col, lux = get_col_lux(filename)
             """
             Check if image is an alsc calibration image
             """
             if 'alsc' in filename:
-                Img = load_image(self,address,mac=False)
+                Img = load_image(self, address, mac=False)
                 self.log += '\nIdentified as an ALSC image'
                 """
                 check if imagae data has been successfully unpacked
@@ -633,7 +633,7 @@ class Camera:
                     self.log += '\nWARNING: Error reading lux value'
                     self.log += '\nImage discarded!'
                     continue
-                Img = load_image(self,address,mac_config)
+                Img = load_image(self, address, mac_config)
                 """
                 check that image data has been successfuly unpacked
                 """
@@ -645,7 +645,7 @@ class Camera:
                     """
                     if successful, append to list and continue to next image
                     """
-                    Img.col,Img.lux = col,lux
+                    Img.col, Img.lux = col, lux
                     Img.name = filename
                     self.log += '\nColour temperature: {} K'.format(col)
                     self.log += '\nLux value: {} lx'.format(lux)
@@ -683,7 +683,7 @@ class Camera:
         patterns = list(set([Img.pattern for Img in all_imgs]))
         sigbitss = list(set([Img.sigbits for Img in all_imgs]))
         blacklevels = list(set([Img.blacklevel_16 for Img in all_imgs]))
-        sizes = list(set([(Img.w,Img.h) for Img in all_imgs]))
+        sizes = list(set([(Img.w, Img.h) for Img in all_imgs]))
 
         if len(camNames)==1 and len(patterns)==1 and len(sigbitss)==1 and len(blacklevels) ==1 and len(sizes)== 1:
             self.grey = (patterns[0] == 128)
@@ -694,14 +694,14 @@ class Camera:
                 self.log += '\nGreyscale camera identified'
             self.log += '\nSignificant bits: {}'.format(sigbitss[0])
             self.log += '\nBlacklevel: {}'.format(blacklevels[0])
-            self.log += '\nImage size: w = {} h = {}'.format(sizes[0][0],sizes[0][1])
+            self.log += '\nImage size: w = {} h = {}'.format(sizes[0][0], sizes[0][1])
             return 1
         else:
             print('\nERROR: Images from different cameras')
             self.log += '\nERROR: Images are from different cameras'
             return 0
 
-def run_ctt(json_output,directory,config,log_output):
+def run_ctt(json_output, directory, config, log_output):
     """
     check input files are jsons
     """
@@ -717,7 +717,7 @@ def run_ctt(json_output,directory,config,log_output):
         read configurations
         """
         try:
-            with open(config,'r') as config_json:
+            with open(config, 'r') as config_json:
                 configs = json.load(config_json)
         except FileNotFoundError:
             configs = {}
@@ -731,18 +731,18 @@ def run_ctt(json_output,directory,config,log_output):
     """
     load configurations from config file, if not given then set default
     """
-    disable = get_config(configs,"disable",[],'list')
-    plot = get_config(configs,"plot",[],'list')
-    awb_d = get_config(configs,"awb",{},'dict')
-    greyworld = get_config(awb_d,"greyworld",0,'bool')
-    alsc_d = get_config(configs,"alsc",{},'dict')
-    do_alsc_colour = get_config(alsc_d,"do_alsc_colour",1,'bool')
-    luminance_strength = get_config(alsc_d,"luminance_strength",0.5,'num')
-    blacklevel = get_config(configs,"blacklevel",-1,'num')
-    macbeth_d =  get_config(configs,"macbeth",{},'dict')
-    mac_small = get_config(macbeth_d,"small",0,'bool')
-    mac_show = get_config(macbeth_d,"show",0,'bool')
-    mac_config = (mac_small,mac_show)
+    disable = get_config(configs, "disable", [], 'list')
+    plot = get_config(configs, "plot", [], 'list')
+    awb_d = get_config(configs, "awb", {}, 'dict')
+    greyworld = get_config(awb_d, "greyworld", 0, 'bool')
+    alsc_d = get_config(configs, "alsc", {}, 'dict')
+    do_alsc_colour = get_config(alsc_d, "do_alsc_colour", 1, 'bool')
+    luminance_strength = get_config(alsc_d, "luminance_strength", 0.5, 'num')
+    blacklevel = get_config(configs, "blacklevel", -1, 'num')
+    macbeth_d =  get_config(configs, "macbeth", {}, 'dict')
+    mac_small = get_config(macbeth_d, "small", 0, 'bool')
+    mac_show = get_config(macbeth_d, "show", 0, 'bool')
+    mac_config = (mac_small, mac_show)
 
     if blacklevel < -1 or blacklevel >= 2**16:
         print('\nInvalid blacklevel, defaulted to 64')
@@ -762,10 +762,10 @@ def run_ctt(json_output,directory,config,log_output):
     """
     try:
         Cam = Camera(json_output)
-        Cam.log_user_input(json_output,directory,config,log_output)
+        Cam.log_user_input(json_output, directory, config, log_output)
         Cam.disable = disable
         Cam.plot = plot
-        Cam.add_imgs(directory,mac_config,blacklevel)
+        Cam.add_imgs(directory, mac_config, blacklevel)
     except FileNotFoundError:
         raise ArgError('\n\nError: Input image directory not found!')
 
@@ -781,11 +781,11 @@ def run_ctt(json_output,directory,config,log_output):
         Cam.json['rpi.black_level']['black_level'] = Cam.blacklevel_16
         Cam.json_remove(disable)
         print('\nSTARTING CALIBRATIONS')
-        Cam.alsc_cal(luminance_strength,do_alsc_colour)
+        Cam.alsc_cal(luminance_strength, do_alsc_colour)
         Cam.geq_cal()
         Cam.lux_cal()
         Cam.noise_cal()
-        Cam.awb_cal(greyworld,do_alsc_colour)
+        Cam.awb_cal(greyworld, do_alsc_colour)
         Cam.ccm_cal(do_alsc_colour)
         print('\nFINISHED CALIBRATIONS')
         Cam.write_json()
@@ -819,5 +819,5 @@ if __name__ == '__main__':
         """
         parse input arguments
         """
-        json_output,directory,config,log_output = parse_input()
-        run_ctt(json_output,directory,config,log_output)
+        json_output, directory, config, log_output = parse_input()
+        run_ctt(json_output, directory, config, log_output)

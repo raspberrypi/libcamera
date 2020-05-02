@@ -18,7 +18,7 @@ Once image is extracted from data, it finds 24 16x16 patches for each
 channel, centred at the macbeth chart squares
 """
 class Image:
-    def __init__(self,buf):
+    def __init__(self, buf):
         self.buf = buf
         self.patches = None
         self.saturated = False
@@ -45,11 +45,11 @@ class Image:
         Channel order depending on bayer pattern
         """
         bayer_case = {
-            0 : (0,1,2,3), #red
-            1 : (2,0,3,1), #green next to red
-            2 : (3,2,1,0), #green next to blue
-            3 : (1,0,3,2), #blue
-            128 : (0,1,2,3) #arbitrary order for greyscale casw
+            0 : (0, 1, 2, 3), #red
+            1 : (2, 0, 3, 1), #green next to red
+            2 : (3, 2, 1, 0), #green next to blue
+            3 : (1, 0, 3, 2), #blue
+            128 : (0, 1, 2, 3) #arbitrary order for greyscale casw
         }
         self.order = bayer_case[self.pattern]
 
@@ -87,7 +87,7 @@ class Image:
     """
     get image from raw scanline data
     """
-    def get_image(self,raw):
+    def get_image(self, raw):
         self.dptr = []
         """
         check if data is 10 or 12 bits
@@ -100,31 +100,31 @@ class Image:
             """
             stack scan lines into matrix
             """
-            raw = np.array(raw).reshape(-1,lin_len).astype(np.int64)[:self.h,...]
+            raw = np.array(raw).reshape(-1, lin_len).astype(np.int64)[:self.h, ...]
             """
             separate 5 bits in each package, stopping when w is satisfied
             """
-            ba0 = raw[...,0:5*((self.w+3)>>2):5]
-            ba1 = raw[...,1:5*((self.w+3)>>2):5]
-            ba2 = raw[...,2:5*((self.w+3)>>2):5]
-            ba3 = raw[...,3:5*((self.w+3)>>2):5]
-            ba4 = raw[...,4:5*((self.w+3)>>2):5]
+            ba0 = raw[..., 0:5*((self.w+3)>>2):5]
+            ba1 = raw[..., 1:5*((self.w+3)>>2):5]
+            ba2 = raw[..., 2:5*((self.w+3)>>2):5]
+            ba3 = raw[..., 3:5*((self.w+3)>>2):5]
+            ba4 = raw[..., 4:5*((self.w+3)>>2):5]
             """
             assemble 10 bit numbers
             """
-            ch0 = np.left_shift((np.left_shift(ba0,2) + (ba4%4)),6)
-            ch1 = np.left_shift((np.left_shift(ba1,2) + (np.right_shift(ba4,2)%4)),6)
-            ch2 = np.left_shift((np.left_shift(ba2,2) + (np.right_shift(ba4,4)%4)),6)
-            ch3 = np.left_shift((np.left_shift(ba3,2) + (np.right_shift(ba4,6)%4)),6)
+            ch0 = np.left_shift((np.left_shift(ba0, 2) + (ba4%4)), 6)
+            ch1 = np.left_shift((np.left_shift(ba1, 2) + (np.right_shift(ba4, 2)%4)), 6)
+            ch2 = np.left_shift((np.left_shift(ba2, 2) + (np.right_shift(ba4, 4)%4)), 6)
+            ch3 = np.left_shift((np.left_shift(ba3, 2) + (np.right_shift(ba4, 6)%4)), 6)
             """
             interleave bits
             """
-            mat = np.empty((self.h,self.w),dtype=ch0.dtype)
+            mat = np.empty((self.h, self.w), dtype=ch0.dtype)
 
-            mat[...,0::4] = ch0
-            mat[...,1::4] = ch1
-            mat[...,2::4] = ch2
-            mat[...,3::4] = ch3
+            mat[..., 0::4] = ch0
+            mat[..., 1::4] = ch1
+            mat[..., 2::4] = ch2
+            mat[..., 3::4] = ch3
 
             """
             There is som eleaking memory somewhere in the code. This code here
@@ -132,25 +132,25 @@ class Image:
             reasonable numbers of images, however this is techincally just a
             workaround. (sorry)
             """
-            ba0,ba1,ba2,ba3,ba4 = None,None,None,None,None
-            del ba0,ba1,ba2,ba3,ba4
-            ch0,ch1,ch2,ch3 = None,None,None,None
-            del ch0,ch1,ch2,ch3
+            ba0, ba1, ba2, ba3, ba4 = None, None, None, None, None
+            del ba0, ba1, ba2, ba3, ba4
+            ch0, ch1, ch2, ch3 = None, None, None, None
+            del ch0, ch1, ch2, ch3
 
             """
         same as before but 12 bit case
         """
         elif self.sigbits == 12:
             lin_len = ((((((self.w+self.pad+1)>>1)) * 3)+31)>>5) * 32
-            raw = np.array(raw).reshape(-1,lin_len).astype(np.int64)[:self.h,...]
-            ba0 = raw[...,0:3*((self.w+1)>>1):3]
-            ba1 = raw[...,1:3*((self.w+1)>>1):3]
-            ba2 = raw[...,2:3*((self.w+1)>>1):3]
-            ch0 = np.left_shift((np.left_shift(ba0,4) + ba2%16),4)
-            ch1 = np.left_shift((np.left_shift(ba1,4) + (np.right_shift(ba2,4))%16),4)
-            mat = np.empty((self.h,self.w),dtype=ch0.dtype)
-            mat[...,0::2] = ch0
-            mat[...,1::2] = ch1
+            raw = np.array(raw).reshape(-1, lin_len).astype(np.int64)[:self.h, ...]
+            ba0 = raw[..., 0:3*((self.w+1)>>1):3]
+            ba1 = raw[..., 1:3*((self.w+1)>>1):3]
+            ba2 = raw[..., 2:3*((self.w+1)>>1):3]
+            ch0 = np.left_shift((np.left_shift(ba0, 4) + ba2%16), 4)
+            ch1 = np.left_shift((np.left_shift(ba1, 4) + (np.right_shift(ba2, 4))%16), 4)
+            mat = np.empty((self.h, self.w), dtype=ch0.dtype)
+            mat[..., 0::2] = ch0
+            mat[..., 1::2] = ch1
 
         else:
             """
@@ -162,21 +162,21 @@ class Image:
         """
         separate bayer channels
         """
-        c0 = mat[0::2,0::2]
-        c1 = mat[0::2,1::2]
-        c2 = mat[1::2,0::2]
-        c3 = mat[1::2,1::2]
-        self.channels = [c0,c1,c2,c3]
+        c0 = mat[0::2, 0::2]
+        c1 = mat[0::2, 1::2]
+        c2 = mat[1::2, 0::2]
+        c3 = mat[1::2, 1::2]
+        self.channels = [c0, c1, c2, c3]
         return 1
 
     """
     obtain 16x16 patch centred at macbeth square centre for each channel
     """
-    def get_patches(self,cen_coords,size=16):
+    def get_patches(self, cen_coords, size=16):
         """
         obtain channel widths and heights
         """
-        ch_w,ch_h = self.w,self.h
+        ch_w, ch_h = self.w, self.h
         cen_coords = list(np.array((cen_coords[0])).astype(np.int32))
         self.cen_coords = cen_coords
         """
@@ -184,10 +184,10 @@ class Image:
         left to right. Some useful patch indices:
             white = 3
             black = 23
-            'reds' = 9,10
-            'blues' = 2,5,8,20,22
-            'greens' = 6,12,17
-            greyscale = 3,7,11,15,19,23
+            'reds' = 9, 10
+            'blues' = 2, 5, 8, 20, 22
+            'greens' = 6, 12, 17
+            greyscale = 3, 7, 11, 15, 19, 23
         """
         all_patches = []
         for ch in self.channels:
@@ -199,7 +199,7 @@ class Image:
                 Patch pixels are sorted by pixel brightness so spatial
                 information is lost.
                 '''
-                patch = ch[cen[1]-7:cen[1]+9,cen[0]-7:cen[0]+9].flatten()
+                patch = ch[cen[1]-7:cen[1]+9, cen[0]-7:cen[0]+9].flatten()
                 patch.sort()
                 if patch[-5] == (2**self.sigbits-1)*2**(16-self.sigbits):
                     self.saturated = True
@@ -218,7 +218,7 @@ def brcm_load_image(Cam, im_str):
         """
         create byte array
         """
-        with open(im_str,'rb') as image:
+        with open(im_str, 'rb') as image:
             f = image.read()
             b = bytearray(f)
         """
@@ -249,7 +249,7 @@ def brcm_load_image(Cam, im_str):
     """
     note index is divided by two to go from string to hex
     """
-    indices = [m.start()//2 for m in re.finditer(match_str,b_str)]
+    indices = [m.start()//2 for m in re.finditer(match_str, b_str)]
     # print(indices)
     try:
         start = indices[0] + 3
@@ -325,10 +325,10 @@ def dng_load_image(Cam, im_str):
         raw_im = raw.imread(im_str)
         raw_data = raw_im.raw_image
         shift = 16 - Img.sigbits
-        c0 = np.left_shift(raw_data[0::2,0::2].astype(np.int64), shift)
-        c1 = np.left_shift(raw_data[0::2,1::2].astype(np.int64), shift)
-        c2 = np.left_shift(raw_data[1::2,0::2].astype(np.int64), shift)
-        c3 = np.left_shift(raw_data[1::2,1::2].astype(np.int64), shift)
+        c0 = np.left_shift(raw_data[0::2, 0::2].astype(np.int64), shift)
+        c1 = np.left_shift(raw_data[0::2, 1::2].astype(np.int64), shift)
+        c2 = np.left_shift(raw_data[1::2, 0::2].astype(np.int64), shift)
+        c3 = np.left_shift(raw_data[1::2, 1::2].astype(np.int64), shift)
         Img.channels = [c0, c1, c2, c3]
 
     except:
@@ -347,7 +347,7 @@ check correct filetype
 mac boolean is true if image is expected to contain macbeth chart and false
 if not (alsc images don't have macbeth charts)
 '''
-def load_image(Cam,im_str,mac_config=None,show=False,mac=True,show_meta=False):
+def load_image(Cam, im_str, mac_config=None, show=False, mac=True, show_meta=False):
     """
     check image is correct filetype
     """
@@ -363,7 +363,7 @@ def load_image(Cam,im_str,mac_config=None,show=False,mac=True,show_meta=False):
             """
             find macbeth centres, discarding images that are too dark or light
             """
-            av_chan = (np.mean(np.array(Img.channels),axis=0)/(2**16))
+            av_chan = (np.mean(np.array(Img.channels), axis=0)/(2**16))
             av_val = np.mean(av_chan)
             # print(av_val)
             if av_val < Img.blacklevel_16/(2**16)+1/64:
@@ -371,7 +371,7 @@ def load_image(Cam,im_str,mac_config=None,show=False,mac=True,show_meta=False):
                 print('\nError: Image too dark!')
                 Cam.log += '\nWARNING: Image too dark!'
             else:
-                macbeth = find_macbeth(Cam,av_chan,mac_config)
+                macbeth = find_macbeth(Cam, av_chan, mac_config)
 
             """
             if no macbeth found return error
@@ -405,8 +405,8 @@ def load_image(Cam,im_str,mac_config=None,show=False,mac=True,show_meta=False):
         """
         if show and __name__ == '__main__':
             copy = sum(Img.channels)/2**18
-            copy = np.reshape(copy,(Img.h//2,Img.w//2)).astype(np.float64)
-            copy,_ = reshape(copy,800)
+            copy = np.reshape(copy, (Img.h//2, Img.w//2)).astype(np.float64)
+            copy, _ = reshape(copy, 800)
             represent(copy)
 
         return Img

@@ -40,7 +40,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     Reference macbeth chart is created that will be correlated with the located
     macbeth chart guess to produce a confidence value for the match.
     """
-    ref = cv2.imread(Cam.path +'ctt_ref.pgm', flags=cv2.IMREAD_GRAYSCALE)
+    ref = cv2.imread(Cam.path + 'ctt_ref.pgm', flags=cv2.IMREAD_GRAYSCALE)
     ref_w = 120
     ref_h = 80
     rc1 = (0, 0)
@@ -328,7 +328,7 @@ def get_macbeth_chart(img, ref_data):
         """
         src = img
         src, factor = reshape(src, 200)
-        original=src.copy()
+        original = src.copy()
         a = 125/np.average(src)
         src_norm = cv2.convertScaleAbs(src, alpha=a, beta=0)
         """
@@ -349,7 +349,7 @@ def get_macbeth_chart(img, ref_data):
         """
         obtain image edges
         """
-        sigma=2
+        sigma = 2
         src_bw = cv2.GaussianBlur(src_bw, (0, 0), sigma)
         t1, t2 = 50, 100
         edges = cv2.Canny(src_bw, t1, t2)
@@ -490,7 +490,7 @@ def get_macbeth_chart(img, ref_data):
         )
         mac_mids_list = [x[0] for x in mac_mids]
 
-        if len(mac_mids_list)==1:
+        if len(mac_mids_list) == 1:
             """
             special case of only one valid centre found (probably not needed)
             """
@@ -508,7 +508,7 @@ def get_macbeth_chart(img, ref_data):
             create list of all clusters
             """
             clus_list = []
-            if clustering.n_clusters_ >1:
+            if clustering.n_clusters_ > 1:
                 for i in range(clustering.labels_.max()+1):
                     indices = [j for j, x in enumerate(clustering.labels_) if x == i]
                     clus = []
@@ -535,7 +535,7 @@ def get_macbeth_chart(img, ref_data):
         keep only clusters with enough votes
         """
         clus_len_max = clus_list[0][1]
-        clus_tol= 0.7
+        clus_tol = 0.7
         for i in range(len(clus_list)):
             if clus_list[i][1] < clus_len_max * clus_tol:
                 clus_list = clus_list[:i]

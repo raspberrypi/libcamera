@@ -42,8 +42,8 @@ def get_square_verts(c_err=0.05, scale=scale):
     for i in range(6):
         shift_i = np.array(((i*side, 0), (i*side, 0),
                             (i*side, 0), (i*side, 0)), np.float32)
-        shift_bord =np.array(((i*s_bord, 0), (i*s_bord, 0),
-                              (i*s_bord, 0), (i*s_bord, 0)), np.float32)
+        shift_bord = np.array(((i*s_bord, 0), (i*s_bord, 0),
+                               (i*s_bord, 0), (i*s_bord, 0)), np.float32)
         square_i = square_0 + shift_i + shift_bord
         for j in range(4):
             shift_j = np.array(((0, j*side), (0, j*side),

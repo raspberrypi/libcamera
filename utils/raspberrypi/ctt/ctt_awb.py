@@ -27,8 +27,8 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
             """
             normalise tables so min value is 1
             """
-            cr_tab= cr_tab/np.min(cr_tab)
-            cb_tab= cb_tab/np.min(cb_tab)
+            cr_tab = cr_tab/np.min(cr_tab)
+            cb_tab = cb_tab/np.min(cb_tab)
             colour_cals[cr['ct']] = [cr_tab, cb_tab]
     """
     obtain data from greyscale macbeth patches
@@ -183,10 +183,10 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
     """
     round to 4dp
     """
-    r_fit = np.where((1000*r_fit)%1<=0.05, r_fit+0.0001, r_fit)
-    r_fit = np.where((1000*r_fit)%1>=0.95, r_fit-0.0001, r_fit)
-    b_fit = np.where((1000*b_fit)%1<=0.05, b_fit+0.0001, b_fit)
-    b_fit = np.where((1000*b_fit)%1>=0.95, b_fit-0.0001, b_fit)
+    r_fit = np.where((1000*r_fit)%1 <= 0.05, r_fit+0.0001, r_fit)
+    r_fit = np.where((1000*r_fit)%1 >= 0.95, r_fit-0.0001, r_fit)
+    b_fit = np.where((1000*b_fit)%1 <= 0.05, b_fit+0.0001, b_fit)
+    b_fit = np.where((1000*b_fit)%1 >= 0.95, b_fit-0.0001, b_fit)
     r_fit = np.round(r_fit, 4)
     b_fit = np.round(b_fit, 4)
     """
@@ -215,7 +215,7 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
             find bad index
             note that in python false = 0 and true = 1
             """
-            bad = i - (error_1<error_2)
+            bad = i - (error_1 < error_2)
             Cam.log += '\nPoint at {} K deleted as '.format(c_fit[bad])
             Cam.log += 'it is furthest from fit'
             """

@@ -71,7 +71,7 @@ class Camera:
             self.path = ''
         self.imgs = []
         self.imgs_alsc = []
-        self.log = 'Log created : '+ time.asctime(time.localtime(time.time()))
+        self.log = 'Log created : ' + time.asctime(time.localtime(time.time()))
         self.log_separator = '\n'+'-'*70+'\n'
         self.jf = jfile
         """
@@ -227,7 +227,7 @@ class Camera:
                 cal_cb_list = self.json['rpi.alsc']['calibrations_Cb']
                 self.log += '\nALSC tables found successfully'
             except KeyError:
-                cal_cr_list, cal_cb_list=None, None
+                cal_cr_list, cal_cb_list = None, None
                 print('WARNING! No ALSC tables found for CCM!')
                 print('Performing CCM calibrations without ALSC correction...')
                 self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
@@ -236,7 +236,7 @@ class Camera:
             """
             case where config options result in CCM done without ALSC colour tables
             """
-            cal_cr_list, cal_cb_list=None, None
+            cal_cr_list, cal_cb_list = None, None
             self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
             self.log += 'performed without ALSC correction...'
 
@@ -292,13 +292,13 @@ class Camera:
                 cal_cb_list = self.json['rpi.alsc']['calibrations_Cb']
                 self.log += '\nALSC tables found successfully'
             except KeyError:
-                cal_cr_list, cal_cb_list=None, None
+                cal_cr_list, cal_cb_list = None, None
                 print('ERROR, no ALSC calibrations found for AWB')
                 print('Performing AWB without ALSC tables')
                 self.log += '\nWARNING: No ALSC tables found.\nAWB calibration '
                 self.log += 'performed without ALSC correction...'
         else:
-            cal_cr_list, cal_cb_list=None, None
+            cal_cr_list, cal_cb_list = None, None
             self.log += '\nWARNING: No ALSC tables found.\nAWB calibration '
             self.log += 'performed without ALSC correction...'
         """
@@ -502,9 +502,9 @@ class Camera:
         for key in disable:
             try:
                 del self.json[key]
-                self.log += '\nDisabled: '+key
+                self.log += '\nDisabled: ' + key
             except KeyError:
-                self.log += '\nERROR: '+key +' not found!'
+                self.log += '\nERROR: ' + key + ' not found!'
     """
     writes the json dictionary to the raw json file then make pretty
     """
@@ -685,7 +685,8 @@ class Camera:
         blacklevels = list(set([Img.blacklevel_16 for Img in all_imgs]))
         sizes = list(set([(Img.w, Img.h) for Img in all_imgs]))
 
-        if len(camNames)==1 and len(patterns)==1 and len(sigbitss)==1 and len(blacklevels) ==1 and len(sizes)== 1:
+        if len(camNames) == 1 and len(patterns) == 1 and len(sigbitss) == 1 and \
+           len(blacklevels) == 1 and len(sizes) == 1:
             self.grey = (patterns[0] == 128)
             self.blacklevel_16 = blacklevels[0]
             self.log += '\nName: {}'.format(camNames[0])

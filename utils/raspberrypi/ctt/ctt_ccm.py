@@ -74,8 +74,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
             """
             normalise tables so min value is 1
             """
-            cr_tab= cr_tab/np.min(cr_tab)
-            cb_tab= cb_tab/np.min(cb_tab)
+            cr_tab = cr_tab/np.min(cr_tab)
+            cb_tab = cb_tab/np.min(cb_tab)
             colour_cals[cr['ct']] = [cr_tab, cb_tab]
 
     """
@@ -135,8 +135,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
     """
     for k, v in ccm_tab.items():
         tab = np.mean(v, axis=0)
-        tab = np.where((10000*tab)%1<=0.05, tab+0.00001, tab)
-        tab = np.where((10000*tab)%1>=0.95, tab-0.00001, tab)
+        tab = np.where((10000*tab)%1 <= 0.05, tab+0.00001, tab)
+        tab = np.where((10000*tab)%1 >= 0.95, tab-0.00001, tab)
         ccm_tab[k] = list(np.round(tab, 5))
         Cam.log += '\nMatrix calculated for colour temperature of {} K'.format(k)
 

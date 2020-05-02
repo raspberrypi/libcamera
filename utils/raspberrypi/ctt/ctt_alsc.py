@@ -61,10 +61,10 @@ def alsc_all(Cam, do_alsc_colour, plot):
             """
             force numbers to be stored to 3dp.... :(
             """
-            t_r = np.where((100*t_r)%1<=0.05, t_r+0.001, t_r)
-            t_b = np.where((100*t_b)%1<=0.05, t_b+0.001, t_b)
-            t_r = np.where((100*t_r)%1>=0.95, t_r-0.001, t_r)
-            t_b = np.where((100*t_b)%1>=0.95, t_b-0.001, t_b)
+            t_r = np.where((100*t_r)%1 <= 0.05, t_r+0.001, t_r)
+            t_b = np.where((100*t_b)%1 <= 0.05, t_b+0.001, t_b)
+            t_r = np.where((100*t_r)%1 >= 0.95, t_r-0.001, t_r)
+            t_b = np.where((100*t_b)%1 >= 0.95, t_b-0.001, t_b)
             t_r = np.round(t_r, 3)
             t_b = np.round(t_b, 3)
             r_corners = (t_r[0], t_r[15], t_r[-1], t_r[-16])
@@ -95,8 +95,8 @@ def alsc_all(Cam, do_alsc_colour, plot):
     average all values for luminance shading and return one table for all temperatures
     """
     lum_lut = np.mean(list_cg, axis=0)
-    lum_lut = np.where((100*lum_lut)%1<=0.05, lum_lut+0.001, lum_lut)
-    lum_lut = np.where((100*lum_lut)%1>=0.95, lum_lut-0.001, lum_lut)
+    lum_lut = np.where((100*lum_lut)%1 <= 0.05, lum_lut+0.001, lum_lut)
+    lum_lut = np.where((100*lum_lut)%1 >= 0.95, lum_lut-0.001, lum_lut)
     lum_lut = list(np.round(lum_lut, 3))
 
     """

@@ -55,8 +55,8 @@ def parse_input():
     arguments = sys.argv[1:]
     if len(arguments)%2 != 0:
         raise ArgError('\n\nERROR! Enter value for each arguent passed.')
-    params = arguments [0::2]
-    vals = arguments [1::2]
+    params = arguments[0::2]
+    vals = arguments[1::2]
     args_dict = dict(zip(params, vals))
     json_output = get_config(args_dict, '-o', None, 'string')
     directory = get_config(args_dict, '-i', None, 'string')

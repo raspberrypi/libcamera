@@ -7,10 +7,13 @@
 
 #include "dng_writer.h"
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 
 #include <tiffio.h>
+
+#include <libcamera/control_ids.h>
 
 using namespace libcamera;
 
@@ -153,6 +156,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	uint8_t scanline[(config.size.width * info->bitsPerSample + 7) / 8];
 
 	toff_t rawIFDOffset = 0;
+	toff_t exifIFDOffset = 0;
 
 	/*
 	 * Start with a thumbnail in IFD 0 for compatibility with TIFF baseline
@@ -185,10 +189,12 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
 
 	/*
-	 * Reserve space for the SubIFD tag, pointing to the IFD for the raw
-	 * image. The real offset will be set later.
+	 * Reserve space for the SubIFD and ExifIFD tags, pointing to the IFD
+	 * for the raw image and EXIF data respectively. The real offsets will
+	 * be set later.
 	 */
 	TIFFSetField(tif, TIFFTAG_SUBIFD, 1, &rawIFDOffset);
+	TIFFSetField(tif, TIFFTAG_EXIFIFD, exifIFDOffset);
 
 	/* Write the thumbnail. */
 	const uint8_t *row = static_cast<const uint8_t *>(data);
@@ -230,7 +236,47 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_CFAPLANECOLOR, 3, cfaPlaneColor);
 	TIFFSetField(tif, TIFFTAG_CFALAYOUT, 1);
 
-	/* \todo Add more EXIF fields to output. */
+	const uint16_t blackLevelRepeatDim[] = { 2, 2 };
+	float blackLevel[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	uint32_t whiteLevel = (1 << info->bitsPerSample) - 1;
+
+	if (metadata.contains(controls::SensorBlackLevels)) {
+		Span<const int32_t> levels = metadata.get(controls::SensorBlackLevels);
+
+		/*
+		 * The black levels control is specified in R, Gr, Gb, B order.
+		 * Map it to the TIFF tag that is specified in CFA pattern
+		 * order.
+		 */
+		unsigned int green = (info->pattern[0] == CFAPatternRed ||
+				      info->pattern[1] == CFAPatternRed)
+				   ? 0 : 1;
+
+		for (unsigned int i = 0; i < 4; ++i) {
+			unsigned int level;
+
+			switch (info->pattern[i]) {
+			case CFAPatternRed:
+				level = levels[0];
+				break;
+			case CFAPatternGreen:
+				level = levels[green + 1];
+				green = (green + 1) % 2;
+				break;
+			case CFAPatternBlue:
+			default:
+				level = levels[3];
+				break;
+			}
+
+			/* Map the 16-bit value to the bits per sample range. */
+			blackLevel[i] = level >> (16 - info->bitsPerSample);
+		}
+	}
+
+	TIFFSetField(tif, TIFFTAG_BLACKLEVELREPEATDIM, &blackLevelRepeatDim);
+	TIFFSetField(tif, TIFFTAG_BLACKLEVEL, 4, &blackLevel);
+	TIFFSetField(tif, TIFFTAG_WHITELEVEL, 1, &whiteLevel);
 
 	/* Write RAW content. */
 	row = static_cast<const uint8_t *>(data);
@@ -252,9 +298,28 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	rawIFDOffset = TIFFCurrentDirOffset(tif);
 	TIFFWriteDirectory(tif);
 
+	/* Create a new IFD for the EXIF data and fill it. */
+	TIFFCreateEXIFDirectory(tif);
+
+	if (metadata.contains(controls::AnalogueGain)) {
+		float gain = metadata.get(controls::AnalogueGain);
+		uint16_t iso = std::min(std::max(gain * 100, 0.0f), 65535.0f);
+		TIFFSetField(tif, EXIFTAG_ISOSPEEDRATINGS, 1, &iso);
+	}
+
+	if (metadata.contains(controls::ExposureTime)) {
+		float exposureTime = metadata.get(controls::ExposureTime) / 1e6;
+		TIFFSetField(tif, EXIFTAG_EXPOSURETIME, exposureTime);
+	}
+
+	TIFFCheckpointDirectory(tif);
+	exifIFDOffset = TIFFCurrentDirOffset(tif);
+	TIFFWriteDirectory(tif);
+
 	/* Update the IFD offsets and close the file. */
 	TIFFSetDirectory(tif, 0);
 	TIFFSetField(tif, TIFFTAG_SUBIFD, 1, &rawIFDOffset);
+	TIFFSetField(tif, TIFFTAG_EXIFIFD, exifIFDOffset);
 	TIFFWriteDirectory(tif);
 
 	TIFFClose(tif);

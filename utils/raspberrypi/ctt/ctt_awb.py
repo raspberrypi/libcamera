@@ -183,10 +183,10 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
     """
     round to 4dp
     """
-    r_fit = np.where((1000*r_fit)%1 <= 0.05, r_fit+0.0001, r_fit)
-    r_fit = np.where((1000*r_fit)%1 >= 0.95, r_fit-0.0001, r_fit)
-    b_fit = np.where((1000*b_fit)%1 <= 0.05, b_fit+0.0001, b_fit)
-    b_fit = np.where((1000*b_fit)%1 >= 0.95, b_fit-0.0001, b_fit)
+    r_fit = np.where((1000*r_fit) % 1 <= 0.05, r_fit+0.0001, r_fit)
+    r_fit = np.where((1000*r_fit) % 1 >= 0.95, r_fit-0.0001, r_fit)
+    b_fit = np.where((1000*b_fit) % 1 <= 0.05, b_fit+0.0001, b_fit)
+    b_fit = np.where((1000*b_fit) % 1 >= 0.95, b_fit-0.0001, b_fit)
     r_fit = np.round(r_fit, 4)
     b_fit = np.round(b_fit, 4)
     """
@@ -326,7 +326,7 @@ def get_alsc_patches(Img, colour_cals, grey=True):
     if img colour is below minimum or above maximum alsc calibration colour, simply
     pick extreme closest to img colour
     """
-    if pos%(len(cts)) == 0:
+    if pos % len(cts) == 0:
         """
         this works because -0 = 0 = first and -1 = last index
         """

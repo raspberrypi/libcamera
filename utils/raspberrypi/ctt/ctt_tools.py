@@ -53,7 +53,7 @@ argument parser
 """
 def parse_input():
     arguments = sys.argv[1:]
-    if len(arguments)%2 != 0:
+    if len(arguments) % 2 != 0:
         raise ArgError('\n\nERROR! Enter value for each arguent passed.')
     params = arguments[0::2]
     vals = arguments[1::2]

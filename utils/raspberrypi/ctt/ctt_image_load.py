@@ -112,10 +112,10 @@ class Image:
             """
             assemble 10 bit numbers
             """
-            ch0 = np.left_shift((np.left_shift(ba0, 2) + (ba4%4)), 6)
-            ch1 = np.left_shift((np.left_shift(ba1, 2) + (np.right_shift(ba4, 2)%4)), 6)
-            ch2 = np.left_shift((np.left_shift(ba2, 2) + (np.right_shift(ba4, 4)%4)), 6)
-            ch3 = np.left_shift((np.left_shift(ba3, 2) + (np.right_shift(ba4, 6)%4)), 6)
+            ch0 = np.left_shift((np.left_shift(ba0, 2) + (ba4 % 4)), 6)
+            ch1 = np.left_shift((np.left_shift(ba1, 2) + (np.right_shift(ba4, 2) % 4)), 6)
+            ch2 = np.left_shift((np.left_shift(ba2, 2) + (np.right_shift(ba4, 4) % 4)), 6)
+            ch3 = np.left_shift((np.left_shift(ba3, 2) + (np.right_shift(ba4, 6) % 4)), 6)
             """
             interleave bits
             """
@@ -146,8 +146,8 @@ class Image:
             ba0 = raw[..., 0:3*((self.w+1)>>1):3]
             ba1 = raw[..., 1:3*((self.w+1)>>1):3]
             ba2 = raw[..., 2:3*((self.w+1)>>1):3]
-            ch0 = np.left_shift((np.left_shift(ba0, 4) + ba2%16), 4)
-            ch1 = np.left_shift((np.left_shift(ba1, 4) + (np.right_shift(ba2, 4))%16), 4)
+            ch0 = np.left_shift((np.left_shift(ba0, 4) + ba2 % 16), 4)
+            ch1 = np.left_shift((np.left_shift(ba1, 4) + (np.right_shift(ba2, 4)) % 16), 4)
             mat = np.empty((self.h, self.w), dtype=ch0.dtype)
             mat[..., 0::2] = ch0
             mat[..., 1::2] = ch1

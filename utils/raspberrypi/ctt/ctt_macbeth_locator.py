@@ -363,9 +363,8 @@ def get_macbeth_chart(img, ref_data):
         """
         find Contours in image
         """
-        conts, _ = cv2.findContours(edges,
-                        cv2.RETR_TREE,
-                        cv2.CHAIN_APPROX_NONE)
+        conts, _ = cv2.findContours(edges, cv2.RETR_TREE,
+                                    cv2.CHAIN_APPROX_NONE)
         if len(conts) == 0:
             raise MacbethError(
                 '\nWARNING: No macbeth chart found!'
@@ -381,8 +380,7 @@ def get_macbeth_chart(img, ref_data):
         conts_per = []
         for i in range(len(conts)):
             per = cv2.arcLength(conts[i], True)
-            poly = cv2.approxPolyDP(conts[i],
-                                epsilon*per, True)
+            poly = cv2.approxPolyDP(conts[i], epsilon*per, True)
             if len(poly) == 4 and cv2.isContourConvex(poly):
                 conts_per.append((poly, per))
 

@@ -29,11 +29,11 @@ def get_square_verts(c_err=0.05, scale=scale):
 
     square_verts = []
     square_0 = np.array(((0, 0), (0, side),
-                (side, side), (side, 0)), np.float32)
+                         (side, side), (side, 0)), np.float32)
     offset_0 = np.array((b_bord_x, b_bord_y), np.float32)
     c_off = side * c_err
     offset_cont = np.array(((c_off, c_off), (c_off, -c_off),
-                (-c_off, -c_off), (-c_off, c_off)), np.float32)
+                            (-c_off, -c_off), (-c_off, c_off)), np.float32)
     square_0 += offset_0
     square_0 += offset_cont
     """
@@ -41,16 +41,16 @@ def get_square_verts(c_err=0.05, scale=scale):
     """
     for i in range(6):
         shift_i = np.array(((i*side, 0), (i*side, 0),
-                    (i*side, 0), (i*side, 0)), np.float32)
+                            (i*side, 0), (i*side, 0)), np.float32)
         shift_bord =np.array(((i*s_bord, 0), (i*s_bord, 0),
-                    (i*s_bord, 0), (i*s_bord, 0)), np.float32)
+                              (i*s_bord, 0), (i*s_bord, 0)), np.float32)
         square_i = square_0 + shift_i + shift_bord
         for j in range(4):
             shift_j = np.array(((0, j*side), (0, j*side),
-                    (0, j*side), (0, j*side)), np.float32)
+                                (0, j*side), (0, j*side)), np.float32)
             shift_bord = np.array(((0, j*s_bord),
-                    (0, j*s_bord), (0, j*s_bord),
-                    (0, j*s_bord)), np.float32)
+                                   (0, j*s_bord), (0, j*s_bord),
+                                   (0, j*s_bord)), np.float32)
             square_j = square_i + shift_j + shift_bord
             square_verts.append(square_j)
     # print('square_verts')

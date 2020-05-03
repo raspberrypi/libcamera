@@ -1,0 +1,16 @@
+{
+  "disable": [],
+  "plot": [],
+  "alsc": {
+    "do_alsc_colour": 1,
+    "luminance_strength": 0.5
+  },
+  "awb": {
+    "greyworld": 0
+  },
+  "blacklevel": -1,
+  "macbeth": {
+    "small": 0,
+    "show": 0
+  }
+}

@@ -316,9 +316,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 		TIFFSetField(tif, EXIFTAG_EXPOSURETIME, exposureTime);
 	}
 
-	TIFFCheckpointDirectory(tif);
-	exifIFDOffset = TIFFCurrentDirOffset(tif);
-	TIFFWriteDirectory(tif);
+	TIFFWriteCustomDirectory(tif, &exifIFDOffset);
 
 	/* Update the IFD offsets and close the file. */
 	TIFFSetDirectory(tif, 0);

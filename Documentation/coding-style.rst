@@ -72,10 +72,10 @@ self-contained.
 
 The headers shall be grouped and ordered as follows.
 
- # The header declaring the API being implemented (if any)
- # The C and C++ system and standard library headers
- # Other libraries' headers, with one group per library
- # Other project's headers
+1. The header declaring the API being implemented (if any)
+2. The C and C++ system and standard library headers
+3. Other libraries' headers, with one group per library
+4. Other project's headers
 
 Groups of headers shall be separated by a single blank line. Headers within
 each group shall be sorted alphabetically.
@@ -118,7 +118,7 @@ reference means using a reference passed by a caller without ownership transfer
 based on the assumption that the caller guarantees the validity of the
 reference for the duration of the operation that borrows it.
 
-#. Single Owner Objects
+1. Single Owner Objects
 
    * By default an object has a single owner at any time.
    * Storage of single owner objects varies depending on how the object
@@ -155,7 +155,7 @@ reference for the duration of the operation that borrows it.
        otherwise specified, pointers passed to functions are considered as
        borrowed references valid for the duration of the function only.
 
-#. Shared Objects
+2. Shared Objects
 
    * Objects that may have multiple owners at a given time are called shared
      objects. They are reference-counted and live as long as any references to

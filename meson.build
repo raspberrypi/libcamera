@@ -116,4 +116,5 @@ pkg_mod.generate(libraries : libcamera,
                  version : '1.0',
                  name : 'libcamera',
                  filebase : 'camera',
-                 description : 'Complex Camera Support Library')
+                 description : 'Complex Camera Support Library',
+                 subdirs : 'libcamera')

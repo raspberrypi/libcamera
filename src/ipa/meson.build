@@ -16,7 +16,7 @@ config_h.set('IPA_MODULE_DIR',
 
 subdir('libipa')
 
-ipa_sign = find_program('ipa-sign.sh')
+ipa_sign = files('ipa-sign.sh')
 
 ipas = ['rkisp1', 'vimc']
 

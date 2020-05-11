@@ -7,7 +7,7 @@
 #ifndef __LIBCAMERA_CAMERA_CONTROLS_H__
 #define __LIBCAMERA_CAMERA_CONTROLS_H__
 
-#include "control_validator.h"
+#include "libcamera/internal/control_validator.h"
 
 namespace libcamera {
 

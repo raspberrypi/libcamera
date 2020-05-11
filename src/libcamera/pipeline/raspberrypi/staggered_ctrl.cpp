@@ -11,9 +11,9 @@
 
 #include <libcamera/controls.h>
 
-#include "log.h"
-#include "utils.h"
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 

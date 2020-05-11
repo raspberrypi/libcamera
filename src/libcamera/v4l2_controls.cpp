@@ -5,7 +5,7 @@
  * v4l2_controls.cpp - V4L2 Controls Support
  */
 
-#include "v4l2_controls.h"
+#include "libcamera/internal/v4l2_controls.h"
 
 #include <string.h>
 

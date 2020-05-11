@@ -19,7 +19,7 @@
 #include <libcamera/object.h>
 #include <libcamera/stream.h>
 
-#include "ipa_proxy.h"
+#include "libcamera/internal/ipa_proxy.h"
 
 namespace libcamera {
 

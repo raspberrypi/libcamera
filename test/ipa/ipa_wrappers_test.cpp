@@ -15,11 +15,11 @@
 #include <libcamera/controls.h>
 #include <libipa/ipa_interface_wrapper.h>
 
-#include "camera_sensor.h"
-#include "device_enumerator.h"
-#include "ipa_context_wrapper.h"
-#include "media_device.h"
-#include "v4l2_subdevice.h"
+#include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/ipa_context_wrapper.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 #include "test.h"
 

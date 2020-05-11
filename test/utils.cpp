@@ -12,8 +12,9 @@
 
 #include <libcamera/geometry.h>
 
+#include "libcamera/internal/utils.h"
+
 #include "test.h"
-#include "utils.h"
 
 using namespace std;
 using namespace libcamera;

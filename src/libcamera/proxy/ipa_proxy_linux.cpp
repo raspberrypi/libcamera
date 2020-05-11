@@ -10,11 +10,11 @@
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
 
-#include "ipa_module.h"
-#include "ipa_proxy.h"
-#include "ipc_unixsocket.h"
-#include "log.h"
-#include "process.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/ipa_proxy.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/process.h"
 
 namespace libcamera {
 

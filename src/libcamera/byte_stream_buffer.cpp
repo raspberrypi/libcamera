@@ -5,12 +5,12 @@
  * byte_stream_buffer.cpp - Byte stream buffer
  */
 
-#include "byte_stream_buffer.h"
+#include "libcamera/internal/byte_stream_buffer.h"
 
 #include <stdint.h>
 #include <string.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

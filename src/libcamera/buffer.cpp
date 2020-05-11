@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file buffer.h

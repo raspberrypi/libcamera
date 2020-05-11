@@ -5,11 +5,11 @@
  * message.cpp - Message queue support
  */
 
-#include "message.h"
+#include "libcamera/internal/message.h"
 
 #include <libcamera/signal.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file message.h

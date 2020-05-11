@@ -16,7 +16,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "message.h"
+#include "libcamera/internal/message.h"
 
 class CameraMetadata;
 

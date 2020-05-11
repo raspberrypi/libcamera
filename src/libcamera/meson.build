@@ -51,13 +51,8 @@ libcamera_sources = files([
     'v4l2_videodevice.cpp',
 ])
 
-subdir('include')
-
-libcamera_internal_includes =  include_directories('include')
-
 includes = [
     libcamera_includes,
-    libcamera_internal_includes,
 ]
 
 subdir('pipeline')

@@ -16,8 +16,8 @@
 
 #include <libcamera/signal.h>
 
-#include "log.h"
-#include "media_object.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_object.h"
 
 namespace libcamera {
 

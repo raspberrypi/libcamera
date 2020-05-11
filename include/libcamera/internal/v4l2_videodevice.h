@@ -20,10 +20,10 @@
 #include <libcamera/pixelformats.h>
 #include <libcamera/signal.h>
 
-#include "formats.h"
-#include "log.h"
-#include "v4l2_device.h"
-#include "v4l2_pixelformat.h"
+#include "libcamera/internal/formats.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/v4l2_device.h"
+#include "libcamera/internal/v4l2_pixelformat.h"
 
 namespace libcamera {
 

@@ -5,7 +5,7 @@
  * thread.cpp - Thread support
  */
 
-#include "thread.h"
+#include "libcamera/internal/thread.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -16,9 +16,9 @@
 
 #include <libcamera/event_dispatcher.h>
 
-#include "event_dispatcher_poll.h"
-#include "log.h"
-#include "message.h"
+#include "libcamera/internal/event_dispatcher_poll.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/message.h"
 
 /**
  * \page thread Thread Support

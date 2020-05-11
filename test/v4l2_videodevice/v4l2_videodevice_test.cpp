@@ -9,10 +9,10 @@
 
 #include <linux/media-bus-format.h>
 
-#include "v4l2_videodevice_test.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/media_device.h"
 
-#include "device_enumerator.h"
-#include "media_device.h"
+#include "v4l2_videodevice_test.h"
 
 using namespace std;
 using namespace libcamera;

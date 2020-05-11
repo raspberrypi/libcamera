@@ -9,8 +9,8 @@
 
 #include <libcamera/object.h>
 
-#include "message.h"
-#include "thread.h"
+#include "libcamera/internal/message.h"
+#include "libcamera/internal/thread.h"
 
 #include "test.h"
 

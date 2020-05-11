@@ -7,7 +7,7 @@
 
 #include "camera_metadata.h"
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

@@ -8,7 +8,8 @@
 #include <iostream>
 #include <limits.h>
 
-#include "v4l2_subdevice.h"
+#include "libcamera/internal/v4l2_subdevice.h"
+
 #include "v4l2_subdevice_test.h"
 
 using namespace std;

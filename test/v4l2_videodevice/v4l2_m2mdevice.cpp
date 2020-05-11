@@ -11,10 +11,10 @@
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
-#include "device_enumerator.h"
-#include "media_device.h"
-#include "thread.h"
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 #include "test.h"
 

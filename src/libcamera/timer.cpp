@@ -12,10 +12,10 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/event_dispatcher.h>
 
-#include "log.h"
-#include "message.h"
-#include "thread.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/message.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file timer.h

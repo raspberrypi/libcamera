@@ -842,10 +842,10 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @TOP_SRCDIR@/include/libcamera/span.h \
+			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
+			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
 			 @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp \
 			 @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
-			 @TOP_SRCDIR@/src/libcamera/include/device_enumerator_sysfs.h \
-			 @TOP_SRCDIR@/src/libcamera/include/device_enumerator_udev.h \
 			 @TOP_SRCDIR@/src/libcamera/pipeline/ \
 			 @TOP_SRCDIR@/src/libcamera/proxy/
 
@@ -2053,7 +2053,7 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           = "@TOP_SRCDIR@/include/libcamera" "@TOP_SRCDIR@/src/libcamera/include"
+INCLUDE_PATH           = "@TOP_SRCDIR@/include/libcamera"
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the

@@ -5,7 +5,7 @@
  * camera_controls.cpp - Camera controls
  */
 
-#include "camera_controls.h"
+#include "libcamera/internal/camera_controls.h"
 
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>

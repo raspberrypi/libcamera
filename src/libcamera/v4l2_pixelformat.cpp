@@ -6,7 +6,7 @@
  * v4l2_pixelformat.cpp - V4L2 Pixel Format
  */
 
-#include "v4l2_pixelformat.h"
+#include "libcamera/internal/v4l2_pixelformat.h"
 
 #include <ctype.h>
 #include <map>
@@ -16,8 +16,8 @@
 
 #include <libcamera/pixelformats.h>
 
-#include "formats.h"
-#include "log.h"
+#include "libcamera/internal/formats.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file v4l2_pixelformat.h

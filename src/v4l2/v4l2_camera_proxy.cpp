@@ -17,8 +17,9 @@
 #include <libcamera/camera.h>
 #include <libcamera/object.h>
 
-#include "log.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
+
 #include "v4l2_camera.h"
 #include "v4l2_compat_manager.h"
 

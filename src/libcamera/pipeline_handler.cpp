@@ -5,7 +5,7 @@
  * pipeline_handler.cpp - Pipeline handler infrastructure
  */
 
-#include "pipeline_handler.h"
+#include "libcamera/internal/pipeline_handler.h"
 
 #include <sys/sysmacros.h>
 
@@ -13,10 +13,10 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
-#include "device_enumerator.h"
-#include "log.h"
-#include "media_device.h"
-#include "utils.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file pipeline_handler.h

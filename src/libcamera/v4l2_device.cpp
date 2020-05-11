@@ -5,7 +5,7 @@
  * v4l2_device.cpp - Common base for V4L2 video devices and subdevices
  */
 
-#include "v4l2_device.h"
+#include "libcamera/internal/v4l2_device.h"
 
 #include <fcntl.h>
 #include <iomanip>
@@ -14,9 +14,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "log.h"
-#include "utils.h"
-#include "v4l2_controls.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
+#include "libcamera/internal/v4l2_controls.h"
 
 /**
  * \file v4l2_device.h

@@ -5,7 +5,7 @@
  * ipa_module.cpp - Image Processing Algorithm module
  */
 
-#include "ipa_module.h"
+#include "libcamera/internal/ipa_module.h"
 
 #include <algorithm>
 #include <array>
@@ -23,10 +23,10 @@
 
 #include <libcamera/span.h>
 
-#include "file.h"
-#include "log.h"
-#include "pipeline_handler.h"
-#include "utils.h"
+#include "libcamera/internal/file.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_module.h

@@ -18,7 +18,8 @@
 
 #include <libcamera/logging.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
+
 #include "test.h"
 
 using namespace std;

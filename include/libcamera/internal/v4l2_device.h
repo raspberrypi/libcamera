@@ -13,8 +13,8 @@
 
 #include <linux/videodev2.h>
 
-#include "log.h"
-#include "v4l2_controls.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/v4l2_controls.h"
 
 namespace libcamera {
 

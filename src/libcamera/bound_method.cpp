@@ -7,9 +7,9 @@
 
 #include <libcamera/bound_method.h>
 
-#include "message.h"
-#include "semaphore.h"
-#include "thread.h"
+#include "libcamera/internal/message.h"
+#include "libcamera/internal/semaphore.h"
+#include "libcamera/internal/thread.h"
 
 /**
  * \file bound_method.h

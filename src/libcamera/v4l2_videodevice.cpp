@@ -5,7 +5,7 @@
  * v4l2_videodevice.cpp - V4L2 Video Device
  */
 
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 #include <fcntl.h>
 #include <iomanip>
@@ -23,10 +23,10 @@
 #include <libcamera/event_notifier.h>
 #include <libcamera/file_descriptor.h>
 
-#include "log.h"
-#include "media_device.h"
-#include "media_object.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/media_object.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file v4l2_videodevice.h

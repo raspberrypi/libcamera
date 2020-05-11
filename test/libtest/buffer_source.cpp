@@ -10,7 +10,7 @@
 #include <iostream>
 #include <memory>
 
-#include "device_enumerator.h"
+#include "libcamera/internal/device_enumerator.h"
 
 #include "test.h"
 

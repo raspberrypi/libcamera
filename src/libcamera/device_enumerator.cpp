@@ -5,14 +5,14 @@
  * device_enumerator.cpp - Enumeration and matching
  */
 
-#include "device_enumerator.h"
-#include "device_enumerator_sysfs.h"
-#include "device_enumerator_udev.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/device_enumerator_sysfs.h"
+#include "libcamera/internal/device_enumerator_udev.h"
 
 #include <string.h>
 
-#include "log.h"
-#include "media_device.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
 
 /**
  * \file device_enumerator.h

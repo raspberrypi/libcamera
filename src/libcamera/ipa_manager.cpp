@@ -5,19 +5,19 @@
  * ipa_manager.cpp - Image Processing Algorithm module manager
  */
 
-#include "ipa_manager.h"
+#include "libcamera/internal/ipa_manager.h"
 
 #include <algorithm>
 #include <dirent.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include "file.h"
-#include "ipa_module.h"
-#include "ipa_proxy.h"
-#include "log.h"
-#include "pipeline_handler.h"
-#include "utils.h"
+#include "libcamera/internal/file.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/ipa_proxy.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_manager.h

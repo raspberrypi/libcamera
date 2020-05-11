@@ -12,10 +12,10 @@
 
 #include <libcamera/geometry.h>
 
-#include "formats.h"
-#include "log.h"
-#include "media_object.h"
-#include "v4l2_device.h"
+#include "libcamera/internal/formats.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_object.h"
+#include "libcamera/internal/v4l2_device.h"
 
 namespace libcamera {
 

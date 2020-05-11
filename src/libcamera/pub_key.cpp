@@ -5,7 +5,7 @@
  * pub_key.cpp - Public key signature verification
  */
 
-#include "pub_key.h"
+#include "libcamera/internal/pub_key.h"
 
 #if HAVE_GNUTLS
 #include <gnutls/abstract.h>

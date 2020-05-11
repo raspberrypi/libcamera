@@ -11,7 +11,8 @@
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
-#include "thread.h"
+#include "libcamera/internal/thread.h"
+
 #include "v4l2_videodevice_test.h"
 
 class CaptureAsyncTest : public V4L2VideoDeviceTest

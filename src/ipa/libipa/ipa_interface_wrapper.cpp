@@ -14,8 +14,8 @@
 
 #include <ipa/ipa_interface.h>
 
-#include "byte_stream_buffer.h"
-#include "camera_sensor.h"
+#include "libcamera/internal/byte_stream_buffer.h"
+#include "libcamera/internal/camera_sensor.h"
 
 /**
  * \file ipa_interface_wrapper.h

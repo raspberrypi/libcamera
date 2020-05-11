@@ -22,7 +22,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

@@ -23,6 +23,8 @@ libcamera_api = files([
 
 include_dir = join_paths(libcamera_include_dir, 'libcamera')
 
+subdir('internal')
+
 install_headers(libcamera_api,
                 subdir : include_dir)
 

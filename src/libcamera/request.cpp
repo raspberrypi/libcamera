@@ -14,8 +14,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/stream.h>
 
-#include "camera_controls.h"
-#include "log.h"
+#include "libcamera/internal/camera_controls.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file request.h

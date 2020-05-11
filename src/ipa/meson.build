@@ -6,7 +6,6 @@ ipa_sysconf_dir = join_paths(get_option('sysconfdir'), 'libcamera', 'ipa')
 
 ipa_includes = [
     libcamera_includes,
-    libcamera_internal_includes,
 ]
 
 config_h.set('IPA_CONFIG_DIR',

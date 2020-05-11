@@ -11,8 +11,9 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
-#include "byte_stream_buffer.h"
-#include "control_serializer.h"
+#include "libcamera/internal/byte_stream_buffer.h"
+#include "libcamera/internal/control_serializer.h"
+
 #include "serialization_test.h"
 #include "test.h"
 

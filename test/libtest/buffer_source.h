@@ -9,8 +9,8 @@
 
 #include <libcamera/libcamera.h>
 
-#include "media_device.h"
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 using namespace libcamera;
 

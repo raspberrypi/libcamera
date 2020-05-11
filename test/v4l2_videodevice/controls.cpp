@@ -10,7 +10,7 @@
 #include <iostream>
 #include <limits.h>
 
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 #include "v4l2_videodevice_test.h"
 

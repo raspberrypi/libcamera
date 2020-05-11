@@ -22,6 +22,10 @@
 #include <libcamera/span.h>
 #include <libipa/ipa_interface_wrapper.h>
 
+#include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
+
 #include <linux/bcm2835-isp.h>
 
 #include "agc_algorithm.hpp"
@@ -43,10 +47,6 @@
 #include "noise_status.h"
 #include "sdn_status.h"
 #include "sharpen_status.h"
-
-#include "camera_sensor.h"
-#include "log.h"
-#include "utils.h"
 
 namespace libcamera {
 

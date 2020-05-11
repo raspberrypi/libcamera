@@ -16,9 +16,10 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
-#include "device_enumerator.h"
-#include "media_device.h"
-#include "media_object.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/media_object.h"
+
 #include "test.h"
 
 using namespace std;

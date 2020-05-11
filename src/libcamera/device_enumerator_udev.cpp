@@ -5,7 +5,7 @@
  * device_enumerator_udev.cpp - udev-based device enumerator
  */
 
-#include "device_enumerator_udev.h"
+#include "libcamera/internal/device_enumerator_udev.h"
 
 #include <algorithm>
 #include <fcntl.h>
@@ -19,8 +19,8 @@
 
 #include <libcamera/event_notifier.h>
 
-#include "log.h"
-#include "media_device.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
 
 namespace libcamera {
 

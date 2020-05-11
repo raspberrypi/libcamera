@@ -7,7 +7,7 @@
 
 #include "timeline.h"
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file timeline.h

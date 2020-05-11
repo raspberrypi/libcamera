@@ -14,7 +14,7 @@
 #include <string>
 #include <sys/types.h>
 
-#include "device_enumerator.h"
+#include "libcamera/internal/device_enumerator.h"
 
 struct udev;
 struct udev_device;

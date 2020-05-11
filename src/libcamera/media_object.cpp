@@ -5,7 +5,7 @@
  * media_object.cpp - Media device objects: entities, pads and links
  */
 
-#include "media_object.h"
+#include "libcamera/internal/media_object.h"
 
 #include <errno.h>
 #include <string>
@@ -15,8 +15,8 @@
 
 #include <linux/media.h>
 
-#include "log.h"
-#include "media_device.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
 
 /**
  * \file media_object.h

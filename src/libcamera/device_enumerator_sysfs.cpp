@@ -5,7 +5,7 @@
  * device_enumerator_sysfs.cpp - sysfs-based device enumerator
  */
 
-#include "device_enumerator_sysfs.h"
+#include "libcamera/internal/device_enumerator_sysfs.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -17,8 +17,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "log.h"
-#include "media_device.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
 
 namespace libcamera {
 

@@ -5,7 +5,7 @@
  * event_dispatcher_poll.cpp - Poll-based event dispatcher
  */
 
-#include "event_dispatcher_poll.h"
+#include "libcamera/internal/event_dispatcher_poll.h"
 
 #include <algorithm>
 #include <chrono>
@@ -19,9 +19,9 @@
 #include <libcamera/event_notifier.h>
 #include <libcamera/timer.h>
 
-#include "log.h"
-#include "thread.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file event_dispatcher_poll.h

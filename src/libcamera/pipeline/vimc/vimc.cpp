@@ -22,16 +22,16 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "camera_sensor.h"
-#include "device_enumerator.h"
-#include "ipa_manager.h"
-#include "log.h"
-#include "media_device.h"
-#include "pipeline_handler.h"
-#include "utils.h"
-#include "v4l2_controls.h"
-#include "v4l2_subdevice.h"
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/ipa_manager.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/utils.h"
+#include "libcamera/internal/v4l2_controls.h"
+#include "libcamera/internal/v4l2_subdevice.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 

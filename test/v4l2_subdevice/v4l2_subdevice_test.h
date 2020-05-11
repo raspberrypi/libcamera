@@ -10,10 +10,11 @@
 
 #include <libcamera/buffer.h>
 
-#include "device_enumerator.h"
-#include "media_device.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/v4l2_subdevice.h"
+
 #include "test.h"
-#include "v4l2_subdevice.h"
 
 using namespace libcamera;
 

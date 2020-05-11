@@ -15,7 +15,6 @@ test_includes_public = [
 
 test_includes_internal = [
     test_includes_public,
-    libcamera_internal_includes,
 ]
 
 libtest = static_library('libtest', libtest_sources,

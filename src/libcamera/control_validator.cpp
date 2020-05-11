@@ -5,7 +5,7 @@
  * control_validator.cpp - Control validator
  */
 
-#include "control_validator.h"
+#include "libcamera/internal/control_validator.h"
 
 /**
  * \file control_validator.h

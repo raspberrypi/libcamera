@@ -11,8 +11,9 @@
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
+#include "libcamera/internal/thread.h"
+
 #include "test.h"
-#include "thread.h"
 
 using namespace std;
 using namespace libcamera;

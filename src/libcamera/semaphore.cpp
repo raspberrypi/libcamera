@@ -5,8 +5,8 @@
  * semaphore.cpp - General-purpose counting semaphore
  */
 
-#include "semaphore.h"
-#include "thread.h"
+#include "libcamera/internal/semaphore.h"
+#include "libcamera/internal/thread.h"
 
 /**
  * \file semaphore.h

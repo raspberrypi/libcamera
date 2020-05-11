@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "media_device.h"
+#include "libcamera/internal/media_device.h"
 
 #include "test.h"
 

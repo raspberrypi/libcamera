@@ -8,7 +8,8 @@
 #include <array>
 #include <iostream>
 
-#include "byte_stream_buffer.h"
+#include "libcamera/internal/byte_stream_buffer.h"
+
 #include "test.h"
 
 using namespace std;

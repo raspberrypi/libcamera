@@ -19,8 +19,8 @@
 
 #include <libipa/ipa_interface_wrapper.h>
 
-#include "file.h"
-#include "log.h"
+#include "libcamera/internal/file.h"
+#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

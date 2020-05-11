@@ -18,11 +18,12 @@
 #include <libcamera/logging.h>
 #include <libcamera/timer.h>
 
-#include "log.h"
-#include "process.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/process.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/utils.h"
+
 #include "test.h"
-#include "thread.h"
-#include "utils.h"
 
 using namespace std;
 using namespace libcamera;

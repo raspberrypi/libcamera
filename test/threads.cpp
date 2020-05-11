@@ -9,7 +9,8 @@
 #include <iostream>
 #include <thread>
 
-#include "thread.h"
+#include "libcamera/internal/thread.h"
+
 #include "test.h"
 
 using namespace std;

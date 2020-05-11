@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string.h>
 
-#include "ipa_module.h"
+#include "libcamera/internal/ipa_module.h"
 
 #include "test.h"
 

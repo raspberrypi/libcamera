@@ -11,7 +11,7 @@
 #include "camera_mode.h"
 #include "md_parser.hpp"
 
-#include "v4l2_videodevice.h"
+#include "libcamera/internal/v4l2_videodevice.h"
 
 namespace RPi {
 

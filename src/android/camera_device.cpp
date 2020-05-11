@@ -11,8 +11,8 @@
 #include <libcamera/controls.h>
 #include <libcamera/property_ids.h>
 
-#include "log.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
 
 #include "camera_metadata.h"
 

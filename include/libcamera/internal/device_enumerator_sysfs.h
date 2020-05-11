@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 
-#include "device_enumerator.h"
+#include "libcamera/internal/device_enumerator.h"
 
 class MediaDevice;
 

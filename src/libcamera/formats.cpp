@@ -5,11 +5,11 @@
  * formats.cpp - libcamera image formats
  */
 
-#include "formats.h"
+#include "libcamera/internal/formats.h"
 
 #include <errno.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file formats.h

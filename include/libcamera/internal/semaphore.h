@@ -9,7 +9,7 @@
 
 #include <condition_variable>
 
-#include "thread.h"
+#include "libcamera/internal/thread.h"
 
 namespace libcamera {
 

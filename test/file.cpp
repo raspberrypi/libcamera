@@ -13,7 +13,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "file.h"
+#include "libcamera/internal/file.h"
+
 #include "test.h"
 
 using namespace std;

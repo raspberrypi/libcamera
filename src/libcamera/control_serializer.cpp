@@ -5,7 +5,7 @@
  * control_serializer.cpp - Control (de)serializer
  */
 
-#include "control_serializer.h"
+#include "libcamera/internal/control_serializer.h"
 
 #include <algorithm>
 #include <memory>
@@ -16,8 +16,8 @@
 #include <libcamera/controls.h>
 #include <libcamera/span.h>
 
-#include "byte_stream_buffer.h"
-#include "log.h"
+#include "libcamera/internal/byte_stream_buffer.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file control_serializer.h

@@ -18,10 +18,11 @@
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/timer.h>
 
-#include "ipc_unixsocket.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/utils.h"
+
 #include "test.h"
-#include "thread.h"
-#include "utils.h"
 
 #define CMD_CLOSE	0
 #define CMD_REVERSE	1

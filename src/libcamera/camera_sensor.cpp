@@ -5,7 +5,7 @@
  * camera_sensor.cpp - A camera sensor
  */
 
-#include "camera_sensor.h"
+#include "libcamera/internal/camera_sensor.h"
 
 #include <algorithm>
 #include <float.h>
@@ -16,9 +16,9 @@
 
 #include <libcamera/property_ids.h>
 
-#include "formats.h"
-#include "utils.h"
-#include "v4l2_subdevice.h"
+#include "libcamera/internal/formats.h"
+#include "libcamera/internal/utils.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 /**
  * \file camera_sensor.h

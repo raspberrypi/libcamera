@@ -5,7 +5,7 @@
  * utils.cpp - Miscellaneous utility functions
  */
 
-#include "utils.h"
+#include "libcamera/internal/utils.h"
 
 #include <dlfcn.h>
 #include <elf.h>

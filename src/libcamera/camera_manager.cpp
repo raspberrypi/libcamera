@@ -13,12 +13,12 @@
 #include <libcamera/camera.h>
 #include <libcamera/event_dispatcher.h>
 
-#include "device_enumerator.h"
-#include "event_dispatcher_poll.h"
-#include "log.h"
-#include "pipeline_handler.h"
-#include "thread.h"
-#include "utils.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/event_dispatcher_poll.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/thread.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file camera_manager.h

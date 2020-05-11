@@ -14,8 +14,8 @@
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
-#include "formats.h"
-#include "log.h"
+#include "libcamera/internal/formats.h"
+#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

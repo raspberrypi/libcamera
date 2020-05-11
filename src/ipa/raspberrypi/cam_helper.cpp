@@ -11,10 +11,10 @@
 #include <map>
 #include <string.h>
 
+#include "libcamera/internal/v4l2_videodevice.h"
+
 #include "cam_helper.hpp"
 #include "md_parser.hpp"
-
-#include "v4l2_videodevice.h"
 
 using namespace RPi;
 

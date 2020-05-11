@@ -5,7 +5,7 @@
  * v4l2_subdevice.cpp - V4L2 Subdevice
  */
 
-#include "v4l2_subdevice.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 #include <fcntl.h>
 #include <iomanip>
@@ -19,10 +19,10 @@
 
 #include <libcamera/geometry.h>
 
-#include "log.h"
-#include "media_device.h"
-#include "media_object.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/media_device.h"
+#include "libcamera/internal/media_object.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file v4l2_subdevice.h

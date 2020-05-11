@@ -14,9 +14,9 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "log.h"
-#include "pipeline_handler.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file camera.h

@@ -5,7 +5,7 @@
  * process.cpp - Process object
  */
 
-#include "process.h"
+#include "libcamera/internal/process.h"
 
 #include <algorithm>
 #include <dirent.h>
@@ -22,8 +22,8 @@
 
 #include <libcamera/event_notifier.h>
 
-#include "log.h"
-#include "utils.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file process.h

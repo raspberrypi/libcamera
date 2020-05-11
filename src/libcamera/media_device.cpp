@@ -5,7 +5,7 @@
  * media_device.cpp - Media device handler
  */
 
-#include "media_device.h"
+#include "libcamera/internal/media_device.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -18,7 +18,7 @@
 
 #include <linux/media.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file media_device.h

@@ -5,16 +5,16 @@
  * ipa_proxy.cpp - Image Processing Algorithm proxy
  */
 
-#include "ipa_proxy.h"
+#include "libcamera/internal/ipa_proxy.h"
 
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "ipa_module.h"
-#include "log.h"
-#include "utils.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_proxy.h

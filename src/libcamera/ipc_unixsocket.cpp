@@ -5,14 +5,14 @@
  * ipc_unixsocket.cpp - IPC mechanism based on Unix sockets
  */
 
-#include "ipc_unixsocket.h"
+#include "libcamera/internal/ipc_unixsocket.h"
 
 #include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file ipc_unixsocket.h

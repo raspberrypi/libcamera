@@ -18,12 +18,13 @@
 
 #include <ipa/ipa_vimc.h>
 
-#include "device_enumerator.h"
-#include "ipa_manager.h"
-#include "ipa_module.h"
-#include "pipeline_handler.h"
+#include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/ipa_manager.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/thread.h"
+
 #include "test.h"
-#include "thread.h"
 
 using namespace std;
 using namespace libcamera;

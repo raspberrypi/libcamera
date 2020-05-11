@@ -14,8 +14,8 @@
 #include <ipa/ipa_interface.h>
 #include <ipa/ipa_module_info.h>
 
-#include "log.h"
-#include "pipeline_handler.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
 
 namespace libcamera {
 

@@ -12,7 +12,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
-#include "camera_controls.h"
+#include "libcamera/internal/camera_controls.h"
 
 #include "camera_test.h"
 #include "test.h"

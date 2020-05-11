@@ -13,8 +13,8 @@
 #include <libcamera/camera.h>
 #include <libcamera/stream.h>
 
-#include "log.h"
-#include "pipeline_handler.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/pipeline_handler.h"
 
 /**
  * \file framebuffer_allocator.h

@@ -9,7 +9,7 @@
 
 #include <libcamera/camera.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 #include "camera_device.h"
 

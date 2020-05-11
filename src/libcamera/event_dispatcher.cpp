@@ -7,7 +7,7 @@
 
 #include <libcamera/event_dispatcher.h>
 
-#include "log.h"
+#include "libcamera/internal/log.h"
 
 /**
  * \file event_dispatcher.h

@@ -123,8 +123,6 @@ struct ipa_context *ipaCreate();
 #include <libcamera/geometry.h>
 #include <libcamera/signal.h>
 
-#include "v4l2_controls.h"
-
 namespace libcamera {
 
 struct IPASettings {

@@ -330,7 +330,7 @@ public:
 	std::vector<IPABuffer> ipaBuffers_;
 
 	/* VCSM allocation helper. */
-	RPi::Vcsm vcsm_;
+	::RPi::Vcsm vcsm_;
 	void *lsTable_;
 
 	RPi::StaggeredCtrl staggeredCtrl_;

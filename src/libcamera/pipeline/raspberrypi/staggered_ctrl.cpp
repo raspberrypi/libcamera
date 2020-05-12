@@ -9,20 +9,19 @@
 
 #include <algorithm>
 
+#include <libcamera/controls.h>
+
 #include "log.h"
 #include "utils.h"
+#include "v4l2_videodevice.h"
 
-/* For logging... */
-using libcamera::LogCategory;
-using libcamera::LogDebug;
-using libcamera::LogInfo;
-using libcamera::utils::hex;
+namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RPI_S_W);
 
 namespace RPi {
 
-void StaggeredCtrl::init(libcamera::V4L2VideoDevice *dev,
+void StaggeredCtrl::init(V4L2VideoDevice *dev,
 	  std::initializer_list<std::pair<const uint32_t, uint8_t>> delayList)
 {
 	std::lock_guard<std::mutex> lock(lock_);
@@ -35,7 +34,7 @@ void StaggeredCtrl::init(libcamera::V4L2VideoDevice *dev,
 	maxDelay_ = 0;
 	for (auto const &p : delay_) {
 		LOG(RPI_S_W, Info) << "Init ctrl "
-				   << hex(p.first) << " with delay "
+				   << utils::hex(p.first) << " with delay "
 				   << static_cast<int>(p.second);
 		maxDelay_ = std::max(maxDelay_, p.second);
 	}
@@ -92,7 +91,7 @@ bool StaggeredCtrl::set(std::initializer_list<std::pair<const uint32_t, int32_t>
 	return true;
 }
 
-bool StaggeredCtrl::set(libcamera::ControlList &controls)
+bool StaggeredCtrl::set(ControlList &controls)
 {
 	std::lock_guard<std::mutex> lock(lock_);
 
@@ -103,7 +102,7 @@ bool StaggeredCtrl::set(libcamera::ControlList &controls)
 
 		ctrl_[p.first][setCount_] = CtrlInfo(p.second.get<int32_t>());
 		LOG(RPI_S_W, Debug) << "Setting ctrl "
-				    << hex(p.first) << " to "
+				    << utils::hex(p.first) << " to "
 				    << ctrl_[p.first][setCount_].value
 				    << " at index "
 				    << setCount_;
@@ -115,7 +114,7 @@ bool StaggeredCtrl::set(libcamera::ControlList &controls)
 int StaggeredCtrl::write()
 {
 	std::lock_guard<std::mutex> lock(lock_);
-	libcamera::ControlList controls(dev_->controls());
+	ControlList controls(dev_->controls());
 
 	for (auto &p : ctrl_) {
 		int delayDiff = maxDelay_ - delay_[p.first];
@@ -126,7 +125,7 @@ int StaggeredCtrl::write()
 			controls.set(p.first, p.second[index].value);
 			p.second[index].updated = false;
 			LOG(RPI_S_W, Debug) << "Writing ctrl "
-					    << hex(p.first) << " to "
+					    << utils::hex(p.first) << " to "
 					    << p.second[index].value
 					    << " at index "
 					    << index;
@@ -149,7 +148,7 @@ void StaggeredCtrl::get(std::unordered_map<uint32_t, int32_t> &ctrl, uint8_t off
 		int index = std::max<int>(0, getCount_ - maxDelay_);
 		ctrl[p.first] = p.second[index].value;
 		LOG(RPI_S_W, Debug) << "Getting ctrl "
-				    << hex(p.first) << " to "
+				    << utils::hex(p.first) << " to "
 				    << p.second[index].value
 				    << " at index "
 				    << index;
@@ -171,3 +170,5 @@ void StaggeredCtrl::nextFrame()
 }
 
 } /* namespace RPi */
+
+} /* namespace libcamera */

@@ -12,9 +12,10 @@
 #include <unordered_map>
 #include <utility>
 
-#include <libcamera/controls.h>
+namespace libcamera {
 
-#include "v4l2_videodevice.h"
+class ControlList;
+class V4L2VideoDevice;
 
 namespace RPi {
 
@@ -31,7 +32,7 @@ public:
 		return init_;
 	}
 
-	void init(libcamera::V4L2VideoDevice *dev,
+	void init(V4L2VideoDevice *dev,
 		  std::initializer_list<std::pair<const uint32_t, uint8_t>> delayList);
 	void reset();
 
@@ -39,7 +40,7 @@ public:
 
 	bool set(uint32_t ctrl, int32_t value);
 	bool set(std::initializer_list<std::pair<const uint32_t, int32_t>> ctrlList);
-	bool set(libcamera::ControlList &controls);
+	bool set(ControlList &controls);
 
 	int write();
 
@@ -81,10 +82,12 @@ private:
 	uint32_t setCount_;
 	uint32_t getCount_;
 	uint8_t maxDelay_;
-	libcamera::V4L2VideoDevice *dev_;
+	V4L2VideoDevice *dev_;
 	std::unordered_map<uint32_t, uint8_t> delay_;
 	std::unordered_map<uint32_t, CircularArray> ctrl_;
 	std::mutex lock_;
 };
 
 } /* namespace RPi */
+
+} /* namespace libcamera */

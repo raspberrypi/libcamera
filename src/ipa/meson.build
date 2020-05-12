@@ -21,10 +21,12 @@ subdir('libipa')
 ipa_sign = files('ipa-sign.sh')
 
 ipas = ['raspberrypi', 'rkisp1', 'vimc']
+ipa_names = []
 
 foreach pipeline : get_option('pipelines')
     if ipas.contains(pipeline)
         subdir(pipeline)
+        ipa_names += join_paths(ipa_install_dir, ipa_name + '.so')
     endif
 endforeach
 
@@ -33,6 +35,6 @@ if ipa_sign_module
     # .sign files, as meson strips the DT_RPATH and DT_RUNPATH from binaries at
     # install time, which invalidates the signatures.
     meson.add_install_script('ipa-sign-install.sh',
-                             ipa_install_dir,
-                             ipa_priv_key.full_path())
+                             ipa_priv_key.full_path(),
+                             ipa_names)
 endif

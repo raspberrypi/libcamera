@@ -1276,7 +1276,14 @@ FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,
 		return FileDescriptor();
 	}
 
-	return FileDescriptor(expbuf.fd);
+	FileDescriptor fd(expbuf.fd);
+	/*
+	 * FileDescriptor takes a duplicate of fd, so we must close the
+	 * original here, otherwise it will be left dangling.
+	 */
+	::close(expbuf.fd);
+
+	return fd;
 }
 
 /**

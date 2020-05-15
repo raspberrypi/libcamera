@@ -146,6 +146,7 @@ private:
 
 					if (num < 0) {
 						cerr << "Read failed" << endl;
+						close(outfd);
 						stop(-EIO);
 						return;
 					} else if (!num)
@@ -153,6 +154,7 @@ private:
 
 					if (write(outfd, buf, num) < 0) {
 						cerr << "Write failed" << endl;
+						close(outfd);
 						stop(-EIO);
 						return;
 					}

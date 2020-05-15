@@ -777,9 +777,12 @@ int Camera::configure(CameraConfiguration *config)
 	p_->activeStreams_.clear();
 	for (const StreamConfiguration &cfg : *config) {
 		Stream *stream = cfg.stream();
-		if (!stream)
+		if (!stream) {
 			LOG(Camera, Fatal)
 				<< "Pipeline handler failed to update stream configuration";
+			p_->activeStreams_.clear();
+			return -EINVAL;
+		}
 
 		stream->configuration_ = cfg;
 		p_->activeStreams_.insert(stream);

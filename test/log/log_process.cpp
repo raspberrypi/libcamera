@@ -107,6 +107,7 @@ protected:
 		memset(buf, 0, sizeof(buf));
 		if (read(fd, buf, sizeof(buf)) < 0) {
 			cerr << "Failed to read tmp log file" << endl;
+			close(fd);
 			return TestFail;
 		}
 		close(fd);

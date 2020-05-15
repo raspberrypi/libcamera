@@ -14,9 +14,8 @@
 
 #include <libcamera/event_dispatcher.h>
 #include <libcamera/event_notifier.h>
+#include <libcamera/ipa/ipa_vimc.h>
 #include <libcamera/timer.h>
-
-#include <ipa/ipa_vimc.h>
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"

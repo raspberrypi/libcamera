@@ -11,9 +11,9 @@
 #include <memory>
 #include <vector>
 
-#include <ipa/ipa_controls.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/ipa/ipa_controls.h>
 #include <libcamera/span.h>
 
 #include "libcamera/internal/byte_stream_buffer.h"

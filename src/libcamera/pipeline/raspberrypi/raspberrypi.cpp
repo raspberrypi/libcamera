@@ -11,9 +11,9 @@
 #include <queue>
 #include <sys/mman.h>
 
-#include <ipa/raspberrypi.h>
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/logging.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>

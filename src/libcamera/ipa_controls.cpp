@@ -5,7 +5,7 @@
  * ipa_controls.cpp - IPA control handling
  */
 
-#include <ipa/ipa_controls.h>
+#include <libcamera/ipa/ipa_controls.h>
 
 /**
  * \file ipa_controls.h

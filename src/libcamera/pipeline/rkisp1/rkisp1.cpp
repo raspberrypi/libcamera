@@ -13,10 +13,10 @@
 
 #include <linux/media-bus-format.h>
 
-#include <ipa/rkisp1.h>
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/ipa/rkisp1.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 

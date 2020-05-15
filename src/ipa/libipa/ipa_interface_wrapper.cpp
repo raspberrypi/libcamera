@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <vector>
 
-#include <ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_interface.h>
 
 #include "libcamera/internal/byte_stream_buffer.h"
 #include "libcamera/internal/camera_sensor.h"

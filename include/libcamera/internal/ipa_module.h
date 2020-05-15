@@ -11,8 +11,8 @@
 #include <string>
 #include <vector>
 
-#include <ipa/ipa_interface.h>
-#include <ipa/ipa_module_info.h>
+#include <libcamera/ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_module_info.h>
 
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"

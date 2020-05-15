@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include <ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_interface.h>
 
 #include "libcamera/internal/control_serializer.h"
 

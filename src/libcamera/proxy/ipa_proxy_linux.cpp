@@ -7,8 +7,8 @@
 
 #include <vector>
 
-#include <ipa/ipa_interface.h>
-#include <ipa/ipa_module_info.h>
+#include <libcamera/ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_module_info.h>
 
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/ipa_proxy.h"

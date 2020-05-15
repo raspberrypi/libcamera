@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_interface.h>
 
 namespace libcamera {
 

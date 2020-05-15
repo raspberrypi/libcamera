@@ -7,7 +7,7 @@
 #ifndef __LIBCAMERA_IPA_CONTEXT_WRAPPER_H__
 #define __LIBCAMERA_IPA_CONTEXT_WRAPPER_H__
 
-#include <ipa/ipa_interface.h>
+#include <libcamera/ipa/ipa_interface.h>
 
 #include "libcamera/internal/control_serializer.h"
 

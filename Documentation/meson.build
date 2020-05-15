@@ -22,9 +22,9 @@ if doxygen.found()
     custom_target('doxygen',
                   input : [
                       doxyfile,
-                      libcamera_api,
-                      libcamera_ipa_api,
-                      libcamera_headers,
+                      libcamera_internal_headers,
+                      libcamera_ipa_headers,
+                      libcamera_public_headers,
                       libcamera_sources,
                       libipa_headers,
                       libipa_sources,

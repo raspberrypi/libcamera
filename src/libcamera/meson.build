@@ -138,7 +138,10 @@ libcamera = shared_library('camera',
                            build_rpath : '/',
                            dependencies : libcamera_deps)
 
-libcamera_dep = declare_dependency(sources : [libcamera_api, libcamera_ipa_api],
+libcamera_dep = declare_dependency(sources : [
+                                       libcamera_ipa_headers,
+                                       libcamera_public_headers,
+                                   ],
                                    include_directories : libcamera_includes,
                                    link_with : libcamera)
 

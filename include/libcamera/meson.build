@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libcamera_api = files([
+libcamera_public_headers = files([
     'bound_method.h',
     'buffer.h',
     'camera.h',
@@ -26,7 +26,7 @@ include_dir = join_paths(libcamera_include_dir, 'libcamera')
 subdir('internal')
 subdir('ipa')
 
-install_headers(libcamera_api,
+install_headers(libcamera_public_headers,
                 subdir : include_dir)
 
 gen_controls = files('../../src/libcamera/gen-controls.py')
@@ -49,7 +49,7 @@ foreach header : control_source_files
                                      install_dir : join_paths('include', include_dir))
 endforeach
 
-libcamera_api += control_headers
+libcamera_public_headers += control_headers
 
 gen_header = files('gen-header.sh')
 
@@ -60,7 +60,7 @@ libcamera_h = custom_target('gen-header',
                             install : true,
                             install_dir : join_paths('include', include_dir))
 
-libcamera_api += libcamera_h
+libcamera_public_headers += libcamera_h
 
 version = libcamera_version.split('.')
 libcamera_version_config = configuration_data()

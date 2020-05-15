@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libcamera_headers = files([
+libcamera_internal_headers = files([
     'byte_stream_buffer.h',
     'camera_controls.h',
     'camera_sensor.h',

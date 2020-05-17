@@ -19,10 +19,23 @@ cam_sources = files([
     'stream_options.cpp',
 ])
 
+cam_cpp_args = []
+
+libdrm = dependency('libdrm', required : false)
+
+if libdrm.found()
+cam_cpp_args += [ '-DHAVE_KMS' ]
+cam_sources += files([
+    'drm.cpp',
+])
+endif
+
 cam  = executable('cam', cam_sources,
                   dependencies : [
                       libatomic,
                       libcamera_public,
+                      libdrm,
                       libevent,
                   ],
+                  cpp_args : cam_cpp_args,
                   install : true)

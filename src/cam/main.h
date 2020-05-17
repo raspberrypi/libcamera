@@ -10,6 +10,7 @@
 enum {
 	OptCamera = 'c',
 	OptCapture = 'C',
+	OptDisplay = 'D',
 	OptFile = 'F',
 	OptHelp = 'h',
 	OptInfo = 'I',

@@ -132,6 +132,12 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "Capture until interrupted by user or until <count> frames captured",
 			 "capture", ArgumentOptional, "count", false,
 			 OptCamera);
+#ifdef HAVE_KMS
+	parser.addOption(OptDisplay, OptionString,
+			 "Display viewfinder through DRM/KMS on specified connector",
+			 "display", ArgumentOptional, "connector", false,
+			 OptCamera);
+#endif
 	parser.addOption(OptFile, OptionString,
 			 "Write captured frames to disk\n"
 			 "If the file name ends with a '/', it sets the directory in which\n"

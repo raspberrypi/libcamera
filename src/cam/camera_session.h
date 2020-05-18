@@ -21,8 +21,9 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "buffer_writer.h"
 #include "options.h"
+
+class FrameSink;
 
 class CameraSession
 {
@@ -53,13 +54,14 @@ private:
 	int queueRequest(libcamera::Request *request);
 	void requestComplete(libcamera::Request *request);
 	void processRequest(libcamera::Request *request);
+	void sinkRelease(libcamera::Request *request);
 
 	const OptionsParser::Options &options_;
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
 	std::map<const libcamera::Stream *, std::string> streamName_;
-	std::unique_ptr<BufferWriter> writer_;
+	std::unique_ptr<FrameSink> sink_;
 	unsigned int cameraIndex_;
 
 	uint64_t last_;

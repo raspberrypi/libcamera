@@ -13,6 +13,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <libcamera/camera.h>
+
 #include "buffer_writer.h"
 
 using namespace libcamera;
@@ -32,6 +34,21 @@ BufferWriter::~BufferWriter()
 	mappedBuffers_.clear();
 }
 
+int BufferWriter::configure(const libcamera::CameraConfiguration &config)
+{
+	int ret = FrameSink::configure(config);
+	if (ret < 0)
+		return ret;
+
+	streamNames_.clear();
+	for (unsigned int index = 0; index < config.size(); ++index) {
+		const StreamConfiguration &cfg = config.at(index);
+		streamNames_[cfg.stream()] = "stream" + std::to_string(index);
+	}
+
+	return 0;
+}
+
 void BufferWriter::mapBuffer(FrameBuffer *buffer)
 {
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
@@ -43,7 +60,15 @@ void BufferWriter::mapBuffer(FrameBuffer *buffer)
 	}
 }
 
-int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
+bool BufferWriter::processRequest(Request *request)
+{
+	for (auto [stream, buffer] : request->buffers())
+		writeBuffer(stream, buffer);
+
+	return true;
+}
+
+void BufferWriter::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 {
 	std::string filename;
 	size_t pos;
@@ -58,7 +83,7 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 	pos = filename.find_first_of('#');
 	if (pos != std::string::npos) {
 		std::stringstream ss;
-		ss << streamName << "-" << std::setw(6)
+		ss << streamNames_[stream] << "-" << std::setw(6)
 		   << std::setfill('0') << buffer->metadata().sequence;
 		filename.replace(pos, 1, ss.str());
 	}
@@ -66,8 +91,12 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 	fd = open(filename.c_str(), O_CREAT | O_WRONLY |
 		  (pos == std::string::npos ? O_APPEND : O_TRUNC),
 		  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	if (fd == -1)
-		return -errno;
+	if (fd == -1) {
+		ret = -errno;
+		std::cerr << "failed to open file " << filename << ": "
+			  << strerror(-ret) << std::endl;
+		return;
+	}
 
 	for (unsigned int i = 0; i < buffer->planes().size(); ++i) {
 		const FrameBuffer::Plane &plane = buffer->planes()[i];
@@ -96,6 +125,4 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 	}
 
 	close(fd);
-
-	return ret;
 }

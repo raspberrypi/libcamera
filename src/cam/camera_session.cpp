@@ -13,6 +13,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/property_ids.h>
 
+#include "buffer_writer.h"
 #include "camera_session.h"
 #include "event_loop.h"
 #include "main.h"
@@ -162,9 +163,20 @@ int CameraSession::start()
 
 	if (options_.isSet(OptFile)) {
 		if (!options_[OptFile].toString().empty())
-			writer_ = std::make_unique<BufferWriter>(options_[OptFile]);
+			sink_ = std::make_unique<BufferWriter>(options_[OptFile]);
 		else
-			writer_ = std::make_unique<BufferWriter>();
+			sink_ = std::make_unique<BufferWriter>();
+	}
+
+	if (sink_) {
+		ret = sink_->configure(*config_);
+		if (ret < 0) {
+			std::cout << "Failed to configure frame sink"
+				  << std::endl;
+			return ret;
+		}
+
+		sink_->requestProcessed.connect(this, &CameraSession::sinkRelease);
 	}
 
 	allocator_ = std::make_unique<FrameBufferAllocator>(camera_);
@@ -178,7 +190,13 @@ void CameraSession::stop()
 	if (ret)
 		std::cout << "Failed to stop capture" << std::endl;
 
-	writer_.reset();
+	if (sink_) {
+		ret = sink_->stop();
+		if (ret)
+			std::cout << "Failed to stop frame sink" << std::endl;
+	}
+
+	sink_.reset();
 
 	requests_.clear();
 
@@ -227,16 +245,26 @@ int CameraSession::startCapture()
 				return ret;
 			}
 
-			if (writer_)
-				writer_->mapBuffer(buffer.get());
+			if (sink_)
+				sink_->mapBuffer(buffer.get());
 		}
 
 		requests_.push_back(std::move(request));
 	}
 
+	if (sink_) {
+		ret = sink_->start();
+		if (ret) {
+			std::cout << "Failed to start frame sink" << std::endl;
+			return ret;
+		}
+	}
+
 	ret = camera_->start();
 	if (ret) {
 		std::cout << "Failed to start capture" << std::endl;
+		if (sink_)
+			sink_->stop();
 		return ret;
 	}
 
@@ -245,6 +273,8 @@ int CameraSession::startCapture()
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
 			camera_->stop();
+			if (sink_)
+				sink_->stop();
 			return ret;
 		}
 	}
@@ -296,6 +326,8 @@ void CameraSession::processRequest(Request *request)
 	fps = last_ != 0 && fps ? 1000000000.0 / fps : 0.0;
 	last_ = ts;
 
+	bool requeue = true;
+
 	std::stringstream info;
 	info << ts / 1000000000 << "."
 	     << std::setw(6) << std::setfill('0') << ts / 1000 % 1000000
@@ -304,11 +336,10 @@ void CameraSession::processRequest(Request *request)
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		const Stream *stream = it->first;
 		FrameBuffer *buffer = it->second;
-		const std::string &name = streamName_[stream];
 
 		const FrameMetadata &metadata = buffer->metadata();
 
-		info << " " << name
+		info << " " << streamName_[stream]
 		     << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
 		     << " bytesused: ";
 
@@ -318,9 +349,11 @@ void CameraSession::processRequest(Request *request)
 			if (++nplane < metadata.planes.size())
 				info << "/";
 		}
+	}
 
-		if (writer_)
-			writer_->write(buffer, name);
+	if (sink_) {
+		if (!sink_->processRequest(request))
+			requeue = false;
 	}
 
 	std::cout << info.str() << std::endl;
@@ -340,6 +373,19 @@ void CameraSession::processRequest(Request *request)
 		return;
 	}
 
+	/*
+	 * If the frame sink holds on the request, we'll requeue it later in the
+	 * complete handler.
+	 */
+	if (!requeue)
+		return;
+
+	request->reuse(Request::ReuseBuffers);
+	camera_->queueRequest(request);
+}
+
+void CameraSession::sinkRelease(Request *request)
+{
 	request->reuse(Request::ReuseBuffers);
 	queueRequest(request);
 }

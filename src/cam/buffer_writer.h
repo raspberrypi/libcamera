@@ -10,20 +10,27 @@
 #include <map>
 #include <string>
 
-#include <libcamera/framebuffer.h>
+#include <libcamera/stream.h>
 
-class BufferWriter
+#include "frame_sink.h"
+
+class BufferWriter : public FrameSink
 {
 public:
 	BufferWriter(const std::string &pattern = "");
 	~BufferWriter();
 
-	void mapBuffer(libcamera::FrameBuffer *buffer);
+	int configure(const libcamera::CameraConfiguration &config) override;
 
-	int write(libcamera::FrameBuffer *buffer,
-		  const std::string &streamName);
+	void mapBuffer(libcamera::FrameBuffer *buffer) override;
+
+	bool processRequest(libcamera::Request *request) override;
 
 private:
+	void writeBuffer(const libcamera::Stream *stream,
+			 libcamera::FrameBuffer *buffer);
+
+	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::string pattern_;
 	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
 };

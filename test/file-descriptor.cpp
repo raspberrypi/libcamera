@@ -56,16 +56,19 @@ protected:
 		delete desc1_;
 		desc1_ = nullptr;
 
-		/* Test creating FileDescriptor from numerical file descriptor. */
+		/*
+		 * Test creating FileDescriptor by copying numerical file
+		 * descriptor.
+		 */
 		desc1_ = new FileDescriptor(fd_);
 		if (desc1_->fd() == fd_) {
-			std::cout << "Failed fd numerical check (int constructor)"
+			std::cout << "Failed fd numerical check (lvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
 		if (!isValidFd(fd_) || !isValidFd(desc1_->fd())) {
-			std::cout << "Failed fd validity after construction (int constructor)"
+			std::cout << "Failed fd validity after construction (lvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
@@ -76,7 +79,38 @@ protected:
 		desc1_ = nullptr;
 
 		if (!isValidFd(fd_) || isValidFd(fd)) {
-			std::cout << "Failed fd validity after destruction (int constructor)"
+			std::cout << "Failed fd validity after destruction (lvalue ref constructor)"
+				  << std::endl;
+			return TestFail;
+		}
+
+		/*
+		 * Test creating FileDescriptor by taking ownership of
+		 * numerical file descriptor.
+		 */
+		int dupFd = dup(fd_);
+		int dupFdCopy = dupFd;
+
+		desc1_ = new FileDescriptor(std::move(dupFd));
+		if (desc1_->fd() != dupFdCopy) {
+			std::cout << "Failed fd numerical check (rvalue ref constructor)"
+				  << std::endl;
+			return TestFail;
+		}
+
+		if (dupFd != -1 || !isValidFd(fd_) || !isValidFd(desc1_->fd())) {
+			std::cout << "Failed fd validity after construction (rvalue ref constructor)"
+				  << std::endl;
+			return TestFail;
+		}
+
+		fd = desc1_->fd();
+
+		delete desc1_;
+		desc1_ = nullptr;
+
+		if (!isValidFd(fd_) || isValidFd(fd)) {
+			std::cout << "Failed fd validity after destruction (rvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}

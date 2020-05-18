@@ -33,41 +33,79 @@ LOG_DEFINE_CATEGORY(FileDescriptor)
  * shared with all FileDescriptor instances constructed as copies.
  *
  * When constructed from a numerical file descriptor, the FileDescriptor
- * instance duplicates the file descriptor and wraps the duplicate as a
- * Descriptor. The copy constructor and assignment operator create copies that
- * share the Descriptor, while the move versions of those methods additionally
- * make the other FileDescriptor invalid. When the last FileDescriptor that
- * references a Descriptor is destroyed, the file descriptor is closed.
+ * instance either duplicates or takes over the file descriptor:
  *
- * The numerical file descriptor is available through the fd() method. As
- * constructing a FileDescriptor from a numerical file descriptor duplicates
- * the file descriptor, the value returned by fd() will be different than the
- * value passed to the constructor. All FileDescriptor instances created as
- * copies of a FileDescriptor will report the same fd() value. Callers can
- * perform operations on the fd(), but shall never close it manually.
+ * - The FileDescriptor(const int &) constructor duplicates the numerical file
+ *   descriptor and wraps the duplicate in a Descriptor. The caller is
+ *   responsible for closing the original file descriptor, and the value
+ *   returned by fd() will be different from the value passed to the
+ *   constructor.
+ *
+ * - The FileDescriptor(int &&) constructor takes over the numerical file
+ *   descriptor and wraps it in a Descriptor. The caller is shall not touch the
+ *   original file descriptor once the function returns, and the value returned
+ *   by fd() will be identical to the value passed to the constructor.
+ *
+ * The copy constructor and assignment operator create copies that share the
+ * Descriptor, while the move versions of those methods additionally make the
+ * other FileDescriptor invalid. When the last FileDescriptor that references a
+ * Descriptor is destroyed, the file descriptor is closed.
+ *
+ * The numerical file descriptor is available through the fd() method. All
+ * FileDescriptor instances created as copies of a FileDescriptor will report
+ * the same fd() value. Callers can perform operations on the fd(), but shall
+ * never close it manually.
  */
 
 /**
- * \brief Create a FileDescriptor wrapping a copy of a given \a fd
+ * \brief Create a FileDescriptor copying a given \a fd
  * \param[in] fd File descriptor
  *
- * Constructing a FileDescriptor from a numerical file descriptor duplicates the
- * \a fd and takes ownership of the copy. The original \a fd is left untouched,
- * and the caller is responsible for closing it when appropriate. The duplicated
- * file descriptor will be closed automatically when all FileDescriptor
- * instances that reference it are destroyed.
+ * Construct a FileDescriptor from a numerical file descriptor by duplicating
+ * the \a fd, and take ownership of the copy. The original \a fd is left
+ * untouched, and the caller is responsible for closing it when appropriate.
+ * The duplicated file descriptor will be closed automatically when all
+ * FileDescriptor instances that reference it are destroyed.
  *
  * If the \a fd is negative, the FileDescriptor is constructed as invalid and
  * the fd() method will return -1.
  */
-FileDescriptor::FileDescriptor(int fd)
+FileDescriptor::FileDescriptor(const int &fd)
 {
 	if (fd < 0)
 		return;
 
-	fd_ = std::make_shared<Descriptor>(fd);
+	fd_ = std::make_shared<Descriptor>(fd, true);
 	if (fd_->fd() < 0)
 		fd_.reset();
+}
+
+/**
+ * \brief Create a FileDescriptor taking ownership of a given \a fd
+ * \param[in] fd File descriptor
+ *
+ * Construct a FileDescriptor from a numerical file descriptor by taking
+ * ownership of the \a fd. The original \a fd is set to -1 and shall not be
+ * touched by the caller anymore. In particular, the caller shall not close the
+ * original \a fd manually. The duplicated file descriptor will be closed
+ * automatically when all FileDescriptor instances that reference it are
+ * destroyed.
+ *
+ * If the \a fd is negative, the FileDescriptor is constructed as invalid and
+ * the fd() method will return -1.
+ */
+FileDescriptor::FileDescriptor(int &&fd)
+{
+	if (fd < 0)
+		return;
+
+	fd_ = std::make_shared<Descriptor>(fd, false);
+	/*
+	 * The Descriptor constructor can't have failed here, as it took over
+	 * the fd without duplicating it. Just set the original fd to -1 to
+	 * implement move semantics.
+	 */
+	fd = -1;
 }
 
 /**
@@ -183,8 +221,13 @@ FileDescriptor FileDescriptor::dup() const
 	return FileDescriptor(fd());
 }
 
-FileDescriptor::Descriptor::Descriptor(int fd)
+FileDescriptor::Descriptor::Descriptor(int fd, bool duplicate)
 {
+	if (!duplicate) {
+		fd_ = fd;
+		return;
+	}
+
 	/* Failing to dup() a fd should not happen and is fatal. */
 	fd_ = ::dup(fd);
 	if (fd_ == -1) {

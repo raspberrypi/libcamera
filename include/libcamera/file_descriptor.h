@@ -14,7 +14,8 @@ namespace libcamera {
 class FileDescriptor final
 {
 public:
-	explicit FileDescriptor(int fd = -1);
+	explicit FileDescriptor(const int &fd = -1);
+	explicit FileDescriptor(int &&fd);
 	FileDescriptor(const FileDescriptor &other);
 	FileDescriptor(FileDescriptor &&other);
 	~FileDescriptor();
@@ -30,7 +31,7 @@ private:
 	class Descriptor
 	{
 	public:
-		Descriptor(int fd);
+		Descriptor(int fd, bool duplicate);
 		~Descriptor();
 
 		int fd() const { return fd_; }

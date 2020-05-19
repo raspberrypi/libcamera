@@ -75,7 +75,8 @@ public:
 	struct Configuration {
 		uint32_t code;
 		PixelFormat pixelFormat;
-		Size size;
+		Size captureSize;
+		SizeRange outputSizes;
 	};
 
 	Stream stream_;
@@ -301,12 +302,15 @@ int SimpleCameraData::init()
 			Configuration config;
 			config.code = code;
 			config.pixelFormat = pixelFormat;
-			config.size = format.size;
+			config.captureSize = format.size;
 
 			if (!converter) {
+				config.outputSizes = config.captureSize;
 				formats_[pixelFormat] = config;
 				continue;
 			}
+
+			config.outputSizes = converter->sizes(format.size);
 
 			for (PixelFormat format : converter->formats(pixelFormat))
 				formats_[format] = config;
@@ -440,15 +444,16 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	}
 
 	const SimpleCameraData::Configuration &pipeConfig = it->second;
-	if (cfg.size != pipeConfig.size) {
+	if (!pipeConfig.outputSizes.contains(cfg.size)) {
 		LOG(SimplePipeline, Debug)
 			<< "Adjusting size from " << cfg.size.toString()
-			<< " to " << pipeConfig.size.toString();
-		cfg.size = pipeConfig.size;
+			<< " to " << pipeConfig.captureSize.toString();
+		cfg.size = pipeConfig.captureSize;
 		status = Adjusted;
 	}
 
-	needConversion_ = cfg.pixelFormat != pipeConfig.pixelFormat;
+	needConversion_ = cfg.pixelFormat != pipeConfig.pixelFormat
+			|| cfg.size != pipeConfig.captureSize;
 
 	cfg.bufferCount = 3;
 
@@ -485,7 +490,7 @@ CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera
 		       std::inserter(formats, formats.end()),
 		       [](const auto &format) -> decltype(formats)::value_type {
 			       const PixelFormat &pixelFormat = format.first;
-			       const Size &size = format.second.size;
+			       const Size &size = format.second.captureSize;
 			       return { pixelFormat, { size } };
 		       });
 
@@ -537,15 +542,18 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 
 	V4L2DeviceFormat captureFormat = {};
 	captureFormat.fourcc = videoFormat;
-	captureFormat.size = cfg.size;
+	captureFormat.size = pipeConfig.captureSize;
 
 	ret = video->setFormat(&captureFormat);
 	if (ret)
 		return ret;
 
-	if (captureFormat.fourcc != videoFormat || captureFormat.size != cfg.size) {
+	if (captureFormat.fourcc != videoFormat ||
+	    captureFormat.size != pipeConfig.captureSize) {
 		LOG(SimplePipeline, Error)
-			<< "Unable to configure capture in " << cfg.toString();
+			<< "Unable to configure capture in "
+			<< pipeConfig.captureSize.toString() << "-"
+			<< videoFormat.toString();
 		return -EINVAL;
 	}
 
@@ -556,7 +564,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 
 	if (useConverter_) {
 		int ret = converter_->configure(pipeConfig.pixelFormat,
-						cfg.size, &cfg);
+						pipeConfig.captureSize, &cfg);
 		if (ret < 0) {
 			LOG(SimplePipeline, Error)
 				<< "Unable to configure converter";

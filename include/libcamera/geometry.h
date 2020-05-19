@@ -71,6 +71,7 @@ class SizeRange
 {
 public:
 	SizeRange()
+		: hStep(0), vStep(0)
 	{
 	}
 

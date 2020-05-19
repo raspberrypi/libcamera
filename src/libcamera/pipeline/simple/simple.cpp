@@ -549,12 +549,13 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return -EINVAL;
 	}
 
+	cfg.stride = captureFormat.planes[0].bpl;
+
 	/* Configure the converter if required. */
 	useConverter_ = config->needConversion();
 
 	if (useConverter_) {
-		int ret = converter_->configure(pipeConfig.pixelFormat,
-						cfg.pixelFormat, cfg.size);
+		int ret = converter_->configure(pipeConfig.pixelFormat, &cfg);
 		if (ret < 0) {
 			LOG(SimplePipeline, Error)
 				<< "Unable to configure converter";

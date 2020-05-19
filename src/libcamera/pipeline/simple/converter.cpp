@@ -12,6 +12,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/signal.h>
+#include <libcamera/stream.h>
 
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
@@ -93,14 +94,14 @@ std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
 }
 
 int SimpleConverter::configure(PixelFormat inputFormat,
-			       PixelFormat outputFormat, const Size &size)
+			       StreamConfiguration *cfg)
 {
 	V4L2DeviceFormat format;
 	int ret;
 
 	V4L2PixelFormat videoFormat = m2m_->output()->toV4L2PixelFormat(inputFormat);
 	format.fourcc = videoFormat;
-	format.size = size;
+	format.size = cfg->size;
 
 	ret = m2m_->output()->setFormat(&format);
 	if (ret < 0) {
@@ -109,7 +110,7 @@ int SimpleConverter::configure(PixelFormat inputFormat,
 		return ret;
 	}
 
-	if (format.fourcc != videoFormat || format.size != size) {
+	if (format.fourcc != videoFormat || format.size != cfg->size) {
 		LOG(SimplePipeline, Error)
 			<< "Input format not supported";
 		return -EINVAL;
@@ -119,7 +120,7 @@ int SimpleConverter::configure(PixelFormat inputFormat,
 	 * Set the pixel format on the output, the size is identical to the
 	 * input as we don't support scaling.
 	 */
-	videoFormat = m2m_->capture()->toV4L2PixelFormat(outputFormat);
+	videoFormat = m2m_->capture()->toV4L2PixelFormat(cfg->pixelFormat);
 	format.fourcc = videoFormat;
 
 	ret = m2m_->capture()->setFormat(&format);
@@ -129,11 +130,13 @@ int SimpleConverter::configure(PixelFormat inputFormat,
 		return ret;
 	}
 
-	if (format.fourcc != videoFormat || format.size != size) {
+	if (format.fourcc != videoFormat || format.size != cfg->size) {
 		LOG(SimplePipeline, Error)
 			<< "Output format not supported";
 		return -EINVAL;
 	}
+
+	cfg->stride = format.planes[0].bpl;
 
 	return 0;
 }

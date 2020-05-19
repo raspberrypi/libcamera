@@ -61,8 +61,6 @@ private:
 	libcamera::Size size_;
 	unsigned int stride_;
 
-	bool planeInitialized_;
-
 	std::map<libcamera::FrameBuffer *, std::unique_ptr<DRM::FrameBuffer>> buffers_;
 
 	std::mutex lock_;

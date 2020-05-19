@@ -195,23 +195,6 @@ int KMSSink::start()
 		return ret;
 	}
 
-	/* Enable the display pipeline with no plane to start with. */
-	request = std::make_unique<DRM::AtomicRequest>(&dev_);
-
-	request->addProperty(connector_, "CRTC_ID", crtc_->id());
-	request->addProperty(crtc_, "ACTIVE", 1);
-	request->addProperty(crtc_, "MODE_ID", mode_->toBlob(&dev_));
-
-	ret = request->commit(DRM::AtomicRequest::FlagAllowModeset);
-	if (ret < 0) {
-		std::cerr
-			<< "Failed to enable display pipeline: "
-			<< strerror(-ret) << std::endl;
-		return ret;
-	}
-
-	planeInitialized_ = false;
-
 	return 0;
 }
 
@@ -259,10 +242,17 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 
 	DRM::FrameBuffer *drmBuffer = iter->second.get();
 
+	unsigned int flags = DRM::AtomicRequest::FlagAsync;
 	DRM::AtomicRequest *drmRequest = new DRM::AtomicRequest(&dev_);
 	drmRequest->addProperty(plane_, "FB_ID", drmBuffer->id());
 
-	if (!planeInitialized_) {
+	if (!active_ && !queued_) {
+		/* Enable the display pipeline on the first frame. */
+		drmRequest->addProperty(connector_, "CRTC_ID", crtc_->id());
+
+		drmRequest->addProperty(crtc_, "ACTIVE", 1);
+		drmRequest->addProperty(crtc_, "MODE_ID", mode_->toBlob(&dev_));
+
 		drmRequest->addProperty(plane_, "CRTC_ID", crtc_->id());
 		drmRequest->addProperty(plane_, "SRC_X", 0 << 16);
 		drmRequest->addProperty(plane_, "SRC_Y", 0 << 16);
@@ -272,7 +262,8 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 		drmRequest->addProperty(plane_, "CRTC_Y", 0);
 		drmRequest->addProperty(plane_, "CRTC_W", mode_->hdisplay);
 		drmRequest->addProperty(plane_, "CRTC_H", mode_->vdisplay);
-		planeInitialized_ = true;
+
+		flags |= DRM::AtomicRequest::FlagAllowModeset;
 	}
 
 	pending_ = std::make_unique<Request>(drmRequest, camRequest);
@@ -280,7 +271,7 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 	std::lock_guard<std::mutex> lock(lock_);
 
 	if (!queued_) {
-		int ret = drmRequest->commit(DRM::AtomicRequest::FlagAsync);
+		int ret = drmRequest->commit(flags);
 		if (ret < 0) {
 			std::cerr
 				<< "Failed to commit atomic request: "

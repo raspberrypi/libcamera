@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * buffer_writer.h - Buffer writer
+ * file_sink.h - File Sink
  */
-#ifndef __CAM_BUFFER_WRITER_H__
-#define __CAM_BUFFER_WRITER_H__
+#ifndef __CAM_FILE_SINK_H__
+#define __CAM_FILE_SINK_H__
 
 #include <map>
 #include <string>
@@ -14,11 +14,11 @@
 
 #include "frame_sink.h"
 
-class BufferWriter : public FrameSink
+class FileSink : public FrameSink
 {
 public:
-	BufferWriter(const std::string &pattern = "");
-	~BufferWriter();
+	FileSink(const std::string &pattern = "");
+	~FileSink();
 
 	int configure(const libcamera::CameraConfiguration &config) override;
 
@@ -35,4 +35,4 @@ private:
 	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
 };
 
-#endif /* __CAM_BUFFER_WRITER_H__ */
+#endif /* __CAM_FILE_SINK_H__ */

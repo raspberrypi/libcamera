@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * buffer_writer.cpp - Buffer writer
+ * file_sink.cpp - File Sink
  */
 
 #include <fcntl.h>
@@ -15,16 +15,16 @@
 
 #include <libcamera/camera.h>
 
-#include "buffer_writer.h"
+#include "file_sink.h"
 
 using namespace libcamera;
 
-BufferWriter::BufferWriter(const std::string &pattern)
+FileSink::FileSink(const std::string &pattern)
 	: pattern_(pattern)
 {
 }
 
-BufferWriter::~BufferWriter()
+FileSink::~FileSink()
 {
 	for (auto &iter : mappedBuffers_) {
 		void *memory = iter.second.first;
@@ -34,7 +34,7 @@ BufferWriter::~BufferWriter()
 	mappedBuffers_.clear();
 }
 
-int BufferWriter::configure(const libcamera::CameraConfiguration &config)
+int FileSink::configure(const libcamera::CameraConfiguration &config)
 {
 	int ret = FrameSink::configure(config);
 	if (ret < 0)
@@ -49,7 +49,7 @@ int BufferWriter::configure(const libcamera::CameraConfiguration &config)
 	return 0;
 }
 
-void BufferWriter::mapBuffer(FrameBuffer *buffer)
+void FileSink::mapBuffer(FrameBuffer *buffer)
 {
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
 		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
@@ -60,7 +60,7 @@ void BufferWriter::mapBuffer(FrameBuffer *buffer)
 	}
 }
 
-bool BufferWriter::processRequest(Request *request)
+bool FileSink::processRequest(Request *request)
 {
 	for (auto [stream, buffer] : request->buffers())
 		writeBuffer(stream, buffer);
@@ -68,7 +68,7 @@ bool BufferWriter::processRequest(Request *request)
 	return true;
 }
 
-void BufferWriter::writeBuffer(const Stream *stream, FrameBuffer *buffer)
+void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 {
 	std::string filename;
 	size_t pos;

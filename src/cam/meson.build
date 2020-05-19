@@ -10,9 +10,9 @@ endif
 cam_enabled = true
 
 cam_sources = files([
-    'buffer_writer.cpp',
     'camera_session.cpp',
     'event_loop.cpp',
+    'file_sink.cpp',
     'frame_sink.cpp',
     'main.cpp',
     'options.cpp',

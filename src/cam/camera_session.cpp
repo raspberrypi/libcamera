@@ -13,9 +13,9 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/property_ids.h>
 
-#include "buffer_writer.h"
 #include "camera_session.h"
 #include "event_loop.h"
+#include "file_sink.h"
 #include "main.h"
 #include "stream_options.h"
 
@@ -163,9 +163,9 @@ int CameraSession::start()
 
 	if (options_.isSet(OptFile)) {
 		if (!options_[OptFile].toString().empty())
-			sink_ = std::make_unique<BufferWriter>(options_[OptFile]);
+			sink_ = std::make_unique<FileSink>(options_[OptFile]);
 		else
-			sink_ = std::make_unique<BufferWriter>();
+			sink_ = std::make_unique<FileSink>();
 	}
 
 	if (sink_) {

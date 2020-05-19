@@ -914,22 +914,10 @@ enum v4l2_auto_focus_range {
 #define V4L2_CID_PAN_SPEED			(V4L2_CID_CAMERA_CLASS_BASE+32)
 #define V4L2_CID_TILT_SPEED			(V4L2_CID_CAMERA_CLASS_BASE+33)
 
-/*
- * This version of the v4l2-controls.h header part of the libcamera sources has
- * deviated from the version distributed by the mainline Linux kernel.
- *
- * Specifically, this version includes temporary definitions of a few custom
- * controls (V4L2_CID_CAMERA_SENSOR_ROTATION and
- * V4L2_CID_CAMERA_SENSOR_LOCATION) which have not yet made their way to
- * upstream Linux.
- *
- * When updating this header with a more recent version, make sure the new
- * version has those additional controls defined.
- */
-#define V4L2_CID_CAMERA_SENSOR_LOCATION		(V4L2_CID_CAMERA_CLASS_BASE+34)
-#define V4L2_LOCATION_FRONT			0
-#define V4L2_LOCATION_BACK			1
-#define V4L2_LOCATION_EXTERNAL			2
+#define V4L2_CID_CAMERA_ORIENTATION		(V4L2_CID_CAMERA_CLASS_BASE+34)
+#define V4L2_CAMERA_ORIENTATION_FRONT		0
+#define V4L2_CAMERA_ORIENTATION_BACK		1
+#define V4L2_CAMERA_ORIENTATION_EXTERNAL	2
 
 #define V4L2_CID_CAMERA_SENSOR_ROTATION		(V4L2_CID_CAMERA_CLASS_BASE+35)
 

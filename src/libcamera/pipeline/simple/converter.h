@@ -20,6 +20,7 @@ namespace libcamera {
 class FrameBuffer;
 class MediaDevice;
 struct Size;
+class SizeRange;
 struct StreamConfiguration;
 class V4L2M2MDevice;
 
@@ -33,8 +34,10 @@ public:
 	void close();
 
 	std::vector<PixelFormat> formats(PixelFormat input);
+	SizeRange sizes(const Size &input);
 
-	int configure(PixelFormat inputFormat, StreamConfiguration *cfg);
+	int configure(PixelFormat inputFormat, const Size &inputSize,
+		      StreamConfiguration *cfg);
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 

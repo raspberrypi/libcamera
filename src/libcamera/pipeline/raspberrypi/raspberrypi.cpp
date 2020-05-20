@@ -304,7 +304,8 @@ public:
 		}
 
 		/* Stop the IPA proxy thread. */
-		ipa_->stop();
+		if (ipa_)
+			ipa_->stop();
 	}
 
 	void frameStarted(uint32_t sequence);

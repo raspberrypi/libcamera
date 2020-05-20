@@ -210,24 +210,23 @@ int CameraSensor::init()
 	int32_t propertyValue;
 
 	/* Camera Location: default is front location. */
-	const auto &locationControl = controls.find(V4L2_CID_CAMERA_SENSOR_LOCATION);
-	if (locationControl != controls.end()) {
-		int32_t v4l2Location =
-			locationControl->second.def().get<int32_t>();
+	const auto &orientation = controls.find(V4L2_CID_CAMERA_ORIENTATION);
+	if (orientation != controls.end()) {
+		int32_t v4l2Orientation = orientation->second.def().get<int32_t>();
 
-		switch (v4l2Location) {
+		switch (v4l2Orientation) {
 		default:
 			LOG(CameraSensor, Warning)
 				<< "Unsupported camera location "
-				<< v4l2Location << ", setting to Front";
+				<< v4l2Orientation << ", setting to Front";
 			/* Fall-through */
-		case V4L2_LOCATION_FRONT:
+		case V4L2_CAMERA_ORIENTATION_FRONT:
 			propertyValue = properties::CameraLocationFront;
 			break;
-		case V4L2_LOCATION_BACK:
+		case V4L2_CAMERA_ORIENTATION_BACK:
 			propertyValue = properties::CameraLocationBack;
 			break;
-		case V4L2_LOCATION_EXTERNAL:
+		case V4L2_CAMERA_ORIENTATION_EXTERNAL:
 			propertyValue = properties::CameraLocationExternal;
 			break;
 		}

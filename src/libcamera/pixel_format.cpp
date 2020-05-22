@@ -25,25 +25,19 @@ namespace libcamera {
  */
 
 /**
+ * \fn PixelFormat::PixelFormat()
  * \brief Construct a PixelFormat with an invalid format
  *
  * PixelFormat instances constructed with the default constructor are
  * invalid, calling the isValid() function returns false.
  */
-PixelFormat::PixelFormat()
-	: fourcc_(0)
-{
-}
 
 /**
+ * \fn PixelFormat::PixelFormat(uint32_t fourcc, uint64_t modifier)
  * \brief Construct a PixelFormat from a DRM FourCC and a modifier
  * \param[in] fourcc A DRM FourCC
  * \param[in] modifier A DRM FourCC modifier
  */
-PixelFormat::PixelFormat(uint32_t fourcc, uint64_t modifier)
-	: fourcc_(fourcc), modifier_(modifier)
-{
-}
 
 /**
  * \brief Compare pixel formats for equality

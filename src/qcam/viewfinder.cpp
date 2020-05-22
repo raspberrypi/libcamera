@@ -17,18 +17,20 @@
 #include <QPainter>
 #include <QtDebug>
 
+#include <libcamera/formats.h>
+
 #include "format_converter.h"
 
 static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
-	{ libcamera::PixelFormat{ DRM_FORMAT_ABGR8888 }, QImage::Format_RGBA8888 },
+	{ libcamera::formats::ABGR8888, QImage::Format_RGBA8888 },
 #endif
-	{ libcamera::PixelFormat{ DRM_FORMAT_ARGB8888 }, QImage::Format_RGB32 },
+	{ libcamera::formats::ARGB8888, QImage::Format_RGB32 },
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-	{ libcamera::PixelFormat{ DRM_FORMAT_RGB888 }, QImage::Format_BGR888 },
+	{ libcamera::formats::RGB888, QImage::Format_BGR888 },
 #endif
-	{ libcamera::PixelFormat{ DRM_FORMAT_BGR888 }, QImage::Format_RGB888 },
+	{ libcamera::formats::BGR888, QImage::Format_RGB888 },
 };
 
 ViewFinder::ViewFinder(QWidget *parent)

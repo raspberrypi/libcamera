@@ -14,6 +14,7 @@
 #include <tiffio.h>
 
 #include <libcamera/control_ids.h>
+#include <libcamera/formats.h>
 
 using namespace libcamera;
 
@@ -181,73 +182,73 @@ void thumbScanlineIPU3(const FormatInfo &info, void *output,
 }
 
 static const std::map<PixelFormat, FormatInfo> formatInfo = {
-	{ PixelFormat(DRM_FORMAT_SBGGR10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SBGGR10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
 		.packScanline = packScanlineSBGGR10P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGBRG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SGBRG10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
 		.packScanline = packScanlineSBGGR10P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGRBG10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SGRBG10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
 		.packScanline = packScanlineSBGGR10P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SRGGB10, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SRGGB10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineSBGGR10P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SBGGR12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SBGGR12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
 		.packScanline = packScanlineSBGGR12P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGBRG12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SGBRG12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
 		.packScanline = packScanlineSBGGR12P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGRBG12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SGRBG12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
 		.packScanline = packScanlineSBGGR12P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SRGGB12, MIPI_FORMAT_MOD_CSI2_PACKED), {
+	{ formats::SRGGB12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineSBGGR12P,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
-	{ PixelFormat(DRM_FORMAT_SBGGR10, IPU3_FORMAT_MOD_PACKED), {
+	{ formats::SBGGR10_IPU3, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
 		.packScanline = packScanlineIPU3,
 		.thumbScanline = thumbScanlineIPU3,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGBRG10, IPU3_FORMAT_MOD_PACKED), {
+	{ formats::SGBRG10_IPU3, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
 		.packScanline = packScanlineIPU3,
 		.thumbScanline = thumbScanlineIPU3,
 	} },
-	{ PixelFormat(DRM_FORMAT_SGRBG10, IPU3_FORMAT_MOD_PACKED), {
+	{ formats::SGRBG10_IPU3, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
 		.packScanline = packScanlineIPU3,
 		.thumbScanline = thumbScanlineIPU3,
 	} },
-	{ PixelFormat(DRM_FORMAT_SRGGB10, IPU3_FORMAT_MOD_PACKED), {
+	{ formats::SRGGB10_IPU3, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineIPU3,

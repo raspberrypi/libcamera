@@ -11,6 +11,8 @@
 
 #include <QImage>
 
+#include <libcamera/formats.h>
+
 #define RGBSHIFT		8
 #ifndef MAX
 #define MAX(a,b)		((a)>(b)?(a):(b))
@@ -29,79 +31,79 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 			       const QSize &size)
 {
 	switch (format) {
-	case DRM_FORMAT_NV12:
+	case libcamera::formats::NV12:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = false;
 		break;
-	case DRM_FORMAT_NV21:
+	case libcamera::formats::NV21:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = true;
 		break;
-	case DRM_FORMAT_NV16:
+	case libcamera::formats::NV16:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
-	case DRM_FORMAT_NV61:
+	case libcamera::formats::NV61:
 		formatFamily_ = NV;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
-	case DRM_FORMAT_NV24:
+	case libcamera::formats::NV24:
 		formatFamily_ = NV;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
-	case DRM_FORMAT_NV42:
+	case libcamera::formats::NV42:
 		formatFamily_ = NV;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
 
-	case DRM_FORMAT_RGB888:
+	case libcamera::formats::RGB888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;
 		g_pos_ = 1;
 		b_pos_ = 0;
 		bpp_ = 3;
 		break;
-	case DRM_FORMAT_BGR888:
+	case libcamera::formats::BGR888:
 		formatFamily_ = RGB;
 		r_pos_ = 0;
 		g_pos_ = 1;
 		b_pos_ = 2;
 		bpp_ = 3;
 		break;
-	case DRM_FORMAT_ARGB8888:
+	case libcamera::formats::ARGB8888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;
 		g_pos_ = 1;
 		b_pos_ = 0;
 		bpp_ = 4;
 		break;
-	case DRM_FORMAT_RGBA8888:
+	case libcamera::formats::RGBA8888:
 		formatFamily_ = RGB;
 		r_pos_ = 3;
 		g_pos_ = 2;
 		b_pos_ = 1;
 		bpp_ = 4;
 		break;
-	case DRM_FORMAT_ABGR8888:
+	case libcamera::formats::ABGR8888:
 		formatFamily_ = RGB;
 		r_pos_ = 0;
 		g_pos_ = 1;
 		b_pos_ = 2;
 		bpp_ = 4;
 		break;
-	case DRM_FORMAT_BGRA8888:
+	case libcamera::formats::BGRA8888:
 		formatFamily_ = RGB;
 		r_pos_ = 1;
 		g_pos_ = 2;
@@ -109,28 +111,28 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		bpp_ = 4;
 		break;
 
-	case DRM_FORMAT_VYUY:
+	case libcamera::formats::VYUY:
 		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 2;
 		break;
-	case DRM_FORMAT_YVYU:
+	case libcamera::formats::YVYU:
 		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 3;
 		break;
-	case DRM_FORMAT_UYVY:
+	case libcamera::formats::UYVY:
 		formatFamily_ = YUV;
 		y_pos_ = 1;
 		cb_pos_ = 0;
 		break;
-	case DRM_FORMAT_YUYV:
+	case libcamera::formats::YUYV:
 		formatFamily_ = YUV;
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
 
-	case DRM_FORMAT_MJPEG:
+	case libcamera::formats::MJPEG:
 		formatFamily_ = MJPEG;
 		break;
 

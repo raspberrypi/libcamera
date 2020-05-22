@@ -12,8 +12,7 @@
 #include <map>
 #include <string.h>
 
-#include <linux/drm_fourcc.h>
-
+#include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/formats.h"
@@ -46,60 +45,52 @@ namespace {
 
 const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	/* RGB formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB24), PixelFormat(DRM_FORMAT_BGR888) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_BGR24), PixelFormat(DRM_FORMAT_RGB888) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBA32), PixelFormat(DRM_FORMAT_ABGR8888) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_ABGR32), PixelFormat(DRM_FORMAT_ARGB8888) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_ARGB32), PixelFormat(DRM_FORMAT_BGRA8888) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_BGRA32), PixelFormat(DRM_FORMAT_RGBA8888) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB24), formats::BGR888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_BGR24), formats::RGB888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBA32), formats::ABGR8888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_ABGR32), formats::ARGB8888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_ARGB32), formats::BGRA8888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_BGRA32), formats::RGBA8888 },
 
 	/* YUV packed formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_YUYV), PixelFormat(DRM_FORMAT_YUYV) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_YVYU), PixelFormat(DRM_FORMAT_YVYU) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_UYVY), PixelFormat(DRM_FORMAT_UYVY) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_VYUY), PixelFormat(DRM_FORMAT_VYUY) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUYV), formats::YUYV },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YVYU), formats::YVYU },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_UYVY), formats::UYVY },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_VYUY), formats::VYUY },
 
 	/* YUV planar formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16), PixelFormat(DRM_FORMAT_NV16) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61), PixelFormat(DRM_FORMAT_NV61) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12), PixelFormat(DRM_FORMAT_NV12) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21), PixelFormat(DRM_FORMAT_NV21) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16), formats::NV16 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61), formats::NV61 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12), formats::NV12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21), formats::NV21 },
 
 	/* Greyscale formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_GREY), PixelFormat(DRM_FORMAT_R8) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_GREY), formats::R8 },
 
 	/* Bayer formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8), PixelFormat(DRM_FORMAT_SBGGR8) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8), PixelFormat(DRM_FORMAT_SGBRG8) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8), PixelFormat(DRM_FORMAT_SGRBG8) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8), PixelFormat(DRM_FORMAT_SRGGB8) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10), PixelFormat(DRM_FORMAT_SBGGR10) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10), PixelFormat(DRM_FORMAT_SGBRG10) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10), PixelFormat(DRM_FORMAT_SGRBG10) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10), PixelFormat(DRM_FORMAT_SRGGB10) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P),
-	  PixelFormat(DRM_FORMAT_SBGGR10, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P),
-	  PixelFormat(DRM_FORMAT_SGBRG10, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P),
-	  PixelFormat(DRM_FORMAT_SGRBG10, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P),
-	  PixelFormat(DRM_FORMAT_SRGGB10, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12), PixelFormat(DRM_FORMAT_SBGGR12) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12), PixelFormat(DRM_FORMAT_SGBRG12) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12), PixelFormat(DRM_FORMAT_SGRBG12) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12), PixelFormat(DRM_FORMAT_SRGGB12) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P),
-	  PixelFormat(DRM_FORMAT_SBGGR12, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P),
-	  PixelFormat(DRM_FORMAT_SGBRG12, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P),
-	  PixelFormat(DRM_FORMAT_SGRBG12, MIPI_FORMAT_MOD_CSI2_PACKED) },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P),
-	  PixelFormat(DRM_FORMAT_SRGGB12, MIPI_FORMAT_MOD_CSI2_PACKED) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8), formats::SBGGR8 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8), formats::SGBRG8 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8), formats::SGRBG8 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8), formats::SRGGB8 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10), formats::SBGGR10 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10), formats::SGBRG10 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10), formats::SGRBG10 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10), formats::SRGGB10 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P), formats::SBGGR10_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P), formats::SGBRG10_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P), formats::SGRBG10_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P), formats::SRGGB10_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12), formats::SBGGR12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12), formats::SGBRG12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12), formats::SGRBG12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12), formats::SRGGB12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P), formats::SBGGR12_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P), formats::SGBRG12_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P), formats::SGRBG12_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P), formats::SRGGB12_CSI2P },
 
 	/* Compressed formats. */
-	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG), PixelFormat(DRM_FORMAT_MJPEG) },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG), formats::MJPEG },
 };
 
 } /* namespace */

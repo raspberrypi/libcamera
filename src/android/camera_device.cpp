@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/controls.h>
+#include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/log.h"
@@ -58,13 +59,13 @@ struct Camera3Format {
 const std::map<int, const Camera3Format> camera3FormatsMap = {
 	{
 		HAL_PIXEL_FORMAT_BLOB, {
-			{ PixelFormat(DRM_FORMAT_MJPEG) },
+			{ formats::MJPEG },
 			ANDROID_SCALER_AVAILABLE_FORMATS_BLOB,
 			"BLOB"
 		}
 	}, {
 		HAL_PIXEL_FORMAT_YCbCr_420_888, {
-			{ PixelFormat(DRM_FORMAT_NV12), PixelFormat(DRM_FORMAT_NV21) },
+			{ formats::NV12, formats::NV21 },
 			ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
 			"YCbCr_420_888"
 		}
@@ -74,7 +75,7 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 		 * usage flag. For now, copy the YCbCr_420 configuration.
 		 */
 		HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED, {
-			{ PixelFormat(DRM_FORMAT_NV12), PixelFormat(DRM_FORMAT_NV21) },
+			{ formats::NV12, formats::NV21 },
 			ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED,
 			"IMPLEMENTATION_DEFINED"
 		}
@@ -264,7 +265,7 @@ int CameraDevice::initializeStreamConfigurations()
 		for (const PixelFormat &pixelFormat : libcameraFormats) {
 			/* \todo Fixed mapping for JPEG. */
 			if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
-				mappedFormat = PixelFormat(DRM_FORMAT_MJPEG);
+				mappedFormat = formats::MJPEG;
 				break;
 			}
 

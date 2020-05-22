@@ -11,8 +11,6 @@
 #include <stdint.h>
 #include <string>
 
-#include <linux/drm_fourcc.h>
-
 namespace libcamera {
 
 class PixelFormat

@@ -5,6 +5,7 @@
  * pixel_format.cpp - libcamera Pixel Format
  */
 
+#include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 
 /**
@@ -21,7 +22,8 @@ namespace libcamera {
  * The PixelFormat type describes the format of images in the public libcamera
  * API. It stores a FourCC value as a 32-bit unsigned integer and a modifier.
  * The FourCC and modifier values are defined in the Linux kernel DRM/KMS API
- * (see linux/drm_fourcc.h).
+ * (see linux/drm_fourcc.h). Constant expressions for all pixel formats
+ * supported by libcamera are available in libcamera/formats.h.
  */
 
 /**

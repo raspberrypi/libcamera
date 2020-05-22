@@ -12,7 +12,7 @@
 #include "libcamera/internal/log.h"
 
 /**
- * \file formats.h
+ * \file internal/formats.h
  * \brief Types and helper methods to handle libcamera image formats
  */
 

@@ -51,6 +51,8 @@ libcamera_sources = files([
     'v4l2_videodevice.cpp',
 ])
 
+libcamera_sources += libcamera_public_headers
+
 includes = [
     libcamera_includes,
 ]
@@ -87,7 +89,6 @@ foreach source : control_source_files
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'])
 endforeach
 
-libcamera_sources += control_headers
 libcamera_sources += control_sources
 
 gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')

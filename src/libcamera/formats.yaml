@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2020, Google Inc.
+#
+%YAML 1.2
+---
+formats:
+  - R8:
+      fourcc: DRM_FORMAT_R8
+
+  - RGB888:
+      fourcc: DRM_FORMAT_RGB888
+  - BGR888:
+      fourcc: DRM_FORMAT_BGR888
+
+  - XRGB8888:
+      fourcc: DRM_FORMAT_XRGB8888
+  - XBGR8888:
+      fourcc: DRM_FORMAT_XBGR8888
+  - RGBX8888:
+      fourcc: DRM_FORMAT_RGBX8888
+  - BGRX8888:
+      fourcc: DRM_FORMAT_BGRX8888
+
+  - ARGB8888:
+      fourcc: DRM_FORMAT_ARGB8888
+  - ABGR8888:
+      fourcc: DRM_FORMAT_ABGR8888
+  - RGBA8888:
+      fourcc: DRM_FORMAT_RGBA8888
+  - BGRA8888:
+      fourcc: DRM_FORMAT_BGRA8888
+
+  - YUYV:
+      fourcc: DRM_FORMAT_YUYV
+  - YVYU:
+      fourcc: DRM_FORMAT_YVYU
+  - UYVY:
+      fourcc: DRM_FORMAT_UYVY
+  - VYUY:
+      fourcc: DRM_FORMAT_VYUY
+
+  - NV12:
+      fourcc: DRM_FORMAT_NV12
+  - NV21:
+      fourcc: DRM_FORMAT_NV21
+  - NV16:
+      fourcc: DRM_FORMAT_NV16
+  - NV61:
+      fourcc: DRM_FORMAT_NV61
+  - NV24:
+      fourcc: DRM_FORMAT_NV24
+  - NV42:
+      fourcc: DRM_FORMAT_NV42
+
+  - MJPEG:
+      fourcc: DRM_FORMAT_MJPEG
+
+  - SRGGB8:
+      fourcc: DRM_FORMAT_SRGGB8
+  - SGRBG8:
+      fourcc: DRM_FORMAT_SGRBG8
+  - SGBRG8:
+      fourcc: DRM_FORMAT_SGBRG8
+  - SBGGR8:
+      fourcc: DRM_FORMAT_SBGGR8
+
+  - SRGGB10:
+      fourcc: DRM_FORMAT_SRGGB10
+  - SGRBG10:
+      fourcc: DRM_FORMAT_SGRBG10
+  - SGBRG10:
+      fourcc: DRM_FORMAT_SGBRG10
+  - SBGGR10:
+      fourcc: DRM_FORMAT_SBGGR10
+
+  - SRGGB12:
+      fourcc: DRM_FORMAT_SRGGB12
+  - SGRBG12:
+      fourcc: DRM_FORMAT_SGRBG12
+  - SGBRG12:
+      fourcc: DRM_FORMAT_SGBRG12
+  - SBGGR12:
+      fourcc: DRM_FORMAT_SBGGR12
+
+  - SRGGB10_CSI2P:
+      fourcc: DRM_FORMAT_SRGGB10
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SGRBG10_CSI2P:
+      fourcc: DRM_FORMAT_SGRBG10
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SGBRG10_CSI2P:
+      fourcc: DRM_FORMAT_SGBRG10
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SBGGR10_CSI2P:
+      fourcc: DRM_FORMAT_SBGGR10
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+
+  - SRGGB12_CSI2P:
+      fourcc: DRM_FORMAT_SRGGB12
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SGRBG12_CSI2P:
+      fourcc: DRM_FORMAT_SGRBG12
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SGBRG12_CSI2P:
+      fourcc: DRM_FORMAT_SGBRG12
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - SBGGR12_CSI2P:
+      fourcc: DRM_FORMAT_SBGGR12
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
+
+  - SRGGB10_IPU3:
+      fourcc: DRM_FORMAT_SRGGB10
+      mod: IPU3_FORMAT_MOD_PACKED
+  - SGRBG10_IPU3:
+      fourcc: DRM_FORMAT_SGRBG10
+      mod: IPU3_FORMAT_MOD_PACKED
+  - SGBRG10_IPU3:
+      fourcc: DRM_FORMAT_SGBRG10
+      mod: IPU3_FORMAT_MOD_PACKED
+  - SBGGR10_IPU3:
+      fourcc: DRM_FORMAT_SBGGR10
+      mod: IPU3_FORMAT_MOD_PACKED
+...

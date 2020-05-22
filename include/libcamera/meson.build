@@ -29,6 +29,11 @@ subdir('ipa')
 install_headers(libcamera_public_headers,
                 subdir : include_dir)
 
+#
+# Generate headers from templates.
+#
+
+# control_ids.h and property_ids.h
 gen_controls = files('../../src/libcamera/gen-controls.py')
 
 control_source_files = [
@@ -51,6 +56,22 @@ endforeach
 
 libcamera_public_headers += control_headers
 
+# formats.h
+gen_formats = files('gen-formats.py')
+
+formats_h = custom_target('formats_h',
+                          input : files(
+                              '../../src/libcamera/formats.yaml',
+                              'formats.h.in',
+                              '../linux/drm_fourcc.h'
+                          ),
+                          output : 'formats.h',
+                          command : [gen_formats, '-o', '@OUTPUT@', '@INPUT@'],
+                          install : true,
+                          install_dir : join_paths('include', include_dir))
+libcamera_public_headers += formats_h
+
+# libcamera.h
 gen_header = files('gen-header.sh')
 
 libcamera_h = custom_target('gen-header',
@@ -62,6 +83,7 @@ libcamera_h = custom_target('gen-header',
 
 libcamera_public_headers += libcamera_h
 
+# version.h
 version = libcamera_version.split('.')
 libcamera_version_config = configuration_data()
 libcamera_version_config.set('LIBCAMERA_VERSION_MAJOR', version[0])

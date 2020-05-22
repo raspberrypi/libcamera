@@ -4,8 +4,8 @@
  *
  * ipa_context_wrapper.h - Image Processing Algorithm context wrapper
  */
-#ifndef __LIBCAMERA_IPA_CONTEXT_WRAPPER_H__
-#define __LIBCAMERA_IPA_CONTEXT_WRAPPER_H__
+#ifndef __LIBCAMERA_INTERNAL_IPA_CONTEXT_WRAPPER_H__
+#define __LIBCAMERA_INTERNAL_IPA_CONTEXT_WRAPPER_H__
 
 #include <libcamera/ipa/ipa_interface.h>
 
@@ -47,4 +47,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_IPA_CONTEXT_WRAPPER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_IPA_CONTEXT_WRAPPER_H__ */

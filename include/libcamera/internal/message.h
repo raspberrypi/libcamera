@@ -4,8 +4,8 @@
  *
  * message.h - Message queue support
  */
-#ifndef __LIBCAMERA_MESSAGE_H__
-#define __LIBCAMERA_MESSAGE_H__
+#ifndef __LIBCAMERA_INTERNAL_MESSAGE_H__
+#define __LIBCAMERA_INTERNAL_MESSAGE_H__
 
 #include <atomic>
 
@@ -67,4 +67,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_MESSAGE_H__ */
+#endif /* __LIBCAMERA_INTERNAL_MESSAGE_H__ */

@@ -4,8 +4,8 @@
  *
  * pub_key.h - Public key signature verification
  */
-#ifndef __LIBCAMERA_PUB_KEY_H__
-#define __LIBCAMERA_PUB_KEY_H__
+#ifndef __LIBCAMERA_INTERNAL_PUB_KEY_H__
+#define __LIBCAMERA_INTERNAL_PUB_KEY_H__
 
 #include <stdint.h>
 
@@ -35,4 +35,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_PUB_KEY_H__ */
+#endif /* __LIBCAMERA_INTERNAL_PUB_KEY_H__ */

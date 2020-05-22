@@ -4,8 +4,8 @@
  *
  * semaphore.h - General-purpose counting semaphore
  */
-#ifndef __LIBCAMERA_SEMAPHORE_H__
-#define __LIBCAMERA_SEMAPHORE_H__
+#ifndef __LIBCAMERA_INTERNAL_SEMAPHORE_H__
+#define __LIBCAMERA_INTERNAL_SEMAPHORE_H__
 
 #include <condition_variable>
 
@@ -31,4 +31,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_SEMAPHORE_H__ */
+#endif /* __LIBCAMERA_INTERNAL_SEMAPHORE_H__ */

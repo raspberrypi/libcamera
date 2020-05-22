@@ -4,8 +4,8 @@
  *
  * media_device.h - Media device handler
  */
-#ifndef __LIBCAMERA_MEDIA_DEVICE_H__
-#define __LIBCAMERA_MEDIA_DEVICE_H__
+#ifndef __LIBCAMERA_INTERNAL_MEDIA_DEVICE_H__
+#define __LIBCAMERA_INTERNAL_MEDIA_DEVICE_H__
 
 #include <map>
 #include <sstream>
@@ -91,4 +91,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_MEDIA_DEVICE_H__ */
+#endif /* __LIBCAMERA_INTERNAL_MEDIA_DEVICE_H__ */

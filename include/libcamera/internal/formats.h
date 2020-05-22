@@ -5,8 +5,8 @@
  * formats.h - libcamera image formats
  */
 
-#ifndef __LIBCAMERA_FORMATS_H__
-#define __LIBCAMERA_FORMATS_H__
+#ifndef __LIBCAMERA_INTERNAL_FORMATS_H__
+#define __LIBCAMERA_INTERNAL_FORMATS_H__
 
 #include <map>
 #include <vector>
@@ -55,4 +55,4 @@ public:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_FORMATS_H__ */
+#endif /* __LIBCAMERA_INTERNAL_FORMATS_H__ */

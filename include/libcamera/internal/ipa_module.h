@@ -4,8 +4,8 @@
  *
  * ipa_module.h - Image Processing Algorithm module
  */
-#ifndef __LIBCAMERA_IPA_MODULE_H__
-#define __LIBCAMERA_IPA_MODULE_H__
+#ifndef __LIBCAMERA_INTERNAL_IPA_MODULE_H__
+#define __LIBCAMERA_INTERNAL_IPA_MODULE_H__
 
 #include <stdint.h>
 #include <string>
@@ -58,4 +58,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_IPA_MODULE_H__ */
+#endif /* __LIBCAMERA_INTERNAL_IPA_MODULE_H__ */

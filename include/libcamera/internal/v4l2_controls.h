@@ -5,8 +5,8 @@
  * v4l2_controls.h - V4L2 Controls Support
  */
 
-#ifndef __LIBCAMERA_V4L2_CONTROLS_H__
-#define __LIBCAMERA_V4L2_CONTROLS_H__
+#ifndef __LIBCAMERA_INTERNAL_V4L2_CONTROLS_H__
+#define __LIBCAMERA_INTERNAL_V4L2_CONTROLS_H__
 
 #include <linux/videodev2.h>
 
@@ -28,4 +28,4 @@ public:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_V4L2_CONTROLS_H__ */
+#endif /* __LIBCAMERA_INTERNAL_V4L2_CONTROLS_H__ */

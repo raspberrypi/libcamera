@@ -4,8 +4,8 @@
  *
  * camera_controls.h - Camera controls
  */
-#ifndef __LIBCAMERA_CAMERA_CONTROLS_H__
-#define __LIBCAMERA_CAMERA_CONTROLS_H__
+#ifndef __LIBCAMERA_INTERNAL_CAMERA_CONTROLS_H__
+#define __LIBCAMERA_INTERNAL_CAMERA_CONTROLS_H__
 
 #include "libcamera/internal/control_validator.h"
 
@@ -27,4 +27,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_CAMERA_CONTROLS_H__ */
+#endif /* __LIBCAMERA_INTERNAL_CAMERA_CONTROLS_H__ */

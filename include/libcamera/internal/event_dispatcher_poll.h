@@ -4,8 +4,8 @@
  *
  * event_dispatcher_poll.h - Poll-based event dispatcher
  */
-#ifndef __LIBCAMERA_EVENT_DISPATCHER_POLL_H__
-#define __LIBCAMERA_EVENT_DISPATCHER_POLL_H__
+#ifndef __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__
+#define __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__
 
 #include <list>
 #include <map>
@@ -55,4 +55,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_EVENT_DISPATCHER_POLL_H__ */
+#endif /* __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__ */

@@ -4,8 +4,8 @@
  *
  * v4l2_device.h - Common base for V4L2 video devices and subdevices
  */
-#ifndef __LIBCAMERA_V4L2_DEVICE_H__
-#define __LIBCAMERA_V4L2_DEVICE_H__
+#ifndef __LIBCAMERA_INTERNAL_V4L2_DEVICE_H__
+#define __LIBCAMERA_INTERNAL_V4L2_DEVICE_H__
 
 #include <map>
 #include <memory>
@@ -57,4 +57,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_V4L2_DEVICE_H__ */
+#endif /* __LIBCAMERA_INTERNAL_V4L2_DEVICE_H__ */

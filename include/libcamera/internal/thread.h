@@ -4,8 +4,8 @@
  *
  * thread.h - Thread support
  */
-#ifndef __LIBCAMERA_THREAD_H__
-#define __LIBCAMERA_THREAD_H__
+#ifndef __LIBCAMERA_INTERNAL_THREAD_H__
+#define __LIBCAMERA_INTERNAL_THREAD_H__
 
 #include <memory>
 #include <mutex>
@@ -74,4 +74,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_THREAD_H__ */
+#endif /* __LIBCAMERA_INTERNAL_THREAD_H__ */

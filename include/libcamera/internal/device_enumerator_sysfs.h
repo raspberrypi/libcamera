@@ -4,8 +4,8 @@
  *
  * device_enumerator_sysfs.h - sysfs-based device enumerator
  */
-#ifndef __LIBCAMERA_DEVICE_ENUMERATOR_SYSFS_H__
-#define __LIBCAMERA_DEVICE_ENUMERATOR_SYSFS_H__
+#ifndef __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_SYSFS_H__
+#define __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_SYSFS_H__
 
 #include <memory>
 #include <string>
@@ -29,4 +29,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_DEVICE_ENUMERATOR_SYSFS_H__ */
+#endif /* __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_SYSFS_H__ */

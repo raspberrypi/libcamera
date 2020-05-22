@@ -4,8 +4,8 @@
  *
  * utils.h - Miscellaneous utility functions
  */
-#ifndef __LIBCAMERA_UTILS_H__
-#define __LIBCAMERA_UTILS_H__
+#ifndef __LIBCAMERA_INTERNAL_UTILS_H__
+#define __LIBCAMERA_INTERNAL_UTILS_H__
 
 #include <algorithm>
 #include <chrono>
@@ -194,4 +194,4 @@ std::string libcameraSourcePath();
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_UTILS_H__ */
+#endif /* __LIBCAMERA_INTERNAL_UTILS_H__ */

@@ -4,8 +4,8 @@
  *
  * byte_stream_buffer.h - Byte stream buffer
  */
-#ifndef __LIBCAMERA_BYTE_STREAM_BUFFER_H__
-#define __LIBCAMERA_BYTE_STREAM_BUFFER_H__
+#ifndef __LIBCAMERA_INTERNAL_BYTE_STREAM_BUFFER_H__
+#define __LIBCAMERA_INTERNAL_BYTE_STREAM_BUFFER_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -86,4 +86,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_BYTE_STREAM_BUFFER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_BYTE_STREAM_BUFFER_H__ */

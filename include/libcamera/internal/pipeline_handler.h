@@ -4,8 +4,8 @@
  *
  * pipeline_handler.h - Pipeline handler infrastructure
  */
-#ifndef __LIBCAMERA_PIPELINE_HANDLER_H__
-#define __LIBCAMERA_PIPELINE_HANDLER_H__
+#ifndef __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
+#define __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
 
 #include <list>
 #include <map>
@@ -148,4 +148,4 @@ static handler##Factory global_##handler##Factory;
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_PIPELINE_HANDLER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__ */

@@ -4,8 +4,8 @@
  *
  * device_enumerator.h - API to enumerate and find media devices
  */
-#ifndef __LIBCAMERA_DEVICE_ENUMERATOR_H__
-#define __LIBCAMERA_DEVICE_ENUMERATOR_H__
+#ifndef __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_H__
+#define __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_H__
 
 #include <memory>
 #include <string>
@@ -54,4 +54,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif	/* __LIBCAMERA_DEVICE_ENUMERATOR_H__ */
+#endif	/* __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_H__ */

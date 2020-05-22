@@ -11,7 +11,7 @@
 
 #include <QSize>
 
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 class QImage;
 

@@ -14,7 +14,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 namespace libcamera {
 

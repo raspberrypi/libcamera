@@ -12,7 +12,7 @@
 #include <queue>
 #include <vector>
 
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 #include <libcamera/signal.h>
 
 namespace libcamera {

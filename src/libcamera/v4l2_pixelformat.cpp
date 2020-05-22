@@ -14,7 +14,7 @@
 
 #include <linux/drm_fourcc.h>
 
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"

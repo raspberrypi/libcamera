@@ -34,7 +34,7 @@ libcamera_sources = files([
     'message.cpp',
     'object.cpp',
     'pipeline_handler.cpp',
-    'pixelformats.cpp',
+    'pixel_format.cpp',
     'process.cpp',
     'pub_key.cpp',
     'request.cpp',

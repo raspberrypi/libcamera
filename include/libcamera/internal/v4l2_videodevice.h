@@ -17,7 +17,7 @@
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 #include <libcamera/signal.h>
 
 #include "libcamera/internal/formats.h"

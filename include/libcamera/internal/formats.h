@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <libcamera/geometry.h>
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/v4l2_pixelformat.h"
 

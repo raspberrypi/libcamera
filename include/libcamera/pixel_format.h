@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * pixelformats.h - libcamera pixel formats
+ * pixel_format.h - libcamera Pixel Format
  */
-#ifndef __LIBCAMERA_PIXEL_FORMATS_H__
-#define __LIBCAMERA_PIXEL_FORMATS_H__
+#ifndef __LIBCAMERA_PIXEL_FORMAT_H__
+#define __LIBCAMERA_PIXEL_FORMAT_H__
 
 #include <set>
 #include <stdint.h>
@@ -40,4 +40,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_PIXEL_FORMATS_H__ */
+#endif /* __LIBCAMERA_PIXEL_FORMAT_H__ */

@@ -13,7 +13,7 @@ libcamera_public_headers = files([
     'geometry.h',
     'logging.h',
     'object.h',
-    'pixelformats.h',
+    'pixel_format.h',
     'request.h',
     'signal.h',
     'span.h',

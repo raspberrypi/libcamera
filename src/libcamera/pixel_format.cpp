@@ -2,14 +2,14 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * pixelformats.cpp - libcamera pixel formats
+ * pixel_format.cpp - libcamera Pixel Format
  */
 
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 /**
- * \file pixelformats.h
- * \brief libcamera pixel formats
+ * \file pixel_format.h
+ * \brief libcamera pixel format
  */
 
 namespace libcamera {

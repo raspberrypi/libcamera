@@ -13,7 +13,7 @@
 
 #include <linux/videodev2.h>
 
-#include <libcamera/pixelformats.h>
+#include <libcamera/pixel_format.h>
 
 namespace libcamera {
 

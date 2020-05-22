@@ -8,56 +8,56 @@
 
 #include "gstlibcamera-utils.h"
 
-#include <linux/drm_fourcc.h>
+#include <libcamera/formats.h>
 
 using namespace libcamera;
 
 static struct {
 	GstVideoFormat gst_format;
-	guint drm_fourcc;
+	PixelFormat format;
 } format_map[] = {
-	{ GST_VIDEO_FORMAT_ENCODED, DRM_FORMAT_MJPEG },
-	{ GST_VIDEO_FORMAT_RGB, DRM_FORMAT_BGR888 },
-	{ GST_VIDEO_FORMAT_BGR, DRM_FORMAT_RGB888 },
-	{ GST_VIDEO_FORMAT_ARGB, DRM_FORMAT_BGRA8888 },
-	{ GST_VIDEO_FORMAT_NV12, DRM_FORMAT_NV12 },
-	{ GST_VIDEO_FORMAT_NV21, DRM_FORMAT_NV21 },
-	{ GST_VIDEO_FORMAT_NV16, DRM_FORMAT_NV16 },
-	{ GST_VIDEO_FORMAT_NV61, DRM_FORMAT_NV61 },
-	{ GST_VIDEO_FORMAT_NV24, DRM_FORMAT_NV24 },
-	{ GST_VIDEO_FORMAT_UYVY, DRM_FORMAT_UYVY },
-	{ GST_VIDEO_FORMAT_VYUY, DRM_FORMAT_VYUY },
-	{ GST_VIDEO_FORMAT_YUY2, DRM_FORMAT_YUYV },
-	{ GST_VIDEO_FORMAT_YVYU, DRM_FORMAT_YVYU },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
+	{ GST_VIDEO_FORMAT_RGB, formats::BGR888 },
+	{ GST_VIDEO_FORMAT_BGR, formats::RGB888 },
+	{ GST_VIDEO_FORMAT_ARGB, formats::BGRA8888 },
+	{ GST_VIDEO_FORMAT_NV12, formats::NV12 },
+	{ GST_VIDEO_FORMAT_NV21, formats::NV21 },
+	{ GST_VIDEO_FORMAT_NV16, formats::NV16 },
+	{ GST_VIDEO_FORMAT_NV61, formats::NV61 },
+	{ GST_VIDEO_FORMAT_NV24, formats::NV24 },
+	{ GST_VIDEO_FORMAT_UYVY, formats::UYVY },
+	{ GST_VIDEO_FORMAT_VYUY, formats::VYUY },
+	{ GST_VIDEO_FORMAT_YUY2, formats::YUYV },
+	{ GST_VIDEO_FORMAT_YVYU, formats::YVYU },
 	/* \todo NV42 is used in libcamera but is not mapped in GStreamer yet. */
 };
 
 static GstVideoFormat
-drm_to_gst_format(guint drm_fourcc)
+pixel_format_to_gst_format(const PixelFormat &format)
 {
 	for (const auto &item : format_map) {
-		if (item.drm_fourcc == drm_fourcc)
+		if (item.format == format)
 			return item.gst_format;
 	}
 	return GST_VIDEO_FORMAT_UNKNOWN;
 }
 
-static guint
-gst_format_to_drm(GstVideoFormat gst_format)
+static PixelFormat
+gst_format_to_pixel_format(GstVideoFormat gst_format)
 {
 	if (gst_format == GST_VIDEO_FORMAT_ENCODED)
-		return DRM_FORMAT_INVALID;
+		return PixelFormat{};
 
 	for (const auto &item : format_map)
 		if (item.gst_format == gst_format)
-			return item.drm_fourcc;
-	return DRM_FORMAT_INVALID;
+			return item.format;
+	return PixelFormat{};
 }
 
 static GstStructure *
-bare_structure_from_fourcc(guint fourcc)
+bare_structure_from_format(const PixelFormat &format)
 {
-	GstVideoFormat gst_format = drm_to_gst_format(fourcc);
+	GstVideoFormat gst_format = pixel_format_to_gst_format(format);
 
 	if (gst_format == GST_VIDEO_FORMAT_UNKNOWN)
 		return nullptr;
@@ -66,8 +66,8 @@ bare_structure_from_fourcc(guint fourcc)
 		return gst_structure_new("video/x-raw", "format", G_TYPE_STRING,
 					 gst_video_format_to_string(gst_format), nullptr);
 
-	switch (fourcc) {
-	case DRM_FORMAT_MJPEG:
+	switch (format) {
+	case formats::MJPEG:
 		return gst_structure_new_empty("image/jpeg");
 	default:
 		return nullptr;
@@ -80,7 +80,7 @@ gst_libcamera_stream_formats_to_caps(const StreamFormats &formats)
 	GstCaps *caps = gst_caps_new_empty();
 
 	for (PixelFormat pixelformat : formats.pixelformats()) {
-		g_autoptr(GstStructure) bare_s = bare_structure_from_fourcc(pixelformat);
+		g_autoptr(GstStructure) bare_s = bare_structure_from_format(pixelformat);
 
 		if (!bare_s) {
 			GST_WARNING("Unsupported DRM format %" GST_FOURCC_FORMAT,
@@ -120,7 +120,7 @@ GstCaps *
 gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg)
 {
 	GstCaps *caps = gst_caps_new_empty();
-	GstStructure *s = bare_structure_from_fourcc(stream_cfg.pixelFormat);
+	GstStructure *s = bare_structure_from_format(stream_cfg.pixelFormat);
 
 	gst_structure_set(s,
 			  "width", G_TYPE_INT, stream_cfg.size.width,
@@ -135,7 +135,7 @@ void
 gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 					 GstCaps *caps)
 {
-	GstVideoFormat gst_format = drm_to_gst_format(stream_cfg.pixelFormat);
+	GstVideoFormat gst_format = pixel_format_to_gst_format(stream_cfg.pixelFormat);
 
 	/* First fixate the caps using default configuration value. */
 	g_assert(gst_caps_is_writable(caps));
@@ -154,9 +154,9 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 	if (gst_structure_has_name(s, "video/x-raw")) {
 		const gchar *format = gst_structure_get_string(s, "format");
 		gst_format = gst_video_format_from_string(format);
-		stream_cfg.pixelFormat = PixelFormat(gst_format_to_drm(gst_format));
+		stream_cfg.pixelFormat = gst_format_to_pixel_format(gst_format);
 	} else if (gst_structure_has_name(s, "image/jpeg")) {
-		stream_cfg.pixelFormat = PixelFormat(DRM_FORMAT_MJPEG);
+		stream_cfg.pixelFormat = formats::MJPEG;
 	} else {
 		g_critical("Unsupported media type: %s", gst_structure_get_name(s));
 	}

@@ -664,7 +664,7 @@ const ControlList &Camera::properties()
  *
  * \context This function is \threadsafe.
  *
- * \return An array of all the camera's streams.
+ * \return An array of all the camera's streams
  */
 const std::set<Stream *> &Camera::streams() const
 {

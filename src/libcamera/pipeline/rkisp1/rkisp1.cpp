@@ -16,6 +16,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/formats.h>
 #include <libcamera/ipa/rkisp1.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -459,13 +460,13 @@ RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
 	static const std::array<PixelFormat, 8> formats{
-		PixelFormat(DRM_FORMAT_YUYV),
-		PixelFormat(DRM_FORMAT_YVYU),
-		PixelFormat(DRM_FORMAT_VYUY),
-		PixelFormat(DRM_FORMAT_NV16),
-		PixelFormat(DRM_FORMAT_NV61),
-		PixelFormat(DRM_FORMAT_NV21),
-		PixelFormat(DRM_FORMAT_NV12),
+		formats::YUYV,
+		formats::YVYU,
+		formats::VYUY,
+		formats::NV16,
+		formats::NV61,
+		formats::NV21,
+		formats::NV12,
 		/* \todo Add support for 8-bit greyscale to DRM formats */
 	};
 
@@ -487,7 +488,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
 	    formats.end()) {
 		LOG(RkISP1, Debug) << "Adjusting format to NV12";
-		cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12),
+		cfg.pixelFormat = formats::NV12,
 		status = Adjusted;
 	}
 
@@ -566,7 +567,7 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 		return config;
 
 	StreamConfiguration cfg{};
-	cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
+	cfg.pixelFormat = formats::NV12;
 	cfg.size = data->sensor_->resolution();
 
 	config->addConfiguration(cfg);

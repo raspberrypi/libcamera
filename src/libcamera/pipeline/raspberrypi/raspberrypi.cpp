@@ -13,12 +13,12 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/formats.h>
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/logging.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include <linux/drm_fourcc.h>
 #include <linux/videodev2.h>
 
 #include "libcamera/internal/camera_sensor.h"
@@ -490,7 +490,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt, false)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
-			cfgPixFmt = PixelFormat(DRM_FORMAT_NV12);
+			cfgPixFmt = formats::NV12;
 			status = Adjusted;
 		}
 	}
@@ -537,20 +537,20 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			break;
 
 		case StreamRole::StillCapture:
-			cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
+			cfg.pixelFormat = formats::NV12;
 			/* Return the largest sensor resolution. */
 			cfg.size = data->sensor_->resolution();
 			cfg.bufferCount = 1;
 			break;
 
 		case StreamRole::VideoRecording:
-			cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
+			cfg.pixelFormat = formats::NV12;
 			cfg.size = { 1920, 1080 };
 			cfg.bufferCount = 4;
 			break;
 
 		case StreamRole::Viewfinder:
-			cfg.pixelFormat = PixelFormat(DRM_FORMAT_ARGB8888);
+			cfg.pixelFormat = formats::ARGB8888;
 			cfg.size = { 800, 600 };
 			cfg.bufferCount = 4;
 			break;

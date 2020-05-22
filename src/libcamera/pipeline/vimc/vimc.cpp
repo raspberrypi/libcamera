@@ -17,6 +17,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/formats.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/request.h>
@@ -108,8 +109,8 @@ private:
 namespace {
 
 static const std::map<PixelFormat, uint32_t> pixelformats{
-	{ PixelFormat(DRM_FORMAT_RGB888), MEDIA_BUS_FMT_BGR888_1X24 },
-	{ PixelFormat(DRM_FORMAT_BGR888), MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::RGB888, MEDIA_BUS_FMT_BGR888_1X24 },
+	{ formats::BGR888, MEDIA_BUS_FMT_RGB888_1X24 },
 };
 
 } /* namespace */
@@ -138,7 +139,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	const std::vector<libcamera::PixelFormat> formats = cfg.formats().pixelformats();
 	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) == formats.end()) {
 		LOG(VIMC, Debug) << "Adjusting format to BGR888";
-		cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
+		cfg.pixelFormat = formats::BGR888;
 		status = Adjusted;
 	}
 
@@ -184,7 +185,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 		 * but it isn't functional within the pipeline.
 		 */
 		if (data->media_->version() < KERNEL_VERSION(5, 7, 0)) {
-			if (pixelformat.first != PixelFormat(DRM_FORMAT_BGR888)) {
+			if (pixelformat.first != formats::BGR888) {
 				LOG(VIMC, Info)
 					<< "Skipping unsupported pixel format "
 					<< pixelformat.first.toString();
@@ -201,7 +202,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 
 	StreamConfiguration cfg(formats);
 
-	cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
+	cfg.pixelFormat = formats::BGR888;
 	cfg.size = { 1920, 1080 };
 	cfg.bufferCount = 4;
 

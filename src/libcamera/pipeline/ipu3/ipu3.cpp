@@ -14,6 +14,7 @@
 #include <linux/media-bus-format.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/formats.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -34,10 +35,10 @@ LOG_DEFINE_CATEGORY(IPU3)
 class IPU3CameraData;
 
 static const std::map<uint32_t, PixelFormat> sensorMbusToPixel = {
-	{ MEDIA_BUS_FMT_SBGGR10_1X10, PixelFormat(DRM_FORMAT_SBGGR10, IPU3_FORMAT_MOD_PACKED) },
-	{ MEDIA_BUS_FMT_SGBRG10_1X10, PixelFormat(DRM_FORMAT_SGBRG10, IPU3_FORMAT_MOD_PACKED) },
-	{ MEDIA_BUS_FMT_SGRBG10_1X10, PixelFormat(DRM_FORMAT_SGRBG10, IPU3_FORMAT_MOD_PACKED) },
-	{ MEDIA_BUS_FMT_SRGGB10_1X10, PixelFormat(DRM_FORMAT_SRGGB10, IPU3_FORMAT_MOD_PACKED) },
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, formats::SBGGR10_IPU3 },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, formats::SGBRG10_IPU3 },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, formats::SGRBG10_IPU3 },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, formats::SRGGB10_IPU3 },
 };
 
 class ImgUDevice
@@ -261,7 +262,7 @@ IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
 void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 {
 	/* The only pixel format the driver supports is NV12. */
-	cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
+	cfg.pixelFormat = formats::NV12;
 
 	if (scale) {
 		/*
@@ -363,10 +364,11 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	for (unsigned int i = 0; i < config_.size(); ++i) {
 		StreamConfiguration &cfg = config_[i];
 		const PixelFormat pixelFormat = cfg.pixelFormat;
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 		const Size size = cfg.size;
 		const IPU3Stream *stream;
 
-		if (cfg.pixelFormat.modifier() == IPU3_FORMAT_MOD_PACKED)
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
 			stream = &data_->rawStream_;
 		else if (cfg.size == sensorFormat_.size)
 			stream = &data_->outStream_;
@@ -430,7 +432,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		StreamConfiguration cfg = {};
 		IPU3Stream *stream = nullptr;
 
-		cfg.pixelFormat = PixelFormat(DRM_FORMAT_NV12);
+		cfg.pixelFormat = formats::NV12;
 
 		switch (role) {
 		case StreamRole::StillCapture:
@@ -1193,7 +1195,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 		return 0;
 
 	*outputFormat = {};
-	outputFormat->fourcc = dev->toV4L2PixelFormat(PixelFormat(DRM_FORMAT_NV12));
+	outputFormat->fourcc = dev->toV4L2PixelFormat(formats::NV12);
 	outputFormat->size = cfg.size;
 	outputFormat->planesCount = 2;
 

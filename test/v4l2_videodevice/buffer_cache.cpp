@@ -9,6 +9,7 @@
 #include <random>
 #include <vector>
 
+#include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
 #include "buffer_source.h"
@@ -142,7 +143,7 @@ public:
 		const unsigned int numBuffers = 8;
 
 		StreamConfiguration cfg;
-		cfg.pixelFormat = PixelFormat(DRM_FORMAT_YUYV);
+		cfg.pixelFormat = formats::YUYV;
 		cfg.size = Size(600, 800);
 		cfg.bufferCount = numBuffers;
 

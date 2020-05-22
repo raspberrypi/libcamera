@@ -136,8 +136,9 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	StreamConfiguration &cfg = config_[0];
 
 	/* Adjust the pixel format. */
-	if (pixelformats.find(cfg.pixelFormat) == pixelformats.end()) {
-		LOG(VIMC, Debug) << "Adjusting format to RGB24";
+	const std::vector<libcamera::PixelFormat> formats = cfg.formats().pixelformats();
+	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) == formats.end()) {
+		LOG(VIMC, Debug) << "Adjusting format to BGR888";
 		cfg.pixelFormat = PixelFormat(DRM_FORMAT_BGR888);
 		status = Adjusted;
 	}
@@ -171,6 +172,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	CameraConfiguration *config = new VimcCameraConfiguration();
+	VimcCameraData *data = cameraData(camera);
 
 	if (roles.empty())
 		return config;
@@ -178,6 +180,19 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	std::map<PixelFormat, std::vector<SizeRange>> formats;
 
 	for (const auto &pixelformat : pixelformats) {
+		/*
+		 * Kernels prior to v5.7 incorrectly report support for RGB888,
+		 * but it isn't functional within the pipeline.
+		 */
+		if (data->media_->version() < KERNEL_VERSION(5, 7, 0)) {
+			if (pixelformat.first != PixelFormat(DRM_FORMAT_BGR888)) {
+				LOG(VIMC, Info)
+					<< "Skipping unsupported pixel format "
+					<< pixelformat.first.toString();
+				continue;
+			}
+		}
+
 		/* The scaler hardcodes a x3 scale-up ratio. */
 		std::vector<SizeRange> sizes{
 			SizeRange{ { 48, 48 }, { 4096, 2160 } }

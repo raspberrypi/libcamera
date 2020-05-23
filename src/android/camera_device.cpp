@@ -8,6 +8,8 @@
 #include "camera_device.h"
 #include "camera_ops.h"
 
+#include <vector>
+
 #include <libcamera/controls.h>
 #include <libcamera/property_ids.h>
 
@@ -15,8 +17,70 @@
 #include "libcamera/internal/utils.h"
 
 #include "camera_metadata.h"
+#include "system/graphics.h"
 
 using namespace libcamera;
+
+namespace {
+
+/*
+ * \var camera3Resolutions
+ * \brief The list of image resolutions defined as mandatory to be supported by
+ * the Android Camera3 specification
+ */
+const std::vector<Size> camera3Resolutions = {
+	{ 320, 240 },
+	{ 640, 480 },
+	{ 1280, 720 },
+	{ 1920, 1080 }
+};
+
+/*
+ * \struct Camera3Format
+ * \brief Data associated with an Android format identifier
+ * \var libcameraFormats List of libcamera pixel formats compatible with the
+ * Android format
+ * \var scalerFormat The format identifier to be reported to the android
+ * framework through the static format configuration map
+ * \var name The human-readable representation of the Android format code
+ */
+struct Camera3Format {
+	std::vector<PixelFormat> libcameraFormats;
+	camera_metadata_enum_android_scaler_available_formats_t scalerFormat;
+	const char *name;
+};
+
+/*
+ * \var camera3FormatsMap
+ * \brief Associate Android format code with ancillary data
+ */
+const std::map<int, const Camera3Format> camera3FormatsMap = {
+	{
+		HAL_PIXEL_FORMAT_BLOB, {
+			{ PixelFormat(DRM_FORMAT_MJPEG) },
+			ANDROID_SCALER_AVAILABLE_FORMATS_BLOB,
+			"BLOB"
+		}
+	}, {
+		HAL_PIXEL_FORMAT_YCbCr_420_888, {
+			{ PixelFormat(DRM_FORMAT_NV12), PixelFormat(DRM_FORMAT_NV21) },
+			ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
+			"YCbCr_420_888"
+		}
+	}, {
+		/*
+		 * \todo Translate IMPLEMENTATION_DEFINED inspecting the gralloc
+		 * usage flag. For now, copy the YCbCr_420 configuration.
+		 */
+		HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED, {
+			{ PixelFormat(DRM_FORMAT_NV12), PixelFormat(DRM_FORMAT_NV21) },
+			ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED,
+			"IMPLEMENTATION_DEFINED"
+		}
+	},
+};
+
+} /* namespace */
 
 LOG_DECLARE_CATEGORY(HAL);
 
@@ -99,6 +163,165 @@ int CameraDevice::initialize()
 	 */
 	if (properties.contains(properties::Rotation))
 		orientation_ = properties.get(properties::Rotation);
+
+	int ret = camera_->acquire();
+	if (ret) {
+		LOG(HAL, Error) << "Failed to temporarily acquire the camera";
+		return ret;
+	}
+
+	ret = initializeStreamConfigurations();
+	camera_->release();
+	return ret;
+}
+
+/*
+ * Initialize the format conversion map to translate from Android format
+ * identifier to libcamera pixel formats and fill in the list of supported
+ * stream configurations to be reported to the Android camera framework through
+ * the static stream configuration metadata.
+ */
+int CameraDevice::initializeStreamConfigurations()
+{
+	/*
+	 * Get the maximum output resolutions
+	 * \todo Get this from the camera properties once defined
+	 */
+	std::unique_ptr<CameraConfiguration> cameraConfig =
+		camera_->generateConfiguration({ StillCapture });
+	if (!cameraConfig) {
+		LOG(HAL, Error) << "Failed to get maximum resolution";
+		return -EINVAL;
+	}
+	StreamConfiguration &cfg = cameraConfig->at(0);
+
+	/*
+	 * \todo JPEG - Adjust the maximum available resolution by taking the
+	 * JPEG encoder requirements into account (alignment and aspect ratio).
+	 */
+	const Size maxRes = cfg.size;
+	LOG(HAL, Debug) << "Maximum supported resolution: " << maxRes.toString();
+
+	/*
+	 * Build the list of supported image resolutions.
+	 *
+	 * The resolutions listed in camera3Resolution are mandatory to be
+	 * supported, up to the camera maximum resolution.
+	 *
+	 * Augment the list by adding resolutions calculated from the camera
+	 * maximum one.
+	 */
+	std::vector<Size> cameraResolutions;
+	std::copy_if(camera3Resolutions.begin(), camera3Resolutions.end(),
+		     std::back_inserter(cameraResolutions),
+		     [&](const Size &res) { return res < maxRes; });
+
+	/*
+	 * The Camera3 specification suggests adding 1/2 and 1/4 of the maximum
+	 * resolution.
+	 */
+	for (unsigned int divider = 2;; divider <<= 1) {
+		Size derivedSize{
+			maxRes.width / divider,
+			maxRes.height / divider,
+		};
+
+		if (derivedSize.width < 320 ||
+		    derivedSize.height < 240)
+			break;
+
+		cameraResolutions.push_back(derivedSize);
+	}
+	cameraResolutions.push_back(maxRes);
+
+	/* Remove duplicated entries from the list of supported resolutions. */
+	std::sort(cameraResolutions.begin(), cameraResolutions.end());
+	auto last = std::unique(cameraResolutions.begin(), cameraResolutions.end());
+	cameraResolutions.erase(last, cameraResolutions.end());
+
+	/*
+	 * Build the list of supported camera formats.
+	 *
+	 * To each Android format a list of compatible libcamera formats is
+	 * associated. The first libcamera format that tests successful is added
+	 * to the format translation map used when configuring the streams.
+	 * It is then tested against the list of supported camera resolutions to
+	 * build the stream configuration map reported through the camera static
+	 * metadata.
+	 */
+	for (const auto &format : camera3FormatsMap) {
+		int androidFormat = format.first;
+		const Camera3Format &camera3Format = format.second;
+		const std::vector<PixelFormat> &libcameraFormats =
+			camera3Format.libcameraFormats;
+
+		/*
+		 * Test the libcamera formats that can produce images
+		 * compatible with the format defined by Android.
+		 */
+		PixelFormat mappedFormat;
+		for (const PixelFormat &pixelFormat : libcameraFormats) {
+			/* \todo Fixed mapping for JPEG. */
+			if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
+				mappedFormat = PixelFormat(DRM_FORMAT_MJPEG);
+				break;
+			}
+
+			/*
+			 * The stream configuration size can be adjusted,
+			 * not the pixel format.
+			 *
+			 * \todo This could be simplified once all pipeline
+			 * handlers will report the StreamFormats list of
+			 * supported formats.
+			 */
+			cfg.pixelFormat = pixelFormat;
+
+			CameraConfiguration::Status status = cameraConfig->validate();
+			if (status != CameraConfiguration::Invalid &&
+			    cfg.pixelFormat == pixelFormat) {
+				mappedFormat = pixelFormat;
+				break;
+			}
+		}
+		if (!mappedFormat.isValid()) {
+			LOG(HAL, Error) << "Failed to map Android format "
+					<< camera3Format.name << " ("
+					<< utils::hex(androidFormat) << ")";
+			return -EINVAL;
+		}
+
+		/*
+		 * Record the mapping and then proceed to generate the
+		 * stream configurations map, by testing the image resolutions.
+		 */
+		formatsMap_[androidFormat] = mappedFormat;
+
+		for (const Size &res : cameraResolutions) {
+			cfg.pixelFormat = mappedFormat;
+			cfg.size = res;
+
+			CameraConfiguration::Status status = cameraConfig->validate();
+			/*
+			 * Unconditionally report we can produce JPEG.
+			 *
+			 * \todo The JPEG stream will be implemented as an
+			 * HAL-only stream, but some cameras can produce it
+			 * directly. As of now, claim support for JPEG without
+			 * inspecting where the JPEG stream is produced.
+			 */
+			if (androidFormat != HAL_PIXEL_FORMAT_BLOB &&
+			    status != CameraConfiguration::Valid)
+				continue;
+
+			streamConfigurations_.push_back({ res, camera3Format.scalerFormat });
+		}
+	}
+
+	LOG(HAL, Debug) << "Collected stream configuration map: ";
+	for (const auto &entry : streamConfigurations_)
+		LOG(HAL, Debug) << "{ " << entry.resolution.toString() << " - "
+				<< utils::hex(entry.androidScalerCode) << " }";
 
 	return 0;
 }

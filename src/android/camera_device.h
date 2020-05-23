@@ -7,12 +7,15 @@
 #ifndef __ANDROID_CAMERA_DEVICE_H__
 #define __ANDROID_CAMERA_DEVICE_H__
 
+#include <map>
 #include <memory>
+#include <vector>
 
 #include <hardware/camera3.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/geometry.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -59,6 +62,12 @@ private:
 		camera3_stream_buffer_t *buffers;
 	};
 
+	struct Camera3StreamConfiguration {
+		libcamera::Size resolution;
+		int androidScalerCode;
+	};
+
+	int initializeStreamConfigurations();
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
 	std::unique_ptr<CameraMetadata> getResultMetadata(int frame_number,
@@ -74,6 +83,9 @@ private:
 	CameraMetadata *staticMetadata_;
 	std::map<unsigned int, CameraMetadata *> requestTemplates_;
 	const camera3_callback_ops_t *callbacks_;
+
+	std::vector<Camera3StreamConfiguration> streamConfigurations_;
+	std::map<int, libcamera::PixelFormat> formatsMap_;
 
 	int facing_;
 	int orientation_;

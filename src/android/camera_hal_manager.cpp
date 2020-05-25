@@ -110,7 +110,7 @@ int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 	/* \todo Get these info dynamically inspecting the camera module. */
 	info->facing = id ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
 	info->orientation = 0;
-	info->device_version = 0;
+	info->device_version = CAMERA_DEVICE_API_VERSION_3_3;
 	info->resource_cost = 0;
 	info->static_camera_characteristics = camera->getStaticMetadata();
 	info->conflicting_devices = nullptr;

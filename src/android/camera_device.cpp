@@ -654,23 +654,24 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
 				  &maxDigitalZoom, 1);
 
-	std::vector<uint32_t> availableStreamFormats = {
-		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB,
-		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
-		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED,
-	};
+	std::vector<uint32_t> availableStreamFormats;
+	availableStreamFormats.reserve(streamConfigurations_.size());
+	std::transform(streamConfigurations_.begin(), streamConfigurations_.end(),
+		       std::back_inserter(availableStreamFormats),
+		       [](const auto &entry) { return entry.androidScalerCode; });
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_FORMATS,
 				  availableStreamFormats.data(),
 				  availableStreamFormats.size());
 
-	std::vector<uint32_t> availableStreamConfigurations = {
-		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB, 2560, 1920,
-		ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
-		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888, 2560, 1920,
-		ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
-		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED, 2560, 1920,
-		ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
-	};
+	std::vector<uint32_t> availableStreamConfigurations;
+	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);
+	for (const auto &entry : streamConfigurations_) {
+		availableStreamConfigurations.push_back(entry.androidScalerCode);
+		availableStreamConfigurations.push_back(entry.resolution.width);
+		availableStreamConfigurations.push_back(entry.resolution.height);
+		availableStreamConfigurations.push_back(
+			ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT);
+	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 				  availableStreamConfigurations.data(),
 				  availableStreamConfigurations.size());
@@ -682,11 +683,15 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableStallDurations.data(),
 				  availableStallDurations.size());
 
-	std::vector<int64_t> minFrameDurations = {
-		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB, 2560, 1920, 33333333,
-		ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED, 2560, 1920, 33333333,
-		ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888, 2560, 1920, 33333333,
-	};
+	/* \todo Collect the minimum frame duration from the camera. */
+	std::vector<int64_t> minFrameDurations;
+	minFrameDurations.reserve(streamConfigurations_.size() * 4);
+	for (const auto &entry : streamConfigurations_) {
+		minFrameDurations.push_back(entry.androidScalerCode);
+		minFrameDurations.push_back(entry.resolution.width);
+		minFrameDurations.push_back(entry.resolution.height);
+		minFrameDurations.push_back(33333333);
+	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
 				  minFrameDurations.data(),
 				  minFrameDurations.size());

@@ -27,11 +27,16 @@ public:
 	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
 	~CameraDevice();
 
+	int initialize();
+
 	int open(const hw_module_t *hardwareModule);
 	void close();
 
 	unsigned int id() const { return id_; }
 	camera3_device_t *camera3Device() { return &camera3Device_; }
+
+	int facing() const { return facing_; }
+	int orientation() const { return orientation_; }
 
 	void setCallbacks(const camera3_callback_ops_t *callbacks);
 	const camera_metadata_t *getStaticMetadata();
@@ -69,6 +74,9 @@ private:
 	CameraMetadata *staticMetadata_;
 	std::map<unsigned int, CameraMetadata *> requestTemplates_;
 	const camera3_callback_ops_t *callbacks_;
+
+	int facing_;
+	int orientation_;
 };
 
 #endif /* __ANDROID_CAMERA_DEVICE_H__ */

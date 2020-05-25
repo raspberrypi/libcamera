@@ -53,7 +53,8 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  */
 
 CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
-	: running_(false), camera_(camera), staticMetadata_(nullptr)
+	: running_(false), camera_(camera), staticMetadata_(nullptr),
+	  facing_(CAMERA_FACING_FRONT), orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
 }
@@ -67,6 +68,45 @@ CameraDevice::~CameraDevice()
 		delete it.second;
 }
 
+/*
+ * Initialize the camera static information.
+ * This method is called before the camera device is opened.
+ */
+int CameraDevice::initialize()
+{
+	/* Initialize orientation and facing side of the camera. */
+	const ControlList &properties = camera_->properties();
+
+	if (properties.contains(properties::Location)) {
+		int32_t location = properties.get(properties::Location);
+		switch (location) {
+		case properties::CameraLocationFront:
+			facing_ = CAMERA_FACING_FRONT;
+			break;
+		case properties::CameraLocationBack:
+			facing_ = CAMERA_FACING_BACK;
+			break;
+		case properties::CameraLocationExternal:
+			facing_ = CAMERA_FACING_EXTERNAL;
+			break;
+		}
+	}
+
+	/*
+	 * The Android orientation metadata and libcamera rotation property are
+	 * defined differently but have identical numerical values for Android
+	 * devices such as phones and tablets.
+	 */
+	if (properties.contains(properties::Rotation))
+		orientation_ = properties.get(properties::Rotation);
+
+	return 0;
+}
+
+/*
+ * Open a camera device. The static information on the camera shall have been
+ * initialized with a call to CameraDevice::initialize().
+ */
 int CameraDevice::open(const hw_module_t *hardwareModule)
 {
 	int ret = camera_->acquire();
@@ -111,8 +151,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 {
 	if (staticMetadata_)
 		return staticMetadata_->get();
-
-	const ControlList &properties = camera_->properties();
 
 	/*
 	 * The here reported metadata are enough to implement a basic capture
@@ -278,15 +316,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
 				  &exposureTimeRange, 2);
 
-	/*
-	 * The Android orientation metadata and libcamera rotation property are
-	 * defined differently but have identical numerical values for Android
-	 * devices such as phones and tablets.
-	 */
-	int32_t orientation = 0;
-	if (properties.contains(properties::Rotation))
-		orientation = properties.get(properties::Rotation);
-	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION, &orientation, 1);
+	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION, &orientation_, 1);
 
 	std::vector<int32_t> testPatterModes = {
 		ANDROID_SENSOR_TEST_PATTERN_MODE_OFF,
@@ -332,20 +362,18 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  lensApertures.data(),
 				  lensApertures.size());
 
-	uint8_t lensFacing = ANDROID_LENS_FACING_FRONT;
-	if (properties.contains(properties::Location)) {
-		int32_t location = properties.get(properties::Location);
-		switch (location) {
-		case properties::CameraLocationFront:
-			lensFacing = ANDROID_LENS_FACING_FRONT;
-			break;
-		case properties::CameraLocationBack:
-			lensFacing = ANDROID_LENS_FACING_BACK;
-			break;
-		case properties::CameraLocationExternal:
-			lensFacing = ANDROID_LENS_FACING_EXTERNAL;
-			break;
-		}
+	uint8_t lensFacing;
+	switch (facing_) {
+	default:
+	case CAMERA_FACING_FRONT:
+		lensFacing = ANDROID_LENS_FACING_FRONT;
+		break;
+	case CAMERA_FACING_BACK:
+		lensFacing = ANDROID_LENS_FACING_BACK;
+		break;
+	case CAMERA_FACING_EXTERNAL:
+		lensFacing = ANDROID_LENS_FACING_EXTERNAL;
+		break;
 	}
 	staticMetadata_->addEntry(ANDROID_LENS_FACING, &lensFacing, 1);
 

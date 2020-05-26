@@ -59,8 +59,8 @@ private:
 };
 
 enum StreamRole {
+	Raw,
 	StillCapture,
-	StillCaptureRaw,
 	VideoRecording,
 	Viewfinder,
 };

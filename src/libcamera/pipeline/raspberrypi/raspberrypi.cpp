@@ -461,7 +461,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 	unsigned int outCount = 0;
 	for (const StreamRole role : roles) {
 		switch (role) {
-		case StreamRole::StillCaptureRaw:
+		case StreamRole::Raw:
 			size = data->sensor_->resolution();
 			fmts = data->unicam_[Unicam::Image].dev()->formats();
 			sensorFormat = findBestMode(fmts, size);

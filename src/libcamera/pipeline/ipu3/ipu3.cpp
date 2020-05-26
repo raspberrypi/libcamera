@@ -348,7 +348,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 			break;
 
-		case StreamRole::StillCaptureRaw: {
+		case StreamRole::Raw: {
 			StreamConfiguration cio2Config =
 				data->cio2_.generateConfiguration(sensorResolution);
 			pixelFormat = cio2Config.pixelFormat;

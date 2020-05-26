@@ -119,8 +119,8 @@ bool StreamKeyValueParser::parseRole(StreamRole *role,
 	} else if (name == "still") {
 		*role = StreamRole::StillCapture;
 		return true;
-	} else if (name == "stillraw") {
-		*role = StreamRole::StillCaptureRaw;
+	} else if (name == "raw") {
+		*role = StreamRole::Raw;
 		return true;
 	}
 

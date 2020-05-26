@@ -380,7 +380,7 @@ int MainWindow::startCapture()
 		break;
 	case 2:
 		if (roles[0] != StreamRole::Viewfinder ||
-		    roles[1] != StreamRole::StillCaptureRaw) {
+		    roles[1] != StreamRole::Raw) {
 			qWarning() << "Only viewfinder + raw supported for dual streams";
 			return -EINVAL;
 		}

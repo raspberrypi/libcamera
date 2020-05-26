@@ -313,7 +313,7 @@ std::vector<Size> CameraDevice::getYUVResolutions(CameraConfiguration *cameraCon
 std::vector<Size> CameraDevice::getRawResolutions(const libcamera::PixelFormat &pixelFormat)
 {
 	std::unique_ptr<CameraConfiguration> cameraConfig =
-		camera_->generateConfiguration({ StillCaptureRaw });
+		camera_->generateConfiguration({ StreamRole::Raw });
 	StreamConfiguration &cfg = cameraConfig->at(0);
 	const StreamFormats &formats = cfg.formats();
 	std::vector<Size> supportedResolutions = formats.sizes(pixelFormat);
@@ -895,7 +895,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	/* Report if camera supports RAW. */
 	std::unique_ptr<CameraConfiguration> cameraConfig =
-		camera_->generateConfiguration({ StillCaptureRaw });
+		camera_->generateConfiguration({ StreamRole::Raw });
 	if (cameraConfig && !cameraConfig->empty()) {
 		const PixelFormatInfo &info =
 			PixelFormatInfo::info(cameraConfig->at(0).pixelFormat);

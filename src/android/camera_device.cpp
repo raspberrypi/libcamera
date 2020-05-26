@@ -863,6 +863,11 @@ void CameraDevice::requestComplete(Request *request)
 	delete buffer;
 }
 
+std::string CameraDevice::logPrefix() const
+{
+	return "'" + camera_->name() + "'";
+}
+
 void CameraDevice::notifyShutter(uint32_t frameNumber, uint64_t timestamp)
 {
 	camera3_notify_msg_t notify = {};

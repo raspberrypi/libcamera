@@ -16,11 +16,12 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
 class CameraMetadata;
 
-class CameraDevice
+class CameraDevice : protected libcamera::Loggable
 {
 public:
 	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
@@ -38,6 +39,9 @@ public:
 	int configureStreams(camera3_stream_configuration_t *stream_list);
 	int processCaptureRequest(camera3_capture_request_t *request);
 	void requestComplete(libcamera::Request *request);
+
+protected:
+	std::string logPrefix() const override;
 
 private:
 	struct Camera3RequestDescriptor {

@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include <hardware/camera3.h>
@@ -68,6 +69,7 @@ private:
 	};
 
 	int initializeStreamConfigurations();
+	std::tuple<uint32_t, uint32_t> calculateStaticMetadataSize();
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
 	std::unique_ptr<CameraMetadata> getResultMetadata(int frame_number,

@@ -8,6 +8,7 @@
 #include "camera_device.h"
 #include "camera_ops.h"
 
+#include <tuple>
 #include <vector>
 
 #include <libcamera/controls.h>
@@ -367,6 +368,29 @@ void CameraDevice::setCallbacks(const camera3_callback_ops_t *callbacks)
 	callbacks_ = callbacks;
 }
 
+std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
+{
+	/*
+	 * \todo Keep this in sync with the actual number of entries.
+	 * Currently: 50 entries, 647 bytes of static metadata
+	 */
+	uint32_t numEntries = 50;
+	uint32_t byteSize = 647;
+
+	/*
+	 * Calculate space occupation in bytes for dynamically built metadata
+	 * entries.
+	 *
+	 * Each stream configuration entry requires 52 bytes:
+	 * 4 32bits integers for ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS
+	 * 1 32bits integer for ANDROID_SCALER_AVAILABLE_FORMATS
+	 * 4 64bits integers for ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS
+	 */
+	byteSize += streamConfigurations_.size() * 52;
+
+	return { numEntries, byteSize };
+}
+
 /*
  * Return static information for the camera.
  */
@@ -380,12 +404,10 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	 * example application, but a real camera implementation will require
 	 * more.
 	 */
-
-	/*
-	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 50 entries, 666 bytes
-	 */
-	staticMetadata_ = new CameraMetadata(50, 700);
+	uint32_t numEntries;
+	uint32_t byteSize;
+	std::tie(numEntries, byteSize) = calculateStaticMetadataSize();
+	staticMetadata_ = new CameraMetadata(numEntries, byteSize);
 	if (!staticMetadata_->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		delete staticMetadata_;

@@ -58,25 +58,12 @@ protected:
 	std::string logPrefix() const;
 
 private:
-	std::string driver_;
-	std::string deviceNode_;
-	std::string model_;
-	unsigned int version_;
-
-	int fd_;
-	bool valid_;
-	bool acquired_;
-	bool lockOwner_;
-
 	int open();
 	void close();
 
-	std::map<unsigned int, MediaObject *> objects_;
 	MediaObject *object(unsigned int id);
 	bool addObject(MediaObject *object);
 	void clear();
-
-	std::vector<MediaEntity *> entities_;
 
 	struct media_v2_interface *findInterface(const struct media_v2_topology &topology,
 						 unsigned int entityId);
@@ -87,6 +74,19 @@ private:
 
 	friend int MediaLink::setEnabled(bool enable);
 	int setupLink(const MediaLink *link, unsigned int flags);
+
+	std::string driver_;
+	std::string deviceNode_;
+	std::string model_;
+	unsigned int version_;
+
+	int fd_;
+	bool valid_;
+	bool acquired_;
+	bool lockOwner_;
+
+	std::map<unsigned int, MediaObject *> objects_;
+	std::vector<MediaEntity *> entities_;
 };
 
 } /* namespace libcamera */

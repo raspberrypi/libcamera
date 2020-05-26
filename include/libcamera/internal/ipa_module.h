@@ -42,6 +42,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	int loadIPAModuleInfo();
+
 	struct IPAModuleInfo info_;
 	std::vector<uint8_t> signature_;
 
@@ -52,8 +54,6 @@ private:
 	void *dlHandle_;
 	typedef struct ipa_context *(*IPAIntfFactory)(void);
 	IPAIntfFactory ipaCreate_;
-
-	int loadIPAModuleInfo();
 };
 
 } /* namespace libcamera */

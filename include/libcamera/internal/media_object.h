@@ -107,6 +107,8 @@ private:
 	MediaEntity(const MediaEntity &) = delete;
 	~MediaEntity();
 
+	void addPad(MediaPad *pad);
+
 	std::string name_;
 	unsigned int function_;
 	unsigned int flags_;
@@ -115,8 +117,6 @@ private:
 	unsigned int minor_;
 
 	std::vector<MediaPad *> pads_;
-
-	void addPad(MediaPad *pad);
 };
 
 } /* namespace libcamera */

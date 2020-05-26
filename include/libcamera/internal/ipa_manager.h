@@ -29,8 +29,6 @@ public:
 					    uint32_t minVersion);
 
 private:
-	std::vector<IPAModule *> modules_;
-
 	IPAManager();
 	~IPAManager();
 
@@ -39,6 +37,8 @@ private:
 	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);
 
 	bool isSignatureValid(IPAModule *ipa) const;
+
+	std::vector<IPAModule *> modules_;
 
 #if HAVE_IPA_PUBKEY
 	static const uint8_t publicKeyData_[];

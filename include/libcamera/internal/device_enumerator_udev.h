@@ -36,10 +36,6 @@ public:
 	int enumerate() final;
 
 private:
-	struct udev *udev_;
-	struct udev_monitor *monitor_;
-	EventNotifier *notifier_;
-
 	using DependencyMap = std::map<dev_t, std::list<MediaEntity *>>;
 
 	struct MediaDeviceDeps {
@@ -58,16 +54,20 @@ private:
 		DependencyMap deps_;
 	};
 
-	std::set<dev_t> orphans_;
-	std::list<MediaDeviceDeps> pending_;
-	std::map<dev_t, MediaDeviceDeps *> devMap_;
-
 	int addUdevDevice(struct udev_device *dev);
 	int populateMediaDevice(MediaDevice *media, DependencyMap *deps);
 	std::string lookupDeviceNode(dev_t devnum);
 
 	int addV4L2Device(dev_t devnum);
 	void udevNotify(EventNotifier *notifier);
+
+	struct udev *udev_;
+	struct udev_monitor *monitor_;
+	EventNotifier *notifier_;
+
+	std::set<dev_t> orphans_;
+	std::list<MediaDeviceDeps> pending_;
+	std::map<dev_t, MediaDeviceDeps *> devMap_;
 };
 
 } /* namespace libcamera */

@@ -938,12 +938,26 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			       << ", format: " << utils::hex(stream->format);
 	}
 
-	/* Hardcode viewfinder role, collecting sizes from the stream config. */
+	/* Only one stream is supported. */
 	if (stream_list->num_streams != 1) {
 		LOG(HAL, Error) << "Only one stream supported";
 		return -EINVAL;
 	}
+	camera3_stream_t *camera3Stream = stream_list->streams[0];
 
+	/* Translate Android format code to libcamera pixel format. */
+	auto it = formatsMap_.find(camera3Stream->format);
+	if (it == formatsMap_.end()) {
+		LOG(HAL, Error) << "Requested format "
+				<< utils::hex(camera3Stream->format)
+				<< " not supported";
+		return -EINVAL;
+	}
+
+	/*
+	 * Hardcode viewfinder role, replacing the generated configuration
+	 * parameters with the ones requested by the Android framework.
+	 */
 	StreamRoles roles = { StreamRole::Viewfinder };
 	config_ = camera_->generateConfiguration(roles);
 	if (!config_ || config_->empty()) {
@@ -951,17 +965,10 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		return -EINVAL;
 	}
 
-	/* Only one stream is supported. */
-	camera3_stream_t *camera3Stream = stream_list->streams[0];
 	StreamConfiguration *streamConfiguration = &config_->at(0);
 	streamConfiguration->size.width = camera3Stream->width;
 	streamConfiguration->size.height = camera3Stream->height;
-
-	/*
-	 * \todo We'll need to translate from Android defined pixel format codes
-	 * to the libcamera image format codes. For now, do not change the
-	 * format returned from Camera::generateConfiguration().
-	 */
+	streamConfiguration->pixelFormat = it->second;
 
 	switch (config_->validate()) {
 	case CameraConfiguration::Valid:

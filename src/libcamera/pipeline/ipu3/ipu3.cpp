@@ -191,6 +191,7 @@ private:
 	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
 	static constexpr unsigned int IPU3_MAX_STREAMS = 3;
 
+	void assignStreams();
 	void adjustStream(StreamConfiguration &cfg, bool scale);
 
 	/*
@@ -255,6 +256,50 @@ IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
 {
 	camera_ = camera->shared_from_this();
 	data_ = data;
+}
+
+void IPU3CameraConfiguration::assignStreams()
+{
+	/*
+	 * Verify and update all configuration entries, and assign a stream to
+	 * each of them. The viewfinder stream can scale, while the output
+	 * stream can crop only, so select the output stream when the requested
+	 * resolution is equal to the sensor resolution, and the viewfinder
+	 * stream otherwise.
+	 */
+	std::set<const IPU3Stream *> availableStreams = {
+		&data_->outStream_,
+		&data_->vfStream_,
+		&data_->rawStream_,
+	};
+
+	/*
+	 * The caller is responsible to limit the number of requested streams
+	 * to a number supported by the pipeline before calling this function.
+	 */
+	ASSERT(availableStreams.size() >= config_.size());
+
+	streams_.clear();
+	streams_.reserve(config_.size());
+
+	for (const StreamConfiguration &cfg : config_) {
+		const PixelFormatInfo &info =
+			PixelFormatInfo::info(cfg.pixelFormat);
+		const IPU3Stream *stream;
+
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			stream = &data_->rawStream_;
+		else if (cfg.size == sensorFormat_.size)
+			stream = &data_->outStream_;
+		else
+			stream = &data_->vfStream_;
+
+		if (availableStreams.find(stream) == availableStreams.end())
+			stream = *availableStreams.begin();
+
+		streams_.push_back(stream);
+		availableStreams.erase(stream);
+	}
 }
 
 void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
@@ -343,41 +388,14 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	if (!sensorFormat_.size.width || !sensorFormat_.size.height)
 		sensorFormat_.size = sensor->resolution();
 
-	/*
-	 * Verify and update all configuration entries, and assign a stream to
-	 * each of them. The viewfinder stream can scale, while the output
-	 * stream can crop only, so select the output stream when the requested
-	 * resolution is equal to the sensor resolution, and the viewfinder
-	 * stream otherwise.
-	 */
-	std::set<const IPU3Stream *> availableStreams = {
-		&data_->outStream_,
-		&data_->vfStream_,
-		&data_->rawStream_,
-	};
+	/* Assign streams to each configuration entry. */
+	assignStreams();
 
-	streams_.clear();
-	streams_.reserve(config_.size());
-
+	/* Verify and adjust configuration if needed. */
 	for (unsigned int i = 0; i < config_.size(); ++i) {
 		StreamConfiguration &cfg = config_[i];
-		const PixelFormat pixelFormat = cfg.pixelFormat;
-		const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
-		const Size size = cfg.size;
-		const IPU3Stream *stream;
-
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-			stream = &data_->rawStream_;
-		else if (cfg.size == sensorFormat_.size)
-			stream = &data_->outStream_;
-		else
-			stream = &data_->vfStream_;
-
-		if (availableStreams.find(stream) == availableStreams.end())
-			stream = *availableStreams.begin();
-
-		LOG(IPU3, Debug)
-			<< "Assigned '" << stream->name_ << "' to stream " << i;
+		const StreamConfiguration oldCfg = cfg;
+		const IPU3Stream *stream = streams_[i];
 
 		if (stream->raw_) {
 			const auto &itFormat =
@@ -394,15 +412,13 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 		cfg.bufferCount = IPU3_BUFFER_COUNT;
 
-		if (cfg.pixelFormat != pixelFormat || cfg.size != size) {
+		if (cfg.pixelFormat != oldCfg.pixelFormat ||
+		    cfg.size != oldCfg.size) {
 			LOG(IPU3, Debug)
 				<< "Stream " << i << " configuration adjusted to "
 				<< cfg.toString();
 			status = Adjusted;
 		}
-
-		streams_.push_back(stream);
-		availableStreams.erase(stream);
 	}
 
 	return status;

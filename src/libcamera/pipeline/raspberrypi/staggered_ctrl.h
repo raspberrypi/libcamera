@@ -4,7 +4,8 @@
  *
  * staggered_ctrl.h - Helper for writing staggered ctrls to a V4L2 device.
  */
-#pragma once
+#ifndef __LIBCAMERA_PIPELINE_RASPBERRYPI_STAGGERED_CTRL_H__
+#define __LIBCAMERA_PIPELINE_RASPBERRYPI_STAGGERED_CTRL_H__
 
 #include <array>
 #include <initializer_list>
@@ -91,3 +92,5 @@ private:
 } /* namespace RPi */
 
 } /* namespace libcamera */
+
+#endif /* __LIBCAMERA_PIPELINE_RASPBERRYPI_STAGGERED_CTRL_H__ */

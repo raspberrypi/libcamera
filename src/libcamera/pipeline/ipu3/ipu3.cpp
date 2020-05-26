@@ -951,8 +951,7 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
-		std::string cameraName = cio2->sensor_->entity()->name() + " "
-				       + std::to_string(id);
+		std::string cameraName = cio2->sensor_->entity()->name();
 		std::shared_ptr<Camera> camera = Camera::create(this,
 								cameraName,
 								streams);

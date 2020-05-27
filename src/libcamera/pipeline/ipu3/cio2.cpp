@@ -9,6 +9,9 @@
 
 #include <linux/media-bus-format.h>
 
+#include <libcamera/formats.h>
+#include <libcamera/stream.h>
+
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_subdevice.h"
@@ -20,11 +23,11 @@ LOG_DECLARE_CATEGORY(IPU3)
 
 namespace {
 
-static const std::map<uint32_t, V4L2PixelFormat> mbusCodesToInfo = {
-	{ MEDIA_BUS_FMT_SBGGR10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10) },
-	{ MEDIA_BUS_FMT_SGBRG10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10) },
-	{ MEDIA_BUS_FMT_SGRBG10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10) },
-	{ MEDIA_BUS_FMT_SRGGB10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10) },
+static const std::map<uint32_t, PixelFormat> mbusCodesToInfo = {
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, formats::SBGGR10_IPU3 },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, formats::SGBRG10_IPU3 },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, formats::SGRBG10_IPU3 },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, formats::SRGGB10_IPU3 },
 };
 
 } /* namespace */
@@ -159,7 +162,9 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	if (itInfo == mbusCodesToInfo.end())
 		return -EINVAL;
 
-	outputFormat->fourcc = itInfo->second;
+	const PixelFormatInfo &info = PixelFormatInfo::info(itInfo->second);
+
+	outputFormat->fourcc = info.v4l2Format;
 	outputFormat->size = sensorFormat.size;
 	outputFormat->planesCount = 1;
 
@@ -170,6 +175,34 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	LOG(IPU3, Debug) << "CIO2 output format " << outputFormat->toString();
 
 	return 0;
+}
+
+StreamConfiguration
+CIO2Device::generateConfiguration(Size size) const
+{
+	StreamConfiguration cfg;
+
+	/* If no desired size use the sensor resolution. */
+	if (!size.width && !size.height)
+		size = sensor_->resolution();
+
+	/* Query the sensor static information for closest match. */
+	std::vector<unsigned int> mbusCodes;
+	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
+		       std::back_inserter(mbusCodes),
+		       [](auto &pair) { return pair.first; });
+
+	V4L2SubdeviceFormat sensorFormat = sensor_->getFormat(mbusCodes, size);
+	if (!sensorFormat.mbus_code) {
+		LOG(IPU3, Error) << "Sensor does not support mbus code";
+		return {};
+	}
+
+	cfg.size = sensorFormat.size;
+	cfg.pixelFormat = mbusCodesToInfo.at(sensorFormat.mbus_code);
+	cfg.bufferCount = CIO2_BUFFER_COUNT;
+
+	return cfg;
 }
 
 /**

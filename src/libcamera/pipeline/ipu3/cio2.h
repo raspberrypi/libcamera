@@ -20,6 +20,7 @@ class V4L2DeviceFormat;
 class V4L2Subdevice;
 class V4L2VideoDevice;
 struct Size;
+struct StreamConfiguration;
 
 class CIO2Device
 {
@@ -31,6 +32,8 @@ public:
 
 	int init(const MediaDevice *media, unsigned int index);
 	int configure(const Size &size, V4L2DeviceFormat *outputFormat);
+
+	StreamConfiguration generateConfiguration(Size size) const;
 
 	int allocateBuffers();
 	void freeBuffers();

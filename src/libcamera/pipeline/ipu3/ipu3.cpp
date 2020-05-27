@@ -36,13 +36,6 @@ LOG_DEFINE_CATEGORY(IPU3)
 
 class IPU3CameraData;
 
-static const std::map<uint32_t, PixelFormat> sensorMbusToPixel = {
-	{ MEDIA_BUS_FMT_SBGGR10_1X10, formats::SBGGR10_IPU3 },
-	{ MEDIA_BUS_FMT_SGBRG10_1X10, formats::SGBRG10_IPU3 },
-	{ MEDIA_BUS_FMT_SGRBG10_1X10, formats::SGRBG10_IPU3 },
-	{ MEDIA_BUS_FMT_SRGGB10_1X10, formats::SRGGB10_IPU3 },
-};
-
 class ImgUDevice
 {
 public:
@@ -147,7 +140,7 @@ public:
 
 	Status validate() override;
 
-	const V4L2SubdeviceFormat &sensorFormat() { return sensorFormat_; }
+	const StreamConfiguration &cio2Format() const { return cio2Configuration_; };
 	const std::vector<const IPU3Stream *> &streams() { return streams_; }
 
 private:
@@ -165,7 +158,7 @@ private:
 	std::shared_ptr<Camera> camera_;
 	const IPU3CameraData *data_;
 
-	V4L2SubdeviceFormat sensorFormat_;
+	StreamConfiguration cio2Configuration_;
 	std::vector<const IPU3Stream *> streams_;
 };
 
@@ -252,7 +245,7 @@ void IPU3CameraConfiguration::assignStreams()
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
 			stream = &data_->rawStream_;
-		else if (cfg.size == sensorFormat_.size)
+		else if (cfg.size == cio2Configuration_.size)
 			stream = &data_->outStream_;
 		else
 			stream = &data_->vfStream_;
@@ -277,8 +270,8 @@ void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 		 */
 		if (!cfg.size.width || !cfg.size.height) {
 			cfg.size.width = 1280;
-			cfg.size.height = 1280 * sensorFormat_.size.height
-					/ sensorFormat_.size.width;
+			cfg.size.height = 1280 * cio2Configuration_.size.height
+					/ cio2Configuration_.size.width;
 		}
 
 		/*
@@ -297,7 +290,7 @@ void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 		 * \todo: Properly support cropping when the ImgU driver
 		 * interface will be cleaned up.
 		 */
-		cfg.size = sensorFormat_.size;
+		cfg.size = cio2Configuration_.size;
 	}
 
 	/*
@@ -313,7 +306,6 @@ void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 
 CameraConfiguration::Status IPU3CameraConfiguration::validate()
 {
-	const CameraSensor *sensor = data_->cio2_.sensor_;
 	Status status = Valid;
 
 	if (config_.empty())
@@ -340,16 +332,10 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 			size.height = cfg.size.height;
 	}
 
-	if (!size.width || !size.height)
-		size = sensor->resolution();
-
-	sensorFormat_ = sensor->getFormat({ MEDIA_BUS_FMT_SBGGR10_1X10,
-					    MEDIA_BUS_FMT_SGBRG10_1X10,
-					    MEDIA_BUS_FMT_SGRBG10_1X10,
-					    MEDIA_BUS_FMT_SRGGB10_1X10 },
-					  size);
-	if (!sensorFormat_.size.width || !sensorFormat_.size.height)
-		sensorFormat_.size = sensor->resolution();
+	/* Generate raw configuration from CIO2. */
+	cio2Configuration_ = data_->cio2_.generateConfiguration(size);
+	if (!cio2Configuration_.pixelFormat.isValid())
+		return Invalid;
 
 	/* Assign streams to each configuration entry. */
 	assignStreams();
@@ -361,19 +347,12 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		const IPU3Stream *stream = streams_[i];
 
 		if (stream->raw_) {
-			const auto &itFormat =
-				sensorMbusToPixel.find(sensorFormat_.mbus_code);
-			if (itFormat == sensorMbusToPixel.end())
-				return Invalid;
-
-			cfg.pixelFormat = itFormat->second;
-			cfg.size = sensorFormat_.size;
+			cfg = cio2Configuration_;
 		} else {
 			bool scale = stream == &data_->vfStream_;
 			adjustStream(config_[i], scale);
+			cfg.bufferCount = IPU3_BUFFER_COUNT;
 		}
-
-		cfg.bufferCount = IPU3_BUFFER_COUNT;
 
 		if (cfg.pixelFormat != oldCfg.pixelFormat ||
 		    cfg.size != oldCfg.size) {
@@ -454,14 +433,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 			cfg.size = data->cio2_.sensor_->resolution();
 
-			V4L2SubdeviceFormat sensorFormat =
-				data->cio2_.sensor_->getFormat({ MEDIA_BUS_FMT_SBGGR10_1X10,
-								 MEDIA_BUS_FMT_SGBRG10_1X10,
-								 MEDIA_BUS_FMT_SGRBG10_1X10,
-								 MEDIA_BUS_FMT_SRGGB10_1X10 },
-							       cfg.size);
-			cfg.pixelFormat =
-				sensorMbusToPixel.at(sensorFormat.mbus_code);
+			cfg = data->cio2_.generateConfiguration(cfg.size);
 			break;
 		}
 
@@ -575,7 +547,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * Pass the requested stream size to the CIO2 unit and get back the
 	 * adjusted format to be propagated to the ImgU output devices.
 	 */
-	const Size &sensorSize = config->sensorFormat().size;
+	const Size &sensorSize = config->cio2Format().size;
 	V4L2DeviceFormat cio2Format = {};
 	ret = cio2->configure(sensorSize, &cio2Format);
 	if (ret)

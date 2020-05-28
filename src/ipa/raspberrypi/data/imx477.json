@@ -412,5 +412,9 @@
     "rpi.sharpen":
     {
 
+    },
+    "rpi.focus":
+    {
+	"print": 1
     }
 }

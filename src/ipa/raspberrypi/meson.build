@@ -29,6 +29,7 @@ rpi_ipa_sources = files([
     'controller/rpi/awb.cpp',
     'controller/rpi/sharpen.cpp',
     'controller/rpi/black_level.cpp',
+    'controller/rpi/focus.cpp',
     'controller/rpi/geq.cpp',
     'controller/rpi/noise.cpp',
     'controller/rpi/lux.cpp',

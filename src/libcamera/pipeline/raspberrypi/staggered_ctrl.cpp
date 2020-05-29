@@ -46,7 +46,7 @@ void StaggeredCtrl::reset()
 {
 	std::lock_guard<std::mutex> lock(lock_);
 
-	int lastSetCount = std::max<int>(0, setCount_ - 1);
+	int lastSetCount = setCount_;
 	std::unordered_map<uint32_t, int32_t> lastVal;
 
 	/* Reset the counters. */

@@ -122,7 +122,6 @@ public:
 	}
 
 	void imguOutputBufferReady(FrameBuffer *buffer);
-	void imguInputBufferReady(FrameBuffer *buffer);
 	void cio2BufferReady(FrameBuffer *buffer);
 
 	CIO2Device cio2_;
@@ -737,25 +736,24 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
-	FrameBuffer *buffer;
 	int error = 0;
 
-	/* Get a CIO2 buffer, associate it with the request and queue it. */
-	buffer = data->cio2_.getBuffer();
-	if (!buffer)
-		return -EINVAL;
+	/*
+	 * Queue a buffer on the CIO2, using the raw stream buffer provided in
+	 * the request, if any, or a CIO2 internal buffer otherwise.
+	 */
+	FrameBuffer *rawBuffer = request->findBuffer(&data->rawStream_);
+	error = data->cio2_.queueBuffer(request, rawBuffer);
+	if (error)
+		return error;
 
-	buffer->setRequest(request);
-	data->cio2_.queueBuffer(buffer);
-
+	/* Queue all buffers from the request aimed for the ImgU. */
 	for (auto it : request->buffers()) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
-		buffer = it.second;
-
-		/* Skip raw streams, they are copied from the CIO2 buffer. */
 		if (stream->raw_)
 			continue;
 
+		FrameBuffer *buffer = it.second;
 		int ret = stream->device_->dev->queueBuffer(buffer);
 		if (ret < 0)
 			error = ret;
@@ -885,8 +883,8 @@ int PipelineHandlerIPU3::registerCameras()
 		 */
 		data->cio2_.bufferReady.connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
-		data->imgu_->input_->bufferReady.connect(data.get(),
-					&IPU3CameraData::imguInputBufferReady);
+		data->imgu_->input_->bufferReady.connect(&data->cio2_,
+					&CIO2Device::tryReturnBuffer);
 		data->imgu_->output_.dev->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
 		data->imgu_->viewfinder_.dev->bufferReady.connect(data.get(),
@@ -914,22 +912,6 @@ int PipelineHandlerIPU3::registerCameras()
 /* -----------------------------------------------------------------------------
  * Buffer Ready slots
  */
-
-/**
- * \brief Handle buffers completion at the ImgU input
- * \param[in] buffer The completed buffer
- *
- * Buffers completed from the ImgU input are immediately queued back to the
- * CIO2 unit to continue frame capture.
- */
-void IPU3CameraData::imguInputBufferReady(FrameBuffer *buffer)
-{
-	/* \todo Handle buffer failures when state is set to BufferError. */
-	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
-		return;
-
-	cio2_.putBuffer(buffer);
-}
 
 /**
  * \brief Handle buffers completion at the ImgU output
@@ -963,27 +945,18 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 		return;
 
 	Request *request = buffer->request();
-	FrameBuffer *raw = request->findBuffer(&rawStream_);
 
-	if (!raw) {
-		/* No RAW buffers present, just queue to IMGU. */
-		imgu_->input_->queueBuffer(buffer);
+	/*
+	 * If the request contains a buffer for the RAW stream only, complete it
+	 * now as there's no need for ImgU processing.
+	 */
+	if (request->findBuffer(&rawStream_) &&
+	    pipe_->completeBuffer(camera_, request, buffer)) {
+		pipe_->completeRequest(camera_, request);
 		return;
 	}
 
-	/* RAW buffers present, special care is needed. */
-	if (request->buffers().size() > 1)
-		imgu_->input_->queueBuffer(buffer);
-
-	if (raw->copyFrom(buffer))
-		LOG(IPU3, Debug) << "Copy of FrameBuffer failed";
-
-	pipe_->completeBuffer(camera_, request, raw);
-
-	if (request->buffers().size() == 1) {
-		cio2_.putBuffer(buffer);
-		pipe_->completeRequest(camera_, request);
-	}
+	imgu_->input_->queueBuffer(buffer);
 }
 
 /* -----------------------------------------------------------------------------

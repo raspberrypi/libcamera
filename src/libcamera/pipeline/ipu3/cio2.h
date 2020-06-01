@@ -18,6 +18,7 @@ namespace libcamera {
 class CameraSensor;
 class FrameBuffer;
 class MediaDevice;
+class Request;
 class V4L2DeviceFormat;
 class V4L2Subdevice;
 class V4L2VideoDevice;
@@ -40,15 +41,13 @@ public:
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
-	FrameBuffer *getBuffer();
-	void putBuffer(FrameBuffer *buffer);
-
 	int start();
 	int stop();
 
 	CameraSensor *sensor() { return sensor_; }
 
-	int queueBuffer(FrameBuffer *buffer);
+	int queueBuffer(Request *request, FrameBuffer *rawBuffer);
+	void tryReturnBuffer(FrameBuffer *buffer);
 	Signal<FrameBuffer *> bufferReady;
 
 private:

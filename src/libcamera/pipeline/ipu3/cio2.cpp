@@ -213,30 +213,15 @@ int CIO2Device::exportBuffers(unsigned int count,
 	return output_->exportBuffers(count, buffers);
 }
 
-FrameBuffer *CIO2Device::getBuffer()
-{
-	if (availableBuffers_.empty()) {
-		LOG(IPU3, Error) << "CIO2 buffer underrun";
-		return nullptr;
-	}
-
-	FrameBuffer *buffer = availableBuffers_.front();
-
-	availableBuffers_.pop();
-
-	return buffer;
-}
-
-void CIO2Device::putBuffer(FrameBuffer *buffer)
-{
-	availableBuffers_.push(buffer);
-}
-
 int CIO2Device::start()
 {
-	int ret = output_->allocateBuffers(CIO2_BUFFER_COUNT, &buffers_);
+	int ret = output_->exportBuffers(CIO2_BUFFER_COUNT, &buffers_);
 	if (ret < 0)
 		return ret;
+
+	ret = output_->importBuffers(CIO2_BUFFER_COUNT);
+	if (ret)
+		LOG(IPU3, Error) << "Failed to import CIO2 buffers";
 
 	for (std::unique_ptr<FrameBuffer> &buffer : buffers_)
 		availableBuffers_.push(buffer.get());
@@ -257,9 +242,40 @@ int CIO2Device::stop()
 	return ret;
 }
 
-int CIO2Device::queueBuffer(FrameBuffer *buffer)
+int CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 {
+	FrameBuffer *buffer = rawBuffer;
+
+	/* If no buffer is provided in the request, use an internal one. */
+	if (!buffer) {
+		if (availableBuffers_.empty()) {
+			LOG(IPU3, Error) << "CIO2 buffer underrun";
+			return -EINVAL;
+		}
+
+		buffer = availableBuffers_.front();
+		availableBuffers_.pop();
+	}
+
+	buffer->setRequest(request);
+
 	return output_->queueBuffer(buffer);
+}
+
+void CIO2Device::tryReturnBuffer(FrameBuffer *buffer)
+{
+	/*
+	 * \todo Once more pipelines deal with buffers that may be allocated
+	 * internally or externally this pattern might become a common need. At
+	 * that point this check should be moved to something clever in
+	 * FrameBuffer.
+	 */
+	for (const std::unique_ptr<FrameBuffer> &buf : buffers_) {
+		if (buf.get() == buffer) {
+			availableBuffers_.push(buffer);
+			break;
+		}
+	}
 }
 
 void CIO2Device::freeBuffers()

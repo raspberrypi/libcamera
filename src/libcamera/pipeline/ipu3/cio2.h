@@ -37,10 +37,8 @@ public:
 
 	StreamConfiguration generateConfiguration(Size size) const;
 
-	int allocateBuffers();
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
-	void freeBuffers();
 
 	FrameBuffer *getBuffer();
 	void putBuffer(FrameBuffer *buffer);
@@ -54,6 +52,8 @@ public:
 	Signal<FrameBuffer *> bufferReady;
 
 private:
+	void freeBuffers();
+
 	void cio2BufferReady(FrameBuffer *buffer);
 
 	CameraSensor *sensor_;

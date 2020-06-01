@@ -207,42 +207,10 @@ CIO2Device::generateConfiguration(Size size) const
 	return cfg;
 }
 
-/**
- * \brief Allocate frame buffers for the CIO2 output
- *
- * Allocate frame buffers in the CIO2 video device to be used to capture frames
- * from the CIO2 output. The buffers are stored in the CIO2Device::buffers_
- * vector.
- *
- * \return Number of buffers allocated or negative error code
- */
-int CIO2Device::allocateBuffers()
-{
-	int ret = output_->allocateBuffers(CIO2_BUFFER_COUNT, &buffers_);
-	if (ret < 0)
-		return ret;
-
-	for (std::unique_ptr<FrameBuffer> &buffer : buffers_)
-		availableBuffers_.push(buffer.get());
-
-	return ret;
-}
-
 int CIO2Device::exportBuffers(unsigned int count,
 			      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	return output_->exportBuffers(count, buffers);
-}
-
-void CIO2Device::freeBuffers()
-{
-	/* The default std::queue constructor is explicit with gcc 5 and 6. */
-	availableBuffers_ = std::queue<FrameBuffer *>{};
-
-	buffers_.clear();
-
-	if (output_->releaseBuffers())
-		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
 FrameBuffer *CIO2Device::getBuffer()
@@ -266,17 +234,43 @@ void CIO2Device::putBuffer(FrameBuffer *buffer)
 
 int CIO2Device::start()
 {
-	return output_->streamOn();
+	int ret = output_->allocateBuffers(CIO2_BUFFER_COUNT, &buffers_);
+	if (ret < 0)
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : buffers_)
+		availableBuffers_.push(buffer.get());
+
+	ret = output_->streamOn();
+	if (ret)
+		freeBuffers();
+
+	return ret;
 }
 
 int CIO2Device::stop()
 {
-	return output_->streamOff();
+	int ret = output_->streamOff();
+
+	freeBuffers();
+
+	return ret;
 }
 
 int CIO2Device::queueBuffer(FrameBuffer *buffer)
 {
 	return output_->queueBuffer(buffer);
+}
+
+void CIO2Device::freeBuffers()
+{
+	/* The default std::queue constructor is explicit with gcc 5 and 6. */
+	availableBuffers_ = std::queue<FrameBuffer *>{};
+
+	buffers_.clear();
+
+	if (output_->releaseBuffers())
+		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
 }
 
 void CIO2Device::cio2BufferReady(FrameBuffer *buffer)

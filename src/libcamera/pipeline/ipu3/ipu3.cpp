@@ -658,14 +658,9 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
-	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	unsigned int bufferCount;
 	int ret;
-
-	ret = cio2->allocateBuffers();
-	if (ret < 0)
-		return ret;
 
 	bufferCount = std::max({
 		data->outStream_.configuration().bufferCount,
@@ -674,10 +669,8 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	});
 
 	ret = imgu->allocateBuffers(data, bufferCount);
-	if (ret < 0) {
-		cio2->freeBuffers();
+	if (ret < 0)
 		return ret;
-	}
 
 	return 0;
 }
@@ -686,7 +679,6 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 
-	data->cio2_.freeBuffers();
 	data->imgu_->freeBuffers(data);
 
 	return 0;
@@ -731,10 +723,10 @@ error:
 void PipelineHandlerIPU3::stop(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
-	int ret;
+	int ret = 0;
 
-	ret = data->cio2_.stop();
 	ret |= data->imgu_->stop();
+	ret |= data->cio2_.stop();
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera "
 				   << camera->name();

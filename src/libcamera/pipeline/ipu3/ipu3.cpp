@@ -134,8 +134,6 @@ public:
 	int start();
 	int stop();
 
-	static V4L2PixelFormat mediaBusToFormat(unsigned int code);
-
 	V4L2VideoDevice *output_;
 	V4L2Subdevice *csi2_;
 	CameraSensor *sensor_;
@@ -1506,7 +1504,25 @@ int CIO2Device::configure(const Size &size,
 	if (ret)
 		return ret;
 
-	outputFormat->fourcc = mediaBusToFormat(sensorFormat.mbus_code);
+	V4L2PixelFormat v4l2Format;
+	switch (sensorFormat.mbus_code) {
+	case MEDIA_BUS_FMT_SBGGR10_1X10:
+		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10);
+		break;
+	case MEDIA_BUS_FMT_SGBRG10_1X10:
+		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10);
+		break;
+	case MEDIA_BUS_FMT_SGRBG10_1X10:
+		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10);
+		break;
+	case MEDIA_BUS_FMT_SRGGB10_1X10:
+		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	outputFormat->fourcc = v4l2Format;
 	outputFormat->size = sensorFormat.size;
 	outputFormat->planesCount = 1;
 
@@ -1578,22 +1594,6 @@ int CIO2Device::start()
 int CIO2Device::stop()
 {
 	return output_->streamOff();
-}
-
-V4L2PixelFormat CIO2Device::mediaBusToFormat(unsigned int code)
-{
-	switch (code) {
-	case MEDIA_BUS_FMT_SBGGR10_1X10:
-		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10);
-	case MEDIA_BUS_FMT_SGBRG10_1X10:
-		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10);
-	case MEDIA_BUS_FMT_SGRBG10_1X10:
-		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10);
-	case MEDIA_BUS_FMT_SRGGB10_1X10:
-		return V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10);
-	default:
-		return {};
-	}
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3);

@@ -735,7 +735,11 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	if (ret < 0)
 		return ret;
 
-	bufferCount = ret;
+	bufferCount = std::max({
+		data->outStream_.configuration().bufferCount,
+		data->vfStream_.configuration().bufferCount,
+		data->rawStream_.configuration().bufferCount,
+	});
 
 	ret = imgu->allocateBuffers(data, bufferCount);
 	if (ret < 0) {

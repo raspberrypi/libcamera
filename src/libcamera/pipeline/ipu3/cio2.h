@@ -11,6 +11,8 @@
 #include <queue>
 #include <vector>
 
+#include <libcamera/signal.h>
+
 namespace libcamera {
 
 class CameraSensor;
@@ -36,6 +38,8 @@ public:
 	StreamConfiguration generateConfiguration(Size size) const;
 
 	int allocateBuffers();
+	int exportBuffers(unsigned int count,
+			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	void freeBuffers();
 
 	FrameBuffer *getBuffer();
@@ -44,11 +48,18 @@ public:
 	int start();
 	int stop();
 
-	V4L2VideoDevice *output_;
-	V4L2Subdevice *csi2_;
-	CameraSensor *sensor_;
+	CameraSensor *sensor() { return sensor_; }
+
+	int queueBuffer(FrameBuffer *buffer);
+	Signal<FrameBuffer *> bufferReady;
 
 private:
+	void cio2BufferReady(FrameBuffer *buffer);
+
+	CameraSensor *sensor_;
+	V4L2Subdevice *csi2_;
+	V4L2VideoDevice *output_;
+
 	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
 	std::queue<FrameBuffer *> availableBuffers_;
 };

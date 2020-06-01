@@ -33,7 +33,7 @@ static const std::map<uint32_t, PixelFormat> mbusCodesToInfo = {
 } /* namespace */
 
 CIO2Device::CIO2Device()
-	: output_(nullptr), csi2_(nullptr), sensor_(nullptr)
+	: sensor_(nullptr), csi2_(nullptr), output_(nullptr)
 {
 }
 
@@ -124,6 +124,8 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	ret = output_->open();
 	if (ret)
 		return ret;
+
+	output_->bufferReady.connect(this, &CIO2Device::cio2BufferReady);
 
 	return 0;
 }
@@ -226,6 +228,12 @@ int CIO2Device::allocateBuffers()
 	return ret;
 }
 
+int CIO2Device::exportBuffers(unsigned int count,
+			      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	return output_->exportBuffers(count, buffers);
+}
+
 void CIO2Device::freeBuffers()
 {
 	/* The default std::queue constructor is explicit with gcc 5 and 6. */
@@ -264,6 +272,16 @@ int CIO2Device::start()
 int CIO2Device::stop()
 {
 	return output_->streamOff();
+}
+
+int CIO2Device::queueBuffer(FrameBuffer *buffer)
+{
+	return output_->queueBuffer(buffer);
+}
+
+void CIO2Device::cio2BufferReady(FrameBuffer *buffer)
+{
+	bufferReady.emit(buffer);
 }
 
 } /* namespace libcamera */

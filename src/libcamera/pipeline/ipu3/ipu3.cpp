@@ -431,7 +431,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 			stream = &data->rawStream_;
 
-			cfg.size = data->cio2_.sensor_->resolution();
+			cfg.size = data->cio2_.sensor()->resolution();
 
 			cfg = data->cio2_.generateConfiguration(cfg.size);
 			break;
@@ -460,7 +460,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * available sensor resolution and to the IPU3
 			 * alignment constraints.
 			 */
-			const Size &res = data->cio2_.sensor_->resolution();
+			const Size &res = data->cio2_.sensor()->resolution();
 			unsigned int width = std::min(1280U, res.width);
 			unsigned int height = std::min(720U, res.height);
 			cfg.size = { width & ~7, height & ~3 };
@@ -640,14 +640,11 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 	IPU3CameraData *data = cameraData(camera);
 	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
 	unsigned int count = stream->configuration().bufferCount;
-	V4L2VideoDevice *video;
 
 	if (ipu3stream->raw_)
-		video = data->cio2_.output_;
-	else
-		video = ipu3stream->device_->dev;
+		return data->cio2_.exportBuffers(count, buffers);
 
-	return video->exportBuffers(count, buffers);
+	return ipu3stream->device_->dev->exportBuffers(count, buffers);
 }
 
 /**
@@ -757,7 +754,7 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 		return -EINVAL;
 
 	buffer->setRequest(request);
-	data->cio2_.output_->queueBuffer(buffer);
+	data->cio2_.queueBuffer(buffer);
 
 	for (auto it : request->buffers()) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
@@ -870,7 +867,7 @@ int PipelineHandlerIPU3::registerCameras()
 			continue;
 
 		/* Initialize the camera properties. */
-		data->properties_ = cio2->sensor_->properties();
+		data->properties_ = cio2->sensor()->properties();
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each
@@ -894,7 +891,7 @@ int PipelineHandlerIPU3::registerCameras()
 		 * associated ImgU input where they get processed and
 		 * returned through the ImgU main and secondary outputs.
 		 */
-		data->cio2_.output_->bufferReady.connect(data.get(),
+		data->cio2_.bufferReady.connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
 		data->imgu_->input_->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguInputBufferReady);
@@ -904,7 +901,7 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
-		std::string cameraName = cio2->sensor_->entity()->name();
+		std::string cameraName = cio2->sensor()->entity()->name();
 		std::shared_ptr<Camera> camera = Camera::create(this,
 								cameraName,
 								streams);

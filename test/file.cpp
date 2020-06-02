@@ -30,10 +30,11 @@ protected:
 		if (fd == -1)
 			return TestFail;
 
-		write(fd, "libcamera", 9);
+		ssize_t ret = write(fd, "libcamera", 9);
+
 		close(fd);
 
-		return TestPass;
+		return ret == 9 ? TestPass : TestFail;
 	}
 
 	int run()

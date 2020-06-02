@@ -15,6 +15,7 @@
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/event_dispatcher_poll.h"
+#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/thread.h"
@@ -63,6 +64,8 @@ private:
 
 	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
+
+	IPAManager ipaManager_;
 };
 
 CameraManager::Private::Private(CameraManager *cm)

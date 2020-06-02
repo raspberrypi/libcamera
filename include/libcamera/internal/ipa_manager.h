@@ -22,6 +22,9 @@ namespace libcamera {
 class IPAManager
 {
 public:
+	IPAManager();
+	~IPAManager();
+
 	static IPAManager *instance();
 
 	std::unique_ptr<IPAProxy> createIPA(PipelineHandler *pipe,
@@ -29,8 +32,7 @@ public:
 					    uint32_t minVersion);
 
 private:
-	IPAManager();
-	~IPAManager();
+	static IPAManager *self_;
 
 	void parseDir(const char *libDir, unsigned int maxDepth,
 		      std::vector<std::string> &files);

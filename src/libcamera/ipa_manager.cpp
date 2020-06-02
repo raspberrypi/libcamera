@@ -93,8 +93,21 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * plain C API, or to transmit the data to the isolated process through IPC.
  */
 
+IPAManager *IPAManager::self_ = nullptr;
+
+/**
+ * \brief Construct an IPAManager instance
+ *
+ * The IPAManager class is meant to only be instantiated once, by the
+ * CameraManager. Pipeline handlers shall use the instance() function to access
+ * the IPAManager instance.
+ */
 IPAManager::IPAManager()
 {
+	if (self_)
+		LOG(IPAManager, Fatal)
+			<< "Multiple IPAManager objects are not allowed";
+
 	unsigned int ipaCount = 0;
 
 	/* User-specified paths take precedence. */
@@ -134,27 +147,29 @@ IPAManager::IPAManager()
 	if (!ipaCount)
 		LOG(IPAManager, Warning)
 			<< "No IPA found in '" IPA_MODULE_DIR "'";
+
+	self_ = this;
 }
 
 IPAManager::~IPAManager()
 {
 	for (IPAModule *module : modules_)
 		delete module;
+
+	self_ = nullptr;
 }
 
 /**
  * \brief Retrieve the IPA manager instance
  *
- * The IPAManager is a singleton and can't be constructed manually. This
- * function shall instead be used to retrieve the single global instance of the
- * manager.
+ * The IPAManager is constructed by the CameraManager. This function shall be
+ * used to retrieve the single instance of the manager.
  *
  * \return The IPA manager instance
  */
 IPAManager *IPAManager::instance()
 {
-	static IPAManager ipaManager;
-	return &ipaManager;
+	return self_;
 }
 
 /**

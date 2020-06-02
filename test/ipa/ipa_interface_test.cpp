@@ -39,11 +39,15 @@ public:
 	~IPAInterfaceTest()
 	{
 		delete notifier_;
+		ipa_.reset();
+		ipaManager_.reset();
 	}
 
 protected:
 	int init() override
 	{
+		ipaManager_ = make_unique<IPAManager>();
+
 		/* Create a pipeline handler for vimc. */
 		std::vector<PipelineHandlerFactory *> &factories =
 			PipelineHandlerFactory::factories();
@@ -161,6 +165,7 @@ private:
 
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::unique_ptr<IPAProxy> ipa_;
+	std::unique_ptr<IPAManager> ipaManager_;
 	enum IPAOperationCode trace_;
 	EventNotifier *notifier_;
 	int fd_;

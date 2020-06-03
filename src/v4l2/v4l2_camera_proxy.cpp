@@ -352,8 +352,18 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 		return -EINVAL;
 
 	sizeimage_ = calculateSizeImage(streamConfig_);
+	/*
+	 * If we return -EINVAL here then the application will think that we
+	 * don't support streaming mmap. Since we don't support readwrite and
+	 * userptr either, the application will get confused and think that
+	 * we don't support anything.
+	 * On the other hand, if a format has a zero sizeimage (eg. MJPEG),
+	 * we'll get a floating point exception when we try to stream it.
+	 */
 	if (sizeimage_ == 0)
-		return -EINVAL;
+		LOG(V4L2Compat, Warning)
+			<< "sizeimage of at least one format is zero. "
+			<< "Streaming this format will cause a floating point exception.";
 
 	setFmtFromConfig(streamConfig_);
 

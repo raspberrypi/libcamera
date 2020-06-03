@@ -426,10 +426,10 @@ int V4L2CameraProxy::vidioc_dqbuf(struct v4l2_buffer *arg)
 	    !validateMemoryType(arg->memory))
 		return -EINVAL;
 
-	if (nonBlocking_ && !vcam_->bufferSema_.tryAcquire())
-		return -EAGAIN;
-	else
+	if (!nonBlocking_)
 		vcam_->bufferSema_.acquire();
+	else if (!vcam_->bufferSema_.tryAcquire())
+		return -EAGAIN;
 
 	updateBuffers();
 

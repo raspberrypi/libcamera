@@ -224,7 +224,7 @@ int V4L2CameraProxy::vidioc_enum_fmt(struct v4l2_fmtdesc *arg)
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_fmt";
 
 	if (!validateBufferType(arg->type) ||
-	    arg->index > streamConfig_.formats().pixelformats().size())
+	    arg->index >= streamConfig_.formats().pixelformats().size())
 		return -EINVAL;
 
 	/* \todo Add map from format to description. */

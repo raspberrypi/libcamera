@@ -213,7 +213,7 @@ public:
 	V4L2PixelFormat toV4L2PixelFormat(const PixelFormat &pixelFormat);
 
 protected:
-	std::string logPrefix() const;
+	std::string logPrefix() const override;
 
 private:
 	int getFormatMeta(V4L2DeviceFormat *format);

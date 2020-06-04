@@ -62,7 +62,7 @@ public:
 					     const std::string &entity);
 
 protected:
-	std::string logPrefix() const;
+	std::string logPrefix() const override;
 
 private:
 	std::vector<unsigned int> enumPadCodes(unsigned int pad);

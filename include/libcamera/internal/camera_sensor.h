@@ -66,7 +66,7 @@ public:
 	int sensorInfo(CameraSensorInfo *info) const;
 
 protected:
-	std::string logPrefix() const;
+	std::string logPrefix() const override;
 
 private:
 	const MediaEntity *entity_;

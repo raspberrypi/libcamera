@@ -55,7 +55,7 @@ public:
 	Signal<MediaDevice *> disconnected;
 
 protected:
-	std::string logPrefix() const;
+	std::string logPrefix() const override;
 
 private:
 	int open();

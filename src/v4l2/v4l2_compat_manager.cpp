@@ -155,12 +155,17 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 	if (ret < 0)
 		return ret;
 
-	int efd = eventfd(0, oflag & (O_CLOEXEC | O_NONBLOCK));
+	int efd = eventfd(0, EFD_SEMAPHORE |
+			     ((oflag & O_CLOEXEC) ? EFD_CLOEXEC : 0) |
+			     ((oflag & O_NONBLOCK) ? EFD_NONBLOCK : 0));
 	if (efd < 0) {
+		int err = errno;
 		proxy->close();
+		errno = err;
 		return efd;
 	}
 
+	proxy->bind(efd);
 	devices_.emplace(efd, proxy);
 
 	return efd;

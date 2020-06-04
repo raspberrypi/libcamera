@@ -13,6 +13,7 @@
 #include <linux/videodev2.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/object.h>
@@ -451,6 +452,9 @@ int V4L2CameraProxy::vidioc_dqbuf(struct v4l2_buffer *arg)
 
 	currentBuf_ = (currentBuf_ + 1) % bufferCount_;
 
+	uint64_t data;
+	::read(efd_, &data, sizeof(data));
+
 	return 0;
 }
 
@@ -527,6 +531,12 @@ int V4L2CameraProxy::ioctl(unsigned long request, void *arg)
 	}
 
 	return ret;
+}
+
+void V4L2CameraProxy::bind(int fd)
+{
+	efd_ = fd;
+	vcam_->bind(fd);
 }
 
 struct PixelFormatPlaneInfo {

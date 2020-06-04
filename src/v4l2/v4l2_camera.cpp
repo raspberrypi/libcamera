@@ -8,6 +8,7 @@
 #include "v4l2_camera.h"
 
 #include <errno.h>
+#include <unistd.h>
 
 #include "libcamera/internal/log.h"
 
@@ -53,6 +54,11 @@ void V4L2Camera::close()
 	camera_->release();
 }
 
+void V4L2Camera::bind(int efd)
+{
+	efd_ = efd;
+}
+
 void V4L2Camera::getStreamConfig(StreamConfiguration *streamConfig)
 {
 	*streamConfig = config_->at(0);
@@ -83,6 +89,9 @@ void V4L2Camera::requestComplete(Request *request)
 		std::make_unique<Buffer>(request->cookie(), buffer->metadata());
 	completedBuffers_.push_back(std::move(metadata));
 	bufferLock_.unlock();
+
+	uint64_t data = 1;
+	::write(efd_, &data, sizeof(data));
 
 	bufferSema_.release();
 }

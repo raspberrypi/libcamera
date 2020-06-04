@@ -33,6 +33,8 @@ public:
 
 	int ioctl(unsigned long request, void *arg);
 
+	void bind(int fd);
+
 private:
 	bool validateBufferType(uint32_t type);
 	bool validateMemoryType(uint32_t memory);
@@ -77,6 +79,8 @@ private:
 	std::map<void *, unsigned int> mmaps_;
 
 	std::unique_ptr<V4L2Camera> vcam_;
+
+	int efd_;
 };
 
 #endif /* __V4L2_CAMERA_PROXY_H__ */

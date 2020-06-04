@@ -39,6 +39,7 @@ public:
 
 	int open();
 	void close();
+	void bind(int efd);
 	void getStreamConfig(StreamConfiguration *streamConfig);
 	std::vector<Buffer> completedBuffers();
 
@@ -70,6 +71,8 @@ private:
 
 	std::deque<std::unique_ptr<Request>> pendingRequests_;
 	std::deque<std::unique_ptr<Buffer>> completedBuffers_;
+
+	int efd_;
 };
 
 #endif /* __V4L2_CAMERA_H__ */

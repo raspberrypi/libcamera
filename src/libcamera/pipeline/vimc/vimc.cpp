@@ -110,7 +110,6 @@ namespace {
 static const std::map<PixelFormat, uint32_t> pixelformats{
 	{ PixelFormat(DRM_FORMAT_RGB888), MEDIA_BUS_FMT_BGR888_1X24 },
 	{ PixelFormat(DRM_FORMAT_BGR888), MEDIA_BUS_FMT_RGB888_1X24 },
-	{ PixelFormat(DRM_FORMAT_BGRA8888), MEDIA_BUS_FMT_ARGB8888_1X32 },
 };
 
 } /* namespace */

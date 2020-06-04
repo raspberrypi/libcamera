@@ -465,6 +465,8 @@ int V4L2CameraProxy::vidioc_streamon(int *arg)
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 
+	currentBuf_ = 0;
+
 	return vcam_->streamOn();
 }
 

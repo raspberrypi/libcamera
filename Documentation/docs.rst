@@ -231,7 +231,7 @@ The camera stack comprises four software layers. From bottom to top:
 
   Those components can live in the libcamera project source code
   in separate repositories, or move to their respective project's
-  repository (for instance the gstreamer libcamera element).</p>
+  repository (for instance the gstreamer libcamera element).
 
 * The applications and upper level frameworks are based on the
   libcamera framework or libcamera adaptation, and are outside of
@@ -326,7 +326,7 @@ Pipeline Handler
   such it is covered by the same free software license as the rest of libcamera
   and needs to be contributed upstream by device vendors. The Pipeline Handler
   lives in the same process as the rest of the library, and has access to all
-  helpers and kernel camera-related devices.</p>
+  helpers and kernel camera-related devices.
 
 Image Processing Algorithms
   Together with the hardware image processing and hardware statistics

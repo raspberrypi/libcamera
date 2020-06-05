@@ -453,7 +453,7 @@ struct ipa_context *IPAModule::createContext()
 }
 
 /**
- * \brief Verify if the IPA module maches a given pipeline handler
+ * \brief Verify if the IPA module matches a given pipeline handler
  * \param[in] pipe Pipeline handler to match with
  * \param[in] minVersion Minimum acceptable version of IPA module
  * \param[in] maxVersion Maximum acceptable version of IPA module

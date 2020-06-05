@@ -410,7 +410,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this, media);
 
-	data->ipa_ = IPAManager::instance()->createIPA(this, 0, 0);
+	data->ipa_ = IPAManager::createIPA(this, 0, 0);
 	if (data->ipa_ != nullptr) {
 		std::string conf = data->ipa_->configurationFile("vimc.conf");
 		data->ipa_->init(IPASettings{ conf });

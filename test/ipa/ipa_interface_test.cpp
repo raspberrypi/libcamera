@@ -95,7 +95,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = IPAManager::instance()->createIPA(pipe_.get(), 0, 0);
+		ipa_ = IPAManager::createIPA(pipe_.get(), 0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;

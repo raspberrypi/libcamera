@@ -25,11 +25,9 @@ public:
 	IPAManager();
 	~IPAManager();
 
-	static IPAManager *instance();
-
-	std::unique_ptr<IPAProxy> createIPA(PipelineHandler *pipe,
-					    uint32_t maxVersion,
-					    uint32_t minVersion);
+	static std::unique_ptr<IPAProxy> createIPA(PipelineHandler *pipe,
+						   uint32_t maxVersion,
+						   uint32_t minVersion);
 
 private:
 	static IPAManager *self_;

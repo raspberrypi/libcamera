@@ -395,7 +395,7 @@ private:
 
 int RkISP1CameraData::loadIPA()
 {
-	ipa_ = IPAManager::instance()->createIPA(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA(pipe_, 1, 1);
 	if (!ipa_)
 		return -ENOENT;
 

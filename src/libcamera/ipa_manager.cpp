@@ -99,8 +99,7 @@ IPAManager *IPAManager::self_ = nullptr;
  * \brief Construct an IPAManager instance
  *
  * The IPAManager class is meant to only be instantiated once, by the
- * CameraManager. Pipeline handlers shall use the instance() function to access
- * the IPAManager instance.
+ * CameraManager.
  */
 IPAManager::IPAManager()
 {
@@ -157,19 +156,6 @@ IPAManager::~IPAManager()
 		delete module;
 
 	self_ = nullptr;
-}
-
-/**
- * \brief Retrieve the IPA manager instance
- *
- * The IPAManager is constructed by the CameraManager. This function shall be
- * used to retrieve the single instance of the manager.
- *
- * \return The IPA manager instance
- */
-IPAManager *IPAManager::instance()
-{
-	return self_;
 }
 
 /**
@@ -273,7 +259,7 @@ std::unique_ptr<IPAProxy> IPAManager::createIPA(PipelineHandler *pipe,
 {
 	IPAModule *m = nullptr;
 
-	for (IPAModule *module : modules_) {
+	for (IPAModule *module : self_->modules_) {
 		if (module->match(pipe, minVersion, maxVersion)) {
 			m = module;
 			break;
@@ -289,7 +275,7 @@ std::unique_ptr<IPAProxy> IPAManager::createIPA(PipelineHandler *pipe,
 	 *
 	 * \todo Implement a better proxy selection
 	 */
-	const char *proxyName = isSignatureValid(m)
+	const char *proxyName = self_->isSignatureValid(m)
 			      ? "IPAProxyThread" : "IPAProxyLinux";
 	IPAProxyFactory *pf = nullptr;
 

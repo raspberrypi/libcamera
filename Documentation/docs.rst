@@ -282,7 +282,7 @@ libcamera Architecture
            | |   Runner    |  |             |                                   |
            | +-------------+  +-------------+                                   |
            +--------------------------------------------------------------------+
-  
+
              /// Device-Specific Components
              ~~~ Sandboxing
 

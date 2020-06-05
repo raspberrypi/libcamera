@@ -91,7 +91,7 @@ public:
 
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera,
-			    std::unique_ptr<CameraData> data, dev_t devnum = 0);
+			    std::unique_ptr<CameraData> data);
 	void hotplugMediaDevice(MediaDevice *media);
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;

@@ -481,28 +481,38 @@ void PipelineHandler::completeRequest(Camera *camera, Request *request)
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
  * \param[in] data Pipeline-specific data for the camera
- * \param[in] devnum Device number of the camera (optional)
  *
  * This method is called by pipeline handlers to register the cameras they
  * handle with the camera manager. It associates the pipeline-specific \a data
  * with the camera, for later retrieval with cameraData(). Ownership of \a data
  * is transferred to the PipelineHandler.
  *
- * \a devnum is the device number (as returned by makedev) that the \a camera
- * is to be associated with. This is for the V4L2 compatibility layer to map
- * device nodes to Camera instances based on the device number
- * registered by this method in \a devnum.
- *
  * \context This function shall be called from the CameraManager thread.
  */
 void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
-				     std::unique_ptr<CameraData> data,
-				     dev_t devnum)
+				     std::unique_ptr<CameraData> data)
 {
 	data->camera_ = camera.get();
 	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
-	manager_->addCamera(std::move(camera), devnum);
+
+	/*
+	 * Walk the entity list and map the devnums of all capture video nodes
+	 * to the camera.
+	 */
+	std::vector<dev_t> devnums;
+	for (const std::shared_ptr<MediaDevice> &media : mediaDevices_) {
+		for (const MediaEntity *entity : media->entities()) {
+			if (entity->pads().size() == 1 &&
+			    (entity->pads()[0]->flags() & MEDIA_PAD_FL_SINK) &&
+			    entity->function() == MEDIA_ENT_F_IO_V4L) {
+				devnums.push_back(makedev(entity->deviceMajor(),
+							  entity->deviceMinor()));
+			}
+		}
+	}
+
+	manager_->addCamera(std::move(camera), devnums);
 }
 
 /**

@@ -36,7 +36,8 @@ public:
 	Private(CameraManager *cm);
 
 	int start();
-	void addCamera(std::shared_ptr<Camera> &camera, dev_t devnum);
+	void addCamera(std::shared_ptr<Camera> &camera,
+		       const std::vector<dev_t> &devnums);
 	void removeCamera(Camera *camera);
 
 	/*
@@ -168,7 +169,7 @@ void CameraManager::Private::cleanup()
 }
 
 void CameraManager::Private::addCamera(std::shared_ptr<Camera> &camera,
-				       dev_t devnum)
+				       const std::vector<dev_t> &devnums)
 {
 	MutexLocker locker(mutex_);
 
@@ -183,10 +184,9 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> &camera,
 
 	cameras_.push_back(std::move(camera));
 
-	if (devnum) {
-		unsigned int index = cameras_.size() - 1;
+	unsigned int index = cameras_.size() - 1;
+	for (dev_t devnum : devnums)
 		camerasByDevnum_[devnum] = cameras_[index];
-	}
 }
 
 void CameraManager::Private::removeCamera(Camera *camera)
@@ -374,22 +374,23 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 /**
  * \brief Add a camera to the camera manager
  * \param[in] camera The camera to be added
- * \param[in] devnum The device number to associate with \a camera
+ * \param[in] devnums The device numbers to associate with \a camera
  *
  * This function is called by pipeline handlers to register the cameras they
  * handle with the camera manager. Registered cameras are immediately made
  * available to the system.
  *
- * \a devnum is used by the V4L2 compatibility layer to map V4L2 device nodes
+ * \a devnums are used by the V4L2 compatibility layer to map V4L2 device nodes
  * to Camera instances.
  *
  * \context This function shall be called from the CameraManager thread.
  */
-void CameraManager::addCamera(std::shared_ptr<Camera> camera, dev_t devnum)
+void CameraManager::addCamera(std::shared_ptr<Camera> camera,
+			      const std::vector<dev_t> &devnums)
 {
 	ASSERT(Thread::current() == p_.get());
 
-	p_->addCamera(camera, devnum);
+	p_->addCamera(camera, devnums);
 }
 
 /**

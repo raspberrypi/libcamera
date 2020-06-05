@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <iomanip>
 #include <math.h>
-#include <sys/sysmacros.h>
 #include <tuple>
 
 #include <libcamera/camera.h>
@@ -396,12 +395,10 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	if (data->init(*entity))
 		return false;
 
-	dev_t devnum = makedev((*entity)->deviceMajor(), (*entity)->deviceMinor());
-
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera = Camera::create(this, media->model(), streams);
-	registerCamera(std::move(camera), std::move(data), devnum);
+	registerCamera(std::move(camera), std::move(data));
 
 	/* Enable hot-unplug notifications. */
 	hotplugMediaDevice(media);

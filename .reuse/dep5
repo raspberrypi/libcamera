@@ -8,3 +8,8 @@ Files: src/ipa/raspberrypi/data/*.json
        utils/raspberrypi/ctt/ctt_ref.pgm
 Copyright: 2019-2020 Raspberry Pi (Trading) Ltd.
 License: BSD-2-Clause
+
+Files: src/qcam/assets/feathericons/*.svg
+Copyright: 2019 Cole Bemis (and other Feather icons contributors)
+License: MIT
+Comment: https://feathericons.com/

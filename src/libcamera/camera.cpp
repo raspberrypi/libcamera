@@ -449,8 +449,8 @@ void Camera::Private::setState(State state)
 
 /**
  * \brief Create a camera instance
- * \param[in] name The name of the camera device
  * \param[in] pipe The pipeline handler responsible for the camera device
+ * \param[in] name The name of the camera device
  * \param[in] streams Array of streams the camera provides
  *
  * The caller is responsible for guaranteeing unicity of the camera name.

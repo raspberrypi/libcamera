@@ -70,7 +70,7 @@ macro. For .cpp files, if the file implements an API declared in a header file,
 that header file shall be included first in order to ensure it is
 self-contained.
 
-The headers shall be grouped and ordered as follows.
+The headers shall be grouped and ordered as follows:
 
 1. The header declaring the API being implemented (if any)
 2. The C and C++ system and standard library headers

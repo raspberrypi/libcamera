@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: libcamera
+Upstream-Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Source: https://git.linuxtv.org/libcamera.git/
+
+Files: src/ipa/raspberrypi/data/*.json
+       utils/raspberrypi/ctt/ctt_config_example.json
+       utils/raspberrypi/ctt/ctt_ref.pgm
+Copyright: 2019-2020 Raspberry Pi (Trading) Ltd.
+License: BSD-2-Clause

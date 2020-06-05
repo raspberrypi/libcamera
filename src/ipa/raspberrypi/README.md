@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: BSD-2-Clause
+
 # _libcamera_ for the Raspberry Pi
 
 Raspberry Pi provides a fully featured pipeline handler and control algorithms

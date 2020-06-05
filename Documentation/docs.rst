@@ -148,7 +148,7 @@ V4L2 Compatibility Layer
 
 The project shall support traditional V4L2 application through an additional
 libcamera wrapper library. The wrapper library shall trap all accesses to
-camera devices through LD_PRELOAD, and route them through libcamera to
+camera devices through `LD_PRELOAD`, and route them through libcamera to
 emulate a high-level V4L2 camera device. It shall expose camera device
 features on a best-effort basis, and aim for the level of features
 traditionally available from a UVC camera designed for video conferencing.
@@ -380,7 +380,7 @@ V4L2 Compatibility Layer
 V4L2 compatibility is achieved through a shared library that traps all
 accesses to camera devices and routes them to libcamera to emulate high-level
 V4L2 camera devices. It is injected in a process address space through
-LD_PRELOAD and is completely transparent for applications.
+`LD_PRELOAD` and is completely transparent for applications.
 
 The compatibility layer exposes camera device features on a best-effort basis,
 and aims for the level of features traditionally available from a UVC camera

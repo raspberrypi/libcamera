@@ -14,3 +14,4 @@
    Contribute <contributing>
 
    Developer Guide <guides/introduction>
+   Application Writer's Guide <guides/application-developer>

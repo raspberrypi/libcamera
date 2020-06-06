@@ -358,8 +358,9 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 	 * don't support streaming mmap. Since we don't support readwrite and
 	 * userptr either, the application will get confused and think that
 	 * we don't support anything.
-	 * On the other hand, if a format has a zero sizeimage (eg. MJPEG),
-	 * we'll get a floating point exception when we try to stream it.
+	 * On the other hand, if the set format at the time of reqbufs has a
+	 * zero sizeimage we'll get a floating point exception when we try to
+	 * stream it.
 	 */
 	if (sizeimage_ == 0)
 		LOG(V4L2Compat, Warning)
@@ -556,7 +557,7 @@ struct PixelFormatInfo {
 
 namespace {
 
-static const std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
+static const std::array<PixelFormatInfo, 14> pixelFormatInfo = {{
 	/* RGB formats. */
 	{ PixelFormat(DRM_FORMAT_RGB888),	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_BGR888),	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
@@ -573,6 +574,13 @@ static const std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
 	{ PixelFormat(DRM_FORMAT_NV61),		V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_NV24),		V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_NV42),		V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
+	/* Compressed formats. */
+	/*
+	 * \todo Get a better image size estimate for MJPEG, via
+	 * StreamConfiguration, instead of using the worst-case
+	 * width * height * bpp of uncompressed data.
+	 */
+	{ PixelFormat(DRM_FORMAT_MJPEG),	V4L2_PIX_FMT_MJPEG,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 }};
 
 } /* namespace */

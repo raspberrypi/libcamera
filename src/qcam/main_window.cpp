@@ -31,6 +31,16 @@
 
 using namespace libcamera;
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+/*
+ * Qt::fixed was introduced in v5.14, and ::fixed deprecated in v5.15. Allow
+ * usage of Qt::fixed unconditionally.
+ */
+namespace Qt {
+constexpr auto fixed = ::fixed;
+} /* namespace Qt */
+#endif
+
 /**
  * \brief Custom QEvent to signal capture completion
  */
@@ -631,7 +641,7 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 		<< QString("seq: %1").arg(metadata.sequence, 6, 10, QLatin1Char('0'))
 		<< "bytesused:" << metadata.planes[0].bytesused
 		<< "timestamp:" << metadata.timestamp
-		<< "fps:" << fixed << qSetRealNumberPrecision(2) << fps;
+		<< "fps:" << Qt::fixed << qSetRealNumberPrecision(2) << fps;
 
 	/* Render the frame on the viewfinder. */
 	viewfinder_->render(buffer, &mappedBuffers_[buffer]);

@@ -93,7 +93,8 @@ ElfW(Shdr) *elfSection(Span<uint8_t> elf, ElfW(Ehdr) *eHdr, ElfW(Half) idx)
 	if (idx >= eHdr->e_shnum)
 		return nullptr;
 
-	off_t offset = eHdr->e_shoff + idx * eHdr->e_shentsize;
+	off_t offset = eHdr->e_shoff + idx *
+				       static_cast<uint32_t>(eHdr->e_shentsize);
 	return elfPointer<ElfW(Shdr)>(elf, offset);
 }
 

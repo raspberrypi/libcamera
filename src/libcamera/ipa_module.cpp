@@ -88,6 +88,15 @@ int elfVerifyIdent(Span<uint8_t> elf)
 	return 0;
 }
 
+ElfW(Shdr) *elfSection(Span<uint8_t> elf, ElfW(Ehdr) *eHdr, ElfW(Half) idx)
+{
+	if (idx >= eHdr->e_shnum)
+		return nullptr;
+
+	off_t offset = eHdr->e_shoff + idx * eHdr->e_shentsize;
+	return elfPointer<ElfW(Shdr)>(elf, offset);
+}
+
 /**
  * \brief Retrieve address and size of a symbol from an mmap'ed ELF file
  * \param[in] elf Address and size of mmap'ed ELF file
@@ -102,8 +111,7 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	if (!eHdr)
 		return {};
 
-	off_t offset = eHdr->e_shoff + eHdr->e_shentsize * eHdr->e_shstrndx;
-	ElfW(Shdr) *sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
+	ElfW(Shdr) *sHdr = elfSection(elf, eHdr, eHdr->e_shstrndx);
 	if (!sHdr)
 		return {};
 	off_t shnameoff = sHdr->sh_offset;
@@ -111,12 +119,11 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	/* Locate .dynsym section header. */
 	ElfW(Shdr) *dynsym = nullptr;
 	for (unsigned int i = 0; i < eHdr->e_shnum; i++) {
-		offset = eHdr->e_shoff + eHdr->e_shentsize * i;
-		sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
+		sHdr = elfSection(elf, eHdr, i);
 		if (!sHdr)
 			return {};
 
-		offset = shnameoff + sHdr->sh_name;
+		off_t offset = shnameoff + sHdr->sh_name;
 		char *name = elfPointer<char[8]>(elf, offset);
 		if (!name)
 			return {};
@@ -132,8 +139,7 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 		return {};
 	}
 
-	offset = eHdr->e_shoff + eHdr->e_shentsize * dynsym->sh_link;
-	sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
+	sHdr = elfSection(elf, eHdr, dynsym->sh_link);
 	if (!sHdr)
 		return {};
 	off_t dynsym_nameoff = sHdr->sh_offset;
@@ -142,7 +148,7 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	ElfW(Sym) *targetSymbol = nullptr;
 	unsigned int dynsym_num = dynsym->sh_size / dynsym->sh_entsize;
 	for (unsigned int i = 0; i < dynsym_num; i++) {
-		offset = dynsym->sh_offset + dynsym->sh_entsize * i;
+		off_t offset = dynsym->sh_offset + dynsym->sh_entsize * i;
 		ElfW(Sym) *sym = elfPointer<ElfW(Sym)>(elf, offset);
 		if (!sym)
 			return {};
@@ -165,13 +171,10 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	}
 
 	/* Locate and return data of symbol. */
-	if (targetSymbol->st_shndx >= eHdr->e_shnum)
-		return {};
-	offset = eHdr->e_shoff + targetSymbol->st_shndx * eHdr->e_shentsize;
-	sHdr = elfPointer<ElfW(Shdr)>(elf, offset);
+	sHdr = elfSection(elf, eHdr, targetSymbol->st_shndx);
 	if (!sHdr)
 		return {};
-	offset = sHdr->sh_offset + (targetSymbol->st_value - sHdr->sh_addr);
+	off_t offset = sHdr->sh_offset + (targetSymbol->st_value - sHdr->sh_addr);
 	uint8_t *data = elfPointer<uint8_t>(elf, offset, targetSymbol->st_size);
 	if (!data)
 		return {};

@@ -5,12 +5,12 @@
  * libcamera V4L2 Subdevice format handling test
  */
 
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
 #include <libcamera/geometry.h>
 
+#include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 #include "v4l2_subdevice_test.h"
@@ -36,8 +36,7 @@ void ListFormatsTest::printFormats(unsigned int pad,
 {
 	cout << "Enumerate formats on pad " << pad << endl;
 	for (const SizeRange &size : sizes) {
-		cout << "	mbus code: 0x" << setfill('0') << setw(4)
-		     << hex << code << endl;
+		cout << "	mbus code: " << utils::hex(code, 4) << endl;
 		cout << "	min width: " << dec << size.min.width << endl;
 		cout << "	min height: " << dec << size.min.height << endl;
 		cout << "	max width: " << dec << size.max.width << endl;

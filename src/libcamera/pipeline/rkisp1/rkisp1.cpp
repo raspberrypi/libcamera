@@ -221,7 +221,7 @@ private:
 };
 
 RkISP1Frames::RkISP1Frames(PipelineHandler *pipe)
-	: pipe_(dynamic_cast<PipelineHandlerRkISP1 *>(pipe))
+	: pipe_(static_cast<PipelineHandlerRkISP1 *>(pipe))
 {
 }
 

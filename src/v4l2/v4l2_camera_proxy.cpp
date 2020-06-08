@@ -571,7 +571,7 @@ static const std::array<PixelFormatInfo, 13> pixelFormatInfo = {{
 	{ PixelFormat(DRM_FORMAT_NV21),		V4L2_PIX_FMT_NV21,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_NV16),		V4L2_PIX_FMT_NV16,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_NV61),		V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ PixelFormat(DRM_FORMAT_NV24),		V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
+	{ PixelFormat(DRM_FORMAT_NV24),		V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
 	{ PixelFormat(DRM_FORMAT_NV42),		V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
 }};
 

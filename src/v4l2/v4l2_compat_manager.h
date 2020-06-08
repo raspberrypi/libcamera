@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <map>
 #include <memory>
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <vector>
 
@@ -30,7 +31,7 @@ public:
 		using close_func_t = int (*)(int fd);
 		using ioctl_func_t = int (*)(int fd, unsigned long request, ...);
 		using mmap_func_t = void *(*)(void *addr, size_t length, int prot,
-					      int flags, int fd, off_t offset);
+					      int flags, int fd, off64_t offset);
 		using munmap_func_t = int (*)(void *addr, size_t length);
 
 		openat_func_t openat;
@@ -51,7 +52,7 @@ public:
 	int dup(int oldfd);
 	int close(int fd);
 	void *mmap(void *addr, size_t length, int prot, int flags,
-		   int fd, off_t offset);
+		   int fd, off64_t offset);
 	int munmap(void *addr, size_t length);
 	int ioctl(int fd, unsigned long request, void *arg);
 

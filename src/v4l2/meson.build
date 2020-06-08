@@ -15,6 +15,7 @@ v4l2_compat_cpp_args = [
     # file operations, disable transparent large file support.
     '-U_FILE_OFFSET_BITS',
     '-D_FILE_OFFSET_BITS=32',
+    '-D_LARGEFILE64_SOURCE',
     '-fvisibility=hidden',
 ]
 

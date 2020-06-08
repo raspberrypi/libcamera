@@ -11,6 +11,7 @@
 #include <linux/videodev2.h>
 #include <map>
 #include <memory>
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <vector>
 
@@ -28,7 +29,7 @@ public:
 	int open(bool nonBlocking);
 	void dup();
 	void close();
-	void *mmap(void *addr, size_t length, int prot, int flags, off_t offset);
+	void *mmap(void *addr, size_t length, int prot, int flags, off64_t offset);
 	int munmap(void *addr, size_t length);
 
 	int ioctl(unsigned long request, void *arg);

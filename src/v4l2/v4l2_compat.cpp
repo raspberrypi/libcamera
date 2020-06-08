@@ -44,6 +44,23 @@ LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
 	return open(path, oflag);
 }
 
+#ifndef open64
+LIBCAMERA_PUBLIC int open64(const char *path, int oflag, ...)
+{
+	mode_t mode = 0;
+	if (oflag & O_CREAT || oflag & O_TMPFILE)
+		extract_va_arg(mode_t, mode, oflag);
+
+	return V4L2CompatManager::instance()->openat(AT_FDCWD, path,
+						     oflag | O_LARGEFILE, mode);
+}
+
+LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
+{
+	return open(path, oflag);
+}
+#endif
+
 LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
@@ -57,6 +74,23 @@ LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
 {
 	return openat(dirfd, path, oflag);
 }
+
+#ifndef openat64
+LIBCAMERA_PUBLIC int openat64(int dirfd, const char *path, int oflag, ...)
+{
+	mode_t mode = 0;
+	if (oflag & O_CREAT || oflag & O_TMPFILE)
+		extract_va_arg(mode_t, mode, oflag);
+
+	return V4L2CompatManager::instance()->openat(dirfd, path,
+						     oflag | O_LARGEFILE, mode);
+}
+
+LIBCAMERA_PUBLIC int __openat64_2(int dirfd, const char *path, int oflag)
+{
+	return openat(dirfd, path, oflag);
+}
+#endif
 
 LIBCAMERA_PUBLIC int dup(int oldfd)
 {
@@ -74,6 +108,15 @@ LIBCAMERA_PUBLIC void *mmap(void *addr, size_t length, int prot, int flags,
 	return V4L2CompatManager::instance()->mmap(addr, length, prot, flags,
 						   fd, offset);
 }
+
+#ifndef mmap64
+LIBCAMERA_PUBLIC void *mmap64(void *addr, size_t length, int prot, int flags,
+			      int fd, off64_t offset)
+{
+	return V4L2CompatManager::instance()->mmap(addr, length, prot, flags,
+						   fd, offset);
+}
+#endif
 
 LIBCAMERA_PUBLIC int munmap(void *addr, size_t length)
 {

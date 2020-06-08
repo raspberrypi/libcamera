@@ -76,7 +76,7 @@ void V4L2CameraProxy::close()
 }
 
 void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
-			    off_t offset)
+			    off64_t offset)
 {
 	LOG(V4L2Compat, Debug) << "Servicing mmap";
 

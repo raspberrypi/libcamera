@@ -39,11 +39,11 @@ void get_symbol(T &func, const char *name)
 V4L2CompatManager::V4L2CompatManager()
 	: cm_(nullptr)
 {
-	get_symbol(fops_.openat, "openat");
+	get_symbol(fops_.openat, "openat64");
 	get_symbol(fops_.dup, "dup");
 	get_symbol(fops_.close, "close");
 	get_symbol(fops_.ioctl, "ioctl");
-	get_symbol(fops_.mmap, "mmap");
+	get_symbol(fops_.mmap, "mmap64");
 	get_symbol(fops_.munmap, "munmap");
 }
 
@@ -200,7 +200,7 @@ int V4L2CompatManager::close(int fd)
 }
 
 void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
-			      int fd, off_t offset)
+			      int fd, off64_t offset)
 {
 	V4L2CameraProxy *proxy = getProxy(fd);
 	if (!proxy)

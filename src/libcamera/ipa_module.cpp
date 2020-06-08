@@ -45,26 +45,27 @@ LOG_DEFINE_CATEGORY(IPAModule)
 namespace {
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(Span<uint8_t> elf, off_t offset,
-					     size_t objSize)
+typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
+					     off_t offset, size_t objSize)
 {
 	size_t size = offset + objSize;
 	if (size > elf.size() || size < objSize)
 		return nullptr;
 
 	return reinterpret_cast<typename std::remove_extent_t<T> *>
-		(reinterpret_cast<char *>(elf.data()) + offset);
+		(reinterpret_cast<const char *>(elf.data()) + offset);
 }
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(Span<uint8_t> elf, off_t offset)
+typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
+					     off_t offset)
 {
 	return elfPointer<T>(elf, offset, sizeof(T));
 }
 
-int elfVerifyIdent(Span<uint8_t> elf)
+int elfVerifyIdent(Span<const uint8_t> elf)
 {
-	char *e_ident = elfPointer<char[EI_NIDENT]>(elf, 0);
+	const char *e_ident = elfPointer<const char[EI_NIDENT]>(elf, 0);
 	if (!e_ident)
 		return -ENOEXEC;
 
@@ -88,14 +89,15 @@ int elfVerifyIdent(Span<uint8_t> elf)
 	return 0;
 }
 
-ElfW(Shdr) *elfSection(Span<uint8_t> elf, ElfW(Ehdr) *eHdr, ElfW(Half) idx)
+const ElfW(Shdr) *elfSection(Span<const uint8_t> elf, const ElfW(Ehdr) *eHdr,
+			     ElfW(Half) idx)
 {
 	if (idx >= eHdr->e_shnum)
 		return nullptr;
 
 	off_t offset = eHdr->e_shoff + idx *
 				       static_cast<uint32_t>(eHdr->e_shentsize);
-	return elfPointer<ElfW(Shdr)>(elf, offset);
+	return elfPointer<const ElfW(Shdr)>(elf, offset);
 }
 
 /**
@@ -106,26 +108,26 @@ ElfW(Shdr) *elfSection(Span<uint8_t> elf, ElfW(Ehdr) *eHdr, ElfW(Half) idx)
  * \return The memory region storing the symbol on success, or an empty span
  * otherwise
  */
-Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
+Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
 {
-	ElfW(Ehdr) *eHdr = elfPointer<ElfW(Ehdr)>(elf, 0);
+	const ElfW(Ehdr) *eHdr = elfPointer<const ElfW(Ehdr)>(elf, 0);
 	if (!eHdr)
 		return {};
 
-	ElfW(Shdr) *sHdr = elfSection(elf, eHdr, eHdr->e_shstrndx);
+	const ElfW(Shdr) *sHdr = elfSection(elf, eHdr, eHdr->e_shstrndx);
 	if (!sHdr)
 		return {};
 	off_t shnameoff = sHdr->sh_offset;
 
 	/* Locate .dynsym section header. */
-	ElfW(Shdr) *dynsym = nullptr;
+	const ElfW(Shdr) *dynsym = nullptr;
 	for (unsigned int i = 0; i < eHdr->e_shnum; i++) {
 		sHdr = elfSection(elf, eHdr, i);
 		if (!sHdr)
 			return {};
 
 		off_t offset = shnameoff + sHdr->sh_name;
-		char *name = elfPointer<char[8]>(elf, offset);
+		const char *name = elfPointer<const char[8]>(elf, offset);
 		if (!name)
 			return {};
 
@@ -146,16 +148,17 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	off_t dynsym_nameoff = sHdr->sh_offset;
 
 	/* Locate symbol in the .dynsym section. */
-	ElfW(Sym) *targetSymbol = nullptr;
+	const ElfW(Sym) *targetSymbol = nullptr;
 	unsigned int dynsym_num = dynsym->sh_size / dynsym->sh_entsize;
 	for (unsigned int i = 0; i < dynsym_num; i++) {
 		off_t offset = dynsym->sh_offset + dynsym->sh_entsize * i;
-		ElfW(Sym) *sym = elfPointer<ElfW(Sym)>(elf, offset);
+		const ElfW(Sym) *sym = elfPointer<const ElfW(Sym)>(elf, offset);
 		if (!sym)
 			return {};
 
 		offset = dynsym_nameoff + sym->st_name;
-		char *name = elfPointer<char>(elf, offset, strlen(symbol) + 1);
+		const char *name = elfPointer<const char>(elf, offset,
+							  strlen(symbol) + 1);
 		if (!name)
 			return {};
 
@@ -176,7 +179,8 @@ Span<uint8_t> elfLoadSymbol(Span<uint8_t> elf, const char *symbol)
 	if (!sHdr)
 		return {};
 	off_t offset = sHdr->sh_offset + (targetSymbol->st_value - sHdr->sh_addr);
-	uint8_t *data = elfPointer<uint8_t>(elf, offset, targetSymbol->st_size);
+	const uint8_t *data = elfPointer<const uint8_t>(elf, offset,
+							targetSymbol->st_size);
 	if (!data)
 		return {};
 
@@ -277,14 +281,14 @@ int IPAModule::loadIPAModuleInfo()
 		return file.error();
 	}
 
-	Span<uint8_t> data = file.map(0, -1, File::MapPrivate);
+	Span<const uint8_t> data = file.map();
 	int ret = elfVerifyIdent(data);
 	if (ret) {
 		LOG(IPAModule, Error) << "IPA module is not an ELF file";
 		return ret;
 	}
 
-	Span<uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
+	Span<const uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
 	if (info.size() != sizeof(info_)) {
 		LOG(IPAModule, Error) << "IPA module has no valid info";
 		return -EINVAL;

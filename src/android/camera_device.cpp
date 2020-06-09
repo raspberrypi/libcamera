@@ -388,7 +388,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 */
 	byteSize += streamConfigurations_.size() * 52;
 
-	return { numEntries, byteSize };
+	return std::make_tuple(numEntries, byteSize);
 }
 
 /*

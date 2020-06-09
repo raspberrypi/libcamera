@@ -454,7 +454,9 @@ int V4L2CameraProxy::vidioc_dqbuf(struct v4l2_buffer *arg)
 	currentBuf_ = (currentBuf_ + 1) % bufferCount_;
 
 	uint64_t data;
-	::read(efd_, &data, sizeof(data));
+	int ret = ::read(efd_, &data, sizeof(data));
+	if (ret != sizeof(data))
+		LOG(V4L2Compat, Error) << "Failed to clear eventfd POLLIN";
 
 	return 0;
 }

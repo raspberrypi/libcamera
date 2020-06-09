@@ -91,7 +91,9 @@ void V4L2Camera::requestComplete(Request *request)
 	bufferLock_.unlock();
 
 	uint64_t data = 1;
-	::write(efd_, &data, sizeof(data));
+	int ret = ::write(efd_, &data, sizeof(data));
+	if (ret != sizeof(data))
+		LOG(V4L2Compat, Error) << "Failed to signal eventfd POLLIN";
 
 	bufferSema_.release();
 }

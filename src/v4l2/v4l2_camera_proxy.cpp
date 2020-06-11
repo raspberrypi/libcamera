@@ -162,6 +162,10 @@ void V4L2CameraProxy::setFmtFromConfig(StreamConfiguration &streamConfig)
 			  curV4L2Format_.fmt.pix.width,
 			  curV4L2Format_.fmt.pix.height);
 	curV4L2Format_.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+	curV4L2Format_.fmt.pix.priv = V4L2_PIX_FMT_PRIV_MAGIC;
+	curV4L2Format_.fmt.pix.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
+	curV4L2Format_.fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
+	curV4L2Format_.fmt.pix.xfer_func = V4L2_XFER_FUNC_DEFAULT;
 }
 
 unsigned int V4L2CameraProxy::calculateSizeImage(StreamConfiguration &streamConfig)
@@ -188,7 +192,9 @@ void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
 		       sizeof(capabilities_.bus_info));
 	/* \todo Put this in a header/config somewhere. */
 	capabilities_.version = KERNEL_VERSION(5, 2, 0);
-	capabilities_.device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
+	capabilities_.device_caps = V4L2_CAP_VIDEO_CAPTURE
+				  | V4L2_CAP_STREAMING
+				  | V4L2_CAP_EXT_PIX_FORMAT;
 	capabilities_.capabilities = capabilities_.device_caps
 				   | V4L2_CAP_DEVICE_CAPS;
 	memset(capabilities_.reserved, 0, sizeof(capabilities_.reserved));
@@ -237,10 +243,14 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 	    arg->index >= streamConfig_.formats().pixelformats().size())
 		return -EINVAL;
 
+	/* \todo Set V4L2_FMT_FLAG_COMPRESSED for compressed formats. */
+	arg->flags = 0;
 	/* \todo Add map from format to description. */
-	utils::strlcpy(reinterpret_cast<char *>(arg->description), "Video Format Description",
-		       sizeof(arg->description));
+	utils::strlcpy(reinterpret_cast<char *>(arg->description),
+		       "Video Format Description", sizeof(arg->description));
 	arg->pixelformat = drmToV4L2(streamConfig_.formats().pixelformats()[arg->index]);
+
+	memset(arg->reserved, 0, sizeof(arg->reserved));
 
 	return 0;
 }
@@ -281,6 +291,10 @@ void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 					      arg->fmt.pix.width,
 					      arg->fmt.pix.height);
 	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
+	arg->fmt.pix.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
+	arg->fmt.pix.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
+	arg->fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
+	arg->fmt.pix.xfer_func    = V4L2_XFER_FUNC_DEFAULT;
 }
 
 int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)

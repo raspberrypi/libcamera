@@ -54,6 +54,9 @@ private:
 	int vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *arg);
 	int vidioc_g_priority(V4L2CameraFile *file, enum v4l2_priority *arg);
 	int vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority *arg);
+	int vidioc_enuminput(V4L2CameraFile *file, struct v4l2_input *arg);
+	int vidioc_g_input(V4L2CameraFile *file, int *arg);
+	int vidioc_s_input(V4L2CameraFile *file, int *arg);
 	int vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg);
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);

@@ -383,6 +383,42 @@ int V4L2CameraProxy::vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority 
 	return 0;
 }
 
+int V4L2CameraProxy::vidioc_enuminput(V4L2CameraFile *file, struct v4l2_input *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_enuminput fd = " << file->efd();
+
+	if (arg->index != 0)
+		return -EINVAL;
+
+	memset(arg, 0, sizeof(*arg));
+
+	utils::strlcpy(reinterpret_cast<char *>(arg->name),
+		       reinterpret_cast<char *>(capabilities_.card),
+		       sizeof(arg->name));
+	arg->type = V4L2_INPUT_TYPE_CAMERA;
+
+	return 0;
+}
+
+int V4L2CameraProxy::vidioc_g_input(V4L2CameraFile *file, int *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_input fd = " << file->efd();
+
+	*arg = 0;
+
+	return 0;
+}
+
+int V4L2CameraProxy::vidioc_s_input(V4L2CameraFile *file, int *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_input fd = " << file->efd();
+
+	if (*arg != 0)
+		return -EINVAL;
+
+	return 0;
+}
+
 void V4L2CameraProxy::freeBuffers()
 {
 	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
@@ -596,6 +632,9 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_TRY_FMT,
 	VIDIOC_G_PRIORITY,
 	VIDIOC_S_PRIORITY,
+	VIDIOC_ENUMINPUT,
+	VIDIOC_G_INPUT,
+	VIDIOC_S_INPUT,
 	VIDIOC_REQBUFS,
 	VIDIOC_QUERYBUF,
 	VIDIOC_QBUF,
@@ -643,6 +682,15 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 		break;
 	case VIDIOC_S_PRIORITY:
 		ret = vidioc_s_priority(file, static_cast<enum v4l2_priority *>(arg));
+		break;
+	case VIDIOC_ENUMINPUT:
+		ret = vidioc_enuminput(file, static_cast<struct v4l2_input *>(arg));
+		break;
+	case VIDIOC_G_INPUT:
+		ret = vidioc_g_input(file, static_cast<int *>(arg));
+		break;
+	case VIDIOC_S_INPUT:
+		ret = vidioc_s_input(file, static_cast<int *>(arg));
 		break;
 	case VIDIOC_REQBUFS:
 		ret = vidioc_reqbufs(file, static_cast<struct v4l2_requestbuffers *>(arg));

@@ -43,6 +43,7 @@ private:
 	unsigned int calculateSizeImage(StreamConfiguration &streamConfig);
 	void querycap(std::shared_ptr<Camera> camera);
 	void tryFormat(struct v4l2_format *arg);
+	enum v4l2_priority maxPriority();
 	void updateBuffers();
 	void freeBuffers();
 
@@ -51,6 +52,8 @@ private:
 	int vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg);
 	int vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg);
 	int vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *arg);
+	int vidioc_g_priority(V4L2CameraFile *file, enum v4l2_priority *arg);
+	int vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority *arg);
 	int vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg);
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
@@ -83,6 +86,8 @@ private:
 
 	std::vector<struct v4l2_buffer> buffers_;
 	std::map<void *, unsigned int> mmaps_;
+
+	std::set<V4L2CameraFile *> files_;
 
 	std::unique_ptr<V4L2Camera> vcam_;
 

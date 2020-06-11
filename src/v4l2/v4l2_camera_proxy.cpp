@@ -45,8 +45,10 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing open fd = " << file->efd();
 
-	if (refcount_++)
+	if (refcount_++) {
+		files_.insert(file);
 		return 0;
+	}
 
 	/*
 	 * We open the camera here, once, and keep it open until the last
@@ -68,12 +70,16 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 	setFmtFromConfig(streamConfig_);
 	sizeimage_ = calculateSizeImage(streamConfig_);
 
+	files_.insert(file);
+
 	return 0;
 }
 
 void V4L2CameraProxy::close(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing close fd = " << file->efd();
+
+	files_.erase(file);
 
 	release(file);
 
@@ -304,6 +310,9 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
 
+	if (file->priority() < maxPriority())
+		return -EBUSY;
+
 	int ret = acquire(file);
 	if (ret < 0)
 		return ret;
@@ -340,6 +349,40 @@ int V4L2CameraProxy::vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *ar
 	return 0;
 }
 
+enum v4l2_priority V4L2CameraProxy::maxPriority()
+{
+	auto max = std::max_element(files_.begin(), files_.end(),
+				    [](const V4L2CameraFile *a, const V4L2CameraFile *b) {
+					    return a->priority() < b->priority();
+				    });
+	return max != files_.end() ? (*max)->priority() : V4L2_PRIORITY_UNSET;
+}
+
+int V4L2CameraProxy::vidioc_g_priority(V4L2CameraFile *file, enum v4l2_priority *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_priority fd = " << file->efd();
+
+	*arg = maxPriority();
+
+	return 0;
+}
+
+int V4L2CameraProxy::vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority *arg)
+{
+	LOG(V4L2Compat, Debug)
+		<< "Servicing vidioc_s_priority fd = " << file->efd();
+
+	if (*arg > V4L2_PRIORITY_RECORD)
+		return -EINVAL;
+
+	if (file->priority() < maxPriority())
+		return -EBUSY;
+
+	file->setPriority(*arg);
+
+	return 0;
+}
+
 void V4L2CameraProxy::freeBuffers()
 {
 	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
@@ -361,6 +404,9 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 		return -EINVAL;
 
 	LOG(V4L2Compat, Debug) << arg->count << " buffers requested ";
+
+	if (file->priority() < maxPriority())
+		return -EBUSY;
 
 	if (!hasOwnership(file) && owner_)
 		return -EBUSY;
@@ -510,6 +556,9 @@ int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 
+	if (file->priority() < maxPriority())
+		return -EBUSY;
+
 	if (!hasOwnership(file))
 		return -EBUSY;
 
@@ -524,6 +573,9 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 
 	if (!validateBufferType(*arg))
 		return -EINVAL;
+
+	if (file->priority() < maxPriority())
+		return -EBUSY;
 
 	if (!hasOwnership(file) && owner_)
 		return -EBUSY;
@@ -542,6 +594,8 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_G_FMT,
 	VIDIOC_S_FMT,
 	VIDIOC_TRY_FMT,
+	VIDIOC_G_PRIORITY,
+	VIDIOC_S_PRIORITY,
 	VIDIOC_REQBUFS,
 	VIDIOC_QUERYBUF,
 	VIDIOC_QBUF,
@@ -583,6 +637,12 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 		break;
 	case VIDIOC_TRY_FMT:
 		ret = vidioc_try_fmt(file, static_cast<struct v4l2_format *>(arg));
+		break;
+	case VIDIOC_G_PRIORITY:
+		ret = vidioc_g_priority(file, static_cast<enum v4l2_priority *>(arg));
+		break;
+	case VIDIOC_S_PRIORITY:
+		ret = vidioc_s_priority(file, static_cast<enum v4l2_priority *>(arg));
 		break;
 	case VIDIOC_REQBUFS:
 		ret = vidioc_reqbufs(file, static_cast<struct v4l2_requestbuffers *>(arg));

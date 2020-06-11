@@ -427,6 +427,23 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	/* Create a new IFD for the EXIF data and fill it. */
 	TIFFCreateEXIFDirectory(tif);
 
+	/* Store creation time. */
+	time_t rawtime;
+	struct tm *timeinfo;
+	char strTime[20];
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(strTime, 20, "%Y:%m:%d %H:%M:%S", timeinfo);
+
+	/*
+	 * \todo Handle timezone information by setting OffsetTimeOriginal and
+	 * OffsetTimeDigitized once libtiff catches up to the specification and
+	 * has EXIFTAG_ defines to handle them.
+	 */
+	TIFFSetField(tif, EXIFTAG_DATETIMEORIGINAL, strTime);
+	TIFFSetField(tif, EXIFTAG_DATETIMEDIGITIZED, strTime);
+
 	if (metadata.contains(controls::AnalogueGain)) {
 		float gain = metadata.get(controls::AnalogueGain);
 		uint16_t iso = std::min(std::max(gain * 100, 0.0f), 65535.0f);

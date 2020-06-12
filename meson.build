@@ -105,6 +105,17 @@ if get_option('test')
     subdir('test')
 endif
 
+if not meson.is_cross_build()
+    kernel_version_req = '>= 5.0.0'
+    kernel_version = run_command('uname', '-r').stdout().strip()
+    if not kernel_version.version_compare(kernel_version_req)
+        warning('The current running kernel version @0@ is too old to run libcamera.'
+                .format(kernel_version))
+        warning('If you intend to use libcamera on this machine, please upgrade to a kernel @0@.'
+                .format(kernel_version_req))
+    endif
+endif
+
 # Create a symlink from the build root to the source root. This is used when
 # running libcamera from the build directory to locate resources in the source
 # directory (such as IPA configuration files).

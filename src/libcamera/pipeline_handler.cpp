@@ -579,7 +579,7 @@ void PipelineHandler::disconnect()
 			continue;
 
 		camera->disconnect();
-		manager_->removeCamera(camera.get());
+		manager_->removeCamera(camera);
 	}
 }
 

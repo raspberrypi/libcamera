@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <libcamera/object.h>
+#include <libcamera/signal.h>
 
 namespace libcamera {
 
@@ -36,12 +37,15 @@ public:
 
 	void addCamera(std::shared_ptr<Camera> camera,
 		       const std::vector<dev_t> &devnums);
-	void removeCamera(Camera *camera);
+	void removeCamera(std::shared_ptr<Camera> camera);
 
 	static const std::string &version() { return version_; }
 
 	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 	EventDispatcher *eventDispatcher();
+
+	Signal<std::shared_ptr<Camera>> cameraAdded;
+	Signal<std::shared_ptr<Camera>> cameraRemoved;
 
 private:
 	static const std::string version_;

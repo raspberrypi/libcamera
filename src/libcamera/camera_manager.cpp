@@ -55,6 +55,7 @@ protected:
 
 private:
 	int init();
+	void createPipelineHandlers();
 	void cleanup();
 
 	CameraManager *cm_;
@@ -123,12 +124,20 @@ int CameraManager::Private::init()
 	if (!enumerator_ || enumerator_->enumerate())
 		return -ENODEV;
 
+	createPipelineHandlers();
+
+	return 0;
+}
+
+void CameraManager::Private::createPipelineHandlers()
+{
 	/*
-	 * TODO: Try to read handlers and order from configuration
+	 * \todo Try to read handlers and order from configuration
 	 * file and only fallback on all handlers if there is no
 	 * configuration file.
 	 */
-	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
+	std::vector<PipelineHandlerFactory *> &factories =
+		PipelineHandlerFactory::factories();
 
 	for (PipelineHandlerFactory *factory : factories) {
 		/*
@@ -146,14 +155,12 @@ int CameraManager::Private::init()
 		}
 	}
 
-	/* TODO: register hot-plug callback here */
-
-	return 0;
+	/* \todo Register hot-plug callback here */
 }
 
 void CameraManager::Private::cleanup()
 {
-	/* TODO: unregister hot-plug callback here */
+	/* \todo Unregister hot-plug callback here */
 
 	/*
 	 * Release all references to cameras to ensure they all get destroyed

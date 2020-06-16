@@ -32,6 +32,8 @@ using namespace libcamera;
 class QAction;
 class QComboBox;
 
+class HotplugEvent;
+
 enum {
 	OptCamera = 'c',
 	OptHelp = 'h',
@@ -87,8 +89,12 @@ private:
 	int startCapture();
 	void stopCapture();
 
+	void addCamera(std::shared_ptr<Camera> camera);
+	void removeCamera(std::shared_ptr<Camera> camera);
+
 	void requestComplete(Request *request);
 	void processCapture();
+	void processHotplug(HotplugEvent *e);
 	void processViewfinder(FrameBuffer *buffer);
 
 	/* UI elements */

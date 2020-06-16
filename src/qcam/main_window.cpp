@@ -59,6 +59,36 @@ public:
 	}
 };
 
+/**
+ * \brief Custom QEvent to signal hotplug or unplug
+ */
+class HotplugEvent : public QEvent
+{
+public:
+	enum PlugEvent {
+		HotPlug,
+		HotUnplug
+	};
+
+	HotplugEvent(std::shared_ptr<Camera> camera, PlugEvent event)
+		: QEvent(type()), camera_(std::move(camera)), plugEvent_(event)
+	{
+	}
+
+	static Type type()
+	{
+		static int type = QEvent::registerEventType();
+		return static_cast<Type>(type);
+	}
+
+	PlugEvent hotplugEvent() const { return plugEvent_; }
+	Camera *camera() const { return camera_.get(); }
+
+private:
+	std::shared_ptr<Camera> camera_;
+	PlugEvent plugEvent_;
+};
+
 MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	: saveRaw_(nullptr), options_(options), cm_(cm), allocator_(nullptr),
 	  isCapturing_(false), captureRaw_(false)
@@ -80,6 +110,10 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 		this, &MainWindow::queueRequest);
 	setCentralWidget(viewfinder_);
 	adjustSize();
+
+	/* Hotplug/unplug support */
+	cm_->cameraAdded.connect(this, &MainWindow::addCamera);
+	cm_->cameraRemoved.connect(this, &MainWindow::removeCamera);
 
 	/* Open the camera and start capture. */
 	ret = openCamera();
@@ -104,6 +138,9 @@ bool MainWindow::event(QEvent *e)
 {
 	if (e->type() == CaptureEvent::type()) {
 		processCapture();
+		return true;
+	} else if (e->type() == HotplugEvent::type()) {
+		processHotplug(static_cast<HotplugEvent *>(e));
 		return true;
 	}
 
@@ -533,6 +570,45 @@ void MainWindow::stopCapture()
 
 	titleTimer_.stop();
 	setWindowTitle(title_);
+}
+
+/* -----------------------------------------------------------------------------
+ * Camera hotplugging support
+ */
+
+void MainWindow::processHotplug(HotplugEvent *e)
+{
+	Camera *camera = e->camera();
+	HotplugEvent::PlugEvent event = e->hotplugEvent();
+
+	if (event == HotplugEvent::HotPlug) {
+		cameraCombo_->addItem(QString::fromStdString(camera->name()));
+	} else if (event == HotplugEvent::HotUnplug) {
+		/* Check if the currently-streaming camera is removed. */
+		if (camera == camera_.get()) {
+			toggleCapture(false);
+			cameraCombo_->setCurrentIndex(0);
+		}
+
+		int camIndex = cameraCombo_->findText(QString::fromStdString(camera->name()));
+		cameraCombo_->removeItem(camIndex);
+	}
+}
+
+void MainWindow::addCamera(std::shared_ptr<Camera> camera)
+{
+	qInfo() << "Adding new camera:" << camera->name().c_str();
+	QCoreApplication::postEvent(this,
+				    new HotplugEvent(std::move(camera),
+						     HotplugEvent::HotPlug));
+}
+
+void MainWindow::removeCamera(std::shared_ptr<Camera> camera)
+{
+	qInfo() << "Removing camera:" << camera->name().c_str();
+	QCoreApplication::postEvent(this,
+				    new HotplugEvent(std::move(camera),
+						     HotplugEvent::HotUnplug));
 }
 
 /* -----------------------------------------------------------------------------

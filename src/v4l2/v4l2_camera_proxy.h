@@ -48,6 +48,7 @@ private:
 	void freeBuffers();
 
 	int vidioc_querycap(struct v4l2_capability *arg);
+	int vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_frmsizeenum *arg);
 	int vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg);
 	int vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg);
 	int vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg);

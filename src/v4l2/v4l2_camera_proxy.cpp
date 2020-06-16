@@ -241,6 +241,28 @@ int V4L2CameraProxy::vidioc_querycap(struct v4l2_capability *arg)
 	return 0;
 }
 
+int V4L2CameraProxy::vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_frmsizeenum *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_framesizes fd = " << file->efd();
+
+	PixelFormat argFormat = v4l2ToDrm(arg->pixel_format);
+	/*
+	 * \todo This might need to be expanded as few pipeline handlers
+	 * report StreamFormats.
+	 */
+	const std::vector<Size> &frameSizes = streamConfig_.formats().sizes(argFormat);
+
+	if (arg->index >= frameSizes.size())
+		return -EINVAL;
+
+	arg->type = V4L2_FRMSIZE_TYPE_DISCRETE;
+	arg->discrete.width = frameSizes[arg->index].width;
+	arg->discrete.height = frameSizes[arg->index].height;
+	memset(arg->reserved, 0, sizeof(arg->reserved));
+
+	return 0;
+}
+
 int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_fmt fd = " << file->efd();
@@ -626,6 +648,7 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 
 const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_QUERYCAP,
+	VIDIOC_ENUM_FRAMESIZES,
 	VIDIOC_ENUM_FMT,
 	VIDIOC_G_FMT,
 	VIDIOC_S_FMT,
@@ -664,6 +687,9 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 	switch (request) {
 	case VIDIOC_QUERYCAP:
 		ret = vidioc_querycap(static_cast<struct v4l2_capability *>(arg));
+		break;
+	case VIDIOC_ENUM_FRAMESIZES:
+		ret = vidioc_enum_framesizes(file, static_cast<struct v4l2_frmsizeenum *>(arg));
 		break;
 	case VIDIOC_ENUM_FMT:
 		ret = vidioc_enum_fmt(file, static_cast<struct v4l2_fmtdesc *>(arg));

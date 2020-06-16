@@ -276,7 +276,7 @@ SizeRange StreamFormats::range(const PixelFormat &pixelformat) const
 
 /**
  * \todo This method is deprecated and should be removed once all pipeline
- * handlers provied StreamFormats.
+ * handlers provide StreamFormats.
  */
 StreamConfiguration::StreamConfiguration()
 	: pixelFormat(0), stream_(nullptr)

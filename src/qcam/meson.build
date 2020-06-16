@@ -22,7 +22,7 @@ qt5 = import('qt5')
 qt5_dep = dependency('qt5',
                      method : 'pkg-config',
                      modules : ['Core', 'Gui', 'Widgets'],
-                     required : false)
+                     required : get_option('qcam'))
 
 if qt5_dep.found()
     qcam_deps = [

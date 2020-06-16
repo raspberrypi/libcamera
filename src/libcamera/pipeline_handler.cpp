@@ -559,7 +559,21 @@ void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
  */
 void PipelineHandler::disconnect()
 {
-	for (std::weak_ptr<Camera> ptr : cameras_) {
+	/*
+	 * Each camera holds a reference to its associated pipeline handler
+	 * instance. Hence, when the last camera is dropped, the pipeline
+	 * handler will get destroyed by the last manager_->removeCamera(camera)
+	 * call in the loop below.
+	 *
+	 * This is acceptable as long as we make sure that the code path does not
+	 * access any member of the (already destroyed) pipeline handler instance
+	 * afterwards. Therefore, we move the cameras_ vector to a local temporary
+	 * container to avoid accessing freed memory later i.e. to explicitly run
+	 * cameras_.clear().
+	 */
+	std::vector<std::weak_ptr<Camera>> cameras{ std::move(cameras_) };
+
+	for (std::weak_ptr<Camera> ptr : cameras) {
 		std::shared_ptr<Camera> camera = ptr.lock();
 		if (!camera)
 			continue;
@@ -567,8 +581,6 @@ void PipelineHandler::disconnect()
 		camera->disconnect();
 		manager_->removeCamera(camera.get());
 	}
-
-	cameras_.clear();
 }
 
 /**

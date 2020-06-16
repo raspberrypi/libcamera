@@ -63,7 +63,6 @@ private:
 	bool initialized_;
 	int status_;
 
-	std::vector<std::shared_ptr<PipelineHandler>> pipes_;
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 
 	IPAManager ipaManager_;
@@ -144,7 +143,6 @@ int CameraManager::Private::init()
 			LOG(Camera, Debug)
 				<< "Pipeline handler \"" << factory->name()
 				<< "\" matched";
-			pipes_.push_back(std::move(pipe));
 		}
 	}
 
@@ -158,11 +156,9 @@ void CameraManager::Private::cleanup()
 	/* TODO: unregister hot-plug callback here */
 
 	/*
-	 * Release all references to cameras and pipeline handlers to ensure
-	 * they all get destroyed before the device enumerator deletes the
-	 * media devices.
+	 * Release all references to cameras to ensure they all get destroyed
+	 * before the device enumerator deletes the media devices.
 	 */
-	pipes_.clear();
 	cameras_.clear();
 
 	enumerator_.reset(nullptr);

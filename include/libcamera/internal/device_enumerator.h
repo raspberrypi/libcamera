@@ -13,6 +13,8 @@
 
 #include <linux/media.h>
 
+#include <libcamera/signal.h>
+
 namespace libcamera {
 
 class MediaDevice;
@@ -42,6 +44,8 @@ public:
 	virtual int enumerate() = 0;
 
 	std::shared_ptr<MediaDevice> search(const DeviceMatch &dm);
+
+	Signal<> devicesAdded;
 
 protected:
 	std::unique_ptr<MediaDevice> createDevice(const std::string &deviceNode);

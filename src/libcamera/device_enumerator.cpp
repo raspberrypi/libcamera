@@ -228,6 +228,16 @@ std::unique_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &d
 }
 
 /**
+* \var DeviceEnumerator::devicesAdded
+* \brief Notify of new media devices being found
+*
+* This signal is emitted when the device enumerator finds new media devices in
+* the system. It may be emitted for every newly detected device, or once for
+* multiple devices, at the discretion of the device enumerator. Not all device
+* enumerator types may support dynamic detection of new devices.
+*/
+
+/**
  * \brief Add a media device to the enumerator
  * \param[in] media media device instance to add
  *
@@ -242,6 +252,9 @@ void DeviceEnumerator::addDevice(std::unique_ptr<MediaDevice> &&media)
 		<< "Added device " << media->deviceNode() << ": " << media->driver();
 
 	devices_.push_back(std::move(media));
+
+	/* \todo To batch multiple additions, emit with a small delay here. */
+	devicesAdded.emit();
 }
 
 /**

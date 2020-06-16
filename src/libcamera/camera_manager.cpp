@@ -155,12 +155,12 @@ void CameraManager::Private::createPipelineHandlers()
 		}
 	}
 
-	/* \todo Register hot-plug callback here */
+	enumerator_->devicesAdded.connect(this, &Private::createPipelineHandlers);
 }
 
 void CameraManager::Private::cleanup()
 {
-	/* \todo Unregister hot-plug callback here */
+	enumerator_->devicesAdded.disconnect(this, &Private::createPipelineHandlers);
 
 	/*
 	 * Release all references to cameras to ensure they all get destroyed

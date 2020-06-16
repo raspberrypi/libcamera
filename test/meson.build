@@ -30,6 +30,7 @@ internal_tests = [
     ['event-thread',                    'event-thread.cpp'],
     ['file',                            'file.cpp'],
     ['file-descriptor',                 'file-descriptor.cpp'],
+    ['hotplug-cameras',                 'hotplug-cameras.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
     ['object-invoke',                   'object-invoke.cpp'],

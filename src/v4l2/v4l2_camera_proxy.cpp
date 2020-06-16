@@ -539,6 +539,9 @@ int V4L2CameraProxy::vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *a
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_querybuf fd = " << file->efd();
 
+	if (arg->index >= bufferCount_)
+		return -EINVAL;
+
 	if (!validateBufferType(arg->type) ||
 	    arg->index >= bufferCount_)
 		return -EINVAL;
@@ -554,6 +557,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_qbuf, index = "
 			       << arg->index << " fd = " << file->efd();
+
+	if (arg->index >= bufferCount_)
+		return -EINVAL;
 
 	if (!hasOwnership(file))
 		return -EBUSY;
@@ -576,6 +582,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
+
+	if (arg->index >= bufferCount_)
+		return -EINVAL;
 
 	if (!hasOwnership(file))
 		return -EBUSY;

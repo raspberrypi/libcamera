@@ -445,11 +445,8 @@ void V4L2CameraProxy::freeBuffers()
 {
 	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
 
-	int ret = vcam_->streamOff();
-	if (ret < 0)
-		LOG(V4L2Compat, Error) << "Failed to stop stream";
-
 	vcam_->freeBuffers();
+	buffers_.clear();
 	bufferCount_ = 0;
 }
 
@@ -473,6 +470,9 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	memset(arg->reserved, 0, sizeof(arg->reserved));
 
 	if (arg->count == 0) {
+		if (vcam_->isRunning())
+			return -EBUSY;
+
 		freeBuffers();
 		release(file);
 

@@ -147,6 +147,8 @@ int V4L2Camera::allocBuffers(unsigned int count)
 
 void V4L2Camera::freeBuffers()
 {
+	pendingRequests_.clear();
+
 	Stream *stream = *camera_->streams().begin();
 	bufferAllocator_->free(stream);
 }
@@ -188,9 +190,10 @@ int V4L2Camera::streamOn()
 
 int V4L2Camera::streamOff()
 {
-	/* \todo Restore buffers to reqbufs state? */
 	if (!isRunning_)
 		return 0;
+
+	pendingRequests_.clear();
 
 	int ret = camera_->stop();
 	if (ret < 0)

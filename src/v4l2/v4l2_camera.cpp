@@ -18,7 +18,7 @@ LOG_DECLARE_CATEGORY(V4L2Compat);
 
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
 	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr),
-	  efd_(-1)
+	  efd_(-1), bufferAvailableCount_(0)
 {
 	camera_->requestCompleted.connect(this, &V4L2Camera::requestComplete);
 }
@@ -100,7 +100,11 @@ void V4L2Camera::requestComplete(Request *request)
 	if (ret != sizeof(data))
 		LOG(V4L2Compat, Error) << "Failed to signal eventfd POLLIN";
 
-	bufferSema_.release();
+	{
+		MutexLocker locker(bufferMutex_);
+		bufferAvailableCount_++;
+	}
+	bufferCV_.notify_all();
 }
 
 int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
@@ -192,7 +196,11 @@ int V4L2Camera::streamOff()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	isRunning_ = false;
+	{
+		MutexLocker locker(bufferMutex_);
+		isRunning_ = false;
+	}
+	bufferCV_.notify_all();
 
 	return 0;
 }
@@ -226,6 +234,26 @@ int V4L2Camera::qbuf(unsigned int index)
 	}
 
 	return 0;
+}
+
+void V4L2Camera::waitForBufferAvailable()
+{
+	MutexLocker locker(bufferMutex_);
+	bufferCV_.wait(locker, [&] {
+			       return bufferAvailableCount_ >= 1 || !isRunning_;
+		       });
+	if (isRunning_)
+		bufferAvailableCount_--;
+}
+
+bool V4L2Camera::isBufferAvailable()
+{
+	MutexLocker locker(bufferMutex_);
+	if (bufferAvailableCount_ < 1)
+		return false;
+
+	bufferAvailableCount_--;
+	return true;
 }
 
 bool V4L2Camera::isRunning()

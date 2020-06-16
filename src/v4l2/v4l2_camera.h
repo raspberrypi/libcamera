@@ -57,9 +57,10 @@ public:
 
 	int qbuf(unsigned int index);
 
-	bool isRunning();
+	void waitForBufferAvailable();
+	bool isBufferAvailable();
 
-	Semaphore bufferSema_;
+	bool isRunning();
 
 private:
 	void requestComplete(Request *request);
@@ -76,6 +77,10 @@ private:
 	std::deque<std::unique_ptr<Buffer>> completedBuffers_;
 
 	int efd_;
+
+	Mutex bufferMutex_;
+	std::condition_variable bufferCV_;
+	unsigned int bufferAvailableCount_;
 };
 
 #endif /* __V4L2_CAMERA_H__ */

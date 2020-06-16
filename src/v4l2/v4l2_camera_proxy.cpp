@@ -588,9 +588,16 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 		return -EINVAL;
 
 	if (!file->nonBlocking())
-		vcam_->bufferSema_.acquire();
-	else if (!vcam_->bufferSema_.tryAcquire())
+		vcam_->waitForBufferAvailable();
+	else if (!vcam_->isBufferAvailable())
 		return -EAGAIN;
+
+	/*
+	 * We need to check here again in case stream was turned off while we
+	 * were blocked on waitForBufferAvailable().
+	 */
+	if (!vcam_->isRunning())
+		return -EINVAL;
 
 	updateBuffers();
 

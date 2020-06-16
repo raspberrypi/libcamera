@@ -11,6 +11,7 @@
 #include <array>
 #include <errno.h>
 #include <linux/videodev2.h>
+#include <set>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -521,8 +522,37 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 	return ret;
 }
 
+const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
+	VIDIOC_QUERYCAP,
+	VIDIOC_ENUM_FMT,
+	VIDIOC_G_FMT,
+	VIDIOC_S_FMT,
+	VIDIOC_TRY_FMT,
+	VIDIOC_REQBUFS,
+	VIDIOC_QUERYBUF,
+	VIDIOC_QBUF,
+	VIDIOC_DQBUF,
+	VIDIOC_STREAMON,
+	VIDIOC_STREAMOFF,
+};
+
 int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *arg)
 {
+	if (!arg && (_IOC_DIR(request) & _IOC_WRITE)) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	if (supportedIoctls_.find(request) == supportedIoctls_.end()) {
+		errno = ENOTTY;
+		return -1;
+	}
+
+	if (!arg && (_IOC_DIR(request) & _IOC_READ)) {
+		errno = EFAULT;
+		return -1;
+	}
+
 	int ret;
 	switch (request) {
 	case VIDIOC_QUERYCAP:

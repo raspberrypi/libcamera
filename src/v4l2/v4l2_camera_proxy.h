@@ -11,6 +11,7 @@
 #include <linux/videodev2.h>
 #include <map>
 #include <memory>
+#include <set>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <vector>
@@ -67,6 +68,8 @@ private:
 
 	static PixelFormat v4l2ToDrm(uint32_t format);
 	static uint32_t drmToV4L2(const PixelFormat &format);
+
+	static const std::set<unsigned long> supportedIoctls_;
 
 	unsigned int refcount_;
 	unsigned int index_;

@@ -63,6 +63,8 @@ const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61), formats::NV61 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12), formats::NV12 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21), formats::NV21 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV420), formats::YUV420 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV422P), formats::YUV422 },
 
 	/* Greyscale formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_GREY), formats::R8 },

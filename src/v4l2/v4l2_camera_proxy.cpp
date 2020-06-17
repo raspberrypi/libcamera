@@ -560,7 +560,7 @@ struct PixelFormatInfo {
 
 namespace {
 
-static const std::array<PixelFormatInfo, 14> pixelFormatInfo = {{
+static const std::array<PixelFormatInfo, 16> pixelFormatInfo = {{
 	/* RGB formats. */
 	{ formats::RGB888,	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
 	{ formats::BGR888,	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
@@ -577,6 +577,8 @@ static const std::array<PixelFormatInfo, 14> pixelFormatInfo = {{
 	{ formats::NV61,	V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
 	{ formats::NV24,	V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
 	{ formats::NV42,	V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
+	{ formats::YUV420,	V4L2_PIX_FMT_YUV420,	3, {{ {  8, 1, 1 }, {  8, 2, 2 }, {  8, 2, 2 } }} },
+	{ formats::YUV422,	V4L2_PIX_FMT_YUV422P,	3, {{ {  8, 1, 1 }, {  8, 2, 1 }, {  8, 2, 1 } }} },
 	/* Compressed formats. */
 	/*
 	 * \todo Get a better image size estimate for MJPEG, via

@@ -270,6 +270,20 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
 	} },
+	{ formats::YUV420, {
+		.format = PixelFormat(formats::YUV420),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV420),
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+	} },
+	{ formats::YUV422, {
+		.format = PixelFormat(formats::YUV422),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV422P),
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+	} },
 
 	/* Greyscale formats. */
 	{ formats::R8, {

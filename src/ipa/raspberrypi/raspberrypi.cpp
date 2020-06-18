@@ -247,28 +247,29 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		mistrust_count_ = helper_->MistrustFramesStartup();
 	}
 
+	struct AgcStatus agcStatus;
+	/* These zero values mean not program anything (unless overwritten). */
+	agcStatus.shutter_time = 0.0;
+	agcStatus.analogue_gain = 0.0;
+
 	if (!controllerInit_) {
 		/* Load the tuning file for this sensor. */
 		controller_.Read(tuningFile_.c_str());
 		controller_.Initialise();
 		controllerInit_ = true;
 
-		/* Calculate initial values for gain and exposure. */
-		int32_t gain_code = helper_->GainCode(DEFAULT_ANALOGUE_GAIN);
-		int32_t exposure_lines = helper_->ExposureLines(DEFAULT_EXPOSURE_TIME);
-
-		ControlList ctrls(unicam_ctrls_);
-		ctrls.set(V4L2_CID_ANALOGUE_GAIN, gain_code);
-		ctrls.set(V4L2_CID_EXPOSURE, exposure_lines);
-
-		IPAOperationData op;
-		op.operation = RPI_IPA_ACTION_V4L2_SET_STAGGERED;
-		op.controls.push_back(ctrls);
-		queueFrameAction.emit(0, op);
+		/* Supply initial values for gain and exposure. */
+		agcStatus.shutter_time = DEFAULT_EXPOSURE_TIME;
+		agcStatus.analogue_gain = DEFAULT_ANALOGUE_GAIN;
 	}
 
 	RPi::Metadata metadata;
 	controller_.SwitchMode(mode_, &metadata);
+
+	/* SwitchMode may supply updated exposure/gain values to use. */
+	metadata.Get("agc.status", agcStatus);
+	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0)
+		applyAGC(&agcStatus);
 
 	lastMode_ = mode_;
 }

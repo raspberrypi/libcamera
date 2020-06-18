@@ -75,6 +75,7 @@ public:
 	void SetMeteringMode(std::string const &metering_mode_name) override;
 	void SetExposureMode(std::string const &exposure_mode_name) override;
 	void SetConstraintMode(std::string const &contraint_mode_name) override;
+	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Prepare(Metadata *image_metadata) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 

@@ -221,6 +221,18 @@ void Agc::SetConstraintMode(std::string const &constraint_mode_name)
 	constraint_mode_name_ = constraint_mode_name;
 }
 
+void Agc::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
+{
+	// On a mode switch, it's possible the exposure profile could change,
+	// so we run through the dividing up of exposure/gain again and
+	// write the results into the metadata we've been given.
+	if (status_.total_exposure_value) {
+		housekeepConfig();
+		divvyupExposure();
+		writeAndFinish(metadata, false);
+	}
+}
+
 void Agc::Prepare(Metadata *image_metadata)
 {
 	AgcStatus status;

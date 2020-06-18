@@ -630,6 +630,9 @@ int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamon fd = " << file->efd();
 
+	if (bufferCount_ == 0)
+		return -EINVAL;
+
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 

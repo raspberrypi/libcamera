@@ -580,6 +580,9 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	if (!hasOwnership(file))
 		return -EBUSY;
 
+	if (!vcam_->isRunning())
+		return -EINVAL;
+
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
 		return -EINVAL;

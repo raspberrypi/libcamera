@@ -57,6 +57,8 @@ public:
 
 	int qbuf(unsigned int index);
 
+	bool isRunning();
+
 	Semaphore bufferSema_;
 
 private:

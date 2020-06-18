@@ -227,3 +227,8 @@ int V4L2Camera::qbuf(unsigned int index)
 
 	return 0;
 }
+
+bool V4L2Camera::isRunning()
+{
+	return isRunning_;
+}

@@ -470,6 +470,10 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	memset(arg->reserved, 0, sizeof(arg->reserved));
 
 	if (arg->count == 0) {
+		/* \todo Add buffer orphaning support */
+		if (!mmaps_.empty())
+			return -EBUSY;
+
 		if (vcam_->isRunning())
 			return -EBUSY;
 

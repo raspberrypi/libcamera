@@ -565,6 +565,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	if (arg->index >= bufferCount_)
 		return -EINVAL;
 
+	if (buffers_[arg->index].flags & V4L2_BUF_FLAG_QUEUED)
+		return -EINVAL;
+
 	if (!hasOwnership(file))
 		return -EBUSY;
 
@@ -577,8 +580,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	if (ret < 0)
 		return ret;
 
-	arg->flags |= V4L2_BUF_FLAG_QUEUED;
-	arg->flags &= ~V4L2_BUF_FLAG_DONE;
+	buffers_[arg->index].flags |= V4L2_BUF_FLAG_QUEUED;
+
+	arg->flags = buffers_[arg->index].flags;
 
 	return ret;
 }
@@ -616,7 +620,7 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 
 	struct v4l2_buffer &buf = buffers_[currentBuf_];
 
-	buf.flags &= ~V4L2_BUF_FLAG_QUEUED;
+	buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);
 	buf.length = sizeimage_;
 	*arg = buf;
 

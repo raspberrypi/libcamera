@@ -173,8 +173,10 @@ void Alsc::Initialise()
 		lambda_r_[i] = lambda_b_[i] = 1.0;
 }
 
-void Alsc::SwitchMode(CameraMode const &camera_mode)
+void Alsc::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 {
+	(void)metadata;
+
 	// There's a bit of a question what we should do if the "crop" of the
 	// camera mode has changed.  Any calculation currently in flight would
 	// not be useful to the new mode, so arguably we should abort it, and

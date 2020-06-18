@@ -56,11 +56,11 @@ void Controller::Initialise()
 	RPI_LOG("Controller finished");
 }
 
-void Controller::SwitchMode(CameraMode const &camera_mode)
+void Controller::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 {
 	RPI_LOG("Controller starting");
 	for (auto &algo : algorithms_)
-		algo->SwitchMode(camera_mode);
+		algo->SwitchMode(camera_mode, metadata);
 	switch_mode_called_ = true;
 	RPI_LOG("Controller finished");
 }

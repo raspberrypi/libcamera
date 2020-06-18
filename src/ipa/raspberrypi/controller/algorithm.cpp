@@ -16,9 +16,10 @@ void Algorithm::Read(boost::property_tree::ptree const &params)
 
 void Algorithm::Initialise() {}
 
-void Algorithm::SwitchMode(CameraMode const &camera_mode)
+void Algorithm::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 {
 	(void)camera_mode;
+	(void)metadata;
 }
 
 void Algorithm::Prepare(Metadata *image_metadata)

@@ -267,7 +267,8 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		queueFrameAction.emit(0, op);
 	}
 
-	controller_.SwitchMode(mode_);
+	RPi::Metadata metadata;
+	controller_.SwitchMode(mode_, &metadata);
 
 	lastMode_ = mode_;
 }

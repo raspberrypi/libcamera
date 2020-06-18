@@ -18,7 +18,7 @@ class Sharpen : public Algorithm
 public:
 	Sharpen(Controller *controller);
 	char const *Name() const override;
-	void SwitchMode(CameraMode const &camera_mode) override;
+	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Read(boost::property_tree::ptree const &params) override;
 	void Prepare(Metadata *image_metadata) override;
 

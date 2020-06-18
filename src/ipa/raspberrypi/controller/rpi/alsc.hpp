@@ -50,7 +50,7 @@ public:
 	~Alsc();
 	char const *Name() const override;
 	void Initialise() override;
-	void SwitchMode(CameraMode const &camera_mode) override;
+	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Read(boost::property_tree::ptree const &params) override;
 	void Prepare(Metadata *image_metadata) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;

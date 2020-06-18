@@ -37,7 +37,7 @@ public:
 	virtual void Resume() { paused_ = false; }
 	virtual void Read(boost::property_tree::ptree const &params);
 	virtual void Initialise();
-	virtual void SwitchMode(CameraMode const &camera_mode);
+	virtual void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
 	virtual void Prepare(Metadata *image_metadata);
 	virtual void Process(StatisticsPtr &stats, Metadata *image_metadata);
 	Metadata &GetGlobalMetadata() const

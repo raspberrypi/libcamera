@@ -39,7 +39,7 @@ public:
 	Algorithm *CreateAlgorithm(char const *name);
 	void Read(char const *filename);
 	void Initialise();
-	void SwitchMode(CameraMode const &camera_mode);
+	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
 	void Prepare(Metadata *image_metadata);
 	void Process(StatisticsPtr stats, Metadata *image_metadata);
 	Metadata &GetGlobalMetadata();

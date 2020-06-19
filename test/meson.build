@@ -12,6 +12,7 @@ subdir('pipeline')
 subdir('process')
 subdir('serialization')
 subdir('stream')
+subdir('v4l2_compat')
 subdir('v4l2_subdevice')
 subdir('v4l2_videodevice')
 

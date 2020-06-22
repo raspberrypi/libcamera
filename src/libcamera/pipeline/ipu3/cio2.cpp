@@ -18,6 +18,17 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(IPU3)
 
+namespace {
+
+static const std::map<uint32_t, V4L2PixelFormat> mbusCodesToInfo = {
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10) },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10) },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10) },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10) },
+};
+
+} /* namespace */
+
 CIO2Device::CIO2Device()
 	: output_(nullptr), csi2_(nullptr), sensor_(nullptr)
 {
@@ -81,10 +92,11 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	 * utils::set_overlap requires the ranges to be sorted, keep the
 	 * cio2Codes vector sorted in ascending order.
 	 */
-	const std::vector<unsigned int> cio2Codes{ MEDIA_BUS_FMT_SBGGR10_1X10,
-						   MEDIA_BUS_FMT_SGRBG10_1X10,
-						   MEDIA_BUS_FMT_SGBRG10_1X10,
-						   MEDIA_BUS_FMT_SRGGB10_1X10 };
+	std::vector<unsigned int> cio2Codes;
+	cio2Codes.reserve(mbusCodesToInfo.size());
+	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
+		       std::back_inserter(cio2Codes),
+		       [](auto &pair) { return pair.first; });
 	const std::vector<unsigned int> &sensorCodes = sensor_->mbusCodes();
 	if (!utils::set_overlap(sensorCodes.begin(), sensorCodes.end(),
 				cio2Codes.begin(), cio2Codes.end())) {
@@ -128,11 +140,13 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	 * Apply the selected format to the sensor, the CSI-2 receiver and
 	 * the CIO2 output device.
 	 */
-	sensorFormat = sensor_->getFormat({ MEDIA_BUS_FMT_SBGGR10_1X10,
-					    MEDIA_BUS_FMT_SGBRG10_1X10,
-					    MEDIA_BUS_FMT_SGRBG10_1X10,
-					    MEDIA_BUS_FMT_SRGGB10_1X10 },
-					  size);
+	std::vector<unsigned int> mbusCodes;
+	mbusCodes.reserve(mbusCodesToInfo.size());
+	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
+		       std::back_inserter(mbusCodes),
+		       [](auto &pair) { return pair.first; });
+
+	sensorFormat = sensor_->getFormat(mbusCodes, size);
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
@@ -141,25 +155,11 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	if (ret)
 		return ret;
 
-	V4L2PixelFormat v4l2Format;
-	switch (sensorFormat.mbus_code) {
-	case MEDIA_BUS_FMT_SBGGR10_1X10:
-		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10);
-		break;
-	case MEDIA_BUS_FMT_SGBRG10_1X10:
-		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10);
-		break;
-	case MEDIA_BUS_FMT_SGRBG10_1X10:
-		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10);
-		break;
-	case MEDIA_BUS_FMT_SRGGB10_1X10:
-		v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10);
-		break;
-	default:
+	const auto &itInfo = mbusCodesToInfo.find(sensorFormat.mbus_code);
+	if (itInfo == mbusCodesToInfo.end())
 		return -EINVAL;
-	}
 
-	outputFormat->fourcc = v4l2Format;
+	outputFormat->fourcc = itInfo->second;
 	outputFormat->size = sensorFormat.size;
 	outputFormat->planesCount = 1;
 

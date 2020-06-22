@@ -40,6 +40,7 @@ public:
 	int open();
 	void close();
 	void bind(int efd);
+	void unbind();
 	void getStreamConfig(StreamConfiguration *streamConfig);
 	std::vector<Buffer> completedBuffers();
 

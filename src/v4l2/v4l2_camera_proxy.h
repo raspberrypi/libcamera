@@ -33,7 +33,6 @@ public:
 	void *mmap(void *addr, size_t length, int prot, int flags, off64_t offset);
 	int munmap(void *addr, size_t length);
 
-	void bind(int fd);
 	int ioctl(V4L2CameraFile *file, unsigned long request, void *arg);
 
 private:
@@ -44,7 +43,7 @@ private:
 	void querycap(std::shared_ptr<Camera> camera);
 	void tryFormat(struct v4l2_format *arg);
 	void updateBuffers();
-	int freeBuffers();
+	void freeBuffers();
 
 	int vidioc_querycap(struct v4l2_capability *arg);
 	int vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg);
@@ -57,6 +56,10 @@ private:
 	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_streamon(V4L2CameraFile *file, int *arg);
 	int vidioc_streamoff(V4L2CameraFile *file, int *arg);
+
+	bool hasOwnership(V4L2CameraFile *file);
+	int acquire(V4L2CameraFile *file);
+	void release(V4L2CameraFile *file);
 
 	static unsigned int bplMultiplier(uint32_t format);
 	static unsigned int imageSize(uint32_t format, unsigned int width,
@@ -80,7 +83,16 @@ private:
 
 	std::unique_ptr<V4L2Camera> vcam_;
 
-	int efd_;
+	/*
+	 * This is the exclusive owner of this V4L2CameraProxy instance.
+	 * When there is no owner, anybody can call any ioctl before reqbufs.
+	 * The first file to call reqbufs with count > 0 or s_fmt will become
+	 * the owner, and when the owner calls reqbufs with count = 0 it will
+	 * release ownership. Any buffer-related ioctl (except querybuf) or
+	 * s_fmt that is called by a non-owner while there exists an owner
+	 * will return -EBUSY.
+	 */
+	V4L2CameraFile *owner_;
 };
 
 #endif /* __V4L2_CAMERA_PROXY_H__ */

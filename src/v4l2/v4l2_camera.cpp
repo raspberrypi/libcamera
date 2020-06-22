@@ -17,7 +17,8 @@ using namespace libcamera;
 LOG_DECLARE_CATEGORY(V4L2Compat);
 
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
-	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr)
+	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr),
+	  efd_(-1)
 {
 	camera_->requestCompleted.connect(this, &V4L2Camera::requestComplete);
 }
@@ -29,7 +30,6 @@ V4L2Camera::~V4L2Camera()
 
 int V4L2Camera::open()
 {
-	/* \todo Support multiple open. */
 	if (camera_->acquire() < 0) {
 		LOG(V4L2Compat, Error) << "Failed to acquire camera";
 		return -EINVAL;
@@ -57,6 +57,11 @@ void V4L2Camera::close()
 void V4L2Camera::bind(int efd)
 {
 	efd_ = efd;
+}
+
+void V4L2Camera::unbind()
+{
+	efd_ = -1;
 }
 
 void V4L2Camera::getStreamConfig(StreamConfiguration *streamConfig)

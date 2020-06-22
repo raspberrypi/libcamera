@@ -35,7 +35,7 @@ LOG_DECLARE_CATEGORY(V4L2Compat);
 V4L2CameraProxy::V4L2CameraProxy(unsigned int index,
 				 std::shared_ptr<Camera> camera)
 	: refcount_(0), index_(index), bufferCount_(0), currentBuf_(0),
-	  vcam_(std::make_unique<V4L2Camera>(camera))
+	  vcam_(std::make_unique<V4L2Camera>(camera)), owner_(nullptr)
 {
 	querycap(camera);
 }
@@ -44,17 +44,28 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing open fd = " << file->efd();
 
+	if (refcount_++)
+		return 0;
+
+	/*
+	 * We open the camera here, once, and keep it open until the last
+	 * V4L2CameraFile is closed. The proxy is initially not owned by any
+	 * file. The first file that calls reqbufs with count > 0 or s_fmt
+	 * will become the owner, and no other file will be allowed to call
+	 * buffer-related ioctls (except querybuf), set the format, or start or
+	 * stop the stream until ownership is released with a call to reqbufs
+	 * with count = 0.
+	 */
+
 	int ret = vcam_->open();
 	if (ret < 0) {
-		errno = -ret;
-		return -1;
+		refcount_--;
+		return ret;
 	}
 
 	vcam_->getStreamConfig(&streamConfig_);
 	setFmtFromConfig(streamConfig_);
 	sizeimage_ = calculateSizeImage(streamConfig_);
-
-	refcount_++;
 
 	return 0;
 }
@@ -63,6 +74,7 @@ void V4L2CameraProxy::close(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing close fd = " << file->efd();
 
+	release(file);
 
 	if (--refcount_ > 0)
 		return;
@@ -277,12 +289,16 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
 
+	int ret = acquire(file);
+	if (ret < 0)
+		return ret;
+
 	tryFormat(arg);
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
-	int ret = vcam_->configure(&streamConfig_, size,
-				   v4l2ToDrm(arg->fmt.pix.pixelformat),
-				   bufferCount_);
+	ret = vcam_->configure(&streamConfig_, size,
+			       v4l2ToDrm(arg->fmt.pix.pixelformat),
+			       bufferCount_);
 	if (ret < 0)
 		return -EINVAL;
 
@@ -309,19 +325,16 @@ int V4L2CameraProxy::vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *ar
 	return 0;
 }
 
-int V4L2CameraProxy::freeBuffers()
+void V4L2CameraProxy::freeBuffers()
 {
 	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
 
 	int ret = vcam_->streamOff();
-	if (ret < 0) {
+	if (ret < 0)
 		LOG(V4L2Compat, Error) << "Failed to stop stream";
-		return ret;
-	}
+
 	vcam_->freeBuffers();
 	bufferCount_ = 0;
-
-	return 0;
 }
 
 int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg)
@@ -334,10 +347,17 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 
 	LOG(V4L2Compat, Debug) << arg->count << " buffers requested ";
 
+	if (!hasOwnership(file) && owner_)
+		return -EBUSY;
+
 	arg->capabilities = V4L2_BUF_CAP_SUPPORTS_MMAP;
 
-	if (arg->count == 0)
-		return freeBuffers();
+	if (arg->count == 0) {
+		freeBuffers();
+		release(file);
+
+		return 0;
+	}
 
 	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
 	int ret = vcam_->configure(&streamConfig_, size,
@@ -386,6 +406,8 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 
 	LOG(V4L2Compat, Debug) << "Allocated " << arg->count << " buffers";
 
+	acquire(file);
+
 	return 0;
 }
 
@@ -409,6 +431,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_qbuf, index = "
 			       << arg->index << " fd = " << file->efd();
 
+	if (!hasOwnership(file))
+		return -EBUSY;
+
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory) ||
 	    arg->index >= bufferCount_)
@@ -427,6 +452,9 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
+
+	if (!hasOwnership(file))
+		return -EBUSY;
 
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
@@ -462,6 +490,9 @@ int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 	if (!validateBufferType(*arg))
 		return -EINVAL;
 
+	if (!hasOwnership(file))
+		return -EBUSY;
+
 	currentBuf_ = 0;
 
 	return vcam_->streamOn();
@@ -473,6 +504,9 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 
 	if (!validateBufferType(*arg))
 		return -EINVAL;
+
+	if (!hasOwnership(file) && owner_)
+		return -EBUSY;
 
 	int ret = vcam_->streamOff();
 
@@ -532,10 +566,45 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 	return ret;
 }
 
-void V4L2CameraProxy::bind(int fd)
+bool V4L2CameraProxy::hasOwnership(V4L2CameraFile *file)
 {
-	efd_ = fd;
-	vcam_->bind(fd);
+	return owner_ == file;
+}
+
+/**
+ * \brief Acquire exclusive ownership of the V4L2Camera
+ *
+ * \return Zero on success or if already acquired, and negative error on
+ * failure.
+ *
+ * This is sufficient for poll()ing for buffers. Events, however, are signaled
+ * on the file level, so all fds must be signaled. poll()ing from a different
+ * fd than the one that locks the device is a corner case, and is currently not
+ * supported.
+ */
+int V4L2CameraProxy::acquire(V4L2CameraFile *file)
+{
+	if (owner_ == file)
+		return 0;
+
+	if (owner_)
+		return -EBUSY;
+
+	vcam_->bind(file->efd());
+
+	owner_ = file;
+
+	return 0;
+}
+
+void V4L2CameraProxy::release(V4L2CameraFile *file)
+{
+	if (owner_ != file)
+		return;
+
+	vcam_->unbind();
+
+	owner_ = nullptr;
 }
 
 struct PixelFormatPlaneInfo {

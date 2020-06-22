@@ -46,6 +46,7 @@ public:
 	static const PixelFormatInfo &info(const PixelFormat &format);
 
 	/* \todo Add support for non-contiguous memory planes */
+	const char *name;
 	PixelFormat format;
 	V4L2PixelFormat v4l2Format;
 	unsigned int bitsPerPixel;

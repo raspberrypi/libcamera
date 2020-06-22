@@ -8,6 +8,8 @@
 #include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 
+#include "libcamera/internal/formats.h"
+
 /**
  * \file pixel_format.h
  * \brief libcamera pixel format
@@ -104,9 +106,28 @@ bool PixelFormat::operator<(const PixelFormat &other) const
  */
 std::string PixelFormat::toString() const
 {
-	char str[11];
-	snprintf(str, 11, "0x%08x", fourcc_);
-	return str;
+	const PixelFormatInfo &info = PixelFormatInfo::info(*this);
+
+	if (!info.isValid()) {
+		if (*this == PixelFormat())
+			return "<INVALID>";
+
+		char fourcc[7] = { '<',
+				   static_cast<char>(fourcc_),
+				   static_cast<char>(fourcc_ >> 8),
+				   static_cast<char>(fourcc_ >> 16),
+				   static_cast<char>(fourcc_ >> 24),
+				   '>' };
+
+		for (unsigned int i = 1; i < 5; i++) {
+			if (!isprint(fourcc[i]))
+				fourcc[i] = '.';
+		}
+
+		return fourcc;
+	}
+
+	return info.name;
 }
 
 } /* namespace libcamera */

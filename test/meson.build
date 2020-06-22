@@ -34,6 +34,7 @@ internal_tests = [
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
     ['object-invoke',                   'object-invoke.cpp'],
+    ['pixel-format',                    'pixel-format.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],
     ['threads',                         'threads.cpp'],
     ['timer',                           'timer.cpp'],

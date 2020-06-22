@@ -17,10 +17,10 @@ V4L2CameraFile::V4L2CameraFile(int efd, bool nonBlocking, V4L2CameraProxy *proxy
 	: proxy_(proxy), nonBlocking_(nonBlocking), efd_(efd),
 	  priority_(V4L2_PRIORITY_DEFAULT)
 {
-	proxy_->open(nonBlocking);
+	proxy_->open(this);
 }
 
 V4L2CameraFile::~V4L2CameraFile()
 {
-	proxy_->close();
+	proxy_->close(this);
 }

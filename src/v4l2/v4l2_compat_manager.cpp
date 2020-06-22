@@ -24,6 +24,8 @@
 
 #include "libcamera/internal/log.h"
 
+#include "v4l2_camera_file.h"
+
 using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(V4L2Compat)
@@ -49,7 +51,7 @@ V4L2CompatManager::V4L2CompatManager()
 
 V4L2CompatManager::~V4L2CompatManager()
 {
-	devices_.clear();
+	files_.clear();
 	mmaps_.clear();
 
 	if (cm_) {
@@ -95,13 +97,13 @@ V4L2CompatManager *V4L2CompatManager::instance()
 	return &instance;
 }
 
-V4L2CameraProxy *V4L2CompatManager::getProxy(int fd)
+std::shared_ptr<V4L2CameraFile> V4L2CompatManager::cameraFile(int fd)
 {
-	auto device = devices_.find(fd);
-	if (device == devices_.end())
+	auto file = files_.find(fd);
+	if (file == files_.end())
 		return nullptr;
 
-	return device->second;
+	return file->second;
 }
 
 int V4L2CompatManager::getCameraIndex(int fd)
@@ -148,25 +150,14 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 
 	fops_.close(fd);
 
-	unsigned int camera_index = static_cast<unsigned int>(ret);
-
-	V4L2CameraProxy *proxy = proxies_[camera_index].get();
-	ret = proxy->open(oflag & O_NONBLOCK);
-	if (ret < 0)
-		return ret;
-
 	int efd = eventfd(0, EFD_SEMAPHORE |
 			     ((oflag & O_CLOEXEC) ? EFD_CLOEXEC : 0) |
 			     ((oflag & O_NONBLOCK) ? EFD_NONBLOCK : 0));
-	if (efd < 0) {
-		int err = errno;
-		proxy->close();
-		errno = err;
+	if (efd < 0)
 		return efd;
-	}
 
-	proxy->bind(efd);
-	devices_.emplace(efd, proxy);
+	V4L2CameraProxy *proxy = proxies_[ret].get();
+	files_.emplace(efd, std::make_shared<V4L2CameraFile>(efd, oflag & O_NONBLOCK, proxy));
 
 	return efd;
 }
@@ -177,40 +168,39 @@ int V4L2CompatManager::dup(int oldfd)
 	if (newfd < 0)
 		return newfd;
 
-	auto device = devices_.find(oldfd);
-	if (device != devices_.end()) {
-		V4L2CameraProxy *proxy = device->second;
-		devices_[newfd] = proxy;
-		proxy->dup();
-	}
+	auto file = files_.find(oldfd);
+	if (file != files_.end())
+		files_[newfd] = file->second;
 
 	return newfd;
 }
 
 int V4L2CompatManager::close(int fd)
 {
-	V4L2CameraProxy *proxy = getProxy(fd);
-	if (proxy) {
-		proxy->close();
-		devices_.erase(fd);
-		return 0;
-	}
+	auto file = files_.find(fd);
+	if (file != files_.end())
+		files_.erase(file);
 
+	/* We still need to close the eventfd. */
 	return fops_.close(fd);
 }
 
 void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
 			      int fd, off64_t offset)
 {
-	V4L2CameraProxy *proxy = getProxy(fd);
-	if (!proxy)
+	std::shared_ptr<V4L2CameraFile> file = cameraFile(fd);
+	if (!file)
 		return fops_.mmap(addr, length, prot, flags, fd, offset);
 
-	void *map = proxy->mmap(addr, length, prot, flags, offset);
+	void *map = file->proxy()->mmap(addr, length, prot, flags, offset);
 	if (map == MAP_FAILED)
 		return map;
 
-	mmaps_[map] = proxy;
+	/*
+	 * Map to V4L2CameraProxy directly to prevent adding more references
+	 * to V4L2CameraFile.
+	 */
+	mmaps_[map] = file->proxy();
 	return map;
 }
 
@@ -233,9 +223,9 @@ int V4L2CompatManager::munmap(void *addr, size_t length)
 
 int V4L2CompatManager::ioctl(int fd, unsigned long request, void *arg)
 {
-	V4L2CameraProxy *proxy = getProxy(fd);
-	if (!proxy)
+	std::shared_ptr<V4L2CameraFile> file = cameraFile(fd);
+	if (!file)
 		return fops_.ioctl(fd, request, arg);
 
-	return proxy->ioctl(request, arg);
+	return file->proxy()->ioctl(file.get(), request, arg);
 }

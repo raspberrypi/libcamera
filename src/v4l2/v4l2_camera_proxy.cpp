@@ -23,6 +23,7 @@
 #include "libcamera/internal/utils.h"
 
 #include "v4l2_camera.h"
+#include "v4l2_camera_file.h"
 #include "v4l2_compat_manager.h"
 
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
@@ -39,17 +40,15 @@ V4L2CameraProxy::V4L2CameraProxy(unsigned int index,
 	querycap(camera);
 }
 
-int V4L2CameraProxy::open(bool nonBlocking)
+int V4L2CameraProxy::open(V4L2CameraFile *file)
 {
-	LOG(V4L2Compat, Debug) << "Servicing open";
+	LOG(V4L2Compat, Debug) << "Servicing open fd = " << file->efd();
 
 	int ret = vcam_->open();
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
 	}
-
-	nonBlocking_ = nonBlocking;
 
 	vcam_->getStreamConfig(&streamConfig_);
 	setFmtFromConfig(streamConfig_);
@@ -60,14 +59,10 @@ int V4L2CameraProxy::open(bool nonBlocking)
 	return 0;
 }
 
-void V4L2CameraProxy::dup()
+void V4L2CameraProxy::close(V4L2CameraFile *file)
 {
-	refcount_++;
-}
+	LOG(V4L2Compat, Debug) << "Servicing close fd = " << file->efd();
 
-void V4L2CameraProxy::close()
-{
-	LOG(V4L2Compat, Debug) << "Servicing close";
 
 	if (--refcount_ > 0)
 		return;
@@ -221,9 +216,9 @@ int V4L2CameraProxy::vidioc_querycap(struct v4l2_capability *arg)
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_enum_fmt(struct v4l2_fmtdesc *arg)
+int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_fmt";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_fmt fd = " << file->efd();
 
 	if (!validateBufferType(arg->type) ||
 	    arg->index >= streamConfig_.formats().pixelformats().size())
@@ -237,9 +232,9 @@ int V4L2CameraProxy::vidioc_enum_fmt(struct v4l2_fmtdesc *arg)
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_g_fmt(struct v4l2_format *arg)
+int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_fmt";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_fmt fd = " << file->efd();
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -275,9 +270,9 @@ void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
 }
 
-int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
+int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_fmt";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_fmt fd = " << file->efd();
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -302,9 +297,9 @@ int V4L2CameraProxy::vidioc_s_fmt(struct v4l2_format *arg)
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_try_fmt(struct v4l2_format *arg)
+int V4L2CameraProxy::vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_try_fmt";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_try_fmt fd = " << file->efd();
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -329,11 +324,9 @@ int V4L2CameraProxy::freeBuffers()
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
+int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg)
 {
-	int ret;
-
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_reqbufs";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_reqbufs fd = " << file->efd();
 
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
@@ -347,9 +340,9 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 		return freeBuffers();
 
 	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
-	ret = vcam_->configure(&streamConfig_, size,
-			       v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),
-			       arg->count);
+	int ret = vcam_->configure(&streamConfig_, size,
+				   v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),
+				   arg->count);
 	if (ret < 0)
 		return -EINVAL;
 
@@ -396,9 +389,9 @@ int V4L2CameraProxy::vidioc_reqbufs(struct v4l2_requestbuffers *arg)
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_querybuf(struct v4l2_buffer *arg)
+int V4L2CameraProxy::vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_querybuf";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_querybuf fd = " << file->efd();
 
 	if (!validateBufferType(arg->type) ||
 	    arg->index >= bufferCount_)
@@ -411,10 +404,10 @@ int V4L2CameraProxy::vidioc_querybuf(struct v4l2_buffer *arg)
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_qbuf(struct v4l2_buffer *arg)
+int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_qbuf, index = "
-			       << arg->index;
+			       << arg->index << " fd = " << file->efd();
 
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory) ||
@@ -431,15 +424,15 @@ int V4L2CameraProxy::vidioc_qbuf(struct v4l2_buffer *arg)
 	return ret;
 }
 
-int V4L2CameraProxy::vidioc_dqbuf(struct v4l2_buffer *arg)
+int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
 
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
 		return -EINVAL;
 
-	if (!nonBlocking_)
+	if (!file->nonBlocking())
 		vcam_->bufferSema_.acquire();
 	else if (!vcam_->bufferSema_.tryAcquire())
 		return -EAGAIN;
@@ -455,16 +448,16 @@ int V4L2CameraProxy::vidioc_dqbuf(struct v4l2_buffer *arg)
 	currentBuf_ = (currentBuf_ + 1) % bufferCount_;
 
 	uint64_t data;
-	int ret = ::read(efd_, &data, sizeof(data));
+	int ret = ::read(file->efd(), &data, sizeof(data));
 	if (ret != sizeof(data))
 		LOG(V4L2Compat, Error) << "Failed to clear eventfd POLLIN";
 
 	return 0;
 }
 
-int V4L2CameraProxy::vidioc_streamon(int *arg)
+int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamon";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamon fd = " << file->efd();
 
 	if (!validateBufferType(*arg))
 		return -EINVAL;
@@ -474,9 +467,9 @@ int V4L2CameraProxy::vidioc_streamon(int *arg)
 	return vcam_->streamOn();
 }
 
-int V4L2CameraProxy::vidioc_streamoff(int *arg)
+int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamoff";
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamoff fd = " << file->efd();
 
 	if (!validateBufferType(*arg))
 		return -EINVAL;
@@ -489,7 +482,7 @@ int V4L2CameraProxy::vidioc_streamoff(int *arg)
 	return ret;
 }
 
-int V4L2CameraProxy::ioctl(unsigned long request, void *arg)
+int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *arg)
 {
 	int ret;
 	switch (request) {
@@ -497,34 +490,34 @@ int V4L2CameraProxy::ioctl(unsigned long request, void *arg)
 		ret = vidioc_querycap(static_cast<struct v4l2_capability *>(arg));
 		break;
 	case VIDIOC_ENUM_FMT:
-		ret = vidioc_enum_fmt(static_cast<struct v4l2_fmtdesc *>(arg));
+		ret = vidioc_enum_fmt(file, static_cast<struct v4l2_fmtdesc *>(arg));
 		break;
 	case VIDIOC_G_FMT:
-		ret = vidioc_g_fmt(static_cast<struct v4l2_format *>(arg));
+		ret = vidioc_g_fmt(file, static_cast<struct v4l2_format *>(arg));
 		break;
 	case VIDIOC_S_FMT:
-		ret = vidioc_s_fmt(static_cast<struct v4l2_format *>(arg));
+		ret = vidioc_s_fmt(file, static_cast<struct v4l2_format *>(arg));
 		break;
 	case VIDIOC_TRY_FMT:
-		ret = vidioc_try_fmt(static_cast<struct v4l2_format *>(arg));
+		ret = vidioc_try_fmt(file, static_cast<struct v4l2_format *>(arg));
 		break;
 	case VIDIOC_REQBUFS:
-		ret = vidioc_reqbufs(static_cast<struct v4l2_requestbuffers *>(arg));
+		ret = vidioc_reqbufs(file, static_cast<struct v4l2_requestbuffers *>(arg));
 		break;
 	case VIDIOC_QUERYBUF:
-		ret = vidioc_querybuf(static_cast<struct v4l2_buffer *>(arg));
+		ret = vidioc_querybuf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_QBUF:
-		ret = vidioc_qbuf(static_cast<struct v4l2_buffer *>(arg));
+		ret = vidioc_qbuf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_DQBUF:
-		ret = vidioc_dqbuf(static_cast<struct v4l2_buffer *>(arg));
+		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_STREAMON:
-		ret = vidioc_streamon(static_cast<int *>(arg));
+		ret = vidioc_streamon(file, static_cast<int *>(arg));
 		break;
 	case VIDIOC_STREAMOFF:
-		ret = vidioc_streamoff(static_cast<int *>(arg));
+		ret = vidioc_streamoff(file, static_cast<int *>(arg));
 		break;
 	default:
 		ret = -ENOTTY;

@@ -44,7 +44,6 @@ public:
 
 	static V4L2CompatManager *instance();
 
-	V4L2CameraProxy *getProxy(int fd);
 	const FileOperations &fops() const { return fops_; }
 
 	int openat(int dirfd, const char *path, int oflag, mode_t mode);
@@ -62,13 +61,14 @@ private:
 
 	int start();
 	int getCameraIndex(int fd);
+	std::shared_ptr<V4L2CameraFile> cameraFile(int fd);
 
 	FileOperations fops_;
 
 	CameraManager *cm_;
 
 	std::vector<std::unique_ptr<V4L2CameraProxy>> proxies_;
-	std::map<int, V4L2CameraProxy *> devices_;
+	std::map<int, std::shared_ptr<V4L2CameraFile>> files_;
 	std::map<void *, V4L2CameraProxy *> mmaps_;
 };
 

@@ -181,7 +181,7 @@ PipelineHandler::~PipelineHandler()
  */
 
 /**
- * \brief Search and acquire a MediDevice matching a device pattern
+ * \brief Search and acquire a MediaDevice matching a device pattern
  * \param[in] enumerator Enumerator containing all media devices in the system
  * \param[in] dm Device match pattern
  *

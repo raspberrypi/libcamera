@@ -623,6 +623,9 @@ int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 	if (!hasOwnership(file))
 		return -EBUSY;
 
+	if (vcam_->isRunning())
+		return 0;
+
 	currentBuf_ = 0;
 
 	return vcam_->streamOn();

@@ -404,6 +404,7 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.m.offset = i * curV4L2Format_.fmt.pix.sizeimage;
 		buf.index = i;
+		buf.flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
 
 		buffers_[i] = buf;
 	}

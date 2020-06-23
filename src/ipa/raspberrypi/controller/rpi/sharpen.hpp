@@ -26,7 +26,7 @@ private:
 	double threshold_;
 	double strength_;
 	double limit_;
-	std::atomic<double> mode_factor_;
+	double mode_factor_;
 };
 
 } // namespace RPi

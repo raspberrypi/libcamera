@@ -44,13 +44,12 @@ void Sharpen::Read(boost::property_tree::ptree const &params)
 
 void Sharpen::Prepare(Metadata *image_metadata)
 {
-	double mode_factor = mode_factor_;
 	struct SharpenStatus status;
 	// Binned modes seem to need the sharpening toned down with this
 	// pipeline.
-	status.threshold = threshold_ * mode_factor;
-	status.strength = strength_ / mode_factor;
-	status.limit = limit_ / mode_factor;
+	status.threshold = threshold_ * mode_factor_;
+	status.strength = strength_ / mode_factor_;
+	status.limit = limit_ / mode_factor_;
 	image_metadata->Set("sharpen.status", status);
 }
 

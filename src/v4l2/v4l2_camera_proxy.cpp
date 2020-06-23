@@ -359,6 +359,9 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 		return 0;
 	}
 
+	if (bufferCount_ > 0)
+		freeBuffers();
+
 	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
 	int ret = vcam_->configure(&streamConfig_, size,
 				   v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),

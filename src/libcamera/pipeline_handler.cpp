@@ -46,7 +46,7 @@ LOG_DEFINE_CATEGORY(Pipeline)
  *
  * Pipeline handlers are expected to extend this base class with platform
  * specific implementation, associate instances of the derived classes
- * using the setCameraData() method, and access them at a later time
+ * using the registerCamera() method, and access them at a later time
  * with cameraData().
  */
 

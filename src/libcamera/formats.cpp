@@ -435,6 +435,34 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
 	} },
+	{ formats::SBGGR10_IPU3, {
+		.format = formats::SBGGR10_IPU3,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10),
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+	} },
+	{ formats::SGBRG10_IPU3, {
+		.format = formats::SGBRG10_IPU3,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10),
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+	} },
+	{ formats::SGRBG10_IPU3, {
+		.format = formats::SGRBG10_IPU3,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10),
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+	} },
+	{ formats::SRGGB10_IPU3, {
+		.format = formats::SRGGB10_IPU3,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10),
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+	} },
 
 	/* Compressed formats. */
 	{ formats::MJPEG, {

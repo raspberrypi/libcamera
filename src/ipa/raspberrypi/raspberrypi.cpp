@@ -47,6 +47,7 @@
 #include "metadata.hpp"
 #include "noise_status.h"
 #include "sdn_status.h"
+#include "sharpen_algorithm.hpp"
 #include "sharpen_status.h"
 
 namespace libcamera {
@@ -629,6 +630,17 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 			ccm->SetSaturation(ctrl.second.get<float>());
 			libcameraMetadata_.set(controls::Saturation,
+					       ctrl.second.get<float>());
+			break;
+		}
+
+		case controls::SHARPNESS: {
+			RPi::SharpenAlgorithm *sharpen = dynamic_cast<RPi::SharpenAlgorithm *>(
+				controller_.GetAlgorithm("sharpen"));
+			ASSERT(sharpen);
+
+			sharpen->SetStrength(ctrl.second.get<float>());
+			libcameraMetadata_.set(controls::Sharpness,
 					       ctrl.second.get<float>());
 			break;
 		}

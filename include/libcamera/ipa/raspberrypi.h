@@ -51,6 +51,7 @@ static const ControlInfoMap RPiControls = {
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f) },
 	{ &controls::Saturation, ControlInfo(0.0f, 32.0f) },
+	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 };
 
 } /* namespace libcamera */

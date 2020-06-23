@@ -239,4 +239,16 @@ controls:
         pixel range (as if pixels ranged from 0 to 65535). The SensorBlackLevels
         control can only be returned in metadata.
       size: [4]
+
+  - Sharpness:
+      type: float
+      description:  |
+        A value of 0.0 means no sharpening. The minimum value means
+        minimal sharpening, and shall be 0.0 unless the camera can't
+        disable sharpening completely. The default value shall give a
+        "reasonable" level of sharpening, suitable for most use cases.
+        The maximum value may apply extremely high levels of sharpening,
+        higher than anyone could reasonably want. Negative values are
+        not allowed. Note also that sharpening is not applied to raw
+        streams.
 ...

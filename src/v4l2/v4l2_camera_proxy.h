@@ -61,7 +61,7 @@ private:
 	int vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg);
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
-	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
+	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg, MutexLocker *locker);
 	int vidioc_streamon(V4L2CameraFile *file, int *arg);
 	int vidioc_streamoff(V4L2CameraFile *file, int *arg);
 
@@ -105,6 +105,9 @@ private:
 	 * will return -EBUSY.
 	 */
 	V4L2CameraFile *owner_;
+
+	/* This mutex is to serialize access to the proxy. */
+	Mutex proxyMutex_;
 };
 
 #endif /* __V4L2_CAMERA_PROXY_H__ */

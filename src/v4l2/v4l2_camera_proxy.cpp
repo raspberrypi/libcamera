@@ -45,6 +45,8 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing open fd = " << file->efd();
 
+	MutexLocker locker(proxyMutex_);
+
 	if (refcount_++) {
 		files_.insert(file);
 		return 0;
@@ -79,6 +81,8 @@ void V4L2CameraProxy::close(V4L2CameraFile *file)
 {
 	LOG(V4L2Compat, Debug) << "Servicing close fd = " << file->efd();
 
+	MutexLocker locker(proxyMutex_);
+
 	files_.erase(file);
 
 	release(file);
@@ -93,6 +97,8 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 			    off64_t offset)
 {
 	LOG(V4L2Compat, Debug) << "Servicing mmap";
+
+	MutexLocker locker(proxyMutex_);
 
 	/* \todo Validate prot and flags properly. */
 	if (prot != (PROT_READ | PROT_WRITE)) {
@@ -127,6 +133,8 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 int V4L2CameraProxy::munmap(void *addr, size_t length)
 {
 	LOG(V4L2Compat, Debug) << "Servicing munmap";
+
+	MutexLocker locker(proxyMutex_);
 
 	auto iter = mmaps_.find(addr);
 	if (iter == mmaps_.end() || length != sizeimage_) {
@@ -587,7 +595,8 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	return ret;
 }
 
-int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
+int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
+				  MutexLocker *locker)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
 
@@ -604,9 +613,11 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	    !validateMemoryType(arg->memory))
 		return -EINVAL;
 
-	if (!file->nonBlocking())
+	if (!file->nonBlocking()) {
+		locker->unlock();
 		vcam_->waitForBufferAvailable();
-	else if (!vcam_->isBufferAvailable())
+		locker->lock();
+	} else if (!vcam_->isBufferAvailable())
 		return -EAGAIN;
 
 	/*
@@ -701,6 +712,8 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 
 int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *arg)
 {
+	MutexLocker locker(proxyMutex_);
+
 	if (!arg && (_IOC_DIR(request) & _IOC_WRITE)) {
 		errno = EFAULT;
 		return -1;
@@ -761,7 +774,7 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 		ret = vidioc_qbuf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_DQBUF:
-		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg));
+		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg), &locker);
 		break;
 	case VIDIOC_STREAMON:
 		ret = vidioc_streamon(file, static_cast<int *>(arg));

@@ -19,6 +19,8 @@ struct SharpenStatus {
 	double strength;
 	// upper limit of the allowed sharpening response
 	double limit;
+	// The sharpening strength requested by the user or application.
+	double user_strength;
 };
 
 #ifdef __cplusplus

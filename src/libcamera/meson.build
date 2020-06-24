@@ -125,6 +125,8 @@ if get_option('android')
     libcamera_sources += android_hal_sources
     includes += android_includes
     libcamera_link_with += android_camera_metadata
+
+    libcamera_deps += android_deps
 endif
 
 # We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.

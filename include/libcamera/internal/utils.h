@@ -15,6 +15,7 @@
 #include <string>
 #include <string.h>
 #include <sys/time.h>
+#include <vector>
 
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
 
@@ -35,6 +36,15 @@ const char *basename(const char *path);
 
 char *secure_getenv(const char *name);
 std::string dirname(const std::string &path);
+
+template<typename T>
+std::vector<typename T::key_type> map_keys(const T &map)
+{
+	std::vector<typename T::key_type> keys;
+	std::transform(map.begin(), map.end(), std::back_inserter(keys),
+		       [](const auto &value) { return value.first; });
+	return keys;
+}
 
 template<class InputIt1, class InputIt2>
 unsigned int set_overlap(InputIt1 first1, InputIt1 last1,

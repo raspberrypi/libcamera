@@ -128,6 +128,13 @@ std::string dirname(const std::string &path)
 }
 
 /**
+ * \fn std::vector<typename T::key_type> map_keys(const T &map)
+ * \brief Retrieve the keys of a std::map<>
+ * \param[in] map The map whose keys to retrieve
+ * \return A std::vector<> containing the keys of \a map
+ */
+
+/**
  * \fn libcamera::utils::set_overlap(InputIt1 first1, InputIt1 last1,
  *				     InputIt2 first2, InputIt2 last2)
  * \brief Count the number of elements in the intersection of two ranges

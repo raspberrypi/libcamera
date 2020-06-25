@@ -518,41 +518,45 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 	RPiCameraData *data = cameraData(camera);
 	CameraConfiguration *config = new RPiCameraConfiguration(data);
 	V4L2DeviceFormat sensorFormat;
+	unsigned int bufferCount;
+	PixelFormat pixelFormat;
 	V4L2PixFmtMap fmts;
+	Size size;
 
 	if (roles.empty())
 		return config;
 
 	for (const StreamRole role : roles) {
-		StreamConfiguration cfg{};
-
 		switch (role) {
 		case StreamRole::StillCaptureRaw:
-			cfg.size = data->sensor_->resolution();
+			size = data->sensor_->resolution();
 			fmts = data->unicam_[Unicam::Image].dev()->formats();
-			sensorFormat = findBestMode(fmts, cfg.size);
-			cfg.pixelFormat = sensorFormat.fourcc.toPixelFormat();
-			ASSERT(cfg.pixelFormat.isValid());
-			cfg.bufferCount = 1;
+			sensorFormat = findBestMode(fmts, size);
+			pixelFormat = sensorFormat.fourcc.toPixelFormat();
+			ASSERT(pixelFormat.isValid());
+			bufferCount = 1;
 			break;
 
 		case StreamRole::StillCapture:
-			cfg.pixelFormat = formats::NV12;
+			fmts = data->isp_[Isp::Output0].dev()->formats();
+			pixelFormat = formats::NV12;
 			/* Return the largest sensor resolution. */
-			cfg.size = data->sensor_->resolution();
-			cfg.bufferCount = 1;
+			size = data->sensor_->resolution();
+			bufferCount = 1;
 			break;
 
 		case StreamRole::VideoRecording:
-			cfg.pixelFormat = formats::NV12;
-			cfg.size = { 1920, 1080 };
-			cfg.bufferCount = 4;
+			fmts = data->isp_[Isp::Output0].dev()->formats();
+			pixelFormat = formats::NV12;
+			size = { 1920, 1080 };
+			bufferCount = 4;
 			break;
 
 		case StreamRole::Viewfinder:
-			cfg.pixelFormat = formats::ARGB8888;
-			cfg.size = { 800, 600 };
-			cfg.bufferCount = 4;
+			fmts = data->isp_[Isp::Output0].dev()->formats();
+			pixelFormat = formats::ARGB8888;
+			size = { 800, 600 };
+			bufferCount = 4;
 			break;
 
 		default:
@@ -561,6 +565,22 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			break;
 		}
 
+		/* Translate the V4L2PixelFormat to PixelFormat. */
+		std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
+		std::transform(fmts.begin(), fmts.end(), std::inserter(deviceFormats, deviceFormats.end()),
+			       [&](const decltype(fmts)::value_type &format) {
+					return decltype(deviceFormats)::value_type{
+						format.first.toPixelFormat(),
+						format.second
+					};
+			       });
+
+		/* Add the stream format based on the device node used for the use case. */
+		StreamFormats formats(deviceFormats);
+		StreamConfiguration cfg(formats);
+		cfg.size = size;
+		cfg.pixelFormat = pixelFormat;
+		cfg.bufferCount = bufferCount;
 		config->addConfiguration(cfg);
 	}
 

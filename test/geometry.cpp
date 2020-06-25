@@ -36,6 +36,16 @@ protected:
 
 	int run()
 	{
+		if (!Size().isNull() || !Size(0, 0).isNull()) {
+			cout << "Null size incorrectly reported as not null" << endl;
+			return TestFail;
+		}
+
+		if (Size(0, 100).isNull() || Size(100, 0).isNull() || Size(100, 100).isNull()) {
+			cout << "Non-null size incorrectly reported as null" << endl;
+			return TestFail;
+		}
+
 		/* Test Size equality and inequality. */
 		if (!compare(Size(100, 100), Size(100, 100), &operator==, "==", true))
 			return TestFail;

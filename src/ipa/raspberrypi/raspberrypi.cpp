@@ -318,6 +318,8 @@ void IPARPi::processEvent(const IPAOperationData &event)
 		if (frame_count_ > mistrust_count_)
 			processStats(bufferId);
 
+		reportMetadata();
+
 		IPAOperationData op;
 		op.operation = RPI_IPA_ACTION_STATS_METADATA_COMPLETE;
 		op.data = { bufferId & RPiIpaMask::ID };
@@ -336,7 +338,6 @@ void IPARPi::processEvent(const IPAOperationData &event)
 		 * they are "unreliable".
 		 */
 		prepareISP(embeddedbufferId);
-		reportMetadata();
 
 		/* Ready to push the input buffer into the ISP. */
 		IPAOperationData op;

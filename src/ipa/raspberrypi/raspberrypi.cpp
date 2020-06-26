@@ -42,6 +42,7 @@
 #include "contrast_status.h"
 #include "controller.hpp"
 #include "dpc_status.h"
+#include "focus_status.h"
 #include "geq_status.h"
 #include "lux_status.h"
 #include "metadata.hpp"
@@ -405,6 +406,17 @@ void IPARPi::reportMetadata()
 					 static_cast<int32_t>(blackLevelStatus->black_level_g),
 					 static_cast<int32_t>(blackLevelStatus->black_level_g),
 					 static_cast<int32_t>(blackLevelStatus->black_level_b) });
+
+	FocusStatus *focusStatus = rpiMetadata_.GetLocked<FocusStatus>("focus.status");
+	if (focusStatus && focusStatus->num == 12) {
+		/*
+		 * We get a 4x3 grid of regions by default. Calculate the average
+		 * FoM over the central two positions to give an overall scene FoM.
+		 * This can change later if it is not deemed suitable.
+		 */
+		int32_t focusFoM = (focusStatus->focus_measures[5] + focusStatus->focus_measures[6]) / 2;
+		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
+	}
 }
 
 /*

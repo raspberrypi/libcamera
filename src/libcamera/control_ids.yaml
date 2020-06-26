@@ -251,4 +251,15 @@ controls:
         higher than anyone could reasonably want. Negative values are
         not allowed. Note also that sharpening is not applied to raw
         streams.
+
+  - FocusFoM:
+      type: int32_t
+      description: |
+        Reports a Figure of Merit (FoM) to indicate how in-focus the frame is.
+        A larger FocusFoM value indicates a more in-focus frame. This control
+        depends on the IPA to gather ISP statistics from the defined focus
+        region, and combine them in a suitable way to generate a FocusFoM value.
+        In this respect, it is not necessarily aimed at providing a way to
+        implement a focus algorithm by the application, rather an indication of
+        how in-focus a frame is.
 ...

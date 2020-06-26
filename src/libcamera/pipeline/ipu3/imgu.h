@@ -22,11 +22,6 @@ struct StreamConfiguration;
 class ImgUDevice
 {
 public:
-	static constexpr unsigned int PAD_INPUT = 0;
-	static constexpr unsigned int PAD_OUTPUT = 2;
-	static constexpr unsigned int PAD_VF = 3;
-	static constexpr unsigned int PAD_STAT = 4;
-
 	/* ImgU output descriptor: group data specific to an ImgU output. */
 	struct ImgUOutput {
 		V4L2VideoDevice *dev;
@@ -62,13 +57,7 @@ public:
 	int start();
 	int stop();
 
-	int linkSetup(const std::string &source, unsigned int sourcePad,
-		      const std::string &sink, unsigned int sinkPad,
-		      bool enable);
 	int enableLinks(bool enable);
-
-	std::string name_;
-	MediaDevice *media_;
 
 	V4L2Subdevice *imgu_;
 	V4L2VideoDevice *input_;
@@ -76,6 +65,19 @@ public:
 	ImgUOutput viewfinder_;
 	ImgUOutput stat_;
 	/* \todo Add param video device for 3A tuning */
+
+private:
+	static constexpr unsigned int PAD_INPUT = 0;
+	static constexpr unsigned int PAD_OUTPUT = 2;
+	static constexpr unsigned int PAD_VF = 3;
+	static constexpr unsigned int PAD_STAT = 4;
+
+	int linkSetup(const std::string &source, unsigned int sourcePad,
+		      const std::string &sink, unsigned int sinkPad,
+		      bool enable);
+
+	std::string name_;
+	MediaDevice *media_;
 };
 
 } /* namespace libcamera */

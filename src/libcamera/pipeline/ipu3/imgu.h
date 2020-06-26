@@ -67,7 +67,6 @@ public:
 		      bool enable);
 	int enableLinks(bool enable);
 
-	unsigned int index_;
 	std::string name_;
 	MediaDevice *media_;
 

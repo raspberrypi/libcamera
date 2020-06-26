@@ -36,8 +36,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 {
 	int ret;
 
-	index_ = index;
-	name_ = "ipu3-imgu " + std::to_string(index_);
+	name_ = "ipu3-imgu " + std::to_string(index);
 	media_ = media;
 
 	/*

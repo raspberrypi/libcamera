@@ -923,6 +923,19 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	return requestTemplate->get();
 }
 
+PixelFormat CameraDevice::toPixelFormat(int format)
+{
+	/* Translate Android format code to libcamera pixel format. */
+	auto it = formatsMap_.find(format);
+	if (it == formatsMap_.end()) {
+		LOG(HAL, Error) << "Requested format " << utils::hex(format)
+				<< " not supported";
+		return PixelFormat();
+	}
+
+	return it->second;
+}
+
 /*
  * Inspect the stream_list to produce a list of StreamConfiguration to
  * be use to configure the Camera.
@@ -932,11 +945,14 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 
+		PixelFormat format = toPixelFormat(stream->format);
+
 		LOG(HAL, Info) << "Stream #" << i
 			       << ", direction: " << stream->stream_type
 			       << ", width: " << stream->width
 			       << ", height: " << stream->height
-			       << ", format: " << utils::hex(stream->format);
+			       << ", format: " << utils::hex(stream->format)
+			       << " (" << format.toString() << ")";
 	}
 
 	/* Only one stream is supported. */
@@ -947,13 +963,9 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	camera3_stream_t *camera3Stream = stream_list->streams[0];
 
 	/* Translate Android format code to libcamera pixel format. */
-	auto it = formatsMap_.find(camera3Stream->format);
-	if (it == formatsMap_.end()) {
-		LOG(HAL, Error) << "Requested format "
-				<< utils::hex(camera3Stream->format)
-				<< " not supported";
+	PixelFormat format = toPixelFormat(camera3Stream->format);
+	if (!format.isValid())
 		return -EINVAL;
-	}
 
 	/*
 	 * Hardcode viewfinder role, replacing the generated configuration
@@ -969,7 +981,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	StreamConfiguration *streamConfiguration = &config_->at(0);
 	streamConfiguration->size.width = camera3Stream->width;
 	streamConfiguration->size.height = camera3Stream->height;
-	streamConfiguration->pixelFormat = it->second;
+	streamConfiguration->pixelFormat = format;
 
 	switch (config_->validate()) {
 	case CameraConfiguration::Valid:

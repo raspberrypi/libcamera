@@ -109,7 +109,6 @@ public:
 
 	bool active_;
 	bool raw_;
-	std::string name_;
 	ImgUDevice::ImgUOutput *device_;
 };
 
@@ -867,11 +866,8 @@ int PipelineHandlerIPU3::registerCameras()
 		 */
 		data->imgu_ = numCameras ? &imgu1_ : &imgu0_;
 		data->outStream_.device_ = &data->imgu_->output_;
-		data->outStream_.name_ = "output";
 		data->vfStream_.device_ = &data->imgu_->viewfinder_;
-		data->vfStream_.name_ = "viewfinder";
 		data->rawStream_.raw_ = true;
-		data->rawStream_.name_ = "raw";
 
 		/*
 		 * Connect video devices' 'bufferReady' signals to their

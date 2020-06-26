@@ -34,8 +34,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
-class IPU3CameraData;
-
 class ImgUDevice
 {
 public:
@@ -75,8 +73,8 @@ public:
 			    const StreamConfiguration &cfg,
 			    V4L2DeviceFormat *outputFormat);
 
-	int allocateBuffers(IPU3CameraData *data, unsigned int bufferCount);
-	void freeBuffers(IPU3CameraData *data);
+	int allocateBuffers(unsigned int bufferCount);
+	void freeBuffers();
 
 	int start();
 	int stop();
@@ -665,7 +663,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 		data->rawStream_.configuration().bufferCount,
 	});
 
-	ret = imgu->allocateBuffers(data, bufferCount);
+	ret = imgu->allocateBuffers(bufferCount);
 	if (ret < 0)
 		return ret;
 
@@ -676,7 +674,7 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 
-	data->imgu_->freeBuffers(data);
+	data->imgu_->freeBuffers();
 
 	return 0;
 }
@@ -1121,7 +1119,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 /**
  * \brief Allocate buffers for all the ImgU video devices
  */
-int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
+int ImgUDevice::allocateBuffers(unsigned int bufferCount)
 {
 	/* Share buffers between CIO2 output and ImgU input. */
 	int ret = input_->importBuffers(bufferCount);
@@ -1163,7 +1161,7 @@ int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
 	return 0;
 
 error:
-	freeBuffers(data);
+	freeBuffers();
 
 	return ret;
 }
@@ -1171,7 +1169,7 @@ error:
 /**
  * \brief Release buffers for all the ImgU video devices
  */
-void ImgUDevice::freeBuffers(IPU3CameraData *data)
+void ImgUDevice::freeBuffers()
 {
 	int ret;
 

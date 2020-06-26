@@ -942,6 +942,16 @@ PixelFormat CameraDevice::toPixelFormat(int format)
  */
 int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 {
+	/*
+	 * Generate an empty configuration, and construct a StreamConfiguration
+	 * for each camera3_stream to add to it.
+	 */
+	config_ = camera_->generateConfiguration();
+	if (!config_) {
+		LOG(HAL, Error) << "Failed to generate camera configuration";
+		return -EINVAL;
+	}
+
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 
@@ -953,35 +963,18 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			       << ", height: " << stream->height
 			       << ", format: " << utils::hex(stream->format)
 			       << " (" << format.toString() << ")";
+
+		if (!format.isValid())
+			return -EINVAL;
+
+		StreamConfiguration streamConfiguration;
+
+		streamConfiguration.size.width = stream->width;
+		streamConfiguration.size.height = stream->height;
+		streamConfiguration.pixelFormat = format;
+
+		config_->addConfiguration(streamConfiguration);
 	}
-
-	/* Only one stream is supported. */
-	if (stream_list->num_streams != 1) {
-		LOG(HAL, Error) << "Only one stream supported";
-		return -EINVAL;
-	}
-	camera3_stream_t *camera3Stream = stream_list->streams[0];
-
-	/* Translate Android format code to libcamera pixel format. */
-	PixelFormat format = toPixelFormat(camera3Stream->format);
-	if (!format.isValid())
-		return -EINVAL;
-
-	/*
-	 * Hardcode viewfinder role, replacing the generated configuration
-	 * parameters with the ones requested by the Android framework.
-	 */
-	StreamRoles roles = { StreamRole::Viewfinder };
-	config_ = camera_->generateConfiguration(roles);
-	if (!config_ || config_->empty()) {
-		LOG(HAL, Error) << "Failed to generate camera configuration";
-		return -EINVAL;
-	}
-
-	StreamConfiguration *streamConfiguration = &config_->at(0);
-	streamConfiguration->size.width = camera3Stream->width;
-	streamConfiguration->size.height = camera3Stream->height;
-	streamConfiguration->pixelFormat = format;
 
 	switch (config_->validate()) {
 	case CameraConfiguration::Valid:
@@ -996,7 +989,13 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		return -EINVAL;
 	}
 
-	camera3Stream->max_buffers = streamConfiguration->bufferCount;
+	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
+		camera3_stream_t *stream = stream_list->streams[i];
+		StreamConfiguration &streamConfiguration = config_->at(i);
+
+		/* Use the bufferCount confirmed by the validation process. */
+		stream->max_buffers = streamConfiguration.bufferCount;
+	}
 
 	/*
 	 * Once the CameraConfiguration has been adjusted/validated

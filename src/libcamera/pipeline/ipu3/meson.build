@@ -2,5 +2,6 @@
 
 libcamera_sources += files([
     'cio2.cpp',
+    'imgu.cpp',
     'ipu3.cpp',
 ])

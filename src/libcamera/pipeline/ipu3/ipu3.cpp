@@ -1135,11 +1135,13 @@ int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
 	}
 
 	/*
-	 * Use for the stat's internal pool the same number of buffers as for
-	 * the input pool.
+	 * The kernel fails to start if buffers are not either imported or
+	 * allocated for the statistics video device. As statistics buffers are
+	 * not yet used by the pipeline import buffers to save memory.
+	 *
 	 * \todo To be revised when we'll actually use the stat node.
 	 */
-	ret = stat_.dev->allocateBuffers(bufferCount, &stat_.buffers);
+	ret = stat_.dev->importBuffers(bufferCount);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
 		goto error;

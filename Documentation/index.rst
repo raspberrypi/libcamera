@@ -12,3 +12,5 @@
    Home <self>
    Docs <docs>
    Contribute <contributing>
+
+   Developer Guide <guides/introduction>

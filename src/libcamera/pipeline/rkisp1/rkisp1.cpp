@@ -506,7 +506,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 					    MEDIA_BUS_FMT_SGRBG8_1X8,
 					    MEDIA_BUS_FMT_SRGGB8_1X8 },
 					  cfg.size);
-	if (!sensorFormat_.size.width || !sensorFormat_.size.height)
+	if (sensorFormat_.size.isNull())
 		sensorFormat_.size = sensor->resolution();
 
 	/*
@@ -517,7 +517,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	 */
 	const Size size = cfg.size;
 
-	if (!cfg.size.width || !cfg.size.height) {
+	if (cfg.size.isNull()) {
 		cfg.size.width = 1280;
 		cfg.size.height = 1280 * sensorFormat_.size.height
 				/ sensorFormat_.size.width;

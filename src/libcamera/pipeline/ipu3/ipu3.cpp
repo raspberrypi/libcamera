@@ -185,7 +185,7 @@ void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
 		 * Provide a suitable default that matches the sensor aspect
 		 * ratio.
 		 */
-		if (!cfg.size.width || !cfg.size.height) {
+		if (cfg.size.isNull()) {
 			cfg.size.width = 1280;
 			cfg.size.height = 1280 * cio2Configuration_.size.height
 					/ cio2Configuration_.size.width;

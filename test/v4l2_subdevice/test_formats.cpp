@@ -67,7 +67,7 @@ int FormatHandlingTest::run()
 		return TestFail;
 	}
 
-	if (format.size.width == 0 || format.size.height == 0) {
+	if (format.size.isNull()) {
 		cerr << "Failed to update image format" << endl;
 		return TestFail;
 	}

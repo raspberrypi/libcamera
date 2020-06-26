@@ -49,7 +49,6 @@ public:
 		V4L2VideoDevice *dev;
 		unsigned int pad;
 		std::string name;
-		std::vector<std::unique_ptr<FrameBuffer>> buffers;
 	};
 
 	ImgUDevice()
@@ -1124,9 +1123,6 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
  */
 int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
 {
-	IPU3Stream *outStream = &data->outStream_;
-	IPU3Stream *vfStream = &data->vfStream_;
-
 	/* Share buffers between CIO2 output and ImgU input. */
 	int ret = input_->importBuffers(bufferCount);
 	if (ret) {
@@ -1148,27 +1144,19 @@ int ImgUDevice::allocateBuffers(IPU3CameraData *data, unsigned int bufferCount)
 	}
 
 	/*
-	 * Allocate buffers for both outputs. If an output is active, prepare
-	 * for buffer import, otherwise allocate internal buffers. Use the same
-	 * number of buffers in either case.
+	 * Import buffers for all outputs, regardless of whether the
+	 * corresponding stream is active or inactive, as the driver needs
+	 * buffers to be requested on the V4L2 devices in order to operate.
 	 */
-	if (outStream->active_)
-		ret = output_.dev->importBuffers(bufferCount);
-	else
-		ret = output_.dev->allocateBuffers(bufferCount,
-						   &output_.buffers);
+	ret = output_.dev->importBuffers(bufferCount);
 	if (ret < 0) {
-		LOG(IPU3, Error) << "Failed to allocate ImgU output buffers";
+		LOG(IPU3, Error) << "Failed to import ImgU output buffers";
 		goto error;
 	}
 
-	if (vfStream->active_)
-		ret = viewfinder_.dev->importBuffers(bufferCount);
-	else
-		ret = viewfinder_.dev->allocateBuffers(bufferCount,
-						       &viewfinder_.buffers);
+	ret = viewfinder_.dev->importBuffers(bufferCount);
 	if (ret < 0) {
-		LOG(IPU3, Error) << "Failed to allocate ImgU viewfinder buffers";
+		LOG(IPU3, Error) << "Failed to import ImgU viewfinder buffers";
 		goto error;
 	}
 

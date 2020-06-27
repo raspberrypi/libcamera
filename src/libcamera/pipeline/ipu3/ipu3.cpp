@@ -35,13 +35,11 @@ class IPU3Stream : public Stream
 {
 public:
 	IPU3Stream()
-		: active_(false), raw_(false), device_(nullptr)
+		: active_(false)
 	{
 	}
 
 	bool active_;
-	bool raw_;
-	ImgUDevice::ImgUOutput *device_;
 };
 
 class IPU3CameraData : public CameraData
@@ -276,7 +274,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		const StreamConfiguration oldCfg = cfg;
 		const IPU3Stream *stream = streams_[i];
 
-		if (stream->raw_) {
+		if (stream == &data_->rawStream_) {
 			cfg = cio2Configuration_;
 		} else {
 			bool scale = stream == &data_->vfStream_;
@@ -571,13 +569,16 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 					    std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	IPU3CameraData *data = cameraData(camera);
-	IPU3Stream *ipu3stream = static_cast<IPU3Stream *>(stream);
 	unsigned int count = stream->configuration().bufferCount;
 
-	if (ipu3stream->raw_)
+	if (stream == &data->outStream_)
+		return data->imgu_->output_.dev->exportBuffers(count, buffers);
+	else if (stream == &data->vfStream_)
+		return data->imgu_->viewfinder_.dev->exportBuffers(count, buffers);
+	else if (stream == &data->rawStream_)
 		return data->cio2_.exportBuffers(count, buffers);
 
-	return ipu3stream->device_->dev->exportBuffers(count, buffers);
+	return -EINVAL;
 }
 
 /**
@@ -684,11 +685,16 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 	/* Queue all buffers from the request aimed for the ImgU. */
 	for (auto it : request->buffers()) {
 		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
-		if (stream->raw_)
+		FrameBuffer *buffer = it.second;
+		int ret;
+
+		if (stream == &data->outStream_)
+			ret = data->imgu_->output_.dev->queueBuffer(buffer);
+		else if (stream == &data->vfStream_)
+			ret = data->imgu_->viewfinder_.dev->queueBuffer(buffer);
+		else
 			continue;
 
-		FrameBuffer *buffer = it.second;
-		int ret = stream->device_->dev->queueBuffer(buffer);
 		if (ret < 0)
 			error = ret;
 	}
@@ -800,9 +806,6 @@ int PipelineHandlerIPU3::registerCameras()
 		 * second.
 		 */
 		data->imgu_ = numCameras ? &imgu1_ : &imgu0_;
-		data->outStream_.device_ = &data->imgu_->output_;
-		data->vfStream_.device_ = &data->imgu_->viewfinder_;
-		data->rawStream_.raw_ = true;
 
 		/*
 		 * Connect video devices' 'bufferReady' signals to their

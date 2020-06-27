@@ -139,18 +139,17 @@ int ImgUDevice::configureInput(const Size &size,
 }
 
 /**
- * \brief Configure the ImgU unit \a id video output
- * \param[in] output The ImgU output device to configure
+ * \brief Configure a video device on the ImgU
+ * \param[in] dev The video device to configure
+ * \param[in] pad The pad of the ImgU subdevice
  * \param[in] cfg The requested configuration
+ * \param[out] outputFormat The format set on the video device
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::configureOutput(ImgUOutput *output,
-				const StreamConfiguration &cfg,
-				V4L2DeviceFormat *outputFormat)
+int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
+				     const StreamConfiguration &cfg,
+				     V4L2DeviceFormat *outputFormat)
 {
-	V4L2VideoDevice *dev = output->dev;
-	unsigned int pad = output->pad;
-
 	V4L2SubdeviceFormat imguFormat = {};
 	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
 	imguFormat.size = cfg.size;
@@ -160,7 +159,7 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 		return ret;
 
 	/* No need to apply format to the stat node. */
-	if (output == &stat_)
+	if (dev == stat_.dev)
 		return 0;
 
 	*outputFormat = {};
@@ -172,7 +171,8 @@ int ImgUDevice::configureOutput(ImgUOutput *output,
 	if (ret)
 		return ret;
 
-	LOG(IPU3, Debug) << "ImgU " << output->name << " format = "
+	const char *name = dev == output_.dev ? "output" : "viewfinder";
+	LOG(IPU3, Debug) << "ImgU " << name << " format = "
 			 << outputFormat->toString();
 
 	return 0;

@@ -504,19 +504,24 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		stream->active_ = true;
 		cfg.setStream(stream);
 
-		/*
-		 * The RAW still capture stream just copies buffers from the
-		 * internal queue and doesn't need any specific configuration.
-		 */
-		if (stream->raw_) {
-			cfg.stride = cio2Format.planes[0].bpl;
-		} else {
-			ret = imgu->configureOutput(stream->device_, cfg,
-						    &outputFormat);
+		if (stream == outStream) {
+			ret = imgu->configureOutput(cfg, &outputFormat);
 			if (ret)
 				return ret;
 
 			cfg.stride = outputFormat.planes[0].bpl;
+		} else if (stream == vfStream) {
+			ret = imgu->configureViewfinder(cfg, &outputFormat);
+			if (ret)
+				return ret;
+
+			cfg.stride = outputFormat.planes[0].bpl;
+		} else {
+			/*
+			 * The RAW stream is configured as part of the CIO2 and
+			 * no configuration is needed for the ImgU.
+			 */
+			cfg.stride = cio2Format.planes[0].bpl;
 		}
 	}
 
@@ -526,15 +531,13 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * be at least one active stream in the configuration request).
 	 */
 	if (!outStream->active_) {
-		ret = imgu->configureOutput(outStream->device_, config->at(0),
-					    &outputFormat);
+		ret = imgu->configureOutput(config->at(0), &outputFormat);
 		if (ret)
 			return ret;
 	}
 
 	if (!vfStream->active_) {
-		ret = imgu->configureOutput(vfStream->device_, config->at(0),
-					    &outputFormat);
+		ret = imgu->configureViewfinder(config->at(0), &outputFormat);
 		if (ret)
 			return ret;
 	}
@@ -546,7 +549,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	StreamConfiguration statCfg = {};
 	statCfg.size = cio2Format.size;
 
-	ret = imgu->configureOutput(&imgu->stat_, statCfg, &outputFormat);
+	ret = imgu->configureStat(statCfg, &outputFormat);
 	if (ret)
 		return ret;
 

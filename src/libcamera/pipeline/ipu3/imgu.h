@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_PIPELINE_IPU3_IMGU_H__
 #define __LIBCAMERA_PIPELINE_IPU3_IMGU_H__
 
+#include <memory>
 #include <string>
 
 #include "libcamera/internal/v4l2_subdevice.h"
@@ -22,21 +23,6 @@ struct StreamConfiguration;
 class ImgUDevice
 {
 public:
-	ImgUDevice()
-		: imgu_(nullptr), input_(nullptr), output_(nullptr),
-		  viewfinder_(nullptr), stat_(nullptr)
-	{
-	}
-
-	~ImgUDevice()
-	{
-		delete imgu_;
-		delete input_;
-		delete output_;
-		delete viewfinder_;
-		delete stat_;
-	}
-
 	int init(MediaDevice *media, unsigned int index);
 
 	int configureInput(const Size &size, V4L2DeviceFormat *inputFormat);
@@ -44,21 +30,22 @@ public:
 	int configureOutput(const StreamConfiguration &cfg,
 			    V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(output_, PAD_OUTPUT, cfg,
+		return configureVideoDevice(output_.get(), PAD_OUTPUT, cfg,
 					    outputFormat);
 	}
 
 	int configureViewfinder(const StreamConfiguration &cfg,
 				V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(viewfinder_, PAD_VF, cfg,
+		return configureVideoDevice(viewfinder_.get(), PAD_VF, cfg,
 					    outputFormat);
 	}
 
 	int configureStat(const StreamConfiguration &cfg,
 			  V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(stat_, PAD_STAT, cfg, outputFormat);
+		return configureVideoDevice(stat_.get(), PAD_STAT, cfg,
+					    outputFormat);
 	}
 
 	int allocateBuffers(unsigned int bufferCount);
@@ -69,11 +56,11 @@ public:
 
 	int enableLinks(bool enable);
 
-	V4L2Subdevice *imgu_;
-	V4L2VideoDevice *input_;
-	V4L2VideoDevice *output_;
-	V4L2VideoDevice *viewfinder_;
-	V4L2VideoDevice *stat_;
+	std::unique_ptr<V4L2Subdevice> imgu_;
+	std::unique_ptr<V4L2VideoDevice> input_;
+	std::unique_ptr<V4L2VideoDevice> output_;
+	std::unique_ptr<V4L2VideoDevice> viewfinder_;
+	std::unique_ptr<V4L2VideoDevice> stat_;
 	/* \todo Add param video device for 3A tuning */
 
 private:

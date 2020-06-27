@@ -44,28 +44,29 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	 * by the match() function: no need to check for newly created
 	 * video devices and subdevice validity here.
 	 */
-	imgu_ = V4L2Subdevice::fromEntityName(media, name_);
+	imgu_.reset(V4L2Subdevice::fromEntityName(media, name_));
 	ret = imgu_->open();
 	if (ret)
 		return ret;
 
-	input_ = V4L2VideoDevice::fromEntityName(media, name_ + " input");
+	input_.reset(V4L2VideoDevice::fromEntityName(media, name_ + " input"));
 	ret = input_->open();
 	if (ret)
 		return ret;
 
-	output_ = V4L2VideoDevice::fromEntityName(media, name_ + " output");
+	output_.reset(V4L2VideoDevice::fromEntityName(media,
+						      name_ + " output"));
 	ret = output_->open();
 	if (ret)
 		return ret;
 
-	viewfinder_ = V4L2VideoDevice::fromEntityName(media,
-						      name_ + " viewfinder");
+	viewfinder_.reset(V4L2VideoDevice::fromEntityName(media,
+							  name_ + " viewfinder"));
 	ret = viewfinder_->open();
 	if (ret)
 		return ret;
 
-	stat_ = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
+	stat_.reset(V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat"));
 	ret = stat_->open();
 	if (ret)
 		return ret;
@@ -150,7 +151,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 		return ret;
 
 	/* No need to apply format to the stat node. */
-	if (dev == stat_)
+	if (dev == stat_.get())
 		return 0;
 
 	*outputFormat = {};
@@ -162,7 +163,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 	if (ret)
 		return ret;
 
-	const char *name = dev == output_ ? "output" : "viewfinder";
+	const char *name = dev == output_.get() ? "output" : "viewfinder";
 	LOG(IPU3, Debug) << "ImgU " << name << " format = "
 			 << outputFormat->toString();
 

@@ -33,13 +33,6 @@ LOG_DEFINE_CATEGORY(IPU3)
 
 class IPU3Stream : public Stream
 {
-public:
-	IPU3Stream()
-		: active_(false)
-	{
-	}
-
-	bool active_;
 };
 
 class IPU3CameraData : public CameraData
@@ -486,8 +479,8 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Apply the format to the configured streams output devices. */
-	outStream->active_ = false;
-	vfStream->active_ = false;
+	bool outActive = false;
+	bool vfActive = false;
 
 	for (unsigned int i = 0; i < config->size(); ++i) {
 		/*
@@ -499,7 +492,6 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		IPU3Stream *stream = const_cast<IPU3Stream *>(config->streams()[i]);
 		StreamConfiguration &cfg = (*config)[i];
 
-		stream->active_ = true;
 		cfg.setStream(stream);
 
 		if (stream == outStream) {
@@ -508,12 +500,14 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 				return ret;
 
 			cfg.stride = outputFormat.planes[0].bpl;
+			outActive = true;
 		} else if (stream == vfStream) {
 			ret = imgu->configureViewfinder(cfg, &outputFormat);
 			if (ret)
 				return ret;
 
 			cfg.stride = outputFormat.planes[0].bpl;
+			vfActive = true;
 		} else {
 			/*
 			 * The RAW stream is configured as part of the CIO2 and
@@ -528,13 +522,13 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * the configuration of the active one for that purpose (there should
 	 * be at least one active stream in the configuration request).
 	 */
-	if (!outStream->active_) {
+	if (!outActive) {
 		ret = imgu->configureOutput(config->at(0), &outputFormat);
 		if (ret)
 			return ret;
 	}
 
-	if (!vfStream->active_) {
+	if (!vfActive) {
 		ret = imgu->configureViewfinder(config->at(0), &outputFormat);
 		if (ret)
 			return ret;
@@ -554,7 +548,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
 	ControlList ctrls(imgu->imgu_->controls());
 	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,
-		  static_cast<int32_t>(vfStream->active_ ? IPU3PipeModeVideo :
+		  static_cast<int32_t>(vfActive ? IPU3PipeModeVideo :
 				       IPU3PipeModeStillCapture));
 	ret = imgu->imgu_->setControls(&ctrls);
 	if (ret) {

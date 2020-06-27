@@ -31,10 +31,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
-class IPU3Stream : public Stream
-{
-};
-
 class IPU3CameraData : public CameraData
 {
 public:
@@ -49,9 +45,9 @@ public:
 	CIO2Device cio2_;
 	ImgUDevice *imgu_;
 
-	IPU3Stream outStream_;
-	IPU3Stream vfStream_;
-	IPU3Stream rawStream_;
+	Stream outStream_;
+	Stream vfStream_;
+	Stream rawStream_;
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -62,7 +58,7 @@ public:
 	Status validate() override;
 
 	const StreamConfiguration &cio2Format() const { return cio2Configuration_; };
-	const std::vector<const IPU3Stream *> &streams() { return streams_; }
+	const std::vector<const Stream *> &streams() { return streams_; }
 
 private:
 	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
@@ -80,7 +76,7 @@ private:
 	const IPU3CameraData *data_;
 
 	StreamConfiguration cio2Configuration_;
-	std::vector<const IPU3Stream *> streams_;
+	std::vector<const Stream *> streams_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler
@@ -144,7 +140,7 @@ void IPU3CameraConfiguration::assignStreams()
 	 * resolution is equal to the sensor resolution, and the viewfinder
 	 * stream otherwise.
 	 */
-	std::set<const IPU3Stream *> availableStreams = {
+	std::set<const Stream *> availableStreams = {
 		&data_->outStream_,
 		&data_->vfStream_,
 		&data_->rawStream_,
@@ -162,7 +158,7 @@ void IPU3CameraConfiguration::assignStreams()
 	for (const StreamConfiguration &cfg : config_) {
 		const PixelFormatInfo &info =
 			PixelFormatInfo::info(cfg.pixelFormat);
-		const IPU3Stream *stream;
+		const Stream *stream;
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
 			stream = &data_->rawStream_;
@@ -265,7 +261,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	for (unsigned int i = 0; i < config_.size(); ++i) {
 		StreamConfiguration &cfg = config_[i];
 		const StreamConfiguration oldCfg = cfg;
-		const IPU3Stream *stream = streams_[i];
+		const Stream *stream = streams_[i];
 
 		if (stream == &data_->rawStream_) {
 			cfg = cio2Configuration_;
@@ -297,7 +293,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3CameraConfiguration *config;
-	std::set<IPU3Stream *> streams = {
+	std::set<Stream *> streams = {
 		&data->outStream_,
 		&data->vfStream_,
 		&data->rawStream_,
@@ -307,7 +303,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 	for (const StreamRole role : roles) {
 		StreamConfiguration cfg = {};
-		IPU3Stream *stream = nullptr;
+		Stream *stream = nullptr;
 
 		cfg.pixelFormat = formats::NV12;
 
@@ -415,8 +411,8 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	IPU3CameraConfiguration *config =
 		static_cast<IPU3CameraConfiguration *>(c);
 	IPU3CameraData *data = cameraData(camera);
-	IPU3Stream *outStream = &data->outStream_;
-	IPU3Stream *vfStream = &data->vfStream_;
+	Stream *outStream = &data->outStream_;
+	Stream *vfStream = &data->vfStream_;
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
 	V4L2DeviceFormat outputFormat;
@@ -489,7 +485,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		 * unwanted modifications of camera data in the configuration
 		 * validate() implementation.
 		 */
-		IPU3Stream *stream = const_cast<IPU3Stream *>(config->streams()[i]);
+		Stream *stream = const_cast<Stream *>(config->streams()[i]);
 		StreamConfiguration &cfg = (*config)[i];
 
 		cfg.setStream(stream);
@@ -678,7 +674,7 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Queue all buffers from the request aimed for the ImgU. */
 	for (auto it : request->buffers()) {
-		IPU3Stream *stream = static_cast<IPU3Stream *>(it.first);
+		Stream *stream = static_cast<Stream *>(it.first);
 		FrameBuffer *buffer = it.second;
 		int ret;
 

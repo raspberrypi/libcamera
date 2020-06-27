@@ -89,7 +89,7 @@ public:
 	const ControlList &properties();
 
 	const std::set<Stream *> &streams() const;
-	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles);
+	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles = {});
 	int configure(CameraConfiguration *config);
 
 	Request *createRequest(uint64_t cookie = 0);

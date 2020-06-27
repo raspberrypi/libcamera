@@ -54,30 +54,21 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	if (ret)
 		return ret;
 
-	output_.dev = V4L2VideoDevice::fromEntityName(media, name_ + " output");
-	ret = output_.dev->open();
+	output_ = V4L2VideoDevice::fromEntityName(media, name_ + " output");
+	ret = output_->open();
 	if (ret)
 		return ret;
 
-	output_.pad = PAD_OUTPUT;
-	output_.name = "output";
-
-	viewfinder_.dev = V4L2VideoDevice::fromEntityName(media,
-							  name_ + " viewfinder");
-	ret = viewfinder_.dev->open();
+	viewfinder_ = V4L2VideoDevice::fromEntityName(media,
+						      name_ + " viewfinder");
+	ret = viewfinder_->open();
 	if (ret)
 		return ret;
 
-	viewfinder_.pad = PAD_VF;
-	viewfinder_.name = "viewfinder";
-
-	stat_.dev = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
-	ret = stat_.dev->open();
+	stat_ = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
+	ret = stat_->open();
 	if (ret)
 		return ret;
-
-	stat_.pad = PAD_STAT;
-	stat_.name = "stat";
 
 	return 0;
 }
@@ -159,7 +150,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 		return ret;
 
 	/* No need to apply format to the stat node. */
-	if (dev == stat_.dev)
+	if (dev == stat_)
 		return 0;
 
 	*outputFormat = {};
@@ -171,7 +162,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 	if (ret)
 		return ret;
 
-	const char *name = dev == output_.dev ? "output" : "viewfinder";
+	const char *name = dev == output_ ? "output" : "viewfinder";
 	LOG(IPU3, Debug) << "ImgU " << name << " format = "
 			 << outputFormat->toString();
 
@@ -197,7 +188,7 @@ int ImgUDevice::allocateBuffers(unsigned int bufferCount)
 	 *
 	 * \todo To be revised when we'll actually use the stat node.
 	 */
-	ret = stat_.dev->importBuffers(bufferCount);
+	ret = stat_->importBuffers(bufferCount);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
 		goto error;
@@ -208,13 +199,13 @@ int ImgUDevice::allocateBuffers(unsigned int bufferCount)
 	 * corresponding stream is active or inactive, as the driver needs
 	 * buffers to be requested on the V4L2 devices in order to operate.
 	 */
-	ret = output_.dev->importBuffers(bufferCount);
+	ret = output_->importBuffers(bufferCount);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to import ImgU output buffers";
 		goto error;
 	}
 
-	ret = viewfinder_.dev->importBuffers(bufferCount);
+	ret = viewfinder_->importBuffers(bufferCount);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to import ImgU viewfinder buffers";
 		goto error;
@@ -235,15 +226,15 @@ void ImgUDevice::freeBuffers()
 {
 	int ret;
 
-	ret = output_.dev->releaseBuffers();
+	ret = output_->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU output buffers";
 
-	ret = stat_.dev->releaseBuffers();
+	ret = stat_->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU stat buffers";
 
-	ret = viewfinder_.dev->releaseBuffers();
+	ret = viewfinder_->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU viewfinder buffers";
 
@@ -257,19 +248,19 @@ int ImgUDevice::start()
 	int ret;
 
 	/* Start the ImgU video devices. */
-	ret = output_.dev->streamOn();
+	ret = output_->streamOn();
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to start ImgU output";
 		return ret;
 	}
 
-	ret = viewfinder_.dev->streamOn();
+	ret = viewfinder_->streamOn();
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to start ImgU viewfinder";
 		return ret;
 	}
 
-	ret = stat_.dev->streamOn();
+	ret = stat_->streamOn();
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to start ImgU stat";
 		return ret;
@@ -288,9 +279,9 @@ int ImgUDevice::stop()
 {
 	int ret;
 
-	ret = output_.dev->streamOff();
-	ret |= viewfinder_.dev->streamOff();
-	ret |= stat_.dev->streamOff();
+	ret = output_->streamOff();
+	ret |= viewfinder_->streamOff();
+	ret |= stat_->streamOff();
 	ret |= input_->streamOff();
 
 	return ret;

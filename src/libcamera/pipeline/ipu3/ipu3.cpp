@@ -562,9 +562,9 @@ int PipelineHandlerIPU3::exportFrameBuffers(Camera *camera, Stream *stream,
 	unsigned int count = stream->configuration().bufferCount;
 
 	if (stream == &data->outStream_)
-		return data->imgu_->output_.dev->exportBuffers(count, buffers);
+		return data->imgu_->output_->exportBuffers(count, buffers);
 	else if (stream == &data->vfStream_)
-		return data->imgu_->viewfinder_.dev->exportBuffers(count, buffers);
+		return data->imgu_->viewfinder_->exportBuffers(count, buffers);
 	else if (stream == &data->rawStream_)
 		return data->cio2_.exportBuffers(count, buffers);
 
@@ -679,9 +679,9 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 		int ret;
 
 		if (stream == &data->outStream_)
-			ret = data->imgu_->output_.dev->queueBuffer(buffer);
+			ret = data->imgu_->output_->queueBuffer(buffer);
 		else if (stream == &data->vfStream_)
-			ret = data->imgu_->viewfinder_.dev->queueBuffer(buffer);
+			ret = data->imgu_->viewfinder_->queueBuffer(buffer);
 		else
 			continue;
 
@@ -809,9 +809,9 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::cio2BufferReady);
 		data->imgu_->input_->bufferReady.connect(&data->cio2_,
 					&CIO2Device::tryReturnBuffer);
-		data->imgu_->output_.dev->bufferReady.connect(data.get(),
+		data->imgu_->output_->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
-		data->imgu_->viewfinder_.dev->bufferReady.connect(data.get(),
+		data->imgu_->viewfinder_->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */

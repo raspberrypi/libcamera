@@ -22,28 +22,19 @@ struct StreamConfiguration;
 class ImgUDevice
 {
 public:
-	/* ImgU output descriptor: group data specific to an ImgU output. */
-	struct ImgUOutput {
-		V4L2VideoDevice *dev;
-		unsigned int pad;
-		std::string name;
-	};
-
 	ImgUDevice()
-		: imgu_(nullptr), input_(nullptr)
+		: imgu_(nullptr), input_(nullptr), output_(nullptr),
+		  viewfinder_(nullptr), stat_(nullptr)
 	{
-		output_.dev = nullptr;
-		viewfinder_.dev = nullptr;
-		stat_.dev = nullptr;
 	}
 
 	~ImgUDevice()
 	{
 		delete imgu_;
 		delete input_;
-		delete output_.dev;
-		delete viewfinder_.dev;
-		delete stat_.dev;
+		delete output_;
+		delete viewfinder_;
+		delete stat_;
 	}
 
 	int init(MediaDevice *media, unsigned int index);
@@ -53,22 +44,21 @@ public:
 	int configureOutput(const StreamConfiguration &cfg,
 			    V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(output_.dev, PAD_OUTPUT, cfg,
+		return configureVideoDevice(output_, PAD_OUTPUT, cfg,
 					    outputFormat);
 	}
 
 	int configureViewfinder(const StreamConfiguration &cfg,
 				V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(viewfinder_.dev, PAD_VF, cfg,
+		return configureVideoDevice(viewfinder_, PAD_VF, cfg,
 					    outputFormat);
 	}
 
 	int configureStat(const StreamConfiguration &cfg,
 			  V4L2DeviceFormat *outputFormat)
 	{
-		return configureVideoDevice(stat_.dev, PAD_STAT, cfg,
-					    outputFormat);
+		return configureVideoDevice(stat_, PAD_STAT, cfg, outputFormat);
 	}
 
 	int allocateBuffers(unsigned int bufferCount);
@@ -81,9 +71,9 @@ public:
 
 	V4L2Subdevice *imgu_;
 	V4L2VideoDevice *input_;
-	ImgUOutput output_;
-	ImgUOutput viewfinder_;
-	ImgUOutput stat_;
+	V4L2VideoDevice *output_;
+	V4L2VideoDevice *viewfinder_;
+	V4L2VideoDevice *stat_;
 	/* \todo Add param video device for 3A tuning */
 
 private:

@@ -557,6 +557,8 @@ namespace libcamera {
  * \param[in] sensorInfo Camera sensor information
  * \param[in] streamConfig Configuration of all active streams
  * \param[in] entityControls Controls provided by the pipeline entities
+ * \param[in] ipaConfig Pipeline-handler-specific configuration data
+ * \param[out] result Pipeline-handler-specific configuration result
  *
  * This method shall be called when the camera is started to inform the IPA of
  * the camera's streams and the sensor settings. The meaning of the numerical
@@ -566,6 +568,11 @@ namespace libcamera {
  * The \a sensorInfo conveys information about the camera sensor settings that
  * the pipeline handler has selected for the configuration. The IPA may use
  * that information to tune its algorithms.
+ *
+ * The \a ipaConfig and \a result parameters carry custom data passed by the
+ * pipeline handler to the IPA and back. The pipeline handler may set the \a
+ * result parameter to null if the IPA protocol doesn't need to pass a result
+ * back through the configure() function.
  */
 
 /**

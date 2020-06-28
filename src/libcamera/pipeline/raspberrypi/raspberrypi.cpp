@@ -1034,7 +1034,9 @@ int PipelineHandlerRPi::configureIPA(Camera *camera)
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls);
+	IPAOperationData ipaConfig;
+	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
+			      ipaConfig, nullptr);
 
 	return 0;
 }

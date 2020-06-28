@@ -31,7 +31,9 @@ public:
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       const IPAOperationData &ipaConfig,
+		       IPAOperationData *result) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void processEvent(const IPAOperationData &event) override;
@@ -129,9 +131,12 @@ void IPAProxyThread::stop()
 
 void IPAProxyThread::configure(const CameraSensorInfo &sensorInfo,
 			       const std::map<unsigned int, IPAStream> &streamConfig,
-			       const std::map<unsigned int, const ControlInfoMap &> &entityControls)
+			       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+			       const IPAOperationData &ipaConfig,
+			       IPAOperationData *result)
 {
-	ipa_->configure(sensorInfo, streamConfig, entityControls);
+	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
+			result);
 }
 
 void IPAProxyThread::mapBuffers(const std::vector<IPABuffer> &buffers)

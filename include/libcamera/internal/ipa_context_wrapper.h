@@ -24,7 +24,9 @@ public:
 	void stop() override;
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       const IPAOperationData &ipaConfig,
+		       IPAOperationData *result) override;
 
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;

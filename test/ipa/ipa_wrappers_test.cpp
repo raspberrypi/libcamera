@@ -69,7 +69,9 @@ public:
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       const IPAOperationData &ipaConfig,
+		       IPAOperationData *result) override
 	{
 		/* Verify sensorInfo. */
 		if (sensorInfo.outputSize.width != 2560 ||
@@ -317,7 +319,9 @@ protected:
 		};
 		std::map<unsigned int, const ControlInfoMap &> controlInfo;
 		controlInfo.emplace(42, subdev_->controls());
-		ret = INVOKE(configure, sensorInfo, config, controlInfo);
+		IPAOperationData ipaConfig;
+		ret = INVOKE(configure, sensorInfo, config, controlInfo,
+			     ipaConfig, nullptr);
 		if (ret == TestFail)
 			return TestFail;
 

@@ -79,7 +79,9 @@ public:
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls) override;
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       const IPAOperationData &data,
+		       IPAOperationData *response) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void processEvent(const IPAOperationData &event) override;
@@ -187,7 +189,9 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 
 void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls)
+		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
+		       const IPAOperationData &ipaConfig,
+		       IPAOperationData *result)
 {
 	if (entityControls.empty())
 		return;

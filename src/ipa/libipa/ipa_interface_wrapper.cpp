@@ -166,7 +166,10 @@ void IPAInterfaceWrapper::configure(struct ipa_context *_ctx,
 		entityControls.emplace(id, infoMaps[id]);
 	}
 
-	ctx->ipa_->configure(sensorInfo, ipaStreams, entityControls);
+	/* \todo Translate the ipaConfig and result. */
+	IPAOperationData ipaConfig;
+	ctx->ipa_->configure(sensorInfo, ipaStreams, entityControls, ipaConfig,
+			     nullptr);
 }
 
 void IPAInterfaceWrapper::map_buffers(struct ipa_context *_ctx,

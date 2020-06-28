@@ -310,6 +310,8 @@ public:
 	void frameStarted(uint32_t sequence);
 
 	int loadIPA();
+	int configureIPA();
+
 	void queueFrameAction(unsigned int frame, const IPAOperationData &action);
 
 	/* bufferComplete signal handlers. */
@@ -393,8 +395,6 @@ private:
 	{
 		return static_cast<RPiCameraData *>(PipelineHandler::cameraData(camera));
 	}
-
-	int configureIPA(Camera *camera);
 
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
@@ -767,7 +767,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	crop.y = (sensorFormat.size.height - crop.height) >> 1;
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
-	ret = configureIPA(camera);
+	ret = data->configureIPA();
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
 
@@ -979,67 +979,6 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-int PipelineHandlerRPi::configureIPA(Camera *camera)
-{
-	std::map<unsigned int, IPAStream> streamConfig;
-	std::map<unsigned int, const ControlInfoMap &> entityControls;
-	RPiCameraData *data = cameraData(camera);
-
-	/* Get the device format to pass to the IPA. */
-	V4L2DeviceFormat sensorFormat;
-	data->unicam_[Unicam::Image].dev()->getFormat(&sensorFormat);
-	/* Inform IPA of stream configuration and sensor controls. */
-	unsigned int i = 0;
-	for (auto const &stream : data->isp_) {
-		if (stream.isExternal()) {
-			streamConfig[i] = {
-				.pixelFormat = stream.configuration().pixelFormat,
-				.size = stream.configuration().size
-			};
-		}
-	}
-	entityControls.emplace(0, data->unicam_[Unicam::Image].dev()->controls());
-	entityControls.emplace(1, data->isp_[Isp::Input].dev()->controls());
-
-	/* Allocate the lens shading table via vcsm and pass to the IPA. */
-	if (!data->lsTable_) {
-		data->lsTable_ = data->vcsm_.alloc("ls_grid", MAX_LS_GRID_SIZE);
-		uintptr_t ptr = reinterpret_cast<uintptr_t>(data->lsTable_);
-
-		if (!data->lsTable_)
-			return -ENOMEM;
-
-		/*
-		 * The vcsm allocation will always be in the memory region
-		 * < 32-bits to allow Videocore to access the memory.
-		 *
-		 * \todo Sending a pointer to the IPA is a workaround for
-		 * vc_sm_cma not yet supporting dmabuf. This will not work with
-		 * IPA module isolation and should be reworked when vc_sma_cma
-		 * will permit.
-		 */
-		IPAOperationData op;
-		op.operation = RPI_IPA_EVENT_LS_TABLE_ALLOCATION;
-		op.data = { static_cast<uint32_t>(ptr & 0xffffffff),
-			    data->vcsm_.getVCHandle(data->lsTable_) };
-		data->ipa_->processEvent(op);
-	}
-
-	CameraSensorInfo sensorInfo = {};
-	int ret = data->sensor_->sensorInfo(&sensorInfo);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
-		return ret;
-	}
-
-	/* Ready the IPA - it must know about the sensor resolution. */
-	IPAOperationData ipaConfig;
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
-			      ipaConfig, nullptr);
-
-	return 0;
-}
-
 int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
@@ -1175,6 +1114,66 @@ int RPiCameraData::loadIPA()
 	 * It only gets stopped in the class destructor.
 	 */
 	return ipa_->start();
+}
+
+int RPiCameraData::configureIPA()
+{
+	std::map<unsigned int, IPAStream> streamConfig;
+	std::map<unsigned int, const ControlInfoMap &> entityControls;
+
+	/* Get the device format to pass to the IPA. */
+	V4L2DeviceFormat sensorFormat;
+	unicam_[Unicam::Image].dev()->getFormat(&sensorFormat);
+	/* Inform IPA of stream configuration and sensor controls. */
+	unsigned int i = 0;
+	for (auto const &stream : isp_) {
+		if (stream.isExternal()) {
+			streamConfig[i] = {
+				.pixelFormat = stream.configuration().pixelFormat,
+				.size = stream.configuration().size
+			};
+		}
+	}
+	entityControls.emplace(0, unicam_[Unicam::Image].dev()->controls());
+	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
+
+	/* Allocate the lens shading table via vcsm and pass to the IPA. */
+	if (!lsTable_) {
+		lsTable_ = vcsm_.alloc("ls_grid", MAX_LS_GRID_SIZE);
+		uintptr_t ptr = reinterpret_cast<uintptr_t>(lsTable_);
+
+		if (!lsTable_)
+			return -ENOMEM;
+
+		/*
+		 * The vcsm allocation will always be in the memory region
+		 * < 32-bits to allow Videocore to access the memory.
+		 *
+		 * \todo Sending a pointer to the IPA is a workaround for
+		 * vc_sm_cma not yet supporting dmabuf. This will not work with
+		 * IPA module isolation and should be reworked when vc_sma_cma
+		 * will permit.
+		 */
+		IPAOperationData op;
+		op.operation = RPI_IPA_EVENT_LS_TABLE_ALLOCATION;
+		op.data = { static_cast<uint32_t>(ptr & 0xffffffff),
+			    vcsm_.getVCHandle(lsTable_) };
+		ipa_->processEvent(op);
+	}
+
+	CameraSensorInfo sensorInfo = {};
+	int ret = sensor_->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
+		return ret;
+	}
+
+	/* Ready the IPA - it must know about the sensor resolution. */
+	IPAOperationData ipaConfig;
+	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
+			nullptr);
+
+	return 0;
 }
 
 void RPiCameraData::queueFrameAction(unsigned int frame, const IPAOperationData &action)

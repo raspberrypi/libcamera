@@ -526,6 +526,8 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 	if (roles.empty())
 		return config;
 
+	unsigned int rawCount = 0;
+	unsigned int outCount = 0;
 	for (const StreamRole role : roles) {
 		switch (role) {
 		case StreamRole::StillCaptureRaw:
@@ -535,6 +537,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			pixelFormat = sensorFormat.fourcc.toPixelFormat();
 			ASSERT(pixelFormat.isValid());
 			bufferCount = 1;
+			rawCount++;
 			break;
 
 		case StreamRole::StillCapture:
@@ -543,6 +546,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			/* Return the largest sensor resolution. */
 			size = data->sensor_->resolution();
 			bufferCount = 1;
+			outCount++;
 			break;
 
 		case StreamRole::VideoRecording:
@@ -550,6 +554,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			pixelFormat = formats::NV12;
 			size = { 1920, 1080 };
 			bufferCount = 4;
+			outCount++;
 			break;
 
 		case StreamRole::Viewfinder:
@@ -557,12 +562,19 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			pixelFormat = formats::ARGB8888;
 			size = { 800, 600 };
 			bufferCount = 4;
+			outCount++;
 			break;
 
 		default:
 			LOG(RPI, Error) << "Requested stream role not supported: "
 					<< role;
 			break;
+		}
+
+		if (rawCount > 1 || outCount > 2) {
+			LOG(RPI, Error) << "Invalid stream roles requested";
+			delete config;
+			return nullptr;
 		}
 
 		/* Translate the V4L2PixelFormat to PixelFormat. */

@@ -251,6 +251,14 @@ int SimpleCameraData::init()
 	int ret;
 
 	/*
+	 * Setup links first as some subdev drivers take active links into
+	 * account to propagate TRY formats. Such is life :-(
+	 */
+	ret = setupLinks();
+	if (ret < 0)
+		return ret;
+
+	/*
 	 * Enumerate the possible pipeline configurations. For each media bus
 	 * format supported by the sensor, propagate the formats through the
 	 * pipeline, and enumerate the corresponding possible V4L2 pixel
@@ -258,14 +266,6 @@ int SimpleCameraData::init()
 	 */
 	for (unsigned int code : sensor_->mbusCodes()) {
 		V4L2SubdeviceFormat format{ code, sensor_->resolution() };
-
-		/*
-		 * Setup links first as some subdev drivers take active links
-		 * into account to propagate TRY formats. Such is life :-(
-		 */
-		ret = setupLinks();
-		if (ret < 0)
-			return ret;
 
 		ret = setupFormats(&format, V4L2Subdevice::TryFormat);
 		if (ret < 0) {

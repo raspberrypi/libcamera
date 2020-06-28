@@ -340,6 +340,11 @@
  * \var ipa_context_ops::configure
  * \brief Configure the IPA stream and sensor settings
  * \param[in] ctx The IPA context
+ * \param[in] sensor_info Camera sensor information
+ * \param[in] streams Configuration of all active streams
+ * \param[in] num_streams The number of entries in the \a streams array
+ * \param[in] maps Controls provided by the pipeline entities
+ * \param[in] num_maps The number of entries in the \a maps array
  *
  * \sa libcamera::IPAInterface::configure()
  */

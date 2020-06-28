@@ -283,7 +283,7 @@ void IPAContextWrapper::queue_frame_action(void *ctx, unsigned int frame,
 #ifndef __DOXYGEN__
 /*
  * This construct confuses Doxygen and makes it believe that all members of the
- * operations is a member of IPAInterfaceWrapper. It must thus be hidden.
+ * operations is a member of IPAContextWrapper. It must thus be hidden.
  */
 const struct ipa_callback_ops IPAContextWrapper::callbacks_ = {
 	.queue_frame_action = &IPAContextWrapper::queue_frame_action,

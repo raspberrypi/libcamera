@@ -185,7 +185,7 @@ CIO2Device::generateConfiguration(Size size) const
 	StreamConfiguration cfg;
 
 	/* If no desired size use the sensor resolution. */
-	if (!size.width && !size.height)
+	if (size.isNull())
 		size = sensor_->resolution();
 
 	/* Query the sensor static information for closest match. */

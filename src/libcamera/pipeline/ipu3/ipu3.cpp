@@ -289,7 +289,7 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 }
 
 CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
-	const StreamRoles &roles)
+								const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(camera, data);

@@ -272,6 +272,12 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		applyAGC(&agcStatus);
 
 	lastMode_ = mode_;
+
+	/* Store the lens shading table pointer and handle if available. */
+	if (ipaConfig.operation & RPI_IPA_CONFIG_LS_TABLE) {
+		lsTable_ = reinterpret_cast<void *>(ipaConfig.data[0]);
+		lsTableHandle_ = ipaConfig.data[1];
+	}
 }
 
 void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
@@ -351,12 +357,6 @@ void IPARPi::processEvent(const IPAOperationData &event)
 
 	case RPI_IPA_EVENT_QUEUE_REQUEST: {
 		queueRequest(event.controls[0]);
-		break;
-	}
-
-	case RPI_IPA_EVENT_LS_TABLE_ALLOCATION: {
-		lsTable_ = reinterpret_cast<void *>(event.data[0]);
-		lsTableHandle_ = event.data[1];
 		break;
 	}
 

@@ -1121,6 +1121,7 @@ int RPiCameraData::configureIPA()
 {
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, const ControlInfoMap &> entityControls;
+	IPAOperationData ipaConfig = {};
 
 	/* Get the device format to pass to the IPA. */
 	V4L2DeviceFormat sensorFormat;
@@ -1155,11 +1156,9 @@ int RPiCameraData::configureIPA()
 		 * IPA module isolation and should be reworked when vc_sma_cma
 		 * will permit.
 		 */
-		IPAOperationData op;
-		op.operation = RPI_IPA_EVENT_LS_TABLE_ALLOCATION;
-		op.data = { static_cast<uint32_t>(ptr & 0xffffffff),
-			    vcsm_.getVCHandle(lsTable_) };
-		ipa_->processEvent(op);
+		ipaConfig.operation = RPI_IPA_CONFIG_LS_TABLE;
+		ipaConfig.data = { static_cast<uint32_t>(ptr & 0xffffffff),
+				   vcsm_.getVCHandle(lsTable_) };
 	}
 
 	CameraSensorInfo sensorInfo = {};
@@ -1170,7 +1169,6 @@ int RPiCameraData::configureIPA()
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	IPAOperationData ipaConfig;
 	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
 			nullptr);
 

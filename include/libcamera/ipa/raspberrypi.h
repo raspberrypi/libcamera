@@ -10,6 +10,10 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
+enum RPiConfigParameters {
+	RPI_IPA_CONFIG_LS_TABLE = (1 << 0),
+};
+
 enum RPiOperations {
 	RPI_IPA_ACTION_V4L2_SET_STAGGERED = 1,
 	RPI_IPA_ACTION_V4L2_SET_ISP,
@@ -21,7 +25,6 @@ enum RPiOperations {
 	RPI_IPA_EVENT_SIGNAL_STAT_READY,
 	RPI_IPA_EVENT_SIGNAL_ISP_PREPARE,
 	RPI_IPA_EVENT_QUEUE_REQUEST,
-	RPI_IPA_EVENT_LS_TABLE_ALLOCATION,
 };
 
 enum RPiIpaMask {

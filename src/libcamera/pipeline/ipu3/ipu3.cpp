@@ -292,14 +292,15 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
-	IPU3CameraConfiguration *config;
+	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(camera, data);
 	std::set<Stream *> streams = {
 		&data->outStream_,
 		&data->vfStream_,
 		&data->rawStream_,
 	};
 
-	config = new IPU3CameraConfiguration(camera, data);
+	if (roles.empty())
+		return config;
 
 	for (const StreamRole role : roles) {
 		StreamConfiguration cfg = {};

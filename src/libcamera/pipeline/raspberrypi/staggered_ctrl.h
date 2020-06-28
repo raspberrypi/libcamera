@@ -41,7 +41,7 @@ public:
 
 	bool set(uint32_t ctrl, int32_t value);
 	bool set(std::initializer_list<std::pair<const uint32_t, int32_t>> ctrlList);
-	bool set(ControlList &controls);
+	bool set(const ControlList &controls);
 
 	int write();
 

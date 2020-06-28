@@ -91,7 +91,7 @@ bool StaggeredCtrl::set(std::initializer_list<std::pair<const uint32_t, int32_t>
 	return true;
 }
 
-bool StaggeredCtrl::set(ControlList &controls)
+bool StaggeredCtrl::set(const ControlList &controls)
 {
 	std::lock_guard<std::mutex> lock(lock_);
 

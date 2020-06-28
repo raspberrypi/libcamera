@@ -22,7 +22,7 @@ LOG_DECLARE_CATEGORY(IPU3)
 
 namespace {
 
-static const std::map<uint32_t, PixelFormat> mbusCodesToInfo = {
+const std::map<uint32_t, PixelFormat> mbusCodesToPixelFormat = {
 	{ MEDIA_BUS_FMT_SBGGR10_1X10, formats::SBGGR10_IPU3 },
 	{ MEDIA_BUS_FMT_SGBRG10_1X10, formats::SGBRG10_IPU3 },
 	{ MEDIA_BUS_FMT_SGRBG10_1X10, formats::SGRBG10_IPU3 },
@@ -94,7 +94,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	 * utils::set_overlap requires the ranges to be sorted, keep the
 	 * cio2Codes vector sorted in ascending order.
 	 */
-	std::vector<unsigned int> cio2Codes = utils::map_keys(mbusCodesToInfo);
+	std::vector<unsigned int> cio2Codes = utils::map_keys(mbusCodesToPixelFormat);
 	const std::vector<unsigned int> &sensorCodes = sensor_->mbusCodes();
 	if (!utils::set_overlap(sensorCodes.begin(), sensorCodes.end(),
 				cio2Codes.begin(), cio2Codes.end())) {
@@ -134,7 +134,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	 * Apply the selected format to the sensor, the CSI-2 receiver and
 	 * the CIO2 output device.
 	 */
-	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToInfo);
+	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToPixelFormat);
 	sensorFormat = sensor_->getFormat(mbusCodes, size);
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
@@ -144,8 +144,8 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	if (ret)
 		return ret;
 
-	const auto &itInfo = mbusCodesToInfo.find(sensorFormat.mbus_code);
-	if (itInfo == mbusCodesToInfo.end())
+	const auto &itInfo = mbusCodesToPixelFormat.find(sensorFormat.mbus_code);
+	if (itInfo == mbusCodesToPixelFormat.end())
 		return -EINVAL;
 
 	const PixelFormatInfo &info = PixelFormatInfo::info(itInfo->second);
@@ -173,7 +173,7 @@ CIO2Device::generateConfiguration(Size size) const
 		size = sensor_->resolution();
 
 	/* Query the sensor static information for closest match. */
-	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToInfo);
+	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToPixelFormat);
 	V4L2SubdeviceFormat sensorFormat = sensor_->getFormat(mbusCodes, size);
 	if (!sensorFormat.mbus_code) {
 		LOG(IPU3, Error) << "Sensor does not support mbus code";
@@ -181,7 +181,7 @@ CIO2Device::generateConfiguration(Size size) const
 	}
 
 	cfg.size = sensorFormat.size;
-	cfg.pixelFormat = mbusCodesToInfo.at(sensorFormat.mbus_code);
+	cfg.pixelFormat = mbusCodesToPixelFormat.at(sensorFormat.mbus_code);
 	cfg.bufferCount = CIO2_BUFFER_COUNT;
 
 	return cfg;

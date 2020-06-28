@@ -821,7 +821,7 @@ int PipelineHandlerRPi::start(Camera *camera)
 	/*
 	 * Write the last set of gain and exposure values to the camera before
 	 * starting. First check that the staggered ctrl has been initialised
-	 * by the IPA action.
+	 * by configure().
 	 */
 	ASSERT(data->staggeredCtrl_);
 	data->staggeredCtrl_.reset();
@@ -1169,15 +1169,36 @@ int RPiCameraData::configureIPA()
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
-			nullptr);
+	IPAOperationData result;
 
-	/* Configure the H/V flip controls based on the sensor rotation. */
-	ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
-	int32_t rotation = sensor_->properties().get(properties::Rotation);
-	ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
-	ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
-	unicam_[Unicam::Image].dev()->setControls(&ctrls);
+	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
+			&result);
+
+	if (result.operation & RPI_IPA_CONFIG_STAGGERED_WRITE) {
+		/*
+		 * Setup our staggered control writer with the sensor default
+		 * gain and exposure delays.
+		 */
+		if (!staggeredCtrl_) {
+			staggeredCtrl_.init(unicam_[Unicam::Image].dev(),
+					    { { V4L2_CID_ANALOGUE_GAIN, result.data[0] },
+					      { V4L2_CID_EXPOSURE, result.data[1] } });
+			sensorMetadata_ = result.data[2];
+		}
+
+		/* Configure the H/V flip controls based on the sensor rotation. */
+		ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
+		int32_t rotation = sensor_->properties().get(properties::Rotation);
+		ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
+		ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
+		unicam_[Unicam::Image].dev()->setControls(&ctrls);
+	}
+
+	if (result.operation & RPI_IPA_CONFIG_SENSOR) {
+		const ControlList &ctrls = result.controls[0];
+		if (!staggeredCtrl_.set(ctrls))
+			LOG(RPI, Error) << "V4L2 staggered set failed";
+	}
 
 	return 0;
 }
@@ -1190,23 +1211,9 @@ void RPiCameraData::queueFrameAction(unsigned int frame, const IPAOperationData 
 	 */
 	switch (action.operation) {
 	case RPI_IPA_ACTION_V4L2_SET_STAGGERED: {
-		ControlList controls = action.controls[0];
+		const ControlList &controls = action.controls[0];
 		if (!staggeredCtrl_.set(controls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
-		goto done;
-	}
-
-	case RPI_IPA_ACTION_SET_SENSOR_CONFIG: {
-		/*
-		 * Setup our staggered control writer with the sensor default
-		 * gain and exposure delays.
-		 */
-		if (!staggeredCtrl_) {
-			staggeredCtrl_.init(unicam_[Unicam::Image].dev(),
-					    { { V4L2_CID_ANALOGUE_GAIN, action.data[0] },
-					      { V4L2_CID_EXPOSURE, action.data[1] } });
-			sensorMetadata_ = action.data[2];
-		}
 		goto done;
 	}
 

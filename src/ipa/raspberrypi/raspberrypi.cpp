@@ -94,7 +94,7 @@ private:
 	void reportMetadata();
 	bool parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus);
 	void processStats(unsigned int bufferId);
-	void applyAGC(const struct AgcStatus *agcStatus);
+	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
 	void applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls);
 	void applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls);
@@ -196,6 +196,8 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	if (entityControls.empty())
 		return;
 
+	result->operation = 0;
+
 	unicam_ctrls_ = entityControls.at(0);
 	isp_ctrls_ = entityControls.at(1);
 	/* Setup a metadata ControlList to output metadata. */
@@ -217,13 +219,11 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		helper_->GetDelays(exposureDelay, gainDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
-		IPAOperationData op;
-		op.operation = RPI_IPA_ACTION_SET_SENSOR_CONFIG;
-		op.data.push_back(gainDelay);
-		op.data.push_back(exposureDelay);
-		op.data.push_back(sensorMetadata);
+		result->data.push_back(gainDelay);
+		result->data.push_back(exposureDelay);
+		result->data.push_back(sensorMetadata);
 
-		queueFrameAction.emit(0, op);
+		result->operation |= RPI_IPA_CONFIG_STAGGERED_WRITE;
 	}
 
 	/* Re-assemble camera mode using the sensor info. */
@@ -268,8 +268,13 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	metadata.Get("agc.status", agcStatus);
-	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0)
-		applyAGC(&agcStatus);
+	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
+		ControlList ctrls(unicam_ctrls_);
+		applyAGC(&agcStatus, ctrls);
+		result->controls.push_back(ctrls);
+
+		result->operation |= RPI_IPA_CONFIG_SENSOR;
+	}
 
 	lastMode_ = mode_;
 
@@ -788,8 +793,15 @@ void IPARPi::processStats(unsigned int bufferId)
 	controller_.Process(statistics, &rpiMetadata_);
 
 	struct AgcStatus agcStatus;
-	if (rpiMetadata_.Get("agc.status", agcStatus) == 0)
-		applyAGC(&agcStatus);
+	if (rpiMetadata_.Get("agc.status", agcStatus) == 0) {
+		ControlList ctrls(unicam_ctrls_);
+		applyAGC(&agcStatus, ctrls);
+
+		IPAOperationData op;
+		op.operation = RPI_IPA_ACTION_V4L2_SET_STAGGERED;
+		op.controls.push_back(ctrls);
+		queueFrameAction.emit(0, op);
+	}
 }
 
 void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
@@ -815,11 +827,8 @@ void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 		  static_cast<int32_t>(awbStatus->gain_b * 1000));
 }
 
-void IPARPi::applyAGC(const struct AgcStatus *agcStatus)
+void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 {
-	IPAOperationData op;
-	op.operation = RPI_IPA_ACTION_V4L2_SET_STAGGERED;
-
 	int32_t gain_code = helper_->GainCode(agcStatus->analogue_gain);
 	int32_t exposure_lines = helper_->ExposureLines(agcStatus->shutter_time);
 
@@ -838,11 +847,8 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus)
 			   << agcStatus->analogue_gain << " (Gain Code: "
 			   << gain_code << ")";
 
-	ControlList ctrls(unicam_ctrls_);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gain_code);
 	ctrls.set(V4L2_CID_EXPOSURE, exposure_lines);
-	op.controls.push_back(ctrls);
-	queueFrameAction.emit(0, op);
 }
 
 void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)

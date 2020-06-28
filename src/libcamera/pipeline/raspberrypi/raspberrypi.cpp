@@ -568,7 +568,8 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 		default:
 			LOG(RPI, Error) << "Requested stream role not supported: "
 					<< role;
-			break;
+			delete config;
+			return nullptr;
 		}
 
 		if (rawCount > 1 || outCount > 2) {

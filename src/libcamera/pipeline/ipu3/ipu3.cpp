@@ -341,8 +341,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		case StreamRole::StillCaptureRaw: {
 			if (streams.find(&data->rawStream_) == streams.end()) {
 				LOG(IPU3, Error)
-					<< "No stream available for requested role "
-					<< role;
+					<< "Multiple raw streams are not supported";
 				break;
 			}
 

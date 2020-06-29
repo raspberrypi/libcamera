@@ -1014,6 +1014,11 @@ int PipelineHandlerRPi::configureIPA(Camera *camera)
 		/*
 		 * The vcsm allocation will always be in the memory region
 		 * < 32-bits to allow Videocore to access the memory.
+		 *
+		 * \todo Sending a pointer to the IPA is a workaround for
+		 * vc_sm_cma not yet supporting dmabuf. This will not work with
+		 * IPA module isolation and should be reworked when vc_sma_cma
+		 * will permit.
 		 */
 		IPAOperationData op;
 		op.operation = RPI_IPA_EVENT_LS_TABLE_ALLOCATION;

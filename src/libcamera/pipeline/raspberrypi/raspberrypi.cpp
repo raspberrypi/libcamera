@@ -81,8 +81,7 @@ V4L2DeviceFormat findBestMode(V4L2PixFmtMap &formatsMap, const Size &req)
 	/* Calculate the closest/best mode from the user requested size. */
 	for (const auto &iter : formatsMap) {
 		V4L2PixelFormat v4l2Format = iter.first;
-		PixelFormat pixelFormat = v4l2Format.toPixelFormat();
-		const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+		const PixelFormatInfo &info = PixelFormatInfo::info(v4l2Format);
 
 		for (const SizeRange &sz : iter.second) {
 			double modeWidth = sz.contains(req) ? req.width : sz.max.width;

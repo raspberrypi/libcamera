@@ -270,7 +270,9 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		const Stream *stream = streams_[i];
 
 		if (stream == &data_->rawStream_) {
-			cfg = cio2Configuration_;
+			cfg.size = cio2Configuration_.size;
+			cfg.pixelFormat = cio2Configuration_.pixelFormat;
+			cfg.bufferCount = cio2Configuration_.bufferCount;
 		} else {
 			bool scale = stream == &data_->vfStream_;
 			adjustStream(config_[i], scale);

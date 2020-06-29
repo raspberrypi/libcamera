@@ -256,6 +256,22 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	} },
 
 	/* YUV planar formats. */
+	{ formats::NV12, {
+		.name = "NV12",
+		.format = formats::NV12,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+	} },
+	{ formats::NV21, {
+		.name = "NV21",
+		.format = formats::NV21,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+	} },
 	{ formats::NV16, {
 		.name = "NV16",
 		.format = formats::NV16,
@@ -272,19 +288,19 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
 	} },
-	{ formats::NV12, {
-		.name = "NV12",
-		.format = formats::NV12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
-		.bitsPerPixel = 12,
+	{ formats::NV24, {
+		.name = "NV24",
+		.format = formats::NV24,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV24),
+		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
 	} },
-	{ formats::NV21, {
-		.name = "NV21",
-		.format = formats::NV21,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
-		.bitsPerPixel = 12,
+	{ formats::NV42, {
+		.name = "NV42",
+		.format = formats::NV42,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV42),
+		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
 	} },

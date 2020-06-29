@@ -10,6 +10,7 @@
 #include <linux/media-bus-format.h>
 
 #include <libcamera/formats.h>
+#include <libcamera/geometry.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_sensor.h"
@@ -41,6 +42,45 @@ CIO2Device::~CIO2Device()
 	delete output_;
 	delete csi2_;
 	delete sensor_;
+}
+
+/**
+ * \brief Retrieve the list of supported PixelFormats
+ *
+ * Retrieve the list of supported pixel formats by matching the sensor produced
+ * media bus codes with the formats supported by the CIO2 unit.
+ *
+ * \return The list of supported PixelFormat
+ */
+std::vector<PixelFormat> CIO2Device::formats() const
+{
+	if (!sensor_)
+		return {};
+
+	std::vector<PixelFormat> formats;
+	for (unsigned int code : sensor_->mbusCodes()) {
+		auto it = mbusCodesToPixelFormat.find(code);
+		if (it != mbusCodesToPixelFormat.end())
+			formats.push_back(it->second);
+	}
+
+	return formats;
+}
+
+/**
+ * \brief Retrieve the list of supported size ranges
+ * \return The list of supported SizeRange
+ */
+std::vector<SizeRange> CIO2Device::sizes() const
+{
+	if (!sensor_)
+		return {};
+
+	std::vector<SizeRange> sizes;
+	for (const Size &size : sensor_->sizes())
+		sizes.emplace_back(size, size);
+
+	return sizes;
 }
 
 /**

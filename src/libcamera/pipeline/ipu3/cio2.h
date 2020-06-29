@@ -20,8 +20,10 @@ namespace libcamera {
 class CameraSensor;
 class FrameBuffer;
 class MediaDevice;
+class PixelFormat;
 class Request;
 class Size;
+class SizeRange;
 class V4L2Subdevice;
 struct StreamConfiguration;
 
@@ -32,6 +34,9 @@ public:
 
 	CIO2Device();
 	~CIO2Device();
+
+	std::vector<PixelFormat> formats() const;
+	std::vector<SizeRange> sizes() const;
 
 	int init(const MediaDevice *media, unsigned int index);
 	int configure(const Size &size, V4L2DeviceFormat *outputFormat);

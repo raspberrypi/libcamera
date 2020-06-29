@@ -53,6 +53,12 @@ public:
 	static const PixelFormatInfo &info(const PixelFormat &format);
 	static const PixelFormatInfo &info(const V4L2PixelFormat &format);
 
+	unsigned int stride(unsigned int width, unsigned int plane,
+			    unsigned int align = 1) const;
+	unsigned int frameSize(const Size &size, unsigned int align = 1) const;
+	unsigned int frameSize(const Size &size,
+			       const std::array<unsigned int, 3> &strides) const;
+
 	/* \todo Add support for non-contiguous memory planes */
 	const char *name;
 	PixelFormat format;

@@ -731,4 +731,106 @@ const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
 	return info->second;
 }
 
+/**
+ * \brief Compute the stride
+ * \param[in] width The width of the line, in pixels
+ * \param[in] plane The index of the plane whose stride is to be computed
+ * \param[in] align The stride alignment, in bytes
+ *
+ * The stride is the number of bytes necessary to store a full line of a frame,
+ * including padding at the end of the line. This function takes into account
+ * the alignment constraints intrinsic to the format (for instance, the
+ * SGRBG12_CSI2P format stores two 12-bit pixels in 3 bytes, and thus has a
+ * required stride alignment of 3 bytes). Additional alignment constraints may
+ * be specified through the \a align parameter, which will cause the stride to
+ * be rounded up to the next multiple of \a align.
+ *
+ * For multi-planar formats, different planes may have different stride values.
+ * The \a plane parameter selects which plane to compute the stride for.
+ *
+ * \return The number of bytes necessary to store a line, or 0 if the
+ * PixelFormatInfo instance or the \a plane is not valid
+ */
+unsigned int PixelFormatInfo::stride(unsigned int width, unsigned int plane,
+				     unsigned int align) const
+{
+	if (!isValid()) {
+		LOG(Formats, Warning) << "Invalid pixel format, stride is zero";
+		return 0;
+	}
+
+	if (plane > planes.size() || !planes[plane].bytesPerGroup) {
+		LOG(Formats, Warning) << "Invalid plane index, stride is zero";
+		return 0;
+	}
+
+	/* ceil(width / pixelsPerGroup) * bytesPerGroup */
+	unsigned int stride = (width + pixelsPerGroup - 1) / pixelsPerGroup
+			    * planes[plane].bytesPerGroup;
+
+	/* ceil(stride / align) * align */
+	return (stride + align - 1) / align * align;
+}
+
+/**
+ * \brief Compute the number of bytes necessary to store a frame
+ * \param[in] size The size of the frame, in pixels
+ * \param[in] align The stride alignment, in bytes (1 for default alignment)
+ *
+ * The frame is computed by adding the product of the line stride and the frame
+ * height for all planes, taking subsampling and other format characteristics
+ * into account. Additional stride alignment constraints may be specified
+ * through the \a align parameter, and will apply to all planes. For more
+ * complex stride constraints, use the frameSize() overloaded version that takes
+ * an array of stride values.
+ *
+ * \sa stride()
+ *
+ * \return The number of bytes necessary to store the frame, or 0 if the
+ * PixelFormatInfo instance is not valid
+ */
+unsigned int PixelFormatInfo::frameSize(const Size &size, unsigned int align) const
+{
+	/* stride * ceil(height / verticalSubSampling) */
+	unsigned int sum = 0;
+	for (unsigned int i = 0; i < 3; i++) {
+		unsigned int vertSubSample = planes[i].verticalSubSampling;
+		if (!vertSubSample)
+			continue;
+		sum += stride(size.width, i, align)
+		     * ((size.height + vertSubSample - 1) / vertSubSample);
+	}
+
+	return sum;
+}
+
+/**
+ * \brief Compute the number of bytes necessary to store a frame
+ * \param[in] size The size of the frame, in pixels
+ * \param[in] strides The strides to use for each plane
+ *
+ * This function is an overloaded version that takes custom strides for each
+ * plane, to be used when the device has custom alignment constraints that
+ * can't be described by just an alignment value.
+ *
+ * \return The number of bytes necessary to store the frame, or 0 if the
+ * PixelFormatInfo instance is not valid
+ */
+unsigned int
+PixelFormatInfo::frameSize(const Size &size,
+			   const std::array<unsigned int, 3> &strides) const
+{
+	/* stride * ceil(height / verticalSubSampling) */
+	unsigned int sum = 0;
+	for (unsigned int i = 0; i < 3; i++) {
+		unsigned int vertSubSample = planes[i].verticalSubSampling;
+		if (!vertSubSample)
+			continue;
+		sum += strides[i]
+		     * ((size.height + vertSubSample - 1) / vertSubSample);
+	}
+
+	return sum;
+}
+
 } /* namespace libcamera */

@@ -874,10 +874,12 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	 * If the request contains a buffer for the RAW stream only, complete it
 	 * now as there's no need for ImgU processing.
 	 */
-	if (request->findBuffer(&rawStream_) &&
-	    pipe_->completeBuffer(camera_, request, buffer)) {
-		pipe_->completeRequest(camera_, request);
-		return;
+	if (request->findBuffer(&rawStream_)) {
+		bool isComplete = pipe_->completeBuffer(camera_, request, buffer);
+		if (isComplete) {
+			pipe_->completeRequest(camera_, request);
+			return;
+		}
 	}
 
 	imgu_->input_->queueBuffer(buffer);

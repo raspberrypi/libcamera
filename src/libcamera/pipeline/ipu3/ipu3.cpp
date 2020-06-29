@@ -31,6 +31,15 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
+static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
+static constexpr unsigned int IPU3_MAX_STREAMS = 3;
+static const Size IMGU_OUTPUT_MIN_SIZE = { 2, 2 };
+static const Size IMGU_OUTPUT_MAX_SIZE = { 4480, 34004 };
+static constexpr unsigned int IMGU_OUTPUT_WIDTH_ALIGN = 64;
+static constexpr unsigned int IMGU_OUTPUT_HEIGHT_ALIGN = 4;
+static constexpr unsigned int IMGU_OUTPUT_WIDTH_MARGIN = 64;
+static constexpr unsigned int IMGU_OUTPUT_HEIGHT_MARGIN = 32;
+
 class IPU3CameraData : public CameraData
 {
 public:
@@ -61,9 +70,6 @@ public:
 	const std::vector<const Stream *> &streams() { return streams_; }
 
 private:
-	static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
-	static constexpr unsigned int IPU3_MAX_STREAMS = 3;
-
 	void assignStreams();
 	void adjustStream(StreamConfiguration &cfg, bool scale);
 
@@ -299,94 +305,50 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 {
 	IPU3CameraData *data = cameraData(camera);
 	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(camera, data);
-	std::set<Stream *> streams = {
-		&data->outStream_,
-		&data->vfStream_,
-		&data->rawStream_,
-	};
 
 	if (roles.empty())
 		return config;
 
+	Size sensorResolution = data->cio2_.sensor()->resolution();
 	for (const StreamRole role : roles) {
 		StreamConfiguration cfg = {};
-		Stream *stream = nullptr;
-
-		cfg.pixelFormat = formats::NV12;
 
 		switch (role) {
 		case StreamRole::StillCapture:
 			/*
-			 * Pick the output stream by default as the Viewfinder
-			 * and VideoRecording roles are not allowed on
-			 * the output stream.
+			 * Use as default full-frame configuration a value
+			 * strictly smaller than the sensor resolution (limited
+			 * to the ImgU  maximum output size) and aligned down to
+			 * the required frame margin.
 			 */
-			if (streams.find(&data->outStream_) != streams.end()) {
-				stream = &data->outStream_;
-			} else if (streams.find(&data->vfStream_) != streams.end()) {
-				stream = &data->vfStream_;
-			} else {
-				LOG(IPU3, Error)
-					<< "No stream available for requested role "
-					<< role;
-				break;
-			}
-
-			/*
-			 * FIXME: Soraka: the maximum resolution reported by
-			 * both sensors (2592x1944 for ov5670 and 4224x3136 for
-			 * ov13858) are returned as default configurations but
-			 * they're not correctly processed by the ImgU.
-			 * Resolutions up tp 2560x1920 have been validated.
-			 *
-			 * \todo Clarify ImgU alignment requirements.
-			 */
-			cfg.size = { 2560, 1920 };
+			cfg.size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);
+			cfg.size.width = utils::alignDown(cfg.size.width - 1,
+							  IMGU_OUTPUT_WIDTH_MARGIN);
+			cfg.size.height = utils::alignDown(cfg.size.height - 1,
+							   IMGU_OUTPUT_HEIGHT_MARGIN);
+			cfg.pixelFormat = formats::NV12;
+			cfg.bufferCount = IPU3_BUFFER_COUNT;
 
 			break;
 
 		case StreamRole::StillCaptureRaw: {
-			if (streams.find(&data->rawStream_) == streams.end()) {
-				LOG(IPU3, Error)
-					<< "Multiple raw streams are not supported";
-				break;
-			}
+			cfg = data->cio2_.generateConfiguration(sensorResolution);
 
-			stream = &data->rawStream_;
-
-			cfg.size = data->cio2_.sensor()->resolution();
-
-			cfg = data->cio2_.generateConfiguration(cfg.size);
 			break;
 		}
 
 		case StreamRole::Viewfinder:
 		case StreamRole::VideoRecording: {
 			/*
-			 * We can't use the 'output' stream for viewfinder or
-			 * video capture roles.
-			 *
-			 * \todo This is an artificial limitation until we
-			 * figure out the exact capabilities of the hardware.
+			 * Default viewfinder and videorecording to 1280x720,
+			 * capped to the maximum sensor resolution and aligned
+			 * to the ImgU output constraints.
 			 */
-			if (streams.find(&data->vfStream_) == streams.end()) {
-				LOG(IPU3, Error)
-					<< "No stream available for requested role "
-					<< role;
-				break;
-			}
-
-			stream = &data->vfStream_;
-
-			/*
-			 * Align the default viewfinder size to the maximum
-			 * available sensor resolution and to the IPU3
-			 * alignment constraints.
-			 */
-			const Size &res = data->cio2_.sensor()->resolution();
-			unsigned int width = std::min(1280U, res.width);
-			unsigned int height = std::min(720U, res.height);
-			cfg.size = { width & ~7, height & ~3 };
+			cfg.size = sensorResolution.boundedTo({ 1280, 720 })
+						   .alignedDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
+							          IMGU_OUTPUT_HEIGHT_ALIGN);
+			cfg.pixelFormat = formats::NV12;
+			cfg.bufferCount = IPU3_BUFFER_COUNT;
 
 			break;
 		}
@@ -394,15 +356,9 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		default:
 			LOG(IPU3, Error)
 				<< "Requested stream role not supported: " << role;
-			break;
-		}
-
-		if (!stream) {
 			delete config;
 			return nullptr;
 		}
-
-		streams.erase(stream);
 
 		config->addConfiguration(cfg);
 	}

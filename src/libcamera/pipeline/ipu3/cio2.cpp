@@ -15,7 +15,6 @@
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_subdevice.h"
-#include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 
@@ -121,13 +120,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 
 	std::string cio2Name = "ipu3-cio2 " + std::to_string(index);
 	output_ = V4L2VideoDevice::fromEntityName(media, cio2Name);
-	ret = output_->open();
-	if (ret)
-		return ret;
-
-	output_->bufferReady.connect(this, &CIO2Device::cio2BufferReady);
-
-	return 0;
+	return output_->open();
 }
 
 /**
@@ -287,11 +280,6 @@ void CIO2Device::freeBuffers()
 
 	if (output_->releaseBuffers())
 		LOG(IPU3, Error) << "Failed to release CIO2 buffers";
-}
-
-void CIO2Device::cio2BufferReady(FrameBuffer *buffer)
-{
-	bufferReady.emit(buffer);
 }
 
 } /* namespace libcamera */

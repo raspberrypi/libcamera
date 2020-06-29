@@ -805,7 +805,7 @@ int PipelineHandlerIPU3::registerCameras()
 		 * associated ImgU input where they get processed and
 		 * returned through the ImgU main and secondary outputs.
 		 */
-		data->cio2_.bufferReady.connect(data.get(),
+		data->cio2_.bufferReady().connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
 		data->imgu_->input_->bufferReady.connect(&data->cio2_,
 					&CIO2Device::tryReturnBuffer);

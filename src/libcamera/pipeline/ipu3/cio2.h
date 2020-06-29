@@ -13,15 +13,15 @@
 
 #include <libcamera/signal.h>
 
+#include "libcamera/internal/v4l2_videodevice.h"
+
 namespace libcamera {
 
 class CameraSensor;
 class FrameBuffer;
 class MediaDevice;
 class Request;
-class V4L2DeviceFormat;
 class V4L2Subdevice;
-class V4L2VideoDevice;
 struct Size;
 struct StreamConfiguration;
 
@@ -48,7 +48,7 @@ public:
 
 	int queueBuffer(Request *request, FrameBuffer *rawBuffer);
 	void tryReturnBuffer(FrameBuffer *buffer);
-	Signal<FrameBuffer *> bufferReady;
+	Signal<FrameBuffer *> &bufferReady() { return output_->bufferReady; }
 
 private:
 	void freeBuffers();

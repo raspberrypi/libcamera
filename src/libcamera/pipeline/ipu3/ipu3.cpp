@@ -313,7 +313,10 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 
 	Size sensorResolution = data->cio2_.sensor()->resolution();
 	for (const StreamRole role : roles) {
-		StreamConfiguration cfg = {};
+		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+		unsigned int bufferCount;
+		PixelFormat pixelFormat;
+		Size size;
 
 		switch (role) {
 		case StreamRole::StillCapture:
@@ -323,18 +326,26 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * to the ImgU  maximum output size) and aligned down to
 			 * the required frame margin.
 			 */
-			cfg.size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);
-			cfg.size.width = utils::alignDown(cfg.size.width - 1,
-							  IMGU_OUTPUT_WIDTH_MARGIN);
-			cfg.size.height = utils::alignDown(cfg.size.height - 1,
-							   IMGU_OUTPUT_HEIGHT_MARGIN);
-			cfg.pixelFormat = formats::NV12;
-			cfg.bufferCount = IPU3_BUFFER_COUNT;
+			size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);
+			size.width = utils::alignDown(size.width - 1,
+						      IMGU_OUTPUT_WIDTH_MARGIN);
+			size.height = utils::alignDown(size.height - 1,
+						       IMGU_OUTPUT_HEIGHT_MARGIN);
+			pixelFormat = formats::NV12;
+			bufferCount = IPU3_BUFFER_COUNT;
+			streamFormats[pixelFormat] = { { IMGU_OUTPUT_MIN_SIZE, size } };
 
 			break;
 
 		case StreamRole::StillCaptureRaw: {
-			cfg = data->cio2_.generateConfiguration(sensorResolution);
+			StreamConfiguration cio2Config =
+				data->cio2_.generateConfiguration(sensorResolution);
+			pixelFormat = cio2Config.pixelFormat;
+			size = cio2Config.size;
+			bufferCount = cio2Config.bufferCount;
+
+			for (const PixelFormat &format : data->cio2_.formats())
+				streamFormats[format] = data->cio2_.sizes();
 
 			break;
 		}
@@ -346,11 +357,12 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * capped to the maximum sensor resolution and aligned
 			 * to the ImgU output constraints.
 			 */
-			cfg.size = sensorResolution.boundedTo({ 1280, 720 })
-						   .alignedDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
-							          IMGU_OUTPUT_HEIGHT_ALIGN);
-			cfg.pixelFormat = formats::NV12;
-			cfg.bufferCount = IPU3_BUFFER_COUNT;
+			size = sensorResolution.boundedTo({ 1280, 720 })
+					       .alignedDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
+							      IMGU_OUTPUT_HEIGHT_ALIGN);
+			pixelFormat = formats::NV12;
+			bufferCount = IPU3_BUFFER_COUNT;
+			streamFormats[pixelFormat] = { { IMGU_OUTPUT_MIN_SIZE, size } };
 
 			break;
 		}
@@ -362,6 +374,11 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			return nullptr;
 		}
 
+		StreamFormats formats(streamFormats);
+		StreamConfiguration cfg(formats);
+		cfg.size = size;
+		cfg.pixelFormat = pixelFormat;
+		cfg.bufferCount = bufferCount;
 		config->addConfiguration(cfg);
 	}
 

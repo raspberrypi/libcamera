@@ -8,6 +8,7 @@
 #ifndef __LIBCAMERA_INTERNAL_FORMATS_H__
 #define __LIBCAMERA_INTERNAL_FORMATS_H__
 
+#include <array>
 #include <map>
 #include <vector>
 
@@ -32,6 +33,12 @@ private:
 	std::map<unsigned int, std::vector<SizeRange>> data_;
 };
 
+struct PixelFormatPlaneInfo
+{
+	unsigned int bytesPerGroup;
+	unsigned int verticalSubSampling;
+};
+
 class PixelFormatInfo
 {
 public:
@@ -52,6 +59,10 @@ public:
 	unsigned int bitsPerPixel;
 	enum ColourEncoding colourEncoding;
 	bool packed;
+
+	unsigned int pixelsPerGroup;
+
+	std::array<PixelFormatPlaneInfo, 3> planes;
 };
 
 } /* namespace libcamera */

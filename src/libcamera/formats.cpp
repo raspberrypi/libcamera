@@ -111,6 +111,22 @@ const std::map<unsigned int, std::vector<SizeRange>> &ImageFormats::data() const
 }
 
 /**
+ * \class PixelFormatPlaneInfo
+ * \brief Information about a single plane of a pixel format
+ *
+ * \var PixelFormatPlaneInfo::bytesPerGroup
+ * \brief The number of bytes that a pixel group consumes
+ *
+ * \sa PixelFormatInfo::pixelsPerGroup
+ *
+ * \var PixelFormatPlaneInfo::verticalSubSampling
+ * \brief Vertical subsampling multiplier
+ *
+ * This value is the ratio between the number of rows of pixels in the frame
+ * to the number of rows of pixels in the plane.
+ */
+
+/**
  * \class PixelFormatInfo
  * \brief Information about pixel formats
  *
@@ -152,6 +168,48 @@ const std::map<unsigned int, std::vector<SizeRange>> &ImageFormats::data() const
  * bytes. For instance, 12-bit Bayer data with two pixels stored in three bytes
  * is packed, while the same data stored with 4 bits of padding in two bytes
  * per pixel is not packed.
+ *
+ * \var PixelFormatInfo::pixelsPerGroup
+ * \brief The number of pixels in a pixel group
+ *
+ * A pixel group is defined as the minimum number of pixels (including padding)
+ * necessary in a row when the image has only one column of effective pixels.
+ * pixelsPerGroup refers to this value. PixelFormatPlaneInfo::bytesPerGroup,
+ * then, refers to the number of bytes that a pixel group consumes. This
+ * definition of a pixel group allows simple calculation of stride, as
+ * ceil(width / pixelsPerGroup) * bytesPerGroup. These values are determined
+ * only in terms of a row. The ceiling accounts for padding.
+ *
+ * A pixel group has a second constraint, such that the pixel group
+ * (bytesPerGroup and pixelsPerGroup) is the smallest repeatable unit.
+ * What this means is that, for example, in the IPU3 formats, if there is only
+ * one column of effective pixels, it looks like it could be fit in 5 bytes
+ * with 3 padding pixels (for a total of 4 pixels over 5 bytes). However, this
+ * unit is not repeatable, as at the 7th group in the same row, the pattern
+ * is broken. Therefore, the pixel group for IPU3 formats must be 25 pixels
+ * over 32 bytes.
+ *
+ * For example, for something simple like BGR888, it is self-explanatory:
+ * the pixel group size is 1, and the bytes necessary is 3, and there is
+ * only one plane with no (= 1) vertical subsampling. For YUYV, the
+ * CbCr pair is shared between two pixels, so even if you have only one
+ * pixel, you would still need a padded second Y sample, therefore the pixel
+ * group size is 2, and bytes necessary is 4. YUYV also has no vertical
+ * subsampling. NV12 has a pixel group size of 2 pixels, due to the CbCr plane.
+ * The bytes per group then, for both planes, is 2. The first plane has no
+ * vertical subsampling, but the second plane is subsampled by a factor of 2.
+ *
+ * The IPU3 raw Bayer formats are single-planar, and have a pixel group size of
+ * 25, consuming 32 bytes, due to the packing pattern being repeated in memory
+ * every 32 bytes. The IPU3 hardware, however, has an additional constraint on
+ * the DMA burst size, requiring lines to be multiple of 64 bytes. This isn't an
+ * intrinsic property of the formats and is thus not reflected here. It is
+ * instead enforced by the corresponding pipeline handler.
+ *
+ * \var PixelFormatInfo::planes
+ * \brief Information about pixels for each plane
+ *
+ * \sa PixelFormatPlaneInfo
  */
 
 /**
@@ -179,6 +237,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::RGB888, {
 		.name = "RGB888",
@@ -187,6 +247,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::ABGR8888, {
 		.name = "ABGR8888",
@@ -195,6 +257,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::ARGB8888, {
 		.name = "ARGB8888",
@@ -203,6 +267,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::BGRA8888, {
 		.name = "BGRA8888",
@@ -211,6 +277,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::RGBA8888, {
 		.name = "RGBA8888",
@@ -219,6 +287,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* YUV packed formats. */
@@ -229,6 +299,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::YVYU, {
 		.name = "YVYU",
@@ -237,6 +309,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::UYVY, {
 		.name = "UYVY",
@@ -245,6 +319,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::VYUY, {
 		.name = "VYUY",
@@ -253,6 +329,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* YUV planar formats. */
@@ -263,6 +341,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 2, 2 }, { 0, 0 } }},
 	} },
 	{ formats::NV21, {
 		.name = "NV21",
@@ -271,6 +351,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 2, 2 }, { 0, 0 } }},
 	} },
 	{ formats::NV16, {
 		.name = "NV16",
@@ -279,6 +361,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 2, 1 }, { 0, 0 } }},
 	} },
 	{ formats::NV61, {
 		.name = "NV61",
@@ -287,6 +371,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 2, 1 }, { 0, 0 } }},
 	} },
 	{ formats::NV24, {
 		.name = "NV24",
@@ -295,6 +381,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 2, 1 }, { 0, 0 } }},
 	} },
 	{ formats::NV42, {
 		.name = "NV42",
@@ -303,6 +391,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 2, 1 }, { 0, 0 } }},
 	} },
 	{ formats::YUV420, {
 		.name = "YUV420",
@@ -311,6 +401,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 1, 2 }, { 1, 2 } }},
 	} },
 	{ formats::YUV422, {
 		.name = "YUV422",
@@ -319,6 +411,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 1, 1 }, { 1, 1 } }},
 	} },
 
 	/* Greyscale formats. */
@@ -329,6 +423,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* Bayer formats. */
@@ -339,6 +435,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG8, {
 		.name = "SGBRG8",
@@ -347,6 +445,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG8, {
 		.name = "SGRBG8",
@@ -355,6 +455,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB8, {
 		.name = "SRGGB8",
@@ -363,6 +465,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SBGGR10, {
 		.name = "SBGGR10",
@@ -371,6 +475,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG10, {
 		.name = "SGBRG10",
@@ -379,6 +485,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG10, {
 		.name = "SGRBG10",
@@ -387,6 +495,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB10, {
 		.name = "SRGGB10",
@@ -395,6 +505,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SBGGR10_CSI2P, {
 		.name = "SBGGR10_CSI2P",
@@ -403,6 +515,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG10_CSI2P, {
 		.name = "SGBRG10_CSI2P",
@@ -411,6 +525,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG10_CSI2P, {
 		.name = "SGRBG10_CSI2P",
@@ -419,6 +535,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB10_CSI2P, {
 		.name = "SRGGB10_CSI2P",
@@ -427,6 +545,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SBGGR12, {
 		.name = "SBGGR12",
@@ -435,6 +555,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG12, {
 		.name = "SGBRG12",
@@ -443,6 +565,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG12, {
 		.name = "SGRBG12",
@@ -451,6 +575,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB12, {
 		.name = "SRGGB12",
@@ -459,6 +585,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SBGGR12_CSI2P, {
 		.name = "SBGGR12_CSI2P",
@@ -467,6 +595,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG12_CSI2P, {
 		.name = "SGBRG12_CSI2P",
@@ -475,6 +605,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG12_CSI2P, {
 		.name = "SGRBG12_CSI2P",
@@ -483,6 +615,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB12_CSI2P, {
 		.name = "SRGGB12_CSI2P",
@@ -491,6 +625,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SBGGR10_IPU3, {
 		.name = "SBGGR10_IPU3",
@@ -499,6 +635,9 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		/* \todo remember to double this in the ipu3 pipeline handler */
+		.pixelsPerGroup = 25,
+		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGBRG10_IPU3, {
 		.name = "SGBRG10_IPU3",
@@ -507,6 +646,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 25,
+		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SGRBG10_IPU3, {
 		.name = "SGRBG10_IPU3",
@@ -515,6 +656,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 25,
+		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::SRGGB10_IPU3, {
 		.name = "SRGGB10_IPU3",
@@ -523,6 +666,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
+		.pixelsPerGroup = 25,
+		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* Compressed formats. */
@@ -533,6 +678,8 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.bitsPerPixel = 0,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 };
 

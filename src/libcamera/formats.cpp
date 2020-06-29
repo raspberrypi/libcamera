@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/formats.h"
 
+#include <algorithm>
 #include <errno.h>
 
 #include <libcamera/formats.h>
@@ -227,6 +228,8 @@ const std::map<unsigned int, std::vector<SizeRange>> &ImageFormats::data() const
  */
 
 namespace {
+
+const PixelFormatInfo pixelFormatInfoInvalid{};
 
 const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	/* RGB formats. */
@@ -699,17 +702,33 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
  */
 const PixelFormatInfo &PixelFormatInfo::info(const PixelFormat &format)
 {
-	static const PixelFormatInfo invalid{};
-
 	const auto iter = pixelFormatInfo.find(format);
 	if (iter == pixelFormatInfo.end()) {
 		LOG(Formats, Warning)
 			<< "Unsupported pixel format 0x"
 			<< utils::hex(format.fourcc());
-		return invalid;
+		return pixelFormatInfoInvalid;
 	}
 
 	return iter->second;
+}
+
+/**
+ * \brief Retrieve information about a pixel format
+ * \param[in] format The V4L2 pixel format
+ * \return The PixelFormatInfo describing the V4L2 \a format if known, or an
+ * invalid PixelFormatInfo otherwise
+ */
+const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
+{
+	const auto &info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
+					[format](auto pair) {
+						return pair.second.v4l2Format == format;
+					});
+	if (info == pixelFormatInfo.end())
+		return pixelFormatInfoInvalid;
+
+	return info->second;
 }
 
 } /* namespace libcamera */

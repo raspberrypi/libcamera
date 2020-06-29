@@ -51,6 +51,7 @@ public:
 	bool isValid() const { return format.isValid(); }
 
 	static const PixelFormatInfo &info(const PixelFormat &format);
+	static const PixelFormatInfo &info(const V4L2PixelFormat &format);
 
 	/* \todo Add support for non-contiguous memory planes */
 	const char *name;

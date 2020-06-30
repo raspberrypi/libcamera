@@ -496,6 +496,10 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
 	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
 
+	if (mediaDevices_.empty())
+		LOG(Pipeline, Fatal)
+			<< "Registering camera with no media devices!";
+
 	/*
 	 * Walk the entity list and map the devnums of all capture video nodes
 	 * to the camera.

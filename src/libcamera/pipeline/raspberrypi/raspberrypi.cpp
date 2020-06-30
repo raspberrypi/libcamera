@@ -569,13 +569,11 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 
 		/* Translate the V4L2PixelFormat to PixelFormat. */
 		std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-		std::transform(fmts.begin(), fmts.end(), std::inserter(deviceFormats, deviceFormats.end()),
-			       [&](const decltype(fmts)::value_type &format) {
-					return decltype(deviceFormats)::value_type{
-						format.first.toPixelFormat(),
-						format.second
-					};
-			       });
+		for (const auto &format : fmts) {
+			PixelFormat pixelFormat = format.first.toPixelFormat();
+			if (pixelFormat.isValid())
+				deviceFormats[pixelFormat] = format.second;
+		}
 
 		/* Add the stream format based on the device node used for the use case. */
 		StreamFormats formats(deviceFormats);

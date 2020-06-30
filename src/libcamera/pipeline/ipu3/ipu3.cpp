@@ -67,7 +67,6 @@ public:
 	Status validate() override;
 
 	const StreamConfiguration &cio2Format() const { return cio2Configuration_; };
-	const std::vector<const Stream *> &streams() { return streams_; }
 
 private:
 	/*
@@ -79,7 +78,6 @@ private:
 	const IPU3CameraData *data_;
 
 	StreamConfiguration cio2Configuration_;
-	std::vector<const Stream *> streams_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler

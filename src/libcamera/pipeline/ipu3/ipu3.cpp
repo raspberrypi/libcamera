@@ -62,7 +62,7 @@ public:
 class IPU3CameraConfiguration : public CameraConfiguration
 {
 public:
-	IPU3CameraConfiguration(Camera *camera, IPU3CameraData *data);
+	IPU3CameraConfiguration(IPU3CameraData *data);
 
 	Status validate() override;
 
@@ -74,7 +74,6 @@ private:
 	 * corresponding Camera instance is valid. In order to borrow a
 	 * reference to the camera data, store a new reference to the camera.
 	 */
-	std::shared_ptr<Camera> camera_;
 	const IPU3CameraData *data_;
 
 	StreamConfiguration cio2Configuration_;
@@ -124,11 +123,9 @@ private:
 	MediaDevice *imguMediaDev_;
 };
 
-IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
-						 IPU3CameraData *data)
+IPU3CameraConfiguration::IPU3CameraConfiguration(IPU3CameraData *data)
 	: CameraConfiguration()
 {
-	camera_ = camera->shared_from_this();
 	data_ = data;
 }
 
@@ -297,7 +294,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 								const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
-	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(camera, data);
+	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(data);
 
 	if (roles.empty())
 		return config;

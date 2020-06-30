@@ -374,7 +374,6 @@ class PipelineHandlerRPi : public PipelineHandler
 {
 public:
 	PipelineHandlerRPi(CameraManager *manager);
-	~PipelineHandlerRPi();
 
 	CameraConfiguration *generateConfiguration(Camera *camera, const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
@@ -401,8 +400,8 @@ private:
 	int prepareBuffers(Camera *camera);
 	void freeBuffers(Camera *camera);
 
-	std::shared_ptr<MediaDevice> unicam_;
-	std::shared_ptr<MediaDevice> isp_;
+	MediaDevice *unicam_;
+	MediaDevice *isp_;
 };
 
 RPiCameraConfiguration::RPiCameraConfiguration(const RPiCameraData *data)
@@ -500,15 +499,6 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 PipelineHandlerRPi::PipelineHandlerRPi(CameraManager *manager)
 	: PipelineHandler(manager), unicam_(nullptr), isp_(nullptr)
 {
-}
-
-PipelineHandlerRPi::~PipelineHandlerRPi()
-{
-	if (unicam_)
-		unicam_->release();
-
-	if (isp_)
-		isp_->release();
 }
 
 CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
@@ -895,16 +885,13 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	isp.add("bcm2835-isp0-capture2"); /* Output 1 */
 	isp.add("bcm2835-isp0-capture3"); /* Stats */
 
-	unicam_ = enumerator->search(unicam);
+	unicam_ = acquireMediaDevice(enumerator, unicam);
 	if (!unicam_)
 		return false;
 
-	isp_ = enumerator->search(isp);
+	isp_ = acquireMediaDevice(enumerator, isp);
 	if (!isp_)
 		return false;
-
-	unicam_->acquire();
-	isp_->acquire();
 
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
 

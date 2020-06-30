@@ -429,7 +429,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 		metadataReady(frame, action.controls[0]);
 		break;
 	default:
-		LOG(RkISP1, Error) << "Unkown action " << action.operation;
+		LOG(RkISP1, Error) << "Unknown action " << action.operation;
 		break;
 	}
 }

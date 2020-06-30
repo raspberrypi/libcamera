@@ -176,7 +176,7 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 		break;
 	}
 	default:
-		LOG(IPARkISP1, Error) << "Unkown event " << event.operation;
+		LOG(IPARkISP1, Error) << "Unknown event " << event.operation;
 		break;
 	}
 }

@@ -161,14 +161,11 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	std::map<V4L2PixelFormat, std::vector<SizeRange>> v4l2Formats =
 		data->video_->formats();
 	std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-	std::transform(v4l2Formats.begin(), v4l2Formats.end(),
-		       std::inserter(deviceFormats, deviceFormats.begin()),
-		       [&](const decltype(v4l2Formats)::value_type &format) {
-			       return decltype(deviceFormats)::value_type{
-				       format.first.toPixelFormat(),
-				       format.second
-			       };
-		       });
+	for (const auto &format : v4l2Formats) {
+		PixelFormat pixelFormat = format.first.toPixelFormat();
+		if (pixelFormat.isValid())
+			deviceFormats[pixelFormat] = format.second;
+	}
 
 	StreamFormats formats(deviceFormats);
 	StreamConfiguration cfg(formats);

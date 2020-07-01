@@ -1066,6 +1066,10 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	Camera3RequestDescriptor *descriptor =
 		new Camera3RequestDescriptor(camera3Request->frame_number,
 					     camera3Request->num_output_buffers);
+
+	Request *request =
+		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
+
 	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
 		/*
 		 * Keep track of which stream the request belongs to and store
@@ -1085,12 +1089,11 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	FrameBuffer *buffer = createFrameBuffer(*camera3Buffers[0].buffer);
 	if (!buffer) {
 		LOG(HAL, Error) << "Failed to create buffer";
+		delete request;
 		delete descriptor;
 		return -ENOMEM;
 	}
 
-	Request *request =
-		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
 	request->addBuffer(stream, buffer);
 
 	int ret = camera_->queueRequest(request);

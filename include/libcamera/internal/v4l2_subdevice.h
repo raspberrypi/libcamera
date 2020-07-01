@@ -32,6 +32,8 @@ struct V4L2SubdeviceFormat {
 class V4L2Subdevice : public V4L2Device
 {
 public:
+	using Formats = std::map<unsigned int, std::vector<SizeRange>>;
+
 	enum Whence {
 		ActiveFormat,
 		TryFormat,
@@ -51,7 +53,7 @@ public:
 	int setSelection(unsigned int pad, unsigned int target,
 			 Rectangle *rect);
 
-	ImageFormats formats(unsigned int pad);
+	Formats formats(unsigned int pad);
 
 	int getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 		      Whence whence = ActiveFormat);

@@ -16,13 +16,11 @@
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {
 
 class MediaEntity;
-class V4L2Subdevice;
-
-struct V4L2SubdeviceFormat;
 
 struct CameraSensorInfo {
 	std::string model;
@@ -75,7 +73,7 @@ private:
 
 	std::string model_;
 
-	ImageFormats formats_;
+	V4L2Subdevice::Formats formats_;
 	Size resolution_;
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;

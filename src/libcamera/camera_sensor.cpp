@@ -18,7 +18,6 @@
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/utils.h"
-#include "libcamera/internal/v4l2_subdevice.h"
 
 /**
  * \file camera_sensor.h
@@ -245,15 +244,15 @@ int CameraSensor::init()
 
 	/* Enumerate, sort and cache media bus codes and sizes. */
 	formats_ = subdev_->formats(pad_);
-	if (formats_.isEmpty()) {
+	if (formats_.empty()) {
 		LOG(CameraSensor, Error) << "No image format found";
 		return -EINVAL;
 	}
 
-	mbusCodes_ = formats_.formats();
+	mbusCodes_ = utils::map_keys(formats_);
 	std::sort(mbusCodes_.begin(), mbusCodes_.end());
 
-	for (const auto &format : formats_.data()) {
+	for (const auto &format : formats_) {
 		const std::vector<SizeRange> &ranges = format.second;
 		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes_),
 			       [](const SizeRange &range) { return range.max; });
@@ -359,9 +358,11 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 	uint32_t bestCode = 0;
 
 	for (unsigned int code : mbusCodes) {
-		const std::vector<SizeRange> &ranges = formats_.sizes(code);
+		const auto formats = formats_.find(code);
+		if (formats == formats_.end())
+			continue;
 
-		for (const SizeRange &range : ranges) {
+		for (const SizeRange &range : formats->second) {
 			const Size &sz = range.max;
 
 			if (sz.width < size.width || sz.height < size.height)

@@ -47,29 +47,29 @@ void ListFormatsTest::printFormats(unsigned int pad,
 int ListFormatsTest::run()
 {
 	/* List all formats available on existing "Scaler" pads. */
-	ImageFormats formats;
+	V4L2Subdevice::Formats formats;
 
 	formats = scaler_->formats(0);
-	if (formats.isEmpty()) {
+	if (formats.empty()) {
 		cerr << "Failed to list formats on pad 0 of subdevice "
 		     << scaler_->entity()->name() << endl;
 		return TestFail;
 	}
-	for (unsigned int code : formats.formats())
-		printFormats(0, code, formats.sizes(code));
+	for (unsigned int code : utils::map_keys(formats))
+		printFormats(0, code, formats[code]);
 
 	formats = scaler_->formats(1);
-	if (formats.isEmpty()) {
+	if (formats.empty()) {
 		cerr << "Failed to list formats on pad 1 of subdevice "
 		     << scaler_->entity()->name() << endl;
 		return TestFail;
 	}
-	for (unsigned int code : formats.formats())
-		printFormats(1, code, formats.sizes(code));
+	for (unsigned int code : utils::map_keys(formats))
+		printFormats(1, code, formats[code]);
 
 	/* List format on a non-existing pad, format vector shall be empty. */
 	formats = scaler_->formats(2);
-	if (!formats.isEmpty()) {
+	if (!formats.empty()) {
 		cerr << "Listing formats on non-existing pad 2 of subdevice "
 		     << scaler_->entity()->name()
 		     << " should return an empty format list" << endl;

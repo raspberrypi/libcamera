@@ -7,6 +7,9 @@
 
 #include "imgu.h"
 
+#include <limits>
+#include <math.h>
+
 #include <linux/media-bus-format.h>
 
 #include <libcamera/formats.h>
@@ -14,10 +17,305 @@
 
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/utils.h"
 
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(IPU3)
+
+namespace {
+
+/*
+ * The procedure to calculate the ImgU pipe configuration has been ported
+ * from the pipe_config.py python script, available at:
+ * https://github.com/intel/intel-ipu3-pipecfg
+ * at revision: 61e83f2f7606 ("Add more information into README")
+ */
+
+static constexpr unsigned int FILTER_H = 4;
+
+static constexpr unsigned int IF_ALIGN_W = 2;
+static constexpr unsigned int IF_ALIGN_H = 4;
+
+static constexpr unsigned int BDS_ALIGN_W = 2;
+static constexpr unsigned int BDS_ALIGN_H = 4;
+
+static constexpr unsigned int IF_CROP_MAX_W = 40;
+static constexpr unsigned int IF_CROP_MAX_H = 540;
+
+static constexpr float BDS_SF_MAX = 2.5;
+static constexpr float BDS_SF_MIN = 1.0;
+static constexpr float BDS_SF_STEP = 0.03125;
+
+/* BSD scaling factors: min=1, max=2.5, step=1/32 */
+const std::vector<float> bdsScalingFactors = {
+	1, 1.03125, 1.0625, 1.09375, 1.125, 1.15625, 1.1875, 1.21875, 1.25,
+	1.28125, 1.3125, 1.34375, 1.375, 1.40625, 1.4375, 1.46875, 1.5, 1.53125,
+	1.5625, 1.59375, 1.625, 1.65625, 1.6875, 1.71875, 1.75, 1.78125, 1.8125,
+	1.84375, 1.875, 1.90625, 1.9375, 1.96875, 2, 2.03125, 2.0625, 2.09375,
+	2.125, 2.15625, 2.1875, 2.21875, 2.25, 2.28125, 2.3125, 2.34375, 2.375,
+	2.40625, 2.4375, 2.46875, 2.5
+};
+
+/* GDC scaling factors: min=1, max=16, step=1/4 */
+const std::vector<float> gdcScalingFactors = {
+	1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25,
+	4.5, 4.75, 5, 5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75,
+	8, 8.25, 8.5, 8.75, 9, 9.25, 9.5, 9.75, 10, 10.25, 10.5, 10.75, 11,
+	11.25, 11.5, 11.75, 12, 12.25, 12.5, 12.75, 13, 13.25, 13.5, 13.75, 14,
+	14.25, 14.5, 14.75, 15, 15.25, 15.5, 15.75, 16,
+};
+
+std::vector<ImgUDevice::PipeConfig> pipeConfigs;
+
+struct FOV {
+	float w;
+	float h;
+
+	bool isLarger(const FOV &other)
+	{
+		if (w > other.w)
+			return true;
+		if (w == other.w && h > other.h)
+			return true;
+		return false;
+	}
+};
+
+/* Approximate a scaling factor sf to the closest one available in a range. */
+float findScaleFactor(float sf, const std::vector<float> &range,
+		      bool roundDown = false)
+{
+	if (sf <= range[0])
+		return range[0];
+	if (sf >= range[range.size() - 1])
+		return range[range.size() - 1];
+
+	float bestDiff = std::numeric_limits<float>::max();
+	unsigned int index = 0;
+	for (unsigned int i = 0; i < range.size(); ++i) {
+		float diff = std::abs(sf - range[i]);
+		if (diff < bestDiff) {
+			bestDiff = diff;
+			index = i;
+		}
+	}
+
+	if (roundDown && index > 0 && sf < range[index])
+		index--;
+
+	return range[index];
+}
+
+bool isSameRatio(const Size &in, const Size &out)
+{
+	float inRatio = static_cast<float>(in.width) / in.height;
+	float outRatio = static_cast<float>(out.width) / out.height;
+
+	if (std::abs(inRatio - outRatio) > 0.1)
+		return false;
+
+	return true;
+}
+
+void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc,
+			unsigned int bdsWidth, float bdsSF)
+{
+	unsigned int minIFHeight = iif.height - IF_CROP_MAX_H;
+	unsigned int minBDSHeight = gdc.height + FILTER_H * 2;
+	unsigned int ifHeight;
+	float bdsHeight;
+
+	if (!isSameRatio(pipe->input, gdc)) {
+		float estIFHeight = (iif.width * gdc.height) /
+				    static_cast<float>(gdc.width);
+		estIFHeight = utils::clamp<float>(estIFHeight, minIFHeight, iif.height);
+		bool found = false;
+
+		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
+		while (ifHeight >= minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
+
+			bdsHeight = ifHeight / bdsSF;
+			if (std::fmod(bdsHeight, 1.0) == 0) {
+				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+
+				if (!(bdsIntHeight % BDS_ALIGN_H)) {
+					found = true;
+					break;
+				}
+			}
+
+			ifHeight -= IF_ALIGN_H;
+		}
+
+		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
+		while (ifHeight <= iif.height && ifHeight / bdsSF >= minBDSHeight) {
+
+			bdsHeight = ifHeight / bdsSF;
+			if (std::fmod(bdsHeight, 1.0) == 0) {
+				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+
+				if (!(bdsIntHeight % BDS_ALIGN_H)) {
+					found = true;
+					break;
+				}
+			}
+
+			ifHeight += IF_ALIGN_H;
+		}
+
+		if (found) {
+			unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+
+			pipeConfigs.push_back({ bdsSF, { iif.width, ifHeight },
+						{ bdsWidth, bdsIntHeight }, gdc });
+			return;
+		}
+	} else {
+		ifHeight = utils::alignUp(iif.height, IF_ALIGN_H);
+		while (ifHeight > minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
+
+			bdsHeight = ifHeight / bdsSF;
+			if (std::fmod(ifHeight, 1.0) == 0 && std::fmod(bdsHeight, 1.0) == 0) {
+				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+
+				if (!(ifHeight % IF_ALIGN_H) &&
+				    !(bdsIntHeight % BDS_ALIGN_H)) {
+					pipeConfigs.push_back({ bdsSF, { iif.width, ifHeight },
+								{ bdsWidth, bdsIntHeight }, gdc });
+				}
+			}
+
+			ifHeight -= IF_ALIGN_H;
+		}
+	}
+}
+
+void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, float bdsSF)
+{
+	unsigned int minBDSWidth = gdc.width + FILTER_H * 2;
+
+	float sf = bdsSF;
+	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
+		float bdsWidth = static_cast<float>(iif.width) / sf;
+
+		if (std::fmod(bdsWidth, 1.0) == 0) {
+			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
+			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth)
+				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
+		}
+
+		sf += BDS_SF_STEP;
+	}
+
+	sf = bdsSF;
+	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
+		float bdsWidth = static_cast<float>(iif.width) / sf;
+
+		if (std::fmod(bdsWidth, 1.0) == 0) {
+			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
+			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth)
+				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
+		}
+
+		sf -= BDS_SF_STEP;
+	}
+}
+
+Size calculateGDC(ImgUDevice::Pipe *pipe)
+{
+	const Size &in = pipe->input;
+	const Size &main = pipe->main;
+	const Size &vf = pipe->viewfinder;
+	Size gdc;
+
+	if (!vf.isNull()) {
+		gdc.width = main.width;
+
+		float ratio = (main.width * vf.height) / static_cast<float>(vf.width);
+		gdc.height = std::max(static_cast<float>(main.height), ratio);
+
+		return gdc;
+	}
+
+	if (!isSameRatio(in, main)) {
+		gdc = main;
+		return gdc;
+	}
+
+	float totalSF = static_cast<float>(in.width) / main.width;
+	float bdsSF = totalSF > 2 ? 2 : 1;
+	float yuvSF = totalSF / bdsSF;
+	float sf = findScaleFactor(yuvSF, gdcScalingFactors);
+
+	gdc.width = main.width * sf;
+	gdc.height = main.height * sf;
+
+	return gdc;
+}
+
+FOV calcFOV(const Size &in, const ImgUDevice::PipeConfig &pipe)
+{
+	FOV fov{};
+
+	float inW = static_cast<float>(in.width);
+	float inH = static_cast<float>(in.height);
+	float ifCropW = static_cast<float>(in.width - pipe.iif.width);
+	float ifCropH = static_cast<float>(in.height - pipe.iif.height);
+	float gdcCropW = static_cast<float>(pipe.bds.width - pipe.gdc.width) * pipe.bds_sf;
+	float gdcCropH = static_cast<float>(pipe.bds.height - pipe.gdc.height) * pipe.bds_sf;
+
+	fov.w = (inW - (ifCropW + gdcCropW)) / inW;
+	fov.h = (inH - (ifCropH + gdcCropH)) / inH;
+
+	return fov;
+}
+
+} /* namespace */
+
+/**
+ * \struct PipeConfig
+ * \brief The ImgU pipe configuration parameters
+ *
+ * The ImgU image pipeline is composed of several hardware blocks that crop
+ * and scale the input image to obtain the desired output sizes. The
+ * scaling/cropping operations of those components is configured though the
+ * V4L2 selection API and the V4L2 subdev API applied to the ImgU media entity.
+ *
+ * The configurable components in the pipeline are:
+ * - IF: image feeder
+ * - BDS: bayer downscaler
+ * - GDC: geometric distorsion correction
+ *
+ * The IF crop rectangle is controlled by the V4L2_SEL_TGT_CROP selection target
+ * applied to the ImgU media entity sink pad number 0. The BDS scaler is
+ * controlled by the V4L2_SEL_TGT_COMPOSE target on the same pad, while the GDC
+ * output size is configured with the VIDIOC_SUBDEV_S_FMT IOCTL, again on pad
+ * number 0.
+ *
+ * The PipeConfig structure collects the sizes of each of those components
+ * plus the BDS scaling factor used to calculate the field of view
+ * of the final images.
+ */
+
+/**
+ * \struct Pipe
+ * \brief Describe the ImgU requested configuration
+ *
+ * The ImgU unit processes images through several components, which have
+ * to be properly configured inspecting the input image size and the desired
+ * output sizes. This structure collects the ImgU input configuration and the
+ * requested main output and viewfinder configurations.
+ *
+ * \var Pipe::input
+ * \brief The input image size
+ *
+ * \var Pipe::main
+ * \brief The requested main output size
+ *
+ * \var Pipe::viewfinder
+ * \brief The requested viewfinder output size
+ */
 
 /**
  * \brief Initialize components of the ImgU instance
@@ -72,6 +370,63 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 		return ret;
 
 	return 0;
+}
+
+/**
+ * \brief Calculate the ImgU pipe configuration parameters
+ * \param[in] pipe The requested ImgU configuration
+ * \return An ImgUDevice::PipeConfig instance on success, an empty configuration
+ * otherwise
+ */
+ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
+{
+	pipeConfigs.clear();
+
+	LOG(IPU3, Debug) << "Calculating pipe configuration for: ";
+	LOG(IPU3, Debug) << "input: " << pipe->input.toString();
+	LOG(IPU3, Debug) << "main: " << pipe->main.toString();
+	LOG(IPU3, Debug) << "vf: " << pipe->viewfinder.toString();
+
+	const Size &in = pipe->input;
+	Size gdc = calculateGDC(pipe);
+
+	unsigned int ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
+	unsigned int ifHeight = in.height;
+	unsigned int minIfWidth = in.width - IF_CROP_MAX_W;
+	float bdsSF = static_cast<float>(in.width) / gdc.width;
+	float sf = findScaleFactor(bdsSF, bdsScalingFactors, true);
+
+	while (ifWidth >= minIfWidth) {
+		Size iif{ ifWidth, ifHeight };
+		calculateBDS(pipe, iif, gdc, sf);
+
+		ifWidth -= IF_ALIGN_W;
+	}
+
+	if (pipeConfigs.size() == 0) {
+		LOG(IPU3, Error) << "Failed to calculate pipe configuration";
+		return {};
+	}
+
+	FOV bestFov = calcFOV(pipe->input, pipeConfigs[0]);
+	unsigned int bestIndex = 0;
+	unsigned int p = 0;
+	for (auto pipeConfig : pipeConfigs) {
+		FOV fov = calcFOV(pipe->input, pipeConfig);
+		if (fov.isLarger(bestFov)) {
+			bestFov = fov;
+			bestIndex = p;
+		}
+
+		++p;
+	}
+
+	LOG(IPU3, Debug) << "Computed pipe configuration: ";
+	LOG(IPU3, Debug) << "IF: " << pipeConfigs[bestIndex].iif.toString();
+	LOG(IPU3, Debug) << "BDS: " << pipeConfigs[bestIndex].bds.toString();
+	LOG(IPU3, Debug) << "GDC: " << pipeConfigs[bestIndex].gdc.toString();
+
+	return pipeConfigs[bestIndex];
 }
 
 /**

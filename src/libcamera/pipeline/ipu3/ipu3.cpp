@@ -314,7 +314,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * to the ImgU  maximum output size) and aligned down to
 			 * the required frame margin.
 			 *
-			 * \todo Clarify the alignment constraints as exaplained
+			 * \todo Clarify the alignment constraints as explained
 			 * in validate()
 			 */
 			size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);

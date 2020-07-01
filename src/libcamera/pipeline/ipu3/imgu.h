@@ -23,7 +23,27 @@ struct StreamConfiguration;
 class ImgUDevice
 {
 public:
+	struct PipeConfig {
+		float bds_sf;
+		Size iif;
+		Size bds;
+		Size gdc;
+
+		bool isNull() const
+		{
+			return iif.isNull() || bds.isNull() || gdc.isNull();
+		}
+	};
+
+	struct Pipe {
+		Size input;
+		Size main;
+		Size viewfinder;
+	};
+
 	int init(MediaDevice *media, unsigned int index);
+
+	PipeConfig calculatePipeConfig(Pipe *pipe);
 
 	int configureInput(const Size &size, V4L2DeviceFormat *inputFormat);
 

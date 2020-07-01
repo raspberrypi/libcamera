@@ -22,10 +22,7 @@ class Focus : public Algorithm
 public:
 	Focus(Controller *controller);
 	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
-private:
-	bool print_;
 };
 
 } /* namespace RPi */

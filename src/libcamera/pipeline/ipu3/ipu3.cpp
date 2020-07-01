@@ -246,7 +246,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	 * only. If no resolution is requested for any stream, or if no sensor
 	 * resolution is large enough, pick the largest one.
 	 */
-	Size size = {};
+	Size size;
 
 	for (const StreamConfiguration &cfg : config_) {
 		if (cfg.size.width > size.width)

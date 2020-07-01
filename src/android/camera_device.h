@@ -25,6 +25,15 @@
 
 class CameraMetadata;
 
+struct CameraStream {
+	/*
+	 * The index of the libcamera StreamConfiguration as added during
+	 * configureStreams(). A single libcamera Stream may be used to deliver
+	 * one or more streams to the Android framework.
+	 */
+	unsigned int index;
+};
+
 class CameraDevice : protected libcamera::Loggable
 {
 public:
@@ -90,6 +99,7 @@ private:
 
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;
+	std::vector<CameraStream> streams_;
 
 	int facing_;
 	int orientation_;

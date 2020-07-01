@@ -952,6 +952,20 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		return -EINVAL;
 	}
 
+	/*
+	 * Clear and remove any existing configuration from previous calls, and
+	 * ensure the required entries are available without further
+	 * re-allcoation.
+	 */
+	streams_.clear();
+	streams_.reserve(stream_list->num_streams);
+
+	/*
+	 * Track actually created streams, as there may not be a 1:1 mapping of
+	 * camera3 streams to libcamera streams.
+	 */
+	unsigned int streamIndex = 0;
+
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 
@@ -974,6 +988,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		streamConfiguration.pixelFormat = format;
 
 		config_->addConfiguration(streamConfiguration);
+
+		streams_[i].index = streamIndex++;
 	}
 
 	switch (config_->validate()) {
@@ -991,10 +1007,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
-		StreamConfiguration &streamConfiguration = config_->at(i);
+		CameraStream *cameraStream = &streams_[i];
+		StreamConfiguration &cfg = config_->at(cameraStream->index);
 
 		/* Use the bufferCount confirmed by the validation process. */
-		stream->max_buffers = streamConfiguration.bufferCount;
+		stream->max_buffers = cfg.bufferCount;
 	}
 
 	/*

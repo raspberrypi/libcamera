@@ -70,6 +70,7 @@ private:
 
 	int initializeStreamConfigurations();
 	std::tuple<uint32_t, uint32_t> calculateStaticMetadataSize();
+	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
 	libcamera::PixelFormat toPixelFormat(int format);

@@ -1011,6 +1011,24 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
+FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer)
+{
+	std::vector<FrameBuffer::Plane> planes;
+	for (unsigned int i = 0; i < 3; i++) {
+		FrameBuffer::Plane plane;
+		plane.fd = FileDescriptor(camera3buffer->data[i]);
+		/*
+		 * Setting length to zero here is OK as the length is only used
+		 * to map the memory of the plane. Libcamera do not need to poke
+		 * at the memory content queued by the HAL.
+		 */
+		plane.length = 0;
+		planes.push_back(std::move(plane));
+	}
+
+	return new FrameBuffer(std::move(planes));
+}
+
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
 	StreamConfiguration *streamConfiguration = &config_->at(0);
@@ -1064,22 +1082,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	 * Create a libcamera buffer using the dmabuf descriptors of the first
 	 * and (currently) only supported request buffer.
 	 */
-	const buffer_handle_t camera3Handle = *camera3Buffers[0].buffer;
-
-	std::vector<FrameBuffer::Plane> planes;
-	for (int i = 0; i < 3; i++) {
-		FrameBuffer::Plane plane;
-		plane.fd = FileDescriptor(camera3Handle->data[i]);
-		/*
-		 * Setting length to zero here is OK as the length is only used
-		 * to map the memory of the plane. Libcamera do not need to poke
-		 * at the memory content queued by the HAL.
-		 */
-		plane.length = 0;
-		planes.push_back(std::move(plane));
-	}
-
-	FrameBuffer *buffer = new FrameBuffer(std::move(planes));
+	FrameBuffer *buffer = createFrameBuffer(*camera3Buffers[0].buffer);
 	if (!buffer) {
 		LOG(HAL, Error) << "Failed to create buffer";
 		delete descriptor;

@@ -70,6 +70,7 @@ private:
 		uint32_t frameNumber;
 		uint32_t numBuffers;
 		camera3_stream_buffer_t *buffers;
+		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers;
 	};
 
 	struct Camera3StreamConfiguration {

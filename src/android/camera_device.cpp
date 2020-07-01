@@ -98,6 +98,7 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 	: frameNumber(frameNumber), numBuffers(numBuffers)
 {
 	buffers = new camera3_stream_buffer_t[numBuffers];
+	frameBuffers.reserve(numBuffers);
 }
 
 CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
@@ -990,6 +991,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		config_->addConfiguration(streamConfiguration);
 
 		streams_[i].index = streamIndex++;
+		stream->priv = static_cast<void *>(&streams_[i]);
 	}
 
 	switch (config_->validate()) {
@@ -1048,9 +1050,6 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
-	StreamConfiguration *streamConfiguration = &config_->at(0);
-	Stream *stream = streamConfiguration->stream();
-
 	if (camera3Request->num_output_buffers != 1) {
 		LOG(HAL, Error) << "Invalid number of output buffers: "
 				<< camera3Request->num_output_buffers;
@@ -1088,30 +1087,36 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
 
 	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
+		CameraStream *cameraStream =
+			static_cast<CameraStream *>(camera3Buffers[i].stream->priv);
+
 		/*
 		 * Keep track of which stream the request belongs to and store
 		 * the native buffer handles.
-		 *
-		 * \todo Currently we only support one capture buffer. Copy
-		 * all of them to be ready once we'll support more.
 		 */
 		descriptor->buffers[i].stream = camera3Buffers[i].stream;
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
-	}
 
-	/*
-	 * Create a libcamera buffer using the dmabuf descriptors of the first
-	 * and (currently) only supported request buffer.
-	 */
-	FrameBuffer *buffer = createFrameBuffer(*camera3Buffers[0].buffer);
-	if (!buffer) {
-		LOG(HAL, Error) << "Failed to create buffer";
-		delete request;
-		delete descriptor;
-		return -ENOMEM;
-	}
+		/*
+		 * Create a libcamera buffer using the dmabuf descriptors of
+		 * the camera3Buffer for each stream. The FrameBuffer is
+		 * directly associated with the Camera3RequestDescriptor for
+		 * lifetime management only.
+		 */
+		FrameBuffer *buffer = createFrameBuffer(*camera3Buffers[i].buffer);
+		if (!buffer) {
+			LOG(HAL, Error) << "Failed to create buffer";
+			delete request;
+			delete descriptor;
+			return -ENOMEM;
+		}
+		descriptor->frameBuffers.emplace_back(buffer);
 
-	request->addBuffer(stream, buffer);
+		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index);
+		Stream *stream = streamConfiguration->stream();
+
+		request->addBuffer(stream, buffer);
+	}
 
 	int ret = camera_->queueRequest(request);
 	if (ret) {
@@ -1127,7 +1132,6 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 void CameraDevice::requestComplete(Request *request)
 {
 	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
-	FrameBuffer *buffer = buffers.begin()->second;
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;
 
@@ -1145,16 +1149,20 @@ void CameraDevice::requestComplete(Request *request)
 	captureResult.frame_number = descriptor->frameNumber;
 	captureResult.num_output_buffers = descriptor->numBuffers;
 	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
-		/*
-		 * \todo Currently we only support one capture buffer. Prepare
-		 * all of them to be ready once we'll support more.
-		 */
 		descriptor->buffers[i].acquire_fence = -1;
 		descriptor->buffers[i].release_fence = -1;
 		descriptor->buffers[i].status = status;
 	}
 	captureResult.output_buffers =
 		const_cast<const camera3_stream_buffer_t *>(descriptor->buffers);
+
+	/*
+	 * \todo The timestamp used for the metadata is currently always taken
+	 * from the first buffer (which may be the first stream) in the Request.
+	 * It might be appropriate to return a 'correct' (as determined by
+	 * pipeline handlers) timestamp in the Request itself.
+	 */
+	FrameBuffer *buffer = buffers.begin()->second;
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
 		notifyShutter(descriptor->frameNumber,
@@ -1180,7 +1188,6 @@ void CameraDevice::requestComplete(Request *request)
 	callbacks_->process_capture_result(callbacks_, &captureResult);
 
 	delete descriptor;
-	delete buffer;
 }
 
 std::string CameraDevice::logPrefix() const

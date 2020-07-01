@@ -1294,6 +1294,13 @@ void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
 {
 	camera3_notify_msg_t notify = {};
 
+	/*
+	 * \todo Report and identify the stream number or configuration to
+	 * clarify the stream that failed.
+	 */
+	LOG(HAL, Error) << "Error occurred on frame " << frameNumber << " ("
+			<< toPixelFormat(stream->format).toString() << ")";
+
 	notify.type = CAMERA3_MSG_ERROR;
 	notify.message.error.error_stream = stream;
 	notify.message.error.frame_number = frameNumber;

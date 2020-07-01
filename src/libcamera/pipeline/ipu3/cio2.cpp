@@ -94,11 +94,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	 * utils::set_overlap requires the ranges to be sorted, keep the
 	 * cio2Codes vector sorted in ascending order.
 	 */
-	std::vector<unsigned int> cio2Codes;
-	cio2Codes.reserve(mbusCodesToInfo.size());
-	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
-		       std::back_inserter(cio2Codes),
-		       [](auto &pair) { return pair.first; });
+	std::vector<unsigned int> cio2Codes = utils::map_keys(mbusCodesToInfo);
 	const std::vector<unsigned int> &sensorCodes = sensor_->mbusCodes();
 	if (!utils::set_overlap(sensorCodes.begin(), sensorCodes.end(),
 				cio2Codes.begin(), cio2Codes.end())) {
@@ -138,12 +134,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	 * Apply the selected format to the sensor, the CSI-2 receiver and
 	 * the CIO2 output device.
 	 */
-	std::vector<unsigned int> mbusCodes;
-	mbusCodes.reserve(mbusCodesToInfo.size());
-	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
-		       std::back_inserter(mbusCodes),
-		       [](auto &pair) { return pair.first; });
-
+	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToInfo);
 	sensorFormat = sensor_->getFormat(mbusCodes, size);
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
@@ -182,11 +173,7 @@ CIO2Device::generateConfiguration(Size size) const
 		size = sensor_->resolution();
 
 	/* Query the sensor static information for closest match. */
-	std::vector<unsigned int> mbusCodes;
-	std::transform(mbusCodesToInfo.begin(), mbusCodesToInfo.end(),
-		       std::back_inserter(mbusCodes),
-		       [](auto &pair) { return pair.first; });
-
+	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToInfo);
 	V4L2SubdeviceFormat sensorFormat = sensor_->getFormat(mbusCodes, size);
 	if (!sensorFormat.mbus_code) {
 		LOG(IPU3, Error) << "Sensor does not support mbus code";

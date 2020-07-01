@@ -386,6 +386,12 @@ bool operator==(const SizeRange &lhs, const SizeRange &rhs)
  */
 
 /**
+ * \fn bool Rectangle::isNull() const
+ * \brief Check if the rectangle is null
+ * \return True if both the width and height are 0, or false otherwise
+ */
+
+/**
  * \brief Assemble and return a string describing the rectangle
  * \return A string describing the Rectangle
  */

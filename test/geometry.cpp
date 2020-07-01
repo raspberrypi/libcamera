@@ -182,6 +182,20 @@ protected:
 		if (!compare(Size(200, 100), Size(100, 200), &operator>=, ">=", true))
 			return TestFail;
 
+		/* Test Rectangle::isNull(). */
+		if (!Rectangle(0, 0, 0, 0).isNull() ||
+		    !Rectangle(1, 1, 0, 0).isNull()) {
+			cout << "Null rectangle incorrectly reported as not null" << endl;
+			return TestFail;
+		}
+
+		if (Rectangle(0, 0, 0, 1).isNull() ||
+		    Rectangle(0, 0, 1, 0).isNull() ||
+		    Rectangle(0, 0, 1, 1).isNull()) {
+			cout << "Non-null rectangle incorrectly reported as null" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

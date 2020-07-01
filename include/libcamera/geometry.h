@@ -181,6 +181,7 @@ public:
 	unsigned int width;
 	unsigned int height;
 
+	bool isNull() const { return !width && !height; }
 	const std::string toString() const;
 };
 

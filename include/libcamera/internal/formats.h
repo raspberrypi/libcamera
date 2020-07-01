@@ -19,20 +19,6 @@
 
 namespace libcamera {
 
-class ImageFormats
-{
-public:
-	int addFormat(unsigned int format, const std::vector<SizeRange> &sizes);
-
-	bool isEmpty() const;
-	std::vector<unsigned int> formats() const;
-	const std::vector<SizeRange> &sizes(unsigned int format) const;
-	const std::map<unsigned int, std::vector<SizeRange>> &data() const;
-
-private:
-	std::map<unsigned int, std::vector<SizeRange>> data_;
-};
-
 struct PixelFormatPlaneInfo
 {
 	unsigned int bytesPerGroup;

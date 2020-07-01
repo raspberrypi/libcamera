@@ -1050,9 +1050,8 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
-	if (camera3Request->num_output_buffers != 1) {
-		LOG(HAL, Error) << "Invalid number of output buffers: "
-				<< camera3Request->num_output_buffers;
+	if (!camera3Request->num_output_buffers) {
+		LOG(HAL, Error) << "No output buffers provided";
 		return -EINVAL;
 	}
 

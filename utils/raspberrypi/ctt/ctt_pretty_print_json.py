@@ -52,8 +52,6 @@ class JSONPrettyPrinter(object):
         elif c == ':':
             self.fout.write(c)
             self.fout.write(' ')
-        elif c == ' ':
-            pass
         elif c == ',':
             if not self.state["inarray"][0]:
                 self.fout.write(c)
@@ -67,6 +65,8 @@ class JSONPrettyPrinter(object):
                     self.newline()
                 else:
                     self.fout.write(' ')
+        elif c.isspace():
+            pass
         else:
             self.fout.write(c)
         self.state["skipnewline"] = (c == '[')

@@ -23,19 +23,21 @@ class JSONPrettyPrinter(object):
         self.fout = fout
 
     def newline(self):
-        self.fout.write('\n')
-        self.state["need_indent"] = True
+        if not self.state["skipnewline"]:
+            self.fout.write('\n')
+            self.state["need_indent"] = True
+        self.state["skipnewline"] = True
 
     def write(self, c):
         if self.state["need_indent"]:
             self.fout.write(' ' * self.state["indent"] * 4)
             self.state["need_indent"] = False
         self.fout.write(c)
+        self.state["skipnewline"] = False
 
     def process_char(self, c):
         if c == '{':
-            if not self.state["skipnewline"]:
-                self.newline()
+            self.newline()
             self.write(c)
             self.state["indent"] += 1
             self.newline()
@@ -76,7 +78,6 @@ class JSONPrettyPrinter(object):
             pass
         else:
             self.write(c)
-        self.state["skipnewline"] = (c == '[')
 
     def print(self, string):
         for c in string:

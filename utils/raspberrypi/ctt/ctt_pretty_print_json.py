@@ -4,6 +4,8 @@
 #
 # ctt_pretty_print_json.py - camera tuning tool JSON formatter
 
+import sys
+
 
 """
 takes a collapsed json file and makes it more readable
@@ -72,4 +74,10 @@ def pretty_print_json(str_in, output_filename):
 
 
 if __name__ == '__main__':
-    pretty_print_json("../ctt/ref_json/final_imx477.json", "pretty.json")
+    if len(sys.argv) != 2:
+        print("Usage: %s filename" % sys.argv[0])
+        sys.exit(1)
+
+    input_filename = sys.argv[1]
+    with open(input_filename, "r") as fin:
+        pretty_print_json(fin.read(), "pretty.json")

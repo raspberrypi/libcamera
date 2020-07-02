@@ -18,6 +18,7 @@ class JSONPrettyPrinter(object):
             "arraycount": [],
             "skipnewline": True,
             "need_indent": False,
+            "need_space": False,
         }
 
         self.fout = fout
@@ -26,12 +27,16 @@ class JSONPrettyPrinter(object):
         if not self.state["skipnewline"]:
             self.fout.write('\n')
             self.state["need_indent"] = True
+            self.state["need_space"] = False
         self.state["skipnewline"] = True
 
     def write(self, c):
         if self.state["need_indent"]:
             self.fout.write(' ' * self.state["indent"] * 4)
             self.state["need_indent"] = False
+        if self.state["need_space"]:
+            self.fout.write(' ')
+            self.state["need_space"] = False
         self.fout.write(c)
         self.state["skipnewline"] = False
 
@@ -60,11 +65,10 @@ class JSONPrettyPrinter(object):
             self.write(c)
         elif c == ':':
             self.write(c)
-            self.write(' ')
+            self.state["need_space"] = True
         elif c == ',':
             if not self.state["inarray"][0]:
                 self.write(c)
-                self.write(' ')
                 self.newline()
             else:
                 self.write(c)
@@ -73,7 +77,7 @@ class JSONPrettyPrinter(object):
                     self.state["arraycount"][0] = 0
                     self.newline()
                 else:
-                    self.write(' ')
+                    self.state["need_space"] = True
         elif c.isspace():
             pass
         else:

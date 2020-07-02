@@ -7,70 +7,77 @@
 import sys
 
 
-"""
-takes a collapsed json file and makes it more readable
-"""
-def process_file(string, fout, state):
-    for c in string:
-        process_char(c, fout, state)
+class JSONPrettyPrinter(object):
+    """
+    Take a collapsed JSON file and make it more readable
+    """
+    def __init__(self):
+        self.state = {
+            "indent": 0,
+            "inarray": [False],
+            "arraycount": [],
+            "skipnewline": True
+        }
 
+    def newline(self, fout):
+        fout.write('\n')
+        fout.write(' ' * self.state["indent"] * 4)
 
-def print_newline(fout, state):
-    fout.write('\n')
-    fout.write(' '*state["indent"]*4)
-
-
-def process_char(c, fout, state):
-    if c == '{':
-        if not state["skipnewline"]:
-            print_newline(fout, state)
-        fout.write(c)
-        state["indent"] += 1
-        print_newline(fout, state)
-    elif c == '}':
-        state["indent"] -= 1
-        print_newline(fout, state)
-        fout.write(c)
-    elif c == '[':
-        print_newline(fout, state)
-        fout.write(c)
-        state["indent"] += 1
-        print_newline(fout, state)
-        state["inarray"] = [True] + state["inarray"]
-        state["arraycount"] = [0] + state["arraycount"]
-    elif c == ']':
-        state["indent"] -= 1
-        print_newline(fout, state)
-        state["inarray"].pop(0)
-        state["arraycount"].pop(0)
-        fout.write(c)
-    elif c == ':':
-        fout.write(c)
-        fout.write(' ')
-    elif c == ' ':
-        pass
-    elif c == ',':
-        if not state["inarray"][0]:
+    def process_char(self, c, fout):
+        if c == '{':
+            if not self.state["skipnewline"]:
+                self.newline(fout)
+            fout.write(c)
+            self.state["indent"] += 1
+            self.newline(fout)
+        elif c == '}':
+            self.state["indent"] -= 1
+            self.newline(fout)
+            fout.write(c)
+        elif c == '[':
+            self.newline(fout)
+            fout.write(c)
+            self.state["indent"] += 1
+            self.newline(fout)
+            self.state["inarray"] = [True] + self.state["inarray"]
+            self.state["arraycount"] = [0] + self.state["arraycount"]
+        elif c == ']':
+            self.state["indent"] -= 1
+            self.newline(fout)
+            self.state["inarray"].pop(0)
+            self.state["arraycount"].pop(0)
+            fout.write(c)
+        elif c == ':':
             fout.write(c)
             fout.write(' ')
-            print_newline(fout, state)
+        elif c == ' ':
+            pass
+        elif c == ',':
+            if not self.state["inarray"][0]:
+                fout.write(c)
+                fout.write(' ')
+                self.newline(fout)
+            else:
+                fout.write(c)
+                self.state["arraycount"][0] += 1
+                if self.state["arraycount"][0] == 16:
+                    self.state["arraycount"][0] = 0
+                    self.newline(fout)
+                else:
+                    fout.write(' ')
         else:
             fout.write(c)
-            state["arraycount"][0] += 1
-            if state["arraycount"][0] == 16:
-                state["arraycount"][0] = 0
-                print_newline(fout, state)
-            else:
-                fout.write(' ')
-    else:
-        fout.write(c)
-    state["skipnewline"] = (c == '[')
+        self.state["skipnewline"] = (c == '[')
+
+    def print(self, string, fout):
+        for c in string:
+            self.process_char(c, fout)
 
 
 def pretty_print_json(str_in, output_filename):
-    state = {"indent": 0, "inarray": [False], "arraycount": [], "skipnewline": True}
     with open(output_filename, "w") as fout:
-        process_file(str_in, fout, state)
+        printer = JSONPrettyPrinter()
+        printer.print(str_in, fout)
 
 
 if __name__ == '__main__':

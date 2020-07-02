@@ -25,20 +25,23 @@ class JSONPrettyPrinter(object):
         self.fout.write('\n')
         self.fout.write(' ' * self.state["indent"] * 4)
 
+    def write(self, c):
+        self.fout.write(c)
+
     def process_char(self, c):
         if c == '{':
             if not self.state["skipnewline"]:
                 self.newline()
-            self.fout.write(c)
+            self.write(c)
             self.state["indent"] += 1
             self.newline()
         elif c == '}':
             self.state["indent"] -= 1
             self.newline()
-            self.fout.write(c)
+            self.write(c)
         elif c == '[':
             self.newline()
-            self.fout.write(c)
+            self.write(c)
             self.state["indent"] += 1
             self.newline()
             self.state["inarray"] = [True] + self.state["inarray"]
@@ -48,27 +51,27 @@ class JSONPrettyPrinter(object):
             self.newline()
             self.state["inarray"].pop(0)
             self.state["arraycount"].pop(0)
-            self.fout.write(c)
+            self.write(c)
         elif c == ':':
-            self.fout.write(c)
-            self.fout.write(' ')
+            self.write(c)
+            self.write(' ')
         elif c == ',':
             if not self.state["inarray"][0]:
-                self.fout.write(c)
-                self.fout.write(' ')
+                self.write(c)
+                self.write(' ')
                 self.newline()
             else:
-                self.fout.write(c)
+                self.write(c)
                 self.state["arraycount"][0] += 1
                 if self.state["arraycount"][0] == 16:
                     self.state["arraycount"][0] = 0
                     self.newline()
                 else:
-                    self.fout.write(' ')
+                    self.write(' ')
         elif c.isspace():
             pass
         else:
-            self.fout.write(c)
+            self.write(c)
         self.state["skipnewline"] = (c == '[')
 
     def print(self, string):

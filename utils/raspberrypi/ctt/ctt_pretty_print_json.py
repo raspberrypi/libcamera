@@ -86,6 +86,7 @@ class JSONPrettyPrinter(object):
     def print(self, string):
         for c in string:
             self.process_char(c)
+        self.newline()
 
 
 def pretty_print_json(str_in, output_filename):

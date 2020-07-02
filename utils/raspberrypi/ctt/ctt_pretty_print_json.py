@@ -16,16 +16,20 @@ class JSONPrettyPrinter(object):
             "indent": 0,
             "inarray": [False],
             "arraycount": [],
-            "skipnewline": True
+            "skipnewline": True,
+            "need_indent": False,
         }
 
         self.fout = fout
 
     def newline(self):
         self.fout.write('\n')
-        self.fout.write(' ' * self.state["indent"] * 4)
+        self.state["need_indent"] = True
 
     def write(self, c):
+        if self.state["need_indent"]:
+            self.fout.write(' ' * self.state["indent"] * 4)
+            self.state["need_indent"] = False
         self.fout.write(c)
 
     def process_char(self, c):

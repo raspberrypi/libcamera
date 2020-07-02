@@ -89,4 +89,5 @@ if __name__ == '__main__':
 
     input_filename = sys.argv[1]
     with open(input_filename, "r") as fin:
-        pretty_print_json(fin.read(), "pretty.json")
+        printer = JSONPrettyPrinter(sys.stdout)
+        printer.print(fin.read())

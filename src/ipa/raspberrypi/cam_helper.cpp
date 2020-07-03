@@ -106,12 +106,6 @@ unsigned int CamHelper::MistrustFramesModeSwitch() const
 	return 0;
 }
 
-CamTransform CamHelper::GetOrientation() const
-{
-	/* Most sensors will be mounted the "right" way up? */
-	return CamTransform_IDENTITY;
-}
-
 RegisterCamHelper::RegisterCamHelper(char const *cam_name,
 				     CamHelperCreateFunc create_func)
 {

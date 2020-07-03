@@ -49,7 +49,6 @@ public:
 	double Gain(uint32_t gain_code) const override;
 	unsigned int MistrustFramesModeSwitch() const override;
 	bool SensorEmbeddedDataPresent() const override;
-	CamTransform GetOrientation() const override;
 };
 
 CamHelperImx219::CamHelperImx219()
@@ -84,12 +83,6 @@ unsigned int CamHelperImx219::MistrustFramesModeSwitch() const
 bool CamHelperImx219::SensorEmbeddedDataPresent() const
 {
 	return ENABLE_EMBEDDED_DATA;
-}
-
-CamTransform CamHelperImx219::GetOrientation() const
-{
-	/* Camera is "upside down" on this board. */
-	return CamTransform_HFLIP | CamTransform_VFLIP;
 }
 
 static CamHelper *Create()

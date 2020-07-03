@@ -38,7 +38,6 @@ public:
 	uint32_t GainCode(double gain) const override;
 	double Gain(uint32_t gain_code) const override;
 	bool SensorEmbeddedDataPresent() const override;
-	CamTransform GetOrientation() const override;
 };
 
 CamHelperImx477::CamHelperImx477()
@@ -59,12 +58,6 @@ double CamHelperImx477::Gain(uint32_t gain_code) const
 bool CamHelperImx477::SensorEmbeddedDataPresent() const
 {
 	return true;
-}
-
-CamTransform CamHelperImx477::GetOrientation() const
-{
-	/* Camera is "upside down" on this board. */
-	return CamTransform_HFLIP | CamTransform_VFLIP;
 }
 
 static CamHelper *Create()

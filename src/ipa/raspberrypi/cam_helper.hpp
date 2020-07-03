@@ -58,12 +58,6 @@ namespace RPi {
 //    (other than start-up), for which control algorithms should not run
 //    (for example, metadata may be unreliable).
 
-// Bitfield to represent the default orientation of the camera.
-typedef int CamTransform;
-static constexpr CamTransform CamTransform_IDENTITY = 0;
-static constexpr CamTransform CamTransform_HFLIP    = 1;
-static constexpr CamTransform CamTransform_VFLIP    = 2;
-
 class CamHelper
 {
 public:
@@ -82,7 +76,6 @@ public:
 	virtual unsigned int HideFramesModeSwitch() const;
 	virtual unsigned int MistrustFramesStartup() const;
 	virtual unsigned int MistrustFramesModeSwitch() const;
-	virtual CamTransform GetOrientation() const;
 protected:
 	MdParser *parser_;
 	CameraMode mode_;

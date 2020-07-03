@@ -216,18 +216,12 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		int gainDelay, exposureDelay, sensorMetadata;
 		helper_->GetDelays(exposureDelay, gainDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
-		RPi::CamTransform orientation = helper_->GetOrientation();
 
 		IPAOperationData op;
 		op.operation = RPI_IPA_ACTION_SET_SENSOR_CONFIG;
 		op.data.push_back(gainDelay);
 		op.data.push_back(exposureDelay);
 		op.data.push_back(sensorMetadata);
-
-		ControlList ctrls(unicam_ctrls_);
-		ctrls.set(V4L2_CID_HFLIP, (int32_t) !!(orientation & RPi::CamTransform_HFLIP));
-		ctrls.set(V4L2_CID_VFLIP, (int32_t) !!(orientation & RPi::CamTransform_VFLIP));
-		op.controls.push_back(ctrls);
 
 		queueFrameAction.emit(0, op);
 	}

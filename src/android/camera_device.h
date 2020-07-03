@@ -23,15 +23,25 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
+#include "jpeg/encoder.h"
+
 class CameraMetadata;
 
 struct CameraStream {
+	CameraStream(libcamera::PixelFormat, libcamera::Size);
+	~CameraStream();
+
 	/*
 	 * The index of the libcamera StreamConfiguration as added during
 	 * configureStreams(). A single libcamera Stream may be used to deliver
 	 * one or more streams to the Android framework.
 	 */
 	unsigned int index;
+
+	libcamera::PixelFormat format;
+	libcamera::Size size;
+
+	Encoder *jpeg;
 };
 
 class CameraDevice : protected libcamera::Loggable
@@ -105,6 +115,8 @@ private:
 
 	int facing_;
 	int orientation_;
+
+	unsigned int maxJpegBufferSize_;
 };
 
 #endif /* __ANDROID_CAMERA_DEVICE_H__ */

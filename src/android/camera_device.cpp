@@ -8,6 +8,7 @@
 #include "camera_device.h"
 #include "camera_ops.h"
 
+#include <sys/mman.h>
 #include <tuple>
 #include <vector>
 
@@ -21,6 +22,8 @@
 
 #include "camera_metadata.h"
 #include "system/graphics.h"
+
+#include "jpeg/encoder_libjpeg.h"
 
 using namespace libcamera;
 
@@ -129,6 +132,52 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 
 LOG_DECLARE_CATEGORY(HAL);
 
+class MappedCamera3Buffer : public MappedBuffer
+{
+public:
+	MappedCamera3Buffer(const buffer_handle_t camera3buffer, int flags);
+};
+
+MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
+					 int flags)
+{
+	maps_.reserve(camera3buffer->numFds);
+	error_ = 0;
+
+	for (int i = 0; i < camera3buffer->numFds; i++) {
+		if (camera3buffer->data[i] == -1)
+			continue;
+
+		off_t length = lseek(camera3buffer->data[i], 0, SEEK_END);
+		if (length < 0) {
+			error_ = -errno;
+			LOG(HAL, Error) << "Failed to query plane length";
+			break;
+		}
+
+		void *address = mmap(nullptr, length, flags, MAP_SHARED,
+				     camera3buffer->data[i], 0);
+		if (address == MAP_FAILED) {
+			error_ = -errno;
+			LOG(HAL, Error) << "Failed to mmap plane";
+			break;
+		}
+
+		maps_.emplace_back(static_cast<uint8_t *>(address),
+				   static_cast<size_t>(length));
+	}
+}
+
+CameraStream::CameraStream(PixelFormat f, Size s)
+	: index(-1), format(f), size(s), jpeg(nullptr)
+{
+}
+
+CameraStream::~CameraStream()
+{
+	delete jpeg;
+};
+
 /*
  * \struct Camera3RequestDescriptor
  *
@@ -167,6 +216,12 @@ CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camer
 	  facing_(CAMERA_FACING_FRONT), orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
+
+	/*
+	 * \todo Determine a more accurate value for this during
+	 *  streamConfiguration.
+	 */
+	maxJpegBufferSize_ = 13 << 20; /* 13631488 from USB HAL */
 }
 
 CameraDevice::~CameraDevice()
@@ -417,10 +472,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 50 entries, 671 bytes of static metadata
+	 * Currently: 51 entries, 687 bytes of static metadata
 	 */
-	uint32_t numEntries = 50;
-	uint32_t byteSize = 671;
+	uint32_t numEntries = 51;
+	uint32_t byteSize = 687;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -575,6 +630,12 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
 				  availableThumbnailSizes.data(),
 				  availableThumbnailSizes.size());
+
+	/*
+	 * \todo Calculate the maximum JPEG buffer size by asking the encoder
+	 * giving the maximum frame size required.
+	 */
+	staticMetadata_->addEntry(ANDROID_JPEG_MAX_SIZE, &maxJpegBufferSize_, 1);
 
 	/* Sensor static metadata. */
 	int32_t pixelArraySize[] = {
@@ -789,6 +850,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
 		ANDROID_CONTROL_AVAILABLE_MODES,
 		ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
+		ANDROID_JPEG_MAX_SIZE,
 		ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
 		ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
 		ANDROID_SENSOR_INFO_SENSITIVITY_RANGE,
@@ -860,6 +922,9 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SENSOR_EXPOSURE_TIME,
 		ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
 		ANDROID_STATISTICS_SCENE_FLICKER,
+		ANDROID_JPEG_SIZE,
+		ANDROID_JPEG_QUALITY,
+		ANDROID_JPEG_ORIENTATION,
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_RESULT_KEYS,
 				  availableResultKeys.data(),
@@ -1052,8 +1117,10 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	 */
 	unsigned int streamIndex = 0;
 
+	/* First handle all non-MJPEG streams. */
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
+		Size size(stream->width, stream->height);
 
 		PixelFormat format = toPixelFormat(stream->format);
 
@@ -1067,16 +1134,71 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		if (!format.isValid())
 			return -EINVAL;
 
+		streams_.emplace_back(format, size);
+		stream->priv = static_cast<void *>(&streams_[i]);
+
+		/* Defer handling of MJPEG streams until all others are known. */
+		if (format == formats::MJPEG)
+			continue;
+
 		StreamConfiguration streamConfiguration;
 
-		streamConfiguration.size.width = stream->width;
-		streamConfiguration.size.height = stream->height;
+		streamConfiguration.size = size;
 		streamConfiguration.pixelFormat = format;
 
 		config_->addConfiguration(streamConfiguration);
 
 		streams_[i].index = streamIndex++;
-		stream->priv = static_cast<void *>(&streams_[i]);
+	}
+
+	/* Now handle MJPEG streams, adding a new stream if required. */
+	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
+		camera3_stream_t *stream = stream_list->streams[i];
+		bool match = false;
+
+		if (streams_[i].format != formats::MJPEG)
+			continue;
+
+		/* Search for a compatible stream */
+		for (unsigned int j = 0; j < config_->size(); j++) {
+			StreamConfiguration &cfg = config_->at(j);
+
+			/*
+			 * \todo The PixelFormat must also be compatible with
+			 * the encoder.
+			 */
+			if (cfg.size == streams_[i].size) {
+				LOG(HAL, Info) << "Stream " << i
+					       << " using libcamera stream " << j;
+
+				match = true;
+				streams_[i].index = j;
+			}
+		}
+
+		/*
+		 * Without a compatible match for JPEG encoding we must
+		 * introduce a new stream to satisfy the request requirements.
+		 */
+		if (!match) {
+			StreamConfiguration streamConfiguration;
+
+			/*
+			 * \todo The pixelFormat should be a 'best-fit' choice
+			 * and may require a validation cycle. This is not yet
+			 * handled, and should be considered as part of any
+			 * stream configuration reworks.
+			 */
+			streamConfiguration.size.width = stream->width;
+			streamConfiguration.size.height = stream->height;
+			streamConfiguration.pixelFormat = formats::NV12;
+
+			LOG(HAL, Info) << "Adding " << streamConfiguration.toString()
+				       << " for MJPEG support";
+
+			config_->addConfiguration(streamConfiguration);
+			streams_[i].index = streamIndex++;
+		}
 	}
 
 	switch (config_->validate()) {
@@ -1103,6 +1225,20 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 		/* Use the bufferCount confirmed by the validation process. */
 		stream->max_buffers = cfg.bufferCount;
+
+		/*
+		 * Construct a software encoder for MJPEG streams from the
+		 * chosen libcamera source stream.
+		 */
+		if (cameraStream->format == formats::MJPEG) {
+			cameraStream->jpeg = new EncoderLibJpeg();
+			int ret = cameraStream->jpeg->configure(cfg);
+			if (ret) {
+				LOG(HAL, Error)
+					<< "Failed to configure encoder";
+				return ret;
+			}
+		}
 	}
 
 	/*
@@ -1197,6 +1333,10 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->buffers[i].stream = camera3Buffers[i].stream;
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
 
+		/* Software streams are handled after hardware streams complete. */
+		if (cameraStream->format == formats::MJPEG)
+			continue;
+
 		/*
 		 * Create a libcamera buffer using the dmabuf descriptors of
 		 * the camera3Buffer for each stream. The FrameBuffer is
@@ -1253,8 +1393,80 @@ void CameraDevice::requestComplete(Request *request)
 	resultMetadata = getResultMetadata(descriptor->frameNumber,
 					   buffer->metadata().timestamp);
 
-	/* Prepare to call back the Android camera stack. */
+	/* Handle any JPEG compression. */
+	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
+		CameraStream *cameraStream =
+			static_cast<CameraStream *>(descriptor->buffers[i].stream->priv);
 
+		if (cameraStream->format != formats::MJPEG)
+			continue;
+
+		Encoder *encoder = cameraStream->jpeg;
+		if (!encoder) {
+			LOG(HAL, Error) << "Failed to identify encoder";
+			continue;
+		}
+
+		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index);
+		Stream *stream = streamConfiguration->stream();
+		FrameBuffer *buffer = request->findBuffer(stream);
+		if (!buffer) {
+			LOG(HAL, Error) << "Failed to find a source stream buffer";
+			continue;
+		}
+
+		/*
+		 * \todo Buffer mapping and compression should be moved to a
+		 * separate thread.
+		 */
+
+		MappedCamera3Buffer mapped(*descriptor->buffers[i].buffer,
+					   PROT_READ | PROT_WRITE);
+		if (!mapped.isValid()) {
+			LOG(HAL, Error) << "Failed to mmap android blob buffer";
+			continue;
+		}
+
+		int jpeg_size = encoder->encode(buffer, mapped.maps()[0]);
+		if (jpeg_size < 0) {
+			LOG(HAL, Error) << "Failed to encode stream image";
+			status = CAMERA3_BUFFER_STATUS_ERROR;
+			continue;
+		}
+
+		/*
+		 * Fill in the JPEG blob header.
+		 *
+		 * The mapped size of the buffer is being returned as
+		 * substantially larger than the requested JPEG_MAX_SIZE
+		 * (which is referenced from maxJpegBufferSize_). Utilise
+		 * this static size to ensure the correct offset of the blob is
+		 * determined.
+		 *
+		 * \todo Investigate if the buffer size mismatch is an issue or
+		 * expected behaviour.
+		 */
+		uint8_t *resultPtr = mapped.maps()[0].data() +
+				     maxJpegBufferSize_ -
+				     sizeof(struct camera3_jpeg_blob);
+		auto *blob = reinterpret_cast<struct camera3_jpeg_blob *>(resultPtr);
+		blob->jpeg_blob_id = CAMERA3_JPEG_BLOB_ID;
+		blob->jpeg_size = jpeg_size;
+
+		/* Update the JPEG result Metadata. */
+		resultMetadata->addEntry(ANDROID_JPEG_SIZE,
+					 &jpeg_size, 1);
+
+		const uint32_t jpeg_quality = 95;
+		resultMetadata->addEntry(ANDROID_JPEG_QUALITY,
+					 &jpeg_quality, 1);
+
+		const uint32_t jpeg_orientation = 0;
+		resultMetadata->addEntry(ANDROID_JPEG_ORIENTATION,
+					 &jpeg_orientation, 1);
+	}
+
+	/* Prepare to call back the Android camera stack. */
 	camera3_capture_result_t captureResult = {};
 	captureResult.frame_number = descriptor->frameNumber;
 	captureResult.num_output_buffers = descriptor->numBuffers;
@@ -1334,10 +1546,10 @@ std::unique_ptr<CameraMetadata> CameraDevice::getResultMetadata(int frame_number
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 12 entries, 36 bytes
+	 * Currently: 18 entries, 62 bytes
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(15, 50);
+		std::make_unique<CameraMetadata>(18, 62);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;

@@ -789,7 +789,6 @@ int PipelineHandlerRPi::exportFrameBuffers(Camera *camera, Stream *stream,
 int PipelineHandlerRPi::start(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
-	ControlList controls(data->sensor_->controls());
 	int ret;
 
 	/* Allocate buffers for internal pipeline usage. */

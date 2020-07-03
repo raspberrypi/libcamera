@@ -16,6 +16,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/logging.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -1173,6 +1174,13 @@ int RPiCameraData::configureIPA()
 	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
 			nullptr);
 
+	/* Configure the H/V flip controls based on the sensor rotation. */
+	ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
+	int32_t rotation = sensor_->properties().get(properties::Rotation);
+	ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
+	ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
+	unicam_[Unicam::Image].dev()->setControls(&ctrls);
+
 	return 0;
 }
 
@@ -1201,10 +1209,6 @@ void RPiCameraData::queueFrameAction(unsigned int frame, const IPAOperationData 
 					      { V4L2_CID_EXPOSURE, action.data[1] } });
 			sensorMetadata_ = action.data[2];
 		}
-
-		/* Set the sensor orientation here as well. */
-		ControlList controls = action.controls[0];
-		unicam_[Unicam::Image].dev()->setControls(&controls);
 		goto done;
 	}
 

@@ -457,6 +457,30 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 
 	cfg.bufferCount = 3;
 
+	/* Set the stride and frameSize. */
+	if (!needConversion_) {
+		V4L2DeviceFormat format = {};
+		format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+		format.size = cfg.size;
+
+		int ret = data_->video_->tryFormat(&format);
+		if (ret < 0)
+			return Invalid;
+
+		cfg.stride = format.planes[0].bpl;
+		cfg.frameSize = format.planes[0].size;
+
+		return status;
+	}
+
+	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(data_->pipe_);
+	SimpleConverter *converter = pipe->converter();
+
+	std::tie(cfg.stride, cfg.frameSize) =
+		converter->strideAndFrameSize(cfg.size, cfg.pixelFormat);
+	if (cfg.stride == 0)
+		return Invalid;
+
 	return status;
 }
 
@@ -556,8 +580,6 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 			<< videoFormat.toString();
 		return -EINVAL;
 	}
-
-	cfg.stride = captureFormat.planes[0].bpl;
 
 	/* Configure the converter if required. */
 	useConverter_ = config->needConversion();

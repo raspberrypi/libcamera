@@ -261,4 +261,19 @@ void SimpleConverter::outputBufferReady(FrameBuffer *buffer)
 	}
 }
 
+std::tuple<unsigned int, unsigned int>
+SimpleConverter::strideAndFrameSize(const Size &size,
+				    const PixelFormat &pixelFormat)
+{
+	V4L2DeviceFormat format = {};
+	format.fourcc = m2m_->capture()->toV4L2PixelFormat(pixelFormat);
+	format.size = size;
+
+	int ret = m2m_->capture()->tryFormat(&format);
+	if (ret < 0)
+		return { 0, 0 };
+
+	return { format.planes[0].bpl, format.planes[0].size };
+}
+
 } /* namespace libcamera */

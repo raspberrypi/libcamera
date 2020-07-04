@@ -138,6 +138,26 @@ int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
 	return 0;
 }
 
+int V4L2Camera::validateConfiguration(const PixelFormat &pixelFormat,
+				      const Size &size,
+				      StreamConfiguration *streamConfigOut)
+{
+	std::unique_ptr<CameraConfiguration> config =
+		camera_->generateConfiguration({ StreamRole::Viewfinder });
+	StreamConfiguration &cfg = config->at(0);
+	cfg.size = size;
+	cfg.pixelFormat = pixelFormat;
+	cfg.bufferCount = 1;
+
+	CameraConfiguration::Status validation = config->validate();
+	if (validation == CameraConfiguration::Invalid)
+		return -EINVAL;
+
+	*streamConfigOut = cfg;
+
+	return 0;
+}
+
 int V4L2Camera::allocBuffers(unsigned int count)
 {
 	Stream *stream = config_->at(0).stream();

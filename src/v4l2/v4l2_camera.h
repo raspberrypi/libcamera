@@ -47,6 +47,9 @@ public:
 	int configure(StreamConfiguration *streamConfigOut,
 		      const Size &size, const PixelFormat &pixelformat,
 		      unsigned int bufferCount);
+	int validateConfiguration(const PixelFormat &pixelformat,
+				  const Size &size,
+				  StreamConfiguration *streamConfigOut);
 
 	int allocBuffers(unsigned int count);
 	void freeBuffers();

@@ -296,33 +296,36 @@ int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 	return 0;
 }
 
-void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
+int V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 {
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
 	PixelFormat format = PixelFormatInfo::info(v4l2Format).format;
-	const std::vector<PixelFormat> &formats =
-		streamConfig_.formats().pixelformats();
-	if (std::find(formats.begin(), formats.end(), format) == formats.end())
-		format = streamConfig_.formats().pixelformats()[0];
-
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
-	const std::vector<Size> &sizes = streamConfig_.formats().sizes(format);
-	if (std::find(sizes.begin(), sizes.end(), size) == sizes.end())
-		size = streamConfig_.formats().sizes(format)[0];
 
-	const PixelFormatInfo &formatInfo = PixelFormatInfo::info(format);
+	StreamConfiguration config;
+	int ret = vcam_->validateConfiguration(format, size, &config);
+	if (ret < 0) {
+		LOG(V4L2Compat, Error)
+			<< "Failed to negotiate a valid format: "
+			<< format.toString();
+		return -EINVAL;
+	}
 
-	arg->fmt.pix.width        = size.width;
-	arg->fmt.pix.height       = size.height;
-	arg->fmt.pix.pixelformat  = formatInfo.v4l2Format;
+	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
+
+	arg->fmt.pix.width        = config.size.width;
+	arg->fmt.pix.height       = config.size.height;
+	arg->fmt.pix.pixelformat  = info.v4l2Format;
 	arg->fmt.pix.field        = V4L2_FIELD_NONE;
-	arg->fmt.pix.bytesperline = formatInfo.stride(size.width, 0);
-	arg->fmt.pix.sizeimage    = formatInfo.frameSize(size);
+	arg->fmt.pix.bytesperline = config.stride;
+	arg->fmt.pix.sizeimage    = config.frameSize;
 	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
 	arg->fmt.pix.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
 	arg->fmt.pix.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
 	arg->fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
 	arg->fmt.pix.xfer_func    = V4L2_XFER_FUNC_DEFAULT;
+
+	return 0;
 }
 
 int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
@@ -339,7 +342,9 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 	if (ret < 0)
 		return ret;
 
-	tryFormat(arg);
+	ret = tryFormat(arg);
+	if (ret < 0)
+		return ret;
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
@@ -361,7 +366,9 @@ int V4L2CameraProxy::vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *ar
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
 
-	tryFormat(arg);
+	int ret = tryFormat(arg);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }

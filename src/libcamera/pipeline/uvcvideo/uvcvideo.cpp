@@ -53,9 +53,12 @@ public:
 class UVCCameraConfiguration : public CameraConfiguration
 {
 public:
-	UVCCameraConfiguration();
+	UVCCameraConfiguration(UVCCameraData *data);
 
 	Status validate() override;
+
+private:
+	UVCCameraData *data_;
 };
 
 class PipelineHandlerUVC : public PipelineHandler
@@ -89,8 +92,8 @@ private:
 	}
 };
 
-UVCCameraConfiguration::UVCCameraConfiguration()
-	: CameraConfiguration()
+UVCCameraConfiguration::UVCCameraConfiguration(UVCCameraData *data)
+	: CameraConfiguration(), data_(data)
 {
 }
 
@@ -141,6 +144,17 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 
 	cfg.bufferCount = 4;
 
+	V4L2DeviceFormat format = {};
+	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+	format.size = cfg.size;
+
+	int ret = data_->video_->tryFormat(&format);
+	if (ret)
+		return Invalid;
+
+	cfg.stride = format.planes[0].bpl;
+	cfg.frameSize = format.planes[0].size;
+
 	return status;
 }
 
@@ -153,7 +167,7 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	UVCCameraData *data = cameraData(camera);
-	CameraConfiguration *config = new UVCCameraConfiguration();
+	CameraConfiguration *config = new UVCCameraConfiguration(data);
 
 	if (roles.empty())
 		return config;
@@ -200,7 +214,6 @@ int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration *config)
 		return -EINVAL;
 
 	cfg.setStream(&data->stream_);
-	cfg.stride = format.planes[0].bpl;
 
 	return 0;
 }

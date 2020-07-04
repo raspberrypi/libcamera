@@ -115,9 +115,9 @@ public:
 class RkISP1CameraData : public CameraData
 {
 public:
-	RkISP1CameraData(PipelineHandler *pipe)
+	RkISP1CameraData(PipelineHandler *pipe, V4L2VideoDevice *video)
 		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe)
+		  frameInfo_(pipe), video_(video)
 	{
 	}
 
@@ -134,6 +134,8 @@ public:
 	std::vector<IPABuffer> ipaBuffers_;
 	RkISP1Frames frameInfo_;
 	RkISP1Timeline timeline_;
+
+	V4L2VideoDevice *video_;
 
 private:
 	void queueFrameAction(unsigned int frame,
@@ -535,6 +537,17 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
+	V4L2DeviceFormat format = {};
+	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+	format.size = cfg.size;
+
+	int ret = data_->video_->tryFormat(&format);
+	if (ret)
+		return Invalid;
+
+	cfg.stride = format.planes[0].bpl;
+	cfg.frameSize = format.planes[0].size;
+
 	return status;
 }
 
@@ -683,7 +696,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	cfg.setStream(&data->stream_);
-	cfg.stride = outputFormat.planes[0].bpl;
 
 	return 0;
 }
@@ -934,7 +946,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		std::make_unique<RkISP1CameraData>(this);
+		std::make_unique<RkISP1CameraData>(this, video_);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,

@@ -427,6 +427,10 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 */
 			V4L2PixFmtMap fmts = data_->unicam_[Unicam::Image].dev()->formats();
 			V4L2DeviceFormat sensorFormat = findBestMode(fmts, cfg.size);
+			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&sensorFormat);
+			if (ret)
+				return Invalid;
+
 			PixelFormat sensorPixFormat = sensorFormat.fourcc.toPixelFormat();
 			if (cfg.size != sensorFormat.size ||
 			    cfg.pixelFormat != sensorPixFormat) {
@@ -434,6 +438,10 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 				cfg.pixelFormat = sensorPixFormat;
 				status = Adjusted;
 			}
+
+			cfg.stride = sensorFormat.planes[0].bpl;
+			cfg.frameSize = sensorFormat.planes[0].size;
+
 			rawCount++;
 		} else {
 			outSize[outCount] = std::make_pair(count, cfg.size);
@@ -478,19 +486,34 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		 * have that fixed up in the code above.
 		 *
 		 */
-		PixelFormat &cfgPixFmt = config_.at(outSize[i].first).pixelFormat;
-		V4L2PixFmtMap fmts;
+		StreamConfiguration &cfg = config_.at(outSize[i].first);
+		PixelFormat &cfgPixFmt = cfg.pixelFormat;
+		V4L2VideoDevice *dev;
 
 		if (i == maxIndex)
-			fmts = data_->isp_[Isp::Output0].dev()->formats();
+			dev = data_->isp_[Isp::Output0].dev();
 		else
-			fmts = data_->isp_[Isp::Output1].dev()->formats();
+			dev = data_->isp_[Isp::Output1].dev();
+
+		V4L2PixFmtMap fmts = dev->formats();
 
 		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt, false)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
 			cfgPixFmt = formats::NV12;
 			status = Adjusted;
 		}
+
+		V4L2DeviceFormat format = {};
+		format.fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
+		format.size = cfg.size;
+
+		int ret = dev->tryFormat(&format);
+		if (ret)
+			return Invalid;
+
+		cfg.stride = format.planes[0].bpl;
+		cfg.frameSize = format.planes[0].size;
+
 	}
 
 	return status;
@@ -655,7 +678,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 		if (isRaw(cfg.pixelFormat)) {
 			cfg.setStream(&data->isp_[Isp::Input]);
-			cfg.stride = sensorFormat.planes[0].bpl;
 			data->isp_[Isp::Input].setExternal(true);
 			continue;
 		}
@@ -679,7 +701,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 			}
 
 			cfg.setStream(&data->isp_[Isp::Output0]);
-			cfg.stride = format.planes[0].bpl;
 			data->isp_[Isp::Output0].setExternal(true);
 		}
 
@@ -705,7 +726,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		 */
 		if (!cfg.stream()) {
 			cfg.setStream(&data->isp_[Isp::Output1]);
-			cfg.stride = format.planes[0].bpl;
 			data->isp_[Isp::Output1].setExternal(true);
 		}
 	}

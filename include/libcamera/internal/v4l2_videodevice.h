@@ -186,6 +186,7 @@ public:
 	const V4L2Capability &caps() const { return caps_; }
 
 	int getFormat(V4L2DeviceFormat *format);
+	int tryFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
 	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats(uint32_t code = 0);
 
@@ -217,13 +218,13 @@ protected:
 
 private:
 	int getFormatMeta(V4L2DeviceFormat *format);
-	int setFormatMeta(V4L2DeviceFormat *format);
+	int trySetFormatMeta(V4L2DeviceFormat *format, bool set);
 
 	int getFormatMultiplane(V4L2DeviceFormat *format);
-	int setFormatMultiplane(V4L2DeviceFormat *format);
+	int trySetFormatMultiplane(V4L2DeviceFormat *format, bool set);
 
 	int getFormatSingleplane(V4L2DeviceFormat *format);
-	int setFormatSingleplane(V4L2DeviceFormat *format);
+	int trySetFormatSingleplane(V4L2DeviceFormat *format, bool set);
 
 	std::vector<V4L2PixelFormat> enumPixelformats(uint32_t code);
 	std::vector<SizeRange> enumSizes(V4L2PixelFormat pixelFormat);

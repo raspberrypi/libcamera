@@ -20,6 +20,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/object.h>
 
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
 
@@ -70,7 +71,6 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 
 	vcam_->getStreamConfig(&streamConfig_);
 	setFmtFromConfig(streamConfig_);
-	sizeimage_ = calculateSizeImage(streamConfig_);
 
 	files_.insert(file);
 
@@ -164,33 +164,22 @@ bool V4L2CameraProxy::validateMemoryType(uint32_t memory)
 
 void V4L2CameraProxy::setFmtFromConfig(StreamConfiguration &streamConfig)
 {
-	curV4L2Format_.fmt.pix.width = streamConfig.size.width;
-	curV4L2Format_.fmt.pix.height = streamConfig.size.height;
-	curV4L2Format_.fmt.pix.pixelformat = drmToV4L2(streamConfig.pixelFormat);
-	curV4L2Format_.fmt.pix.field = V4L2_FIELD_NONE;
-	curV4L2Format_.fmt.pix.bytesperline =
-		bplMultiplier(curV4L2Format_.fmt.pix.pixelformat) *
-		curV4L2Format_.fmt.pix.width;
-	curV4L2Format_.fmt.pix.sizeimage =
-		imageSize(curV4L2Format_.fmt.pix.pixelformat,
-			  curV4L2Format_.fmt.pix.width,
-			  curV4L2Format_.fmt.pix.height);
-	curV4L2Format_.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
-	curV4L2Format_.fmt.pix.priv = V4L2_PIX_FMT_PRIV_MAGIC;
-	curV4L2Format_.fmt.pix.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
-	curV4L2Format_.fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
-	curV4L2Format_.fmt.pix.xfer_func = V4L2_XFER_FUNC_DEFAULT;
-}
+	const PixelFormatInfo &info = PixelFormatInfo::info(streamConfig.pixelFormat);
+	Size size = streamConfig.size;
 
-unsigned int V4L2CameraProxy::calculateSizeImage(StreamConfiguration &streamConfig)
-{
-	/*
-	 * \todo Merge this method with setFmtFromConfig (need imageSize to
-	 * support all libcamera formats first, or filter out MJPEG for now).
-	 */
-	return imageSize(drmToV4L2(streamConfig.pixelFormat),
-			 streamConfig.size.width,
-			 streamConfig.size.height);
+	curV4L2Format_.fmt.pix.width        = size.width;
+	curV4L2Format_.fmt.pix.height       = size.height;
+	curV4L2Format_.fmt.pix.pixelformat  = info.v4l2Format;
+	curV4L2Format_.fmt.pix.field        = V4L2_FIELD_NONE;
+	curV4L2Format_.fmt.pix.bytesperline = streamConfig.stride;
+	curV4L2Format_.fmt.pix.sizeimage    = streamConfig.frameSize;
+	curV4L2Format_.fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
+	curV4L2Format_.fmt.pix.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
+	curV4L2Format_.fmt.pix.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
+	curV4L2Format_.fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
+	curV4L2Format_.fmt.pix.xfer_func    = V4L2_XFER_FUNC_DEFAULT;
+
+	sizeimage_ = streamConfig.frameSize;
 }
 
 void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
@@ -253,12 +242,13 @@ int V4L2CameraProxy::vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_fr
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_framesizes fd = " << file->efd();
 
-	PixelFormat argFormat = v4l2ToDrm(arg->pixel_format);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->pixel_format);
+	PixelFormat format = PixelFormatInfo::info(v4l2Format).format;
 	/*
 	 * \todo This might need to be expanded as few pipeline handlers
 	 * report StreamFormats.
 	 */
-	const std::vector<Size> &frameSizes = streamConfig_.formats().sizes(argFormat);
+	const std::vector<Size> &frameSizes = streamConfig_.formats().sizes(format);
 
 	if (arg->index >= frameSizes.size())
 		return -EINVAL;
@@ -279,12 +269,14 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 	    arg->index >= streamConfig_.formats().pixelformats().size())
 		return -EINVAL;
 
+	PixelFormat format = streamConfig_.formats().pixelformats()[arg->index];
+
 	/* \todo Set V4L2_FMT_FLAG_COMPRESSED for compressed formats. */
 	arg->flags = 0;
 	/* \todo Add map from format to description. */
 	utils::strlcpy(reinterpret_cast<char *>(arg->description),
 		       "Video Format Description", sizeof(arg->description));
-	arg->pixelformat = drmToV4L2(streamConfig_.formats().pixelformats()[arg->index]);
+	arg->pixelformat = PixelFormatInfo::info(format).v4l2Format;
 
 	memset(arg->reserved, 0, sizeof(arg->reserved));
 
@@ -306,7 +298,8 @@ int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 
 void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 {
-	PixelFormat format = v4l2ToDrm(arg->fmt.pix.pixelformat);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
+	PixelFormat format = PixelFormatInfo::info(v4l2Format).format;
 	const std::vector<PixelFormat> &formats =
 		streamConfig_.formats().pixelformats();
 	if (std::find(formats.begin(), formats.end(), format) == formats.end())
@@ -317,15 +310,14 @@ void V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 	if (std::find(sizes.begin(), sizes.end(), size) == sizes.end())
 		size = streamConfig_.formats().sizes(format)[0];
 
+	const PixelFormatInfo &formatInfo = PixelFormatInfo::info(format);
+
 	arg->fmt.pix.width        = size.width;
 	arg->fmt.pix.height       = size.height;
-	arg->fmt.pix.pixelformat  = drmToV4L2(format);
+	arg->fmt.pix.pixelformat  = formatInfo.v4l2Format;
 	arg->fmt.pix.field        = V4L2_FIELD_NONE;
-	arg->fmt.pix.bytesperline = bplMultiplier(drmToV4L2(format)) *
-				    arg->fmt.pix.width;
-	arg->fmt.pix.sizeimage    = imageSize(drmToV4L2(format),
-					      arg->fmt.pix.width,
-					      arg->fmt.pix.height);
+	arg->fmt.pix.bytesperline = formatInfo.stride(size.width, 0);
+	arg->fmt.pix.sizeimage    = formatInfo.frameSize(size);
 	arg->fmt.pix.colorspace   = V4L2_COLORSPACE_SRGB;
 	arg->fmt.pix.priv         = V4L2_PIX_FMT_PRIV_MAGIC;
 	arg->fmt.pix.ycbcr_enc    = V4L2_YCBCR_ENC_DEFAULT;
@@ -350,17 +342,12 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 	tryFormat(arg);
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
 	ret = vcam_->configure(&streamConfig_, size,
-			       v4l2ToDrm(arg->fmt.pix.pixelformat),
+			       PixelFormatInfo::info(v4l2Format).format,
 			       bufferCount_);
 	if (ret < 0)
 		return -EINVAL;
-
-	unsigned int sizeimage = calculateSizeImage(streamConfig_);
-	if (sizeimage == 0)
-		return -EINVAL;
-
-	sizeimage_ = sizeimage;
 
 	setFmtFromConfig(streamConfig_);
 
@@ -495,26 +482,12 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 		freeBuffers();
 
 	Size size(curV4L2Format_.fmt.pix.width, curV4L2Format_.fmt.pix.height);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat(curV4L2Format_.fmt.pix.pixelformat);
 	int ret = vcam_->configure(&streamConfig_, size,
-				   v4l2ToDrm(curV4L2Format_.fmt.pix.pixelformat),
+				   PixelFormatInfo::info(v4l2Format).format,
 				   arg->count);
 	if (ret < 0)
 		return -EINVAL;
-
-	sizeimage_ = calculateSizeImage(streamConfig_);
-	/*
-	 * If we return -EINVAL here then the application will think that we
-	 * don't support streaming mmap. Since we don't support readwrite and
-	 * userptr either, the application will get confused and think that
-	 * we don't support anything.
-	 * On the other hand, if the set format at the time of reqbufs has a
-	 * zero sizeimage we'll get a floating point exception when we try to
-	 * stream it.
-	 */
-	if (sizeimage_ == 0)
-		LOG(V4L2Compat, Warning)
-			<< "sizeimage of at least one format is zero. "
-			<< "Streaming this format will cause a floating point exception.";
 
 	setFmtFromConfig(streamConfig_);
 
@@ -834,105 +807,4 @@ void V4L2CameraProxy::release(V4L2CameraFile *file)
 	vcam_->unbind();
 
 	owner_ = nullptr;
-}
-
-struct PixelFormatPlaneInfo {
-	unsigned int bitsPerPixel;
-	unsigned int hSubSampling;
-	unsigned int vSubSampling;
-};
-
-struct PixelFormatInfo {
-	PixelFormat format;
-	uint32_t v4l2Format;
-	unsigned int numPlanes;
-	std::array<PixelFormatPlaneInfo, 3> planes;
-};
-
-namespace {
-
-static const std::array<PixelFormatInfo, 16> pixelFormatInfo = {{
-	/* RGB formats. */
-	{ formats::RGB888,	V4L2_PIX_FMT_BGR24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ formats::BGR888,	V4L2_PIX_FMT_RGB24,	1, {{ { 24, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ formats::BGRA8888,	V4L2_PIX_FMT_ARGB32,	1, {{ { 32, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	/* YUV packed formats. */
-	{ formats::UYVY,	V4L2_PIX_FMT_UYVY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ formats::VYUY,	V4L2_PIX_FMT_VYUY,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ formats::YUYV,	V4L2_PIX_FMT_YUYV,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	{ formats::YVYU,	V4L2_PIX_FMT_YVYU,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-	/* YUY planar formats. */
-	{ formats::NV12,	V4L2_PIX_FMT_NV12,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
-	{ formats::NV21,	V4L2_PIX_FMT_NV21,	2, {{ {  8, 1, 1 }, { 16, 2, 2 }, {  0, 0, 0 } }} },
-	{ formats::NV16,	V4L2_PIX_FMT_NV16,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ formats::NV61,	V4L2_PIX_FMT_NV61,	2, {{ {  8, 1, 1 }, { 16, 2, 1 }, {  0, 0, 0 } }} },
-	{ formats::NV24,	V4L2_PIX_FMT_NV24,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
-	{ formats::NV42,	V4L2_PIX_FMT_NV42,	2, {{ {  8, 1, 1 }, { 16, 1, 1 }, {  0, 0, 0 } }} },
-	{ formats::YUV420,	V4L2_PIX_FMT_YUV420,	3, {{ {  8, 1, 1 }, {  8, 2, 2 }, {  8, 2, 2 } }} },
-	{ formats::YUV422,	V4L2_PIX_FMT_YUV422P,	3, {{ {  8, 1, 1 }, {  8, 2, 1 }, {  8, 2, 1 } }} },
-	/* Compressed formats. */
-	/*
-	 * \todo Get a better image size estimate for MJPEG, via
-	 * StreamConfiguration, instead of using the worst-case
-	 * width * height * bpp of uncompressed data.
-	 */
-	{ formats::MJPEG,	V4L2_PIX_FMT_MJPEG,	1, {{ { 16, 1, 1 }, {  0, 0, 0 }, {  0, 0, 0 } }} },
-}};
-
-} /* namespace */
-
-/* \todo make libcamera export these */
-unsigned int V4L2CameraProxy::bplMultiplier(uint32_t format)
-{
-	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
-				 [format](const PixelFormatInfo &info) {
-					 return info.v4l2Format == format;
-				 });
-	if (info == pixelFormatInfo.end())
-		return 0;
-
-	return info->planes[0].bitsPerPixel / 8;
-}
-
-unsigned int V4L2CameraProxy::imageSize(uint32_t format, unsigned int width,
-					unsigned int height)
-{
-	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
-				 [format](const PixelFormatInfo &info) {
-					 return info.v4l2Format == format;
-				 });
-	if (info == pixelFormatInfo.end())
-		return 0;
-
-	unsigned int multiplier = 0;
-	for (unsigned int i = 0; i < info->numPlanes; ++i)
-		multiplier += info->planes[i].bitsPerPixel
-			    / info->planes[i].hSubSampling
-			    / info->planes[i].vSubSampling;
-
-	return width * height * multiplier / 8;
-}
-
-PixelFormat V4L2CameraProxy::v4l2ToDrm(uint32_t format)
-{
-	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
-				 [format](const PixelFormatInfo &info) {
-					 return info.v4l2Format == format;
-				 });
-	if (info == pixelFormatInfo.end())
-		return PixelFormat();
-
-	return info->format;
-}
-
-uint32_t V4L2CameraProxy::drmToV4L2(const PixelFormat &format)
-{
-	auto info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
-				 [format](const PixelFormatInfo &info) {
-					 return info.format == format;
-				 });
-	if (info == pixelFormatInfo.end())
-		return format;
-
-	return info->v4l2Format;
 }

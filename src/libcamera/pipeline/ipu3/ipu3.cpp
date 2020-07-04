@@ -278,6 +278,12 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 				<< cfg.toString();
 			status = Adjusted;
 		}
+
+		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
+		bool packedRaw = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+
+		cfg.stride = info.stride(cfg.size.width, 0, packedRaw ? 64 : 1);
+		cfg.frameSize = info.frameSize(cfg.size, packedRaw ? 64 : 1);
 	}
 
 	return status;
@@ -495,21 +501,13 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 			if (ret)
 				return ret;
 
-			cfg.stride = outputFormat.planes[0].bpl;
 			outActive = true;
 		} else if (stream == vfStream) {
 			ret = imgu->configureViewfinder(cfg, &outputFormat);
 			if (ret)
 				return ret;
 
-			cfg.stride = outputFormat.planes[0].bpl;
 			vfActive = true;
-		} else {
-			/*
-			 * The RAW stream is configured as part of the CIO2 and
-			 * no configuration is needed for the ImgU.
-			 */
-			cfg.stride = cio2Format.planes[0].bpl;
 		}
 	}
 

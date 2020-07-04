@@ -72,9 +72,12 @@ public:
 class VimcCameraConfiguration : public CameraConfiguration
 {
 public:
-	VimcCameraConfiguration();
+	VimcCameraConfiguration(VimcCameraData *data);
 
 	Status validate() override;
+
+private:
+	VimcCameraData *data_;
 };
 
 class PipelineHandlerVimc : public PipelineHandler
@@ -115,8 +118,8 @@ static const std::map<PixelFormat, uint32_t> pixelformats{
 
 } /* namespace */
 
-VimcCameraConfiguration::VimcCameraConfiguration()
-	: CameraConfiguration()
+VimcCameraConfiguration::VimcCameraConfiguration(VimcCameraData *data)
+	: CameraConfiguration(), data_(data)
 {
 }
 
@@ -160,6 +163,17 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 
 	cfg.bufferCount = 4;
 
+	V4L2DeviceFormat format = {};
+	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+	format.size = cfg.size;
+
+	int ret = data_->video_->tryFormat(&format);
+	if (ret)
+		return Invalid;
+
+	cfg.stride = format.planes[0].bpl;
+	cfg.frameSize = format.planes[0].size;
+
 	return status;
 }
 
@@ -171,8 +185,8 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
-	CameraConfiguration *config = new VimcCameraConfiguration();
 	VimcCameraData *data = cameraData(camera);
+	CameraConfiguration *config = new VimcCameraConfiguration(data);
 
 	if (roles.empty())
 		return config;
@@ -282,7 +296,6 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	cfg.setStream(&data->stream_);
-	cfg.stride = format.planes[0].bpl;
 
 	return 0;
 }

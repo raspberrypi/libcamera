@@ -121,6 +121,9 @@ int IPAProxyThread::start()
 
 void IPAProxyThread::stop()
 {
+	if (!running_)
+		return;
+
 	running_ = false;
 
 	proxy_.invokeMethod(&ThreadProxy::stop, ConnectionTypeBlocking);

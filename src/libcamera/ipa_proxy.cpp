@@ -146,6 +146,16 @@ std::string IPAProxy::configurationFile(const std::string &name) const
 }
 
 /**
+ * \fn IPAProxy::stop()
+ * \brief Stop the IPA proxy
+ *
+ * This function stops the IPA and releases all the resources acquired by the
+ * proxy in start(). Calling stop() when the IPA proxy hasn't been started or
+ * has already been stopped is valid, the proxy shall treat this as a no-op and
+ * shall not forward the call to the IPA.
+ */
+
+/**
  * \brief Find a valid full path for a proxy worker for a given executable name
  * \param[in] file File name of proxy worker executable
  *

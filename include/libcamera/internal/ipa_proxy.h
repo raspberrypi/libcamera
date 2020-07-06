@@ -27,6 +27,8 @@ public:
 
 	std::string configurationFile(const std::string &file) const;
 
+	void stop() override = 0;
+
 protected:
 	std::string resolvePath(const std::string &file) const;
 

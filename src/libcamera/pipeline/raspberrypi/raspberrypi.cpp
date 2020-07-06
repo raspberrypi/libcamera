@@ -69,7 +69,7 @@ double scoreFormat(double desired, double actual)
 
 V4L2DeviceFormat findBestMode(V4L2PixFmtMap &formatsMap, const Size &req)
 {
-	double bestScore = 9e9, score;
+	double bestScore = std::numeric_limits<double>::max(), score;
 	V4L2DeviceFormat bestMode = {};
 
 #define PENALTY_AR		1500.0

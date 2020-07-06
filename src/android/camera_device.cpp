@@ -1118,9 +1118,20 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer)
 {
 	std::vector<FrameBuffer::Plane> planes;
-	for (unsigned int i = 0; i < 3; i++) {
+	for (int i = 0; i < camera3buffer->numFds; i++) {
+		/* Skip unused planes. */
+		if (camera3buffer->data[i] == -1)
+			break;
+
 		FrameBuffer::Plane plane;
 		plane.fd = FileDescriptor(camera3buffer->data[i]);
+		if (!plane.fd.isValid()) {
+			LOG(HAL, Error) << "Failed to obtain FileDescriptor ("
+					<< camera3buffer->data[i] << ") "
+					<< " on plane " << i;
+			return nullptr;
+		}
+
 		/*
 		 * Setting length to zero here is OK as the length is only used
 		 * to map the memory of the plane. Libcamera do not need to poke

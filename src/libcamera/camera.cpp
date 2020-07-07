@@ -753,6 +753,9 @@ int Camera::configure(CameraConfiguration *config)
 	if (ret < 0)
 		return ret;
 
+	for (auto it : *config)
+		it.setStream(nullptr);
+
 	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)
 			<< "Can't configure camera with invalid configuration";
@@ -763,7 +766,6 @@ int Camera::configure(CameraConfiguration *config)
 
 	for (unsigned int index = 0; index < config->size(); ++index) {
 		StreamConfiguration &cfg = config->at(index);
-		cfg.setStream(nullptr);
 		msg << " (" << index << ") " << cfg.toString();
 	}
 

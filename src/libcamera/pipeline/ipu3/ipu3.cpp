@@ -241,18 +241,33 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	}
 
 	/*
-	 * Select the sensor format by collecting the maximum width and height
-	 * and picking the closest larger match, as the IPU3 can downscale
-	 * only. If no resolution is requested for any stream, or if no sensor
-	 * resolution is large enough, pick the largest one.
+	 * Validate the requested stream configuration and select the sensor
+	 * format by collecting the maximum width and height and picking the
+	 * closest larger match, as the IPU3 can downscale only. If no
+	 * resolution is requested for any stream, or if no sensor resolution is
+	 * large enough, pick the largest one.
 	 */
+	unsigned int rawCount = 0;
+	unsigned int yuvCount = 0;
 	Size size;
 
 	for (const StreamConfiguration &cfg : config_) {
+		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
+
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			rawCount++;
+		else
+			yuvCount++;
+
 		if (cfg.size.width > size.width)
 			size.width = cfg.size.width;
 		if (cfg.size.height > size.height)
 			size.height = cfg.size.height;
+	}
+
+	if (rawCount > 1 || yuvCount > 2) {
+		LOG(IPU3, Debug) << "Camera configuration not supported";
+		return Invalid;
 	}
 
 	/* Generate raw configuration from CIO2. */

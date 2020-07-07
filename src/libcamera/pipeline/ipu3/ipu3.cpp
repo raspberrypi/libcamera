@@ -70,9 +70,6 @@ public:
 	const std::vector<const Stream *> &streams() { return streams_; }
 
 private:
-	void assignStreams();
-	void adjustStream(StreamConfiguration &cfg, bool scale);
-
 	/*
 	 * The IPU3CameraData instance is guaranteed to be valid as long as the
 	 * corresponding Camera instance is valid. In order to borrow a
@@ -137,96 +134,6 @@ IPU3CameraConfiguration::IPU3CameraConfiguration(Camera *camera,
 	data_ = data;
 }
 
-void IPU3CameraConfiguration::assignStreams()
-{
-	/*
-	 * Verify and update all configuration entries, and assign a stream to
-	 * each of them. The viewfinder stream can scale, while the output
-	 * stream can crop only, so select the output stream when the requested
-	 * resolution is equal to the sensor resolution, and the viewfinder
-	 * stream otherwise.
-	 */
-	std::set<const Stream *> availableStreams = {
-		&data_->outStream_,
-		&data_->vfStream_,
-		&data_->rawStream_,
-	};
-
-	/*
-	 * The caller is responsible to limit the number of requested streams
-	 * to a number supported by the pipeline before calling this function.
-	 */
-	ASSERT(availableStreams.size() >= config_.size());
-
-	streams_.clear();
-	streams_.reserve(config_.size());
-
-	for (const StreamConfiguration &cfg : config_) {
-		const PixelFormatInfo &info =
-			PixelFormatInfo::info(cfg.pixelFormat);
-		const Stream *stream;
-
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-			stream = &data_->rawStream_;
-		else if (cfg.size == cio2Configuration_.size)
-			stream = &data_->outStream_;
-		else
-			stream = &data_->vfStream_;
-
-		if (availableStreams.find(stream) == availableStreams.end())
-			stream = *availableStreams.begin();
-
-		streams_.push_back(stream);
-		availableStreams.erase(stream);
-	}
-}
-
-void IPU3CameraConfiguration::adjustStream(StreamConfiguration &cfg, bool scale)
-{
-	/* The only pixel format the driver supports is NV12. */
-	cfg.pixelFormat = formats::NV12;
-
-	if (scale) {
-		/*
-		 * Provide a suitable default that matches the sensor aspect
-		 * ratio.
-		 */
-		if (cfg.size.isNull()) {
-			cfg.size.width = 1280;
-			cfg.size.height = 1280 * cio2Configuration_.size.height
-					/ cio2Configuration_.size.width;
-		}
-
-		/*
-		 * \todo: Clamp the size to the hardware bounds when we will
-		 * figure them out.
-		 *
-		 * \todo: Handle the scaler (BDS) restrictions. The BDS can
-		 * only scale with the same factor in both directions, and the
-		 * scaling factor is limited to a multiple of 1/32. At the
-		 * moment the ImgU driver hides these constraints by applying
-		 * additional cropping, this should be fixed on the driver
-		 * side, and cropping should be exposed to us.
-		 */
-	} else {
-		/*
-		 * \todo: Properly support cropping when the ImgU driver
-		 * interface will be cleaned up.
-		 */
-		cfg.size = cio2Configuration_.size;
-	}
-
-	/*
-	 * Clamp the size to match the ImgU alignment constraints. The width
-	 * shall be a multiple of 8 pixels and the height a multiple of 4
-	 * pixels.
-	 */
-	if (cfg.size.width % 8 || cfg.size.height % 4) {
-		cfg.size.width &= ~7;
-		cfg.size.height &= ~3;
-	}
-}
-
 CameraConfiguration::Status IPU3CameraConfiguration::validate()
 {
 	Status status = Valid;
@@ -242,27 +149,27 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 	/*
 	 * Validate the requested stream configuration and select the sensor
-	 * format by collecting the maximum width and height and picking the
-	 * closest larger match, as the IPU3 can downscale only. If no
-	 * resolution is requested for any stream, or if no sensor resolution is
-	 * large enough, pick the largest one.
+	 * format by collecting the maximum RAW stream width and height and
+	 * picking the closest larger match, as the IPU3 can downscale only. If
+	 * no resolution is requested for the RAW stream, use the one from the
+	 * largest YUV stream, plus margins pixels for the IF and BDS to scale.
+	 * If no resolution is requested for any stream, pick the largest one.
 	 */
 	unsigned int rawCount = 0;
 	unsigned int yuvCount = 0;
-	Size size;
+	Size maxYuvSize;
+	Size maxRawSize;
 
 	for (const StreamConfiguration &cfg : config_) {
 		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
 			rawCount++;
-		else
+			maxRawSize.expandTo(cfg.size);
+		} else {
 			yuvCount++;
-
-		if (cfg.size.width > size.width)
-			size.width = cfg.size.width;
-		if (cfg.size.height > size.height)
-			size.height = cfg.size.height;
+			maxYuvSize.expandTo(cfg.size);
+		}
 	}
 
 	if (rawCount > 1 || yuvCount > 2) {
@@ -270,43 +177,114 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		return Invalid;
 	}
 
-	/* Generate raw configuration from CIO2. */
-	cio2Configuration_ = data_->cio2_.generateConfiguration(size);
+	if (maxRawSize.isNull())
+		maxRawSize = maxYuvSize.alignedUpTo(IMGU_OUTPUT_WIDTH_MARGIN,
+						    IMGU_OUTPUT_HEIGHT_MARGIN)
+				       .boundedTo(data_->cio2_.sensor()->resolution());
+
+	/*
+	 * Generate raw configuration from CIO2.
+	 *
+	 * The output YUV streams will be limited in size to the maximum
+	 * frame size requested for the RAW stream.
+	 */
+	cio2Configuration_ = data_->cio2_.generateConfiguration(maxRawSize);
 	if (!cio2Configuration_.pixelFormat.isValid())
 		return Invalid;
 
-	/* Assign streams to each configuration entry. */
-	assignStreams();
+	LOG(IPU3, Debug) << "CIO2 configuration: " << cio2Configuration_.toString();
 
-	/* Verify and adjust configuration if needed. */
+	/*
+	 * Adjust the configurations if needed and assign streams while
+	 * iterating them.
+	 */
+	bool mainOutputAvailable = true;
 	for (unsigned int i = 0; i < config_.size(); ++i) {
-		StreamConfiguration &cfg = config_[i];
-		const StreamConfiguration oldCfg = cfg;
-		const Stream *stream = streams_[i];
+		const PixelFormatInfo &info = PixelFormatInfo::info(config_[i].pixelFormat);
+		const StreamConfiguration originalCfg = config_[i];
+		StreamConfiguration *cfg = &config_[i];
 
-		if (stream == &data_->rawStream_) {
-			cfg.size = cio2Configuration_.size;
-			cfg.pixelFormat = cio2Configuration_.pixelFormat;
-			cfg.bufferCount = cio2Configuration_.bufferCount;
+		LOG(IPU3, Debug) << "Validating stream: " << config_[i].toString();
+
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
+			/* Initialize the RAW stream with the CIO2 configuration. */
+			cfg->size = cio2Configuration_.size;
+			cfg->pixelFormat = cio2Configuration_.pixelFormat;
+			cfg->bufferCount = cio2Configuration_.bufferCount;
+			cfg->stride = info.stride(cfg->size.width, 0, 64);
+			cfg->frameSize = info.frameSize(cfg->size, 64);
+			cfg->setStream(const_cast<Stream *>(&data_->rawStream_));
+
+			LOG(IPU3, Debug) << "Assigned " << cfg->toString()
+					 << " to the raw stream";
 		} else {
-			bool scale = stream == &data_->vfStream_;
-			adjustStream(config_[i], scale);
-			cfg.bufferCount = IPU3_BUFFER_COUNT;
+			/* Assign and configure the main and viewfinder outputs. */
+
+			/*
+			 * Clamp the size to match the ImgU size limits and the
+			 * margins from the CIO2 output frame size.
+			 *
+			 * The ImgU outputs needs to be strictly smaller than
+			 * the CIO2 output frame and rounded down to 64 pixels
+			 * in width and 32 pixels in height. This assumption
+			 * comes from inspecting the pipe configuration script
+			 * results and the available suggested configurations in
+			 * the ChromeOS BSP .xml camera tuning files and shall
+			 * be validated.
+			 *
+			 * \todo Clarify what are the hardware constraints
+			 * that require this alignements, if any. It might
+			 * depend on the BDS scaling factor of 1/32, as the main
+			 * output has no YUV scaler as the viewfinder output has.
+			 */
+			unsigned int limit;
+			limit = utils::alignDown(cio2Configuration_.size.width - 1,
+						 IMGU_OUTPUT_WIDTH_MARGIN);
+			cfg->size.width = utils::clamp(cfg->size.width,
+						       IMGU_OUTPUT_MIN_SIZE.width,
+						       limit);
+
+			limit = utils::alignDown(cio2Configuration_.size.height - 1,
+						 IMGU_OUTPUT_HEIGHT_MARGIN);
+			cfg->size.height = utils::clamp(cfg->size.height,
+							IMGU_OUTPUT_MIN_SIZE.height,
+							limit);
+
+			cfg->size.alignDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
+					      IMGU_OUTPUT_HEIGHT_ALIGN);
+
+			cfg->pixelFormat = formats::NV12;
+			cfg->bufferCount = IPU3_BUFFER_COUNT;
+			cfg->stride = info.stride(cfg->size.width, 0, 1);
+			cfg->frameSize = info.frameSize(cfg->size, 1);
+
+			/*
+			 * Use the main output stream in case only one stream is
+			 * requested or if the current configuration is the one
+			 * with the maximum YUV output size.
+			 */
+			if (mainOutputAvailable &&
+			    (originalCfg.size == maxYuvSize || yuvCount == 1)) {
+				cfg->setStream(const_cast<Stream *>(&data_->outStream_));
+				mainOutputAvailable = false;
+
+				LOG(IPU3, Debug) << "Assigned " << cfg->toString()
+						 << " to the main output";
+			} else {
+				cfg->setStream(const_cast<Stream *>(&data_->vfStream_));
+
+				LOG(IPU3, Debug) << "Assigned " << cfg->toString()
+						 << " to the viewfinder output";
+			}
 		}
 
-		if (cfg.pixelFormat != oldCfg.pixelFormat ||
-		    cfg.size != oldCfg.size) {
+		if (cfg->pixelFormat != originalCfg.pixelFormat ||
+		    cfg->size != originalCfg.size) {
 			LOG(IPU3, Debug)
 				<< "Stream " << i << " configuration adjusted to "
-				<< cfg.toString();
+				<< cfg->toString();
 			status = Adjusted;
 		}
-
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		bool packedRaw = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
-
-		cfg.stride = info.stride(cfg.size.width, 0, packedRaw ? 64 : 1);
-		cfg.frameSize = info.frameSize(cfg.size, packedRaw ? 64 : 1);
 	}
 
 	return status;
@@ -340,6 +318,9 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * strictly smaller than the sensor resolution (limited
 			 * to the ImgU  maximum output size) and aligned down to
 			 * the required frame margin.
+			 *
+			 * \todo Clarify the alignment constraints as exaplained
+			 * in validate()
 			 */
 			size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);
 			size.width = utils::alignDown(size.width - 1,
@@ -476,16 +457,8 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	bool vfActive = false;
 
 	for (unsigned int i = 0; i < config->size(); ++i) {
-		/*
-		 * Use a const_cast<> here instead of storing a mutable stream
-		 * pointer in the configuration to let the compiler catch
-		 * unwanted modifications of camera data in the configuration
-		 * validate() implementation.
-		 */
-		Stream *stream = const_cast<Stream *>(config->streams()[i]);
 		StreamConfiguration &cfg = (*config)[i];
-
-		cfg.setStream(stream);
+		Stream *stream = cfg.stream();
 
 		if (stream == outStream) {
 			ret = imgu->configureOutput(cfg, &outputFormat);

@@ -77,6 +77,7 @@ private:
 	const IPU3CameraData *data_;
 
 	StreamConfiguration cio2Configuration_;
+	ImgUDevice::PipeConfig pipeConfig_;
 };
 
 class PipelineHandlerIPU3 : public PipelineHandler
@@ -189,6 +190,9 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 	LOG(IPU3, Debug) << "CIO2 configuration: " << cio2Configuration_.toString();
 
+	ImgUDevice::Pipe pipe{};
+	pipe.input = cio2Configuration_.size;
+
 	/*
 	 * Adjust the configurations if needed and assign streams while
 	 * iterating them.
@@ -263,10 +267,15 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 				cfg->setStream(const_cast<Stream *>(&data_->outStream_));
 				mainOutputAvailable = false;
 
+				pipe.main = cfg->size;
+				if (yuvCount == 1)
+					pipe.viewfinder = pipe.main;
+
 				LOG(IPU3, Debug) << "Assigned " << cfg->toString()
 						 << " to the main output";
 			} else {
 				cfg->setStream(const_cast<Stream *>(&data_->vfStream_));
+				pipe.viewfinder = cfg->size;
 
 				LOG(IPU3, Debug) << "Assigned " << cfg->toString()
 						 << " to the viewfinder output";
@@ -279,6 +288,16 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 				<< "Stream " << i << " configuration adjusted to "
 				<< cfg->toString();
 			status = Adjusted;
+		}
+	}
+
+	/* Only compute the ImgU configuration if a YUV stream has been requested. */
+	if (yuvCount) {
+		pipeConfig_ = data_->imgu_->calculatePipeConfig(&pipe);
+		if (pipeConfig_.isNull()) {
+			LOG(IPU3, Error) << "Failed to calculate pipe configuration: "
+					 << "unsupported resolutions.";
+			return Invalid;
 		}
 	}
 

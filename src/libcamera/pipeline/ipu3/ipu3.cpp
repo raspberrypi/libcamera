@@ -476,7 +476,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	if (imguConfig.isNull())
 		return 0;
 
-	ret = imgu->configureInput(imguConfig, &cio2Format);
+	ret = imgu->configure(imguConfig, &cio2Format);
 	if (ret)
 		return ret;
 

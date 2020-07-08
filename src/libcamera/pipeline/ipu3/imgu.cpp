@@ -430,13 +430,12 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 }
 
 /**
- * \brief Configure the ImgU unit input
+ * \brief Configure the ImgU pipeline
  * \param[in] config The ImgU pipe configuration parameters
  * \param[in] inputFormat The format to be applied to ImgU input
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::configureInput(const PipeConfig &pipeConfig,
-			       V4L2DeviceFormat *inputFormat)
+int ImgUDevice::configure(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputFormat)
 {
 	/* Configure the ImgU input video device with the requested sizes. */
 	int ret = input_->setFormat(inputFormat);

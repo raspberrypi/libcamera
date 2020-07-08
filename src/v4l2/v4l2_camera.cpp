@@ -140,7 +140,7 @@ int V4L2Camera::configure(StreamConfiguration *streamConfigOut,
 
 int V4L2Camera::allocBuffers(unsigned int count)
 {
-	Stream *stream = *camera_->streams().begin();
+	Stream *stream = config_->at(0).stream();
 
 	return bufferAllocator_->allocate(stream);
 }
@@ -149,13 +149,13 @@ void V4L2Camera::freeBuffers()
 {
 	pendingRequests_.clear();
 
-	Stream *stream = *camera_->streams().begin();
+	Stream *stream = config_->at(0).stream();
 	bufferAllocator_->free(stream);
 }
 
 FileDescriptor V4L2Camera::getBufferFd(unsigned int index)
 {
-	Stream *stream = *camera_->streams().begin();
+	Stream *stream = config_->at(0).stream();
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers =
 		bufferAllocator_->buffers(stream);
 

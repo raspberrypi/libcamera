@@ -45,7 +45,7 @@ public:
 
 	PipeConfig calculatePipeConfig(Pipe *pipe);
 
-	int configureInput(const Size &size, V4L2DeviceFormat *inputFormat);
+	int configureInput(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputFormat);
 
 	int configureOutput(const StreamConfiguration &cfg,
 			    V4L2DeviceFormat *outputFormat)

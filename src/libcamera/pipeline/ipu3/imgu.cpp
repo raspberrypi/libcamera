@@ -431,11 +431,11 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 
 /**
  * \brief Configure the ImgU unit input
- * \param[in] size The ImgU input frame size
+ * \param[in] config The ImgU pipe configuration parameters
  * \param[in] inputFormat The format to be applied to ImgU input
  * \return 0 on success or a negative error code otherwise
  */
-int ImgUDevice::configureInput(const Size &size,
+int ImgUDevice::configureInput(const PipeConfig &pipeConfig,
 			       V4L2DeviceFormat *inputFormat)
 {
 	/* Configure the ImgU input video device with the requested sizes. */
@@ -455,27 +455,27 @@ int ImgUDevice::configureInput(const Size &size,
 	 * to configure the crop/compose rectangles, contradicting the
 	 * V4L2 specification.
 	 */
-	Rectangle rect{ 0, 0, inputFormat->size };
-	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_CROP, &rect);
+	Rectangle iif{ 0, 0, pipeConfig.iif };
+	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_CROP, &iif);
+	if (ret)
+		return ret;
+	LOG(IPU3, Debug) << "ImgU IF rectangle = " << iif.toString();
+
+	Rectangle bds{ 0, 0, pipeConfig.bds };
+	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_COMPOSE, &bds);
+	if (ret)
+		return ret;
+	LOG(IPU3, Debug) << "ImgU BDS rectangle = " << bds.toString();
+
+	V4L2SubdeviceFormat gdcFormat = {};
+	gdcFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
+	gdcFormat.size = pipeConfig.gdc;
+
+	ret = imgu_->setFormat(PAD_INPUT, &gdcFormat);
 	if (ret)
 		return ret;
 
-	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_COMPOSE, &rect);
-	if (ret)
-		return ret;
-
-	LOG(IPU3, Debug) << "ImgU input feeder and BDS rectangle = "
-			 << rect.toString();
-
-	V4L2SubdeviceFormat imguFormat = {};
-	imguFormat.mbus_code = MEDIA_BUS_FMT_FIXED;
-	imguFormat.size = size;
-
-	ret = imgu_->setFormat(PAD_INPUT, &imguFormat);
-	if (ret)
-		return ret;
-
-	LOG(IPU3, Debug) << "ImgU GDC format = " << imguFormat.toString();
+	LOG(IPU3, Debug) << "ImgU GDC format = " << gdcFormat.toString();
 
 	return 0;
 }

@@ -148,8 +148,9 @@ bool File::exists() const
  * \param[in] mode The open mode
  *
  * This function opens the file specified by fileName() in \a mode. If the file
- * doesn't exist and the mode is WriteOnly or ReadWrite, this
- * function will attempt to create the file.
+ * doesn't exist and the mode is WriteOnly or ReadWrite, this function will
+ * attempt to create the file with initial permissions set to 0666 (modified by
+ * the process' umask).
  *
  * The error() status is updated.
  *
@@ -163,8 +164,10 @@ bool File::open(File::OpenMode mode)
 	}
 
 	int flags = (mode & ReadWrite) - 1;
+	if (mode & WriteOnly)
+		flags |= O_CREAT;
 
-	fd_ = ::open(name_.c_str(), flags);
+	fd_ = ::open(name_.c_str(), flags, 0666);
 	if (fd_ < 0) {
 		error_ = -errno;
 		return false;

@@ -9,11 +9,14 @@
 import argparse
 import glob
 import os
+from packaging import version
 import re
 import shutil
 import signal
 import subprocess
 import sys
+
+MIN_V4L_UTILS_VERSION = version.parse("1.21.0")
 
 TestPass = 0
 TestFail = -1
@@ -90,9 +93,19 @@ def main(argv):
         print('v4l2-compliance is not available')
         return TestSkip
 
+    ret, out = run_with_stdout(v4l2_compliance, '--version')
+    if (ret != 0 or version.parse(out[-2].split()[-1]) < MIN_V4L_UTILS_VERSION):
+        print('v4l2-compliance version >= 1.21.0 required')
+        return TestSkip
+
     v4l2_ctl = shutil.which('v4l2-ctl')
     if v4l2_ctl is None:
         print('v4l2-ctl is not available')
+        return TestSkip
+
+    ret, out = run_with_stdout(v4l2_ctl, '--version')
+    if (ret != 0 or version.parse(out[-2].split()[-1]) < MIN_V4L_UTILS_VERSION):
+        print('v4l2-ctl version >= 1.21.0 required')
         return TestSkip
 
     dev_nodes = glob.glob('/dev/video*')

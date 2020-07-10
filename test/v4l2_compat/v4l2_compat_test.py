@@ -54,32 +54,25 @@ def extract_result(result):
     return ret
 
 
-def print_output_arr(output_arr):
-    print('\n'.join(output_arr))
-
-
 def test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, base_driver):
     ret, output = run_with_stdout(v4l2_compliance, '-s', '-d', device, env={'LD_PRELOAD': v4l2_compat})
     if ret < 0:
-        print_output_arr(output)
-        print(f'Test for {device} terminated due to signal {signal.Signals(-ret).name}')
-        return TestFail
+        output.append(f'Test for {device} terminated due to signal {signal.Signals(-ret).name}')
+        return TestFail, output
 
     result = extract_result(output[-2])
     if result['failed'] == 0:
-        return TestPass
+        return TestPass, None
 
     # vimc will fail s_fmt because it only supports framesizes that are
     # multiples of 3
     if base_driver == 'vimc' and result['failed'] == 1:
         failures = grep('fail', output)
         if re.search('S_FMT cannot handle an invalid format', failures[0]) is None:
-            print_output_arr(output)
-            return TestFail
-        return TestPass
+            return TestFail, output
+        return TestPass, None
 
-    print_output_arr(output)
-    return TestFail
+    return TestFail, output
 
 
 def main(argv):
@@ -132,10 +125,11 @@ def main(argv):
             continue
 
         print(f'Testing {device} with {driver} driver... ', end='')
-        ret = test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, driver)
+        ret, msg = test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, driver)
         if ret == TestFail:
             failed.append(device)
             print('failed')
+            print('\n'.join(msg))
         else:
             print('success')
         drivers_tested[driver] = True

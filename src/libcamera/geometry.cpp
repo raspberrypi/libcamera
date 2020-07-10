@@ -123,6 +123,42 @@ const std::string Size::toString() const
 }
 
 /**
+ * \fn Size::alignedDownTo(unsigned int hAlignment, unsigned int vAlignment)
+ * \brief Align the size down horizontally and vertically
+ * \param[in] hAlignment Horizontal alignment
+ * \param[in] vAlignment Vertical alignment
+ * \return A Size whose width and height are equal to the width and height of
+ * this size rounded down to the nearest multiple of \a hAlignment and
+ * \a vAlignment respectively
+ */
+
+/**
+ * \fn Size::alignedUpTo(unsigned int hAlignment, unsigned int vAlignment)
+ * \brief Align the size up horizontally and vertically
+ * \param[in] hAlignment Horizontal alignment
+ * \param[in] vAlignment Vertical alignment
+ * \return A Size whose width and height are equal to the width and height of
+ * this size rounded up to the nearest multiple of \a hAlignment and
+ * \a vAlignment respectively
+ */
+
+/**
+ * \fn Size::boundedTo(const Size &bound)
+ * \brief Bound the size to \a bound
+ * \param[in] bound The maximum size
+ * \return A Size whose width and height are the minimum of the width and
+ * height of this size and the \a bound size
+ */
+
+/**
+ * \fn Size::expandedTo(const Size &expand)
+ * \brief Expand the size to \a expand
+ * \param[in] expand The minimum size
+ * \return A Size whose width and height are the maximum of the width and
+ * height of this size and the \a expand size
+ */
+
+/**
  * \brief Compare sizes for equality
  * \return True if the two sizes are equal, false otherwise
  */

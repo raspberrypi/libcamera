@@ -8,6 +8,7 @@
 #ifndef __LIBCAMERA_GEOMETRY_H__
 #define __LIBCAMERA_GEOMETRY_H__
 
+#include <algorithm>
 #include <string>
 
 namespace libcamera {
@@ -43,6 +44,38 @@ struct Size {
 
 	bool isNull() const { return !width && !height; }
 	const std::string toString() const;
+
+	Size alignedDownTo(unsigned int hAlignment, unsigned int vAlignment) const
+	{
+		return {
+			width / hAlignment * hAlignment,
+			height / vAlignment * vAlignment
+		};
+	}
+
+	Size alignedUpTo(unsigned int hAlignment, unsigned int vAlignment) const
+	{
+		return {
+			(width + hAlignment - 1) / hAlignment * hAlignment,
+			(height + vAlignment - 1) / vAlignment * vAlignment
+		};
+	}
+
+	Size boundedTo(const Size &bound) const
+	{
+		return {
+			std::min(width, bound.width),
+			std::min(height, bound.height)
+		};
+	}
+
+	Size expandedTo(const Size &expand) const
+	{
+		return {
+			std::max(width, expand.width),
+			std::max(height, expand.height)
+		};
+	}
 };
 
 bool operator==(const Size &lhs, const Size &rhs);

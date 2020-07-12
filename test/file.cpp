@@ -31,6 +31,7 @@ protected:
 			return TestFail;
 
 		close(fd);
+		unlink(fileName_.c_str());
 
 		return TestPass;
 	}
@@ -191,13 +192,36 @@ protected:
 
 		file.close();
 
+		/* Test file creation. */
+		file.setFileName(fileName_);
+
+		if (file.exists()) {
+			cerr << "Temporary file already exists" << endl;
+			return TestFail;
+		}
+
+		if (file.open(File::ReadOnly)) {
+			cerr << "Read-only open succeeded on nonexistent file" << endl;
+			return TestFail;
+		}
+
+		if (!file.open(File::WriteOnly)) {
+			cerr << "Write-only open failed on nonexistent file" << endl;
+			return TestFail;
+		}
+
+		if (!file.exists()) {
+			cerr << "Write-only open failed to create file" << endl;
+			return TestFail;
+		}
+
+		file.close();
+
 		/* Test read and write. */
 		std::array<uint8_t, 256> buffer = { 0 };
 
 		strncpy(reinterpret_cast<char *>(buffer.data()), "libcamera",
 			buffer.size());
-
-		file.setFileName(fileName_);
 
 		if (file.read(buffer) >= 0) {
 			cerr << "Read succeeded on closed file" << endl;

@@ -36,6 +36,8 @@ public:
 	void quit();
 
 private:
+	void cameraAdded(std::shared_ptr<Camera> cam);
+	void cameraRemoved(std::shared_ptr<Camera> cam);
 	int parseOptions(int argc, char *argv[]);
 	int prepareConfig();
 	int listControls();
@@ -123,6 +125,12 @@ int CamApp::init(int argc, char **argv)
 			return ret;
 	}
 
+	if (options_.isSet(OptMonitor)) {
+		cm_->cameraAdded.connect(this, &CamApp::cameraAdded);
+		cm_->cameraRemoved.connect(this, &CamApp::cameraRemoved);
+		std::cout << "Monitoring new hotplug and unplug events" << std::endl;
+	}
+
 	loop_ = new EventLoop(cm_->eventDispatcher());
 
 	return 0;
@@ -186,6 +194,9 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "list-controls");
 	parser.addOption(OptListProperties, OptionNone, "List cameras properties",
 			 "list-properties");
+	parser.addOption(OptMonitor, OptionNone,
+			 "Monitor for hotplug and unplug camera events",
+			 "monitor");
 	parser.addOption(OptStrictFormats, OptionNone,
 			 "Do not allow requested stream format(s) to be adjusted",
 			 "strict-formats");
@@ -309,6 +320,16 @@ int CamApp::infoConfiguration()
 	return 0;
 }
 
+void CamApp::cameraAdded(std::shared_ptr<Camera> cam)
+{
+	std::cout << "Camera Added: " << cam->name() << std::endl;
+}
+
+void CamApp::cameraRemoved(std::shared_ptr<Camera> cam)
+{
+	std::cout << "Camera Removed: " << cam->name() << std::endl;
+}
+
 int CamApp::run()
 {
 	int ret;
@@ -344,6 +365,13 @@ int CamApp::run()
 	if (options_.isSet(OptCapture)) {
 		Capture capture(camera_, config_.get(), loop_);
 		return capture.run(options_);
+	}
+
+	if (options_.isSet(OptMonitor)) {
+		std::cout << "Press Ctrl-C to interrupt" << std::endl;
+		ret = loop_->exec();
+		if (ret)
+			std::cout << "Failed to run monitor loop" << std::endl;
 	}
 
 	return 0;

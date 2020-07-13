@@ -444,6 +444,22 @@ std::string libcameraSourcePath()
 	return path + "/";
 }
 
+/**
+ * \fn alignDown(unsigned int value, unsigned int alignment)
+ * \brief Align \a value down to \a alignment
+ * \param[in] value The value to align
+ * \param[in] alignment The alignment
+ * \return The value rounded down to the nearest multiple of \a alignment
+ */
+
+/**
+ * \fn alignUp(unsigned int value, unsigned int alignment)
+ * \brief Align \a value up to \a alignment
+ * \param[in] value The value to align
+ * \param[in] alignment The alignment
+ * \return The value rounded up to the nearest multiple of \a alignment
+ */
+
 } /* namespace utils */
 
 } /* namespace libcamera */

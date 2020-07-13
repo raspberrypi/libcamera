@@ -166,6 +166,17 @@ protected:
 			return TestFail;
 		}
 
+		/* utils::alignUp() and utils::alignDown() tests. */
+		if (utils::alignDown(6, 3) != 6 || utils::alignDown(7, 3) != 6) {
+			cerr << "utils::alignDown test failed" << endl;
+			return TestFail;
+		}
+
+		if (utils::alignUp(6, 3) != 6 || utils::alignUp(7, 3) != 9) {
+			cerr << "utils::alignUp test failed" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

@@ -200,6 +200,16 @@ details::StringSplitter split(const std::string &str, const std::string &delim);
 std::string libcameraBuildPath();
 std::string libcameraSourcePath();
 
+constexpr unsigned int alignDown(unsigned int value, unsigned int alignment)
+{
+	return value / alignment * alignment;
+}
+
+constexpr unsigned int alignUp(unsigned int value, unsigned int alignment)
+{
+	return (value + alignment - 1) / alignment * alignment;
+}
+
 } /* namespace utils */
 
 } /* namespace libcamera */

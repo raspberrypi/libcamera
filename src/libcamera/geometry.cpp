@@ -18,67 +18,6 @@
 namespace libcamera {
 
 /**
- * \struct Rectangle
- * \brief Describe a rectangle's position and dimensions
- *
- * Rectangles are used to identify an area of an image. They are specified by
- * the coordinates of top-left corner and their horizontal and vertical size.
- *
- * The measure unit of the rectangle coordinates and size, as well as the
- * reference point from which the Rectangle::x and Rectangle::y displacements
- * refers to, are defined by the context were rectangle is used.
- */
-
-/**
- * \var Rectangle::x
- * \brief The horizontal coordinate of the rectangle's top-left corner
- */
-
-/**
- * \var Rectangle::y
- * \brief The vertical coordinate of the rectangle's top-left corner
- */
-
-/**
- * \var Rectangle::width
- * \brief The distance between the left and right sides
- */
-
-/**
- * \var Rectangle::height
- * \brief The distance between the top and bottom sides
- */
-
-/**
- * \brief Assemble and return a string describing the rectangle
- * \return A string describing the Rectangle
- */
-const std::string Rectangle::toString() const
-{
-	std::stringstream ss;
-
-	ss << "(" << x << "x" << y << ")/" << width << "x" << height;
-
-	return ss.str();
-}
-
-/**
- * \brief Compare rectangles for equality
- * \return True if the two rectangles are equal, false otherwise
- */
-bool operator==(const Rectangle &lhs, const Rectangle &rhs)
-{
-	return lhs.x == rhs.x && lhs.y == rhs.y &&
-	       lhs.width == rhs.width && lhs.height == rhs.height;
-}
-
-/**
- * \fn bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
- * \brief Compare rectangles for inequality
- * \return True if the two rectangles are not equal, false otherwise
- */
-
-/**
  * \struct Size
  * \brief Describe a two-dimensional size
  *
@@ -344,6 +283,67 @@ bool operator==(const SizeRange &lhs, const SizeRange &rhs)
  * \fn bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
  * \brief Compare size ranges for inequality
  * \return True if the two size ranges are not equal, false otherwise
+ */
+
+/**
+ * \struct Rectangle
+ * \brief Describe a rectangle's position and dimensions
+ *
+ * Rectangles are used to identify an area of an image. They are specified by
+ * the coordinates of top-left corner and their horizontal and vertical size.
+ *
+ * The measure unit of the rectangle coordinates and size, as well as the
+ * reference point from which the Rectangle::x and Rectangle::y displacements
+ * refers to, are defined by the context were rectangle is used.
+ */
+
+/**
+ * \var Rectangle::x
+ * \brief The horizontal coordinate of the rectangle's top-left corner
+ */
+
+/**
+ * \var Rectangle::y
+ * \brief The vertical coordinate of the rectangle's top-left corner
+ */
+
+/**
+ * \var Rectangle::width
+ * \brief The distance between the left and right sides
+ */
+
+/**
+ * \var Rectangle::height
+ * \brief The distance between the top and bottom sides
+ */
+
+/**
+ * \brief Assemble and return a string describing the rectangle
+ * \return A string describing the Rectangle
+ */
+const std::string Rectangle::toString() const
+{
+	std::stringstream ss;
+
+	ss << "(" << x << "x" << y << ")/" << width << "x" << height;
+
+	return ss.str();
+}
+
+/**
+ * \brief Compare rectangles for equality
+ * \return True if the two rectangles are equal, false otherwise
+ */
+bool operator==(const Rectangle &lhs, const Rectangle &rhs)
+{
+	return lhs.x == rhs.x && lhs.y == rhs.y &&
+	       lhs.width == rhs.width && lhs.height == rhs.height;
+}
+
+/**
+ * \fn bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
+ * \brief Compare rectangles for inequality
+ * \return True if the two rectangles are not equal, false otherwise
  */
 
 } /* namespace libcamera */

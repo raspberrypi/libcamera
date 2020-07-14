@@ -13,21 +13,6 @@
 
 namespace libcamera {
 
-struct Rectangle {
-	int x;
-	int y;
-	unsigned int width;
-	unsigned int height;
-
-	const std::string toString() const;
-};
-
-bool operator==(const Rectangle &lhs, const Rectangle &rhs);
-static inline bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
-{
-	return !(lhs == rhs);
-}
-
 struct Size {
 	Size()
 		: Size(0, 0)
@@ -137,6 +122,21 @@ public:
 
 bool operator==(const SizeRange &lhs, const SizeRange &rhs);
 static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
+{
+	return !(lhs == rhs);
+}
+
+struct Rectangle {
+	int x;
+	int y;
+	unsigned int width;
+	unsigned int height;
+
+	const std::string toString() const;
+};
+
+bool operator==(const Rectangle &lhs, const Rectangle &rhs);
+static inline bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
 {
 	return !(lhs == rhs);
 }

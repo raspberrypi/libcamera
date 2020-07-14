@@ -94,7 +94,7 @@ def main(argv):
         return TestSkip
 
     ret, out = run_with_stdout(v4l2_compliance, '--version')
-    if (ret != 0 or version.parse(out[-2].split()[-1]) < MIN_V4L_UTILS_VERSION):
+    if ret != 0 or version.parse(out[0].split()[-1]) < MIN_V4L_UTILS_VERSION:
         print('v4l2-compliance version >= 1.21.0 required')
         return TestSkip
 
@@ -104,7 +104,7 @@ def main(argv):
         return TestSkip
 
     ret, out = run_with_stdout(v4l2_ctl, '--version')
-    if (ret != 0 or version.parse(out[-2].split()[-1]) < MIN_V4L_UTILS_VERSION):
+    if ret != 0 or version.parse(out[0].split()[-1]) < MIN_V4L_UTILS_VERSION:
         print('v4l2-ctl version >= 1.21.0 required')
         return TestSkip
 

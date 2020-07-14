@@ -16,12 +16,12 @@ namespace libcamera {
 class Size
 {
 public:
-	Size()
+	constexpr Size()
 		: Size(0, 0)
 	{
 	}
 
-	Size(unsigned int w, unsigned int h)
+	constexpr Size(unsigned int w, unsigned int h)
 		: width(w), height(h)
 	{
 	}
@@ -32,7 +32,8 @@ public:
 	bool isNull() const { return !width && !height; }
 	const std::string toString() const;
 
-	Size alignedDownTo(unsigned int hAlignment, unsigned int vAlignment) const
+	constexpr Size alignedDownTo(unsigned int hAlignment,
+				     unsigned int vAlignment) const
 	{
 		return {
 			width / hAlignment * hAlignment,
@@ -40,7 +41,8 @@ public:
 		};
 	}
 
-	Size alignedUpTo(unsigned int hAlignment, unsigned int vAlignment) const
+	constexpr Size alignedUpTo(unsigned int hAlignment,
+				   unsigned int vAlignment) const
 	{
 		return {
 			(width + hAlignment - 1) / hAlignment * hAlignment,
@@ -48,7 +50,7 @@ public:
 		};
 	}
 
-	Size boundedTo(const Size &bound) const
+	constexpr Size boundedTo(const Size &bound) const
 	{
 		return {
 			std::min(width, bound.width),
@@ -56,7 +58,7 @@ public:
 		};
 	}
 
-	Size expandedTo(const Size &expand) const
+	constexpr Size expandedTo(const Size &expand) const
 	{
 		return {
 			std::max(width, expand.width),
@@ -131,17 +133,17 @@ static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
 class Rectangle
 {
 public:
-	Rectangle()
+	constexpr Rectangle()
 		: Rectangle(0, 0, 0, 0)
 	{
 	}
 
-	Rectangle(int xpos, int ypos, const Size &size)
+	constexpr Rectangle(int xpos, int ypos, const Size &size)
 		: x(xpos), y(ypos), width(size.width), height(size.height)
 	{
 	}
 
-	Rectangle(int xpos, int ypos, unsigned int w, unsigned int h)
+	constexpr Rectangle(int xpos, int ypos, unsigned int w, unsigned int h)
 		: x(xpos), y(ypos), width(w), height(h)
 	{
 	}

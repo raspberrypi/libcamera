@@ -17,7 +17,7 @@ namespace libcamera {
 
 class FrameBuffer;
 class MediaDevice;
-struct Size;
+class Size;
 struct StreamConfiguration;
 
 class ImgUDevice

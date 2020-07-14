@@ -21,8 +21,8 @@ class CameraSensor;
 class FrameBuffer;
 class MediaDevice;
 class Request;
+class Size;
 class V4L2Subdevice;
-struct Size;
 struct StreamConfiguration;
 
 class CIO2Device

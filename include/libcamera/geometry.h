@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * geometry.h - Geometry-related structure
+ * geometry.h - Geometry-related classes
  */
 
 #ifndef __LIBCAMERA_GEOMETRY_H__
@@ -13,7 +13,9 @@
 
 namespace libcamera {
 
-struct Size {
+class Size
+{
+public:
 	Size()
 		: Size(0, 0)
 	{
@@ -126,7 +128,9 @@ static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
 	return !(lhs == rhs);
 }
 
-struct Rectangle {
+class Rectangle
+{
+public:
 	Rectangle()
 		: Rectangle(0, 0, 0, 0)
 	{

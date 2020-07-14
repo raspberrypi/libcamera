@@ -100,12 +100,7 @@ int ImgUDevice::configureInput(const Size &size,
 	 * to configure the crop/compose rectangles, contradicting the
 	 * V4L2 specification.
 	 */
-	Rectangle rect = {
-		.x = 0,
-		.y = 0,
-		.width = inputFormat->size.width,
-		.height = inputFormat->size.height,
-	};
+	Rectangle rect{ 0, 0, inputFormat->size };
 	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_CROP, &rect);
 	if (ret)
 		return ret;

@@ -127,6 +127,21 @@ static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
 }
 
 struct Rectangle {
+	Rectangle()
+		: Rectangle(0, 0, 0, 0)
+	{
+	}
+
+	Rectangle(int xpos, int ypos, const Size &size)
+		: x(xpos), y(ypos), width(size.width), height(size.height)
+	{
+	}
+
+	Rectangle(int xpos, int ypos, unsigned int w, unsigned int h)
+		: x(xpos), y(ypos), width(w), height(h)
+	{
+	}
+
 	int x;
 	int y;
 	unsigned int width;

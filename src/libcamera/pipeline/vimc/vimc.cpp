@@ -256,12 +256,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	if (data->media_->version() >= KERNEL_VERSION(5, 6, 0)) {
-		Rectangle crop = {
-			.x = 0,
-			.y = 0,
-			.width = subformat.size.width,
-			.height = subformat.size.height,
-		};
+		Rectangle crop{ 0, 0, subformat.size };
 		ret = data->scaler_->setSelection(0, V4L2_SEL_TGT_CROP, &crop);
 		if (ret)
 			return ret;

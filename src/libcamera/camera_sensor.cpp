@@ -487,7 +487,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	info->model = model();
 
 	/* Get the active area size. */
-	Rectangle rect = {};
+	Rectangle rect;
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
 	if (ret) {
 		LOG(CameraSensor, Error)

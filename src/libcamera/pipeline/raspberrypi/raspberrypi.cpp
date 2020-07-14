@@ -752,12 +752,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	}
 
 	/* Adjust aspect ratio by providing crops on the input image. */
-	Rectangle crop = {
-		.x = 0,
-		.y = 0,
-		.width = sensorFormat.size.width,
-		.height = sensorFormat.size.height
-	};
+	Rectangle crop{ 0, 0, sensorFormat.size };
 
 	int ar = maxSize.height * sensorFormat.size.width - maxSize.width * sensorFormat.size.height;
 	if (ar > 0)

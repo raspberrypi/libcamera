@@ -298,6 +298,28 @@ bool operator==(const SizeRange &lhs, const SizeRange &rhs)
  */
 
 /**
+ * \fn Rectangle::Rectangle()
+ * \brief Construct a Rectangle with all coordinates set to 0
+ */
+
+/**
+ * \fn Rectangle::Rectangle(int x, int y, const Size &size)
+ * \brief Construct a Rectangle with the given position and size
+ * \param[in] x The horizontal coordinate of the top-left corner
+ * \param[in] y The vertical coordinate of the top-left corner
+ * \param[in] size The size
+ */
+
+/**
+ * \fn Rectangle::Rectangle(int x, int y, unsigned int width, unsigned int height)
+ * \brief Construct a Rectangle with the given position and size
+ * \param[in] x The horizontal coordinate of the top-left corner
+ * \param[in] y The vertical coordinate of the top-left corner
+ * \param[in] width The width
+ * \param[in] height The height
+ */
+
+/**
  * \var Rectangle::x
  * \brief The horizontal coordinate of the rectangle's top-left corner
  */

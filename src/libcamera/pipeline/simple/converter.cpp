@@ -271,9 +271,9 @@ SimpleConverter::strideAndFrameSize(const Size &size,
 
 	int ret = m2m_->capture()->tryFormat(&format);
 	if (ret < 0)
-		return { 0, 0 };
+		return std::make_tuple(0, 0);
 
-	return { format.planes[0].bpl, format.planes[0].size };
+	return std::make_tuple(format.planes[0].bpl, format.planes[0].size);
 }
 
 } /* namespace libcamera */

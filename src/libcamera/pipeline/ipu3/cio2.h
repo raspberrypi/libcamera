@@ -50,6 +50,7 @@ public:
 	int stop();
 
 	CameraSensor *sensor() { return sensor_; }
+	const CameraSensor *sensor() const { return sensor_; }
 
 	int queueBuffer(Request *request, FrameBuffer *rawBuffer);
 	void tryReturnBuffer(FrameBuffer *buffer);

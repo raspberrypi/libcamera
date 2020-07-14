@@ -418,7 +418,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	unsigned int rawCount = 0, outCount = 0, count = 0, maxIndex = 0;
 	std::pair<int, Size> outSize[2];
-	Size maxSize = {};
+	Size maxSize;
 	for (StreamConfiguration &cfg : config_) {
 		if (isRaw(cfg.pixelFormat)) {
 			/*
@@ -621,7 +621,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const stream : data->streams_)
 		stream->reset();
 
-	Size maxSize = {}, sensorSize = {};
+	Size maxSize, sensorSize;
 	unsigned int maxIndex = 0;
 	bool rawStream = false;
 

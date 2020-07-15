@@ -13,10 +13,12 @@
 #include <limits.h>
 #include <math.h>
 #include <regex>
+#include <string.h>
 
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
 
 /**
@@ -202,6 +204,11 @@ int CameraSensor::init()
 	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
 	int ret = subdev_->open();
 	if (ret < 0)
+		return ret;
+
+	/* Generate a unique ID for the sensor. */
+	ret = generateId();
+	if (ret)
 		return ret;
 
 	/* Retrieve and store the camera sensor properties. */
@@ -539,6 +546,30 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 std::string CameraSensor::logPrefix() const
 {
 	return "'" + entity_->name() + "'";
+}
+
+int CameraSensor::generateId()
+{
+	const std::string devPath = subdev_->devicePath();
+
+	/* Try to get ID from firmware description. */
+	id_ = sysfs::firmwareNodePath(devPath);
+	if (!id_.empty())
+		return 0;
+
+	/*
+	 * Virtual sensors not described in firmware
+	 *
+	 * Verify it's a platform device and construct ID from the deive path
+	 * and model of sensor.
+	 */
+	if (devPath.find("/sys/devices/platform/", 0) == 0) {
+		id_ = devPath.substr(strlen("/sys/devices/")) + " " + model();
+		return 0;
+	}
+
+	LOG(CameraSensor, Error) << "Can't generate sensor ID";
+	return -EINVAL;
 }
 
 } /* namespace libcamera */

@@ -67,11 +67,14 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	int generateId();
+
 	const MediaEntity *entity_;
 	std::unique_ptr<V4L2Subdevice> subdev_;
 	unsigned int pad_;
 
 	std::string model_;
+	std::string id_;
 
 	V4L2Subdevice::Formats formats_;
 	Size resolution_;

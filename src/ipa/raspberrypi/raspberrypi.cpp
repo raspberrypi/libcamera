@@ -15,6 +15,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/file_descriptor.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/raspberrypi.h>
@@ -65,12 +66,14 @@ public:
 	IPARPi()
 		: lastMode_({}), controller_(), controllerInit_(false),
 		  frame_count_(0), check_count_(0), hide_count_(0),
-		  mistrust_count_(0), lsTableHandle_(0), lsTable_(nullptr)
+		  mistrust_count_(0), lsTable_(nullptr)
 	{
 	}
 
 	~IPARPi()
 	{
+		if (lsTable_)
+			munmap(lsTable_, MAX_LS_GRID_SIZE);
 	}
 
 	int init(const IPASettings &settings) override;
@@ -139,7 +142,7 @@ private:
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrust_count_;
 	/* LS table allocation passed in from the pipeline handler. */
-	uint32_t lsTableHandle_;
+	FileDescriptor lsTableHandle_;
 	void *lsTable_;
 };
 
@@ -280,8 +283,23 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	/* Store the lens shading table pointer and handle if available. */
 	if (ipaConfig.operation & RPI_IPA_CONFIG_LS_TABLE) {
-		lsTable_ = reinterpret_cast<void *>(ipaConfig.data[0]);
-		lsTableHandle_ = ipaConfig.data[1];
+		/* Remove any previous table, if there was one. */
+		if (lsTable_) {
+			munmap(lsTable_, MAX_LS_GRID_SIZE);
+			lsTable_ = nullptr;
+		}
+
+		/* Map the LS table buffer into user space. */
+		lsTableHandle_ = FileDescriptor(ipaConfig.data[0]);
+		if (lsTableHandle_.isValid()) {
+			lsTable_ = mmap(nullptr, MAX_LS_GRID_SIZE, PROT_READ | PROT_WRITE,
+					MAP_SHARED, lsTableHandle_.fd(), 0);
+
+			if (lsTable_ == MAP_FAILED) {
+				LOG(IPARPI, Error) << "dmaHeap mmap failure for LS table.";
+				lsTable_ = nullptr;
+			}
+		}
 	}
 }
 
@@ -1030,7 +1048,7 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 		.grid_width = w,
 		.grid_stride = w,
 		.grid_height = h,
-		.mem_handle_table = lsTableHandle_,
+		.dmabuf = lsTableHandle_.fd(),
 		.ref_transform = 0,
 		.corner_sampled = 1,
 		.gain_format = GAIN_FORMAT_U4P10

@@ -13,6 +13,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/file_descriptor.h>
 #include <libcamera/formats.h>
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/logging.h>
@@ -31,8 +32,8 @@
 #include "libcamera/internal/v4l2_controls.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include "dma_heaps.h"
 #include "staggered_ctrl.h"
-#include "vcsm.h"
 
 namespace libcamera {
 
@@ -286,22 +287,9 @@ class RPiCameraData : public CameraData
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), sensor_(nullptr), lsTable_(nullptr),
-		  state_(State::Stopped), dropFrame_(false), ispOutputCount_(0)
+		: CameraData(pipe), sensor_(nullptr), state_(State::Stopped),
+		  dropFrame_(false), ispOutputCount_(0)
 	{
-	}
-
-	~RPiCameraData()
-	{
-		/*
-		 * Free the LS table if we have allocated one. Another
-		 * allocation will occur in applyLS() with the appropriate
-		 * size.
-		 */
-		if (lsTable_) {
-			vcsm_.free(lsTable_);
-			lsTable_ = nullptr;
-		}
 	}
 
 	void frameStarted(uint32_t sequence);
@@ -329,9 +317,9 @@ public:
 	/* Buffers passed to the IPA. */
 	std::vector<IPABuffer> ipaBuffers_;
 
-	/* VCSM allocation helper. */
-	::RPi::Vcsm vcsm_;
-	void *lsTable_;
+	/* DMAHEAP allocation helper. */
+	RPi::DmaHeap dmaHeap_;
+	FileDescriptor lsTable_;
 
 	RPi::StaggeredCtrl staggeredCtrl_;
 	uint32_t expectedSequence_;
@@ -1142,26 +1130,15 @@ int RPiCameraData::configureIPA()
 	entityControls.emplace(0, unicam_[Unicam::Image].dev()->controls());
 	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
 
-	/* Allocate the lens shading table via vcsm and pass to the IPA. */
-	if (!lsTable_) {
-		lsTable_ = vcsm_.alloc("ls_grid", MAX_LS_GRID_SIZE);
-		uintptr_t ptr = reinterpret_cast<uintptr_t>(lsTable_);
-
-		if (!lsTable_)
+	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
+	if (!lsTable_.isValid()) {
+		lsTable_ = dmaHeap_.alloc("ls_grid", MAX_LS_GRID_SIZE);
+		if (!lsTable_.isValid())
 			return -ENOMEM;
 
-		/*
-		 * The vcsm allocation will always be in the memory region
-		 * < 32-bits to allow Videocore to access the memory.
-		 *
-		 * \todo Sending a pointer to the IPA is a workaround for
-		 * vc_sm_cma not yet supporting dmabuf. This will not work with
-		 * IPA module isolation and should be reworked when vc_sma_cma
-		 * will permit.
-		 */
+		/* Allow the IPA to mmap the LS table via the file descriptor. */
 		ipaConfig.operation = RPI_IPA_CONFIG_LS_TABLE;
-		ipaConfig.data = { static_cast<uint32_t>(ptr & 0xffffffff),
-				   vcsm_.getVCHandle(lsTable_) };
+		ipaConfig.data = { static_cast<unsigned int>(lsTable_.fd()) };
 	}
 
 	CameraSensorInfo sensorInfo = {};

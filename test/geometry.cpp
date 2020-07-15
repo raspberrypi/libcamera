@@ -46,6 +46,40 @@ protected:
 			return TestFail;
 		}
 
+		/* Test alignDownTo(), alignUpTo(), boundTo() and expandTo() */
+		Size s(50, 50);
+
+		s.alignDownTo(16, 16);
+		if (s != Size(48, 48)) {
+			cout << "Size::alignDownTo() test failed" << endl;
+			return TestFail;
+		}
+
+		s.alignUpTo(32, 32);
+		if (s != Size(64, 64)) {
+			cout << "Size::alignUpTo() test failed" << endl;
+			return TestFail;
+		}
+
+		s.boundTo({ 40, 40 });
+		if (s != Size(40, 40)) {
+			cout << "Size::boundTo() test failed" << endl;
+			return TestFail;
+		}
+
+		s.expandTo({ 50, 50 });
+		if (s != Size(50, 50)) {
+			cout << "Size::expandTo() test failed" << endl;
+			return TestFail;
+		}
+
+		s.alignDownTo(16, 16).alignUpTo(32, 32)
+		 .boundTo({ 40, 80 }).expandTo({ 16, 80 });
+		if (s != Size(40, 80)) {
+			cout << "Size chained in-place modifiers test failed" << endl;
+			return TestFail;
+		}
+
 		/* Test alignedDownTo(), alignedUpTo(), boundedTo() and expandedTo() */
 		if (Size(0, 0).alignedDownTo(16, 8) != Size(0, 0) ||
 		    Size(1, 1).alignedDownTo(16, 8) != Size(0, 0) ||

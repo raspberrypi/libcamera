@@ -62,6 +62,52 @@ const std::string Size::toString() const
 }
 
 /**
+ * \fn Size::alignDownTo(unsigned int hAlignment, unsigned int vAlignment)
+ * \brief Align the size down horizontally and vertically in place
+ * \param[in] hAlignment Horizontal alignment
+ * \param[in] vAlignment Vertical alignment
+ *
+ * This functions rounds the width and height down to the nearest multiple of
+ * \a hAlignment and \a vAlignment respectively.
+ *
+ * \return A reference to this object
+ */
+
+/**
+ * \fn Size::alignUpTo(unsigned int hAlignment, unsigned int vAlignment)
+ * \brief Align the size up horizontally and vertically in place
+ * \param[in] hAlignment Horizontal alignment
+ * \param[in] vAlignment Vertical alignment
+ *
+ * This functions rounds the width and height up to the nearest multiple of
+ * \a hAlignment and \a vAlignment respectively.
+ *
+ * \return A reference to this object
+ */
+
+/**
+ * \fn Size::boundTo(const Size &bound)
+ * \brief Bound the size to \a bound in place
+ * \param[in] bound The maximum size
+ *
+ * This function sets the width and height to the minimum of this size and the
+ * \a bound size.
+ *
+ * \return A reference to this object
+ */
+
+/**
+ * \fn Size::expandTo(const Size &expand)
+ * \brief Expand the size to \a expand
+ * \param[in] expand The minimum size
+ *
+ * This function sets the width and height to the maximum of this size and the
+ * \a expand size.
+ *
+ * \return A reference to this object
+ */
+
+/**
  * \fn Size::alignedDownTo(unsigned int hAlignment, unsigned int vAlignment)
  * \brief Align the size down horizontally and vertically
  * \param[in] hAlignment Horizontal alignment

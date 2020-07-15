@@ -32,6 +32,34 @@ public:
 	bool isNull() const { return !width && !height; }
 	const std::string toString() const;
 
+	Size &alignDownTo(unsigned int hAlignment, unsigned int vAlignment)
+	{
+		width = width / hAlignment * hAlignment;
+		height = height / vAlignment * vAlignment;
+		return *this;
+	}
+
+	Size &alignUpTo(unsigned int hAlignment, unsigned int vAlignment)
+	{
+		width = (width + hAlignment - 1) / hAlignment * hAlignment;
+		height = (height + vAlignment - 1) / vAlignment * vAlignment;
+		return *this;
+	}
+
+	Size &boundTo(const Size &bound)
+	{
+		width = std::min(width, bound.width);
+		height = std::min(height, bound.height);
+		return *this;
+	}
+
+	Size &expandTo(const Size &expand)
+	{
+		width = std::max(width, expand.width);
+		height = std::max(height, expand.height);
+		return *this;
+	}
+
 	constexpr Size alignedDownTo(unsigned int hAlignment,
 				     unsigned int vAlignment) const
 	{

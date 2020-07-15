@@ -30,6 +30,7 @@ public:
 	int setControls(ControlList *ctrls);
 
 	const std::string &deviceNode() const { return deviceNode_; }
+	std::string devicePath() const;
 
 protected:
 	V4L2Device(const std::string &deviceNode);

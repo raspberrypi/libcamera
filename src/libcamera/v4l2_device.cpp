@@ -9,12 +9,15 @@
 
 #include <fcntl.h>
 #include <iomanip>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_controls.h"
 
@@ -348,6 +351,34 @@ int V4L2Device::setControls(ControlList *ctrls)
 	updateControls(ctrls, v4l2Ctrls, count);
 
 	return ret;
+}
+
+/**
+ * \brief Retrieve the device path in sysfs
+ *
+ * This function returns the sysfs path to the physical device backing the V4L2
+ * device. The path is guaranteed to be an absolute path, without any symbolic
+ * link.
+ *
+ * It includes the sysfs mount point prefix
+ *
+ * \return The device path in sysfs
+ */
+std::string V4L2Device::devicePath() const
+{
+	std::string devicePath = sysfs::charDevPath(deviceNode_) + "/device";
+
+	char *realPath = realpath(devicePath.c_str(), nullptr);
+	if (!realPath) {
+		LOG(V4L2, Fatal)
+			<< "Can not resolve device path for " << devicePath;
+		return {};
+	}
+
+	std::string path{ realPath };
+	free(realPath);
+
+	return path;
 }
 
 /**

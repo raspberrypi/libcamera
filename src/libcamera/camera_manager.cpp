@@ -182,10 +182,10 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 
 	for (std::shared_ptr<Camera> c : cameras_) {
 		if (c->id() == camera->id()) {
-			LOG(Camera, Warning)
-				<< "Registering camera with duplicate ID '"
+			LOG(Camera, Fatal)
+				<< "Trying to register a camera with a duplicated ID '"
 				<< camera->id() << "'";
-			break;
+			return;
 		}
 	}
 

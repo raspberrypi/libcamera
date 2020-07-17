@@ -261,32 +261,23 @@ int FrameBuffer::copyFrom(const FrameBuffer *src)
 		}
 	}
 
+	MappedFrameBuffer source(src, PROT_READ);
+	MappedFrameBuffer destination(this, PROT_WRITE);
+
+	if (!source.isValid()) {
+		LOG(Buffer, Error) << "Failed to map source planes";
+		return -EINVAL;
+	}
+
+	if (!destination.isValid()) {
+		LOG(Buffer, Error) << "Failed to map destination planes";
+		return -EINVAL;
+	}
+
 	for (unsigned int i = 0; i < planes_.size(); i++) {
-		void *dstmem = mmap(nullptr, planes_[i].length, PROT_WRITE,
-				    MAP_SHARED, planes_[i].fd.fd(), 0);
-
-		if (dstmem == MAP_FAILED) {
-			LOG(Buffer, Error)
-				<< "Failed to map destination plane " << i;
-			metadata_.status = FrameMetadata::FrameError;
-			return -EINVAL;
-		}
-
-		void *srcmem = mmap(nullptr, src->planes_[i].length, PROT_READ,
-				    MAP_SHARED, src->planes_[i].fd.fd(), 0);
-
-		if (srcmem == MAP_FAILED) {
-			munmap(dstmem, planes_[i].length);
-			LOG(Buffer, Error)
-				<< "Failed to map source plane " << i;
-			metadata_.status = FrameMetadata::FrameError;
-			return -EINVAL;
-		}
-
-		memcpy(dstmem, srcmem, src->planes_[i].length);
-
-		munmap(srcmem, src->planes_[i].length);
-		munmap(dstmem, planes_[i].length);
+		memcpy(destination.maps()[i].data(),
+		       source.maps()[i].data(),
+		       source.maps()[i].size());
 	}
 
 	metadata_ = src->metadata_;

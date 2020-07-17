@@ -1132,12 +1132,13 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 			return nullptr;
 		}
 
-		/*
-		 * Setting length to zero here is OK as the length is only used
-		 * to map the memory of the plane. Libcamera do not need to poke
-		 * at the memory content queued by the HAL.
-		 */
-		plane.length = 0;
+		off_t length = lseek(plane.fd.fd(), 0, SEEK_END);
+		if (length == -1) {
+			LOG(HAL, Error) << "Failed to query plane length";
+			return nullptr;
+		}
+
+		plane.length = length;
 		planes.push_back(std::move(plane));
 	}
 

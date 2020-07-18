@@ -407,6 +407,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 2,
 		.planes = {{ { 2, 1 }, { 1, 2 }, { 1, 2 } }},
 	} },
+	{ formats::YVU420, {
+		.name = "YVU420",
+		.format = PixelFormat(formats::YVU420),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVU420),
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 1, 2 }, { 1, 2 } }},
+	} },
 	{ formats::YUV422, {
 		.name = "YUV422",
 		.format = PixelFormat(formats::YUV422),

@@ -55,6 +55,8 @@ formats:
 
   - YUV420:
       fourcc: DRM_FORMAT_YUV420
+  - YVU420:
+      fourcc: DRM_FORMAT_YVU420
   - YUV422:
       fourcc: DRM_FORMAT_YUV422
 

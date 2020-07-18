@@ -233,6 +233,16 @@ const PixelFormatInfo pixelFormatInfoInvalid{};
 
 const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	/* RGB formats. */
+	{ formats::RGB565, {
+		.name = "RGB565",
+		.format = formats::RGB565,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB565),
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	{ formats::BGR888, {
 		.name = "BGR888",
 		.format = formats::BGR888,

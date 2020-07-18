@@ -8,6 +8,9 @@ formats:
   - R8:
       fourcc: DRM_FORMAT_R8
 
+  - RGB565:
+      fourcc: DRM_FORMAT_RGB565
+
   - RGB888:
       fourcc: DRM_FORMAT_RGB888
   - BGR888:

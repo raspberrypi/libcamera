@@ -15,6 +15,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
 
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
 
@@ -755,6 +756,17 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	std::vector<uint8_t> availableCapabilities = {
 		ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
 	};
+
+	/* Report if camera supports RAW. */
+	std::unique_ptr<CameraConfiguration> cameraConfig =
+		camera_->generateConfiguration({ StillCaptureRaw });
+	if (cameraConfig && !cameraConfig->empty()) {
+		const PixelFormatInfo &info =
+			PixelFormatInfo::info(cameraConfig->at(0).pixelFormat);
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
+	}
+
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
 				  availableCapabilities.data(),
 				  availableCapabilities.size());

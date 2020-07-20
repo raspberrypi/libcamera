@@ -77,6 +77,50 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 			true,
 			"IMPLEMENTATION_DEFINED"
 		}
+	}, {
+		HAL_PIXEL_FORMAT_RAW10, {
+			{
+				formats::SBGGR10_CSI2P,
+				formats::SGBRG10_CSI2P,
+				formats::SGRBG10_CSI2P,
+				formats::SRGGB10_CSI2P
+			},
+			false,
+			"RAW10"
+		}
+	}, {
+		HAL_PIXEL_FORMAT_RAW12, {
+			{
+				formats::SBGGR12_CSI2P,
+				formats::SGBRG12_CSI2P,
+				formats::SGRBG12_CSI2P,
+				formats::SRGGB12_CSI2P
+			},
+			false,
+			"RAW12"
+		}
+	}, {
+		HAL_PIXEL_FORMAT_RAW16, {
+			{
+				formats::SBGGR16,
+				formats::SGBRG16,
+				formats::SGRBG16,
+				formats::SRGGB16
+			},
+			false,
+			"RAW16"
+		}
+	}, {
+		HAL_PIXEL_FORMAT_RAW_OPAQUE, {
+			{
+				formats::SBGGR10_IPU3,
+				formats::SGBRG10_IPU3,
+				formats::SGRBG10_IPU3,
+				formats::SRGGB10_IPU3
+			},
+			false,
+			"RAW_OPAQUE"
+		}
 	},
 };
 

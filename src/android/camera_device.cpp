@@ -370,8 +370,8 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 50 entries, 647 bytes of static metadata
 	 */
-	uint32_t numEntries = 49;
-	uint32_t byteSize = 647;
+	uint32_t numEntries = 50;
+	uint32_t byteSize = 651;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -699,6 +699,11 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
 				  &maxPipelineDepth, 1);
 
+	/* LIMITED does not support reprocessing. */
+	uint32_t maxNumInputStreams = 0;
+	staticMetadata_->addEntry(ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS,
+				  &maxNumInputStreams, 1);
+
 	std::vector<uint8_t> availableCapabilities = {
 		ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
 	};
@@ -752,6 +757,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL,
 		ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
 		ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
+		ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS,
 		ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CHARACTERISTICS_KEYS,

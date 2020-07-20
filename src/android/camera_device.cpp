@@ -1084,6 +1084,10 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		break;
 	case CameraConfiguration::Adjusted:
 		LOG(HAL, Info) << "Camera configuration adjusted";
+
+		for (const StreamConfiguration &cfg : *config_)
+			LOG(HAL, Info) << " - " << cfg.toString();
+
 		config_.reset();
 		return -EINVAL;
 	case CameraConfiguration::Invalid:

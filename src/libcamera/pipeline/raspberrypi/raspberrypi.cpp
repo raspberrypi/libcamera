@@ -39,8 +39,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RPI)
 
-using V4L2PixFmtMap = std::map<V4L2PixelFormat, std::vector<SizeRange>>;
-
 namespace {
 
 bool isRaw(PixelFormat &pixFmt)
@@ -69,7 +67,8 @@ double scoreFormat(double desired, double actual)
 	return score;
 }
 
-V4L2DeviceFormat findBestMode(V4L2PixFmtMap &formatsMap, const Size &req)
+V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
+			      const Size &req)
 {
 	double bestScore = std::numeric_limits<double>::max(), score;
 	V4L2DeviceFormat bestMode = {};
@@ -410,7 +409,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 * Calculate the best sensor mode we can use based on
 			 * the user request.
 			 */
-			V4L2PixFmtMap fmts = data_->unicam_[Unicam::Image].dev()->formats();
+			V4L2VideoDevice::Formats fmts = data_->unicam_[Unicam::Image].dev()->formats();
 			V4L2DeviceFormat sensorFormat = findBestMode(fmts, cfg.size);
 			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&sensorFormat);
 			if (ret)
@@ -480,7 +479,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		else
 			dev = data_->isp_[Isp::Output1].dev();
 
-		V4L2PixFmtMap fmts = dev->formats();
+		V4L2VideoDevice::Formats fmts = dev->formats();
 
 		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt, false)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
@@ -517,7 +516,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 	V4L2DeviceFormat sensorFormat;
 	unsigned int bufferCount;
 	PixelFormat pixelFormat;
-	V4L2PixFmtMap fmts;
+	V4L2VideoDevice::Formats fmts;
 	Size size;
 
 	if (roles.empty())
@@ -633,7 +632,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	}
 
 	/* First calculate the best sensor mode we can use based on the user request. */
-	V4L2PixFmtMap fmts = data->unicam_[Unicam::Image].dev()->formats();
+	V4L2VideoDevice::Formats fmts = data->unicam_[Unicam::Image].dev()->formats();
 	V4L2DeviceFormat sensorFormat = findBestMode(fmts, rawStream ? sensorSize : maxSize);
 
 	/*

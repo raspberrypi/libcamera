@@ -462,6 +462,11 @@ const std::string V4L2DeviceFormat::toString() const
  */
 
 /**
+ * \typedef V4L2VideoDevice::Formats
+ * \brief A map of supported V4L2 pixel formats to frame sizes
+ */
+
+/**
  * \brief Construct a V4L2VideoDevice
  * \param[in] deviceNode The file-system path to the video device node
  */
@@ -951,9 +956,9 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
  *
  * \return A list of the supported video device formats
  */
-std::map<V4L2PixelFormat, std::vector<SizeRange>> V4L2VideoDevice::formats(uint32_t code)
+V4L2VideoDevice::Formats V4L2VideoDevice::formats(uint32_t code)
 {
-	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats;
+	Formats formats;
 
 	for (V4L2PixelFormat pixelFormat : enumPixelformats(code)) {
 		std::vector<SizeRange> sizes = enumSizes(pixelFormat);

@@ -275,7 +275,7 @@ int SimpleCameraData::init()
 			return ret;
 		}
 
-		std::map<V4L2PixelFormat, std::vector<SizeRange>> videoFormats =
+		V4L2VideoDevice::Formats videoFormats =
 			video_->formats(format.mbus_code);
 
 		LOG(SimplePipeline, Debug)

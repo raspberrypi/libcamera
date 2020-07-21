@@ -172,8 +172,7 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	if (roles.empty())
 		return config;
 
-	std::map<V4L2PixelFormat, std::vector<SizeRange>> v4l2Formats =
-		data->video_->formats();
+	V4L2VideoDevice::Formats v4l2Formats = data->video_->formats();
 	std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
 	for (const auto &format : v4l2Formats) {
 		PixelFormat pixelFormat = format.first.toPixelFormat();

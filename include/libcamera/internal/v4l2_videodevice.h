@@ -168,6 +168,8 @@ public:
 class V4L2VideoDevice : public V4L2Device
 {
 public:
+	using Formats = std::map<V4L2PixelFormat, std::vector<SizeRange>>;
+
 	explicit V4L2VideoDevice(const std::string &deviceNode);
 	explicit V4L2VideoDevice(const MediaEntity *entity);
 	V4L2VideoDevice(const V4L2VideoDevice &) = delete;
@@ -188,7 +190,7 @@ public:
 	int getFormat(V4L2DeviceFormat *format);
 	int tryFormat(V4L2DeviceFormat *format);
 	int setFormat(V4L2DeviceFormat *format);
-	std::map<V4L2PixelFormat, std::vector<SizeRange>> formats(uint32_t code = 0);
+	Formats formats(uint32_t code = 0);
 
 	int setSelection(unsigned int target, Rectangle *rect);
 

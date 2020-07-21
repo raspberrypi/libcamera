@@ -960,6 +960,13 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
 
+	/* Configure the H/V flip controls based on the sensor rotation. */
+	ControlList ctrls(data->unicam_[Unicam::Image].dev()->controls());
+	int32_t rotation = data->properties_.get(properties::Rotation);
+	ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
+	ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
+	data->unicam_[Unicam::Image].dev()->setControls(&ctrls);
+
 	/*
 	 * List the available output streams.
 	 * Currently cannot do Unicam streams!
@@ -1164,13 +1171,6 @@ int RPiCameraData::configureIPA()
 					      { V4L2_CID_EXPOSURE, result.data[1] } });
 			sensorMetadata_ = result.data[2];
 		}
-
-		/* Configure the H/V flip controls based on the sensor rotation. */
-		ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
-		int32_t rotation = sensor_->properties().get(properties::Rotation);
-		ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
-		ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
-		unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}
 
 	if (result.operation & RPI_IPA_CONFIG_SENSOR) {

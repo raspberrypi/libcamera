@@ -821,4 +821,22 @@ PixelFormatInfo::frameSize(const Size &size,
 	return sum;
 }
 
+/**
+ * \brief Retrieve the number of planes represented by the format
+ * \return The number of planes used by the format
+ */
+unsigned int PixelFormatInfo::numPlanes() const
+{
+	unsigned int count = 0;
+
+	for (const PixelFormatPlaneInfo &p : planes) {
+		if (p.bytesPerGroup == 0)
+			break;
+
+		count++;
+	}
+
+	return count;
+}
+
 } /* namespace libcamera */

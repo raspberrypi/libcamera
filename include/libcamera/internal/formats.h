@@ -46,6 +46,8 @@ public:
 	unsigned int frameSize(const Size &size,
 			       const std::array<unsigned int, 3> &strides) const;
 
+	unsigned int numPlanes() const;
+
 	/* \todo Add support for non-contiguous memory planes */
 	const char *name;
 	PixelFormat format;

@@ -75,7 +75,7 @@ private:
 
 	struct Camera3StreamConfiguration {
 		libcamera::Size resolution;
-		int androidScalerCode;
+		int androidFormat;
 	};
 
 	int initializeStreamConfigurations();

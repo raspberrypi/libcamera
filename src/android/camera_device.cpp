@@ -317,14 +317,14 @@ int CameraDevice::initializeStreamConfigurations()
 			    status != CameraConfiguration::Valid)
 				continue;
 
-			streamConfigurations_.push_back({ res, camera3Format.scalerFormat });
+			streamConfigurations_.push_back({ res, androidFormat });
 		}
 	}
 
 	LOG(HAL, Debug) << "Collected stream configuration map: ";
 	for (const auto &entry : streamConfigurations_)
 		LOG(HAL, Debug) << "{ " << entry.resolution.toString() << " - "
-				<< utils::hex(entry.androidScalerCode) << " }";
+				<< utils::hex(entry.androidFormat) << " }";
 
 	return 0;
 }
@@ -658,7 +658,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	std::vector<uint32_t> availableStreamConfigurations;
 	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
-		availableStreamConfigurations.push_back(entry.androidScalerCode);
+		availableStreamConfigurations.push_back(entry.androidFormat);
 		availableStreamConfigurations.push_back(entry.resolution.width);
 		availableStreamConfigurations.push_back(entry.resolution.height);
 		availableStreamConfigurations.push_back(
@@ -679,7 +679,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	std::vector<int64_t> minFrameDurations;
 	minFrameDurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
-		minFrameDurations.push_back(entry.androidScalerCode);
+		minFrameDurations.push_back(entry.androidFormat);
 		minFrameDurations.push_back(entry.resolution.width);
 		minFrameDurations.push_back(entry.resolution.height);
 		minFrameDurations.push_back(33333333);

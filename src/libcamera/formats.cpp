@@ -321,7 +321,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	} },
 	{ formats::YUV420, {
 		.name = "YUV420",
-		.format = PixelFormat(formats::YUV420),
+		.format = formats::YUV420,
 		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV420),
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
@@ -331,7 +331,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	} },
 	{ formats::YVU420, {
 		.name = "YVU420",
-		.format = PixelFormat(formats::YVU420),
+		.format = formats::YVU420,
 		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVU420),
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
@@ -341,7 +341,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	} },
 	{ formats::YUV422, {
 		.name = "YUV422",
-		.format = PixelFormat(formats::YUV422),
+		.format = formats::YUV422,
 		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV422P),
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,

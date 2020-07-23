@@ -376,7 +376,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 50 entries, 647 bytes of static metadata
 	 */
-	uint32_t numEntries = 50;
+	uint32_t numEntries = 49;
 	uint32_t byteSize = 647;
 
 	/*
@@ -385,10 +385,9 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 *
 	 * Each stream configuration entry requires 52 bytes:
 	 * 4 32bits integers for ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS
-	 * 1 32bits integer for ANDROID_SCALER_AVAILABLE_FORMATS
 	 * 4 64bits integers for ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS
 	 */
-	byteSize += streamConfigurations_.size() * 52;
+	byteSize += streamConfigurations_.size() * 48;
 
 	return std::make_tuple(numEntries, byteSize);
 }
@@ -656,15 +655,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
 				  &maxDigitalZoom, 1);
 
-	std::vector<uint32_t> availableStreamFormats;
-	availableStreamFormats.reserve(streamConfigurations_.size());
-	std::transform(streamConfigurations_.begin(), streamConfigurations_.end(),
-		       std::back_inserter(availableStreamFormats),
-		       [](const auto &entry) { return entry.androidScalerCode; });
-	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_FORMATS,
-				  availableStreamFormats.data(),
-				  availableStreamFormats.size());
-
 	std::vector<uint32_t> availableStreamConfigurations;
 	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
@@ -761,7 +751,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_LENS_INFO_MINIMUM_FOCUS_DISTANCE,
 		ANDROID_NOISE_REDUCTION_AVAILABLE_NOISE_REDUCTION_MODES,
 		ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
-		ANDROID_SCALER_AVAILABLE_FORMATS,
 		ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 		ANDROID_SCALER_AVAILABLE_STALL_DURATIONS,
 		ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,

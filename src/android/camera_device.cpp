@@ -42,13 +42,10 @@ const std::vector<Size> camera3Resolutions = {
  * \brief Data associated with an Android format identifier
  * \var libcameraFormats List of libcamera pixel formats compatible with the
  * Android format
- * \var scalerFormat The format identifier to be reported to the android
- * framework through the static format configuration map
  * \var name The human-readable representation of the Android format code
  */
 struct Camera3Format {
 	std::vector<PixelFormat> libcameraFormats;
-	camera_metadata_enum_android_scaler_available_formats_t scalerFormat;
 	const char *name;
 };
 
@@ -60,13 +57,11 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 	{
 		HAL_PIXEL_FORMAT_BLOB, {
 			{ formats::MJPEG },
-			ANDROID_SCALER_AVAILABLE_FORMATS_BLOB,
 			"BLOB"
 		}
 	}, {
 		HAL_PIXEL_FORMAT_YCbCr_420_888, {
 			{ formats::NV12, formats::NV21 },
-			ANDROID_SCALER_AVAILABLE_FORMATS_YCbCr_420_888,
 			"YCbCr_420_888"
 		}
 	}, {
@@ -76,7 +71,6 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 		 */
 		HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED, {
 			{ formats::NV12, formats::NV21 },
-			ANDROID_SCALER_AVAILABLE_FORMATS_IMPLEMENTATION_DEFINED,
 			"IMPLEMENTATION_DEFINED"
 		}
 	},

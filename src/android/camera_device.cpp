@@ -417,10 +417,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 50 entries, 647 bytes of static metadata
+	 * Currently: 50 entries, 671 bytes of static metadata
 	 */
 	uint32_t numEntries = 50;
-	uint32_t byteSize = 651;
+	uint32_t byteSize = 671;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -828,6 +828,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AE_MODE,
 		ANDROID_CONTROL_AE_EXPOSURE_COMPENSATION,
 		ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
+		ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE,
 		ANDROID_CONTROL_AE_LOCK,
 		ANDROID_CONTROL_AF_TRIGGER,
 		ANDROID_CONTROL_AWB_MODE,
@@ -836,6 +838,9 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_STATISTICS_FACE_DETECT_MODE,
 		ANDROID_NOISE_REDUCTION_MODE,
 		ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
+		ANDROID_LENS_APERTURE,
+		ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
+		ANDROID_CONTROL_MODE,
 		ANDROID_CONTROL_CAPTURE_INTENT,
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_REQUEST_KEYS,
@@ -874,9 +879,9 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 12 entries, 15 bytes
+	 * Currently: 20 entries, 35 bytes
 	 */
-	CameraMetadata *requestTemplate = new CameraMetadata(15, 20);
+	CameraMetadata *requestTemplate = new CameraMetadata(20, 35);
 	if (!requestTemplate->isValid()) {
 		delete requestTemplate;
 		return nullptr;
@@ -897,6 +902,17 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	uint8_t aeLock = ANDROID_CONTROL_AE_LOCK_OFF;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_LOCK,
 				  &aeLock, 1);
+
+	std::vector<int32_t> aeFpsTarget = {
+		15, 30,
+	};
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+				  aeFpsTarget.data(),
+				  aeFpsTarget.size());
+
+	uint8_t aeAntibandingMode = ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO;
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE,
+				  &aeAntibandingMode, 1);
 
 	uint8_t afTrigger = ANDROID_CONTROL_AF_TRIGGER_IDLE;
 	requestTemplate->addEntry(ANDROID_CONTROL_AF_TRIGGER,
@@ -925,6 +941,16 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	uint8_t aberrationMode = ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF;
 	requestTemplate->addEntry(ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
 				  &aberrationMode, 1);
+
+	uint8_t controlMode = ANDROID_CONTROL_MODE_AUTO;
+	requestTemplate->addEntry(ANDROID_CONTROL_MODE, &controlMode, 1);
+
+	float lensAperture = 2.53 / 100;
+	requestTemplate->addEntry(ANDROID_LENS_APERTURE, &lensAperture, 1);
+
+	uint8_t opticalStabilization = ANDROID_LENS_OPTICAL_STABILIZATION_MODE_OFF;
+	requestTemplate->addEntry(ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
+				  &opticalStabilization, 1);
 
 	uint8_t captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
 	requestTemplate->addEntry(ANDROID_CONTROL_CAPTURE_INTENT,

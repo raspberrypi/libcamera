@@ -262,4 +262,15 @@ controls:
         In this respect, it is not necessarily aimed at providing a way to
         implement a focus algorithm by the application, rather an indication of
         how in-focus a frame is.
+
+  - ColourCorrectionMatrix:
+      type: float
+      description: |
+        The 3x3 matrix that converts camera RGB to sRGB within the
+        imaging pipeline. This should describe the matrix that is used
+        after pixels have been white-balanced, but before any gamma
+        transformation. The 3x3 matrix is stored in conventional reading
+        order in an array of 9 floating point values.
+
+      size: [3x3]
 ...

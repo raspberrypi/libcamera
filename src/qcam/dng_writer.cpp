@@ -34,6 +34,97 @@ struct FormatInfo {
 			      unsigned int stride);
 };
 
+struct Matrix3d {
+	Matrix3d()
+	{
+	}
+
+	Matrix3d(float m0, float m1, float m2,
+		 float m3, float m4, float m5,
+		 float m6, float m7, float m8)
+	{
+		m[0] = m0, m[1] = m1, m[2] = m2;
+		m[3] = m3, m[4] = m4, m[5] = m5;
+		m[6] = m6, m[7] = m7, m[8] = m8;
+	}
+
+	Matrix3d(const Span<const float> &span)
+		: Matrix3d(span[0], span[1], span[2],
+			   span[3], span[4], span[5],
+			   span[6], span[7], span[8])
+	{
+	}
+
+	static Matrix3d diag(float diag0, float diag1, float diag2)
+	{
+		return Matrix3d(diag0, 0, 0, 0, diag1, 0, 0, 0, diag2);
+	}
+
+	static Matrix3d identity()
+	{
+		return Matrix3d(1, 0, 0, 0, 1, 0, 0, 0, 1);
+	}
+
+	Matrix3d transpose() const
+	{
+		return { m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8] };
+	}
+
+	Matrix3d cofactors() const
+	{
+		return { m[4] * m[8] - m[5] * m[7],
+			 -(m[3] * m[8] - m[5] * m[6]),
+			 m[3] * m[7] - m[4] * m[6],
+			 -(m[1] * m[8] - m[2] * m[7]),
+			 m[0] * m[8] - m[2] * m[6],
+			 -(m[0] * m[7] - m[1] * m[6]),
+			 m[1] * m[5] - m[2] * m[4],
+			 -(m[0] * m[5] - m[2] * m[3]),
+			 m[0] * m[4] - m[1] * m[3] };
+	}
+
+	Matrix3d adjugate() const
+	{
+		return cofactors().transpose();
+	}
+
+	float determinant() const
+	{
+		return m[0] * (m[4] * m[8] - m[5] * m[7]) -
+		       m[1] * (m[3] * m[8] - m[5] * m[6]) +
+		       m[2] * (m[3] * m[7] - m[4] * m[6]);
+	}
+
+	Matrix3d inverse() const
+	{
+		return adjugate() * (1.0 / determinant());
+	}
+
+	Matrix3d operator*(const Matrix3d &other) const
+	{
+		Matrix3d result;
+		for (unsigned int i = 0; i < 3; i++) {
+			for (unsigned int j = 0; j < 3; j++) {
+				result.m[i * 3 + j] =
+					m[i * 3 + 0] * other.m[0 + j] +
+					m[i * 3 + 1] * other.m[3 + j] +
+					m[i * 3 + 2] * other.m[6 + j];
+			}
+		}
+		return result;
+	}
+
+	Matrix3d operator*(float f) const
+	{
+		Matrix3d result;
+		for (unsigned int i = 0; i < 9; i++)
+			result.m[i] = m[i] * f;
+		return result;
+	}
+
+	float m[9];
+};
+
 void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
@@ -314,6 +405,53 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+
+	/*
+	 * Fill in some reasonable colour information in the DNG. We supply
+	 * the "neutral" colour values which determine the white balance, and the
+	 * "ColorMatrix1" which converts XYZ to (un-white-balanced) camera RGB.
+	 * Note that this is not a "proper" colour calibration for the DNG,
+	 * nonetheless, many tools should be able to render the colours better.
+	 */
+	float neutral[3] = { 1, 1, 1 };
+	Matrix3d wbGain = Matrix3d::identity();
+	/* From http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html */
+	const Matrix3d rgb2xyz(0.4124564, 0.3575761, 0.1804375,
+			       0.2126729, 0.7151522, 0.0721750,
+			       0.0193339, 0.1191920, 0.9503041);
+	Matrix3d ccm = Matrix3d::identity();
+	/*
+	 * Pick a reasonable number eps to protect against singularities. It
+	 * should be comfortably larger than the point at which we run into
+	 * numerical trouble, yet smaller than any plausible gain that we might
+	 * apply to a colour, either explicitly or as part of the colour matrix.
+	 */
+	const double eps = 1e-2;
+
+	if (metadata.contains(controls::ColourGains)) {
+		Span<const float> const &colourGains = metadata.get(controls::ColourGains);
+		if (colourGains[0] > eps && colourGains[1] > eps) {
+			wbGain = Matrix3d::diag(colourGains[0], 1, colourGains[1]);
+			neutral[0] = 1.0 / colourGains[0]; /* red */
+			neutral[2] = 1.0 / colourGains[1]; /* blue */
+		}
+	}
+	if (metadata.contains(controls::ColourCorrectionMatrix)) {
+		Span<const float> const &coeffs = metadata.get(controls::ColourCorrectionMatrix);
+		Matrix3d ccmSupplied(coeffs);
+		if (ccmSupplied.determinant() > eps)
+			ccm = ccmSupplied;
+	}
+
+	/*
+	 * rgb2xyz is known to be invertible, and we've ensured above that both
+	 * the ccm and wbGain matrices are non-singular, so the product of all
+	 * three is guaranteed to be invertible too.
+	 */
+	Matrix3d colorMatrix1 = (rgb2xyz * ccm * wbGain).inverse();
+
+	TIFFSetField(tif, TIFFTAG_COLORMATRIX1, 9, colorMatrix1.m);
+	TIFFSetField(tif, TIFFTAG_ASSHOTNEUTRAL, 3, neutral);
 
 	/*
 	 * Reserve space for the SubIFD and ExifIFD tags, pointing to the IFD

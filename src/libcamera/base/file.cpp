@@ -58,7 +58,7 @@ LOG_DEFINE_CATEGORY(File)
  */
 
 /**
- * \enum File::OpenMode
+ * \enum File::OpenModeFlag
  * \brief Mode in which a file is opened
  * \var File::NotOpen
  * \brief The file is not open
@@ -68,6 +68,11 @@ LOG_DEFINE_CATEGORY(File)
  * \brief The file is open for writing
  * \var File::ReadWrite
  * \brief The file is open for reading and writing
+ */
+
+/**
+ * \typedef File::OpenMode
+ * \brief A bitwise combination of File::OpenModeFlag values
  */
 
 /**
@@ -168,7 +173,7 @@ bool File::open(File::OpenMode mode)
 		return false;
 	}
 
-	int flags = (mode & ReadWrite) - 1;
+	int flags = static_cast<OpenMode::Type>(mode & ReadWrite) - 1;
 	if (mode & WriteOnly)
 		flags |= O_CREAT;
 

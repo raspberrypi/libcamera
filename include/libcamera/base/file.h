@@ -30,12 +30,14 @@ public:
 
 	using MapFlags = Flags<MapFlag>;
 
-	enum OpenMode {
+	enum OpenModeFlag {
 		NotOpen = 0,
 		ReadOnly = (1 << 0),
 		WriteOnly = (1 << 1),
 		ReadWrite = ReadOnly | WriteOnly,
 	};
+
+	using OpenMode = Flags<OpenModeFlag>;
 
 	File(const std::string &name);
 	File();

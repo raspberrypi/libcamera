@@ -37,6 +37,21 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RkISP1)
 
+namespace {
+constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
+constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
+constexpr std::array<PixelFormat, 7> RKISP1_RSZ_MP_FORMATS{
+	formats::YUYV,
+	formats::YVYU,
+	formats::VYUY,
+	formats::NV16,
+	formats::NV61,
+	formats::NV21,
+	formats::NV12,
+	/* \todo Add support for 8-bit greyscale to DRM formats */
+};
+} /* namespace */
+
 class PipelineHandlerRkISP1;
 class RkISP1ActionQueueBuffers;
 
@@ -456,17 +471,6 @@ RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
-	static const std::array<PixelFormat, 7> formats{
-		formats::YUYV,
-		formats::YVYU,
-		formats::VYUY,
-		formats::NV16,
-		formats::NV61,
-		formats::NV21,
-		formats::NV12,
-		/* \todo Add support for 8-bit greyscale to DRM formats */
-	};
-
 	const CameraSensor *sensor = data_->sensor_;
 	Status status = Valid;
 
@@ -482,8 +486,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	StreamConfiguration &cfg = config_[0];
 
 	/* Adjust the pixel format. */
-	if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) ==
-	    formats.end()) {
+	if (std::find(RKISP1_RSZ_MP_FORMATS.begin(), RKISP1_RSZ_MP_FORMATS.end(),
+		      cfg.pixelFormat) == RKISP1_RSZ_MP_FORMATS.end()) {
 		LOG(RkISP1, Debug) << "Adjusting format to NV12";
 		cfg.pixelFormat = formats::NV12,
 		status = Adjusted;
@@ -520,8 +524,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 				/ sensorFormat_.size.width;
 	}
 
-	cfg.size.width = std::max(32U, std::min(4416U, cfg.size.width));
-	cfg.size.height = std::max(16U, std::min(3312U, cfg.size.height));
+	cfg.size.boundTo(RKISP1_RSZ_MP_SRC_MAX);
+	cfg.size.expandTo(RKISP1_RSZ_MP_SRC_MIN);
 
 	if (cfg.size != size) {
 		LOG(RkISP1, Debug)

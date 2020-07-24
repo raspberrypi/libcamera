@@ -21,6 +21,7 @@ public:
 	bool addEntry(uint32_t tag, const void *data, size_t data_count);
 
 	camera_metadata_t *get();
+	const camera_metadata_t *get() const;
 
 private:
 	camera_metadata_t *metadata_;

@@ -50,3 +50,8 @@ camera_metadata_t *CameraMetadata::get()
 {
 	return valid_ ? metadata_ : nullptr;
 }
+
+const camera_metadata_t *CameraMetadata::get() const
+{
+	return valid_ ? metadata_ : nullptr;
+}

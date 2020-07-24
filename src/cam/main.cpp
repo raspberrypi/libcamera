@@ -49,12 +49,15 @@ private:
 	std::shared_ptr<Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	EventLoop *loop_;
+
+	bool strictFormats_;
 };
 
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr), camera_(nullptr), config_(nullptr), loop_(nullptr)
+	: cm_(nullptr), camera_(nullptr), config_(nullptr), loop_(nullptr),
+	  strictFormats_(false)
 {
 	CamApp::app_ = this;
 }
@@ -76,6 +79,9 @@ int CamApp::init(int argc, char **argv)
 	ret = parseOptions(argc, argv);
 	if (ret < 0)
 		return ret;
+
+	if (options_.isSet(OptStrictFormats))
+		strictFormats_ = true;
 
 	cm_ = new CameraManager();
 
@@ -179,6 +185,9 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "list-controls");
 	parser.addOption(OptListProperties, OptionNone, "List cameras properties",
 			 "list-properties");
+	parser.addOption(OptStrictFormats, OptionNone,
+			 "Do not allow requested stream format(s) to be adjusted",
+			 "strict-formats");
 
 	options_ = parser.parse(argc, argv);
 	if (!options_.valid())
@@ -214,6 +223,12 @@ int CamApp::prepareConfig()
 	case CameraConfiguration::Valid:
 		break;
 	case CameraConfiguration::Adjusted:
+		if (strictFormats_) {
+			std::cout << "Adjusting camera configuration disallowed by --strict-formats argument"
+				  << std::endl;
+			config_.reset();
+			return -EINVAL;
+		}
 		std::cout << "Camera configuration adjusted" << std::endl;
 		break;
 	case CameraConfiguration::Invalid:

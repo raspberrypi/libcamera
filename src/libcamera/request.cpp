@@ -212,6 +212,10 @@ void Request::complete()
 {
 	ASSERT(!hasPendingBuffers());
 	status_ = cancelled_ ? RequestCancelled : RequestComplete;
+
+	LOG(Request, Debug)
+		<< "Request has completed - cookie: " << cookie_
+		<< (cancelled_ ? " [Cancelled]" : "");
 }
 
 /**

@@ -24,12 +24,12 @@ class Capture
 {
 public:
 	Capture(std::shared_ptr<libcamera::Camera> camera,
-		libcamera::CameraConfiguration *config);
+		libcamera::CameraConfiguration *config,
+		EventLoop *loop);
 
-	int run(EventLoop *loop, const OptionsParser::Options &options);
+	int run(const OptionsParser::Options &options);
 private:
-	int capture(EventLoop *loop,
-		    libcamera::FrameBufferAllocator *allocator);
+	int capture(libcamera::FrameBufferAllocator *allocator);
 
 	void requestComplete(libcamera::Request *request);
 
@@ -39,6 +39,8 @@ private:
 	std::map<libcamera::Stream *, std::string> streamName_;
 	BufferWriter *writer_;
 	std::chrono::steady_clock::time_point last_;
+
+	EventLoop *loop_;
 };
 
 #endif /* __CAM_CAPTURE_H__ */

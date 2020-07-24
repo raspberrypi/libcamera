@@ -16,12 +16,13 @@
 
 using namespace libcamera;
 
-Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config)
-	: camera_(camera), config_(config), writer_(nullptr)
+Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
+		 EventLoop *loop)
+	: camera_(camera), config_(config), writer_(nullptr), loop_(loop)
 {
 }
 
-int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
+int Capture::run(const OptionsParser::Options &options)
 {
 	int ret;
 
@@ -54,7 +55,7 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 
 	FrameBufferAllocator *allocator = new FrameBufferAllocator(camera_);
 
-	ret = capture(loop, allocator);
+	ret = capture(allocator);
 
 	if (options.isSet(OptFile)) {
 		delete writer_;
@@ -66,7 +67,7 @@ int Capture::run(EventLoop *loop, const OptionsParser::Options &options)
 	return ret;
 }
 
-int Capture::capture(EventLoop *loop, FrameBufferAllocator *allocator)
+int Capture::capture(FrameBufferAllocator *allocator)
 {
 	int ret;
 
@@ -132,7 +133,7 @@ int Capture::capture(EventLoop *loop, FrameBufferAllocator *allocator)
 	}
 
 	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
-	ret = loop->exec();
+	ret = loop_->exec();
 	if (ret)
 		std::cout << "Failed to run capture loop" << std::endl;
 

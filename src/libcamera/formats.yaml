@@ -93,6 +93,15 @@ formats:
   - SBGGR12:
       fourcc: DRM_FORMAT_SBGGR12
 
+  - SRGGB16:
+      fourcc: DRM_FORMAT_SRGGB16
+  - SGRBG16:
+      fourcc: DRM_FORMAT_SGRBG16
+  - SGBRG16:
+      fourcc: DRM_FORMAT_SGBRG16
+  - SBGGR16:
+      fourcc: DRM_FORMAT_SBGGR16
+
   - SRGGB10_CSI2P:
       fourcc: DRM_FORMAT_SRGGB10
       mod: MIPI_FORMAT_MOD_CSI2_PACKED

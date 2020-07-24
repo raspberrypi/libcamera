@@ -92,6 +92,10 @@ const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P), formats::SGBRG12_CSI2P },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P), formats::SGRBG12_CSI2P },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P), formats::SRGGB12_CSI2P },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16), formats::SBGGR16 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16), formats::SGBRG16 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16), formats::SGRBG16 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16), formats::SRGGB16 },
 
 	/* Compressed formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG), formats::MJPEG },

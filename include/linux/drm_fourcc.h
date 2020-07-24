@@ -344,6 +344,12 @@ extern "C" {
 #define DRM_FORMAT_SGBRG14	fourcc_code('G', 'B', '1', '4')
 #define DRM_FORMAT_SBGGR14	fourcc_code('B', 'G', '1', '4')
 
+/* 16-bit Bayer formats */
+#define DRM_FORMAT_SRGGB16	fourcc_code('R', 'G', 'B', '6')
+#define DRM_FORMAT_SGRBG16	fourcc_code('G', 'R', '1', '6')
+#define DRM_FORMAT_SGBRG16	fourcc_code('G', 'B', '1', '6')
+#define DRM_FORMAT_SBGGR16	fourcc_code('B', 'Y', 'R', '2')
+
 /*
  * Format Modifiers:
  *

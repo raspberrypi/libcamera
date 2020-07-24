@@ -438,6 +438,14 @@ void IPARPi::reportMetadata()
 		int32_t focusFoM = (focusStatus->focus_measures[5] + focusStatus->focus_measures[6]) / 2;
 		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
 	}
+
+	CcmStatus *ccmStatus = rpiMetadata_.GetLocked<CcmStatus>("ccm.status");
+	if (ccmStatus) {
+		float m[9];
+		for (unsigned int i = 0; i < 9; i++)
+			m[i] = ccmStatus->matrix[i];
+		libcameraMetadata_.set(controls::ColourCorrectionMatrix, m);
+	}
 }
 
 /*

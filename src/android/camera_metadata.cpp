@@ -46,6 +46,33 @@ bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count)
 	return false;
 }
 
+bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count)
+{
+	if (!valid_)
+		return false;
+
+	camera_metadata_entry_t entry;
+	int ret = find_camera_metadata_entry(metadata_, tag, &entry);
+	if (ret) {
+		const char *name = get_camera_metadata_tag_name(tag);
+		LOG(CameraMetadata, Error)
+			<< "Failed to update tag "
+			<< (name ? name : "<unknown>") << ": not present";
+		return false;
+	}
+
+	ret = update_camera_metadata_entry(metadata_, entry.index, data,
+					   count, nullptr);
+	if (ret) {
+		const char *name = get_camera_metadata_tag_name(tag);
+		LOG(CameraMetadata, Error)
+			<< "Failed to update tag " << (name ? name : "<unknown>");
+		return false;
+	}
+
+	return true;
+}
+
 camera_metadata_t *CameraMetadata::get()
 {
 	return valid_ ? metadata_ : nullptr;

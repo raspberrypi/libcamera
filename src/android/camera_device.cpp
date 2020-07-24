@@ -870,48 +870,14 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	return staticMetadata_->get();
 }
 
-/*
- * Produce a metadata pack to be used as template for a capture request.
- */
-const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
+CameraMetadata *CameraDevice::requestTemplatePreview()
 {
-	auto it = requestTemplates_.find(type);
-	if (it != requestTemplates_.end())
-		return it->second->get();
-
-	/* Use the capture intent matching the requested template type. */
-	uint8_t captureIntent;
-	switch (type) {
-	case CAMERA3_TEMPLATE_PREVIEW:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
-		break;
-	case CAMERA3_TEMPLATE_STILL_CAPTURE:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE;
-		break;
-	case CAMERA3_TEMPLATE_VIDEO_RECORD:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD;
-		break;
-	case CAMERA3_TEMPLATE_VIDEO_SNAPSHOT:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT;
-		break;
-	case CAMERA3_TEMPLATE_ZERO_SHUTTER_LAG:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG;
-		break;
-	case CAMERA3_TEMPLATE_MANUAL:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_MANUAL;
-		break;
-	default:
-		LOG(HAL, Error) << "Invalid template request type: " << type;
-		return nullptr;
-	}
-
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 12 entries, 15 bytes
 	 */
 	CameraMetadata *requestTemplate = new CameraMetadata(15, 20);
 	if (!requestTemplate->isValid()) {
-		LOG(HAL, Error) << "Failed to allocate template metadata";
 		delete requestTemplate;
 		return nullptr;
 	}
@@ -960,14 +926,58 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	requestTemplate->addEntry(ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
 				  &aberrationMode, 1);
 
+	uint8_t captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
 	requestTemplate->addEntry(ANDROID_CONTROL_CAPTURE_INTENT,
 				  &captureIntent, 1);
 
-	if (!requestTemplate->isValid()) {
+	return requestTemplate;
+}
+
+/*
+ * Produce a metadata pack to be used as template for a capture request.
+ */
+const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
+{
+	auto it = requestTemplates_.find(type);
+	if (it != requestTemplates_.end())
+		return it->second->get();
+
+	/* Use the capture intent matching the requested template type. */
+	CameraMetadata *requestTemplate;
+	uint8_t captureIntent;
+	switch (type) {
+	case CAMERA3_TEMPLATE_PREVIEW:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
+		break;
+	case CAMERA3_TEMPLATE_STILL_CAPTURE:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE;
+		break;
+	case CAMERA3_TEMPLATE_VIDEO_RECORD:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD;
+		break;
+	case CAMERA3_TEMPLATE_VIDEO_SNAPSHOT:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT;
+		break;
+	case CAMERA3_TEMPLATE_ZERO_SHUTTER_LAG:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG;
+		break;
+	case CAMERA3_TEMPLATE_MANUAL:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_MANUAL;
+		break;
+	default:
+		LOG(HAL, Error) << "Invalid template request type: " << type;
+		return nullptr;
+	}
+
+	requestTemplate = requestTemplatePreview();
+	if (!requestTemplate || !requestTemplate->isValid()) {
 		LOG(HAL, Error) << "Failed to construct request template";
 		delete requestTemplate;
 		return nullptr;
 	}
+
+	requestTemplate->updateEntry(ANDROID_CONTROL_CAPTURE_INTENT,
+				     &captureIntent, 1);
 
 	requestTemplates_[type] = requestTemplate;
 	return requestTemplate->get();

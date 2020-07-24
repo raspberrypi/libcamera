@@ -41,6 +41,8 @@ private:
 	std::chrono::steady_clock::time_point last_;
 
 	EventLoop *loop_;
+	unsigned int captureCount_;
+	unsigned int captureLimit_;
 };
 
 #endif /* __CAM_CAPTURE_H__ */

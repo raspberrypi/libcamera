@@ -167,8 +167,9 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on, by name or by index", "camera",
 			 ArgumentRequired, "camera");
-	parser.addOption(OptCapture, OptionNone,
-			 "Capture until interrupted by user", "capture");
+	parser.addOption(OptCapture, OptionInteger,
+			 "Capture until interrupted by user or until <count> frames captured",
+			 "capture", ArgumentOptional, "count");
 	parser.addOption(OptFile, OptionString,
 			 "Write captured frames to disk\n"
 			 "The first '#' character in the file name is expanded to the stream name and frame sequence number.\n"

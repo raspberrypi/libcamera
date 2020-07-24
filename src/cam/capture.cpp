@@ -18,13 +18,17 @@ using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
 		 EventLoop *loop)
-	: camera_(camera), config_(config), writer_(nullptr), loop_(loop)
+	: camera_(camera), config_(config), writer_(nullptr), loop_(loop),
+	  captureCount_(0), captureLimit_(0)
 {
 }
 
 int Capture::run(const OptionsParser::Options &options)
 {
 	int ret;
+
+	captureCount_ = 0;
+	captureLimit_ = options[OptCapture].toInteger();
 
 	if (!camera_) {
 		std::cout << "Can't capture without a camera" << std::endl;
@@ -132,7 +136,11 @@ int Capture::capture(FrameBufferAllocator *allocator)
 		}
 	}
 
-	std::cout << "Capture until user interrupts by SIGINT" << std::endl;
+	if (captureLimit_)
+		std::cout << "Capture " << captureLimit_ << " frames" << std::endl;
+	else
+		std::cout << "Capture until user interrupts by SIGINT" << std::endl;
+
 	ret = loop_->exec();
 	if (ret)
 		std::cout << "Failed to run capture loop" << std::endl;
@@ -183,6 +191,12 @@ void Capture::requestComplete(Request *request)
 	}
 
 	std::cout << info.str() << std::endl;
+
+	captureCount_++;
+	if (captureLimit_ && captureCount_ >= captureLimit_) {
+		loop_->exit(0);
+		return;
+	}
 
 	/*
 	 * Create a new request and populate it with one buffer for each

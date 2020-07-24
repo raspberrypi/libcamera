@@ -15,6 +15,7 @@
 #include <libcamera/base/private.h>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/span.h>
 
 namespace libcamera {
@@ -26,6 +27,8 @@ public:
 		MapNoOption = 0,
 		MapPrivate = (1 << 0),
 	};
+
+	using MapFlags = Flags<MapFlag>;
 
 	enum OpenMode {
 		NotOpen = 0,
@@ -57,7 +60,7 @@ public:
 	ssize_t write(const Span<const uint8_t> &data);
 
 	Span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
-			  MapFlag flags = MapNoOption);
+			  MapFlags flags = MapNoOption);
 	bool unmap(uint8_t *addr);
 
 	static bool exists(const std::string &name);

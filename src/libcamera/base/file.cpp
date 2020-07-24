@@ -53,6 +53,11 @@ LOG_DEFINE_CATEGORY(File)
  */
 
 /**
+ * \typedef File::MapFlags
+ * \brief A bitwise combination of File::MapFlag values
+ */
+
+/**
  * \enum File::OpenMode
  * \brief Mode in which a file is opened
  * \var File::NotOpen
@@ -371,7 +376,7 @@ ssize_t File::write(const Span<const uint8_t> &data)
  *
  * \return The mapped memory on success, or an empty span otherwise
  */
-Span<uint8_t> File::map(off_t offset, ssize_t size, enum File::MapFlag flags)
+Span<uint8_t> File::map(off_t offset, ssize_t size, File::MapFlags flags)
 {
 	if (!isOpen()) {
 		error_ = -EBADF;

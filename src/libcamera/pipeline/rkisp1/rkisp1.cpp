@@ -461,7 +461,7 @@ RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
-	static const std::array<PixelFormat, 8> formats{
+	static const std::array<PixelFormat, 7> formats{
 		formats::YUYV,
 		formats::YVYU,
 		formats::VYUY,

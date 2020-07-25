@@ -361,7 +361,7 @@ int MainWindow::startCapture()
 		break;
 	default:
 		if (roles.size() != 1) {
-			qWarning() << "Unsuported stream configuration";
+			qWarning() << "Unsupported stream configuration";
 			return -EINVAL;
 		}
 		break;

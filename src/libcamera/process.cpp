@@ -373,7 +373,8 @@ void Process::died(int wstatus)
  */
 void Process::kill()
 {
-	::kill(pid_, SIGKILL);
+	if (pid_ > 0)
+		::kill(pid_, SIGKILL);
 }
 
 } /* namespace libcamera */

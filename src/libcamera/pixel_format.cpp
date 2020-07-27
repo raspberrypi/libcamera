@@ -130,4 +130,15 @@ std::string PixelFormat::toString() const
 	return info.name;
 }
 
+/**
+ * \brief Create a PixelFormat from a string
+ * \return Pixel format
+ * \return The PixelFormat represented by the \a name if known, or an
+ * invalid pixel format otherwise.
+ */
+PixelFormat PixelFormat::fromString(const std::string &name)
+{
+	return PixelFormatInfo::info(name).format;
+}
+
 } /* namespace libcamera */

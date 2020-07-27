@@ -38,6 +38,8 @@ public:
 
 	std::string toString() const;
 
+	static PixelFormat fromString(const std::string &name);
+
 private:
 	uint32_t fourcc_;
 	uint64_t modifier_;

@@ -35,9 +35,9 @@ namespace libcamera {
  * multiple event types on the same file descriptor multiple notifiers must be
  * created.
  *
- * The notifier can be disabled with the setEnable() function. When the notifier
+ * The notifier can be disabled with the setEnabled() function. When the notifier
  * is disabled it ignores events and does not emit the \ref activated signal.
- * The notifier can then be re-enabled with the setEnable() function.
+ * The notifier can then be re-enabled with the setEnabled() function.
  *
  * Creating multiple notifiers of the same type for the same file descriptor is
  * not allowed and results in undefined behaviour.
@@ -90,7 +90,7 @@ EventNotifier::~EventNotifier()
  * \fn EventNotifier::enabled()
  * \brief Retrieve the notifier state
  * \return True if the notifier is enabled, or false otherwise
- * \sa setEnable()
+ * \sa setEnabled()
  */
 
 /**

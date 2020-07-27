@@ -587,6 +587,8 @@ void MainWindow::processHotplug(HotplugEvent *e)
 		/* Check if the currently-streaming camera is removed. */
 		if (camera == camera_.get()) {
 			toggleCapture(false);
+			camera_->release();
+			camera_.reset();
 			cameraCombo_->setCurrentIndex(0);
 		}
 

@@ -18,7 +18,7 @@ class ConfigurationDefault : public CameraTest, public Test
 {
 public:
 	ConfigurationDefault()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

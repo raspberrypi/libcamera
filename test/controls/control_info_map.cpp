@@ -24,7 +24,7 @@ class ControlInfoMapTest : public CameraTest, public Test
 {
 public:
 	ControlInfoMapTest()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

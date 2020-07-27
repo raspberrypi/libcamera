@@ -971,7 +971,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera =
-		Camera::create(this, sensor->name(), streams);
+		Camera::create(this, data->sensor_->id(), streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	return 0;

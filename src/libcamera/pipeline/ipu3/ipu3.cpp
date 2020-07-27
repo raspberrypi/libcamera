@@ -805,16 +805,15 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguOutputBufferReady);
 
 		/* Create and register the Camera instance. */
-		std::string cameraName = cio2->sensor()->entity()->name();
-		std::shared_ptr<Camera> camera = Camera::create(this,
-								cameraName,
-								streams);
+		std::string cameraId = cio2->sensor()->id();
+		std::shared_ptr<Camera> camera =
+			Camera::create(this, cameraId, streams);
 
 		registerCamera(std::move(camera), std::move(data));
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""
-			<< cameraName << "\""
+			<< cameraId << "\""
 			<< " connected to CSI-2 receiver " << id;
 
 		numCameras++;

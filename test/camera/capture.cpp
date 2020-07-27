@@ -18,7 +18,7 @@ class Capture : public CameraTest, public Test
 {
 public:
 	Capture()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

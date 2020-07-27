@@ -972,7 +972,8 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	streams.insert(&data->isp_[Isp::Stats]);
 
 	/* Create and register the camera. */
-	std::shared_ptr<Camera> camera = Camera::create(this, data->sensor_->model(), streams);
+	std::shared_ptr<Camera> camera =
+		Camera::create(this, data->sensor_->id(), streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	return true;

@@ -24,7 +24,7 @@ class ControlListTest : public CameraTest, public Test
 {
 public:
 	ControlListTest()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

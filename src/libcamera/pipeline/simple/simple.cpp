@@ -815,7 +815,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			continue;
 
 		std::shared_ptr<Camera> camera =
-			Camera::create(this, data->sensor_->entity()->name(),
+			Camera::create(this, data->sensor_->id(),
 				       data->streams());
 		registerCamera(std::move(camera), std::move(data));
 	}

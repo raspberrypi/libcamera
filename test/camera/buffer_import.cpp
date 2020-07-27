@@ -28,7 +28,7 @@ class BufferImportTest : public CameraTest, public Test
 {
 public:
 	BufferImportTest()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

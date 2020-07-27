@@ -18,7 +18,7 @@ class Statemachine : public CameraTest, public Test
 {
 public:
 	Statemachine()
-		: CameraTest("VIMC Sensor B")
+		: CameraTest("platform/vimc.0 Sensor B")
 	{
 	}
 

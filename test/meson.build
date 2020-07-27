@@ -18,7 +18,6 @@ subdir('v4l2_videodevice')
 
 public_tests = [
     ['geometry',                        'geometry.cpp'],
-    ['list-cameras',                    'list-cameras.cpp'],
     ['signal',                          'signal.cpp'],
     ['span',                            'span.cpp'],
 ]

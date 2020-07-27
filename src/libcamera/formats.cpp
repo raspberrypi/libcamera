@@ -704,6 +704,22 @@ const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
 }
 
 /**
+ * \brief Retrieve information about a pixel format
+ * \param[in] name The name of pixel format
+ * \return The PixelFormatInfo describing the PixelFormat matching the
+ * \a name if known, or an invalid PixelFormatInfo otherwise
+ */
+const PixelFormatInfo &PixelFormatInfo::info(const std::string &name)
+{
+	for (const auto &info : pixelFormatInfo) {
+		if (info.second.name == name)
+			return info.second;
+	}
+
+	return pixelFormatInfoInvalid;
+}
+
+/**
  * \brief Compute the stride
  * \param[in] width The width of the line, in pixels
  * \param[in] plane The index of the plane whose stride is to be computed

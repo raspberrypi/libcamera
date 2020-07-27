@@ -38,6 +38,7 @@ public:
 
 	static const PixelFormatInfo &info(const PixelFormat &format);
 	static const PixelFormatInfo &info(const V4L2PixelFormat &format);
+	static const PixelFormatInfo &info(const std::string &name);
 
 	unsigned int stride(unsigned int width, unsigned int plane,
 			    unsigned int align = 1) const;

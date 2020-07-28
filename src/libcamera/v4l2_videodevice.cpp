@@ -213,7 +213,7 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 	for (unsigned int index = 0; index < cache_.size(); index++) {
 		const Entry &entry = cache_[index];
 
-		if (!entry.free)
+		if (!entry.free_)
 			continue;
 
 		/* Try to find a cache hit by comparing the planes. */
@@ -223,9 +223,9 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 			break;
 		}
 
-		if (entry.lastUsed < oldest) {
+		if (entry.lastUsed_ < oldest) {
 			use = index;
-			oldest = entry.lastUsed;
+			oldest = entry.lastUsed_;
 		}
 	}
 
@@ -249,16 +249,16 @@ int V4L2BufferCache::get(const FrameBuffer &buffer)
 void V4L2BufferCache::put(unsigned int index)
 {
 	ASSERT(index < cache_.size());
-	cache_[index].free = true;
+	cache_[index].free_ = true;
 }
 
 V4L2BufferCache::Entry::Entry()
-	: free(true), lastUsed(0)
+	: free_(true), lastUsed_(0)
 {
 }
 
 V4L2BufferCache::Entry::Entry(bool free, uint64_t lastUsed, const FrameBuffer &buffer)
-	: free(free), lastUsed(lastUsed)
+	: free_(free), lastUsed_(lastUsed)
 {
 	for (const FrameBuffer::Plane &plane : buffer.planes())
 		planes_.emplace_back(plane);

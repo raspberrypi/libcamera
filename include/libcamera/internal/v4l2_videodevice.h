@@ -127,8 +127,8 @@ private:
 
 		bool operator==(const FrameBuffer &buffer) const;
 
-		bool free;
-		uint64_t lastUsed;
+		bool free_;
+		uint64_t lastUsed_;
 
 	private:
 		struct Plane {

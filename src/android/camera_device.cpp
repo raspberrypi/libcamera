@@ -46,6 +46,7 @@ const std::vector<Size> camera3Resolutions = {
  */
 struct Camera3Format {
 	std::vector<PixelFormat> libcameraFormats;
+	bool mandatory;
 	const char *name;
 };
 
@@ -57,11 +58,13 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 	{
 		HAL_PIXEL_FORMAT_BLOB, {
 			{ formats::MJPEG },
+			true,
 			"BLOB"
 		}
 	}, {
 		HAL_PIXEL_FORMAT_YCbCr_420_888, {
 			{ formats::NV12, formats::NV21 },
+			true,
 			"YCbCr_420_888"
 		}
 	}, {
@@ -71,6 +74,7 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 		 */
 		HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED, {
 			{ formats::NV12, formats::NV21 },
+			true,
 			"IMPLEMENTATION_DEFINED"
 		}
 	},
@@ -281,7 +285,7 @@ int CameraDevice::initializeStreamConfigurations()
 				break;
 			}
 		}
-		if (!mappedFormat.isValid()) {
+		if (camera3Format.mandatory && !mappedFormat.isValid()) {
 			LOG(HAL, Error) << "Failed to map Android format "
 					<< camera3Format.name << " ("
 					<< utils::hex(androidFormat) << ")";

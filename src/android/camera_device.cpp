@@ -1234,6 +1234,8 @@ void CameraDevice::requestComplete(Request *request)
 	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;
+	Camera3RequestDescriptor *descriptor =
+		reinterpret_cast<Camera3RequestDescriptor *>(request->cookie());
 
 	if (request->status() != Request::RequestComplete) {
 		LOG(HAL, Error) << "Request not successfully completed: "
@@ -1241,9 +1243,17 @@ void CameraDevice::requestComplete(Request *request)
 		status = CAMERA3_BUFFER_STATUS_ERROR;
 	}
 
+	/*
+	 * \todo The timestamp used for the metadata is currently always taken
+	 * from the first buffer (which may be the first stream) in the Request.
+	 * It might be appropriate to return a 'correct' (as determined by
+	 * pipeline handlers) timestamp in the Request itself.
+	 */
+	FrameBuffer *buffer = buffers.begin()->second;
+	resultMetadata = getResultMetadata(descriptor->frameNumber,
+					   buffer->metadata().timestamp);
+
 	/* Prepare to call back the Android camera stack. */
-	Camera3RequestDescriptor *descriptor =
-		reinterpret_cast<Camera3RequestDescriptor *>(request->cookie());
 
 	camera3_capture_result_t captureResult = {};
 	captureResult.frame_number = descriptor->frameNumber;
@@ -1256,21 +1266,12 @@ void CameraDevice::requestComplete(Request *request)
 	captureResult.output_buffers =
 		const_cast<const camera3_stream_buffer_t *>(descriptor->buffers);
 
-	/*
-	 * \todo The timestamp used for the metadata is currently always taken
-	 * from the first buffer (which may be the first stream) in the Request.
-	 * It might be appropriate to return a 'correct' (as determined by
-	 * pipeline handlers) timestamp in the Request itself.
-	 */
-	FrameBuffer *buffer = buffers.begin()->second;
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
 		notifyShutter(descriptor->frameNumber,
 			      buffer->metadata().timestamp);
 
 		captureResult.partial_result = 1;
-		resultMetadata = getResultMetadata(descriptor->frameNumber,
-						   buffer->metadata().timestamp);
 		captureResult.result = resultMetadata->get();
 	}
 

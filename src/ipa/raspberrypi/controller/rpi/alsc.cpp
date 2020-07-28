@@ -606,9 +606,9 @@ static double gauss_seidel2_SOR(double const M[XY][4], double omega,
 				double lambda[XY])
 {
 	double old_lambda[XY];
-	for (int i = 0; i < XY; i++)
-		old_lambda[i] = lambda[i];
 	int i;
+	for (i = 0; i < XY; i++)
+		old_lambda[i] = lambda[i];
 	lambda[0] = compute_lambda_bottom_start(0, M, lambda);
 	for (i = 1; i < X; i++)
 		lambda[i] = compute_lambda_bottom(i, M, lambda);
@@ -628,7 +628,7 @@ static double gauss_seidel2_SOR(double const M[XY][4], double omega,
 		lambda[i] = compute_lambda_bottom(i, M, lambda);
 	lambda[0] = compute_lambda_bottom_start(0, M, lambda);
 	double max_diff = 0;
-	for (int i = 0; i < XY; i++) {
+	for (i = 0; i < XY; i++) {
 		lambda[i] = old_lambda[i] + (lambda[i] - old_lambda[i]) * omega;
 		if (fabs(lambda[i] - old_lambda[i]) > fabs(max_diff))
 			max_diff = lambda[i] - old_lambda[i];

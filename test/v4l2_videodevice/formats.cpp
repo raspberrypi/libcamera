@@ -55,10 +55,10 @@ protected:
 			{ V4L2_PIX_FMT_Y16_BE, "Y16 -BE" }
 		};
 
-		for (const auto &format : formats) {
-			if (V4L2PixelFormat(format.first).toString() != format.second) {
+		for (const auto &fmt : formats) {
+			if (V4L2PixelFormat(fmt.first).toString() != fmt.second) {
 				cerr << "Failed to convert V4L2PixelFormat"
-				     << utils::hex(format.first) << "to string"
+				     << utils::hex(fmt.first) << "to string"
 				     << endl;
 				return TestFail;
 			}

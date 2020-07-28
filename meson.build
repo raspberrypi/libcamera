@@ -38,6 +38,7 @@ if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOUR
 endif
 
 common_arguments = [
+    '-Wshadow',
     '-include', 'config.h',
 ]
 

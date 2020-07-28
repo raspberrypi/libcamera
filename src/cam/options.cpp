@@ -77,7 +77,7 @@ void OptionsBase<T>::invalidate()
 
 template<typename T>
 bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
-				const char *optarg)
+				const char *arg)
 {
 	OptionValue value;
 
@@ -88,9 +88,9 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 	case OptionInteger:
 		unsigned int integer;
 
-		if (optarg) {
+		if (arg) {
 			char *endptr;
-			integer = strtoul(optarg, &endptr, 0);
+			integer = strtoul(arg, &endptr, 0);
 			if (*endptr != '\0')
 				return false;
 		} else {
@@ -101,12 +101,12 @@ bool OptionsBase<T>::parseValue(const T &opt, const Option &option,
 		break;
 
 	case OptionString:
-		value = OptionValue(optarg ? optarg : "");
+		value = OptionValue(arg ? arg : "");
 		break;
 
 	case OptionKeyValue:
 		KeyValueParser *kvParser = option.keyValueParser;
-		KeyValueParser::Options keyValues = kvParser->parse(optarg);
+		KeyValueParser::Options keyValues = kvParser->parse(arg);
 		if (!keyValues.valid())
 			return false;
 

@@ -769,16 +769,16 @@ void MainWindow::queueRequest(FrameBuffer *buffer)
 	request->addBuffer(vfStream_, buffer);
 
 	if (captureRaw_) {
-		FrameBuffer *buffer = nullptr;
+		FrameBuffer *rawBuffer = nullptr;
 
 		{
 			QMutexLocker locker(&mutex_);
 			if (!freeBuffers_[rawStream_].isEmpty())
-				buffer = freeBuffers_[rawStream_].dequeue();
+				rawBuffer = freeBuffers_[rawStream_].dequeue();
 		}
 
-		if (buffer) {
-			request->addBuffer(rawStream_, buffer);
+		if (rawBuffer) {
+			request->addBuffer(rawStream_, rawBuffer);
 			captureRaw_ = false;
 		} else {
 			qWarning() << "No free buffer available for RAW capture";

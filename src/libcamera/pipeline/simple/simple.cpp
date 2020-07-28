@@ -314,8 +314,8 @@ int SimpleCameraData::init()
 
 			config.outputSizes = converter->sizes(format.size);
 
-			for (PixelFormat format : converter->formats(pixelFormat))
-				formats_[format] = config;
+			for (PixelFormat fmt : converter->formats(pixelFormat))
+				formats_[fmt] = config;
 		}
 	}
 

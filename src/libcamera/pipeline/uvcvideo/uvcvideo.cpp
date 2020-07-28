@@ -490,8 +490,8 @@ int UVCCameraData::init(MediaDevice *media)
 	/* Locate and initialise the camera data with the default video node. */
 	const std::vector<MediaEntity *> &entities = media->entities();
 	auto entity = std::find_if(entities.begin(), entities.end(),
-				   [](MediaEntity *entity) {
-					   return entity->flags() & MEDIA_ENT_FL_DEFAULT;
+				   [](MediaEntity *e) {
+					   return e->flags() & MEDIA_ENT_FL_DEFAULT;
 				   });
 	if (entity == entities.end()) {
 		LOG(UVC, Error) << "Could not find a default video device";

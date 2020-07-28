@@ -72,11 +72,11 @@ std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
 	 * Set the format on the input side (V4L2 output) of the converter to
 	 * enumerate the conversion capabilities on its output (V4L2 capture).
 	 */
-	V4L2DeviceFormat format;
-	format.fourcc = m2m_->output()->toV4L2PixelFormat(input);
-	format.size = { 1, 1 };
+	V4L2DeviceFormat v4l2Format;
+	v4l2Format.fourcc = m2m_->output()->toV4L2PixelFormat(input);
+	v4l2Format.size = { 1, 1 };
 
-	int ret = m2m_->output()->setFormat(&format);
+	int ret = m2m_->output()->setFormat(&v4l2Format);
 	if (ret < 0) {
 		LOG(SimplePipeline, Error)
 			<< "Failed to set format: " << strerror(-ret);

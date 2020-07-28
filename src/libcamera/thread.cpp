@@ -374,7 +374,7 @@ void Thread::exit(int code)
  */
 bool Thread::wait(utils::duration duration)
 {
-	bool finished = true;
+	bool hasFinished = true;
 
 	{
 		MutexLocker locker(data_->mutex_);
@@ -382,14 +382,14 @@ bool Thread::wait(utils::duration duration)
 		if (duration == utils::duration::max())
 			data_->cv_.wait(locker, [&]() { return !data_->running_; });
 		else
-			finished = data_->cv_.wait_for(locker, duration,
-						       [&]() { return !data_->running_; });
+			hasFinished = data_->cv_.wait_for(locker, duration,
+							  [&]() { return !data_->running_; });
 	}
 
 	if (thread_.joinable())
 		thread_.join();
 
-	return finished;
+	return hasFinished;
 }
 
 /**

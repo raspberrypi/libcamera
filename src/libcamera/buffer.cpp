@@ -174,11 +174,11 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  * The intended callers of this method are buffer completion handlers that
  * need to associate a buffer to the request it belongs to.
  *
- * A Buffer is associated to a request by Request::addBuffer() and the
+ * A FrameBuffer is associated to a request by Request::addBuffer() and the
  * association is valid until the buffer completes. The returned request
  * pointer is valid only during that interval.
  *
- * \return The Request the Buffer belongs to, or nullptr if the buffer is
+ * \return The Request the FrameBuffer belongs to, or nullptr if the buffer is
  * not associated with a request
  */
 
@@ -224,7 +224,7 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 
 /**
  * \brief Copy the contents from another buffer
- * \param[in] src Buffer to copy
+ * \param[in] src FrameBuffer to copy
  *
  * Copy the buffer contents and metadata from \a src to this buffer. The
  * destination FrameBuffer shall have the same number of planes as the source

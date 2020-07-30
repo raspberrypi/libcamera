@@ -284,4 +284,249 @@ controls:
         order in an array of 9 floating point values.
 
       size: [3x3]
+
+  - AePrecaptureTrigger:
+      type: int32_t
+      draft: true
+      description: |
+        Control for AE metering trigger. Currently identical to
+        ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER.
+
+        Whether the camera device will trigger a precapture metering sequence
+        when it processes this request.
+      enum:
+        - name: AePrecaptureTriggerIdle
+          value: 0
+          description: The trigger is idle.
+        - name: AePrecaptureTriggerStart
+          value: 1
+          description: The pre-capture AE metering is started by the camera.
+        - name: AePrecaptureTriggerCancel
+          value: 2
+          description: |
+            The camera will cancel any active or completed metering sequence.
+            The AE algorithm is reset to its initial state.
+
+  - AfTrigger:
+      type: int32_t
+      draft: true
+      description: |
+       Control for AF trigger. Currently identical to
+       ANDROID_CONTROL_AF_TRIGGER.
+
+        Whether the camera device will trigger autofocus for this request.
+      enum:
+        - name: AfTriggerIdle
+          value: 0
+          description: The trigger is idle.
+        - name: AfTriggerStart
+          value: 1
+          description: The AF routine is started by the camera.
+        - name: AfTriggerCancel
+          value: 2
+          description: |
+            The camera will cancel any active trigger and the AF routine is
+            reset to its initial state.
+
+  - NoiseReductionMode:
+      type: int32_t
+      draft: true
+      description: |
+       Control to select the noise reduction algorithm mode. Currently
+       identical to ANDROID_NOISE_REDUCTION_MODE.
+
+        Mode of operation for the noise reduction algorithm.
+      enum:
+        - name: NoiseReductionModeOff
+          value: 0
+          description: No noise reduction is applied
+        - name: NoiseReductionModeFast
+          value: 1
+          description: |
+            Noise reduction is applied without reducing the frame rate.
+        - name: NoiseReductionModeHighQuality
+          value: 2
+          description: |
+            High quality noise reduction at the expense of frame rate.
+        - name: NoiseReductionModeMinimal
+          value: 3
+          description: |
+            Minimal noise reduction is applied without reducing the frame rate.
+        - name: NoiseReductionModeZSL
+          value: 4
+          description: |
+            Noise reduction is applied at different levels to different streams.
+
+  - ColorCorrectionAberrationMode:
+      type: int32_t
+      draft: true
+      description: |
+       Control to select the color correction aberration mode. Currently
+       identical to ANDROID_COLOR_CORRECTION_ABERRATION_MODE.
+
+        Mode of operation for the chromatic aberration correction algorithm.
+      enum:
+        - name: ColorCorrectionAberrationOff
+          value: 0
+          description: No aberration correction is applied.
+        - name: ColorCorrectionAberrationFast
+          value: 1
+          description: Aberration correction will not slow down the frame rate.
+        - name: ColorCorrectionAberrationHighQuality
+          value: 2
+          description: |
+            High quality aberration correction which might reduce the frame
+            rate.
+
+  - AeState:
+      type: int32_t
+      draft: true
+      description: |
+       Control to report the current AE algorithm state. Currently identical to
+       ANDROID_CONTROL_AE_STATE.
+
+        Current state of the AE algorithm.
+      enum:
+        - name: AeStateInactive
+          value: 0
+          description: The AE algorithm is inactive.
+        - name: AeStateSearching
+          value: 1
+          description: The AE algorithm has not converged yet.
+        - name: AeStateConverged
+          value: 2
+          description: The AE algorithm has converged.
+        - name: AeStateLocked
+          value: 3
+          description: The AE algorithm is locked.
+        - name: AeStateFlashRequired
+          value: 4
+          description: The AE algorithm would need a flash for good results
+        - name: AeStatePrecapture
+          value: 5
+          description: |
+            The AE algorithm has started a pre-capture metering session.
+            \sa AePrecaptureTrigger
+
+  - AfState:
+      type: int32_t
+      draft: true
+      description: |
+       Control to report the current AF algorithm state. Currently identical to
+       ANDROID_CONTROL_AF_STATE.
+
+        Current state of the AF algorithm.
+      enum:
+        - name: AfStateInactive
+          value: 0
+          description: The AF algorithm is inactive.
+        - name: AfStatePassiveScan
+          value: 1
+          description: |
+            AF is performing a passive scan of the scene in continuous
+            auto-focus mode.
+        - name: AfStatePassiveFocused
+          value: 2
+          description: |
+            AF believes the scene is in focus, but might restart scanning.
+        - name: AfStateActiveScan
+          value: 3
+          description: |
+            AF is performing a scan triggered by an AF trigger request.
+            \sa AfTrigger
+        - name: AfStateFocusedLock
+          value: 4
+          description: |
+            AF believes has focused correctly and has locked focus.
+        - name: AfStateNotFocusedLock
+          value: 5
+          description: |
+            AF has not been able to focus and has locked.
+        - name: AfStatePassiveUnfocused
+          value: 6
+          description: |
+            AF has completed a passive scan without finding focus.
+
+  - AwbState:
+      type: int32_t
+      draft: true
+      description: |
+       Control to report the current AWB algorithm state. Currently identical
+       to ANDROID_CONTROL_AWB_STATE.
+
+        Current state of the AWB algorithm.
+      enum:
+        - name: AwbStateInactive
+          value: 0
+          description: The AWB algorithm is inactive.
+        - name: AwbStateSearching
+          value: 1
+          description: The AWB algorithm has not converged yet.
+        - name: AwbConverged
+          value: 2
+          description: The AWB algorithm has converged.
+        - name: AwbLocked
+          value: 3
+          description: The AWB algorithm is locked.
+
+  - SensorTimestamp:
+      type: int64_t
+      draft: true
+      description: |
+       Control to report the start of exposure of the first row of the captured
+       image. Currently identical to ANDROID_SENSOR_TIMESTAMP.
+
+  - SensorRollingShutterSkew:
+      type: int64_t
+      draft: true
+      description: |
+       Control to report the time between the start of exposure of the first
+       row and the start of exposure of the last row. Currently identical to
+       ANDROID_SENSOR_ROLLING_SHUTTER_SKEW
+
+  - LensShadingMapMode:
+      type: int32_t
+      draft: true
+      description: |
+       Control to report if the lens shading map is available. Currently
+       identical to ANDROID_STATISTICS_LENS_SHADING_MAP_MODE.
+      enum:
+        - name: LensShadingMapModeOff
+          value: 0
+          description: No lens shading map mode is available.
+        - name: LensShadingMapModeOn
+          value: 1
+          description: The lens shading map mode is available.
+
+  - SceneFlicker:
+      type: int32_t
+      draft: true
+      description: |
+       Control to report the detected scene light frequency. Currently
+       identical to ANDROID_STATISTICS_SCENE_FLICKER.
+      enum:
+        - name: SceneFickerOff
+          value: 0
+          description: No flickering detected.
+        - name: SceneFicker50Hz
+          value: 1
+          description: 50Hz flickering detected.
+        - name: SceneFicker60Hz
+          value: 2
+          description: 60Hz flickering detected.
+
+  - PipelineDepth:
+      type: int32_t
+      draft: true
+      description: |
+        Specifies the number of pipeline stages the frame went through from when
+        it was exposed to when the final completed result was available to the
+        framework. Always less than or equal to PipelineMaxDepth. Currently
+        identical to ANDROID_REQUEST_PIPELINE_DEPTH.
+
+        The typical value for this control is 3 as a frame is first exposed,
+        captured and then processed in a single pass through the ISP. Any
+        additional processing step performed after the ISP pass (in example face
+        detection, additional format conversions etc) count as an additional
+        pipeline stage.
 ...

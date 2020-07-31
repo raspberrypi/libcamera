@@ -552,25 +552,42 @@ void Thread::removeMessages(Object *receiver)
 }
 
 /**
- * \brief Dispatch all posted messages for this thread
+ * \brief Dispatch posted messages for this thread
+ * \param[in] type The message type
+ *
+ * This function immediately dispatches all the messages previously posted for
+ * this thread with postMessage() that match the message \a type. If the \a type
+ * is Message::Type::None, all messages are dispatched.
  */
-void Thread::dispatchMessages()
+void Thread::dispatchMessages(Message::Type type)
 {
 	MutexLocker locker(data_->messages_.mutex_);
 
-	while (!data_->messages_.list_.empty()) {
-		std::unique_ptr<Message> msg = std::move(data_->messages_.list_.front());
-		data_->messages_.list_.pop_front();
-		if (!msg)
+	std::list<std::unique_ptr<Message>> &messages = data_->messages_.list_;
+
+	for (auto iter = messages.begin(); iter != messages.end(); ) {
+		std::unique_ptr<Message> &msg = *iter;
+
+		if (!msg) {
+			iter = data_->messages_.list_.erase(iter);
 			continue;
+		}
 
-		Object *receiver = msg->receiver_;
+		if (type != Message::Type::None && msg->type() != type) {
+			++iter;
+			continue;
+		}
+
+		std::unique_ptr<Message> message = std::move(msg);
+		iter = data_->messages_.list_.erase(iter);
+
+		Object *receiver = message->receiver_;
 		ASSERT(data_ == receiver->thread()->data_);
-
 		receiver->pendingMessages_--;
 
 		locker.unlock();
-		receiver->message(msg.get());
+		receiver->message(message.get());
+		message.reset();
 		locker.lock();
 	}
 }

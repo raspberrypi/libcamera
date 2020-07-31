@@ -14,6 +14,7 @@
 
 #include <libcamera/signal.h>
 
+#include "libcamera/internal/message.h"
 #include "libcamera/internal/utils.h"
 
 namespace libcamera {
@@ -47,7 +48,7 @@ public:
 	EventDispatcher *eventDispatcher();
 	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 
-	void dispatchMessages();
+	void dispatchMessages(Message::Type type = Message::Type::None);
 
 protected:
 	int exec();

@@ -33,6 +33,7 @@ internal_tests = [
     ['hotplug-cameras',                 'hotplug-cameras.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
+    ['object-delete',                   'object-delete.cpp'],
     ['object-invoke',                   'object-invoke.cpp'],
     ['pixel-format',                    'pixel-format.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],

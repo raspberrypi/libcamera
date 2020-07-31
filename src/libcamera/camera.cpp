@@ -464,7 +464,7 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 	struct Deleter : std::default_delete<Camera> {
 		void operator()(Camera *camera)
 		{
-			delete camera;
+			camera->deleteLater();
 		}
 	};
 

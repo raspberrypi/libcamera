@@ -164,9 +164,13 @@ void CameraManager::Private::cleanup()
 
 	/*
 	 * Release all references to cameras to ensure they all get destroyed
-	 * before the device enumerator deletes the media devices.
+	 * before the device enumerator deletes the media devices. Cameras are
+	 * destroyed via Object::deleteLater() API, hence we need to explicitly
+	 * process deletion requests from the thread's message queue as the event
+	 * loop is not in action here.
 	 */
 	cameras_.clear();
+	dispatchMessages(Message::Type::DeferredDelete);
 
 	enumerator_.reset(nullptr);
 }

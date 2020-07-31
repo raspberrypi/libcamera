@@ -73,6 +73,10 @@ Object::Object(Object *parent)
  * Deleting an Object automatically disconnects all signals from the Object's
  * slots. All the Object's children are made orphan, but stay bound to their
  * current thread.
+ *
+ * Object instances shall be destroyed from the thread they are bound to,
+ * otherwise undefined behaviour may occur. If deletion of an Object needs to
+ * be scheduled from a different thread, deleteLater() shall be used.
  */
 Object::~Object()
 {
@@ -96,6 +100,46 @@ Object::~Object()
 
 	for (auto child : children_)
 		child->parent_ = nullptr;
+}
+
+/**
+ * \brief Schedule deletion of the instance in the thread it belongs to
+ *
+ * This function schedules deletion of the Object when control returns to the
+ * event loop that the object belongs to. This ensures the object is destroyed
+ * from the right context, as required by the libcamera threading model.
+ *
+ * If this function is called before the thread's event loop is started, the
+ * object will be deleted when the event loop starts.
+ *
+ * Deferred deletion can be used to control the destruction context with shared
+ * pointers. An object managed with shared pointers is deleted when the last
+ * reference is destroyed, which makes difficult to ensure through software
+ * design which context the deletion will take place in. With a custom deleter
+ * for the shared pointer using deleteLater(), the deletion can be guaranteed to
+ * happen in the thread the object is bound to.
+ *
+ * \code{.cpp}
+ * std::shared_ptr<MyObject> createObject()
+ * {
+ *     struct Deleter : std::default_delete<MyObject> {
+ *             void operator()(MyObject *obj)
+ *             {
+ *                     delete obj;
+ *             }
+ *     };
+ *
+ *     MyObject *obj = new MyObject();
+ *
+ *     return std::shared_ptr<MyObject>(obj, Deleter());
+ * }
+ * \endcode
+ *
+ * \context This function is \threadsafe.
+ */
+void Object::deleteLater()
+{
+	postMessage(std::make_unique<Message>(Message::DeferredDelete));
 }
 
 /**
@@ -143,6 +187,10 @@ void Object::message(Message *msg)
 
 		break;
 	}
+
+	case Message::DeferredDelete:
+		delete this;
+		break;
 
 	default:
 		break;

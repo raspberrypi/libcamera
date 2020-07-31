@@ -27,6 +27,8 @@ public:
 	Object(Object *parent = nullptr);
 	virtual ~Object();
 
+	void deleteLater();
+
 	void postMessage(std::unique_ptr<Message> msg);
 
 	template<typename T, typename R, typename... FuncArgs, typename... Args,

@@ -25,6 +25,7 @@ public:
 		None = 0,
 		InvokeMessage = 1,
 		ThreadMoveMessage = 2,
+		DeferredDelete = 3,
 		UserMessage = 1000,
 	};
 

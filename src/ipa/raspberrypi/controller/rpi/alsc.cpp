@@ -32,8 +32,8 @@ Alsc::~Alsc()
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		async_abort_ = true;
-		async_signal_.notify_one();
 	}
+	async_signal_.notify_one();
 	async_thread_.join();
 }
 
@@ -268,8 +268,11 @@ void Alsc::restartAsync(StatisticsPtr &stats, Metadata *image_metadata)
 	frame_phase_ = 0;
 	// copy the camera mode so it won't change during the calculations
 	async_camera_mode_ = camera_mode_;
-	async_start_ = true;
 	async_started_ = true;
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		async_start_ = true;
+	}
 	async_signal_.notify_one();
 }
 
@@ -315,7 +318,6 @@ void Alsc::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	RPI_LOG("Alsc: frame_phase " << frame_phase_);
 	if (frame_phase_ >= (int)config_.frame_period ||
 	    frame_count2_ < (int)config_.startup_frames) {
-		std::unique_lock<std::mutex> lock(mutex_);
 		if (async_started_ == false) {
 			RPI_LOG("ALSC thread starting");
 			restartAsync(stats, image_metadata);
@@ -339,8 +341,8 @@ void Alsc::asyncFunc()
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 			async_finished_ = true;
-			sync_signal_.notify_one();
 		}
+		sync_signal_.notify_one();
 	}
 }
 

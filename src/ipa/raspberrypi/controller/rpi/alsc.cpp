@@ -173,19 +173,34 @@ void Alsc::Initialise()
 		lambda_r_[i] = lambda_b_[i] = 1.0;
 }
 
+void Alsc::waitForAysncThread()
+{
+	if (async_started_) {
+		async_started_ = false;
+		std::unique_lock<std::mutex> lock(mutex_);
+		sync_signal_.wait(lock, [&] {
+			return async_finished_;
+		});
+		async_finished_ = false;
+	}
+}
+
 void Alsc::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 {
 	(void)metadata;
 
+	// Ensure the other thread isn't running while we do this.
+	waitForAysncThread();
+
 	// There's a bit of a question what we should do if the "crop" of the
-	// camera mode has changed.  Any calculation currently in flight would
-	// not be useful to the new mode, so arguably we should abort it, and
-	// generate a new table (like the "first_time" code already here).  When
-	// the crop doesn't change, we can presumably just leave things
-	// alone. For now, I think we'll just wait and see. When the crop does
-	// change, any effects should be transient, and if they're not transient
-	// enough, we'll revisit the question then.
+	// camera mode has changed. Should we effectively reset the algorithm
+	// and start over?
 	camera_mode_ = camera_mode;
+
+	// We must resample the luminance table like we do the others, but it's
+	// fixed so we can simply do it up front here.
+	resample_cal_table(config_.luminance_lut, camera_mode_, luminance_table_);
+
 	if (first_time_) {
 		// On the first time, arrange for something sensible in the
 		// initial tables. Construct the tables for some default colour
@@ -201,7 +216,7 @@ void Alsc::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 		compensate_lambdas_for_cal(cal_table_b, lambda_b_,
 					   async_lambda_b_);
 		add_luminance_to_tables(sync_results_, async_lambda_r_, 1.0,
-					async_lambda_b_, config_.luminance_lut,
+					async_lambda_b_, luminance_table_,
 					config_.luminance_strength);
 		memcpy(prev_sync_results_, sync_results_,
 		       sizeof(prev_sync_results_));
@@ -266,8 +281,6 @@ void Alsc::restartAsync(StatisticsPtr &stats, Metadata *image_metadata)
 	}
 	copy_stats(statistics_, stats, alsc_status);
 	frame_phase_ = 0;
-	// copy the camera mode so it won't change during the calculations
-	async_camera_mode_ = camera_mode_;
 	async_started_ = true;
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -672,9 +685,9 @@ void Alsc::doAlsc()
 	// Fetch the new calibrations (if any) for this CT. Resample them in
 	// case the camera mode is not full-frame.
 	get_cal_table(ct_, config_.calibrations_Cr, cal_table_tmp);
-	resample_cal_table(cal_table_tmp, async_camera_mode_, cal_table_r);
+	resample_cal_table(cal_table_tmp, camera_mode_, cal_table_r);
 	get_cal_table(ct_, config_.calibrations_Cb, cal_table_tmp);
-	resample_cal_table(cal_table_tmp, async_camera_mode_, cal_table_b);
+	resample_cal_table(cal_table_tmp, camera_mode_, cal_table_b);
 	// You could print out the cal tables for this image here, if you're
 	// tuning the algorithm...
 	(void)print_cal_table;
@@ -697,7 +710,7 @@ void Alsc::doAlsc()
 	compensate_lambdas_for_cal(cal_table_b, lambda_b_, async_lambda_b_);
 	// Fold in the luminance table at the appropriate strength.
 	add_luminance_to_tables(async_results_, async_lambda_r_, 1.0,
-				async_lambda_b_, config_.luminance_lut,
+				async_lambda_b_, luminance_table_,
 				config_.luminance_strength);
 }
 

@@ -60,10 +60,10 @@ private:
 	AlscConfig config_;
 	bool first_time_;
 	CameraMode camera_mode_;
+	double luminance_table_[ALSC_CELLS_X * ALSC_CELLS_Y];
 	std::thread async_thread_;
 	void asyncFunc(); // asynchronous thread function
 	std::mutex mutex_;
-	CameraMode async_camera_mode_;
 	// condvar for async thread to wait on
 	std::condition_variable async_signal_;
 	// condvar for synchronous thread to wait on
@@ -86,6 +86,7 @@ private:
 	int frame_count2_;
 	double sync_results_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
 	double prev_sync_results_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
+	void waitForAysncThread();
 	// The following are for the asynchronous thread to use, though the main
 	// thread can set/reset them if the async thread is known to be idle:
 	void restartAsync(StatisticsPtr &stats, Metadata *image_metadata);

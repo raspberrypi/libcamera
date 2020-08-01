@@ -59,7 +59,7 @@ private:
 	// configuration is read-only, and available to both threads
 	AlscConfig config_;
 	bool first_time_;
-	std::atomic<CameraMode> camera_mode_;
+	CameraMode camera_mode_;
 	std::thread async_thread_;
 	void asyncFunc(); // asynchronous thread function
 	std::mutex mutex_;

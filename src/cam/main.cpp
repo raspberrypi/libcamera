@@ -117,7 +117,7 @@ int CamApp::init(int argc, char **argv)
 			return -EINVAL;
 		}
 
-		std::cout << "Using camera " << camera_->name() << std::endl;
+		std::cout << "Using camera " << camera_->id() << std::endl;
 
 		ret = prepareConfig();
 		if (ret) {
@@ -174,7 +174,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
-			 "Specify which camera to operate on, by name or by index", "camera",
+			 "Specify which camera to operate on, by id or by index", "camera",
 			 ArgumentRequired, "camera");
 	parser.addOption(OptCapture, OptionInteger,
 			 "Capture until interrupted by user or until <count> frames captured",
@@ -323,12 +323,12 @@ int CamApp::infoConfiguration()
 
 void CamApp::cameraAdded(std::shared_ptr<Camera> cam)
 {
-	std::cout << "Camera Added: " << cam->name() << std::endl;
+	std::cout << "Camera Added: " << cam->id() << std::endl;
 }
 
 void CamApp::cameraRemoved(std::shared_ptr<Camera> cam)
 {
-	std::cout << "Camera Removed: " << cam->name() << std::endl;
+	std::cout << "Camera Removed: " << cam->id() << std::endl;
 }
 
 int CamApp::run()
@@ -340,7 +340,7 @@ int CamApp::run()
 
 		unsigned int index = 1;
 		for (const std::shared_ptr<Camera> &cam : cm_->cameras()) {
-			std::cout << index << ": " << cam->name() << std::endl;
+			std::cout << index << ": " << cam->id() << std::endl;
 			index++;
 		}
 	}

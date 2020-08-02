@@ -1108,7 +1108,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	int ret = camera_->configure(config_.get());
 	if (ret) {
 		LOG(HAL, Error) << "Failed to configure camera '"
-				<< camera_->name() << "'";
+				<< camera_->id() << "'";
 		return ret;
 	}
 
@@ -1276,7 +1276,7 @@ void CameraDevice::requestComplete(Request *request)
 
 std::string CameraDevice::logPrefix() const
 {
-	return "'" + camera_->name() + "'";
+	return "'" + camera_->id() + "'";
 }
 
 void CameraDevice::notifyShutter(uint32_t frameNumber, uint64_t timestamp)

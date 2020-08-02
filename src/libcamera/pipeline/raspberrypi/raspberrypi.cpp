@@ -643,7 +643,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	LOG(RPI, Info) << "Sensor: " << camera->name()
+	LOG(RPI, Info) << "Sensor: " << camera->id()
 		       << " - Selected mode: " << sensorFormat.toString();
 
 	/*
@@ -793,7 +793,7 @@ int PipelineHandlerRPi::start(Camera *camera)
 	ret = data->ipa_->start();
 	if (ret) {
 		LOG(RPI, Error)
-			<< "Failed to start IPA for " << camera->name();
+			<< "Failed to start IPA for " << camera->id();
 		stop(camera);
 		return ret;
 	}

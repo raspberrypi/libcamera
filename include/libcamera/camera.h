@@ -71,13 +71,13 @@ class Camera final : public Object, public std::enable_shared_from_this<Camera>
 {
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
-					      const std::string &name,
+					      const std::string &id,
 					      const std::set<Stream *> &streams);
 
 	Camera(const Camera &) = delete;
 	Camera &operator=(const Camera &) = delete;
 
-	const std::string &name() const;
+	const std::string &id() const;
 
 	Signal<Request *, FrameBuffer *> bufferCompleted;
 	Signal<Request *> requestCompleted;
@@ -100,7 +100,7 @@ public:
 	int stop();
 
 private:
-	Camera(PipelineHandler *pipe, const std::string &name,
+	Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams);
 	~Camera();
 

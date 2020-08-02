@@ -95,7 +95,7 @@ int FrameBufferAllocator::allocate(Stream *stream)
 	int ret = camera_->exportFrameBuffers(stream, &buffers_[stream]);
 	if (ret == -EINVAL)
 		LOG(Allocator, Error)
-			<< "Stream is not part of " << camera_->name()
+			<< "Stream is not part of " << camera_->id()
 			<< " active configuration";
 	return ret;
 }

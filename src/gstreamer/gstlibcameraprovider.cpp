@@ -127,7 +127,7 @@ static GstDevice *
 gst_libcamera_device_new(const std::shared_ptr<Camera> &camera)
 {
 	g_autoptr(GstCaps) caps = gst_caps_new_empty();
-	const gchar *name = camera->name().c_str();
+	const gchar *name = camera->id().c_str();
 	StreamRoles roles;
 
 	roles.push_back(StreamRole::VideoRecording);
@@ -189,7 +189,7 @@ gst_libcamera_provider_probe(GstDeviceProvider *provider)
 	}
 
 	for (const std::shared_ptr<Camera> &camera : cm->cameras()) {
-		GST_INFO_OBJECT(self, "Found camera '%s'", camera->name().c_str());
+		GST_INFO_OBJECT(self, "Found camera '%s'", camera->id().c_str());
 		devices = g_list_append(devices,
 					g_object_ref_sink(gst_libcamera_device_new(camera)));
 	}

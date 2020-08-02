@@ -181,10 +181,10 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 	MutexLocker locker(mutex_);
 
 	for (std::shared_ptr<Camera> c : cameras_) {
-		if (c->name() == camera->name()) {
+		if (c->id() == camera->id()) {
 			LOG(Camera, Warning)
-				<< "Registering camera with duplicate name '"
-				<< camera->name() << "'";
+				<< "Registering camera with duplicate ID '"
+				<< camera->id() << "'";
 			break;
 		}
 	}
@@ -208,7 +208,7 @@ void CameraManager::Private::removeCamera(Camera *camera)
 		return;
 
 	LOG(Camera, Debug)
-		<< "Unregistering camera '" << camera->name() << "'";
+		<< "Unregistering camera '" << camera->id() << "'";
 
 	auto iter_d = std::find_if(camerasByDevnum_.begin(), camerasByDevnum_.end(),
 				   [camera](const std::pair<dev_t, std::weak_ptr<Camera>> &p) {
@@ -329,8 +329,8 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
 }
 
 /**
- * \brief Get a camera based on name
- * \param[in] name Name of camera to get
+ * \brief Get a camera based on ID
+ * \param[in] id ID of camera to get
  *
  * Before calling this function the caller is responsible for ensuring that
  * the camera manager is running.
@@ -339,12 +339,12 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
  *
  * \return Shared pointer to Camera object or nullptr if camera not found
  */
-std::shared_ptr<Camera> CameraManager::get(const std::string &name)
+std::shared_ptr<Camera> CameraManager::get(const std::string &id)
 {
 	MutexLocker locker(p_->mutex_);
 
 	for (std::shared_ptr<Camera> camera : p_->cameras_) {
-		if (camera->name() == name)
+		if (camera->id() == id)
 			return camera;
 	}
 

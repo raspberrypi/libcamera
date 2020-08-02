@@ -265,7 +265,7 @@ public:
 		CameraRunning,
 	};
 
-	Private(PipelineHandler *pipe, const std::string &name,
+	Private(PipelineHandler *pipe, const std::string &id,
 		const std::set<Stream *> &streams);
 	~Private();
 
@@ -277,7 +277,7 @@ public:
 	void setState(State state);
 
 	std::shared_ptr<PipelineHandler> pipe_;
-	std::string name_;
+	std::string id_;
 	std::set<Stream *> streams_;
 	std::set<Stream *> activeStreams_;
 
@@ -286,9 +286,9 @@ private:
 	std::atomic<State> state_;
 };
 
-Camera::Private::Private(PipelineHandler *pipe, const std::string &name,
+Camera::Private::Private(PipelineHandler *pipe, const std::string &id,
 			 const std::set<Stream *> &streams)
-	: pipe_(pipe->shared_from_this()), name_(name), streams_(streams),
+	: pipe_(pipe->shared_from_this()), id_(id), streams_(streams),
 	  disconnected_(false), state_(CameraAvailable)
 {
 }
@@ -450,15 +450,21 @@ void Camera::Private::setState(State state)
 /**
  * \brief Create a camera instance
  * \param[in] pipe The pipeline handler responsible for the camera device
- * \param[in] name The name of the camera device
+ * \param[in] id The ID of the camera device
  * \param[in] streams Array of streams the camera provides
  *
- * The caller is responsible for guaranteeing unicity of the camera name.
+ * The caller is responsible for guaranteeing a stable and unique camera ID
+ * matching the constraints described by Camera::id(). Parameters that are
+ * allocated dynamically at system startup, such as bus numbers that may be
+ * enumerated differently, are therefore not suitable to use in the ID.
+ *
+ * Pipeline handlers that use a CameraSensor may use the CameraSensor::id() to
+ * generate an ID that satisfies the criteria of a stable and unique camera ID.
  *
  * \return A shared pointer to the newly created camera object
  */
 std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
-				       const std::string &name,
+				       const std::string &id,
 				       const std::set<Stream *> &streams)
 {
 	struct Deleter : std::default_delete<Camera> {
@@ -468,19 +474,34 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 		}
 	};
 
-	Camera *camera = new Camera(pipe, name, streams);
+	Camera *camera = new Camera(pipe, id, streams);
 
 	return std::shared_ptr<Camera>(camera, Deleter());
 }
 
 /**
- * \brief Retrieve the name of the camera
+ * \brief Retrieve the ID of the camera
+ *
+ * The camera ID is a free-form string that identifies a camera in the system.
+ * IDs are guaranteed to be unique and stable: the same camera, when connected
+ * to the system in the same way (e.g. in the same USB port), will have the same
+ * ID across both unplug/replug and system reboots.
+ *
+ * Applications may store the camera ID and use it later to acquire the same
+ * camera. They shall treat the ID as an opaque identifier, without interpreting
+ * its value.
+ *
+ * Camera IDs may change when the system hardware or firmware is modified, for
+ * instance when replacing a PCI USB controller or moving it to another PCI
+ * slot, or updating the ACPI tables or Device Tree.
+ *
  * \context This function is \threadsafe.
- * \return Name of the camera device
+ *
+ * \return ID of the camera device
  */
-const std::string &Camera::name() const
+const std::string &Camera::id() const
 {
-	return p_->name_;
+	return p_->id_;
 }
 
 /**
@@ -506,9 +527,9 @@ const std::string &Camera::name() const
  * application API calls by returning errors immediately.
  */
 
-Camera::Camera(PipelineHandler *pipe, const std::string &name,
+Camera::Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams)
-	: p_(new Private(pipe, name, streams))
+	: p_(new Private(pipe, id, streams))
 {
 }
 
@@ -530,7 +551,7 @@ Camera::~Camera()
  */
 void Camera::disconnect()
 {
-	LOG(Camera, Debug) << "Disconnecting camera " << name();
+	LOG(Camera, Debug) << "Disconnecting camera " << id();
 
 	p_->disconnect();
 	disconnected.emit(this);

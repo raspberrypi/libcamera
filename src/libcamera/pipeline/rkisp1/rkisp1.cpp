@@ -798,7 +798,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	if (ret) {
 		freeBuffers(camera);
 		LOG(RkISP1, Error)
-			<< "Failed to start IPA " << camera->name();
+			<< "Failed to start IPA " << camera->id();
 		return ret;
 	}
 
@@ -809,7 +809,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		data->ipa_->stop();
 		freeBuffers(camera);
 		LOG(RkISP1, Error)
-			<< "Failed to start parameters " << camera->name();
+			<< "Failed to start parameters " << camera->id();
 		return ret;
 	}
 
@@ -819,7 +819,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		data->ipa_->stop();
 		freeBuffers(camera);
 		LOG(RkISP1, Error)
-			<< "Failed to start statistics " << camera->name();
+			<< "Failed to start statistics " << camera->id();
 		return ret;
 	}
 
@@ -831,7 +831,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		freeBuffers(camera);
 
 		LOG(RkISP1, Error)
-			<< "Failed to start camera " << camera->name();
+			<< "Failed to start camera " << camera->id();
 	}
 
 	activeCamera_ = camera;
@@ -870,17 +870,17 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	ret = video_->streamOff();
 	if (ret)
 		LOG(RkISP1, Warning)
-			<< "Failed to stop camera " << camera->name();
+			<< "Failed to stop camera " << camera->id();
 
 	ret = stat_->streamOff();
 	if (ret)
 		LOG(RkISP1, Warning)
-			<< "Failed to stop statistics " << camera->name();
+			<< "Failed to stop statistics " << camera->id();
 
 	ret = param_->streamOff();
 	if (ret)
 		LOG(RkISP1, Warning)
-			<< "Failed to stop parameters " << camera->name();
+			<< "Failed to stop parameters " << camera->id();
 
 	data->ipa_->stop();
 

@@ -169,7 +169,7 @@ int MainWindow::createToolbars()
 		this, &MainWindow::switchCamera);
 
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameraCombo_->addItem(QString::fromStdString(cam->name()));
+		cameraCombo_->addItem(QString::fromStdString(cam->id()));
 
 	toolbar_->addWidget(cameraCombo_);
 
@@ -241,11 +241,11 @@ void MainWindow::switchCamera(int index)
 	const std::shared_ptr<Camera> &cam = cameras[index];
 
 	if (cam->acquire()) {
-		qInfo() << "Failed to acquire camera" << cam->name().c_str();
+		qInfo() << "Failed to acquire camera" << cam->id().c_str();
 		return;
 	}
 
-	qInfo() << "Switching to camera" << cam->name().c_str();
+	qInfo() << "Switching to camera" << cam->id().c_str();
 
 	/*
 	 * Stop the capture session, release the current camera, replace it with
@@ -266,19 +266,19 @@ std::string MainWindow::chooseCamera()
 
 	/* If only one camera is available, use it automatically. */
 	if (cm_->cameras().size() == 1)
-		return cm_->cameras()[0]->name();
+		return cm_->cameras()[0]->id();
 
 	/* Present a dialog box to pick a camera. */
 	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameras.append(QString::fromStdString(cam->name()));
+		cameras.append(QString::fromStdString(cam->id()));
 
-	QString name = QInputDialog::getItem(this, "Select Camera",
-					     "Camera:", cameras, 0,
-					     false, &result);
+	QString id = QInputDialog::getItem(this, "Select Camera",
+					   "Camera:", cameras, 0,
+					   false, &result);
 	if (!result)
 		return std::string();
 
-	return name.toStdString();
+	return id.toStdString();
 }
 
 int MainWindow::openCamera()
@@ -582,7 +582,7 @@ void MainWindow::processHotplug(HotplugEvent *e)
 	HotplugEvent::PlugEvent event = e->hotplugEvent();
 
 	if (event == HotplugEvent::HotPlug) {
-		cameraCombo_->addItem(QString::fromStdString(camera->name()));
+		cameraCombo_->addItem(QString::fromStdString(camera->id()));
 	} else if (event == HotplugEvent::HotUnplug) {
 		/* Check if the currently-streaming camera is removed. */
 		if (camera == camera_.get()) {
@@ -592,14 +592,14 @@ void MainWindow::processHotplug(HotplugEvent *e)
 			cameraCombo_->setCurrentIndex(0);
 		}
 
-		int camIndex = cameraCombo_->findText(QString::fromStdString(camera->name()));
+		int camIndex = cameraCombo_->findText(QString::fromStdString(camera->id()));
 		cameraCombo_->removeItem(camIndex);
 	}
 }
 
 void MainWindow::addCamera(std::shared_ptr<Camera> camera)
 {
-	qInfo() << "Adding new camera:" << camera->name().c_str();
+	qInfo() << "Adding new camera:" << camera->id().c_str();
 	QCoreApplication::postEvent(this,
 				    new HotplugEvent(std::move(camera),
 						     HotplugEvent::HotPlug));
@@ -607,7 +607,7 @@ void MainWindow::addCamera(std::shared_ptr<Camera> camera)
 
 void MainWindow::removeCamera(std::shared_ptr<Camera> camera)
 {
-	qInfo() << "Removing camera:" << camera->name().c_str();
+	qInfo() << "Removing camera:" << camera->id().c_str();
 	QCoreApplication::postEvent(this,
 				    new HotplugEvent(std::move(camera),
 						     HotplugEvent::HotUnplug));

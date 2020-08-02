@@ -106,7 +106,7 @@ int IPU3PipelineTest::run()
 {
 	auto cameras = cameraManager_->cameras();
 	for (const std::shared_ptr<Camera> &cam : cameras)
-		cout << "Found camera '" << cam->name() << "'" << endl;
+		cout << "Found camera '" << cam->id() << "'" << endl;
 
 	if (cameras.size() != sensors_) {
 		cerr << cameras.size() << " cameras registered, but " << sensors_

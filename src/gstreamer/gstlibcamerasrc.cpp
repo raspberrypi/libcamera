@@ -241,12 +241,12 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 		cam = cm->cameras()[0];
 	}
 
-	GST_INFO_OBJECT(self, "Using camera named '%s'", cam->name().c_str());
+	GST_INFO_OBJECT(self, "Using camera '%s'", cam->id().c_str());
 
 	ret = cam->acquire();
 	if (ret) {
 		GST_ELEMENT_ERROR(self, RESOURCE, BUSY,
-				  ("Camera name '%s' is already in use.", cam->name().c_str()),
+				  ("Camera '%s' is already in use.", cam->id().c_str()),
 				  ("libcamera::Camera::acquire() failed: %s", g_strerror(ret)));
 		return false;
 	}
@@ -495,7 +495,7 @@ gst_libcamera_src_close(GstLibcameraSrc *self)
 	ret = state->cam_->release();
 	if (ret) {
 		GST_ELEMENT_WARNING(self, RESOURCE, BUSY,
-				    ("Camera name '%s' is still in use.", state->cam_->name().c_str()),
+				    ("Camera '%s' is still in use.", state->cam_->id().c_str()),
 				    ("libcamera::Camera.release() failed: %s", g_strerror(-ret)));
 	}
 

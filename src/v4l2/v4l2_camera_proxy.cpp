@@ -189,7 +189,7 @@ void V4L2CameraProxy::querycap(std::shared_ptr<Camera> camera)
 
 	utils::strlcpy(reinterpret_cast<char *>(capabilities_.driver), driver.c_str(),
 		       sizeof(capabilities_.driver));
-	utils::strlcpy(reinterpret_cast<char *>(capabilities_.card), camera->name().c_str(),
+	utils::strlcpy(reinterpret_cast<char *>(capabilities_.card), camera->id().c_str(),
 		       sizeof(capabilities_.card));
 	utils::strlcpy(reinterpret_cast<char *>(capabilities_.bus_info), bus_info.c_str(),
 		       sizeof(capabilities_.bus_info));

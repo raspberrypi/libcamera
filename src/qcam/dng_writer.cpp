@@ -386,8 +386,9 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_DNGBACKWARDVERSION, version);
 	TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 	TIFFSetField(tif, TIFFTAG_MAKE, "libcamera");
-	TIFFSetField(tif, TIFFTAG_MODEL, camera->name().c_str());
-	TIFFSetField(tif, TIFFTAG_UNIQUECAMERAMODEL, camera->name().c_str());
+	/* \todo Report a real model string instead of id. */
+	TIFFSetField(tif, TIFFTAG_MODEL, camera->id().c_str());
+	TIFFSetField(tif, TIFFTAG_UNIQUECAMERAMODEL, camera->id().c_str());
 	TIFFSetField(tif, TIFFTAG_SOFTWARE, "qcam");
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 

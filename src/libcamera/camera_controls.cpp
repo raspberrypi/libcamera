@@ -36,7 +36,7 @@ CameraControlValidator::CameraControlValidator(Camera *camera)
 
 const std::string &CameraControlValidator::name() const
 {
-	return camera_->name();
+	return camera_->id();
 }
 
 /**

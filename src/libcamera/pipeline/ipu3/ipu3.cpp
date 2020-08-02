@@ -629,7 +629,7 @@ int PipelineHandlerIPU3::start(Camera *camera)
 
 error:
 	freeBuffers(camera);
-	LOG(IPU3, Error) << "Failed to start camera " << camera->name();
+	LOG(IPU3, Error) << "Failed to start camera " << camera->id();
 
 	return ret;
 }
@@ -642,8 +642,7 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	ret |= data->imgu_->stop();
 	ret |= data->cio2_.stop();
 	if (ret)
-		LOG(IPU3, Warning) << "Failed to stop camera "
-				   << camera->name();
+		LOG(IPU3, Warning) << "Failed to stop camera " << camera->id();
 
 	freeBuffers(camera);
 }

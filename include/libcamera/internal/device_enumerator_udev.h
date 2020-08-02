@@ -26,14 +26,14 @@ class EventNotifier;
 class MediaDevice;
 class MediaEntity;
 
-class DeviceEnumeratorUdev : public DeviceEnumerator
+class DeviceEnumeratorUdev final : public DeviceEnumerator
 {
 public:
 	DeviceEnumeratorUdev();
 	~DeviceEnumeratorUdev();
 
-	int init() final;
-	int enumerate() final;
+	int init();
+	int enumerate();
 
 private:
 	using DependencyMap = std::map<dev_t, std::list<MediaEntity *>>;

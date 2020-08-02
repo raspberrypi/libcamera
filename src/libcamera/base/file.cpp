@@ -45,9 +45,9 @@ LOG_DEFINE_CATEGORY(File)
 /**
  * \enum File::MapFlag
  * \brief Flags for the File::map() function
- * \var File::MapNoOption
+ * \var File::MapFlag::NoOption
  * \brief No option (used as default value)
- * \var File::MapPrivate
+ * \var File::MapFlag::Private
  * \brief The memory region is mapped as private, changes are not reflected in
  * the file constents
  */
@@ -60,13 +60,13 @@ LOG_DEFINE_CATEGORY(File)
 /**
  * \enum File::OpenModeFlag
  * \brief Mode in which a file is opened
- * \var File::NotOpen
+ * \var File::OpenModeFlag::NotOpen
  * \brief The file is not open
- * \var File::ReadOnly
+ * \var File::OpenModeFlag::ReadOnly
  * \brief The file is open for reading
- * \var File::WriteOnly
+ * \var File::OpenModeFlag::WriteOnly
  * \brief The file is open for writing
- * \var File::ReadWrite
+ * \var File::OpenModeFlag::ReadWrite
  * \brief The file is open for reading and writing
  */
 
@@ -83,7 +83,7 @@ LOG_DEFINE_CATEGORY(File)
  * before performing I/O operations.
  */
 File::File(const std::string &name)
-	: name_(name), fd_(-1), mode_(NotOpen), error_(0)
+	: name_(name), fd_(-1), mode_(OpenModeFlag::NotOpen), error_(0)
 {
 }
 
@@ -94,7 +94,7 @@ File::File(const std::string &name)
  * setFileName().
  */
 File::File()
-	: fd_(-1), mode_(NotOpen), error_(0)
+	: fd_(-1), mode_(OpenModeFlag::NotOpen), error_(0)
 {
 }
 
@@ -173,8 +173,8 @@ bool File::open(File::OpenMode mode)
 		return false;
 	}
 
-	int flags = static_cast<OpenMode::Type>(mode & ReadWrite) - 1;
-	if (mode & WriteOnly)
+	int flags = static_cast<OpenMode::Type>(mode & OpenModeFlag::ReadWrite) - 1;
+	if (mode & OpenModeFlag::WriteOnly)
 		flags |= O_CREAT;
 
 	fd_ = ::open(name_.c_str(), flags, 0666);
@@ -214,7 +214,7 @@ void File::close()
 
 	::close(fd_);
 	fd_ = -1;
-	mode_ = NotOpen;
+	mode_ = OpenModeFlag::NotOpen;
 }
 
 /**
@@ -374,8 +374,8 @@ ssize_t File::write(const Span<const uint8_t> &data)
  * offset until the end of the file.
  *
  * The mapping memory protection is controlled by the file open mode, unless \a
- * flags contains MapPrivate in which case the region is mapped in read/write
- * mode.
+ * flags contains MapFlag::Private in which case the region is mapped in
+ * read/write mode.
  *
  * The error() status is updated.
  *
@@ -398,14 +398,14 @@ Span<uint8_t> File::map(off_t offset, ssize_t size, File::MapFlags flags)
 		size -= offset;
 	}
 
-	int mmapFlags = flags & MapPrivate ? MAP_PRIVATE : MAP_SHARED;
+	int mmapFlags = flags & MapFlag::Private ? MAP_PRIVATE : MAP_SHARED;
 
 	int prot = 0;
-	if (mode_ & ReadOnly)
+	if (mode_ & OpenModeFlag::ReadOnly)
 		prot |= PROT_READ;
-	if (mode_ & WriteOnly)
+	if (mode_ & OpenModeFlag::WriteOnly)
 		prot |= PROT_WRITE;
-	if (flags & MapPrivate)
+	if (flags & MapFlag::Private)
 		prot |= PROT_WRITE;
 
 	void *map = mmap(NULL, size, prot, mmapFlags, fd_, offset);

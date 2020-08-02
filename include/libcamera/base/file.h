@@ -23,14 +23,14 @@ namespace libcamera {
 class File
 {
 public:
-	enum MapFlag {
-		MapNoOption = 0,
-		MapPrivate = (1 << 0),
+	enum class MapFlag {
+		NoOption = 0,
+		Private = (1 << 0),
 	};
 
 	using MapFlags = Flags<MapFlag>;
 
-	enum OpenModeFlag {
+	enum class OpenModeFlag {
 		NotOpen = 0,
 		ReadOnly = (1 << 0),
 		WriteOnly = (1 << 1),
@@ -62,7 +62,7 @@ public:
 	ssize_t write(const Span<const uint8_t> &data);
 
 	Span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
-			  MapFlags flags = MapNoOption);
+			  MapFlags flags = MapFlag::NoOption);
 	bool unmap(uint8_t *addr);
 
 	static bool exists(const std::string &name);
@@ -79,6 +79,9 @@ private:
 	int error_;
 	std::map<void *, size_t> maps_;
 };
+
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(File::MapFlag)
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(File::OpenModeFlag)
 
 } /* namespace libcamera */
 

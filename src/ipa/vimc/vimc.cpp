@@ -62,7 +62,7 @@ int IPAVimc::init(const IPASettings &settings)
 		<< settings.configurationFile;
 
 	File conf(settings.configurationFile);
-	if (!conf.open(File::ReadOnly)) {
+	if (!conf.open(File::OpenModeFlag::ReadOnly)) {
 		LOG(IPAVimc, Error) << "Failed to open configuration file";
 		return -EINVAL;
 	}

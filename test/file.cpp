@@ -72,7 +72,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.openMode() != File::NotOpen) {
+		if (file.openMode() != File::OpenModeFlag::NotOpen) {
 			cerr << "File has invalid open mode after construction"
 			     << endl;
 			return TestFail;
@@ -83,7 +83,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.open(File::ReadWrite)) {
+		if (file.open(File::OpenModeFlag::ReadWrite)) {
 			cerr << "Opening unnamed file succeeded" << endl;
 			return TestFail;
 		}
@@ -111,7 +111,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.openMode() != File::NotOpen) {
+		if (file.openMode() != File::OpenModeFlag::NotOpen) {
 			cerr << "Invalid file has invalid open mode after construction"
 			     << endl;
 			return TestFail;
@@ -122,7 +122,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.open(File::ReadWrite)) {
+		if (file.open(File::OpenModeFlag::ReadWrite)) {
 			cerr << "Opening invalid file succeeded" << endl;
 			return TestFail;
 		}
@@ -140,7 +140,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.openMode() != File::NotOpen) {
+		if (file.openMode() != File::OpenModeFlag::NotOpen) {
 			cerr << "Valid file has invalid open mode after construction"
 			     << endl;
 			return TestFail;
@@ -152,7 +152,7 @@ protected:
 		}
 
 		/* Test open and close. */
-		if (!file.open(File::ReadWrite)) {
+		if (!file.open(File::OpenModeFlag::ReadWrite)) {
 			cerr << "Opening file failed" << endl;
 			return TestFail;
 		}
@@ -162,7 +162,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.openMode() != File::ReadWrite) {
+		if (file.openMode() != File::OpenModeFlag::ReadWrite) {
 			cerr << "Open file has invalid open mode" << endl;
 			return TestFail;
 		}
@@ -174,7 +174,7 @@ protected:
 			return TestFail;
 		}
 
-		if (file.openMode() != File::NotOpen) {
+		if (file.openMode() != File::OpenModeFlag::NotOpen) {
 			cerr << "Closed file has invalid open mode" << endl;
 			return TestFail;
 		}
@@ -187,7 +187,7 @@ protected:
 			return TestFail;
 		}
 
-		file.open(File::ReadOnly);
+		file.open(File::OpenModeFlag::ReadOnly);
 
 		ssize_t size = file.size();
 		if (size <= 0) {
@@ -205,12 +205,12 @@ protected:
 			return TestFail;
 		}
 
-		if (file.open(File::ReadOnly)) {
+		if (file.open(File::OpenModeFlag::ReadOnly)) {
 			cerr << "Read-only open succeeded on nonexistent file" << endl;
 			return TestFail;
 		}
 
-		if (!file.open(File::WriteOnly)) {
+		if (!file.open(File::OpenModeFlag::WriteOnly)) {
 			cerr << "Write-only open failed on nonexistent file" << endl;
 			return TestFail;
 		}
@@ -238,7 +238,7 @@ protected:
 			return TestFail;
 		}
 
-		file.open(File::ReadOnly);
+		file.open(File::OpenModeFlag::ReadOnly);
 
 		if (file.write(buffer) >= 0) {
 			cerr << "Write succeeded on read-only file" << endl;
@@ -247,7 +247,7 @@ protected:
 
 		file.close();
 
-		file.open(File::ReadWrite);
+		file.open(File::OpenModeFlag::ReadWrite);
 
 		if (file.write({ buffer.data(), 9 }) != 9) {
 			cerr << "Write test failed" << endl;
@@ -278,7 +278,7 @@ protected:
 
 		/* Test mapping and unmapping. */
 		file.setFileName("/proc/self/exe");
-		file.open(File::ReadOnly);
+		file.open(File::OpenModeFlag::ReadOnly);
 
 		Span<uint8_t> data = file.map();
 		if (data.empty()) {
@@ -316,9 +316,9 @@ protected:
 
 		/* Test private mapping. */
 		file.setFileName(fileName_);
-		file.open(File::ReadWrite);
+		file.open(File::OpenModeFlag::ReadWrite);
 
-		data = file.map(0, -1, File::MapPrivate);
+		data = file.map(0, -1, File::MapFlag::Private);
 		if (data.empty()) {
 			cerr << "Private mapping failed" << endl;
 			return TestFail;

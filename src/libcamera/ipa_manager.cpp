@@ -285,7 +285,7 @@ bool IPAManager::isSignatureValid([[maybe_unused]] IPAModule *ipa) const
 	}
 
 	File file{ ipa->path() };
-	if (!file.open(File::ReadOnly))
+	if (!file.open(File::OpenModeFlag::ReadOnly))
 		return false;
 
 	Span<uint8_t> data = file.map();

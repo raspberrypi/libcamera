@@ -275,7 +275,7 @@ IPAModule::~IPAModule()
 int IPAModule::loadIPAModuleInfo()
 {
 	File file{ libPath_ };
-	if (!file.open(File::ReadOnly)) {
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
 		LOG(IPAModule, Error) << "Failed to open IPA library: "
 				      << strerror(-file.error());
 		return file.error();
@@ -317,13 +317,13 @@ int IPAModule::loadIPAModuleInfo()
 
 	/* Load the signature. Failures are not fatal. */
 	File sign{ libPath_ + ".sign" };
-	if (!sign.open(File::ReadOnly)) {
+	if (!sign.open(File::OpenModeFlag::ReadOnly)) {
 		LOG(IPAModule, Debug)
 			<< "IPA module " << libPath_ << " is not signed";
 		return 0;
 	}
 
-	data = sign.map(0, -1, File::MapPrivate);
+	data = sign.map(0, -1, File::MapFlag::Private);
 	signature_.resize(data.size());
 	memcpy(signature_.data(), data.data(), data.size());
 

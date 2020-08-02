@@ -27,7 +27,7 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(DeviceEnumerator)
 
 DeviceEnumeratorUdev::DeviceEnumeratorUdev()
-	: udev_(nullptr)
+	: udev_(nullptr), monitor_(nullptr), notifier_(nullptr)
 {
 }
 

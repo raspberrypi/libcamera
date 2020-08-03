@@ -107,22 +107,23 @@ int CamApp::init(int argc, char **argv)
 			std::cout << "Camera "
 				  << std::string(options_[OptCamera])
 				  << " not found" << std::endl;
-			cm_->stop();
+			cleanup();
 			return -ENODEV;
 		}
 
 		if (camera_->acquire()) {
 			std::cout << "Failed to acquire camera" << std::endl;
-			camera_.reset();
-			cm_->stop();
+			cleanup();
 			return -EINVAL;
 		}
 
 		std::cout << "Using camera " << camera_->name() << std::endl;
 
 		ret = prepareConfig();
-		if (ret)
+		if (ret) {
+			cleanup();
 			return ret;
+		}
 	}
 
 	if (options_.isSet(OptMonitor)) {

@@ -7,10 +7,12 @@
 
 #include "libcamera/internal/sysfs.h"
 
+#include <fstream>
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
+#include "libcamera/internal/file.h"
 #include "libcamera/internal/log.h"
 
 /**
@@ -45,6 +47,62 @@ std::string charDevPath(const std::string &deviceNode)
 	dev << major(st.st_rdev) << ":" << minor(st.st_rdev);
 
 	return dev.str();
+}
+
+/**
+ * \brief Retrieve the path of the firmware node for a device
+ * \param[in] device Path in sysfs to search
+ *
+ * Physical devices in a system are described by the system firmware. Depending
+ * on the type of platform, devices are identified using different naming
+ * schemes. The Linux kernel abstract those differences with "firmware nodes".
+ * This function retrieves the firmware node path corresponding to the
+ * \a device.
+ *
+ * For DT-based systems, the path is the full name of the DT node that
+ * represents the device. For ACPI-based systems, the path is the absolute
+ * namespace path to the ACPI object that represents the device. In both cases,
+ * the path is guaranteed to be unique and persistent as long as the system
+ * firmware is not modified.
+ *
+ * \return The firmware node path on success or an empty string on failure
+ */
+std::string firmwareNodePath(const std::string &device)
+{
+	std::string fwPath, node;
+
+	/* Lookup for DT-based systems */
+	node = device + "/of_node";
+	if (File::exists(node)) {
+		char *ofPath = realpath(node.c_str(), nullptr);
+		if (!ofPath)
+			return {};
+
+		static const char prefix[] = "/sys/firmware/devicetree";
+		if (strncmp(ofPath, prefix, strlen(prefix)) == 0)
+			fwPath = ofPath + strlen(prefix);
+		else
+			fwPath = ofPath;
+
+		free(ofPath);
+
+		return fwPath;
+	}
+
+	/* Lookup for ACPI-based systems */
+	node = device + "/firmware_node/path";
+	if (File::exists(node)) {
+		std::ifstream file(node);
+		if (!file.is_open())
+			return {};
+
+		std::getline(file, fwPath);
+		file.close();
+
+		return fwPath;
+	}
+
+	return {};
 }
 
 } /* namespace sysfs */

@@ -15,6 +15,8 @@ namespace sysfs {
 
 std::string charDevPath(const std::string &deviceNode);
 
+std::string firmwareNodePath(const std::string &device);
+
 } /* namespace sysfs */
 
 } /* namespace libcamera */

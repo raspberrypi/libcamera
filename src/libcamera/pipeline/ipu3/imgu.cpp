@@ -7,8 +7,8 @@
 
 #include "imgu.h"
 
+#include <cmath>
 #include <limits>
-#include <math.h>
 
 #include <linux/media-bus-format.h>
 

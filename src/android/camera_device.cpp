@@ -1220,7 +1220,7 @@ void CameraDevice::requestComplete(Request *request)
 	std::unique_ptr<CameraMetadata> resultMetadata;
 
 	if (request->status() != Request::RequestComplete) {
-		LOG(HAL, Error) << "Request not succesfully completed: "
+		LOG(HAL, Error) << "Request not successfully completed: "
 				<< request->status();
 		status = CAMERA3_BUFFER_STATUS_ERROR;
 	}

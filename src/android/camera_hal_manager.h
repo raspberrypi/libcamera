@@ -31,8 +31,6 @@ public:
 	int getCameraInfo(unsigned int id, struct camera_info *info);
 
 private:
-	camera_metadata_t *getStaticMetadata(unsigned int id);
-
 	libcamera::CameraManager *cameraManager_;
 
 	std::vector<std::unique_ptr<CameraDevice>> cameras_;

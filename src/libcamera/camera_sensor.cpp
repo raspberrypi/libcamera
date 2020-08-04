@@ -291,6 +291,16 @@ int CameraSensor::init()
  */
 
 /**
+ * \fn CameraSensor::id()
+ * \brief Retrieve the sensor ID
+ *
+ * The sensor ID is a free-form string that uniquely identifies the sensor in
+ * the system. The ID satisfies the requirements to be used as a camera ID.
+ *
+ * \return The sensor ID
+ */
+
+/**
  * \fn CameraSensor::entity()
  * \brief Retrieve the sensor media entity
  * \return The sensor media entity

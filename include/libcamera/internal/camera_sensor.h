@@ -47,6 +47,7 @@ public:
 	int init();
 
 	const std::string &model() const { return model_; }
+	const std::string &id() const { return id_; }
 	const MediaEntity *entity() const { return entity_; }
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> &sizes() const { return sizes_; }

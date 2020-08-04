@@ -14,7 +14,7 @@
 using namespace libcamera;
 
 /*
- * Translatation layer between the Android Camera HAL device operations and the
+ * Translation layer between the Android Camera HAL device operations and the
  * CameraDevice.
  */
 

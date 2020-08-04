@@ -25,6 +25,7 @@ libcamera_internal_headers = files([
     'process.h',
     'pub_key.h',
     'semaphore.h',
+    'sysfs.h',
     'thread.h',
     'utils.h',
     'v4l2_controls.h',

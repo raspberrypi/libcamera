@@ -31,6 +31,7 @@ internal_tests = [
     ['file',                            'file.cpp'],
     ['file-descriptor',                 'file-descriptor.cpp'],
     ['hotplug-cameras',                 'hotplug-cameras.cpp'],
+    ['mapped-buffer',                   'mapped-buffer.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
     ['object-delete',                   'object-delete.cpp'],

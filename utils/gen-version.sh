@@ -26,7 +26,7 @@ if [ -z "$build_dir" ] || (echo "$build_dir" | grep -q "$src_dir")
 then
 	git update-index --refresh > /dev/null 2>&1
 fi
-git diff-index --quiet HEAD || version="$version-dirty"
+git diff-index --quiet HEAD || version="$version-dirty ($(date --iso-8601=seconds))"
 
 # Replace first '-' with a '+' to denote build metadata, strip the 'g' in from
 # of the git SHA1 and remove the initial 'v'.

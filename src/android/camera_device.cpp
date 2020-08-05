@@ -163,7 +163,7 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  */
 
 CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
-	: running_(false), camera_(camera), staticMetadata_(nullptr),
+	: id_(id), running_(false), camera_(camera), staticMetadata_(nullptr),
 	  facing_(CAMERA_FACING_FRONT), orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);

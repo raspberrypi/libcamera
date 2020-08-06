@@ -44,7 +44,7 @@ public:
 		delete video_;
 	}
 
-	int init(MediaEntity *entity);
+	int init(MediaDevice *media);
 	void addControl(uint32_t cid, const ControlInfo &v4l2info,
 			ControlInfoMap::Map *ctrls);
 	void bufferReady(FrameBuffer *buffer);
@@ -463,18 +463,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	std::unique_ptr<UVCCameraData> data = std::make_unique<UVCCameraData>(this);
 
-	/* Locate and initialise the camera data with the default video node. */
-	const std::vector<MediaEntity *> &entities = media->entities();
-	auto entity = std::find_if(entities.begin(), entities.end(),
-				   [](MediaEntity *entity) {
-					   return entity->flags() & MEDIA_ENT_FL_DEFAULT;
-				   });
-	if (entity == entities.end()) {
-		LOG(UVC, Error) << "Could not find a default video device";
-		return false;
-	}
-
-	if (data->init(*entity))
+	if (data->init(media))
 		return false;
 
 	/* Create and register the camera. */
@@ -494,12 +483,23 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-int UVCCameraData::init(MediaEntity *entity)
+int UVCCameraData::init(MediaDevice *media)
 {
 	int ret;
 
+	/* Locate and initialise the camera data with the default video node. */
+	const std::vector<MediaEntity *> &entities = media->entities();
+	auto entity = std::find_if(entities.begin(), entities.end(),
+				   [](MediaEntity *entity) {
+					   return entity->flags() & MEDIA_ENT_FL_DEFAULT;
+				   });
+	if (entity == entities.end()) {
+		LOG(UVC, Error) << "Could not find a default video device";
+		return -ENODEV;
+	}
+
 	/* Create and open the video device. */
-	video_ = new V4L2VideoDevice(entity);
+	video_ = new V4L2VideoDevice(*entity);
 	ret = video_->open();
 	if (ret)
 		return ret;

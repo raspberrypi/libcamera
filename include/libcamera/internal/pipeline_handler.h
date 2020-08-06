@@ -68,8 +68,8 @@ public:
 	bool lock();
 	void unlock();
 
-	const ControlInfoMap &controls(Camera *camera);
-	const ControlList &properties(Camera *camera);
+	const ControlInfoMap &controls(const Camera *camera) const;
+	const ControlList &properties(const Camera *camera) const;
 
 	virtual CameraConfiguration *generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;

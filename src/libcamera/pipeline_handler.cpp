@@ -257,9 +257,9 @@ void PipelineHandler::unlock()
  * \context This function is \threadsafe.
  * \return A ControlInfoMap listing the controls support by \a camera
  */
-const ControlInfoMap &PipelineHandler::controls(Camera *camera)
+const ControlInfoMap &PipelineHandler::controls(const Camera *camera) const
 {
-	CameraData *data = cameraData(camera);
+	const CameraData *data = cameraData(camera);
 	return data->controlInfo_;
 }
 
@@ -268,9 +268,9 @@ const ControlInfoMap &PipelineHandler::controls(Camera *camera)
  * \param[in] camera The camera
  * \return A ControlList of properties supported by \a camera
  */
-const ControlList &PipelineHandler::properties(Camera *camera)
+const ControlList &PipelineHandler::properties(const Camera *camera) const
 {
-	CameraData *data = cameraData(camera);
+	const CameraData *data = cameraData(camera);
 	return data->properties_;
 }
 

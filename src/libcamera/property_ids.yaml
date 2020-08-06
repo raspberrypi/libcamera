@@ -387,6 +387,29 @@ controls:
                               |                    |
                               +--------------------+
 
+  - Model:
+      type: string
+      description: |
+        The model name shall to the extent possible describe the sensor. For
+        most devices this is the model name of the sensor. While for some
+        devices the sensor model is unavailable as the sensor or the entire
+        camera is part of a larger unit and exposed as a black-box to the
+        system. In such cases the model name of the smallest device that
+        contains the camera sensor shall be used.
+
+        The model name is not meant to be a camera name displayed to the
+        end-user, but may be combined with other camera information to create a
+        camera name.
+
+        The model name is not guaranteed to be unique in the system nor is
+        it guaranteed to be stable or have any other properties required to make
+        it a good candidate to be used as a permanent identifier of a camera.
+
+        The model name shall describe the camera in a human readable format and
+        shall be encoded in ASCII.
+
+        Example model names are 'ov5670', 'imx219' or 'Logitech Webcam C930e'.
+
   - UnitCellSize:
       type: Size
       description: |

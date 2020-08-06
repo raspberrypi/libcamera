@@ -97,6 +97,7 @@ protected:
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
 
 	CameraData *cameraData(const Camera *camera);
+	const CameraData *cameraData(const Camera *camera) const;
 
 	CameraManager *manager_;
 

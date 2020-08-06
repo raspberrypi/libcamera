@@ -602,6 +602,19 @@ CameraData *PipelineHandler::cameraData(const Camera *camera)
 }
 
 /**
+ * \brief Retrieve the pipeline-specific data associated with a Camera
+ * \param[in] camera The camera whose data to retrieve
+ * \sa cameraData()
+ * \return A const pointer to the pipeline-specific data passed to
+ * registerCamera().
+ */
+const CameraData *PipelineHandler::cameraData(const Camera *camera) const
+{
+	ASSERT(cameraData_.count(camera));
+	return cameraData_.at(camera).get();
+}
+
+/**
  * \var PipelineHandler::manager_
  * \brief The Camera manager associated with the pipeline handler
  *

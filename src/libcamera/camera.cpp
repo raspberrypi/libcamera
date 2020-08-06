@@ -658,7 +658,7 @@ int Camera::release()
  *
  * \return A ControlInfoMap listing the controls supported by the camera
  */
-const ControlInfoMap &Camera::controls()
+const ControlInfoMap &Camera::controls() const
 {
 	return p_->pipe_->controls(this);
 }
@@ -671,7 +671,7 @@ const ControlInfoMap &Camera::controls()
  *
  * \return A ControlList of properties supported by the camera
  */
-const ControlList &Camera::properties()
+const ControlList &Camera::properties() const
 {
 	return p_->pipe_->properties(this);
 }

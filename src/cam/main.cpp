@@ -45,6 +45,8 @@ private:
 	int infoConfiguration();
 	int run();
 
+	std::string const cameraName(const Camera *camera);
+
 	static CamApp *app_;
 	OptionsParser::Options options_;
 	CameraManager *cm_;
@@ -340,7 +342,7 @@ int CamApp::run()
 
 		unsigned int index = 1;
 		for (const std::shared_ptr<Camera> &cam : cm_->cameras()) {
-			std::cout << index << ": " << cam->id() << std::endl;
+			std::cout << index << ": " << cameraName(cam.get()) << std::endl;
 			index++;
 		}
 	}
@@ -376,6 +378,30 @@ int CamApp::run()
 	}
 
 	return 0;
+}
+
+std::string const CamApp::cameraName(const Camera *camera)
+{
+	const ControlList &props = camera->properties();
+	std::string name;
+
+	switch (props.get(properties::Location)) {
+	case properties::CameraLocationFront:
+		name = "Internal front camera";
+		break;
+	case properties::CameraLocationBack:
+		name = "Internal back camera";
+		break;
+	case properties::CameraLocationExternal:
+		name = "External camera";
+		if (props.contains(properties::Model))
+			name += " '" + props.get(properties::Model) + "'";
+		break;
+	}
+
+	name += " (" + camera->id() + ")";
+
+	return name;
 }
 
 void signalHandler([[maybe_unused]] int signal)

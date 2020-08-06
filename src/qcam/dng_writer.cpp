@@ -15,6 +15,7 @@
 
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
+#include <libcamera/property_ids.h>
 
 using namespace libcamera;
 
@@ -353,6 +354,8 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 		     [[maybe_unused]] const FrameBuffer *buffer,
 		     const void *data)
 {
+	const ControlList &cameraProperties = camera->properties();
+
 	const auto it = formatInfo.find(config.pixelFormat);
 	if (it == formatInfo.cend()) {
 		std::cerr << "Unsupported pixel format" << std::endl;
@@ -387,9 +390,13 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_DNGBACKWARDVERSION, version);
 	TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 	TIFFSetField(tif, TIFFTAG_MAKE, "libcamera");
-	/* \todo Report a real model string instead of id. */
-	TIFFSetField(tif, TIFFTAG_MODEL, camera->id().c_str());
-	TIFFSetField(tif, TIFFTAG_UNIQUECAMERAMODEL, camera->id().c_str());
+
+	if (cameraProperties.contains(properties::Model)) {
+		std::string model = cameraProperties.get(properties::Model);
+		TIFFSetField(tif, TIFFTAG_MODEL, model.c_str());
+		/* \todo set TIFFTAG_UNIQUECAMERAMODEL. */
+	}
+
 	TIFFSetField(tif, TIFFTAG_SOFTWARE, "qcam");
 	TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 

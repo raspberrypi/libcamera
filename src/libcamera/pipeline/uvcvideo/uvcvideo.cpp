@@ -511,6 +511,7 @@ int UVCCameraData::init(MediaDevice *media)
 	 * Until then, treat all UVC cameras as external.
 	 */
 	properties_.set(properties::Location, properties::CameraLocationExternal);
+	properties_.set(properties::Model, utils::toAscii(media->model()));
 
 	/* Initialise the supported controls. */
 	ControlInfoMap::Map ctrls;

@@ -95,13 +95,13 @@ int CamApp::init(int argc, char **argv)
 	}
 
 	if (options_.isSet(OptCamera)) {
-		const std::string &cameraName = options_[OptCamera];
+		const std::string &cameraId = options_[OptCamera];
 		char *endptr;
-		unsigned long index = strtoul(cameraName.c_str(), &endptr, 10);
+		unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
 		if (*endptr == '\0' && index > 0 && index <= cm_->cameras().size())
 			camera_ = cm_->cameras()[index - 1];
 		else
-			camera_ = cm_->get(cameraName);
+			camera_ = cm_->get(cameraId);
 
 		if (!camera_) {
 			std::cout << "Camera "

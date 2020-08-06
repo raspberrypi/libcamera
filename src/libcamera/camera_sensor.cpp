@@ -200,6 +200,8 @@ int CameraSensor::init()
 	else
 		model_ = entityName;
 
+	properties_.set(properties::Model, utils::toAscii(model_));
+
 	/* Create and open the subdev. */
 	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
 	int ret = subdev_->open();

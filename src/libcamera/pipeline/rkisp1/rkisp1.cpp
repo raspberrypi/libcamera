@@ -582,7 +582,13 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 	if (roles.empty())
 		return config;
 
-	StreamConfiguration cfg{};
+	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+	for (const PixelFormat &format : RKISP1_RSZ_MP_FORMATS)
+		streamFormats[format] =
+			{ { RKISP1_RSZ_MP_SRC_MIN, data->sensor_->resolution() } };
+
+	StreamFormats formats(streamFormats);
+	StreamConfiguration cfg(formats);
 	cfg.pixelFormat = formats::NV12;
 	cfg.size = data->sensor_->resolution();
 

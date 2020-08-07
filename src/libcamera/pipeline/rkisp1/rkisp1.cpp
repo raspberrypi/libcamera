@@ -629,6 +629,11 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
+	Rectangle rect(0, 0, format.size);
+	ret = isp_->setSelection(0, V4L2_SEL_TGT_CROP, &rect);
+	if (ret < 0)
+		return ret;
+
 	LOG(RkISP1, Debug) << "ISP input pad configured with " << format.toString();
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */

@@ -208,6 +208,17 @@ controls:
           value: 7
           description: Maximum allowed value (place any new values above here).
 
+  - AwbLocked:
+      type: bool
+      description: |
+        Report the lock status of a running AWB algorithm.
+
+        If the AWB algorithm is locked the value shall be set to true, if it's
+        converging it shall be set to false. If the AWB algorithm is not
+        running the control shall not be present in the metadata control list.
+
+        \sa AwbEnable
+
   - ColourGains:
       type: float
       description: |

@@ -51,7 +51,7 @@ protected:
 		completeRequestsCount_++;
 
 		/* Create a new request. */
-		Stream *stream = buffers.begin()->first;
+		const Stream *stream = buffers.begin()->first;
 		FrameBuffer *buffer = buffers.begin()->second;
 
 		request = camera_->createRequest();

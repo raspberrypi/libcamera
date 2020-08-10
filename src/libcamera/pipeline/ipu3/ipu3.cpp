@@ -663,7 +663,7 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Queue all buffers from the request aimed for the ImgU. */
 	for (auto it : request->buffers()) {
-		Stream *stream = static_cast<Stream *>(it.first);
+		const Stream *stream = it.first;
 		FrameBuffer *buffer = it.second;
 		int ret;
 

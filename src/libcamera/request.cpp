@@ -127,7 +127,7 @@ Request::~Request()
  * \retval -EEXIST The request already contains a buffer for the stream
  * \retval -EINVAL The buffer does not reference a valid Stream
  */
-int Request::addBuffer(Stream *stream, FrameBuffer *buffer)
+int Request::addBuffer(const Stream *stream, FrameBuffer *buffer)
 {
 	if (!stream) {
 		LOG(Request, Error) << "Invalid stream reference";
@@ -162,9 +162,9 @@ int Request::addBuffer(Stream *stream, FrameBuffer *buffer)
  * \return The buffer associated with the stream, or nullptr if the stream is
  * not part of this request
  */
-FrameBuffer *Request::findBuffer(Stream *stream) const
+FrameBuffer *Request::findBuffer(const Stream *stream) const
 {
-	auto it = bufferMap_.find(stream);
+	const auto it = bufferMap_.find(stream);
 	if (it == bufferMap_.end())
 		return nullptr;
 

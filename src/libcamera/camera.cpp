@@ -279,7 +279,7 @@ public:
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::string id_;
 	std::set<Stream *> streams_;
-	std::set<Stream *> activeStreams_;
+	std::set<const Stream *> activeStreams_;
 
 private:
 	bool disconnected_;
@@ -889,7 +889,7 @@ int Camera::queueRequest(Request *request)
 	}
 
 	for (auto const &it : request->buffers()) {
-		Stream *stream = it.first;
+		const Stream *stream = it.first;
 
 		if (p_->activeStreams_.find(stream) == p_->activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";

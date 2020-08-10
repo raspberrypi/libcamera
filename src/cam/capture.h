@@ -36,7 +36,7 @@ private:
 	std::shared_ptr<libcamera::Camera> camera_;
 	libcamera::CameraConfiguration *config_;
 
-	std::map<libcamera::Stream *, std::string> streamName_;
+	std::map<const libcamera::Stream *, std::string> streamName_;
 	BufferWriter *writer_;
 	std::chrono::steady_clock::time_point last_;
 

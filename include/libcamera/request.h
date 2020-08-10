@@ -31,7 +31,7 @@ public:
 		RequestCancelled,
 	};
 
-	using BufferMap = std::map<Stream *, FrameBuffer *>;
+	using BufferMap = std::map<const Stream *, FrameBuffer *>;
 
 	Request(Camera *camera, uint64_t cookie = 0);
 	Request(const Request &) = delete;
@@ -41,8 +41,8 @@ public:
 	ControlList &controls() { return *controls_; }
 	ControlList &metadata() { return *metadata_; }
 	const BufferMap &buffers() const { return bufferMap_; }
-	int addBuffer(Stream *stream, FrameBuffer *buffer);
-	FrameBuffer *findBuffer(Stream *stream) const;
+	int addBuffer(const Stream *stream, FrameBuffer *buffer);
+	FrameBuffer *findBuffer(const Stream *stream) const;
 
 	uint64_t cookie() const { return cookie_; }
 	Status status() const { return status_; }

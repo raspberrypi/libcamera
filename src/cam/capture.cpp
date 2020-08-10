@@ -169,7 +169,7 @@ void Capture::requestComplete(Request *request)
 	info << "fps: " << std::fixed << std::setprecision(2) << fps;
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		Stream *stream = it->first;
+		const Stream *stream = it->first;
 		FrameBuffer *buffer = it->second;
 		const std::string &name = streamName_[stream];
 
@@ -209,7 +209,7 @@ void Capture::requestComplete(Request *request)
 	}
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		Stream *stream = it->first;
+		const Stream *stream = it->first;
 		FrameBuffer *buffer = it->second;
 
 		request->addBuffer(stream, buffer);

@@ -126,7 +126,7 @@ private:
 	bool captureRaw_;
 	Stream *vfStream_;
 	Stream *rawStream_;
-	std::map<Stream *, QQueue<FrameBuffer *>> freeBuffers_;
+	std::map<const Stream *, QQueue<FrameBuffer *>> freeBuffers_;
 	QQueue<CaptureRequest> doneQueue_;
 	QMutex mutex_; /* Protects freeBuffers_ and doneQueue_ */
 

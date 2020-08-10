@@ -46,7 +46,7 @@ protected:
 		if (request->status() != Request::RequestComplete)
 			return;
 
-		const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+		const Request::BufferMap &buffers = request->buffers();
 
 		completeRequestsCount_++;
 

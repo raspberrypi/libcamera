@@ -47,13 +47,13 @@ public:
 	{
 	}
 
-	CaptureRequest(const std::map<Stream *, FrameBuffer *> &buffers,
+	CaptureRequest(const Request::BufferMap &buffers,
 		       const ControlList &metadata)
 		: buffers_(buffers), metadata_(metadata)
 	{
 	}
 
-	std::map<Stream *, FrameBuffer *> buffers_;
+	Request::BufferMap buffers_;
 	ControlList metadata_;
 };
 

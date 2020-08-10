@@ -38,6 +38,11 @@ LOG_DEFINE_CATEGORY(Request)
  */
 
 /**
+ * \typedef Request::BufferMap
+ * \brief A map of Stream to FrameBuffer pointers
+ */
+
+/**
  * \class Request
  * \brief A frame capture request
  *

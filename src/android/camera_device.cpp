@@ -1371,7 +1371,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 void CameraDevice::requestComplete(Request *request)
 {
-	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+	const Request::BufferMap &buffers = request->buffers();
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;
 	Camera3RequestDescriptor *descriptor =

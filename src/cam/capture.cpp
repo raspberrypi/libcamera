@@ -157,7 +157,7 @@ void Capture::requestComplete(Request *request)
 	if (request->status() == Request::RequestCancelled)
 		return;
 
-	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+	const Request::BufferMap &buffers = request->buffers();
 
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 	double fps = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_).count();

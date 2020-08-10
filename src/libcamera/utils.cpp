@@ -335,6 +335,23 @@ details::StringSplitter split(const std::string &str, const std::string &delim)
 }
 
 /**
+ * \brief Remove any non-ASCII characters from a string
+ * \param[in] str The string to strip
+ *
+ * Remove all non-ASCII characters from a string.
+ *
+ * \return A string equal to \a str stripped out of all non-ASCII characters
+ */
+std::string toAscii(const std::string &str)
+{
+	std::string ret;
+	for (const char &c : str)
+		if (!(c & 0x80))
+			ret += c;
+	return ret;
+}
+
+/**
  * \brief Check if libcamera is installed or not
  *
  * Utilise the build_rpath dynamic tag which is stripped out by meson at

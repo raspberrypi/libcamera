@@ -69,6 +69,7 @@ struct RkISP1FrameInfo {
 	FrameBuffer *paramBuffer;
 	FrameBuffer *statBuffer;
 	FrameBuffer *mainPathBuffer;
+	FrameBuffer *selfPathBuffer;
 
 	bool paramFilled;
 	bool paramDequeued;
@@ -272,6 +273,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
 	FrameBuffer *mainPathBuffer = request->findBuffer(&data->mainPathStream_);
+	FrameBuffer *selfPathBuffer = request->findBuffer(&data->selfPathStream_);
 
 	pipe_->availableParamBuffers_.pop();
 	pipe_->availableStatBuffers_.pop();
@@ -282,6 +284,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 	info->request = request;
 	info->paramBuffer = paramBuffer;
 	info->mainPathBuffer = mainPathBuffer;
+	info->selfPathBuffer = selfPathBuffer;
 	info->statBuffer = statBuffer;
 	info->paramFilled = false;
 	info->paramDequeued = false;
@@ -340,7 +343,8 @@ RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 
 		if (info->paramBuffer == buffer ||
 		    info->statBuffer == buffer ||
-		    info->mainPathBuffer == buffer)
+		    info->mainPathBuffer == buffer ||
+		    info->selfPathBuffer == buffer)
 			return info;
 	}
 
@@ -412,7 +416,12 @@ protected:
 
 		pipe_->param_->queueBuffer(info->paramBuffer);
 		pipe_->stat_->queueBuffer(info->statBuffer);
-		pipe_->mainPathVideo_->queueBuffer(info->mainPathBuffer);
+
+		if (info->mainPathBuffer)
+			pipe_->mainPathVideo_->queueBuffer(info->mainPathBuffer);
+
+		if (info->selfPathBuffer)
+			pipe_->selfPathVideo_->queueBuffer(info->selfPathBuffer);
 	}
 
 private:

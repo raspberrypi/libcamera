@@ -1070,19 +1070,7 @@ void PipelineHandlerRkISP1::tryCompleteRequest(Request *request)
 void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
-	RkISP1CameraData *data = cameraData(activeCamera_);
 	Request *request = buffer->request();
-
-	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
-		completeBuffer(activeCamera_, request, buffer);
-		completeRequest(activeCamera_, request);
-		return;
-	}
-
-	data->timeline_.bufferReady(buffer);
-
-	if (data->frame_ <= buffer->metadata().sequence)
-		data->frame_ = buffer->metadata().sequence + 1;
 
 	completeBuffer(activeCamera_, request, buffer);
 	tryCompleteRequest(request);
@@ -1113,6 +1101,11 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	RkISP1FrameInfo *info = data->frameInfo_.find(buffer);
 	if (!info)
 		return;
+
+	data->timeline_.bufferReady(buffer);
+
+	if (data->frame_ <= buffer->metadata().sequence)
+		data->frame_ = buffer->metadata().sequence + 1;
 
 	IPAOperationData op;
 	op.operation = RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER;

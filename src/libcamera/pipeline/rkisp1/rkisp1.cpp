@@ -893,8 +893,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	activeCamera_ = nullptr;
 }
 
-int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera,
-					      Request *request)
+int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	Stream *stream = &data->stream_;

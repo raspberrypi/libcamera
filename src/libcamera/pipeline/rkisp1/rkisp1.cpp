@@ -213,7 +213,8 @@ private:
 	friend RkISP1CameraData;
 	friend RkISP1Frames;
 
-	int initLinks();
+	int initLinks(const Camera *camera, const CameraSensor *sensor,
+		      const RkISP1CameraConfiguration &config);
 	int createCamera(MediaEntity *sensor);
 	void tryCompleteRequest(Request *request);
 	void bufferReady(FrameBuffer *buffer);
@@ -598,28 +599,9 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	CameraSensor *sensor = data->sensor_;
 	int ret;
 
-	/*
-	 * Configure the sensor links: enable the link corresponding to this
-	 * camera and disable all the other sensor links.
-	 */
-	const MediaPad *pad = isp_->entity()->getPadByIndex(0);
-
-	for (MediaLink *link : pad->links()) {
-		bool enable = link->source()->entity() == sensor->entity();
-
-		if (!!(link->flags() & MEDIA_LNK_FL_ENABLED) == enable)
-			continue;
-
-		LOG(RkISP1, Debug)
-			<< (enable ? "Enabling" : "Disabling")
-			<< " link from sensor '"
-			<< link->source()->entity()->name()
-			<< "' to ISP";
-
-		ret = link->setEnabled(enable);
-		if (ret < 0)
-			return ret;
-	}
+	ret = initLinks(camera, sensor, *config);
+	if (ret)
+		return ret;
 
 	/*
 	 * Configure the format on the sensor output and propagate it through
@@ -922,22 +904,49 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
  * Match and Setup
  */
 
-int PipelineHandlerRkISP1::initLinks()
+int PipelineHandlerRkISP1::initLinks(const Camera *camera,
+				     const CameraSensor *sensor,
+				     const RkISP1CameraConfiguration &config)
 {
-	MediaLink *link;
+	RkISP1CameraData *data = cameraData(camera);
 	int ret;
 
 	ret = media_->disableLinks();
 	if (ret < 0)
 		return ret;
 
-	link = media_->link("rkisp1_isp", 2, "rkisp1_resizer_mainpath", 0);
-	if (!link)
-		return -ENODEV;
+	/*
+	 * Configure the sensor links: enable the link corresponding to this
+	 * camera.
+	 */
+	const MediaPad *pad = isp_->entity()->getPadByIndex(0);
+	for (MediaLink *link : pad->links()) {
+		if (link->source()->entity() != sensor->entity())
+			continue;
 
-	ret = link->setEnabled(true);
-	if (ret < 0)
-		return ret;
+		LOG(RkISP1, Debug)
+			<< "Enabling link from sensor '"
+			<< link->source()->entity()->name()
+			<< "' to ISP";
+
+		ret = link->setEnabled(true);
+		if (ret < 0)
+			return ret;
+	}
+
+	for (const StreamConfiguration &cfg : config) {
+		if (cfg.stream() != &data->stream_)
+			return -EINVAL;
+
+		MediaLink *link = media_->link("rkisp1_isp", 2,
+					       "rkisp1_resizer_mainpath", 0);
+		if (!link)
+			return -ENODEV;
+
+		ret = link->setEnabled(true);
+		if (ret < 0)
+			return ret;
+	}
 
 	return 0;
 }
@@ -1018,12 +1027,6 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
-
-	/* Configure default links. */
-	if (initLinks() < 0) {
-		LOG(RkISP1, Error) << "Failed to setup links";
-		return false;
-	}
 
 	/*
 	 * Enumerate all sensors connected to the ISP and create one

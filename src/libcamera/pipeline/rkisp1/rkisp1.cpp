@@ -54,6 +54,7 @@ constexpr std::array<PixelFormat, 7> RKISP1_RSZ_MP_FORMATS{
 
 class PipelineHandlerRkISP1;
 class RkISP1ActionQueueBuffers;
+class RkISP1CameraData;
 
 enum RkISP1ActionType {
 	SetSensor,
@@ -79,7 +80,7 @@ class RkISP1Frames
 public:
 	RkISP1Frames(PipelineHandler *pipe);
 
-	RkISP1FrameInfo *create(unsigned int frame, Request *request, Stream *stream);
+	RkISP1FrameInfo *create(const RkISP1CameraData *data, Request *request);
 	int destroy(unsigned int frame);
 	void clear();
 
@@ -244,8 +245,10 @@ RkISP1Frames::RkISP1Frames(PipelineHandler *pipe)
 {
 }
 
-RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stream *stream)
+RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *request)
 {
+	unsigned int frame = data->frame_;
+
 	if (pipe_->availableParamBuffers_.empty()) {
 		LOG(RkISP1, Error) << "Parameters buffer underrun";
 		return nullptr;
@@ -258,7 +261,7 @@ RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stre
 	}
 	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
-	FrameBuffer *videoBuffer = request->findBuffer(stream);
+	FrameBuffer *videoBuffer = request->findBuffer(&data->stream_);
 
 	pipe_->availableParamBuffers_.pop();
 	pipe_->availableStatBuffers_.pop();
@@ -878,10 +881,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	Stream *stream = &data->stream_;
 
-	RkISP1FrameInfo *info = data->frameInfo_.create(data->frame_, request,
-							stream);
+	RkISP1FrameInfo *info = data->frameInfo_.create(data, request);
 	if (!info)
 		return -ENOENT;
 

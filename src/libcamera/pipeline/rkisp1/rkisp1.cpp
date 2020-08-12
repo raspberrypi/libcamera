@@ -68,7 +68,7 @@ struct RkISP1FrameInfo {
 
 	FrameBuffer *paramBuffer;
 	FrameBuffer *statBuffer;
-	FrameBuffer *videoBuffer;
+	FrameBuffer *mainPathBuffer;
 
 	bool paramFilled;
 	bool paramDequeued;
@@ -133,7 +133,7 @@ class RkISP1CameraData : public CameraData
 public:
 	RkISP1CameraData(PipelineHandler *pipe, V4L2VideoDevice *video)
 		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe), video_(video)
+		  frameInfo_(pipe), mainPathVideo_(video)
 	{
 	}
 
@@ -144,14 +144,14 @@ public:
 
 	int loadIPA();
 
-	Stream stream_;
+	Stream mainPathStream_;
 	CameraSensor *sensor_;
 	unsigned int frame_;
 	std::vector<IPABuffer> ipaBuffers_;
 	RkISP1Frames frameInfo_;
 	RkISP1Timeline timeline_;
 
-	V4L2VideoDevice *video_;
+	V4L2VideoDevice *mainPathVideo_;
 
 private:
 	void queueFrameAction(unsigned int frame,
@@ -227,8 +227,8 @@ private:
 
 	MediaDevice *media_;
 	V4L2Subdevice *isp_;
-	V4L2Subdevice *resizer_;
-	V4L2VideoDevice *video_;
+	V4L2Subdevice *mainPathResizer_;
+	V4L2VideoDevice *mainPathVideo_;
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
 
@@ -261,7 +261,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 	}
 	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
-	FrameBuffer *videoBuffer = request->findBuffer(&data->stream_);
+	FrameBuffer *mainPathBuffer = request->findBuffer(&data->mainPathStream_);
 
 	pipe_->availableParamBuffers_.pop();
 	pipe_->availableStatBuffers_.pop();
@@ -271,7 +271,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 	info->frame = frame;
 	info->request = request;
 	info->paramBuffer = paramBuffer;
-	info->videoBuffer = videoBuffer;
+	info->mainPathBuffer = mainPathBuffer;
 	info->statBuffer = statBuffer;
 	info->paramFilled = false;
 	info->paramDequeued = false;
@@ -330,7 +330,7 @@ RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 
 		if (info->paramBuffer == buffer ||
 		    info->statBuffer == buffer ||
-		    info->videoBuffer == buffer)
+		    info->mainPathBuffer == buffer)
 			return info;
 	}
 
@@ -402,7 +402,7 @@ protected:
 
 		pipe_->param_->queueBuffer(info->paramBuffer);
 		pipe_->stat_->queueBuffer(info->statBuffer);
-		pipe_->video_->queueBuffer(info->videoBuffer);
+		pipe_->mainPathVideo_->queueBuffer(info->mainPathBuffer);
 	}
 
 private:
@@ -541,10 +541,10 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
 	V4L2DeviceFormat format = {};
-	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+	format.fourcc = data_->mainPathVideo_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 
-	int ret = data_->video_->tryFormat(&format);
+	int ret = data_->mainPathVideo_->tryFormat(&format);
 	if (ret)
 		return Invalid;
 
@@ -555,8 +555,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), isp_(nullptr), resizer_(nullptr),
-	  video_(nullptr), param_(nullptr), stat_(nullptr)
+	: PipelineHandler(manager), isp_(nullptr), mainPathResizer_(nullptr),
+	  mainPathVideo_(nullptr), param_(nullptr), stat_(nullptr)
 {
 }
 
@@ -564,8 +564,8 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 {
 	delete param_;
 	delete stat_;
-	delete video_;
-	delete resizer_;
+	delete mainPathVideo_;
+	delete mainPathResizer_;
 	delete isp_;
 }
 
@@ -646,7 +646,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "ISP output pad configured with " << format.toString();
 
-	ret = resizer_->setFormat(0, &format);
+	ret = mainPathResizer_->setFormat(0, &format);
 	if (ret < 0)
 		return ret;
 
@@ -656,7 +656,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "Configuring resizer output pad with " << format.toString();
 
-	ret = resizer_->setFormat(1, &format);
+	ret = mainPathResizer_->setFormat(1, &format);
 	if (ret < 0)
 		return ret;
 
@@ -664,16 +664,16 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 	V4L2DeviceFormat outputFormat = {};
-	outputFormat.fourcc = video_->toV4L2PixelFormat(cfg.pixelFormat);
+	outputFormat.fourcc = mainPathVideo_->toV4L2PixelFormat(cfg.pixelFormat);
 	outputFormat.size = cfg.size;
 	outputFormat.planesCount = info.numPlanes();
 
-	ret = video_->setFormat(&outputFormat);
+	ret = mainPathVideo_->setFormat(&outputFormat);
 	if (ret)
 		return ret;
 
 	if (outputFormat.size != cfg.size ||
-	    outputFormat.fourcc != video_->toV4L2PixelFormat(cfg.pixelFormat)) {
+	    outputFormat.fourcc != mainPathVideo_->toV4L2PixelFormat(cfg.pixelFormat)) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << cfg.toString();
 		return -EINVAL;
@@ -691,7 +691,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret)
 		return ret;
 
-	cfg.setStream(&data->stream_);
+	cfg.setStream(&data->mainPathStream_);
 
 	return 0;
 }
@@ -700,17 +700,17 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 					      std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	unsigned int count = stream->configuration().bufferCount;
-	return video_->exportBuffers(count, buffers);
+	return mainPathVideo_->exportBuffers(count, buffers);
 }
 
 int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
-	unsigned int count = data->stream_.configuration().bufferCount;
+	unsigned int count = data->mainPathStream_.configuration().bufferCount;
 	unsigned int ipaBufferId = 1;
 	int ret;
 
-	ret = video_->importBuffers(count);
+	ret = mainPathVideo_->importBuffers(count);
 	if (ret < 0)
 		goto error;
 
@@ -743,7 +743,7 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 error:
 	paramBuffers_.clear();
 	statBuffers_.clear();
-	video_->releaseBuffers();
+	mainPathVideo_->releaseBuffers();
 
 	return ret;
 }
@@ -774,8 +774,8 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 	if (stat_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release stat buffers";
 
-	if (video_->releaseBuffers())
-		LOG(RkISP1, Error) << "Failed to release video buffers";
+	if (mainPathVideo_->releaseBuffers())
+		LOG(RkISP1, Error) << "Failed to release main path buffers";
 
 	return 0;
 }
@@ -819,7 +819,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		return ret;
 	}
 
-	ret = video_->streamOn();
+	ret = mainPathVideo_->streamOn();
 	if (ret) {
 		param_->streamOff();
 		stat_->streamOff();
@@ -844,8 +844,8 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 
 	std::map<unsigned int, IPAStream> streamConfig;
 	streamConfig[0] = {
-		.pixelFormat = data->stream_.configuration().pixelFormat,
-		.size = data->stream_.configuration().size,
+		.pixelFormat = data->mainPathStream_.configuration().pixelFormat,
+		.size = data->mainPathStream_.configuration().size,
 	};
 
 	std::map<unsigned int, const ControlInfoMap &> entityControls;
@@ -863,7 +863,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;
 
-	ret = video_->streamOff();
+	ret = mainPathVideo_->streamOff();
 	if (ret)
 		LOG(RkISP1, Warning)
 			<< "Failed to stop camera " << camera->id();
@@ -947,7 +947,7 @@ int PipelineHandlerRkISP1::initLinks(const Camera *camera,
 	}
 
 	for (const StreamConfiguration &cfg : config) {
-		if (cfg.stream() != &data->stream_)
+		if (cfg.stream() != &data->mainPathStream_)
 			return -EINVAL;
 
 		MediaLink *link = media_->link("rkisp1_isp", 2,
@@ -968,7 +968,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		std::make_unique<RkISP1CameraData>(this, video_);
+		std::make_unique<RkISP1CameraData>(this, mainPathVideo_);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,
@@ -989,7 +989,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	if (ret)
 		return ret;
 
-	std::set<Stream *> streams{ &data->stream_ };
+	std::set<Stream *> streams{ &data->mainPathStream_ };
 	std::shared_ptr<Camera> camera =
 		Camera::create(this, data->sensor_->id(), streams);
 	registerCamera(std::move(camera), std::move(data));
@@ -1019,13 +1019,13 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (isp_->open() < 0)
 		return false;
 
-	resizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_mainpath");
-	if (resizer_->open() < 0)
+	mainPathResizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_mainpath");
+	if (mainPathResizer_->open() < 0)
 		return false;
 
 	/* Locate and open the capture video node. */
-	video_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_mainpath");
-	if (video_->open() < 0)
+	mainPathVideo_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_mainpath");
+	if (mainPathVideo_->open() < 0)
 		return false;
 
 	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
@@ -1036,7 +1036,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (param_->open() < 0)
 		return false;
 
-	video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	mainPathVideo_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 

@@ -710,21 +710,59 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 {
 	RkISP1CameraData *data = cameraData(camera);
 	CameraConfiguration *config = new RkISP1CameraConfiguration(camera, data);
-
 	if (roles.empty())
 		return config;
 
-	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-	for (const PixelFormat &format : RKISP1_RSZ_MP_FORMATS)
-		streamFormats[format] =
-			{ { RKISP1_RSZ_MP_SRC_MIN, data->sensor_->resolution() } };
+	bool mainPathAvailable = true;
+	bool selfPathAvailable = true;
+	for (const StreamRole role : roles) {
+		bool useMainPath;
 
-	StreamFormats formats(streamFormats);
-	StreamConfiguration cfg(formats);
-	cfg.pixelFormat = formats::NV12;
-	cfg.size = data->sensor_->resolution();
+		switch (role) {
+		case StreamRole::StillCapture: {
+			useMainPath = mainPathAvailable;
+			break;
+		}
+		case StreamRole::Viewfinder:
+		case StreamRole::VideoRecording: {
+			useMainPath = !selfPathAvailable;
+			break;
+		}
+		default:
+			LOG(RkISP1, Warning)
+				<< "Requested stream role not supported: " << role;
+			delete config;
+			return nullptr;
+		}
 
-	config->addConfiguration(cfg);
+		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+		Size maxResolution = data->sensor_->resolution();
+		if (useMainPath) {
+			mainPathAvailable = false;
+			maxResolution.boundTo(RKISP1_RSZ_MP_SRC_MAX);
+			for (const PixelFormat &format : RKISP1_RSZ_MP_FORMATS)
+				streamFormats[format] = { {
+					RKISP1_RSZ_MP_SRC_MIN,
+					maxResolution,
+				} };
+		} else {
+			selfPathAvailable = false;
+			maxResolution.boundTo(RKISP1_RSZ_SP_SRC_MAX);
+			for (const PixelFormat &format : RKISP1_RSZ_SP_FORMATS)
+				streamFormats[format] = { {
+					RKISP1_RSZ_SP_SRC_MIN,
+					maxResolution,
+				} };
+		}
+
+		StreamFormats formats(streamFormats);
+		StreamConfiguration cfg(formats);
+		cfg.pixelFormat = formats::NV12;
+		cfg.size = maxResolution;
+		cfg.bufferCount = 4;
+
+		config->addConfiguration(cfg);
+	}
 
 	config->validate();
 
@@ -1212,7 +1250,10 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	if (ret)
 		return ret;
 
-	std::set<Stream *> streams{ &data->mainPathStream_ };
+	std::set<Stream *> streams{
+		&data->mainPathStream_,
+		&data->selfPathStream_,
+	};
 	std::shared_ptr<Camera> camera =
 		Camera::create(this, data->sensor_->id(), streams);
 	registerCamera(std::move(camera), std::move(data));

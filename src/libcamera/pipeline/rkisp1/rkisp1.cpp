@@ -131,9 +131,11 @@ public:
 class RkISP1CameraData : public CameraData
 {
 public:
-	RkISP1CameraData(PipelineHandler *pipe, V4L2VideoDevice *video)
+	RkISP1CameraData(PipelineHandler *pipe, V4L2VideoDevice *mainPathVideo,
+			 V4L2VideoDevice *selfPathVideo)
 		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe), mainPathVideo_(video)
+		  frameInfo_(pipe), mainPathVideo_(mainPathVideo),
+		  selfPathVideo_(selfPathVideo)
 	{
 	}
 
@@ -152,6 +154,7 @@ public:
 	RkISP1Timeline timeline_;
 
 	V4L2VideoDevice *mainPathVideo_;
+	V4L2VideoDevice *selfPathVideo_;
 
 private:
 	void queueFrameAction(unsigned int frame,
@@ -228,7 +231,9 @@ private:
 	MediaDevice *media_;
 	V4L2Subdevice *isp_;
 	V4L2Subdevice *mainPathResizer_;
+	V4L2Subdevice *selfPathResizer_;
 	V4L2VideoDevice *mainPathVideo_;
+	V4L2VideoDevice *selfPathVideo_;
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
 
@@ -556,7 +561,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
 	: PipelineHandler(manager), isp_(nullptr), mainPathResizer_(nullptr),
-	  mainPathVideo_(nullptr), param_(nullptr), stat_(nullptr)
+	  selfPathResizer_(nullptr), mainPathVideo_(nullptr),
+	  selfPathVideo_(nullptr), param_(nullptr), stat_(nullptr)
 {
 }
 
@@ -565,7 +571,9 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 	delete param_;
 	delete stat_;
 	delete mainPathVideo_;
+	delete selfPathVideo_;
 	delete mainPathResizer_;
+	delete selfPathResizer_;
 	delete isp_;
 }
 
@@ -968,7 +976,8 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		std::make_unique<RkISP1CameraData>(this, mainPathVideo_);
+		std::make_unique<RkISP1CameraData>(this, mainPathVideo_,
+						   selfPathVideo_);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,
@@ -1023,9 +1032,17 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (mainPathResizer_->open() < 0)
 		return false;
 
+	selfPathResizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_selfpath");
+	if (selfPathResizer_->open() < 0)
+		return false;
+
 	/* Locate and open the capture video node. */
 	mainPathVideo_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_mainpath");
 	if (mainPathVideo_->open() < 0)
+		return false;
+
+	selfPathVideo_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_selfpath");
+	if (selfPathVideo_->open() < 0)
 		return false;
 
 	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
@@ -1037,6 +1054,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 		return false;
 
 	mainPathVideo_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	selfPathVideo_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 

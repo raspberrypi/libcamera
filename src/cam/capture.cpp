@@ -5,7 +5,6 @@
  * capture.cpp - Cam capture
  */
 
-#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <limits.h>
@@ -159,14 +158,19 @@ void Capture::requestComplete(Request *request)
 
 	const Request::BufferMap &buffers = request->buffers();
 
-	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	double fps = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_).count();
-	fps = last_ != std::chrono::steady_clock::time_point() && fps
-	    ? 1000.0 / fps : 0.0;
-	last_ = now;
+	/*
+	 * Compute the frame rate. The timestamp is arbitrarily retrieved from
+	 * the first buffer, as all buffers should have matching timestamps.
+	 */
+	uint64_t ts = buffers.begin()->second->metadata().timestamp;
+	double fps = ts - last_;
+	fps = last_ != 0 && fps ? 1000000000.0 / fps : 0.0;
+	last_ = ts;
 
 	std::stringstream info;
-	info << "fps: " << std::fixed << std::setprecision(2) << fps;
+	info << ts / 1000000000 << "."
+	     << std::setw(6) << std::setfill('0') << ts / 1000 % 1000000
+	     << " (" << std::fixed << std::setprecision(2) << fps << " fps)";
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		const Stream *stream = it->first;

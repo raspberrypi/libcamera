@@ -64,9 +64,17 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 	if (fd == -1)
 		return -errno;
 
-	for (const FrameBuffer::Plane &plane : buffer->planes()) {
+	for (unsigned int i = 0; i < buffer->planes().size(); ++i) {
+		const FrameBuffer::Plane &plane = buffer->planes()[i];
+		const FrameMetadata::Plane &meta = buffer->metadata().planes[i];
+
 		void *data = mappedBuffers_[plane.fd.fd()].first;
-		unsigned int length = plane.length;
+		unsigned int length = std::min(meta.bytesused, plane.length);
+
+		if (meta.bytesused > plane.length)
+			std::cerr << "payload size " << meta.bytesused
+				  << " larger than plane size " << plane.length
+				  << std::endl;
 
 		ret = ::write(fd, data, length);
 		if (ret < 0) {

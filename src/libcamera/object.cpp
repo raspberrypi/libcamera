@@ -125,7 +125,7 @@ Object::~Object()
  *     struct Deleter : std::default_delete<MyObject> {
  *             void operator()(MyObject *obj)
  *             {
- *                     delete obj;
+ *                     obj->deleteLater();
  *             }
  *     };
  *

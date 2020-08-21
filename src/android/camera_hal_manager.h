@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <vector>
 
+#include <hardware/camera_common.h>
 #include <hardware/hardware.h>
 #include <system/camera_metadata.h>
 
@@ -29,10 +30,12 @@ public:
 
 	unsigned int numCameras() const;
 	int getCameraInfo(unsigned int id, struct camera_info *info);
+	void setCallbacks(const camera_module_callbacks_t *callbacks);
 
 private:
 	libcamera::CameraManager *cameraManager_;
 
+	const camera_module_callbacks_t *callbacks_;
 	std::vector<std::unique_ptr<CameraDevice>> cameras_;
 };
 

@@ -120,3 +120,8 @@ int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 
 	return 0;
 }
+
+void CameraHalManager::setCallbacks(const camera_module_callbacks_t *callbacks)
+{
+	callbacks_ = callbacks;
+}

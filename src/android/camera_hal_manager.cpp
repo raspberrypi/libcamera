@@ -8,6 +8,7 @@
 #include "camera_hal_manager.h"
 
 #include <libcamera/camera.h>
+#include <libcamera/property_ids.h>
 
 #include "libcamera/internal/log.h"
 
@@ -28,7 +29,8 @@ LOG_DECLARE_CATEGORY(HAL);
  */
 
 CameraHalManager::CameraHalManager()
-	: cameraManager_(nullptr)
+	: cameraManager_(nullptr), numInternalCameras_(0),
+	  nextExternalCameraId_(firstExternalCameraId_)
 {
 }
 
@@ -47,6 +49,10 @@ int CameraHalManager::init()
 {
 	cameraManager_ = new CameraManager();
 
+	/* Support camera hotplug. */
+	cameraManager_->cameraAdded.connect(this, &CameraHalManager::cameraAdded);
+	cameraManager_->cameraRemoved.connect(this, &CameraHalManager::cameraRemoved);
+
 	int ret = cameraManager_->start();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to start camera manager: "
@@ -56,35 +62,20 @@ int CameraHalManager::init()
 		return ret;
 	}
 
-	/*
-	 * For each Camera registered in the system, a CameraDevice
-	 * gets created here to wraps a libcamera Camera instance.
-	 *
-	 * \todo Support camera hotplug.
-	 */
-	unsigned int index = 0;
-	for (auto &cam : cameraManager_->cameras()) {
-		std::shared_ptr<CameraDevice> camera = CameraDevice::create(index, cam);
-		ret = camera->initialize();
-		if (ret)
-			continue;
-
-		cameras_.emplace_back(std::move(camera));
-		++index;
-	}
-
 	return 0;
 }
 
 CameraDevice *CameraHalManager::open(unsigned int id,
 				     const hw_module_t *hardwareModule)
 {
-	if (id >= numCameras()) {
+	MutexLocker locker(mutex_);
+
+	CameraDevice *camera = cameraDeviceFromHalId(id);
+	if (!camera) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
 		return nullptr;
 	}
 
-	CameraDevice *camera = cameras_[id].get();
 	if (camera->open(hardwareModule))
 		return nullptr;
 
@@ -93,9 +84,120 @@ CameraDevice *CameraHalManager::open(unsigned int id,
 	return camera;
 }
 
+void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
+{
+	unsigned int id;
+	bool isCameraExternal = false;
+	bool isCameraNew = false;
+
+	MutexLocker locker(mutex_);
+
+	/*
+	 * Each camera is assigned a unique integer ID when it is seen for the
+	 * first time. If the camera has been seen before, the previous ID is
+	 * re-used.
+	 *
+	 * IDs starts from '0' for internal cameras and '1000' for external
+	 * cameras.
+	 */
+	auto iter = cameraIdsMap_.find(cam->id());
+	if (iter != cameraIdsMap_.end()) {
+		id = iter->second;
+	} else {
+		isCameraNew = true;
+
+		/*
+		 * Now check if this is an external camera and assign
+		 * its id accordingly.
+		 */
+		if (cameraLocation(cam.get()) == properties::CameraLocationExternal) {
+			isCameraExternal = true;
+			id = nextExternalCameraId_;
+		} else {
+			id = numInternalCameras_;
+		}
+	}
+
+	/* Create a CameraDevice instance to wrap the libcamera Camera. */
+	std::shared_ptr<CameraDevice> camera = CameraDevice::create(id, std::move(cam));
+	int ret = camera->initialize();
+	if (ret) {
+		LOG(HAL, Error) << "Failed to initialize camera: " << cam->id();
+		return;
+	}
+
+	if (isCameraNew) {
+		cameraIdsMap_.emplace(cam->id(), id);
+
+		if (isCameraExternal)
+			nextExternalCameraId_++;
+		else
+			numInternalCameras_++;
+	}
+
+	cameras_.emplace_back(std::move(camera));
+
+	if (callbacks_)
+		callbacks_->camera_device_status_change(callbacks_, id,
+							CAMERA_DEVICE_STATUS_PRESENT);
+
+	LOG(HAL, Debug) << "Camera ID: " << id << " added successfully.";
+}
+
+void CameraHalManager::cameraRemoved(std::shared_ptr<Camera> cam)
+{
+	MutexLocker locker(mutex_);
+
+	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
+				 [&cam](std::shared_ptr<CameraDevice> &camera) {
+					 return cam.get() == camera->camera();
+				 });
+	if (iter == cameras_.end())
+		return;
+
+	/*
+	 * CAMERA_DEVICE_STATUS_NOT_PRESENT should be set for external cameras
+	 * only.
+	 */
+	unsigned int id = (*iter)->id();
+	if (id >= firstExternalCameraId_)
+		callbacks_->camera_device_status_change(callbacks_, id,
+							CAMERA_DEVICE_STATUS_NOT_PRESENT);
+
+	/*
+	 * \todo Check if the camera is already open and running.
+	 * Inform the framework about its absence before deleting its
+	 * reference here.
+	 */
+	cameras_.erase(iter);
+
+	LOG(HAL, Debug) << "Camera ID: " << id << " removed successfully.";
+}
+
+int32_t CameraHalManager::cameraLocation(const Camera *cam)
+{
+	const ControlList &properties = cam->properties();
+	if (!properties.contains(properties::Location))
+		return -1;
+
+	return properties.get(properties::Location);
+}
+
+CameraDevice *CameraHalManager::cameraDeviceFromHalId(unsigned int id)
+{
+	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
+				 [id](std::shared_ptr<CameraDevice> &camera) {
+					 return camera->id() == id;
+				 });
+	if (iter == cameras_.end())
+		return nullptr;
+
+	return iter->get();
+}
+
 unsigned int CameraHalManager::numCameras() const
 {
-	return cameraManager_->cameras().size();
+	return numInternalCameras_;
 }
 
 int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
@@ -103,12 +205,13 @@ int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 	if (!info)
 		return -EINVAL;
 
-	if (id >= numCameras()) {
+	MutexLocker locker(mutex_);
+
+	CameraDevice *camera = cameraDeviceFromHalId(id);
+	if (!camera) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
 		return -EINVAL;
 	}
-
-	CameraDevice *camera = cameras_[id].get();
 
 	info->facing = camera->facing();
 	info->orientation = camera->orientation();
@@ -124,4 +227,21 @@ int CameraHalManager::getCameraInfo(unsigned int id, struct camera_info *info)
 void CameraHalManager::setCallbacks(const camera_module_callbacks_t *callbacks)
 {
 	callbacks_ = callbacks;
+
+	MutexLocker locker(mutex_);
+
+	/*
+	 * Some external cameras may have been identified before the callbacks_
+	 * were set. Iterate all existing external cameras and mark them as
+	 * CAMERA_DEVICE_STATUS_PRESENT explicitly.
+	 *
+	 * Internal cameras are already assumed to be present at module load
+	 * time by the Android framework.
+	 */
+	for (std::shared_ptr<CameraDevice> &camera : cameras_) {
+		unsigned int id = camera->id();
+		if (id >= firstExternalCameraId_)
+			callbacks_->camera_device_status_change(callbacks_, id,
+								CAMERA_DEVICE_STATUS_PRESENT);
+	}
 }

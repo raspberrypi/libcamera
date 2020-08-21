@@ -14,6 +14,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -499,6 +500,12 @@ int UVCCameraData::init(MediaEntity *entity)
 		return ret;
 
 	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
+
+	/*
+	 * \todo Find a way to tell internal and external UVC cameras apart.
+	 * Until then, treat all UVC cameras as external.
+	 */
+	properties_.set(properties::Location, properties::CameraLocationExternal);
 
 	/* Initialise the supported controls. */
 	ControlInfoMap::Map ctrls;

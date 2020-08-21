@@ -36,7 +36,7 @@ private:
 	libcamera::CameraManager *cameraManager_;
 
 	const camera_module_callbacks_t *callbacks_;
-	std::vector<std::unique_ptr<CameraDevice>> cameras_;
+	std::vector<std::shared_ptr<CameraDevice>> cameras_;
 };
 
 #endif /* __ANDROID_CAMERA_MANAGER_H__ */

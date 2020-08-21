@@ -64,12 +64,12 @@ int CameraHalManager::init()
 	 */
 	unsigned int index = 0;
 	for (auto &cam : cameraManager_->cameras()) {
-		CameraDevice *camera = new CameraDevice(index, cam);
+		std::shared_ptr<CameraDevice> camera = CameraDevice::create(index, cam);
 		ret = camera->initialize();
 		if (ret)
 			continue;
 
-		cameras_.emplace_back(camera);
+		cameras_.emplace_back(std::move(camera));
 		++index;
 	}
 

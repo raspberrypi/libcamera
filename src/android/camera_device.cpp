@@ -233,6 +233,13 @@ CameraDevice::~CameraDevice()
 		delete it.second;
 }
 
+std::shared_ptr<CameraDevice> CameraDevice::create(unsigned int id,
+						   const std::shared_ptr<Camera> &cam)
+{
+	CameraDevice *camera = new CameraDevice(id, cam);
+	return std::shared_ptr<CameraDevice>(camera);
+}
+
 /*
  * Initialize the camera static information.
  * This method is called before the camera device is opened.

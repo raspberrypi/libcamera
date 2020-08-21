@@ -47,7 +47,8 @@ struct CameraStream {
 class CameraDevice : protected libcamera::Loggable
 {
 public:
-	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
+	static std::shared_ptr<CameraDevice> create(unsigned int id,
+						    const std::shared_ptr<libcamera::Camera> &cam);
 	~CameraDevice();
 
 	int initialize();
@@ -72,6 +73,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
+
 	struct Camera3RequestDescriptor {
 		Camera3RequestDescriptor(unsigned int frameNumber,
 					 unsigned int numBuffers);

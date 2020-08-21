@@ -58,6 +58,7 @@ public:
 
 	unsigned int id() const { return id_; }
 	camera3_device_t *camera3Device() { return &camera3Device_; }
+	const libcamera::Camera *camera() const { return camera_.get(); }
 
 	int facing() const { return facing_; }
 	int orientation() const { return orientation_; }

@@ -26,10 +26,9 @@ char const *Sharpen::Name() const
 	return NAME;
 }
 
-void Sharpen::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
+void Sharpen::SwitchMode(CameraMode const &camera_mode,
+			 [[maybe_unused]] Metadata *metadata)
 {
-	(void)metadata;
-
 	// can't be less than one, right?
 	mode_factor_ = std::max(1.0, camera_mode.noise_factor);
 }

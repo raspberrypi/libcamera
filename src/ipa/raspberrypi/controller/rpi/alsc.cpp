@@ -200,10 +200,9 @@ static bool compare_modes(CameraMode const &cm0, CameraMode const &cm1)
 	       top_diff > threshold_y || bottom_diff > threshold_y;
 }
 
-void Alsc::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
+void Alsc::SwitchMode(CameraMode const &camera_mode,
+		      [[maybe_unused]] Metadata *metadata)
 {
-	(void)metadata;
-
 	// We're going to start over with the tables if there's any "significant"
 	// change.
 	bool reset_tables = first_time_ || compare_modes(camera_mode_, camera_mode);
@@ -490,7 +489,7 @@ void compensate_lambdas_for_cal(double const cal_table[XY],
 		new_lambdas[i] /= min_new_lambda;
 }
 
-static void print_cal_table(double const C[XY])
+[[maybe_unused]] static void print_cal_table(double const C[XY])
 {
 	printf("table: [\n");
 	for (int j = 0; j < Y; j++) {
@@ -710,7 +709,6 @@ void Alsc::doAlsc()
 	resample_cal_table(cal_table_tmp, camera_mode_, cal_table_b);
 	// You could print out the cal tables for this image here, if you're
 	// tuning the algorithm...
-	(void)print_cal_table;
 	// Apply any calibration to the statistics, so the adaptive algorithm
 	// makes only the extra adjustments.
 	apply_cal_table(cal_table_r, Cr);

@@ -27,10 +27,9 @@ char const *Noise::Name() const
 	return NAME;
 }
 
-void Noise::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
+void Noise::SwitchMode(CameraMode const &camera_mode,
+		       [[maybe_unused]] Metadata *metadata)
 {
-	(void)metadata;
-
 	// For example, we would expect a 2x2 binned mode to have a "noise
 	// factor" of sqrt(2x2) = 2. (can't be less than one, right?)
 	mode_factor_ = std::max(1.0, camera_mode.noise_factor);

@@ -300,9 +300,7 @@ void CIO2Device::tryReturnBuffer(FrameBuffer *buffer)
 
 void CIO2Device::freeBuffers()
 {
-	/* The default std::queue constructor is explicit with gcc 5 and 6. */
-	availableBuffers_ = std::queue<FrameBuffer *>{};
-
+	availableBuffers_ = {};
 	buffers_.clear();
 
 	if (output_->releaseBuffers())

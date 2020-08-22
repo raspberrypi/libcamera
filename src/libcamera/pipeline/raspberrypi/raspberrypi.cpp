@@ -848,9 +848,8 @@ void PipelineHandlerRPi::stop(Camera *camera)
 
 	/* This also stops the streams. */
 	data->clearIncompleteRequests();
-	/* The default std::queue constructor is explicit with gcc 5 and 6. */
-	data->bayerQueue_ = std::queue<FrameBuffer *>{};
-	data->embeddedQueue_ = std::queue<FrameBuffer *>{};
+	data->bayerQueue_ = {};
+	data->embeddedQueue_ = {};
 
 	/* Stop the IPA. */
 	data->ipa_->stop();

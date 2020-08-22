@@ -6,7 +6,7 @@ project('libcamera', 'c', 'cpp',
     default_options : [
         'werror=true',
         'warning_level=2',
-        'cpp_std=c++14',
+        'cpp_std=c++17',
     ],
     license : 'LGPL 2.1+')
 
@@ -45,6 +45,10 @@ c_arguments = []
 cpp_arguments = []
 
 if cc.get_id() == 'clang'
+    if cc.version().version_compare('<5')
+        error('clang version is too old, libcamera requires 5.0 or newer')
+    endif
+
     # Turn _FORTIFY_SOURCE by default on optimised builds (as it requires -O1
     # or higher). This is needed on clang only as gcc enables it by default.
     if get_option('optimization') != '0'
@@ -62,22 +66,29 @@ if cc.get_id() == 'clang'
     endif
 endif
 
+if cc.get_id() == 'gcc'
+    if cc.version().version_compare('<7')
+        error('gcc version is too old, libcamera requires 7.0 or newer')
+    endif
+
+    # gcc 7.1 introduced processor-specific ABI breakages related to parameter
+    # passing on ARM platforms. This generates a large number of messages
+    # during compilation with gcc >=7.1 until gcc 9. Silence them.
+    if (host_machine.cpu_family() == 'arm' and
+        cc.version().version_compare('>=7.1') and
+        cc.version().version_compare('<9'))
+        cpp_arguments += [
+            '-Wno-psabi',
+        ]
+    endif
+endif
+
 # We use C99 designated initializers for arrays as C++ has no equivalent
 # feature. Both gcc and clang support this extension, but recent
 # versions of clang generate a warning that needs to be disabled.
 if cc.has_argument('-Wno-c99-designator')
     common_arguments += [
         '-Wno-c99-designator',
-    ]
-endif
-
-# gcc 7.1 introduced processor-specific ABI breakages related to parameter
-# passing on ARM platforms. This generates a large number of messages during
-# compilation with gcc >=7.1 until gcc 9. Silence them.
-if (host_machine.cpu_family() == 'arm' and cc.get_id() == 'gcc' and
-    cc.version().version_compare('>=7.1') and cc.version().version_compare('<9'))
-    cpp_arguments += [
-        '-Wno-psabi',
     ]
 endif
 

@@ -88,13 +88,12 @@ headers, and with double quotes for other libcamera headers.
 C++ Specific Rules
 ------------------
 
-The code shall be implemented in C++14, with the following caveats:
+The code shall be implemented in C++17, with the following caveats:
 
 * Type inference (auto and decltype) shall be used with caution, to avoid
   drifting towards an untyped language.
 * The explicit, override and final specifiers are to be used where applicable.
-* General-purpose smart pointers (std::unique_ptr) deprecate std::auto_ptr.
-  Smart pointers, as well as shared pointers and weak pointers, shall not be
+* Smart pointers, as well as shared pointers and weak pointers, shall not be
   overused.
 * Classes are encouraged to define move constructors and assignment operators
   where applicable, and generally make use of the features offered by rvalue

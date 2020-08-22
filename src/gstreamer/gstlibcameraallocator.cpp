@@ -70,7 +70,7 @@ FrameWrap::~FrameWrap()
 	}
 }
 
-GQuark FrameWrap::getQuark(void)
+GQuark FrameWrap::getQuark()
 {
 	static gsize frame_quark = 0;
 

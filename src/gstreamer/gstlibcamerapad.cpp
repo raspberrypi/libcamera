@@ -84,7 +84,7 @@ gst_libcamera_pad_init(GstLibcameraPad *self)
 }
 
 static GType
-gst_libcamera_stream_role_get_type(void)
+gst_libcamera_stream_role_get_type()
 {
 	static GType type = 0;
 	static const GEnumValue values[] = {

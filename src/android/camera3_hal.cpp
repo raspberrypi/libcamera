@@ -22,7 +22,7 @@ static CameraHalManager cameraManager;
  * Android Camera HAL callbacks
  */
 
-static int hal_get_number_of_cameras(void)
+static int hal_get_number_of_cameras()
 {
 	return cameraManager.numCameras();
 }

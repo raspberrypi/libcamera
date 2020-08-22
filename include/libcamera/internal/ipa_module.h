@@ -52,7 +52,7 @@ private:
 	bool loaded_;
 
 	void *dlHandle_;
-	typedef struct ipa_context *(*IPAIntfFactory)(void);
+	typedef struct ipa_context *(*IPAIntfFactory)();
 	IPAIntfFactory ipaCreate_;
 };
 

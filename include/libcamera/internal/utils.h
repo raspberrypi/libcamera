@@ -65,13 +65,6 @@ unsigned int set_overlap(InputIt1 first1, InputIt1 last1,
 	return count;
 }
 
-/* C++11 doesn't provide std::clamp */
-template <typename T>
-const T& clamp(const T& v, const T& lo, const T& hi)
-{
-	return std::max(lo, std::min(v, hi));
-}
-
 using clock = std::chrono::steady_clock;
 using duration = std::chrono::steady_clock::duration;
 using time_point = std::chrono::steady_clock::time_point;

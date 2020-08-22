@@ -7,6 +7,7 @@
 
 #include "imgu.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -129,7 +130,7 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 	if (!isSameRatio(pipe->input, gdc)) {
 		float estIFHeight = (iif.width * gdc.height) /
 				    static_cast<float>(gdc.width);
-		estIFHeight = utils::clamp<float>(estIFHeight, minIFHeight, iif.height);
+		estIFHeight = std::clamp<float>(estIFHeight, minIFHeight, iif.height);
 		bool found = false;
 
 		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);

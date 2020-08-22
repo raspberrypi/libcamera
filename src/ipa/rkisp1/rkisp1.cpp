@@ -24,7 +24,6 @@
 #include <libipa/ipa_interface_wrapper.h>
 
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/utils.h"
 
 namespace libcamera {
 
@@ -234,13 +233,13 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 			double exposure;
 
 			exposure = factor * exposure_ * gain_ / minGain_;
-			exposure_ = utils::clamp<uint64_t>((uint64_t)exposure,
-							   minExposure_,
-							   maxExposure_);
+			exposure_ = std::clamp<uint64_t>((uint64_t)exposure,
+							 minExposure_,
+							 maxExposure_);
 
 			exposure = exposure / exposure_ * minGain_;
-			gain_ = utils::clamp<uint64_t>((uint64_t)exposure,
-						       minGain_, maxGain_);
+			gain_ = std::clamp<uint64_t>((uint64_t)exposure,
+						     minGain_, maxGain_);
 
 			setControls(frame + 1);
 		}

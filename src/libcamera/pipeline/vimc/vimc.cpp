@@ -360,7 +360,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 		}
 
 		int32_t value = lroundf(it.second.get<float>() * 128 + offset);
-		controls.set(cid, utils::clamp(value, 0, 255));
+		controls.set(cid, std::clamp(value, 0, 255));
 	}
 
 	for (const auto &ctrl : controls)

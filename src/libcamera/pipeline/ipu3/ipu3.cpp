@@ -240,15 +240,15 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 			unsigned int limit;
 			limit = utils::alignDown(cio2Configuration_.size.width - 1,
 						 IMGU_OUTPUT_WIDTH_MARGIN);
-			cfg->size.width = utils::clamp(cfg->size.width,
-						       IMGU_OUTPUT_MIN_SIZE.width,
-						       limit);
+			cfg->size.width = std::clamp(cfg->size.width,
+						     IMGU_OUTPUT_MIN_SIZE.width,
+						     limit);
 
 			limit = utils::alignDown(cio2Configuration_.size.height - 1,
 						 IMGU_OUTPUT_HEIGHT_MARGIN);
-			cfg->size.height = utils::clamp(cfg->size.height,
-							IMGU_OUTPUT_MIN_SIZE.height,
-							limit);
+			cfg->size.height = std::clamp(cfg->size.height,
+						      IMGU_OUTPUT_MIN_SIZE.height,
+						      limit);
 
 			cfg->size.alignDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
 					      IMGU_OUTPUT_HEIGHT_ALIGN);

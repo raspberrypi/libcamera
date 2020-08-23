@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/event_notifier.h>
+#include <libcamera/signal.h>
 
 namespace libcamera {
 

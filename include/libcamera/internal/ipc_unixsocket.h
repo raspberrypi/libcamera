@@ -12,9 +12,11 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/event_notifier.h>
+#include <libcamera/signal.h>
 
 namespace libcamera {
+
+class EventNotifier;
 
 class IPCUnixSocket
 {

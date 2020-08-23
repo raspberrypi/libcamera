@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include <libcamera/framebuffer_allocator.h>
+
 #include "libcamera/internal/buffer.h"
 
 #include "camera_test.h"

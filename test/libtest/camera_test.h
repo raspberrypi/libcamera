@@ -7,7 +7,10 @@
 #ifndef __LIBCAMERA_CAMERA_TEST_H__
 #define __LIBCAMERA_CAMERA_TEST_H__
 
-#include <libcamera/libcamera.h>
+#include <memory>
+
+#include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 
 using namespace libcamera;
 

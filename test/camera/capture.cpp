@@ -7,6 +7,10 @@
 
 #include <iostream>
 
+#include <libcamera/event_dispatcher.h>
+#include <libcamera/framebuffer_allocator.h>
+#include <libcamera/timer.h>
+
 #include "camera_test.h"
 #include "test.h"
 

@@ -7,7 +7,7 @@
 #ifndef __LIBCAMERA_BUFFER_SOURCE_TEST_H__
 #define __LIBCAMERA_BUFFER_SOURCE_TEST_H__
 
-#include <libcamera/libcamera.h>
+#include <libcamera/stream.h>
 
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_videodevice.h"

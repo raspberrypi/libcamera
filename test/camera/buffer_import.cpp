@@ -12,6 +12,9 @@
 #include <numeric>
 #include <vector>
 
+#include <libcamera/event_dispatcher.h>
+#include <libcamera/timer.h>
+
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_videodevice.h"

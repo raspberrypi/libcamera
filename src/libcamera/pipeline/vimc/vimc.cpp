@@ -149,11 +149,15 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	/* Clamp the size based on the device limits. */
 	const Size size = cfg.size;
 
-	/* The scaler hardcodes a x3 scale-up ratio. */
+	/*
+	 * The scaler hardcodes a x3 scale-up ratio, and the sensor output size
+	 * is aligned to two pixels in both directions. The output width and
+	 * height thus have to be multiples of 6.
+	 */
 	cfg.size.width = std::max(48U, std::min(4096U, cfg.size.width));
 	cfg.size.height = std::max(48U, std::min(2160U, cfg.size.height));
-	cfg.size.width -= cfg.size.width % 3;
-	cfg.size.height -= cfg.size.height % 3;
+	cfg.size.width -= cfg.size.width % 6;
+	cfg.size.height -= cfg.size.height % 6;
 
 	if (cfg.size != size) {
 		LOG(VIMC, Debug)

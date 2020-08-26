@@ -7,12 +7,15 @@
 #ifndef __LIBCAMERA_INTERNAL_PROCESS_H__
 #define __LIBCAMERA_INTERNAL_PROCESS_H__
 
+#include <signal.h>
 #include <string>
 #include <vector>
 
 #include <libcamera/signal.h>
 
 namespace libcamera {
+
+class EventNotifier;
 
 class Process final
 {
@@ -48,6 +51,32 @@ private:
 	int exitCode_;
 
 	friend class ProcessManager;
+};
+
+class ProcessManager
+{
+public:
+	ProcessManager();
+	~ProcessManager();
+
+	void registerProcess(Process *proc);
+
+	static ProcessManager *instance();
+
+	int writePipe() const;
+
+	const struct sigaction &oldsa() const;
+
+private:
+	static ProcessManager *self_;
+
+	void sighandler(EventNotifier *notifier);
+
+	std::list<Process *> processes_;
+
+	struct sigaction oldsa_;
+	EventNotifier *sigEvent_;
+	int pipe_[2];
 };
 
 } /* namespace libcamera */

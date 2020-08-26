@@ -18,6 +18,7 @@
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/process.h"
 #include "libcamera/internal/thread.h"
 #include "libcamera/internal/utils.h"
 
@@ -67,6 +68,7 @@ private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 
 	IPAManager ipaManager_;
+	ProcessManager processManager_;
 };
 
 CameraManager::Private::Private(CameraManager *cm)

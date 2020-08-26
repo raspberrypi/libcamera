@@ -41,28 +41,6 @@ LOG_DEFINE_CATEGORY(Process)
  * The ProcessManager singleton keeps track of all created Process instances,
  * and manages the signal handling involved in terminating processes.
  */
-class ProcessManager
-{
-public:
-	void registerProcess(Process *proc);
-
-	static ProcessManager *instance();
-
-	int writePipe() const;
-
-	const struct sigaction &oldsa() const;
-
-private:
-	void sighandler(EventNotifier *notifier);
-	ProcessManager();
-	~ProcessManager();
-
-	std::list<Process *> processes_;
-
-	struct sigaction oldsa_;
-	EventNotifier *sigEvent_;
-	int pipe_[2];
-};
 
 namespace {
 
@@ -127,8 +105,20 @@ void ProcessManager::registerProcess(Process *proc)
 	processes_.push_back(proc);
 }
 
+ProcessManager *ProcessManager::self_ = nullptr;
+
+/**
+ * \brief Construct a ProcessManager instance
+ *
+ * The ProcessManager class is meant to only be instantiated once, by the
+ * CameraManager.
+ */
 ProcessManager::ProcessManager()
 {
+	if (self_)
+		LOG(Process, Fatal)
+			<< "Multiple ProcessManager objects are not allowed";
+
 	sigaction(SIGCHLD, NULL, &oldsa_);
 
 	struct sigaction sa;
@@ -145,6 +135,8 @@ ProcessManager::ProcessManager()
 			<< "Failed to initialize pipe for signal handling";
 	sigEvent_ = new EventNotifier(pipe_[0], EventNotifier::Read);
 	sigEvent_->activated.connect(this, &ProcessManager::sighandler);
+
+	self_ = this;
 }
 
 ProcessManager::~ProcessManager()
@@ -153,21 +145,21 @@ ProcessManager::~ProcessManager()
 	delete sigEvent_;
 	close(pipe_[0]);
 	close(pipe_[1]);
+
+	self_ = nullptr;
 }
 
 /**
  * \brief Retrieve the Process manager instance
  *
- * The ProcessManager is a singleton and can't be constructed manually. This
- * method shall instead be used to retrieve the single global instance of the
- * manager.
+ * The ProcessManager is constructed by the CameraManager. This function shall
+ * be used to retrieve the single instance of the manager.
  *
  * \return The Process manager instance
  */
 ProcessManager *ProcessManager::instance()
 {
-	static ProcessManager processManager;
-	return &processManager;
+	return self_;
 }
 
 /**

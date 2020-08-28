@@ -115,7 +115,8 @@ LOG_DECLARE_CATEGORY(MediaDevice)
  */
 int MediaLink::setEnabled(bool enable)
 {
-	unsigned int flags = enable ? MEDIA_LNK_FL_ENABLED : 0;
+	unsigned int flags = (flags_ & ~MEDIA_LNK_FL_ENABLED)
+			   | (enable ? MEDIA_LNK_FL_ENABLED : 0);
 
 	int ret = dev_->setupLink(this, flags);
 	if (ret)

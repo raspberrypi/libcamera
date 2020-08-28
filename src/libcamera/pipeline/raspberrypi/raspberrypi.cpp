@@ -904,6 +904,8 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		return false;
 
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
+	if (!data->dmaHeap_.isValid())
+		return false;
 
 	/* Locate and open the unicam video streams. */
 	data->unicam_[Unicam::Embedded] = RPiStream("Unicam Embedded", unicam_->getEntityByName("unicam-embedded"));

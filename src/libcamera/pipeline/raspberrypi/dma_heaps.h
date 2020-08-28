@@ -18,6 +18,7 @@ class DmaHeap
 public:
 	DmaHeap();
 	~DmaHeap();
+	bool isValid() const { return dmaHeapHandle_ > -1; }
 	FileDescriptor alloc(const char *name, std::size_t size);
 
 private:

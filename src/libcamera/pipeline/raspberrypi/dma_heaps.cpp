@@ -7,6 +7,7 @@
 
 #include "dma_heaps.h"
 
+#include <array>
 #include <fcntl.h>
 #include <linux/dma-buf.h>
 #include <linux/dma-heap.h>
@@ -22,8 +23,10 @@
  * Annoyingly, should the cma heap size be specified on the kernel command line
  * instead of DT, the heap gets named "reserved" instead.
  */
-#define DMA_HEAP_CMA_NAME "/dev/dma_heap/linux,cma"
-#define DMA_HEAP_CMA_ALT_NAME "/dev/dma_heap/reserved"
+static constexpr std::array<const char *, 2> heapNames = {
+	"/dev/dma_heap/linux,cma",
+	"/dev/dma_heap/reserved"
+};
 
 namespace libcamera {
 
@@ -32,19 +35,28 @@ LOG_DECLARE_CATEGORY(RPI)
 namespace RPi {
 
 DmaHeap::DmaHeap()
+	: dmaHeapHandle_(-1)
 {
-	dmaHeapHandle_ = ::open(DMA_HEAP_CMA_NAME, O_RDWR, 0);
-	if (dmaHeapHandle_ == -1) {
-		dmaHeapHandle_ = ::open(DMA_HEAP_CMA_ALT_NAME, O_RDWR, 0);
-		if (dmaHeapHandle_ == -1) {
-			LOG(RPI, Error) << "Could not open dmaHeap device";
+	for (const char *name : heapNames) {
+		int ret = ::open(name, O_RDWR, 0);
+		if (ret < 0) {
+			ret = errno;
+			LOG(RPI, Debug) << "Failed to open " << name << ": "
+					<< strerror(ret);
+			continue;
 		}
+
+		dmaHeapHandle_ = ret;
+		break;
 	}
+
+	if (dmaHeapHandle_ < 0)
+		LOG(RPI, Error) << "Could not open any dmaHeap device";
 }
 
 DmaHeap::~DmaHeap()
 {
-	if (dmaHeapHandle_)
+	if (dmaHeapHandle_ > -1)
 		::close(dmaHeapHandle_);
 }
 

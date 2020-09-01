@@ -97,6 +97,8 @@ private:
 	getYUVResolutions(libcamera::CameraConfiguration *cameraConfig,
 			  const libcamera::PixelFormat &pixelFormat,
 			  const std::vector<libcamera::Size> &resolutions);
+	std::vector<libcamera::Size>
+	getRawResolutions(const libcamera::PixelFormat &pixelFormat);
 
 	std::tuple<uint32_t, uint32_t> calculateStaticMetadataSize();
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);

@@ -314,6 +314,17 @@ std::vector<Size> CameraDevice::getYUVResolutions(CameraConfiguration *cameraCon
 	return supportedResolutions;
 }
 
+std::vector<Size> CameraDevice::getRawResolutions(const libcamera::PixelFormat &pixelFormat)
+{
+	std::unique_ptr<CameraConfiguration> cameraConfig =
+		camera_->generateConfiguration({ StillCaptureRaw });
+	StreamConfiguration &cfg = cameraConfig->at(0);
+	const StreamFormats &formats = cfg.formats();
+	std::vector<Size> supportedResolutions = formats.sizes(pixelFormat);
+
+	return supportedResolutions;
+}
+
 /*
  * Initialize the format conversion map to translate from Android format
  * identifier to libcamera pixel formats and fill in the list of supported
@@ -458,9 +469,15 @@ int CameraDevice::initializeStreamConfigurations()
 				<< camera3Format.name << " to "
 				<< mappedFormat.toString();
 
-		std::vector<Size> resolutions = getYUVResolutions(cameraConfig.get(),
-								  mappedFormat,
-								  cameraResolutions);
+		std::vector<Size> resolutions;
+		const PixelFormatInfo &info = PixelFormatInfo::info(mappedFormat);
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			resolutions = getRawResolutions(mappedFormat);
+		else
+			resolutions = getYUVResolutions(cameraConfig.get(),
+							mappedFormat,
+							cameraResolutions);
+
 		for (const Size &res : resolutions) {
 			streamConfigurations_.push_back({ res, androidFormat });
 

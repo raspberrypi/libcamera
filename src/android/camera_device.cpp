@@ -369,12 +369,19 @@ int CameraDevice::initializeStreamConfigurations()
 		const std::vector<PixelFormat> &libcameraFormats =
 			camera3Format.libcameraFormats;
 
+		LOG(HAL, Debug) << "Trying to map Android format "
+				<< camera3Format.name;
+
 		/*
 		 * JPEG is always supported, either produced directly by the
 		 * camera, or encoded in the HAL.
 		 */
 		if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
 			formatsMap_[androidFormat] = formats::MJPEG;
+			LOG(HAL, Debug) << "Mapped Android format "
+					<< camera3Format.name << " to "
+					<< formats::MJPEG.toString()
+					<< " (fixed mapping)";
 			continue;
 		}
 
@@ -384,6 +391,8 @@ int CameraDevice::initializeStreamConfigurations()
 		 */
 		PixelFormat mappedFormat;
 		for (const PixelFormat &pixelFormat : libcameraFormats) {
+
+			LOG(HAL, Debug) << "Testing " << pixelFormat.toString();
 
 			/*
 			 * The stream configuration size can be adjusted,
@@ -420,14 +429,22 @@ int CameraDevice::initializeStreamConfigurations()
 		 * stream configurations map, by testing the image resolutions.
 		 */
 		formatsMap_[androidFormat] = mappedFormat;
+		LOG(HAL, Debug) << "Mapped Android format "
+				<< camera3Format.name << " to "
+				<< mappedFormat.toString();
 
 		for (const Size &res : cameraResolutions) {
 			cfg.pixelFormat = mappedFormat;
 			cfg.size = res;
 
 			CameraConfiguration::Status status = cameraConfig->validate();
-			if (status != CameraConfiguration::Valid)
+			if (status != CameraConfiguration::Valid) {
+				LOG(HAL, Debug) << cfg.toString()
+						<< " not supported";
 				continue;
+			}
+
+			LOG(HAL, Debug) << cfg.toString() << " supported";
 
 			streamConfigurations_.push_back({ res, androidFormat });
 

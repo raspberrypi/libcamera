@@ -141,3 +141,6 @@ pkg_mod.generate(libraries : libcamera,
                  filebase : 'camera',
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')
+
+## Summarise Configurations
+message('Enabled pipelines: ' + ', '.join(get_option('pipelines')))

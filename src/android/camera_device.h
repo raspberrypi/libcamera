@@ -93,6 +93,11 @@ private:
 	};
 
 	int initializeStreamConfigurations();
+	std::vector<libcamera::Size>
+	getYUVResolutions(libcamera::CameraConfiguration *cameraConfig,
+			  const libcamera::PixelFormat &pixelFormat,
+			  const std::vector<libcamera::Size> &resolutions);
+
 	std::tuple<uint32_t, uint32_t> calculateStaticMetadataSize();
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);

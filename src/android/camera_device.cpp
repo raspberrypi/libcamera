@@ -289,6 +289,31 @@ int CameraDevice::initialize()
 	return ret;
 }
 
+std::vector<Size> CameraDevice::getYUVResolutions(CameraConfiguration *cameraConfig,
+						  const PixelFormat &pixelFormat,
+						  const std::vector<Size> &resolutions)
+{
+	std::vector<Size> supportedResolutions;
+
+	StreamConfiguration &cfg = cameraConfig->at(0);
+	for (const Size &res : resolutions) {
+		cfg.pixelFormat = pixelFormat;
+		cfg.size = res;
+
+		CameraConfiguration::Status status = cameraConfig->validate();
+		if (status != CameraConfiguration::Valid) {
+			LOG(HAL, Debug) << cfg.toString() << " not supported";
+			continue;
+		}
+
+		LOG(HAL, Debug) << cfg.toString() << " supported";
+
+		supportedResolutions.push_back(res);
+	}
+
+	return supportedResolutions;
+}
+
 /*
  * Initialize the format conversion map to translate from Android format
  * identifier to libcamera pixel formats and fill in the list of supported
@@ -433,19 +458,10 @@ int CameraDevice::initializeStreamConfigurations()
 				<< camera3Format.name << " to "
 				<< mappedFormat.toString();
 
-		for (const Size &res : cameraResolutions) {
-			cfg.pixelFormat = mappedFormat;
-			cfg.size = res;
-
-			CameraConfiguration::Status status = cameraConfig->validate();
-			if (status != CameraConfiguration::Valid) {
-				LOG(HAL, Debug) << cfg.toString()
-						<< " not supported";
-				continue;
-			}
-
-			LOG(HAL, Debug) << cfg.toString() << " supported";
-
+		std::vector<Size> resolutions = getYUVResolutions(cameraConfig.get(),
+								  mappedFormat,
+								  cameraResolutions);
+		for (const Size &res : resolutions) {
 			streamConfigurations_.push_back({ res, androidFormat });
 
 			/*

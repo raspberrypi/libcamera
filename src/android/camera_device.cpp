@@ -398,10 +398,16 @@ int CameraDevice::initializeStreamConfigurations()
 				break;
 			}
 		}
-		if (camera3Format.mandatory && !mappedFormat.isValid()) {
-			LOG(HAL, Error) << "Failed to map Android format "
-					<< camera3Format.name << " ("
-					<< utils::hex(androidFormat) << ")";
+
+		if (!mappedFormat.isValid()) {
+			/* If the format is not mandatory, skip it. */
+			if (!camera3Format.mandatory)
+				continue;
+
+			LOG(HAL, Error)
+				<< "Failed to map mandatory Android format "
+				<< camera3Format.name << " ("
+				<< utils::hex(androidFormat) << "): aborting";
 			return -EINVAL;
 		}
 

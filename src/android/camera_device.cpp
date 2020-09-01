@@ -370,16 +370,20 @@ int CameraDevice::initializeStreamConfigurations()
 			camera3Format.libcameraFormats;
 
 		/*
+		 * JPEG is always supported, either produced directly by the
+		 * camera, or encoded in the HAL.
+		 */
+		if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
+			formatsMap_[androidFormat] = formats::MJPEG;
+			continue;
+		}
+
+		/*
 		 * Test the libcamera formats that can produce images
 		 * compatible with the format defined by Android.
 		 */
 		PixelFormat mappedFormat;
 		for (const PixelFormat &pixelFormat : libcameraFormats) {
-			/* \todo Fixed mapping for JPEG. */
-			if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
-				mappedFormat = formats::MJPEG;
-				break;
-			}
 
 			/*
 			 * The stream configuration size can be adjusted,
@@ -422,19 +426,25 @@ int CameraDevice::initializeStreamConfigurations()
 			cfg.size = res;
 
 			CameraConfiguration::Status status = cameraConfig->validate();
-			/*
-			 * Unconditionally report we can produce JPEG.
-			 *
-			 * \todo The JPEG stream will be implemented as an
-			 * HAL-only stream, but some cameras can produce it
-			 * directly. As of now, claim support for JPEG without
-			 * inspecting where the JPEG stream is produced.
-			 */
-			if (androidFormat != HAL_PIXEL_FORMAT_BLOB &&
-			    status != CameraConfiguration::Valid)
+			if (status != CameraConfiguration::Valid)
 				continue;
 
 			streamConfigurations_.push_back({ res, androidFormat });
+
+			/*
+			 * If the format is HAL_PIXEL_FORMAT_YCbCr_420_888
+			 * from which JPEG is produced, add an entry for
+			 * the JPEG stream.
+			 *
+			 * \todo Wire the JPEG encoder to query the supported
+			 * sizes provided a list of formats it can encode.
+			 *
+			 * \todo Support JPEG streams produced by the Camera
+			 * natively.
+			 */
+			if (androidFormat == HAL_PIXEL_FORMAT_YCbCr_420_888)
+				streamConfigurations_.push_back(
+					{ res, HAL_PIXEL_FORMAT_BLOB });
 		}
 	}
 

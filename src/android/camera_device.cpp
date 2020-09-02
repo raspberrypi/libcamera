@@ -1211,7 +1211,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		stream->priv = static_cast<void *>(&streams_[i]);
 
 		/* Defer handling of MJPEG streams until all others are known. */
-		if (format == formats::MJPEG)
+		if (stream->format == HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
 		StreamConfiguration streamConfiguration;
@@ -1228,7 +1228,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		camera3_stream_t *stream = stream_list->streams[i];
 		bool match = false;
 
-		if (streams_[i].format != formats::MJPEG)
+		if (stream->format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
 		/* Search for a compatible stream */

@@ -392,7 +392,7 @@ MappedBuffer::~MappedBuffer()
 
 /**
  * \var MappedBuffer::maps_
- * \brief Stores the internal
+ * \brief Stores the internal mapped planes
  *
  * MappedBuffer derived classes shall store the mappings they create in this
  * vector which is parsed during destruct to unmap any memory mappings which

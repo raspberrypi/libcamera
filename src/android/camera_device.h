@@ -29,15 +29,14 @@ class CameraMetadata;
 
 struct CameraStream {
 public:
-	CameraStream(libcamera::PixelFormat, libcamera::Size, unsigned int i);
-	~CameraStream();
+	CameraStream(libcamera::PixelFormat, libcamera::Size, unsigned int i,
+		     Encoder *e = nullptr);
 
 	unsigned int index() const { return index_; }
+	Encoder *encoder() const { return encoder_.get(); }
 
 	libcamera::PixelFormat format;
 	libcamera::Size size;
-
-	Encoder *jpeg;
 
 private:
 	/*
@@ -46,6 +45,7 @@ private:
 	 * one or more streams to the Android framework.
 	 */
 	unsigned int index_;
+	std::unique_ptr<Encoder> encoder_;
 };
 
 class CameraDevice : protected libcamera::Loggable

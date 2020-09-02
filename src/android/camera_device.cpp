@@ -169,15 +169,10 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 	}
 }
 
-CameraStream::CameraStream(PixelFormat f, Size s, unsigned int i)
-	: format(f), size(s), jpeg(nullptr), index_(i)
+CameraStream::CameraStream(PixelFormat f, Size s, unsigned int i, Encoder *e)
+	: format(f), size(s), index_(i), encoder_(e)
 {
 }
-
-CameraStream::~CameraStream()
-{
-	delete jpeg;
-};
 
 /*
  * \struct Camera3RequestDescriptor
@@ -1278,20 +1273,21 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		}
 
 		StreamConfiguration &cfg = config_->at(index);
-		CameraStream &cameraStream =
-			streams_.emplace_back(formats::MJPEG, cfg.size, index);
-		jpegStream->priv = static_cast<void *>(&cameraStream);
 
 		/*
 		 * Construct a software encoder for the MJPEG streams from the
 		 * chosen libcamera source stream.
 		 */
-		cameraStream.jpeg = new EncoderLibJpeg();
-		int ret = cameraStream.jpeg->configure(cfg);
+		Encoder *encoder = new EncoderLibJpeg();
+		int ret = encoder->configure(cfg);
 		if (ret) {
 			LOG(HAL, Error) << "Failed to configure encoder";
+			delete encoder;
 			return ret;
 		}
+
+		streams_.emplace_back(formats::MJPEG, cfg.size, index, encoder);
+		jpegStream->priv = static_cast<void *>(&streams_.back());
 	}
 
 	switch (config_->validate()) {
@@ -1480,7 +1476,7 @@ void CameraDevice::requestComplete(Request *request)
 		if (cameraStream->format != formats::MJPEG)
 			continue;
 
-		Encoder *encoder = cameraStream->jpeg;
+		Encoder *encoder = cameraStream->encoder();
 		if (!encoder) {
 			LOG(HAL, Error) << "Failed to identify encoder";
 			continue;

@@ -1190,12 +1190,6 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	streams_.clear();
 	streams_.reserve(stream_list->num_streams);
 
-	/*
-	 * Track actually created streams, as there may not be a 1:1 mapping of
-	 * camera3 streams to libcamera streams.
-	 */
-	unsigned int streamIndex = 0;
-
 	/* First handle all non-MJPEG streams. */
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
@@ -1226,8 +1220,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		streamConfiguration.pixelFormat = format;
 
 		config_->addConfiguration(streamConfiguration);
-
-		streams_[i].index = streamIndex++;
+		streams_[i].index = config_->size() - 1;
 	}
 
 	/* Now handle MJPEG streams, adding a new stream if required. */
@@ -1276,7 +1269,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 				       << " for MJPEG support";
 
 			config_->addConfiguration(streamConfiguration);
-			streams_[i].index = streamIndex++;
+			streams_[i].index = config_->size() - 1;
 		}
 	}
 

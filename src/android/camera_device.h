@@ -28,20 +28,24 @@
 class CameraMetadata;
 
 struct CameraStream {
-	CameraStream(libcamera::PixelFormat, libcamera::Size);
+public:
+	CameraStream(libcamera::PixelFormat, libcamera::Size, unsigned int i);
 	~CameraStream();
 
-	/*
-	 * The index of the libcamera StreamConfiguration as added during
-	 * configureStreams(). A single libcamera Stream may be used to deliver
-	 * one or more streams to the Android framework.
-	 */
-	unsigned int index;
+	unsigned int index() const { return index_; }
 
 	libcamera::PixelFormat format;
 	libcamera::Size size;
 
 	Encoder *jpeg;
+
+private:
+	/*
+	 * The index of the libcamera StreamConfiguration as added during
+	 * configureStreams(). A single libcamera Stream may be used to deliver
+	 * one or more streams to the Android framework.
+	 */
+	unsigned int index_;
 };
 
 class CameraDevice : protected libcamera::Loggable

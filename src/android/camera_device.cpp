@@ -169,8 +169,8 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 	}
 }
 
-CameraStream::CameraStream(PixelFormat f, Size s)
-	: index(-1), format(f), size(s), jpeg(nullptr)
+CameraStream::CameraStream(PixelFormat f, Size s, unsigned int i)
+	: format(f), size(s), jpeg(nullptr), index_(i)
 {
 }
 
@@ -1191,6 +1191,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	streams_.reserve(stream_list->num_streams);
 
 	/* First handle all non-MJPEG streams. */
+	camera3_stream_t *jpegStream = nullptr;
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 		Size size(stream->width, stream->height);
@@ -1207,52 +1208,56 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		if (!format.isValid())
 			return -EINVAL;
 
-		streams_.emplace_back(format, size);
-		stream->priv = static_cast<void *>(&streams_[i]);
-
 		/* Defer handling of MJPEG streams until all others are known. */
-		if (stream->format == HAL_PIXEL_FORMAT_BLOB)
+		if (stream->format == HAL_PIXEL_FORMAT_BLOB) {
+			if (jpegStream) {
+				LOG(HAL, Error)
+					<< "Multiple JPEG streams are not supported";
+				return -EINVAL;
+			}
+
+			jpegStream = stream;
 			continue;
+		}
 
 		StreamConfiguration streamConfiguration;
-
 		streamConfiguration.size = size;
 		streamConfiguration.pixelFormat = format;
 
 		config_->addConfiguration(streamConfiguration);
-		streams_[i].index = config_->size() - 1;
+		unsigned int index = config_->size() - 1;
+		streams_.emplace_back(format, size, index);
+		stream->priv = static_cast<void *>(&streams_.back());
 	}
 
-	/* Now handle MJPEG streams, adding a new stream if required. */
-	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
-		camera3_stream_t *stream = stream_list->streams[i];
-		bool match = false;
+	/* Now handle the MJPEG streams, adding a new stream if required. */
+	if (jpegStream) {
+		int index = -1;
 
-		if (stream->format != HAL_PIXEL_FORMAT_BLOB)
-			continue;
-
-		/* Search for a compatible stream */
-		for (unsigned int j = 0; j < config_->size(); j++) {
-			StreamConfiguration &cfg = config_->at(j);
+		/* Search for a compatible stream in the non-JPEG ones. */
+		for (unsigned int i = 0; i < config_->size(); i++) {
+			StreamConfiguration &cfg = config_->at(i);
 
 			/*
 			 * \todo The PixelFormat must also be compatible with
 			 * the encoder.
 			 */
-			if (cfg.size == streams_[i].size) {
-				LOG(HAL, Info) << "Stream " << i
-					       << " using libcamera stream " << j;
+			if (cfg.size.width != jpegStream->width ||
+			    cfg.size.height != jpegStream->height)
+				continue;
 
-				match = true;
-				streams_[i].index = j;
-			}
+			LOG(HAL, Info)
+				<< "Android JPEG stream mapped to libcamera stream " << i;
+
+			index = i;
+			break;
 		}
 
 		/*
 		 * Without a compatible match for JPEG encoding we must
 		 * introduce a new stream to satisfy the request requirements.
 		 */
-		if (!match) {
+		if (index < 0) {
 			StreamConfiguration streamConfiguration;
 
 			/*
@@ -1261,15 +1266,31 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			 * handled, and should be considered as part of any
 			 * stream configuration reworks.
 			 */
-			streamConfiguration.size.width = stream->width;
-			streamConfiguration.size.height = stream->height;
+			streamConfiguration.size.width = jpegStream->width;
+			streamConfiguration.size.height = jpegStream->height;
 			streamConfiguration.pixelFormat = formats::NV12;
 
 			LOG(HAL, Info) << "Adding " << streamConfiguration.toString()
 				       << " for MJPEG support";
 
 			config_->addConfiguration(streamConfiguration);
-			streams_[i].index = config_->size() - 1;
+			index = config_->size() - 1;
+		}
+
+		StreamConfiguration &cfg = config_->at(index);
+		CameraStream &cameraStream =
+			streams_.emplace_back(formats::MJPEG, cfg.size, index);
+		jpegStream->priv = static_cast<void *>(&cameraStream);
+
+		/*
+		 * Construct a software encoder for the MJPEG streams from the
+		 * chosen libcamera source stream.
+		 */
+		cameraStream.jpeg = new EncoderLibJpeg();
+		int ret = cameraStream.jpeg->configure(cfg);
+		if (ret) {
+			LOG(HAL, Error) << "Failed to configure encoder";
+			return ret;
 		}
 	}
 
@@ -1292,25 +1313,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
-		CameraStream *cameraStream = &streams_[i];
-		StreamConfiguration &cfg = config_->at(cameraStream->index);
+		CameraStream *cameraStream = static_cast<CameraStream *>(stream->priv);
+		StreamConfiguration &cfg = config_->at(cameraStream->index());
 
 		/* Use the bufferCount confirmed by the validation process. */
 		stream->max_buffers = cfg.bufferCount;
-
-		/*
-		 * Construct a software encoder for MJPEG streams from the
-		 * chosen libcamera source stream.
-		 */
-		if (cameraStream->format == formats::MJPEG) {
-			cameraStream->jpeg = new EncoderLibJpeg();
-			int ret = cameraStream->jpeg->configure(cfg);
-			if (ret) {
-				LOG(HAL, Error)
-					<< "Failed to configure encoder";
-				return ret;
-			}
-		}
 	}
 
 	/*
@@ -1424,7 +1431,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		}
 		descriptor->frameBuffers.emplace_back(buffer);
 
-		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index);
+		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index());
 		Stream *stream = streamConfiguration->stream();
 
 		request->addBuffer(stream, buffer);
@@ -1479,7 +1486,7 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index);
+		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index());
 		Stream *stream = streamConfiguration->stream();
 		FrameBuffer *buffer = request->findBuffer(stream);
 		if (!buffer) {

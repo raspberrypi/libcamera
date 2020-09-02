@@ -169,8 +169,9 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 	}
 }
 
-CameraStream::CameraStream(PixelFormat f, Size s, unsigned int i, Encoder *e)
-	: format(f), size(s), index_(i), encoder_(e)
+CameraStream::CameraStream(PixelFormat format, Size size,
+			   unsigned int index, Encoder *encoder)
+	: format_(format), size_(size), index_(index), encoder_(encoder)
 {
 }
 
@@ -1409,7 +1410,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
 
 		/* Software streams are handled after hardware streams complete. */
-		if (cameraStream->format == formats::MJPEG)
+		if (cameraStream->format() == formats::MJPEG)
 			continue;
 
 		/*
@@ -1473,7 +1474,7 @@ void CameraDevice::requestComplete(Request *request)
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(descriptor->buffers[i].stream->priv);
 
-		if (cameraStream->format != formats::MJPEG)
+		if (cameraStream->format() != formats::MJPEG)
 			continue;
 
 		Encoder *encoder = cameraStream->encoder();
@@ -1508,7 +1509,7 @@ void CameraDevice::requestComplete(Request *request)
 		exif.setMake("libcamera");
 		exif.setModel("cameraModel");
 		exif.setOrientation(orientation_);
-		exif.setSize(cameraStream->size);
+		exif.setSize(cameraStream->size());
 		/*
 		 * We set the frame's EXIF timestamp as the time of encode.
 		 * Since the precision we need for EXIF timestamp is only one

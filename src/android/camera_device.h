@@ -27,18 +27,20 @@
 
 class CameraMetadata;
 
-struct CameraStream {
+class CameraStream
+{
 public:
-	CameraStream(libcamera::PixelFormat, libcamera::Size, unsigned int i,
-		     Encoder *e = nullptr);
+	CameraStream(libcamera::PixelFormat format, libcamera::Size size,
+		     unsigned int index, Encoder *encoder = nullptr);
 
+	const libcamera::PixelFormat &format() const { return format_; }
+	const libcamera::Size &size() const { return size_; }
 	unsigned int index() const { return index_; }
 	Encoder *encoder() const { return encoder_.get(); }
 
-	libcamera::PixelFormat format;
-	libcamera::Size size;
-
 private:
+	libcamera::PixelFormat format_;
+	libcamera::Size size_;
 	/*
 	 * The index of the libcamera StreamConfiguration as added during
 	 * configureStreams(). A single libcamera Stream may be used to deliver

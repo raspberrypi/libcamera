@@ -34,8 +34,6 @@ install_headers(libcamera_public_headers,
 #
 
 # control_ids.h and property_ids.h
-gen_controls = files('../../src/libcamera/gen-controls.py')
-
 control_source_files = [
     'control_ids',
     'property_ids',
@@ -57,8 +55,6 @@ endforeach
 libcamera_public_headers += control_headers
 
 # formats.h
-gen_formats = files('gen-formats.py')
-
 formats_h = custom_target('formats_h',
                           input : files(
                               '../../src/libcamera/formats.yaml',
@@ -72,8 +68,6 @@ formats_h = custom_target('formats_h',
 libcamera_public_headers += formats_h
 
 # libcamera.h
-gen_header = files('gen-header.sh')
-
 libcamera_h = custom_target('gen-header',
                             input : 'meson.build',
                             output : 'libcamera.h',

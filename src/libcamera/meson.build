@@ -77,8 +77,6 @@ if libudev.found()
     ])
 endif
 
-gen_controls = files('gen-controls.py')
-
 control_sources = []
 
 foreach source : control_source_files

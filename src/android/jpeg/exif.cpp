@@ -186,9 +186,11 @@ void Exif::setSize(const Size &size)
 
 void Exif::setTimestamp(time_t timestamp)
 {
+	struct tm tm;
+	localtime_r(&timestamp, &tm);
+
 	char str[20];
-	std::strftime(str, sizeof(str), "%Y:%m:%d %H:%M:%S",
-		      std::localtime(&timestamp));
+	strftime(str, sizeof(str), "%Y:%m:%d %H:%M:%S", &tm);
 	std::string ts(str);
 
 	setString(EXIF_IFD_0, EXIF_TAG_DATE_TIME, EXIF_FORMAT_ASCII, ts);

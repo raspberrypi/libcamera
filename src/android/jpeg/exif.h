@@ -7,8 +7,8 @@
 #ifndef __ANDROID_JPEG_EXIF_H__
 #define __ANDROID_JPEG_EXIF_H__
 
-#include <ctime>
 #include <string>
+#include <time.h>
 
 #include <libexif/exif-data.h>
 

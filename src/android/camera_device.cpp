@@ -1216,12 +1216,14 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 		config_->addConfiguration(streamConfiguration);
 		unsigned int index = config_->size() - 1;
-		streams_.emplace_back(format, size, index);
+		streams_.emplace_back(format, size, CameraStream::Type::Direct,
+				      index);
 		stream->priv = static_cast<void *>(&streams_.back());
 	}
 
 	/* Now handle the MJPEG streams, adding a new stream if required. */
 	if (jpegStream) {
+		CameraStream::Type type;
 		int index = -1;
 
 		/* Search for a compatible stream in the non-JPEG ones. */
@@ -1239,6 +1241,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			LOG(HAL, Info)
 				<< "Android JPEG stream mapped to libcamera stream " << i;
 
+			type = CameraStream::Type::Mapped;
 			index = i;
 			break;
 		}
@@ -1263,6 +1266,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			LOG(HAL, Info) << "Adding " << streamConfiguration.toString()
 				       << " for MJPEG support";
 
+			type = CameraStream::Type::Internal;
 			config_->addConfiguration(streamConfiguration);
 			index = config_->size() - 1;
 		}
@@ -1281,7 +1285,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			return ret;
 		}
 
-		streams_.emplace_back(formats::MJPEG, cfg.size, index, encoder);
+		streams_.emplace_back(formats::MJPEG, cfg.size, type, index, encoder);
 		jpegStream->priv = static_cast<void *>(&streams_.back());
 	}
 

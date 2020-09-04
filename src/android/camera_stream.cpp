@@ -12,7 +12,7 @@
 using namespace libcamera;
 
 CameraStream::CameraStream(PixelFormat format, Size size,
-			   unsigned int index, Encoder *encoder)
-	: format_(format), size_(size), index_(index), encoder_(encoder)
+			   Type type, unsigned int index, Encoder *encoder)
+	: format_(format), size_(size), type_(type), index_(index), encoder_(encoder)
 {
 }

@@ -1376,7 +1376,10 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	Request *request =
 		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
 
+	LOG(HAL, Debug) << "Queueing Request to libcamera with "
+			<< descriptor->numBuffers << " HAL streams";
 	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
+		camera3_stream *camera3Stream = camera3Buffers[i].stream;
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(camera3Buffers[i].stream->priv);
 
@@ -1386,6 +1389,13 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		 */
 		descriptor->buffers[i].stream = camera3Buffers[i].stream;
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
+
+		std::stringstream ss;
+		ss << i << " - (" << camera3Stream->width << "x"
+		   << camera3Stream->height << ")"
+		   << "[" << utils::hex(camera3Stream->format) << "] -> "
+		   << "(" << cameraStream->configuration().size.toString() << ")["
+		   << cameraStream->configuration().pixelFormat.toString() << "]";
 
 		/*
 		 * Inspect the camera stream type, create buffers opportunely
@@ -1398,6 +1408,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * Mapped streams don't need buffers added to the
 			 * Request.
 			 */
+			LOG(HAL, Debug) << ss.str() << " (mapped)";
 			continue;
 
 		case CameraStream::Type::Direct:
@@ -1409,6 +1420,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 */
 			buffer = createFrameBuffer(*camera3Buffers[i].buffer);
 			descriptor->frameBuffers.emplace_back(buffer);
+			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 
 		case CameraStream::Type::Internal:
@@ -1420,6 +1432,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * once it has been processed.
 			 */
 			buffer = cameraStream->getBuffer();
+			LOG(HAL, Debug) << ss.str() << " (internal)";
 			break;
 		}
 

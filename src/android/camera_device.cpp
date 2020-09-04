@@ -1387,24 +1387,48 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->buffers[i].stream = camera3Buffers[i].stream;
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
 
-		/* Software streams are handled after hardware streams complete. */
-		if (cameraStream->camera3Stream().format == HAL_PIXEL_FORMAT_BLOB)
+		/*
+		 * Inspect the camera stream type, create buffers opportunely
+		 * and add them to the Request if required.
+		 */
+		FrameBuffer *buffer = nullptr;
+		switch (cameraStream->type()) {
+		case CameraStream::Type::Mapped:
+			/*
+			 * Mapped streams don't need buffers added to the
+			 * Request.
+			 */
 			continue;
 
-		/*
-		 * Create a libcamera buffer using the dmabuf descriptors of
-		 * the camera3Buffer for each stream. The FrameBuffer is
-		 * directly associated with the Camera3RequestDescriptor for
-		 * lifetime management only.
-		 */
-		FrameBuffer *buffer = createFrameBuffer(*camera3Buffers[i].buffer);
+		case CameraStream::Type::Direct:
+			/*
+			 * Create a libcamera buffer using the dmabuf
+			 * descriptors of the camera3Buffer for each stream and
+			 * associate it with the Camera3RequestDescriptor for
+			 * lifetime management only.
+			 */
+			buffer = createFrameBuffer(*camera3Buffers[i].buffer);
+			descriptor->frameBuffers.emplace_back(buffer);
+			break;
+
+		case CameraStream::Type::Internal:
+			/*
+			 * Get the frame buffer from the CameraStream internal
+			 * buffer pool.
+			 *
+			 * The buffer has to be returned to the CameraStream
+			 * once it has been processed.
+			 */
+			buffer = cameraStream->getBuffer();
+			break;
+		}
+
 		if (!buffer) {
 			LOG(HAL, Error) << "Failed to create buffer";
 			delete request;
 			delete descriptor;
 			return -ENOMEM;
 		}
-		descriptor->frameBuffers.emplace_back(buffer);
 
 		request->addBuffer(cameraStream->stream(), buffer);
 	}
@@ -1476,6 +1500,13 @@ void CameraDevice::requestComplete(Request *request)
 			status = CAMERA3_BUFFER_STATUS_ERROR;
 			continue;
 		}
+
+		/*
+		 * Return the FrameBuffer to the CameraStream now that we're
+		 * done processing it.
+		 */
+		if (cameraStream->type() == CameraStream::Type::Internal)
+			cameraStream->putBuffer(buffer);
 	}
 
 	/* Prepare to call back the Android camera stack. */

@@ -1113,7 +1113,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	/*
 	 * Clear and remove any existing configuration from previous calls, and
 	 * ensure the required entries are available without further
-	 * re-allcoation.
+	 * reallocation.
 	 */
 	streams_.clear();
 	streams_.reserve(stream_list->num_streams);

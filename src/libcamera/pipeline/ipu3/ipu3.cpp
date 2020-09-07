@@ -138,6 +138,11 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	if (transform != Transform::Identity) {
+		transform = Transform::Identity;
+		status = Adjusted;
+	}
+
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > IPU3_MAX_STREAMS) {
 		config_.resize(IPU3_MAX_STREAMS);

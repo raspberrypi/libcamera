@@ -586,6 +586,11 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	if (transform != Transform::Identity) {
+		transform = Transform::Identity;
+		status = Adjusted;
+	}
+
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > 2) {
 		config_.resize(2);

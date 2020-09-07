@@ -250,6 +250,11 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	if (transform != Transform::Identity) {
+		transform = Transform::Identity;
+		status = Adjusted;
+	}
+
 	unsigned int rawCount = 0, outCount = 0, count = 0, maxIndex = 0;
 	std::pair<int, Size> outSize[2];
 	Size maxSize;

@@ -438,6 +438,11 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	if (transform != Transform::Identity) {
+		transform = Transform::Identity;
+		status = Adjusted;
+	}
+
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > 1) {
 		config_.resize(1);

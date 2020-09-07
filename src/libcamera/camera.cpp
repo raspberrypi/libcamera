@@ -94,7 +94,7 @@ LOG_DECLARE_CATEGORY(Camera)
  * \brief Create an empty camera configuration
  */
 CameraConfiguration::CameraConfiguration()
-	: config_({})
+	: transform(Transform::Identity), config_({})
 {
 }
 
@@ -250,6 +250,20 @@ std::size_t CameraConfiguration::size() const
 {
 	return config_.size();
 }
+
+/**
+ * \var CameraConfiguration::transform
+ * \brief User-specified transform to be applied to the image
+ *
+ * The transform is a user-specified 2D plane transform that will be applied
+ * to the camera images by the processing pipeline before being handed to
+ * the application. This is subsequent to any transform that is already
+ * required to fix up any platform-defined rotation.
+ *
+ * The usual 2D plane transforms are allowed here (horizontal/vertical
+ * flips, multiple of 90-degree rotations etc.), but the validate() function
+ * may adjust this field at its discretion if the selection is not supported.
+ */
 
 /**
  * \var CameraConfiguration::config_

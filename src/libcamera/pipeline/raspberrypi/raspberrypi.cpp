@@ -23,6 +23,7 @@
 
 #include <linux/videodev2.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
@@ -133,6 +134,7 @@ class RPiCameraData : public CameraData
 public:
 	RPiCameraData(PipelineHandler *pipe)
 		: CameraData(pipe), sensor_(nullptr), state_(State::Stopped),
+		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  dropFrameCount_(0), ispOutputCount_(0)
 	{
 	}
@@ -140,7 +142,7 @@ public:
 	void frameStarted(uint32_t sequence);
 
 	int loadIPA();
-	int configureIPA();
+	int configureIPA(const CameraConfiguration *config);
 
 	void queueFrameAction(unsigned int frame, const IPAOperationData &action);
 
@@ -182,6 +184,15 @@ public:
 	std::queue<FrameBuffer *> embeddedQueue_;
 	std::deque<Request *> requestQueue_;
 
+	/*
+	 * Manage horizontal and vertical flips supported (or not) by the
+	 * sensor. Also store the "native" Bayer order (that is, with no
+	 * transforms applied).
+	 */
+	bool supportsFlips_;
+	bool flipsAlterBayerOrder_;
+	BayerFormat::Order nativeBayerOrder_;
+
 	unsigned int dropFrameCount_;
 
 private:
@@ -200,6 +211,9 @@ public:
 	RPiCameraConfiguration(const RPiCameraData *data);
 
 	Status validate() override;
+
+	/* Cache the combinedTransform_ that will be applied to the sensor */
+	Transform combinedTransform_;
 
 private:
 	const RPiCameraData *data_;
@@ -250,10 +264,60 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
-	if (transform != Transform::Identity) {
-		transform = Transform::Identity;
+	/*
+	 * What if the platform has a non-90 degree rotation? We can't even
+	 * "adjust" the configuration and carry on. Alternatively, raising an
+	 * error means the platform can never run. Let's just print a warning
+	 * and continue regardless; the rotation is effectively set to zero.
+	 */
+	int32_t rotation = data_->sensor_->properties().get(properties::Rotation);
+	bool success;
+	Transform rotationTransform = transformFromRotation(rotation, &success);
+	if (!success)
+		LOG(RPI, Warning) << "Invalid rotation of " << rotation
+				  << " degrees - ignoring";
+	Transform combined = transform * rotationTransform;
+
+	/*
+	 * We combine the platform and user transform, but must "adjust away"
+	 * any combined result that includes a transform, as we can't do those.
+	 * In this case, flipping only the transpose bit is helpful to
+	 * applications - they either get the transform they requested, or have
+	 * to do a simple transpose themselves (they don't have to worry about
+	 * the other possible cases).
+	 */
+	if (!!(combined & Transform::Transpose)) {
+		/*
+		 * Flipping the transpose bit in "transform" flips it in the
+		 * combined result too (as it's the last thing that happens),
+		 * which is of course clearing it.
+		 */
+		transform ^= Transform::Transpose;
+		combined &= ~Transform::Transpose;
 		status = Adjusted;
 	}
+
+	/*
+	 * We also check if the sensor doesn't do h/vflips at all, in which
+	 * case we clear them, and the application will have to do everything.
+	 */
+	if (!data_->supportsFlips_ && !!combined) {
+		/*
+		 * If the sensor can do no transforms, then combined must be
+		 * changed to the identity. The only user transform that gives
+		 * rise to this the inverse of the rotation. (Recall that
+		 * combined = transform * rotationTransform.)
+		 */
+		transform = -rotationTransform;
+		combined = Transform::Identity;
+		status = Adjusted;
+	}
+
+	/*
+	 * Store the final combined transform that configure() will need to
+	 * apply to the sensor to save us working it out again.
+	 */
+	combinedTransform_ = combined;
 
 	unsigned int rawCount = 0, outCount = 0, count = 0, maxIndex = 0;
 	std::pair<int, Size> outSize[2];
@@ -270,7 +334,23 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			if (ret)
 				return Invalid;
 
-			PixelFormat sensorPixFormat = sensorFormat.fourcc.toPixelFormat();
+			/*
+			 * Some sensors change their Bayer order when they are
+			 * h-flipped or v-flipped, according to the transform.
+			 * If this one does, we must advertise the transformed
+			 * Bayer order in the raw stream. Note how we must
+			 * fetch the "native" (i.e. untransformed) Bayer order,
+			 * because the sensor may currently be flipped!
+			 */
+			V4L2PixelFormat fourcc = sensorFormat.fourcc;
+			if (data_->flipsAlterBayerOrder_) {
+				BayerFormat bayer(fourcc);
+				bayer.order = data_->nativeBayerOrder_;
+				bayer = bayer.transform(combined);
+				fourcc = bayer.toV4L2PixelFormat();
+			}
+
+			PixelFormat sensorPixFormat = fourcc.toPixelFormat();
 			if (cfg.size != sensorFormat.size ||
 			    cfg.pixelFormat != sensorPixFormat) {
 				cfg.size = sensorFormat.size;
@@ -613,7 +693,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	crop.y = (sensorFormat.size.height - crop.height) >> 1;
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
-	ret = data->configureIPA();
+	ret = data->configureIPA(config);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
 
@@ -847,6 +927,47 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	data->properties_ = data->sensor_->properties();
 
 	/*
+	 * We cache three things about the sensor in relation to transforms
+	 * (meaning horizontal and vertical flips).
+	 *
+	 * Firstly, does it support them?
+	 * Secondly, if you use them does it affect the Bayer ordering?
+	 * Thirdly, what is the "native" Bayer order, when no transforms are
+	 * applied?
+	 *
+	 * As part of answering the final question, we reset the camera to
+	 * no transform at all.
+	 */
+
+	V4L2VideoDevice *dev = data->unicam_[Unicam::Image].dev();
+	const struct v4l2_query_ext_ctrl *hflipCtrl = dev->controlInfo(V4L2_CID_HFLIP);
+	if (hflipCtrl) {
+		/* We assume it will support vflips too... */
+		data->supportsFlips_ = true;
+		data->flipsAlterBayerOrder_ = hflipCtrl->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT;
+
+		ControlList ctrls(dev->controls());
+		ctrls.set(V4L2_CID_HFLIP, 0);
+		ctrls.set(V4L2_CID_VFLIP, 0);
+		dev->setControls(&ctrls);
+	}
+
+	/* Look for a valid Bayer format. */
+	BayerFormat bayerFormat;
+	for (const auto &iter : dev->formats()) {
+		V4L2PixelFormat v4l2Format = iter.first;
+		bayerFormat = BayerFormat(v4l2Format);
+		if (bayerFormat.isValid())
+			break;
+	}
+
+	if (!bayerFormat.isValid()) {
+		LOG(RPI, Error) << "No Bayer format found";
+		return false;
+	}
+	data->nativeBayerOrder_ = bayerFormat.order;
+
+	/*
 	 * List the available streams an application may request. At present, we
 	 * do not advertise Unicam Embedded and ISP Statistics streams, as there
 	 * is no mechanism for the application to request non-image buffer formats.
@@ -985,8 +1106,12 @@ int RPiCameraData::loadIPA()
 	return ipa_->init(settings);
 }
 
-int RPiCameraData::configureIPA()
+int RPiCameraData::configureIPA(const CameraConfiguration *config)
 {
+	/* We know config must be an RPiCameraConfiguration. */
+	const RPiCameraConfiguration *rpiConfig =
+		static_cast<const RPiCameraConfiguration *>(config);
+
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, const ControlInfoMap &> entityControls;
 	IPAOperationData ipaConfig = {};
@@ -1045,12 +1170,18 @@ int RPiCameraData::configureIPA()
 			sensorMetadata_ = result.data[resultIdx++];
 		}
 
-		/* Configure the H/V flip controls based on the sensor rotation. */
-		ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
-		int32_t rotation = sensor_->properties().get(properties::Rotation);
-		ctrls.set(V4L2_CID_HFLIP, static_cast<int32_t>(!!rotation));
-		ctrls.set(V4L2_CID_VFLIP, static_cast<int32_t>(!!rotation));
-		unicam_[Unicam::Image].dev()->setControls(&ctrls);
+		/*
+		 * Configure the H/V flip controls based on the combination of
+		 * the sensor and user transform.
+		 */
+		if (supportsFlips_) {
+			ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
+			ctrls.set(V4L2_CID_HFLIP,
+				  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
+			ctrls.set(V4L2_CID_VFLIP,
+				  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
+			unicam_[Unicam::Image].dev()->setControls(&ctrls);
+		}
 	}
 
 	if (result.operation & RPI_IPA_CONFIG_SENSOR) {

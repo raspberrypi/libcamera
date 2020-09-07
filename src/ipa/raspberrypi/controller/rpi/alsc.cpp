@@ -184,7 +184,10 @@ void Alsc::waitForAysncThread()
 
 static bool compare_modes(CameraMode const &cm0, CameraMode const &cm1)
 {
-	// Return true if the modes crop from the sensor significantly differently.
+	// Return true if the modes crop from the sensor significantly differently,
+	// or if the user transform has changed.
+	if (cm0.transform != cm1.transform)
+		return true;
 	int left_diff = abs(cm0.crop_x - cm1.crop_x);
 	int top_diff = abs(cm0.crop_y - cm1.crop_y);
 	int right_diff = fabs(cm0.crop_x + cm0.scale_x * cm0.width -
@@ -428,6 +431,10 @@ void resample_cal_table(double const cal_table_in[XY],
 		xf[i] = x - x_lo[i];
 		x_hi[i] = std::min(x_lo[i] + 1, X - 1);
 		x_lo[i] = std::max(x_lo[i], 0);
+		if (!!(camera_mode.transform & libcamera::Transform::HFlip)) {
+			x_lo[i] = X - 1 - x_lo[i];
+			x_hi[i] = X - 1 - x_hi[i];
+		}
 	}
 	// Now march over the output table generating the new values.
 	double scale_y = camera_mode.sensor_height /
@@ -440,6 +447,10 @@ void resample_cal_table(double const cal_table_in[XY],
 		double yf = y - y_lo;
 		int y_hi = std::min(y_lo + 1, Y - 1);
 		y_lo = std::max(y_lo, 0);
+		if (!!(camera_mode.transform & libcamera::Transform::VFlip)) {
+			y_lo = Y - 1 - y_lo;
+			y_hi = Y - 1 - y_hi;
+		}
 		double const *row_above = cal_table_in + X * y_lo;
 		double const *row_below = cal_table_in + X * y_hi;
 		for (int i = 0; i < X; i++) {

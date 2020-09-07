@@ -354,6 +354,21 @@ int V4L2Device::setControls(ControlList *ctrls)
 }
 
 /**
+ * \brief Retrieve the v4l2_query_ext_ctrl information for the given control
+ * \param[in] id The V4L2 control id
+ * \return A pointer to the v4l2_query_ext_ctrl structure for the given
+ * control, or a null pointer if not found
+ */
+const struct v4l2_query_ext_ctrl *V4L2Device::controlInfo(uint32_t id) const
+{
+	const auto it = controlInfo_.find(id);
+	if (it == controlInfo_.end())
+		return nullptr;
+
+	return &it->second;
+}
+
+/**
  * \brief Retrieve the device path in sysfs
  *
  * This function returns the sysfs path to the physical device backing the V4L2

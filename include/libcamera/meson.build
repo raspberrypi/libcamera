@@ -19,6 +19,7 @@ libcamera_public_headers = files([
     'span.h',
     'stream.h',
     'timer.h',
+    'transform.h',
 ])
 
 include_dir = join_paths(libcamera_include_dir, 'libcamera')

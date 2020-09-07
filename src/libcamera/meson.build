@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_sources = files([
+    'bayer_format.cpp',
     'bound_method.cpp',
     'buffer.cpp',
     'byte_stream_buffer.cpp',

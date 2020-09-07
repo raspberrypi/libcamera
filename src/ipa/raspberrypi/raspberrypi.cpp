@@ -230,6 +230,33 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	/* Re-assemble camera mode using the sensor info. */
 	setMode(sensorInfo);
 
+	/*
+	 * The ipaConfig.data always gives us the user transform first. Note that
+	 * this will always make the LS table pointer (if present) element 1.
+	 */
+	mode_.transform = static_cast<libcamera::Transform>(ipaConfig.data[0]);
+
+	/* Store the lens shading table pointer and handle if available. */
+	if (ipaConfig.operation & RPI_IPA_CONFIG_LS_TABLE) {
+		/* Remove any previous table, if there was one. */
+		if (lsTable_) {
+			munmap(lsTable_, MAX_LS_GRID_SIZE);
+			lsTable_ = nullptr;
+		}
+
+		/* Map the LS table buffer into user space (now element 1). */
+		lsTableHandle_ = FileDescriptor(ipaConfig.data[1]);
+		if (lsTableHandle_.isValid()) {
+			lsTable_ = mmap(nullptr, MAX_LS_GRID_SIZE, PROT_READ | PROT_WRITE,
+					MAP_SHARED, lsTableHandle_.fd(), 0);
+
+			if (lsTable_ == MAP_FAILED) {
+				LOG(IPARPI, Error) << "dmaHeap mmap failure for LS table.";
+				lsTable_ = nullptr;
+			}
+		}
+	}
+
 	/* Pass the camera mode to the CamHelper to setup algorithms. */
 	helper_->SetCameraMode(mode_);
 
@@ -282,27 +309,6 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	}
 
 	lastMode_ = mode_;
-
-	/* Store the lens shading table pointer and handle if available. */
-	if (ipaConfig.operation & RPI_IPA_CONFIG_LS_TABLE) {
-		/* Remove any previous table, if there was one. */
-		if (lsTable_) {
-			munmap(lsTable_, MAX_LS_GRID_SIZE);
-			lsTable_ = nullptr;
-		}
-
-		/* Map the LS table buffer into user space. */
-		lsTableHandle_ = FileDescriptor(ipaConfig.data[0]);
-		if (lsTableHandle_.isValid()) {
-			lsTable_ = mmap(nullptr, MAX_LS_GRID_SIZE, PROT_READ | PROT_WRITE,
-					MAP_SHARED, lsTableHandle_.fd(), 0);
-
-			if (lsTable_ == MAP_FAILED) {
-				LOG(IPARPI, Error) << "dmaHeap mmap failure for LS table.";
-				lsTable_ = nullptr;
-			}
-		}
-	}
 }
 
 void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)

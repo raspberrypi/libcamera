@@ -1133,6 +1133,9 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	entityControls.emplace(0, unicam_[Unicam::Image].dev()->controls());
 	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
 
+	/* Always send the user transform to the IPA. */
+	ipaConfig.data = { static_cast<unsigned int>(config->transform) };
+
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
 		lsTable_ = dmaHeap_.alloc("ls_grid", MAX_LS_GRID_SIZE);
@@ -1141,7 +1144,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 		/* Allow the IPA to mmap the LS table via the file descriptor. */
 		ipaConfig.operation = RPI_IPA_CONFIG_LS_TABLE;
-		ipaConfig.data = { static_cast<unsigned int>(lsTable_.fd()) };
+		ipaConfig.data.push_back(static_cast<unsigned int>(lsTable_.fd()));
 	}
 
 	CameraSensorInfo sensorInfo = {};

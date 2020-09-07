@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <libcamera/transform.h>
+
 // Description of a "camera mode", holding enough information for control
 // algorithms to adapt their behaviour to the different modes of the camera,
 // including binning, scaling, cropping etc.
@@ -33,6 +35,8 @@ struct CameraMode {
 	double noise_factor;
 	// line time in nanoseconds
 	double line_length;
+	// any camera transform *not* reflected already in the camera tuning
+	libcamera::Transform transform;
 };
 
 #ifdef __cplusplus

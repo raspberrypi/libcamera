@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from mojom.generate import module
 from mojom_parser_test_case import MojomParserTestCase
 
 
@@ -20,9 +21,11 @@ class VersionCompatibilityTest(MojomParserTestCase):
     self.assertEqual(set(old.keys()), set(new.keys()),
                      'Old and new test mojoms should use the same type names.')
 
+    checker = module.BackwardCompatibilityChecker()
     compatibility_map = {}
     for name in old.keys():
-      compatibility_map[name] = new[name].IsBackwardCompatible(old[name])
+      compatibility_map[name] = checker.IsBackwardCompatible(
+          new[name], old[name])
     return compatibility_map
 
   def assertBackwardCompatible(self, old_mojom, new_mojom):
@@ -233,6 +236,47 @@ class VersionCompatibilityTest(MojomParserTestCase):
     backward-compatibility."""
     self.assertNotBackwardCompatible('union U { string a; };',
                                      'union U { string? a; };')
+
+  def testFieldNestedTypeChanged(self):
+    """Changing the definition of a nested type within a field (such as an array
+    element or interface endpoint type) should only break backward-compatibility
+    if the changes to that type are not backward-compatible."""
+    self.assertBackwardCompatible(
+        """\
+        struct S { string a; };
+        struct T { array<S> ss; };
+        """, """\
+        struct S {
+          string a;
+          [MinVersion=1] string? b;
+        };
+        struct T { array<S> ss; };
+        """)
+    self.assertBackwardCompatible(
+        """\
+        interface F { Do(); };
+        struct S { pending_receiver<F> r; };
+        """, """\
+        interface F {
+          Do();
+          [MinVersion=1] Say();
+        };
+        struct S { pending_receiver<F> r; };
+        """)
+
+  def testRecursiveTypeChange(self):
+    """Recursive types do not break the compatibility checker."""
+    self.assertBackwardCompatible(
+        """\
+        struct S {
+          string a;
+          array<S> others;
+        };""", """\
+        struct S {
+          string a;
+          array<S> others;
+          [MinVersion=1] string? b;
+        };""")
 
   def testUnionFieldBecomingNonOptional(self):
     """Changing a field from optional to non-optional breaks

@@ -32,7 +32,7 @@ static int hal_get_camera_info(int id, struct camera_info *info)
 	return cameraManager.getCameraInfo(id, info);
 }
 
-static int hal_set_callbacks([[maybe_unused]] const camera_module_callbacks_t *callbacks)
+static int hal_set_callbacks(const camera_module_callbacks_t *callbacks)
 {
 	cameraManager.setCallbacks(callbacks);
 

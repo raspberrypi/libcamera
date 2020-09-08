@@ -29,7 +29,7 @@ LOG_DECLARE_CATEGORY(HAL);
  */
 
 CameraHalManager::CameraHalManager()
-	: cameraManager_(nullptr), numInternalCameras_(0),
+	: cameraManager_(nullptr), callbacks_(nullptr), numInternalCameras_(0),
 	  nextExternalCameraId_(firstExternalCameraId_)
 {
 }
@@ -69,6 +69,11 @@ CameraDevice *CameraHalManager::open(unsigned int id,
 				     const hw_module_t *hardwareModule)
 {
 	MutexLocker locker(mutex_);
+
+	if (!callbacks_) {
+		LOG(HAL, Error) << "Can't open camera before callbacks are set";
+		return nullptr;
+	}
 
 	CameraDevice *camera = cameraDeviceFromHalId(id);
 	if (!camera) {

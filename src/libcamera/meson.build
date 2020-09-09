@@ -100,7 +100,6 @@ version_cpp = vcs_tag(command : [gen_version, meson.build_root()],
 libcamera_sources += version_cpp
 
 if ipa_sign_module
-    gen_ipa_pub_key = files('gen-ipa-pub-key.py')
     ipa_pub_key_cpp = custom_target('ipa_pub_key_cpp',
                                     input : [ ipa_priv_key, 'ipa_pub_key.cpp.in' ],
                                     output : 'ipa_pub_key.cpp',

@@ -6,3 +6,7 @@ subdir('ipu3')
 gen_controls = files('gen-controls.py')
 gen_formats = files('gen-formats.py')
 gen_header = files('gen-header.sh')
+
+## Module signing
+gen_ipa_priv_key = files('gen-ipa-priv-key.sh')
+gen_ipa_pub_key = files('gen-ipa-pub-key.py')

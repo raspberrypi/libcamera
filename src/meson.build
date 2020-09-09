@@ -4,7 +4,6 @@ subdir('android')
 
 openssl = find_program('openssl', required : true)
 if openssl.found()
-    gen_ipa_priv_key = files('ipa/gen-ipa-priv-key.sh')
     ipa_priv_key = custom_target('ipa-priv-key',
                                  output : [ 'ipa-priv-key.pem' ],
                                  command : [ gen_ipa_priv_key, '@OUTPUT@' ])

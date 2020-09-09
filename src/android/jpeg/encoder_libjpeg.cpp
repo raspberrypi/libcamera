@@ -180,7 +180,8 @@ void EncoderLibJpeg::compressNV(const libcamera::MappedBuffer *frame)
 }
 
 int EncoderLibJpeg::encode(const FrameBuffer *source,
-			   const libcamera::Span<uint8_t> &dest)
+			   const libcamera::Span<uint8_t> &dest,
+			   const libcamera::Span<const uint8_t> &exifData)
 {
 	MappedFrameBuffer frame(source, PROT_READ);
 	if (!frame.isValid()) {
@@ -203,6 +204,12 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 	jpeg_mem_dest(&compress_, &destination, &size);
 
 	jpeg_start_compress(&compress_, TRUE);
+
+	if (exifData.size())
+		/* Store Exif data in the JPEG_APP1 data block. */
+		jpeg_write_marker(&compress_, JPEG_APP0 + 1,
+				  static_cast<const JOCTET *>(exifData.data()),
+				  exifData.size());
 
 	LOG(JPEG, Debug) << "JPEG Encode Starting:" << compress_.image_width
 			 << "x" << compress_.image_height;

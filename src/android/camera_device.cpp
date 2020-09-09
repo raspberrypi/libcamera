@@ -24,6 +24,7 @@
 #include "system/graphics.h"
 
 #include "jpeg/encoder_libjpeg.h"
+#include "jpeg/exif.h"
 
 using namespace libcamera;
 
@@ -1439,7 +1440,23 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		int jpeg_size = encoder->encode(buffer, mapped.maps()[0]);
+		/* Set EXIF metadata for various tags. */
+		Exif exif;
+		/* \todo Set Make and Model from external vendor tags. */
+		exif.setMake("libcamera");
+		exif.setModel("cameraModel");
+		exif.setOrientation(orientation_);
+		exif.setSize(cameraStream->size);
+		/*
+		 * We set the frame's EXIF timestamp as the time of encode.
+		 * Since the precision we need for EXIF timestamp is only one
+		 * second, it is good enough.
+		 */
+		exif.setTimestamp(std::time(nullptr));
+		if (exif.generate() != 0)
+			LOG(HAL, Error) << "Failed to generate valid EXIF data";
+
+		int jpeg_size = encoder->encode(buffer, mapped.maps()[0], exif.data());
 		if (jpeg_size < 0) {
 			LOG(HAL, Error) << "Failed to encode stream image";
 			status = CAMERA3_BUFFER_STATUS_ERROR;

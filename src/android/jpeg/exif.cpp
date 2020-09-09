@@ -168,6 +168,56 @@ void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format, const std::str
 	exif_entry_unref(entry);
 }
 
+void Exif::setMake(const std::string &make)
+{
+	setString(EXIF_IFD_0, EXIF_TAG_MAKE, EXIF_FORMAT_ASCII, make);
+}
+
+void Exif::setModel(const std::string &model)
+{
+	setString(EXIF_IFD_0, EXIF_TAG_MODEL, EXIF_FORMAT_ASCII, model);
+}
+
+void Exif::setSize(const Size &size)
+{
+	setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_Y_DIMENSION, size.height);
+	setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_X_DIMENSION, size.width);
+}
+
+void Exif::setTimestamp(time_t timestamp)
+{
+	char str[20];
+	std::strftime(str, sizeof(str), "%Y:%m:%d %H:%M:%S",
+		      std::localtime(&timestamp));
+	std::string ts(str);
+
+	setString(EXIF_IFD_0, EXIF_TAG_DATE_TIME, EXIF_FORMAT_ASCII, ts);
+	setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_ORIGINAL, EXIF_FORMAT_ASCII, ts);
+	setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_DIGITIZED, EXIF_FORMAT_ASCII, ts);
+}
+
+void Exif::setOrientation(int orientation)
+{
+	int value;
+	switch (orientation) {
+	case 0:
+	default:
+		value = 1;
+		break;
+	case 90:
+		value = 8;
+		break;
+	case 180:
+		value = 3;
+		break;
+	case 270:
+		value = 6;
+		break;
+	}
+
+	setShort(EXIF_IFD_0, EXIF_TAG_ORIENTATION, value);
+}
+
 [[nodiscard]] int Exif::generate()
 {
 	if (exifData_) {

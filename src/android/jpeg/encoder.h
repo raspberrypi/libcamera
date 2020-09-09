@@ -18,7 +18,8 @@ public:
 
 	virtual int configure(const libcamera::StreamConfiguration &cfg) = 0;
 	virtual int encode(const libcamera::FrameBuffer *source,
-			   const libcamera::Span<uint8_t> &destination) = 0;
+			   const libcamera::Span<uint8_t> &destination,
+			   const libcamera::Span<const uint8_t> &exifData) = 0;
 };
 
 #endif /* __ANDROID_JPEG_ENCODER_H__ */

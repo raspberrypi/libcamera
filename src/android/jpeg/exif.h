@@ -12,6 +12,7 @@
 
 #include <libexif/exif-data.h>
 
+#include <libcamera/geometry.h>
 #include <libcamera/span.h>
 
 class Exif
@@ -19,6 +20,13 @@ class Exif
 public:
 	Exif();
 	~Exif();
+
+	void setMake(const std::string &make);
+	void setModel(const std::string &model);
+
+	void setOrientation(int orientation);
+	void setSize(const libcamera::Size &size);
+	void setTimestamp(time_t timestamp);
 
 	libcamera::Span<const uint8_t> data() const { return { exifData_, size_ }; }
 	[[nodiscard]] int generate();

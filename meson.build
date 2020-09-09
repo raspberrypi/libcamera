@@ -101,9 +101,11 @@ add_project_link_arguments(cpp_arguments, language : 'cpp')
 
 libcamera_includes = include_directories('include')
 
+# Utilities are parsed first to provide support for other components.
+subdir('utils')
+
 subdir('include')
 subdir('src')
-subdir('utils')
 
 # The documentation and test components are optional and can be disabled
 # through configuration values. They are enabled by default.

@@ -144,25 +144,16 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		status = Adjusted;
 	}
 
-	/*
-	 * Validate the requested stream configuration and select the sensor
-	 * format by collecting the maximum RAW stream width and height and
-	 * picking the closest larger match, as the IPU3 can downscale only. If
-	 * no resolution is requested for the RAW stream, use the one from the
-	 * largest YUV stream, plus margins pixels for the IF and BDS to scale.
-	 * If no resolution is requested for any stream, pick the largest one.
-	 */
+	/* Validate the requested stream configuration */
 	unsigned int rawCount = 0;
 	unsigned int yuvCount = 0;
 	Size maxYuvSize;
-	Size maxRawSize;
 
 	for (const StreamConfiguration &cfg : config_) {
 		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
 			rawCount++;
-			maxRawSize.expandTo(cfg.size);
 		} else {
 			yuvCount++;
 			maxYuvSize.expandTo(cfg.size);
@@ -174,18 +165,22 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		return Invalid;
 	}
 
-	if (maxRawSize.isNull())
-		maxRawSize = maxYuvSize.alignedUpTo(IMGU_OUTPUT_WIDTH_MARGIN,
-						    IMGU_OUTPUT_HEIGHT_MARGIN)
-				       .boundedTo(data_->cio2_.sensor()->resolution());
-
 	/*
 	 * Generate raw configuration from CIO2.
 	 *
-	 * The output YUV streams will be limited in size to the maximum
-	 * frame size requested for the RAW stream.
+	 * \todo The image sensor frame size should be selected to optimize
+	 * operations based on the sizes of the requested streams. However such
+	 * a selection makes the pipeline configuration procedure fail for small
+	 * resolutions (for example: 640x480 with OV5670) and causes the capture
+	 * operations to stall for some stream size combinations (see the
+	 * commit message of the patch that introduced this comment for more
+	 * failure examples).
+	 *
+	 * Until the sensor frame size calculation criteria are clarified,
+	 * always use the largest possible one which guarantees better results
+	 * at the expense of the frame rate and CSI-2 bus bandwidth.
 	 */
-	cio2Configuration_ = data_->cio2_.generateConfiguration(maxRawSize);
+	cio2Configuration_ = data_->cio2_.generateConfiguration({});
 	if (!cio2Configuration_.pixelFormat.isValid())
 		return Invalid;
 

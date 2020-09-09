@@ -265,12 +265,17 @@ int CameraDevice::initialize()
 	}
 
 	/*
-	 * The Android orientation metadata and libcamera rotation property are
-	 * defined differently but have identical numerical values for Android
-	 * devices such as phones and tablets.
+	 * The Android orientation metadata specifies its rotation correction
+	 * value in clockwise direction whereas libcamera specifies the
+	 * rotation property in anticlockwise direction. Read the libcamera's
+	 * rotation property (anticlockwise) and compute the corresponding
+	 * value for clockwise direction as required by the Android orientation
+	 * metadata.
 	 */
-	if (properties.contains(properties::Rotation))
-		orientation_ = properties.get(properties::Rotation);
+	if (properties.contains(properties::Rotation)) {
+		int rotation = properties.get(properties::Rotation);
+		orientation_ = (360 - rotation) % 360;
+	}
 
 	int ret = camera_->acquire();
 	if (ret) {

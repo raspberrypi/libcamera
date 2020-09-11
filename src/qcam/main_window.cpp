@@ -28,6 +28,7 @@
 #include <libcamera/version.h>
 
 #include "dng_writer.h"
+#include "viewfinder_qt.h"
 
 using namespace libcamera;
 
@@ -105,10 +106,11 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	setWindowTitle(title_);
 	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
 
-	viewfinder_ = new ViewFinder(this);
-	connect(viewfinder_, &ViewFinder::renderComplete,
+	ViewFinderQt *viewfinder = new ViewFinderQt(this);
+	connect(viewfinder, &ViewFinderQt::renderComplete,
 		this, &MainWindow::queueRequest);
-	setCentralWidget(viewfinder_);
+	viewfinder_ = viewfinder;
+	setCentralWidget(viewfinder);
 	adjustSize();
 
 	/* Hotplug/unplug support */

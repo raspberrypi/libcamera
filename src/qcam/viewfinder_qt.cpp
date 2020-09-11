@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * viewfinder.cpp - qcam - Viewfinder
+ * viewfinder_qt.cpp - qcam - QPainter-based ViewFinder
  */
 
-#include "viewfinder.h"
+#include "viewfinder_qt.h"
 
 #include <stdint.h>
 #include <utility>
@@ -33,24 +33,24 @@ static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats
 	{ libcamera::formats::BGR888, QImage::Format_RGB888 },
 };
 
-ViewFinder::ViewFinder(QWidget *parent)
+ViewFinderQt::ViewFinderQt(QWidget *parent)
 	: QWidget(parent), buffer_(nullptr)
 {
 	icon_ = QIcon(":camera-off.svg");
 }
 
-ViewFinder::~ViewFinder()
+ViewFinderQt::~ViewFinderQt()
 {
 }
 
-const QList<libcamera::PixelFormat> &ViewFinder::nativeFormats() const
+const QList<libcamera::PixelFormat> &ViewFinderQt::nativeFormats() const
 {
 	static const QList<libcamera::PixelFormat> formats = ::nativeFormats.keys();
 	return formats;
 }
 
-int ViewFinder::setFormat(const libcamera::PixelFormat &format,
-			  const QSize &size)
+int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
+			    const QSize &size)
 {
 	image_ = QImage();
 
@@ -78,7 +78,7 @@ int ViewFinder::setFormat(const libcamera::PixelFormat &format,
 	return 0;
 }
 
-void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
+void ViewFinderQt::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
@@ -121,7 +121,7 @@ void ViewFinder::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 		renderComplete(buffer);
 }
 
-void ViewFinder::stop()
+void ViewFinderQt::stop()
 {
 	image_ = QImage();
 
@@ -133,14 +133,14 @@ void ViewFinder::stop()
 	update();
 }
 
-QImage ViewFinder::getCurrentImage()
+QImage ViewFinderQt::getCurrentImage()
 {
 	QMutexLocker locker(&mutex_);
 
 	return image_.copy();
 }
 
-void ViewFinder::paintEvent(QPaintEvent *)
+void ViewFinderQt::paintEvent(QPaintEvent *)
 {
 	QPainter painter(this);
 
@@ -175,7 +175,7 @@ void ViewFinder::paintEvent(QPaintEvent *)
 	painter.drawPixmap(point, pixmap_);
 }
 
-QSize ViewFinder::sizeHint() const
+QSize ViewFinderQt::sizeHint() const
 {
 	return size_.isValid() ? size_ : QSize(640, 480);
 }

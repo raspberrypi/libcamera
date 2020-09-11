@@ -6,12 +6,12 @@ qcam_sources = files([
     'format_converter.cpp',
     'main.cpp',
     'main_window.cpp',
-    'viewfinder.cpp',
+    'viewfinder_qt.cpp',
 ])
 
 qcam_moc_headers = files([
     'main_window.h',
-    'viewfinder.h',
+    'viewfinder_qt.h',
 ])
 
 qcam_resources = files([

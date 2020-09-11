@@ -16,6 +16,7 @@ qcam_moc_headers = files([
 
 qcam_resources = files([
     'assets/feathericons/feathericons.qrc',
+    'assets/shader/shaders.qrc'
 ])
 
 qt5 = import('qt5')

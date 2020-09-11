@@ -68,6 +68,13 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		nvSwap_ = true;
 		break;
 
+	case libcamera::formats::R8:
+		formatFamily_ = RGB;
+		r_pos_ = 0;
+		g_pos_ = 0;
+		b_pos_ = 0;
+		bpp_ = 1;
+		break;
 	case libcamera::formats::RGB888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;

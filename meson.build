@@ -26,6 +26,7 @@ libcamera_version = libcamera_git_version.split('+')[0]
 
 # Configure the build environment.
 cc = meson.get_compiler('c')
+cxx = meson.get_compiler('cpp')
 config_h = configuration_data()
 
 if cc.has_header_symbol('execinfo.h', 'backtrace')

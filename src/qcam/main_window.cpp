@@ -28,6 +28,9 @@
 #include <libcamera/version.h>
 
 #include "dng_writer.h"
+#ifndef QT_NO_OPENGL
+#include "viewfinder_gl.h"
+#endif
 #include "viewfinder_qt.h"
 
 using namespace libcamera;
@@ -106,11 +109,32 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	setWindowTitle(title_);
 	connect(&titleTimer_, SIGNAL(timeout()), this, SLOT(updateTitle()));
 
-	ViewFinderQt *viewfinder = new ViewFinderQt(this);
-	connect(viewfinder, &ViewFinderQt::renderComplete,
-		this, &MainWindow::queueRequest);
-	viewfinder_ = viewfinder;
-	setCentralWidget(viewfinder);
+	/* Renderer type Qt or GLES, select Qt by default. */
+	std::string renderType = "qt";
+	if (options_.isSet(OptRenderer))
+		renderType = options_[OptRenderer].toString();
+
+	if (renderType == "qt") {
+		ViewFinderQt *viewfinder = new ViewFinderQt(this);
+		connect(viewfinder, &ViewFinderQt::renderComplete,
+			this, &MainWindow::queueRequest);
+		viewfinder_ = viewfinder;
+		setCentralWidget(viewfinder);
+#ifndef QT_NO_OPENGL
+	} else if (renderType == "gles") {
+		ViewFinderGL *viewfinder = new ViewFinderGL(this);
+		connect(viewfinder, &ViewFinderGL::renderComplete,
+			this, &MainWindow::queueRequest);
+		viewfinder_ = viewfinder;
+		setCentralWidget(viewfinder);
+#endif
+	} else {
+		qWarning() << "Invalid render type"
+			   << QString::fromStdString(renderType);
+		quit();
+		return;
+	}
+
 	adjustSize();
 
 	/* Hotplug/unplug support */

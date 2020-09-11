@@ -33,6 +33,9 @@ OptionsParser::Options parseOptions(int argc, char *argv[])
 			 ArgumentRequired, "camera");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
+	parser.addOption(OptRenderer, OptionString,
+			 "Choose the renderer type {qt,gles} (default: qt)",
+			 "renderer", ArgumentRequired, "renderer");
 	parser.addOption(OptStream, &streamKeyValue,
 			 "Set configuration of a camera stream", "stream", true);
 

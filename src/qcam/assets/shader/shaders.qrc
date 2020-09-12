@@ -2,8 +2,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
 	<file>YUV.vert</file>
-	<file>YUV_2_planes_UV.frag</file>
-	<file>YUV_2_planes_VU.frag</file>
+	<file>YUV_2_planes.frag</file>
 	<file>YUV_3_planes.frag</file>
 </qresource>
 </RCC>

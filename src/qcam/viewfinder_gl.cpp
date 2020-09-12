@@ -106,32 +106,38 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::NV12:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV21:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV16:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV61:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV24:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV42:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
+		fragmentShaderFile_ = ":YUV_2_planes.frag";
 		break;
 	case libcamera::formats::YUV420:
 		horzSubSample_ = 2;

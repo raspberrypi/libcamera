@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * YUV_2_planes_UV.frag - Fragment shader code for NV12, NV16 and NV24 formats
+ * YUV_2_planes.frag - Fragment shader code for NV12, NV16 and NV24 formats
  */
 
 #ifdef GL_ES
@@ -24,8 +24,15 @@ void main(void)
 	);
 
 	yuv.x = texture2D(tex_y, textureOut).r - 0.063;
+#if defined(YUV_PATTERN_UV)
 	yuv.y = texture2D(tex_u, textureOut).r - 0.500;
 	yuv.z = texture2D(tex_u, textureOut).g - 0.500;
+#elif defined(YUV_PATTERN_VU)
+	yuv.y = texture2D(tex_u, textureOut).g - 0.500;
+	yuv.z = texture2D(tex_u, textureOut).r - 0.500;
+#else
+#error Invalid pattern
+#endif
 
 	rgb = yuv2rgb_bt601_mat * yuv;
 	gl_FragColor = vec4(rgb, 1.0);

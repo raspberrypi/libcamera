@@ -14,12 +14,19 @@
 #include <libcamera/formats.h>
 
 static const QList<libcamera::PixelFormat> supportedFormats{
+	/* Packed (single plane) */
+	libcamera::formats::UYVY,
+	libcamera::formats::VYUY,
+	libcamera::formats::YUYV,
+	libcamera::formats::YVYU,
+	/* Semi planar (two planes) */
 	libcamera::formats::NV12,
 	libcamera::formats::NV21,
 	libcamera::formats::NV16,
 	libcamera::formats::NV61,
 	libcamera::formats::NV24,
 	libcamera::formats::NV42,
+	/* Fully planar (three planes) */
 	libcamera::formats::YUV420,
 	libcamera::formats::YVU420,
 };
@@ -149,6 +156,22 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 		vertSubSample_ = 2;
 		fragmentShaderFile_ = ":YUV_3_planes.frag";
 		break;
+	case libcamera::formats::UYVY:
+		fragmentShaderDefines_.append("#define YUV_PATTERN_UYVY");
+		fragmentShaderFile_ = ":YUV_packed.frag";
+		break;
+	case libcamera::formats::VYUY:
+		fragmentShaderDefines_.append("#define YUV_PATTERN_VYUY");
+		fragmentShaderFile_ = ":YUV_packed.frag";
+		break;
+	case libcamera::formats::YUYV:
+		fragmentShaderDefines_.append("#define YUV_PATTERN_YUYV");
+		fragmentShaderFile_ = ":YUV_packed.frag";
+		break;
+	case libcamera::formats::YVYU:
+		fragmentShaderDefines_.append("#define YUV_PATTERN_YVYU");
+		fragmentShaderFile_ = ":YUV_packed.frag";
+		break;
 	default:
 		ret = false;
 		qWarning() << "[ViewFinderGL]:"
@@ -235,6 +258,7 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformY_ = shaderProgram_.uniformLocation("tex_y");
 	textureUniformU_ = shaderProgram_.uniformLocation("tex_u");
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
+	textureUniformStepX_ = shaderProgram_.uniformLocation("tex_stepx");
 
 	if (!textureY_.isCreated())
 		textureY_.create();
@@ -429,6 +453,38 @@ void ViewFinderGL::doRender()
 			     GL_UNSIGNED_BYTE,
 			     (char *)yuvData_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
+		break;
+
+	case libcamera::formats::UYVY:
+	case libcamera::formats::VYUY:
+	case libcamera::formats::YUYV:
+	case libcamera::formats::YVYU:
+		/*
+		 * Packed YUV formats are stored in a RGBA texture to match the
+		 * OpenGL texel size with the 4 bytes repeating pattern in YUV.
+		 * The texture width is thus half of the image with.
+		 */
+		glActiveTexture(GL_TEXTURE0);
+		configureTexture(textureY_);
+		glTexImage2D(GL_TEXTURE_2D,
+			     0,
+			     GL_RGBA,
+			     size_.width() / 2,
+			     size_.height(),
+			     0,
+			     GL_RGBA,
+			     GL_UNSIGNED_BYTE,
+			     yuvData_);
+		shaderProgram_.setUniformValue(textureUniformY_, 0);
+
+		/*
+		 * The shader needs the step between two texture pixels in the
+		 * horizontal direction, expressed in texture coordinate units
+		 * ([0, 1]). There are exactly width - 1 steps between the
+		 * leftmost and rightmost texels.
+		 */
+		shaderProgram_.setUniformValue(textureUniformStepX_,
+					       1.0f / (size_.width() / 2 - 1));
 		break;
 
 	default:

@@ -79,6 +79,7 @@ private:
 	GLuint textureUniformU_;
 	GLuint textureUniformV_;
 	GLuint textureUniformY_;
+	GLuint textureUniformStepX_;
 	QOpenGLTexture textureU_;
 	QOpenGLTexture textureV_;
 	QOpenGLTexture textureY_;

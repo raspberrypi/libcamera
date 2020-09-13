@@ -229,15 +229,12 @@ bool ViewFinderGL::createFragmentShader()
 	if (!textureV_.isCreated())
 		textureV_.create();
 
-	id_y_ = textureY_.textureId();
-	id_u_ = textureU_.textureId();
-	id_v_ = textureV_.textureId();
 	return true;
 }
 
-void ViewFinderGL::configureTexture(unsigned int id)
+void ViewFinderGL::configureTexture(QOpenGLTexture &texture)
 {
-	glBindTexture(GL_TEXTURE_2D, id);
+	glBindTexture(GL_TEXTURE_2D, texture.textureId());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -303,7 +300,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::NV42:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(id_y_);
+		configureTexture(textureY_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -317,7 +314,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture UV/VU */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(id_u_);
+		configureTexture(textureU_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RG,
@@ -333,7 +330,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::YUV420:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(id_y_);
+		configureTexture(textureY_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -347,7 +344,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture U */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(id_u_);
+		configureTexture(textureU_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -361,7 +358,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture V */
 		glActiveTexture(GL_TEXTURE2);
-		configureTexture(id_v_);
+		configureTexture(textureV_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -377,7 +374,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::YVU420:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(id_y_);
+		configureTexture(textureY_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -391,7 +388,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture V */
 		glActiveTexture(GL_TEXTURE2);
-		configureTexture(id_v_);
+		configureTexture(textureV_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -405,7 +402,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture U */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(id_u_);
+		configureTexture(textureU_);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,

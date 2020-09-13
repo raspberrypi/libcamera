@@ -53,7 +53,7 @@ protected:
 private:
 	bool selectFormat(const libcamera::PixelFormat &format);
 
-	void configureTexture(unsigned int id);
+	void configureTexture(QOpenGLTexture &texture);
 	bool createFragmentShader();
 	bool createVertexShader();
 	void removeShader();
@@ -78,9 +78,6 @@ private:
 	QString vertexShaderSrc_;
 
 	/* YUV texture planars and parameters */
-	GLuint id_u_;
-	GLuint id_v_;
-	GLuint id_y_;
 	GLuint textureUniformU_;
 	GLuint textureUniformV_;
 	GLuint textureUniformY_;

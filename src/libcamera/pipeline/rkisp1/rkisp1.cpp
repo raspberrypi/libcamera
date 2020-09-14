@@ -667,10 +667,11 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "Resizer output pad configured with " << format.toString();
 
+	const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 	V4L2DeviceFormat outputFormat = {};
 	outputFormat.fourcc = video_->toV4L2PixelFormat(cfg.pixelFormat);
 	outputFormat.size = cfg.size;
-	outputFormat.planesCount = 2;
+	outputFormat.planesCount = info.numPlanes();
 
 	ret = video_->setFormat(&outputFormat);
 	if (ret)

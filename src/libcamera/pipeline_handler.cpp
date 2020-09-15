@@ -689,9 +689,6 @@ void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
 	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
 
 	factories.push_back(factory);
-
-	LOG(Pipeline, Debug)
-		<< "Registered pipeline handler \"" << factory->name() << "\"";
 }
 
 /**

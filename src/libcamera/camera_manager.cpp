@@ -142,6 +142,9 @@ void CameraManager::Private::createPipelineHandlers()
 		PipelineHandlerFactory::factories();
 
 	for (PipelineHandlerFactory *factory : factories) {
+		LOG(Camera, Debug)
+			<< "Found registered pipeline handler '"
+			<< factory->name() << "'";
 		/*
 		 * Try each pipeline handler until it exhaust
 		 * all pipelines it can provide.

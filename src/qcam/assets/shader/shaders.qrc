@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-<file>./NV_vertex_shader.glsl</file>
-<file>./NV_2_planes_UV_f.glsl</file>
-<file>./NV_2_planes_VU_f.glsl</file>
-<file>./NV_3_planes_f.glsl</file>
+	<file>NV_vertex_shader.glsl</file>
+	<file>NV_2_planes_UV_f.glsl</file>
+	<file>NV_2_planes_VU_f.glsl</file>
+	<file>NV_3_planes_f.glsl</file>
 </qresource>
 </RCC>

@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-<file>./aperture.svg</file>
-<file>./camera-off.svg</file>
-<file>./play-circle.svg</file>
-<file>./save.svg</file>
-<file>./stop-circle.svg</file>
-<file>./x-circle.svg</file>
+	<file>aperture.svg</file>
+	<file>camera-off.svg</file>
+	<file>play-circle.svg</file>
+	<file>save.svg</file>
+	<file>stop-circle.svg</file>
+	<file>x-circle.svg</file>
 </qresource>
 </RCC>

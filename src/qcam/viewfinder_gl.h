@@ -65,16 +65,15 @@ private:
 	QSize size_;
 	unsigned char *yuvData_;
 
-	/* OpenGL components for rendering */
-	QOpenGLShader *fragmentShader_;
-	QOpenGLShader *vertexShader_;
+	/* Shaders */
 	QOpenGLShaderProgram shaderProgram_;
+	QOpenGLShader *vertexShader_;
+	QOpenGLShader *fragmentShader_;
+	QString fragmentShaderFile_;
+	QStringList fragmentShaderDefines_;
 
 	/* Vertex buffer */
 	QOpenGLBuffer vertexBuffer_;
-
-	/* Fragment shader file name */
-	QString fragmentShaderSrc_;
 
 	/* YUV texture planars and parameters */
 	GLuint textureUniformU_;

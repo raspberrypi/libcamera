@@ -7,6 +7,8 @@
 
 #include "viewfinder_gl.h"
 
+#include <QByteArray>
+#include <QFile>
 #include <QImage>
 
 #include <libcamera/formats.h>
@@ -24,7 +26,7 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
 	: QOpenGLWidget(parent), buffer_(nullptr), yuvData_(nullptr),
-	  fragmentShader_(nullptr), vertexShader_(nullptr),
+	  vertexShader_(nullptr), fragmentShader_(nullptr),
 	  vertexBuffer_(QOpenGLBuffer::VertexBuffer),
 	  textureU_(QOpenGLTexture::Target2D),
 	  textureV_(QOpenGLTexture::Target2D),
@@ -97,46 +99,49 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 {
 	bool ret = true;
+
+	fragmentShaderDefines_.clear();
+
 	switch (format) {
 	case libcamera::formats::NV12:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV21:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::NV16:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV61:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::NV24:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV42:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
+		fragmentShaderFile_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::YUV420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":YUV_3_planes.frag";
+		fragmentShaderFile_ = ":YUV_3_planes.frag";
 		break;
 	case libcamera::formats::YVU420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":YUV_3_planes.frag";
+		fragmentShaderFile_ = ":YUV_3_planes.frag";
 		break;
 	default:
 		ret = false;
@@ -168,11 +173,24 @@ bool ViewFinderGL::createFragmentShader()
 	int attributeVertex;
 	int attributeTexture;
 
-	/* Create Fragment Shader */
+	/*
+	 * Create the fragment shader, compile it, and add it to the shader
+	 * program. The #define macros stored in fragmentShaderDefines_, if
+	 * any, are prepended to the source code.
+	 */
 	fragmentShader_ = new QOpenGLShader(QOpenGLShader::Fragment, this);
 
-	/* Compile the fragment shader */
-	if (!fragmentShader_->compileSourceFile(fragmentShaderSrc_)) {
+	QFile file(fragmentShaderFile_);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		qWarning() << "Shader" << fragmentShaderFile_ << "not found";
+		return false;
+	}
+
+	QString defines = fragmentShaderDefines_.join('\n') + "\n";
+	QByteArray src = file.readAll();
+	src.prepend(defines.toUtf8());
+
+	if (!fragmentShader_->compileSourceCode(src)) {
 		qWarning() << "[ViewFinderGL]:" << fragmentShader_->log();
 		return false;
 	}

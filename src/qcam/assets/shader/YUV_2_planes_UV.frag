@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * NV_2_planes_VU_f.glsl - Fragment shader code for NV21, NV61 and NV42 formats
+ * YUV_2_planes_UV.frag - Fragment shader code for NV12, NV16 and NV24 formats
  */
 
 #ifdef GL_ES
@@ -24,8 +24,8 @@ void main(void)
 	);
 
 	yuv.x = texture2D(tex_y, textureOut).r - 0.063;
-	yuv.y = texture2D(tex_u, textureOut).g - 0.500;
-	yuv.z = texture2D(tex_u, textureOut).r - 0.500;
+	yuv.y = texture2D(tex_u, textureOut).r - 0.500;
+	yuv.z = texture2D(tex_u, textureOut).g - 0.500;
 
 	rgb = yuv2rgb_bt601_mat * yuv;
 	gl_FragColor = vec4(rgb, 1.0);

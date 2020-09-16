@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * NV_vertex_shader.glsl - Vertex shader code for NV family
+ * YUV.vert - Vertex shader for YUV to RGB conversion
  */
 
 attribute vec4 vertexIn;

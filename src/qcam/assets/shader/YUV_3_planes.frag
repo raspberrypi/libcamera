@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * NV_3_planes_UV_f.glsl - Fragment shader code for YUV420 format
+ * YUV_3_planes_UV.frag - Fragment shader code for YUV420 format
  */
 
 #ifdef GL_ES

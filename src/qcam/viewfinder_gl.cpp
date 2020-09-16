@@ -101,42 +101,42 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::NV12:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":NV_2_planes_UV_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV21:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":NV_2_planes_VU_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::NV16:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":NV_2_planes_UV_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV61:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":NV_2_planes_VU_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::NV24:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":NV_2_planes_UV_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_UV.frag";
 		break;
 	case libcamera::formats::NV42:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
-		fragmentShaderSrc_ = ":NV_2_planes_VU_f.glsl";
+		fragmentShaderSrc_ = ":YUV_2_planes_VU.frag";
 		break;
 	case libcamera::formats::YUV420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":NV_3_planes_f.glsl";
+		fragmentShaderSrc_ = ":YUV_3_planes.frag";
 		break;
 	case libcamera::formats::YVU420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderSrc_ = ":NV_3_planes_f.glsl";
+		fragmentShaderSrc_ = ":YUV_3_planes.frag";
 		break;
 	default:
 		ret = false;
@@ -154,7 +154,7 @@ bool ViewFinderGL::createVertexShader()
 	vertexShader_ = new QOpenGLShader(QOpenGLShader::Vertex, this);
 
 	/* Compile the vertex shader */
-	if (!vertexShader_->compileSourceFile(":NV_vertex_shader.glsl")) {
+	if (!vertexShader_->compileSourceFile(":YUV.vert")) {
 		qWarning() << "[ViewFinderGL]:" << vertexShader_->log();
 		return false;
 	}

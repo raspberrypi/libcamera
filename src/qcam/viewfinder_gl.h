@@ -73,9 +73,8 @@ private:
 	/* Vertex buffer */
 	QOpenGLBuffer vertexBuffer_;
 
-	/* Fragment and Vertex shader file name */
+	/* Fragment shader file name */
 	QString fragmentShaderSrc_;
-	QString vertexShaderSrc_;
 
 	/* YUV texture planars and parameters */
 	GLuint textureUniformU_;

@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 option('android',
-        type : 'boolean',
-        value : false,
+        type : 'feature',
+        value : 'disabled',
         description : 'Compile libcamera with Android Camera3 HAL interface')
 
 option('documentation',

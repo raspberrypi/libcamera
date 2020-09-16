@@ -121,7 +121,7 @@ libcamera_deps = [
 
 libcamera_link_with = []
 
-if get_option('android')
+if android_enabled
     libcamera_sources += android_hal_sources
     includes += android_includes
     libcamera_link_with += android_camera_metadata

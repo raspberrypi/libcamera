@@ -992,12 +992,13 @@ int RPiCameraData::configureIPA()
 	unsigned int i = 0;
 	for (auto const &stream : isp_) {
 		if (stream.isExternal()) {
-			streamConfig[i] = {
+			streamConfig[i++] = {
 				.pixelFormat = stream.configuration().pixelFormat,
 				.size = stream.configuration().size
 			};
 		}
 	}
+
 	entityControls.emplace(0, unicam_[Unicam::Image].dev()->controls());
 	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
 

@@ -44,20 +44,23 @@ public:
 	void setExternal(bool external);
 	bool isExternal() const;
 
-	void setExternalBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
-	const std::vector<std::unique_ptr<FrameBuffer>> *getBuffers() const;
+	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+	const std::vector<FrameBuffer *> &getBuffers() const;
 	bool findFrameBuffer(FrameBuffer *buffer) const;
 
-	int importBuffers(unsigned int count);
-	int allocateBuffers(unsigned int count);
+	int prepareBuffers(unsigned int count);
+	int queueBuffer(FrameBuffer *buffer);
+	void returnBuffer(FrameBuffer *buffer);
 
-	int queueBuffers();
+	int queueAllBuffers();
 	void releaseBuffers();
 
 private:
+	void clearBuffers();
+
 	/*
 	 * Indicates that this stream is active externally, i.e. the buffers
-	 * are provided by the application.
+	 * might be provided by (and returned to) the application.
 	 */
 	bool external_;
 
@@ -70,11 +73,21 @@ private:
 	/* The actual device stream. */
 	std::unique_ptr<V4L2VideoDevice> dev_;
 
-	/* Internally allocated framebuffers associated with this device stream. */
-	std::vector<std::unique_ptr<FrameBuffer>> internalBuffers_;
+	/* All framebuffers associated with this device stream. */
+	std::vector<FrameBuffer *> bufferList_;
 
-	/* Externally allocated framebuffers associated with this device stream. */
-	std::vector<std::unique_ptr<FrameBuffer>> *externalBuffers_;
+	/*
+	 * List of frame buffers that we can use if none have been provided by
+	 * the application for external streams. This is populated by the
+	 * buffers exported internally.
+	 */
+	std::queue<FrameBuffer *> availableBuffers_;
+
+	/*
+	 * This is a list of buffers exported internally. Need to keep this around
+	 * as the stream needs to maintain ownership of these buffers.
+	 */
+	std::vector<std::unique_ptr<FrameBuffer>> internalBuffers_;
 };
 
 /*

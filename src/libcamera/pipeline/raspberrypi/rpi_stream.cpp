@@ -27,78 +27,120 @@ std::string RPiStream::name() const
 void RPiStream::reset()
 {
 	external_ = false;
-	internalBuffers_.clear();
-}
-
-bool RPiStream::isImporter() const
-{
-	return importOnly_;
+	clearBuffers();
 }
 
 void RPiStream::setExternal(bool external)
 {
+	/* Import streams cannot be external. */
+	ASSERT(!external || !importOnly_);
 	external_ = external;
 }
 
 bool RPiStream::isExternal() const
 {
-	/*
-	 * Import streams cannot be external.
-	 *
-	 * RAW capture is a special case where we simply copy the RAW
-	 * buffer out of the request. All other buffer handling happens
-	 * as if the stream is internal.
-	 */
-	return external_ && !importOnly_;
+	return external_;
 }
 
-void RPiStream::setExternalBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+void RPiStream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	externalBuffers_ = buffers;
+	std::transform(buffers->begin(), buffers->end(), std::back_inserter(bufferList_),
+		       [](std::unique_ptr<FrameBuffer> &b) { return b.get(); });
 }
 
-const std::vector<std::unique_ptr<FrameBuffer>> *RPiStream::getBuffers() const
+const std::vector<FrameBuffer *> &RPiStream::getBuffers() const
 {
-	return external_ ? externalBuffers_ : &internalBuffers_;
+	return bufferList_;
 }
 
 bool RPiStream::findFrameBuffer(FrameBuffer *buffer) const
 {
-	auto start = external_ ? externalBuffers_->begin() : internalBuffers_.begin();
-	auto end = external_ ? externalBuffers_->end() : internalBuffers_.end();
-
 	if (importOnly_)
 		return false;
 
-	if (std::find_if(start, end,
-			 [buffer](std::unique_ptr<FrameBuffer> const &ref) { return ref.get() == buffer; }) != end)
+	if (std::find(bufferList_.begin(), bufferList_.end(), buffer) != bufferList_.end())
 		return true;
 
 	return false;
 }
 
-int RPiStream::importBuffers(unsigned int count)
+int RPiStream::prepareBuffers(unsigned int count)
 {
+	int ret;
+
+	if (!importOnly_) {
+		if (count) {
+			/* Export some frame buffers for internal use. */
+			ret = dev_->exportBuffers(count, &internalBuffers_);
+			if (ret < 0)
+				return ret;
+
+			/* Add these exported buffers to the internal/external buffer list. */
+			setExportedBuffers(&internalBuffers_);
+
+			/* Add these buffers to the queue of internal usable buffers. */
+			for (auto const &buffer : internalBuffers_)
+				availableBuffers_.push(buffer.get());
+		}
+
+		/* We must import all internal/external exported buffers. */
+		count = bufferList_.size();
+	}
+
 	return dev_->importBuffers(count);
 }
 
-int RPiStream::allocateBuffers(unsigned int count)
+int RPiStream::queueBuffer(FrameBuffer *buffer)
 {
-	return dev_->allocateBuffers(count, &internalBuffers_);
+	/*
+	 * A nullptr buffer implies an external stream, but no external
+	 * buffer has been supplied. So, pick one from the availableBuffers_
+	 * queue.
+	 */
+	if (!buffer) {
+		if (availableBuffers_.empty()) {
+			LOG(RPISTREAM, Warning) << "No buffers available for "
+						<< name_;
+			return -EINVAL;
+		}
+
+		buffer = availableBuffers_.front();
+		availableBuffers_.pop();
+	}
+
+	LOG(RPISTREAM, Debug) << "Queuing buffer " << buffer->cookie()
+			      << " for " << name_;
+
+	int ret = dev_->queueBuffer(buffer);
+	if (ret) {
+		LOG(RPISTREAM, Error) << "Failed to queue buffer for "
+				      << name_;
+	}
+
+	return ret;
 }
 
-int RPiStream::queueBuffers()
+void RPiStream::returnBuffer(FrameBuffer *buffer)
 {
+	/* This can only be called for external streams. */
+	assert(external_);
+
+	availableBuffers_.push(buffer);
+}
+
+int RPiStream::queueAllBuffers()
+{
+	int ret;
+
 	if (external_)
 		return 0;
 
-	for (auto &b : internalBuffers_) {
-		int ret = dev_->queueBuffer(b.get());
-		if (ret) {
-			LOG(RPISTREAM, Error) << "Failed to queue buffers for "
-					      << name_;
+	while (!availableBuffers_.empty()) {
+		ret = queueBuffer(availableBuffers_.front());
+		if (ret < 0)
 			return ret;
-		}
+
+		availableBuffers_.pop();
 	}
 
 	return 0;
@@ -107,8 +149,14 @@ int RPiStream::queueBuffers()
 void RPiStream::releaseBuffers()
 {
 	dev_->releaseBuffers();
-	if (!external_ && !importOnly_)
-		internalBuffers_.clear();
+	clearBuffers();
+}
+
+void RPiStream::clearBuffers()
+{
+	availableBuffers_ = std::queue<FrameBuffer *>{};
+	internalBuffers_.clear();
+	bufferList_.clear();
 }
 
 } /* namespace RPi */

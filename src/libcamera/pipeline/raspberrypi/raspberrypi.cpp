@@ -186,7 +186,8 @@ private:
 	void checkRequestCompleted();
 	void tryRunPipeline();
 	void tryFlushQueues();
-	FrameBuffer *updateQueue(std::queue<FrameBuffer *> &q, uint64_t timestamp, V4L2VideoDevice *dev);
+	FrameBuffer *updateQueue(std::queue<FrameBuffer *> &q, uint64_t timestamp,
+				 RPi::RPiStream *stream);
 
 	unsigned int ispOutputCount_;
 };
@@ -507,8 +508,15 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		StreamConfiguration &cfg = config->at(i);
 
 		if (isRaw(cfg.pixelFormat)) {
-			cfg.setStream(&data->isp_[Isp::Input]);
-			data->isp_[Isp::Input].setExternal(true);
+			cfg.setStream(&data->unicam_[Unicam::Image]);
+			/*
+			 * We must set both Unicam streams as external, even
+			 * though the application may only request RAW frames.
+			 * This is because we match timestamps on both streams
+			 * to synchronise buffers.
+			 */
+			data->unicam_[Unicam::Image].setExternal(true);
+			data->unicam_[Unicam::Embedded].setExternal(true);
 			continue;
 		}
 
@@ -611,7 +619,7 @@ int PipelineHandlerRPi::exportFrameBuffers([[maybe_unused]] Camera *camera, Stre
 	unsigned int count = stream->configuration().bufferCount;
 	int ret = s->dev()->exportBuffers(count, buffers);
 
-	s->setExternalBuffers(buffers);
+	s->setExportedBuffers(buffers);
 
 	return ret;
 }
@@ -625,6 +633,7 @@ int PipelineHandlerRPi::start(Camera *camera)
 	ret = prepareBuffers(camera);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to allocate buffers";
+		stop(camera);
 		return ret;
 	}
 
@@ -710,14 +719,26 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 	if (data->state_ == RPiCameraData::State::Stopped)
 		return -EINVAL;
 
-	/* Ensure all external streams have associated buffers! */
-	for (auto &stream : data->isp_) {
-		if (!stream.isExternal())
-			continue;
+	LOG(RPI, Debug) << "queueRequestDevice: New request.";
 
-		if (!request->findBuffer(&stream)) {
-			LOG(RPI, Error) << "Attempt to queue request with invalid stream.";
-			return -ENOENT;
+	/* Push all buffers supplied in the Request to the respective streams. */
+	for (auto stream : data->streams_) {
+		if (stream->isExternal()) {
+			FrameBuffer *buffer = request->findBuffer(stream);
+			/*
+			 * If no buffer is provided by the request for this stream, we
+			 * queue a nullptr to the stream to signify that it must use an
+			 * internally allocated buffer for this capture request. This
+			 * buffer will not be given back to the application, but is used
+			 * to support the internal pipeline flow.
+			 *
+			 * The below queueBuffer() call will do nothing if there are not
+			 * enough internal buffers allocated, but this will be handled by
+			 * queuing the request for buffers in the RPiStream object.
+			 */
+			int ret = stream->queueBuffer(buffer);
+			if (ret)
+				return ret;
 		}
 	}
 
@@ -816,14 +837,14 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	data->unicam_[Unicam::Image].dev()->setControls(&ctrls);
 
 	/*
-	 * List the available output streams.
-	 * Currently cannot do Unicam streams!
+	 * List the available streams an application may request. At present, we
+	 * do not advertise Unicam Embedded and ISP Statistics streams, as there
+	 * is no mechanism for the application to request non-image buffer formats.
 	 */
 	std::set<Stream *> streams;
-	streams.insert(&data->isp_[Isp::Input]);
+	streams.insert(&data->unicam_[Unicam::Image]);
 	streams.insert(&data->isp_[Isp::Output0]);
 	streams.insert(&data->isp_[Isp::Output1]);
-	streams.insert(&data->isp_[Isp::Stats]);
 
 	/* Create and register the camera. */
 	std::shared_ptr<Camera> camera =
@@ -839,9 +860,28 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 	int ret;
 
 	for (auto const stream : data->streams_) {
-		ret = stream->queueBuffers();
-		if (ret < 0)
-			return ret;
+		if (!stream->isExternal()) {
+			ret = stream->queueAllBuffers();
+			if (ret < 0)
+				return ret;
+		} else {
+			/*
+			 * For external streams, we must queue up a set of internal
+			 * buffers to handle the number of drop frames requested by
+			 * the IPA. This is done by passing nullptr in queueBuffer().
+			 *
+			 * The below queueBuffer() call will do nothing if there
+			 * are not enough internal buffers allocated, but this will
+			 * be handled by queuing the request for buffers in the
+			 * RPiStream object.
+			 */
+			unsigned int i;
+			for (i = 0; i < data->dropFrameCount_; i++) {
+				int ret = stream->queueBuffer(nullptr);
+				if (ret)
+					return ret;
+			}
+		}
 	}
 
 	return 0;
@@ -855,7 +895,8 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	/*
 	 * Decide how many internal buffers to allocate. For now, simply look
 	 * at how many external buffers will be provided. Will need to improve
-	 * this logic.
+	 * this logic. However, we really must have all streams allocate the same
+	 * number of buffers to simplify error handling in queueRequestDevice().
 	 */
 	unsigned int maxBuffers = 0;
 	for (const Stream *s : camera->streams())
@@ -863,33 +904,9 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 			maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
 
 	for (auto const stream : data->streams_) {
-		if (stream->isExternal() || stream->isImporter()) {
-			/*
-			 * If a stream is marked as external reserve memory to
-			 * prepare to import as many buffers are requested in
-			 * the stream configuration.
-			 *
-			 * If a stream is an internal stream with importer
-			 * role, reserve as many buffers as possible.
-			 */
-			unsigned int count = stream->isExternal()
-						     ? stream->configuration().bufferCount
-						     : maxBuffers;
-			ret = stream->importBuffers(count);
-			if (ret < 0)
-				return ret;
-		} else {
-			/*
-			 * If the stream is an internal exporter allocate and
-			 * export as many buffers as possible to its internal
-			 * pool.
-			 */
-			ret = stream->allocateBuffers(maxBuffers);
-			if (ret < 0) {
-				freeBuffers(camera);
-				return ret;
-			}
-		}
+		ret = stream->prepareBuffers(maxBuffers);
+		if (ret < 0)
+			return ret;
 	}
 
 	/*
@@ -897,7 +914,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * the IPA and RPI_IPA_EVENT_SIGNAL_ISP_PREPARE event.
 	 */
 	count = 0;
-	for (auto const &b : *data->unicam_[Unicam::Image].getBuffers()) {
+	for (auto const &b : data->unicam_[Unicam::Image].getBuffers()) {
 		b->setCookie(count++);
 	}
 
@@ -906,14 +923,14 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * the IPA.
 	 */
 	count = 0;
-	for (auto const &b : *data->isp_[Isp::Stats].getBuffers()) {
+	for (auto const &b : data->isp_[Isp::Stats].getBuffers()) {
 		b->setCookie(count++);
 		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | b->cookie(),
 					      .planes = b->planes() });
 	}
 
 	count = 0;
-	for (auto const &b : *data->unicam_[Unicam::Embedded].getBuffers()) {
+	for (auto const &b : data->unicam_[Unicam::Embedded].getBuffers()) {
 		b->setCookie(count++);
 		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | b->cookie(),
 					      .planes = b->planes() });
@@ -1068,7 +1085,7 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 	switch (action.operation) {
 	case RPI_IPA_ACTION_STATS_METADATA_COMPLETE: {
 		unsigned int bufferId = action.data[0];
-		FrameBuffer *buffer = isp_[Isp::Stats].getBuffers()->at(bufferId).get();
+		FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
 
 		handleStreamBuffer(buffer, &isp_[Isp::Stats]);
 		/* Fill the Request metadata buffer with what the IPA has provided */
@@ -1079,19 +1096,19 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 
 	case RPI_IPA_ACTION_EMBEDDED_COMPLETE: {
 		unsigned int bufferId = action.data[0];
-		FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers()->at(bufferId).get();
+		FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId);
 		handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
 		break;
 	}
 
 	case RPI_IPA_ACTION_RUN_ISP: {
 		unsigned int bufferId = action.data[0];
-		FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers()->at(bufferId).get();
+		FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
 
 		LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << buffer->cookie()
 				<< ", timestamp: " << buffer->metadata().timestamp;
 
-		isp_[Isp::Input].dev()->queueBuffer(buffer);
+		isp_[Isp::Input].queueBuffer(buffer);
 		ispOutputCount_ = 0;
 		break;
 	}
@@ -1192,21 +1209,25 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 			<< ", buffer id " << buffer->cookie()
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
-	handleStreamBuffer(buffer, stream);
+	/*
+	 * ISP statistics buffer must not be re-queued or sent back to the
+	 * application until after the IPA signals so.
+	 */
+	if (stream == &isp_[Isp::Stats]) {
+		IPAOperationData op;
+		op.operation = RPI_IPA_EVENT_SIGNAL_STAT_READY;
+		op.data = { RPiIpaMask::STATS | buffer->cookie() };
+		ipa_->processEvent(op);
+	} else {
+		/* Any other ISP output can be handed back to the application now. */
+		handleStreamBuffer(buffer, stream);
+	}
 
 	/*
 	 * Increment the number of ISP outputs generated.
 	 * This is needed to track dropped frames.
 	 */
 	ispOutputCount_++;
-
-	/* If this is a stats output, hand it to the IPA now. */
-	if (stream == &isp_[Isp::Stats]) {
-		IPAOperationData op;
-		op.operation = RPI_IPA_EVENT_SIGNAL_STAT_READY;
-		op.data = { RPiIpaMask::STATS | buffer->cookie() };
-		ipa_->processEvent(op);
-	}
 
 	handleState();
 }
@@ -1220,8 +1241,12 @@ void RPiCameraData::clearIncompleteRequests()
 	 */
 	for (auto const request : requestQueue_) {
 		for (auto const stream : streams_) {
-			if (stream->isExternal())
-				stream->dev()->queueBuffer(request->findBuffer(stream));
+			if (!stream->isExternal())
+				continue;
+
+			FrameBuffer *buffer = request->findBuffer(stream);
+			if (buffer)
+				stream->queueBuffer(buffer);
 		}
 	}
 
@@ -1250,7 +1275,7 @@ void RPiCameraData::clearIncompleteRequests()
 			 * Has the buffer already been handed back to the
 			 * request? If not, do so now.
 			 */
-			if (buffer->request())
+			if (buffer && buffer->request())
 				pipe_->completeBuffer(camera_, request, buffer);
 		}
 
@@ -1262,30 +1287,28 @@ void RPiCameraData::clearIncompleteRequests()
 void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stream)
 {
 	if (stream->isExternal()) {
-		if (!dropFrameCount_) {
-			Request *request = buffer->request();
+		/*
+		 * It is possible to be here without a pending request, so check
+		 * that we actually have one to action, otherwise we just return
+		 * buffer back to the stream.
+		 */
+		Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
+		if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
+			/*
+			 * Tag the buffer as completed, returning it to the
+			 * application.
+			 */
 			pipe_->completeBuffer(camera_, request, buffer);
+		} else {
+			/*
+			 * This buffer was not part of the Request, or there is no
+			 * pending request, so we can recycle it.
+			 */
+			stream->returnBuffer(buffer);
 		}
 	} else {
-		/* Special handling for RAW buffer Requests.
-		 *
-		 * The ISP input stream is alway an import stream, but if the
-		 * current Request has been made for a buffer on the stream,
-		 * simply memcpy to the Request buffer and requeue back to the
-		 * device.
-		 */
-		if (stream == &unicam_[Unicam::Image] && !dropFrameCount_) {
-			const Stream *rawStream = static_cast<const Stream *>(&isp_[Isp::Input]);
-			Request *request = requestQueue_.front();
-			FrameBuffer *raw = request->findBuffer(const_cast<Stream *>(rawStream));
-			if (raw) {
-				raw->copyFrom(buffer);
-				pipe_->completeBuffer(camera_, request, raw);
-			}
-		}
-
-		/* Simply requeue the buffer. */
-		stream->dev()->queueBuffer(buffer);
+		/* Simply re-queue the buffer to the requested stream. */
+		stream->queueBuffer(buffer);
 	}
 }
 
@@ -1367,7 +1390,7 @@ void RPiCameraData::tryRunPipeline()
 	 * current bayer buffer will be removed and re-queued to the driver.
 	 */
 	embeddedBuffer = updateQueue(embeddedQueue_, bayerBuffer->metadata().timestamp,
-				     unicam_[Unicam::Embedded].dev());
+				     &unicam_[Unicam::Embedded]);
 
 	if (!embeddedBuffer) {
 		LOG(RPI, Debug) << "Could not find matching embedded buffer";
@@ -1386,7 +1409,7 @@ void RPiCameraData::tryRunPipeline()
 
 		embeddedBuffer = embeddedQueue_.front();
 		bayerBuffer = updateQueue(bayerQueue_, embeddedBuffer->metadata().timestamp,
-					  unicam_[Unicam::Image].dev());
+					  &unicam_[Unicam::Image]);
 
 		if (!bayerBuffer) {
 			LOG(RPI, Debug) << "Could not find matching bayer buffer - ending.";
@@ -1394,11 +1417,7 @@ void RPiCameraData::tryRunPipeline()
 		}
 	}
 
-	/*
-	 * Take the first request from the queue and action the IPA.
-	 * Unicam buffers for the request have already been queued as they come
-	 * in.
-	 */
+	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
 
 	/*
@@ -1409,12 +1428,6 @@ void RPiCameraData::tryRunPipeline()
 	op.operation = RPI_IPA_EVENT_QUEUE_REQUEST;
 	op.controls = { request->controls() };
 	ipa_->processEvent(op);
-
-	/* Queue up any ISP buffers passed into the request. */
-	for (auto &stream : isp_) {
-		if (stream.isExternal())
-			stream.dev()->queueBuffer(request->findBuffer(&stream));
-	}
 
 	/* Ready to use the buffers, pop them off the queue. */
 	bayerQueue_.pop();
@@ -1445,32 +1458,42 @@ void RPiCameraData::tryFlushQueues()
 	 * and give a chance for the hardware to return to lock-step. We do have
 	 * to drop all interim frames.
 	 */
-	if (unicam_[Unicam::Image].getBuffers()->size() == bayerQueue_.size() &&
-	    unicam_[Unicam::Embedded].getBuffers()->size() == embeddedQueue_.size()) {
+	if (unicam_[Unicam::Image].getBuffers().size() == bayerQueue_.size() &&
+	    unicam_[Unicam::Embedded].getBuffers().size() == embeddedQueue_.size()) {
+		/* This cannot happen when Unicam streams are external. */
+		assert(!unicam_[Unicam::Image].isExternal());
+
 		LOG(RPI, Warning) << "Flushing all buffer queues!";
 
 		while (!bayerQueue_.empty()) {
-			unicam_[Unicam::Image].dev()->queueBuffer(bayerQueue_.front());
+			unicam_[Unicam::Image].queueBuffer(bayerQueue_.front());
 			bayerQueue_.pop();
 		}
 
 		while (!embeddedQueue_.empty()) {
-			unicam_[Unicam::Embedded].dev()->queueBuffer(embeddedQueue_.front());
+			unicam_[Unicam::Embedded].queueBuffer(embeddedQueue_.front());
 			embeddedQueue_.pop();
 		}
 	}
 }
 
 FrameBuffer *RPiCameraData::updateQueue(std::queue<FrameBuffer *> &q, uint64_t timestamp,
-					V4L2VideoDevice *dev)
+					RPi::RPiStream *stream)
 {
+	/*
+	 * If the unicam streams are external (both have be to the same), then we
+	 * can only return out the top buffer in the queue, and assume they have
+	 * been synced by queuing at the same time. We cannot drop these frames,
+	 * as they may have been provided externally.
+	 */
 	while (!q.empty()) {
 		FrameBuffer *b = q.front();
-		if (b->metadata().timestamp < timestamp) {
+		if (!stream->isExternal() && b->metadata().timestamp < timestamp) {
 			q.pop();
-			dev->queueBuffer(b);
-			LOG(RPI, Warning) << "Dropping input frame!";
-		} else if (b->metadata().timestamp == timestamp) {
+			stream->queueBuffer(b);
+			LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
+					  << stream->name();
+		} else if (stream->isExternal() || b->metadata().timestamp == timestamp) {
 			/* The calling function will pop the item from the queue. */
 			return b;
 		} else {

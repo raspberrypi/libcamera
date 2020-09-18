@@ -13,3 +13,9 @@ Files: src/qcam/assets/feathericons/*.svg
 Copyright: 2019 Cole Bemis (and other Feather icons contributors)
 License: MIT
 Comment: https://feathericons.com/
+
+Files: utils/ipc/mojo
+       utils/ipc/tools
+Copyright: Copyright 2013-2020 The Chromium Authors. All rights reserved.
+License: BSD-3-Clause
+Source: https://chromium.googlesource.com/chromium/src.git/

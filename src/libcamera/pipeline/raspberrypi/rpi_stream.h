@@ -31,13 +31,13 @@ class RPiStream : public Stream
 {
 public:
 	RPiStream()
-		: id_(RPiIpaMask::ID)
+		: id_(RPiBufferMask::ID)
 	{
 	}
 
 	RPiStream(const char *name, MediaEntity *dev, bool importOnly = false)
 		: external_(false), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPiIpaMask::ID)
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPiBufferMask::ID)
 	{
 	}
 
@@ -52,6 +52,9 @@ public:
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const BufferMap &getBuffers() const;
 	int getBufferId(FrameBuffer *buffer) const;
+
+	void setExternalBuffer(FrameBuffer *buffer);
+	void removeExternalBuffer(FrameBuffer *buffer);
 
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);

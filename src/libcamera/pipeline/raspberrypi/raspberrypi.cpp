@@ -151,6 +151,7 @@ public:
 
 	void clearIncompleteRequests();
 	void handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stream);
+	void handleExternalBuffer(FrameBuffer *buffer, RPi::RPiStream *stream);
 	void handleState();
 
 	CameraSensor *sensor_;
@@ -725,23 +726,32 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Push all buffers supplied in the Request to the respective streams. */
 	for (auto stream : data->streams_) {
-		if (stream->isExternal()) {
-			FrameBuffer *buffer = request->findBuffer(stream);
+		if (!stream->isExternal())
+			continue;
+
+		FrameBuffer *buffer = request->findBuffer(stream);
+		if (buffer && stream->getBufferId(buffer) == -1) {
 			/*
-			 * If no buffer is provided by the request for this stream, we
-			 * queue a nullptr to the stream to signify that it must use an
-			 * internally allocated buffer for this capture request. This
-			 * buffer will not be given back to the application, but is used
-			 * to support the internal pipeline flow.
-			 *
-			 * The below queueBuffer() call will do nothing if there are not
-			 * enough internal buffers allocated, but this will be handled by
-			 * queuing the request for buffers in the RPiStream object.
+			 * This buffer is not recognised, so it must have been allocated
+			 * outside the v4l2 device. Store it in the stream buffer list
+			 * so we can track it.
 			 */
-			int ret = stream->queueBuffer(buffer);
-			if (ret)
-				return ret;
+			stream->setExternalBuffer(buffer);
 		}
+		/*
+		 * If no buffer is provided by the request for this stream, we
+		 * queue a nullptr to the stream to signify that it must use an
+		 * internally allocated buffer for this capture request. This
+		 * buffer will not be given back to the application, but is used
+		 * to support the internal pipeline flow.
+		 *
+		 * The below queueBuffer() call will do nothing if there are not
+		 * enough internal buffers allocated, but this will be handled by
+		 * queuing the request for buffers in the RPiStream object.
+		 */
+		int ret = stream->queueBuffer(buffer);
+		if (ret)
+			return ret;
 	}
 
 	/* Push the request to the back of the queue. */
@@ -915,8 +925,8 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPiIpaMask::STATS);
-	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), RPiIpaMask::EMBEDDED_DATA);
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPiBufferMask::STATS);
+	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), RPiBufferMask::EMBEDDED_DATA);
 
 	return 0;
 }
@@ -1219,7 +1229,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	if (stream == &isp_[Isp::Stats]) {
 		IPAOperationData op;
 		op.operation = RPI_IPA_EVENT_SIGNAL_STAT_READY;
-		op.data = { RPiIpaMask::STATS | static_cast<unsigned int>(index) };
+		op.data = { RPiBufferMask::STATS | static_cast<unsigned int>(index) };
 		ipa_->processEvent(op);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
@@ -1298,6 +1308,11 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stre
 		Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
 		if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 			/*
+			 * Check if this is an externally provided buffer, and if
+			 * so, we must stop tracking it in the pipeline handler.
+			 */
+			handleExternalBuffer(buffer, stream);
+			/*
 			 * Tag the buffer as completed, returning it to the
 			 * application.
 			 */
@@ -1313,6 +1328,17 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stre
 		/* Simply re-queue the buffer to the requested stream. */
 		stream->queueBuffer(buffer);
 	}
+}
+
+void RPiCameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::RPiStream *stream)
+{
+	unsigned int id = stream->getBufferId(buffer);
+
+	if (!(id & RPiBufferMask::EXTERNAL_BUFFER))
+		return;
+
+	/* Stop the Stream object from tracking the buffer. */
+	stream->removeExternalBuffer(buffer);
 }
 
 void RPiCameraData::handleState()
@@ -1447,8 +1473,8 @@ void RPiCameraData::tryRunPipeline()
 			<< " Embedded buffer id: " << embeddedId;
 
 	op.operation = RPI_IPA_EVENT_SIGNAL_ISP_PREPARE;
-	op.data = { RPiIpaMask::EMBEDDED_DATA | embeddedId,
-		    RPiIpaMask::BAYER_DATA | bayerId };
+	op.data = { RPiBufferMask::EMBEDDED_DATA | embeddedId,
+		    RPiBufferMask::BAYER_DATA | bayerId };
 	ipa_->processEvent(op);
 }
 

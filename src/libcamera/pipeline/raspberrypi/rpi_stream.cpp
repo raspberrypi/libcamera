@@ -68,6 +68,20 @@ int RPiStream::getBufferId(FrameBuffer *buffer) const
 	return it->first;
 }
 
+void RPiStream::setExternalBuffer(FrameBuffer *buffer)
+{
+	bufferMap_.emplace(RPiBufferMask::EXTERNAL_BUFFER | id_.get(), buffer);
+}
+
+void RPiStream::removeExternalBuffer(FrameBuffer *buffer)
+{
+	int id = getBufferId(buffer);
+
+	/* Ensure we have this buffer in the stream, and it is marked external. */
+	ASSERT(id != -1 && (id & RPiBufferMask::EXTERNAL_BUFFER));
+	bufferMap_.erase(id);
+}
+
 int RPiStream::prepareBuffers(unsigned int count)
 {
 	int ret;

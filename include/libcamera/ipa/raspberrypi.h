@@ -28,11 +28,12 @@ enum RPiOperations {
 	RPI_IPA_EVENT_QUEUE_REQUEST,
 };
 
-enum RPiIpaMask {
-	ID		= 0x0ffff,
-	STATS		= 0x10000,
-	EMBEDDED_DATA	= 0x20000,
-	BAYER_DATA	= 0x40000
+enum RPiBufferMask {
+	ID		= 0x00ffff,
+	STATS		= 0x010000,
+	EMBEDDED_DATA	= 0x020000,
+	BAYER_DATA	= 0x040000,
+	EXTERNAL_BUFFER	= 0x100000,
 };
 
 /* Size of the LS grid allocation. */

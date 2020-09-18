@@ -352,7 +352,7 @@ void IPARPi::processEvent(const IPAOperationData &event)
 
 		IPAOperationData op;
 		op.operation = RPI_IPA_ACTION_STATS_METADATA_COMPLETE;
-		op.data = { bufferId & RPiIpaMask::ID };
+		op.data = { bufferId & RPiBufferMask::ID };
 		op.controls = { libcameraMetadata_ };
 		queueFrameAction.emit(0, op);
 		break;
@@ -373,7 +373,7 @@ void IPARPi::processEvent(const IPAOperationData &event)
 		/* Ready to push the input buffer into the ISP. */
 		IPAOperationData op;
 		op.operation = RPI_IPA_ACTION_RUN_ISP;
-		op.data = { bayerbufferId & RPiIpaMask::ID };
+		op.data = { bayerbufferId & RPiBufferMask::ID };
 		queueFrameAction.emit(0, op);
 		break;
 	}
@@ -700,7 +700,7 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 {
 	IPAOperationData op;
 	op.operation = RPI_IPA_ACTION_EMBEDDED_COMPLETE;
-	op.data = { bufferId & RPiIpaMask::ID };
+	op.data = { bufferId & RPiBufferMask::ID };
 	queueFrameAction.emit(0, op);
 }
 

@@ -1162,6 +1162,11 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 	if (state_ == State::Stopped)
 		return;
 
+	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
+			<< ", buffer id " << buffer->cookie()
+			<< ", timestamp: " << buffer->metadata().timestamp;
+
+	/* The ISP input buffer gets re-queued into Unicam. */
 	handleStreamBuffer(buffer, &unicam_[Unicam::Image]);
 	handleState();
 }
@@ -1464,7 +1469,7 @@ FrameBuffer *RPiCameraData::updateQueue(std::queue<FrameBuffer *> &q, uint64_t t
 		if (b->metadata().timestamp < timestamp) {
 			q.pop();
 			dev->queueBuffer(b);
-			LOG(RPI, Error) << "Dropping input frame!";
+			LOG(RPI, Warning) << "Dropping input frame!";
 		} else if (b->metadata().timestamp == timestamp) {
 			/* The calling function will pop the item from the queue. */
 			return b;

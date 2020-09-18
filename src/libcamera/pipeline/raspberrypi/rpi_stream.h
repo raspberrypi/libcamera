@@ -57,6 +57,7 @@ public:
 
 private:
 	void clearBuffers();
+	int queueToDevice(FrameBuffer *buffer);
 
 	/*
 	 * Indicates that this stream is active externally, i.e. the buffers
@@ -73,7 +74,7 @@ private:
 	/* The actual device stream. */
 	std::unique_ptr<V4L2VideoDevice> dev_;
 
-	/* All framebuffers associated with this device stream. */
+	/* All frame buffers associated with this device stream. */
 	std::vector<FrameBuffer *> bufferList_;
 
 	/*
@@ -82,6 +83,16 @@ private:
 	 * buffers exported internally.
 	 */
 	std::queue<FrameBuffer *> availableBuffers_;
+
+	/*
+	 * List of frame buffers that are to be queued into the device from a Request.
+	 * A nullptr indicates any internal buffer can be used (from availableBuffers_),
+	 * whereas a valid pointer indicates an external buffer to be queued.
+	 *
+	 * Ordering buffers to be queued is important here as it must match the
+	 * requests coming from the application.
+	 */
+	std::queue<FrameBuffer *> requestBuffers_;
 
 	/*
 	 * This is a list of buffers exported internally. Need to keep this around

@@ -94,38 +94,75 @@ int RPiStream::queueBuffer(FrameBuffer *buffer)
 {
 	/*
 	 * A nullptr buffer implies an external stream, but no external
-	 * buffer has been supplied. So, pick one from the availableBuffers_
-	 * queue.
+	 * buffer has been supplied in the Request. So, pick one from the
+	 * availableBuffers_ queue.
 	 */
 	if (!buffer) {
 		if (availableBuffers_.empty()) {
-			LOG(RPISTREAM, Warning) << "No buffers available for "
+			LOG(RPISTREAM, Info) << "No buffers available for "
 						<< name_;
-			return -EINVAL;
+			/*
+			 * Note that we need to queue an internal buffer as soon
+			 * as one becomes available.
+			 */
+			requestBuffers_.push(nullptr);
+			return 0;
 		}
 
 		buffer = availableBuffers_.front();
 		availableBuffers_.pop();
 	}
 
-	LOG(RPISTREAM, Debug) << "Queuing buffer " << buffer->cookie()
-			      << " for " << name_;
+	/*
+	 * If no earlier requests are pending to be queued we can go ahead and
+	 * queue this buffer into the device.
+	 */
+	if (requestBuffers_.empty())
+		return queueToDevice(buffer);
 
-	int ret = dev_->queueBuffer(buffer);
-	if (ret) {
-		LOG(RPISTREAM, Error) << "Failed to queue buffer for "
-				      << name_;
-	}
+	/*
+	 * There are earlier Request buffers to be queued, so this buffer must go
+	 * on the waiting list.
+	 */
+	requestBuffers_.push(buffer);
 
-	return ret;
+	return 0;
 }
 
 void RPiStream::returnBuffer(FrameBuffer *buffer)
 {
 	/* This can only be called for external streams. */
-	assert(external_);
+	ASSERT(external_);
 
+	/* Push this buffer back into the queue to be used again. */
 	availableBuffers_.push(buffer);
+
+	/*
+	 * Do we have any Request buffers that are waiting to be queued?
+	 * If so, do it now as availableBuffers_ will not be empty.
+	 */
+	while (!requestBuffers_.empty()) {
+		FrameBuffer *buffer = requestBuffers_.front();
+
+		if (!buffer) {
+			/*
+			 * We want to queue an internal buffer, but none
+			 * are available. Can't do anything, quit the loop.
+			 */
+			if (availableBuffers_.empty())
+				break;
+
+			/*
+			 * We want to queue an internal buffer, and at least one
+			 * is available.
+			 */
+			buffer = availableBuffers_.front();
+			availableBuffers_.pop();
+		}
+
+		requestBuffers_.pop();
+		queueToDevice(buffer);
+	}
 }
 
 int RPiStream::queueAllBuffers()
@@ -155,8 +192,21 @@ void RPiStream::releaseBuffers()
 void RPiStream::clearBuffers()
 {
 	availableBuffers_ = std::queue<FrameBuffer *>{};
+	requestBuffers_ = std::queue<FrameBuffer *>{};
 	internalBuffers_.clear();
 	bufferList_.clear();
+}
+
+int RPiStream::queueToDevice(FrameBuffer *buffer)
+{
+	LOG(RPISTREAM, Debug) << "Queuing buffer " << buffer->cookie()
+			      << " for " << name_;
+
+	int ret = dev_->queueBuffer(buffer);
+	if (ret)
+		LOG(RPISTREAM, Error) << "Failed to queue buffer for "
+				      << name_;
+	return ret;
 }
 
 } /* namespace RPi */

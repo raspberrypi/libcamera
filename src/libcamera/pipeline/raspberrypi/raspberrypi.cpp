@@ -132,7 +132,7 @@ class RPiCameraData : public CameraData
 public:
 	RPiCameraData(PipelineHandler *pipe)
 		: CameraData(pipe), sensor_(nullptr), state_(State::Stopped),
-		  dropFrame_(false), ispOutputCount_(0)
+		  dropFrameCount_(0), ispOutputCount_(0)
 	{
 	}
 
@@ -180,14 +180,15 @@ public:
 	std::queue<FrameBuffer *> embeddedQueue_;
 	std::deque<Request *> requestQueue_;
 
+	unsigned int dropFrameCount_;
+
 private:
 	void checkRequestCompleted();
 	void tryRunPipeline();
 	void tryFlushQueues();
 	FrameBuffer *updateQueue(std::queue<FrameBuffer *> &q, uint64_t timestamp, V4L2VideoDevice *dev);
 
-	bool dropFrame_;
-	int ispOutputCount_;
+	unsigned int ispOutputCount_;
 };
 
 class RPiCameraConfiguration : public CameraConfiguration
@@ -1007,6 +1008,7 @@ int RPiCameraData::configureIPA()
 	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
 			&result);
 
+	unsigned int resultIdx = 0;
 	if (result.operation & RPI_IPA_CONFIG_STAGGERED_WRITE) {
 		/*
 		 * Setup our staggered control writer with the sensor default
@@ -1014,9 +1016,9 @@ int RPiCameraData::configureIPA()
 		 */
 		if (!staggeredCtrl_) {
 			staggeredCtrl_.init(unicam_[Unicam::Image].dev(),
-					    { { V4L2_CID_ANALOGUE_GAIN, result.data[0] },
-					      { V4L2_CID_EXPOSURE, result.data[1] } });
-			sensorMetadata_ = result.data[2];
+					    { { V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
+					      { V4L2_CID_EXPOSURE, result.data[resultIdx++] } });
+			sensorMetadata_ = result.data[resultIdx++];
 		}
 	}
 
@@ -1024,6 +1026,11 @@ int RPiCameraData::configureIPA()
 		const ControlList &ctrls = result.controls[0];
 		if (!staggeredCtrl_.set(ctrls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
+	}
+
+	if (result.operation & RPI_IPA_CONFIG_DROP_FRAMES) {
+		/* Configure the number of dropped frames required on startup. */
+		dropFrameCount_ = result.data[resultIdx++];
 	}
 
 	return 0;
@@ -1077,7 +1084,6 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 		break;
 	}
 
-	case RPI_IPA_ACTION_RUN_ISP_AND_DROP_FRAME:
 	case RPI_IPA_ACTION_RUN_ISP: {
 		unsigned int bufferId = action.data[0];
 		FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers()->at(bufferId).get();
@@ -1086,7 +1092,6 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 				<< ", timestamp: " << buffer->metadata().timestamp;
 
 		isp_[Isp::Input].dev()->queueBuffer(buffer);
-		dropFrame_ = (action.operation == RPI_IPA_ACTION_RUN_ISP_AND_DROP_FRAME) ? true : false;
 		ispOutputCount_ = 0;
 		break;
 	}
@@ -1252,7 +1257,7 @@ void RPiCameraData::clearIncompleteRequests()
 void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream *stream)
 {
 	if (stream->isExternal()) {
-		if (!dropFrame_) {
+		if (!dropFrameCount_) {
 			Request *request = buffer->request();
 			pipe_->completeBuffer(camera_, request, buffer);
 		}
@@ -1264,7 +1269,7 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream
 		 * simply memcpy to the Request buffer and requeue back to the
 		 * device.
 		 */
-		if (stream == &unicam_[Unicam::Image] && !dropFrame_) {
+		if (stream == &unicam_[Unicam::Image] && !dropFrameCount_) {
 			const Stream *rawStream = static_cast<const Stream *>(&isp_[Isp::Input]);
 			Request *request = requestQueue_.front();
 			FrameBuffer *raw = request->findBuffer(const_cast<Stream *>(rawStream));
@@ -1309,7 +1314,7 @@ void RPiCameraData::checkRequestCompleted()
 	 * If we are dropping this frame, do not touch the request, simply
 	 * change the state to IDLE when ready.
 	 */
-	if (!dropFrame_) {
+	if (!dropFrameCount_) {
 		Request *request = requestQueue_.front();
 		if (request->hasPendingBuffers())
 			return;
@@ -1328,10 +1333,13 @@ void RPiCameraData::checkRequestCompleted()
 	 * frame.
 	 */
 	if (state_ == State::IpaComplete &&
-	    ((ispOutputCount_ == 3 && dropFrame_) || requestCompleted)) {
+	    ((ispOutputCount_ == 3 && dropFrameCount_) || requestCompleted)) {
 		state_ = State::Idle;
-		if (dropFrame_)
-			LOG(RPI, Info) << "Dropping frame at the request of the IPA";
+		if (dropFrameCount_) {
+			dropFrameCount_--;
+			LOG(RPI, Info) << "Dropping frame at the request of the IPA ("
+				       << dropFrameCount_ << " left)";
+		}
 	}
 }
 

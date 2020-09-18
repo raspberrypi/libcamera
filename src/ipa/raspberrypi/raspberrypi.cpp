@@ -65,8 +65,8 @@ class IPARPi : public IPAInterface
 public:
 	IPARPi()
 		: lastMode_({}), controller_(), controllerInit_(false),
-		  frame_count_(0), check_count_(0), hide_count_(0),
-		  mistrust_count_(0), lsTable_(nullptr)
+		  frame_count_(0), check_count_(0), mistrust_count_(0),
+		  lsTable_(nullptr)
 	{
 	}
 
@@ -137,8 +137,6 @@ private:
 	uint64_t frame_count_;
 	/* For checking the sequencing of Prepare/Process calls. */
 	uint64_t check_count_;
-	/* How many frames the pipeline handler should hide, or "drop". */
-	unsigned int hide_count_;
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrust_count_;
 	/* LS table allocation passed in from the pipeline handler. */
@@ -242,13 +240,17 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	 */
 	frame_count_ = 0;
 	check_count_ = 0;
+	unsigned int drop_frame = 0;
 	if (controllerInit_) {
-		hide_count_ = helper_->HideFramesModeSwitch();
+		drop_frame = helper_->HideFramesModeSwitch();
 		mistrust_count_ = helper_->MistrustFramesModeSwitch();
 	} else {
-		hide_count_ = helper_->HideFramesStartup();
+		drop_frame = helper_->HideFramesStartup();
 		mistrust_count_ = helper_->MistrustFramesStartup();
 	}
+
+	result->data.push_back(drop_frame);
+	result->operation |= RPI_IPA_CONFIG_DROP_FRAMES;
 
 	struct AgcStatus agcStatus;
 	/* These zero values mean not program anything (unless overwritten). */
@@ -366,13 +368,11 @@ void IPARPi::processEvent(const IPAOperationData &event)
 		 * they are "unreliable".
 		 */
 		prepareISP(embeddedbufferId);
+		frame_count_++;
 
 		/* Ready to push the input buffer into the ISP. */
 		IPAOperationData op;
-		if (++frame_count_ > hide_count_)
-			op.operation = RPI_IPA_ACTION_RUN_ISP;
-		else
-			op.operation = RPI_IPA_ACTION_RUN_ISP_AND_DROP_FRAME;
+		op.operation = RPI_IPA_ACTION_RUN_ISP;
 		op.data = { bayerbufferId & RPiIpaMask::ID };
 		queueFrameAction.emit(0, op);
 		break;

@@ -890,7 +890,6 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
-	unsigned int index;
 	int ret;
 
 	/*
@@ -917,18 +916,14 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * This will allow us to identify buffers passed between the pipeline
 	 * handler and the IPA.
 	 */
-	index = 0;
 	for (auto const &b : data->isp_[Isp::Stats].getBuffers()) {
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | index,
-					      .planes = b->planes() });
-		index++;
+		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | b.first,
+					      .planes = b.second->planes() });
 	}
 
-	index = 0;
 	for (auto const &b : data->unicam_[Unicam::Embedded].getBuffers()) {
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | index,
-					      .planes = b->planes() });
-		index++;
+		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | b.first,
+					      .planes = b.second->planes() });
 	}
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
@@ -1127,7 +1122,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		return;
 
 	for (RPi::RPiStream &s : unicam_) {
-		index = s.getBufferIndex(buffer);
+		index = s.getBufferId(buffer);
 		if (index != -1) {
 			stream = &s;
 			break;
@@ -1178,7 +1173,7 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 		return;
 
 	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
-			<< ", buffer id " << unicam_[Unicam::Image].getBufferIndex(buffer)
+			<< ", buffer id " << unicam_[Unicam::Image].getBufferId(buffer)
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	/* The ISP input buffer gets re-queued into Unicam. */
@@ -1195,7 +1190,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 		return;
 
 	for (RPi::RPiStream &s : isp_) {
-		index = s.getBufferIndex(buffer);
+		index = s.getBufferId(buffer);
 		if (index != -1) {
 			stream = &s;
 			break;
@@ -1436,16 +1431,16 @@ void RPiCameraData::tryRunPipeline()
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
-	unsigned int bayerIndex = unicam_[Unicam::Image].getBufferIndex(bayerBuffer);
-	unsigned int embeddedIndex = unicam_[Unicam::Embedded].getBufferIndex(embeddedBuffer);
+	unsigned int bayerId = unicam_[Unicam::Image].getBufferId(bayerBuffer);
+	unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
 	LOG(RPI, Debug) << "Signalling RPI_IPA_EVENT_SIGNAL_ISP_PREPARE:"
-			<< " Bayer buffer id: " << bayerIndex
-			<< " Embedded buffer id: " << embeddedIndex;
+			<< " Bayer buffer id: " << bayerId
+			<< " Embedded buffer id: " << embeddedId;
 
 	op.operation = RPI_IPA_EVENT_SIGNAL_ISP_PREPARE;
-	op.data = { RPiIpaMask::EMBEDDED_DATA | embeddedIndex,
-		    RPiIpaMask::BAYER_DATA | bayerIndex };
+	op.data = { RPiIpaMask::EMBEDDED_DATA | embeddedId,
+		    RPiIpaMask::BAYER_DATA | bayerId };
 	ipa_->processEvent(op);
 }
 

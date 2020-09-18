@@ -9,8 +9,10 @@
 
 #include <queue>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -18,6 +20,8 @@
 namespace libcamera {
 
 namespace RPi {
+
+using BufferMap = std::unordered_map<unsigned int, FrameBuffer *>;
 
 /*
  * Device stream abstraction for either an internal or external stream.
@@ -27,12 +31,13 @@ class RPiStream : public Stream
 {
 public:
 	RPiStream()
+		: id_(RPiIpaMask::ID)
 	{
 	}
 
 	RPiStream(const char *name, MediaEntity *dev, bool importOnly = false)
 		: external_(false), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev))
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPiIpaMask::ID)
 	{
 	}
 
@@ -45,8 +50,8 @@ public:
 	bool isExternal() const;
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
-	const std::vector<FrameBuffer *> &getBuffers() const;
-	int getBufferIndex(FrameBuffer *buffer) const;
+	const BufferMap &getBuffers() const;
+	int getBufferId(FrameBuffer *buffer) const;
 
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
@@ -56,6 +61,44 @@ public:
 	void releaseBuffers();
 
 private:
+	class IdGenerator
+	{
+	public:
+		IdGenerator(int max)
+			: max_(max), id_(0)
+		{
+		}
+
+		int get()
+		{
+			int id;
+			if (!recycle_.empty()) {
+				id = recycle_.front();
+				recycle_.pop();
+			} else {
+				id = id_++;
+				ASSERT(id_ <= max_);
+			}
+			return id;
+		}
+
+		void release(int id)
+		{
+			recycle_.push(id);
+		}
+
+		void reset()
+		{
+			id_ = 0;
+			recycle_ = {};
+		}
+
+	private:
+		int max_;
+		int id_;
+		std::queue<int> recycle_;
+	};
+
 	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 
@@ -74,8 +117,11 @@ private:
 	/* The actual device stream. */
 	std::unique_ptr<V4L2VideoDevice> dev_;
 
+	/* Tracks a unique id key for the bufferMap_ */
+	IdGenerator id_;
+
 	/* All frame buffers associated with this device stream. */
-	std::vector<FrameBuffer *> bufferList_;
+	BufferMap bufferMap_;
 
 	/*
 	 * List of frame buffers that we can use if none have been provided by

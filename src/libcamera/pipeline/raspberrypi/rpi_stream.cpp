@@ -44,26 +44,28 @@ bool RPiStream::isExternal() const
 
 void RPiStream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	std::transform(buffers->begin(), buffers->end(), std::back_inserter(bufferList_),
-		       [](std::unique_ptr<FrameBuffer> &b) { return b.get(); });
+	for (auto const &buffer : *buffers)
+		bufferMap_.emplace(id_.get(), buffer.get());
 }
 
-const std::vector<FrameBuffer *> &RPiStream::getBuffers() const
+const BufferMap &RPiStream::getBuffers() const
 {
-	return bufferList_;
+	return bufferMap_;
 }
 
-int RPiStream::getBufferIndex(FrameBuffer *buffer) const
+int RPiStream::getBufferId(FrameBuffer *buffer) const
 {
 	if (importOnly_)
 		return -1;
 
-	/* Find the buffer in the list, and return the index position. */
-	auto it = std::find(bufferList_.begin(), bufferList_.end(), buffer);
-	if (it != bufferList_.end())
-		return std::distance(bufferList_.begin(), it);
+	/* Find the buffer in the map, and return the buffer id. */
+	auto it = std::find_if(bufferMap_.begin(), bufferMap_.end(),
+			       [&buffer](auto const &p) { return p.second == buffer; });
 
-	return -1;
+	if (it == bufferMap_.end())
+		return -1;
+
+	return it->first;
 }
 
 int RPiStream::prepareBuffers(unsigned int count)
@@ -86,7 +88,7 @@ int RPiStream::prepareBuffers(unsigned int count)
 		}
 
 		/* We must import all internal/external exported buffers. */
-		count = bufferList_.size();
+		count = bufferMap_.size();
 	}
 
 	return dev_->importBuffers(count);
@@ -138,6 +140,9 @@ void RPiStream::returnBuffer(FrameBuffer *buffer)
 
 	/* Push this buffer back into the queue to be used again. */
 	availableBuffers_.push(buffer);
+
+	/* Allow the buffer id to be reused. */
+	id_.release(getBufferId(buffer));
 
 	/*
 	 * Do we have any Request buffers that are waiting to be queued?
@@ -196,12 +201,13 @@ void RPiStream::clearBuffers()
 	availableBuffers_ = std::queue<FrameBuffer *>{};
 	requestBuffers_ = std::queue<FrameBuffer *>{};
 	internalBuffers_.clear();
-	bufferList_.clear();
+	bufferMap_.clear();
+	id_.reset();
 }
 
 int RPiStream::queueToDevice(FrameBuffer *buffer)
 {
-	LOG(RPISTREAM, Debug) << "Queuing buffer " << getBufferIndex(buffer)
+	LOG(RPISTREAM, Debug) << "Queuing buffer " << getBufferId(buffer)
 			      << " for " << name_;
 
 	int ret = dev_->queueBuffer(buffer);

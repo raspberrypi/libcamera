@@ -19,7 +19,6 @@
 #include <libcamera/logging.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/request.h>
-#include <libcamera/stream.h>
 
 #include <linux/videodev2.h>
 
@@ -33,6 +32,7 @@
 #include "libcamera/internal/v4l2_videodevice.h"
 
 #include "dma_heaps.h"
+#include "rpi_stream.h"
 #include "staggered_ctrl.h"
 
 namespace libcamera {
@@ -122,165 +122,10 @@ V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
 	return bestMode;
 }
 
-} /* namespace */
-
-/*
- * Device stream abstraction for either an internal or external stream.
- * Used for both Unicam and the ISP.
- */
-class RPiStream : public Stream
-{
-public:
-	RPiStream()
-	{
-	}
-
-	RPiStream(const char *name, MediaEntity *dev, bool importOnly = false)
-		: external_(false), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev))
-	{
-	}
-
-	V4L2VideoDevice *dev() const
-	{
-		return dev_.get();
-	}
-
-	void setExternal(bool external)
-	{
-		external_ = external;
-	}
-
-	bool isExternal() const
-	{
-		/*
-		 * Import streams cannot be external.
-		 *
-		 * RAW capture is a special case where we simply copy the RAW
-		 * buffer out of the request. All other buffer handling happens
-		 * as if the stream is internal.
-		 */
-		return external_ && !importOnly_;
-	}
-
-	bool isImporter() const
-	{
-		return importOnly_;
-	}
-
-	void reset()
-	{
-		external_ = false;
-		internalBuffers_.clear();
-	}
-
-	std::string name() const
-	{
-		return name_;
-	}
-
-	void setExternalBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
-	{
-		externalBuffers_ = buffers;
-	}
-
-	const std::vector<std::unique_ptr<FrameBuffer>> *getBuffers() const
-	{
-		return external_ ? externalBuffers_ : &internalBuffers_;
-	}
-
-	void releaseBuffers()
-	{
-		dev_->releaseBuffers();
-		if (!external_ && !importOnly_)
-			internalBuffers_.clear();
-	}
-
-	int importBuffers(unsigned int count)
-	{
-		return dev_->importBuffers(count);
-	}
-
-	int allocateBuffers(unsigned int count)
-	{
-		return dev_->allocateBuffers(count, &internalBuffers_);
-	}
-
-	int queueBuffers()
-	{
-		if (external_)
-			return 0;
-
-		for (auto &b : internalBuffers_) {
-			int ret = dev_->queueBuffer(b.get());
-			if (ret) {
-				LOG(RPI, Error) << "Failed to queue buffers for "
-						<< name_;
-				return ret;
-			}
-		}
-
-		return 0;
-	}
-
-	bool findFrameBuffer(FrameBuffer *buffer) const
-	{
-		auto start = external_ ? externalBuffers_->begin() : internalBuffers_.begin();
-		auto end = external_ ? externalBuffers_->end() : internalBuffers_.end();
-
-		if (importOnly_)
-			return false;
-
-		if (std::find_if(start, end,
-				 [buffer](std::unique_ptr<FrameBuffer> const &ref) { return ref.get() == buffer; }) != end)
-			return true;
-
-		return false;
-	}
-
-private:
-	/*
-	 * Indicates that this stream is active externally, i.e. the buffers
-	 * are provided by the application.
-	 */
-	bool external_;
-	/* Indicates that this stream only imports buffers, e.g. ISP input. */
-	bool importOnly_;
-	/* Stream name identifier. */
-	std::string name_;
-	/* The actual device stream. */
-	std::unique_ptr<V4L2VideoDevice> dev_;
-	/* Internally allocated framebuffers associated with this device stream. */
-	std::vector<std::unique_ptr<FrameBuffer>> internalBuffers_;
-	/* Externally allocated framebuffers associated with this device stream. */
-	std::vector<std::unique_ptr<FrameBuffer>> *externalBuffers_;
-};
-
-/*
- * The following class is just a convenient (and typesafe) array of device
- * streams indexed with an enum class.
- */
 enum class Unicam : unsigned int { Image, Embedded };
 enum class Isp : unsigned int { Input, Output0, Output1, Stats };
 
-template<typename E, std::size_t N>
-class RPiDevice : public std::array<class RPiStream, N>
-{
-private:
-	constexpr auto index(E e) const noexcept
-	{
-		return static_cast<std::underlying_type_t<E>>(e);
-	}
-public:
-	RPiStream &operator[](E e)
-	{
-		return std::array<class RPiStream, N>::operator[](index(e));
-	}
-	const RPiStream &operator[](E e) const
-	{
-		return std::array<class RPiStream, N>::operator[](index(e));
-	}
-};
+} /* namespace */
 
 class RPiCameraData : public CameraData
 {
@@ -304,15 +149,15 @@ public:
 	void ispOutputDequeue(FrameBuffer *buffer);
 
 	void clearIncompleteRequests();
-	void handleStreamBuffer(FrameBuffer *buffer, const RPiStream *stream);
+	void handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream *stream);
 	void handleState();
 
 	CameraSensor *sensor_;
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
-	RPiDevice<Unicam, 2> unicam_;
-	RPiDevice<Isp, 4> isp_;
+	RPi::RPiDevice<Unicam, 2> unicam_;
+	RPi::RPiDevice<Isp, 4> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
-	std::vector<RPiStream *> streams_;
+	std::vector<RPi::RPiStream *> streams_;
 	/* Buffers passed to the IPA. */
 	std::vector<IPABuffer> ipaBuffers_;
 
@@ -761,7 +606,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 int PipelineHandlerRPi::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
 					   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	RPiStream *s = static_cast<RPiStream *>(stream);
+	RPi::RPiStream *s = static_cast<RPi::RPiStream *>(stream);
 	unsigned int count = stream->configuration().bufferCount;
 	int ret = s->dev()->exportBuffers(count, buffers);
 
@@ -908,14 +753,14 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Locate and open the unicam video streams. */
-	data->unicam_[Unicam::Embedded] = RPiStream("Unicam Embedded", unicam_->getEntityByName("unicam-embedded"));
-	data->unicam_[Unicam::Image] = RPiStream("Unicam Image", unicam_->getEntityByName("unicam-image"));
+	data->unicam_[Unicam::Embedded] = RPi::RPiStream("Unicam Embedded", unicam_->getEntityByName("unicam-embedded"));
+	data->unicam_[Unicam::Image] = RPi::RPiStream("Unicam Image", unicam_->getEntityByName("unicam-image"));
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = RPiStream("ISP Input", isp_->getEntityByName("bcm2835-isp0-output0"), true);
-	data->isp_[Isp::Output0] = RPiStream("ISP Output0", isp_->getEntityByName("bcm2835-isp0-capture1"));
-	data->isp_[Isp::Output1] = RPiStream("ISP Output1", isp_->getEntityByName("bcm2835-isp0-capture2"));
-	data->isp_[Isp::Stats] = RPiStream("ISP Stats", isp_->getEntityByName("bcm2835-isp0-capture3"));
+	data->isp_[Isp::Input] = RPi::RPiStream("ISP Input", isp_->getEntityByName("bcm2835-isp0-output0"), true);
+	data->isp_[Isp::Output0] = RPi::RPiStream("ISP Output0", isp_->getEntityByName("bcm2835-isp0-capture1"));
+	data->isp_[Isp::Output1] = RPi::RPiStream("ISP Output1", isp_->getEntityByName("bcm2835-isp0-capture2"));
+	data->isp_[Isp::Stats] = RPi::RPiStream("ISP Stats", isp_->getEntityByName("bcm2835-isp0-capture3"));
 
 	/* This is just for convenience so that we can easily iterate over all streams. */
 	for (auto &stream : data->unicam_)
@@ -1013,7 +858,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 */
 	unsigned int maxBuffers = 0;
 	for (const Stream *s : camera->streams())
-		if (static_cast<const RPiStream *>(s)->isExternal())
+		if (static_cast<const RPi::RPiStream *>(s)->isExternal())
 			maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
 
 	for (auto const stream : data->streams_) {
@@ -1257,12 +1102,12 @@ done:
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 {
-	const RPiStream *stream = nullptr;
+	const RPi::RPiStream *stream = nullptr;
 
 	if (state_ == State::Stopped)
 		return;
 
-	for (RPiStream const &s : unicam_) {
+	for (RPi::RPiStream const &s : unicam_) {
 		if (s.findFrameBuffer(buffer)) {
 			stream = &s;
 			break;
@@ -1318,12 +1163,12 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 
 void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 {
-	const RPiStream *stream = nullptr;
+	const RPi::RPiStream *stream = nullptr;
 
 	if (state_ == State::Stopped)
 		return;
 
-	for (RPiStream const &s : isp_) {
+	for (RPi::RPiStream const &s : isp_) {
 		if (s.findFrameBuffer(buffer)) {
 			stream = &s;
 			break;
@@ -1404,7 +1249,7 @@ void RPiCameraData::clearIncompleteRequests()
 	}
 }
 
-void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, const RPiStream *stream)
+void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream *stream)
 {
 	if (stream->isExternal()) {
 		if (!dropFrame_) {

@@ -3,5 +3,6 @@
 libcamera_sources += files([
     'dma_heaps.cpp',
     'raspberrypi.cpp',
+    'rpi_stream.cpp',
     'staggered_ctrl.cpp',
 ])

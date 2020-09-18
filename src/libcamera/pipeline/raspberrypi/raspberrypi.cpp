@@ -10,6 +10,7 @@
 #include <mutex>
 #include <queue>
 #include <sys/mman.h>
+#include <unordered_set>
 
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
@@ -158,8 +159,8 @@ public:
 	RPi::RPiDevice<Isp, 4> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<RPi::RPiStream *> streams_;
-	/* Buffers passed to the IPA. */
-	std::vector<IPABuffer> ipaBuffers_;
+	/* Stores the ids of the buffers mapped in the IPA. */
+	std::unordered_set<unsigned int> ipaBuffers_;
 
 	/* DMAHEAP allocation helper. */
 	RPi::DmaHeap dmaHeap_;
@@ -230,6 +231,7 @@ private:
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
 	void freeBuffers(Camera *camera);
+	void mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask);
 
 	MediaDevice *unicam_;
 	MediaDevice *isp_;
@@ -910,36 +912,42 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	}
 
 	/*
-	 * Link the FrameBuffers with the index of their position in the vector
-	 * stored in the RPi stream object.
+	 * Pass the stats and embedded data buffers to the IPA. No other
+	 * buffers need to be passed.
+	 */
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPiIpaMask::STATS);
+	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), RPiIpaMask::EMBEDDED_DATA);
+
+	return 0;
+}
+
+void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask)
+{
+	RPiCameraData *data = cameraData(camera);
+	std::vector<IPABuffer> ipaBuffers;
+	/*
+	 * Link the FrameBuffers with the id (key value) in the map stored in
+	 * the RPi stream object - along with an identifier mask.
 	 *
 	 * This will allow us to identify buffers passed between the pipeline
 	 * handler and the IPA.
 	 */
-	for (auto const &b : data->isp_[Isp::Stats].getBuffers()) {
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | b.first,
-					      .planes = b.second->planes() });
+	for (auto const &it : buffers) {
+		ipaBuffers.push_back({ .id = mask | it.first,
+				       .planes = it.second->planes() });
+		data->ipaBuffers_.insert(mask | it.first);
 	}
 
-	for (auto const &b : data->unicam_[Unicam::Embedded].getBuffers()) {
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | b.first,
-					      .planes = b.second->planes() });
-	}
-
-	data->ipa_->mapBuffers(data->ipaBuffers_);
-
-	return 0;
+	data->ipa_->mapBuffers(ipaBuffers);
 }
 
 void PipelineHandlerRPi::freeBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 
-	std::vector<unsigned int> ids;
-	for (IPABuffer &ipabuf : data->ipaBuffers_)
-		ids.push_back(ipabuf.id);
-
-	data->ipa_->unmapBuffers(ids);
+	/* Copy the buffer ids from the unordered_set to a vector to pass to the IPA. */
+	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
+	data->ipa_->unmapBuffers(ipaBuffers);
 	data->ipaBuffers_.clear();
 
 	for (auto const stream : data->streams_)

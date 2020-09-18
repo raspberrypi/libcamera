@@ -53,15 +53,17 @@ const std::vector<FrameBuffer *> &RPiStream::getBuffers() const
 	return bufferList_;
 }
 
-bool RPiStream::findFrameBuffer(FrameBuffer *buffer) const
+int RPiStream::getBufferIndex(FrameBuffer *buffer) const
 {
 	if (importOnly_)
-		return false;
+		return -1;
 
-	if (std::find(bufferList_.begin(), bufferList_.end(), buffer) != bufferList_.end())
-		return true;
+	/* Find the buffer in the list, and return the index position. */
+	auto it = std::find(bufferList_.begin(), bufferList_.end(), buffer);
+	if (it != bufferList_.end())
+		return std::distance(bufferList_.begin(), it);
 
-	return false;
+	return -1;
 }
 
 int RPiStream::prepareBuffers(unsigned int count)
@@ -199,7 +201,7 @@ void RPiStream::clearBuffers()
 
 int RPiStream::queueToDevice(FrameBuffer *buffer)
 {
-	LOG(RPISTREAM, Debug) << "Queuing buffer " << buffer->cookie()
+	LOG(RPISTREAM, Debug) << "Queuing buffer " << getBufferIndex(buffer)
 			      << " for " << name_;
 
 	int ret = dev_->queueBuffer(buffer);

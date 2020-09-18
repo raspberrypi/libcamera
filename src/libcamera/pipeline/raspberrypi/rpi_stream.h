@@ -46,7 +46,7 @@ public:
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const std::vector<FrameBuffer *> &getBuffers() const;
-	bool findFrameBuffer(FrameBuffer *buffer) const;
+	int getBufferIndex(FrameBuffer *buffer) const;
 
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);

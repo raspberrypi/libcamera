@@ -890,7 +890,8 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
-	int count, ret;
+	unsigned int index;
+	int ret;
 
 	/*
 	 * Decide how many internal buffers to allocate. For now, simply look
@@ -910,30 +911,24 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	}
 
 	/*
-	 * Add cookies to the ISP Input buffers so that we can link them with
-	 * the IPA and RPI_IPA_EVENT_SIGNAL_ISP_PREPARE event.
+	 * Link the FrameBuffers with the index of their position in the vector
+	 * stored in the RPi stream object.
+	 *
+	 * This will allow us to identify buffers passed between the pipeline
+	 * handler and the IPA.
 	 */
-	count = 0;
-	for (auto const &b : data->unicam_[Unicam::Image].getBuffers()) {
-		b->setCookie(count++);
-	}
-
-	/*
-	 * Add cookies to the stats and embedded data buffers and link them with
-	 * the IPA.
-	 */
-	count = 0;
+	index = 0;
 	for (auto const &b : data->isp_[Isp::Stats].getBuffers()) {
-		b->setCookie(count++);
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | b->cookie(),
+		data->ipaBuffers_.push_back({ .id = RPiIpaMask::STATS | index,
 					      .planes = b->planes() });
+		index++;
 	}
 
-	count = 0;
+	index = 0;
 	for (auto const &b : data->unicam_[Unicam::Embedded].getBuffers()) {
-		b->setCookie(count++);
-		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | b->cookie(),
+		data->ipaBuffers_.push_back({ .id = RPiIpaMask::EMBEDDED_DATA | index,
 					      .planes = b->planes() });
+		index++;
 	}
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
@@ -1106,7 +1101,7 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 		unsigned int bufferId = action.data[0];
 		FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
 
-		LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << buffer->cookie()
+		LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << bufferId
 				<< ", timestamp: " << buffer->metadata().timestamp;
 
 		isp_[Isp::Input].queueBuffer(buffer);
@@ -1126,12 +1121,14 @@ done:
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 {
 	RPi::RPiStream *stream = nullptr;
+	int index;
 
 	if (state_ == State::Stopped)
 		return;
 
 	for (RPi::RPiStream &s : unicam_) {
-		if (s.findFrameBuffer(buffer)) {
+		index = s.getBufferIndex(buffer);
+		if (index != -1) {
 			stream = &s;
 			break;
 		}
@@ -1141,7 +1138,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 	ASSERT(stream);
 
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer dequeue"
-			<< ", buffer id " << buffer->cookie()
+			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	if (stream == &unicam_[Unicam::Image]) {
@@ -1181,7 +1178,7 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 		return;
 
 	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
-			<< ", buffer id " << buffer->cookie()
+			<< ", buffer id " << unicam_[Unicam::Image].getBufferIndex(buffer)
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	/* The ISP input buffer gets re-queued into Unicam. */
@@ -1192,12 +1189,14 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 {
 	RPi::RPiStream *stream = nullptr;
+	int index;
 
 	if (state_ == State::Stopped)
 		return;
 
 	for (RPi::RPiStream &s : isp_) {
-		if (s.findFrameBuffer(buffer)) {
+		index = s.getBufferIndex(buffer);
+		if (index != -1) {
 			stream = &s;
 			break;
 		}
@@ -1207,7 +1206,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	ASSERT(stream);
 
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer complete"
-			<< ", buffer id " << buffer->cookie()
+			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	/*
@@ -1217,7 +1216,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	if (stream == &isp_[Isp::Stats]) {
 		IPAOperationData op;
 		op.operation = RPI_IPA_EVENT_SIGNAL_STAT_READY;
-		op.data = { RPiIpaMask::STATS | buffer->cookie() };
+		op.data = { RPiIpaMask::STATS | static_cast<unsigned int>(index) };
 		ipa_->processEvent(op);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
@@ -1437,13 +1436,16 @@ void RPiCameraData::tryRunPipeline()
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
+	unsigned int bayerIndex = unicam_[Unicam::Image].getBufferIndex(bayerBuffer);
+	unsigned int embeddedIndex = unicam_[Unicam::Embedded].getBufferIndex(embeddedBuffer);
+
 	LOG(RPI, Debug) << "Signalling RPI_IPA_EVENT_SIGNAL_ISP_PREPARE:"
-			<< " Bayer buffer id: " << bayerBuffer->cookie()
-			<< " Embedded buffer id: " << embeddedBuffer->cookie();
+			<< " Bayer buffer id: " << bayerIndex
+			<< " Embedded buffer id: " << embeddedIndex;
 
 	op.operation = RPI_IPA_EVENT_SIGNAL_ISP_PREPARE;
-	op.data = { RPiIpaMask::EMBEDDED_DATA | embeddedBuffer->cookie(),
-		    RPiIpaMask::BAYER_DATA | bayerBuffer->cookie() };
+	op.data = { RPiIpaMask::EMBEDDED_DATA | embeddedIndex,
+		    RPiIpaMask::BAYER_DATA | bayerIndex };
 	ipa_->processEvent(op);
 }
 

@@ -378,7 +378,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			sensorFormat = findBestMode(fmts, size);
 			pixelFormat = sensorFormat.fourcc.toPixelFormat();
 			ASSERT(pixelFormat.isValid());
-			bufferCount = 1;
+			bufferCount = 2;
 			rawCount++;
 			break;
 

@@ -149,7 +149,7 @@ public:
 	void ispOutputDequeue(FrameBuffer *buffer);
 
 	void clearIncompleteRequests();
-	void handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream *stream);
+	void handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stream);
 	void handleState();
 
 	CameraSensor *sensor_;
@@ -1107,12 +1107,12 @@ done:
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 {
-	const RPi::RPiStream *stream = nullptr;
+	RPi::RPiStream *stream = nullptr;
 
 	if (state_ == State::Stopped)
 		return;
 
-	for (RPi::RPiStream const &s : unicam_) {
+	for (RPi::RPiStream &s : unicam_) {
 		if (s.findFrameBuffer(buffer)) {
 			stream = &s;
 			break;
@@ -1173,12 +1173,12 @@ void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 
 void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 {
-	const RPi::RPiStream *stream = nullptr;
+	RPi::RPiStream *stream = nullptr;
 
 	if (state_ == State::Stopped)
 		return;
 
-	for (RPi::RPiStream const &s : isp_) {
+	for (RPi::RPiStream &s : isp_) {
 		if (s.findFrameBuffer(buffer)) {
 			stream = &s;
 			break;
@@ -1259,7 +1259,7 @@ void RPiCameraData::clearIncompleteRequests()
 	}
 }
 
-void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, const RPi::RPiStream *stream)
+void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::RPiStream *stream)
 {
 	if (stream->isExternal()) {
 		if (!dropFrameCount_) {

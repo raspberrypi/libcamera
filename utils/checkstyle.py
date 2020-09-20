@@ -244,9 +244,9 @@ class IncludeChecker(StyleChecker):
     patterns = ('*.cpp', '*.h')
 
     headers = ('assert', 'ctype', 'errno', 'fenv', 'float', 'inttypes',
-               'limits', 'locale', 'math', 'setjmp', 'signal', 'stdarg',
-               'stddef', 'stdint', 'stdio', 'stdlib', 'string', 'time', 'uchar',
-               'wchar', 'wctype')
+               'limits', 'locale', 'setjmp', 'signal', 'stdarg', 'stddef',
+               'stdint', 'stdio', 'stdlib', 'string', 'time', 'uchar', 'wchar',
+               'wctype')
     include_regex = re.compile('^#include <c([a-z]*)>')
 
     def __init__(self, content):

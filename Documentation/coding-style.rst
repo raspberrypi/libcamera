@@ -195,9 +195,17 @@ them, defines C compatibility headers. The former have a name of the form
 <cxxx> while the later are named <xxx.h>. The C++ headers declare names in the
 std namespace, and may declare the same names in the global namespace. The C
 compatibility headers declare names in the global namespace, and may declare
-the same names in the std namespace. Usage of the C compatibility headers is
-strongly preferred. Code shall not rely on the optional declaration of names in
-the global or std namespace.
+the same names in the std namespace. Code shall not rely on the optional
+declaration of names in the global or std namespace.
+
+Usage of the C compatibility headers is preferred, except for the math.h header.
+Where math.h defines separate functions for different argument types (e.g.
+abs(int), labs(long int), fabs(double) and fabsf(float)) and requires the
+developer to pick the right function, cmath defines overloaded functions
+(std::abs(int), std::abs(long int), std::abs(double) and std::abs(float) to let
+the compiler select the right function. This avoids potential errors such as
+calling abs(int) with a float argument, performing an unwanted implicit integer
+conversion. For this reason, cmath is preferred over math.h.
 
 
 Documentation

@@ -13,6 +13,7 @@
 #include <string>
 
 #include <libcamera/controls.h>
+#include <libcamera/extensible.h>
 #include <libcamera/object.h>
 #include <libcamera/request.h>
 #include <libcamera/signal.h>
@@ -70,8 +71,11 @@ protected:
 	std::vector<StreamConfiguration> config_;
 };
 
-class Camera final : public Object, public std::enable_shared_from_this<Camera>
+class Camera final : public Object, public std::enable_shared_from_this<Camera>,
+		     public Extensible
 {
+	LIBCAMERA_DECLARE_PRIVATE(Camera)
+
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
 					      const std::string &id,
@@ -106,9 +110,6 @@ private:
 	Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams);
 	~Camera();
-
-	class Private;
-	std::unique_ptr<Private> p_;
 
 	friend class PipelineHandler;
 	void disconnect();

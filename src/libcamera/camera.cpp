@@ -270,8 +270,10 @@ std::size_t CameraConfiguration::size() const
  * \brief The vector of stream configurations
  */
 
-class Camera::Private
+class Camera::Private : public Extensible::Private
 {
+	LIBCAMERA_DECLARE_PUBLIC(Camera)
+
 public:
 	enum State {
 		CameraAvailable,
@@ -280,7 +282,7 @@ public:
 		CameraRunning,
 	};
 
-	Private(PipelineHandler *pipe, const std::string &id,
+	Private(Camera *camera, PipelineHandler *pipe, const std::string &id,
 		const std::set<Stream *> &streams);
 	~Private();
 
@@ -301,10 +303,11 @@ private:
 	std::atomic<State> state_;
 };
 
-Camera::Private::Private(PipelineHandler *pipe, const std::string &id,
+Camera::Private::Private(Camera *camera, PipelineHandler *pipe,
+			 const std::string &id,
 			 const std::set<Stream *> &streams)
-	: pipe_(pipe->shared_from_this()), id_(id), streams_(streams),
-	  disconnected_(false), state_(CameraAvailable)
+	: Extensible::Private(camera), pipe_(pipe->shared_from_this()), id_(id),
+	  streams_(streams), disconnected_(false), state_(CameraAvailable)
 {
 }
 
@@ -519,7 +522,8 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
  */
 const std::string &Camera::id() const
 {
-	return p_->id_;
+	const Private *const d = LIBCAMERA_D_PTR();
+	return d->id_;
 }
 
 /**
@@ -547,7 +551,7 @@ const std::string &Camera::id() const
 
 Camera::Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams)
-	: p_(new Private(pipe, id, streams))
+	: Extensible(new Private(this, pipe, id, streams))
 {
 }
 
@@ -569,28 +573,32 @@ Camera::~Camera()
  */
 void Camera::disconnect()
 {
+	Private *const d = LIBCAMERA_D_PTR();
+
 	LOG(Camera, Debug) << "Disconnecting camera " << id();
 
-	p_->disconnect();
+	d->disconnect();
 	disconnected.emit(this);
 }
 
 int Camera::exportFrameBuffers(Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	int ret = p_->isAccessAllowed(Private::CameraConfigured);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraConfigured);
 	if (ret < 0)
 		return ret;
 
 	if (streams().find(stream) == streams().end())
 		return -EINVAL;
 
-	if (p_->activeStreams_.find(stream) == p_->activeStreams_.end())
+	if (d->activeStreams_.find(stream) == d->activeStreams_.end())
 		return -EINVAL;
 
-	return p_->pipe_->invokeMethod(&PipelineHandler::exportFrameBuffers,
-				       ConnectionTypeBlocking, this, stream,
-				       buffers);
+	return d->pipe_->invokeMethod(&PipelineHandler::exportFrameBuffers,
+				      ConnectionTypeBlocking, this, stream,
+				      buffers);
 }
 
 /**
@@ -619,21 +627,23 @@ int Camera::exportFrameBuffers(Stream *stream,
  */
 int Camera::acquire()
 {
+	Private *const d = LIBCAMERA_D_PTR();
+
 	/*
 	 * No manual locking is required as PipelineHandler::lock() is
 	 * thread-safe.
 	 */
-	int ret = p_->isAccessAllowed(Private::CameraAvailable);
+	int ret = d->isAccessAllowed(Private::CameraAvailable);
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	if (!p_->pipe_->lock()) {
+	if (!d->pipe_->lock()) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;
 	}
 
-	p_->setState(Private::CameraAcquired);
+	d->setState(Private::CameraAcquired);
 
 	return 0;
 }
@@ -654,14 +664,16 @@ int Camera::acquire()
  */
 int Camera::release()
 {
-	int ret = p_->isAccessAllowed(Private::CameraAvailable,
-				      Private::CameraConfigured, true);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraAvailable,
+				     Private::CameraConfigured, true);
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	p_->pipe_->unlock();
+	d->pipe_->unlock();
 
-	p_->setState(Private::CameraAvailable);
+	d->setState(Private::CameraAvailable);
 
 	return 0;
 }
@@ -678,7 +690,8 @@ int Camera::release()
  */
 const ControlInfoMap &Camera::controls() const
 {
-	return p_->pipe_->controls(this);
+	const Private *const d = LIBCAMERA_D_PTR();
+	return d->pipe_->controls(this);
 }
 
 /**
@@ -691,7 +704,8 @@ const ControlInfoMap &Camera::controls() const
  */
 const ControlList &Camera::properties() const
 {
-	return p_->pipe_->properties(this);
+	const Private *const d = LIBCAMERA_D_PTR();
+	return d->pipe_->properties(this);
 }
 
 /**
@@ -707,7 +721,8 @@ const ControlList &Camera::properties() const
  */
 const std::set<Stream *> &Camera::streams() const
 {
-	return p_->streams_;
+	const Private *const d = LIBCAMERA_D_PTR();
+	return d->streams_;
 }
 
 /**
@@ -728,15 +743,17 @@ const std::set<Stream *> &Camera::streams() const
  */
 std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamRoles &roles)
 {
-	int ret = p_->isAccessAllowed(Private::CameraAvailable,
-				      Private::CameraRunning);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraAvailable,
+				     Private::CameraRunning);
 	if (ret < 0)
 		return nullptr;
 
 	if (roles.size() > streams().size())
 		return nullptr;
 
-	CameraConfiguration *config = p_->pipe_->generateConfiguration(this, roles);
+	CameraConfiguration *config = d->pipe_->generateConfiguration(this, roles);
 	if (!config) {
 		LOG(Camera, Debug)
 			<< "Pipeline handler failed to generate configuration";
@@ -787,8 +804,10 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamR
  */
 int Camera::configure(CameraConfiguration *config)
 {
-	int ret = p_->isAccessAllowed(Private::CameraAcquired,
-				      Private::CameraConfigured);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraAcquired,
+				     Private::CameraConfigured);
 	if (ret < 0)
 		return ret;
 
@@ -810,26 +829,26 @@ int Camera::configure(CameraConfiguration *config)
 
 	LOG(Camera, Info) << msg.str();
 
-	ret = p_->pipe_->invokeMethod(&PipelineHandler::configure,
-				      ConnectionTypeBlocking, this, config);
+	ret = d->pipe_->invokeMethod(&PipelineHandler::configure,
+				     ConnectionTypeBlocking, this, config);
 	if (ret)
 		return ret;
 
-	p_->activeStreams_.clear();
+	d->activeStreams_.clear();
 	for (const StreamConfiguration &cfg : *config) {
 		Stream *stream = cfg.stream();
 		if (!stream) {
 			LOG(Camera, Fatal)
 				<< "Pipeline handler failed to update stream configuration";
-			p_->activeStreams_.clear();
+			d->activeStreams_.clear();
 			return -EINVAL;
 		}
 
 		stream->configuration_ = cfg;
-		p_->activeStreams_.insert(stream);
+		d->activeStreams_.insert(stream);
 	}
 
-	p_->setState(Private::CameraConfigured);
+	d->setState(Private::CameraConfigured);
 
 	return 0;
 }
@@ -857,8 +876,10 @@ int Camera::configure(CameraConfiguration *config)
  */
 std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
 {
-	int ret = p_->isAccessAllowed(Private::CameraConfigured,
-				      Private::CameraRunning);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraConfigured,
+				     Private::CameraRunning);
 	if (ret < 0)
 		return nullptr;
 
@@ -889,7 +910,9 @@ std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
  */
 int Camera::queueRequest(Request *request)
 {
-	int ret = p_->isAccessAllowed(Private::CameraRunning);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraRunning);
 	if (ret < 0)
 		return ret;
 
@@ -907,14 +930,14 @@ int Camera::queueRequest(Request *request)
 	for (auto const &it : request->buffers()) {
 		const Stream *stream = it.first;
 
-		if (p_->activeStreams_.find(stream) == p_->activeStreams_.end()) {
+		if (d->activeStreams_.find(stream) == d->activeStreams_.end()) {
 			LOG(Camera, Error) << "Invalid request";
 			return -EINVAL;
 		}
 	}
 
-	return p_->pipe_->invokeMethod(&PipelineHandler::queueRequest,
-				       ConnectionTypeQueued, this, request);
+	return d->pipe_->invokeMethod(&PipelineHandler::queueRequest,
+				      ConnectionTypeQueued, this, request);
 }
 
 /**
@@ -935,18 +958,20 @@ int Camera::queueRequest(Request *request)
  */
 int Camera::start()
 {
-	int ret = p_->isAccessAllowed(Private::CameraConfigured);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraConfigured);
 	if (ret < 0)
 		return ret;
 
 	LOG(Camera, Debug) << "Starting capture";
 
-	ret = p_->pipe_->invokeMethod(&PipelineHandler::start,
-				      ConnectionTypeBlocking, this);
+	ret = d->pipe_->invokeMethod(&PipelineHandler::start,
+				     ConnectionTypeBlocking, this);
 	if (ret)
 		return ret;
 
-	p_->setState(Private::CameraRunning);
+	d->setState(Private::CameraRunning);
 
 	return 0;
 }
@@ -967,16 +992,18 @@ int Camera::start()
  */
 int Camera::stop()
 {
-	int ret = p_->isAccessAllowed(Private::CameraRunning);
+	Private *const d = LIBCAMERA_D_PTR();
+
+	int ret = d->isAccessAllowed(Private::CameraRunning);
 	if (ret < 0)
 		return ret;
 
 	LOG(Camera, Debug) << "Stopping capture";
 
-	p_->setState(Private::CameraConfigured);
+	d->setState(Private::CameraConfigured);
 
-	p_->pipe_->invokeMethod(&PipelineHandler::stop, ConnectionTypeBlocking,
-				this);
+	d->pipe_->invokeMethod(&PipelineHandler::stop, ConnectionTypeBlocking,
+			       this);
 
 	return 0;
 }

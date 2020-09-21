@@ -187,6 +187,25 @@ These rules match the `object ownership rules from the Chromium C++ Style Guide`
    long term borrowing isn't marked through language constructs, it shall be
    documented explicitly in details in the API.
 
+Global Variables
+~~~~~~~~~~~~~~~~
+
+The order of initializations and destructions of global variables cannot be
+reasonably controlled. This can cause problems (including segfaults) when global
+variables depend on each other, directly or indirectly.  For example, if the
+declaration of a global variable calls a constructor which uses another global
+variable that hasn't been initialized yet, incorrect behavior is likely.
+Similar issues may occur when the library is unloaded and global variables are
+destroyed.
+
+Global variables that are statically initialized and have trivial destructors
+(such as an integer constant) do not cause any issue. Other global variables
+shall be avoided when possible, but are allowed when required (for instance to
+implement factories with auto-registration). They shall not depend on any other
+global variable, should run a minimal amount of code in the constructor and
+destructor, and code that contains dependencies should be moved to a later
+point in time. 
+
 C Compatibility Headers
 ~~~~~~~~~~~~~~~~~~~~~~~
 

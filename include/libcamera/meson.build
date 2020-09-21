@@ -8,6 +8,7 @@ libcamera_public_headers = files([
     'controls.h',
     'event_dispatcher.h',
     'event_notifier.h',
+    'extensible.h',
     'file_descriptor.h',
     'framebuffer_allocator.h',
     'geometry.h',

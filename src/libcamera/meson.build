@@ -17,6 +17,7 @@ libcamera_sources = files([
     'event_dispatcher.cpp',
     'event_dispatcher_poll.cpp',
     'event_notifier.cpp',
+    'extensible.cpp',
     'file.cpp',
     'file_descriptor.cpp',
     'formats.cpp',

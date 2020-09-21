@@ -50,7 +50,7 @@ public:
 	 * - initialized_ and status_ during initialization
 	 * - cameras_ and camerasByDevnum_ after initialization
 	 */
-	Mutex mutex_;
+	mutable Mutex mutex_;
 	std::vector<std::shared_ptr<Camera>> cameras_;
 	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_;
 

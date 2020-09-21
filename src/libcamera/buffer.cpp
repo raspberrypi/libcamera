@@ -227,65 +227,6 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  */
 
 /**
- * \brief Copy the contents from another buffer
- * \param[in] src FrameBuffer to copy
- *
- * Copy the buffer contents and metadata from \a src to this buffer. The
- * destination FrameBuffer shall have the same number of planes as the source
- * buffer, and each destination plane shall be larger than or equal to the
- * corresponding source plane.
- *
- * The complete metadata of the source buffer is copied to the destination
- * buffer. If an error occurs during the copy, the destination buffer's metadata
- * status is set to FrameMetadata::FrameError, and other metadata fields are not
- * modified.
- *
- * The operation is performed using memcpy() so is very slow, users needs to
- * consider this before copying buffers.
- *
- * \return 0 on success or a negative error code otherwise
- */
-int FrameBuffer::copyFrom(const FrameBuffer *src)
-{
-	if (planes_.size() != src->planes_.size()) {
-		LOG(Buffer, Error) << "Different number of planes";
-		metadata_.status = FrameMetadata::FrameError;
-		return -EINVAL;
-	}
-
-	for (unsigned int i = 0; i < planes_.size(); i++) {
-		if (planes_[i].length < src->planes_[i].length) {
-			LOG(Buffer, Error) << "Plane " << i << " is too small";
-			metadata_.status = FrameMetadata::FrameError;
-			return -EINVAL;
-		}
-	}
-
-	MappedFrameBuffer source(src, PROT_READ);
-	MappedFrameBuffer destination(this, PROT_WRITE);
-
-	if (!source.isValid()) {
-		LOG(Buffer, Error) << "Failed to map source planes";
-		return -EINVAL;
-	}
-
-	if (!destination.isValid()) {
-		LOG(Buffer, Error) << "Failed to map destination planes";
-		return -EINVAL;
-	}
-
-	for (unsigned int i = 0; i < planes_.size(); i++) {
-		memcpy(destination.maps()[i].data(),
-		       source.maps()[i].data(),
-		       source.maps()[i].size());
-	}
-
-	metadata_ = src->metadata_;
-
-	return 0;
-}
-
-/**
  * \class MappedBuffer
  * \brief Provide an interface to support managing memory mapped buffers
  *

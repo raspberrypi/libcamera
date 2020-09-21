@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include <libcamera/extensible.h>
 #include <libcamera/object.h>
 #include <libcamera/signal.h>
 
@@ -20,8 +21,9 @@ namespace libcamera {
 class Camera;
 class EventDispatcher;
 
-class CameraManager : public Object
+class CameraManager : public Object, public Extensible
 {
+	LIBCAMERA_DECLARE_PRIVATE(CameraManager)
 public:
 	CameraManager();
 	CameraManager(const CameraManager &) = delete;
@@ -50,9 +52,6 @@ public:
 private:
 	static const std::string version_;
 	static CameraManager *self_;
-
-	class Private;
-	std::unique_ptr<Private> p_;
 };
 
 } /* namespace libcamera */

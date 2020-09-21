@@ -34,8 +34,10 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
 
-class CameraManager::Private : public Thread
+class CameraManager::Private : public Extensible::Private, public Thread
 {
+	LIBCAMERA_DECLARE_PUBLIC(CameraManager)
+
 public:
 	Private(CameraManager *cm);
 
@@ -62,8 +64,6 @@ private:
 	void createPipelineHandlers();
 	void cleanup();
 
-	CameraManager *cm_;
-
 	std::condition_variable cv_;
 	bool initialized_;
 	int status_;
@@ -75,7 +75,7 @@ private:
 };
 
 CameraManager::Private::Private(CameraManager *cm)
-	: cm_(cm), initialized_(false)
+	: Extensible::Private(cm), initialized_(false)
 {
 }
 
@@ -136,6 +136,8 @@ int CameraManager::Private::init()
 
 void CameraManager::Private::createPipelineHandlers()
 {
+	CameraManager *const o = LIBCAMERA_O_PTR();
+
 	/*
 	 * \todo Try to read handlers and order from configuration
 	 * file and only fallback on all handlers if there is no
@@ -153,7 +155,7 @@ void CameraManager::Private::createPipelineHandlers()
 		 * all pipelines it can provide.
 		 */
 		while (1) {
-			std::shared_ptr<PipelineHandler> pipe = factory->create(cm_);
+			std::shared_ptr<PipelineHandler> pipe = factory->create(o);
 			if (!pipe->match(enumerator_.get()))
 				break;
 
@@ -264,7 +266,7 @@ void CameraManager::Private::removeCamera(Camera *camera)
 CameraManager *CameraManager::self_ = nullptr;
 
 CameraManager::CameraManager()
-	: p_(new CameraManager::Private(this))
+	: Extensible(new CameraManager::Private(this))
 {
 	if (self_)
 		LOG(Camera, Fatal)
@@ -292,9 +294,11 @@ CameraManager::~CameraManager()
  */
 int CameraManager::start()
 {
+	Private *const d = LIBCAMERA_D_PTR();
+
 	LOG(Camera, Info) << "libcamera " << version_;
 
-	int ret = p_->start();
+	int ret = d->start();
 	if (ret)
 		LOG(Camera, Error) << "Failed to start camera manager: "
 				   << strerror(-ret);
@@ -314,8 +318,9 @@ int CameraManager::start()
  */
 void CameraManager::stop()
 {
-	p_->exit();
-	p_->wait();
+	Private *const d = LIBCAMERA_D_PTR();
+	d->exit();
+	d->wait();
 }
 
 /**
@@ -331,9 +336,11 @@ void CameraManager::stop()
  */
 std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
 {
-	MutexLocker locker(p_->mutex_);
+	const Private *const d = LIBCAMERA_D_PTR();
 
-	return p_->cameras_;
+	MutexLocker locker(d->mutex_);
+
+	return d->cameras_;
 }
 
 /**
@@ -349,9 +356,11 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
  */
 std::shared_ptr<Camera> CameraManager::get(const std::string &id)
 {
-	MutexLocker locker(p_->mutex_);
+	Private *const d = LIBCAMERA_D_PTR();
 
-	for (std::shared_ptr<Camera> camera : p_->cameras_) {
+	MutexLocker locker(d->mutex_);
+
+	for (std::shared_ptr<Camera> camera : d->cameras_) {
 		if (camera->id() == id)
 			return camera;
 	}
@@ -377,10 +386,12 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &id)
  */
 std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 {
-	MutexLocker locker(p_->mutex_);
+	Private *const d = LIBCAMERA_D_PTR();
 
-	auto iter = p_->camerasByDevnum_.find(devnum);
-	if (iter == p_->camerasByDevnum_.end())
+	MutexLocker locker(d->mutex_);
+
+	auto iter = d->camerasByDevnum_.find(devnum);
+	if (iter == d->camerasByDevnum_.end())
 		return nullptr;
 
 	return iter->second.lock();
@@ -431,9 +442,11 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 void CameraManager::addCamera(std::shared_ptr<Camera> camera,
 			      const std::vector<dev_t> &devnums)
 {
-	ASSERT(Thread::current() == p_.get());
+	Private *const d = LIBCAMERA_D_PTR();
 
-	p_->addCamera(camera, devnums);
+	ASSERT(Thread::current() == d);
+
+	d->addCamera(camera, devnums);
 	cameraAdded.emit(camera);
 }
 
@@ -449,9 +462,11 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera,
  */
 void CameraManager::removeCamera(std::shared_ptr<Camera> camera)
 {
-	ASSERT(Thread::current() == p_.get());
+	Private *const d = LIBCAMERA_D_PTR();
 
-	p_->removeCamera(camera.get());
+	ASSERT(Thread::current() == d);
+
+	d->removeCamera(camera.get());
 	cameraRemoved.emit(camera);
 }
 

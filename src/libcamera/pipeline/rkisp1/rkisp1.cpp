@@ -243,11 +243,6 @@ RkISP1FrameInfo *RkISP1Frames::create(unsigned int frame, Request *request, Stre
 	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
 	FrameBuffer *videoBuffer = request->findBuffer(stream);
-	if (!videoBuffer) {
-		LOG(RkISP1, Error)
-			<< "Attempt to queue request with invalid stream";
-		return nullptr;
-	}
 
 	pipe_->availableParamBuffers_.pop();
 	pipe_->availableStatBuffers_.pop();

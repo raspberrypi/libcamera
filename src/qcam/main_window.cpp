@@ -367,7 +367,6 @@ void MainWindow::toggleCapture(bool start)
 int MainWindow::startCapture()
 {
 	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
-	std::vector<Request *> requests;
 	int ret;
 
 	/* Verify roles are supported. */
@@ -486,7 +485,7 @@ int MainWindow::startCapture()
 	while (!freeBuffers_[vfStream_].isEmpty()) {
 		FrameBuffer *buffer = freeBuffers_[vfStream_].dequeue();
 
-		Request *request = camera_->createRequest();
+		std::unique_ptr<Request> request = camera_->createRequest();
 		if (!request) {
 			qWarning() << "Can't create request";
 			ret = -ENOMEM;
@@ -499,7 +498,7 @@ int MainWindow::startCapture()
 			goto error;
 		}
 
-		requests.push_back(request);
+		requests_.push_back(std::move(request));
 	}
 
 	/* Start the title timer and the camera. */
@@ -518,8 +517,8 @@ int MainWindow::startCapture()
 	camera_->requestCompleted.connect(this, &MainWindow::requestComplete);
 
 	/* Queue all requests. */
-	for (Request *request : requests) {
-		ret = camera_->queueRequest(request);
+	for (std::unique_ptr<Request> &request : requests_) {
+		ret = camera_->queueRequest(request.get());
 		if (ret < 0) {
 			qWarning() << "Can't queue request";
 			goto error_disconnect;
@@ -535,8 +534,7 @@ error_disconnect:
 	camera_->stop();
 
 error:
-	for (Request *request : requests)
-		delete request;
+	requests_.clear();
 
 	for (auto &iter : mappedBuffers_) {
 		const MappedBuffer &buffer = iter.second;
@@ -579,6 +577,8 @@ void MainWindow::stopCapture()
 		munmap(buffer.memory, buffer.size);
 	}
 	mappedBuffers_.clear();
+
+	requests_.clear();
 
 	delete allocator_;
 
@@ -701,7 +701,7 @@ void MainWindow::requestComplete(Request *request)
 	 */
 	{
 		QMutexLocker locker(&mutex_);
-		doneQueue_.enqueue({ request->buffers(), request->metadata() });
+		doneQueue_.enqueue(request);
 	}
 
 	QCoreApplication::postEvent(this, new CaptureEvent);
@@ -714,8 +714,7 @@ void MainWindow::processCapture()
 	 * if stopCapture() has been called while a CaptureEvent was posted but
 	 * not processed yet. Return immediately in that case.
 	 */
-	CaptureRequest request;
-
+	Request *request;
 	{
 		QMutexLocker locker(&mutex_);
 		if (doneQueue_.isEmpty())
@@ -725,11 +724,15 @@ void MainWindow::processCapture()
 	}
 
 	/* Process buffers. */
-	if (request.buffers_.count(vfStream_))
-		processViewfinder(request.buffers_[vfStream_]);
+	if (request->buffers().count(vfStream_))
+		processViewfinder(request->buffers().at(vfStream_));
 
-	if (request.buffers_.count(rawStream_))
-		processRaw(request.buffers_[rawStream_], request.metadata_);
+	if (request->buffers().count(rawStream_))
+		processRaw(request->buffers().at(rawStream_), request->metadata());
+
+	request->reuse();
+	QMutexLocker locker(&mutex_);
+	freeQueue_.enqueue(request);
 }
 
 void MainWindow::processViewfinder(FrameBuffer *buffer)
@@ -754,10 +757,13 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 
 void MainWindow::queueRequest(FrameBuffer *buffer)
 {
-	Request *request = camera_->createRequest();
-	if (!request) {
-		qWarning() << "Can't create request";
-		return;
+	Request *request;
+	{
+		QMutexLocker locker(&mutex_);
+		if (freeQueue_.isEmpty())
+			return;
+
+		request = freeQueue_.dequeue();
 	}
 
 	request->addBuffer(vfStream_, buffer);

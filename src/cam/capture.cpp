@@ -65,6 +65,8 @@ int Capture::run(const OptionsParser::Options &options)
 		writer_ = nullptr;
 	}
 
+	requests_.clear();
+
 	delete allocator;
 
 	return ret;
@@ -92,9 +94,8 @@ int Capture::capture(FrameBufferAllocator *allocator)
 	 * example pushing a button. For now run all streams all the time.
 	 */
 
-	std::vector<Request *> requests;
 	for (unsigned int i = 0; i < nbuffers; i++) {
-		Request *request = camera_->createRequest();
+		std::unique_ptr<Request> request = camera_->createRequest();
 		if (!request) {
 			std::cerr << "Can't create request" << std::endl;
 			return -ENOMEM;
@@ -117,7 +118,7 @@ int Capture::capture(FrameBufferAllocator *allocator)
 				writer_->mapBuffer(buffer.get());
 		}
 
-		requests.push_back(request);
+		requests_.push_back(std::move(request));
 	}
 
 	ret = camera_->start();
@@ -126,8 +127,8 @@ int Capture::capture(FrameBufferAllocator *allocator)
 		return ret;
 	}
 
-	for (Request *request : requests) {
-		ret = camera_->queueRequest(request);
+	for (std::unique_ptr<Request> &request : requests_) {
+		ret = camera_->queueRequest(request.get());
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
 			camera_->stop();
@@ -202,22 +203,6 @@ void Capture::requestComplete(Request *request)
 		return;
 	}
 
-	/*
-	 * Create a new request and populate it with one buffer for each
-	 * stream.
-	 */
-	request = camera_->createRequest();
-	if (!request) {
-		std::cerr << "Can't create request" << std::endl;
-		return;
-	}
-
-	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		const Stream *stream = it->first;
-		FrameBuffer *buffer = it->second;
-
-		request->addBuffer(stream, buffer);
-	}
-
+	request->reuse(Request::ReuseBuffers);
 	camera_->queueRequest(request);
 }

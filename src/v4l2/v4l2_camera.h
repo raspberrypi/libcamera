@@ -76,7 +76,9 @@ private:
 	std::mutex bufferLock_;
 	FrameBufferAllocator *bufferAllocator_;
 
-	std::deque<std::unique_ptr<Request>> pendingRequests_;
+	std::vector<std::unique_ptr<Request>> requestPool_;
+
+	std::deque<Request *> pendingRequests_;
 	std::deque<std::unique_ptr<Buffer>> completedBuffers_;
 
 	int efd_;

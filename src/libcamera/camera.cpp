@@ -847,21 +847,22 @@ int Camera::configure(CameraConfiguration *config)
  * handler, and is completely opaque to libcamera.
  *
  * The ownership of the returned request is passed to the caller, which is
- * responsible for either queueing the request or deleting it.
+ * responsible for deleting it. The request may be deleted in the completion
+ * handler, or reused after resetting its state with Request::reuse().
  *
  * \context This function is \threadsafe. It may only be called when the camera
  * is in the Configured or Running state as defined in \ref camera_operation.
  *
  * \return A pointer to the newly created request, or nullptr on error
  */
-Request *Camera::createRequest(uint64_t cookie)
+std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
 {
 	int ret = p_->isAccessAllowed(Private::CameraConfigured,
 				      Private::CameraRunning);
 	if (ret < 0)
 		return nullptr;
 
-	return new Request(this, cookie);
+	return std::make_unique<Request>(this, cookie);
 }
 
 /**
@@ -876,9 +877,6 @@ Request *Camera::createRequest(uint64_t cookie)
  *
  * Once the request has been queued, the camera will notify its completion
  * through the \ref requestCompleted signal.
- *
- * Ownership of the request is transferred to the camera. It will be deleted
- * automatically after it completes.
  *
  * \context This function is \threadsafe. It may only be called when the camera
  * is in the Running state as defined in \ref camera_operation.
@@ -988,13 +986,11 @@ int Camera::stop()
  * \param[in] request The request that has completed
  *
  * This function is called by the pipeline handler to notify the camera that
- * the request has completed. It emits the requestCompleted signal and deletes
- * the request.
+ * the request has completed. It emits the requestCompleted signal.
  */
 void Camera::requestComplete(Request *request)
 {
 	requestCompleted.emit(request);
-	delete request;
 }
 
 } /* namespace libcamera */

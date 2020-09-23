@@ -52,7 +52,7 @@ protected:
 		const Stream *stream = buffers.begin()->first;
 		FrameBuffer *buffer = buffers.begin()->second;
 
-		request = camera_->createRequest();
+		request->reuse();
 		request->addBuffer(stream, buffer);
 		camera_->queueRequest(request);
 	}
@@ -98,9 +98,8 @@ protected:
 		if (ret < 0)
 			return TestFail;
 
-		std::vector<Request *> requests;
 		for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
-			Request *request = camera_->createRequest();
+			std::unique_ptr<Request> request = camera_->createRequest();
 			if (!request) {
 				cout << "Failed to create request" << endl;
 				return TestFail;
@@ -111,7 +110,7 @@ protected:
 				return TestFail;
 			}
 
-			requests.push_back(request);
+			requests_.push_back(std::move(request));
 		}
 
 		completeRequestsCount_ = 0;
@@ -125,8 +124,8 @@ protected:
 			return TestFail;
 		}
 
-		for (Request *request : requests) {
-			if (camera_->queueRequest(request)) {
+		for (std::unique_ptr<Request> &request : requests_) {
+			if (camera_->queueRequest(request.get())) {
 				cout << "Failed to queue request" << endl;
 				return TestFail;
 			}
@@ -160,6 +159,8 @@ protected:
 
 		return TestPass;
 	}
+
+	std::vector<std::unique_ptr<Request>> requests_;
 
 	std::unique_ptr<CameraConfiguration> config_;
 	FrameBufferAllocator *allocator_;

@@ -38,6 +38,15 @@ LOG_DEFINE_CATEGORY(Request)
  */
 
 /**
+ * \enum Request::ReuseFlag
+ * Flags to control the behavior of Request::reuse()
+ * \var Request::Default
+ * Don't reuse buffers
+ * \var Request::ReuseBuffers
+ * Reuse the buffers that were previously added by addBuffer()
+ */
+
+/**
  * \typedef Request::BufferMap
  * \brief A map of Stream to FrameBuffer pointers
  */
@@ -83,6 +92,35 @@ Request::~Request()
 	delete metadata_;
 	delete controls_;
 	delete validator_;
+}
+
+/**
+ * \brief Reset the request for reuse
+ * \param[in] flags Indicate whether or not to reuse the buffers
+ *
+ * Reset the status and controls associated with the request, to allow it to
+ * be reused and requeued without destruction. This function shall be called
+ * prior to queueing the request to the camera, in lieu of constructing a new
+ * request. The application can reuse the buffers that were previously added
+ * to the request via addBuffer() by setting \a flags to ReuseBuffers.
+ */
+void Request::reuse(ReuseFlag flags)
+{
+	pending_.clear();
+	if (flags & ReuseBuffers) {
+		for (auto pair : bufferMap_) {
+			pair.second->request_ = this;
+			pending_.insert(pair.second);
+		}
+	} else {
+		bufferMap_.clear();
+	}
+
+	status_ = RequestPending;
+	cancelled_ = false;
+
+	controls_->clear();
+	metadata_->clear();
 }
 
 /**

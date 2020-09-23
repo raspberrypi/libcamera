@@ -74,6 +74,8 @@ RequestWrap::~RequestWrap()
 		if (item.second)
 			gst_buffer_unref(item.second);
 	}
+
+	delete request_;
 }
 
 void RequestWrap::attachBuffer(GstBuffer *buffer)
@@ -266,8 +268,8 @@ gst_libcamera_src_task_run(gpointer user_data)
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
 	GstLibcameraSrcState *state = self->state;
 
-	Request *request = state->cam_->createRequest();
-	auto wrap = std::make_unique<RequestWrap>(request);
+	std::unique_ptr<Request> request = state->cam_->createRequest();
+	auto wrap = std::make_unique<RequestWrap>(request.get());
 	for (GstPad *srcpad : state->srcpads_) {
 		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
 		GstBuffer *buffer;
@@ -280,8 +282,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 			 * RequestWrap does not take ownership, and we won't be
 			 * queueing this one due to lack of buffers.
 			 */
-			delete request;
-			request = nullptr;
+			request.reset();
 			break;
 		}
 
@@ -291,8 +292,11 @@ gst_libcamera_src_task_run(gpointer user_data)
 	if (request) {
 		GLibLocker lock(GST_OBJECT(self));
 		GST_TRACE_OBJECT(self, "Requesting buffers");
-		state->cam_->queueRequest(request);
+		state->cam_->queueRequest(request.get());
 		state->requests_.push(std::move(wrap));
+
+		/* The request will be deleted in the completion handler. */
+		request.release();
 	}
 
 	GstFlowReturn ret = GST_FLOW_OK;

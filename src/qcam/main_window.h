@@ -8,6 +8,7 @@
 #define __QCAM_MAIN_WINDOW_H__
 
 #include <memory>
+#include <vector>
 
 #include <QElapsedTimer>
 #include <QIcon>
@@ -22,6 +23,7 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/controls.h>
 #include <libcamera/framebuffer_allocator.h>
+#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "../cam/stream_options.h"
@@ -39,23 +41,6 @@ enum {
 	OptHelp = 'h',
 	OptRenderer = 'r',
 	OptStream = 's',
-};
-
-class CaptureRequest
-{
-public:
-	CaptureRequest()
-	{
-	}
-
-	CaptureRequest(const Request::BufferMap &buffers,
-		       const ControlList &metadata)
-		: buffers_(buffers), metadata_(metadata)
-	{
-	}
-
-	Request::BufferMap buffers_;
-	ControlList metadata_;
 };
 
 class MainWindow : public QMainWindow
@@ -128,13 +113,16 @@ private:
 	Stream *vfStream_;
 	Stream *rawStream_;
 	std::map<const Stream *, QQueue<FrameBuffer *>> freeBuffers_;
-	QQueue<CaptureRequest> doneQueue_;
-	QMutex mutex_; /* Protects freeBuffers_ and doneQueue_ */
+	QQueue<Request *> doneQueue_;
+	QQueue<Request *> freeQueue_;
+	QMutex mutex_; /* Protects freeBuffers_, doneQueue_, and freeQueue_ */
 
 	uint64_t lastBufferTime_;
 	QElapsedTimer frameRateInterval_;
 	uint32_t previousFrames_;
 	uint32_t framesCaptured_;
+
+	std::vector<std::unique_ptr<Request>> requests_;
 };
 
 #endif /* __QCAM_MAIN_WINDOW__ */

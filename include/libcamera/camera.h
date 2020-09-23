@@ -96,7 +96,7 @@ public:
 	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles = {});
 	int configure(CameraConfiguration *config);
 
-	Request *createRequest(uint64_t cookie = 0);
+	std::unique_ptr<Request> createRequest(uint64_t cookie = 0);
 	int queueRequest(Request *request);
 
 	int start();

@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <stdint.h>
+#include <vector>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
@@ -43,6 +44,8 @@ private:
 	EventLoop *loop_;
 	unsigned int captureCount_;
 	unsigned int captureLimit_;
+
+	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
 
 #endif /* __CAM_CAPTURE_H__ */

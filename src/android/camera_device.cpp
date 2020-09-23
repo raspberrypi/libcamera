@@ -13,6 +13,7 @@
 #include <tuple>
 #include <vector>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
@@ -591,6 +592,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		return nullptr;
 	}
 
+	const ControlInfoMap &controlsInfo = camera_->controls();
+
 	/* Color correction static metadata. */
 	std::vector<uint8_t> aberrationModes = {
 		ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF,
@@ -882,9 +885,15 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
 				  &partialResultCount, 1);
 
-	uint8_t maxPipelineDepth = 2;
-	staticMetadata_->addEntry(ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
-				  &maxPipelineDepth, 1);
+	{
+		/* Default the value to 2 if not reported by the camera. */
+		uint8_t maxPipelineDepth = 2;
+		const auto &infoMap = controlsInfo.find(&controls::draft::PipelineDepth);
+		if (infoMap != controlsInfo.end())
+			maxPipelineDepth = infoMap->second.max().get<int32_t>();
+		staticMetadata_->addEntry(ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
+					  &maxPipelineDepth, 1);
+	}
 
 	/* LIMITED does not support reprocessing. */
 	uint32_t maxNumInputStreams = 0;

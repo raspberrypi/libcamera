@@ -8,8 +8,9 @@ doc_install_dir = join_paths(get_option('datadir'), 'doc',
 #
 
 doxygen = find_program('doxygen', required : false)
+dot = find_program('dot', required : false)
 
-if doxygen.found()
+if doxygen.found() and dot.found()
     cdata = configuration_data()
     cdata.set('VERSION', 'v@0@'.format(libcamera_git_version))
     cdata.set('TOP_SRCDIR', meson.source_root())

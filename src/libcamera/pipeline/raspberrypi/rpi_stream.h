@@ -31,13 +31,13 @@ class Stream : public libcamera::Stream
 {
 public:
 	Stream()
-		: id_(RPiBufferMask::ID)
+		: id_(RPi::BufferMask::ID)
 	{
 	}
 
 	Stream(const char *name, MediaEntity *dev, bool importOnly = false)
 		: external_(false), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPiBufferMask::ID)
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPi::BufferMask::ID)
 	{
 	}
 

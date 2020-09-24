@@ -224,7 +224,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		result->data.push_back(exposureDelay);
 		result->data.push_back(sensorMetadata);
 
-		result->operation |= RPI_IPA_CONFIG_STAGGERED_WRITE;
+		result->operation |= RPi::IPA_CONFIG_STAGGERED_WRITE;
 	}
 
 	/* Re-assemble camera mode using the sensor info. */
@@ -237,7 +237,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	mode_.transform = static_cast<libcamera::Transform>(ipaConfig.data[0]);
 
 	/* Store the lens shading table pointer and handle if available. */
-	if (ipaConfig.operation & RPI_IPA_CONFIG_LS_TABLE) {
+	if (ipaConfig.operation & RPi::IPA_CONFIG_LS_TABLE) {
 		/* Remove any previous table, if there was one. */
 		if (lsTable_) {
 			munmap(lsTable_, MAX_LS_GRID_SIZE);
@@ -277,7 +277,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	}
 
 	result->data.push_back(drop_frame);
-	result->operation |= RPI_IPA_CONFIG_DROP_FRAMES;
+	result->operation |= RPi::IPA_CONFIG_DROP_FRAMES;
 
 	struct AgcStatus agcStatus;
 	/* These zero values mean not program anything (unless overwritten). */
@@ -305,7 +305,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		applyAGC(&agcStatus, ctrls);
 		result->controls.push_back(ctrls);
 
-		result->operation |= RPI_IPA_CONFIG_SENSOR;
+		result->operation |= RPi::IPA_CONFIG_SENSOR;
 	}
 
 	lastMode_ = mode_;
@@ -346,7 +346,7 @@ void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 void IPARPi::processEvent(const IPAOperationData &event)
 {
 	switch (event.operation) {
-	case RPI_IPA_EVENT_SIGNAL_STAT_READY: {
+	case RPi::IPA_EVENT_SIGNAL_STAT_READY: {
 		unsigned int bufferId = event.data[0];
 
 		if (++check_count_ != frame_count_) /* assert here? */
@@ -357,14 +357,14 @@ void IPARPi::processEvent(const IPAOperationData &event)
 		reportMetadata();
 
 		IPAOperationData op;
-		op.operation = RPI_IPA_ACTION_STATS_METADATA_COMPLETE;
-		op.data = { bufferId & RPiBufferMask::ID };
+		op.operation = RPi::IPA_ACTION_STATS_METADATA_COMPLETE;
+		op.data = { bufferId & RPi::BufferMask::ID };
 		op.controls = { libcameraMetadata_ };
 		queueFrameAction.emit(0, op);
 		break;
 	}
 
-	case RPI_IPA_EVENT_SIGNAL_ISP_PREPARE: {
+	case RPi::IPA_EVENT_SIGNAL_ISP_PREPARE: {
 		unsigned int embeddedbufferId = event.data[0];
 		unsigned int bayerbufferId = event.data[1];
 
@@ -378,13 +378,13 @@ void IPARPi::processEvent(const IPAOperationData &event)
 
 		/* Ready to push the input buffer into the ISP. */
 		IPAOperationData op;
-		op.operation = RPI_IPA_ACTION_RUN_ISP;
-		op.data = { bayerbufferId & RPiBufferMask::ID };
+		op.operation = RPi::IPA_ACTION_RUN_ISP;
+		op.data = { bayerbufferId & RPi::BufferMask::ID };
 		queueFrameAction.emit(0, op);
 		break;
 	}
 
-	case RPI_IPA_EVENT_QUEUE_REQUEST: {
+	case RPi::IPA_EVENT_QUEUE_REQUEST: {
 		queueRequest(event.controls[0]);
 		break;
 	}
@@ -705,8 +705,8 @@ void IPARPi::queueRequest(const ControlList &controls)
 void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 {
 	IPAOperationData op;
-	op.operation = RPI_IPA_ACTION_EMBEDDED_COMPLETE;
-	op.data = { bufferId & RPiBufferMask::ID };
+	op.operation = RPi::IPA_ACTION_EMBEDDED_COMPLETE;
+	op.data = { bufferId & RPi::BufferMask::ID };
 	queueFrameAction.emit(0, op);
 }
 
@@ -770,7 +770,7 @@ void IPARPi::prepareISP(unsigned int bufferId)
 
 		if (!ctrls.empty()) {
 			IPAOperationData op;
-			op.operation = RPI_IPA_ACTION_V4L2_SET_ISP;
+			op.operation = RPi::IPA_ACTION_V4L2_SET_ISP;
 			op.controls.push_back(ctrls);
 			queueFrameAction.emit(0, op);
 		}
@@ -830,7 +830,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		applyAGC(&agcStatus, ctrls);
 
 		IPAOperationData op;
-		op.operation = RPI_IPA_ACTION_V4L2_SET_STAGGERED;
+		op.operation = RPi::IPA_ACTION_V4L2_SET_STAGGERED;
 		op.controls.push_back(ctrls);
 		queueFrameAction.emit(0, op);
 	}

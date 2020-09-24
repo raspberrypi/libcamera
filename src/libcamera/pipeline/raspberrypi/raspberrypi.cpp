@@ -922,7 +922,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	}
 
 	/* Register the controls that the Raspberry Pi IPA can handle. */
-	data->controlInfo_ = RPiControls;
+	data->controlInfo_ = RPi::Controls;
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
 
@@ -1044,8 +1044,8 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPiBufferMask::STATS);
-	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), RPiBufferMask::EMBEDDED_DATA);
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPi::BufferMask::STATS);
+	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), RPi::BufferMask::EMBEDDED_DATA);
 
 	return 0;
 }
@@ -1143,7 +1143,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 			return -ENOMEM;
 
 		/* Allow the IPA to mmap the LS table via the file descriptor. */
-		ipaConfig.operation = RPI_IPA_CONFIG_LS_TABLE;
+		ipaConfig.operation = RPi::IPA_CONFIG_LS_TABLE;
 		ipaConfig.data.push_back(static_cast<unsigned int>(lsTable_.fd()));
 	}
 
@@ -1161,7 +1161,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 			&result);
 
 	unsigned int resultIdx = 0;
-	if (result.operation & RPI_IPA_CONFIG_STAGGERED_WRITE) {
+	if (result.operation & RPi::IPA_CONFIG_STAGGERED_WRITE) {
 		/*
 		 * Setup our staggered control writer with the sensor default
 		 * gain and exposure delays.
@@ -1187,13 +1187,13 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		}
 	}
 
-	if (result.operation & RPI_IPA_CONFIG_SENSOR) {
+	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
 		const ControlList &ctrls = result.controls[0];
 		if (!staggeredCtrl_.set(ctrls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
 	}
 
-	if (result.operation & RPI_IPA_CONFIG_DROP_FRAMES) {
+	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
 		/* Configure the number of dropped frames required on startup. */
 		dropFrameCount_ = result.data[resultIdx++];
 	}
@@ -1209,14 +1209,14 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 	 * a stopped state.
 	 */
 	switch (action.operation) {
-	case RPI_IPA_ACTION_V4L2_SET_STAGGERED: {
+	case RPi::IPA_ACTION_V4L2_SET_STAGGERED: {
 		const ControlList &controls = action.controls[0];
 		if (!staggeredCtrl_.set(controls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
 		goto done;
 	}
 
-	case RPI_IPA_ACTION_V4L2_SET_ISP: {
+	case RPi::IPA_ACTION_V4L2_SET_ISP: {
 		ControlList controls = action.controls[0];
 		isp_[Isp::Input].dev()->setControls(&controls);
 		goto done;
@@ -1231,7 +1231,7 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 	 * is in a stopped state.
 	 */
 	switch (action.operation) {
-	case RPI_IPA_ACTION_STATS_METADATA_COMPLETE: {
+	case RPi::IPA_ACTION_STATS_METADATA_COMPLETE: {
 		unsigned int bufferId = action.data[0];
 		FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
 
@@ -1242,14 +1242,14 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 		break;
 	}
 
-	case RPI_IPA_ACTION_EMBEDDED_COMPLETE: {
+	case RPi::IPA_ACTION_EMBEDDED_COMPLETE: {
 		unsigned int bufferId = action.data[0];
 		FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId);
 		handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
 		break;
 	}
 
-	case RPI_IPA_ACTION_RUN_ISP: {
+	case RPi::IPA_ACTION_RUN_ISP: {
 		unsigned int bufferId = action.data[0];
 		FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
 
@@ -1367,8 +1367,8 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 */
 	if (stream == &isp_[Isp::Stats]) {
 		IPAOperationData op;
-		op.operation = RPI_IPA_EVENT_SIGNAL_STAT_READY;
-		op.data = { RPiBufferMask::STATS | static_cast<unsigned int>(index) };
+		op.operation = RPi::IPA_EVENT_SIGNAL_STAT_READY;
+		op.data = { RPi::BufferMask::STATS | static_cast<unsigned int>(index) };
 		ipa_->processEvent(op);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
@@ -1473,7 +1473,7 @@ void RPiCameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *strea
 {
 	unsigned int id = stream->getBufferId(buffer);
 
-	if (!(id & RPiBufferMask::EXTERNAL_BUFFER))
+	if (!(id & RPi::BufferMask::EXTERNAL_BUFFER))
 		return;
 
 	/* Stop the Stream object from tracking the buffer. */
@@ -1593,7 +1593,7 @@ void RPiCameraData::tryRunPipeline()
 	 * queue the ISP output buffer listed in the request to start the HW
 	 * pipeline.
 	 */
-	op.operation = RPI_IPA_EVENT_QUEUE_REQUEST;
+	op.operation = RPi::IPA_EVENT_QUEUE_REQUEST;
 	op.controls = { request->controls() };
 	ipa_->processEvent(op);
 
@@ -1607,13 +1607,13 @@ void RPiCameraData::tryRunPipeline()
 	unsigned int bayerId = unicam_[Unicam::Image].getBufferId(bayerBuffer);
 	unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
-	LOG(RPI, Debug) << "Signalling RPI_IPA_EVENT_SIGNAL_ISP_PREPARE:"
+	LOG(RPI, Debug) << "Signalling RPi::IPA_EVENT_SIGNAL_ISP_PREPARE:"
 			<< " Bayer buffer id: " << bayerId
 			<< " Embedded buffer id: " << embeddedId;
 
-	op.operation = RPI_IPA_EVENT_SIGNAL_ISP_PREPARE;
-	op.data = { RPiBufferMask::EMBEDDED_DATA | embeddedId,
-		    RPiBufferMask::BAYER_DATA | bayerId };
+	op.operation = RPi::IPA_EVENT_SIGNAL_ISP_PREPARE;
+	op.data = { RPi::BufferMask::EMBEDDED_DATA | embeddedId,
+		    RPi::BufferMask::BAYER_DATA | bayerId };
 	ipa_->processEvent(op);
 }
 

@@ -47,7 +47,7 @@ A C++ toolchain: [required]
 	Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.47) ninja-build pkg-config
+        meson (>= 0.51) ninja-build pkg-config
 
         If your distribution doesn't provide a recent enough version of meson,
         you can install or upgrade it using pip3.

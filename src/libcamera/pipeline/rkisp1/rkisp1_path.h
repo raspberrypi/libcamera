@@ -45,22 +45,24 @@ public:
 		return video_->exportBuffers(bufferCount, buffers);
 	}
 
+	int start();
+	void stop();
+
 	int queueBuffer(FrameBuffer *buffer) { return video_->queueBuffer(buffer); }
 	Signal<FrameBuffer *> &bufferReady() { return video_->bufferReady; }
-
-	/* \todo Make video private. */
-	V4L2VideoDevice *video_;
 
 private:
 	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
 	const char *name_;
+	bool running_;
 
 	const Span<const PixelFormat> formats_;
 	const Size minResolution_;
 	const Size maxResolution_;
 
 	V4L2Subdevice *resizer_;
+	V4L2VideoDevice *video_;
 };
 
 class RkISP1MainPath : public RkISP1Path

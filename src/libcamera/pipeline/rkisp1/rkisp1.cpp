@@ -770,20 +770,6 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 		data->selfPathStream_.configuration().bufferCount,
 	});
 
-	if (data->mainPathActive_) {
-		ret = mainPath_.video_->importBuffers(
-			data->mainPathStream_.configuration().bufferCount);
-		if (ret < 0)
-			goto error;
-	}
-
-	if (data->selfPathActive_) {
-		ret = selfPath_.video_->importBuffers(
-			data->selfPathStream_.configuration().bufferCount);
-		if (ret < 0)
-			goto error;
-	}
-
 	ret = param_->allocateBuffers(maxCount, &paramBuffers_);
 	if (ret < 0)
 		goto error;
@@ -813,8 +799,6 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 error:
 	paramBuffers_.clear();
 	statBuffers_.clear();
-	mainPath_.video_->releaseBuffers();
-	selfPath_.video_->releaseBuffers();
 
 	return ret;
 }
@@ -844,12 +828,6 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 
 	if (stat_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release stat buffers";
-
-	if (mainPath_.video_->releaseBuffers())
-		LOG(RkISP1, Error) << "Failed to release main path buffers";
-
-	if (selfPath_.video_->releaseBuffers())
-		LOG(RkISP1, Error) << "Failed to release self path buffers";
 
 	return 0;
 }
@@ -896,15 +874,12 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	std::map<unsigned int, IPAStream> streamConfig;
 
 	if (data->mainPathActive_) {
-		ret = mainPath_.video_->streamOn();
+		ret = mainPath_.start();
 		if (ret) {
 			param_->streamOff();
 			stat_->streamOff();
 			data->ipa_->stop();
 			freeBuffers(camera);
-
-			LOG(RkISP1, Error)
-				<< "Failed to start main path " << camera->id();
 			return ret;
 		}
 
@@ -915,18 +890,13 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	}
 
 	if (data->selfPathActive_) {
-		ret = selfPath_.video_->streamOn();
+		ret = selfPath_.start();
 		if (ret) {
-			if (data->mainPathActive_)
-				mainPath_.video_->streamOff();
-
+			mainPath_.stop();
 			param_->streamOff();
 			stat_->streamOff();
 			data->ipa_->stop();
 			freeBuffers(camera);
-
-			LOG(RkISP1, Error)
-				<< "Failed to start self path " << camera->id();
 			return ret;
 		}
 
@@ -963,21 +933,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;
 
-	if (data->selfPathActive_) {
-		ret = selfPath_.video_->streamOff();
-		if (ret)
-			LOG(RkISP1, Warning)
-				<< "Failed to stop self path for "
-				<< camera->id();
-	}
-
-	if (data->mainPathActive_) {
-		ret = mainPath_.video_->streamOff();
-		if (ret)
-			LOG(RkISP1, Warning)
-				<< "Failed to stop main path for "
-				<< camera->id();
-	}
+	selfPath_.stop();
+	mainPath_.stop();
 
 	ret = stat_->streamOff();
 	if (ret)

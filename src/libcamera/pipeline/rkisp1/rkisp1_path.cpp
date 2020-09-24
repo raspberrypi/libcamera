@@ -20,9 +20,9 @@ LOG_DECLARE_CATEGORY(RkISP1)
 
 RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		       const Size &minResolution, const Size &maxResolution)
-	: video_(nullptr), name_(name), formats_(formats),
+	: name_(name), running_(false), formats_(formats),
 	  minResolution_(minResolution), maxResolution_(maxResolution),
-	  resizer_(nullptr)
+	  resizer_(nullptr), video_(nullptr)
 {
 }
 
@@ -147,6 +147,45 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	}
 
 	return 0;
+}
+
+int RkISP1Path::start()
+{
+	int ret;
+
+	if (running_)
+		return -EBUSY;
+
+	/* \todo Make buffer count user configurable. */
+	ret = video_->importBuffers(RKISP1_BUFFER_COUNT);
+	if (ret)
+		return ret;
+
+	ret = video_->streamOn();
+	if (ret) {
+		LOG(RkISP1, Error)
+			<< "Failed to start " << name_ << " path";
+
+		video_->releaseBuffers();
+		return ret;
+	}
+
+	running_ = true;
+
+	return 0;
+}
+
+void RkISP1Path::stop()
+{
+	if (!running_)
+		return;
+
+	if (video_->streamOff())
+		LOG(RkISP1, Warning) << "Failed to stop " << name_ << " path";
+
+	video_->releaseBuffers();
+
+	running_ = false;
 }
 
 namespace {

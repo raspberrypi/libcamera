@@ -47,7 +47,7 @@ A C++ toolchain: [required]
 	Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.47) ninja-build
+        meson (>= 0.47) ninja-build pkg-config
 
         If your distribution doesn't provide a recent enough version of meson,
         you can install or upgrade it using pip3.
@@ -70,7 +70,7 @@ for the Raspberry Pi IPA: [optional]
          'pipelines' option to avoid this dependency.
 
 for device hotplug enumeration: [optional]
-	pkg-config libudev-dev
+	libudev-dev
 
 for documentation: [optional]
 	python3-sphinx doxygen

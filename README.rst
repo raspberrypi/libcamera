@@ -79,7 +79,7 @@ for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
 for qcam: [optional]
-	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools
 
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~

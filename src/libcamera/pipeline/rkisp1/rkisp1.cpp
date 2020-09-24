@@ -122,8 +122,7 @@ public:
 	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
 			 RkISP1SelfPath *selfPath)
 		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe), mainPath_(mainPath), selfPath_(selfPath),
-		  mainPathActive_(false), selfPathActive_(false)
+		  frameInfo_(pipe), mainPath_(mainPath), selfPath_(selfPath)
 	{
 	}
 
@@ -144,9 +143,6 @@ public:
 
 	RkISP1MainPath *mainPath_;
 	RkISP1SelfPath *selfPath_;
-
-	bool mainPathActive_;
-	bool selfPathActive_;
 
 private:
 	void queueFrameAction(unsigned int frame,
@@ -714,20 +710,14 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "ISP output pad configured with " << format.toString();
 
-	data->mainPathActive_ = false;
-	data->selfPathActive_ = false;
 	for (const StreamConfiguration &cfg : *config) {
-		if (cfg.stream() == &data->mainPathStream_) {
+		if (cfg.stream() == &data->mainPathStream_)
 			ret = mainPath_.configure(cfg, format);
-			if (ret)
-				return ret;
-			data->mainPathActive_ = true;
-		} else {
+		else
 			ret = selfPath_.configure(cfg, format);
-			if (ret)
-				return ret;
-			data->selfPathActive_ = true;
-		}
+
+		if (ret)
+			return ret;
 	}
 
 	V4L2DeviceFormat paramFormat = {};
@@ -873,7 +863,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 
 	std::map<unsigned int, IPAStream> streamConfig;
 
-	if (data->mainPathActive_) {
+	if (data->mainPath_->isEnabled()) {
 		ret = mainPath_.start();
 		if (ret) {
 			param_->streamOff();
@@ -889,7 +879,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 		};
 	}
 
-	if (data->selfPathActive_) {
+	if (data->selfPath_->isEnabled()) {
 		ret = selfPath_.start();
 		if (ret) {
 			mainPath_.stop();

@@ -35,6 +35,7 @@ public:
 	bool init(MediaDevice *media);
 
 	int setEnabled(bool enable) { return link_->setEnabled(enable); }
+	bool isEnabled() const { return link_->flags() & MEDIA_LNK_FL_ENABLED; }
 
 	StreamConfiguration generateConfiguration(const Size &resolution);
 	CameraConfiguration::Status validate(StreamConfiguration *cfg);

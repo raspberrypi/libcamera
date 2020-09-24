@@ -33,6 +33,7 @@
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include "rkisp1_path.h"
 #include "timeline.h"
 
 namespace libcamera {
@@ -147,12 +148,11 @@ public:
 class RkISP1CameraData : public CameraData
 {
 public:
-	RkISP1CameraData(PipelineHandler *pipe, V4L2VideoDevice *mainPathVideo,
-			 V4L2VideoDevice *selfPathVideo)
+	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
+			 RkISP1SelfPath *selfPath)
 		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe), mainPathVideo_(mainPathVideo),
-		  selfPathVideo_(selfPathVideo), mainPathActive_(false),
-		  selfPathActive_(false)
+		  frameInfo_(pipe), mainPath_(mainPath), selfPath_(selfPath),
+		  mainPathActive_(false), selfPathActive_(false)
 	{
 	}
 
@@ -171,8 +171,8 @@ public:
 	RkISP1Frames frameInfo_;
 	RkISP1Timeline timeline_;
 
-	V4L2VideoDevice *mainPathVideo_;
-	V4L2VideoDevice *selfPathVideo_;
+	RkISP1MainPath *mainPath_;
+	RkISP1SelfPath *selfPath_;
 
 	bool mainPathActive_;
 	bool selfPathActive_;
@@ -259,12 +259,11 @@ private:
 
 	MediaDevice *media_;
 	V4L2Subdevice *isp_;
-	V4L2Subdevice *mainPathResizer_;
-	V4L2Subdevice *selfPathResizer_;
-	V4L2VideoDevice *mainPathVideo_;
-	V4L2VideoDevice *selfPathVideo_;
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
+
+	RkISP1MainPath mainPath_;
+	RkISP1SelfPath selfPath_;
 
 	std::vector<std::unique_ptr<FrameBuffer>> paramBuffers_;
 	std::vector<std::unique_ptr<FrameBuffer>> statBuffers_;
@@ -441,10 +440,10 @@ protected:
 		pipe_->stat_->queueBuffer(info->statBuffer);
 
 		if (info->mainPathBuffer)
-			pipe_->mainPathVideo_->queueBuffer(info->mainPathBuffer);
+			pipe_->mainPath_.video_->queueBuffer(info->mainPathBuffer);
 
 		if (info->selfPathBuffer)
-			pipe_->selfPathVideo_->queueBuffer(info->selfPathBuffer);
+			pipe_->selfPath_.video_->queueBuffer(info->selfPathBuffer);
 	}
 
 private:
@@ -554,13 +553,13 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validatePath(
 CameraConfiguration::Status RkISP1CameraConfiguration::validateMainPath(StreamConfiguration *cfg)
 {
 	return validatePath(cfg, RKISP1_RSZ_MP_FORMATS, RKISP1_RSZ_MP_SRC_MIN,
-			    RKISP1_RSZ_MP_SRC_MAX, data_->mainPathVideo_);
+			    RKISP1_RSZ_MP_SRC_MAX, data_->mainPath_->video_);
 }
 
 CameraConfiguration::Status RkISP1CameraConfiguration::validateSelfPath(StreamConfiguration *cfg)
 {
 	return validatePath(cfg, RKISP1_RSZ_SP_FORMATS, RKISP1_RSZ_SP_SRC_MIN,
-			    RKISP1_RSZ_SP_SRC_MAX, data_->selfPathVideo_);
+			    RKISP1_RSZ_SP_SRC_MAX, data_->selfPath_->video_);
 }
 
 bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
@@ -689,9 +688,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), isp_(nullptr), mainPathResizer_(nullptr),
-	  selfPathResizer_(nullptr), mainPathVideo_(nullptr),
-	  selfPathVideo_(nullptr), param_(nullptr), stat_(nullptr)
+	: PipelineHandler(manager), isp_(nullptr), param_(nullptr),
+	  stat_(nullptr)
 {
 }
 
@@ -699,10 +697,6 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 {
 	delete param_;
 	delete stat_;
-	delete mainPathVideo_;
-	delete selfPathVideo_;
-	delete mainPathResizer_;
-	delete selfPathResizer_;
 	delete isp_;
 }
 
@@ -828,12 +822,12 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		V4L2VideoDevice *video;
 
 		if (cfg.stream() == &data->mainPathStream_) {
-			resizer = mainPathResizer_;
-			video = mainPathVideo_;
+			resizer = mainPath_.resizer_;
+			video = mainPath_.video_;
 			data->mainPathActive_ = true;
 		} else {
-			resizer = selfPathResizer_;
-			video = selfPathVideo_;
+			resizer = selfPath_.resizer_;
+			video = selfPath_.video_;
 			data->selfPathActive_ = true;
 		}
 
@@ -841,7 +835,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		if (ret < 0)
 			return ret;
 
-		const char *name = resizer == mainPathResizer_ ? "main" : "self";
+		const char *name = resizer == mainPath_.resizer_ ? "main" : "self";
 
 		LOG(RkISP1, Debug)
 			<< "Configured " << name << " resizer input pad with "
@@ -901,9 +895,9 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 	unsigned int count = stream->configuration().bufferCount;
 
 	if (stream == &data->mainPathStream_)
-		return mainPathVideo_->exportBuffers(count, buffers);
+		return mainPath_.video_->exportBuffers(count, buffers);
 	else if (stream == &data->selfPathStream_)
-		return selfPathVideo_->exportBuffers(count, buffers);
+		return selfPath_.video_->exportBuffers(count, buffers);
 
 	return -EINVAL;
 }
@@ -920,14 +914,14 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	});
 
 	if (data->mainPathActive_) {
-		ret = mainPathVideo_->importBuffers(
+		ret = mainPath_.video_->importBuffers(
 			data->mainPathStream_.configuration().bufferCount);
 		if (ret < 0)
 			goto error;
 	}
 
 	if (data->selfPathActive_) {
-		ret = selfPathVideo_->importBuffers(
+		ret = selfPath_.video_->importBuffers(
 			data->selfPathStream_.configuration().bufferCount);
 		if (ret < 0)
 			goto error;
@@ -962,8 +956,8 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 error:
 	paramBuffers_.clear();
 	statBuffers_.clear();
-	mainPathVideo_->releaseBuffers();
-	selfPathVideo_->releaseBuffers();
+	mainPath_.video_->releaseBuffers();
+	selfPath_.video_->releaseBuffers();
 
 	return ret;
 }
@@ -994,10 +988,10 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 	if (stat_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release stat buffers";
 
-	if (mainPathVideo_->releaseBuffers())
+	if (mainPath_.video_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release main path buffers";
 
-	if (selfPathVideo_->releaseBuffers())
+	if (selfPath_.video_->releaseBuffers())
 		LOG(RkISP1, Error) << "Failed to release self path buffers";
 
 	return 0;
@@ -1045,7 +1039,7 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	std::map<unsigned int, IPAStream> streamConfig;
 
 	if (data->mainPathActive_) {
-		ret = mainPathVideo_->streamOn();
+		ret = mainPath_.video_->streamOn();
 		if (ret) {
 			param_->streamOff();
 			stat_->streamOff();
@@ -1064,10 +1058,10 @@ int PipelineHandlerRkISP1::start(Camera *camera)
 	}
 
 	if (data->selfPathActive_) {
-		ret = selfPathVideo_->streamOn();
+		ret = selfPath_.video_->streamOn();
 		if (ret) {
 			if (data->mainPathActive_)
-				mainPathVideo_->streamOff();
+				mainPath_.video_->streamOff();
 
 			param_->streamOff();
 			stat_->streamOff();
@@ -1113,7 +1107,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	int ret;
 
 	if (data->selfPathActive_) {
-		ret = selfPathVideo_->streamOff();
+		ret = selfPath_.video_->streamOff();
 		if (ret)
 			LOG(RkISP1, Warning)
 				<< "Failed to stop self path for "
@@ -1121,7 +1115,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	}
 
 	if (data->mainPathActive_) {
-		ret = mainPathVideo_->streamOff();
+		ret = mainPath_.video_->streamOff();
 		if (ret)
 			LOG(RkISP1, Warning)
 				<< "Failed to stop main path for "
@@ -1233,8 +1227,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		std::make_unique<RkISP1CameraData>(this, mainPathVideo_,
-						   selfPathVideo_);
+		std::make_unique<RkISP1CameraData>(this, &mainPath_, &selfPath_);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,
@@ -1288,23 +1281,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (isp_->open() < 0)
 		return false;
 
-	mainPathResizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_mainpath");
-	if (mainPathResizer_->open() < 0)
-		return false;
-
-	selfPathResizer_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_resizer_selfpath");
-	if (selfPathResizer_->open() < 0)
-		return false;
-
-	/* Locate and open the capture video node. */
-	mainPathVideo_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_mainpath");
-	if (mainPathVideo_->open() < 0)
-		return false;
-
-	selfPathVideo_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_selfpath");
-	if (selfPathVideo_->open() < 0)
-		return false;
-
+	/* Locate and open the stats and params video nodes. */
 	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
 	if (stat_->open() < 0)
 		return false;
@@ -1313,8 +1290,15 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (param_->open() < 0)
 		return false;
 
-	mainPathVideo_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
-	selfPathVideo_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	/* Locate and open the ISP main and self paths. */
+	if (!mainPath_.init(media_))
+		return false;
+
+	if (!selfPath_.init(media_))
+		return false;
+
+	mainPath_.video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	selfPath_.video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 

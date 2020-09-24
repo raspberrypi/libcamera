@@ -2,5 +2,6 @@
 
 libcamera_sources += files([
     'rkisp1.cpp',
+    'rkisp1_path.cpp',
     'timeline.cpp',
 ])

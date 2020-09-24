@@ -41,7 +41,7 @@ enum BufferMask {
 };
 
 /* Size of the LS grid allocation. */
-#define MAX_LS_GRID_SIZE (32 << 10)
+static constexpr unsigned int MaxLsGridSize = 32 << 10;
 
 /* List of controls handled by the Raspberry Pi IPA */
 static const ControlInfoMap Controls = {

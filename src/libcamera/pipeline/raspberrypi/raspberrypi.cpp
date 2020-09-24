@@ -1138,7 +1138,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
-		lsTable_ = dmaHeap_.alloc("ls_grid", MAX_LS_GRID_SIZE);
+		lsTable_ = dmaHeap_.alloc("ls_grid", RPi::MaxLsGridSize);
 		if (!lsTable_.isValid())
 			return -ENOMEM;
 

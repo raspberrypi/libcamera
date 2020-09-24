@@ -22,7 +22,7 @@ RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		       const Size &minResolution, const Size &maxResolution)
 	: name_(name), running_(false), formats_(formats),
 	  minResolution_(minResolution), maxResolution_(maxResolution),
-	  resizer_(nullptr), video_(nullptr)
+	  resizer_(nullptr), video_(nullptr), link_(nullptr)
 {
 }
 
@@ -43,6 +43,10 @@ bool RkISP1Path::init(MediaDevice *media)
 
 	video_ = V4L2VideoDevice::fromEntityName(media, video);
 	if (video_->open() < 0)
+		return false;
+
+	link_ = media->link("rkisp1_isp", 2, resizer, 0);
+	if (!link_)
 		return false;
 
 	return true;

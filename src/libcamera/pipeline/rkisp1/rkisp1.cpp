@@ -1015,20 +1015,13 @@ int PipelineHandlerRkISP1::initLinks(const Camera *camera,
 	}
 
 	for (const StreamConfiguration &cfg : config) {
-		MediaLink *link;
 		if (cfg.stream() == &data->mainPathStream_)
-			link = media_->link("rkisp1_isp", 2,
-					    "rkisp1_resizer_mainpath", 0);
+			ret = data->mainPath_->setEnabled(true);
 		else if (cfg.stream() == &data->selfPathStream_)
-			link = media_->link("rkisp1_isp", 2,
-					    "rkisp1_resizer_selfpath", 0);
+			ret = data->selfPath_->setEnabled(true);
 		else
 			return -EINVAL;
 
-		if (!link)
-			return -ENODEV;
-
-		ret = link->setEnabled(true);
 		if (ret < 0)
 			return ret;
 	}

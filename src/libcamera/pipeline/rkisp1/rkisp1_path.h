@@ -15,6 +15,7 @@
 #include <libcamera/signal.h>
 #include <libcamera/span.h>
 
+#include "libcamera/internal/media_object.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
@@ -32,6 +33,8 @@ public:
 	~RkISP1Path();
 
 	bool init(MediaDevice *media);
+
+	int setEnabled(bool enable) { return link_->setEnabled(enable); }
 
 	StreamConfiguration generateConfiguration(const Size &resolution);
 	CameraConfiguration::Status validate(StreamConfiguration *cfg);
@@ -63,6 +66,7 @@ private:
 
 	V4L2Subdevice *resizer_;
 	V4L2VideoDevice *video_;
+	MediaLink *link_;
 };
 
 class RkISP1MainPath : public RkISP1Path

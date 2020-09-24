@@ -157,8 +157,9 @@ void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 
 void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format, const std::string &item)
 {
-	/* Pad 1 extra byte for null-terminated string. */
-	size_t length = item.length() + 1;
+	/* Pad 1 extra byte for null-terminated string in ASCII format. */
+	size_t length = format == EXIF_FORMAT_ASCII ?
+			item.length() + 1 : item.length();
 
 	ExifEntry *entry = createEntry(ifd, tag, format, length, length);
 	if (!entry)

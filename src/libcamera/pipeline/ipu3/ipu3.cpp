@@ -481,25 +481,23 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Apply the format to the configured streams output devices. */
-	bool outActive = false;
-	bool vfActive = false;
+	StreamConfiguration *mainCfg = nullptr;
+	StreamConfiguration *vfCfg = nullptr;
 
 	for (unsigned int i = 0; i < config->size(); ++i) {
 		StreamConfiguration &cfg = (*config)[i];
 		Stream *stream = cfg.stream();
 
 		if (stream == outStream) {
+			mainCfg = &cfg;
 			ret = imgu->configureOutput(cfg, &outputFormat);
 			if (ret)
 				return ret;
-
-			outActive = true;
 		} else if (stream == vfStream) {
+			vfCfg = &cfg;
 			ret = imgu->configureViewfinder(cfg, &outputFormat);
 			if (ret)
 				return ret;
-
-			vfActive = true;
 		}
 	}
 
@@ -508,14 +506,14 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * the configuration of the active one for that purpose (there should
 	 * be at least one active stream in the configuration request).
 	 */
-	if (!outActive) {
-		ret = imgu->configureOutput(config->at(0), &outputFormat);
+	if (!mainCfg) {
+		ret = imgu->configureOutput(*vfCfg, &outputFormat);
 		if (ret)
 			return ret;
 	}
 
-	if (!vfActive) {
-		ret = imgu->configureViewfinder(config->at(0), &outputFormat);
+	if (!vfCfg) {
+		ret = imgu->configureViewfinder(*mainCfg, &outputFormat);
 		if (ret)
 			return ret;
 	}
@@ -534,7 +532,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
 	ControlList ctrls(imgu->imgu_->controls());
 	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,
-		  static_cast<int32_t>(vfActive ? IPU3PipeModeVideo :
+		  static_cast<int32_t>(vfCfg ? IPU3PipeModeVideo :
 				       IPU3PipeModeStillCapture));
 	ret = imgu->imgu_->setControls(&ctrls);
 	if (ret) {

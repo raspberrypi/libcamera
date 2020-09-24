@@ -73,7 +73,7 @@ for device hotplug enumeration: [optional]
 	libudev-dev
 
 for documentation: [optional]
-	python3-sphinx doxygen
+	python3-sphinx doxygen graphviz
 
 for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev

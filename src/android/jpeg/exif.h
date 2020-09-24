@@ -46,6 +46,7 @@ private:
 
 	ExifData *data_;
 	ExifMem *mem_;
+	ExifByteOrder order_;
 
 	unsigned char *exifData_;
 	unsigned int size_;

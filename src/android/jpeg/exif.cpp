@@ -35,7 +35,8 @@ enum class _ExifTag {
  * data can be obtained using the data() method.
  */
 Exif::Exif()
-	: valid_(false), data_(nullptr), exifData_(0), size_(0)
+	: valid_(false), data_(nullptr), order_(EXIF_BYTE_ORDER_INTEL),
+	  exifData_(0), size_(0)
 {
 	/* Create an ExifMem allocator to construct entries. */
 	mem_ = exif_mem_new_default();
@@ -59,7 +60,7 @@ Exif::Exif()
 	 * Big-Endian: EXIF_BYTE_ORDER_MOTOROLA
 	 * Little Endian: EXIF_BYTE_ORDER_INTEL
 	 */
-	exif_data_set_byte_order(data_, EXIF_BYTE_ORDER_INTEL);
+	exif_data_set_byte_order(data_, order_);
 
 	setString(EXIF_IFD_EXIF, EXIF_TAG_EXIF_VERSION,
 		  EXIF_FORMAT_UNDEFINED, "0231");
@@ -144,7 +145,7 @@ void Exif::setShort(ExifIfd ifd, ExifTag tag, uint16_t item)
 	if (!entry)
 		return;
 
-	exif_set_short(entry->data, EXIF_BYTE_ORDER_INTEL, item);
+	exif_set_short(entry->data, order_, item);
 	exif_entry_unref(entry);
 }
 
@@ -154,7 +155,7 @@ void Exif::setLong(ExifIfd ifd, ExifTag tag, uint32_t item)
 	if (!entry)
 		return;
 
-	exif_set_long(entry->data, EXIF_BYTE_ORDER_INTEL, item);
+	exif_set_long(entry->data, order_, item);
 	exif_entry_unref(entry);
 }
 
@@ -164,7 +165,7 @@ void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 	if (!entry)
 		return;
 
-	exif_set_rational(entry->data, EXIF_BYTE_ORDER_INTEL, item);
+	exif_set_rational(entry->data, order_, item);
 	exif_entry_unref(entry);
 }
 

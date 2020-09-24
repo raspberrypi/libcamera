@@ -46,8 +46,8 @@ Other distributions may have differing package names:
 A C++ toolchain: [required]
 	Either {g++, clang}
 
-for libcamera: [required]
-        meson (>= 0.47) ninja-build python3-yaml
+Meson Build system: [required]
+        meson (>= 0.47) ninja-build
 
         If your distribution doesn't provide a recent enough version of meson,
         you can install or upgrade it using pip3.
@@ -56,6 +56,9 @@ for libcamera: [required]
 
             pip3 install --user meson
             pip3 install --user --upgrade meson
+
+for the libcamera core: [required]
+        python3-yaml
 
 for device hotplug enumeration: [optional]
 	pkg-config libudev-dev

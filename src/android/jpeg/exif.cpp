@@ -14,6 +14,16 @@ using namespace libcamera;
 LOG_DEFINE_CATEGORY(EXIF)
 
 /*
+ * List of EXIF tags that we set directly because they are not supported
+ * by libexif version 0.6.21.
+ */
+enum class _ExifTag {
+	OFFSET_TIME              = 0x9010,
+	OFFSET_TIME_ORIGINAL     = 0x9011,
+	OFFSET_TIME_DIGITIZED    = 0x9012,
+};
+
+/*
  * The Exif class should be instantiated and specific properties set
  * through the exposed public API.
  *
@@ -50,6 +60,9 @@ Exif::Exif()
 	 * Little Endian: EXIF_BYTE_ORDER_INTEL
 	 */
 	exif_data_set_byte_order(data_, EXIF_BYTE_ORDER_INTEL);
+
+	setString(EXIF_IFD_EXIF, EXIF_TAG_EXIF_VERSION,
+		  EXIF_FORMAT_UNDEFINED, "0231");
 
 	/* Create the mandatory EXIF fields with default data. */
 	exif_data_fix(data_);
@@ -197,6 +210,22 @@ void Exif::setTimestamp(time_t timestamp)
 	setString(EXIF_IFD_0, EXIF_TAG_DATE_TIME, EXIF_FORMAT_ASCII, ts);
 	setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_ORIGINAL, EXIF_FORMAT_ASCII, ts);
 	setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_DIGITIZED, EXIF_FORMAT_ASCII, ts);
+
+	/* Query and set timezone information if available. */
+	int r = strftime(str, sizeof(str), "%z", &tm);
+	if (r > 0) {
+		std::string tz(str);
+		tz.insert(3, 1, ':');
+		setString(EXIF_IFD_EXIF,
+			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME),
+			  EXIF_FORMAT_ASCII, tz);
+		setString(EXIF_IFD_EXIF,
+			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_ORIGINAL),
+			  EXIF_FORMAT_ASCII, tz);
+		setString(EXIF_IFD_EXIF,
+			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_DIGITIZED),
+			  EXIF_FORMAT_ASCII, tz);
+	}
 }
 
 void Exif::setOrientation(int orientation)

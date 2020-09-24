@@ -7,6 +7,7 @@
 
 #include "rkisp1_path.h"
 
+#include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/media_device.h"
@@ -17,8 +18,11 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(RkISP1)
 
-RkISP1Path::RkISP1Path(const char *name)
-	: video_(nullptr), name_(name), resizer_(nullptr)
+RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
+		       const Size &minResolution, const Size &maxResolution)
+	: video_(nullptr), name_(name), formats_(formats),
+	  minResolution_(minResolution), maxResolution_(maxResolution),
+	  resizer_(nullptr)
 {
 }
 
@@ -42,6 +46,58 @@ bool RkISP1Path::init(MediaDevice *media)
 		return false;
 
 	return true;
+}
+
+StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
+{
+	Size maxResolution = resolution;
+	maxResolution.boundTo(maxResolution_);
+
+	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+	for (const PixelFormat &format : formats_)
+		streamFormats[format] = { { minResolution_, maxResolution } };
+
+	StreamFormats formats(streamFormats);
+	StreamConfiguration cfg(formats);
+	cfg.pixelFormat = formats::NV12;
+	cfg.size = maxResolution;
+	cfg.bufferCount = RKISP1_BUFFER_COUNT;
+
+	return cfg;
+}
+
+CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
+{
+	const StreamConfiguration reqCfg = *cfg;
+	CameraConfiguration::Status status = CameraConfiguration::Valid;
+
+	if (std::find(formats_.begin(), formats_.end(), cfg->pixelFormat) ==
+	    formats_.end())
+		cfg->pixelFormat = formats::NV12;
+
+	cfg->size.boundTo(maxResolution_);
+	cfg->size.expandTo(minResolution_);
+	cfg->bufferCount = RKISP1_BUFFER_COUNT;
+
+	V4L2DeviceFormat format = {};
+	format.fourcc = video_->toV4L2PixelFormat(cfg->pixelFormat);
+	format.size = cfg->size;
+
+	int ret = video_->tryFormat(&format);
+	if (ret)
+		return CameraConfiguration::Invalid;
+
+	cfg->stride = format.planes[0].bpl;
+	cfg->frameSize = format.planes[0].size;
+
+	if (cfg->pixelFormat != reqCfg.pixelFormat || cfg->size != reqCfg.size) {
+		LOG(RkISP1, Debug)
+			<< "Adjusting format from " << reqCfg.toString()
+			<< " to " << cfg->toString();
+		status = CameraConfiguration::Adjusted;
+	}
+
+	return status;
 }
 
 int RkISP1Path::configure(const StreamConfiguration &config,
@@ -93,13 +149,43 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	return 0;
 }
 
+namespace {
+constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
+constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
+constexpr std::array<PixelFormat, 7> RKISP1_RSZ_MP_FORMATS{
+	formats::YUYV,
+	formats::YVYU,
+	formats::VYUY,
+	formats::NV16,
+	formats::NV61,
+	formats::NV21,
+	formats::NV12,
+	/* \todo Add support for 8-bit greyscale to DRM formats */
+};
+
+constexpr Size RKISP1_RSZ_SP_SRC_MIN{ 32, 16 };
+constexpr Size RKISP1_RSZ_SP_SRC_MAX{ 1920, 1920 };
+constexpr std::array<PixelFormat, 7> RKISP1_RSZ_SP_FORMATS{
+	formats::YUYV,
+	formats::YVYU,
+	formats::VYUY,
+	formats::NV16,
+	formats::NV61,
+	formats::NV21,
+	formats::NV12,
+	/* \todo Add support for BGR888 and RGB565 */
+};
+} /* namespace */
+
 RkISP1MainPath::RkISP1MainPath()
-	: RkISP1Path("main")
+	: RkISP1Path("main", RKISP1_RSZ_MP_FORMATS,
+		     RKISP1_RSZ_MP_SRC_MIN, RKISP1_RSZ_MP_SRC_MAX)
 {
 }
 
 RkISP1SelfPath::RkISP1SelfPath()
-	: RkISP1Path("self")
+	: RkISP1Path("self", RKISP1_RSZ_SP_FORMATS,
+		     RKISP1_RSZ_SP_SRC_MIN, RKISP1_RSZ_SP_SRC_MAX)
 {
 }
 

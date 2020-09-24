@@ -12,13 +12,15 @@
 #include <libcamera/camera.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
+#include <libcamera/signal.h>
 #include <libcamera/span.h>
+
+#include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 
 class MediaDevice;
 class V4L2Subdevice;
-class V4L2VideoDevice;
 struct StreamConfiguration;
 struct V4L2SubdeviceFormat;
 
@@ -36,6 +38,15 @@ public:
 
 	int configure(const StreamConfiguration &config,
 		      const V4L2SubdeviceFormat &inputFormat);
+
+	int exportBuffers(unsigned int bufferCount,
+			  std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+	{
+		return video_->exportBuffers(bufferCount, buffers);
+	}
+
+	int queueBuffer(FrameBuffer *buffer) { return video_->queueBuffer(buffer); }
+	Signal<FrameBuffer *> &bufferReady() { return video_->bufferReady; }
 
 	/* \todo Make video private. */
 	V4L2VideoDevice *video_;

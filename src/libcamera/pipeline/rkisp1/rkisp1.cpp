@@ -403,10 +403,10 @@ protected:
 		pipe_->stat_->queueBuffer(info->statBuffer);
 
 		if (info->mainPathBuffer)
-			pipe_->mainPath_.video_->queueBuffer(info->mainPathBuffer);
+			pipe_->mainPath_.queueBuffer(info->mainPathBuffer);
 
 		if (info->selfPathBuffer)
-			pipe_->selfPath_.video_->queueBuffer(info->selfPathBuffer);
+			pipe_->selfPath_.queueBuffer(info->selfPathBuffer);
 	}
 
 private:
@@ -752,9 +752,9 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 	unsigned int count = stream->configuration().bufferCount;
 
 	if (stream == &data->mainPathStream_)
-		return mainPath_.video_->exportBuffers(count, buffers);
+		return mainPath_.exportBuffers(count, buffers);
 	else if (stream == &data->selfPathStream_)
-		return selfPath_.video_->exportBuffers(count, buffers);
+		return selfPath_.exportBuffers(count, buffers);
 
 	return -EINVAL;
 }
@@ -1154,8 +1154,8 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (!selfPath_.init(media_))
 		return false;
 
-	mainPath_.video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
-	selfPath_.video_->bufferReady.connect(this, &PipelineHandlerRkISP1::bufferReady);
+	mainPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
+	selfPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 

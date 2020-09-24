@@ -60,6 +60,9 @@ Meson Build system: [required]
 for the libcamera core: [required]
         python3-yaml
 
+for IPA module signing: [required]
+        libgnutls28-dev openssl
+
 for device hotplug enumeration: [optional]
 	pkg-config libudev-dev
 
@@ -68,9 +71,6 @@ for documentation: [optional]
 
 for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
-
-for IPA module signing: [required]
-        libgnutls28-dev openssl
 
 for qcam: [optional]
 	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5

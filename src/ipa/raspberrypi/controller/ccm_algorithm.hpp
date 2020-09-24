@@ -8,7 +8,7 @@
 
 #include "algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class CcmAlgorithm : public Algorithm
 {
@@ -18,4 +18,4 @@ public:
 	virtual void SetSaturation(double saturation) = 0;
 };
 
-} // namespace RPi
+} // namespace RPiController

@@ -125,10 +125,10 @@ private:
 	CameraMode lastMode_;
 
 	/* Raspberry Pi controller specific defines. */
-	std::unique_ptr<RPi::CamHelper> helper_;
-	RPi::Controller controller_;
+	std::unique_ptr<RPiController::CamHelper> helper_;
+	RPiController::Controller controller_;
 	bool controllerInit_;
-	RPi::Metadata rpiMetadata_;
+	RPiController::Metadata rpiMetadata_;
 
 	/*
 	 * We count frames to decide if the frame must be hidden (e.g. from
@@ -211,7 +211,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	 */
 	std::string cameraName(sensorInfo.model);
 	if (!helper_) {
-		helper_ = std::unique_ptr<RPi::CamHelper>(RPi::CamHelper::Create(cameraName));
+		helper_ = std::unique_ptr<RPiController::CamHelper>(RPiController::CamHelper::Create(cameraName));
 		/*
 		 * Pass out the sensor config to the pipeline handler in order
 		 * to setup the staggered writer class.
@@ -295,7 +295,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		agcStatus.analogue_gain = DEFAULT_ANALOGUE_GAIN;
 	}
 
-	RPi::Metadata metadata;
+	RPiController::Metadata metadata;
 	controller_.SwitchMode(mode_, &metadata);
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
@@ -397,7 +397,7 @@ void IPARPi::processEvent(const IPAOperationData &event)
 
 void IPARPi::reportMetadata()
 {
-	std::unique_lock<RPi::Metadata> lock(rpiMetadata_);
+	std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
 
 	/*
 	 * Certain information about the current frame and how it will be
@@ -502,7 +502,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 		switch (ctrl.first) {
 		case controls::AE_ENABLE: {
-			RPi::Algorithm *agc = controller_.GetAlgorithm("agc");
+			RPiController::Algorithm *agc = controller_.GetAlgorithm("agc");
 			ASSERT(agc);
 			if (ctrl.second.get<bool>() == false)
 				agc->Pause();
@@ -514,7 +514,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::EXPOSURE_TIME: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 			/* This expects units of micro-seconds. */
@@ -528,7 +528,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::ANALOGUE_GAIN: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 			agc->SetFixedAnalogueGain(ctrl.second.get<float>());
@@ -542,7 +542,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AE_METERING_MODE: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 
@@ -558,7 +558,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AE_CONSTRAINT_MODE: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 
@@ -574,7 +574,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AE_EXPOSURE_MODE: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 
@@ -590,7 +590,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::EXPOSURE_VALUE: {
-			RPi::AgcAlgorithm *agc = dynamic_cast<RPi::AgcAlgorithm *>(
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 
@@ -606,7 +606,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AWB_ENABLE: {
-			RPi::Algorithm *awb = controller_.GetAlgorithm("awb");
+			RPiController::Algorithm *awb = controller_.GetAlgorithm("awb");
 			ASSERT(awb);
 
 			if (ctrl.second.get<bool>() == false)
@@ -620,7 +620,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AWB_MODE: {
-			RPi::AwbAlgorithm *awb = dynamic_cast<RPi::AwbAlgorithm *>(
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 				controller_.GetAlgorithm("awb"));
 			ASSERT(awb);
 
@@ -637,7 +637,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 		case controls::COLOUR_GAINS: {
 			auto gains = ctrl.second.get<Span<const float>>();
-			RPi::AwbAlgorithm *awb = dynamic_cast<RPi::AwbAlgorithm *>(
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 				controller_.GetAlgorithm("awb"));
 			ASSERT(awb);
 
@@ -650,7 +650,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::BRIGHTNESS: {
-			RPi::ContrastAlgorithm *contrast = dynamic_cast<RPi::ContrastAlgorithm *>(
+			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
 				controller_.GetAlgorithm("contrast"));
 			ASSERT(contrast);
 
@@ -661,7 +661,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::CONTRAST: {
-			RPi::ContrastAlgorithm *contrast = dynamic_cast<RPi::ContrastAlgorithm *>(
+			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
 				controller_.GetAlgorithm("contrast"));
 			ASSERT(contrast);
 
@@ -672,7 +672,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::SATURATION: {
-			RPi::CcmAlgorithm *ccm = dynamic_cast<RPi::CcmAlgorithm *>(
+			RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
 				controller_.GetAlgorithm("ccm"));
 			ASSERT(ccm);
 
@@ -683,7 +683,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::SHARPNESS: {
-			RPi::SharpenAlgorithm *sharpen = dynamic_cast<RPi::SharpenAlgorithm *>(
+			RPiController::SharpenAlgorithm *sharpen = dynamic_cast<RPiController::SharpenAlgorithm *>(
 				controller_.GetAlgorithm("sharpen"));
 			ASSERT(sharpen);
 
@@ -726,7 +726,7 @@ void IPARPi::prepareISP(unsigned int bufferId)
 		controller_.Prepare(&rpiMetadata_);
 
 		/* Lock the metadata buffer to avoid constant locks/unlocks. */
-		std::unique_lock<RPi::Metadata> lock(rpiMetadata_);
+		std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
 
 		AwbStatus *awbStatus = rpiMetadata_.GetLocked<AwbStatus>("awb.status");
 		if (awbStatus)
@@ -787,18 +787,18 @@ bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &devic
 
 	int size = buffers_.find(bufferId)->second.planes()[0].length;
 	helper_->Parser().SetBufferSize(size);
-	RPi::MdParser::Status status = helper_->Parser().Parse(it->second);
-	if (status != RPi::MdParser::Status::OK) {
+	RPiController::MdParser::Status status = helper_->Parser().Parse(it->second);
+	if (status != RPiController::MdParser::Status::OK) {
 		LOG(IPARPI, Error) << "Embedded Buffer parsing failed, error " << status;
 	} else {
 		uint32_t exposure_lines, gain_code;
-		if (helper_->Parser().GetExposureLines(exposure_lines) != RPi::MdParser::Status::OK) {
+		if (helper_->Parser().GetExposureLines(exposure_lines) != RPiController::MdParser::Status::OK) {
 			LOG(IPARPI, Error) << "Exposure time failed";
 			return false;
 		}
 
 		deviceStatus.shutter_speed = helper_->Exposure(exposure_lines);
-		if (helper_->Parser().GetGainCode(gain_code) != RPi::MdParser::Status::OK) {
+		if (helper_->Parser().GetGainCode(gain_code) != RPiController::MdParser::Status::OK) {
 			LOG(IPARPI, Error) << "Gain failed";
 			return false;
 		}
@@ -821,7 +821,7 @@ void IPARPi::processStats(unsigned int bufferId)
 	}
 
 	bcm2835_isp_stats *stats = static_cast<bcm2835_isp_stats *>(it->second);
-	RPi::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
+	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
 	controller_.Process(statistics, &rpiMetadata_);
 
 	struct AgcStatus agcStatus;

@@ -14,7 +14,7 @@
 
 // This is our implementation of the "lux control algorithm".
 
-namespace RPi {
+namespace RPiController {
 
 class Lux : public Algorithm
 {
@@ -39,4 +39,4 @@ private:
 	std::mutex mutex_;
 };
 
-} // namespace RPi
+} // namespace RPiController

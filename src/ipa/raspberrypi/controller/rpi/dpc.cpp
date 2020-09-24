@@ -8,7 +8,7 @@
 #include "../logging.hpp"
 #include "dpc.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 // We use the lux status so that we can apply stronger settings in darkness (if
 // necessary).

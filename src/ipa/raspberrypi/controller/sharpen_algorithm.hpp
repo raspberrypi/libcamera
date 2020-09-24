@@ -8,7 +8,7 @@
 
 #include "algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class SharpenAlgorithm : public Algorithm
 {
@@ -18,4 +18,4 @@ public:
 	virtual void SetStrength(double strength) = 0;
 };
 
-} // namespace RPi
+} // namespace RPiController

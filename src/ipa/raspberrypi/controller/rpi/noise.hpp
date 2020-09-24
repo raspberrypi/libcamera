@@ -11,7 +11,7 @@
 
 // This is our implementation of the "noise algorithm".
 
-namespace RPi {
+namespace RPiController {
 
 class Noise : public Algorithm
 {
@@ -29,4 +29,4 @@ private:
 	std::atomic<double> mode_factor_;
 };
 
-} // namespace RPi
+} // namespace RPiController

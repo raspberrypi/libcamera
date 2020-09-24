@@ -10,7 +10,7 @@
 #include "cam_helper.hpp"
 #include "md_parser_rpi.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 class CamHelperOv5647 : public CamHelper
 {

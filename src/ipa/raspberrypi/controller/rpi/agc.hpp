@@ -20,7 +20,7 @@
 
 #define AGC_STATS_SIZE 15
 
-namespace RPi {
+namespace RPiController {
 
 struct AgcMeteringMode {
 	double weights[AGC_STATS_SIZE];
@@ -121,4 +121,4 @@ private:
 	double fixed_analogue_gain_;
 };
 
-} // namespace RPi
+} // namespace RPiController

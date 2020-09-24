@@ -8,7 +8,7 @@
 
 #include "algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class ContrastAlgorithm : public Algorithm
 {
@@ -19,4 +19,4 @@ public:
 	virtual void SetContrast(double contrast) = 0;
 };
 
-} // namespace RPi
+} // namespace RPiController

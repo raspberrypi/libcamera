@@ -11,7 +11,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-namespace RPi {
+namespace RPiController {
 
 class Pwl
 {
@@ -106,4 +106,4 @@ private:
 	std::vector<Point> points_;
 };
 
-} // namespace RPi
+} // namespace RPiController

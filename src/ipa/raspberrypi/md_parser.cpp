@@ -11,7 +11,7 @@
 
 #include "md_parser.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 // This function goes through the embedded data to find the offsets (not
 // values!), in the data block, where the values of the given registers can

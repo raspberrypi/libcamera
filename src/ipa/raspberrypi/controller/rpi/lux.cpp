@@ -13,7 +13,7 @@
 
 #include "lux.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 #define NAME "rpi.lux"
 

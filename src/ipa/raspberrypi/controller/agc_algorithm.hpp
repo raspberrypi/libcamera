@@ -8,7 +8,7 @@
 
 #include "algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class AgcAlgorithm : public Algorithm
 {
@@ -25,4 +25,4 @@ public:
 	SetConstraintMode(std::string const &contraint_mode_name) = 0;
 };
 
-} // namespace RPi
+} // namespace RPiController

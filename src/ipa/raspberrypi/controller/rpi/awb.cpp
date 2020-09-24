@@ -10,7 +10,7 @@
 
 #include "awb.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 #define NAME "rpi.awb"
 

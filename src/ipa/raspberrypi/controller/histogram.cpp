@@ -9,7 +9,7 @@
 
 #include "histogram.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 uint64_t Histogram::CumulativeFreq(double bin) const
 {

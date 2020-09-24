@@ -14,7 +14,7 @@
 #include "../pwl.hpp"
 #include "../awb_status.h"
 
-namespace RPi {
+namespace RPiController {
 
 // Control algorithm to perform AWB calculations.
 
@@ -175,4 +175,4 @@ static inline Awb::RGB operator*(Awb::RGB const &rgb, double d)
 	return d * rgb;
 }
 
-} // namespace RPi
+} // namespace RPiController

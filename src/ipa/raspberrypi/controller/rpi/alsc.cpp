@@ -11,7 +11,7 @@
 
 // Raspberry Pi ALSC (Auto Lens Shading Correction) algorithm.
 
-using namespace RPi;
+using namespace RPiController;
 
 #define NAME "rpi.alsc"
 

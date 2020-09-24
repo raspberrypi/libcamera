@@ -10,7 +10,7 @@
 
 #include "sdn.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 // Calculate settings for the spatial denoise block using the noise profile in
 // the image metadata.

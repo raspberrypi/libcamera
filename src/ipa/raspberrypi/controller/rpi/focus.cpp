@@ -11,7 +11,7 @@
 #include "../focus_status.h"
 #include "focus.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiFocus)

@@ -7,7 +7,7 @@
 
 #include "algorithm.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 void Algorithm::Read([[maybe_unused]] boost::property_tree::ptree const &params)
 {
@@ -32,7 +32,7 @@ void Algorithm::Process([[maybe_unused]] StatisticsPtr &stats,
 // For registering algorithms with the system:
 
 static std::map<std::string, AlgoCreateFunc> algorithms;
-std::map<std::string, AlgoCreateFunc> const &RPi::GetAlgorithms()
+std::map<std::string, AlgoCreateFunc> const &RPiController::GetAlgorithms()
 {
 	return algorithms;
 }

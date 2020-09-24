@@ -12,7 +12,7 @@
 #include "../contrast_algorithm.hpp"
 #include "../pwl.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 // Back End algorithm to appaly correct digital gain. Should be placed after
 // Back End AWB.
@@ -48,4 +48,4 @@ private:
 	std::mutex mutex_;
 };
 
-} // namespace RPi
+} // namespace RPiController

@@ -15,7 +15,7 @@
  * control.
  */
 
-namespace RPi {
+namespace RPiController {
 
 class Focus : public Algorithm
 {
@@ -25,4 +25,4 @@ public:
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 };
 
-} /* namespace RPi */
+} /* namespace RPiController */

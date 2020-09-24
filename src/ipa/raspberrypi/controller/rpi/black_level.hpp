@@ -11,7 +11,7 @@
 
 // This is our implementation of the "black level algorithm".
 
-namespace RPi {
+namespace RPiController {
 
 class BlackLevel : public Algorithm
 {
@@ -27,4 +27,4 @@ private:
 	double black_level_b_;
 };
 
-} // namespace RPi
+} // namespace RPiController

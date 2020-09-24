@@ -13,7 +13,7 @@
 #include "cam_helper.hpp"
 #include "md_parser.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 /* Metadata parser implementation specific to Sony IMX477 sensors. */
 

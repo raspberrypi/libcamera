@@ -8,7 +8,7 @@
 
 #include "algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class AwbAlgorithm : public Algorithm
 {
@@ -19,4 +19,4 @@ public:
 	virtual void SetManualGains(double manual_r, double manual_b) = 0;
 };
 
-} // namespace RPi
+} // namespace RPiController

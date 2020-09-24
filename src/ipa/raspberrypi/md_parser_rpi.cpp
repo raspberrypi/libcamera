@@ -9,7 +9,7 @@
 
 #include "md_parser_rpi.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 MdParserRPi::MdParserRPi()
 {

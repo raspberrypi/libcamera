@@ -13,7 +13,7 @@
 
 #include "black_level.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 #define NAME "rpi.black_level"
 

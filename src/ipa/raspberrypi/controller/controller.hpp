@@ -19,7 +19,7 @@
 #include "device_status.h"
 #include "metadata.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class Algorithm;
 typedef std::unique_ptr<Algorithm> AlgorithmPtr;
@@ -51,4 +51,4 @@ protected:
 	bool switch_mode_called_;
 };
 
-} // namespace RPi
+} // namespace RPiController

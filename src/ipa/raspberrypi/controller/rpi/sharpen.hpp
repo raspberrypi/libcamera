@@ -11,7 +11,7 @@
 
 // This is our implementation of the "sharpen algorithm".
 
-namespace RPi {
+namespace RPiController {
 
 class Sharpen : public SharpenAlgorithm
 {
@@ -31,4 +31,4 @@ private:
 	double user_strength_;
 };
 
-} // namespace RPi
+} // namespace RPiController

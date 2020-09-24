@@ -50,7 +50,7 @@ parser->Reset();
 
 before calling Parse again. */
 
-namespace RPi {
+namespace RPiController {
 
 // Abstract base class from which other metadata parsers are derived.
 

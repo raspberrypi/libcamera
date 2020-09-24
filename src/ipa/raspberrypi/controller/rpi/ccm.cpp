@@ -13,7 +13,7 @@
 
 #include "ccm.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 // This algorithm selects a CCM (Colour Correction Matrix) according to the
 // colour temperature estimated by AWB (interpolating between known matricies as

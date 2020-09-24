@@ -13,7 +13,7 @@
 
 #include "libcamera/internal/v4l2_videodevice.h"
 
-namespace RPi {
+namespace RPiController {
 
 // The CamHelper class provides a number of facilities that anyone trying
 // trying to drive a camera will need to know, but which are not provided by

@@ -8,7 +8,7 @@
 
 #include "md_parser.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 class MdParserRPi : public MdParser
 {

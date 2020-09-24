@@ -11,7 +11,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-using namespace RPi;
+using namespace RPiController;
 
 Controller::Controller()
 	: switch_mode_called_(false) {}

@@ -11,7 +11,7 @@
 
 #include "contrast.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 // This is a very simple control algorithm which simply retrieves the results of
 // AGC and AWB via their "status" metadata, and applies digital gain to the

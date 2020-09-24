@@ -15,7 +15,7 @@
 
 #include <boost/any.hpp>
 
-namespace RPi {
+namespace RPiController {
 
 class Metadata
 {
@@ -74,4 +74,4 @@ private:
 
 typedef std::shared_ptr<Metadata> MetadataPtr;
 
-} // namespace RPi
+} // namespace RPiController

@@ -8,7 +8,7 @@
 
 #include "../algorithm.hpp"
 
-namespace RPi {
+namespace RPiController {
 
 // Algorithm to calculate correct spatial denoise (SDN) settings.
 
@@ -26,4 +26,4 @@ private:
 	double strength_;
 };
 
-} // namespace RPi
+} // namespace RPiController

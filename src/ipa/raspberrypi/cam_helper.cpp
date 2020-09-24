@@ -16,7 +16,7 @@
 #include "cam_helper.hpp"
 #include "md_parser.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 static std::map<std::string, CamHelperCreateFunc> cam_helpers;
 

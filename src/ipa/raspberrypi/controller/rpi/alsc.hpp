@@ -13,7 +13,7 @@
 #include "../algorithm.hpp"
 #include "../alsc_status.h"
 
-namespace RPi {
+namespace RPiController {
 
 // Algorithm to generate automagic LSC (Lens Shading Correction) tables.
 
@@ -102,4 +102,4 @@ private:
 	double lambda_b_[ALSC_CELLS_X * ALSC_CELLS_Y];
 };
 
-} // namespace RPi
+} // namespace RPiController

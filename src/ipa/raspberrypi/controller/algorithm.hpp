@@ -19,7 +19,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 
-namespace RPi {
+namespace RPiController {
 
 // This defines the basic interface for all control algorithms.
 
@@ -59,4 +59,4 @@ struct RegisterAlgorithm {
 };
 std::map<std::string, AlgoCreateFunc> const &GetAlgorithms();
 
-} // namespace RPi
+} // namespace RPiController

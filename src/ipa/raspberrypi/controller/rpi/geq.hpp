@@ -9,7 +9,7 @@
 #include "../algorithm.hpp"
 #include "../geq_status.h"
 
-namespace RPi {
+namespace RPiController {
 
 // Back End algorithm to apply appropriate GEQ settings.
 
@@ -31,4 +31,4 @@ private:
 	GeqConfig config_;
 };
 
-} // namespace RPi
+} // namespace RPiController

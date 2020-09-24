@@ -13,7 +13,7 @@
 
 #include "noise.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 #define NAME "rpi.noise"
 

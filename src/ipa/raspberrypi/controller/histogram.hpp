@@ -13,7 +13,7 @@
 // A simple histogram class, for use in particular to find "quantiles" and
 // averages between "quantiles".
 
-namespace RPi {
+namespace RPiController {
 
 class Histogram
 {
@@ -41,4 +41,4 @@ private:
 	std::vector<uint64_t> cumulative_;
 };
 
-} // namespace RPi
+} // namespace RPiController

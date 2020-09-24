@@ -23,7 +23,7 @@
 #include "md_parser_rpi.hpp"
 #endif
 
-using namespace RPi;
+using namespace RPiController;
 
 /* Metadata parser implementation specific to Sony IMX219 sensors. */
 

@@ -10,7 +10,7 @@
 
 #include "pwl.hpp"
 
-using namespace RPi;
+using namespace RPiController;
 
 void Pwl::Read(boost::property_tree::ptree const &params)
 {

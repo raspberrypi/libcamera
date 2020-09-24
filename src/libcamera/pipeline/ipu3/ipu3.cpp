@@ -464,9 +464,10 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/*
-	 * If the ImgU gets configured with proper IF, BDS and GDC sizes, it
-	 * is then expected that frames are dequeued from its main output
-	 * otherwise the system stalls.
+	 * If the ImgU gets configured, its driver seems to expect that
+	 * buffers will be queued to its outputs, as otherwise the next
+	 * capture session that uses the ImgU fails when queueing
+	 * buffers to its input.
 	 *
 	 * If no ImgU configuration has been computed, it means only a RAW
 	 * stream has been requested: return here to skip the ImgU configuration

@@ -27,15 +27,15 @@ using BufferMap = std::unordered_map<unsigned int, FrameBuffer *>;
  * Device stream abstraction for either an internal or external stream.
  * Used for both Unicam and the ISP.
  */
-class RPiStream : public Stream
+class Stream : public libcamera::Stream
 {
 public:
-	RPiStream()
+	Stream()
 		: id_(RPiBufferMask::ID)
 	{
 	}
 
-	RPiStream(const char *name, MediaEntity *dev, bool importOnly = false)
+	Stream(const char *name, MediaEntity *dev, bool importOnly = false)
 		: external_(false), importOnly_(importOnly), name_(name),
 		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(RPiBufferMask::ID)
 	{
@@ -155,7 +155,7 @@ private:
  * streams indexed with an enum class.
  */
 template<typename E, std::size_t N>
-class RPiDevice : public std::array<class RPiStream, N>
+class Device : public std::array<class Stream, N>
 {
 private:
 	constexpr auto index(E e) const noexcept
@@ -163,13 +163,13 @@ private:
 		return static_cast<std::underlying_type_t<E>>(e);
 	}
 public:
-	RPiStream &operator[](E e)
+	Stream &operator[](E e)
 	{
-		return std::array<class RPiStream, N>::operator[](index(e));
+		return std::array<class Stream, N>::operator[](index(e));
 	}
-	const RPiStream &operator[](E e) const
+	const Stream &operator[](E e) const
 	{
-		return std::array<class RPiStream, N>::operator[](index(e));
+		return std::array<class Stream, N>::operator[](index(e));
 	}
 };
 

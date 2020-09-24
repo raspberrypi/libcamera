@@ -14,46 +14,46 @@ LOG_DEFINE_CATEGORY(RPISTREAM)
 
 namespace RPi {
 
-V4L2VideoDevice *RPiStream::dev() const
+V4L2VideoDevice *Stream::dev() const
 {
 	return dev_.get();
 }
 
-std::string RPiStream::name() const
+std::string Stream::name() const
 {
 	return name_;
 }
 
-void RPiStream::reset()
+void Stream::reset()
 {
 	external_ = false;
 	clearBuffers();
 }
 
-void RPiStream::setExternal(bool external)
+void Stream::setExternal(bool external)
 {
 	/* Import streams cannot be external. */
 	ASSERT(!external || !importOnly_);
 	external_ = external;
 }
 
-bool RPiStream::isExternal() const
+bool Stream::isExternal() const
 {
 	return external_;
 }
 
-void RPiStream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+void Stream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	for (auto const &buffer : *buffers)
 		bufferMap_.emplace(id_.get(), buffer.get());
 }
 
-const BufferMap &RPiStream::getBuffers() const
+const BufferMap &Stream::getBuffers() const
 {
 	return bufferMap_;
 }
 
-int RPiStream::getBufferId(FrameBuffer *buffer) const
+int Stream::getBufferId(FrameBuffer *buffer) const
 {
 	if (importOnly_)
 		return -1;
@@ -68,12 +68,12 @@ int RPiStream::getBufferId(FrameBuffer *buffer) const
 	return it->first;
 }
 
-void RPiStream::setExternalBuffer(FrameBuffer *buffer)
+void Stream::setExternalBuffer(FrameBuffer *buffer)
 {
 	bufferMap_.emplace(RPiBufferMask::EXTERNAL_BUFFER | id_.get(), buffer);
 }
 
-void RPiStream::removeExternalBuffer(FrameBuffer *buffer)
+void Stream::removeExternalBuffer(FrameBuffer *buffer)
 {
 	int id = getBufferId(buffer);
 
@@ -82,7 +82,7 @@ void RPiStream::removeExternalBuffer(FrameBuffer *buffer)
 	bufferMap_.erase(id);
 }
 
-int RPiStream::prepareBuffers(unsigned int count)
+int Stream::prepareBuffers(unsigned int count)
 {
 	int ret;
 
@@ -108,7 +108,7 @@ int RPiStream::prepareBuffers(unsigned int count)
 	return dev_->importBuffers(count);
 }
 
-int RPiStream::queueBuffer(FrameBuffer *buffer)
+int Stream::queueBuffer(FrameBuffer *buffer)
 {
 	/*
 	 * A nullptr buffer implies an external stream, but no external
@@ -147,7 +147,7 @@ int RPiStream::queueBuffer(FrameBuffer *buffer)
 	return 0;
 }
 
-void RPiStream::returnBuffer(FrameBuffer *buffer)
+void Stream::returnBuffer(FrameBuffer *buffer)
 {
 	/* This can only be called for external streams. */
 	ASSERT(external_);
@@ -186,7 +186,7 @@ void RPiStream::returnBuffer(FrameBuffer *buffer)
 	}
 }
 
-int RPiStream::queueAllBuffers()
+int Stream::queueAllBuffers()
 {
 	int ret;
 
@@ -204,13 +204,13 @@ int RPiStream::queueAllBuffers()
 	return 0;
 }
 
-void RPiStream::releaseBuffers()
+void Stream::releaseBuffers()
 {
 	dev_->releaseBuffers();
 	clearBuffers();
 }
 
-void RPiStream::clearBuffers()
+void Stream::clearBuffers()
 {
 	availableBuffers_ = std::queue<FrameBuffer *>{};
 	requestBuffers_ = std::queue<FrameBuffer *>{};
@@ -219,7 +219,7 @@ void RPiStream::clearBuffers()
 	id_.reset();
 }
 
-int RPiStream::queueToDevice(FrameBuffer *buffer)
+int Stream::queueToDevice(FrameBuffer *buffer)
 {
 	LOG(RPISTREAM, Debug) << "Queuing buffer " << getBufferId(buffer)
 			      << " for " << name_;

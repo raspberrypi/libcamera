@@ -110,9 +110,7 @@ subdir('src')
 # The documentation and test components are optional and can be disabled
 # through configuration values. They are enabled by default.
 
-if get_option('documentation')
-    subdir('Documentation')
-endif
+subdir('Documentation')
 
 if get_option('test')
     subdir('test')

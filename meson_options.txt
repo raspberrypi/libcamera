@@ -6,7 +6,7 @@ option('android',
         description : 'Compile libcamera with Android Camera3 HAL interface')
 
 option('documentation',
-        type : 'boolean',
+        type : 'feature',
         description : 'Generate the project documentation')
 
 option('gstreamer',

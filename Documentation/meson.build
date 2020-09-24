@@ -7,8 +7,8 @@ doc_install_dir = join_paths(get_option('datadir'), 'doc',
 # Doxygen
 #
 
-doxygen = find_program('doxygen', required : false)
-dot = find_program('dot', required : false)
+doxygen = find_program('doxygen', required : get_option('documentation'))
+dot = find_program('dot', required : get_option('documentation'))
 
 if doxygen.found() and dot.found()
     cdata = configuration_data()
@@ -42,7 +42,7 @@ endif
 
 sphinx = find_program('sphinx-build-3', required : false)
 if not sphinx.found()
-    sphinx = find_program('sphinx-build', required : false)
+    sphinx = find_program('sphinx-build', required : get_option('documentation'))
 endif
 
 if sphinx.found()

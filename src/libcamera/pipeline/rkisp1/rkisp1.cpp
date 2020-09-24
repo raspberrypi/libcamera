@@ -817,59 +817,16 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	data->mainPathActive_ = false;
 	data->selfPathActive_ = false;
 	for (const StreamConfiguration &cfg : *config) {
-		V4L2SubdeviceFormat ispFormat = format;
-		V4L2Subdevice *resizer;
-		V4L2VideoDevice *video;
-
 		if (cfg.stream() == &data->mainPathStream_) {
-			resizer = mainPath_.resizer_;
-			video = mainPath_.video_;
+			ret = mainPath_.configure(cfg, format);
+			if (ret)
+				return ret;
 			data->mainPathActive_ = true;
 		} else {
-			resizer = selfPath_.resizer_;
-			video = selfPath_.video_;
+			ret = selfPath_.configure(cfg, format);
+			if (ret)
+				return ret;
 			data->selfPathActive_ = true;
-		}
-
-		ret = resizer->setFormat(0, &ispFormat);
-		if (ret < 0)
-			return ret;
-
-		const char *name = resizer == mainPath_.resizer_ ? "main" : "self";
-
-		LOG(RkISP1, Debug)
-			<< "Configured " << name << " resizer input pad with "
-			<< ispFormat.toString();
-
-		ispFormat.size = cfg.size;
-
-		LOG(RkISP1, Debug)
-			<< "Configuring " << name << " resizer output pad with "
-			<< ispFormat.toString();
-
-		ret = resizer->setFormat(1, &ispFormat);
-		if (ret < 0)
-			return ret;
-
-		LOG(RkISP1, Debug)
-			<< "Configured " << name << " resizer output pad with "
-			<< ispFormat.toString();
-
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		V4L2DeviceFormat outputFormat = {};
-		outputFormat.fourcc = video->toV4L2PixelFormat(cfg.pixelFormat);
-		outputFormat.size = cfg.size;
-		outputFormat.planesCount = info.numPlanes();
-
-		ret = video->setFormat(&outputFormat);
-		if (ret)
-			return ret;
-
-		if (outputFormat.size != cfg.size ||
-		    outputFormat.fourcc != video->toV4L2PixelFormat(cfg.pixelFormat)) {
-			LOG(RkISP1, Error)
-				<< "Unable to configure capture in " << cfg.toString();
-			return -EINVAL;
 		}
 	}
 

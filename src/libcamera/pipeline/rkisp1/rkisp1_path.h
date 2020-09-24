@@ -12,6 +12,8 @@ namespace libcamera {
 class MediaDevice;
 class V4L2Subdevice;
 class V4L2VideoDevice;
+struct StreamConfiguration;
+struct V4L2SubdeviceFormat;
 
 class RkISP1Path
 {
@@ -21,12 +23,16 @@ public:
 
 	bool init(MediaDevice *media);
 
-	/* \todo Make resizer and video private. */
-	V4L2Subdevice *resizer_;
+	int configure(const StreamConfiguration &config,
+		      const V4L2SubdeviceFormat &inputFormat);
+
+	/* \todo Make video private. */
 	V4L2VideoDevice *video_;
 
 private:
 	const char *name_;
+
+	V4L2Subdevice *resizer_;
 };
 
 class RkISP1MainPath : public RkISP1Path

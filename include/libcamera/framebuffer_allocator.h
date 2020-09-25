@@ -21,8 +21,8 @@ class FrameBufferAllocator
 {
 public:
 	FrameBufferAllocator(std::shared_ptr<Camera> camera);
-	FrameBufferAllocator(const Camera &) = delete;
-	FrameBufferAllocator &operator=(const Camera &) = delete;
+	FrameBufferAllocator(const FrameBufferAllocator &) = delete;
+	FrameBufferAllocator &operator=(const FrameBufferAllocator &) = delete;
 
 	~FrameBufferAllocator();
 

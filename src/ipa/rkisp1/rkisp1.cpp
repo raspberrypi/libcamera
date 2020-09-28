@@ -50,7 +50,7 @@ public:
 	void processEvent(const IPAOperationData &event) override;
 
 private:
-	void queueRequest(unsigned int frame, rkisp1_isp_params_cfg *params,
+	void queueRequest(unsigned int frame, rkisp1_params_cfg *params,
 			  const ControlList &controls);
 	void updateStatistics(unsigned int frame,
 			      const rkisp1_stat_buffer *stats);
@@ -176,8 +176,8 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 		unsigned int frame = event.data[0];
 		unsigned int bufferId = event.data[1];
 
-		rkisp1_isp_params_cfg *params =
-			static_cast<rkisp1_isp_params_cfg *>(buffersMemory_[bufferId]);
+		rkisp1_params_cfg *params =
+			static_cast<rkisp1_params_cfg *>(buffersMemory_[bufferId]);
 
 		queueRequest(frame, params, event.controls[0]);
 		break;
@@ -188,7 +188,7 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 	}
 }
 
-void IPARkISP1::queueRequest(unsigned int frame, rkisp1_isp_params_cfg *params,
+void IPARkISP1::queueRequest(unsigned int frame, rkisp1_params_cfg *params,
 			     const ControlList &controls)
 {
 	/* Prepare parameters buffer. */
@@ -198,9 +198,9 @@ void IPARkISP1::queueRequest(unsigned int frame, rkisp1_isp_params_cfg *params,
 	if (controls.contains(controls::AeEnable)) {
 		autoExposure_ = controls.get(controls::AeEnable);
 		if (autoExposure_)
-			params->module_ens = CIFISP_MODULE_AEC;
+			params->module_ens = RKISP1_CIF_ISP_MODULE_AEC;
 
-		params->module_en_update = CIFISP_MODULE_AEC;
+		params->module_en_update = RKISP1_CIF_ISP_MODULE_AEC;
 	}
 
 	IPAOperationData op;
@@ -212,17 +212,17 @@ void IPARkISP1::queueRequest(unsigned int frame, rkisp1_isp_params_cfg *params,
 void IPARkISP1::updateStatistics(unsigned int frame,
 				 const rkisp1_stat_buffer *stats)
 {
-	const cifisp_stat *params = &stats->params;
+	const rkisp1_cif_isp_stat *params = &stats->params;
 	unsigned int aeState = 0;
 
-	if (stats->meas_type & CIFISP_STAT_AUTOEXP) {
-		const cifisp_ae_stat *ae = &params->ae;
+	if (stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP) {
+		const rkisp1_cif_isp_ae_stat *ae = &params->ae;
 
 		const unsigned int target = 60;
 
 		unsigned int value = 0;
 		unsigned int num = 0;
-		for (int i = 0; i < CIFISP_AE_MEAN_MAX; i++) {
+		for (int i = 0; i < RKISP1_CIF_ISP_AE_MEAN_MAX; i++) {
 			if (ae->exp_mean[i] <= 15)
 				continue;
 

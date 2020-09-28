@@ -13,6 +13,7 @@
 #include <sys/mman.h>
 
 #include <linux/rkisp1-config.h>
+#include <linux/v4l2-controls.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>

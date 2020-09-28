@@ -58,7 +58,7 @@ Meson Build system: [required]
             pip3 install --user --upgrade meson
 
 for the libcamera core: [required]
-        python3-yaml
+        python3-yaml python3-ply python3-jinja2
 
 for IPA module signing: [required]
         libgnutls28-dev openssl

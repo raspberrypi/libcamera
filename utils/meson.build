@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('ipc')
 subdir('ipu3')
 subdir('tracepoints')
 

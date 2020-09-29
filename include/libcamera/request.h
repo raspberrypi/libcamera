@@ -64,6 +64,8 @@ public:
 
 	std::string toString() const;
 
+	std::shared_ptr<Camera> camera() const;
+
 private:
 	LIBCAMERA_DISABLE_COPY(Request)
 

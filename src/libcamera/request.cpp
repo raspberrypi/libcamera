@@ -513,6 +513,11 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
 	return it->second;
 }
 
+std::shared_ptr<Camera> Request::camera() const
+{
+	return _d()->camera()->shared_from_this();
+}
+
 /**
  * \fn Request::metadata()
  * \brief Retrieve the request's metadata

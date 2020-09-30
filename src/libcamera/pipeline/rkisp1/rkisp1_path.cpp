@@ -207,23 +207,25 @@ void RkISP1Path::stop()
 namespace {
 constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
-constexpr std::array<PixelFormat, 5> RKISP1_RSZ_MP_FORMATS{
+constexpr std::array<PixelFormat, 6> RKISP1_RSZ_MP_FORMATS{
 	formats::YUYV,
 	formats::NV16,
 	formats::NV61,
 	formats::NV21,
 	formats::NV12,
-	/* \todo Add support for 8-bit greyscale to DRM formats */
+	formats::R8,
+	/* \todo Add support for RAW formats. */
 };
 
 constexpr Size RKISP1_RSZ_SP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_SP_SRC_MAX{ 1920, 1920 };
-constexpr std::array<PixelFormat, 6> RKISP1_RSZ_SP_FORMATS{
+constexpr std::array<PixelFormat, 7> RKISP1_RSZ_SP_FORMATS{
 	formats::YUYV,
 	formats::NV16,
 	formats::NV61,
 	formats::NV21,
 	formats::NV12,
+	formats::R8,
 	formats::RGB565,
 	/* \todo Add support for BGR888 */
 };

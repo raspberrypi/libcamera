@@ -7,6 +7,8 @@
 
 #include "rkisp1_path.h"
 
+#include <linux/media-bus-format.h>
+
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
@@ -124,6 +126,16 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	LOG(RkISP1, Debug)
 		<< "Configuring " << name_ << " resizer output pad with "
 		<< ispFormat.toString();
+
+	switch (config.pixelFormat) {
+	case formats::NV12:
+	case formats::NV21:
+		ispFormat.mbus_code = MEDIA_BUS_FMT_YUYV8_1_5X8;
+		break;
+	default:
+		ispFormat.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
+		break;
+	}
 
 	ret = resizer_->setFormat(1, &ispFormat);
 	if (ret < 0)

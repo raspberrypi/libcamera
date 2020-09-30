@@ -48,6 +48,8 @@ const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB565), formats::RGB565 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB24), formats::BGR888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_BGR24), formats::RGB888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_XBGR32), formats::XRGB8888 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_XRGB32), formats::XBGR8888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBA32), formats::ABGR8888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_ABGR32), formats::ARGB8888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_ARGB32), formats::BGRA8888 },

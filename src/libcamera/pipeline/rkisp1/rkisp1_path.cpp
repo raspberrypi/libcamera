@@ -195,10 +195,8 @@ void RkISP1Path::stop()
 namespace {
 constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
-constexpr std::array<PixelFormat, 7> RKISP1_RSZ_MP_FORMATS{
+constexpr std::array<PixelFormat, 5> RKISP1_RSZ_MP_FORMATS{
 	formats::YUYV,
-	formats::YVYU,
-	formats::VYUY,
 	formats::NV16,
 	formats::NV61,
 	formats::NV21,
@@ -208,10 +206,8 @@ constexpr std::array<PixelFormat, 7> RKISP1_RSZ_MP_FORMATS{
 
 constexpr Size RKISP1_RSZ_SP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_SP_SRC_MAX{ 1920, 1920 };
-constexpr std::array<PixelFormat, 7> RKISP1_RSZ_SP_FORMATS{
+constexpr std::array<PixelFormat, 5> RKISP1_RSZ_SP_FORMATS{
 	formats::YUYV,
-	formats::YVYU,
-	formats::VYUY,
 	formats::NV16,
 	formats::NV61,
 	formats::NV21,

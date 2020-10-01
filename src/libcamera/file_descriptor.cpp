@@ -42,7 +42,7 @@ LOG_DEFINE_CATEGORY(FileDescriptor)
  *   constructor.
  *
  * - The FileDescriptor(int &&) constructor takes over the numerical file
- *   descriptor and wraps it in a Descriptor. The caller is shall not touch the
+ *   descriptor and wraps it in a Descriptor. The caller shall not touch the
  *   original file descriptor once the function returns, and the value returned
  *   by fd() will be identical to the value passed to the constructor.
  *

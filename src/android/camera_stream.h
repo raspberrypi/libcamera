@@ -9,9 +9,13 @@
 
 #include <memory>
 
+#include <hardware/camera3.h>
+
+#include <libcamera/camera.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
+class CameraDevice;
 class Encoder;
 
 class CameraStream
@@ -99,9 +103,12 @@ public:
 		Internal,
 		Mapped,
 	};
-	CameraStream(libcamera::PixelFormat format, libcamera::Size size,
+	CameraStream(CameraDevice *cameraDevice,
+		     camera3_stream_t *androidStream,
+		     const libcamera::StreamConfiguration &cfg,
 		     Type type, unsigned int index);
 
+	const camera3_stream_t &camera3Stream() const { return *camera3Stream_; }
 	const libcamera::PixelFormat &format() const { return format_; }
 	const libcamera::Size &size() const { return size_; }
 	Type type() const { return type_; }
@@ -111,9 +118,15 @@ public:
 	int configure(const libcamera::StreamConfiguration &cfg);
 
 private:
+	CameraDevice *cameraDevice_;
+	libcamera::CameraConfiguration *config_;
+	camera3_stream_t *camera3Stream_;
+	Type type_;
+
+	/* Libcamera facing format and sizes. */
 	libcamera::PixelFormat format_;
 	libcamera::Size size_;
-	Type type_;
+
 	/*
 	 * The index of the libcamera StreamConfiguration as added during
 	 * configureStreams(). A single libcamera Stream may be used to deliver

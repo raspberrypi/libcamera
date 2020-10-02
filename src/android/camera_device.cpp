@@ -1216,8 +1216,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 		config_->addConfiguration(streamConfiguration);
 		unsigned int index = config_->size() - 1;
-		streams_.emplace_back(format, size, CameraStream::Type::Direct,
-				      index);
+		streams_.emplace_back(this, stream, streamConfiguration,
+				      CameraStream::Type::Direct, index);
 		stream->priv = static_cast<void *>(&streams_.back());
 	}
 
@@ -1272,8 +1272,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		}
 
 		StreamConfiguration &cfg = config_->at(index);
-
-		streams_.emplace_back(formats::MJPEG, cfg.size, type, index);
+		streams_.emplace_back(this, jpegStream, cfg, type, index);
 		jpegStream->priv = static_cast<void *>(&streams_.back());
 	}
 
@@ -1405,7 +1404,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
 
 		/* Software streams are handled after hardware streams complete. */
-		if (cameraStream->format() == formats::MJPEG)
+		if (cameraStream->camera3Stream().format == HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
 		/*
@@ -1469,7 +1468,7 @@ void CameraDevice::requestComplete(Request *request)
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(descriptor->buffers[i].stream->priv);
 
-		if (cameraStream->format() != formats::MJPEG)
+		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
 		Encoder *encoder = cameraStream->encoder();

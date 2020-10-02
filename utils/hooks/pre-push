@@ -57,10 +57,10 @@ do
 			errors=$((errors+1))
 		fi
 
-		# 3. A Reviewed-by is required.
-		if ! echo "$msg" | grep -q '^Reviewed-by: '
+		# 3. A Reviewed-by or Acked-by is required.
+		if ! echo "$msg" | grep -q '^\(Reviewed\|Acked\)-by: '
 		then
-			echo >&2 "No Reviewed-by in commit $commit"
+			echo >&2 "No Reviewed-by or Acked-by in commit $commit"
 			errors=$((errors+1))
 		fi
 	done

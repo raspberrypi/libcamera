@@ -1273,19 +1273,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 		StreamConfiguration &cfg = config_->at(index);
 
-		/*
-		 * Construct a software encoder for the MJPEG streams from the
-		 * chosen libcamera source stream.
-		 */
-		Encoder *encoder = new EncoderLibJpeg();
-		int ret = encoder->configure(cfg);
-		if (ret) {
-			LOG(HAL, Error) << "Failed to configure encoder";
-			delete encoder;
-			return ret;
-		}
-
-		streams_.emplace_back(formats::MJPEG, cfg.size, type, index, encoder);
+		streams_.emplace_back(formats::MJPEG, cfg.size, type, index);
 		jpegStream->priv = static_cast<void *>(&streams_.back());
 	}
 
@@ -1306,10 +1294,19 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		return -EINVAL;
 	}
 
+	/*
+	 * Configure the HAL CameraStream instances using the associated
+	 * StreamConfiguration and set the number of required buffers in
+	 * the Android camera3_stream_t.
+	 */
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 		CameraStream *cameraStream = static_cast<CameraStream *>(stream->priv);
 		StreamConfiguration &cfg = config_->at(cameraStream->index());
+
+		int ret = cameraStream->configure(cfg);
+		if (ret)
+			return ret;
 
 		/* Use the bufferCount confirmed by the validation process. */
 		stream->max_buffers = cfg.bufferCount;

@@ -8,11 +8,21 @@
 #include "camera_stream.h"
 
 #include "jpeg/encoder.h"
+#include "jpeg/encoder_libjpeg.h"
 
 using namespace libcamera;
 
-CameraStream::CameraStream(PixelFormat format, Size size,
-			   Type type, unsigned int index, Encoder *encoder)
-	: format_(format), size_(size), type_(type), index_(index), encoder_(encoder)
+CameraStream::CameraStream(PixelFormat format, Size size, Type type, unsigned int index)
+	: format_(format), size_(size), type_(type), index_(index)
 {
+	if (type_ == Type::Internal || type_ == Type::Mapped)
+		encoder_ = std::make_unique<EncoderLibJpeg>();
+}
+
+int CameraStream::configure(const libcamera::StreamConfiguration &cfg)
+{
+	if (encoder_)
+		return encoder_->configure(cfg);
+
+	return 0;
 }

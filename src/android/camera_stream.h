@@ -100,13 +100,15 @@ public:
 		Mapped,
 	};
 	CameraStream(libcamera::PixelFormat format, libcamera::Size size,
-		     Type type, unsigned int index, Encoder *encoder = nullptr);
+		     Type type, unsigned int index);
 
 	const libcamera::PixelFormat &format() const { return format_; }
 	const libcamera::Size &size() const { return size_; }
 	Type type() const { return type_; }
 	unsigned int index() const { return index_; }
 	Encoder *encoder() const { return encoder_.get(); }
+
+	int configure(const libcamera::StreamConfiguration &cfg);
 
 private:
 	libcamera::PixelFormat format_;

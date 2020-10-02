@@ -169,12 +169,6 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 	}
 }
 
-CameraStream::CameraStream(PixelFormat format, Size size,
-			   unsigned int index, Encoder *encoder)
-	: format_(format), size_(size), index_(index), encoder_(encoder)
-{
-}
-
 /*
  * \struct Camera3RequestDescriptor
  *

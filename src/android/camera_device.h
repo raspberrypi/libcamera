@@ -23,32 +23,10 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
+#include "camera_stream.h"
 #include "jpeg/encoder.h"
 
 class CameraMetadata;
-
-class CameraStream
-{
-public:
-	CameraStream(libcamera::PixelFormat format, libcamera::Size size,
-		     unsigned int index, Encoder *encoder = nullptr);
-
-	const libcamera::PixelFormat &format() const { return format_; }
-	const libcamera::Size &size() const { return size_; }
-	unsigned int index() const { return index_; }
-	Encoder *encoder() const { return encoder_.get(); }
-
-private:
-	libcamera::PixelFormat format_;
-	libcamera::Size size_;
-	/*
-	 * The index of the libcamera StreamConfiguration as added during
-	 * configureStreams(). A single libcamera Stream may be used to deliver
-	 * one or more streams to the Android framework.
-	 */
-	unsigned int index_;
-	std::unique_ptr<Encoder> encoder_;
-};
 
 class CameraDevice : protected libcamera::Loggable
 {

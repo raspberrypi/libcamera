@@ -1172,19 +1172,6 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 					      { V4L2_CID_EXPOSURE, result.data[resultIdx++] } });
 			sensorMetadata_ = result.data[resultIdx++];
 		}
-
-		/*
-		 * Configure the H/V flip controls based on the combination of
-		 * the sensor and user transform.
-		 */
-		if (supportsFlips_) {
-			ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
-			ctrls.set(V4L2_CID_HFLIP,
-				  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
-			ctrls.set(V4L2_CID_VFLIP,
-				  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
-			unicam_[Unicam::Image].dev()->setControls(&ctrls);
-		}
 	}
 
 	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
@@ -1196,6 +1183,19 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
 		/* Configure the number of dropped frames required on startup. */
 		dropFrameCount_ = result.data[resultIdx++];
+	}
+
+	/*
+	 * Configure the H/V flip controls based on the combination of
+	 * the sensor and user transform.
+	 */
+	if (supportsFlips_) {
+		ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
+		ctrls.set(V4L2_CID_HFLIP,
+			  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
+		ctrls.set(V4L2_CID_VFLIP,
+			  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
+		unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}
 
 	return 0;

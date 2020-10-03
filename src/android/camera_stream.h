@@ -114,7 +114,7 @@ public:
 	const libcamera::StreamConfiguration &configuration() const;
 	libcamera::Stream *stream() const;
 
-	int configure(const libcamera::StreamConfiguration &cfg);
+	int configure();
 	int process(const libcamera::FrameBuffer &source,
 		    MappedCamera3Buffer *dest, CameraMetadata *metadata);
 

@@ -38,10 +38,15 @@ Stream *CameraStream::stream() const
 	return configuration().stream();
 }
 
-int CameraStream::configure(const libcamera::StreamConfiguration &cfg)
+int CameraStream::configure()
 {
-	if (encoder_)
-		return encoder_->configure(cfg);
+	if (encoder_) {
+		int ret = encoder_->configure(configuration());
+		if (ret)
+			return ret;
+	}
+
+	camera3Stream_->max_buffers = configuration().bufferCount;
 
 	return 0;
 }

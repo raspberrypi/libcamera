@@ -106,16 +106,11 @@ public:
 		Internal,
 		Mapped,
 	};
-	CameraStream(CameraDevice *cameraDevice,
-		     camera3_stream_t *androidStream,
-		     const libcamera::StreamConfiguration &cfg,
-		     Type type, unsigned int index);
+	CameraStream(CameraDevice *cameraDevice, Type type,
+		     camera3_stream_t *camera3Stream, unsigned int index);
 
-	const camera3_stream_t &camera3Stream() const { return *camera3Stream_; }
-	const libcamera::PixelFormat &format() const { return format_; }
-	const libcamera::Size &size() const { return size_; }
 	Type type() const { return type_; }
-
+	const camera3_stream_t &camera3Stream() const { return *camera3Stream_; }
 	const libcamera::StreamConfiguration &configuration() const;
 	libcamera::Stream *stream() const;
 
@@ -126,13 +121,8 @@ public:
 private:
 	CameraDevice *cameraDevice_;
 	libcamera::CameraConfiguration *config_;
-	camera3_stream_t *camera3Stream_;
 	Type type_;
-
-	/* Libcamera facing format and sizes. */
-	libcamera::PixelFormat format_;
-	libcamera::Size size_;
-
+	camera3_stream_t *camera3Stream_;
 	/*
 	 * The index of the libcamera StreamConfiguration as added during
 	 * configureStreams(). A single libcamera Stream may be used to deliver

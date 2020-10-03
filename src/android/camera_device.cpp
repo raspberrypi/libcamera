@@ -1206,9 +1206,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		streamConfiguration.pixelFormat = format;
 
 		config_->addConfiguration(streamConfiguration);
-		unsigned int index = config_->size() - 1;
-		streams_.emplace_back(this, stream, streamConfiguration,
-				      CameraStream::Type::Direct, index);
+		streams_.emplace_back(this, CameraStream::Type::Direct,
+				      stream, config_->size() - 1);
 		stream->priv = static_cast<void *>(&streams_.back());
 	}
 
@@ -1262,8 +1261,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			index = config_->size() - 1;
 		}
 
-		StreamConfiguration &cfg = config_->at(index);
-		streams_.emplace_back(this, jpegStream, cfg, type, index);
+		streams_.emplace_back(this, type, jpegStream, index);
 		jpegStream->priv = static_cast<void *>(&streams_.back());
 	}
 

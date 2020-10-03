@@ -17,17 +17,12 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(HAL);
 
-CameraStream::CameraStream(CameraDevice *cameraDevice,
-			   camera3_stream_t *camera3Stream,
-			   const libcamera::StreamConfiguration &cfg,
-			   Type type, unsigned int index)
-	: cameraDevice_(cameraDevice), camera3Stream_(camera3Stream),
-	  type_(type), index_(index)
+CameraStream::CameraStream(CameraDevice *cameraDevice, Type type,
+			   camera3_stream_t *camera3Stream, unsigned int index)
+	: cameraDevice_(cameraDevice), type_(type),
+	  camera3Stream_(camera3Stream), index_(index)
 {
 	config_ = cameraDevice_->cameraConfiguration();
-
-	format_ = cfg.pixelFormat;
-	size_ = cfg.size;
 
 	if (type_ == Type::Internal || type_ == Type::Mapped)
 		encoder_ = std::make_unique<EncoderLibJpeg>();
@@ -63,7 +58,7 @@ int CameraStream::process(const libcamera::FrameBuffer &source,
 	exif.setMake("libcamera");
 	exif.setModel("cameraModel");
 	exif.setOrientation(cameraDevice_->orientation());
-	exif.setSize(size_);
+	exif.setSize(configuration().size);
 	/*
 	 * We set the frame's EXIF timestamp as the time of encode.
 	 * Since the precision we need for EXIF timestamp is only one

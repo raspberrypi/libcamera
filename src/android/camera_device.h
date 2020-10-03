@@ -20,6 +20,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
@@ -27,6 +28,12 @@
 #include "jpeg/encoder.h"
 
 class CameraMetadata;
+
+class MappedCamera3Buffer : public libcamera::MappedBuffer
+{
+public:
+	MappedCamera3Buffer(const buffer_handle_t camera3buffer, int flags);
+};
 
 class CameraDevice : protected libcamera::Loggable
 {
@@ -50,6 +57,7 @@ public:
 
 	int facing() const { return facing_; }
 	int orientation() const { return orientation_; }
+	unsigned int maxJpegBufferSize() const { return maxJpegBufferSize_; }
 
 	void setCallbacks(const camera3_callback_ops_t *callbacks);
 	const camera_metadata_t *getStaticMetadata();

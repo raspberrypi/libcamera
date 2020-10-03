@@ -23,9 +23,6 @@
 #include "camera_metadata.h"
 #include "system/graphics.h"
 
-#include "jpeg/encoder_libjpeg.h"
-#include "jpeg/exif.h"
-
 using namespace libcamera;
 
 namespace {
@@ -132,12 +129,6 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 } /* namespace */
 
 LOG_DECLARE_CATEGORY(HAL);
-
-class MappedCamera3Buffer : public MappedBuffer
-{
-public:
-	MappedCamera3Buffer(const buffer_handle_t camera3buffer, int flags);
-};
 
 MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 					 int flags)
@@ -1471,12 +1462,6 @@ void CameraDevice::requestComplete(Request *request)
 		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
-		Encoder *encoder = cameraStream->encoder();
-		if (!encoder) {
-			LOG(HAL, Error) << "Failed to identify encoder";
-			continue;
-		}
-
 		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index());
 		Stream *stream = streamConfiguration->stream();
 		FrameBuffer *buffer = request->findBuffer(stream);
@@ -1497,59 +1482,12 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		/* Set EXIF metadata for various tags. */
-		Exif exif;
-		/* \todo Set Make and Model from external vendor tags. */
-		exif.setMake("libcamera");
-		exif.setModel("cameraModel");
-		exif.setOrientation(orientation_);
-		exif.setSize(cameraStream->size());
-		/*
-		 * We set the frame's EXIF timestamp as the time of encode.
-		 * Since the precision we need for EXIF timestamp is only one
-		 * second, it is good enough.
-		 */
-		exif.setTimestamp(std::time(nullptr));
-		if (exif.generate() != 0)
-			LOG(HAL, Error) << "Failed to generate valid EXIF data";
-
-		int jpeg_size = encoder->encode(buffer, mapped.maps()[0], exif.data());
-		if (jpeg_size < 0) {
-			LOG(HAL, Error) << "Failed to encode stream image";
+		int ret = cameraStream->process(*buffer, &mapped,
+						resultMetadata.get());
+		if (ret) {
 			status = CAMERA3_BUFFER_STATUS_ERROR;
 			continue;
 		}
-
-		/*
-		 * Fill in the JPEG blob header.
-		 *
-		 * The mapped size of the buffer is being returned as
-		 * substantially larger than the requested JPEG_MAX_SIZE
-		 * (which is referenced from maxJpegBufferSize_). Utilise
-		 * this static size to ensure the correct offset of the blob is
-		 * determined.
-		 *
-		 * \todo Investigate if the buffer size mismatch is an issue or
-		 * expected behaviour.
-		 */
-		uint8_t *resultPtr = mapped.maps()[0].data() +
-				     maxJpegBufferSize_ -
-				     sizeof(struct camera3_jpeg_blob);
-		auto *blob = reinterpret_cast<struct camera3_jpeg_blob *>(resultPtr);
-		blob->jpeg_blob_id = CAMERA3_JPEG_BLOB_ID;
-		blob->jpeg_size = jpeg_size;
-
-		/* Update the JPEG result Metadata. */
-		resultMetadata->addEntry(ANDROID_JPEG_SIZE,
-					 &jpeg_size, 1);
-
-		const uint32_t jpeg_quality = 95;
-		resultMetadata->addEntry(ANDROID_JPEG_QUALITY,
-					 &jpeg_quality, 1);
-
-		const uint32_t jpeg_orientation = 0;
-		resultMetadata->addEntry(ANDROID_JPEG_ORIENTATION,
-					 &jpeg_orientation, 1);
 	}
 
 	/* Prepare to call back the Android camera stack. */

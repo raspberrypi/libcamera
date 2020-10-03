@@ -11,12 +11,15 @@
 
 #include <hardware/camera3.h>
 
+#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-class CameraDevice;
 class Encoder;
+class CameraDevice;
+class CameraMetadata;
+class MappedCamera3Buffer;
 
 class CameraStream
 {
@@ -113,9 +116,10 @@ public:
 	const libcamera::Size &size() const { return size_; }
 	Type type() const { return type_; }
 	unsigned int index() const { return index_; }
-	Encoder *encoder() const { return encoder_.get(); }
 
 	int configure(const libcamera::StreamConfiguration &cfg);
+	int process(const libcamera::FrameBuffer &source,
+		    MappedCamera3Buffer *dest, CameraMetadata *metadata);
 
 private:
 	CameraDevice *cameraDevice_;

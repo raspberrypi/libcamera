@@ -155,7 +155,7 @@ void CameraHalManager::cameraRemoved(std::shared_ptr<Camera> cam)
 
 	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
 				 [&cam](std::shared_ptr<CameraDevice> &camera) {
-					 return cam.get() == camera->camera();
+					 return cam == camera->camera();
 				 });
 	if (iter == cameras_.end())
 		return;

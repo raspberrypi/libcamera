@@ -49,7 +49,7 @@ public:
 
 	unsigned int id() const { return id_; }
 	camera3_device_t *camera3Device() { return &camera3Device_; }
-	const libcamera::Camera *camera() const { return camera_.get(); }
+	std::shared_ptr<libcamera::Camera> camera() const { return camera_; }
 	libcamera::CameraConfiguration *cameraConfiguration() const
 	{
 		return config_.get();

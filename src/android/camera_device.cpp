@@ -1283,6 +1283,17 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	}
 
 	/*
+	 * Once the CameraConfiguration has been adjusted/validated
+	 * it can be applied to the camera.
+	 */
+	int ret = camera_->configure(config_.get());
+	if (ret) {
+		LOG(HAL, Error) << "Failed to configure camera '"
+				<< camera_->id() << "'";
+		return ret;
+	}
+
+	/*
 	 * Configure the HAL CameraStream instances using the associated
 	 * StreamConfiguration and set the number of required buffers in
 	 * the Android camera3_stream_t.
@@ -1293,17 +1304,6 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			LOG(HAL, Error) << "Failed to configure camera stream";
 			return ret;
 		}
-	}
-
-	/*
-	 * Once the CameraConfiguration has been adjusted/validated
-	 * it can be applied to the camera.
-	 */
-	int ret = camera_->configure(config_.get());
-	if (ret) {
-		LOG(HAL, Error) << "Failed to configure camera '"
-				<< camera_->id() << "'";
-		return ret;
 	}
 
 	return 0;

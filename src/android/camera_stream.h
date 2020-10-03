@@ -8,11 +8,14 @@
 #define __ANDROID_CAMERA_STREAM_H__
 
 #include <memory>
+#include <mutex>
+#include <vector>
 
 #include <hardware/camera3.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
@@ -117,6 +120,8 @@ public:
 	int configure();
 	int process(const libcamera::FrameBuffer &source,
 		    MappedCamera3Buffer *dest, CameraMetadata *metadata);
+	libcamera::FrameBuffer *getBuffer();
+	void putBuffer(libcamera::FrameBuffer *buffer);
 
 private:
 	CameraDevice *cameraDevice_;
@@ -129,7 +134,15 @@ private:
 	 * one or more streams to the Android framework.
 	 */
 	unsigned int index_;
+
 	std::unique_ptr<Encoder> encoder_;
+	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
+	std::vector<libcamera::FrameBuffer *> buffers_;
+	/*
+	 * The class has to be MoveConstructible as instances are stored in
+	 * an std::vector in CameraDevice.
+	 */
+	 std::unique_ptr<std::mutex> mutex_;
 };
 
 #endif /* __ANDROID_CAMERA_STREAM__ */

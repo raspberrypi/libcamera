@@ -26,6 +26,11 @@ CameraStream::CameraStream(CameraDevice *cameraDevice, Type type,
 
 	if (type_ == Type::Internal || type_ == Type::Mapped)
 		encoder_ = std::make_unique<EncoderLibJpeg>();
+
+	if (type == Type::Internal) {
+		allocator_ = std::make_unique<FrameBufferAllocator>(cameraDevice_->camera());
+		mutex_ = std::make_unique<std::mutex>();
+	}
 }
 
 const StreamConfiguration &CameraStream::configuration() const
@@ -44,6 +49,16 @@ int CameraStream::configure()
 		int ret = encoder_->configure(configuration());
 		if (ret)
 			return ret;
+	}
+
+	if (allocator_) {
+		int ret = allocator_->allocate(stream());
+		if (ret < 0)
+			return ret;
+
+		/* Save a pointer to the reserved frame buffers */
+		for (const auto &frameBuffer : allocator_->buffers(stream()))
+			buffers_.push_back(frameBuffer.get());
 	}
 
 	camera3Stream_->max_buffers = configuration().bufferCount;
@@ -108,4 +123,32 @@ int CameraStream::process(const libcamera::FrameBuffer &source,
 	metadata->addEntry(ANDROID_JPEG_ORIENTATION, &jpeg_orientation, 1);
 
 	return 0;
+}
+
+FrameBuffer *CameraStream::getBuffer()
+{
+	if (!allocator_)
+		return nullptr;
+
+	std::lock_guard<std::mutex> locker(*mutex_);
+
+	if (buffers_.empty()) {
+		LOG(HAL, Error) << "Buffer underrun";
+		return nullptr;
+	}
+
+	FrameBuffer *buffer = buffers_.back();
+	buffers_.pop_back();
+
+	return buffer;
+}
+
+void CameraStream::putBuffer(libcamera::FrameBuffer *buffer)
+{
+	if (!allocator_)
+		return;
+
+	std::lock_guard<std::mutex> locker(*mutex_);
+
+	buffers_.push_back(buffer);
 }

@@ -517,6 +517,8 @@ int CameraDevice::open(const hw_module_t *hardwareModule)
 
 void CameraDevice::close()
 {
+	streams_.clear();
+
 	camera_->stop();
 	camera_->release();
 

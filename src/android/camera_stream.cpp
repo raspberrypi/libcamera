@@ -33,6 +33,16 @@ CameraStream::CameraStream(CameraDevice *cameraDevice,
 		encoder_ = std::make_unique<EncoderLibJpeg>();
 }
 
+const StreamConfiguration &CameraStream::configuration() const
+{
+	return config_->at(index_);
+}
+
+Stream *CameraStream::stream() const
+{
+	return configuration().stream();
+}
+
 int CameraStream::configure(const libcamera::StreamConfiguration &cfg)
 {
 	if (encoder_)

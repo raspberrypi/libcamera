@@ -115,7 +115,9 @@ public:
 	const libcamera::PixelFormat &format() const { return format_; }
 	const libcamera::Size &size() const { return size_; }
 	Type type() const { return type_; }
-	unsigned int index() const { return index_; }
+
+	const libcamera::StreamConfiguration &configuration() const;
+	libcamera::Stream *stream() const;
 
 	int configure(const libcamera::StreamConfiguration &cfg);
 	int process(const libcamera::FrameBuffer &source,

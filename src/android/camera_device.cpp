@@ -1292,7 +1292,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
 		camera3_stream_t *stream = stream_list->streams[i];
 		CameraStream *cameraStream = static_cast<CameraStream *>(stream->priv);
-		StreamConfiguration &cfg = config_->at(cameraStream->index());
+		const StreamConfiguration &cfg = cameraStream->configuration();
 
 		int ret = cameraStream->configure(cfg);
 		if (ret)
@@ -1413,10 +1413,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		}
 		descriptor->frameBuffers.emplace_back(buffer);
 
-		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index());
-		Stream *stream = streamConfiguration->stream();
-
-		request->addBuffer(stream, buffer);
+		request->addBuffer(cameraStream->stream(), buffer);
 	}
 
 	int ret = camera_->queueRequest(request);
@@ -1462,9 +1459,7 @@ void CameraDevice::requestComplete(Request *request)
 		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
-		StreamConfiguration *streamConfiguration = &config_->at(cameraStream->index());
-		Stream *stream = streamConfiguration->stream();
-		FrameBuffer *buffer = request->findBuffer(stream);
+		FrameBuffer *buffer = request->findBuffer(cameraStream->stream());
 		if (!buffer) {
 			LOG(HAL, Error) << "Failed to find a source stream buffer";
 			continue;

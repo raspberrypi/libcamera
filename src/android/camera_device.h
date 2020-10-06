@@ -25,6 +25,7 @@
 #include "libcamera/internal/message.h"
 
 #include "camera_stream.h"
+#include "camera_worker.h"
 #include "jpeg/encoder.h"
 
 class CameraMetadata;
@@ -73,7 +74,8 @@ private:
 	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
 
 	struct Camera3RequestDescriptor {
-		Camera3RequestDescriptor(unsigned int frameNumber,
+		Camera3RequestDescriptor(libcamera::Camera *camera,
+					 unsigned int frameNumber,
 					 unsigned int numBuffers);
 		~Camera3RequestDescriptor();
 
@@ -81,6 +83,7 @@ private:
 		uint32_t numBuffers;
 		camera3_stream_buffer_t *buffers;
 		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers;
+		std::unique_ptr<CaptureRequest> request;
 	};
 
 	struct Camera3StreamConfiguration {
@@ -107,6 +110,8 @@ private:
 
 	unsigned int id_;
 	camera3_device_t camera3Device_;
+
+	CameraWorker worker_;
 
 	bool running_;
 	std::shared_ptr<libcamera::Camera> camera_;

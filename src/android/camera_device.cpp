@@ -168,11 +168,24 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
  */
 
 CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
-		unsigned int frameNumber, unsigned int numBuffers)
+	Camera *camera, unsigned int frameNumber, unsigned int numBuffers)
 	: frameNumber(frameNumber), numBuffers(numBuffers)
 {
 	buffers = new camera3_stream_buffer_t[numBuffers];
+
+	/*
+	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
+	 * are emplaced in this vector of unique_ptr<> for lifetime management.
+	 */
 	frameBuffers.reserve(numBuffers);
+
+	/*
+	 * Create the libcamera::Request unique_ptr<> to tie its lifetime
+	 * to the descriptor's one. Set the descriptor's address as the
+	 * request's cookie to retrieve it at completion time.
+	 */
+	request = std::make_unique<CaptureRequest>(camera,
+						   reinterpret_cast<uint64_t>(this));
 }
 
 CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
@@ -519,6 +532,7 @@ void CameraDevice::close()
 {
 	streams_.clear();
 
+	worker_.stop();
 	camera_->stop();
 	camera_->release();
 
@@ -1350,6 +1364,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 	/* Start the camera if that's the first request we handle. */
 	if (!running_) {
+		worker_.start();
+
 		int ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";
@@ -1372,15 +1388,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	 * at request complete time.
 	 */
 	Camera3RequestDescriptor *descriptor =
-		new Camera3RequestDescriptor(camera3Request->frame_number,
+		new Camera3RequestDescriptor(camera_.get(), camera3Request->frame_number,
 					     camera3Request->num_output_buffers);
-
-	std::unique_ptr<Request> request =
-		camera_->createRequest(reinterpret_cast<uint64_t>(descriptor));
-	if (!request) {
-		LOG(HAL, Error) << "Failed to create request";
-		return -ENOMEM;
-	}
 
 	LOG(HAL, Debug) << "Queueing Request to libcamera with "
 			<< descriptor->numBuffers << " HAL streams";
@@ -1448,18 +1457,12 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			return -ENOMEM;
 		}
 
-		request->addBuffer(cameraStream->stream(), buffer);
+		descriptor->request->addBuffer(cameraStream->stream(), buffer,
+					       camera3Buffers[i].acquire_fence);
 	}
 
-	int ret = camera_->queueRequest(request.get());
-	if (ret) {
-		LOG(HAL, Error) << "Failed to queue request";
-		delete descriptor;
-		return ret;
-	}
-
-	/* The request will be deleted in the completion handler. */
-	request.release();
+	/* Queue the request to the CameraWorker. */
+	worker_.queueRequest(descriptor->request.get());
 
 	return 0;
 }
@@ -1564,7 +1567,6 @@ void CameraDevice::requestComplete(Request *request)
 	callbacks_->process_capture_result(callbacks_, &captureResult);
 
 	delete descriptor;
-	delete request;
 }
 
 std::string CameraDevice::logPrefix() const

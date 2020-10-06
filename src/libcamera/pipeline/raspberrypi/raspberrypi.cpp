@@ -1494,7 +1494,7 @@ void RPiCameraData::handleState()
 		 * No break here, we want to try running the pipeline again.
 		 * The fallthrough clause below suppresses compiler warnings.
 		 */
-		/* Fall through */
+		[[fallthrough]];
 
 	case State::Idle:
 		tryRunPipeline();

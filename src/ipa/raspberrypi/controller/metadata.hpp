@@ -8,12 +8,11 @@
 
 // A simple class for carrying arbitrary metadata, for example about an image.
 
+#include <any>
 #include <string>
 #include <mutex>
 #include <map>
 #include <memory>
-
-#include <boost/any.hpp>
 
 namespace RPiController {
 
@@ -31,7 +30,7 @@ public:
 		auto it = data_.find(tag);
 		if (it == data_.end())
 			return -1;
-		value = boost::any_cast<T>(it->second);
+		value = std::any_cast<T>(it->second);
 		return 0;
 	}
 	void Clear()
@@ -53,7 +52,7 @@ public:
 		auto it = data_.find(tag);
 		if (it == data_.end())
 			return nullptr;
-		return boost::any_cast<T>(&it->second);
+		return std::any_cast<T>(&it->second);
 	}
 	template<typename T>
 	void SetLocked(std::string const &tag, T const &value)
@@ -69,7 +68,7 @@ public:
 
 private:
 	mutable std::mutex mutex_;
-	std::map<std::string, boost::any> data_;
+	std::map<std::string, std::any> data_;
 };
 
 typedef std::shared_ptr<Metadata> MetadataPtr;

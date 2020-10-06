@@ -8,6 +8,7 @@
 #include "exif.h"
 
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
 
 using namespace libcamera;
 
@@ -171,15 +172,31 @@ void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 
 void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format, const std::string &item)
 {
-	/* Pad 1 extra byte for null-terminated string in ASCII format. */
-	size_t length = format == EXIF_FORMAT_ASCII ?
-			item.length() + 1 : item.length();
+	std::string ascii;
+	size_t length;
+	const char *str;
+
+	if (format == EXIF_FORMAT_ASCII) {
+		ascii = utils::toAscii(item);
+		str = ascii.c_str();
+
+		/* Pad 1 extra byte to null-terminate the ASCII string. */
+		length = ascii.length() + 1;
+	} else {
+		str = item.c_str();
+
+		/*
+		 * Strings stored in different formats (EXIF_FORMAT_UNDEFINED)
+		 * are not null-terminated.
+		 */
+		length = item.length();
+	}
 
 	ExifEntry *entry = createEntry(ifd, tag, format, length, length);
 	if (!entry)
 		return;
 
-	memcpy(entry->data, item.c_str(), length);
+	memcpy(entry->data, str, length);
 	exif_entry_unref(entry);
 }
 

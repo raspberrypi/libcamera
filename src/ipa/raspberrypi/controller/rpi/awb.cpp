@@ -430,7 +430,7 @@ double Awb::coarseSearch(Pwl const &prior)
 
 void Awb::fineSearch(double &t, double &r, double &b, Pwl const &prior)
 {
-	int span_r, span_b;
+	int span_r = -1, span_b = -1;
 	config_.ct_r.Eval(t, &span_r);
 	config_.ct_b.Eval(t, &span_b);
 	double step = t / 10 * config_.coarse_step * 0.1;

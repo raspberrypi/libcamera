@@ -61,7 +61,7 @@ IPAVimc::IPAVimc()
 
 IPAVimc::~IPAVimc()
 {
-	if (fd_)
+	if (fd_ != -1)
 		::close(fd_);
 }
 

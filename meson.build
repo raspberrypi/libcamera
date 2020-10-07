@@ -73,10 +73,9 @@ if cc.get_id() == 'gcc'
 
     # gcc 7.1 introduced processor-specific ABI breakages related to parameter
     # passing on ARM platforms. This generates a large number of messages
-    # during compilation with gcc >=7.1 until gcc 9. Silence them.
+    # during compilation with gcc >=7.1. Silence them.
     if (host_machine.cpu_family() == 'arm' and
-        cc.version().version_compare('>=7.1') and
-        cc.version().version_compare('<9'))
+        cc.version().version_compare('>=7.1'))
         cpp_arguments += [
             '-Wno-psabi',
         ]

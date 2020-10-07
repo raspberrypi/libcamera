@@ -26,6 +26,12 @@ ${controls}
 
 extern const ControlIdMap controls;
 
+namespace draft {
+
+${draft_controls}
+
+} /* namespace draft */
+
 } /* namespace controls */
 
 } /* namespace libcamera */

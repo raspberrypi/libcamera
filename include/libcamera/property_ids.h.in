@@ -24,6 +24,12 @@ ${ids}
 
 ${controls}
 
+namespace draft {
+
+${draft_controls}
+
+} /* namespace draft */
+
 extern const ControlIdMap properties;
 
 } /* namespace properties */

@@ -36,6 +36,8 @@ ${description}
 
     ctrls_doc = []
     ctrls_def = []
+    draft_ctrls_doc = []
+    draft_ctrls_def = []
     ctrls_map = []
 
     for ctrl in controls:
@@ -55,6 +57,12 @@ ${description}
             'id_name': id_name,
         }
 
+        target_doc = ctrls_doc
+        target_def = ctrls_def
+        if ctrl.get('draft'):
+            target_doc = draft_ctrls_doc
+            target_def = draft_ctrls_def
+
         enum = ctrl.get('enum')
         if enum:
             enum_doc = []
@@ -70,15 +78,21 @@ ${description}
 
             enum_doc = '\n *\n'.join(enum_doc)
             enum_doc += '\n */'
-            ctrls_doc.append(enum_doc)
+            target_doc.append(enum_doc)
 
-        ctrls_doc.append(doc_template.substitute(info))
-        ctrls_def.append(def_template.substitute(info))
+        target_doc.append(doc_template.substitute(info))
+        target_def.append(def_template.substitute(info))
+
+        if ctrl.get('draft'):
+            name = 'draft::' + name
+
         ctrls_map.append('\t{ ' + id_name + ', &' + name + ' },')
 
     return {
         'controls_doc': '\n\n'.join(ctrls_doc),
         'controls_def': '\n'.join(ctrls_def),
+        'draft_controls_doc': '\n\n'.join(draft_ctrls_doc),
+        'draft_controls_def': '\n\n'.join(draft_ctrls_def),
         'controls_map': '\n'.join(ctrls_map),
     }
 
@@ -89,6 +103,7 @@ def generate_h(controls):
     template = string.Template('''extern const Control<${type}> ${name};''')
 
     ctrls = []
+    draft_ctrls = []
     ids = []
     id_value = 1
 
@@ -109,22 +124,30 @@ def generate_h(controls):
             'type': ctrl_type,
         }
 
+        target_ctrls = ctrls
+        if ctrl.get('draft'):
+            target_ctrls = draft_ctrls
+
         enum = ctrl.get('enum')
         if enum:
-            ctrls.append(enum_template_start.substitute(info))
+            target_ctrls.append(enum_template_start.substitute(info))
 
             for entry in enum:
                 value_info = {
                     'name': entry['name'],
                     'value': entry['value'],
                 }
-                ctrls.append(enum_value_template.substitute(value_info))
-            ctrls.append("};")
+                target_ctrls.append(enum_value_template.substitute(value_info))
+            target_ctrls.append("};")
 
-        ctrls.append(template.substitute(info))
+        target_ctrls.append(template.substitute(info))
         id_value += 1
 
-    return {'ids': '\n'.join(ids), 'controls': '\n'.join(ctrls)}
+    return {
+        'ids': '\n'.join(ids),
+        'controls': '\n'.join(ctrls),
+        'draft_controls': '\n'.join(draft_ctrls)
+    }
 
 
 def fill_template(template, data):

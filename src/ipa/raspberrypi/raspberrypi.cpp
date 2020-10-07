@@ -178,7 +178,7 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 	 *
 	 * \todo Get the pipeline handle to provide the full data
 	 */
-	mode_.bin_y = std::min(2, static_cast<int>(mode_.scale_x));
+	mode_.bin_x = std::min(2, static_cast<int>(mode_.scale_x));
 	mode_.bin_y = std::min(2, static_cast<int>(mode_.scale_y));
 
 	/* The noise factor is the square root of the total binning factor. */

@@ -17,7 +17,7 @@ using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
 		 EventLoop *loop)
-	: camera_(camera), config_(config), writer_(nullptr), loop_(loop),
+	: camera_(camera), config_(config), writer_(nullptr), last_(0), loop_(loop),
 	  captureCount_(0), captureLimit_(0)
 {
 }

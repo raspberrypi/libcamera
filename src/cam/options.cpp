@@ -61,7 +61,12 @@ bool OptionsBase<T>::isSet(const T &opt) const
 template<typename T>
 const OptionValue &OptionsBase<T>::operator[](const T &opt) const
 {
-	return values_.find(opt)->second;
+	static const OptionValue empty;
+
+	auto it = values_.find(opt);
+	if (it != values_.end())
+		return it->second;
+	return empty;
 }
 
 template<typename T>

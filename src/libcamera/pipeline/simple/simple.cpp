@@ -324,6 +324,8 @@ int SimpleCameraData::init()
 		return -EINVAL;
 	}
 
+	properties_ = sensor_->properties();
+
 	return 0;
 }
 

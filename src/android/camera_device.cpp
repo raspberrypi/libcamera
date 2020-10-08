@@ -552,8 +552,8 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 51 entries, 687 bytes of static metadata
 	 */
-	uint32_t numEntries = 51;
-	uint32_t byteSize = 693;
+	uint32_t numEntries = 52;
+	uint32_t byteSize = 694;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -780,6 +780,19 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	int32_t maxFaceCount = 0;
 	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_MAX_FACE_COUNT,
 				  &maxFaceCount, 1);
+
+	{
+		std::vector<uint8_t> data(2);
+		const auto &infoMap = controlsInfo.find(&controls::draft::LensShadingMapMode);
+		if (infoMap != controlsInfo.end()) {
+			for (const auto &value : infoMap->second.values())
+				data.push_back(value.get<int32_t>());
+		} else {
+			data.push_back(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF);
+		}
+		staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_AVAILABLE_LENS_SHADING_MAP_MODES,
+					  data.data(), data.size());
+	}
 
 	/* Sync static metadata. */
 	int32_t maxLatency = ANDROID_SYNC_MAX_LATENCY_UNKNOWN;

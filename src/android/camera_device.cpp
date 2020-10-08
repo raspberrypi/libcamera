@@ -553,7 +553,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * Currently: 51 entries, 687 bytes of static metadata
 	 */
 	uint32_t numEntries = 51;
-	uint32_t byteSize = 687;
+	uint32_t byteSize = 691;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -830,9 +830,18 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  &minFocusDistance, 1);
 
 	/* Noise reduction modes. */
-	uint8_t noiseReductionModes = ANDROID_NOISE_REDUCTION_MODE_OFF;
-	staticMetadata_->addEntry(ANDROID_NOISE_REDUCTION_AVAILABLE_NOISE_REDUCTION_MODES,
-				  &noiseReductionModes, 1);
+	{
+		std::vector<uint8_t> data(5);
+		const auto &infoMap = controlsInfo.find(&controls::draft::NoiseReductionMode);
+		if (infoMap != controlsInfo.end()) {
+			for (const auto &value : infoMap->second.values())
+				data.push_back(value.get<int32_t>());
+		} else {
+			data.push_back(ANDROID_NOISE_REDUCTION_MODE_OFF);
+		}
+		staticMetadata_->addEntry(ANDROID_NOISE_REDUCTION_AVAILABLE_NOISE_REDUCTION_MODES,
+					  data.data(), data.size());
+	}
 
 	/* Scaler static metadata. */
 	float maxDigitalZoom = 1;

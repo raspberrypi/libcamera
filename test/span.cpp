@@ -106,7 +106,7 @@ protected:
 		/* staticSpan.subspan(2, 4); */
 
 		/*
-		 * Compile-test construction and usage of spans with static
+		 * Compile-test construction and usage of spans with dynamic
 		 * extent. Commented-out tests are expected not to compile, or
 		 * to generate undefined behaviour.
 		 */

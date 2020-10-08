@@ -553,7 +553,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * Currently: 51 entries, 687 bytes of static metadata
 	 */
 	uint32_t numEntries = 51;
-	uint32_t byteSize = 691;
+	uint32_t byteSize = 693;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -595,12 +595,18 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	const ControlInfoMap &controlsInfo = camera_->controls();
 
 	/* Color correction static metadata. */
-	std::vector<uint8_t> aberrationModes = {
-		ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF,
-	};
-	staticMetadata_->addEntry(ANDROID_COLOR_CORRECTION_AVAILABLE_ABERRATION_MODES,
-				  aberrationModes.data(),
-				  aberrationModes.size());
+	{
+		std::vector<uint8_t> data(3);
+		const auto &infoMap = controlsInfo.find(&controls::draft::ColorCorrectionAberrationMode);
+		if (infoMap != controlsInfo.end()) {
+			for (const auto &value : infoMap->second.values())
+				data.push_back(value.get<int32_t>());
+		} else {
+			data.push_back(ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF);
+		}
+		staticMetadata_->addEntry(ANDROID_COLOR_CORRECTION_AVAILABLE_ABERRATION_MODES,
+					  data.data(), data.size());
+	}
 
 	/* Control static metadata. */
 	std::vector<uint8_t> aeAvailableAntiBandingModes = {

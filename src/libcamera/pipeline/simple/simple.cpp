@@ -592,6 +592,12 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (ret)
 		return ret;
 
+	if (captureFormat.planesCount != 1) {
+		LOG(SimplePipeline, Error)
+			<< "Planar formats using non-contiguous memory not supported";
+		return -EINVAL;
+	}
+
 	if (captureFormat.fourcc != videoFormat ||
 	    captureFormat.size != pipeConfig.captureSize) {
 		LOG(SimplePipeline, Error)
@@ -844,12 +850,6 @@ V4L2VideoDevice *SimplePipelineHandler::video(const MediaEntity *entity)
 		std::make_unique<V4L2VideoDevice>(entity);
 	if (video->open() < 0)
 		return nullptr;
-
-	if (video->caps().isMultiplanar()) {
-		LOG(SimplePipeline, Error)
-			<< "V4L2 multiplanar devices are not supported";
-		return nullptr;
-	}
 
 	video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
 

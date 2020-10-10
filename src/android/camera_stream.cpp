@@ -17,6 +17,27 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(HAL);
 
+/*
+ * \class CameraStream
+ * \brief Map a camera3_stream_t to a StreamConfiguration
+ *
+ * The CameraStream class maps a camera3_stream_t provided by Android
+ * camera framework to a libcamera::StreamConfiguration.
+ *
+ * The StreamConfiguration is represented by its index as recorded in the
+ * CameraConfiguration and not by pointer as StreamConfiguration is subject to
+ * relocation.
+ *
+ * A single StreamConfiguration may be used to deliver one or more streams to
+ * the Android framework. The mapping type between a camera3 stream to a
+ * StreamConfiguration is described by the CameraStream::Type.
+ *
+ * CameraStream handles all the aspects of producing a stream with the size
+ * and format requested by the camera3 stream from the data produced by
+ * the associated libcamera::Stream, including the creation of the encoder
+ * and buffer allocation.
+ */
+
 CameraStream::CameraStream(CameraDevice *cameraDevice, Type type,
 			   camera3_stream_t *camera3Stream, unsigned int index)
 	: cameraDevice_(cameraDevice), type_(type),

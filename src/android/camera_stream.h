@@ -128,11 +128,6 @@ private:
 	libcamera::CameraConfiguration *config_;
 	Type type_;
 	camera3_stream_t *camera3Stream_;
-	/*
-	 * The index of the libcamera StreamConfiguration as added during
-	 * configureStreams(). A single libcamera Stream may be used to deliver
-	 * one or more streams to the Android framework.
-	 */
 	unsigned int index_;
 
 	std::unique_ptr<Encoder> encoder_;

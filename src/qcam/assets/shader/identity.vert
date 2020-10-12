@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * YUV.vert - Vertex shader for YUV to RGB conversion
+ * identity.vert - Identity vertex shader for pixel format conversion
  */
 
 attribute vec4 vertexIn;

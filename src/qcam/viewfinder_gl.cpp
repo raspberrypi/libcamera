@@ -191,7 +191,7 @@ bool ViewFinderGL::createVertexShader()
 	vertexShader_ = std::make_unique<QOpenGLShader>(QOpenGLShader::Vertex, this);
 
 	/* Compile the vertex shader */
-	if (!vertexShader_->compileSourceFile(":YUV.vert")) {
+	if (!vertexShader_->compileSourceFile(":identity.vert")) {
 		qWarning() << "[ViewFinderGL]:" << vertexShader_->log();
 		return false;
 	}

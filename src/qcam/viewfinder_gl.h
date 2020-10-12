@@ -8,6 +8,8 @@
 #ifndef __VIEWFINDER_GL_H__
 #define __VIEWFINDER_GL_H__
 
+#include <memory>
+
 #include <QImage>
 #include <QMutex>
 #include <QOpenGLBuffer>
@@ -67,8 +69,8 @@ private:
 
 	/* Shaders */
 	QOpenGLShaderProgram shaderProgram_;
-	QOpenGLShader *vertexShader_;
-	QOpenGLShader *fragmentShader_;
+	std::unique_ptr<QOpenGLShader> vertexShader_;
+	std::unique_ptr<QOpenGLShader> fragmentShader_;
 	QString fragmentShaderFile_;
 	QStringList fragmentShaderDefines_;
 

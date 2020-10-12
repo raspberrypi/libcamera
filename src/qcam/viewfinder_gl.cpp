@@ -33,7 +33,6 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
 	: QOpenGLWidget(parent), buffer_(nullptr), yuvData_(nullptr),
-	  vertexShader_(nullptr), fragmentShader_(nullptr),
 	  vertexBuffer_(QOpenGLBuffer::VertexBuffer),
 	  textureU_(QOpenGLTexture::Target2D),
 	  textureV_(QOpenGLTexture::Target2D),
@@ -58,8 +57,8 @@ int ViewFinderGL::setFormat(const libcamera::PixelFormat &format,
 	if (fragmentShader_) {
 		if (shaderProgram_.isLinked()) {
 			shaderProgram_.release();
-			shaderProgram_.removeShader(fragmentShader_);
-			delete fragmentShader_;
+			shaderProgram_.removeShader(fragmentShader_.get());
+			fragmentShader_.reset();
 		}
 	}
 
@@ -185,7 +184,7 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 bool ViewFinderGL::createVertexShader()
 {
 	/* Create Vertex Shader */
-	vertexShader_ = new QOpenGLShader(QOpenGLShader::Vertex, this);
+	vertexShader_ = std::make_unique<QOpenGLShader>(QOpenGLShader::Vertex, this);
 
 	/* Compile the vertex shader */
 	if (!vertexShader_->compileSourceFile(":YUV.vert")) {
@@ -193,7 +192,7 @@ bool ViewFinderGL::createVertexShader()
 		return false;
 	}
 
-	shaderProgram_.addShader(vertexShader_);
+	shaderProgram_.addShader(vertexShader_.get());
 	return true;
 }
 
@@ -207,7 +206,7 @@ bool ViewFinderGL::createFragmentShader()
 	 * program. The #define macros stored in fragmentShaderDefines_, if
 	 * any, are prepended to the source code.
 	 */
-	fragmentShader_ = new QOpenGLShader(QOpenGLShader::Fragment, this);
+	fragmentShader_ = std::make_unique<QOpenGLShader>(QOpenGLShader::Fragment, this);
 
 	QFile file(fragmentShaderFile_);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -224,7 +223,7 @@ bool ViewFinderGL::createFragmentShader()
 		return false;
 	}
 
-	shaderProgram_.addShader(fragmentShader_);
+	shaderProgram_.addShader(fragmentShader_.get());
 
 	/* Link shader pipeline */
 	if (!shaderProgram_.link()) {
@@ -287,12 +286,6 @@ void ViewFinderGL::removeShader()
 		shaderProgram_.release();
 		shaderProgram_.removeAllShaders();
 	}
-
-	if (fragmentShader_)
-		delete fragmentShader_;
-
-	if (vertexShader_)
-		delete vertexShader_;
 }
 
 void ViewFinderGL::initializeGL()

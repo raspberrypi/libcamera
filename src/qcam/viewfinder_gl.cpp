@@ -360,7 +360,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RG,
 			     GL_UNSIGNED_BYTE,
-			     (char *)yuvData_ + size_.width() * size_.height());
+			     yuvData_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 
@@ -390,7 +390,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     (char *)yuvData_ + size_.width() * size_.height());
+			     yuvData_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 
 		/* Activate texture V */
@@ -404,7 +404,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     (char *)yuvData_ + size_.width() * size_.height() * 5 / 4);
+			     yuvData_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 		break;
 
@@ -434,7 +434,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     (char *)yuvData_ + size_.width() * size_.height());
+			     yuvData_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 
 		/* Activate texture U */
@@ -448,7 +448,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     (char *)yuvData_ + size_.width() * size_.height() * 5 / 4);
+			     yuvData_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 

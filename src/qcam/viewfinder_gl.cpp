@@ -32,7 +32,7 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
-	: QOpenGLWidget(parent), buffer_(nullptr), yuvData_(nullptr),
+	: QOpenGLWidget(parent), buffer_(nullptr), data_(nullptr),
 	  vertexBuffer_(QOpenGLBuffer::VertexBuffer),
 	  textureU_(QOpenGLTexture::Target2D),
 	  textureV_(QOpenGLTexture::Target2D),
@@ -101,7 +101,7 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 	if (buffer_)
 		renderComplete(buffer_);
 
-	yuvData_ = static_cast<unsigned char *>(map->memory);
+	data_ = static_cast<unsigned char *>(map->memory);
 	update();
 	buffer_ = buffer;
 }
@@ -346,7 +346,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_);
+			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture UV/VU */
@@ -360,7 +360,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RG,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_ + size_.width() * size_.height());
+			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 
@@ -376,7 +376,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_);
+			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture U */
@@ -390,7 +390,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_ + size_.width() * size_.height());
+			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 
 		/* Activate texture V */
@@ -404,7 +404,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_ + size_.width() * size_.height() * 5 / 4);
+			     data_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 		break;
 
@@ -420,7 +420,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_);
+			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture V */
@@ -434,7 +434,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_ + size_.width() * size_.height());
+			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 
 		/* Activate texture U */
@@ -448,7 +448,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RED,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_ + size_.width() * size_.height() * 5 / 4);
+			     data_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 
@@ -471,7 +471,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RGBA,
 			     GL_UNSIGNED_BYTE,
-			     yuvData_);
+			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/*
@@ -497,7 +497,7 @@ void ViewFinderGL::paintGL()
 				   << "create fragment shader failed.";
 		}
 
-	if (yuvData_) {
+	if (data_) {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

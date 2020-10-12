@@ -65,7 +65,7 @@ private:
 	libcamera::FrameBuffer *buffer_;
 	libcamera::PixelFormat format_;
 	QSize size_;
-	unsigned char *yuvData_;
+	unsigned char *data_;
 
 	/* Shaders */
 	QOpenGLShaderProgram shaderProgram_;

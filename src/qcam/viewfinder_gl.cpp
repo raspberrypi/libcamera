@@ -53,19 +53,23 @@ const QList<libcamera::PixelFormat> &ViewFinderGL::nativeFormats() const
 int ViewFinderGL::setFormat(const libcamera::PixelFormat &format,
 			    const QSize &size)
 {
-	/* If the fragment is created remove it and create a new one. */
-	if (fragmentShader_) {
+	if (format != format_) {
+		/*
+		 * If the fragment already exists, remove it and create a new
+		 * one for the new format.
+		 */
 		if (shaderProgram_.isLinked()) {
 			shaderProgram_.release();
 			shaderProgram_.removeShader(fragmentShader_.get());
 			fragmentShader_.reset();
 		}
+
+		if (!selectFormat(format))
+			return -1;
+
+		format_ = format;
 	}
 
-	if (!selectFormat(format))
-		return -1;
-
-	format_ = format;
 	size_ = size;
 
 	updateGeometry();

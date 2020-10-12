@@ -14,21 +14,28 @@
 #include <libcamera/formats.h>
 
 static const QList<libcamera::PixelFormat> supportedFormats{
-	/* Packed (single plane) */
+	/* YUV - packed (single plane) */
 	libcamera::formats::UYVY,
 	libcamera::formats::VYUY,
 	libcamera::formats::YUYV,
 	libcamera::formats::YVYU,
-	/* Semi planar (two planes) */
+	/* YUV - semi planar (two planes) */
 	libcamera::formats::NV12,
 	libcamera::formats::NV21,
 	libcamera::formats::NV16,
 	libcamera::formats::NV61,
 	libcamera::formats::NV24,
 	libcamera::formats::NV42,
-	/* Fully planar (three planes) */
+	/* YUV - fully planar (three planes) */
 	libcamera::formats::YUV420,
 	libcamera::formats::YVU420,
+	/* RGB */
+	libcamera::formats::ABGR8888,
+	libcamera::formats::ARGB8888,
+	libcamera::formats::BGRA8888,
+	libcamera::formats::RGBA8888,
+	libcamera::formats::BGR888,
+	libcamera::formats::RGB888,
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
@@ -171,6 +178,30 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::YVYU:
 		fragmentShaderDefines_.append("#define YUV_PATTERN_YVYU");
 		fragmentShaderFile_ = ":YUV_packed.frag";
+		break;
+	case libcamera::formats::ABGR8888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN rgb");
+		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::ARGB8888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
+		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::BGRA8888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN gba");
+		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::RGBA8888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN abg");
+		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::BGR888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN rgb");
+		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::RGB888:
+		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
+		fragmentShaderFile_ = ":RGB.frag";
 		break;
 	default:
 		ret = false;
@@ -479,6 +510,40 @@ void ViewFinderGL::doRender()
 		 */
 		shaderProgram_.setUniformValue(textureUniformStepX_,
 					       1.0f / (size_.width() / 2 - 1));
+		break;
+
+	case libcamera::formats::ABGR8888:
+	case libcamera::formats::ARGB8888:
+	case libcamera::formats::BGRA8888:
+	case libcamera::formats::RGBA8888:
+		glActiveTexture(GL_TEXTURE0);
+		configureTexture(*textures_[0]);
+		glTexImage2D(GL_TEXTURE_2D,
+			     0,
+			     GL_RGBA,
+			     size_.width(),
+			     size_.height(),
+			     0,
+			     GL_RGBA,
+			     GL_UNSIGNED_BYTE,
+			     data_);
+		shaderProgram_.setUniformValue(textureUniformY_, 0);
+		break;
+
+	case libcamera::formats::BGR888:
+	case libcamera::formats::RGB888:
+		glActiveTexture(GL_TEXTURE0);
+		configureTexture(*textures_[0]);
+		glTexImage2D(GL_TEXTURE_2D,
+			     0,
+			     GL_RGB,
+			     size_.width(),
+			     size_.height(),
+			     0,
+			     GL_RGB,
+			     GL_UNSIGNED_BYTE,
+			     data_);
+		shaderProgram_.setUniformValue(textureUniformY_, 0);
 		break;
 
 	default:

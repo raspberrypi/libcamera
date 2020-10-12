@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+	<file>RGB.frag</file>
 	<file>YUV_2_planes.frag</file>
 	<file>YUV_3_planes.frag</file>
 	<file>YUV_packed.frag</file>

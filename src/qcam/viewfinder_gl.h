@@ -8,6 +8,7 @@
 #ifndef __VIEWFINDER_GL_H__
 #define __VIEWFINDER_GL_H__
 
+#include <array>
 #include <memory>
 
 #include <QImage>
@@ -77,14 +78,14 @@ private:
 	/* Vertex buffer */
 	QOpenGLBuffer vertexBuffer_;
 
-	/* YUV texture planars and parameters */
+	/* Textures */
+	std::array<std::unique_ptr<QOpenGLTexture>, 3> textures_;
+
+	/* YUV texture parameters */
 	GLuint textureUniformU_;
 	GLuint textureUniformV_;
 	GLuint textureUniformY_;
 	GLuint textureUniformStepX_;
-	QOpenGLTexture textureU_;
-	QOpenGLTexture textureV_;
-	QOpenGLTexture textureY_;
 	unsigned int horzSubSample_;
 	unsigned int vertSubSample_;
 

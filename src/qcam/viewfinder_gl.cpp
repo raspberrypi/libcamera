@@ -33,10 +33,7 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
 	: QOpenGLWidget(parent), buffer_(nullptr), data_(nullptr),
-	  vertexBuffer_(QOpenGLBuffer::VertexBuffer),
-	  textureU_(QOpenGLTexture::Target2D),
-	  textureV_(QOpenGLTexture::Target2D),
-	  textureY_(QOpenGLTexture::Target2D)
+	  vertexBuffer_(QOpenGLBuffer::VertexBuffer)
 {
 }
 
@@ -263,14 +260,14 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
 	textureUniformStepX_ = shaderProgram_.uniformLocation("tex_stepx");
 
-	if (!textureY_.isCreated())
-		textureY_.create();
+	/* Create the textures. */
+	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
+		if (texture)
+			continue;
 
-	if (!textureU_.isCreated())
-		textureU_.create();
-
-	if (!textureV_.isCreated())
-		textureV_.create();
+		texture = std::make_unique<QOpenGLTexture>(QOpenGLTexture::Target2D);
+		texture->create();
+	}
 
 	return true;
 }
@@ -337,7 +334,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::NV42:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(textureY_);
+		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -351,7 +348,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture UV/VU */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(textureU_);
+		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RG,
@@ -367,7 +364,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::YUV420:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(textureY_);
+		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -381,7 +378,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture U */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(textureU_);
+		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -395,7 +392,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture V */
 		glActiveTexture(GL_TEXTURE2);
-		configureTexture(textureV_);
+		configureTexture(*textures_[2]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -411,7 +408,7 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::YVU420:
 		/* Activate texture Y */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(textureY_);
+		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -425,7 +422,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture V */
 		glActiveTexture(GL_TEXTURE2);
-		configureTexture(textureV_);
+		configureTexture(*textures_[2]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -439,7 +436,7 @@ void ViewFinderGL::doRender()
 
 		/* Activate texture U */
 		glActiveTexture(GL_TEXTURE1);
-		configureTexture(textureU_);
+		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RED,
@@ -462,7 +459,7 @@ void ViewFinderGL::doRender()
 		 * The texture width is thus half of the image with.
 		 */
 		glActiveTexture(GL_TEXTURE0);
-		configureTexture(textureY_);
+		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RGBA,

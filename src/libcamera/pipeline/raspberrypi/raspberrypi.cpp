@@ -1008,7 +1008,7 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 			 */
 			unsigned int i;
 			for (i = 0; i < data->dropFrameCount_; i++) {
-				int ret = stream->queueBuffer(nullptr);
+				ret = stream->queueBuffer(nullptr);
 				if (ret)
 					return ret;
 			}

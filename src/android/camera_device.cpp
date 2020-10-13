@@ -1316,7 +1316,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	 * the Android camera3_stream_t.
 	 */
 	for (CameraStream &cameraStream : streams_) {
-		int ret = cameraStream.configure();
+		ret = cameraStream.configure();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to configure camera stream";
 			return ret;

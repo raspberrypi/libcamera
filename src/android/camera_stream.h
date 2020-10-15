@@ -137,7 +137,7 @@ private:
 	 * The class has to be MoveConstructible as instances are stored in
 	 * an std::vector in CameraDevice.
 	 */
-	 std::unique_ptr<std::mutex> mutex_;
+	std::unique_ptr<std::mutex> mutex_;
 };
 
 #endif /* __ANDROID_CAMERA_STREAM__ */

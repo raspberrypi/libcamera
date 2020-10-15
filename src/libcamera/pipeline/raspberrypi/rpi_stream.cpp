@@ -163,9 +163,9 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 	 * If so, do it now as availableBuffers_ will not be empty.
 	 */
 	while (!requestBuffers_.empty()) {
-		FrameBuffer *buffer = requestBuffers_.front();
+		FrameBuffer *requestBuffer = requestBuffers_.front();
 
-		if (!buffer) {
+		if (!requestBuffer) {
 			/*
 			 * We want to queue an internal buffer, but none
 			 * are available. Can't do anything, quit the loop.
@@ -177,12 +177,12 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 			 * We want to queue an internal buffer, and at least one
 			 * is available.
 			 */
-			buffer = availableBuffers_.front();
+			requestBuffer = availableBuffers_.front();
 			availableBuffers_.pop();
 		}
 
 		requestBuffers_.pop();
-		queueToDevice(buffer);
+		queueToDevice(requestBuffer);
 	}
 }
 

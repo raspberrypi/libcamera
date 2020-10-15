@@ -33,4 +33,5 @@ android_camera_metadata_sources = files([
 
 android_camera_metadata = static_library('camera_metadata',
                                          android_camera_metadata_sources,
+                                         c_args : '-Wno-shadow',
                                          include_directories : android_includes)

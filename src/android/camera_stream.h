@@ -19,10 +19,10 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-class Encoder;
 class CameraDevice;
 class CameraMetadata;
 class MappedCamera3Buffer;
+class PostProcessor;
 
 class CameraStream
 {
@@ -130,7 +130,6 @@ private:
 	camera3_stream_t *camera3Stream_;
 	unsigned int index_;
 
-	std::unique_ptr<Encoder> encoder_;
 	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
 	std::vector<libcamera::FrameBuffer *> buffers_;
 	/*
@@ -138,6 +137,7 @@ private:
 	 * an std::vector in CameraDevice.
 	 */
 	std::unique_ptr<std::mutex> mutex_;
+	std::unique_ptr<PostProcessor> postProcessor_;
 };
 
 #endif /* __ANDROID_CAMERA_STREAM__ */

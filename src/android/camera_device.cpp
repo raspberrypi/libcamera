@@ -7,6 +7,7 @@
 
 #include "camera_device.h"
 #include "camera_ops.h"
+#include "post_processor.h"
 
 #include <sys/mman.h>
 #include <tuple>

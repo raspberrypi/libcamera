@@ -16,6 +16,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <libcamera/event_notifier.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
@@ -52,7 +54,8 @@ LOG_DEFINE_CATEGORY(V4L2)
  * at open() time, and the \a logTag to prefix log messages with.
  */
 V4L2Device::V4L2Device(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1)
+	: deviceNode_(deviceNode), fd_(-1), fdEventNotifier_(nullptr),
+	  frameStartEnabled_(false)
 {
 }
 
@@ -87,7 +90,7 @@ int V4L2Device::open(unsigned int flags)
 		return ret;
 	}
 
-	fd_ = ret;
+	setFd(ret);
 
 	listControls();
 
@@ -117,6 +120,10 @@ int V4L2Device::setFd(int fd)
 
 	fd_ = fd;
 
+	fdEventNotifier_ = new EventNotifier(fd_, EventNotifier::Exception);
+	fdEventNotifier_->activated.connect(this, &V4L2Device::eventAvailable);
+	fdEventNotifier_->setEnabled(false);
+
 	return 0;
 }
 
@@ -129,6 +136,8 @@ void V4L2Device::close()
 {
 	if (!isOpen())
 		return;
+
+	delete fdEventNotifier_;
 
 	if (::close(fd_) < 0)
 		LOG(V4L2, Error) << "Failed to close V4L2 device: "
@@ -396,6 +405,40 @@ std::string V4L2Device::devicePath() const
 }
 
 /**
+ * \brief Enable or disable frame start event notification
+ * \param[in] enable True to enable frame start events, false to disable them
+ *
+ * This function enables or disables generation of frame start events. Once
+ * enabled, the events are signalled through the frameStart signal.
+ *
+ * \return 0 on success, a negative error code otherwise
+ */
+int V4L2Device::setFrameStartEnabled(bool enable)
+{
+	if (frameStartEnabled_ == enable)
+		return 0;
+
+	struct v4l2_event_subscription event{};
+	event.type = V4L2_EVENT_FRAME_SYNC;
+
+	unsigned long request = enable ? VIDIOC_SUBSCRIBE_EVENT
+			      : VIDIOC_UNSUBSCRIBE_EVENT;
+	int ret = ioctl(request, &event);
+	if (enable && ret)
+		return ret;
+
+	fdEventNotifier_->setEnabled(enable);
+	frameStartEnabled_ = enable;
+
+	return ret;
+}
+
+/**
+ * \var V4L2Device::frameStart
+ * \brief A Signal emitted when capture of a frame has started
+ */
+
+/**
  * \brief Perform an IOCTL system call on the device node
  * \param[in] request The IOCTL request code
  * \param[in] argp A pointer to the IOCTL argument
@@ -516,6 +559,35 @@ void V4L2Device::updateControls(ControlList *ctrls,
 
 		i++;
 	}
+}
+
+/**
+ * \brief Slot to handle V4L2 events from the V4L2 device
+ * \param[in] notifier The event notifier
+ *
+ * When this slot is called, a V4L2 event is available to be dequeued from the
+ * device.
+ */
+void V4L2Device::eventAvailable([[maybe_unused]] EventNotifier *notifier)
+{
+	struct v4l2_event event{};
+	int ret = ioctl(VIDIOC_DQEVENT, &event);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to dequeue event, disabling event notifier";
+		fdEventNotifier_->setEnabled(false);
+		return;
+	}
+
+	if (event.type != V4L2_EVENT_FRAME_SYNC) {
+		LOG(V4L2, Error)
+			<< "Spurious event (" << event.type
+			<< "), disabling event notifier";
+		fdEventNotifier_->setEnabled(false);
+		return;
+	}
+
+	frameStart.emit(event.u.frame_sync.frame_sequence);
 }
 
 } /* namespace libcamera */

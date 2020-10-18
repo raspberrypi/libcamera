@@ -207,9 +207,6 @@ public:
 	int queueBuffer(FrameBuffer *buffer);
 	Signal<FrameBuffer *> bufferReady;
 
-	int setFrameStartEnabled(bool enable);
-	Signal<uint32_t> frameStart;
-
 	int streamOn();
 	int streamOff();
 
@@ -243,8 +240,6 @@ private:
 	void bufferAvailable(EventNotifier *notifier);
 	FrameBuffer *dequeueBuffer();
 
-	void eventAvailable(EventNotifier *notifier);
-
 	V4L2Capability caps_;
 
 	enum v4l2_buf_type bufferType_;
@@ -254,9 +249,6 @@ private:
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
 
 	EventNotifier *fdBufferNotifier_;
-	EventNotifier *fdEventNotifier_;
-
-	bool frameStartEnabled_;
 };
 
 class V4L2M2MDevice

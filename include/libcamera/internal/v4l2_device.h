@@ -13,10 +13,14 @@
 
 #include <linux/videodev2.h>
 
+#include <libcamera/signal.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/v4l2_controls.h"
 
 namespace libcamera {
+
+class EventNotifier;
 
 class V4L2Device : protected Loggable
 {
@@ -33,6 +37,9 @@ public:
 
 	const std::string &deviceNode() const { return deviceNode_; }
 	std::string devicePath() const;
+
+	int setFrameStartEnabled(bool enable);
+	Signal<uint32_t> frameStart;
 
 protected:
 	V4L2Device(const std::string &deviceNode);
@@ -51,11 +58,16 @@ private:
 			    const struct v4l2_ext_control *v4l2Ctrls,
 			    unsigned int count);
 
+	void eventAvailable(EventNotifier *notifier);
+
 	std::map<unsigned int, struct v4l2_query_ext_ctrl> controlInfo_;
 	std::vector<std::unique_ptr<V4L2ControlId>> controlIds_;
 	ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;
+
+	EventNotifier *fdEventNotifier_;
+	bool frameStartEnabled_;
 };
 
 } /* namespace libcamera */

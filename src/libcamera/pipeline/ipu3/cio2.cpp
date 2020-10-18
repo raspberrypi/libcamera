@@ -238,15 +238,27 @@ int CIO2Device::start()
 		availableBuffers_.push(buffer.get());
 
 	ret = output_->streamOn();
-	if (ret)
+	if (ret) {
 		freeBuffers();
+		return ret;
+	}
 
-	return ret;
+	ret = csi2_->setFrameStartEnabled(true);
+	if (ret) {
+		stop();
+		return ret;
+	}
+
+	return 0;
 }
 
 int CIO2Device::stop()
 {
-	int ret = output_->streamOff();
+	int ret;
+
+	csi2_->setFrameStartEnabled(false);
+
+	ret = output_->streamOff();
 
 	freeBuffers();
 

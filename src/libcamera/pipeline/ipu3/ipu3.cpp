@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -39,6 +40,10 @@ static constexpr unsigned int IMGU_OUTPUT_WIDTH_ALIGN = 64;
 static constexpr unsigned int IMGU_OUTPUT_HEIGHT_ALIGN = 4;
 static constexpr unsigned int IMGU_OUTPUT_WIDTH_MARGIN = 64;
 static constexpr unsigned int IMGU_OUTPUT_HEIGHT_MARGIN = 32;
+
+static const ControlInfoMap IPU3Controls = {
+	{ &controls::draft::PipelineDepth, ControlInfo(2, 3) },
+};
 
 class IPU3CameraData : public CameraData
 {
@@ -771,6 +776,9 @@ int PipelineHandlerIPU3::registerCameras()
 		/* Initialize the camera properties. */
 		data->properties_ = cio2->sensor()->properties();
 
+		/* Initialze the camera controls. */
+		data->controlInfo_ = IPU3Controls;
+
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each
 		 * stream and camera; as of now, limit support to two cameras
@@ -833,6 +841,7 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 		return;
 
 	/* Mark the request as complete. */
+	request->metadata().set(controls::draft::PipelineDepth, 3);
 	pipe_->completeRequest(camera_, request);
 }
 
@@ -858,6 +867,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (request->findBuffer(&rawStream_)) {
 		bool isComplete = pipe_->completeBuffer(camera_, request, buffer);
 		if (isComplete) {
+			request->metadata().set(controls::draft::PipelineDepth, 2);
 			pipe_->completeRequest(camera_, request);
 			return;
 		}

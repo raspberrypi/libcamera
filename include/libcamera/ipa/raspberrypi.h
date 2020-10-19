@@ -10,6 +10,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
+#ifndef __DOXYGEN__
+
 namespace libcamera {
 
 namespace RPi {
@@ -65,5 +67,7 @@ static const ControlInfoMap Controls = {
 } /* namespace RPi */
 
 } /* namespace libcamera */
+
+#endif /* __DOXYGEN__ */
 
 #endif /* __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__ */

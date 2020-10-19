@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_vimc.h - Vimc Image Processing Algorithm module
+ * vimc.h - Vimc Image Processing Algorithm module
  */
 
 #ifndef __LIBCAMERA_IPA_VIMC_H__

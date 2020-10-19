@@ -5,7 +5,7 @@
  * ipa_vimc.cpp - Vimc Image Processing Algorithm module
  */
 
-#include <libcamera/ipa/ipa_vimc.h>
+#include <libcamera/ipa/vimc.h>
 
 #include <fcntl.h>
 #include <string.h>

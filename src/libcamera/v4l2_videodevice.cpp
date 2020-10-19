@@ -32,6 +32,7 @@
  * \file v4l2_videodevice.h
  * \brief V4L2 Video Device
  */
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(V4L2)

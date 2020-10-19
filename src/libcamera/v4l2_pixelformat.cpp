@@ -22,6 +22,7 @@
  * \file v4l2_pixelformat.h
  * \brief V4L2 Pixel Format
  */
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(V4L2)

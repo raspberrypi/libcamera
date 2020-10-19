@@ -12,14 +12,14 @@
 
 #include "libcamera/internal/log.h"
 
-namespace libcamera {
-
-LOG_DEFINE_CATEGORY(Serialization)
-
 /**
  * \file byte_stream_buffer.h
  * \brief Managed memory container for serialized data
  */
+
+namespace libcamera {
+
+LOG_DEFINE_CATEGORY(Serialization)
 
 /**
  * \class ByteStreamBuffer

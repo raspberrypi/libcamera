@@ -81,6 +81,9 @@ for gstreamer: [optional]
 for qcam: [optional]
 	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev
 
+for tracing with lttng: [optional]
+        lttng-ust-dev python3-jinja2
+
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 

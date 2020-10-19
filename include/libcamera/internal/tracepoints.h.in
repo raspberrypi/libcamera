@@ -1,0 +1,61 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) {{year}}, Google Inc.
+ *
+ * tracepoints.h - Tracepoints with lttng
+ *
+ * This file is auto-generated. Do not edit.
+ */
+#ifndef __LIBCAMERA_INTERNAL_TRACEPOINTS_H__
+#define __LIBCAMERA_INTERNAL_TRACEPOINTS_H__
+
+#if HAVE_TRACING
+#define LIBCAMERA_TRACEPOINT(...) tracepoint(libcamera, __VA_ARGS__)
+
+#define LIBCAMERA_TRACEPOINT_IPA_BEGIN(pipe, func) \
+tracepoint(libcamera, ipa_call_begin, #pipe, #func)
+
+#define LIBCAMERA_TRACEPOINT_IPA_END(pipe, func) \
+tracepoint(libcamera, ipa_call_end, #pipe, #func)
+
+#else
+
+namespace {
+
+template <typename ...Args>
+inline void unused([[maybe_unused]] Args&& ...args)
+{
+}
+
+} /* namespace */
+
+#define LIBCAMERA_TRACEPOINT(category, ...) unused(__VA_ARGS__)
+
+#define LIBCAMERA_TRACEPOINT_IPA_BEGIN(pipe, func)
+#define LIBCAMERA_TRACEPOINT_IPA_END(pipe, func)
+
+#endif /* HAVE_TRACING */
+
+#endif /* __LIBCAMERA_INTERNAL_TRACEPOINTS_H__ */
+
+
+#if HAVE_TRACING
+
+#undef TRACEPOINT_PROVIDER
+#define TRACEPOINT_PROVIDER libcamera
+
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "{{path}}"
+
+#if !defined(INCLUDE_LIBCAMERA_INTERNAL_TRACEPOINTS_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define INCLUDE_LIBCAMERA_INTERNAL_TRACEPOINTS_TP_H
+
+#include <lttng/tracepoint.h>
+
+{{source}}
+
+#endif /* INCLUDE_LIBCAMERA_INTERNAL_TRACEPOINTS_TP_H */
+
+#include <lttng/tracepoint-event.h>
+
+#endif /* HAVE_TRACING */

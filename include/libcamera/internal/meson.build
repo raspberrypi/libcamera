@@ -1,5 +1,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('tracepoints')
+
+libcamera_tracepoint_header = custom_target(
+    'tp_header',
+    input: [ 'tracepoints.h.in', tracepoint_files ],
+    output: 'tracepoints.h',
+    command: [ gen_tracepoints_header, '@OUTPUT@', '@INPUT@' ],
+)
+
 libcamera_internal_headers = files([
     'byte_stream_buffer.h',
     'camera_controls.h',

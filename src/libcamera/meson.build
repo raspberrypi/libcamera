@@ -55,6 +55,7 @@ libcamera_sources = files([
 ])
 
 libcamera_sources += libcamera_public_headers
+libcamera_sources += libcamera_tracepoint_header
 
 includes = [
     libcamera_includes,
@@ -70,6 +71,11 @@ libudev = dependency('libudev', required : false)
 
 if libgnutls.found()
     config_h.set('HAVE_GNUTLS', 1)
+endif
+
+if liblttng.found()
+    config_h.set('HAVE_TRACING', 1)
+    libcamera_sources += files(['tracepoints.cpp'])
 endif
 
 if libudev.found()
@@ -114,6 +120,7 @@ libcamera_deps = [
     libatomic,
     libdl,
     libgnutls,
+    liblttng,
     libudev,
     dependency('threads'),
 ]

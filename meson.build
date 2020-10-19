@@ -108,6 +108,9 @@ libcamera_includes = include_directories('include')
 # Sub-directories fill py_modules with their dependencies.
 py_modules = []
 
+# Libraries used by multiple components
+liblttng = cc.find_library('lttng-ust', required : get_option('tracing'))
+
 # Utilities are parsed first to provide support for other components.
 subdir('utils')
 

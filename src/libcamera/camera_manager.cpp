@@ -27,6 +27,9 @@
  * \brief The camera manager
  */
 
+/**
+ * \brief Top-level libcamera namespace
+ */
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)

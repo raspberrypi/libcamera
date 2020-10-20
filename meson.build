@@ -64,6 +64,10 @@ if cc.get_id() == 'clang'
             '-stdlib=libc++',
         ]
     endif
+
+    cpp_arguments += [
+        '-Wextra-semi',
+    ]
 endif
 
 if cc.get_id() == 'gcc'

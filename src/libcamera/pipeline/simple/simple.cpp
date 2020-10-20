@@ -821,6 +821,8 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	}
 
 	/* Initialize each pipeline and register a corresponding camera. */
+	bool registered = false;
+
 	for (std::unique_ptr<SimpleCameraData> &data : pipelines) {
 		int ret = data->init();
 		if (ret < 0)
@@ -830,9 +832,10 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			Camera::create(this, data->sensor_->id(),
 				       data->streams());
 		registerCamera(std::move(camera), std::move(data));
+		registered = true;
 	}
 
-	return true;
+	return registered;
 }
 
 V4L2VideoDevice *SimplePipelineHandler::video(const MediaEntity *entity)

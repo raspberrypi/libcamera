@@ -1107,10 +1107,13 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (!pad)
 		return false;
 
-	for (MediaLink *link : pad->links())
-		createCamera(link->source()->entity());
+	bool registered = false;
+	for (MediaLink *link : pad->links()) {
+		if (!createCamera(link->source()->entity()))
+			registered = true;
+	}
 
-	return true;
+	return registered;
 }
 
 /* -----------------------------------------------------------------------------

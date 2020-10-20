@@ -30,4 +30,4 @@ class MediaDeviceAcquire : public MediaDeviceTest
 	}
 };
 
-TEST_REGISTER(MediaDeviceAcquire);
+TEST_REGISTER(MediaDeviceAcquire)

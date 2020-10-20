@@ -127,4 +127,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(V4L2ControlTest);
+TEST_REGISTER(V4L2ControlTest)

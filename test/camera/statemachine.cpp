@@ -211,4 +211,4 @@ protected:
 
 } /* namespace */
 
-TEST_REGISTER(Statemachine);
+TEST_REGISTER(Statemachine)

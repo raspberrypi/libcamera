@@ -200,4 +200,4 @@ private:
 	unsigned int framesOutput_;
 };
 
-TEST_REGISTER(BufferSharingTest);
+TEST_REGISTER(BufferSharingTest)

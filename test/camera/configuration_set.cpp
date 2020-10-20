@@ -102,4 +102,4 @@ protected:
 
 } /* namespace */
 
-TEST_REGISTER(ConfigurationSet);
+TEST_REGISTER(ConfigurationSet)

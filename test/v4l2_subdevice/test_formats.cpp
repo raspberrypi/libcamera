@@ -75,4 +75,4 @@ int FormatHandlingTest::run()
 	return TestPass;
 }
 
-TEST_REGISTER(FormatHandlingTest);
+TEST_REGISTER(FormatHandlingTest)

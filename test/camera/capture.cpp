@@ -168,4 +168,4 @@ protected:
 
 } /* namespace */
 
-TEST_REGISTER(Capture);
+TEST_REGISTER(Capture)

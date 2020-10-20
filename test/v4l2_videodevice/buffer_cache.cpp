@@ -213,4 +213,4 @@ private:
 
 } /* namespace */
 
-TEST_REGISTER(BufferCacheTest);
+TEST_REGISTER(BufferCacheTest)

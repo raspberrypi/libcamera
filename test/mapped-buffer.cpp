@@ -113,4 +113,4 @@ private:
 
 } /* namespace */
 
-TEST_REGISTER(MappedBufferTest);
+TEST_REGISTER(MappedBufferTest)

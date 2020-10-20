@@ -74,4 +74,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(Format);
+TEST_REGISTER(Format)

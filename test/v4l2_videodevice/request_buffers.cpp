@@ -26,4 +26,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(RequestBuffersTest);
+TEST_REGISTER(RequestBuffersTest)

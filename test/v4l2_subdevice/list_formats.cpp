@@ -79,4 +79,4 @@ int ListFormatsTest::run()
 	return TestPass;
 }
 
-TEST_REGISTER(ListFormatsTest);
+TEST_REGISTER(ListFormatsTest)

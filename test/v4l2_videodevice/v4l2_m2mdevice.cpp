@@ -187,7 +187,7 @@ protected:
 	void cleanup()
 	{
 		delete vim2m_;
-	};
+	}
 
 private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
@@ -201,4 +201,4 @@ private:
 	unsigned int captureFrames_;
 };
 
-TEST_REGISTER(V4L2M2MDeviceTest);
+TEST_REGISTER(V4L2M2MDeviceTest)

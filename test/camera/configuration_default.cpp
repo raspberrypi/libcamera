@@ -56,4 +56,4 @@ protected:
 
 } /* namespace */
 
-TEST_REGISTER(ConfigurationDefault);
+TEST_REGISTER(ConfigurationDefault)

@@ -151,4 +151,4 @@ int MediaDevicePrintTest::run()
 	return ret;
 }
 
-TEST_REGISTER(MediaDevicePrintTest);
+TEST_REGISTER(MediaDevicePrintTest)

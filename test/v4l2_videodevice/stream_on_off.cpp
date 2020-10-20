@@ -33,4 +33,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(StreamOnStreamOffTest);
+TEST_REGISTER(StreamOnStreamOffTest)

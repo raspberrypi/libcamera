@@ -219,4 +219,4 @@ class MediaDeviceLinkTest : public MediaDeviceTest
 	}
 };
 
-TEST_REGISTER(MediaDeviceLinkTest);
+TEST_REGISTER(MediaDeviceLinkTest)

@@ -168,4 +168,4 @@ private:
 
 } /* namespace */
 
-TEST_REGISTER(BufferImportTest);
+TEST_REGISTER(BufferImportTest)

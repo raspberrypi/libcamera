@@ -88,4 +88,4 @@ private:
 	unsigned int frames;
 };
 
-TEST_REGISTER(CaptureAsyncTest);
+TEST_REGISTER(CaptureAsyncTest)

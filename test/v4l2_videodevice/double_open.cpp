@@ -38,4 +38,4 @@ protected:
 
 } /* namespace */
 
-TEST_REGISTER(DoubleOpen);
+TEST_REGISTER(DoubleOpen)

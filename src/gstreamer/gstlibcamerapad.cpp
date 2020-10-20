@@ -27,7 +27,7 @@ enum {
 	PROP_STREAM_ROLE
 };
 
-G_DEFINE_TYPE(GstLibcameraPad, gst_libcamera_pad, GST_TYPE_PAD);
+G_DEFINE_TYPE(GstLibcameraPad, gst_libcamera_pad, GST_TYPE_PAD)
 
 static void
 gst_libcamera_pad_set_property(GObject *object, guint prop_id,

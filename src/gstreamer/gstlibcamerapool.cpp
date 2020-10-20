@@ -29,7 +29,7 @@ struct _GstLibcameraPool {
 	Stream *stream;
 };
 
-G_DEFINE_TYPE(GstLibcameraPool, gst_libcamera_pool, GST_TYPE_BUFFER_POOL);
+G_DEFINE_TYPE(GstLibcameraPool, gst_libcamera_pool, GST_TYPE_BUFFER_POOL)
 
 static GstFlowReturn
 gst_libcamera_pool_acquire_buffer(GstBufferPool *pool, GstBuffer **buffer,

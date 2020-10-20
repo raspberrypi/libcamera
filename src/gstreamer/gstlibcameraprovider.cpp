@@ -35,14 +35,14 @@ enum {
 
 #define GST_TYPE_LIBCAMERA_DEVICE gst_libcamera_device_get_type()
 G_DECLARE_FINAL_TYPE(GstLibcameraDevice, gst_libcamera_device,
-		     GST_LIBCAMERA, DEVICE, GstDevice);
+		     GST_LIBCAMERA, DEVICE, GstDevice)
 
 struct _GstLibcameraDevice {
 	GstDevice parent;
 	gchar *name;
 };
 
-G_DEFINE_TYPE(GstLibcameraDevice, gst_libcamera_device, GST_TYPE_DEVICE);
+G_DEFINE_TYPE(GstLibcameraDevice, gst_libcamera_device, GST_TYPE_DEVICE)
 
 static GstElement *
 gst_libcamera_device_create_element(GstDevice *device, const gchar *name)
@@ -164,7 +164,7 @@ struct _GstLibcameraProvider {
 G_DEFINE_TYPE_WITH_CODE(GstLibcameraProvider, gst_libcamera_provider,
 			GST_TYPE_DEVICE_PROVIDER,
 			GST_DEBUG_CATEGORY_INIT(provider_debug, "libcamera-provider", 0,
-						"libcamera Device Provider"));
+						"libcamera Device Provider"))
 
 static GList *
 gst_libcamera_provider_probe(GstDeviceProvider *provider)

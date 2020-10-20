@@ -101,7 +101,7 @@ struct _GstLibcameraAllocator {
 };
 
 G_DEFINE_TYPE(GstLibcameraAllocator, gst_libcamera_allocator,
-	      GST_TYPE_DMABUF_ALLOCATOR);
+	      GST_TYPE_DMABUF_ALLOCATOR)
 
 static gboolean
 gst_libcamera_allocator_release(GstMiniObject *mini_object)

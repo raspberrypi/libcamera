@@ -140,7 +140,7 @@ enum {
 
 G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
 			GST_DEBUG_CATEGORY_INIT(source_debug, "libcamerasrc", 0,
-						"libcamera Source"));
+						"libcamera Source"))
 
 #define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg")
 

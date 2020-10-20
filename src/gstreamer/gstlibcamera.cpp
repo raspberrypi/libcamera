@@ -24,4 +24,4 @@ plugin_init(GstPlugin *plugin)
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR,
 		  libcamera, "libcamera capture plugin",
-		  plugin_init, VERSION, "LGPL", PACKAGE, "https://libcamera.org");
+		  plugin_init, VERSION, "LGPL", PACKAGE, "https://libcamera.org")

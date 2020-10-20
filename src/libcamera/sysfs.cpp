@@ -22,7 +22,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(SysFs);
+LOG_DEFINE_CATEGORY(SysFs)
 
 namespace sysfs {
 

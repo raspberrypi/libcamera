@@ -66,7 +66,7 @@ public:
 
 	Status validate() override;
 
-	const StreamConfiguration &cio2Format() const { return cio2Configuration_; };
+	const StreamConfiguration &cio2Format() const { return cio2Configuration_; }
 	const ImgUDevice::PipeConfig imguConfig() const { return pipeConfig_; }
 
 private:
@@ -866,6 +866,6 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	imgu_->input_->queueBuffer(buffer);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3);
+REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)
 
 } /* namespace libcamera */

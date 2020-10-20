@@ -14,7 +14,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(Serialization);
+LOG_DEFINE_CATEGORY(Serialization)
 
 /**
  * \file byte_stream_buffer.h

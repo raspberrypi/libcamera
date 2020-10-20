@@ -28,7 +28,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(CameraSensor);
+LOG_DEFINE_CATEGORY(CameraSensor)
 
 /**
  * \struct CameraSensorInfo

@@ -23,7 +23,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(File);
+LOG_DEFINE_CATEGORY(File)
 
 /**
  * \class File

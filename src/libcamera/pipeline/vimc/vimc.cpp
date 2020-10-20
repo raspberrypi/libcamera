@@ -533,6 +533,6 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 	pipe_->completeRequest(camera_, request);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc);
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc)
 
 } /* namespace libcamera */

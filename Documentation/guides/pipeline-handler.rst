@@ -258,7 +258,7 @@ methods for the overridden class members.
           return false;
    }
 
-   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid);
+   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid)
 
    } /* namespace libcamera */
 

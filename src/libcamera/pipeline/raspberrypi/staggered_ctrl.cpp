@@ -17,7 +17,7 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(RPI_S_W);
+LOG_DEFINE_CATEGORY(RPI_S_W)
 
 namespace RPi {
 

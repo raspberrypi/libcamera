@@ -1184,6 +1184,6 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	data->ipa_->processEvent(op);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1);
+REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)
 
 } /* namespace libcamera */

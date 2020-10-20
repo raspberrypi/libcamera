@@ -21,7 +21,7 @@
 
 namespace libcamera {
 
-LOG_DECLARE_CATEGORY(SimplePipeline);
+LOG_DECLARE_CATEGORY(SimplePipeline)
 
 SimpleConverter::SimpleConverter(MediaDevice *media)
 	: m2m_(nullptr)

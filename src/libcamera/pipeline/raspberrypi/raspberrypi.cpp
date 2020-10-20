@@ -1675,6 +1675,6 @@ FrameBuffer *RPiCameraData::updateQueue(std::queue<FrameBuffer *> &q, uint64_t t
 	return nullptr;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerRPi);
+REGISTER_PIPELINE_HANDLER(PipelineHandlerRPi)
 
 } /* namespace libcamera */

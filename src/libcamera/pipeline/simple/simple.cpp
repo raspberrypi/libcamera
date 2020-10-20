@@ -942,6 +942,6 @@ void SimplePipelineHandler::converterDone(FrameBuffer *input,
 	data->video_->queueBuffer(input);
 }
 
-REGISTER_PIPELINE_HANDLER(SimplePipelineHandler);
+REGISTER_PIPELINE_HANDLER(SimplePipelineHandler)
 
 } /* namespace libcamera */

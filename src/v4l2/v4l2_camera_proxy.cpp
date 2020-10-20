@@ -32,7 +32,7 @@
 
 using namespace libcamera;
 
-LOG_DECLARE_CATEGORY(V4L2Compat);
+LOG_DECLARE_CATEGORY(V4L2Compat)
 
 V4L2CameraProxy::V4L2CameraProxy(unsigned int index,
 				 std::shared_ptr<Camera> camera)

@@ -14,7 +14,7 @@
 
 using namespace libcamera;
 
-LOG_DECLARE_CATEGORY(V4L2Compat);
+LOG_DECLARE_CATEGORY(V4L2Compat)
 
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
 	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr),

@@ -407,6 +407,6 @@ private:
 	size_type size_;
 };
 
-}; /* namespace libcamera */
+} /* namespace libcamera */
 
 #endif /* __LIBCAMERA_SPAN_H__ */

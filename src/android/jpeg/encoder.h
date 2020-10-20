@@ -14,7 +14,7 @@
 class Encoder
 {
 public:
-	virtual ~Encoder() {};
+	virtual ~Encoder() {}
 
 	virtual int configure(const libcamera::StreamConfiguration &cfg) = 0;
 	virtual int encode(const libcamera::FrameBuffer *source,

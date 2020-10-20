@@ -11,7 +11,7 @@
 
 using namespace libcamera;
 
-LOG_DEFINE_CATEGORY(CameraMetadata);
+LOG_DEFINE_CATEGORY(CameraMetadata)
 
 CameraMetadata::CameraMetadata(size_t entryCapacity, size_t dataCapacity)
 {

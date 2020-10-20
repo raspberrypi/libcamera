@@ -25,7 +25,7 @@
 
 using namespace libcamera;
 
-LOG_DECLARE_CATEGORY(JPEG);
+LOG_DECLARE_CATEGORY(JPEG)
 
 namespace {
 

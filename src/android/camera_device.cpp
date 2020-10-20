@@ -129,7 +129,7 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 
 } /* namespace */
 
-LOG_DECLARE_CATEGORY(HAL);
+LOG_DECLARE_CATEGORY(HAL)
 
 MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 					 int flags)

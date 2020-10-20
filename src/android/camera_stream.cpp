@@ -15,7 +15,7 @@
 
 using namespace libcamera;
 
-LOG_DECLARE_CATEGORY(HAL);
+LOG_DECLARE_CATEGORY(HAL)
 
 /*
  * \class CameraStream

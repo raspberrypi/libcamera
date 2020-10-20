@@ -481,6 +481,38 @@ class DoxygenFormatter(Formatter):
         return '\n'.join(lines)
 
 
+class DPointerFormatter(Formatter):
+    # Ensure consistent naming of variables related to the d-pointer design
+    # pattern.
+    patterns = ('*.cpp', '*.h')
+
+    # The clang formatter runs first, we can thus rely on appropriate coding
+    # style.
+    declare_regex = re.compile(r'^(\t*)(const )?([a-zA-Z0-9_]+) \*( ?const )?([a-zA-Z0-9_]+) = (LIBCAMERA_[DO]_PTR)\(([a-zA-Z0-9_]+)\);$')
+
+    @classmethod
+    def format(cls, filename, data):
+        lines = []
+
+        for line in data.split('\n'):
+            match = cls.declare_regex.match(line)
+            if match:
+                indent = match.group(1) or ''
+                const = match.group(2) or ''
+                macro = match.group(6)
+                klass = match.group(7)
+                if macro == 'LIBCAMERA_D_PTR':
+                    var = 'Private *const d'
+                else:
+                    var = f'{klass} *const o'
+
+                line = f'{indent}{const}{var} = {macro}({klass});'
+
+            lines.append(line)
+
+        return '\n'.join(lines)
+
+
 class IncludeOrderFormatter(Formatter):
     patterns = ('*.cpp', '*.h')
 

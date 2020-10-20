@@ -48,9 +48,6 @@ controls:
         - name: MeteringCustom
           value: 3
           description: Custom metering mode.
-        - name: MeteringModeMax
-          value: 3
-          description: Maximum allowed value (place any new values above here).
 
   # AeConstraintMode needs further attention:
   # - Auto-generate max enum value.
@@ -85,9 +82,6 @@ controls:
         - name: ConstraintCustom
           value: 3
           description: Custom constraint mode.
-        - name: ConstraintModeMax
-          value: 3
-          description: Maximum allowed value (place any new values above here).
 
   # AeExposureMode needs further attention:
   # - Auto-generate max enum value.
@@ -112,9 +106,6 @@ controls:
         - name: ExposureCustom
           value: 3
           description: Custom exposure mode.
-        - name: ExposureModeMax
-          value: 3
-          description: Maximum allowed value (place any new values above here).
 
   - ExposureValue:
       type: float
@@ -204,9 +195,6 @@ controls:
         - name: AwbCustom
           value: 7
           description: Custom AWB mode.
-        - name: AwbModeMax
-          value: 7
-          description: Maximum allowed value (place any new values above here).
 
   - AwbLocked:
       type: bool

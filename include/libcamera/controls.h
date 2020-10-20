@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <libcamera/geometry.h>
 #include <libcamera/span.h>
@@ -269,10 +270,13 @@ public:
 	explicit ControlInfo(const ControlValue &min = 0,
 			     const ControlValue &max = 0,
 			     const ControlValue &def = 0);
+	explicit ControlInfo(Span<const ControlValue> values,
+			     const ControlValue &def = {});
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }
 	const ControlValue &def() const { return def_; }
+	const std::vector<ControlValue> &values() const { return values_; }
 
 	std::string toString() const;
 
@@ -290,6 +294,7 @@ private:
 	ControlValue min_;
 	ControlValue max_;
 	ControlValue def_;
+	std::vector<ControlValue> values_;
 };
 
 using ControlIdMap = std::unordered_map<unsigned int, const ControlId *>;

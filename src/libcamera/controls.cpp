@@ -492,6 +492,28 @@ ControlInfo::ControlInfo(const ControlValue &min,
 }
 
 /**
+ * \brief Construct a ControlInfo from the list of valid values
+ * \param[in] values The control valid values
+ * \param[in] def The control default value
+ *
+ * Construct a ControlInfo from a list of valid values. The ControlInfo
+ * minimum and maximum values are set to the first and last members of the
+ * values list respectively. The default value is set to \a def if provided, or
+ * to the minimum value otherwise.
+ */
+ControlInfo::ControlInfo(Span<const ControlValue> values,
+			 const ControlValue &def)
+{
+	min_ = values.front();
+	max_ = values.back();
+	def_ = !def.isNone() ? def : values.front();
+
+	values_.reserve(values.size());
+	for (const ControlValue &value : values)
+		values_.push_back(value);
+}
+
+/**
  * \fn ControlInfo::min()
  * \brief Retrieve the minimum value of the control
  *
@@ -517,6 +539,17 @@ ControlInfo::ControlInfo(const ControlValue &min,
  * \fn ControlInfo::def()
  * \brief Retrieve the default value of the control
  * \return A ControlValue with the default value for the control
+ */
+
+/**
+ * \fn ControlInfo::values()
+ * \brief Retrieve the list of valid values
+ *
+ * For controls that support a pre-defined number of values, the enumeration of
+ * those is reported through a vector of ControlValue instances accessible with
+ * this method.
+ *
+ * \return A vector of ControlValue representing the control valid values
  */
 
 /**

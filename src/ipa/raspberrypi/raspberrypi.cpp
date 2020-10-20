@@ -1150,6 +1150,6 @@ struct ipa_context *ipaCreate()
 	return new IPAInterfaceWrapper(std::make_unique<IPARPi>());
 }
 
-}; /* extern "C" */
+} /* extern "C" */
 
 } /* namespace libcamera */

@@ -33,6 +33,12 @@ ${description}''')
 ${description}
  */''')
     def_template = string.Template('extern const Control<${type}> ${name}(${id_name}, "${name}");')
+    enum_values_doc = string.Template('''/**
+ * \\var ${name}Values
+ * \\brief List of all $name supported values
+ */''')
+    enum_values_start = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values = {''')
+    enum_values_values = string.Template('''\tstatic_cast<int32_t>(${name}),''')
 
     ctrls_doc = []
     ctrls_def = []
@@ -68,6 +74,7 @@ ${description}
             enum_doc = []
             enum_doc.append(enum_doc_start_template.substitute(info))
 
+            num_entries = 0
             for entry in enum:
                 value_info = {
                     'name' : name,
@@ -75,10 +82,24 @@ ${description}
                     'description': format_description(entry['description']),
                 }
                 enum_doc.append(enum_doc_value_template.substitute(value_info))
+                num_entries += 1
 
             enum_doc = '\n *\n'.join(enum_doc)
             enum_doc += '\n */'
             target_doc.append(enum_doc)
+
+            values_info = {
+                'name': info['name'],
+                'size': num_entries,
+            }
+            target_doc.append(enum_values_doc.substitute(values_info))
+            target_def.append(enum_values_start.substitute(values_info))
+            for entry in enum:
+                value_info = {
+                    'name': entry['name']
+                }
+                target_def.append(enum_values_values.substitute(value_info))
+            target_def.append("};")
 
         target_doc.append(doc_template.substitute(info))
         target_def.append(def_template.substitute(info))
@@ -100,6 +121,7 @@ ${description}
 def generate_h(controls):
     enum_template_start = string.Template('''enum ${name}Enum {''')
     enum_value_template = string.Template('''\t${name} = ${value},''')
+    enum_values_template = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values;''')
     template = string.Template('''extern const Control<${type}> ${name};''')
 
     ctrls = []
@@ -132,13 +154,21 @@ def generate_h(controls):
         if enum:
             target_ctrls.append(enum_template_start.substitute(info))
 
+            num_entries = 0
             for entry in enum:
                 value_info = {
                     'name': entry['name'],
                     'value': entry['value'],
                 }
                 target_ctrls.append(enum_value_template.substitute(value_info))
+                num_entries += 1
             target_ctrls.append("};")
+
+            values_info = {
+                'name': info['name'],
+                'size': num_entries,
+            }
+            target_ctrls.append(enum_values_template.substitute(values_info))
 
         target_ctrls.append(template.substitute(info))
         id_value += 1

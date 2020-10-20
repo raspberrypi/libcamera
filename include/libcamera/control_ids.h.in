@@ -10,6 +10,7 @@
 #ifndef __LIBCAMERA_CONTROL_IDS_H__
 #define __LIBCAMERA_CONTROL_IDS_H__
 
+#include <array>
 #include <stdint.h>
 
 #include <libcamera/controls.h>

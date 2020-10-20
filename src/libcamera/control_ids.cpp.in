@@ -8,6 +8,7 @@
  */
 
 #include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
 
 /**
  * \file control_ids.h

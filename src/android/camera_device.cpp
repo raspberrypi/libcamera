@@ -1488,9 +1488,8 @@ void CameraDevice::requestComplete(Request *request)
 	 * It might be appropriate to return a 'correct' (as determined by
 	 * pipeline handlers) timestamp in the Request itself.
 	 */
-	FrameBuffer *buffer = buffers.begin()->second;
-	resultMetadata = getResultMetadata(descriptor->frameNumber_,
-					   buffer->metadata().timestamp);
+	uint64_t timestamp = buffers.at(0)->metadata().timestamp;
+	resultMetadata = getResultMetadata(descriptor->frameNumber_, timestamp);
 
 	/* Handle any JPEG compression. */
 	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
@@ -1547,8 +1546,7 @@ void CameraDevice::requestComplete(Request *request)
 
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
-		notifyShutter(descriptor->frameNumber_,
-			      buffer->metadata().timestamp);
+		notifyShutter(descriptor->frameNumber_, timestamp);
 
 		captureResult.partial_result = 1;
 		captureResult.result = resultMetadata->get();

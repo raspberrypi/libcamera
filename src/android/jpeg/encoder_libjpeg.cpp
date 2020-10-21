@@ -179,11 +179,11 @@ void EncoderLibJpeg::compressNV(const libcamera::MappedBuffer *frame)
 	}
 }
 
-int EncoderLibJpeg::encode(const FrameBuffer *source,
-			   const libcamera::Span<uint8_t> &dest,
+int EncoderLibJpeg::encode(const FrameBuffer &source,
+			   libcamera::Span<uint8_t> dest,
 			   const libcamera::Span<const uint8_t> &exifData)
 {
-	MappedFrameBuffer frame(source, PROT_READ);
+	MappedFrameBuffer frame(&source, PROT_READ);
 	if (!frame.isValid()) {
 		LOG(JPEG, Error) << "Failed to map FrameBuffer : "
 				 << strerror(frame.error());

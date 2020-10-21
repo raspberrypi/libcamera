@@ -154,7 +154,7 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 
 	cfg.bufferCount = 4;
 
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 
@@ -210,7 +210,7 @@ int PipelineHandlerUVC::configure(Camera *camera, CameraConfiguration *config)
 	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = data->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 

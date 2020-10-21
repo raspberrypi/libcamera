@@ -482,7 +482,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 
 	/* Set the stride and frameSize. */
 	if (!needConversion_) {
-		V4L2DeviceFormat format = {};
+		V4L2DeviceFormat format;
 		format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 
@@ -587,7 +587,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	/* Configure the video node. */
 	V4L2PixelFormat videoFormat = video->toV4L2PixelFormat(pipeConfig.pixelFormat);
 
-	V4L2DeviceFormat captureFormat = {};
+	V4L2DeviceFormat captureFormat;
 	captureFormat.fourcc = videoFormat;
 	captureFormat.size = pipeConfig.captureSize;
 

@@ -172,7 +172,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 
 	cfg.bufferCount = 4;
 
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 
@@ -276,7 +276,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = data->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 

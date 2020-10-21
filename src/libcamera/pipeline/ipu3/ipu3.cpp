@@ -463,7 +463,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 * adjusted format to be propagated to the ImgU output devices.
 	 */
 	const Size &sensorSize = config->cio2Format().size;
-	V4L2DeviceFormat cio2Format = {};
+	V4L2DeviceFormat cio2Format;
 	ret = cio2->configure(sensorSize, &cio2Format);
 	if (ret)
 		return ret;

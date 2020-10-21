@@ -73,7 +73,7 @@ V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
 			      const Size &req)
 {
 	double bestScore = std::numeric_limits<double>::max(), score;
-	V4L2DeviceFormat bestMode = {};
+	V4L2DeviceFormat bestMode;
 
 #define PENALTY_AR		1500.0
 #define PENALTY_8BIT		2000.0
@@ -429,7 +429,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			status = Adjusted;
 		}
 
-		V4L2DeviceFormat format = {};
+		V4L2DeviceFormat format;
 		format.fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 
@@ -600,7 +600,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * See which streams are requested, and route the user
 	 * StreamConfiguration appropriately.
 	 */
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	for (unsigned i = 0; i < config->size(); i++) {
 		StreamConfiguration &cfg = config->at(i);
 

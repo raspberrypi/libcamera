@@ -85,7 +85,7 @@ CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
 	cfg->size.expandTo(minResolution_);
 	cfg->bufferCount = RKISP1_BUFFER_COUNT;
 
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = video_->toV4L2PixelFormat(cfg->pixelFormat);
 	format.size = cfg->size;
 
@@ -146,7 +146,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 		<< ispFormat.toString();
 
 	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
-	V4L2DeviceFormat outputFormat = {};
+	V4L2DeviceFormat outputFormat;
 	outputFormat.fourcc = video_->toV4L2PixelFormat(config.pixelFormat);
 	outputFormat.size = config.size;
 	outputFormat.planesCount = info.numPlanes();

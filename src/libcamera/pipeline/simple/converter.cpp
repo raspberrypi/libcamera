@@ -265,7 +265,7 @@ std::tuple<unsigned int, unsigned int>
 SimpleConverter::strideAndFrameSize(const Size &size,
 				    const PixelFormat &pixelFormat)
 {
-	V4L2DeviceFormat format = {};
+	V4L2DeviceFormat format;
 	format.fourcc = m2m_->capture()->toV4L2PixelFormat(pixelFormat);
 	format.size = size;
 

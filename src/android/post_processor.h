@@ -20,8 +20,8 @@ public:
 
 	virtual int configure(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg) = 0;
-	virtual int process(const libcamera::FrameBuffer *source,
-			    const libcamera::Span<uint8_t> &destination,
+	virtual int process(const libcamera::FrameBuffer &source,
+			    libcamera::Span<uint8_t> destination,
 			    CameraMetadata *metadata) = 0;
 };
 

@@ -44,8 +44,8 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 	return encoder_->configure(inCfg);
 }
 
-int PostProcessorJpeg::process(const libcamera::FrameBuffer *source,
-			       const libcamera::Span<uint8_t> &destination,
+int PostProcessorJpeg::process(const libcamera::FrameBuffer &source,
+			       libcamera::Span<uint8_t> destination,
 			       CameraMetadata *metadata)
 {
 	if (!encoder_)
@@ -67,7 +67,7 @@ int PostProcessorJpeg::process(const libcamera::FrameBuffer *source,
 	if (exif.generate() != 0)
 		LOG(JPEG, Error) << "Failed to generate valid EXIF data";
 
-	int jpeg_size = encoder_->encode(source, destination, exif.data());
+	int jpeg_size = encoder_->encode(&source, destination, exif.data());
 	if (jpeg_size < 0) {
 		LOG(JPEG, Error) << "Failed to encode stream image";
 		return jpeg_size;

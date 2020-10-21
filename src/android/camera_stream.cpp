@@ -102,7 +102,7 @@ int CameraStream::process(const libcamera::FrameBuffer &source,
 	if (!postProcessor_)
 		return 0;
 
-	return postProcessor_->process(&source, dest->maps()[0], metadata);
+	return postProcessor_->process(source, dest->maps()[0], metadata);
 }
 
 FrameBuffer *CameraStream::getBuffer()

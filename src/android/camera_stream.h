@@ -109,7 +109,7 @@ public:
 		Internal,
 		Mapped,
 	};
-	CameraStream(CameraDevice *cameraDevice, Type type,
+	CameraStream(CameraDevice *const cameraDevice, Type type,
 		     camera3_stream_t *camera3Stream, unsigned int index);
 
 	Type type() const { return type_; }
@@ -124,11 +124,11 @@ public:
 	void putBuffer(libcamera::FrameBuffer *buffer);
 
 private:
-	CameraDevice *cameraDevice_;
-	libcamera::CameraConfiguration *config_;
-	Type type_;
+	CameraDevice *const cameraDevice_;
+	const libcamera::CameraConfiguration *config_;
+	const Type type_;
 	camera3_stream_t *camera3Stream_;
-	unsigned int index_;
+	const unsigned int index_;
 
 	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
 	std::vector<libcamera::FrameBuffer *> buffers_;

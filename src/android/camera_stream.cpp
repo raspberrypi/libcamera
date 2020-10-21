@@ -38,13 +38,12 @@ LOG_DECLARE_CATEGORY(HAL)
  * and buffer allocation.
  */
 
-CameraStream::CameraStream(CameraDevice *cameraDevice, Type type,
+CameraStream::CameraStream(CameraDevice *const cameraDevice, Type type,
 			   camera3_stream_t *camera3Stream, unsigned int index)
-	: cameraDevice_(cameraDevice), type_(type),
+	: cameraDevice_(cameraDevice),
+	  config_(cameraDevice->cameraConfiguration()), type_(type),
 	  camera3Stream_(camera3Stream), index_(index)
 {
-	config_ = cameraDevice_->cameraConfiguration();
-
 	if (type_ == Type::Internal || type_ == Type::Mapped) {
 		/*
 		 * \todo There might be multiple post-processors. The logic

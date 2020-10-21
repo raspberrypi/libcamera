@@ -26,12 +26,12 @@ class V4L2Camera
 public:
 	struct Buffer {
 		Buffer(unsigned int index, const FrameMetadata &data)
-			: index(index), data(data)
+			: index_(index), data_(data)
 		{
 		}
 
-		unsigned int index;
-		FrameMetadata data;
+		unsigned int index_;
+		FrameMetadata data_;
 	};
 
 	V4L2Camera(std::shared_ptr<Camera> camera);

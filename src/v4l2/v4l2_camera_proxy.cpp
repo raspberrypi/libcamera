@@ -206,8 +206,8 @@ void V4L2CameraProxy::updateBuffers()
 {
 	std::vector<V4L2Camera::Buffer> completedBuffers = vcam_->completedBuffers();
 	for (const V4L2Camera::Buffer &buffer : completedBuffers) {
-		const FrameMetadata &fmd = buffer.data;
-		struct v4l2_buffer &buf = buffers_[buffer.index];
+		const FrameMetadata &fmd = buffer.data_;
+		struct v4l2_buffer &buf = buffers_[buffer.index_];
 
 		switch (fmd.status) {
 		case FrameMetadata::FrameSuccess:

@@ -20,7 +20,7 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(JPEG)
 
-PostProcessorJpeg::PostProcessorJpeg(CameraDevice *device)
+PostProcessorJpeg::PostProcessorJpeg(CameraDevice *const device)
 	: cameraDevice_(device)
 {
 }

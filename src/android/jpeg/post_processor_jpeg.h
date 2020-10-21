@@ -19,7 +19,7 @@ class CameraDevice;
 class PostProcessorJpeg : public PostProcessor
 {
 public:
-	PostProcessorJpeg(CameraDevice *device);
+	PostProcessorJpeg(CameraDevice *const device);
 
 	int configure(const libcamera::StreamConfiguration &incfg,
 		      const libcamera::StreamConfiguration &outcfg) override;
@@ -28,7 +28,7 @@ public:
 		    CameraMetadata *metadata) override;
 
 private:
-	CameraDevice *cameraDevice_;
+	CameraDevice *const cameraDevice_;
 	std::unique_ptr<Encoder> encoder_;
 	libcamera::Size streamSize_;
 };

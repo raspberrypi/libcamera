@@ -79,11 +79,11 @@ private:
 					 unsigned int numBuffers);
 		~Camera3RequestDescriptor();
 
-		uint32_t frameNumber;
-		uint32_t numBuffers;
-		camera3_stream_buffer_t *buffers;
-		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers;
-		std::unique_ptr<CaptureRequest> request;
+		uint32_t frameNumber_;
+		uint32_t numBuffers_;
+		camera3_stream_buffer_t *buffers_;
+		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
+		std::unique_ptr<CaptureRequest> request_;
 	};
 
 	struct Camera3StreamConfiguration {

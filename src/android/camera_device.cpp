@@ -170,28 +170,28 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 
 CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 	Camera *camera, unsigned int frameNumber, unsigned int numBuffers)
-	: frameNumber(frameNumber), numBuffers(numBuffers)
+	: frameNumber_(frameNumber), numBuffers_(numBuffers)
 {
-	buffers = new camera3_stream_buffer_t[numBuffers];
+	buffers_ = new camera3_stream_buffer_t[numBuffers];
 
 	/*
 	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
 	 * are emplaced in this vector of unique_ptr<> for lifetime management.
 	 */
-	frameBuffers.reserve(numBuffers);
+	frameBuffers_.reserve(numBuffers);
 
 	/*
 	 * Create the libcamera::Request unique_ptr<> to tie its lifetime
 	 * to the descriptor's one. Set the descriptor's address as the
 	 * request's cookie to retrieve it at completion time.
 	 */
-	request = std::make_unique<CaptureRequest>(camera,
-						   reinterpret_cast<uint64_t>(this));
+	request_ = std::make_unique<CaptureRequest>(camera,
+						    reinterpret_cast<uint64_t>(this));
 }
 
 CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
 {
-	delete[] buffers;
+	delete[] buffers_;
 }
 
 /*
@@ -1393,8 +1393,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 					     camera3Request->num_output_buffers);
 
 	LOG(HAL, Debug) << "Queueing Request to libcamera with "
-			<< descriptor->numBuffers << " HAL streams";
-	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
+			<< descriptor->numBuffers_ << " HAL streams";
+	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
 		camera3_stream *camera3Stream = camera3Buffers[i].stream;
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(camera3Buffers[i].stream->priv);
@@ -1403,8 +1403,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		 * Keep track of which stream the request belongs to and store
 		 * the native buffer handles.
 		 */
-		descriptor->buffers[i].stream = camera3Buffers[i].stream;
-		descriptor->buffers[i].buffer = camera3Buffers[i].buffer;
+		descriptor->buffers_[i].stream = camera3Buffers[i].stream;
+		descriptor->buffers_[i].buffer = camera3Buffers[i].buffer;
 
 		std::stringstream ss;
 		ss << i << " - (" << camera3Stream->width << "x"
@@ -1435,7 +1435,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * lifetime management only.
 			 */
 			buffer = createFrameBuffer(*camera3Buffers[i].buffer);
-			descriptor->frameBuffers.emplace_back(buffer);
+			descriptor->frameBuffers_.emplace_back(buffer);
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 
@@ -1458,12 +1458,12 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			return -ENOMEM;
 		}
 
-		descriptor->request->addBuffer(cameraStream->stream(), buffer,
-					       camera3Buffers[i].acquire_fence);
+		descriptor->request_->addBuffer(cameraStream->stream(), buffer,
+						camera3Buffers[i].acquire_fence);
 	}
 
 	/* Queue the request to the CameraWorker. */
-	worker_.queueRequest(descriptor->request.get());
+	worker_.queueRequest(descriptor->request_.get());
 
 	return 0;
 }
@@ -1489,13 +1489,13 @@ void CameraDevice::requestComplete(Request *request)
 	 * pipeline handlers) timestamp in the Request itself.
 	 */
 	FrameBuffer *buffer = buffers.begin()->second;
-	resultMetadata = getResultMetadata(descriptor->frameNumber,
+	resultMetadata = getResultMetadata(descriptor->frameNumber_,
 					   buffer->metadata().timestamp);
 
 	/* Handle any JPEG compression. */
-	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
+	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
 		CameraStream *cameraStream =
-			static_cast<CameraStream *>(descriptor->buffers[i].stream->priv);
+			static_cast<CameraStream *>(descriptor->buffers_[i].stream->priv);
 
 		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
@@ -1511,7 +1511,7 @@ void CameraDevice::requestComplete(Request *request)
 		 * separate thread.
 		 */
 
-		MappedCamera3Buffer mapped(*descriptor->buffers[i].buffer,
+		MappedCamera3Buffer mapped(*descriptor->buffers_[i].buffer,
 					   PROT_READ | PROT_WRITE);
 		if (!mapped.isValid()) {
 			LOG(HAL, Error) << "Failed to mmap android blob buffer";
@@ -1535,19 +1535,19 @@ void CameraDevice::requestComplete(Request *request)
 
 	/* Prepare to call back the Android camera stack. */
 	camera3_capture_result_t captureResult = {};
-	captureResult.frame_number = descriptor->frameNumber;
-	captureResult.num_output_buffers = descriptor->numBuffers;
-	for (unsigned int i = 0; i < descriptor->numBuffers; ++i) {
-		descriptor->buffers[i].acquire_fence = -1;
-		descriptor->buffers[i].release_fence = -1;
-		descriptor->buffers[i].status = status;
+	captureResult.frame_number = descriptor->frameNumber_;
+	captureResult.num_output_buffers = descriptor->numBuffers_;
+	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
+		descriptor->buffers_[i].acquire_fence = -1;
+		descriptor->buffers_[i].release_fence = -1;
+		descriptor->buffers_[i].status = status;
 	}
 	captureResult.output_buffers =
-		const_cast<const camera3_stream_buffer_t *>(descriptor->buffers);
+		const_cast<const camera3_stream_buffer_t *>(descriptor->buffers_);
 
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
-		notifyShutter(descriptor->frameNumber,
+		notifyShutter(descriptor->frameNumber_,
 			      buffer->metadata().timestamp);
 
 		captureResult.partial_result = 1;
@@ -1561,8 +1561,8 @@ void CameraDevice::requestComplete(Request *request)
 		 * is here signalled. Make sure the error path plays well with
 		 * the camera stack state machine.
 		 */
-		notifyError(descriptor->frameNumber,
-			    descriptor->buffers[0].stream);
+		notifyError(descriptor->frameNumber_,
+			    descriptor->buffers_[0].stream);
 	}
 
 	callbacks_->process_capture_result(callbacks_, &captureResult);

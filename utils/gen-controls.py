@@ -24,9 +24,9 @@ def format_description(description):
 
 def generate_cpp(controls):
     enum_doc_start_template = string.Template('''/**
- * \\enum ${name}Values
+ * \\enum ${name}Enum
  * \\brief Supported ${name} values''')
-    enum_doc_value_template = string.Template(''' * \\var ${name}Values::${value}
+    enum_doc_value_template = string.Template(''' * \\var ${name}Enum::${value}
 ${description}''')
     doc_template = string.Template('''/**
  * \\var ${name}
@@ -98,7 +98,7 @@ ${description}
 
 
 def generate_h(controls):
-    enum_template_start = string.Template('''enum ${name}Values {''')
+    enum_template_start = string.Template('''enum ${name}Enum {''')
     enum_value_template = string.Template('''\t${name} = ${value},''')
     template = string.Template('''extern const Control<${type}> ${name};''')
 

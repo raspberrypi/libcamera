@@ -870,6 +870,8 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
 
+	ASSERT(pix->num_planes <= ARRAY_SIZE(pix->plane_fmt));
+
 	for (unsigned int i = 0; i < pix->num_planes; ++i) {
 		pix->plane_fmt[i].bytesperline = format->planes[i].bpl;
 		pix->plane_fmt[i].sizeimage = format->planes[i].size;

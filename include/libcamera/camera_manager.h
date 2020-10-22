@@ -25,8 +25,6 @@ class CameraManager : public Object, public Extensible
 	LIBCAMERA_DECLARE_PRIVATE(CameraManager)
 public:
 	CameraManager();
-	CameraManager(const CameraManager &) = delete;
-	CameraManager &operator=(const CameraManager &) = delete;
 	~CameraManager();
 
 	int start();
@@ -46,6 +44,8 @@ public:
 	Signal<std::shared_ptr<Camera>> cameraRemoved;
 
 private:
+	LIBCAMERA_DISABLE_COPY(CameraManager)
+
 	static const std::string version_;
 	static CameraManager *self_;
 };

@@ -17,6 +17,7 @@
 #include <linux/videodev2.h>
 
 #include <libcamera/buffer.h>
+#include <libcamera/class.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 #include <libcamera/signal.h>
@@ -175,10 +176,7 @@ public:
 
 	explicit V4L2VideoDevice(const std::string &deviceNode);
 	explicit V4L2VideoDevice(const MediaEntity *entity);
-	V4L2VideoDevice(const V4L2VideoDevice &) = delete;
 	~V4L2VideoDevice();
-
-	V4L2VideoDevice &operator=(const V4L2VideoDevice &) = delete;
 
 	int open();
 	int open(int handle, enum v4l2_buf_type type);
@@ -219,6 +217,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	LIBCAMERA_DISABLE_COPY(V4L2VideoDevice)
+
 	int getFormatMeta(V4L2DeviceFormat *format);
 	int trySetFormatMeta(V4L2DeviceFormat *format, bool set);
 

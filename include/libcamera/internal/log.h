@@ -10,6 +10,8 @@
 #include <chrono>
 #include <sstream>
 
+#include <libcamera/class.h>
+
 #include "libcamera/internal/utils.h"
 
 namespace libcamera {
@@ -57,7 +59,7 @@ public:
 		   LogSeverity severity);
 	LogMessage(const char *fileName, unsigned int line,
 		   const LogCategory &category, LogSeverity severity);
-	LogMessage(const LogMessage &) = delete;
+
 	LogMessage(LogMessage &&);
 	~LogMessage();
 
@@ -70,6 +72,8 @@ public:
 	const std::string msg() const { return msgStream_.str(); }
 
 private:
+	LIBCAMERA_DISABLE_COPY(LogMessage)
+
 	void init(const char *fileName, unsigned int line);
 
 	std::ostringstream msgStream_;

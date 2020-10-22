@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unordered_set>
 
+#include <libcamera/class.h>
 #include <libcamera/controls.h>
 #include <libcamera/signal.h>
 
@@ -39,8 +40,6 @@ public:
 	using BufferMap = std::map<const Stream *, FrameBuffer *>;
 
 	Request(Camera *camera, uint64_t cookie = 0);
-	Request(const Request &) = delete;
-	Request &operator=(const Request &) = delete;
 	~Request();
 
 	void reuse(ReuseFlag flags = Default);
@@ -57,6 +56,8 @@ public:
 	bool hasPendingBuffers() const { return !pending_.empty(); }
 
 private:
+	LIBCAMERA_DISABLE_COPY(Request)
+
 	friend class PipelineHandler;
 
 	void complete();

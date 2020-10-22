@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/class.h>
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/formats.h"
@@ -41,8 +42,6 @@ public:
 	};
 
 	explicit V4L2Subdevice(const MediaEntity *entity);
-	V4L2Subdevice(const V4L2Subdevice &) = delete;
-	V4L2Subdevice &operator=(const V4L2Subdevice &) = delete;
 	~V4L2Subdevice();
 
 	int open();
@@ -68,6 +67,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	LIBCAMERA_DISABLE_COPY(V4L2Subdevice)
+
 	std::vector<unsigned int> enumPadCodes(unsigned int pad);
 	std::vector<SizeRange> enumPadSizes(unsigned int pad,
 					    unsigned int code);

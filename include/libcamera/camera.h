@@ -81,9 +81,6 @@ public:
 					      const std::string &id,
 					      const std::set<Stream *> &streams);
 
-	Camera(const Camera &) = delete;
-	Camera &operator=(const Camera &) = delete;
-
 	const std::string &id() const;
 
 	Signal<Request *, FrameBuffer *> bufferCompleted;
@@ -107,6 +104,8 @@ public:
 	int stop();
 
 private:
+	LIBCAMERA_DISABLE_COPY(Camera)
+
 	Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams);
 	~Camera();

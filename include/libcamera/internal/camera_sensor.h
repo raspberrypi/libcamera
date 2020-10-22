@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/class.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
@@ -45,9 +46,6 @@ public:
 	explicit CameraSensor(const MediaEntity *entity);
 	~CameraSensor();
 
-	CameraSensor(const CameraSensor &) = delete;
-	CameraSensor &operator=(const CameraSensor &) = delete;
-
 	int init();
 
 	const std::string &model() const { return model_; }
@@ -74,6 +72,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	LIBCAMERA_DISABLE_COPY(CameraSensor)
+
 	int generateId();
 	int validateSensorDriver();
 	void initVimcDefaultProperties();

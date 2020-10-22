@@ -11,6 +11,7 @@
 #include <string>
 #include <sys/types.h>
 
+#include <libcamera/class.h>
 #include <libcamera/span.h>
 
 namespace libcamera {
@@ -33,9 +34,6 @@ public:
 	File(const std::string &name);
 	File();
 	~File();
-
-	File(const File &) = delete;
-	File &operator=(const File &) = delete;
 
 	const std::string &fileName() const { return name_; }
 	void setFileName(const std::string &name);
@@ -62,6 +60,8 @@ public:
 	static bool exists(const std::string &name);
 
 private:
+	LIBCAMERA_DISABLE_COPY(File)
+
 	void unmapAll();
 
 	std::string name_;

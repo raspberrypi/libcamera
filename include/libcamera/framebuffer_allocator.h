@@ -11,6 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include <libcamera/class.h>
+
 namespace libcamera {
 
 class Camera;
@@ -21,9 +23,6 @@ class FrameBufferAllocator
 {
 public:
 	FrameBufferAllocator(std::shared_ptr<Camera> camera);
-	FrameBufferAllocator(const FrameBufferAllocator &) = delete;
-	FrameBufferAllocator &operator=(const FrameBufferAllocator &) = delete;
-
 	~FrameBufferAllocator();
 
 	int allocate(Stream *stream);
@@ -33,6 +32,8 @@ public:
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers(Stream *stream) const;
 
 private:
+	LIBCAMERA_DISABLE_COPY(FrameBufferAllocator)
+
 	std::shared_ptr<Camera> camera_;
 	std::map<Stream *, std::vector<std::unique_ptr<FrameBuffer>>> buffers_;
 };

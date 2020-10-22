@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include <libcamera/class.h>
 #include <libcamera/controls.h>
 #include <libcamera/object.h>
 #include <libcamera/stream.h>
@@ -49,8 +50,7 @@ public:
 	std::unique_ptr<IPAProxy> ipa_;
 
 private:
-	CameraData(const CameraData &) = delete;
-	CameraData &operator=(const CameraData &) = delete;
+	LIBCAMERA_DISABLE_COPY(CameraData)
 };
 
 class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>,

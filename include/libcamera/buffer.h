@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include <libcamera/class.h>
 #include <libcamera/file_descriptor.h>
 
 namespace libcamera {
@@ -43,12 +44,6 @@ public:
 
 	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
 
-	FrameBuffer(const FrameBuffer &) = delete;
-	FrameBuffer(FrameBuffer &&) = delete;
-
-	FrameBuffer &operator=(const FrameBuffer &) = delete;
-	FrameBuffer &operator=(FrameBuffer &&) = delete;
-
 	const std::vector<Plane> &planes() const { return planes_; }
 
 	Request *request() const { return request_; }
@@ -57,7 +52,10 @@ public:
 
 	unsigned int cookie() const { return cookie_; }
 	void setCookie(unsigned int cookie) { cookie_ = cookie; }
+
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(FrameBuffer)
+
 	friend class Request; /* Needed to update request_. */
 	friend class V4L2VideoDevice; /* Needed to update metadata_. */
 

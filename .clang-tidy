@@ -1,0 +1,2 @@
+Checks:		-clang-diagnostic-c99-designator
+FormatStyle:	file

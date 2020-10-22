@@ -593,6 +593,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * because of flips in the sensor.
 	 */
 	ret = data->isp_[Isp::Input].dev()->setFormat(&sensorFormat);
+	if (ret)
+		return ret;
 
 	/*
 	 * See which streams are requested, and route the user

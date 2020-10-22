@@ -12,6 +12,8 @@
 
 #include <linux/media.h>
 
+#include <libcamera/class.h>
+
 namespace libcamera {
 
 class MediaDevice;
@@ -47,11 +49,12 @@ public:
 	int setEnabled(bool enable);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(MediaLink)
+
 	friend class MediaDevice;
 
 	MediaLink(const struct media_v2_link *link,
 		  MediaPad *source, MediaPad *sink);
-	MediaLink(const MediaLink &) = delete;
 
 	MediaPad *source_;
 	MediaPad *sink_;
@@ -69,10 +72,11 @@ public:
 	void addLink(MediaLink *link);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(MediaPad)
+
 	friend class MediaDevice;
 
 	MediaPad(const struct media_v2_pad *pad, MediaEntity *entity);
-	MediaPad(const MediaPad &) = delete;
 
 	unsigned int index_;
 	MediaEntity *entity_;
@@ -99,11 +103,12 @@ public:
 	int setDeviceNode(const std::string &deviceNode);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(MediaEntity)
+
 	friend class MediaDevice;
 
 	MediaEntity(MediaDevice *dev, const struct media_v2_entity *entity,
 		    unsigned int major = 0, unsigned int minor = 0);
-	MediaEntity(const MediaEntity &) = delete;
 
 	void addPad(MediaPad *pad);
 

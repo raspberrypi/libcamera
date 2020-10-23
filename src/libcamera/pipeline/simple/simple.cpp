@@ -774,9 +774,9 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 				<< "Failed to open converter, disabling format conversion";
 			delete converter_;
 			converter_ = nullptr;
+		} else {
+			converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);
 		}
-
-		converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);
 	}
 
 	/*

@@ -44,8 +44,8 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 	return encoder_->configure(inCfg);
 }
 
-int PostProcessorJpeg::process(const libcamera::FrameBuffer &source,
-			       libcamera::Span<uint8_t> destination,
+int PostProcessorJpeg::process(const FrameBuffer &source,
+			       Span<uint8_t> destination,
 			       CameraMetadata *metadata)
 {
 	if (!encoder_)

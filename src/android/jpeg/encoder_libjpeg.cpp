@@ -104,7 +104,7 @@ int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 	return 0;
 }
 
-void EncoderLibJpeg::compressRGB(const libcamera::MappedBuffer *frame)
+void EncoderLibJpeg::compressRGB(const MappedBuffer *frame)
 {
 	unsigned char *src = static_cast<unsigned char *>(frame->maps()[0].data());
 	/* \todo Stride information should come from buffer configuration. */
@@ -122,7 +122,7 @@ void EncoderLibJpeg::compressRGB(const libcamera::MappedBuffer *frame)
  * Compress the incoming buffer from a supported NV format.
  * This naively unpacks the semi-planar NV12 to a YUV888 format for libjpeg.
  */
-void EncoderLibJpeg::compressNV(const libcamera::MappedBuffer *frame)
+void EncoderLibJpeg::compressNV(const MappedBuffer *frame)
 {
 	uint8_t tmprowbuf[compress_.image_width * 3];
 
@@ -179,9 +179,8 @@ void EncoderLibJpeg::compressNV(const libcamera::MappedBuffer *frame)
 	}
 }
 
-int EncoderLibJpeg::encode(const FrameBuffer &source,
-			   libcamera::Span<uint8_t> dest,
-			   const libcamera::Span<const uint8_t> &exifData)
+int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
+			   const Span<const uint8_t> &exifData)
 {
 	MappedFrameBuffer frame(&source, PROT_READ);
 	if (!frame.isValid()) {

@@ -38,7 +38,6 @@ template<typename... Args>
 class Signal : public SignalBase
 {
 public:
-	Signal() {}
 	~Signal()
 	{
 		disconnect();

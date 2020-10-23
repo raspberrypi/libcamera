@@ -96,6 +96,7 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
+						       details::control_type<T>::value &&
 						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 	ControlValue(const T &value)

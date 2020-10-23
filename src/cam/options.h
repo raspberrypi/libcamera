@@ -73,7 +73,7 @@ public:
 	{
 	};
 
-	virtual ~KeyValueParser() {}
+	virtual ~KeyValueParser() = default;
 
 	bool addOption(const char *name, OptionType type, const char *help,
 		       OptionArgument argument = ArgumentNone);

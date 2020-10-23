@@ -16,7 +16,7 @@ class CameraMetadata;
 class PostProcessor
 {
 public:
-	virtual ~PostProcessor() {}
+	virtual ~PostProcessor() = default;
 
 	virtual int configure(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg) = 0;

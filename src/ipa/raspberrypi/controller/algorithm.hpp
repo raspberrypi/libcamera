@@ -30,7 +30,7 @@ public:
 		: controller_(controller), paused_(false)
 	{
 	}
-	virtual ~Algorithm() {}
+	virtual ~Algorithm() = default;
 	virtual char const *Name() const = 0;
 	virtual bool IsPaused() const { return paused_; }
 	virtual void Pause() { paused_ = true; }

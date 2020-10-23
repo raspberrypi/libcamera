@@ -40,7 +40,7 @@ public:
 		: pipe_(pipe)
 	{
 	}
-	virtual ~CameraData() {}
+	virtual ~CameraData() = default;
 
 	Camera *camera_;
 	PipelineHandler *pipe_;
@@ -118,7 +118,7 @@ class PipelineHandlerFactory
 {
 public:
 	PipelineHandlerFactory(const char *name);
-	virtual ~PipelineHandlerFactory() {}
+	virtual ~PipelineHandlerFactory() = default;
 
 	std::shared_ptr<PipelineHandler> create(CameraManager *manager);
 

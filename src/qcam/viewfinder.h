@@ -22,7 +22,7 @@ struct MappedBuffer {
 class ViewFinder
 {
 public:
-	virtual ~ViewFinder() {}
+	virtual ~ViewFinder() = default;
 
 	virtual const QList<libcamera::PixelFormat> &nativeFormats() const = 0;
 

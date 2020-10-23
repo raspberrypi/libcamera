@@ -16,7 +16,7 @@ class ControlId;
 class ControlValidator
 {
 public:
-	virtual ~ControlValidator() {}
+	virtual ~ControlValidator() = default;
 
 	virtual const std::string &name() const = 0;
 	virtual bool validate(unsigned int id) const = 0;

@@ -22,7 +22,7 @@ public:
 	FrameAction(unsigned int frame, unsigned int type)
 		: frame_(frame), type_(type) {}
 
-	virtual ~FrameAction() {}
+	virtual ~FrameAction() = default;
 
 	unsigned int frame() const { return frame_; }
 	unsigned int type() const { return type_; }
@@ -38,7 +38,7 @@ class Timeline
 {
 public:
 	Timeline();
-	virtual ~Timeline() {}
+	virtual ~Timeline() = default;
 
 	virtual void reset();
 	virtual void scheduleAction(std::unique_ptr<FrameAction> action);

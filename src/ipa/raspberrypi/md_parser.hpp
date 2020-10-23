@@ -67,7 +67,7 @@ public:
 		ERROR = 2
 	};
 	MdParser() : reset_(true) {}
-	virtual ~MdParser() {}
+	virtual ~MdParser() = default;
 	void Reset() { reset_ = true; }
 	void SetBitsPerPixel(int bpp) { bits_per_pixel_ = bpp; }
 	void SetNumLines(unsigned int num_lines) { num_lines_ = num_lines; }

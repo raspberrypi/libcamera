@@ -150,7 +150,7 @@ struct CameraSensorInfo;
 class IPAInterface
 {
 public:
-	virtual ~IPAInterface() {}
+	virtual ~IPAInterface() = default;
 
 	virtual int init(const IPASettings &settings) = 0;
 	virtual int start() = 0;

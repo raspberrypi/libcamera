@@ -31,7 +31,7 @@ protected:
 		: dev_(dev), id_(id)
 	{
 	}
-	virtual ~MediaObject() {}
+	virtual ~MediaObject() = default;
 
 	MediaDevice *dev_;
 	unsigned int id_;

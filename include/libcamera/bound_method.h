@@ -26,7 +26,7 @@ enum ConnectionType {
 class BoundMethodPackBase
 {
 public:
-	virtual ~BoundMethodPackBase() {}
+	virtual ~BoundMethodPackBase() = default;
 };
 
 template<typename R, typename... Args>
@@ -61,7 +61,7 @@ public:
 		: obj_(obj), object_(object), connectionType_(type)
 	{
 	}
-	virtual ~BoundMethodBase() {}
+	virtual ~BoundMethodBase() = default;
 
 	template<typename T, typename std::enable_if_t<!std::is_same<Object, T>::value> * = nullptr>
 	bool match(T *obj) { return obj == obj_; }

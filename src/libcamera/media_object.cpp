@@ -191,15 +191,6 @@ MediaPad::MediaPad(const struct media_v2_pad *pad, MediaEntity *entity)
 {
 }
 
-MediaPad::~MediaPad()
-{
-	/*
-	 * Don't delete the links as we only borrow the reference owned by
-	 * MediaDevice.
-	 */
-	links_.clear();
-}
-
 /**
  * \fn MediaPad::index()
  * \brief Retrieve the pad index
@@ -369,15 +360,6 @@ MediaEntity::MediaEntity(MediaDevice *dev,
 	  function_(entity->function), flags_(entity->flags),
 	  major_(major), minor_(minor)
 {
-}
-
-MediaEntity::~MediaEntity()
-{
-	/*
-	 * Don't delete the pads as we only borrow the reference owned by
-	 * MediaDevice.
-	 */
-	pads_.clear();
 }
 
 /**

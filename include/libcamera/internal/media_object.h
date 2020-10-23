@@ -51,7 +51,6 @@ private:
 	MediaLink(const struct media_v2_link *link,
 		  MediaPad *source, MediaPad *sink);
 	MediaLink(const MediaLink &) = delete;
-	~MediaLink() {}
 
 	MediaPad *source_;
 	MediaPad *sink_;
@@ -73,7 +72,6 @@ private:
 
 	MediaPad(const struct media_v2_pad *pad, MediaEntity *entity);
 	MediaPad(const MediaPad &) = delete;
-	~MediaPad();
 
 	unsigned int index_;
 	MediaEntity *entity_;
@@ -105,7 +103,6 @@ private:
 	MediaEntity(MediaDevice *dev, const struct media_v2_entity *entity,
 		    unsigned int major = 0, unsigned int minor = 0);
 	MediaEntity(const MediaEntity &) = delete;
-	~MediaEntity();
 
 	void addPad(MediaPad *pad);
 

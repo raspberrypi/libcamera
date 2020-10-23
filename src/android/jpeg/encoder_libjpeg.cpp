@@ -180,7 +180,7 @@ void EncoderLibJpeg::compressNV(const MappedBuffer *frame)
 }
 
 int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
-			   const Span<const uint8_t> &exifData)
+			   Span<const uint8_t> exifData)
 {
 	MappedFrameBuffer frame(&source, PROT_READ);
 	if (!frame.isValid()) {

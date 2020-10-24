@@ -113,12 +113,12 @@ public:
 	{
 	}
 
-	constexpr Span(pointer ptr, [[maybe_unused]] size_type count)
+	explicit constexpr Span(pointer ptr, [[maybe_unused]] size_type count)
 		: data_(ptr)
 	{
 	}
 
-	constexpr Span(pointer first, [[maybe_unused]] pointer last)
+	explicit constexpr Span(pointer first, [[maybe_unused]] pointer last)
 		: data_(first)
 	{
 	}
@@ -154,35 +154,35 @@ public:
 	}
 
 	template<class Container>
-	constexpr Span(Container &cont,
-		       std::enable_if_t<!details::is_span<Container>::value &&
-					!details::is_array<Container>::value &&
-					!std::is_array<Container>::value &&
-					std::is_convertible<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
-							    element_type (*)[]>::value,
-					std::nullptr_t> = nullptr)
+	explicit constexpr Span(Container &cont,
+				std::enable_if_t<!details::is_span<Container>::value &&
+						 !details::is_array<Container>::value &&
+						 !std::is_array<Container>::value &&
+						 std::is_convertible<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
+								     element_type (*)[]>::value,
+						 std::nullptr_t> = nullptr)
 		: data_(utils::data(cont))
 	{
 	}
 
 	template<class Container>
-	constexpr Span(const Container &cont,
-		       std::enable_if_t<!details::is_span<Container>::value &&
-					!details::is_array<Container>::value &&
-					!std::is_array<Container>::value &&
-					std::is_convertible<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
-							    element_type (*)[]>::value,
-					std::nullptr_t> = nullptr)
+	explicit constexpr Span(const Container &cont,
+				std::enable_if_t<!details::is_span<Container>::value &&
+						 !details::is_array<Container>::value &&
+						 !std::is_array<Container>::value &&
+						 std::is_convertible<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
+								     element_type (*)[]>::value,
+						 std::nullptr_t> = nullptr)
 		: data_(utils::data(cont))
 	{
 		static_assert(utils::size(cont) == Extent, "Size mismatch");
 	}
 
 	template<class U, std::size_t N>
-	constexpr Span(const Span<U, N> &s,
-		       std::enable_if_t<std::is_convertible<U (*)[], element_type (*)[]>::value &&
-					N == Extent,
-					std::nullptr_t> = nullptr) noexcept
+	explicit constexpr Span(const Span<U, N> &s,
+				std::enable_if_t<std::is_convertible<U (*)[], element_type (*)[]>::value &&
+						 N == Extent,
+						 std::nullptr_t> = nullptr) noexcept
 		: data_(s.data())
 	{
 	}
@@ -212,24 +212,24 @@ public:
 	constexpr Span<element_type, Count> first() const
 	{
 		static_assert(Count <= Extent, "Count larger than size");
-		return { data(), Count };
+		return Span<element_type, Count>{ data(), Count };
 	}
 
 	constexpr Span<element_type, dynamic_extent> first(std::size_t Count) const
 	{
-		return { data(), Count };
+		return Span<element_type, dynamic_extent>{ data(), Count };
 	}
 
 	template<std::size_t Count>
 	constexpr Span<element_type, Count> last() const
 	{
 		static_assert(Count <= Extent, "Count larger than size");
-		return { data() + size() - Count, Count };
+		return Span<element_type, Count>{ data() + size() - Count, Count };
 	}
 
 	constexpr Span<element_type, dynamic_extent> last(std::size_t Count) const
 	{
-		return { data() + size() - Count, Count };
+		return Span<element_type, dynamic_extent>{ data() + size() - Count, Count };
 	}
 
 	template<std::size_t Offset, std::size_t Count = dynamic_extent>
@@ -238,13 +238,19 @@ public:
 		static_assert(Offset <= Extent, "Offset larger than size");
 		static_assert(Count == dynamic_extent || Count + Offset <= Extent,
 			      "Offset + Count larger than size");
-		return { data() + Offset, Count == dynamic_extent ? size() - Offset : Count };
+		return Span<element_type, Count != dynamic_extent ? Count : Extent - Offset>{
+			data() + Offset,
+			Count == dynamic_extent ? size() - Offset : Count
+		};
 	}
 
 	constexpr Span<element_type, dynamic_extent>
 	subspan(std::size_t Offset, std::size_t Count = dynamic_extent) const
 	{
-		return { data() + Offset, Count == dynamic_extent ? size() - Offset : Count };
+		return Span<element_type, dynamic_extent>{
+			data() + Offset,
+			Count == dynamic_extent ? size() - Offset : Count
+		};
 	}
 
 private:
@@ -371,7 +377,7 @@ public:
 	template<std::size_t Count>
 	constexpr Span<element_type, Count> first() const
 	{
-		return { data(), Count };
+		return Span<element_type, Count>{ data(), Count };
 	}
 
 	constexpr Span<element_type, dynamic_extent> first(std::size_t Count) const
@@ -382,24 +388,30 @@ public:
 	template<std::size_t Count>
 	constexpr Span<element_type, Count> last() const
 	{
-		return { data() + size() - Count, Count };
+		return Span<element_type, Count>{ data() + size() - Count, Count };
 	}
 
 	constexpr Span<element_type, dynamic_extent> last(std::size_t Count) const
 	{
-		return { data() + size() - Count, Count };
+		return Span<element_type, dynamic_extent>{ data() + size() - Count, Count };
 	}
 
 	template<std::size_t Offset, std::size_t Count = dynamic_extent>
 	constexpr Span<element_type, Count> subspan() const
 	{
-		return { data() + Offset, Count == dynamic_extent ? size() - Offset : Count };
+		return Span<element_type, Count>{
+			data() + Offset,
+			Count == dynamic_extent ? size() - Offset : Count
+		};
 	}
 
 	constexpr Span<element_type, dynamic_extent>
 	subspan(std::size_t Offset, std::size_t Count = dynamic_extent) const
 	{
-		return { data() + Offset, Count == dynamic_extent ? size() - Offset : Count };
+		return Span<element_type, dynamic_extent>{
+			data() + Offset,
+			Count == dynamic_extent ? size() - Offset : Count
+		};
 	}
 
 private:

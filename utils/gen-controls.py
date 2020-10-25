@@ -77,7 +77,7 @@ ${description}
             num_entries = 0
             for entry in enum:
                 value_info = {
-                    'name' : name,
+                    'name': name,
                     'value': entry['name'],
                     'description': format_description(entry['description']),
                 }

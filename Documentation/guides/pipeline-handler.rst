@@ -63,7 +63,7 @@ functionalities:
   system resources (memory, shared components, etc.) to satisfy the
   configuration requested by the application.
 
-- Start and the stop the image acquisition and processing sessions.
+- Start and stop the image acquisition and processing sessions.
 
 - Apply configuration settings requested by applications and computed by image
   processing algorithms integrated in libcamera to the hardware devices.

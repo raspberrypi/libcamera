@@ -52,7 +52,7 @@ private:
 	CameraManager *cm_;
 	std::shared_ptr<Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
-	EventLoop *loop_;
+	EventLoop loop_;
 
 	bool strictFormats_;
 };
@@ -60,7 +60,7 @@ private:
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr), camera_(nullptr), config_(nullptr), loop_(nullptr),
+	: cm_(nullptr), camera_(nullptr), config_(nullptr),
 	  strictFormats_(false)
 {
 	CamApp::app_ = this;
@@ -134,16 +134,11 @@ int CamApp::init(int argc, char **argv)
 		std::cout << "Monitoring new hotplug and unplug events" << std::endl;
 	}
 
-	loop_ = new EventLoop(cm_->eventDispatcher());
-
 	return 0;
 }
 
 void CamApp::cleanup()
 {
-	delete loop_;
-	loop_ = nullptr;
-
 	if (camera_) {
 		camera_->release();
 		camera_.reset();
@@ -166,8 +161,7 @@ int CamApp::exec()
 
 void CamApp::quit()
 {
-	if (loop_)
-		loop_->exit();
+	loop_.exit();
 }
 
 int CamApp::parseOptions(int argc, char *argv[])
@@ -366,13 +360,13 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		Capture capture(camera_, config_.get(), loop_);
+		Capture capture(camera_, config_.get(), &loop_);
 		return capture.run(options_);
 	}
 
 	if (options_.isSet(OptMonitor)) {
 		std::cout << "Press Ctrl-C to interrupt" << std::endl;
-		ret = loop_->exec();
+		ret = loop_.exec();
 		if (ret)
 			std::cout << "Failed to run monitor loop" << std::endl;
 	}

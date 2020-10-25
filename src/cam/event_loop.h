@@ -9,26 +9,27 @@
 
 #include <atomic>
 
-#include <libcamera/event_notifier.h>
-
-namespace libcamera {
-class EventDispatcher;
-}
+struct event_base;
 
 class EventLoop
 {
 public:
-	EventLoop(libcamera::EventDispatcher *dispatcher);
+	EventLoop();
 	~EventLoop();
+
+	static EventLoop *instance();
 
 	int exec();
 	void exit(int code = 0);
 
 private:
-	libcamera::EventDispatcher *dispatcher_;
+	static EventLoop *instance_;
 
+	struct event_base *event_;
 	std::atomic<bool> exit_;
 	int exitCode_;
+
+	void interrupt();
 };
 
 #endif /* __CAM_EVENT_LOOP_H__ */

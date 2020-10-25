@@ -78,6 +78,9 @@ for documentation: [optional]
 for gstreamer: [optional]
 	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
+for cam: [optional]
+        libevent-dev
+
 for qcam: [optional]
 	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev
 

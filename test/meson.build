@@ -29,6 +29,7 @@ public_tests = [
 internal_tests = [
     ['byte-stream-buffer',              'byte-stream-buffer.cpp'],
     ['camera-sensor',                   'camera-sensor.cpp'],
+    ['delayed_contols',                 'delayed_contols.cpp'],
     ['event',                           'event.cpp'],
     ['event-dispatcher',                'event-dispatcher.cpp'],
     ['event-thread',                    'event-thread.cpp'],

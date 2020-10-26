@@ -13,6 +13,38 @@
 
 namespace libcamera {
 
+class Rectangle;
+
+class Point
+{
+public:
+	constexpr Point()
+		: x(0), y(0)
+	{
+	}
+
+	constexpr Point(int xpos, int ypos)
+		: x(xpos), y(ypos)
+	{
+	}
+
+	int x;
+	int y;
+
+	const std::string toString() const;
+
+	constexpr Point operator-() const
+	{
+		return { -x, -y };
+	}
+};
+
+bool operator==(const Point &lhs, const Point &rhs);
+static inline bool operator!=(const Point &lhs, const Point &rhs)
+{
+	return !(lhs == rhs);
+}
+
 class Size
 {
 public:
@@ -93,6 +125,17 @@ public:
 			std::max(height, expand.height)
 		};
 	}
+
+	Size boundedToAspectRatio(const Size &ratio) const;
+	Size expandedToAspectRatio(const Size &ratio) const;
+
+	Rectangle centeredTo(const Point &center) const;
+
+	Size operator*(float factor) const;
+	Size operator/(float factor) const;
+
+	Size &operator*=(float factor);
+	Size &operator/=(float factor);
 };
 
 bool operator==(const Size &lhs, const Size &rhs);
@@ -176,6 +219,11 @@ public:
 	{
 	}
 
+	constexpr explicit Rectangle(const Size &size)
+		: x(0), y(0), width(size.width), height(size.height)
+	{
+	}
+
 	int x;
 	int y;
 	unsigned int width;
@@ -183,6 +231,26 @@ public:
 
 	bool isNull() const { return !width && !height; }
 	const std::string toString() const;
+
+	Point center() const;
+
+	Size size() const
+	{
+		return { width, height };
+	}
+
+	Point topLeft() const
+	{
+		return { x, y };
+	}
+
+	Rectangle &scaleBy(const Size &numerator, const Size &denominator);
+	Rectangle &translateBy(const Point &point);
+
+	Rectangle boundedTo(const Rectangle &bound) const;
+	Rectangle enclosedIn(const Rectangle &boundary) const;
+	Rectangle scaledBy(const Size &numerator, const Size &denominator) const;
+	Rectangle translatedBy(const Point &point) const;
 };
 
 bool operator==(const Rectangle &lhs, const Rectangle &rhs);

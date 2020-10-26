@@ -63,7 +63,7 @@ public:
 	}
 	virtual ~BoundMethodBase() = default;
 
-	template<typename T, typename std::enable_if_t<!std::is_same<Object, T>::value> * = nullptr>
+	template<typename T, typename std::enable_if_t<!std::is_same_v<Object, T>> * = nullptr>
 	bool match(T *obj) { return obj == obj_; }
 	bool match(Object *object) { return object == object_; }
 

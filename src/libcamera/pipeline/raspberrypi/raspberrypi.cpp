@@ -927,6 +927,13 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	data->properties_ = data->sensor_->properties();
 
 	/*
+	 * Set a default value for the ScalerCropMaximum property to show
+	 * that we support its use, however, initialise it to zero because
+	 * it's not meaningful until a camera mode has been chosen.
+	 */
+	data->properties_.set(properties::ScalerCropMaximum, Rectangle{});
+
+	/*
 	 * We cache three things about the sensor in relation to transforms
 	 * (meaning horizontal and vertical flips).
 	 *

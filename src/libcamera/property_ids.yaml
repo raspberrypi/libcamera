@@ -663,4 +663,19 @@ controls:
         \todo Rename this property to ActiveAreas once we will have property
               categories (i.e. Properties::PixelArray::ActiveAreas)
 
+  - ScalerCropMaximum:
+      type: Rectangle
+      description: |
+        The maximum valid rectangle for the controls::ScalerCrop control. This
+        reflects the minimum mandatory cropping applied in the camera sensor and
+        the rest of the pipeline. Just as the ScalerCrop control, it defines a
+        rectangle taken from the sensor's active pixel array.
+
+        This property is valid only after the camera has been successfully
+        configured and its value may change whenever a new configuration is
+        applied.
+
+        \todo Turn this property into a "maximum control value" for the
+        ScalerCrop control once "dynamic" controls have been implemented.
+
 ...

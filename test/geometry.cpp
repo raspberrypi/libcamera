@@ -17,16 +17,17 @@ using namespace libcamera;
 class GeometryTest : public Test
 {
 protected:
-	bool compare(const Size &lhs, const Size &rhs,
-		     bool (*op)(const Size &lhs, const Size &rhs),
+	template<typename T>
+	bool compare(const T &lhs, const T &rhs,
+		     bool (*op)(const T &lhs, const T &rhs),
 		     const char *opName, bool expect)
 	{
 		bool result = op(lhs, rhs);
 
 		if (result != expect) {
-			cout << "Size(" << lhs.width << ", " << lhs.height << ") "
+			cout << lhs.toString()
 			     << opName << " "
-			     << "Size(" << rhs.width << ", " << rhs.height << ") "
+			     << rhs.toString()
 			     << "test failed" << std::endl;
 			return false;
 		}
@@ -36,6 +37,63 @@ protected:
 
 	int run()
 	{
+		/*
+		 * Point tests
+		 */
+
+		/* Equality */
+		if (!compare(Point(50, 100), Point(50, 100), &operator==, "==", true))
+			return TestFail;
+
+		if (!compare(Point(-50, 100), Point(-50, 100), &operator==, "==", true))
+			return TestFail;
+
+		if (!compare(Point(50, -100), Point(50, -100), &operator==, "==", true))
+			return TestFail;
+
+		if (!compare(Point(-50, -100), Point(-50, -100), &operator==, "==", true))
+			return TestFail;
+
+		/* Inequality */
+		if (!compare(Point(50, 100), Point(50, 100), &operator!=, "!=", false))
+			return TestFail;
+
+		if (!compare(Point(-50, 100), Point(-50, 100), &operator!=, "!=", false))
+			return TestFail;
+
+		if (!compare(Point(50, -100), Point(50, -100), &operator!=, "!=", false))
+			return TestFail;
+
+		if (!compare(Point(-50, -100), Point(-50, -100), &operator!=, "!=", false))
+			return TestFail;
+
+		if (!compare(Point(-50, 100), Point(50, 100), &operator!=, "!=", true))
+			return TestFail;
+
+		if (!compare(Point(50, -100), Point(50, 100), &operator!=, "!=", true))
+			return TestFail;
+
+		if (!compare(Point(-50, -100), Point(50, 100), &operator!=, "!=", true))
+			return TestFail;
+
+		/* Negation */
+		if (Point(50, 100) != -Point(-50, -100) ||
+		    Point(50, 100) == -Point(50, -100) ||
+		    Point(50, 100) == -Point(-50, 100)) {
+			cout << "Point negation test failed" << endl;
+			return TestFail;
+		}
+
+		/* Default constructor */
+		if (Point() != Point(0, 0)) {
+			cout << "Default constructor test failed" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Size tests
+		 */
+
 		if (!Size().isNull() || !Size(0, 0).isNull()) {
 			cout << "Null size incorrectly reported as not null" << endl;
 			return TestFail;
@@ -106,6 +164,75 @@ protected:
 		    Size(200, 50).expandedTo({ 100, 100 }) != Size(200, 100) ||
 		    Size(50, 200).expandedTo({ 100, 100 }) != Size(100, 200)) {
 			cout << "Size::expandedTo() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Aspect ratio tests */
+		if (Size(0, 0).boundedToAspectRatio(Size(4, 3)) != Size(0, 0) ||
+		    Size(1920, 1440).boundedToAspectRatio(Size(16, 9)) != Size(1920, 1080) ||
+		    Size(1920, 1440).boundedToAspectRatio(Size(65536, 36864)) != Size(1920, 1080) ||
+		    Size(1440, 1920).boundedToAspectRatio(Size(9, 16)) != Size(1080, 1920) ||
+		    Size(1920, 1080).boundedToAspectRatio(Size(4, 3)) != Size(1440, 1080) ||
+		    Size(1920, 1080).boundedToAspectRatio(Size(65536, 49152)) != Size(1440, 1080) ||
+		    Size(1024, 1024).boundedToAspectRatio(Size(1, 1)) != Size(1024, 1024) ||
+		    Size(1920, 1080).boundedToAspectRatio(Size(16, 9)) != Size(1920, 1080) ||
+		    Size(200, 100).boundedToAspectRatio(Size(16, 9)) != Size(177, 100) ||
+		    Size(300, 200).boundedToAspectRatio(Size(16, 9)) != Size(300, 168)) {
+			cout << "Size::boundedToAspectRatio() test failed" << endl;
+			return TestFail;
+		}
+
+		if (Size(0, 0).expandedToAspectRatio(Size(4, 3)) != Size(0, 0) ||
+		    Size(1920, 1440).expandedToAspectRatio(Size(16, 9)) != Size(2560, 1440) ||
+		    Size(1920, 1440).expandedToAspectRatio(Size(65536, 36864)) != Size(2560, 1440) ||
+		    Size(1440, 1920).expandedToAspectRatio(Size(9, 16)) != Size(1440, 2560) ||
+		    Size(1920, 1080).expandedToAspectRatio(Size(4, 3)) != Size(1920, 1440) ||
+		    Size(1920, 1080).expandedToAspectRatio(Size(65536, 49152)) != Size(1920, 1440) ||
+		    Size(1024, 1024).expandedToAspectRatio(Size(1, 1)) != Size(1024, 1024) ||
+		    Size(1920, 1080).expandedToAspectRatio(Size(16, 9)) != Size(1920, 1080) ||
+		    Size(200, 100).expandedToAspectRatio(Size(16, 9)) != Size(200, 112) ||
+		    Size(300, 200).expandedToAspectRatio(Size(16, 9)) != Size(355, 200)) {
+			cout << "Size::expandedToAspectRatio() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Size::centeredTo() tests */
+		if (Size(0, 0).centeredTo(Point(50, 100)) != Rectangle(50, 100, 0, 0) ||
+		    Size(0, 0).centeredTo(Point(-50, -100)) != Rectangle(-50, -100, 0, 0) ||
+		    Size(100, 200).centeredTo(Point(50, 100)) != Rectangle(0, 0, 100, 200) ||
+		    Size(100, 200).centeredTo(Point(-50, -100)) != Rectangle(-100, -200, 100, 200) ||
+		    Size(101, 201).centeredTo(Point(-50, -100)) != Rectangle(-100, -200, 101, 201) ||
+		    Size(101, 201).centeredTo(Point(-51, -101)) != Rectangle(-101, -201, 101, 201)) {
+			cout << "Size::centeredTo() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Scale a size by a float */
+		if (Size(1000, 2000) * 2.0 != Size(2000, 4000) ||
+		    Size(300, 100) * 0.5 != Size(150, 50) ||
+		    Size(1, 2) * 1.6 != Size(1, 3)) {
+			cout << "Size::operator*() failed" << endl;
+			return TestFail;
+		}
+
+		if (Size(1000, 2000) / 2.0 != Size(500, 1000) ||
+		    Size(300, 100) / 0.5 != Size(600, 200) ||
+		    Size(1000, 2000) / 3.0 != Size(333, 666)) {
+			cout << "Size::operator*() failed" << endl;
+			return TestFail;
+		}
+
+		s = Size(300, 100);
+		s *= 0.3333;
+		if (s != Size(99, 33)) {
+			cout << "Size::operator*() test failed" << endl;
+			return TestFail;
+		}
+
+		s = Size(300, 100);
+		s /= 3;
+		if (s != Size(100, 33)) {
+			cout << "Size::operator*() test failed" << endl;
 			return TestFail;
 		}
 
@@ -182,6 +309,10 @@ protected:
 		if (!compare(Size(200, 100), Size(100, 200), &operator>=, ">=", true))
 			return TestFail;
 
+		/*
+		 * Rectangle tests
+		 */
+
 		/* Test Rectangle::isNull(). */
 		if (!Rectangle(0, 0, 0, 0).isNull() ||
 		    !Rectangle(1, 1, 0, 0).isNull()) {
@@ -193,6 +324,124 @@ protected:
 		    Rectangle(0, 0, 1, 0).isNull() ||
 		    Rectangle(0, 0, 1, 1).isNull()) {
 			cout << "Non-null rectangle incorrectly reported as null" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::size(), Rectangle::topLeft() and Rectangle::center() tests */
+		if (Rectangle(-1, -2, 3, 4).size() != Size(3, 4) ||
+		    Rectangle(0, 0, 100000, 200000).size() != Size(100000, 200000)) {
+			cout << "Rectangle::size() test failed" << endl;
+			return TestFail;
+		}
+
+		if (Rectangle(1, 2, 3, 4).topLeft() != Point(1, 2) ||
+		    Rectangle(-1, -2, 3, 4).topLeft() != Point(-1, -2)) {
+			cout << "Rectangle::topLeft() test failed" << endl;
+			return TestFail;
+		}
+
+		if (Rectangle(0, 0, 300, 400).center() != Point(150, 200) ||
+		    Rectangle(-1000, -2000, 300, 400).center() != Point(-850, -1800) ||
+		    Rectangle(10, 20, 301, 401).center() != Point(160, 220) ||
+		    Rectangle(11, 21, 301, 401).center() != Point(161, 221) ||
+		    Rectangle(-1011, -2021, 301, 401).center() != Point(-861, -1821)) {
+			cout << "Rectangle::center() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::boundedTo() (intersection function) */
+		if (Rectangle(0, 0, 1000, 2000).boundedTo(Rectangle(0, 0, 1000, 2000)) !=
+			    Rectangle(0, 0, 1000, 2000) ||
+		    Rectangle(-500, -1000, 1000, 2000).boundedTo(Rectangle(0, 0, 1000, 2000)) !=
+			    Rectangle(0, 0, 500, 1000) ||
+		    Rectangle(500, 1000, 1000, 2000).boundedTo(Rectangle(0, 0, 1000, 2000)) !=
+			    Rectangle(500, 1000, 500, 1000) ||
+		    Rectangle(300, 400, 50, 100).boundedTo(Rectangle(0, 0, 1000, 2000)) !=
+			    Rectangle(300, 400, 50, 100) ||
+		    Rectangle(0, 0, 1000, 2000).boundedTo(Rectangle(300, 400, 50, 100)) !=
+			    Rectangle(300, 400, 50, 100) ||
+		    Rectangle(0, 0, 100, 100).boundedTo(Rectangle(50, 100, 100, 100)) !=
+			    Rectangle(50, 100, 50, 0) ||
+		    Rectangle(0, 0, 100, 100).boundedTo(Rectangle(100, 50, 100, 100)) !=
+			    Rectangle(100, 50, 0, 50) ||
+		    Rectangle(-10, -20, 10, 20).boundedTo(Rectangle(10, 20, 100, 100)) !=
+			    Rectangle(10, 20, 0, 0)) {
+			cout << "Rectangle::boundedTo() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::enclosedIn() tests */
+		if (Rectangle(10, 20, 300, 400).enclosedIn(Rectangle(-10, -20, 1300, 1400)) !=
+			    Rectangle(10, 20, 300, 400) ||
+		    Rectangle(-100, -200, 3000, 4000).enclosedIn(Rectangle(-10, -20, 1300, 1400)) !=
+			    Rectangle(-10, -20, 1300, 1400) ||
+		    Rectangle(-100, -200, 300, 400).enclosedIn(Rectangle(-10, -20, 1300, 1400)) !=
+			    Rectangle(-10, -20, 300, 400) ||
+		    Rectangle(5100, 6200, 300, 400).enclosedIn(Rectangle(-10, -20, 1300, 1400)) !=
+			    Rectangle(990, 980, 300, 400) ||
+		    Rectangle(100, -300, 150, 200).enclosedIn(Rectangle(50, 0, 200, 300)) !=
+			    Rectangle(100, 0, 150, 200) ||
+		    Rectangle(100, -300, 150, 1200).enclosedIn(Rectangle(50, 0, 200, 300)) !=
+			    Rectangle(100, 0, 150, 300) ||
+		    Rectangle(-300, 100, 200, 150).enclosedIn(Rectangle(0, 50, 300, 200)) !=
+			    Rectangle(0, 100, 200, 150) ||
+		    Rectangle(-300, 100, 1200, 150).enclosedIn(Rectangle(0, 50, 300, 200)) !=
+			    Rectangle(0, 100, 300, 150)) {
+			cout << "Rectangle::enclosedIn() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectange::scaledBy() tests */
+		if (Rectangle(10, 20, 300, 400).scaledBy(Size(0, 0), Size(1, 1)) !=
+			    Rectangle(0, 0, 0, 0) ||
+		    Rectangle(10, -20, 300, 400).scaledBy(Size(32768, 65536), Size(32768, 32768)) !=
+			    Rectangle(10, -40, 300, 800) ||
+		    Rectangle(-30000, 10000, 20000, 20000).scaledBy(Size(7, 7), Size(7, 7)) !=
+			    Rectangle(-30000, 10000, 20000, 20000) ||
+		    Rectangle(-20, -30, 320, 240).scaledBy(Size(1280, 960), Size(640, 480)) !=
+			    Rectangle(-40, -60, 640, 480) ||
+		    Rectangle(1, 1, 2026, 1510).scaledBy(Size(4056, 3024), Size(2028, 1512)) !=
+			    Rectangle(2, 2, 4052, 3020)) {
+			cout << "Rectangle::scaledBy() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::translatedBy() tests */
+		if (Rectangle(10, -20, 300, 400).translatedBy(Point(-30, 40)) !=
+			    Rectangle(-20, 20, 300, 400) ||
+		    Rectangle(-10, 20, 400, 300).translatedBy(Point(50, -60)) !=
+			    Rectangle(40, -40, 400, 300)) {
+			cout << "Rectangle::translatedBy() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::scaleBy() tests */
+		Rectangle r(-20, -30, 320, 240);
+		r.scaleBy(Size(1280, 960), Size(640, 480));
+		if (r != Rectangle(-40, -60, 640, 480)) {
+			cout << "Rectangle::scaleBy() test failed" << endl;
+			return TestFail;
+		}
+
+		r = Rectangle(1, 1, 2026, 1510);
+		r.scaleBy(Size(4056, 3024), Size(2028, 1512));
+		if (r != Rectangle(2, 2, 4052, 3020)) {
+			cout << "Rectangle::scaleBy() test failed" << endl;
+			return TestFail;
+		}
+
+		/* Rectangle::translateBy() tests */
+		r = Rectangle(10, -20, 300, 400);
+		r.translateBy(Point(-30, 40));
+		if (r != Rectangle(-20, 20, 300, 400)) {
+			cout << "Rectangle::translateBy() test failed" << endl;
+			return TestFail;
+		}
+
+		r = Rectangle(-10, 20, 400, 300);
+		r.translateBy(Point(50, -60));
+		if (r != Rectangle(40, -40, 400, 300)) {
+			cout << "Rectangle::translateBy() test failed" << endl;
 			return TestFail;
 		}
 

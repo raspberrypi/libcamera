@@ -23,6 +23,7 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/log.h"
@@ -131,6 +132,7 @@ public:
 	Stream mainPathStream_;
 	Stream selfPathStream_;
 	std::unique_ptr<CameraSensor> sensor_;
+	std::unique_ptr<DelayedControls> delayedCtrls_;
 	unsigned int frame_;
 	std::vector<IPABuffer> ipaBuffers_;
 	RkISP1Frames frameInfo_;
@@ -340,23 +342,6 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 	return nullptr;
 }
 
-class RkISP1ActionSetSensor : public FrameAction
-{
-public:
-	RkISP1ActionSetSensor(unsigned int frame, CameraSensor *sensor, const ControlList &controls)
-		: FrameAction(frame, SetSensor), sensor_(sensor), controls_(controls) {}
-
-protected:
-	void run() override
-	{
-		sensor_->setControls(&controls_);
-	}
-
-private:
-	CameraSensor *sensor_;
-	ControlList controls_;
-};
-
 class RkISP1ActionQueueBuffers : public FrameAction
 {
 public:
@@ -424,9 +409,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 	switch (action.operation) {
 	case RKISP1_IPA_ACTION_V4L2_SET: {
 		const ControlList &controls = action.controls[0];
-		timeline_.scheduleAction(std::make_unique<RkISP1ActionSetSensor>(frame,
-										 sensor_.get(),
-										 controls));
+		delayedCtrls_->push(controls);
 		break;
 	}
 	case RKISP1_IPA_ACTION_PARAM_FILLED: {
@@ -893,6 +876,8 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 		};
 	}
 
+	isp_->setFrameStartEnabled(true);
+
 	activeCamera_ = camera;
 
 	/* Inform IPA of stream configuration and sensor controls. */
@@ -919,6 +904,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;
+
+	isp_->setFrameStartEnabled(false);
 
 	selfPath_.stop();
 	mainPath_.stop();
@@ -1037,6 +1024,22 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
+
+	/*
+	 * \todo Read dealy values from the sensor itself or from a
+	 * a sensor database. For now use generic values taken from
+	 * the Raspberry Pi and listed as generic values.
+	 */
+	std::unordered_map<uint32_t, unsigned int> delays = {
+		{ V4L2_CID_ANALOGUE_GAIN, 1 },
+		{ V4L2_CID_EXPOSURE, 2 },
+	};
+
+	data->delayedCtrls_ =
+		std::make_unique<DelayedControls>(data->sensor_->device(),
+						  delays);
+	isp_->frameStart.connect(data->delayedCtrls_.get(),
+				 &DelayedControls::applyControls);
 
 	ret = data->loadIPA();
 	if (ret)

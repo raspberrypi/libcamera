@@ -41,7 +41,6 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(RkISP1)
 
 class PipelineHandlerRkISP1;
-class RkISP1ActionQueueBuffers;
 class RkISP1CameraData;
 
 enum RkISP1ActionType {
@@ -197,7 +196,6 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
-	friend RkISP1ActionQueueBuffers;
 	friend RkISP1CameraData;
 	friend RkISP1Frames;
 
@@ -208,6 +206,7 @@ private:
 	void bufferReady(FrameBuffer *buffer);
 	void paramReady(FrameBuffer *buffer);
 	void statReady(FrameBuffer *buffer);
+	void frameStart(uint32_t sequence);
 
 	int allocateBuffers(Camera *camera);
 	int freeBuffers(Camera *camera);
@@ -341,53 +340,6 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 	LOG(RkISP1, Error) << "Can't locate info from request";
 	return nullptr;
 }
-
-class RkISP1ActionQueueBuffers : public FrameAction
-{
-public:
-	RkISP1ActionQueueBuffers(unsigned int frame, RkISP1CameraData *data,
-				 PipelineHandlerRkISP1 *pipe)
-		: FrameAction(frame, QueueBuffers), data_(data), pipe_(pipe)
-	{
-	}
-
-protected:
-	void run() override
-	{
-		RkISP1FrameInfo *info = data_->frameInfo_.find(frame());
-		if (!info)
-			LOG(RkISP1, Fatal) << "Frame not known";
-
-		/*
-		 * \todo: If parameters are not filled a better method to handle
-		 * the situation than queuing a buffer with unknown content
-		 * should be used.
-		 *
-		 * It seems excessive to keep an internal zeroed scratch
-		 * parameters buffer around as this should not happen unless the
-		 * devices is under too much load. Perhaps failing the request
-		 * and returning it to the application with an error code is
-		 * better than queue it to hardware?
-		 */
-		if (!info->paramFilled)
-			LOG(RkISP1, Error)
-				<< "Parameters not ready on time for frame "
-				<< frame();
-
-		pipe_->param_->queueBuffer(info->paramBuffer);
-		pipe_->stat_->queueBuffer(info->statBuffer);
-
-		if (info->mainPathBuffer)
-			pipe_->mainPath_.queueBuffer(info->mainPathBuffer);
-
-		if (info->selfPathBuffer)
-			pipe_->selfPath_.queueBuffer(info->selfPathBuffer);
-	}
-
-private:
-	RkISP1CameraData *data_;
-	PipelineHandlerRkISP1 *pipe_;
-};
 
 int RkISP1CameraData::loadIPA()
 {
@@ -945,9 +897,14 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 	op.controls = { request->controls() };
 	data->ipa_->processEvent(op);
 
-	data->timeline_.scheduleAction(std::make_unique<RkISP1ActionQueueBuffers>(data->frame_,
-										  data,
-										  this));
+	param_->queueBuffer(info->paramBuffer);
+	stat_->queueBuffer(info->statBuffer);
+
+	if (info->mainPathBuffer)
+		mainPath_.queueBuffer(info->mainPathBuffer);
+
+	if (info->selfPathBuffer)
+		selfPath_.queueBuffer(info->selfPathBuffer);
 
 	data->frame_++;
 
@@ -1097,6 +1054,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	mainPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	selfPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
+	isp_->frameStart.connect(this, &PipelineHandlerRkISP1::frameStart);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 
 	/*
@@ -1175,8 +1133,6 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	if (!info)
 		return;
 
-	data->timeline_.bufferReady(buffer);
-
 	if (data->frame_ <= buffer->metadata().sequence)
 		data->frame_ = buffer->metadata().sequence + 1;
 
@@ -1184,6 +1140,20 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	op.operation = RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER;
 	op.data = { info->frame, info->statBuffer->cookie() };
 	data->ipa_->processEvent(op);
+}
+
+void PipelineHandlerRkISP1::frameStart(uint32_t sequence)
+{
+	if (!activeCamera_)
+		return;
+
+	RkISP1CameraData *data = cameraData(activeCamera_);
+
+	RkISP1FrameInfo *info = data->frameInfo_.find(sequence);
+	if (!info || !info->paramFilled)
+		LOG(RkISP1, Info)
+			<< "Parameters not ready on time for frame "
+			<< sequence;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)

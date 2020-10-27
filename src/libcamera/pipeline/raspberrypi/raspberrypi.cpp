@@ -135,7 +135,7 @@ public:
 	RPiCameraData(PipelineHandler *pipe)
 		: CameraData(pipe), sensor_(nullptr), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
-		  dropFrameCount_(0), ispOutputCount_(0)
+		  updateScalerCrop_(true), dropFrameCount_(0), ispOutputCount_(0)
 	{
 	}
 
@@ -192,6 +192,13 @@ public:
 	bool supportsFlips_;
 	bool flipsAlterBayerOrder_;
 	BayerFormat::Order nativeBayerOrder_;
+
+	/* For handling digital zoom. */
+	CameraSensorInfo sensorInfo_;
+	Rectangle ispCrop_; /* crop in ISP (camera mode) pixels */
+	Rectangle scalerCrop_; /* crop in sensor native pixels */
+	bool updateScalerCrop_;
+	Size ispMinCropSize_;
 
 	unsigned int dropFrameCount_;
 
@@ -677,25 +684,30 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 	}
 
+	/* Figure out the smallest selection the ISP will allow. */
+	Rectangle testCrop(0, 0, 1, 1);
+	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &testCrop);
+	data->ispMinCropSize_ = testCrop.size();
+
 	/* Adjust aspect ratio by providing crops on the input image. */
-	Rectangle crop{ 0, 0, sensorFormat.size };
+	Size size = sensorFormat.size.boundedToAspectRatio(maxSize);
+	Rectangle crop = size.centeredTo(Rectangle(sensorFormat.size).center());
+	data->ispCrop_ = crop;
 
-	int ar = maxSize.height * sensorFormat.size.width - maxSize.width * sensorFormat.size.height;
-	if (ar > 0)
-		crop.width = maxSize.width * sensorFormat.size.height / maxSize.height;
-	else if (ar < 0)
-		crop.height = maxSize.height * sensorFormat.size.width / maxSize.width;
-
-	crop.width &= ~1;
-	crop.height &= ~1;
-
-	crop.x = (sensorFormat.size.width - crop.width) >> 1;
-	crop.y = (sensorFormat.size.height - crop.height) >> 1;
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
 	ret = data->configureIPA(config);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
+
+	/*
+	 * Update the ScalerCropMaximum to the correct value for this camera mode.
+	 * For us, it's the same as the "analogue crop".
+	 *
+	 * \todo Make this property the ScalerCrop maximum value when dynamic
+	 * controls are available and set it at validate() time
+	 */
+	data->properties_.set(properties::ScalerCropMaximum, data->sensorInfo_.analogCrop);
 
 	return ret;
 }
@@ -1154,8 +1166,8 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		ipaConfig.data.push_back(static_cast<unsigned int>(lsTable_.fd()));
 	}
 
-	CameraSensorInfo sensorInfo = {};
-	int ret = sensor_->sensorInfo(&sensorInfo);
+	/* We store the CameraSensorInfo for digital zoom calculations. */
+	int ret = sensor_->sensorInfo(&sensorInfo_);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
 		return ret;
@@ -1164,7 +1176,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	/* Ready the IPA - it must know about the sensor resolution. */
 	IPAOperationData result;
 
-	ipa_->configure(sensorInfo, streamConfig, entityControls, ipaConfig,
+	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
 			&result);
 
 	unsigned int resultIdx = 0;
@@ -1243,8 +1255,26 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 		FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
 
 		handleStreamBuffer(buffer, &isp_[Isp::Stats]);
+
 		/* Fill the Request metadata buffer with what the IPA has provided */
-		requestQueue_.front()->metadata() = std::move(action.controls[0]);
+		Request *request = requestQueue_.front();
+		request->metadata() = std::move(action.controls[0]);
+
+		/*
+		 * Also update the ScalerCrop in the metadata with what we actually
+		 * used. But we must first rescale that from ISP (camera mode) pixels
+		 * back into sensor native pixels.
+		 *
+		 * Sending this information on every frame may be helpful.
+		 */
+		if (updateScalerCrop_) {
+			updateScalerCrop_ = false;
+			scalerCrop_ = ispCrop_.scaledBy(sensorInfo_.analogCrop.size(),
+							sensorInfo_.outputSize);
+			scalerCrop_.translateBy(sensorInfo_.analogCrop.topLeft());
+		}
+		request->metadata().set(controls::ScalerCrop, scalerCrop_);
+
 		state_ = State::IpaComplete;
 		break;
 	}
@@ -1594,6 +1624,35 @@ void RPiCameraData::tryRunPipeline()
 
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
+
+	if (request->controls().contains(controls::ScalerCrop)) {
+		Rectangle nativeCrop = request->controls().get<Rectangle>(controls::ScalerCrop);
+
+		if (!nativeCrop.width || !nativeCrop.height)
+			nativeCrop = { 0, 0, 1, 1 };
+
+		/* Create a version of the crop scaled to ISP (camera mode) pixels. */
+		Rectangle ispCrop = nativeCrop.translatedBy(-sensorInfo_.analogCrop.topLeft());
+		ispCrop.scaleBy(sensorInfo_.outputSize, sensorInfo_.analogCrop.size());
+
+		/*
+		 * The crop that we set must be:
+		 * 1. At least as big as ispMinCropSize_, once that's been
+		 *    enlarged to the same aspect ratio.
+		 * 2. With the same mid-point, if possible.
+		 * 3. But it can't go outside the sensor area.
+		 */
+		Size minSize = ispMinCropSize_.expandedToAspectRatio(nativeCrop.size());
+		Size size = ispCrop.size().expandedTo(minSize);
+		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
+
+		if (ispCrop != ispCrop_) {
+			isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop);
+			ispCrop_ = ispCrop;
+			/* queueFrameAction will have to update its scalerCrop_ */
+			updateScalerCrop_ = true;
+		}
+	}
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we

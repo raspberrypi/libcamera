@@ -699,6 +699,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 			break;
 		}
 
+		case controls::SCALER_CROP: {
+			/* We do nothing with this, but should avoid the warning below. */
+			break;
+		}
+
 		default:
 			LOG(IPARPI, Warning)
 				<< "Ctrl " << controls::controls.at(ctrl.first)->name()

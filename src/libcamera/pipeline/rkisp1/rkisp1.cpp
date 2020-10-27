@@ -34,7 +34,6 @@
 #include "libcamera/internal/v4l2_videodevice.h"
 
 #include "rkisp1_path.h"
-#include "timeline.h"
 
 namespace libcamera {
 
@@ -42,12 +41,6 @@ LOG_DEFINE_CATEGORY(RkISP1)
 
 class PipelineHandlerRkISP1;
 class RkISP1CameraData;
-
-enum RkISP1ActionType {
-	SetSensor,
-	SOE,
-	QueueBuffers,
-};
 
 struct RkISP1FrameInfo {
 	unsigned int frame;
@@ -81,41 +74,6 @@ private:
 	std::map<unsigned int, RkISP1FrameInfo *> frameInfo_;
 };
 
-class RkISP1Timeline : public Timeline
-{
-public:
-	RkISP1Timeline()
-		: Timeline()
-	{
-		setDelay(SetSensor, -1, 5);
-		setDelay(SOE, 0, -1);
-		setDelay(QueueBuffers, -1, 10);
-	}
-
-	void bufferReady(FrameBuffer *buffer)
-	{
-		/*
-		 * Calculate SOE by taking the end of DMA set by the kernel and applying
-		 * the time offsets provideprovided by the IPA to find the best estimate
-		 * of SOE.
-		 */
-
-		ASSERT(frameOffset(SOE) == 0);
-
-		utils::time_point soe = std::chrono::time_point<utils::clock>()
-			+ std::chrono::nanoseconds(buffer->metadata().timestamp)
-			+ timeOffset(SOE);
-
-		notifyStartOfExposure(buffer->metadata().sequence, soe);
-	}
-
-	void setDelay(unsigned int type, int frame, int msdelay)
-	{
-		utils::duration delay = std::chrono::milliseconds(msdelay);
-		setRawDelay(type, frame, delay);
-	}
-};
-
 class RkISP1CameraData : public CameraData
 {
 public:
@@ -135,7 +93,6 @@ public:
 	unsigned int frame_;
 	std::vector<IPABuffer> ipaBuffers_;
 	RkISP1Frames frameInfo_;
-	RkISP1Timeline timeline_;
 
 	RkISP1MainPath *mainPath_;
 	RkISP1SelfPath *selfPath_;
@@ -873,8 +830,6 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 			<< "Failed to stop parameters for " << camera->id();
 
 	data->ipa_->stop();
-
-	data->timeline_.reset();
 
 	data->frameInfo_.clear();
 

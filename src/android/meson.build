@@ -25,6 +25,7 @@ android_hal_sources = files([
     'jpeg/encoder_libjpeg.cpp',
     'jpeg/exif.cpp',
     'jpeg/post_processor_jpeg.cpp',
+    'jpeg/thumbnailer.cpp',
 ])
 
 android_camera_metadata_sources = files([

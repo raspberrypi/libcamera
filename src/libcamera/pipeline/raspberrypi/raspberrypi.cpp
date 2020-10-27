@@ -27,6 +27,7 @@
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
@@ -37,7 +38,6 @@
 
 #include "dma_heaps.h"
 #include "rpi_stream.h"
-#include "staggered_ctrl.h"
 
 namespace libcamera {
 
@@ -178,8 +178,7 @@ public:
 	RPi::DmaHeap dmaHeap_;
 	FileDescriptor lsTable_;
 
-	RPi::StaggeredCtrl staggeredCtrl_;
-	uint32_t expectedSequence_;
+	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
 
 	/*
@@ -766,11 +765,9 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	}
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	ASSERT(data->staggeredCtrl_);
 	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
-		const ControlList &ctrls = result.controls[0];
-		if (!data->staggeredCtrl_.set(ctrls))
-			LOG(RPI, Error) << "V4L2 staggered set failed";
+		ControlList &ctrls = result.controls[0];
+		data->unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}
 
 	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
@@ -802,13 +799,10 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	data->unicam_[Unicam::Image].dev()->setFrameStartEnabled(true);
 
 	/*
-	 * Write the last set of gain and exposure values to the camera before
-	 * starting. First check that the staggered ctrl has been initialised
-	 * by configure().
+	 * Reset the delayed controls with the gain and exposure values set by
+	 * the IPA.
 	 */
-	data->staggeredCtrl_.reset();
-	data->staggeredCtrl_.write();
-	data->expectedSequence_ = 0;
+	data->delayedCtrls_->reset();
 
 	data->state_ = RPiCameraData::State::Idle;
 
@@ -1147,7 +1141,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 	LOG(RPI, Debug) << "frame start " << sequence;
 
 	/* Write any controls for the next frame as soon as we can. */
-	staggeredCtrl_.write();
+	delayedCtrls_->applyControls(sequence);
 }
 
 int RPiCameraData::loadIPA()
@@ -1227,22 +1221,25 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	unsigned int resultIdx = 0;
 	if (result.operation & RPi::IPA_CONFIG_STAGGERED_WRITE) {
 		/*
-		 * Setup our staggered control writer with the sensor default
+		 * Setup our delayed control writer with the sensor default
 		 * gain and exposure delays.
 		 */
-		if (!staggeredCtrl_) {
-			staggeredCtrl_.init(unicam_[Unicam::Image].dev(),
-					    { { V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
-					      { V4L2_CID_EXPOSURE, result.data[resultIdx++] },
-					      { V4L2_CID_VBLANK, result.data[resultIdx++] } });
+		if (!delayedCtrls_) {
+			std::unordered_map<uint32_t, unsigned int> delays = {
+				{ V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
+				{ V4L2_CID_EXPOSURE, result.data[resultIdx++] },
+				{ V4L2_CID_VBLANK, result.data[resultIdx++] }
+			};
+
+			delayedCtrls_ = std::make_unique<DelayedControls>(unicam_[Unicam::Image].dev(), delays);
+
 			sensorMetadata_ = result.data[resultIdx++];
 		}
 	}
 
 	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
-		const ControlList &ctrls = result.controls[0];
-		if (!staggeredCtrl_.set(ctrls))
-			LOG(RPI, Error) << "V4L2 staggered set failed";
+		ControlList &ctrls = result.controls[0];
+		unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}
 
 	/*
@@ -1269,10 +1266,10 @@ void RPiCameraData::queueFrameAction([[maybe_unused]] unsigned int frame,
 	 * a stopped state.
 	 */
 	switch (action.operation) {
-	case RPi::IPA_ACTION_V4L2_SET_STAGGERED: {
+	case RPi::IPA_ACTION_SET_DELAYED_CTRLS: {
 		const ControlList &controls = action.controls[0];
-		if (!staggeredCtrl_.set(controls))
-			LOG(RPI, Error) << "V4L2 staggered set failed";
+		if (!delayedCtrls_->push(controls))
+			LOG(RPI, Error) << "Failed to set delayed controls";
 		goto done;
 	}
 
@@ -1376,11 +1373,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 	} else {
 		embeddedQueue_.push(buffer);
 
-		std::unordered_map<uint32_t, int32_t> ctrl;
-		int offset = buffer->metadata().sequence - expectedSequence_;
-		staggeredCtrl_.get(ctrl, offset);
-
-		expectedSequence_ = buffer->metadata().sequence + 1;
+		ControlList ctrl = delayedCtrls_->get(buffer->metadata().sequence);
 
 		/*
 		 * Sensor metadata is unavailable, so put the expected ctrl
@@ -1392,8 +1385,8 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 			auto it = mappedEmbeddedBuffers_.find(bufferId);
 			if (it != mappedEmbeddedBuffers_.end()) {
 				uint32_t *mem = reinterpret_cast<uint32_t *>(it->second.maps()[0].data());
-				mem[0] = ctrl[V4L2_CID_EXPOSURE];
-				mem[1] = ctrl[V4L2_CID_ANALOGUE_GAIN];
+				mem[0] = ctrl.get(V4L2_CID_EXPOSURE).get<int32_t>();
+				mem[1] = ctrl.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 			} else {
 				LOG(RPI, Warning) << "Failed to find embedded buffer "
 						  << bufferId;

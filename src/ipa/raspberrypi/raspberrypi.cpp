@@ -974,7 +974,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		applyAGC(&agcStatus, ctrls);
 
 		IPAOperationData op;
-		op.operation = RPi::IPA_ACTION_V4L2_SET_STAGGERED;
+		op.operation = RPi::IPA_ACTION_SET_DELAYED_CTRLS;
 		op.controls.emplace_back(ctrls);
 		queueFrameAction.emit(0, op);
 	}

@@ -75,8 +75,16 @@ Exif::~Exif()
 	if (exifData_)
 		free(exifData_);
 
-	if (data_)
+	if (data_) {
+		/*
+		 * Reset thumbnail data to avoid getting double-freed by
+		 * libexif. It is owned by the caller (i.e. PostProcessorJpeg).
+		 */
+		data_->data = nullptr;
+		data_->size = 0;
+
 		exif_data_unref(data_);
+	}
 
 	if (mem_)
 		exif_mem_unref(mem_);
@@ -266,6 +274,20 @@ void Exif::setOrientation(int orientation)
 	}
 
 	setShort(EXIF_IFD_0, EXIF_TAG_ORIENTATION, value);
+}
+
+/*
+ * The thumbnail data should remain valid until the Exif object is destroyed.
+ * Failing to do so, might result in no thumbnail data being set even after a
+ * call to Exif::setThumbnail().
+ */
+void Exif::setThumbnail(Span<const unsigned char> thumbnail,
+			Compression compression)
+{
+	data_->data = const_cast<unsigned char *>(thumbnail.data());
+	data_->size = thumbnail.size();
+
+	setShort(EXIF_IFD_0, EXIF_TAG_COMPRESSION, compression);
 }
 
 [[nodiscard]] int Exif::generate()

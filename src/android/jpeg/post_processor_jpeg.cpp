@@ -39,9 +39,43 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 	}
 
 	streamSize_ = outCfg.size;
+
+	thumbnailer_.configure(inCfg.size, inCfg.pixelFormat);
+	StreamConfiguration thCfg = inCfg;
+	thCfg.size = thumbnailer_.size();
+	if (thumbnailEncoder_.configure(thCfg) != 0) {
+		LOG(JPEG, Error) << "Failed to configure thumbnail encoder";
+		return -EINVAL;
+	}
+
 	encoder_ = std::make_unique<EncoderLibJpeg>();
 
 	return encoder_->configure(inCfg);
+}
+
+void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
+					  std::vector<unsigned char> *thumbnail)
+{
+	/* Stores the raw scaled-down thumbnail bytes. */
+	std::vector<unsigned char> rawThumbnail;
+
+	thumbnailer_.createThumbnail(source, &rawThumbnail);
+
+	if (!rawThumbnail.empty()) {
+		/*
+		 * \todo Avoid value-initialization of all elements of the
+		 * vector.
+		 */
+		thumbnail->resize(rawThumbnail.size());
+
+		int jpeg_size = thumbnailEncoder_.encode(rawThumbnail,
+							 *thumbnail, {});
+		thumbnail->resize(jpeg_size);
+
+		LOG(JPEG, Debug)
+			<< "Thumbnail compress returned "
+			<< jpeg_size << " bytes";
+	}
 }
 
 int PostProcessorJpeg::process(const FrameBuffer &source,
@@ -64,6 +98,12 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	 * second, it is good enough.
 	 */
 	exif.setTimestamp(std::time(nullptr));
+
+	std::vector<unsigned char> thumbnail;
+	generateThumbnail(source, &thumbnail);
+	if (!thumbnail.empty())
+		exif.setThumbnail(thumbnail, Exif::Compression::JPEG);
+
 	if (exif.generate() != 0)
 		LOG(JPEG, Error) << "Failed to generate valid EXIF data";
 

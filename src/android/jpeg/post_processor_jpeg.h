@@ -8,12 +8,13 @@
 #define __ANDROID_POST_PROCESSOR_JPEG_H__
 
 #include "../post_processor.h"
+#include "encoder_libjpeg.h"
+#include "thumbnailer.h"
 
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/buffer.h"
 
-class Encoder;
 class CameraDevice;
 
 class PostProcessorJpeg : public PostProcessor
@@ -28,9 +29,14 @@ public:
 		    CameraMetadata *metadata) override;
 
 private:
+	void generateThumbnail(const libcamera::FrameBuffer &source,
+			       std::vector<unsigned char> *thumbnail);
+
 	CameraDevice *const cameraDevice_;
 	std::unique_ptr<Encoder> encoder_;
 	libcamera::Size streamSize_;
+	EncoderLibJpeg thumbnailEncoder_;
+	Thumbnailer thumbnailer_;
 };
 
 #endif /* __ANDROID_POST_PROCESSOR_JPEG_H__ */

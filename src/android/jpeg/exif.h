@@ -21,11 +21,18 @@ public:
 	Exif();
 	~Exif();
 
+	enum Compression {
+		None = 1,
+		JPEG = 6,
+	};
+
 	void setMake(const std::string &make);
 	void setModel(const std::string &model);
 
 	void setOrientation(int orientation);
 	void setSize(const libcamera::Size &size);
+	void setThumbnail(libcamera::Span<const unsigned char> thumbnail,
+			  Compression compression);
 	void setTimestamp(time_t timestamp);
 
 	libcamera::Span<const uint8_t> data() const { return { exifData_, size_ }; }

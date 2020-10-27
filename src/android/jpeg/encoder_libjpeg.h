@@ -24,10 +24,13 @@ public:
 	int encode(const libcamera::FrameBuffer &source,
 		   libcamera::Span<uint8_t> destination,
 		   libcamera::Span<const uint8_t> exifData) override;
+	int encode(libcamera::Span<const uint8_t> source,
+		   libcamera::Span<uint8_t> destination,
+		   libcamera::Span<const uint8_t> exifData);
 
 private:
-	void compressRGB(const libcamera::MappedBuffer *frame);
-	void compressNV(const libcamera::MappedBuffer *frame);
+	void compressRGB(libcamera::Span<const uint8_t> frame);
+	void compressNV(libcamera::Span<const uint8_t> frame);
 
 	struct jpeg_compress_struct compress_;
 	struct jpeg_error_mgr jerr_;

@@ -104,9 +104,9 @@ int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 	return 0;
 }
 
-void EncoderLibJpeg::compressRGB(const MappedBuffer *frame)
+void EncoderLibJpeg::compressRGB(Span<const uint8_t> frame)
 {
-	unsigned char *src = static_cast<unsigned char *>(frame->maps()[0].data());
+	unsigned char *src = const_cast<unsigned char *>(frame.data());
 	/* \todo Stride information should come from buffer configuration. */
 	unsigned int stride = pixelFormatInfo_->stride(compress_.image_width, 0);
 
@@ -122,7 +122,7 @@ void EncoderLibJpeg::compressRGB(const MappedBuffer *frame)
  * Compress the incoming buffer from a supported NV format.
  * This naively unpacks the semi-planar NV12 to a YUV888 format for libjpeg.
  */
-void EncoderLibJpeg::compressNV(const MappedBuffer *frame)
+void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
 {
 	uint8_t tmprowbuf[compress_.image_width * 3];
 
@@ -144,7 +144,7 @@ void EncoderLibJpeg::compressNV(const MappedBuffer *frame)
 	unsigned int cb_pos = nvSwap_ ? 1 : 0;
 	unsigned int cr_pos = nvSwap_ ? 0 : 1;
 
-	const unsigned char *src = static_cast<unsigned char *>(frame->maps()[0].data());
+	const unsigned char *src = frame.data();
 	const unsigned char *src_c = src + y_stride * compress_.image_height;
 
 	JSAMPROW row_pointer[1];
@@ -189,6 +189,12 @@ int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 		return frame.error();
 	}
 
+	return encode(frame.maps()[0], dest, exifData);
+}
+
+int EncoderLibJpeg::encode(Span<const uint8_t> src, Span<uint8_t> dest,
+			   Span<const uint8_t> exifData)
+{
 	unsigned char *destination = dest.data();
 	unsigned long size = dest.size();
 
@@ -214,9 +220,9 @@ int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 			 << "x" << compress_.image_height;
 
 	if (nv_)
-		compressNV(&frame);
+		compressNV(src);
 	else
-		compressRGB(&frame);
+		compressRGB(src);
 
 	jpeg_finish_compress(&compress_);
 

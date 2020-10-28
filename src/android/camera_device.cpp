@@ -1188,7 +1188,7 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	return requestTemplate->get();
 }
 
-PixelFormat CameraDevice::toPixelFormat(int format)
+PixelFormat CameraDevice::toPixelFormat(int format) const
 {
 	/* Translate Android format code to libcamera pixel format. */
 	auto it = formatsMap_.find(format);

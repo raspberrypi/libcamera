@@ -16,3 +16,4 @@
    Developer Guide <guides/introduction>
    Application Writer's Guide <guides/application-developer>
    Pipeline Handler Writer's Guide <guides/pipeline-handler>
+   Tracing guide <guides/tracing>

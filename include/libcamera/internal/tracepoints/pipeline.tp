@@ -1,0 +1,25 @@
+TRACEPOINT_EVENT(
+	libcamera,
+	ipa_call_begin,
+	TP_ARGS(
+		const char *, pipe,
+		const char *, func
+	),
+	TP_FIELDS(
+		ctf_string(pipeline_name, pipe)
+		ctf_string(function_name, func)
+	)
+)
+
+TRACEPOINT_EVENT(
+	libcamera,
+	ipa_call_end,
+	TP_ARGS(
+		const char *, pipe,
+		const char *, func
+	),
+	TP_FIELDS(
+		ctf_string(pipeline_name, pipe)
+		ctf_string(function_name, func)
+	)
+)

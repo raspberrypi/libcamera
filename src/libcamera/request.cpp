@@ -16,6 +16,7 @@
 
 #include "libcamera/internal/camera_controls.h"
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/tracepoints.h"
 
 /**
  * \file request.h
@@ -85,10 +86,14 @@ Request::Request(Camera *camera, uint64_t cookie)
 	 * \todo: Add a validator for metadata controls.
 	 */
 	metadata_ = new ControlList(controls::controls);
+
+	LIBCAMERA_TRACEPOINT(request_construct, this);
 }
 
 Request::~Request()
 {
+	LIBCAMERA_TRACEPOINT(request_destroy, this);
+
 	delete metadata_;
 	delete controls_;
 	delete validator_;
@@ -106,6 +111,8 @@ Request::~Request()
  */
 void Request::reuse(ReuseFlag flags)
 {
+	LIBCAMERA_TRACEPOINT(request_reuse, this);
+
 	pending_.clear();
 	if (flags & ReuseBuffers) {
 		for (auto pair : bufferMap_) {
@@ -259,6 +266,8 @@ void Request::complete()
 	LOG(Request, Debug)
 		<< "Request has completed - cookie: " << cookie_
 		<< (cancelled_ ? " [Cancelled]" : "");
+
+	LIBCAMERA_TRACEPOINT(request_complete, this);
 }
 
 /**
@@ -276,6 +285,8 @@ void Request::complete()
  */
 bool Request::completeBuffer(FrameBuffer *buffer)
 {
+	LIBCAMERA_TRACEPOINT(request_complete_buffer, this, buffer);
+
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 

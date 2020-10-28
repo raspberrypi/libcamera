@@ -1,0 +1,9 @@
+TRACEPOINT_ENUM(
+	libcamera,
+	buffer_status,
+	TP_ENUM_VALUES(
+		ctf_enum_value("FrameSuccess", 0)
+		ctf_enum_value("FrameError", 1)
+		ctf_enum_value("FrameCancelled", 2)
+	)
+)

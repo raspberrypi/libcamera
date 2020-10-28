@@ -1,0 +1,9 @@
+TRACEPOINT_ENUM(
+	libcamera,
+	request_status,
+	TP_ENUM_VALUES(
+		ctf_enum_value("RequestPending", 0)
+		ctf_enum_value("RequestComplete", 1)
+		ctf_enum_value("RequestCancelled", 2)
+	)
+)

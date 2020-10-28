@@ -243,7 +243,6 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 		LOG(V4L2, Error) << "Unable to read control " << errorIdx
 				 << ": " << strerror(-ret);
 		count = errorIdx - 1;
-		ret = errorIdx;
 	}
 
 	updateControls(&ctrls, v4l2Ctrls, count);

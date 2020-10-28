@@ -1525,7 +1525,7 @@ void CameraDevice::requestComplete(Request *request)
 	 * It might be appropriate to return a 'correct' (as determined by
 	 * pipeline handlers) timestamp in the Request itself.
 	 */
-	uint64_t timestamp = buffers.at(0)->metadata().timestamp;
+	uint64_t timestamp = buffers.begin()->second->metadata().timestamp;
 	resultMetadata = getResultMetadata(descriptor->frameNumber_, timestamp);
 
 	/* Handle any JPEG compression. */

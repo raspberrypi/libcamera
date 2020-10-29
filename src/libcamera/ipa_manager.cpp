@@ -43,7 +43,7 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * The isolation mechanism ensures that no code from a closed-source module is
  * ever run in the libcamera process.
  *
- * To create an IPA context, pipeline handlers call the IPAManager::ipaCreate()
+ * To create an IPA context, pipeline handlers call the IPAManager::createIPA()
  * method. For a directly loaded module, the manager calls the module's
  * ipaCreate() function directly and wraps the returned context in an
  * IPAContextWrapper that exposes an IPAInterface.

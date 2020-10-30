@@ -63,6 +63,13 @@ do
 			echo >&2 "No Reviewed-by or Acked-by in commit $commit"
 			errors=$((errors+1))
 		fi
+
+		# 4. The commit message shall not contain a Change-Id.
+		if echo "$msg" | grep -q '^Change-Id:'
+		then
+			echo >&2 "Found Change-Id in commit $commit"
+			errors=$((errors+1))
+		fi
 	done
 
 	if [ $errors != 0 ]

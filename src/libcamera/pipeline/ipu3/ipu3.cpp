@@ -836,13 +836,13 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
-	if (!pipe_->completeBuffer(camera_, request, buffer))
+	if (!pipe_->completeBuffer(request, buffer))
 		/* Request not completed yet, return here. */
 		return;
 
 	/* Mark the request as complete. */
 	request->metadata().set(controls::draft::PipelineDepth, 3);
-	pipe_->completeRequest(camera_, request);
+	pipe_->completeRequest(request);
 }
 
 /**
@@ -865,10 +865,10 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	 * now as there's no need for ImgU processing.
 	 */
 	if (request->findBuffer(&rawStream_)) {
-		bool isComplete = pipe_->completeBuffer(camera_, request, buffer);
+		bool isComplete = pipe_->completeBuffer(request, buffer);
 		if (isComplete) {
 			request->metadata().set(controls::draft::PipelineDepth, 2);
-			pipe_->completeRequest(camera_, request);
+			pipe_->completeRequest(request);
 			return;
 		}
 	}

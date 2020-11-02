@@ -81,11 +81,10 @@ public:
 	virtual int start(Camera *camera, ControlList *controls) = 0;
 	virtual void stop(Camera *camera) = 0;
 
-	int queueRequest(Camera *camera, Request *request);
+	int queueRequest(Request *request);
 
-	bool completeBuffer(Camera *camera, Request *request,
-			    FrameBuffer *buffer);
-	void completeRequest(Camera *camera, Request *request);
+	bool completeBuffer(Request *request, FrameBuffer *buffer);
+	void completeRequest(Request *request);
 
 	const char *name() const { return name_; }
 

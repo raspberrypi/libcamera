@@ -1135,15 +1135,14 @@ void PipelineHandlerRkISP1::tryCompleteRequest(Request *request)
 
 	data->frameInfo_.destroy(info->frame);
 
-	completeRequest(activeCamera_, request);
+	completeRequest(request);
 }
 
 void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 {
-	ASSERT(activeCamera_);
 	Request *request = buffer->request();
 
-	completeBuffer(activeCamera_, request, buffer);
+	completeBuffer(request, buffer);
 	tryCompleteRequest(request);
 }
 

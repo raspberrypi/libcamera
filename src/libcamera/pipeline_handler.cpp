@@ -376,8 +376,7 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
 
 /**
  * \fn PipelineHandler::queueRequest()
- * \brief Queue a request to the camera
- * \param[in] camera The camera to queue the request to
+ * \brief Queue a request
  * \param[in] request The request to queue
  *
  * This method queues a capture request to the pipeline handler for processing.
@@ -392,8 +391,9 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
  *
  * \return 0 on success or a negative error code otherwise
  */
-int PipelineHandler::queueRequest(Camera *camera, Request *request)
+int PipelineHandler::queueRequest(Request *request)
 {
+	Camera *camera = request->camera_;
 	CameraData *data = cameraData(camera);
 	data->queuedRequests_.push_back(request);
 
@@ -423,7 +423,6 @@ int PipelineHandler::queueRequest(Camera *camera, Request *request)
 
 /**
  * \brief Complete a buffer for a request
- * \param[in] camera The camera the request belongs to
  * \param[in] request The request the buffer belongs to
  * \param[in] buffer The buffer that has completed
  *
@@ -439,16 +438,15 @@ int PipelineHandler::queueRequest(Camera *camera, Request *request)
  * \return True if all buffers contained in the request have completed, false
  * otherwise
  */
-bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
-				     FrameBuffer *buffer)
+bool PipelineHandler::completeBuffer(Request *request, FrameBuffer *buffer)
 {
+	Camera *camera = request->camera_;
 	camera->bufferCompleted.emit(request, buffer);
 	return request->completeBuffer(buffer);
 }
 
 /**
  * \brief Signal request completion
- * \param[in] camera The camera that the request belongs to
  * \param[in] request The request that has completed
  *
  * The pipeline handler shall call this method to notify the \a camera that the
@@ -461,8 +459,10 @@ bool PipelineHandler::completeBuffer(Camera *camera, Request *request,
  *
  * \context This function shall be called from the CameraManager thread.
  */
-void PipelineHandler::completeRequest(Camera *camera, Request *request)
+void PipelineHandler::completeRequest(Request *request)
 {
+	Camera *camera = request->camera_;
+
 	request->complete();
 
 	CameraData *data = cameraData(camera);

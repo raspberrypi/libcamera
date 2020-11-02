@@ -519,8 +519,8 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
-	pipe_->completeBuffer(camera_, request, buffer);
-	pipe_->completeRequest(camera_, request);
+	pipe_->completeBuffer(request, buffer);
+	pipe_->completeRequest(request);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc)

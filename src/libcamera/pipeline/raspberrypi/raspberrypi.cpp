@@ -1507,10 +1507,10 @@ void RPiCameraData::clearIncompleteRequests()
 			 * request? If not, do so now.
 			 */
 			if (buffer && buffer->request())
-				pipe_->completeBuffer(camera_, request, buffer);
+				pipe_->completeBuffer(request, buffer);
 		}
 
-		pipe_->completeRequest(camera_, request);
+		pipe_->completeRequest(request);
 		requestQueue_.pop_front();
 	}
 }
@@ -1534,7 +1534,7 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 			 * Tag the buffer as completed, returning it to the
 			 * application.
 			 */
-			pipe_->completeBuffer(camera_, request, buffer);
+			pipe_->completeBuffer(request, buffer);
 		} else {
 			/*
 			 * This buffer was not part of the Request, or there is no
@@ -1597,7 +1597,7 @@ void RPiCameraData::checkRequestCompleted()
 		if (state_ != State::IpaComplete)
 			return;
 
-		pipe_->completeRequest(camera_, request);
+		pipe_->completeRequest(request);
 		requestQueue_.pop_front();
 		requestCompleted = true;
 	}

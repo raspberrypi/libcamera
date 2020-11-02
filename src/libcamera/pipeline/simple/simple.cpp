@@ -898,8 +898,8 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 		}
 
 		Request *request = buffer->request();
-		completeBuffer(activeCamera_, request, buffer);
-		completeRequest(activeCamera_, request);
+		completeBuffer(request, buffer);
+		completeRequest(request);
 		return;
 	}
 
@@ -923,8 +923,8 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 
 	/* Otherwise simply complete the request. */
 	Request *request = buffer->request();
-	completeBuffer(activeCamera_, request, buffer);
-	completeRequest(activeCamera_, request);
+	completeBuffer(request, buffer);
+	completeRequest(request);
 }
 
 void SimplePipelineHandler::converterDone(FrameBuffer *input,
@@ -935,8 +935,8 @@ void SimplePipelineHandler::converterDone(FrameBuffer *input,
 
 	/* Complete the request. */
 	Request *request = output->request();
-	completeBuffer(activeCamera_, request, output);
-	completeRequest(activeCamera_, request);
+	completeBuffer(request, output);
+	completeRequest(request);
 
 	/* Queue the input buffer back for capture. */
 	data->video_->queueBuffer(input);

@@ -522,17 +522,6 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 			return ret;
 	}
 
-	/*
-	 * Apply the largest available format to the stat node.
-	 * \todo Revise this when we'll actually use the stat node.
-	 */
-	StreamConfiguration statCfg = {};
-	statCfg.size = cio2Format.size;
-
-	ret = imgu->configureStat(statCfg, &outputFormat);
-	if (ret)
-		return ret;
-
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
 	ControlList ctrls(imgu->imgu_->controls());
 	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,

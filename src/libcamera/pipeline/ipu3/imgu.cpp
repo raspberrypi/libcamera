@@ -475,6 +475,13 @@ int ImgUDevice::configure(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputF
 
 	LOG(IPU3, Debug) << "ImgU GDC format = " << gdcFormat.toString();
 
+	StreamConfiguration statCfg = {};
+	statCfg.size = inputFormat->size;
+	V4L2DeviceFormat statFormat;
+	ret = configureVideoDevice(stat_.get(), PAD_STAT, statCfg, &statFormat);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 

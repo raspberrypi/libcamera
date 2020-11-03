@@ -61,13 +61,6 @@ public:
 					    outputFormat);
 	}
 
-	int configureStat(const StreamConfiguration &cfg,
-			  V4L2DeviceFormat *outputFormat)
-	{
-		return configureVideoDevice(stat_.get(), PAD_STAT, cfg,
-					    outputFormat);
-	}
-
 	int allocateBuffers(unsigned int bufferCount);
 	void freeBuffers();
 

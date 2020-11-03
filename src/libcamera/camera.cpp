@@ -23,22 +23,82 @@
  * \file camera.h
  * \brief Camera device handling
  *
- * At the core of libcamera is the camera device, combining one image source
- * with processing hardware able to provide one or multiple image streams. The
- * Camera class represents a camera device.
+ * \page camera-model Camera Model
  *
- * A camera device contains a single image source, and separate camera device
- * instances relate to different image sources. For instance, a phone containing
- * front and back image sensors will be modelled with two camera devices, one
- * for each sensor. When multiple streams can be produced from the same image
- * source, all those streams are guaranteed to be part of the same camera
- * device.
+ * libcamera acts as a middleware between applications and camera hardware. It
+ * provides a solution to an unsolvable problem: reconciling applications,
+ * which need to run on different systems without dealing with device-specific
+ * details, and camera hardware, which exhibits a wide variety of features,
+ * limitations and architecture variations. In order to do so, it creates an
+ * abstract camera model that hides the camera hardware from applications. The
+ * model is designed to strike the right balance between genericity, to please
+ * generic applications, and flexibility, to expose even the most specific
+ * hardware features to the most demanding applications.
  *
- * While not sharing image sources, separate camera devices can share other
- * system resources, such as an ISP. For this reason camera device instances may
- * not be fully independent, in which case usage restrictions may apply. For
- * instance, a phone with a front and a back camera device may not allow usage
- * of the two devices simultaneously.
+ * In libcamera, a Camera is defined as a device that can capture frames
+ * continuously from a camera sensor and store them in memory. If supported by
+ * the device and desired by the application, the camera may store each
+ * captured frame in multiple copies, possibly in different formats and sizes.
+ * Each of these memory outputs of the camera is called a Stream.
+ *
+ * A camera contains a single image source, and separate camera instances
+ * relate to different image sources. For instance, a phone containing front
+ * and back image sensors will be modelled with two cameras, one for each
+ * sensor. When multiple streams can be produced from the same image source,
+ * all those streams are guaranteed to be part of the same camera.
+ *
+ * While not sharing image sources, separate cameras can share other system
+ * resources, such as ISPs. For this reason camera instances may not be fully
+ * independent, in which case usage restrictions may apply. For instance, a
+ * phone with a front and a back camera may not allow usage of the two cameras
+ * simultaneously.
+ *
+ * The camera model defines an implicit pipeline, whose input is the camera
+ * sensor, and whose outputs are the streams. Along the pipeline, the frames
+ * produced by the camera sensor are transformed by the camera into a format
+ * suitable for applications, with image processing that improves the quality
+ * of the captured frames. The camera exposes a set of controls that
+ * applications may use to manually control the processing steps. This
+ * high-level camera model is the minimum baseline that all cameras must
+ * conform to.
+ *
+ * \section camera-pipeline-model Pipeline Model
+ *
+ * Camera hardware differs in the supported image processing operations and the
+ * order in which they are applied. The libcamera pipelines abstract the
+ * hardware differences and expose a logical view of the processing operations
+ * with a fixed order. This offers low-level control of those operations to
+ * applications, while keeping application code generic.
+ *
+ * Starting from the camera sensor, a pipeline applies the following
+ * operations, in that order.
+ *
+ * - Pixel exposure
+ * - Analog to digital conversion and readout
+ * - Black level subtraction
+ * - Defective pixel correction
+ * - Lens shading correction
+ * - Spatial noise filtering
+ * - Per-channel gains (white balance)
+ * - Demosaicing (color filter array interpolation)
+ * - Color correction matrix (typically RGB to RGB)
+ * - Gamma correction
+ * - Color space transformation (typically RGB to YUV)
+ * - Cropping
+ * - Scaling
+ *
+ * Not all cameras implement all operations, and they are not necessarily
+ * implemented in the above order at the hardware level. The libcamera pipeline
+ * handlers translate the pipeline model to the real hardware configuration.
+ *
+ * \subsection digital-zoom Digital Zoom
+ *
+ * Digital zoom is implemented as a combination of the cropping and scaling
+ * stages of the pipeline. Cropping is controlled explicitly through the
+ * controls::ScalerCrop control, while scaling is controlled implicitly based
+ * on the crop rectangle and the output stream size. The crop rectangle is
+ * expressed relatively to the full pixel array size and indicates how the field
+ * of view is affected by the pipeline.
  */
 
 namespace libcamera {

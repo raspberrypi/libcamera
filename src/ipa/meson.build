@@ -19,7 +19,7 @@ subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')
 
-ipas = ['raspberrypi', 'rkisp1', 'vimc']
+ipas = ['ipu3', 'raspberrypi', 'rkisp1', 'vimc']
 ipa_names = []
 
 foreach pipeline : get_option('pipelines')

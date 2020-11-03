@@ -363,6 +363,11 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	if (ret)
 		return ret;
 
+	param_ = V4L2VideoDevice::fromEntityName(media, name_ + " parameters");
+	ret = param_->open();
+	if (ret)
+		return ret;
+
 	stat_ = V4L2VideoDevice::fromEntityName(media, name_ + " 3a stat");
 	ret = stat_->open();
 	if (ret)
@@ -475,6 +480,13 @@ int ImgUDevice::configure(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputF
 
 	LOG(IPU3, Debug) << "ImgU GDC format = " << gdcFormat.toString();
 
+	StreamConfiguration paramCfg = {};
+	paramCfg.size = inputFormat->size;
+	V4L2DeviceFormat paramFormat;
+	ret = configureVideoDevice(param_.get(), PAD_PARAM, paramCfg, &paramFormat);
+	if (ret)
+		return ret;
+
 	StreamConfiguration statCfg = {};
 	statCfg.size = inputFormat->size;
 	V4L2DeviceFormat statFormat;
@@ -505,8 +517,11 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 	if (ret)
 		return ret;
 
-	/* No need to apply format to the stat node. */
-	if (dev == stat_.get())
+	/*
+	 * No need to apply format to the param or stat video devices as the
+	 * driver ignores the operation.
+	 */
+	if (dev == param_.get() || dev == stat_.get())
 		return 0;
 
 	*outputFormat = {};
@@ -535,6 +550,12 @@ int ImgUDevice::allocateBuffers(unsigned int bufferCount)
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to import ImgU input buffers";
 		return ret;
+	}
+
+	ret = param_->importBuffers(bufferCount);
+	if (ret < 0) {
+		LOG(IPU3, Error) << "Failed to allocate ImgU param buffers";
+		goto error;
 	}
 
 	/*
@@ -586,6 +607,10 @@ void ImgUDevice::freeBuffers()
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU output buffers";
 
+	ret = param_->releaseBuffers();
+	if (ret)
+		LOG(IPU3, Error) << "Failed to release ImgU param buffers";
+
 	ret = stat_->releaseBuffers();
 	if (ret)
 		LOG(IPU3, Error) << "Failed to release ImgU stat buffers";
@@ -616,6 +641,12 @@ int ImgUDevice::start()
 		return ret;
 	}
 
+	ret = param_->streamOn();
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to start ImgU param";
+		return ret;
+	}
+
 	ret = stat_->streamOn();
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to start ImgU stat";
@@ -637,6 +668,7 @@ int ImgUDevice::stop()
 
 	ret = output_->streamOff();
 	ret |= viewfinder_->streamOff();
+	ret |= param_->streamOff();
 	ret |= stat_->streamOff();
 	ret |= input_->streamOff();
 
@@ -678,6 +710,7 @@ int ImgUDevice::linkSetup(const std::string &source, unsigned int sourcePad,
 int ImgUDevice::enableLinks(bool enable)
 {
 	std::string viewfinderName = name_ + " viewfinder";
+	std::string paramName = name_ + " parameters";
 	std::string outputName = name_ + " output";
 	std::string statName = name_ + " 3a stat";
 	std::string inputName = name_ + " input";
@@ -692,6 +725,10 @@ int ImgUDevice::enableLinks(bool enable)
 		return ret;
 
 	ret = linkSetup(name_, PAD_VF, viewfinderName, 0, enable);
+	if (ret)
+		return ret;
+
+	ret = linkSetup(paramName, 0, name_, PAD_PARAM, enable);
 	if (ret)
 		return ret;
 

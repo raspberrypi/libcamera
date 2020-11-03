@@ -71,13 +71,14 @@ public:
 
 	std::unique_ptr<V4L2Subdevice> imgu_;
 	std::unique_ptr<V4L2VideoDevice> input_;
+	std::unique_ptr<V4L2VideoDevice> param_;
 	std::unique_ptr<V4L2VideoDevice> output_;
 	std::unique_ptr<V4L2VideoDevice> viewfinder_;
 	std::unique_ptr<V4L2VideoDevice> stat_;
-	/* \todo Add param video device for 3A tuning */
 
 private:
 	static constexpr unsigned int PAD_INPUT = 0;
+	static constexpr unsigned int PAD_PARAM = 1;
 	static constexpr unsigned int PAD_OUTPUT = 2;
 	static constexpr unsigned int PAD_VF = 3;
 	static constexpr unsigned int PAD_STAT = 4;

@@ -552,20 +552,13 @@ int ImgUDevice::allocateBuffers(unsigned int bufferCount)
 		return ret;
 	}
 
-	ret = param_->importBuffers(bufferCount);
+	ret = param_->allocateBuffers(bufferCount, &paramBuffers_);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to allocate ImgU param buffers";
 		goto error;
 	}
 
-	/*
-	 * The kernel fails to start if buffers are not either imported or
-	 * allocated for the statistics video device. As statistics buffers are
-	 * not yet used by the pipeline import buffers to save memory.
-	 *
-	 * \todo To be revised when we'll actually use the stat node.
-	 */
-	ret = stat_->importBuffers(bufferCount);
+	ret = stat_->allocateBuffers(bufferCount, &statBuffers_);
 	if (ret < 0) {
 		LOG(IPU3, Error) << "Failed to allocate ImgU stat buffers";
 		goto error;
@@ -602,6 +595,9 @@ error:
 void ImgUDevice::freeBuffers()
 {
 	int ret;
+
+	paramBuffers_.clear();
+	statBuffers_.clear();
 
 	ret = output_->releaseBuffers();
 	if (ret)

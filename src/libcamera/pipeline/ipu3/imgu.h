@@ -76,6 +76,9 @@ public:
 	std::unique_ptr<V4L2VideoDevice> viewfinder_;
 	std::unique_ptr<V4L2VideoDevice> stat_;
 
+	std::vector<std::unique_ptr<FrameBuffer>> paramBuffers_;
+	std::vector<std::unique_ptr<FrameBuffer>> statBuffers_;
+
 private:
 	static constexpr unsigned int PAD_INPUT = 0;
 	static constexpr unsigned int PAD_PARAM = 1;

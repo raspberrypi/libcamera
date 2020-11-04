@@ -253,7 +253,7 @@ int CIO2Device::stop()
 	return ret;
 }
 
-int CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
+FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 {
 	FrameBuffer *buffer = rawBuffer;
 
@@ -261,7 +261,7 @@ int CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 	if (!buffer) {
 		if (availableBuffers_.empty()) {
 			LOG(IPU3, Error) << "CIO2 buffer underrun";
-			return -EINVAL;
+			return nullptr;
 		}
 
 		buffer = availableBuffers_.front();
@@ -270,7 +270,11 @@ int CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 
 	buffer->setRequest(request);
 
-	return output_->queueBuffer(buffer);
+	int ret = output_->queueBuffer(buffer);
+	if (ret)
+		return nullptr;
+
+	return buffer;
 }
 
 void CIO2Device::tryReturnBuffer(FrameBuffer *buffer)

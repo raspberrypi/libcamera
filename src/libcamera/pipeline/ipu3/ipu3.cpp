@@ -646,10 +646,10 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 	 * Queue a buffer on the CIO2, using the raw stream buffer provided in
 	 * the request, if any, or a CIO2 internal buffer otherwise.
 	 */
-	FrameBuffer *rawBuffer = request->findBuffer(&data->rawStream_);
-	error = data->cio2_.queueBuffer(request, rawBuffer);
-	if (error)
-		return error;
+	FrameBuffer *reqRawBuffer = request->findBuffer(&data->rawStream_);
+	FrameBuffer *rawBuffer = data->cio2_.queueBuffer(request, reqRawBuffer);
+	if (!rawBuffer)
+		return -ENOMEM;
 
 	/* Queue all buffers from the request aimed for the ImgU. */
 	for (auto it : request->buffers()) {

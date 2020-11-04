@@ -51,7 +51,7 @@ public:
 	CameraSensor *sensor() { return sensor_.get(); }
 	const CameraSensor *sensor() const { return sensor_.get(); }
 
-	int queueBuffer(Request *request, FrameBuffer *rawBuffer);
+	FrameBuffer *queueBuffer(Request *request, FrameBuffer *rawBuffer);
 	void tryReturnBuffer(FrameBuffer *buffer);
 	Signal<FrameBuffer *> &bufferReady() { return output_->bufferReady; }
 

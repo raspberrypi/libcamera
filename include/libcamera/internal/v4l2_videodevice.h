@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_INTERNAL_V4L2_VIDEODEVICE_H__
 #define __LIBCAMERA_INTERNAL_V4L2_VIDEODEVICE_H__
 
+#include <array>
 #include <atomic>
 #include <memory>
 #include <stdint.h>
@@ -153,14 +154,16 @@ private:
 class V4L2DeviceFormat
 {
 public:
+	struct Plane {
+		uint32_t size = 0;
+		uint32_t bpl = 0;
+	};
+
 	V4L2PixelFormat fourcc;
 	Size size;
 
-	struct {
-		uint32_t size;
-		uint32_t bpl;
-	} planes[3];
-	unsigned int planesCount;
+	std::array<Plane, 3> planes;
+	unsigned int planesCount = 0;
 
 	const std::string toString() const;
 };

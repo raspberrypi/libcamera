@@ -352,6 +352,15 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  */
 
 /**
+ * \struct V4L2DeviceFormat::Plane
+ * \brief Per-plane memory size information
+ * \var V4L2DeviceFormat::Plane::size
+ * \brief The plane total memory size (in bytes)
+ * \var V4L2DeviceFormat::Plane::bpl
+ * \brief The plane line stride (in bytes)
+ */
+
+/**
  * \var V4L2DeviceFormat::size
  * \brief The image size in pixels
  */

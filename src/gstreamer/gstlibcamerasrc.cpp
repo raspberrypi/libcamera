@@ -499,6 +499,8 @@ gst_libcamera_src_close(GstLibcameraSrc *self)
 
 	GST_DEBUG_OBJECT(self, "Releasing resources");
 
+	state->config_.reset();
+
 	ret = state->cam_->release();
 	if (ret) {
 		GST_ELEMENT_WARNING(self, RESOURCE, BUSY,

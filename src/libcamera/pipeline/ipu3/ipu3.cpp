@@ -14,11 +14,14 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
+#include <libcamera/ipa/ipu3.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -54,6 +57,8 @@ public:
 	{
 	}
 
+	int loadIPA();
+
 	void imguOutputBufferReady(FrameBuffer *buffer);
 	void cio2BufferReady(FrameBuffer *buffer);
 
@@ -65,6 +70,10 @@ public:
 	Stream rawStream_;
 
 	uint32_t exposureTime_;
+	std::unique_ptr<DelayedControls> delayedCtrls_;
+
+private:
+	void queueFrameAction(unsigned int id, const IPAOperationData &op);
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -594,12 +603,24 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *con
 	IPU3CameraData *data = cameraData(camera);
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
+
+	CameraSensorInfo sensorInfo = {};
+	std::map<unsigned int, IPAStream> streamConfig;
+	std::map<unsigned int, const ControlInfoMap &> entityControls;
+	IPAOperationData ipaConfig;
+	IPAOperationData result = {};
+
 	int ret;
 
 	/* Allocate buffers for internal pipeline usage. */
 	ret = allocateBuffers(camera);
 	if (ret)
 		return ret;
+
+	IPAOperationData ipaData = {};
+	ret = data->ipa_->start(ipaData, nullptr);
+	if (ret)
+		goto error;
 
 	/*
 	 * Start the ImgU video devices, buffers will be queued to the
@@ -613,11 +634,31 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *con
 	if (ret)
 		goto error;
 
+	/* Inform IPA of stream configuration and sensor controls. */
+	ret = data->cio2_.sensor()->sensorInfo(&sensorInfo);
+	if (ret)
+		goto error;
+
+	streamConfig[0] = {
+		.pixelFormat = data->outStream_.configuration().pixelFormat,
+		.size = data->outStream_.configuration().size,
+	};
+	streamConfig[1] = {
+		.pixelFormat = data->vfStream_.configuration().pixelFormat,
+		.size = data->vfStream_.configuration().size,
+	};
+
+	entityControls.emplace(0, data->cio2_.sensor()->controls());
+
+	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
+			      ipaConfig, &result);
+
 	return 0;
 
 error:
 	imgu->stop();
 	cio2->stop();
+	data->ipa_->stop();
 	freeBuffers(camera);
 	LOG(IPU3, Error) << "Failed to start camera " << camera->id();
 
@@ -633,6 +674,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	ret |= data->cio2_.stop();
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera " << camera->id();
+
+	data->ipa_->stop();
 
 	freeBuffers(camera);
 }
@@ -883,12 +926,32 @@ int PipelineHandlerIPU3::registerCameras()
 		if (ret)
 			continue;
 
+		ret = data->loadIPA();
+		if (ret)
+			continue;
+
 		/* Initialize the camera properties. */
 		data->properties_ = cio2->sensor()->properties();
 
 		ret = initControls(data.get());
 		if (ret)
 			continue;
+
+		/*
+		 * \todo Read delay values from the sensor itself or from a
+		 * a sensor database. For now use generic values taken from
+		 * the Raspberry Pi and listed as 'generic values'.
+		 */
+		std::unordered_map<uint32_t, unsigned int> delays = {
+			{ V4L2_CID_ANALOGUE_GAIN, 1 },
+			{ V4L2_CID_EXPOSURE, 2 },
+		};
+
+		data->delayedCtrls_ =
+			std::make_unique<DelayedControls>(cio2->sensor()->device(),
+							  delays);
+		data->cio2_.frameStart().connect(data->delayedCtrls_.get(),
+						 &DelayedControls::applyControls);
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each
@@ -931,6 +994,34 @@ int PipelineHandlerIPU3::registerCameras()
 	}
 
 	return numCameras ? 0 : -ENODEV;
+}
+
+int IPU3CameraData::loadIPA()
+{
+	ipa_ = IPAManager::createIPA(pipe_, 1, 1);
+	if (!ipa_)
+		return -ENOENT;
+
+	ipa_->queueFrameAction.connect(this, &IPU3CameraData::queueFrameAction);
+
+	ipa_->init(IPASettings{});
+
+	return 0;
+}
+
+void IPU3CameraData::queueFrameAction([[maybe_unused]] unsigned int id,
+				      const IPAOperationData &action)
+{
+	switch (action.operation) {
+	case IPU3_IPA_ACTION_SET_SENSOR_CONTROLS: {
+		const ControlList &controls = action.controls[0];
+		delayedCtrls_->push(controls);
+		break;
+	}
+	default:
+		LOG(IPU3, Error) << "Unknown action " << action.operation;
+		break;
+	}
 }
 
 /* -----------------------------------------------------------------------------

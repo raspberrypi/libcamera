@@ -172,6 +172,49 @@ int CameraSensor::init()
 		return -EINVAL;
 	}
 
+	/* Create and open the subdev. */
+	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
+	int ret = subdev_->open();
+	if (ret < 0)
+		return ret;
+
+	ret = initProperties();
+	if (ret)
+		return ret;
+
+	/* Enumerate, sort and cache media bus codes and sizes. */
+	formats_ = subdev_->formats(pad_);
+	if (formats_.empty()) {
+		LOG(CameraSensor, Error) << "No image format found";
+		return -EINVAL;
+	}
+
+	mbusCodes_ = utils::map_keys(formats_);
+	std::sort(mbusCodes_.begin(), mbusCodes_.end());
+
+	for (const auto &format : formats_) {
+		const std::vector<SizeRange> &ranges = format.second;
+		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes_),
+			       [](const SizeRange &range) { return range.max; });
+	}
+
+	std::sort(sizes_.begin(), sizes_.end());
+
+	/* Remove duplicates. */
+	auto last = std::unique(sizes_.begin(), sizes_.end());
+	sizes_.erase(last, sizes_.end());
+
+	/*
+	 * The sizes_ vector is sorted in ascending order, the resolution is
+	 * thus the last element of the vector.
+	 */
+	resolution_ = sizes_.back();
+
+	return 0;
+}
+
+int CameraSensor::initProperties()
+{
 	/*
 	 * Extract the camera sensor model name from the media entity name.
 	 *
@@ -202,14 +245,8 @@ int CameraSensor::init()
 
 	properties_.set(properties::Model, utils::toAscii(model_));
 
-	/* Create and open the subdev. */
-	subdev_ = std::make_unique<V4L2Subdevice>(entity_);
-	int ret = subdev_->open();
-	if (ret < 0)
-		return ret;
-
 	/* Generate a unique ID for the sensor. */
-	ret = generateId();
+	int ret = generateId();
 	if (ret)
 		return ret;
 
@@ -250,34 +287,6 @@ int CameraSensor::init()
 	else
 		propertyValue = 0;
 	properties_.set(properties::Rotation, propertyValue);
-
-	/* Enumerate, sort and cache media bus codes and sizes. */
-	formats_ = subdev_->formats(pad_);
-	if (formats_.empty()) {
-		LOG(CameraSensor, Error) << "No image format found";
-		return -EINVAL;
-	}
-
-	mbusCodes_ = utils::map_keys(formats_);
-	std::sort(mbusCodes_.begin(), mbusCodes_.end());
-
-	for (const auto &format : formats_) {
-		const std::vector<SizeRange> &ranges = format.second;
-		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes_),
-			       [](const SizeRange &range) { return range.max; });
-	}
-
-	std::sort(sizes_.begin(), sizes_.end());
-
-	/* Remove duplicates. */
-	auto last = std::unique(sizes_.begin(), sizes_.end());
-	sizes_.erase(last, sizes_.end());
-
-	/*
-	 * The sizes_ vector is sorted in ascending order, the resolution is
-	 * thus the last element of the vector.
-	 */
-	resolution_ = sizes_.back();
 
 	return 0;
 }

@@ -117,9 +117,14 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	if (ret < 0)
 		return ret;
 
+	Rectangle rect(0, 0, ispFormat.size);
+	ret = resizer_->setSelection(0, V4L2_SEL_TGT_CROP, &rect);
+	if (ret < 0)
+		return ret;
+
 	LOG(RkISP1, Debug)
 		<< "Configured " << name_ << " resizer input pad with "
-		<< ispFormat.toString();
+		<< ispFormat.toString() << " crop " << rect.toString();
 
 	ispFormat.size = config.size;
 

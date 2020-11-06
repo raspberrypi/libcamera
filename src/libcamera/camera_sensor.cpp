@@ -288,6 +288,25 @@ int CameraSensor::initProperties()
 		propertyValue = 0;
 	properties_.set(properties::Rotation, propertyValue);
 
+	Rectangle bounds;
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &bounds);
+	if (!ret)
+		properties_.set(properties::PixelArraySize, bounds.size());
+
+	Rectangle crop;
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &crop);
+	if (!ret) {
+		/*
+		 * V4L2_SEL_TGT_CROP_DEFAULT and V4L2_SEL_TGT_CROP_BOUNDS are
+		 * defined relatively to the sensor full pixel array size,
+		 * while properties::PixelArrayActiveAreas is defined relatively
+		 * to properties::PixelArraySize. Adjust it.
+		 */
+		crop.x -= bounds.x;
+		crop.y -= bounds.y;
+		properties_.set(properties::PixelArrayActiveAreas, { crop });
+	}
+
 	return 0;
 }
 

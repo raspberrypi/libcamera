@@ -593,6 +593,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	}
 
 	const ControlInfoMap &controlsInfo = camera_->controls();
+	const ControlList &properties = camera_->properties();
 
 	/* Color correction static metadata. */
 	{
@@ -725,17 +726,29 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_JPEG_MAX_SIZE, &maxJpegBufferSize_, 1);
 
 	/* Sensor static metadata. */
-	int32_t pixelArraySize[] = {
-		2592, 1944,
-	};
-	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
-				  &pixelArraySize, 2);
+	if (properties.contains(properties::PixelArraySize)) {
+		const Size &size =
+			properties.get<Size>(properties::PixelArraySize);
+		std::vector<int32_t> data{
+			static_cast<int32_t>(size.width),
+			static_cast<int32_t>(size.height),
+		};
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
+					  data.data(), data.size());
+	}
 
-	int32_t sensorSizes[] = {
-		0, 0, 2560, 1920,
-	};
-	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
-				  &sensorSizes, 4);
+	if (properties.contains(properties::PixelArrayActiveAreas)) {
+		const Span<const Rectangle> &rects =
+			properties.get<Span<const Rectangle>>(properties::PixelArrayActiveAreas);
+		std::vector<int32_t> data{
+			static_cast<int32_t>(rects[0].x),
+			static_cast<int32_t>(rects[0].y),
+			static_cast<int32_t>(rects[0].width),
+			static_cast<int32_t>(rects[0].height),
+		};
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
+					  data.data(), data.size());
+	}
 
 	int32_t sensitivityRange[] = {
 		32, 2400,

@@ -527,6 +527,16 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 		return ret;
 	}
 
+	/*
+	 * CameraSensorInfo::analogCrop::x and CameraSensorInfo::analogCrop::y
+	 * are defined relatively to the active pixel area, while V4L2's
+	 * TGT_CROP target is defined in respect to the full pixel array.
+	 *
+	 * Compensate it by subtracting the active areas offset.
+	 */
+	info->analogCrop.x -= rect.x;
+	info->analogCrop.y -= rect.y;
+
 	/* The bit depth and image size depend on the currently applied format. */
 	V4L2SubdeviceFormat format{};
 	ret = subdev_->getFormat(pad_, &format);

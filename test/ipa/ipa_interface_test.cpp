@@ -12,16 +12,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/event_dispatcher.h>
-#include <libcamera/event_notifier.h>
 #include <libcamera/ipa/vimc.h>
-#include <libcamera/timer.h>
 
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/event_dispatcher.h"
+#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/thread.h"
+#include "libcamera/internal/timer.h"
 
 #include "test.h"
 

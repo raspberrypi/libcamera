@@ -8,10 +8,9 @@
 #include <chrono>
 #include <iostream>
 
-#include <libcamera/event_dispatcher.h>
-#include <libcamera/timer.h>
-
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/thread.h"
+#include "libcamera/internal/timer.h"
 
 #include "test.h"
 

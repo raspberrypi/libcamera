@@ -8,10 +8,10 @@
 #include <iostream>
 
 #include <libcamera/buffer.h>
-#include <libcamera/event_dispatcher.h>
-#include <libcamera/timer.h>
 
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/thread.h"
+#include "libcamera/internal/timer.h"
 
 #include "v4l2_videodevice_test.h"
 

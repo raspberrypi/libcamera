@@ -6,8 +6,6 @@ libcamera_public_headers = files([
     'camera.h',
     'camera_manager.h',
     'controls.h',
-    'event_dispatcher.h',
-    'event_notifier.h',
     'extensible.h',
     'file_descriptor.h',
     'framebuffer_allocator.h',
@@ -19,7 +17,6 @@ libcamera_public_headers = files([
     'signal.h',
     'span.h',
     'stream.h',
-    'timer.h',
     'transform.h',
 ])
 

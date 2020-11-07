@@ -5,7 +5,7 @@
  * event_dispatcher.cpp - Event dispatcher
  */
 
-#include <libcamera/event_dispatcher.h>
+#include "libcamera/internal/event_dispatcher.h"
 
 #include "libcamera/internal/log.h"
 

@@ -13,11 +13,11 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
-#include <libcamera/event_dispatcher.h>
-#include <libcamera/timer.h>
 
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/file.h"
 #include "libcamera/internal/thread.h"
+#include "libcamera/internal/timer.h"
 
 #include "test.h"
 

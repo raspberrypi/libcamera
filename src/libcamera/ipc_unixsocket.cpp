@@ -12,8 +12,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <libcamera/event_notifier.h>
-
+#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/log.h"
 
 /**

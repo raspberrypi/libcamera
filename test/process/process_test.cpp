@@ -9,11 +9,10 @@
 #include <unistd.h>
 #include <vector>
 
-#include <libcamera/event_dispatcher.h>
-#include <libcamera/timer.h>
-
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/process.h"
 #include "libcamera/internal/thread.h"
+#include "libcamera/internal/timer.h"
 #include "libcamera/internal/utils.h"
 
 #include "test.h"

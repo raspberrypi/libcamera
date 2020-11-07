@@ -8,9 +8,9 @@
 #include <iostream>
 #include <thread>
 
-#include <libcamera/event_dispatcher.h>
 #include <libcamera/object.h>
 
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/thread.h"
 
 #include "test.h"

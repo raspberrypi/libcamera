@@ -11,10 +11,8 @@
 #include <map>
 
 #include <libcamera/camera.h>
-#include <libcamera/event_dispatcher.h>
 
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/event_dispatcher_poll.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -244,12 +242,8 @@ void CameraManager::Private::removeCamera(Camera *camera)
  * a time. Attempting to create a second instance without first deleting the
  * existing instance results in undefined behaviour.
  *
- * The manager is initially stopped, and shall be configured before being
- * started. In particular a custom event dispatcher shall be installed if
- * needed with CameraManager::setEventDispatcher().
- *
- * Once the camera manager is configured, it shall be started with start().
- * This will enumerate all the cameras present in the system, which can then be
+ * The manager is initially stopped, and shall be started with start(). This
+ * will enumerate all the cameras present in the system, which can then be
  * listed with list() and retrieved with get().
  *
  * Cameras are shared through std::shared_ptr<>, ensuring that a camera will
@@ -476,39 +470,5 @@ void CameraManager::removeCamera(std::shared_ptr<Camera> camera)
  * \context This function is \a threadsafe.
  * \return The libcamera version string
  */
-
-/**
- * \brief Set the event dispatcher
- * \param[in] dispatcher Pointer to the event dispatcher
- *
- * libcamera requires an event dispatcher to integrate event notification and
- * timers with the application event loop. Applications that want to provide
- * their own event dispatcher shall call this function once and only once before
- * the camera manager is started with start(). If no event dispatcher is
- * provided, a default poll-based implementation will be used.
- *
- * The CameraManager takes ownership of the event dispatcher and will delete it
- * when the application terminates.
- */
-void CameraManager::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
-{
-	thread()->setEventDispatcher(std::move(dispatcher));
-}
-
-/**
- * \brief Retrieve the event dispatcher
- *
- * This function retrieves the event dispatcher set with setEventDispatcher().
- * If no dispatcher has been set, a default poll-based implementation is created
- * and returned, and no custom event dispatcher may be installed anymore.
- *
- * The returned event dispatcher is valid until the camera manager is destroyed.
- *
- * \return Pointer to the event dispatcher
- */
-EventDispatcher *CameraManager::eventDispatcher()
-{
-	return thread()->eventDispatcher();
-}
 
 } /* namespace libcamera */

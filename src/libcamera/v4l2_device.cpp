@@ -16,8 +16,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include <libcamera/event_notifier.h>
-
+#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"

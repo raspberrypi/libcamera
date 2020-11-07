@@ -20,9 +20,9 @@
 
 #include <linux/version.h>
 
-#include <libcamera/event_notifier.h>
 #include <libcamera/file_descriptor.h>
 
+#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"

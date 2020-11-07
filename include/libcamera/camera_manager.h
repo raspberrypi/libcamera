@@ -19,7 +19,6 @@
 namespace libcamera {
 
 class Camera;
-class EventDispatcher;
 
 class CameraManager : public Object, public Extensible
 {
@@ -42,9 +41,6 @@ public:
 	void removeCamera(std::shared_ptr<Camera> camera);
 
 	static const std::string &version() { return version_; }
-
-	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
-	EventDispatcher *eventDispatcher();
 
 	Signal<std::shared_ptr<Camera>> cameraAdded;
 	Signal<std::shared_ptr<Camera>> cameraRemoved;

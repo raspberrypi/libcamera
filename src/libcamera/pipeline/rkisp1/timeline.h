@@ -10,8 +10,7 @@
 #include <list>
 #include <map>
 
-#include <libcamera/timer.h>
-
+#include "libcamera/internal/timer.h"
 #include "libcamera/internal/utils.h"
 
 namespace libcamera {

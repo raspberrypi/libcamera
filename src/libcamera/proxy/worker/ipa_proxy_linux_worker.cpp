@@ -9,10 +9,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/event_dispatcher.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/logging.h>
 
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/ipc_unixsocket.h"
 #include "libcamera/internal/log.h"

@@ -14,8 +14,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/event_dispatcher.h>
-
+#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/event_dispatcher_poll.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"

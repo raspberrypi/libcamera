@@ -11,6 +11,8 @@
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/timer.h>
 
+#include "libcamera/internal/thread.h"
+
 #include "camera_test.h"
 #include "test.h"
 
@@ -131,7 +133,7 @@ protected:
 			}
 		}
 
-		EventDispatcher *dispatcher = cm_->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 
 		Timer timer;
 		timer.start(1000);

@@ -17,6 +17,7 @@
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/thread.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 #include "buffer_source.h"
@@ -131,7 +132,7 @@ protected:
 			}
 		}
 
-		EventDispatcher *dispatcher = cm_->eventDispatcher();
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 
 		Timer timer;
 		timer.start(1000);

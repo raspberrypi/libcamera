@@ -33,6 +33,7 @@ private:
 	int capture(libcamera::FrameBufferAllocator *allocator);
 
 	void requestComplete(libcamera::Request *request);
+	void processRequest(libcamera::Request *request);
 
 	std::shared_ptr<libcamera::Camera> camera_;
 	libcamera::CameraConfiguration *config_;

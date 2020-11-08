@@ -157,6 +157,15 @@ void Capture::requestComplete(Request *request)
 	if (request->status() == Request::RequestCancelled)
 		return;
 
+	/*
+	 * Defer processing of the completed request to the event loop, to avoid
+	 * blocking the camera manager thread.
+	 */
+	loop_->callLater([=]() { processRequest(request); });
+}
+
+void Capture::processRequest(Request *request)
+{
 	const Request::BufferMap &buffers = request->buffers();
 
 	/*

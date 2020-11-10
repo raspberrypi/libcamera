@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('v4l2')
+    subdir_done()
+endif
+
 v4l2_compat_sources = files([
     'v4l2_camera.cpp',
     'v4l2_camera_file.cpp',

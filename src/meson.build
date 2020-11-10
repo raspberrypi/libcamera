@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
-subdir('android')
-
 openssl = find_program('openssl', required : true)
 if openssl.found()
     ipa_priv_key = custom_target('ipa-priv-key',
@@ -13,8 +11,13 @@ else
     ipa_sign_module = false
 endif
 
+# The 'android' subdir must be processed first, and the build targets
+# are included directly into the libcamera library when this is enabled.
+subdir('android')
+
 subdir('libcamera')
 subdir('ipa')
+
 subdir('cam')
 subdir('qcam')
 

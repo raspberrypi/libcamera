@@ -579,6 +579,7 @@ void MainWindow::stopCapture()
 	mappedBuffers_.clear();
 
 	requests_.clear();
+	freeQueue_.clear();
 
 	delete allocator_;
 

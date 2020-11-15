@@ -164,6 +164,7 @@ int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
 
 	/* Set the pixel format and size on the output. */
 	videoFormat = m2m_->capture()->toV4L2PixelFormat(cfg->pixelFormat);
+	format = {};
 	format.fourcc = videoFormat;
 	format.size = cfg->size;
 

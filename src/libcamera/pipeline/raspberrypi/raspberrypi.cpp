@@ -24,6 +24,7 @@
 #include <linux/videodev2.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
@@ -164,6 +165,12 @@ public:
 	std::vector<RPi::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
 	std::unordered_set<unsigned int> ipaBuffers_;
+
+	/*
+	 * Map of (internal) mmaped embedded data buffers, to avoid having to
+	 * map/unmap on every frame.
+	 */
+	std::map<unsigned int, MappedFrameBuffer> mappedEmbeddedBuffers_;
 
 	/* DMAHEAP allocation helper. */
 	RPi::DmaHeap dmaHeap_;
@@ -1061,6 +1068,13 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 			return ret;
 	}
 
+	if (!data->sensorMetadata_) {
+		for (auto const &it : data->unicam_[Unicam::Embedded].getBuffers()) {
+			MappedFrameBuffer fb(it.second, PROT_READ | PROT_WRITE);
+			data->mappedEmbeddedBuffers_.emplace(it.first, std::move(fb));
+		}
+	}
+
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
@@ -1099,6 +1113,7 @@ void PipelineHandlerRPi::freeBuffers(Camera *camera)
 	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
 	data->ipa_->unmapBuffers(ipaBuffers);
 	data->ipaBuffers_.clear();
+	data->mappedEmbeddedBuffers_.clear();
 
 	for (auto const stream : data->streams_)
 		stream->releaseBuffers();
@@ -1349,14 +1364,16 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * metadata buffer.
 		 */
 		if (!sensorMetadata_) {
-			const FrameBuffer &fb = buffer->planes();
-			uint32_t *mem = static_cast<uint32_t *>(::mmap(nullptr, fb.planes()[0].length,
-								       PROT_READ | PROT_WRITE,
-								       MAP_SHARED,
-								       fb.planes()[0].fd.fd(), 0));
-			mem[0] = ctrl[V4L2_CID_EXPOSURE];
-			mem[1] = ctrl[V4L2_CID_ANALOGUE_GAIN];
-			munmap(mem, fb.planes()[0].length);
+			unsigned int bufferId = unicam_[Unicam::Embedded].getBufferId(buffer);
+			auto it = mappedEmbeddedBuffers_.find(bufferId);
+			if (it != mappedEmbeddedBuffers_.end()) {
+				uint32_t *mem = reinterpret_cast<uint32_t *>(it->second.maps()[0].data());
+				mem[0] = ctrl[V4L2_CID_EXPOSURE];
+				mem[1] = ctrl[V4L2_CID_ANALOGUE_GAIN];
+			} else {
+				LOG(RPI, Warning) << "Failed to find embedded buffer "
+						  << bufferId;
+			}
 		}
 	}
 

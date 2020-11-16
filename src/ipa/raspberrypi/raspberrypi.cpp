@@ -24,6 +24,7 @@
 
 #include <libipa/ipa_interface_wrapper.h>
 
+#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
@@ -110,8 +111,7 @@ private:
 	void applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls);
 	void resampleTable(uint16_t dest[], double const src[12][16], int destW, int destH);
 
-	std::map<unsigned int, FrameBuffer> buffers_;
-	std::map<unsigned int, void *> buffersMemory_;
+	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
 	ControlInfoMap unicamCtrls_;
 	ControlInfoMap ispCtrls_;
@@ -319,31 +319,18 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
-		auto elem = buffers_.emplace(std::piecewise_construct,
-					     std::forward_as_tuple(buffer.id),
-					     std::forward_as_tuple(buffer.planes));
-		const FrameBuffer &fb = elem.first->second;
-
-		buffersMemory_[buffer.id] = mmap(nullptr, fb.planes()[0].length,
-						 PROT_READ | PROT_WRITE, MAP_SHARED,
-						 fb.planes()[0].fd.fd(), 0);
-
-		if (buffersMemory_[buffer.id] == MAP_FAILED) {
-			int ret = -errno;
-			LOG(IPARPI, Fatal) << "Failed to mmap buffer: " << strerror(-ret);
-		}
+		const FrameBuffer fb(buffer.planes);
+		buffers_.emplace(buffer.id, MappedFrameBuffer(&fb, PROT_READ | PROT_WRITE));
 	}
 }
 
 void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 {
 	for (unsigned int id : ids) {
-		const auto fb = buffers_.find(id);
-		if (fb == buffers_.end())
+		auto it = buffers_.find(id);
+		if (it == buffers_.end())
 			continue;
 
-		munmap(buffersMemory_[id], fb->second.planes()[0].length);
-		buffersMemory_.erase(id);
 		buffers_.erase(id);
 	}
 }
@@ -790,15 +777,15 @@ void IPARPi::prepareISP(unsigned int bufferId)
 
 bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus)
 {
-	auto it = buffersMemory_.find(bufferId);
-	if (it == buffersMemory_.end()) {
+	auto it = buffers_.find(bufferId);
+	if (it == buffers_.end()) {
 		LOG(IPARPI, Error) << "Could not find embedded buffer!";
 		return false;
 	}
 
-	int size = buffers_.find(bufferId)->second.planes()[0].length;
-	helper_->Parser().SetBufferSize(size);
-	RPiController::MdParser::Status status = helper_->Parser().Parse(it->second);
+	Span<uint8_t> mem = it->second.maps()[0];
+	helper_->Parser().SetBufferSize(mem.size());
+	RPiController::MdParser::Status status = helper_->Parser().Parse(mem.data());
 	if (status != RPiController::MdParser::Status::OK) {
 		LOG(IPARPI, Error) << "Embedded Buffer parsing failed, error " << status;
 	} else {
@@ -825,13 +812,14 @@ bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &devic
 
 void IPARPi::processStats(unsigned int bufferId)
 {
-	auto it = buffersMemory_.find(bufferId);
-	if (it == buffersMemory_.end()) {
+	auto it = buffers_.find(bufferId);
+	if (it == buffers_.end()) {
 		LOG(IPARPI, Error) << "Could not find stats buffer!";
 		return;
 	}
 
-	bcm2835_isp_stats *stats = static_cast<bcm2835_isp_stats *>(it->second);
+	Span<uint8_t> mem = it->second.maps()[0];
+	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
 	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
 	controller_.Process(statistics, &rpiMetadata_);
 

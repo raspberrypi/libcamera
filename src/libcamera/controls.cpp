@@ -437,8 +437,8 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * the control value. See for instance how the ControlList::get() method
  * returns a value corresponding to the type of the requested control.
  *
- * While this class is the main mean to refer to a control, the control
- * identifying information are stored in the non-template base ControlId class.
+ * While this class is the main means to refer to a control, the control
+ * identifying information is stored in the non-template base ControlId class.
  * This allows code that operates on a set of controls of different types to
  * reference those controls through a ControlId instead of a Control. For
  * instance, the list of controls supported by a camera is exposed as ControlId

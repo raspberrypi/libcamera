@@ -52,6 +52,7 @@ if sphinx.found()
         'conf.py',
         'contributing.rst',
         'docs.rst',
+        'environment_variables.rst',
         'index.rst',
         'guides/introduction.rst',
         'guides/application-developer.rst',

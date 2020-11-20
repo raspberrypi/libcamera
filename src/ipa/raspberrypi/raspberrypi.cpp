@@ -477,6 +477,7 @@ static const std::map<int32_t, std::string> AwbModeTable = {
 	{ controls::AwbFluorescent, "fluorescent" },
 	{ controls::AwbIndoor, "indoor" },
 	{ controls::AwbDaylight, "daylight" },
+	{ controls::AwbCloudy, "cloudy" },
 	{ controls::AwbCustom, "custom" },
 };
 

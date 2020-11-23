@@ -89,7 +89,7 @@ private:
 	bool applyDigitalGain(Metadata *image_metadata, double gain,
 			      double target_Y);
 	void filterExposure(bool desaturate);
-	void divvyupExposure();
+	void divideUpExposure();
 	void writeAndFinish(Metadata *image_metadata, bool desaturate);
 	AgcMeteringMode *metering_mode_;
 	AgcExposureMode *exposure_mode_;

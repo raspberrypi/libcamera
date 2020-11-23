@@ -225,7 +225,7 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 	// write the results into the metadata we've been given.
 	if (status_.total_exposure_value) {
 		housekeepConfig();
-		divvyupExposure();
+		divideUpExposure();
 		writeAndFinish(metadata, false);
 	}
 }
@@ -303,9 +303,9 @@ void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	bool desaturate = applyDigitalGain(image_metadata, gain, target_Y);
 	// The results have to be filtered so as not to change too rapidly.
 	filterExposure(desaturate);
-	// The last thing is to divvy up the exposure value into a shutter time
+	// The last thing is to divide up the exposure value into a shutter time
 	// and analogue_gain, according to the current exposure mode.
-	divvyupExposure();
+	divideUpExposure();
 	// Finally advertise what we've done.
 	writeAndFinish(image_metadata, desaturate);
 }
@@ -544,7 +544,7 @@ void Agc::filterExposure(bool desaturate)
 			   << " no dg " << filtered_.total_exposure_no_dg;
 }
 
-void Agc::divvyupExposure()
+void Agc::divideUpExposure()
 {
 	// Sending the fixed shutter/gain cases through the same code may seem
 	// unnecessary, but it will make more sense when extend this to cover

@@ -385,18 +385,23 @@ static double compute_initial_Y(bcm2835_isp_stats *stats, Metadata *image_metada
 	awb.gain_r = awb.gain_g = awb.gain_b = 1.0; // in case no metadata
 	if (image_metadata->Get("awb.status", awb) != 0)
 		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
-	double Y_sum = 0, weight_sum = 0;
+	// Note how the calculation below means that equal weights give you
+	// "average" metering (i.e. all pixels equally important).
+	double R_sum = 0, G_sum = 0, B_sum = 0, pixel_sum = 0;
 	for (int i = 0; i < AGC_STATS_SIZE; i++) {
-		if (regions[i].counted == 0)
-			continue;
-		weight_sum += weights[i];
-		double Y = regions[i].r_sum * awb.gain_r * .299 +
-			   regions[i].g_sum * awb.gain_g * .587 +
-			   regions[i].b_sum * awb.gain_b * .114;
-		Y /= regions[i].counted;
-		Y_sum += Y * weights[i];
+		R_sum += regions[i].r_sum * weights[i];
+		G_sum += regions[i].g_sum * weights[i];
+		B_sum += regions[i].b_sum * weights[i];
+		pixel_sum += regions[i].counted * weights[i];
 	}
-	return Y_sum / weight_sum / (1 << PIPELINE_BITS);
+	if (pixel_sum == 0.0) {
+		LOG(RPiAgc, Warning) << "compute_initial_Y: pixel_sum is zero";
+		return 0;
+	}
+	double Y_sum = R_sum * awb.gain_r * .299 +
+		       G_sum * awb.gain_g * .587 +
+		       B_sum * awb.gain_b * .114;
+	return Y_sum / pixel_sum / (1 << PIPELINE_BITS);
 }
 
 // We handle extra gain through EV by adjusting our Y targets. However, you

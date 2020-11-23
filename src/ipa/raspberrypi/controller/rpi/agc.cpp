@@ -160,7 +160,6 @@ Agc::Agc(Controller *controller)
 	status_.total_exposure_value = 0.0;
 	status_.target_exposure_value = 0.0;
 	status_.locked = false;
-	output_status_ = status_;
 }
 
 char const *Agc::Name() const
@@ -185,43 +184,36 @@ void Agc::Read(boost::property_tree::ptree const &params)
 
 void Agc::SetEv(double ev)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	ev_ = ev;
 }
 
 void Agc::SetFlickerPeriod(double flicker_period)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	flicker_period_ = flicker_period;
 }
 
 void Agc::SetFixedShutter(double fixed_shutter)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	fixed_shutter_ = fixed_shutter;
 }
 
 void Agc::SetFixedAnalogueGain(double fixed_analogue_gain)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	fixed_analogue_gain_ = fixed_analogue_gain;
 }
 
 void Agc::SetMeteringMode(std::string const &metering_mode_name)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	metering_mode_name_ = metering_mode_name;
 }
 
 void Agc::SetExposureMode(std::string const &exposure_mode_name)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	exposure_mode_name_ = exposure_mode_name;
 }
 
 void Agc::SetConstraintMode(std::string const &constraint_mode_name)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	constraint_mode_name_ = constraint_mode_name;
 }
 
@@ -240,14 +232,9 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 
 void Agc::Prepare(Metadata *image_metadata)
 {
-	AgcStatus status;
-	{
-		std::unique_lock<std::mutex> lock(output_mutex_);
-		status = output_status_;
-	}
 	int lock_count = lock_count_;
 	lock_count_ = 0;
-	status.digital_gain = 1.0;
+	status_.digital_gain = 1.0;
 	if (status_.total_exposure_value) {
 		// Process has run, so we have meaningful values.
 		DeviceStatus device_status;
@@ -255,48 +242,45 @@ void Agc::Prepare(Metadata *image_metadata)
 			double actual_exposure = device_status.shutter_speed *
 						 device_status.analogue_gain;
 			if (actual_exposure) {
-				status.digital_gain =
+				status_.digital_gain =
 					status_.total_exposure_value /
 					actual_exposure;
 				LOG(RPiAgc, Debug) << "Want total exposure " << status_.total_exposure_value;
 				// Never ask for a gain < 1.0, and also impose
 				// some upper limit. Make it customisable?
-				status.digital_gain = std::max(
+				status_.digital_gain = std::max(
 					1.0,
-					std::min(status.digital_gain, 4.0));
+					std::min(status_.digital_gain, 4.0));
 				LOG(RPiAgc, Debug) << "Actual exposure " << actual_exposure;
-				LOG(RPiAgc, Debug) << "Use digital_gain " << status.digital_gain;
-				LOG(RPiAgc, Debug) << "Effective exposure " << actual_exposure * status.digital_gain;
+				LOG(RPiAgc, Debug) << "Use digital_gain " << status_.digital_gain;
+				LOG(RPiAgc, Debug) << "Effective exposure " << actual_exposure * status_.digital_gain;
 				// Decide whether AEC/AGC has converged.
 				// Insist AGC is steady for MAX_LOCK_COUNT
 				// frames before we say we are "locked".
 				// (The hard-coded constants may need to
 				// become customisable.)
-				if (status.target_exposure_value) {
+				if (status_.target_exposure_value) {
 #define MAX_LOCK_COUNT 3
-					double err = 0.10 * status.target_exposure_value + 200;
+					double err = 0.10 * status_.target_exposure_value + 200;
 					if (actual_exposure <
-					    status.target_exposure_value + err
-					    && actual_exposure >
-					    status.target_exposure_value - err)
+						    status_.target_exposure_value + err &&
+					    actual_exposure >
+						    status_.target_exposure_value - err)
 						lock_count_ =
 							std::min(lock_count + 1,
-							       MAX_LOCK_COUNT);
+								 MAX_LOCK_COUNT);
 					else if (actual_exposure <
-						 status.target_exposure_value
-						 + 1.5 * err &&
+							 status_.target_exposure_value + 1.5 * err &&
 						 actual_exposure >
-						 status.target_exposure_value
-						 - 1.5 * err)
+							 status_.target_exposure_value - 1.5 * err)
 						lock_count_ = lock_count;
 					LOG(RPiAgc, Debug) << "Lock count: " << lock_count_;
 				}
 			}
 		} else
 			LOG(RPiAgc, Debug) << Name() << ": no device metadata";
-		status.locked = lock_count_ >= MAX_LOCK_COUNT;
-		//printf("%s\n", status.locked ? "+++++++++" : "-");
-		image_metadata->Set("agc.status", status);
+		status_.locked = lock_count_ >= MAX_LOCK_COUNT;
+		image_metadata->Set("agc.status", status_);
 	}
 }
 
@@ -335,55 +319,47 @@ static void copy_string(std::string const &s, char *d, size_t size)
 void Agc::housekeepConfig()
 {
 	// First fetch all the up-to-date settings, so no one else has to do it.
-	std::string new_exposure_mode_name, new_constraint_mode_name,
-		new_metering_mode_name;
-	{
-		std::unique_lock<std::mutex> lock(settings_mutex_);
-		new_metering_mode_name = metering_mode_name_;
-		new_exposure_mode_name = exposure_mode_name_;
-		new_constraint_mode_name = constraint_mode_name_;
-		status_.ev = ev_;
-		status_.fixed_shutter = fixed_shutter_;
-		status_.fixed_analogue_gain = fixed_analogue_gain_;
-		status_.flicker_period = flicker_period_;
-	}
+	status_.ev = ev_;
+	status_.fixed_shutter = fixed_shutter_;
+	status_.fixed_analogue_gain = fixed_analogue_gain_;
+	status_.flicker_period = flicker_period_;
 	LOG(RPiAgc, Debug) << "ev " << status_.ev << " fixed_shutter "
 			   << status_.fixed_shutter << " fixed_analogue_gain "
 			   << status_.fixed_analogue_gain;
 	// Make sure the "mode" pointers point to the up-to-date things, if
 	// they've changed.
-	if (strcmp(new_metering_mode_name.c_str(), status_.metering_mode)) {
-		auto it = config_.metering_modes.find(new_metering_mode_name);
+	if (strcmp(metering_mode_name_.c_str(), status_.metering_mode)) {
+		auto it = config_.metering_modes.find(metering_mode_name_);
 		if (it == config_.metering_modes.end())
 			throw std::runtime_error("Agc: no metering mode " +
-						 new_metering_mode_name);
+						 metering_mode_name_);
 		metering_mode_ = &it->second;
-		copy_string(new_metering_mode_name, status_.metering_mode,
+		copy_string(metering_mode_name_, status_.metering_mode,
 			    sizeof(status_.metering_mode));
 	}
-	if (strcmp(new_exposure_mode_name.c_str(), status_.exposure_mode)) {
-		auto it = config_.exposure_modes.find(new_exposure_mode_name);
+	if (strcmp(exposure_mode_name_.c_str(), status_.exposure_mode)) {
+		auto it = config_.exposure_modes.find(exposure_mode_name_);
 		if (it == config_.exposure_modes.end())
 			throw std::runtime_error("Agc: no exposure profile " +
-						 new_exposure_mode_name);
+						 exposure_mode_name_);
 		exposure_mode_ = &it->second;
-		copy_string(new_exposure_mode_name, status_.exposure_mode,
+		copy_string(exposure_mode_name_, status_.exposure_mode,
 			    sizeof(status_.exposure_mode));
 	}
-	if (strcmp(new_constraint_mode_name.c_str(), status_.constraint_mode)) {
+	if (strcmp(constraint_mode_name_.c_str(), status_.constraint_mode)) {
 		auto it =
-			config_.constraint_modes.find(new_constraint_mode_name);
+			config_.constraint_modes.find(constraint_mode_name_);
 		if (it == config_.constraint_modes.end())
 			throw std::runtime_error("Agc: no constraint list " +
-						 new_constraint_mode_name);
+						 constraint_mode_name_);
 		constraint_mode_ = &it->second;
-		copy_string(new_constraint_mode_name, status_.constraint_mode,
+		copy_string(constraint_mode_name_, status_.constraint_mode,
 			    sizeof(status_.constraint_mode));
 	}
 	LOG(RPiAgc, Debug) << "exposure_mode "
-			   << new_exposure_mode_name << " constraint_mode "
-			   << new_constraint_mode_name << " metering_mode "
-			   << new_metering_mode_name;
+			   << exposure_mode_name_ << " constraint_mode "
+			   << constraint_mode_name_ << " metering_mode "
+			   << metering_mode_name_;
 }
 
 void Agc::fetchCurrentExposure(Metadata *image_metadata)
@@ -638,10 +614,6 @@ void Agc::writeAndFinish(Metadata *image_metadata, bool desaturate)
 	status_.target_exposure_value = desaturate ? 0 : target_.total_exposure_no_dg;
 	status_.shutter_time = filtered_.shutter;
 	status_.analogue_gain = filtered_.analogue_gain;
-	{
-		std::unique_lock<std::mutex> lock(output_mutex_);
-		output_status_ = status_;
-	}
 	// Write to metadata as well, in case anyone wants to update the camera
 	// immediately.
 	image_metadata->Set("agc.status", status_);

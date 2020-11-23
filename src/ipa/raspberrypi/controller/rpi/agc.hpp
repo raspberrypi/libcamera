@@ -106,12 +106,9 @@ private:
 	ExposureValues current_;  // values for the current frame
 	ExposureValues target_;   // calculate the values we want here
 	ExposureValues filtered_; // these values are filtered towards target
-	AgcStatus status_;        // to "latch" settings so they can't change
-	AgcStatus output_status_; // the status we will write out
-	std::mutex output_mutex_;
+	AgcStatus status_;
 	int lock_count_;
 	// Below here the "settings" that applications can change.
-	std::mutex settings_mutex_;
 	std::string metering_mode_name_;
 	std::string exposure_mode_name_;
 	std::string constraint_mode_name_;

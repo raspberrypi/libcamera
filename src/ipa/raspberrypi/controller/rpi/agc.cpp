@@ -153,16 +153,15 @@ void AgcConfig::Read(boost::property_tree::ptree const &params)
 Agc::Agc(Controller *controller)
 	: AgcAlgorithm(controller), metering_mode_(nullptr),
 	  exposure_mode_(nullptr), constraint_mode_(nullptr),
-	  frame_count_(0), lock_count_(0)
+	  frame_count_(0), lock_count_(0),
+	  ev_(1.0), flicker_period_(0.0),
+	  fixed_shutter_(0), fixed_analogue_gain_(0.0)
 {
-	ev_ = status_.ev = 1.0;
-	flicker_period_ = status_.flicker_period = 0.0;
-	fixed_shutter_ = status_.fixed_shutter = 0;
-	fixed_analogue_gain_ = status_.fixed_analogue_gain = 0.0;
-	// set to zero initially, so we can tell it's not been calculated
-	status_.total_exposure_value = 0.0;
-	status_.target_exposure_value = 0.0;
-	status_.locked = false;
+	memset(&awb_, 0, sizeof(awb_));
+	// Setting status_.total_exposure_value_ to zero initially tells us
+	// it's not been calculated yet (i.e. Process hasn't yet run).
+	memset(&status_, 0, sizeof(status_));
+	status_.ev = ev_;
 }
 
 char const *Agc::Name() const

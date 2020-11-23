@@ -273,6 +273,22 @@ controls:
 
       size: [3x3]
 
+  - ScalerCrop:
+      type: Rectangle
+      description: |
+        Sets the image portion that will be scaled to form the whole of
+        the final output image. The (x,y) location of this rectangle is
+        relative to the PixelArrayActiveAreas that is being used. The units
+        remain native sensor pixels, even if the sensor is being used in
+        a binning or skipping mode.
+
+        This control is only present when the pipeline supports scaling. Its
+        maximum valid value is given by the properties::ScalerCropMaximum
+        property, and the two can be used to implement digital zoom.
+
+  # ----------------------------------------------------------------------------
+  # Draft controls section
+
   - AePrecaptureTrigger:
       type: int32_t
       draft: true
@@ -518,16 +534,4 @@ controls:
         detection, additional format conversions etc) count as an additional
         pipeline stage.
 
-  - ScalerCrop:
-      type: Rectangle
-      description: |
-        Sets the image portion that will be scaled to form the whole of
-        the final output image. The (x,y) location of this rectangle is
-        relative to the PixelArrayActiveAreas that is being used. The units
-        remain native sensor pixels, even if the sensor is being used in
-        a binning or skipping mode.
-
-        This control is only present when the pipeline supports scaling. Its
-        maximum valid value is given by the properties::ScalerCropMaximum
-        property, and the two can be used to implement digital zoom.
 ...

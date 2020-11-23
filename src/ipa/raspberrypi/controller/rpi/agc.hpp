@@ -60,6 +60,8 @@ struct AgcConfig {
 	std::string default_exposure_mode;
 	std::string default_constraint_mode;
 	double base_ev;
+	double default_exposure_time;
+	double default_analogue_gain;
 };
 
 class Agc : public AgcAlgorithm

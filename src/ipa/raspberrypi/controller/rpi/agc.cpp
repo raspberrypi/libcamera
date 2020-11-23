@@ -145,6 +145,9 @@ void AgcConfig::Read(boost::property_tree::ptree const &params)
 	fast_reduce_threshold =
 		params.get<double>("fast_reduce_threshold", 0.4);
 	base_ev = params.get<double>("base_ev", 1.0);
+	// Start with quite a low value as ramping up is easier than ramping down.
+	default_exposure_time = params.get<double>("default_exposure_time", 1000);
+	default_analogue_gain = params.get<double>("default_analogue_gain", 1.0);
 }
 
 Agc::Agc(Controller *controller)
@@ -220,14 +223,42 @@ void Agc::SetConstraintMode(std::string const &constraint_mode_name)
 void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		     Metadata *metadata)
 {
-	// On a mode switch, it's possible the exposure profile could change,
-	// so we run through the dividing up of exposure/gain again and
-	// write the results into the metadata we've been given.
-	if (status_.total_exposure_value) {
-		housekeepConfig();
+	housekeepConfig();
+
+	if (fixed_shutter_ != 0.0 && fixed_analogue_gain_ != 0.0) {
+		// We're going to reset the algorithm here with these fixed values.
+
+		fetchAwbStatus(metadata);
+		double min_colour_gain = std::min({ awb_.gain_r, awb_.gain_g, awb_.gain_b, 1.0 });
+		ASSERT(min_colour_gain != 0.0);
+
+		// This is the equivalent of computeTargetExposure and applyDigitalGain.
+		target_.total_exposure_no_dg = fixed_shutter_ * fixed_analogue_gain_;
+		target_.total_exposure = target_.total_exposure_no_dg / min_colour_gain;
+
+		// Equivalent of filterExposure. This resets any "history".
+		filtered_ = target_;
+
+		// Equivalent of divideUpExposure.
+		filtered_.shutter = fixed_shutter_;
+		filtered_.analogue_gain = fixed_analogue_gain_;
+	} else if (status_.total_exposure_value) {
+		// On a mode switch, it's possible the exposure profile could change,
+		// or a fixed exposure/gain might be set so we divide up the exposure/
+		// gain again, but we don't change any target values.
 		divideUpExposure();
-		writeAndFinish(metadata, false);
+	} else {
+		// We come through here on startup, when at least one of the shutter
+		// or gain has not been fixed. We must still write those values out so
+		// that they will be applied immediately. We supply some arbitrary defaults
+		// for any that weren't set.
+
+		// Equivalent of divideUpExposure.
+		filtered_.shutter = fixed_shutter_ ? fixed_shutter_ : config_.default_exposure_time;
+		filtered_.analogue_gain = fixed_analogue_gain_ ? fixed_analogue_gain_ : config_.default_analogue_gain;
 	}
+
+	writeAndFinish(metadata, false);
 }
 
 void Agc::Prepare(Metadata *image_metadata)
@@ -472,20 +503,31 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 
 void Agc::computeTargetExposure(double gain)
 {
-	// The statistics reflect the image without digital gain, so the final
-	// total exposure we're aiming for is:
-	target_.total_exposure = current_.total_exposure_no_dg * gain;
-	// The final target exposure is also limited to what the exposure
-	// mode allows.
-	double max_total_exposure =
-		(status_.fixed_shutter != 0.0
+	if (status_.fixed_shutter != 0.0 && status_.fixed_analogue_gain != 0.0) {
+		// When ag and shutter are both fixed, we need to drive the
+		// total exposure so that we end up with a digital gain of at least
+		// 1/min_colour_gain. Otherwise we'd desaturate channels causing
+		// white to go cyan or magenta.
+		double min_colour_gain = std::min({ awb_.gain_r, awb_.gain_g, awb_.gain_b, 1.0 });
+		ASSERT(min_colour_gain != 0.0);
+		target_.total_exposure =
+			status_.fixed_shutter * status_.fixed_analogue_gain / min_colour_gain;
+	} else {
+		// The statistics reflect the image without digital gain, so the final
+		// total exposure we're aiming for is:
+		target_.total_exposure = current_.total_exposure_no_dg * gain;
+		// The final target exposure is also limited to what the exposure
+		// mode allows.
+		double max_total_exposure =
+			(status_.fixed_shutter != 0.0
 			 ? status_.fixed_shutter
 			 : exposure_mode_->shutter.back()) *
-		(status_.fixed_analogue_gain != 0.0
+			(status_.fixed_analogue_gain != 0.0
 			 ? status_.fixed_analogue_gain
 			 : exposure_mode_->gain.back());
-	target_.total_exposure = std::min(target_.total_exposure,
-					  max_total_exposure);
+		target_.total_exposure = std::min(target_.total_exposure,
+						  max_total_exposure);
+	}
 	LOG(RPiAgc, Debug) << "Target total_exposure " << target_.total_exposure;
 }
 

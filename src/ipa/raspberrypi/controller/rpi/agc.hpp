@@ -83,11 +83,11 @@ private:
 	AgcConfig config_;
 	void housekeepConfig();
 	void fetchCurrentExposure(Metadata *image_metadata);
+	void fetchAwbStatus(Metadata *image_metadata);
 	void computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 			 double &gain, double &target_Y);
 	void computeTargetExposure(double gain);
-	bool applyDigitalGain(Metadata *image_metadata, double gain,
-			      double target_Y);
+	bool applyDigitalGain(double gain, double target_Y);
 	void filterExposure(bool desaturate);
 	void divideUpExposure();
 	void writeAndFinish(Metadata *image_metadata, bool desaturate);
@@ -95,6 +95,7 @@ private:
 	AgcExposureMode *exposure_mode_;
 	AgcConstraintMode *constraint_mode_;
 	uint64_t frame_count_;
+	AwbStatus awb_;
 	struct ExposureValues {
 		ExposureValues() : shutter(0), analogue_gain(0),
 				   total_exposure(0), total_exposure_no_dg(0) {}

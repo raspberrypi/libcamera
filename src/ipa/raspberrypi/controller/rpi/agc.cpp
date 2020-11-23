@@ -235,6 +235,8 @@ void Agc::Prepare(Metadata *image_metadata)
 	int lock_count = lock_count_;
 	lock_count_ = 0;
 	status_.digital_gain = 1.0;
+	fetchAwbStatus(image_metadata); // always fetch it so that Process knows it's been done
+
 	if (status_.total_exposure_value) {
 		// Process has run, so we have meaningful values.
 		DeviceStatus device_status;
@@ -300,7 +302,7 @@ void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	// Some of the exposure has to be applied as digital gain, so work out
 	// what that is. This function also tells us whether it's decided to
 	// "desaturate" the image more quickly.
-	bool desaturate = applyDigitalGain(image_metadata, gain, target_Y);
+	bool desaturate = applyDigitalGain(gain, target_Y);
 	// The results have to be filtered so as not to change too rapidly.
 	filterExposure(desaturate);
 	// The last thing is to divide up the exposure value into a shutter time
@@ -377,14 +379,19 @@ void Agc::fetchCurrentExposure(Metadata *image_metadata)
 	current_.total_exposure_no_dg = current_.shutter * current_.analogue_gain;
 }
 
-static double compute_initial_Y(bcm2835_isp_stats *stats, Metadata *image_metadata,
+void Agc::fetchAwbStatus(Metadata *image_metadata)
+{
+	awb_.gain_r = 1.0; // in case not found in metadata
+	awb_.gain_g = 1.0;
+	awb_.gain_b = 1.0;
+	if (image_metadata->Get("awb.status", awb_) != 0)
+		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
+}
+
+static double compute_initial_Y(bcm2835_isp_stats *stats, AwbStatus const &awb,
 				double weights[])
 {
 	bcm2835_isp_stats_region *regions = stats->agc_stats;
-	struct AwbStatus awb;
-	awb.gain_r = awb.gain_g = awb.gain_b = 1.0; // in case no metadata
-	if (image_metadata->Get("awb.status", awb) != 0)
-		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
 	// Note how the calculation below means that equal weights give you
 	// "average" metering (i.e. all pixels equally important).
 	double R_sum = 0, G_sum = 0, B_sum = 0, pixel_sum = 0;
@@ -436,7 +443,7 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 	target_Y =
 		config_.Y_target.Eval(config_.Y_target.Domain().Clip(lux.lux));
 	target_Y = std::min(EV_GAIN_Y_TARGET_LIMIT, target_Y * ev_gain);
-	double initial_Y = compute_initial_Y(statistics, image_metadata,
+	double initial_Y = compute_initial_Y(statistics, awb_,
 					     metering_mode_->weights);
 	gain = std::min(10.0, target_Y / (initial_Y + .001));
 	LOG(RPiAgc, Debug) << "Initially Y " << initial_Y << " target " << target_Y
@@ -482,19 +489,13 @@ void Agc::computeTargetExposure(double gain)
 	LOG(RPiAgc, Debug) << "Target total_exposure " << target_.total_exposure;
 }
 
-bool Agc::applyDigitalGain(Metadata *image_metadata, double gain,
-			   double target_Y)
+bool Agc::applyDigitalGain(double gain, double target_Y)
 {
-	double dg = 1.0;
+	double min_colour_gain = std::min({ awb_.gain_r, awb_.gain_g, awb_.gain_b, 1.0 });
+	ASSERT(min_colour_gain != 0.0);
+	double dg = 1.0 / min_colour_gain;
 	// I think this pipeline subtracts black level and rescales before we
 	// get the stats, so no need to worry about it.
-	struct AwbStatus awb;
-	if (image_metadata->Get("awb.status", awb) == 0) {
-		double min_gain = std::min(awb.gain_r,
-					   std::min(awb.gain_g, awb.gain_b));
-		dg *= std::max(1.0, 1.0 / min_gain);
-	} else
-		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
 	LOG(RPiAgc, Debug) << "after AWB, target dg " << dg << " gain " << gain
 			   << " target_Y " << target_Y;
 	// Finally, if we're trying to reduce exposure but the target_Y is

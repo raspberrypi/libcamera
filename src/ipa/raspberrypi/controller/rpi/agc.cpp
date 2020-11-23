@@ -419,17 +419,21 @@ void Agc::fetchAwbStatus(Metadata *image_metadata)
 }
 
 static double compute_initial_Y(bcm2835_isp_stats *stats, AwbStatus const &awb,
-				double weights[])
+				double weights[], double gain)
 {
 	bcm2835_isp_stats_region *regions = stats->agc_stats;
 	// Note how the calculation below means that equal weights give you
 	// "average" metering (i.e. all pixels equally important).
 	double R_sum = 0, G_sum = 0, B_sum = 0, pixel_sum = 0;
 	for (int i = 0; i < AGC_STATS_SIZE; i++) {
-		R_sum += regions[i].r_sum * weights[i];
-		G_sum += regions[i].g_sum * weights[i];
-		B_sum += regions[i].b_sum * weights[i];
-		pixel_sum += regions[i].counted * weights[i];
+		double counted = regions[i].counted;
+		double r_sum = std::min(regions[i].r_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
+		double g_sum = std::min(regions[i].g_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
+		double b_sum = std::min(regions[i].b_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
+		R_sum += r_sum * weights[i];
+		G_sum += g_sum * weights[i];
+		B_sum += b_sum * weights[i];
+		pixel_sum += counted * weights[i];
 	}
 	if (pixel_sum == 0.0) {
 		LOG(RPiAgc, Warning) << "compute_initial_Y: pixel_sum is zero";
@@ -473,11 +477,21 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 	target_Y =
 		config_.Y_target.Eval(config_.Y_target.Domain().Clip(lux.lux));
 	target_Y = std::min(EV_GAIN_Y_TARGET_LIMIT, target_Y * ev_gain);
-	double initial_Y = compute_initial_Y(statistics, awb_,
-					     metering_mode_->weights);
-	gain = std::min(10.0, target_Y / (initial_Y + .001));
-	LOG(RPiAgc, Debug) << "Initially Y " << initial_Y << " target " << target_Y
-			   << " gives gain " << gain;
+
+	// Do this calculation a few times as brightness increase can be
+	// non-linear when there are saturated regions.
+	gain = 1.0;
+	for (int i = 0; i < 8; i++) {
+		double initial_Y = compute_initial_Y(statistics, awb_,
+						     metering_mode_->weights, gain);
+		double extra_gain = std::min(10.0, target_Y / (initial_Y + .001));
+		gain *= extra_gain;
+		LOG(RPiAgc, Debug) << "Initial Y " << initial_Y << " target " << target_Y
+				   << " gives gain " << gain;
+		if (extra_gain < 1.01) // close enough
+			break;
+	}
+
 	for (auto &c : *constraint_mode_) {
 		double new_target_Y;
 		double new_gain =

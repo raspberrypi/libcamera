@@ -9,16 +9,20 @@
 
 #include "linux/bcm2835-isp.h"
 
+#include "libcamera/internal/log.h"
+
 #include "../awb_status.h"
 #include "../device_status.h"
 #include "../histogram.hpp"
-#include "../logging.hpp"
 #include "../lux_status.h"
 #include "../metadata.hpp"
 
 #include "agc.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiAgc)
 
 #define NAME "rpi.agc"
 
@@ -128,7 +132,7 @@ static std::string read_constraint_modes(
 
 void AgcConfig::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG("AgcConfig");
+	LOG(RPiAgc, Debug) << "AgcConfig";
 	default_metering_mode = read_metering_modes(
 		metering_modes, params.get_child("metering_modes"));
 	default_exposure_mode = read_exposure_modes(
@@ -166,7 +170,7 @@ char const *Agc::Name() const
 
 void Agc::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG("Agc");
+	LOG(RPiAgc, Debug) << "Agc";
 	config_.Read(params);
 	// Set the config's defaults (which are the first ones it read) as our
 	// current modes, until someone changes them.  (they're all known to
@@ -254,15 +258,15 @@ void Agc::Prepare(Metadata *image_metadata)
 				status.digital_gain =
 					status_.total_exposure_value /
 					actual_exposure;
-				RPI_LOG("Want total exposure " << status_.total_exposure_value);
+				LOG(RPiAgc, Debug) << "Want total exposure " << status_.total_exposure_value;
 				// Never ask for a gain < 1.0, and also impose
 				// some upper limit. Make it customisable?
 				status.digital_gain = std::max(
 					1.0,
 					std::min(status.digital_gain, 4.0));
-				RPI_LOG("Actual exposure " << actual_exposure);
-				RPI_LOG("Use digital_gain " << status.digital_gain);
-				RPI_LOG("Effective exposure " << actual_exposure * status.digital_gain);
+				LOG(RPiAgc, Debug) << "Actual exposure " << actual_exposure;
+				LOG(RPiAgc, Debug) << "Use digital_gain " << status.digital_gain;
+				LOG(RPiAgc, Debug) << "Effective exposure " << actual_exposure * status.digital_gain;
 				// Decide whether AEC/AGC has converged.
 				// Insist AGC is steady for MAX_LOCK_COUNT
 				// frames before we say we are "locked".
@@ -285,11 +289,11 @@ void Agc::Prepare(Metadata *image_metadata)
 						 status.target_exposure_value
 						 - 1.5 * err)
 						lock_count_ = lock_count;
-					RPI_LOG("Lock count: " << lock_count_);
+					LOG(RPiAgc, Debug) << "Lock count: " << lock_count_;
 				}
 			}
 		} else
-			RPI_LOG(Name() << ": no device metadata");
+			LOG(RPiAgc, Debug) << Name() << ": no device metadata";
 		status.locked = lock_count_ >= MAX_LOCK_COUNT;
 		//printf("%s\n", status.locked ? "+++++++++" : "-");
 		image_metadata->Set("agc.status", status);
@@ -343,9 +347,9 @@ void Agc::housekeepConfig()
 		status_.fixed_analogue_gain = fixed_analogue_gain_;
 		status_.flicker_period = flicker_period_;
 	}
-	RPI_LOG("ev " << status_.ev << " fixed_shutter "
-		      << status_.fixed_shutter << " fixed_analogue_gain "
-		      << status_.fixed_analogue_gain);
+	LOG(RPiAgc, Debug) << "ev " << status_.ev << " fixed_shutter "
+			   << status_.fixed_shutter << " fixed_analogue_gain "
+			   << status_.fixed_analogue_gain;
 	// Make sure the "mode" pointers point to the up-to-date things, if
 	// they've changed.
 	if (strcmp(new_metering_mode_name.c_str(), status_.metering_mode)) {
@@ -376,10 +380,10 @@ void Agc::housekeepConfig()
 		copy_string(new_constraint_mode_name, status_.constraint_mode,
 			    sizeof(status_.constraint_mode));
 	}
-	RPI_LOG("exposure_mode "
-		<< new_exposure_mode_name << " constraint_mode "
-		<< new_constraint_mode_name << " metering_mode "
-		<< new_metering_mode_name);
+	LOG(RPiAgc, Debug) << "exposure_mode "
+			   << new_exposure_mode_name << " constraint_mode "
+			   << new_constraint_mode_name << " metering_mode "
+			   << new_metering_mode_name;
 }
 
 void Agc::fetchCurrentExposure(Metadata *image_metadata)
@@ -404,7 +408,7 @@ static double compute_initial_Y(bcm2835_isp_stats *stats, Metadata *image_metada
 	struct AwbStatus awb;
 	awb.gain_r = awb.gain_g = awb.gain_b = 1.0; // in case no metadata
 	if (image_metadata->Get("awb.status", awb) != 0)
-		RPI_WARN("Agc: no AWB status found");
+		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
 	double Y_sum = 0, weight_sum = 0;
 	for (int i = 0; i < AGC_STATS_SIZE; i++) {
 		if (regions[i].counted == 0)
@@ -443,7 +447,7 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 	struct LuxStatus lux = {};
 	lux.lux = 400; // default lux level to 400 in case no metadata found
 	if (image_metadata->Get("lux.status", lux) != 0)
-		RPI_WARN("Agc: no lux level found");
+		LOG(RPiAgc, Warning) << "Agc: no lux level found";
 	Histogram h(statistics->hist[0].g_hist, NUM_HISTOGRAM_BINS);
 	double ev_gain = status_.ev * config_.base_ev;
 	// The initial gain and target_Y come from some of the regions. After
@@ -454,28 +458,28 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
 	double initial_Y = compute_initial_Y(statistics, image_metadata,
 					     metering_mode_->weights);
 	gain = std::min(10.0, target_Y / (initial_Y + .001));
-	RPI_LOG("Initially Y " << initial_Y << " target " << target_Y
-			       << " gives gain " << gain);
+	LOG(RPiAgc, Debug) << "Initially Y " << initial_Y << " target " << target_Y
+			   << " gives gain " << gain;
 	for (auto &c : *constraint_mode_) {
 		double new_target_Y;
 		double new_gain =
 			constraint_compute_gain(c, h, lux.lux, ev_gain,
 						new_target_Y);
-		RPI_LOG("Constraint has target_Y "
-			<< new_target_Y << " giving gain " << new_gain);
+		LOG(RPiAgc, Debug) << "Constraint has target_Y "
+				   << new_target_Y << " giving gain " << new_gain;
 		if (c.bound == AgcConstraint::Bound::LOWER &&
 		    new_gain > gain) {
-			RPI_LOG("Lower bound constraint adopted");
+			LOG(RPiAgc, Debug) << "Lower bound constraint adopted";
 			gain = new_gain, target_Y = new_target_Y;
 		} else if (c.bound == AgcConstraint::Bound::UPPER &&
 			   new_gain < gain) {
-			RPI_LOG("Upper bound constraint adopted");
+			LOG(RPiAgc, Debug) << "Upper bound constraint adopted";
 			gain = new_gain, target_Y = new_target_Y;
 		}
 	}
-	RPI_LOG("Final gain " << gain << " (target_Y " << target_Y << " ev "
-			      << status_.ev << " base_ev " << config_.base_ev
-			      << ")");
+	LOG(RPiAgc, Debug) << "Final gain " << gain << " (target_Y " << target_Y << " ev "
+			   << status_.ev << " base_ev " << config_.base_ev
+			   << ")";
 }
 
 void Agc::computeTargetExposure(double gain)
@@ -494,7 +498,7 @@ void Agc::computeTargetExposure(double gain)
 			 : exposure_mode_->gain.back());
 	target_.total_exposure = std::min(target_.total_exposure,
 					  max_total_exposure);
-	RPI_LOG("Target total_exposure " << target_.total_exposure);
+	LOG(RPiAgc, Debug) << "Target total_exposure " << target_.total_exposure;
 }
 
 bool Agc::applyDigitalGain(Metadata *image_metadata, double gain,
@@ -509,9 +513,9 @@ bool Agc::applyDigitalGain(Metadata *image_metadata, double gain,
 					   std::min(awb.gain_g, awb.gain_b));
 		dg *= std::max(1.0, 1.0 / min_gain);
 	} else
-		RPI_WARN("Agc: no AWB status found");
-	RPI_LOG("after AWB, target dg " << dg << " gain " << gain
-					<< " target_Y " << target_Y);
+		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
+	LOG(RPiAgc, Debug) << "after AWB, target dg " << dg << " gain " << gain
+			   << " target_Y " << target_Y;
 	// Finally, if we're trying to reduce exposure but the target_Y is
 	// "close" to 1.0, then the gain computed for that constraint will be
 	// only slightly less than one, because the measured Y can never be
@@ -523,9 +527,9 @@ bool Agc::applyDigitalGain(Metadata *image_metadata, double gain,
 			  gain < sqrt(target_Y);
 	if (desaturate)
 		dg /= config_.fast_reduce_threshold;
-	RPI_LOG("Digital gain " << dg << " desaturate? " << desaturate);
+	LOG(RPiAgc, Debug) << "Digital gain " << dg << " desaturate? " << desaturate;
 	target_.total_exposure_no_dg = target_.total_exposure / dg;
-	RPI_LOG("Target total_exposure_no_dg " << target_.total_exposure_no_dg);
+	LOG(RPiAgc, Debug) << "Target total_exposure_no_dg " << target_.total_exposure_no_dg;
 	return desaturate;
 }
 
@@ -560,8 +564,8 @@ void Agc::filterExposure(bool desaturate)
 	    filtered_.total_exposure * config_.fast_reduce_threshold)
 		filtered_.total_exposure_no_dg = filtered_.total_exposure *
 						 config_.fast_reduce_threshold;
-	RPI_LOG("After filtering, total_exposure " << filtered_.total_exposure <<
-		" no dg " << filtered_.total_exposure_no_dg);
+	LOG(RPiAgc, Debug) << "After filtering, total_exposure " << filtered_.total_exposure
+			   << " no dg " << filtered_.total_exposure_no_dg;
 }
 
 void Agc::divvyupExposure()
@@ -602,8 +606,8 @@ void Agc::divvyupExposure()
 			}
 		}
 	}
-	RPI_LOG("Divided up shutter and gain are " << shutter_time << " and "
-						   << analogue_gain);
+	LOG(RPiAgc, Debug) << "Divided up shutter and gain are " << shutter_time << " and "
+			   << analogue_gain;
 	// Finally adjust shutter time for flicker avoidance (require both
 	// shutter and gain not to be fixed).
 	if (status_.fixed_shutter == 0.0 &&
@@ -621,8 +625,8 @@ void Agc::divvyupExposure()
 						 exposure_mode_->gain.back());
 			shutter_time = new_shutter_time;
 		}
-		RPI_LOG("After flicker avoidance, shutter "
-			<< shutter_time << " gain " << analogue_gain);
+		LOG(RPiAgc, Debug) << "After flicker avoidance, shutter "
+				   << shutter_time << " gain " << analogue_gain;
 	}
 	filtered_.shutter = shutter_time;
 	filtered_.analogue_gain = analogue_gain;
@@ -641,10 +645,10 @@ void Agc::writeAndFinish(Metadata *image_metadata, bool desaturate)
 	// Write to metadata as well, in case anyone wants to update the camera
 	// immediately.
 	image_metadata->Set("agc.status", status_);
-	RPI_LOG("Output written, total exposure requested is "
-		<< filtered_.total_exposure);
-	RPI_LOG("Camera exposure update: shutter time " << filtered_.shutter <<
-		" analogue gain " << filtered_.analogue_gain);
+	LOG(RPiAgc, Debug) << "Output written, total exposure requested is "
+			   << filtered_.total_exposure;
+	LOG(RPiAgc, Debug) << "Camera exposure update: shutter time " << filtered_.shutter
+			   << " analogue gain " << filtered_.analogue_gain;
 }
 
 // Register algorithm with the system.

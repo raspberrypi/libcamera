@@ -84,6 +84,7 @@ public:
 	void Read(boost::property_tree::ptree const &params) override;
 	void SetMode(std::string const &name) override;
 	void SetManualGains(double manual_r, double manual_b) override;
+	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Prepare(Metadata *image_metadata) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 	struct RGB {

@@ -179,6 +179,20 @@ void Awb::SetManualGains(double manual_r, double manual_b)
 	manual_b_ = manual_b;
 }
 
+void Awb::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
+		     Metadata *metadata)
+{
+	// If fixed colour gains have been set, we should let other algorithms
+	// know by writing it into the image metadata.
+	if (manual_r_ != 0.0 && manual_b_ != 0.0) {
+		prev_sync_results_.gain_r = manual_r_;
+		prev_sync_results_.gain_g = 1.0;
+		prev_sync_results_.gain_b = manual_b_;
+		sync_results_ = prev_sync_results_;
+	}
+	metadata->Set("awb.status", prev_sync_results_);
+}
+
 void Awb::fetchAsyncResults()
 {
 	RPI_LOG("Fetch AWB results");

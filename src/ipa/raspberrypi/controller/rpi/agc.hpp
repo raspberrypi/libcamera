@@ -82,6 +82,7 @@ public:
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 
 private:
+	void updateLockStatus(DeviceStatus const &device_status);
 	AgcConfig config_;
 	void housekeepConfig();
 	void fetchCurrentExposure(Metadata *image_metadata);
@@ -111,6 +112,8 @@ private:
 	ExposureValues filtered_; // these values are filtered towards target
 	AgcStatus status_;
 	int lock_count_;
+	DeviceStatus last_device_status_;
+	double last_target_exposure_;
 	// Below here the "settings" that applications can change.
 	std::string metering_mode_name_;
 	std::string exposure_mode_name_;

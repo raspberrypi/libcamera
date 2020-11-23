@@ -154,6 +154,7 @@ Agc::Agc(Controller *controller)
 	: AgcAlgorithm(controller), metering_mode_(nullptr),
 	  exposure_mode_(nullptr), constraint_mode_(nullptr),
 	  frame_count_(0), lock_count_(0),
+	  last_target_exposure_(0.0),
 	  ev_(1.0), flicker_period_(0.0),
 	  fixed_shutter_(0), fixed_analogue_gain_(0.0)
 {
@@ -162,6 +163,7 @@ Agc::Agc(Controller *controller)
 	// it's not been calculated yet (i.e. Process hasn't yet run).
 	memset(&status_, 0, sizeof(status_));
 	status_.ev = ev_;
+	memset(&last_device_status_, 0, sizeof(last_device_status_));
 }
 
 char const *Agc::Name() const
@@ -262,8 +264,6 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 
 void Agc::Prepare(Metadata *image_metadata)
 {
-	int lock_count = lock_count_;
-	lock_count_ = 0;
 	status_.digital_gain = 1.0;
 	fetchAwbStatus(image_metadata); // always fetch it so that Process knows it's been done
 
@@ -287,31 +287,10 @@ void Agc::Prepare(Metadata *image_metadata)
 				LOG(RPiAgc, Debug) << "Use digital_gain " << status_.digital_gain;
 				LOG(RPiAgc, Debug) << "Effective exposure " << actual_exposure * status_.digital_gain;
 				// Decide whether AEC/AGC has converged.
-				// Insist AGC is steady for MAX_LOCK_COUNT
-				// frames before we say we are "locked".
-				// (The hard-coded constants may need to
-				// become customisable.)
-				if (status_.target_exposure_value) {
-#define MAX_LOCK_COUNT 3
-					double err = 0.10 * status_.target_exposure_value + 200;
-					if (actual_exposure <
-						    status_.target_exposure_value + err &&
-					    actual_exposure >
-						    status_.target_exposure_value - err)
-						lock_count_ =
-							std::min(lock_count + 1,
-								 MAX_LOCK_COUNT);
-					else if (actual_exposure <
-							 status_.target_exposure_value + 1.5 * err &&
-						 actual_exposure >
-							 status_.target_exposure_value - 1.5 * err)
-						lock_count_ = lock_count;
-					LOG(RPiAgc, Debug) << "Lock count: " << lock_count_;
-				}
+				updateLockStatus(device_status);
 			}
 		} else
-			LOG(RPiAgc, Debug) << Name() << ": no device metadata";
-		status_.locked = lock_count_ >= MAX_LOCK_COUNT;
+			LOG(RPiAgc, Warning) << Name() << ": no device metadata";
 		image_metadata->Set("agc.status", status_);
 	}
 }
@@ -340,6 +319,43 @@ void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	divideUpExposure();
 	// Finally advertise what we've done.
 	writeAndFinish(image_metadata, desaturate);
+}
+
+void Agc::updateLockStatus(DeviceStatus const &device_status)
+{
+	const double ERROR_FACTOR = 0.10; // make these customisable?
+	const int MAX_LOCK_COUNT = 5;
+	// Reset "lock count" when we exceed this multiple of ERROR_FACTOR
+	const double RESET_MARGIN = 1.5;
+
+	// Add 200us to the exposure time error to allow for line quantisation.
+	double exposure_error = last_device_status_.shutter_speed * ERROR_FACTOR + 200;
+	double gain_error = last_device_status_.analogue_gain * ERROR_FACTOR;
+	double target_error = last_target_exposure_ * ERROR_FACTOR;
+
+	// Note that we don't know the exposure/gain limits of the sensor, so
+	// the values we keep requesting may be unachievable. For this reason
+	// we only insist that we're close to values in the past few frames.
+	if (device_status.shutter_speed > last_device_status_.shutter_speed - exposure_error &&
+	    device_status.shutter_speed < last_device_status_.shutter_speed + exposure_error &&
+	    device_status.analogue_gain > last_device_status_.analogue_gain - gain_error &&
+	    device_status.analogue_gain < last_device_status_.analogue_gain + gain_error &&
+	    status_.target_exposure_value > last_target_exposure_ - target_error &&
+	    status_.target_exposure_value < last_target_exposure_ + target_error)
+		lock_count_ = std::min(lock_count_ + 1, MAX_LOCK_COUNT);
+	else if (device_status.shutter_speed < last_device_status_.shutter_speed - RESET_MARGIN * exposure_error ||
+		 device_status.shutter_speed > last_device_status_.shutter_speed + RESET_MARGIN * exposure_error ||
+		 device_status.analogue_gain < last_device_status_.analogue_gain - RESET_MARGIN * gain_error ||
+		 device_status.analogue_gain > last_device_status_.analogue_gain + RESET_MARGIN * gain_error ||
+		 status_.target_exposure_value < last_target_exposure_ - RESET_MARGIN * target_error ||
+		 status_.target_exposure_value > last_target_exposure_ + RESET_MARGIN * target_error)
+		lock_count_ = 0;
+
+	last_device_status_ = device_status;
+	last_target_exposure_ = status_.target_exposure_value;
+
+	LOG(RPiAgc, Debug) << "Lock count updated to " << lock_count_;
+	status_.locked = lock_count_ == MAX_LOCK_COUNT;
 }
 
 static void copy_string(std::string const &s, char *d, size_t size)

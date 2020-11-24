@@ -1696,7 +1696,22 @@ bool RPiCameraData::findMatchingBuffers(FrameBuffer *&bayerBuffer, FrameBuffer *
 		}
 
 		if (!embeddedBuffer) {
+			bool flushedBuffers = false;
+
 			LOG(RPI, Debug) << "Could not find matching embedded buffer";
+
+			if (!embeddedQueue_.empty()) {
+				/*
+				 * Not found a matching embedded buffer for the bayer buffer in
+				 * the front of the queue. This buffer is now orphaned, so requeue
+				 * it back to the device.
+				 */
+				unicam_[Unicam::Image].queueBuffer(bayerQueue_.front());
+				bayerQueue_.pop();
+				bayerRequeueCount++;
+				LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
+						  << unicam_[Unicam::Image].name();
+			}
 
 			/*
 			 * If we have requeued all available embedded data buffers in this loop,
@@ -1712,19 +1727,8 @@ bool RPiCameraData::findMatchingBuffers(FrameBuffer *&bayerBuffer, FrameBuffer *
 					unicam_[Unicam::Image].queueBuffer(bayerQueue_.front());
 					bayerQueue_.pop();
 				}
-				return false;
+				flushedBuffers = true;
 			}
-
-			/*
-			 * Not found a matching embedded buffer for the bayer buffer in
-			 * the front of the queue. This buffer is now orphaned, so requeue
-			 * it back to the device.
-			 */
-			unicam_[Unicam::Image].queueBuffer(bayerQueue_.front());
-			bayerQueue_.pop();
-			bayerRequeueCount++;
-			LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
-					  << unicam_[Unicam::Image].name();
 
 			/*
 			 * Similar to the above, if we have requeued all available bayer buffers in
@@ -1740,11 +1744,15 @@ bool RPiCameraData::findMatchingBuffers(FrameBuffer *&bayerBuffer, FrameBuffer *
 					unicam_[Unicam::Embedded].queueBuffer(embeddedQueue_.front());
 					embeddedQueue_.pop();
 				}
-				return false;
+				flushedBuffers = true;
 			}
 
-			/* If the embedded queue has become empty, we cannot do any more. */
-			if (embeddedQueue_.empty())
+			/*
+			 * If the embedded queue has become empty, we cannot do any more.
+			 * Similarly, if we have flushed any one of our queues, we cannot do
+			 * any more. Return from here without a buffer pair.
+			 */
+			if (embeddedQueue_.empty() || flushedBuffers)
 				return false;
 		} else {
 			/*

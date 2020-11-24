@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('test')
+    subdir_done()
+endif
+
 subdir('libtest')
 
 subdir('camera')

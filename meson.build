@@ -121,10 +121,7 @@ subdir('src')
 # through configuration values. They are enabled by default.
 
 subdir('Documentation')
-
-if get_option('test')
-    subdir('test')
-endif
+subdir('test')
 
 if not meson.is_cross_build()
     kernel_version_req = '>= 5.0.0'

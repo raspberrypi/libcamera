@@ -6,6 +6,7 @@ qcam_sources = files([
     'format_converter.cpp',
     'main.cpp',
     'main_window.cpp',
+    'message_handler.cpp',
     'viewfinder_qt.cpp',
 ])
 

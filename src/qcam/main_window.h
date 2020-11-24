@@ -41,6 +41,7 @@ enum {
 	OptHelp = 'h',
 	OptRenderer = 'r',
 	OptStream = 's',
+	OptVerbose = 'v',
 };
 
 class MainWindow : public QMainWindow

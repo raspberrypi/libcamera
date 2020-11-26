@@ -306,6 +306,23 @@ controls:
         maximum valid value is given by the properties::ScalerCropMaximum
         property, and the two can be used to implement digital zoom.
 
+  - DigitalGain:
+      type: float
+      description: |
+        Digital gain value applied during the processing steps applied
+        to the image as captured from the sensor.
+
+        The global digital gain factor is applied to all the colour channels
+        of the RAW image. Different pipeline models are free to
+        specify how the global gain factor applies to each separate
+        channel.
+
+        If an imaging pipeline applies digital gain in distinct
+        processing steps, this value indicates their total sum.
+        Pipelines are free to decide how to adjust each processing
+        step to respect the received gain factor and shall report
+        their total value in the request metadata.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 

@@ -478,8 +478,10 @@ void IPARPi::reportMetadata()
 	}
 
 	AgcStatus *agcStatus = rpiMetadata_.GetLocked<AgcStatus>("agc.status");
-	if (agcStatus)
+	if (agcStatus) {
 		libcameraMetadata_.set(controls::AeLocked, agcStatus->locked);
+		libcameraMetadata_.set(controls::DigitalGain, agcStatus->digital_gain);
+	}
 
 	LuxStatus *luxStatus = rpiMetadata_.GetLocked<LuxStatus>("lux.status");
 	if (luxStatus)

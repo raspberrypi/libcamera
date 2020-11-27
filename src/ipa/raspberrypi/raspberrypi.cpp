@@ -197,8 +197,11 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		       const IPAOperationData &ipaConfig,
 		       IPAOperationData *result)
 {
-	if (entityControls.empty())
+	if (entityControls.size() != 2) {
+		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
+		result->operation = RPi::IPA_CONFIG_FAILED;
 		return;
+	}
 
 	result->operation = 0;
 
@@ -216,6 +219,13 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	std::string cameraName(sensorInfo.model);
 	if (!helper_) {
 		helper_ = std::unique_ptr<RPiController::CamHelper>(RPiController::CamHelper::Create(cameraName));
+
+		if (!helper_) {
+			LOG(IPARPI, Error) << "Could not create camera helper for "
+					   << cameraName;
+			result->operation = RPi::IPA_CONFIG_FAILED;
+			return;
+		}
 
 		/*
 		 * Pass out the sensor config to the pipeline handler in order

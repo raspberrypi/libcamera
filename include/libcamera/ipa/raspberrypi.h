@@ -21,6 +21,7 @@ enum ConfigParameters {
 	IPA_CONFIG_STAGGERED_WRITE = (1 << 1),
 	IPA_CONFIG_SENSOR = (1 << 2),
 	IPA_CONFIG_DROP_FRAMES = (1 << 3),
+	IPA_CONFIG_FAILED = (1 << 4),
 };
 
 enum Operations {

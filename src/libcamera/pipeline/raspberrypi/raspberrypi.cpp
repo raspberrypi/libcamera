@@ -1194,6 +1194,11 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
 			&result);
 
+	if (result.operation & RPi::IPA_CONFIG_FAILED) {
+		LOG(RPI, Error) << "IPA configuration failed!";
+		return -EPIPE;
+	}
+
 	unsigned int resultIdx = 0;
 	if (result.operation & RPi::IPA_CONFIG_STAGGERED_WRITE) {
 		/*

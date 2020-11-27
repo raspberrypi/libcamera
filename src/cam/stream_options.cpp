@@ -13,7 +13,7 @@ using namespace libcamera;
 StreamKeyValueParser::StreamKeyValueParser()
 {
 	addOption("role", OptionString,
-		  "Role for the stream (viewfinder, video, still, stillraw)",
+		  "Role for the stream (viewfinder, video, still, raw)",
 		  ArgumentRequired);
 	addOption("width", OptionInteger, "Width in pixels",
 		  ArgumentRequired);

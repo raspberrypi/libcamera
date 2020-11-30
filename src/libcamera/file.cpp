@@ -458,7 +458,8 @@ bool File::exists(const std::string &name)
 	if (ret < 0)
 		return false;
 
-	return true;
+	/* Directories can not be handled here, even if they exist. */
+	return !S_ISDIR(st.st_mode);
 }
 
 } /* namespace libcamera */

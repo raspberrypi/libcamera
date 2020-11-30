@@ -85,7 +85,6 @@ public:
 	std::list<Entity> entities_;
 	V4L2VideoDevice *video_;
 
-	std::vector<Configuration> configs_;
 	std::map<PixelFormat, Configuration> formats_;
 };
 

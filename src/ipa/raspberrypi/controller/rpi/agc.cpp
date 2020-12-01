@@ -184,6 +184,26 @@ void Agc::Read(boost::property_tree::ptree const &params)
 	exposure_mode_ = &config_.exposure_modes[exposure_mode_name_];
 	constraint_mode_name_ = config_.default_constraint_mode;
 	constraint_mode_ = &config_.constraint_modes[constraint_mode_name_];
+	// Set up the "last shutter/gain" values, in case AGC starts "disabled".
+	status_.shutter_time = config_.default_exposure_time;
+	status_.analogue_gain = config_.default_analogue_gain;
+}
+
+bool Agc::IsPaused() const
+{
+	return false;
+}
+
+void Agc::Pause()
+{
+	fixed_shutter_ = status_.shutter_time;
+	fixed_analogue_gain_ = status_.analogue_gain;
+}
+
+void Agc::Resume()
+{
+	fixed_shutter_ = 0;
+	fixed_analogue_gain_ = 0;
 }
 
 void Agc::SetEv(double ev)
@@ -199,11 +219,15 @@ void Agc::SetFlickerPeriod(double flicker_period)
 void Agc::SetFixedShutter(double fixed_shutter)
 {
 	fixed_shutter_ = fixed_shutter;
+	// Set this in case someone calls Pause() straight after.
+	status_.shutter_time = fixed_shutter;
 }
 
 void Agc::SetFixedAnalogueGain(double fixed_analogue_gain)
 {
 	fixed_analogue_gain_ = fixed_analogue_gain;
+	// Set this in case someone calls Pause() straight after.
+	status_.analogue_gain = fixed_analogue_gain;
 }
 
 void Agc::SetMeteringMode(std::string const &metering_mode_name)

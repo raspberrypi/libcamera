@@ -70,6 +70,10 @@ public:
 	Agc(Controller *controller);
 	char const *Name() const override;
 	void Read(boost::property_tree::ptree const &params) override;
+	// AGC handles "pausing" for itself.
+	bool IsPaused() const override;
+	void Pause() override;
+	void Resume() override;
 	void SetEv(double ev) override;
 	void SetFlickerPeriod(double flicker_period) override;
 	void SetFixedShutter(double fixed_shutter) override; // microseconds

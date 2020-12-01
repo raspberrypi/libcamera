@@ -125,7 +125,17 @@ controls:
         Exposure time (shutter speed) for the frame applied in the sensor
         device. This value is specified in micro-seconds.
 
+        Setting this value means that it is now fixed and the AE algorithm may
+        not change it. Setting it back to zero returns it to the control of the
+        AE algorithm.
+
         \sa AnalogueGain AeEnable
+
+        \todo Document the interactions between AeEnable and setting a fixed
+        value for this control. Consider interactions with other AE features,
+        such as aperture and aperture/shutter priority mode, and decide if
+        control of which features should be automatically adjusted shouldn't
+        better be handled through a separate AE mode control.
 
   - AnalogueGain:
       type: float
@@ -134,7 +144,17 @@ controls:
         The value of the control specifies the gain multiplier applied to all
         colour channels. This value cannot be lower than 1.0.
 
+        Setting this value means that it is now fixed and the AE algorithm may
+        not change it. Setting it back to zero returns it to the control of the
+        AE algorithm.
+
         \sa ExposureTime AeEnable
+
+        \todo Document the interactions between AeEnable and setting a fixed
+        value for this control. Consider interactions with other AE features,
+        such as aperture and aperture/shutter priority mode, and decide if
+        control of which features should be automatically adjusted shouldn't
+        better be handled through a separate AE mode control.
 
   - Brightness:
       type: float

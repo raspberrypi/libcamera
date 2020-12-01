@@ -588,7 +588,12 @@ bool Agc::applyDigitalGain(double gain, double target_Y)
 
 void Agc::filterExposure(bool desaturate)
 {
-	double speed = frame_count_ <= config_.startup_frames ? 1.0 : config_.speed;
+	double speed = config_.speed;
+	// AGC adapts instantly if both shutter and gain are directly specified
+	// or we're in the startup phase.
+	if ((status_.fixed_shutter && status_.fixed_analogue_gain) ||
+	    frame_count_ <= config_.startup_frames)
+		speed = 1.0;
 	if (filtered_.total_exposure == 0.0) {
 		filtered_.total_exposure = target_.total_exposure;
 		filtered_.total_exposure_no_dg = target_.total_exposure_no_dg;

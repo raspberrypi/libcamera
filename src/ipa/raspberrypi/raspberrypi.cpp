@@ -512,10 +512,6 @@ void IPARPi::queueRequest(const ControlList &controls)
 			/* This expects units of micro-seconds. */
 			agc->SetFixedShutter(ctrl.second.get<int32_t>());
 
-			/* For the manual values to take effect, AGC must be unpaused. */
-			if (agc->IsPaused())
-				agc->Resume();
-
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
 		}
@@ -525,10 +521,6 @@ void IPARPi::queueRequest(const ControlList &controls)
 				controller_.GetAlgorithm("agc"));
 			ASSERT(agc);
 			agc->SetFixedAnalogueGain(ctrl.second.get<float>());
-
-			/* For the manual values to take effect, AGC must be unpaused. */
-			if (agc->IsPaused())
-				agc->Resume();
 
 			libcameraMetadata_.set(controls::AnalogueGain,
 					       ctrl.second.get<float>());

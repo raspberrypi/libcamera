@@ -596,7 +596,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	/* Color correction static metadata. */
 	{
-		std::vector<uint8_t> data(3);
+		std::vector<uint8_t> data;
+		data.reserve(3);
 		const auto &infoMap = controlsInfo.find(&controls::draft::ColorCorrectionAberrationMode);
 		if (infoMap != controlsInfo.end()) {
 			for (const auto &value : infoMap->second.values())
@@ -782,7 +783,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  &maxFaceCount, 1);
 
 	{
-		std::vector<uint8_t> data(2);
+		std::vector<uint8_t> data;
+		data.reserve(2);
 		const auto &infoMap = controlsInfo.find(&controls::draft::LensShadingMapMode);
 		if (infoMap != controlsInfo.end()) {
 			for (const auto &value : infoMap->second.values())
@@ -850,7 +852,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	/* Noise reduction modes. */
 	{
-		std::vector<uint8_t> data(5);
+		std::vector<uint8_t> data;
+		data.reserve(5);
 		const auto &infoMap = controlsInfo.find(&controls::draft::NoiseReductionMode);
 		if (infoMap != controlsInfo.end()) {
 			for (const auto &value : infoMap->second.values())

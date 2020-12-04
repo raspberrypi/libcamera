@@ -1223,6 +1223,13 @@ PixelFormat CameraDevice::toPixelFormat(int format) const
  */
 int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 {
+	/* Before any configuration attempt, stop the camera if it's running. */
+	if (running_) {
+		worker_.stop();
+		camera_->stop();
+		running_ = false;
+	}
+
 	/*
 	 * Generate an empty configuration, and construct a StreamConfiguration
 	 * for each camera3_stream to add to it.

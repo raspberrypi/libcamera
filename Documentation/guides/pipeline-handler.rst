@@ -209,7 +209,7 @@ methods for the overridden class members.
           int exportFrameBuffers(Camera *camera, Stream *stream,
           std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-          int start(Camera *camera) override;
+          int start(Camera *camera, ControlList *controls) override;
           void stop(Camera *camera) override;
 
           int queueRequestDevice(Camera *camera, Request *request) override;
@@ -239,7 +239,7 @@ methods for the overridden class members.
           return -1;
    }
 
-   int PipelineHandlerVivid::start(Camera *camera)
+   int PipelineHandlerVivid::start(Camera *camera, ControlList *controls)
    {
           return -1;
    }

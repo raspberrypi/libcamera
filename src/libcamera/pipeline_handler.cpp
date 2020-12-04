@@ -351,6 +351,7 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
  * \fn PipelineHandler::start()
  * \brief Start capturing from a group of streams
  * \param[in] camera The camera to start
+ * \param[in] controls Controls to be applied before starting the Camera
  *
  * Start the group of streams that have been configured for capture by
  * \a configure(). The intended caller of this method is the Camera class which

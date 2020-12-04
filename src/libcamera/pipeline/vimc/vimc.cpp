@@ -92,7 +92,7 @@ public:
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-	int start(Camera *camera) override;
+	int start(Camera *camera, ControlList *controls) override;
 	void stop(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -313,7 +313,7 @@ int PipelineHandlerVimc::exportFrameBuffers(Camera *camera, Stream *stream,
 	return data->video_->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerVimc::start(Camera *camera)
+int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] ControlList *controls)
 {
 	VimcCameraData *data = cameraData(camera);
 	unsigned int count = data->stream_.configuration().bufferCount;

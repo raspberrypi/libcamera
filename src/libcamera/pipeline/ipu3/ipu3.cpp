@@ -105,7 +105,7 @@ public:
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-	int start(Camera *camera) override;
+	int start(Camera *camera, ControlList *controls) override;
 	void stop(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -596,7 +596,7 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 	return 0;
 }
 
-int PipelineHandlerIPU3::start(Camera *camera)
+int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *controls)
 {
 	IPU3CameraData *data = cameraData(camera);
 	CIO2Device *cio2 = &data->cio2_;

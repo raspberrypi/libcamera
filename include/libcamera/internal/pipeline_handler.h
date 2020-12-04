@@ -78,7 +78,7 @@ public:
 	virtual int exportFrameBuffers(Camera *camera, Stream *stream,
 				       std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
 
-	virtual int start(Camera *camera) = 0;
+	virtual int start(Camera *camera, ControlList *controls) = 0;
 	virtual void stop(Camera *camera) = 0;
 
 	int queueRequest(Camera *camera, Request *request);

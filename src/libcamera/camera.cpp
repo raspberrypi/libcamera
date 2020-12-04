@@ -1002,10 +1002,12 @@ int Camera::queueRequest(Request *request)
 
 /**
  * \brief Start capture from camera
+ * \param[in] controls Controls to be applied before starting the Camera
  *
- * Start the camera capture session. Once the camera is started the application
- * can queue requests to the camera to process and return to the application
- * until the capture session is terminated with \a stop().
+ * Start the camera capture session, optionally providing a list of controls to
+ * apply before starting. Once the camera is started the application can queue
+ * requests to the camera to process and return to the application until the
+ * capture session is terminated with \a stop().
  *
  * \context This function may only be called when the camera is in the
  * Configured state as defined in \ref camera_operation, and shall be
@@ -1016,7 +1018,7 @@ int Camera::queueRequest(Request *request)
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not in a state where it can be started
  */
-int Camera::start()
+int Camera::start(ControlList *controls)
 {
 	Private *const d = LIBCAMERA_D_PTR();
 
@@ -1027,7 +1029,7 @@ int Camera::start()
 	LOG(Camera, Debug) << "Starting capture";
 
 	ret = d->pipe_->invokeMethod(&PipelineHandler::start,
-				     ConnectionTypeBlocking, this);
+				     ConnectionTypeBlocking, this, controls);
 	if (ret)
 		return ret;
 

@@ -536,9 +536,16 @@ namespace libcamera {
 /**
  * \fn IPAInterface::start()
  * \brief Start the IPA
+ * \param[in] data Protocol-specific data for the start operation
+ * \param[out] result Result of the start operation
  *
  * This method informs the IPA module that the camera is about to be started.
  * The IPA module shall prepare any resources it needs to operate.
+ *
+ * The \a data and \a result parameters carry custom data passed by the
+ * pipeline handler to the IPA and back. The pipeline handler may set the \a
+ * result parameter to null if the IPA protocol doesn't need to pass a result
+ * back through the start() function.
  *
  * \return 0 on success or a negative error code otherwise
  */

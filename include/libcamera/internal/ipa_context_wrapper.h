@@ -20,7 +20,8 @@ public:
 	~IPAContextWrapper();
 
 	int init(const IPASettings &settings) override;
-	int start() override;
+	int start(const IPAOperationData &data,
+		  IPAOperationData *result) override;
 	void stop() override;
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,

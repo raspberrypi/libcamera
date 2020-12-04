@@ -120,7 +120,8 @@ protected:
 		}
 
 		/* Test start of IPA module. */
-		ipa_->start();
+		IPAOperationData data = {};
+		ipa_->start(data, nullptr);
 		timer.start(1000);
 		while (timer.isRunning() && trace_ != IPAOperationStart)
 			dispatcher->processEvents();

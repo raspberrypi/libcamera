@@ -34,7 +34,8 @@ public:
 
 	int init(const IPASettings &settings) override;
 
-	int start() override;
+	int start(const IPAOperationData &data,
+		  IPAOperationData *result) override;
 	void stop() override;
 
 	void configure([[maybe_unused]] const CameraSensorInfo &sensorInfo,
@@ -82,7 +83,8 @@ int IPAVimc::init(const IPASettings &settings)
 	return 0;
 }
 
-int IPAVimc::start()
+int IPAVimc::start([[maybe_unused]] const IPAOperationData &data,
+		   [[maybe_unused]] IPAOperationData *result)
 {
 	trace(IPAOperationStart);
 

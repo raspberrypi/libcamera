@@ -752,7 +752,11 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	}
 
 	/* Start the IPA. */
-	ret = data->ipa_->start();
+	IPAOperationData ipaData = {};
+	IPAOperationData result = {};
+	if (controls)
+		ipaData.controls.emplace_back(*controls);
+	ret = data->ipa_->start(ipaData, &result);
 	if (ret) {
 		LOG(RPI, Error)
 			<< "Failed to start IPA for " << camera->id();
@@ -1189,7 +1193,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	IPAOperationData result;
+	IPAOperationData result = {};
 
 	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
 			&result);

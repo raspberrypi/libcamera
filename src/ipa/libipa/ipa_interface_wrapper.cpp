@@ -95,7 +95,9 @@ int IPAInterfaceWrapper::start(struct ipa_context *_ctx)
 {
 	IPAInterfaceWrapper *ctx = static_cast<IPAInterfaceWrapper *>(_ctx);
 
-	return ctx->ipa_->start();
+	/* \todo Translate the data and result. */
+	IPAOperationData data = {};
+	return ctx->ipa_->start(data, nullptr);
 }
 
 void IPAInterfaceWrapper::stop(struct ipa_context *_ctx)

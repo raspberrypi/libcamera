@@ -86,10 +86,11 @@ int IPAContextWrapper::init(const IPASettings &settings)
 	return 0;
 }
 
-int IPAContextWrapper::start()
+int IPAContextWrapper::start(const IPAOperationData &data,
+			     IPAOperationData *result)
 {
 	if (intf_)
-		return intf_->start();
+		return intf_->start(data, result);
 
 	if (!ctx_)
 		return 0;

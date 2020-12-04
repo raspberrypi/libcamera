@@ -26,7 +26,8 @@ public:
 	IPAProxyThread(IPAModule *ipam);
 
 	int init(const IPASettings &settings) override;
-	int start() override;
+	int start(const IPAOperationData &data,
+		  IPAOperationData *result) override;
 	void stop() override;
 
 	void configure(const CameraSensorInfo &sensorInfo,
@@ -50,9 +51,9 @@ private:
 			ipa_ = ipa;
 		}
 
-		int start()
+		int start(const IPAOperationData &data, IPAOperationData *result)
 		{
-			return ipa_->start();
+			return ipa_->start(data, result);
 		}
 
 		void stop()
@@ -111,12 +112,14 @@ int IPAProxyThread::init(const IPASettings &settings)
 	return 0;
 }
 
-int IPAProxyThread::start()
+int IPAProxyThread::start(const IPAOperationData &data,
+			  IPAOperationData *result)
 {
 	running_ = true;
 	thread_.start();
 
-	return proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking);
+	return proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking,
+				   data, result);
 }
 
 void IPAProxyThread::stop()

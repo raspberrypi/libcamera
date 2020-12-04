@@ -322,7 +322,8 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] ControlList *con
 	if (ret < 0)
 		return ret;
 
-	ret = data->ipa_->start();
+	IPAOperationData ipaData = {};
+	ret = data->ipa_->start(ipaData, nullptr);
 	if (ret) {
 		data->video_->releaseBuffers();
 		return ret;

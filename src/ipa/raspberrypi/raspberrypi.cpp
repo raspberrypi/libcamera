@@ -78,13 +78,14 @@ public:
 	}
 
 	int init(const IPASettings &settings) override;
-	int start() override { return 0; }
+	int start([[maybe_unused]] const IPAOperationData &data,
+		  [[maybe_unused]] IPAOperationData *result) override { return 0; }
 	void stop() override {}
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &data,
+		       const IPAOperationData &ipaConfig,
 		       IPAOperationData *response) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;

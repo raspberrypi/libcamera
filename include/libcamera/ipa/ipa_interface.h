@@ -153,7 +153,8 @@ public:
 	virtual ~IPAInterface() = default;
 
 	virtual int init(const IPASettings &settings) = 0;
-	virtual int start() = 0;
+	virtual int start(const IPAOperationData &data,
+			  IPAOperationData *result) = 0;
 	virtual void stop() = 0;
 
 	virtual void configure(const CameraSensorInfo &sensorInfo,

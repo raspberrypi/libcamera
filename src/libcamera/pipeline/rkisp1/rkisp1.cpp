@@ -842,7 +842,8 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 	if (ret)
 		return ret;
 
-	ret = data->ipa_->start();
+	IPAOperationData ipaData = {};
+	ret = data->ipa_->start(ipaData, nullptr);
 	if (ret) {
 		freeBuffers(camera);
 		LOG(RkISP1, Error)

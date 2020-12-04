@@ -30,7 +30,8 @@ public:
 	{
 		return 0;
 	}
-	int start() override { return 0; }
+	int start([[maybe_unused]] const IPAOperationData &data,
+		  [[maybe_unused]] IPAOperationData *result) override { return 0; }
 	void stop() override {}
 	void configure([[maybe_unused]] const CameraSensorInfo &sensorInfo,
 		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,

@@ -56,7 +56,8 @@ public:
 		return 0;
 	}
 
-	int start() override
+	int start([[maybe_unused]] const IPAOperationData &data,
+		  [[maybe_unused]] IPAOperationData *result) override
 	{
 		report(Op_start, TestPass);
 		return 0;
@@ -376,7 +377,7 @@ protected:
 			return TestFail;
 		}
 
-		ret = INVOKE(start);
+		ret = INVOKE(start, ipaConfig, nullptr);
 		if (ret == TestFail) {
 			cerr << "Failed to run start()";
 			return TestFail;

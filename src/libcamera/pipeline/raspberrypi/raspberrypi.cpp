@@ -754,14 +754,24 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	/* Start the IPA. */
 	IPAOperationData ipaData = {};
 	IPAOperationData result = {};
-	if (controls)
+	if (controls) {
+		ipaData.operation = RPi::IPA_CONFIG_STARTUP;
 		ipaData.controls.emplace_back(*controls);
+	}
 	ret = data->ipa_->start(ipaData, &result);
 	if (ret) {
 		LOG(RPI, Error)
 			<< "Failed to start IPA for " << camera->id();
 		stop(camera);
 		return ret;
+	}
+
+	/* Apply any gain/exposure settings that the IPA may have passed back. */
+	ASSERT(data->staggeredCtrl_);
+	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
+		const ControlList &ctrls = result.controls[0];
+		if (!data->staggeredCtrl_.set(ctrls))
+			LOG(RPI, Error) << "V4L2 staggered set failed";
 	}
 
 	/*
@@ -784,7 +794,6 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	 * starting. First check that the staggered ctrl has been initialised
 	 * by configure().
 	 */
-	ASSERT(data->staggeredCtrl_);
 	data->staggeredCtrl_.reset();
 	data->staggeredCtrl_.write();
 	data->expectedSequence_ = 0;

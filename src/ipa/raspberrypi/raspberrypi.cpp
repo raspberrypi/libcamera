@@ -78,8 +78,7 @@ public:
 	}
 
 	int init(const IPASettings &settings) override;
-	int start([[maybe_unused]] const IPAOperationData &data,
-		  [[maybe_unused]] IPAOperationData *result) override { return 0; }
+	int start(const IPAOperationData &data, IPAOperationData *result) override;
 	void stop() override {}
 
 	void configure(const CameraSensorInfo &sensorInfo,
@@ -151,6 +150,36 @@ private:
 int IPARPi::init(const IPASettings &settings)
 {
 	tuningFile_ = settings.configurationFile;
+	return 0;
+}
+
+int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
+{
+	RPiController::Metadata metadata;
+
+	ASSERT(result);
+	result->operation = 0;
+	if (data.operation & RPi::IPA_CONFIG_STARTUP) {
+		/* We have been given some controls to action before start. */
+		queueRequest(data.controls[0]);
+	}
+
+	controller_.SwitchMode(mode_, &metadata);
+
+	/* SwitchMode may supply updated exposure/gain values to use. */
+	AgcStatus agcStatus;
+	agcStatus.shutter_time = 0.0;
+	agcStatus.analogue_gain = 0.0;
+
+	/* SwitchMode may supply updated exposure/gain values to use. */
+	metadata.Get("agc.status", agcStatus);
+	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
+		ControlList ctrls(unicamCtrls_);
+		applyAGC(&agcStatus, ctrls);
+		result->controls.emplace_back(ctrls);
+		result->operation |= RPi::IPA_CONFIG_SENSOR;
+	}
+
 	return 0;
 }
 
@@ -295,11 +324,6 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	result->data.push_back(dropFrame);
 	result->operation |= RPi::IPA_CONFIG_DROP_FRAMES;
 
-	/* These zero values mean not program anything (unless overwritten). */
-	struct AgcStatus agcStatus;
-	agcStatus.shutter_time = 0.0;
-	agcStatus.analogue_gain = 0.0;
-
 	if (!controllerInit_) {
 		/* Load the tuning file for this sensor. */
 		controller_.Read(tuningFile_.c_str());
@@ -307,20 +331,13 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		controllerInit_ = true;
 
 		/* Supply initial values for gain and exposure. */
+		ControlList ctrls(unicamCtrls_);
+		AgcStatus agcStatus;
 		agcStatus.shutter_time = DefaultExposureTime;
 		agcStatus.analogue_gain = DefaultAnalogueGain;
-	}
-
-	RPiController::Metadata metadata;
-	controller_.SwitchMode(mode_, &metadata);
-
-	/* SwitchMode may supply updated exposure/gain values to use. */
-	metadata.Get("agc.status", agcStatus);
-	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
-		ControlList ctrls(unicamCtrls_);
 		applyAGC(&agcStatus, ctrls);
-		result->controls.push_back(ctrls);
 
+		result->controls.emplace_back(ctrls);
 		result->operation |= RPi::IPA_CONFIG_SENSOR;
 	}
 
@@ -834,7 +851,7 @@ void IPARPi::processStats(unsigned int bufferId)
 
 		IPAOperationData op;
 		op.operation = RPi::IPA_ACTION_V4L2_SET_STAGGERED;
-		op.controls.push_back(ctrls);
+		op.controls.emplace_back(ctrls);
 		queueFrameAction.emit(0, op);
 	}
 }

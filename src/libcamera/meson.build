@@ -31,6 +31,7 @@ libcamera_sources = files([
     'ipa_manager.cpp',
     'ipa_module.cpp',
     'ipa_proxy.cpp',
+    'ipc_pipe.cpp',
     'ipc_unixsocket.cpp',
     'log.cpp',
     'media_device.cpp',

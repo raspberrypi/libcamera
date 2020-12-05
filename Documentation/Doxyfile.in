@@ -842,7 +842,9 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/span.h \
 			 @TOP_SRCDIR@/src/libcamera/pipeline/ \
 			 @TOP_SRCDIR@/src/libcamera/proxy/ \
 			 @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
-			 @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h
+			 @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
+			 @TOP_BUILDDIR@/include/libcamera/ipa/ \
+			 @TOP_BUILDDIR@/src/libcamera/proxy/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

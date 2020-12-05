@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('generated_serializer')
+
 serialization_tests = [
     ['control_serialization',     'control_serialization.cpp'],
     ['ipa_data_serializer_test',  'ipa_data_serializer_test.cpp'],

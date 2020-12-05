@@ -42,7 +42,7 @@ rpi_ipa_sources = files([
 ])
 
 mod = shared_module(ipa_name,
-                    rpi_ipa_sources,
+                    [rpi_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : rpi_ipa_includes,
                     dependencies : rpi_ipa_deps,

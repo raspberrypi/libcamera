@@ -14,10 +14,13 @@
 #include <libcamera/ipa/ipa_module_info.h>
 
 #include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/pub_key.h"
 
 namespace libcamera {
+
+LOG_DECLARE_CATEGORY(IPAManager)
 
 class IPAManager
 {
@@ -25,9 +28,31 @@ public:
 	IPAManager();
 	~IPAManager();
 
-	static std::unique_ptr<IPAProxy> createIPA(PipelineHandler *pipe,
-						   uint32_t maxVersion,
-						   uint32_t minVersion);
+	template<typename T>
+	static std::unique_ptr<T> createIPA(PipelineHandler *pipe,
+					    uint32_t maxVersion,
+					    uint32_t minVersion)
+	{
+		IPAModule *m = nullptr;
+
+		for (IPAModule *module : self_->modules_) {
+			if (module->match(pipe, minVersion, maxVersion)) {
+				m = module;
+				break;
+			}
+		}
+
+		if (!m)
+			return nullptr;
+
+		std::unique_ptr<T> proxy = std::make_unique<T>(m, !self_->isSignatureValid(m));
+		if (!proxy->isValid()) {
+			LOG(IPAManager, Error) << "Failed to load proxy";
+			return nullptr;
+		}
+
+		return proxy;
+	}
 
 private:
 	static IPAManager *self_;

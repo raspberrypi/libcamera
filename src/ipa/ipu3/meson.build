@@ -3,10 +3,10 @@
 ipa_name = 'ipa_ipu3'
 
 mod = shared_module(ipa_name,
-                    'ipu3.cpp',
+                    ['ipu3.cpp', libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : [ipa_includes, libipa_includes],
-                    dependencies : [libatomic, libcamera_dep],
+                    dependencies : libcamera_dep,
                     link_with : libipa,
                     install : true,
                     install_dir : ipa_install_dir)

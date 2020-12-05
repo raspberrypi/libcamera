@@ -26,7 +26,6 @@ libcamera_internal_headers = files([
     'event_notifier.h',
     'file.h',
     'formats.h',
-    'ipa_context_wrapper.h',
     'ipa_manager.h',
     'ipa_module.h',
     'ipa_proxy.h',

@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/ipa/vimc.h>
+#include <libcamera/ipa/vimc_ipa_proxy.h>
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/event_dispatcher.h"
@@ -20,6 +20,7 @@
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/process.h"
 #include "libcamera/internal/thread.h"
 #include "libcamera/internal/timer.h"
 
@@ -32,7 +33,7 @@ class IPAInterfaceTest : public Test, public Object
 {
 public:
 	IPAInterfaceTest()
-		: trace_(IPAOperationNone), notifier_(nullptr), fd_(-1)
+		: trace_(ipa::vimc::IPAOperationNone), notifier_(nullptr), fd_(-1)
 	{
 	}
 
@@ -64,22 +65,22 @@ protected:
 		}
 
 		/* Create and open the communication FIFO. */
-		int ret = mkfifo(VIMC_IPA_FIFO_PATH, S_IRUSR | S_IWUSR);
+		int ret = mkfifo(ipa::vimc::VimcIPAFIFOPath.c_str(), S_IRUSR | S_IWUSR);
 		if (ret) {
 			ret = errno;
 			cerr << "Failed to create IPA test FIFO at '"
-			     << VIMC_IPA_FIFO_PATH << "': " << strerror(ret)
+			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
 			     << endl;
 			return TestFail;
 		}
 
-		ret = open(VIMC_IPA_FIFO_PATH, O_RDONLY | O_NONBLOCK);
+		ret = open(ipa::vimc::VimcIPAFIFOPath.c_str(), O_RDONLY | O_NONBLOCK);
 		if (ret < 0) {
 			ret = errno;
 			cerr << "Failed to open IPA test FIFO at '"
-			     << VIMC_IPA_FIFO_PATH << "': " << strerror(ret)
+			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
 			     << endl;
-			unlink(VIMC_IPA_FIFO_PATH);
+			unlink(ipa::vimc::VimcIPAFIFOPath.c_str());
 			return TestFail;
 		}
 		fd_ = ret;
@@ -95,7 +96,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = IPAManager::createIPA(pipe_.get(), 0, 0);
+		ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;
@@ -110,23 +111,22 @@ protected:
 		}
 
 		timer.start(1000);
-		while (timer.isRunning() && trace_ != IPAOperationInit)
+		while (timer.isRunning() && trace_ != ipa::vimc::IPAOperationInit)
 			dispatcher->processEvents();
 
-		if (trace_ != IPAOperationInit) {
+		if (trace_ != ipa::vimc::IPAOperationInit) {
 			cerr << "Failed to test IPA initialization sequence"
 			     << endl;
 			return TestFail;
 		}
 
 		/* Test start of IPA module. */
-		IPAOperationData data = {};
-		ipa_->start(data, nullptr);
+		ipa_->start();
 		timer.start(1000);
-		while (timer.isRunning() && trace_ != IPAOperationStart)
+		while (timer.isRunning() && trace_ != ipa::vimc::IPAOperationStart)
 			dispatcher->processEvents();
 
-		if (trace_ != IPAOperationStart) {
+		if (trace_ != ipa::vimc::IPAOperationStart) {
 			cerr << "Failed to test IPA start sequence" << endl;
 			return TestFail;
 		}
@@ -134,10 +134,10 @@ protected:
 		/* Test stop of IPA module. */
 		ipa_->stop();
 		timer.start(1000);
-		while (timer.isRunning() && trace_ != IPAOperationStop)
+		while (timer.isRunning() && trace_ != ipa::vimc::IPAOperationStop)
 			dispatcher->processEvents();
 
-		if (trace_ != IPAOperationStop) {
+		if (trace_ != ipa::vimc::IPAOperationStop) {
 			cerr << "Failed to test IPA stop sequence" << endl;
 			return TestFail;
 		}
@@ -148,7 +148,7 @@ protected:
 	void cleanup() override
 	{
 		close(fd_);
-		unlink(VIMC_IPA_FIFO_PATH);
+		unlink(ipa::vimc::VimcIPAFIFOPath.c_str());
 	}
 
 private:
@@ -158,16 +158,18 @@ private:
 		if (s < 0) {
 			int ret = errno;
 			cerr << "Failed to read from IPA test FIFO at '"
-			     << VIMC_IPA_FIFO_PATH << "': " << strerror(ret)
+			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
 			     << endl;
-			trace_ = IPAOperationNone;
+			trace_ = ipa::vimc::IPAOperationNone;
 		}
 	}
 
+	ProcessManager processManager_;
+
 	std::shared_ptr<PipelineHandler> pipe_;
-	std::unique_ptr<IPAProxy> ipa_;
+	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
 	std::unique_ptr<IPAManager> ipaManager_;
-	enum IPAOperationCode trace_;
+	enum ipa::vimc::IPAOperationCode trace_;
 	EventNotifier *notifier_;
 	int fd_;
 };

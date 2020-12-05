@@ -6,7 +6,7 @@ ipa_test = [
 ]
 
 foreach t : ipa_test
-    exe = executable(t[0], t[1],
+    exe = executable(t[0], [t[1], libcamera_generated_ipa_headers],
                      dependencies : libcamera_dep,
                      link_with : [libipa, test_libraries],
                      include_directories : [libipa_includes, test_includes_internal])

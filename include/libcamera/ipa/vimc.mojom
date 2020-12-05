@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+module ipa.vimc;
+
+import "include/libcamera/ipa/core.mojom";
+
+const string VimcIPAFIFOPath = "/tmp/libcamera_ipa_vimc_fifo";
+
+enum IPAOperationCode {
+	IPAOperationNone,
+	IPAOperationInit,
+	IPAOperationStart,
+	IPAOperationStop,
+};
+
+interface IPAVimcInterface {
+	init(IPASettings settings) => (int32 ret);
+	start() => (int32 ret);
+	stop();
+};
+
+interface IPAVimcEventInterface {
+	dummyEvent(uint32 val);
+};

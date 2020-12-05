@@ -34,6 +34,9 @@
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include <libcamera/ipa/vimc_ipa_interface.h>
+#include <libcamera/ipa/vimc_ipa_proxy.h>
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(VIMC)
@@ -56,6 +59,8 @@ public:
 	std::unique_ptr<V4L2VideoDevice> video_;
 	std::unique_ptr<V4L2VideoDevice> raw_;
 	Stream stream_;
+
+	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
 };
 
 class VimcCameraConfiguration : public CameraConfiguration
@@ -311,8 +316,7 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] ControlList *con
 	if (ret < 0)
 		return ret;
 
-	IPAOperationData ipaData = {};
-	ret = data->ipa_->start(ipaData, nullptr);
+	ret = data->ipa_->start();
 	if (ret) {
 		data->video_->releaseBuffers();
 		return ret;
@@ -418,7 +422,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this, media);
 
-	data->ipa_ = IPAManager::createIPA(this, 0, 0);
+	data->ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(this, 0, 0);
 	if (data->ipa_ != nullptr) {
 		std::string conf = data->ipa_->configurationFile("vimc.conf");
 		data->ipa_->init(IPASettings{ conf });

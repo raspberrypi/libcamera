@@ -18,37 +18,6 @@ namespace libcamera {
 
 namespace RPi {
 
-enum ConfigParameters {
-	IPA_CONFIG_LS_TABLE = (1 << 0),
-	IPA_CONFIG_STARTUP_CTRLS = (1 << 1),
-	IPA_RESULT_CONFIG_FAILED = (1 << 2),
-	IPA_RESULT_SENSOR_PARAMS = (1 << 3),
-	IPA_RESULT_SENSOR_CTRLS = (1 << 4),
-	IPA_RESULT_DROP_FRAMES = (1 << 5),
-};
-
-enum Operations {
-	IPA_ACTION_SET_DELAYED_CTRLS = 1,
-	IPA_ACTION_V4L2_SET_ISP,
-	IPA_ACTION_STATS_METADATA_COMPLETE,
-	IPA_ACTION_RUN_ISP,
-	IPA_ACTION_EMBEDDED_COMPLETE,
-	IPA_EVENT_SIGNAL_STAT_READY,
-	IPA_EVENT_SIGNAL_ISP_PREPARE,
-	IPA_EVENT_QUEUE_REQUEST,
-};
-
-enum BufferMask {
-	ID		= 0x00ffff,
-	STATS		= 0x010000,
-	EMBEDDED_DATA	= 0x020000,
-	BAYER_DATA	= 0x040000,
-	EXTERNAL_BUFFER	= 0x100000,
-};
-
-/* Size of the LS grid allocation. */
-static constexpr unsigned int MaxLsGridSize = 32 << 10;
-
 /*
  * List of controls handled by the Raspberry Pi IPA
  *

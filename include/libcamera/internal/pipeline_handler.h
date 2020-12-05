@@ -47,7 +47,6 @@ public:
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
 	ControlList properties_;
-	std::unique_ptr<IPAProxy> ipa_;
 
 private:
 	LIBCAMERA_DISABLE_COPY(CameraData)

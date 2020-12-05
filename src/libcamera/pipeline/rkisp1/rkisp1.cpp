@@ -18,7 +18,9 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
-#include <libcamera/ipa/rkisp1.h>
+#include <libcamera/ipa/core_ipa_interface.h>
+#include <libcamera/ipa/rkisp1_ipa_interface.h>
+#include <libcamera/ipa/rkisp1_ipa_proxy.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -96,9 +98,11 @@ public:
 	RkISP1MainPath *mainPath_;
 	RkISP1SelfPath *selfPath_;
 
+	std::unique_ptr<ipa::rkisp1::IPAProxyRkISP1> ipa_;
+
 private:
 	void queueFrameAction(unsigned int frame,
-			      const IPAOperationData &action);
+			      const ipa::rkisp1::RkISP1Action &action);
 
 	void metadataReady(unsigned int frame, const ControlList &metadata);
 };
@@ -298,7 +302,7 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 
 int RkISP1CameraData::loadIPA()
 {
-	ipa_ = IPAManager::createIPA(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe_, 1, 1);
 	if (!ipa_)
 		return -ENOENT;
 
@@ -311,15 +315,15 @@ int RkISP1CameraData::loadIPA()
 }
 
 void RkISP1CameraData::queueFrameAction(unsigned int frame,
-					const IPAOperationData &action)
+					const ipa::rkisp1::RkISP1Action &action)
 {
-	switch (action.operation) {
-	case RKISP1_IPA_ACTION_V4L2_SET: {
-		const ControlList &controls = action.controls[0];
+	switch (action.op) {
+	case ipa::rkisp1::ActionV4L2Set: {
+		const ControlList &controls = action.controls;
 		delayedCtrls_->push(controls);
 		break;
 	}
-	case RKISP1_IPA_ACTION_PARAM_FILLED: {
+	case ipa::rkisp1::ActionParamFilled: {
 		PipelineHandlerRkISP1 *pipe = static_cast<PipelineHandlerRkISP1 *>(pipe_);
 		RkISP1FrameInfo *info = frameInfo_.find(frame);
 		if (!info)
@@ -336,11 +340,11 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 
 		break;
 	}
-	case RKISP1_IPA_ACTION_METADATA:
-		metadataReady(frame, action.controls[0]);
+	case ipa::rkisp1::ActionMetadata:
+		metadataReady(frame, action.controls);
 		break;
 	default:
-		LOG(RkISP1, Error) << "Unknown action " << action.operation;
+		LOG(RkISP1, Error) << "Unknown action " << action.op;
 		break;
 	}
 }
@@ -612,16 +616,12 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	for (const StreamConfiguration &cfg : *config) {
 		if (cfg.stream() == &data->mainPathStream_) {
 			ret = mainPath_.configure(cfg, format);
-			streamConfig[0] = {
-				.pixelFormat = cfg.pixelFormat,
-				.size = cfg.size,
-			};
+			streamConfig[0] = IPAStream(cfg.pixelFormat,
+						    cfg.size);
 		} else {
 			ret = selfPath_.configure(cfg, format);
-			streamConfig[1] = {
-				.pixelFormat = cfg.pixelFormat,
-				.size = cfg.size,
-			};
+			streamConfig[1] = IPAStream(cfg.pixelFormat,
+						    cfg.size);
 		}
 
 		if (ret)
@@ -650,12 +650,10 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		ret = 0;
 	}
 
-	std::map<unsigned int, const ControlInfoMap &> entityControls;
+	std::map<uint32_t, ControlInfoMap> entityControls;
 	entityControls.emplace(0, data->sensor_->controls());
 
-	IPAOperationData ipaConfig;
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
-			      ipaConfig, nullptr);
+	data->ipa_->configure(sensorInfo, streamConfig, entityControls);
 
 	return 0;
 }
@@ -695,15 +693,15 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 
 	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {
 		buffer->setCookie(ipaBufferId++);
-		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
-					      .planes = buffer->planes() });
+		data->ipaBuffers_.emplace_back(buffer->cookie(),
+					       buffer->planes());
 		availableParamBuffers_.push(buffer.get());
 	}
 
 	for (std::unique_ptr<FrameBuffer> &buffer : statBuffers_) {
 		buffer->setCookie(ipaBufferId++);
-		data->ipaBuffers_.push_back({ .id = buffer->cookie(),
-					      .planes = buffer->planes() });
+		data->ipaBuffers_.emplace_back(buffer->cookie(),
+					       buffer->planes());
 		availableStatBuffers_.push(buffer.get());
 	}
 
@@ -757,8 +755,7 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 	if (ret)
 		return ret;
 
-	IPAOperationData ipaData = {};
-	ret = data->ipa_->start(ipaData, nullptr);
+	ret = data->ipa_->start();
 	if (ret) {
 		freeBuffers(camera);
 		LOG(RkISP1, Error)
@@ -853,11 +850,12 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 	if (!info)
 		return -ENOENT;
 
-	IPAOperationData op;
-	op.operation = RKISP1_IPA_EVENT_QUEUE_REQUEST;
-	op.data = { data->frame_, info->paramBuffer->cookie() };
-	op.controls = { request->controls() };
-	data->ipa_->processEvent(op);
+	ipa::rkisp1::RkISP1Event ev;
+	ev.op = ipa::rkisp1::EventQueueRequest;
+	ev.frame = data->frame_;
+	ev.bufferId = info->paramBuffer->cookie();
+	ev.controls = request->controls();
+	data->ipa_->processEvent(ev);
 
 	data->frame_++;
 
@@ -1088,10 +1086,11 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	if (data->frame_ <= buffer->metadata().sequence)
 		data->frame_ = buffer->metadata().sequence + 1;
 
-	IPAOperationData op;
-	op.operation = RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER;
-	op.data = { info->frame, info->statBuffer->cookie() };
-	data->ipa_->processEvent(op);
+	ipa::rkisp1::RkISP1Event ev;
+	ev.op = ipa::rkisp1::EventSignalStatBuffer;
+	ev.frame = info->frame;
+	ev.bufferId = info->statBuffer->cookie();
+	data->ipa_->processEvent(ev);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)

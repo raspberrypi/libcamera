@@ -33,7 +33,7 @@ public:
 
 	bool load();
 
-	struct ipa_context *createContext();
+	IPAInterface *createInterface();
 
 	bool match(PipelineHandler *pipe,
 		   uint32_t minVersion, uint32_t maxVersion) const;
@@ -52,7 +52,7 @@ private:
 	bool loaded_;
 
 	void *dlHandle_;
-	typedef struct ipa_context *(*IPAIntfFactory)();
+	typedef IPAInterface *(*IPAIntfFactory)(void);
 	IPAIntfFactory ipaCreate_;
 };
 

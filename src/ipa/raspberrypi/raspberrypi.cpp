@@ -20,10 +20,9 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/raspberrypi.h>
+#include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/request.h>
 #include <libcamera/span.h>
-
-#include <libipa/ipa_interface_wrapper.h>
 
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
@@ -64,7 +63,7 @@ constexpr double defaultMaxFrameDuration = 1e6 / 0.01;
 
 LOG_DEFINE_CATEGORY(IPARPI)
 
-class IPARPi : public IPAInterface
+class IPARPi : public ipa::rpi::IPARPiInterface
 {
 public:
 	IPARPi()
@@ -77,21 +76,24 @@ public:
 	~IPARPi()
 	{
 		if (lsTable_)
-			munmap(lsTable_, RPi::MaxLsGridSize);
+			munmap(lsTable_, ipa::rpi::MaxLsGridSize);
 	}
 
 	int init(const IPASettings &settings) override;
-	int start(const IPAOperationData &data, IPAOperationData *result) override;
+	void start(const ipa::rpi::StartControls &data,
+		   ipa::rpi::StartControls *result) override;
 	void stop() override {}
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *response) override;
+		       const std::map<unsigned int, ControlInfoMap> &entityControls,
+		       const ipa::rpi::ConfigInput &data,
+		       ipa::rpi::ConfigOutput *response, int32_t *ret) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const IPAOperationData &event) override;
+	void signalStatReady(const uint32_t bufferId) override;
+	void signalQueueRequest(const ControlList &controls) override;
+	void signalIspPrepare(const ipa::rpi::ISPConfig &data) override;
 
 private:
 	void setMode(const CameraSensorInfo &sensorInfo);
@@ -166,15 +168,15 @@ int IPARPi::init(const IPASettings &settings)
 	return 0;
 }
 
-int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
+void IPARPi::start(const ipa::rpi::StartControls &data,
+		   ipa::rpi::StartControls *result)
 {
 	RPiController::Metadata metadata;
 
 	ASSERT(result);
-	result->operation = 0;
-	if (data.operation & RPi::IPA_CONFIG_STARTUP_CTRLS) {
+	if (!data.controls.empty()) {
 		/* We have been given some controls to action before start. */
-		queueRequest(data.controls[0]);
+		queueRequest(data.controls);
 	}
 
 	controller_.SwitchMode(mode_, &metadata);
@@ -189,8 +191,7 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
-		result->controls.emplace_back(ctrls);
-		result->operation |= RPi::IPA_RESULT_SENSOR_CTRLS;
+		result->controls = std::move(ctrls);
 	}
 
 	/*
@@ -237,12 +238,9 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 		mistrustCount_ = helper_->MistrustFramesModeSwitch();
 	}
 
-	result->data.push_back(dropFrame);
-	result->operation |= RPi::IPA_RESULT_DROP_FRAMES;
+	result->dropFrameCount = dropFrame;
 
 	firstStart_ = false;
-
-	return 0;
 }
 
 void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
@@ -292,30 +290,30 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 
 void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *result)
+		       const std::map<unsigned int, ControlInfoMap> &entityControls,
+		       const ipa::rpi::ConfigInput &ipaConfig,
+		       ipa::rpi::ConfigOutput *result, int32_t *ret)
 {
 	if (entityControls.size() != 2) {
 		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
-		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
+		*ret = -1;
 		return;
 	}
 
-	result->operation = 0;
+	result->params = 0;
 
 	sensorCtrls_ = entityControls.at(0);
 	ispCtrls_ = entityControls.at(1);
 
 	if (!validateSensorControls()) {
 		LOG(IPARPI, Error) << "Sensor control validation failed.";
-		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
+		*ret = -1;
 		return;
 	}
 
 	if (!validateIspControls()) {
 		LOG(IPARPI, Error) << "ISP control validation failed.";
-		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
+		*ret = -1;
 		return;
 	}
 
@@ -334,7 +332,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		if (!helper_) {
 			LOG(IPARPI, Error) << "Could not create camera helper for "
 					   << cameraName;
-			result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
+			*ret = -1;
 			return;
 		}
 
@@ -346,35 +344,30 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		helper_->GetDelays(exposureDelay, gainDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
-		result->data.push_back(gainDelay);
-		result->data.push_back(exposureDelay); /* For EXPOSURE ctrl */
-		result->data.push_back(exposureDelay); /* For VBLANK ctrl */
-		result->data.push_back(sensorMetadata);
-
-		result->operation |= RPi::IPA_RESULT_SENSOR_PARAMS;
+		result->params |= ipa::rpi::ConfigStaggeredWrite;
+		result->sensorConfig.gainDelay = gainDelay;
+		result->sensorConfig.exposureDelay = exposureDelay;
+		result->sensorConfig.vblank = exposureDelay;
+		result->sensorConfig.sensorMetadata = sensorMetadata;
 	}
 
 	/* Re-assemble camera mode using the sensor info. */
 	setMode(sensorInfo);
 
-	/*
-	 * The ipaConfig.data always gives us the user transform first. Note that
-	 * this will always make the LS table pointer (if present) element 1.
-	 */
-	mode_.transform = static_cast<libcamera::Transform>(ipaConfig.data[0]);
+	mode_.transform = static_cast<libcamera::Transform>(ipaConfig.transform);
 
 	/* Store the lens shading table pointer and handle if available. */
-	if (ipaConfig.operation & RPi::IPA_CONFIG_LS_TABLE) {
+	if (ipaConfig.lsTableHandle.isValid()) {
 		/* Remove any previous table, if there was one. */
 		if (lsTable_) {
-			munmap(lsTable_, RPi::MaxLsGridSize);
+			munmap(lsTable_, ipa::rpi::MaxLsGridSize);
 			lsTable_ = nullptr;
 		}
 
-		/* Map the LS table buffer into user space (now element 1). */
-		lsTableHandle_ = FileDescriptor(ipaConfig.data[1]);
+		/* Map the LS table buffer into user space. */
+		lsTableHandle_ = std::move(ipaConfig.lsTableHandle);
 		if (lsTableHandle_.isValid()) {
-			lsTable_ = mmap(nullptr, RPi::MaxLsGridSize, PROT_READ | PROT_WRITE,
+			lsTable_ = mmap(nullptr, ipa::rpi::MaxLsGridSize, PROT_READ | PROT_WRITE,
 					MAP_SHARED, lsTableHandle_.fd(), 0);
 
 			if (lsTable_ == MAP_FAILED) {
@@ -403,11 +396,12 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		agcStatus.analogue_gain = DefaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
-		result->controls.emplace_back(ctrls);
-		result->operation |= RPi::IPA_RESULT_SENSOR_CTRLS;
+		result->controls = std::move(ctrls);
 	}
 
 	lastMode_ = mode_;
+
+	*ret = 0;
 }
 
 void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
@@ -429,56 +423,35 @@ void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARPi::processEvent(const IPAOperationData &event)
+void IPARPi::signalStatReady(uint32_t bufferId)
 {
-	switch (event.operation) {
-	case RPi::IPA_EVENT_SIGNAL_STAT_READY: {
-		unsigned int bufferId = event.data[0];
+	if (++checkCount_ != frameCount_) /* assert here? */
+		LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
+	if (frameCount_ > mistrustCount_)
+		processStats(bufferId);
 
-		if (++checkCount_ != frameCount_) /* assert here? */
-			LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
-		if (frameCount_ > mistrustCount_)
-			processStats(bufferId);
+	reportMetadata();
 
-		reportMetadata();
+	statsMetadataComplete.emit(bufferId & ipa::rpi::MaskID, libcameraMetadata_);
+}
 
-		IPAOperationData op;
-		op.operation = RPi::IPA_ACTION_STATS_METADATA_COMPLETE;
-		op.data = { bufferId & RPi::BufferMask::ID };
-		op.controls = { libcameraMetadata_ };
-		queueFrameAction.emit(0, op);
-		break;
-	}
+void IPARPi::signalQueueRequest(const ControlList &controls)
+{
+	queueRequest(controls);
+}
 
-	case RPi::IPA_EVENT_SIGNAL_ISP_PREPARE: {
-		unsigned int embeddedbufferId = event.data[0];
-		unsigned int bayerbufferId = event.data[1];
+void IPARPi::signalIspPrepare(const ipa::rpi::ISPConfig &data)
+{
+	/*
+	 * At start-up, or after a mode-switch, we may want to
+	 * avoid running the control algos for a few frames in case
+	 * they are "unreliable".
+	 */
+	prepareISP(data.embeddedbufferId);
+	frameCount_++;
 
-		/*
-		 * At start-up, or after a mode-switch, we may want to
-		 * avoid running the control algos for a few frames in case
-		 * they are "unreliable".
-		 */
-		prepareISP(embeddedbufferId);
-		frameCount_++;
-
-		/* Ready to push the input buffer into the ISP. */
-		IPAOperationData op;
-		op.operation = RPi::IPA_ACTION_RUN_ISP;
-		op.data = { bayerbufferId & RPi::BufferMask::ID };
-		queueFrameAction.emit(0, op);
-		break;
-	}
-
-	case RPi::IPA_EVENT_QUEUE_REQUEST: {
-		queueRequest(event.controls[0]);
-		break;
-	}
-
-	default:
-		LOG(IPARPI, Error) << "Unknown event " << event.operation;
-		break;
-	}
+	/* Ready to push the input buffer into the ISP. */
+	runIsp.emit(data.bayerbufferId & ipa::rpi::MaskID);
 }
 
 void IPARPi::reportMetadata()
@@ -933,10 +906,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 {
-	IPAOperationData op;
-	op.operation = RPi::IPA_ACTION_EMBEDDED_COMPLETE;
-	op.data = { bufferId & RPi::BufferMask::ID };
-	queueFrameAction.emit(0, op);
+	embeddedComplete.emit(bufferId & ipa::rpi::MaskID);
 }
 
 void IPARPi::prepareISP(unsigned int bufferId)
@@ -997,12 +967,8 @@ void IPARPi::prepareISP(unsigned int bufferId)
 		if (dpcStatus)
 			applyDPC(dpcStatus, ctrls);
 
-		if (!ctrls.empty()) {
-			IPAOperationData op;
-			op.operation = RPi::IPA_ACTION_V4L2_SET_ISP;
-			op.controls.push_back(ctrls);
-			queueFrameAction.emit(0, op);
-		}
+		if (!ctrls.empty())
+			setIsp.emit(ctrls);
 	}
 }
 
@@ -1059,10 +1025,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 
-		IPAOperationData op;
-		op.operation = RPi::IPA_ACTION_SET_DELAYED_CTRLS;
-		op.controls.emplace_back(ctrls);
-		queueFrameAction.emit(0, op);
+		setDelayedControls.emit(ctrls);
 	}
 }
 
@@ -1301,13 +1264,14 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 		.grid_width = w,
 		.grid_stride = w,
 		.grid_height = h,
-		.dmabuf = lsTableHandle_.fd(),
+		/* .dmabuf will be filled in by pipeline handler. */
+		.dmabuf = 0,
 		.ref_transform = 0,
 		.corner_sampled = 1,
 		.gain_format = GAIN_FORMAT_U4P10
 	};
 
-	if (!lsTable_ || w * h * 4 * sizeof(uint16_t) > RPi::MaxLsGridSize) {
+	if (!lsTable_ || w * h * 4 * sizeof(uint16_t) > ipa::rpi::MaxLsGridSize) {
 		LOG(IPARPI, Error) << "Do not have a correctly allocate lens shading table!";
 		return;
 	}
@@ -1378,9 +1342,9 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	"raspberrypi",
 };
 
-struct ipa_context *ipaCreate()
+IPAInterface *ipaCreate()
 {
-	return new IPAInterfaceWrapper(std::make_unique<IPARPi>());
+	return new IPARPi();
 }
 
 } /* extern "C" */

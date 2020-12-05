@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libcamera_sources += files([
-    'ipa_proxy_linux.cpp',
-    'ipa_proxy_thread.cpp',
-])
-
 # generate {pipeline}_ipa_proxy.cpp
 foreach mojom : ipa_mojoms
     proxy = custom_target(mojom['name'] + '_proxy_cpp',

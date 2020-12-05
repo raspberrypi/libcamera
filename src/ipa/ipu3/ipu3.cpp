@@ -5,8 +5,6 @@
  * ipu3.cpp - IPU3 Image Processing Algorithms
  */
 
-#include <libcamera/ipa/ipu3.h>
-
 #include <stdint.h>
 #include <sys/mman.h>
 
@@ -17,9 +15,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
+#include <libcamera/ipa/ipu3_ipa_interface.h>
 #include <libcamera/request.h>
-
-#include <libipa/ipa_interface_wrapper.h>
 
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/log.h"
@@ -28,25 +25,21 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAIPU3)
 
-class IPAIPU3 : public IPAInterface
+class IPAIPU3 : public ipa::ipu3::IPAIPU3Interface
 {
 public:
 	int init([[maybe_unused]] const IPASettings &settings) override
 	{
 		return 0;
 	}
-	int start([[maybe_unused]] const IPAOperationData &data,
-		  [[maybe_unused]] IPAOperationData *result) override { return 0; }
+	int start() override { return 0; }
 	void stop() override {}
 
-	void configure(const CameraSensorInfo &info,
-		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *response) override;
+	void configure(const std::map<uint32_t, ControlInfoMap> &entityControls) override;
+
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const IPAOperationData &event) override;
+	void processEvent(const ipa::ipu3::IPU3Event &event) override;
 
 private:
 	void processControls(unsigned int frame, const ControlList &controls);
@@ -69,11 +62,7 @@ private:
 	uint32_t maxGain_;
 };
 
-void IPAIPU3::configure([[maybe_unused]] const CameraSensorInfo &info,
-			[[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-			const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-			[[maybe_unused]] const IPAOperationData &ipaConfig,
-			[[maybe_unused]] IPAOperationData *result)
+void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls)
 {
 	if (entityControls.empty())
 		return;
@@ -123,19 +112,15 @@ void IPAIPU3::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPAIPU3::processEvent(const IPAOperationData &event)
+void IPAIPU3::processEvent(const ipa::ipu3::IPU3Event &event)
 {
-	switch (event.operation) {
-	case IPU3_IPA_EVENT_PROCESS_CONTROLS: {
-		unsigned int frame = event.data[0];
-		processControls(frame, event.controls[0]);
+	switch (event.op) {
+	case ipa::ipu3::EventProcessControls: {
+		processControls(event.frame, event.controls);
 		break;
 	}
-	case IPU3_IPA_EVENT_STAT_READY: {
-		unsigned int frame = event.data[0];
-		unsigned int bufferId = event.data[1];
-
-		auto it = buffers_.find(bufferId);
+	case ipa::ipu3::EventStatReady: {
+		auto it = buffers_.find(event.bufferId);
 		if (it == buffers_.end()) {
 			LOG(IPAIPU3, Error) << "Could not find stats buffer!";
 			return;
@@ -145,14 +130,11 @@ void IPAIPU3::processEvent(const IPAOperationData &event)
 		const ipu3_uapi_stats_3a *stats =
 			reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
-		parseStatistics(frame, stats);
+		parseStatistics(event.frame, stats);
 		break;
 	}
-	case IPU3_IPA_EVENT_FILL_PARAMS: {
-		unsigned int frame = event.data[0];
-		unsigned int bufferId = event.data[1];
-
-		auto it = buffers_.find(bufferId);
+	case ipa::ipu3::EventFillParams: {
+		auto it = buffers_.find(event.bufferId);
 		if (it == buffers_.end()) {
 			LOG(IPAIPU3, Error) << "Could not find param buffer!";
 			return;
@@ -162,11 +144,11 @@ void IPAIPU3::processEvent(const IPAOperationData &event)
 		ipu3_uapi_params *params =
 			reinterpret_cast<ipu3_uapi_params *>(mem.data());
 
-		fillParams(frame, params);
+		fillParams(event.frame, params);
 		break;
 	}
 	default:
-		LOG(IPAIPU3, Error) << "Unknown event " << event.operation;
+		LOG(IPAIPU3, Error) << "Unknown event " << event.op;
 		break;
 	}
 }
@@ -184,8 +166,8 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 
 	/* \todo Fill in parameters buffer. */
 
-	IPAOperationData op;
-	op.operation = IPU3_IPA_ACTION_PARAM_FILLED;
+	ipa::ipu3::IPU3Action op;
+	op.op = ipa::ipu3::ActionParamFilled;
 
 	queueFrameAction.emit(frame, op);
 
@@ -201,22 +183,22 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	/* \todo React to statistics and update internal state machine. */
 	/* \todo Add meta-data information to ctrls. */
 
-	IPAOperationData op;
-	op.operation = IPU3_IPA_ACTION_METADATA_READY;
-	op.controls.push_back(ctrls);
+	ipa::ipu3::IPU3Action op;
+	op.op = ipa::ipu3::ActionMetadataReady;
+	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }
 
 void IPAIPU3::setControls(unsigned int frame)
 {
-	IPAOperationData op;
-	op.operation = IPU3_IPA_ACTION_SET_SENSOR_CONTROLS;
+	ipa::ipu3::IPU3Action op;
+	op.op = ipa::ipu3::ActionSetSensorControls;
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
-	op.controls.push_back(ctrls);
+	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -233,9 +215,9 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	"ipu3",
 };
 
-struct ipa_context *ipaCreate()
+IPAInterface *ipaCreate()
 {
-	return new IPAInterfaceWrapper(std::make_unique<IPAIPU3>());
+	return new IPAIPU3();
 }
 }
 

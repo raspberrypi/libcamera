@@ -3,7 +3,7 @@
 ipa_name = 'ipa_vimc'
 
 mod = shared_module(ipa_name,
-                    'vimc.cpp',
+                    ['vimc.cpp', libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : [ipa_includes, libipa_includes],
                     dependencies : libcamera_dep,

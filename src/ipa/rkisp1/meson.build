@@ -3,7 +3,7 @@
 ipa_name = 'ipa_rkisp1'
 
 mod = shared_module(ipa_name,
-                    'rkisp1.cpp',
+                    ['rkisp1.cpp', libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : [ipa_includes, libipa_includes],
                     dependencies : libcamera_dep,

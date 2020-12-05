@@ -27,8 +27,6 @@ public:
 
 	std::string configurationFile(const std::string &file) const;
 
-	void stop() override = 0;
-
 protected:
 	std::string resolvePath(const std::string &file) const;
 
@@ -37,35 +35,6 @@ protected:
 private:
 	IPAModule *ipam_;
 };
-
-class IPAProxyFactory
-{
-public:
-	IPAProxyFactory(const char *name);
-	virtual ~IPAProxyFactory() = default;
-
-	virtual std::unique_ptr<IPAProxy> create(IPAModule *ipam) = 0;
-
-	const std::string &name() const { return name_; }
-
-	static void registerType(IPAProxyFactory *factory);
-	static std::vector<IPAProxyFactory *> &factories();
-
-private:
-	std::string name_;
-};
-
-#define REGISTER_IPA_PROXY(proxy)			\
-class proxy##Factory final : public IPAProxyFactory	\
-{							\
-public:							\
-	proxy##Factory() : IPAProxyFactory(#proxy) {}	\
-	std::unique_ptr<IPAProxy> create(IPAModule *ipam)	\
-	{						\
-		return std::make_unique<proxy>(ipam);	\
-	}						\
-};							\
-static proxy##Factory global_##proxy##Factory;
 
 } /* namespace libcamera */
 

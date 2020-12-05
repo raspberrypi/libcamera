@@ -54,7 +54,12 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
                       './' +'@INPUT@'
                   ])
 
-ipa_mojom_files = []
+ipa_mojom_files = [
+    'ipu3.mojom',
+    'raspberrypi.mojom',
+    'rkisp1.mojom',
+    'vimc.mojom',
+]
 
 ipa_mojoms = []
 

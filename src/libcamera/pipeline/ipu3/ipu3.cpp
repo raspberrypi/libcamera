@@ -14,7 +14,8 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
-#include <libcamera/ipa/ipu3.h>
+#include <libcamera/ipa/ipu3_ipa_interface.h>
+#include <libcamera/ipa/ipu3_ipa_proxy.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -77,8 +78,11 @@ public:
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	IPU3Frames frameInfos_;
 
+	std::unique_ptr<ipa::ipu3::IPAProxyIPU3> ipa_;
+
 private:
-	void queueFrameAction(unsigned int id, const IPAOperationData &op);
+	void queueFrameAction(unsigned int id,
+			      const ipa::ipu3::IPU3Action &action);
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -609,18 +613,12 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 
 	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->paramBuffers_) {
 		buffer->setCookie(ipaBufferId++);
-		ipaBuffers_.push_back({
-			.id = buffer->cookie(),
-			.planes = buffer->planes()
-		});
+		ipaBuffers_.emplace_back(buffer->cookie(), buffer->planes());
 	}
 
 	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->statBuffers_) {
 		buffer->setCookie(ipaBufferId++);
-		ipaBuffers_.push_back({
-			.id = buffer->cookie(),
-			.planes = buffer->planes()
-		});
+		ipaBuffers_.emplace_back(buffer->cookie(), buffer->planes());
 	}
 
 	data->ipa_->mapBuffers(ipaBuffers_);
@@ -650,16 +648,10 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 
 int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *controls)
 {
+	std::map<uint32_t, ControlInfoMap> entityControls;
 	IPU3CameraData *data = cameraData(camera);
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
-
-	CameraSensorInfo sensorInfo = {};
-	std::map<unsigned int, IPAStream> streamConfig;
-	std::map<unsigned int, const ControlInfoMap &> entityControls;
-	IPAOperationData ipaConfig;
-	IPAOperationData result = {};
-
 	int ret;
 
 	/* Allocate buffers for internal pipeline usage. */
@@ -667,8 +659,7 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *con
 	if (ret)
 		return ret;
 
-	IPAOperationData ipaData = {};
-	ret = data->ipa_->start(ipaData, nullptr);
+	ret = data->ipa_->start();
 	if (ret)
 		goto error;
 
@@ -684,24 +675,8 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *con
 	if (ret)
 		goto error;
 
-	/* Inform IPA of stream configuration and sensor controls. */
-	ret = data->cio2_.sensor()->sensorInfo(&sensorInfo);
-	if (ret)
-		goto error;
-
-	streamConfig[0] = {
-		.pixelFormat = data->outStream_.configuration().pixelFormat,
-		.size = data->outStream_.configuration().size,
-	};
-	streamConfig[1] = {
-		.pixelFormat = data->vfStream_.configuration().pixelFormat,
-		.size = data->vfStream_.configuration().size,
-	};
-
 	entityControls.emplace(0, data->cio2_.sensor()->controls());
-
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
-			      ipaConfig, &result);
+	data->ipa_->configure(entityControls);
 
 	return 0;
 
@@ -751,11 +726,11 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 
 	info->rawBuffer = rawBuffer;
 
-	IPAOperationData op;
-	op.operation = IPU3_IPA_EVENT_PROCESS_CONTROLS;
-	op.data = { info->id };
-	op.controls = { request->controls() };
-	data->ipa_->processEvent(op);
+	ipa::ipu3::IPU3Event ev;
+	ev.op = ipa::ipu3::EventProcessControls;
+	ev.frame = info->id;
+	ev.controls = request->controls();
+	data->ipa_->processEvent(ev);
 
 	return 0;
 }
@@ -1048,7 +1023,7 @@ int PipelineHandlerIPU3::registerCameras()
 
 int IPU3CameraData::loadIPA()
 {
-	ipa_ = IPAManager::createIPA(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::ipu3::IPAProxyIPU3>(pipe_, 1, 1);
 	if (!ipa_)
 		return -ENOENT;
 
@@ -1060,15 +1035,15 @@ int IPU3CameraData::loadIPA()
 }
 
 void IPU3CameraData::queueFrameAction(unsigned int id,
-				      const IPAOperationData &action)
+				      const ipa::ipu3::IPU3Action &action)
 {
-	switch (action.operation) {
-	case IPU3_IPA_ACTION_SET_SENSOR_CONTROLS: {
-		const ControlList &controls = action.controls[0];
+	switch (action.op) {
+	case ipa::ipu3::ActionSetSensorControls: {
+		const ControlList &controls = action.controls;
 		delayedCtrls_->push(controls);
 		break;
 	}
-	case IPU3_IPA_ACTION_PARAM_FILLED: {
+	case ipa::ipu3::ActionParamFilled: {
 		IPU3Frames::Info *info = frameInfos_.find(id);
 		if (!info)
 			break;
@@ -1090,13 +1065,13 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 
 		break;
 	}
-	case IPU3_IPA_ACTION_METADATA_READY: {
+	case ipa::ipu3::ActionMetadataReady: {
 		IPU3Frames::Info *info = frameInfos_.find(id);
 		if (!info)
 			break;
 
 		Request *request = info->request;
-		request->metadata() = action.controls[0];
+		request->metadata() = action.controls;
 		info->metadataProcessed = true;
 		if (frameInfos_.tryComplete(info))
 			pipe_->completeRequest(request);
@@ -1104,7 +1079,7 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 		break;
 	}
 	default:
-		LOG(IPU3, Error) << "Unknown action " << action.operation;
+		LOG(IPU3, Error) << "Unknown action " << action.op;
 		break;
 	}
 }
@@ -1172,10 +1147,11 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (request->findBuffer(&rawStream_))
 		pipe_->completeBuffer(request, buffer);
 
-	IPAOperationData op;
-	op.operation = IPU3_IPA_EVENT_FILL_PARAMS;
-	op.data = { info->id, info->paramBuffer->cookie() };
-	ipa_->processEvent(op);
+	ipa::ipu3::IPU3Event ev;
+	ev.op = ipa::ipu3::EventFillParams;
+	ev.frame = info->id;
+	ev.bufferId = info->paramBuffer->cookie();
+	ipa_->processEvent(ev);
 }
 
 void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
@@ -1202,10 +1178,11 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	IPAOperationData op;
-	op.operation = IPU3_IPA_EVENT_STAT_READY;
-	op.data = { info->id, info->statBuffer->cookie() };
-	ipa_->processEvent(op);
+	ipa::ipu3::IPU3Event ev;
+	ev.op = ipa::ipu3::EventStatReady;
+	ev.frame = info->id;
+	ev.bufferId = info->statBuffer->cookie();
+	ipa_->processEvent(ev);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)

@@ -245,6 +245,7 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
 }
 
 /**
+ * \fn IPAManager::createIPA()
  * \brief Create an IPA proxy that matches a given pipeline handler
  * \param[in] pipe The pipeline handler that wants a matching IPA proxy
  * \param[in] minVersion Minimum acceptable version of IPA module
@@ -253,52 +254,6 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
  * \return A newly created IPA proxy, or nullptr if no matching IPA module is
  * found or if the IPA proxy fails to initialize
  */
-std::unique_ptr<IPAProxy> IPAManager::createIPA(PipelineHandler *pipe,
-						uint32_t maxVersion,
-						uint32_t minVersion)
-{
-	IPAModule *m = nullptr;
-
-	for (IPAModule *module : self_->modules_) {
-		if (module->match(pipe, minVersion, maxVersion)) {
-			m = module;
-			break;
-		}
-	}
-
-	if (!m)
-		return nullptr;
-
-	/*
-	 * Load and run the IPA module in a thread if it has a valid signature,
-	 * or isolate it in a separate process otherwise.
-	 *
-	 * \todo Implement a better proxy selection
-	 */
-	const char *proxyName = self_->isSignatureValid(m)
-			      ? "IPAProxyThread" : "IPAProxyLinux";
-	IPAProxyFactory *pf = nullptr;
-
-	for (IPAProxyFactory *factory : IPAProxyFactory::factories()) {
-		if (!strcmp(factory->name().c_str(), proxyName)) {
-			pf = factory;
-			break;
-		}
-	}
-
-	if (!pf) {
-		LOG(IPAManager, Error) << "Failed to get proxy factory";
-		return nullptr;
-	}
-
-	std::unique_ptr<IPAProxy> proxy = pf->create(m);
-	if (!proxy->isValid()) {
-		LOG(IPAManager, Error) << "Failed to load proxy";
-		return nullptr;
-	}
-
-	return proxy;
-}
 
 bool IPAManager::isSignatureValid([[maybe_unused]] IPAModule *ipa) const
 {

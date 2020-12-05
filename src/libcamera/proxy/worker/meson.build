@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
-ipa_proxy_sources = [
-    ['ipa_proxy_linux', 'ipa_proxy_linux_worker.cpp']
-]
-
 proxy_install_dir = join_paths(get_option('libexecdir'), 'libcamera')
 
 # generate {pipeline}_ipa_proxy_worker.cpp

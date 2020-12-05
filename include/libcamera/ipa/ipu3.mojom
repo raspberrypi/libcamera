@@ -1,0 +1,43 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+module ipa.ipu3;
+
+import "include/libcamera/ipa/core.mojom";
+
+enum IPU3Operations {
+	ActionSetSensorControls = 1,
+	ActionParamFilled = 2,
+	ActionMetadataReady = 3,
+	EventProcessControls = 4,
+	EventStatReady = 5,
+	EventFillParams = 6,
+};
+
+struct IPU3Event {
+	IPU3Operations op;
+	uint32 frame;
+	uint32 bufferId;
+	ControlList controls;
+};
+
+struct IPU3Action {
+	IPU3Operations op;
+	ControlList controls;
+};
+
+interface IPAIPU3Interface {
+	init(IPASettings settings) => (int32 ret);
+	start() => (int32 ret);
+	stop();
+
+	configure(map<uint32, ControlInfoMap> entityControls) => ();
+
+	mapBuffers(array<IPABuffer> buffers);
+	unmapBuffers(array<uint32> ids);
+
+	[async] processEvent(IPU3Event ev);
+};
+
+interface IPAIPU3EventInterface {
+	queueFrameAction(uint32 frame, IPU3Action action);
+};

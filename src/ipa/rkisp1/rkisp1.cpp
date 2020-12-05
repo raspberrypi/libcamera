@@ -19,10 +19,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
-#include <libcamera/ipa/rkisp1.h>
+#include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/request.h>
-
-#include <libipa/ipa_interface_wrapper.h>
 
 #include "libcamera/internal/log.h"
 
@@ -30,25 +28,22 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPARkISP1)
 
-class IPARkISP1 : public IPAInterface
+class IPARkISP1 : public ipa::rkisp1::IPARkISP1Interface
 {
 public:
 	int init([[maybe_unused]] const IPASettings &settings) override
 	{
 		return 0;
 	}
-	int start([[maybe_unused]] const IPAOperationData &data,
-		  [[maybe_unused]] IPAOperationData *result) override { return 0; }
+	int start() override { return 0; }
 	void stop() override {}
 
 	void configure(const CameraSensorInfo &info,
-		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       const IPAOperationData &ipaConfig,
-		       IPAOperationData *response) override;
+		       const std::map<uint32_t, IPAStream> &streamConfig,
+		       const std::map<uint32_t, ControlInfoMap> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const IPAOperationData &event) override;
+	void processEvent(const ipa::rkisp1::RkISP1Event &event) override;
 
 private:
 	void queueRequest(unsigned int frame, rkisp1_params_cfg *params,
@@ -81,10 +76,8 @@ private:
  * before accessing them.
  */
 void IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
-			  [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-			  const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-			  [[maybe_unused]] const IPAOperationData &ipaConfig,
-			  [[maybe_unused]] IPAOperationData *result)
+			  [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
+			  const std::map<uint32_t, ControlInfoMap> &entityControls)
 {
 	if (entityControls.empty())
 		return;
@@ -160,12 +153,12 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARkISP1::processEvent(const IPAOperationData &event)
+void IPARkISP1::processEvent(const ipa::rkisp1::RkISP1Event &event)
 {
-	switch (event.operation) {
-	case RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER: {
-		unsigned int frame = event.data[0];
-		unsigned int bufferId = event.data[1];
+	switch (event.op) {
+	case ipa::rkisp1::EventSignalStatBuffer: {
+		unsigned int frame = event.frame;
+		unsigned int bufferId = event.bufferId;
 
 		const rkisp1_stat_buffer *stats =
 			static_cast<rkisp1_stat_buffer *>(buffersMemory_[bufferId]);
@@ -173,18 +166,18 @@ void IPARkISP1::processEvent(const IPAOperationData &event)
 		updateStatistics(frame, stats);
 		break;
 	}
-	case RKISP1_IPA_EVENT_QUEUE_REQUEST: {
-		unsigned int frame = event.data[0];
-		unsigned int bufferId = event.data[1];
+	case ipa::rkisp1::EventQueueRequest: {
+		unsigned int frame = event.frame;
+		unsigned int bufferId = event.bufferId;
 
 		rkisp1_params_cfg *params =
 			static_cast<rkisp1_params_cfg *>(buffersMemory_[bufferId]);
 
-		queueRequest(frame, params, event.controls[0]);
+		queueRequest(frame, params, event.controls);
 		break;
 	}
 	default:
-		LOG(IPARkISP1, Error) << "Unknown event " << event.operation;
+		LOG(IPARkISP1, Error) << "Unknown event " << event.op;
 		break;
 	}
 }
@@ -204,8 +197,8 @@ void IPARkISP1::queueRequest(unsigned int frame, rkisp1_params_cfg *params,
 		params->module_en_update = RKISP1_CIF_ISP_MODULE_AEC;
 	}
 
-	IPAOperationData op;
-	op.operation = RKISP1_IPA_ACTION_PARAM_FILLED;
+	ipa::rkisp1::RkISP1Action op;
+	op.op = ipa::rkisp1::ActionParamFilled;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -257,13 +250,13 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 
 void IPARkISP1::setControls(unsigned int frame)
 {
-	IPAOperationData op;
-	op.operation = RKISP1_IPA_ACTION_V4L2_SET;
+	ipa::rkisp1::RkISP1Action op;
+	op.op = ipa::rkisp1::ActionV4L2Set;
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
-	op.controls.push_back(ctrls);
+	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -275,9 +268,9 @@ void IPARkISP1::metadataReady(unsigned int frame, unsigned int aeState)
 	if (aeState)
 		ctrls.set(controls::AeLocked, aeState == 2);
 
-	IPAOperationData op;
-	op.operation = RKISP1_IPA_ACTION_METADATA;
-	op.controls.push_back(ctrls);
+	ipa::rkisp1::RkISP1Action op;
+	op.op = ipa::rkisp1::ActionMetadata;
+	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -294,9 +287,9 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	"rkisp1",
 };
 
-struct ipa_context *ipaCreate()
+IPAInterface *ipaCreate()
 {
-	return new IPAInterfaceWrapper(std::make_unique<IPARkISP1>());
+	return new IPARkISP1();
 }
 }
 

@@ -5,7 +5,7 @@
  * ipa_vimc.cpp - Vimc Image Processing Algorithm module
  */
 
-#include <libcamera/ipa/vimc.h>
+#include <libcamera/ipa/vimc_ipa_interface.h>
 
 #include <fcntl.h>
 #include <string.h>
@@ -17,8 +17,6 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
-#include <libipa/ipa_interface_wrapper.h>
-
 #include "libcamera/internal/file.h"
 #include "libcamera/internal/log.h"
 
@@ -26,7 +24,7 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAVimc)
 
-class IPAVimc : public IPAInterface
+class IPAVimc : public ipa::vimc::IPAVimcInterface
 {
 public:
 	IPAVimc();
@@ -34,22 +32,12 @@ public:
 
 	int init(const IPASettings &settings) override;
 
-	int start(const IPAOperationData &data,
-		  IPAOperationData *result) override;
+	int start() override;
 	void stop() override;
-
-	void configure([[maybe_unused]] const CameraSensorInfo &sensorInfo,
-		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-		       [[maybe_unused]] const std::map<unsigned int, const ControlInfoMap &> &entityControls,
-		       [[maybe_unused]] const IPAOperationData &ipaConfig,
-		       [[maybe_unused]] IPAOperationData *result) override {}
-	void mapBuffers([[maybe_unused]] const std::vector<IPABuffer> &buffers) override {}
-	void unmapBuffers([[maybe_unused]] const std::vector<unsigned int> &ids) override {}
-	void processEvent([[maybe_unused]] const IPAOperationData &event) override {}
 
 private:
 	void initTrace();
-	void trace(enum IPAOperationCode operation);
+	void trace(enum ipa::vimc::IPAOperationCode operation);
 
 	int fd_;
 };
@@ -68,7 +56,7 @@ IPAVimc::~IPAVimc()
 
 int IPAVimc::init(const IPASettings &settings)
 {
-	trace(IPAOperationInit);
+	trace(ipa::vimc::IPAOperationInit);
 
 	LOG(IPAVimc, Debug)
 		<< "initializing vimc IPA with configuration file "
@@ -83,10 +71,9 @@ int IPAVimc::init(const IPASettings &settings)
 	return 0;
 }
 
-int IPAVimc::start([[maybe_unused]] const IPAOperationData &data,
-		   [[maybe_unused]] IPAOperationData *result)
+int IPAVimc::start()
 {
-	trace(IPAOperationStart);
+	trace(ipa::vimc::IPAOperationStart);
 
 	LOG(IPAVimc, Debug) << "start vimc IPA!";
 
@@ -95,7 +82,7 @@ int IPAVimc::start([[maybe_unused]] const IPAOperationData &data,
 
 void IPAVimc::stop()
 {
-	trace(IPAOperationStop);
+	trace(ipa::vimc::IPAOperationStop);
 
 	LOG(IPAVimc, Debug) << "stop vimc IPA!";
 }
@@ -103,11 +90,11 @@ void IPAVimc::stop()
 void IPAVimc::initTrace()
 {
 	struct stat fifoStat;
-	int ret = stat(VIMC_IPA_FIFO_PATH, &fifoStat);
+	int ret = stat(ipa::vimc::VimcIPAFIFOPath.c_str(), &fifoStat);
 	if (ret)
 		return;
 
-	ret = ::open(VIMC_IPA_FIFO_PATH, O_WRONLY);
+	ret = ::open(ipa::vimc::VimcIPAFIFOPath.c_str(), O_WRONLY);
 	if (ret < 0) {
 		ret = errno;
 		LOG(IPAVimc, Error) << "Failed to open vimc IPA test FIFO: "
@@ -118,7 +105,7 @@ void IPAVimc::initTrace()
 	fd_ = ret;
 }
 
-void IPAVimc::trace(enum IPAOperationCode operation)
+void IPAVimc::trace(enum ipa::vimc::IPAOperationCode operation)
 {
 	if (fd_ < 0)
 		return;
@@ -143,9 +130,9 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	"vimc",
 };
 
-struct ipa_context *ipaCreate()
+IPAInterface *ipaCreate()
 {
-	return new IPAInterfaceWrapper(std::make_unique<IPAVimc>());
+	return new IPAVimc();
 }
 }
 

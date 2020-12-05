@@ -1,0 +1,44 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+module ipa.rkisp1;
+
+import "include/libcamera/ipa/core.mojom";
+
+enum RkISP1Operations {
+	ActionV4L2Set = 1,
+	ActionParamFilled = 2,
+	ActionMetadata = 3,
+	EventSignalStatBuffer = 4,
+	EventQueueRequest = 5,
+};
+
+struct RkISP1Event {
+	RkISP1Operations op;
+	uint32 frame;
+	uint32 bufferId;
+	ControlList controls;
+};
+
+struct RkISP1Action {
+	RkISP1Operations op;
+	ControlList controls;
+};
+
+interface IPARkISP1Interface {
+	init(IPASettings settings) => (int32 ret);
+	start() => (int32 ret);
+	stop();
+
+	configure(CameraSensorInfo sensorInfo,
+		  map<uint32, IPAStream> streamConfig,
+		  map<uint32, ControlInfoMap> entityControls) => ();
+
+	mapBuffers(array<IPABuffer> buffers);
+	unmapBuffers(array<uint32> ids);
+
+	[async] processEvent(RkISP1Event ev);
+};
+
+interface IPARkISP1EventInterface {
+	queueFrameAction(uint32 frame, RkISP1Action action);
+};

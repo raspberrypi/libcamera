@@ -26,6 +26,7 @@ libcamera_sources = files([
     'geometry.cpp',
     'ipa_context_wrapper.cpp',
     'ipa_controls.cpp',
+    'ipa_data_serializer.cpp',
     'ipa_interface.cpp',
     'ipa_manager.cpp',
     'ipa_module.cpp',

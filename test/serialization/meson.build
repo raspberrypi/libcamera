@@ -2,6 +2,7 @@
 
 serialization_tests = [
     ['control_serialization',     'control_serialization.cpp'],
+    ['ipa_data_serializer_test',  'ipa_data_serializer_test.cpp'],
 ]
 
 foreach t : serialization_tests

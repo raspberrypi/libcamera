@@ -1,0 +1,236 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "proxy_functions.tmpl" as proxy_funcs -%}
+
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * {{module_name}}_ipa_proxy.cpp - Image Processing Algorithm proxy for {{module_name}}
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <libcamera/ipa/{{module_name}}_ipa_proxy.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <libcamera/ipa/ipa_module_info.h>
+#include <libcamera/ipa/{{module_name}}_ipa_interface.h>
+#include <libcamera/ipa/{{module_name}}_ipa_serializer.h>
+
+#include "libcamera/internal/control_serializer.h"
+#include "libcamera/internal/ipa_data_serializer.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/ipa_proxy.h"
+#include "libcamera/internal/ipc_pipe.h"
+#include "libcamera/internal/ipc_pipe_unixsocket.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/process.h"
+#include "libcamera/internal/thread.h"
+
+namespace libcamera {
+
+LOG_DECLARE_CATEGORY(IPAProxy)
+
+{%- if has_namespace %}
+{% for ns in namespace %}
+namespace {{ns}} {
+{% endfor %}
+{%- endif %}
+
+{{proxy_name}}::{{proxy_name}}(IPAModule *ipam, bool isolate)
+	: IPAProxy(ipam), running_(false),
+	  isolate_(isolate), seq_(0)
+{
+	LOG(IPAProxy, Debug)
+		<< "initializing {{module_name}} proxy: loading IPA from "
+		<< ipam->path();
+
+	if (isolate_) {
+		const std::string proxyWorkerPath = resolvePath("{{module_name}}_ipa_proxy");
+		if (proxyWorkerPath.empty()) {
+			LOG(IPAProxy, Error)
+				<< "Failed to get proxy worker path";
+			return;
+		}
+
+		ipc_ = std::make_unique<IPCPipeUnixSocket>(ipam->path().c_str(),
+							   proxyWorkerPath.c_str());
+		if (!ipc_->isConnected()) {
+			LOG(IPAProxy, Error) << "Failed to create IPCPipe";
+			return;
+		}
+
+		ipc_->recv.connect(this, &{{proxy_name}}::recvMessage);
+
+		valid_ = true;
+		return;
+	}
+
+	if (!ipam->load())
+		return;
+
+	IPAInterface *ipai = ipam->createInterface();
+	if (!ipai) {
+		LOG(IPAProxy, Error)
+			<< "Failed to create IPA context for " << ipam->path();
+		return;
+	}
+
+	ipa_ = std::unique_ptr<{{interface_name}}>(static_cast<{{interface_name}} *>(ipai));
+	proxy_.setIPA(ipa_.get());
+
+{% for method in interface_event.methods %}
+	ipa_->{{method.mojom_name}}.connect(this, &{{proxy_name}}::{{method.mojom_name}}Thread);
+{%- endfor %}
+
+	valid_ = true;
+}
+
+{{proxy_name}}::~{{proxy_name}}()
+{
+	if (isolate_) {
+		IPCMessage::Header header =
+			{ static_cast<uint32_t>({{cmd_enum_name}}::Exit), seq_++ };
+		IPCMessage msg(header);
+		ipc_->sendAsync(msg);
+	}
+}
+
+{% if interface_event.methods|length > 0 %}
+void {{proxy_name}}::recvMessage(const IPCMessage &data)
+{
+	size_t dataSize = data.data().size();
+	{{cmd_event_enum_name}} _cmd = static_cast<{{cmd_event_enum_name}}>(data.header().cmd);
+
+	switch (_cmd) {
+{%- for method in interface_event.methods %}
+	case {{cmd_event_enum_name}}::{{method.mojom_name|cap}}: {
+		{{method.mojom_name}}IPC(data.data().cbegin(), dataSize, data.fds());
+		break;
+	}
+{%- endfor %}
+	default:
+		LOG(IPAProxy, Error) << "Unknown command " << static_cast<uint32_t>(_cmd);
+	}
+}
+{%- endif %}
+
+{% for method in interface_main.methods %}
+{{proxy_funcs.func_sig(proxy_name, method)}}
+{
+	if (isolate_)
+		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}IPC(
+{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+{%- endfor -%}
+);
+	else
+		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}Thread(
+{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+{%- endfor -%}
+);
+}
+
+{{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
+{
+{%- if method.mojom_name == "init" %}
+	{{proxy_funcs.init_thread_body()}}
+{%- elif method.mojom_name == "stop" %}
+	{{proxy_funcs.stop_thread_body()}}
+{%- elif method.mojom_name == "start" %}
+	running_ = true;
+	thread_.start();
+
+	{{ "return " if method|method_return_value != "void" -}}
+	proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking
+	{{- ", " if method|method_param_names}}
+	{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+	{%- endfor -%}
+);
+{%- elif not method|is_async %}
+	{{ "return " if method|method_return_value != "void" -}}
+	ipa_->{{method.mojom_name}}(
+	{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+	{%- endfor -%}
+);
+{% elif method|is_async %}
+	proxy_.invokeMethod(&ThreadProxy::{{method.mojom_name}}, ConnectionTypeQueued,
+	{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+	{%- endfor -%}
+);
+{%- endif %}
+}
+
+{{proxy_funcs.func_sig(proxy_name, method, "IPC")}}
+{
+{%- set has_input = true if method|method_param_inputs|length > 0 %}
+{%- set has_output = true if method|method_param_outputs|length > 0 or method|method_return_value != "void" %}
+{%- set cmd = cmd_enum_name + "::" + method.mojom_name|cap %}
+	IPCMessage::Header _header = { static_cast<uint32_t>({{cmd}}), seq_++ };
+	IPCMessage _ipcInputBuf(_header);
+{%- if has_output %}
+	IPCMessage _ipcOutputBuf;
+{%- endif %}
+
+{{proxy_funcs.serialize_call(method|method_param_inputs, '_ipcInputBuf.data()', '_ipcInputBuf.fds()')}}
+
+{% if method|is_async %}
+	int _ret = ipc_->sendAsync(_ipcInputBuf);
+{%- else %}
+	int _ret = ipc_->sendSync(_ipcInputBuf
+{{- ", &_ipcOutputBuf" if has_output -}}
+);
+{%- endif %}
+	if (_ret < 0) {
+		LOG(IPAProxy, Error) << "Failed to call {{method.mojom_name}}";
+{%- if method|method_return_value != "void" %}
+		return static_cast<{{method|method_return_value}}>(_ret);
+{%- else %}
+		return;
+{%- endif %}
+	}
+{% if method|method_return_value != "void" %}
+	return IPADataSerializer<{{method.response_parameters|first|name}}>::deserialize(_ipcOutputBuf.data(), 0);
+{% elif method|method_param_outputs|length > 0 %}
+{{proxy_funcs.deserialize_call(method|method_param_outputs, '_ipcOutputBuf.data()', '_ipcOutputBuf.fds()')}}
+{% endif -%}
+}
+
+{% endfor %}
+
+{% for method in interface_event.methods %}
+{{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
+{
+	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
+}
+
+void {{proxy_name}}::{{method.mojom_name}}IPC(
+	std::vector<uint8_t>::const_iterator data,
+	size_t dataSize,
+	[[maybe_unused]] const std::vector<int32_t> &fds)
+{
+{%- for param in method.parameters %}
+	{{param|name}} {{param.mojom_name}};
+{%- endfor %}
+{{proxy_funcs.deserialize_call(method.parameters, 'data', 'fds', false, false, true, 'dataSize')}}
+	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
+}
+{% endfor %}
+
+{%- if has_namespace %}
+{% for ns in namespace|reverse %}
+} /* namespace {{ns}} */
+{% endfor %}
+{%- endif %}
+} /* namespace libcamera */

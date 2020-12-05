@@ -1,0 +1,129 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "proxy_functions.tmpl" as proxy_funcs -%}
+
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * {{module_name}}_ipa_proxy.h - Image Processing Algorithm proxy for {{module_name}}
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#ifndef __LIBCAMERA_INTERNAL_IPA_PROXY_{{module_name|upper}}_H__
+#define __LIBCAMERA_INTERNAL_IPA_PROXY_{{module_name|upper}}_H__
+
+#include <libcamera/ipa/ipa_interface.h>
+#include <libcamera/ipa/{{module_name}}_ipa_interface.h>
+
+#include "libcamera/internal/control_serializer.h"
+#include "libcamera/internal/ipa_proxy.h"
+#include "libcamera/internal/ipc_pipe.h"
+#include "libcamera/internal/ipc_pipe_unixsocket.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+#include "libcamera/internal/thread.h"
+
+namespace libcamera {
+{%- if has_namespace %}
+{% for ns in namespace %}
+namespace {{ns}} {
+{% endfor %}
+{%- endif %}
+
+class {{proxy_name}} : public IPAProxy, public {{interface_name}}, public Object
+{
+public:
+	{{proxy_name}}(IPAModule *ipam, bool isolate);
+	~{{proxy_name}}();
+
+{% for method in interface_main.methods %}
+{{proxy_funcs.func_sig(proxy_name, method, "", false, true)|indent(8, true)}};
+{% endfor %}
+
+{%- for method in interface_event.methods %}
+	Signal<
+{%- for param in method.parameters -%}
+		{{"const " if not param|is_pod}}{{param|name}}{{" &" if not param|is_pod}}
+		{{- ", " if not loop.last}}
+{%- endfor -%}
+> {{method.mojom_name}};
+{% endfor %}
+
+private:
+	void recvMessage(const IPCMessage &data);
+
+{% for method in interface_main.methods %}
+{{proxy_funcs.func_sig(proxy_name, method, "Thread", false)|indent(8, true)}};
+{{proxy_funcs.func_sig(proxy_name, method, "IPC", false)|indent(8, true)}};
+{% endfor %}
+{% for method in interface_event.methods %}
+{{proxy_funcs.func_sig(proxy_name, method, "Thread", false)|indent(8, true)}};
+	void {{method.mojom_name}}IPC(
+		std::vector<uint8_t>::const_iterator data,
+		size_t dataSize,
+		const std::vector<int32_t> &fds);
+{% endfor %}
+
+	/* Helper class to invoke async functions in another thread. */
+	class ThreadProxy : public Object
+	{
+	public:
+		void setIPA({{interface_name}} *ipa)
+		{
+			ipa_ = ipa;
+		}
+
+		void stop()
+		{
+			ipa_->stop();
+		}
+{% for method in interface_main.methods %}
+{%- if method|is_async %}
+		{{proxy_funcs.func_sig(proxy_name, method, "", false)|indent(16)}}
+		{
+			ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
+		}
+{%- elif method.mojom_name == "start" %}
+		{{proxy_funcs.func_sig(proxy_name, method, "", false)|indent(16)}}
+		{
+{%- if method|method_return_value != "void" %}
+			return ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
+{%- else %}
+			ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}}
+	{{- ", " if method|method_param_outputs|params_comma_sep -}}
+	{{- method|method_param_outputs|params_comma_sep}});
+{%- endif %}
+		}
+{%- endif %}
+{%- endfor %}
+
+	private:
+		{{interface_name}} *ipa_;
+	};
+
+	bool running_;
+	Thread thread_;
+	ThreadProxy proxy_;
+	std::unique_ptr<{{interface_name}}> ipa_;
+
+	const bool isolate_;
+
+	std::unique_ptr<IPCPipeUnixSocket> ipc_;
+
+	ControlSerializer controlSerializer_;
+
+{# \todo Move this to IPCPipe #}
+	uint32_t seq_;
+};
+
+{%- if has_namespace %}
+{% for ns in namespace|reverse %}
+} /* namespace {{ns}} */
+{% endfor %}
+{%- endif %}
+} /* namespace libcamera */
+
+#endif /* __LIBCAMERA_INTERNAL_IPA_PROXY_{{module_name|upper}}_H__ */

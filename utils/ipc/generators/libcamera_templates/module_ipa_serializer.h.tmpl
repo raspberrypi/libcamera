@@ -1,0 +1,48 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "serializer.tmpl" as serializer -%}
+
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * {{module_name}}_ipa_serializer.h - Image Processing Algorithm data serializer for {{module_name}}
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#ifndef __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_{{module_name|upper}}_H__
+#define __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_{{module_name|upper}}_H__
+
+#include <tuple>
+#include <vector>
+
+#include <libcamera/ipa/{{module_name}}_ipa_interface.h>
+#include <libcamera/ipa/core_ipa_serializer.h>
+
+#include "libcamera/internal/control_serializer.h"
+#include "libcamera/internal/ipa_data_serializer.h"
+
+namespace libcamera {
+
+LOG_DECLARE_CATEGORY(IPADataSerializer)
+{% for struct in structs_nonempty %}
+template<>
+class IPADataSerializer<{{struct|name_full(namespace_str)}}>
+{
+public:
+{{- serializer.serializer(struct, namespace_str)}}
+{%- if struct|has_fd %}
+{{serializer.deserializer_fd(struct, namespace_str)}}
+{%- else %}
+{{serializer.deserializer_no_fd(struct, namespace_str)}}
+{{serializer.deserializer_fd_simple(struct, namespace_str)}}
+{%- endif %}
+};
+{% endfor %}
+
+} /* namespace libcamera */
+
+#endif /* __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_{{module_name|upper}}_H__ */

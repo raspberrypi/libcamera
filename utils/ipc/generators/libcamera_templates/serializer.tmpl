@@ -1,0 +1,313 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{#
+ # \brief Verify that there is enough bytes to deserialize
+ #
+ # Generate code that verifies that \a size is not greater than \a dataSize.
+ # Otherwise log an error with \a name and \a typename.
+ #}
+{%- macro check_data_size(size, dataSize, name, typename) %}
+		if ({{dataSize}} < {{size}}) {
+			LOG(IPADataSerializer, Error)
+				<< "Failed to deserialize " << "{{name}}"
+				<< ": not enough {{typename}}, expected "
+				<< ({{size}}) << ", got " << ({{dataSize}});
+			return ret;
+		}
+{%- endmacro %}
+
+
+{#
+ # \brief Serialize a field into return vector
+ #
+ # Generate code to serialize \a field into retData, including size of the
+ # field and fds (where appropriate).
+ # This code is meant to be used by the IPADataSerializer specialization.
+ #
+ # \todo Avoid intermediate vectors
+ #}
+{%- macro serializer_field(field, namespace, loop) %}
+{%- if field|is_pod or field|is_enum %}
+		std::vector<uint8_t> {{field.mojom_name}};
+		std::tie({{field.mojom_name}}, std::ignore) =
+	{%- if field|is_pod %}
+			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
+	{%- elif field|is_enum %}
+			IPADataSerializer<uint{{field|bit_width}}_t>::serialize(data.{{field.mojom_name}});
+	{%- endif %}
+		retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
+{%- elif field|is_fd %}
+		std::vector<uint8_t> {{field.mojom_name}};
+		std::vector<int32_t> {{field.mojom_name}}Fds;
+		std::tie({{field.mojom_name}}, {{field.mojom_name}}Fds) =
+			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
+		retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
+		retFds.insert(retFds.end(), {{field.mojom_name}}Fds.begin(), {{field.mojom_name}}Fds.end());
+{%- elif field|is_controls %}
+		if (data.{{field.mojom_name}}.size() > 0) {
+			std::vector<uint8_t> {{field.mojom_name}};
+			std::tie({{field.mojom_name}}, std::ignore) =
+				IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}}, cs);
+			appendPOD<uint32_t>(retData, {{field.mojom_name}}.size());
+			retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
+		} else {
+			appendPOD<uint32_t>(retData, 0);
+		}
+{%- elif field|is_plain_struct or field|is_array or field|is_map or field|is_str %}
+		std::vector<uint8_t> {{field.mojom_name}};
+	{%- if field|has_fd %}
+		std::vector<int32_t> {{field.mojom_name}}Fds;
+		std::tie({{field.mojom_name}}, {{field.mojom_name}}Fds) =
+	{%- else %}
+		std::tie({{field.mojom_name}}, std::ignore) =
+	{%- endif %}
+	{%- if field|is_array or field|is_map %}
+			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}}, cs);
+	{%- elif field|is_str %}
+			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
+	{%- else %}
+			IPADataSerializer<{{field|name_full(namespace)}}>::serialize(data.{{field.mojom_name}}, cs);
+	{%- endif %}
+		appendPOD<uint32_t>(retData, {{field.mojom_name}}.size());
+	{%- if field|has_fd %}
+		appendPOD<uint32_t>(retData, {{field.mojom_name}}Fds.size());
+	{%- endif %}
+		retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
+	{%- if field|has_fd %}
+		retFds.insert(retFds.end(), {{field.mojom_name}}Fds.begin(), {{field.mojom_name}}Fds.end());
+	{%- endif %}
+{%- else %}
+		/* Unknown serialization for {{field.mojom_name}}. */
+{%- endif %}
+{%- endmacro %}
+
+
+{#
+ # \brief Deserialize a field into return struct
+ #
+ # Generate code to deserialize \a field into object ret.
+ # This code is meant to be used by the IPADataSerializer specialization.
+ #}
+{%- macro deserializer_field(field, namespace, loop) %}
+{% if field|is_pod or field|is_enum %}
+	{%- set field_size = (field|bit_width|int / 8)|int %}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
+		{%- if field|is_pod %}
+		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field_size}});
+		{%- else %}
+		ret.{{field.mojom_name}} = static_cast<{{field|name_full(namespace)}}>(IPADataSerializer<uint{{field|bit_width}}_t>::deserialize(m, m + {{field_size}}));
+		{%- endif %}
+	{%- if not loop.last %}
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+	{%- endif %}
+{% elif field|is_fd %}
+	{%- set field_size = 1 %}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
+		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + 1, n, n + 1, cs);
+	{%- if not loop.last %}
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+		n += ret.{{field.mojom_name}}.isValid() ? 1 : 0;
+		fdsSize -= ret.{{field.mojom_name}}.isValid() ? 1 : 0;
+	{%- endif %}
+{% elif field|is_controls %}
+	{%- set field_size = 4 %}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name + 'Size', 'data')}}
+		const size_t {{field.mojom_name}}Size = readPOD<uint32_t>(m, 0, dataEnd);
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+	{%- set field_size = field.mojom_name + 'Size' -%}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
+		if ({{field.mojom_name}}Size > 0)
+			ret.{{field.mojom_name}} =
+				IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
+	{%- if not loop.last %}
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+	{%- endif %}
+{% elif field|is_plain_struct or field|is_array or field|is_map or field|is_str %}
+	{%- set field_size = 4 %}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name + 'Size', 'data')}}
+		const size_t {{field.mojom_name}}Size = readPOD<uint32_t>(m, 0, dataEnd);
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+	{%- if field|has_fd %}
+	{%- set field_size = 4 %}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name + 'FdsSize', 'data')}}
+		const size_t {{field.mojom_name}}FdsSize = readPOD<uint32_t>(m, 0, dataEnd);
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+		{{- check_data_size(field.mojom_name + 'FdsSize', 'fdsSize', field.mojom_name, 'fds')}}
+	{%- endif %}
+	{%- set field_size = field.mojom_name + 'Size' -%}
+		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
+		ret.{{field.mojom_name}} =
+	{%- if field|is_str %}
+			IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size);
+	{%- elif field|has_fd and (field|is_array or field|is_map) %}
+			IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size, n, n + {{field.mojom_name}}FdsSize, cs);
+	{%- elif field|has_fd and (not (field|is_array or field|is_map)) %}
+			IPADataSerializer<{{field|name_full(namespace)}}>::deserialize(m, m + {{field.mojom_name}}Size, n, n + {{field.mojom_name}}FdsSize, cs);
+	{%- elif (not field|has_fd) and (field|is_array or field|is_map) %}
+			IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
+	{%- else %}
+			IPADataSerializer<{{field|name_full(namespace)}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
+	{%- endif %}
+	{%- if not loop.last %}
+		m += {{field_size}};
+		dataSize -= {{field_size}};
+	{%- if field|has_fd %}
+		n += {{field.mojom_name}}FdsSize;
+		fdsSize -= {{field.mojom_name}}FdsSize;
+	{%- endif %}
+	{%- endif %}
+{% else %}
+		/* Unknown deserialization for {{field.mojom_name}}. */
+{%- endif %}
+{%- endmacro %}
+
+
+{#
+ # \brief Serialize a struct
+ #
+ # Generate code for IPADataSerializer specialization, for serializing
+ # \a struct.
+ #}
+{%- macro serializer(struct, namespace) %}
+	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+	serialize(const {{struct|name_full(namespace)}} &data,
+{%- if struct|needs_control_serializer %}
+		  ControlSerializer *cs)
+{%- else %}
+		  [[maybe_unused]] ControlSerializer *cs = nullptr)
+{%- endif %}
+	{
+		std::vector<uint8_t> retData;
+{%- if struct|has_fd %}
+		std::vector<int32_t> retFds;
+{%- endif %}
+{%- for field in struct.fields %}
+{{serializer_field(field, namespace, loop)}}
+{%- endfor %}
+{% if struct|has_fd %}
+		return {retData, retFds};
+{%- else %}
+		return {retData, {}};
+{%- endif %}
+	}
+{%- endmacro %}
+
+
+{#
+ # \brief Deserialize a struct that has fds
+ #
+ # Generate code for IPADataSerializer specialization, for deserializing
+ # \a struct, in the case that \a struct has file descriptors.
+ #}
+{%- macro deserializer_fd(struct, namespace) %}
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t> &data,
+		    std::vector<int32_t> &fds,
+{%- if struct|needs_control_serializer %}
+		    ControlSerializer *cs)
+{%- else %}
+		    ControlSerializer *cs = nullptr)
+{%- endif %}
+	{
+		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), fds.cbegin(), fds.cend(), cs);
+	}
+
+{# \todo Don't inline this function #}
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+		    std::vector<uint8_t>::const_iterator dataEnd,
+		    std::vector<int32_t>::const_iterator fdsBegin,
+		    std::vector<int32_t>::const_iterator fdsEnd,
+{%- if struct|needs_control_serializer %}
+		    ControlSerializer *cs)
+{%- else %}
+		    [[maybe_unused]] ControlSerializer *cs = nullptr)
+{%- endif %}
+	{
+		{{struct|name_full(namespace)}} ret;
+		std::vector<uint8_t>::const_iterator m = dataBegin;
+		std::vector<int32_t>::const_iterator n = fdsBegin;
+
+		size_t dataSize = std::distance(dataBegin, dataEnd);
+		[[maybe_unused]] size_t fdsSize = std::distance(fdsBegin, fdsEnd);
+{%- for field in struct.fields -%}
+{{deserializer_field(field, namespace, loop)}}
+{%- endfor %}
+		return ret;
+	}
+{%- endmacro %}
+
+{#
+ # \brief Deserialize a struct that has fds, using non-fd
+ #
+ # Generate code for IPADataSerializer specialization, for deserializing
+ # \a struct, in the case that \a struct has no file descriptors but requires
+ # deserializers with file descriptors.
+ #}
+{%- macro deserializer_fd_simple(struct, namespace) %}
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t> &data,
+		    [[maybe_unused]] std::vector<int32_t> &fds,
+		    ControlSerializer *cs = nullptr)
+	{
+		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), cs);
+	}
+
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+		    std::vector<uint8_t>::const_iterator dataEnd,
+		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
+		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+		    ControlSerializer *cs = nullptr)
+	{
+		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(dataBegin, dataEnd, cs);
+	}
+{%- endmacro %}
+
+
+{#
+ # \brief Deserialize a struct that has no fds
+ #
+ # Generate code for IPADataSerializer specialization, for deserializing
+ # \a struct, in the case that \a struct does not have file descriptors.
+ #}
+{%- macro deserializer_no_fd(struct, namespace) %}
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t> &data,
+{%- if struct|needs_control_serializer %}
+		    ControlSerializer *cs)
+{%- else %}
+		    ControlSerializer *cs = nullptr)
+{%- endif %}
+	{
+		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), cs);
+	}
+
+{# \todo Don't inline this function #}
+	static {{struct|name_full(namespace)}}
+	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+		    std::vector<uint8_t>::const_iterator dataEnd,
+{%- if struct|needs_control_serializer %}
+		    ControlSerializer *cs)
+{%- else %}
+		    [[maybe_unused]] ControlSerializer *cs = nullptr)
+{%- endif %}
+	{
+		{{struct|name_full(namespace)}} ret;
+		std::vector<uint8_t>::const_iterator m = dataBegin;
+
+		size_t dataSize = std::distance(dataBegin, dataEnd);
+{%- for field in struct.fields -%}
+{{deserializer_field(field, namespace, loop)}}
+{%- endfor %}
+		return ret;
+	}
+{%- endmacro %}

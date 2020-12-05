@@ -1,0 +1,226 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "proxy_functions.tmpl" as proxy_funcs -%}
+
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * {{module_name}}_ipa_proxy_worker.cpp - Image Processing Algorithm proxy worker for {{module_name}}
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+{#- \todo Split proxy worker into IPC worker and proxy worker. #}
+
+#include <algorithm>
+#include <iostream>
+#include <sys/types.h>
+#include <tuple>
+#include <unistd.h>
+
+#include <libcamera/ipa/ipa_interface.h>
+#include <libcamera/ipa/{{module_name}}_ipa_interface.h>
+#include <libcamera/ipa/{{module_name}}_ipa_serializer.h>
+#include <libcamera/logging.h>
+
+#include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/control_serializer.h"
+#include "libcamera/internal/event_dispatcher.h"
+#include "libcamera/internal/ipa_data_serializer.h"
+#include "libcamera/internal/ipa_module.h"
+#include "libcamera/internal/ipa_proxy.h"
+#include "libcamera/internal/ipc_pipe.h"
+#include "libcamera/internal/ipc_pipe_unixsocket.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+#include "libcamera/internal/log.h"
+#include "libcamera/internal/thread.h"
+
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY({{proxy_worker_name}})
+
+{%- if has_namespace %}
+{% for ns in namespace -%}
+using namespace {{ns}};
+{% endfor %}
+{%- endif %}
+
+class {{proxy_worker_name}}
+{
+public:
+	{{proxy_worker_name}}()
+		: ipa_(nullptr), exit_(false) {}
+
+	~{{proxy_worker_name}}() {}
+
+	void readyRead(IPCUnixSocket *socket)
+	{
+		IPCUnixSocket::Payload _message;
+		int _retRecv = socket->receive(&_message);
+		if (_retRecv) {
+			LOG({{proxy_worker_name}}, Error)
+				<< "Receive message failed: " << _retRecv;
+			return;
+		}
+
+		IPCMessage _ipcMessage(_message);
+
+		{{cmd_enum_name}} _cmd = static_cast<{{cmd_enum_name}}>(_ipcMessage.header().cmd);
+
+		switch (_cmd) {
+		case {{cmd_enum_name}}::Exit: {
+			exit_ = true;
+			break;
+		}
+
+{% for method in interface_main.methods %}
+		case {{cmd_enum_name}}::{{method.mojom_name|cap}}: {
+		{{proxy_funcs.deserialize_call(method|method_param_inputs, '_ipcMessage.data()', '_ipcMessage.fds()', false, true)|indent(8, true)}}
+{% for param in method|method_param_outputs %}
+			{{param|name}} {{param.mojom_name}};
+{% endfor %}
+{%- if method|method_return_value != "void" %}
+			{{method|method_return_value}} _callRet = ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
+{%- else %}
+			ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}}
+{{- ", " if method|method_param_outputs|params_comma_sep -}}
+{%- for param in method|method_param_outputs -%}
+&{{param.mojom_name}}{{", " if not loop.last}}
+{%- endfor -%}
+);
+{%- endif %}
+{% if not method|is_async %}
+			IPCMessage::Header header = { _ipcMessage.header().cmd, _ipcMessage.header().cookie };
+			IPCMessage _response(header);
+{%- if method|method_return_value != "void" %}
+			std::vector<uint8_t> _callRetBuf;
+			std::tie(_callRetBuf, std::ignore) =
+				IPADataSerializer<{{method|method_return_value}}>::serialize(_callRet);
+			_response.data().insert(_response.data().end(), _callRetBuf.cbegin(), _callRetBuf.cend());
+{%- else %}
+		{{proxy_funcs.serialize_call(method|method_param_outputs, "_response.data()", "_response.fds()")|indent(16, true)}}
+{%- endif %}
+			int _ret = socket_.send(_response.payload());
+			if (_ret < 0) {
+				LOG({{proxy_worker_name}}, Error)
+					<< "Reply to {{method.mojom_name}}() failed: " << _ret;
+			}
+			LOG({{proxy_worker_name}}, Debug) << "Done replying to {{method.mojom_name}}()";
+{%- endif %}
+			break;
+		}
+{% endfor %}
+		default:
+			LOG({{proxy_worker_name}}, Error) << "Unknown command " << _ipcMessage.header().cmd;
+		}
+	}
+
+	int init(std::unique_ptr<IPAModule> &ipam, int socketfd)
+	{
+		if (socket_.bind(socketfd) < 0) {
+			LOG({{proxy_worker_name}}, Error)
+				<< "IPC socket binding failed";
+			return EXIT_FAILURE;
+		}
+		socket_.readyRead.connect(this, &{{proxy_worker_name}}::readyRead);
+
+		ipa_ = dynamic_cast<{{interface_name}} *>(ipam->createInterface());
+		if (!ipa_) {
+			LOG({{proxy_worker_name}}, Error)
+				<< "Failed to create IPA interface instance";
+			return EXIT_FAILURE;
+		}
+{% for method in interface_event.methods %}
+		ipa_->{{method.mojom_name}}.connect(this, &{{proxy_worker_name}}::{{method.mojom_name}});
+{%- endfor %}
+		return 0;
+	}
+
+	void run()
+	{
+		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
+		while (!exit_)
+			dispatcher->processEvents();
+	}
+
+	void cleanup()
+	{
+		delete ipa_;
+		socket_.close();
+	}
+
+private:
+
+{% for method in interface_event.methods %}
+{{proxy_funcs.func_sig(proxy_name, method, "", false)|indent(8, true)}}
+	{
+		IPCMessage::Header header = {
+			static_cast<uint32_t>({{cmd_event_enum_name}}::{{method.mojom_name|cap}}),
+			0
+		};
+		IPCMessage _message(header);
+
+		{{proxy_funcs.serialize_call(method|method_param_inputs, "_message.data()", "_message.fds()")}}
+
+		socket_.send(_message.payload());
+
+		LOG({{proxy_worker_name}}, Debug) << "{{method.mojom_name}} done";
+	}
+{% endfor %}
+
+	{{interface_name}} *ipa_;
+	IPCUnixSocket socket_;
+
+	ControlSerializer controlSerializer_;
+
+	bool exit_;
+};
+
+int main(int argc, char **argv)
+{
+{#- \todo Handle enabling debugging more dynamically. #}
+	/* Uncomment this for debugging. */
+#if 0
+	std::string logPath = "/tmp/libcamera.worker." +
+			      std::to_string(getpid()) + ".log";
+	logSetFile(logPath.c_str());
+#endif
+
+	if (argc < 3) {
+		LOG({{proxy_worker_name}}, Error)
+			<< "Tried to start worker with no args: "
+			<< "expected <path to IPA so> <fd to bind unix socket>";
+		return EXIT_FAILURE;
+	}
+
+	int fd = std::stoi(argv[2]);
+	LOG({{proxy_worker_name}}, Info)
+		<< "Starting worker for IPA module " << argv[1]
+		<< " with IPC fd = " << fd;
+
+	std::unique_ptr<IPAModule> ipam = std::make_unique<IPAModule>(argv[1]);
+	if (!ipam->isValid() || !ipam->load()) {
+		LOG({{proxy_worker_name}}, Error)
+			<< "IPAModule " << argv[1] << " isn't valid";
+		return EXIT_FAILURE;
+	}
+
+	{{proxy_worker_name}} proxyWorker;
+	int ret = proxyWorker.init(ipam, fd);
+	if (ret < 0) {
+		LOG({{proxy_worker_name}}, Error)
+			<< "Failed to initialize proxy worker";
+		return ret;
+	}
+
+	LOG({{proxy_worker_name}}, Debug) << "Proxy worker successfully initialized";
+
+	proxyWorker.run();
+
+	proxyWorker.cleanup();
+
+	return 0;
+}

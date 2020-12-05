@@ -1,0 +1,194 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{#
+ # \brief Generate function prototype
+ #
+ # \param class Class name
+ # \param method mojom Method object
+ # \param suffix Suffix to append to \a method function name
+ # \param need_class_name If true, generate class name with function
+ # \param override If true, generate override tag after the function prototype
+ #}
+{%- macro func_sig(class, method, suffix = "", need_class_name = true, override = false) -%}
+{{method|method_return_value}} {{class + "::" if need_class_name}}{{method.mojom_name}}{{suffix}}(
+{%- for param in method|method_parameters %}
+	{{param}}{{- "," if not loop.last}}
+{%- endfor -%}
+){{" override" if override}}
+{%- endmacro -%}
+
+{#
+ # \brief Generate function body for IPA init() function for thread
+ #}
+{%- macro init_thread_body() -%}
+	int ret = ipa_->init(settings);
+	if (ret)
+		return ret;
+
+	proxy_.moveToThread(&thread_);
+
+	return 0;
+{%- endmacro -%}
+
+{#
+ # \brief Generate function body for IPA stop() function for thread
+ #}
+{%- macro stop_thread_body() -%}
+	if (!running_)
+		return;
+
+	running_ = false;
+
+	proxy_.invokeMethod(&ThreadProxy::stop, ConnectionTypeBlocking);
+
+	thread_.exit();
+	thread_.wait();
+{%- endmacro -%}
+
+
+{#
+ # \brief Serialize multiple objects into data buffer and fd vector
+ #
+ # Generate code to serialize multiple objects, as specified in \a params
+ # (which are the parameters to some function), into \a buf data buffer and
+ # \a fds fd vector.
+ # This code is meant to be used by the proxy, for serializing prior to IPC calls.
+ #
+ # \todo Avoid intermediate vectors
+ #}
+{%- macro serialize_call(params, buf, fds) %}
+{%- for param in params %}
+	std::vector<uint8_t> {{param.mojom_name}}Buf;
+{%- if param|has_fd %}
+	std::vector<int32_t> {{param.mojom_name}}Fds;
+	std::tie({{param.mojom_name}}Buf, {{param.mojom_name}}Fds) =
+{%- else %}
+	std::tie({{param.mojom_name}}Buf, std::ignore) =
+{%- endif %}
+		IPADataSerializer<{{param|name}}>::serialize({{param.mojom_name}}
+{{- ", &controlSerializer_" if param|needs_control_serializer -}}
+);
+{%- endfor %}
+
+{%- if params|length > 1 %}
+{%- for param in params %}
+	appendPOD<uint32_t>({{buf}}, {{param.mojom_name}}Buf.size());
+{%- if param|has_fd %}
+	appendPOD<uint32_t>({{buf}}, {{param.mojom_name}}Fds.size());
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+
+{%- for param in params %}
+	{{buf}}.insert({{buf}}.end(), {{param.mojom_name}}Buf.begin(), {{param.mojom_name}}Buf.end());
+{%- endfor %}
+
+{%- for param in params %}
+{%- if param|has_fd %}
+	{{fds}}.insert({{fds}}.end(), {{param.mojom_name}}Fds.begin(), {{param.mojom_name}}Fds.end());
+{%- endif %}
+{%- endfor %}
+{%- endmacro -%}
+
+
+{#
+ # \brief Deserialize a single object from data buffer and fd vector
+ #
+ # \param pointer If true, deserialize the object into a dereferenced pointer
+ # \param iter If true, treat \a buf as an iterator instead of a vector
+ # \param data_size Variable that holds the size of the vector referenced by \a buf
+ #
+ # Generate code to deserialize a single object, as specified in \a param,
+ # from \a buf data buffer and \a fds fd vector.
+ # This code is meant to be used by macro deserialize_call.
+ #}
+{%- macro deserialize_param(param, pointer, loop, buf, fds, iter, data_size) -%}
+{{"*" if pointer}}{{param.mojom_name}} = IPADataSerializer<{{param|name}}>::deserialize(
+	{{buf}}{{- ".cbegin()" if not iter}} + {{param.mojom_name}}Start,
+{%- if loop.last and not iter %}
+	{{buf}}.cend()
+{%- elif not iter %}
+	{{buf}}.cbegin() + {{param.mojom_name}}Start + {{param.mojom_name}}BufSize
+{%- elif iter and loop.length == 1 %}
+	{{buf}} + {{data_size}}
+{%- else %}
+	{{buf}} + {{param.mojom_name}}Start + {{param.mojom_name}}BufSize
+{%- endif -%}
+{{- "," if param|has_fd}}
+{%- if param|has_fd %}
+	{{fds}}.cbegin() + {{param.mojom_name}}FdStart,
+{%- if loop.last %}
+	{{fds}}.cend()
+{%- else %}
+	{{fds}}.cbegin() + {{param.mojom_name}}FdStart + {{param.mojom_name}}FdsSize
+{%- endif -%}
+{%- endif -%}
+{{- "," if param|needs_control_serializer}}
+{%- if param|needs_control_serializer %}
+	&controlSerializer_
+{%- endif -%}
+);
+{%- endmacro -%}
+
+
+{#
+ # \brief Deserialize multiple objects from data buffer and fd vector
+ #
+ # \param pointer If true, deserialize objects into pointers, and adds a null check.
+ # \param declare If true, declare the objects in addition to deserialization.
+ # \param iter if true, treat \a buf as an iterator instead of a vector
+ # \param data_size Variable that holds the size of the vector referenced by \a buf
+ #
+ # Generate code to deserialize multiple objects, as specified in \a params
+ # (which are the parameters to some function), from \a buf data buffer and
+ # \a fds fd vector.
+ # This code is meant to be used by the proxy, for deserializing after IPC calls.
+ #
+ # \todo Avoid intermediate vectors
+ #}
+{%- macro deserialize_call(params, buf, fds, pointer = true, declare = false, iter = false, data_size = '') -%}
+{% set ns = namespace(size_offset = 0) %}
+{%- if params|length > 1 %}
+{%- for param in params %}
+	[[maybe_unused]] const size_t {{param.mojom_name}}BufSize = readPOD<uint32_t>({{buf}}, {{ns.size_offset}}
+{%- if iter -%}
+, {{buf}} + {{data_size}}
+{%- endif -%}
+);
+	{%- set ns.size_offset = ns.size_offset + 4 %}
+{%- if param|has_fd %}
+	[[maybe_unused]] const size_t {{param.mojom_name}}FdsSize = readPOD<uint32_t>({{buf}}, {{ns.size_offset}}
+{%- if iter -%}
+, {{buf}} + {{data_size}}
+{%- endif -%}
+);
+	{%- set ns.size_offset = ns.size_offset + 4 %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+{% for param in params %}
+{%- if loop.first %}
+	const size_t {{param.mojom_name}}Start = {{ns.size_offset}};
+{%- else %}
+	const size_t {{param.mojom_name}}Start = {{loop.previtem.mojom_name}}Start + {{loop.previtem.mojom_name}}BufSize;
+{%- endif %}
+{%- endfor %}
+{% for param in params|with_fds %}
+{%- if loop.first %}
+	const size_t {{param.mojom_name}}FdStart = 0;
+{%- elif not loop.last %}
+	const size_t {{param.mojom_name}}FdStart = {{loop.previtem.mojom_name}}FdStart + {{loop.previtem.mojom_name}}FdsSize;
+{%- endif %}
+{%- endfor %}
+{% for param in params %}
+	{%- if pointer %}
+	if ({{param.mojom_name}}) {
+{{deserialize_param(param, pointer, loop, buf, fds, iter, data_size)|indent(16, True)}}
+	}
+	{%- else %}
+	{{param|name + " " if declare}}{{deserialize_param(param, pointer, loop, buf, fds, iter, data_size)|indent(8)}}
+	{%- endif %}
+{% endfor %}
+{%- endmacro -%}

@@ -1,0 +1,49 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * ipc_pipe_unixsocket.h - Image Processing Algorithm IPC module using unix socket
+ */
+#ifndef __LIBCAMERA_INTERNAL_IPA_IPC_UNIXSOCKET_H__
+#define __LIBCAMERA_INTERNAL_IPA_IPC_UNIXSOCKET_H__
+
+#include <map>
+#include <memory>
+#include <vector>
+
+#include "libcamera/internal/ipc_pipe.h"
+#include "libcamera/internal/ipc_unixsocket.h"
+
+namespace libcamera {
+
+class Process;
+
+class IPCPipeUnixSocket : public IPCPipe
+{
+public:
+	IPCPipeUnixSocket(const char *ipaModulePath, const char *ipaProxyWorkerPath);
+	~IPCPipeUnixSocket();
+
+	int sendSync(const IPCMessage &in,
+		     IPCMessage *out = nullptr) override;
+
+	int sendAsync(const IPCMessage &data) override;
+
+private:
+	struct CallData {
+		IPCUnixSocket::Payload *response;
+		bool done;
+	};
+
+	void readyRead(IPCUnixSocket *socket);
+	int call(const IPCUnixSocket::Payload &message,
+		 IPCUnixSocket::Payload *response, uint32_t seq);
+
+	std::unique_ptr<Process> proc_;
+	std::unique_ptr<IPCUnixSocket> socket_;
+	std::map<uint32_t, CallData> callData_;
+};
+
+} /* namespace libcamera */
+
+#endif /* __LIBCAMERA_INTERNAL_IPA_IPC_UNIXSOCKET_H__ */

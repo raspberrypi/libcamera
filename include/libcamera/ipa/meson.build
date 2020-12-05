@@ -8,3 +8,123 @@ libcamera_ipa_headers = files([
 
 install_headers(libcamera_ipa_headers,
                 subdir: join_paths(libcamera_include_dir, 'ipa'))
+
+libcamera_generated_ipa_headers = []
+
+#
+# Prepare IPA/IPC generation components
+#
+
+core_mojom_file = 'core.mojom'
+ipa_mojom_core = custom_target(core_mojom_file.split('.')[0] + '_mojom_module',
+                               input : core_mojom_file,
+                               output : core_mojom_file + '-module',
+                               command : [
+                                   mojom_parser,
+                                   '--output-root', meson.build_root(),
+                                   '--input-root', meson.source_root(),
+                                   '--mojoms', '@INPUT@'
+                               ])
+
+# core_ipa_interface.h
+libcamera_generated_ipa_headers += custom_target('core_ipa_interface_h',
+                  input : ipa_mojom_core,
+                  output : 'core_ipa_interface.h',
+                  depends : mojom_templates,
+                  command : [
+                      mojom_generator, 'generate',
+                      '-g', 'libcamera',
+                      '--bytecode_path', mojom_templates_dir,
+                      '--libcamera_generate_core_header',
+                      '--libcamera_output_path=@OUTPUT@',
+                      './' +'@INPUT@'
+                  ])
+
+# core_ipa_serializer.h
+libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
+                  input : ipa_mojom_core,
+                  output : 'core_ipa_serializer.h',
+                  depends : mojom_templates,
+                  command : [
+                      mojom_generator, 'generate',
+                      '-g', 'libcamera',
+                      '--bytecode_path', mojom_templates_dir,
+                      '--libcamera_generate_core_serializer',
+                      '--libcamera_output_path=@OUTPUT@',
+                      './' +'@INPUT@'
+                  ])
+
+ipa_mojom_files = []
+
+ipa_mojoms = []
+
+#
+# Generate headers from templates.
+#
+
+# TODO Define per-pipeline ControlInfoMap with yaml?
+
+foreach file : ipa_mojom_files
+    name = file.split('.')[0]
+
+    # {pipeline}.mojom-module
+    mojom = custom_target(file.split('.')[0] + '_mojom_module',
+                          input : file,
+                          output : file + '-module',
+                          depends : ipa_mojom_core,
+                          command : [
+                              mojom_parser,
+                              '--output-root', meson.build_root(),
+                              '--input-root', meson.source_root(),
+                              '--mojoms', '@INPUT@'
+                          ])
+
+    # {pipeline}_ipa_interface.h
+    header = custom_target(name + '_ipa_interface_h',
+                           input : mojom,
+                           output : name + '_ipa_interface.h',
+                           depends : mojom_templates,
+                           command : [
+                               mojom_generator, 'generate',
+                               '-g', 'libcamera',
+                               '--bytecode_path', mojom_templates_dir,
+                               '--libcamera_generate_header',
+                               '--libcamera_output_path=@OUTPUT@',
+                               './' +'@INPUT@'
+                           ])
+
+    # {pipeline}_ipa_serializer.h
+    serializer = custom_target(name + '_ipa_serializer_h',
+                               input : mojom,
+                               output : name + '_ipa_serializer.h',
+                               depends : mojom_templates,
+                               command : [
+                                   mojom_generator, 'generate',
+                                   '-g', 'libcamera',
+                                   '--bytecode_path', mojom_templates_dir,
+                                   '--libcamera_generate_serializer',
+                                   '--libcamera_output_path=@OUTPUT@',
+                                   './' +'@INPUT@'
+                               ])
+
+    # {pipeline}_ipa_proxy.h
+    proxy_header = custom_target(name + '_proxy_h',
+                                 input : mojom,
+                                 output : name + '_ipa_proxy.h',
+                                 depends : mojom_templates,
+                                 command : [
+                                     mojom_generator, 'generate',
+                                     '-g', 'libcamera',
+                                     '--bytecode_path', mojom_templates_dir,
+                                     '--libcamera_generate_proxy_h',
+                                     '--libcamera_output_path=@OUTPUT@',
+                                     './' +'@INPUT@'
+                                 ])
+
+    ipa_mojoms += {
+        'name': name,
+        'mojom': mojom,
+    }
+
+    libcamera_generated_ipa_headers += [header, serializer, proxy_header]
+endforeach

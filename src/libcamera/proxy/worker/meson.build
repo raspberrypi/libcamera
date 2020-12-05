@@ -6,8 +6,23 @@ ipa_proxy_sources = [
 
 proxy_install_dir = join_paths(get_option('libexecdir'), 'libcamera')
 
-foreach t : ipa_proxy_sources
-    proxy = executable(t[0], t[1],
+# generate {pipeline}_ipa_proxy_worker.cpp
+foreach mojom : ipa_mojoms
+    worker = custom_target(mojom['name'] + '_proxy_worker',
+                           input : mojom['mojom'],
+                           output : mojom['name'] + '_ipa_proxy_worker.cpp',
+                           depends : mojom_templates,
+                           command : [
+                               mojom_generator, 'generate',
+                               '-g', 'libcamera',
+                               '--bytecode_path', mojom_templates_dir,
+                               '--libcamera_generate_proxy_worker',
+                               '--libcamera_output_path=@OUTPUT@',
+                               './' + '@INPUT@'
+                           ])
+
+    proxy = executable(mojom['name'] + '_ipa_proxy',
+                       [worker, libcamera_generated_ipa_headers],
                        install : true,
                        install_dir : proxy_install_dir,
                        dependencies : libcamera_dep)

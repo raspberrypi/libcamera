@@ -60,6 +60,7 @@ libcamera_sources = files([
 ])
 
 libcamera_sources += libcamera_public_headers
+libcamera_sources += libcamera_generated_ipa_headers
 libcamera_sources += libcamera_tracepoint_header
 
 includes = [

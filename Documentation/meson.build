@@ -53,6 +53,7 @@ if sphinx.found()
         'environment_variables.rst',
         'guides/application-developer.rst',
         'guides/introduction.rst',
+        'guides/ipa.rst',
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',

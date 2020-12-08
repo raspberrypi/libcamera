@@ -194,6 +194,34 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 	if (firstStart_) {
 		dropFrame = helper_->HideFramesStartup();
 		mistrustCount_ = helper_->MistrustFramesStartup();
+
+		/*
+		 * Query the AGC/AWB for how many frames they may take to
+		 * converge sufficiently. Where these numbers are non-zero
+		 * we must allow for the frames with bad statistics
+		 * (mistrustCount_) that they won't see. But if zero (i.e.
+		 * no convergence necessary), no frames need to be dropped.
+		 */
+		unsigned int agcConvergenceFrames = 0;
+		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+			controller_.GetAlgorithm("agc"));
+		if (agc) {
+			agcConvergenceFrames = agc->GetConvergenceFrames();
+			if (agcConvergenceFrames)
+				agcConvergenceFrames += mistrustCount_;
+		}
+
+		unsigned int awbConvergenceFrames = 0;
+		RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+			controller_.GetAlgorithm("awb"));
+		if (awb) {
+			awbConvergenceFrames = awb->GetConvergenceFrames();
+			if (awbConvergenceFrames)
+				awbConvergenceFrames += mistrustCount_;
+		}
+
+		dropFrame = std::max({ dropFrame, agcConvergenceFrames, awbConvergenceFrames });
+		LOG(IPARPI, Debug) << "Drop " << dropFrame << " frames on startup";
 	} else {
 		dropFrame = helper_->HideFramesModeSwitch();
 		mistrustCount_ = helper_->MistrustFramesModeSwitch();

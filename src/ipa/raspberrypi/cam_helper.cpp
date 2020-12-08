@@ -82,10 +82,10 @@ bool CamHelper::SensorEmbeddedDataPresent() const
 unsigned int CamHelper::HideFramesStartup() const
 {
 	/*
-	 * By default, hide 6 frames completely at start-up while AGC etc. sort
-	 * themselves out (converge).
+	 * The number of frames when a camera first starts that shouldn't be
+	 * displayed as they are invalid in some way.
 	 */
-	return 6;
+	return 0;
 }
 
 unsigned int CamHelper::HideFramesModeSwitch() const

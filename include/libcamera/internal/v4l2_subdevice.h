@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_INTERNAL_V4L2_SUBDEVICE_H__
 #define __LIBCAMERA_INTERNAL_V4L2_SUBDEVICE_H__
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -60,8 +61,8 @@ public:
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 		      Whence whence = ActiveFormat);
 
-	static V4L2Subdevice *fromEntityName(const MediaDevice *media,
-					     const std::string &entity);
+	static std::unique_ptr<V4L2Subdevice>
+	fromEntityName(const MediaDevice *media, const std::string &entity);
 
 protected:
 	std::string logPrefix() const override;

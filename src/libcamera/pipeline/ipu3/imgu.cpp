@@ -343,7 +343,7 @@ int ImgUDevice::init(MediaDevice *media, unsigned int index)
 	 * by the match() function: no need to check for newly created
 	 * video devices and subdevice validity here.
 	 */
-	imgu_.reset(V4L2Subdevice::fromEntityName(media, name_));
+	imgu_ = V4L2Subdevice::fromEntityName(media, name_);
 	ret = imgu_->open();
 	if (ret)
 		return ret;

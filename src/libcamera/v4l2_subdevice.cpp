@@ -446,19 +446,17 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
  * \param[in] media The media device where the entity is registered
  * \param[in] entity The media entity name
  *
- * Releasing memory of the newly created instance is responsibility of the
- * caller of this function.
- *
  * \return A newly created V4L2Subdevice on success, nullptr otherwise
  */
-V4L2Subdevice *V4L2Subdevice::fromEntityName(const MediaDevice *media,
-					     const std::string &entity)
+std::unique_ptr<V4L2Subdevice>
+V4L2Subdevice::fromEntityName(const MediaDevice *media,
+			      const std::string &entity)
 {
 	MediaEntity *mediaEntity = media->getEntityByName(entity);
 	if (!mediaEntity)
 		return nullptr;
 
-	return new V4L2Subdevice(mediaEntity);
+	return std::make_unique<V4L2Subdevice>(mediaEntity);
 }
 
 std::string V4L2Subdevice::logPrefix() const

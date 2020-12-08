@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_PIPELINE_RKISP1_PATH_H__
 #define __LIBCAMERA_PIPELINE_RKISP1_PATH_H__
 
+#include <memory>
 #include <vector>
 
 #include <libcamera/camera.h>
@@ -65,7 +66,7 @@ private:
 	const Size minResolution_;
 	const Size maxResolution_;
 
-	V4L2Subdevice *resizer_;
+	std::unique_ptr<V4L2Subdevice> resizer_;
 	V4L2VideoDevice *video_;
 	MediaLink *link_;
 };

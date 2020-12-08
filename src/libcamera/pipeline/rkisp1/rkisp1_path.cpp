@@ -24,14 +24,13 @@ RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		       const Size &minResolution, const Size &maxResolution)
 	: name_(name), running_(false), formats_(formats),
 	  minResolution_(minResolution), maxResolution_(maxResolution),
-	  resizer_(nullptr), video_(nullptr), link_(nullptr)
+	  video_(nullptr), link_(nullptr)
 {
 }
 
 RkISP1Path::~RkISP1Path()
 {
 	delete video_;
-	delete resizer_;
 }
 
 bool RkISP1Path::init(MediaDevice *media)

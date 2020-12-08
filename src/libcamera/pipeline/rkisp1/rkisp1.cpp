@@ -217,7 +217,7 @@ private:
 	int freeBuffers(Camera *camera);
 
 	MediaDevice *media_;
-	V4L2Subdevice *isp_;
+	std::unique_ptr<V4L2Subdevice> isp_;
 	V4L2VideoDevice *param_;
 	V4L2VideoDevice *stat_;
 
@@ -599,8 +599,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), isp_(nullptr), param_(nullptr),
-	  stat_(nullptr)
+	: PipelineHandler(manager), param_(nullptr), stat_(nullptr)
 {
 }
 
@@ -608,7 +607,6 @@ PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
 {
 	delete param_;
 	delete stat_;
-	delete isp_;
 }
 
 /* -----------------------------------------------------------------------------

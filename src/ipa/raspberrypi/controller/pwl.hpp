@@ -80,6 +80,9 @@ public:
 	};
 	PerpType Invert(Point const &xy, Point &perp, int &span,
 			const double eps = 1e-6) const;
+	// Compute the inverse function. Indicate if it is a proper (true)
+	// inverse, or only a best effort (e.g. input was non-monotonic).
+	Pwl Inverse(bool *true_inverse = nullptr, const double eps = 1e-6) const;
 	// Compose two Pwls together, doing "this" first and "other" after.
 	Pwl Compose(Pwl const &other, const double eps = 1e-6) const;
 	// Apply function to (x,y) values at every control point.

@@ -19,6 +19,9 @@ using namespace RPiController;
 
 const double Awb::RGB::INVALID = -1.0;
 
+// todo - the locking in this algorithm needs some tidying up as has been done
+// elsewhere (ALSC and AGC).
+
 void AwbMode::Read(boost::property_tree::ptree const &params)
 {
 	ct_lo = params.get<double>("lo");
@@ -121,6 +124,7 @@ Awb::Awb(Controller *controller)
 	async_abort_ = async_start_ = async_started_ = async_finished_ = false;
 	mode_ = nullptr;
 	manual_r_ = manual_b_ = 0.0;
+	first_switch_mode_ = true;
 	async_thread_ = std::thread(std::bind(&Awb::asyncFunc, this));
 }
 
@@ -199,9 +203,19 @@ void Awb::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		prev_sync_results_.gain_r = manual_r_;
 		prev_sync_results_.gain_g = 1.0;
 		prev_sync_results_.gain_b = manual_b_;
+		// If we're starting up for the first time, try and
+		// "dead reckon" the corresponding colour temperature.
+		if (first_switch_mode_ && config_.bayes) {
+			Pwl ct_r_inverse = config_.ct_r.Inverse();
+			Pwl ct_b_inverse = config_.ct_b.Inverse();
+			double ct_r = ct_r_inverse.Eval(ct_r_inverse.Domain().Clip(1 / manual_r_));
+			double ct_b = ct_b_inverse.Eval(ct_b_inverse.Domain().Clip(1 / manual_b_));
+			prev_sync_results_.temperature_K = (ct_r + ct_b) / 2;
+		}
 		sync_results_ = prev_sync_results_;
 	}
 	metadata->Set("awb.status", prev_sync_results_);
+	first_switch_mode_ = false;
 }
 
 void Awb::fetchAsyncResults()

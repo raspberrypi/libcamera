@@ -159,6 +159,7 @@ private:
 	double manual_r_;
 	// manual b setting
 	double manual_b_;
+	bool first_switch_mode_; // is this the first call to SwitchMode?
 };
 
 static inline Awb::RGB operator+(Awb::RGB const &a, Awb::RGB const &b)

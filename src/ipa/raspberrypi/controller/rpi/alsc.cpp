@@ -146,6 +146,7 @@ void Alsc::Read(boost::property_tree::ptree const &params)
 	config_.threshold = params.get<double>("threshold", 1e-3);
 }
 
+static double get_ct(Metadata *metadata, double default_ct);
 static void get_cal_table(double ct,
 			  std::vector<AlscCalibration> const &calibrations,
 			  double cal_table[XY]);
@@ -210,6 +211,9 @@ void Alsc::SwitchMode(CameraMode const &camera_mode,
 	// change.
 	bool reset_tables = first_time_ || compare_modes(camera_mode_, camera_mode);
 
+	// Believe the colour temperature from the AWB, if there is one.
+	ct_ = get_ct(metadata, ct_);
+
 	// Ensure the other thread isn't running while we do this.
 	waitForAysncThread();
 
@@ -254,7 +258,7 @@ void Alsc::fetchAsyncResults()
 	memcpy(sync_results_, async_results_, sizeof(sync_results_));
 }
 
-static double get_ct(Metadata *metadata, double default_ct)
+double get_ct(Metadata *metadata, double default_ct)
 {
 	AwbStatus awb_status;
 	awb_status.temperature_K = default_ct; // in case nothing found

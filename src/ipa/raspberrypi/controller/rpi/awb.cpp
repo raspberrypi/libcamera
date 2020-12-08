@@ -59,6 +59,7 @@ void AwbConfig::Read(boost::property_tree::ptree const &params)
 	bayes = params.get<int>("bayes", 1);
 	frame_period = params.get<uint16_t>("frame_period", 10);
 	startup_frames = params.get<uint16_t>("startup_frames", 10);
+	convergence_frames = params.get<unsigned int>("convergence_frames", 3);
 	speed = params.get<double>("speed", 0.05);
 	if (params.get_child_optional("ct_curve"))
 		read_ct_curve(ct_r, ct_b, params.get_child("ct_curve"));
@@ -163,6 +164,16 @@ void Awb::Initialise()
 			sync_results_.gain_b = 1.0;
 	}
 	prev_sync_results_ = sync_results_;
+}
+
+unsigned int Awb::GetConvergenceFrames() const
+{
+	// If colour gains have been explicitly set, there is no convergence
+	// to happen, so no need to drop any frames - return zero.
+	if (manual_r_ && manual_b_)
+		return 0;
+	else
+		return config_.convergence_frames;
 }
 
 void Awb::SetMode(std::string const &mode_name)

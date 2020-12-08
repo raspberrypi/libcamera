@@ -37,6 +37,7 @@ struct AwbConfig {
 	uint16_t frame_period;
 	// number of initial frames for which speed taken as 1.0 (maximum)
 	uint16_t startup_frames;
+	unsigned int convergence_frames; // approx number of frames to converge
 	double speed; // IIR filter speed applied to algorithm results
 	bool fast; // "fast" mode uses a 16x16 rather than 32x32 grid
 	Pwl ct_r; // function maps CT to r (= R/G)
@@ -82,6 +83,7 @@ public:
 	char const *Name() const override;
 	void Initialise() override;
 	void Read(boost::property_tree::ptree const &params) override;
+	unsigned int GetConvergenceFrames() const override;
 	void SetMode(std::string const &name) override;
 	void SetManualGains(double manual_r, double manual_b) override;
 	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;

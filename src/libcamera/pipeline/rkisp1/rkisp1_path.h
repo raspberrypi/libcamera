@@ -31,7 +31,6 @@ class RkISP1Path
 public:
 	RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		   const Size &minResolution, const Size &maxResolution);
-	~RkISP1Path();
 
 	bool init(MediaDevice *media);
 
@@ -67,7 +66,7 @@ private:
 	const Size maxResolution_;
 
 	std::unique_ptr<V4L2Subdevice> resizer_;
-	V4L2VideoDevice *video_;
+	std::unique_ptr<V4L2VideoDevice> video_;
 	MediaLink *link_;
 };
 

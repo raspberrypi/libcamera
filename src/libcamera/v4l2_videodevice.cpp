@@ -1598,19 +1598,17 @@ int V4L2VideoDevice::streamOff()
  * \param[in] media The media device where the entity is registered
  * \param[in] entity The media entity name
  *
- * Releasing memory of the newly created instance is responsibility of the
- * caller of this function.
- *
  * \return A newly created V4L2VideoDevice on success, nullptr otherwise
  */
-V4L2VideoDevice *V4L2VideoDevice::fromEntityName(const MediaDevice *media,
-						 const std::string &entity)
+std::unique_ptr<V4L2VideoDevice>
+V4L2VideoDevice::fromEntityName(const MediaDevice *media,
+				const std::string &entity)
 {
 	MediaEntity *mediaEntity = media->getEntityByName(entity);
 	if (!mediaEntity)
 		return nullptr;
 
-	return new V4L2VideoDevice(mediaEntity);
+	return std::make_unique<V4L2VideoDevice>(mediaEntity);
 }
 
 /**

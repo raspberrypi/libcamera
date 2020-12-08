@@ -33,13 +33,12 @@ const std::map<uint32_t, PixelFormat> mbusCodesToPixelFormat = {
 } /* namespace */
 
 CIO2Device::CIO2Device()
-	: sensor_(nullptr), csi2_(nullptr), output_(nullptr)
+	: sensor_(nullptr), csi2_(nullptr)
 {
 }
 
 CIO2Device::~CIO2Device()
 {
-	delete output_;
 	delete csi2_;
 	delete sensor_;
 }

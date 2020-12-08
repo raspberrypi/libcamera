@@ -178,7 +178,6 @@ class PipelineHandlerRkISP1 : public PipelineHandler
 {
 public:
 	PipelineHandlerRkISP1(CameraManager *manager);
-	~PipelineHandlerRkISP1();
 
 	CameraConfiguration *generateConfiguration(Camera *camera,
 		const StreamRoles &roles) override;
@@ -218,8 +217,8 @@ private:
 
 	MediaDevice *media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
-	V4L2VideoDevice *param_;
-	V4L2VideoDevice *stat_;
+	std::unique_ptr<V4L2VideoDevice> param_;
+	std::unique_ptr<V4L2VideoDevice> stat_;
 
 	RkISP1MainPath mainPath_;
 	RkISP1SelfPath selfPath_;
@@ -599,14 +598,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), param_(nullptr), stat_(nullptr)
+	: PipelineHandler(manager)
 {
-}
-
-PipelineHandlerRkISP1::~PipelineHandlerRkISP1()
-{
-	delete param_;
-	delete stat_;
 }
 
 /* -----------------------------------------------------------------------------

@@ -63,7 +63,7 @@ private:
 
 	CameraSensor *sensor_;
 	V4L2Subdevice *csi2_;
-	V4L2VideoDevice *output_;
+	std::unique_ptr<V4L2VideoDevice> output_;
 
 	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
 	std::queue<FrameBuffer *> availableBuffers_;

@@ -745,13 +745,6 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 		return ret;
 	}
 
-	ret = queueAllBuffers(camera);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to queue buffers";
-		stop(camera);
-		return ret;
-	}
-
 	/* Check if a ScalerCrop control was specified. */
 	if (controls)
 		data->applyScalerCrop(*controls);
@@ -777,6 +770,19 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 		const ControlList &ctrls = result.controls[0];
 		if (!data->staggeredCtrl_.set(ctrls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
+	}
+
+	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
+		/* Configure the number of dropped frames required on startup. */
+		data->dropFrameCount_ = result.data[0];
+	}
+
+	/* We need to set the dropFrameCount_ before queueing buffers. */
+	ret = queueAllBuffers(camera);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to queue buffers";
+		stop(camera);
+		return ret;
 	}
 
 	/*
@@ -1235,11 +1241,6 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		const ControlList &ctrls = result.controls[0];
 		if (!staggeredCtrl_.set(ctrls))
 			LOG(RPI, Error) << "V4L2 staggered set failed";
-	}
-
-	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
-		/* Configure the number of dropped frames required on startup. */
-		dropFrameCount_ = result.data[resultIdx++];
 	}
 
 	/*

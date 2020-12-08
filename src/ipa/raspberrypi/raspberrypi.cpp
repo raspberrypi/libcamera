@@ -67,7 +67,7 @@ public:
 	IPARPi()
 		: lastMode_({}), controller_(), controllerInit_(false),
 		  frameCount_(0), checkCount_(0), mistrustCount_(0),
-		  lsTable_(nullptr)
+		  lsTable_(nullptr), firstStart_(true)
 	{
 	}
 
@@ -145,6 +145,9 @@ private:
 	/* LS table allocation passed in from the pipeline handler. */
 	FileDescriptor lsTableHandle_;
 	void *lsTable_;
+
+	/* Distinguish the first camera start from others. */
+	bool firstStart_;
 };
 
 int IPARPi::init(const IPASettings &settings)
@@ -179,6 +182,27 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 		result->controls.emplace_back(ctrls);
 		result->operation |= RPi::IPA_CONFIG_SENSOR;
 	}
+
+	/*
+	 * Initialise frame counts, and decide how many frames must be hidden or
+	 * "mistrusted", which depends on whether this is a startup from cold,
+	 * or merely a mode switch in a running system.
+	 */
+	frameCount_ = 0;
+	checkCount_ = 0;
+	unsigned int dropFrame = 0;
+	if (firstStart_) {
+		dropFrame = helper_->HideFramesStartup();
+		mistrustCount_ = helper_->MistrustFramesStartup();
+	} else {
+		dropFrame = helper_->HideFramesModeSwitch();
+		mistrustCount_ = helper_->MistrustFramesModeSwitch();
+	}
+
+	result->data.push_back(dropFrame);
+	result->operation |= RPi::IPA_CONFIG_DROP_FRAMES;
+
+	firstStart_ = false;
 
 	return 0;
 }
@@ -304,25 +328,6 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	/* Pass the camera mode to the CamHelper to setup algorithms. */
 	helper_->SetCameraMode(mode_);
-
-	/*
-	 * Initialise frame counts, and decide how many frames must be hidden or
-	 *"mistrusted", which depends on whether this is a startup from cold,
-	 * or merely a mode switch in a running system.
-	 */
-	frameCount_ = 0;
-	checkCount_ = 0;
-	unsigned int dropFrame = 0;
-	if (controllerInit_) {
-		dropFrame = helper_->HideFramesModeSwitch();
-		mistrustCount_ = helper_->MistrustFramesModeSwitch();
-	} else {
-		dropFrame = helper_->HideFramesStartup();
-		mistrustCount_ = helper_->MistrustFramesStartup();
-	}
-
-	result->data.push_back(dropFrame);
-	result->operation |= RPi::IPA_CONFIG_DROP_FRAMES;
 
 	if (!controllerInit_) {
 		/* Load the tuning file for this sensor. */

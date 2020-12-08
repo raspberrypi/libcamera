@@ -15,6 +15,7 @@ class AgcAlgorithm : public Algorithm
 public:
 	AgcAlgorithm(Controller *controller) : Algorithm(controller) {}
 	// An AGC algorithm must provide the following:
+	virtual unsigned int GetConvergenceFrames() const = 0;
 	virtual void SetEv(double ev) = 0;
 	virtual void SetFlickerPeriod(double flicker_period) = 0;
 	virtual void SetFixedShutter(double fixed_shutter) = 0; // microseconds

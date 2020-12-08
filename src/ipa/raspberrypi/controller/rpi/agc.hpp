@@ -52,6 +52,7 @@ struct AgcConfig {
 	Pwl Y_target;
 	double speed;
 	uint16_t startup_frames;
+	unsigned int convergence_frames;
 	double max_change;
 	double min_change;
 	double fast_reduce_threshold;
@@ -74,6 +75,7 @@ public:
 	bool IsPaused() const override;
 	void Pause() override;
 	void Resume() override;
+	unsigned int GetConvergenceFrames() const override;
 	void SetEv(double ev) override;
 	void SetFlickerPeriod(double flicker_period) override;
 	void SetFixedShutter(double fixed_shutter) override; // microseconds

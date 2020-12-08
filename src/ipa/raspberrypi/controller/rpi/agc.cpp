@@ -142,6 +142,7 @@ void AgcConfig::Read(boost::property_tree::ptree const &params)
 	Y_target.Read(params.get_child("y_target"));
 	speed = params.get<double>("speed", 0.2);
 	startup_frames = params.get<uint16_t>("startup_frames", 10);
+	convergence_frames = params.get<unsigned int>("convergence_frames", 6);
 	fast_reduce_threshold =
 		params.get<double>("fast_reduce_threshold", 0.4);
 	base_ev = params.get<double>("base_ev", 1.0);
@@ -204,6 +205,16 @@ void Agc::Resume()
 {
 	fixed_shutter_ = 0;
 	fixed_analogue_gain_ = 0;
+}
+
+unsigned int Agc::GetConvergenceFrames() const
+{
+	// If shutter and gain have been explicitly set, there is no
+	// convergence to happen, so no need to drop any frames - return zero.
+	if (fixed_shutter_ && fixed_analogue_gain_)
+		return 0;
+	else
+		return config_.convergence_frames;
 }
 
 void Agc::SetEv(double ev)

@@ -156,6 +156,7 @@ public:
 	void handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream);
 	void handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *stream);
 	void handleState();
+	void applyScalerCrop(const ControlList &controls);
 
 	CameraSensor *sensor_;
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
@@ -750,6 +751,10 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 		stop(camera);
 		return ret;
 	}
+
+	/* Check if a ScalerCrop control was specified. */
+	if (controls)
+		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
 	IPAOperationData ipaData = {};
@@ -1610,24 +1615,10 @@ void RPiCameraData::checkRequestCompleted()
 	}
 }
 
-void RPiCameraData::tryRunPipeline()
+void RPiCameraData::applyScalerCrop(const ControlList &controls)
 {
-	FrameBuffer *bayerBuffer, *embeddedBuffer;
-	IPAOperationData op;
-
-	/* If any of our request or buffer queues are empty, we cannot proceed. */
-	if (state_ != State::Idle || requestQueue_.empty() ||
-	    bayerQueue_.empty() || embeddedQueue_.empty())
-		return;
-
-	if (!findMatchingBuffers(bayerBuffer, embeddedBuffer))
-		return;
-
-	/* Take the first request from the queue and action the IPA. */
-	Request *request = requestQueue_.front();
-
-	if (request->controls().contains(controls::ScalerCrop)) {
-		Rectangle nativeCrop = request->controls().get<Rectangle>(controls::ScalerCrop);
+	if (controls.contains(controls::ScalerCrop)) {
+		Rectangle nativeCrop = controls.get<Rectangle>(controls::ScalerCrop);
 
 		if (!nativeCrop.width || !nativeCrop.height)
 			nativeCrop = { 0, 0, 1, 1 };
@@ -1654,6 +1645,26 @@ void RPiCameraData::tryRunPipeline()
 			updateScalerCrop_ = true;
 		}
 	}
+}
+
+void RPiCameraData::tryRunPipeline()
+{
+	FrameBuffer *bayerBuffer, *embeddedBuffer;
+	IPAOperationData op;
+
+	/* If any of our request or buffer queues are empty, we cannot proceed. */
+	if (state_ != State::Idle || requestQueue_.empty() ||
+	    bayerQueue_.empty() || embeddedQueue_.empty())
+		return;
+
+	if (!findMatchingBuffers(bayerBuffer, embeddedBuffer))
+		return;
+
+	/* Take the first request from the queue and action the IPA. */
+	Request *request = requestQueue_.front();
+
+	/* See if a new ScalerCrop value needs to be applied. */
+	applyScalerCrop(request->controls());
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we

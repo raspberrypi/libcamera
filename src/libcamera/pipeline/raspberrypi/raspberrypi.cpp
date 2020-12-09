@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <fcntl.h>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <sys/mman.h>
@@ -134,7 +135,7 @@ class RPiCameraData : public CameraData
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), sensor_(nullptr), state_(State::Stopped),
+		: CameraData(pipe), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  updateScalerCrop_(true), dropFrameCount_(0), ispOutputCount_(0)
 	{
@@ -158,7 +159,7 @@ public:
 	void handleState();
 	void applyScalerCrop(const ControlList &controls);
 
-	CameraSensor *sensor_;
+	std::unique_ptr<CameraSensor> sensor_;
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
 	RPi::Device<Unicam, 2> unicam_;
 	RPi::Device<Isp, 4> isp_;
@@ -948,7 +949,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	/* Identify the sensor. */
 	for (MediaEntity *entity : unicam_->entities()) {
 		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR) {
-			data->sensor_ = new CameraSensor(entity);
+			data->sensor_ = std::make_unique<CameraSensor>(entity);
 			break;
 		}
 	}

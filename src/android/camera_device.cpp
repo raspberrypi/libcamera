@@ -675,10 +675,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 52 entries, 698 bytes of static metadata
+	 * Currently: 53 entries, 714 bytes of static metadata
 	 */
-	uint32_t numEntries = 52;
-	uint32_t byteSize = 698;
+	uint32_t numEntries = 53;
+	uint32_t byteSize = 714;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1090,14 +1090,22 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	};
 
 	/* Report if camera supports RAW. */
+	bool rawStreamAvailable = false;
 	std::unique_ptr<CameraConfiguration> cameraConfig =
 		camera_->generateConfiguration({ StreamRole::Raw });
 	if (cameraConfig && !cameraConfig->empty()) {
 		const PixelFormatInfo &info =
 			PixelFormatInfo::info(cameraConfig->at(0).pixelFormat);
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
+			rawStreamAvailable = true;
 			availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
+		}
 	}
+
+	/* Number of { RAW, YUV, JPEG } supported output streams */
+	int32_t numOutStreams[] = { rawStreamAvailable, 2, 1 };
+	staticMetadata_->addEntry(ANDROID_REQUEST_MAX_NUM_OUTPUT_STREAMS,
+				  &numOutStreams, 3);
 
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
 				  availableCapabilities.data(),
@@ -1150,6 +1158,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL,
 		ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
 		ANDROID_REQUEST_PIPELINE_MAX_DEPTH,
+		ANDROID_REQUEST_MAX_NUM_OUTPUT_STREAMS,
 		ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS,
 		ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
 	};

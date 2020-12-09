@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iomanip>
 #include <math.h>
+#include <memory>
 #include <tuple>
 
 #include <libcamera/camera.h>
@@ -35,13 +36,8 @@ class UVCCameraData : public CameraData
 {
 public:
 	UVCCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), video_(nullptr)
+		: CameraData(pipe)
 	{
-	}
-
-	~UVCCameraData()
-	{
-		delete video_;
 	}
 
 	int init(MediaDevice *media);
@@ -49,7 +45,7 @@ public:
 			ControlInfoMap::Map *ctrls);
 	void bufferReady(FrameBuffer *buffer);
 
-	V4L2VideoDevice *video_;
+	std::unique_ptr<V4L2VideoDevice> video_;
 	Stream stream_;
 };
 
@@ -499,7 +495,7 @@ int UVCCameraData::init(MediaDevice *media)
 	}
 
 	/* Create and open the video device. */
-	video_ = new V4L2VideoDevice(*entity);
+	video_ = std::make_unique<V4L2VideoDevice>(*entity);
 	ret = video_->open();
 	if (ret)
 		return ret;

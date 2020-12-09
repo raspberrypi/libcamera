@@ -121,21 +121,16 @@ class RkISP1CameraData : public CameraData
 public:
 	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
 			 RkISP1SelfPath *selfPath)
-		: CameraData(pipe), sensor_(nullptr), frame_(0),
-		  frameInfo_(pipe), mainPath_(mainPath), selfPath_(selfPath)
+		: CameraData(pipe), frame_(0), frameInfo_(pipe),
+		  mainPath_(mainPath), selfPath_(selfPath)
 	{
-	}
-
-	~RkISP1CameraData()
-	{
-		delete sensor_;
 	}
 
 	int loadIPA();
 
 	Stream mainPathStream_;
 	Stream selfPathStream_;
-	CameraSensor *sensor_;
+	std::unique_ptr<CameraSensor> sensor_;
 	unsigned int frame_;
 	std::vector<IPABuffer> ipaBuffers_;
 	RkISP1Frames frameInfo_;
@@ -430,7 +425,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 	case RKISP1_IPA_ACTION_V4L2_SET: {
 		const ControlList &controls = action.controls[0];
 		timeline_.scheduleAction(std::make_unique<RkISP1ActionSetSensor>(frame,
-										 sensor_,
+										 sensor_.get(),
 										 controls));
 		break;
 	}
@@ -489,7 +484,7 @@ bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
-	const CameraSensor *sensor = data_->sensor_;
+	const CameraSensor *sensor = data_->sensor_.get();
 	Status status = Valid;
 
 	if (config_.empty())
@@ -660,7 +655,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	RkISP1CameraConfiguration *config =
 		static_cast<RkISP1CameraConfiguration *>(c);
 	RkISP1CameraData *data = cameraData(camera);
-	CameraSensor *sensor = data->sensor_;
+	CameraSensor *sensor = data->sensor_.get();
 	int ret;
 
 	ret = initLinks(camera, sensor, *config);
@@ -1035,7 +1030,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 
 	data->controlInfo_ = std::move(ctrls);
 
-	data->sensor_ = new CameraSensor(sensor);
+	data->sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = data->sensor_->init();
 	if (ret)
 		return ret;

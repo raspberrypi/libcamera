@@ -33,14 +33,7 @@ const std::map<uint32_t, PixelFormat> mbusCodesToPixelFormat = {
 } /* namespace */
 
 CIO2Device::CIO2Device()
-	: sensor_(nullptr), csi2_(nullptr)
 {
-}
-
-CIO2Device::~CIO2Device()
-{
-	delete csi2_;
-	delete sensor_;
 }
 
 /**
@@ -117,7 +110,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 
 	MediaLink *link = links[0];
 	MediaEntity *sensorEntity = link->source()->entity();
-	sensor_ = new CameraSensor(sensorEntity);
+	sensor_ = std::make_unique<CameraSensor>(sensorEntity);
 	ret = sensor_->init();
 	if (ret)
 		return ret;
@@ -148,7 +141,7 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 	 * might impact on power consumption.
 	 */
 
-	csi2_ = new V4L2Subdevice(csi2Entity);
+	csi2_ = std::make_unique<V4L2Subdevice>(csi2Entity);
 	ret = csi2_->open();
 	if (ret)
 		return ret;

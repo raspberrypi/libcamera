@@ -29,7 +29,6 @@ class SimpleConverter
 {
 public:
 	SimpleConverter(MediaDevice *media);
-	~SimpleConverter();
 
 	int open();
 	void close();
@@ -56,7 +55,7 @@ private:
 	void captureBufferReady(FrameBuffer *buffer);
 	void outputBufferReady(FrameBuffer *buffer);
 
-	V4L2M2MDevice *m2m_;
+	std::unique_ptr<V4L2M2MDevice> m2m_;
 
 	std::queue<FrameBuffer *> captureDoneQueue_;
 	std::queue<FrameBuffer *> outputDoneQueue_;

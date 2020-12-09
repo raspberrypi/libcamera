@@ -42,20 +42,15 @@ class VimcCameraData : public CameraData
 {
 public:
 	VimcCameraData(PipelineHandler *pipe, MediaDevice *media)
-		: CameraData(pipe), media_(media), sensor_(nullptr)
+		: CameraData(pipe), media_(media)
 	{
-	}
-
-	~VimcCameraData()
-	{
-		delete sensor_;
 	}
 
 	int init();
 	void bufferReady(FrameBuffer *buffer);
 
 	MediaDevice *media_;
-	CameraSensor *sensor_;
+	std::unique_ptr<CameraSensor> sensor_;
 	std::unique_ptr<V4L2Subdevice> debayer_;
 	std::unique_ptr<V4L2Subdevice> scaler_;
 	std::unique_ptr<V4L2VideoDevice> video_;
@@ -461,7 +456,7 @@ int VimcCameraData::init()
 		return ret;
 
 	/* Create and open the camera sensor, debayer, scaler and video device. */
-	sensor_ = new CameraSensor(media_->getEntityByName("Sensor B"));
+	sensor_ = std::make_unique<CameraSensor>(media_->getEntityByName("Sensor B"));
 	ret = sensor_->init();
 	if (ret)
 		return ret;

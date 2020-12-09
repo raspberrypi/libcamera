@@ -24,7 +24,6 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(SimplePipeline)
 
 SimpleConverter::SimpleConverter(MediaDevice *media)
-	: m2m_(nullptr)
 {
 	/*
 	 * Locate the video node. There's no need to validate the pipeline
@@ -38,15 +37,10 @@ SimpleConverter::SimpleConverter(MediaDevice *media)
 	if (it == entities.end())
 		return;
 
-	m2m_ = new V4L2M2MDevice((*it)->deviceNode());
+	m2m_ = std::make_unique<V4L2M2MDevice>((*it)->deviceNode());
 
 	m2m_->output()->bufferReady.connect(this, &SimpleConverter::outputBufferReady);
 	m2m_->capture()->bufferReady.connect(this, &SimpleConverter::captureBufferReady);
-}
-
-SimpleConverter::~SimpleConverter()
-{
-	delete m2m_;
 }
 
 int SimpleConverter::open()

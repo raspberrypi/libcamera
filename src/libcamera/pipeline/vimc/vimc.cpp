@@ -42,19 +42,13 @@ class VimcCameraData : public CameraData
 {
 public:
 	VimcCameraData(PipelineHandler *pipe, MediaDevice *media)
-		: CameraData(pipe), media_(media), sensor_(nullptr),
-		  debayer_(nullptr), scaler_(nullptr), video_(nullptr),
-		  raw_(nullptr)
+		: CameraData(pipe), media_(media), sensor_(nullptr)
 	{
 	}
 
 	~VimcCameraData()
 	{
 		delete sensor_;
-		delete debayer_;
-		delete scaler_;
-		delete video_;
-		delete raw_;
 	}
 
 	int init();
@@ -62,10 +56,10 @@ public:
 
 	MediaDevice *media_;
 	CameraSensor *sensor_;
-	V4L2Subdevice *debayer_;
-	V4L2Subdevice *scaler_;
-	V4L2VideoDevice *video_;
-	V4L2VideoDevice *raw_;
+	std::unique_ptr<V4L2Subdevice> debayer_;
+	std::unique_ptr<V4L2Subdevice> scaler_;
+	std::unique_ptr<V4L2VideoDevice> video_;
+	std::unique_ptr<V4L2VideoDevice> raw_;
 	Stream stream_;
 };
 
@@ -472,21 +466,21 @@ int VimcCameraData::init()
 	if (ret)
 		return ret;
 
-	debayer_ = new V4L2Subdevice(media_->getEntityByName("Debayer B"));
+	debayer_ = V4L2Subdevice::fromEntityName(media_, "Debayer B");
 	if (debayer_->open())
 		return -ENODEV;
 
-	scaler_ = new V4L2Subdevice(media_->getEntityByName("Scaler"));
+	scaler_ = V4L2Subdevice::fromEntityName(media_, "Scaler");
 	if (scaler_->open())
 		return -ENODEV;
 
-	video_ = new V4L2VideoDevice(media_->getEntityByName("RGB/YUV Capture"));
+	video_ = V4L2VideoDevice::fromEntityName(media_, "RGB/YUV Capture");
 	if (video_->open())
 		return -ENODEV;
 
 	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
 
-	raw_ = new V4L2VideoDevice(media_->getEntityByName("Raw Capture 1"));
+	raw_ = V4L2VideoDevice::fromEntityName(media_, "Raw Capture 1");
 	if (raw_->open())
 		return -ENODEV;
 

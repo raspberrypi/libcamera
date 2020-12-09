@@ -675,10 +675,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 51 entries, 687 bytes of static metadata
+	 * Currently: 52 entries, 698 bytes of static metadata
 	 */
 	uint32_t numEntries = 52;
-	uint32_t byteSize = 694;
+	uint32_t byteSize = 698;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1187,6 +1187,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AWB_STATE,
 		ANDROID_CONTROL_AWB_LOCK,
 		ANDROID_LENS_STATE,
+		ANDROID_REQUEST_PIPELINE_DEPTH,
 		ANDROID_SCALER_CROP_REGION,
 		ANDROID_SENSOR_TIMESTAMP,
 		ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
@@ -1704,7 +1705,7 @@ void CameraDevice::requestComplete(Request *request)
 	 * pipeline handlers) timestamp in the Request itself.
 	 */
 	uint64_t timestamp = buffers.begin()->second->metadata().timestamp;
-	resultMetadata = getResultMetadata(descriptor->frameNumber_, timestamp);
+	resultMetadata = getResultMetadata(descriptor, timestamp);
 
 	/* Handle any JPEG compression. */
 	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
@@ -1822,15 +1823,17 @@ void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
  * Produce a set of fixed result metadata.
  */
 std::unique_ptr<CameraMetadata>
-CameraDevice::getResultMetadata([[maybe_unused]] int frame_number,
+CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 				int64_t timestamp)
 {
+	const ControlList &metadata = descriptor->request_->metadata();
+
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 18 entries, 62 bytes
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(18, 62);
+		std::make_unique<CameraMetadata>(19, 63);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
@@ -1879,6 +1882,14 @@ CameraDevice::getResultMetadata([[maybe_unused]] int frame_number,
 	const uint8_t scene_flicker = ANDROID_STATISTICS_SCENE_FLICKER_NONE;
 	resultMetadata->addEntry(ANDROID_STATISTICS_SCENE_FLICKER,
 				 &scene_flicker, 1);
+
+	/* Add metadata tags reported by libcamera. */
+	if (metadata.contains(controls::draft::PipelineDepth)) {
+		uint8_t pipeline_depth =
+			metadata.get<int32_t>(controls::draft::PipelineDepth);
+		resultMetadata->addEntry(ANDROID_REQUEST_PIPELINE_DEPTH,
+					 &pipeline_depth, 1);
+	}
 
 	/*
 	 * Return the result metadata pack even is not valid: get() will return

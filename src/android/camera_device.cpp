@@ -27,6 +27,8 @@
 
 using namespace libcamera;
 
+LOG_DECLARE_CATEGORY(HAL)
+
 namespace {
 
 /*
@@ -145,9 +147,115 @@ struct Camera3StreamConfig {
 	StreamConfiguration config;
 };
 
-} /* namespace */
+/*
+ * Reorder the configurations so that libcamera::Camera can accept them as much
+ * as possible. The sort rule is as follows.
+ * 1.) The configuration for NV12 request whose resolution is the largest.
+ * 2.) The configuration for JPEG request.
+ * 3.) Others. Larger resolutions and different formats are put earlier.
+ */
+void sortCamera3StreamConfigs(std::vector<Camera3StreamConfig> &unsortedConfigs,
+			      const camera3_stream_t *jpegStream)
+{
+	const Camera3StreamConfig *jpegConfig = nullptr;
 
-LOG_DECLARE_CATEGORY(HAL)
+	std::map<PixelFormat, std::vector<const Camera3StreamConfig *>> formatToConfigs;
+	for (const auto &streamConfig : unsortedConfigs) {
+		if (jpegStream && !jpegConfig) {
+			const auto &streams = streamConfig.streams;
+			if (std::find_if(streams.begin(), streams.end(),
+					 [jpegStream](const auto &stream) {
+						 return stream.stream == jpegStream;
+					 }) != streams.end()) {
+				jpegConfig = &streamConfig;
+				continue;
+			}
+		}
+		formatToConfigs[streamConfig.config.pixelFormat].push_back(&streamConfig);
+	}
+
+	if (jpegStream && !jpegConfig)
+		LOG(HAL, Fatal) << "No Camera3StreamConfig is found for JPEG";
+
+	for (auto &fmt : formatToConfigs) {
+		auto &streamConfigs = fmt.second;
+
+		/* Sorted by resolution. Smaller is put first. */
+		std::sort(streamConfigs.begin(), streamConfigs.end(),
+			  [](const auto *streamConfigA, const auto *streamConfigB) {
+				  const Size &sizeA = streamConfigA->config.size;
+				  const Size &sizeB = streamConfigB->config.size;
+				  return sizeA < sizeB;
+			  });
+	}
+
+	std::vector<Camera3StreamConfig> sortedConfigs;
+	sortedConfigs.reserve(unsortedConfigs.size());
+
+	/*
+	 * NV12 is the most prioritized format. Put the configuration with NV12
+	 * and the largest resolution first.
+	 */
+	const auto nv12It = formatToConfigs.find(formats::NV12);
+	if (nv12It != formatToConfigs.end()) {
+		auto &nv12Configs = nv12It->second;
+		const auto &nv12Largest = nv12Configs.back();
+
+		/*
+		 * If JPEG will be created from NV12 and the size is larger than
+		 * the largest NV12 configurations, then put the NV12
+		 * configuration for JPEG first.
+		 */
+		if (jpegConfig && jpegConfig->config.pixelFormat == formats::NV12) {
+			const Size &nv12SizeForJpeg = jpegConfig->config.size;
+			const Size &nv12LargestSize = nv12Largest->config.size;
+
+			if (nv12LargestSize < nv12SizeForJpeg) {
+				LOG(HAL, Debug) << "Insert " << jpegConfig->config.toString();
+				sortedConfigs.push_back(std::move(*jpegConfig));
+				jpegConfig = nullptr;
+			}
+		}
+
+		LOG(HAL, Debug) << "Insert " << nv12Largest->config.toString();
+		sortedConfigs.push_back(*nv12Largest);
+		nv12Configs.pop_back();
+
+		if (nv12Configs.empty())
+			formatToConfigs.erase(nv12It);
+	}
+
+	/* If the configuration for JPEG is there, then put it. */
+	if (jpegConfig) {
+		LOG(HAL, Debug) << "Insert " << jpegConfig->config.toString();
+		sortedConfigs.push_back(std::move(*jpegConfig));
+		jpegConfig = nullptr;
+	}
+
+	/*
+	 * Put configurations with different formats and larger resolutions
+	 * earlier.
+	 */
+	while (!formatToConfigs.empty()) {
+		for (auto it = formatToConfigs.begin(); it != formatToConfigs.end();) {
+			auto &configs = it->second;
+			LOG(HAL, Debug) << "Insert " << configs.back()->config.toString();
+			sortedConfigs.push_back(*configs.back());
+			configs.pop_back();
+
+			if (configs.empty())
+				it = formatToConfigs.erase(it);
+			else
+				it++;
+		}
+	}
+
+	ASSERT(sortedConfigs.size() == unsortedConfigs.size());
+
+	unsortedConfigs = sortedConfigs;
+}
+
+} /* namespace */
 
 MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
 					 int flags)
@@ -1357,6 +1465,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		streamConfigs[index].streams.push_back({ jpegStream, type });
 	}
 
+	sortCamera3StreamConfigs(streamConfigs, jpegStream);
 	for (const auto &streamConfig : streamConfigs) {
 		config_->addConfiguration(streamConfig.config);
 

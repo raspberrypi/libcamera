@@ -1265,6 +1265,9 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	streams_.clear();
 	streams_.reserve(stream_list->num_streams);
 
+	std::vector<Camera3StreamConfig> streamConfigs;
+	streamConfigs.reserve(stream_list->num_streams);
+
 	/* First handle all non-MJPEG streams. */
 	camera3_stream_t *jpegStream = nullptr;
 	for (unsigned int i = 0; i < stream_list->num_streams; ++i) {
@@ -1295,14 +1298,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			continue;
 		}
 
-		StreamConfiguration streamConfiguration;
-		streamConfiguration.size = size;
-		streamConfiguration.pixelFormat = format;
-
-		config_->addConfiguration(streamConfiguration);
-		streams_.emplace_back(this, CameraStream::Type::Direct,
-				      stream, config_->size() - 1);
-		stream->priv = static_cast<void *>(&streams_.back());
+		Camera3StreamConfig streamConfig;
+		streamConfig.streams = { { stream, CameraStream::Type::Direct } };
+		streamConfig.config.size = size;
+		streamConfig.config.pixelFormat = format;
+		streamConfigs.push_back(std::move(streamConfig));
 	}
 
 	/* Now handle the MJPEG streams, adding a new stream if required. */
@@ -1311,8 +1311,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		int index = -1;
 
 		/* Search for a compatible stream in the non-JPEG ones. */
-		for (unsigned int i = 0; i < config_->size(); i++) {
-			StreamConfiguration &cfg = config_->at(i);
+		for (size_t i = 0; i < streamConfigs.size(); ++i) {
+			const auto &cfg = streamConfigs[i].config;
 
 			/*
 			 * \todo The PixelFormat must also be compatible with
@@ -1335,28 +1335,36 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		 * introduce a new stream to satisfy the request requirements.
 		 */
 		if (index < 0) {
-			StreamConfiguration streamConfiguration;
-
 			/*
 			 * \todo The pixelFormat should be a 'best-fit' choice
 			 * and may require a validation cycle. This is not yet
 			 * handled, and should be considered as part of any
 			 * stream configuration reworks.
 			 */
-			streamConfiguration.size.width = jpegStream->width;
-			streamConfiguration.size.height = jpegStream->height;
-			streamConfiguration.pixelFormat = formats::NV12;
+			Camera3StreamConfig streamConfig;
+			streamConfig.config.size.width = jpegStream->width;
+			streamConfig.config.size.height = jpegStream->height;
+			streamConfig.config.pixelFormat = formats::NV12;
+			streamConfigs.push_back(std::move(streamConfig));
 
-			LOG(HAL, Info) << "Adding " << streamConfiguration.toString()
+			LOG(HAL, Info) << "Adding " << streamConfig.config.toString()
 				       << " for MJPEG support";
 
 			type = CameraStream::Type::Internal;
-			config_->addConfiguration(streamConfiguration);
-			index = config_->size() - 1;
+			index = streamConfigs.size() - 1;
 		}
 
-		streams_.emplace_back(this, type, jpegStream, index);
-		jpegStream->priv = static_cast<void *>(&streams_.back());
+		streamConfigs[index].streams.push_back({ jpegStream, type });
+	}
+
+	for (const auto &streamConfig : streamConfigs) {
+		config_->addConfiguration(streamConfig.config);
+
+		for (auto &stream : streamConfig.streams) {
+			streams_.emplace_back(this, stream.type, stream.stream,
+					      config_->size() - 1);
+			stream.stream->priv = static_cast<void *>(&streams_.back());
+		}
 	}
 
 	switch (config_->validate()) {

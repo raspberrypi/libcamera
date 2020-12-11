@@ -128,6 +128,23 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 	},
 };
 
+/*
+ * \struct Camera3StreamConfig
+ * \brief Data to store StreamConfiguration associated with camera3_stream(s)
+ * \var streams List of the pairs of a stream requested by Android HAL client
+ * and CameraStream::Type associated with the stream
+ * \var config StreamConfiguration for streams
+ */
+struct Camera3StreamConfig {
+	struct Camera3Stream {
+		camera3_stream_t *stream;
+		CameraStream::Type type;
+	};
+
+	std::vector<Camera3Stream> streams;
+	StreamConfiguration config;
+};
+
 } /* namespace */
 
 LOG_DECLARE_CATEGORY(HAL)

@@ -17,8 +17,6 @@
 #include <sys/time.h>
 #include <vector>
 
-#define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
-
 #ifndef __DOXYGEN__
 
 /* uClibc and uClibc-ng don't provide O_TMPFILE */

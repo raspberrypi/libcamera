@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include <array>
 #include <fcntl.h>
 #include <iomanip>
 #include <sstream>
@@ -26,7 +27,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file v4l2_videodevice.h
@@ -860,7 +860,7 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
 
-	ASSERT(pix->num_planes <= ARRAY_SIZE(pix->plane_fmt));
+	ASSERT(pix->num_planes <= std::size(pix->plane_fmt));
 
 	for (unsigned int i = 0; i < pix->num_planes; ++i) {
 		pix->plane_fmt[i].bytesperline = format->planes[i].bpl;
@@ -1255,7 +1255,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 	buf.index = index;
 	buf.type = bufferType_;
 	buf.memory = V4L2_MEMORY_MMAP;
-	buf.length = ARRAY_SIZE(v4l2Planes);
+	buf.length = std::size(v4l2Planes);
 	buf.m.planes = v4l2Planes;
 
 	int ret = ioctl(VIDIOC_QUERYBUF, &buf);

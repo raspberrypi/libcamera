@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/log.h"
 
+#include <array>
 #if HAVE_BACKTRACE
 #include <execinfo.h>
 #endif
@@ -91,7 +92,7 @@ static const char *log_severity_name(LogSeverity severity)
 		"FATAL",
 	};
 
-	if (static_cast<unsigned int>(severity) < ARRAY_SIZE(names))
+	if (static_cast<unsigned int>(severity) < std::size(names))
 		return names[severity];
 	else
 		return "UNKWN";
@@ -406,7 +407,7 @@ void Logger::backtrace()
 		return;
 
 	void *buffer[32];
-	int num_entries = ::backtrace(buffer, ARRAY_SIZE(buffer));
+	int num_entries = ::backtrace(buffer, std::size(buffer));
 	char **strings = backtrace_symbols(buffer, num_entries);
 	if (!strings)
 		return;
@@ -620,7 +621,7 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
 			severity = LogInvalid;
 	} else {
 		severity = LogInvalid;
-		for (unsigned int i = 0; i < ARRAY_SIZE(names); ++i) {
+		for (unsigned int i = 0; i < std::size(names); ++i) {
 			if (names[i] == level) {
 				severity = i;
 				break;

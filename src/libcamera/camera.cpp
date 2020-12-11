@@ -7,6 +7,7 @@
 
 #include <libcamera/camera.h>
 
+#include <array>
 #include <atomic>
 #include <iomanip>
 
@@ -17,7 +18,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/thread.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file camera.h
@@ -393,7 +393,7 @@ int Camera::Private::isAccessAllowed(State state, bool allowDisconnected) const
 	if (currentState == state)
 		return 0;
 
-	ASSERT(static_cast<unsigned int>(state) < ARRAY_SIZE(camera_state_names));
+	ASSERT(static_cast<unsigned int>(state) < std::size(camera_state_names));
 
 	LOG(Camera, Debug) << "Camera in " << camera_state_names[currentState]
 			   << " state trying operation requiring state "
@@ -412,8 +412,8 @@ int Camera::Private::isAccessAllowed(State low, State high,
 	if (currentState >= low && currentState <= high)
 		return 0;
 
-	ASSERT(static_cast<unsigned int>(low) < ARRAY_SIZE(camera_state_names) &&
-	       static_cast<unsigned int>(high) < ARRAY_SIZE(camera_state_names));
+	ASSERT(static_cast<unsigned int>(low) < std::size(camera_state_names) &&
+	       static_cast<unsigned int>(high) < std::size(camera_state_names));
 
 	LOG(Camera, Debug) << "Camera in " << camera_state_names[currentState]
 			   << " state trying operation requiring state between "

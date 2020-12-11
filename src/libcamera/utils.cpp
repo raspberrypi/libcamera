@@ -32,11 +32,6 @@ namespace libcamera {
 namespace utils {
 
 /**
- * \def ARRAY_SIZE(array)
- * \brief Determine the number of elements in the static array.
- */
-
-/**
  * \brief Strip the directory prefix from the path
  * \param[in] path The path to process
  *

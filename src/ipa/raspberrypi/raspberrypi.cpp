@@ -6,6 +6,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>
@@ -27,7 +28,6 @@
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/utils.h"
 
 #include <linux/bcm2835-isp.h>
 
@@ -1092,7 +1092,7 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 	 * Choose smallest cell size that won't exceed 63x48 cells.
 	 */
 	const int cellSizes[] = { 16, 32, 64, 128, 256 };
-	unsigned int numCells = ARRAY_SIZE(cellSizes);
+	unsigned int numCells = std::size(cellSizes);
 	unsigned int i, w, h, cellSize;
 	for (i = 0; i < numCells; i++) {
 		cellSize = cellSizes[i];

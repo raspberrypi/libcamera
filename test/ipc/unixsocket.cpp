@@ -6,6 +6,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <fcntl.h>
 #include <iostream>
 #include <stdlib.h>
@@ -19,7 +20,6 @@
 #include "libcamera/internal/ipc_unixsocket.h"
 #include "libcamera/internal/thread.h"
 #include "libcamera/internal/timer.h"
-#include "libcamera/internal/utils.h"
 
 #include "test.h"
 
@@ -311,7 +311,7 @@ protected:
 		};
 		int fds[2];
 
-		for (unsigned int i = 0; i < ARRAY_SIZE(strings); i++) {
+		for (unsigned int i = 0; i < std::size(strings); i++) {
 			unsigned int len = strlen(strings[i]);
 
 			fds[i] = open("/tmp", O_TMPFILE | O_RDWR,
@@ -333,7 +333,7 @@ protected:
 		if (ret)
 			return ret;
 
-		for (unsigned int i = 0; i < ARRAY_SIZE(strings); i++) {
+		for (unsigned int i = 0; i < std::size(strings); i++) {
 			unsigned int len = strlen(strings[i]);
 			char buf[len];
 

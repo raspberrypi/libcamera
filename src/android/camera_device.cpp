@@ -199,7 +199,7 @@ void sortCamera3StreamConfigs(std::vector<Camera3StreamConfig> &unsortedConfigs,
 	const auto nv12It = formatToConfigs.find(formats::NV12);
 	if (nv12It != formatToConfigs.end()) {
 		auto &nv12Configs = nv12It->second;
-		const auto &nv12Largest = nv12Configs.back();
+		const Camera3StreamConfig *nv12Largest = nv12Configs.back();
 
 		/*
 		 * If JPEG will be created from NV12 and the size is larger than

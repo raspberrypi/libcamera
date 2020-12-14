@@ -642,6 +642,13 @@ int CameraSensor::setControls(ControlList *ctrls)
 }
 
 /**
+ * \fn CameraSensor::device()
+ * \brief Retrieve the camera sensor device
+ * \todo Remove this function by integrating DelayedControl with CameraSensor
+ * \return The camera sensor device
+ */
+
+/**
  * \fn CameraSensor::properties()
  * \brief Retrieve the camera sensor properties
  * \return The list of camera sensor properties

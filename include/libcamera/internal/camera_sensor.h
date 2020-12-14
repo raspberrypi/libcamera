@@ -61,6 +61,8 @@ public:
 	ControlList getControls(const std::vector<uint32_t> &ids);
 	int setControls(ControlList *ctrls);
 
+	V4L2Subdevice *device() { return subdev_.get(); }
+
 	const ControlList &properties() const { return properties_; }
 	int sensorInfo(CameraSensorInfo *info) const;
 

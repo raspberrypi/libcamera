@@ -92,6 +92,8 @@ public:
 
 private:
 	void setMode(const CameraSensorInfo &sensorInfo);
+	bool validateSensorControls();
+	bool validateIspControls();
 	void queueRequest(const ControlList &controls);
 	void returnEmbeddedBuffer(unsigned int bufferId);
 	void prepareISP(unsigned int bufferId);
@@ -289,6 +291,18 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	sensorCtrls_ = entityControls.at(0);
 	ispCtrls_ = entityControls.at(1);
+
+	if (!validateSensorControls()) {
+		LOG(IPARPI, Error) << "Sensor control validation failed.";
+		result->operation = RPi::IPA_CONFIG_FAILED;
+		return;
+	}
+
+	if (!validateIspControls()) {
+		LOG(IPARPI, Error) << "ISP control validation failed.";
+		result->operation = RPi::IPA_CONFIG_FAILED;
+		return;
+	}
 
 	/* Setup a metadata ControlList to output metadata. */
 	libcameraMetadata_ = ControlList(controls::controls);
@@ -504,6 +518,51 @@ void IPARPi::reportMetadata()
 			m[i] = ccmStatus->matrix[i];
 		libcameraMetadata_.set(controls::ColourCorrectionMatrix, m);
 	}
+}
+
+bool IPARPi::validateSensorControls()
+{
+	static const uint32_t ctrls[] = {
+		V4L2_CID_ANALOGUE_GAIN,
+		V4L2_CID_EXPOSURE
+	};
+
+	for (auto c : ctrls) {
+		if (sensorCtrls_.find(c) == sensorCtrls_.end()) {
+			LOG(IPARPI, Error) << "Unable to find sensor control "
+					   << utils::hex(c);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool IPARPi::validateIspControls()
+{
+	static const uint32_t ctrls[] = {
+		V4L2_CID_RED_BALANCE,
+		V4L2_CID_BLUE_BALANCE,
+		V4L2_CID_DIGITAL_GAIN,
+		V4L2_CID_USER_BCM2835_ISP_CC_MATRIX,
+		V4L2_CID_USER_BCM2835_ISP_GAMMA,
+		V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL,
+		V4L2_CID_USER_BCM2835_ISP_GEQ,
+		V4L2_CID_USER_BCM2835_ISP_DENOISE,
+		V4L2_CID_USER_BCM2835_ISP_SHARPEN,
+		V4L2_CID_USER_BCM2835_ISP_DPC,
+		V4L2_CID_USER_BCM2835_ISP_LENS_SHADING
+	};
+
+	for (auto c : ctrls) {
+		if (ispCtrls_.find(c) == ispCtrls_.end()) {
+			LOG(IPARPI, Error) << "Unable to find ISP control "
+					   << utils::hex(c);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /*
@@ -891,18 +950,6 @@ void IPARPi::processStats(unsigned int bufferId)
 
 void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 {
-	const auto gainR = ispCtrls_.find(V4L2_CID_RED_BALANCE);
-	if (gainR == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find red gain control";
-		return;
-	}
-
-	const auto gainB = ispCtrls_.find(V4L2_CID_BLUE_BALANCE);
-	if (gainB == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find blue gain control";
-		return;
-	}
-
 	LOG(IPARPI, Debug) << "Applying WB R: " << awbStatus->gain_r << " B: "
 			   << awbStatus->gain_b;
 
@@ -917,16 +964,6 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
 	int32_t exposureLines = helper_->ExposureLines(agcStatus->shutter_time);
 
-	if (sensorCtrls_.find(V4L2_CID_ANALOGUE_GAIN) == sensorCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find analogue gain control";
-		return;
-	}
-
-	if (sensorCtrls_.find(V4L2_CID_EXPOSURE) == sensorCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find exposure control";
-		return;
-	}
-
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << agcStatus->shutter_time
 			   << " (Shutter lines: " << exposureLines << ") Gain: "
 			   << agcStatus->analogue_gain << " (Gain Code: "
@@ -938,23 +975,14 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 
 void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_DIGITAL_GAIN) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find digital gain control";
-		return;
-	}
-
 	ctrls.set(V4L2_CID_DIGITAL_GAIN,
 		  static_cast<int32_t>(dgStatus->digital_gain * 1000));
 }
 
 void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_CC_MATRIX) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find CCM control";
-		return;
-	}
-
 	bcm2835_isp_custom_ccm ccm;
+
 	for (int i = 0; i < 9; i++) {
 		ccm.ccm.ccm[i / 3][i % 3].den = 1000;
 		ccm.ccm.ccm[i / 3][i % 3].num = 1000 * ccmStatus->matrix[i];
@@ -970,12 +998,8 @@ void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 
 void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_GAMMA) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find Gamma control";
-		return;
-	}
-
 	struct bcm2835_isp_gamma gamma;
+
 	gamma.enabled = 1;
 	for (int i = 0; i < CONTRAST_NUM_POINTS; i++) {
 		gamma.x[i] = contrastStatus->points[i].x;
@@ -989,12 +1013,8 @@ void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList
 
 void IPARPi::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find black level control";
-		return;
-	}
-
 	bcm2835_isp_black_level blackLevel;
+
 	blackLevel.enabled = 1;
 	blackLevel.black_level_r = blackLevelStatus->black_level_r;
 	blackLevel.black_level_g = blackLevelStatus->black_level_g;
@@ -1007,12 +1027,8 @@ void IPARPi::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, Co
 
 void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_GEQ) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find geq control";
-		return;
-	}
-
 	bcm2835_isp_geq geq;
+
 	geq.enabled = 1;
 	geq.offset = geqStatus->offset;
 	geq.slope.den = 1000;
@@ -1025,12 +1041,8 @@ void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 
 void IPARPi::applyDenoise(const struct SdnStatus *denoiseStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_DENOISE) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find denoise control";
-		return;
-	}
-
 	bcm2835_isp_denoise denoise;
+
 	denoise.enabled = 1;
 	denoise.constant = denoiseStatus->noise_constant;
 	denoise.slope.num = 1000 * denoiseStatus->noise_slope;
@@ -1045,12 +1057,8 @@ void IPARPi::applyDenoise(const struct SdnStatus *denoiseStatus, ControlList &ct
 
 void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_SHARPEN) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find sharpen control";
-		return;
-	}
-
 	bcm2835_isp_sharpen sharpen;
+
 	sharpen.enabled = 1;
 	sharpen.threshold.num = 1000 * sharpenStatus->threshold;
 	sharpen.threshold.den = 1000;
@@ -1066,12 +1074,8 @@ void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList
 
 void IPARPi::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_DPC) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find DPC control";
-		return;
-	}
-
 	bcm2835_isp_dpc dpc;
+
 	dpc.enabled = 1;
 	dpc.strength = dpcStatus->strength;
 
@@ -1082,11 +1086,6 @@ void IPARPi::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
 
 void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 {
-	if (ispCtrls_.find(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING) == ispCtrls_.end()) {
-		LOG(IPARPI, Error) << "Can't find LS control";
-		return;
-	}
-
 	/*
 	 * Program lens shading tables into pipeline.
 	 * Choose smallest cell size that won't exceed 63x48 cells.

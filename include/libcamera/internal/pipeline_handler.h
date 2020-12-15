@@ -42,7 +42,6 @@ public:
 	}
 	virtual ~CameraData() = default;
 
-	Camera *camera_;
 	PipelineHandler *pipe_;
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;

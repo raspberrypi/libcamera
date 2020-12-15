@@ -61,16 +61,6 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
- * \var CameraData::camera_
- * \brief The camera related to this CameraData instance
- *
- * The camera_ pointer provides access to the Camera object that this instance
- * is related to. It is set when the Camera is registered with
- * PipelineHandler::registerCamera() and remains valid until the CameraData
- * instance is destroyed.
- */
-
-/**
  * \var CameraData::pipe_
  * \brief The pipeline handler related to this CameraData instance
  *
@@ -493,7 +483,6 @@ void PipelineHandler::completeRequest(Request *request)
 void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
 				     std::unique_ptr<CameraData> data)
 {
-	data->camera_ = camera.get();
 	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
 

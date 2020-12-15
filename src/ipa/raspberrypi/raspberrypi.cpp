@@ -113,7 +113,7 @@ private:
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
-	ControlInfoMap unicamCtrls_;
+	ControlInfoMap sensorCtrls_;
 	ControlInfoMap ispCtrls_;
 	ControlList libcameraMetadata_;
 
@@ -177,7 +177,7 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	metadata.Get("agc.status", agcStatus);
 	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
-		ControlList ctrls(unicamCtrls_);
+		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		result->controls.emplace_back(ctrls);
 		result->operation |= RPi::IPA_CONFIG_SENSOR;
@@ -287,7 +287,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	result->operation = 0;
 
-	unicamCtrls_ = entityControls.at(0);
+	sensorCtrls_ = entityControls.at(0);
 	ispCtrls_ = entityControls.at(1);
 
 	/* Setup a metadata ControlList to output metadata. */
@@ -364,7 +364,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		controllerInit_ = true;
 
 		/* Supply initial values for gain and exposure. */
-		ControlList ctrls(unicamCtrls_);
+		ControlList ctrls(sensorCtrls_);
 		AgcStatus agcStatus;
 		agcStatus.shutter_time = DefaultExposureTime;
 		agcStatus.analogue_gain = DefaultAnalogueGain;
@@ -879,7 +879,7 @@ void IPARPi::processStats(unsigned int bufferId)
 
 	struct AgcStatus agcStatus;
 	if (rpiMetadata_.Get("agc.status", agcStatus) == 0) {
-		ControlList ctrls(unicamCtrls_);
+		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 
 		IPAOperationData op;
@@ -917,12 +917,12 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
 	int32_t exposureLines = helper_->ExposureLines(agcStatus->shutter_time);
 
-	if (unicamCtrls_.find(V4L2_CID_ANALOGUE_GAIN) == unicamCtrls_.end()) {
+	if (sensorCtrls_.find(V4L2_CID_ANALOGUE_GAIN) == sensorCtrls_.end()) {
 		LOG(IPARPI, Error) << "Can't find analogue gain control";
 		return;
 	}
 
-	if (unicamCtrls_.find(V4L2_CID_EXPOSURE) == unicamCtrls_.end()) {
+	if (sensorCtrls_.find(V4L2_CID_EXPOSURE) == sensorCtrls_.end()) {
 		LOG(IPARPI, Error) << "Can't find exposure control";
 		return;
 	}

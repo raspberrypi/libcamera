@@ -145,10 +145,6 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
-	int initLinks();
-
-	int createCamera(MediaEntity *sensor);
-
 	void bufferReady(FrameBuffer *buffer);
 	void converterDone(FrameBuffer *input, FrameBuffer *output);
 

@@ -17,6 +17,7 @@
 
 #include <libcamera/property_ids.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
@@ -178,10 +179,6 @@ int CameraSensor::init()
 	if (ret < 0)
 		return ret;
 
-	ret = initProperties();
-	if (ret)
-		return ret;
-
 	/* Enumerate, sort and cache media bus codes and sizes. */
 	formats_ = subdev_->formats(pad_);
 	if (formats_.empty()) {
@@ -209,6 +206,10 @@ int CameraSensor::init()
 	 * thus the last element of the vector.
 	 */
 	resolution_ = sizes_.back();
+
+	ret = initProperties();
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -305,6 +306,33 @@ int CameraSensor::initProperties()
 		crop.x -= bounds.x;
 		crop.y -= bounds.y;
 		properties_.set(properties::PixelArrayActiveAreas, { crop });
+	}
+
+	/* Color filter array pattern, register only for RAW sensors. */
+	for (const auto &format : formats_) {
+		unsigned int mbusCode = format.first;
+		BayerFormat bayerFormat = BayerFormat::fromMbusCode(mbusCode);
+		if (!bayerFormat.isValid())
+			continue;
+
+		int32_t cfa;
+		switch (bayerFormat.order) {
+		case BayerFormat::BGGR:
+			cfa = properties::draft::BGGR;
+			break;
+		case BayerFormat::GBRG:
+			cfa = properties::draft::GBRG;
+			break;
+		case BayerFormat::GRBG:
+			cfa = properties::draft::GRBG;
+			break;
+		case BayerFormat::RGGB:
+			cfa = properties::draft::RGGB;
+			break;
+		}
+
+		properties_.set(properties::draft::ColorFilterArrangement, cfa);
+		break;
 	}
 
 	return 0;

@@ -8,6 +8,9 @@
 #include "libcamera/internal/bayer_format.h"
 
 #include <map>
+#include <unordered_map>
+
+#include <linux/media-bus-format.h>
 
 #include <libcamera/transform.h>
 
@@ -140,6 +143,41 @@ const std::map<BayerFormat, V4L2PixelFormat, BayerFormatComparator> bayerToV4l2{
 	{ { BayerFormat::RGGB, 16, BayerFormat::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) },
 };
 
+const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
+	{ MEDIA_BUS_FMT_SBGGR8_1X8, { BayerFormat::BGGR, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG8_1X8, { BayerFormat::GBRG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG8_1X8, { BayerFormat::GRBG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB8_1X8, { BayerFormat::RGGB, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8, { BayerFormat::BGGR, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8, { BayerFormat::GBRG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8, { BayerFormat::GRBG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8, { BayerFormat::RGGB, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8, { BayerFormat::BGGR, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8, { BayerFormat::GBRG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8, { BayerFormat::GRBG, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8, { BayerFormat::RGGB, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE, { BayerFormat::BGGR, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE, { BayerFormat::BGGR, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE, { BayerFormat::BGGR, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE, { BayerFormat::BGGR, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, { BayerFormat::BGGR, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, { BayerFormat::GBRG, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, { BayerFormat::GRBG, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, { BayerFormat::RGGB, 10, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR12_1X12, { BayerFormat::BGGR, 12, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG12_1X12, { BayerFormat::GBRG, 12, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG12_1X12, { BayerFormat::GRBG, 12, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB12_1X12, { BayerFormat::RGGB, 12, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR14_1X14, { BayerFormat::BGGR, 14, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG14_1X14, { BayerFormat::GBRG, 14, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG14_1X14, { BayerFormat::GRBG, 14, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB14_1X14, { BayerFormat::RGGB, 14, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SBGGR16_1X16, { BayerFormat::BGGR, 16, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGBRG16_1X16, { BayerFormat::GBRG, 16, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SGRBG16_1X16, { BayerFormat::GRBG, 16, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_SRGGB16_1X16, { BayerFormat::RGGB, 16, BayerFormat::None } },
+};
+
 } /* namespace */
 
 /**
@@ -167,6 +205,23 @@ BayerFormat::BayerFormat(V4L2PixelFormat v4l2Format)
 		bitDepth = 0;
 	else
 		*this = it->second;
+}
+
+/**
+ * \brief Retrieve the BayerFormat associated with a media bus code
+ * \param[in] mbusCode The media bus code to convert into a BayerFormat
+ *
+ * The media bus code numeric identifiers are defined by the V4L2 specification.
+ */
+const BayerFormat &BayerFormat::fromMbusCode(unsigned int mbusCode)
+{
+	static BayerFormat empty;
+
+	const auto it = mbusCodeToBayer.find(mbusCode);
+	if (it == mbusCodeToBayer.end())
+		return empty;
+	else
+		return it->second;
 }
 
 /**

@@ -9,6 +9,7 @@
 #include "camera_ops.h"
 #include "post_processor.h"
 
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <sys/mman.h>
@@ -1032,15 +1033,23 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_JPEG_MAX_SIZE, &maxJpegBufferSize_, 1);
 
 	/* Sensor static metadata. */
+	std::array<int32_t, 2> pixelArraySize;
 	{
-		const Size &size =
-			properties.get(properties::PixelArraySize);
-		std::vector<int32_t> data{
-			static_cast<int32_t>(size.width),
-			static_cast<int32_t>(size.height),
-		};
+		const Size &size = properties.get(properties::PixelArraySize);
+		pixelArraySize[0] = size.width;
+		pixelArraySize[1] = size.height;
 		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
-					  data.data(), data.size());
+					  pixelArraySize.data(), pixelArraySize.size());
+	}
+
+	if (properties.contains(properties::UnitCellSize)) {
+		const Size &cellSize = properties.get<Size>(properties::UnitCellSize);
+		std::array<float, 2> physicalSize{
+			cellSize.width * pixelArraySize[0] / 1e6f,
+			cellSize.height * pixelArraySize[1] / 1e6f
+		};
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PHYSICAL_SIZE,
+					  physicalSize.data(), physicalSize.size());
 	}
 
 	{
@@ -1087,13 +1096,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_AVAILABLE_TEST_PATTERN_MODES,
 				  testPatterModes.data(),
 				  testPatterModes.size());
-
-	std::vector<float> physicalSize = {
-		2592, 1944,
-	};
-	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PHYSICAL_SIZE,
-				  physicalSize.data(),
-				  physicalSize.size());
 
 	uint8_t timestampSource = ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN;
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE,

@@ -19,6 +19,7 @@
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
@@ -407,6 +408,16 @@ void CameraSensor::initVimcDefaultProperties()
 	activeArea_ = Rectangle(pixelArraySize_);
 }
 
+void CameraSensor::initStaticProperties()
+{
+	const CameraSensorProperties *props = CameraSensorProperties::get(model_);
+	if (!props)
+		return;
+
+	/* Register the properties retrieved from the sensor database. */
+	properties_.set(properties::UnitCellSize, props->unitCellSize);
+}
+
 int CameraSensor::initProperties()
 {
 	/*
@@ -444,7 +455,10 @@ int CameraSensor::initProperties()
 	if (ret)
 		return ret;
 
-	/* Retrieve and store the camera sensor properties. */
+	/* Initialize the static properties from the sensor database. */
+	initStaticProperties();
+
+	/* Retrieve and register properties from the kernel interface. */
 	const ControlInfoMap &controls = subdev_->controls();
 	int32_t propertyValue;
 

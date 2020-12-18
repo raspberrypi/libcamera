@@ -77,6 +77,7 @@ private:
 	int generateId();
 	int validateSensorDriver();
 	void initVimcDefaultProperties();
+	void initStaticProperties();
 	int initProperties();
 
 	const MediaEntity *entity_;

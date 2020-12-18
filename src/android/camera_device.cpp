@@ -897,9 +897,12 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_SENSITIVITY_RANGE,
 				  &sensitivityRange, 2);
 
-	uint16_t filterArr = ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_GRBG;
-	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT,
-				  &filterArr, 1);
+	/* Report the color filter arrangement if the camera reports it. */
+	if (properties.contains(properties::draft::ColorFilterArrangement)) {
+		uint8_t filterArr = properties.get(properties::draft::ColorFilterArrangement);
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT,
+					  &filterArr, 1);
+	}
 
 	int64_t exposureTimeRange[] = {
 		100000, 200000000,

@@ -26,7 +26,7 @@ def generate_cpp(controls):
     enum_doc_start_template = string.Template('''/**
  * \\enum ${name}Enum
  * \\brief Supported ${name} values''')
-    enum_doc_value_template = string.Template(''' * \\var ${name}Enum::${value}
+    enum_doc_value_template = string.Template(''' * \\var ${value}
 ${description}''')
     doc_template = string.Template('''/**
  * \\var ${name}

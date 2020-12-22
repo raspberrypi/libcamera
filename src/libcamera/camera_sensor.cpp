@@ -207,9 +207,93 @@ int CameraSensor::init()
 	 */
 	resolution_ = sizes_.back();
 
+	ret = validateSensorDriver();
+	if (ret)
+		return ret;
+
 	ret = initProperties();
 	if (ret)
 		return ret;
+
+	return 0;
+}
+
+int CameraSensor::validateSensorDriver()
+{
+	/*
+	 * Make sure the sensor driver supports the mandatory controls
+	 * required by the CameraSensor class.
+	 * - V4L2_CID_PIXEL_RATE is used to calculate the sensor timings
+	 * - V4L2_CID_HBLANK is used to calculate the line length
+	 */
+	const std::vector<uint32_t> mandatoryControls{
+		V4L2_CID_PIXEL_RATE,
+		V4L2_CID_HBLANK,
+	};
+
+	ControlList ctrls = subdev_->getControls(mandatoryControls);
+	if (ctrls.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Mandatory V4L2 controls not available";
+		LOG(CameraSensor, Error)
+			<< "The sensor kernel driver needs to be fixed";
+		LOG(CameraSensor, Error)
+			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
+		return -EINVAL;
+	}
+
+	/*
+	 * Optional controls are used to register optional sensor properties. If
+	 * not present, some values will be defaulted.
+	 */
+	const std::vector<uint32_t> optionalControls{
+		V4L2_CID_CAMERA_ORIENTATION,
+		V4L2_CID_CAMERA_SENSOR_ROTATION,
+	};
+
+	ctrls = subdev_->getControls(optionalControls);
+	if (ctrls.empty())
+		LOG(CameraSensor, Debug) << "Optional V4L2 controls not supported";
+
+	/*
+	 * Make sure the required selection targets are supported.
+	 *
+	 * Failures in reading any of the targets are not deemed to be fatal,
+	 * but some properties and features, like constructing a
+	 * CameraSensorInfo for the IPA module, won't be supported.
+	 *
+	 * \todo Make support for selection targets mandatory as soon as all
+	 * test platforms have been updated.
+	 */
+	int err = 0;
+	Rectangle rect;
+	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &rect);
+	if (ret) {
+		LOG(CameraSensor, Warning)
+			<< "Failed to retrieve the readable pixel array size";
+		err = -EINVAL;
+	}
+
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
+	if (ret) {
+		LOG(CameraSensor, Warning)
+			<< "Failed to retrieve the active pixel array size";
+		err = -EINVAL;
+	}
+
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &rect);
+	if (ret) {
+		LOG(CameraSensor, Warning)
+			<< "Failed to retrieve the sensor crop rectangle";
+		err = -EINVAL;
+	}
+
+	if (err) {
+		LOG(CameraSensor, Warning)
+			<< "The sensor kernel driver needs to be fixed";
+		LOG(CameraSensor, Warning)
+			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
+	}
 
 	return 0;
 }

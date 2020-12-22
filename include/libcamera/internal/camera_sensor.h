@@ -69,6 +69,7 @@ protected:
 
 private:
 	int generateId();
+	int validateSensorDriver();
 	int initProperties();
 
 	const MediaEntity *entity_;

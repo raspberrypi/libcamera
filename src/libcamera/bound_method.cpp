@@ -26,22 +26,22 @@ namespace libcamera {
  * between a sender and a receiver. It applies to Signal::emit() and
  * Object::invokeMethod().
  *
- * \var ConnectionType::ConnectionTypeAuto
+ * \var ConnectionTypeAuto
  * \brief If the sender and the receiver live in the same thread,
  * ConnectionTypeDirect is used. Otherwise ConnectionTypeQueued is used.
  *
- * \var ConnectionType::ConnectionTypeDirect
+ * \var ConnectionTypeDirect
  * \brief The receiver is invoked immediately and synchronously in the sender's
  * thread.
  *
- * \var ConnectionType::ConnectionTypeQueued
+ * \var ConnectionTypeQueued
  * \brief The receiver is invoked asynchronously
  *
  * Invoke the receiver asynchronously in its thread when control returns to the
  * thread's event loop. The sender proceeds without waiting for the invocation
  * to complete.
  *
- * \var ConnectionType::ConnectionTypeBlocking
+ * \var ConnectionTypeBlocking
  * \brief The receiver is invoked synchronously
  *
  * If the sender and the receiver live in the same thread, this is equivalent to

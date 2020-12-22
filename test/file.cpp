@@ -49,6 +49,11 @@ protected:
 			return TestFail;
 		}
 
+		if (File::exists("/dev")) {
+			cerr << "Directories should not be treated as files" << endl;
+			return TestFail;
+		}
+
 		/* Test unnamed file. */
 		File file;
 

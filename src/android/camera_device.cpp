@@ -853,7 +853,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	/* Sensor static metadata. */
 	if (properties.contains(properties::PixelArraySize)) {
 		const Size &size =
-			properties.get<Size>(properties::PixelArraySize);
+			properties.get(properties::PixelArraySize);
 		std::vector<int32_t> data{
 			static_cast<int32_t>(size.width),
 			static_cast<int32_t>(size.height),
@@ -872,7 +872,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	if (properties.contains(properties::PixelArrayActiveAreas)) {
 		const Span<const Rectangle> &rects =
-			properties.get<Span<const Rectangle>>(properties::PixelArrayActiveAreas);
+			properties.get(properties::PixelArrayActiveAreas);
 		std::vector<int32_t> data{
 			static_cast<int32_t>(rects[0].x),
 			static_cast<int32_t>(rects[0].y),

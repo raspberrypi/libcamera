@@ -173,6 +173,12 @@ void ControlSerializer::store(const ControlInfo &info, ByteStreamBuffer &buffer)
 int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 				 ByteStreamBuffer &buffer)
 {
+	if (isCached(infoMap)) {
+		LOG(Serializer, Debug)
+			<< "Skipping already serialized ControlInfoMap";
+		return 0;
+	}
+
 	/* Compute entries and data required sizes. */
 	size_t entriesSize = infoMap.size()
 			   * sizeof(struct ipa_control_info_entry);
@@ -347,6 +353,12 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		return {};
 	}
 
+	auto iter = infoMaps_.find(hdr->handle);
+	if (iter != infoMaps_.end()) {
+		LOG(Serializer, Debug) << "Use cached ControlInfoMap";
+		return iter->second;
+	}
+
 	if (hdr->version != IPA_CONTROLS_FORMAT_VERSION) {
 		LOG(Serializer, Error)
 			<< "Unsupported controls format version "
@@ -483,6 +495,20 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 	}
 
 	return ctrls;
+}
+
+/**
+ * \brief Check if a ControlInfoMap is cached
+ * \param[in] infoMap The ControlInfoMap to check
+ *
+ * The ControlSerializer caches all ControlInfoMaps that it has (de)serialized.
+ * This function checks if \a infoMap is in the cache.
+ *
+ * \return True if \a infoMap is in the cache or false otherwise
+ */
+bool ControlSerializer::isCached(const ControlInfoMap &infoMap)
+{
+	return infoMapHandles_.count(&infoMap);
 }
 
 } /* namespace libcamera */

@@ -33,6 +33,8 @@ public:
 	template<typename T>
 	T deserialize(ByteStreamBuffer &buffer);
 
+	bool isCached(const ControlInfoMap &infoMap);
+
 private:
 	static size_t binarySize(const ControlValue &value);
 	static size_t binarySize(const ControlInfo &info);

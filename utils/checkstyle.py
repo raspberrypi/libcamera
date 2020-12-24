@@ -236,9 +236,10 @@ class Commit:
         return self.__title
 
     def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
+        diff = subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
                                '--', '%s/%s' % (top_level, filename)],
                               stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return parse_diff(diff.splitlines(True))
 
     def get_file(self, filename):
         return subprocess.run(['git', 'show', '%s:%s' % (self.commit, filename)],
@@ -256,9 +257,10 @@ class StagedChanges(Commit):
         self.__files = [CommitFile(f) for f in ret.splitlines()]
 
     def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '--staged', '--',
+        diff = subprocess.run(['git', 'diff', '--staged', '--',
                                '%s/%s' % (top_level, filename)],
                               stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return parse_diff(diff.splitlines(True))
 
 
 class Amendment(StagedChanges):
@@ -276,9 +278,10 @@ class Amendment(StagedChanges):
         self.__files = [CommitFile(f) for f in ret.splitlines()]
 
     def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
+        diff = subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
                                '%s/%s' % (top_level, filename)],
                               stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return parse_diff(diff.splitlines(True))
 
 
 # ------------------------------------------------------------------------------
@@ -657,9 +660,7 @@ class StripTrailingSpaceFormatter(Formatter):
 
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.
-    diff = commit.get_diff(top_level, filename)
-    diff = diff.splitlines(True)
-    commit_diff = parse_diff(diff)
+    commit_diff = commit.get_diff(top_level, filename)
 
     lines = []
     for hunk in commit_diff:

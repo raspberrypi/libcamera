@@ -126,14 +126,15 @@ class SimplePipelineHandler;
 struct SimplePipelineInfo {
 	const char *driver;
 	const char *converter;
+	unsigned int numStreams;
 };
 
 namespace {
 
 static const SimplePipelineInfo supportedDevices[] = {
-	{ "imx7-csi", "pxp" },
-	{ "qcom-camss", nullptr },
-	{ "sun6i-csi", nullptr },
+	{ "imx7-csi", "pxp", 1 },
+	{ "qcom-camss", nullptr, 1 },
+	{ "sun6i-csi", nullptr, 1 },
 };
 
 } /* namespace */
@@ -141,7 +142,9 @@ static const SimplePipelineInfo supportedDevices[] = {
 class SimpleCameraData : public CameraData
 {
 public:
-	SimpleCameraData(SimplePipelineHandler *pipe, MediaEntity *sensor);
+	SimpleCameraData(SimplePipelineHandler *pipe,
+			 const SimplePipelineInfo *info,
+			 MediaEntity *sensor);
 
 	bool isValid() const { return sensor_ != nullptr; }
 
@@ -259,12 +262,11 @@ private:
  */
 
 SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
+				   const SimplePipelineInfo *info,
 				   MediaEntity *sensor)
-	: CameraData(pipe)
+	: CameraData(pipe), streams_(info->numStreams)
 {
 	int ret;
-
-	streams_.resize(1);
 
 	/*
 	 * Walk the pipeline towards the video node and store all entities
@@ -868,24 +870,25 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
+	const SimplePipelineInfo *info = nullptr;
 	MediaDevice *converter = nullptr;
 
-	for (const SimplePipelineInfo &info : supportedDevices) {
-		DeviceMatch dm(info.driver);
+	for (const SimplePipelineInfo &inf : supportedDevices) {
+		DeviceMatch dm(inf.driver);
 		media_ = acquireMediaDevice(enumerator, dm);
-		if (!media_)
-			continue;
-
-		if (!info.converter)
+		if (media_) {
+			info = &inf;
 			break;
-
-		DeviceMatch converterMatch(info.converter);
-		converter = acquireMediaDevice(enumerator, converterMatch);
-		break;
+		}
 	}
 
 	if (!media_)
 		return false;
+
+	if (info->converter) {
+		DeviceMatch converterMatch(info->converter);
+		converter = acquireMediaDevice(enumerator, converterMatch);
+	}
 
 	/* Locate the sensors. */
 	std::vector<MediaEntity *> sensors;
@@ -930,7 +933,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 	for (MediaEntity *sensor : sensors) {
 		std::unique_ptr<SimpleCameraData> data =
-			std::make_unique<SimpleCameraData>(this, sensor);
+			std::make_unique<SimpleCameraData>(this, info, sensor);
 		if (!data->isValid()) {
 			LOG(SimplePipeline, Error)
 				<< "No valid pipeline for sensor '"

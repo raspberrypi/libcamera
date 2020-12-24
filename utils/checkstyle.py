@@ -320,6 +320,50 @@ class CommitIssue(object):
         self.msg = msg
 
 
+class HeaderAddChecker(CommitChecker):
+    @classmethod
+    def check(cls, commit, top_level):
+        issues = []
+
+        meson_files = [f for f in commit.files('M')
+                       if os.path.basename(f) == 'meson.build']
+
+        for filename in commit.files('A'):
+            if not filename.startswith('include/libcamera/') or \
+               not filename.endswith('.h'):
+                continue
+
+            meson = os.path.dirname(filename) + '/meson.build'
+            header = os.path.basename(filename)
+
+            issue = CommitIssue('Header %s added without corresponding update to %s' %
+                                (filename, meson))
+
+            if meson not in meson_files:
+                issues.append(issue)
+                continue
+
+            diff = commit.get_diff(top_level, meson)
+            found = False
+
+            for hunk in diff:
+                for line in hunk.lines:
+                    if line[0] != '+':
+                        continue
+
+                    if line.find("'%s'" % header) != -1:
+                        found = True
+                        break
+
+                if found:
+                    break
+
+            if not found:
+                issues.append(issue)
+
+        return issues
+
+
 # ------------------------------------------------------------------------------
 # Style Checkers
 #

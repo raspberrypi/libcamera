@@ -1,0 +1,191 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+/*
+ * Things that can be defined here (and in other mojom files):
+ * - consts
+ * - enums
+ * - structs
+ *
+ * Attributes:
+ * - skipHeader - structs only, and only in core.mojom
+ *   - designate that this struct shall not have a C++ header definition
+ *     generated
+ * - skipSerdes - structs only, and only in core.mojom
+ *   - designate that this struct shall not have a (de)serializer generated
+ *   - all fields need a (de)serializer to be defined, either hand-written
+ *     in ipa_data_serializer.h
+ * - hasFd - struct fields or empty structs only
+ *   - designate that this field or empty struct contains a FileDescriptor
+ *
+ * Rules:
+ * - Any struct that is used in a struct definition in mojom must also be
+ *   defined in mojom
+ *   - If the struct has both a definition in a C++ header and a (de)serializer
+ *     in ipa_data_serializer.h, then the struct shall be declared as empty,
+ *     with both the [skipHeader] and [skipSerdes] attributes
+ *   - If the struct only has a definition in a C++ header, but no
+ *     (de)serializer, then the struct definition should have the [skipHeader]
+ *     attribute
+ * - Nested structures (e.g. FrameBuffer::Plane) cannot be defined in mojom.
+ *   - Avoid them, by defining them in a header in C++ and a (de)serializer in
+ *     ipa_data_serializer.h
+ * - If a struct is in an array/map inside a struct, then the struct that is
+ *   the member of the array/map does not need a mojom definition if it is
+ *   defined in a C++ header.
+ *   - This can be used to embed nested structures. The C++ double colon is
+ *     replaced with a dot (e.g. FrameBuffer::Plane -> FrameBuffer.Plane)
+ *   - The struct must still be defined in a header in C++ and a (de)serializer
+ *     implemented in ipa_data_serializer.h, as it cannot be defined in mojom
+ * - [skipHeader] and [skipSerdes] only work here in core.mojom.
+ * - If a struct definition has [skipHeader], then the header where the
+ *   struct is defined must be #included (or the struct forward-declared) in
+ *   ipa_interface.h
+ * - If a field in a struct has a FileDescriptor, but is not explicitly
+ *   defined so in mojom, then the field must be marked with the [hasFd]
+ *   attribute.
+ *
+ * \todo Generate documentation from Doxygen comments in .mojom files
+ * \todo Figure out how to keep the skipHeader structs in sync with their
+ * C++ definitions, and the skipSerdes structs in sync with their
+ * (de)serializers
+ */
+[skipSerdes, skipHeader] struct ControlInfoMap {};
+[skipSerdes, skipHeader] struct ControlList {};
+[skipSerdes, skipHeader] struct FileDescriptor {};
+
+[skipHeader] struct Point {
+	int32 x;
+	int32 y;
+};
+
+[skipHeader] struct Size {
+	uint32 width;
+	uint32 height;
+};
+
+[skipHeader] struct SizeRange {
+	Size min;
+	Size max;
+	uint32 hStep;
+	uint32 vStep;
+};
+
+[skipHeader] struct Rectangle {
+	int32 x;
+	int32 y;
+	uint32 width;
+	uint32 height;
+};
+
+[skipHeader] struct CameraSensorInfo {
+	string model;
+
+	uint32 bitsPerPixel;
+
+	Size activeAreaSize;
+	Rectangle analogCrop;
+	Size outputSize;
+
+	uint64 pixelRate;
+	uint32 lineLength;
+
+	uint32 minFrameLength;
+	uint32 maxFrameLength;
+};
+
+/**
+ * \struct IPABuffer
+ * \brief Buffer information for the IPA interface
+ *
+ * The IPABuffer structure associates buffer memory with a unique ID. It is
+ * used to map buffers to the IPA with IPAInterface::mapBuffers(), after which
+ * buffers will be identified by their ID in the IPA interface.
+ */
+
+/**
+ * \var IPABuffer::id
+ * \brief The buffer unique ID
+ *
+ * Buffers mapped to the IPA are identified by numerical unique IDs. The IDs
+ * are chosen by the pipeline handler to fulfil the following constraints:
+ *
+ * - IDs shall be positive integers different than zero
+ * - IDs shall be unique among all mapped buffers
+ *
+ * When buffers are unmapped with IPAInterface::unmapBuffers() their IDs are
+ * freed and may be reused for new buffer mappings.
+ */
+
+/**
+ * \var IPABuffer::planes
+ * \brief The buffer planes description
+ *
+ * Stores the dmabuf handle and length for each plane of the buffer.
+ */
+
+struct IPABuffer {
+	uint32 id;
+	[hasFd] array<FrameBuffer.Plane> planes;
+};
+
+/**
+ * \struct IPASettings
+ * \brief IPA interface initialization settings
+ *
+ * The IPASettings structure stores data passed to the IPAInterface::init()
+ * function. The data contains settings that don't depend on a particular camera
+ * or pipeline configuration and are valid for the whole life time of the IPA
+ * interface.
+ */
+
+/**
+ * \var IPASettings::configurationFile
+ * \brief The name of the IPA configuration file
+ *
+ * This field may be an empty string if the IPA doesn't require a configuration
+ * file.
+ */
+struct IPASettings {
+	string configurationFile;
+};
+
+/**
+ * \struct IPAStream
+ * \brief Stream configuration for the IPA interface
+ *
+ * The IPAStream structure stores stream configuration parameters needed by the
+ * IPAInterface::configure() method. It mirrors the StreamConfiguration class
+ * that is not suitable for this purpose due to not being serializable.
+ */
+
+/**
+ * \var IPAStream::pixelFormat
+ * \brief The stream pixel format
+ */
+
+/**
+ * \var IPAStream::size
+ * \brief The stream size in pixels
+ */
+struct IPAStream {
+	uint32 pixelFormat;
+	Size size;
+};
+
+/**
+ * \fn IPAInterface::init()
+ * \brief Initialise the IPAInterface
+ * \param[in] settings The IPA initialization settings
+ *
+ * This function initializes the IPA interface. It shall be called before any
+ * other function of the IPAInterface. The \a settings carry initialization
+ * parameters that are valid for the whole life time of the IPA interface.
+ */
+
+/**
+ * \fn IPAInterface::stop()
+ * \brief Stop the IPA
+ *
+ * This method informs the IPA module that the camera is stopped. The IPA module
+ * shall release resources prepared in start().
+ */

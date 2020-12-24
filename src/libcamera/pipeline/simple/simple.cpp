@@ -61,7 +61,6 @@ public:
 	SimpleCameraData(SimplePipelineHandler *pipe, MediaEntity *sensor);
 
 	bool isValid() const { return sensor_ != nullptr; }
-	std::set<Stream *> streams() { return { &stream_ }; }
 
 	int init();
 	int setupLinks();
@@ -80,7 +79,7 @@ public:
 		SizeRange outputSizes;
 	};
 
-	Stream stream_;
+	std::vector<Stream> streams_;
 	std::unique_ptr<CameraSensor> sensor_;
 	std::list<Entity> entities_;
 	V4L2VideoDevice *video_;
@@ -168,6 +167,8 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	: CameraData(pipe)
 {
 	int ret;
+
+	streams_.resize(1);
 
 	/*
 	 * Walk the pipeline towards the video node and store all entities
@@ -620,7 +621,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		LOG(SimplePipeline, Debug) << "Using format converter";
 	}
 
-	cfg.setStream(&data->stream_);
+	cfg.setStream(&data->streams_[0]);
 
 	return 0;
 }
@@ -645,7 +646,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
-	unsigned int count = data->stream_.configuration().bufferCount;
+	unsigned int count = data->streams_[0].configuration().bufferCount;
 	int ret;
 
 	if (useConverter_)
@@ -696,7 +697,7 @@ void SimplePipelineHandler::stop(Camera *camera)
 int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 {
 	SimpleCameraData *data = cameraData(camera);
-	Stream *stream = &data->stream_;
+	Stream *stream = &data->streams_[0];
 
 	FrameBuffer *buffer = request->findBuffer(stream);
 	if (!buffer) {
@@ -825,9 +826,13 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 		if (ret < 0)
 			continue;
 
+		std::set<Stream *> streams;
+		std::transform(data->streams_.begin(), data->streams_.end(),
+			       std::inserter(streams, streams.end()),
+			       [](Stream &stream) { return &stream; });
+
 		std::shared_ptr<Camera> camera =
-			Camera::create(this, data->sensor_->id(),
-				       data->streams());
+			Camera::create(this, data->sensor_->id(), streams);
 		registerCamera(std::move(camera), std::move(data));
 		registered = true;
 	}

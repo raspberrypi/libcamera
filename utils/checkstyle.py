@@ -194,6 +194,26 @@ def parse_diff(diff):
 # Commit, Staged Changes & Amendments
 #
 
+class CommitFile:
+    def __init__(self, name):
+        info = name.split()
+        self.__status = info[0][0]
+
+        # For renamed files, store the new name
+        if self.__status == 'R':
+            self.__filename = info[2]
+        else:
+            self.__filename = info[1]
+
+    @property
+    def filename(self):
+        return self.__filename
+
+    @property
+    def status(self):
+        return self.__status
+
+
 class Commit:
     def __init__(self, commit):
         self.commit = commit
@@ -201,16 +221,15 @@ class Commit:
 
     def __parse(self):
         # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-only',
+        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-status',
                               self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         files = ret.splitlines()
-        self.__files = files[1:]
+        self.__files = [CommitFile(f) for f in files[1:]]
         self.__title = files[0]
 
-    @property
-    def files(self):
-        return self.__files
+    def files(self, filter='AM'):
+        return [f.filename for f in self.__files if f.status in filter]
 
     @property
     def title(self):
@@ -231,10 +250,10 @@ class StagedChanges(Commit):
         Commit.__init__(self, '')
 
     def __parse(self):
-        ret = subprocess.run(['git', 'diff', '--staged', '--name-only'],
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-status'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         self.__title = "Staged changes"
-        self.__files = ret.splitlines()
+        self.__files = [CommitFile(f) for f in ret.splitlines()]
 
     def get_diff(self, top_level, filename):
         return subprocess.run(['git', 'diff', '--staged', '--',
@@ -252,9 +271,9 @@ class Amendment(StagedChanges):
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         self.__title = 'Amendment of ' + ret.strip()
         # Extract the list of modified files
-        ret = subprocess.run(['git', 'diff', '--staged', '--name-only', 'HEAD~'],
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-status', 'HEAD~'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        self.__files = ret.splitlines()
+        self.__files = [CommitFile(f) for f in ret.splitlines()]
 
     def get_diff(self, top_level, filename):
         return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
@@ -705,7 +724,7 @@ def check_style(top_level, commit):
     patterns = set()
     patterns.update(StyleChecker.all_patterns())
     patterns.update(Formatter.all_patterns())
-    files = [f for f in commit.files if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
+    files = [f for f in commit.files() if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
     if len(files) == 0:
         print("Commit doesn't touch source files, skipping")
         return 0

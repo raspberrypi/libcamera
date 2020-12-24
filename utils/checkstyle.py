@@ -297,6 +297,30 @@ class ClassRegistry(type):
 
 
 # ------------------------------------------------------------------------------
+# Commit Checkers
+#
+
+class CommitChecker(metaclass=ClassRegistry):
+    subclasses = []
+
+    def __init__(self):
+        pass
+
+    #
+    # Class methods
+    #
+    @classmethod
+    def checkers(cls):
+        for checker in cls.subclasses:
+            yield checker
+
+
+class CommitIssue(object):
+    def __init__(self, msg):
+        self.msg = msg
+
+
+# ------------------------------------------------------------------------------
 # Style Checkers
 #
 
@@ -721,25 +745,29 @@ def check_style(top_level, commit):
     print(commit.title)
     print(separator)
 
+    issues = 0
+
+    # Apply the commit checkers first.
+    for checker in CommitChecker.checkers():
+        for issue in checker.check(commit, top_level):
+            print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
+            issues += 1
+
     # Filter out files we have no checker for.
     patterns = set()
     patterns.update(StyleChecker.all_patterns())
     patterns.update(Formatter.all_patterns())
     files = [f for f in commit.files() if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
-    if len(files) == 0:
-        print("Commit doesn't touch source files, skipping")
-        return 0
 
-    issues = 0
     for f in files:
         issues += check_file(top_level, commit, f)
 
     if issues == 0:
-        print("No style issue detected")
+        print("No issue detected")
     else:
         print('---')
-        print("%u potential style %s detected, please review" % \
-                (issues, 'issue' if issues == 1 else 'issues'))
+        print("%u potential %s detected, please review" %
+              (issues, 'issue' if issues == 1 else 'issues'))
 
     return issues
 

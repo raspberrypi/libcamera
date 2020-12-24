@@ -198,7 +198,7 @@ _style_checkers = []
 
 class StyleCheckerRegistry(type):
     def __new__(cls, clsname, bases, attrs):
-        newclass = super(StyleCheckerRegistry, cls).__new__(cls, clsname, bases, attrs)
+        newclass = super().__new__(cls, clsname, bases, attrs)
         if clsname != 'StyleChecker':
             _style_checkers.append(newclass)
         return newclass
@@ -387,7 +387,7 @@ _formatters = []
 
 class FormatterRegistry(type):
     def __new__(cls, clsname, bases, attrs):
-        newclass = super(FormatterRegistry, cls).__new__(cls, clsname, bases, attrs)
+        newclass = super().__new__(cls, clsname, bases, attrs)
         if clsname != 'Formatter':
             _formatters.append(newclass)
         return newclass

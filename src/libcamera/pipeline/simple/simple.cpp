@@ -38,6 +38,89 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(SimplePipeline)
 
+/* -----------------------------------------------------------------------------
+ *
+ * Overview
+ * --------
+ *
+ * The SimplePipelineHandler relies on generic kernel APIs to control a camera
+ * device, without any device-specific code and with limited device-specific
+ * static data.
+ *
+ * To qualify for support by the simple pipeline handler, a device shall
+ *
+ * - be supported by V4L2 drivers, exposing the Media Controller API, the V4L2
+ *   subdev APIs and the media bus format-based enumeration extension for the
+ *   VIDIOC_ENUM_FMT ioctl ;
+ * - not expose any device-specific API from drivers to userspace ;
+ * - include one or more camera sensor media entities and one or more video
+ *   capture devices ;
+ * - have a capture pipeline with linear paths from the camera sensors to the
+ *   video capture devices ; and
+ * - have an optional memory-to-memory device to perform format conversion
+ *   and/or scaling, exposed as a V4L2 M2M device.
+ *
+ * As devices that require a specific pipeline handler may still match the
+ * above characteristics, the simple pipeline handler doesn't attempt to
+ * automatically determine which devices it can support. It instead relies on
+ * an explicit list of supported devices, provided in the supportedDevices
+ * array.
+ *
+ * When matching a device, the pipeline handler enumerates all camera sensors
+ * and attempts, for each of them, to find a path to a video capture video node.
+ * It does so by traversing the media graph, following the first non permanently
+ * disabled downstream link. If such a path is found, the pipeline handler
+ * creates a corresponding SimpleCameraData instance, and stores the media graph
+ * path in its entities_ list.
+ *
+ * A more complex graph search algorithm could be implemented if a device that
+ * would otherwise be compatible with the pipeline handler isn't correctly
+ * handled by this heuristic.
+ *
+ * Once the camera data instances have been created, the match() function
+ * creates a V4L2Subdevice instance for each entity used by any of the cameras
+ * and stores the instances in SimplePipelineHandler::subdevs_, accessible by
+ * the SimpleCameraData class through the SimplePipelineHandler::subdev()
+ * function. This avoids duplication of subdev instances between different
+ * cameras when the same entity is used in multiple paths. A similar mechanism
+ * is used for V4L2VideoDevice instances, but instances are in this case created
+ * on demand when accessed through SimplePipelineHandler::video() instead of all
+ * in one go at initialization time.
+ *
+ * Finally, all camera data instances are initialized to gather information
+ * about the possible pipeline configurations for the corresponding camera. If
+ * valid pipeline configurations are found, a Camera is registered for the
+ * SimpleCameraData instance.
+ *
+ * Pipeline Configuration
+ * ----------------------
+ *
+ * The simple pipeline handler configures the pipeline by propagating V4L2
+ * subdev formats from the camera sensor to the video node. The format is first
+ * set on the camera sensor's output, using the native camera sensor
+ * resolution. Then, on every link in the pipeline, the format is retrieved on
+ * the link source and set unmodified on the link sink.
+ *
+ * When initializating the camera data, this above procedure is repeated for
+ * every media bus format supported by the camera sensor. Upon reaching the
+ * video node, the pixel formats compatible with the media bus format are
+ * enumerated. Each of those pixel formats corresponds to one possible pipeline
+ * configuration, stored as an instance of SimpleCameraData::Configuration in
+ * the SimpleCameraData::formats_ map.
+ *
+ * Format Conversion and Scaling
+ * -----------------------------
+ *
+ * The capture pipeline isn't expected to include a scaler, and if a scaler is
+ * available, it is ignored when configuring the pipeline. However, the simple
+ * pipeline handler supports optional memory-to-memory converters to scale the
+ * image and convert it to a different pixel format. If such a converter is
+ * present, the pipeline handler enumerates, for each pipeline configuration,
+ * the pixel formats and sizes that the converter can produce for the output of
+ * the capture video node, and stores the information in the outputFormats and
+ * outputSizes of the SimpleCameraData::Configuration structure.
+ */
+
 class SimplePipelineHandler;
 
 struct SimplePipelineInfo {

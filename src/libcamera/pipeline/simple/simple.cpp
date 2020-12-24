@@ -159,6 +159,7 @@ public:
 		uint32_t code;
 		PixelFormat captureFormat;
 		Size captureSize;
+		std::vector<PixelFormat> outputFormats;
 		SizeRange outputSizes;
 	};
 
@@ -167,7 +168,8 @@ public:
 	std::list<Entity> entities_;
 	V4L2VideoDevice *video_;
 
-	std::map<PixelFormat, Configuration> formats_;
+	std::vector<Configuration> configs_;
+	std::map<PixelFormat, const Configuration *> formats_;
 };
 
 class SimpleCameraConfiguration : public CameraConfiguration
@@ -371,13 +373,6 @@ int SimpleCameraData::init()
 				       })
 			<< " ]";
 
-		/*
-		 * Store the configuration in the formats_ map, mapping the
-		 * PixelFormat to the corresponding configuration. Any
-		 * previously stored value is overwritten, as the pipeline
-		 * handler currently doesn't care about how a particular
-		 * PixelFormat is achieved.
-		 */
 		for (const auto &videoFormat : videoFormats) {
 			PixelFormat pixelFormat = videoFormat.first.toPixelFormat();
 			if (!pixelFormat)
@@ -389,21 +384,32 @@ int SimpleCameraData::init()
 			config.captureSize = format.size;
 
 			if (!converter) {
+				config.outputFormats = { pixelFormat };
 				config.outputSizes = config.captureSize;
-				formats_[pixelFormat] = config;
-				continue;
+			} else {
+				config.outputFormats = converter->formats(pixelFormat);
+				config.outputSizes = converter->sizes(format.size);
 			}
 
-			config.outputSizes = converter->sizes(format.size);
-
-			for (PixelFormat fmt : converter->formats(pixelFormat))
-				formats_[fmt] = config;
+			configs_.push_back(config);
 		}
 	}
 
-	if (formats_.empty()) {
+	if (configs_.empty()) {
 		LOG(SimplePipeline, Error) << "No valid configuration found";
 		return -EINVAL;
+	}
+
+	/*
+	 * Map the pixel formats to configurations. Any previously stored value
+	 * is overwritten, as the pipeline handler currently doesn't care about
+	 * how a particular PixelFormat is achieved.
+	 */
+	for (const Configuration &config : configs_) {
+		formats_[config.captureFormat] = &config;
+
+		for (PixelFormat fmt : config.outputFormats)
+			formats_[fmt] = &config;
 	}
 
 	properties_ = sensor_->properties();
@@ -548,7 +554,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		status = Adjusted;
 	}
 
-	pipeConfig_ = &it->second;
+	pipeConfig_ = it->second;
 	if (!pipeConfig_->outputSizes.contains(cfg.size)) {
 		LOG(SimplePipeline, Debug)
 			<< "Adjusting size from " << cfg.size.toString()
@@ -615,7 +621,7 @@ CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera
 		       std::inserter(formats, formats.end()),
 		       [](const auto &format) -> decltype(formats)::value_type {
 			       const PixelFormat &pixelFormat = format.first;
-			       const Size &size = format.second.captureSize;
+			       const Size &size = format.second->captureSize;
 			       return { pixelFormat, { size } };
 		       });
 

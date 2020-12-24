@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# checkstyle.py - A patch style checker script based on astyle or clang-format
+# checkstyle.py - A patch style checker script based on clang-format
 #
 # TODO:
 #
@@ -22,22 +22,8 @@ import shutil
 import subprocess
 import sys
 
-astyle_options = (
-    '-n',
-    '--style=linux',
-    '--indent=force-tab=8',
-    '--attach-namespaces',
-    '--attach-extern-c',
-    '--pad-oper',
-    '--align-pointer=name',
-    '--align-reference=name',
-    '--keep-one-line-blocks',
-    '--max-code-length=120'
-)
-
 dependencies = {
-    'astyle': False,
-    'clang-format': False,
+    'clang-format': True,
     'git': True,
 }
 
@@ -550,7 +536,6 @@ class ShellChecker(StyleChecker):
 #
 
 class Formatter(metaclass=ClassRegistry):
-    enabled = True
     subclasses = []
 
     def __init__(self):
@@ -562,15 +547,11 @@ class Formatter(metaclass=ClassRegistry):
     @classmethod
     def formatters(cls, filename):
         for formatter in cls.subclasses:
-            if not cls.enabled:
-                continue
             if formatter.supports(filename):
                 yield formatter
 
     @classmethod
     def supports(cls, filename):
-        if not cls.enabled:
-            return False
         for pattern in cls.patterns:
             if fnmatch.fnmatch(os.path.basename(filename), pattern):
                 return True
@@ -580,26 +561,12 @@ class Formatter(metaclass=ClassRegistry):
     def all_patterns(cls):
         patterns = set()
         for formatter in cls.subclasses:
-            if not cls.enabled:
-                continue
             patterns.update(formatter.patterns)
 
         return patterns
 
 
-class AStyleFormatter(Formatter):
-    enabled = False
-    patterns = ('*.c', '*.cpp', '*.h')
-
-    @classmethod
-    def format(cls, filename, data):
-        ret = subprocess.run(['astyle', *astyle_options],
-                             input=data.encode('utf-8'), stdout=subprocess.PIPE)
-        return ret.stdout.decode('utf-8')
-
-
 class CLangFormatter(Formatter):
-    enabled = False
     patterns = ('*.c', '*.cpp', '*.h')
 
     @classmethod
@@ -854,8 +821,6 @@ def main(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--formatter', '-f', type=str, choices=['astyle', 'clang-format'],
-                        help='Code formatter. Default to clang-format if not specified.')
     parser.add_argument('--staged', '-s', action='store_true',
                         help='Include the changes in the index. Defaults to False')
     parser.add_argument('--amend', '-a', action='store_true',
@@ -872,21 +837,6 @@ def main(argv):
             return 1
 
         dependencies[command] = found
-
-    if args.formatter:
-        if not args.formatter in dependencies or \
-           not dependencies[args.formatter]:
-            print("Formatter %s not available" % args.formatter)
-            return 1
-        formatter = args.formatter
-    else:
-        if dependencies['clang-format']:
-            CLangFormatter.enabled = True
-        elif dependencies['astyle']:
-            AStyleFormatter.enabled = True
-        else:
-            print("No formatter found, please install clang-format or astyle")
-            return 1
 
     # Get the top level directory to pass absolute file names to git diff
     # commands, in order to support execution from subdirectories of the git

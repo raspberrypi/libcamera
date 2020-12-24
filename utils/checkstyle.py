@@ -191,20 +191,24 @@ def parse_diff(diff):
 
 
 # ------------------------------------------------------------------------------
-# Style Checkers
+# Helpers
 #
 
-_style_checkers = []
-
-class StyleCheckerRegistry(type):
+class ClassRegistry(type):
     def __new__(cls, clsname, bases, attrs):
         newclass = super().__new__(cls, clsname, bases, attrs)
-        if clsname != 'StyleChecker':
-            _style_checkers.append(newclass)
+        if bases:
+            bases[0].subclasses.append(newclass)
         return newclass
 
 
-class StyleChecker(metaclass=StyleCheckerRegistry):
+# ------------------------------------------------------------------------------
+# Style Checkers
+#
+
+class StyleChecker(metaclass=ClassRegistry):
+    subclasses = []
+
     def __init__(self):
         pass
 
@@ -213,7 +217,7 @@ class StyleChecker(metaclass=StyleCheckerRegistry):
     #
     @classmethod
     def checkers(cls, filename):
-        for checker in _style_checkers:
+        for checker in cls.subclasses:
             if checker.supports(filename):
                 yield checker
 
@@ -227,7 +231,7 @@ class StyleChecker(metaclass=StyleCheckerRegistry):
     @classmethod
     def all_patterns(cls):
         patterns = set()
-        for checker in _style_checkers:
+        for checker in cls.subclasses:
             patterns.update(checker.patterns)
 
         return patterns
@@ -383,18 +387,9 @@ class ShellChecker(StyleChecker):
 # Formatters
 #
 
-_formatters = []
-
-class FormatterRegistry(type):
-    def __new__(cls, clsname, bases, attrs):
-        newclass = super().__new__(cls, clsname, bases, attrs)
-        if clsname != 'Formatter':
-            _formatters.append(newclass)
-        return newclass
-
-
-class Formatter(metaclass=FormatterRegistry):
+class Formatter(metaclass=ClassRegistry):
     enabled = True
+    subclasses = []
 
     def __init__(self):
         pass
@@ -404,7 +399,7 @@ class Formatter(metaclass=FormatterRegistry):
     #
     @classmethod
     def formatters(cls, filename):
-        for formatter in _formatters:
+        for formatter in cls.subclasses:
             if not cls.enabled:
                 continue
             if formatter.supports(filename):
@@ -422,7 +417,7 @@ class Formatter(metaclass=FormatterRegistry):
     @classmethod
     def all_patterns(cls):
         patterns = set()
-        for formatter in _formatters:
+        for formatter in cls.subclasses:
             if not cls.enabled:
                 continue
             patterns.update(formatter.patterns)

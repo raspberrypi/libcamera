@@ -94,8 +94,6 @@ public:
 
 	Status validate() override;
 
-	const V4L2SubdeviceFormat &sensorFormat() { return sensorFormat_; }
-
 	bool needConversion() const { return needConversion_; }
 
 private:
@@ -107,7 +105,6 @@ private:
 	std::shared_ptr<Camera> camera_;
 	const SimpleCameraData *data_;
 
-	V4L2SubdeviceFormat sensorFormat_;
 	bool needConversion_;
 };
 

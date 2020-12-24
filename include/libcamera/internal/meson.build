@@ -10,6 +10,8 @@ libcamera_tracepoint_header = custom_target(
 )
 
 libcamera_internal_headers = files([
+    'bayer_format.h',
+    'buffer.h',
     'byte_stream_buffer.h',
     'camera_controls.h',
     'camera_sensor.h',

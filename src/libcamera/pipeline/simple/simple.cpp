@@ -116,7 +116,6 @@ class SimplePipelineHandler : public PipelineHandler
 {
 public:
 	SimplePipelineHandler(CameraManager *manager);
-	~SimplePipelineHandler();
 
 	CameraConfiguration *generateConfiguration(Camera *camera,
 						   const StreamRoles &roles) override;
@@ -132,7 +131,7 @@ public:
 
 	V4L2VideoDevice *video(const MediaEntity *entity);
 	V4L2Subdevice *subdev(const MediaEntity *entity);
-	SimpleConverter *converter() { return converter_; }
+	SimpleConverter *converter() { return converter_.get(); }
 
 protected:
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -151,7 +150,7 @@ private:
 	std::map<const MediaEntity *, std::unique_ptr<V4L2VideoDevice>> videos_;
 	std::map<const MediaEntity *, V4L2Subdevice> subdevs_;
 
-	SimpleConverter *converter_;
+	std::unique_ptr<SimpleConverter> converter_;
 	bool useConverter_;
 	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
 	std::queue<FrameBuffer *> converterQueue_;
@@ -507,13 +506,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
  */
 
 SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
-	: PipelineHandler(manager), converter_(nullptr)
+	: PipelineHandler(manager)
 {
-}
-
-SimplePipelineHandler::~SimplePipelineHandler()
-{
-	delete converter_;
 }
 
 CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera,
@@ -763,12 +757,11 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 	/* Open the converter, if any. */
 	if (converter) {
-		converter_ = new SimpleConverter(converter);
+		converter_ = std::make_unique<SimpleConverter>(converter);
 		if (converter_->open() < 0) {
 			LOG(SimplePipeline, Warning)
 				<< "Failed to open converter, disabling format conversion";
-			delete converter_;
-			converter_ = nullptr;
+			converter_.reset();
 		} else {
 			converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);
 		}

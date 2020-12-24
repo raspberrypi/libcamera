@@ -197,15 +197,24 @@ def parse_diff(diff):
 class Commit:
     def __init__(self, commit):
         self.commit = commit
+        self.__parse()
 
-    def get_info(self):
+    def __parse(self):
         # Get the commit title and list of files.
         ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-only',
                               self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         files = ret.splitlines()
-        # Returning title and files list as a tuple
-        return files[0], files[1:]
+        self.__files = files[1:]
+        self.__title = files[0]
+
+    @property
+    def files(self):
+        return self.__files
+
+    @property
+    def title(self):
+        return self.__title
 
     def get_diff(self, top_level, filename):
         return subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
@@ -221,10 +230,11 @@ class StagedChanges(Commit):
     def __init__(self):
         Commit.__init__(self, '')
 
-    def get_info(self):
+    def __parse(self):
         ret = subprocess.run(['git', 'diff', '--staged', '--name-only'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        return "Staged changes", ret.splitlines()
+        self.__title = "Staged changes"
+        self.__files = ret.splitlines()
 
     def get_diff(self, top_level, filename):
         return subprocess.run(['git', 'diff', '--staged', '--',
@@ -236,15 +246,15 @@ class Amendment(StagedChanges):
     def __init__(self):
         StagedChanges.__init__(self)
 
-    def get_info(self):
+    def __parse(self):
         # Create a title using HEAD commit
         ret = subprocess.run(['git', 'show', '--pretty=oneline', '--no-patch'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        title = 'Amendment of ' + ret.strip()
+        self.__title = 'Amendment of ' + ret.strip()
         # Extract the list of modified files
         ret = subprocess.run(['git', 'diff', '--staged', '--name-only', 'HEAD~'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        return title, ret.splitlines()
+        self.__files = ret.splitlines()
 
     def get_diff(self, top_level, filename):
         return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
@@ -686,18 +696,16 @@ def check_file(top_level, commit, filename):
 
 
 def check_style(top_level, commit):
-    title, files = commit.get_info()
-
-    separator = '-' * len(title)
+    separator = '-' * len(commit.title)
     print(separator)
-    print(title)
+    print(commit.title)
     print(separator)
 
     # Filter out files we have no checker for.
     patterns = set()
     patterns.update(StyleChecker.all_patterns())
     patterns.update(Formatter.all_patterns())
-    files = [f for f in files if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
+    files = [f for f in commit.files if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
     if len(files) == 0:
         print("Commit doesn't touch source files, skipping")
         return 0

@@ -191,6 +191,68 @@ def parse_diff(diff):
 
 
 # ------------------------------------------------------------------------------
+# Commit, Staged Changes & Amendments
+#
+
+class Commit:
+    def __init__(self, commit):
+        self.commit = commit
+
+    def get_info(self):
+        # Get the commit title and list of files.
+        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-only',
+                              self.commit],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        files = ret.splitlines()
+        # Returning title and files list as a tuple
+        return files[0], files[1:]
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
+                               '--', '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+    def get_file(self, filename):
+        return subprocess.run(['git', 'show', '%s:%s' % (self.commit, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
+class StagedChanges(Commit):
+    def __init__(self):
+        Commit.__init__(self, '')
+
+    def get_info(self):
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-only'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return "Staged changes", ret.splitlines()
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '--staged', '--',
+                               '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
+class Amendment(StagedChanges):
+    def __init__(self):
+        StagedChanges.__init__(self)
+
+    def get_info(self):
+        # Create a title using HEAD commit
+        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--no-patch'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        title = 'Amendment of ' + ret.strip()
+        # Extract the list of modified files
+        ret = subprocess.run(['git', 'diff', '--staged', '--name-only', 'HEAD~'],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        return title, ret.splitlines()
+
+    def get_diff(self, top_level, filename):
+        return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
+                               '%s/%s' % (top_level, filename)],
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+
+# ------------------------------------------------------------------------------
 # Helpers
 #
 
@@ -563,64 +625,6 @@ class StripTrailingSpaceFormatter(Formatter):
 # ------------------------------------------------------------------------------
 # Style checking
 #
-
-class Commit:
-    def __init__(self, commit):
-        self.commit = commit
-
-    def get_info(self):
-        # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-only',
-                              self.commit],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        files = ret.splitlines()
-        # Returning title and files list as a tuple
-        return files[0], files[1:]
-
-    def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
-                               '--', '%s/%s' % (top_level, filename)],
-                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-
-    def get_file(self, filename):
-        return subprocess.run(['git', 'show', '%s:%s' % (self.commit, filename)],
-                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-
-
-class StagedChanges(Commit):
-    def __init__(self):
-        Commit.__init__(self, '')
-
-    def get_info(self):
-        ret = subprocess.run(['git', 'diff', '--staged', '--name-only'],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        return "Staged changes", ret.splitlines()
-
-    def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '--staged', '--',
-                               '%s/%s' % (top_level, filename)],
-                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-
-
-class Amendment(StagedChanges):
-    def __init__(self):
-        StagedChanges.__init__(self)
-
-    def get_info(self):
-        # Create a title using HEAD commit
-        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--no-patch'],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        title = 'Amendment of ' + ret.strip()
-        # Extract the list of modified files
-        ret = subprocess.run(['git', 'diff', '--staged', '--name-only', 'HEAD~'],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        return title, ret.splitlines()
-
-    def get_diff(self, top_level, filename):
-        return subprocess.run(['git', 'diff', '--staged', 'HEAD~', '--',
-                               '%s/%s' % (top_level, filename)],
-                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-
 
 def check_file(top_level, commit, filename):
     # Extract the line numbers touched by the commit.

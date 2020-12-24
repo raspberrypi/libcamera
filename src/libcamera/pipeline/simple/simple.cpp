@@ -170,6 +170,10 @@ public:
 
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, const Configuration *> formats_;
+
+	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
+	bool useConverter_;
+	std::queue<FrameBuffer *> converterQueue_;
 };
 
 class SimpleCameraConfiguration : public CameraConfiguration
@@ -239,9 +243,6 @@ private:
 	std::map<const MediaEntity *, V4L2Subdevice> subdevs_;
 
 	std::unique_ptr<SimpleConverter> converter_;
-	bool useConverter_;
-	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
-	std::queue<FrameBuffer *> converterQueue_;
 
 	Camera *activeCamera_;
 };
@@ -693,9 +694,8 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	}
 
 	/* Configure the converter if required. */
-	useConverter_ = config->needConversion();
-
-	if (useConverter_) {
+	data->useConverter_ = config->needConversion();
+	if (data->useConverter_) {
 		StreamConfiguration inputCfg;
 		inputCfg.pixelFormat = pipeConfig->captureFormat;
 		inputCfg.size = pipeConfig->captureSize;
@@ -727,7 +727,7 @@ int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 	 * Export buffers on the converter or capture video node, depending on
 	 * whether the converter is used or not.
 	 */
-	if (useConverter_)
+	if (data->useConverter_)
 		return converter_->exportBuffers(0, count, buffers);
 	else
 		return data->video_->exportBuffers(count, buffers);
@@ -740,8 +740,8 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 	unsigned int count = data->streams_[0].configuration().bufferCount;
 	int ret;
 
-	if (useConverter_)
-		ret = video->allocateBuffers(count, &converterBuffers_);
+	if (data->useConverter_)
+		ret = video->allocateBuffers(count, &data->converterBuffers_);
 	else
 		ret = video->importBuffers(count);
 	if (ret < 0)
@@ -753,7 +753,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		return ret;
 	}
 
-	if (useConverter_) {
+	if (data->useConverter_) {
 		ret = converter_->start();
 		if (ret < 0) {
 			stop(camera);
@@ -761,7 +761,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		}
 
 		/* Queue all internal buffers for capture. */
-		for (std::unique_ptr<FrameBuffer> &buffer : converterBuffers_)
+		for (std::unique_ptr<FrameBuffer> &buffer : data->converterBuffers_)
 			video->queueBuffer(buffer.get());
 	}
 
@@ -775,13 +775,13 @@ void SimplePipelineHandler::stop(Camera *camera)
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
 
-	if (useConverter_)
+	if (data->useConverter_)
 		converter_->stop();
 
 	video->streamOff();
 	video->releaseBuffers();
 
-	converterBuffers_.clear();
+	data->converterBuffers_.clear();
 	activeCamera_ = nullptr;
 }
 
@@ -801,8 +801,8 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 	 * If conversion is needed, push the buffer to the converter queue, it
 	 * will be handed to the converter in the capture completion handler.
 	 */
-	if (useConverter_) {
-		converterQueue_.push(buffer);
+	if (data->useConverter_) {
+		data->converterQueue_.push(buffer);
 		return 0;
 	}
 
@@ -978,7 +978,7 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	 * point converting an erroneous buffer.
 	 */
 	if (buffer->metadata().status != FrameMetadata::FrameSuccess) {
-		if (useConverter_) {
+		if (data->useConverter_) {
 			/* Requeue the buffer for capture. */
 			data->video_->queueBuffer(buffer);
 
@@ -986,11 +986,11 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 			 * Get the next user-facing buffer to complete the
 			 * request.
 			 */
-			if (converterQueue_.empty())
+			if (data->converterQueue_.empty())
 				return;
 
-			buffer = converterQueue_.front();
-			converterQueue_.pop();
+			buffer = data->converterQueue_.front();
+			data->converterQueue_.pop();
 		}
 
 		Request *request = buffer->request();
@@ -1004,14 +1004,14 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	 * conversion is needed. If there's no queued request, just requeue the
 	 * captured buffer for capture.
 	 */
-	if (useConverter_) {
-		if (converterQueue_.empty()) {
+	if (data->useConverter_) {
+		if (data->converterQueue_.empty()) {
 			data->video_->queueBuffer(buffer);
 			return;
 		}
 
-		FrameBuffer *output = converterQueue_.front();
-		converterQueue_.pop();
+		FrameBuffer *output = data->converterQueue_.front();
+		data->converterQueue_.pop();
 
 		converter_->queueBuffers(buffer, { { 0, output } });
 		return;

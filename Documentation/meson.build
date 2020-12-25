@@ -47,17 +47,17 @@ endif
 
 if sphinx.found()
     docs_sources = [
-       '../README.rst',
         'coding-style.rst',
         'conf.py',
         'contributing.rst',
         'docs.rst',
         'environment_variables.rst',
-        'index.rst',
-        'guides/introduction.rst',
         'guides/application-developer.rst',
+        'guides/introduction.rst',
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
+        'index.rst',
+       '../README.rst',
     ]
 
     release = 'release=v' + libcamera_git_version

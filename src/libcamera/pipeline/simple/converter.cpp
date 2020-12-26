@@ -159,6 +159,8 @@ int SimpleConverter::configure(const StreamConfiguration &inputCfg,
 	V4L2DeviceFormat format;
 	format.fourcc = videoFormat;
 	format.size = inputCfg.size;
+	format.planesCount = 1;
+	format.planes[0].bpl = inputCfg.stride;
 
 	ret = m2m_->output()->setFormat(&format);
 	if (ret < 0) {
@@ -167,7 +169,8 @@ int SimpleConverter::configure(const StreamConfiguration &inputCfg,
 		return ret;
 	}
 
-	if (format.fourcc != videoFormat || format.size != inputCfg.size) {
+	if (format.fourcc != videoFormat || format.size != inputCfg.size ||
+	    format.planes[0].bpl != inputCfg.stride) {
 		LOG(SimplePipeline, Error)
 			<< "Input format not supported";
 		return -EINVAL;

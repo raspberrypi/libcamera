@@ -606,6 +606,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		StreamConfiguration inputCfg;
 		inputCfg.pixelFormat = pipeConfig.pixelFormat;
 		inputCfg.size = pipeConfig.captureSize;
+		inputCfg.stride = captureFormat.planes[0].bpl;
 
 		ret = converter_->configure(inputCfg, cfg);
 		if (ret < 0) {

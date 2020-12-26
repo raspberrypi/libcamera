@@ -134,7 +134,7 @@ SizeRange SimpleConverter::sizes(const Size &input)
 }
 
 int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
-			       StreamConfiguration *cfg)
+			       const StreamConfiguration &outputCfg)
 {
 	V4L2DeviceFormat format;
 	int ret;
@@ -157,10 +157,10 @@ int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
 	}
 
 	/* Set the pixel format and size on the output. */
-	videoFormat = m2m_->capture()->toV4L2PixelFormat(cfg->pixelFormat);
+	videoFormat = m2m_->capture()->toV4L2PixelFormat(outputCfg.pixelFormat);
 	format = {};
 	format.fourcc = videoFormat;
-	format.size = cfg->size;
+	format.size = outputCfg.size;
 
 	ret = m2m_->capture()->setFormat(&format);
 	if (ret < 0) {
@@ -169,13 +169,11 @@ int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
 		return ret;
 	}
 
-	if (format.fourcc != videoFormat || format.size != cfg->size) {
+	if (format.fourcc != videoFormat || format.size != outputCfg.size) {
 		LOG(SimplePipeline, Error)
 			<< "Output format not supported";
 		return -EINVAL;
 	}
-
-	cfg->stride = format.planes[0].bpl;
 
 	return 0;
 }

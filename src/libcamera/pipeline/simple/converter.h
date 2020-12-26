@@ -37,7 +37,7 @@ public:
 	SizeRange sizes(const Size &input);
 
 	int configure(PixelFormat inputFormat, const Size &inputSize,
-		      StreamConfiguration *cfg);
+		      const StreamConfiguration &outputCfg);
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 

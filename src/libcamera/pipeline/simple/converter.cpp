@@ -148,15 +148,17 @@ SimpleConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
 	return std::make_tuple(format.planes[0].bpl, format.planes[0].size);
 }
 
-int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
+int SimpleConverter::configure(const StreamConfiguration &inputCfg,
 			       const StreamConfiguration &outputCfg)
 {
-	V4L2DeviceFormat format;
 	int ret;
 
-	V4L2PixelFormat videoFormat = m2m_->output()->toV4L2PixelFormat(inputFormat);
+	V4L2PixelFormat videoFormat =
+		m2m_->output()->toV4L2PixelFormat(inputCfg.pixelFormat);
+
+	V4L2DeviceFormat format;
 	format.fourcc = videoFormat;
-	format.size = inputSize;
+	format.size = inputCfg.size;
 
 	ret = m2m_->output()->setFormat(&format);
 	if (ret < 0) {
@@ -165,7 +167,7 @@ int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
 		return ret;
 	}
 
-	if (format.fourcc != videoFormat || format.size != inputSize) {
+	if (format.fourcc != videoFormat || format.size != inputCfg.size) {
 		LOG(SimplePipeline, Error)
 			<< "Input format not supported";
 		return -EINVAL;

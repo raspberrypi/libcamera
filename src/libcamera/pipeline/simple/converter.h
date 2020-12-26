@@ -39,7 +39,7 @@ public:
 	std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size);
 
-	int configure(PixelFormat inputFormat, const Size &inputSize,
+	int configure(const StreamConfiguration &inputCfg,
 		      const StreamConfiguration &outputCfg);
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);

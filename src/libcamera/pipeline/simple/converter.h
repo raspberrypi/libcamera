@@ -44,7 +44,7 @@ public:
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
-	int start(unsigned int count);
+	int start();
 	void stop();
 
 	int queueBuffers(FrameBuffer *input, FrameBuffer *output);
@@ -59,6 +59,9 @@ private:
 
 	std::queue<FrameBuffer *> captureDoneQueue_;
 	std::queue<FrameBuffer *> outputDoneQueue_;
+
+	unsigned int inputBufferCount_;
+	unsigned int outputBufferCount_;
 };
 
 } /* namespace libcamera */

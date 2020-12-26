@@ -607,6 +607,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		inputCfg.pixelFormat = pipeConfig.pixelFormat;
 		inputCfg.size = pipeConfig.captureSize;
 		inputCfg.stride = captureFormat.planes[0].bpl;
+		inputCfg.bufferCount = cfg.bufferCount;
 
 		ret = converter_->configure(inputCfg, cfg);
 		if (ret < 0) {
@@ -660,7 +661,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 	}
 
 	if (useConverter_) {
-		ret = converter_->start(count);
+		ret = converter_->start();
 		if (ret < 0) {
 			stop(camera);
 			return ret;

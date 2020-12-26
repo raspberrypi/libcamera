@@ -195,6 +195,9 @@ int SimpleConverter::configure(const StreamConfiguration &inputCfg,
 		return -EINVAL;
 	}
 
+	inputBufferCount_ = inputCfg.bufferCount;
+	outputBufferCount_ = outputCfg.bufferCount;
+
 	return 0;
 }
 
@@ -204,13 +207,13 @@ int SimpleConverter::exportBuffers(unsigned int count,
 	return m2m_->capture()->exportBuffers(count, buffers);
 }
 
-int SimpleConverter::start(unsigned int count)
+int SimpleConverter::start()
 {
-	int ret = m2m_->output()->importBuffers(count);
+	int ret = m2m_->output()->importBuffers(inputBufferCount_);
 	if (ret < 0)
 		return ret;
 
-	ret = m2m_->capture()->importBuffers(count);
+	ret = m2m_->capture()->importBuffers(outputBufferCount_);
 	if (ret < 0) {
 		stop();
 		return ret;

@@ -9,7 +9,6 @@
 #define __LIBCAMERA_PIPELINE_SIMPLE_CONVERTER_H__
 
 #include <memory>
-#include <queue>
 #include <tuple>
 #include <vector>
 
@@ -48,16 +47,14 @@ public:
 
 	int queueBuffers(FrameBuffer *input, FrameBuffer *output);
 
-	Signal<FrameBuffer *, FrameBuffer *> bufferReady;
+	Signal<FrameBuffer *> inputBufferReady;
+	Signal<FrameBuffer *> outputBufferReady;
 
 private:
-	void captureBufferReady(FrameBuffer *buffer);
-	void outputBufferReady(FrameBuffer *buffer);
+	void m2mInputBufferReady(FrameBuffer *buffer);
+	void m2mOutputBufferReady(FrameBuffer *buffer);
 
 	std::unique_ptr<V4L2M2MDevice> m2m_;
-
-	std::queue<FrameBuffer *> captureDoneQueue_;
-	std::queue<FrameBuffer *> outputDoneQueue_;
 
 	unsigned int inputBufferCount_;
 	unsigned int outputBufferCount_;

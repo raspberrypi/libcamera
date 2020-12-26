@@ -45,8 +45,8 @@ SimpleConverter::SimpleConverter(MediaDevice *media)
 		return;
 	}
 
-	m2m_->output()->bufferReady.connect(this, &SimpleConverter::outputBufferReady);
-	m2m_->capture()->bufferReady.connect(this, &SimpleConverter::captureBufferReady);
+	m2m_->output()->bufferReady.connect(this, &SimpleConverter::m2mInputBufferReady);
+	m2m_->capture()->bufferReady.connect(this, &SimpleConverter::m2mOutputBufferReady);
 }
 
 std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
@@ -247,26 +247,14 @@ int SimpleConverter::queueBuffers(FrameBuffer *input, FrameBuffer *output)
 	return 0;
 }
 
-void SimpleConverter::captureBufferReady(FrameBuffer *buffer)
+void SimpleConverter::m2mInputBufferReady(FrameBuffer *buffer)
 {
-	if (!outputDoneQueue_.empty()) {
-		FrameBuffer *other = outputDoneQueue_.front();
-		outputDoneQueue_.pop();
-		bufferReady.emit(other, buffer);
-	} else {
-		captureDoneQueue_.push(buffer);
-	}
+	inputBufferReady.emit(buffer);
 }
 
-void SimpleConverter::outputBufferReady(FrameBuffer *buffer)
+void SimpleConverter::m2mOutputBufferReady(FrameBuffer *buffer)
 {
-	if (!captureDoneQueue_.empty()) {
-		FrameBuffer *other = captureDoneQueue_.front();
-		captureDoneQueue_.pop();
-		bufferReady.emit(buffer, other);
-	} else {
-		outputDoneQueue_.push(buffer);
-	}
+	outputBufferReady.emit(buffer);
 }
 
 } /* namespace libcamera */

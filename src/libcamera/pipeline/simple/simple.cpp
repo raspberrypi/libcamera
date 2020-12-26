@@ -144,7 +144,8 @@ private:
 	}
 
 	void bufferReady(FrameBuffer *buffer);
-	void converterDone(FrameBuffer *input, FrameBuffer *output);
+	void converterInputDone(FrameBuffer *buffer);
+	void converterOutputDone(FrameBuffer *buffer);
 
 	MediaDevice *media_;
 	std::map<const MediaEntity *, std::unique_ptr<V4L2VideoDevice>> videos_;
@@ -768,7 +769,8 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 				<< "Failed to create converter, disabling format conversion";
 			converter_.reset();
 		} else {
-			converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);
+			converter_->inputBufferReady.connect(this, &SimplePipelineHandler::converterInputDone);
+			converter_->outputBufferReady.connect(this, &SimplePipelineHandler::converterOutputDone);
 		}
 	}
 
@@ -925,19 +927,23 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	completeRequest(request);
 }
 
-void SimplePipelineHandler::converterDone(FrameBuffer *input,
-					  FrameBuffer *output)
+void SimplePipelineHandler::converterInputDone(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
 	SimpleCameraData *data = cameraData(activeCamera_);
 
-	/* Complete the request. */
-	Request *request = output->request();
-	completeBuffer(request, output);
-	completeRequest(request);
-
 	/* Queue the input buffer back for capture. */
-	data->video_->queueBuffer(input);
+	data->video_->queueBuffer(buffer);
+}
+
+void SimplePipelineHandler::converterOutputDone(FrameBuffer *buffer)
+{
+	ASSERT(activeCamera_);
+
+	/* Complete the request. */
+	Request *request = buffer->request();
+	completeBuffer(request, buffer);
+	completeRequest(request);
 }
 
 REGISTER_PIPELINE_HANDLER(SimplePipelineHandler)

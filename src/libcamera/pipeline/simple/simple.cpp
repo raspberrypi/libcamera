@@ -763,9 +763,9 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	/* Open the converter, if any. */
 	if (converter) {
 		converter_ = std::make_unique<SimpleConverter>(converter);
-		if (converter_->open() < 0) {
+		if (!converter_->isValid()) {
 			LOG(SimplePipeline, Warning)
-				<< "Failed to open converter, disabling format conversion";
+				<< "Failed to create converter, disabling format conversion";
 			converter_.reset();
 		} else {
 			converter_->bufferReady.connect(this, &SimplePipelineHandler::converterDone);

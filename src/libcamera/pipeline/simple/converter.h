@@ -30,8 +30,7 @@ class SimpleConverter
 public:
 	SimpleConverter(MediaDevice *media);
 
-	int open();
-	void close();
+	bool isValid() const { return m2m_ != nullptr; }
 
 	std::vector<PixelFormat> formats(PixelFormat input);
 	SizeRange sizes(const Size &input);

@@ -39,22 +39,14 @@ SimpleConverter::SimpleConverter(MediaDevice *media)
 
 	m2m_ = std::make_unique<V4L2M2MDevice>((*it)->deviceNode());
 
+	int ret = m2m_->open();
+	if (ret < 0) {
+		m2m_.reset();
+		return;
+	}
+
 	m2m_->output()->bufferReady.connect(this, &SimpleConverter::outputBufferReady);
 	m2m_->capture()->bufferReady.connect(this, &SimpleConverter::captureBufferReady);
-}
-
-int SimpleConverter::open()
-{
-	if (!m2m_)
-		return -ENODEV;
-
-	return m2m_->open();
-}
-
-void SimpleConverter::close()
-{
-	if (m2m_)
-		m2m_->close();
 }
 
 std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)

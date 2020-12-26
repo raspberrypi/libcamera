@@ -17,11 +17,161 @@
 
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(SimplePipeline)
+
+/* -----------------------------------------------------------------------------
+ * SimpleConverter::Stream
+ */
+
+SimpleConverter::Stream::Stream(SimpleConverter *converter, unsigned int index)
+	: converter_(converter), index_(index)
+{
+	m2m_ = std::make_unique<V4L2M2MDevice>(converter->deviceNode_);
+
+	m2m_->output()->bufferReady.connect(this, &Stream::outputBufferReady);
+	m2m_->capture()->bufferReady.connect(this, &Stream::captureBufferReady);
+
+	int ret = m2m_->open();
+	if (ret < 0)
+		m2m_.reset();
+}
+
+int SimpleConverter::Stream::configure(const StreamConfiguration &inputCfg,
+				       const StreamConfiguration &outputCfg)
+{
+	V4L2PixelFormat videoFormat =
+		m2m_->output()->toV4L2PixelFormat(inputCfg.pixelFormat);
+
+	V4L2DeviceFormat format;
+	format.fourcc = videoFormat;
+	format.size = inputCfg.size;
+	format.planesCount = 1;
+	format.planes[0].bpl = inputCfg.stride;
+
+	int ret = m2m_->output()->setFormat(&format);
+	if (ret < 0) {
+		LOG(SimplePipeline, Error)
+			<< "Failed to set input format: " << strerror(-ret);
+		return ret;
+	}
+
+	if (format.fourcc != videoFormat || format.size != inputCfg.size ||
+	    format.planes[0].bpl != inputCfg.stride) {
+		LOG(SimplePipeline, Error)
+			<< "Input format not supported";
+		return -EINVAL;
+	}
+
+	/* Set the pixel format and size on the output. */
+	videoFormat = m2m_->capture()->toV4L2PixelFormat(outputCfg.pixelFormat);
+	format = {};
+	format.fourcc = videoFormat;
+	format.size = outputCfg.size;
+
+	ret = m2m_->capture()->setFormat(&format);
+	if (ret < 0) {
+		LOG(SimplePipeline, Error)
+			<< "Failed to set output format: " << strerror(-ret);
+		return ret;
+	}
+
+	if (format.fourcc != videoFormat || format.size != outputCfg.size) {
+		LOG(SimplePipeline, Error)
+			<< "Output format not supported";
+		return -EINVAL;
+	}
+
+	inputBufferCount_ = inputCfg.bufferCount;
+	outputBufferCount_ = outputCfg.bufferCount;
+
+	return 0;
+}
+
+int SimpleConverter::Stream::exportBuffers(unsigned int count,
+					   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	return m2m_->capture()->exportBuffers(count, buffers);
+}
+
+int SimpleConverter::Stream::start()
+{
+	int ret = m2m_->output()->importBuffers(inputBufferCount_);
+	if (ret < 0)
+		return ret;
+
+	ret = m2m_->capture()->importBuffers(outputBufferCount_);
+	if (ret < 0) {
+		stop();
+		return ret;
+	}
+
+	ret = m2m_->output()->streamOn();
+	if (ret < 0) {
+		stop();
+		return ret;
+	}
+
+	ret = m2m_->capture()->streamOn();
+	if (ret < 0) {
+		stop();
+		return ret;
+	}
+
+	return 0;
+}
+
+void SimpleConverter::Stream::stop()
+{
+	m2m_->capture()->streamOff();
+	m2m_->output()->streamOff();
+	m2m_->capture()->releaseBuffers();
+	m2m_->output()->releaseBuffers();
+}
+
+int SimpleConverter::Stream::queueBuffers(FrameBuffer *input,
+					  FrameBuffer *output)
+{
+	int ret = m2m_->output()->queueBuffer(input);
+	if (ret < 0)
+		return ret;
+
+	ret = m2m_->capture()->queueBuffer(output);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+std::string SimpleConverter::Stream::logPrefix() const
+{
+	return "stream" + std::to_string(index_);
+}
+
+void SimpleConverter::Stream::outputBufferReady(FrameBuffer *buffer)
+{
+	auto it = converter_->queue_.find(buffer);
+	if (it == converter_->queue_.end())
+		return;
+
+	if (!--it->second) {
+		converter_->inputBufferReady.emit(buffer);
+		converter_->queue_.erase(it);
+	}
+}
+
+void SimpleConverter::Stream::captureBufferReady(FrameBuffer *buffer)
+{
+	converter_->outputBufferReady.emit(buffer);
+}
+
+/* -----------------------------------------------------------------------------
+ * SimpleConverter
+ */
 
 SimpleConverter::SimpleConverter(MediaDevice *media)
 {
@@ -37,16 +187,14 @@ SimpleConverter::SimpleConverter(MediaDevice *media)
 	if (it == entities.end())
 		return;
 
-	m2m_ = std::make_unique<V4L2M2MDevice>((*it)->deviceNode());
+	deviceNode_ = (*it)->deviceNode();
 
+	m2m_ = std::make_unique<V4L2M2MDevice>(deviceNode_);
 	int ret = m2m_->open();
 	if (ret < 0) {
 		m2m_.reset();
 		return;
 	}
-
-	m2m_->output()->bufferReady.connect(this, &SimpleConverter::m2mInputBufferReady);
-	m2m_->capture()->bufferReady.connect(this, &SimpleConverter::m2mOutputBufferReady);
 }
 
 std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
@@ -141,86 +289,55 @@ SimpleConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
 }
 
 int SimpleConverter::configure(const StreamConfiguration &inputCfg,
-			       const StreamConfiguration &outputCfg)
+			       const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs)
 {
-	int ret;
+	int ret = 0;
 
-	V4L2PixelFormat videoFormat =
-		m2m_->output()->toV4L2PixelFormat(inputCfg.pixelFormat);
+	streams_.clear();
+	streams_.reserve(outputCfgs.size());
 
-	V4L2DeviceFormat format;
-	format.fourcc = videoFormat;
-	format.size = inputCfg.size;
-	format.planesCount = 1;
-	format.planes[0].bpl = inputCfg.stride;
+	for (unsigned int i = 0; i < outputCfgs.size(); ++i) {
+		Stream &stream = streams_.emplace_back(this, i);
 
-	ret = m2m_->output()->setFormat(&format);
+		if (!stream.isValid()) {
+			LOG(SimplePipeline, Error)
+				<< "Failed to create stream " << i;
+			ret = -EINVAL;
+			break;
+		}
+
+		ret = stream.configure(inputCfg, outputCfgs[i]);
+		if (ret < 0)
+			break;
+	}
+
 	if (ret < 0) {
-		LOG(SimplePipeline, Error)
-			<< "Failed to set input format: " << strerror(-ret);
+		streams_.clear();
 		return ret;
 	}
-
-	if (format.fourcc != videoFormat || format.size != inputCfg.size ||
-	    format.planes[0].bpl != inputCfg.stride) {
-		LOG(SimplePipeline, Error)
-			<< "Input format not supported";
-		return -EINVAL;
-	}
-
-	/* Set the pixel format and size on the output. */
-	videoFormat = m2m_->capture()->toV4L2PixelFormat(outputCfg.pixelFormat);
-	format = {};
-	format.fourcc = videoFormat;
-	format.size = outputCfg.size;
-
-	ret = m2m_->capture()->setFormat(&format);
-	if (ret < 0) {
-		LOG(SimplePipeline, Error)
-			<< "Failed to set output format: " << strerror(-ret);
-		return ret;
-	}
-
-	if (format.fourcc != videoFormat || format.size != outputCfg.size) {
-		LOG(SimplePipeline, Error)
-			<< "Output format not supported";
-		return -EINVAL;
-	}
-
-	inputBufferCount_ = inputCfg.bufferCount;
-	outputBufferCount_ = outputCfg.bufferCount;
 
 	return 0;
 }
 
-int SimpleConverter::exportBuffers(unsigned int count,
+int SimpleConverter::exportBuffers(unsigned int output, unsigned int count,
 				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	return m2m_->capture()->exportBuffers(count, buffers);
+	if (output >= streams_.size())
+		return -EINVAL;
+
+	return streams_[output].exportBuffers(count, buffers);
 }
 
 int SimpleConverter::start()
 {
-	int ret = m2m_->output()->importBuffers(inputBufferCount_);
-	if (ret < 0)
-		return ret;
+	int ret;
 
-	ret = m2m_->capture()->importBuffers(outputBufferCount_);
-	if (ret < 0) {
-		stop();
-		return ret;
-	}
-
-	ret = m2m_->output()->streamOn();
-	if (ret < 0) {
-		stop();
-		return ret;
-	}
-
-	ret = m2m_->capture()->streamOn();
-	if (ret < 0) {
-		stop();
-		return ret;
+	for (Stream &stream : streams_) {
+		ret = stream.start();
+		if (ret < 0) {
+			stop();
+			return ret;
+		}
 	}
 
 	return 0;
@@ -228,33 +345,52 @@ int SimpleConverter::start()
 
 void SimpleConverter::stop()
 {
-	m2m_->capture()->streamOff();
-	m2m_->output()->streamOff();
-	m2m_->capture()->releaseBuffers();
-	m2m_->output()->releaseBuffers();
+	for (Stream &stream : utils::reverse(streams_))
+		stream.stop();
 }
 
-int SimpleConverter::queueBuffers(FrameBuffer *input, FrameBuffer *output)
+int SimpleConverter::queueBuffers(FrameBuffer *input,
+				  const std::map<unsigned int, FrameBuffer *> &outputs)
 {
-	int ret = m2m_->output()->queueBuffer(input);
-	if (ret < 0)
-		return ret;
+	unsigned int mask = 0;
+	int ret;
 
-	ret = m2m_->capture()->queueBuffer(output);
-	if (ret < 0)
-		return ret;
+	/*
+	 * Validate the outputs as a sanity check: at least one output is
+	 * required, all outputs must reference a valid stream and no two
+	 * outputs can reference the same stream.
+	 */
+	if (outputs.empty())
+		return -EINVAL;
+
+	for (auto [index, buffer] : outputs) {
+		if (!buffer)
+			return -EINVAL;
+		if (index >= streams_.size())
+			return -EINVAL;
+		if (mask & (1 << index))
+			return -EINVAL;
+
+		mask |= 1 << index;
+	}
+
+	/* Queue the input and output buffers to all the streams. */
+	for (auto [index, buffer] : outputs) {
+		ret = streams_[index].queueBuffers(input, buffer);
+		if (ret < 0)
+			return ret;
+	}
+
+	/*
+	 * Add the input buffer to the queue, with the number of streams as a
+	 * reference count. Completion of the input buffer will be signalled by
+	 * the stream that releases the last reference.
+	 */
+	queue_.emplace(std::piecewise_construct,
+		       std::forward_as_tuple(input),
+		       std::forward_as_tuple(outputs.size()));
 
 	return 0;
-}
-
-void SimpleConverter::m2mInputBufferReady(FrameBuffer *buffer)
-{
-	inputBufferReady.emit(buffer);
-}
-
-void SimpleConverter::m2mOutputBufferReady(FrameBuffer *buffer)
-{
-	outputBufferReady.emit(buffer);
 }
 
 } /* namespace libcamera */

@@ -610,7 +610,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		inputCfg.stride = captureFormat.planes[0].bpl;
 		inputCfg.bufferCount = cfg.bufferCount;
 
-		ret = converter_->configure(inputCfg, cfg);
+		ret = converter_->configure(inputCfg, { cfg });
 		if (ret < 0) {
 			LOG(SimplePipeline, Error)
 				<< "Unable to configure converter";
@@ -636,7 +636,7 @@ int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 	 * whether the converter is used or not.
 	 */
 	if (useConverter_)
-		return converter_->exportBuffers(count, buffers);
+		return converter_->exportBuffers(0, count, buffers);
 	else
 		return data->video_->exportBuffers(count, buffers);
 }
@@ -917,7 +917,7 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 		FrameBuffer *output = converterQueue_.front();
 		converterQueue_.pop();
 
-		converter_->queueBuffers(buffer, output);
+		converter_->queueBuffers(buffer, { { 0, output } });
 		return;
 	}
 

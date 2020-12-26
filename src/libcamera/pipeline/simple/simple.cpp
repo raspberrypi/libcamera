@@ -494,7 +494,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	SimpleConverter *converter = pipe->converter();
 
 	std::tie(cfg.stride, cfg.frameSize) =
-		converter->strideAndFrameSize(cfg.size, cfg.pixelFormat);
+		converter->strideAndFrameSize(cfg.pixelFormat, cfg.size);
 	if (cfg.stride == 0)
 		return Invalid;
 

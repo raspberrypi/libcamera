@@ -36,6 +36,9 @@ public:
 	std::vector<PixelFormat> formats(PixelFormat input);
 	SizeRange sizes(const Size &input);
 
+	std::tuple<unsigned int, unsigned int>
+	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size);
+
 	int configure(PixelFormat inputFormat, const Size &inputSize,
 		      const StreamConfiguration &outputCfg);
 	int exportBuffers(unsigned int count,
@@ -45,9 +48,6 @@ public:
 	void stop();
 
 	int queueBuffers(FrameBuffer *input, FrameBuffer *output);
-
-	std::tuple<unsigned int, unsigned int>
-	strideAndFrameSize(const Size &size, const PixelFormat &pixelFormat);
 
 	Signal<FrameBuffer *, FrameBuffer *> bufferReady;
 

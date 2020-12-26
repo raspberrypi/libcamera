@@ -133,6 +133,21 @@ SizeRange SimpleConverter::sizes(const Size &input)
 	return sizes;
 }
 
+std::tuple<unsigned int, unsigned int>
+SimpleConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
+				    const Size &size)
+{
+	V4L2DeviceFormat format;
+	format.fourcc = m2m_->capture()->toV4L2PixelFormat(pixelFormat);
+	format.size = size;
+
+	int ret = m2m_->capture()->tryFormat(&format);
+	if (ret < 0)
+		return std::make_tuple(0, 0);
+
+	return std::make_tuple(format.planes[0].bpl, format.planes[0].size);
+}
+
 int SimpleConverter::configure(PixelFormat inputFormat, const Size &inputSize,
 			       const StreamConfiguration &outputCfg)
 {
@@ -252,21 +267,6 @@ void SimpleConverter::outputBufferReady(FrameBuffer *buffer)
 	} else {
 		outputDoneQueue_.push(buffer);
 	}
-}
-
-std::tuple<unsigned int, unsigned int>
-SimpleConverter::strideAndFrameSize(const Size &size,
-				    const PixelFormat &pixelFormat)
-{
-	V4L2DeviceFormat format;
-	format.fourcc = m2m_->capture()->toV4L2PixelFormat(pixelFormat);
-	format.size = size;
-
-	int ret = m2m_->capture()->tryFormat(&format);
-	if (ret < 0)
-		return std::make_tuple(0, 0);
-
-	return std::make_tuple(format.planes[0].bpl, format.planes[0].size);
 }
 
 } /* namespace libcamera */

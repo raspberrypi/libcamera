@@ -877,7 +877,7 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          libcamera::BoundMethodStatic \
                          libcamera::SignalBase \
                          libcamera::*::Private \
-                         *::details::* \
+                         *::details \
                          std::*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories

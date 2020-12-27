@@ -464,6 +464,14 @@ std::string libcameraSourcePath()
  * \return The value rounded up to the nearest multiple of \a alignment
  */
 
+/**
+ * \fn reverse(T &&iterable)
+ * \brief Wrap an iterable to reverse iteration in a range-based loop
+ * \param[in] iterable The iterable
+ * \return A value of unspecified type that, when used in a range-based for
+ * loop, will cause the loop to iterate over the \a iterable in reverse order
+ */
+
 } /* namespace utils */
 
 } /* namespace libcamera */

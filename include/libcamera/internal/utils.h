@@ -203,6 +203,33 @@ constexpr unsigned int alignUp(unsigned int value, unsigned int alignment)
 	return (value + alignment - 1) / alignment * alignment;
 }
 
+namespace details {
+
+template<typename T>
+struct reverse_adapter {
+	T &iterable;
+};
+
+template<typename T>
+auto begin(reverse_adapter<T> r)
+{
+	return std::rbegin(r.iterable);
+}
+
+template<typename T>
+auto end(reverse_adapter<T> r)
+{
+	return std::rend(r.iterable);
+}
+
+} /* namespace details */
+
+template<typename T>
+details::reverse_adapter<T> reverse(T &&iterable)
+{
+	return { iterable };
+}
+
 } /* namespace utils */
 
 } /* namespace libcamera */

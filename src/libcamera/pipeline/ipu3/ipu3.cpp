@@ -141,6 +141,8 @@ private:
 	ImgUDevice imgu1_;
 	MediaDevice *cio2MediaDev_;
 	MediaDevice *imguMediaDev_;
+
+	std::vector<IPABuffer> ipaBuffers_;
 };
 
 IPU3CameraConfiguration::IPU3CameraConfiguration(IPU3CameraData *data)
@@ -586,12 +588,40 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	if (ret < 0)
 		return ret;
 
+	/* Map buffers to the IPA. */
+	unsigned int ipaBufferId = 1;
+
+	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->paramBuffers_) {
+		buffer->setCookie(ipaBufferId++);
+		ipaBuffers_.push_back({
+			.id = buffer->cookie(),
+			.planes = buffer->planes()
+		});
+	}
+
+	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->statBuffers_) {
+		buffer->setCookie(ipaBufferId++);
+		ipaBuffers_.push_back({
+			.id = buffer->cookie(),
+			.planes = buffer->planes()
+		});
+	}
+
+	data->ipa_->mapBuffers(ipaBuffers_);
+
 	return 0;
 }
 
 int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
+
+	std::vector<unsigned int> ids;
+	for (IPABuffer &ipabuf : ipaBuffers_)
+		ids.push_back(ipabuf.id);
+
+	data->ipa_->unmapBuffers(ids);
+	ipaBuffers_.clear();
 
 	data->imgu_->freeBuffers();
 

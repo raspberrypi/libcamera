@@ -538,63 +538,95 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	}
 
 	/* Cap the number of entries to the available streams. */
-	if (config_.size() > 1) {
-		config_.resize(1);
+	if (config_.size() > data_->streams_.size()) {
+		config_.resize(data_->streams_.size());
 		status = Adjusted;
 	}
 
-	StreamConfiguration &cfg = config_[0];
+	/*
+	 * Pick a configuration for the pipeline based on the pixel format for
+	 * the streams (ordered from highest to lowest priority). Default to
+	 * the first pipeline configuration if no streams requests a supported
+	 * pixel format.
+	 */
+	pipeConfig_ = data_->formats_.begin()->second;
 
-	/* Adjust the pixel format. */
-	auto it = data_->formats_.find(cfg.pixelFormat);
-	if (it == data_->formats_.end())
-		it = data_->formats_.begin();
-
-	PixelFormat pixelFormat = it->first;
-	if (cfg.pixelFormat != pixelFormat) {
-		LOG(SimplePipeline, Debug) << "Adjusting pixel format";
-		cfg.pixelFormat = pixelFormat;
-		status = Adjusted;
+	for (const StreamConfiguration &cfg : config_) {
+		auto it = data_->formats_.find(cfg.pixelFormat);
+		if (it != data_->formats_.end()) {
+			pipeConfig_ = it->second;
+			break;
+		}
 	}
 
-	pipeConfig_ = it->second;
-	if (!pipeConfig_->outputSizes.contains(cfg.size)) {
-		LOG(SimplePipeline, Debug)
-			<< "Adjusting size from " << cfg.size.toString()
-			<< " to " << pipeConfig_->captureSize.toString();
-		cfg.size = pipeConfig_->captureSize;
-		status = Adjusted;
-	}
-
-	/* \todo Create a libcamera core class to group format and size */
-	needConversion_ = cfg.pixelFormat != pipeConfig_->captureFormat
-			|| cfg.size != pipeConfig_->captureSize;
-
-	cfg.bufferCount = 3;
-
-	/* Set the stride and frameSize. */
-	if (!needConversion_) {
-		V4L2DeviceFormat format;
-		format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
-		format.size = cfg.size;
-
-		int ret = data_->video_->tryFormat(&format);
-		if (ret < 0)
-			return Invalid;
-
-		cfg.stride = format.planes[0].bpl;
-		cfg.frameSize = format.planes[0].size;
-
-		return status;
-	}
-
+	/* Adjust the requested streams. */
 	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(data_->pipe_);
 	SimpleConverter *converter = pipe->converter();
 
-	std::tie(cfg.stride, cfg.frameSize) =
-		converter->strideAndFrameSize(cfg.pixelFormat, cfg.size);
-	if (cfg.stride == 0)
-		return Invalid;
+	/*
+	 * Enable usage of the converter when producing multiple streams, as
+	 * the video capture device can't capture to multiple buffers.
+	 *
+	 * It is possible to produce up to one stream without conversion
+	 * (provided the format and size match), at the expense of more complex
+	 * buffer handling (including allocation of internal buffers to be used
+	 * when a request doesn't contain a buffer for the stream that doesn't
+	 * require any conversion, similar to raw capture use cases). This is
+	 * left as a future improvement.
+	 */
+	needConversion_ = config_.size() > 1;
+
+	for (unsigned int i = 0; i < config_.size(); ++i) {
+		StreamConfiguration &cfg = config_[i];
+
+		/* Adjust the pixel format and size. */
+		auto it = std::find(pipeConfig_->outputFormats.begin(),
+				    pipeConfig_->outputFormats.end(),
+				    cfg.pixelFormat);
+		if (it == pipeConfig_->outputFormats.end())
+			it = pipeConfig_->outputFormats.begin();
+
+		PixelFormat pixelFormat = *it;
+		if (cfg.pixelFormat != pixelFormat) {
+			LOG(SimplePipeline, Debug) << "Adjusting pixel format";
+			cfg.pixelFormat = pixelFormat;
+			status = Adjusted;
+		}
+
+		if (!pipeConfig_->outputSizes.contains(cfg.size)) {
+			LOG(SimplePipeline, Debug)
+				<< "Adjusting size from " << cfg.size.toString()
+				<< " to " << pipeConfig_->captureSize.toString();
+			cfg.size = pipeConfig_->captureSize;
+			status = Adjusted;
+		}
+
+		/* \todo Create a libcamera core class to group format and size */
+		if (cfg.pixelFormat != pipeConfig_->captureFormat ||
+		    cfg.size != pipeConfig_->captureSize)
+			needConversion_ = true;
+
+		/* Set the stride, frameSize and bufferCount. */
+		if (needConversion_) {
+			std::tie(cfg.stride, cfg.frameSize) =
+				converter->strideAndFrameSize(cfg.pixelFormat, cfg.size);
+			if (cfg.stride == 0)
+				return Invalid;
+		} else {
+			V4L2DeviceFormat format;
+			format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+			format.size = cfg.size;
+
+			int ret = data_->video_->tryFormat(&format);
+			if (ret < 0)
+				return Invalid;
+
+			cfg.stride = format.planes[0].bpl;
+			cfg.frameSize = format.planes[0].size;
+		}
+
+		cfg.bufferCount = 3;
+	}
 
 	return status;
 }
@@ -629,16 +661,18 @@ CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera
 		       });
 
 	/*
-	 * Create the stream configuration. Take the first entry in the formats
+	 * Create the stream configurations. Take the first entry in the formats
 	 * map as the default, for lack of a better option.
 	 *
 	 * \todo Implement a better way to pick the default format
 	 */
-	StreamConfiguration cfg{ StreamFormats{ formats } };
-	cfg.pixelFormat = formats.begin()->first;
-	cfg.size = formats.begin()->second[0].max;
+	for ([[maybe_unused]] StreamRole role : roles) {
+		StreamConfiguration cfg{ StreamFormats{ formats } };
+		cfg.pixelFormat = formats.begin()->first;
+		cfg.size = formats.begin()->second[0].max;
 
-	config->addConfiguration(cfg);
+		config->addConfiguration(cfg);
+	}
 
 	config->validate();
 
@@ -651,7 +685,6 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		static_cast<SimpleCameraConfiguration *>(c);
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
-	StreamConfiguration &cfg = config->at(0);
 	int ret;
 
 	/*
@@ -695,28 +728,29 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return -EINVAL;
 	}
 
-	/* Configure the converter if required. */
+	/* Configure the converter if needed. */
+	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;
 	data->useConverter_ = config->needConversion();
-	if (data->useConverter_) {
-		StreamConfiguration inputCfg;
-		inputCfg.pixelFormat = pipeConfig->captureFormat;
-		inputCfg.size = pipeConfig->captureSize;
-		inputCfg.stride = captureFormat.planes[0].bpl;
-		inputCfg.bufferCount = kNumInternalBuffers;
 
-		ret = converter_->configure(inputCfg, { cfg });
-		if (ret < 0) {
-			LOG(SimplePipeline, Error)
-				<< "Unable to configure converter";
-			return ret;
-		}
+	for (unsigned int i = 0; i < config->size(); ++i) {
+		StreamConfiguration &cfg = config->at(i);
 
-		LOG(SimplePipeline, Debug) << "Using format converter";
+		cfg.setStream(&data->streams_[i]);
+
+		if (data->useConverter_)
+			outputCfgs.push_back(cfg);
 	}
 
-	cfg.setStream(&data->streams_[0]);
+	if (outputCfgs.empty())
+		return 0;
 
-	return 0;
+	StreamConfiguration inputCfg;
+	inputCfg.pixelFormat = pipeConfig->captureFormat;
+	inputCfg.size = pipeConfig->captureSize;
+	inputCfg.stride = captureFormat.planes[0].bpl;
+	inputCfg.bufferCount = kNumInternalBuffers;
+
+	return converter_->configure(inputCfg, outputCfgs);
 }
 
 int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,

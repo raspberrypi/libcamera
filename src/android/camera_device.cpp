@@ -851,7 +851,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_JPEG_MAX_SIZE, &maxJpegBufferSize_, 1);
 
 	/* Sensor static metadata. */
-	if (properties.contains(properties::PixelArraySize)) {
+	{
 		const Size &size =
 			properties.get(properties::PixelArraySize);
 		std::vector<int32_t> data{
@@ -860,17 +860,9 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		};
 		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
 					  data.data(), data.size());
-	} else {
-		/*
-		 * \todo Drop the default once the ov5670 and ov13858 drivers
-		 * are updated to report the pixel array size.
-		 */
-		int32_t data[] = { 2592, 1944 };
-		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
-					  data, 2);
 	}
 
-	if (properties.contains(properties::PixelArrayActiveAreas)) {
+	{
 		const Span<const Rectangle> &rects =
 			properties.get(properties::PixelArrayActiveAreas);
 		std::vector<int32_t> data{
@@ -881,14 +873,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		};
 		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
 					  data.data(), data.size());
-	} else {
-		/*
-		 * \todo Drop the default once the ov5670 and ov13858 drivers
-		 * are updated to report the pixel array size.
-		 */
-		int32_t data[] = { 0, 0, 2560, 1920 };
-		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
-					  data, 4);
 	}
 
 	int32_t sensitivityRange[] = {

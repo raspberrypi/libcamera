@@ -18,3 +18,4 @@
    Pipeline Handler Writer's Guide <guides/pipeline-handler>
    Tracing guide <guides/tracing>
    Environment variables <environment_variables>
+   Sensor driver requirements <sensor_driver_requirements>

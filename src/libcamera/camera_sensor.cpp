@@ -370,13 +370,11 @@ int CameraSensor::initProperties()
 	}
 	properties_.set(properties::Location, propertyValue);
 
-	/* Camera Rotation: default is 0 degrees. */
 	const auto &rotationControl = controls.find(V4L2_CID_CAMERA_SENSOR_ROTATION);
-	if (rotationControl != controls.end())
+	if (rotationControl != controls.end()) {
 		propertyValue = rotationControl->second.def().get<int32_t>();
-	else
-		propertyValue = 0;
-	properties_.set(properties::Rotation, propertyValue);
+		properties_.set(properties::Rotation, propertyValue);
+	}
 
 	properties_.set(properties::PixelArraySize, pixelArraySize_);
 	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });

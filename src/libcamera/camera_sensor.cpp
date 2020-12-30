@@ -269,15 +269,21 @@ int CameraSensor::validateSensorDriver()
 	Rectangle rect;
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &rect);
 	if (ret) {
+		rect = Rectangle(resolution());
 		LOG(CameraSensor, Warning)
-			<< "Failed to retrieve the readable pixel array size";
+			<< "The PixelArraySize property has been defaulted to "
+			<< rect.toString();
 		err = -EINVAL;
 	}
+	pixelArraySize_.width = rect.width;
+	pixelArraySize_.height = rect.height;
 
-	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &activeArea_);
 	if (ret) {
+		activeArea_ = Rectangle(pixelArraySize_);
 		LOG(CameraSensor, Warning)
-			<< "Failed to retrieve the active pixel array size";
+			<< "The PixelArrayActiveAreas property has been defaulted to "
+			<< activeArea_.toString();
 		err = -EINVAL;
 	}
 
@@ -373,24 +379,8 @@ int CameraSensor::initProperties()
 		propertyValue = 0;
 	properties_.set(properties::Rotation, propertyValue);
 
-	Rectangle bounds;
-	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &bounds);
-	if (!ret)
-		properties_.set(properties::PixelArraySize, bounds.size());
-
-	Rectangle crop;
-	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &crop);
-	if (!ret) {
-		/*
-		 * V4L2_SEL_TGT_CROP_DEFAULT and V4L2_SEL_TGT_CROP_BOUNDS are
-		 * defined relatively to the sensor full pixel array size,
-		 * while properties::PixelArrayActiveAreas is defined relatively
-		 * to properties::PixelArraySize. Adjust it.
-		 */
-		crop.x -= bounds.x;
-		crop.y -= bounds.y;
-		properties_.set(properties::PixelArrayActiveAreas, { crop });
-	}
+	properties_.set(properties::PixelArraySize, pixelArraySize_);
+	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });
 
 	/* Color filter array pattern, register only for RAW sensors. */
 	for (const auto &format : formats_) {
@@ -646,20 +636,15 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 {
 	info->model = model();
 
-	/* Get the active area size. */
-	Rectangle rect;
-	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &rect);
-	if (ret) {
-		LOG(CameraSensor, Error)
-			<< "Failed to construct camera sensor info: "
-			<< "the camera sensor does not report the active area";
-
-		return ret;
-	}
-	info->activeAreaSize = { rect.width, rect.height };
+	/*
+	 * The active area size is a static property, while the crop
+	 * rectangle needs to be re-read as it depends on the sensor
+	 * configuration.
+	 */
+	info->activeAreaSize = { activeArea_.width, activeArea_.height };
 
 	/* It's mandatory for the subdevice to report its crop rectangle. */
-	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
+	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
 	if (ret) {
 		LOG(CameraSensor, Error)
 			<< "Failed to construct camera sensor info: "
@@ -672,10 +657,10 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	 * are defined relatively to the active pixel area, while V4L2's
 	 * TGT_CROP target is defined in respect to the full pixel array.
 	 *
-	 * Compensate it by subtracting the active areas offset.
+	 * Compensate it by subtracting the active area offset.
 	 */
-	info->analogCrop.x -= rect.x;
-	info->analogCrop.y -= rect.y;
+	info->analogCrop.x -= activeArea_.x;
+	info->analogCrop.y -= activeArea_.y;
 
 	/* The bit depth and image size depend on the currently applied format. */
 	V4L2SubdeviceFormat format{};

@@ -84,6 +84,9 @@ private:
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
 
+	Size pixelArraySize_;
+	Rectangle activeArea_;
+
 	ControlList properties_;
 };
 

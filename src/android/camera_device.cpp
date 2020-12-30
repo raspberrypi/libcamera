@@ -1099,7 +1099,9 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	if (cameraConfig && !cameraConfig->empty()) {
 		const PixelFormatInfo &info =
 			PixelFormatInfo::info(cameraConfig->at(0).pixelFormat);
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
+		/* Only advertise RAW support if RAW16 is possible. */
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW &&
+		    info.bitsPerPixel == 16) {
 			rawStreamAvailable = true;
 			availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
 		}

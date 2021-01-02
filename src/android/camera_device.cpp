@@ -895,11 +895,15 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 					  &filterArr, 1);
 	}
 
-	int64_t exposureTimeRange[] = {
-		100000, 200000000,
-	};
-	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
-				  &exposureTimeRange, 2);
+	const auto &exposureInfo = controlsInfo.find(&controls::ExposureTime);
+	if (exposureInfo != controlsInfo.end()) {
+		int64_t exposureTimeRange[2] = {
+			exposureInfo->second.min().get<int32_t>() * 1000LL,
+			exposureInfo->second.max().get<int32_t>() * 1000LL,
+		};
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
+					  &exposureTimeRange, 2);
+	}
 
 	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION, &orientation_, 1);
 

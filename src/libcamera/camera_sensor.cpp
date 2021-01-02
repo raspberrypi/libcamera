@@ -239,12 +239,11 @@ int CameraSensor::validateSensorDriver()
 	/*
 	 * Make sure the sensor driver supports the mandatory controls
 	 * required by the CameraSensor class.
-	 * - V4L2_CID_PIXEL_RATE is used to calculate the sensor timings
-	 * - V4L2_CID_HBLANK is used to calculate the line length
 	 */
 	const std::vector<uint32_t> mandatoryControls{
-		V4L2_CID_PIXEL_RATE,
+		V4L2_CID_EXPOSURE,
 		V4L2_CID_HBLANK,
+		V4L2_CID_PIXEL_RATE,
 	};
 
 	ControlList ctrls = subdev_->getControls(mandatoryControls);

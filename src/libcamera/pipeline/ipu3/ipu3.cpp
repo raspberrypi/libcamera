@@ -41,7 +41,7 @@ static constexpr unsigned int IMGU_OUTPUT_HEIGHT_ALIGN = 4;
 static constexpr unsigned int IMGU_OUTPUT_WIDTH_MARGIN = 64;
 static constexpr unsigned int IMGU_OUTPUT_HEIGHT_MARGIN = 32;
 
-static const ControlInfoMap IPU3Controls = {
+static const ControlInfoMap::Map IPU3Controls = {
 	{ &controls::draft::PipelineDepth, ControlInfo(2, 3) },
 };
 
@@ -49,7 +49,7 @@ class IPU3CameraData : public CameraData
 {
 public:
 	IPU3CameraData(PipelineHandler *pipe)
-		: CameraData(pipe)
+		: CameraData(pipe), exposureTime_(0)
 	{
 	}
 
@@ -62,6 +62,8 @@ public:
 	Stream outStream_;
 	Stream vfStream_;
 	Stream rawStream_;
+
+	uint32_t exposureTime_;
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -119,6 +121,7 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
+	int initControls(IPU3CameraData *data);
 	int registerCameras();
 
 	int allocateBuffers(Camera *camera);
@@ -731,6 +734,58 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 }
 
 /**
+ * \brief Initialize the camera controls
+ * \param[in] data The camera data
+ *
+ * Initialize the camera controls as the union of the static pipeline handler
+ * controls (IPU3Controls) and controls created dynamically from the sensor
+ * capabilities.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
+{
+	const CameraSensor *sensor = data->cio2_.sensor();
+	CameraSensorInfo sensorInfo{};
+
+	int ret = sensor->sensorInfo(&sensorInfo);
+	if (ret)
+		return ret;
+
+	ControlInfoMap::Map controls = IPU3Controls;
+
+	/*
+	 * Compute exposure time limits.
+	 *
+	 * \todo The exposure limits depend on the sensor configuration.
+	 * Initialize the control using the line length and pixel rate of the
+	 * current configuration converted to microseconds. Use the
+	 * V4L2_CID_EXPOSURE control to get exposure min, max and default and
+	 * convert it from lines to microseconds.
+	 */
+	double lineDuration = sensorInfo.lineLength
+			    / (sensorInfo.pixelRate / 1e6);
+	const ControlInfoMap &sensorControls = sensor->controls();
+	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
+
+	/*
+	 * \todo Report the actual exposure time, use the default for the
+	 * moment.
+	 */
+	data->exposureTime_ = defExposure;
+
+	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
+							defExposure);
+
+	data->controlInfo_ = std::move(controls);
+
+	return 0;
+}
+
+/**
  * \brief Initialise ImgU and CIO2 devices associated with cameras
  *
  * Initialise the two ImgU instances and create cameras with an associated
@@ -775,8 +830,9 @@ int PipelineHandlerIPU3::registerCameras()
 		/* Initialize the camera properties. */
 		data->properties_ = cio2->sensor()->properties();
 
-		/* Initialze the camera controls. */
-		data->controlInfo_ = IPU3Controls;
+		ret = initControls(data.get());
+		if (ret)
+			continue;
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each
@@ -841,6 +897,8 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 
 	/* Mark the request as complete. */
 	request->metadata().set(controls::draft::PipelineDepth, 3);
+	/* \todo Move the ExposureTime control to the IPA. */
+	request->metadata().set(controls::ExposureTime, exposureTime_);
 	pipe_->completeRequest(request);
 }
 

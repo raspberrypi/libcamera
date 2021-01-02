@@ -590,11 +590,12 @@ const ControlInfoMap &CameraSensor::controls() const
 }
 
 /**
- * \brief Read controls from the sensor
+ * \brief Read V4L2 controls from the sensor
  * \param[in] ids The list of controls to read, specified by their ID
  *
  * This method reads the value of all controls contained in \a ids, and returns
- * their values as a ControlList.
+ * their values as a ControlList. The control identifiers are defined by the
+ * V4L2 specification (V4L2_CID_*).
  *
  * If any control in \a ids is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
@@ -612,18 +613,13 @@ ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
 }
 
 /**
- * \fn CameraSensor::properties()
- * \brief Retrieve the camera sensor properties
- * \return The list of camera sensor properties
- */
-
-/**
- * \brief Write controls to the sensor
+ * \brief Write V4L2 controls to the sensor
  * \param[in] ctrls The list of controls to write
  *
  * This method writes the value of all controls contained in \a ctrls, and
- * stores the values actually applied to the device in the corresponding
- * \a ctrls entry.
+ * stores the values actually applied to the device in the corresponding \a
+ * ctrls entry. The control identifiers are defined by the V4L2 specification
+ * (V4L2_CID_*).
  *
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
@@ -645,6 +641,12 @@ int CameraSensor::setControls(ControlList *ctrls)
 {
 	return subdev_->setControls(ctrls);
 }
+
+/**
+ * \fn CameraSensor::properties()
+ * \brief Retrieve the camera sensor properties
+ * \return The list of camera sensor properties
+ */
 
 /**
  * \brief Assemble and return the camera sensor info

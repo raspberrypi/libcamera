@@ -643,13 +643,16 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	 */
 	info->activeAreaSize = { activeArea_.width, activeArea_.height };
 
-	/* It's mandatory for the subdevice to report its crop rectangle. */
+	/*
+	 * \todo Support for retreiving the crop rectangle is scheduled to
+	 * become mandatory. For the time being use the default value if it has
+	 * been initialized at sensor driver validation time.
+	 */
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
 	if (ret) {
+		info->analogCrop = activeArea_;
 		LOG(CameraSensor, Error)
-			<< "Failed to construct camera sensor info: "
-			<< "the camera sensor does not report the crop rectangle";
-		return ret;
+			<< "The analogue crop rectangle has been defaulted to the active area size";
 	}
 
 	/*

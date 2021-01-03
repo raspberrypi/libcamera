@@ -40,6 +40,7 @@ static constexpr unsigned int IMGU_OUTPUT_WIDTH_ALIGN = 64;
 static constexpr unsigned int IMGU_OUTPUT_HEIGHT_ALIGN = 4;
 static constexpr unsigned int IMGU_OUTPUT_WIDTH_MARGIN = 64;
 static constexpr unsigned int IMGU_OUTPUT_HEIGHT_MARGIN = 32;
+static constexpr Size IPU3ViewfinderSize(1280, 720);
 
 static const ControlInfoMap::Map IPU3Controls = {
 	{ &controls::draft::PipelineDepth, ControlInfo(2, 3) },
@@ -376,7 +377,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * capped to the maximum sensor resolution and aligned
 			 * to the ImgU output constraints.
 			 */
-			size = sensorResolution.boundedTo({ 1280, 720 })
+			size = sensorResolution.boundedTo(IPU3ViewfinderSize)
 					       .alignedDownTo(IMGU_OUTPUT_WIDTH_ALIGN,
 							      IMGU_OUTPUT_HEIGHT_ALIGN);
 			pixelFormat = formats::NV12;
@@ -745,7 +746,7 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
  */
 int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 {
-	const CameraSensor *sensor = data->cio2_.sensor();
+	CameraSensor *sensor = data->cio2_.sensor();
 	CameraSensorInfo sensorInfo{};
 
 	int ret = sensor->sensorInfo(&sensorInfo);
@@ -779,6 +780,72 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 
 	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
 							defExposure);
+
+	/*
+	 * Compute the scaler crop limits.
+	 *
+	 * \todo The scaler crop limits depend on the sensor configuration. It
+	 * should be updated when a new configuration is applied. To initialize
+	 * the control use the 'Viewfinder' configuration (1280x720) as the
+	 * pipeline output resolution and the full sensor size as input frame
+	 * (see the todo note in the validate() function about the usage of the
+	 * sensor's full frame as ImgU input).
+	 */
+
+	/* Re-fetch the sensor info updated to use the largest resolution. */
+	V4L2SubdeviceFormat sensorFormat;
+	sensorFormat.size = sensor->resolution();
+	ret = sensor->setFormat(&sensorFormat);
+	if (ret)
+		return ret;
+
+	ret = sensor->sensorInfo(&sensorInfo);
+	if (ret)
+		return ret;
+
+	/*
+	 * The maximum scaler crop rectangle is the analogue crop used to
+	 * produce the maximum frame size.
+	 */
+	const Rectangle &analogueCrop = sensorInfo.analogCrop;
+	Rectangle maxCrop = analogueCrop;
+
+	/*
+	 * As the ImgU cannot up-scale, the minimum selection rectangle has to
+	 * be as large as the pipeline output size. Use the default viewfinder
+	 * configuration as the desired output size and calculate the minimum
+	 * rectangle required to satisfy the ImgU processing margins, unless the
+	 * sensor resolution is smaller.
+	 *
+	 * \todo This implementation is based on the same assumptions about the
+	 * ImgU pipeline configuration described in then viewfinder and main
+	 * output sizes calculation in the validate() function.
+	 */
+
+	/* The strictly smaller size than the sensor resolution, aligned to margins. */
+	Size minSize = Size(sensor->resolution().width - 1,
+			    sensor->resolution().height - 1)
+		       .alignedDownTo(IMGU_OUTPUT_WIDTH_MARGIN,
+				      IMGU_OUTPUT_HEIGHT_MARGIN);
+
+	/*
+	 * Either the smallest margin-aligned size larger than the viewfinder
+	 * size or the adjusted sensor resolution.
+	 */
+	minSize = Size(IPU3ViewfinderSize.width + 1,
+		       IPU3ViewfinderSize.height + 1)
+		  .alignedUpTo(IMGU_OUTPUT_WIDTH_MARGIN,
+			       IMGU_OUTPUT_HEIGHT_MARGIN)
+		  .boundedTo(minSize);
+
+	/*
+	 * Re-scale in the sensor's native coordinates. Report (0,0) as
+	 * top-left corner as we allow application to freely pan the crop area.
+	 */
+	Rectangle minCrop = Rectangle(minSize).scaledBy(analogueCrop.size(),
+					       sensorInfo.outputSize);
+
+	controls[&controls::ScalerCrop] = ControlInfo(minCrop, maxCrop, maxCrop);
 
 	data->controlInfo_ = std::move(controls);
 

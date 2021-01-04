@@ -682,10 +682,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 714 bytes of static metadata
+	 * Currently: 53 entries, 782 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 714;
+	uint32_t byteSize = 782;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1211,19 +1211,36 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableRequestKeys.size());
 
 	std::vector<int32_t> availableResultKeys = {
-		ANDROID_CONTROL_AE_STATE,
+		ANDROID_CONTROL_AE_ANTIBANDING_MODE,
 		ANDROID_CONTROL_AE_LOCK,
+		ANDROID_CONTROL_AE_MODE,
+		ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+		ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
+		ANDROID_CONTROL_AE_STATE,
+		ANDROID_CONTROL_AF_MODE,
 		ANDROID_CONTROL_AF_STATE,
-		ANDROID_CONTROL_AWB_STATE,
+		ANDROID_CONTROL_AF_TRIGGER,
+		ANDROID_CONTROL_AWB_MODE,
 		ANDROID_CONTROL_AWB_LOCK,
+		ANDROID_CONTROL_AWB_STATE,
+		ANDROID_CONTROL_CAPTURE_INTENT,
+		ANDROID_CONTROL_EFFECT_MODE,
+		ANDROID_CONTROL_MODE,
+		ANDROID_CONTROL_SCENE_MODE,
+		ANDROID_CONTROL_VIDEO_STABILIZATION_MODE,
+		ANDROID_FLASH_MODE,
+		ANDROID_FLASH_STATE,
 		ANDROID_LENS_STATE,
-		ANDROID_REQUEST_PIPELINE_DEPTH,
-		ANDROID_SCALER_CROP_REGION,
+		ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
 		ANDROID_SENSOR_TIMESTAMP,
 		ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
 		ANDROID_SENSOR_EXPOSURE_TIME,
+		ANDROID_STATISTICS_FACE_DETECT_MODE,
 		ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
 		ANDROID_STATISTICS_SCENE_FLICKER,
+		ANDROID_NOISE_REDUCTION_MODE,
+		ANDROID_REQUEST_PIPELINE_DEPTH,
+		ANDROID_SCALER_CROP_REGION,
 		ANDROID_JPEG_SIZE,
 		ANDROID_JPEG_QUALITY,
 		ANDROID_JPEG_ORIENTATION,
@@ -1872,48 +1889,106 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 18 entries, 62 bytes
+	 * Currently: 33 entries, 75 bytes
+	 *
+	 * Reserve more space for the JPEG metadata set by the post-processor.
+	 * Currently: ANDROID_JPEG_SIZE (int32_t), ANDROID_JPEG_QUALITY (byte),
+	 * ANDROID_JPEG_ORIENTATION (int32_t) = 3 entries, 9 bytes.
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(19, 63);
+		std::make_unique<CameraMetadata>(33, 75);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
 	}
 
-	const uint8_t ae_state = ANDROID_CONTROL_AE_STATE_CONVERGED;
-	resultMetadata->addEntry(ANDROID_CONTROL_AE_STATE, &ae_state, 1);
+	uint8_t value = ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE, &value, 1);
 
-	const uint8_t ae_lock = ANDROID_CONTROL_AE_LOCK_OFF;
-	resultMetadata->addEntry(ANDROID_CONTROL_AE_LOCK, &ae_lock, 1);
+	value = ANDROID_CONTROL_AE_LOCK_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_LOCK, &value, 1);
 
-	uint8_t af_state = ANDROID_CONTROL_AF_STATE_INACTIVE;
-	resultMetadata->addEntry(ANDROID_CONTROL_AF_STATE, &af_state, 1);
+	value = ANDROID_CONTROL_AE_MODE_ON;
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_MODE, &value, 1);
 
-	const uint8_t awb_state = ANDROID_CONTROL_AWB_STATE_CONVERGED;
-	resultMetadata->addEntry(ANDROID_CONTROL_AWB_STATE, &awb_state, 1);
+	std::vector<int32_t> aeFpsTarget = { 30, 30 };
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+				 aeFpsTarget.data(), aeFpsTarget.size());
 
-	const uint8_t awb_lock = ANDROID_CONTROL_AWB_LOCK_OFF;
-	resultMetadata->addEntry(ANDROID_CONTROL_AWB_LOCK, &awb_lock, 1);
+	value = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
+				 &value, 1);
 
-	const uint8_t lens_state = ANDROID_LENS_STATE_STATIONARY;
-	resultMetadata->addEntry(ANDROID_LENS_STATE, &lens_state, 1);
+	value = ANDROID_CONTROL_AE_STATE_CONVERGED;
+	resultMetadata->addEntry(ANDROID_CONTROL_AE_STATE, &value, 1);
+
+	value = ANDROID_CONTROL_AF_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_AF_MODE, &value, 1);
+
+	value = ANDROID_CONTROL_AF_STATE_INACTIVE;
+	resultMetadata->addEntry(ANDROID_CONTROL_AF_STATE, &value, 1);
+
+	value = ANDROID_CONTROL_AF_TRIGGER_IDLE;
+	resultMetadata->addEntry(ANDROID_CONTROL_AF_TRIGGER, &value, 1);
+
+	value = ANDROID_CONTROL_AWB_MODE_AUTO;
+	resultMetadata->addEntry(ANDROID_CONTROL_AWB_MODE, &value, 1);
+
+	value = ANDROID_CONTROL_AWB_LOCK_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_AWB_LOCK, &value, 1);
+
+	value = ANDROID_CONTROL_AWB_STATE_CONVERGED;
+	resultMetadata->addEntry(ANDROID_CONTROL_AWB_STATE, &value, 1);
+
+	value = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
+	resultMetadata->addEntry(ANDROID_CONTROL_CAPTURE_INTENT, &value, 1);
+
+	value = ANDROID_CONTROL_EFFECT_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_EFFECT_MODE, &value, 1);
+
+	value = ANDROID_CONTROL_MODE_AUTO;
+	resultMetadata->addEntry(ANDROID_CONTROL_MODE, &value, 1);
+
+	value = ANDROID_CONTROL_SCENE_MODE_DISABLED;
+	resultMetadata->addEntry(ANDROID_CONTROL_SCENE_MODE, &value, 1);
+
+	value = ANDROID_CONTROL_VIDEO_STABILIZATION_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_CONTROL_VIDEO_STABILIZATION_MODE, &value, 1);
+
+	value = ANDROID_FLASH_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_FLASH_MODE, &value, 1);
+
+	value = ANDROID_FLASH_STATE_UNAVAILABLE;
+	resultMetadata->addEntry(ANDROID_FLASH_STATE, &value, 1);
+
+	value = ANDROID_LENS_STATE_STATIONARY;
+	resultMetadata->addEntry(ANDROID_LENS_STATE, &value, 1);
+
+	value = ANDROID_LENS_OPTICAL_STABILIZATION_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
+				 &value, 1);
 
 	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
+
+	value = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE,
+				 &value, 1);
+
+	value = ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
+				 &value, 1);
+
+	value = ANDROID_STATISTICS_SCENE_FLICKER_NONE;
+	resultMetadata->addEntry(ANDROID_STATISTICS_SCENE_FLICKER,
+				 &value, 1);
+
+	value = ANDROID_NOISE_REDUCTION_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_NOISE_REDUCTION_MODE, &value, 1);
 
 	/* 33.3 msec */
 	const int64_t rolling_shutter_skew = 33300000;
 	resultMetadata->addEntry(ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
 				 &rolling_shutter_skew, 1);
-
-	const uint8_t lens_shading_map_mode =
-				ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF;
-	resultMetadata->addEntry(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
-				 &lens_shading_map_mode, 1);
-
-	const uint8_t scene_flicker = ANDROID_STATISTICS_SCENE_FLICKER_NONE;
-	resultMetadata->addEntry(ANDROID_STATISTICS_SCENE_FLICKER,
-				 &scene_flicker, 1);
 
 	/* Add metadata tags reported by libcamera. */
 	if (metadata.contains(controls::draft::PipelineDepth)) {

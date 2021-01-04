@@ -808,8 +808,12 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableStabilizationModes.data(),
 				  availableStabilizationModes.size());
 
+	/*
+	 * \todo Inspect the Camera capabilities to report the available
+	 * AWB modes. Default to AUTO as CTS tests require it.
+	 */
 	std::vector<uint8_t> availableAwbModes = {
-		ANDROID_CONTROL_AWB_MODE_OFF,
+		ANDROID_CONTROL_AWB_MODE_AUTO,
 	};
 	staticMetadata_->addEntry(ANDROID_CONTROL_AWB_AVAILABLE_MODES,
 				  availableAwbModes.data(),

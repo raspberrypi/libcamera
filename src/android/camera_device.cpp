@@ -9,6 +9,7 @@
 #include "camera_ops.h"
 #include "post_processor.h"
 
+#include <cmath>
 #include <fstream>
 #include <sys/mman.h>
 #include <tuple>
@@ -682,10 +683,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 854 bytes of static metadata
+	 * Currently: 54 entries, 874 bytes of static metadata
 	 */
-	uint32_t numEntries = 53;
-	uint32_t byteSize = 854;
+	uint32_t numEntries = 54;
+	uint32_t byteSize = 874;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -775,12 +776,48 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  aeAvailableModes.data(),
 				  aeAvailableModes.size());
 
-	std::vector<int32_t> availableAeFpsTarget = {
-		15, 30,
-	};
-	staticMetadata_->addEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
-				  availableAeFpsTarget.data(),
-				  availableAeFpsTarget.size());
+	int64_t minFrameDurationNsec = -1;
+	int64_t maxFrameDurationNsec = -1;
+	const auto frameDurationsInfo = controlsInfo.find(&controls::FrameDurations);
+	if (frameDurationsInfo != controlsInfo.end()) {
+		minFrameDurationNsec = frameDurationsInfo->second.min().get<int64_t>() * 1000;
+		maxFrameDurationNsec = frameDurationsInfo->second.max().get<int64_t>() * 1000;
+
+		/*
+		 * Adjust the minimum frame duration to comply with Android
+		 * requirements. The camera service mandates all preview/record
+		 * streams to have a minimum frame duration < 33,366 milliseconds
+		 * (see MAX_PREVIEW_RECORD_DURATION_NS in the camera service
+		 * implementation).
+		 *
+		 * If we're close enough (+ 500 useconds) to that value, round
+		 * the minimum frame duration of the camera to an accepted
+		 * value.
+		 */
+		static constexpr int64_t MAX_PREVIEW_RECORD_DURATION_NS = 1e9 / 29.97;
+		if (minFrameDurationNsec > MAX_PREVIEW_RECORD_DURATION_NS &&
+		    minFrameDurationNsec < MAX_PREVIEW_RECORD_DURATION_NS + 500000)
+			minFrameDurationNsec = MAX_PREVIEW_RECORD_DURATION_NS - 1000;
+
+		/*
+		 * The AE routine frame rate limits are computed using the frame
+		 * duration limits, as libcamera clips the AE routine to the
+		 * frame durations.
+		 */
+		int32_t maxFps = std::round(1e9 / minFrameDurationNsec);
+		int32_t minFps = std::round(1e9 / maxFrameDurationNsec);
+		minFps = std::max(1, minFps);
+
+		/*
+		 * Register to the camera service {min, max} and {max, max}
+		 * intervals as requested by the metadata documentation.
+		 */
+		int32_t availableAeFpsTarget[] = {
+			minFps, maxFps, maxFps, maxFps
+		};
+		staticMetadata_->addEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+					  availableAeFpsTarget, 4);
+	}
 
 	std::vector<int32_t> aeCompensationRange = {
 		0, 0,
@@ -970,6 +1007,10 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE,
 				  &timestampSource, 1);
 
+	if (maxFrameDurationNsec > 0)
+		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_MAX_FRAME_DURATION,
+					  &maxFrameDurationNsec, 1);
+
 	/* Statistics static metadata. */
 	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
 	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
@@ -1104,18 +1145,20 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableStallDurations.data(),
 				  availableStallDurations.size());
 
-	/* \todo Collect the minimum frame duration from the camera. */
-	std::vector<int64_t> minFrameDurations;
-	minFrameDurations.reserve(streamConfigurations_.size() * 4);
-	for (const auto &entry : streamConfigurations_) {
-		minFrameDurations.push_back(entry.androidFormat);
-		minFrameDurations.push_back(entry.resolution.width);
-		minFrameDurations.push_back(entry.resolution.height);
-		minFrameDurations.push_back(33333333);
+	/* Use the minimum frame duration for all the YUV/RGB formats. */
+	if (minFrameDurationNsec > 0) {
+		std::vector<int64_t> minFrameDurations;
+		minFrameDurations.reserve(streamConfigurations_.size() * 4);
+		for (const auto &entry : streamConfigurations_) {
+			minFrameDurations.push_back(entry.androidFormat);
+			minFrameDurations.push_back(entry.resolution.width);
+			minFrameDurations.push_back(entry.resolution.height);
+			minFrameDurations.push_back(minFrameDurationNsec);
+		}
+		staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
+					  minFrameDurations.data(),
+					  minFrameDurations.size());
 	}
-	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
-				  minFrameDurations.data(),
-				  minFrameDurations.size());
 
 	uint8_t croppingType = ANDROID_SCALER_CROPPING_TYPE_CENTER_ONLY;
 	staticMetadata_->addEntry(ANDROID_SCALER_CROPPING_TYPE, &croppingType, 1);
@@ -1215,6 +1258,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SENSOR_INFO_ACTIVE_ARRAY_SIZE,
 		ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT,
 		ANDROID_SENSOR_INFO_EXPOSURE_TIME_RANGE,
+		ANDROID_SENSOR_INFO_MAX_FRAME_DURATION,
 		ANDROID_SENSOR_INFO_PHYSICAL_SIZE,
 		ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
 		ANDROID_SENSOR_INFO_SENSITIVITY_RANGE,

@@ -104,6 +104,7 @@ private:
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
 	CameraMetadata *requestTemplatePreview();
 	libcamera::PixelFormat toPixelFormat(int format) const;
+	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
 		Camera3RequestDescriptor *descriptor, int64_t timestamp);
 

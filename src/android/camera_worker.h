@@ -25,6 +25,7 @@ public:
 	CaptureRequest(libcamera::Camera *camera, uint64_t cookie);
 
 	const std::vector<int> &fences() const { return acquireFences_; }
+	libcamera::ControlList &controls() { return request_->controls(); }
 	const libcamera::ControlList &metadata() const
 	{
 		return request_->metadata();

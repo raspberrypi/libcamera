@@ -1593,6 +1593,26 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 	return new FrameBuffer(std::move(planes));
 }
 
+int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
+{
+	const CameraMetadata &settings = descriptor->settings_;
+	if (!settings.isValid())
+		return 0;
+
+	/* Translate the Android request settings to libcamera controls. */
+	camera_metadata_ro_entry_t entry;
+	if (settings.getEntry(ANDROID_SCALER_CROP_REGION, &entry)) {
+		const int32_t *data = entry.data.i32;
+		Rectangle cropRegion{ data[0], data[1],
+				      static_cast<unsigned int>(data[2]),
+				      static_cast<unsigned int>(data[3]) };
+		ControlList &controls = descriptor->request_->controls();
+		controls.set(controls::ScalerCrop, cropRegion);
+	}
+
+	return 0;
+}
+
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
 	if (!camera3Request) {
@@ -1689,7 +1709,14 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 						camera3Buffer->acquire_fence);
 	}
 
-	/* Queue the request to the CameraWorker. */
+	/*
+	 * Translate controls from Android to libcamera and queue the request
+	 * to the CameraWorker thread.
+	 */
+	int ret = processControls(descriptor);
+	if (ret)
+		return ret;
+
 	worker_.queueRequest(descriptor->request_.get());
 
 	return 0;
@@ -1868,11 +1895,6 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	const uint8_t lens_state = ANDROID_LENS_STATE_STATIONARY;
 	resultMetadata->addEntry(ANDROID_LENS_STATE, &lens_state, 1);
 
-	int32_t sensorSizes[] = {
-		0, 0, 2560, 1920,
-	};
-	resultMetadata->addEntry(ANDROID_SCALER_CROP_REGION, sensorSizes, 4);
-
 	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
 
 	/* 33.3 msec */
@@ -1901,6 +1923,15 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 		int32_t exposure = metadata.get(controls::ExposureTime);
 		resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME,
 					 &exposure, 1);
+	}
+
+	if (metadata.contains(controls::ScalerCrop)) {
+		Rectangle crop = metadata.get(controls::ScalerCrop);
+		int32_t cropRect[] = {
+			crop.x, crop.y, static_cast<int32_t>(crop.width),
+			static_cast<int32_t>(crop.height),
+		};
+		resultMetadata->addEntry(ANDROID_SCALER_CROP_REGION, cropRect, 4);
 	}
 
 	/*

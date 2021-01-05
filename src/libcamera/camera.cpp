@@ -977,7 +977,7 @@ int Camera::queueRequest(Request *request)
 		return ret;
 
 	/*
-	 * The camera state may chance until the end of the function. No locking
+	 * The camera state may change until the end of the function. No locking
 	 * is however needed as PipelineHandler::queueRequest() will handle
 	 * this.
 	 */

@@ -70,6 +70,7 @@ protected:
 private:
 	int generateId();
 	int validateSensorDriver();
+	void initVimcDefaultProperties();
 	int initProperties();
 
 	const MediaEntity *entity_;

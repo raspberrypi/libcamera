@@ -6,6 +6,7 @@
  */
 
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/media_device.h"
 
 #include <algorithm>
 #include <float.h>
@@ -207,6 +208,21 @@ int CameraSensor::init()
 	 */
 	resolution_ = sizes_.back();
 
+	/*
+	 * VIMC is a bit special, as it does not yet support all the mandatory
+	 * requirements regular sensors have to respect.
+	 *
+	 * Do not validate the driver if it's VIMC and initialize the sensor
+	 * properties with static information.
+	 *
+	 * \todo Remove the special case once the VIMC driver has been
+	 * updated in all test platforms.
+	 */
+	if (entity_->device()->driver() == "vimc") {
+		initVimcDefaultProperties();
+		return initProperties();
+	}
+
 	ret = validateSensorDriver();
 	if (ret)
 		return ret;
@@ -302,6 +318,16 @@ int CameraSensor::validateSensorDriver()
 	}
 
 	return 0;
+}
+
+/*
+ * \brief Initialize properties that cannot be intialized by the
+ * regular initProperties() function for VIMC
+ */
+void CameraSensor::initVimcDefaultProperties()
+{
+	pixelArraySize_ = resolution();
+	activeArea_ = Rectangle(pixelArraySize_);
 }
 
 int CameraSensor::initProperties()

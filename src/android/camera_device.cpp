@@ -1863,11 +1863,6 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	resultMetadata->addEntry(ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
 				 &rolling_shutter_skew, 1);
 
-	/* 16.6 msec */
-	const int64_t exposure_time = 16600000;
-	resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME,
-				 &exposure_time, 1);
-
 	const uint8_t lens_shading_map_mode =
 				ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
@@ -1883,6 +1878,12 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 			metadata.get<int32_t>(controls::draft::PipelineDepth);
 		resultMetadata->addEntry(ANDROID_REQUEST_PIPELINE_DEPTH,
 					 &pipeline_depth, 1);
+	}
+
+	if (metadata.contains(controls::ExposureTime)) {
+		int32_t exposure = metadata.get(controls::ExposureTime);
+		resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME,
+					 &exposure, 1);
 	}
 
 	/*

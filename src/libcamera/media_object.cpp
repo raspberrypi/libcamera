@@ -67,6 +67,11 @@ LOG_DECLARE_CATEGORY(MediaDevice)
 
 /**
  * \fn MediaObject::device()
+ * \copydoc MediaObject::device() const
+ */
+
+/**
+ * \fn MediaObject::device() const
  * \brief Retrieve the media device the media object belongs to
  * \return The MediaDevice
  */

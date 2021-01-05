@@ -22,6 +22,7 @@ class MediaObject
 {
 public:
 	MediaDevice *device() { return dev_; }
+	const MediaDevice *device() const { return dev_; }
 	unsigned int id() const { return id_; }
 
 protected:

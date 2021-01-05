@@ -509,6 +509,22 @@ int UVCCameraData::init(MediaDevice *media)
 	properties_.set(properties::Location, properties::CameraLocationExternal);
 	properties_.set(properties::Model, utils::toAscii(media->model()));
 
+	/*
+	 * Get the current format in order to initialize the sensor array
+	 * properties.
+	 */
+	Size resolution;
+	for (const auto &it : video_->formats()) {
+		const std::vector<SizeRange> &sizeRanges = it.second;
+		for (const SizeRange &sizeRange : sizeRanges) {
+			if (sizeRange.max > resolution)
+				resolution = sizeRange.max;
+		}
+	}
+
+	properties_.set(properties::PixelArraySize, resolution);
+	properties_.set(properties::PixelArrayActiveAreas, { Rectangle(resolution) });
+
 	/* Initialise the supported controls. */
 	ControlInfoMap::Map ctrls;
 

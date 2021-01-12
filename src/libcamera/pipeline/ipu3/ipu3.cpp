@@ -617,15 +617,14 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] ControlList *con
 		goto error;
 
 	ret = imgu->start();
-	if (ret) {
-		imgu->stop();
-		cio2->stop();
+	if (ret)
 		goto error;
-	}
 
 	return 0;
 
 error:
+	imgu->stop();
+	cio2->stop();
 	freeBuffers(camera);
 	LOG(IPU3, Error) << "Failed to start camera " << camera->id();
 

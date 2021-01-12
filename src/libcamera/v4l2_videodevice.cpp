@@ -481,7 +481,8 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr)
+	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr),
+	  streaming_(false)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -1554,6 +1555,8 @@ int V4L2VideoDevice::streamOn()
 		return ret;
 	}
 
+	streaming_ = true;
+
 	return 0;
 }
 
@@ -1565,11 +1568,17 @@ int V4L2VideoDevice::streamOn()
  * and the bufferReady signal is emitted for them. The order in which those
  * buffers are dequeued is not specified.
  *
+ * This will be a no-op if the stream is not started in the first place and
+ * has no queued buffers.
+ *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::streamOff()
 {
 	int ret;
+
+	if (!streaming_ && queuedBuffers_.empty())
+		return 0;
 
 	ret = ioctl(VIDIOC_STREAMOFF, &bufferType_);
 	if (ret < 0) {
@@ -1588,6 +1597,7 @@ int V4L2VideoDevice::streamOff()
 
 	queuedBuffers_.clear();
 	fdBufferNotifier_->setEnabled(false);
+	streaming_ = false;
 
 	return 0;
 }

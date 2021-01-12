@@ -249,6 +249,8 @@ private:
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
 
 	EventNotifier *fdBufferNotifier_;
+
+	bool streaming_;
 };
 
 class V4L2M2MDevice

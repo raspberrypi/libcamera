@@ -6,15 +6,15 @@ Sensor Driver Requirements
 ==========================
 
 libcamera handles imaging devices in the CameraSensor class and defines
-through its API a consistent interface towards other library components.
+a consistent interface through its API towards other library components.
 
 The CameraSensor class uses the V4L2 subdev kernel API to interface with the
 camera sensor through one or multiple sub-devices exposed in userspace by
 the sensor driver.
 
-In order for libcamera to be fully operational and provide to applications and
-pipeline handlers all the required information to interface with the camera
-sensor, a set of mandatory and optional features the driver has to support
+In order for libcamera to be fully operational and provide all the required
+information to interface with the camera sensor to applications and pipeline
+handlers, a set of mandatory and optional features the driver has to support
 has been defined.
 
 Mandatory Requirements

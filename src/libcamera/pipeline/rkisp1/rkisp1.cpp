@@ -51,7 +51,6 @@ struct RkISP1FrameInfo {
 	FrameBuffer *mainPathBuffer;
 	FrameBuffer *selfPathBuffer;
 
-	bool paramFilled;
 	bool paramDequeued;
 	bool metadataProcessed;
 };
@@ -219,7 +218,6 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 	info->mainPathBuffer = mainPathBuffer;
 	info->selfPathBuffer = selfPathBuffer;
 	info->statBuffer = statBuffer;
-	info->paramFilled = false;
 	info->paramDequeued = false;
 	info->metadataProcessed = false;
 
@@ -322,9 +320,20 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 		break;
 	}
 	case RKISP1_IPA_ACTION_PARAM_FILLED: {
+		PipelineHandlerRkISP1 *pipe = static_cast<PipelineHandlerRkISP1 *>(pipe_);
 		RkISP1FrameInfo *info = frameInfo_.find(frame);
-		if (info)
-			info->paramFilled = true;
+		if (!info)
+			break;
+
+		pipe->param_->queueBuffer(info->paramBuffer);
+		pipe->stat_->queueBuffer(info->statBuffer);
+
+		if (info->mainPathBuffer)
+			mainPath_->queueBuffer(info->mainPathBuffer);
+
+		if (info->selfPathBuffer)
+			selfPath_->queueBuffer(info->selfPathBuffer);
+
 		break;
 	}
 	case RKISP1_IPA_ACTION_METADATA:
@@ -852,15 +861,6 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 	op.controls = { request->controls() };
 	data->ipa_->processEvent(op);
 
-	param_->queueBuffer(info->paramBuffer);
-	stat_->queueBuffer(info->statBuffer);
-
-	if (info->mainPathBuffer)
-		mainPath_.queueBuffer(info->mainPathBuffer);
-
-	if (info->selfPathBuffer)
-		selfPath_.queueBuffer(info->selfPathBuffer);
-
 	data->frame_++;
 
 	return 0;
@@ -1009,7 +1009,6 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	mainPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	selfPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
-	isp_->frameStart.connect(this, &PipelineHandlerRkISP1::frameStart);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 
 	/*
@@ -1095,20 +1094,6 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	op.operation = RKISP1_IPA_EVENT_SIGNAL_STAT_BUFFER;
 	op.data = { info->frame, info->statBuffer->cookie() };
 	data->ipa_->processEvent(op);
-}
-
-void PipelineHandlerRkISP1::frameStart(uint32_t sequence)
-{
-	if (!activeCamera_)
-		return;
-
-	RkISP1CameraData *data = cameraData(activeCamera_);
-
-	RkISP1FrameInfo *info = data->frameInfo_.find(sequence);
-	if (!info || !info->paramFilled)
-		LOG(RkISP1, Info)
-			<< "Parameters not ready on time for frame "
-			<< sequence;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)

@@ -43,7 +43,7 @@ The sensor driver should support the following V4L2 controls:
 .. _V4L2_CID_CAMERA_ORIENTATION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-camera.html
 .. _V4L2_CID_CAMERA_SENSOR_ROTATION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-process.html
 
-The controls are used to register the camera location and orientation.
+The controls are used to register the camera location and rotation.
 
 The sensor driver should implement support for the V4L2 Selection API,
 specifically it should implement support for the

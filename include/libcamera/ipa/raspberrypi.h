@@ -65,6 +65,7 @@ static const ControlInfoMap Controls = {
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ColourCorrectionMatrix, ControlInfo(-16.0f, 16.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
+	{ &controls::FrameDurations, ControlInfo(1000, 1000000000) },
 };
 
 } /* namespace RPi */

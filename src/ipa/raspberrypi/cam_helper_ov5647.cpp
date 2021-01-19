@@ -23,6 +23,15 @@ public:
 	unsigned int HideFramesModeSwitch() const override;
 	unsigned int MistrustFramesStartup() const override;
 	unsigned int MistrustFramesModeSwitch() const override;
+
+private:
+	/*
+	 * Smallest difference between the frame length and integration time,
+	 * in units of lines.
+	 */
+	static constexpr int frameIntegrationDiff = 4;
+	/* Largest possible frame length, in units of lines. */
+	static constexpr int maxFrameLength = 0xffff;
 };
 
 /*
@@ -31,7 +40,7 @@ public:
  */
 
 CamHelperOv5647::CamHelperOv5647()
-	: CamHelper(new MdParserRPi())
+	: CamHelper(new MdParserRPi(), maxFrameLength, frameIntegrationDiff)
 {
 }
 

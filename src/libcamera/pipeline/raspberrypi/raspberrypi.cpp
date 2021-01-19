@@ -1233,7 +1233,8 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		if (!staggeredCtrl_) {
 			staggeredCtrl_.init(unicam_[Unicam::Image].dev(),
 					    { { V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
-					      { V4L2_CID_EXPOSURE, result.data[resultIdx++] } });
+					      { V4L2_CID_EXPOSURE, result.data[resultIdx++] },
+					      { V4L2_CID_VBLANK, result.data[resultIdx++] } });
 			sensorMetadata_ = result.data[resultIdx++];
 		}
 	}

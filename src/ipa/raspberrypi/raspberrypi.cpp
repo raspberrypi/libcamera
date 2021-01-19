@@ -58,6 +58,8 @@ namespace libcamera {
 /* Configure the sensor with these values initially. */
 constexpr double DefaultAnalogueGain = 1.0;
 constexpr unsigned int DefaultExposureTime = 20000;
+constexpr double defaultMinFrameDuration = 1e6 / 30.0;
+constexpr double defaultMaxFrameDuration = 1e6 / 0.01;
 
 LOG_DEFINE_CATEGORY(IPARPI)
 
@@ -150,6 +152,10 @@ private:
 
 	/* Distinguish the first camera start from others. */
 	bool firstStart_;
+
+	/* Frame duration (1/fps) limits, given in microseconds. */
+	double minFrameDuration_;
+	double maxFrameDuration_;
 };
 
 int IPARPi::init(const IPASettings &settings)
@@ -332,7 +338,8 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
 		result->data.push_back(gainDelay);
-		result->data.push_back(exposureDelay);
+		result->data.push_back(exposureDelay); /* For EXPOSURE ctrl */
+		result->data.push_back(exposureDelay); /* For VBLANK ctrl */
 		result->data.push_back(sensorMetadata);
 
 		result->operation |= RPi::IPA_CONFIG_STAGGERED_WRITE;
@@ -376,6 +383,9 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		controller_.Read(tuningFile_.c_str());
 		controller_.Initialise();
 		controllerInit_ = true;
+
+		minFrameDuration_ = defaultMinFrameDuration;
+		maxFrameDuration_ = defaultMaxFrameDuration;
 
 		/* Supply initial values for gain and exposure. */
 		ControlList ctrls(sensorCtrls_);
@@ -526,7 +536,8 @@ bool IPARPi::validateSensorControls()
 {
 	static const uint32_t ctrls[] = {
 		V4L2_CID_ANALOGUE_GAIN,
-		V4L2_CID_EXPOSURE
+		V4L2_CID_EXPOSURE,
+		V4L2_CID_VBLANK,
 	};
 
 	for (auto c : ctrls) {
@@ -553,7 +564,7 @@ bool IPARPi::validateIspControls()
 		V4L2_CID_USER_BCM2835_ISP_DENOISE,
 		V4L2_CID_USER_BCM2835_ISP_SHARPEN,
 		V4L2_CID_USER_BCM2835_ISP_DPC,
-		V4L2_CID_USER_BCM2835_ISP_LENS_SHADING
+		V4L2_CID_USER_BCM2835_ISP_LENS_SHADING,
 	};
 
 	for (auto c : ctrls) {
@@ -806,6 +817,25 @@ void IPARPi::queueRequest(const ControlList &controls)
 			break;
 		}
 
+		case controls::FRAME_DURATIONS: {
+			auto frameDurations = ctrl.second.get<Span<const int64_t>>();
+
+			/* This will be applied once AGC recalculations occur. */
+			minFrameDuration_ = frameDurations[0] ? frameDurations[0] : defaultMinFrameDuration;
+			maxFrameDuration_ = frameDurations[1] ? frameDurations[1] : defaultMaxFrameDuration;
+			maxFrameDuration_ = std::max(maxFrameDuration_, minFrameDuration_);
+
+			/*
+			 * \todo The values returned in the metadata below must be
+			 * correctly clipped by what the sensor mode supports and
+			 * what the AGC exposure mode or manual shutter speed limits
+			 */
+			libcameraMetadata_.set(controls::FrameDurations,
+					       { static_cast<int64_t>(minFrameDuration_),
+						 static_cast<int64_t>(maxFrameDuration_) });
+			break;
+		}
+
 		default:
 			LOG(IPARPI, Warning)
 				<< "Ctrl " << controls::controls.at(ctrl.first)->name()
@@ -964,15 +994,27 @@ void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
-	int32_t exposureLines = helper_->ExposureLines(agcStatus->shutter_time);
 
-	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << agcStatus->shutter_time
-			   << " (Shutter lines: " << exposureLines << ") Gain: "
+	/* GetVBlanking might clip exposure time to the fps limits. */
+	double exposure = agcStatus->shutter_time;
+	int32_t vblanking = helper_->GetVBlanking(exposure, minFrameDuration_,
+						  maxFrameDuration_);
+	int32_t exposureLines = helper_->ExposureLines(exposure);
+
+	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
+			   << " (Shutter lines: " << exposureLines << ", AGC requested "
+			   << agcStatus->shutter_time << ") Gain: "
 			   << agcStatus->analogue_gain << " (Gain Code: "
 			   << gainCode << ")";
 
-	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
+	/*
+	 * Due to the behavior of V4L2, the current value of VBLANK could clip the
+	 * exposure time without us knowing. The next time though this function should
+	 * clip exposure correctly.
+	 */
+	ctrls.set(V4L2_CID_VBLANK, vblanking);
 	ctrls.set(V4L2_CID_EXPOSURE, exposureLines);
+	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
 }
 
 void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)

@@ -49,13 +49,22 @@ public:
 	double Gain(uint32_t gain_code) const override;
 	unsigned int MistrustFramesModeSwitch() const override;
 	bool SensorEmbeddedDataPresent() const override;
+
+private:
+	/*
+	 * Smallest difference between the frame length and integration time,
+	 * in units of lines.
+	 */
+	static constexpr int frameIntegrationDiff = 4;
+	/* Largest possible frame length, in units of lines. */
+	static constexpr int maxFrameLength = 0xffff;
 };
 
 CamHelperImx219::CamHelperImx219()
 #if ENABLE_EMBEDDED_DATA
-	: CamHelper(new MdParserImx219())
+	: CamHelper(new MdParserImx219(), maxFrameLength, frameIntegrationDiff)
 #else
-	: CamHelper(new MdParserRPi())
+	: CamHelper(new MdParserRPi(), maxFrameLength, frameIntegrationDiff)
 #endif
 {
 }

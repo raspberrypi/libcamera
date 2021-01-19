@@ -38,10 +38,19 @@ public:
 	uint32_t GainCode(double gain) const override;
 	double Gain(uint32_t gain_code) const override;
 	bool SensorEmbeddedDataPresent() const override;
+
+private:
+	/*
+	 * Smallest difference between the frame length and integration time,
+	 * in units of lines.
+	 */
+	static constexpr int frameIntegrationDiff = 22;
+	/* Largest possible frame length, in units of lines. */
+	static constexpr int maxFrameLength = 0xffdc;
 };
 
 CamHelperImx477::CamHelperImx477()
-	: CamHelper(new MdParserImx477())
+	: CamHelper(new MdParserImx477(), maxFrameLength, frameIntegrationDiff)
 {
 }
 

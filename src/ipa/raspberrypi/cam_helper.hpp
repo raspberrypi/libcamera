@@ -62,12 +62,15 @@ class CamHelper
 {
 public:
 	static CamHelper *Create(std::string const &cam_name);
-	CamHelper(MdParser *parser);
+	CamHelper(MdParser *parser, unsigned int maxFrameLength,
+		  unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
 	void SetCameraMode(const CameraMode &mode);
 	MdParser &Parser() const { return *parser_; }
 	uint32_t ExposureLines(double exposure_us) const;
 	double Exposure(uint32_t exposure_lines) const; // in us
+	virtual uint32_t GetVBlanking(double &exposure_us, double minFrameDuration,
+				      double maxFrameDuration) const;
 	virtual uint32_t GainCode(double gain) const = 0;
 	virtual double Gain(uint32_t gain_code) const = 0;
 	virtual void GetDelays(int &exposure_delay, int &gain_delay) const;
@@ -76,10 +79,20 @@ public:
 	virtual unsigned int HideFramesModeSwitch() const;
 	virtual unsigned int MistrustFramesStartup() const;
 	virtual unsigned int MistrustFramesModeSwitch() const;
+
 protected:
 	MdParser *parser_;
 	CameraMode mode_;
+
+private:
 	bool initialized_;
+	/* Largest possible frame length, in units of lines. */
+	unsigned int maxFrameLength_;
+	/*
+	 * Smallest difference between the frame length and integration time,
+	 * in units of lines.
+	 */
+	unsigned int frameIntegrationDiff_;
 };
 
 // This is for registering camera helpers with the system, so that the

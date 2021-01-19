@@ -34,8 +34,10 @@ CamHelper *CamHelper::Create(std::string const &cam_name)
 	return nullptr;
 }
 
-CamHelper::CamHelper(MdParser *parser)
-	: parser_(parser), initialized_(false)
+CamHelper::CamHelper(MdParser *parser, unsigned int maxFrameLength,
+		     unsigned int frameIntegrationDiff)
+	: parser_(parser), initialized_(false), maxFrameLength_(maxFrameLength),
+	  frameIntegrationDiff_(frameIntegrationDiff)
 {
 }
 
@@ -54,6 +56,35 @@ double CamHelper::Exposure(uint32_t exposure_lines) const
 {
 	assert(initialized_);
 	return exposure_lines * mode_.line_length / 1000.0;
+}
+
+uint32_t CamHelper::GetVBlanking(double &exposure, double minFrameDuration,
+				 double maxFrameDuration) const
+{
+	uint32_t frameLengthMin, frameLengthMax, vblank;
+	uint32_t exposureLines = ExposureLines(exposure);
+
+	assert(initialized_);
+
+	/*
+	 * Clamp frame length by the frame duration range and the maximum allowable
+	 * value in the sensor, given by maxFrameLength_.
+	 */
+	frameLengthMin = std::clamp<uint32_t>(1e3 * minFrameDuration / mode_.line_length,
+					      mode_.height, maxFrameLength_);
+	frameLengthMax = std::clamp<uint32_t>(1e3 * maxFrameDuration / mode_.line_length,
+					      mode_.height, maxFrameLength_);
+	/*
+	 * Limit the exposure to the maximum frame duration requested, and
+	 * re-calculate if it has been clipped.
+	 */
+	exposureLines = std::min(frameLengthMax - frameIntegrationDiff_, exposureLines);
+	exposure = Exposure(exposureLines);
+
+	/* Limit the vblank to the range allowed by the frame length limits. */
+	vblank = std::clamp(exposureLines + frameIntegrationDiff_,
+			    frameLengthMin, frameLengthMax) - mode_.height;
+	return vblank;
 }
 
 void CamHelper::SetCameraMode(const CameraMode &mode)

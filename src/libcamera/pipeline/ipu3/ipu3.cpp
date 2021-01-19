@@ -966,6 +966,11 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Move the ExposureTime control to the IPA. */
 	request->metadata().set(controls::ExposureTime, exposureTime_);
+	/* \todo Actually apply the scaler crop region to the ImgU. */
+	if (request->controls().contains(controls::ScalerCrop)) {
+		Rectangle cropRegion = request->controls().get(controls::ScalerCrop);
+		request->metadata().set(controls::ScalerCrop, cropRegion);
+	}
 	pipe_->completeRequest(request);
 }
 

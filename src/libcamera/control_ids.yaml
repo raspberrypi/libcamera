@@ -323,6 +323,43 @@ controls:
         step to respect the received gain factor and shall report
         their total value in the request metadata.
 
+  - FrameDurations:
+      type: int64_t
+      description: |
+        The minimum and maximum (in that order) frame duration,
+        expressed in microseconds.
+
+        When provided by applications, the control specifies the sensor frame
+        duration interval the pipeline has to use. This limits the largest
+        exposure time the sensor can use. For example, if a maximum frame
+        duration of 33ms is requested (corresponding to 30 frames per second),
+        the sensor will not be able to raise the exposure time above 33ms.
+        A fixed frame duration is achieved by setting the minimum and maximum
+        values to be the same. Setting both values to 0 reverts to using the
+        IPA provided defaults.
+
+        The maximum frame duration provides the absolute limit to the shutter
+        speed computed by the AE algorithm and it overrides any exposure mode
+        setting specified with controls::AeExposureMode. Similarly, when a
+        manual exposure time is set through controls::ExposureTime, it also
+        gets clipped to the limits set by this control. When reported in
+        metadata, the control expresses the minimum and maximum frame
+        durations used after being clipped to the sensor provided frame
+        duration limits.
+
+        \sa AeExposureMode
+        \sa ExposureTime
+
+        \todo Define how to calculate the capture frame rate by
+        defining controls to report additional delays introduced by
+        the capture pipeline or post-processing stages (ie JPEG
+        conversion, frame scaling).
+
+        \todo Provide an explicit definition of default control values, for
+        this and all other controls.
+
+      size: [2]
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 

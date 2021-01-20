@@ -889,6 +889,7 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 		return ret;
 
 	ControlInfoMap::Map controls = IPU3Controls;
+	const ControlInfoMap &sensorControls = sensor->controls();
 
 	/*
 	 * Compute exposure time limits.
@@ -900,7 +901,6 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	 */
 	double lineDuration = sensorInfo.lineLength
 			    / (sensorInfo.pixelRate / 1e6);
-	const ControlInfoMap &sensorControls = sensor->controls();
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
 	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
 	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
@@ -914,6 +914,33 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 
 	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
 							defExposure);
+
+	/*
+	 * Compute the frame duration limits.
+	 *
+	 * The frame length is computed assuming a fixed line length combined
+	 * with the vertical frame sizes.
+	 */
+	const ControlInfo &v4l2HBlank = sensorControls.find(V4L2_CID_HBLANK)->second;
+	uint32_t hblank = v4l2HBlank.def().get<int32_t>();
+	uint32_t lineLength = sensorInfo.outputSize.width + hblank;
+
+	const ControlInfo &v4l2VBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
+	std::array<uint32_t, 3> frameHeights{
+		v4l2VBlank.min().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.max().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.def().get<int32_t>() + sensorInfo.outputSize.height,
+	};
+
+	std::array<int64_t, 3> frameDurations;
+	for (unsigned int i = 0; i < frameHeights.size(); ++i) {
+		uint64_t frameSize = lineLength * frameHeights[i];
+		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
+	}
+
+	controls[&controls::FrameDurations] = ControlInfo(frameDurations[0],
+							  frameDurations[1],
+							  frameDurations[2]);
 
 	/*
 	 * Compute the scaler crop limits.

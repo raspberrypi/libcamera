@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('libcamera', 'c', 'cpp',
-    meson_version : '>= 0.51',
+    meson_version : '>= 0.53',
     version : '0.0.0',
     default_options : [
         'werror=true',
@@ -155,4 +155,6 @@ py_mod = import('python')
 py_mod.find_installation('python3', modules: py_modules)
 
 ## Summarise Configurations
-message('Enabled pipelines: ' + ', '.join(get_option('pipelines')))
+summary({
+            'Enabled pipelines': get_option('pipelines'),
+        }, section : 'Configuration')

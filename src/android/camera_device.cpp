@@ -1392,12 +1392,21 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_LOCK,
 				  &aeLock, 1);
 
-	std::vector<int32_t> aeFpsTarget = {
-		15, 30,
-	};
-	requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
-				  aeFpsTarget.data(),
-				  aeFpsTarget.size());
+	/* Get the FPS range registered in the static metadata. */
+	camera_metadata_ro_entry_t entry;
+	bool found = staticMetadata_->getEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+					       &entry);
+	if (found)
+		/*
+		 * \todo Depending on the requested CaptureIntent, the FPS range
+		 * needs to be adjusted. For example, the capture template for
+		 * video capture intent shall report a fixed value.
+		 *
+		 * Also assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
+		 * has been assembled as {{min, max} {max, max}}.
+		 */
+		requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+					  entry.data.i32, 2);
 
 	uint8_t aeAntibandingMode = ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE,

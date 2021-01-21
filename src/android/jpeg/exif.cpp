@@ -306,13 +306,13 @@ void Exif::setOrientation(int orientation)
 		value = 1;
 		break;
 	case 90:
-		value = 8;
+		value = 6;
 		break;
 	case 180:
 		value = 3;
 		break;
 	case 270:
-		value = 6;
+		value = 8;
 		break;
 	}
 

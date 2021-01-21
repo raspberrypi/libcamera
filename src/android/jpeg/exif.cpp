@@ -7,6 +7,9 @@
 
 #include "exif.h"
 
+#include <map>
+#include <uchar.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
 
@@ -178,11 +181,18 @@ void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 	exif_entry_unref(entry);
 }
 
-void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format, const std::string &item)
+static const std::map<Exif::StringEncoding, std::array<uint8_t, 8>> stringEncodingCodes = {
+	{ Exif::ASCII,     { 0x41, 0x53, 0x43, 0x49, 0x49, 0x00, 0x00, 0x00 } },
+	{ Exif::Unicode,   { 0x55, 0x4e, 0x49, 0x43, 0x4f, 0x44, 0x45, 0x00 } },
+};
+
+void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format,
+		     const std::string &item, StringEncoding encoding)
 {
 	std::string ascii;
 	size_t length;
 	const char *str;
+	std::vector<uint8_t> buf;
 
 	if (format == EXIF_FORMAT_ASCII) {
 		ascii = utils::toAscii(item);
@@ -191,13 +201,46 @@ void Exif::setString(ExifIfd ifd, ExifTag tag, ExifFormat format, const std::str
 		/* Pad 1 extra byte to null-terminate the ASCII string. */
 		length = ascii.length() + 1;
 	} else {
-		str = item.c_str();
+		std::u16string u16str;
+
+		auto encodingString = stringEncodingCodes.find(encoding);
+		if (encodingString != stringEncodingCodes.end()) {
+			buf = {
+				encodingString->second.begin(),
+				encodingString->second.end()
+			};
+		}
+
+		switch (encoding) {
+		case Unicode:
+			u16str = utf8ToUtf16(item);
+
+			buf.resize(8 + u16str.size() * 2);
+			for (size_t i = 0; i < u16str.size(); i++) {
+				if (order_ == EXIF_BYTE_ORDER_INTEL) {
+					buf[8 + 2 * i] = u16str[i] & 0xff;
+					buf[8 + 2 * i + 1] = (u16str[i] >> 8) & 0xff;
+				} else {
+					buf[8 + 2 * i] = (u16str[i] >> 8) & 0xff;
+					buf[8 + 2 * i + 1] = u16str[i] & 0xff;
+				}
+			}
+
+			break;
+
+		case ASCII:
+		case NoEncoding:
+			buf.insert(buf.end(), item.begin(), item.end());
+			break;
+		}
+
+		str = reinterpret_cast<const char *>(buf.data());
 
 		/*
 		 * Strings stored in different formats (EXIF_FORMAT_UNDEFINED)
 		 * are not null-terminated.
 		 */
-		length = item.length();
+		length = buf.size();
 	}
 
 	ExifEntry *entry = createEntry(ifd, tag, format, length, length);
@@ -288,6 +331,34 @@ void Exif::setThumbnail(Span<const unsigned char> thumbnail,
 	data_->size = thumbnail.size();
 
 	setShort(EXIF_IFD_0, EXIF_TAG_COMPRESSION, compression);
+}
+
+/**
+ * \brief Convert UTF-8 string to UTF-16 string
+ * \param[in] str String to convert
+ *
+ * \return \a str in UTF-16
+ */
+std::u16string Exif::utf8ToUtf16(const std::string &str)
+{
+	mbstate_t state{};
+	char16_t c16;
+	const char *ptr = str.data();
+	const char *end = ptr + str.size();
+
+	std::u16string ret;
+	while (size_t rc = mbrtoc16(&c16, ptr, end - ptr + 1, &state)) {
+		if (rc == static_cast<size_t>(-2) ||
+		    rc == static_cast<size_t>(-1))
+			break;
+
+		ret.push_back(c16);
+
+		if (rc > 0)
+			ptr += rc;
+	}
+
+	return ret;
 }
 
 [[nodiscard]] int Exif::generate()

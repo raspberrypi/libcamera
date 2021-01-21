@@ -26,6 +26,12 @@ public:
 		JPEG = 6,
 	};
 
+	enum StringEncoding {
+		NoEncoding = 0,
+		ASCII = 1,
+		Unicode = 2,
+	};
+
 	void setMake(const std::string &make);
 	void setModel(const std::string &model);
 
@@ -46,8 +52,11 @@ private:
 	void setShort(ExifIfd ifd, ExifTag tag, uint16_t item);
 	void setLong(ExifIfd ifd, ExifTag tag, uint32_t item);
 	void setString(ExifIfd ifd, ExifTag tag, ExifFormat format,
-		       const std::string &item);
+		       const std::string &item,
+		       StringEncoding encoding = NoEncoding);
 	void setRational(ExifIfd ifd, ExifTag tag, ExifRational item);
+
+	std::u16string utf8ToUtf16(const std::string &str);
 
 	bool valid_;
 

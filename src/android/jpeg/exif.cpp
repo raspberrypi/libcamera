@@ -7,7 +7,11 @@
 
 #include "exif.h"
 
+#include <cmath>
+#include <iomanip>
 #include <map>
+#include <sstream>
+#include <tuple>
 #include <uchar.h>
 
 #include "libcamera/internal/log.h"
@@ -151,6 +155,16 @@ ExifEntry *Exif::createEntry(ExifIfd ifd, ExifTag tag, ExifFormat format,
 	return entry;
 }
 
+void Exif::setByte(ExifIfd ifd, ExifTag tag, uint8_t item)
+{
+	ExifEntry *entry = createEntry(ifd, tag, EXIF_FORMAT_BYTE, 1, 1);
+	if (!entry)
+		return;
+
+	entry->data[0] = item;
+	exif_entry_unref(entry);
+}
+
 void Exif::setShort(ExifIfd ifd, ExifTag tag, uint16_t item)
 {
 	ExifEntry *entry = createEntry(ifd, tag);
@@ -267,7 +281,7 @@ void Exif::setSize(const Size &size)
 	setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_X_DIMENSION, size.width);
 }
 
-void Exif::setTimestamp(time_t timestamp)
+void Exif::setTimestamp(time_t timestamp, std::chrono::milliseconds msec)
 {
 	struct tm tm;
 	localtime_r(&timestamp, &tm);
@@ -282,19 +296,126 @@ void Exif::setTimestamp(time_t timestamp)
 
 	/* Query and set timezone information if available. */
 	int r = strftime(str, sizeof(str), "%z", &tm);
-	if (r > 0) {
-		std::string tz(str);
-		tz.insert(3, 1, ':');
-		setString(EXIF_IFD_EXIF,
-			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME),
-			  EXIF_FORMAT_ASCII, tz);
-		setString(EXIF_IFD_EXIF,
-			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_ORIGINAL),
-			  EXIF_FORMAT_ASCII, tz);
-		setString(EXIF_IFD_EXIF,
-			  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_DIGITIZED),
-			  EXIF_FORMAT_ASCII, tz);
-	}
+	if (r <= 0)
+		return;
+
+	std::string tz(str);
+	tz.insert(3, 1, ':');
+	setString(EXIF_IFD_EXIF,
+		  static_cast<ExifTag>(_ExifTag::OFFSET_TIME),
+		  EXIF_FORMAT_ASCII, tz);
+	setString(EXIF_IFD_EXIF,
+		  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_ORIGINAL),
+		  EXIF_FORMAT_ASCII, tz);
+	setString(EXIF_IFD_EXIF,
+		  static_cast<ExifTag>(_ExifTag::OFFSET_TIME_DIGITIZED),
+		  EXIF_FORMAT_ASCII, tz);
+
+	std::stringstream sstr;
+	sstr << std::setfill('0') << std::setw(3) << msec.count();
+	std::string subsec = sstr.str();
+
+	setString(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME,
+		  EXIF_FORMAT_ASCII, subsec);
+	setString(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME_ORIGINAL,
+		  EXIF_FORMAT_ASCII, subsec);
+	setString(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME_DIGITIZED,
+		  EXIF_FORMAT_ASCII, subsec);
+}
+
+void Exif::setGPSDateTimestamp(time_t timestamp)
+{
+	struct tm tm;
+	gmtime_r(&timestamp, &tm);
+
+	char str[11];
+	strftime(str, sizeof(str), "%Y:%m:%d", &tm);
+	std::string tsStr(str);
+
+	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_DATE_STAMP),
+		  EXIF_FORMAT_ASCII, tsStr);
+
+	/* Set GPS_TIME_STAMP */
+	ExifEntry *entry =
+		createEntry(EXIF_IFD_GPS,
+			    static_cast<ExifTag>(EXIF_TAG_GPS_TIME_STAMP),
+			    EXIF_FORMAT_RATIONAL, 3, 3 * sizeof(ExifRational));
+	if (!entry)
+		return;
+
+	ExifRational ts[] = {
+		{ static_cast<ExifLong>(tm.tm_hour), 1 },
+		{ static_cast<ExifLong>(tm.tm_min),  1 },
+		{ static_cast<ExifLong>(tm.tm_sec),  1 },
+	};
+
+	for (int i = 0; i < 3; i++)
+		exif_set_rational(entry->data + i * sizeof(ExifRational),
+				  order_, ts[i]);
+
+	exif_entry_unref(entry);
+}
+
+std::tuple<int, int, int> Exif::degreesToDMS(double decimalDegrees)
+{
+	int degrees = std::trunc(decimalDegrees);
+	double minutes = std::abs((decimalDegrees - degrees) * 60);
+	double seconds = (minutes - std::trunc(minutes)) * 60;
+
+	return { degrees, std::trunc(minutes), std::round(seconds) };
+}
+
+void Exif::setGPSDMS(ExifIfd ifd, ExifTag tag, int deg, int min, int sec)
+{
+	ExifEntry *entry = createEntry(ifd, tag, EXIF_FORMAT_RATIONAL, 3,
+				       3 * sizeof(ExifRational));
+	if (!entry)
+		return;
+
+	ExifRational coords[] = {
+		{ static_cast<ExifLong>(deg), 1 },
+		{ static_cast<ExifLong>(min), 1 },
+		{ static_cast<ExifLong>(sec), 1 },
+	};
+
+	for (int i = 0; i < 3; i++)
+		exif_set_rational(entry->data + i * sizeof(ExifRational),
+				  order_, coords[i]);
+
+	exif_entry_unref(entry);
+}
+
+/*
+ * \brief Set GPS location (lat, long, alt)
+ * \param[in] coords Pointer to coordinates latitude, longitude, and altitude,
+ * first two in degrees, the third in meters
+ */
+void Exif::setGPSLocation(const double *coords)
+{
+	int deg, min, sec;
+
+	std::tie<int, int, int>(deg, min, sec) = degreesToDMS(coords[0]);
+	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LATITUDE_REF),
+		  EXIF_FORMAT_ASCII, deg >= 0 ? "N" : "S");
+	setGPSDMS(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LATITUDE),
+		  std::abs(deg), min, sec);
+
+	std::tie<int, int, int>(deg, min, sec) = degreesToDMS(coords[1]);
+	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LONGITUDE_REF),
+		  EXIF_FORMAT_ASCII, deg >= 0 ? "E" : "W");
+	setGPSDMS(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LATITUDE),
+		  std::abs(deg), min, sec);
+
+	setByte(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_ALTITUDE_REF),
+		coords[2] >= 0 ? 0 : 1);
+	setRational(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_ALTITUDE),
+		    ExifRational{ static_cast<ExifLong>(std::abs(coords[2])), 1 });
+}
+
+void Exif::setGPSMethod(const std::string &method)
+{
+	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_PROCESSING_METHOD),
+		  EXIF_FORMAT_UNDEFINED, method, Unicode);
 }
 
 void Exif::setOrientation(int orientation)
@@ -331,6 +452,39 @@ void Exif::setThumbnail(Span<const unsigned char> thumbnail,
 	data_->size = thumbnail.size();
 
 	setShort(EXIF_IFD_0, EXIF_TAG_COMPRESSION, compression);
+}
+
+void Exif::setFocalLength(float length)
+{
+	ExifRational rational = { static_cast<ExifLong>(length * 1000), 1000 };
+	setRational(EXIF_IFD_EXIF, EXIF_TAG_FOCAL_LENGTH, rational);
+}
+
+void Exif::setExposureTime(uint64_t nsec)
+{
+	ExifRational rational = { static_cast<ExifLong>(nsec), 1000000000 };
+	setRational(EXIF_IFD_EXIF, EXIF_TAG_EXPOSURE_TIME, rational);
+}
+
+void Exif::setAperture(float size)
+{
+	ExifRational rational = { static_cast<ExifLong>(size * 10000), 10000 };
+	setRational(EXIF_IFD_EXIF, EXIF_TAG_FNUMBER, rational);
+}
+
+void Exif::setISO(uint16_t iso)
+{
+	setShort(EXIF_IFD_EXIF, EXIF_TAG_ISO_SPEED_RATINGS, iso);
+}
+
+void Exif::setFlash(Flash flash)
+{
+	setShort(EXIF_IFD_EXIF, EXIF_TAG_FLASH, static_cast<ExifShort>(flash));
+}
+
+void Exif::setWhiteBalance(WhiteBalance wb)
+{
+	setShort(EXIF_IFD_EXIF, EXIF_TAG_WHITE_BALANCE, static_cast<ExifShort>(wb));
 }
 
 /**

@@ -7,6 +7,8 @@
 
 #include "post_processor_jpeg.h"
 
+#include <chrono>
+
 #include "../camera_device.h"
 #include "../camera_metadata.h"
 #include "encoder_libjpeg.h"
@@ -17,6 +19,7 @@
 #include "libcamera/internal/log.h"
 
 using namespace libcamera;
+using namespace std::chrono_literals;
 
 LOG_DEFINE_CATEGORY(JPEG)
 
@@ -97,7 +100,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	 * Since the precision we need for EXIF timestamp is only one
 	 * second, it is good enough.
 	 */
-	exif.setTimestamp(std::time(nullptr));
+	exif.setTimestamp(std::time(nullptr), 0ms);
 
 	std::vector<unsigned char> thumbnail;
 	generateThumbnail(source, &thumbnail);

@@ -14,6 +14,7 @@
 class CameraMetadata
 {
 public:
+	CameraMetadata();
 	CameraMetadata(size_t entryCapacity, size_t dataCapacity);
 	CameraMetadata(const camera_metadata_t *metadata);
 	CameraMetadata(const CameraMetadata &other);

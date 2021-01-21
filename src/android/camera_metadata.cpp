@@ -13,6 +13,11 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(CameraMetadata)
 
+CameraMetadata::CameraMetadata()
+	: metadata_(nullptr), valid_(false)
+{
+}
+
 CameraMetadata::CameraMetadata(size_t entryCapacity, size_t dataCapacity)
 {
 	metadata_ = allocate_camera_metadata(entryCapacity, dataCapacity);

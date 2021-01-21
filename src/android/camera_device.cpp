@@ -1696,6 +1696,16 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	 */
 	Camera3RequestDescriptor *descriptor =
 		new Camera3RequestDescriptor(camera_.get(), camera3Request);
+	/*
+	 * \todo The Android request model is incremental, settings passed in
+	 * previous requests are to be effective until overridden explicitly in
+	 * a new request. Do we need to cache settings incrementally here, or is
+	 * it handled by the Android camera service ?
+	 */
+	if (camera3Request->settings)
+		lastSettings_ = camera3Request->settings;
+	else
+		descriptor->settings_ = lastSettings_;
 
 	LOG(HAL, Debug) << "Queueing Request to libcamera with "
 			<< descriptor->numBuffers_ << " HAL streams";

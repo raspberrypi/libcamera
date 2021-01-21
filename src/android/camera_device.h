@@ -134,6 +134,8 @@ private:
 	int orientation_;
 
 	unsigned int maxJpegBufferSize_;
+
+	CameraMetadata lastSettings_;
 };
 
 #endif /* __ANDROID_CAMERA_DEVICE_H__ */

@@ -22,7 +22,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
 
-#include "camera_metadata.h"
 #include "system/graphics.h"
 
 using namespace libcamera;
@@ -310,6 +309,9 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 	 * are emplaced in this vector of unique_ptr<> for lifetime management.
 	 */
 	frameBuffers_.reserve(numBuffers_);
+
+	/* Clone the controls associated with the camera3 request. */
+	settings_ = CameraMetadata(camera3Request->settings);
 
 	/*
 	 * Create the libcamera::Request unique_ptr<> to tie its lifetime

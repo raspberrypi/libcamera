@@ -24,11 +24,10 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
+#include "camera_metadata.h"
 #include "camera_stream.h"
 #include "camera_worker.h"
 #include "jpeg/encoder.h"
-
-class CameraMetadata;
 
 class MappedCamera3Buffer : public libcamera::MappedBuffer
 {
@@ -82,6 +81,7 @@ private:
 		uint32_t numBuffers_;
 		camera3_stream_buffer_t *buffers_;
 		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
+		CameraMetadata settings_;
 		std::unique_ptr<CaptureRequest> request_;
 	};
 

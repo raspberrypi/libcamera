@@ -15,9 +15,14 @@ class CameraMetadata
 {
 public:
 	CameraMetadata(size_t entryCapacity, size_t dataCapacity);
+	CameraMetadata(const camera_metadata_t *metadata);
+	CameraMetadata(const CameraMetadata &other);
 	~CameraMetadata();
 
+	CameraMetadata &operator=(const CameraMetadata &other);
+
 	bool isValid() const { return valid_; }
+	bool getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) const;
 	bool addEntry(uint32_t tag, const void *data, size_t data_count);
 	bool updateEntry(uint32_t tag, const void *data, size_t data_count);
 

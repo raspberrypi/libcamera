@@ -55,6 +55,8 @@ public:
 		return config_.get();
 	}
 
+	const std::string &maker() const { return maker_; }
+	const std::string &model() const { return model_; }
 	int facing() const { return facing_; }
 	int orientation() const { return orientation_; }
 	unsigned int maxJpegBufferSize() const { return maxJpegBufferSize_; }
@@ -124,6 +126,9 @@ private:
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;
 	std::vector<CameraStream> streams_;
+
+	std::string maker_;
+	std::string model_;
 
 	int facing_;
 	int orientation_;

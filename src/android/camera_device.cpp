@@ -9,6 +9,7 @@
 #include "camera_ops.h"
 #include "post_processor.h"
 
+#include <fstream>
 #include <sys/mman.h>
 #include <tuple>
 #include <vector>
@@ -351,6 +352,28 @@ CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camer
 	 *  streamConfiguration.
 	 */
 	maxJpegBufferSize_ = 13 << 20; /* 13631488 from USB HAL */
+
+	maker_ = "libcamera";
+	model_ = "cameraModel";
+
+	/* \todo Support getting properties on Android */
+	std::ifstream fstream("/var/cache/camera/camera.prop");
+	if (!fstream.is_open())
+		return;
+
+	std::string line;
+	while (std::getline(fstream, line)) {
+		std::string::size_type delimPos = line.find("=");
+		if (delimPos == std::string::npos)
+			continue;
+		std::string key = line.substr(0, delimPos);
+		std::string val = line.substr(delimPos + 1);
+
+		if (!key.compare("ro.product.model"))
+			model_ = val;
+		else if (!key.compare("ro.product.manufacturer"))
+			maker_ = val;
+	}
 }
 
 CameraDevice::~CameraDevice()

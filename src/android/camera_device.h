@@ -75,8 +75,7 @@ private:
 
 	struct Camera3RequestDescriptor {
 		Camera3RequestDescriptor(libcamera::Camera *camera,
-					 unsigned int frameNumber,
-					 unsigned int numBuffers);
+					 const camera3_capture_request_t *camera3Request);
 		~Camera3RequestDescriptor();
 
 		uint32_t frameNumber_;

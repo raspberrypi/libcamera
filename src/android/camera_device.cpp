@@ -295,16 +295,18 @@ MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
  */
 
 CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
-	Camera *camera, unsigned int frameNumber, unsigned int numBuffers)
-	: frameNumber_(frameNumber), numBuffers_(numBuffers)
+	Camera *camera, const camera3_capture_request_t *camera3Request)
 {
-	buffers_ = new camera3_stream_buffer_t[numBuffers];
+	frameNumber_ = camera3Request->frame_number;
+
+	numBuffers_ = camera3Request->num_output_buffers;
+	buffers_ = new camera3_stream_buffer_t[numBuffers_];
 
 	/*
 	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
 	 * are emplaced in this vector of unique_ptr<> for lifetime management.
 	 */
-	frameBuffers_.reserve(numBuffers);
+	frameBuffers_.reserve(numBuffers_);
 
 	/*
 	 * Create the libcamera::Request unique_ptr<> to tie its lifetime
@@ -1603,8 +1605,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	 * at request complete time.
 	 */
 	Camera3RequestDescriptor *descriptor =
-		new Camera3RequestDescriptor(camera_.get(), camera3Request->frame_number,
-					     camera3Request->num_output_buffers);
+		new Camera3RequestDescriptor(camera_.get(), camera3Request);
 
 	LOG(HAL, Debug) << "Queueing Request to libcamera with "
 			<< descriptor->numBuffers_ << " HAL streams";

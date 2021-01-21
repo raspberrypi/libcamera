@@ -299,8 +299,11 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 {
 	frameNumber_ = camera3Request->frame_number;
 
+	/* Copy the camera3 request stream information for later access. */
 	numBuffers_ = camera3Request->num_output_buffers;
 	buffers_ = new camera3_stream_buffer_t[numBuffers_];
+	for (unsigned int i = 0; i < numBuffers_; ++i)
+		buffers_[i] = camera3Request->output_buffers[i];
 
 	/*
 	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
@@ -1593,13 +1596,6 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	}
 
 	/*
-	 * Queue a request for the Camera with the provided dmabuf file
-	 * descriptors.
-	 */
-	const camera3_stream_buffer_t *camera3Buffers =
-					camera3Request->output_buffers;
-
-	/*
 	 * Save the request descriptors for use at completion time.
 	 * The descriptor and the associated memory reserved here are freed
 	 * at request complete time.
@@ -1610,16 +1606,9 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	LOG(HAL, Debug) << "Queueing Request to libcamera with "
 			<< descriptor->numBuffers_ << " HAL streams";
 	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
-		camera3_stream *camera3Stream = camera3Buffers[i].stream;
-		CameraStream *cameraStream =
-			static_cast<CameraStream *>(camera3Buffers[i].stream->priv);
-
-		/*
-		 * Keep track of which stream the request belongs to and store
-		 * the native buffer handles.
-		 */
-		descriptor->buffers_[i].stream = camera3Buffers[i].stream;
-		descriptor->buffers_[i].buffer = camera3Buffers[i].buffer;
+		const camera3_stream_buffer_t *camera3Buffer = &descriptor->buffers_[i];
+		camera3_stream *camera3Stream = camera3Buffer->stream;
+		CameraStream *cameraStream = static_cast<CameraStream *>(camera3Stream->priv);
 
 		std::stringstream ss;
 		ss << i << " - (" << camera3Stream->width << "x"
@@ -1649,7 +1638,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * associate it with the Camera3RequestDescriptor for
 			 * lifetime management only.
 			 */
-			buffer = createFrameBuffer(*camera3Buffers[i].buffer);
+			buffer = createFrameBuffer(*camera3Buffer->buffer);
 			descriptor->frameBuffers_.emplace_back(buffer);
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
@@ -1674,7 +1663,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		}
 
 		descriptor->request_->addBuffer(cameraStream->stream(), buffer,
-						camera3Buffers[i].acquire_fence);
+						camera3Buffer->acquire_fence);
 	}
 
 	/* Queue the request to the CameraWorker. */

@@ -2070,9 +2070,14 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	value = ANDROID_CONTROL_AE_MODE_ON;
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_MODE, &value, 1);
 
-	std::vector<int32_t> aeFpsTarget = { 30, 30 };
-	resultMetadata->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
-				 aeFpsTarget.data(), aeFpsTarget.size());
+	if (settings.getEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE, &entry))
+		/*
+		 * \todo Retrieve the AE FPS range from the libcamera metadata.
+		 * As libcamera does not support that control, as a temporary
+		 * workaround return what the framework asked.
+		 */
+		resultMetadata->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+					 entry.data.i32, 2);
 
 	value = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
 	found = settings.getEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry);

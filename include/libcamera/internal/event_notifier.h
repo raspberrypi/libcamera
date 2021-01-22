@@ -4,8 +4,8 @@
  *
  * event_notifier.h - File descriptor event notifier
  */
-#ifndef __LIBCAMERA_EVENT_NOTIFIER_H__
-#define __LIBCAMERA_EVENT_NOTIFIER_H__
+#ifndef __LIBCAMERA_INTERNAL_EVENT_NOTIFIER_H__
+#define __LIBCAMERA_INTERNAL_EVENT_NOTIFIER_H__
 
 #include <libcamera/object.h>
 #include <libcamera/signal.h>
@@ -45,4 +45,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_EVENT_NOTIFIER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_EVENT_NOTIFIER_H__ */

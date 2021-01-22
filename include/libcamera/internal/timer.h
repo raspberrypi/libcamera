@@ -4,8 +4,8 @@
  *
  * timer.h - Generic timer
  */
-#ifndef __LIBCAMERA_TIMER_H__
-#define __LIBCAMERA_TIMER_H__
+#ifndef __LIBCAMERA_INTERNAL_TIMER_H__
+#define __LIBCAMERA_INTERNAL_TIMER_H__
 
 #include <chrono>
 #include <stdint.h>
@@ -46,4 +46,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_TIMER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_TIMER_H__ */

@@ -28,6 +28,13 @@
  * interactions with application threads. Careful compliance with the threading
  * model will ensure avoidance of race conditions.
  *
+ * Every thread created by libcamera is associated with an instance of the
+ * Thread class. Those threads run an internal event loop by default to
+ * dispatch events to objects. Additionally, the main thread of the application
+ * (defined as the thread that calls CameraManager::start()) is also associated
+ * with a Thread instance, but has no event loop accessible to libcamera. Other
+ * application threads are not visible to libcamera.
+ *
  * \section thread-objects Threads and Objects
  *
  * Instances of the Object class and all its derived classes are thread-aware
@@ -39,13 +46,12 @@
  * explicitly connected with ConnectionTypeDirect, will also be delivered from
  * the object thread's event loop.
  *
- * All Object instances created by libcamera are bound to an internal thread,
- * and applications don't need to provide an event loop to support them. Object
- * instances created by applications require an event loop. It is the
- * responsibility of applications to provide that event loop, either explicitly
- * through CameraManager::setEventDispatcher(), or by running the default event
- * loop provided by CameraManager::eventDispatcher() in their main thread. The
- * main thread of an application is the one that calls CameraManager::start().
+ * All Object instances created internally by libcamera are bound to internal
+ * threads. As objects interact with thread event loops for proper operation,
+ * creating an Object instance in a thread that has no internal event loop (such
+ * as the main application thread, or libcamera threads that have a custom main
+ * loop), prevents some features of the Object class from being used. See
+ * Thread::exec() for more details.
  *
  * \section thread-signals Threads and Signals
  *
@@ -220,9 +226,9 @@ ThreadData *ThreadData::current()
  * with the Object, Signal and EventDispatcher classes.
  *
  * Thread instances by default run an event loop until the exit() method is
- * called. A custom event dispatcher may be installed with
- * setEventDispatcher(), otherwise a poll-based event dispatcher is used. This
- * behaviour can be overriden by overloading the run() method.
+ * called. The event loop dispatches events (messages, notifiers and timers)
+ * sent to the objects living in the thread. This behaviour can be modified by
+ * overriding the run() function.
  *
  * \context This class is \threadsafe.
  */
@@ -317,9 +323,17 @@ int Thread::exec()
  * \brief Main method of the thread
  *
  * When the thread is started with start(), it calls this method in the context
- * of the new thread. The run() method can be overloaded to perform custom
- * work. When this method returns the thread execution is stopped, and the \ref
- * finished signal is emitted.
+ * of the new thread. The run() method can be overridden to perform custom
+ * work, either custom initialization and cleanup before and after calling the
+ * Thread::exec() function, or a custom thread loop altogether. When this
+ * method returns the thread execution is stopped, and the \ref finished signal
+ * is emitted.
+ *
+ * Note that if this function is overridden and doesn't call Thread::exec(), no
+ * events will be dispatched to the objects living in the thread. These objects
+ * will not be able to use the EventNotifier, Timer or Message facilities. This
+ * includes functions that rely on message dispatching, such as
+ * Object::deleteLater().
  *
  * The base implementation just calls exec().
  */
@@ -436,37 +450,10 @@ pid_t Thread::currentId()
 }
 
 /**
- * \brief Set the event dispatcher
- * \param[in] dispatcher Pointer to the event dispatcher
- *
- * Threads that run an event loop require an event dispatcher to integrate
- * event notification and timers with the loop. Users that want to provide
- * their own event dispatcher shall call this method once and only once before
- * the thread is started with start(). If no event dispatcher is provided, a
- * default poll-based implementation will be used.
- *
- * The Thread takes ownership of the event dispatcher and will delete it when
- * the thread is destroyed.
- */
-void Thread::setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher)
-{
-	if (data_->dispatcher_.load(std::memory_order_relaxed)) {
-		LOG(Thread, Warning) << "Event dispatcher is already set";
-		return;
-	}
-
-	data_->dispatcher_.store(dispatcher.release(),
-				 std::memory_order_relaxed);
-}
-
-/**
  * \brief Retrieve the event dispatcher
  *
- * This method retrieves the event dispatcher set with setEventDispatcher().
- * If no dispatcher has been set, a default poll-based implementation is created
- * and returned, and no custom event dispatcher may be installed anymore.
- *
- * The returned event dispatcher is valid until the thread is destroyed.
+ * This function retrieves the internal event dispatcher for the thread. The
+ * returned event dispatcher is valid until the thread is destroyed.
  *
  * \return Pointer to the event dispatcher
  */

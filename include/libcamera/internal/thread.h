@@ -46,7 +46,6 @@ public:
 	static pid_t currentId();
 
 	EventDispatcher *eventDispatcher();
-	void setEventDispatcher(std::unique_ptr<EventDispatcher> dispatcher);
 
 	void dispatchMessages(Message::Type type = Message::Type::None);
 

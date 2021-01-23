@@ -68,7 +68,6 @@ const struct JPEGPixelFormatInfo &findPixelInfo(const PixelFormat &format)
 } /* namespace */
 
 EncoderLibJpeg::EncoderLibJpeg()
-	: quality_(95)
 {
 	/* \todo Expand error handling coverage with a custom handler. */
 	compress_.err = jpeg_std_error(&jerr_);
@@ -94,7 +93,6 @@ int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 	compress_.input_components = info.colorSpace == JCS_GRAYSCALE ? 1 : 3;
 
 	jpeg_set_defaults(&compress_);
-	jpeg_set_quality(&compress_, quality_, TRUE);
 
 	pixelFormatInfo_ = &info.pixelFormatInfo;
 
@@ -180,7 +178,7 @@ void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
 }
 
 int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
-			   Span<const uint8_t> exifData)
+			   Span<const uint8_t> exifData, unsigned int quality)
 {
 	MappedFrameBuffer frame(&source, PROT_READ);
 	if (!frame.isValid()) {
@@ -189,14 +187,16 @@ int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 		return frame.error();
 	}
 
-	return encode(frame.maps()[0], dest, exifData);
+	return encode(frame.maps()[0], dest, exifData, quality);
 }
 
 int EncoderLibJpeg::encode(Span<const uint8_t> src, Span<uint8_t> dest,
-			   Span<const uint8_t> exifData)
+			   Span<const uint8_t> exifData, unsigned int quality)
 {
 	unsigned char *destination = dest.data();
 	unsigned long size = dest.size();
+
+	jpeg_set_quality(&compress_, quality, TRUE);
 
 	/*
 	 * The jpeg_mem_dest will reallocate if the required size is not

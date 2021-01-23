@@ -52,6 +52,7 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 
 void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 					  const Size &targetSize,
+					  unsigned int quality,
 					  std::vector<unsigned char> *thumbnail)
 {
 	/* Stores the raw scaled-down thumbnail bytes. */
@@ -72,7 +73,7 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 		thumbnail->resize(rawThumbnail.size());
 
 		int jpeg_size = thumbnailEncoder_.encode(rawThumbnail,
-							 *thumbnail, {});
+							 *thumbnail, {}, quality);
 		thumbnail->resize(jpeg_size);
 
 		LOG(JPEG, Debug)
@@ -135,20 +136,18 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 		Size thumbnailSize = { static_cast<uint32_t>(data[0]),
 				       static_cast<uint32_t>(data[1]) };
 
+		ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &entry);
+		uint8_t quality = ret ? *entry.data.u8 : 95;
+		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &quality, 1);
+
 		if (thumbnailSize != Size(0, 0)) {
 			std::vector<unsigned char> thumbnail;
-			generateThumbnail(source, thumbnailSize, &thumbnail);
+			generateThumbnail(source, thumbnailSize, quality, &thumbnail);
 			if (!thumbnail.empty())
 				exif.setThumbnail(thumbnail, Exif::Compression::JPEG);
 		}
 
 		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_SIZE, data, 2);
-
-		/* \todo Use this quality as a parameter to the encoder */
-		ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &entry);
-		if (ret)
-			resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_QUALITY,
-						 entry.data.u8, 1);
 	}
 
 	ret = requestMetadata.getEntry(ANDROID_JPEG_GPS_COORDINATES, &entry);
@@ -169,7 +168,11 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	if (exif.generate() != 0)
 		LOG(JPEG, Error) << "Failed to generate valid EXIF data";
 
-	int jpeg_size = encoder_->encode(source, destination, exif.data());
+	ret = requestMetadata.getEntry(ANDROID_JPEG_QUALITY, &entry);
+	const uint8_t quality = ret ? *entry.data.u8 : 95;
+	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &quality, 1);
+
+	int jpeg_size = encoder_->encode(source, destination, exif.data(), quality);
 	if (jpeg_size < 0) {
 		LOG(JPEG, Error) << "Failed to encode stream image";
 		return jpeg_size;
@@ -196,11 +199,6 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 
 	/* Update the JPEG result Metadata. */
 	resultMetadata->addEntry(ANDROID_JPEG_SIZE, &jpeg_size, 1);
-
-	/* \todo Configure JPEG encoder with this */
-	ret = requestMetadata.getEntry(ANDROID_JPEG_QUALITY, &entry);
-	const uint8_t jpegQuality = ret ? *entry.data.u8 : 95;
-	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &jpegQuality, 1);
 
 	return 0;
 }

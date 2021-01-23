@@ -23,10 +23,12 @@ public:
 	int configure(const libcamera::StreamConfiguration &cfg) override;
 	int encode(const libcamera::FrameBuffer &source,
 		   libcamera::Span<uint8_t> destination,
-		   libcamera::Span<const uint8_t> exifData) override;
+		   libcamera::Span<const uint8_t> exifData,
+		   unsigned int quality) override;
 	int encode(libcamera::Span<const uint8_t> source,
 		   libcamera::Span<uint8_t> destination,
-		   libcamera::Span<const uint8_t> exifData);
+		   libcamera::Span<const uint8_t> exifData,
+		   unsigned int quality);
 
 private:
 	void compressRGB(libcamera::Span<const uint8_t> frame);
@@ -34,8 +36,6 @@ private:
 
 	struct jpeg_compress_struct compress_;
 	struct jpeg_error_mgr jerr_;
-
-	unsigned int quality_;
 
 	const libcamera::PixelFormatInfo *pixelFormatInfo_;
 

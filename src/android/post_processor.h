@@ -22,7 +22,8 @@ public:
 			      const libcamera::StreamConfiguration &outCfg) = 0;
 	virtual int process(const libcamera::FrameBuffer &source,
 			    libcamera::Span<uint8_t> destination,
-			    CameraMetadata *metadata) = 0;
+			    const CameraMetadata &requestMetadata,
+			    CameraMetadata *resultMetadata) = 0;
 };
 
 #endif /* __ANDROID_POST_PROCESSOR_H__ */

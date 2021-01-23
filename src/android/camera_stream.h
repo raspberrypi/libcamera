@@ -119,7 +119,9 @@ public:
 
 	int configure();
 	int process(const libcamera::FrameBuffer &source,
-		    MappedCamera3Buffer *dest, CameraMetadata *metadata);
+		    MappedCamera3Buffer *dest,
+		    const CameraMetadata &requestMetadata,
+		    CameraMetadata *resultMetadata);
 	libcamera::FrameBuffer *getBuffer();
 	void putBuffer(libcamera::FrameBuffer *buffer);
 

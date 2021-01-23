@@ -708,7 +708,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * Currently: 53 entries, 782 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 782;
+	uint32_t byteSize = 802;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1253,6 +1253,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_VIDEO_STABILIZATION_MODE,
 		ANDROID_FLASH_MODE,
 		ANDROID_FLASH_STATE,
+		ANDROID_LENS_APERTURE,
+		ANDROID_LENS_FOCAL_LENGTH,
 		ANDROID_LENS_STATE,
 		ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
 		ANDROID_SENSOR_TIMESTAMP,
@@ -1264,6 +1266,9 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_NOISE_REDUCTION_MODE,
 		ANDROID_REQUEST_PIPELINE_DEPTH,
 		ANDROID_SCALER_CROP_REGION,
+		ANDROID_JPEG_GPS_COORDINATES,
+		ANDROID_JPEG_GPS_PROCESSING_METHOD,
+		ANDROID_JPEG_GPS_TIMESTAMP,
 		ANDROID_JPEG_SIZE,
 		ANDROID_JPEG_QUALITY,
 		ANDROID_JPEG_ORIENTATION,
@@ -1816,6 +1821,7 @@ void CameraDevice::requestComplete(Request *request)
 		}
 
 		int ret = cameraStream->process(*buffer, &mapped,
+						descriptor->settings_,
 						resultMetadata.get());
 		if (ret) {
 			status = CAMERA3_BUFFER_STATUS_ERROR;
@@ -1912,14 +1918,20 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 33 entries, 75 bytes
+	 * Currently: 38 entries, 147 bytes
 	 *
 	 * Reserve more space for the JPEG metadata set by the post-processor.
-	 * Currently: ANDROID_JPEG_SIZE (int32_t), ANDROID_JPEG_QUALITY (byte),
-	 * ANDROID_JPEG_ORIENTATION (int32_t) = 3 entries, 9 bytes.
+	 * Currently:
+	 * ANDROID_JPEG_GPS_COORDINATES (double x 3) = 24 bytes
+	 * ANDROID_JPEG_GPS_PROCESSING_METHOD (byte x 32) = 32 bytes
+	 * ANDROID_JPEG_GPS_TIMESTAMP (int64) = 8 bytes
+	 * ANDROID_JPEG_SIZE (int32_t) = 4 bytes
+	 * ANDROID_JPEG_QUALITY (byte) = 1 byte
+	 * ANDROID_JPEG_ORIENTATION (int32_t) = 4 bytes
+	 * Total bytes for JPEG metadata: 73
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(33, 75);
+		std::make_unique<CameraMetadata>(38, 147);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
@@ -1983,6 +1995,14 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 
 	value = ANDROID_FLASH_STATE_UNAVAILABLE;
 	resultMetadata->addEntry(ANDROID_FLASH_STATE, &value, 1);
+
+	camera_metadata_ro_entry_t entry;
+	int ret = descriptor->settings_.getEntry(ANDROID_LENS_APERTURE, &entry);
+	if (ret)
+		resultMetadata->addEntry(ANDROID_LENS_APERTURE, entry.data.f, 1);
+
+	float focal_length = 1.0;
+	resultMetadata->addEntry(ANDROID_LENS_FOCAL_LENGTH, &focal_length, 1);
 
 	value = ANDROID_LENS_STATE_STATIONARY;
 	resultMetadata->addEntry(ANDROID_LENS_STATE, &value, 1);

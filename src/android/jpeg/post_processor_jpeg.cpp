@@ -83,17 +83,26 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 
 int PostProcessorJpeg::process(const FrameBuffer &source,
 			       Span<uint8_t> destination,
-			       CameraMetadata *metadata)
+			       const CameraMetadata &requestMetadata,
+			       CameraMetadata *resultMetadata)
 {
 	if (!encoder_)
 		return 0;
 
+	camera_metadata_ro_entry_t entry;
+	int ret;
+
 	/* Set EXIF metadata for various tags. */
 	Exif exif;
-	/* \todo Set Make and Model from external vendor tags. */
-	exif.setMake("libcamera");
-	exif.setModel("cameraModel");
-	exif.setOrientation(cameraDevice_->orientation());
+	exif.setMake(cameraDevice_->maker());
+	exif.setModel(cameraDevice_->model());
+
+	ret = requestMetadata.getEntry(ANDROID_JPEG_ORIENTATION, &entry);
+
+	const uint32_t jpegOrientation = ret ? *entry.data.i32 : 0;
+	resultMetadata->addEntry(ANDROID_JPEG_ORIENTATION, &jpegOrientation, 1);
+	exif.setOrientation(jpegOrientation);
+
 	exif.setSize(streamSize_);
 	/*
 	 * We set the frame's EXIF timestamp as the time of encode.
@@ -101,6 +110,39 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	 * second, it is good enough.
 	 */
 	exif.setTimestamp(std::time(nullptr), 0ms);
+
+	/* \todo Get this information from libcamera::Request::metadata */
+	exif.setExposureTime(0);
+	ret = requestMetadata.getEntry(ANDROID_LENS_APERTURE, &entry);
+	if (ret)
+		exif.setAperture(*entry.data.f);
+	exif.setISO(100);
+	exif.setFlash(Exif::Flash::FlashNotPresent);
+	exif.setWhiteBalance(Exif::WhiteBalance::Auto);
+
+	exif.setFocalLength(1.0);
+
+	ret = requestMetadata.getEntry(ANDROID_JPEG_GPS_TIMESTAMP, &entry);
+	if (ret) {
+		exif.setGPSDateTimestamp(*entry.data.i64);
+		resultMetadata->addEntry(ANDROID_JPEG_GPS_TIMESTAMP,
+					 entry.data.i64, 1);
+	}
+
+	ret = requestMetadata.getEntry(ANDROID_JPEG_GPS_COORDINATES, &entry);
+	if (ret) {
+		exif.setGPSLocation(entry.data.d);
+		resultMetadata->addEntry(ANDROID_JPEG_GPS_COORDINATES,
+					 entry.data.d, 3);
+	}
+
+	ret = requestMetadata.getEntry(ANDROID_JPEG_GPS_PROCESSING_METHOD, &entry);
+	if (ret) {
+		std::string method(entry.data.u8, entry.data.u8 + entry.count);
+		exif.setGPSMethod(method);
+		resultMetadata->addEntry(ANDROID_JPEG_GPS_PROCESSING_METHOD,
+					 entry.data.u8, entry.count);
+	}
 
 	std::vector<unsigned char> thumbnail;
 	generateThumbnail(source, &thumbnail);
@@ -136,13 +178,12 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	blob->jpeg_size = jpeg_size;
 
 	/* Update the JPEG result Metadata. */
-	metadata->addEntry(ANDROID_JPEG_SIZE, &jpeg_size, 1);
+	resultMetadata->addEntry(ANDROID_JPEG_SIZE, &jpeg_size, 1);
 
-	const uint32_t jpeg_quality = 95;
-	metadata->addEntry(ANDROID_JPEG_QUALITY, &jpeg_quality, 1);
-
-	const uint32_t jpeg_orientation = 0;
-	metadata->addEntry(ANDROID_JPEG_ORIENTATION, &jpeg_orientation, 1);
+	/* \todo Configure JPEG encoder with this */
+	ret = requestMetadata.getEntry(ANDROID_JPEG_QUALITY, &entry);
+	const uint8_t jpegQuality = ret ? *entry.data.u8 : 95;
+	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &jpegQuality, 1);
 
 	return 0;
 }

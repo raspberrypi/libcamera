@@ -32,30 +32,11 @@ void Thumbnailer::configure(const Size &sourceSize, PixelFormat pixelFormat)
 		return;
 	}
 
-	targetSize_ = computeThumbnailSize();
-
 	valid_ = true;
 }
 
-/*
- * The Exif specification recommends the width of the thumbnail to be a
- * multiple of 16 (section 4.8.1). Hence, compute the corresponding height
- * keeping the aspect ratio same as of the source.
- */
-Size Thumbnailer::computeThumbnailSize() const
-{
-	unsigned int targetHeight;
-	constexpr unsigned int kTargetWidth = 160;
-
-	targetHeight = kTargetWidth * sourceSize_.height / sourceSize_.width;
-
-	if (targetHeight & 1)
-		targetHeight++;
-
-	return Size(kTargetWidth, targetHeight);
-}
-
 void Thumbnailer::createThumbnail(const FrameBuffer &source,
+				  const Size &targetSize,
 				  std::vector<unsigned char> *destination)
 {
 	MappedFrameBuffer frame(&source, PROT_READ);
@@ -73,8 +54,8 @@ void Thumbnailer::createThumbnail(const FrameBuffer &source,
 
 	const unsigned int sw = sourceSize_.width;
 	const unsigned int sh = sourceSize_.height;
-	const unsigned int tw = targetSize_.width;
-	const unsigned int th = targetSize_.height;
+	const unsigned int tw = targetSize.width;
+	const unsigned int th = targetSize.height;
 
 	ASSERT(tw % 2 == 0 && th % 2 == 0);
 

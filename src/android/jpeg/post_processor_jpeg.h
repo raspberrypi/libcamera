@@ -31,6 +31,7 @@ public:
 
 private:
 	void generateThumbnail(const libcamera::FrameBuffer &source,
+			       const libcamera::Size &targetSize,
 			       std::vector<unsigned char> *thumbnail);
 
 	CameraDevice *const cameraDevice_;

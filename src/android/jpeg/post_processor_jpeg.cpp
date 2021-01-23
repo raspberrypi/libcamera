@@ -44,12 +44,6 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 	streamSize_ = outCfg.size;
 
 	thumbnailer_.configure(inCfg.size, inCfg.pixelFormat);
-	StreamConfiguration thCfg = inCfg;
-	thCfg.size = thumbnailer_.size();
-	if (thumbnailEncoder_.configure(thCfg) != 0) {
-		LOG(JPEG, Error) << "Failed to configure thumbnail encoder";
-		return -EINVAL;
-	}
 
 	encoder_ = std::make_unique<EncoderLibJpeg>();
 
@@ -57,14 +51,20 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 }
 
 void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
+					  const Size &targetSize,
 					  std::vector<unsigned char> *thumbnail)
 {
 	/* Stores the raw scaled-down thumbnail bytes. */
 	std::vector<unsigned char> rawThumbnail;
 
-	thumbnailer_.createThumbnail(source, &rawThumbnail);
+	thumbnailer_.createThumbnail(source, targetSize, &rawThumbnail);
 
-	if (!rawThumbnail.empty()) {
+	StreamConfiguration thCfg;
+	thCfg.size = targetSize;
+	thCfg.pixelFormat = thumbnailer_.pixelFormat();
+	int ret = thumbnailEncoder_.configure(thCfg);
+
+	if (!rawThumbnail.empty() && !ret) {
 		/*
 		 * \todo Avoid value-initialization of all elements of the
 		 * vector.
@@ -129,6 +129,28 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 					 entry.data.i64, 1);
 	}
 
+	ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_SIZE, &entry);
+	if (ret) {
+		const int32_t *data = entry.data.i32;
+		Size thumbnailSize = { static_cast<uint32_t>(data[0]),
+				       static_cast<uint32_t>(data[1]) };
+
+		if (thumbnailSize != Size(0, 0)) {
+			std::vector<unsigned char> thumbnail;
+			generateThumbnail(source, thumbnailSize, &thumbnail);
+			if (!thumbnail.empty())
+				exif.setThumbnail(thumbnail, Exif::Compression::JPEG);
+		}
+
+		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_SIZE, data, 2);
+
+		/* \todo Use this quality as a parameter to the encoder */
+		ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &entry);
+		if (ret)
+			resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_QUALITY,
+						 entry.data.u8, 1);
+	}
+
 	ret = requestMetadata.getEntry(ANDROID_JPEG_GPS_COORDINATES, &entry);
 	if (ret) {
 		exif.setGPSLocation(entry.data.d);
@@ -143,11 +165,6 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 		resultMetadata->addEntry(ANDROID_JPEG_GPS_PROCESSING_METHOD,
 					 entry.data.u8, entry.count);
 	}
-
-	std::vector<unsigned char> thumbnail;
-	generateThumbnail(source, &thumbnail);
-	if (!thumbnail.empty())
-		exif.setThumbnail(thumbnail, Exif::Compression::JPEG);
 
 	if (exif.generate() != 0)
 		LOG(JPEG, Error) << "Failed to generate valid EXIF data";

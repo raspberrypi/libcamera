@@ -20,15 +20,13 @@ public:
 	void configure(const libcamera::Size &sourceSize,
 		       libcamera::PixelFormat pixelFormat);
 	void createThumbnail(const libcamera::FrameBuffer &source,
+			     const libcamera::Size &targetSize,
 			     std::vector<unsigned char> *dest);
-	const libcamera::Size &size() const { return targetSize_; }
+	const libcamera::PixelFormat &pixelFormat() const { return pixelFormat_; }
 
 private:
-	libcamera::Size computeThumbnailSize() const;
-
 	libcamera::PixelFormat pixelFormat_;
 	libcamera::Size sourceSize_;
-	libcamera::Size targetSize_;
 
 	bool valid_;
 };

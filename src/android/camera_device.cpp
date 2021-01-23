@@ -708,7 +708,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * Currently: 53 entries, 782 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 802;
+	uint32_t byteSize = 810;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1272,6 +1272,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_JPEG_SIZE,
 		ANDROID_JPEG_QUALITY,
 		ANDROID_JPEG_ORIENTATION,
+		ANDROID_JPEG_THUMBNAIL_QUALITY,
+		ANDROID_JPEG_THUMBNAIL_SIZE,
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_RESULT_KEYS,
 				  availableResultKeys.data(),
@@ -1918,7 +1920,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 38 entries, 147 bytes
+	 * Currently: 40 entries, 156 bytes
 	 *
 	 * Reserve more space for the JPEG metadata set by the post-processor.
 	 * Currently:
@@ -1928,10 +1930,12 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	 * ANDROID_JPEG_SIZE (int32_t) = 4 bytes
 	 * ANDROID_JPEG_QUALITY (byte) = 1 byte
 	 * ANDROID_JPEG_ORIENTATION (int32_t) = 4 bytes
-	 * Total bytes for JPEG metadata: 73
+	 * ANDROID_JPEG_THUMBNAIL_QUALITY (byte) = 1 byte
+	 * ANDROID_JPEG_THUMBNAIL_SIZE (int32 x 2) = 8 bytes
+	 * Total bytes for JPEG metadata: 82
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(38, 147);
+		std::make_unique<CameraMetadata>(40, 156);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;

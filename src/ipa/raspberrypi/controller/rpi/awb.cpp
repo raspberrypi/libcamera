@@ -5,12 +5,16 @@
  * awb.cpp - AWB control algorithm
  */
 
-#include "../logging.hpp"
+#include "libcamera/internal/log.h"
+
 #include "../lux_status.h"
 
 #include "awb.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiAwb)
 
 #define NAME "rpi.awb"
 
@@ -58,7 +62,6 @@ static void read_ct_curve(Pwl &ct_r, Pwl &ct_b,
 
 void AwbConfig::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG("AwbConfig");
 	bayes = params.get<int>("bayes", 1);
 	frame_period = params.get<uint16_t>("frame_period", 10);
 	startup_frames = params.get<uint16_t>("startup_frames", 10);
@@ -104,8 +107,8 @@ void AwbConfig::Read(boost::property_tree::ptree const &params)
 	if (bayes) {
 		if (ct_r.Empty() || ct_b.Empty() || priors.empty() ||
 		    default_mode == nullptr) {
-			RPI_WARN(
-				"Bayesian AWB mis-configured - switch to Grey method");
+			LOG(RPiAwb, Warning)
+				<< "Bayesian AWB mis-configured - switch to Grey method";
 			bayes = false;
 		}
 	}
@@ -220,7 +223,7 @@ void Awb::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 
 void Awb::fetchAsyncResults()
 {
-	RPI_LOG("Fetch AWB results");
+	LOG(RPiAwb, Debug) << "Fetch AWB results";
 	async_finished_ = false;
 	async_started_ = false;
 	sync_results_ = async_results_;
@@ -229,7 +232,7 @@ void Awb::fetchAsyncResults()
 void Awb::restartAsync(StatisticsPtr &stats, std::string const &mode_name,
 		       double lux)
 {
-	RPI_LOG("Starting AWB thread");
+	LOG(RPiAwb, Debug) << "Starting AWB calculation";
 	// this makes a new reference which belongs to the asynchronous thread
 	statistics_ = stats;
 	// store the mode as it could technically change
@@ -254,13 +257,12 @@ void Awb::Prepare(Metadata *image_metadata)
 	double speed = frame_count_ < (int)config_.startup_frames
 			       ? 1.0
 			       : config_.speed;
-	RPI_LOG("Awb: frame_count " << frame_count_ << " speed " << speed);
+	LOG(RPiAwb, Debug)
+		<< "frame_count " << frame_count_ << " speed " << speed;
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		if (async_started_ && async_finished_) {
-			RPI_LOG("AWB thread finished");
+		if (async_started_ && async_finished_)
 			fetchAsyncResults();
-		}
 	}
 	// Finally apply IIR filter to results and put into metadata.
 	memcpy(prev_sync_results_.mode, sync_results_.mode,
@@ -275,9 +277,10 @@ void Awb::Prepare(Metadata *image_metadata)
 	prev_sync_results_.gain_b = speed * sync_results_.gain_b +
 				    (1.0 - speed) * prev_sync_results_.gain_b;
 	image_metadata->Set("awb.status", prev_sync_results_);
-	RPI_LOG("Using AWB gains r " << prev_sync_results_.gain_r << " g "
-				     << prev_sync_results_.gain_g << " b "
-				     << prev_sync_results_.gain_b);
+	LOG(RPiAwb, Debug)
+		<< "Using AWB gains r " << prev_sync_results_.gain_r << " g "
+		<< prev_sync_results_.gain_g << " b "
+		<< prev_sync_results_.gain_b;
 }
 
 void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
@@ -287,7 +290,7 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 		frame_phase_++;
 	if (frame_count2_ < (int)config_.startup_frames)
 		frame_count2_++;
-	RPI_LOG("Awb: frame_phase " << frame_phase_);
+	LOG(RPiAwb, Debug) << "frame_phase " << frame_phase_;
 	if (frame_phase_ >= (int)config_.frame_period ||
 	    frame_count2_ < (int)config_.startup_frames) {
 		// Update any settings and any image metadata that we need.
@@ -299,14 +302,12 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 		struct LuxStatus lux_status = {};
 		lux_status.lux = 400; // in case no metadata
 		if (image_metadata->Get("lux.status", lux_status) != 0)
-			RPI_LOG("No lux metadata found");
-		RPI_LOG("Awb lux value is " << lux_status.lux);
+			LOG(RPiAwb, Debug) << "No lux metadata found";
+		LOG(RPiAwb, Debug) << "Awb lux value is " << lux_status.lux;
 
 		std::unique_lock<std::mutex> lock(mutex_);
-		if (async_started_ == false) {
-			RPI_LOG("AWB thread starting");
+		if (async_started_ == false)
 			restartAsync(stats, mode_name, lux_status.lux);
-		}
 	}
 }
 
@@ -375,7 +376,7 @@ double Awb::computeDelta2Sum(double gain_r, double gain_b)
 		double delta_r = gain_r * z.R - 1 - config_.whitepoint_r;
 		double delta_b = gain_b * z.B - 1 - config_.whitepoint_b;
 		double delta2 = delta_r * delta_r + delta_b * delta_b;
-		//RPI_LOG("delta_r " << delta_r << " delta_b " << delta_b << " delta2 " << delta2);
+		//LOG(RPiAwb, Debug) << "delta_r " << delta_r << " delta_b " << delta_b << " delta2 " << delta2;
 		delta2 = std::min(delta2, config_.delta_limit);
 		delta2_sum += delta2;
 	}
@@ -438,10 +439,11 @@ double Awb::coarseSearch(Pwl const &prior)
 		double prior_log_likelihood =
 			prior.Eval(prior.Domain().Clip(t));
 		double final_log_likelihood = delta2_sum - prior_log_likelihood;
-		RPI_LOG("t: " << t << " gain_r " << gain_r << " gain_b "
-			      << gain_b << " delta2_sum " << delta2_sum
-			      << " prior " << prior_log_likelihood << " final "
-			      << final_log_likelihood);
+		LOG(RPiAwb, Debug)
+			<< "t: " << t << " gain_r " << gain_r << " gain_b "
+			<< gain_b << " delta2_sum " << delta2_sum
+			<< " prior " << prior_log_likelihood << " final "
+			<< final_log_likelihood;
 		points_.push_back(Pwl::Point(t, final_log_likelihood));
 		if (points_.back().y < points_[best_point].y)
 			best_point = points_.size() - 1;
@@ -452,7 +454,7 @@ double Awb::coarseSearch(Pwl const &prior)
 			     mode_->ct_hi);
 	}
 	t = points_[best_point].x;
-	RPI_LOG("Coarse search found CT " << t);
+	LOG(RPiAwb, Debug) << "Coarse search found CT " << t;
 	// We have the best point of the search, but refine it with a quadratic
 	// interpolation around its neighbours.
 	if (points_.size() > 2) {
@@ -461,8 +463,9 @@ double Awb::coarseSearch(Pwl const &prior)
 		t = interpolate_quadatric(points_[best_point - 1],
 					  points_[best_point],
 					  points_[best_point + 1]);
-		RPI_LOG("After quadratic refinement, coarse search has CT "
-			<< t);
+		LOG(RPiAwb, Debug)
+			<< "After quadratic refinement, coarse search has CT "
+			<< t;
 	}
 	return t;
 }
@@ -514,8 +517,9 @@ void Awb::fineSearch(double &t, double &r, double &b, Pwl const &prior)
 			double gain_r = 1 / r_test, gain_b = 1 / b_test;
 			double delta2_sum = computeDelta2Sum(gain_r, gain_b);
 			points[j].y = delta2_sum - prior_log_likelihood;
-			RPI_LOG("At t " << t_test << " r " << r_test << " b "
-					<< b_test << ": " << points[j].y);
+			LOG(RPiAwb, Debug)
+				<< "At t " << t_test << " r " << r_test << " b "
+				<< b_test << ": " << points[j].y;
 			if (points[j].y < points[best_point].y)
 				best_point = j;
 		}
@@ -532,17 +536,18 @@ void Awb::fineSearch(double &t, double &r, double &b, Pwl const &prior)
 		double gain_r = 1 / r_test, gain_b = 1 / b_test;
 		double delta2_sum = computeDelta2Sum(gain_r, gain_b);
 		double final_log_likelihood = delta2_sum - prior_log_likelihood;
-		RPI_LOG("Finally "
+		LOG(RPiAwb, Debug)
+			<< "Finally "
 			<< t_test << " r " << r_test << " b " << b_test << ": "
 			<< final_log_likelihood
-			<< (final_log_likelihood < best_log_likelihood ? " BEST"
-								       : ""));
+			<< (final_log_likelihood < best_log_likelihood ? " BEST" : "");
 		if (best_t == 0 || final_log_likelihood < best_log_likelihood)
 			best_log_likelihood = final_log_likelihood,
 			best_t = t_test, best_r = r_test, best_b = b_test;
 	}
 	t = best_t, r = best_r, b = best_b;
-	RPI_LOG("Fine search found t " << t << " r " << r << " b " << b);
+	LOG(RPiAwb, Debug)
+		<< "Fine search found t " << t << " r " << r << " b " << b;
 }
 
 void Awb::awbBayes()
@@ -556,13 +561,14 @@ void Awb::awbBayes()
 	Pwl prior = interpolatePrior();
 	prior *= zones_.size() / (double)(AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y);
 	prior.Map([](double x, double y) {
-		RPI_LOG("(" << x << "," << y << ")");
+		LOG(RPiAwb, Debug) << "(" << x << "," << y << ")";
 	});
 	double t = coarseSearch(prior);
 	double r = config_.ct_r.Eval(t);
 	double b = config_.ct_b.Eval(t);
-	RPI_LOG("After coarse search: r " << r << " b " << b << " (gains r "
-					  << 1 / r << " b " << 1 / b << ")");
+	LOG(RPiAwb, Debug)
+		<< "After coarse search: r " << r << " b " << b << " (gains r "
+		<< 1 / r << " b " << 1 / b << ")";
 	// Not entirely sure how to handle the fine search yet. Mostly the
 	// estimated CT is already good enough, but the fine search allows us to
 	// wander transverely off the CT curve. Under some illuminants, where
@@ -570,8 +576,9 @@ void Awb::awbBayes()
 	// though I probably need more real datasets before deciding exactly how
 	// this should be controlled and tuned.
 	fineSearch(t, r, b, prior);
-	RPI_LOG("After fine search: r " << r << " b " << b << " (gains r "
-					<< 1 / r << " b " << 1 / b << ")");
+	LOG(RPiAwb, Debug)
+		<< "After fine search: r " << r << " b " << b << " (gains r "
+		<< 1 / r << " b " << 1 / b << ")";
 	// Write results out for the main thread to pick up. Remember to adjust
 	// the gains from the ones that the "canonical sensor" would require to
 	// the ones needed by *this* sensor.
@@ -583,7 +590,7 @@ void Awb::awbBayes()
 
 void Awb::awbGrey()
 {
-	RPI_LOG("Grey world AWB");
+	LOG(RPiAwb, Debug) << "Grey world AWB";
 	// Make a separate list of the derivatives for each of red and blue, so
 	// that we can sort them to exclude the extreme gains.  We could
 	// consider some variations, such as normalising all the zones first, or
@@ -620,21 +627,23 @@ void Awb::doAwb()
 		async_results_.gain_r = manual_r_;
 		async_results_.gain_g = 1.0;
 		async_results_.gain_b = manual_b_;
-		RPI_LOG("Using manual white balance: gain_r "
+		LOG(RPiAwb, Debug)
+			<< "Using manual white balance: gain_r "
 			<< async_results_.gain_r << " gain_b "
-			<< async_results_.gain_b);
+			<< async_results_.gain_b;
 	} else {
 		prepareStats();
-		RPI_LOG("Valid zones: " << zones_.size());
+		LOG(RPiAwb, Debug) << "Valid zones: " << zones_.size();
 		if (zones_.size() > config_.min_regions) {
 			if (config_.bayes)
 				awbBayes();
 			else
 				awbGrey();
-			RPI_LOG("CT found is "
+			LOG(RPiAwb, Debug)
+				<< "CT found is "
 				<< async_results_.temperature_K
 				<< " with gains r " << async_results_.gain_r
-				<< " and b " << async_results_.gain_b);
+				<< " and b " << async_results_.gain_b;
 		}
 	}
 }

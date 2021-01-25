@@ -7,13 +7,17 @@
 
 #include <math.h>
 
+#include "libcamera/internal/log.h"
+
 #include "../device_status.h"
-#include "../logging.hpp"
 #include "../noise_status.h"
 
 #include "noise.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiNoise)
 
 #define NAME "rpi.noise"
 
@@ -37,7 +41,6 @@ void Noise::SwitchMode(CameraMode const &camera_mode,
 
 void Noise::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG(Name());
 	reference_constant_ = params.get<double>("reference_constant");
 	reference_slope_ = params.get<double>("reference_slope");
 }
@@ -58,10 +61,11 @@ void Noise::Prepare(Metadata *image_metadata)
 		status.noise_constant = reference_constant_ * factor;
 		status.noise_slope = reference_slope_ * factor;
 		image_metadata->Set("noise.status", status);
-		RPI_LOG(Name() << ": constant " << status.noise_constant
-			       << " slope " << status.noise_slope);
+		LOG(RPiNoise, Debug)
+			<< "constant " << status.noise_constant
+			<< " slope " << status.noise_slope;
 	} else
-		RPI_WARN(Name() << " no metadata");
+		LOG(RPiNoise, Warning) << " no metadata";
 }
 
 // Register algorithm with the system.

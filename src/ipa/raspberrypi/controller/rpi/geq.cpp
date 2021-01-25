@@ -5,14 +5,18 @@
  * geq.cpp - GEQ (green equalisation) control algorithm
  */
 
+#include "libcamera/internal/log.h"
+
 #include "../device_status.h"
-#include "../logging.hpp"
 #include "../lux_status.h"
 #include "../pwl.hpp"
 
 #include "geq.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiGeq)
 
 // We use the lux status so that we can apply stronger settings in darkness (if
 // necessary).
@@ -44,11 +48,12 @@ void Geq::Prepare(Metadata *image_metadata)
 	LuxStatus lux_status = {};
 	lux_status.lux = 400;
 	if (image_metadata->Get("lux.status", lux_status))
-		RPI_WARN("Geq: no lux data found");
+		LOG(RPiGeq, Warning) << "no lux data found";
 	DeviceStatus device_status = {};
 	device_status.analogue_gain = 1.0; // in case not found
 	if (image_metadata->Get("device.status", device_status))
-		RPI_WARN("Geq: no device metadata - use analogue gain of 1x");
+		LOG(RPiGeq, Warning)
+			<< "no device metadata - use analogue gain of 1x";
 	GeqStatus geq_status = {};
 	double strength =
 		config_.strength.Empty()
@@ -60,10 +65,11 @@ void Geq::Prepare(Metadata *image_metadata)
 	double slope = config_.slope * strength;
 	geq_status.offset = std::min(65535.0, std::max(0.0, offset));
 	geq_status.slope = std::min(.99999, std::max(0.0, slope));
-	RPI_LOG("Geq: offset " << geq_status.offset << " slope "
-			       << geq_status.slope << " (analogue gain "
-			       << device_status.analogue_gain << " lux "
-			       << lux_status.lux << ")");
+	LOG(RPiGeq, Debug)
+		<< "offset " << geq_status.offset << " slope "
+		<< geq_status.slope << " (analogue gain "
+		<< device_status.analogue_gain << " lux "
+		<< lux_status.lux << ")";
 	image_metadata->Set("geq.status", geq_status);
 }
 

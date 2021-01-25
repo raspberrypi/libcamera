@@ -5,15 +5,19 @@
  * ccm.cpp - CCM (colour correction matrix) control algorithm
  */
 
+#include "libcamera/internal/log.h"
+
 #include "../awb_status.h"
 #include "../ccm_status.h"
-#include "../logging.hpp"
 #include "../lux_status.h"
 #include "../metadata.hpp"
 
 #include "ccm.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiCcm)
 
 // This algorithm selects a CCM (Colour Correction Matrix) according to the
 // colour temperature estimated by AWB (interpolating between known matricies as
@@ -129,9 +133,9 @@ void Ccm::Prepare(Metadata *image_metadata)
 		lux_ok = get_locked(image_metadata, "lux.status", lux);
 	}
 	if (!awb_ok)
-		RPI_WARN("Ccm: no colour temperature found");
+		LOG(RPiCcm, Warning) << "no colour temperature found";
 	if (!lux_ok)
-		RPI_WARN("Ccm: no lux value found");
+		LOG(RPiCcm, Warning) << "no lux value found";
 	Matrix ccm = calculate_ccm(config_.ccms, awb.temperature_K);
 	double saturation = saturation_;
 	struct CcmStatus ccm_status;
@@ -144,13 +148,15 @@ void Ccm::Prepare(Metadata *image_metadata)
 		for (int i = 0; i < 3; i++)
 			ccm_status.matrix[j * 3 + i] =
 				std::max(-8.0, std::min(7.9999, ccm.m[j][i]));
-	RPI_LOG("CCM: colour temperature " << awb.temperature_K << "K");
-	RPI_LOG("CCM: " << ccm_status.matrix[0] << " " << ccm_status.matrix[1]
-			<< " " << ccm_status.matrix[2] << "     "
-			<< ccm_status.matrix[3] << " " << ccm_status.matrix[4]
-			<< " " << ccm_status.matrix[5] << "     "
-			<< ccm_status.matrix[6] << " " << ccm_status.matrix[7]
-			<< " " << ccm_status.matrix[8]);
+	LOG(RPiCcm, Debug)
+		<< "colour temperature " << awb.temperature_K << "K";
+	LOG(RPiCcm, Debug)
+		<< "CCM: " << ccm_status.matrix[0] << " " << ccm_status.matrix[1]
+		<< " " << ccm_status.matrix[2] << "     "
+		<< ccm_status.matrix[3] << " " << ccm_status.matrix[4]
+		<< " " << ccm_status.matrix[5] << "     "
+		<< ccm_status.matrix[6] << " " << ccm_status.matrix[7]
+		<< " " << ccm_status.matrix[8];
 	image_metadata->Set("ccm.status", ccm_status);
 }
 

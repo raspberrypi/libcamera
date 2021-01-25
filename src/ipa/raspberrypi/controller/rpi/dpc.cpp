@@ -5,10 +5,14 @@
  * dpc.cpp - DPC (defective pixel correction) control algorithm
  */
 
-#include "../logging.hpp"
+#include "libcamera/internal/log.h"
+
 #include "dpc.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiDpc)
 
 // We use the lux status so that we can apply stronger settings in darkness (if
 // necessary).
@@ -37,7 +41,7 @@ void Dpc::Prepare(Metadata *image_metadata)
 	DpcStatus dpc_status = {};
 	// Should we vary this with lux level or analogue gain? TBD.
 	dpc_status.strength = config_.strength;
-	RPI_LOG("Dpc: strength " << dpc_status.strength);
+	LOG(RPiDpc, Debug) << "strength " << dpc_status.strength;
 	image_metadata->Set("dpc.status", dpc_status);
 }
 

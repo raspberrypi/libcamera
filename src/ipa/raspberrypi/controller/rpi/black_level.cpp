@@ -8,12 +8,16 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "libcamera/internal/log.h"
+
 #include "../black_level_status.h"
-#include "../logging.hpp"
 
 #include "black_level.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiBlackLevel)
 
 #define NAME "rpi.black_level"
 
@@ -29,12 +33,15 @@ char const *BlackLevel::Name() const
 
 void BlackLevel::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG(Name());
 	uint16_t black_level = params.get<uint16_t>(
 		"black_level", 4096); // 64 in 10 bits scaled to 16 bits
 	black_level_r_ = params.get<uint16_t>("black_level_r", black_level);
 	black_level_g_ = params.get<uint16_t>("black_level_g", black_level);
 	black_level_b_ = params.get<uint16_t>("black_level_b", black_level);
+	LOG(RPiBlackLevel, Debug)
+		<< " Read black levels red " << black_level_r_
+		<< " green " << black_level_g_
+		<< " blue " << black_level_b_;
 }
 
 void BlackLevel::Prepare(Metadata *image_metadata)

@@ -8,12 +8,16 @@
 
 #include "linux/bcm2835-isp.h"
 
+#include "libcamera/internal/log.h"
+
 #include "../device_status.h"
-#include "../logging.hpp"
 
 #include "lux.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiLux)
 
 #define NAME "rpi.lux"
 
@@ -33,7 +37,6 @@ char const *Lux::Name() const
 
 void Lux::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG(Name());
 	reference_shutter_speed_ =
 		params.get<double>("reference_shutter_speed");
 	reference_gain_ = params.get<double>("reference_gain");
@@ -84,7 +87,7 @@ void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 		LuxStatus status;
 		status.lux = estimated_lux;
 		status.aperture = current_aperture;
-		RPI_LOG(Name() << ": estimated lux " << estimated_lux);
+		LOG(RPiLux, Debug) << ": estimated lux " << estimated_lux;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
 			status_ = status;
@@ -93,7 +96,7 @@ void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 		// algorithms get the latest value.
 		image_metadata->Set("lux.status", status);
 	} else
-		RPI_WARN(Name() << ": no device metadata");
+		LOG(RPiLux, Warning) << ": no device metadata";
 }
 
 // Register algorithm with the system.

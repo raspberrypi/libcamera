@@ -7,12 +7,16 @@
 
 #include <math.h>
 
-#include "../logging.hpp"
+#include "libcamera/internal/log.h"
+
 #include "../sharpen_status.h"
 
 #include "sharpen.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiSharpen)
 
 #define NAME "rpi.sharpen"
 
@@ -35,10 +39,13 @@ void Sharpen::SwitchMode(CameraMode const &camera_mode,
 
 void Sharpen::Read(boost::property_tree::ptree const &params)
 {
-	RPI_LOG(Name());
 	threshold_ = params.get<double>("threshold", 1.0);
 	strength_ = params.get<double>("strength", 1.0);
 	limit_ = params.get<double>("limit", 1.0);
+	LOG(RPiSharpen, Debug)
+		<< "Read threshold " << threshold_
+		<< " strength " << strength_
+		<< " limit " << limit_;
 }
 
 void Sharpen::SetStrength(double strength)

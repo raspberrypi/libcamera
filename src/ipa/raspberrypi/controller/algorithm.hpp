@@ -14,7 +14,6 @@
 #include <map>
 #include <atomic>
 
-#include "logging.hpp"
 #include "controller.hpp"
 
 #include <boost/property_tree/ptree.hpp>

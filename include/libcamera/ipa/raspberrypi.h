@@ -7,6 +7,8 @@
 #ifndef __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__
 #define __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__
 
+#include <stdint.h>
+
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
@@ -65,7 +67,7 @@ static const ControlInfoMap Controls = {
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ColourCorrectionMatrix, ControlInfo(-16.0f, 16.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::FrameDurations, ControlInfo(1000, 1000000000) },
+	{ &controls::FrameDurations, ControlInfo(INT64_C(1000), INT64_C(1000000000)) },
 };
 
 } /* namespace RPi */

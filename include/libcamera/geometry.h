@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <string>
 
+#include <libcamera/compiler.h>
+
 namespace libcamera {
 
 class Rectangle;
@@ -92,8 +94,8 @@ public:
 		return *this;
 	}
 
-	constexpr Size alignedDownTo(unsigned int hAlignment,
-				     unsigned int vAlignment) const
+	__nodiscard constexpr Size alignedDownTo(unsigned int hAlignment,
+						 unsigned int vAlignment) const
 	{
 		return {
 			width / hAlignment * hAlignment,
@@ -101,8 +103,8 @@ public:
 		};
 	}
 
-	constexpr Size alignedUpTo(unsigned int hAlignment,
-				   unsigned int vAlignment) const
+	__nodiscard constexpr Size alignedUpTo(unsigned int hAlignment,
+					       unsigned int vAlignment) const
 	{
 		return {
 			(width + hAlignment - 1) / hAlignment * hAlignment,
@@ -110,7 +112,7 @@ public:
 		};
 	}
 
-	constexpr Size boundedTo(const Size &bound) const
+	__nodiscard constexpr Size boundedTo(const Size &bound) const
 	{
 		return {
 			std::min(width, bound.width),
@@ -118,7 +120,7 @@ public:
 		};
 	}
 
-	constexpr Size expandedTo(const Size &expand) const
+	__nodiscard constexpr Size expandedTo(const Size &expand) const
 	{
 		return {
 			std::max(width, expand.width),
@@ -126,10 +128,10 @@ public:
 		};
 	}
 
-	Size boundedToAspectRatio(const Size &ratio) const;
-	Size expandedToAspectRatio(const Size &ratio) const;
+	__nodiscard Size boundedToAspectRatio(const Size &ratio) const;
+	__nodiscard Size expandedToAspectRatio(const Size &ratio) const;
 
-	Rectangle centeredTo(const Point &center) const;
+	__nodiscard Rectangle centeredTo(const Point &center) const;
 
 	Size operator*(float factor) const;
 	Size operator/(float factor) const;
@@ -247,10 +249,11 @@ public:
 	Rectangle &scaleBy(const Size &numerator, const Size &denominator);
 	Rectangle &translateBy(const Point &point);
 
-	Rectangle boundedTo(const Rectangle &bound) const;
-	Rectangle enclosedIn(const Rectangle &boundary) const;
-	Rectangle scaledBy(const Size &numerator, const Size &denominator) const;
-	Rectangle translatedBy(const Point &point) const;
+	__nodiscard Rectangle boundedTo(const Rectangle &bound) const;
+	__nodiscard Rectangle enclosedIn(const Rectangle &boundary) const;
+	__nodiscard Rectangle scaledBy(const Size &numerator,
+				       const Size &denominator) const;
+	__nodiscard Rectangle translatedBy(const Point &point) const;
 };
 
 bool operator==(const Rectangle &lhs, const Rectangle &rhs);

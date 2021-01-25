@@ -5,6 +5,8 @@
  * controller.cpp - ISP controller
  */
 
+#include "libcamera/internal/log.h"
+
 #include "algorithm.hpp"
 #include "controller.hpp"
 
@@ -12,6 +14,9 @@
 #include <boost/property_tree/ptree.hpp>
 
 using namespace RPiController;
+using namespace libcamera;
+
+LOG_DEFINE_CATEGORY(RPiController)
 
 Controller::Controller()
 	: switch_mode_called_(false) {}
@@ -27,7 +32,6 @@ Controller::~Controller() {}
 
 void Controller::Read(char const *filename)
 {
-	RPI_LOG("Controller starting");
 	boost::property_tree::ptree root;
 	boost::property_tree::read_json(filename, root);
 	for (auto const &key_and_value : root) {
@@ -36,10 +40,9 @@ void Controller::Read(char const *filename)
 			algo->Read(key_and_value.second);
 			algorithms_.push_back(AlgorithmPtr(algo));
 		} else
-			RPI_LOG("WARNING: No algorithm found for \""
-				<< key_and_value.first << "\"");
+			LOG(RPiController, Warning)
+				<< "No algorithm found for \"" << key_and_value.first << "\"";
 	}
-	RPI_LOG("Controller finished");
 }
 
 Algorithm *Controller::CreateAlgorithm(char const *name)
@@ -50,39 +53,31 @@ Algorithm *Controller::CreateAlgorithm(char const *name)
 
 void Controller::Initialise()
 {
-	RPI_LOG("Controller starting");
 	for (auto &algo : algorithms_)
 		algo->Initialise();
-	RPI_LOG("Controller finished");
 }
 
 void Controller::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 {
-	RPI_LOG("Controller starting");
 	for (auto &algo : algorithms_)
 		algo->SwitchMode(camera_mode, metadata);
 	switch_mode_called_ = true;
-	RPI_LOG("Controller finished");
 }
 
 void Controller::Prepare(Metadata *image_metadata)
 {
-	RPI_LOG("Controller::Prepare starting");
 	assert(switch_mode_called_);
 	for (auto &algo : algorithms_)
 		if (!algo->IsPaused())
 			algo->Prepare(image_metadata);
-	RPI_LOG("Controller::Prepare finished");
 }
 
 void Controller::Process(StatisticsPtr stats, Metadata *image_metadata)
 {
-	RPI_LOG("Controller::Process starting");
 	assert(switch_mode_called_);
 	for (auto &algo : algorithms_)
 		if (!algo->IsPaused())
 			algo->Process(stats, image_metadata);
-	RPI_LOG("Controller::Process finished");
 }
 
 Metadata &Controller::GetGlobalMetadata()

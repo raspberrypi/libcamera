@@ -272,9 +272,7 @@ BayerFormat BayerFormat::fromV4L2PixelFormat(V4L2PixelFormat v4l2Format)
  * The transformed image would have a GRBG order. The bit depth and modifiers
  * are not affected.
  *
- * Note that transpositions are ignored as the order of a transpose with
- * respect to the flips would have to be defined, and sensors are not expected
- * to support transposition.
+ * Horizontal and vertical flips are applied before transpose.
  *
  * \return The transformed Bayer format
  */
@@ -291,6 +289,11 @@ BayerFormat BayerFormat::transform(Transform t) const
 		result.order = static_cast<Order>(result.order ^ 1);
 	if (!!(t & Transform::VFlip))
 		result.order = static_cast<Order>(result.order ^ 2);
+
+	if (!!(t & Transform::Transpose) && result.order == 1)
+		result.order = static_cast<Order>(2);
+	else if (!!(t & Transform::Transpose) && result.order == 2)
+		result.order = static_cast<Order>(1);
 
 	return result;
 }

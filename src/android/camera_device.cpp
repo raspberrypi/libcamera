@@ -1927,6 +1927,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 				int64_t timestamp)
 {
 	const ControlList &metadata = descriptor->request_->metadata();
+	camera_metadata_ro_entry_t entry;
 
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
@@ -1965,8 +1966,10 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 				 aeFpsTarget.data(), aeFpsTarget.size());
 
 	value = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
+	/* \todo Handle IPA appropriately */
+	bool ret = descriptor->settings_.getEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry);
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
-				 &value, 1);
+				 ret ? entry.data.u8 : &value, 1);
 
 	value = ANDROID_CONTROL_AE_STATE_CONVERGED;
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_STATE, &value, 1);
@@ -2010,8 +2013,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	value = ANDROID_FLASH_STATE_UNAVAILABLE;
 	resultMetadata->addEntry(ANDROID_FLASH_STATE, &value, 1);
 
-	camera_metadata_ro_entry_t entry;
-	int ret = descriptor->settings_.getEntry(ANDROID_LENS_APERTURE, &entry);
+	ret = descriptor->settings_.getEntry(ANDROID_LENS_APERTURE, &entry);
 	if (ret)
 		resultMetadata->addEntry(ANDROID_LENS_APERTURE, entry.data.f, 1);
 

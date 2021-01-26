@@ -27,6 +27,7 @@ public_tests = [
 ]
 
 internal_tests = [
+    ['bayer-format',                    'bayer-format.cpp'],
     ['byte-stream-buffer',              'byte-stream-buffer.cpp'],
     ['camera-sensor',                   'camera-sensor.cpp'],
     ['delayed_contols',                 'delayed_contols.cpp'],

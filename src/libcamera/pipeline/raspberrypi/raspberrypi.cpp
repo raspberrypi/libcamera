@@ -357,7 +357,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 */
 			V4L2PixelFormat fourcc = sensorFormat.fourcc;
 			if (data_->flipsAlterBayerOrder_) {
-				BayerFormat bayer(fourcc);
+				BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(fourcc);
 				bayer.order = data_->nativeBayerOrder_;
 				bayer = bayer.transform(combined);
 				fourcc = bayer.toV4L2PixelFormat();
@@ -1001,7 +1001,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	BayerFormat bayerFormat;
 	for (const auto &iter : dev->formats()) {
 		V4L2PixelFormat v4l2Format = iter.first;
-		bayerFormat = BayerFormat(v4l2Format);
+		bayerFormat = BayerFormat::fromV4L2PixelFormat(v4l2Format);
 		if (bayerFormat.isValid())
 			break;
 	}

@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/bayer_format.h"
 
+#include <algorithm>
 #include <map>
 #include <unordered_map>
 
@@ -270,6 +271,23 @@ V4L2PixelFormat BayerFormat::toV4L2PixelFormat() const
 		return it->second;
 
 	return V4L2PixelFormat();
+}
+
+/**
+ * \brief Convert \a v4l2Format to the corresponding BayerFormat
+ * \param[in] v4l2Format The raw format to convert into a BayerFormat
+ * \return The BayerFormat corresponding to \a v4l2Format
+ */
+BayerFormat BayerFormat::fromV4L2PixelFormat(V4L2PixelFormat v4l2Format)
+{
+	auto it = std::find_if(bayerToV4l2.begin(), bayerToV4l2.end(),
+			       [v4l2Format](const auto &i) {
+				       return i.second == v4l2Format;
+			       });
+	if (it != bayerToV4l2.end())
+		return it->first;
+
+	return BayerFormat();
 }
 
 /**

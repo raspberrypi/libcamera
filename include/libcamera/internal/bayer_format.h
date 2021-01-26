@@ -49,6 +49,7 @@ public:
 	std::string toString() const;
 
 	V4L2PixelFormat toV4L2PixelFormat() const;
+	static BayerFormat fromV4L2PixelFormat(V4L2PixelFormat v4l2Format);
 	BayerFormat transform(Transform t) const;
 
 	Order order;

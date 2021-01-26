@@ -216,6 +216,23 @@ std::string BayerFormat::toString() const
 }
 
 /**
+ * \brief Compare two BayerFormats for equality
+ * \return True if order, bitDepth and packing are equal, or false otherwise
+ */
+bool operator==(const BayerFormat &lhs, const BayerFormat &rhs)
+{
+	return lhs.order == rhs.order && lhs.bitDepth == rhs.bitDepth &&
+	       lhs.packing == rhs.packing;
+}
+
+/**
+ * \fn bool operator!=(const BayerFormat &lhs, const BayerFormat &rhs)
+ * \brief Compare two BayerFormats for inequality
+ * \return True if either order, bitdepth or packing are not equal, or false
+ * otherwise
+ */
+
+/**
  * \brief Convert a BayerFormat into the corresponding V4L2PixelFormat
  * \return The V4L2PixelFormat corresponding to this BayerFormat
  */

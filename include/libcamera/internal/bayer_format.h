@@ -57,6 +57,12 @@ public:
 	Packing packing;
 };
 
+bool operator==(const BayerFormat &lhs, const BayerFormat &rhs);
+static inline bool operator!=(const BayerFormat &lhs, const BayerFormat &rhs)
+{
+	return !(lhs == rhs);
+}
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_INTERNAL_BAYER_FORMAT_H__ */

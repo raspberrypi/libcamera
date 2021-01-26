@@ -98,7 +98,7 @@ public:
 #ifndef __DOXYGEN__
 	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
 						       details::control_type<T>::value &&
-						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 	ControlValue(const T &value)
 		: type_(ControlTypeNone), numElements_(0)
@@ -108,7 +108,7 @@ public:
 	}
 
 	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
-						       std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>
@@ -142,7 +142,7 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
-						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 	T get() const
 	{
@@ -153,7 +153,7 @@ public:
 	}
 
 	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
-						       std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>
@@ -170,7 +170,7 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
-						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       !std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 	void set(const T &value)
 	{
@@ -179,7 +179,7 @@ public:
 	}
 
 	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
-						       std::is_same_v<std::string, std::remove_cv_t<T>>,
+						       std::is_same<std::string, std::remove_cv_t<T>>::value,
 						       std::nullptr_t> = nullptr>
 #else
 	template<typename T>

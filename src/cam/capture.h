@@ -32,6 +32,7 @@ public:
 private:
 	int capture(libcamera::FrameBufferAllocator *allocator);
 
+	int queueRequest(libcamera::Request *request);
 	void requestComplete(libcamera::Request *request);
 	void processRequest(libcamera::Request *request);
 
@@ -43,6 +44,7 @@ private:
 	uint64_t last_;
 
 	EventLoop *loop_;
+	unsigned int queueCount_;
 	unsigned int captureCount_;
 	unsigned int captureLimit_;
 

@@ -18,7 +18,7 @@ using namespace libcamera;
 Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
 		 EventLoop *loop)
 	: camera_(camera), config_(config), writer_(nullptr), last_(0), loop_(loop),
-	  captureCount_(0), captureLimit_(0)
+	  queueCount_(0), captureCount_(0), captureLimit_(0)
 {
 }
 
@@ -26,6 +26,7 @@ int Capture::run(const OptionsParser::Options &options)
 {
 	int ret;
 
+	queueCount_ = 0;
 	captureCount_ = 0;
 	captureLimit_ = options[OptCapture].toInteger();
 
@@ -128,7 +129,7 @@ int Capture::capture(FrameBufferAllocator *allocator)
 	}
 
 	for (std::unique_ptr<Request> &request : requests_) {
-		ret = camera_->queueRequest(request.get());
+		ret = queueRequest(request.get());
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
 			camera_->stop();
@@ -150,6 +151,16 @@ int Capture::capture(FrameBufferAllocator *allocator)
 		std::cout << "Failed to stop capture" << std::endl;
 
 	return ret;
+}
+
+int Capture::queueRequest(Request *request)
+{
+	if (captureLimit_ && queueCount_ >= captureLimit_)
+		return 0;
+
+	queueCount_++;
+
+	return camera_->queueRequest(request);
 }
 
 void Capture::requestComplete(Request *request)
@@ -213,5 +224,5 @@ void Capture::processRequest(Request *request)
 	}
 
 	request->reuse(Request::ReuseBuffers);
-	camera_->queueRequest(request);
+	queueRequest(request);
 }

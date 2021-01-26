@@ -61,37 +61,6 @@ namespace libcamera {
 
 namespace {
 
-const std::map<V4L2PixelFormat, BayerFormat> v4l2ToBayer{
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8), { BayerFormat::BGGR, 8, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8), { BayerFormat::GBRG, 8, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8), { BayerFormat::GRBG, 8, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8), { BayerFormat::RGGB, 8, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10), { BayerFormat::BGGR, 10, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10), { BayerFormat::GBRG, 10, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10), { BayerFormat::GRBG, 10, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10), { BayerFormat::RGGB, 10, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P), { BayerFormat::BGGR, 10, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P), { BayerFormat::GBRG, 10, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P), { BayerFormat::GRBG, 10, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P), { BayerFormat::RGGB, 10, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10), { BayerFormat::BGGR, 10, BayerFormat::IPU3Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10), { BayerFormat::GBRG, 10, BayerFormat::IPU3Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10), { BayerFormat::GRBG, 10, BayerFormat::IPU3Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10), { BayerFormat::RGGB, 10, BayerFormat::IPU3Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12), { BayerFormat::BGGR, 12, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12), { BayerFormat::GBRG, 12, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12), { BayerFormat::GRBG, 12, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12), { BayerFormat::RGGB, 12, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P), { BayerFormat::BGGR, 12, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P), { BayerFormat::GBRG, 12, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P), { BayerFormat::GRBG, 12, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P), { BayerFormat::RGGB, 12, BayerFormat::CSI2Packed } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16), { BayerFormat::BGGR, 16, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16), { BayerFormat::GBRG, 16, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16), { BayerFormat::GRBG, 16, BayerFormat::None } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16), { BayerFormat::RGGB, 16, BayerFormat::None } },
-};
-
 /* Define a slightly arbitrary ordering so that we can use a std::map. */
 struct BayerFormatComparator {
 	constexpr bool operator()(const BayerFormat &lhs, const BayerFormat &rhs) const
@@ -193,20 +162,6 @@ const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
  * \param[in] b The bit depth of the Bayer samples
  * \param[in] p The type of packing applied to the pixel values
  */
-
-/**
- * \brief Construct a BayerFormat from a V4L2PixelFormat
- * \param[in] v4l2Format The raw format to convert into a BayerFormat
- */
-BayerFormat::BayerFormat(V4L2PixelFormat v4l2Format)
-	: order(BGGR), packing(None)
-{
-	const auto it = v4l2ToBayer.find(v4l2Format);
-	if (it == v4l2ToBayer.end())
-		bitDepth = 0;
-	else
-		*this = it->second;
-}
 
 /**
  * \brief Retrieve the BayerFormat associated with a media bus code

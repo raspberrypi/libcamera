@@ -42,7 +42,6 @@ public:
 	{
 	}
 
-	explicit BayerFormat(V4L2PixelFormat v4l2Format);
 	static const BayerFormat &fromMbusCode(unsigned int mbusCode);
 	bool isValid() const { return bitDepth != 0; }
 

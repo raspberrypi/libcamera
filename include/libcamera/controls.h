@@ -96,7 +96,7 @@ public:
 	ControlValue();
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span_v<T> &&
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
 						       details::control_type<T>::value &&
 						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
@@ -107,7 +107,7 @@ public:
 		    &value, 1, sizeof(T));
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span_v<T> ||
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
 						       std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
 #else
@@ -141,7 +141,7 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span_v<T> &&
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
 						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
 	T get() const
@@ -152,7 +152,7 @@ public:
 		return *reinterpret_cast<const T *>(data().data());
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span_v<T> ||
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
 						       std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
 #else
@@ -169,7 +169,7 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename std::enable_if_t<!details::is_span_v<T> &&
+	template<typename T, typename std::enable_if_t<!details::is_span<T>::value &&
 						       !std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
 	void set(const T &value)
@@ -178,7 +178,7 @@ public:
 		    reinterpret_cast<const void *>(&value), 1, sizeof(T));
 	}
 
-	template<typename T, typename std::enable_if_t<details::is_span_v<T> ||
+	template<typename T, typename std::enable_if_t<details::is_span<T>::value ||
 						       std::is_same_v<std::string, std::remove_cv_t<T>>,
 						       std::nullptr_t> = nullptr>
 #else

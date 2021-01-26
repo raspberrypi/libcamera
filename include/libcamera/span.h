@@ -31,9 +31,6 @@ template<typename U, std::size_t N>
 struct is_array<std::array<U, N>> : public std::true_type {
 };
 
-template<typename T>
-inline constexpr bool is_array_v = is_array<T>::value;
-
 template<typename U>
 struct is_span : public std::false_type {
 };
@@ -41,9 +38,6 @@ struct is_span : public std::false_type {
 template<typename U, std::size_t Extent>
 struct is_span<Span<U, Extent>> : public std::true_type {
 };
-
-template<typename T>
-inline constexpr bool is_span_v = is_span<T>::value;
 
 } /* namespace details */
 
@@ -161,8 +155,8 @@ public:
 
 	template<class Container>
 	explicit constexpr Span(Container &cont,
-				std::enable_if_t<!details::is_span_v<Container> &&
-						 !details::is_array_v<Container> &&
+				std::enable_if_t<!details::is_span<Container>::value &&
+						 !details::is_array<Container>::value &&
 						 !std::is_array_v<Container> &&
 						 std::is_convertible_v<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
 								       element_type (*)[]>,
@@ -173,8 +167,8 @@ public:
 
 	template<class Container>
 	explicit constexpr Span(const Container &cont,
-				std::enable_if_t<!details::is_span_v<Container> &&
-						 !details::is_array_v<Container> &&
+				std::enable_if_t<!details::is_span<Container>::value &&
+						 !details::is_array<Container>::value &&
 						 !std::is_array_v<Container> &&
 						 std::is_convertible_v<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
 								       element_type (*)[]>,
@@ -323,8 +317,8 @@ public:
 
 	template<class Container>
 	constexpr Span(Container &cont,
-		       std::enable_if_t<!details::is_span_v<Container> &&
-					!details::is_array_v<Container> &&
+		       std::enable_if_t<!details::is_span<Container>::value &&
+					!details::is_array<Container>::value &&
 					!std::is_array_v<Container> &&
 					std::is_convertible_v<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
 							      element_type (*)[]>,
@@ -335,8 +329,8 @@ public:
 
 	template<class Container>
 	constexpr Span(const Container &cont,
-		       std::enable_if_t<!details::is_span_v<Container> &&
-					!details::is_array_v<Container> &&
+		       std::enable_if_t<!details::is_span<Container>::value &&
+					!details::is_array<Container>::value &&
 					!std::is_array_v<Container> &&
 					std::is_convertible_v<std::remove_pointer_t<decltype(utils::data(cont))> (*)[],
 							      element_type (*)[]>,

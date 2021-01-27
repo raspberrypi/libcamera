@@ -403,7 +403,7 @@ void get_cal_table(double ct, std::vector<AlscCalibration> const &calibrations,
 		memcpy(cal_table, calibrations.back().table,
 		       XY * sizeof(double));
 		LOG(RPiAlsc, Debug) << "using calibration for "
-				    << calibrations.front().ct;
+				    << calibrations.back().ct;
 	} else {
 		int idx = 0;
 		while (ct > calibrations[idx + 1].ct)

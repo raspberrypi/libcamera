@@ -25,6 +25,11 @@ option('gstreamer',
         value : 'auto',
         description : 'Compile libcamera GStreamer plugin')
 
+option('lc-compliance',
+        type : 'feature',
+        value : 'auto',
+        description : 'Compile the lc-compliance test application')
+
 option('pipelines',
         type : 'array',
         choices : ['ipu3', 'raspberrypi', 'rkisp1', 'simple', 'uvcvideo', 'vimc'],

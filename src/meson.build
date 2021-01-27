@@ -21,6 +21,8 @@ subdir('android')
 subdir('libcamera')
 subdir('ipa')
 
+subdir('lc-compliance')
+
 subdir('cam')
 subdir('qcam')
 

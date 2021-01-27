@@ -173,5 +173,6 @@ summary({
             'V4L2 emulation support': v4l2_enabled,
             'cam application': cam_enabled,
             'qcam application': qcam_enabled,
+            'lc-compliance application': lc_compliance_enabled,
             'Unit tests': test_enabled,
         }, section : 'Configuration')

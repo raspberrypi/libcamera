@@ -347,12 +347,6 @@ CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camer
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
 
-	/*
-	 * \todo Determine a more accurate value for this during
-	 *  streamConfiguration.
-	 */
-	maxJpegBufferSize_ = 13 << 20; /* 13631488 from USB HAL */
-
 	maker_ = "libcamera";
 	model_ = "cameraModel";
 
@@ -550,6 +544,7 @@ int CameraDevice::initializeStreamConfigurations()
 	 * build the stream configuration map reported through the camera static
 	 * metadata.
 	 */
+	Size maxJpegSize;
 	for (const auto &format : camera3FormatsMap) {
 		int androidFormat = format.first;
 		const Camera3Format &camera3Format = format.second;
@@ -643,10 +638,18 @@ int CameraDevice::initializeStreamConfigurations()
 			 * \todo Support JPEG streams produced by the Camera
 			 * natively.
 			 */
-			if (androidFormat == HAL_PIXEL_FORMAT_YCbCr_420_888)
+			if (androidFormat == HAL_PIXEL_FORMAT_YCbCr_420_888) {
 				streamConfigurations_.push_back(
 					{ res, HAL_PIXEL_FORMAT_BLOB });
+				maxJpegSize = std::max(maxJpegSize, res);
+			}
 		}
+
+		/*
+		 * \todo Calculate the maximum JPEG buffer size by asking the
+		 * encoder giving the maximum frame size required.
+		 */
+		maxJpegBufferSize_ = maxJpegSize.width * maxJpegSize.height * 1.5;
 	}
 
 	LOG(HAL, Debug) << "Collected stream configuration map: ";
@@ -923,10 +926,6 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
 				  thumbnailEntries.data(), thumbnailEntries.size());
 
-	/*
-	 * \todo Calculate the maximum JPEG buffer size by asking the encoder
-	 * giving the maximum frame size required.
-	 */
 	staticMetadata_->addEntry(ANDROID_JPEG_MAX_SIZE, &maxJpegBufferSize_, 1);
 
 	/* Sensor static metadata. */

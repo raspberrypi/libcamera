@@ -83,7 +83,7 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 }
 
 int PostProcessorJpeg::process(const FrameBuffer &source,
-			       Span<uint8_t> destination,
+			       libcamera::MappedBuffer *destination,
 			       const CameraMetadata &requestMetadata,
 			       CameraMetadata *resultMetadata)
 {
@@ -172,7 +172,8 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	const uint8_t quality = ret ? *entry.data.u8 : 95;
 	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &quality, 1);
 
-	int jpeg_size = encoder_->encode(source, destination, exif.data(), quality);
+	int jpeg_size = encoder_->encode(source, destination->maps()[0],
+					 exif.data(), quality);
 	if (jpeg_size < 0) {
 		LOG(JPEG, Error) << "Failed to encode stream image";
 		return jpeg_size;
@@ -190,7 +191,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	 * \todo Investigate if the buffer size mismatch is an issue or
 	 * expected behaviour.
 	 */
-	uint8_t *resultPtr = destination.data() +
+	uint8_t *resultPtr = destination->maps()[0].data() +
 			     cameraDevice_->maxJpegBufferSize() -
 			     sizeof(struct camera3_jpeg_blob);
 	auto *blob = reinterpret_cast<struct camera3_jpeg_blob *>(resultPtr);

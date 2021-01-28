@@ -8,8 +8,9 @@
 #define __ANDROID_POST_PROCESSOR_H__
 
 #include <libcamera/buffer.h>
-#include <libcamera/span.h>
 #include <libcamera/stream.h>
+
+#include <libcamera/internal/buffer.h>
 
 class CameraMetadata;
 
@@ -21,7 +22,7 @@ public:
 	virtual int configure(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg) = 0;
 	virtual int process(const libcamera::FrameBuffer &source,
-			    libcamera::Span<uint8_t> destination,
+			    libcamera::MappedBuffer *destination,
 			    const CameraMetadata &requestMetadata,
 			    CameraMetadata *resultMetadata) = 0;
 };

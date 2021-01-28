@@ -19,9 +19,10 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
+#include <libcamera/internal/buffer.h>
+
 class CameraDevice;
 class CameraMetadata;
-class MappedCamera3Buffer;
 class PostProcessor;
 
 class CameraStream
@@ -119,7 +120,7 @@ public:
 
 	int configure();
 	int process(const libcamera::FrameBuffer &source,
-		    MappedCamera3Buffer *dest,
+		    libcamera::MappedBuffer *destination,
 		    const CameraMetadata &requestMetadata,
 		    CameraMetadata *resultMetadata);
 	libcamera::FrameBuffer *getBuffer();

@@ -96,14 +96,14 @@ int CameraStream::configure()
 }
 
 int CameraStream::process(const libcamera::FrameBuffer &source,
-			  MappedCamera3Buffer *dest,
+			  libcamera::MappedBuffer *destination,
 			  const CameraMetadata &requestMetadata,
 			  CameraMetadata *resultMetadata)
 {
 	if (!postProcessor_)
 		return 0;
 
-	return postProcessor_->process(source, dest->maps()[0],
+	return postProcessor_->process(source, destination,
 				       requestMetadata, resultMetadata);
 }
 

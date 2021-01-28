@@ -25,7 +25,7 @@ public:
 	int configure(const libcamera::StreamConfiguration &incfg,
 		      const libcamera::StreamConfiguration &outcfg) override;
 	int process(const libcamera::FrameBuffer &source,
-		    libcamera::Span<uint8_t> destination,
+		    libcamera::MappedBuffer *destination,
 		    const CameraMetadata &requestMetadata,
 		    CameraMetadata *resultMetadata) override;
 

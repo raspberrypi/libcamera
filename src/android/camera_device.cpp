@@ -1716,8 +1716,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	else
 		descriptor->settings_ = lastSettings_;
 
-	LOG(HAL, Debug) << "Queueing Request to libcamera with "
-			<< descriptor->numBuffers_ << " HAL streams";
+	LOG(HAL, Debug) << "Queueing request " << descriptor->request_->cookie()
+			<< " with " << descriptor->numBuffers_ << " streams";
 	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
 		const camera3_stream_buffer_t *camera3Buffer = &descriptor->buffers_[i];
 		camera3_stream *camera3Stream = camera3Buffer->stream;
@@ -1805,6 +1805,9 @@ void CameraDevice::requestComplete(Request *request)
 				<< request->status();
 		status = CAMERA3_BUFFER_STATUS_ERROR;
 	}
+
+	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
+			<< descriptor->numBuffers_ << " streams";
 
 	/*
 	 * \todo The timestamp used for the metadata is currently always taken

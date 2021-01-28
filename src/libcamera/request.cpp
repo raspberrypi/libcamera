@@ -88,6 +88,8 @@ Request::Request(Camera *camera, uint64_t cookie)
 	metadata_ = new ControlList(controls::controls);
 
 	LIBCAMERA_TRACEPOINT(request_construct, this);
+
+	LOG(Request, Debug) << "Created request - cookie: " << cookie_;
 }
 
 Request::~Request()

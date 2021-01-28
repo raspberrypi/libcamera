@@ -30,6 +30,7 @@ public:
 	{
 		return request_->metadata();
 	}
+	unsigned long cookie() const { return request_->cookie(); }
 
 	void addBuffer(libcamera::Stream *stream,
 		       libcamera::FrameBuffer *buffer, int fence);

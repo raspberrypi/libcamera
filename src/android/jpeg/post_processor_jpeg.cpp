@@ -112,8 +112,8 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	 */
 	exif.setTimestamp(std::time(nullptr), 0ms);
 
-	/* \todo Get this information from libcamera::Request::metadata */
-	exif.setExposureTime(0);
+	ret = resultMetadata->getEntry(ANDROID_SENSOR_EXPOSURE_TIME, &entry);
+	exif.setExposureTime(ret ? *entry.data.i64 : 0);
 	ret = requestMetadata.getEntry(ANDROID_LENS_APERTURE, &entry);
 	if (ret)
 		exif.setAperture(*entry.data.f);

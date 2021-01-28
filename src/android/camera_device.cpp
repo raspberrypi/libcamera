@@ -2058,7 +2058,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	}
 
 	if (metadata.contains(controls::ExposureTime)) {
-		int32_t exposure = metadata.get(controls::ExposureTime);
+		int64_t exposure = metadata.get(controls::ExposureTime) * 1000ULL;
 		resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME,
 					 &exposure, 1);
 	}

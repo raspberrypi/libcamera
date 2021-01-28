@@ -228,6 +228,8 @@ protected:
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
 private:
+	static constexpr unsigned int kNumInternalBuffers = 3;
+
 	SimpleCameraData *cameraData(const Camera *camera)
 	{
 		return static_cast<SimpleCameraData *>(
@@ -700,7 +702,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		inputCfg.pixelFormat = pipeConfig->captureFormat;
 		inputCfg.size = pipeConfig->captureSize;
 		inputCfg.stride = captureFormat.planes[0].bpl;
-		inputCfg.bufferCount = cfg.bufferCount;
+		inputCfg.bufferCount = kNumInternalBuffers;
 
 		ret = converter_->configure(inputCfg, { cfg });
 		if (ret < 0) {
@@ -737,13 +739,20 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
-	unsigned int count = data->streams_[0].configuration().bufferCount;
 	int ret;
 
-	if (data->useConverter_)
-		ret = video->allocateBuffers(count, &data->converterBuffers_);
-	else
-		ret = video->importBuffers(count);
+	if (data->useConverter_) {
+		/*
+		 * When using the converter allocate a fixed number of internal
+		 * buffers.
+		 */
+		ret = video->allocateBuffers(kNumInternalBuffers,
+					     &data->converterBuffers_);
+	} else {
+		/* Otherwise, prepare for using buffers from the only stream. */
+		Stream *stream = &data->streams_[0];
+		ret = video->importBuffers(stream->configuration().bufferCount);
+	}
 	if (ret < 0)
 		return ret;
 

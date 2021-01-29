@@ -244,6 +244,7 @@ int CameraSensor::validateSensorDriver()
 		V4L2_CID_EXPOSURE,
 		V4L2_CID_HBLANK,
 		V4L2_CID_PIXEL_RATE,
+		V4L2_CID_VBLANK,
 	};
 
 	ControlList ctrls = subdev_->getControls(mandatoryControls);

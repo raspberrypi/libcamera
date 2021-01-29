@@ -157,7 +157,7 @@ Agc::Agc(Controller *controller)
 	  frame_count_(0), lock_count_(0),
 	  last_target_exposure_(0.0),
 	  ev_(1.0), flicker_period_(0.0),
-	  fixed_shutter_(0), fixed_analogue_gain_(0.0)
+	  max_shutter_(0), fixed_shutter_(0), fixed_analogue_gain_(0.0)
 {
 	memset(&awb_, 0, sizeof(awb_));
 	// Setting status_.total_exposure_value_ to zero initially tells us
@@ -227,11 +227,16 @@ void Agc::SetFlickerPeriod(double flicker_period)
 	flicker_period_ = flicker_period;
 }
 
+void Agc::SetMaxShutter(double max_shutter)
+{
+	max_shutter_ = max_shutter;
+}
+
 void Agc::SetFixedShutter(double fixed_shutter)
 {
 	fixed_shutter_ = fixed_shutter;
 	// Set this in case someone calls Pause() straight after.
-	status_.shutter_time = fixed_shutter;
+	status_.shutter_time = clipShutter(fixed_shutter_);
 }
 
 void Agc::SetFixedAnalogueGain(double fixed_analogue_gain)
@@ -261,7 +266,8 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 {
 	housekeepConfig();
 
-	if (fixed_shutter_ != 0.0 && fixed_analogue_gain_ != 0.0) {
+	double fixed_shutter = clipShutter(fixed_shutter_);
+	if (fixed_shutter != 0.0 && fixed_analogue_gain_ != 0.0) {
 		// We're going to reset the algorithm here with these fixed values.
 
 		fetchAwbStatus(metadata);
@@ -269,14 +275,14 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		ASSERT(min_colour_gain != 0.0);
 
 		// This is the equivalent of computeTargetExposure and applyDigitalGain.
-		target_.total_exposure_no_dg = fixed_shutter_ * fixed_analogue_gain_;
+		target_.total_exposure_no_dg = fixed_shutter * fixed_analogue_gain_;
 		target_.total_exposure = target_.total_exposure_no_dg / min_colour_gain;
 
 		// Equivalent of filterExposure. This resets any "history".
 		filtered_ = target_;
 
 		// Equivalent of divideUpExposure.
-		filtered_.shutter = fixed_shutter_;
+		filtered_.shutter = fixed_shutter;
 		filtered_.analogue_gain = fixed_analogue_gain_;
 	} else if (status_.total_exposure_value) {
 		// On a mode switch, it's possible the exposure profile could change,
@@ -290,7 +296,7 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		// for any that weren't set.
 
 		// Equivalent of divideUpExposure.
-		filtered_.shutter = fixed_shutter_ ? fixed_shutter_ : config_.default_exposure_time;
+		filtered_.shutter = fixed_shutter ? fixed_shutter : config_.default_exposure_time;
 		filtered_.analogue_gain = fixed_analogue_gain_ ? fixed_analogue_gain_ : config_.default_analogue_gain;
 	}
 
@@ -403,7 +409,7 @@ void Agc::housekeepConfig()
 {
 	// First fetch all the up-to-date settings, so no one else has to do it.
 	status_.ev = ev_;
-	status_.fixed_shutter = fixed_shutter_;
+	status_.fixed_shutter = clipShutter(fixed_shutter_);
 	status_.fixed_analogue_gain = fixed_analogue_gain_;
 	status_.flicker_period = flicker_period_;
 	LOG(RPiAgc, Debug) << "ev " << status_.ev << " fixed_shutter "
@@ -582,13 +588,15 @@ void Agc::computeTargetExposure(double gain)
 		target_.total_exposure = current_.total_exposure_no_dg * gain;
 		// The final target exposure is also limited to what the exposure
 		// mode allows.
+		double max_shutter = status_.fixed_shutter != 0.0
+				   ? status_.fixed_shutter
+				   : exposure_mode_->shutter.back();
+		max_shutter = clipShutter(max_shutter);
 		double max_total_exposure =
-			(status_.fixed_shutter != 0.0
-			 ? status_.fixed_shutter
-			 : exposure_mode_->shutter.back()) *
+			max_shutter *
 			(status_.fixed_analogue_gain != 0.0
-			 ? status_.fixed_analogue_gain
-			 : exposure_mode_->gain.back());
+				 ? status_.fixed_analogue_gain
+				 : exposure_mode_->gain.back());
 		target_.total_exposure = std::min(target_.total_exposure,
 						  max_total_exposure);
 	}
@@ -671,6 +679,7 @@ void Agc::divideUpExposure()
 	shutter_time = status_.fixed_shutter != 0.0
 			       ? status_.fixed_shutter
 			       : exposure_mode_->shutter[0];
+	shutter_time = clipShutter(shutter_time);
 	analogue_gain = status_.fixed_analogue_gain != 0.0
 				? status_.fixed_analogue_gain
 				: exposure_mode_->gain[0];
@@ -678,14 +687,15 @@ void Agc::divideUpExposure()
 		for (unsigned int stage = 1;
 		     stage < exposure_mode_->gain.size(); stage++) {
 			if (status_.fixed_shutter == 0.0) {
-				if (exposure_mode_->shutter[stage] *
-					    analogue_gain >=
+				double stage_shutter =
+					clipShutter(exposure_mode_->shutter[stage]);
+				if (stage_shutter * analogue_gain >=
 				    exposure_value) {
 					shutter_time =
 						exposure_value / analogue_gain;
 					break;
 				}
-				shutter_time = exposure_mode_->shutter[stage];
+				shutter_time = stage_shutter;
 			}
 			if (status_.fixed_analogue_gain == 0.0) {
 				if (exposure_mode_->gain[stage] *
@@ -738,6 +748,13 @@ void Agc::writeAndFinish(Metadata *image_metadata, bool desaturate)
 			   << filtered_.total_exposure;
 	LOG(RPiAgc, Debug) << "Camera exposure update: shutter time " << filtered_.shutter
 			   << " analogue gain " << filtered_.analogue_gain;
+}
+
+double Agc::clipShutter(double shutter)
+{
+	if (max_shutter_)
+		shutter = std::min(shutter, max_shutter_);
+	return shutter;
 }
 
 // Register algorithm with the system.

@@ -78,6 +78,7 @@ public:
 	unsigned int GetConvergenceFrames() const override;
 	void SetEv(double ev) override;
 	void SetFlickerPeriod(double flicker_period) override;
+	void SetMaxShutter(double max_shutter) override; // microseconds
 	void SetFixedShutter(double fixed_shutter) override; // microseconds
 	void SetFixedAnalogueGain(double fixed_analogue_gain) override;
 	void SetMeteringMode(std::string const &metering_mode_name) override;
@@ -100,6 +101,7 @@ private:
 	void filterExposure(bool desaturate);
 	void divideUpExposure();
 	void writeAndFinish(Metadata *image_metadata, bool desaturate);
+	double clipShutter(double shutter);
 	AgcMeteringMode *metering_mode_;
 	AgcExposureMode *exposure_mode_;
 	AgcConstraintMode *constraint_mode_;
@@ -126,6 +128,7 @@ private:
 	std::string constraint_mode_name_;
 	double ev_;
 	double flicker_period_;
+	double max_shutter_;
 	double fixed_shutter_;
 	double fixed_analogue_gain_;
 };

@@ -1065,6 +1065,18 @@ void IPARPi::applyFrameDurations(double minFrameDuration, double maxFrameDuratio
 	libcameraMetadata_.set(controls::FrameDurations,
 			       { static_cast<int64_t>(minFrameDuration_),
 				 static_cast<int64_t>(maxFrameDuration_) });
+
+	/*
+	 * Calculate the maximum exposure time possible for the AGC to use.
+	 * GetVBlanking() will update maxShutter with the largest exposure
+	 * value possible.
+	 */
+	double maxShutter = std::numeric_limits<double>::max();
+	helper_->GetVBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
+
+	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+		controller_.GetAlgorithm("agc"));
+	agc->SetMaxShutter(maxShutter);
 }
 
 void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)

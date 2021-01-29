@@ -33,6 +33,9 @@ struct CameraSensorInfo {
 
 	uint64_t pixelRate;
 	uint32_t lineLength;
+
+	uint32_t minFrameLength;
+	uint32_t maxFrameLength;
 };
 
 class CameraSensor : protected Loggable

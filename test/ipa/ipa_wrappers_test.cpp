@@ -313,6 +313,8 @@ protected:
 			.outputSize = { 2560, 1940 },
 			.pixelRate = 96000000,
 			.lineLength = 2918,
+			.minFrameLength = 1940,
+			.maxFrameLength = 2880
 		};
 		std::map<unsigned int, IPAStream> config{
 			{ 1, { V4L2_PIX_FMT_YUYV, { 1024, 768 } } },

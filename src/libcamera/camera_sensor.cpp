@@ -114,6 +114,36 @@ LOG_DEFINE_CATEGORY(CameraSensor)
  */
 
 /**
+ * \var CameraSensorInfo::minFrameLength
+ * \brief The minimum allowable frame length in units of lines
+ *
+ * The sensor frame length comprises of active output lines and blanking lines
+ * in a frame. The minimum frame length value dictates the minimum allowable
+ * frame duration of the sensor mode.
+ *
+ * To obtain the minimum frame duration:
+ *
+ * \verbatim
+	frameDuration(s) = minFrameLength(lines) * lineLength(pixels) / pixelRate(pixels per second)
+   \endverbatim
+ */
+
+/**
+ * \var CameraSensorInfo::maxFrameLength
+ * \brief The maximum allowable frame length in units of lines
+ *
+ * The sensor frame length comprises of active output lines and blanking lines
+ * in a frame. The maximum frame length value dictates the maximum allowable
+ * frame duration of the sensor mode.
+ *
+ * To obtain the maximum frame duration:
+ *
+ * \verbatim
+	frameDuration(s) = maxFrameLength(lines) * lineLength(pixels) / pixelRate(pixels per second)
+   \endverbatim
+ */
+
+/**
  * \class CameraSensor
  * \brief A camera sensor based on V4L2 subdevices
  *
@@ -706,12 +736,13 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	info->outputSize = format.size;
 
 	/*
-	 * Retrieve the pixel rate and the line length through V4L2 controls.
-	 * Support for the V4L2_CID_PIXEL_RATE and V4L2_CID_HBLANK controls is
-	 * mandatory.
+	 * Retrieve the pixel rate, line length and minimum/maximum frame
+	 * duration through V4L2 controls. Support for the V4L2_CID_PIXEL_RATE,
+	 * V4L2_CID_HBLANK and V4L2_CID_VBLANK controls is mandatory.
 	 */
 	ControlList ctrls = subdev_->getControls({ V4L2_CID_PIXEL_RATE,
-						   V4L2_CID_HBLANK });
+						   V4L2_CID_HBLANK,
+						   V4L2_CID_VBLANK });
 	if (ctrls.empty()) {
 		LOG(CameraSensor, Error)
 			<< "Failed to retrieve camera info controls";
@@ -721,6 +752,10 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	int32_t hblank = ctrls.get(V4L2_CID_HBLANK).get<int32_t>();
 	info->lineLength = info->outputSize.width + hblank;
 	info->pixelRate = ctrls.get(V4L2_CID_PIXEL_RATE).get<int64_t>();
+
+	const ControlInfo vblank = ctrls.infoMap()->at(V4L2_CID_VBLANK);
+	info->minFrameLength = info->outputSize.height + vblank.min().get<int32_t>();
+	info->maxFrameLength = info->outputSize.height + vblank.max().get<int32_t>();
 
 	return 0;
 }

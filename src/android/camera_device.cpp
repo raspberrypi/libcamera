@@ -705,10 +705,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 782 bytes of static metadata
+	 * Currently: 53 entries, 846 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 810;
+	uint32_t byteSize = 846;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1218,15 +1218,24 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_CONTROL_AE_MODE,
 		ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
 		ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+		ANDROID_CONTROL_AF_MODE,
 		ANDROID_CONTROL_AF_TRIGGER,
 		ANDROID_CONTROL_AWB_LOCK,
 		ANDROID_CONTROL_AWB_MODE,
 		ANDROID_CONTROL_CAPTURE_INTENT,
+		ANDROID_CONTROL_EFFECT_MODE,
 		ANDROID_CONTROL_MODE,
+		ANDROID_CONTROL_SCENE_MODE,
+		ANDROID_CONTROL_VIDEO_STABILIZATION_MODE,
 		ANDROID_FLASH_MODE,
+		ANDROID_JPEG_ORIENTATION,
+		ANDROID_JPEG_QUALITY,
+		ANDROID_JPEG_THUMBNAIL_QUALITY,
+		ANDROID_JPEG_THUMBNAIL_SIZE,
 		ANDROID_LENS_APERTURE,
 		ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
 		ANDROID_NOISE_REDUCTION_MODE,
+		ANDROID_SCALER_CROP_REGION,
 		ANDROID_STATISTICS_FACE_DETECT_MODE
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_REQUEST_KEYS,

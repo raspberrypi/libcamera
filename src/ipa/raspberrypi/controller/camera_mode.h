@@ -37,6 +37,8 @@ struct CameraMode {
 	double line_length;
 	// any camera transform *not* reflected already in the camera tuning
 	libcamera::Transform transform;
+	// minimum and maximum fame lengths in units of lines
+	uint32_t min_frame_length, max_frame_length;
 };
 
 #ifdef __cplusplus

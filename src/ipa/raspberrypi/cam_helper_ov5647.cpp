@@ -30,8 +30,6 @@ private:
 	 * in units of lines.
 	 */
 	static constexpr int frameIntegrationDiff = 4;
-	/* Largest possible frame length, in units of lines. */
-	static constexpr int maxFrameLength = 0xffff;
 };
 
 /*
@@ -40,7 +38,7 @@ private:
  */
 
 CamHelperOv5647::CamHelperOv5647()
-	: CamHelper(new MdParserRPi(), maxFrameLength, frameIntegrationDiff)
+	: CamHelper(new MdParserRPi(), frameIntegrationDiff)
 {
 }
 

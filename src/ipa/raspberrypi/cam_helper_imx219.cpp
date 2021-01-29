@@ -56,15 +56,13 @@ private:
 	 * in units of lines.
 	 */
 	static constexpr int frameIntegrationDiff = 4;
-	/* Largest possible frame length, in units of lines. */
-	static constexpr int maxFrameLength = 0xffff;
 };
 
 CamHelperImx219::CamHelperImx219()
 #if ENABLE_EMBEDDED_DATA
-	: CamHelper(new MdParserImx219(), maxFrameLength, frameIntegrationDiff)
+	: CamHelper(new MdParserImx219(), frameIntegrationDiff)
 #else
-	: CamHelper(new MdParserRPi(), maxFrameLength, frameIntegrationDiff)
+	: CamHelper(new MdParserRPi(), frameIntegrationDiff)
 #endif
 {
 }

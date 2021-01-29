@@ -62,8 +62,7 @@ class CamHelper
 {
 public:
 	static CamHelper *Create(std::string const &cam_name);
-	CamHelper(MdParser *parser, unsigned int maxFrameLength,
-		  unsigned int frameIntegrationDiff);
+	CamHelper(MdParser *parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
 	void SetCameraMode(const CameraMode &mode);
 	MdParser &Parser() const { return *parser_; }
@@ -86,8 +85,6 @@ protected:
 
 private:
 	bool initialized_;
-	/* Largest possible frame length, in units of lines. */
-	unsigned int maxFrameLength_;
 	/*
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.

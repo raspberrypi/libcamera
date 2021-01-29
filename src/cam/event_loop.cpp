@@ -38,25 +38,13 @@ EventLoop *EventLoop::instance()
 int EventLoop::exec()
 {
 	exitCode_ = -1;
-	exit_.store(false, std::memory_order_release);
-
-	while (!exit_.load(std::memory_order_acquire)) {
-		dispatchCalls();
-		event_base_loop(base_, EVLOOP_NO_EXIT_ON_EMPTY);
-	}
-
+	event_base_loop(base_, EVLOOP_NO_EXIT_ON_EMPTY);
 	return exitCode_;
 }
 
 void EventLoop::exit(int code)
 {
 	exitCode_ = code;
-	exit_.store(true, std::memory_order_release);
-	interrupt();
-}
-
-void EventLoop::interrupt()
-{
 	event_base_loopbreak(base_);
 }
 
@@ -67,20 +55,28 @@ void EventLoop::callLater(const std::function<void()> &func)
 		calls_.push_back(func);
 	}
 
-	interrupt();
+	event_base_once(base_, -1, EV_TIMEOUT, dispatchCallback, this, nullptr);
 }
 
-void EventLoop::dispatchCalls()
+void EventLoop::dispatchCallback([[maybe_unused]] evutil_socket_t fd,
+				 [[maybe_unused]] short flags, void *param)
 {
-	std::unique_lock<std::mutex> locker(lock_);
+	EventLoop *loop = static_cast<EventLoop *>(param);
+	loop->dispatchCall();
+}
 
-	for (auto iter = calls_.begin(); iter != calls_.end(); ) {
-		std::function<void()> call = std::move(*iter);
+void EventLoop::dispatchCall()
+{
+	std::function<void()> call;
 
-		iter = calls_.erase(iter);
+	{
+		std::unique_lock<std::mutex> locker(lock_);
+		if (calls_.empty())
+			return;
 
-		locker.unlock();
-		call();
-		locker.lock();
+		call = calls_.front();
+		calls_.pop_front();
 	}
+
+	call();
 }

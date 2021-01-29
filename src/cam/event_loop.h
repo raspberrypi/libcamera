@@ -7,10 +7,11 @@
 #ifndef __CAM_EVENT_LOOP_H__
 #define __CAM_EVENT_LOOP_H__
 
-#include <atomic>
 #include <functional>
 #include <list>
 #include <mutex>
+
+#include <event2/util.h>
 
 struct event_base;
 
@@ -31,14 +32,14 @@ private:
 	static EventLoop *instance_;
 
 	struct event_base *base_;
-	std::atomic<bool> exit_;
 	int exitCode_;
 
 	std::list<std::function<void()>> calls_;
 	std::mutex lock_;
 
-	void interrupt();
-	void dispatchCalls();
+	static void dispatchCallback(evutil_socket_t fd, short flags,
+				     void *param);
+	void dispatchCall();
 };
 
 #endif /* __CAM_EVENT_LOOP_H__ */

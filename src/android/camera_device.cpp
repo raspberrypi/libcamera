@@ -1936,7 +1936,9 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 				int64_t timestamp)
 {
 	const ControlList &metadata = descriptor->request_->metadata();
+	const CameraMetadata &settings = descriptor->settings_;
 	camera_metadata_ro_entry_t entry;
+	bool found;
 
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
@@ -1961,6 +1963,12 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 		return nullptr;
 	}
 
+	/*
+	 * \todo The value of the results metadata copied from the settings
+	 * will have to be passed to the libcamera::Camera and extracted
+	 * from libcamera::Request::metadata.
+	 */
+
 	uint8_t value = ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE, &value, 1);
 
@@ -1975,10 +1983,9 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 				 aeFpsTarget.data(), aeFpsTarget.size());
 
 	value = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
-	/* \todo Handle IPA appropriately */
-	bool ret = descriptor->settings_.getEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry);
+	found = settings.getEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry);
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER,
-				 ret ? entry.data.u8 : &value, 1);
+				 found ? entry.data.u8 : &value, 1);
 
 	value = ANDROID_CONTROL_AE_STATE_CONVERGED;
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_STATE, &value, 1);
@@ -2022,8 +2029,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	value = ANDROID_FLASH_STATE_UNAVAILABLE;
 	resultMetadata->addEntry(ANDROID_FLASH_STATE, &value, 1);
 
-	ret = descriptor->settings_.getEntry(ANDROID_LENS_APERTURE, &entry);
-	if (ret)
+	if (settings.getEntry(ANDROID_LENS_APERTURE, &entry))
 		resultMetadata->addEntry(ANDROID_LENS_APERTURE, entry.data.f, 1);
 
 	float focal_length = 1.0;

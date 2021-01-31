@@ -10,6 +10,9 @@ formats:
 
   - RGB565:
       fourcc: DRM_FORMAT_RGB565
+  - RGB565_BE:
+      fourcc: DRM_FORMAT_RGB565
+      big_endian: true
 
   - RGB888:
       fourcc: DRM_FORMAT_RGB888

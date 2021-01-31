@@ -47,6 +47,7 @@ namespace {
 const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 	/* RGB formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB565), formats::RGB565 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB565X), formats::RGB565_BE },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGB24), formats::BGR888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_BGR24), formats::RGB888 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_XBGR32), formats::XRGB8888 },

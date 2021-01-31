@@ -20,6 +20,7 @@
 
 namespace libcamera {
 
+class BayerFormat;
 class MediaEntity;
 
 struct CameraSensorInfo {
@@ -92,6 +93,7 @@ private:
 
 	Size pixelArraySize_;
 	Rectangle activeArea_;
+	const BayerFormat *bayerFormat_;
 
 	ControlList properties_;
 };

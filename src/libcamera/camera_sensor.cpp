@@ -163,7 +163,8 @@ LOG_DEFINE_CATEGORY(CameraSensor)
  * Once constructed the instance must be initialized with init().
  */
 CameraSensor::CameraSensor(const MediaEntity *entity)
-	: entity_(entity), pad_(UINT_MAX), properties_(properties::properties)
+	: entity_(entity), pad_(UINT_MAX), bayerFormat_(nullptr),
+	  properties_(properties::properties)
 {
 }
 
@@ -251,6 +252,15 @@ int CameraSensor::init()
 	if (entity_->device()->driver() == "vimc") {
 		initVimcDefaultProperties();
 		return initProperties();
+	}
+
+	/* Get the color filter array pattern (only for RAW sensors). */
+	for (unsigned int mbusCode : mbusCodes_) {
+		const BayerFormat &bayerFormat = BayerFormat::fromMbusCode(mbusCode);
+		if (bayerFormat.isValid()) {
+			bayerFormat_ = &bayerFormat;
+			break;
+		}
 	}
 
 	ret = validateSensorDriver();
@@ -436,14 +446,9 @@ int CameraSensor::initProperties()
 	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });
 
 	/* Color filter array pattern, register only for RAW sensors. */
-	for (const auto &format : formats_) {
-		unsigned int mbusCode = format.first;
-		BayerFormat bayerFormat = BayerFormat::fromMbusCode(mbusCode);
-		if (!bayerFormat.isValid())
-			continue;
-
+	if (bayerFormat_) {
 		int32_t cfa;
-		switch (bayerFormat.order) {
+		switch (bayerFormat_->order) {
 		case BayerFormat::BGGR:
 			cfa = properties::draft::BGGR;
 			break;
@@ -459,7 +464,6 @@ int CameraSensor::initProperties()
 		}
 
 		properties_.set(properties::draft::ColorFilterArrangement, cfa);
-		break;
 	}
 
 	return 0;

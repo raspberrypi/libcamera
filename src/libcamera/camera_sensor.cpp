@@ -280,14 +280,18 @@ int CameraSensor::validateSensorDriver()
 	 * Optional controls are used to register optional sensor properties. If
 	 * not present, some values will be defaulted.
 	 */
-	const std::vector<uint32_t> optionalControls{
+	static constexpr uint32_t optionalControls[] = {
 		V4L2_CID_CAMERA_ORIENTATION,
 		V4L2_CID_CAMERA_SENSOR_ROTATION,
 	};
 
-	ControlList ctrls = subdev_->getControls(optionalControls);
-	if (ctrls.empty())
-		LOG(CameraSensor, Debug) << "Optional V4L2 controls not supported";
+	const ControlIdMap &controls = subdev_->controls().idmap();
+	for (uint32_t ctrl : optionalControls) {
+		if (!controls.count(ctrl))
+			LOG(CameraSensor, Debug)
+				<< "Optional V4L2 control " << utils::hex(ctrl)
+				<< " not supported";
+	}
 
 	/*
 	 * Make sure the required selection targets are supported.
@@ -342,22 +346,29 @@ int CameraSensor::validateSensorDriver()
 	 * For raw sensors, make sure the sensor driver supports the controls
 	 * required by the CameraSensor class.
 	 */
-	const std::vector<uint32_t> mandatoryControls{
+	static constexpr uint32_t mandatoryControls[] = {
 		V4L2_CID_EXPOSURE,
 		V4L2_CID_HBLANK,
 		V4L2_CID_PIXEL_RATE,
 		V4L2_CID_VBLANK,
 	};
 
-	ctrls = subdev_->getControls(mandatoryControls);
-	if (ctrls.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Mandatory V4L2 controls not available";
+	err = 0;
+	for (uint32_t ctrl : mandatoryControls) {
+		if (!controls.count(ctrl)) {
+			LOG(CameraSensor, Error)
+				<< "Mandatory V4L2 control " << utils::hex(ctrl)
+				<< " not available";
+			err = -EINVAL;
+		}
+	}
+
+	if (err) {
 		LOG(CameraSensor, Error)
 			<< "The sensor kernel driver needs to be fixed";
 		LOG(CameraSensor, Error)
 			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
-		return -EINVAL;
+		return err;
 	}
 
 	return 0;

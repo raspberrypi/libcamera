@@ -22,7 +22,7 @@ Mandatory Requirements
 
 The sensor driver is assumed to be fully compliant with the V4L2 specification.
 
-The sensor driver shall support the following V4L2 controls:
+For RAW sensors, the sensor driver shall support the following V4L2 controls:
 
 * `V4L2_CID_EXPOSURE`_
 * `V4L2_CID_HBLANK`_

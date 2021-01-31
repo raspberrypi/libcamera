@@ -277,28 +277,6 @@ int CameraSensor::init()
 int CameraSensor::validateSensorDriver()
 {
 	/*
-	 * Make sure the sensor driver supports the mandatory controls
-	 * required by the CameraSensor class.
-	 */
-	const std::vector<uint32_t> mandatoryControls{
-		V4L2_CID_EXPOSURE,
-		V4L2_CID_HBLANK,
-		V4L2_CID_PIXEL_RATE,
-		V4L2_CID_VBLANK,
-	};
-
-	ControlList ctrls = subdev_->getControls(mandatoryControls);
-	if (ctrls.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Mandatory V4L2 controls not available";
-		LOG(CameraSensor, Error)
-			<< "The sensor kernel driver needs to be fixed";
-		LOG(CameraSensor, Error)
-			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
-		return -EINVAL;
-	}
-
-	/*
 	 * Optional controls are used to register optional sensor properties. If
 	 * not present, some values will be defaulted.
 	 */
@@ -307,7 +285,7 @@ int CameraSensor::validateSensorDriver()
 		V4L2_CID_CAMERA_SENSOR_ROTATION,
 	};
 
-	ctrls = subdev_->getControls(optionalControls);
+	ControlList ctrls = subdev_->getControls(optionalControls);
 	if (ctrls.empty())
 		LOG(CameraSensor, Debug) << "Optional V4L2 controls not supported";
 
@@ -355,6 +333,31 @@ int CameraSensor::validateSensorDriver()
 			<< "The sensor kernel driver needs to be fixed";
 		LOG(CameraSensor, Warning)
 			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
+	}
+
+	if (!bayerFormat_)
+		return 0;
+
+	/*
+	 * For raw sensors, make sure the sensor driver supports the controls
+	 * required by the CameraSensor class.
+	 */
+	const std::vector<uint32_t> mandatoryControls{
+		V4L2_CID_EXPOSURE,
+		V4L2_CID_HBLANK,
+		V4L2_CID_PIXEL_RATE,
+		V4L2_CID_VBLANK,
+	};
+
+	ctrls = subdev_->getControls(mandatoryControls);
+	if (ctrls.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Mandatory V4L2 controls not available";
+		LOG(CameraSensor, Error)
+			<< "The sensor kernel driver needs to be fixed";
+		LOG(CameraSensor, Error)
+			<< "See Documentation/sensor_driver_requirements.rst in the libcamera sources for more information";
+		return -EINVAL;
 	}
 
 	return 0;
@@ -693,13 +696,21 @@ int CameraSensor::setControls(ControlList *ctrls)
  * \brief Assemble and return the camera sensor info
  * \param[out] info The camera sensor info
  *
- * The CameraSensorInfo content is assembled by inspecting the currently
- * applied sensor configuration and the sensor static properties.
+ * This function fills \a info with information that describes the camera sensor
+ * and its current configuration. The information combines static data (such as
+ * the the sensor model or active pixel array size) and data specific to the
+ * current sensor configuration (such as the line length and pixel rate).
+ *
+ * Sensor information is only available for raw sensors. When called for a YUV
+ * sensor, this function returns -EINVAL.
  *
  * \return 0 on success, a negative error code otherwise
  */
 int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 {
+	if (!bayerFormat_)
+		return -EINVAL;
+
 	info->model = model();
 
 	/*

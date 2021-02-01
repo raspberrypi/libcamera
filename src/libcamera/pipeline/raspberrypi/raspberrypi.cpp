@@ -1224,17 +1224,15 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		 * Setup our delayed control writer with the sensor default
 		 * gain and exposure delays.
 		 */
-		if (!delayedCtrls_) {
-			std::unordered_map<uint32_t, unsigned int> delays = {
-				{ V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
-				{ V4L2_CID_EXPOSURE, result.data[resultIdx++] },
-				{ V4L2_CID_VBLANK, result.data[resultIdx++] }
-			};
+		std::unordered_map<uint32_t, unsigned int> delays = {
+			{ V4L2_CID_ANALOGUE_GAIN, result.data[resultIdx++] },
+			{ V4L2_CID_EXPOSURE, result.data[resultIdx++] },
+			{ V4L2_CID_VBLANK, result.data[resultIdx++] }
+		};
 
-			delayedCtrls_ = std::make_unique<DelayedControls>(unicam_[Unicam::Image].dev(), delays);
+		delayedCtrls_ = std::make_unique<DelayedControls>(unicam_[Unicam::Image].dev(), delays);
 
-			sensorMetadata_ = result.data[resultIdx++];
-		}
+		sensorMetadata_ = result.data[resultIdx++];
 	}
 
 	if (result.operation & RPi::IPA_RESULT_SENSOR_CTRLS) {

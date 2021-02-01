@@ -753,7 +753,7 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	IPAOperationData ipaData = {};
 	IPAOperationData result = {};
 	if (controls) {
-		ipaData.operation = RPi::IPA_CONFIG_STARTUP;
+		ipaData.operation = RPi::IPA_CONFIG_STARTUP_CTRLS;
 		ipaData.controls.emplace_back(*controls);
 	}
 	ret = data->ipa_->start(ipaData, &result);
@@ -765,12 +765,12 @@ int PipelineHandlerRPi::start(Camera *camera, [[maybe_unused]] ControlList *cont
 	}
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
+	if (result.operation & RPi::IPA_RESULT_SENSOR_CTRLS) {
 		ControlList &ctrls = result.controls[0];
 		data->unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}
 
-	if (result.operation & RPi::IPA_CONFIG_DROP_FRAMES) {
+	if (result.operation & RPi::IPA_RESULT_DROP_FRAMES) {
 		/* Configure the number of dropped frames required on startup. */
 		data->dropFrameCount_ = result.data[0];
 	}
@@ -1213,13 +1213,13 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
 			&result);
 
-	if (result.operation & RPi::IPA_CONFIG_FAILED) {
+	if (result.operation & RPi::IPA_RESULT_CONFIG_FAILED) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
 	}
 
 	unsigned int resultIdx = 0;
-	if (result.operation & RPi::IPA_CONFIG_STAGGERED_WRITE) {
+	if (result.operation & RPi::IPA_RESULT_SENSOR_PARAMS) {
 		/*
 		 * Setup our delayed control writer with the sensor default
 		 * gain and exposure delays.
@@ -1237,7 +1237,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		}
 	}
 
-	if (result.operation & RPi::IPA_CONFIG_SENSOR) {
+	if (result.operation & RPi::IPA_RESULT_SENSOR_CTRLS) {
 		ControlList &ctrls = result.controls[0];
 		unicam_[Unicam::Image].dev()->setControls(&ctrls);
 	}

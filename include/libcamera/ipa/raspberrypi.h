@@ -20,11 +20,11 @@ namespace RPi {
 
 enum ConfigParameters {
 	IPA_CONFIG_LS_TABLE = (1 << 0),
-	IPA_CONFIG_STAGGERED_WRITE = (1 << 1),
-	IPA_CONFIG_SENSOR = (1 << 2),
-	IPA_CONFIG_DROP_FRAMES = (1 << 3),
-	IPA_CONFIG_FAILED = (1 << 4),
-	IPA_CONFIG_STARTUP = (1 << 5),
+	IPA_CONFIG_STARTUP_CTRLS = (1 << 1),
+	IPA_RESULT_CONFIG_FAILED = (1 << 2),
+	IPA_RESULT_SENSOR_PARAMS = (1 << 3),
+	IPA_RESULT_SENSOR_CTRLS = (1 << 4),
+	IPA_RESULT_DROP_FRAMES = (1 << 5),
 };
 
 enum Operations {

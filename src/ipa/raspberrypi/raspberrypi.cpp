@@ -170,7 +170,7 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 
 	ASSERT(result);
 	result->operation = 0;
-	if (data.operation & RPi::IPA_CONFIG_STARTUP) {
+	if (data.operation & RPi::IPA_CONFIG_STARTUP_CTRLS) {
 		/* We have been given some controls to action before start. */
 		queueRequest(data.controls[0]);
 	}
@@ -188,7 +188,7 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		result->controls.emplace_back(ctrls);
-		result->operation |= RPi::IPA_CONFIG_SENSOR;
+		result->operation |= RPi::IPA_RESULT_SENSOR_CTRLS;
 	}
 
 	/*
@@ -236,7 +236,7 @@ int IPARPi::start(const IPAOperationData &data, IPAOperationData *result)
 	}
 
 	result->data.push_back(dropFrame);
-	result->operation |= RPi::IPA_CONFIG_DROP_FRAMES;
+	result->operation |= RPi::IPA_RESULT_DROP_FRAMES;
 
 	firstStart_ = false;
 
@@ -289,7 +289,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 {
 	if (entityControls.size() != 2) {
 		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
-		result->operation = RPi::IPA_CONFIG_FAILED;
+		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
 		return;
 	}
 
@@ -300,13 +300,13 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	if (!validateSensorControls()) {
 		LOG(IPARPI, Error) << "Sensor control validation failed.";
-		result->operation = RPi::IPA_CONFIG_FAILED;
+		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
 		return;
 	}
 
 	if (!validateIspControls()) {
 		LOG(IPARPI, Error) << "ISP control validation failed.";
-		result->operation = RPi::IPA_CONFIG_FAILED;
+		result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
 		return;
 	}
 
@@ -325,7 +325,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		if (!helper_) {
 			LOG(IPARPI, Error) << "Could not create camera helper for "
 					   << cameraName;
-			result->operation = RPi::IPA_CONFIG_FAILED;
+			result->operation = RPi::IPA_RESULT_CONFIG_FAILED;
 			return;
 		}
 
@@ -342,7 +342,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		result->data.push_back(exposureDelay); /* For VBLANK ctrl */
 		result->data.push_back(sensorMetadata);
 
-		result->operation |= RPi::IPA_CONFIG_STAGGERED_WRITE;
+		result->operation |= RPi::IPA_RESULT_SENSOR_PARAMS;
 	}
 
 	/* Re-assemble camera mode using the sensor info. */
@@ -395,7 +395,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		applyAGC(&agcStatus, ctrls);
 
 		result->controls.emplace_back(ctrls);
-		result->operation |= RPi::IPA_CONFIG_SENSOR;
+		result->operation |= RPi::IPA_RESULT_SENSOR_CTRLS;
 	}
 
 	lastMode_ = mode_;

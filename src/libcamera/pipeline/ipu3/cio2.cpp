@@ -195,8 +195,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	return 0;
 }
 
-StreamConfiguration
-CIO2Device::generateConfiguration(Size size) const
+StreamConfiguration CIO2Device::generateConfiguration(Size size) const
 {
 	StreamConfiguration cfg;
 

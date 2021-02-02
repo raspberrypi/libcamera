@@ -138,7 +138,7 @@ protected:
 		while (timer.isRunning())
 			dispatcher->processEvents();
 
-		if (completeRequestsCount_ <= cfg.bufferCount * 2) {
+		if (completeRequestsCount_ < cfg.bufferCount * 2) {
 			std::cout << "Failed to capture enough frames (got "
 				  << completeRequestsCount_ << " expected at least "
 				  << cfg.bufferCount * 2 << ")" << std::endl;

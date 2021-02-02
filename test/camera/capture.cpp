@@ -142,7 +142,7 @@ protected:
 
 		unsigned int nbuffers = allocator_->buffers(stream).size();
 
-		if (completeRequestsCount_ <= nbuffers * 2) {
+		if (completeRequestsCount_ < nbuffers * 2) {
 			cout << "Failed to capture enough frames (got "
 			     << completeRequestsCount_ << " expected at least "
 			     << nbuffers * 2 << ")" << endl;

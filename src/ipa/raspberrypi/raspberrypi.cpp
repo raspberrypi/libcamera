@@ -627,7 +627,12 @@ void IPARPi::queueRequest(const ControlList &controls)
 		switch (ctrl.first) {
 		case controls::AE_ENABLE: {
 			RPiController::Algorithm *agc = controller_.GetAlgorithm("agc");
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AE_ENABLE - no AGC algorithm";
+				break;
+			}
+
 			if (ctrl.second.get<bool>() == false)
 				agc->Pause();
 			else
@@ -640,7 +645,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::EXPOSURE_TIME: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set EXPOSURE_TIME - no AGC algorithm";
+				break;
+			}
 
 			/* This expects units of micro-seconds. */
 			agc->SetFixedShutter(ctrl.second.get<int32_t>());
@@ -652,7 +661,12 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::ANALOGUE_GAIN: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set ANALOGUE_GAIN - no AGC algorithm";
+				break;
+			}
+
 			agc->SetFixedAnalogueGain(ctrl.second.get<float>());
 
 			libcameraMetadata_.set(controls::AnalogueGain,
@@ -663,7 +677,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::AE_METERING_MODE: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AE_METERING_MODE - no AGC algorithm";
+				break;
+			}
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (MeteringModeTable.count(idx)) {
@@ -679,7 +697,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::AE_CONSTRAINT_MODE: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AE_CONSTRAINT_MODE - no AGC algorithm";
+				break;
+			}
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ConstraintModeTable.count(idx)) {
@@ -695,7 +717,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::AE_EXPOSURE_MODE: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AE_EXPOSURE_MODE - no AGC algorithm";
+				break;
+			}
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ExposureModeTable.count(idx)) {
@@ -711,7 +737,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::EXPOSURE_VALUE: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.GetAlgorithm("agc"));
-			ASSERT(agc);
+			if (!agc) {
+				LOG(IPARPI, Warning)
+					<< "Could not set EXPOSURE_VALUE - no AGC algorithm";
+				break;
+			}
 
 			/*
 			 * The SetEv() method takes in a direct exposure multiplier.
@@ -726,7 +756,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 		case controls::AWB_ENABLE: {
 			RPiController::Algorithm *awb = controller_.GetAlgorithm("awb");
-			ASSERT(awb);
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AWB_ENABLE - no AWB algorithm";
+				break;
+			}
 
 			if (ctrl.second.get<bool>() == false)
 				awb->Pause();
@@ -741,7 +775,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::AWB_MODE: {
 			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 				controller_.GetAlgorithm("awb"));
-			ASSERT(awb);
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AWB_MODE - no AWB algorithm";
+				break;
+			}
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (AwbModeTable.count(idx)) {
@@ -758,7 +796,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 			auto gains = ctrl.second.get<Span<const float>>();
 			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 				controller_.GetAlgorithm("awb"));
-			ASSERT(awb);
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_GAINS - no AWB algorithm";
+				break;
+			}
 
 			awb->SetManualGains(gains[0], gains[1]);
 			if (gains[0] != 0.0f && gains[1] != 0.0f)
@@ -771,7 +813,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::BRIGHTNESS: {
 			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
 				controller_.GetAlgorithm("contrast"));
-			ASSERT(contrast);
+			if (!contrast) {
+				LOG(IPARPI, Warning)
+					<< "Could not set BRIGHTNESS - no contrast algorithm";
+				break;
+			}
 
 			contrast->SetBrightness(ctrl.second.get<float>() * 65536);
 			libcameraMetadata_.set(controls::Brightness,
@@ -782,7 +828,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::CONTRAST: {
 			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
 				controller_.GetAlgorithm("contrast"));
-			ASSERT(contrast);
+			if (!contrast) {
+				LOG(IPARPI, Warning)
+					<< "Could not set CONTRAST - no contrast algorithm";
+				break;
+			}
 
 			contrast->SetContrast(ctrl.second.get<float>());
 			libcameraMetadata_.set(controls::Contrast,
@@ -793,7 +843,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::SATURATION: {
 			RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
 				controller_.GetAlgorithm("ccm"));
-			ASSERT(ccm);
+			if (!ccm) {
+				LOG(IPARPI, Warning)
+					<< "Could not set SATURATION - no ccm algorithm";
+				break;
+			}
 
 			ccm->SetSaturation(ctrl.second.get<float>());
 			libcameraMetadata_.set(controls::Saturation,
@@ -804,7 +858,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::SHARPNESS: {
 			RPiController::SharpenAlgorithm *sharpen = dynamic_cast<RPiController::SharpenAlgorithm *>(
 				controller_.GetAlgorithm("sharpen"));
-			ASSERT(sharpen);
+			if (!sharpen) {
+				LOG(IPARPI, Warning)
+					<< "Could not set SHARPNESS - no sharpen algorithm";
+				break;
+			}
 
 			sharpen->SetStrength(ctrl.second.get<float>());
 			libcameraMetadata_.set(controls::Sharpness,

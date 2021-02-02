@@ -49,7 +49,15 @@ enum BufferMask {
 /* Size of the LS grid allocation. */
 static constexpr unsigned int MaxLsGridSize = 32 << 10;
 
-/* List of controls handled by the Raspberry Pi IPA */
+/*
+ * List of controls handled by the Raspberry Pi IPA
+ *
+ * \todo This list will need to be built dynamically from the control
+ * algorithms loaded by the json file, once this is supported. At that
+ * point applications should check first whether a control is supported,
+ * and the pipeline handler may be reverted so that it aborts when an
+ * unsupported control is encountered.
+ */
 static const ControlInfoMap Controls = {
 	{ &controls::AeEnable, ControlInfo(false, true) },
 	{ &controls::ExposureTime, ControlInfo(0, 999999) },

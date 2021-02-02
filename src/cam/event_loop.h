@@ -30,7 +30,7 @@ public:
 private:
 	static EventLoop *instance_;
 
-	struct event_base *event_;
+	struct event_base *base_;
 	std::atomic<bool> exit_;
 	int exitCode_;
 

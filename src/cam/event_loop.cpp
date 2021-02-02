@@ -18,7 +18,7 @@ EventLoop::EventLoop()
 	assert(!instance_);
 
 	evthread_use_pthreads();
-	event_ = event_base_new();
+	base_ = event_base_new();
 	instance_ = this;
 }
 
@@ -26,7 +26,7 @@ EventLoop::~EventLoop()
 {
 	instance_ = nullptr;
 
-	event_base_free(event_);
+	event_base_free(base_);
 	libevent_global_shutdown();
 }
 
@@ -42,7 +42,7 @@ int EventLoop::exec()
 
 	while (!exit_.load(std::memory_order_acquire)) {
 		dispatchCalls();
-		event_base_loop(event_, EVLOOP_NO_EXIT_ON_EMPTY);
+		event_base_loop(base_, EVLOOP_NO_EXIT_ON_EMPTY);
 	}
 
 	return exitCode_;
@@ -57,7 +57,7 @@ void EventLoop::exit(int code)
 
 void EventLoop::interrupt()
 {
-	event_base_loopbreak(event_);
+	event_base_loopbreak(base_);
 }
 
 void EventLoop::callLater(const std::function<void()> &func)

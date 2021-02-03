@@ -705,10 +705,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 838 bytes of static metadata
+	 * Currently: 53 entries, 842 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 838;
+	uint32_t byteSize = 842;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1288,6 +1288,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableRequestKeys.size());
 
 	std::vector<int32_t> availableResultKeys = {
+		ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
 		ANDROID_CONTROL_AE_ANTIBANDING_MODE,
 		ANDROID_CONTROL_AE_LOCK,
 		ANDROID_CONTROL_AE_MODE,
@@ -2005,7 +2006,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	 * Total bytes for JPEG metadata: 82
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(40, 156);
+		std::make_unique<CameraMetadata>(41, 157);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
@@ -2017,7 +2018,11 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	 * from libcamera::Request::metadata.
 	 */
 
-	uint8_t value = ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF;
+	uint8_t value = ANDROID_COLOR_CORRECTION_ABERRATION_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_COLOR_CORRECTION_ABERRATION_MODE,
+				 &value, 1);
+
+	value = ANDROID_CONTROL_AE_ANTIBANDING_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE, &value, 1);
 
 	value = ANDROID_CONTROL_AE_LOCK_OFF;

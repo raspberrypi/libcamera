@@ -1351,7 +1351,7 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 20 entries, 35 bytes
 	 */
-	CameraMetadata *requestTemplate = new CameraMetadata(20, 35);
+	CameraMetadata *requestTemplate = new CameraMetadata(21, 36);
 	if (!requestTemplate->isValid()) {
 		delete requestTemplate;
 		return nullptr;
@@ -1383,6 +1383,9 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	uint8_t aeAntibandingMode = ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE,
 				  &aeAntibandingMode, 1);
+
+	uint8_t afMode = ANDROID_CONTROL_AF_MODE_OFF;
+	requestTemplate->addEntry(ANDROID_CONTROL_AF_MODE, &afMode, 1);
 
 	uint8_t afTrigger = ANDROID_CONTROL_AF_TRIGGER_IDLE;
 	requestTemplate->addEntry(ANDROID_CONTROL_AF_TRIGGER,

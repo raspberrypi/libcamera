@@ -16,8 +16,8 @@ enum LoggingTarget {
 	LoggingTargetStream,
 };
 
-int logSetFile(const char *path);
-int logSetStream(std::ostream *stream);
+int logSetFile(const char *path, bool color = false);
+int logSetStream(std::ostream *stream, bool color = false);
 int logSetTarget(LoggingTarget target);
 void logSetLevel(const char *category, const char *level);
 

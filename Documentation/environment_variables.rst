@@ -19,6 +19,9 @@ LIBCAMERA_LOG_LEVELS
 
    Example value: ``*:DEBUG``
 
+LIBCAMERA_LOG_NO_COLOR
+   Disable coloring of log messages (`more <Notes about debugging_>`__).
+
 LIBCAMERA_IPA_CONFIG_PATH
    Define custom search locations for IPA configurations (`more <IPA configuration_>`__).
 
@@ -40,12 +43,20 @@ Further details
 Notes about debugging
 ~~~~~~~~~~~~~~~~~~~~~
 
-The environment variables ``LIBCAMERA_LOG_FILE`` and ``LIBCAMERA_LOG_LEVELS``
-are used to modify the destination and verbosity of messages provided by
-libcamera.
+The environment variables ``LIBCAMERA_LOG_FILE``, ``LIBCAMERA_LOG_LEVELS`` and
+``LIBCAMERA_LOG_NO_COLOR`` are used to modify the default configuration of the
+libcamera logger.
 
-The ``LIBCAMERA_LOG_LEVELS`` variable accepts a comma-separated list of
-'category:level' pairs.
+By default, libcamera logs all messages to the standard error (std::cerr).
+Messages are colored by default depending on the log level. Coloring can be
+disabled by setting the ``LIBCAMERA_LOG_NO_COLOR`` environment variable.
+
+The default log destination can also be directed to a file by setting the
+``LIBCAMERA_LOG_FILE`` environment variable to the log file name. This also
+disables coloring.
+
+Log levels are controlled through the ``LIBCAMERA_LOG_LEVELS`` variable, which
+accepts a comma-separated list of 'category:level' pairs.
 
 The `level <Log levels_>`__ part is mandatory and can either be specified by
 name or by numerical index associated with each level.

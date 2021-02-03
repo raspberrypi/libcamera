@@ -1255,7 +1255,6 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 
 	buf.index = index;
 	buf.type = bufferType_;
-	buf.memory = V4L2_MEMORY_MMAP;
 	buf.length = std::size(v4l2Planes);
 	buf.m.planes = v4l2Planes;
 

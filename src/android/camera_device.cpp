@@ -705,10 +705,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 846 bytes of static metadata
+	 * Currently: 53 entries, 850 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 846;
+	uint32_t byteSize = 850;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1326,6 +1326,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SCALER_CROP_REGION,
 		ANDROID_SENSOR_EXPOSURE_TIME,
 		ANDROID_SENSOR_ROLLING_SHUTTER_SKEW,
+		ANDROID_SENSOR_TEST_PATTERN_MODE,
 		ANDROID_SENSOR_TIMESTAMP,
 		ANDROID_STATISTICS_FACE_DETECT_MODE,
 		ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
@@ -2010,7 +2011,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	 * Total bytes for JPEG metadata: 82
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(42, 161);
+		std::make_unique<CameraMetadata>(43, 165);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
@@ -2102,6 +2103,10 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	value = ANDROID_LENS_OPTICAL_STABILIZATION_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_LENS_OPTICAL_STABILIZATION_MODE,
 				 &value, 1);
+
+	value32 = ANDROID_SENSOR_TEST_PATTERN_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_SENSOR_TEST_PATTERN_MODE,
+				 &value32, 1);
 
 	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
 

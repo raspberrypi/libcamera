@@ -29,6 +29,7 @@
 #include "libcamera/internal/v4l2_controls.h"
 
 #include "cio2.h"
+#include "frames.h"
 #include "imgu.h"
 
 namespace libcamera {
@@ -61,6 +62,8 @@ public:
 
 	void imguOutputBufferReady(FrameBuffer *buffer);
 	void cio2BufferReady(FrameBuffer *buffer);
+	void paramBufferReady(FrameBuffer *buffer);
+	void statBufferReady(FrameBuffer *buffer);
 
 	CIO2Device cio2_;
 	ImgUDevice *imgu_;
@@ -71,6 +74,7 @@ public:
 
 	uint32_t exposureTime_;
 	std::unique_ptr<DelayedControls> delayedCtrls_;
+	IPU3Frames frameInfos_;
 
 private:
 	void queueFrameAction(unsigned int id, const IPAOperationData &op);
@@ -609,12 +613,16 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 
 	data->ipa_->mapBuffers(ipaBuffers_);
 
+	data->frameInfos_.init(imgu->paramBuffers_, imgu->statBuffers_);
+
 	return 0;
 }
 
 int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
+
+	data->frameInfos_.clear();
 
 	std::vector<unsigned int> ids;
 	for (IPABuffer &ipabuf : ipaBuffers_)
@@ -713,7 +721,10 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
-	int error = 0;
+
+	IPU3Frames::Info *info = data->frameInfos_.create(request);
+	if (!info)
+		return -ENOBUFS;
 
 	/*
 	 * Queue a buffer on the CIO2, using the raw stream buffer provided in
@@ -721,27 +732,20 @@ int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 	 */
 	FrameBuffer *reqRawBuffer = request->findBuffer(&data->rawStream_);
 	FrameBuffer *rawBuffer = data->cio2_.queueBuffer(request, reqRawBuffer);
-	if (!rawBuffer)
+	if (!rawBuffer) {
+		data->frameInfos_.remove(info);
 		return -ENOMEM;
-
-	/* Queue all buffers from the request aimed for the ImgU. */
-	for (auto it : request->buffers()) {
-		const Stream *stream = it.first;
-		FrameBuffer *buffer = it.second;
-		int ret;
-
-		if (stream == &data->outStream_)
-			ret = data->imgu_->output_->queueBuffer(buffer);
-		else if (stream == &data->vfStream_)
-			ret = data->imgu_->viewfinder_->queueBuffer(buffer);
-		else
-			continue;
-
-		if (ret < 0)
-			error = ret;
 	}
 
-	return error;
+	info->rawBuffer = rawBuffer;
+
+	IPAOperationData op;
+	op.operation = IPU3_IPA_EVENT_PROCESS_CONTROLS;
+	op.data = { info->id };
+	op.controls = { request->controls() };
+	data->ipa_->processEvent(op);
+
+	return 0;
 }
 
 bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
@@ -1007,6 +1011,10 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::imguOutputBufferReady);
 		data->imgu_->viewfinder_->bufferReady.connect(data.get(),
 					&IPU3CameraData::imguOutputBufferReady);
+		data->imgu_->param_->bufferReady.connect(data.get(),
+					&IPU3CameraData::paramBufferReady);
+		data->imgu_->stat_->bufferReady.connect(data.get(),
+					&IPU3CameraData::statBufferReady);
 
 		/* Create and register the Camera instance. */
 		std::string cameraId = cio2->sensor()->id();
@@ -1039,13 +1047,48 @@ int IPU3CameraData::loadIPA()
 	return 0;
 }
 
-void IPU3CameraData::queueFrameAction([[maybe_unused]] unsigned int id,
+void IPU3CameraData::queueFrameAction(unsigned int id,
 				      const IPAOperationData &action)
 {
 	switch (action.operation) {
 	case IPU3_IPA_ACTION_SET_SENSOR_CONTROLS: {
 		const ControlList &controls = action.controls[0];
 		delayedCtrls_->push(controls);
+		break;
+	}
+	case IPU3_IPA_ACTION_PARAM_FILLED: {
+		IPU3Frames::Info *info = frameInfos_.find(id);
+		if (!info)
+			break;
+
+		/* Queue all buffers from the request aimed for the ImgU. */
+		for (auto it : info->request->buffers()) {
+			const Stream *stream = it.first;
+			FrameBuffer *outbuffer = it.second;
+
+			if (stream == &outStream_)
+				imgu_->output_->queueBuffer(outbuffer);
+			else if (stream == &vfStream_)
+				imgu_->viewfinder_->queueBuffer(outbuffer);
+		}
+
+		imgu_->param_->queueBuffer(info->paramBuffer);
+		imgu_->stat_->queueBuffer(info->statBuffer);
+		imgu_->input_->queueBuffer(info->rawBuffer);
+
+		break;
+	}
+	case IPU3_IPA_ACTION_METADATA_READY: {
+		IPU3Frames::Info *info = frameInfos_.find(id);
+		if (!info)
+			break;
+
+		Request *request = info->request;
+		request->metadata() = action.controls[0];
+		info->metadataProcessed = true;
+		if (frameInfos_.tryComplete(info))
+			pipe_->completeRequest(request);
+
 		break;
 	}
 	default:
@@ -1068,11 +1111,12 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
-	if (!pipe_->completeBuffer(request, buffer))
-		/* Request not completed yet, return here. */
+	pipe_->completeBuffer(request, buffer);
+
+	IPU3Frames::Info *info = frameInfos_.find(buffer);
+	if (!info)
 		return;
 
-	/* Mark the request as complete. */
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Move the ExposureTime control to the IPA. */
 	request->metadata().set(controls::ExposureTime, exposureTime_);
@@ -1081,7 +1125,12 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 		Rectangle cropRegion = request->controls().get(controls::ScalerCrop);
 		request->metadata().set(controls::ScalerCrop, cropRegion);
 	}
-	pipe_->completeRequest(request);
+
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
+		info->metadataProcessed = true;
+
+	if (frameInfos_.tryComplete(info))
+		pipe_->completeRequest(request);
 }
 
 /**
@@ -1093,26 +1142,59 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
  */
 void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 {
-	/* \todo Handle buffer failures when state is set to BufferError. */
-	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
+	IPU3Frames::Info *info = frameInfos_.find(buffer);
+	if (!info)
 		return;
 
 	Request *request = buffer->request();
 
-	/*
-	 * If the request contains a buffer for the RAW stream only, complete it
-	 * now as there's no need for ImgU processing.
-	 */
-	if (request->findBuffer(&rawStream_)) {
-		bool isComplete = pipe_->completeBuffer(request, buffer);
-		if (isComplete) {
-			request->metadata().set(controls::draft::PipelineDepth, 2);
-			pipe_->completeRequest(request);
-			return;
-		}
+	/* If the buffer is cancelled force a complete of the whole request. */
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
+		for (auto it : request->buffers())
+			pipe_->completeBuffer(request, it.second);
+
+		frameInfos_.remove(info);
+		pipe_->completeRequest(request);
+		return;
 	}
 
-	imgu_->input_->queueBuffer(buffer);
+	if (request->findBuffer(&rawStream_))
+		pipe_->completeBuffer(request, buffer);
+
+	IPAOperationData op;
+	op.operation = IPU3_IPA_EVENT_FILL_PARAMS;
+	op.data = { info->id, info->paramBuffer->cookie() };
+	ipa_->processEvent(op);
+}
+
+void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
+{
+	IPU3Frames::Info *info = frameInfos_.find(buffer);
+	if (!info)
+		return;
+
+	info->paramDequeued = true;
+	if (frameInfos_.tryComplete(info))
+		pipe_->completeRequest(buffer->request());
+}
+
+void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
+{
+	IPU3Frames::Info *info = frameInfos_.find(buffer);
+	if (!info)
+		return;
+
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
+		info->metadataProcessed = true;
+		if (frameInfos_.tryComplete(info))
+			pipe_->completeRequest(buffer->request());
+		return;
+	}
+
+	IPAOperationData op;
+	op.operation = IPU3_IPA_EVENT_STAT_READY;
+	op.data = { info->id, info->statBuffer->cookie() };
+	ipa_->processEvent(op);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)

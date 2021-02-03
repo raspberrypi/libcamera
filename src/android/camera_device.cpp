@@ -867,7 +867,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	std::vector<uint8_t> sceneModesOverride = {
 		ANDROID_CONTROL_AE_MODE_ON,
 		ANDROID_CONTROL_AWB_MODE_AUTO,
-		ANDROID_CONTROL_AF_MODE_AUTO,
+		ANDROID_CONTROL_AF_MODE_OFF,
 	};
 	staticMetadata_->addEntry(ANDROID_CONTROL_SCENE_MODE_OVERRIDES,
 				  sceneModesOverride.data(),

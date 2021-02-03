@@ -189,6 +189,7 @@ namespace {
  * https://en.wikipedia.org/wiki/ANSI_escape_code#Colors.
  */
 constexpr const char *kColorReset = "\033[0m";
+constexpr const char *kColorGreen = "\033[0;32m";
 constexpr const char *kColorBrightRed = "\033[1;31m";
 constexpr const char *kColorBrightGreen = "\033[1;32m";
 constexpr const char *kColorBrightYellow = "\033[1;33m";
@@ -215,6 +216,7 @@ void LogOutput::write(const LogMessage &msg)
 
 	const char *categoryColor = color_ ? kColorBrightWhite : "";
 	const char *fileColor = color_ ? kColorBrightBlue : "";
+	const char *prefixColor = color_ ? kColorGreen : "";
 	const char *resetColor = color_ ? kColorReset : "";
 	const char *severityColor = "";
 	LogSeverity severity = msg.severity();
@@ -230,8 +232,10 @@ void LogOutput::write(const LogMessage &msg)
 	switch (target_) {
 	case LoggingTargetSyslog:
 		str = std::string(log_severity_name(severity)) + " "
-		    + msg.category().name() + " " + msg.fileInfo() + " "
-		    + msg.msg();
+		    + msg.category().name() + " " + msg.fileInfo() + " ";
+		if (!msg.prefix().empty())
+			str += msg.prefix() + ": ";
+		str += msg.msg();
 		writeSyslog(severity, str);
 		break;
 	case LoggingTargetStream:
@@ -240,8 +244,10 @@ void LogOutput::write(const LogMessage &msg)
 		    + std::to_string(Thread::currentId()) + "] "
 		    + severityColor + log_severity_name(severity) + " "
 		    + categoryColor + msg.category().name() + " "
-		    + fileColor + msg.fileInfo() + " "
-		    + resetColor + msg.msg();
+		    + fileColor + msg.fileInfo() + " ";
+		if (!msg.prefix().empty())
+			str += prefixColor + msg.prefix() + ": ";
+		str += resetColor + msg.msg();
 		writeStream(str);
 		break;
 	default:
@@ -819,14 +825,17 @@ const LogCategory &LogCategory::defaultCategory()
  * will be displayed
  * \param[in] severity The log message severity, controlling how the message
  * will be displayed
+ * \param[in] prefix The log message prefix
  *
  * Create a log message pertaining to line \a line of file \a fileName. The
  * \a severity argument sets the message severity to control whether it will be
- * output or dropped.
+ * output or dropped. The \a prefix optionally identifies the object instance
+ * logging the message.
  */
 LogMessage::LogMessage(const char *fileName, unsigned int line,
-		       const LogCategory &category, LogSeverity severity)
-	: category_(category), severity_(severity)
+		       const LogCategory &category, LogSeverity severity,
+		       const std::string &prefix)
+	: category_(category), severity_(severity), prefix_(prefix)
 {
 	init(fileName, line);
 }
@@ -916,6 +925,12 @@ LogMessage::~LogMessage()
  */
 
 /**
+ * \fn LogMessage::prefix()
+ * \brief Retrieve the prefix of the log message
+ * \return The prefix of the message
+ */
+
+/**
  * \fn LogMessage::msg()
  * \brief Retrieve the message text of the log message
  * \return The message text of the message, as a string
@@ -962,12 +977,9 @@ Loggable::~Loggable()
 LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
 			  const char *fileName, unsigned int line) const
 {
-	LogMessage msg(fileName, line,
-		       category ? *category : LogCategory::defaultCategory(),
-		       severity);
-
-	msg.stream() << logPrefix() << ": ";
-	return msg;
+	return LogMessage(fileName, line,
+			  category ? *category : LogCategory::defaultCategory(),
+			  severity, logPrefix());
 }
 
 /**

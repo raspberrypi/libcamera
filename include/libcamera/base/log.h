@@ -57,7 +57,8 @@ class LogMessage
 {
 public:
 	LogMessage(const char *fileName, unsigned int line,
-		   const LogCategory &category, LogSeverity severity);
+		   const LogCategory &category, LogSeverity severity,
+		   const std::string &prefix = std::string());
 
 	LogMessage(LogMessage &&);
 	~LogMessage();
@@ -68,6 +69,7 @@ public:
 	LogSeverity severity() const { return severity_; }
 	const LogCategory &category() const { return category_; }
 	const std::string &fileInfo() const { return fileInfo_; }
+	const std::string &prefix() const { return prefix_; }
 	const std::string msg() const { return msgStream_.str(); }
 
 private:
@@ -80,6 +82,7 @@ private:
 	LogSeverity severity_;
 	utils::time_point timestamp_;
 	std::string fileInfo_;
+	std::string prefix_;
 };
 
 class Loggable

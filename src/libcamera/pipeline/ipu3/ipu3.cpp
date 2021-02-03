@@ -178,12 +178,14 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	unsigned int rawCount = 0;
 	unsigned int yuvCount = 0;
 	Size maxYuvSize;
+	Size rawSize;
 
 	for (const StreamConfiguration &cfg : config_) {
 		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
 			rawCount++;
+			rawSize = cfg.size;
 		} else {
 			yuvCount++;
 			maxYuvSize.expandTo(cfg.size);
@@ -206,11 +208,16 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	 * commit message of the patch that introduced this comment for more
 	 * failure examples).
 	 *
-	 * Until the sensor frame size calculation criteria are clarified,
-	 * always use the largest possible one which guarantees better results
-	 * at the expense of the frame rate and CSI-2 bus bandwidth.
+	 * Until the sensor frame size calculation criteria are clarified, when
+	 * capturing from ImgU always use the largest possible size which
+	 * guarantees better results at the expense of the frame rate and CSI-2
+	 * bus bandwidth. When only a raw stream is requested use the requested
+	 * size instead, as the ImgU is not involved.
 	 */
-	cio2Configuration_ = data_->cio2_.generateConfiguration({});
+	if (!yuvCount)
+		cio2Configuration_ = data_->cio2_.generateConfiguration(rawSize);
+	else
+		cio2Configuration_ = data_->cio2_.generateConfiguration({});
 	if (!cio2Configuration_.pixelFormat.isValid())
 		return Invalid;
 

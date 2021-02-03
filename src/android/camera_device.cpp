@@ -705,10 +705,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 850 bytes of static metadata
+	 * Currently: 53 entries, 854 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 850;
+	uint32_t byteSize = 854;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -1330,6 +1330,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		ANDROID_SENSOR_TIMESTAMP,
 		ANDROID_STATISTICS_FACE_DETECT_MODE,
 		ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
+		ANDROID_STATISTICS_HOT_PIXEL_MAP_MODE,
 		ANDROID_STATISTICS_SCENE_FLICKER,
 	};
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_RESULT_KEYS,
@@ -2011,7 +2012,7 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 	 * Total bytes for JPEG metadata: 82
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(43, 165);
+		std::make_unique<CameraMetadata>(44, 166);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		return nullptr;
@@ -2116,6 +2117,10 @@ CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
 
 	value = ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
+				 &value, 1);
+
+	value = ANDROID_STATISTICS_HOT_PIXEL_MAP_MODE_OFF;
+	resultMetadata->addEntry(ANDROID_STATISTICS_HOT_PIXEL_MAP_MODE,
 				 &value, 1);
 
 	value = ANDROID_STATISTICS_SCENE_FLICKER_NONE;

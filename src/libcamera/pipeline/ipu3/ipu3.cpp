@@ -73,6 +73,7 @@ public:
 	Stream rawStream_;
 
 	uint32_t exposureTime_;
+	Rectangle cropRegion_;
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	IPU3Frames frameInfos_;
 
@@ -486,6 +487,10 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	ret = cio2->configure(sensorSize, &cio2Format);
 	if (ret)
 		return ret;
+
+	CameraSensorInfo sensorInfo;
+	cio2->sensor()->sensorInfo(&sensorInfo);
+	data->cropRegion_ = sensorInfo.analogCrop;
 
 	/*
 	 * If the ImgU gets configured, its driver seems to expect that
@@ -1121,10 +1126,9 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 	/* \todo Move the ExposureTime control to the IPA. */
 	request->metadata().set(controls::ExposureTime, exposureTime_);
 	/* \todo Actually apply the scaler crop region to the ImgU. */
-	if (request->controls().contains(controls::ScalerCrop)) {
-		Rectangle cropRegion = request->controls().get(controls::ScalerCrop);
-		request->metadata().set(controls::ScalerCrop, cropRegion);
-	}
+	if (request->controls().contains(controls::ScalerCrop))
+		cropRegion_ = request->controls().get(controls::ScalerCrop);
+	request->metadata().set(controls::ScalerCrop, cropRegion_);
 
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		info->metadataProcessed = true;

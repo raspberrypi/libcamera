@@ -136,8 +136,8 @@ Awb::~Awb()
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		async_abort_ = true;
-		async_signal_.notify_one();
 	}
+	async_signal_.notify_one();
 	async_thread_.join();
 }
 
@@ -239,11 +239,14 @@ void Awb::restartAsync(StatisticsPtr &stats, double lux)
 			: (mode_ == nullptr ? config_.default_mode : mode_);
 	lux_ = lux;
 	frame_phase_ = 0;
-	async_start_ = true;
 	async_started_ = true;
 	size_t len = mode_name_.copy(async_results_.mode,
 				     sizeof(async_results_.mode) - 1);
 	async_results_.mode[len] = '\0';
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		async_start_ = true;
+	}
 	async_signal_.notify_one();
 }
 
@@ -297,7 +300,6 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 			LOG(RPiAwb, Debug) << "No lux metadata found";
 		LOG(RPiAwb, Debug) << "Awb lux value is " << lux_status.lux;
 
-		std::unique_lock<std::mutex> lock(mutex_);
 		if (async_started_ == false)
 			restartAsync(stats, lux_status.lux);
 	}
@@ -319,8 +321,8 @@ void Awb::asyncFunc()
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 			async_finished_ = true;
-			sync_signal_.notify_one();
 		}
+		sync_signal_.notify_one();
 	}
 }
 

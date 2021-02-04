@@ -150,7 +150,6 @@ Pwl apply_manual_contrast(Pwl const &gamma_curve, double brightness,
 void Contrast::Process(StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *image_metadata)
 {
-	double brightness = brightness_, contrast = contrast_;
 	Histogram histogram(stats->hist[0].g_hist, NUM_HISTOGRAM_BINS);
 	// We look at the histogram and adjust the gamma curve in the following
 	// ways: 1. Adjust the gamma curve so as to pull the start of the
@@ -165,13 +164,13 @@ void Contrast::Process(StatisticsPtr &stats,
 	}
 	// 2. Finally apply any manually selected brightness/contrast
 	// adjustment.
-	if (brightness != 0 || contrast != 1.0)
-		gamma_curve = apply_manual_contrast(gamma_curve, brightness,
-						    contrast);
+	if (brightness_ != 0 || contrast_ != 1.0)
+		gamma_curve = apply_manual_contrast(gamma_curve, brightness_,
+						    contrast_);
 	// And fill in the status for output. Use more points towards the bottom
 	// of the curve.
 	ContrastStatus status;
-	fill_in_status(status, brightness, contrast, gamma_curve);
+	fill_in_status(status, brightness_, contrast_, gamma_curve);
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
 		status_ = status;

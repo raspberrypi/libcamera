@@ -7,7 +7,6 @@
 #pragma once
 
 #include <vector>
-#include <atomic>
 
 #include "../ccm_algorithm.hpp"
 #include "../pwl.hpp"
@@ -70,7 +69,7 @@ public:
 
 private:
 	CcmConfig config_;
-	std::atomic<double> saturation_;
+	double saturation_;
 };
 
 } // namespace RPiController

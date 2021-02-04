@@ -185,13 +185,11 @@ unsigned int Awb::GetConvergenceFrames() const
 
 void Awb::SetMode(std::string const &mode_name)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	mode_name_ = mode_name;
 }
 
 void Awb::SetManualGains(double manual_r, double manual_b)
 {
-	std::unique_lock<std::mutex> lock(settings_mutex_);
 	// If any of these are 0.0, we swich back to auto.
 	manual_r_ = manual_r;
 	manual_b_ = manual_b;
@@ -229,14 +227,13 @@ void Awb::fetchAsyncResults()
 	sync_results_ = async_results_;
 }
 
-void Awb::restartAsync(StatisticsPtr &stats, std::string const &mode_name,
-		       double lux)
+void Awb::restartAsync(StatisticsPtr &stats, double lux)
 {
 	LOG(RPiAwb, Debug) << "Starting AWB calculation";
 	// this makes a new reference which belongs to the asynchronous thread
 	statistics_ = stats;
 	// store the mode as it could technically change
-	auto m = config_.modes.find(mode_name);
+	auto m = config_.modes.find(mode_name_);
 	mode_ = m != config_.modes.end()
 			? &m->second
 			: (mode_ == nullptr ? config_.default_mode : mode_);
@@ -244,8 +241,8 @@ void Awb::restartAsync(StatisticsPtr &stats, std::string const &mode_name,
 	frame_phase_ = 0;
 	async_start_ = true;
 	async_started_ = true;
-	size_t len = mode_name.copy(async_results_.mode,
-				    sizeof(async_results_.mode) - 1);
+	size_t len = mode_name_.copy(async_results_.mode,
+				     sizeof(async_results_.mode) - 1);
 	async_results_.mode[len] = '\0';
 	async_signal_.notify_one();
 }
@@ -294,11 +291,6 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	if (frame_phase_ >= (int)config_.frame_period ||
 	    frame_count2_ < (int)config_.startup_frames) {
 		// Update any settings and any image metadata that we need.
-		std::string mode_name;
-		{
-			std::unique_lock<std::mutex> lock(settings_mutex_);
-			mode_name = mode_name_;
-		}
 		struct LuxStatus lux_status = {};
 		lux_status.lux = 400; // in case no metadata
 		if (image_metadata->Get("lux.status", lux_status) != 0)
@@ -307,7 +299,7 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 
 		std::unique_lock<std::mutex> lock(mutex_);
 		if (async_started_ == false)
-			restartAsync(stats, mode_name, lux_status.lux);
+			restartAsync(stats, lux_status.lux);
 	}
 }
 

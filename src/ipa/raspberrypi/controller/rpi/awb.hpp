@@ -134,11 +134,9 @@ private:
 	AwbStatus sync_results_;
 	AwbStatus prev_sync_results_;
 	std::string mode_name_;
-	std::mutex settings_mutex_;
 	// The following are for the asynchronous thread to use, though the main
 	// thread can set/reset them if the async thread is known to be idle:
-	void restartAsync(StatisticsPtr &stats, std::string const &mode_name,
-			  double lux);
+	void restartAsync(StatisticsPtr &stats, double lux);
 	// copy out the results from the async thread so that it can be restarted
 	void fetchAsyncResults();
 	StatisticsPtr statistics_;

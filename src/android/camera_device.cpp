@@ -705,10 +705,10 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 53 entries, 846 bytes of static metadata
+	 * Currently: 53 entries, 838 bytes of static metadata
 	 */
 	uint32_t numEntries = 53;
-	uint32_t byteSize = 846;
+	uint32_t byteSize = 838;
 
 	/*
 	 * Calculate space occupation in bytes for dynamically built metadata
@@ -719,6 +719,21 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * 4 64bits integers for ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS
 	 */
 	byteSize += streamConfigurations_.size() * 48;
+
+	/*
+	 * 2 32bits integers for each HAL_PIXEL_FORMAT_BLOB for thumbnail sizes
+	 * 2 32bits integers for the (0, 0) thumbnail size
+	 *
+	 * This is a worst case estimates as different configurations with the
+	 * same aspect ratio will generate the same size.
+	 */
+	for (const auto &entry : streamConfigurations_) {
+		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB)
+			continue;
+
+		byteSize += 8;
+	}
+	byteSize += 8;
 
 	return std::make_tuple(numEntries, byteSize);
 }
@@ -871,12 +886,42 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  &availableControlModes, 1);
 
 	/* JPEG static metadata. */
-	std::vector<int32_t> availableThumbnailSizes = {
-		0, 0,
-	};
+
+	/*
+	 * Create the list of supported thumbnail sizes by inspecting the
+	 * available JPEG resolutions collected in streamConfigurations_ and
+	 * generate one entry for each aspect ratio.
+	 *
+	 * The JPEG thumbnailer can freely scale, so pick an arbitrary
+	 * (160, 160) size as the bounding rectangle, which is then cropped to
+	 * the different supported aspect ratios.
+	 */
+	constexpr Size maxJpegThumbnail(160, 160);
+	std::vector<Size> thumbnailSizes;
+	thumbnailSizes.push_back({ 0, 0 });
+	for (const auto &entry : streamConfigurations_) {
+		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB)
+			continue;
+
+		Size thumbnailSize = maxJpegThumbnail
+				     .boundedToAspectRatio({ entry.resolution.width,
+							     entry.resolution.height });
+		thumbnailSizes.push_back(thumbnailSize);
+	}
+
+	std::sort(thumbnailSizes.begin(), thumbnailSizes.end());
+	auto last = std::unique(thumbnailSizes.begin(), thumbnailSizes.end());
+	thumbnailSizes.erase(last, thumbnailSizes.end());
+
+	/* Transform sizes in to a list of integers that can be consumed. */
+	std::vector<int32_t> thumbnailEntries;
+	thumbnailEntries.reserve(thumbnailSizes.size() * 2);
+	for (const auto &size : thumbnailSizes) {
+		thumbnailEntries.push_back(size.width);
+		thumbnailEntries.push_back(size.height);
+	}
 	staticMetadata_->addEntry(ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
-				  availableThumbnailSizes.data(),
-				  availableThumbnailSizes.size());
+				  thumbnailEntries.data(), thumbnailEntries.size());
 
 	/*
 	 * \todo Calculate the maximum JPEG buffer size by asking the encoder

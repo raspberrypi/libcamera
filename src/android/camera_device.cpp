@@ -714,7 +714,7 @@ std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
 	 * Calculate space occupation in bytes for dynamically built metadata
 	 * entries.
 	 *
-	 * Each stream configuration entry requires 52 bytes:
+	 * Each stream configuration entry requires 48 bytes:
 	 * 4 32bits integers for ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS
 	 * 4 64bits integers for ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS
 	 */

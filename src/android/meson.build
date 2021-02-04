@@ -14,6 +14,23 @@ foreach dep : android_deps
     endif
 endforeach
 
+if android_enabled
+    cmake = import('cmake')
+
+    libyuv_vars = cmake.subproject_options()
+    libyuv_vars.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON'})
+    libyuv_vars.set_override_option('cpp_std', 'c++17')
+    libyuv_vars.append_compile_args('cpp',
+         '-Wno-sign-compare',
+         '-Wno-unused-variable',
+         '-Wno-unused-parameter')
+    libyuv_vars.append_link_args('-ljpeg')
+    libyuv = cmake.subproject('libyuv', options : libyuv_vars)
+    libyuv_dep = libyuv.dependency('yuv')
+
+    android_deps += [ libyuv_dep, ]
+endif
+
 android_hal_sources = files([
     'camera3_hal.cpp',
     'camera_hal_manager.cpp',

@@ -46,6 +46,11 @@ void Lux::Read(boost::property_tree::ptree const &params)
 	current_aperture_ = reference_aperture_;
 }
 
+void Lux::SetCurrentAperture(double aperture)
+{
+	current_aperture_ = aperture;
+}
+
 void Lux::Prepare(Metadata *image_metadata)
 {
 	std::unique_lock<std::mutex> lock(mutex_);

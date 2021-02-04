@@ -6,7 +6,6 @@
  */
 #pragma once
 
-#include <atomic>
 #include <mutex>
 
 #include "../lux_status.h"
@@ -34,7 +33,7 @@ private:
 	double reference_aperture_; // units of 1/f
 	double reference_Y_; // out of 65536
 	double reference_lux_;
-	std::atomic<double> current_aperture_;
+	double current_aperture_;
 	LuxStatus status_;
 	std::mutex mutex_;
 };

@@ -1121,13 +1121,13 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
  */
 void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 {
-	Request *request = buffer->request();
-
-	pipe_->completeBuffer(request, buffer);
-
 	IPU3Frames::Info *info = frameInfos_.find(buffer);
 	if (!info)
 		return;
+
+	Request *request = info->request;
+
+	pipe_->completeBuffer(request, buffer);
 
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Move the ExposureTime control to the IPA. */
@@ -1157,7 +1157,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (!info)
 		return;
 
-	Request *request = buffer->request();
+	Request *request = info->request;
 
 	/* If the buffer is cancelled force a complete of the whole request. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
@@ -1186,7 +1186,7 @@ void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
 
 	info->paramDequeued = true;
 	if (frameInfos_.tryComplete(info))
-		pipe_->completeRequest(buffer->request());
+		pipe_->completeRequest(info->request);
 }
 
 void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
@@ -1198,7 +1198,7 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
 		info->metadataProcessed = true;
 		if (frameInfos_.tryComplete(info))
-			pipe_->completeRequest(buffer->request());
+			pipe_->completeRequest(info->request);
 		return;
 	}
 

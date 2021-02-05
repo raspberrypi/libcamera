@@ -33,6 +33,18 @@ Results::Result testRequestBalance(std::shared_ptr<Camera> camera,
 		std::to_string(startCycles) + " start cycles" };
 }
 
+Results::Result testRequestUnbalance(std::shared_ptr<Camera> camera,
+				     StreamRole role, unsigned int numRequests)
+{
+	SimpleCaptureUnbalanced capture(camera);
+
+	Results::Result ret = capture.configure(role);
+	if (ret.first != Results::Pass)
+		return ret;
+
+	return capture.capture(numRequests);
+}
+
 Results testSingleStream(std::shared_ptr<Camera> camera)
 {
 	static const std::vector<std::pair<std::string, StreamRole>> roles = {
@@ -43,7 +55,7 @@ Results testSingleStream(std::shared_ptr<Camera> camera)
 	};
 	static const std::vector<unsigned int> numRequests = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
 
-	Results results(numRequests.size() * roles.size() * 2);
+	Results results(numRequests.size() * roles.size() * 3);
 
 	for (const auto &role : roles) {
 		std::cout << "= Test role " << role.first << std::endl;
@@ -68,6 +80,17 @@ Results testSingleStream(std::shared_ptr<Camera> camera)
 		std::cout << "* Test multiple start/stop cycles" << std::endl;
 		for (unsigned int num : numRequests)
 			results.add(testRequestBalance(camera, role.second, 3, num));
+
+		/*
+		 * Test unbalanced stop
+		 *
+		 * Makes sure the camera supports a stop with requests queued.
+		 * Example failure is a camera that does not handle cancelation
+		 * of buffers coming back from the video device while stopping.
+		 */
+		std::cout << "* Test unbalanced stop" << std::endl;
+		for (unsigned int num : numRequests)
+			results.add(testRequestUnbalance(camera, role.second, num));
 	}
 
 	return results;

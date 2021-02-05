@@ -149,3 +149,66 @@ void SimpleCaptureBalanced::requestComplete(Request *request)
 	if (queueRequest(request))
 		loop_->exit(-EINVAL);
 }
+
+/* SimpleCaptureUnbalanced */
+
+SimpleCaptureUnbalanced::SimpleCaptureUnbalanced(std::shared_ptr<Camera> camera)
+	: SimpleCapture(camera)
+{
+}
+
+Results::Result SimpleCaptureUnbalanced::capture(unsigned int numRequests)
+{
+	Results::Result ret = start();
+	if (ret.first != Results::Pass)
+		return ret;
+
+	Stream *stream = config_->at(0).stream();
+	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
+
+	captureCount_ = 0;
+	captureLimit_ = numRequests;
+
+	/* Queue the recommended number of reqeuests. */
+	std::vector<std::unique_ptr<libcamera::Request>> requests;
+	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+		std::unique_ptr<Request> request = camera_->createRequest();
+		if (!request) {
+			stop();
+			return { Results::Fail, "Can't create request" };
+		}
+
+		if (request->addBuffer(stream, buffer.get())) {
+			stop();
+			return { Results::Fail, "Can't set buffer for request" };
+		}
+
+		if (camera_->queueRequest(request.get()) < 0) {
+			stop();
+			return { Results::Fail, "Failed to queue request" };
+		}
+
+		requests.push_back(std::move(request));
+	}
+
+	/* Run capture session. */
+	loop_ = new EventLoop();
+	int status = loop_->exec();
+	stop();
+	delete loop_;
+
+	return { status ? Results::Fail : Results::Pass, "Unbalanced capture of " + std::to_string(numRequests) + " requests" };
+}
+
+void SimpleCaptureUnbalanced::requestComplete(Request *request)
+{
+	captureCount_++;
+	if (captureCount_ >= captureLimit_) {
+		loop_->exit(0);
+		return;
+	}
+
+	request->reuse(Request::ReuseBuffers);
+	if (camera_->queueRequest(request))
+		loop_->exit(-EINVAL);
+}

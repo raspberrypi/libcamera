@@ -51,4 +51,18 @@ private:
 	unsigned int captureLimit_;
 };
 
+class SimpleCaptureUnbalanced : public SimpleCapture
+{
+public:
+	SimpleCaptureUnbalanced(std::shared_ptr<libcamera::Camera> camera);
+
+	Results::Result capture(unsigned int numRequests);
+
+private:
+	void requestComplete(libcamera::Request *request) override;
+
+	unsigned int captureCount_;
+	unsigned int captureLimit_;
+};
+
 #endif /* __LC_COMPLIANCE_SIMPLE_CAPTURE_H__ */

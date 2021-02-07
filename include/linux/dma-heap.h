@@ -5,8 +5,8 @@
  * Copyright (C) 2011 Google, Inc.
  * Copyright (C) 2019 Linaro Ltd.
  */
-#ifndef _UAPI_LINUX_DMABUF_POOL_H
-#define _UAPI_LINUX_DMABUF_POOL_H
+#ifndef _LINUX_DMABUF_POOL_H
+#define _LINUX_DMABUF_POOL_H
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
@@ -50,4 +50,4 @@ struct dma_heap_allocation_data {
 #define DMA_HEAP_IOCTL_ALLOC	_IOWR(DMA_HEAP_IOC_MAGIC, 0x0,\
 				      struct dma_heap_allocation_data)
 
-#endif /* _UAPI_LINUX_DMABUF_POOL_H */
+#endif /* _LINUX_DMABUF_POOL_H */

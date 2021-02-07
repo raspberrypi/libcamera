@@ -198,7 +198,12 @@ int CameraSensor::init()
 		return -EINVAL;
 	}
 
-	if (entity_->function() != MEDIA_ENT_F_CAM_SENSOR) {
+	switch (entity_->function()) {
+	case MEDIA_ENT_F_CAM_SENSOR:
+	case MEDIA_ENT_F_PROC_VIDEO_ISP:
+		break;
+
+	default:
 		LOG(CameraSensor, Error)
 			<< "Invalid sensor function "
 			<< utils::hex(entity_->function());

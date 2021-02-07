@@ -244,6 +244,8 @@ private:
 			PipelineHandler::cameraData(camera));
 	}
 
+	std::vector<MediaEntity *> locateSensors();
+
 	void bufferReady(FrameBuffer *buffer);
 	void converterInputDone(FrameBuffer *buffer);
 	void converterOutputDone(FrameBuffer *buffer);
@@ -857,6 +859,67 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
  * Match and Setup
  */
 
+std::vector<MediaEntity *> SimplePipelineHandler::locateSensors()
+{
+	std::vector<MediaEntity *> entities;
+
+	/*
+	 * Gather all the camera sensor entities based on the function they
+	 * expose.
+	 */
+	for (MediaEntity *entity : media_->entities()) {
+		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR)
+			entities.push_back(entity);
+	}
+
+	if (entities.empty())
+		return {};
+
+	/*
+	 * Sensors can be made of multiple entities. For instance, a raw sensor
+	 * can be connected to an ISP, and the combination of both should be
+	 * treated as one sensor. To support this, as a crude heuristic, check
+	 * the downstream entity from the camera sensor, and if it is an ISP,
+	 * use it instead of the sensor.
+	 */
+	std::vector<MediaEntity *> sensors;
+
+	for (MediaEntity *entity : entities) {
+		/*
+		 * Locate the downstream entity by following the first link
+		 * from a source pad.
+		 */
+		const MediaLink *link = nullptr;
+
+		for (const MediaPad *pad : entity->pads()) {
+			if ((pad->flags() & MEDIA_PAD_FL_SOURCE) &&
+			    !pad->links().empty()) {
+				link = pad->links()[0];
+				break;
+			}
+		}
+
+		if (!link)
+			continue;
+
+		MediaEntity *remote = link->sink()->entity();
+		if (remote->function() == MEDIA_ENT_F_PROC_VIDEO_ISP)
+			sensors.push_back(remote);
+		else
+			sensors.push_back(entity);
+	}
+
+	/*
+	 * Remove duplicates, in case multiple sensors are connected to the
+	 * same ISP.
+	 */
+	std::sort(sensors.begin(), sensors.end());
+	auto last = std::unique(sensors.begin(), sensors.end());
+	sensors.erase(last, sensors.end());
+
+	return sensors;
+}
+
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
 	const SimplePipelineInfo *info = nullptr;
@@ -880,19 +943,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	}
 
 	/* Locate the sensors. */
-	std::vector<MediaEntity *> sensors;
-
-	for (MediaEntity *entity : media_->entities()) {
-		switch (entity->function()) {
-		case MEDIA_ENT_F_CAM_SENSOR:
-			sensors.push_back(entity);
-			break;
-
-		default:
-			break;
-		}
-	}
-
+	std::vector<MediaEntity *> sensors = locateSensors();
 	if (sensors.empty()) {
 		LOG(SimplePipeline, Error) << "No sensor found";
 		return false;

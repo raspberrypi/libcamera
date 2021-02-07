@@ -234,12 +234,6 @@ int CameraSensor::init()
 	sizes_.erase(last, sizes_.end());
 
 	/*
-	 * The sizes_ vector is sorted in ascending order, the resolution is
-	 * thus the last element of the vector.
-	 */
-	resolution_ = sizes_.back();
-
-	/*
 	 * VIMC is a bit special, as it does not yet support all the mandatory
 	 * requirements regular sensors have to respect.
 	 *
@@ -324,14 +318,20 @@ int CameraSensor::validateSensorDriver()
 	Rectangle rect;
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &rect);
 	if (ret) {
-		rect = Rectangle(resolution());
+		/*
+		 * Default the pixel array size to the largest size supported
+		 * by the sensor. The sizes_ vector is sorted in ascending
+		 * order, the largest size is thus the last element.
+		 */
+		pixelArraySize_ = sizes_.back();
+
 		LOG(CameraSensor, Warning)
 			<< "The PixelArraySize property has been defaulted to "
-			<< rect.toString();
+			<< pixelArraySize_.toString();
 		err = -EINVAL;
+	} else {
+		pixelArraySize_ = rect.size();
 	}
-	pixelArraySize_.width = rect.width;
-	pixelArraySize_.height = rect.height;
 
 	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &activeArea_);
 	if (ret) {
@@ -397,7 +397,8 @@ int CameraSensor::validateSensorDriver()
  */
 void CameraSensor::initVimcDefaultProperties()
 {
-	pixelArraySize_ = resolution();
+	/* Use the largest supported size. */
+	pixelArraySize_ = sizes_.back();
 	activeArea_ = Rectangle(pixelArraySize_);
 }
 

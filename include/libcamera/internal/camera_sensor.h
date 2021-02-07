@@ -53,7 +53,7 @@ public:
 	const MediaEntity *entity() const { return entity_; }
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> &sizes() const { return sizes_; }
-	const Size &resolution() const { return resolution_; }
+	Size resolution() const { return activeArea_.size(); }
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
@@ -87,7 +87,6 @@ private:
 	std::string id_;
 
 	V4L2Subdevice::Formats formats_;
-	Size resolution_;
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
 

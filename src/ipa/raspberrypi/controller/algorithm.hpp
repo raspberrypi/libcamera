@@ -12,7 +12,6 @@
 #include <string>
 #include <memory>
 #include <map>
-#include <atomic>
 
 #include "controller.hpp"
 
@@ -46,7 +45,7 @@ public:
 
 private:
 	Controller *controller_;
-	std::atomic<bool> paused_;
+	bool paused_;
 };
 
 // This code is for automatic registration of Front End algorithms with the

@@ -7,12 +7,13 @@
 #pragma once
 
 #include "../algorithm.hpp"
+#include "../denoise_algorithm.hpp"
 
 namespace RPiController {
 
 // Algorithm to calculate correct spatial denoise (SDN) settings.
 
-class Sdn : public Algorithm
+class Sdn : public DenoiseAlgorithm
 {
 public:
 	Sdn(Controller *controller = NULL);
@@ -20,10 +21,12 @@ public:
 	void Read(boost::property_tree::ptree const &params) override;
 	void Initialise() override;
 	void Prepare(Metadata *image_metadata) override;
+	void SetMode(DenoiseMode mode) override;
 
 private:
 	double deviation_;
 	double strength_;
+	DenoiseMode mode_;
 };
 
 } // namespace RPiController

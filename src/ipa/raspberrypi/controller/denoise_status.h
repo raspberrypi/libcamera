@@ -16,6 +16,7 @@ struct DenoiseStatus {
 	double noise_constant;
 	double noise_slope;
 	double strength;
+	unsigned int mode;
 };
 
 #ifdef __cplusplus

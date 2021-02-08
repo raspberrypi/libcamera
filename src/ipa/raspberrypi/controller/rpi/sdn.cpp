@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2021, Raspberry Pi (Trading) Limited
  *
  * sdn.cpp - SDN (spatial denoise) control algorithm
  */
@@ -23,7 +23,7 @@ LOG_DEFINE_CATEGORY(RPiSdn)
 #define NAME "rpi.sdn"
 
 Sdn::Sdn(Controller *controller)
-	: Algorithm(controller)
+	: DenoiseAlgorithm(controller), mode_(DenoiseMode::ColourOff)
 {
 }
 
@@ -53,11 +53,18 @@ void Sdn::Prepare(Metadata *image_metadata)
 	status.noise_constant = noise_status.noise_constant * deviation_;
 	status.noise_slope = noise_status.noise_slope * deviation_;
 	status.strength = strength_;
+	status.mode = static_cast<std::underlying_type_t<DenoiseMode>>(mode_);
 	image_metadata->Set("denoise.status", status);
 	LOG(RPiSdn, Debug)
 		<< "programmed constant " << status.noise_constant
 		<< " slope " << status.noise_slope
 		<< " strength " << status.strength;
+}
+
+void Sdn::SetMode(DenoiseMode mode)
+{
+	// We only distinguish between off and all other modes.
+	mode_ = mode;
 }
 
 // Register algorithm with the system.

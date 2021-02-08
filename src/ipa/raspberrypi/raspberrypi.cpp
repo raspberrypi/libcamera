@@ -43,6 +43,7 @@
 #include "contrast_algorithm.hpp"
 #include "contrast_status.h"
 #include "controller.hpp"
+#include "denoise_algorithm.hpp"
 #include "denoise_status.h"
 #include "dpc_status.h"
 #include "focus_status.h"
@@ -573,6 +574,7 @@ bool IPARPi::validateIspControls()
 		V4L2_CID_USER_BCM2835_ISP_SHARPEN,
 		V4L2_CID_USER_BCM2835_ISP_DPC,
 		V4L2_CID_USER_BCM2835_ISP_LENS_SHADING,
+		V4L2_CID_USER_BCM2835_ISP_CDN,
 	};
 
 	for (auto c : ctrls) {
@@ -620,6 +622,14 @@ static const std::map<int32_t, std::string> AwbModeTable = {
 	{ controls::AwbDaylight, "daylight" },
 	{ controls::AwbCloudy, "cloudy" },
 	{ controls::AwbCustom, "custom" },
+};
+
+static const std::map<int32_t, RPiController::DenoiseMode> DenoiseModeTable = {
+	{ controls::draft::NoiseReductionModeOff, RPiController::DenoiseMode::Off },
+	{ controls::draft::NoiseReductionModeFast, RPiController::DenoiseMode::ColourFast },
+	{ controls::draft::NoiseReductionModeHighQuality, RPiController::DenoiseMode::ColourHighQuality },
+	{ controls::draft::NoiseReductionModeMinimal, RPiController::DenoiseMode::ColourOff },
+	{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
 };
 
 void IPARPi::queueRequest(const ControlList &controls)
@@ -886,6 +896,29 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::FRAME_DURATIONS: {
 			auto frameDurations = ctrl.second.get<Span<const int64_t>>();
 			applyFrameDurations(frameDurations[0], frameDurations[1]);
+			break;
+		}
+
+		case controls::NOISE_REDUCTION_MODE: {
+			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
+				controller_.GetAlgorithm("SDN"));
+			ASSERT(sdn);
+
+			int32_t idx = ctrl.second.get<int32_t>();
+			auto mode = DenoiseModeTable.find(idx);
+			if (mode != DenoiseModeTable.end()) {
+				sdn->SetMode(mode->second);
+
+				/*
+				 * \todo If the colour denoise is not going to run due to an
+				 * analysis image resolution or format mismatch, we should
+				 * report the status correctly in the metadata.
+				 */
+				libcameraMetadata_.set(controls::draft::NoiseReductionMode, idx);
+			} else {
+				LOG(IPARPI, Error) << "Noise reduction mode " << idx
+						   << " not recognised";
+			}
 			break;
 		}
 
@@ -1173,18 +1206,40 @@ void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 
 void IPARPi::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls)
 {
-	bcm2835_isp_denoise denoise;
+	using RPiController::DenoiseMode;
 
-	denoise.enabled = 1;
+	bcm2835_isp_denoise denoise;
+	DenoiseMode mode = static_cast<DenoiseMode>(denoiseStatus->mode);
+
+	denoise.enabled = mode != DenoiseMode::Off;
 	denoise.constant = denoiseStatus->noise_constant;
 	denoise.slope.num = 1000 * denoiseStatus->noise_slope;
 	denoise.slope.den = 1000;
 	denoise.strength.num = 1000 * denoiseStatus->strength;
 	denoise.strength.den = 1000;
 
+	/* Set the CDN mode to match the SDN operating mode. */
+	bcm2835_isp_cdn cdn;
+	switch (mode) {
+	case DenoiseMode::ColourFast:
+		cdn.enabled = 1;
+		cdn.mode = CDN_MODE_FAST;
+		break;
+	case DenoiseMode::ColourHighQuality:
+		cdn.enabled = 1;
+		cdn.mode = CDN_MODE_HIGH_QUALITY;
+		break;
+	default:
+		cdn.enabled = 0;
+	}
+
 	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&denoise),
 					    sizeof(denoise) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DENOISE, c);
+
+	c = ControlValue(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&cdn),
+					      sizeof(cdn) });
+	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CDN, c);
 }
 
 void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls)

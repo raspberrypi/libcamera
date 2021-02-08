@@ -18,6 +18,63 @@
 namespace libcamera {
 
 /**
+ * \def LIBCAMERA_DISABLE_COPY
+ * \brief Disable copy construction and assignment of the \a klass
+ * \param klass The name of the class
+ *
+ * Example usage:
+ * \code{.cpp}
+ * class NonCopyable
+ * {
+ * public:
+ * 	NonCopyable();
+ * 	...
+ *
+ * private:
+ * 	LIBCAMERA_DISABLE_COPY(NonCopyable)
+ * };
+ * \endcode
+ */
+
+/**
+ * \def LIBCAMERA_DISABLE_MOVE
+ * \brief Disable move construction and assignment of the \a klass
+ * \param klass The name of the class
+ *
+ * Example usage:
+ * \code{.cpp}
+ * class NonMoveable
+ * {
+ * public:
+ * 	NonMoveable();
+ * 	...
+ *
+ * private:
+ * 	LIBCAMERA_DISABLE_MOVE(NonMoveable)
+ * };
+ * \endcode
+ */
+
+/**
+ * \def LIBCAMERA_DISABLE_COPY_AND_MOVE
+ * \brief Disable copy and move construction and assignment of the \a klass
+ * \param klass The name of the class
+ *
+ * Example usage:
+ * \code{.cpp}
+ * class NonCopyableNonMoveable
+ * {
+ * public:
+ * 	NonCopyableNonMoveable();
+ * 	...
+ *
+ * private:
+ * 	LIBCAMERA_DISABLE_COPY_AND_MOVE(NonCopyableNonMoveable)
+ * };
+ * \endcode
+ */
+
+/**
  * \def LIBCAMERA_DECLARE_PRIVATE
  * \brief Declare private data for a public class
  * \param klass The public class name

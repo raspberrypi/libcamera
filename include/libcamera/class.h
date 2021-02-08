@@ -12,6 +12,24 @@
 namespace libcamera {
 
 #ifndef __DOXYGEN__
+#define LIBCAMERA_DISABLE_COPY(klass)  \
+	klass(const klass &) = delete; \
+	klass &operator=(const klass &) = delete;
+
+#define LIBCAMERA_DISABLE_MOVE(klass) \
+	klass(klass &&) = delete;     \
+	klass &operator=(klass &&) = delete;
+
+#define LIBCAMERA_DISABLE_COPY_AND_MOVE(klass) \
+	LIBCAMERA_DISABLE_COPY(klass)          \
+	LIBCAMERA_DISABLE_MOVE(klass)
+#else
+#define LIBCAMERA_DISABLE_COPY(klass)
+#define LIBCAMERA_DISABLE_MOVE(klass)
+#define LIBCAMERA_DISABLE_COPY_AND_MOVE(klass)
+#endif
+
+#ifndef __DOXYGEN__
 #define LIBCAMERA_DECLARE_PRIVATE(klass)				\
 public:									\
 	class Private;							\

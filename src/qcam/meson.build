@@ -32,12 +32,12 @@ if qt5_dep.found()
         qt5_dep,
     ]
 
-    qt5_cpp_args = [ '-DQT_NO_KEYWORDS' ]
+    qt5_cpp_args = ['-DQT_NO_KEYWORDS']
 
     tiff_dep = dependency('libtiff-4', required : false)
     if tiff_dep.found()
-        qt5_cpp_args += [ '-DHAVE_TIFF' ]
-        qcam_deps += [ tiff_dep ]
+        qt5_cpp_args += ['-DHAVE_TIFF']
+        qcam_deps += [tiff_dep]
         qcam_sources += files([
             'dng_writer.cpp',
         ])
@@ -62,7 +62,7 @@ if qt5_dep.found()
     if ((cc.get_id() == 'gcc' and cc.version().version_compare('>=9.0') and
          qt5_dep.version().version_compare('<5.13')) or
         (cc.get_id() == 'clang' and cc.version().version_compare('>=10.0')))
-        qt5_cpp_args += [ '-Wno-deprecated-copy' ]
+        qt5_cpp_args += ['-Wno-deprecated-copy']
     endif
 
     resources = qt5.preprocess(moc_headers: qcam_moc_headers,

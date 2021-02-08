@@ -28,5 +28,5 @@ v4l2_compat = shared_library('v4l2-compat',
                              v4l2_compat_sources,
                              name_prefix : '',
                              install : true,
-                             dependencies : [ libcamera_dep, libdl ],
+                             dependencies : [libcamera_dep, libdl],
                              cpp_args : v4l2_compat_cpp_args)

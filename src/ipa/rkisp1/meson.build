@@ -15,7 +15,7 @@ if ipa_sign_module
     custom_target(ipa_name + '.so.sign',
                   input : mod,
                   output : ipa_name + '.so.sign',
-                  command : [ ipa_sign, ipa_priv_key, '@INPUT@', '@OUTPUT@' ],
+                  command : [ipa_sign, ipa_priv_key, '@INPUT@', '@OUTPUT@'],
                   install : false,
                   build_by_default : true)
 endif

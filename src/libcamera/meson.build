@@ -111,9 +111,9 @@ libcamera_sources += version_cpp
 
 if ipa_sign_module
     ipa_pub_key_cpp = custom_target('ipa_pub_key_cpp',
-                                    input : [ ipa_priv_key, 'ipa_pub_key.cpp.in' ],
+                                    input : [ipa_priv_key, 'ipa_pub_key.cpp.in'],
                                     output : 'ipa_pub_key.cpp',
-                                    command : [ gen_ipa_pub_key, '@INPUT@', '@OUTPUT@' ])
+                                    command : [gen_ipa_pub_key, '@INPUT@', '@OUTPUT@'])
 
     libcamera_sources += ipa_pub_key_cpp
 endif

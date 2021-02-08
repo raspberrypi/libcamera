@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 serialization_tests = [
-    [ 'control_serialization',    'control_serialization.cpp' ],
+    ['control_serialization',     'control_serialization.cpp'],
 ]
 
 foreach t : serialization_tests

@@ -32,9 +32,9 @@ if android_enabled
         libyuv_vars.append_link_args('-ljpeg')
         libyuv = cmake.subproject('libyuv', options : libyuv_vars)
         libyuv_dep = libyuv.dependency('yuv')
-   endif
+    endif
 
-   android_deps += [ libyuv_dep, ]
+    android_deps += [libyuv_dep]
 endif
 
 android_hal_sources = files([

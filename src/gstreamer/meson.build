@@ -29,7 +29,7 @@ if glib_dep.found() and gstvideo_dep.found() and gstallocator_dep.found()
     # complain about the ones we are not using. Silence the -Wunused-function
     # warning in that case.
     if cc.get_id() == 'clang' and glib_dep.version().version_compare('<2.63.0')
-        libcamera_gst_cpp_args += [ '-Wno-unused-function' ]
+        libcamera_gst_cpp_args += ['-Wno-unused-function']
     endif
 
     libcamera_gst = shared_library('gstlibcamera',

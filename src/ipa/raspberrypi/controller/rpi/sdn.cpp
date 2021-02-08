@@ -7,8 +7,8 @@
 
 #include "libcamera/internal/log.h"
 
+#include "../denoise_status.h"
 #include "../noise_status.h"
-#include "../sdn_status.h"
 
 #include "sdn.hpp"
 
@@ -49,11 +49,11 @@ void Sdn::Prepare(Metadata *image_metadata)
 	LOG(RPiSdn, Debug)
 		<< "Noise profile: constant " << noise_status.noise_constant
 		<< " slope " << noise_status.noise_slope;
-	struct SdnStatus status;
+	struct DenoiseStatus status;
 	status.noise_constant = noise_status.noise_constant * deviation_;
 	status.noise_slope = noise_status.noise_slope * deviation_;
 	status.strength = strength_;
-	image_metadata->Set("sdn.status", status);
+	image_metadata->Set("denoise.status", status);
 	LOG(RPiSdn, Debug)
 		<< "programmed constant " << status.noise_constant
 		<< " slope " << status.noise_slope

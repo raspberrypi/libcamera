@@ -1,18 +1,18 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2021, Raspberry Pi (Trading) Limited
  *
- * sdn_status.h - SDN (spatial denoise) control algorithm status
+ * denoise_status.h - Denoise control algorithm status
  */
 #pragma once
 
-// This stores the parameters required for Spatial Denoise (SDN).
+// This stores the parameters required for Denoise.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct SdnStatus {
+struct DenoiseStatus {
 	double noise_constant;
 	double noise_slope;
 	double strength;

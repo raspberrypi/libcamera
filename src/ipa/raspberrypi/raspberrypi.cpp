@@ -43,13 +43,13 @@
 #include "contrast_algorithm.hpp"
 #include "contrast_status.h"
 #include "controller.hpp"
+#include "denoise_status.h"
 #include "dpc_status.h"
 #include "focus_status.h"
 #include "geq_status.h"
 #include "lux_status.h"
 #include "metadata.hpp"
 #include "noise_status.h"
-#include "sdn_status.h"
 #include "sharpen_algorithm.hpp"
 #include "sharpen_status.h"
 
@@ -110,7 +110,7 @@ private:
 	void applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls);
 	void applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls);
 	void applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls);
-	void applyDenoise(const struct SdnStatus *denoiseStatus, ControlList &ctrls);
+	void applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls);
 	void applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls);
 	void applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls);
 	void applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls);
@@ -952,7 +952,7 @@ void IPARPi::prepareISP(unsigned int bufferId)
 		if (geqStatus)
 			applyGEQ(geqStatus, ctrls);
 
-		SdnStatus *denoiseStatus = rpiMetadata_.GetLocked<SdnStatus>("sdn.status");
+		DenoiseStatus *denoiseStatus = rpiMetadata_.GetLocked<DenoiseStatus>("denoise.status");
 		if (denoiseStatus)
 			applyDenoise(denoiseStatus, ctrls);
 
@@ -1171,7 +1171,7 @@ void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GEQ, c);
 }
 
-void IPARPi::applyDenoise(const struct SdnStatus *denoiseStatus, ControlList &ctrls)
+void IPARPi::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls)
 {
 	bcm2835_isp_denoise denoise;
 

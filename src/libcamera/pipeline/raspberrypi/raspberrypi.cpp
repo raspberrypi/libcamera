@@ -623,52 +623,27 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 			continue;
 		}
 
-		if (i == maxIndex) {
-			/* ISP main output format. */
-			V4L2VideoDevice *dev = data->isp_[Isp::Output0].dev();
-			V4L2PixelFormat fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
-			format.size = cfg.size;
-			format.fourcc = fourcc;
+		/* The largest resolution gets routed to the ISP Output 0 node. */
+		RPi::Stream *stream = i == maxIndex ? &data->isp_[Isp::Output0]
+						    : &data->isp_[Isp::Output1];
 
-			ret = dev->setFormat(&format);
-			if (ret)
-				return -EINVAL;
-
-			if (format.size != cfg.size || format.fourcc != fourcc) {
-				LOG(RPI, Error)
-					<< "Failed to set format on ISP capture0 device: "
-					<< format.toString();
-				return -EINVAL;
-			}
-
-			cfg.setStream(&data->isp_[Isp::Output0]);
-			data->isp_[Isp::Output0].setExternal(true);
-		}
-
-		/*
-		 * ISP second output format. This fallthrough means that if a
-		 * second output stream has not been configured, we simply use
-		 * the Output0 configuration.
-		 */
-		V4L2VideoDevice *dev = data->isp_[Isp::Output1].dev();
-		format.fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
+		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
+		format.fourcc = fourcc;
 
-		ret = dev->setFormat(&format);
-		if (ret) {
+		ret = stream->dev()->setFormat(&format);
+		if (ret)
+			return -EINVAL;
+
+		if (format.size != cfg.size || format.fourcc != fourcc) {
 			LOG(RPI, Error)
-				<< "Failed to set format on ISP capture1 device: "
-				<< format.toString();
-			return ret;
+				<< "Failed to set requested format on " << stream->name()
+				<< ", returned " << format.toString();
+			return -EINVAL;
 		}
-		/*
-		 * If we have not yet provided a stream for this config, it
-		 * means this is to be routed from Output1.
-		 */
-		if (!cfg.stream()) {
-			cfg.setStream(&data->isp_[Isp::Output1]);
-			data->isp_[Isp::Output1].setExternal(true);
-		}
+
+		cfg.setStream(stream);
+		stream->setExternal(true);
 	}
 
 	/* ISP statistics output format. */

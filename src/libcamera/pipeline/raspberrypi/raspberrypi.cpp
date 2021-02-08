@@ -494,8 +494,16 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			break;
 
 		case StreamRole::VideoRecording:
+			/*
+			 * The colour denoise algorithm requires the analysis
+			 * image, produced by the second ISP output, to be in
+			 * YUV420 format. Select this format as the default, to
+			 * maximize chances that it will be picked by
+			 * applications and enable usage of the colour denoise
+			 * algorithm.
+			 */
 			fmts = data->isp_[Isp::Output0].dev()->formats();
-			pixelFormat = formats::NV12;
+			pixelFormat = formats::YUV420;
 			size = { 1920, 1080 };
 			bufferCount = 4;
 			outCount++;
@@ -607,6 +615,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * StreamConfiguration appropriately.
 	 */
 	V4L2DeviceFormat format;
+	bool output1Set = false;
 	for (unsigned i = 0; i < config->size(); i++) {
 		StreamConfiguration &cfg = config->at(i);
 
@@ -631,6 +640,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		format.size = cfg.size;
 		format.fourcc = fourcc;
 
+		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
+				<< format.toString();
+
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
 			return -EINVAL;
@@ -644,6 +656,38 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 		cfg.setStream(stream);
 		stream->setExternal(true);
+
+		if (i != maxIndex)
+			output1Set = true;
+	}
+
+	/*
+	 * If ISP::Output1 stream has not been requested by the application, we
+	 * set it up for internal use now. This second stream will be used for
+	 * fast colour denoise, and must be a quarter resolution of the ISP::Output0
+	 * stream. However, also limit the maximum size to 1200 pixels in the
+	 * larger dimension, just to avoid being wasteful with buffer allocations
+	 * and memory bandwidth.
+	 *
+	 * \todo If Output 1 format is not YUV420, Output 1 ought to be disabled as
+	 * colour denoise will not run.
+	 */
+	if (!output1Set) {
+		V4L2DeviceFormat output1Format = format;
+		constexpr Size maxDimensions(1200, 1200);
+		const Size limit = maxDimensions.boundedToAspectRatio(format.size);
+
+		output1Format.size = (format.size / 2).boundedTo(limit).alignedDownTo(2, 2);
+
+		LOG(RPI, Debug) << "Setting ISP Output1 (internal) to "
+				<< output1Format.toString();
+
+		ret = data->isp_[Isp::Output1].dev()->setFormat(&output1Format);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to set format on ISP Output1: "
+					<< ret;
+			return -EINVAL;
+		}
 	}
 
 	/* ISP statistics output format. */

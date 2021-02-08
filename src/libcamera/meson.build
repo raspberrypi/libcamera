@@ -94,7 +94,6 @@ foreach source : control_source_files
     control_sources += custom_target(source + '_cpp',
                                      input : input_files,
                                      output : source + '.cpp',
-                                     depend_files : gen_controls,
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'])
 endforeach
 

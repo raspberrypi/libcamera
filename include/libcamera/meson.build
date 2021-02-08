@@ -46,7 +46,6 @@ foreach header : control_source_files
     control_headers += custom_target(header + '_h',
                                      input : input_files,
                                      output : header + '.h',
-                                     depend_files : gen_controls,
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
                                      install : true,
                                      install_dir : join_paths('include', include_dir))

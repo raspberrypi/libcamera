@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * extensible.h - Utilities to create extensible public classes with stable ABIs
+ * class.h - Utilities and helpers for classes
  */
-#ifndef __LIBCAMERA_EXTENSIBLE_H__
-#define __LIBCAMERA_EXTENSIBLE_H__
+#ifndef __LIBCAMERA_CLASS_H__
+#define __LIBCAMERA_CLASS_H__
 
 #include <memory>
 
@@ -84,4 +84,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_EXTENSIBLE_H__ */
+#endif /* __LIBCAMERA_CLASS_H__ */

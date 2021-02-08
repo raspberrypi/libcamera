@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/extensible.h>
+#include <libcamera/class.h>
 #include <libcamera/object.h>
 #include <libcamera/signal.h>
 

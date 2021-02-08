@@ -2,14 +2,17 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * extensible.cpp - Utilities to create extensible public classes with stable ABIs
+ * class.cpp - Utilities and helpers for classes
  */
 
-#include <libcamera/extensible.h>
+#include <libcamera/class.h>
 
 /**
- * \file extensible.h
- * \brief Utilities to create extensible public classes with stable ABIs
+ * \file class.h
+ * \brief Utilities to help constructing class interfaces
+ *
+ * The extensible class can be inherited to create public classes with stable
+ * ABIs.
  */
 
 namespace libcamera {

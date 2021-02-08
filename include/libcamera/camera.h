@@ -12,8 +12,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <libcamera/class.h>
 #include <libcamera/controls.h>
-#include <libcamera/extensible.h>
 #include <libcamera/object.h>
 #include <libcamera/request.h>
 #include <libcamera/signal.h>

@@ -170,9 +170,6 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 	op.op = ipa::ipu3::ActionParamFilled;
 
 	queueFrameAction.emit(frame, op);
-
-	/* \todo Calculate new values for exposure_ and gain_. */
-	setControls(frame);
 }
 
 void IPAIPU3::parseStatistics(unsigned int frame,

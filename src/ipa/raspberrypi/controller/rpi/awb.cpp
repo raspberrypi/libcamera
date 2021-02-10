@@ -153,7 +153,7 @@ void Awb::Read(boost::property_tree::ptree const &params)
 
 void Awb::Initialise()
 {
-	frame_count2_ = frame_count_ = frame_phase_ = 0;
+	frame_count_ = frame_phase_ = 0;
 	// Put something sane into the status that we are filtering towards,
 	// just in case the first few frames don't have anything meaningful in
 	// them.
@@ -288,11 +288,9 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	// Count frames since we last poked the async thread.
 	if (frame_phase_ < (int)config_.frame_period)
 		frame_phase_++;
-	if (frame_count2_ < (int)config_.startup_frames)
-		frame_count2_++;
 	LOG(RPiAwb, Debug) << "frame_phase " << frame_phase_;
 	if (frame_phase_ >= (int)config_.frame_period ||
-	    frame_count2_ < (int)config_.startup_frames) {
+	    frame_count_ < (int)config_.startup_frames) {
 		// Update any settings and any image metadata that we need.
 		struct LuxStatus lux_status = {};
 		lux_status.lux = 400; // in case no metadata

@@ -130,7 +130,6 @@ private:
 	// counts up to frame_period before restarting the async thread
 	int frame_phase_;
 	int frame_count_; // counts up to startup_frames
-	int frame_count2_; // counts up to startup_frames for Process method
 	AwbStatus sync_results_;
 	AwbStatus prev_sync_results_;
 	std::string mode_name_;

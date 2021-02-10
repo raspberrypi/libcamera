@@ -108,6 +108,7 @@ public:
 	};
 
 private:
+	bool isAutoEnabled() const;
 	// configuration is read-only, and available to both threads
 	AwbConfig config_;
 	std::thread async_thread_;

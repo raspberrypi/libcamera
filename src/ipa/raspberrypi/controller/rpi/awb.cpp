@@ -175,9 +175,9 @@ void Awb::Initialise()
 
 unsigned int Awb::GetConvergenceFrames() const
 {
-	// If colour gains have been explicitly set, there is no convergence
+	// If not in auto mode, there is no convergence
 	// to happen, so no need to drop any frames - return zero.
-	if (manual_r_ && manual_b_)
+	if (!isAutoEnabled())
 		return 0;
 	else
 		return config_.convergence_frames;
@@ -193,30 +193,36 @@ void Awb::SetManualGains(double manual_r, double manual_b)
 	// If any of these are 0.0, we swich back to auto.
 	manual_r_ = manual_r;
 	manual_b_ = manual_b;
+	// If not in auto mode, set these values into the sync_results which
+	// means that Prepare() will adopt them immediately.
+	if (!isAutoEnabled()) {
+		sync_results_.gain_r = prev_sync_results_.gain_r = manual_r_;
+		sync_results_.gain_g = prev_sync_results_.gain_g = 1.0;
+		sync_results_.gain_b = prev_sync_results_.gain_b = manual_b_;
+	}
 }
 
 void Awb::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		     Metadata *metadata)
 {
-	// If fixed colour gains have been set, we should let other algorithms
-	// know by writing it into the image metadata.
-	if (manual_r_ != 0.0 && manual_b_ != 0.0) {
-		prev_sync_results_.gain_r = manual_r_;
-		prev_sync_results_.gain_g = 1.0;
-		prev_sync_results_.gain_b = manual_b_;
-		// If we're starting up for the first time, try and
-		// "dead reckon" the corresponding colour temperature.
-		if (first_switch_mode_ && config_.bayes) {
-			Pwl ct_r_inverse = config_.ct_r.Inverse();
-			Pwl ct_b_inverse = config_.ct_b.Inverse();
-			double ct_r = ct_r_inverse.Eval(ct_r_inverse.Domain().Clip(1 / manual_r_));
-			double ct_b = ct_b_inverse.Eval(ct_b_inverse.Domain().Clip(1 / manual_b_));
-			prev_sync_results_.temperature_K = (ct_r + ct_b) / 2;
-		}
-		sync_results_ = prev_sync_results_;
+	// On the first mode switch we'll have no meaningful colour
+	// temperature, so try to dead reckon one if in manual mode.
+	if (!isAutoEnabled() && first_switch_mode_ && config_.bayes) {
+		Pwl ct_r_inverse = config_.ct_r.Inverse();
+		Pwl ct_b_inverse = config_.ct_b.Inverse();
+		double ct_r = ct_r_inverse.Eval(ct_r_inverse.Domain().Clip(1 / manual_r_));
+		double ct_b = ct_b_inverse.Eval(ct_b_inverse.Domain().Clip(1 / manual_b_));
+		prev_sync_results_.temperature_K = (ct_r + ct_b) / 2;
+		sync_results_.temperature_K = prev_sync_results_.temperature_K;
 	}
+	// Let other algorithms know the current white balance values.
 	metadata->Set("awb.status", prev_sync_results_);
 	first_switch_mode_ = false;
+}
+
+bool Awb::isAutoEnabled() const
+{
+	return manual_r_ == 0.0 || manual_b_ == 0.0;
 }
 
 void Awb::fetchAsyncResults()
@@ -224,7 +230,10 @@ void Awb::fetchAsyncResults()
 	LOG(RPiAwb, Debug) << "Fetch AWB results";
 	async_finished_ = false;
 	async_started_ = false;
-	sync_results_ = async_results_;
+	// It's possible manual gains could be set even while the async
+	// thread was running, so only copy the results if still in auto mode.
+	if (isAutoEnabled())
+		sync_results_ = async_results_;
 }
 
 void Awb::restartAsync(StatisticsPtr &stats, double lux)
@@ -289,8 +298,10 @@ void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	if (frame_phase_ < (int)config_.frame_period)
 		frame_phase_++;
 	LOG(RPiAwb, Debug) << "frame_phase " << frame_phase_;
-	if (frame_phase_ >= (int)config_.frame_period ||
-	    frame_count_ < (int)config_.startup_frames) {
+	// We do not restart the async thread if we're not in auto mode.
+	if (isAutoEnabled() &&
+	    (frame_phase_ >= (int)config_.frame_period ||
+	     frame_count_ < (int)config_.startup_frames)) {
 		// Update any settings and any image metadata that we need.
 		struct LuxStatus lux_status = {};
 		lux_status.lux = 400; // in case no metadata
@@ -614,29 +625,18 @@ void Awb::awbGrey()
 
 void Awb::doAwb()
 {
-	if (manual_r_ != 0.0 && manual_b_ != 0.0) {
-		async_results_.temperature_K = 4500; // don't know what it is
-		async_results_.gain_r = manual_r_;
-		async_results_.gain_g = 1.0;
-		async_results_.gain_b = manual_b_;
+	prepareStats();
+	LOG(RPiAwb, Debug) << "Valid zones: " << zones_.size();
+	if (zones_.size() > config_.min_regions) {
+		if (config_.bayes)
+			awbBayes();
+		else
+			awbGrey();
 		LOG(RPiAwb, Debug)
-			<< "Using manual white balance: gain_r "
-			<< async_results_.gain_r << " gain_b "
-			<< async_results_.gain_b;
-	} else {
-		prepareStats();
-		LOG(RPiAwb, Debug) << "Valid zones: " << zones_.size();
-		if (zones_.size() > config_.min_regions) {
-			if (config_.bayes)
-				awbBayes();
-			else
-				awbGrey();
-			LOG(RPiAwb, Debug)
-				<< "CT found is "
-				<< async_results_.temperature_K
-				<< " with gains r " << async_results_.gain_r
-				<< " and b " << async_results_.gain_b;
-		}
+			<< "CT found is "
+			<< async_results_.temperature_K
+			<< " with gains r " << async_results_.gain_r
+			<< " and b " << async_results_.gain_b;
 	}
 }
 

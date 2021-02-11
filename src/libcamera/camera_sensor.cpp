@@ -276,12 +276,13 @@ int CameraSensor::init()
 
 int CameraSensor::validateSensorDriver()
 {
+	int err = 0;
+
 	/*
 	 * Optional controls are used to register optional sensor properties. If
 	 * not present, some values will be defaulted.
 	 */
 	static constexpr uint32_t optionalControls[] = {
-		V4L2_CID_CAMERA_ORIENTATION,
 		V4L2_CID_CAMERA_SENSOR_ROTATION,
 	};
 
@@ -294,6 +295,23 @@ int CameraSensor::validateSensorDriver()
 	}
 
 	/*
+	 * Recommended controls are similar to optional controls, but will
+	 * become mandatory in the near future. Be loud if they're missing.
+	 */
+	static constexpr uint32_t recommendedControls[] = {
+		V4L2_CID_CAMERA_ORIENTATION,
+	};
+
+	for (uint32_t ctrl : recommendedControls) {
+		if (!controls.count(ctrl)) {
+			LOG(CameraSensor, Warning)
+				<< "Recommended V4L2 control " << utils::hex(ctrl)
+				<< " not supported";
+			err = -EINVAL;
+		}
+	}
+
+	/*
 	 * Make sure the required selection targets are supported.
 	 *
 	 * Failures in reading any of the targets are not deemed to be fatal,
@@ -303,7 +321,6 @@ int CameraSensor::validateSensorDriver()
 	 * \todo Make support for selection targets mandatory as soon as all
 	 * test platforms have been updated.
 	 */
-	int err = 0;
 	Rectangle rect;
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &rect);
 	if (ret) {
@@ -446,6 +463,8 @@ int CameraSensor::initProperties()
 			break;
 		}
 	} else {
+		LOG(CameraSensor, Warning)
+			<< "Failed to retrieve the camera location, setting to External";
 		propertyValue = properties::CameraLocationExternal;
 	}
 	properties_.set(properties::Location, propertyValue);

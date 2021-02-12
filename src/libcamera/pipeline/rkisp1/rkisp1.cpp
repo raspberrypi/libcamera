@@ -142,7 +142,7 @@ public:
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-	int start(Camera *camera, ControlList *controls) override;
+	int start(Camera *camera, const ControlList *controls) override;
 	void stop(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -745,7 +745,7 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 	return 0;
 }
 
-int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *controls)
+int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;

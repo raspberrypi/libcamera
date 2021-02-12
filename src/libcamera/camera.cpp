@@ -1018,7 +1018,7 @@ int Camera::queueRequest(Request *request)
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not in a state where it can be started
  */
-int Camera::start(ControlList *controls)
+int Camera::start(const ControlList *controls)
 {
 	Private *const d = LIBCAMERA_D_PTR();
 

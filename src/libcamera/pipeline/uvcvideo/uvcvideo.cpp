@@ -72,7 +72,7 @@ public:
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-	int start(Camera *camera, ControlList *controls) override;
+	int start(Camera *camera, const ControlList *controls) override;
 	void stop(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
@@ -232,7 +232,7 @@ int PipelineHandlerUVC::exportFrameBuffers(Camera *camera, Stream *stream,
 	return data->video_->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerUVC::start(Camera *camera, [[maybe_unused]] ControlList *controls)
+int PipelineHandlerUVC::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
 {
 	UVCCameraData *data = cameraData(camera);
 	unsigned int count = data->stream_.configuration().bufferCount;

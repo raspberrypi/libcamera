@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <libcamera/class.h>
 #include <libcamera/geometry.h>
 #include <libcamera/span.h>
 
@@ -220,8 +221,7 @@ public:
 	ControlType type() const { return type_; }
 
 private:
-	ControlId &operator=(const ControlId &) = delete;
-	ControlId(const ControlId &) = delete;
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(ControlId)
 
 	unsigned int id_;
 	std::string name_;
@@ -260,8 +260,7 @@ public:
 	}
 
 private:
-	Control(const Control &) = delete;
-	Control &operator=(const Control &) = delete;
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Control)
 };
 
 class ControlInfo

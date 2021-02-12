@@ -214,7 +214,7 @@ class Commit:
         self._files = [CommitFile(f) for f in files[1:]]
         self._title = files[0]
 
-    def files(self, filter='AM'):
+    def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
 
     @property

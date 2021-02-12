@@ -314,7 +314,7 @@ class HeaderAddChecker(CommitChecker):
         meson_files = [f for f in commit.files('M')
                        if os.path.basename(f) == 'meson.build']
 
-        for filename in commit.files('A'):
+        for filename in commit.files('AR'):
             if not filename.startswith('include/libcamera/') or \
                not filename.endswith('.h'):
                 continue

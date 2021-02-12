@@ -555,9 +555,15 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 
 	/* Apply the "pipe_mode" control to the ImgU subdevice. */
 	ControlList ctrls(imgu->imgu_->controls());
+	/*
+	 * Set the ImgU pipe mode to 'Video' unconditionally to have statistics
+	 * generated.
+	 *
+	 * \todo Figure out what the 'Still Capture' mode is meant for, and use
+	 * it accordingly.
+	 */
 	ctrls.set(V4L2_CID_IPU3_PIPE_MODE,
-		  static_cast<int32_t>(vfCfg ? IPU3PipeModeVideo :
-				       IPU3PipeModeStillCapture));
+		  static_cast<int32_t>(IPU3PipeModeVideo));
 	ret = imgu->imgu_->setControls(&ctrls);
 	if (ret) {
 		LOG(IPU3, Error) << "Unable to set pipe_mode control";

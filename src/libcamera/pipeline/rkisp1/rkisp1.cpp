@@ -607,11 +607,22 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		<< "ISP output pad configured with " << format.toString()
 		<< " crop " << rect.toString();
 
+	std::map<unsigned int, IPAStream> streamConfig;
+
 	for (const StreamConfiguration &cfg : *config) {
-		if (cfg.stream() == &data->mainPathStream_)
+		if (cfg.stream() == &data->mainPathStream_) {
 			ret = mainPath_.configure(cfg, format);
-		else
+			streamConfig[0] = {
+				.pixelFormat = cfg.pixelFormat,
+				.size = cfg.size,
+			};
+		} else {
 			ret = selfPath_.configure(cfg, format);
+			streamConfig[1] = {
+				.pixelFormat = cfg.pixelFormat,
+				.size = cfg.size,
+			};
+		}
 
 		if (ret)
 			return ret;
@@ -628,6 +639,23 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	ret = stat_->setFormat(&statFormat);
 	if (ret)
 		return ret;
+
+	/* Inform IPA of stream configuration and sensor controls. */
+	CameraSensorInfo sensorInfo = {};
+	ret = data->sensor_->sensorInfo(&sensorInfo);
+	if (ret) {
+		/* \todo Turn this into a hard failure. */
+		LOG(RkISP1, Warning) << "Camera sensor information not available";
+		sensorInfo = {};
+		ret = 0;
+	}
+
+	std::map<unsigned int, const ControlInfoMap &> entityControls;
+	entityControls.emplace(0, data->sensor_->controls());
+
+	IPAOperationData ipaConfig;
+	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
+			      ipaConfig, nullptr);
 
 	return 0;
 }
@@ -759,8 +787,6 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 		return ret;
 	}
 
-	std::map<unsigned int, IPAStream> streamConfig;
-
 	if (data->mainPath_->isEnabled()) {
 		ret = mainPath_.start();
 		if (ret) {
@@ -770,11 +796,6 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 			freeBuffers(camera);
 			return ret;
 		}
-
-		streamConfig[0] = {
-			.pixelFormat = data->mainPathStream_.configuration().pixelFormat,
-			.size = data->mainPathStream_.configuration().size,
-		};
 	}
 
 	if (data->selfPath_->isEnabled()) {
@@ -787,34 +808,11 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] ControlList *c
 			freeBuffers(camera);
 			return ret;
 		}
-
-		streamConfig[1] = {
-			.pixelFormat = data->selfPathStream_.configuration().pixelFormat,
-			.size = data->selfPathStream_.configuration().size,
-		};
 	}
 
 	isp_->setFrameStartEnabled(true);
 
 	activeCamera_ = camera;
-
-	/* Inform IPA of stream configuration and sensor controls. */
-	CameraSensorInfo sensorInfo = {};
-	ret = data->sensor_->sensorInfo(&sensorInfo);
-	if (ret) {
-		/* \todo Turn this in an hard failure. */
-		LOG(RkISP1, Warning) << "Camera sensor information not available";
-		sensorInfo = {};
-		ret = 0;
-	}
-
-	std::map<unsigned int, const ControlInfoMap &> entityControls;
-	entityControls.emplace(0, data->sensor_->controls());
-
-	IPAOperationData ipaConfig;
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls,
-			      ipaConfig, nullptr);
-
 	return ret;
 }
 

@@ -16,6 +16,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/ipa/ipu3_ipa_interface.h>
 #include <libcamera/ipa/ipu3_ipa_proxy.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -75,6 +76,9 @@ public:
 
 	uint32_t exposureTime_;
 	Rectangle cropRegion_;
+	bool supportsFlips_;
+	Transform rotationTransform_;
+
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	IPU3Frames frameInfos_;
 
@@ -94,6 +98,9 @@ public:
 
 	const StreamConfiguration &cio2Format() const { return cio2Configuration_; }
 	const ImgUDevice::PipeConfig imguConfig() const { return pipeConfig_; }
+
+	/* Cache the combinedTransform_ that will be applied to the sensor */
+	Transform combinedTransform_;
 
 private:
 	/*
@@ -167,10 +174,48 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
-	if (transform != Transform::Identity) {
-		transform = Transform::Identity;
+	Transform combined = transform * data_->rotationTransform_;
+
+	/*
+	 * We combine the platform and user transform, but must "adjust away"
+	 * any combined result that includes a transposition, as we can't do
+	 * those. In this case, flipping only the transpose bit is helpful to
+	 * applications - they either get the transform they requested, or have
+	 * to do a simple transpose themselves (they don't have to worry about
+	 * the other possible cases).
+	 */
+	if (!!(combined & Transform::Transpose)) {
+		/*
+		 * Flipping the transpose bit in "transform" flips it in the
+		 * combined result too (as it's the last thing that happens),
+		 * which is of course clearing it.
+		 */
+		transform ^= Transform::Transpose;
+		combined &= ~Transform::Transpose;
 		status = Adjusted;
 	}
+
+	/*
+	 * We also check if the sensor doesn't do h/vflips at all, in which
+	 * case we clear them, and the application will have to do everything.
+	 */
+	if (!data_->supportsFlips_ && !!combined) {
+		/*
+		 * If the sensor can do no transforms, then combined must be
+		 * changed to the identity. The only user transform that gives
+		 * rise to this is the inverse of the rotation. (Recall that
+		 * combined = transform * rotationTransform.)
+		 */
+		transform = -data_->rotationTransform_;
+		combined = Transform::Identity;
+		status = Adjusted;
+	}
+
+	/*
+	 * Store the final combined transform that configure() will need to
+	 * apply to the sensor to save us working it out again.
+	 */
+	combinedTransform_ = combined;
 
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > IPU3_MAX_STREAMS) {
@@ -502,6 +547,24 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	CameraSensorInfo sensorInfo;
 	cio2->sensor()->sensorInfo(&sensorInfo);
 	data->cropRegion_ = sensorInfo.analogCrop;
+
+	/*
+	 * Configure the H/V flip controls based on the combination of
+	 * the sensor and user transform.
+	 */
+	if (data->supportsFlips_) {
+		ControlList sensorCtrls(cio2->sensor()->controls());
+		sensorCtrls.set(V4L2_CID_HFLIP,
+				static_cast<int32_t>(!!(config->combinedTransform_
+							& Transform::HFlip)));
+		sensorCtrls.set(V4L2_CID_VFLIP,
+				static_cast<int32_t>(!!(config->combinedTransform_
+						        & Transform::VFlip)));
+
+		ret = cio2->sensor()->setControls(&sensorCtrls);
+		if (ret)
+			return ret;
+	}
 
 	/*
 	 * If the ImgU gets configured, its driver seems to expect that
@@ -979,6 +1042,26 @@ int PipelineHandlerIPU3::registerCameras()
 							  delays);
 		data->cio2_.frameStart().connect(data->delayedCtrls_.get(),
 						 &DelayedControls::applyControls);
+
+		/* Convert the sensor rotation to a transformation */
+		int32_t rotation = 0;
+		if (data->properties_.contains(properties::Rotation))
+			rotation = data->properties_.get(properties::Rotation);
+		else
+			LOG(IPU3, Warning) << "Rotation control not exposed by "
+					   << cio2->sensor()->id()
+					   << ". Assume rotation 0";
+
+		bool success;
+		data->rotationTransform_ = transformFromRotation(rotation, &success);
+		if (!success)
+			LOG(IPU3, Warning) << "Invalid rotation of " << rotation
+					   << " degrees: ignoring";
+
+		ControlList ctrls = cio2->sensor()->getControls({ V4L2_CID_HFLIP });
+		if (!ctrls.empty())
+			/* We assume the sensor supports VFLIP too. */
+			data->supportsFlips_ = true;
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each

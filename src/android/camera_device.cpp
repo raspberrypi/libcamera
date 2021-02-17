@@ -1851,8 +1851,8 @@ void CameraDevice::requestComplete(Request *request)
 		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
 
-		FrameBuffer *buffer = request->findBuffer(cameraStream->stream());
-		if (!buffer) {
+		FrameBuffer *src = request->findBuffer(cameraStream->stream());
+		if (!src) {
 			LOG(HAL, Error) << "Failed to find a source stream buffer";
 			continue;
 		}
@@ -1862,14 +1862,14 @@ void CameraDevice::requestComplete(Request *request)
 		 * separate thread.
 		 */
 
-		CameraBuffer mapped(*descriptor->buffers_[i].buffer,
-				    PROT_READ | PROT_WRITE);
-		if (!mapped.isValid()) {
-			LOG(HAL, Error) << "Failed to mmap android blob buffer";
+		CameraBuffer dest(*descriptor->buffers_[i].buffer,
+				  PROT_READ | PROT_WRITE);
+		if (!dest.isValid()) {
+			LOG(HAL, Error) << "Failed to map android blob buffer";
 			continue;
 		}
 
-		int ret = cameraStream->process(*buffer, &mapped,
+		int ret = cameraStream->process(*src, &dest,
 						descriptor->settings_,
 						resultMetadata.get());
 		if (ret) {
@@ -1882,7 +1882,7 @@ void CameraDevice::requestComplete(Request *request)
 		 * done processing it.
 		 */
 		if (cameraStream->type() == CameraStream::Type::Internal)
-			cameraStream->putBuffer(buffer);
+			cameraStream->putBuffer(src);
 	}
 
 	/* Prepare to call back the Android camera stack. */

@@ -875,7 +875,11 @@ void IPARPi::queueRequest(const ControlList &controls)
 		case controls::NOISE_REDUCTION_MODE: {
 			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
 				controller_.GetAlgorithm("SDN"));
-			ASSERT(sdn);
+			if (!sdn) {
+				LOG(IPARPI, Warning)
+					<< "Could not set NOISE_REDUCTION_MODE - no SDN algorithm";
+				break;
+			}
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			auto mode = DenoiseModeTable.find(idx);

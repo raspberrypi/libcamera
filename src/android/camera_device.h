@@ -24,16 +24,11 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
+#include "camera_buffer.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"
 #include "camera_worker.h"
 #include "jpeg/encoder.h"
-
-class MappedCamera3Buffer : public libcamera::MappedBuffer
-{
-public:
-	MappedCamera3Buffer(const buffer_handle_t camera3buffer, int flags);
-};
 
 class CameraDevice : protected libcamera::Loggable
 {

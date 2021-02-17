@@ -52,6 +52,8 @@ android_hal_sources = files([
     'yuv/post_processor_yuv.cpp'
 ])
 
+subdir('mm')
+
 android_camera_metadata_sources = files([
     'metadata/camera_metadata.c',
 ])

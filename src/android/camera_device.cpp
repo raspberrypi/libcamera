@@ -257,36 +257,6 @@ void sortCamera3StreamConfigs(std::vector<Camera3StreamConfig> &unsortedConfigs,
 
 } /* namespace */
 
-MappedCamera3Buffer::MappedCamera3Buffer(const buffer_handle_t camera3buffer,
-					 int flags)
-{
-	maps_.reserve(camera3buffer->numFds);
-	error_ = 0;
-
-	for (int i = 0; i < camera3buffer->numFds; i++) {
-		if (camera3buffer->data[i] == -1)
-			continue;
-
-		off_t length = lseek(camera3buffer->data[i], 0, SEEK_END);
-		if (length < 0) {
-			error_ = -errno;
-			LOG(HAL, Error) << "Failed to query plane length";
-			break;
-		}
-
-		void *address = mmap(nullptr, length, flags, MAP_SHARED,
-				     camera3buffer->data[i], 0);
-		if (address == MAP_FAILED) {
-			error_ = -errno;
-			LOG(HAL, Error) << "Failed to mmap plane";
-			break;
-		}
-
-		maps_.emplace_back(static_cast<uint8_t *>(address),
-				   static_cast<size_t>(length));
-	}
-}
-
 /*
  * \struct Camera3RequestDescriptor
  *
@@ -1892,8 +1862,8 @@ void CameraDevice::requestComplete(Request *request)
 		 * separate thread.
 		 */
 
-		MappedCamera3Buffer mapped(*descriptor->buffers_[i].buffer,
-					   PROT_READ | PROT_WRITE);
+		CameraBuffer mapped(*descriptor->buffers_[i].buffer,
+				    PROT_READ | PROT_WRITE);
 		if (!mapped.isValid()) {
 			LOG(HAL, Error) << "Failed to mmap android blob buffer";
 			continue;

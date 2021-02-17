@@ -7,7 +7,7 @@ option('android',
 
 option('android_platform',
         type : 'combo',
-        choices : ['generic'],
+        choices : ['cros', 'generic'],
         value : 'generic',
         description : 'Select the Android platform to compile for')
 

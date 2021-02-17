@@ -72,6 +72,10 @@ ipa_mojoms = []
 foreach file : ipa_mojom_files
     name = file.split('.')[0]
 
+    if not get_option('pipelines').contains(name)
+        continue
+    endif
+
     # {pipeline}.mojom-module
     mojom = custom_target(file.split('.')[0] + '_mojom_module',
                           input : file,

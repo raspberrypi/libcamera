@@ -846,7 +846,7 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	 */
 
 	/* Re-fetch the sensor info updated to use the largest resolution. */
-	V4L2SubdeviceFormat sensorFormat;
+	V4L2SubdeviceFormat sensorFormat = {};
 	sensorFormat.size = sensor->resolution();
 	ret = sensor->setFormat(&sensorFormat);
 	if (ret)

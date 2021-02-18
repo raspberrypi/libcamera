@@ -1338,17 +1338,16 @@ void RPiCameraData::embeddedComplete(uint32_t bufferId)
 
 void RPiCameraData::setIspControls(const ControlList &controls)
 {
-	ControlList ctrls = controls;
+	ControlList ctrls = std::move(controls);
 
-	Span<const uint8_t> s =
-		ctrls.get(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING).data();
-	bcm2835_isp_lens_shading ls =
-		*reinterpret_cast<const bcm2835_isp_lens_shading *>(s.data());
-	ls.dmabuf = lsTable_.fd();
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ls),
-					    sizeof(ls) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING, c);
+	if (ctrls.contains(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING)) {
+		ControlValue &value =
+			const_cast<ControlValue &>(ctrls.get(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING));
+		Span<uint8_t> s = value.data();
+		bcm2835_isp_lens_shading *ls =
+			reinterpret_cast<bcm2835_isp_lens_shading *>(s.data());
+		ls->dmabuf = lsTable_.fd();
+	}
 
 	isp_[Isp::Input].dev()->setControls(&ctrls);
 	handleState();

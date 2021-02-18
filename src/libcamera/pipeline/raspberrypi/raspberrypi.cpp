@@ -152,7 +152,7 @@ public:
 	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
 	void runIsp(uint32_t bufferId);
 	void embeddedComplete(uint32_t bufferId);
-	void setIsp(const ControlList &controls);
+	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls);
 
 	/* bufferComplete signal handlers. */
@@ -1172,7 +1172,7 @@ int RPiCameraData::loadIPA()
 	ipa_->statsMetadataComplete.connect(this, &RPiCameraData::statsMetadataComplete);
 	ipa_->runIsp.connect(this, &RPiCameraData::runIsp);
 	ipa_->embeddedComplete.connect(this, &RPiCameraData::embeddedComplete);
-	ipa_->setIsp.connect(this, &RPiCameraData::setIsp);
+	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 
 	IPASettings settings(ipa_->configurationFile(sensor_->model() + ".json"));
@@ -1241,7 +1241,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		return -EPIPE;
 	}
 
-	if (result.params & ipa::rpi::ConfigStaggeredWrite) {
+	if (result.params & ipa::rpi::ConfigSensorParams) {
 		/*
 		 * Setup our delayed control writer with the sensor default
 		 * gain and exposure delays.
@@ -1336,7 +1336,7 @@ void RPiCameraData::embeddedComplete(uint32_t bufferId)
 	handleState();
 }
 
-void RPiCameraData::setIsp(const ControlList &controls)
+void RPiCameraData::setIspControls(const ControlList &controls)
 {
 	ControlList ctrls = controls;
 
@@ -1692,8 +1692,8 @@ void RPiCameraData::tryRunPipeline()
 			<< " Embedded buffer id: " << embeddedId;
 
 	ipa::rpi::ISPConfig ispPrepare;
-	ispPrepare.embeddedbufferId = ipa::rpi::MaskEmbeddedData | embeddedId;
-	ispPrepare.bayerbufferId = ipa::rpi::MaskBayerData | bayerId;
+	ispPrepare.embeddedBufferId = ipa::rpi::MaskEmbeddedData | embeddedId;
+	ispPrepare.bayerBufferId = ipa::rpi::MaskBayerData | bayerId;
 	ipa_->signalIspPrepare(ispPrepare);
 }
 

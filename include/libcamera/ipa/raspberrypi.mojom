@@ -16,7 +16,7 @@ enum BufferMask {
 const uint32 MaxLsGridSize = 0x8000;
 
 enum ConfigOutputParameters {
-	ConfigStaggeredWrite = 0x01,
+	ConfigSensorParams = 0x01,
 };
 
 struct SensorConfig {
@@ -27,8 +27,8 @@ struct SensorConfig {
 };
 
 struct ISPConfig {
-	uint32 embeddedbufferId;
-	uint32 bayerbufferId;
+	uint32 embeddedBufferId;
+	uint32 bayerBufferId;
 };
 
 struct ConfigInput {
@@ -126,6 +126,6 @@ interface IPARPiEventInterface {
 	statsMetadataComplete(uint32 bufferId, ControlList controls);
 	runIsp(uint32 bufferId);
 	embeddedComplete(uint32 bufferId);
-	setIsp(ControlList controls);
+	setIspControls(ControlList controls);
 	setDelayedControls(ControlList controls);
 };

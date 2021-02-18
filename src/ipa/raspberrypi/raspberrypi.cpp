@@ -344,7 +344,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		helper_->GetDelays(exposureDelay, gainDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
-		result->params |= ipa::rpi::ConfigStaggeredWrite;
+		result->params |= ipa::rpi::ConfigSensorParams;
 		result->sensorConfig.gainDelay = gainDelay;
 		result->sensorConfig.exposureDelay = exposureDelay;
 		result->sensorConfig.vblank = exposureDelay;
@@ -447,11 +447,11 @@ void IPARPi::signalIspPrepare(const ipa::rpi::ISPConfig &data)
 	 * avoid running the control algos for a few frames in case
 	 * they are "unreliable".
 	 */
-	prepareISP(data.embeddedbufferId);
+	prepareISP(data.embeddedBufferId);
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
-	runIsp.emit(data.bayerbufferId & ipa::rpi::MaskID);
+	runIsp.emit(data.bayerBufferId & ipa::rpi::MaskID);
 }
 
 void IPARPi::reportMetadata()
@@ -972,7 +972,7 @@ void IPARPi::prepareISP(unsigned int bufferId)
 			applyDPC(dpcStatus, ctrls);
 
 		if (!ctrls.empty())
-			setIsp.emit(ctrls);
+			setIspControls.emit(ctrls);
 	}
 }
 

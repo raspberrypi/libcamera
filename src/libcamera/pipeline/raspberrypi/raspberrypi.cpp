@@ -166,7 +166,7 @@ public:
 	void handleState();
 	void applyScalerCrop(const ControlList &controls);
 
-	std::unique_ptr<ipa::rpi::IPAProxyRPi> ipa_;
+	std::unique_ptr<ipa::RPi::IPAProxyRPi> ipa_;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
@@ -778,8 +778,8 @@ int PipelineHandlerRPi::start(Camera *camera, ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
-	ipa::rpi::StartControls ipaData;
-	ipa::rpi::StartControls result;
+	ipa::RPi::StartControls ipaData;
+	ipa::RPi::StartControls result;
 	if (controls)
 		ipaData.controls = *controls;
 	data->ipa_->start(ipaData, &result);
@@ -1114,8 +1114,8 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::rpi::MaskStats);
-	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), ipa::rpi::MaskEmbeddedData);
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::RPi::MaskStats);
+	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), ipa::RPi::MaskEmbeddedData);
 
 	return 0;
 }
@@ -1164,7 +1164,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 
 int RPiCameraData::loadIPA()
 {
-	ipa_ = IPAManager::createIPA<ipa::rpi::IPAProxyRPi>(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe_, 1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
@@ -1188,7 +1188,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
-	ipa::rpi::ConfigInput ipaConfig;
+	ipa::RPi::ConfigInput ipaConfig;
 
 	/* Get the device format to pass to the IPA. */
 	V4L2DeviceFormat sensorFormat;
@@ -1211,7 +1211,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
-		lsTable_ = dmaHeap_.alloc("ls_grid", ipa::rpi::MaxLsGridSize);
+		lsTable_ = dmaHeap_.alloc("ls_grid", ipa::RPi::MaxLsGridSize);
 		if (!lsTable_.isValid())
 			return -ENOMEM;
 
@@ -1231,7 +1231,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	ipa::rpi::ConfigOutput result;
+	ipa::RPi::ConfigOutput result;
 
 	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
 			&result, &ret);
@@ -1241,7 +1241,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		return -EPIPE;
 	}
 
-	if (result.params & ipa::rpi::ConfigSensorParams) {
+	if (result.params & ipa::RPi::ConfigSensorParams) {
 		/*
 		 * Setup our delayed control writer with the sensor default
 		 * gain and exposure delays.
@@ -1455,7 +1455,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 * application until after the IPA signals so.
 	 */
 	if (stream == &isp_[Isp::Stats]) {
-		ipa_->signalStatReady(ipa::rpi::MaskStats | static_cast<unsigned int>(index));
+		ipa_->signalStatReady(ipa::RPi::MaskStats | static_cast<unsigned int>(index));
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
 		handleStreamBuffer(buffer, stream);
@@ -1559,7 +1559,7 @@ void RPiCameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *strea
 {
 	unsigned int id = stream->getBufferId(buffer);
 
-	if (!(id & ipa::rpi::MaskExternalBuffer))
+	if (!(id & ipa::RPi::MaskExternalBuffer))
 		return;
 
 	/* Stop the Stream object from tracking the buffer. */
@@ -1691,9 +1691,9 @@ void RPiCameraData::tryRunPipeline()
 			<< " Bayer buffer id: " << bayerId
 			<< " Embedded buffer id: " << embeddedId;
 
-	ipa::rpi::ISPConfig ispPrepare;
-	ispPrepare.embeddedBufferId = ipa::rpi::MaskEmbeddedData | embeddedId;
-	ispPrepare.bayerBufferId = ipa::rpi::MaskBayerData | bayerId;
+	ipa::RPi::ISPConfig ispPrepare;
+	ispPrepare.embeddedBufferId = ipa::RPi::MaskEmbeddedData | embeddedId;
+	ispPrepare.bayerBufferId = ipa::RPi::MaskBayerData | bayerId;
 	ipa_->signalIspPrepare(ispPrepare);
 }
 

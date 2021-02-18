@@ -63,7 +63,7 @@ constexpr double defaultMaxFrameDuration = 1e6 / 0.01;
 
 LOG_DEFINE_CATEGORY(IPARPI)
 
-class IPARPi : public ipa::rpi::IPARPiInterface
+class IPARPi : public ipa::RPi::IPARPiInterface
 {
 public:
 	IPARPi()
@@ -76,24 +76,24 @@ public:
 	~IPARPi()
 	{
 		if (lsTable_)
-			munmap(lsTable_, ipa::rpi::MaxLsGridSize);
+			munmap(lsTable_, ipa::RPi::MaxLsGridSize);
 	}
 
 	int init(const IPASettings &settings) override;
-	void start(const ipa::rpi::StartControls &data,
-		   ipa::rpi::StartControls *result) override;
+	void start(const ipa::RPi::StartControls &data,
+		   ipa::RPi::StartControls *result) override;
 	void stop() override {}
 
 	void configure(const CameraSensorInfo &sensorInfo,
 		       const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, ControlInfoMap> &entityControls,
-		       const ipa::rpi::ConfigInput &data,
-		       ipa::rpi::ConfigOutput *response, int32_t *ret) override;
+		       const ipa::RPi::ConfigInput &data,
+		       ipa::RPi::ConfigOutput *response, int32_t *ret) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void signalStatReady(const uint32_t bufferId) override;
 	void signalQueueRequest(const ControlList &controls) override;
-	void signalIspPrepare(const ipa::rpi::ISPConfig &data) override;
+	void signalIspPrepare(const ipa::RPi::ISPConfig &data) override;
 
 private:
 	void setMode(const CameraSensorInfo &sensorInfo);
@@ -168,8 +168,8 @@ int IPARPi::init(const IPASettings &settings)
 	return 0;
 }
 
-void IPARPi::start(const ipa::rpi::StartControls &data,
-		   ipa::rpi::StartControls *result)
+void IPARPi::start(const ipa::RPi::StartControls &data,
+		   ipa::RPi::StartControls *result)
 {
 	RPiController::Metadata metadata;
 
@@ -291,8 +291,8 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		       const std::map<unsigned int, ControlInfoMap> &entityControls,
-		       const ipa::rpi::ConfigInput &ipaConfig,
-		       ipa::rpi::ConfigOutput *result, int32_t *ret)
+		       const ipa::RPi::ConfigInput &ipaConfig,
+		       ipa::RPi::ConfigOutput *result, int32_t *ret)
 {
 	if (entityControls.size() != 2) {
 		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
@@ -344,7 +344,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		helper_->GetDelays(exposureDelay, gainDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
-		result->params |= ipa::rpi::ConfigSensorParams;
+		result->params |= ipa::RPi::ConfigSensorParams;
 		result->sensorConfig.gainDelay = gainDelay;
 		result->sensorConfig.exposureDelay = exposureDelay;
 		result->sensorConfig.vblank = exposureDelay;
@@ -360,14 +360,14 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 	if (ipaConfig.lsTableHandle.isValid()) {
 		/* Remove any previous table, if there was one. */
 		if (lsTable_) {
-			munmap(lsTable_, ipa::rpi::MaxLsGridSize);
+			munmap(lsTable_, ipa::RPi::MaxLsGridSize);
 			lsTable_ = nullptr;
 		}
 
 		/* Map the LS table buffer into user space. */
 		lsTableHandle_ = std::move(ipaConfig.lsTableHandle);
 		if (lsTableHandle_.isValid()) {
-			lsTable_ = mmap(nullptr, ipa::rpi::MaxLsGridSize, PROT_READ | PROT_WRITE,
+			lsTable_ = mmap(nullptr, ipa::RPi::MaxLsGridSize, PROT_READ | PROT_WRITE,
 					MAP_SHARED, lsTableHandle_.fd(), 0);
 
 			if (lsTable_ == MAP_FAILED) {
@@ -432,7 +432,7 @@ void IPARPi::signalStatReady(uint32_t bufferId)
 
 	reportMetadata();
 
-	statsMetadataComplete.emit(bufferId & ipa::rpi::MaskID, libcameraMetadata_);
+	statsMetadataComplete.emit(bufferId & ipa::RPi::MaskID, libcameraMetadata_);
 }
 
 void IPARPi::signalQueueRequest(const ControlList &controls)
@@ -440,7 +440,7 @@ void IPARPi::signalQueueRequest(const ControlList &controls)
 	queueRequest(controls);
 }
 
-void IPARPi::signalIspPrepare(const ipa::rpi::ISPConfig &data)
+void IPARPi::signalIspPrepare(const ipa::RPi::ISPConfig &data)
 {
 	/*
 	 * At start-up, or after a mode-switch, we may want to
@@ -451,7 +451,7 @@ void IPARPi::signalIspPrepare(const ipa::rpi::ISPConfig &data)
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
-	runIsp.emit(data.bayerBufferId & ipa::rpi::MaskID);
+	runIsp.emit(data.bayerBufferId & ipa::RPi::MaskID);
 }
 
 void IPARPi::reportMetadata()
@@ -910,7 +910,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 {
-	embeddedComplete.emit(bufferId & ipa::rpi::MaskID);
+	embeddedComplete.emit(bufferId & ipa::RPi::MaskID);
 }
 
 void IPARPi::prepareISP(unsigned int bufferId)
@@ -1275,7 +1275,7 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 		.gain_format = GAIN_FORMAT_U4P10
 	};
 
-	if (!lsTable_ || w * h * 4 * sizeof(uint16_t) > ipa::rpi::MaxLsGridSize) {
+	if (!lsTable_ || w * h * 4 * sizeof(uint16_t) > ipa::RPi::MaxLsGridSize) {
 		LOG(IPARPI, Error) << "Do not have a correctly allocate lens shading table!";
 		return;
 	}

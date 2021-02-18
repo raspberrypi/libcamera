@@ -868,10 +868,23 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
  */
 int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 {
+	/*
+	 * \todo The constrols intialized here depend on sensor configuration
+	 * and their limits should be updated once the configuration gets
+	 * changed.
+	 *
+	 * Initialize the sensor using its resolution and compute the control
+	 * limits.
+	 */
 	CameraSensor *sensor = data->cio2_.sensor();
-	CameraSensorInfo sensorInfo{};
+	V4L2SubdeviceFormat sensorFormat = {};
+	sensorFormat.size = sensor->resolution();
+	int ret = sensor->setFormat(&sensorFormat);
+	if (ret)
+		return ret;
 
-	int ret = sensor->sensorInfo(&sensorInfo);
+	CameraSensorInfo sensorInfo{};
+	ret = sensor->sensorInfo(&sensorInfo);
 	if (ret)
 		return ret;
 
@@ -880,7 +893,6 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	/*
 	 * Compute exposure time limits.
 	 *
-	 * \todo The exposure limits depend on the sensor configuration.
 	 * Initialize the control using the line length and pixel rate of the
 	 * current configuration converted to microseconds. Use the
 	 * V4L2_CID_EXPOSURE control to get exposure min, max and default and
@@ -906,24 +918,11 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	/*
 	 * Compute the scaler crop limits.
 	 *
-	 * \todo The scaler crop limits depend on the sensor configuration. It
-	 * should be updated when a new configuration is applied. To initialize
-	 * the control use the 'Viewfinder' configuration (1280x720) as the
-	 * pipeline output resolution and the full sensor size as input frame
-	 * (see the todo note in the validate() function about the usage of the
-	 * sensor's full frame as ImgU input).
+	 * Initialize the control use the 'Viewfinder' configuration (1280x720)
+	 * as the pipeline output resolution and the full sensor size as input
+	 * frame (see the todo note in the validate() function about the usage
+	 * of the sensor's full frame as ImgU input).
 	 */
-
-	/* Re-fetch the sensor info updated to use the largest resolution. */
-	V4L2SubdeviceFormat sensorFormat = {};
-	sensorFormat.size = sensor->resolution();
-	ret = sensor->setFormat(&sensorFormat);
-	if (ret)
-		return ret;
-
-	ret = sensor->sensorInfo(&sensorInfo);
-	if (ret)
-		return ret;
 
 	/*
 	 * The maximum scaler crop rectangle is the analogue crop used to

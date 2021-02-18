@@ -1281,7 +1281,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &controls)
 {
 	if (state_ == State::Stopped)
-		handleState();
+		return;
 
 	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
 
@@ -1314,7 +1314,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 void RPiCameraData::runIsp(uint32_t bufferId)
 {
 	if (state_ == State::Stopped)
-		handleState();
+		return;
 
 	FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
 
@@ -1329,7 +1329,7 @@ void RPiCameraData::runIsp(uint32_t bufferId)
 void RPiCameraData::embeddedComplete(uint32_t bufferId)
 {
 	if (state_ == State::Stopped)
-		handleState();
+		return;
 
 	FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId);
 	handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);

@@ -363,7 +363,9 @@ public:
 
 	bool empty() const { return controls_.empty(); }
 	std::size_t size() const { return controls_.size(); }
+
 	void clear() { controls_.clear(); }
+	void merge(const ControlList &source);
 
 	bool contains(const ControlId &id) const;
 	bool contains(unsigned int id) const;

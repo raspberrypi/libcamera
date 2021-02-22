@@ -875,6 +875,36 @@ ControlList::ControlList(const ControlInfoMap &infoMap, ControlValidator *valida
  */
 
 /**
+ * \brief Merge the \a source into the ControlList
+ * \param[in] source The ControlList to merge into this object
+ *
+ * Merging two control lists copies elements from the \a source and inserts
+ * them in *this. If the \a source contains elements whose key is already
+ * present in *this, then those elements are not overwritten.
+ *
+ * Only control lists created from the same ControlIdMap or ControlInfoMap may
+ * be merged. Attempting to do otherwise results in undefined behaviour.
+ *
+ * \todo Reimplement or implement an overloaded version which internally uses
+ * std::unordered_map::merge() and accepts a non-const argument.
+ */
+void ControlList::merge(const ControlList &source)
+{
+	ASSERT(idmap_ == source.idmap_);
+
+	for (const auto &ctrl : source) {
+		if (contains(ctrl.first)) {
+			const ControlId *id = idmap_->at(ctrl.first);
+			LOG(Controls, Warning)
+				<< "Control " << id->name() << " not overwritten";
+			continue;
+		}
+
+		set(ctrl.first, ctrl.second);
+	}
+}
+
+/**
  * \brief Check if the list contains a control with the specified \a id
  * \param[in] id The control ID
  *

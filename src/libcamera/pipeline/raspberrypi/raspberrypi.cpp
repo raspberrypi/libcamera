@@ -1289,7 +1289,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 
 	/* Fill the Request metadata buffer with what the IPA has provided */
 	Request *request = requestQueue_.front();
-	request->metadata() = std::move(controls);
+	request->metadata() = controls;
 
 	/*
 	 * Also update the ScalerCrop in the metadata with what we actually
@@ -1338,7 +1338,7 @@ void RPiCameraData::embeddedComplete(uint32_t bufferId)
 
 void RPiCameraData::setIspControls(const ControlList &controls)
 {
-	ControlList ctrls = std::move(controls);
+	ControlList ctrls = controls;
 
 	if (ctrls.contains(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING)) {
 		ControlValue &value =

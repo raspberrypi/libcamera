@@ -111,6 +111,17 @@ py_modules = []
 # Libraries used by multiple components
 liblttng = cc.find_library('lttng-ust', required : get_option('tracing'))
 
+# Pipeline handlers
+#
+# Tests require the vimc pipeline handler, include it automatically when tests
+# are enabled.
+pipelines = get_option('pipelines')
+
+if get_option('test') and 'vimc' not in pipelines
+    message('Enabling vimc pipeline handler to support tests')
+    pipelines += ['vimc']
+endif
+
 # Utilities are parsed first to provide support for other components.
 subdir('utils')
 
@@ -156,5 +167,5 @@ py_mod.find_installation('python3', modules: py_modules)
 
 ## Summarise Configurations
 summary({
-            'Enabled pipelines': get_option('pipelines'),
+            'Enabled pipelines': pipelines,
         }, section : 'Configuration')

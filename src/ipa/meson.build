@@ -22,7 +22,7 @@ ipa_sign = files('ipa-sign.sh')
 ipas = ['ipu3', 'raspberrypi', 'rkisp1', 'vimc']
 ipa_names = []
 
-foreach pipeline : get_option('pipelines')
+foreach pipeline : pipelines
     if ipas.contains(pipeline)
         subdir(pipeline)
         ipa_names += join_paths(ipa_install_dir, ipa_name + '.so')

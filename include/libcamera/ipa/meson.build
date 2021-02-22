@@ -72,7 +72,7 @@ ipa_mojoms = []
 foreach file : ipa_mojom_files
     name = file.split('.')[0]
 
-    if not get_option('pipelines').contains(name)
+    if name not in pipelines
         continue
     endif
 

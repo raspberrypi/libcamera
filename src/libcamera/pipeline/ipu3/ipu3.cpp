@@ -56,7 +56,7 @@ class IPU3CameraData : public CameraData
 {
 public:
 	IPU3CameraData(PipelineHandler *pipe)
-		: CameraData(pipe), exposureTime_(0)
+		: CameraData(pipe), exposureTime_(0), supportsFlips_(false)
 	{
 	}
 

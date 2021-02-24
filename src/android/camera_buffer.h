@@ -10,11 +10,9 @@
 #include <hardware/camera3.h>
 
 #include <libcamera/class.h>
-#include <libcamera/internal/buffer.h>
 #include <libcamera/span.h>
 
-class CameraBuffer final : public libcamera::Extensible,
-			   public libcamera::MappedBuffer
+class CameraBuffer final : public libcamera::Extensible
 {
 	LIBCAMERA_DECLARE_PRIVATE(CameraBuffer)
 

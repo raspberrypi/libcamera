@@ -21,13 +21,13 @@ public:
 	int configure(const libcamera::StreamConfiguration &incfg,
 		      const libcamera::StreamConfiguration &outcfg) override;
 	int process(const libcamera::FrameBuffer &source,
-		    libcamera::MappedBuffer *destination,
+		    CameraBuffer *destination,
 		    const CameraMetadata &requestMetadata,
 		    CameraMetadata *metadata) override;
 
 private:
 	bool isValidBuffers(const libcamera::FrameBuffer &source,
-			    const libcamera::MappedBuffer &destination) const;
+			    const CameraBuffer &destination) const;
 	void calculateLengths(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg);
 

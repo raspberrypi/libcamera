@@ -48,7 +48,7 @@ int PostProcessorYuv::configure(const StreamConfiguration &inCfg,
 }
 
 int PostProcessorYuv::process(const FrameBuffer &source,
-			      libcamera::MappedBuffer *destination,
+			      CameraBuffer *destination,
 			      [[maybe_unused]] const CameraMetadata &requestMetadata,
 			      [[maybe_unused]] CameraMetadata *metadata)
 {
@@ -66,9 +66,9 @@ int PostProcessorYuv::process(const FrameBuffer &source,
 				    sourceMapped.maps()[1].data(),
 				    sourceStride_[1],
 				    sourceSize_.width, sourceSize_.height,
-				    destination->maps()[0].data(),
+				    destination->plane(0).data(),
 				    destinationStride_[0],
-				    destination->maps()[1].data(),
+				    destination->plane(1).data(),
 				    destinationStride_[1],
 				    destinationSize_.width,
 				    destinationSize_.height,
@@ -82,16 +82,16 @@ int PostProcessorYuv::process(const FrameBuffer &source,
 }
 
 bool PostProcessorYuv::isValidBuffers(const FrameBuffer &source,
-				      const libcamera::MappedBuffer &destination) const
+				      const CameraBuffer &destination) const
 {
 	if (source.planes().size() != 2) {
 		LOG(YUV, Error) << "Invalid number of source planes: "
 				<< source.planes().size();
 		return false;
 	}
-	if (destination.maps().size() != 2) {
+	if (destination.numPlanes() != 2) {
 		LOG(YUV, Error) << "Invalid number of destination planes: "
-				<< destination.maps().size();
+				<< destination.numPlanes();
 		return false;
 	}
 
@@ -106,12 +106,12 @@ bool PostProcessorYuv::isValidBuffers(const FrameBuffer &source,
 			<< sourceLength_[1] << "}";
 		return false;
 	}
-	if (destination.maps()[0].size() < destinationLength_[0] ||
-	    destination.maps()[1].size() < destinationLength_[1]) {
+	if (destination.plane(0).size() < destinationLength_[0] ||
+	    destination.plane(1).size() < destinationLength_[1]) {
 		LOG(YUV, Error)
 			<< "The destination planes lengths are too small, actual size: {"
-			<< destination.maps()[0].size() << ", "
-			<< destination.maps()[1].size()
+			<< destination.plane(0).size() << ", "
+			<< destination.plane(1).size()
 			<< "}, expected size: {"
 			<< sourceLength_[0] << ", "
 			<< sourceLength_[1] << "}";

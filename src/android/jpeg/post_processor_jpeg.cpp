@@ -83,12 +83,14 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 }
 
 int PostProcessorJpeg::process(const FrameBuffer &source,
-			       libcamera::MappedBuffer *destination,
+			       CameraBuffer *destination,
 			       const CameraMetadata &requestMetadata,
 			       CameraMetadata *resultMetadata)
 {
 	if (!encoder_)
 		return 0;
+
+	ASSERT(destination->numPlanes() == 1);
 
 	camera_metadata_ro_entry_t entry;
 	int ret;
@@ -172,28 +174,17 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	const uint8_t quality = ret ? *entry.data.u8 : 95;
 	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &quality, 1);
 
-	int jpeg_size = encoder_->encode(source, destination->maps()[0],
+	int jpeg_size = encoder_->encode(source, destination->plane(0),
 					 exif.data(), quality);
 	if (jpeg_size < 0) {
 		LOG(JPEG, Error) << "Failed to encode stream image";
 		return jpeg_size;
 	}
 
-	/*
-	 * Fill in the JPEG blob header.
-	 *
-	 * The mapped size of the buffer is being returned as
-	 * substantially larger than the requested JPEG_MAX_SIZE
-	 * (which is referenced from maxJpegBufferSize_). Utilise
-	 * this static size to ensure the correct offset of the blob is
-	 * determined.
-	 *
-	 * \todo Investigate if the buffer size mismatch is an issue or
-	 * expected behaviour.
-	 */
-	uint8_t *resultPtr = destination->maps()[0].data() +
-			     cameraDevice_->maxJpegBufferSize() -
-			     sizeof(struct camera3_jpeg_blob);
+	/* Fill in the JPEG blob header. */
+	uint8_t *resultPtr = destination->plane(0).data()
+			   + destination->plane(0).size()
+			   - sizeof(struct camera3_jpeg_blob);
 	auto *blob = reinterpret_cast<struct camera3_jpeg_blob *>(resultPtr);
 	blob->jpeg_blob_id = CAMERA3_JPEG_BLOB_ID;
 	blob->jpeg_size = jpeg_size;

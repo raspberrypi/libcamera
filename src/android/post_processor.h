@@ -12,6 +12,8 @@
 
 #include <libcamera/internal/buffer.h>
 
+#include "camera_buffer.h"
+
 class CameraMetadata;
 
 class PostProcessor
@@ -22,7 +24,7 @@ public:
 	virtual int configure(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg) = 0;
 	virtual int process(const libcamera::FrameBuffer &source,
-			    libcamera::MappedBuffer *destination,
+			    CameraBuffer *destination,
 			    const CameraMetadata &requestMetadata,
 			    CameraMetadata *resultMetadata) = 0;
 };

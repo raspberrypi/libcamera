@@ -7,6 +7,7 @@
 
 #include "camera_stream.h"
 
+#include "camera_buffer.h"
 #include "camera_device.h"
 #include "camera_metadata.h"
 #include "jpeg/post_processor_jpeg.h"
@@ -96,15 +97,24 @@ int CameraStream::configure()
 }
 
 int CameraStream::process(const libcamera::FrameBuffer &source,
-			  libcamera::MappedBuffer *destination,
+			  buffer_handle_t camera3Dest,
 			  const CameraMetadata &requestMetadata,
 			  CameraMetadata *resultMetadata)
 {
 	if (!postProcessor_)
 		return 0;
 
-	return postProcessor_->process(source, destination,
-				       requestMetadata, resultMetadata);
+	/*
+	 * \todo Buffer mapping and processing should be moved to a
+	 * separate thread.
+	 */
+	CameraBuffer dest(camera3Dest, PROT_READ | PROT_WRITE);
+	if (!dest.isValid()) {
+		LOG(HAL, Error) << "Failed to map android blob buffer";
+		return -EINVAL;
+	}
+
+	return postProcessor_->process(source, &dest, requestMetadata, resultMetadata);
 }
 
 FrameBuffer *CameraStream::getBuffer()

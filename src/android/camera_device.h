@@ -24,7 +24,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 
-#include "camera_buffer.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"
 #include "camera_worker.h"

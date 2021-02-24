@@ -1857,19 +1857,8 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		/*
-		 * \todo Buffer mapping and compression should be moved to a
-		 * separate thread.
-		 */
-
-		CameraBuffer dest(*descriptor->buffers_[i].buffer,
-				  PROT_READ | PROT_WRITE);
-		if (!dest.isValid()) {
-			LOG(HAL, Error) << "Failed to map android blob buffer";
-			continue;
-		}
-
-		int ret = cameraStream->process(*src, &dest,
+		int ret = cameraStream->process(*src,
+						*descriptor->buffers_[i].buffer,
 						descriptor->settings_,
 						resultMetadata.get());
 		if (ret) {

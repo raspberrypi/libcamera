@@ -27,6 +27,8 @@ public:
 	unsigned int numPlanes() const;
 
 	Span<uint8_t> plane(unsigned int plane);
+
+	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 };
 
 CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
@@ -77,6 +79,12 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 	return maps_[plane];
 }
 
+size_t CameraBuffer::Private::jpegBufferSize(size_t maxJpegBufferSize) const
+{
+	return std::min<unsigned int>(maps_[0].size(),
+				      maxJpegBufferSize);
+}
+
 CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer, int flags)
 	: Extensible(new Private(this, camera3Buffer, flags))
 {
@@ -108,4 +116,10 @@ Span<uint8_t> CameraBuffer::plane(unsigned int plane)
 {
 	Private *const d = LIBCAMERA_D_PTR();
 	return d->plane(plane);
+}
+
+size_t CameraBuffer::jpegBufferSize(size_t maxJpegBufferSize) const
+{
+	const Private *const d = LIBCAMERA_D_PTR();
+	return d->jpegBufferSize(maxJpegBufferSize);
 }

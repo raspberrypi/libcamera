@@ -26,6 +26,8 @@ public:
 
 	libcamera::Span<const uint8_t> plane(unsigned int plane) const;
 	libcamera::Span<uint8_t> plane(unsigned int plane);
+
+	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 };
 
 #endif /* __ANDROID_CAMERA_BUFFER_H__ */

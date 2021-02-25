@@ -21,8 +21,6 @@ LOG_DEFINE_CATEGORY(RPiAwb)
 #define AWB_STATS_SIZE_X DEFAULT_AWB_REGIONS_X
 #define AWB_STATS_SIZE_Y DEFAULT_AWB_REGIONS_Y
 
-const double Awb::RGB::INVALID = -1.0;
-
 // todo - the locking in this algorithm needs some tidying up as has been done
 // elsewhere (ALSC and AGC).
 
@@ -340,7 +338,7 @@ static void generate_stats(std::vector<Awb::RGB> &zones,
 			   double min_G)
 {
 	for (int i = 0; i < AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y; i++) {
-		Awb::RGB zone; // this is "invalid", unless R gets overwritten later
+		Awb::RGB zone;
 		double counted = stats[i].counted;
 		if (counted >= min_pixels) {
 			zone.G = stats[i].g_sum / counted;

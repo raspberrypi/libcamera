@@ -90,21 +90,16 @@ public:
 	void Prepare(Metadata *image_metadata) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 	struct RGB {
-		RGB(double _R = INVALID, double _G = INVALID,
-		    double _B = INVALID)
+		RGB(double _R = -1.0, double _G = -1.0, double _B = -1.0)
 			: R(_R), G(_G), B(_B)
 		{
 		}
 		double R, G, B;
-		static const double INVALID;
-		bool Valid() const { return G != INVALID; }
-		bool Invalid() const { return G == INVALID; }
 		RGB &operator+=(RGB const &other)
 		{
 			R += other.R, G += other.G, B += other.B;
 			return *this;
 		}
-		RGB Square() const { return RGB(R * R, G * G, B * B); }
 	};
 
 private:

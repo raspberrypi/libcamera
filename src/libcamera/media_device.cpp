@@ -50,7 +50,7 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * entity to entity through pads and links as exposed by the corresponding
  * classes.
  *
- * Media device can be claimed for exclusive use with acquire(), released with
+ * Media devices can be claimed for exclusive use with acquire(), released with
  * release() and tested with busy(). This mechanism is aimed at pipeline
  * managers to claim media devices they support during enumeration.
  */

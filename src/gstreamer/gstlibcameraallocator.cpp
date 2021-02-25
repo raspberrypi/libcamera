@@ -183,13 +183,15 @@ gst_libcamera_allocator_class_init(GstLibcameraAllocatorClass *klass)
 }
 
 GstLibcameraAllocator *
-gst_libcamera_allocator_new(std::shared_ptr<Camera> camera)
+gst_libcamera_allocator_new(std::shared_ptr<Camera> camera,
+			    CameraConfiguration *config_)
 {
 	auto *self = GST_LIBCAMERA_ALLOCATOR(g_object_new(GST_TYPE_LIBCAMERA_ALLOCATOR,
 							  nullptr));
 
 	self->fb_allocator = new FrameBufferAllocator(camera);
-	for (Stream *stream : camera->streams()) {
+	for (StreamConfiguration &streamCfg : *config_) {
+		Stream *stream = streamCfg.stream();
 		gint ret;
 
 		ret = self->fb_allocator->allocate(stream);

@@ -436,7 +436,7 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		return;
 	}
 
-	self->allocator = gst_libcamera_allocator_new(state->cam_);
+	self->allocator = gst_libcamera_allocator_new(state->cam_, state->config_.get());
 	if (!self->allocator) {
 		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
 				  ("Failed to allocate memory"),

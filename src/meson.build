@@ -11,6 +11,8 @@ else
     ipa_sign_module = false
 endif
 
+libcamera_objects = []
+
 # The 'android' subdir must be processed first, and the build targets
 # are included directly into the libcamera library when this is enabled.
 subdir('android')

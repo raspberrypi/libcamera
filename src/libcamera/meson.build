@@ -149,6 +149,7 @@ libcamera = shared_library('camera',
                            install : true,
                            link_with : libcamera_link_with,
                            include_directories : includes,
+                           objects : libcamera_objects,
                            build_rpath : '/',
                            dependencies : libcamera_deps)
 

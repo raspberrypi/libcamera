@@ -37,6 +37,8 @@ if android_enabled
     android_deps += [libyuv_dep]
 endif
 
+subdir('cros')
+
 android_hal_sources = files([
     'camera3_hal.cpp',
     'camera_hal_manager.cpp',

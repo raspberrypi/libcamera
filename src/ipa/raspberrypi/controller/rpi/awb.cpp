@@ -169,6 +169,7 @@ void Awb::Initialise()
 			sync_results_.gain_b = 1.0;
 	}
 	prev_sync_results_ = sync_results_;
+	async_results_ = sync_results_;
 }
 
 unsigned int Awb::GetConvergenceFrames() const
@@ -345,9 +346,9 @@ static void generate_stats(std::vector<Awb::RGB> &zones,
 			if (zone.G >= min_G) {
 				zone.R = stats[i].r_sum / counted;
 				zone.B = stats[i].b_sum / counted;
+				zones.push_back(zone);
 			}
 		}
-		zones.push_back(zone);
 	}
 }
 

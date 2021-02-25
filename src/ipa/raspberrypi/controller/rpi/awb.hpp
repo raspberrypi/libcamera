@@ -90,7 +90,7 @@ public:
 	void Prepare(Metadata *image_metadata) override;
 	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
 	struct RGB {
-		RGB(double _R = -1.0, double _G = -1.0, double _B = -1.0)
+		RGB(double _R = 0, double _G = 0, double _B = 0)
 			: R(_R), G(_G), B(_B)
 		{
 		}

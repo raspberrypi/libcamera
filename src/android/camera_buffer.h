@@ -30,4 +30,37 @@ public:
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 };
 
+#define PUBLIC_CAMERA_BUFFER_IMPLEMENTATION				\
+CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer, int flags)	\
+	: Extensible(new Private(this, camera3Buffer, flags))		\
+{									\
+}									\
+CameraBuffer::~CameraBuffer()						\
+{									\
+}									\
+bool CameraBuffer::isValid() const					\
+{									\
+	const Private *const d = LIBCAMERA_D_PTR();			\
+	return d->isValid();						\
+}									\
+unsigned int CameraBuffer::numPlanes() const				\
+{									\
+	const Private *const d = LIBCAMERA_D_PTR();			\
+	return d->numPlanes();						\
+}									\
+Span<const uint8_t> CameraBuffer::plane(unsigned int plane) const	\
+{									\
+	const Private *const d = LIBCAMERA_D_PTR();			\
+	return const_cast<Private *>(d)->plane(plane);			\
+}									\
+Span<uint8_t> CameraBuffer::plane(unsigned int plane)			\
+{									\
+	Private *const d = LIBCAMERA_D_PTR();				\
+	return d->plane(plane);						\
+}									\
+size_t CameraBuffer::jpegBufferSize(size_t maxJpegBufferSize) const	\
+{									\
+	const Private *const d = LIBCAMERA_D_PTR();			\
+	return d->jpegBufferSize(maxJpegBufferSize);			\
+}
 #endif /* __ANDROID_CAMERA_BUFFER_H__ */

@@ -14,7 +14,7 @@
 class CameraBuffer : public libcamera::MappedBuffer
 {
 public:
-	CameraBuffer(const buffer_handle_t camera3buffer, int flags);
+	CameraBuffer(buffer_handle_t camera3Buffer, int flags);
 	~CameraBuffer();
 };
 

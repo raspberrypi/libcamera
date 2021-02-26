@@ -13,16 +13,16 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(HAL)
 
-CameraBuffer::CameraBuffer(const buffer_handle_t camera3buffer, int flags)
+CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer, int flags)
 {
-	maps_.reserve(camera3buffer->numFds);
+	maps_.reserve(camera3Buffer->numFds);
 	error_ = 0;
 
-	for (int i = 0; i < camera3buffer->numFds; i++) {
-		if (camera3buffer->data[i] == -1)
+	for (int i = 0; i < camera3Buffer->numFds; i++) {
+		if (camera3Buffer->data[i] == -1)
 			continue;
 
-		off_t length = lseek(camera3buffer->data[i], 0, SEEK_END);
+		off_t length = lseek(camera3Buffer->data[i], 0, SEEK_END);
 		if (length < 0) {
 			error_ = -errno;
 			LOG(HAL, Error) << "Failed to query plane length";
@@ -30,7 +30,7 @@ CameraBuffer::CameraBuffer(const buffer_handle_t camera3buffer, int flags)
 		}
 
 		void *address = mmap(nullptr, length, flags, MAP_SHARED,
-				     camera3buffer->data[i], 0);
+				     camera3Buffer->data[i], 0);
 		if (address == MAP_FAILED) {
 			error_ = -errno;
 			LOG(HAL, Error) << "Failed to mmap plane";

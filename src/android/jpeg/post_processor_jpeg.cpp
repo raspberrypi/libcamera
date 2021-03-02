@@ -183,7 +183,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 
 	/* Fill in the JPEG blob header. */
 	uint8_t *resultPtr = destination->plane(0).data()
-			   + destination->plane(0).size()
+			   + destination->jpegBufferSize(cameraDevice_->maxJpegBufferSize())
 			   - sizeof(struct camera3_jpeg_blob);
 	auto *blob = reinterpret_cast<struct camera3_jpeg_blob *>(resultPtr);
 	blob->jpeg_blob_id = CAMERA3_JPEG_BLOB_ID;

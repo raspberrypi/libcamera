@@ -177,12 +177,6 @@ public:
 	/* Stores the ids of the buffers mapped in the IPA. */
 	std::unordered_set<unsigned int> ipaBuffers_;
 
-	/*
-	 * Map of (internal) mmaped embedded data buffers, to avoid having to
-	 * map/unmap on every frame.
-	 */
-	std::map<unsigned int, MappedFrameBuffer> mappedEmbeddedBuffers_;
-
 	/* DMAHEAP allocation helper. */
 	RPi::DmaHeap dmaHeap_;
 	FileDescriptor lsTable_;
@@ -636,14 +630,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 		if (isRaw(cfg.pixelFormat)) {
 			cfg.setStream(&data->unicam_[Unicam::Image]);
-			/*
-			 * We must set both Unicam streams as external, even
-			 * though the application may only request RAW frames.
-			 * This is because we match timestamps on both streams
-			 * to synchronise buffers.
-			 */
 			data->unicam_[Unicam::Image].setExternal(true);
-			data->unicam_[Unicam::Embedded].setExternal(true);
 			continue;
 		}
 
@@ -715,17 +702,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 	}
 
-	/* Unicam embedded data output format. */
-	format = {};
-	format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-	LOG(RPI, Debug) << "Setting embedded data format.";
-	ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
-				<< format.toString();
-		return ret;
-	}
-
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &testCrop);
@@ -741,6 +717,41 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	ret = data->configureIPA(config);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
+
+	/*
+	 * The IPA will set data->sensorMetadata_ to true if embedded data is
+	 * supported on this sensor. If so, open the Unicam embedded data
+	 * node and configure the output format.
+	 */
+	if (data->sensorMetadata_) {
+		format = {};
+		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
+		LOG(RPI, Debug) << "Setting embedded data format.";
+		data->unicam_[Unicam::Embedded].dev()->open();
+		ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
+					<< format.toString();
+			return ret;
+		}
+
+		/*
+		 * If a RAW/Bayer stream has been requested by the application,
+		 * we must set both Unicam streams as external, even though the
+		 * application may only request RAW frames. This is because we
+		 * match timestamps on both streams to synchronise buffers.
+		 */
+		if (rawStream)
+			data->unicam_[Unicam::Embedded].setExternal(true);
+	} else {
+		/*
+		 * No embedded data present, so we do not want to iterate over
+		 * the embedded data stream when starting and stopping.
+		 */
+		data->streams_.erase(std::remove(data->streams_.begin(), data->streams_.end(),
+						 &data->unicam_[Unicam::Embedded]),
+				     data->streams_.end());
+	}
 
 	/*
 	 * Update the ScalerCropMaximum to the correct value for this camera mode.
@@ -949,10 +960,16 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	for (auto &stream : data->isp_)
 		data->streams_.push_back(&stream);
 
-	/* Open all Unicam and ISP streams. */
+	/*
+	 * Open all Unicam and ISP streams. The exception is the embedded data
+	 * stream, which only gets opened if the IPA reports that the sensor
+	 * supports embedded data. This happens in RPiCameraData::configureIPA().
+	 */
 	for (auto const stream : data->streams_) {
-		if (stream->dev()->open())
-			return false;
+		if (stream != &data->unicam_[Unicam::Embedded]) {
+			if (stream->dev()->open())
+				return false;
+		}
 	}
 
 	/* Wire up all the buffer connections. */
@@ -1109,19 +1126,14 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 			return ret;
 	}
 
-	if (!data->sensorMetadata_) {
-		for (auto const &it : data->unicam_[Unicam::Embedded].getBuffers()) {
-			MappedFrameBuffer fb(it.second, PROT_READ | PROT_WRITE);
-			data->mappedEmbeddedBuffers_.emplace(it.first, std::move(fb));
-		}
-	}
-
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
 	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::RPi::MaskStats);
-	mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(), ipa::RPi::MaskEmbeddedData);
+	if (data->sensorMetadata_)
+		mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(),
+			   ipa::RPi::MaskEmbeddedData);
 
 	return 0;
 }
@@ -1154,7 +1166,6 @@ void PipelineHandlerRPi::freeBuffers(Camera *camera)
 	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
 	data->ipa_->unmapBuffers(ipaBuffers);
 	data->ipaBuffers_.clear();
-	data->mappedEmbeddedBuffers_.clear();
 
 	for (auto const stream : data->streams_)
 		stream->releaseBuffers();
@@ -1653,7 +1664,7 @@ void RPiCameraData::tryRunPipeline()
 
 	/* If any of our request or buffer queues are empty, we cannot proceed. */
 	if (state_ != State::Idle || requestQueue_.empty() ||
-	    bayerQueue_.empty() || embeddedQueue_.empty())
+	    bayerQueue_.empty() || (embeddedQueue_.empty() && sensorMetadata_))
 		return;
 
 	if (!findMatchingBuffers(bayerFrame, embeddedBuffer))
@@ -1676,17 +1687,24 @@ void RPiCameraData::tryRunPipeline()
 	state_ = State::Busy;
 
 	unsigned int bayerId = unicam_[Unicam::Image].getBufferId(bayerFrame.buffer);
-	unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
 	LOG(RPI, Debug) << "Signalling signalIspPrepare:"
-			<< " Bayer buffer id: " << bayerId
-			<< " Embedded buffer id: " << embeddedId;
+			<< " Bayer buffer id: " << bayerId;
 
 	ipa::RPi::ISPConfig ispPrepare;
-	ispPrepare.embeddedBufferId = ipa::RPi::MaskEmbeddedData | embeddedId;
 	ispPrepare.bayerBufferId = ipa::RPi::MaskBayerData | bayerId;
-	ispPrepare.embeddedBufferPresent = sensorMetadata_;
 	ispPrepare.controls = std::move(bayerFrame.controls);
+
+	if (embeddedBuffer) {
+		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
+
+		ispPrepare.embeddedBufferId = ipa::RPi::MaskEmbeddedData | embeddedId;
+		ispPrepare.embeddedBufferPresent = true;
+
+		LOG(RPI, Debug) << "Signalling signalIspPrepare:"
+				<< " Bayer buffer id: " << embeddedId;
+	}
+
 	ipa_->signalIspPrepare(ispPrepare);
 }
 
@@ -1727,6 +1745,18 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 			bool flushedBuffers = false;
 
 			LOG(RPI, Debug) << "Could not find matching embedded buffer";
+
+			if (!sensorMetadata_) {
+				/*
+				 * If there is no sensor metadata, simply return the
+				 * first bayer frame in the queue.
+				 */
+				LOG(RPI, Debug) << "Returning bayer frame without a match";
+				bayerFrame = std::move(bayerQueue_.front());
+				bayerQueue_.pop();
+				embeddedBuffer = nullptr;
+				return true;
+			}
 
 			if (!embeddedQueue_.empty()) {
 				/*

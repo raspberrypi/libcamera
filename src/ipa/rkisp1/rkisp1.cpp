@@ -216,7 +216,7 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 
 		unsigned int value = 0;
 		unsigned int num = 0;
-		for (int i = 0; i < RKISP1_CIF_ISP_AE_MEAN_MAX; i++) {
+		for (int i = 0; i < RKISP1_CIF_ISP_AE_MEAN_MAX_V10; i++) {
 			if (ae->exp_mean[i] <= 15)
 				continue;
 

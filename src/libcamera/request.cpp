@@ -262,7 +262,9 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  */
 void Request::complete()
 {
+	ASSERT(status_ == RequestPending);
 	ASSERT(!hasPendingBuffers());
+
 	status_ = cancelled_ ? RequestCancelled : RequestComplete;
 
 	LOG(Request, Debug)

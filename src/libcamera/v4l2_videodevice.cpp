@@ -711,7 +711,8 @@ void V4L2VideoDevice::close()
 
 std::string V4L2VideoDevice::logPrefix() const
 {
-	return deviceNode() + (V4L2_TYPE_IS_OUTPUT(bufferType_) ? "[out]" : "[cap]");
+	return deviceNode() + "[" + std::to_string(fd()) +
+		(V4L2_TYPE_IS_OUTPUT(bufferType_) ? ":out]" : ":cap]");
 }
 
 /**

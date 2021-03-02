@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019-2020, Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2019-2021, Raspberry Pi (Trading) Ltd.
  *
  * rpi.cpp - Raspberry Pi Image Processing Algorithms
  */
@@ -101,9 +101,11 @@ private:
 	bool validateIspControls();
 	void queueRequest(const ControlList &controls);
 	void returnEmbeddedBuffer(unsigned int bufferId);
-	void prepareISP(unsigned int bufferId);
+	void prepareISP(const ipa::RPi::ISPConfig &data);
 	void reportMetadata();
 	bool parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus);
+	void fillDeviceStatus(uint32_t exposureLines, uint32_t gainCode,
+			      struct DeviceStatus &deviceStatus);
 	void processStats(unsigned int bufferId);
 	void applyFrameDurations(double minFrameDuration, double maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
@@ -447,7 +449,7 @@ void IPARPi::signalIspPrepare(const ipa::RPi::ISPConfig &data)
 	 * avoid running the control algos for a few frames in case
 	 * they are "unreliable".
 	 */
-	prepareISP(data.embeddedBufferId);
+	prepareISP(data);
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
@@ -913,67 +915,84 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 	embeddedComplete.emit(bufferId & ipa::RPi::MaskID);
 }
 
-void IPARPi::prepareISP(unsigned int bufferId)
+void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 {
 	struct DeviceStatus deviceStatus = {};
-	bool success = parseEmbeddedData(bufferId, deviceStatus);
+	bool success = false;
 
-	/* Done with embedded data now, return to pipeline handler asap. */
-	returnEmbeddedBuffer(bufferId);
+	if (data.embeddedBufferPresent) {
+		/*
+		 * Pipeline handler has supplied us with an embedded data buffer,
+		 * so parse it and extract the exposure and gain.
+		 */
+		success = parseEmbeddedData(data.embeddedBufferId, deviceStatus);
 
-	if (success) {
-		ControlList ctrls(ispCtrls_);
-
-		rpiMetadata_.Clear();
-		rpiMetadata_.Set("device.status", deviceStatus);
-		controller_.Prepare(&rpiMetadata_);
-
-		/* Lock the metadata buffer to avoid constant locks/unlocks. */
-		std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
-
-		AwbStatus *awbStatus = rpiMetadata_.GetLocked<AwbStatus>("awb.status");
-		if (awbStatus)
-			applyAWB(awbStatus, ctrls);
-
-		CcmStatus *ccmStatus = rpiMetadata_.GetLocked<CcmStatus>("ccm.status");
-		if (ccmStatus)
-			applyCCM(ccmStatus, ctrls);
-
-		AgcStatus *dgStatus = rpiMetadata_.GetLocked<AgcStatus>("agc.status");
-		if (dgStatus)
-			applyDG(dgStatus, ctrls);
-
-		AlscStatus *lsStatus = rpiMetadata_.GetLocked<AlscStatus>("alsc.status");
-		if (lsStatus)
-			applyLS(lsStatus, ctrls);
-
-		ContrastStatus *contrastStatus = rpiMetadata_.GetLocked<ContrastStatus>("contrast.status");
-		if (contrastStatus)
-			applyGamma(contrastStatus, ctrls);
-
-		BlackLevelStatus *blackLevelStatus = rpiMetadata_.GetLocked<BlackLevelStatus>("black_level.status");
-		if (blackLevelStatus)
-			applyBlackLevel(blackLevelStatus, ctrls);
-
-		GeqStatus *geqStatus = rpiMetadata_.GetLocked<GeqStatus>("geq.status");
-		if (geqStatus)
-			applyGEQ(geqStatus, ctrls);
-
-		DenoiseStatus *denoiseStatus = rpiMetadata_.GetLocked<DenoiseStatus>("denoise.status");
-		if (denoiseStatus)
-			applyDenoise(denoiseStatus, ctrls);
-
-		SharpenStatus *sharpenStatus = rpiMetadata_.GetLocked<SharpenStatus>("sharpen.status");
-		if (sharpenStatus)
-			applySharpen(sharpenStatus, ctrls);
-
-		DpcStatus *dpcStatus = rpiMetadata_.GetLocked<DpcStatus>("dpc.status");
-		if (dpcStatus)
-			applyDPC(dpcStatus, ctrls);
-
-		if (!ctrls.empty())
-			setIspControls.emit(ctrls);
+		/* Done with embedded data now, return to pipeline handler asap. */
+		returnEmbeddedBuffer(data.embeddedBufferId);
 	}
+
+	if (!success) {
+		/*
+		 * Pipeline handler has not supplied an embedded data buffer,
+		 * or embedded data buffer parsing has failed for some reason,
+		 * so pull the exposure and gain values from the control list.
+		 */
+		int32_t exposureLines = data.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+		int32_t gainCode = data.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
+		fillDeviceStatus(exposureLines, gainCode, deviceStatus);
+	}
+
+	ControlList ctrls(ispCtrls_);
+
+	rpiMetadata_.Clear();
+	rpiMetadata_.Set("device.status", deviceStatus);
+	controller_.Prepare(&rpiMetadata_);
+
+	/* Lock the metadata buffer to avoid constant locks/unlocks. */
+	std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
+
+	AwbStatus *awbStatus = rpiMetadata_.GetLocked<AwbStatus>("awb.status");
+	if (awbStatus)
+		applyAWB(awbStatus, ctrls);
+
+	CcmStatus *ccmStatus = rpiMetadata_.GetLocked<CcmStatus>("ccm.status");
+	if (ccmStatus)
+		applyCCM(ccmStatus, ctrls);
+
+	AgcStatus *dgStatus = rpiMetadata_.GetLocked<AgcStatus>("agc.status");
+	if (dgStatus)
+		applyDG(dgStatus, ctrls);
+
+	AlscStatus *lsStatus = rpiMetadata_.GetLocked<AlscStatus>("alsc.status");
+	if (lsStatus)
+		applyLS(lsStatus, ctrls);
+
+	ContrastStatus *contrastStatus = rpiMetadata_.GetLocked<ContrastStatus>("contrast.status");
+	if (contrastStatus)
+		applyGamma(contrastStatus, ctrls);
+
+	BlackLevelStatus *blackLevelStatus = rpiMetadata_.GetLocked<BlackLevelStatus>("black_level.status");
+	if (blackLevelStatus)
+		applyBlackLevel(blackLevelStatus, ctrls);
+
+	GeqStatus *geqStatus = rpiMetadata_.GetLocked<GeqStatus>("geq.status");
+	if (geqStatus)
+		applyGEQ(geqStatus, ctrls);
+
+	DenoiseStatus *denoiseStatus = rpiMetadata_.GetLocked<DenoiseStatus>("denoise.status");
+	if (denoiseStatus)
+		applyDenoise(denoiseStatus, ctrls);
+
+	SharpenStatus *sharpenStatus = rpiMetadata_.GetLocked<SharpenStatus>("sharpen.status");
+	if (sharpenStatus)
+		applySharpen(sharpenStatus, ctrls);
+
+	DpcStatus *dpcStatus = rpiMetadata_.GetLocked<DpcStatus>("dpc.status");
+	if (dpcStatus)
+		applyDPC(dpcStatus, ctrls);
+
+	if (!ctrls.empty())
+		setIspControls.emit(ctrls);
 }
 
 bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus)
@@ -989,6 +1008,7 @@ bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &devic
 	RPiController::MdParser::Status status = helper_->Parser().Parse(mem.data());
 	if (status != RPiController::MdParser::Status::OK) {
 		LOG(IPARPI, Error) << "Embedded Buffer parsing failed, error " << status;
+		return false;
 	} else {
 		uint32_t exposureLines, gainCode;
 		if (helper_->Parser().GetExposureLines(exposureLines) != RPiController::MdParser::Status::OK) {
@@ -996,19 +1016,27 @@ bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &devic
 			return false;
 		}
 
-		deviceStatus.shutter_speed = helper_->Exposure(exposureLines);
 		if (helper_->Parser().GetGainCode(gainCode) != RPiController::MdParser::Status::OK) {
 			LOG(IPARPI, Error) << "Gain failed";
 			return false;
 		}
 
-		deviceStatus.analogue_gain = helper_->Gain(gainCode);
-		LOG(IPARPI, Debug) << "Metadata - Exposure : "
-				   << deviceStatus.shutter_speed << " Gain : "
-				   << deviceStatus.analogue_gain;
+		fillDeviceStatus(exposureLines, gainCode, deviceStatus);
 	}
 
 	return true;
+}
+
+void IPARPi::fillDeviceStatus(uint32_t exposureLines, uint32_t gainCode,
+			      struct DeviceStatus &deviceStatus)
+{
+	deviceStatus.shutter_speed = helper_->Exposure(exposureLines);
+	deviceStatus.analogue_gain = helper_->Gain(gainCode);
+
+	LOG(IPARPI, Debug) << "Metadata - Exposure : "
+			   << deviceStatus.shutter_speed
+			   << " Gain : "
+			   << deviceStatus.analogue_gain;
 }
 
 void IPARPi::processStats(unsigned int bufferId)

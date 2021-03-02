@@ -29,6 +29,8 @@ struct SensorConfig {
 struct ISPConfig {
 	uint32 embeddedBufferId;
 	uint32 bayerBufferId;
+	bool embeddedBufferPresent;
+	ControlList controls;
 };
 
 struct ConfigInput {

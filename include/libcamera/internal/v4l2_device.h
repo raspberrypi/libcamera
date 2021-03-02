@@ -50,7 +50,7 @@ protected:
 
 	int ioctl(unsigned long request, void *argp);
 
-	int fd() { return fd_; }
+	int fd() const { return fd_; }
 
 private:
 	void listControls();

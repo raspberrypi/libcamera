@@ -1391,6 +1391,16 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	struct v4l2_buffer buf = {};
 	int ret;
 
+	/*
+	 * Pipeline handlers should not requeue buffers after releasing the
+	 * buffers on the device. Any occurence of this error should be fixed
+	 * in the pipeline handler directly.
+	 */
+	if (!cache_) {
+		LOG(V4L2, Fatal) << "No BufferCache available to queue.";
+		return -ENOENT;
+	}
+
 	ret = cache_->get(*buffer);
 	if (ret < 0)
 		return ret;

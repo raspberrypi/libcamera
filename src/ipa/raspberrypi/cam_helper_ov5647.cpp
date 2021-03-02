@@ -8,7 +8,6 @@
 #include <assert.h>
 
 #include "cam_helper.hpp"
-#include "md_parser_rpi.hpp"
 
 using namespace RPiController;
 
@@ -38,7 +37,7 @@ private:
  */
 
 CamHelperOv5647::CamHelperOv5647()
-	: CamHelper(new MdParserRPi(), frameIntegrationDiff)
+	: CamHelper(nullptr, frameIntegrationDiff)
 {
 }
 

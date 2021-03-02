@@ -88,8 +88,10 @@ uint32_t CamHelper::GetVBlanking(double &exposure, double minFrameDuration,
 void CamHelper::SetCameraMode(const CameraMode &mode)
 {
 	mode_ = mode;
-	parser_->SetBitsPerPixel(mode.bitdepth);
-	parser_->SetLineLengthBytes(0); /* We use SetBufferSize. */
+	if (parser_) {
+		parser_->SetBitsPerPixel(mode.bitdepth);
+		parser_->SetLineLengthBytes(0); /* We use SetBufferSize. */
+	}
 	initialized_ = true;
 }
 

@@ -432,8 +432,8 @@ bool PipelineHandler::completeBuffer(Request *request, FrameBuffer *buffer)
  * \param[in] request The request that has completed
  *
  * The pipeline handler shall call this method to notify the \a camera that the
- * request has completed. The request is deleted and shall not be accessed once
- * this method returns.
+ * request has completed. The request is no longer managed by the pipeline
+ * handler and shall not be accessed once this method returns.
  *
  * This method ensures that requests will be returned to the application in
  * submission order, the pipeline handler may call it on any complete request

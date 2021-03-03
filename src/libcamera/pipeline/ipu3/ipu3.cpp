@@ -1164,6 +1164,7 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 		 * in action.controls to register additional metadata.
 		 */
 		Request *request = info->request;
+
 		info->metadataProcessed = true;
 		if (frameInfos_.tryComplete(info))
 			pipe_->completeRequest(request);
@@ -1253,8 +1254,17 @@ void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
 		return;
 
 	info->paramDequeued = true;
+
+	/*
+	 * tryComplete() will delete info if it completes the IPU3Frame.
+	 * In that event, we must have obtained the Request before hand.
+	 *
+	 * \todo Improve the FrameInfo API to avoid this type of issue
+	 */
+	Request *request = info->request;
+
 	if (frameInfos_.tryComplete(info))
-		pipe_->completeRequest(info->request);
+		pipe_->completeRequest(request);
 }
 
 void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
@@ -1265,8 +1275,16 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
 		info->metadataProcessed = true;
+
+		/*
+		* tryComplete() will delete info if it completes the IPU3Frame.
+		* In that event, we must have obtained the Request before hand.
+		*/
+		Request *request = info->request;
+
 		if (frameInfos_.tryComplete(info))
-			pipe_->completeRequest(info->request);
+			pipe_->completeRequest(request);
+
 		return;
 	}
 

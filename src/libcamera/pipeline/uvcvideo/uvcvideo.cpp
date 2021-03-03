@@ -429,7 +429,7 @@ std::string PipelineHandlerUVC::generateId(const UVCCameraData *data)
 
 	/* Creata a device ID from the USB devices vendor and product ID. */
 	std::string deviceId;
-	for (const std::string &name : { "idVendor", "idProduct" }) {
+	for (const char *name : { "idVendor", "idProduct" }) {
 		std::ifstream file(path + "/../" + name);
 
 		if (!file.is_open())

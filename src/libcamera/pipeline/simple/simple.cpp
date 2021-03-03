@@ -279,33 +279,22 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 		if (source->function() == MEDIA_ENT_F_IO_V4L)
 			break;
 
-		/* Use the first output pad that has links. */
+		/*
+		 * Use the first output pad that has links and follow its first
+		 * link.
+		 */
 		MediaPad *sourcePad = nullptr;
+		MediaLink *sourceLink = nullptr;
 		for (MediaPad *pad : source->pads()) {
 			if ((pad->flags() & MEDIA_PAD_FL_SOURCE) &&
 			    !pad->links().empty()) {
 				sourcePad = pad;
+				sourceLink = pad->links().front();
 				break;
 			}
 		}
 
 		if (!sourcePad)
-			return;
-
-		/*
-		 * Use the first link that is enabled or can be enabled (not
-		 * immutable).
-		 */
-		MediaLink *sourceLink = nullptr;
-		for (MediaLink *link : sourcePad->links()) {
-			if ((link->flags() & MEDIA_LNK_FL_ENABLED) ||
-			    !(link->flags() & MEDIA_LNK_FL_IMMUTABLE)) {
-				sourceLink = link;
-				break;
-			}
-		}
-
-		if (!sourceLink)
 			return;
 
 		entities_.push_back({ source, sourceLink });

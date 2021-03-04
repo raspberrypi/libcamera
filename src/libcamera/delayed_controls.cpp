@@ -226,11 +226,11 @@ void DelayedControls::applyControls(uint32_t sequence)
 	 * values are set in time to satisfy the sensor delay.
 	 */
 	ControlList out(device_->controls());
-	for (const auto &ctrl : values_) {
+	for (auto &ctrl : values_) {
 		const ControlId *id = ctrl.first;
 		unsigned int delayDiff = maxDelay_ - controlParams_[id].delay;
 		unsigned int index = std::max<int>(0, writeCount_ - delayDiff);
-		const Info &info = ctrl.second[index];
+		Info &info = ctrl.second[index];
 
 		if (info.updated) {
 			if (controlParams_[id].priorityWrite) {
@@ -253,12 +253,15 @@ void DelayedControls::applyControls(uint32_t sequence)
 				<< "Setting " << id->name()
 				<< " to " << info.toString()
 				<< " at index " << index;
+
+			/* Done with this update, so mark as completed. */
+			info.updated = false;
 		}
 	}
 
 	writeCount_++;
 
-	while (writeCount_ >= queueCount_) {
+	while (writeCount_ > queueCount_) {
 		LOG(DelayedControls, Debug)
 			<< "Queue is empty, auto queue no-op.";
 		push({});

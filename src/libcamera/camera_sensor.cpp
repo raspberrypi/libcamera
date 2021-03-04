@@ -551,10 +551,22 @@ int CameraSensor::initProperties()
  */
 
 /**
- * \fn CameraSensor::resolution()
  * \brief Retrieve the camera sensor resolution
+ *
+ * The camera sensor resolution is the active pixel area size, clamped to the
+ * maximum frame size the sensor can produce if it is smaller than the active
+ * pixel area.
+ *
+ * \todo Consider if it desirable to distinguish between the maximum resolution
+ * the sensor can produce (also including upscaled ones) and the actual pixel
+ * array size by splitting this method in two.
+ *
  * \return The camera sensor resolution in pixels
  */
+Size CameraSensor::resolution() const
+{
+	return std::min(sizes_.back(), activeArea_.size());
+}
 
 /**
  * \brief Retrieve the best sensor format for a desired output

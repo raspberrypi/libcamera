@@ -82,9 +82,13 @@ protected:
 		/* Reset control to value not used in test. */
 		ctrls.set(V4L2_CID_BRIGHTNESS, 1);
 		dev_->setControls(&ctrls);
+		delayed->reset();
+
+		/* Trigger the first frame start event */
+		delayed->applyControls(0);
 
 		/* Test control without delay are set at once. */
-		for (unsigned int i = 0; i < 100; i++) {
+		for (unsigned int i = 1; i < 100; i++) {
 			int32_t value = 100 + i;
 
 			ctrls.set(V4L2_CID_BRIGHTNESS, value);
@@ -122,8 +126,11 @@ protected:
 		dev_->setControls(&ctrls);
 		delayed->reset();
 
+		/* Trigger the first frame start event */
+		delayed->applyControls(0);
+
 		/* Test single control with delay. */
-		for (unsigned int i = 0; i < 100; i++) {
+		for (unsigned int i = 1; i < 100; i++) {
 			int32_t value = 10 + i;
 
 			ctrls.set(V4L2_CID_BRIGHTNESS, value);
@@ -150,9 +157,11 @@ protected:
 
 	int dualControlsWithDelay(uint32_t startOffset)
 	{
+		static const unsigned int maxDelay = 2;
+
 		std::unordered_map<uint32_t, DelayedControls::ControlParams> delays = {
 			{ V4L2_CID_BRIGHTNESS, { 1, false } },
-			{ V4L2_CID_CONTRAST, { 2, false } },
+			{ V4L2_CID_CONTRAST, { maxDelay, false } },
 		};
 		std::unique_ptr<DelayedControls> delayed =
 			std::make_unique<DelayedControls>(dev_.get(), delays);
@@ -165,8 +174,11 @@ protected:
 		dev_->setControls(&ctrls);
 		delayed->reset();
 
+		/* Trigger the first frame start event */
+		delayed->applyControls(startOffset);
+
 		/* Test dual control with delay. */
-		for (unsigned int i = 0; i < 100; i++) {
+		for (unsigned int i = 1; i < 100; i++) {
 			uint32_t frame = startOffset + i;
 			int32_t value = 10 + i;
 
@@ -189,7 +201,7 @@ protected:
 				return TestFail;
 			}
 
-			expected = i < 1 ? expected : value - 1;
+			expected = i < maxDelay ? expected : value - 1;
 		}
 
 		return TestPass;
@@ -197,9 +209,11 @@ protected:
 
 	int dualControlsMultiQueue()
 	{
+		static const unsigned int maxDelay = 2;
+
 		std::unordered_map<uint32_t, DelayedControls::ControlParams> delays = {
 			{ V4L2_CID_BRIGHTNESS, { 1, false } },
-			{ V4L2_CID_CONTRAST, { 2, false } }
+			{ V4L2_CID_CONTRAST, { maxDelay, false } }
 		};
 		std::unique_ptr<DelayedControls> delayed =
 			std::make_unique<DelayedControls>(dev_.get(), delays);
@@ -211,6 +225,9 @@ protected:
 		ctrls.set(V4L2_CID_CONTRAST, expected);
 		dev_->setControls(&ctrls);
 		delayed->reset();
+
+		/* Trigger the first frame start event */
+		delayed->applyControls(0);
 
 		/*
 		 * Queue all controls before any fake frame start. Note we
@@ -226,8 +243,8 @@ protected:
 		}
 
 		/* Process all queued controls. */
-		for (unsigned int i = 0; i < 16; i++) {
-			int32_t value = 10 + i;
+		for (unsigned int i = 1; i < 16; i++) {
+			int32_t value = 10 + i - 1;
 
 			delayed->applyControls(i);
 
@@ -245,7 +262,7 @@ protected:
 				return TestFail;
 			}
 
-			expected = i < 1 ? expected : value - 1;
+			expected = i < maxDelay ? expected : value - 1;
 		}
 
 		return TestPass;

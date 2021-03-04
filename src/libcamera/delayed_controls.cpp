@@ -40,15 +40,19 @@ LOG_DEFINE_CATEGORY(DelayedControls)
 /**
  * \brief Construct a DelayedControls instance
  * \param[in] device The V4L2 device the controls have to be applied to
- * \param[in] delays Map of the numerical V4L2 control ids to their associated
- * delays (in frames)
+ * \param[in] controlParams Map of the numerical V4L2 control ids to their
+ * associated control parameters.
  *
- * Only controls specified in \a delays are handled. If it's desired to mix
- * delayed controls and controls that take effect immediately the immediate
- * controls must be listed in the \a delays map with a delay value of 0.
+ * The control parameters comprise of delays (in frames) and a priority write
+ * flag. If this flag is set, the relevant control is written separately from,
+ * and ahead of the rest of the batched controls.
+ *
+ * Only controls specified in \a controlParams are handled. If it's desired to
+ * mix delayed controls and controls that take effect immediately the immediate
+ * controls must be listed in the \a controlParams map with a delay value of 0.
  */
 DelayedControls::DelayedControls(V4L2Device *device,
-				 const std::unordered_map<uint32_t, unsigned int> &delays)
+				 const std::unordered_map<uint32_t, ControlParams> &controlParams)
 	: device_(device), maxDelay_(0)
 {
 	const ControlInfoMap &controls = device_->controls();
@@ -57,12 +61,12 @@ DelayedControls::DelayedControls(V4L2Device *device,
 	 * Create a map of control ids to delays for controls exposed by the
 	 * device.
 	 */
-	for (auto const &delay : delays) {
-		auto it = controls.find(delay.first);
+	for (auto const &param : controlParams) {
+		auto it = controls.find(param.first);
 		if (it == controls.end()) {
 			LOG(DelayedControls, Error)
 				<< "Delay request for control id "
-				<< utils::hex(delay.first)
+				<< utils::hex(param.first)
 				<< " but control is not exposed by device "
 				<< device_->deviceNode();
 			continue;
@@ -70,13 +74,14 @@ DelayedControls::DelayedControls(V4L2Device *device,
 
 		const ControlId *id = it->first;
 
-		delays_[id] = delay.second;
+		controlParams_[id] = param.second;
 
 		LOG(DelayedControls, Debug)
-			<< "Set a delay of " << delays_[id]
+			<< "Set a delay of " << controlParams_[id].delay
+			<< " and priority write flag " << controlParams_[id].priorityWrite
 			<< " for " << id->name();
 
-		maxDelay_ = std::max(maxDelay_, delays_[id]);
+		maxDelay_ = std::max(maxDelay_, controlParams_[id].delay);
 	}
 
 	reset();
@@ -97,8 +102,8 @@ void DelayedControls::reset()
 
 	/* Retrieve control as reported by the device. */
 	std::vector<uint32_t> ids;
-	for (auto const &delay : delays_)
-		ids.push_back(delay.first->id());
+	for (auto const &param : controlParams_)
+		ids.push_back(param.first->id());
 
 	ControlList controls = device_->getControls(ids);
 
@@ -140,7 +145,7 @@ bool DelayedControls::push(const ControlList &controls)
 
 		const ControlId *id = it->second;
 
-		if (delays_.find(id) == delays_.end())
+		if (controlParams_.find(id) == controlParams_.end())
 			return false;
 
 		Info &info = values_[id][queueCount_];
@@ -220,12 +225,27 @@ void DelayedControls::applyControls(uint32_t sequence)
 	ControlList out(device_->controls());
 	for (const auto &ctrl : values_) {
 		const ControlId *id = ctrl.first;
-		unsigned int delayDiff = maxDelay_ - delays_[id];
+		unsigned int delayDiff = maxDelay_ - controlParams_[id].delay;
 		unsigned int index = std::max<int>(0, writeCount_ - delayDiff);
 		const Info &info = ctrl.second[index];
 
 		if (info.updated) {
-			out.set(id->id(), info);
+			if (controlParams_[id].priorityWrite) {
+				/*
+				 * This control must be written now, it could
+				 * affect validity of the other controls.
+				 */
+				ControlList priority(device_->controls());
+				priority.set(id->id(), info);
+				device_->setControls(&priority);
+			} else {
+				/*
+				 * Batch up the list of controls and write them
+				 * at the end of the function.
+				 */
+				out.set(id->id(), info);
+			}
+
 			LOG(DelayedControls, Debug)
 				<< "Setting " << id->name()
 				<< " to " << info.toString()

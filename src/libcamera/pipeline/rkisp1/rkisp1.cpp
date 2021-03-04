@@ -945,14 +945,14 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	 * a sensor database. For now use generic values taken from
 	 * the Raspberry Pi and listed as generic values.
 	 */
-	std::unordered_map<uint32_t, unsigned int> delays = {
-		{ V4L2_CID_ANALOGUE_GAIN, 1 },
-		{ V4L2_CID_EXPOSURE, 2 },
+	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+		{ V4L2_CID_ANALOGUE_GAIN, { 1, false } },
+		{ V4L2_CID_EXPOSURE, { 2, false } },
 	};
 
 	data->delayedCtrls_ =
 		std::make_unique<DelayedControls>(data->sensor_->device(),
-						  delays);
+						  params);
 	isp_->frameStart.connect(data->delayedCtrls_.get(),
 				 &DelayedControls::applyControls);
 

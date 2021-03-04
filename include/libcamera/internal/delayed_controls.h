@@ -19,8 +19,13 @@ class V4L2Device;
 class DelayedControls
 {
 public:
+	struct ControlParams {
+		unsigned int delay;
+		bool priorityWrite;
+	};
+
 	DelayedControls(V4L2Device *device,
-			const std::unordered_map<uint32_t, unsigned int> &delays);
+			const std::unordered_map<uint32_t, ControlParams> &controlParams);
 
 	void reset();
 
@@ -64,7 +69,7 @@ private:
 
 	V4L2Device *device_;
 	/* \todo Evaluate if we should index on ControlId * or unsigned int */
-	std::unordered_map<const ControlId *, unsigned int> delays_;
+	std::unordered_map<const ControlId *, ControlParams> controlParams_;
 	unsigned int maxDelay_;
 
 	bool running_;

@@ -43,8 +43,8 @@ private:
 		{
 		}
 
-		Info(const ControlValue &v)
-			: ControlValue(v), updated(true)
+		Info(const ControlValue &v, bool updated_ = true)
+			: ControlValue(v), updated(updated_)
 		{
 		}
 

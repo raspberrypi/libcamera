@@ -111,7 +111,11 @@ void DelayedControls::reset()
 	values_.clear();
 	for (const auto &ctrl : controls) {
 		const ControlId *id = device_->controls().idmap().at(ctrl.first);
-		values_[id][0] = Info(ctrl.second);
+		/*
+		 * Do not mark this control value as updated, it does not need
+		 * to be written to to device on startup.
+		 */
+		values_[id][0] = Info(ctrl.second, false);
 	}
 }
 
@@ -150,8 +154,7 @@ bool DelayedControls::push(const ControlList &controls)
 
 		Info &info = values_[id][queueCount_];
 
-		info = control.second;
-		info.updated = true;
+		info = Info(control.second);
 
 		LOG(DelayedControls, Debug)
 			<< "Queuing " << id->name()

@@ -1539,6 +1539,9 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		streamConfig.config.size = size;
 		streamConfig.config.pixelFormat = format;
 		streamConfigs.push_back(std::move(streamConfig));
+
+		/* This stream will be produced by hardware. */
+		stream->usage |= GRALLOC_USAGE_HW_CAMERA_WRITE;
 	}
 
 	/* Now handle the MJPEG streams, adding a new stream if required. */
@@ -1548,7 +1551,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 		/* Search for a compatible stream in the non-JPEG ones. */
 		for (size_t i = 0; i < streamConfigs.size(); ++i) {
-			const auto &cfg = streamConfigs[i].config;
+			Camera3StreamConfig &streamConfig = streamConfigs[i];
+			const auto &cfg = streamConfig.config;
 
 			/*
 			 * \todo The PixelFormat must also be compatible with
@@ -1563,6 +1567,13 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 			type = CameraStream::Type::Mapped;
 			index = i;
+
+			/*
+			 * The source stream will be read by software to
+			 * produce the JPEG stream.
+			 */
+			camera3_stream_t *stream = streamConfig.streams[0].stream;
+			stream->usage |= GRALLOC_USAGE_SW_READ_OFTEN;
 			break;
 		}
 
@@ -1589,6 +1600,9 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			type = CameraStream::Type::Internal;
 			index = streamConfigs.size() - 1;
 		}
+
+		/* The JPEG stream will be produced by software. */
+		jpegStream->usage |= GRALLOC_USAGE_SW_WRITE_OFTEN;
 
 		streamConfigs[index].streams.push_back({ jpegStream, type });
 	}

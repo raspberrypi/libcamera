@@ -77,7 +77,7 @@ interface IPARPiInterface {
 		  map<uint32, IPAStream> streamConfig,
 		  map<uint32, ControlInfoMap> entityControls,
 		  ConfigInput ipaConfig)
-		=> (ConfigOutput results, int32 ret);
+		=> (int32 ret, ConfigOutput results);
 
 	/**
 	 * \fn mapBuffers()

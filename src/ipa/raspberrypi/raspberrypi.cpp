@@ -84,11 +84,11 @@ public:
 		   ipa::RPi::StartControls *result) override;
 	void stop() override {}
 
-	void configure(const CameraSensorInfo &sensorInfo,
-		       const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, ControlInfoMap> &entityControls,
-		       const ipa::RPi::ConfigInput &data,
-		       ipa::RPi::ConfigOutput *response, int32_t *ret) override;
+	int configure(const CameraSensorInfo &sensorInfo,
+		      const std::map<unsigned int, IPAStream> &streamConfig,
+		      const std::map<unsigned int, ControlInfoMap> &entityControls,
+		      const ipa::RPi::ConfigInput &data,
+		      ipa::RPi::ConfigOutput *response) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void signalStatReady(const uint32_t bufferId) override;
@@ -290,16 +290,15 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 	mode_.max_frame_length = sensorInfo.maxFrameLength;
 }
 
-void IPARPi::configure(const CameraSensorInfo &sensorInfo,
-		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-		       const std::map<unsigned int, ControlInfoMap> &entityControls,
-		       const ipa::RPi::ConfigInput &ipaConfig,
-		       ipa::RPi::ConfigOutput *result, int32_t *ret)
+int IPARPi::configure(const CameraSensorInfo &sensorInfo,
+		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
+		      const std::map<unsigned int, ControlInfoMap> &entityControls,
+		      const ipa::RPi::ConfigInput &ipaConfig,
+		      ipa::RPi::ConfigOutput *result)
 {
 	if (entityControls.size() != 2) {
 		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
-		*ret = -1;
-		return;
+		return -1;
 	}
 
 	result->params = 0;
@@ -309,14 +308,12 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	if (!validateSensorControls()) {
 		LOG(IPARPI, Error) << "Sensor control validation failed.";
-		*ret = -1;
-		return;
+		return -1;
 	}
 
 	if (!validateIspControls()) {
 		LOG(IPARPI, Error) << "ISP control validation failed.";
-		*ret = -1;
-		return;
+		return -1;
 	}
 
 	/* Setup a metadata ControlList to output metadata. */
@@ -334,8 +331,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		if (!helper_) {
 			LOG(IPARPI, Error) << "Could not create camera helper for "
 					   << cameraName;
-			*ret = -1;
-			return;
+			return -1;
 		}
 
 		/*
@@ -403,7 +399,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	lastMode_ = mode_;
 
-	*ret = 0;
+	return 0;
 }
 
 void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)

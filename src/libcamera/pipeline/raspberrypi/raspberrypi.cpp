@@ -1250,9 +1250,8 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	/* Ready the IPA - it must know about the sensor resolution. */
 	ipa::RPi::ConfigOutput result;
 
-	ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
-			&result, &ret);
-
+	ret = ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
+			      &result);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;

@@ -99,6 +99,7 @@ private:
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
 	CameraMetadata *requestTemplatePreview();
+	CameraMetadata *requestTemplateVideo();
 	libcamera::PixelFormat toPixelFormat(int format) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(

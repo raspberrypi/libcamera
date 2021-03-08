@@ -1386,11 +1386,7 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	}
 
 	/*
-	 * \todo Depending on the requested CaptureIntent, the FPS range
-	 * needs to be adjusted. For example, the capture template for
-	 * video capture intent shall report a fixed value.
-	 *
-	 * Also assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
+	 * Assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
 	 * has been assembled as {{min, max} {max, max}}.
 	 */
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
@@ -1464,6 +1460,30 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	return requestTemplate;
 }
 
+CameraMetadata *CameraDevice::requestTemplateVideo()
+{
+	CameraMetadata *previewTemplate = requestTemplatePreview();
+	if (!previewTemplate)
+		return nullptr;
+
+	/*
+	 * The video template requires a fixed FPS range. Everything else
+	 * stays the same as the preview template.
+	 */
+	camera_metadata_ro_entry_t entry;
+	staticMetadata_->getEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+				  &entry);
+
+	/*
+	 * Assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
+	 * has been assembled as {{min, max} {max, max}}.
+	 */
+	previewTemplate->updateEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+				     entry.data.i32 + 2, 2);
+
+	return previewTemplate;
+}
+
 /*
  * Produce a metadata pack to be used as template for a capture request.
  */
@@ -1479,15 +1499,23 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	switch (type) {
 	case CAMERA3_TEMPLATE_PREVIEW:
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
+		requestTemplate = requestTemplatePreview();
 		break;
 	case CAMERA3_TEMPLATE_STILL_CAPTURE:
+		/*
+		 * Use the preview template for still capture, they only differ
+		 * for the torch mode we currently do not support.
+		 */
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE;
+		requestTemplate = requestTemplatePreview();
 		break;
 	case CAMERA3_TEMPLATE_VIDEO_RECORD:
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD;
+		requestTemplate = requestTemplateVideo();
 		break;
 	case CAMERA3_TEMPLATE_VIDEO_SNAPSHOT:
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT;
+		requestTemplate = requestTemplateVideo();
 		break;
 	/* \todo Implement templates generation for the remaining use cases. */
 	case CAMERA3_TEMPLATE_ZERO_SHUTTER_LAG:
@@ -1497,7 +1525,6 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		return nullptr;
 	}
 
-	requestTemplate = requestTemplatePreview();
 	if (!requestTemplate || !requestTemplate->isValid()) {
 		LOG(HAL, Error) << "Failed to construct request template";
 		delete requestTemplate;

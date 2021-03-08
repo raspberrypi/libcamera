@@ -20,19 +20,6 @@
 {%- endmacro -%}
 
 {#
- # \brief Generate function body for IPA init() function for thread
- #}
-{%- macro init_thread_body() -%}
-	int ret = ipa_->init(settings);
-	if (ret)
-		return ret;
-
-	proxy_.moveToThread(&thread_);
-
-	return 0;
-{%- endmacro -%}
-
-{#
  # \brief Generate function body for IPA stop() function for thread
  #}
 {%- macro stop_thread_body() -%}

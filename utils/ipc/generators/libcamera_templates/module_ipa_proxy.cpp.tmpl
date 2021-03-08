@@ -141,10 +141,19 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 
 {{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
 {
-{%- if method.mojom_name == "init" %}
-	{{proxy_funcs.init_thread_body()}}
-{%- elif method.mojom_name == "stop" %}
+{%- if method.mojom_name == "stop" %}
 	{{proxy_funcs.stop_thread_body()}}
+{%- elif method.mojom_name == "init" %}
+	{{ method|method_return_value + " _ret = " if method|method_return_value != "void" -}}
+	ipa_->{{method.mojom_name}}(
+	{%- for param in method|method_param_names -%}
+		{{param}}{{- ", " if not loop.last}}
+	{%- endfor -%}
+);
+
+	proxy_.moveToThread(&thread_);
+
+	return {{ "_ret" if method|method_return_value != "void" }};
 {%- elif method.mojom_name == "start" %}
 	running_ = true;
 	thread_.start();

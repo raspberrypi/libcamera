@@ -341,19 +341,9 @@ def ValidateInterfaces(interfaces):
     ValidateSingleLength(f_start, 'start()', False)
     ValidateSingleLength(f_stop, 'stop()', False)
 
-    f_init  = f_init[0]
-    f_start = f_start[0]
     f_stop  = f_stop[0]
 
-    # Validate parameters to init()
-    ValidateSingleLength(f_init.parameters, 'input parameter to init()')
-    ValidateSingleLength(f_init.response_parameters, 'output parameter from init()')
-    if f_init.parameters[0].kind.mojom_name != 'IPASettings':
-        raise Exception('init() must have single IPASettings input parameter')
-    if f_init.response_parameters[0].kind.spec != 'i32':
-        raise Exception('init() must have single int32 output parameter')
-
-    # No need to validate start() as it is customizable
+    # No need to validate init() and start() as they are customizable
 
     # Validate parameters to stop()
     ValidateZeroLength(f_stop.parameters, 'input parameter to stop()')

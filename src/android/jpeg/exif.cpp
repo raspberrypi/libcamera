@@ -393,7 +393,7 @@ void Exif::setGPSLocation(const double *coords)
 	std::tie<int, int, int>(deg, min, sec) = degreesToDMS(coords[1]);
 	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LONGITUDE_REF),
 		  EXIF_FORMAT_ASCII, deg >= 0 ? "E" : "W");
-	setGPSDMS(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LATITUDE),
+	setGPSDMS(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_LONGITUDE),
 		  std::abs(deg), min, sec);
 
 	setByte(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_ALTITUDE_REF),

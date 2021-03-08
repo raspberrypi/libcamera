@@ -1376,6 +1376,26 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 		return nullptr;
 	}
 
+	/* Get the FPS range registered in the static metadata. */
+	camera_metadata_ro_entry_t entry;
+	bool found = staticMetadata_->getEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+					       &entry);
+	if (!found) {
+		LOG(HAL, Error) << "Cannot create capture template without FPS range";
+		return nullptr;
+	}
+
+	/*
+	 * \todo Depending on the requested CaptureIntent, the FPS range
+	 * needs to be adjusted. For example, the capture template for
+	 * video capture intent shall report a fixed value.
+	 *
+	 * Also assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
+	 * has been assembled as {{min, max} {max, max}}.
+	 */
+	requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
+				  entry.data.i32, 2);
+
 	uint8_t aeMode = ANDROID_CONTROL_AE_MODE_ON;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_MODE,
 				  &aeMode, 1);
@@ -1391,22 +1411,6 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	uint8_t aeLock = ANDROID_CONTROL_AE_LOCK_OFF;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_LOCK,
 				  &aeLock, 1);
-
-	/* Get the FPS range registered in the static metadata. */
-	camera_metadata_ro_entry_t entry;
-	bool found = staticMetadata_->getEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
-					       &entry);
-	if (found)
-		/*
-		 * \todo Depending on the requested CaptureIntent, the FPS range
-		 * needs to be adjusted. For example, the capture template for
-		 * video capture intent shall report a fixed value.
-		 *
-		 * Also assume the AE_AVAILABLE_TARGET_FPS_RANGE static metadata
-		 * has been assembled as {{min, max} {max, max}}.
-		 */
-		requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
-					  entry.data.i32, 2);
 
 	uint8_t aeAntibandingMode = ANDROID_CONTROL_AE_ANTIBANDING_MODE_AUTO;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_ANTIBANDING_MODE,

@@ -345,24 +345,14 @@ void Exif::setGPSDateTimestamp(time_t timestamp)
 		  EXIF_FORMAT_ASCII, tsStr);
 
 	/* Set GPS_TIME_STAMP */
-	ExifEntry *entry =
-		createEntry(EXIF_IFD_GPS,
-			    static_cast<ExifTag>(EXIF_TAG_GPS_TIME_STAMP),
-			    EXIF_FORMAT_RATIONAL, 3, 3 * sizeof(ExifRational));
-	if (!entry)
-		return;
-
 	ExifRational ts[] = {
 		{ static_cast<ExifLong>(tm.tm_hour), 1 },
 		{ static_cast<ExifLong>(tm.tm_min),  1 },
 		{ static_cast<ExifLong>(tm.tm_sec),  1 },
 	};
 
-	for (int i = 0; i < 3; i++)
-		exif_set_rational(entry->data + i * sizeof(ExifRational),
-				  order_, ts[i]);
-
-	exif_entry_unref(entry);
+	setRational(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_TIME_STAMP),
+		    ts);
 }
 
 std::tuple<int, int, int> Exif::degreesToDMS(double decimalDegrees)
@@ -376,22 +366,13 @@ std::tuple<int, int, int> Exif::degreesToDMS(double decimalDegrees)
 
 void Exif::setGPSDMS(ExifIfd ifd, ExifTag tag, int deg, int min, int sec)
 {
-	ExifEntry *entry = createEntry(ifd, tag, EXIF_FORMAT_RATIONAL, 3,
-				       3 * sizeof(ExifRational));
-	if (!entry)
-		return;
-
 	ExifRational coords[] = {
 		{ static_cast<ExifLong>(deg), 1 },
 		{ static_cast<ExifLong>(min), 1 },
 		{ static_cast<ExifLong>(sec), 1 },
 	};
 
-	for (int i = 0; i < 3; i++)
-		exif_set_rational(entry->data + i * sizeof(ExifRational),
-				  order_, coords[i]);
-
-	exif_entry_unref(entry);
+	setRational(ifd, tag, coords);
 }
 
 /*

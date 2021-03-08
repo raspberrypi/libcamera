@@ -1485,14 +1485,11 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 	case CAMERA3_TEMPLATE_VIDEO_SNAPSHOT:
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT;
 		break;
+	/* \todo Implement templates generation for the remaining use cases. */
 	case CAMERA3_TEMPLATE_ZERO_SHUTTER_LAG:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_ZERO_SHUTTER_LAG;
-		break;
 	case CAMERA3_TEMPLATE_MANUAL:
-		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_MANUAL;
-		break;
 	default:
-		LOG(HAL, Error) << "Invalid template request type: " << type;
+		LOG(HAL, Error) << "Unsupported template request type: " << type;
 		return nullptr;
 	}
 

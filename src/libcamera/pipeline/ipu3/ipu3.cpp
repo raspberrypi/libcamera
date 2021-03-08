@@ -764,12 +764,12 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	IPU3CameraData *data = cameraData(camera);
 	int ret = 0;
 
+	data->ipa_->stop();
+
 	ret |= data->imgu_->stop();
 	ret |= data->cio2_.stop();
 	if (ret)
 		LOG(IPU3, Warning) << "Failed to stop camera " << camera->id();
-
-	data->ipa_->stop();
 
 	freeBuffers(camera);
 }

@@ -89,6 +89,8 @@ private:
 		       const std::string &item,
 		       StringEncoding encoding = NoEncoding);
 	void setRational(ExifIfd ifd, ExifTag tag, ExifRational item);
+	void setRational(ExifIfd ifd, ExifTag tag,
+			 libcamera::Span<const ExifRational> items);
 
 	std::tuple<int, int, int> degreesToDMS(double decimalDegrees);
 	void setGPSDMS(ExifIfd ifd, ExifTag tag, int deg, int min, int sec);

@@ -187,11 +187,20 @@ void Exif::setLong(ExifIfd ifd, ExifTag tag, uint32_t item)
 
 void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 {
-	ExifEntry *entry = createEntry(ifd, tag);
+	setRational(ifd, tag, { &item, 1 });
+}
+
+void Exif::setRational(ExifIfd ifd, ExifTag tag, Span<const ExifRational> items)
+{
+	ExifEntry *entry = createEntry(ifd, tag, EXIF_FORMAT_RATIONAL,
+				       items.size(),
+				       items.size() * sizeof(ExifRational));
 	if (!entry)
 		return;
 
-	exif_set_rational(entry->data, order_, item);
+	for (size_t i = 0; i < items.size(); i++)
+		exif_set_rational(entry->data + i * sizeof(ExifRational),
+				  order_, items[i]);
 	exif_entry_unref(entry);
 }
 

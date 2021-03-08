@@ -405,7 +405,7 @@ void Exif::setGPSLocation(const double *coords)
 void Exif::setGPSMethod(const std::string &method)
 {
 	setString(EXIF_IFD_GPS, static_cast<ExifTag>(EXIF_TAG_GPS_PROCESSING_METHOD),
-		  EXIF_FORMAT_UNDEFINED, method, Unicode);
+		  EXIF_FORMAT_UNDEFINED, method, NoEncoding);
 }
 
 void Exif::setOrientation(int orientation)

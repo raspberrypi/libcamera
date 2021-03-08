@@ -37,7 +37,8 @@ public:
 	CamHelperImx477();
 	uint32_t GainCode(double gain) const override;
 	double Gain(uint32_t gain_code) const override;
-	void GetDelays(int &exposure_delay, int &gain_delay) const override;
+	void GetDelays(int &exposure_delay, int &gain_delay,
+		       int &vblank_delay) const override;
 	bool SensorEmbeddedDataPresent() const override;
 
 private:
@@ -63,10 +64,12 @@ double CamHelperImx477::Gain(uint32_t gain_code) const
 	return 1024.0 / (1024 - gain_code);
 }
 
-void CamHelperImx477::GetDelays(int &exposure_delay, int &gain_delay) const
+void CamHelperImx477::GetDelays(int &exposure_delay, int &gain_delay,
+				int &vblank_delay) const
 {
 	exposure_delay = 2;
 	gain_delay = 2;
+	vblank_delay = 3;
 }
 
 bool CamHelperImx477::SensorEmbeddedDataPresent() const

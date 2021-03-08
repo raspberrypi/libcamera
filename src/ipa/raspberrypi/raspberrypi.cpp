@@ -342,14 +342,14 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		 * Pass out the sensor config to the pipeline handler in order
 		 * to setup the staggered writer class.
 		 */
-		int gainDelay, exposureDelay, sensorMetadata;
-		helper_->GetDelays(exposureDelay, gainDelay);
+		int gainDelay, exposureDelay, vblankDelay, sensorMetadata;
+		helper_->GetDelays(exposureDelay, gainDelay, vblankDelay);
 		sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
 		result->params |= ipa::RPi::ConfigSensorParams;
 		result->sensorConfig.gainDelay = gainDelay;
 		result->sensorConfig.exposureDelay = exposureDelay;
-		result->sensorConfig.vblank = exposureDelay;
+		result->sensorConfig.vblank = vblankDelay;
 		result->sensorConfig.sensorMetadata = sensorMetadata;
 	}
 

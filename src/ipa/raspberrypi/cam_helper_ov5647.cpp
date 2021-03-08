@@ -17,7 +17,8 @@ public:
 	CamHelperOv5647();
 	uint32_t GainCode(double gain) const override;
 	double Gain(uint32_t gain_code) const override;
-	void GetDelays(int &exposure_delay, int &gain_delay) const override;
+	void GetDelays(int &exposure_delay, int &gain_delay,
+		       int &vblank_delay) const override;
 	unsigned int HideFramesStartup() const override;
 	unsigned int HideFramesModeSwitch() const override;
 	unsigned int MistrustFramesStartup() const override;
@@ -51,7 +52,8 @@ double CamHelperOv5647::Gain(uint32_t gain_code) const
 	return static_cast<double>(gain_code) / 16.0;
 }
 
-void CamHelperOv5647::GetDelays(int &exposure_delay, int &gain_delay) const
+void CamHelperOv5647::GetDelays(int &exposure_delay, int &gain_delay,
+				int &vblank_delay) const
 {
 	/*
 	 * We run this sensor in a mode where the gain delay is bumped up to
@@ -59,6 +61,7 @@ void CamHelperOv5647::GetDelays(int &exposure_delay, int &gain_delay) const
 	 */
 	exposure_delay = 2;
 	gain_delay = 2;
+	vblank_delay = 2;
 }
 
 unsigned int CamHelperOv5647::HideFramesStartup() const

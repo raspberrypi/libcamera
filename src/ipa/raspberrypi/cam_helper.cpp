@@ -95,7 +95,8 @@ void CamHelper::SetCameraMode(const CameraMode &mode)
 	initialized_ = true;
 }
 
-void CamHelper::GetDelays(int &exposure_delay, int &gain_delay) const
+void CamHelper::GetDelays(int &exposure_delay, int &gain_delay,
+			  int &vblank_delay) const
 {
 	/*
 	 * These values are correct for many sensors. Other sensors will
@@ -103,6 +104,7 @@ void CamHelper::GetDelays(int &exposure_delay, int &gain_delay) const
 	 */
 	exposure_delay = 2;
 	gain_delay = 1;
+	vblank_delay = 2;
 }
 
 bool CamHelper::SensorEmbeddedDataPresent() const

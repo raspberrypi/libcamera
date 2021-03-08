@@ -28,10 +28,10 @@ namespace RPiController {
 // exposure time, and to convert between the sensor's gain codes and actual
 // gains.
 //
-// A method to return the number of frames of delay between updating exposure
-// and analogue gain and the changes taking effect. For many sensors these
-// take the values 2 and 1 respectively, but sensors that are different will
-// need to over-ride the default method provided.
+// A method to return the number of frames of delay between updating exposure,
+// analogue gain and vblanking, and for the changes to take effect. For many
+// sensors these take the values 2, 1 and 2 respectively, but sensors that are
+// different will need to over-ride the default method provided.
 //
 // A method to query if the sensor outputs embedded data that can be parsed.
 //
@@ -72,7 +72,8 @@ public:
 				      double maxFrameDuration) const;
 	virtual uint32_t GainCode(double gain) const = 0;
 	virtual double Gain(uint32_t gain_code) const = 0;
-	virtual void GetDelays(int &exposure_delay, int &gain_delay) const;
+	virtual void GetDelays(int &exposure_delay, int &gain_delay,
+			       int &vblank_delay) const;
 	virtual bool SensorEmbeddedDataPresent() const;
 	virtual unsigned int HideFramesStartup() const;
 	virtual unsigned int HideFramesModeSwitch() const;

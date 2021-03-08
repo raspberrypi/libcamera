@@ -149,10 +149,16 @@ def MethodParamInputs(method):
     return method.parameters
 
 def MethodParamOutputs(method):
-    if (MethodReturnValue(method) != 'void' or
-        method.response_parameters is None):
+    if method.response_parameters is None:
         return []
-    return method.response_parameters
+
+    if MethodReturnValue(method) == 'void':
+        return method.response_parameters
+
+    if len(method.response_parameters) <= 1:
+        return []
+
+    return method.response_parameters[1:]
 
 def MethodParamsHaveFd(parameters):
     return len([x for x in parameters if HasFd(x)]) > 0
@@ -167,11 +173,8 @@ def MethodParamNames(method):
     params = []
     for param in method.parameters:
         params.append(param.mojom_name)
-    if MethodReturnValue(method) == 'void':
-        if method.response_parameters is None:
-            return params
-        for param in method.response_parameters:
-            params.append(param.mojom_name)
+    for param in MethodParamOutputs(method):
+        params.append(param.mojom_name)
     return params
 
 def MethodParameters(method):
@@ -180,18 +183,17 @@ def MethodParameters(method):
         params.append('const %s %s%s' % (GetNameForElement(param),
                                          '&' if not IsPod(param) else '',
                                          param.mojom_name))
-    if MethodReturnValue(method) == 'void':
-        if method.response_parameters is None:
-            return params
-        for param in method.response_parameters:
-            params.append(f'{GetNameForElement(param)} *{param.mojom_name}')
+    for param in MethodParamOutputs(method):
+        params.append(f'{GetNameForElement(param)} *{param.mojom_name}')
     return params
 
 def MethodReturnValue(method):
-    if method.response_parameters is None:
+    if method.response_parameters is None or len(method.response_parameters) == 0:
         return 'void'
-    if len(method.response_parameters) == 1 and IsPod(method.response_parameters[0]):
-        return GetNameForElement(method.response_parameters[0])
+    first_output = method.response_parameters[0]
+    if ((len(method.response_parameters) == 1 and IsPod(first_output)) or
+        first_output.kind == mojom.INT32):
+        return GetNameForElement(first_output)
     return 'void'
 
 def IsAsync(method):
@@ -236,6 +238,16 @@ def BitWidth(element):
     if mojom.IsEnumKind(element.kind):
         return '32'
     return ''
+
+def ByteWidthFromCppType(t):
+    key = None
+    for mojo_type, cpp_type in _kind_to_cpp_type.items():
+        if t == cpp_type:
+            key = mojo_type
+    if key is None:
+        raise Exception('invalid type')
+    return str(int(_bit_widths[key]) // 8)
+
 
 # Get the type name for a given element
 def GetNameForElement(element):
@@ -373,6 +385,7 @@ class Generator(generator.Generator):
         libcamera_filters = {
             'all_types': GetAllTypes,
             'bit_width': BitWidth,
+            'byte_width' : ByteWidthFromCppType,
             'cap': Capitalize,
             'choose': Choose,
             'comma_sep': CommaSep,

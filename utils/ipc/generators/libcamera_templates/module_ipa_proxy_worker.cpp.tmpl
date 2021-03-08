@@ -83,15 +83,14 @@ public:
 			{{param|name}} {{param.mojom_name}};
 {% endfor %}
 {%- if method|method_return_value != "void" %}
-			{{method|method_return_value}} _callRet = ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
-{%- else %}
+			{{method|method_return_value}} _callRet =
+{%- endif -%}
 			ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}}
 {{- ", " if method|method_param_outputs|params_comma_sep -}}
 {%- for param in method|method_param_outputs -%}
 &{{param.mojom_name}}{{", " if not loop.last}}
 {%- endfor -%}
 );
-{%- endif %}
 {% if not method|is_async %}
 			IPCMessage::Header header = { _ipcMessage.header().cmd, _ipcMessage.header().cookie };
 			IPCMessage _response(header);
@@ -100,9 +99,8 @@ public:
 			std::tie(_callRetBuf, std::ignore) =
 				IPADataSerializer<{{method|method_return_value}}>::serialize(_callRet);
 			_response.data().insert(_response.data().end(), _callRetBuf.cbegin(), _callRetBuf.cend());
-{%- else %}
-		{{proxy_funcs.serialize_call(method|method_param_outputs, "_response.data()", "_response.fds()")|indent(16, true)}}
 {%- endif %}
+		{{proxy_funcs.serialize_call(method|method_param_outputs, "_response.data()", "_response.fds()")|indent(16, true)}}
 			int _ret = socket_.send(_response.payload());
 			if (_ret < 0) {
 				LOG({{proxy_worker_name}}, Error)

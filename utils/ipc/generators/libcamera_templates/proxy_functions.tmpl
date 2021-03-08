@@ -135,8 +135,8 @@
  #
  # \todo Avoid intermediate vectors
  #}
-{%- macro deserialize_call(params, buf, fds, pointer = true, declare = false, iter = false, data_size = '') -%}
-{% set ns = namespace(size_offset = 0) %}
+{%- macro deserialize_call(params, buf, fds, pointer = true, declare = false, iter = false, data_size = '', init_offset = 0) -%}
+{% set ns = namespace(size_offset = init_offset) %}
 {%- if params|length > 1 %}
 {%- for param in params %}
 	[[maybe_unused]] const size_t {{param.mojom_name}}BufSize = readPOD<uint32_t>({{buf}}, {{ns.size_offset}}

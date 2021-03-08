@@ -209,7 +209,12 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 {%- endif %}
 	}
 {% if method|method_return_value != "void" %}
-	return IPADataSerializer<{{method.response_parameters|first|name}}>::deserialize(_ipcOutputBuf.data(), 0);
+	{{method|method_return_value}} _retValue = IPADataSerializer<{{method|method_return_value}}>::deserialize(_ipcOutputBuf.data(), 0);
+
+{{proxy_funcs.deserialize_call(method|method_param_outputs, '_ipcOutputBuf.data()', '_ipcOutputBuf.fds()', init_offset = method|method_return_value|byte_width|int)}}
+
+	return _retValue;
+
 {% elif method|method_param_outputs|length > 0 %}
 {{proxy_funcs.deserialize_call(method|method_param_outputs, '_ipcOutputBuf.data()', '_ipcOutputBuf.fds()')}}
 {% endif -%}

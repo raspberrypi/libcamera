@@ -22,7 +22,7 @@ enum ConfigOutputParameters {
 struct SensorConfig {
 	uint32 gainDelay;
 	uint32 exposureDelay;
-	uint32 vblank;
+	uint32 vblankDelay;
 	uint32 sensorMetadata;
 };
 

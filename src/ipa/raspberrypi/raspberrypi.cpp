@@ -349,7 +349,7 @@ void IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		result->params |= ipa::RPi::ConfigSensorParams;
 		result->sensorConfig.gainDelay = gainDelay;
 		result->sensorConfig.exposureDelay = exposureDelay;
-		result->sensorConfig.vblank = vblankDelay;
+		result->sensorConfig.vblankDelay = vblankDelay;
 		result->sensorConfig.sensorMetadata = sensorMetadata;
 	}
 

@@ -85,7 +85,7 @@ public:
 	{
 	}
 
-	int loadIPA();
+	int loadIPA(unsigned int hwRevision);
 
 	Stream mainPathStream_;
 	Stream selfPathStream_;
@@ -300,7 +300,7 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 	return nullptr;
 }
 
-int RkISP1CameraData::loadIPA()
+int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 {
 	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe_, 1, 1);
 	if (!ipa_)
@@ -309,7 +309,11 @@ int RkISP1CameraData::loadIPA()
 	ipa_->queueFrameAction.connect(this,
 				       &RkISP1CameraData::queueFrameAction);
 
-	ipa_->init(IPASettings{});
+	int ret = ipa_->init(hwRevision);
+	if (ret < 0) {
+		LOG(RkISP1, Error) << "IPA initialization failure";
+		return ret;
+	}
 
 	return 0;
 }
@@ -952,7 +956,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	isp_->frameStart.connect(data->delayedCtrls_.get(),
 				 &DelayedControls::applyControls);
 
-	ret = data->loadIPA();
+	ret = data->loadIPA(media_->hwRevision());
 	if (ret)
 		return ret;
 
@@ -983,6 +987,12 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	media_ = acquireMediaDevice(enumerator, dm);
 	if (!media_)
 		return false;
+
+	if (!media_->hwRevision()) {
+		LOG(RkISP1, Error)
+			<< "The rkisp1 driver is too old, v5.11 or newer is required";
+		return false;
+	}
 
 	/* Create the V4L2 subdevices we will need. */
 	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_isp");

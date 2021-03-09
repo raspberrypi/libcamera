@@ -31,10 +31,7 @@ LOG_DEFINE_CATEGORY(IPARkISP1)
 class IPARkISP1 : public ipa::rkisp1::IPARkISP1Interface
 {
 public:
-	int init([[maybe_unused]] const IPASettings &settings) override
-	{
-		return 0;
-	}
+	int init(unsigned int hwRevision) override;
 	int start() override { return 0; }
 	void stop() override {}
 
@@ -68,6 +65,20 @@ private:
 	uint32_t minGain_;
 	uint32_t maxGain_;
 };
+
+int IPARkISP1::init(unsigned int hwRevision)
+{
+	/* \todo Add support for other revisions */
+	if (hwRevision != RKISP1_V10) {
+		LOG(IPARkISP1, Error)
+			<< "Hardware revision " << hwRevision
+			<< " is currently not supported";
+		return -ENODEV;
+	}
+
+	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
+	return 0;
+}
 
 /**
  * \todo The RkISP1 pipeline currently provides an empty CameraSensorInfo

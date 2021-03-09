@@ -25,7 +25,7 @@ struct RkISP1Action {
 };
 
 interface IPARkISP1Interface {
-	init(IPASettings settings) => (int32 ret);
+	init(uint32 hwRevision) => (int32 ret);
 	start() => (int32 ret);
 	stop();
 

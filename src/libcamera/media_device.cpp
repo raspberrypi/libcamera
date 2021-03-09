@@ -231,6 +231,7 @@ int MediaDevice::populate()
 	driver_ = info.driver;
 	model_ = info.model;
 	version_ = info.media_version;
+	hwRevision_ = info.hw_revision;
 
 	/*
 	 * Keep calling G_TOPOLOGY until the version number stays stable.
@@ -321,6 +322,15 @@ done:
  * The version is formatted with the KERNEL_VERSION() macro.
  *
  * \return The MediaDevice API version
+ */
+
+/**
+ * \fn MediaDevice::hwRevision()
+ * \brief Retrieve the media device hardware revision
+ *
+ * The hardware revision is in a driver-specific format.
+ *
+ * \return The MediaDevice hardware revision
  */
 
 /**

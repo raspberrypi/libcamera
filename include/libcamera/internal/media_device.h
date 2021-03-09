@@ -41,6 +41,7 @@ public:
 	const std::string deviceNode() const { return deviceNode_; }
 	const std::string model() const { return model_; }
 	unsigned int version() const { return version_; }
+	unsigned int hwRevision() const { return hwRevision_; }
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;
@@ -79,6 +80,7 @@ private:
 	std::string deviceNode_;
 	std::string model_;
 	unsigned int version_;
+	unsigned int hwRevision_;
 
 	int fd_;
 	bool valid_;

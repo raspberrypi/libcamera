@@ -38,9 +38,9 @@ public:
 	int start() override { return 0; }
 	void stop() override {}
 
-	void configure(const CameraSensorInfo &info,
-		       const std::map<uint32_t, IPAStream> &streamConfig,
-		       const std::map<uint32_t, ControlInfoMap> &entityControls) override;
+	int configure(const CameraSensorInfo &info,
+		      const std::map<uint32_t, IPAStream> &streamConfig,
+		      const std::map<uint32_t, ControlInfoMap> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void processEvent(const ipa::rkisp1::RkISP1Event &event) override;
@@ -75,25 +75,25 @@ private:
  * assemble one. Make sure the reported sensor information are relevant
  * before accessing them.
  */
-void IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
-			  [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
-			  const std::map<uint32_t, ControlInfoMap> &entityControls)
+int IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
+			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
+			 const std::map<uint32_t, ControlInfoMap> &entityControls)
 {
 	if (entityControls.empty())
-		return;
+		return -EINVAL;
 
 	ctrls_ = entityControls.at(0);
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
 	if (itExp == ctrls_.end()) {
 		LOG(IPARkISP1, Error) << "Can't find exposure control";
-		return;
+		return -EINVAL;
 	}
 
 	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
 	if (itGain == ctrls_.end()) {
 		LOG(IPARkISP1, Error) << "Can't find gain control";
-		return;
+		return -EINVAL;
 	}
 
 	autoExposure_ = true;
@@ -111,6 +111,7 @@ void IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
 		<< " Gain: " << minGain_ << "-" << maxGain_;
 
 	setControls(0);
+	return 0;
 }
 
 void IPARkISP1::mapBuffers(const std::vector<IPABuffer> &buffers)

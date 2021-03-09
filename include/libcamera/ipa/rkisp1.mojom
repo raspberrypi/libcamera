@@ -31,7 +31,7 @@ interface IPARkISP1Interface {
 
 	configure(CameraSensorInfo sensorInfo,
 		  map<uint32, IPAStream> streamConfig,
-		  map<uint32, ControlInfoMap> entityControls) => ();
+		  map<uint32, ControlInfoMap> entityControls) => (int32 ret);
 
 	mapBuffers(array<IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);

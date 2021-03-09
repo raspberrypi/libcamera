@@ -653,8 +653,11 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	std::map<uint32_t, ControlInfoMap> entityControls;
 	entityControls.emplace(0, data->sensor_->controls());
 
-	data->ipa_->configure(sensorInfo, streamConfig, entityControls);
-
+	ret = data->ipa_->configure(sensorInfo, streamConfig, entityControls);
+	if (ret) {
+		LOG(RkISP1, Error) << "failed configuring IPA (" << ret << ")";
+		return ret;
+	}
 	return 0;
 }
 

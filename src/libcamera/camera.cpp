@@ -1062,10 +1062,10 @@ int Camera::stop()
 
 	LOG(Camera, Debug) << "Stopping capture";
 
-	d->setState(Private::CameraConfigured);
-
 	d->pipe_->invokeMethod(&PipelineHandler::stop, ConnectionTypeBlocking,
 			       this);
+
+	d->setState(Private::CameraConfigured);
 
 	return 0;
 }
@@ -1079,6 +1079,12 @@ int Camera::stop()
  */
 void Camera::requestComplete(Request *request)
 {
+	Private *const d = LIBCAMERA_D_PTR();
+
+	/* Disconnected cameras are still able to complete requests. */
+	if (d->isAccessAllowed(Private::CameraRunning, true))
+		LOG(Camera, Fatal) << "Trying to complete a request when stopped";
+
 	requestCompleted.emit(request);
 }
 

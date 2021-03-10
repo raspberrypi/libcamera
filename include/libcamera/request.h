@@ -50,6 +50,7 @@ public:
 	int addBuffer(const Stream *stream, FrameBuffer *buffer);
 	FrameBuffer *findBuffer(const Stream *stream) const;
 
+	uint32_t sequence() const { return sequence_; }
 	uint64_t cookie() const { return cookie_; }
 	Status status() const { return status_; }
 
@@ -71,6 +72,7 @@ private:
 	BufferMap bufferMap_;
 	std::unordered_set<FrameBuffer *> pending_;
 
+	uint32_t sequence_;
 	const uint64_t cookie_;
 	Status status_;
 	bool cancelled_;

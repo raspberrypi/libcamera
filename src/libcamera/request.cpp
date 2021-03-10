@@ -72,8 +72,8 @@ LOG_DEFINE_CATEGORY(Request)
  *
  */
 Request::Request(Camera *camera, uint64_t cookie)
-	: camera_(camera), cookie_(cookie), status_(RequestPending),
-	  cancelled_(false)
+	: camera_(camera), sequence_(0), cookie_(cookie),
+	  status_(RequestPending), cancelled_(false)
 {
 	/**
 	 * \todo Should the Camera expose a validator instance, to avoid
@@ -126,6 +126,7 @@ void Request::reuse(ReuseFlag flags)
 		bufferMap_.clear();
 	}
 
+	sequence_ = 0;
 	status_ = RequestPending;
 	cancelled_ = false;
 
@@ -225,6 +226,23 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  * \todo Offer a read-only API towards applications while keeping a read/write
  * API internally.
  * \return The metadata associated with the request
+ */
+
+/**
+ * \fn Request::sequence()
+ * \brief Retrieve the sequence number for the request
+ *
+ * When requests are queued, they are given a sequential number to track the
+ * order in which requests are queued to a camera. This number counts all
+ * requests given to a camera through its lifetime, and is not reset to zero
+ * between camera stop/start sequences.
+ *
+ * It can be used to support debugging and identifying the flow of requests
+ * through a pipeline, but does not guarantee to represent the sequence number
+ * of any images in the stream. The sequence number is stored as an unsigned
+ * integer and will wrap when overflowed.
+ *
+ * \return The request sequence number
  */
 
 /**

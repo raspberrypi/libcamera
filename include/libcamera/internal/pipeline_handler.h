@@ -38,7 +38,7 @@ class CameraData
 {
 public:
 	explicit CameraData(PipelineHandler *pipe)
-		: pipe_(pipe)
+		: pipe_(pipe), requestSequence_(0)
 	{
 	}
 	virtual ~CameraData() = default;
@@ -47,6 +47,8 @@ public:
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
 	ControlList properties_;
+
+	uint32_t requestSequence_;
 
 private:
 	LIBCAMERA_DISABLE_COPY(CameraData)

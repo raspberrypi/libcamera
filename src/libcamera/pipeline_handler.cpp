@@ -382,6 +382,8 @@ int PipelineHandler::queueRequest(Request *request)
 	CameraData *data = cameraData(camera);
 	data->queuedRequests_.push_back(request);
 
+	request->sequence_ = data->requestSequence_++;
+
 	int ret = queueRequestDevice(camera, request);
 	if (ret)
 		data->queuedRequests_.remove(request);

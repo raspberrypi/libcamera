@@ -376,13 +376,15 @@ int CameraDevice::initialize()
 			facing_ = CAMERA_FACING_BACK;
 			break;
 		case properties::CameraLocationExternal:
-			/*
-			 * \todo Set this to EXTERNAL once we support
-			 * HARDWARE_LEVEL_EXTERNAL
-			 */
-			facing_ = CAMERA_FACING_FRONT;
+			facing_ = CAMERA_FACING_EXTERNAL;
 			break;
 		}
+	} else {
+		/*
+		 * \todo Retrieve the camera location from configuration file
+		 * if not available from the library.
+		 */
+		facing_ = CAMERA_FACING_FRONT;
 	}
 
 	/*

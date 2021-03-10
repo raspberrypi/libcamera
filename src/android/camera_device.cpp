@@ -6,6 +6,7 @@
  */
 
 #include "camera_device.h"
+#include "camera_hal_config.h"
 #include "camera_ops.h"
 #include "post_processor.h"
 
@@ -440,12 +441,25 @@ std::unique_ptr<CameraDevice> CameraDevice::create(unsigned int id,
 }
 
 /*
- * Initialize the camera static information.
+ * Initialize the camera static information retrieved from the
+ * Camera::properties or from the cameraConfigData.
+ *
+ * cameraConfigData is optional for external camera devices and can be
+ * nullptr.
+ *
  * This method is called before the camera device is opened.
  */
-int CameraDevice::initialize()
+int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 {
-	/* Initialize orientation and facing side of the camera. */
+	/*
+	 * Initialize orientation and facing side of the camera.
+	 *
+	 * If the libcamera::Camera provides those information as retrieved
+	 * from firmware use them, otherwise fallback to values parsed from
+	 * the configuration file. If the configuration file is not available
+	 * the camera is external so its location and rotation can be safely
+	 * defaulted.
+	 */
 	const ControlList &properties = camera_->properties();
 
 	if (properties.contains(properties::Location)) {
@@ -461,12 +475,22 @@ int CameraDevice::initialize()
 			facing_ = CAMERA_FACING_EXTERNAL;
 			break;
 		}
+
+		if (cameraConfigData && cameraConfigData->facing != -1 &&
+		    facing_ != cameraConfigData->facing) {
+			LOG(HAL, Warning)
+				<< "Camera location does not match"
+				<< " configuration file. Using " << facing_;
+		}
+	} else if (cameraConfigData) {
+		if (cameraConfigData->facing == -1) {
+			LOG(HAL, Error)
+				<< "Camera facing not in configuration file";
+			return -EINVAL;
+		}
+		facing_ = cameraConfigData->facing;
 	} else {
-		/*
-		 * \todo Retrieve the camera location from configuration file
-		 * if not available from the library.
-		 */
-		facing_ = CAMERA_FACING_FRONT;
+		facing_ = CAMERA_FACING_EXTERNAL;
 	}
 
 	/*
@@ -480,8 +504,24 @@ int CameraDevice::initialize()
 	if (properties.contains(properties::Rotation)) {
 		int rotation = properties.get(properties::Rotation);
 		orientation_ = (360 - rotation) % 360;
+		if (cameraConfigData && cameraConfigData->rotation != -1 &&
+		    orientation_ != cameraConfigData->rotation) {
+			LOG(HAL, Warning)
+				<< "Camera orientation does not match"
+				<< " configuration file. Using " << orientation_;
+		}
+	} else if (cameraConfigData) {
+		if (cameraConfigData->rotation == -1) {
+			LOG(HAL, Error)
+				<< "Camera rotation not in configuration file";
+			return -EINVAL;
+		}
+		orientation_ = cameraConfigData->rotation;
+	} else {
+		orientation_ = 0;
 	}
 
+	/* Acquire the camera and initialize available stream configurations. */
 	int ret = camera_->acquire();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to temporarily acquire the camera";

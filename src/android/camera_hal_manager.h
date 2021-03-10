@@ -19,6 +19,8 @@
 
 #include <libcamera/camera_manager.h>
 
+#include "camera_hal_config.h"
+
 class CameraDevice;
 
 class CameraHalManager
@@ -50,6 +52,7 @@ private:
 	CameraDevice *cameraDeviceFromHalId(unsigned int id);
 
 	std::unique_ptr<libcamera::CameraManager> cameraManager_;
+	CameraHalConfig halConfig_;
 
 	const camera_module_callbacks_t *callbacks_;
 	std::vector<std::unique_ptr<CameraDevice>> cameras_;

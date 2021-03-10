@@ -468,12 +468,10 @@ int CameraSensor::initProperties()
 			propertyValue = properties::CameraLocationBack;
 			break;
 		}
+		properties_.set(properties::Location, propertyValue);
 	} else {
-		LOG(CameraSensor, Warning)
-			<< "Failed to retrieve the camera location, setting to External";
-		propertyValue = properties::CameraLocationExternal;
+		LOG(CameraSensor, Warning) << "Failed to retrieve the camera location";
 	}
-	properties_.set(properties::Location, propertyValue);
 
 	const auto &rotationControl = controls.find(V4L2_CID_CAMERA_SENSOR_ROTATION);
 	if (rotationControl != controls.end()) {

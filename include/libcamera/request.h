@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <stdint.h>
+#include <string>
 #include <unordered_set>
 
 #include <libcamera/class.h>
@@ -55,6 +56,8 @@ public:
 	Status status() const { return status_; }
 
 	bool hasPendingBuffers() const { return !pending_.empty(); }
+
+	std::string toString() const;
 
 private:
 	LIBCAMERA_DISABLE_COPY(Request)

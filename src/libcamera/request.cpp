@@ -8,6 +8,7 @@
 #include <libcamera/request.h>
 
 #include <map>
+#include <sstream>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
@@ -286,9 +287,7 @@ void Request::complete()
 
 	status_ = cancelled_ ? RequestCancelled : RequestComplete;
 
-	LOG(Request, Debug)
-		<< "Request has completed - cookie: " << cookie_
-		<< (cancelled_ ? " [Cancelled]" : "");
+	LOG(Request, Debug) << toString();
 
 	LIBCAMERA_TRACEPOINT(request_complete, this);
 }
@@ -319,6 +318,29 @@ bool Request::completeBuffer(FrameBuffer *buffer)
 		cancelled_ = true;
 
 	return !hasPendingBuffers();
+}
+
+/**
+ * \brief Generate a string representation of the Request internals
+ *
+ * This function facilitates debugging of Request state while it is used
+ * internally within libcamera.
+ *
+ * \return A string representing the current state of the request
+ */
+std::string Request::toString() const
+{
+	std::stringstream ss;
+
+	/* Pending, Completed, Cancelled(X). */
+	static const char *statuses = "PCX";
+
+	/* Example Output: Request(55:P:1/2:6523524) */
+	ss << "Request(" << sequence_ << ":" << statuses[status_] << ":"
+	   << pending_.size() << "/" << bufferMap_.size() << ":"
+	   << cookie_ << ")";
+
+	return ss.str();
 }
 
 } /* namespace libcamera */

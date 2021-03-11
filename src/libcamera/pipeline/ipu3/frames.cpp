@@ -49,12 +49,13 @@ IPU3Frames::Info *IPU3Frames::create(Request *request)
 		LOG(IPU3, Error) << "Parameters buffer underrun";
 		return nullptr;
 	}
-	FrameBuffer *paramBuffer = availableParamBuffers_.front();
 
 	if (availableStatBuffers_.empty()) {
 		LOG(IPU3, Error) << "Statistics buffer underrun";
 		return nullptr;
 	}
+
+	FrameBuffer *paramBuffer = availableParamBuffers_.front();
 	FrameBuffer *statBuffer = availableStatBuffers_.front();
 
 	availableParamBuffers_.pop();

@@ -278,9 +278,8 @@ FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 
 		buffer = availableBuffers_.front();
 		availableBuffers_.pop();
+		buffer->setRequest(request);
 	}
-
-	buffer->setRequest(request);
 
 	int ret = output_->queueBuffer(buffer);
 	if (ret)

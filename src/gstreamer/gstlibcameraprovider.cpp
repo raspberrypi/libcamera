@@ -101,7 +101,7 @@ gst_libcamera_device_finalize(GObject *object)
 
 	g_free(self->name);
 
-	G_OBJECT_GET_CLASS(klass)->finalize(object);
+	G_OBJECT_CLASS(klass)->finalize(object);
 }
 
 static void
@@ -218,7 +218,7 @@ gst_libcamera_provider_finalize(GObject *object)
 
 	delete self->cm;
 
-	return G_OBJECT_GET_CLASS(klass)->finalize(object);
+	return G_OBJECT_CLASS(klass)->finalize(object);
 }
 
 static void

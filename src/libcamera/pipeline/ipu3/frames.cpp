@@ -113,7 +113,8 @@ IPU3Frames::Info *IPU3Frames::find(unsigned int id)
 	if (itInfo != frameInfo_.end())
 		return itInfo->second.get();
 
-	LOG(IPU3, Error) << "Can't find tracking informaton for frame " << id;
+	LOG(IPU3, Fatal) << "Can't find tracking information for frame " << id;
+
 	return nullptr;
 }
 
@@ -131,7 +132,8 @@ IPU3Frames::Info *IPU3Frames::find(FrameBuffer *buffer)
 			return info;
 	}
 
-	LOG(IPU3, Error) << "Can't find tracking informaton from buffer";
+	LOG(IPU3, Fatal) << "Can't find tracking information from buffer";
+
 	return nullptr;
 }
 

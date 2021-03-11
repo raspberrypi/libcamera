@@ -18,7 +18,6 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(IPU3)
 
 IPU3Frames::IPU3Frames()
-	: nextId_(0)
 {
 }
 
@@ -31,7 +30,6 @@ void IPU3Frames::init(const std::vector<std::unique_ptr<FrameBuffer>> &paramBuff
 	for (const std::unique_ptr<FrameBuffer> &buffer : statBuffers)
 		availableStatBuffers_.push(buffer.get());
 
-	nextId_ = 0;
 	frameInfo_.clear();
 }
 
@@ -43,7 +41,7 @@ void IPU3Frames::clear()
 
 IPU3Frames::Info *IPU3Frames::create(Request *request)
 {
-	unsigned int id = nextId_++;
+	unsigned int id = request->sequence();
 
 	if (availableParamBuffers_.empty()) {
 		LOG(IPU3, Error) << "Parameters buffer underrun";

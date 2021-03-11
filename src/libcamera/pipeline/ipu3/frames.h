@@ -53,7 +53,6 @@ private:
 	std::queue<FrameBuffer *> availableParamBuffers_;
 	std::queue<FrameBuffer *> availableStatBuffers_;
 
-	unsigned int nextId_;
 	std::map<unsigned int, std::unique_ptr<Info>> frameInfo_;
 };
 

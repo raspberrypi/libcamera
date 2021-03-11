@@ -52,19 +52,18 @@ GST_DEBUG_CATEGORY_STATIC(source_debug);
 #define GST_CAT_DEFAULT source_debug
 
 struct RequestWrap {
-	RequestWrap(Request *request);
+	RequestWrap(std::unique_ptr<Request> request);
 	~RequestWrap();
 
 	void attachBuffer(GstBuffer *buffer);
 	GstBuffer *detachBuffer(Stream *stream);
 
-	/* For ptr comparison only. */
-	Request *request_;
+	std::unique_ptr<Request> request_;
 	std::map<Stream *, GstBuffer *> buffers_;
 };
 
-RequestWrap::RequestWrap(Request *request)
-	: request_(request)
+RequestWrap::RequestWrap(std::unique_ptr<Request> request)
+	: request_(std::move(request))
 {
 }
 
@@ -74,8 +73,6 @@ RequestWrap::~RequestWrap()
 		if (item.second)
 			gst_buffer_unref(item.second);
 	}
-
-	delete request_;
 }
 
 void RequestWrap::attachBuffer(GstBuffer *buffer)
@@ -164,7 +161,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 	std::unique_ptr<RequestWrap> wrap = std::move(requests_.front());
 	requests_.pop();
 
-	g_return_if_fail(wrap->request_ == request);
+	g_return_if_fail(wrap->request_.get() == request);
 
 	if ((request->status() == Request::RequestCancelled)) {
 		GST_DEBUG_OBJECT(src_, "Request was cancelled");
@@ -269,7 +266,18 @@ gst_libcamera_src_task_run(gpointer user_data)
 	GstLibcameraSrcState *state = self->state;
 
 	std::unique_ptr<Request> request = state->cam_->createRequest();
-	auto wrap = std::make_unique<RequestWrap>(request.get());
+	if (!request) {
+		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
+				  ("Failed to allocate request for camera '%s'.",
+				   state->cam_->id().c_str()),
+				  ("libcamera::Camera::createRequest() failed"));
+		gst_task_stop(self->task);
+		return;
+	}
+
+	std::unique_ptr<RequestWrap> wrap =
+		std::make_unique<RequestWrap>(std::move(request));
+
 	for (GstPad *srcpad : state->srcpads_) {
 		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
 		GstBuffer *buffer;
@@ -279,24 +287,23 @@ gst_libcamera_src_task_run(gpointer user_data)
 						     &buffer, nullptr);
 		if (ret != GST_FLOW_OK) {
 			/*
-			 * RequestWrap does not take ownership, and we won't be
-			 * queueing this one due to lack of buffers.
+			 * RequestWrap has ownership of the rquest, and we
+			 * won't be queueing this one due to lack of buffers.
 			 */
-			request.reset();
+			wrap.release();
 			break;
 		}
 
 		wrap->attachBuffer(buffer);
 	}
 
-	if (request) {
+	if (wrap) {
 		GLibLocker lock(GST_OBJECT(self));
 		GST_TRACE_OBJECT(self, "Requesting buffers");
-		state->cam_->queueRequest(request.get());
+		state->cam_->queueRequest(wrap->request_.get());
 		state->requests_.push(std::move(wrap));
 
-		/* The request will be deleted in the completion handler. */
-		request.release();
+		/* The RequestWrap will be deleted in the completion handler. */
 	}
 
 	GstFlowReturn ret = GST_FLOW_OK;

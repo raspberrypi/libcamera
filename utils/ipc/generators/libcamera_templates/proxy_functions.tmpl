@@ -26,12 +26,12 @@
 	if (!running_)
 		return;
 
-	running_ = false;
-
 	proxy_.invokeMethod(&ThreadProxy::stop, ConnectionTypeBlocking);
 
 	thread_.exit();
 	thread_.wait();
+
+	running_ = false;
 {%- endmacro -%}
 
 

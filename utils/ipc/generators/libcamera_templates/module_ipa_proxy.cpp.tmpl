@@ -173,6 +173,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 	{%- endfor -%}
 );
 {% elif method|is_async %}
+	ASSERT(running_);
 	proxy_.invokeMethod(&ThreadProxy::{{method.mojom_name}}, ConnectionTypeQueued,
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
@@ -225,6 +226,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 {% for method in interface_event.methods %}
 {{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
 {
+	ASSERT(running_);
 	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
 }
 

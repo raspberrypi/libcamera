@@ -31,6 +31,8 @@
 	thread_.exit();
 	thread_.wait();
 
+	Thread::current()->dispatchMessages(Message::Type::InvokeMessage);
+
 	running_ = false;
 {%- endmacro -%}
 

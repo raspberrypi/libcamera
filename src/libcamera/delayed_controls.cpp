@@ -38,6 +38,25 @@ LOG_DEFINE_CATEGORY(DelayedControls)
  */
 
 /**
+ * \struct DelayedControls::ControlParams
+ * \brief Parameters associated with controls handled by the \a DelayedControls
+ * helper class
+ *
+ * \var ControlParams::delay
+ * \brief Frame delay from setting the control on a sensor device to when it is
+ * consumed during framing.
+ *
+ * \var ControlParams::priorityWrite
+ * \brief Flag to indicate that this control must be applied ahead of, and
+ * separately from the other controls.
+ *
+ * Typically set for the \a V4L2_CID_VBLANK control so that the device driver
+ * does not reject \a V4L2_CID_EXPOSURE control values that may be outside of
+ * the existing vertical blanking specified bounds, but are within the new
+ * blanking bounds.
+ */
+
+/**
  * \brief Construct a DelayedControls instance
  * \param[in] device The V4L2 device the controls have to be applied to
  * \param[in] controlParams Map of the numerical V4L2 control ids to their

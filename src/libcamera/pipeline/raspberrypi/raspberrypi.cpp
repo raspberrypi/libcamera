@@ -138,7 +138,7 @@ class RPiCameraData : public CameraData
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), state_(State::Stopped),
+		: CameraData(pipe), embeddedNodeOpened_(false), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  updateScalerCrop_(true), dropFrameCount_(0), ispOutputCount_(0)
 	{
@@ -183,6 +183,7 @@ public:
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
+	bool embeddedNodeOpened_;
 
 	/*
 	 * All the functions in this class are called from a single calling
@@ -726,8 +727,13 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	if (data->sensorMetadata_) {
 		format = {};
 		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
+
+		if (!data->embeddedNodeOpened_) {
+			data->unicam_[Unicam::Embedded].dev()->open();
+			data->embeddedNodeOpened_ = true;
+		}
+
 		LOG(RPI, Debug) << "Setting embedded data format.";
-		data->unicam_[Unicam::Embedded].dev()->open();
 		ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "

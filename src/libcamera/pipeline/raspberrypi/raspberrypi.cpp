@@ -625,7 +625,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * StreamConfiguration appropriately.
 	 */
 	V4L2DeviceFormat format;
-	bool output1Set = false;
+	bool output0Set = false, output1Set = false;
 	for (unsigned i = 0; i < config->size(); i++) {
 		StreamConfiguration &cfg = config->at(i);
 
@@ -662,6 +662,35 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 		if (i != maxIndex)
 			output1Set = true;
+		else
+			output0Set = true;
+	}
+
+	/*
+	 * If ISP::Output0 stream has not been configured by the application,
+	 * we must allow the hardware to generate an output so that the data
+	 * flow in the pipeline handler remains consistent, and we still generate
+	 * statistics for the IPA to use. So enable the output at a very low
+	 * resolution for internal use.
+	 *
+	 * \todo Allow the pipeline to work correctly without Output0 and only
+	 * statistics coming from the hardware.
+	 */
+	if (!output0Set) {
+		maxSize = Size(320, 240);
+		format = {};
+		format.size = maxSize;
+		format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420, false);
+		ret = data->isp_[Isp::Output0].dev()->setFormat(&format);
+		if (ret) {
+			LOG(RPI, Error)
+				<< "Failed to set default format on ISP Output0: "
+				<< ret;
+			return -EINVAL;
+		}
+
+		LOG(RPI, Debug) << "Defaulting ISP Output0 format to "
+				<< format.toString();
 	}
 
 	/*

@@ -20,6 +20,11 @@
 
 namespace libcamera {
 
+/*
+ * Structs that are defined in core.mojom and have the skipHeader tag must be
+ * forward-declared or #included here.
+ */
+
 struct CameraSensorInfo;
 
 class IPAInterface

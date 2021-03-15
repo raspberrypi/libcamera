@@ -15,6 +15,7 @@
 #include <set>
 #include <string>
 #include <string.h>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -271,63 +272,71 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	int ret;
 
 	/*
-	 * Walk the pipeline towards the video node and store all entities
-	 * along the way.
+	 * Find the shortest path from the camera sensor to a video capture
+	 * device using the breadth-first search algorithm. This heuristic will
+	 * be most likely to skip paths that aren't suitable for the simple
+	 * pipeline handler on more complex devices, and is guaranteed to
+	 * produce a valid path on all devices that have a single option.
+	 *
+	 * For instance, on the IPU-based i.MX6Q, the shortest path will skip
+	 * encoders and image converters, and will end in a CSI capture device.
 	 */
-	MediaEntity *source = sensor;
+	std::unordered_set<MediaEntity *> visited;
+	std::queue<MediaEntity *> queue;
 
-	while (source) {
-		/* If we have reached a video node, we're done. */
-		if (source->function() == MEDIA_ENT_F_IO_V4L)
+	/* Remember at each entity where we came from. */
+	std::unordered_map<MediaEntity *, Entity> parents;
+	queue.push(sensor);
+
+	MediaEntity *entity = nullptr;
+
+	while (!queue.empty()) {
+		entity = queue.back();
+		queue.pop();
+
+		/* Found the capture device. */
+		if (entity->function() == MEDIA_ENT_F_IO_V4L) {
+			LOG(SimplePipeline, Debug)
+				<< "Found capture device " << entity->name();
+			video_ = pipe->video(entity);
 			break;
-
-		/*
-		 * Use the first output pad that has links and follow its first
-		 * link.
-		 */
-		MediaPad *sourcePad = nullptr;
-		MediaLink *sourceLink = nullptr;
-		for (MediaPad *pad : source->pads()) {
-			if ((pad->flags() & MEDIA_PAD_FL_SOURCE) &&
-			    !pad->links().empty()) {
-				sourcePad = pad;
-				sourceLink = pad->links().front();
-				break;
-			}
 		}
 
-		if (!sourcePad)
-			return;
+		/* The actual breadth-first search algorithm. */
+		visited.insert(entity);
+		for (MediaPad *pad : entity->pads()) {
+			if (!(pad->flags() & MEDIA_PAD_FL_SOURCE))
+				continue;
 
-		entities_.push_back({ source, sourceLink });
-
-		source = sourceLink->sink()->entity();
-
-		/* Avoid infinite loops. */
-		auto iter = std::find_if(entities_.begin(), entities_.end(),
-					 [&](const Entity &entity) {
-						 return entity.entity == source;
-					 });
-		if (iter != entities_.end()) {
-			LOG(SimplePipeline, Info) << "Loop detected in pipeline";
-			return;
+			for (MediaLink *link : pad->links()) {
+				MediaEntity *next = link->sink()->entity();
+				if (visited.find(next) == visited.end()) {
+					queue.push(next);
+					parents.insert({ next, { entity, link } });
+				}
+			}
 		}
 	}
 
-	/*
-	 * We have a valid pipeline, get the video device and create the camera
-	 * sensor.
-	 */
-	video_ = pipe->video(source);
 	if (!video_)
 		return;
 
+	/*
+	 * With the parents, we can follow back our way from the capture device
+	 * to the sensor.
+	 */
+	for (auto it = parents.find(entity); it != parents.end();
+	     it = parents.find(entity)) {
+		const Entity &e = it->second;
+		entities_.push_front(e);
+		entity = e.entity;
+	}
+
+	/* Finally also remember the sensor. */
 	sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = sensor_->init();
-	if (ret) {
+	if (ret)
 		sensor_.reset();
-		return;
-	}
 }
 
 int SimpleCameraData::init()

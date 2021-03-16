@@ -30,7 +30,7 @@ interface IPAIPU3Interface {
 	start() => (int32 ret);
 	stop();
 
-	configure(map<uint32, ControlInfoMap> entityControls) => ();
+	configure(map<uint32, ControlInfoMap> entityControls, Size bdsOutputSize) => ();
 
 	mapBuffers(array<IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);

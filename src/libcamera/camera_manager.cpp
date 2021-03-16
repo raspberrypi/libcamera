@@ -251,10 +251,6 @@ void CameraManager::Private::removeCamera(Camera *camera)
  * action from the application. Once the application has released all the
  * references it held to cameras, the camera manager can be stopped with
  * stop().
- *
- * \todo Add interface to register a notification callback to the user to be
- * able to inform it new cameras have been hot-plugged or cameras have been
- * removed due to hot-unplug.
  */
 
 CameraManager *CameraManager::self_ = nullptr;

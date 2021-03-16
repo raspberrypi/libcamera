@@ -633,6 +633,10 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 	}
 
+	std::map<uint32_t, ControlInfoMap> entityControls;
+	entityControls.emplace(0, data->cio2_.sensor()->controls());
+	data->ipa_->configure(entityControls);
+
 	return 0;
 }
 
@@ -717,7 +721,6 @@ int PipelineHandlerIPU3::freeBuffers(Camera *camera)
 
 int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
 {
-	std::map<uint32_t, ControlInfoMap> entityControls;
 	IPU3CameraData *data = cameraData(camera);
 	CIO2Device *cio2 = &data->cio2_;
 	ImgUDevice *imgu = data->imgu_;
@@ -743,9 +746,6 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] const ControlLis
 	ret = imgu->start();
 	if (ret)
 		goto error;
-
-	entityControls.emplace(0, data->cio2_.sensor()->controls());
-	data->ipa_->configure(entityControls);
 
 	return 0;
 

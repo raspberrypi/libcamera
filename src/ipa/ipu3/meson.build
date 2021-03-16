@@ -2,8 +2,13 @@
 
 ipa_name = 'ipa_ipu3'
 
+ipu3_ipa_sources = files([
+    'ipu3.cpp',
+    'ipu3_awb.cpp',
+])
+
 mod = shared_module(ipa_name,
-                    ['ipu3.cpp', libcamera_generated_ipa_headers],
+                    [ipu3_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : [ipa_includes, libipa_includes],
                     dependencies : libcamera_dep,

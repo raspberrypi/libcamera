@@ -21,6 +21,11 @@
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/log.h"
 
+#include "ipu3_awb.h"
+
+static constexpr uint32_t kMaxCellWidthPerSet = 160;
+static constexpr uint32_t kMaxCellHeightPerSet = 56;
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAIPU3)
@@ -51,6 +56,7 @@ private:
 			     const ipu3_uapi_stats_3a *stats);
 
 	void setControls(unsigned int frame);
+	void calculateBdsGrid(const Size &bdsOutputSize);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -63,6 +69,14 @@ private:
 	uint32_t gain_;
 	uint32_t minGain_;
 	uint32_t maxGain_;
+
+	/* Interface to the AWB algorithm */
+	std::unique_ptr<IPU3Awb> awbAlgo_;
+
+	/* Local parameter storage */
+	struct ipu3_uapi_params params_;
+
+	struct ipu3_uapi_grid_config bdsGrid_;
 };
 
 int IPAIPU3::start()
@@ -72,8 +86,58 @@ int IPAIPU3::start()
 	return 0;
 }
 
+/**
+ * This method calculates a grid for the AWB algorithm in the IPU3 firmware.
+ * Its input is the BDS output size calculated in the ImgU.
+ * It is limited for now to the simplest method: find the lesser error
+ * with the width/height and respective log2 width/height of the cells.
+ *
+ * \todo The frame is divided into cells which can be 8x8 => 128x128.
+ * As a smaller cell improves the algorithm precision, adapting the
+ * x_start and y_start parameters of the grid would provoke a loss of
+ * some pixels but would also result in more accurate algorithms.
+ */
+void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
+{
+	uint32_t minError = std::numeric_limits<uint32_t>::max();
+	Size best;
+	Size bestLog2;
+	bdsGrid_ = {};
+
+	for (uint32_t widthShift = 3; widthShift <= 7; ++widthShift) {
+		uint32_t width = std::min(kMaxCellWidthPerSet,
+					  bdsOutputSize.width >> widthShift);
+		width = width << widthShift;
+		for (uint32_t heightShift = 3; heightShift <= 7; ++heightShift) {
+			int32_t height = std::min(kMaxCellHeightPerSet,
+						  bdsOutputSize.height >> heightShift);
+			height = height << heightShift;
+			uint32_t error  = std::abs(static_cast<int>(width - bdsOutputSize.width))
+							+ std::abs(static_cast<int>(height - bdsOutputSize.height));
+
+			if (error > minError)
+				continue;
+
+			minError = error;
+			best.width = width;
+			best.height = height;
+			bestLog2.width = widthShift;
+			bestLog2.height = heightShift;
+		}
+	}
+
+	bdsGrid_.width = best.width >> bestLog2.width;
+	bdsGrid_.block_width_log2 = bestLog2.width;
+	bdsGrid_.height = best.height >> bestLog2.height;
+	bdsGrid_.block_height_log2 = bestLog2.height;
+
+	LOG(IPAIPU3, Debug) << "Best grid found is: ("
+			    << (int)bdsGrid_.width << " << " << (int)bdsGrid_.block_width_log2 << ") x ("
+			    << (int)bdsGrid_.height << " << " << (int)bdsGrid_.block_height_log2 << ")";
+}
+
 void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls,
-			[[maybe_unused]] const Size &bdsOutputSize)
+			const Size &bdsOutputSize)
 {
 	if (entityControls.empty())
 		return;
@@ -94,11 +158,18 @@ void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls
 
 	minExposure_ = std::max(itExp->second.min().get<int32_t>(), 1);
 	maxExposure_ = itExp->second.max().get<int32_t>();
-	exposure_ = maxExposure_;
+	exposure_ = minExposure_;
 
 	minGain_ = std::max(itGain->second.min().get<int32_t>(), 1);
 	maxGain_ = itGain->second.max().get<int32_t>();
-	gain_ = maxGain_;
+	gain_ = minGain_;
+
+	params_ = {};
+
+	calculateBdsGrid(bdsOutputSize);
+
+	awbAlgo_ = std::make_unique<IPU3Awb>();
+	awbAlgo_->initialise(params_, bdsOutputSize, bdsGrid_);
 }
 
 void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)
@@ -170,10 +241,10 @@ void IPAIPU3::processControls([[maybe_unused]] unsigned int frame,
 
 void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 {
-	/* Prepare parameters buffer. */
-	memset(params, 0, sizeof(*params));
+	/* Pass a default gamma of 1.0 (default linear correction) */
+	awbAlgo_->updateWbParameters(params_, 1.0);
 
-	/* \todo Fill in parameters buffer. */
+	*params = params_;
 
 	IPU3Action op;
 	op.op = ActionParamFilled;
@@ -186,8 +257,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 {
 	ControlList ctrls(controls::controls);
 
-	/* \todo React to statistics and update internal state machine. */
-	/* \todo Add meta-data information to ctrls. */
+	awbAlgo_->calculateWBGains(stats);
 
 	IPU3Action op;
 	op.op = ActionMetadataReady;

@@ -394,17 +394,43 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	const Size &in = pipe->input;
 	Size gdc = calculateGDC(pipe);
 
-	unsigned int ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
-	unsigned int ifHeight = in.height;
-	unsigned int minIfWidth = in.width - IF_CROP_MAX_W;
 	float bdsSF = static_cast<float>(in.width) / gdc.width;
 	float sf = findScaleFactor(bdsSF, bdsScalingFactors, true);
 
+	/* Populate the configurations vector by scaling width and height. */
+	unsigned int ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
+	unsigned int ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
+	unsigned int minIfWidth = std::min(IF_ALIGN_W,
+					   in.width - IF_CROP_MAX_W);
+	unsigned int minIfHeight = std::min(IF_ALIGN_H,
+					    in.height - IF_CROP_MAX_H);
 	while (ifWidth >= minIfWidth) {
-		Size iif{ ifWidth, ifHeight };
-		calculateBDS(pipe, iif, gdc, sf);
+		while (ifHeight >= minIfHeight) {
+			Size iif{ ifWidth, ifHeight };
+			calculateBDS(pipe, iif, gdc, sf);
+			ifHeight -= IF_ALIGN_H;
+		}
 
 		ifWidth -= IF_ALIGN_W;
+	}
+
+	/* Repeat search by scaling width first. */
+	ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
+	ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
+	minIfWidth = std::min(IF_ALIGN_W, in.width - IF_CROP_MAX_W);
+	minIfHeight = std::min(IF_ALIGN_H, in.height - IF_CROP_MAX_H);
+	while (ifHeight >= minIfHeight) {
+		/*
+		 * \todo This procedure is probably broken:
+		 * https://github.com/intel/intel-ipu3-pipecfg/issues/2
+		 */
+		while (ifWidth >= minIfWidth) {
+			Size iif{ ifWidth, ifHeight };
+			calculateBDS(pipe, iif, gdc, sf);
+			ifWidth -= IF_ALIGN_W;
+		}
+
+		ifHeight -= IF_ALIGN_H;
 	}
 
 	if (pipeConfigs.size() == 0) {

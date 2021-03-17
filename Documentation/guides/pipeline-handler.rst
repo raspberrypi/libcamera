@@ -1434,7 +1434,7 @@ capture through the pipeline through both of the cam and qcam utilities.
 .. code-block:: shell
 
    ninja -C build
-   ./build/src/cam/cam -c vivid -C 5
+   ./build/src/cam/cam -c vivid -C5
 
 To test that the pipeline handler can detect a device, and capture input.
 

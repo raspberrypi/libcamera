@@ -33,6 +33,7 @@ namespace {
  * at revision: 61e83f2f7606 ("Add more information into README")
  */
 
+static constexpr unsigned int FILTER_W = 4;
 static constexpr unsigned int FILTER_H = 4;
 
 static constexpr unsigned int IF_ALIGN_W = 2;
@@ -194,15 +195,20 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 
 void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, float bdsSF)
 {
-	unsigned int minBDSWidth = gdc.width + FILTER_H * 2;
+	unsigned int minBDSWidth = gdc.width + FILTER_W * 2;
+	unsigned int minBDSHeight = gdc.height + FILTER_H * 2;
 
 	float sf = bdsSF;
 	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
 		float bdsWidth = static_cast<float>(iif.width) / sf;
+		float bdsHeight = static_cast<float>(iif.height) / sf;
 
-		if (std::fmod(bdsWidth, 1.0) == 0) {
+		if (std::fmod(bdsWidth, 1.0) == 0 &&
+		    std::fmod(bdsHeight, 1.0) == 0) {
 			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
-			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth)
+			unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth &&
+			    !(bdsIntHeight % BDS_ALIGN_H) && bdsHeight >= minBDSHeight)
 				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
 		}
 
@@ -212,10 +218,14 @@ void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, floa
 	sf = bdsSF;
 	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
 		float bdsWidth = static_cast<float>(iif.width) / sf;
+		float bdsHeight = static_cast<float>(iif.height) / sf;
 
-		if (std::fmod(bdsWidth, 1.0) == 0) {
+		if (std::fmod(bdsWidth, 1.0) == 0 &&
+		    std::fmod(bdsHeight, 1.0) == 0) {
 			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
-			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth)
+			unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth &&
+			    !(bdsIntHeight % BDS_ALIGN_H) && bdsHeight >= minBDSHeight)
 				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
 		}
 

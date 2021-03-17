@@ -135,7 +135,8 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 		estIFHeight = std::clamp<float>(estIFHeight, minIFHeight, iif.height);
 
 		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
-		while (ifHeight >= minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
+		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
+		       ifHeight / bdsSF >= minBDSHeight) {
 
 			bdsHeight = ifHeight / bdsSF;
 			if (std::fmod(bdsHeight, 1.0) == 0) {
@@ -151,7 +152,8 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 		}
 
 		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
-		while (ifHeight <= iif.height && ifHeight / bdsSF >= minBDSHeight) {
+		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
+		       ifHeight / bdsSF >= minBDSHeight) {
 
 			bdsHeight = ifHeight / bdsSF;
 			if (std::fmod(bdsHeight, 1.0) == 0) {

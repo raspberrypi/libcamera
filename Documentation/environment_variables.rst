@@ -15,17 +15,17 @@ LIBCAMERA_LOG_FILE
    Example value: ``/home/{user}/camera_log.log``
 
 LIBCAMERA_LOG_LEVELS
-   Configure the verbosity of log messages for different categories (`more <#log-levels>`__).
+   Configure the verbosity of log messages for different categories (`more <Log levels_>`__).
 
    Example value: ``*:DEBUG``
 
 LIBCAMERA_IPA_CONFIG_PATH
-   Define custom search locations for IPA configurations (`more <#ipa-configuration>`__).
+   Define custom search locations for IPA configurations (`more <IPA configuration_>`__).
 
    Example value: ``${HOME}/.libcamera/share/ipa:/opt/libcamera/vendor/share/ipa``
 
 LIBCAMERA_IPA_MODULE_PATH
-   Define custom search locations for IPA modules (`more <#ipa-module>`__).
+   Define custom search locations for IPA modules (`more <IPA module_>`__).
 
    Example value: ``${HOME}/.libcamera/lib:/opt/libcamera/vendor/lib``
 
@@ -42,10 +42,10 @@ libcamera.
 The ``LIBCAMERA_LOG_LEVELS`` variable accepts a comma-separated list of
 'category:level' pairs.
 
-The `level <#log-levels>`__ part is mandatory and can either be specified by
+The `level <Log levels_>`__ part is mandatory and can either be specified by
 name or by numerical index associated with each level.
 
-The optional `category <#log-categories>`__ is a string matching the categories
+The optional `category <Log categories_>`__ is a string matching the categories
 defined by each file in the source base using the logging infrastructure. It
 can include a wildcard ('*') character at the end to match multiple categories.
 
@@ -53,7 +53,7 @@ For more information refer to the `API documentation <http://libcamera.org/api-h
 
 Examples:
 
-Enable full debug output to a separate file, for every `category <#log-categories>`__
+Enable full debug output to a separate file, for every `category <Log categories_>`__
 within a local environment:
 
 .. code:: bash

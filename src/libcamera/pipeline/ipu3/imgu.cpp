@@ -177,7 +177,7 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 		}
 	} else {
 		ifHeight = utils::alignUp(iif.height, IF_ALIGN_H);
-		while (ifHeight > minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
+		while (ifHeight >= minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
 
 			bdsHeight = ifHeight / bdsSF;
 			if (std::fmod(ifHeight, 1.0) == 0 && std::fmod(bdsHeight, 1.0) == 0) {

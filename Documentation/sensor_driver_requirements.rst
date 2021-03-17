@@ -51,7 +51,7 @@ The sensor driver should support the following V4L2 controls:
 * `V4L2_CID_CAMERA_SENSOR_ROTATION`_
 
 .. _V4L2_CID_CAMERA_ORIENTATION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-camera.html
-.. _V4L2_CID_CAMERA_SENSOR_ROTATION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-process.html
+.. _V4L2_CID_CAMERA_SENSOR_ROTATION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-camera.html
 
 The controls are used to register the camera location and rotation.
 
@@ -60,7 +60,7 @@ specifically it should implement support for the
 `VIDIOC_SUBDEV_G_SELECTION`_ ioctl with support for the following selection
 targets:
 
-.. _VIDIOC_SUBDEV_G_SELECTION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/vidioc-subdev-g-selection.html?highlight=g_selection#c.V4L.VIDIOC_SUBDEV_G_SELECTION
+.. _VIDIOC_SUBDEV_G_SELECTION: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/vidioc-subdev-g-selection.html#c.V4L.VIDIOC_SUBDEV_G_SELECTION
 
 * `V4L2_SEL_TGT_CROP_BOUNDS`_ to report the readable pixel array area size
 * `V4L2_SEL_TGT_CROP_DEFAULT`_ to report the active pixel array area size

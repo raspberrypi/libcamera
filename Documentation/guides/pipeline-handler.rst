@@ -209,7 +209,7 @@ methods for the overridden class members.
           int exportFrameBuffers(Camera *camera, Stream *stream,
           std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-          int start(Camera *camera, ControlList *controls) override;
+          int start(Camera *camera, const ControlList *controls) override;
           void stop(Camera *camera) override;
 
           int queueRequestDevice(Camera *camera, Request *request) override;
@@ -239,7 +239,7 @@ methods for the overridden class members.
           return -1;
    }
 
-   int PipelineHandlerVivid::start(Camera *camera, ControlList *controls)
+   int PipelineHandlerVivid::start(Camera *camera, const ControlList *controls)
    {
           return -1;
    }
@@ -303,13 +303,13 @@ new pipeline handler by running:
 
 .. code-block:: shell
 
-   LIBCAMERA_LOG_LEVELS=Pipeline:0 ./build/src/cam/cam -l
+   LIBCAMERA_LOG_LEVELS=Camera:0 ./build/src/cam/cam -l
 
 And you should see output like the below:
 
 .. code-block:: shell
 
-    DEBUG Pipeline pipeline_handler.cpp:680 Registered pipeline handler "PipelineHandlerVivid"
+    DEBUG Camera camera_manager.cpp:148 Found registered pipeline handler 'PipelineHandlerVivid'
 
 Matching devices
 ~~~~~~~~~~~~~~~~

@@ -119,7 +119,7 @@ V4L2 Compatibility Layer
   V4L2 compatibility is achieved through a shared library that traps all
   accesses to camera devices and routes them to libcamera to emulate high-level
   V4L2 camera devices. It is injected in a process address space through
-  `LD_PRELOAD` and is completely transparent for applications.
+  ``LD_PRELOAD`` and is completely transparent for applications.
 
   The compatibility layer exposes camera device features on a best-effort basis,
   and aims for the level of features traditionally available from a UVC camera

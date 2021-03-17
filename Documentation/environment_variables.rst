@@ -35,10 +35,11 @@ Further details
 Notes about debugging
 ~~~~~~~~~~~~~~~~~~~~~
 
-The environment variables `LIBCAMERA_LOG_FILE` and `LIBCAMERA_LOG_LEVELS` are
-used to modify the destination and verbosity of messages provided by libcamera.
+The environment variables ``LIBCAMERA_LOG_FILE`` and ``LIBCAMERA_LOG_LEVELS``
+are used to modify the destination and verbosity of messages provided by
+libcamera.
 
-The `LIBCAMERA_LOG_LEVELS` variable accepts a comma-separated list of
+The ``LIBCAMERA_LOG_LEVELS`` variable accepts a comma-separated list of
 'category:level' pairs.
 
 The `level <#log-levels>`__ part is mandatory and can either be specified by
@@ -61,8 +62,8 @@ within a local environment:
        LIBCAMERA_LOG_LEVELS=0 \
        cam --list
 
-Enable full debug output for the categories `Camera` and `V4L2` within a global
-environment:
+Enable full debug output for the categories ``Camera`` and ``V4L2`` within a
+global environment:
 
 .. code:: bash
 
@@ -100,10 +101,10 @@ There are two available macros used to assign a category name to a part of the
 libcamera codebase:
 
 LOG_DEFINE_CATEGORY
-   This macro is required, in order to use the `LOGC` macro for a particular
+   This macro is required, in order to use the ``LOGC`` macro for a particular
    category. It can only be used once for each category. If you want to create
    log messages within multiple compilation units for the same category utilize
-   the `LOG_DECLARE_CATEGORY` macro, in every file except the definition file.
+   the ``LOG_DECLARE_CATEGORY`` macro, in every file except the definition file.
 LOG_DECLARE_CATEGORY
    Used for sharing an already defined category between multiple separate
    compilation units.
@@ -118,7 +119,7 @@ IPA modules use configuration files to store parameters. The format and
 contents of the configuration files is specific to the IPA module. They usually
 contain tuning parameters for the algorithms, in JSON format.
 
-The `LIBCAMERA_IPA_CONFIG_PATH` variable can be used to specify custom
+The ``LIBCAMERA_IPA_CONFIG_PATH`` variable can be used to specify custom
 storage locations to search for those configuration files.
 
 `Examples <https://git.libcamera.org/libcamera/libcamera.git/tree/src/ipa/raspberrypi/data>`__
@@ -130,5 +131,5 @@ In order to locate the correct IPA module for your hardware, libcamera gathers
 existing IPA modules from multiple locations. The default locations for this
 operation are the installed system path (for example on Debian:
 ``/usr/local/x86_64-pc-linux-gnu/libcamera``) and the build directory.
-With the `LIBCAMERA_IPA_MODULE_PATH`, you can specify a non-default
-location to search for IPA modules.
+With the ``LIBCAMERA_IPA_MODULE_PATH``, you can specify a non-default location
+to search for IPA modules.

@@ -95,9 +95,9 @@ GStreamer can find it.
 
   export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
 
-The debugging tool `gst-launch-1.0` can be used to construct and pipeline and test
-it. The following pipeline will stream from the camera named "Camera 1" onto the
-default video display element on your system.
+The debugging tool ``gst-launch-1.0`` can be used to construct a pipeline and
+test it. The following pipeline will stream from the camera named "Camera 1"
+onto the default video display element on your system.
 
 .. code::
 

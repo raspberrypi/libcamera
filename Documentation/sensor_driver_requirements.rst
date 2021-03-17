@@ -34,13 +34,13 @@ For RAW sensors, the sensor driver shall support the following V4L2 controls:
 .. _V4L2_CID_PIXEL_RATE: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-process.html
 .. _V4L2_CID_VBLANK: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-source.html
 
-While V4L2 doesn't specify a unit for the `EXPOSURE` control, libcamera requires
-it to be expressed as a number of image lines. Camera sensor drivers that do not
-comply with this requirement will need to be adapted or will produce incorrect
-results.
+While V4L2 doesn't specify a unit for the ``EXPOSURE`` control, libcamera
+requires it to be expressed as a number of image lines. Camera sensor drivers
+that do not comply with this requirement will need to be adapted or will produce
+incorrect results.
 
-The `HBLANK`, `PIXEL_RATE` and `VBLANK` controls are used to compute the sensor
-output timings.
+The ``HBLANK``, ``PIXEL_RATE`` and ``VBLANK`` controls are used to compute the
+sensor output timings.
 
 Optional Requirements
 ---------------------

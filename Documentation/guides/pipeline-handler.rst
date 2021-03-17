@@ -177,7 +177,7 @@ configuring a build directory.
 .. _Meson build configuration: https://mesonbuild.com/Configuring-a-build-directory.html
 
 To add the new pipeline handler to this list of options, add its directory name
-to the libcamera build options in the top level _meson_options.txt_.
+to the libcamera build options in the top level ``meson_options.txt``.
 
 .. code-block:: none
 
@@ -778,7 +778,7 @@ implementation.
 .. code-block:: cpp
 
    std::map<V4L2PixelFormat, std::vector<SizeRange>> v4l2Formats =
-   data->video_->formats();
+           data->video_->formats();
    std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
    std::transform(v4l2Formats.begin(), v4l2Formats.end(),
           std::inserter(deviceFormats, deviceFormats.begin()),
@@ -1027,9 +1027,9 @@ Initializing device controls
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Pipeline handlers can optionally initialize the video devices and camera sensor
-controls at system configuration time, to make sure to make sure they are
-defaulted to sane values. Handling of device controls is again performed using
-the libcamera `controls framework`_.
+controls at system configuration time, to make sure they are defaulted to sane
+values. Handling of device controls is again performed using the libcamera
+`controls framework`_.
 
 .. _Controls Framework: http://libcamera.org/api-html/controls_8h.html
 
@@ -1240,7 +1240,7 @@ Replace the stubbed contents of ``queueRequestDevice`` with the following:
                   << "Attempt to queue request with invalid stream";
 
           return -ENOENT;
-    }
+   }
 
    int ret = data->video_->queueBuffer(buffer);
    if (ret < 0)
@@ -1396,7 +1396,7 @@ delivered to applications in the same order as they have been submitted.
 .. _connecting: http://libcamera.org/api-html/classlibcamera_1_1Signal.html#aa04db72d5b3091ffbb4920565aeed382
 
 Returning to the ``int VividCameraData::init()`` method, add the following above
-the closing ``return 0;`` to connects the pipeline handler ``bufferReady``
+the closing ``return 0;`` to connect the pipeline handler ``bufferReady``
 method to the V4L2 device buffer signal.
 
 .. code-block:: cpp
@@ -1428,7 +1428,7 @@ code-base.
 Testing a pipeline handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once you've built the pipeline handler, we ca rebuild the code base, and test
+Once you've built the pipeline handler, we can rebuild the code base, and test
 capture through the pipeline through both of the cam and qcam utilities.
 
 .. code-block:: shell

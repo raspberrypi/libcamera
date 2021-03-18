@@ -346,9 +346,11 @@ public:
 		const std::set<Stream *> &streams);
 	~Private();
 
-	int isAccessAllowed(State state, bool allowDisconnected = false) const;
+	int isAccessAllowed(State state, bool allowDisconnected = false,
+			    const char *from = __builtin_FUNCTION()) const;
 	int isAccessAllowed(State low, State high,
-			    bool allowDisconnected = false) const;
+			    bool allowDisconnected = false,
+			    const char *from = __builtin_FUNCTION()) const;
 
 	void disconnect();
 	void setState(State state);
@@ -384,7 +386,8 @@ static const char *const camera_state_names[] = {
 	"Running",
 };
 
-int Camera::Private::isAccessAllowed(State state, bool allowDisconnected) const
+int Camera::Private::isAccessAllowed(State state, bool allowDisconnected,
+				     const char *from) const
 {
 	if (!allowDisconnected && disconnected_)
 		return -ENODEV;
@@ -395,15 +398,16 @@ int Camera::Private::isAccessAllowed(State state, bool allowDisconnected) const
 
 	ASSERT(static_cast<unsigned int>(state) < std::size(camera_state_names));
 
-	LOG(Camera, Debug) << "Camera in " << camera_state_names[currentState]
-			   << " state trying operation requiring state "
+	LOG(Camera, Error) << "Camera in " << camera_state_names[currentState]
+			   << " state trying " << from << "() requiring state "
 			   << camera_state_names[state];
 
 	return -EACCES;
 }
 
 int Camera::Private::isAccessAllowed(State low, State high,
-				     bool allowDisconnected) const
+				     bool allowDisconnected,
+				     const char *from) const
 {
 	if (!allowDisconnected && disconnected_)
 		return -ENODEV;
@@ -415,8 +419,9 @@ int Camera::Private::isAccessAllowed(State low, State high,
 	ASSERT(static_cast<unsigned int>(low) < std::size(camera_state_names) &&
 	       static_cast<unsigned int>(high) < std::size(camera_state_names));
 
-	LOG(Camera, Debug) << "Camera in " << camera_state_names[currentState]
-			   << " state trying operation requiring state between "
+	LOG(Camera, Error) << "Camera in " << camera_state_names[currentState]
+			   << " state trying " << from
+			   << "() requiring state between "
 			   << camera_state_names[low] << " and "
 			   << camera_state_names[high];
 

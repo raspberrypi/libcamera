@@ -138,8 +138,8 @@ void Request::reuse(ReuseFlag flags)
  *
  * Requests store a list of controls to be applied to all frames captured for
  * the request. They are created with an empty list of controls that can be
- * accessed through this method and updated with ControlList::operator[]() or
- * ControlList::update().
+ * accessed through this method. Control values can be retrieved using
+ * ControlList::get() and updated using ControlList::set().
  *
  * Only controls supported by the camera to which this request will be
  * submitted shall be included in the controls list. Attempting to add an

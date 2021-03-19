@@ -377,23 +377,38 @@ int CamApp::run()
 std::string const CamApp::cameraName(const Camera *camera)
 {
 	const ControlList &props = camera->properties();
+	bool addModel = true;
 	std::string name;
 
-	switch (props.get(properties::Location)) {
-	case properties::CameraLocationFront:
-		name = "Internal front camera";
-		break;
-	case properties::CameraLocationBack:
-		name = "Internal back camera";
-		break;
-	case properties::CameraLocationExternal:
-		name = "External camera";
-		if (props.contains(properties::Model))
-			name += " '" + props.get(properties::Model) + "'";
-		break;
+	/*
+	 * Construct the name from the camera location, model and ID. The model
+	 * is only used if the location isn't present or is set to External.
+	 */
+	if (props.contains(properties::Location)) {
+		switch (props.get(properties::Location)) {
+		case properties::CameraLocationFront:
+			addModel = false;
+			name = "Internal front camera ";
+			break;
+		case properties::CameraLocationBack:
+			addModel = false;
+			name = "Internal back camera ";
+			break;
+		case properties::CameraLocationExternal:
+			name = "External camera ";
+			break;
+		}
 	}
 
-	name += " (" + camera->id() + ")";
+	if (addModel && props.contains(properties::Model)) {
+		/*
+		 * If the camera location is not availble use the camera model
+		 * to build the camera name.
+		 */
+		name = "'" + props.get(properties::Model) + "' ";
+	}
+
+	name += "(" + camera->id() + ")";
 
 	return name;
 }

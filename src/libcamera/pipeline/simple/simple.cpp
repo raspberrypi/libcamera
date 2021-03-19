@@ -69,11 +69,12 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  *
  * When matching a device, the pipeline handler enumerates all camera sensors
  * and attempts, for each of them, to find a path to a video capture video node.
- * It does so by traversing the media graph, following the first non permanently
- * disabled downstream link. If such a path is found, the pipeline handler
- * creates a corresponding SimpleCameraData instance, and stores the media graph
- * path in its entities_ list.
- *
+ * It does so by using a breadth-first search to find the shortest path from the
+ * sensor device to a valid capture device. This is guaranteed to produce a
+ * valid path on devices with one only option and is a good heuristic on more
+ * complex devices to skip paths that aren't suitable for the simple pipeline
+ * handler. For instance, on the IPU-based i.MX6, the shortest path will skip
+ * encoders and image converters, and it will end in a CSI capture device.
  * A more complex graph search algorithm could be implemented if a device that
  * would otherwise be compatible with the pipeline handler isn't correctly
  * handled by this heuristic.

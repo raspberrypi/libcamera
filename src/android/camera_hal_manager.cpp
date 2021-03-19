@@ -65,28 +65,29 @@ int CameraHalManager::init()
 	return 0;
 }
 
-CameraDevice *CameraHalManager::open(unsigned int id,
-				     const hw_module_t *hardwareModule)
+std::tuple<CameraDevice *, int>
+CameraHalManager::open(unsigned int id, const hw_module_t *hardwareModule)
 {
 	MutexLocker locker(mutex_);
 
 	if (!callbacks_) {
 		LOG(HAL, Error) << "Can't open camera before callbacks are set";
-		return nullptr;
+		return { nullptr, -ENODEV };
 	}
 
 	CameraDevice *camera = cameraDeviceFromHalId(id);
 	if (!camera) {
 		LOG(HAL, Error) << "Invalid camera id '" << id << "'";
-		return nullptr;
+		return { nullptr, -ENODEV };
 	}
 
-	if (camera->open(hardwareModule))
-		return nullptr;
+	int ret = camera->open(hardwareModule);
+	if (ret)
+		return { nullptr, ret };
 
 	LOG(HAL, Info) << "Open camera '" << id << "'";
 
-	return camera;
+	return { camera, 0 };
 }
 
 void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)

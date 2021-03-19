@@ -77,11 +77,11 @@ static int hal_dev_open(const hw_module_t *module, const char *name,
 	LOG(HAL, Debug) << "Open camera " << name;
 
 	int id = atoi(name);
-	CameraDevice *camera = cameraManager.open(id, module);
+	auto [camera, ret] = cameraManager.open(id, module);
 	if (!camera) {
 		LOG(HAL, Error)
 			<< "Failed to open camera module '" << id << "'";
-		return -ENODEV;
+		return ret == -EBUSY ? -EUSERS : ret;
 	}
 
 	*device = &camera->camera3Device()->common;

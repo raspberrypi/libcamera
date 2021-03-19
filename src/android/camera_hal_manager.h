@@ -10,6 +10,7 @@
 #include <map>
 #include <mutex>
 #include <stddef.h>
+#include <tuple>
 #include <vector>
 
 #include <hardware/camera_common.h>
@@ -28,7 +29,8 @@ public:
 
 	int init();
 
-	CameraDevice *open(unsigned int id, const hw_module_t *module);
+	std::tuple<CameraDevice *, int>
+	open(unsigned int id, const hw_module_t *module);
 
 	unsigned int numCameras() const;
 	int getCameraInfo(unsigned int id, struct camera_info *info);

@@ -11,6 +11,11 @@ option('android_platform',
         value : 'generic',
         description : 'Select the Android platform to compile for')
 
+option('cam',
+        type : 'feature',
+        value : 'auto',
+        description : 'Compile the cam test application')
+
 option('documentation',
         type : 'feature',
         description : 'Generate the project documentation')

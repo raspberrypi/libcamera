@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libevent = dependency('libevent_pthreads', required : false)
+libevent = dependency('libevent_pthreads', required : get_option('cam'))
 
 if not libevent.found()
-    warning('libevent_pthreads not found, \'cam\' application will not be compiled')
     subdir_done()
 endif
 

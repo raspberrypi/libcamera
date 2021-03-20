@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: CC0-1.0
 
 if not get_option('test')
+    test_enabled = false
     subdir_done()
 endif
+
+test_enabled = true
 
 subdir('libtest')
 

@@ -9,8 +9,11 @@ gstallocator_dep = dependency('gstreamer-allocators-1.0', version : gst_dep_vers
                               required : get_option('gstreamer'))
 
 if not glib_dep.found() or not gstvideo_dep.found() or not gstallocator_dep.found()
+    gst_enabled = false
     subdir_done()
 endif
+
+gst_enabled = true
 
 libcamera_gst_sources = [
     'gstlibcamera-utils.cpp',

@@ -168,4 +168,10 @@ py_mod.find_installation('python3', modules: py_modules)
 ## Summarise Configurations
 summary({
             'Enabled pipelines': pipelines,
+            'Android support': android_enabled,
+            'GStreamer support': gst_enabled,
+            'V4L2 emulation support': v4l2_enabled,
+            'cam application': cam_enabled,
+            'qcam application': qcam_enabled,
+            'Unit tests': test_enabled,
         }, section : 'Configuration')

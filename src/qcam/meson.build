@@ -8,8 +8,11 @@ qt5_dep = dependency('qt5',
                      version : '>=5.4')
 
 if not qt5_dep.found()
+    qcam_enabled = false
     subdir_done()
 endif
+
+qcam_enabled = true
 
 qcam_sources = files([
     '../cam/options.cpp',

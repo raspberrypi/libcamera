@@ -246,7 +246,7 @@ std::unique_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &d
  * This method shall be called after all members of the entities of the
  * media graph have been confirmed to be initialized.
  */
-void DeviceEnumerator::addDevice(std::unique_ptr<MediaDevice> &&media)
+void DeviceEnumerator::addDevice(std::unique_ptr<MediaDevice> media)
 {
 	LOG(DeviceEnumerator, Debug)
 		<< "Added device " << media->deviceNode() << ": " << media->driver();

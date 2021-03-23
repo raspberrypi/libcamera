@@ -269,6 +269,11 @@ CameraManager::CameraManager()
 	self_ = this;
 }
 
+/**
+ * \brief Destroy the camera manager
+ *
+ * Destroying the camera manager stops it if it is currently running.
+ */
 CameraManager::~CameraManager()
 {
 	stop();

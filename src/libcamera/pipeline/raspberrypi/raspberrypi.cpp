@@ -146,7 +146,7 @@ public:
 
 	void frameStarted(uint32_t sequence);
 
-	int loadIPA();
+	int loadIPA(ipa::RPi::SensorConfig *sensorConfig);
 	int configureIPA(const CameraConfiguration *config);
 
 	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
@@ -1030,10 +1030,23 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	if (data->sensor_->init())
 		return false;
 
-	if (data->loadIPA()) {
+	ipa::RPi::SensorConfig sensorConfig;
+	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return false;
 	}
+
+	/*
+	 * Setup our delayed control writer with the sensor default
+	 * gain and exposure delays. Mark VBLANK for priority write.
+	 */
+	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+		{ V4L2_CID_ANALOGUE_GAIN, { sensorConfig.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { sensorConfig.exposureDelay, false } },
+		{ V4L2_CID_VBLANK, { sensorConfig.vblankDelay, true } }
+	};
+	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->unicam_[Unicam::Image].dev(), params);
+	data->sensorMetadata_ = sensorConfig.sensorMetadata;
 
 	/* Register the controls that the Raspberry Pi IPA can handle. */
 	data->controlInfo_ = RPi::Controls;
@@ -1214,7 +1227,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 	delayedCtrls_->applyControls(sequence);
 }
 
-int RPiCameraData::loadIPA()
+int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 {
 	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe_, 1, 1);
 
@@ -1230,7 +1243,7 @@ int RPiCameraData::loadIPA()
 	IPASettings settings(ipa_->configurationFile(sensor_->model() + ".json"),
 			     sensor_->model());
 
-	return ipa_->init(settings);
+	return ipa_->init(settings, sensorConfig);
 }
 
 int RPiCameraData::configureIPA(const CameraConfiguration *config)
@@ -1291,21 +1304,6 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
-	}
-
-	if (result.params & ipa::RPi::ConfigSensorParams) {
-		/*
-		 * Setup our delayed control writer with the sensor default
-		 * gain and exposure delays. Mark VBLANK for priority write.
-		 */
-		std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-			{ V4L2_CID_ANALOGUE_GAIN, { result.sensorConfig.gainDelay, false } },
-			{ V4L2_CID_EXPOSURE, { result.sensorConfig.exposureDelay, false } },
-			{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
-		};
-
-		delayedCtrls_ = std::make_unique<DelayedControls>(unicam_[Unicam::Image].dev(), params);
-		sensorMetadata_ = result.sensorConfig.sensorMetadata;
 	}
 
 	if (!result.controls.empty()) {

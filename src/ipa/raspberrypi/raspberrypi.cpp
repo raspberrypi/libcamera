@@ -79,7 +79,7 @@ public:
 			munmap(lsTable_, ipa::RPi::MaxLsGridSize);
 	}
 
-	int init(const IPASettings &settings) override;
+	int init(const IPASettings &settings, ipa::RPi::SensorConfig *sensorConfig) override;
 	void start(const ipa::RPi::StartControls &data,
 		   ipa::RPi::StartControls *result) override;
 	void stop() override {}
@@ -164,9 +164,35 @@ private:
 	double maxFrameDuration_;
 };
 
-int IPARPi::init(const IPASettings &settings)
+int IPARPi::init(const IPASettings &settings, ipa::RPi::SensorConfig *sensorConfig)
 {
 	tuningFile_ = settings.configurationFile;
+
+	/*
+	 * Load the "helper" for this sensor. This tells us all the device specific stuff
+	 * that the kernel driver doesn't. We only do this the first time; we don't need
+	 * to re-parse the metadata after a simple mode-switch for no reason.
+	 */
+	helper_ = std::unique_ptr<RPiController::CamHelper>(RPiController::CamHelper::Create(settings.sensorModel));
+	if (!helper_) {
+		LOG(IPARPI, Error) << "Could not create camera helper for "
+				   << settings.sensorModel;
+		return -EINVAL;
+	}
+
+	/*
+	 * Pass out the sensor config to the pipeline handler in order
+	 * to setup the staggered writer class.
+	 */
+	int gainDelay, exposureDelay, vblankDelay, sensorMetadata;
+	helper_->GetDelays(exposureDelay, gainDelay, vblankDelay);
+	sensorMetadata = helper_->SensorEmbeddedDataPresent();
+
+	sensorConfig->gainDelay = gainDelay;
+	sensorConfig->exposureDelay = exposureDelay;
+	sensorConfig->vblankDelay = vblankDelay;
+	sensorConfig->sensorMetadata = sensorMetadata;
+
 	return 0;
 }
 
@@ -301,8 +327,6 @@ int IPARPi::configure(const CameraSensorInfo &sensorInfo,
 		return -1;
 	}
 
-	result->params = 0;
-
 	sensorCtrls_ = entityControls.at(0);
 	ispCtrls_ = entityControls.at(1);
 
@@ -318,36 +342,6 @@ int IPARPi::configure(const CameraSensorInfo &sensorInfo,
 
 	/* Setup a metadata ControlList to output metadata. */
 	libcameraMetadata_ = ControlList(controls::controls);
-
-	/*
-	 * Load the "helper" for this sensor. This tells us all the device specific stuff
-	 * that the kernel driver doesn't. We only do this the first time; we don't need
-	 * to re-parse the metadata after a simple mode-switch for no reason.
-	 */
-	std::string cameraName(sensorInfo.model);
-	if (!helper_) {
-		helper_ = std::unique_ptr<RPiController::CamHelper>(RPiController::CamHelper::Create(cameraName));
-
-		if (!helper_) {
-			LOG(IPARPI, Error) << "Could not create camera helper for "
-					   << cameraName;
-			return -1;
-		}
-
-		/*
-		 * Pass out the sensor config to the pipeline handler in order
-		 * to setup the staggered writer class.
-		 */
-		int gainDelay, exposureDelay, vblankDelay, sensorMetadata;
-		helper_->GetDelays(exposureDelay, gainDelay, vblankDelay);
-		sensorMetadata = helper_->SensorEmbeddedDataPresent();
-
-		result->params |= ipa::RPi::ConfigSensorParams;
-		result->sensorConfig.gainDelay = gainDelay;
-		result->sensorConfig.exposureDelay = exposureDelay;
-		result->sensorConfig.vblankDelay = vblankDelay;
-		result->sensorConfig.sensorMetadata = sensorMetadata;
-	}
 
 	/* Re-assemble camera mode using the sensor info. */
 	setMode(sensorInfo);

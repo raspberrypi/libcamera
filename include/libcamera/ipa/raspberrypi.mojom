@@ -15,10 +15,6 @@ enum BufferMask {
 /* Size of the LS grid allocation. */
 const uint32 MaxLsGridSize = 0x8000;
 
-enum ConfigOutputParameters {
-	ConfigSensorParams = 0x01,
-};
-
 struct SensorConfig {
 	uint32 gainDelay;
 	uint32 exposureDelay;
@@ -40,8 +36,6 @@ struct ConfigInput {
 };
 
 struct ConfigOutput {
-	uint32 params;
-	SensorConfig sensorConfig;
 	ControlList controls;
 };
 
@@ -51,7 +45,7 @@ struct StartControls {
 };
 
 interface IPARPiInterface {
-	init(IPASettings settings) => (int32 ret);
+	init(IPASettings settings) => (int32 ret, SensorConfig sensorConfig);
 	start(StartControls controls) => (StartControls result);
 	stop();
 

@@ -138,7 +138,7 @@ class RPiCameraData : public CameraData
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), embeddedNodeOpened_(false), state_(State::Stopped),
+		: CameraData(pipe), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  updateScalerCrop_(true), dropFrameCount_(0), ispOutputCount_(0)
 	{
@@ -183,7 +183,6 @@ public:
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
-	bool embeddedNodeOpened_;
 
 	/*
 	 * All the functions in this class are called from a single calling
@@ -749,18 +748,12 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
 
 	/*
-	 * The IPA will set data->sensorMetadata_ to true if embedded data is
-	 * supported on this sensor. If so, open the Unicam embedded data
-	 * node and configure the output format.
+	 * Configure the Unicam embedded data output format only if the sensor
+	 * supports it.
 	 */
 	if (data->sensorMetadata_) {
 		format = {};
 		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-
-		if (!data->embeddedNodeOpened_) {
-			data->unicam_[Unicam::Embedded].dev()->open();
-			data->embeddedNodeOpened_ = true;
-		}
 
 		LOG(RPI, Debug) << "Setting embedded data format.";
 		ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
@@ -778,14 +771,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		 */
 		if (rawStream)
 			data->unicam_[Unicam::Embedded].setExternal(true);
-	} else {
-		/*
-		 * No embedded data present, so we do not want to iterate over
-		 * the embedded data stream when starting and stopping.
-		 */
-		data->streams_.erase(std::remove(data->streams_.begin(), data->streams_.end(),
-						 &data->unicam_[Unicam::Embedded]),
-				     data->streams_.end());
 	}
 
 	/*
@@ -989,24 +974,6 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", isp_->getEntityByName("bcm2835-isp0-capture2"));
 	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", isp_->getEntityByName("bcm2835-isp0-capture3"));
 
-	/* This is just for convenience so that we can easily iterate over all streams. */
-	for (auto &stream : data->unicam_)
-		data->streams_.push_back(&stream);
-	for (auto &stream : data->isp_)
-		data->streams_.push_back(&stream);
-
-	/*
-	 * Open all Unicam and ISP streams. The exception is the embedded data
-	 * stream, which only gets opened if the IPA reports that the sensor
-	 * supports embedded data. This happens in RPiCameraData::configureIPA().
-	 */
-	for (auto const stream : data->streams_) {
-		if (stream != &data->unicam_[Unicam::Embedded]) {
-			if (stream->dev()->open())
-				return false;
-		}
-	}
-
 	/* Wire up all the buffer connections. */
 	data->unicam_[Unicam::Image].dev()->frameStart.connect(data.get(), &RPiCameraData::frameStarted);
 	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data.get(), &RPiCameraData::unicamBufferDequeue);
@@ -1034,6 +1001,26 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return false;
+	}
+
+	/*
+	 * Open all Unicam and ISP streams. The exception is the embedded data
+	 * stream, which only gets opened below if the IPA reports that the sensor
+	 * supports embedded data.
+	 *
+	 * The below grouping is just for convenience so that we can easily
+	 * iterate over all streams in one go.
+	 */
+	data->streams_.push_back(&data->unicam_[Unicam::Image]);
+	if (sensorConfig.sensorMetadata)
+		data->streams_.push_back(&data->unicam_[Unicam::Embedded]);
+
+	for (auto &stream : data->isp_)
+		data->streams_.push_back(&stream);
+
+	for (auto stream : data->streams_) {
+		if (stream->dev()->open())
+			return false;
 	}
 
 	/*

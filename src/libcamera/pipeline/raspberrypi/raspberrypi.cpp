@@ -815,20 +815,15 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
-	ipa::RPi::StartControls ipaData;
-	ipa::RPi::StartControls result;
-	if (controls)
-		ipaData.controls = *controls;
-	data->ipa_->start(ipaData, &result);
+	ipa::RPi::StartConfig startConfig;
+	data->ipa_->start(controls ? *controls : ControlList{}, &startConfig);
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	if (!result.controls.empty()) {
-		ControlList &ctrls = result.controls;
-		data->unicam_[Unicam::Image].dev()->setControls(&ctrls);
-	}
+	if (!startConfig.controls.empty())
+		data->unicam_[Unicam::Image].dev()->setControls(&startConfig.controls);
 
 	/* Configure the number of dropped frames required on startup. */
-	data->dropFrameCount_ = result.dropFrameCount;
+	data->dropFrameCount_ = startConfig.dropFrameCount;
 
 	/* We need to set the dropFrameCount_ before queueing buffers. */
 	ret = queueAllBuffers(camera);

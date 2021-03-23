@@ -39,14 +39,14 @@ struct ConfigOutput {
 	ControlList controls;
 };
 
-struct StartControls {
+struct StartConfig {
 	ControlList controls;
 	int32 dropFrameCount;
 };
 
 interface IPARPiInterface {
 	init(IPASettings settings) => (int32 ret, SensorConfig sensorConfig);
-	start(StartControls controls) => (StartControls result);
+	start(ControlList controls) => (StartConfig startConfig);
 	stop();
 
 	/**

@@ -79,8 +79,7 @@ public:
 	}
 
 	int init(const IPASettings &settings, ipa::RPi::SensorConfig *sensorConfig) override;
-	void start(const ipa::RPi::StartControls &data,
-		   ipa::RPi::StartControls *result) override;
+	void start(const ControlList &controls, ipa::RPi::StartConfig *startConfig) override;
 	void stop() override {}
 
 	int configure(const CameraSensorInfo &sensorInfo,
@@ -192,15 +191,14 @@ int IPARPi::init(const IPASettings &settings, ipa::RPi::SensorConfig *sensorConf
 	return 0;
 }
 
-void IPARPi::start(const ipa::RPi::StartControls &data,
-		   ipa::RPi::StartControls *result)
+void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConfig)
 {
 	RPiController::Metadata metadata;
 
-	ASSERT(result);
-	if (!data.controls.empty()) {
+	ASSERT(startConfig);
+	if (!controls.empty()) {
 		/* We have been given some controls to action before start. */
-		queueRequest(data.controls);
+		queueRequest(controls);
 	}
 
 	controller_.SwitchMode(mode_, &metadata);
@@ -215,7 +213,7 @@ void IPARPi::start(const ipa::RPi::StartControls &data,
 	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
-		result->controls = std::move(ctrls);
+		startConfig->controls = std::move(ctrls);
 	}
 
 	/*
@@ -262,7 +260,7 @@ void IPARPi::start(const ipa::RPi::StartControls &data,
 		mistrustCount_ = helper_->MistrustFramesModeSwitch();
 	}
 
-	result->dropFrameCount = dropFrame;
+	startConfig->dropFrameCount = dropFrame;
 
 	firstStart_ = false;
 }

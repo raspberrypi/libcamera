@@ -87,6 +87,9 @@ for qcam: [optional]
 for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools
 
+for android: [optional]
+        libexif libjpeg
+
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 

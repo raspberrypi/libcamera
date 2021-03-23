@@ -37,7 +37,7 @@ LOG_DEFINE_CATEGORY(IPAProxy)
  * \param[in] ipam The IPA module
  */
 IPAProxy::IPAProxy(IPAModule *ipam)
-	: valid_(false), ipam_(ipam)
+	: valid_(false), state_(ProxyStopped), ipam_(ipam)
 {
 }
 

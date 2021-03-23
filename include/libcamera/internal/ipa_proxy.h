@@ -17,6 +17,12 @@ namespace libcamera {
 
 class IPAModule;
 
+enum ProxyState {
+	ProxyStopped,
+	ProxyStopping,
+	ProxyRunning,
+};
+
 class IPAProxy : public IPAInterface
 {
 public:
@@ -31,6 +37,7 @@ protected:
 	std::string resolvePath(const std::string &file) const;
 
 	bool valid_;
+	ProxyState state_;
 
 private:
 	IPAModule *ipam_;

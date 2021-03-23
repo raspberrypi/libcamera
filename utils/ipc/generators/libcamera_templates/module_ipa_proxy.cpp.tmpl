@@ -45,8 +45,7 @@ namespace {{ns}} {
 {%- endif %}
 
 {{proxy_name}}::{{proxy_name}}(IPAModule *ipam, bool isolate)
-	: IPAProxy(ipam), running_(false),
-	  isolate_(isolate), seq_(0)
+	: IPAProxy(ipam), isolate_(isolate), seq_(0)
 {
 	LOG(IPAProxy, Debug)
 		<< "initializing {{module_name}} proxy: loading IPA from "
@@ -155,7 +154,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 
 	return {{ "_ret" if method|method_return_value != "void" }};
 {%- elif method.mojom_name == "start" %}
-	running_ = true;
+	state_ = ProxyRunning;
 	thread_.start();
 
 	{{ "return " if method|method_return_value != "void" -}}
@@ -173,7 +172,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 	{%- endfor -%}
 );
 {% elif method|is_async %}
-	ASSERT(running_);
+	ASSERT(state_ == ProxyRunning);
 	proxy_.invokeMethod(&ThreadProxy::{{method.mojom_name}}, ConnectionTypeQueued,
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
@@ -226,7 +225,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 {% for method in interface_event.methods %}
 {{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
 {
-	ASSERT(running_);
+	ASSERT(state_ != ProxyStopped);
 	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
 }
 

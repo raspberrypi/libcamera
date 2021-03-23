@@ -23,8 +23,11 @@
  # \brief Generate function body for IPA stop() function for thread
  #}
 {%- macro stop_thread_body() -%}
-	if (!running_)
+	ASSERT(state_ != ProxyStopping);
+	if (state_ != ProxyRunning)
 		return;
+
+	state_ = ProxyStopping;
 
 	proxy_.invokeMethod(&ThreadProxy::stop, ConnectionTypeBlocking);
 
@@ -33,7 +36,7 @@
 
 	Thread::current()->dispatchMessages(Message::Type::InvokeMessage);
 
-	running_ = false;
+	state_ = ProxyStopped;
 {%- endmacro -%}
 
 

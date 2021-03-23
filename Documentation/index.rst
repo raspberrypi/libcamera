@@ -12,6 +12,7 @@
    Home <self>
    Docs <docs>
    Contribute <contributing>
+   Getting Started <getting-started>
 
    Developer Guide <guides/introduction>
    Application Writer's Guide <guides/application-developer>

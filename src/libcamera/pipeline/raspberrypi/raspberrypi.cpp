@@ -1236,7 +1236,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
-	ipa::RPi::ConfigInput ipaConfig;
+	ipa::RPi::IPAConfig ipaConfig;
 
 	/* Get the device format to pass to the IPA. */
 	V4L2DeviceFormat sensorFormat;
@@ -1279,19 +1279,16 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	ipa::RPi::ConfigOutput result;
-
+	ControlList controls;
 	ret = ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
-			      &result);
+			      &controls);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
 	}
 
-	if (!result.controls.empty()) {
-		ControlList &ctrls = result.controls;
-		unicam_[Unicam::Image].dev()->setControls(&ctrls);
-	}
+	if (!controls.empty())
+		unicam_[Unicam::Image].dev()->setControls(&controls);
 
 	/*
 	 * Configure the H/V flip controls based on the combination of

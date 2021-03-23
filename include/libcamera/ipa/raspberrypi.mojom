@@ -29,14 +29,9 @@ struct ISPConfig {
 	ControlList controls;
 };
 
-struct ConfigInput {
-	uint32 op;
+struct IPAConfig {
 	uint32 transform;
 	FileDescriptor lsTableHandle;
-};
-
-struct ConfigOutput {
-	ControlList controls;
 };
 
 struct StartConfig {
@@ -56,7 +51,7 @@ interface IPARPiInterface {
 	 * \param[in] streamConfig Configuration of all active streams
 	 * \param[in] entityControls Controls provided by the pipeline entities
 	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
-	 * \param[out] results Pipeline-handler-specific configuration result
+	 * \param[out] controls Controls to apply by the pipeline entity
 	 *
 	 * This method shall be called when the camera is configured to inform
 	 * the IPA of the camera's streams and the sensor settings.
@@ -64,14 +59,14 @@ interface IPARPiInterface {
 	 * The \a sensorInfo conveys information about the camera sensor settings that
 	 * the pipeline handler has selected for the configuration.
 	 *
-	 * The \a ipaConfig and \a results parameters carry data passed by the
+	 * The \a ipaConfig and \a controls parameters carry data passed by the
 	 * pipeline handler to the IPA and back.
 	 */
 	configure(CameraSensorInfo sensorInfo,
 		  map<uint32, IPAStream> streamConfig,
 		  map<uint32, ControlInfoMap> entityControls,
-		  ConfigInput ipaConfig)
-		=> (int32 ret, ConfigOutput results);
+		  IPAConfig ipaConfig)
+		=> (int32 ret, ControlList controls);
 
 	/**
 	 * \fn mapBuffers()

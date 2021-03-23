@@ -145,8 +145,16 @@ struct IPABuffer {
  * This field may be an empty string if the IPA doesn't require a configuration
  * file.
  */
+
+ /**
+ * \var IPASettings::sensorModel
+ * \brief The sensor model name
+ *
+ * Provides the sensor model name to the IPA.
+ */
 struct IPASettings {
 	string configurationFile;
+	string sensorModel;
 };
 
 /**

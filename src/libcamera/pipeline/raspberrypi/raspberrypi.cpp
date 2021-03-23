@@ -1227,7 +1227,8 @@ int RPiCameraData::loadIPA()
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 
-	IPASettings settings(ipa_->configurationFile(sensor_->model() + ".json"));
+	IPASettings settings(ipa_->configurationFile(sensor_->model() + ".json"),
+			     sensor_->model());
 
 	return ipa_->init(settings);
 }

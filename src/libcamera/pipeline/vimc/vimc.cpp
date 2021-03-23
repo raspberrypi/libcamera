@@ -422,17 +422,17 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	std::unique_ptr<VimcCameraData> data = std::make_unique<VimcCameraData>(this, media);
 
-	data->ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(this, 0, 0);
-	if (data->ipa_ != nullptr) {
-		std::string conf = data->ipa_->configurationFile("vimc.conf");
-		data->ipa_->init(IPASettings{ conf });
-	} else {
-		LOG(VIMC, Warning) << "no matching IPA found";
-	}
-
 	/* Locate and open the capture video node. */
 	if (data->init())
 		return false;
+
+	data->ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(this, 0, 0);
+	if (data->ipa_ != nullptr) {
+		std::string conf = data->ipa_->configurationFile("vimc.conf");
+		data->ipa_->init(IPASettings{ conf, data->sensor_->model() });
+	} else {
+		LOG(VIMC, Warning) << "no matching IPA found";
+	}
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };

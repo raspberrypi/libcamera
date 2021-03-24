@@ -34,18 +34,12 @@ CameraHalManager::CameraHalManager()
 {
 }
 
-CameraHalManager::~CameraHalManager()
-{
-	if (cameraManager_) {
-		cameraManager_->stop();
-		delete cameraManager_;
-		cameraManager_ = nullptr;
-	}
-}
+/* CameraManager calls stop() in the destructor. */
+CameraHalManager::~CameraHalManager() = default;
 
 int CameraHalManager::init()
 {
-	cameraManager_ = new CameraManager();
+	cameraManager_ = std::make_unique<CameraManager>();
 
 	/* Support camera hotplug. */
 	cameraManager_->cameraAdded.connect(this, &CameraHalManager::cameraAdded);
@@ -55,8 +49,7 @@ int CameraHalManager::init()
 	if (ret) {
 		LOG(HAL, Error) << "Failed to start camera manager: "
 				<< strerror(-ret);
-		delete cameraManager_;
-		cameraManager_ = nullptr;
+		cameraManager_.reset();
 		return ret;
 	}
 

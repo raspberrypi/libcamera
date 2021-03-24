@@ -49,7 +49,7 @@ private:
 
 	CameraDevice *cameraDeviceFromHalId(unsigned int id);
 
-	libcamera::CameraManager *cameraManager_;
+	std::unique_ptr<libcamera::CameraManager> cameraManager_;
 
 	const camera_module_callbacks_t *callbacks_;
 	std::vector<std::unique_ptr<CameraDevice>> cameras_;

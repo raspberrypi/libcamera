@@ -116,7 +116,7 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 	}
 
 	/* Create a CameraDevice instance to wrap the libcamera Camera. */
-	std::unique_ptr<CameraDevice> camera = CameraDevice::create(id, std::move(cam));
+	std::unique_ptr<CameraDevice> camera = CameraDevice::create(id, cam);
 	int ret = camera->initialize();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to initialize camera: " << cam->id();

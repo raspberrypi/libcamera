@@ -32,7 +32,7 @@ public:
 	{
 		return 0;
 	}
-	int start() override { return 0; }
+	int start() override;
 	void stop() override {}
 
 	void configure(const std::map<uint32_t, ControlInfoMap> &entityControls,
@@ -63,6 +63,13 @@ private:
 	uint32_t maxGain_;
 };
 
+int IPAIPU3::start()
+{
+	setControls(0);
+
+	return 0;
+}
+
 void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls,
 			[[maybe_unused]] const Size &bdsOutputSize)
 {
@@ -90,8 +97,6 @@ void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls
 	minGain_ = std::max(itGain->second.min().get<int32_t>(), 1);
 	maxGain_ = itGain->second.max().get<int32_t>();
 	gain_ = maxGain_;
-
-	setControls(0);
 }
 
 void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)

@@ -311,8 +311,7 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;
 
 CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> camera)
 	: id_(id), running_(false), camera_(std::move(camera)),
-	  staticMetadata_(nullptr), facing_(CAMERA_FACING_FRONT),
-	  orientation_(0)
+	  facing_(CAMERA_FACING_FRONT), orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
 
@@ -341,9 +340,6 @@ CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> camera)
 
 CameraDevice::~CameraDevice()
 {
-	if (staticMetadata_)
-		delete staticMetadata_;
-
 	for (auto &it : requestTemplates_)
 		delete it.second;
 }
@@ -732,11 +728,10 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	uint32_t numEntries;
 	uint32_t byteSize;
 	std::tie(numEntries, byteSize) = calculateStaticMetadataSize();
-	staticMetadata_ = new CameraMetadata(numEntries, byteSize);
+	staticMetadata_ = std::make_unique<CameraMetadata>(numEntries, byteSize);
 	if (!staticMetadata_->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
-		delete staticMetadata_;
-		staticMetadata_ = nullptr;
+		staticMetadata_.reset();
 		return nullptr;
 	}
 
@@ -1356,8 +1351,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	if (!staticMetadata_->isValid()) {
 		LOG(HAL, Error) << "Failed to construct static metadata";
-		delete staticMetadata_;
-		staticMetadata_ = nullptr;
+		staticMetadata_.reset();
 		return nullptr;
 	}
 

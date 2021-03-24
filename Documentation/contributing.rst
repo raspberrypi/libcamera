@@ -38,6 +38,14 @@ The source code is available from the project's `git tree`_, hosted by `LinuxTV`
 .. _git tree: https://git.linuxtv.org/libcamera.git/
 .. _LinuxTV: https://linuxtv.org/
 
+Issue Tracker
+-------------
+
+Our `issue tracker`_ tracks all bugs, issues and feature requests. All issues
+are publicly visible, and you can register for an account to create new issues.
+
+.. _issue tracker: https://bugs.libcamera.org/
+
 Documentation
 -------------
 

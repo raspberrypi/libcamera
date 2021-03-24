@@ -312,9 +312,10 @@ CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
  * back to the framework using the designated callbacks.
  */
 
-CameraDevice::CameraDevice(unsigned int id, const std::shared_ptr<Camera> &camera)
-	: id_(id), running_(false), camera_(camera), staticMetadata_(nullptr),
-	  facing_(CAMERA_FACING_FRONT), orientation_(0)
+CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> camera)
+	: id_(id), running_(false), camera_(std::move(camera)),
+	  staticMetadata_(nullptr), facing_(CAMERA_FACING_FRONT),
+	  orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
 
@@ -351,9 +352,10 @@ CameraDevice::~CameraDevice()
 }
 
 std::unique_ptr<CameraDevice> CameraDevice::create(unsigned int id,
-						   const std::shared_ptr<Camera> &cam)
+						   std::shared_ptr<Camera> cam)
 {
-	return std::unique_ptr<CameraDevice>(new CameraDevice(id, cam));
+	return std::unique_ptr<CameraDevice>(
+		new CameraDevice(id, std::move(cam)));
 }
 
 /*

@@ -33,7 +33,7 @@ class CameraDevice : protected libcamera::Loggable
 {
 public:
 	static std::unique_ptr<CameraDevice> create(unsigned int id,
-						    const std::shared_ptr<libcamera::Camera> &cam);
+						    std::shared_ptr<libcamera::Camera> cam);
 	~CameraDevice();
 
 	int initialize();
@@ -66,7 +66,7 @@ protected:
 	std::string logPrefix() const override;
 
 private:
-	CameraDevice(unsigned int id, const std::shared_ptr<libcamera::Camera> &camera);
+	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> camera);
 
 	struct Camera3RequestDescriptor {
 		Camera3RequestDescriptor(libcamera::Camera *camera,

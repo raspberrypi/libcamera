@@ -271,16 +271,16 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 	frameNumber_ = camera3Request->frame_number;
 
 	/* Copy the camera3 request stream information for later access. */
-	numBuffers_ = camera3Request->num_output_buffers;
-	buffers_ = new camera3_stream_buffer_t[numBuffers_];
-	for (unsigned int i = 0; i < numBuffers_; ++i)
+	const uint32_t numBuffers = camera3Request->num_output_buffers;
+	buffers_.resize(numBuffers);
+	for (uint32_t i = 0; i < numBuffers; i++)
 		buffers_[i] = camera3Request->output_buffers[i];
 
 	/*
 	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
 	 * are emplaced in this vector of unique_ptr<> for lifetime management.
 	 */
-	frameBuffers_.reserve(numBuffers_);
+	frameBuffers_.reserve(numBuffers);
 
 	/* Clone the controls associated with the camera3 request. */
 	settings_ = CameraMetadata(camera3Request->settings);
@@ -294,10 +294,7 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
 						    reinterpret_cast<uint64_t>(this));
 }
 
-CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor()
-{
-	delete[] buffers_;
-}
+CameraDevice::Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;
 
 /*
  * \class CameraDevice
@@ -1840,10 +1837,10 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->settings_ = lastSettings_;
 
 	LOG(HAL, Debug) << "Queueing request " << descriptor->request_->cookie()
-			<< " with " << descriptor->numBuffers_ << " streams";
-	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
-		const camera3_stream_buffer_t *camera3Buffer = &descriptor->buffers_[i];
-		camera3_stream *camera3Stream = camera3Buffer->stream;
+			<< " with " << descriptor->buffers_.size() << " streams";
+	for (unsigned int i = 0; i < descriptor->buffers_.size(); ++i) {
+		const camera3_stream_buffer_t &camera3Buffer = descriptor->buffers_[i];
+		camera3_stream *camera3Stream = camera3Buffer.stream;
 		CameraStream *cameraStream = static_cast<CameraStream *>(camera3Stream->priv);
 
 		std::stringstream ss;
@@ -1874,7 +1871,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * associate it with the Camera3RequestDescriptor for
 			 * lifetime management only.
 			 */
-			buffer = createFrameBuffer(*camera3Buffer->buffer);
+			buffer = createFrameBuffer(*camera3Buffer.buffer);
 			descriptor->frameBuffers_.emplace_back(buffer);
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
@@ -1899,7 +1896,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		}
 
 		descriptor->request_->addBuffer(cameraStream->stream(), buffer,
-						camera3Buffer->acquire_fence);
+						camera3Buffer.acquire_fence);
 	}
 
 	/*
@@ -1930,7 +1927,7 @@ void CameraDevice::requestComplete(Request *request)
 	}
 
 	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
-			<< descriptor->numBuffers_ << " streams";
+			<< descriptor->buffers_.size() << " streams";
 
 	/*
 	 * \todo The timestamp used for the metadata is currently always taken
@@ -1942,9 +1939,9 @@ void CameraDevice::requestComplete(Request *request)
 	resultMetadata = getResultMetadata(descriptor, timestamp);
 
 	/* Handle any JPEG compression. */
-	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
+	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
 		CameraStream *cameraStream =
-			static_cast<CameraStream *>(descriptor->buffers_[i].stream->priv);
+			static_cast<CameraStream *>(buffer.stream->priv);
 
 		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
 			continue;
@@ -1956,7 +1953,7 @@ void CameraDevice::requestComplete(Request *request)
 		}
 
 		int ret = cameraStream->process(*src,
-						*descriptor->buffers_[i].buffer,
+						*buffer.buffer,
 						descriptor->settings_,
 						resultMetadata.get());
 		if (ret) {
@@ -1975,15 +1972,13 @@ void CameraDevice::requestComplete(Request *request)
 	/* Prepare to call back the Android camera stack. */
 	camera3_capture_result_t captureResult = {};
 	captureResult.frame_number = descriptor->frameNumber_;
-	captureResult.num_output_buffers = descriptor->numBuffers_;
-	for (unsigned int i = 0; i < descriptor->numBuffers_; ++i) {
-		descriptor->buffers_[i].acquire_fence = -1;
-		descriptor->buffers_[i].release_fence = -1;
-		descriptor->buffers_[i].status = status;
+	captureResult.num_output_buffers = descriptor->buffers_.size();
+	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
+		buffer.acquire_fence = -1;
+		buffer.release_fence = -1;
+		buffer.status = status;
 	}
-	captureResult.output_buffers =
-		const_cast<const camera3_stream_buffer_t *>(descriptor->buffers_);
-
+	captureResult.output_buffers = descriptor->buffers_.data();
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
 		notifyShutter(descriptor->frameNumber_, timestamp);

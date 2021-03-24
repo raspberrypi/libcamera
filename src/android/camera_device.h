@@ -74,8 +74,7 @@ private:
 		~Camera3RequestDescriptor();
 
 		uint32_t frameNumber_;
-		uint32_t numBuffers_;
-		camera3_stream_buffer_t *buffers_;
+		std::vector<camera3_stream_buffer_t> buffers_;
 		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
 		CameraMetadata settings_;
 		std::unique_ptr<CaptureRequest> request_;

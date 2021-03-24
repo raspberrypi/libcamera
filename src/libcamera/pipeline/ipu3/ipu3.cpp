@@ -1257,8 +1257,11 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 
 	/* If the buffer is cancelled force a complete of the whole request. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
-		for (auto it : request->buffers())
-			pipe_->completeBuffer(request, it.second);
+		for (auto it : request->buffers()) {
+			FrameBuffer *b = it.second;
+			b->cancel();
+			pipe_->completeBuffer(request, b);
+		}
 
 		frameInfos_.remove(info);
 		pipe_->completeRequest(request);

@@ -53,6 +53,8 @@ public:
 	unsigned int cookie() const { return cookie_; }
 	void setCookie(unsigned int cookie) { cookie_ = cookie; }
 
+	void cancel() { metadata_.status = FrameMetadata::FrameCancelled; }
+
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(FrameBuffer)
 

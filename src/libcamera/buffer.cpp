@@ -227,6 +227,14 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  */
 
 /**
+ * \fn FrameBuffer::cancel()
+ * \brief Marks the buffer as cancelled
+ *
+ * If a buffer is not used by a request, it shall be marked as cancelled to
+ * indicate that the metadata is invalid.
+ */
+
+/**
  * \class MappedBuffer
  * \brief Provide an interface to support managing memory mapped buffers
  *

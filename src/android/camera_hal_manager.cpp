@@ -36,8 +36,6 @@ CameraHalManager::CameraHalManager()
 
 CameraHalManager::~CameraHalManager()
 {
-	cameras_.clear();
-
 	if (cameraManager_) {
 		cameraManager_->stop();
 		delete cameraManager_;
@@ -125,7 +123,7 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 	}
 
 	/* Create a CameraDevice instance to wrap the libcamera Camera. */
-	std::shared_ptr<CameraDevice> camera = CameraDevice::create(id, std::move(cam));
+	std::unique_ptr<CameraDevice> camera = CameraDevice::create(id, std::move(cam));
 	int ret = camera->initialize();
 	if (ret) {
 		LOG(HAL, Error) << "Failed to initialize camera: " << cam->id();
@@ -155,7 +153,7 @@ void CameraHalManager::cameraRemoved(std::shared_ptr<Camera> cam)
 	MutexLocker locker(mutex_);
 
 	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
-				 [&cam](std::shared_ptr<CameraDevice> &camera) {
+				 [&cam](const std::unique_ptr<CameraDevice> &camera) {
 					 return cam == camera->camera();
 				 });
 	if (iter == cameras_.end())
@@ -192,7 +190,7 @@ int32_t CameraHalManager::cameraLocation(const Camera *cam)
 CameraDevice *CameraHalManager::cameraDeviceFromHalId(unsigned int id)
 {
 	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
-				 [id](std::shared_ptr<CameraDevice> &camera) {
+				 [id](const std::unique_ptr<CameraDevice> &camera) {
 					 return camera->id() == id;
 				 });
 	if (iter == cameras_.end())
@@ -244,7 +242,7 @@ void CameraHalManager::setCallbacks(const camera_module_callbacks_t *callbacks)
 	 * Internal cameras are already assumed to be present at module load
 	 * time by the Android framework.
 	 */
-	for (std::shared_ptr<CameraDevice> &camera : cameras_) {
+	for (const std::unique_ptr<CameraDevice> &camera : cameras_) {
 		unsigned int id = camera->id();
 		if (id >= firstExternalCameraId_)
 			callbacks_->camera_device_status_change(callbacks_, id,

@@ -350,11 +350,10 @@ CameraDevice::~CameraDevice()
 		delete it.second;
 }
 
-std::shared_ptr<CameraDevice> CameraDevice::create(unsigned int id,
+std::unique_ptr<CameraDevice> CameraDevice::create(unsigned int id,
 						   const std::shared_ptr<Camera> &cam)
 {
-	CameraDevice *camera = new CameraDevice(id, cam);
-	return std::shared_ptr<CameraDevice>(camera);
+	return std::unique_ptr<CameraDevice>(new CameraDevice(id, cam));
 }
 
 /*

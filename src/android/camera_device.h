@@ -32,7 +32,7 @@
 class CameraDevice : protected libcamera::Loggable
 {
 public:
-	static std::shared_ptr<CameraDevice> create(unsigned int id,
+	static std::unique_ptr<CameraDevice> create(unsigned int id,
 						    const std::shared_ptr<libcamera::Camera> &cam);
 	~CameraDevice();
 

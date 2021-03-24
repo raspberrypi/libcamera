@@ -80,6 +80,7 @@ public:
 
 	virtual int start(Camera *camera, const ControlList *controls) = 0;
 	virtual void stop(Camera *camera) = 0;
+	bool hasPendingRequests(const Camera *camera) const;
 
 	void queueRequest(Request *request);
 

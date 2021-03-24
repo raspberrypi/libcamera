@@ -338,11 +338,7 @@ CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> camera)
 	}
 }
 
-CameraDevice::~CameraDevice()
-{
-	for (auto &it : requestTemplates_)
-		delete it.second;
-}
+CameraDevice::~CameraDevice() = default;
 
 std::unique_ptr<CameraDevice> CameraDevice::create(unsigned int id,
 						   std::shared_ptr<Camera> cam)
@@ -1358,15 +1354,14 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	return staticMetadata_->get();
 }
 
-CameraMetadata *CameraDevice::requestTemplatePreview()
+std::unique_ptr<CameraMetadata> CameraDevice::requestTemplatePreview()
 {
 	/*
 	 * \todo Keep this in sync with the actual number of entries.
 	 * Currently: 20 entries, 35 bytes
 	 */
-	CameraMetadata *requestTemplate = new CameraMetadata(21, 36);
+	auto requestTemplate = std::make_unique<CameraMetadata>(21, 36);
 	if (!requestTemplate->isValid()) {
-		delete requestTemplate;
 		return nullptr;
 	}
 
@@ -1454,9 +1449,9 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	return requestTemplate;
 }
 
-CameraMetadata *CameraDevice::requestTemplateVideo()
+std::unique_ptr<CameraMetadata> CameraDevice::requestTemplateVideo()
 {
-	CameraMetadata *previewTemplate = requestTemplatePreview();
+	std::unique_ptr<CameraMetadata> previewTemplate = requestTemplatePreview();
 	if (!previewTemplate)
 		return nullptr;
 
@@ -1488,7 +1483,7 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		return it->second->get();
 
 	/* Use the capture intent matching the requested template type. */
-	CameraMetadata *requestTemplate;
+	std::unique_ptr<CameraMetadata> requestTemplate;
 	uint8_t captureIntent;
 	switch (type) {
 	case CAMERA3_TEMPLATE_PREVIEW:
@@ -1521,15 +1516,14 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 
 	if (!requestTemplate || !requestTemplate->isValid()) {
 		LOG(HAL, Error) << "Failed to construct request template";
-		delete requestTemplate;
 		return nullptr;
 	}
 
 	requestTemplate->updateEntry(ANDROID_CONTROL_CAPTURE_INTENT,
 				     &captureIntent, 1);
 
-	requestTemplates_[type] = requestTemplate;
-	return requestTemplate->get();
+	requestTemplates_[type] = std::move(requestTemplate);
+	return requestTemplates_[type]->get();
 }
 
 PixelFormat CameraDevice::toPixelFormat(int format) const

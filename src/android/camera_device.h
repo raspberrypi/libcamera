@@ -97,8 +97,8 @@ private:
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
-	CameraMetadata *requestTemplatePreview();
-	CameraMetadata *requestTemplateVideo();
+	std::unique_ptr<CameraMetadata> requestTemplatePreview();
+	std::unique_ptr<CameraMetadata> requestTemplateVideo();
 	libcamera::PixelFormat toPixelFormat(int format) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
@@ -114,7 +114,7 @@ private:
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
 	std::unique_ptr<CameraMetadata> staticMetadata_;
-	std::map<unsigned int, const CameraMetadata *> requestTemplates_;
+	std::map<unsigned int, std::unique_ptr<CameraMetadata>> requestTemplates_;
 	const camera3_callback_ops_t *callbacks_;
 
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;

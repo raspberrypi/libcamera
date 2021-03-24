@@ -1232,9 +1232,6 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 		cropRegion_ = request->controls().get(controls::ScalerCrop);
 	request->metadata().set(controls::ScalerCrop, cropRegion_);
 
-	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
-		info->metadataProcessed = true;
-
 	if (frameInfos_.tryComplete(info))
 		pipe_->completeRequest(request);
 }

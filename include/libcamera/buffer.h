@@ -56,7 +56,6 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(FrameBuffer)
 
-	friend class Request; /* Needed to update request_. */
 	friend class V4L2VideoDevice; /* Needed to update metadata_. */
 
 	std::vector<Plane> planes_;

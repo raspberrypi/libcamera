@@ -118,8 +118,9 @@ void Request::reuse(ReuseFlag flags)
 	pending_.clear();
 	if (flags & ReuseBuffers) {
 		for (auto pair : bufferMap_) {
-			pair.second->request_ = this;
-			pending_.insert(pair.second);
+			FrameBuffer *buffer = pair.second;
+			buffer->setRequest(this);
+			pending_.insert(buffer);
 		}
 	} else {
 		bufferMap_.clear();
@@ -187,7 +188,7 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer)
 		return -EEXIST;
 	}
 
-	buffer->request_ = this;
+	buffer->setRequest(this);
 	pending_.insert(buffer);
 	bufferMap_[stream] = buffer;
 
@@ -294,7 +295,7 @@ bool Request::completeBuffer(FrameBuffer *buffer)
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	buffer->request_ = nullptr;
+	buffer->setRequest(nullptr);
 
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		cancelled_ = true;

@@ -1,0 +1,8 @@
+cameras:
+  "\\_SB_.PCI0.I2C4.CAM1":
+    location: front
+    rotation: 0
+
+  "\\_SB_.PCI0.I2C2.CAM0":
+    location: back
+    rotation: 0

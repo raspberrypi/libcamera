@@ -1924,7 +1924,7 @@ void CameraDevice::requestComplete(Request *request)
 	 * pipeline handlers) timestamp in the Request itself.
 	 */
 	uint64_t timestamp = buffers.begin()->second->metadata().timestamp;
-	resultMetadata = getResultMetadata(descriptor, timestamp);
+	resultMetadata = getResultMetadata(*descriptor, timestamp);
 
 	/* Handle any JPEG compression. */
 	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
@@ -2030,11 +2030,11 @@ void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
  * Produce a set of fixed result metadata.
  */
 std::unique_ptr<CameraMetadata>
-CameraDevice::getResultMetadata(Camera3RequestDescriptor *descriptor,
-				int64_t timestamp)
+CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor,
+				int64_t timestamp) const
 {
-	const ControlList &metadata = descriptor->request_->metadata();
-	const CameraMetadata &settings = descriptor->settings_;
+	const ControlList &metadata = descriptor.request_->metadata();
+	const CameraMetadata &settings = descriptor.settings_;
 	camera_metadata_ro_entry_t entry;
 	bool found;
 

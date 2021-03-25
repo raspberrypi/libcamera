@@ -42,6 +42,16 @@ private:
 		int androidFormat;
 	};
 
+	bool validateManualSensorCapability();
+	bool validateManualPostProcessingCapability();
+	bool validateBurstCaptureCapability();
+
+	std::set<camera_metadata_enum_android_request_available_capabilities>
+		computeCapabilities();
+
+	void computeHwLevel(
+		const std::set<camera_metadata_enum_android_request_available_capabilities> &caps);
+
 	std::vector<libcamera::Size>
 	initializeYUVResolutions(const libcamera::PixelFormat &pixelFormat,
 				 const std::vector<libcamera::Size> &resolutions);
@@ -56,6 +66,7 @@ private:
 	int facing_;
 	int orientation_;
 	bool rawStreamAvailable_;
+	camera_metadata_enum_android_info_supported_hardware_level hwLevel_;
 
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;

@@ -7,8 +7,10 @@
 
 #include "camera_capabilities.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <map>
 
 #include <hardware/camera3.h>
 
@@ -114,7 +116,179 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 	},
 };
 
+const std::map<camera_metadata_enum_android_info_supported_hardware_level, std::string>
+hwLevelStrings = {
+	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,  "LIMITED" },
+	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_FULL,     "FULL" },
+	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,   "LEGACY" },
+	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_3,        "LEVEL_3" },
+	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, "EXTERNAL" },
+};
+
 } /* namespace */
+
+bool CameraCapabilities::validateManualSensorCapability()
+{
+	const char *noMode = "Manual sensor capability unavailable: ";
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AE_AVAILABLE_MODES,
+						     ANDROID_CONTROL_AE_MODE_OFF)) {
+		LOG(HAL, Info) << noMode << "missing AE mode off";
+		return false;
+	}
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AE_LOCK_AVAILABLE,
+						     ANDROID_CONTROL_AE_LOCK_AVAILABLE_TRUE)) {
+		LOG(HAL, Info) << noMode << "missing AE lock";
+		return false;
+	}
+
+	/*
+	 * \todo Return true here after we satisfy all the requirements:
+	 * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR
+	 * Manual frame duration control
+	 *     android.sensor.frameDuration
+	 *     android.sensor.info.maxFrameDuration
+	 * Manual exposure control
+	 *     android.sensor.exposureTime
+	 *     android.sensor.info.exposureTimeRange
+	 * Manual sensitivity control
+	 *     android.sensor.sensitivity
+	 *     android.sensor.info.sensitivityRange
+	 * Manual lens control (if the lens is adjustable)
+	 *     android.lens.*
+	 * Manual flash control (if a flash unit is present)
+	 *     android.flash.*
+	 * Manual black level locking
+	 *     android.blackLevel.lock
+	 * Auto exposure lock
+	 *     android.control.aeLock
+	 */
+	return false;
+}
+
+bool CameraCapabilities::validateManualPostProcessingCapability()
+{
+	const char *noMode = "Manual post processing capability unavailable: ";
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AWB_AVAILABLE_MODES,
+						     ANDROID_CONTROL_AWB_MODE_OFF)) {
+		LOG(HAL, Info) << noMode << "missing AWB mode off";
+		return false;
+	}
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
+						     ANDROID_CONTROL_AWB_LOCK_AVAILABLE_TRUE)) {
+		LOG(HAL, Info) << noMode << "missing AWB lock";
+		return false;
+	}
+
+	/*
+	 * \todo return true here after we satisfy all the requirements:
+	 * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING
+	 * Manual tonemap control
+	 *     android.tonemap.curve
+	 *     android.tonemap.mode
+	 *     android.tonemap.maxCurvePoints
+	 *     android.tonemap.gamma
+	 *     android.tonemap.presetCurve
+	 * Manual white balance control
+	 *     android.colorCorrection.transform
+	 *     android.colorCorrection.gains
+	 * Manual lens shading map control
+	 *     android.shading.mode
+	 *     android.statistics.lensShadingMapMode
+	 *     android.statistics.lensShadingMap
+	 *     android.lens.info.shadingMapSize
+	 * Manual aberration correction control (if aberration correction is supported)
+	 *     android.colorCorrection.aberrationMode
+	 *     android.colorCorrection.availableAberrationModes
+	 * Auto white balance lock
+	 *     android.control.awbLock
+	 */
+	return false;
+}
+
+bool CameraCapabilities::validateBurstCaptureCapability()
+{
+	camera_metadata_ro_entry_t entry;
+	bool found;
+
+	const char *noMode = "Burst capture capability unavailable: ";
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AE_LOCK_AVAILABLE,
+						     ANDROID_CONTROL_AE_LOCK_AVAILABLE_TRUE)) {
+		LOG(HAL, Info) << noMode << "missing AE lock";
+		return false;
+	}
+
+	if (!staticMetadata_->entryContains<uint8_t>(ANDROID_CONTROL_AWB_LOCK_AVAILABLE,
+						     ANDROID_CONTROL_AWB_LOCK_AVAILABLE_TRUE)) {
+		LOG(HAL, Info) << noMode << "missing AWB lock";
+		return false;
+	}
+
+	found = staticMetadata_->getEntry(ANDROID_SYNC_MAX_LATENCY, &entry);
+	if (!found || *entry.data.i32 < 0 || 4 < *entry.data.i32) {
+		LOG(HAL, Info)
+			<< noMode << "max sync latency is "
+			<< (found ? std::to_string(*entry.data.i32) : "not present");
+		return false;
+	}
+
+	/*
+	 * \todo return true here after we satisfy all the requirements
+	 * https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE
+	 */
+	return false;
+}
+
+std::set<camera_metadata_enum_android_request_available_capabilities>
+CameraCapabilities::computeCapabilities()
+{
+	std::set<camera_metadata_enum_android_request_available_capabilities>
+		capabilities;
+
+	capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE);
+
+	if (validateManualSensorCapability())
+		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR);
+
+	if (validateManualPostProcessingCapability())
+		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING);
+
+	if (validateBurstCaptureCapability())
+		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE);
+
+	if (rawStreamAvailable_)
+		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
+
+	return capabilities;
+}
+
+void CameraCapabilities::computeHwLevel(
+	const std::set<camera_metadata_enum_android_request_available_capabilities> &caps)
+{
+	camera_metadata_ro_entry_t entry;
+	bool found;
+	camera_metadata_enum_android_info_supported_hardware_level
+		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_FULL;
+
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR))
+		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING))
+		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE))
+		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+
+	found = staticMetadata_->getEntry(ANDROID_SYNC_MAX_LATENCY, &entry);
+	if (!found || *entry.data.i32 != 0)
+		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+
+	hwLevel_ = hwLevel;
+}
 
 int CameraCapabilities::initialize(std::shared_ptr<libcamera::Camera> camera,
 				   int orientation, int facing)
@@ -851,11 +1025,6 @@ int CameraCapabilities::initializeStaticMetadata()
 	uint8_t croppingType = ANDROID_SCALER_CROPPING_TYPE_CENTER_ONLY;
 	staticMetadata_->addEntry(ANDROID_SCALER_CROPPING_TYPE, croppingType);
 
-	/* Info static metadata. */
-	uint8_t supportedHWLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
-	staticMetadata_->addEntry(ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL,
-				  supportedHWLevel);
-
 	/* Request static metadata. */
 	int32_t partialResultCount = 1;
 	staticMetadata_->addEntry(ANDROID_REQUEST_PARTIAL_RESULT_COUNT,
@@ -876,21 +1045,23 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_REQUEST_MAX_NUM_INPUT_STREAMS,
 				  maxNumInputStreams);
 
-	std::vector<uint8_t> availableCapabilities = {
-		ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE,
-	};
-
-	/* Report if camera supports RAW. */
-	if (rawStreamAvailable_)
-		availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
-
 	/* Number of { RAW, YUV, JPEG } supported output streams */
 	int32_t numOutStreams[] = { rawStreamAvailable_, 2, 1 };
 	staticMetadata_->addEntry(ANDROID_REQUEST_MAX_NUM_OUTPUT_STREAMS,
 				  numOutStreams);
 
-	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES,
-				  availableCapabilities);
+	/* Check capabilities */
+	std::set<camera_metadata_enum_android_request_available_capabilities>
+		capabilities = computeCapabilities();
+	std::vector<camera_metadata_enum_android_request_available_capabilities>
+		capsVec(capabilities.begin(), capabilities.end());
+	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES, capsVec);
+
+	computeHwLevel(capabilities);
+	staticMetadata_->addEntry(ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL, hwLevel_);
+
+	LOG(HAL, Info)
+		<< "Hardware level: " << hwLevelStrings.find(hwLevel_)->second;
 
 	std::vector<int32_t> availableCharacteristicsKeys = {
 		ANDROID_COLOR_CORRECTION_AVAILABLE_ABERRATION_MODES,

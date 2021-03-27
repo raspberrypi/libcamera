@@ -32,7 +32,7 @@ class IPARkISP1 : public ipa::rkisp1::IPARkISP1Interface
 {
 public:
 	int init(unsigned int hwRevision) override;
-	int start() override { return 0; }
+	int start() override;
 	void stop() override {}
 
 	int configure(const CameraSensorInfo &info,
@@ -80,6 +80,13 @@ int IPARkISP1::init(unsigned int hwRevision)
 	return 0;
 }
 
+int IPARkISP1::start()
+{
+	setControls(0);
+
+	return 0;
+}
+
 /**
  * \todo The RkISP1 pipeline currently provides an empty CameraSensorInfo
  * if the connected sensor does not provide enough information to properly
@@ -121,7 +128,6 @@ int IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
 		<< "Exposure: " << minExposure_ << "-" << maxExposure_
 		<< " Gain: " << minGain_ << "-" << maxGain_;
 
-	setControls(0);
 	return 0;
 }
 

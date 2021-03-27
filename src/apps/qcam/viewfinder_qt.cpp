@@ -40,6 +40,10 @@ ViewFinderQt::ViewFinderQt(QWidget *parent)
 	: QWidget(parent), place_(rect()), buffer_(nullptr)
 {
 	icon_ = QIcon(":camera-off.svg");
+
+	QPalette pal = palette();
+	pal.setColor(QPalette::Window, Qt::black);
+	setPalette(pal);
 }
 
 ViewFinderQt::~ViewFinderQt()
@@ -114,6 +118,11 @@ void ViewFinderQt::render(libcamera::FrameBuffer *buffer, Image *image)
 		}
 	}
 
+	/*
+	 * Indicate the widget paints all its pixels, to optimize rendering by
+	 * skipping erasing the widget before painting.
+	 */
+	setAttribute(Qt::WA_OpaquePaintEvent, true);
 	update();
 
 	if (buffer)
@@ -129,6 +138,11 @@ void ViewFinderQt::stop()
 		buffer_ = nullptr;
 	}
 
+	/*
+	 * The logo has a transparent background, reenable erasing the widget
+	 * before painting.
+	 */
+	setAttribute(Qt::WA_OpaquePaintEvent, false);
 	update();
 }
 
@@ -143,8 +157,22 @@ void ViewFinderQt::paintEvent(QPaintEvent *)
 {
 	QPainter painter(this);
 
-	/* If we have an image, draw it. */
+	painter.setBrush(palette().window());
+
+	/* If we have an image, draw it, with black letterbox rectangles. */
 	if (!image_.isNull()) {
+		if (place_.width() < width()) {
+			QRect rect{ 0, 0, (width() - place_.width()) / 2, height() };
+			painter.drawRect(rect);
+			rect.moveLeft(place_.right());
+			painter.drawRect(rect);
+		} else {
+			QRect rect{ 0, 0, width(), (height() - place_.height()) / 2 };
+			painter.drawRect(rect);
+			rect.moveTop(place_.bottom());
+			painter.drawRect(rect);
+		}
+
 		painter.drawImage(place_, image_, image_.rect());
 		return;
 	}
@@ -170,7 +198,6 @@ void ViewFinderQt::paintEvent(QPaintEvent *)
 	else
 		point.setY((height() - pixmap_.height()) / 2);
 
-	painter.setBackgroundMode(Qt::OpaqueMode);
 	painter.drawPixmap(point, pixmap_);
 }
 

@@ -1066,7 +1066,7 @@ void IPARPi::applyFrameDurations(double minFrameDuration, double maxFrameDuratio
 				       minSensorFrameDuration, maxSensorFrameDuration);
 	maxFrameDuration_ = std::max(maxFrameDuration_, minFrameDuration_);
 
-	/* Return the validated limits out though metadata. */
+	/* Return the validated limits via metadata. */
 	libcameraMetadata_.set(controls::FrameDurations,
 			       { static_cast<int64_t>(minFrameDuration_),
 				 static_cast<int64_t>(maxFrameDuration_) });

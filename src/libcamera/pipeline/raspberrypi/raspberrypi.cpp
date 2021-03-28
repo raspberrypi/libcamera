@@ -1141,7 +1141,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 
 	/*
 	 * Decide how many internal buffers to allocate. For now, simply look
-	 * at how many external buffers will be provided. Will need to improve
+	 * at how many external buffers will be provided. We'll need to improve
 	 * this logic. However, we really must have all streams allocate the same
 	 * number of buffers to simplify error handling in queueRequestDevice().
 	 */

@@ -208,7 +208,6 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 	agcStatus.shutter_time = 0.0;
 	agcStatus.analogue_gain = 0.0;
 
-	/* SwitchMode may supply updated exposure/gain values to use. */
 	metadata.Get("agc.status", agcStatus);
 	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
 		ControlList ctrls(sensorCtrls_);

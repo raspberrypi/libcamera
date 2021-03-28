@@ -1238,9 +1238,6 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::IPAConfig ipaConfig;
 
-	/* Get the device format to pass to the IPA. */
-	V4L2DeviceFormat sensorFormat;
-	unicam_[Unicam::Image].dev()->getFormat(&sensorFormat);
 	/* Inform IPA of stream configuration and sensor controls. */
 	unsigned int i = 0;
 	for (auto const &stream : isp_) {

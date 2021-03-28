@@ -869,7 +869,7 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
 int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 {
 	/*
-	 * \todo The constrols intialized here depend on sensor configuration
+	 * \todo The controls initialized here depend on sensor configuration
 	 * and their limits should be updated once the configuration gets
 	 * changed.
 	 *

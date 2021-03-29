@@ -1095,26 +1095,28 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	}
 
 	/* Scaler static metadata. */
-	{
-		/*
-		 * \todo The digital zoom factor is a property that depends
-		 * on the desired output configuration and the sensor frame size
-		 * input to the ISP. This information is not available to the
-		 * Android HAL, not at initialization time at least.
-		 *
-		 * As a workaround rely on pipeline handlers initializing the
-		 * ScalerCrop control with the camera default configuration and
-		 * use the maximum and minimum crop rectangles to calculate the
-		 * digital zoom factor.
-		 */
-		const auto info = controlsInfo.find(&controls::ScalerCrop);
-		Rectangle min = info->second.min().get<Rectangle>();
-		Rectangle max = info->second.max().get<Rectangle>();
-		float maxZoom = std::min(1.0f * max.width / min.width,
-					 1.0f * max.height / min.height);
-		staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
-					  &maxZoom, 1);
+
+	/*
+	 * \todo The digital zoom factor is a property that depends on the
+	 * desired output configuration and the sensor frame size input to the
+	 * ISP. This information is not available to the Android HAL, not at
+	 * initialization time at least.
+	 *
+	 * As a workaround rely on pipeline handlers initializing the
+	 * ScalerCrop control with the camera default configuration and use the
+	 * maximum and minimum crop rectangles to calculate the digital zoom
+	 * factor.
+	 */
+	float maxZoom = 1.0f;
+	const auto scalerCrop = controlsInfo.find(&controls::ScalerCrop);
+	if (scalerCrop != controlsInfo.end()) {
+		Rectangle min = scalerCrop->second.min().get<Rectangle>();
+		Rectangle max = scalerCrop->second.max().get<Rectangle>();
+		maxZoom = std::min(1.0f * max.width / min.width,
+				   1.0f * max.height / min.height);
 	}
+	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
+				  &maxZoom, 1);
 
 	std::vector<uint32_t> availableStreamConfigurations;
 	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);

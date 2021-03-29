@@ -81,7 +81,7 @@ public:
 	virtual int start(Camera *camera, const ControlList *controls) = 0;
 	virtual void stop(Camera *camera) = 0;
 
-	int queueRequest(Request *request);
+	void queueRequest(Request *request);
 
 	bool completeBuffer(Request *request, FrameBuffer *buffer);
 	void completeRequest(Request *request);

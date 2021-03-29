@@ -371,10 +371,8 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
  * signalled by the pipeline handler using the completeRequest() method.
  *
  * \context This function is called from the CameraManager thread.
- *
- * \return 0 on success or a negative error code otherwise
  */
-int PipelineHandler::queueRequest(Request *request)
+void PipelineHandler::queueRequest(Request *request)
 {
 	LIBCAMERA_TRACEPOINT(request_queue, request);
 
@@ -387,8 +385,6 @@ int PipelineHandler::queueRequest(Request *request)
 	int ret = queueRequestDevice(camera, request);
 	if (ret)
 		data->queuedRequests_.remove(request);
-
-	return ret;
 }
 
 /**

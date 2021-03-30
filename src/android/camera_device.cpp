@@ -855,6 +855,13 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		minFps = std::max(1, minFps);
 
 		/*
+		 * Force rounding errors so that we have the proper frame
+		 * durations for when we reuse these variables later
+		 */
+		minFrameDurationNsec = 1e9 / maxFps;
+		maxFrameDurationNsec = 1e9 / minFps;
+
+		/*
 		 * Register to the camera service {min, max} and {max, max}
 		 * intervals as requested by the metadata documentation.
 		 */

@@ -117,9 +117,10 @@ LogMessage _log(const LogCategory *category, LogSeverity severity,
 #endif /* __DOXYGEN__ */
 
 #ifndef NDEBUG
-#define ASSERT(condition) static_cast<void>(({				\
-	if (!(condition))						\
-		LOG(Fatal) << "assertion \"" #condition "\" failed";	\
+#define ASSERT(condition) static_cast<void>(({                          \
+	if (!(condition))                                               \
+		LOG(Fatal) << "assertion \"" #condition "\" failed in " \
+			   << __func__ << "()";                         \
 }))
 #else
 #define ASSERT(condition) static_cast<void>(false && (condition))

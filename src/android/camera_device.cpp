@@ -2187,7 +2187,7 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	std::unique_ptr<CameraMetadata> resultMetadata =
 		std::make_unique<CameraMetadata>(44, 166);
 	if (!resultMetadata->isValid()) {
-		LOG(HAL, Error) << "Failed to allocate static metadata";
+		LOG(HAL, Error) << "Failed to allocate result metadata";
 		return nullptr;
 	}
 

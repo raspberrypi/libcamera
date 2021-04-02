@@ -754,9 +754,18 @@ void CameraDevice::close()
 {
 	streams_.clear();
 
+	stop();
+
+	camera_->release();
+}
+
+void CameraDevice::stop()
+{
+	if (!running_)
+		return;
+
 	worker_.stop();
 	camera_->stop();
-	camera_->release();
 
 	running_ = false;
 }
@@ -1642,12 +1651,8 @@ PixelFormat CameraDevice::toPixelFormat(int format) const
  */
 int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 {
-	/* Before any configuration attempt, stop the camera if it's running. */
-	if (running_) {
-		worker_.stop();
-		camera_->stop();
-		running_ = false;
-	}
+	/* Before any configuration attempt, stop the camera. */
+	stop();
 
 	if (stream_list->num_streams == 0) {
 		LOG(HAL, Error) << "No streams in configuration";

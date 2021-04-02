@@ -85,6 +85,8 @@ private:
 		int androidFormat;
 	};
 
+	void stop();
+
 	int initializeStreamConfigurations();
 	std::vector<libcamera::Size>
 	getYUVResolutions(libcamera::CameraConfiguration *cameraConfig,

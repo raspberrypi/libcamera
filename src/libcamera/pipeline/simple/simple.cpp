@@ -100,8 +100,14 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  *
  * During the breadth-first search, the pipeline is traversed from entity to
  * entity, by following media graph links from source to sink, starting at the
- * camera sensor. When reaching an entity (on its sink side), all its source
- * pads are considered to continue the graph traversal.
+ * camera sensor.
+ *
+ * When reaching an entity (on its sink side), if the entity is a V4L2 subdev
+ * that supports the streams API, the subdev internal routes are followed to
+ * find the connected source pads. Otherwise all of the entity's source pads
+ * are considered to continue the graph traversal. The pipeline handler
+ * currently considers the default internal routes only and doesn't attempt to
+ * setup custom routes. This can be extended if needed.
  *
  * The shortest path between the camera sensor and a video node is stored in
  * SimpleCameraData::entities_ as a list of SimpleCameraData::Entity structures,
@@ -261,6 +267,7 @@ public:
 
 private:
 	void tryPipeline(unsigned int code, const Size &size);
+	static std::vector<const MediaPad *> routedSourcePads(MediaPad *sink);
 
 	void converterInputDone(FrameBuffer *buffer);
 	void converterOutputDone(FrameBuffer *buffer);
@@ -387,12 +394,29 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 			break;
 		}
 
-		/* The actual breadth-first search algorithm. */
 		visited.insert(entity);
-		for (MediaPad *pad : entity->pads()) {
-			if (!(pad->flags() & MEDIA_PAD_FL_SOURCE))
-				continue;
 
+		/*
+		 * Add direct downstream entities to the search queue. If the
+		 * current entity supports the subdev internal routing API,
+		 * restrict the search to downstream entities reachable through
+		 * active routes.
+		 */
+
+		std::vector<const MediaPad *> pads;
+
+		if (sinkPad)
+			pads = routedSourcePads(sinkPad);
+
+		if (pads.empty()) {
+			for (const MediaPad *pad : entity->pads()) {
+				if (!(pad->flags() & MEDIA_PAD_FL_SOURCE))
+					continue;
+				pads.push_back(pad);
+			}
+		}
+
+		for (const MediaPad *pad : pads) {
 			for (MediaLink *link : pad->links()) {
 				MediaEntity *next = link->sink()->entity();
 				if (visited.find(next) == visited.end()) {
@@ -780,6 +804,43 @@ void SimpleCameraData::converterOutputDone(FrameBuffer *buffer)
 	Request *request = buffer->request();
 	if (pipe->completeBuffer(request, buffer))
 		pipe->completeRequest(request);
+}
+
+/* Retrieve all source pads connected to a sink pad through active routes. */
+std::vector<const MediaPad *> SimpleCameraData::routedSourcePads(MediaPad *sink)
+{
+	MediaEntity *entity = sink->entity();
+	std::unique_ptr<V4L2Subdevice> subdev =
+		std::make_unique<V4L2Subdevice>(entity);
+
+	int ret = subdev->open();
+	if (ret < 0)
+		return {};
+
+	V4L2Subdevice::Routing routing = {};
+	ret = subdev->getRouting(&routing, V4L2Subdevice::ActiveFormat);
+	if (ret < 0)
+		return {};
+
+	std::vector<const MediaPad *> pads;
+
+	for (const struct v4l2_subdev_route &route : routing) {
+		if (sink->index() != route.sink_pad ||
+		    !(route.flags & V4L2_SUBDEV_ROUTE_FL_ACTIVE))
+			continue;
+
+		const MediaPad *pad = entity->getPadByIndex(route.source_pad);
+		if (!pad) {
+			LOG(SimplePipeline, Warning)
+				<< "Entity " << entity->name()
+				<< " has invalid route source pad "
+				<< route.source_pad;
+		}
+
+		pads.push_back(pad);
+	}
+
+	return pads;
 }
 
 /* -----------------------------------------------------------------------------

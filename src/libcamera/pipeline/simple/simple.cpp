@@ -222,6 +222,11 @@ public:
 		/* The media entity, always valid. */
 		MediaEntity *entity;
 		/*
+		 * Whether or not the entity is a subdev that supports the
+		 * routing API.
+		 */
+		bool supportsRouting;
+		/*
 		 * The local sink pad connected to the upstream entity, null for
 		 * the camera sensor at the beginning of the pipeline.
 		 */
@@ -404,9 +409,13 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 		 */
 
 		std::vector<const MediaPad *> pads;
+		bool supportsRouting = false;
 
-		if (sinkPad)
+		if (sinkPad) {
 			pads = routedSourcePads(sinkPad);
+			if (!pads.empty())
+				supportsRouting = true;
+		}
 
 		if (pads.empty()) {
 			for (const MediaPad *pad : entity->pads()) {
@@ -421,7 +430,9 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 				MediaEntity *next = link->sink()->entity();
 				if (visited.find(next) == visited.end()) {
 					queue.push({ next, link->sink() });
-					parents.insert({ next, { entity, sinkPad, pad, link } });
+
+					Entity e{ entity, supportsRouting, sinkPad, pad, link };
+					parents.insert({ next, e });
 				}
 			}
 		}
@@ -435,7 +446,7 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	 * to the sensor. Store all the entities in the pipeline, from the
 	 * camera sensor to the video node, in entities_.
 	 */
-	entities_.push_front({ entity, sinkPad, nullptr, nullptr });
+	entities_.push_front({ entity, false, sinkPad, nullptr, nullptr });
 
 	for (auto it = parents.find(entity); it != parents.end();
 	     it = parents.find(entity)) {
@@ -617,6 +628,15 @@ int SimpleCameraData::setupLinks()
 		}
 
 		for (MediaPad *pad : e.entity->pads()) {
+			/*
+			 * If the entity supports the V4L2 internal routing API,
+			 * assume that it may carry multiple independent streams
+			 * concurrently, and only disable links on the sink and
+			 * source pads used by the pipeline.
+			 */
+			if (e.supportsRouting && pad != e.sink && pad != e.source)
+				continue;
+
 			for (MediaLink *link : pad->links()) {
 				if (link == sinkLink)
 					continue;

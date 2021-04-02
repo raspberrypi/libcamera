@@ -287,12 +287,12 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 
 	/* Remember at each entity where we came from. */
 	std::unordered_map<MediaEntity *, Entity> parents;
-	queue.push(sensor);
-
 	MediaEntity *entity = nullptr;
 
+	queue.push(sensor);
+
 	while (!queue.empty()) {
-		entity = queue.back();
+		entity = queue.front();
 		queue.pop();
 
 		/* Found the capture device. */

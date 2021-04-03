@@ -22,7 +22,7 @@ class CameraDevice;
 class CaptureRequest
 {
 public:
-	CaptureRequest(libcamera::Camera *camera, uint64_t cookie);
+	CaptureRequest(libcamera::Camera *camera);
 
 	const std::vector<int> &fences() const { return acquireFences_; }
 	libcamera::ControlList &controls() { return request_->controls(); }

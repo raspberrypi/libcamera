@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <tuple>
 #include <vector>
 
@@ -69,11 +70,13 @@ private:
 	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> camera);
 
 	struct Camera3RequestDescriptor {
+		Camera3RequestDescriptor() = default;
+		~Camera3RequestDescriptor() = default;
 		Camera3RequestDescriptor(libcamera::Camera *camera,
 					 const camera3_capture_request_t *camera3Request);
-		~Camera3RequestDescriptor();
+		Camera3RequestDescriptor &operator=(Camera3RequestDescriptor &&) = default;
 
-		uint32_t frameNumber_;
+		uint32_t frameNumber_ = 0;
 		std::vector<camera3_stream_buffer_t> buffers_;
 		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
 		CameraMetadata settings_;
@@ -123,6 +126,9 @@ private:
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;
 	std::vector<CameraStream> streams_;
+
+	std::mutex mutex_; /* Protect descriptors_ */
+	std::map<uint64_t, Camera3RequestDescriptor> descriptors_;
 
 	std::string maker_;
 	std::string model_;

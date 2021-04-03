@@ -256,6 +256,21 @@ void sortCamera3StreamConfigs(std::vector<Camera3StreamConfig> &unsortedConfigs,
 	unsortedConfigs = sortedConfigs;
 }
 
+bool isValidRequest(camera3_capture_request_t *camera3Request)
+{
+	if (!camera3Request) {
+		LOG(HAL, Error) << "No capture request provided";
+		return false;
+	}
+
+	if (!camera3Request->num_output_buffers) {
+		LOG(HAL, Error) << "No output buffers provided";
+		return false;
+	}
+
+	return true;
+}
+
 } /* namespace */
 
 /*
@@ -1790,15 +1805,8 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
-	if (!camera3Request) {
-		LOG(HAL, Error) << "No capture request provided";
+	if (!isValidRequest(camera3Request))
 		return -EINVAL;
-	}
-
-	if (!camera3Request->num_output_buffers) {
-		LOG(HAL, Error) << "No output buffers provided";
-		return -EINVAL;
-	}
 
 	/* Start the camera if that's the first request we handle. */
 	if (!running_) {

@@ -1703,6 +1703,18 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		if (!format.isValid())
 			return -EINVAL;
 
+		/* \todo Support rotation. */
+		if (stream->rotation != CAMERA3_STREAM_ROTATION_0) {
+			LOG(HAL, Error) << "Rotation is not supported";
+			return -EINVAL;
+		}
+#if defined(OS_CHROMEOS)
+		if (stream->crop_rotate_scale_degrees != CAMERA3_STREAM_ROTATION_0) {
+			LOG(HAL, Error) << "Rotation is not supported";
+			return -EINVAL;
+		}
+#endif
+
 		/* Defer handling of MJPEG streams until all others are known. */
 		if (stream->format == HAL_PIXEL_FORMAT_BLOB) {
 			if (jpegStream) {

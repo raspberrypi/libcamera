@@ -35,6 +35,10 @@ endif
 
 android_deps += [libyuv_dep]
 
+if get_option('android_platform') == 'cros'
+   libcamera_cpp_args += [ '-DOS_CHROMEOS']
+endif
+
 subdir('cros')
 
 android_hal_sources = files([

@@ -11,6 +11,7 @@ else
     ipa_sign_module = false
 endif
 
+libcamera_cpp_args = []
 libcamera_objects = []
 
 # The 'android' subdir must be processed first, and the build targets

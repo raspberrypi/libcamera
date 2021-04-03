@@ -1554,6 +1554,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		running_ = false;
 	}
 
+	if (stream_list->num_streams == 0) {
+		LOG(HAL, Error) << "No streams in configuration";
+		return -EINVAL;
+	}
+
 	/*
 	 * Generate an empty configuration, and construct a StreamConfiguration
 	 * for each camera3_stream to add to it.

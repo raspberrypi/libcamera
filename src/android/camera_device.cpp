@@ -298,6 +298,44 @@ bool isValidRequest(camera3_capture_request_t *camera3Request)
 	return true;
 }
 
+#if defined(OS_CHROMEOS)
+/*
+ * Check whether the crop_rotate_scale_degrees values for all streams in
+ * the list are valid according to the Chrome OS camera HAL API.
+ */
+bool validateCropRotate(const camera3_stream_configuration_t &streamList)
+{
+	ASSERT(streamList.num_streams > 0);
+	const int cropRotateScaleDegrees =
+		streamList.streams[0]->crop_rotate_scale_degrees;
+	for (unsigned int i = 0; i < streamList.num_streams; ++i) {
+		const camera3_stream_t &stream = *streamList.streams[i];
+
+		switch (stream.crop_rotate_scale_degrees) {
+		case CAMERA3_STREAM_ROTATION_0:
+		case CAMERA3_STREAM_ROTATION_90:
+		case CAMERA3_STREAM_ROTATION_270:
+			break;
+
+		/* 180° rotation is specified by Chrome OS as invalid. */
+		case CAMERA3_STREAM_ROTATION_180:
+		default:
+			LOG(HAL, Error) << "Invalid crop_rotate_scale_degrees: "
+					<< stream.crop_rotate_scale_degrees;
+			return false;
+		}
+
+		if (cropRotateScaleDegrees != stream.crop_rotate_scale_degrees) {
+			LOG(HAL, Error) << "crop_rotate_scale_degrees in all "
+					<< "streams are not identical";
+			return false;
+		}
+	}
+
+	return true;
+}
+#endif
+
 } /* namespace */
 
 /*
@@ -1600,6 +1638,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		LOG(HAL, Error) << "No streams in configuration";
 		return -EINVAL;
 	}
+
+#if defined(OS_CHROMEOS)
+	if (!validateCropRotate(*stream_list))
+		return -EINVAL;
+#endif
 
 	/*
 	 * Generate an empty configuration, and construct a StreamConfiguration

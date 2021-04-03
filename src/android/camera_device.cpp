@@ -298,6 +298,21 @@ bool isValidRequest(camera3_capture_request_t *camera3Request)
 	return true;
 }
 
+const char *rotationToString(int rotation)
+{
+	switch (rotation) {
+	case CAMERA3_STREAM_ROTATION_0:
+		return "0";
+	case CAMERA3_STREAM_ROTATION_90:
+		return "90";
+	case CAMERA3_STREAM_ROTATION_180:
+		return "180";
+	case CAMERA3_STREAM_ROTATION_270:
+		return "270";
+	}
+	return "INVALID";
+}
+
 #if defined(OS_CHROMEOS)
 /*
  * Check whether the crop_rotate_scale_degrees values for all streams in
@@ -1678,6 +1693,11 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			       << ", width: " << stream->width
 			       << ", height: " << stream->height
 			       << ", format: " << utils::hex(stream->format)
+			       << ", rotation: " << rotationToString(stream->rotation)
+#if defined(OS_CHROMEOS)
+			       << ", crop_rotate_scale_degrees: "
+			       << rotationToString(stream->crop_rotate_scale_degrees)
+#endif
 			       << " (" << format.toString() << ")";
 
 		if (!format.isValid())

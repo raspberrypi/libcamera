@@ -37,6 +37,7 @@ private:
 	buffer_handle_t handle_;
 	unsigned int numPlanes_;
 	bool valid_;
+	bool registered_;
 	union {
 		void *addr;
 		android_ycbcr ycbcr;
@@ -49,16 +50,21 @@ private:
 CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer, int flags)
 	: Extensible::Private(cameraBuffer), handle_(camera3Buffer),
-	  numPlanes_(0), valid_(false)
+	  numPlanes_(0), valid_(false), registered(false)
 {
 	bufferManager_ = cros::CameraBufferManager::GetInstance();
 
-	bufferManager_->Register(camera3Buffer);
+	int ret = bufferManager_->Register(camera3Buffer);
+	if (ret) {
+		LOG(HAL, Error) << "Failed registering a buffer: " << ret;
+		return;
+	}
 
+	registered_ = true;
 	numPlanes_ = bufferManager_->GetNumPlanes(camera3Buffer);
 	switch (numPlanes_) {
 	case 1: {
-		int ret = bufferManager_->Lock(handle_, 0, 0, 0, 0, 0, &mem.addr);
+		ret = bufferManager_->Lock(handle_, 0, 0, 0, 0, 0, &mem.addr);
 		if (ret) {
 			LOG(HAL, Error) << "Single plane buffer mapping failed";
 			return;
@@ -67,8 +73,8 @@ CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
 	}
 	case 2:
 	case 3: {
-		int ret = bufferManager_->LockYCbCr(handle_, 0, 0, 0, 0, 0,
-						    &mem.ycbcr);
+		ret = bufferManager_->LockYCbCr(handle_, 0, 0, 0, 0, 0,
+						&mem.ycbcr);
 		if (ret) {
 			LOG(HAL, Error) << "YCbCr buffer mapping failed";
 			return;
@@ -85,8 +91,10 @@ CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
 
 CameraBuffer::Private::~Private()
 {
-	bufferManager_->Unlock(handle_);
-	bufferManager_->Deregister(handle_);
+	if (valid_)
+		bufferManager_->Unlock(handle_);
+	if (registered_)
+		bufferManager_->Deregister(handle_);
 }
 
 unsigned int CameraBuffer::Private::numPlanes() const

@@ -119,7 +119,10 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	ret = requestMetadata.getEntry(ANDROID_LENS_APERTURE, &entry);
 	if (ret)
 		exif.setAperture(*entry.data.f);
-	exif.setISO(100);
+
+	ret = resultMetadata->getEntry(ANDROID_SENSOR_SENSITIVITY, &entry);
+	exif.setISO(ret ? *entry.data.i32 : 100);
+
 	exif.setFlash(Exif::Flash::FlashNotPresent);
 	exif.setWhiteBalance(Exif::WhiteBalance::Auto);
 

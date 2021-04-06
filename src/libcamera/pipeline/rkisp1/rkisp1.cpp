@@ -842,6 +842,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 		LOG(RkISP1, Warning)
 			<< "Failed to stop parameters for " << camera->id();
 
+	ASSERT(data->queuedRequests_.empty());
 	data->frameInfo_.clear();
 
 	freeBuffers(camera);

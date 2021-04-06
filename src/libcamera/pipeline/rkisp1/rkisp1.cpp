@@ -827,6 +827,8 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 
 	isp_->setFrameStartEnabled(false);
 
+	data->ipa_->stop();
+
 	selfPath_.stop();
 	mainPath_.stop();
 
@@ -839,8 +841,6 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 	if (ret)
 		LOG(RkISP1, Warning)
 			<< "Failed to stop parameters for " << camera->id();
-
-	data->ipa_->stop();
 
 	data->frameInfo_.clear();
 

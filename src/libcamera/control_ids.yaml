@@ -360,6 +360,20 @@ controls:
 
       size: [2]
 
+  - SensorTimestamp:
+      type: int64_t
+      description: |
+        The time when the first row of the image sensor active array is exposed.
+
+        The timestamp, expressed in nanoseconds, represents a monotonically
+        increasing counter since the system boot time, as defined by the
+        Linux-specific CLOCK_BOOTTIME clock id.
+
+        The SensorTimestamp control can only be returned in metadata.
+
+        \todo Define how the sensor timestamp has to be used in the reprocessing
+        use case.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 
@@ -546,13 +560,6 @@ controls:
         - name: AwbLocked
           value: 3
           description: The AWB algorithm is locked.
-
-  - SensorTimestamp:
-      type: int64_t
-      draft: true
-      description: |
-       Control to report the start of exposure of the first row of the captured
-       image. Currently identical to ANDROID_SENSOR_TIMESTAMP.
 
   - SensorRollingShutterSkew:
       type: int64_t

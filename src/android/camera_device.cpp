@@ -2025,7 +2025,6 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 void CameraDevice::requestComplete(Request *request)
 {
-	const Request::BufferMap &buffers = request->buffers();
 	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
 	std::unique_ptr<CameraMetadata> resultMetadata;
 
@@ -2053,14 +2052,7 @@ void CameraDevice::requestComplete(Request *request)
 	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
 			<< descriptor.buffers_.size() << " streams";
 
-	/*
-	 * \todo The timestamp used for the metadata is currently always taken
-	 * from the first buffer (which may be the first stream) in the Request.
-	 * It might be appropriate to return a 'correct' (as determined by
-	 * pipeline handlers) timestamp in the Request itself.
-	 */
-	uint64_t timestamp = buffers.begin()->second->metadata().timestamp;
-	resultMetadata = getResultMetadata(descriptor, timestamp);
+	resultMetadata = getResultMetadata(descriptor);
 
 	/* Handle any JPEG compression. */
 	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
@@ -2105,6 +2097,9 @@ void CameraDevice::requestComplete(Request *request)
 	captureResult.output_buffers = descriptor.buffers_.data();
 
 	if (status == CAMERA3_BUFFER_STATUS_OK) {
+		uint64_t timestamp =
+			static_cast<uint64_t>(request->metadata()
+					      .get(controls::SensorTimestamp));
 		notifyShutter(descriptor.frameNumber_, timestamp);
 
 		captureResult.partial_result = 1;
@@ -2164,8 +2159,7 @@ void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
  * Produce a set of fixed result metadata.
  */
 std::unique_ptr<CameraMetadata>
-CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor,
-				int64_t timestamp) const
+CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) const
 {
 	const ControlList &metadata = descriptor.request_->metadata();
 	const CameraMetadata &settings = descriptor.settings_;
@@ -2291,8 +2285,6 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor,
 	resultMetadata->addEntry(ANDROID_SENSOR_TEST_PATTERN_MODE,
 				 &value32, 1);
 
-	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
-
 	value = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE,
 				 &value, 1);
@@ -2318,6 +2310,9 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor,
 				 &rolling_shutter_skew, 1);
 
 	/* Add metadata tags reported by libcamera. */
+	const int64_t timestamp = metadata.get(controls::SensorTimestamp);
+	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, &timestamp, 1);
+
 	if (metadata.contains(controls::draft::PipelineDepth)) {
 		uint8_t pipeline_depth =
 			metadata.get<int32_t>(controls::draft::PipelineDepth);

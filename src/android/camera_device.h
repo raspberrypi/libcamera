@@ -107,8 +107,7 @@ private:
 	libcamera::PixelFormat toPixelFormat(int format) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
-		const Camera3RequestDescriptor &descriptor,
-		int64_t timestamp) const;
+		const Camera3RequestDescriptor &descriptor) const;
 
 	unsigned int id_;
 	camera3_device_t camera3Device_;

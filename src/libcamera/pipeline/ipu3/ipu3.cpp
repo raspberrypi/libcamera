@@ -1255,6 +1255,15 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 
 	Request *request = info->request;
 
+	/*
+	 * Record the sensor's timestamp in the request metadata.
+	 *
+	 * \todo The sensor timestamp should be better estimated by connecting
+	 * to the V4L2Device::frameStart signal.
+	 */
+	request->metadata().set(controls::SensorTimestamp,
+				buffer->metadata().timestamp);
+
 	/* If the buffer is cancelled force a complete of the whole request. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
 		for (auto it : request->buffers()) {

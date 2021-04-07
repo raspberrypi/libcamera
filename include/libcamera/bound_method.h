@@ -174,7 +174,7 @@ template<typename T, typename... Args>
 class BoundMethodMember<T, void, Args...> : public BoundMethodArgs<void, Args...>
 {
 public:
-	using PackType = typename BoundMethodArgs<void *, Args...>::PackType;
+	using PackType = typename BoundMethodArgs<void, Args...>::PackType;
 
 	BoundMethodMember(T *obj, Object *object, void (T::*func)(Args...),
 			  ConnectionType type = ConnectionTypeAuto)

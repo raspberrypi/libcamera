@@ -305,7 +305,7 @@ std::unique_ptr<CameraDevice> CameraDevice::create(unsigned int id,
  * cameraConfigData is optional for external camera devices and can be
  * nullptr.
  *
- * This method is called before the camera device is opened.
+ * This function is called before the camera device is opened.
  */
 int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 {

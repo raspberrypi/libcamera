@@ -34,25 +34,25 @@ namespace RPiController {
 // exposure time, and to convert between the sensor's gain codes and actual
 // gains.
 //
-// A method to return the number of frames of delay between updating exposure,
+// A function to return the number of frames of delay between updating exposure,
 // analogue gain and vblanking, and for the changes to take effect. For many
 // sensors these take the values 2, 1 and 2 respectively, but sensors that are
-// different will need to over-ride the default method provided.
+// different will need to over-ride the default function provided.
 //
-// A method to query if the sensor outputs embedded data that can be parsed.
+// A function to query if the sensor outputs embedded data that can be parsed.
 //
-// A method to return the sensitivity of a given camera mode.
+// A function to return the sensitivity of a given camera mode.
 //
 // A parser to parse the embedded data buffers provided by some sensors (for
 // example, the imx219 does; the ov5647 doesn't). This allows us to know for
 // sure the exposure and gain of the frame we're looking at. CamHelper
-// provides methods for converting analogue gains to and from the sensor's
+// provides functions for converting analogue gains to and from the sensor's
 // native gain codes.
 //
-// Finally, a set of methods that determine how to handle the vagaries of
+// Finally, a set of functions that determine how to handle the vagaries of
 // different camera modules on start-up or when switching modes. Some
 // modules may produce one or more frames that are not yet correctly exposed,
-// or where the metadata may be suspect. We have the following methods:
+// or where the metadata may be suspect. We have the following functions:
 // HideFramesStartup(): Tell the pipeline handler not to return this many
 //     frames at start-up. This can also be used to hide initial frames
 //     while the AGC and other algorithms are sorting themselves out.

@@ -41,7 +41,7 @@ namespace ipa {
  * \brief Construct a CameraSensorHelper instance
  *
  * CameraSensorHelper derived class instances shall never be constructed
- * manually but always through the CameraSensorHelperFactory::create() method.
+ * manually but always through the CameraSensorHelperFactory::create() function.
  */
 
 /**

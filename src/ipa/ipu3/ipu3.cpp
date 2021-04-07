@@ -105,7 +105,7 @@ int IPAIPU3::start()
 }
 
 /**
- * This method calculates a grid for the AWB algorithm in the IPU3 firmware.
+ * This function calculates a grid for the AWB algorithm in the IPU3 firmware.
  * Its input is the BDS output size calculated in the ImgU.
  * It is limited for now to the simplest method: find the lesser error
  * with the width/height and respective log2 width/height of the cells.

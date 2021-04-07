@@ -172,7 +172,7 @@ function of the IPAInterface.
 stop() informs the IPA module that the camera is stopped. The IPA module shall
 release resources prepared in start().
 
-A configure() method is recommended. Any ControlInfoMap instances that will be
+A configure() function is recommended. Any ControlInfoMap instances that will be
 used by the IPA must be sent to the IPA from the pipeline handler, at configure
 time, for example.
 
@@ -184,11 +184,11 @@ parameter, in which case it will become a regular return value.
 const is not allowed inside of arrays and maps. mojo arrays will become C++
 std::vector<>.
 
-By default, all methods defined in the main interface are synchronous. This
+By default, all functions defined in the main interface are synchronous. This
 means that in the case of IPC (i.e. isolated IPA), the function call will not
 return until the return value or output parameters are ready. To specify an
 asynchronous function, the [async] attribute can be used. Asynchronous
-methods must not have any return value or output parameters, since in the
+functions must not have any return value or output parameters, since in the
 case of IPC the call needs to return immediately.
 
 It is also possible that the IPA will not be run in isolation. In this case,
@@ -245,11 +245,11 @@ the camera pipeline from the IPA.
 
 The event interface must be named as IPA{pipeline_name}EventInterface.
 
-Methods defined in the event interface are implicitly asynchronous.
+Functions defined in the event interface are implicitly asynchronous.
 Thus they cannot return any value. Specifying the [async] tag is not
 necessary.
 
-Methods defined in the event interface will become signals in the IPA
+Functions defined in the event interface will become signals in the IPA
 interface. The IPA can emit signals, while the pipeline handler can connect
 slots to them.
 

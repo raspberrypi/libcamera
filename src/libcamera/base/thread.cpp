@@ -222,7 +222,7 @@ ThreadData *ThreadData::current()
  * The Thread class is a wrapper around std::thread that handles integration
  * with the Object, Signal and EventDispatcher classes.
  *
- * Thread instances by default run an event loop until the exit() method is
+ * Thread instances by default run an event loop until the exit() function is
  * called. The event loop dispatches events (messages, notifiers and timers)
  * sent to the objects living in the thread. This behaviour can be modified by
  * overriding the run() function.
@@ -318,7 +318,7 @@ void Thread::startThread()
 	};
 
 	/*
-	 * Make sure the thread is cleaned up even if the run method exits
+	 * Make sure the thread is cleaned up even if the run() function exits
 	 * abnormally (for instance via a direct call to pthread_cancel()).
 	 */
 	thread_local ThreadCleaner cleaner(this, &Thread::finishThread);
@@ -332,12 +332,12 @@ void Thread::startThread()
 /**
  * \brief Enter the event loop
  *
- * This method enters an event loop based on the event dispatcher instance for
- * the thread, and blocks until the exit() method is called. It is meant to be
- * called within the thread from the run() method and shall not be called
+ * This function enters an event loop based on the event dispatcher instance for
+ * the thread, and blocks until the exit() function is called. It is meant to be
+ * called within the thread from the run() function and shall not be called
  * outside of the thread.
  *
- * \return The exit code passed to the exit() method
+ * \return The exit code passed to the exit() function
  */
 int Thread::exec()
 {
@@ -356,14 +356,14 @@ int Thread::exec()
 }
 
 /**
- * \brief Main method of the thread
+ * \brief Main function of the thread
  *
- * When the thread is started with start(), it calls this method in the context
- * of the new thread. The run() method can be overridden to perform custom
- * work, either custom initialization and cleanup before and after calling the
- * Thread::exec() function, or a custom thread loop altogether. When this
- * method returns the thread execution is stopped, and the \ref finished signal
- * is emitted.
+ * When the thread is started with start(), it calls this function in the
+ * context of the new thread. The run() function can be overridden to perform
+ * custom work, either custom initialization and cleanup before and after
+ * calling the Thread::exec() function, or a custom thread loop altogether. When
+ * this function returns the thread execution is stopped, and the \ref finished
+ * signal is emitted.
  *
  * Note that if this function is overridden and doesn't call Thread::exec(), no
  * events will be dispatched to the objects living in the thread. These objects
@@ -392,10 +392,10 @@ void Thread::finishThread()
  * \brief Stop the thread's event loop
  * \param[in] code The exit code
  *
- * This method interrupts the event loop started by the exec() method, causing
- * exec() to return \a code.
+ * This function interrupts the event loop started by the exec() function,
+ * causing exec() to return \a code.
  *
- * Calling exit() on a thread that reimplements the run() method and doesn't
+ * Calling exit() on a thread that reimplements the run() function and doesn't
  * call exec() will likely have no effect.
  *
  * \context This function is \threadsafe.
@@ -449,8 +449,8 @@ bool Thread::wait(utils::duration duration)
  * \brief Check if the thread is running
  *
  * A Thread instance is considered as running once the underlying thread has
- * started. This method guarantees that it returns true after the start()
- * method returns, and false after the wait() method returns.
+ * started. This function guarantees that it returns true after the start()
+ * function returns, and false after the wait() function returns.
  *
  * \context This function is \threadsafe.
  *
@@ -518,8 +518,8 @@ EventDispatcher *Thread::eventDispatcher()
  * \param[in] msg The message
  * \param[in] receiver The receiver
  *
- * This method stores the message \a msg in the message queue of the thread for
- * the \a receiver and wake up the thread's event loop. Message ownership is
+ * This function stores the message \a msg in the message queue of the thread
+ * for the \a receiver and wake up the thread's event loop. Message ownership is
  * passed to the thread, and the message will be deleted after being delivered.
  *
  * Messages are delivered through the thread's event loop. If the thread is not

@@ -101,7 +101,7 @@ void EventDispatcherPoll::unregisterEventNotifier(EventNotifier *notifier)
 	set.notifiers[type] = nullptr;
 
 	/*
-	 * Don't race with event processing if this method is called from an
+	 * Don't race with event processing if this function is called from an
 	 * event notifier. The notifiers_ entry will be erased by
 	 * processEvents().
 	 */

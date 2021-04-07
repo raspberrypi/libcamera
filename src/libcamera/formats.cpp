@@ -16,7 +16,7 @@
 
 /**
  * \file internal/formats.h
- * \brief Types and helper methods to handle libcamera image formats
+ * \brief Types and helper functions to handle libcamera image formats
  */
 
 namespace libcamera {

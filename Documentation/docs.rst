@@ -310,7 +310,7 @@ Camera Device
   thus the highest level object exposed by libcamera.
 
   Camera Device instances are created by the Camera Devices
-  Manager. An optional method to create new instances could be exposed
+  Manager. An optional function to create new instances could be exposed
   through the public API to speed up initialization when the upper
   layer knows how to directly address camera devices present in the
   system.

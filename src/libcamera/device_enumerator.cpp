@@ -244,7 +244,7 @@ std::unique_ptr<MediaDevice> DeviceEnumerator::createDevice(const std::string &d
  *
  * Store the media device in the internal list for later matching with
  * pipeline handlers. \a media shall be created with createDevice() first.
- * This method shall be called after all members of the entities of the
+ * This function shall be called after all members of the entities of the
  * media graph have been confirmed to be initialized.
  */
 void DeviceEnumerator::addDevice(std::unique_ptr<MediaDevice> media)

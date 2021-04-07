@@ -35,7 +35,7 @@ namespace libcamera {
  * \brief Validate a control
  * \param[in] id The control ID
  *
- * This method validates the control \a id against the object corresponding to
+ * This function validates the control \a id against the object corresponding to
  * the validator. It shall at least validate that the control is applicable to
  * the object instance, and may perform additional checks.
  *

@@ -69,7 +69,7 @@ CameraSensor::~CameraSensor()
 /**
  * \brief Initialize the camera sensor instance
  *
- * This method performs the initialisation steps of the CameraSensor that may
+ * This function performs the initialisation steps of the CameraSensor that may
  * fail. It shall be called once and only once after constructing the instance.
  *
  * \return 0 on success or a negative error code otherwise
@@ -490,7 +490,7 @@ int CameraSensor::initProperties()
  *
  * \todo Consider if it desirable to distinguish between the maximum resolution
  * the sensor can produce (also including upscaled ones) and the actual pixel
- * array size by splitting this method in two.
+ * array size by splitting this function in two.
  *
  * \return The camera sensor resolution in pixels
  */
@@ -517,7 +517,7 @@ Size CameraSensor::resolution() const
  * sensor but not listed in \a mbusCodes are ignored. If none of the desired
  * codes is supported, it returns an error.
  *
- * \a size indicates the desired size at the output of the sensor. This method
+ * \a size indicates the desired size at the output of the sensor. This function
  * selects the best media bus code and size supported by the sensor according
  * to the following criteria.
  *
@@ -533,12 +533,12 @@ Size CameraSensor::resolution() const
  * When multiple media bus codes can produce the same size, the code at the
  * lowest position in \a mbusCodes is selected.
  *
- * The use of this method is optional, as the above criteria may not match the
+ * The use of this function is optional, as the above criteria may not match the
  * needs of all pipeline handlers. Pipeline handlers may implement custom
  * sensor format selection when needed.
  *
  * The returned sensor output format is guaranteed to be acceptable by the
- * setFormat() method without any modification.
+ * setFormat() function without any modification.
  *
  * \return The best sensor output format matching the desired media bus codes
  * and size on success, or an empty format otherwise.
@@ -632,14 +632,14 @@ const ControlInfoMap &CameraSensor::controls() const
  * \brief Read V4L2 controls from the sensor
  * \param[in] ids The list of controls to read, specified by their ID
  *
- * This method reads the value of all controls contained in \a ids, and returns
- * their values as a ControlList. The control identifiers are defined by the
- * V4L2 specification (V4L2_CID_*).
+ * This function reads the value of all controls contained in \a ids, and
+ * returns their values as a ControlList. The control identifiers are defined by
+ * the V4L2 specification (V4L2_CID_*).
  *
  * If any control in \a ids is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
  * during validation of the requested controls, no control is read and this
- * method returns an empty control list.
+ * function returns an empty control list.
  *
  * \sa V4L2Device::getControls()
  *
@@ -655,7 +655,7 @@ ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
  * \brief Write V4L2 controls to the sensor
  * \param[in] ctrls The list of controls to write
  *
- * This method writes the value of all controls contained in \a ctrls, and
+ * This function writes the value of all controls contained in \a ctrls, and
  * stores the values actually applied to the device in the corresponding \a
  * ctrls entry. The control identifiers are defined by the V4L2 specification
  * (V4L2_CID_*).
@@ -663,7 +663,7 @@ ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
  * error occurs during validation of the requested controls, no control is
- * written and this method returns -EINVAL.
+ * written and this function returns -EINVAL.
  *
  * If an error occurs while writing the controls, the index of the first
  * control that couldn't be written is returned. All controls below that index
@@ -707,7 +707,7 @@ int CameraSensor::setControls(ControlList *ctrls)
  * sensor, this function returns -EINVAL.
  *
  * Pipeline handlers that do not change the sensor format using the setFormat()
- * method may need to call updateControlInfo() beforehand, to ensure all the
+ * function may need to call updateControlInfo() beforehand, to ensure all the
  * control ranges are up to date.
  *
  * \return 0 on success, a negative error code otherwise

@@ -194,7 +194,7 @@ function. If the new values are not supported by the ``Camera`` device, the
 validation process adjusts the parameters to what it considers to be the closest
 supported values.
 
-The ``validate`` method returns a `Status`_ which applications shall check to
+The ``validate`` function returns a `Status`_ which applications shall check to
 see if the Pipeline Handler adjusted the configuration.
 
 .. _Status: http://libcamera.org/api-html/classlibcamera_1_1CameraConfiguration.html#a64163f21db2fe1ce0a6af5a6f6847744
@@ -360,7 +360,7 @@ signal to handle it in the application code.
    camera->requestCompleted.connect(requestComplete);
 
 For this example application, only the ``Camera::requestCompleted`` signal gets
-handled and the matching ``requestComplete`` slot method outputs information
+handled and the matching ``requestComplete`` slot function outputs information
 about the FrameBuffer to standard output. This callback is typically where an
 application accesses the image data from the camera and does something with it.
 

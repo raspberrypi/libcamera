@@ -40,7 +40,8 @@ LOG_DEFINE_CATEGORY(Serialization)
  * respectively. Access is strictly sequential, the buffer keeps track of the
  * current access location and advances it automatically. Reading or writing
  * the same location multiple times is thus not possible. Bytes may also be
- * skipped with the skip() method.
+ * skipped with the skip() function.
+ *
  *
  * The ByteStreamBuffer also supports carving out pieces of memory into other
  * ByteStreamBuffer instances. Like a read or write operation, a carveOut()
@@ -52,7 +53,7 @@ LOG_DEFINE_CATEGORY(Serialization)
  * the buffer being marked as having overflown. If the buffer has been carved
  * out from a parent buffer, the parent buffer is also marked as having
  * overflown. Any later access on an overflown buffer is blocked. The buffer
- * overflow status can be checked with the overflow() method.
+ * overflow status can be checked with the overflow() function.
  */
 
 /**
@@ -155,7 +156,7 @@ void ByteStreamBuffer::setOverflow()
  * \brief Carve out an area of \a size bytes into a new ByteStreamBuffer
  * \param[in] size The size of the newly created memory buffer
  *
- * This method carves out an area of \a size bytes from the buffer into a new
+ * This function carves out an area of \a size bytes from the buffer into a new
  * ByteStreamBuffer, and returns the new buffer. It operates identically to a
  * read or write access from the point of view of the current buffer, but allows
  * the new buffer to be read or written at a later time after other read or
@@ -194,7 +195,7 @@ ByteStreamBuffer ByteStreamBuffer::carveOut(size_t size)
  * \brief Skip \a size bytes from the buffer
  * \param[in] size The number of bytes to skip
  *
- * This method skips the next \a size bytes from the buffer.
+ * This function skips the next \a size bytes from the buffer.
  *
  * \return 0 on success, a negative error code otherwise
  * \retval -ENOSPC no more space is available in the managed memory buffer

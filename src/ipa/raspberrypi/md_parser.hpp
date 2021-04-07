@@ -113,8 +113,8 @@ protected:
 
 /*
  * This isn't a full implementation of a metadata parser for SMIA sensors,
- * however, it does provide the findRegs method which will prove useful and make
- * it easier to implement parsers for other SMIA-like sensors (see
+ * however, it does provide the findRegs function which will prove useful and
+ * make it easier to implement parsers for other SMIA-like sensors (see
  * md_parser_imx219.cpp for an example).
  */
 

@@ -24,7 +24,7 @@
  * thus the message shall not store any temporary data.
  *
  * The message is delivered in the context of the object's thread, through the
- * Object::message() virtual method. After delivery the message is
+ * Object::message() virtual function. After delivery the message is
  * automatically deleted.
  */
 
@@ -84,10 +84,10 @@ Message::~Message()
  *
  * Custom message types use values starting at Message::UserMessage. Assigning
  * custom types manually may lead to accidental duplicated types. To avoid this
- * problem, this method reserves and returns the next available user-defined
+ * problem, this function reserves and returns the next available user-defined
  * message type.
  *
- * The recommended way to use this method is to subclass Message and provide a
+ * The recommended way to use this function is to subclass Message and provide a
  * static accessor for the custom message type.
  *
  * \code{.cpp}

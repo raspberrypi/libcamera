@@ -724,7 +724,7 @@ int ImgUDevice::stop()
 /**
  * \brief Enable or disable a single link on the ImgU instance
  *
- * This method assumes the media device associated with the ImgU instance
+ * This function assumes the media device associated with the ImgU instance
  * is open.
  *
  * \return 0 on success or a negative error code otherwise
@@ -748,7 +748,7 @@ int ImgUDevice::linkSetup(const std::string &source, unsigned int sourcePad,
  * \brief Enable or disable all media links in the ImgU instance to prepare
  * for capture operations
  *
- * \todo This method will probably be removed or changed once links will be
+ * \todo This function will probably be removed or changed once links will be
  * enabled or disabled selectively.
  *
  * \return 0 on success or a negative error code otherwise

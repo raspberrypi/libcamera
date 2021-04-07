@@ -145,8 +145,8 @@ void Object::deleteLater()
  * \brief Post a message to the object's thread
  * \param[in] msg The message
  *
- * This method posts the message \a msg to the message queue of the object's
- * thread, to be delivered to the object through the message() method in the
+ * This function posts the message \a msg to the message queue of the object's
+ * thread, to be delivered to the object through the message() function in the
  * context of its thread. Message ownership is passed to the thread, and the
  * message will be deleted after being delivered.
  *
@@ -169,13 +169,13 @@ void Object::postMessage(std::unique_ptr<Message> msg)
  * \brief Message handler for the object
  * \param[in] msg The message
  *
- * This virtual method receives messages for the object. It is called in the
+ * This virtual function receives messages for the object. It is called in the
  * context of the object's thread, and can be overridden to process custom
- * messages. The parent Object::message() method shall be called for any
- * message not handled by the override method.
+ * messages. The parent Object::message() function shall be called for any
+ * message not handled by the override function.
  *
  * The message \a msg is valid only for the duration of the call, no reference
- * to it shall be kept after this method returns.
+ * to it shall be kept after this function returns.
  */
 void Object::message(Message *msg)
 {
@@ -207,7 +207,7 @@ void Object::message(Message *msg)
  * \param[in] type Connection type for method invocation
  * \param[in] args The method arguments
  *
- * This method invokes the member method \a func with arguments \a args, based
+ * This function invokes the member method \a func with arguments \a args, based
  * on the connection \a type. Depending on the type, the method will be called
  * synchronously in the same thread or asynchronously in the object's thread.
  *
@@ -237,12 +237,12 @@ void Object::message(Message *msg)
  * \brief Move the object and all its children to a different thread
  * \param[in] thread The target thread
  *
- * This method moves the object and all its children from the current thread to
- * the new \a thread.
+ * This function moves the object and all its children from the current thread
+ * to the new \a thread.
  *
  * Before the object is moved, a Message::ThreadMoveMessage message is sent to
- * it. The message() method can be reimplement in derived classes to be notified
- * of the upcoming thread move and perform any required processing.
+ * it. The message() function can be reimplement in derived classes to be
+ * notified of the upcoming thread move and perform any required processing.
  *
  * Moving an object that has a parent is not allowed, and causes undefined
  * behaviour.

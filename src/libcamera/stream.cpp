@@ -276,7 +276,7 @@ SizeRange StreamFormats::range(const PixelFormat &pixelformat) const
  */
 
 /**
- * \todo This method is deprecated and should be removed once all pipeline
+ * \todo This function is deprecated and should be removed once all pipeline
  * handlers provide StreamFormats.
  */
 StreamConfiguration::StreamConfiguration()
@@ -334,7 +334,7 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  * \brief Retrieve the stream associated with the configuration
  *
  * When a camera is configured with Camera::configure() Stream instances are
- * associated with each stream configuration entry. This method retrieves the
+ * associated with each stream configuration entry. This function retrieves the
  * associated Stream, which remains valid until the next call to
  * Camera::configure() or Camera::release().
  *
@@ -345,8 +345,8 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  * \fn StreamConfiguration::setStream()
  * \brief Associate a stream with a configuration
  *
- * This method is meant for the PipelineHandler::configure() method and shall
- * not be called by applications.
+ * This function is meant for the PipelineHandler::configure() function and
+ * shall not be called by applications.
  *
  * \param[in] stream The stream
  */
@@ -355,10 +355,11 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  * \fn StreamConfiguration::formats()
  * \brief Retrieve advisory stream format information
  *
- * This method retrieves information about the pixel formats and sizes supported
- * by the stream configuration. The sizes are advisory and not all of them are
- * guaranteed to be supported by the stream. Users shall always inspect the size
- * in the stream configuration after calling CameraConfiguration::validate().
+ * This function retrieves information about the pixel formats and sizes
+ * supported by the stream configuration. The sizes are advisory and not all of
+ * them are guaranteed to be supported by the stream. Users shall always inspect
+ * the size in the stream configuration after calling
+ * CameraConfiguration::validate().
  *
  * \return Stream formats information
  */

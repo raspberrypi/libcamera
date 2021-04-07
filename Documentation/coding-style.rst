@@ -251,7 +251,7 @@ member function of the PipelineHandler class.
    * \param[in] camera The camera to start
    *
    * Start the group of streams that have been configured for capture by
-   * \a configureStreams(). The intended caller of this method is the Camera
+   * \a configureStreams(). The intended caller of this function is the Camera
    * class which will in turn be called from the application to indicate that
    * it has configured the streams and is ready to capture.
    *

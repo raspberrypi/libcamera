@@ -40,7 +40,7 @@ enum class _ExifTag {
  *
  * Calls to generate() must check the return code to determine if any error
  * occurred during the construction of the Exif data, and if successful the
- * data can be obtained using the data() method.
+ * data can be obtained using the data() function.
  */
 Exif::Exif()
 	: valid_(false), data_(nullptr), order_(EXIF_BYTE_ORDER_INTEL),

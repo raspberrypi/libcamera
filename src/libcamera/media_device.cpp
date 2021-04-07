@@ -134,7 +134,7 @@ void MediaDevice::release()
  * they provide at all times, while still allowing an instance to lock a
  * resource while it prepares to actively use a camera from the resource.
  *
- * This method shall not be called from a pipeline handler implementation
+ * This function shall not be called from a pipeline handler implementation
  * directly, as the base PipelineHandler implementation handles this on the
  * behalf of the specified implementation.
  *
@@ -161,7 +161,7 @@ bool MediaDevice::lock()
 /**
  * \brief Unlock the device and free it for use for libcamera instances
  *
- * This method shall not be called from a pipeline handler implementation
+ * This function shall not be called from a pipeline handler implementation
  * directly, as the base PipelineHandler implementation handles this on the
  * behalf of the specified implementation.
  *

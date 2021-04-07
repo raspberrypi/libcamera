@@ -651,7 +651,7 @@ Rectangle &Rectangle::translateBy(const Point &point)
  * \brief Calculate the intersection of this Rectangle with another
  * \param[in] bound The Rectangle that is intersected with this Rectangle
  *
- * This method calculates the standard intersection of two rectangles. If the
+ * This function calculates the standard intersection of two rectangles. If the
  * rectangles do not overlap in either the x or y direction, then the size
  * of that dimension in the result (its width or height) is set to zero. Even
  * when one dimension is set to zero, note that the other dimension may still

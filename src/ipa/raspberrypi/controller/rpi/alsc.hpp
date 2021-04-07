@@ -82,7 +82,7 @@ private:
 	int frame_phase_;
 	// counts up to startup_frames
 	int frame_count_;
-	// counts up to startup_frames for Process method
+	// counts up to startup_frames for Process function
 	int frame_count2_;
 	double sync_results_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
 	double prev_sync_results_[3][ALSC_CELLS_Y][ALSC_CELLS_X];

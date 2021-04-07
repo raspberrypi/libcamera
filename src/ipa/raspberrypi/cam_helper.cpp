@@ -117,7 +117,7 @@ void CamHelper::GetDelays(int &exposure_delay, int &gain_delay,
 {
 	/*
 	 * These values are correct for many sensors. Other sensors will
-	 * need to over-ride this method.
+	 * need to over-ride this function.
 	 */
 	exposure_delay = 2;
 	gain_delay = 1;
@@ -133,7 +133,7 @@ double CamHelper::GetModeSensitivity([[maybe_unused]] const CameraMode &mode) co
 {
 	/*
 	 * Most sensors have the same sensitivity in every mode, but this
-	 * method can be overridden for those that do not. Note that it is
+	 * function can be overridden for those that do not. Note that it is
 	 * called before mode_ is set, so it must return the sensitivity
 	 * of the mode that is passed in.
 	 */

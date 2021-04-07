@@ -159,7 +159,7 @@ std::string IPAProxy::configurationFile(const std::string &name) const
  *
  * A proxy worker's executable could be found in either the global installation
  * directory, or in the paths specified by the environment variable
- * LIBCAMERA_IPA_PROXY_PATH. This method checks the global install directory
+ * LIBCAMERA_IPA_PROXY_PATH. This function checks the global install directory
  * first, then LIBCAMERA_IPA_PROXY_PATH in order, and returns the full path to
  * the proxy worker executable that is specified by file. The proxy worker
  * executable shall have exec permission.
@@ -233,7 +233,7 @@ std::string IPAProxy::resolvePath(const std::string &file) const
  *
  * The IPAProxy can be Running, Stopped, or Stopping.
  *
- * This state provides a means to ensure that asynchronous methods are only
+ * This state provides a means to ensure that asynchronous functions are only
  * called while the proxy is running, and prevent new tasks being submitted
  * while still enabling events to complete when the IPAProxy is stopping.
  */

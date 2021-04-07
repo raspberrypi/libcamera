@@ -69,10 +69,9 @@ LOG_DEFINE_CATEGORY(Request)
  * \param[in] cookie Opaque cookie for application use
  *
  * The \a cookie is stored in the request and is accessible through the
- * cookie() method at any time. It is typically used by applications to map the
- * request to an external resource in the request completion handler, and is
+ * cookie() function at any time. It is typically used by applications to map
+ * the request to an external resource in the request completion handler, and is
  * completely opaque to libcamera.
- *
  */
 Request::Request(Camera *camera, uint64_t cookie)
 	: camera_(camera), sequence_(0), cookie_(cookie),
@@ -143,7 +142,7 @@ void Request::reuse(ReuseFlag flags)
  *
  * Requests store a list of controls to be applied to all frames captured for
  * the request. They are created with an empty list of controls that can be
- * accessed through this method. Control values can be retrieved using
+ * accessed through this function. Control values can be retrieved using
  * ControlList::get() and updated using ControlList::set().
  *
  * Only controls supported by the camera to which this request will be
@@ -173,7 +172,7 @@ void Request::reuse(ReuseFlag flags)
  * callback is called.
  *
  * A request can only contain one buffer per stream. If a buffer has already
- * been added to the request for the same stream, this method returns -EEXIST.
+ * been added to the request for the same stream, this function returns -EEXIST.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -EEXIST The request already contains a buffer for the stream
@@ -325,7 +324,7 @@ void Request::cancel()
  * pending buffers. This function removes the \a buffer from the set to mark it
  * as complete. All buffers associate with the request shall be marked as
  * complete by calling this function once and once only before reporting the
- * request as complete with the complete() method.
+ * request as complete with the complete() function.
  *
  * \return True if all buffers contained in the request have completed, false
  * otherwise

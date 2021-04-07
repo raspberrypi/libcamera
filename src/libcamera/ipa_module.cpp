@@ -253,7 +253,7 @@ Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
  * The IPA module shared object file must be of the same endianness and
  * bitness as libcamera.
  *
- * The caller shall call the isValid() method after constructing an
+ * The caller shall call the isValid() function after constructing an
  * IPAModule instance to verify the validity of the IPAModule.
  */
 IPAModule::IPAModule(const std::string &libPath)
@@ -392,11 +392,11 @@ const std::string &IPAModule::path() const
  * \brief Load the IPA implementation factory from the shared object
  *
  * The IPA module shared object implements an IPAInterface object to be used
- * by pipeline handlers. This method loads the factory function from the
+ * by pipeline handlers. This function loads the factory function from the
  * shared object. Later, createInterface() can be called to instantiate the
  * IPAInterface.
  *
- * This method only needs to be called successfully once, after which
+ * This function only needs to be called successfully once, after which
  * createInterface() can be called as many times as IPAInterface instances are
  * needed.
  *
@@ -441,8 +441,8 @@ bool IPAModule::load()
 /**
  * \brief Instantiate an IPA interface
  *
- * After loading the IPA module with load(), this method creates an instance of
- * the IPA module interface.
+ * After loading the IPA module with load(), this function creates an instance
+ * of the IPA module interface.
  *
  * Calling this function on a module that has not yet been loaded, or an
  * invalid module (as returned by load() and isValid(), respectively) is
@@ -464,7 +464,7 @@ IPAInterface *IPAModule::createInterface()
  * \param[in] minVersion Minimum acceptable version of IPA module
  * \param[in] maxVersion Maximum acceptable version of IPA module
  *
- * This method checks if this IPA module matches the \a pipe pipeline handler,
+ * This function checks if this IPA module matches the \a pipe pipeline handler,
  * and the input version range.
  *
  * \return True if the pipeline handler matches the IPA module, or false otherwise

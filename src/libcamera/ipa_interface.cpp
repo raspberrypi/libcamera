@@ -57,8 +57,8 @@
  * Due to IPC, synchronous communication between pipeline handlers and IPAs can
  * be costly. For that reason, functions that cannot afford the high cost
  * should be marked as [async] in the mojom file, and they will operate
- * asynchronously. This implies that these methods don't return a status, and
- * that all methods may copy their arguments. Synchronous functions are still
+ * asynchronously. This implies that these functions don't return a status, and
+ * that all functions may copy their arguments. Synchronous functions are still
  * allowed, but should be used with caution.
  */
 
@@ -84,11 +84,11 @@ namespace libcamera {
  * include/libcamera/ipa/ (see the IPA Writers Guide for details
  * on how to do so).
  *
- * Due to process isolation all arguments to the IPAInterface methods and
- * signals may need to be transferred over IPC. The class thus uses serializable
- * data types only. The IPA C++ interface defines custom data structures that
- * mirror core libcamera structures when the latter are not suitable, such as
- * IPAStream to carry StreamConfiguration data.
+ * Due to process isolation all arguments to the IPAInterface member functions
+ * and signals may need to be transferred over IPC. The class thus uses
+ * serializable data types only. The IPA C++ interface defines custom data
+ * structures that mirror core libcamera structures when the latter are not
+ * suitable, such as IPAStream to carry StreamConfiguration data.
  *
  * Custom data structures may also be defined in the mojom file, in which case
  * the (de)serialization will automatically be generated. If any other libcamera

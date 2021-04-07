@@ -41,8 +41,8 @@ class BaseClass
 {
 public:
 	/*
-	 * A virtual method is required in the base class, otherwise the compiler
-	 * will always store Object before BaseClass in memory.
+	 * A virtual function is required in the base class, otherwise the
+	 * compiler will always store Object before BaseClass in memory.
 	 */
 	virtual ~BaseClass()
 	{

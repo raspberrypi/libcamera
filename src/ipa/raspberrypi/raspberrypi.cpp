@@ -741,7 +741,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 			}
 
 			/*
-			 * The SetEv() method takes in a direct exposure multiplier.
+			 * The SetEv() function takes in a direct exposure multiplier.
 			 * So convert to 2^EV
 			 */
 			double ev = pow(2.0, ctrl.second.get<float>());

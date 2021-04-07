@@ -367,7 +367,7 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &id)
  * \brief Retrieve a camera based on device number
  * \param[in] devnum Device number of camera to get
  *
- * This method is meant solely for the use of the V4L2 compatibility
+ * This function is meant solely for the use of the V4L2 compatibility
  * layer, to map device nodes to Camera instances. Applications shall
  * not use it and shall instead retrieve cameras by name.
  *

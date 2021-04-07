@@ -423,7 +423,7 @@ void Logger::backtrace()
 	msg << "Backtrace:" << std::endl;
 
 	/*
-	 * Skip the first two entries that correspond to this method and
+	 * Skip the first two entries that correspond to this function and
 	 * ~LogMessage().
 	 */
 	for (int i = 2; i < num_entries; ++i)
@@ -865,9 +865,9 @@ LogMessage::~LogMessage()
  *
  * The Loggable class allows classes to extend log messages without any change
  * to the way the LOG() macro is invoked. By inheriting from Loggable and
- * implementing the logPrefix() virtual method, a class can specify extra
+ * implementing the logPrefix() virtual function, a class can specify extra
  * information to be automatically added to messages logged from class member
- * methods.
+ * function.
  */
 
 Loggable::~Loggable()
@@ -878,7 +878,7 @@ Loggable::~Loggable()
  * \fn Loggable::logPrefix()
  * \brief Retrieve a string to be prefixed to the log message
  *
- * This method allows classes inheriting from the Loggable class to extend the
+ * This function allows classes inheriting from the Loggable class to extend the
  * logger with an object-specific prefix output right before the log message
  * contents.
  *
@@ -892,7 +892,7 @@ Loggable::~Loggable()
  * \param[in] fileName The file name where the message is logged from
  * \param[in] line The line number where the message is logged from
  *
- * This method is used as a backeng by the LOG() macro to create a log message
+ * This function is used as a backend by the LOG() macro to create a log message
  * for locations inheriting from the Loggable class.
  *
  * \return A log message
@@ -915,7 +915,7 @@ LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
  * \param[in] fileName The file name where the message is logged from
  * \param[in] line The line number where the message is logged from
  *
- * This function is used as a backeng by the LOG() macro to create a log
+ * This function is used as a backend by the LOG() macro to create a log
  * message for locations not inheriting from the Loggable class.
  *
  * \return A log message

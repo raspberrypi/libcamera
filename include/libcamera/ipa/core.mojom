@@ -291,7 +291,7 @@ struct IPASettings {
  * \brief Stream configuration for the IPA interface
  *
  * The IPAStream structure stores stream configuration parameters needed by the
- * IPAInterface::configure() method. It mirrors the StreamConfiguration class
+ * IPAInterface::configure() function. It mirrors the StreamConfiguration class
  * that is not suitable for this purpose due to not being serializable.
  */
 

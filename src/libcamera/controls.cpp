@@ -41,7 +41,7 @@
  * int32_t exposure = controls->get(controls::ManualExposure);
  * \endcode
  *
- * The ControlList::get() and ControlList::set() methods automatically deduce
+ * The ControlList::get() and ControlList::set() functions automatically deduce
  * the data type based on the control.
  */
 
@@ -433,9 +433,9 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \brief Describe a control and its intrinsic properties
  *
  * The Control class models a control exposed by an object. Its template type
- * name T refers to the control data type, and allows methods that operate on
- * control values to be defined as template methods using the same type T for
- * the control value. See for instance how the ControlList::get() method
+ * name T refers to the control data type, and allows functions that operate on
+ * control values to be defined as template functions using the same type T for
+ * the control value. See for instance how the ControlList::get() function
  * returns a value corresponding to the type of the requested control.
  *
  * While this class is the main means to refer to a control, the control
@@ -577,7 +577,7 @@ ControlInfo::ControlInfo(bool value)
  *
  * For controls that support a pre-defined number of values, the enumeration of
  * those is reported through a vector of ControlValue instances accessible with
- * this method.
+ * this function.
  *
  * \return A vector of ControlValue representing the control valid values
  */
@@ -628,7 +628,7 @@ std::string ControlInfo::toString() const
  * In addition to the features of the standard unsorted map, this class also
  * provides access to the mapped elements using numerical ID keys. It maintains
  * an internal map of numerical ID to ControlId for this purpose, and exposes it
- * through the idmap() method to help construction of ControlList instances.
+ * through the idmap() function to help construction of ControlList instances.
  */
 
 /**
@@ -770,7 +770,7 @@ ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
  * \brief Retrieve the ControlId map
  *
  * Constructing ControlList instances for V4L2 controls requires a ControlIdMap
- * for the V4L2 device that the control list targets. This helper method
+ * for the V4L2 device that the control list targets. This helper function
  * returns a suitable idmap for that purpose.
  *
  * \return The ControlId map
@@ -808,7 +808,7 @@ void ControlInfoMap::generateIdmap()
  * \brief Associate a list of ControlId with their values for an object
  *
  * The ControlList class stores values of controls exposed by an object. The
- * lists returned by the Request::controls() and Request::metadata() methods
+ * lists returned by the Request::controls() and Request::metadata() functions
  * refer to the camera that the request belongs to.
  *
  * Control lists are constructed with a map of all the controls supported by
@@ -987,7 +987,7 @@ bool ControlList::contains(unsigned int id) const
  * \param[in] ctrl The control
  * \param[in] value The control value
  *
- * This method sets the value of a control in the control list. If the control
+ * This function sets the value of a control in the control list. If the control
  * is already present in the list, its value is updated, otherwise it is added
  * to the list.
  *
@@ -1027,7 +1027,7 @@ const ControlValue &ControlList::get(unsigned int id) const
  * \param[in] id The control ID
  * \param[in] value The control value
  *
- * This method sets the value of a control in the control list. If the control
+ * This function sets the value of a control in the control list. If the control
  * is already present in the list, its value is updated, otherwise it is added
  * to the list.
  *

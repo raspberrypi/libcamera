@@ -120,7 +120,7 @@ FrameBuffer::Private::Private()
  * \brief Set the request this buffer belongs to
  * \param[in] request Request to set
  *
- * For buffers added to requests by applications, this method is called by
+ * For buffers added to requests by applications, this function is called by
  * Request::addBuffer() or Request::reuse(). For buffers internal to pipeline
  * handlers, it is called by the pipeline handlers themselves.
  */
@@ -199,7 +199,7 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 /**
  * \brief Retrieve the request this buffer belongs to
  *
- * The intended callers of this method are buffer completion handlers that
+ * The intended callers of this function are buffer completion handlers that
  * need to associate a buffer to the request it belongs to.
  *
  * A FrameBuffer is associated to a request by Request::addBuffer() and the
@@ -238,9 +238,9 @@ Request *FrameBuffer::request() const
  * \param[in] cookie Cookie to set
  *
  * The cookie belongs to the creator of the FrameBuffer. Its value may be
- * modified at any time with this method. Applications and IPAs shall not modify
- * the cookie value of buffers they haven't created themselves. The libcamera
- * core never modifies the buffer cookie.
+ * modified at any time with this function. Applications and IPAs shall not
+ * modify the cookie value of buffers they haven't created themselves. The
+ * libcamera core never modifies the buffer cookie.
  */
 
 /**

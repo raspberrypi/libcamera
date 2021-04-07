@@ -35,9 +35,9 @@ LOG_DEFINE_CATEGORY(V4L2)
  * \class V4L2Device
  * \brief Base class for V4L2VideoDevice and V4L2Subdevice
  *
- * The V4L2Device class groups together the methods and fields common to
+ * The V4L2Device class groups together the functions and fields common to
  * both the V4L2VideoDevice and V4L2Subdevice classes, and provides a base
- * class with methods to open and close the device node associated with the
+ * class with functions to open and close the device node associated with the
  * device and to perform IOCTL system calls on it.
  *
  * The V4L2Device class cannot be instantiated directly, as its constructor
@@ -100,15 +100,15 @@ int V4L2Device::open(unsigned int flags)
  * \brief Set the file descriptor of a V4L2 device
  * \param[in] fd The file descriptor handle
  *
- * This method allows a device to provide an already opened file descriptor
+ * This function allows a device to provide an already opened file descriptor
  * referring to the V4L2 device node, instead of opening it with open(). This
  * can be used for V4L2 M2M devices where a single video device node is used for
  * both the output and capture devices, or when receiving an open file
  * descriptor in a context that doesn't have permission to open the device node
  * itself.
  *
- * This method and the open() method are mutually exclusive, only one of the two
- * shall be used for a V4L2Device instance.
+ * This function and the open() function are mutually exclusive, only one of the
+ * two shall be used for a V4L2Device instance.
  *
  * \return 0 on success or a negative error code otherwise
  */
@@ -160,13 +160,13 @@ void V4L2Device::close()
  * \brief Read controls from the device
  * \param[in] ids The list of controls to read, specified by their ID
  *
- * This method reads the value of all controls contained in \a ids, and returns
- * their values as a ControlList.
+ * This function reads the value of all controls contained in \a ids, and
+ * returns their values as a ControlList.
  *
  * If any control in \a ids is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
  * during validation of the requested controls, no control is read and this
- * method returns an empty control list.
+ * function returns an empty control list.
  *
  * \return The control values in a ControlList on success, or an empty list on
  * error
@@ -256,14 +256,14 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
  * \brief Write controls to the device
  * \param[in] ctrls The list of controls to write
  *
- * This method writes the value of all controls contained in \a ctrls, and
+ * This function writes the value of all controls contained in \a ctrls, and
  * stores the values actually applied to the device in the corresponding
  * \a ctrls entry.
  *
  * If any control in \a ctrls is not supported by the device, is disabled (i.e.
  * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, if any other error
  * occurs during validation of the requested controls, no control is written and
- * this method returns -EINVAL.
+ * this function returns -EINVAL.
  *
  * If an error occurs while writing the controls, the index of the first
  * control that couldn't be written is returned. All controls below that index

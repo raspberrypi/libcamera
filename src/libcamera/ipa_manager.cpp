@@ -45,7 +45,7 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * ever run in the libcamera process.
  *
  * To create an IPA context, pipeline handlers call the IPAManager::createIPA()
- * method. For a directly loaded module, the manager calls the module's
+ * function. For a directly loaded module, the manager calls the module's
  * ipaCreate() function directly and wraps the returned context in an
  * IPAContextWrapper that exposes an IPAInterface.
  *
@@ -89,9 +89,10 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * returned to the pipeline handler, and all interactions with the IPA context
  * go the same interface regardless of process isolation.
  *
- * In all cases the data passed to the IPAInterface methods is serialized to
- * Plain Old Data, either for the purpose of passing it to the IPA context
- * plain C API, or to transmit the data to the isolated process through IPC.
+ * In all cases the data passed to the IPAInterface member functions is
+ * serialized to Plain Old Data, either for the purpose of passing it to the IPA
+ * context plain C API, or to transmit the data to the isolated process through
+ * IPC.
  */
 
 IPAManager *IPAManager::self_ = nullptr;
@@ -211,7 +212,7 @@ void IPAManager::parseDir(const char *libDir, unsigned int maxDepth,
  * \param[in] libDir The directory to search for IPA modules
  * \param[in] maxDepth The maximum depth of sub-directories to search
  *
- * This method tries to create an IPAModule instance for every shared object
+ * This function tries to create an IPAModule instance for every shared object
  * found in \a libDir, and skips invalid IPA modules.
  *
  * Sub-directories are searched up to a depth of \a maxDepth. A \a maxDepth

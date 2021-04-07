@@ -102,7 +102,7 @@ SignalBase::SlotList SignalBase::slots()
  * emitted from the same thread, the slot will be called synchronously, before
  * Signal::emit() returns. If the signal is emitted from a different thread,
  * the slot will be called asynchronously from the object's thread's event
- * loop, after the Signal::emit() method returns, with a copy of the signal's
+ * loop, after the Signal::emit() function returns, with a copy of the signal's
  * arguments. The emitter shall thus ensure that any pointer or reference
  * passed through the signal will remain valid after the signal is emitted.
  */

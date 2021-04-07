@@ -177,7 +177,7 @@ void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
  * \fn CameraConfiguration::validate()
  * \brief Validate and possibly adjust the camera configuration
  *
- * This method adjusts the camera configuration to the closest valid
+ * This function adjusts the camera configuration to the closest valid
  * configuration and returns the validation status.
  *
  * \todo: Define exactly when to return each status code. Should stream
@@ -206,7 +206,7 @@ void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
  *
  * The \a index represents the zero based insertion order of stream
  * configuration into the camera configuration with addConfiguration(). Calling
- * this method with an invalid index results in undefined behaviour.
+ * this function with an invalid index results in undefined behaviour.
  *
  * \return The stream configuration
  */
@@ -221,7 +221,7 @@ StreamConfiguration &CameraConfiguration::at(unsigned int index)
  *
  * The \a index represents the zero based insertion order of stream
  * configuration into the camera configuration with addConfiguration(). Calling
- * this method with an invalid index results in undefined behaviour.
+ * this function with an invalid index results in undefined behaviour.
  *
  * \return The stream configuration
  */
@@ -237,7 +237,7 @@ const StreamConfiguration &CameraConfiguration::at(unsigned int index) const
  *
  * The \a index represents the zero based insertion order of stream
  * configuration into the camera configuration with addConfiguration(). Calling
- * this method with an invalid index results in undefined behaviour.
+ * this function with an invalid index results in undefined behaviour.
  *
  * \return The stream configuration
  */
@@ -249,7 +249,7 @@ const StreamConfiguration &CameraConfiguration::at(unsigned int index) const
  *
  * The \a index represents the zero based insertion order of stream
  * configuration into the camera configuration with addConfiguration(). Calling
- * this method with an invalid index results in undefined behaviour.
+ * this function with an invalid index results in undefined behaviour.
  *
  * \return The stream configuration
  */
@@ -607,7 +607,7 @@ Camera::~Camera()
 /**
  * \brief Notify camera disconnection
  *
- * This method is used to notify the camera instance that the underlying
+ * This function is used to notify the camera instance that the underlying
  * hardware has been unplugged. In response to the disconnection the camera
  * instance notifies the application by emitting the #disconnected signal, and
  * ensures that all new calls to the application-facing Camera API return an
@@ -823,7 +823,7 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamR
  * by populating \a config.
  *
  * The configuration is created by generateConfiguration(), and adjusted by the
- * caller with CameraConfiguration::validate(). This method only accepts fully
+ * caller with CameraConfiguration::validate(). This function only accepts fully
  * valid configurations and returns an error if \a config is not valid.
  *
  * Exclusive access to the camera shall be ensured by a call to acquire() prior
@@ -897,11 +897,11 @@ int Camera::configure(CameraConfiguration *config)
  * \brief Create a request object for the camera
  * \param[in] cookie Opaque cookie for application use
  *
- * This method creates an empty request for the application to fill with
+ * This function creates an empty request for the application to fill with
  * buffers and parameters, and queue for capture.
  *
  * The \a cookie is stored in the request and is accessible through the
- * Request::cookie() method at any time. It is typically used by applications
+ * Request::cookie() function at any time. It is typically used by applications
  * to map the request to an external resource in the request completion
  * handler, and is completely opaque to libcamera.
  *
@@ -928,7 +928,7 @@ std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
  * \brief Queue a request to the camera
  * \param[in] request The request to queue to the camera
  *
- * This method queues a \a request to the camera for capture.
+ * This function queues a \a request to the camera for capture.
  *
  * After allocating the request with createRequest(), the application shall
  * fill it with at least one capture buffer before queuing it. Requests that
@@ -1021,8 +1021,8 @@ int Camera::start(const ControlList *controls)
 /**
  * \brief Stop capture from camera
  *
- * This method stops capturing and processing requests immediately. All pending
- * requests are cancelled and complete synchronously in an error state.
+ * This function stops capturing and processing requests immediately. All
+ * pending requests are cancelled and complete synchronously in an error state.
  *
  * \context This function may be called in any camera state as defined in \ref
  * camera_operation, and shall be synchronized by the caller with other

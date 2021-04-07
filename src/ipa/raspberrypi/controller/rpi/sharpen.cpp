@@ -50,7 +50,7 @@ void Sharpen::Read(boost::property_tree::ptree const &params)
 
 void Sharpen::SetStrength(double strength)
 {
-	// Note that this method is how an application sets the overall
+	// Note that this function is how an application sets the overall
 	// sharpening "strength". We call this the "user strength" field
 	// as there already is a strength_ field - being an internal gain
 	// parameter that gets passed to the ISP control code. Negative

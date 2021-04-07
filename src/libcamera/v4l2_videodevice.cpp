@@ -589,15 +589,15 @@ int V4L2VideoDevice::open()
  * \param[in] handle The file descriptor to set
  * \param[in] type The device type to operate on
  *
- * This methods opens a video device from the existing file descriptor \a
- * handle. Like open(), this method queries the capabilities of the device, but
- * handles it according to the given device \a type instead of determining its
- * type from the capabilities. This can be used to force a given device type for
- * memory-to-memory devices.
+ * This function opens a video device from the existing file descriptor \a
+ * handle. Like open(), this function queries the capabilities of the device,
+ * but handles it according to the given device \a type instead of determining
+ * its type from the capabilities. This can be used to force a given device type
+ * for memory-to-memory devices.
  *
  * The file descriptor \a handle is duplicated, and the caller is responsible
  * for closing the \a handle when it has no further use for it. The close()
- * method will close the duplicated file descriptor, leaving \a handle
+ * function will close the duplicated file descriptor, leaving \a handle
  * untouched.
  *
  * \return 0 on success or a negative error code otherwise
@@ -1489,8 +1489,8 @@ void V4L2VideoDevice::bufferAvailable([[maybe_unused]] EventNotifier *notifier)
 /**
  * \brief Dequeue the next available buffer from the video device
  *
- * This method dequeues the next available buffer from the device. If no buffer
- * is available to be dequeued it will return nullptr immediately.
+ * This function dequeues the next available buffer from the device. If no
+ * buffer is available to be dequeued it will return nullptr immediately.
  *
  * \return A pointer to the dequeued buffer on success, or nullptr otherwise
  */

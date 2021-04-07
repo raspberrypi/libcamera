@@ -56,7 +56,7 @@ class MediaDeviceLinkTest : public MediaDeviceTest
 
 		/*
 		 * Test if link can be consistently retrieved through the
-		 * different methods the media device offers.
+		 * different functions the media device offers.
 		 */
 		string linkName("'Debayer A':[1] -> 'Scaler':[0]'");
 		MediaLink *link = media_->link("Debayer A", 1, "Scaler", 0);

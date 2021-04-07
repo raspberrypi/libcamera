@@ -332,7 +332,7 @@ ControlInfo ControlSerializer::loadControlInfo(ControlType type,
  * \brief Deserialize an object from a binary buffer
  * \param[in] buffer The memory buffer that contains the object
  *
- * This method is only valid when specialized for ControlInfoMap or
+ * This function is only valid when specialized for ControlInfoMap or
  * ControlList. Any other typename \a T is not supported.
  */
 
@@ -341,7 +341,7 @@ ControlInfo ControlSerializer::loadControlInfo(ControlType type,
  * \param[in] buffer The memory buffer that contains the serialized map
  *
  * Re-construct a ControlInfoMap from a binary \a buffer containing data
- * serialized using the serialize() method.
+ * serialized using the serialize() function.
  *
  * \return The deserialized ControlInfoMap
  */
@@ -420,7 +420,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
  * \param[in] buffer The memory buffer that contains the serialized list
  *
  * Re-construct a ControlList from a binary \a buffer containing data
- * serialized using the serialize() method.
+ * serialized using the serialize() function.
  *
  * \return The deserialized ControlList
  */

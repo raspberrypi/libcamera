@@ -296,7 +296,7 @@ void Thread::startThread()
 /**
  * \brief Enter the event loop
  *
- * This method enter an event loop based on the event dispatcher instance for
+ * This method enters an event loop based on the event dispatcher instance for
  * the thread, and blocks until the exit() method is called. It is meant to be
  * called within the thread from the run() method and shall not be called
  * outside of the thread.

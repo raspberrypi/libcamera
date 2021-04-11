@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 #include "libcamera/internal/thread.h"
@@ -45,23 +46,23 @@ protected:
 	int run()
 	{
 		/* Test Thread() retrieval for the main thread. */
-		Thread *thread = Thread::current();
-		if (!thread) {
+		Thread *mainThread = Thread::current();
+		if (!mainThread) {
 			cout << "Thread::current() failed to main thread"
 			     << endl;
 			return TestFail;
 		}
 
-		if (!thread->isRunning()) {
+		if (!mainThread->isRunning()) {
 			cout << "Main thread is not running" << endl;
 			return TestFail;
 		}
 
 		/* Test starting the main thread, the test shall not crash. */
-		thread->start();
+		mainThread->start();
 
 		/* Test the running state of a custom thread. */
-		thread = new Thread();
+		std::unique_ptr<Thread> thread = std::make_unique<Thread>();
 		thread->start();
 
 		if (!thread->isRunning()) {
@@ -79,10 +80,8 @@ protected:
 			return TestFail;
 		}
 
-		delete thread;
-
 		/* Test waiting for completion with a timeout. */
-		thread = new DelayThread(chrono::milliseconds(500));
+		thread = std::make_unique<DelayThread>(chrono::milliseconds(500));
 		thread->start();
 		thread->exit(0);
 
@@ -100,10 +99,8 @@ protected:
 			return TestFail;
 		}
 
-		delete thread;
-
 		/* Test waiting on a thread that isn't running. */
-		thread = new Thread();
+		thread = std::make_unique<Thread>();
 
 		timeout = !thread->wait();
 		if (timeout) {

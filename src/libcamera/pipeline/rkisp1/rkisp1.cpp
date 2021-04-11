@@ -1080,6 +1080,8 @@ void PipelineHandlerRkISP1::paramReady(FrameBuffer *buffer)
 	RkISP1CameraData *data = cameraData(activeCamera_);
 
 	RkISP1FrameInfo *info = data->frameInfo_.find(buffer);
+	if (!info)
+		return;
 
 	info->paramDequeued = true;
 	tryCompleteRequest(info->request);

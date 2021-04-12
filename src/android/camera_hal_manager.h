@@ -17,6 +17,8 @@
 #include <hardware/hardware.h>
 #include <system/camera_metadata.h>
 
+#include <libcamera/base/class.h>
+
 #include <libcamera/camera_manager.h>
 
 #include "camera_hal_config.h"
@@ -40,6 +42,8 @@ public:
 	void setCallbacks(const camera_module_callbacks_t *callbacks);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraHalManager)
+
 	using Mutex = std::mutex;
 	using MutexLocker = std::unique_lock<std::mutex>;
 

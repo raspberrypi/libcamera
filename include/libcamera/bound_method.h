@@ -153,8 +153,10 @@ public:
 
 	R activate(Args... args, bool deleteMethod = false) override
 	{
-		if (!this->object_)
-			return (static_cast<T *>(this->obj_)->*func_)(args...);
+		if (!this->object_) {
+			T *obj = static_cast<T *>(this->obj_);
+			return (obj->*func_)(args...);
+		}
 
 		auto pack = std::make_shared<PackType>(args...);
 		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
@@ -163,7 +165,8 @@ public:
 
 	R invoke(Args... args) override
 	{
-		return (static_cast<T *>(this->obj_)->*func_)(args...);
+		T *obj = static_cast<T *>(this->obj_);
+		return (obj->*func_)(args...);
 	}
 
 private:
@@ -186,8 +189,10 @@ public:
 
 	void activate(Args... args, bool deleteMethod = false) override
 	{
-		if (!this->object_)
-			return (static_cast<T *>(this->obj_)->*func_)(args...);
+		if (!this->object_) {
+			T *obj = static_cast<T *>(this->obj_);
+			return (obj->*func_)(args...);
+		}
 
 		auto pack = std::make_shared<PackType>(args...);
 		BoundMethodBase::activatePack(pack, deleteMethod);
@@ -195,7 +200,8 @@ public:
 
 	void invoke(Args... args) override
 	{
-		(static_cast<T *>(this->obj_)->*func_)(args...);
+		T *obj = static_cast<T *>(this->obj_);
+		return (obj->*func_)(args...);
 	}
 
 private:

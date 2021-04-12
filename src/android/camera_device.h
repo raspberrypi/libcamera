@@ -14,6 +14,7 @@
 
 #include <hardware/camera3.h>
 
+#include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/thread.h>
@@ -66,6 +67,8 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraDevice)
+
 	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> camera);
 
 	struct Camera3RequestDescriptor {

@@ -49,7 +49,7 @@ public:
 		     ConnectionType type = ConnectionTypeAuto)
 	{
 		Object *object = static_cast<Object *>(obj);
-		SignalBase::connect(new BoundMethodMember<T, void, Args...>(obj, object, func, type));
+		SignalBase::connect(new BoundMethodMember<T, R, Args...>(obj, object, func, type));
 	}
 
 	template<typename T, typename R, typename std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>

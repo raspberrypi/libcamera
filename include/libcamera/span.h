@@ -194,9 +194,9 @@ public:
 	constexpr const_iterator cbegin() const { return begin(); }
 	constexpr iterator end() const { return data() + size(); }
 	constexpr const_iterator cend() const { return end(); }
-	constexpr reverse_iterator rbegin() const { return reverse_iterator(data() + size() - 1); }
+	constexpr reverse_iterator rbegin() const { return reverse_iterator(end()); }
 	constexpr const_reverse_iterator crbegin() const { return rbegin(); }
-	constexpr reverse_iterator rend() const { return reverse_iterator(data() - 1); }
+	constexpr reverse_iterator rend() const { return reverse_iterator(begin()); }
 	constexpr const_reverse_iterator crend() const { return rend(); }
 
 	constexpr reference front() const { return *data(); }
@@ -360,9 +360,9 @@ public:
 	constexpr const_iterator cbegin() const { return begin(); }
 	constexpr iterator end() const { return data() + size(); }
 	constexpr const_iterator cend() const { return end(); }
-	constexpr reverse_iterator rbegin() const { return reverse_iterator(data() + size() - 1); }
+	constexpr reverse_iterator rbegin() const { return reverse_iterator(end()); }
 	constexpr const_reverse_iterator crbegin() const { return rbegin(); }
-	constexpr reverse_iterator rend() const { return reverse_iterator(data() - 1); }
+	constexpr reverse_iterator rend() const { return reverse_iterator(begin()); }
 	constexpr const_reverse_iterator crend() const { return rend(); }
 
 	constexpr reference front() const { return *data(); }

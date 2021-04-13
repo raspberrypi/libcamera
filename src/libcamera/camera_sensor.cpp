@@ -774,7 +774,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
 	if (ret) {
 		info->analogCrop = activeArea_;
-		LOG(CameraSensor, Error)
+		LOG(CameraSensor, Warning)
 			<< "The analogue crop rectangle has been defaulted to the active area size";
 	}
 

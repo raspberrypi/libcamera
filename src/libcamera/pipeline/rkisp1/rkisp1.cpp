@@ -267,7 +267,8 @@ RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)
 	if (itInfo != frameInfo_.end())
 		return itInfo->second;
 
-	LOG(RkISP1, Error) << "Can't locate info from frame";
+	LOG(RkISP1, Fatal) << "Can't locate info from frame";
+
 	return nullptr;
 }
 
@@ -283,7 +284,8 @@ RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 			return info;
 	}
 
-	LOG(RkISP1, Error) << "Can't locate info from buffer";
+	LOG(RkISP1, Fatal) << "Can't locate info from buffer";
+
 	return nullptr;
 }
 
@@ -296,7 +298,8 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 			return info;
 	}
 
-	LOG(RkISP1, Error) << "Can't locate info from request";
+	LOG(RkISP1, Fatal) << "Can't locate info from request";
+
 	return nullptr;
 }
 

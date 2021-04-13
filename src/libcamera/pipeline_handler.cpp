@@ -98,6 +98,17 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
+ * \var CameraData::requestSequence_
+ * \brief The queuing sequence of the request
+ *
+ * When requests are queued, they are given a per-camera sequence number to
+ * facilitate debugging of internal request usage.
+ *
+ * The requestSequence_ tracks the number of requests queued to a camera
+ * over its lifetime.
+ */
+
+/**
  * \class PipelineHandler
  * \brief Create and manage cameras based on a set of media devices
  *

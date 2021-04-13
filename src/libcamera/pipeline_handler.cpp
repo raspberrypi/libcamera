@@ -304,8 +304,8 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
  * application.
  *
  * The configuration is guaranteed to have been validated with
- * CameraConfiguration::valid(). The pipeline handler implementation shall not
- * perform further validation and may rely on any custom field stored in its
+ * CameraConfiguration::validate(). The pipeline handler implementation shall
+ * not perform further validation and may rely on any custom field stored in its
  * custom CameraConfiguration derived class.
  *
  * When configuring the camera the pipeline handler shall associate a Stream

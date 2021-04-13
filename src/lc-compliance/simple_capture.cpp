@@ -50,7 +50,7 @@ Results::Result SimpleCapture::start()
 	return { Results::Pass, "Started camera" };
 }
 
-Results::Result SimpleCapture::stop()
+void SimpleCapture::stop()
 {
 	Stream *stream = config_->at(0).stream();
 
@@ -59,8 +59,6 @@ Results::Result SimpleCapture::stop()
 	camera_->requestCompleted.disconnect(this, &SimpleCapture::requestComplete);
 
 	allocator_->free(stream);
-
-	return { Results::Pass, "Stopped camera" };
 }
 
 /* SimpleCaptureBalanced */

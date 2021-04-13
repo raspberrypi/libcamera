@@ -24,7 +24,7 @@ protected:
 	virtual ~SimpleCapture();
 
 	Results::Result start();
-	Results::Result stop();
+	void stop();
 
 	virtual void requestComplete(libcamera::Request *request) = 0;
 

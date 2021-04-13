@@ -10,7 +10,8 @@
 using namespace libcamera;
 
 SimpleCapture::SimpleCapture(std::shared_ptr<Camera> camera)
-	: camera_(camera), allocator_(std::make_unique<FrameBufferAllocator>(camera))
+	: loop_(nullptr), camera_(camera),
+	  allocator_(std::make_unique<FrameBufferAllocator>(camera))
 {
 }
 

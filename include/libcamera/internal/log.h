@@ -56,8 +56,6 @@ class LogMessage
 {
 public:
 	LogMessage(const char *fileName, unsigned int line,
-		   LogSeverity severity);
-	LogMessage(const char *fileName, unsigned int line,
 		   const LogCategory &category, LogSeverity severity);
 
 	LogMessage(LogMessage &&);
@@ -92,23 +90,20 @@ protected:
 	virtual std::string logPrefix() const = 0;
 
 	LogMessage _log(const char *file, unsigned int line,
-			LogSeverity severity) const;
-	LogMessage _log(const char *file, unsigned int line,
-			const LogCategory &category,
+			const LogCategory *category,
 			LogSeverity severity) const;
 };
 
-LogMessage _log(const char *file, unsigned int line, LogSeverity severity);
 LogMessage _log(const char *file, unsigned int line,
-		const LogCategory &category, LogSeverity severity);
+		const LogCategory *category, LogSeverity severity);
 
 #ifndef __DOXYGEN__
 #define _LOG_CATEGORY(name) logCategory##name
 
 #define _LOG1(severity) \
-	_log(__FILE__, __LINE__, Log##severity).stream()
+	_log(__FILE__, __LINE__, nullptr, Log##severity).stream()
 #define _LOG2(category, severity) \
-	_log(__FILE__, __LINE__, _LOG_CATEGORY(category)(), Log##severity).stream()
+	_log(__FILE__, __LINE__, &_LOG_CATEGORY(category)(), Log##severity).stream()
 
 /*
  * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of

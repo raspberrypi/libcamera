@@ -764,24 +764,6 @@ const LogCategory &LogCategory::defaultCategory()
  */
 
 /**
- * \brief Construct a log message for the default category
- * \param[in] fileName The file name where the message is logged from
- * \param[in] line The line number where the message is logged from
- * \param[in] severity The log message severity, controlling how the message
- * will be displayed
- *
- * Create a log message pertaining to line \a line of file \a fileName. The
- * \a severity argument sets the message severity to control whether it will be
- * output or dropped.
- */
-LogMessage::LogMessage(const char *fileName, unsigned int line,
-		       LogSeverity severity)
-	: category_(LogCategory::defaultCategory()), severity_(severity)
-{
-	init(fileName, line);
-}
-
-/**
  * \brief Construct a log message for a given category
  * \param[in] fileName The file name where the message is logged from
  * \param[in] line The line number where the message is logged from
@@ -917,26 +899,6 @@ Loggable::~Loggable()
  * \brief Create a temporary LogMessage object to log a message
  * \param[in] fileName The file name where the message is logged from
  * \param[in] line The line number where the message is logged from
- * \param[in] severity The log message severity
- *
- * This method is used as a backeng by the LOG() macro to create a log message
- * for locations inheriting from the Loggable class.
- *
- * \return A log message
- */
-LogMessage Loggable::_log(const char *fileName, unsigned int line,
-			  LogSeverity severity) const
-{
-	LogMessage msg(fileName, line, severity);
-
-	msg.stream() << logPrefix() << ": ";
-	return msg;
-}
-
-/**
- * \brief Create a temporary LogMessage object to log a message
- * \param[in] fileName The file name where the message is logged from
- * \param[in] line The line number where the message is logged from
  * \param[in] category The log message category
  * \param[in] severity The log message severity
  *
@@ -946,29 +908,15 @@ LogMessage Loggable::_log(const char *fileName, unsigned int line,
  * \return A log message
  */
 LogMessage Loggable::_log(const char *fileName, unsigned int line,
-			  const LogCategory &category,
+			  const LogCategory *category,
 			  LogSeverity severity) const
 {
-	LogMessage msg(fileName, line, category, severity);
+	LogMessage msg(fileName, line,
+		       category ? *category : LogCategory::defaultCategory(),
+		       severity);
 
 	msg.stream() << logPrefix() << ": ";
 	return msg;
-}
-
-/**
- * \brief Create a temporary LogMessage object to log a message
- * \param[in] fileName The file name where the message is logged from
- * \param[in] line The line number where the message is logged from
- * \param[in] severity The log message severity
- *
- * This function is used as a backeng by the LOG() macro to create a log
- * message for locations not inheriting from the Loggable class.
- *
- * \return A log message
- */
-LogMessage _log(const char *fileName, unsigned int line, LogSeverity severity)
-{
-	return LogMessage(fileName, line, severity);
 }
 
 /**
@@ -984,9 +932,11 @@ LogMessage _log(const char *fileName, unsigned int line, LogSeverity severity)
  * \return A log message
  */
 LogMessage _log(const char *fileName, unsigned int line,
-		const LogCategory &category, LogSeverity severity)
+		const LogCategory *category, LogSeverity severity)
 {
-	return LogMessage(fileName, line, category, severity);
+	return LogMessage(fileName, line,
+			  category ? *category : LogCategory::defaultCategory(),
+			  severity);
 }
 
 /**

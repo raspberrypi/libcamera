@@ -2,10 +2,12 @@
 
 libipa_headers = files([
     'algorithm.h',
+    'histogram.h'
 ])
 
 libipa_sources = files([
     'algorithm.cpp',
+    'histogram.cpp'
 ])
 
 libipa_includes = include_directories('..')

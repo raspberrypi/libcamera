@@ -17,15 +17,15 @@ namespace libcamera {
 
 class IPAModule;
 
-enum ProxyState {
-	ProxyStopped,
-	ProxyStopping,
-	ProxyRunning,
-};
-
 class IPAProxy : public IPAInterface
 {
 public:
+	enum ProxyState {
+		ProxyStopped,
+		ProxyStopping,
+		ProxyRunning,
+	};
+
 	IPAProxy(IPAModule *ipam);
 	~IPAProxy();
 

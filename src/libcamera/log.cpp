@@ -897,19 +897,18 @@ Loggable::~Loggable()
 
 /**
  * \brief Create a temporary LogMessage object to log a message
- * \param[in] fileName The file name where the message is logged from
- * \param[in] line The line number where the message is logged from
  * \param[in] category The log message category
  * \param[in] severity The log message severity
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
  *
  * This method is used as a backeng by the LOG() macro to create a log message
  * for locations inheriting from the Loggable class.
  *
  * \return A log message
  */
-LogMessage Loggable::_log(const char *fileName, unsigned int line,
-			  const LogCategory *category,
-			  LogSeverity severity) const
+LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
+			  const char *fileName, unsigned int line) const
 {
 	LogMessage msg(fileName, line,
 		       category ? *category : LogCategory::defaultCategory(),
@@ -921,18 +920,18 @@ LogMessage Loggable::_log(const char *fileName, unsigned int line,
 
 /**
  * \brief Create a temporary LogMessage object to log a message
- * \param[in] fileName The file name where the message is logged from
- * \param[in] line The line number where the message is logged from
  * \param[in] category The log message category
  * \param[in] severity The log message severity
+ * \param[in] fileName The file name where the message is logged from
+ * \param[in] line The line number where the message is logged from
  *
  * This function is used as a backeng by the LOG() macro to create a log
  * message for locations not inheriting from the Loggable class.
  *
  * \return A log message
  */
-LogMessage _log(const char *fileName, unsigned int line,
-		const LogCategory *category, LogSeverity severity)
+LogMessage _log(const LogCategory *category, LogSeverity severity,
+		const char *fileName, unsigned int line)
 {
 	return LogMessage(fileName, line,
 			  category ? *category : LogCategory::defaultCategory(),

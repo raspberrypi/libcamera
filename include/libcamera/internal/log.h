@@ -89,21 +89,22 @@ public:
 protected:
 	virtual std::string logPrefix() const = 0;
 
-	LogMessage _log(const char *file, unsigned int line,
-			const LogCategory *category,
-			LogSeverity severity) const;
+	LogMessage _log(const LogCategory *category, LogSeverity severity,
+			const char *fileName = __builtin_FILE(),
+			unsigned int line = __builtin_LINE()) const;
 };
 
-LogMessage _log(const char *file, unsigned int line,
-		const LogCategory *category, LogSeverity severity);
+LogMessage _log(const LogCategory *category, LogSeverity severity,
+		const char *fileName = __builtin_FILE(),
+		unsigned int line = __builtin_LINE());
 
 #ifndef __DOXYGEN__
 #define _LOG_CATEGORY(name) logCategory##name
 
 #define _LOG1(severity) \
-	_log(__FILE__, __LINE__, nullptr, Log##severity).stream()
+	_log(nullptr, Log##severity).stream()
 #define _LOG2(category, severity) \
-	_log(__FILE__, __LINE__, &_LOG_CATEGORY(category)(), Log##severity).stream()
+	_log(&_LOG_CATEGORY(category)(), Log##severity).stream()
 
 /*
  * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of

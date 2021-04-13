@@ -33,6 +33,19 @@ LOG_DEFINE_CATEGORY(IPAProxy)
  */
 
 /**
+ * \enum IPAProxy::ProxyState
+ * \brief Identifies the available operational states of the proxy
+ *
+ * \var IPAProxy::ProxyStopped
+ * \brief The proxy is not active and only synchronous operations are permitted
+ * \var IPAProxy::ProxyStopping
+ * \brief No new tasks can be submitted to the proxy, however existing events
+ * can be completed
+ * \var IPAProxy::ProxyRunning
+ * \brief The Proxy is active and asynchronous tasks may be queued
+ */
+
+/**
  * \brief Construct an IPAProxy instance
  * \param[in] ipam The IPA module
  */
@@ -211,6 +224,17 @@ std::string IPAProxy::resolvePath(const std::string &file) const
  *
  * Implementations of the IPAProxy class should set this flag upon successful
  * construction.
+ */
+
+/**
+ * \var IPAProxy::state_
+ * \brief Current state of the IPAProxy
+ *
+ * The IPAProxy can be Running, Stopped, or Stopping.
+ *
+ * This state provides a means to ensure that asynchronous methods are only
+ * called while the proxy is running, and prevent new tasks being submitted
+ * while still enabling events to complete when the IPAProxy is stopping.
  */
 
 } /* namespace libcamera */

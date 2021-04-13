@@ -35,7 +35,7 @@ public:
 	void unlock();
 
 	int populate();
-	bool valid() const { return valid_; }
+	bool isValid() const { return valid_; }
 
 	const std::string driver() const { return driver_; }
 	const std::string deviceNode() const { return deviceNode_; }

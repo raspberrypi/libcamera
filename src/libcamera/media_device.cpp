@@ -44,7 +44,7 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * MediaEntity, MediaPad and MediaLink are created to model the media graph,
  * and stored in a map indexed by object id.
  *
- * The graph is valid once successfully populated, as reported by the valid()
+ * The graph is valid once successfully populated, as reported by the isValid()
  * function. It can be queried to list all entities(), or entities can be
  * looked up by name with getEntityByName(). The graph can be traversed from
  * entity to entity through pads and links as exposed by the corresponding
@@ -292,7 +292,7 @@ done:
 }
 
 /**
- * \fn MediaDevice::valid()
+ * \fn MediaDevice::isValid()
  * \brief Query whether the media graph has been populated and is valid
  * \return true if the media graph is valid, false otherwise
  */
@@ -571,7 +571,7 @@ bool MediaDevice::addObject(MediaObject *object)
  *
  * The media device graph state is reset to invalid when the graph is cleared.
  *
- * \sa valid()
+ * \sa isValid()
  */
 void MediaDevice::clear()
 {

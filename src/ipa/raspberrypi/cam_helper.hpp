@@ -16,8 +16,8 @@
 namespace RPiController {
 
 // The CamHelper class provides a number of facilities that anyone trying
-// trying to drive a camera will need to know, but which are not provided by
-// by the standard driver framework. Specifically, it provides:
+// to drive a camera will need to know, but which are not provided by the
+// standard driver framework. Specifically, it provides:
 //
 // A "CameraMode" structure to describe extra information about the chosen
 // mode of the driver. For example, how it is cropped from the full sensor

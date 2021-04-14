@@ -23,6 +23,9 @@ Results::Result SimpleCapture::configure(StreamRole role)
 {
 	config_ = camera_->generateConfiguration({ role });
 
+	if (!config_)
+		return { Results::Skip, "Role not supported by camera" };
+
 	if (config_->validate() != CameraConfiguration::Valid) {
 		config_.reset();
 		return { Results::Fail, "Configuration not valid" };

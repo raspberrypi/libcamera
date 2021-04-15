@@ -1802,7 +1802,7 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 			 * pending embedded data buffers.
 			 */
 			if (bayerRequeueCount == unicam_[Unicam::Image].getBuffers().size()) {
-				/* The embedded queue must be empty at this point! */
+				/* The bayer queue must be empty at this point! */
 				ASSERT(bayerQueue_.empty());
 
 				LOG(RPI, Warning) << "Flushing embedded data stream!";

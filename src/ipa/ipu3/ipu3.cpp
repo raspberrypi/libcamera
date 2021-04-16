@@ -25,7 +25,9 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAIPU3)
 
-class IPAIPU3 : public ipa::ipu3::IPAIPU3Interface
+namespace ipa::ipu3 {
+
+class IPAIPU3 : public IPAIPU3Interface
 {
 public:
 	int init([[maybe_unused]] const IPASettings &settings) override
@@ -40,7 +42,7 @@ public:
 
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const ipa::ipu3::IPU3Event &event) override;
+	void processEvent(const IPU3Event &event) override;
 
 private:
 	void processControls(unsigned int frame, const ControlList &controls);
@@ -119,14 +121,14 @@ void IPAIPU3::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPAIPU3::processEvent(const ipa::ipu3::IPU3Event &event)
+void IPAIPU3::processEvent(const IPU3Event &event)
 {
 	switch (event.op) {
-	case ipa::ipu3::EventProcessControls: {
+	case EventProcessControls: {
 		processControls(event.frame, event.controls);
 		break;
 	}
-	case ipa::ipu3::EventStatReady: {
+	case EventStatReady: {
 		auto it = buffers_.find(event.bufferId);
 		if (it == buffers_.end()) {
 			LOG(IPAIPU3, Error) << "Could not find stats buffer!";
@@ -140,7 +142,7 @@ void IPAIPU3::processEvent(const ipa::ipu3::IPU3Event &event)
 		parseStatistics(event.frame, stats);
 		break;
 	}
-	case ipa::ipu3::EventFillParams: {
+	case EventFillParams: {
 		auto it = buffers_.find(event.bufferId);
 		if (it == buffers_.end()) {
 			LOG(IPAIPU3, Error) << "Could not find param buffer!";
@@ -173,8 +175,8 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 
 	/* \todo Fill in parameters buffer. */
 
-	ipa::ipu3::IPU3Action op;
-	op.op = ipa::ipu3::ActionParamFilled;
+	IPU3Action op;
+	op.op = ActionParamFilled;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -187,8 +189,8 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	/* \todo React to statistics and update internal state machine. */
 	/* \todo Add meta-data information to ctrls. */
 
-	ipa::ipu3::IPU3Action op;
-	op.op = ipa::ipu3::ActionMetadataReady;
+	IPU3Action op;
+	op.op = ActionMetadataReady;
 	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
@@ -196,8 +198,8 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 
 void IPAIPU3::setControls(unsigned int frame)
 {
-	ipa::ipu3::IPU3Action op;
-	op.op = ipa::ipu3::ActionSetSensorControls;
+	IPU3Action op;
+	op.op = ActionSetSensorControls;
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
@@ -206,6 +208,8 @@ void IPAIPU3::setControls(unsigned int frame)
 
 	queueFrameAction.emit(frame, op);
 }
+
+} /* namespace ipa::ipu3 */
 
 /*
  * External IPA module interface
@@ -221,7 +225,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 
 IPAInterface *ipaCreate()
 {
-	return new IPAIPU3();
+	return new ipa::ipu3::IPAIPU3();
 }
 }
 

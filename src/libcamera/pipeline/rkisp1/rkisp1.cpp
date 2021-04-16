@@ -1070,6 +1070,15 @@ void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
+	/*
+	 * Record the sensor's timestamp in the request metadata.
+	 *
+	 * \todo The sensor timestamp should be better estimated by connecting
+	 * to the V4L2Device::frameStart signal.
+	 */
+	request->metadata().set(controls::SensorTimestamp,
+				buffer->metadata().timestamp);
+
 	completeBuffer(request, buffer);
 	tryCompleteRequest(request);
 }

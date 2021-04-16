@@ -365,7 +365,7 @@ void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &meta
 	if (!info)
 		return;
 
-	info->request->metadata() = metadata;
+	info->request->metadata().merge(metadata);
 	info->metadataProcessed = true;
 
 	pipe->tryCompleteRequest(info->request);

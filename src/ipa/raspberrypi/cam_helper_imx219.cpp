@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 /*
- * We have observed the imx219 embedded data stream randomly return junk
- * reister values.  Do not rely on embedded data until this has been resolved.
+ * We have observed that the imx219 embedded data stream randomly returns junk
+ * register values. Do not rely on embedded data until this has been resolved.
  */
 #define ENABLE_EMBEDDED_DATA 0
 

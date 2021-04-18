@@ -22,7 +22,7 @@ class Camera;
 
 class CameraManager : public Object, public Extensible
 {
-	LIBCAMERA_DECLARE_PRIVATE(CameraManager)
+	LIBCAMERA_DECLARE_PRIVATE()
 public:
 	CameraManager();
 	~CameraManager();

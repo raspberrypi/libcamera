@@ -30,7 +30,7 @@ namespace libcamera {
 #endif
 
 #ifndef __DOXYGEN__
-#define LIBCAMERA_DECLARE_PRIVATE(klass)				\
+#define LIBCAMERA_DECLARE_PRIVATE()					\
 public:									\
 	class Private;							\
 	friend class Private;
@@ -46,7 +46,7 @@ public:									\
 	_o<Public>();
 
 #else
-#define LIBCAMERA_DECLARE_PRIVATE(klass)
+#define LIBCAMERA_DECLARE_PRIVATE()
 #define LIBCAMERA_DECLARE_PUBLIC(klass)
 #define LIBCAMERA_D_PTR(klass)
 #define LIBCAMERA_O_PTR(klass)

@@ -74,7 +74,7 @@ protected:
 class Camera final : public Object, public std::enable_shared_from_this<Camera>,
 		     public Extensible
 {
-	LIBCAMERA_DECLARE_PRIVATE(Camera)
+	LIBCAMERA_DECLARE_PRIVATE()
 
 public:
 	static std::shared_ptr<Camera> create(PipelineHandler *pipe,

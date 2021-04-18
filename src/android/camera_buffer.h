@@ -14,7 +14,7 @@
 
 class CameraBuffer final : public libcamera::Extensible
 {
-	LIBCAMERA_DECLARE_PRIVATE(CameraBuffer)
+	LIBCAMERA_DECLARE_PRIVATE()
 
 public:
 	CameraBuffer(buffer_handle_t camera3Buffer, int flags);

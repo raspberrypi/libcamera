@@ -77,12 +77,10 @@ namespace libcamera {
 /**
  * \def LIBCAMERA_DECLARE_PRIVATE
  * \brief Declare private data for a public class
- * \param klass The public class name
  *
  * The LIBCAMERA_DECLARE_PRIVATE() macro plumbs the infrastructure necessary to
  * make a class manage its private data through a d-pointer. It shall be used at
- * the very top of the class definition, with the public class name passed as
- * the \a klass parameter.
+ * the very top of the class definition.
  */
 
 /**

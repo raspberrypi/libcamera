@@ -35,7 +35,7 @@ namespace RPiController {
 //
 // A method to query if the sensor outputs embedded data that can be parsed.
 //
-// A parser to parse the metadata buffers provided by some sensors (for
+// A parser to parse the embedded data buffers provided by some sensors (for
 // example, the imx219 does; the ov5647 doesn't). This allows us to know for
 // sure the exposure and gain of the frame we're looking at. CamHelper
 // provides methods for converting analogue gains to and from the sensor's

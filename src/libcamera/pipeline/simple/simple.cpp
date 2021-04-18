@@ -22,6 +22,7 @@
 #include <linux/media-bus-format.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -1117,6 +1118,16 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	}
 
 	/*
+	 * Record the sensor's timestamp in the request metadata.
+	 *
+	 * \todo The sensor timestamp should be better estimated by connecting
+	 * to the V4L2Device::frameStart signal if the platform provides it.
+	 */
+	Request *request = buffer->request();
+	request->metadata().set(controls::SensorTimestamp,
+				buffer->metadata().timestamp);
+
+	/*
 	 * Queue the captured and the request buffer to the converter if format
 	 * conversion is needed. If there's no queued request, just requeue the
 	 * captured buffer for capture.
@@ -1133,7 +1144,6 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	}
 
 	/* Otherwise simply complete the request. */
-	Request *request = buffer->request();
 	completeBuffer(request, buffer);
 	completeRequest(request);
 }

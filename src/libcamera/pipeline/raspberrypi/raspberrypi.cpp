@@ -1410,6 +1410,18 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 
 	if (stream == &unicam_[Unicam::Image]) {
 		/*
+		 * Record the sensor timestamp in the Request.
+		 *
+		 * \todo Do not assume the request in the front of the queue
+		 * is the correct one
+		 */
+		Request *request = requestQueue_.front();
+		ASSERT(request);
+
+		request->metadata().set(controls::SensorTimestamp,
+					buffer->metadata().timestamp);
+
+		/*
 		 * Lookup the sensor controls used for this frame sequence from
 		 * DelayedControl and queue them along with the frame buffer.
 		 */

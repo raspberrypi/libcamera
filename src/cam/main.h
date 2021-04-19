@@ -19,6 +19,7 @@ enum {
 	OptStream = 's',
 	OptListControls = 256,
 	OptStrictFormats = 257,
+	OptMetadata = 258,
 };
 
 #endif /* __CAM_MAIN_H__ */

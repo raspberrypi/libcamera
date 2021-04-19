@@ -197,6 +197,9 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptStrictFormats, OptionNone,
 			 "Do not allow requested stream format(s) to be adjusted",
 			 "strict-formats");
+	parser.addOption(OptMetadata, OptionNone,
+			 "Print the metadata for completed requests",
+			 "metadata");
 
 	options_ = parser.parse(argc, argv);
 	if (!options_.valid())

@@ -1312,9 +1312,9 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
 
-	/* Fill the Request metadata buffer with what the IPA has provided */
+	/* Add to the Request metadata buffer what the IPA has provided. */
 	Request *request = requestQueue_.front();
-	request->metadata() = controls;
+	request->metadata().merge(controls);
 
 	/*
 	 * Also update the ScalerCrop in the metadata with what we actually

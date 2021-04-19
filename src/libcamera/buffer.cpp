@@ -191,8 +191,9 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  * \brief Set the request this buffer belongs to
  * \param[in] request Request to set
  *
- * The intended callers of this method are pipeline handlers and only for
- * buffers that are internal to the pipeline.
+ * For buffers added to requests by applications, this method is called by
+ * Request::addBuffer() or Request::reuse(). For buffers internal to pipeline
+ * handlers, it is called by the pipeline handlers themselves.
  *
  * \todo Shall be hidden from applications with a d-pointer design.
  */

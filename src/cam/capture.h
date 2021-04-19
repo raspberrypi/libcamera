@@ -47,6 +47,7 @@ private:
 	unsigned int queueCount_;
 	unsigned int captureCount_;
 	unsigned int captureLimit_;
+	bool printMetadata_;
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };

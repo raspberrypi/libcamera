@@ -10,6 +10,8 @@
 #include <limits.h>
 #include <sstream>
 
+#include <libcamera/control_ids.h>
+
 #include "capture.h"
 #include "main.h"
 
@@ -18,7 +20,8 @@ using namespace libcamera;
 Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
 		 EventLoop *loop)
 	: camera_(camera), config_(config), writer_(nullptr), last_(0), loop_(loop),
-	  queueCount_(0), captureCount_(0), captureLimit_(0)
+	  queueCount_(0), captureCount_(0), captureLimit_(0),
+	  printMetadata_(false)
 {
 }
 
@@ -29,6 +32,7 @@ int Capture::run(const OptionsParser::Options &options)
 	queueCount_ = 0;
 	captureCount_ = 0;
 	captureLimit_ = options[OptCapture].toInteger();
+	printMetadata_ = options.isSet(OptMetadata);
 
 	if (!camera_) {
 		std::cout << "Can't capture without a camera" << std::endl;
@@ -216,6 +220,15 @@ void Capture::processRequest(Request *request)
 	}
 
 	std::cout << info.str() << std::endl;
+
+	if (printMetadata_) {
+		const ControlList &requestMetadata = request->metadata();
+		for (const auto &ctrl : requestMetadata) {
+			const ControlId *id = controls::controls.at(ctrl.first);
+			std::cout << "\t" << id->name() << " = "
+				  << ctrl.second.toString() << std::endl;
+		}
+	}
 
 	captureCount_++;
 	if (captureLimit_ && captureCount_ >= captureLimit_) {

@@ -95,9 +95,8 @@ namespace libcamera {
  */
 
 /**
- * \def LIBCAMERA_D_PTR(klass)
+ * \def LIBCAMERA_D_PTR()
  * \brief Retrieve the private data pointer
- * \param[in] klass The public class name
  *
  * This macro can be used in any member function of a class that inherits,
  * directly or indirectly, from the Extensible class, to create a local
@@ -105,9 +104,8 @@ namespace libcamera {
  */
 
 /**
- * \def LIBCAMERA_O_PTR(klass)
+ * \def LIBCAMERA_O_PTR()
  * \brief Retrieve the public instance corresponding to the private data
- * \param[in] klass The public class name
  *
  * This macro is the counterpart of LIBCAMERA_D_PTR() for private data classes.
  * It can be used in any member function of the private data class to create a

@@ -48,8 +48,8 @@ public:									\
 #else
 #define LIBCAMERA_DECLARE_PRIVATE()
 #define LIBCAMERA_DECLARE_PUBLIC(klass)
-#define LIBCAMERA_D_PTR(klass)
-#define LIBCAMERA_O_PTR(klass)
+#define LIBCAMERA_D_PTR()
+#define LIBCAMERA_O_PTR()
 #endif
 
 class Extensible

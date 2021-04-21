@@ -108,9 +108,10 @@ protected:
 		list.set(controls::Brightness, 0.0f);
 		list.set(controls::Contrast, 1.5f);
 
-		if (!list.contains(controls::Contrast) ||
+		if (!list.contains(controls::Brightness) ||
 		    !list.contains(controls::Contrast)) {
-			cout << "List should contain Contrast control" << endl;
+			cout << "List should contain Brightness and Contrast controls"
+			     << endl;
 			return TestFail;
 		}
 

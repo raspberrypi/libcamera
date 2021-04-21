@@ -150,6 +150,52 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * Create a new list with a new control and merge it with the
+		 * existing one, verifying that the existing controls
+		 * values don't get overwritten.
+		 */
+		ControlList mergeList(controls::controls, &validator);
+		mergeList.set(controls::Brightness, 0.7f);
+		mergeList.set(controls::Saturation, 0.4f);
+
+		mergeList.merge(list);
+		if (mergeList.size() != 3) {
+			cout << "Merged list should contain three elements" << endl;
+			return TestFail;
+		}
+
+		if (list.size() != 2) {
+			cout << "The list to merge should contain two elements"
+			     << endl;
+			return TestFail;
+		}
+
+		if (!mergeList.contains(controls::Brightness) ||
+		    !mergeList.contains(controls::Contrast) ||
+		    !mergeList.contains(controls::Saturation)) {
+			cout << "Merged list does not contain all controls" << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Brightness) != 0.7f) {
+			cout << "Brightness control value changed after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Contrast) != 1.1f) {
+			cout << "Contrast control value changed after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Saturation) != 0.4f) {
+			cout << "Saturation control value changed after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

@@ -9,12 +9,14 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <string.h>
 #include <sys/time.h>
+#include <utility>
 #include <vector>
 
 #ifndef __DOXYGEN__
@@ -229,6 +231,90 @@ details::reverse_adapter<T> reverse(T &&iterable)
 {
 	return { iterable };
 }
+
+namespace details {
+
+template<typename Base>
+class enumerate_iterator
+{
+private:
+	using base_reference = typename std::iterator_traits<Base>::reference;
+
+public:
+	using difference_type = typename std::iterator_traits<Base>::difference_type;
+	using value_type = std::pair<const difference_type, base_reference>;
+	using pointer = value_type *;
+	using reference = value_type &;
+	using iterator_category = std::input_iterator_tag;
+
+	explicit enumerate_iterator(Base iter)
+		: current_(iter), pos_(0)
+	{
+	}
+
+	enumerate_iterator &operator++()
+	{
+		++current_;
+		++pos_;
+		return *this;
+	}
+
+	bool operator!=(const enumerate_iterator &other) const
+	{
+		return current_ != other.current_;
+	}
+
+	value_type operator*() const
+	{
+		return { pos_, *current_ };
+	}
+
+private:
+	Base current_;
+	difference_type pos_;
+};
+
+template<typename Base>
+class enumerate_adapter
+{
+public:
+	using iterator = enumerate_iterator<Base>;
+
+	enumerate_adapter(Base begin, Base end)
+		: begin_(begin), end_(end)
+	{
+	}
+
+	iterator begin() const
+	{
+		return iterator{ begin_ };
+	}
+
+	iterator end() const
+	{
+		return iterator{ end_ };
+	}
+
+private:
+	const Base begin_;
+	const Base end_;
+};
+
+} /* namespace details */
+
+template<typename T>
+auto enumerate(T &iterable) -> details::enumerate_adapter<decltype(iterable.begin())>
+{
+	return { std::begin(iterable), std::end(iterable) };
+}
+
+#ifndef __DOXYGEN__
+template<typename T, size_t N>
+auto enumerate(T (&iterable)[N]) -> details::enumerate_adapter<T *>
+{
+	return { std::begin(iterable), std::end(iterable) };
+}
+#endif
 
 } /* namespace utils */
 

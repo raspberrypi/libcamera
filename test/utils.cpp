@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/geometry.h>
+#include <libcamera/span.h>
 
 #include "libcamera/internal/utils.h"
 
@@ -68,6 +69,60 @@ protected:
 				cerr << "\t" << path << endl;
 
 			return TestFail;
+		}
+
+		return TestPass;
+	}
+
+	int testEnumerate()
+	{
+		std::vector<int> integers{ 1, 2, 3, 4, 5 };
+		int i = 0;
+
+		for (auto [index, value] : utils::enumerate(integers)) {
+			if (index != i || value != i + 1) {
+				cerr << "utils::enumerate(<vector>) test failed: i=" << i
+				     << ", index=" << index << ", value=" << value
+				     << std::endl;
+				return TestFail;
+			}
+
+			/* Verify that we can modify the value. */
+			--value;
+			++i;
+		}
+
+		if (integers != std::vector<int>{ 0, 1, 2, 3, 4 }) {
+			cerr << "Failed to modify container in enumerated range loop" << endl;
+			return TestFail;
+		}
+
+		Span<const int> span{ integers };
+		i = 0;
+
+		for (auto [index, value] : utils::enumerate(span)) {
+			if (index != i || value != i) {
+				cerr << "utils::enumerate(<span>) test failed: i=" << i
+				     << ", index=" << index << ", value=" << value
+				     << std::endl;
+				return TestFail;
+			}
+
+			++i;
+		}
+
+		const int array[] = { 0, 2, 4, 6, 8 };
+		i = 0;
+
+		for (auto [index, value] : utils::enumerate(array)) {
+			if (index != i || value != i * 2) {
+				cerr << "utils::enumerate(<array>) test failed: i=" << i
+				     << ", index=" << index << ", value=" << value
+				     << std::endl;
+				return TestFail;
+			}
+
+			++i;
 		}
 
 		return TestPass;
@@ -176,6 +231,10 @@ protected:
 			cerr << "utils::alignUp test failed" << endl;
 			return TestFail;
 		}
+
+		/* utils::enumerate() test. */
+		if (testEnumerate() != TestPass)
+			return TestFail;
 
 		return TestPass;
 	}

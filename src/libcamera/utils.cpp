@@ -472,6 +472,40 @@ std::string libcameraSourcePath()
  * loop, will cause the loop to iterate over the \a iterable in reverse order
  */
 
+/**
+ * \fn enumerate(T &iterable)
+ * \brief Wrap an iterable to enumerate index and value in a range-based loop
+ * \param[in] iterable The iterable
+ *
+ * Range-based for loops are handy and widely preferred in C++, but are limited
+ * in their ability to replace for loops that require access to a loop counter.
+ * The enumerate() function solves this problem by wrapping the \a iterable in
+ * an adapter that, when used as a range-expression, will provide iterators
+ * whose value_type is a pair of index and value reference.
+ *
+ * The iterable must support std::begin() and std::end(). This includes all
+ * containers provided by the standard C++ library, as well as C-style arrays.
+ *
+ * A typical usage pattern would use structured binding to store the index and
+ * value in two separate variables:
+ *
+ * \code{.cpp}
+ * std::vector<int> values = ...;
+ *
+ * for (auto [index, value] : utils::enumerate(values)) {
+ * 	...
+ * }
+ * \endcode
+ *
+ * Note that the argument to enumerate() has to be an lvalue, as the lifetime
+ * of any rvalue would not be extended to the whole for loop. The compiler will
+ * complain if an rvalue is passed to the function, in which case it should be
+ * stored in a local variable before the loop.
+ *
+ * \return A value of unspecified type that, when used in a range-based for
+ * loop, iterates over an indexed view of the \a iterable
+ */
+
 } /* namespace utils */
 
 } /* namespace libcamera */

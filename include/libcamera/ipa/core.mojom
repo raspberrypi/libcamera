@@ -38,8 +38,7 @@
  *     implemented in ipa_data_serializer.h, as it cannot be defined in mojom
  * - [skipHeader] and [skipSerdes] only work here in core.mojom.
  * - If a struct definition has [skipHeader], then the header where the
- *   struct is defined must be #included (or the struct forward-declared) in
- *   ipa_interface.h
+ *   struct is defined must be #included in ipa_interface.h
  * - If a field in a struct has a FileDescriptor, but is not explicitly
  *   defined so in mojom, then the field must be marked with the [hasFd]
  *   attribute.

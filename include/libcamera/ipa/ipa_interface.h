@@ -18,14 +18,14 @@
 #include <libcamera/geometry.h>
 #include <libcamera/signal.h>
 
+#include "libcamera/internal/camera_sensor.h"
+
 namespace libcamera {
 
 /*
  * Structs that are defined in core.mojom and have the skipHeader tag must be
- * forward-declared or #included here.
+ * #included here.
  */
-
-struct CameraSensorInfo;
 
 class IPAInterface
 {

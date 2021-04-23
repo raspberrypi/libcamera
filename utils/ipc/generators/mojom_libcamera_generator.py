@@ -258,12 +258,12 @@ def GetNameForElement(element):
         return element.mojom_name
     # vectors
     if (mojom.IsArrayKind(element)):
-        elem_name = GetNameForElement(element.kind)
+        elem_name = GetFullNameForElement(element.kind)
         return f'std::vector<{elem_name}>'
     # maps
     if (mojom.IsMapKind(element)):
-        key_name = GetNameForElement(element.key_kind)
-        value_name = GetNameForElement(element.value_kind)
+        key_name = GetFullNameForElement(element.key_kind)
+        value_name = GetFullNameForElement(element.value_kind)
         return f'std::map<{key_name}, {value_name}>'
     # struct fields and function parameters
     if isinstance(element, (mojom.Field, mojom.Method, mojom.Parameter)):
@@ -296,8 +296,16 @@ def GetNameForElement(element):
         raise Exception('Unsupported element: %s' % element)
     raise Exception('Unexpected element: %s' % element)
 
-def GetFullNameForElement(element, namespace_str):
+def GetFullNameForElement(element):
     name = GetNameForElement(element)
+    namespace_str = ''
+    if mojom.IsStructKind(element):
+        namespace_str = element.module.mojom_namespace.replace('.', '::')
+    elif (hasattr(element, 'kind') and
+             (mojom.IsStructKind(element.kind) or
+              mojom.IsEnumKind(element.kind))):
+        namespace_str = element.kind.module.mojom_namespace.replace('.', '::')
+
     if namespace_str == '':
         return name
     return f'{namespace_str}::{name}'

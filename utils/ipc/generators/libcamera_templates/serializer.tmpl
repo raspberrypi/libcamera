@@ -68,7 +68,7 @@
 	{%- elif field|is_str %}
 			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
 	{%- else %}
-			IPADataSerializer<{{field|name_full(namespace)}}>::serialize(data.{{field.mojom_name}}, cs);
+			IPADataSerializer<{{field|name_full}}>::serialize(data.{{field.mojom_name}}, cs);
 	{%- endif %}
 		appendPOD<uint32_t>(retData, {{field.mojom_name}}.size());
 	{%- if field|has_fd %}
@@ -97,7 +97,7 @@
 		{%- if field|is_pod %}
 		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field_size}});
 		{%- else %}
-		ret.{{field.mojom_name}} = static_cast<{{field|name_full(namespace)}}>(IPADataSerializer<uint{{field|bit_width}}_t>::deserialize(m, m + {{field_size}}));
+		ret.{{field.mojom_name}} = static_cast<{{field|name_full}}>(IPADataSerializer<uint{{field|bit_width}}_t>::deserialize(m, m + {{field_size}}));
 		{%- endif %}
 	{%- if not loop.last %}
 		m += {{field_size}};
@@ -150,11 +150,11 @@
 	{%- elif field|has_fd and (field|is_array or field|is_map) %}
 			IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size, n, n + {{field.mojom_name}}FdsSize, cs);
 	{%- elif field|has_fd and (not (field|is_array or field|is_map)) %}
-			IPADataSerializer<{{field|name_full(namespace)}}>::deserialize(m, m + {{field.mojom_name}}Size, n, n + {{field.mojom_name}}FdsSize, cs);
+			IPADataSerializer<{{field|name_full}}>::deserialize(m, m + {{field.mojom_name}}Size, n, n + {{field.mojom_name}}FdsSize, cs);
 	{%- elif (not field|has_fd) and (field|is_array or field|is_map) %}
 			IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
 	{%- else %}
-			IPADataSerializer<{{field|name_full(namespace)}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
+			IPADataSerializer<{{field|name_full}}>::deserialize(m, m + {{field.mojom_name}}Size, cs);
 	{%- endif %}
 	{%- if not loop.last %}
 		m += {{field_size}};
@@ -178,7 +178,7 @@
  #}
 {%- macro serializer(struct, namespace) %}
 	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
-	serialize(const {{struct|name_full(namespace)}} &data,
+	serialize(const {{struct|name_full}} &data,
 {%- if struct|needs_control_serializer %}
 		  ControlSerializer *cs)
 {%- else %}
@@ -208,7 +208,7 @@
  # \a struct, in the case that \a struct has file descriptors.
  #}
 {%- macro deserializer_fd(struct, namespace) %}
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 		    std::vector<int32_t> &fds,
 {%- if struct|needs_control_serializer %}
@@ -217,11 +217,11 @@
 		    ControlSerializer *cs = nullptr)
 {%- endif %}
 	{
-		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), fds.cbegin(), fds.cend(), cs);
+		return IPADataSerializer<{{struct|name_full}}>::deserialize(data.cbegin(), data.cend(), fds.cbegin(), fds.cend(), cs);
 	}
 
 {# \todo Don't inline this function #}
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 		    std::vector<uint8_t>::const_iterator dataEnd,
 		    std::vector<int32_t>::const_iterator fdsBegin,
@@ -232,7 +232,7 @@
 		    [[maybe_unused]] ControlSerializer *cs = nullptr)
 {%- endif %}
 	{
-		{{struct|name_full(namespace)}} ret;
+		{{struct|name_full}} ret;
 		std::vector<uint8_t>::const_iterator m = dataBegin;
 		std::vector<int32_t>::const_iterator n = fdsBegin;
 
@@ -253,22 +253,22 @@
  # deserializers with file descriptors.
  #}
 {%- macro deserializer_fd_simple(struct, namespace) %}
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 		    [[maybe_unused]] std::vector<int32_t> &fds,
 		    ControlSerializer *cs = nullptr)
 	{
-		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), cs);
+		return IPADataSerializer<{{struct|name_full}}>::deserialize(data.cbegin(), data.cend(), cs);
 	}
 
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 		    std::vector<uint8_t>::const_iterator dataEnd,
 		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
 		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
 		    ControlSerializer *cs = nullptr)
 	{
-		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(dataBegin, dataEnd, cs);
+		return IPADataSerializer<{{struct|name_full}}>::deserialize(dataBegin, dataEnd, cs);
 	}
 {%- endmacro %}
 
@@ -280,7 +280,7 @@
  # \a struct, in the case that \a struct does not have file descriptors.
  #}
 {%- macro deserializer_no_fd(struct, namespace) %}
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 {%- if struct|needs_control_serializer %}
 		    ControlSerializer *cs)
@@ -288,11 +288,11 @@
 		    ControlSerializer *cs = nullptr)
 {%- endif %}
 	{
-		return IPADataSerializer<{{struct|name_full(namespace)}}>::deserialize(data.cbegin(), data.cend(), cs);
+		return IPADataSerializer<{{struct|name_full}}>::deserialize(data.cbegin(), data.cend(), cs);
 	}
 
 {# \todo Don't inline this function #}
-	static {{struct|name_full(namespace)}}
+	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 		    std::vector<uint8_t>::const_iterator dataEnd,
 {%- if struct|needs_control_serializer %}
@@ -301,7 +301,7 @@
 		    [[maybe_unused]] ControlSerializer *cs = nullptr)
 {%- endif %}
 	{
-		{{struct|name_full(namespace)}} ret;
+		{{struct|name_full}} ret;
 		std::vector<uint8_t>::const_iterator m = dataBegin;
 
 		size_t dataSize = std::distance(dataBegin, dataEnd);

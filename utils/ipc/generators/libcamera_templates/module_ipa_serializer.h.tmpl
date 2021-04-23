@@ -30,7 +30,7 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(IPADataSerializer)
 {% for struct in structs_nonempty %}
 template<>
-class IPADataSerializer<{{struct|name_full(namespace_str)}}>
+class IPADataSerializer<{{struct|name_full}}>
 {
 public:
 {{- serializer.serializer(struct, namespace_str)}}

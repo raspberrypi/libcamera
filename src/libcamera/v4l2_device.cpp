@@ -173,8 +173,7 @@ void V4L2Device::close()
  */
 ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 {
-	unsigned int count = ids.size();
-	if (count == 0)
+	if (ids.empty())
 		return {};
 
 	ControlList ctrls{ controls_ };
@@ -196,13 +195,16 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 		ctrls.set(id, {});
 	}
 
-	struct v4l2_ext_control v4l2Ctrls[count];
-	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
+	std::vector<v4l2_ext_control> v4l2Ctrls(ids.size());
+	memset(v4l2Ctrls.data(), 0, sizeof(v4l2_ext_control) * ctrls.size());
 
 	unsigned int i = 0;
 	for (auto &ctrl : ctrls) {
 		unsigned int id = ctrl.first;
 		const struct v4l2_query_ext_ctrl &info = controlInfo_[id];
+
+		v4l2_ext_control &v4l2Ctrl = v4l2Ctrls[i++];
+		v4l2Ctrl.id = id;
 
 		if (info.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD) {
 			ControlType type;
@@ -223,25 +225,22 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 			value.reserve(type, true, info.elems);
 			Span<uint8_t> data = value.data();
 
-			v4l2Ctrls[i].p_u8 = data.data();
-			v4l2Ctrls[i].size = data.size();
+			v4l2Ctrl.p_u8 = data.data();
+			v4l2Ctrl.size = data.size();
 		}
-
-		v4l2Ctrls[i].id = id;
-		i++;
 	}
 
 	struct v4l2_ext_controls v4l2ExtCtrls = {};
 	v4l2ExtCtrls.which = V4L2_CTRL_WHICH_CUR_VAL;
-	v4l2ExtCtrls.controls = v4l2Ctrls;
-	v4l2ExtCtrls.count = count;
+	v4l2ExtCtrls.controls = v4l2Ctrls.data();
+	v4l2ExtCtrls.count = v4l2Ctrls.size();
 
 	int ret = ioctl(VIDIOC_G_EXT_CTRLS, &v4l2ExtCtrls);
 	if (ret) {
 		unsigned int errorIdx = v4l2ExtCtrls.error_idx;
 
 		/* Generic validation error. */
-		if (errorIdx == 0 || errorIdx >= count) {
+		if (errorIdx == 0 || errorIdx >= v4l2Ctrls.size()) {
 			LOG(V4L2, Error) << "Unable to read controls: "
 					 << strerror(-ret);
 			return {};
@@ -250,10 +249,11 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 		/* A specific control failed. */
 		LOG(V4L2, Error) << "Unable to read control " << errorIdx
 				 << ": " << strerror(-ret);
-		count = errorIdx - 1;
+
+		v4l2Ctrls.resize(errorIdx);
 	}
 
-	updateControls(&ctrls, v4l2Ctrls, count);
+	updateControls(&ctrls, v4l2Ctrls.data(), v4l2Ctrls.size());
 
 	return ctrls;
 }

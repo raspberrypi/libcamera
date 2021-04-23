@@ -23,6 +23,7 @@
 #include <libcamera/camera_manager.h>
 
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/utils.h"
 
 #include "v4l2_camera_file.h"
 
@@ -81,11 +82,10 @@ int V4L2CompatManager::start()
 	 * For each Camera registered in the system, a V4L2CameraProxy gets
 	 * created here to wrap a camera device.
 	 */
-	unsigned int index = 0;
-	for (auto &camera : cm_->cameras()) {
+	auto cameras = cm_->cameras();
+	for (auto [index, camera] : utils::enumerate(cameras)) {
 		V4L2CameraProxy *proxy = new V4L2CameraProxy(index, camera);
 		proxies_.emplace_back(proxy);
-		++index;
 	}
 
 	return 0;
@@ -117,11 +117,10 @@ int V4L2CompatManager::getCameraIndex(int fd)
 	if (!target)
 		return -1;
 
-	unsigned int index = 0;
-	for (auto &camera : cm_->cameras()) {
+	auto cameras = cm_->cameras();
+	for (auto [index, camera] : utils::enumerate(cameras)) {
 		if (camera == target)
 			return index;
-		++index;
 	}
 
 	return -1;

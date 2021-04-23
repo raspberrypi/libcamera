@@ -14,6 +14,7 @@
 #include <linux/videodev2.h>
 
 #include <libcamera/signal.h>
+#include <libcamera/span.h>
 
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/v4l2_controls.h"
@@ -55,8 +56,7 @@ protected:
 private:
 	void listControls();
 	void updateControls(ControlList *ctrls,
-			    const struct v4l2_ext_control *v4l2Ctrls,
-			    unsigned int count);
+			    Span<const v4l2_ext_control> v4l2Ctrls);
 
 	void eventAvailable(EventNotifier *notifier);
 

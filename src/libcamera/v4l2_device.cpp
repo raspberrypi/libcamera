@@ -253,7 +253,7 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 		v4l2Ctrls.resize(errorIdx);
 	}
 
-	updateControls(&ctrls, v4l2Ctrls.data(), v4l2Ctrls.size());
+	updateControls(&ctrls, v4l2Ctrls);
 
 	return ctrls;
 }
@@ -352,7 +352,7 @@ int V4L2Device::setControls(ControlList *ctrls)
 		ret = errorIdx;
 	}
 
-	updateControls(ctrls, v4l2Ctrls.data(), v4l2Ctrls.size());
+	updateControls(ctrls, v4l2Ctrls);
 
 	return ret;
 }
@@ -516,15 +516,13 @@ void V4L2Device::listControls()
  * values in \a v4l2Ctrls
  * \param[inout] ctrls List of V4L2 controls to update
  * \param[in] v4l2Ctrls List of V4L2 extended controls as returned by the driver
- * \param[in] count The number of controls to update
  */
 void V4L2Device::updateControls(ControlList *ctrls,
-				const struct v4l2_ext_control *v4l2Ctrls,
-				unsigned int count)
+				Span<const v4l2_ext_control> v4l2Ctrls)
 {
 	unsigned int i = 0;
 	for (auto &ctrl : *ctrls) {
-		if (i == count)
+		if (i == v4l2Ctrls.size())
 			break;
 
 		const struct v4l2_ext_control *v4l2Ctrl = &v4l2Ctrls[i];

@@ -282,30 +282,28 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
  */
 int V4L2Device::setControls(ControlList *ctrls)
 {
-	unsigned int count = ctrls->size();
-	if (count == 0)
+	if (ctrls->empty())
 		return 0;
 
-	struct v4l2_ext_control v4l2Ctrls[count];
-	memset(v4l2Ctrls, 0, sizeof(v4l2Ctrls));
+	std::vector<v4l2_ext_control> v4l2Ctrls(ctrls->size());
+	memset(v4l2Ctrls.data(), 0, sizeof(v4l2_ext_control) * ctrls->size());
 
-	unsigned int i = 0;
-	for (auto &ctrl : *ctrls) {
-		unsigned int id = ctrl.first;
+	for (auto [ctrl, i] = std::pair(ctrls->begin(), 0u); i < ctrls->size(); ctrl++, i++) {
+		const unsigned int id = ctrl->first;
 		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
 			LOG(V4L2, Error)
 				<< "Control " << utils::hex(id) << " not found";
 			return -EINVAL;
 		}
-
-		v4l2Ctrls[i].id = id;
+		v4l2_ext_control &v4l2Ctrl = v4l2Ctrls[i];
+		v4l2Ctrl.id = id;
 
 		/* Set the v4l2_ext_control value for the write operation. */
-		ControlValue &value = ctrl.second;
+		ControlValue &value = ctrl->second;
 		switch (iter->first->type()) {
 		case ControlTypeInteger64:
-			v4l2Ctrls[i].value64 = value.get<int64_t>();
+			v4l2Ctrl.value64 = value.get<int64_t>();
 			break;
 
 		case ControlTypeByte: {
@@ -317,32 +315,30 @@ int V4L2Device::setControls(ControlList *ctrls)
 			}
 
 			Span<uint8_t> data = value.data();
-			v4l2Ctrls[i].p_u8 = data.data();
-			v4l2Ctrls[i].size = data.size();
+			v4l2Ctrl.p_u8 = data.data();
+			v4l2Ctrl.size = data.size();
 
 			break;
 		}
 
 		default:
 			/* \todo To be changed to support strings. */
-			v4l2Ctrls[i].value = value.get<int32_t>();
+			v4l2Ctrl.value = value.get<int32_t>();
 			break;
 		}
-
-		i++;
 	}
 
 	struct v4l2_ext_controls v4l2ExtCtrls = {};
 	v4l2ExtCtrls.which = V4L2_CTRL_WHICH_CUR_VAL;
-	v4l2ExtCtrls.controls = v4l2Ctrls;
-	v4l2ExtCtrls.count = count;
+	v4l2ExtCtrls.controls = v4l2Ctrls.data();
+	v4l2ExtCtrls.count = v4l2Ctrls.size();
 
 	int ret = ioctl(VIDIOC_S_EXT_CTRLS, &v4l2ExtCtrls);
 	if (ret) {
 		unsigned int errorIdx = v4l2ExtCtrls.error_idx;
 
 		/* Generic validation error. */
-		if (errorIdx == 0 || errorIdx >= count) {
+		if (errorIdx == 0 || errorIdx >= v4l2Ctrls.size()) {
 			LOG(V4L2, Error) << "Unable to set controls: "
 					 << strerror(-ret);
 			return -EINVAL;
@@ -351,11 +347,12 @@ int V4L2Device::setControls(ControlList *ctrls)
 		/* A specific control failed. */
 		LOG(V4L2, Error) << "Unable to set control " << errorIdx
 				 << ": " << strerror(-ret);
-		count = errorIdx - 1;
+
+		v4l2Ctrls.resize(errorIdx);
 		ret = errorIdx;
 	}
 
-	updateControls(ctrls, v4l2Ctrls, count);
+	updateControls(ctrls, v4l2Ctrls.data(), v4l2Ctrls.size());
 
 	return ret;
 }

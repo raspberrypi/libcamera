@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+module libcamera;
+
 /*
  * Things that can be defined here (and in other mojom files):
  * - consts

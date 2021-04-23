@@ -26,22 +26,23 @@ struct ISPConfig {
 	uint32 embeddedBufferId;
 	uint32 bayerBufferId;
 	bool embeddedBufferPresent;
-	ControlList controls;
+	libcamera.ControlList controls;
 };
 
 struct IPAConfig {
 	uint32 transform;
-	FileDescriptor lsTableHandle;
+	libcamera.FileDescriptor lsTableHandle;
 };
 
 struct StartConfig {
-	ControlList controls;
+	libcamera.ControlList controls;
 	int32 dropFrameCount;
 };
 
 interface IPARPiInterface {
-	init(IPASettings settings) => (int32 ret, SensorConfig sensorConfig);
-	start(ControlList controls) => (StartConfig startConfig);
+	init(libcamera.IPASettings settings)
+		=> (int32 ret, SensorConfig sensorConfig);
+	start(libcamera.ControlList controls) => (StartConfig startConfig);
 	stop();
 
 	/**
@@ -62,11 +63,11 @@ interface IPARPiInterface {
 	 * The \a ipaConfig and \a controls parameters carry data passed by the
 	 * pipeline handler to the IPA and back.
 	 */
-	configure(CameraSensorInfo sensorInfo,
-		  map<uint32, IPAStream> streamConfig,
-		  map<uint32, ControlInfoMap> entityControls,
+	configure(libcamera.CameraSensorInfo sensorInfo,
+		  map<uint32, libcamera.IPAStream> streamConfig,
+		  map<uint32, libcamera.ControlInfoMap> entityControls,
 		  IPAConfig ipaConfig)
-		=> (int32 ret, ControlList controls);
+		=> (int32 ret, libcamera.ControlList controls);
 
 	/**
 	 * \fn mapBuffers()
@@ -94,7 +95,7 @@ interface IPARPiInterface {
 	 *
 	 * \sa unmapBuffers()
 	 */
-	mapBuffers(array<IPABuffer> buffers);
+	mapBuffers(array<libcamera.IPABuffer> buffers);
 
 	/**
 	 * \fn unmapBuffers()
@@ -109,14 +110,14 @@ interface IPARPiInterface {
 	unmapBuffers(array<uint32> ids);
 
 	[async] signalStatReady(uint32 bufferId);
-	[async] signalQueueRequest(ControlList controls);
+	[async] signalQueueRequest(libcamera.ControlList controls);
 	[async] signalIspPrepare(ISPConfig data);
 };
 
 interface IPARPiEventInterface {
-	statsMetadataComplete(uint32 bufferId, ControlList controls);
+	statsMetadataComplete(uint32 bufferId, libcamera.ControlList controls);
 	runIsp(uint32 bufferId);
 	embeddedComplete(uint32 bufferId);
-	setIspControls(ControlList controls);
-	setDelayedControls(ControlList controls);
+	setIspControls(libcamera.ControlList controls);
+	setDelayedControls(libcamera.ControlList controls);
 };

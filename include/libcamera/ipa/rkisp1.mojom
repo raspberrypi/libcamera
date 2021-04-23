@@ -16,12 +16,12 @@ struct RkISP1Event {
 	RkISP1Operations op;
 	uint32 frame;
 	uint32 bufferId;
-	ControlList controls;
+	libcamera.ControlList controls;
 };
 
 struct RkISP1Action {
 	RkISP1Operations op;
-	ControlList controls;
+	libcamera.ControlList controls;
 };
 
 interface IPARkISP1Interface {
@@ -29,11 +29,12 @@ interface IPARkISP1Interface {
 	start() => (int32 ret);
 	stop();
 
-	configure(CameraSensorInfo sensorInfo,
-		  map<uint32, IPAStream> streamConfig,
-		  map<uint32, ControlInfoMap> entityControls) => (int32 ret);
+	configure(libcamera.CameraSensorInfo sensorInfo,
+		  map<uint32, libcamera.IPAStream> streamConfig,
+		  map<uint32, libcamera.ControlInfoMap> entityControls)
+		=> (int32 ret);
 
-	mapBuffers(array<IPABuffer> buffers);
+	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
 
 	[async] processEvent(RkISP1Event ev);

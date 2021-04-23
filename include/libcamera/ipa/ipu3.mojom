@@ -17,22 +17,23 @@ struct IPU3Event {
 	IPU3Operations op;
 	uint32 frame;
 	uint32 bufferId;
-	ControlList controls;
+	libcamera.ControlList controls;
 };
 
 struct IPU3Action {
 	IPU3Operations op;
-	ControlList controls;
+	libcamera.ControlList controls;
 };
 
 interface IPAIPU3Interface {
-	init(IPASettings settings) => (int32 ret);
+	init(libcamera.IPASettings settings) => (int32 ret);
 	start() => (int32 ret);
 	stop();
 
-	configure(map<uint32, ControlInfoMap> entityControls, Size bdsOutputSize) => ();
+	configure(map<uint32, libcamera.ControlInfoMap> entityControls,
+		  libcamera.Size bdsOutputSize) => ();
 
-	mapBuffers(array<IPABuffer> buffers);
+	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
 
 	[async] processEvent(IPU3Event ev);

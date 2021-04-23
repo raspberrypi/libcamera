@@ -28,7 +28,9 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPARkISP1)
 
-class IPARkISP1 : public ipa::rkisp1::IPARkISP1Interface
+namespace ipa::rkisp1 {
+
+class IPARkISP1 : public IPARkISP1Interface
 {
 public:
 	int init(unsigned int hwRevision) override;
@@ -40,7 +42,7 @@ public:
 		      const std::map<uint32_t, ControlInfoMap> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const ipa::rkisp1::RkISP1Event &event) override;
+	void processEvent(const RkISP1Event &event) override;
 
 private:
 	void queueRequest(unsigned int frame, rkisp1_params_cfg *params,
@@ -171,10 +173,10 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARkISP1::processEvent(const ipa::rkisp1::RkISP1Event &event)
+void IPARkISP1::processEvent(const RkISP1Event &event)
 {
 	switch (event.op) {
-	case ipa::rkisp1::EventSignalStatBuffer: {
+	case EventSignalStatBuffer: {
 		unsigned int frame = event.frame;
 		unsigned int bufferId = event.bufferId;
 
@@ -184,7 +186,7 @@ void IPARkISP1::processEvent(const ipa::rkisp1::RkISP1Event &event)
 		updateStatistics(frame, stats);
 		break;
 	}
-	case ipa::rkisp1::EventQueueRequest: {
+	case EventQueueRequest: {
 		unsigned int frame = event.frame;
 		unsigned int bufferId = event.bufferId;
 
@@ -215,8 +217,8 @@ void IPARkISP1::queueRequest(unsigned int frame, rkisp1_params_cfg *params,
 		params->module_en_update = RKISP1_CIF_ISP_MODULE_AEC;
 	}
 
-	ipa::rkisp1::RkISP1Action op;
-	op.op = ipa::rkisp1::ActionParamFilled;
+	RkISP1Action op;
+	op.op = ActionParamFilled;
 
 	queueFrameAction.emit(frame, op);
 }
@@ -268,8 +270,8 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 
 void IPARkISP1::setControls(unsigned int frame)
 {
-	ipa::rkisp1::RkISP1Action op;
-	op.op = ipa::rkisp1::ActionV4L2Set;
+	RkISP1Action op;
+	op.op = ActionV4L2Set;
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
@@ -286,12 +288,14 @@ void IPARkISP1::metadataReady(unsigned int frame, unsigned int aeState)
 	if (aeState)
 		ctrls.set(controls::AeLocked, aeState == 2);
 
-	ipa::rkisp1::RkISP1Action op;
-	op.op = ipa::rkisp1::ActionMetadata;
+	RkISP1Action op;
+	op.op = ActionMetadata;
 	op.controls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }
+
+} /* namespace ipa::rkisp1 */
 
 /*
  * External IPA module interface
@@ -307,7 +311,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 
 IPAInterface *ipaCreate()
 {
-	return new IPARkISP1();
+	return new ipa::rkisp1::IPARkISP1();
 }
 }
 

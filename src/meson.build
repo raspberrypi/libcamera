@@ -8,6 +8,11 @@ libcamera_sysconfdir = get_option('sysconfdir') / 'libcamera'
 config_h.set('LIBCAMERA_DATA_DIR', '"' + get_option('prefix') / libcamera_datadir + '"')
 config_h.set('LIBCAMERA_SYSCONF_DIR', '"' + get_option('prefix') / libcamera_sysconfdir + '"')
 
+summary({
+         'LIBCAMERA_DATA_DIR' : config_h.get('LIBCAMERA_DATA_DIR'),
+         'LIBCAMERA_SYSCONF_DIR' : config_h.get('LIBCAMERA_SYSCONF_DIR'),
+         }, section : 'Paths')
+
 # Module Signing
 openssl = find_program('openssl', required : true)
 if openssl.found()

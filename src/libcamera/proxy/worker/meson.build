@@ -26,3 +26,7 @@ endforeach
 
 config_h.set('IPA_PROXY_DIR',
              '"' + get_option('prefix') / proxy_install_dir + '"')
+
+summary({
+         'IPA_PROXY_DIR' : config_h.get('IPA_PROXY_DIR'),
+         }, section : 'Paths')

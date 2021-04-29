@@ -15,6 +15,11 @@ config_h.set('IPA_CONFIG_DIR',
 config_h.set('IPA_MODULE_DIR',
              '"' + get_option('prefix') / ipa_install_dir + '"')
 
+summary({
+         'IPA_CONFIG_DIR' : config_h.get('IPA_CONFIG_DIR'),
+         'IPA_MODULE_DIR' : config_h.get('IPA_MODULE_DIR'),
+         }, section : 'Paths')
+
 subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')

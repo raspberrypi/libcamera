@@ -15,4 +15,4 @@ cros_hal_info = static_library('cros_hal_info',
                                include_directories : [android_includes,
                                                       libcamera_includes])
 
-libcamera_objects += cros_hal_info.extract_objects('camera3_hal.cpp')
+android_objects += cros_hal_info.extract_objects('camera3_hal.cpp')

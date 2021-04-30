@@ -4,6 +4,7 @@ android_deps = [
     dependency('libexif', required : get_option('android')),
     dependency('libjpeg', required : get_option('android')),
     dependency('yaml-0.1', required : get_option('android')),
+    libcamera_dep,
 ]
 
 android_enabled = true
@@ -36,8 +37,11 @@ endif
 
 android_deps += [libyuv_dep]
 
+android_cpp_args = []
+android_objects = []
+
 if get_option('android_platform') == 'cros'
-   libcamera_cpp_args += [ '-DOS_CHROMEOS']
+    android_cpp_args += ['-DOS_CHROMEOS']
 endif
 
 subdir('cros')
@@ -69,3 +73,13 @@ android_camera_metadata = static_library('camera_metadata',
                                          android_camera_metadata_sources,
                                          c_args : '-Wno-shadow',
                                          include_directories : android_includes)
+
+libcamera_hal = shared_library('libcamera-hal',
+                               android_hal_sources,
+                               name_prefix : '',
+                               link_with : android_camera_metadata,
+                               install : true,
+                               cpp_args : android_cpp_args,
+                               objects : android_objects,
+                               include_directories : android_includes,
+                               dependencies : android_deps)

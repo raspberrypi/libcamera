@@ -130,16 +130,6 @@ libcamera_deps = [
     dependency('threads'),
 ]
 
-libcamera_link_with = []
-
-if android_enabled
-    libcamera_sources += android_hal_sources
-    includes += android_includes
-    libcamera_link_with += android_camera_metadata
-
-    libcamera_deps += android_deps
-endif
-
 # We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.
 # The build_rpath is stripped at install time by meson, so we determine at
 # runtime if the library is running from an installed location by checking
@@ -148,10 +138,7 @@ endif
 libcamera = shared_library('camera',
                            libcamera_sources,
                            install : true,
-                           link_with : libcamera_link_with,
-                           cpp_args : libcamera_cpp_args,
                            include_directories : includes,
-                           objects : libcamera_objects,
                            build_rpath : '/',
                            dependencies : libcamera_deps)
 

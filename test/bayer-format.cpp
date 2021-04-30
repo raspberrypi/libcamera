@@ -7,8 +7,9 @@
 
 #include <iostream>
 
-#include <libcamera/internal/bayer_format.h>
 #include <libcamera/transform.h>
+
+#include "libcamera/internal/bayer_format.h"
 
 #include "test.h"
 

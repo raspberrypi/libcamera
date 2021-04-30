@@ -63,10 +63,63 @@ bool CameraMetadata::getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) c
 	return true;
 }
 
-bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count)
+/*
+ * \brief Resize the metadata container, if necessary
+ * \param[in] count Number of entries to add to the container
+ * \param[in] size Total size of entries to add, in bytes
+ * \return True if resize was successful or unnecessary, false otherwise
+ */
+bool CameraMetadata::resize(size_t count, size_t size)
 {
 	if (!valid_)
 		return false;
+
+	if (!count && !size)
+		return true;
+
+	size_t currentEntryCount = get_camera_metadata_entry_count(metadata_);
+	size_t currentEntryCapacity = get_camera_metadata_entry_capacity(metadata_);
+	size_t newEntryCapacity = currentEntryCapacity < currentEntryCount + count ?
+				  currentEntryCapacity * 2 : currentEntryCapacity;
+
+	size_t currentDataCount = get_camera_metadata_data_count(metadata_);
+	size_t currentDataCapacity = get_camera_metadata_data_capacity(metadata_);
+	size_t newDataCapacity = currentDataCapacity < currentDataCount + size ?
+				 currentDataCapacity * 2 : currentDataCapacity;
+
+	if (newEntryCapacity > currentEntryCapacity ||
+	    newDataCapacity > currentDataCapacity) {
+		camera_metadata_t *oldMetadata = metadata_;
+		metadata_ = allocate_camera_metadata(newEntryCapacity, newDataCapacity);
+		if (!metadata_) {
+			metadata_ = oldMetadata;
+			return false;
+		}
+
+		LOG(CameraMetadata, Info)
+			<< "Resized: old entry capacity " << currentEntryCapacity
+			<< ", old data capacity " << currentDataCapacity
+			<< ", new entry capacity " << newEntryCapacity
+			<< ", new data capacity " << newDataCapacity;
+
+		append_camera_metadata(metadata_, oldMetadata);
+		free_camera_metadata(oldMetadata);
+	}
+
+	return true;
+}
+
+bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count,
+			      size_t sizeofT)
+{
+	if (!valid_)
+		return false;
+
+	if (!resize(1, count * sizeofT)) {
+		LOG(CameraMetadata, Error) << "Failed to resize";
+		valid_ = false;
+		return false;
+	}
 
 	if (!add_camera_metadata_entry(metadata_, tag, data, count))
 		return true;
@@ -99,16 +152,31 @@ bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count)
 		return false;
 	}
 
-	ret = update_camera_metadata_entry(metadata_, entry.index, data,
-					   count, nullptr);
-	if (ret) {
-		const char *name = get_camera_metadata_tag_name(tag);
-		LOG(CameraMetadata, Error)
-			<< "Failed to update tag " << (name ? name : "<unknown>");
+	size_t oldSize =
+		calculate_camera_metadata_entry_data_size(entry.type,
+							  entry.count);
+	size_t newSize =
+		calculate_camera_metadata_entry_data_size(entry.type,
+							  count);
+	size_t sizeIncrement = newSize - oldSize > 0 ? newSize - oldSize : 0;
+	if (!resize(0, sizeIncrement)) {
+		LOG(CameraMetadata, Error) << "Failed to resize";
+		valid_ = false;
 		return false;
 	}
 
-	return true;
+	ret = update_camera_metadata_entry(metadata_, entry.index, data,
+					   count, nullptr);
+	if (!ret)
+		return true;
+
+	const char *name = get_camera_metadata_tag_name(tag);
+	LOG(CameraMetadata, Error)
+		<< "Failed to update tag " << (name ? name : "<unknown>");
+
+	valid_ = false;
+
+	return false;
 }
 
 camera_metadata_t *CameraMetadata::get()

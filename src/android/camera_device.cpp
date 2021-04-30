@@ -773,43 +773,6 @@ void CameraDevice::setCallbacks(const camera3_callback_ops_t *callbacks)
 	callbacks_ = callbacks;
 }
 
-std::tuple<uint32_t, uint32_t> CameraDevice::calculateStaticMetadataSize()
-{
-	/*
-	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 54 entries, 874 bytes of static metadata
-	 */
-	uint32_t numEntries = 54;
-	uint32_t byteSize = 874;
-
-	/*
-	 * Calculate space occupation in bytes for dynamically built metadata
-	 * entries.
-	 *
-	 * Each stream configuration entry requires 48 bytes:
-	 * 4 32bits integers for ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS
-	 * 4 64bits integers for ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS
-	 */
-	byteSize += streamConfigurations_.size() * 48;
-
-	/*
-	 * 2 32bits integers for each HAL_PIXEL_FORMAT_BLOB for thumbnail sizes
-	 * 2 32bits integers for the (0, 0) thumbnail size
-	 *
-	 * This is a worst case estimates as different configurations with the
-	 * same aspect ratio will generate the same size.
-	 */
-	for (const auto &entry : streamConfigurations_) {
-		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB)
-			continue;
-
-		byteSize += 8;
-	}
-	byteSize += 8;
-
-	return std::make_tuple(numEntries, byteSize);
-}
-
 /*
  * Return static information for the camera.
  */
@@ -818,15 +781,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	if (staticMetadata_)
 		return staticMetadata_->get();
 
-	/*
-	 * The here reported metadata are enough to implement a basic capture
-	 * example application, but a real camera implementation will require
-	 * more.
-	 */
-	uint32_t numEntries;
-	uint32_t byteSize;
-	std::tie(numEntries, byteSize) = calculateStaticMetadataSize();
-	staticMetadata_ = std::make_unique<CameraMetadata>(numEntries, byteSize);
+	staticMetadata_ = std::make_unique<CameraMetadata>(64, 1024);
 	if (!staticMetadata_->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		staticMetadata_.reset();

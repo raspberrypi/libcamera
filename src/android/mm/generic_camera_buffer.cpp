@@ -7,7 +7,7 @@
 
 #include "../camera_buffer.h"
 
-#include <libcamera/internal/buffer.h>
+#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/log.h"
 
 using namespace libcamera;

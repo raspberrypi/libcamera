@@ -10,7 +10,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/stream.h>
 
-#include <libcamera/internal/buffer.h>
+#include "libcamera/internal/buffer.h"
 
 #include "camera_buffer.h"
 

@@ -19,7 +19,7 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-#include <libcamera/internal/buffer.h>
+#include "libcamera/internal/buffer.h"
 
 class CameraDevice;
 class CameraMetadata;

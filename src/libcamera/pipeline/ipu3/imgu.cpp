@@ -31,7 +31,7 @@ namespace {
  * The procedure to calculate the ImgU pipe configuration has been ported
  * from the pipe_config.py python script, available at:
  * https://github.com/intel/intel-ipu3-pipecfg
- * at revision: 61e83f2f7606 ("Add more information into README")
+ * at revision: 243d13446e44 ("Fix some bug for some resolutions")
  */
 
 static constexpr unsigned int FILTER_W = 4;

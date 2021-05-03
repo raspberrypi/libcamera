@@ -1190,11 +1190,8 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 		if (!info)
 			break;
 
-		/*
-		 * \todo Parse the value of the controls returned by the IPA
-		 * in action.controls to register additional metadata.
-		 */
 		Request *request = info->request;
+		request->metadata().merge(action.controls);
 
 		info->metadataProcessed = true;
 		if (frameInfos_.tryComplete(info))

@@ -101,7 +101,8 @@ private:
 
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
-	void notifyError(uint32_t frameNumber, camera3_stream_t *stream);
+	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
+			 camera3_error_msg_code code);
 	std::unique_ptr<CameraMetadata> requestTemplatePreview();
 	std::unique_ptr<CameraMetadata> requestTemplateVideo();
 	libcamera::PixelFormat toPixelFormat(int format) const;

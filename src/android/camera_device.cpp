@@ -2012,17 +2012,20 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 void CameraDevice::requestComplete(Request *request)
 {
-	camera3_buffer_status status = CAMERA3_BUFFER_STATUS_OK;
-	std::unique_ptr<CameraMetadata> resultMetadata;
-
 	decltype(descriptors_)::node_type node;
 	{
 		std::scoped_lock<std::mutex> lock(mutex_);
 		auto it = descriptors_.find(request->cookie());
 		if (it == descriptors_.end()) {
+			/*
+			 * \todo Clarify if the Camera has to be closed on
+			 * ERROR_DEVICE and possibly demote the Fatal to simple
+			 * Error.
+			 */
+			notifyError(0, nullptr, CAMERA3_MSG_ERROR_DEVICE);
 			LOG(HAL, Fatal)
 				<< "Unknown request: " << request->cookie();
-			status = CAMERA3_BUFFER_STATUS_ERROR;
+
 			return;
 		}
 
@@ -2030,16 +2033,69 @@ void CameraDevice::requestComplete(Request *request)
 	}
 	Camera3RequestDescriptor &descriptor = node.mapped();
 
-	if (request->status() != Request::RequestComplete) {
-		LOG(HAL, Error) << "Request not successfully completed: "
-				<< request->status();
-		status = CAMERA3_BUFFER_STATUS_ERROR;
+	/*
+	 * Prepare the capture result for the Android camera stack.
+	 *
+	 * The buffer status is set to OK and later changed to ERROR if
+	 * post-processing/compression fails.
+	 */
+	camera3_capture_result_t captureResult = {};
+	captureResult.frame_number = descriptor.frameNumber_;
+	captureResult.num_output_buffers = descriptor.buffers_.size();
+	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
+		buffer.acquire_fence = -1;
+		buffer.release_fence = -1;
+		buffer.status = CAMERA3_BUFFER_STATUS_OK;
 	}
+	captureResult.output_buffers = descriptor.buffers_.data();
+	captureResult.partial_result = 1;
+
+	/*
+	 * If the Request has failed, abort the request by notifying the error
+	 * and complete the request with all buffers in error state.
+	 */
+	if (request->status() != Request::RequestComplete) {
+		LOG(HAL, Error) << "Request " << request->cookie()
+				<< " not successfully completed: "
+				<< request->status();
+
+		notifyError(descriptor.frameNumber_, nullptr,
+			    CAMERA3_MSG_ERROR_REQUEST);
+
+		captureResult.partial_result = 0;
+		for (camera3_stream_buffer_t &buffer : descriptor.buffers_)
+			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+		callbacks_->process_capture_result(callbacks_, &captureResult);
+
+		return;
+	}
+
+	/*
+	 * Notify shutter as soon as we have verified we have a valid request.
+	 *
+	 * \todo The shutter event notification should be sent to the framework
+	 * as soon as possible, earlier than request completion time.
+	 */
+	uint64_t sensorTimestamp = static_cast<uint64_t>(request->metadata()
+							 .get(controls::SensorTimestamp));
+	notifyShutter(descriptor.frameNumber_, sensorTimestamp);
 
 	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
 			<< descriptor.buffers_.size() << " streams";
 
-	resultMetadata = getResultMetadata(descriptor);
+	/*
+	 * Generate the metadata associated with the captured buffers.
+	 *
+	 * Notify if the metadata generation has failed, but continue processing
+	 * buffers and return an empty metadata pack.
+	 */
+	std::unique_ptr<CameraMetadata> resultMetadata = getResultMetadata(descriptor);
+	if (!resultMetadata) {
+		notifyError(descriptor.frameNumber_, nullptr, CAMERA3_MSG_ERROR_RESULT);
+
+		/* The camera framework expects an empy metadata pack on error. */
+		resultMetadata = std::make_unique<CameraMetadata>(0, 0);
+	}
 
 	/* Handle any JPEG compression. */
 	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
@@ -2052,58 +2108,30 @@ void CameraDevice::requestComplete(Request *request)
 		FrameBuffer *src = request->findBuffer(cameraStream->stream());
 		if (!src) {
 			LOG(HAL, Error) << "Failed to find a source stream buffer";
+			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+			notifyError(descriptor.frameNumber_, buffer.stream,
+				    CAMERA3_MSG_ERROR_BUFFER);
 			continue;
 		}
 
-		int ret = cameraStream->process(*src,
-						*buffer.buffer,
+		int ret = cameraStream->process(*src, *buffer.buffer,
 						descriptor.settings_,
 						resultMetadata.get());
-		if (ret) {
-			status = CAMERA3_BUFFER_STATUS_ERROR;
-			continue;
-		}
-
 		/*
 		 * Return the FrameBuffer to the CameraStream now that we're
 		 * done processing it.
 		 */
 		if (cameraStream->type() == CameraStream::Type::Internal)
 			cameraStream->putBuffer(src);
+
+		if (ret) {
+			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+			notifyError(descriptor.frameNumber_, buffer.stream,
+				    CAMERA3_MSG_ERROR_BUFFER);
+		}
 	}
 
-	/* Prepare to call back the Android camera stack. */
-	camera3_capture_result_t captureResult = {};
-	captureResult.frame_number = descriptor.frameNumber_;
-	captureResult.num_output_buffers = descriptor.buffers_.size();
-	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
-		buffer.acquire_fence = -1;
-		buffer.release_fence = -1;
-		buffer.status = status;
-	}
-	captureResult.output_buffers = descriptor.buffers_.data();
-
-	if (status == CAMERA3_BUFFER_STATUS_OK) {
-		uint64_t timestamp =
-			static_cast<uint64_t>(request->metadata()
-					      .get(controls::SensorTimestamp));
-		notifyShutter(descriptor.frameNumber_, timestamp);
-
-		captureResult.partial_result = 1;
-		captureResult.result = resultMetadata->get();
-	}
-
-	if (status == CAMERA3_BUFFER_STATUS_ERROR || !captureResult.result) {
-		/* \todo Improve error handling. In case we notify an error
-		 * because the metadata generation fails, a shutter event has
-		 * already been notified for this frame number before the error
-		 * is here signalled. Make sure the error path plays well with
-		 * the camera stack state machine.
-		 */
-		notifyError(descriptor.frameNumber_,
-			    descriptor.buffers_[0].stream);
-	}
-
+	captureResult.result = resultMetadata->get();
 	callbacks_->process_capture_result(callbacks_, &captureResult);
 }
 
@@ -2123,21 +2151,15 @@ void CameraDevice::notifyShutter(uint32_t frameNumber, uint64_t timestamp)
 	callbacks_->notify(callbacks_, &notify);
 }
 
-void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream)
+void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream,
+			       camera3_error_msg_code code)
 {
 	camera3_notify_msg_t notify = {};
-
-	/*
-	 * \todo Report and identify the stream number or configuration to
-	 * clarify the stream that failed.
-	 */
-	LOG(HAL, Error) << "Error occurred on frame " << frameNumber << " ("
-			<< toPixelFormat(stream->format).toString() << ")";
 
 	notify.type = CAMERA3_MSG_ERROR;
 	notify.message.error.error_stream = stream;
 	notify.message.error.frame_number = frameNumber;
-	notify.message.error.error_code = CAMERA3_MSG_ERROR_REQUEST;
+	notify.message.error.error_code = code;
 
 	callbacks_->notify(callbacks_, &notify);
 }

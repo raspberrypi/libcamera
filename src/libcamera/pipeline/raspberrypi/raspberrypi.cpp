@@ -608,6 +608,13 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
+	/*
+	 * The control ranges associated with the sensor may need updating
+	 * after a format change.
+	 * \todo Use the CameraSensor::setFormat API instead.
+	 */
+	data->sensor_->updateControlInfo();
+
 	LOG(RPI, Info) << "Sensor: " << camera->id()
 		       << " - Selected mode: " << sensorFormat.toString();
 

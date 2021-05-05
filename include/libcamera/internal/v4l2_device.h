@@ -42,6 +42,8 @@ public:
 	int setFrameStartEnabled(bool enable);
 	Signal<uint32_t> frameStart;
 
+	void updateControlInfo();
+
 protected:
 	V4L2Device(const std::string &deviceNode);
 	~V4L2Device();

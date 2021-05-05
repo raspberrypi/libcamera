@@ -670,15 +670,30 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 /**
  * \brief Set the sensor output format
  * \param[in] format The desired sensor output format
+ *
+ * The ranges of any controls associated with the sensor are also updated.
+ *
  * \return 0 on success or a negative error code otherwise
  */
 int CameraSensor::setFormat(V4L2SubdeviceFormat *format)
 {
-	return subdev_->setFormat(pad_, format);
+	int ret = subdev_->setFormat(pad_, format);
+	if (ret)
+		return ret;
+
+	updateControlInfo();
+	return 0;
 }
 
 /**
  * \brief Retrieve the supported V4L2 controls and their information
+ *
+ * Control information is updated automatically to reflect the current sensor
+ * configuration when the setFormat() function is called, without invalidating
+ * any iterator on the ControlInfoMap. A manual update can also be forced by
+ * calling the updateControlInfo() function for pipeline handlers that change
+ * the sensor configuration wihtout using setFormat().
+ *
  * \return A map of the V4L2 controls supported by the sensor
  */
 const ControlInfoMap &CameraSensor::controls() const
@@ -764,6 +779,10 @@ int CameraSensor::setControls(ControlList *ctrls)
  * Sensor information is only available for raw sensors. When called for a YUV
  * sensor, this function returns -EINVAL.
  *
+ * Pipeline handlers that do not change the sensor format using the setFormat()
+ * method may need to call updateControlInfo() beforehand, to ensure all the
+ * control ranges are up to date.
+ *
  * \return 0 on success, a negative error code otherwise
  */
 int CameraSensor::sensorInfo(CameraSensorInfo *info) const
@@ -833,6 +852,16 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	info->maxFrameLength = info->outputSize.height + vblank.max().get<int32_t>();
 
 	return 0;
+}
+
+/**
+ * \fn void CameraSensor::updateControlInfo()
+ * \brief Update the sensor's ControlInfoMap in case they have changed
+ * \sa V4L2Device::updateControlInfo()
+ */
+void CameraSensor::updateControlInfo()
+{
+	subdev_->updateControlInfo();
 }
 
 std::string CameraSensor::logPrefix() const

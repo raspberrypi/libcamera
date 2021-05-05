@@ -68,6 +68,8 @@ public:
 	const ControlList &properties() const { return properties_; }
 	int sensorInfo(CameraSensorInfo *info) const;
 
+	void updateControlInfo();
+
 protected:
 	std::string logPrefix() const override;
 

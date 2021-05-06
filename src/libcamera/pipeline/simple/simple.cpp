@@ -128,16 +128,19 @@ class SimplePipelineHandler;
 
 struct SimplePipelineInfo {
 	const char *driver;
-	const char *converter;
-	unsigned int numStreams;
+	/*
+	 * Each converter in the list contains the name
+	 * and the number of streams it supports.
+	 */
+	std::vector<std::pair<const char *, unsigned int>> converters;
 };
 
 namespace {
 
 static const SimplePipelineInfo supportedDevices[] = {
-	{ "imx7-csi", "pxp", 1 },
-	{ "qcom-camss", nullptr, 1 },
-	{ "sun6i-csi", nullptr, 1 },
+	{ "imx7-csi", { { "pxp", 1 } } },
+	{ "qcom-camss", {} },
+	{ "sun6i-csi", {} },
 };
 
 } /* namespace */
@@ -146,7 +149,7 @@ class SimpleCameraData : public CameraData
 {
 public:
 	SimpleCameraData(SimplePipelineHandler *pipe,
-			 const SimplePipelineInfo *info,
+			 unsigned int numStreams,
 			 MediaEntity *sensor);
 
 	bool isValid() const { return sensor_ != nullptr; }
@@ -267,9 +270,9 @@ private:
  */
 
 SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
-				   const SimplePipelineInfo *info,
+				   unsigned int numStreams,
 				   MediaEntity *sensor)
-	: CameraData(pipe), streams_(info->numStreams)
+	: CameraData(pipe), streams_(numStreams)
 {
 	int ret;
 
@@ -935,6 +938,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
 	const SimplePipelineInfo *info = nullptr;
 	MediaDevice *converter = nullptr;
+	unsigned int numStreams = 1;
 
 	for (const SimplePipelineInfo &inf : supportedDevices) {
 		DeviceMatch dm(inf.driver);
@@ -948,9 +952,13 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	if (info->converter) {
-		DeviceMatch converterMatch(info->converter);
+	for (const auto &[name, streams] : info->converters) {
+		DeviceMatch converterMatch(name);
 		converter = acquireMediaDevice(enumerator, converterMatch);
+		if (converter) {
+			numStreams = streams;
+			break;
+		}
 	}
 
 	/* Locate the sensors. */
@@ -984,7 +992,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 	for (MediaEntity *sensor : sensors) {
 		std::unique_ptr<SimpleCameraData> data =
-			std::make_unique<SimpleCameraData>(this, info, sensor);
+			std::make_unique<SimpleCameraData>(this, numStreams, sensor);
 		if (!data->isValid()) {
 			LOG(SimplePipeline, Error)
 				<< "No valid pipeline for sensor '"

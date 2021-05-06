@@ -404,7 +404,7 @@ CameraDevice::Camera3RequestDescriptor::Camera3RequestDescriptor(
  */
 
 CameraDevice::CameraDevice(unsigned int id, std::shared_ptr<Camera> camera)
-	: id_(id), running_(false), camera_(std::move(camera)),
+	: id_(id), state_(State::Stopped), camera_(std::move(camera)),
 	  facing_(CAMERA_FACING_FRONT), orientation_(0)
 {
 	camera_->requestCompleted.connect(this, &CameraDevice::requestComplete);
@@ -799,14 +799,14 @@ void CameraDevice::close()
 
 void CameraDevice::stop()
 {
-	if (!running_)
+	if (state_ == State::Stopped)
 		return;
 
 	worker_.stop();
 	camera_->stop();
 
 	descriptors_.clear();
-	running_ = false;
+	state_ = State::Stopped;
 }
 
 void CameraDevice::setCallbacks(const camera3_callback_ops_t *callbacks)
@@ -1900,7 +1900,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		return -EINVAL;
 
 	/* Start the camera if that's the first request we handle. */
-	if (!running_) {
+	if (state_ == State::Stopped) {
 		worker_.start();
 
 		int ret = camera_->start();
@@ -1909,7 +1909,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			return ret;
 		}
 
-		running_ = true;
+		state_ = State::Running;
 	}
 
 	/*

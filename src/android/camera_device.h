@@ -89,6 +89,11 @@ private:
 		int androidFormat;
 	};
 
+	enum class State {
+		Stopped,
+		Running,
+	};
+
 	void stop();
 
 	int initializeStreamConfigurations();
@@ -115,7 +120,8 @@ private:
 
 	CameraWorker worker_;
 
-	bool running_;
+	State state_;
+
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 

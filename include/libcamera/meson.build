@@ -48,7 +48,7 @@ foreach header : control_source_files
                                      output : header + '.h',
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
                                      install : true,
-                                     install_dir : 'include' / include_dir)
+                                     install_dir : get_option('includedir') / include_dir)
 endforeach
 
 libcamera_public_headers += control_headers
@@ -63,7 +63,7 @@ formats_h = custom_target('formats_h',
                           output : 'formats.h',
                           command : [gen_formats, '-o', '@OUTPUT@', '@INPUT@'],
                           install : true,
-                          install_dir : 'include' / include_dir)
+                          install_dir : get_option('includedir') / include_dir)
 libcamera_public_headers += formats_h
 
 # libcamera.h
@@ -72,7 +72,7 @@ libcamera_h = custom_target('gen-header',
                             output : 'libcamera.h',
                             command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
                             install : true,
-                            install_dir : 'include' / include_dir)
+                            install_dir : get_option('includedir') / include_dir)
 
 libcamera_public_headers += libcamera_h
 
@@ -86,4 +86,4 @@ libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
 configure_file(input : 'version.h.in',
                output : 'version.h',
                configuration : libcamera_version_config,
-               install_dir : 'include' / include_dir)
+               install_dir : get_option('includedir') / include_dir)

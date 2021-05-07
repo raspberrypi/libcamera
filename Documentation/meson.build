@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-doc_install_dir = join_paths(get_option('datadir'), 'doc',
-                             'libcamera-@0@'.format(libcamera_version))
+doc_install_dir = get_option('datadir') / 'doc' / 'libcamera-@0@'.format(libcamera_version)
 
 #
 # Doxygen

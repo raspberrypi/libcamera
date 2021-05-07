@@ -103,7 +103,7 @@ endforeach
 
 libcamera_sources += control_sources
 
-gen_version = join_paths(meson.source_root(), 'utils', 'gen-version.sh')
+gen_version = meson.source_root() / 'utils' / 'gen-version.sh'
 
 version_cpp = vcs_tag(command : [gen_version, meson.build_root()],
                       input : 'version.cpp.in',

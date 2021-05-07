@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-proxy_install_dir = join_paths(get_option('libexecdir'), 'libcamera')
+proxy_install_dir = get_option('libexecdir') / 'libcamera'
 
 # generate {pipeline}_ipa_proxy_worker.cpp
 foreach mojom : ipa_mojoms
@@ -25,4 +25,4 @@ foreach mojom : ipa_mojoms
 endforeach
 
 config_h.set('IPA_PROXY_DIR',
-             '"' + join_paths(get_option('prefix'), proxy_install_dir) + '"')
+             '"' + get_option('prefix') / proxy_install_dir + '"')

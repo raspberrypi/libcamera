@@ -28,7 +28,7 @@ ipa_names = []
 foreach pipeline : pipelines
     if ipas.contains(pipeline)
         subdir(pipeline)
-        ipa_names += join_paths(ipa_install_dir, ipa_name + '.so')
+        ipa_names += ipa_install_dir / ipa_name + '.so'
     endif
 endforeach
 

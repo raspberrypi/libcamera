@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include <libcamera/span.h>
+
 /* Camera metadata parser class. Usage as shown below.
 
 Setup:
@@ -21,17 +23,15 @@ parser->SetBitsPerPixel(bpp);
 parser->SetLineLengthBytes(pitch);
 parser->SetNumLines(2);
 
-Note 1: if you don't know how many lines there are, you can use SetBufferSize
-instead to limit the total buffer size.
+Note 1: if you don't know how many lines there are, the size of the input
+buffer is used as a limit instead.
 
 Note 2: if you don't know the line length, you can leave the line length unset
-(or set to zero) and the parser will hunt for the line start instead. In this
-case SetBufferSize *must* be used so that the parser won't run off the end of
-the buffer.
+(or set to zero) and the parser will hunt for the line start instead.
 
 Then on every frame:
 
-if (parser->Parse(data) != MdParser::OK)
+if (parser->Parse(buffer) != MdParser::OK)
     much badness;
 unsigned int exposure_lines, gain_code
 if (parser->GetExposureLines(exposure_lines) != MdParser::OK)
@@ -75,11 +75,7 @@ public:
 	{
 		line_length_bytes_ = num_bytes;
 	}
-	void SetBufferSize(unsigned int num_bytes)
-	{
-		buffer_size_bytes_ = num_bytes;
-	}
-	virtual Status Parse(void *data) = 0;
+	virtual Status Parse(libcamera::Span<const uint8_t> buffer) = 0;
 	virtual Status GetExposureLines(unsigned int &lines) = 0;
 	virtual Status GetGainCode(unsigned int &gain_code) = 0;
 
@@ -116,7 +112,7 @@ protected:
 		BAD_LINE_END  = -4,
 		BAD_PADDING   = -5
 	};
-	ParseStatus findRegs(unsigned char *data, uint32_t regs[],
+	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer, uint32_t regs[],
 			     int offsets[], unsigned int num_regs);
 };
 

@@ -21,7 +21,7 @@ class MdParserImx477 : public MdParserSmia
 {
 public:
 	MdParserImx477();
-	Status Parse(void *data) override;
+	Status Parse(libcamera::Span<const uint8_t> buffer) override;
 	Status GetExposureLines(unsigned int &lines) override;
 	Status GetGainCode(unsigned int &gain_code) override;
 private:
@@ -107,7 +107,7 @@ MdParserImx477::MdParserImx477()
 	reg_offsets_[0] = reg_offsets_[1] = reg_offsets_[2] = reg_offsets_[3] = -1;
 }
 
-MdParser::Status MdParserImx477::Parse(void *data)
+MdParser::Status MdParserImx477::Parse(libcamera::Span<const uint8_t> buffer)
 {
 	bool try_again = false;
 
@@ -126,7 +126,7 @@ MdParser::Status MdParserImx477::Parse(void *data)
 			GAINLO_REG
 		};
 		reg_offsets_[0] = reg_offsets_[1] = reg_offsets_[2] = reg_offsets_[3] = -1;
-		int ret = static_cast<int>(findRegs(static_cast<uint8_t *>(data),
+		int ret = static_cast<int>(findRegs(buffer,
 						    regs, reg_offsets_, 4));
 		/*
 		 * > 0 means "worked partially but parse again next time",
@@ -142,7 +142,7 @@ MdParser::Status MdParserImx477::Parse(void *data)
 		if (reg_offsets_[i] == -1)
 			continue;
 
-		reg_values_[i] = static_cast<uint8_t *>(data)[reg_offsets_[i]];
+		reg_values_[i] = buffer[reg_offsets_[i]];
 	}
 
 	/* Re-parse next time if we were unhappy in some way. */

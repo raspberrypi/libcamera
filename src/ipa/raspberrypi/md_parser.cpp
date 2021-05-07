@@ -27,12 +27,13 @@ using namespace RPiController;
 #define REG_VALUE 0x5a
 #define REG_SKIP 0x55
 
-MdParserSmia::ParseStatus MdParserSmia::findRegs(unsigned char *data,
+MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> buffer,
 						 uint32_t regs[], int offsets[],
 						 unsigned int num_regs)
 {
 	assert(num_regs > 0);
-	if (data[0] != LINE_START)
+
+	if (buffer[0] != LINE_START)
 		return NO_LINE_START;
 
 	unsigned int current_offset = 1; // after the LINE_START
@@ -40,15 +41,15 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(unsigned char *data,
 	unsigned int reg_num = 0, first_reg = 0;
 	ParseStatus retcode = PARSE_OK;
 	while (1) {
-		int tag = data[current_offset++];
+		int tag = buffer[current_offset++];
 		if ((bits_per_pixel_ == 10 &&
 		     (current_offset + 1 - current_line_start) % 5 == 0) ||
 		    (bits_per_pixel_ == 12 &&
 		     (current_offset + 1 - current_line_start) % 3 == 0)) {
-			if (data[current_offset++] != REG_SKIP)
+			if (buffer[current_offset++] != REG_SKIP)
 				return BAD_DUMMY;
 		}
-		int data_byte = data[current_offset++];
+		int data_byte = buffer[current_offset++];
 		//printf("Offset %u, tag 0x%02x data_byte 0x%02x\n", current_offset-1, tag, data_byte);
 		if (tag == LINE_END_TAG) {
 			if (data_byte != LINE_END_TAG)
@@ -59,18 +60,18 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(unsigned char *data,
 				current_offset =
 					current_line_start + line_length_bytes_;
 				// Require whole line to be in the buffer (if buffer size set).
-				if (buffer_size_bytes_ &&
+				if (buffer.size() &&
 				    current_offset + line_length_bytes_ >
-					    buffer_size_bytes_)
+					    buffer.size())
 					return MISSING_REGS;
-				if (data[current_offset] != LINE_START)
+				if (buffer[current_offset] != LINE_START)
 					return NO_LINE_START;
 			} else {
 				// allow a zero line length to mean "hunt for the next line"
-				while (data[current_offset] != LINE_START &&
-				       current_offset < buffer_size_bytes_)
+				while (buffer[current_offset] != LINE_START &&
+				       current_offset < buffer.size())
 					current_offset++;
-				if (current_offset == buffer_size_bytes_)
+				if (current_offset == buffer.size())
 					return NO_LINE_START;
 			}
 			// inc current_offset to after LINE_START

@@ -890,7 +890,17 @@ ControlList::ControlList(const ControlInfoMap &infoMap, ControlValidator *valida
  */
 void ControlList::merge(const ControlList &source)
 {
-	ASSERT(idmap_ == source.idmap_);
+	/**
+	 * \todo: ASSERT that the current and source ControlList are derived
+	 * from a compatible ControlIdMap, to prevent undefined behaviour due to
+	 * id collisions.
+	 *
+	 * This can not currently be a direct pointer comparison due to the
+	 * duplication of the ControlIdMaps in the isolated IPA use cases.
+	 * Furthermore, manually checking each entry of the id map is identical
+	 * is expensive.
+	 * See https://bugs.libcamera.org/show_bug.cgi?id=31 for further details
+	 */
 
 	for (const auto &ctrl : source) {
 		if (contains(ctrl.first)) {

@@ -8,7 +8,11 @@
 
 #include <string>
 
+#include <libcamera/span.h>
+
 #include "camera_mode.h"
+#include "controller/controller.hpp"
+#include "controller/metadata.hpp"
 #include "md_parser.hpp"
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -65,7 +69,9 @@ public:
 	CamHelper(MdParser *parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
 	void SetCameraMode(const CameraMode &mode);
-	MdParser &Parser() const { return *parser_; }
+	virtual void Prepare(libcamera::Span<const uint8_t> buffer,
+			     Metadata &metadata);
+	virtual void Process(StatisticsPtr &stats, Metadata &metadata);
 	uint32_t ExposureLines(double exposure_us) const;
 	double Exposure(uint32_t exposure_lines) const; // in us
 	virtual uint32_t GetVBlanking(double &exposure_us, double minFrameDuration,
@@ -81,6 +87,9 @@ public:
 	virtual unsigned int MistrustFramesModeSwitch() const;
 
 protected:
+	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
+			       Metadata &metadata);
+
 	MdParser *parser_;
 	CameraMode mode_;
 

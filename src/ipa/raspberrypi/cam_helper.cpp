@@ -17,6 +17,11 @@
 #include "md_parser.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+
+namespace libcamera {
+LOG_DECLARE_CATEGORY(IPARPI)
+}
 
 static std::map<std::string, CamHelperCreateFunc> cam_helpers;
 
@@ -43,6 +48,17 @@ CamHelper::CamHelper(MdParser *parser, unsigned int frameIntegrationDiff)
 CamHelper::~CamHelper()
 {
 	delete parser_;
+}
+
+void CamHelper::Prepare(Span<const uint8_t> buffer,
+			Metadata &metadata)
+{
+	parseEmbeddedData(buffer, metadata);
+}
+
+void CamHelper::Process([[maybe_unused]] StatisticsPtr &stats,
+			[[maybe_unused]] Metadata &metadata)
+{
 }
 
 uint32_t CamHelper::ExposureLines(double exposure_us) const
@@ -137,6 +153,44 @@ unsigned int CamHelper::MistrustFramesModeSwitch() const
 {
 	/* Many sensors return valid metadata immediately. */
 	return 0;
+}
+
+void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
+				  Metadata &metadata)
+{
+	if (buffer.empty())
+		return;
+
+	uint32_t exposureLines, gainCode;
+
+	if (parser_->Parse(buffer) != MdParser::Status::OK ||
+	    parser_->GetExposureLines(exposureLines) != MdParser::Status::OK ||
+	    parser_->GetGainCode(gainCode) != MdParser::Status::OK) {
+		LOG(IPARPI, Error) << "Embedded data buffer parsing failed";
+		return;
+	}
+
+	/*
+	 * Overwrite the exposure/gain values in the DeviceStatus, as
+	 * we know better. Fetch it first in case any other fields were
+	 * set meaningfully.
+	 */
+	DeviceStatus deviceStatus;
+
+	if (metadata.Get("device.status", deviceStatus) != 0) {
+		LOG(IPARPI, Error) << "DeviceStatus not found";
+		return;
+	}
+
+	deviceStatus.shutter_speed = Exposure(exposureLines);
+	deviceStatus.analogue_gain = Gain(gainCode);
+
+	LOG(IPARPI, Debug) << "Metadata updated - Exposure : "
+			   << deviceStatus.shutter_speed
+			   << " Gain : "
+			   << deviceStatus.analogue_gain;
+
+	metadata.Set("device.status", deviceStatus);
 }
 
 RegisterCamHelper::RegisterCamHelper(char const *cam_name,

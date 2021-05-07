@@ -101,9 +101,7 @@ private:
 	void returnEmbeddedBuffer(unsigned int bufferId);
 	void prepareISP(const ipa::RPi::ISPConfig &data);
 	void reportMetadata();
-	bool parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus);
-	void fillDeviceStatus(uint32_t exposureLines, uint32_t gainCode,
-			      struct DeviceStatus &deviceStatus);
+	void fillDeviceStatus(const ControlList &sensorControls);
 	void processStats(unsigned int bufferId);
 	void applyFrameDurations(double minFrameDuration, double maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
@@ -894,35 +892,34 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 
 void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 {
-	struct DeviceStatus deviceStatus = {};
-	bool success = false;
+	Span<uint8_t> embeddedBuffer;
+
+	rpiMetadata_.Clear();
+
+	fillDeviceStatus(data.controls);
 
 	if (data.embeddedBufferPresent) {
 		/*
 		 * Pipeline handler has supplied us with an embedded data buffer,
-		 * so parse it and extract the exposure and gain.
+		 * we must pass it to the CamHelper for parsing.
 		 */
-		success = parseEmbeddedData(data.embeddedBufferId, deviceStatus);
+		auto it = buffers_.find(data.embeddedBufferId);
+		ASSERT(it != buffers_.end());
+		embeddedBuffer = it->second.maps()[0];
+	}
 
-		/* Done with embedded data now, return to pipeline handler asap. */
+	/*
+	 * This may overwrite the DeviceStatus using values from the sensor
+	 * metadata, and may also do additional custom processing.
+	 */
+	helper_->Prepare(embeddedBuffer, rpiMetadata_);
+
+	/* Done with embedded data now, return to pipeline handler asap. */
+	if (data.embeddedBufferPresent)
 		returnEmbeddedBuffer(data.embeddedBufferId);
-	}
-
-	if (!success) {
-		/*
-		 * Pipeline handler has not supplied an embedded data buffer,
-		 * or embedded data buffer parsing has failed for some reason,
-		 * so pull the exposure and gain values from the control list.
-		 */
-		int32_t exposureLines = data.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-		int32_t gainCode = data.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
-		fillDeviceStatus(exposureLines, gainCode, deviceStatus);
-	}
 
 	ControlList ctrls(ispCtrls_);
 
-	rpiMetadata_.Clear();
-	rpiMetadata_.Set("device.status", deviceStatus);
 	controller_.Prepare(&rpiMetadata_);
 
 	/* Lock the metadata buffer to avoid constant locks/unlocks. */
@@ -972,41 +969,13 @@ void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 		setIspControls.emit(ctrls);
 }
 
-bool IPARPi::parseEmbeddedData(unsigned int bufferId, struct DeviceStatus &deviceStatus)
+void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 {
-	auto it = buffers_.find(bufferId);
-	if (it == buffers_.end()) {
-		LOG(IPARPI, Error) << "Could not find embedded buffer!";
-		return false;
-	}
+	DeviceStatus deviceStatus = {};
 
-	Span<uint8_t> mem = it->second.maps()[0];
-	helper_->Parser().SetBufferSize(mem.size());
-	RPiController::MdParser::Status status = helper_->Parser().Parse(mem.data());
-	if (status != RPiController::MdParser::Status::OK) {
-		LOG(IPARPI, Error) << "Embedded Buffer parsing failed, error " << status;
-		return false;
-	} else {
-		uint32_t exposureLines, gainCode;
-		if (helper_->Parser().GetExposureLines(exposureLines) != RPiController::MdParser::Status::OK) {
-			LOG(IPARPI, Error) << "Exposure time failed";
-			return false;
-		}
+	int32_t exposureLines = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	int32_t gainCode = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 
-		if (helper_->Parser().GetGainCode(gainCode) != RPiController::MdParser::Status::OK) {
-			LOG(IPARPI, Error) << "Gain failed";
-			return false;
-		}
-
-		fillDeviceStatus(exposureLines, gainCode, deviceStatus);
-	}
-
-	return true;
-}
-
-void IPARPi::fillDeviceStatus(uint32_t exposureLines, uint32_t gainCode,
-			      struct DeviceStatus &deviceStatus)
-{
 	deviceStatus.shutter_speed = helper_->Exposure(exposureLines);
 	deviceStatus.analogue_gain = helper_->Gain(gainCode);
 
@@ -1014,6 +983,8 @@ void IPARPi::fillDeviceStatus(uint32_t exposureLines, uint32_t gainCode,
 			   << deviceStatus.shutter_speed
 			   << " Gain : "
 			   << deviceStatus.analogue_gain;
+
+	rpiMetadata_.Set("device.status", deviceStatus);
 }
 
 void IPARPi::processStats(unsigned int bufferId)
@@ -1027,6 +998,7 @@ void IPARPi::processStats(unsigned int bufferId)
 	Span<uint8_t> mem = it->second.maps()[0];
 	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
 	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
+	helper_->Process(statistics, rpiMetadata_);
 	controller_.Process(statistics, &rpiMetadata_);
 
 	struct AgcStatus agcStatus;

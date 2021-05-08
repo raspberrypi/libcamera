@@ -65,6 +65,7 @@ private:
 	friend class PipelineHandler;
 
 	void complete();
+	void cancel();
 
 	bool completeBuffer(FrameBuffer *buffer);
 

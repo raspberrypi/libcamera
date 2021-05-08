@@ -66,6 +66,14 @@ TRACEPOINT_EVENT_INSTANCE(
 	)
 )
 
+TRACEPOINT_EVENT_INSTANCE(
+	libcamera,
+	request,
+	request_cancel,
+	TP_ARGS(
+		libcamera::Request *, req
+	)
+)
 
 TRACEPOINT_EVENT(
 	libcamera,

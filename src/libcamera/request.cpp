@@ -293,6 +293,29 @@ void Request::complete()
 }
 
 /**
+ * \brief Cancel a queued request
+ *
+ * Mark the request and its associated buffers as cancelled and complete it.
+ *
+ * Set each pending buffer in error state and emit the buffer completion signal
+ * before completing the Request.
+ */
+void Request::cancel()
+{
+	LIBCAMERA_TRACEPOINT(request_cancel, this);
+
+	ASSERT(status_ == RequestPending);
+
+	for (FrameBuffer *buffer : pending_) {
+		buffer->cancel();
+		camera_->bufferCompleted.emit(this, buffer);
+	}
+
+	pending_.clear();
+	cancelled_ = true;
+}
+
+/**
  * \brief Complete a buffer for the request
  * \param[in] buffer The buffer that has completed
  *

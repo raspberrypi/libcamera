@@ -391,6 +391,8 @@ bool PipelineHandler::hasPendingRequests(const Camera *camera) const
  * This method queues a capture request to the pipeline handler for processing.
  * The request is first added to the internal list of queued requests, and
  * then passed to the pipeline handler with a call to queueRequestDevice().
+ * If the pipeline handler fails in queuing the request to the hardware the
+ * request is cancelled.
  *
  * Keeping track of queued requests ensures automatic completion of all requests
  * when the pipeline handler is stopped with stop(). Request completion shall be
@@ -409,8 +411,10 @@ void PipelineHandler::queueRequest(Request *request)
 	request->sequence_ = data->requestSequence_++;
 
 	int ret = queueRequestDevice(camera, request);
-	if (ret)
-		data->queuedRequests_.remove(request);
+	if (ret) {
+		request->cancel();
+		completeRequest(request);
+	}
 }
 
 /**

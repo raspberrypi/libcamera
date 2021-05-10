@@ -28,7 +28,6 @@
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/utils.h"
-#include "libcamera/internal/v4l2_controls.h"
 
 #include "cio2.h"
 #include "frames.h"

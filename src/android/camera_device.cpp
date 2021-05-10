@@ -800,6 +800,7 @@ void CameraDevice::close()
 
 void CameraDevice::stop()
 {
+	MutexLocker stateLock(stateMutex_);
 	if (state_ == State::Stopped)
 		return;
 
@@ -1900,17 +1901,21 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	if (!isValidRequest(camera3Request))
 		return -EINVAL;
 
-	/* Start the camera if that's the first request we handle. */
-	if (state_ == State::Stopped) {
-		worker_.start();
+	{
+		MutexLocker stateLock(stateMutex_);
 
-		int ret = camera_->start();
-		if (ret) {
-			LOG(HAL, Error) << "Failed to start camera";
-			return ret;
+		/* Start the camera if that's the first request we handle. */
+		if (state_ == State::Stopped) {
+			worker_.start();
+
+			int ret = camera_->start();
+			if (ret) {
+				LOG(HAL, Error) << "Failed to start camera";
+				return ret;
+			}
+
+			state_ = State::Running;
 		}
-
-		state_ = State::Running;
 	}
 
 	/*

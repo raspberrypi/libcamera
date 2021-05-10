@@ -120,6 +120,7 @@ private:
 
 	CameraWorker worker_;
 
+	libcamera::Mutex stateMutex_; /* Protects access to the camera state. */
 	State state_;
 
 	std::shared_ptr<libcamera::Camera> camera_;

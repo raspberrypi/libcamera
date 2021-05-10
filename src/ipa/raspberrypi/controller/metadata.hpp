@@ -22,14 +22,14 @@ public:
 	template<typename T>
 	void Set(std::string const &tag, T const &value)
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		std::scoped_lock lock(mutex_);
 		data_[tag] = value;
 	}
 
 	template<typename T>
 	int Get(std::string const &tag, T &value) const
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		std::scoped_lock lock(mutex_);
 		auto it = data_.find(tag);
 		if (it == data_.end())
 			return -1;
@@ -39,14 +39,13 @@ public:
 
 	void Clear()
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		std::scoped_lock lock(mutex_);
 		data_.clear();
 	}
 
 	Metadata &operator=(Metadata const &other)
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		std::lock_guard<std::mutex> other_lock(other.mutex_);
+		std::scoped_lock lock(mutex_, other.mutex_);
 		data_ = other.data_;
 		return *this;
 	}

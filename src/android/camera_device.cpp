@@ -2009,7 +2009,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	worker_.queueRequest(descriptor.request_.get());
 
 	{
-		MutexLocker lock(mutex_);
+		MutexLocker descriptorsLock(descriptorsMutex_);
 		descriptors_[descriptor.request_->cookie()] = std::move(descriptor);
 	}
 
@@ -2020,7 +2020,7 @@ void CameraDevice::requestComplete(Request *request)
 {
 	decltype(descriptors_)::node_type node;
 	{
-		MutexLocker lock(mutex_);
+		MutexLocker descriptorsLock(descriptorsMutex_);
 		auto it = descriptors_.find(request->cookie());
 		if (it == descriptors_.end()) {
 			/*

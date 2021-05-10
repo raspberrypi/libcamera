@@ -24,6 +24,7 @@
 #include "libcamera/internal/buffer.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
+#include "libcamera/internal/thread.h"
 
 #include "camera_metadata.h"
 #include "camera_stream.h"
@@ -134,7 +135,7 @@ private:
 	std::map<int, libcamera::PixelFormat> formatsMap_;
 	std::vector<CameraStream> streams_;
 
-	std::mutex mutex_; /* Protect descriptors_ */
+	libcamera::Mutex descriptorsMutex_; /* Protects descriptors_. */
 	std::map<uint64_t, Camera3RequestDescriptor> descriptors_;
 
 	std::string maker_;

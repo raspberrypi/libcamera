@@ -20,7 +20,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/sysfs.h"
 #include "libcamera/internal/utils.h"
-#include "libcamera/internal/v4l2_controls.h"
 
 /**
  * \file v4l2_device.h
@@ -30,6 +29,73 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(V4L2)
+
+namespace {
+
+ControlType v4l2CtrlType(uint32_t ctrlType)
+{
+	switch (ctrlType) {
+	case V4L2_CTRL_TYPE_U8:
+		return ControlTypeByte;
+
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		return ControlTypeBool;
+
+	case V4L2_CTRL_TYPE_INTEGER:
+		return ControlTypeInteger32;
+
+	case V4L2_CTRL_TYPE_INTEGER64:
+		return ControlTypeInteger64;
+
+	case V4L2_CTRL_TYPE_MENU:
+	case V4L2_CTRL_TYPE_BUTTON:
+	case V4L2_CTRL_TYPE_BITMASK:
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+		/*
+		 * More precise types may be needed, for now use a 32-bit
+		 * integer type.
+		 */
+		return ControlTypeInteger32;
+
+	default:
+		return ControlTypeNone;
+	}
+}
+
+std::unique_ptr<ControlId> v4l2ControlId(const v4l2_query_ext_ctrl &ctrl)
+{
+	const size_t len = strnlen(ctrl.name, sizeof(ctrl.name));
+	const std::string name(static_cast<const char *>(ctrl.name), len);
+	const ControlType type = v4l2CtrlType(ctrl.type);
+
+	return std::make_unique<ControlId>(ctrl.id, name, type);
+}
+
+ControlInfo v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
+{
+	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_U8:
+		return ControlInfo(static_cast<uint8_t>(ctrl.minimum),
+				   static_cast<uint8_t>(ctrl.maximum),
+				   static_cast<uint8_t>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		return ControlInfo(static_cast<bool>(ctrl.minimum),
+				   static_cast<bool>(ctrl.maximum),
+				   static_cast<bool>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_INTEGER64:
+		return ControlInfo(static_cast<int64_t>(ctrl.minimum),
+				   static_cast<int64_t>(ctrl.maximum),
+				   static_cast<int64_t>(ctrl.default_value));
+
+	default:
+		return ControlInfo(static_cast<int32_t>(ctrl.minimum),
+				   static_cast<int32_t>(ctrl.maximum),
+				   static_cast<int32_t>(ctrl.default_value));
+	}
+}
+} /* namespace */
 
 /**
  * \class V4L2Device
@@ -502,10 +568,10 @@ void V4L2Device::listControls()
 			continue;
 		}
 
-		controlIds_.emplace_back(std::make_unique<V4L2ControlId>(ctrl));
+		controlIds_.emplace_back(v4l2ControlId(ctrl));
 		controlInfo_.emplace(ctrl.id, ctrl);
 
-		ctrls.emplace(controlIds_.back().get(), V4L2ControlInfo(ctrl));
+		ctrls.emplace(controlIds_.back().get(), v4l2ControlInfo(ctrl));
 	}
 
 	controls_ = std::move(ctrls);
@@ -544,7 +610,7 @@ void V4L2Device::updateControlInfo()
 			continue;
 		}
 
-		info = V4L2ControlInfo(ctrl);
+		info = v4l2ControlInfo(ctrl);
 	}
 }
 

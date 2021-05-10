@@ -52,7 +52,6 @@ libcamera_sources = files([
     'timer.cpp',
     'transform.cpp',
     'utils.cpp',
-    'v4l2_controls.cpp',
     'v4l2_device.cpp',
     'v4l2_pixelformat.cpp',
     'v4l2_subdevice.cpp',

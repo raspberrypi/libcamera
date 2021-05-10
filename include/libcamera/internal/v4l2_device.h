@@ -13,11 +13,11 @@
 
 #include <linux/videodev2.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/signal.h>
 #include <libcamera/span.h>
 
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/v4l2_controls.h"
 
 namespace libcamera {
 
@@ -63,7 +63,7 @@ private:
 	void eventAvailable(EventNotifier *notifier);
 
 	std::map<unsigned int, struct v4l2_query_ext_ctrl> controlInfo_;
-	std::vector<std::unique_ptr<V4L2ControlId>> controlIds_;
+	std::vector<std::unique_ptr<ControlId>> controlIds_;
 	ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;

@@ -19,6 +19,21 @@ namespace RPiController {
 class Metadata
 {
 public:
+	Metadata() = default;
+
+	Metadata(Metadata const &other)
+	{
+		std::scoped_lock other_lock(other.mutex_);
+		data_ = other.data_;
+	}
+
+	Metadata(Metadata &&other)
+	{
+		std::scoped_lock other_lock(other.mutex_);
+		data_ = std::move(other.data_);
+		other.data_.clear();
+	}
+
 	template<typename T>
 	void Set(std::string const &tag, T const &value)
 	{
@@ -47,6 +62,14 @@ public:
 	{
 		std::scoped_lock lock(mutex_, other.mutex_);
 		data_ = other.data_;
+		return *this;
+	}
+
+	Metadata &operator=(Metadata &&other)
+	{
+		std::scoped_lock lock(mutex_, other.mutex_);
+		data_ = std::move(other.data_);
+		other.data_.clear();
 		return *this;
 	}
 

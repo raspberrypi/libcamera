@@ -61,6 +61,14 @@ constexpr unsigned int DefaultExposureTime = 20000;
 constexpr double defaultMinFrameDuration = 1e6 / 30.0;
 constexpr double defaultMaxFrameDuration = 1e6 / 0.01;
 
+/*
+ * Determine the minimum allowable inter-frame duration (in us) to run the
+ * controller algorithms. If the pipeline handler provider frames at a rate
+ * higher than this, we rate-limit the controller Prepare() and Process() calls
+ * to lower than or equal to this rate.
+ */
+constexpr double controllerMinFrameDuration = 1e6 / 60.0;
+
 LOG_DEFINE_CATEGORY(IPARPI)
 
 class IPARPi : public ipa::RPi::IPARPiInterface
@@ -68,7 +76,7 @@ class IPARPi : public ipa::RPi::IPARPiInterface
 public:
 	IPARPi()
 		: controller_(), frameCount_(0), checkCount_(0), mistrustCount_(0),
-		  lsTable_(nullptr), firstStart_(true)
+		  lastRunTimestamp_(0), lsTable_(nullptr), firstStart_(true)
 	{
 	}
 
@@ -145,6 +153,12 @@ private:
 
 	/* Number of frames that need to be dropped on startup. */
 	unsigned int dropFrameCount_;
+
+	/* Frame timestamp for the last run of the controller. */
+	uint64_t lastRunTimestamp_;
+
+	/* Do we run a Controller::process() for this frame? */
+	bool processPending_;
 
 	/* LS table allocation passed in from the pipeline handler. */
 	FileDescriptor lsTableHandle_;
@@ -262,6 +276,7 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 	startConfig->dropFrameCount = dropFrameCount_;
 
 	firstStart_ = false;
+	lastRunTimestamp_ = 0;
 }
 
 void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
@@ -406,7 +421,7 @@ void IPARPi::signalStatReady(uint32_t bufferId)
 {
 	if (++checkCount_ != frameCount_) /* assert here? */
 		LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
-	if (frameCount_ > mistrustCount_)
+	if (processPending_ && frameCount_ > mistrustCount_)
 		processStats(bufferId);
 
 	reportMetadata();
@@ -894,10 +909,11 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 
 void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 {
+	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp);
+	RPiController::Metadata lastMetadata;
 	Span<uint8_t> embeddedBuffer;
 
-	rpiMetadata_.Clear();
-
+	lastMetadata = std::move(rpiMetadata_);
 	fillDeviceStatus(data.controls);
 
 	if (data.embeddedBufferPresent) {
@@ -919,6 +935,24 @@ void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 	/* Done with embedded data now, return to pipeline handler asap. */
 	if (data.embeddedBufferPresent)
 		returnEmbeddedBuffer(data.embeddedBufferId);
+
+	/* Allow a 10% margin on the comparison below. */
+	constexpr double eps = controllerMinFrameDuration * 1e3 * 0.1;
+	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	    frameTimestamp - lastRunTimestamp_ + eps < controllerMinFrameDuration * 1e3) {
+		/*
+		 * Ensure we merge the previous frame's metadata with the current
+		 * frame. This will not overwrite exposure/gain values for the
+		 * current frame, or any other bits of metadata that were added
+		 * in helper_->Prepare().
+		 */
+		rpiMetadata_.Merge(lastMetadata);
+		processPending_ = false;
+		return;
+	}
+
+	lastRunTimestamp_ = frameTimestamp;
+	processPending_ = true;
 
 	ControlList ctrls(ispCtrls_);
 

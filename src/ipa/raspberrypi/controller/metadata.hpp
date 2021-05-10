@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2021, Raspberry Pi (Trading) Limited
  *
  * metadata.hpp - general metadata class
  */
@@ -9,22 +9,25 @@
 // A simple class for carrying arbitrary metadata, for example about an image.
 
 #include <any>
-#include <string>
-#include <mutex>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <string>
 
 namespace RPiController {
 
 class Metadata
 {
 public:
-	template<typename T> void Set(std::string const &tag, T const &value)
+	template<typename T>
+	void Set(std::string const &tag, T const &value)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		data_[tag] = value;
 	}
-	template<typename T> int Get(std::string const &tag, T &value) const
+
+	template<typename T>
+	int Get(std::string const &tag, T &value) const
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		auto it = data_.find(tag);
@@ -33,11 +36,13 @@ public:
 		value = std::any_cast<T>(it->second);
 		return 0;
 	}
+
 	void Clear()
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		data_.clear();
 	}
+
 	Metadata &operator=(Metadata const &other)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -45,7 +50,9 @@ public:
 		data_ = other.data_;
 		return *this;
 	}
-	template<typename T> T *GetLocked(std::string const &tag)
+
+	template<typename T>
+	T *GetLocked(std::string const &tag)
 	{
 		// This allows in-place access to the Metadata contents,
 		// for which you should be holding the lock.
@@ -54,15 +61,17 @@ public:
 			return nullptr;
 		return std::any_cast<T>(&it->second);
 	}
+
 	template<typename T>
 	void SetLocked(std::string const &tag, T const &value)
 	{
 		// Use this only if you're holding the lock yourself.
 		data_[tag] = value;
 	}
+
 	// Note: use of (lowercase) lock and unlock means you can create scoped
 	// locks with the standard lock classes.
-	// e.g. std::lock_guard<PisP::Metadata> lock(metadata)
+	// e.g. std::lock_guard<RPiController::Metadata> lock(metadata)
 	void lock() { mutex_.lock(); }
 	void unlock() { mutex_.unlock(); }
 

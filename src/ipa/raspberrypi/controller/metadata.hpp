@@ -73,6 +73,12 @@ public:
 		return *this;
 	}
 
+	void Merge(Metadata &other)
+	{
+		std::scoped_lock lock(mutex_, other.mutex_);
+		data_.merge(other.data_);
+	}
+
 	template<typename T>
 	T *GetLocked(std::string const &tag)
 	{

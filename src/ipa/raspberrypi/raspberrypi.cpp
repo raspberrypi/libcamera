@@ -143,6 +143,9 @@ private:
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrustCount_;
 
+	/* Number of frames that need to be dropped on startup. */
+	unsigned int dropFrameCount_;
+
 	/* LS table allocation passed in from the pipeline handler. */
 	FileDescriptor lsTableHandle_;
 	void *lsTable_;
@@ -220,9 +223,8 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 	 */
 	frameCount_ = 0;
 	checkCount_ = 0;
-	unsigned int dropFrame = 0;
 	if (firstStart_) {
-		dropFrame = helper_->HideFramesStartup();
+		dropFrameCount_ = helper_->HideFramesStartup();
 		mistrustCount_ = helper_->MistrustFramesStartup();
 
 		/*
@@ -250,14 +252,14 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 				awbConvergenceFrames += mistrustCount_;
 		}
 
-		dropFrame = std::max({ dropFrame, agcConvergenceFrames, awbConvergenceFrames });
-		LOG(IPARPI, Debug) << "Drop " << dropFrame << " frames on startup";
+		dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
+		LOG(IPARPI, Debug) << "Drop " << dropFrameCount_ << " frames on startup";
 	} else {
-		dropFrame = helper_->HideFramesModeSwitch();
+		dropFrameCount_ = helper_->HideFramesModeSwitch();
 		mistrustCount_ = helper_->MistrustFramesModeSwitch();
 	}
 
-	startConfig->dropFrameCount = dropFrame;
+	startConfig->dropFrameCount = dropFrameCount_;
 
 	firstStart_ = false;
 }

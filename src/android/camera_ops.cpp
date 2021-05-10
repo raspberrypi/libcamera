@@ -66,8 +66,14 @@ static void hal_dev_dump([[maybe_unused]] const struct camera3_device *dev,
 {
 }
 
-static int hal_dev_flush([[maybe_unused]] const struct camera3_device *dev)
+static int hal_dev_flush(const struct camera3_device *dev)
 {
+	if (!dev)
+		return -EINVAL;
+
+	CameraDevice *camera = reinterpret_cast<CameraDevice *>(dev->priv);
+	camera->flush();
+
 	return 0;
 }
 

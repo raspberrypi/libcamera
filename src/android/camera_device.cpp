@@ -798,6 +798,23 @@ void CameraDevice::close()
 	camera_->release();
 }
 
+void CameraDevice::flush()
+{
+	{
+		MutexLocker stateLock(stateMutex_);
+		if (state_ != State::Running)
+			return;
+
+		state_ = State::Flushing;
+	}
+
+	worker_.stop();
+	camera_->stop();
+
+	MutexLocker stateLock(stateMutex_);
+	state_ = State::Stopped;
+}
+
 void CameraDevice::stop()
 {
 	MutexLocker stateLock(stateMutex_);
@@ -1896,27 +1913,31 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 	return 0;
 }
 
+void CameraDevice::abortRequest(camera3_capture_request_t *request)
+{
+	notifyError(request->frame_number, nullptr, CAMERA3_MSG_ERROR_REQUEST);
+
+	camera3_capture_result_t result = {};
+	result.num_output_buffers = request->num_output_buffers;
+	result.frame_number = request->frame_number;
+	result.partial_result = 0;
+
+	std::vector<camera3_stream_buffer_t> resultBuffers(result.num_output_buffers);
+	for (auto [i, buffer] : utils::enumerate(resultBuffers)) {
+		buffer = request->output_buffers[i];
+		buffer.release_fence = request->output_buffers[i].acquire_fence;
+		buffer.acquire_fence = -1;
+		buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+	}
+	result.output_buffers = resultBuffers.data();
+
+	callbacks_->process_capture_result(callbacks_, &result);
+}
+
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)
 {
 	if (!isValidRequest(camera3Request))
 		return -EINVAL;
-
-	{
-		MutexLocker stateLock(stateMutex_);
-
-		/* Start the camera if that's the first request we handle. */
-		if (state_ == State::Stopped) {
-			worker_.start();
-
-			int ret = camera_->start();
-			if (ret) {
-				LOG(HAL, Error) << "Failed to start camera";
-				return ret;
-			}
-
-			state_ = State::Running;
-		}
-	}
 
 	/*
 	 * Save the request descriptors for use at completion time.
@@ -2005,6 +2026,30 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	int ret = processControls(&descriptor);
 	if (ret)
 		return ret;
+
+	/*
+	 * If flush is in progress abort the request. If the camera has been
+	 * stopped we have to re-start it to be able to process the request.
+	 */
+	MutexLocker stateLock(stateMutex_);
+
+	if (state_ == State::Flushing) {
+		abortRequest(camera3Request);
+		return 0;
+	}
+
+	if (state_ == State::Stopped) {
+		worker_.start();
+
+		ret = camera_->start();
+		if (ret) {
+			LOG(HAL, Error) << "Failed to start camera";
+			worker_.stop();
+			return ret;
+		}
+
+		state_ = State::Running;
+	}
 
 	worker_.queueRequest(descriptor.request_.get());
 

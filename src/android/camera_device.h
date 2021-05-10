@@ -43,6 +43,7 @@ public:
 
 	int open(const hw_module_t *hardwareModule);
 	void close();
+	void flush();
 
 	unsigned int id() const { return id_; }
 	camera3_device_t *camera3Device() { return &camera3Device_; }
@@ -92,6 +93,7 @@ private:
 
 	enum class State {
 		Stopped,
+		Flushing,
 		Running,
 	};
 
@@ -106,6 +108,7 @@ private:
 	getRawResolutions(const libcamera::PixelFormat &pixelFormat);
 
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
+	void abortRequest(camera3_capture_request_t *request);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
 			 camera3_error_msg_code code);

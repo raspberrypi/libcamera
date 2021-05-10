@@ -25,6 +25,7 @@
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
+#include "libcamera/internal/thread.h"
 #include "libcamera/internal/utils.h"
 
 #include "system/graphics.h"
@@ -2003,7 +2004,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	worker_.queueRequest(descriptor.request_.get());
 
 	{
-		std::scoped_lock<std::mutex> lock(mutex_);
+		MutexLocker lock(mutex_);
 		descriptors_[descriptor.request_->cookie()] = std::move(descriptor);
 	}
 
@@ -2014,7 +2015,7 @@ void CameraDevice::requestComplete(Request *request)
 {
 	decltype(descriptors_)::node_type node;
 	{
-		std::scoped_lock<std::mutex> lock(mutex_);
+		MutexLocker lock(mutex_);
 		auto it = descriptors_.find(request->cookie());
 		if (it == descriptors_.end()) {
 			/*

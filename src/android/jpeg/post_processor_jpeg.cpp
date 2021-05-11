@@ -103,7 +103,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	ret = requestMetadata.getEntry(ANDROID_JPEG_ORIENTATION, &entry);
 
 	const uint32_t jpegOrientation = ret ? *entry.data.i32 : 0;
-	resultMetadata->addEntry(ANDROID_JPEG_ORIENTATION, &jpegOrientation, 1);
+	resultMetadata->addEntry(ANDROID_JPEG_ORIENTATION, jpegOrientation);
 	exif.setOrientation(jpegOrientation);
 
 	exif.setSize(streamSize_);
@@ -129,7 +129,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	if (ret) {
 		exif.setGPSDateTimestamp(*entry.data.i64);
 		resultMetadata->addEntry(ANDROID_JPEG_GPS_TIMESTAMP,
-					 entry.data.i64, 1);
+					 *entry.data.i64);
 	}
 
 	ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_SIZE, &entry);
@@ -140,7 +140,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 
 		ret = requestMetadata.getEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &entry);
 		uint8_t quality = ret ? *entry.data.u8 : 95;
-		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, &quality, 1);
+		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_QUALITY, quality);
 
 		if (thumbnailSize != Size(0, 0)) {
 			std::vector<unsigned char> thumbnail;
@@ -172,7 +172,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 
 	ret = requestMetadata.getEntry(ANDROID_JPEG_QUALITY, &entry);
 	const uint8_t quality = ret ? *entry.data.u8 : 95;
-	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, &quality, 1);
+	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, quality);
 
 	int jpeg_size = encoder_->encode(source, destination->plane(0),
 					 exif.data(), quality);
@@ -190,7 +190,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 	blob->jpeg_size = jpeg_size;
 
 	/* Update the JPEG result Metadata. */
-	resultMetadata->addEntry(ANDROID_JPEG_SIZE, &jpeg_size, 1);
+	resultMetadata->addEntry(ANDROID_JPEG_SIZE, jpeg_size);
 
 	return 0;
 }

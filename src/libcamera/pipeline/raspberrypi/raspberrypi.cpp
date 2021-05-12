@@ -221,6 +221,8 @@ public:
 
 private:
 	void checkRequestCompleted();
+	void fillRequestMetadata(const ControlList &bufferControls,
+				 Request *request);
 	void tryRunPipeline();
 	bool findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer);
 
@@ -1417,18 +1419,6 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 
 	if (stream == &unicam_[Unicam::Image]) {
 		/*
-		 * Record the sensor timestamp in the Request.
-		 *
-		 * \todo Do not assume the request in the front of the queue
-		 * is the correct one
-		 */
-		Request *request = requestQueue_.front();
-		ASSERT(request);
-
-		request->metadata().set(controls::SensorTimestamp,
-					buffer->metadata().timestamp);
-
-		/*
 		 * Lookup the sensor controls used for this frame sequence from
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
@@ -1689,6 +1679,13 @@ void RPiCameraData::applyScalerCrop(const ControlList &controls)
 	}
 }
 
+void RPiCameraData::fillRequestMetadata(const ControlList &bufferControls,
+					Request *request)
+{
+	request->metadata().set(controls::SensorTimestamp,
+				bufferControls.get(controls::SensorTimestamp));
+}
+
 void RPiCameraData::tryRunPipeline()
 {
 	FrameBuffer *embeddedBuffer;
@@ -1707,6 +1704,14 @@ void RPiCameraData::tryRunPipeline()
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
+
+	/*
+	 * Clear the request metadata and fill it with some initial non-IPA
+	 * related controls. We clear it first because the request metadata
+	 * may have been populated if we have dropped the previous frame.
+	 */
+	request->metadata().clear();
+	fillRequestMetadata(bayerFrame.controls, request);
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we

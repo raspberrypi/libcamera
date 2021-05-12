@@ -140,7 +140,7 @@ public:
 	RPiCameraData(PipelineHandler *pipe)
 		: CameraData(pipe), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
-		  updateScalerCrop_(true), dropFrameCount_(0), ispOutputCount_(0)
+		  dropFrameCount_(0), ispOutputCount_(0)
 	{
 	}
 
@@ -214,7 +214,6 @@ public:
 	CameraSensorInfo sensorInfo_;
 	Rectangle ispCrop_; /* crop in ISP (camera mode) pixels */
 	Rectangle scalerCrop_; /* crop in sensor native pixels */
-	bool updateScalerCrop_;
 	Size ispMinCropSize_;
 
 	unsigned int dropFrameCount_;
@@ -1325,23 +1324,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 	Request *request = requestQueue_.front();
 	request->metadata().merge(controls);
 
-	/*
-	 * Also update the ScalerCrop in the metadata with what we actually
-	 * used. But we must first rescale that from ISP (camera mode) pixels
-	 * back into sensor native pixels.
-	 *
-	 * Sending this information on every frame may be helpful.
-	 */
-	if (updateScalerCrop_) {
-		updateScalerCrop_ = false;
-		scalerCrop_ = ispCrop_.scaledBy(sensorInfo_.analogCrop.size(),
-						sensorInfo_.outputSize);
-		scalerCrop_.translateBy(sensorInfo_.analogCrop.topLeft());
-	}
-	request->metadata().set(controls::ScalerCrop, scalerCrop_);
-
 	state_ = State::IpaComplete;
-
 	handleState();
 }
 
@@ -1673,8 +1656,15 @@ void RPiCameraData::applyScalerCrop(const ControlList &controls)
 		if (ispCrop != ispCrop_) {
 			isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop);
 			ispCrop_ = ispCrop;
-			/* queueFrameAction will have to update its scalerCrop_ */
-			updateScalerCrop_ = true;
+
+			/*
+			 * Also update the ScalerCrop in the metadata with what we actually
+			 * used. But we must first rescale that from ISP (camera mode) pixels
+			 * back into sensor native pixels.
+			 */
+			scalerCrop_ = ispCrop_.scaledBy(sensorInfo_.analogCrop.size(),
+							sensorInfo_.outputSize);
+			scalerCrop_.translateBy(sensorInfo_.analogCrop.topLeft());
 		}
 	}
 }
@@ -1684,6 +1674,8 @@ void RPiCameraData::fillRequestMetadata(const ControlList &bufferControls,
 {
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp));
+
+	request->metadata().set(controls::ScalerCrop, scalerCrop_);
 }
 
 void RPiCameraData::tryRunPipeline()

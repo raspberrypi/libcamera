@@ -392,6 +392,17 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	LOG(IPU3, Debug) << "vf: " << pipe->viewfinder.toString();
 
 	const Size &in = pipe->input;
+
+	/*
+	 * \todo Filter out all resolutions < IF_CROP_MAX.
+	 * See https://bugs.libcamera.org/show_bug.cgi?id=32
+	 */
+	if (in.width < IF_CROP_MAX_W || in.height < IF_CROP_MAX_H) {
+		LOG(IPU3, Error) << "Input resolution " << in.toString()
+				 << " not supported";
+		return {};
+	}
+
 	Size gdc = calculateGDC(pipe);
 
 	float bdsSF = static_cast<float>(in.width) / gdc.width;
@@ -400,10 +411,8 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	/* Populate the configurations vector by scaling width and height. */
 	unsigned int ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
 	unsigned int ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
-	unsigned int minIfWidth = std::min(IF_ALIGN_W,
-					   in.width - IF_CROP_MAX_W);
-	unsigned int minIfHeight = std::min(IF_ALIGN_H,
-					    in.height - IF_CROP_MAX_H);
+	unsigned int minIfWidth = in.width - IF_CROP_MAX_W;
+	unsigned int minIfHeight = in.height - IF_CROP_MAX_H;
 	while (ifWidth >= minIfWidth) {
 		while (ifHeight >= minIfHeight) {
 			Size iif{ ifWidth, ifHeight };
@@ -417,8 +426,8 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	/* Repeat search by scaling width first. */
 	ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
 	ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
-	minIfWidth = std::min(IF_ALIGN_W, in.width - IF_CROP_MAX_W);
-	minIfHeight = std::min(IF_ALIGN_H, in.height - IF_CROP_MAX_H);
+	minIfWidth = in.width - IF_CROP_MAX_W;
+	minIfHeight = in.height - IF_CROP_MAX_H;
 	while (ifHeight >= minIfHeight) {
 		/*
 		 * \todo This procedure is probably broken:

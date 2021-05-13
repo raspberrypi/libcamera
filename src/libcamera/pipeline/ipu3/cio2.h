@@ -56,6 +56,8 @@ public:
 	Signal<FrameBuffer *> &bufferReady() { return output_->bufferReady; }
 	Signal<uint32_t> &frameStart() { return csi2_->frameStart; }
 
+	Signal<> bufferAvailable;
+
 private:
 	void freeBuffers();
 

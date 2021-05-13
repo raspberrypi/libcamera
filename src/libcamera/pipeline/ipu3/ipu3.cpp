@@ -701,6 +701,8 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	data->ipa_->mapBuffers(ipaBuffers_);
 
 	data->frameInfos_.init(imgu->paramBuffers_, imgu->statBuffers_);
+	data->frameInfos_.bufferAvailable.connect(
+		data, &IPU3CameraData::queuePendingRequests);
 
 	return 0;
 }
@@ -1147,6 +1149,8 @@ int PipelineHandlerIPU3::registerCameras()
 		 */
 		data->cio2_.bufferReady().connect(data.get(),
 					&IPU3CameraData::cio2BufferReady);
+		data->cio2_.bufferAvailable.connect(
+			data.get(), &IPU3CameraData::queuePendingRequests);
 		data->imgu_->input_->bufferReady.connect(&data->cio2_,
 					&CIO2Device::tryReturnBuffer);
 		data->imgu_->output_->bufferReady.connect(data.get(),

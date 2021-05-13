@@ -302,6 +302,8 @@ void CIO2Device::tryReturnBuffer(FrameBuffer *buffer)
 			break;
 		}
 	}
+
+	bufferAvailable.emit();
 }
 
 void CIO2Device::freeBuffers()

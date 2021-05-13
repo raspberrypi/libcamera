@@ -103,6 +103,8 @@ bool IPU3Frames::tryComplete(IPU3Frames::Info *info)
 
 	remove(info);
 
+	bufferAvailable.emit();
+
 	return true;
 }
 

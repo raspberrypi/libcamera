@@ -12,6 +12,8 @@
 #include <queue>
 #include <vector>
 
+#include <libcamera/signal.h>
+
 namespace libcamera {
 
 class FrameBuffer;
@@ -48,6 +50,8 @@ public:
 
 	Info *find(unsigned int id);
 	Info *find(FrameBuffer *buffer);
+
+	Signal<> bufferAvailable;
 
 private:
 	std::queue<FrameBuffer *> availableParamBuffers_;

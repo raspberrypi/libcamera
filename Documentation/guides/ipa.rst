@@ -437,7 +437,7 @@ direct return, since it is an int32, while the other output parameter is a
 pointer-based output parameter.
 
 Using the IPA interface (IPA Module)
------------------------------
+------------------------------------
 
 The following header is necessary to implement an IPA Module (with raspberrypi
 as an example):

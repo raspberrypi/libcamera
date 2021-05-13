@@ -66,6 +66,8 @@ public:
 	void cio2BufferReady(FrameBuffer *buffer);
 	void paramBufferReady(FrameBuffer *buffer);
 	void statBufferReady(FrameBuffer *buffer);
+	void queuePendingRequests();
+	void cancelPendingRequests();
 
 	CIO2Device cio2_;
 	ImgUDevice *imgu_;
@@ -83,6 +85,8 @@ public:
 	IPU3Frames frameInfos_;
 
 	std::unique_ptr<ipa::ipu3::IPAProxyIPU3> ipa_;
+
+	std::queue<Request *> pendingRequests_;
 
 private:
 	void queueFrameAction(unsigned int id,
@@ -764,6 +768,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	IPU3CameraData *data = cameraData(camera);
 	int ret = 0;
 
+	data->cancelPendingRequests();
+
 	data->ipa_->stop();
 
 	ret |= data->imgu_->stop();
@@ -774,32 +780,66 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 	freeBuffers(camera);
 }
 
+void IPU3CameraData::cancelPendingRequests()
+{
+	while (!pendingRequests_.empty()) {
+		Request *request = pendingRequests_.front();
+
+		for (auto it : request->buffers()) {
+			FrameBuffer *buffer = it.second;
+			buffer->cancel();
+			pipe_->completeBuffer(request, buffer);
+		}
+
+		pipe_->completeRequest(request);
+		pendingRequests_.pop();
+	}
+}
+
+void IPU3CameraData::queuePendingRequests()
+{
+	while (!pendingRequests_.empty()) {
+		Request *request = pendingRequests_.front();
+
+		IPU3Frames::Info *info = frameInfos_.create(request);
+		if (!info)
+			break;
+
+		/*
+		 * Queue a buffer on the CIO2, using the raw stream buffer
+		 * provided in the request, if any, or a CIO2 internal buffer
+		 * otherwise.
+		 */
+		FrameBuffer *reqRawBuffer = request->findBuffer(&rawStream_);
+		FrameBuffer *rawBuffer = cio2_.queueBuffer(request, reqRawBuffer);
+		/*
+		 * \todo If queueBuffer fails in queuing a buffer to the device,
+		 * report the request as error by cancelling the request and
+		 * calling PipelineHandler::completeRequest().
+		 */
+		if (!rawBuffer) {
+			frameInfos_.remove(info);
+			break;
+		}
+
+		info->rawBuffer = rawBuffer;
+
+		ipa::ipu3::IPU3Event ev;
+		ev.op = ipa::ipu3::EventProcessControls;
+		ev.frame = info->id;
+		ev.controls = request->controls();
+		ipa_->processEvent(ev);
+
+		pendingRequests_.pop();
+	}
+}
+
 int PipelineHandlerIPU3::queueRequestDevice(Camera *camera, Request *request)
 {
 	IPU3CameraData *data = cameraData(camera);
 
-	IPU3Frames::Info *info = data->frameInfos_.create(request);
-	if (!info)
-		return -ENOBUFS;
-
-	/*
-	 * Queue a buffer on the CIO2, using the raw stream buffer provided in
-	 * the request, if any, or a CIO2 internal buffer otherwise.
-	 */
-	FrameBuffer *reqRawBuffer = request->findBuffer(&data->rawStream_);
-	FrameBuffer *rawBuffer = data->cio2_.queueBuffer(request, reqRawBuffer);
-	if (!rawBuffer) {
-		data->frameInfos_.remove(info);
-		return -ENOMEM;
-	}
-
-	info->rawBuffer = rawBuffer;
-
-	ipa::ipu3::IPU3Event ev;
-	ev.op = ipa::ipu3::EventProcessControls;
-	ev.frame = info->id;
-	ev.controls = request->controls();
-	data->ipa_->processEvent(ev);
+	data->pendingRequests_.push(request);
+	data->queuePendingRequests();
 
 	return 0;
 }

@@ -44,12 +44,12 @@ IPU3Frames::Info *IPU3Frames::create(Request *request)
 	unsigned int id = request->sequence();
 
 	if (availableParamBuffers_.empty()) {
-		LOG(IPU3, Error) << "Parameters buffer underrun";
+		LOG(IPU3, Debug) << "Parameters buffer underrun";
 		return nullptr;
 	}
 
 	if (availableStatBuffers_.empty()) {
-		LOG(IPU3, Error) << "Statistics buffer underrun";
+		LOG(IPU3, Debug) << "Statistics buffer underrun";
 		return nullptr;
 	}
 

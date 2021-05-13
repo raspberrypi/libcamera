@@ -272,7 +272,7 @@ FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 	/* If no buffer is provided in the request, use an internal one. */
 	if (!buffer) {
 		if (availableBuffers_.empty()) {
-			LOG(IPU3, Error) << "CIO2 buffer underrun";
+			LOG(IPU3, Debug) << "CIO2 buffer underrun";
 			return nullptr;
 		}
 

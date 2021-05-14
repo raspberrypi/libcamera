@@ -1438,6 +1438,13 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		return nullptr;
 	}
 
+	if (staticMetadata_->resized()) {
+		auto [entryCount, dataCount] = staticMetadata_->usage();
+		LOG(HAL, Info)
+			<< "Static metadata resized: " << entryCount
+			<< " entries and " << dataCount << " bytes used";
+	}
+
 	return staticMetadata_->get();
 }
 
@@ -2314,6 +2321,13 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	 */
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to construct result metadata";
+	}
+
+	if (resultMetadata->resized()) {
+		auto [entryCount, dataCount] = resultMetadata->usage();
+		LOG(HAL, Info)
+			<< "Result metadata resized: " << entryCount
+			<< " entries and " << dataCount << " bytes used";
 	}
 
 	return resultMetadata;

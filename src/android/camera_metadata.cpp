@@ -14,17 +14,19 @@ using namespace libcamera;
 LOG_DEFINE_CATEGORY(CameraMetadata)
 
 CameraMetadata::CameraMetadata()
-	: metadata_(nullptr), valid_(false)
+	: metadata_(nullptr), valid_(false), resized_(false)
 {
 }
 
 CameraMetadata::CameraMetadata(size_t entryCapacity, size_t dataCapacity)
+	: resized_(false)
 {
 	metadata_ = allocate_camera_metadata(entryCapacity, dataCapacity);
 	valid_ = metadata_ != nullptr;
 }
 
 CameraMetadata::CameraMetadata(const camera_metadata_t *metadata)
+	: resized_(false)
 {
 	metadata_ = clone_camera_metadata(metadata);
 	valid_ = metadata_ != nullptr;
@@ -53,6 +55,14 @@ CameraMetadata &CameraMetadata::operator=(const CameraMetadata &other)
 	valid_ = metadata_ != nullptr;
 
 	return *this;
+}
+
+std::tuple<size_t, size_t> CameraMetadata::usage() const
+{
+	size_t currentEntryCount = get_camera_metadata_entry_count(metadata_);
+	size_t currentDataCount = get_camera_metadata_data_count(metadata_);
+
+	return { currentEntryCount, currentDataCount };
 }
 
 bool CameraMetadata::getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) const
@@ -104,6 +114,8 @@ bool CameraMetadata::resize(size_t count, size_t size)
 
 		append_camera_metadata(metadata_, oldMetadata);
 		free_camera_metadata(oldMetadata);
+
+		resized_ = true;
 	}
 
 	return true;

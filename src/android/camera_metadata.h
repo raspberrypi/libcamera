@@ -23,6 +23,9 @@ public:
 
 	CameraMetadata &operator=(const CameraMetadata &other);
 
+	std::tuple<size_t, size_t> usage() const;
+	bool resized() const { return resized_; }
+
 	bool isValid() const { return valid_; }
 	bool getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) const;
 
@@ -89,6 +92,7 @@ private:
 
 	camera_metadata_t *metadata_;
 	bool valid_;
+	bool resized_;
 };
 
 #endif /* __ANDROID_CAMERA_METADATA_H__ */

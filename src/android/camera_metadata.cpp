@@ -110,12 +110,12 @@ bool CameraMetadata::resize(size_t count, size_t size)
 }
 
 bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count,
-			      size_t sizeofT)
+			      size_t elementSize)
 {
 	if (!valid_)
 		return false;
 
-	if (!resize(1, count * sizeofT)) {
+	if (!resize(1, count * elementSize)) {
 		LOG(CameraMetadata, Error) << "Failed to resize";
 		valid_ = false;
 		return false;

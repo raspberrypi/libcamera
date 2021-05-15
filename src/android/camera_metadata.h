@@ -72,7 +72,8 @@ public:
 		return updateEntry(tag, data.data(), data.size());
 	}
 
-	bool addEntry(uint32_t tag, const void *data, size_t count, size_t sizeofT);
+	bool addEntry(uint32_t tag, const void *data, size_t count,
+		      size_t elementSize);
 	bool updateEntry(uint32_t tag, const void *data, size_t count);
 
 	camera_metadata_t *get();

@@ -24,7 +24,6 @@ public:
 	CameraMetadata &operator=(const CameraMetadata &other);
 
 	bool isValid() const { return valid_; }
-	bool resize(size_t count, size_t size);
 	bool getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) const;
 
 	template<typename T,
@@ -72,14 +71,16 @@ public:
 		return updateEntry(tag, data.data(), data.size());
 	}
 
-	bool addEntry(uint32_t tag, const void *data, size_t count,
-		      size_t elementSize);
 	bool updateEntry(uint32_t tag, const void *data, size_t count);
 
 	camera_metadata_t *get();
 	const camera_metadata_t *get() const;
 
 private:
+	bool resize(size_t count, size_t size);
+	bool addEntry(uint32_t tag, const void *data, size_t count,
+		      size_t elementSize);
+
 	camera_metadata_t *metadata_;
 	bool valid_;
 };

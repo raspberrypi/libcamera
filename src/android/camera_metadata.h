@@ -42,7 +42,7 @@ public:
 
 	template<typename S,
 		 typename T = typename S::value_type>
-	bool addEntry(uint32_t tag, S &data)
+	bool addEntry(uint32_t tag, const S &data)
 	{
 		return addEntry(tag, data.data(), data.size(), sizeof(T));
 	}
@@ -67,7 +67,7 @@ public:
 
 	template<typename S,
 		 typename T = typename S::value_type>
-	bool updateEntry(uint32_t tag, S &data)
+	bool updateEntry(uint32_t tag, const S &data)
 	{
 		return updateEntry(tag, data.data(), data.size());
 	}

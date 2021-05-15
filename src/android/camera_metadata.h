@@ -55,7 +55,7 @@ public:
 	template<typename T>
 	bool updateEntry(uint32_t tag, const T &data)
 	{
-		return updateEntry(tag, &data, 1);
+		return updateEntry(tag, &data, 1, sizeof(T));
 	}
 
 	template<typename T, size_t size>
@@ -68,10 +68,14 @@ public:
 		 typename T = typename S::value_type>
 	bool updateEntry(uint32_t tag, const S &data)
 	{
-		return updateEntry(tag, data.data(), data.size());
+		return updateEntry(tag, data.data(), data.size(), sizeof(T));
 	}
 
-	bool updateEntry(uint32_t tag, const void *data, size_t count);
+	template<typename T>
+	bool updateEntry(uint32_t tag, const T *data, size_t count)
+	{
+		return updateEntry(tag, data, count, sizeof(T));
+	}
 
 	camera_metadata_t *get();
 	const camera_metadata_t *get() const;
@@ -80,6 +84,8 @@ private:
 	bool resize(size_t count, size_t size);
 	bool addEntry(uint32_t tag, const void *data, size_t count,
 		      size_t elementSize);
+	bool updateEntry(uint32_t tag, const void *data, size_t count,
+			 size_t elementSize);
 
 	camera_metadata_t *metadata_;
 	bool valid_;

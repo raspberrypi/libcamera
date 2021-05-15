@@ -137,7 +137,8 @@ bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count,
 	return false;
 }
 
-bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count)
+bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count,
+				 size_t elementSize)
 {
 	if (!valid_)
 		return false;
@@ -149,6 +150,14 @@ bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count)
 		LOG(CameraMetadata, Error)
 			<< "Failed to update tag "
 			<< (name ? name : "<unknown>") << ": not present";
+		return false;
+	}
+
+	if (camera_metadata_type_size[entry.type] != elementSize) {
+		const char *name = get_camera_metadata_tag_name(tag);
+		LOG(CameraMetadata, Fatal)
+			<< "Invalid element size for tag "
+			<< (name ? name : "<unknown>");
 		return false;
 	}
 

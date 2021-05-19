@@ -2306,6 +2306,12 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 		resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME, exposure);
 	}
 
+	if (metadata.contains(controls::FrameDuration)) {
+		int64_t duration = metadata.get(controls::FrameDuration) * 1000;
+		resultMetadata->addEntry(ANDROID_SENSOR_FRAME_DURATION,
+					 duration);
+	}
+
 	if (metadata.contains(controls::ScalerCrop)) {
 		Rectangle crop = metadata.get(controls::ScalerCrop);
 		int32_t cropRect[] = {

@@ -269,6 +269,10 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	if (agcAlgo_->updateControls())
 		setControls(frame);
 
+	/* \todo Populate this with real values */
+	ctrls.set(controls::FrameDuration,
+		  static_cast<int64_t>(33334));
+
 	IPU3Action op;
 	op.op = ActionMetadataReady;
 	op.controls = ctrls;

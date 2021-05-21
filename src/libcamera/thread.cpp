@@ -229,8 +229,6 @@ ThreadData *ThreadData::current()
  * called. The event loop dispatches events (messages, notifiers and timers)
  * sent to the objects living in the thread. This behaviour can be modified by
  * overriding the run() function.
- *
- * \context This class is \threadsafe.
  */
 
 /**
@@ -361,6 +359,8 @@ void Thread::finishThread()
  *
  * Calling exit() on a thread that reimplements the run() method and doesn't
  * call exec() will likely have no effect.
+ *
+ * \context This function is \threadsafe.
  */
 void Thread::exit(int code)
 {
@@ -382,6 +382,8 @@ void Thread::exit(int code)
  * elapsed, whichever happens first. If \a duration is equal to
  * utils::duration::max(), the wait never times out. If the thread is not
  * running the function returns immediately.
+ *
+ * \context This function is \threadsafe.
  *
  * \return True if the thread has finished, or false if the wait timed out
  */
@@ -412,6 +414,8 @@ bool Thread::wait(utils::duration duration)
  * started. This method guarantees that it returns true after the start()
  * method returns, and false after the wait() method returns.
  *
+ * \context This function is \threadsafe.
+ *
  * \return True if the thread is running, false otherwise
  */
 bool Thread::isRunning()
@@ -427,6 +431,7 @@ bool Thread::isRunning()
 
 /**
  * \brief Retrieve the Thread instance for the current thread
+ * \context This function is \threadsafe.
  * \return The Thread instance for the current thread
  */
 Thread *Thread::current()
@@ -441,6 +446,8 @@ Thread *Thread::current()
  * The thread ID corresponds to the Linux thread ID (TID) as returned by the
  * gettid system call.
  *
+ * \context This function is \threadsafe.
+ *
  * \return The ID of the current thread
  */
 pid_t Thread::currentId()
@@ -454,6 +461,8 @@ pid_t Thread::currentId()
  *
  * This function retrieves the internal event dispatcher for the thread. The
  * returned event dispatcher is valid until the thread is destroyed.
+ *
+ * \context This function is \threadsafe.
  *
  * \return Pointer to the event dispatcher
  */
@@ -544,6 +553,10 @@ void Thread::removeMessages(Object *receiver)
  * This function immediately dispatches all the messages previously posted for
  * this thread with postMessage() that match the message \a type. If the \a type
  * is Message::Type::None, all messages are dispatched.
+ *
+ * Messages shall only be dispatched from the current thread, typically within
+ * the thread from the run() function. Calling this function outside of the
+ * thread results in undefined behaviour.
  */
 void Thread::dispatchMessages(Message::Type type)
 {

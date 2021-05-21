@@ -42,7 +42,7 @@ private:
 	std::unique_ptr<libcamera::Request> request_;
 };
 
-class CameraWorker
+class CameraWorker : private libcamera::Thread
 {
 public:
 	CameraWorker();
@@ -51,6 +51,9 @@ public:
 	void stop();
 
 	void queueRequest(CaptureRequest *request);
+
+protected:
+	void run() override;
 
 private:
 	class Worker : public libcamera::Object
@@ -63,7 +66,6 @@ private:
 	};
 
 	Worker worker_;
-	libcamera::Thread thread_;
 };
 
 #endif /* __ANDROID_CAMERA_WORKER_H__ */

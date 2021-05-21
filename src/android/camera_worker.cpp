@@ -52,18 +52,24 @@ void CaptureRequest::queue()
  */
 CameraWorker::CameraWorker()
 {
-	worker_.moveToThread(&thread_);
+	worker_.moveToThread(this);
 }
 
 void CameraWorker::start()
 {
-	thread_.start();
+	Thread::start();
 }
 
 void CameraWorker::stop()
 {
-	thread_.exit();
-	thread_.wait();
+	exit();
+	wait();
+}
+
+void CameraWorker::run()
+{
+	exec();
+	dispatchMessages(Message::Type::InvokeMessage);
 }
 
 void CameraWorker::queueRequest(CaptureRequest *request)

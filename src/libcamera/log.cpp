@@ -980,6 +980,12 @@ LogMessage _log(const LogCategory *category, LogSeverity severity,
  *
  * If the severity is set to Fatal, execution is aborted and the program
  * terminates immediately after printing the message.
+ *
+ * \warning Logging from the destructor of a global object, either directly or
+ * indirectly, results in undefined behaviour.
+ *
+ * \todo Allow logging from destructors of global objects to the largest
+ * possible extent
  */
 
 /**

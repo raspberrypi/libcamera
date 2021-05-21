@@ -560,6 +560,8 @@ void Thread::removeMessages(Object *receiver)
  */
 void Thread::dispatchMessages(Message::Type type)
 {
+	ASSERT(data_ == ThreadData::current());
+
 	MutexLocker locker(data_->messages_.mutex_);
 
 	std::list<std::unique_ptr<Message>> &messages = data_->messages_.list_;

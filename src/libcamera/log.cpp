@@ -990,6 +990,7 @@ LogMessage _log(const LogCategory *category, LogSeverity severity,
 
 /**
  * \def ASSERT(condition)
+ * \hideinitializer
  * \brief Abort program execution if assertion fails
  *
  * If \a condition is false, ASSERT() logs an error message with the Fatal log

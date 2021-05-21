@@ -155,6 +155,10 @@ void Object::deleteLater()
  * running its event loop the message will not be delivered until the event
  * loop gets started.
  *
+ * Due to their asynchronous nature, threads do not provide any guarantee that
+ * all posted messages are delivered before the thread is stopped. See
+ * \ref thread-stop for additional information.
+ *
  * \context This function is \threadsafe.
  */
 void Object::postMessage(std::unique_ptr<Message> msg)
@@ -211,6 +215,10 @@ void Object::message(Message *msg)
  * Arguments \a args passed by value or reference are copied, while pointers
  * are passed untouched. The caller shall ensure that any pointer argument
  * remains valid until the method is invoked.
+ *
+ * Due to the asynchronous nature of threads, functions invoked asynchronously
+ * with the ConnectionTypeQueued type are not guaranteed to be called before
+ * the thread is stopped. See \ref thread-stop for additional information.
  *
  * \context This function is \threadsafe.
  *

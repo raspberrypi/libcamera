@@ -221,6 +221,47 @@ ThreadData *ThreadData::current()
  * called. The event loop dispatches events (messages, notifiers and timers)
  * sent to the objects living in the thread. This behaviour can be modified by
  * overriding the run() function.
+ *
+ * \section thread-stop Stopping Threads
+ *
+ * Threads can't be forcibly stopped. Instead, a thread user first requests the
+ * thread to exit and then waits for the thread's main function to react to the
+ * request and return, at which points the thread will stop.
+ *
+ * For threads running exec(), the exit() function is used to request the thread
+ * to exit. For threads subclassing the Thread class and implementing a custom
+ * run() function, a subclass-specific mechanism shall be provided. In either
+ * case, the wait() function shall be called to wait for the thread to stop.
+ *
+ * Due to their asynchronous nature, threads are subject to race conditions when
+ * they stop. This is of particular importance for messages posted to the thread
+ * with postMessage() (and the other mechanisms that rely on it, such as
+ * Object::invokeMethod() or asynchronous signal delivery). To understand the
+ * issues, three contexts need to be considered:
+ *
+ * - The worker is the Thread performing work and being instructed to stop.
+ * - The controller is the context which instructs the worker thread to stop.
+ * - The other contexts are any threads other than the worker and controller
+ *   that interact with the worker thread.
+ *
+ * Messages posted to the worker thread from the controller context before
+ * calling exit() are queued to the thread's message queue, and the Thread class
+ * offers no guarantee that those messages will be processed before the thread
+ * stops. This allows threads to stop fast.
+ *
+ * A thread that requires delivery of messages posted from the controller
+ * context before exit() should reimplement the run() function and call
+ * dispatchMessages() after exec().
+ *
+ * Messages posted to the worker thread from the other contexts are asynchronous
+ * with respect to the exit() call from the controller context. There is no
+ * guarantee as to whether those messages will be processed or not before the
+ * thread stops.
+ *
+ * Messages that are not processed will stay in the queue, in the exact same way
+ * as messages posted after the thread has stopped. They will be processed when
+ * the thread is restarted. If the thread is never restarted, they will be
+ * deleted without being processed when the Thread instance is destroyed.
  */
 
 /**
@@ -479,6 +520,9 @@ EventDispatcher *Thread::eventDispatcher()
  * Messages are delivered through the thread's event loop. If the thread is not
  * running its event loop the message will not be delivered until the event
  * loop gets started.
+ *
+ * When the thread is stopped, posted messages may not have all been processed.
+ * See \ref thread-stop for additional information.
  *
  * If the \a receiver is not bound to this thread the behaviour is undefined.
  *

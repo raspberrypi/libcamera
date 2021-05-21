@@ -64,14 +64,6 @@
  * be overridden by selecting a different connection type when calling
  * Signal::connect().
  *
- * Asynchronous signal delivery is used internally in libcamera, but is also
- * available to applications if desired. To use this feature, applications
- * shall create receiver classes that inherit from the Object class, and
- * provide an event loop to the CameraManager as explained above. Note that
- * Object instances created by the application are limited to living in the
- * application's main thread. Creating Object instances from another thread of
- * an application causes undefined behaviour.
- *
  * \section thread-reentrancy Reentrancy and Thread-Safety
  *
  * Through the documentation, several terms are used to define how classes and

@@ -248,6 +248,8 @@ void LogOutput::writeStream(const std::string &str)
 class Logger
 {
 public:
+	~Logger();
+
 	static Logger *instance();
 
 	void write(const LogMessage &msg);
@@ -267,7 +269,6 @@ private:
 
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
-	void unregisterCategory(LogCategory *category);
 
 	std::unordered_set<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
@@ -367,6 +368,12 @@ int logSetTarget(LoggingTarget target)
 void logSetLevel(const char *category, const char *level)
 {
 	Logger::instance()->logSetLevel(category, level);
+}
+
+Logger::~Logger()
+{
+	for (LogCategory *category : categories_)
+		delete category;
 }
 
 /**
@@ -666,18 +673,6 @@ void Logger::registerCategory(LogCategory *category)
 }
 
 /**
- * \brief Unregister a log category from the logger
- * \param[in] category The log category
- *
- * If the \a category hasn't been registered with the logger this function
- * performs no operation.
- */
-void Logger::unregisterCategory(LogCategory *category)
-{
-	categories_.erase(category);
-}
-
-/**
  * \enum LogSeverity
  * Log message severity
  * \var LogDebug
@@ -711,11 +706,6 @@ LogCategory::LogCategory(const char *name)
 	Logger::instance()->registerCategory(this);
 }
 
-LogCategory::~LogCategory()
-{
-	Logger::instance()->unregisterCategory(this);
-}
-
 /**
  * \fn LogCategory::name()
  * \brief Retrieve the log category name
@@ -746,12 +736,12 @@ void LogCategory::setSeverity(LogSeverity severity)
  * The default log category is named "default" and is used by the LOG() macro
  * when no log category is specified.
  *
- * \return A pointer to the default log category
+ * \return A reference to the default log category
  */
 const LogCategory &LogCategory::defaultCategory()
 {
-	static const LogCategory category("default");
-	return category;
+	static const LogCategory *category = new LogCategory("default");
+	return *category;
 }
 
 /**

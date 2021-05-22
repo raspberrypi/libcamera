@@ -29,7 +29,6 @@ class LogCategory
 {
 public:
 	explicit LogCategory(const char *name);
-	~LogCategory();
 
 	const char *name() const { return name_; }
 	LogSeverity severity() const { return severity_; }
@@ -48,8 +47,9 @@ extern const LogCategory &_LOG_CATEGORY(name)();
 #define LOG_DEFINE_CATEGORY(name)					\
 const LogCategory &_LOG_CATEGORY(name)()				\
 {									\
-	static LogCategory category(#name);				\
-	return category;						\
+	/* The instance will be deleted by the Logger destructor. */	\
+	static LogCategory *category = new LogCategory(#name);		\
+	return *category;						\
 }
 
 class LogMessage

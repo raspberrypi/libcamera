@@ -20,7 +20,12 @@ class ByteStreamBufferTest : public Test
 protected:
 	int run()
 	{
-		std::array<uint8_t, 100> data;
+		/*
+		 * gcc 11.1.0 incorrectly raises a maybe-uninitialized warning
+		 * when calling data.size() below (if the address sanitizer is
+		 * disabled). Silence it by initializing the array.
+		 */
+		std::array<uint8_t, 100> data = {};
 		unsigned int i;
 		uint32_t value;
 		int ret;

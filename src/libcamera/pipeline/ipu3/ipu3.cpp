@@ -983,9 +983,10 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
 	}
 
-	controls[&controls::FrameDurations] = ControlInfo(frameDurations[0],
-							  frameDurations[1],
-							  frameDurations[2]);
+	controls[&controls::FrameDurationLimits] =
+		ControlInfo(frameDurations[0],
+			    frameDurations[1],
+			    frameDurations[2]);
 
 	/*
 	 * Compute the scaler crop limits.

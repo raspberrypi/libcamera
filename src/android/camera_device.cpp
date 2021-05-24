@@ -864,7 +864,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	int64_t minFrameDurationNsec = -1;
 	int64_t maxFrameDurationNsec = -1;
-	const auto frameDurationsInfo = controlsInfo.find(&controls::FrameDurations);
+	const auto frameDurationsInfo = controlsInfo.find(&controls::FrameDurationLimits);
 	if (frameDurationsInfo != controlsInfo.end()) {
 		minFrameDurationNsec = frameDurationsInfo->second.min().get<int64_t>() * 1000;
 		maxFrameDurationNsec = frameDurationsInfo->second.max().get<int64_t>() * 1000;

@@ -44,7 +44,7 @@ static const ControlInfoMap Controls = {
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ColourCorrectionMatrix, ControlInfo(-16.0f, 16.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::FrameDurations, ControlInfo(INT64_C(1000), INT64_C(1000000000)) },
+	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(1000), INT64_C(1000000000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 };
 

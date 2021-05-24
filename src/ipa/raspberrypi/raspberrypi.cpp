@@ -859,7 +859,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 			break;
 		}
 
-		case controls::FRAME_DURATIONS: {
+		case controls::FRAME_DURATION_LIMITS: {
 			auto frameDurations = ctrl.second.get<Span<const int64_t>>();
 			applyFrameDurations(frameDurations[0], frameDurations[1]);
 			break;
@@ -1074,7 +1074,7 @@ void IPARPi::applyFrameDurations(double minFrameDuration, double maxFrameDuratio
 	maxFrameDuration_ = std::max(maxFrameDuration_, minFrameDuration_);
 
 	/* Return the validated limits via metadata. */
-	libcameraMetadata_.set(controls::FrameDurations,
+	libcameraMetadata_.set(controls::FrameDurationLimits,
 			       { static_cast<int64_t>(minFrameDuration_),
 				 static_cast<int64_t>(maxFrameDuration_) });
 

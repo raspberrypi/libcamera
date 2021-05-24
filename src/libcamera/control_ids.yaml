@@ -323,7 +323,14 @@ controls:
         step to respect the received gain factor and shall report
         their total value in the request metadata.
 
-  - FrameDurations:
+  - FrameDuration:
+      type: int64_t
+      description: |
+        The instantaneous frame duration from start of frame exposure to start
+        of next exposure, expressed in microseconds. This control is meant to
+        be returned in metadata.
+
+  - FrameDurationLimits:
       type: int64_t
       description: |
         The minimum and maximum (in that order) frame duration,

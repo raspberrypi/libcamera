@@ -25,6 +25,11 @@ option('gstreamer',
         value : 'auto',
         description : 'Compile libcamera GStreamer plugin')
 
+option('ipas',
+        type : 'array',
+        choices : ['ipu3', 'raspberrypi', 'rkisp1', 'vimc'],
+        description : 'Select which IPA modules to build')
+
 option('lc-compliance',
         type : 'feature',
         value : 'auto',

@@ -19,14 +19,15 @@ subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')
 
-ipas = ['ipu3', 'raspberrypi', 'rkisp1', 'vimc']
 ipa_names = []
+
+ipa_modules = get_option('ipas')
 
 # The ipa-sign-install.sh script which uses the ipa_names variable will itself
 # prepend MESON_INSTALL_DESTDIR_PREFIX to each ipa module name, therefore we
 # must not include the prefix string here.
 foreach pipeline : pipelines
-    if ipas.contains(pipeline)
+    if ipa_modules.contains(pipeline)
         subdir(pipeline)
         ipa_names += ipa_install_dir / ipa_name + '.so'
     endif

@@ -78,7 +78,7 @@ module libcamera;
 	uint32 height;
 };
 
-[skipHeader] struct CameraSensorInfo {
+struct CameraSensorInfo {
 	string model;
 
 	uint32 bitsPerPixel;

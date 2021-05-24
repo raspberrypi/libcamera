@@ -14,6 +14,7 @@
 #include <libcamera/class.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+#include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
@@ -23,22 +24,6 @@ namespace libcamera {
 
 class BayerFormat;
 class MediaEntity;
-
-struct CameraSensorInfo {
-	std::string model;
-
-	uint32_t bitsPerPixel;
-
-	Size activeAreaSize;
-	Rectangle analogCrop;
-	Size outputSize;
-
-	uint64_t pixelRate;
-	uint32_t lineLength;
-
-	uint32_t minFrameLength;
-	uint32_t maxFrameLength;
-};
 
 class CameraSensor : protected Loggable
 {

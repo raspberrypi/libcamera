@@ -25,7 +25,6 @@
 #include <libcamera/span.h>
 
 #include "libcamera/internal/buffer.h"
-#include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/log.h"
 
 #include <linux/bcm2835-isp.h>

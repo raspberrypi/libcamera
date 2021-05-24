@@ -8,6 +8,8 @@ mojom_parser = find_program('./parser.py')
 
 mojom_generator = find_program('./generate.py')
 
+mojom_docs_extractor = find_program('./extract-docs.py')
+
 mojom_templates = custom_target('mojom_templates',
                                 input : mojom_template_files,
                                 output : 'libcamera_templates.zip',

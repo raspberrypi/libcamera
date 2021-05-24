@@ -24,6 +24,7 @@ if doxygen.found() and dot.found()
                       doxyfile,
                       libcamera_internal_headers,
                       libcamera_ipa_headers,
+                      libcamera_ipa_interfaces,
                       libcamera_public_headers,
                       libcamera_sources,
                       libipa_headers,

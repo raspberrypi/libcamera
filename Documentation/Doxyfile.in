@@ -844,7 +844,6 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/span.h \
 			 @TOP_SRCDIR@/src/libcamera/pipeline/ \
 			 @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
 			 @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
-			 @TOP_BUILDDIR@/include/libcamera/ipa/ \
 			 @TOP_BUILDDIR@/src/libcamera/proxy/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
@@ -861,7 +860,12 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       =
+EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/*_proxy.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/ipu3_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/raspberrypi_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/rkisp1_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/vimc_*.h \
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

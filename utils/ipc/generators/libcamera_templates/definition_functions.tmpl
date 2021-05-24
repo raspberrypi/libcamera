@@ -25,6 +25,7 @@ enum {{enum.mojom_name}} {
 struct {{struct.mojom_name}}
 {
 public:
+#ifndef __DOXYGEN__
 	{{struct.mojom_name}}() {%- if struct|has_default_fields %}
 		:{% endif %}
 {%- for field in struct.fields|with_default_values -%}
@@ -44,6 +45,8 @@ public:
 {%- endfor %}
 	{
 	}
+#endif
+
 {% for field in struct.fields %}
 	{{field|name}} {{field.mojom_name}};
 {%- endfor %}

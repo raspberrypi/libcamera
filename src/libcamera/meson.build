@@ -66,6 +66,7 @@ includes = [
     libcamera_includes,
 ]
 
+subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
 

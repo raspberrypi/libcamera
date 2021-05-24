@@ -43,8 +43,7 @@ public:
 	int start() override;
 	void stop() override {}
 
-	void configure(const std::map<uint32_t, ControlInfoMap> &entityControls,
-		       const Size &bdsOutputSize) override;
+	void configure(const IPAConfigInfo &configInfo) override;
 
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
@@ -139,13 +138,12 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 			    << (int)bdsGrid_.height << " << " << (int)bdsGrid_.block_height_log2 << ")";
 }
 
-void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls,
-			const Size &bdsOutputSize)
+void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 {
-	if (entityControls.empty())
+	if (configInfo.entityControls.empty())
 		return;
 
-	ctrls_ = entityControls.at(0);
+	ctrls_ = configInfo.entityControls.at(0);
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
 	if (itExp == ctrls_.end()) {
@@ -169,10 +167,10 @@ void IPAIPU3::configure(const std::map<uint32_t, ControlInfoMap> &entityControls
 
 	params_ = {};
 
-	calculateBdsGrid(bdsOutputSize);
+	calculateBdsGrid(configInfo.bdsOutputSize);
 
 	awbAlgo_ = std::make_unique<IPU3Awb>();
-	awbAlgo_->initialise(params_, bdsOutputSize, bdsGrid_);
+	awbAlgo_->initialise(params_, configInfo.bdsOutputSize, bdsGrid_);
 
 	agcAlgo_ = std::make_unique<IPU3Agc>();
 	agcAlgo_->initialise(bdsGrid_);

@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
 /*
- * \todo Document the interface as src/libcamera/ipa/vimc_ipa_interface.cpp
- * and remove the EXCLUDE_PATTERNS entry in Doxygen.in for its generation.
+ * \todo Document the interface and remove the related EXCLUDE_PATTERNS entry.
  */
 
 module ipa.vimc;

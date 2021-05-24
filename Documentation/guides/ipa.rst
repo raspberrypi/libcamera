@@ -166,6 +166,12 @@ At a minimum, the following three functions must be present (and implemented):
 All three of these functions are synchronous. The parameters for start() and
 init() may be customized.
 
+init() initializes the IPA interface. It shall be called before any other
+function of the IPAInterface.
+
+stop() informs the IPA module that the camera is stopped. The IPA module shall
+release resources prepared in start().
+
 A configure() method is recommended. Any ControlInfoMap instances that will be
 used by the IPA must be sent to the IPA from the pipeline handler, at configure
 time, for example.

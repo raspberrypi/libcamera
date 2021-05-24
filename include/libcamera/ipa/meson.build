@@ -145,3 +145,6 @@ foreach file : ipa_mojom_files
 endforeach
 
 ipa_mojom_files = files(ipa_mojom_files)
+
+# Pass this to the documentation generator in src/libcamera/ipa
+ipa_mojom_files += files(['core.mojom'])

@@ -81,7 +81,7 @@ foreach file : ipa_mojom_files
     endif
 
     # {pipeline}.mojom-module
-    mojom = custom_target(file.split('.')[0] + '_mojom_module',
+    mojom = custom_target(name + '_mojom_module',
                           input : file,
                           output : file + '-module',
                           depends : ipa_mojom_core,
@@ -143,3 +143,5 @@ foreach file : ipa_mojom_files
 
     libcamera_generated_ipa_headers += [header, serializer, proxy_header]
 endforeach
+
+ipa_mojom_files = files(ipa_mojom_files)

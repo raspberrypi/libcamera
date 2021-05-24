@@ -183,4 +183,6 @@ summary({
             'qcam application': qcam_enabled,
             'lc-compliance application': lc_compliance_enabled,
             'Unit tests': test_enabled,
-        }, section : 'Configuration')
+        },
+        section : 'Configuration',
+        bool_yn : true)

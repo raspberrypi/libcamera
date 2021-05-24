@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+libcamera_ipa_include_dir = libcamera_include_dir / 'ipa'
+
 libcamera_ipa_headers = files([
     'ipa_controls.h',
     'ipa_interface.h',
@@ -7,7 +9,7 @@ libcamera_ipa_headers = files([
 ])
 
 install_headers(libcamera_ipa_headers,
-                subdir: libcamera_include_dir / 'ipa')
+                subdir: libcamera_ipa_include_dir)
 
 libcamera_generated_ipa_headers = []
 
@@ -31,6 +33,8 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_interface_h',
                   input : ipa_mojom_core,
                   output : 'core_ipa_interface.h',
                   depends : mojom_templates,
+                  install : true,
+                  install_dir : get_option('includedir') / libcamera_ipa_include_dir,
                   command : [
                       mojom_generator, 'generate',
                       '-g', 'libcamera',
@@ -93,6 +97,8 @@ foreach file : ipa_mojom_files
                            input : mojom,
                            output : name + '_ipa_interface.h',
                            depends : mojom_templates,
+                           install : true,
+                           install_dir : get_option('includedir') / libcamera_ipa_include_dir,
                            command : [
                                mojom_generator, 'generate',
                                '-g', 'libcamera',

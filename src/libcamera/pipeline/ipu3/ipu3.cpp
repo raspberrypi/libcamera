@@ -547,7 +547,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	if (ret)
 		return ret;
 
-	CameraSensorInfo sensorInfo;
+	IPACameraSensorInfo sensorInfo;
 	cio2->sensor()->sensorInfo(&sensorInfo);
 	data->cropRegion_ = sensorInfo.analogCrop;
 
@@ -924,7 +924,7 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	if (ret)
 		return ret;
 
-	CameraSensorInfo sensorInfo{};
+	IPACameraSensorInfo sensorInfo{};
 	ret = sensor->sensorInfo(&sensorInfo);
 	if (ret)
 		return ret;

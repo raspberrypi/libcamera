@@ -205,7 +205,7 @@ int CameraSensor::validateSensorDriver()
 	 *
 	 * Failures in reading any of the targets are not deemed to be fatal,
 	 * but some properties and features, like constructing a
-	 * CameraSensorInfo for the IPA module, won't be supported.
+	 * IPACameraSensorInfo for the IPA module, won't be supported.
 	 *
 	 * \todo Make support for selection targets mandatory as soon as all
 	 * test platforms have been updated.
@@ -674,7 +674,7 @@ int CameraSensor::setControls(ControlList *ctrls)
  *
  * \return 0 on success, a negative error code otherwise
  */
-int CameraSensor::sensorInfo(CameraSensorInfo *info) const
+int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 {
 	if (!bayerFormat_)
 		return -EINVAL;
@@ -701,7 +701,7 @@ int CameraSensor::sensorInfo(CameraSensorInfo *info) const
 	}
 
 	/*
-	 * CameraSensorInfo::analogCrop::x and CameraSensorInfo::analogCrop::y
+	 * IPACameraSensorInfo::analogCrop::x and IPACameraSensorInfo::analogCrop::y
 	 * are defined relatively to the active pixel area, while V4L2's
 	 * TGT_CROP target is defined in respect to the full pixel array.
 	 *

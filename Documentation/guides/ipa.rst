@@ -74,11 +74,11 @@ serialization, any custom data containers must be defined with the mojo IDL.
 The following list of libcamera objects are supported in the interface
 definition, and may be used as function parameter types or struct field types:
 
-- libcamera.CameraSensorInfo
 - libcamera.ControlInfoMap
 - libcamera.ControlList
 - libcamera.FileDescriptor
 - libcamera.IPABuffer
+- libcamera.IPACameraSensorInfo
 - libcamera.IPASettings
 - libcamera.IPAStream
 - libcamera.Point
@@ -208,7 +208,7 @@ The following is an example of a main interface definition:
                 start() => (int32 ret);
                 stop();
 
-                configure(libcamera.CameraSensorInfo sensorInfo,
+                configure(libcamera.IPACameraSensorInfo sensorInfo,
                           map<uint32, libcamera.IPAStream> streamConfig,
                           map<uint32, libcamera.ControlInfoMap> entityControls,
                           ConfigInput ipaConfig)
@@ -470,7 +470,7 @@ definition:
 
 .. code-block:: none
 
-   configure(libcamera.CameraSensorInfo sensorInfo,
+   configure(libcamera.IPACameraSensorInfo sensorInfo,
              uint32 exampleNumber,
              map<uint32, libcamera.IPAStream> streamConfig,
              map<uint32, libcamera.ControlInfoMap> entityControls,
@@ -481,7 +481,7 @@ We will need to implement a function with the following function signature:
 
 .. code-block:: C++
 
-        int configure(const CameraSensorInfo &sensorInfo,
+        int configure(const IPACameraSensorInfo &sensorInfo,
                       uint32_t exampleNumber,
                       const std::map<unsigned int, IPAStream> &streamConfig,
                       const std::map<unsigned int, ControlInfoMap> &entityControls,

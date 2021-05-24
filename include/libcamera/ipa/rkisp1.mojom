@@ -34,7 +34,7 @@ interface IPARkISP1Interface {
 	start() => (int32 ret);
 	stop();
 
-	configure(libcamera.CameraSensorInfo sensorInfo,
+	configure(libcamera.IPACameraSensorInfo sensorInfo,
 		  map<uint32, libcamera.IPAStream> streamConfig,
 		  map<uint32, libcamera.ControlInfoMap> entityControls)
 		=> (int32 ret);

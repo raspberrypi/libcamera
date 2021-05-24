@@ -37,7 +37,7 @@ public:
 	int start() override;
 	void stop() override {}
 
-	int configure(const CameraSensorInfo &info,
+	int configure(const IPACameraSensorInfo &info,
 		      const std::map<uint32_t, IPAStream> &streamConfig,
 		      const std::map<uint32_t, ControlInfoMap> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
@@ -90,12 +90,12 @@ int IPARkISP1::start()
 }
 
 /**
- * \todo The RkISP1 pipeline currently provides an empty CameraSensorInfo
+ * \todo The RkISP1 pipeline currently provides an empty IPACameraSensorInfo
  * if the connected sensor does not provide enough information to properly
  * assemble one. Make sure the reported sensor information are relevant
  * before accessing them.
  */
-int IPARkISP1::configure([[maybe_unused]] const CameraSensorInfo &info,
+int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
 			 const std::map<uint32_t, ControlInfoMap> &entityControls)
 {

@@ -87,7 +87,7 @@ namespace libcamera {
  */
 
 /**
- * \struct CameraSensorInfo
+ * \struct IPACameraSensorInfo
  * \brief Report the image sensor characteristics
  *
  * The structure reports image sensor characteristics used by IPA modules to
@@ -105,7 +105,7 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::model
+ * \var IPACameraSensorInfo::model
  * \brief The image sensor model name
  *
  * The sensor model name is a free-formed string that uniquely identifies the
@@ -113,18 +113,18 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::bitsPerPixel
+ * \var IPACameraSensorInfo::bitsPerPixel
  * \brief The number of bits per pixel of the image format produced by the
  * image sensor
  */
 
 /**
- * \var CameraSensorInfo::activeAreaSize
+ * \var IPACameraSensorInfo::activeAreaSize
  * \brief The size of the pixel array active area of the sensor
  */
 
 /**
- * \var CameraSensorInfo::analogCrop
+ * \var IPACameraSensorInfo::analogCrop
  * \brief The portion of the pixel array active area which is read-out and
  * processed
  *
@@ -137,7 +137,7 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::outputSize
+ * \var IPACameraSensorInfo::outputSize
  * \brief The size of the images produced by the camera sensor
  *
  * The output image size defines the horizontal and vertical sizes of the images
@@ -150,7 +150,7 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::pixelRate
+ * \var IPACameraSensorInfo::pixelRate
  * \brief The number of pixels produced in a second
  *
  * To obtain the read-out time in seconds of a full line:
@@ -161,14 +161,14 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::lineLength
+ * \var IPACameraSensorInfo::lineLength
  * \brief Total line length in pixels
  *
  * The total line length in pixel clock periods, including blanking.
  */
 
 /**
- * \var CameraSensorInfo::minFrameLength
+ * \var IPACameraSensorInfo::minFrameLength
  * \brief The minimum allowable frame length in units of lines
  *
  * The sensor frame length comprises of active output lines and blanking lines
@@ -183,7 +183,7 @@ namespace libcamera {
  */
 
 /**
- * \var CameraSensorInfo::maxFrameLength
+ * \var IPACameraSensorInfo::maxFrameLength
  * \brief The maximum allowable frame length in units of lines
  *
  * The sensor frame length comprises of active output lines and blanking lines

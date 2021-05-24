@@ -68,7 +68,7 @@ interface IPARPiInterface {
 	 * The \a ipaConfig and \a controls parameters carry data passed by the
 	 * pipeline handler to the IPA and back.
 	 */
-	configure(libcamera.CameraSensorInfo sensorInfo,
+	configure(libcamera.IPACameraSensorInfo sensorInfo,
 		  map<uint32, libcamera.IPAStream> streamConfig,
 		  map<uint32, libcamera.ControlInfoMap> entityControls,
 		  IPAConfig ipaConfig)

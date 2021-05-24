@@ -648,7 +648,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Inform IPA of stream configuration and sensor controls. */
-	CameraSensorInfo sensorInfo = {};
+	IPACameraSensorInfo sensorInfo = {};
 	ret = data->sensor_->sensorInfo(&sensorInfo);
 	if (ret) {
 		/* \todo Turn this into a hard failure. */

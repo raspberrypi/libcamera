@@ -39,7 +39,7 @@ static constexpr uint32_t kMaxGain = kMaxISO / 100;
 static constexpr uint32_t kMinExposure = 1;
 static constexpr uint32_t kMaxExposure = 1976;
 
-/* \todo those should be get from CameraSensorInfo ! */
+/* \todo those should be got from IPACameraSensorInfo ! */
 /* line duration in microseconds */
 static constexpr double kLineDuration = 16.8;
 static constexpr double kMaxExposureTime = kMaxExposure * kLineDuration;

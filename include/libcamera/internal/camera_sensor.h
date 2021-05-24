@@ -51,7 +51,7 @@ public:
 	V4L2Subdevice *device() { return subdev_.get(); }
 
 	const ControlList &properties() const { return properties_; }
-	int sensorInfo(CameraSensorInfo *info) const;
+	int sensorInfo(IPACameraSensorInfo *info) const;
 
 	void updateControlInfo();
 

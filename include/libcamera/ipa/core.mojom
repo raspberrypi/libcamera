@@ -78,7 +78,7 @@ module libcamera;
 	uint32 height;
 };
 
-struct CameraSensorInfo {
+struct IPACameraSensorInfo {
 	string model;
 
 	uint32 bitsPerPixel;

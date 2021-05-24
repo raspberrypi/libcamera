@@ -89,7 +89,7 @@ public:
 	void start(const ControlList &controls, ipa::RPi::StartConfig *startConfig) override;
 	void stop() override {}
 
-	int configure(const CameraSensorInfo &sensorInfo,
+	int configure(const IPACameraSensorInfo &sensorInfo,
 		      const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const ipa::RPi::IPAConfig &data,
@@ -101,7 +101,7 @@ public:
 	void signalIspPrepare(const ipa::RPi::ISPConfig &data) override;
 
 private:
-	void setMode(const CameraSensorInfo &sensorInfo);
+	void setMode(const IPACameraSensorInfo &sensorInfo);
 	bool validateSensorControls();
 	bool validateIspControls();
 	void queueRequest(const ControlList &controls);
@@ -278,7 +278,7 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 	lastRunTimestamp_ = 0;
 }
 
-void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
+void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 {
 	mode_.bitdepth = sensorInfo.bitsPerPixel;
 	mode_.width = sensorInfo.outputSize.width;
@@ -323,7 +323,7 @@ void IPARPi::setMode(const CameraSensorInfo &sensorInfo)
 	mode_.max_frame_length = sensorInfo.maxFrameLength;
 }
 
-int IPARPi::configure(const CameraSensorInfo &sensorInfo,
+int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const ipa::RPi::IPAConfig &ipaConfig,

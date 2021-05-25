@@ -54,6 +54,9 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "ov13858", {
 			.unitCellSize = { 1120, 1120 },
 		} },
+		{ "ov5693", {
+			.unitCellSize = { 1400, 1400 },
+		} },
 	};
 
 	const auto it = sensorProps.find(sensor);

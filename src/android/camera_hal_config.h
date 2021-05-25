@@ -7,7 +7,6 @@
 #ifndef __ANDROID_CAMERA_HAL_CONFIG_H__
 #define __ANDROID_CAMERA_HAL_CONFIG_H__
 
-#include <filesystem>
 #include <map>
 #include <string>
 

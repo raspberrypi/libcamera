@@ -6,7 +6,14 @@
  */
 #include "camera_hal_config.h"
 
+#if defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 8
+#include <experimental/filesystem>
+namespace std {
+namespace filesystem = std::experimental::filesystem;
+}
+#else
 #include <filesystem>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>

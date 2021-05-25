@@ -16,6 +16,7 @@
 
 /* These come from the vivid driver. */
 #define VIVID_CID_CUSTOM_BASE		(V4L2_CID_USER_BASE | 0xf000)
+#define VIVID_CID_INTEGER64		(VIVID_CID_CUSTOM_BASE + 3)
 #define VIVID_CID_U8_4D_ARRAY		(VIVID_CID_CUSTOM_BASE + 10)
 
 /* Helper for VIVID_CID_U8_4D_ARRAY control array size: not from kernel. */
@@ -46,6 +47,7 @@ protected:
 		if (infoMap.find(V4L2_CID_BRIGHTNESS) == infoMap.end() ||
 		    infoMap.find(V4L2_CID_CONTRAST) == infoMap.end() ||
 		    infoMap.find(V4L2_CID_SATURATION) == infoMap.end() ||
+		    infoMap.find(VIVID_CID_INTEGER64) == infoMap.end() ||
 		    infoMap.find(VIVID_CID_U8_4D_ARRAY) == infoMap.end()) {
 			cerr << "Missing controls" << endl;
 			return TestFail;
@@ -54,12 +56,14 @@ protected:
 		const ControlInfo &brightness = infoMap.find(V4L2_CID_BRIGHTNESS)->second;
 		const ControlInfo &contrast = infoMap.find(V4L2_CID_CONTRAST)->second;
 		const ControlInfo &saturation = infoMap.find(V4L2_CID_SATURATION)->second;
+		const ControlInfo &int64 = infoMap.find(VIVID_CID_INTEGER64)->second;
 		const ControlInfo &u8 = infoMap.find(VIVID_CID_U8_4D_ARRAY)->second;
 
 		/* Test getting controls. */
 		ControlList ctrls = capture_->getControls({ V4L2_CID_BRIGHTNESS,
 							    V4L2_CID_CONTRAST,
 							    V4L2_CID_SATURATION,
+							    VIVID_CID_INTEGER64,
 							    VIVID_CID_U8_4D_ARRAY });
 		if (ctrls.empty()) {
 			cerr << "Failed to get controls" << endl;
@@ -78,6 +82,12 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * The VIVID_CID_INTEGER64 control can take any value, just test
+		 * that its value can be retrieved and has the right type.
+		 */
+		ctrls.get(VIVID_CID_INTEGER64).get<int64_t>();
+
 		uint8_t u8Min = u8.min().get<uint8_t>();
 		uint8_t u8Max = u8.max().get<uint8_t>();
 
@@ -94,6 +104,7 @@ protected:
 		ctrls.set(V4L2_CID_BRIGHTNESS, brightness.min());
 		ctrls.set(V4L2_CID_CONTRAST, contrast.max());
 		ctrls.set(V4L2_CID_SATURATION, saturation.min());
+		ctrls.set(VIVID_CID_INTEGER64, int64.min());
 
 		std::array<uint8_t, VIVID_CID_U8_ARRAY_SIZE> u8Values;
 		std::fill(u8Values.begin(), u8Values.end(), u8.min().get<uint8_t>());

@@ -931,7 +931,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 		{ 0, 1 }
 	};
 	staticMetadata_->addEntry(ANDROID_CONTROL_AE_COMPENSATION_STEP,
-				  aeCompensationStep, 1);
+				  aeCompensationStep);
 
 	std::vector<uint8_t> availableAfModes = {
 		ANDROID_CONTROL_AF_MODE_OFF,
@@ -1153,7 +1153,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 	/* Statistics static metadata. */
 	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
 	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
-				  &faceDetectMode, 1);
+				  faceDetectMode);
 
 	int32_t maxFaceCount = 0;
 	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_MAX_FACE_COUNT,
@@ -1273,8 +1273,7 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 			ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT);
 	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
-				  availableStreamConfigurations.data(),
-				  availableStreamConfigurations.size());
+				  availableStreamConfigurations);
 
 	std::vector<int64_t> availableStallDurations = {
 		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB, 2560, 1920, 33333333,

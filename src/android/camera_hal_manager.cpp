@@ -37,6 +37,13 @@ CameraHalManager::CameraHalManager()
 /* CameraManager calls stop() in the destructor. */
 CameraHalManager::~CameraHalManager() = default;
 
+/* static */
+CameraHalManager *CameraHalManager::instance()
+{
+	static CameraHalManager *cameraHalManager = new CameraHalManager;
+	return cameraHalManager;
+}
+
 int CameraHalManager::init()
 {
 	cameraManager_ = std::make_unique<CameraManager>();

@@ -16,25 +16,23 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(HAL)
 
-static CameraHalManager cameraManager;
-
 /*------------------------------------------------------------------------------
  * Android Camera HAL callbacks
  */
 
 static int hal_get_number_of_cameras()
 {
-	return cameraManager.numCameras();
+	return CameraHalManager::instance()->numCameras();
 }
 
 static int hal_get_camera_info(int id, struct camera_info *info)
 {
-	return cameraManager.getCameraInfo(id, info);
+	return CameraHalManager::instance()->getCameraInfo(id, info);
 }
 
 static int hal_set_callbacks(const camera_module_callbacks_t *callbacks)
 {
-	cameraManager.setCallbacks(callbacks);
+	CameraHalManager::instance()->setCallbacks(callbacks);
 
 	return 0;
 }
@@ -62,7 +60,7 @@ static int hal_init()
 {
 	LOG(HAL, Info) << "Initialising Android camera HAL";
 
-	cameraManager.init();
+	CameraHalManager::instance()->init();
 
 	return 0;
 }
@@ -77,7 +75,8 @@ static int hal_dev_open(const hw_module_t *module, const char *name,
 	LOG(HAL, Debug) << "Open camera " << name;
 
 	int id = atoi(name);
-	auto [camera, ret] = cameraManager.open(id, module);
+
+	auto [camera, ret] = CameraHalManager::instance()->open(id, module);
 	if (!camera) {
 		LOG(HAL, Error)
 			<< "Failed to open camera module '" << id << "'";

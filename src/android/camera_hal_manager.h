@@ -26,8 +26,9 @@ class CameraDevice;
 class CameraHalManager
 {
 public:
-	CameraHalManager();
 	~CameraHalManager();
+
+	static CameraHalManager *instance();
 
 	int init();
 
@@ -43,6 +44,8 @@ private:
 	using MutexLocker = std::unique_lock<std::mutex>;
 
 	static constexpr unsigned int firstExternalCameraId_ = 1000;
+
+	CameraHalManager();
 
 	static int32_t cameraLocation(const libcamera::Camera *cam);
 

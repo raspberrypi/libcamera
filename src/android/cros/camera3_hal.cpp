@@ -7,12 +7,15 @@
 
 #include <cros-camera/cros_camera_hal.h>
 
+#include "../camera_hal_manager.h"
+
 static void set_up(cros::CameraMojoChannelManagerToken *token)
 {
 }
 
 static void tear_down()
 {
+	delete CameraHalManager::instance();
 }
 
 cros::cros_camera_hal_t CROS_CAMERA_EXPORT CROS_CAMERA_HAL_INFO_SYM = {

@@ -1361,9 +1361,9 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		info->metadataProcessed = true;
 
 		/*
-		* tryComplete() will delete info if it completes the IPU3Frame.
-		* In that event, we must have obtained the Request before hand.
-		*/
+		 * tryComplete() will delete info if it completes the IPU3Frame.
+		 * In that event, we must have obtained the Request before hand.
+		 */
 		Request *request = info->request;
 
 		if (frameInfos_.tryComplete(info))

@@ -244,12 +244,6 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 
 	ControlList ctrls{ controls_ };
 
-	/*
-	 * Start by filling the ControlList. This can't be combined with filling
-	 * v4l2Ctrls, as updateControls() relies on both containers having the
-	 * same order, and the control list is based on a map, which is not
-	 * sorted by insertion order.
-	 */
 	for (uint32_t id : ids) {
 		const auto iter = controls_.find(id);
 		if (iter == controls_.end()) {
@@ -623,19 +617,17 @@ void V4L2Device::updateControlInfo()
 void V4L2Device::updateControls(ControlList *ctrls,
 				Span<const v4l2_ext_control> v4l2Ctrls)
 {
-	unsigned int i = 0;
-	for (auto &ctrl : *ctrls) {
-		if (i == v4l2Ctrls.size())
-			break;
+	for (const v4l2_ext_control &v4l2Ctrl : v4l2Ctrls) {
+		const unsigned int id = v4l2Ctrl.id;
 
-		const struct v4l2_ext_control *v4l2Ctrl = &v4l2Ctrls[i];
-		unsigned int id = ctrl.first;
-		ControlValue &value = ctrl.second;
+		ControlValue value = ctrls->get(id);
 
 		const auto iter = controls_.find(id);
+		ASSERT(iter != controls_.end());
+
 		switch (iter->first->type()) {
 		case ControlTypeInteger64:
-			value.set<int64_t>(v4l2Ctrl->value64);
+			value.set<int64_t>(v4l2Ctrl.value64);
 			break;
 
 		case ControlTypeByte:
@@ -650,11 +642,11 @@ void V4L2Device::updateControls(ControlList *ctrls,
 			 * \todo To be changed when support for string controls
 			 * will be added.
 			 */
-			value.set<int32_t>(v4l2Ctrl->value);
+			value.set<int32_t>(v4l2Ctrl.value);
 			break;
 		}
 
-		i++;
+		ctrls->set(id, value);
 	}
 }
 

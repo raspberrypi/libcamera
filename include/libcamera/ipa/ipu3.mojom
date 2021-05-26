@@ -32,7 +32,7 @@ struct IPU3Action {
 
 struct IPAConfigInfo {
 	libcamera.IPACameraSensorInfo sensorInfo;
-	map<uint32, ControlInfoMap> entityControls;
+	map<uint32, libcamera.ControlInfoMap> entityControls;
 	libcamera.Size bdsOutputSize;
 	libcamera.Size iif;
 };

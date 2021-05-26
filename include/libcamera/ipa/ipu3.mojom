@@ -21,6 +21,7 @@ enum IPU3Operations {
 struct IPU3Event {
 	IPU3Operations op;
 	uint32 frame;
+	int64 frameTimestamp;
 	uint32 bufferId;
 	libcamera.ControlList controls;
 };

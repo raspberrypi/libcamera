@@ -53,6 +53,7 @@ private:
 	void processControls(unsigned int frame, const ControlList &controls);
 	void fillParams(unsigned int frame, ipu3_uapi_params *params);
 	void parseStatistics(unsigned int frame,
+			     int64_t frameTimestamp,
 			     const ipu3_uapi_stats_3a *stats);
 
 	void setControls(unsigned int frame);
@@ -214,7 +215,7 @@ void IPAIPU3::processEvent(const IPU3Event &event)
 		const ipu3_uapi_stats_3a *stats =
 			reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
-		parseStatistics(event.frame, stats);
+		parseStatistics(event.frame, event.frameTimestamp, stats);
 		break;
 	}
 	case EventFillParams: {
@@ -257,6 +258,7 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 }
 
 void IPAIPU3::parseStatistics(unsigned int frame,
+			      [[maybe_unused]] int64_t frameTimestamp,
 			      [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	ControlList ctrls(controls::controls);

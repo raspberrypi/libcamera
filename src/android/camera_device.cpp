@@ -15,6 +15,7 @@
 #include <fstream>
 #include <sys/mman.h>
 #include <tuple>
+#include <unistd.h>
 #include <vector>
 
 #include <libcamera/control_ids.h>

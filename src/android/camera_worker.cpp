@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/poll.h>
+#include <unistd.h>
 
 #include "camera_device.h"
 

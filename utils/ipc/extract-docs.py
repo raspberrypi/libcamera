@@ -12,6 +12,7 @@ import sys
 
 regex_block_start = re.compile('^\/\*\*$')
 regex_block_end = re.compile('^ \*\/$')
+regex_spdx = re.compile('^\/\* SPDX-License-Identifier: .* \*\/$')
 
 
 def main(argv):
@@ -28,8 +29,12 @@ def main(argv):
 
     lines = open(args.input, 'r').readlines()
     pipeline = args.input.split('/')[-1].replace('.mojom', '')
-    data = f'''\
-/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+    if not regex_spdx.match(lines[0]):
+        raise Exception(f'Missing SPDX license header in {args.input}')
+
+    data = lines[0]
+    data += f'''\
 /*
  * Copyright (C) 2021, Google Inc.
  *

@@ -48,6 +48,9 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "imx219", {
 			.unitCellSize = { 1120, 1120 },
 		} },
+		{ "imx258", {
+			.unitCellSize = { 1120, 1120 },
+		} },
 		{ "ov5670", {
 			.unitCellSize = { 1120, 1120 },
 		} },

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2013-2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,21 @@
 #include "camera_common.h"
 
 /**
- * Camera device HAL 3.3 [ CAMERA_DEVICE_API_VERSION_3_3 ]
+ * Camera device HAL 3.5[ CAMERA_DEVICE_API_VERSION_3_5 ]
  *
  * This is the current recommended version of the camera device HAL.
  *
  * Supports the android.hardware.Camera API, and as of v3.2, the
- * android.hardware.camera2 API in LIMITED or FULL modes.
+ * android.hardware.camera2 API as LIMITED or above hardware level.
  *
  * Camera devices that support this version of the HAL must return
- * CAMERA_DEVICE_API_VERSION_3_3 in camera_device_t.common.version and in
+ * CAMERA_DEVICE_API_VERSION_3_5 in camera_device_t.common.version and in
  * camera_info_t.device_version (from camera_module_t.get_camera_info).
  *
- * CAMERA_DEVICE_API_VERSION_3_3:
- *    Camera modules that may contain version 3.3 devices must implement at
- *    least version 2.2 of the camera module interface (as defined by
- *    camera_module_t.common.module_api_version).
+ * CAMERA_DEVICE_API_VERSION_3_3 and above:
+ *    Camera modules that may contain version 3.3 or above devices must
+ *    implement at least version 2.2 of the camera module interface (as defined
+ *    by camera_module_t.common.module_api_version).
  *
  * CAMERA_DEVICE_API_VERSION_3_2:
  *    Camera modules that may contain version 3.2 devices must implement at
@@ -137,6 +137,52 @@
  *   - Addition of rotation field to camera3_stream_t.
  *
  *   - Addition of camera3 stream configuration operation mode to camera3_stream_configuration_t
+ *
+ * 3.4: Minor additions to supported metadata and changes to data_space support
+ *
+ *   - Add ANDROID_SENSOR_OPAQUE_RAW_SIZE static metadata as mandatory if
+ *     RAW_OPAQUE format is supported.
+ *
+ *   - Add ANDROID_CONTROL_POST_RAW_SENSITIVITY_BOOST_RANGE static metadata as
+ *     mandatory if any RAW format is supported
+ *
+ *   - Switch camera3_stream_t data_space field to a more flexible definition,
+ *     using the version 0 definition of dataspace encoding.
+ *
+ *   - General metadata additions which are available to use for HALv3.2 or
+ *     newer:
+ *     - ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_3
+ *     - ANDROID_CONTROL_POST_RAW_SENSITIVITY_BOOST
+ *     - ANDROID_CONTROL_POST_RAW_SENSITIVITY_BOOST_RANGE
+ *     - ANDROID_SENSOR_DYNAMIC_BLACK_LEVEL
+ *     - ANDROID_SENSOR_DYNAMIC_WHITE_LEVEL
+ *     - ANDROID_SENSOR_OPAQUE_RAW_SIZE
+ *     - ANDROID_SENSOR_OPTICAL_BLACK_REGIONS
+ *
+ * 3.5: Minor revisions to support session parameters and logical multi camera:
+ *
+ *   - Add ANDROID_REQUEST_AVAILABLE_SESSION_KEYS static metadata, which is
+ *     optional for implementations that want to support session parameters. If support is
+ *     needed, then Hal should populate the list with all available capture request keys
+ *     that can cause severe processing delays when modified by client. Typical examples
+ *     include parameters that require time-consuming HW re-configuration or internal camera
+ *     pipeline update.
+ *
+ *   - Add a session parameter field to camera3_stream_configuration which can be populated
+ *     by clients with initial values for the keys found in ANDROID_REQUEST_AVAILABLE_SESSION_KEYS.
+ *
+ *   - Metadata additions for logical multi camera capability:
+ *     - ANDROID_REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
+ *     - ANDROID_LOGICAL_MULTI_CAMERA_PHYSICAL_IDS
+ *     - ANDROID_LOGICAL_MULTI_CAMERA_SYNC_TYPE
+ *
+ *   - Add physical camera id field in camera3_stream, so that for a logical
+ *     multi camera, the application has the option to specify which physical camera
+ *     a particular stream is configured on.
+ *
+ *   - Add physical camera id and settings field in camera3_capture_request, so that
+ *     for a logical multi camera, the application has the option to specify individual
+ *     settings for a particular physical device.
  *
  */
 
@@ -1460,6 +1506,13 @@ typedef enum camera3_stream_configuration_mode {
      *      android.lens.opticalStabilizationMode (if it is supported)
      *      android.scaler.cropRegion
      *      android.statistics.faceDetectMode (if it is supported)
+     *   6. To reduce the amount of data passed across process boundaries at
+     *      high frame rate, within one batch, camera framework only propagates
+     *      the last shutter notify and the last capture results (including partial
+     *      results and final result) to the app. The shutter notifies and capture
+     *      results for the other requests in the batch are derived by
+     *      the camera framework. As a result, the HAL can return empty metadata
+     *      except for the last result in the batch.
      *
      * For more details about high speed stream requirements, see
      * android.control.availableHighSpeedVideoConfigurations and CONSTRAINED_HIGH_SPEED_VIDEO
@@ -1578,6 +1631,13 @@ typedef struct camera3_stream {
      *   value of this is 0.
      *   For all streams passed via configure_streams(), the HAL must write
      *   over this field with its usage flags.
+     *
+     *   From Android O, the usage flag for an output stream may be bitwise
+     *   combination of usage flags for multiple consumers, for the purpose of
+     *   sharing one camera stream between those consumers. The HAL must fail
+     *   configure_streams call with -EINVAL if the combined flags cannot be
+     *   supported due to imcompatible buffer format, dataSpace, or other hardware
+     *   limitations.
      */
     uint32_t usage;
 
@@ -1612,11 +1672,19 @@ typedef struct camera3_stream {
      *   be HAL_DATASPACE_UNKNOWN, and the appropriate color space, etc, should
      *   be determined from the usage flags and the format.
      *
-     * >= CAMERA_DEVICE_API_VERSION_3_3:
+     * = CAMERA_DEVICE_API_VERSION_3_3:
      *
      *   Always set by the camera service. HAL must use this dataSpace to
      *   configure the stream to the correct colorspace, or to select between
-     *   color and depth outputs if supported.
+     *   color and depth outputs if supported. The dataspace values are the
+     *   legacy definitions in graphics.h
+     *
+     * >= CAMERA_DEVICE_API_VERSION_3_4:
+     *
+     *   Always set by the camera service. HAL must use this dataSpace to
+     *   configure the stream to the correct colorspace, or to select between
+     *   color and depth outputs if supported. The dataspace values are set
+     *   using the V0 dataspace definitions in graphics.h
      */
     android_dataspace_t data_space;
 
@@ -1647,6 +1715,29 @@ typedef struct camera3_stream {
     int rotation;
 
     /**
+     * The physical camera id this stream belongs to.
+     *
+     * <= CAMERA_DEVICE_API_VERISON_3_4:
+     *
+     *    Not defined and must not be accessed.
+     *
+     * >= CAMERA_DEVICE_API_VERISON_3_5:
+     *
+     *    Always set by camera service. If the camera device is not a logical
+     *    multi camera, or if the camera is a logical multi camera but the stream
+     *    is not a physical output stream, this field will point to a 0-length
+     *    string.
+     *
+     *    A logical multi camera is a camera device backed by multiple physical
+     *    cameras that are also exposed to the application. And for a logical
+     *    multi camera, a physical output stream is an output stream specifically
+     *    requested on an underlying physical camera.
+     *
+     *    For an input stream, this field is guaranteed to be a 0-length string.
+     */
+    const char* physical_camera_id;
+
+    /**
      * This should be one of the camera3_stream_rotation_t values except for
      * CAMERA3_STREAM_ROTATION_180.
      * When setting to CAMERA3_STREAM_ROTATION_90 or CAMERA3_STREAM_ROTATION_270, HAL would crop,
@@ -1663,7 +1754,7 @@ typedef struct camera3_stream {
     int crop_rotate_scale_degrees;
 
     /* reserved for future use */
-    void *reserved[6];
+    void *reserved[5];
 
 } camera3_stream_t;
 
@@ -1697,16 +1788,30 @@ typedef struct camera3_stream_configuration {
     /**
      * >= CAMERA_DEVICE_API_VERSION_3_3:
      *
-     * The operation mode of streams in this configuration, one of the value defined in
-     * camera3_stream_configuration_mode_t.
-     * The HAL can use this mode as an indicator to set the stream property (e.g.,
-     * camera3_stream->max_buffers) appropriately. For example, if the configuration is
-     * CAMERA3_STREAM_CONFIGURATION_CONSTRAINED_HIGH_SPEED_MODE, the HAL may want to set aside more
-     * buffers for batch mode operation (see android.control.availableHighSpeedVideoConfigurations
-     * for batch mode definition).
+     * The operation mode of streams in this configuration, one of the value
+     * defined in camera3_stream_configuration_mode_t.  The HAL can use this
+     * mode as an indicator to set the stream property (e.g.,
+     * camera3_stream->max_buffers) appropriately. For example, if the
+     * configuration is
+     * CAMERA3_STREAM_CONFIGURATION_CONSTRAINED_HIGH_SPEED_MODE, the HAL may
+     * want to set aside more buffers for batch mode operation (see
+     * android.control.availableHighSpeedVideoConfigurations for batch mode
+     * definition).
      *
      */
     uint32_t operation_mode;
+
+    /**
+     * >= CAMERA_DEVICE_API_VERSION_3_5:
+     *
+     * The session metadata buffer contains the initial values of
+     * ANDROID_REQUEST_AVAILABLE_SESSION_KEYS. This field is optional
+     * and camera clients can choose to ignore it, in which case it will
+     * be set to NULL. If parameters are present, then Hal should examine
+     * the parameter values and configure its internal camera pipeline
+     * accordingly.
+     */
+    const camera_metadata_t *session_parameters;
 } camera3_stream_configuration_t;
 
 /**
@@ -1950,7 +2055,7 @@ typedef enum camera3_error_msg_code {
      * available. Subsequent requests are unaffected, and the device remains
      * operational. The frame_number field specifies the request for which the
      * buffer was dropped, and error_stream contains a pointer to the stream
-     * that dropped the frame.u
+     * that dropped the frame.
      */
     CAMERA3_MSG_ERROR_BUFFER = 4,
 
@@ -2190,6 +2295,44 @@ typedef struct camera3_capture_request {
      */
     const camera3_stream_buffer_t *output_buffers;
 
+    /**
+     * <= CAMERA_DEVICE_API_VERISON_3_4:
+     *
+     *    Not defined and must not be accessed.
+     *
+     * >= CAMERA_DEVICE_API_VERSION_3_5:
+     *    The number of physical camera settings to be applied. If 'num_physcam_settings'
+     *    equals 0 or a physical device is not included, then Hal must decide the
+     *    specific physical device settings based on the default 'settings'.
+     */
+    uint32_t num_physcam_settings;
+
+    /**
+     * <= CAMERA_DEVICE_API_VERISON_3_4:
+     *
+     *    Not defined and must not be accessed.
+     *
+     * >= CAMERA_DEVICE_API_VERSION_3_5:
+     *    The physical camera ids. The array will contain 'num_physcam_settings'
+     *    camera id strings for all physical devices that have specific settings.
+     *    In case some id is invalid, the process capture request must fail and return
+     *    -EINVAL.
+     */
+    const char **physcam_id;
+
+    /**
+     * <= CAMERA_DEVICE_API_VERISON_3_4:
+     *
+     *    Not defined and must not be accessed.
+     *
+     * >= CAMERA_DEVICE_API_VERSION_3_5:
+     *    The capture settings for the physical cameras. The array will contain
+     *    'num_physcam_settings' settings for invididual physical devices. In
+     *    case the settings at some particular index are empty, the process capture
+     *    request must fail and return -EINVAL.
+     */
+    const camera_metadata_t **physcam_settings;
+
 } camera3_capture_request_t;
 
 /**
@@ -2366,6 +2509,37 @@ typedef struct camera3_capture_result {
       * and no metadata.
       */
      uint32_t partial_result;
+
+     /**
+      * >= CAMERA_DEVICE_API_VERSION_3_5:
+      *
+      * Specifies the number of physical camera metadata this capture result
+      * contains. It must be equal to the number of physical cameras being
+      * requested from.
+      *
+      * If the current camera device is not a logical multi-camera, or the
+      * corresponding capture_request doesn't request on any physical camera,
+      * this field must be 0.
+      */
+     uint32_t num_physcam_metadata;
+
+     /**
+      * >= CAMERA_DEVICE_API_VERSION_3_5:
+      *
+      * An array of strings containing the physical camera ids for the returned
+      * physical camera metadata. The length of the array is
+      * num_physcam_metadata.
+      */
+     const char **physcam_ids;
+
+     /**
+      * >= CAMERA_DEVICE_API_VERSION_3_5:
+      *
+      * The array of physical camera metadata for the physical cameras being
+      * requested upon. This array should have a 1-to-1 mapping with the
+      * physcam_ids. The length of the array is num_physcam_metadata.
+      */
+     const camera_metadata_t **physcam_metadata;
 
 } camera3_capture_result_t;
 
@@ -2899,7 +3073,8 @@ typedef struct camera3_device_ops {
      *  0:      On a successful start to processing the capture request
      *
      * -EINVAL: If the input is malformed (the settings are NULL when not
-     *          allowed, there are 0 output buffers, etc) and capture processing
+     *          allowed, invalid physical camera settings,
+     *          there are 0 output buffers, etc) and capture processing
      *          cannot start. Failures during request processing should be
      *          handled by calling camera3_callback_ops_t.notify(). In case of
      *          this error, the framework will retain responsibility for the

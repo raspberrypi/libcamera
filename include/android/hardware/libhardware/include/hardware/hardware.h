@@ -202,6 +202,12 @@ typedef struct hw_device_t {
 
 } hw_device_t;
 
+#ifdef __cplusplus
+#define TO_HW_DEVICE_T_OPEN(x) reinterpret_cast<struct hw_device_t**>(x)
+#else
+#define TO_HW_DEVICE_T_OPEN(x) (struct hw_device_t**)(x)
+#endif
+
 /**
  * Name of the hal_module_info
  */

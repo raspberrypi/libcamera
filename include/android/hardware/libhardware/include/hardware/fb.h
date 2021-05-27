@@ -161,7 +161,7 @@ typedef struct framebuffer_device_t {
 static inline int framebuffer_open(const struct hw_module_t* module,
         struct framebuffer_device_t** device) {
     return module->methods->open(module,
-            GRALLOC_HARDWARE_FB0, (struct hw_device_t**)device);
+            GRALLOC_HARDWARE_FB0, TO_HW_DEVICE_T_OPEN(device));
 }
 
 static inline int framebuffer_close(struct framebuffer_device_t* device) {

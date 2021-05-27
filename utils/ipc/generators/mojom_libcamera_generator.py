@@ -129,6 +129,9 @@ def GetAllAttrs(element):
 
 def NeedsControlSerializer(element):
     types = GetAllTypes(element)
+    for type in ['ControlList', 'ControlInfoMap']:
+        if f'x:{type}' in types:
+            raise Exception(f'Unknown type "{type}" in {element.mojom_name}, did you mean "libcamera.{type}"?')
     return "ControlList" in types or "ControlInfoMap" in types
 
 def HasFd(element):

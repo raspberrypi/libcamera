@@ -20,10 +20,11 @@ list information page.
 IRC Channel
 -----------
 
-For informal and real time discussions, our IRC channel on Freenode is open to
-the public. Point your IRC client to #libcamera to say hello, or use the `WebChat`_.
+For informal and real time discussions, our IRC channel on irc.oftc.net is open
+to the public. Point your IRC client to #libcamera to say hello, or use the
+`WebChat`_.
 
-.. _WebChat: https://webchat.freenode.net/?channels=%23libcamera&uio=d4
+.. _WebChat: https://webchat.oftc.net/?channels=libcamera
 
 Source Code
 -----------

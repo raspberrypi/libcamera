@@ -28,6 +28,7 @@ libcamera_gst_sources = [
 libcamera_gst_cpp_args = [
     '-DVERSION="@0@"'.format(libcamera_git_version),
     '-DPACKAGE="@0@"'.format(meson.project_name()),
+    '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_40',
 ]
 
 # The G_DECLARE_FINAL_TYPE macro creates static inline functions that were

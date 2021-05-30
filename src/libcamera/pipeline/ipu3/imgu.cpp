@@ -138,12 +138,13 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
 		       ifHeight / bdsSF >= minBDSHeight) {
 
-			bdsHeight = ifHeight / bdsSF;
-			if (std::fmod(bdsHeight, 1.0) == 0) {
-				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+			float height = ifHeight / bdsSF;
+			if (std::fmod(height, 1.0) == 0) {
+				unsigned int bdsIntHeight = static_cast<unsigned int>(height);
 
 				if (!(bdsIntHeight % BDS_ALIGN_H)) {
 					foundIfHeight = ifHeight;
+					bdsHeight = height;
 					break;
 				}
 			}
@@ -155,12 +156,13 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
 		       ifHeight / bdsSF >= minBDSHeight) {
 
-			bdsHeight = ifHeight / bdsSF;
-			if (std::fmod(bdsHeight, 1.0) == 0) {
-				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
+			float height = ifHeight / bdsSF;
+			if (std::fmod(height, 1.0) == 0) {
+				unsigned int bdsIntHeight = static_cast<unsigned int>(height);
 
 				if (!(bdsIntHeight % BDS_ALIGN_H)) {
 					foundIfHeight = ifHeight;
+					bdsHeight = height;
 					break;
 				}
 			}

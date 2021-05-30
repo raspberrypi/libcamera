@@ -90,6 +90,10 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
+		{ "imx296", {
+			.unitCellSize = { 3450, 3450 },
+			.testPatternModes = {},
+		} },
 		{ "ov2740", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {

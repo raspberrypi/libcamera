@@ -9,7 +9,7 @@
 
 #include "../camera_hal_manager.h"
 
-static void set_up(cros::CameraMojoChannelManagerToken *token)
+static void set_up([[maybe_unused]] cros::CameraMojoChannelManagerToken *token)
 {
 }
 

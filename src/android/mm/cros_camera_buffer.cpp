@@ -48,7 +48,8 @@ private:
 };
 
 CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
-			       buffer_handle_t camera3Buffer, int flags)
+			       buffer_handle_t camera3Buffer,
+			       [[maybe_unused]] int flags)
 	: Extensible::Private(cameraBuffer), handle_(camera3Buffer),
 	  numPlanes_(0), valid_(false), registered_(false)
 {
@@ -128,7 +129,7 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 		 bufferManager_->GetPlaneSize(handle_, plane) };
 }
 
-size_t CameraBuffer::Private::jpegBufferSize(size_t maxJpegBufferSize) const
+size_t CameraBuffer::Private::jpegBufferSize([[maybe_unused]] size_t maxJpegBufferSize) const
 {
 	return bufferManager_->GetPlaneSize(handle_, 0);
 }

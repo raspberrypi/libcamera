@@ -375,10 +375,13 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 
 	/* Generate the stream configurations, there should be one per pad. */
 	state->config_ = state->cam_->generateConfiguration(roles);
-	/*
-	 * \todo Check if camera may increase or decrease the number of streams
-	 * regardless of the number of roles.
-	 */
+	if (state->config_ == nullptr) {
+		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+				  ("Failed to generate camera configuration from roles"),
+				  ("Camera::generateConfiguration() returned nullptr"));
+		gst_task_stop(task);
+		return;
+	}
 	g_assert(state->config_->size() == state->srcpads_.size());
 
 	for (gsize i = 0; i < state->srcpads_.size(); i++) {

@@ -34,6 +34,7 @@ qcam_resources = files([
 ])
 
 qcam_deps = [
+    libatomic,
     libcamera_dep,
     qt5_dep,
 ]

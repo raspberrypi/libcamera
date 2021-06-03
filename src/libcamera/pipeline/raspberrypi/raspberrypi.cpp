@@ -884,7 +884,9 @@ void PipelineHandlerRPi::stop(Camera *camera)
 	/* Disable SOF event generation. */
 	data->unicam_[Unicam::Image].dev()->setFrameStartEnabled(false);
 
-	/* This also stops the streams. */
+	for (auto const stream : data->streams_)
+		stream->dev()->streamOff();
+
 	data->clearIncompleteRequests();
 	data->bayerQueue_ = {};
 	data->embeddedQueue_ = {};
@@ -1478,48 +1480,16 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 void RPiCameraData::clearIncompleteRequests()
 {
 	/*
-	 * Queue up any buffers passed in the request.
-	 * This is needed because streamOff() will then mark the buffers as
-	 * cancelled.
-	 */
-	for (auto const request : requestQueue_) {
-		for (auto const stream : streams_) {
-			if (!stream->isExternal())
-				continue;
-
-			FrameBuffer *buffer = request->findBuffer(stream);
-			if (buffer)
-				stream->queueBuffer(buffer);
-		}
-	}
-
-	/* Stop all streams. */
-	for (auto const stream : streams_)
-		stream->dev()->streamOff();
-
-	/*
 	 * All outstanding requests (and associated buffers) must be returned
-	 * back to the pipeline. The buffers would have been marked as
-	 * cancelled by the call to streamOff() earlier.
+	 * back to the application.
 	 */
 	while (!requestQueue_.empty()) {
 		Request *request = requestQueue_.front();
-		/*
-		 * A request could be partially complete,
-		 * i.e. we have returned some buffers, but still waiting
-		 * for others or waiting for metadata.
-		 */
-		for (auto const stream : streams_) {
-			if (!stream->isExternal())
-				continue;
 
-			FrameBuffer *buffer = request->findBuffer(stream);
-			/*
-			 * Has the buffer already been handed back to the
-			 * request? If not, do so now.
-			 */
-			if (buffer && buffer->request())
-				pipe_->completeBuffer(request, buffer);
+		for (auto &b : request->buffers()) {
+			FrameBuffer *buffer = b.second;
+			buffer->cancel();
+			pipe_->completeBuffer(request, buffer);
 		}
 
 		pipe_->completeRequest(request);

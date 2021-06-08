@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include "libcamera/internal/utils.h"
+
 // Definition of "device metadata" which stores things like shutter time and
 // analogue gain that downstream control algorithms will want to know.
 
@@ -14,8 +16,8 @@ extern "C" {
 #endif
 
 struct DeviceStatus {
-	// time shutter is open, in microseconds
-	double shutter_speed;
+	// time shutter is open
+	libcamera::utils::Duration shutter_speed;
 	double analogue_gain;
 	// 1.0/distance-in-metres, or 0 if unknown
 	double lens_position;

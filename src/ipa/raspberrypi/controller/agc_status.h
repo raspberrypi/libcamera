@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include "libcamera/internal/utils.h"
+
 // The AGC algorithm should post the following structure into the image's
 // "agc.status" metadata.
 
@@ -18,17 +20,17 @@ extern "C" {
 // ignored until then.
 
 struct AgcStatus {
-	double total_exposure_value; // value for all exposure and gain for this image
-	double target_exposure_value; // (unfiltered) target total exposure AGC is aiming for
-	double shutter_time;
+	libcamera::utils::Duration total_exposure_value; // value for all exposure and gain for this image
+	libcamera::utils::Duration target_exposure_value; // (unfiltered) target total exposure AGC is aiming for
+	libcamera::utils::Duration shutter_time;
 	double analogue_gain;
 	char exposure_mode[32];
 	char constraint_mode[32];
 	char metering_mode[32];
 	double ev;
-	double flicker_period;
+	libcamera::utils::Duration flicker_period;
 	int floating_region_enable;
-	double fixed_shutter;
+	libcamera::utils::Duration fixed_shutter;
 	double fixed_analogue_gain;
 	double digital_gain;
 	int locked;

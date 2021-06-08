@@ -184,7 +184,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 		return;
 	}
 
-	deviceStatus.shutter_speed = Exposure(exposureLines).get<std::micro>();
+	deviceStatus.shutter_speed = Exposure(exposureLines);
 	deviceStatus.analogue_gain = Gain(gainCode);
 
 	LOG(IPARPI, Debug) << "Metadata updated - Exposure : "

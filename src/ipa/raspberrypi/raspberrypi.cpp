@@ -222,11 +222,11 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	AgcStatus agcStatus;
-	agcStatus.shutter_time = 0.0;
+	agcStatus.shutter_time = 0.0s;
 	agcStatus.analogue_gain = 0.0;
 
 	metadata.Get("agc.status", agcStatus);
-	if (agcStatus.shutter_time != 0.0 && agcStatus.analogue_gain != 0.0) {
+	if (agcStatus.shutter_time && agcStatus.analogue_gain) {
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		startConfig->controls = std::move(ctrls);
@@ -389,7 +389,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		/* Supply initial values for gain and exposure. */
 		ControlList ctrls(sensorCtrls_);
 		AgcStatus agcStatus;
-		agcStatus.shutter_time = DefaultExposureTime.get<std::micro>();
+		agcStatus.shutter_time = DefaultExposureTime;
 		agcStatus.analogue_gain = DefaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
@@ -461,7 +461,8 @@ void IPARPi::reportMetadata()
 	 */
 	DeviceStatus *deviceStatus = rpiMetadata_.GetLocked<DeviceStatus>("device.status");
 	if (deviceStatus) {
-		libcameraMetadata_.set(controls::ExposureTime, deviceStatus->shutter_speed);
+		libcameraMetadata_.set(controls::ExposureTime,
+				       deviceStatus->shutter_speed.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogue_gain);
 	}
 
@@ -1014,7 +1015,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 	int32_t exposureLines = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	int32_t gainCode = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 
-	deviceStatus.shutter_speed = helper_->Exposure(exposureLines).get<std::micro>();
+	deviceStatus.shutter_speed = helper_->Exposure(exposureLines);
 	deviceStatus.analogue_gain = helper_->Gain(gainCode);
 
 	LOG(IPARPI, Debug) << "Metadata - Exposure : "
@@ -1099,7 +1100,7 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
 
 	/* GetVBlanking might clip exposure time to the fps limits. */
-	Duration exposure = agcStatus->shutter_time * 1.0us;
+	Duration exposure = agcStatus->shutter_time;
 	int32_t vblanking = helper_->GetVBlanking(exposure, minFrameDuration_, maxFrameDuration_);
 	int32_t exposureLines = helper_->ExposureLines(exposure);
 

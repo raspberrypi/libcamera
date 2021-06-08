@@ -16,6 +16,7 @@
 
 using namespace RPiController;
 using namespace libcamera;
+using namespace std::literals::chrono_literals;
 
 LOG_DEFINE_CATEGORY(RPiLux)
 
@@ -38,7 +39,7 @@ char const *Lux::Name() const
 void Lux::Read(boost::property_tree::ptree const &params)
 {
 	reference_shutter_speed_ =
-		params.get<double>("reference_shutter_speed");
+		params.get<double>("reference_shutter_speed") * 1.0us;
 	reference_gain_ = params.get<double>("reference_gain");
 	reference_aperture_ = params.get<double>("reference_aperture", 1.0);
 	reference_Y_ = params.get<double>("reference_Y");
@@ -60,15 +61,15 @@ void Lux::Prepare(Metadata *image_metadata)
 void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 {
 	// set some initial values to shut the compiler up
-	DeviceStatus device_status =
-		{ .shutter_speed = 1.0,
-		  .analogue_gain = 1.0,
-		  .lens_position = 0.0,
-		  .aperture = 0.0,
-		  .flash_intensity = 0.0 };
+	DeviceStatus device_status = {
+		.shutter_speed = 1.0ms,
+		.analogue_gain = 1.0,
+		.lens_position = 0.0,
+		.aperture = 0.0,
+		.flash_intensity = 0.0
+	};
 	if (image_metadata->Get("device.status", device_status) == 0) {
 		double current_gain = device_status.analogue_gain;
-		double current_shutter_speed = device_status.shutter_speed;
 		double current_aperture = device_status.aperture;
 		if (current_aperture == 0)
 			current_aperture = current_aperture_;
@@ -83,7 +84,7 @@ void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 		double current_Y = sum / (double)num + .5;
 		double gain_ratio = reference_gain_ / current_gain;
 		double shutter_speed_ratio =
-			reference_shutter_speed_ / current_shutter_speed;
+			reference_shutter_speed_ / device_status.shutter_speed;
 		double aperture_ratio = reference_aperture_ / current_aperture;
 		double Y_ratio = current_Y * (65536 / num_bins) / reference_Y_;
 		double estimated_lux = shutter_speed_ratio * gain_ratio *

@@ -8,6 +8,8 @@
 
 #include <mutex>
 
+#include "libcamera/internal/utils.h"
+
 #include "../lux_status.h"
 #include "../algorithm.hpp"
 
@@ -28,7 +30,7 @@ public:
 private:
 	// These values define the conditions of the reference image, against
 	// which we compare the new image.
-	double reference_shutter_speed_; // in micro-seconds
+	libcamera::utils::Duration reference_shutter_speed_;
 	double reference_gain_;
 	double reference_aperture_; // units of 1/f
 	double reference_Y_; // out of 65536

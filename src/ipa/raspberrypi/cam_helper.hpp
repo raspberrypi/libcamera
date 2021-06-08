@@ -15,6 +15,7 @@
 #include "controller/metadata.hpp"
 #include "md_parser.hpp"
 
+#include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace RPiController {
@@ -72,10 +73,11 @@ public:
 	virtual void Prepare(libcamera::Span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void Process(StatisticsPtr &stats, Metadata &metadata);
-	uint32_t ExposureLines(double exposure_us) const;
-	double Exposure(uint32_t exposure_lines) const; // in us
-	virtual uint32_t GetVBlanking(double &exposure_us, double minFrameDuration,
-				      double maxFrameDuration) const;
+	uint32_t ExposureLines(libcamera::utils::Duration exposure) const;
+	libcamera::utils::Duration Exposure(uint32_t exposure_lines) const;
+	virtual uint32_t GetVBlanking(libcamera::utils::Duration &exposure,
+				      libcamera::utils::Duration minFrameDuration,
+				      libcamera::utils::Duration maxFrameDuration) const;
 	virtual uint32_t GainCode(double gain) const = 0;
 	virtual double Gain(uint32_t gain_code) const = 0;
 	virtual void GetDelays(int &exposure_delay, int &gain_delay,

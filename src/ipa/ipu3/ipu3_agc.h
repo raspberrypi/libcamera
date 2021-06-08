@@ -18,7 +18,7 @@
 
 namespace libcamera {
 
-class IPACameraSensorInfo;
+struct IPACameraSensorInfo;
 
 namespace ipa::ipu3 {
 

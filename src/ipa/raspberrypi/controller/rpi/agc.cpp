@@ -21,6 +21,7 @@
 
 using namespace RPiController;
 using namespace libcamera;
+using libcamera::utils::Duration;
 
 LOG_DEFINE_CATEGORY(RPiAgc)
 
@@ -222,19 +223,19 @@ void Agc::SetEv(double ev)
 	ev_ = ev;
 }
 
-void Agc::SetFlickerPeriod(double flicker_period)
+void Agc::SetFlickerPeriod(Duration flicker_period)
 {
-	flicker_period_ = flicker_period;
+	flicker_period_ = flicker_period.get<std::micro>();
 }
 
-void Agc::SetMaxShutter(double max_shutter)
+void Agc::SetMaxShutter(Duration max_shutter)
 {
-	max_shutter_ = max_shutter;
+	max_shutter_ = max_shutter.get<std::micro>();
 }
 
-void Agc::SetFixedShutter(double fixed_shutter)
+void Agc::SetFixedShutter(Duration fixed_shutter)
 {
-	fixed_shutter_ = fixed_shutter;
+	fixed_shutter_ = fixed_shutter.get<std::micro>();
 	// Set this in case someone calls Pause() straight after.
 	status_.shutter_time = clipShutter(fixed_shutter_);
 }

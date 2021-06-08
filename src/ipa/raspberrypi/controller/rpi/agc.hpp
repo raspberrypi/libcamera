@@ -77,9 +77,9 @@ public:
 	void Resume() override;
 	unsigned int GetConvergenceFrames() const override;
 	void SetEv(double ev) override;
-	void SetFlickerPeriod(double flicker_period) override;
-	void SetMaxShutter(double max_shutter) override; // microseconds
-	void SetFixedShutter(double fixed_shutter) override; // microseconds
+	void SetFlickerPeriod(libcamera::utils::Duration flicker_period) override;
+	void SetMaxShutter(libcamera::utils::Duration max_shutter) override;
+	void SetFixedShutter(libcamera::utils::Duration fixed_shutter) override;
 	void SetFixedAnalogueGain(double fixed_analogue_gain) override;
 	void SetMeteringMode(std::string const &metering_mode_name) override;
 	void SetExposureMode(std::string const &exposure_mode_name) override;

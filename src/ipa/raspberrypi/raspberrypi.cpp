@@ -638,8 +638,8 @@ void IPARPi::queueRequest(const ControlList &controls)
 				break;
 			}
 
-			/* This expects units of micro-seconds. */
-			agc->SetFixedShutter(ctrl.second.get<int32_t>());
+			/* The control provides units of microseconds. */
+			agc->SetFixedShutter(ctrl.second.get<int32_t>() * 1.0us);
 
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
@@ -1091,7 +1091,7 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.GetAlgorithm("agc"));
-	agc->SetMaxShutter(maxShutter.get<std::micro>());
+	agc->SetMaxShutter(maxShutter);
 }
 
 void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)

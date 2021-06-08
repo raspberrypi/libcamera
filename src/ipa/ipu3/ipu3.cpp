@@ -63,6 +63,8 @@ private:
 
 	ControlInfoMap ctrls_;
 
+	IPACameraSensorInfo sensorInfo_;
+
 	/* Camera sensor controls. */
 	uint32_t exposure_;
 	uint32_t minExposure_;
@@ -144,6 +146,8 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	if (configInfo.entityControls.empty())
 		return;
 
+	sensorInfo_ = configInfo.sensorInfo;
+
 	ctrls_ = configInfo.entityControls.at(0);
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
@@ -174,7 +178,7 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	awbAlgo_->initialise(params_, configInfo.bdsOutputSize, bdsGrid_);
 
 	agcAlgo_ = std::make_unique<IPU3Agc>();
-	agcAlgo_->initialise(bdsGrid_, configInfo.sensorInfo);
+	agcAlgo_->initialise(bdsGrid_, sensorInfo_);
 }
 
 void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)

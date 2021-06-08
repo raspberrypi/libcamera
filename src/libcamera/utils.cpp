@@ -506,6 +506,64 @@ std::string libcameraSourcePath()
  * loop, iterates over an indexed view of the \a iterable
  */
 
+/**
+ * \class Duration
+ * \brief Helper class from std::chrono::duration that represents a time
+ * duration in nanoseconds with double precision
+ */
+
+/**
+ * \fn Duration::Duration(const std::chrono::duration<Rep, Period> &d)
+ * \brief Construct a Duration by converting an arbitrary std::chrono::duration
+ * \param[in] d The std::chrono::duration object to convert from
+ *
+ * The constructed \a Duration object is internally represented in double
+ * precision with nanoseconds ticks.
+ */
+
+/**
+ * \fn Duration::get<Period>()
+ * \brief Retrieve the tick count, converted to the timebase provided by the
+ * template argument Period of type \a std::ratio
+ *
+ * A typical usage example is given below:
+ *
+ * \code{.cpp}
+ * utils::Duration d = 5s;
+ * double d_in_ms = d.get<std::milli>();
+ * \endcode
+ *
+ * \return The tick count of the Duration expressed in \a Period
+ */
+
+/**
+ * \fn Duration::operator bool()
+ * \brief Boolean operator to test if a \a Duration holds a non-zero time value
+ *
+ * \return True if \a Duration is a non-zero time value, False otherwise
+ */
+
 } /* namespace utils */
+
+#ifndef __DOXYGEN__
+template<class CharT, class Traits>
+std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os,
+					      const utils::Duration &d)
+{
+	std::basic_ostringstream<CharT, Traits> s;
+
+	s.flags(os.flags());
+	s.imbue(os.getloc());
+	s.setf(std::ios_base::fixed, std::ios_base::floatfield);
+	s.precision(2);
+	s << d.get<std::micro>() << "us";
+	return os << s.str();
+}
+
+template
+std::basic_ostream<char, std::char_traits<char>> &
+operator<< <char, std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>> &os,
+					  const utils::Duration &d);
+#endif
 
 } /* namespace libcamera */

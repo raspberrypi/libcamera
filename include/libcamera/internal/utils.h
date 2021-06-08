@@ -316,7 +316,39 @@ auto enumerate(T (&iterable)[N]) -> details::enumerate_adapter<T *>
 }
 #endif
 
+class Duration : public std::chrono::duration<double, std::nano>
+{
+	using BaseDuration = std::chrono::duration<double, std::nano>;
+
+public:
+	Duration() = default;
+
+	template<typename Rep, typename Period>
+	constexpr Duration(const std::chrono::duration<Rep, Period> &d)
+		: BaseDuration(d)
+	{
+	}
+
+	template<typename Period>
+	double get() const
+	{
+		auto const c = std::chrono::duration_cast<std::chrono::duration<double, Period>>(*this);
+		return c.count();
+	}
+
+	explicit constexpr operator bool() const
+	{
+		return *this != BaseDuration::zero();
+	}
+};
+
 } /* namespace utils */
+
+#ifndef __DOXYGEN__
+template<class CharT, class Traits>
+std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os,
+					      const utils::Duration &d);
+#endif
 
 } /* namespace libcamera */
 

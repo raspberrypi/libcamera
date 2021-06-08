@@ -20,6 +20,7 @@
 
 using namespace std;
 using namespace libcamera;
+using namespace std::literals::chrono_literals;
 
 class UtilsTest : public Test
 {
@@ -123,6 +124,46 @@ protected:
 			}
 
 			++i;
+		}
+
+		return TestPass;
+	}
+
+	int testDuration()
+	{
+		std::ostringstream os;
+		utils::Duration exposure;
+		double ratio;
+
+		exposure = 25ms + 25ms;
+		if (exposure.get<std::micro>() != 50000.0) {
+			cerr << "utils::Duration failed to return microsecond count";
+			return TestFail;
+		}
+
+		exposure = 1.0s / 4;
+		if (exposure != 250ms) {
+			cerr << "utils::Duration failed scalar divide test";
+			return TestFail;
+		}
+
+		exposure = 5000.5us;
+		if (!exposure) {
+			cerr << "utils::Duration failed boolean test";
+			return TestFail;
+		}
+
+		os << exposure;
+		if (os.str() != "5000.50us") {
+			cerr << "utils::Duration operator << failed";
+			return TestFail;
+		}
+
+		exposure = 100ms;
+		ratio = exposure / 25ms;
+		if (ratio != 4.0) {
+			cerr << "utils::Duration failed ratio test";
+			return TestFail;
 		}
 
 		return TestPass;
@@ -234,6 +275,10 @@ protected:
 
 		/* utils::enumerate() test. */
 		if (testEnumerate() != TestPass)
+			return TestFail;
+
+		/* utils::Duration test. */
+		if (testDuration() != TestPass)
 			return TestFail;
 
 		return TestPass;

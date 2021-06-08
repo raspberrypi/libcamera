@@ -66,6 +66,7 @@ private:
 	IPACameraSensorInfo sensorInfo_;
 
 	/* Camera sensor controls. */
+	uint32_t defVBlank_;
 	uint32_t exposure_;
 	uint32_t minExposure_;
 	uint32_t maxExposure_;
@@ -162,6 +163,12 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 		return;
 	}
 
+	const auto itVBlank = ctrls_.find(V4L2_CID_VBLANK);
+	if (itVBlank == ctrls_.end()) {
+		LOG(IPAIPU3, Error) << "Can't find VBLANK control";
+		return;
+	}
+
 	minExposure_ = std::max(itExp->second.min().get<int32_t>(), 1);
 	maxExposure_ = itExp->second.max().get<int32_t>();
 	exposure_ = minExposure_;
@@ -169,6 +176,8 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	minGain_ = std::max(itGain->second.min().get<int32_t>(), 1);
 	maxGain_ = itGain->second.max().get<int32_t>();
 	gain_ = minGain_;
+
+	defVBlank_ = itVBlank->second.def().get<int32_t>();
 
 	params_ = {};
 
@@ -273,9 +282,10 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	if (agcAlgo_->updateControls())
 		setControls(frame);
 
-	/* \todo Populate this with real values */
-	ctrls.set(controls::FrameDuration,
-		  static_cast<int64_t>(33334));
+	/* \todo Use VBlank value calculated from each frame exposure. */
+	int64_t frameDuration = sensorInfo_.lineLength * (defVBlank_ + sensorInfo_.outputSize.height) /
+				(sensorInfo_.pixelRate / 1e6);
+	ctrls.set(controls::FrameDuration, frameDuration);
 
 	IPU3Action op;
 	op.op = ActionMetadataReady;

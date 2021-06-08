@@ -18,6 +18,8 @@
 
 namespace libcamera {
 
+class IPACameraSensorInfo;
+
 namespace ipa::ipu3 {
 
 class IPU3Agc : public Algorithm
@@ -26,7 +28,7 @@ public:
 	IPU3Agc();
 	~IPU3Agc() = default;
 
-	void initialise(struct ipu3_uapi_grid_config &bdsGrid);
+	void initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraSensorInfo &sensorInfo);
 	void process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, uint32_t &gain);
 	bool converged() { return converged_; }
 	bool updateControls() { return updateControls_; }
@@ -48,6 +50,9 @@ private:
 
 	double iqMean_;
 	double gamma_;
+
+	double lineDuration_;
+	double maxExposureTime_;
 
 	double prevExposure_;
 	double prevExposureNoDg_;

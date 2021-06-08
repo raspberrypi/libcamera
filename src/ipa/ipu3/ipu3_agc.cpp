@@ -11,6 +11,8 @@
 #include <cmath>
 #include <numeric>
 
+#include <libcamera/ipa/core_ipa_interface.h>
+
 #include "libcamera/internal/log.h"
 
 #include "libipa/histogram.h"
@@ -39,11 +41,6 @@ static constexpr uint32_t kMaxGain = kMaxISO / 100;
 static constexpr uint32_t kMinExposure = 1;
 static constexpr uint32_t kMaxExposure = 1976;
 
-/* \todo those should be got from IPACameraSensorInfo ! */
-/* line duration in microseconds */
-static constexpr double kLineDuration = 16.8;
-static constexpr double kMaxExposureTime = kMaxExposure * kLineDuration;
-
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
 static constexpr double kEvGainTarget = 0.5;
@@ -54,14 +51,19 @@ static constexpr uint8_t kCellSize = 8;
 IPU3Agc::IPU3Agc()
 	: frameCount_(0), lastFrame_(0), converged_(false),
 	  updateControls_(false), iqMean_(0.0), gamma_(1.0),
+	  lineDuration_(0.0), maxExposureTime_(0.0),
 	  prevExposure_(0.0), prevExposureNoDg_(0.0),
 	  currentExposure_(0.0), currentExposureNoDg_(0.0)
 {
 }
 
-void IPU3Agc::initialise(struct ipu3_uapi_grid_config &bdsGrid)
+void IPU3Agc::initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraSensorInfo &sensorInfo)
 {
 	aeGrid_ = bdsGrid;
+
+	/* line duration in microseconds */
+	lineDuration_ = sensorInfo.lineLength * 1000000ULL / static_cast<double>(sensorInfo.pixelRate);
+	maxExposureTime_ = kMaxExposure * lineDuration_;
 }
 
 void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
@@ -160,13 +162,13 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, uint32_t &gain)
 		double newGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
 		/* extracted from Rpi::Agc::computeTargetExposure */
-		double currentShutter = exposure * kLineDuration;
+		double currentShutter = exposure * lineDuration_;
 		currentExposureNoDg_ = currentShutter * gain;
 		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
 				    << " Shutter speed " << currentShutter
 				    << " Gain " << gain;
 		currentExposure_ = currentExposureNoDg_ * newGain;
-		double maxTotalExposure = kMaxExposureTime * kMaxGain;
+		double maxTotalExposure = maxExposureTime_ * kMaxGain;
 		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_;
 
@@ -174,18 +176,18 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, uint32_t &gain)
 		filterExposure();
 
 		double newExposure = 0.0;
-		if (currentShutter < kMaxExposureTime) {
+		if (currentShutter < maxExposureTime_) {
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_), kMinExposure, kMaxExposure);
 			newExposure = currentExposure_ / exposure;
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / newExposure), kMinGain, kMaxGain);
 			updateControls_ = true;
-		} else if (currentShutter >= kMaxExposureTime) {
+		} else if (currentShutter >= maxExposureTime_) {
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / currentExposureNoDg_), kMinGain, kMaxGain);
 			newExposure = currentExposure_ / gain;
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / newExposure), kMinExposure, kMaxExposure);
 			updateControls_ = true;
 		}
-		LOG(IPU3Agc, Debug) << "Adjust exposure " << exposure * kLineDuration << " and gain " << gain;
+		LOG(IPU3Agc, Debug) << "Adjust exposure " << exposure * lineDuration_ << " and gain " << gain;
 	}
 	lastFrame_ = frameCount_;
 }

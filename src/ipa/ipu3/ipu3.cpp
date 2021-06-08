@@ -174,7 +174,7 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	awbAlgo_->initialise(params_, configInfo.bdsOutputSize, bdsGrid_);
 
 	agcAlgo_ = std::make_unique<IPU3Agc>();
-	agcAlgo_->initialise(bdsGrid_);
+	agcAlgo_->initialise(bdsGrid_, configInfo.sensorInfo);
 }
 
 void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)

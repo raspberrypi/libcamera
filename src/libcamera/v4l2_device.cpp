@@ -53,7 +53,7 @@ LOG_DEFINE_CATEGORY(V4L2)
  * at open() time, and the \a logTag to prefix log messages with.
  */
 V4L2Device::V4L2Device(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1), fdEventNotifier_(nullptr),
+	: deviceNode_(deviceNode), fdEventNotifier_(nullptr),
 	  frameStartEnabled_(false)
 {
 }
@@ -81,15 +81,15 @@ int V4L2Device::open(unsigned int flags)
 		return -EBUSY;
 	}
 
-	int ret = syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(), flags);
-	if (ret < 0) {
-		ret = -errno;
+	UniqueFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(), flags));
+	if (!fd.isValid()) {
+		int ret = -errno;
 		LOG(V4L2, Error) << "Failed to open V4L2 device: "
 				 << strerror(-ret);
 		return ret;
 	}
 
-	setFd(ret);
+	setFd(std::move(fd));
 
 	listControls();
 
@@ -112,14 +112,14 @@ int V4L2Device::open(unsigned int flags)
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Device::setFd(int fd)
+int V4L2Device::setFd(UniqueFD fd)
 {
 	if (isOpen())
 		return -EBUSY;
 
-	fd_ = fd;
+	fd_ = std::move(fd);
 
-	fdEventNotifier_ = new EventNotifier(fd_, EventNotifier::Exception);
+	fdEventNotifier_ = new EventNotifier(fd_.get(), EventNotifier::Exception);
 	fdEventNotifier_->activated.connect(this, &V4L2Device::eventAvailable);
 	fdEventNotifier_->setEnabled(false);
 
@@ -138,10 +138,7 @@ void V4L2Device::close()
 
 	delete fdEventNotifier_;
 
-	if (::close(fd_) < 0)
-		LOG(V4L2, Error) << "Failed to close V4L2 device: "
-				 << strerror(errno);
-	fd_ = -1;
+	fd_.reset();
 }
 
 /**
@@ -440,7 +437,7 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
 	 * Printing out an error message is usually better performed
 	 * in the caller, which can provide more context.
 	 */
-	if (::ioctl(fd_, request, argp) < 0)
+	if (::ioctl(fd_.get(), request, argp) < 0)
 		return -errno;
 
 	return 0;

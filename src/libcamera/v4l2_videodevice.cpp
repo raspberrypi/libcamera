@@ -24,6 +24,7 @@
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/unique_fd.h>
 #include <libcamera/base/utils.h>
 
 #include "libcamera/internal/formats.h"
@@ -620,22 +621,17 @@ int V4L2VideoDevice::open()
  */
 int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 {
-	int ret;
-	int newFd;
-
-	newFd = dup(handle);
-	if (newFd < 0) {
-		ret = -errno;
+	UniqueFD newFd(dup(handle));
+	if (!newFd.isValid()) {
 		LOG(V4L2, Error) << "Failed to duplicate file handle: "
-				 << strerror(-ret);
-		return ret;
+				 << strerror(errno);
+		return -errno;
 	}
 
-	ret = V4L2Device::setFd(newFd);
+	int ret = V4L2Device::setFd(std::move(newFd));
 	if (ret < 0) {
 		LOG(V4L2, Error) << "Failed to set file handle: "
 				 << strerror(-ret);
-		::close(newFd);
 		return ret;
 	}
 

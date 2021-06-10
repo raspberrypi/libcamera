@@ -622,4 +622,62 @@ controls:
         detection, additional format conversions etc) count as an additional
         pipeline stage.
 
+  - TestPatternMode:
+      type: int32_t
+      draft: true
+      description: |
+        Control to select the test pattern mode. Currently identical to
+        ANDROID_SENSOR_TEST_PATTERN_MODE.
+      enum:
+        - name: TestPatternModeOff
+          value: 0
+          description: |
+            No test pattern mode is used. The camera device returns frames from
+            the image sensor.
+        - name: TestPatternModeSolidColor
+          value: 1
+          description: |
+            Each pixel in [R, G_even, G_odd, B] is replaced by its respective
+            color channel provided in test pattern data.
+            \todo Add control for test pattern data.
+        - name: TestPatternModeColorBars
+          value: 2
+          description: |
+            All pixel data is replaced with an 8-bar color pattern. The vertical
+            bars (left-to-right) are as follows; white, yellow, cyan, green,
+            magenta, red, blue and black. Each bar should take up 1/8 of the
+            sensor pixel array width. When this is not possible, the bar size
+            should be rounded down to the nearest integer and the pattern can
+            repeat on the right side. Each bar's height must always take up the
+            full sensor pixel array height.
+        - name: TestPatternModeColorBarsFadeToGray
+          value: 3
+          description: |
+            The test pattern is similar to TestPatternModeColorBars,
+            except that each bar should start at its specified color at the top
+            and fade to gray at the bottom. Furthermore each bar is further
+            subdevided into a left and right half. The left half should have a
+            smooth gradient, and the right half should have a quantized
+            gradient. In particular, the right half's should consist of blocks
+            of the same color for 1/16th active sensor pixel array width. The
+            least significant bits in the quantized gradient should be copied
+            from the most significant bits of the smooth gradient. The height of
+            each bar should always be a multiple of 128. When this is not the
+            case, the pattern should repeat at the bottom of the image.
+        - name: TestPatternModePn9
+          value: 4
+          description: |
+            All pixel data is replaced by a pseudo-random sequence generated
+            from a PN9 512-bit sequence (typically implemented in hardware with
+            a linear feedback shift register). The generator should be reset at
+            the beginning of each frame, and thus each subsequent raw frame with
+            this test pattern should be exactly the same as the last.
+        - name: TestPatternModeCustom1
+          value: 256
+          description: |
+            The first custom test pattern. All custom patterns that are
+            available only on this camera device are at least this numeric
+            value. All of the custom test patterns will be static (that is the
+            raw image must not vary from frame to frame).
+
 ...

@@ -1320,12 +1320,12 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 
 	std::vector<FrameBuffer::Plane> planes;
 	for (unsigned int nplane = 0; nplane < numPlanes; nplane++) {
-		FileDescriptor fd = exportDmabufFd(buf.index, nplane);
+		UniqueFD fd = exportDmabufFd(buf.index, nplane);
 		if (!fd.isValid())
 			return nullptr;
 
 		FrameBuffer::Plane plane;
-		plane.fd = std::move(fd);
+		plane.fd = FileDescriptor(std::move(fd));
 		/*
 		 * V4L2 API doesn't provide dmabuf offset information of plane.
 		 * Set 0 as a placeholder offset.
@@ -1380,8 +1380,8 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 	return std::make_unique<FrameBuffer>(planes);
 }
 
-FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,
-					       unsigned int plane)
+UniqueFD V4L2VideoDevice::exportDmabufFd(unsigned int index,
+					 unsigned int plane)
 {
 	struct v4l2_exportbuffer expbuf = {};
 	int ret;
@@ -1395,10 +1395,10 @@ FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,
 	if (ret < 0) {
 		LOG(V4L2, Error)
 			<< "Failed to export buffer: " << strerror(-ret);
-		return FileDescriptor();
+		return {};
 	}
 
-	return FileDescriptor(std::move(expbuf.fd));
+	return UniqueFD(expbuf.fd);
 }
 
 /**
@@ -1896,7 +1896,6 @@ V4L2M2MDevice::~V4L2M2MDevice()
  */
 int V4L2M2MDevice::open()
 {
-	int fd;
 	int ret;
 
 	/*
@@ -1905,30 +1904,27 @@ int V4L2M2MDevice::open()
 	 * as the V4L2VideoDevice::open() retains a handle by duplicating the
 	 * fd passed in.
 	 */
-	fd = syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
-		     O_RDWR | O_NONBLOCK);
-	if (fd < 0) {
+	UniqueFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
+			    O_RDWR | O_NONBLOCK));
+	if (!fd.isValid()) {
 		ret = -errno;
-		LOG(V4L2, Error)
-			<< "Failed to open V4L2 M2M device: " << strerror(-ret);
+		LOG(V4L2, Error) << "Failed to open V4L2 M2M device: "
+				 << strerror(-ret);
 		return ret;
 	}
 
-	ret = output_->open(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT);
+	ret = output_->open(fd.get(), V4L2_BUF_TYPE_VIDEO_OUTPUT);
 	if (ret)
 		goto err;
 
-	ret = capture_->open(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE);
+	ret = capture_->open(fd.get(), V4L2_BUF_TYPE_VIDEO_CAPTURE);
 	if (ret)
 		goto err;
-
-	::close(fd);
 
 	return 0;
 
 err:
 	close();
-	::close(fd);
 
 	return ret;
 }

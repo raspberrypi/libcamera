@@ -19,6 +19,7 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/unique_fd.h>
 
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
@@ -31,7 +32,6 @@
 namespace libcamera {
 
 class EventNotifier;
-class FileDescriptor;
 class MediaDevice;
 class MediaEntity;
 
@@ -238,7 +238,7 @@ private:
 	int createBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	std::unique_ptr<FrameBuffer> createBuffer(unsigned int index);
-	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
+	UniqueFD exportDmabufFd(unsigned int index, unsigned int plane);
 
 	void bufferAvailable();
 	FrameBuffer *dequeueBuffer();

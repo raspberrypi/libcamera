@@ -939,6 +939,16 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 
 	ControlInfoMap::Map controls = IPU3Controls;
 	const ControlInfoMap &sensorControls = sensor->controls();
+	const std::vector<int32_t> &testPatternModes = sensor->testPatternModes();
+	if (!testPatternModes.empty()) {
+		std::vector<ControlValue> values;
+		values.reserve(testPatternModes.size());
+
+		for (int32_t pattern : testPatternModes)
+			values.emplace_back(pattern);
+
+		controls[&controls::draft::TestPatternMode] = ControlInfo(values);
+	}
 
 	/*
 	 * Compute exposure time limits.

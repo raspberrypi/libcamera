@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/base/signal.h>
+#include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
 
@@ -28,8 +29,8 @@ public:
 	IPCUnixSocket();
 	~IPCUnixSocket();
 
-	int create();
-	int bind(int fd);
+	UniqueFD create();
+	int bind(UniqueFD fd);
 	void close();
 	bool isBound() const;
 
@@ -49,7 +50,7 @@ private:
 
 	void dataNotifier();
 
-	int fd_;
+	UniqueFD fd_;
 	bool headerReceived_;
 	struct Header header_;
 	EventNotifier *notifier_;

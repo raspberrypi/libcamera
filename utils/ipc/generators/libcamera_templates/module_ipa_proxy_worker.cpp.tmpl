@@ -27,8 +27,9 @@
 #include <libcamera/logging.h>
 
 #include <libcamera/base/event_dispatcher.h>
-#include <libcamera/base/thread.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/unique_fd.h>
 
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/control_serializer.h"
@@ -122,9 +123,9 @@ public:
 		}
 	}
 
-	int init(std::unique_ptr<IPAModule> &ipam, int socketfd)
+	int init(std::unique_ptr<IPAModule> &ipam, UniqueFD socketfd)
 	{
-		if (socket_.bind(socketfd) < 0) {
+		if (socket_.bind(std::move(socketfd)) < 0) {
 			LOG({{proxy_worker_name}}, Error)
 				<< "IPC socket binding failed";
 			return EXIT_FAILURE;
@@ -203,10 +204,10 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	int fd = std::stoi(argv[2]);
+	UniqueFD fd(std::stoi(argv[2]));
 	LOG({{proxy_worker_name}}, Info)
 		<< "Starting worker for IPA module " << argv[1]
-		<< " with IPC fd = " << fd;
+		<< " with IPC fd = " << fd.get();
 
 	std::unique_ptr<IPAModule> ipam = std::make_unique<IPAModule>(argv[1]);
 	if (!ipam->isValid() || !ipam->load()) {
@@ -228,7 +229,7 @@ int main(int argc, char **argv)
 	}
 
 	{{proxy_worker_name}} proxyWorker;
-	int ret = proxyWorker.init(ipam, fd);
+	int ret = proxyWorker.init(ipam, std::move(fd));
 	if (ret < 0) {
 		LOG({{proxy_worker_name}}, Error)
 			<< "Failed to initialize proxy worker";

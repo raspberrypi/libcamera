@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/ipc_unixsocket.h"
 
+#include <array>
 #include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -68,7 +69,7 @@ LOG_DEFINE_CATEGORY(IPCUnixSocket)
  */
 
 IPCUnixSocket::IPCUnixSocket()
-	: fd_(-1), headerReceived_(false), notifier_(nullptr)
+	: headerReceived_(false), notifier_(nullptr)
 {
 }
 
@@ -86,9 +87,9 @@ IPCUnixSocket::~IPCUnixSocket()
  * to the remote process, where it can be used with IPCUnixSocket::bind() to
  * bind the remote side socket.
  *
- * \return A file descriptor on success, negative error code on failure
+ * \return A file descriptor. It is valid on success or invalid otherwise.
  */
-int IPCUnixSocket::create()
+UniqueFD IPCUnixSocket::create()
 {
 	int sockets[2];
 	int ret;
@@ -98,14 +99,18 @@ int IPCUnixSocket::create()
 		ret = -errno;
 		LOG(IPCUnixSocket, Error)
 			<< "Failed to create socket pair: " << strerror(-ret);
-		return ret;
+		return {};
 	}
 
-	ret = bind(sockets[0]);
-	if (ret)
-		return ret;
+	std::array<UniqueFD, 2> socketFds{
+		UniqueFD(sockets[0]),
+		UniqueFD(sockets[1]),
+	};
 
-	return sockets[1];
+	if (bind(std::move(socketFds[0])) < 0)
+		return {};
+
+	return std::move(socketFds[1]);
 }
 
 /**
@@ -118,13 +123,13 @@ int IPCUnixSocket::create()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int IPCUnixSocket::bind(int fd)
+int IPCUnixSocket::bind(UniqueFD fd)
 {
 	if (isBound())
 		return -EINVAL;
 
-	fd_ = fd;
-	notifier_ = new EventNotifier(fd_, EventNotifier::Read);
+	fd_ = std::move(fd);
+	notifier_ = new EventNotifier(fd_.get(), EventNotifier::Read);
 	notifier_->activated.connect(this, &IPCUnixSocket::dataNotifier);
 
 	return 0;
@@ -143,9 +148,7 @@ void IPCUnixSocket::close()
 	delete notifier_;
 	notifier_ = nullptr;
 
-	::close(fd_);
-
-	fd_ = -1;
+	fd_.reset();
 	headerReceived_ = false;
 }
 
@@ -155,7 +158,7 @@ void IPCUnixSocket::close()
  */
 bool IPCUnixSocket::isBound() const
 {
-	return fd_ != -1;
+	return fd_.isValid();
 }
 
 /**
@@ -182,7 +185,7 @@ int IPCUnixSocket::send(const Payload &payload)
 	if (!hdr.data && !hdr.fds)
 		return -EINVAL;
 
-	ret = ::send(fd_, &hdr, sizeof(hdr), 0);
+	ret = ::send(fd_.get(), &hdr, sizeof(hdr), 0);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(IPCUnixSocket, Error)
@@ -263,7 +266,7 @@ int IPCUnixSocket::sendData(const void *buffer, size_t length,
 	if (fds)
 		memcpy(CMSG_DATA(cmsg), fds, num * sizeof(uint32_t));
 
-	if (sendmsg(fd_, &msg, 0) < 0) {
+	if (sendmsg(fd_.get(), &msg, 0) < 0) {
 		int ret = -errno;
 		LOG(IPCUnixSocket, Error)
 			<< "Failed to sendmsg: " << strerror(-ret);
@@ -297,7 +300,7 @@ int IPCUnixSocket::recvData(void *buffer, size_t length,
 	msg.msg_controllen = cmsg->cmsg_len;
 	msg.msg_flags = 0;
 
-	if (recvmsg(fd_, &msg, 0) < 0) {
+	if (recvmsg(fd_.get(), &msg, 0) < 0) {
 		int ret = -errno;
 		if (ret != -EAGAIN)
 			LOG(IPCUnixSocket, Error)
@@ -317,7 +320,7 @@ void IPCUnixSocket::dataNotifier()
 
 	if (!headerReceived_) {
 		/* Receive the header. */
-		ret = ::recv(fd_, &header_, sizeof(header_), 0);
+		ret = ::recv(fd_.get(), &header_, sizeof(header_), 0);
 		if (ret < 0) {
 			ret = -errno;
 			LOG(IPCUnixSocket, Error)
@@ -333,7 +336,7 @@ void IPCUnixSocket::dataNotifier()
 	 * readyRead signal. The notifier will be reenabled by the receive()
 	 * function.
 	 */
-	struct pollfd fds = { fd_, POLLIN, 0 };
+	struct pollfd fds = { fd_.get(), POLLIN, 0 };
 	ret = poll(&fds, 1, 0);
 	if (ret < 0)
 		return;

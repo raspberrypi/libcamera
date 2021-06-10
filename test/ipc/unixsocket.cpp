@@ -52,9 +52,9 @@ public:
 		ipc_.readyRead.connect(this, &UnixSocketTestSlave::readyRead);
 	}
 
-	int run(int fd)
+	int run(UniqueFD fd)
 	{
-		if (ipc_.bind(fd)) {
+		if (ipc_.bind(std::move(fd))) {
 			cerr << "Failed to connect to IPC channel" << endl;
 			return EXIT_FAILURE;
 		}
@@ -359,11 +359,11 @@ protected:
 
 	int run()
 	{
-		int slavefd = ipc_.create();
-		if (slavefd < 0)
+		UniqueFD slavefd = ipc_.create();
+		if (!slavefd.isValid())
 			return TestFail;
 
-		if (slaveStart(slavefd)) {
+		if (slaveStart(slavefd.release())) {
 			cerr << "Failed to start slave" << endl;
 			return TestFail;
 		}
@@ -495,9 +495,9 @@ private:
 int main(int argc, char **argv)
 {
 	if (argc == 2) {
-		int ipcfd = std::stoi(argv[1]);
+		UniqueFD ipcfd = UniqueFD(std::stoi(argv[1]));
 		UnixSocketTestSlave slave;
-		return slave.run(ipcfd);
+		return slave.run(std::move(ipcfd));
 	}
 
 	UnixSocketTest test;

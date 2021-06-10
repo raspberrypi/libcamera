@@ -31,14 +31,14 @@ IPCPipeUnixSocket::IPCPipeUnixSocket(const char *ipaModulePath,
 	args.push_back(ipaModulePath);
 
 	socket_ = std::make_unique<IPCUnixSocket>();
-	int fd = socket_->create();
-	if (fd < 0) {
+	UniqueFD fd = socket_->create();
+	if (!fd.isValid()) {
 		LOG(IPCPipe, Error) << "Failed to create socket";
 		return;
 	}
 	socket_->readyRead.connect(this, &IPCPipeUnixSocket::readyRead);
-	args.push_back(std::to_string(fd));
-	fds.push_back(fd);
+	args.push_back(std::to_string(fd.get()));
+	fds.push_back(fd.release());
 
 	proc_ = std::make_unique<Process>();
 	int ret = proc_->start(ipaProxyWorkerPath, args, fds);

@@ -305,6 +305,32 @@ void CameraSensor::initStaticProperties()
 
 	/* Register the properties retrieved from the sensor database. */
 	properties_.set(properties::UnitCellSize, props->unitCellSize);
+
+	initTestPatternModes(props->testPatternModes);
+}
+
+void CameraSensor::initTestPatternModes(
+	const std::map<int32_t, int32_t> &testPatternModes)
+{
+	const auto &v4l2TestPattern = controls().find(V4L2_CID_TEST_PATTERN);
+	if (v4l2TestPattern == controls().end()) {
+		LOG(CameraSensor, Debug) << "No static test pattern map for \'"
+					 << model() << "\'";
+		return;
+	}
+
+	for (const ControlValue &value : v4l2TestPattern->second.values()) {
+		const int32_t index = value.get<int32_t>();
+
+		const auto it = testPatternModes.find(index);
+		if (it == testPatternModes.end()) {
+			LOG(CameraSensor, Debug)
+				<< "Test pattern mode " << index << " ignored";
+			continue;
+		}
+
+		testPatternModes_.push_back(it->second);
+	}
 }
 
 int CameraSensor::initProperties()
@@ -468,6 +494,14 @@ Size CameraSensor::resolution() const
 {
 	return std::min(sizes_.back(), activeArea_.size());
 }
+
+/**
+ * \fn CameraSensor::testPatternModes()
+ * \brief Retrieve all the supported test pattern modes of the camera sensor
+ * The test pattern mode values correspond to the controls::TestPattern control.
+ *
+ * \return The list of test pattern modes
+ */
 
 /**
  * \brief Retrieve the best sensor format for a desired output

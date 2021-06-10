@@ -39,6 +39,10 @@ public:
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> &sizes() const { return sizes_; }
 	Size resolution() const;
+	const std::vector<int32_t> &testPatternModes() const
+	{
+		return testPatternModes_;
+	}
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
@@ -65,6 +69,8 @@ private:
 	int validateSensorDriver();
 	void initVimcDefaultProperties();
 	void initStaticProperties();
+	void initTestPatternModes(
+		const std::map<int32_t, int32_t> &testPatternModeMap);
 	int initProperties();
 
 	const MediaEntity *entity_;
@@ -77,6 +83,7 @@ private:
 	V4L2Subdevice::Formats formats_;
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
+	std::vector<int32_t> testPatternModes_;
 
 	Size pixelArraySize_;
 	Rectangle activeArea_;

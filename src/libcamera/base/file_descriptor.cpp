@@ -13,6 +13,7 @@
 #include <utility>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/unique_fd.h>
 
 /**
  * \file base/file_descriptor.h
@@ -107,6 +108,18 @@ FileDescriptor::FileDescriptor(int &&fd)
 	 * implement move semantics.
 	 */
 	fd = -1;
+}
+
+/**
+ * \brief Create a FileDescriptor taking ownership of a given UniqueFD \a fd
+ * \param[in] fd UniqueFD
+ *
+ * Construct a FileDescriptor from UniqueFD by taking ownership of the \a fd.
+ * The original \a fd becomes invalid.
+ */
+FileDescriptor::FileDescriptor(UniqueFD fd)
+	: FileDescriptor(fd.release())
+{
 }
 
 /**

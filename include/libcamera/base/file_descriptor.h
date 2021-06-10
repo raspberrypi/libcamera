@@ -11,11 +11,14 @@
 
 namespace libcamera {
 
+class UniqueFD;
+
 class FileDescriptor final
 {
 public:
 	explicit FileDescriptor(const int &fd = -1);
 	explicit FileDescriptor(int &&fd);
+	explicit FileDescriptor(UniqueFD fd);
 	FileDescriptor(const FileDescriptor &other);
 	FileDescriptor(FileDescriptor &&other);
 	~FileDescriptor();

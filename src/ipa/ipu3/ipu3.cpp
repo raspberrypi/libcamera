@@ -24,6 +24,7 @@
 
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"
+#include "libipa/camera_sensor_helper.h"
 
 static constexpr uint32_t kMaxCellWidthPerSet = 160;
 static constexpr uint32_t kMaxCellHeightPerSet = 56;
@@ -37,10 +38,7 @@ namespace ipa::ipu3 {
 class IPAIPU3 : public IPAIPU3Interface
 {
 public:
-	int init([[maybe_unused]] const IPASettings &settings) override
-	{
-		return 0;
-	}
+	int init(const IPASettings &settings) override;
 	int start() override;
 	void stop() override {}
 
@@ -79,12 +77,25 @@ private:
 	std::unique_ptr<IPU3Awb> awbAlgo_;
 	/* Interface to the AEC/AGC algorithm */
 	std::unique_ptr<IPU3Agc> agcAlgo_;
+	/* Interface to the Camera Helper */
+	std::unique_ptr<CameraSensorHelper> camHelper_;
 
 	/* Local parameter storage */
 	struct ipu3_uapi_params params_;
 
 	struct ipu3_uapi_grid_config bdsGrid_;
 };
+
+int IPAIPU3::init(const IPASettings &settings)
+{
+	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
+	if (camHelper_ == nullptr) {
+		LOG(IPAIPU3, Error) << "Failed to create camera sensor helper for " << settings.sensorModel;
+		return -ENODEV;
+	}
+
+	return 0;
+}
 
 int IPAIPU3::start()
 {
@@ -281,7 +292,10 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 {
 	ControlList ctrls(controls::controls);
 
-	agcAlgo_->process(stats, exposure_, gain_);
+	double gain = camHelper_->gain(gain_);
+	agcAlgo_->process(stats, exposure_, gain);
+	gain_ = camHelper_->gainCode(gain);
+
 	awbAlgo_->calculateWBGains(stats);
 
 	if (agcAlgo_->updateControls())

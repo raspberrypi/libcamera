@@ -145,7 +145,7 @@ void IPU3Agc::filterExposure()
 	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << prevExposure_;
 }
 
-void IPU3Agc::lockExposureGain(uint32_t &exposure, uint32_t &gain)
+void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
 {
 	updateControls_ = false;
 
@@ -193,7 +193,7 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, uint32_t &gain)
 	lastFrame_ = frameCount_;
 }
 
-void IPU3Agc::process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, uint32_t &gain)
+void IPU3Agc::process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, double &gain)
 {
 	processBrightness(stats);
 	lockExposureGain(exposure, gain);

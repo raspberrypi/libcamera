@@ -33,7 +33,7 @@ public:
 	~IPU3Agc() = default;
 
 	void initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraSensorInfo &sensorInfo);
-	void process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, uint32_t &gain);
+	void process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, double &gain);
 	bool converged() { return converged_; }
 	bool updateControls() { return updateControls_; }
 	/* \todo Use a metadata exchange between IPAs */
@@ -42,7 +42,7 @@ public:
 private:
 	void processBrightness(const ipu3_uapi_stats_3a *stats);
 	void filterExposure();
-	void lockExposureGain(uint32_t &exposure, uint32_t &gain);
+	void lockExposureGain(uint32_t &exposure, double &gain);
 
 	struct ipu3_uapi_grid_config aeGrid_;
 

@@ -14,6 +14,7 @@
 #include <libcamera/base/private.h>
 
 #include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/unique_fd.h>
 
 struct pollfd;
 
@@ -50,7 +51,7 @@ private:
 
 	std::map<int, EventNotifierSetPoll> notifiers_;
 	std::list<Timer *> timers_;
-	int eventfd_;
+	UniqueFD eventfd_;
 
 	bool processingEvents_;
 };

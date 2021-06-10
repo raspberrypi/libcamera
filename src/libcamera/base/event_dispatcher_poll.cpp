@@ -54,14 +54,13 @@ EventDispatcherPoll::EventDispatcherPoll()
 	 * Create the event fd. Failures are fatal as we can't implement an
 	 * interruptible dispatcher without the fd.
 	 */
-	eventfd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-	if (eventfd_ < 0)
+	eventfd_ = UniqueFD(eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK));
+	if (!eventfd_.isValid())
 		LOG(Event, Fatal) << "Unable to create eventfd";
 }
 
 EventDispatcherPoll::~EventDispatcherPoll()
 {
-	close(eventfd_);
 }
 
 void EventDispatcherPoll::registerEventNotifier(EventNotifier *notifier)
@@ -154,7 +153,7 @@ void EventDispatcherPoll::processEvents()
 	for (auto notifier : notifiers_)
 		pollfds.push_back({ notifier.first, notifier.second.events(), 0 });
 
-	pollfds.push_back({ eventfd_, POLLIN, 0 });
+	pollfds.push_back({ eventfd_.get(), POLLIN, 0 });
 
 	/* Wait for events and process notifiers and timers. */
 	do {
@@ -176,7 +175,7 @@ void EventDispatcherPoll::processEvents()
 void EventDispatcherPoll::interrupt()
 {
 	uint64_t value = 1;
-	ssize_t ret = write(eventfd_, &value, sizeof(value));
+	ssize_t ret = write(eventfd_.get(), &value, sizeof(value));
 	if (ret != sizeof(value)) {
 		if (ret < 0)
 			ret = -errno;
@@ -230,7 +229,7 @@ void EventDispatcherPoll::processInterrupt(const struct pollfd &pfd)
 		return;
 
 	uint64_t value;
-	ssize_t ret = read(eventfd_, &value, sizeof(value));
+	ssize_t ret = read(eventfd_.get(), &value, sizeof(value));
 	if (ret != sizeof(value)) {
 		if (ret < 0)
 			ret = -errno;

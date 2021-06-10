@@ -7,7 +7,9 @@
 
 #pragma once
 
-#include <libcamera/base/file_descriptor.h>
+#include <stddef.h>
+
+#include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
 
@@ -18,11 +20,11 @@ class DmaHeap
 public:
 	DmaHeap();
 	~DmaHeap();
-	bool isValid() const { return dmaHeapHandle_ > -1; }
-	FileDescriptor alloc(const char *name, std::size_t size);
+	bool isValid() const { return dmaHeapHandle_.isValid(); }
+	UniqueFD alloc(const char *name, std::size_t size);
 
 private:
-	int dmaHeapHandle_;
+	UniqueFD dmaHeapHandle_;
 };
 
 } /* namespace RPi */

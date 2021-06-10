@@ -56,6 +56,11 @@ protected:
 	int fd() const { return fd_; }
 
 private:
+	static ControlType v4l2CtrlType(uint32_t ctrlType);
+	static std::unique_ptr<ControlId> v4l2ControlId(const v4l2_query_ext_ctrl &ctrl);
+	ControlInfo v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl);
+	ControlInfo v4l2MenuControlInfo(const v4l2_query_ext_ctrl &ctrl);
+
 	void listControls();
 	void updateControls(ControlList *ctrls,
 			    Span<const v4l2_ext_control> v4l2Ctrls);

@@ -30,73 +30,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(V4L2)
 
-namespace {
-
-ControlType v4l2CtrlType(uint32_t ctrlType)
-{
-	switch (ctrlType) {
-	case V4L2_CTRL_TYPE_U8:
-		return ControlTypeByte;
-
-	case V4L2_CTRL_TYPE_BOOLEAN:
-		return ControlTypeBool;
-
-	case V4L2_CTRL_TYPE_INTEGER:
-		return ControlTypeInteger32;
-
-	case V4L2_CTRL_TYPE_INTEGER64:
-		return ControlTypeInteger64;
-
-	case V4L2_CTRL_TYPE_MENU:
-	case V4L2_CTRL_TYPE_BUTTON:
-	case V4L2_CTRL_TYPE_BITMASK:
-	case V4L2_CTRL_TYPE_INTEGER_MENU:
-		/*
-		 * More precise types may be needed, for now use a 32-bit
-		 * integer type.
-		 */
-		return ControlTypeInteger32;
-
-	default:
-		return ControlTypeNone;
-	}
-}
-
-std::unique_ptr<ControlId> v4l2ControlId(const v4l2_query_ext_ctrl &ctrl)
-{
-	const size_t len = strnlen(ctrl.name, sizeof(ctrl.name));
-	const std::string name(static_cast<const char *>(ctrl.name), len);
-	const ControlType type = v4l2CtrlType(ctrl.type);
-
-	return std::make_unique<ControlId>(ctrl.id, name, type);
-}
-
-ControlInfo v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
-{
-	switch (ctrl.type) {
-	case V4L2_CTRL_TYPE_U8:
-		return ControlInfo(static_cast<uint8_t>(ctrl.minimum),
-				   static_cast<uint8_t>(ctrl.maximum),
-				   static_cast<uint8_t>(ctrl.default_value));
-
-	case V4L2_CTRL_TYPE_BOOLEAN:
-		return ControlInfo(static_cast<bool>(ctrl.minimum),
-				   static_cast<bool>(ctrl.maximum),
-				   static_cast<bool>(ctrl.default_value));
-
-	case V4L2_CTRL_TYPE_INTEGER64:
-		return ControlInfo(static_cast<int64_t>(ctrl.minimum),
-				   static_cast<int64_t>(ctrl.maximum),
-				   static_cast<int64_t>(ctrl.default_value));
-
-	default:
-		return ControlInfo(static_cast<int32_t>(ctrl.minimum),
-				   static_cast<int32_t>(ctrl.maximum),
-				   static_cast<int32_t>(ctrl.default_value));
-	}
-}
-} /* namespace */
-
 /**
  * \class V4L2Device
  * \brief Base class for V4L2VideoDevice and V4L2Subdevice
@@ -524,6 +457,118 @@ int V4L2Device::ioctl(unsigned long request, void *argp)
  * \return The V4L2 device file descriptor, -1 if the device node is not open
  */
 
+/**
+ * \brief Retrieve the libcamera control type associated with the V4L2 control
+ * \param[in] ctrlType The V4L2 control type
+ * \return The ControlType associated to \a ctrlType
+ */
+ControlType V4L2Device::v4l2CtrlType(uint32_t ctrlType)
+{
+	switch (ctrlType) {
+	case V4L2_CTRL_TYPE_U8:
+		return ControlTypeByte;
+
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		return ControlTypeBool;
+
+	case V4L2_CTRL_TYPE_INTEGER:
+		return ControlTypeInteger32;
+
+	case V4L2_CTRL_TYPE_INTEGER64:
+		return ControlTypeInteger64;
+
+	case V4L2_CTRL_TYPE_MENU:
+	case V4L2_CTRL_TYPE_BUTTON:
+	case V4L2_CTRL_TYPE_BITMASK:
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+		/*
+		 * More precise types may be needed, for now use a 32-bit
+		 * integer type.
+		 */
+		return ControlTypeInteger32;
+
+	default:
+		return ControlTypeNone;
+	}
+}
+
+/**
+ * \brief Create a ControlId for a V4L2 control
+ * \param[in] ctrl The v4l2_query_ext_ctrl that represents a V4L2 control
+ * \return A ControlId associated to \a ctrl
+ */
+std::unique_ptr<ControlId> V4L2Device::v4l2ControlId(const v4l2_query_ext_ctrl &ctrl)
+{
+	const size_t len = strnlen(ctrl.name, sizeof(ctrl.name));
+	const std::string name(static_cast<const char *>(ctrl.name), len);
+	const ControlType type = v4l2CtrlType(ctrl.type);
+
+	return std::make_unique<ControlId>(ctrl.id, name, type);
+}
+
+/**
+ * \brief Create a ControlInfo for a V4L2 control
+ * \param[in] ctrl The v4l2_query_ext_ctrl that represents a V4L2 control
+ * \return A ControlInfo that represents \a ctrl
+ */
+ControlInfo V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
+{
+	switch (ctrl.type) {
+	case V4L2_CTRL_TYPE_U8:
+		return ControlInfo(static_cast<uint8_t>(ctrl.minimum),
+				   static_cast<uint8_t>(ctrl.maximum),
+				   static_cast<uint8_t>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		return ControlInfo(static_cast<bool>(ctrl.minimum),
+				   static_cast<bool>(ctrl.maximum),
+				   static_cast<bool>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_INTEGER64:
+		return ControlInfo(static_cast<int64_t>(ctrl.minimum),
+				   static_cast<int64_t>(ctrl.maximum),
+				   static_cast<int64_t>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+	case V4L2_CTRL_TYPE_MENU:
+		return v4l2MenuControlInfo(ctrl);
+
+	default:
+		return ControlInfo(static_cast<int32_t>(ctrl.minimum),
+				   static_cast<int32_t>(ctrl.maximum),
+				   static_cast<int32_t>(ctrl.default_value));
+	}
+}
+
+/**
+ * \brief Create ControlInfo for a V4L2 menu control
+ * \param[in] ctrl The v4l2_query_ext_ctrl that represents a V4L2 menu control
+ *
+ * The created ControlInfo contains indices acquired by VIDIOC_QUERYMENU.
+ *
+ * \return A ControlInfo that represents \a ctrl
+ */
+ControlInfo V4L2Device::v4l2MenuControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
+{
+	std::vector<ControlValue> indices;
+	struct v4l2_querymenu menu = {};
+	menu.id = ctrl.id;
+
+	if (ctrl.minimum < 0)
+		return ControlInfo();
+
+	for (int32_t index = ctrl.minimum; index <= ctrl.maximum; ++index) {
+		menu.index = index;
+		if (ioctl(VIDIOC_QUERYMENU, &menu) != 0)
+			continue;
+
+		indices.push_back(index);
+	}
+
+	return ControlInfo(indices,
+			   ControlValue(static_cast<int32_t>(ctrl.default_value)));
+}
+
 /*
  * \brief List and store information about all controls supported by the
  * V4L2 device
@@ -533,7 +578,6 @@ void V4L2Device::listControls()
 	ControlInfoMap::Map ctrls;
 	struct v4l2_query_ext_ctrl ctrl = {};
 
-	/* \todo Add support for menu controls. */
 	while (1) {
 		ctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL |
 			   V4L2_CTRL_FLAG_NEXT_COMPOUND;
@@ -561,6 +605,9 @@ void V4L2Device::listControls()
 				<< " has unsupported type " << ctrl.type;
 			continue;
 		}
+
+		LOG(V4L2, Debug) << "Control: " << ctrl.name
+				 << " (" << utils::hex(ctrl.id) << ")";
 
 		controlIds_.emplace_back(v4l2ControlId(ctrl));
 		controlInfo_.emplace(ctrl.id, ctrl);
@@ -628,6 +675,10 @@ void V4L2Device::updateControls(ControlList *ctrls,
 		switch (iter->first->type()) {
 		case ControlTypeInteger64:
 			value.set<int64_t>(v4l2Ctrl.value64);
+			break;
+
+		case ControlTypeInteger32:
+			value.set<int32_t>(v4l2Ctrl.value);
 			break;
 
 		case ControlTypeByte:

@@ -17,6 +17,7 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/flags.h>
 #include <libcamera/base/span.h>
+#include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
 
@@ -48,7 +49,7 @@ public:
 	bool exists() const;
 
 	bool open(OpenMode mode);
-	bool isOpen() const { return fd_ != -1; }
+	bool isOpen() const { return fd_.isValid(); }
 	OpenMode openMode() const { return mode_; }
 	void close();
 
@@ -73,7 +74,7 @@ private:
 	void unmapAll();
 
 	std::string name_;
-	int fd_;
+	UniqueFD fd_;
 	OpenMode mode_;
 
 	int error_;

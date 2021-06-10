@@ -83,7 +83,7 @@ LOG_DEFINE_CATEGORY(File)
  * before performing I/O operations.
  */
 File::File(const std::string &name)
-	: name_(name), fd_(-1), mode_(OpenModeFlag::NotOpen), error_(0)
+	: name_(name), mode_(OpenModeFlag::NotOpen), error_(0)
 {
 }
 
@@ -94,7 +94,7 @@ File::File(const std::string &name)
  * setFileName().
  */
 File::File()
-	: fd_(-1), mode_(OpenModeFlag::NotOpen), error_(0)
+	: mode_(OpenModeFlag::NotOpen), error_(0)
 {
 }
 
@@ -177,8 +177,8 @@ bool File::open(File::OpenMode mode)
 	if (mode & OpenModeFlag::WriteOnly)
 		flags |= O_CREAT;
 
-	fd_ = ::open(name_.c_str(), flags, 0666);
-	if (fd_ < 0) {
+	fd_ = UniqueFD(::open(name_.c_str(), flags, 0666));
+	if (!fd_.isValid()) {
 		error_ = -errno;
 		return false;
 	}
@@ -209,11 +209,10 @@ bool File::open(File::OpenMode mode)
  */
 void File::close()
 {
-	if (fd_ == -1)
+	if (!fd_.isValid())
 		return;
 
-	::close(fd_);
-	fd_ = -1;
+	fd_.reset();
 	mode_ = OpenModeFlag::NotOpen;
 }
 
@@ -243,7 +242,7 @@ ssize_t File::size() const
 		return -EINVAL;
 
 	struct stat st;
-	int ret = fstat(fd_, &st);
+	int ret = fstat(fd_.get(), &st);
 	if (ret < 0)
 		return -errno;
 
@@ -262,7 +261,7 @@ off_t File::pos() const
 	if (!isOpen())
 		return 0;
 
-	return lseek(fd_, 0, SEEK_CUR);
+	return lseek(fd_.get(), 0, SEEK_CUR);
 }
 
 /**
@@ -276,7 +275,7 @@ off_t File::seek(off_t pos)
 	if (!isOpen())
 		return -EINVAL;
 
-	off_t ret = lseek(fd_, pos, SEEK_SET);
+	off_t ret = lseek(fd_.get(), pos, SEEK_SET);
 	if (ret < 0)
 		return -errno;
 
@@ -308,7 +307,7 @@ ssize_t File::read(const Span<uint8_t> &data)
 
 	/* Retry in case of interrupted system calls. */
 	while (readBytes < data.size()) {
-		ret = ::read(fd_, data.data() + readBytes,
+		ret = ::read(fd_.get(), data.data() + readBytes,
 			     data.size() - readBytes);
 		if (ret <= 0)
 			break;
@@ -345,7 +344,7 @@ ssize_t File::write(const Span<const uint8_t> &data)
 
 	/* Retry in case of interrupted system calls. */
 	while (writtenBytes < data.size()) {
-		ssize_t ret = ::write(fd_, data.data() + writtenBytes,
+		ssize_t ret = ::write(fd_.get(), data.data() + writtenBytes,
 				      data.size() - writtenBytes);
 		if (ret <= 0)
 			break;
@@ -408,7 +407,7 @@ Span<uint8_t> File::map(off_t offset, ssize_t size, File::MapFlags flags)
 	if (flags & MapFlag::Private)
 		prot |= PROT_WRITE;
 
-	void *map = mmap(NULL, size, prot, mmapFlags, fd_, offset);
+	void *map = mmap(NULL, size, prot, mmapFlags, fd_.get(), offset);
 	if (map == MAP_FAILED) {
 		error_ = -errno;
 		return {};

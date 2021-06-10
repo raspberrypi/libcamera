@@ -1102,11 +1102,56 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 
 	staticMetadata_->addEntry(ANDROID_SENSOR_ORIENTATION, orientation_);
 
-	std::vector<int32_t> testPatterModes = {
-		ANDROID_SENSOR_TEST_PATTERN_MODE_OFF,
+	std::vector<int32_t> testPatternModes = {
+		ANDROID_SENSOR_TEST_PATTERN_MODE_OFF
 	};
+	const auto &testPatternsInfo =
+		controlsInfo.find(&controls::draft::TestPatternMode);
+	if (testPatternsInfo != controlsInfo.end()) {
+		const auto &values = testPatternsInfo->second.values();
+		ASSERT(!values.empty());
+		for (const auto &value : values) {
+			switch (value.get<int32_t>()) {
+			case controls::draft::TestPatternModeOff:
+				/*
+				 * ANDROID_SENSOR_TEST_PATTERN_MODE_OFF is
+				 * already in testPatternModes.
+				 */
+				break;
+
+			case controls::draft::TestPatternModeSolidColor:
+				testPatternModes.push_back(
+					ANDROID_SENSOR_TEST_PATTERN_MODE_SOLID_COLOR);
+				break;
+
+			case controls::draft::TestPatternModeColorBars:
+				testPatternModes.push_back(
+					ANDROID_SENSOR_TEST_PATTERN_MODE_COLOR_BARS);
+				break;
+
+			case controls::draft::TestPatternModeColorBarsFadeToGray:
+				testPatternModes.push_back(
+					ANDROID_SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY);
+				break;
+
+			case controls::draft::TestPatternModePn9:
+				testPatternModes.push_back(
+					ANDROID_SENSOR_TEST_PATTERN_MODE_PN9);
+				break;
+
+			case controls::draft::TestPatternModeCustom1:
+				/* We don't support this yet. */
+				break;
+
+			default:
+				LOG(HAL, Error) << "Unknown test pattern mode: "
+						<< value.get<int32_t>();
+				continue;
+			}
+		}
+	}
 	staticMetadata_->addEntry(ANDROID_SENSOR_AVAILABLE_TEST_PATTERN_MODES,
-				  testPatterModes);
+				  testPatternModes);
 
 	uint8_t timestampSource = ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN;
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE,

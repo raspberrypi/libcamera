@@ -9,6 +9,8 @@
 
 #include <map>
 
+#include <libcamera/control_ids.h>
+
 #include "libcamera/internal/log.h"
 
 /**
@@ -34,6 +36,11 @@ LOG_DEFINE_CATEGORY(CameraSensorProperties)
  *
  * \var CameraSensorProperties::unitCellSize
  * \brief The physical size of a pixel, including pixel edges, in nanometers.
+ *
+ * \var CameraSensorProperties::testPatternModes
+ * \brief Map that associates the indexes of the sensor test pattern modes as
+ * returned by V4L2_CID_TEST_PATTERN with the corresponding TestPattern
+ * control value
  */
 
 /**
@@ -47,18 +54,44 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 	static const std::map<std::string, const CameraSensorProperties> sensorProps = {
 		{ "imx219", {
 			.unitCellSize = { 1120, 1120 },
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeColorBars },
+				{ 2, controls::draft::TestPatternModeSolidColor },
+				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
+				{ 4, controls::draft::TestPatternModePn9 },
+			},
 		} },
 		{ "imx258", {
 			.unitCellSize = { 1120, 1120 },
+			/* \todo fill test pattern modes for imx258. */
+			.testPatternModes = {},
 		} },
 		{ "ov5670", {
 			.unitCellSize = { 1120, 1120 },
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeColorBars },
+			},
 		} },
 		{ "ov13858", {
 			.unitCellSize = { 1120, 1120 },
+			.testPatternModes =  {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeColorBars },
+			},
 		} },
 		{ "ov5693", {
 			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 2, controls::draft::TestPatternModeColorBars },
+				/*
+				 * No corresponding test pattern mode for
+				 * 1: "Random data" and 3: "Colour Bars with
+				 * Rolling Bar".
+				 */
+			},
 		} },
 	};
 

@@ -7,6 +7,7 @@
 #ifndef __LIBCAMERA_SENSOR_CAMERA_SENSOR_PROPERTIES_H__
 #define __LIBCAMERA_SENSOR_CAMERA_SENSOR_PROPERTIES_H__
 
+#include <map>
 #include <string>
 
 #include <libcamera/geometry.h>
@@ -17,6 +18,7 @@ struct CameraSensorProperties {
 	static const CameraSensorProperties *get(const std::string &sensor);
 
 	Size unitCellSize;
+	std::map<int32_t, int32_t> testPatternModes;
 };
 
 } /* namespace libcamera */

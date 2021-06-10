@@ -18,6 +18,7 @@ libcamera_base_sources = files([
     'signal.cpp',
     'thread.cpp',
     'timer.cpp',
+    'unique_fd.cpp',
     'utils.cpp',
 ])
 

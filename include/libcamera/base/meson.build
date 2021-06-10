@@ -24,6 +24,7 @@ libcamera_base_headers = files([
     'thread.h',
     'thread_annotations.h',
     'timer.h',
+    'unique_fd.h',
     'utils.h',
 ])
 

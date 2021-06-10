@@ -114,14 +114,14 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 		return MAP_FAILED;
 	}
 
-	FileDescriptor fd = vcam_->getBufferFd(index);
-	if (!fd.isValid()) {
+	int fd = vcam_->getBufferFd(index);
+	if (fd < 0) {
 		errno = EINVAL;
 		return MAP_FAILED;
 	}
 
 	void *map = V4L2CompatManager::instance()->fops().mmap(addr, length, prot,
-							       flags, fd.fd(), 0);
+							       flags, fd, 0);
 	if (map == MAP_FAILED)
 		return map;
 

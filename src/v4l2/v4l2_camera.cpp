@@ -186,16 +186,16 @@ void V4L2Camera::freeBuffers()
 	bufferAllocator_->free(stream);
 }
 
-FileDescriptor V4L2Camera::getBufferFd(unsigned int index)
+int V4L2Camera::getBufferFd(unsigned int index)
 {
 	Stream *stream = config_->at(0).stream();
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers =
 		bufferAllocator_->buffers(stream);
 
 	if (buffers.size() <= index)
-		return FileDescriptor();
+		return -1;
 
-	return buffers[index]->planes()[0].fd;
+	return buffers[index]->planes()[0].fd.fd();
 }
 
 int V4L2Camera::streamOn()

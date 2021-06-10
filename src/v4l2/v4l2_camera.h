@@ -51,7 +51,7 @@ public:
 
 	int allocBuffers(unsigned int count);
 	void freeBuffers();
-	libcamera::FileDescriptor getBufferFd(unsigned int index);
+	int getBufferFd(unsigned int index);
 
 	int streamOn();
 	int streamOff();

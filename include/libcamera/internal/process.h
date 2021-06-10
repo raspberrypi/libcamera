@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/base/signal.h>
+#include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
 
@@ -75,8 +76,9 @@ private:
 	std::list<Process *> processes_;
 
 	struct sigaction oldsa_;
+
 	EventNotifier *sigEvent_;
-	int pipe_[2];
+	UniqueFD pipe_[2];
 };
 
 } /* namespace libcamera */

@@ -69,7 +69,7 @@ void sigact(int signal, siginfo_t *info, void *ucontext)
 void ProcessManager::sighandler()
 {
 	char data;
-	ssize_t ret = read(pipe_[0], &data, sizeof(data));
+	ssize_t ret = read(pipe_[0].get(), &data, sizeof(data));
 	if (ret < 0) {
 		LOG(Process, Error)
 			<< "Failed to read byte from signal handler pipe";
@@ -129,10 +129,15 @@ ProcessManager::ProcessManager()
 
 	sigaction(SIGCHLD, &sa, NULL);
 
-	if (pipe2(pipe_, O_CLOEXEC | O_DIRECT | O_NONBLOCK))
+	int pipe[2];
+	if (pipe2(pipe, O_CLOEXEC | O_DIRECT | O_NONBLOCK))
 		LOG(Process, Fatal)
 			<< "Failed to initialize pipe for signal handling";
-	sigEvent_ = new EventNotifier(pipe_[0], EventNotifier::Read);
+
+	pipe_[0] = UniqueFD(pipe[0]);
+	pipe_[1] = UniqueFD(pipe[1]);
+
+	sigEvent_ = new EventNotifier(pipe_[0].get(), EventNotifier::Read);
 	sigEvent_->activated.connect(this, &ProcessManager::sighandler);
 
 	self_ = this;
@@ -141,9 +146,8 @@ ProcessManager::ProcessManager()
 ProcessManager::~ProcessManager()
 {
 	sigaction(SIGCHLD, &oldsa_, NULL);
+
 	delete sigEvent_;
-	close(pipe_[0]);
-	close(pipe_[1]);
 
 	self_ = nullptr;
 }
@@ -170,7 +174,7 @@ ProcessManager *ProcessManager::instance()
  */
 int ProcessManager::writePipe() const
 {
-	return pipe_[1];
+	return pipe_[1].get();
 }
 
 /**

@@ -63,15 +63,14 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &deviceNode)
-	: deviceNode_(deviceNode), fd_(-1), valid_(false), acquired_(false),
+	: deviceNode_(deviceNode), valid_(false), acquired_(false),
 	  lockOwner_(false)
 {
 }
 
 MediaDevice::~MediaDevice()
 {
-	if (fd_ != -1)
-		::close(fd_);
+	fd_.reset();
 	clear();
 }
 
@@ -143,14 +142,14 @@ void MediaDevice::release()
  */
 bool MediaDevice::lock()
 {
-	if (fd_ == -1)
+	if (!fd_.isValid())
 		return false;
 
 	/* Do not allow nested locking in the same libcamera instance. */
 	if (lockOwner_)
 		return false;
 
-	if (lockf(fd_, F_TLOCK, 0))
+	if (lockf(fd_.get(), F_TLOCK, 0))
 		return false;
 
 	lockOwner_ = true;
@@ -169,7 +168,7 @@ bool MediaDevice::lock()
  */
 void MediaDevice::unlock()
 {
-	if (fd_ == -1)
+	if (!fd_.isValid())
 		return;
 
 	if (!lockOwner_)
@@ -177,7 +176,7 @@ void MediaDevice::unlock()
 
 	lockOwner_ = false;
 
-	lockf(fd_, F_ULOCK, 0);
+	lockf(fd_.get(), F_ULOCK, 0);
 }
 
 /**
@@ -220,7 +219,7 @@ int MediaDevice::populate()
 		return ret;
 
 	struct media_device_info info = {};
-	ret = ioctl(fd_, MEDIA_IOC_DEVICE_INFO, &info);
+	ret = ioctl(fd_.get(), MEDIA_IOC_DEVICE_INFO, &info);
 	if (ret) {
 		ret = -errno;
 		LOG(MediaDevice, Error)
@@ -243,7 +242,7 @@ int MediaDevice::populate()
 		topology.ptr_links = reinterpret_cast<uintptr_t>(links);
 		topology.ptr_pads = reinterpret_cast<uintptr_t>(pads);
 
-		ret = ioctl(fd_, MEDIA_IOC_G_TOPOLOGY, &topology);
+		ret = ioctl(fd_.get(), MEDIA_IOC_G_TOPOLOGY, &topology);
 		if (ret < 0) {
 			ret = -errno;
 			LOG(MediaDevice, Error)
@@ -481,20 +480,19 @@ int MediaDevice::disableLinks()
  */
 int MediaDevice::open()
 {
-	if (fd_ != -1) {
+	if (fd_.isValid()) {
 		LOG(MediaDevice, Error) << "MediaDevice already open";
 		return -EBUSY;
 	}
 
-	int ret = ::open(deviceNode_.c_str(), O_RDWR);
-	if (ret < 0) {
-		ret = -errno;
+	fd_ = UniqueFD(::open(deviceNode_.c_str(), O_RDWR));
+	if (!fd_.isValid()) {
+		int ret = -errno;
 		LOG(MediaDevice, Error)
 			<< "Failed to open media device at "
 			<< deviceNode_ << ": " << strerror(-ret);
 		return ret;
 	}
-	fd_ = ret;
 
 	return 0;
 }
@@ -514,11 +512,7 @@ int MediaDevice::open()
  */
 void MediaDevice::close()
 {
-	if (fd_ == -1)
-		return;
-
-	::close(fd_);
-	fd_ = -1;
+	fd_.reset();
 }
 
 /**
@@ -756,7 +750,7 @@ void MediaDevice::fixupEntityFlags(struct media_v2_entity *entity)
 	struct media_entity_desc desc = {};
 	desc.id = entity->id;
 
-	int ret = ioctl(fd_, MEDIA_IOC_ENUM_ENTITIES, &desc);
+	int ret = ioctl(fd_.get(), MEDIA_IOC_ENUM_ENTITIES, &desc);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(MediaDevice, Debug)
@@ -799,7 +793,7 @@ int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 
 	linkDesc.flags = flags;
 
-	int ret = ioctl(fd_, MEDIA_IOC_SETUP_LINK, &linkDesc);
+	int ret = ioctl(fd_.get(), MEDIA_IOC_SETUP_LINK, &linkDesc);
 	if (ret) {
 		ret = -errno;
 		LOG(MediaDevice, Error)

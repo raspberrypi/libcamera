@@ -16,6 +16,7 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/unique_fd.h>
 
 #include "libcamera/internal/media_object.h"
 
@@ -82,7 +83,7 @@ private:
 	unsigned int version_;
 	unsigned int hwRevision_;
 
-	int fd_;
+	UniqueFD fd_;
 	bool valid_;
 	bool acquired_;
 	bool lockOwner_;

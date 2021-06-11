@@ -642,7 +642,11 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	configInfo.bdsOutputSize = config->imguConfig().bds;
 	configInfo.iif = config->imguConfig().iif;
 
-	data->ipa_->configure(configInfo);
+	ret = data->ipa_->configure(configInfo);
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to configure IPA";
+		return ret;
+	}
 
 	return 0;
 }

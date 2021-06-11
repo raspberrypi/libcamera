@@ -43,7 +43,7 @@ public:
 	int start() override;
 	void stop() override {}
 
-	void configure(const IPAConfigInfo &configInfo) override;
+	int configure(const IPAConfigInfo &configInfo) override;
 
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
@@ -142,10 +142,12 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 			    << (int)bdsGrid_.height << " << " << (int)bdsGrid_.block_height_log2 << ")";
 }
 
-void IPAIPU3::configure(const IPAConfigInfo &configInfo)
+int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 {
-	if (configInfo.entityControls.empty())
-		return;
+	if (configInfo.entityControls.empty()) {
+		LOG(IPAIPU3, Error) << "No controls provided";
+		return -ENODATA;
+	}
 
 	sensorInfo_ = configInfo.sensorInfo;
 
@@ -154,19 +156,19 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
 	if (itExp == ctrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find exposure control";
-		return;
+		return -EINVAL;
 	}
 
 	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
 	if (itGain == ctrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find gain control";
-		return;
+		return -EINVAL;
 	}
 
 	const auto itVBlank = ctrls_.find(V4L2_CID_VBLANK);
 	if (itVBlank == ctrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find VBLANK control";
-		return;
+		return -EINVAL;
 	}
 
 	minExposure_ = std::max(itExp->second.min().get<int32_t>(), 1);
@@ -188,6 +190,8 @@ void IPAIPU3::configure(const IPAConfigInfo &configInfo)
 
 	agcAlgo_ = std::make_unique<IPU3Agc>();
 	agcAlgo_->initialise(bdsGrid_, sensorInfo_);
+
+	return 0;
 }
 
 void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)

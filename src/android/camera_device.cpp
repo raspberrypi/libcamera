@@ -121,17 +121,6 @@ const std::map<int, const Camera3Format> camera3FormatsMap = {
 			false,
 			"RAW16"
 		}
-	}, {
-		HAL_PIXEL_FORMAT_RAW_OPAQUE, {
-			{
-				formats::SBGGR10_IPU3,
-				formats::SGBRG10_IPU3,
-				formats::SGRBG10_IPU3,
-				formats::SRGGB10_IPU3
-			},
-			false,
-			"RAW_OPAQUE"
-		}
 	},
 };
 

@@ -64,8 +64,13 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		} },
 		{ "imx258", {
 			.unitCellSize = { 1120, 1120 },
-			/* \todo fill test pattern modes for imx258. */
-			.testPatternModes = {},
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeSolidColor },
+				{ 2, controls::draft::TestPatternModeColorBars },
+				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
+				{ 4, controls::draft::TestPatternModePn9 },
+			},
 		} },
 		{ "ov5670", {
 			.unitCellSize = { 1120, 1120 },

@@ -10,71 +10,93 @@
 
 #include <libcamera/span.h>
 
-/* Camera metadata parser class. Usage as shown below.
-
-Setup:
-
-Usually the metadata parser will be made as part of the CamHelper class so
-application code doesn't have to worry which to kind to instantiate. But for
-the sake of example let's suppose we're parsing imx219 metadata.
-
-MdParser *parser = new MdParserImx219();  // for example
-parser->SetBitsPerPixel(bpp);
-parser->SetLineLengthBytes(pitch);
-parser->SetNumLines(2);
-
-Note 1: if you don't know how many lines there are, the size of the input
-buffer is used as a limit instead.
-
-Note 2: if you don't know the line length, you can leave the line length unset
-(or set to zero) and the parser will hunt for the line start instead.
-
-Then on every frame:
-
-if (parser->Parse(buffer) != MdParser::OK)
-    much badness;
-unsigned int exposure_lines, gain_code
-if (parser->GetExposureLines(exposure_lines) != MdParser::OK)
-    exposure was not found;
-if (parser->GetGainCode(parser, gain_code) != MdParser::OK)
-    gain code was not found;
-
-(Note that the CamHelper class converts to/from exposure lines and time,
-and gain_code / actual gain.)
-
-If you suspect your embedded data may have changed its layout, change any line
-lengths, number of lines, bits per pixel etc. that are different, and
-then:
-
-parser->Reset();
-
-before calling Parse again. */
+/*
+ * Camera metadata parser class. Usage as shown below.
+ *
+ * Setup:
+ *
+ * Usually the metadata parser will be made as part of the CamHelper class so
+ * application code doesn't have to worry which kind to instantiate. But for
+ * the sake of example let's suppose we're parsing imx219 metadata.
+ *
+ * MdParser *parser = new MdParserImx219();  // for example
+ * parser->SetBitsPerPixel(bpp);
+ * parser->SetLineLengthBytes(pitch);
+ * parser->SetNumLines(2);
+ *
+ * Note 1: if you don't know how many lines there are, the size of the input
+ * buffer is used as a limit instead.
+ *
+ * Note 2: if you don't know the line length, you can leave the line length unset
+ * (or set to zero) and the parser will hunt for the line start instead.
+ *
+ * Then on every frame:
+ *
+ * if (parser->Parse(buffer) != MdParser::OK)
+ *     much badness;
+ * unsigned int exposure_lines, gain_code
+ * if (parser->GetExposureLines(exposure_lines) != MdParser::OK)
+ *     exposure was not found;
+ * if (parser->GetGainCode(parser, gain_code) != MdParser::OK)
+ *     gain code was not found;
+ *
+ * (Note that the CamHelper class converts to/from exposure lines and time,
+ * and gain_code / actual gain.)
+ *
+ * If you suspect your embedded data may have changed its layout, change any line
+ * lengths, number of lines, bits per pixel etc. that are different, and
+ * then:
+ *
+ * parser->Reset();
+ *
+ * before calling Parse again.
+ */
 
 namespace RPiController {
 
-// Abstract base class from which other metadata parsers are derived.
+/* Abstract base class from which other metadata parsers are derived. */
 
 class MdParser
 {
 public:
-	// Parser status codes:
-	// OK       - success
-	// NOTFOUND - value such as exposure or gain was not found
-	// ERROR    - all other errors
+	/*
+	 * Parser status codes:
+	 * OK       - success
+	 * NOTFOUND - value such as exposure or gain was not found
+	 * ERROR    - all other errors
+	 */
 	enum Status {
 		OK = 0,
 		NOTFOUND = 1,
 		ERROR = 2
 	};
-	MdParser() : reset_(true) {}
+
+	MdParser() : reset_(true)
+	{
+	}
+
 	virtual ~MdParser() = default;
-	void Reset() { reset_ = true; }
-	void SetBitsPerPixel(int bpp) { bits_per_pixel_ = bpp; }
-	void SetNumLines(unsigned int num_lines) { num_lines_ = num_lines; }
+
+	void Reset()
+	{
+		reset_ = true;
+	}
+
+	void SetBitsPerPixel(int bpp)
+	{
+		bits_per_pixel_ = bpp;
+	}
+
+	void SetNumLines(unsigned int num_lines)
+	{
+		num_lines_ = num_lines;
+	}
+
 	void SetLineLengthBytes(unsigned int num_bytes)
 	{
 		line_length_bytes_ = num_bytes;
 	}
+
 	virtual Status Parse(libcamera::Span<const uint8_t> buffer) = 0;
 	virtual Status GetExposureLines(unsigned int &lines) = 0;
 	virtual Status GetGainCode(unsigned int &gain_code) = 0;
@@ -87,22 +109,28 @@ protected:
 	unsigned int buffer_size_bytes_;
 };
 
-// This isn't a full implementation of a metadata parser for SMIA sensors,
-// however, it does provide the findRegs method which will prove useful and make
-// it easier to implement parsers for other SMIA-like sensors (see
-// md_parser_imx219.cpp for an example).
+/*
+ * This isn't a full implementation of a metadata parser for SMIA sensors,
+ * however, it does provide the findRegs method which will prove useful and make
+ * it easier to implement parsers for other SMIA-like sensors (see
+ * md_parser_imx219.cpp for an example).
+ */
 
 class MdParserSmia : public MdParser
 {
 public:
-	MdParserSmia() : MdParser() {}
+	MdParserSmia() : MdParser()
+	{
+	}
 
 protected:
-	// Note that error codes > 0 are regarded as non-fatal; codes < 0
-	// indicate a bad data buffer. Status codes are:
-	// PARSE_OK     - found all registers, much happiness
-	// MISSING_REGS - some registers found; should this be a hard error?
-	// The remaining codes are all hard errors.
+	/*
+	 * Note that error codes > 0 are regarded as non-fatal; codes < 0
+	 * indicate a bad data buffer. Status codes are:
+	 * PARSE_OK     - found all registers, much happiness
+	 * MISSING_REGS - some registers found; should this be a hard error?
+	 * The remaining codes are all hard errors.
+	 */
 	enum ParseStatus {
 		PARSE_OK      =  0,
 		MISSING_REGS  =  1,
@@ -112,6 +140,7 @@ protected:
 		BAD_LINE_END  = -4,
 		BAD_PADDING   = -5
 	};
+
 	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer, uint32_t regs[],
 			     int offsets[], unsigned int num_regs);
 };

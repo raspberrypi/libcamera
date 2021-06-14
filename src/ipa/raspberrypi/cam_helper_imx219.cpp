@@ -128,7 +128,6 @@ MdParser::Status MdParserImx219::Parse(libcamera::Span<const uint8_t> buffer)
 		 * registers.
 		 */
 		assert(bits_per_pixel_);
-		assert(num_lines_ || buffer_size_bytes_);
 		/* Need to be ordered */
 		uint32_t regs[3] = { GAIN_REG, EXPHI_REG, EXPLO_REG };
 		reg_offsets_[0] = reg_offsets_[1] = reg_offsets_[2] = -1;

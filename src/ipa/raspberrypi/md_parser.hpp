@@ -71,7 +71,8 @@ public:
 		ERROR = 2
 	};
 
-	MdParser() : reset_(true)
+	MdParser()
+		: reset_(true), bits_per_pixel_(0), num_lines_(0), line_length_bytes_(0)
 	{
 	}
 
@@ -106,7 +107,6 @@ protected:
 	int bits_per_pixel_;
 	unsigned int num_lines_;
 	unsigned int line_length_bytes_;
-	unsigned int buffer_size_bytes_;
 };
 
 /*

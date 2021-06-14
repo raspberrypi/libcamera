@@ -117,7 +117,6 @@ MdParser::Status MdParserImx477::Parse(libcamera::Span<const uint8_t> buffer)
 		 * registers.
 		 */
 		assert(bits_per_pixel_);
-		assert(num_lines_ || buffer_size_bytes_);
 		/* Need to be ordered */
 		uint32_t regs[4] = {
 			EXPHI_REG,

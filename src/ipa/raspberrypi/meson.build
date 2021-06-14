@@ -16,7 +16,7 @@ rpi_ipa_includes = [
 
 rpi_ipa_sources = files([
     'raspberrypi.cpp',
-    'md_parser.cpp',
+    'md_parser_smia.cpp',
     'cam_helper.cpp',
     'cam_helper_ov5647.cpp',
     'cam_helper_imx219.cpp',

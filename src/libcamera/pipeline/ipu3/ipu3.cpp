@@ -20,6 +20,8 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
@@ -27,7 +29,6 @@
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/utils.h"
 
 #include "cio2.h"
 #include "frames.h"

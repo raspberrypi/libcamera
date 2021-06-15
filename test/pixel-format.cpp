@@ -10,7 +10,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include "test.h"
 

@@ -10,10 +10,11 @@
 
 #include <linux/media-bus-format.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
-#include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 #include "test.h"

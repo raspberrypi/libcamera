@@ -13,11 +13,12 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/tracepoints.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file pipeline_handler.h

@@ -12,9 +12,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_proxy.h

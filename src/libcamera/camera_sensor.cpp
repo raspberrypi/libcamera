@@ -18,11 +18,12 @@
 
 #include <libcamera/property_ids.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file camera_sensor.h

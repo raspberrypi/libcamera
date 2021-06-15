@@ -20,9 +20,10 @@
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/thread.h"
-#include "libcamera/internal/utils.h"
 
 #include "system/graphics.h"
 

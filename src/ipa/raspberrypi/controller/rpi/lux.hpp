@@ -8,7 +8,7 @@
 
 #include <mutex>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include "../lux_status.h"
 #include "../algorithm.hpp"

@@ -14,7 +14,7 @@
 #include <libcamera/geometry.h>
 #include <libcamera/span.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include "test.h"
 

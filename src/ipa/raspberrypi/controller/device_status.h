@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 // Definition of "device metadata" which stores things like shutter time and
 // analogue gain that downstream control algorithms will want to know.

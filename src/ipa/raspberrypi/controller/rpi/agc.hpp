@@ -9,7 +9,7 @@
 #include <vector>
 #include <mutex>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include "../agc_algorithm.hpp"
 #include "../agc_status.h"

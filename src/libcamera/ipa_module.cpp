@@ -23,10 +23,11 @@
 
 #include <libcamera/span.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/file.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_module.h

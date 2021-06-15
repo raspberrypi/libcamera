@@ -12,9 +12,9 @@
 
 #include <linux/intel-ipu3.h>
 
-#include <libcamera/geometry.h>
+#include <libcamera/base/utils.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/geometry.h>
 
 #include "libipa/algorithm.h"
 

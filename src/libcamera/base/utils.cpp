@@ -5,7 +5,7 @@
  * utils.cpp - Miscellaneous utility functions
  */
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include <iomanip>
 #include <sstream>
@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 /**
- * \file utils.h
+ * \file base/utils.h
  * \brief Miscellaneous utility functions
  */
 
@@ -35,8 +35,8 @@ namespace utils {
  */
 const char *basename(const char *path)
 {
-       const char *base = strrchr(path, '/');
-       return base ? base + 1 : path;
+	const char *base = strrchr(path, '/');
+	return base ? base + 1 : path;
 }
 
 /**

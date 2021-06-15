@@ -4,8 +4,8 @@
  *
  * utils.h - Miscellaneous utility functions
  */
-#ifndef __LIBCAMERA_INTERNAL_UTILS_H__
-#define __LIBCAMERA_INTERNAL_UTILS_H__
+#ifndef __LIBCAMERA_BASE_UTILS_H__
+#define __LIBCAMERA_BASE_UTILS_H__
 
 #include <algorithm>
 #include <chrono>
@@ -23,7 +23,7 @@
 
 /* uClibc and uClibc-ng don't provide O_TMPFILE */
 #ifndef O_TMPFILE
-#define O_TMPFILE	(020000000 | O_DIRECTORY)
+#define O_TMPFILE (020000000 | O_DIRECTORY)
 #endif
 
 #endif
@@ -352,4 +352,4 @@ std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> 
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_UTILS_H__ */
+#endif /* __LIBCAMERA_BASE_UTILS_H__ */

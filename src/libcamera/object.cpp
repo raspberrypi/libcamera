@@ -11,11 +11,12 @@
 
 #include <libcamera/signal.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/message.h"
 #include "libcamera/internal/semaphore.h"
 #include "libcamera/internal/thread.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file object.h

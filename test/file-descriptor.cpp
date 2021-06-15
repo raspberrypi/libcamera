@@ -13,7 +13,7 @@
 
 #include <libcamera/file_descriptor.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 #include "test.h"
 

@@ -6,7 +6,8 @@
  */
 #pragma once
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
+
 #include "algorithm.hpp"
 
 namespace RPiController {

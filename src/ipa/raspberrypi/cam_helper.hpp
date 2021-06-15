@@ -15,7 +15,8 @@
 #include "controller/metadata.hpp"
 #include "md_parser.hpp"
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace RPiController {

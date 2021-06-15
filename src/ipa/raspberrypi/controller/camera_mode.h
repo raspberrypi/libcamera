@@ -8,7 +8,7 @@
 
 #include <libcamera/transform.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 // Description of a "camera mode", holding enough information for control
 // algorithms to adapt their behaviour to the different modes of the camera,

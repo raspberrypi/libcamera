@@ -20,9 +20,10 @@
 #include <unistd.h>
 #include <vector>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file process.h

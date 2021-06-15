@@ -23,8 +23,9 @@
 
 #include <libcamera/logging.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/thread.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file log.h

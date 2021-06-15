@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 // The AGC algorithm should post the following structure into the image's
 // "agc.status" metadata.

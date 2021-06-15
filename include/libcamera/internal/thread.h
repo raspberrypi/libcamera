@@ -14,8 +14,9 @@
 
 #include <libcamera/signal.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/message.h"
-#include "libcamera/internal/utils.h"
 
 namespace libcamera {
 

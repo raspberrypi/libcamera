@@ -14,8 +14,9 @@
 #include <tuple>
 #include <uchar.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/log.h"
-#include "libcamera/internal/utils.h"
 
 using namespace libcamera;
 

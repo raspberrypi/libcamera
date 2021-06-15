@@ -24,6 +24,8 @@
 #include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 
+#include <libcamera/base/utils.h>
+
 #include <linux/bcm2835-isp.h>
 #include <linux/videodev2.h>
 
@@ -35,7 +37,6 @@
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/utils.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 #include "dma_heaps.h"

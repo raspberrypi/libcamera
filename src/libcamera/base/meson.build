@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_base_sources = files([
+    'utils.cpp',
 ])
 
 libcamera_base_deps = [

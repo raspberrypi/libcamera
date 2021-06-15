@@ -19,10 +19,11 @@
 
 #include <libcamera/geometry.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file v4l2_subdevice.h

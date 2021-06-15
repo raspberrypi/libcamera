@@ -12,12 +12,13 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/file.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/ipa_proxy.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/utils.h"
 
 /**
  * \file ipa_manager.h

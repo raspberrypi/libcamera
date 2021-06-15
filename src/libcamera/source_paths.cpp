@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "libcamera/internal/utils.h"
+#include <libcamera/base/utils.h>
 
 /**
  * \file source_paths.h

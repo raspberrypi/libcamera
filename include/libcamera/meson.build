@@ -23,6 +23,7 @@ libcamera_public_headers = files([
 
 include_dir = libcamera_include_dir / 'libcamera'
 
+subdir('base')
 subdir('internal')
 subdir('ipa')
 

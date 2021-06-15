@@ -22,6 +22,8 @@ if doxygen.found() and dot.found()
     custom_target('doxygen',
                   input : [
                       doxyfile,
+                      libcamera_base_headers,
+                      libcamera_base_sources,
                       libcamera_internal_headers,
                       libcamera_ipa_headers,
                       libcamera_ipa_interfaces,

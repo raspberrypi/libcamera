@@ -67,6 +67,7 @@ includes = [
     libcamera_includes,
 ]
 
+subdir('base')
 subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
@@ -124,6 +125,7 @@ endif
 
 libcamera_deps = [
     libatomic,
+    libcamera_base,
     libdl,
     libgnutls,
     liblttng,
@@ -156,10 +158,12 @@ libcamera_dep = declare_dependency(sources : [
                                        libcamera_generated_ipa_headers,
                                    ],
                                    include_directories : libcamera_includes,
+                                   dependencies: libcamera_base,
                                    link_with : libcamera)
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libcamera,
+                 libraries : libcamera_base_lib,
                  version : '1.0',
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')

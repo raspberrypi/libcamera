@@ -581,8 +581,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	 * Generate an empty configuration, and construct a StreamConfiguration
 	 * for each camera3_stream to add to it.
 	 */
-	config_ = camera_->generateConfiguration();
-	if (!config_) {
+	std::unique_ptr<CameraConfiguration> config = camera_->generateConfiguration();
+	if (!config) {
 		LOG(HAL, Error) << "Failed to generate camera configuration";
 		return -EINVAL;
 	}
@@ -720,29 +720,27 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 
 	sortCamera3StreamConfigs(streamConfigs, jpegStream);
 	for (const auto &streamConfig : streamConfigs) {
-		config_->addConfiguration(streamConfig.config);
+		config->addConfiguration(streamConfig.config);
 
 		for (auto &stream : streamConfig.streams) {
 			streams_.emplace_back(this, stream.type, stream.stream,
-					      config_->size() - 1);
+					      config->size() - 1);
 			stream.stream->priv = static_cast<void *>(&streams_.back());
 		}
 	}
 
-	switch (config_->validate()) {
+	switch (config->validate()) {
 	case CameraConfiguration::Valid:
 		break;
 	case CameraConfiguration::Adjusted:
 		LOG(HAL, Info) << "Camera configuration adjusted";
 
-		for (const StreamConfiguration &cfg : *config_)
+		for (const StreamConfiguration &cfg : *config)
 			LOG(HAL, Info) << " - " << cfg.toString();
 
-		config_.reset();
 		return -EINVAL;
 	case CameraConfiguration::Invalid:
 		LOG(HAL, Info) << "Camera configuration invalid";
-		config_.reset();
 		return -EINVAL;
 	}
 
@@ -750,7 +748,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	 * Once the CameraConfiguration has been adjusted/validated
 	 * it can be applied to the camera.
 	 */
-	int ret = camera_->configure(config_.get());
+	int ret = camera_->configure(config.get());
 	if (ret) {
 		LOG(HAL, Error) << "Failed to configure camera '"
 				<< camera_->id() << "'";
@@ -770,6 +768,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		}
 	}
 
+	config_ = std::move(config);
 	return 0;
 }
 

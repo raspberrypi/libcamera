@@ -644,7 +644,8 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 
 	ret = data->ipa_->configure(configInfo);
 	if (ret) {
-		LOG(IPU3, Error) << "Failed to configure IPA";
+		LOG(IPU3, Error) << "Failed to configure IPA: "
+				 << strerror(-ret);
 		return ret;
 	}
 

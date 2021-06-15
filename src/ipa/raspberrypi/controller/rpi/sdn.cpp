@@ -5,7 +5,7 @@
  * sdn.cpp - SDN (spatial denoise) control algorithm
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../denoise_status.h"
 #include "../noise_status.h"

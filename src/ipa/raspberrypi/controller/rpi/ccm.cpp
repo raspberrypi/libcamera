@@ -5,7 +5,7 @@
  * ccm.cpp - CCM (colour correction matrix) control algorithm
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../awb_status.h"
 #include "../ccm_status.h"

@@ -9,10 +9,9 @@
 #include <iostream>
 #include <thread>
 
+#include <libcamera/base/message.h>
+#include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
-
-#include "libcamera/internal/message.h"
-#include "libcamera/internal/thread.h"
 
 #include "test.h"
 

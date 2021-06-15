@@ -7,9 +7,9 @@
 
 #include "thumbnailer.h"
 
-#include <libcamera/formats.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/formats.h>
 
 using namespace libcamera;
 

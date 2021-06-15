@@ -12,11 +12,11 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/log.h>
 
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/media_object.h"
 #include "libcamera/internal/v4l2_device.h"
 

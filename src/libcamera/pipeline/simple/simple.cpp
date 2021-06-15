@@ -21,6 +21,8 @@
 
 #include <linux/media-bus-format.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/request.h>
@@ -28,7 +30,6 @@
 
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"

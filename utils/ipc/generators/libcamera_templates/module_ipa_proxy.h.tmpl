@@ -19,12 +19,13 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/{{module_name}}_ipa_interface.h>
 
+#include <libcamera/base/thread.h>
+
 #include "libcamera/internal/control_serializer.h"
 #include "libcamera/internal/ipa_proxy.h"
 #include "libcamera/internal/ipc_pipe.h"
 #include "libcamera/internal/ipc_pipe_unixsocket.h"
 #include "libcamera/internal/ipc_unixsocket.h"
-#include "libcamera/internal/thread.h"
 
 namespace libcamera {
 {%- if has_namespace %}

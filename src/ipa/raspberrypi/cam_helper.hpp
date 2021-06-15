@@ -10,12 +10,12 @@
 
 #include <libcamera/span.h>
 
+#include <libcamera/base/utils.h>
+
 #include "camera_mode.h"
 #include "controller/controller.hpp"
 #include "controller/metadata.hpp"
 #include "md_parser.hpp"
-
-#include <libcamera/base/utils.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
 

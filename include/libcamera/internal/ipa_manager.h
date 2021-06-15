@@ -10,11 +10,12 @@
 #include <stdint.h>
 #include <vector>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
 #include "libcamera/internal/ipa_module.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/pub_key.h"
 

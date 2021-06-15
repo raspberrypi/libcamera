@@ -16,9 +16,9 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/object.h>
 
 #include <libcamera/controls.h>
-#include <libcamera/object.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/ipa_proxy.h"

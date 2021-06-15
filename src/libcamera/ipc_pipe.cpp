@@ -7,7 +7,7 @@
 
 #include "libcamera/internal/ipc_pipe.h"
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file ipc_pipe.h

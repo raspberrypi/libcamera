@@ -7,9 +7,8 @@
 
 #include <iostream>
 
-#include <libcamera/object.h>
-
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/object.h>
+#include <libcamera/base/thread.h>
 
 #include "test.h"
 

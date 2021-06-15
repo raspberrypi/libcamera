@@ -8,7 +8,7 @@
 
 #include "linux/bcm2835-isp.h"
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../device_status.h"
 

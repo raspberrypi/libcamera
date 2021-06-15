@@ -5,7 +5,7 @@
  * geq.cpp - GEQ (green equalisation) control algorithm
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../device_status.h"
 #include "../lux_status.h"

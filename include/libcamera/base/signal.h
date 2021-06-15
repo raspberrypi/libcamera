@@ -4,16 +4,16 @@
  *
  * signal.h - Signal & slot implementation
  */
-#ifndef __LIBCAMERA_SIGNAL_H__
-#define __LIBCAMERA_SIGNAL_H__
+#ifndef __LIBCAMERA_BASE_SIGNAL_H__
+#define __LIBCAMERA_BASE_SIGNAL_H__
 
 #include <functional>
 #include <list>
 #include <type_traits>
 #include <vector>
 
-#include <libcamera/bound_method.h>
-#include <libcamera/object.h>
+#include <libcamera/base/bound_method.h>
+#include <libcamera/base/object.h>
 
 namespace libcamera {
 
@@ -129,4 +129,4 @@ public:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_SIGNAL_H__ */
+#endif /* __LIBCAMERA_BASE_SIGNAL_H__ */

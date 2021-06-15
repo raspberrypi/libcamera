@@ -2,10 +2,21 @@
 
 libcamera_base_sources = files([
     'class.cpp',
+    'bound_method.cpp',
+    'event_dispatcher.cpp',
+    'event_dispatcher_poll.cpp',
+    'log.cpp',
+    'message.cpp',
+    'object.cpp',
+    'semaphore.cpp',
+    'signal.cpp',
+    'thread.cpp',
+    'timer.cpp',
     'utils.cpp',
 ])
 
 libcamera_base_deps = [
+    dependency('threads'),
 ]
 
 libcamera_base_lib = shared_library('libcamera-base',

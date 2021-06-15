@@ -13,6 +13,10 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include <linux/bcm2835-isp.h>
+
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
@@ -25,9 +29,6 @@
 #include <libcamera/span.h>
 
 #include "libcamera/internal/buffer.h"
-#include "libcamera/internal/log.h"
-
-#include <linux/bcm2835-isp.h>
 
 #include "agc_algorithm.hpp"
 #include "agc_status.h"

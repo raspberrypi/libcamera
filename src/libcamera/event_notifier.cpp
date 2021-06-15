@@ -9,9 +9,9 @@
 
 #include <libcamera/camera_manager.h>
 
-#include "libcamera/internal/event_dispatcher.h"
-#include "libcamera/internal/message.h"
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/message.h>
+#include <libcamera/base/thread.h>
 
 /**
  * \file event_notifier.h

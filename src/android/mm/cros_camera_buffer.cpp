@@ -7,7 +7,7 @@
 
 #include "../camera_buffer.h"
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "cros-camera/camera_buffer_manager.h"
 

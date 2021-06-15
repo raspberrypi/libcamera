@@ -7,7 +7,7 @@
 
 #include "libcamera/internal/ipa_data_serializer.h"
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file ipa_data_serializer.h

@@ -10,9 +10,9 @@
 #include <algorithm>
 #include <errno.h>
 
-#include <libcamera/formats.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/formats.h>
 
 /**
  * \file internal/formats.h

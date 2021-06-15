@@ -12,6 +12,9 @@
 #include <memory>
 #include <tuple>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
@@ -19,10 +22,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include <libcamera/base/utils.h>
-
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/sysfs.h"

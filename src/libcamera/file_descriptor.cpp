@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <utility>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file file_descriptor.h

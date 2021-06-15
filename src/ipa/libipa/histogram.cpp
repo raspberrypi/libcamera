@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file histogram.h

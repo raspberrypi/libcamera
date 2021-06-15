@@ -14,9 +14,9 @@
 #include "encoder_libjpeg.h"
 #include "exif.h"
 
-#include <libcamera/formats.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/formats.h>
 
 using namespace libcamera;
 using namespace std::chrono_literals;

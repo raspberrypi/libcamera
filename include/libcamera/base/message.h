@@ -4,12 +4,12 @@
  *
  * message.h - Message queue support
  */
-#ifndef __LIBCAMERA_INTERNAL_MESSAGE_H__
-#define __LIBCAMERA_INTERNAL_MESSAGE_H__
+#ifndef __LIBCAMERA_BASE_MESSAGE_H__
+#define __LIBCAMERA_BASE_MESSAGE_H__
 
 #include <atomic>
 
-#include <libcamera/bound_method.h>
+#include <libcamera/base/bound_method.h>
 
 namespace libcamera {
 
@@ -68,4 +68,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_MESSAGE_H__ */
+#endif /* __LIBCAMERA_BASE_MESSAGE_H__ */

@@ -4,8 +4,8 @@
  *
  * event_dispatcher.h - Event dispatcher
  */
-#ifndef __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_H__
-#define __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_H__
+#ifndef __LIBCAMERA_BASE_EVENT_DISPATCHER_H__
+#define __LIBCAMERA_BASE_EVENT_DISPATCHER_H__
 
 #include <vector>
 
@@ -32,4 +32,4 @@ public:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_H__ */
+#endif /* __LIBCAMERA_BASE_EVENT_DISPATCHER_H__ */

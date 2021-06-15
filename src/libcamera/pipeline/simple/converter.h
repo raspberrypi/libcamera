@@ -16,9 +16,9 @@
 #include <vector>
 
 #include <libcamera/pixel_format.h>
-#include <libcamera/signal.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
+#include <libcamera/base/signal.h>
 
 namespace libcamera {
 

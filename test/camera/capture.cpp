@@ -9,9 +9,9 @@
 
 #include <libcamera/framebuffer_allocator.h>
 
-#include "libcamera/internal/event_dispatcher.h"
-#include "libcamera/internal/thread.h"
-#include "libcamera/internal/timer.h"
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/timer.h>
 
 #include "camera_test.h"
 #include "test.h"

@@ -14,6 +14,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/geometry.h>
@@ -22,7 +24,6 @@
 #include "libcamera/internal/byte_stream_buffer.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/control_serializer.h"
-#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

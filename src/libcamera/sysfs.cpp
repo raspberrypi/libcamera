@@ -12,8 +12,9 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
+#include <libcamera/base/log.h>
+
 #include "libcamera/internal/file.h"
-#include "libcamera/internal/log.h"
 
 /**
  * \file sysfs.h

@@ -10,7 +10,7 @@
 #include <memory>
 #include <thread>
 
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/thread.h>
 
 #include "test.h"
 

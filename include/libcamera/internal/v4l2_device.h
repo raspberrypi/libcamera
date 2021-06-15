@@ -13,11 +13,11 @@
 
 #include <linux/videodev2.h>
 
-#include <libcamera/controls.h>
-#include <libcamera/signal.h>
-#include <libcamera/span.h>
+#include <libcamera/base/log.h>
+#include <libcamera/base/signal.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/controls.h>
+#include <libcamera/span.h>
 
 namespace libcamera {
 

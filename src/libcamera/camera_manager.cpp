@@ -14,12 +14,13 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/process.h"
-#include "libcamera/internal/thread.h"
 
 /**
  * \file camera_manager.h

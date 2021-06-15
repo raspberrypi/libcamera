@@ -17,13 +17,14 @@
 #include <unistd.h>
 #include <vector>
 
+#include <libcamera/base/thread.h>
+#include <libcamera/base/timer.h>
+
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_data_serializer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/thread.h"
-#include "libcamera/internal/timer.h"
 
 #include "serialization_test.h"
 #include "test.h"

@@ -26,17 +26,18 @@
 #include <libcamera/ipa/{{module_name}}_ipa_serializer.h>
 #include <libcamera/logging.h>
 
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/log.h>
+
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/control_serializer.h"
-#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/ipa_data_serializer.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/ipa_proxy.h"
 #include "libcamera/internal/ipc_pipe.h"
 #include "libcamera/internal/ipc_pipe_unixsocket.h"
 #include "libcamera/internal/ipc_unixsocket.h"
-#include "libcamera/internal/log.h"
-#include "libcamera/internal/thread.h"
 
 using namespace libcamera;
 

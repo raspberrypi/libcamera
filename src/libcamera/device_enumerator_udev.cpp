@@ -17,8 +17,9 @@
 #include <sys/sysmacros.h>
 #include <unistd.h>
 
+#include <libcamera/base/log.h>
+
 #include "libcamera/internal/event_notifier.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 
 namespace libcamera {

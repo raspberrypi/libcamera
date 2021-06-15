@@ -11,7 +11,7 @@
 #include <queue>
 #include <vector>
 
-#include <libcamera/signal.h>
+#include <libcamera/base/signal.h>
 
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"

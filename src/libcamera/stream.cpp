@@ -15,9 +15,9 @@
 
 #include <libcamera/request.h>
 
+#include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/log.h"
 
 /**
  * \file stream.h

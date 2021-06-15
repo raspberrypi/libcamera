@@ -9,9 +9,9 @@
 
 #include <vector>
 
-#include "libcamera/internal/ipc_unixsocket.h"
+#include <libcamera/base/signal.h>
 
-#include <libcamera/signal.h>
+#include "libcamera/internal/ipc_unixsocket.h"
 
 namespace libcamera {
 

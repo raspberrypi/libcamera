@@ -5,14 +5,13 @@
  * message.cpp - Message queue support
  */
 
-#include "libcamera/internal/message.h"
+#include <libcamera/base/message.h>
 
-#include <libcamera/signal.h>
-
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
+#include <libcamera/base/signal.h>
 
 /**
- * \file message.h
+ * \file base/message.h
  * \brief Message queue support
  *
  * The messaging API enables inter-thread communication through message

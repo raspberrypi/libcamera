@@ -16,9 +16,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/logging.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/logging.h>
 
 #include "test.h"
 

@@ -5,21 +5,19 @@
  * object.cpp - Base object
  */
 
-#include <libcamera/object.h>
+#include <libcamera/base/object.h>
 
 #include <algorithm>
 
-#include <libcamera/signal.h>
-
+#include <libcamera/base/log.h>
+#include <libcamera/base/message.h>
+#include <libcamera/base/semaphore.h>
+#include <libcamera/base/signal.h>
+#include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/log.h"
-#include "libcamera/internal/message.h"
-#include "libcamera/internal/semaphore.h"
-#include "libcamera/internal/thread.h"
-
 /**
- * \file object.h
+ * \file base/object.h
  * \brief Base object to support automatic signal disconnection
  */
 

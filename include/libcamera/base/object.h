@@ -4,14 +4,14 @@
  *
  * object.h - Base object
  */
-#ifndef __LIBCAMERA_OBJECT_H__
-#define __LIBCAMERA_OBJECT_H__
+#ifndef __LIBCAMERA_BASE_OBJECT_H__
+#define __LIBCAMERA_BASE_OBJECT_H__
 
 #include <list>
 #include <memory>
 #include <vector>
 
-#include <libcamera/bound_method.h>
+#include <libcamera/base/bound_method.h>
 
 namespace libcamera {
 
@@ -68,4 +68,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_OBJECT_H__ */
+#endif /* __LIBCAMERA_BASE_OBJECT_H__ */

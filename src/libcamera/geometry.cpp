@@ -10,7 +10,7 @@
 #include <sstream>
 #include <stdint.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file geometry.h

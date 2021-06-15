@@ -5,7 +5,7 @@
  * awb.cpp - AWB control algorithm
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../lux_status.h"
 

@@ -5,12 +5,12 @@
  * signal.cpp - Signal & slot implementation
  */
 
-#include <libcamera/signal.h>
+#include <libcamera/base/signal.h>
 
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/thread.h>
 
 /**
- * \file signal.h
+ * \file base/signal.h
  * \brief Signal & slot implementation
  */
 

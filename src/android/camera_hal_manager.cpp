@@ -7,10 +7,10 @@
 
 #include "camera_hal_manager.h"
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/property_ids.h>
-
-#include "libcamera/internal/log.h"
 
 #include "camera_device.h"
 

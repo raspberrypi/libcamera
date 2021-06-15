@@ -18,7 +18,7 @@
 
 #include <linux/media.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file media_device.h

@@ -15,14 +15,14 @@
 #include <linux/rkisp1-config.h>
 #include <linux/v4l2-controls.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/request.h>
-
-#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

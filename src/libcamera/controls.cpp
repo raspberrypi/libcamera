@@ -12,10 +12,10 @@
 #include <string>
 #include <string.h>
 
+#include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
 #include "libcamera/internal/control_validator.h"
-#include "libcamera/internal/log.h"
 
 /**
  * \file controls.h

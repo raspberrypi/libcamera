@@ -9,8 +9,9 @@
 
 #include <unistd.h>
 
+#include <libcamera/base/log.h>
+
 #include "libcamera/internal/buffer.h"
-#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

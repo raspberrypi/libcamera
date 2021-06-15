@@ -9,11 +9,12 @@
 
 #include <errno.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**

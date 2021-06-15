@@ -5,7 +5,7 @@
  * controller.cpp - ISP controller
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "algorithm.hpp"
 #include "controller.hpp"

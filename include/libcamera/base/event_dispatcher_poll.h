@@ -4,14 +4,14 @@
  *
  * event_dispatcher_poll.h - Poll-based event dispatcher
  */
-#ifndef __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__
-#define __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__
+#ifndef __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__
+#define __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__
 
 #include <list>
 #include <map>
 #include <vector>
 
-#include "libcamera/internal/event_dispatcher.h"
+#include <libcamera/base/event_dispatcher.h>
 
 struct pollfd;
 
@@ -55,4 +55,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_EVENT_DISPATCHER_POLL_H__ */
+#endif /* __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__ */

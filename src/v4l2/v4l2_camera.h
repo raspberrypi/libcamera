@@ -12,12 +12,12 @@
 #include <mutex>
 #include <utility>
 
+#include <libcamera/base/semaphore.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/file_descriptor.h>
 #include <libcamera/framebuffer_allocator.h>
-
-#include "libcamera/internal/semaphore.h"
 
 using namespace libcamera;
 

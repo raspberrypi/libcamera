@@ -9,11 +9,12 @@
 
 #include <libcamera/buffer.h>
 
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/timer.h>
+
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/event_dispatcher.h"
 #include "libcamera/internal/media_device.h"
-#include "libcamera/internal/thread.h"
-#include "libcamera/internal/timer.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 #include "test.h"

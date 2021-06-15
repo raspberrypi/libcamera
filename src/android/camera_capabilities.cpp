@@ -12,12 +12,13 @@
 
 #include <hardware/camera3.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

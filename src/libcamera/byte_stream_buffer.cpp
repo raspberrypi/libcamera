@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file byte_stream_buffer.h

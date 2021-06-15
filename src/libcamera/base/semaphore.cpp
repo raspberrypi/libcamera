@@ -5,11 +5,11 @@
  * semaphore.cpp - General-purpose counting semaphore
  */
 
-#include "libcamera/internal/semaphore.h"
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/semaphore.h>
+#include <libcamera/base/thread.h>
 
 /**
- * \file semaphore.h
+ * \file base/semaphore.h
  * \brief General-purpose counting semaphore
  */
 

@@ -12,13 +12,13 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/log.h>
 
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {

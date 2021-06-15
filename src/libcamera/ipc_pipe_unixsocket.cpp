@@ -9,13 +9,14 @@
 
 #include <vector>
 
-#include "libcamera/internal/event_dispatcher.h"
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/timer.h>
+
 #include "libcamera/internal/ipc_pipe.h"
 #include "libcamera/internal/ipc_unixsocket.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/process.h"
-#include "libcamera/internal/thread.h"
-#include "libcamera/internal/timer.h"
 
 namespace libcamera {
 

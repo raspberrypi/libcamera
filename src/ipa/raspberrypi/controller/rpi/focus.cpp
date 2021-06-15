@@ -6,7 +6,7 @@
  */
 #include <stdint.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../focus_status.h"
 #include "focus.hpp"

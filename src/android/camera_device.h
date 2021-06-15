@@ -14,15 +14,16 @@
 
 #include <hardware/camera3.h>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/message.h>
+#include <libcamera/base/thread.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/buffer.h"
-#include "libcamera/internal/log.h"
-#include "libcamera/internal/message.h"
-#include "libcamera/internal/thread.h"
 
 #include "camera_capabilities.h"
 #include "camera_metadata.h"

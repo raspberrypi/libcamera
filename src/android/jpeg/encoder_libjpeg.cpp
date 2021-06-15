@@ -16,12 +16,13 @@
 #include <unistd.h>
 #include <vector>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

@@ -10,13 +10,14 @@
 #include <map>
 #include <sstream>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_controls.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/tracepoints.h"
 
 /**

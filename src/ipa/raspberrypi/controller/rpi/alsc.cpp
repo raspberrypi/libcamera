@@ -6,7 +6,7 @@
  */
 #include <math.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../awb_status.h"
 #include "alsc.hpp"

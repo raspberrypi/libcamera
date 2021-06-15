@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/signal.h>
+#include <libcamera/base/signal.h>
 
 namespace libcamera {
 

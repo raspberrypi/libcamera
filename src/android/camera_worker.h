@@ -9,13 +9,13 @@
 
 #include <memory>
 
+#include <libcamera/base/object.h>
+#include <libcamera/base/thread.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
-#include <libcamera/object.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
-
-#include "libcamera/internal/thread.h"
 
 class CameraDevice;
 

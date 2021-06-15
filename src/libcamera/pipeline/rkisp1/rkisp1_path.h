@@ -10,10 +10,11 @@
 #include <memory>
 #include <vector>
 
+#include <libcamera/base/signal.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
-#include <libcamera/signal.h>
 #include <libcamera/span.h>
 
 #include "libcamera/internal/media_object.h"

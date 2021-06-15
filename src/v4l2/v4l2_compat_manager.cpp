@@ -19,12 +19,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/camera.h>
-#include <libcamera/camera_manager.h>
-
+#include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 
 #include "v4l2_camera_file.h"
 

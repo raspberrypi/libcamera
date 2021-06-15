@@ -17,14 +17,14 @@
 #include <linux/videodev2.h>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/log.h>
+#include <libcamera/base/signal.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
-#include <libcamera/signal.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/v4l2_device.h"
 #include "libcamera/internal/v4l2_pixelformat.h"
 

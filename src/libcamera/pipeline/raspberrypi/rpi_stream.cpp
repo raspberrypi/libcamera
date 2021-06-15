@@ -6,9 +6,9 @@
  */
 #include "rpi_stream.h"
 
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/ipa/raspberrypi_ipa_interface.h>
 
 namespace libcamera {
 

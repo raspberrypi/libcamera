@@ -11,6 +11,8 @@
 #include <linux/intel-ipu3.h>
 #include <linux/v4l2-controls.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_interface.h>
@@ -19,7 +21,6 @@
 #include <libcamera/request.h>
 
 #include "libcamera/internal/buffer.h"
-#include "libcamera/internal/log.h"
 
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"

@@ -14,11 +14,12 @@
 
 #include <iostream>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
 #include "libcamera/internal/file.h"
-#include "libcamera/internal/log.h"
 
 namespace libcamera {
 

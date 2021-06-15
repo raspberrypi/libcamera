@@ -7,7 +7,7 @@
 
 #include <hardware/camera_common.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "camera_device.h"
 #include "camera_hal_manager.h"

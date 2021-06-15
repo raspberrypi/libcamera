@@ -8,8 +8,8 @@
 #include <iostream>
 #include <string.h>
 
-#include <libcamera/object.h>
-#include <libcamera/signal.h>
+#include <libcamera/base/object.h>
+#include <libcamera/base/signal.h>
 
 #include "test.h"
 

@@ -2,7 +2,6 @@
 
 libcamera_sources = files([
     'bayer_format.cpp',
-    'bound_method.cpp',
     'buffer.cpp',
     'byte_stream_buffer.cpp',
     'camera.cpp',
@@ -16,8 +15,6 @@ libcamera_sources = files([
     'delayed_controls.cpp',
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',
-    'event_dispatcher.cpp',
-    'event_dispatcher_poll.cpp',
     'event_notifier.cpp',
     'file.cpp',
     'file_descriptor.cpp',
@@ -33,23 +30,16 @@ libcamera_sources = files([
     'ipc_pipe.cpp',
     'ipc_pipe_unixsocket.cpp',
     'ipc_unixsocket.cpp',
-    'log.cpp',
     'media_device.cpp',
     'media_object.cpp',
-    'message.cpp',
-    'object.cpp',
     'pipeline_handler.cpp',
     'pixel_format.cpp',
     'process.cpp',
     'pub_key.cpp',
     'request.cpp',
-    'semaphore.cpp',
-    'signal.cpp',
     'source_paths.cpp',
     'stream.cpp',
     'sysfs.cpp',
-    'thread.cpp',
-    'timer.cpp',
     'transform.cpp',
     'v4l2_device.cpp',
     'v4l2_pixelformat.cpp',
@@ -128,7 +118,6 @@ libcamera_deps = [
     libgnutls,
     liblttng,
     libudev,
-    dependency('threads'),
 ]
 
 # We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.

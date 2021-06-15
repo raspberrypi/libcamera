@@ -11,13 +11,14 @@
 #include <memory>
 #include <vector>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/ipa/ipa_controls.h>
 #include <libcamera/span.h>
 
 #include "libcamera/internal/byte_stream_buffer.h"
-#include "libcamera/internal/log.h"
 
 /**
  * \file control_serializer.h

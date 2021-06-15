@@ -10,7 +10,7 @@
 #include <numeric>
 #include <unordered_map>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 namespace libcamera {
 

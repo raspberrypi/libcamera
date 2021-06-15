@@ -10,14 +10,14 @@
 #include <algorithm>
 #include <limits.h>
 
-#include <libcamera/buffer.h>
-#include <libcamera/geometry.h>
-#include <libcamera/signal.h>
-#include <libcamera/stream.h>
-
+#include <libcamera/base/log.h>
+#include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/buffer.h>
+#include <libcamera/geometry.h>
+#include <libcamera/stream.h>
+
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 

@@ -11,13 +11,14 @@
 #include <atomic>
 #include <iomanip>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/thread.h"
 
 /**
  * \file camera.h

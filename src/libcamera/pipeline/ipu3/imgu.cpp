@@ -13,12 +13,12 @@
 
 #include <linux/media-bus-format.h>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
+
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
-#include <libcamera/base/utils.h>
-
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/media_device.h"
 
 namespace libcamera {

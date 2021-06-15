@@ -3,7 +3,17 @@
 libcamera_base_include_dir = libcamera_include_dir / 'base'
 
 libcamera_base_headers = files([
+    'bound_method.h',
     'class.h',
+    'event_dispatcher.h',
+    'event_dispatcher_poll.h',
+    'log.h',
+    'message.h',
+    'object.h',
+    'semaphore.h',
+    'signal.h',
+    'thread.h',
+    'timer.h',
     'utils.h',
 ])
 

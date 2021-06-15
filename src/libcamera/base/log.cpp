@@ -5,7 +5,7 @@
  * log.cpp - Logging infrastructure
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include <array>
 #if HAVE_BACKTRACE
@@ -23,12 +23,11 @@
 
 #include <libcamera/logging.h>
 
+#include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/thread.h"
-
 /**
- * \file log.h
+ * \file base/log.h
  * \brief Logging infrastructure
  *
  * libcamera includes a logging infrastructure used through the library that

@@ -7,8 +7,8 @@
 #ifndef __LIBCAMERA_INTERNAL_EVENT_NOTIFIER_H__
 #define __LIBCAMERA_INTERNAL_EVENT_NOTIFIER_H__
 
-#include <libcamera/object.h>
-#include <libcamera/signal.h>
+#include <libcamera/base/object.h>
+#include <libcamera/base/signal.h>
 
 namespace libcamera {
 

@@ -13,9 +13,8 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
-
-#include <libcamera/object.h>
-#include <libcamera/signal.h>
+#include <libcamera/base/object.h>
+#include <libcamera/base/signal.h>
 
 namespace libcamera {
 

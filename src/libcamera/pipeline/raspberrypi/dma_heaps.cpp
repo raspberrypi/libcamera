@@ -14,7 +14,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 /*
  * /dev/dma-heap/linux,cma is the dma-heap allocator, which allows dmaheap-cma

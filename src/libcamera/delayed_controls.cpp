@@ -7,9 +7,10 @@
 
 #include "libcamera/internal/delayed_controls.h"
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/controls.h>
 
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/v4l2_device.h"
 
 /**

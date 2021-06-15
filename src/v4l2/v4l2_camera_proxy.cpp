@@ -18,12 +18,12 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
-#include <libcamera/object.h>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/utils.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 
 #include "v4l2_camera.h"
 #include "v4l2_camera_file.h"

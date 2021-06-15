@@ -21,7 +21,7 @@ namespace filesystem = std::experimental::filesystem;
 
 #include <hardware/camera3.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 using namespace libcamera;
 

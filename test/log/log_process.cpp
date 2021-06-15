@@ -16,13 +16,13 @@
 
 #include <libcamera/logging.h>
 
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+#include <libcamera/base/timer.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/event_dispatcher.h"
-#include "libcamera/internal/log.h"
 #include "libcamera/internal/process.h"
-#include "libcamera/internal/thread.h"
-#include "libcamera/internal/timer.h"
 
 #include "test.h"
 

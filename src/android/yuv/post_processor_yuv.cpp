@@ -9,12 +9,13 @@
 
 #include <libyuv/scale.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/formats.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/log.h"
 
 using namespace libcamera;
 

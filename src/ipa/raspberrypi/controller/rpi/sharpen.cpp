@@ -7,7 +7,7 @@
 
 #include <math.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "../sharpen_status.h"
 

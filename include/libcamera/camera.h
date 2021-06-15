@@ -13,11 +13,11 @@
 #include <string>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/object.h>
+#include <libcamera/base/signal.h>
 
 #include <libcamera/controls.h>
-#include <libcamera/object.h>
 #include <libcamera/request.h>
-#include <libcamera/signal.h>
 #include <libcamera/stream.h>
 #include <libcamera/transform.h>
 

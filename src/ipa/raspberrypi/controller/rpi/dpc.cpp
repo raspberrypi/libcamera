@@ -5,7 +5,7 @@
  * dpc.cpp - DPC (defective pixel correction) control algorithm
  */
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
 
 #include "dpc.hpp"
 

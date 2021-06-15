@@ -9,9 +9,9 @@
 
 #include <map>
 
-#include <libcamera/control_ids.h>
+#include <libcamera/base/log.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/control_ids.h>
 
 /**
  * \file camera_sensor_properties.h

@@ -13,10 +13,11 @@
 #include <map>
 #include <vector>
 
+#include <libcamera/base/signal.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
-#include <libcamera/signal.h>
 
 namespace libcamera {
 

@@ -5,12 +5,11 @@
  * event_dispatcher.cpp - Event dispatcher
  */
 
-#include "libcamera/internal/event_dispatcher.h"
-
-#include "libcamera/internal/log.h"
+#include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/log.h>
 
 /**
- * \file event_dispatcher.h
+ * \file base/event_dispatcher.h
  */
 
 namespace libcamera {

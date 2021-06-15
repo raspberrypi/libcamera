@@ -5,14 +5,13 @@
  * bound_method.cpp - Method bind and invocation
  */
 
-#include <libcamera/bound_method.h>
-
-#include "libcamera/internal/message.h"
-#include "libcamera/internal/semaphore.h"
-#include "libcamera/internal/thread.h"
+#include <libcamera/base/bound_method.h>
+#include <libcamera/base/message.h>
+#include <libcamera/base/semaphore.h>
+#include <libcamera/base/thread.h>
 
 /**
- * \file bound_method.h
+ * \file base/bound_method.h
  * \brief Method bind and invocation
  */
 

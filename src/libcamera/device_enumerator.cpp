@@ -11,7 +11,8 @@
 
 #include <string.h>
 
-#include "libcamera/internal/log.h"
+#include <libcamera/base/log.h>
+
 #include "libcamera/internal/media_device.h"
 
 /**

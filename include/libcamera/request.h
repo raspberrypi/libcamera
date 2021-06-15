@@ -14,9 +14,9 @@
 #include <unordered_set>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/signal.h>
 
 #include <libcamera/controls.h>
-#include <libcamera/signal.h>
 
 namespace libcamera {
 

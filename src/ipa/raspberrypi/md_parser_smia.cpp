@@ -71,8 +71,8 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> 
 					return NO_LINE_START;
 			} else {
 				/* allow a zero line length to mean "hunt for the next line" */
-				while (buffer[current_offset] != LINE_START &&
-				       current_offset < buffer.size())
+				while (current_offset < buffer.size() &&
+				       buffer[current_offset] != LINE_START)
 					current_offset++;
 
 				if (current_offset == buffer.size())

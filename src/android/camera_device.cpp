@@ -10,6 +10,7 @@
 #include "camera_ops.h"
 #include "post_processor.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -155,48 +156,6 @@ void sortCamera3StreamConfigs(std::vector<Camera3StreamConfig> &unsortedConfigs,
 	ASSERT(sortedConfigs.size() == unsortedConfigs.size());
 
 	unsortedConfigs = sortedConfigs;
-}
-
-bool isValidRequest(camera3_capture_request_t *camera3Request)
-{
-	if (!camera3Request) {
-		LOG(HAL, Error) << "No capture request provided";
-		return false;
-	}
-
-	if (!camera3Request->num_output_buffers ||
-	    !camera3Request->output_buffers) {
-		LOG(HAL, Error) << "No output buffers provided";
-		return false;
-	}
-
-	for (uint32_t i = 0; i < camera3Request->num_output_buffers; i++) {
-		const camera3_stream_buffer_t &outputBuffer =
-			camera3Request->output_buffers[i];
-		if (!outputBuffer.buffer || !(*outputBuffer.buffer)) {
-			LOG(HAL, Error) << "Invalid native handle";
-			return false;
-		}
-
-		const native_handle_t *handle = *outputBuffer.buffer;
-		constexpr int kNativeHandleMaxFds = 1024;
-		if (handle->numFds < 0 || handle->numFds > kNativeHandleMaxFds) {
-			LOG(HAL, Error)
-				<< "Invalid number of fds (" << handle->numFds
-				<< ") in buffer " << i;
-			return false;
-		}
-
-		constexpr int kNativeHandleMaxInts = 1024;
-		if (handle->numInts < 0 || handle->numInts > kNativeHandleMaxInts) {
-			LOG(HAL, Error)
-				<< "Invalid number of ints (" << handle->numInts
-				<< ") in buffer " << i;
-			return false;
-		}
-	}
-
-	return true;
 }
 
 const char *rotationToString(int rotation)
@@ -841,6 +800,71 @@ void CameraDevice::abortRequest(camera3_capture_request_t *request)
 	result.output_buffers = resultBuffers.data();
 
 	callbacks_->process_capture_result(callbacks_, &result);
+}
+
+bool CameraDevice::isValidRequest(camera3_capture_request_t *camera3Request) const
+{
+	if (!camera3Request) {
+		LOG(HAL, Error) << "No capture request provided";
+		return false;
+	}
+
+	if (!camera3Request->num_output_buffers ||
+	    !camera3Request->output_buffers) {
+		LOG(HAL, Error) << "No output buffers provided";
+		return false;
+	}
+
+	/* configureStreams() has not been called or has failed. */
+	if (streams_.empty() || !config_) {
+		LOG(HAL, Error) << "No stream is configured";
+		return false;
+	}
+
+	for (uint32_t i = 0; i < camera3Request->num_output_buffers; i++) {
+		const camera3_stream_buffer_t &outputBuffer =
+			camera3Request->output_buffers[i];
+		if (!outputBuffer.buffer || !(*outputBuffer.buffer)) {
+			LOG(HAL, Error) << "Invalid native handle";
+			return false;
+		}
+
+		const native_handle_t *handle = *outputBuffer.buffer;
+		constexpr int kNativeHandleMaxFds = 1024;
+		if (handle->numFds < 0 || handle->numFds > kNativeHandleMaxFds) {
+			LOG(HAL, Error)
+				<< "Invalid number of fds (" << handle->numFds
+				<< ") in buffer " << i;
+			return false;
+		}
+
+		constexpr int kNativeHandleMaxInts = 1024;
+		if (handle->numInts < 0 || handle->numInts > kNativeHandleMaxInts) {
+			LOG(HAL, Error)
+				<< "Invalid number of ints (" << handle->numInts
+				<< ") in buffer " << i;
+			return false;
+		}
+
+		const camera3_stream *camera3Stream = outputBuffer.stream;
+		if (!camera3Stream)
+			return false;
+
+		const CameraStream *cameraStream =
+			static_cast<CameraStream *>(camera3Stream->priv);
+
+		auto found = std::find_if(streams_.begin(), streams_.end(),
+					  [cameraStream](const CameraStream &stream) {
+						  return &stream == cameraStream;
+					  });
+		if (found == streams_.end()) {
+			LOG(HAL, Error)
+				<< "No corresponding configured stream found";
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Request)

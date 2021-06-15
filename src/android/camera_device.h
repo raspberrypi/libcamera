@@ -96,6 +96,7 @@ private:
 
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void abortRequest(camera3_capture_request_t *request);
+	bool isValidRequest(camera3_capture_request_t *request) const;
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
 			 camera3_error_msg_code code);

@@ -59,6 +59,10 @@ const char *basename(const char *path)
  * avoid vulnerabilities that could occur if set-user-ID or set-group-ID
  * programs accidentally trust the environment.
  *
+ * \note Not all platforms may support the features required to implement the
+ * secure execution check, in which case this function behaves as getenv(). A
+ * notable example of this is Android.
+ *
  * \return A pointer to the value in the environment or NULL if the requested
  * environment variable doesn't exist or if secure execution is required.
  */
@@ -67,9 +71,10 @@ char *secure_getenv(const char *name)
 #if HAVE_SECURE_GETENV
 	return ::secure_getenv(name);
 #else
+#if HAVE_ISSETUGID
 	if (issetugid())
 		return NULL;
-
+#endif
 	return getenv(name);
 #endif
 }

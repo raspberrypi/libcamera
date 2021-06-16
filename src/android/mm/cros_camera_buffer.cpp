@@ -113,13 +113,13 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 		break;
 	default:
 		switch (plane) {
-		case 1:
+		case 0:
 			addr = mem.ycbcr.y;
 			break;
-		case 2:
+		case 1:
 			addr = mem.ycbcr.cb;
 			break;
-		case 3:
+		case 2:
 			addr = mem.ycbcr.cr;
 			break;
 		}

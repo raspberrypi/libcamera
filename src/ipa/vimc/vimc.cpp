@@ -4,7 +4,6 @@
  *
  * ipa_vimc.cpp - Vimc Image Processing Algorithm module
  */
-
 #include <libcamera/ipa/vimc_ipa_interface.h>
 
 #include <fcntl.h>
@@ -14,12 +13,11 @@
 
 #include <iostream>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
-
-#include "libcamera/internal/file.h"
 
 namespace libcamera {
 

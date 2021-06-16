@@ -23,10 +23,10 @@
 
 #include <libcamera/span.h>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/file.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**

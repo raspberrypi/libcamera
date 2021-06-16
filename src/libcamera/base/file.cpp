@@ -5,7 +5,7 @@
  * file.cpp - File I/O operations
  */
 
-#include "libcamera/internal/file.h"
+#include <libcamera/base/file.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -17,7 +17,7 @@
 #include <libcamera/base/log.h>
 
 /**
- * \file file.h
+ * \file base/file.h
  * \brief File I/O operations
  */
 

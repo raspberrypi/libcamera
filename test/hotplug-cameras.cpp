@@ -15,10 +15,9 @@
 #include <libcamera/camera_manager.h>
 
 #include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/file.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
-
-#include "libcamera/internal/file.h"
 
 #include "test.h"
 

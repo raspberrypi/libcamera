@@ -4,12 +4,13 @@
  *
  * file.h - File I/O operations
  */
-#ifndef __LIBCAMERA_INTERNAL_FILE_H__
-#define __LIBCAMERA_INTERNAL_FILE_H__
+#ifndef __LIBCAMERA_BASE_FILE_H__
+#define __LIBCAMERA_BASE_FILE_H__
+
+#include <sys/types.h>
 
 #include <map>
 #include <string>
-#include <sys/types.h>
 
 #include <libcamera/base/class.h>
 
@@ -75,4 +76,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_FILE_H__ */
+#endif /* __LIBCAMERA_BASE_FILE_H__ */

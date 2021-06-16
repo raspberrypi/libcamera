@@ -23,7 +23,6 @@ libcamera_internal_headers = files([
     'device_enumerator_sysfs.h',
     'device_enumerator_udev.h',
     'event_notifier.h',
-    'file.h',
     'formats.h',
     'ipa_manager.h',
     'ipa_module.h',

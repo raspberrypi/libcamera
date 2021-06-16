@@ -5,6 +5,7 @@ libcamera_base_sources = files([
     'bound_method.cpp',
     'event_dispatcher.cpp',
     'event_dispatcher_poll.cpp',
+    'file.cpp',
     'log.cpp',
     'message.cpp',
     'object.cpp',

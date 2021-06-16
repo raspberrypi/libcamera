@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "libcamera/internal/file.h"
+#include <libcamera/base/file.h>
 
 #include "test.h"
 

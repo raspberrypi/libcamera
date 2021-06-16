@@ -1126,14 +1126,28 @@ void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
 	}
 
 	/*
-	 * Record the sensor's timestamp in the request metadata.
+	 * Record the sensor's timestamp in the request metadata. The request
+	 * needs to be obtained from the user-facing buffer, as internal
+	 * buffers are free-wheeling and have no request associated with them.
 	 *
 	 * \todo The sensor timestamp should be better estimated by connecting
 	 * to the V4L2Device::frameStart signal if the platform provides it.
 	 */
 	Request *request = buffer->request();
-	request->metadata().set(controls::SensorTimestamp,
-				buffer->metadata().timestamp);
+
+	if (data->useConverter_ && !data->converterQueue_.empty()) {
+		const std::map<unsigned int, FrameBuffer *> &outputs =
+			data->converterQueue_.front();
+		if (!outputs.empty()) {
+			FrameBuffer *outputBuffer = outputs.begin()->second;
+			if (outputBuffer)
+				request = outputBuffer->request();
+		}
+	}
+
+	if (request)
+		request->metadata().set(controls::SensorTimestamp,
+					buffer->metadata().timestamp);
 
 	/*
 	 * Queue the captured and the request buffer to the converter if format

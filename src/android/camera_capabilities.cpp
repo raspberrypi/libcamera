@@ -1119,8 +1119,10 @@ int CameraCapabilities::initializeStaticMetadata()
 	}
 
 	/* Sync static metadata. */
-	int32_t maxLatency = ANDROID_SYNC_MAX_LATENCY_UNKNOWN;
-	staticMetadata_->addEntry(ANDROID_SYNC_MAX_LATENCY, maxLatency);
+	setMetadata(staticMetadata_.get(), ANDROID_SYNC_MAX_LATENCY,
+		    controlsInfo, controls::draft::MaxLatency,
+		    ControlRange::Def,
+		    ANDROID_SYNC_MAX_LATENCY_UNKNOWN);
 
 	/* Flash static metadata. */
 	char flashAvailable = ANDROID_FLASH_INFO_AVAILABLE_FALSE;

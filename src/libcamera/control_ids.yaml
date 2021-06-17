@@ -622,6 +622,16 @@ controls:
         detection, additional format conversions etc) count as an additional
         pipeline stage.
 
+  - MaxLatency:
+      type: int32_t
+      draft: true
+      description: |
+        The maximum number of frames that can occur after a request (different
+        than the previous) has been submitted, and before the result's state
+        becomes synchronized. A value of -1 indicates unknown latency, and 0
+        indicates per-frame control. Currently identical to
+        ANDROID_SYNC_MAX_LATENCY.
+
   - TestPatternMode:
       type: int32_t
       draft: true

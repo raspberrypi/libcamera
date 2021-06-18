@@ -361,10 +361,12 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	GST_DEBUG_OBJECT(self, "Streaming thread has started");
 
 	guint group_id = gst_util_group_id_next();
+	gint stream_id_num = 0;
 	StreamRoles roles;
 	for (GstPad *srcpad : state->srcpads_) {
 		/* Create stream-id and push stream-start. */
-		g_autofree gchar *stream_id = gst_pad_create_stream_id(srcpad, GST_ELEMENT(self), nullptr);
+		g_autofree gchar *stream_id_intermediate = g_strdup_printf("%i%i", group_id, stream_id_num++);
+		g_autofree gchar *stream_id = gst_pad_create_stream_id(srcpad, GST_ELEMENT(self), stream_id_intermediate);
 		GstEvent *event = gst_event_new_stream_start(stream_id);
 		gst_event_set_group_id(event, group_id);
 		gst_pad_push_event(srcpad, event);
@@ -640,6 +642,53 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 	self->state = state;
 }
 
+static GstPad *
+gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
+				  const gchar *name, [[maybe_unused]] const GstCaps *caps)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(element);
+	g_autoptr(GstPad) pad = NULL;
+
+	GST_DEBUG_OBJECT(self, "new request pad created");
+
+	pad = gst_pad_new_from_template(templ, name);
+	g_object_ref_sink(pad);
+
+	if (gst_element_add_pad(element, pad)) {
+		GLibLocker lock(GST_OBJECT(self));
+		self->state->srcpads_.push_back(reinterpret_cast<GstPad *>(g_object_ref(pad)));
+	} else {
+		GST_ELEMENT_ERROR(element, STREAM, FAILED,
+				  ("Internal data stream error."),
+				  ("Could not add pad to element"));
+		return NULL;
+	}
+
+	return reinterpret_cast<GstPad *>(g_steal_pointer(&pad));
+}
+
+static void
+gst_libcamera_src_release_pad(GstElement *element, GstPad *pad)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(element);
+
+	GST_DEBUG_OBJECT(self, "Pad %" GST_PTR_FORMAT " being released", pad);
+
+	{
+		GLibLocker lock(GST_OBJECT(self));
+		std::vector<GstPad *> &pads = self->state->srcpads_;
+		auto begin_iterator = pads.begin();
+		auto end_iterator = pads.end();
+		auto pad_iterator = std::find(begin_iterator, end_iterator, pad);
+
+		if (pad_iterator != end_iterator) {
+			g_object_unref(*pad_iterator);
+			pads.erase(pad_iterator);
+		}
+	}
+	gst_element_remove_pad(element, pad);
+}
+
 static void
 gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 {
@@ -650,6 +699,8 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 	object_class->get_property = gst_libcamera_src_get_property;
 	object_class->finalize = gst_libcamera_src_finalize;
 
+	element_class->request_new_pad = gst_libcamera_src_request_new_pad;
+	element_class->release_pad = gst_libcamera_src_release_pad;
 	element_class->change_state = gst_libcamera_src_change_state;
 
 	gst_element_class_set_metadata(element_class,

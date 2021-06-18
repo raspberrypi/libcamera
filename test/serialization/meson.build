@@ -9,7 +9,7 @@ serialization_tests = [
 
 foreach t : serialization_tests
     exe = executable(t[0], [t[1], 'serialization_test.cpp'],
-                     dependencies : libcamera_dep,
+                     dependencies : libcamera_private,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
     test(t[0], exe, suite : 'serialization', is_parallel : true)

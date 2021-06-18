@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#include <libcamera/base/private.h>
+
 #ifndef __DOXYGEN__
 
 /* uClibc and uClibc-ng don't provide O_TMPFILE */

@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <thread>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/message.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>

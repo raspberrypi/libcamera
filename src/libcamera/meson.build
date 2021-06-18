@@ -112,6 +112,7 @@ endif
 libcamera_deps = [
     libatomic,
     libcamera_base,
+    libcamera_base_private,
     libdl,
     libgnutls,
     liblttng,
@@ -143,8 +144,14 @@ libcamera_dep = declare_dependency(sources : [
                                        libcamera_generated_ipa_headers,
                                    ],
                                    include_directories : libcamera_includes,
-                                   dependencies: libcamera_base,
+                                   dependencies : libcamera_base,
                                    link_with : libcamera)
+
+# Internal dependency for components and plugins which can use private APIs
+libcamera_private = declare_dependency(dependencies : [
+                                           libcamera_dep,
+                                           libcamera_base_private,
+                                       ])
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libcamera,

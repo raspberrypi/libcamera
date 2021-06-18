@@ -21,7 +21,7 @@ foreach mojom : ipa_mojoms
                        [worker, libcamera_generated_ipa_headers],
                        install : true,
                        install_dir : proxy_install_dir,
-                       dependencies : libcamera_dep)
+                       dependencies : libcamera_private)
 endforeach
 
 config_h.set('IPA_PROXY_DIR',

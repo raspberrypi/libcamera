@@ -10,6 +10,8 @@
 #include <chrono>
 #include <sstream>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/class.h>
 #include <libcamera/base/utils.h>
 

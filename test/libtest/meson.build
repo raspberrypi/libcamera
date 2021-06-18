@@ -18,7 +18,7 @@ test_includes_internal = [
 ]
 
 libtest = static_library('libtest', libtest_sources,
-                         dependencies : libcamera_dep,
+                         dependencies : libcamera_private,
                          include_directories : test_includes_internal)
 
 test_libraries = [libtest]

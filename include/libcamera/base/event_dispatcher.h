@@ -9,6 +9,8 @@
 
 #include <vector>
 
+#include <libcamera/base/private.h>
+
 namespace libcamera {
 
 class EventNotifier;

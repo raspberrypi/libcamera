@@ -11,6 +11,8 @@
 #include <map>
 #include <vector>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/event_dispatcher.h>
 
 struct pollfd;

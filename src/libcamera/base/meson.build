@@ -21,10 +21,15 @@ libcamera_base_deps = [
     dependency('threads'),
 ]
 
+# Internal components must use the libcamera_base_private dependency to enable
+# the use of headers which must not be exposed to the libcamera public api.
+libcamera_base_args = [ '-DLIBCAMERA_BASE_PRIVATE' ]
+
 libcamera_base_lib = shared_library('libcamera-base',
                                     [libcamera_base_sources, libcamera_base_headers],
                                     name_prefix : '',
                                     install : true,
+                                    cpp_args : libcamera_base_args,
                                     include_directories : libcamera_includes,
                                     dependencies : libcamera_base_deps)
 
@@ -39,3 +44,6 @@ pkg_mod.generate(libcamera_base_lib,
                  version : '1.0',
                  description : 'Camera support base utility library',
                  subdirs : 'libcamera')
+
+libcamera_base_private = declare_dependency(dependencies : libcamera_base,
+                                            compile_args : libcamera_base_args)

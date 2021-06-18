@@ -8,7 +8,7 @@ exe = executable('generated_serializer_test',
                      generated_test_header,
                      generated_test_serializer,
                  ],
-                 dependencies : libcamera_dep,
+                 dependencies : libcamera_private,
                  link_with : test_libraries,
                  include_directories : [
                      test_includes_internal,

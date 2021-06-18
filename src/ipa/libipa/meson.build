@@ -14,4 +14,4 @@ libipa_includes = include_directories('..')
 
 libipa = static_library('ipa', [libipa_sources, libipa_headers],
                         include_directories : ipa_includes,
-                        dependencies : libcamera_dep)
+                        dependencies : libcamera_private)

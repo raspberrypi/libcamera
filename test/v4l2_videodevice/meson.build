@@ -16,7 +16,7 @@ v4l2_videodevice_tests = [
 
 foreach t : v4l2_videodevice_tests
     exe = executable(t[0], [t[1], 'v4l2_videodevice_test.cpp'],
-                     dependencies : libcamera_dep,
+                     dependencies : libcamera_private,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
     test(t[0], exe, suite : 'v4l2_videodevice', is_parallel : false)

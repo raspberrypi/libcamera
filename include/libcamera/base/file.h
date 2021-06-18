@@ -12,6 +12,8 @@
 #include <map>
 #include <string>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/class.h>
 #include <libcamera/base/span.h>
 

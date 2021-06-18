@@ -10,6 +10,8 @@
 #include <chrono>
 #include <stdint.h>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
 

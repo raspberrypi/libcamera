@@ -10,14 +10,12 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <tuple>
 #include <vector>
 
 #include <hardware/camera3.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/camera.h>
-#include <libcamera/geometry.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -26,6 +24,7 @@
 #include "libcamera/internal/message.h"
 #include "libcamera/internal/thread.h"
 
+#include "camera_capabilities.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"
 #include "camera_worker.h"
@@ -57,7 +56,7 @@ public:
 	const std::string &model() const { return model_; }
 	int facing() const { return facing_; }
 	int orientation() const { return orientation_; }
-	unsigned int maxJpegBufferSize() const { return maxJpegBufferSize_; }
+	unsigned int maxJpegBufferSize() const;
 
 	void setCallbacks(const camera3_callback_ops_t *callbacks);
 	const camera_metadata_t *getStaticMetadata();
@@ -86,11 +85,6 @@ private:
 		std::unique_ptr<CaptureRequest> request_;
 	};
 
-	struct Camera3StreamConfiguration {
-		libcamera::Size resolution;
-		int androidFormat;
-	};
-
 	enum class State {
 		Stopped,
 		Flushing,
@@ -99,22 +93,11 @@ private:
 
 	void stop();
 
-	int initializeStreamConfigurations();
-	std::vector<libcamera::Size>
-	getYUVResolutions(libcamera::CameraConfiguration *cameraConfig,
-			  const libcamera::PixelFormat &pixelFormat,
-			  const std::vector<libcamera::Size> &resolutions);
-	std::vector<libcamera::Size>
-	getRawResolutions(const libcamera::PixelFormat &pixelFormat);
-
 	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
 	void abortRequest(camera3_capture_request_t *request);
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
 			 camera3_error_msg_code code);
-	std::unique_ptr<CameraMetadata> requestTemplatePreview();
-	std::unique_ptr<CameraMetadata> requestTemplateVideo();
-	libcamera::PixelFormat toPixelFormat(int format) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
 		const Camera3RequestDescriptor &descriptor) const;
@@ -129,13 +112,11 @@ private:
 
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
+	CameraCapabilities capabilities_;
 
-	std::unique_ptr<CameraMetadata> staticMetadata_;
 	std::map<unsigned int, std::unique_ptr<CameraMetadata>> requestTemplates_;
 	const camera3_callback_ops_t *callbacks_;
 
-	std::vector<Camera3StreamConfiguration> streamConfigurations_;
-	std::map<int, libcamera::PixelFormat> formatsMap_;
 	std::vector<CameraStream> streams_;
 
 	libcamera::Mutex descriptorsMutex_; /* Protects descriptors_. */
@@ -146,8 +127,6 @@ private:
 
 	int facing_;
 	int orientation_;
-
-	unsigned int maxJpegBufferSize_;
 
 	CameraMetadata lastSettings_;
 };

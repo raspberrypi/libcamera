@@ -44,6 +44,7 @@ subdir('cros')
 
 android_hal_sources = files([
     'camera3_hal.cpp',
+    'camera_capabilities.cpp',
     'camera_device.cpp',
     'camera_hal_config.cpp',
     'camera_hal_manager.cpp',

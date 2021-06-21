@@ -66,12 +66,31 @@ private:
 	uint32_t gain_;
 	uint32_t minGain_;
 	uint32_t maxGain_;
+
+	/* revision-specific data */
+	unsigned int hwAeMeanMax_;
+	unsigned int hwHistBinNMax_;
+	unsigned int hwGammaOutMaxSamples_;
+	unsigned int hwHistogramWeightGridsSize_;
 };
 
 int IPARkISP1::init(unsigned int hwRevision)
 {
 	/* \todo Add support for other revisions */
-	if (hwRevision != RKISP1_V10) {
+	switch (hwRevision) {
+	case RKISP1_V10:
+		hwAeMeanMax_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V10;
+		hwHistBinNMax_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10;
+		hwGammaOutMaxSamples_ = RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10;
+		hwHistogramWeightGridsSize_ = RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10;
+		break;
+	case RKISP1_V12:
+		hwAeMeanMax_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V12;
+		hwHistBinNMax_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12;
+		hwGammaOutMaxSamples_ = RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V12;
+		hwHistogramWeightGridsSize_ = RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V12;
+		break;
+	default:
 		LOG(IPARkISP1, Error)
 			<< "Hardware revision " << hwRevision
 			<< " is currently not supported";
@@ -236,7 +255,7 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 
 		unsigned int value = 0;
 		unsigned int num = 0;
-		for (int i = 0; i < RKISP1_CIF_ISP_AE_MEAN_MAX_V10; i++) {
+		for (unsigned int i = 0; i < hwAeMeanMax_; i++) {
 			if (ae->exp_mean[i] <= 15)
 				continue;
 

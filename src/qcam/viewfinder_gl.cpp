@@ -131,6 +131,9 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	/* Set min/mag filters to GL_LINEAR by default. */
 	textureMinMagFilters_ = GL_LINEAR;
 
+	/* Use identity.vert as the default vertex shader. */
+	vertexShaderFile_ = ":identity.vert";
+
 	fragmentShaderDefines_.clear();
 
 	switch (format) {
@@ -292,7 +295,7 @@ bool ViewFinderGL::createVertexShader()
 	vertexShader_ = std::make_unique<QOpenGLShader>(QOpenGLShader::Vertex, this);
 
 	/* Compile the vertex shader */
-	if (!vertexShader_->compileSourceFile(":identity.vert")) {
+	if (!vertexShader_->compileSourceFile(vertexShaderFile_)) {
 		qWarning() << "[ViewFinderGL]:" << vertexShader_->log();
 		return false;
 	}

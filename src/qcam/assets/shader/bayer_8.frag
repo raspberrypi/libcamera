@@ -9,20 +9,23 @@ Morgan McGuire
 This paper appears in issue Volume 13, Number 4.
 ---------------------------------------------------------
 Copyright (c) 2008, Morgan McGuire. All rights reserved.
+
+Modified by Linaro Ltd to integrate it into libcamera.
+Copyright (C) 2021, Linaro
 */
 
 //Pixel Shader
 
 /** Monochrome RGBA or GL_LUMINANCE Bayer encoded texture.*/
-uniform sampler2D       source;
+uniform sampler2D       tex_y;
 varying vec4            center;
 varying vec4            yCoord;
 varying vec4            xCoord;
 
 void main(void) {
-    #define fetch(x, y) texture2D(source, vec2(x, y)).r
+    #define fetch(x, y) texture2D(tex_y, vec2(x, y)).r
 
-    float C = texture2D(source, center.xy).r; // ( 0, 0)
+    float C = texture2D(tex_y, center.xy).r; // ( 0, 0)
     const vec4 kC = vec4( 4.0,  6.0,  5.0,  5.0) / 8.0;
 
     // Determine which of four types of pixels we are on.

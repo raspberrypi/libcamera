@@ -9,17 +9,22 @@ Morgan McGuire
 This paper appears in issue Volume 13, Number 4.
 ---------------------------------------------------------
 Copyright (c) 2008, Morgan McGuire. All rights reserved.
+
+Modified by Linaro Ltd to integrate it into libcamera.
+Copyright (C) 2021, Linaro
 */
 
 //Vertex Shader
 
+attribute vec4 vertexIn;
+attribute vec2 textureIn;
 
-/** (w,h,1/w,1/h) */
-uniform vec4            sourceSize;
+uniform vec2 tex_size;	/* The texture size in pixels */
+uniform vec2 tex_step;
 
 /** Pixel position of the first red pixel in the */
 /**  Bayer pattern.  [{0,1}, {0, 1}]*/
-uniform vec2            firstRed;
+uniform vec2            tex_bayer_first_red;
 
 /** .xy = Pixel being sampled in the fragment shader on the range [0, 1]
     .zw = ...on the range [0, sourceSize], offset by firstRed */
@@ -34,14 +39,13 @@ varying vec4            xCoord;
 varying vec4            yCoord;
 
 void main(void) {
-    center.xy = gl_MultiTexCoord0.xy;
-    center.zw = gl_MultiTexCoord0.xy * sourceSize.xy + firstRed;
+    center.xy = textureIn;
+    center.zw = textureIn * tex_size + tex_bayer_first_red;
 
-    vec2 invSize = sourceSize.zw;
-    xCoord = center.x + vec4(-2.0 * invSize.x,
-                             -invSize.x, invSize.x, 2.0 * invSize.x);
-    yCoord = center.y + vec4(-2.0 * invSize.y,
-                              -invSize.y, invSize.y, 2.0 * invSize.y);
+    xCoord = center.x + vec4(-2.0 * tex_step.x,
+                             -tex_step.x, tex_step.x, 2.0 * tex_step.x);
+    yCoord = center.y + vec4(-2.0 * tex_step.y,
+                              -tex_step.y, tex_step.y, 2.0 * tex_step.y);
 
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    gl_Position = vertexIn;
 }

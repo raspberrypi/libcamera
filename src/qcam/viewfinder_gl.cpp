@@ -36,6 +36,11 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 	libcamera::formats::RGBA8888,
 	libcamera::formats::BGR888,
 	libcamera::formats::RGB888,
+	/* Raw Bayer 8-bit */
+	libcamera::formats::SBGGR8,
+	libcamera::formats::SGBRG8,
+	libcamera::formats::SGRBG8,
+	libcamera::formats::SRGGB8,
 	/* Raw Bayer 10-bit packed */
 	libcamera::formats::SBGGR10_CSI2P,
 	libcamera::formats::SGBRG10_CSI2P,
@@ -222,6 +227,34 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::RGB888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
 		fragmentShaderFile_ = ":RGB.frag";
+		break;
+	case libcamera::formats::SBGGR8:
+		firstRed_.setX(1.0);
+		firstRed_.setY(1.0);
+		vertexShaderFile_ = ":bayer_8.vert";
+		fragmentShaderFile_ = ":bayer_8.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGBRG8:
+		firstRed_.setX(0.0);
+		firstRed_.setY(1.0);
+		vertexShaderFile_ = ":bayer_8.vert";
+		fragmentShaderFile_ = ":bayer_8.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGRBG8:
+		firstRed_.setX(1.0);
+		firstRed_.setY(0.0);
+		vertexShaderFile_ = ":bayer_8.vert";
+		fragmentShaderFile_ = ":bayer_8.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SRGGB8:
+		firstRed_.setX(0.0);
+		firstRed_.setY(0.0);
+		vertexShaderFile_ = ":bayer_8.vert";
+		fragmentShaderFile_ = ":bayer_8.frag";
+		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SBGGR10_CSI2P:
 		firstRed_.setX(1.0);
@@ -627,6 +660,10 @@ void ViewFinderGL::doRender()
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 		break;
 
+	case libcamera::formats::SBGGR8:
+	case libcamera::formats::SGBRG8:
+	case libcamera::formats::SGRBG8:
+	case libcamera::formats::SRGGB8:
 	case libcamera::formats::SBGGR10_CSI2P:
 	case libcamera::formats::SGBRG10_CSI2P:
 	case libcamera::formats::SGRBG10_CSI2P:
@@ -636,8 +673,8 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::SGRBG12_CSI2P:
 	case libcamera::formats::SRGGB12_CSI2P:
 		/*
-		 * Packed raw Bayer 10-bit and 12-bit formats are stored in
-		 * GL_RED texture.
+		 * Raw Bayer 8-bit, and packed raw Bayer 10-bit/12-bit formats
+		 * are stored in GL_RED texture.
 		 * The texture width is equal to the stride.
 		 */
 		glActiveTexture(GL_TEXTURE0);

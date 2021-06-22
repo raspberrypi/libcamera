@@ -68,8 +68,8 @@ void main(void) {
     vec4 value = vec4(
         fetch(center.x, yCoord[0]),   // ( 0,-2)
         fetch(center.x, yCoord[1]),   // ( 0,-1)
-        fetch(xCoord[0], center.y),   // (-1, 0)
-        fetch(xCoord[1], center.y));  // (-2, 0)
+        fetch(xCoord[0], center.y),   // (-2, 0)
+        fetch(xCoord[1], center.y));  // (-1, 0)
 
     vec4 temp = vec4(
         fetch(center.x, yCoord[3]),   // ( 0, 2)

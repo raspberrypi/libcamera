@@ -36,6 +36,11 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 	libcamera::formats::RGBA8888,
 	libcamera::formats::BGR888,
 	libcamera::formats::RGB888,
+	/* Raw Bayer 10-bit packed */
+	libcamera::formats::SBGGR10_CSI2P,
+	libcamera::formats::SGBRG10_CSI2P,
+	libcamera::formats::SGRBG10_CSI2P,
+	libcamera::formats::SRGGB10_CSI2P,
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
@@ -106,6 +111,10 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 		renderComplete(buffer_);
 
 	data_ = static_cast<unsigned char *>(map->memory);
+	/*
+	 * \todo Get the stride from the buffer instead of computing it naively
+	 */
+	stride_ = buffer->metadata().planes[0].bytesused / size_.height();
 	update();
 	buffer_ = buffer;
 }
@@ -113,6 +122,9 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 {
 	bool ret = true;
+
+	/* Set min/mag filters to GL_LINEAR by default. */
+	textureMinMagFilters_ = GL_LINEAR;
 
 	fragmentShaderDefines_.clear();
 
@@ -203,6 +215,34 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
 		fragmentShaderFile_ = ":RGB.frag";
 		break;
+	case libcamera::formats::SBGGR10_CSI2P:
+		firstRed_.setX(1.0);
+		firstRed_.setY(1.0);
+		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGBRG10_CSI2P:
+		firstRed_.setX(0.0);
+		firstRed_.setY(1.0);
+		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGRBG10_CSI2P:
+		firstRed_.setX(1.0);
+		firstRed_.setY(0.0);
+		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SRGGB10_CSI2P:
+		firstRed_.setX(0.0);
+		firstRed_.setY(0.0);
+		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
 	default:
 		ret = false;
 		qWarning() << "[ViewFinderGL]:"
@@ -290,6 +330,8 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformU_ = shaderProgram_.uniformLocation("tex_u");
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
 	textureUniformStep_ = shaderProgram_.uniformLocation("tex_step");
+	textureUniformSize_ = shaderProgram_.uniformLocation("tex_size");
+	textureUniformBayerFirstRed_ = shaderProgram_.uniformLocation("tex_bayer_first_red");
 
 	/* Create the textures. */
 	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
@@ -306,8 +348,10 @@ bool ViewFinderGL::createFragmentShader()
 void ViewFinderGL::configureTexture(QOpenGLTexture &texture)
 {
 	glBindTexture(GL_TEXTURE_2D, texture.textureId());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+			textureMinMagFilters_);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			textureMinMagFilters_);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
@@ -545,6 +589,36 @@ void ViewFinderGL::doRender()
 			     GL_UNSIGNED_BYTE,
 			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
+		break;
+
+	case libcamera::formats::SBGGR10_CSI2P:
+	case libcamera::formats::SGBRG10_CSI2P:
+	case libcamera::formats::SGRBG10_CSI2P:
+	case libcamera::formats::SRGGB10_CSI2P:
+		/*
+		 * Packed raw Bayer 10-bit formats are stored in GL_RED texture.
+		 * The texture width is equal to the stride.
+		 */
+		glActiveTexture(GL_TEXTURE0);
+		configureTexture(*textures_[0]);
+		glTexImage2D(GL_TEXTURE_2D,
+			     0,
+			     GL_RED,
+			     stride_,
+			     size_.height(),
+			     0,
+			     GL_RED,
+			     GL_UNSIGNED_BYTE,
+			     data_);
+		shaderProgram_.setUniformValue(textureUniformY_, 0);
+		shaderProgram_.setUniformValue(textureUniformBayerFirstRed_,
+					       firstRed_);
+		shaderProgram_.setUniformValue(textureUniformSize_,
+					       size_.width(), /* in pixels */
+					       size_.height());
+		shaderProgram_.setUniformValue(textureUniformStep_,
+					       1.0f / (stride_ - 1),
+					       1.0f / (size_.height() - 1));
 		break;
 
 	default:

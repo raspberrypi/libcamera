@@ -289,7 +289,7 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformY_ = shaderProgram_.uniformLocation("tex_y");
 	textureUniformU_ = shaderProgram_.uniformLocation("tex_u");
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
-	textureUniformStepX_ = shaderProgram_.uniformLocation("tex_stepx");
+	textureUniformStep_ = shaderProgram_.uniformLocation("tex_step");
 
 	/* Create the textures. */
 	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
@@ -508,8 +508,9 @@ void ViewFinderGL::doRender()
 		 * ([0, 1]). There are exactly width - 1 steps between the
 		 * leftmost and rightmost texels.
 		 */
-		shaderProgram_.setUniformValue(textureUniformStepX_,
-					       1.0f / (size_.width() / 2 - 1));
+		shaderProgram_.setUniformValue(textureUniformStep_,
+					       1.0f / (size_.width() / 2 - 1),
+					       1.0f /* not used */);
 		break;
 
 	case libcamera::formats::ABGR8888:

@@ -12,7 +12,7 @@ precision mediump float;
 varying vec2 textureOut;
 
 uniform sampler2D tex_y;
-uniform float tex_stepx;
+uniform vec2 tex_step;
 
 void main(void)
 {
@@ -49,10 +49,10 @@ void main(void)
 	 * a = fract(x) * 2 - 1			if fract(x) >= 0.5
 	 */
 	vec2 pos = textureOut;
-	float f_x = fract(pos.x / tex_stepx);
+	float f_x = fract(pos.x / tex_step.x);
 
-	vec4 left = texture2D(tex_y, vec2(pos.x - f_x * tex_stepx, pos.y));
-	vec4 right = texture2D(tex_y, vec2(pos.x + (1.0 - f_x) * tex_stepx , pos.y));
+	vec4 left = texture2D(tex_y, vec2(pos.x - f_x * tex_step.x, pos.y));
+	vec4 right = texture2D(tex_y, vec2(pos.x + (1.0 - f_x) * tex_step.x , pos.y));
 
 #if defined(YUV_PATTERN_UYVY)
 	float y_left = mix(left.g, left.a, f_x * 2.0);

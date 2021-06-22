@@ -23,6 +23,40 @@
 precision mediump float;
 #endif
 
+/*
+ * These constants are used to select the bytes containing the HS part of
+ * the pixel value:
+ * BPP - bytes per pixel,
+ * THRESHOLD_L = fract(BPP) * 0.5 + 0.02
+ * THRESHOLD_H = 1.0 - fract(BPP) * 1.5 + 0.02
+ * Let X is the x coordinate in the texture measured in bytes (so that the
+ * range is from 0 to (stride_-1)) aligned on the nearest pixel.
+ * E.g. for RAW10P:
+ * -------------+-------------------+-------------------+--
+ *  pixel No    |  0   1    2   3   |  4   5    6   7   | ...
+ * -------------+-------------------+-------------------+--
+ *  byte offset | 0   1   2   3   4 | 5   6   7   8   9 | ...
+ * -------------+-------------------+-------------------+--
+ *      X       | 0.0 1.25 2.5 3.75 | 5.0 6.25 7.5 8.75 | ...
+ * -------------+-------------------+-------------------+--
+ * If fract(X) < THRESHOLD_L then the previous byte contains the LS
+ * bits of the pixel values and needs to be skipped.
+ * If fract(X) > THRESHOLD_H then the next byte contains the LS bits
+ * of the pixel values and needs to be skipped.
+ */
+#if defined(RAW10P)
+#define BPP		1.25
+#define THRESHOLD_L	0.14
+#define THRESHOLD_H	0.64
+#elif defined(RAW12P)
+#define BPP		1.5
+#define THRESHOLD_L	0.27
+#define THRESHOLD_H	0.27
+#else
+#error Invalid raw format
+#endif
+
+
 varying vec2 textureOut;
 
 /* the texture size in pixels */
@@ -66,10 +100,7 @@ void main(void)
 	 * Add a small number (a few mantissa's LSBs) to avoid float
 	 * representation issues. Maybe paranoic.
 	 */
-	center_bytes.x = BPP_X * center_pixel.x + 0.02;
-
-	const float threshold_l = 0.127 /* fract(BPP_X) * 0.5 + 0.02 */;
-	const float threshold_h = 0.625 /* 1.0 - fract(BPP_X) * 1.5 */;
+	center_bytes.x = BPP * center_pixel.x + 0.02;
 
 	float fract_x = fract(center_bytes.x);
 
@@ -90,14 +121,14 @@ void main(void)
 	 * of the previous group of the pixels, move xcoords[0] one
 	 * byte back.
 	 */
-	xcoords[0] += (fract_x < threshold_l) ? -tex_step.x : 0.0;
+	xcoords[0] += (fract_x < THRESHOLD_L) ? -tex_step.x : 0.0;
 
 	/*
 	 * If xcoords[1] points at the byte containing the LS bits
 	 * of the current group of the pixels, move xcoords[1] one
 	 * byte forward.
 	 */
-	xcoords[1] += (fract_x > threshold_h) ? tex_step.x : 0.0;
+	xcoords[1] += (fract_x > THRESHOLD_H) ? tex_step.x : 0.0;
 
 	vec2 alternate = mod(center_pixel.xy + tex_bayer_first_red, 2.0);
 	bool even_col = alternate.x < 1.0;

@@ -41,6 +41,11 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 	libcamera::formats::SGBRG10_CSI2P,
 	libcamera::formats::SGRBG10_CSI2P,
 	libcamera::formats::SRGGB10_CSI2P,
+	/* Raw Bayer 12-bit packed */
+	libcamera::formats::SBGGR12_CSI2P,
+	libcamera::formats::SGBRG12_CSI2P,
+	libcamera::formats::SGRBG12_CSI2P,
+	libcamera::formats::SRGGB12_CSI2P,
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
@@ -218,28 +223,56 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::SBGGR10_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(1.0);
-		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderDefines_.append("#define RAW10P");
 		fragmentShaderFile_ = ":bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGBRG10_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(1.0);
-		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderDefines_.append("#define RAW10P");
 		fragmentShaderFile_ = ":bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGRBG10_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(0.0);
-		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderDefines_.append("#define RAW10P");
 		fragmentShaderFile_ = ":bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SRGGB10_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(0.0);
-		fragmentShaderDefines_.append("#define BPP_X 1.25");
+		fragmentShaderDefines_.append("#define RAW10P");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SBGGR12_CSI2P:
+		firstRed_.setX(1.0);
+		firstRed_.setY(1.0);
+		fragmentShaderDefines_.append("#define RAW12P");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGBRG12_CSI2P:
+		firstRed_.setX(0.0);
+		firstRed_.setY(1.0);
+		fragmentShaderDefines_.append("#define RAW12P");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SGRBG12_CSI2P:
+		firstRed_.setX(1.0);
+		firstRed_.setY(0.0);
+		fragmentShaderDefines_.append("#define RAW12P");
+		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		textureMinMagFilters_ = GL_NEAREST;
+		break;
+	case libcamera::formats::SRGGB12_CSI2P:
+		firstRed_.setX(0.0);
+		firstRed_.setY(0.0);
+		fragmentShaderDefines_.append("#define RAW12P");
 		fragmentShaderFile_ = ":bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
@@ -595,8 +628,13 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::SGBRG10_CSI2P:
 	case libcamera::formats::SGRBG10_CSI2P:
 	case libcamera::formats::SRGGB10_CSI2P:
+	case libcamera::formats::SBGGR12_CSI2P:
+	case libcamera::formats::SGBRG12_CSI2P:
+	case libcamera::formats::SGRBG12_CSI2P:
+	case libcamera::formats::SRGGB12_CSI2P:
 		/*
-		 * Packed raw Bayer 10-bit formats are stored in GL_RED texture.
+		 * Packed raw Bayer 10-bit and 12-bit formats are stored in
+		 * GL_RED texture.
 		 * The texture width is equal to the stride.
 		 */
 		glActiveTexture(GL_TEXTURE0);

@@ -21,7 +21,7 @@ lc_compliance_sources = files([
 lc_compliance  = executable('lc-compliance', lc_compliance_sources,
                             dependencies : [
                                 libatomic,
-                                libcamera_dep,
+                                libcamera_public,
                                 libevent,
                             ],
                             install : true)

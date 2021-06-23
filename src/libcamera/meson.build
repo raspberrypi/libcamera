@@ -132,20 +132,20 @@ libcamera = shared_library('libcamera',
                            build_rpath : '/',
                            dependencies : libcamera_deps)
 
-libcamera_dep = declare_dependency(sources : [
-                                       libcamera_ipa_headers,
-                                       libcamera_public_headers,
-                                   ],
-                                   include_directories : libcamera_includes,
-                                   dependencies : libcamera_base,
-                                   link_with : libcamera)
+libcamera_public = declare_dependency(sources : [
+                                          libcamera_ipa_headers,
+                                          libcamera_public_headers,
+                                      ],
+                                      include_directories : libcamera_includes,
+                                      dependencies : libcamera_base,
+                                      link_with : libcamera)
 
 # Internal dependency for components and plugins which can use private APIs
 libcamera_private = declare_dependency(sources : [
                                            libcamera_generated_ipa_headers,
                                        ],
                                        dependencies : [
-                                           libcamera_dep,
+                                           libcamera_public,
                                            libcamera_base_private,
                                        ])
 

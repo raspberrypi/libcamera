@@ -21,7 +21,7 @@ cam_sources = files([
 cam  = executable('cam', cam_sources,
                   dependencies : [
                       libatomic,
-                      libcamera_dep,
+                      libcamera_public,
                       libevent,
                   ],
                   install : true)

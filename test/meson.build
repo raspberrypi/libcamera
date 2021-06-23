@@ -55,7 +55,7 @@ internal_tests = [
 
 foreach t : public_tests
     exe = executable(t[0], t[1],
-                     dependencies : libcamera_dep,
+                     dependencies : libcamera_public,
                      link_with : test_libraries,
                      include_directories : test_includes_public)
 

@@ -132,23 +132,19 @@ libcamera = shared_library('libcamera',
                            build_rpath : '/',
                            dependencies : libcamera_deps)
 
-# TODO Drop libcamera_generated_ipa_headers from libcamera_dep as libcamera_dep
-# is supposed to model the dependencies required for usage of the public API,
-# not the internal API. It is needed as as some external components such as the
-# unit tests make use of the generated headers and this creates a race in the
-# build.
-
 libcamera_dep = declare_dependency(sources : [
                                        libcamera_ipa_headers,
                                        libcamera_public_headers,
-                                       libcamera_generated_ipa_headers,
                                    ],
                                    include_directories : libcamera_includes,
                                    dependencies : libcamera_base,
                                    link_with : libcamera)
 
 # Internal dependency for components and plugins which can use private APIs
-libcamera_private = declare_dependency(dependencies : [
+libcamera_private = declare_dependency(sources : [
+                                           libcamera_generated_ipa_headers,
+                                       ],
+                                       dependencies : [
                                            libcamera_dep,
                                            libcamera_base_private,
                                        ])

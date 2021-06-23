@@ -19,6 +19,8 @@
 
 namespace libcamera {
 
+using namespace std::literals::chrono_literals;
+
 namespace ipa::ipu3 {
 
 LOG_DEFINE_CATEGORY(IPU3Agc)
@@ -51,9 +53,9 @@ static constexpr uint8_t kCellSize = 8;
 IPU3Agc::IPU3Agc()
 	: frameCount_(0), lastFrame_(0), converged_(false),
 	  updateControls_(false), iqMean_(0.0), gamma_(1.0),
-	  lineDuration_(0.0), maxExposureTime_(0.0),
-	  prevExposure_(0.0), prevExposureNoDg_(0.0),
-	  currentExposure_(0.0), currentExposureNoDg_(0.0)
+	  lineDuration_(0s), maxExposureTime_(0s),
+	  prevExposure_(0s), prevExposureNoDg_(0s),
+	  currentExposure_(0s), currentExposureNoDg_(0s)
 {
 }
 
@@ -61,8 +63,7 @@ void IPU3Agc::initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraS
 {
 	aeGrid_ = bdsGrid;
 
-	/* line duration in microseconds */
-	lineDuration_ = sensorInfo.lineLength * 1000000ULL / static_cast<double>(sensorInfo.pixelRate);
+	lineDuration_ = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
 	maxExposureTime_ = kMaxExposure * lineDuration_;
 }
 
@@ -113,7 +114,7 @@ void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 void IPU3Agc::filterExposure()
 {
 	double speed = 0.2;
-	if (prevExposure_ == 0.0) {
+	if (prevExposure_ == 0s) {
 		/* DG stands for digital gain.*/
 		prevExposure_ = currentExposure_;
 		prevExposureNoDg_ = currentExposureNoDg_;
@@ -162,20 +163,20 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, uint32_t &gain)
 		double newGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
 		/* extracted from Rpi::Agc::computeTargetExposure */
-		double currentShutter = exposure * lineDuration_;
+		libcamera::utils::Duration currentShutter = exposure * lineDuration_;
 		currentExposureNoDg_ = currentShutter * gain;
 		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
 				    << " Shutter speed " << currentShutter
 				    << " Gain " << gain;
 		currentExposure_ = currentExposureNoDg_ * newGain;
-		double maxTotalExposure = maxExposureTime_ * kMaxGain;
+		libcamera::utils::Duration maxTotalExposure = maxExposureTime_ * kMaxGain;
 		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_;
 
 		/* \todo: estimate if we need to desaturate */
 		filterExposure();
 
-		double newExposure = 0.0;
+		libcamera::utils::Duration newExposure = 0.0s;
 		if (currentShutter < maxExposureTime_) {
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_), kMinExposure, kMaxExposure);
 			newExposure = currentExposure_ / exposure;

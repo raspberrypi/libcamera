@@ -14,6 +14,8 @@
 
 #include <libcamera/geometry.h>
 
+#include "libcamera/internal/utils.h"
+
 #include "libipa/algorithm.h"
 
 namespace libcamera {
@@ -21,6 +23,8 @@ namespace libcamera {
 struct IPACameraSensorInfo;
 
 namespace ipa::ipu3 {
+
+using utils::Duration;
 
 class IPU3Agc : public Algorithm
 {
@@ -51,13 +55,13 @@ private:
 	double iqMean_;
 	double gamma_;
 
-	double lineDuration_;
-	double maxExposureTime_;
+	Duration lineDuration_;
+	Duration maxExposureTime_;
 
-	double prevExposure_;
-	double prevExposureNoDg_;
-	double currentExposure_;
-	double currentExposureNoDg_;
+	Duration prevExposure_;
+	Duration prevExposureNoDg_;
+	Duration currentExposure_;
+	Duration currentExposureNoDg_;
 };
 
 } /* namespace ipa::ipu3 */

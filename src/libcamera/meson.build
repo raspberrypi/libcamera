@@ -135,8 +135,9 @@ libcamera_deps = [
 # runtime if the library is running from an installed location by checking
 # for the presence or abscence of the dynamic tag.
 
-libcamera = shared_library('camera',
+libcamera = shared_library('libcamera',
                            libcamera_sources,
+                           name_prefix : '',
                            install : true,
                            include_directories : includes,
                            build_rpath : '/',
@@ -157,10 +158,8 @@ libcamera_dep = declare_dependency(sources : [
                                    link_with : libcamera)
 
 pkg_mod = import('pkgconfig')
-pkg_mod.generate(libraries: libcamera,
+pkg_mod.generate(libcamera,
                  version : '1.0',
-                 name : 'libcamera',
-                 filebase : 'camera',
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')
 

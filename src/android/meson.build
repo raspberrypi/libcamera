@@ -37,15 +37,6 @@ endif
 
 android_deps += [libyuv_dep]
 
-android_cpp_args = []
-android_objects = []
-
-if get_option('android_platform') == 'cros'
-    android_cpp_args += ['-DOS_CHROMEOS']
-endif
-
-subdir('cros')
-
 android_hal_sources = files([
     'camera3_hal.cpp',
     'camera_capabilities.cpp',
@@ -63,6 +54,9 @@ android_hal_sources = files([
     'yuv/post_processor_yuv.cpp'
 ])
 
+android_cpp_args = []
+
+subdir('cros')
 subdir('mm')
 
 android_camera_metadata_sources = files([
@@ -80,6 +74,5 @@ libcamera_hal = shared_library('libcamera-hal',
                                link_with : android_camera_metadata,
                                install : true,
                                cpp_args : android_cpp_args,
-                               objects : android_objects,
                                include_directories : android_includes,
                                dependencies : android_deps)

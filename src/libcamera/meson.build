@@ -46,6 +46,7 @@ libcamera_sources = files([
     'request.cpp',
     'semaphore.cpp',
     'signal.cpp',
+    'source_paths.cpp',
     'stream.cpp',
     'sysfs.cpp',
     'thread.cpp',

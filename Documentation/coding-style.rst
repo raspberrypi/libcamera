@@ -70,19 +70,30 @@ macro. For .cpp files, if the file implements an API declared in a header file,
 that header file shall be included first in order to ensure it is
 self-contained.
 
+While the following list is extensive, it documents the expected behaviour
+defined by the clang-format configuration and tooling should assist with
+ordering.
+
 The headers shall be grouped and ordered as follows:
 
 1. The header declaring the API being implemented (if any)
 2. The C and C++ system and standard library headers
-3. Other libraries' headers, with one group per library
-4. Other project's headers
+3. Linux kernel headers
+4. The libcamera base private header if required
+5. The libcamera base library headers
+6. The libcamera public API headers
+7. The libcamera IPA interfaces
+8. The internal libcamera headers
+9. Other libraries' headers, with one group per library
+10. Local headers grouped by subdirectory
+11. Any local headers
 
 Groups of headers shall be separated by a single blank line. Headers within
 each group shall be sorted alphabetically.
 
 System and library headers shall be included with angle brackets. Project
 headers shall be included with angle brackets for the libcamera public API
-headers, and with double quotes for other libcamera headers.
+headers, and with double quotes for internal libcamera headers.
 
 
 C++ Specific Rules

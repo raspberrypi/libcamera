@@ -66,10 +66,57 @@ ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
 ForEachMacros:
   - 'udev_list_entry_foreach'
-IncludeBlocks: Preserve
+SortIncludes: true
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '.*'
-    Priority: 1
+  # Headers matching the name of the component are matched automatically.
+  # Priority 1
+  # Other library headers (explicit overrides to match before system headers)
+  - Regex:           '(<jpeglib.h>|<libudev.h>|<tiffio.h>|<xf86drm.h>|<xf86drmMode.h>|<yaml.h>)'
+    Priority:        9
+  # Qt includes (match before C++ standard library)
+  - Regex:           '<Q([A-Za-z0-9\-_])+>'
+    Priority:        9
+    CaseSensitive:   true
+  # Headers in <> with an extension. (+system libraries)
+  - Regex:           '<([A-Za-z0-9\-_])+\.h>'
+    Priority:        2
+  # System headers 
+  - Regex:           '<sys/.*>'
+    Priority:        2
+  # C++ standard library includes (no extension)
+  - Regex:           '<([A-Za-z0-9\-_/])+>'
+    Priority:        2
+  # Linux headers, as a second group/subset of system headers
+  - Regex:           '<linux/.*>'
+    Priority:        3
+  # Headers for libcamera Base support
+  - Regex:           '<libcamera/base/private.h>'
+    Priority:        4
+  - Regex:           '<libcamera/base/.*\.h>'
+    Priority:        5
+  # Public API Headers for libcamera, which are not in a subdir (i.e. ipa/,internal/)
+  - Regex:           '<libcamera/([A-Za-z0-9\-_])+.h>'
+    Priority:        6
+  # IPA Interfaces
+  - Regex:           '<libcamera/ipa/.*\.h>'
+    Priority:        7
+  # libcamera Internal headers in ""  
+  - Regex:           '"libcamera/internal/.*\.h"'
+    Priority:        8
+  # Other libraries headers with one group per library (.h or .hpp)
+  - Regex:           '<.*/.*\.hp*>'
+    Priority:        9
+  # local modular includes "path/file.h" (.h or .hpp)
+  - Regex:           '"(.*/)+.*\.hp*"'
+    Priority:        10
+  # Other local headers "file.h" with extension (.h or .hpp)
+  - Regex:           '".*.hp*"'
+    Priority:        11
+  # Any unmatched line, separated from the last group
+  - Regex:	     '"*"'
+    Priority:        100
+
 IncludeIsMainRegex: '(_test)?$'
 IndentCaseLabels: false
 IndentPPDirectives: None

@@ -11,7 +11,8 @@
 #include <stdint.h>
 #include <type_traits>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/span.h>
 
 namespace libcamera {

@@ -10,7 +10,8 @@
 #include <stdint.h>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/file_descriptor.h>
 
 namespace libcamera {

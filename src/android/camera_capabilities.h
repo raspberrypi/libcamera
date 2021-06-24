@@ -11,8 +11,9 @@
 #include <memory>
 #include <vector>
 
+#include <libcamera/base/class.h>
+
 #include <libcamera/camera.h>
-#include <libcamera/class.h>
 #include <libcamera/formats.h>
 #include <libcamera/geometry.h>
 

@@ -9,7 +9,8 @@
 
 #include <hardware/camera3.h>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/span.h>
 
 class CameraBuffer final : public libcamera::Extensible

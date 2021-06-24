@@ -5,7 +5,7 @@
  * class.cpp - Utilities and helpers for classes
  */
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
 
 /**
  * \file class.h

@@ -5,7 +5,6 @@ libcamera_public_headers = files([
     'buffer.h',
     'camera.h',
     'camera_manager.h',
-    'class.h',
     'compiler.h',
     'controls.h',
     'file_descriptor.h',

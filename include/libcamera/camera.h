@@ -12,7 +12,8 @@
 #include <stdint.h>
 #include <string>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/controls.h>
 #include <libcamera/object.h>
 #include <libcamera/request.h>

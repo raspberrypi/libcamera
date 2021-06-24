@@ -13,7 +13,8 @@
 #include <string>
 #include <unordered_set>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/controls.h>
 #include <libcamera/signal.h>
 

@@ -14,7 +14,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/geometry.h>
 #include <libcamera/span.h>
 

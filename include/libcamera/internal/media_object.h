@@ -12,7 +12,7 @@
 
 #include <linux/media.h>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
 
 namespace libcamera {
 

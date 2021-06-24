@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
 
 namespace libcamera {
 

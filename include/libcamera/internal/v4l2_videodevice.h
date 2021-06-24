@@ -16,8 +16,9 @@
 
 #include <linux/videodev2.h>
 
+#include <libcamera/base/class.h>
+
 #include <libcamera/buffer.h>
-#include <libcamera/class.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 #include <libcamera/signal.h>

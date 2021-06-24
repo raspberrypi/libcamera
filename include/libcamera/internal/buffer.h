@@ -10,7 +10,8 @@
 #include <sys/mman.h>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/buffer.h>
 #include <libcamera/span.h>
 

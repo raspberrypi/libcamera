@@ -4,8 +4,8 @@
  *
  * class.h - Utilities and helpers for classes
  */
-#ifndef __LIBCAMERA_CLASS_H__
-#define __LIBCAMERA_CLASS_H__
+#ifndef __LIBCAMERA_BASE_CLASS_H__
+#define __LIBCAMERA_BASE_CLASS_H__
 
 #include <memory>
 
@@ -102,4 +102,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_CLASS_H__ */
+#endif /* __LIBCAMERA_BASE_CLASS_H__ */

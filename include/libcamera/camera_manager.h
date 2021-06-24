@@ -12,7 +12,8 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/object.h>
 #include <libcamera/signal.h>
 

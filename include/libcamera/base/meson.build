@@ -3,6 +3,7 @@
 libcamera_base_include_dir = libcamera_include_dir / 'base'
 
 libcamera_base_headers = files([
+    'class.h',
     'utils.h',
 ])
 

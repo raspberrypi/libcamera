@@ -10,7 +10,7 @@
 #include <map>
 #include <string>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
 
 struct CameraConfigData {
 	int facing = -1;

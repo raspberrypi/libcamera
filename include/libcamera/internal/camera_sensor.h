@@ -11,7 +11,8 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/class.h>
+#include <libcamera/base/class.h>
+
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 #include <libcamera/ipa/core_ipa_interface.h>

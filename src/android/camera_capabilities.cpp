@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <map>
+#include <type_traits>
 
 #include <hardware/camera3.h>
 
@@ -124,6 +125,93 @@ hwLevelStrings = {
 	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_3,        "LEVEL_3" },
 	{ ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL, "EXTERNAL" },
 };
+
+enum class ControlRange {
+	Min,
+	Def,
+	Max,
+};
+
+/**
+ * \brief Set Android metadata from libcamera ControlInfo or a default value
+ * \tparam T Type of the control in libcamera
+ * \tparam U Type of the metadata in Android
+ * \param[in] metadata Android metadata pack to add the control value to
+ * \param[in] tag Android metadata tag
+ * \param[in] controlsInfo libcamera ControlInfoMap from which to find the control info
+ * \param[in] control libcamera ControlId to find from \a controlsInfo
+ * \param[in] controlRange Whether to use the min, def, or max value from the control info
+ * \param[in] defaultValue The value to set in \a metadata if \a control is not found
+ *
+ * Set the Android metadata entry in \a metadata with tag \a tag based on the
+ * control info found for the libcamera control \a control in the libcamera
+ * ControlInfoMap \a controlsInfo. If no libcamera ControlInfo is found, then
+ * the Android metadata entry is set to \a defaultValue.
+ *
+ * This function is for scalar values.
+ */
+template<typename T, typename U>
+U setMetadata(CameraMetadata *metadata, uint32_t tag,
+	      const ControlInfoMap &controlsInfo, const Control<T> &control,
+	      enum ControlRange controlRange, const U defaultValue)
+{
+	U value = defaultValue;
+
+	const auto &info = controlsInfo.find(&control);
+	if (info != controlsInfo.end()) {
+		switch (controlRange) {
+		case ControlRange::Min:
+			value = static_cast<U>(info->second.min().template get<T>());
+			break;
+		case ControlRange::Def:
+			value = static_cast<U>(info->second.def().template get<T>());
+			break;
+		case ControlRange::Max:
+			value = static_cast<U>(info->second.max().template get<T>());
+			break;
+		}
+	}
+
+	metadata->addEntry(tag, value);
+	return value;
+}
+
+/**
+ * \brief Set Android metadata from libcamera ControlInfo or a default value
+ * \tparam T Type of the control in libcamera
+ * \tparam U Type of the metadata in Android
+ * \param[in] metadata Android metadata pack to add the control value to
+ * \param[in] tag Android metadata tag
+ * \param[in] controlsInfo libcamera ControlInfoMap from which to find the control info
+ * \param[in] control libcamera ControlId to find from \a controlsInfo
+ * \param[in] defaultVector The value to set in \a metadata if \a control is not found
+ *
+ * Set the Android metadata entry in \a metadata with tag \a tag based on the
+ * control info found for the libcamera control \a control in the libcamera
+ * ControlInfoMap \a controlsInfo. If no libcamera ControlInfo is found, then
+ * the Android metadata entry is set to \a defaultVector.
+ *
+ * This function is for vector values.
+ */
+template<typename T, typename U>
+std::vector<U> setMetadata(CameraMetadata *metadata, uint32_t tag,
+			   const ControlInfoMap &controlsInfo,
+			   const Control<T> &control,
+			   const std::vector<U> &defaultVector)
+{
+	const auto &info = controlsInfo.find(&control);
+	if (info == controlsInfo.end()) {
+		metadata->addEntry(tag, defaultVector);
+		return defaultVector;
+	}
+
+	std::vector<U> values(info->second.values().size());
+	for (const auto &value : info->second.values())
+		values.push_back(static_cast<U>(value.template get<T>()));
+	metadata->addEntry(tag, values);
+
+	return values;
+}
 
 } /* namespace */
 

@@ -6,13 +6,13 @@
  */
 
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/device_enumerator_sysfs.h"
-#include "libcamera/internal/device_enumerator_udev.h"
 
 #include <string.h>
 
 #include <libcamera/base/log.h>
 
+#include "libcamera/internal/device_enumerator_sysfs.h"
+#include "libcamera/internal/device_enumerator_udev.h"
 #include "libcamera/internal/media_device.h"
 
 /**

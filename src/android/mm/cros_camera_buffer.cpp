@@ -42,9 +42,6 @@ private:
 		void *addr;
 		android_ycbcr ycbcr;
 	} mem;
-
-	const uint8_t *planeAddr(unsigned int plane) const;
-	uint8_t *planeAddr(unsigned int plane);
 };
 
 CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,

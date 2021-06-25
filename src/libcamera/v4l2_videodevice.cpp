@@ -21,11 +21,11 @@
 
 #include <linux/version.h>
 
+#include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
 
 #include <libcamera/file_descriptor.h>
 
-#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
 

@@ -15,11 +15,11 @@
 #include <libcamera/ipa/vimc_ipa_proxy.h>
 
 #include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/event_notifier.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"

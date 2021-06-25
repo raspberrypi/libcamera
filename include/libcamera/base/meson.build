@@ -7,6 +7,7 @@ libcamera_base_headers = files([
     'class.h',
     'event_dispatcher.h',
     'event_dispatcher_poll.h',
+    'event_notifier.h',
     'file.h',
     'log.h',
     'message.h',

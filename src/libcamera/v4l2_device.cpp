@@ -16,10 +16,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/event_notifier.h"
 #include "libcamera/internal/sysfs.h"
 
 /**

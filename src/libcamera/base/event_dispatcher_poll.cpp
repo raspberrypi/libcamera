@@ -16,12 +16,11 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
+#include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 #include <libcamera/base/utils.h>
-
-#include "libcamera/internal/event_notifier.h"
 
 /**
  * \file base/event_dispatcher_poll.h

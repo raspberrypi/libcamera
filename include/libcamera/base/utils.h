@@ -16,6 +16,7 @@
 #include <string>
 #include <string.h>
 #include <sys/time.h>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -84,7 +85,8 @@ std::basic_ostream<char, std::char_traits<char>> &
 operator<<(std::basic_ostream<char, std::char_traits<char>> &stream, const _hex &h);
 #endif
 
-template<typename T>
+template<typename T,
+	 std::enable_if_t<std::is_integral<T>::value> * = nullptr>
 _hex hex(T value, unsigned int width = 0);
 
 #ifndef __DOXYGEN__

@@ -15,9 +15,9 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/controls.h>
-#include <libcamera/span.h>
 
 namespace libcamera {
 

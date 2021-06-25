@@ -834,7 +834,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @TOP_SRCDIR@/include/libcamera/span.h \
+EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
 			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
 			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
 			 @TOP_SRCDIR@/include/libcamera/internal/ipc_pipe_unixsocket.h \

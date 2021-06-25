@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include <libcamera/span.h>
+#include <libcamera/base/span.h>
 
 #if HAVE_GNUTLS
 struct gnutls_pubkey_st;

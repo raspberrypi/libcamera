@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include <libcamera/span.h>
+#include <libcamera/base/span.h>
 
 /*
  * Camera metadata parser class. Usage as shown below.

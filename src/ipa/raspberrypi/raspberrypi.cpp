@@ -16,6 +16,7 @@
 #include <linux/bcm2835-isp.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
@@ -26,7 +27,6 @@
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/request.h>
-#include <libcamera/span.h>
 
 #include "libcamera/internal/buffer.h"
 

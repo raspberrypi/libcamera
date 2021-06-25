@@ -7,8 +7,9 @@
 #ifndef __ANDROID_JPEG_ENCODER_H__
 #define __ANDROID_JPEG_ENCODER_H__
 
+#include <libcamera/base/span.h>
+
 #include <libcamera/buffer.h>
-#include <libcamera/span.h>
 #include <libcamera/stream.h>
 
 class Encoder

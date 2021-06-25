@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/geometry.h>
-#include <libcamera/span.h>
-
+#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
+
+#include <libcamera/geometry.h>
 
 #include "test.h"
 

@@ -12,11 +12,11 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/ipa/ipa_controls.h>
-#include <libcamera/span.h>
 
 #include "libcamera/internal/byte_stream_buffer.h"
 

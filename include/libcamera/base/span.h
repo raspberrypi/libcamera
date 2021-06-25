@@ -5,8 +5,8 @@
  * span.h - C++20 std::span<> implementation for C++11
  */
 
-#ifndef __LIBCAMERA_SPAN_H__
-#define __LIBCAMERA_SPAN_H__
+#ifndef __LIBCAMERA_BASE_SPAN_H__
+#define __LIBCAMERA_BASE_SPAN_H__
 
 #include <array>
 #include <iterator>
@@ -421,4 +421,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_SPAN_H__ */
+#endif /* __LIBCAMERA_BASE_SPAN_H__ */

@@ -12,7 +12,6 @@ libcamera_public_headers = files([
     'logging.h',
     'pixel_format.h',
     'request.h',
-    'span.h',
     'stream.h',
     'transform.h',
 ])

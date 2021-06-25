@@ -13,8 +13,9 @@
 
 #include <libexif/exif-data.h>
 
+#include <libcamera/base/span.h>
+
 #include <libcamera/geometry.h>
-#include <libcamera/span.h>
 
 class Exif
 {

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include <libcamera/span.h>
+#include <libcamera/base/span.h>
 
 namespace libcamera {
 

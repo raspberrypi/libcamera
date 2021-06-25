@@ -13,8 +13,7 @@
 #include <string>
 
 #include <libcamera/base/class.h>
-
-#include <libcamera/span.h>
+#include <libcamera/base/span.h>
 
 namespace libcamera {
 

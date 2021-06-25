@@ -11,9 +11,9 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/buffer.h>
-#include <libcamera/span.h>
 
 namespace libcamera {
 

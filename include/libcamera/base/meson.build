@@ -14,6 +14,7 @@ libcamera_base_headers = files([
     'object.h',
     'semaphore.h',
     'signal.h',
+    'span.h',
     'thread.h',
     'timer.h',
     'utils.h',

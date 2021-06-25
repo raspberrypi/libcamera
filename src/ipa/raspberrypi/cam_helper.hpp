@@ -8,8 +8,7 @@
 
 #include <string>
 
-#include <libcamera/span.h>
-
+#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include "camera_mode.h"

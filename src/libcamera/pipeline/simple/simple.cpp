@@ -341,8 +341,15 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	/* Finally also remember the sensor. */
 	sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = sensor_->init();
-	if (ret)
+	if (ret) {
 		sensor_.reset();
+		return;
+	}
+
+	LOG(SimplePipeline, Debug)
+		<< "Found pipeline: "
+		<< utils::join(entities_, " -> ",
+			       [](const Entity &e) { return e.entity->name(); });
 }
 
 int SimpleCameraData::init()

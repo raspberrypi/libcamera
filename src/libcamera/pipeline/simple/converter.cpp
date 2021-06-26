@@ -64,7 +64,9 @@ int SimpleConverter::Stream::configure(const StreamConfiguration &inputCfg,
 	if (format.fourcc != videoFormat || format.size != inputCfg.size ||
 	    format.planes[0].bpl != inputCfg.stride) {
 		LOG(SimplePipeline, Error)
-			<< "Input format not supported";
+			<< "Input format not supported (requested "
+			<< inputCfg.size.toString() << "-" << videoFormat.toString()
+			<< ", got " << format.toString() << ")";
 		return -EINVAL;
 	}
 

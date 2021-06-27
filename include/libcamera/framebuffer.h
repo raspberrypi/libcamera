@@ -35,8 +35,10 @@ struct FrameMetadata {
 	std::vector<Plane> planes;
 };
 
-class FrameBuffer final
+class FrameBuffer final : public Extensible
 {
+	LIBCAMERA_DECLARE_PRIVATE()
+
 public:
 	struct Plane {
 		FileDescriptor fd;
@@ -47,8 +49,7 @@ public:
 
 	const std::vector<Plane> &planes() const { return planes_; }
 
-	Request *request() const { return request_; }
-	void setRequest(Request *request) { request_ = request; }
+	Request *request() const;
 	const FrameMetadata &metadata() const { return metadata_; }
 
 	unsigned int cookie() const { return cookie_; }
@@ -63,7 +64,6 @@ private:
 
 	std::vector<Plane> planes_;
 
-	Request *request_;
 	FrameMetadata metadata_;
 
 	unsigned int cookie_;

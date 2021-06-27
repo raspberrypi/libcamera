@@ -14,6 +14,7 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
@@ -278,7 +279,7 @@ FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 
 		buffer = availableBuffers_.front();
 		availableBuffers_.pop();
-		buffer->setRequest(request);
+		buffer->_d()->setRequest(request);
 	}
 
 	int ret = output_->queueBuffer(buffer);

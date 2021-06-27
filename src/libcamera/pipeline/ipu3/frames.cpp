@@ -10,6 +10,7 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/request.h>
 
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
@@ -56,8 +57,8 @@ IPU3Frames::Info *IPU3Frames::create(Request *request)
 	FrameBuffer *paramBuffer = availableParamBuffers_.front();
 	FrameBuffer *statBuffer = availableStatBuffers_.front();
 
-	paramBuffer->setRequest(request);
-	statBuffer->setRequest(request);
+	paramBuffer->_d()->setRequest(request);
+	statBuffer->_d()->setRequest(request);
 
 	availableParamBuffers_.pop();
 	availableStatBuffers_.pop();

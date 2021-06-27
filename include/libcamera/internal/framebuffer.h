@@ -47,6 +47,19 @@ public:
 	MappedFrameBuffer(const FrameBuffer *buffer, int flags);
 };
 
+class FrameBuffer::Private : public Extensible::Private
+{
+	LIBCAMERA_DECLARE_PUBLIC(FrameBuffer)
+
+public:
+	Private(FrameBuffer *buffer);
+
+	void setRequest(Request *request) { request_ = request; }
+
+private:
+	Request *request_;
+};
+
 } /* namespace libcamera */
 
 #endif /* __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__ */

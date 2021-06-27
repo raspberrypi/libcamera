@@ -100,6 +100,21 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \brief Array of per-plane metadata
  */
 
+FrameBuffer::Private::Private(FrameBuffer *buffer)
+	: Extensible::Private(buffer), request_(nullptr)
+{
+}
+
+/**
+ * \fn FrameBuffer::Private::setRequest()
+ * \brief Set the request this buffer belongs to
+ * \param[in] request Request to set
+ *
+ * For buffers added to requests by applications, this method is called by
+ * Request::addBuffer() or Request::reuse(). For buffers internal to pipeline
+ * handlers, it is called by the pipeline handlers themselves.
+ */
+
 /**
  * \class FrameBuffer
  * \brief Frame buffer data and its associated dynamic metadata
@@ -161,7 +176,7 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \param[in] cookie Cookie
  */
 FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
-	: planes_(planes), request_(nullptr), cookie_(cookie)
+	: Extensible(new Private(this)), planes_(planes), cookie_(cookie)
 {
 }
 
@@ -172,7 +187,6 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  */
 
 /**
- * \fn FrameBuffer::request()
  * \brief Retrieve the request this buffer belongs to
  *
  * The intended callers of this method are buffer completion handlers that
@@ -185,18 +199,10 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
  * \return The Request the FrameBuffer belongs to, or nullptr if the buffer is
  * not associated with a request
  */
-
-/**
- * \fn FrameBuffer::setRequest()
- * \brief Set the request this buffer belongs to
- * \param[in] request Request to set
- *
- * For buffers added to requests by applications, this method is called by
- * Request::addBuffer() or Request::reuse(). For buffers internal to pipeline
- * handlers, it is called by the pipeline handlers themselves.
- *
- * \todo Shall be hidden from applications with a d-pointer design.
- */
+Request *FrameBuffer::request() const
+{
+	return _d()->request_;
+}
 
 /**
  * \fn FrameBuffer::metadata()

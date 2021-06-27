@@ -18,6 +18,7 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera_controls.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/tracepoints.h"
 
 /**
@@ -121,7 +122,7 @@ void Request::reuse(ReuseFlag flags)
 	if (flags & ReuseBuffers) {
 		for (auto pair : bufferMap_) {
 			FrameBuffer *buffer = pair.second;
-			buffer->setRequest(this);
+			buffer->_d()->setRequest(this);
 			pending_.insert(buffer);
 		}
 	} else {
@@ -191,7 +192,7 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer)
 		return -EEXIST;
 	}
 
-	buffer->setRequest(this);
+	buffer->_d()->setRequest(this);
 	pending_.insert(buffer);
 	bufferMap_[stream] = buffer;
 
@@ -336,7 +337,7 @@ bool Request::completeBuffer(FrameBuffer *buffer)
 	int ret = pending_.erase(buffer);
 	ASSERT(ret == 1);
 
-	buffer->setRequest(nullptr);
+	buffer->_d()->setRequest(nullptr);
 
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
 		cancelled_ = true;

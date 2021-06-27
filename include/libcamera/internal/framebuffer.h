@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * buffer.h - Internal buffer handling
+ * framebuffer.h - Internal frame buffer handling
  */
-#ifndef __LIBCAMERA_INTERNAL_BUFFER_H__
-#define __LIBCAMERA_INTERNAL_BUFFER_H__
+#ifndef __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__
+#define __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__
 
 #include <sys/mman.h>
 #include <vector>
@@ -13,7 +13,7 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/span.h>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 
 namespace libcamera {
 
@@ -49,4 +49,4 @@ public:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_INTERNAL_BUFFER_H__ */
+#endif /* __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__ */

@@ -13,13 +13,13 @@
 
 #include <hardware/camera3.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 class CameraDevice;
 class CameraMetadata;

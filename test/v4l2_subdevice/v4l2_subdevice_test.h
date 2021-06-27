@@ -8,7 +8,7 @@
 #ifndef __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__
 #define __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"

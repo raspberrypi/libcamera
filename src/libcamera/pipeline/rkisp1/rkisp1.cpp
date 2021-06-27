@@ -17,10 +17,10 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/ipa/core_ipa_interface.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/ipa/rkisp1_ipa_proxy.h>

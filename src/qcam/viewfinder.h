@@ -11,8 +11,8 @@
 #include <QList>
 #include <QSize>
 
-#include <libcamera/buffer.h>
 #include <libcamera/formats.h>
+#include <libcamera/framebuffer.h>
 
 struct MappedBuffer {
 	void *memory;

@@ -15,8 +15,8 @@
 
 #include <libcamera/base/signal.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/controls.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 
 namespace libcamera {

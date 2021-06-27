@@ -13,14 +13,14 @@
 
 #include <libcamera/base/log.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/ipu3_ipa_interface.h>
 #include <libcamera/request.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"

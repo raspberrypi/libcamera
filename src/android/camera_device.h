@@ -19,12 +19,12 @@
 #include <libcamera/base/message.h>
 #include <libcamera/base/thread.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 #include "camera_capabilities.h"
 #include "camera_metadata.h"

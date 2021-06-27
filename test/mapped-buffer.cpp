@@ -9,7 +9,7 @@
 
 #include <libcamera/framebuffer_allocator.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 #include "camera_test.h"
 #include "test.h"

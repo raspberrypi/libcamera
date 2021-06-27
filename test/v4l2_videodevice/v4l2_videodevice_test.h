@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"

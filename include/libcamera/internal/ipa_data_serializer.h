@@ -16,8 +16,8 @@
 
 #include <libcamera/base/log.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/ipa/ipa_interface.h>
 

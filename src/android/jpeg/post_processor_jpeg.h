@@ -13,7 +13,7 @@
 
 #include <libcamera/geometry.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 class CameraDevice;
 

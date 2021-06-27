@@ -14,7 +14,7 @@
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/stream.h>
 

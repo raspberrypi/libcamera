@@ -11,8 +11,8 @@
 
 #include <libcamera/base/log.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/pipeline_handler.h"

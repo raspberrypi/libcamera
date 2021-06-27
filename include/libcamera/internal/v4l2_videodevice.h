@@ -20,7 +20,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 

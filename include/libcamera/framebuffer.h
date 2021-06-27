@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * buffer.h - Buffer handling
+ * framebuffer.h - Frame buffer handling
  */
-#ifndef __LIBCAMERA_BUFFER_H__
-#define __LIBCAMERA_BUFFER_H__
+#ifndef __LIBCAMERA_FRAMEBUFFER_H__
+#define __LIBCAMERA_FRAMEBUFFER_H__
 
 #include <stdint.h>
 #include <vector>
@@ -71,4 +71,4 @@ private:
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_BUFFER_H__ */
+#endif /* __LIBCAMERA_FRAMEBUFFER_H__ */

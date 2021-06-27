@@ -11,7 +11,6 @@ libcamera_tracepoint_header = custom_target(
 
 libcamera_internal_headers = files([
     'bayer_format.h',
-    'buffer.h',
     'byte_stream_buffer.h',
     'camera_controls.h',
     'camera_sensor.h',
@@ -23,6 +22,7 @@ libcamera_internal_headers = files([
     'device_enumerator_sysfs.h',
     'device_enumerator_udev.h',
     'formats.h',
+    'framebuffer.h',
     'ipa_manager.h',
     'ipa_module.h',
     'ipa_proxy.h',

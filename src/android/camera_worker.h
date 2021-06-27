@@ -12,8 +12,8 @@
 #include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 

@@ -10,7 +10,7 @@
 #include <map>
 #include <string>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 
 class BufferWriter
 {

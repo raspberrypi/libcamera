@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * buffer.cpp - Buffer handling
+ * framebuffer.cpp - Frame buffer handling
  */
 
-#include <libcamera/buffer.h>
-#include "libcamera/internal/buffer.h"
+#include <libcamera/framebuffer.h>
+#include "libcamera/internal/framebuffer.h"
 
 #include <errno.h>
 #include <string.h>
@@ -16,11 +16,11 @@
 #include <libcamera/base/log.h>
 
 /**
- * \file libcamera/buffer.h
- * \brief Buffer handling
+ * \file libcamera/framebuffer.h
+ * \brief Frame buffer handling
  *
- * \file libcamera/internal/buffer.h
- * \brief Internal buffer handling support
+ * \file libcamera/internal/framebuffer.h
+ * \brief Internal frame buffer handling support
  */
 
 namespace libcamera {

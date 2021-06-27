@@ -10,9 +10,9 @@
 #ifdef HAVE_TIFF
 #define HAVE_DNG
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
 using namespace libcamera;

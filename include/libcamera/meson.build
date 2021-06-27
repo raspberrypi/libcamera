@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_public_headers = files([
-    'buffer.h',
     'camera.h',
     'camera_manager.h',
     'compiler.h',
     'controls.h',
     'file_descriptor.h',
+    'framebuffer.h',
     'framebuffer_allocator.h',
     'geometry.h',
     'logging.h',

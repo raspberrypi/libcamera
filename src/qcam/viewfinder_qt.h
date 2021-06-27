@@ -14,8 +14,8 @@
 #include <QSize>
 #include <QWidget>
 
-#include <libcamera/buffer.h>
 #include <libcamera/formats.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/pixel_format.h>
 
 #include "format_converter.h"

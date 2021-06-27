@@ -7,10 +7,10 @@
 #ifndef __ANDROID_POST_PROCESSOR_H__
 #define __ANDROID_POST_PROCESSOR_H__
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 #include "camera_buffer.h"
 

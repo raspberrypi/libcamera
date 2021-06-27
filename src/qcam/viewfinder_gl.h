@@ -21,8 +21,8 @@
 #include <QOpenGLWidget>
 #include <QSize>
 
-#include <libcamera/buffer.h>
 #include <libcamera/formats.h>
+#include <libcamera/framebuffer.h>
 
 #include "viewfinder.h"
 

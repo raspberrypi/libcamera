@@ -14,9 +14,9 @@
 
 #include <libcamera/base/semaphore.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/camera.h>
 #include <libcamera/file_descriptor.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
 
 using namespace libcamera;

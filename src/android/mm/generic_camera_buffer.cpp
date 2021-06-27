@@ -11,7 +11,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 using namespace libcamera;
 

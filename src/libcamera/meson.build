@@ -2,7 +2,6 @@
 
 libcamera_sources = files([
     'bayer_format.cpp',
-    'buffer.cpp',
     'byte_stream_buffer.cpp',
     'camera.cpp',
     'camera_controls.cpp',
@@ -17,6 +16,7 @@ libcamera_sources = files([
     'device_enumerator_sysfs.cpp',
     'file_descriptor.cpp',
     'formats.cpp',
+    'framebuffer.cpp',
     'framebuffer_allocator.cpp',
     'geometry.cpp',
     'ipa_controls.cpp',

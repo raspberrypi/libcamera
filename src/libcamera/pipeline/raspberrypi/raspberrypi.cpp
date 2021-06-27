@@ -30,10 +30,10 @@
 #include <linux/videodev2.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"

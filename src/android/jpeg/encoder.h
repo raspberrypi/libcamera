@@ -9,7 +9,7 @@
 
 #include <libcamera/base/span.h>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
 class Encoder

@@ -9,8 +9,8 @@
 
 #include <libcamera/geometry.h>
 
-#include "libcamera/internal/buffer.h"
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/framebuffer.h"
 
 class Thumbnailer
 {

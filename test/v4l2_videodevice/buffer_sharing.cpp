@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-#include <libcamera/buffer.h>
+#include <libcamera/framebuffer.h>
 
 #include <libcamera/base/event_dispatcher.h>
 #include <libcamera/base/thread.h>

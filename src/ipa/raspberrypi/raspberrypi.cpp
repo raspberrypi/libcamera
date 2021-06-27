@@ -18,17 +18,17 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
 
-#include <libcamera/buffer.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/file_descriptor.h>
+#include <libcamera/framebuffer.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/request.h>
 
-#include "libcamera/internal/buffer.h"
+#include "libcamera/internal/framebuffer.h"
 
 #include "agc_algorithm.hpp"
 #include "agc_status.h"

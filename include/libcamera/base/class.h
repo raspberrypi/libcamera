@@ -33,14 +33,24 @@ namespace libcamera {
 #define LIBCAMERA_DECLARE_PRIVATE()					\
 public:									\
 	class Private;							\
-	friend class Private;
+	friend class Private;						\
+	template <bool B = true>					\
+	const Private *_d() const					\
+	{								\
+		return Extensible::_d<Private>();			\
+	}								\
+	template <bool B = true>					\
+	Private *_d()							\
+	{								\
+		return Extensible::_d<Private>();			\
+	}
 
 #define LIBCAMERA_DECLARE_PUBLIC(klass)					\
 	friend class klass;						\
 	using Public = klass;
 
 #define LIBCAMERA_D_PTR()						\
-	_d<Private>();
+	_d();
 
 #define LIBCAMERA_O_PTR()						\
 	_o<Public>();

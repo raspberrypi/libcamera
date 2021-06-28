@@ -48,10 +48,6 @@ public:
 	unsigned int id() const { return id_; }
 	camera3_device_t *camera3Device() { return &camera3Device_; }
 	const std::shared_ptr<libcamera::Camera> &camera() const { return camera_; }
-	libcamera::CameraConfiguration *cameraConfiguration() const
-	{
-		return config_.get();
-	}
 
 	const std::string &maker() const { return maker_; }
 	const std::string &model() const { return model_; }

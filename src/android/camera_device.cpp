@@ -682,8 +682,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		config->addConfiguration(streamConfig.config);
 
 		for (auto &stream : streamConfig.streams) {
-			streams_.emplace_back(this, stream.type, stream.stream,
-					      config->size() - 1);
+			streams_.emplace_back(this, config.get(), stream.type,
+					      stream.stream, config->size() - 1);
 			stream.stream->priv = static_cast<void *>(&streams_.back());
 		}
 	}

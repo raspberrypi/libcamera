@@ -39,10 +39,10 @@ LOG_DECLARE_CATEGORY(HAL)
  * and buffer allocation.
  */
 
-CameraStream::CameraStream(CameraDevice *const cameraDevice, Type type,
+CameraStream::CameraStream(CameraDevice *const cameraDevice,
+			   CameraConfiguration *config, Type type,
 			   camera3_stream_t *camera3Stream, unsigned int index)
-	: cameraDevice_(cameraDevice),
-	  config_(cameraDevice->cameraConfiguration()), type_(type),
+	: cameraDevice_(cameraDevice), config_(config), type_(type),
 	  camera3Stream_(camera3Stream), index_(index)
 {
 	if (type_ == Type::Internal || type_ == Type::Mapped) {

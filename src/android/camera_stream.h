@@ -110,7 +110,8 @@ public:
 		Internal,
 		Mapped,
 	};
-	CameraStream(CameraDevice *const cameraDevice, Type type,
+	CameraStream(CameraDevice *const cameraDevice,
+		     libcamera::CameraConfiguration *config, Type type,
 		     camera3_stream_t *camera3Stream, unsigned int index);
 
 	Type type() const { return type_; }

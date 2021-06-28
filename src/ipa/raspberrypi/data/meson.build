@@ -5,6 +5,7 @@ conf_files = files([
     'imx290.json',
     'imx477.json',
     'ov5647.json',
+    'ov9281.json',
     'se327m12.json',
     'uncalibrated.json',
 ])

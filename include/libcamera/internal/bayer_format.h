@@ -23,7 +23,8 @@ public:
 		BGGR = 0,
 		GBRG = 1,
 		GRBG = 2,
-		RGGB = 3
+		RGGB = 3,
+		MONO = 4
 	};
 
 	enum Packing : uint16_t {

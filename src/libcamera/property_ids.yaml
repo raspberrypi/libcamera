@@ -706,5 +706,9 @@ controls:
           description: |
             Sensor is not Bayer; output has 3 16-bit values for each pixel,
             instead of just 1 16-bit value per pixel.
+        - name: MONO
+          value: 5
+          description: |
+            Sensor is not Bayer; output consists of a single colour channel.
 
 ...

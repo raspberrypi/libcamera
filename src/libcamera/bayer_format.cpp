@@ -45,6 +45,8 @@ namespace libcamera {
  * \brief G then R on the first row, B then G on the second row.
  * \var BayerFormat::RGGB
  * \brief R then G on the first row, G then B on the second row.
+ * \var BayerFormat::MONO
+ * \brief Monochrome image data, there is no colour filter array.
  */
 
 /**
@@ -111,6 +113,8 @@ const std::map<BayerFormat, V4L2PixelFormat, BayerFormatComparator> bayerToV4l2{
 	{ { BayerFormat::GBRG, 16, BayerFormat::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16) },
 	{ { BayerFormat::GRBG, 16, BayerFormat::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16) },
 	{ { BayerFormat::RGGB, 16, BayerFormat::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) },
+	{ { BayerFormat::MONO, 8, BayerFormat::None }, V4L2PixelFormat(V4L2_PIX_FMT_GREY) },
+	{ { BayerFormat::MONO, 10, BayerFormat::CSI2Packed }, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) },
 };
 
 const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
@@ -146,6 +150,8 @@ const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
 	{ MEDIA_BUS_FMT_SGBRG16_1X16, { BayerFormat::GBRG, 16, BayerFormat::None } },
 	{ MEDIA_BUS_FMT_SGRBG16_1X16, { BayerFormat::GRBG, 16, BayerFormat::None } },
 	{ MEDIA_BUS_FMT_SRGGB16_1X16, { BayerFormat::RGGB, 16, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_Y8_1X8, { BayerFormat::MONO, 8, BayerFormat::None } },
+	{ MEDIA_BUS_FMT_Y10_1X10, { BayerFormat::MONO, 10, BayerFormat::None } },
 };
 
 } /* namespace */
@@ -198,9 +204,10 @@ std::string BayerFormat::toString() const
 		"BGGR",
 		"GBRG",
 		"GRBG",
-		"RGGB"
+		"RGGB",
+		"MONO"
 	};
-	if (isValid() && order <= RGGB)
+	if (isValid() && order <= MONO)
 		result = orderStrings[order];
 	else
 		return "INVALID";
@@ -279,6 +286,9 @@ BayerFormat BayerFormat::fromV4L2PixelFormat(V4L2PixelFormat v4l2Format)
 BayerFormat BayerFormat::transform(Transform t) const
 {
 	BayerFormat result = *this;
+
+	if (order == MONO)
+		return result;
 
 	/*
 	 * Observe that flipping bit 0 of the Order enum performs a horizontal

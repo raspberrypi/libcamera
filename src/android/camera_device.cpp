@@ -782,14 +782,52 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 		return 0;
 
 	/* Translate the Android request settings to libcamera controls. */
+	ControlList &controls = descriptor->request_->controls();
 	camera_metadata_ro_entry_t entry;
 	if (settings.getEntry(ANDROID_SCALER_CROP_REGION, &entry)) {
 		const int32_t *data = entry.data.i32;
 		Rectangle cropRegion{ data[0], data[1],
 				      static_cast<unsigned int>(data[2]),
 				      static_cast<unsigned int>(data[3]) };
-		ControlList &controls = descriptor->request_->controls();
 		controls.set(controls::ScalerCrop, cropRegion);
+	}
+
+	if (settings.getEntry(ANDROID_SENSOR_TEST_PATTERN_MODE, &entry)) {
+		const int32_t data = *entry.data.i32;
+		int32_t testPatternMode = controls::draft::TestPatternModeOff;
+		switch (data) {
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_OFF:
+			testPatternMode = controls::draft::TestPatternModeOff;
+			break;
+
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_SOLID_COLOR:
+			testPatternMode = controls::draft::TestPatternModeSolidColor;
+			break;
+
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_COLOR_BARS:
+			testPatternMode = controls::draft::TestPatternModeColorBars;
+			break;
+
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_COLOR_BARS_FADE_TO_GRAY:
+			testPatternMode = controls::draft::TestPatternModeColorBarsFadeToGray;
+			break;
+
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_PN9:
+			testPatternMode = controls::draft::TestPatternModePn9;
+			break;
+
+		case ANDROID_SENSOR_TEST_PATTERN_MODE_CUSTOM1:
+			testPatternMode = controls::draft::TestPatternModeCustom1;
+			break;
+
+		default:
+			LOG(HAL, Error)
+				<< "Unknown test pattern mode: " << data;
+
+			return -EINVAL;
+		}
+
+		controls.set(controls::draft::TestPatternMode, testPatternMode);
 	}
 
 	return 0;
@@ -1341,6 +1379,13 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 			static_cast<int32_t>(crop.height),
 		};
 		resultMetadata->addEntry(ANDROID_SCALER_CROP_REGION, cropRect);
+	}
+
+	if (metadata.contains(controls::draft::TestPatternMode)) {
+		const int32_t testPatternMode =
+			metadata.get(controls::draft::TestPatternMode);
+		resultMetadata->addEntry(ANDROID_SENSOR_TEST_PATTERN_MODE,
+					 testPatternMode);
 	}
 
 	/*

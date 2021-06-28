@@ -481,7 +481,7 @@ void Agc::fetchAwbStatus(Metadata *image_metadata)
 	awb_.gain_g = 1.0;
 	awb_.gain_b = 1.0;
 	if (image_metadata->Get("awb.status", awb_) != 0)
-		LOG(RPiAgc, Warning) << "Agc: no AWB status found";
+		LOG(RPiAgc, Debug) << "Agc: no AWB status found";
 }
 
 static double compute_initial_Y(bcm2835_isp_stats *stats, AwbStatus const &awb,

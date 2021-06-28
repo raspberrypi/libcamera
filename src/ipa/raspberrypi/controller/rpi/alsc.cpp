@@ -267,8 +267,8 @@ double get_ct(Metadata *metadata, double default_ct)
 	AwbStatus awb_status;
 	awb_status.temperature_K = default_ct; // in case nothing found
 	if (metadata->Get("awb.status", awb_status) != 0)
-		LOG(RPiAlsc, Warning) << "no AWB results found, using "
-				      << awb_status.temperature_K;
+		LOG(RPiAlsc, Debug) << "no AWB results found, using "
+				    << awb_status.temperature_K;
 	else
 		LOG(RPiAlsc, Debug) << "AWB results found, using "
 				    << awb_status.temperature_K;

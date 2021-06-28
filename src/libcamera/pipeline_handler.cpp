@@ -707,14 +707,15 @@ void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
 
 /**
  * \brief Retrieve the list of all pipeline handler factories
- *
- * The static factories map is defined inside the function to ensures it gets
- * initialized on first use, without any dependency on link order.
- *
  * \return the list of pipeline handler factories
  */
 std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
 {
+	/*
+	 * The static factories map is defined inside the function to ensure
+	 * it gets initialized on first use, without any dependency on
+	 * link order.
+	 */
 	static std::vector<PipelineHandlerFactory *> factories;
 	return factories;
 }

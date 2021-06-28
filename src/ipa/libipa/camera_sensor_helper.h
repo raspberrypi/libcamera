@@ -30,8 +30,8 @@ public:
 
 protected:
 	enum AnalogueGainType {
-		AnalogueGainLinear = 0,
-		AnalogueGainExponential = 2,
+		AnalogueGainLinear,
+		AnalogueGainExponential,
 	};
 
 	struct AnalogueGainConstants {
@@ -60,24 +60,26 @@ public:
 	static std::vector<CameraSensorHelperFactory *> &factories();
 
 protected:
-	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactory)
 	virtual CameraSensorHelper *createInstance() = 0;
+
+private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactory)
 
 	std::string name_;
 };
 
-#define REGISTER_CAMERA_SENSOR_HELPER(name, helper)		  \
-class helper##Factory final : public CameraSensorHelperFactory	  \
-{                                                                 \
-public:                                                           \
-	helper##Factory() : CameraSensorHelperFactory(name) {}	  \
-								  \
-private:                                                          \
-	CameraSensorHelper *createInstance()			  \
-	{							  \
-		return new helper();				  \
-	}							  \
-};								  \
+#define REGISTER_CAMERA_SENSOR_HELPER(name, helper)		\
+class helper##Factory final : public CameraSensorHelperFactory	\
+{								\
+public: 							\
+	helper##Factory() : CameraSensorHelperFactory(name) {}	\
+								\
+private:							\
+	CameraSensorHelper *createInstance()			\
+	{							\
+		return new helper();				\
+	}							\
+};								\
 static helper##Factory global_##helper##Factory;
 
 } /* namespace ipa */

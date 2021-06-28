@@ -2,11 +2,12 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_helper.cpp - Helper class that performs sensor-specific parameter computations
+ * camera_sensor_helper.cpp - Helper class that performs sensor-specific
+ * parameter computations
  */
 #include "camera_sensor_helper.h"
 
-#include "libcamera/base/log.h"
+#include <libcamera/base/log.h>
 
 /**
  * \file camera_sensor_helper.h
@@ -29,17 +30,18 @@ namespace ipa {
 
 /**
  * \class CameraSensorHelper
- * \brief Base class for computing sensor tuning parameters using sensor-specific constants
+ * \brief Base class for computing sensor tuning parameters using
+ * sensor-specific constants
  *
- * Instances derived from CameraSensorHelper class are sensor specific.
+ * Instances derived from CameraSensorHelper class are sensor-specific.
  * Each supported sensor will have an associated base class defined.
  */
 
 /**
  * \brief Construct a CameraSensorHelper instance
  *
- * CameraSensorHelper derived class instances shall never be constructed manually
- * but always through the CameraSensorHelperFactory::create() method.
+ * CameraSensorHelper derived class instances shall never be constructed
+ * manually but always through the CameraSensorHelperFactory::create() method.
  */
 
 /**
@@ -52,11 +54,11 @@ namespace ipa {
  * The parameters come from the MIPI Alliance Camera Specification for
  * Camera Command Set (CCS).
  *
- * \return The gain code to pass to V4l2
+ * \return The gain code to pass to V4L2
  */
 uint32_t CameraSensorHelper::gainCode(double gain) const
 {
-	ASSERT((analogueGainConstants_.m0 == 0) || (analogueGainConstants_.m1 == 0));
+	ASSERT(analogueGainConstants_.m0 == 0 || analogueGainConstants_.m1 == 0);
 	ASSERT(analogueGainConstants_.type == AnalogueGainLinear);
 
 	return (analogueGainConstants_.c0 - analogueGainConstants_.c1 * gain) /
@@ -64,8 +66,8 @@ uint32_t CameraSensorHelper::gainCode(double gain) const
 }
 
 /**
- * \brief Compute the real gain from the V4l2 subdev control gain code
- * \param[in] gainCode The V4l2 subdev control gain
+ * \brief Compute the real gain from the V4L2 subdev control gain code
+ * \param[in] gainCode The V4L2 subdev control gain
  *
  * This function aims to abstract the calculation of the gain letting the IPA
  * use the real gain for its estimations. It is the counterpart of the function
@@ -78,7 +80,7 @@ uint32_t CameraSensorHelper::gainCode(double gain) const
  */
 double CameraSensorHelper::gain(uint32_t gainCode) const
 {
-	ASSERT((analogueGainConstants_.m0 == 0) || (analogueGainConstants_.m1 == 0));
+	ASSERT(analogueGainConstants_.m0 == 0 || analogueGainConstants_.m1 == 0);
 	ASSERT(analogueGainConstants_.type == AnalogueGainLinear);
 
 	return (analogueGainConstants_.m0 * static_cast<double>(gainCode) + analogueGainConstants_.c0) /
@@ -90,7 +92,7 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  * \brief The gain calculation modes as defined by the MIPI CCS
  *
  * Describes the image sensor analogue gain capabilities.
- * Two modes are possible, depending on the sensor: Global and Alternate.
+ * Two modes are possible, depending on the sensor: Linear and Exponential.
  */
 
 /**
@@ -114,11 +116,12 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 
 /**
  * \var CameraSensorHelper::AnalogueGainExponential
- * \brief Gain is computed using exponential gain estimation (introduced in CCS v1.1)
+ * \brief Gain is computed using exponential gain estimation
+ * (introduced in CCS v1.1)
  *
  * Starting with CCS v1.1, Alternate Global Analogue Gain is also available.
- * If the image sensor supports it, then the global analogue gain can be controlled
- * by linear and exponential gain formula:
+ * If the image sensor supports it, then the global analogue gain can be
+ * controlled by linear and exponential gain formula:
  *
  * \f$gain = analogLinearGainGlobal * 2^{analogExponentialGainGlobal}\f$
  * \todo not implemented in libipa
@@ -194,11 +197,13 @@ CameraSensorHelperFactory::CameraSensorHelperFactory(const std::string name)
 }
 
 /**
- * \brief Create an instance of the CameraSensorHelper corresponding to the factory
+ * \brief Create an instance of the CameraSensorHelper corresponding to
+ * a named factory
  * \param[in] name Name of the factory
  *
  * \return A unique pointer to a new instance of the CameraSensorHelper subclass
- * corresponding to the factory
+ * corresponding to the named factory or a null pointer if no such factory
+ * exists
  */
 std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std::string &name)
 {
@@ -220,33 +225,36 @@ std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std:
  * \brief Add a camera sensor helper class to the registry
  * \param[in] factory Factory to use to construct the camera sensor helper
  *
- * The caller is responsible to guarantee the uniqueness of the camera sensor helper
- * name.
+ * The caller is responsible to guarantee the uniqueness of the camera sensor
+ * helper name.
  */
 void CameraSensorHelperFactory::registerType(CameraSensorHelperFactory *factory)
 {
-	std::vector<CameraSensorHelperFactory *> &factories = CameraSensorHelperFactory::factories();
+	std::vector<CameraSensorHelperFactory *> &factories =
+		CameraSensorHelperFactory::factories();
 
 	factories.push_back(factory);
 }
 
 /**
  * \brief Retrieve the list of all camera sensor helper factories
- *
- * The static factories map is defined inside the function to ensures it gets
- * initialized on first use, without any dependency on link order.
- *
  * \return The list of camera sensor helper factories
  */
 std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
 {
+	/*
+	 * The static factories map is defined inside the function to ensure
+	 * it gets initialized on first use, without any dependency on link
+	 * order.
+	 */
 	static std::vector<CameraSensorHelperFactory *> factories;
 	return factories;
 }
 
 /**
  * \fn CameraSensorHelperFactory::createInstance()
- * \brief Create an instance of the CameraSensorHelper corresponding to the factory
+ * \brief Create an instance of the CameraSensorHelper corresponding to the
+ * factory
  *
  * This virtual function is implemented by the REGISTER_CAMERA_SENSOR_HELPER()
  * macro. It creates a camera sensor helper instance associated with the camera
@@ -267,14 +275,16 @@ std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
  * \param[in] name Sensor model name used to register the class
  * \param[in] helper Class name of CameraSensorHelper derived class to register
  *
- * Register a CameraSensorHelper subclass with the factory and make it available to
- * try and match devices.
+ * Register a CameraSensorHelper subclass with the factory and make it available
+ * to try and match sensors.
  */
 
-/**
- * \class CameraSensorHelperImx219
- * \brief Create and give helpers for the imx219 sensor
+/* -----------------------------------------------------------------------------
+ * Sensor-specific subclasses
  */
+
+#ifndef __DOXYGEN__
+
 class CameraSensorHelperImx219 : public CameraSensorHelper
 {
 public:
@@ -285,10 +295,6 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx219", CameraSensorHelperImx219)
 
-/**
- * \class CameraSensorHelperOv5670
- * \brief Create and give helpers for the ov5670 sensor
- */
 class CameraSensorHelperOv5670 : public CameraSensorHelper
 {
 public:
@@ -299,10 +305,6 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5670", CameraSensorHelperOv5670)
 
-/**
- * \class CameraSensorHelperOv5693
- * \brief Create and give helpers for the ov5693 sensor
- */
 class CameraSensorHelperOv5693 : public CameraSensorHelper
 {
 public:
@@ -312,6 +314,8 @@ public:
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5693", CameraSensorHelperOv5693)
+
+#endif /* __DOXYGEN__ */
 
 } /* namespace ipa */
 

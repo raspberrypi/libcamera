@@ -1285,12 +1285,6 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 				  availableStreamConfigurations);
 
-	std::vector<int64_t> availableStallDurations = {
-		ANDROID_SCALER_AVAILABLE_FORMATS_BLOB, 2560, 1920, 33333333,
-	};
-	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STALL_DURATIONS,
-				  availableStallDurations);
-
 	std::vector<int64_t> minFrameDurations;
 	minFrameDurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
@@ -1301,6 +1295,19 @@ int CameraCapabilities::initializeStaticMetadata()
 	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
 				  minFrameDurations);
+
+	std::vector<int64_t> availableStallDurations;
+	for (const auto &entry : streamConfigurations_) {
+		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB)
+			continue;
+
+		availableStallDurations.push_back(entry.androidFormat);
+		availableStallDurations.push_back(entry.resolution.width);
+		availableStallDurations.push_back(entry.resolution.height);
+		availableStallDurations.push_back(entry.minFrameDurationNsec);
+	}
+	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STALL_DURATIONS,
+				  availableStallDurations);
 
 	uint8_t croppingType = ANDROID_SCALER_CROPPING_TYPE_CENTER_ONLY;
 	staticMetadata_->addEntry(ANDROID_SCALER_CROPPING_TYPE, croppingType);

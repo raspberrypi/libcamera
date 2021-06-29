@@ -58,9 +58,9 @@ private:
 
 CamHelperImx219::CamHelperImx219()
 #if ENABLE_EMBEDDED_DATA
-	: CamHelper(new MdParserImx219(), frameIntegrationDiff)
+	: CamHelper(std::make_unique<MdParserImx219>(), frameIntegrationDiff)
 #else
-	: CamHelper(nullptr, frameIntegrationDiff)
+	: CamHelper({}, frameIntegrationDiff)
 #endif
 {
 }

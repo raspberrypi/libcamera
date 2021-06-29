@@ -38,7 +38,7 @@ private:
  */
 
 CamHelperOv5647::CamHelperOv5647()
-	: CamHelper(nullptr, frameIntegrationDiff)
+	: CamHelper({}, frameIntegrationDiff)
 {
 }
 

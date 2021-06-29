@@ -30,7 +30,7 @@ private:
 };
 
 CamHelperImx290::CamHelperImx290()
-	: CamHelper(nullptr, frameIntegrationDiff)
+	: CamHelper({}, frameIntegrationDiff)
 {
 }
 

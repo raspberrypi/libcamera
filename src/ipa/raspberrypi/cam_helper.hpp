@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <libcamera/base/span.h>
@@ -67,7 +68,7 @@ class CamHelper
 {
 public:
 	static CamHelper *Create(std::string const &cam_name);
-	CamHelper(MdParser *parser, unsigned int frameIntegrationDiff);
+	CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
 	void SetCameraMode(const CameraMode &mode);
 	virtual void Prepare(libcamera::Span<const uint8_t> buffer,
@@ -92,7 +93,7 @@ protected:
 	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
 			       Metadata &metadata);
 
-	MdParser *parser_;
+	std::unique_ptr<MdParser> parser_;
 	CameraMode mode_;
 
 private:

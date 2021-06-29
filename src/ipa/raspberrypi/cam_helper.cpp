@@ -40,15 +40,14 @@ CamHelper *CamHelper::Create(std::string const &cam_name)
 	return nullptr;
 }
 
-CamHelper::CamHelper(MdParser *parser, unsigned int frameIntegrationDiff)
-	: parser_(parser), initialized_(false),
+CamHelper::CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff)
+	: parser_(std::move(parser)), initialized_(false),
 	  frameIntegrationDiff_(frameIntegrationDiff)
 {
 }
 
 CamHelper::~CamHelper()
 {
-	delete parser_;
 }
 
 void CamHelper::Prepare(Span<const uint8_t> buffer,

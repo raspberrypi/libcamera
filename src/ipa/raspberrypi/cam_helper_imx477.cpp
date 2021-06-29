@@ -50,7 +50,7 @@ private:
 };
 
 CamHelperImx477::CamHelperImx477()
-	: CamHelper(new MdParserImx477(), frameIntegrationDiff)
+	: CamHelper(std::make_unique<MdParserImx477>(), frameIntegrationDiff)
 {
 }
 

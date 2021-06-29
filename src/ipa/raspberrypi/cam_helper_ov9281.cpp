@@ -34,7 +34,7 @@ private:
  */
 
 CamHelperOv9281::CamHelperOv9281()
-	: CamHelper(nullptr, frameIntegrationDiff)
+	: CamHelper({}, frameIntegrationDiff)
 {
 }
 

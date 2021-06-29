@@ -148,6 +148,7 @@ private:
 	}
 
 	int initControls(IPU3CameraData *data);
+	int updateControls(IPU3CameraData *data);
 	int registerCameras();
 
 	int allocateBuffers(Camera *camera);
@@ -927,9 +928,11 @@ bool PipelineHandlerIPU3::match(DeviceEnumerator *enumerator)
  * \brief Initialize the camera controls
  * \param[in] data The camera data
  *
- * Initialize the camera controls as the union of the static pipeline handler
- * controls (IPU3Controls) and controls created dynamically from the sensor
- * capabilities.
+ * Initialize the camera controls by calculating controls which the pipeline
+ * is reponsible for and merge them with the controls computed by the IPA.
+ *
+ * This function needs data->ipaControls_ to be initialized by the IPA init()
+ * function at camera creation time. Always call this function after IPA init().
  *
  * \return 0 on success or a negative error code otherwise
  */
@@ -950,8 +953,30 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	if (ret)
 		return ret;
 
+	return updateControls(data);
+}
+
+/**
+ * \brief Update the camera controls
+ * \param[in] data The camera data
+ *
+ * Compute the camera controls by calculating controls which the pipeline
+ * is reponsible for and merge them with the controls computed by the IPA.
+ *
+ * This function needs data->ipaControls_ to be refreshed when a new
+ * configuration is applied to the camera by the IPA configure() function.
+ *
+ * Always call this function after IPA configure() to make sure to have a
+ * properly refreshed IPA controls list.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
+{
+	CameraSensor *sensor = data->cio2_.sensor();
 	IPACameraSensorInfo sensorInfo{};
-	ret = sensor->sensorInfo(&sensorInfo);
+
+	int ret = sensor->sensorInfo(&sensorInfo);
 	if (ret)
 		return ret;
 

@@ -619,7 +619,32 @@ int CameraCapabilities::initializeStreamConfigurations()
 		}
 
 		for (const Size &res : resolutions) {
-			streamConfigurations_.push_back({ res, androidFormat });
+			/*
+			 * Configure the Camera with the collected format and
+			 * resolution to get an updated list of controls.
+			 *
+			 * \todo Avoid the need to configure the camera when
+			 * redesigning the configuration API.
+			 */
+			cfg.size = res;
+			int ret = camera_->configure(cameraConfig.get());
+			if (ret)
+				return ret;
+
+			const ControlInfoMap &controls = camera_->controls();
+			const auto frameDurations = controls.find(
+				&controls::FrameDurationLimits);
+			if (frameDurations == controls.end()) {
+				LOG(HAL, Error)
+					<< "Camera does not report frame durations";
+				return -EINVAL;
+			}
+
+			int64_t minFrameDuration = frameDurations->second.min().get<int64_t>() * 1000;
+			int64_t maxFrameDuration = frameDurations->second.max().get<int64_t>() * 1000;
+			streamConfigurations_.push_back({
+				res, androidFormat, minFrameDuration, maxFrameDuration,
+			});
 
 			/*
 			 * If the format is HAL_PIXEL_FORMAT_YCbCr_420_888
@@ -631,10 +656,18 @@ int CameraCapabilities::initializeStreamConfigurations()
 			 *
 			 * \todo Support JPEG streams produced by the camera
 			 * natively.
+			 *
+			 * \todo HAL_PIXEL_FORMAT_BLOB is a 'stalling' format,
+			 * its duration should take into account the time
+			 * required for the YUV to JPEG encoding. For now
+			 * use the same frame durations as collected for
+			 * the YUV/RGB streams.
 			 */
 			if (androidFormat == HAL_PIXEL_FORMAT_YCbCr_420_888) {
-				streamConfigurations_.push_back(
-					{ res, HAL_PIXEL_FORMAT_BLOB });
+				streamConfigurations_.push_back({
+					res, HAL_PIXEL_FORMAT_BLOB,
+					minFrameDuration, maxFrameDuration,
+				});
 				maxJpegSize = std::max(maxJpegSize, res);
 			}
 		}

@@ -43,6 +43,8 @@ private:
 	struct Camera3StreamConfiguration {
 		libcamera::Size resolution;
 		int androidFormat;
+		int64_t minFrameDurationNsec;
+		int64_t maxFrameDurationNsec;
 	};
 
 	bool validateManualSensorCapability();

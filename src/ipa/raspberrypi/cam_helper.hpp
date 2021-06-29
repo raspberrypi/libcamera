@@ -92,6 +92,8 @@ public:
 protected:
 	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
 			       Metadata &metadata);
+	virtual void PopulateMetadata(const MdParser::RegisterMap &registers,
+				      Metadata &metadata) const;
 
 	std::unique_ptr<MdParser> parser_;
 	CameraMode mode_;

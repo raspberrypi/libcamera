@@ -6,6 +6,9 @@
  */
 #pragma once
 
+#include <initializer_list>
+#include <map>
+#include <optional>
 #include <stdint.h>
 
 #include <libcamera/base/span.h>
@@ -19,7 +22,7 @@
  * application code doesn't have to worry which kind to instantiate. But for
  * the sake of example let's suppose we're parsing imx219 metadata.
  *
- * MdParser *parser = new MdParserImx219();  // for example
+ * MdParser *parser = new MdParserSmia({ expHiReg, expLoReg, gainReg });
  * parser->SetBitsPerPixel(bpp);
  * parser->SetLineLengthBytes(pitch);
  * parser->SetNumLines(2);
@@ -32,13 +35,11 @@
  *
  * Then on every frame:
  *
- * if (parser->Parse(buffer) != MdParser::OK)
+ * RegisterMap registers;
+ * if (parser->Parse(buffer, registers) != MdParser::OK)
  *     much badness;
- * unsigned int exposure_lines, gain_code
- * if (parser->GetExposureLines(exposure_lines) != MdParser::OK)
- *     exposure was not found;
- * if (parser->GetGainCode(parser, gain_code) != MdParser::OK)
- *     gain code was not found;
+ * Metadata metadata;
+ * CamHelper::PopulateMetadata(registers, metadata);
  *
  * (Note that the CamHelper class converts to/from exposure lines and time,
  * and gain_code / actual gain.)
@@ -59,6 +60,8 @@ namespace RPiController {
 class MdParser
 {
 public:
+	using RegisterMap = std::map<uint32_t, uint32_t>;
+
 	/*
 	 * Parser status codes:
 	 * OK       - success
@@ -98,9 +101,8 @@ public:
 		line_length_bytes_ = num_bytes;
 	}
 
-	virtual Status Parse(libcamera::Span<const uint8_t> buffer) = 0;
-	virtual Status GetExposureLines(unsigned int &lines) = 0;
-	virtual Status GetGainCode(unsigned int &gain_code) = 0;
+	virtual Status Parse(libcamera::Span<const uint8_t> buffer,
+			     RegisterMap &registers) = 0;
 
 protected:
 	bool reset_;
@@ -116,14 +118,18 @@ protected:
  * md_parser_imx219.cpp for an example).
  */
 
-class MdParserSmia : public MdParser
+class MdParserSmia final : public MdParser
 {
 public:
-	MdParserSmia() : MdParser()
-	{
-	}
+	MdParserSmia(std::initializer_list<uint32_t> registerList);
 
-protected:
+	MdParser::Status Parse(libcamera::Span<const uint8_t> buffer,
+			       RegisterMap &registers) override;
+
+private:
+	/* Maps register address to offset in the buffer. */
+	using OffsetMap = std::map<uint32_t, std::optional<uint32_t>>;
+
 	/*
 	 * Note that error codes > 0 are regarded as non-fatal; codes < 0
 	 * indicate a bad data buffer. Status codes are:
@@ -141,8 +147,9 @@ protected:
 		BAD_PADDING   = -5
 	};
 
-	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer, uint32_t regs[],
-			     int offsets[], unsigned int num_regs);
+	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer);
+
+	OffsetMap offsets_;
 };
 
 } // namespace RPi

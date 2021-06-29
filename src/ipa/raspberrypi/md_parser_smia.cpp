@@ -4,11 +4,12 @@
  *
  * md_parser_smia.cpp - SMIA specification based embedded data parser
  */
-#include <assert.h>
 
+#include <libcamera/base/log.h>
 #include "md_parser.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
 
 /*
  * This function goes through the embedded data to find the offsets (not
@@ -26,18 +27,61 @@ constexpr unsigned int REG_LOW_BITS = 0xa5;
 constexpr unsigned int REG_VALUE = 0x5a;
 constexpr unsigned int REG_SKIP = 0x55;
 
-MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> buffer,
-						 uint32_t regs[], int offsets[],
-						 unsigned int num_regs)
+MdParserSmia::MdParserSmia(std::initializer_list<uint32_t> registerList)
 {
-	assert(num_regs > 0);
+	for (auto r : registerList)
+		offsets_[r] = {};
+}
+
+MdParser::Status MdParserSmia::Parse(libcamera::Span<const uint8_t> buffer,
+				     RegisterMap &registers)
+{
+	if (reset_) {
+		/*
+		 * Search again through the metadata for all the registers
+		 * requested.
+		 */
+		ASSERT(bits_per_pixel_);
+
+		for (const auto &kv : offsets_)
+			offsets_[kv.first] = {};
+
+		ParseStatus ret = findRegs(buffer);
+		/*
+		 * > 0 means "worked partially but parse again next time",
+		 * < 0 means "hard error".
+		 *
+		 * In either case, we retry parsing on the next frame.
+		 */
+		if (ret != PARSE_OK)
+			return ERROR;
+
+		reset_ = false;
+	}
+
+	/* Populate the register values requested. */
+	registers.clear();
+	for (const auto &[reg, offset] : offsets_) {
+		if (!offset) {
+			reset_ = true;
+			return NOTFOUND;
+		}
+		registers[reg] = buffer[offset.value()];
+	}
+
+	return OK;
+}
+
+MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> buffer)
+{
+	ASSERT(offsets_.size());
 
 	if (buffer[0] != LINE_START)
 		return NO_LINE_START;
 
 	unsigned int current_offset = 1; /* after the LINE_START */
 	unsigned int current_line_start = 0, current_line = 0;
-	unsigned int reg_num = 0, first_reg = 0;
+	unsigned int reg_num = 0, regs_done = 0;
 
 	while (1) {
 		int tag = buffer[current_offset++];
@@ -89,13 +133,12 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> 
 			else if (tag == REG_SKIP)
 				reg_num++;
 			else if (tag == REG_VALUE) {
-				while (reg_num >=
-				       /* assumes registers are in order... */
-				       regs[first_reg]) {
-					if (reg_num == regs[first_reg])
-						offsets[first_reg] = current_offset - 1;
+				auto reg = offsets_.find(reg_num);
 
-					if (++first_reg == num_regs)
+				if (reg != offsets_.end()) {
+					offsets_[reg_num] = current_offset - 1;
+
+					if (++regs_done == offsets_.size())
 						return PARSE_OK;
 				}
 				reg_num++;

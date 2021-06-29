@@ -159,32 +159,34 @@ unsigned int CamHelper::MistrustFramesModeSwitch() const
 void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 				  Metadata &metadata)
 {
+	MdParser::RegisterMap registers;
+	Metadata parsedMetadata;
+
 	if (buffer.empty())
 		return;
 
-	uint32_t exposureLines, gainCode;
-
-	if (parser_->Parse(buffer) != MdParser::Status::OK ||
-	    parser_->GetExposureLines(exposureLines) != MdParser::Status::OK ||
-	    parser_->GetGainCode(gainCode) != MdParser::Status::OK) {
+	if (parser_->Parse(buffer, registers) != MdParser::Status::OK) {
 		LOG(IPARPI, Error) << "Embedded data buffer parsing failed";
 		return;
 	}
 
-	/*
-	 * Overwrite the exposure/gain values in the DeviceStatus, as
-	 * we know better. Fetch it first in case any other fields were
-	 * set meaningfully.
-	 */
-	DeviceStatus deviceStatus;
+	PopulateMetadata(registers, parsedMetadata);
+	metadata.Merge(parsedMetadata);
 
-	if (metadata.Get("device.status", deviceStatus) != 0) {
+	/*
+	 * Overwrite the exposure/gain values in the existing DeviceStatus with
+	 * values from the parsed embedded buffer. Fetch it first in case any
+	 * other fields were set meaningfully.
+	 */
+	DeviceStatus deviceStatus, parsedDeviceStatus;
+	if (metadata.Get("device.status", deviceStatus) ||
+	    parsedMetadata.Get("device.status", parsedDeviceStatus)) {
 		LOG(IPARPI, Error) << "DeviceStatus not found";
 		return;
 	}
 
-	deviceStatus.shutter_speed = Exposure(exposureLines);
-	deviceStatus.analogue_gain = Gain(gainCode);
+	deviceStatus.shutter_speed = parsedDeviceStatus.shutter_speed;
+	deviceStatus.analogue_gain = parsedDeviceStatus.analogue_gain;
 
 	LOG(IPARPI, Debug) << "Metadata updated - Exposure : "
 			   << deviceStatus.shutter_speed
@@ -192,6 +194,11 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 			   << deviceStatus.analogue_gain;
 
 	metadata.Set("device.status", deviceStatus);
+}
+
+void CamHelper::PopulateMetadata([[maybe_unused]] const MdParser::RegisterMap &registers,
+				 [[maybe_unused]] Metadata &metadata) const
+{
 }
 
 RegisterCamHelper::RegisterCamHelper(char const *cam_name,

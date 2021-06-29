@@ -15,21 +15,15 @@
 
 using namespace RPiController;
 
-/* Metadata parser implementation specific to Sony IMX477 sensors. */
-
-class MdParserImx477 : public MdParserSmia
-{
-public:
-	MdParserImx477();
-	Status Parse(libcamera::Span<const uint8_t> buffer) override;
-	Status GetExposureLines(unsigned int &lines) override;
-	Status GetGainCode(unsigned int &gain_code) override;
-private:
-	/* Offset of the register's value in the metadata block. */
-	int reg_offsets_[4];
-	/* Value of the register, once read from the metadata block. */
-	int reg_values_[4];
-};
+/*
+ * We care about two gain registers and a pair of exposure registers. Their
+ * I2C addresses from the Sony IMX477 datasheet:
+ */
+constexpr uint32_t expHiReg = 0x0202;
+constexpr uint32_t expLoReg = 0x0203;
+constexpr uint32_t gainHiReg = 0x0204;
+constexpr uint32_t gainLoReg = 0x0205;
+constexpr std::initializer_list<uint32_t> registerList [[maybe_unused]] = { expHiReg, expLoReg, gainHiReg, gainLoReg };
 
 class CamHelperImx477 : public CamHelper
 {
@@ -47,10 +41,13 @@ private:
 	 * in units of lines.
 	 */
 	static constexpr int frameIntegrationDiff = 22;
+
+	void PopulateMetadata(const MdParser::RegisterMap &registers,
+			      Metadata &metadata) const override;
 };
 
 CamHelperImx477::CamHelperImx477()
-	: CamHelper(std::make_unique<MdParserImx477>(), frameIntegrationDiff)
+	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff)
 {
 }
 
@@ -77,95 +74,20 @@ bool CamHelperImx477::SensorEmbeddedDataPresent() const
 	return true;
 }
 
+void CamHelperImx477::PopulateMetadata(const MdParser::RegisterMap &registers,
+				       Metadata &metadata) const
+{
+	DeviceStatus deviceStatus;
+
+	deviceStatus.shutter_speed = Exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
+	deviceStatus.analogue_gain = Gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
+
+	metadata.Set("device.status", deviceStatus);
+}
+
 static CamHelper *Create()
 {
 	return new CamHelperImx477();
 }
 
 static RegisterCamHelper reg("imx477", &Create);
-
-/*
- * We care about two gain registers and a pair of exposure registers. Their
- * I2C addresses from the Sony IMX477 datasheet:
- */
-#define EXPHI_REG 0x0202
-#define EXPLO_REG 0x0203
-#define GAINHI_REG 0x0204
-#define GAINLO_REG 0x0205
-
-/*
- * Index of each into the reg_offsets and reg_values arrays. Must be in register
- * address order.
- */
-#define EXPHI_INDEX 0
-#define EXPLO_INDEX 1
-#define GAINHI_INDEX 2
-#define GAINLO_INDEX 3
-
-MdParserImx477::MdParserImx477()
-{
-	reg_offsets_[0] = reg_offsets_[1] = reg_offsets_[2] = reg_offsets_[3] = -1;
-}
-
-MdParser::Status MdParserImx477::Parse(libcamera::Span<const uint8_t> buffer)
-{
-	bool try_again = false;
-
-	if (reset_) {
-		/*
-		 * Search again through the metadata for the gain and exposure
-		 * registers.
-		 */
-		assert(bits_per_pixel_);
-		/* Need to be ordered */
-		uint32_t regs[4] = {
-			EXPHI_REG,
-			EXPLO_REG,
-			GAINHI_REG,
-			GAINLO_REG
-		};
-		reg_offsets_[0] = reg_offsets_[1] = reg_offsets_[2] = reg_offsets_[3] = -1;
-		int ret = static_cast<int>(findRegs(buffer,
-						    regs, reg_offsets_, 4));
-		/*
-		 * > 0 means "worked partially but parse again next time",
-		 * < 0 means "hard error".
-		 */
-		if (ret > 0)
-			try_again = true;
-		else if (ret < 0)
-			return ERROR;
-	}
-
-	for (int i = 0; i < 4; i++) {
-		if (reg_offsets_[i] == -1)
-			continue;
-
-		reg_values_[i] = buffer[reg_offsets_[i]];
-	}
-
-	/* Re-parse next time if we were unhappy in some way. */
-	reset_ = try_again;
-
-	return OK;
-}
-
-MdParser::Status MdParserImx477::GetExposureLines(unsigned int &lines)
-{
-	if (reg_offsets_[EXPHI_INDEX] == -1 || reg_offsets_[EXPLO_INDEX] == -1)
-		return NOTFOUND;
-
-	lines = reg_values_[EXPHI_INDEX] * 256 + reg_values_[EXPLO_INDEX];
-
-	return OK;
-}
-
-MdParser::Status MdParserImx477::GetGainCode(unsigned int &gain_code)
-{
-	if (reg_offsets_[GAINHI_INDEX] == -1 || reg_offsets_[GAINLO_INDEX] == -1)
-		return NOTFOUND;
-
-	gain_code = reg_values_[GAINHI_INDEX] * 256 + reg_values_[GAINLO_INDEX];
-
-	return OK;
-}

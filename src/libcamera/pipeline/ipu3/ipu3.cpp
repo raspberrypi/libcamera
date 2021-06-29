@@ -229,7 +229,16 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 		status = Adjusted;
 	}
 
-	/* Validate the requested stream configuration */
+	/*
+	 * Validate the requested stream configuration and select the sensor
+	 * format by collecting the maximum RAW stream width and height and
+	 * picking the closest larger match.
+	 *
+	 * If no RAW stream is requested use the one of the largest YUV stream,
+	 * plus margin pixels for the IF and BDS rectangle to downscale.
+	 *
+	 * \todo Clarify the IF and BDS margins requirements.
+	 */
 	unsigned int rawCount = 0;
 	unsigned int yuvCount = 0;
 	Size maxYuvSize;
@@ -240,7 +249,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
 			rawCount++;
-			rawSize = cfg.size;
+			rawSize.expandTo(cfg.size);
 		} else {
 			yuvCount++;
 			maxYuvSize.expandTo(cfg.size);
@@ -269,24 +278,20 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	/*
 	 * Generate raw configuration from CIO2.
 	 *
-	 * \todo The image sensor frame size should be selected to optimize
-	 * operations based on the sizes of the requested streams. However such
-	 * a selection makes the pipeline configuration procedure fail for small
-	 * resolutions (for example: 640x480 with OV5670) and causes the capture
-	 * operations to stall for some stream size combinations (see the
-	 * commit message of the patch that introduced this comment for more
-	 * failure examples).
+	 * The output YUV streams will be limited in size to the maximum frame
+	 * size requested for the RAW stream, if present.
 	 *
-	 * Until the sensor frame size calculation criteria are clarified, when
-	 * capturing from ImgU always use the largest possible size which
-	 * guarantees better results at the expense of the frame rate and CSI-2
-	 * bus bandwidth. When only a raw stream is requested use the requested
-	 * size instead, as the ImgU is not involved.
+	 * If no raw stream is requested generate a size as large as the maximum
+	 * requested YUV size aligned to the ImgU constraints and bound by the
+	 * sensor's maximum resolution. See
+	 * https://bugs.libcamera.org/show_bug.cgi?id=32
 	 */
-	if (!yuvCount)
-		cio2Configuration_ = data_->cio2_.generateConfiguration(rawSize);
-	else
-		cio2Configuration_ = data_->cio2_.generateConfiguration({});
+	if (rawSize.isNull())
+		rawSize = maxYuvSize.expandedTo({40, 540})
+				    .grownBy({ IMGU_OUTPUT_WIDTH_MARGIN,
+					       IMGU_OUTPUT_HEIGHT_MARGIN })
+				    .boundedTo(data_->cio2_.sensor()->resolution());
+	cio2Configuration_ = data_->cio2_.generateConfiguration(rawSize);
 	if (!cio2Configuration_.pixelFormat.isValid())
 		return Invalid;
 

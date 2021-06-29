@@ -1291,19 +1291,16 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STALL_DURATIONS,
 				  availableStallDurations);
 
-	/* Use the minimum frame duration for all the YUV/RGB formats. */
-	if (minFrameDurationNsec > 0) {
-		std::vector<int64_t> minFrameDurations;
-		minFrameDurations.reserve(streamConfigurations_.size() * 4);
-		for (const auto &entry : streamConfigurations_) {
-			minFrameDurations.push_back(entry.androidFormat);
-			minFrameDurations.push_back(entry.resolution.width);
-			minFrameDurations.push_back(entry.resolution.height);
-			minFrameDurations.push_back(minFrameDurationNsec);
-		}
-		staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
-					  minFrameDurations);
+	std::vector<int64_t> minFrameDurations;
+	minFrameDurations.reserve(streamConfigurations_.size() * 4);
+	for (const auto &entry : streamConfigurations_) {
+		minFrameDurations.push_back(entry.androidFormat);
+		minFrameDurations.push_back(entry.resolution.width);
+		minFrameDurations.push_back(entry.resolution.height);
+		minFrameDurations.push_back(entry.minFrameDurationNsec);
 	}
+	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
+				  minFrameDurations);
 
 	uint8_t croppingType = ANDROID_SCALER_CROPPING_TYPE_CENTER_ONLY;
 	staticMetadata_->addEntry(ANDROID_SCALER_CROPPING_TYPE, croppingType);

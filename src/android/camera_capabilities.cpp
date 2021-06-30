@@ -385,6 +385,7 @@ int CameraCapabilities::initialize(std::shared_ptr<Camera> camera,
 	orientation_ = orientation;
 	facing_ = facing;
 	rawStreamAvailable_ = false;
+	maxFrameDuration_ = 0;
 
 	/* Acquire the camera and initialize available stream configurations. */
 	int ret = camera_->acquire();
@@ -673,6 +674,9 @@ int CameraCapabilities::initializeStreamConfigurations()
 				});
 				maxJpegSize = std::max(maxJpegSize, res);
 			}
+
+			maxFrameDuration_ = std::max(maxFrameDuration_,
+						     maxFrameDuration);
 		}
 
 		/*
@@ -1154,9 +1158,8 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE,
 				  timestampSource);
 
-	if (maxFrameDurationNsec > 0)
-		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_MAX_FRAME_DURATION,
-					  maxFrameDurationNsec);
+	staticMetadata_->addEntry(ANDROID_SENSOR_INFO_MAX_FRAME_DURATION,
+				  maxFrameDuration_);
 
 	/* Statistics static metadata. */
 	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;

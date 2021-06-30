@@ -394,11 +394,14 @@ int CameraCapabilities::initialize(std::shared_ptr<Camera> camera,
 	}
 
 	ret = initializeStreamConfigurations();
-	camera_->release();
-	if (ret)
+	if (ret) {
+		camera_->release();
 		return ret;
+	}
 
-	return initializeStaticMetadata();
+	ret = initializeStaticMetadata();
+	camera_->release();
+	return ret;
 }
 
 std::vector<Size>
@@ -694,6 +697,25 @@ int CameraCapabilities::initializeStaticMetadata()
 		LOG(HAL, Error) << "Failed to allocate static metadata";
 		staticMetadata_.reset();
 		return -EINVAL;
+	}
+
+	/*
+	 * Generate and apply a new configuration for the Viewfinder role to
+	 * collect control limits and properties from a known state.
+	 */
+	std::unique_ptr<CameraConfiguration> cameraConfig =
+		camera_->generateConfiguration({ StreamRole::Viewfinder });
+	if (!cameraConfig) {
+		LOG(HAL, Error) << "Failed to generate camera configuration";
+		staticMetadata_.reset();
+		return -ENODEV;
+	}
+
+	int ret = camera_->configure(cameraConfig.get());
+	if (ret) {
+		LOG(HAL, Error) << "Failed to initialize the camera state";
+		staticMetadata_.reset();
+		return ret;
 	}
 
 	const ControlInfoMap &controlsInfo = camera_->controls();

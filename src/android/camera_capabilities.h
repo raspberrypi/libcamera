@@ -55,6 +55,7 @@ private:
 
 	int facing_;
 	int orientation_;
+	bool rawStreamAvailable_;
 
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;

@@ -122,6 +122,7 @@ int CameraCapabilities::initialize(std::shared_ptr<libcamera::Camera> camera,
 	camera_ = camera;
 	orientation_ = orientation;
 	facing_ = facing;
+	rawStreamAvailable_ = false;
 
 	/* Acquire the camera and initialize available stream configurations. */
 	int ret = camera_->acquire();
@@ -324,11 +325,25 @@ int CameraCapabilities::initializeStreamConfigurations()
 
 		std::vector<Size> resolutions;
 		const PixelFormatInfo &info = PixelFormatInfo::info(mappedFormat);
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+		switch (info.colourEncoding) {
+		case PixelFormatInfo::ColourEncodingRAW:
+			if (info.bitsPerPixel != 16)
+				continue;
+
+			rawStreamAvailable_ = true;
 			resolutions = initializeRawResolutions(mappedFormat);
-		else
+			break;
+
+		case PixelFormatInfo::ColourEncodingYUV:
+		case PixelFormatInfo::ColourEncodingRGB:
+			/*
+			 * We support enumerating RGB streams here to allow
+			 * mapping IMPLEMENTATION_DEFINED format to RGB.
+			 */
 			resolutions = initializeYUVResolutions(mappedFormat,
 							       cameraResolutions);
+			break;
+		}
 
 		for (const Size &res : resolutions) {
 			streamConfigurations_.push_back({ res, androidFormat });
@@ -866,22 +881,11 @@ int CameraCapabilities::initializeStaticMetadata()
 	};
 
 	/* Report if camera supports RAW. */
-	bool rawStreamAvailable = false;
-	std::unique_ptr<CameraConfiguration> cameraConfig =
-		camera_->generateConfiguration({ StreamRole::Raw });
-	if (cameraConfig && !cameraConfig->empty()) {
-		const PixelFormatInfo &info =
-			PixelFormatInfo::info(cameraConfig->at(0).pixelFormat);
-		/* Only advertise RAW support if RAW16 is possible. */
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW &&
-		    info.bitsPerPixel == 16) {
-			rawStreamAvailable = true;
-			availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
-		}
-	}
+	if (rawStreamAvailable_)
+		availableCapabilities.push_back(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_RAW);
 
 	/* Number of { RAW, YUV, JPEG } supported output streams */
-	int32_t numOutStreams[] = { rawStreamAvailable, 2, 1 };
+	int32_t numOutStreams[] = { rawStreamAvailable_, 2, 1 };
 	staticMetadata_->addEntry(ANDROID_REQUEST_MAX_NUM_OUTPUT_STREAMS,
 				  numOutStreams);
 

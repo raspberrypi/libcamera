@@ -882,55 +882,52 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_CONTROL_AE_AVAILABLE_MODES,
 				  aeAvailableModes);
 
-	int64_t minFrameDurationNsec = -1;
-	int64_t maxFrameDurationNsec = -1;
+	/* Initialize the AE frame duration limits. */
 	const auto frameDurationsInfo = controlsInfo.find(&controls::FrameDurationLimits);
-	if (frameDurationsInfo != controlsInfo.end()) {
-		minFrameDurationNsec = frameDurationsInfo->second.min().get<int64_t>() * 1000;
-		maxFrameDurationNsec = frameDurationsInfo->second.max().get<int64_t>() * 1000;
+	int64_t minFrameDurationNsec = frameDurationsInfo->second.min().get<int64_t>() * 1000;
+	int64_t maxFrameDurationNsec = frameDurationsInfo->second.max().get<int64_t>() * 1000;
 
-		/*
-		 * Adjust the minimum frame duration to comply with Android
-		 * requirements. The camera service mandates all preview/record
-		 * streams to have a minimum frame duration < 33,366 milliseconds
-		 * (see MAX_PREVIEW_RECORD_DURATION_NS in the camera service
-		 * implementation).
-		 *
-		 * If we're close enough (+ 500 useconds) to that value, round
-		 * the minimum frame duration of the camera to an accepted
-		 * value.
-		 */
-		static constexpr int64_t MAX_PREVIEW_RECORD_DURATION_NS = 1e9 / 29.97;
-		if (minFrameDurationNsec > MAX_PREVIEW_RECORD_DURATION_NS &&
-		    minFrameDurationNsec < MAX_PREVIEW_RECORD_DURATION_NS + 500000)
-			minFrameDurationNsec = MAX_PREVIEW_RECORD_DURATION_NS - 1000;
+	/*
+	 * Adjust the minimum frame duration to comply with Android
+	 * requirements. The camera service mandates all preview/record
+	 * streams to have a minimum frame duration < 33,366 milliseconds
+	 * (see MAX_PREVIEW_RECORD_DURATION_NS in the camera service
+	 * implementation).
+	 *
+	 * If we're close enough (+ 500 useconds) to that value, round
+	 * the minimum frame duration of the camera to an accepted
+	 * value.
+	 */
+	static constexpr int64_t MAX_PREVIEW_RECORD_DURATION_NS = 1e9 / 29.97;
+	if (minFrameDurationNsec > MAX_PREVIEW_RECORD_DURATION_NS &&
+	    minFrameDurationNsec < MAX_PREVIEW_RECORD_DURATION_NS + 500000)
+		minFrameDurationNsec = MAX_PREVIEW_RECORD_DURATION_NS - 1000;
 
-		/*
-		 * The AE routine frame rate limits are computed using the frame
-		 * duration limits, as libcamera clips the AE routine to the
-		 * frame durations.
-		 */
-		int32_t maxFps = std::round(1e9 / minFrameDurationNsec);
-		int32_t minFps = std::round(1e9 / maxFrameDurationNsec);
-		minFps = std::max(1, minFps);
+	/*
+	 * The AE routine frame rate limits are computed using the frame
+	 * duration limits, as libcamera clips the AE routine to the
+	 * frame durations.
+	 */
+	int32_t maxFps = std::round(1e9 / minFrameDurationNsec);
+	int32_t minFps = std::round(1e9 / maxFrameDurationNsec);
+	minFps = std::max(1, minFps);
 
-		/*
-		 * Force rounding errors so that we have the proper frame
-		 * durations for when we reuse these variables later
-		 */
-		minFrameDurationNsec = 1e9 / maxFps;
-		maxFrameDurationNsec = 1e9 / minFps;
+	/*
+	 * Force rounding errors so that we have the proper frame
+	 * durations for when we reuse these variables later
+	 */
+	minFrameDurationNsec = 1e9 / maxFps;
+	maxFrameDurationNsec = 1e9 / minFps;
 
-		/*
-		 * Register to the camera service {min, max} and {max, max}
-		 * intervals as requested by the metadata documentation.
-		 */
-		int32_t availableAeFpsTarget[] = {
-			minFps, maxFps, maxFps, maxFps
-		};
-		staticMetadata_->addEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
-					  availableAeFpsTarget);
-	}
+	/*
+	 * Register to the camera service {min, max} and {max, max}
+	 * intervals as requested by the metadata documentation.
+	 */
+	int32_t availableAeFpsTarget[] = {
+		minFps, maxFps, maxFps, maxFps
+	};
+	staticMetadata_->addEntry(ANDROID_CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+				  availableAeFpsTarget);
 
 	std::vector<int32_t> aeCompensationRange = {
 		0, 0,

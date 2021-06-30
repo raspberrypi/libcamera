@@ -138,8 +138,9 @@ int CameraCapabilities::initialize(std::shared_ptr<libcamera::Camera> camera,
 	return initializeStaticMetadata();
 }
 
-std::vector<Size> CameraCapabilities::getYUVResolutions(const PixelFormat &pixelFormat,
-							const std::vector<Size> &resolutions)
+std::vector<Size>
+CameraCapabilities::initializeYUVResolutions(const PixelFormat &pixelFormat,
+					     const std::vector<Size> &resolutions)
 {
 	std::vector<Size> supportedResolutions;
 	std::unique_ptr<CameraConfiguration> cameraConfig =
@@ -164,7 +165,8 @@ std::vector<Size> CameraCapabilities::getYUVResolutions(const PixelFormat &pixel
 	return supportedResolutions;
 }
 
-std::vector<Size> CameraCapabilities::getRawResolutions(const libcamera::PixelFormat &pixelFormat)
+std::vector<Size>
+CameraCapabilities::initializeRawResolutions(const libcamera::PixelFormat &pixelFormat)
 {
 	std::unique_ptr<CameraConfiguration> cameraConfig =
 		camera_->generateConfiguration({ StreamRole::Raw });
@@ -323,10 +325,10 @@ int CameraCapabilities::initializeStreamConfigurations()
 		std::vector<Size> resolutions;
 		const PixelFormatInfo &info = PixelFormatInfo::info(mappedFormat);
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-			resolutions = getRawResolutions(mappedFormat);
+			resolutions = initializeRawResolutions(mappedFormat);
 		else
-			resolutions = getYUVResolutions(mappedFormat,
-							cameraResolutions);
+			resolutions = initializeYUVResolutions(mappedFormat,
+							       cameraResolutions);
 
 		for (const Size &res : resolutions) {
 			streamConfigurations_.push_back({ res, androidFormat });

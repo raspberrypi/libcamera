@@ -43,10 +43,10 @@ private:
 	};
 
 	std::vector<libcamera::Size>
-	getYUVResolutions(const libcamera::PixelFormat &pixelFormat,
-			  const std::vector<libcamera::Size> &resolutions);
+	initializeYUVResolutions(const libcamera::PixelFormat &pixelFormat,
+				 const std::vector<libcamera::Size> &resolutions);
 	std::vector<libcamera::Size>
-	getRawResolutions(const libcamera::PixelFormat &pixelFormat);
+	initializeRawResolutions(const libcamera::PixelFormat &pixelFormat);
 	int initializeStreamConfigurations();
 
 	int initializeStaticMetadata();

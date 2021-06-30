@@ -138,13 +138,14 @@ int CameraCapabilities::initialize(std::shared_ptr<libcamera::Camera> camera,
 	return initializeStaticMetadata();
 }
 
-std::vector<Size> CameraCapabilities::getYUVResolutions(CameraConfiguration *cameraConfig,
-							const PixelFormat &pixelFormat,
+std::vector<Size> CameraCapabilities::getYUVResolutions(const PixelFormat &pixelFormat,
 							const std::vector<Size> &resolutions)
 {
 	std::vector<Size> supportedResolutions;
-
+	std::unique_ptr<CameraConfiguration> cameraConfig =
+		camera_->generateConfiguration({ StreamRole::Viewfinder });
 	StreamConfiguration &cfg = cameraConfig->at(0);
+
 	for (const Size &res : resolutions) {
 		cfg.pixelFormat = pixelFormat;
 		cfg.size = res;
@@ -324,8 +325,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
 			resolutions = getRawResolutions(mappedFormat);
 		else
-			resolutions = getYUVResolutions(cameraConfig.get(),
-							mappedFormat,
+			resolutions = getYUVResolutions(mappedFormat,
 							cameraResolutions);
 
 		for (const Size &res : resolutions) {

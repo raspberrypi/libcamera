@@ -526,6 +526,8 @@ EventDispatcher *Thread::eventDispatcher()
  *
  * If the \a receiver is not bound to this thread the behaviour is undefined.
  *
+ * \context This function is \threadsafe.
+ *
  * \sa exec()
  */
 void Thread::postMessage(std::unique_ptr<Message> msg, Object *receiver)

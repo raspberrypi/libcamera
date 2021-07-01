@@ -126,6 +126,11 @@ public:
 	 * \brief Protects the \ref list_
 	 */
 	Mutex mutex_;
+	/**
+	 * \brief The recursion level for recursive Thread::dispatchMessages()
+	 * calls
+	 */
+	unsigned int recursion_ = 0;
 };
 
 /**
@@ -595,30 +600,34 @@ void Thread::removeMessages(Object *receiver)
  * Messages shall only be dispatched from the current thread, typically within
  * the thread from the run() function. Calling this function outside of the
  * thread results in undefined behaviour.
+ *
+ * This function is not thread-safe, but it may be called recursively in the
+ * same thread from an object's message handler. It guarantees delivery of
+ * messages in the order they have been posted in all cases.
  */
 void Thread::dispatchMessages(Message::Type type)
 {
 	ASSERT(data_ == ThreadData::current());
 
+	++data_->messages_.recursion_;
+
 	MutexLocker locker(data_->messages_.mutex_);
 
 	std::list<std::unique_ptr<Message>> &messages = data_->messages_.list_;
 
-	for (auto iter = messages.begin(); iter != messages.end(); ) {
-		std::unique_ptr<Message> &msg = *iter;
-
-		if (!msg) {
-			iter = data_->messages_.list_.erase(iter);
+	for (std::unique_ptr<Message> &msg : messages) {
+		if (!msg)
 			continue;
-		}
 
-		if (type != Message::Type::None && msg->type() != type) {
-			++iter;
+		if (type != Message::Type::None && msg->type() != type)
 			continue;
-		}
 
+		/*
+		 * Move the message, setting the entry in the list to null. It
+		 * will cause recursive calls to ignore the entry, and the erase
+		 * loop at the end of the function to delete it from the list.
+		 */
 		std::unique_ptr<Message> message = std::move(msg);
-		iter = data_->messages_.list_.erase(iter);
 
 		Object *receiver = message->receiver_;
 		ASSERT(data_ == receiver->thread()->data_);
@@ -628,6 +637,20 @@ void Thread::dispatchMessages(Message::Type type)
 		receiver->message(message.get());
 		message.reset();
 		locker.lock();
+	}
+
+	/*
+	 * If the recursion level is 0, erase all null messages in the list. We
+	 * can't do so during recursion, as it would invalidate the iterator of
+	 * the outer calls.
+	 */
+	if (!--data_->messages_.recursion_) {
+		for (auto iter = messages.begin(); iter != messages.end(); ) {
+			if (!*iter)
+				iter = messages.erase(iter);
+			else
+				++iter;
+		}
 	}
 }
 

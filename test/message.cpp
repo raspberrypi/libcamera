@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 #include <libcamera/base/message.h>
@@ -26,8 +27,8 @@ public:
 		MessageReceived,
 	};
 
-	MessageReceiver()
-		: status_(NoMessage)
+	MessageReceiver(Object *parent = nullptr)
+		: Object(parent), status_(NoMessage)
 	{
 	}
 
@@ -50,6 +51,45 @@ protected:
 
 private:
 	Status status_;
+};
+
+class RecursiveMessageReceiver : public Object
+{
+public:
+	RecursiveMessageReceiver()
+		: child_(this), success_(false)
+	{
+	}
+
+	bool success() const { return success_; }
+
+protected:
+	void message([[maybe_unused]] Message *msg)
+	{
+		if (msg->type() != Message::None) {
+			Object::message(msg);
+			return;
+		}
+
+		child_.postMessage(std::make_unique<Message>(Message::None));
+
+		/*
+		 * If the child has already received the message, something is
+		 * wrong.
+		 */
+		if (child_.status() != MessageReceiver::NoMessage)
+			return;
+
+		Thread::current()->dispatchMessages(Message::None);
+
+		/* The child should now have received the message. */
+		if (child_.status() == MessageReceiver::MessageReceived)
+			success_ = true;
+	}
+
+private:
+	MessageReceiver child_;
+	bool success_;
 };
 
 class SlowMessageReceiver : public Object
@@ -119,6 +159,28 @@ protected:
 		this_thread::sleep_for(chrono::milliseconds(10));
 
 		delete slowReceiver;
+
+		this_thread::sleep_for(chrono::milliseconds(100));
+
+		/*
+		 * Test recursive calls to Thread::dispatchMessages(). Messages
+		 * should be delivered correctly, without crashes or memory
+		 * leaks. Two messages need to be posted to ensure we don't only
+		 * test the simple case of a queue containing a single message.
+		 */
+		std::unique_ptr<RecursiveMessageReceiver> recursiveReceiver =
+			std::make_unique<RecursiveMessageReceiver>();
+		recursiveReceiver->moveToThread(&thread_);
+
+		recursiveReceiver->postMessage(std::make_unique<Message>(Message::None));
+		recursiveReceiver->postMessage(std::make_unique<Message>(Message::UserMessage));
+
+		this_thread::sleep_for(chrono::milliseconds(10));
+
+		if (!recursiveReceiver->success()) {
+			cout << "Recursive message delivery failed" << endl;
+			return TestFail;
+		}
 
 		return TestPass;
 	}

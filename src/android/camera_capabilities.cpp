@@ -1301,6 +1301,12 @@ int CameraCapabilities::initializeStaticMetadata()
 		availableStreamConfigurations.push_back(entry.resolution.height);
 		availableStreamConfigurations.push_back(
 			ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT);
+
+		LOG(HAL, Debug)
+			<< "Output Stream: " << utils::hex(entry.androidFormat)
+			<< " (" << entry.resolution.toString() << ")["
+			<< entry.minFrameDurationNsec << "]"
+			<< "@" << fps;
 	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 				  availableStreamConfigurations);

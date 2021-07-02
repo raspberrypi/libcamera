@@ -21,6 +21,8 @@ using namespace libcamera;
 
 enum {
 	OptCamera = 'c',
+	OptList = 'l',
+	OptFilter = 'f',
 	OptHelp = 'h',
 };
 
@@ -77,12 +79,72 @@ static int initCamera(CameraManager *cm, OptionsParser::Options options)
 	return 0;
 }
 
+static int initGtestParameters(char *arg0, OptionsParser::Options options)
+{
+	const std::map<std::string, std::string> gtestFlags = { { "list", "--gtest_list_tests" },
+								{ "filter", "--gtest_filter" } };
+
+	int argc = 0;
+	std::string filterParam;
+
+	/*
+	 * +2 to have space for both the 0th argument that is needed but not
+	 * used and the null at the end.
+	 */
+	char **argv = new char *[(gtestFlags.size() + 2)];
+	if (!argv)
+		return -ENOMEM;
+
+	argv[0] = arg0;
+	argc++;
+
+	if (options.isSet(OptList)) {
+		argv[argc] = const_cast<char *>(gtestFlags.at("list").c_str());
+		argc++;
+	}
+
+	if (options.isSet(OptFilter)) {
+		/*
+		 * The filter flag needs to be passed as a single parameter, in
+		 * the format --gtest_filter=filterStr
+		 */
+		filterParam = gtestFlags.at("filter") + "=" +
+			      static_cast<const std::string &>(options[OptFilter]);
+
+		argv[argc] = const_cast<char *>(filterParam.c_str());
+		argc++;
+	}
+
+	argv[argc] = nullptr;
+
+	::testing::InitGoogleTest(&argc, argv);
+
+	delete[] argv;
+
+	return 0;
+}
+
+static int initGtest(char *arg0, OptionsParser::Options options)
+{
+	int ret = initGtestParameters(arg0, options);
+	if (ret)
+		return ret;
+
+	testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
+
+	return 0;
+}
+
 static int parseOptions(int argc, char **argv, OptionsParser::Options *options)
 {
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on, by id", "camera",
 			 ArgumentRequired, "camera");
+	parser.addOption(OptList, OptionNone, "List all tests and exit", "list");
+	parser.addOption(OptFilter, OptionString,
+			 "Specify which tests to run", "filter",
+			 ArgumentRequired, "filter");
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
 
@@ -92,6 +154,8 @@ static int parseOptions(int argc, char **argv, OptionsParser::Options *options)
 
 	if (options->isSet(OptHelp)) {
 		parser.usage();
+		std::cerr << "Further options from Googletest can be passed as environment variables"
+			  << std::endl;
 		return -EINTR;
 	}
 
@@ -109,15 +173,21 @@ int main(int argc, char **argv)
 
 	std::unique_ptr<CameraManager> cm = std::make_unique<CameraManager>();
 
-	ret = initCamera(cm.get(), options);
+	/* No need to initialize the camera if we'll just list tests */
+	if (!options.isSet(OptList)) {
+		ret = initCamera(cm.get(), options);
+		if (ret)
+			return ret;
+	}
+
+	ret = initGtest(argv[0], options);
 	if (ret)
 		return ret;
 
-	testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
-
 	ret = RUN_ALL_TESTS();
 
-	cm->stop();
+	if (!options.isSet(OptList))
+		cm->stop();
 
 	return ret;
 }

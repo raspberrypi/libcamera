@@ -23,7 +23,7 @@ constexpr uint32_t expHiReg = 0x0202;
 constexpr uint32_t expLoReg = 0x0203;
 constexpr uint32_t gainHiReg = 0x0204;
 constexpr uint32_t gainLoReg = 0x0205;
-constexpr std::initializer_list<uint32_t> registerList [[maybe_unused]] = { expHiReg, expLoReg, gainHiReg, gainLoReg };
+constexpr std::initializer_list<uint32_t> registerList = { expHiReg, expLoReg, gainHiReg, gainLoReg };
 
 class CamHelperImx477 : public CamHelper
 {

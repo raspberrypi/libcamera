@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2020, Google Inc.
+ * Copyright (C) 2020-2021, Google Inc.
  *
  * simple_capture.h - Simple capture helper
  */
@@ -12,18 +12,17 @@
 #include <libcamera/libcamera.h>
 
 #include "../cam/event_loop.h"
-#include "results.h"
 
 class SimpleCapture
 {
 public:
-	Results::Result configure(libcamera::StreamRole role);
+	void configure(libcamera::StreamRole role);
 
 protected:
 	SimpleCapture(std::shared_ptr<libcamera::Camera> camera);
 	virtual ~SimpleCapture();
 
-	Results::Result start();
+	void start();
 	void stop();
 
 	virtual void requestComplete(libcamera::Request *request) = 0;
@@ -40,7 +39,7 @@ class SimpleCaptureBalanced : public SimpleCapture
 public:
 	SimpleCaptureBalanced(std::shared_ptr<libcamera::Camera> camera);
 
-	Results::Result capture(unsigned int numRequests);
+	void capture(unsigned int numRequests);
 
 private:
 	int queueRequest(libcamera::Request *request);
@@ -56,7 +55,7 @@ class SimpleCaptureUnbalanced : public SimpleCapture
 public:
 	SimpleCaptureUnbalanced(std::shared_ptr<libcamera::Camera> camera);
 
-	Results::Result capture(unsigned int numRequests);
+	void capture(unsigned int numRequests);
 
 private:
 	void requestComplete(libcamera::Request *request) override;

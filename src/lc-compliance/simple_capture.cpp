@@ -5,6 +5,8 @@
  * simple_capture.cpp - Simple capture helper
  */
 
+#include <gtest/gtest.h>
+
 #include "simple_capture.h"
 
 using namespace libcamera;
@@ -20,38 +22,37 @@ SimpleCapture::~SimpleCapture()
 	stop();
 }
 
-Results::Result SimpleCapture::configure(StreamRole role)
+void SimpleCapture::configure(StreamRole role)
 {
 	config_ = camera_->generateConfiguration({ role });
 
-	if (!config_)
-		return { Results::Skip, "Role not supported by camera" };
+	if (!config_) {
+		std::cout << "Role not supported by camera" << std::endl;
+		GTEST_SKIP();
+	}
 
 	if (config_->validate() != CameraConfiguration::Valid) {
 		config_.reset();
-		return { Results::Fail, "Configuration not valid" };
+		FAIL() << "Configuration not valid";
 	}
 
 	if (camera_->configure(config_.get())) {
 		config_.reset();
-		return { Results::Fail, "Failed to configure camera" };
+		FAIL() << "Failed to configure camera";
 	}
-
-	return { Results::Pass, "Configure camera" };
 }
 
-Results::Result SimpleCapture::start()
+void SimpleCapture::start()
 {
 	Stream *stream = config_->at(0).stream();
-	if (allocator_->allocate(stream) < 0)
-		return { Results::Fail, "Failed to allocate buffers" };
+	int count = allocator_->allocate(stream);
 
-	if (camera_->start())
-		return { Results::Fail, "Failed to start camera" };
+	ASSERT_GE(count, 0) << "Failed to allocate buffers";
+	EXPECT_EQ(count, config_->at(0).bufferCount) << "Allocated less buffers than expected";
 
 	camera_->requestCompleted.connect(this, &SimpleCapture::requestComplete);
 
-	return { Results::Pass, "Started camera" };
+	ASSERT_EQ(camera_->start(), 0) << "Failed to start camera";
 }
 
 void SimpleCapture::stop()
@@ -74,22 +75,19 @@ SimpleCaptureBalanced::SimpleCaptureBalanced(std::shared_ptr<Camera> camera)
 {
 }
 
-Results::Result SimpleCaptureBalanced::capture(unsigned int numRequests)
+void SimpleCaptureBalanced::capture(unsigned int numRequests)
 {
-	Results::Result ret = start();
-	if (ret.first != Results::Pass)
-		return ret;
+	start();
 
 	Stream *stream = config_->at(0).stream();
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
 
 	/* No point in testing less requests then the camera depth. */
 	if (buffers.size() > numRequests) {
-		/* Cache buffers.size() before we destroy it in stop() */
-		int buffers_size = buffers.size();
-
-		return { Results::Skip, "Camera needs " + std::to_string(buffers_size)
-			+ " requests, can't test only " + std::to_string(numRequests) };
+		std::cout << "Camera needs " + std::to_string(buffers.size())
+			+ " requests, can't test only "
+			+ std::to_string(numRequests) << std::endl;
+		GTEST_SKIP();
 	}
 
 	queueCount_ = 0;
@@ -100,14 +98,11 @@ Results::Result SimpleCaptureBalanced::capture(unsigned int numRequests)
 	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
-		if (!request)
-			return { Results::Fail, "Can't create request" };
+		ASSERT_TRUE(request) << "Can't create request";
 
-		if (request->addBuffer(stream, buffer.get()))
-			return { Results::Fail, "Can't set buffer for request" };
+		ASSERT_EQ(request->addBuffer(stream, buffer.get()), 0) << "Can't set buffer for request";
 
-		if (queueRequest(request.get()) < 0)
-			return { Results::Fail, "Failed to queue request" };
+		ASSERT_EQ(queueRequest(request.get()), 0) << "Failed to queue request";
 
 		requests.push_back(std::move(request));
 	}
@@ -118,12 +113,7 @@ Results::Result SimpleCaptureBalanced::capture(unsigned int numRequests)
 	stop();
 	delete loop_;
 
-	if (captureCount_ != captureLimit_)
-		return { Results::Fail, "Got " + std::to_string(captureCount_) +
-			" request, wanted " + std::to_string(captureLimit_) };
-
-	return { Results::Pass, "Balanced capture of " +
-		std::to_string(numRequests) + " requests" };
+	ASSERT_EQ(captureCount_, captureLimit_);
 }
 
 int SimpleCaptureBalanced::queueRequest(Request *request)
@@ -155,11 +145,9 @@ SimpleCaptureUnbalanced::SimpleCaptureUnbalanced(std::shared_ptr<Camera> camera)
 {
 }
 
-Results::Result SimpleCaptureUnbalanced::capture(unsigned int numRequests)
+void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 {
-	Results::Result ret = start();
-	if (ret.first != Results::Pass)
-		return ret;
+	start();
 
 	Stream *stream = config_->at(0).stream();
 	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
@@ -171,14 +159,11 @@ Results::Result SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
-		if (!request)
-			return { Results::Fail, "Can't create request" };
+		ASSERT_TRUE(request) << "Can't create request";
 
-		if (request->addBuffer(stream, buffer.get()))
-			return { Results::Fail, "Can't set buffer for request" };
+		ASSERT_EQ(request->addBuffer(stream, buffer.get()), 0) << "Can't set buffer for request";
 
-		if (camera_->queueRequest(request.get()) < 0)
-			return { Results::Fail, "Failed to queue request" };
+		ASSERT_EQ(camera_->queueRequest(request.get()), 0) << "Failed to queue request";
 
 		requests.push_back(std::move(request));
 	}
@@ -189,7 +174,7 @@ Results::Result SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	stop();
 	delete loop_;
 
-	return { status ? Results::Fail : Results::Pass, "Unbalanced capture of " + std::to_string(numRequests) + " requests" };
+	ASSERT_EQ(status, 0);
 }
 
 void SimpleCaptureUnbalanced::requestComplete(Request *request)

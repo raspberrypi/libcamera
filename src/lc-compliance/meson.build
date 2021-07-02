@@ -12,6 +12,7 @@ lc_compliance_enabled = true
 lc_compliance_sources = files([
     '../cam/event_loop.cpp',
     '../cam/options.cpp',
+    'environment.cpp',
     'main.cpp',
     'results.cpp',
     'simple_capture.cpp',

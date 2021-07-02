@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2020, Google Inc.
+ * Copyright (C) 2020-2021, Google Inc.
  *
  * simple_capture.cpp - Simple capture helper
  */
@@ -17,6 +17,7 @@ SimpleCapture::SimpleCapture(std::shared_ptr<Camera> camera)
 
 SimpleCapture::~SimpleCapture()
 {
+	stop();
 }
 
 Results::Result SimpleCapture::configure(StreamRole role)
@@ -55,12 +56,14 @@ Results::Result SimpleCapture::start()
 
 void SimpleCapture::stop()
 {
-	Stream *stream = config_->at(0).stream();
+	if (!config_ || !allocator_->allocated())
+		return;
 
 	camera_->stop();
 
 	camera_->requestCompleted.disconnect(this, &SimpleCapture::requestComplete);
 
+	Stream *stream = config_->at(0).stream();
 	allocator_->free(stream);
 }
 
@@ -84,7 +87,6 @@ Results::Result SimpleCaptureBalanced::capture(unsigned int numRequests)
 	if (buffers.size() > numRequests) {
 		/* Cache buffers.size() before we destroy it in stop() */
 		int buffers_size = buffers.size();
-		stop();
 
 		return { Results::Skip, "Camera needs " + std::to_string(buffers_size)
 			+ " requests, can't test only " + std::to_string(numRequests) };
@@ -98,20 +100,14 @@ Results::Result SimpleCaptureBalanced::capture(unsigned int numRequests)
 	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
-		if (!request) {
-			stop();
+		if (!request)
 			return { Results::Fail, "Can't create request" };
-		}
 
-		if (request->addBuffer(stream, buffer.get())) {
-			stop();
+		if (request->addBuffer(stream, buffer.get()))
 			return { Results::Fail, "Can't set buffer for request" };
-		}
 
-		if (queueRequest(request.get()) < 0) {
-			stop();
+		if (queueRequest(request.get()) < 0)
 			return { Results::Fail, "Failed to queue request" };
-		}
 
 		requests.push_back(std::move(request));
 	}
@@ -175,20 +171,14 @@ Results::Result SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
-		if (!request) {
-			stop();
+		if (!request)
 			return { Results::Fail, "Can't create request" };
-		}
 
-		if (request->addBuffer(stream, buffer.get())) {
-			stop();
+		if (request->addBuffer(stream, buffer.get()))
 			return { Results::Fail, "Can't set buffer for request" };
-		}
 
-		if (camera_->queueRequest(request.get()) < 0) {
-			stop();
+		if (camera_->queueRequest(request.get()) < 0)
 			return { Results::Fail, "Failed to queue request" };
-		}
 
 		requests.push_back(std::move(request));
 	}

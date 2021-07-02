@@ -9,6 +9,7 @@
 #define __LIBCAMERA_CONTROLS_H__
 
 #include <assert.h>
+#include <set>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
@@ -272,6 +273,8 @@ public:
 			     const ControlValue &def = 0);
 	explicit ControlInfo(Span<const ControlValue> values,
 			     const ControlValue &def = {});
+	explicit ControlInfo(std::set<bool> values, bool def);
+	explicit ControlInfo(bool value);
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }

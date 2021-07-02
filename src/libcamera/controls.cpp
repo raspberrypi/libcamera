@@ -515,6 +515,35 @@ ControlInfo::ControlInfo(Span<const ControlValue> values,
 }
 
 /**
+ * \brief Construct a boolean ControlInfo with both boolean values
+ * \param[in] values The control valid boolean values (both true and false)
+ * \param[in] def The control default boolean value
+ *
+ * Construct a ControlInfo for a boolean control, where both true and false are
+ * valid values. \a values must be { false, true } (the order is irrelevant).
+ * The minimum value will always be false, and the maximum always true. The
+ * default value is \a def.
+ */
+ControlInfo::ControlInfo(std::set<bool> values, bool def)
+	: min_(false), max_(true), def_(def), values_({ false, true })
+{
+	assert(values.count(def) && values.size() == 2);
+}
+
+/**
+ * \brief Construct a boolean ControlInfo with only one valid value
+ * \param[in] value The control valid boolean value
+ *
+ * Construct a ControlInfo for a boolean control, where there is only valid
+ * value. The minimum, maximum, and default values will all be \a value.
+ */
+ControlInfo::ControlInfo(bool value)
+	: min_(value), max_(value), def_(value)
+{
+	values_ = { value };
+}
+
+/**
  * \fn ControlInfo::min()
  * \brief Retrieve the minimum value of the control
  *

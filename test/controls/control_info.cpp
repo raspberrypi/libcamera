@@ -44,6 +44,39 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * Test information retrieval from a control with boolean
+		 * values.
+		 */
+		ControlInfo aeEnable({ false, true }, false);
+
+		if (aeEnable.min().get<bool>() != false ||
+		    aeEnable.def().get<bool>() != false ||
+		    aeEnable.max().get<bool>() != true) {
+			cout << "Invalid control range for AeEnable" << endl;
+			return TestFail;
+		}
+
+		if (aeEnable.values()[0].get<bool>() != false ||
+		    aeEnable.values()[1].get<bool>() != true) {
+			cout << "Invalid control values for AeEnable" << endl;
+			return TestFail;
+		}
+
+		ControlInfo awbEnable(true);
+
+		if (awbEnable.min().get<bool>() != true ||
+		    awbEnable.def().get<bool>() != true ||
+		    awbEnable.max().get<bool>() != true) {
+			cout << "Invalid control range for AwbEnable" << endl;
+			return TestFail;
+		}
+
+		if (awbEnable.values()[0].get<bool>() != true) {
+			cout << "Invalid control values for AwbEnable" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

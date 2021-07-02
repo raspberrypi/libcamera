@@ -41,11 +41,11 @@ protected:
 		if (camera_->queueRequest(&request) != -EACCES)
 			return TestFail;
 
-		if (camera_->stop() != -EACCES)
-			return TestFail;
-
 		/* Test operations which should pass. */
 		if (camera_->release())
+			return TestFail;
+
+		if (camera_->stop())
 			return TestFail;
 
 		/* Test valid state transitions, end in Acquired state. */
@@ -71,7 +71,8 @@ protected:
 		if (camera_->queueRequest(&request) != -EACCES)
 			return TestFail;
 
-		if (camera_->stop() != -EACCES)
+		/* Test operations which should pass. */
+		if (camera_->stop())
 			return TestFail;
 
 		/* Test valid state transitions, end in Configured state. */
@@ -97,12 +98,12 @@ protected:
 		if (camera_->queueRequest(&request1) != -EACCES)
 			return TestFail;
 
-		if (camera_->stop() != -EACCES)
-			return TestFail;
-
 		/* Test operations which should pass. */
 		std::unique_ptr<Request> request2 = camera_->createRequest();
 		if (!request2)
+			return TestFail;
+
+		if (camera_->stop())
 			return TestFail;
 
 		/* Test valid state transitions, end in Running state. */

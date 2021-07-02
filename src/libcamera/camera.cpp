@@ -348,6 +348,7 @@ public:
 		const std::set<Stream *> &streams);
 	~Private();
 
+	bool isRunning() const;
 	int isAccessAllowed(State state, bool allowDisconnected = false,
 			    const char *from = __builtin_FUNCTION()) const;
 	int isAccessAllowed(State low, State high,
@@ -388,6 +389,11 @@ static const char *const camera_state_names[] = {
 	"Stopping",
 	"Running",
 };
+
+bool Camera::Private::isRunning() const
+{
+	return state_.load(std::memory_order_acquire) == CameraRunning;
+}
 
 int Camera::Private::isAccessAllowed(State state, bool allowDisconnected,
 				     const char *from) const
@@ -1062,9 +1068,10 @@ int Camera::start(const ControlList *controls)
  * This method stops capturing and processing requests immediately. All pending
  * requests are cancelled and complete synchronously in an error state.
  *
- * \context This function may only be called when the camera is in the Running
- * state as defined in \ref camera_operation, and shall be synchronized by the
- * caller with other functions that affect the camera state.
+ * \context This function may be called in any camera state as defined in \ref
+ * camera_operation, and shall be synchronized by the caller with other
+ * functions that affect the camera state. If called when the camera isn't
+ * running, it is a no-op.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera has been disconnected from the system
@@ -1073,6 +1080,13 @@ int Camera::start(const ControlList *controls)
 int Camera::stop()
 {
 	Private *const d = LIBCAMERA_D_PTR();
+
+	/*
+	 * \todo Make calling stop() when not in 'Running' part of the state
+	 * machine rather than take this shortcut
+	 */
+	if (!d->isRunning())
+		return 0;
 
 	int ret = d->isAccessAllowed(Private::CameraRunning);
 	if (ret < 0)

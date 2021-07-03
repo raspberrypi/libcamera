@@ -168,7 +168,22 @@ public:
 	}
 
 	struct Entity {
+		/* The media entity, always valid. */
 		MediaEntity *entity;
+		/*
+		 * The local sink pad connected to the upstream entity, null for
+		 * the camera sensor at the beginning of the pipeline.
+		 */
+		const MediaPad *sink;
+		/*
+		 * The local source pad connected to the downstream entity, null
+		 * for the video node at the end of the pipeline.
+		 */
+		const MediaPad *source;
+		/*
+		 * The link to the downstream entity, null for the video node at
+		 * the end of the pipeline.
+		 */
 		MediaLink *link;
 	};
 
@@ -289,16 +304,18 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	 * encoders and image converters, and will end in a CSI capture device.
 	 */
 	std::unordered_set<MediaEntity *> visited;
-	std::queue<MediaEntity *> queue;
+	std::queue<std::tuple<MediaEntity *, MediaPad *>> queue;
 
 	/* Remember at each entity where we came from. */
 	std::unordered_map<MediaEntity *, Entity> parents;
 	MediaEntity *entity = nullptr;
 
-	queue.push(sensor);
+	queue.push({ sensor, nullptr });
 
 	while (!queue.empty()) {
-		entity = queue.front();
+		MediaPad *sinkPad;
+
+		std::tie(entity, sinkPad) = queue.front();
 		queue.pop();
 
 		/* Found the capture device. */
@@ -318,8 +335,8 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 			for (MediaLink *link : pad->links()) {
 				MediaEntity *next = link->sink()->entity();
 				if (visited.find(next) == visited.end()) {
-					queue.push(next);
-					parents.insert({ next, { entity, link } });
+					queue.push({ next, link->sink() });
+					parents.insert({ next, { entity, sinkPad, pad, link } });
 				}
 			}
 		}
@@ -350,7 +367,16 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	LOG(SimplePipeline, Debug)
 		<< "Found pipeline: "
 		<< utils::join(entities_, " -> ",
-			       [](const Entity &e) { return e.entity->name(); });
+			       [](const Entity &e) {
+				       std::string s = "[";
+				       if (e.sink)
+					       s += std::to_string(e.sink->index()) + "|";
+				       s += e.entity->name();
+				       if (e.source)
+					       s += "|" + std::to_string(e.source->index());
+				       s += "]";
+				       return s;
+			       });
 }
 
 SimplePipelineHandler *SimpleCameraData::pipe()

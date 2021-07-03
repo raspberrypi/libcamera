@@ -313,8 +313,6 @@ private:
 	std::map<const MediaEntity *, EntityData> entities_;
 
 	MediaDevice *converter_;
-
-	Camera *activeCamera_;
 };
 
 /* -----------------------------------------------------------------------------
@@ -1035,8 +1033,6 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 			video->queueBuffer(buffer.get());
 	}
 
-	activeCamera_ = camera;
-
 	return 0;
 }
 
@@ -1054,7 +1050,6 @@ void SimplePipelineHandler::stop(Camera *camera)
 	video->bufferReady.disconnect(data, &SimpleCameraData::bufferReady);
 
 	data->converterBuffers_.clear();
-	activeCamera_ = nullptr;
 
 	releasePipeline(data);
 }

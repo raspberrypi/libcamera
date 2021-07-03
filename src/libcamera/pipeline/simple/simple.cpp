@@ -83,14 +83,12 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  * handled by this heuristic.
  *
  * Once the camera data instances have been created, the match() function
- * creates a V4L2Subdevice instance for each entity used by any of the cameras
- * and stores the instances in SimplePipelineHandler::subdevs_, accessible by
- * the SimpleCameraData class through the SimplePipelineHandler::subdev()
- * function. This avoids duplication of subdev instances between different
- * cameras when the same entity is used in multiple paths. A similar mechanism
- * is used for V4L2VideoDevice instances, but instances are in this case created
- * on demand when accessed through SimplePipelineHandler::video() instead of all
- * in one go at initialization time.
+ * creates a V4L2VideoDevice or V4L2Subdevice instance for each entity used by
+ * any of the cameras and stores them in SimplePipelineHandler::entities_,
+ * accessible by the SimpleCameraData class through the
+ * SimplePipelineHandler::subdev() and SimplePipelineHandler::video() functions.
+ * This avoids duplication of subdev instances between different cameras when
+ * the same entity is used in multiple paths.
  *
  * Finally, all camera data instances are initialized to gather information
  * about the possible pipeline configurations for the corresponding camera. If
@@ -403,10 +401,7 @@ int SimpleCameraData::init()
 	int ret;
 
 	video_ = pipe->video(entities_.back().entity);
-	if (!video_) {
-		LOG(SimplePipeline, Error) << "Failed to open video device";
-		return -ENODEV;
-	}
+	ASSERT(video_);
 
 	/*
 	 * Setup links first as some subdev drivers take active links into
@@ -1074,24 +1069,44 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 	/*
 	 * Insert all entities in the global entities list. Create and open
-	 * V4L2Subdevice instances for each entity corresponding to a V4L2
-	 * subdevice.
+	 * V4L2VideoDevice and V4L2Subdevice instances for the corresponding
+	 * entities.
 	 */
 	for (MediaEntity *entity : entities) {
+		std::unique_ptr<V4L2VideoDevice> video;
 		std::unique_ptr<V4L2Subdevice> subdev;
+		int ret;
 
-		if (entity->type() == MediaEntity::Type::V4L2Subdevice) {
+		switch (entity->type()) {
+		case MediaEntity::Type::V4L2VideoDevice:
+			video = std::make_unique<V4L2VideoDevice>(entity);
+			ret = video->open();
+			if (ret < 0) {
+				LOG(SimplePipeline, Error)
+					<< "Failed to open " << video->deviceNode()
+					<< ": " << strerror(-ret);
+				return false;
+			}
+
+			video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
+			break;
+
+		case MediaEntity::Type::V4L2Subdevice:
 			subdev = std::make_unique<V4L2Subdevice>(entity);
-			int ret = subdev->open();
+			ret = subdev->open();
 			if (ret < 0) {
 				LOG(SimplePipeline, Error)
 					<< "Failed to open " << subdev->deviceNode()
 					<< ": " << strerror(-ret);
 				return false;
 			}
+			break;
+
+		default:
+			break;
 		}
 
-		entities_[entity] = { nullptr, std::move(subdev) };
+		entities_[entity] = { std::move(video), std::move(subdev) };
 	}
 
 	/* Initialize each pipeline and register a corresponding camera. */
@@ -1119,27 +1134,11 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 
 V4L2VideoDevice *SimplePipelineHandler::video(const MediaEntity *entity)
 {
-	/*
-	 * Return the V4L2VideoDevice corresponding to the media entity, either
-	 * as a previously constructed device if available from the cache, or
-	 * by constructing a new one.
-	 */
-
 	auto iter = entities_.find(entity);
 	if (iter == entities_.end())
 		return nullptr;
 
-	EntityData &data = iter->second;
-	if (data.video)
-		return data.video.get();
-
-	data.video = std::make_unique<V4L2VideoDevice>(entity);
-	if (data.video->open() < 0)
-		return nullptr;
-
-	data.video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
-
-	return data.video.get();
+	return iter->second.video.get();
 }
 
 V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)

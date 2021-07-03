@@ -1279,6 +1279,23 @@ int CameraCapabilities::initializeStaticMetadata()
 	std::vector<uint32_t> availableStreamConfigurations;
 	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
+		/*
+		 * Filter out YUV streams not capable of running at 30 FPS.
+		 *
+		 * This requirement comes from CTS RecordingTest failures most
+		 * probably related to a requirement of the camcoder video
+		 * recording profile. Inspecting the Intel IPU3 HAL
+		 * implementation confirms this but no reference has been found
+		 * in the metadata documentation.
+		 *
+		 * Calculate FPS as CTS does: see
+		 * Camera2SurfaceViewTestCase.java:getSuitableFpsRangeForDuration()
+		 */
+		unsigned int fps = static_cast<unsigned int>
+				   (floor(1e9 / entry.minFrameDurationNsec + 0.05f));
+		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB && fps < 30)
+			continue;
+
 		availableStreamConfigurations.push_back(entry.androidFormat);
 		availableStreamConfigurations.push_back(entry.resolution.width);
 		availableStreamConfigurations.push_back(entry.resolution.height);
@@ -1291,6 +1308,11 @@ int CameraCapabilities::initializeStaticMetadata()
 	std::vector<int64_t> minFrameDurations;
 	minFrameDurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
+		unsigned int fps = static_cast<unsigned int>
+				   (floor(1e9 / entry.minFrameDurationNsec + 0.05f));
+		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB && fps < 30)
+			continue;
+
 		minFrameDurations.push_back(entry.androidFormat);
 		minFrameDurations.push_back(entry.resolution.width);
 		minFrameDurations.push_back(entry.resolution.height);

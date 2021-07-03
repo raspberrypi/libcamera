@@ -196,8 +196,13 @@ public:
 	};
 
 	std::vector<Stream> streams_;
-	std::unique_ptr<CameraSensor> sensor_;
+
+	/*
+	 * All entities in the pipeline, from the camera sensor to the video
+	 * node.
+	 */
 	std::list<Entity> entities_;
+	std::unique_ptr<CameraSensor> sensor_;
 	V4L2VideoDevice *video_;
 
 	std::vector<Configuration> configs_;
@@ -310,12 +315,11 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	std::unordered_map<MediaEntity *, Entity> parents;
 	MediaEntity *entity = nullptr;
 	MediaEntity *video = nullptr;
+	MediaPad *sinkPad;
 
 	queue.push({ sensor, nullptr });
 
 	while (!queue.empty()) {
-		MediaPad *sinkPad;
-
 		std::tie(entity, sinkPad) = queue.front();
 		queue.pop();
 
@@ -348,8 +352,11 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 
 	/*
 	 * With the parents, we can follow back our way from the capture device
-	 * to the sensor.
+	 * to the sensor. Store all the entities in the pipeline, from the
+	 * camera sensor to the video node, in entities_.
 	 */
+	entities_.push_front({ entity, sinkPad, nullptr, nullptr });
+
 	for (auto it = parents.find(entity); it != parents.end();
 	     it = parents.find(entity)) {
 		const Entity &e = it->second;
@@ -490,6 +497,9 @@ int SimpleCameraData::setupLinks()
 	 * want to enable) before enabling the pipeline link.
 	 */
 	for (SimpleCameraData::Entity &e : entities_) {
+		if (!e.link)
+			break;
+
 		MediaEntity *remote = e.link->sink()->entity();
 		for (MediaPad *pad : remote->pads()) {
 			for (MediaLink *link : pad->links()) {
@@ -530,6 +540,9 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 		return ret;
 
 	for (const Entity &e : entities_) {
+		if (!e.link)
+			break;
+
 		MediaLink *link = e.link;
 		MediaPad *source = link->source();
 		MediaPad *sink = link->sink();
@@ -1055,8 +1068,14 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	if (entities.empty())
 		return false;
 
-	/* Create and open V4L2Subdev instances for all the entities. */
+	/*
+	 * Create and open V4L2Subdevice instances for all entities
+	 * corresponding to a V4L2 subdevice.
+	 */
 	for (MediaEntity *entity : entities) {
+		if (entity->type() != MediaEntity::Type::V4L2Subdevice)
+			continue;
+
 		auto elem = subdevs_.emplace(std::piecewise_construct,
 					     std::forward_as_tuple(entity),
 					     std::forward_as_tuple(entity));

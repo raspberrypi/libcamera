@@ -122,6 +122,28 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  * the pixel formats and sizes that the converter can produce for the output of
  * the capture video node, and stores the information in the outputFormats and
  * outputSizes of the SimpleCameraData::Configuration structure.
+ *
+ * Concurrent Access to Cameras
+ * ----------------------------
+ *
+ * The cameras created by the same pipeline handler instance may share hardware
+ * resources. For instances, a platform may have multiple CSI-2 receivers but a
+ * single DMA engine, prohibiting usage of multiple cameras concurrently. This
+ * depends heavily on the hardware architecture, which the simple pipeline
+ * handler has no a priori knowledge of. The pipeline handler thus implements a
+ * heuristic to handle sharing of hardware resources in a generic fashion.
+ *
+ * Two cameras are considered to be mutually exclusive if their share common
+ * pads along the pipeline from the camera sensor to the video node. An entity
+ * can thus be used concurrently by multiple cameras, as long as pads are
+ * distinct.
+ *
+ * A resource reservation mechanism is implemented by the SimplePipelineHandler
+ * acquirePipeline() and releasePipeline() functions to manage exclusive access
+ * to pads. A camera reserves all the pads present in its pipeline when it is
+ * started, and the start() function returns an error if any of the required
+ * pads is already in use. When the camera is stopped, the pads it has reserved
+ * are released.
  */
 
 class SimplePipelineHandler;
@@ -268,6 +290,7 @@ private:
 	struct EntityData {
 		std::unique_ptr<V4L2VideoDevice> video;
 		std::unique_ptr<V4L2Subdevice> subdev;
+		std::map<const MediaPad *, SimpleCameraData *> owners;
 	};
 
 	SimpleCameraData *cameraData(Camera *camera)
@@ -276,6 +299,9 @@ private:
 	}
 
 	std::vector<MediaEntity *> locateSensors();
+
+	const MediaPad *acquirePipeline(SimpleCameraData *data);
+	void releasePipeline(SimpleCameraData *data);
 
 	void bufferReady(FrameBuffer *buffer);
 	void converterInputDone(FrameBuffer *buffer);
@@ -846,6 +872,14 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 	V4L2VideoDevice *video = data->video_;
 	int ret;
 
+	const MediaPad *pad = acquirePipeline(data);
+	if (pad) {
+		LOG(SimplePipeline, Info)
+			<< "Failed to acquire pipeline, entity "
+			<< pad->entity()->name() << " in use";
+		return -EBUSY;
+	}
+
 	if (data->useConverter_) {
 		/*
 		 * When using the converter allocate a fixed number of internal
@@ -858,8 +892,10 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		Stream *stream = &data->streams_[0];
 		ret = video->importBuffers(stream->configuration().bufferCount);
 	}
-	if (ret < 0)
+	if (ret < 0) {
+		releasePipeline(data);
 		return ret;
+	}
 
 	ret = video->streamOn();
 	if (ret < 0) {
@@ -897,6 +933,8 @@ void SimplePipelineHandler::stop(Camera *camera)
 
 	data->converterBuffers_.clear();
 	activeCamera_ = nullptr;
+
+	releasePipeline(data);
 }
 
 int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
@@ -1106,7 +1144,7 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			break;
 		}
 
-		entities_[entity] = { std::move(video), std::move(subdev) };
+		entities_[entity] = { std::move(video), std::move(subdev), {} };
 	}
 
 	/* Initialize each pipeline and register a corresponding camera. */
@@ -1148,6 +1186,59 @@ V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)
 		return nullptr;
 
 	return iter->second.subdev.get();
+}
+
+/**
+ * \brief Acquire all resources needed by the camera pipeline
+ * \return nullptr on success, a pointer to the contended pad on error
+ */
+const MediaPad *SimplePipelineHandler::acquirePipeline(SimpleCameraData *data)
+{
+	for (const SimpleCameraData::Entity &entity : data->entities_) {
+		const EntityData &edata = entities_[entity.entity];
+
+		if (entity.sink) {
+			auto iter = edata.owners.find(entity.sink);
+			if (iter != edata.owners.end() && iter->second != data)
+				return entity.sink;
+		}
+
+		if (entity.source) {
+			auto iter = edata.owners.find(entity.source);
+			if (iter != edata.owners.end() && iter->second != data)
+				return entity.source;
+		}
+	}
+
+	for (const SimpleCameraData::Entity &entity : data->entities_) {
+		EntityData &edata = entities_[entity.entity];
+
+		if (entity.sink)
+			edata.owners[entity.sink] = data;
+		if (entity.source)
+			edata.owners[entity.source] = data;
+	}
+
+	return nullptr;
+}
+
+void SimplePipelineHandler::releasePipeline(SimpleCameraData *data)
+{
+	for (const SimpleCameraData::Entity &entity : data->entities_) {
+		EntityData &edata = entities_[entity.entity];
+
+		if (entity.sink) {
+			auto iter = edata.owners.find(entity.sink);
+			ASSERT(iter->second == data);
+			edata.owners.erase(iter);
+		}
+
+		if (entity.source) {
+			auto iter = edata.owners.find(entity.source);
+			ASSERT(iter->second == data);
+			edata.owners.erase(iter);
+		}
+	}
 }
 
 /* -----------------------------------------------------------------------------

@@ -88,9 +88,17 @@ private:
 class MediaEntity : public MediaObject
 {
 public:
+	enum class Type {
+		Invalid,
+		MediaEntity,
+		V4L2Subdevice,
+		V4L2VideoDevice,
+	};
+
 	const std::string &name() const { return name_; }
 	unsigned int function() const { return function_; }
 	unsigned int flags() const { return flags_; }
+	Type type() const { return type_; }
 	const std::string &deviceNode() const { return deviceNode_; }
 	unsigned int deviceMajor() const { return major_; }
 	unsigned int deviceMinor() const { return minor_; }
@@ -108,13 +116,14 @@ private:
 	friend class MediaDevice;
 
 	MediaEntity(MediaDevice *dev, const struct media_v2_entity *entity,
-		    unsigned int major = 0, unsigned int minor = 0);
+		    const struct media_v2_interface *iface);
 
 	void addPad(MediaPad *pad);
 
 	std::string name_;
 	unsigned int function_;
 	unsigned int flags_;
+	Type type_;
 	std::string deviceNode_;
 	unsigned int major_;
 	unsigned int minor_;

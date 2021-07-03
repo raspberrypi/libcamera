@@ -652,14 +652,7 @@ bool MediaDevice::populateEntities(const struct media_v2_topology &topology)
 		 */
 		struct media_v2_interface *iface =
 			findInterface(topology, ent->id);
-
-		MediaEntity *entity;
-		if (iface)
-			entity = new MediaEntity(this, ent,
-						 iface->devnode.major,
-						 iface->devnode.minor);
-		else
-			entity = new MediaEntity(this, ent);
+		MediaEntity *entity = new MediaEntity(this, ent, iface);
 
 		if (!addObject(entity)) {
 			delete entity;

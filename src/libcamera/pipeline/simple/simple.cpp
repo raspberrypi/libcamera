@@ -309,6 +309,7 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	/* Remember at each entity where we came from. */
 	std::unordered_map<MediaEntity *, Entity> parents;
 	MediaEntity *entity = nullptr;
+	MediaEntity *video = nullptr;
 
 	queue.push({ sensor, nullptr });
 
@@ -322,7 +323,7 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 		if (entity->function() == MEDIA_ENT_F_IO_V4L) {
 			LOG(SimplePipeline, Debug)
 				<< "Found capture device " << entity->name();
-			video_ = pipe->video(entity);
+			video = entity;
 			break;
 		}
 
@@ -342,7 +343,7 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 		}
 	}
 
-	if (!video_)
+	if (!video)
 		return;
 
 	/*
@@ -386,8 +387,15 @@ SimplePipelineHandler *SimpleCameraData::pipe()
 
 int SimpleCameraData::init()
 {
-	SimpleConverter *converter = pipe()->converter();
+	SimplePipelineHandler *pipe = SimpleCameraData::pipe();
+	SimpleConverter *converter = pipe->converter();
 	int ret;
+
+	video_ = pipe->video(entities_.back().entity);
+	if (!video_) {
+		LOG(SimplePipeline, Error) << "Failed to open video device";
+		return -ENODEV;
+	}
 
 	/*
 	 * Setup links first as some subdev drivers take active links into

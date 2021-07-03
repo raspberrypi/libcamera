@@ -181,6 +181,7 @@ public:
 	int setupLinks();
 	int setupFormats(V4L2SubdeviceFormat *format,
 			 V4L2Subdevice::Whence whence);
+	void bufferReady(FrameBuffer *buffer);
 
 	unsigned int streamIndex(const Stream *stream) const
 	{
@@ -307,8 +308,6 @@ private:
 
 	const MediaPad *acquirePipeline(SimpleCameraData *data);
 	void releasePipeline(SimpleCameraData *data);
-
-	void bufferReady(FrameBuffer *buffer);
 
 	MediaDevice *media_;
 	std::map<const MediaEntity *, EntityData> entities_;
@@ -627,6 +626,93 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 	return 0;
 }
 
+void SimpleCameraData::bufferReady(FrameBuffer *buffer)
+{
+	SimplePipelineHandler *pipe = SimpleCameraData::pipe();
+
+	/*
+	 * If an error occurred during capture, or if the buffer was cancelled,
+	 * complete the request, even if the converter is in use as there's no
+	 * point converting an erroneous buffer.
+	 */
+	if (buffer->metadata().status != FrameMetadata::FrameSuccess) {
+		if (!useConverter_) {
+			/* No conversion, just complete the request. */
+			Request *request = buffer->request();
+			pipe->completeBuffer(request, buffer);
+			pipe->completeRequest(request);
+			return;
+		}
+
+		/*
+		 * The converter is in use. Requeue the internal buffer for
+		 * capture (unless the stream is being stopped), and complete
+		 * the request with all the user-facing buffers.
+		 */
+		if (buffer->metadata().status != FrameMetadata::FrameCancelled)
+			video_->queueBuffer(buffer);
+
+		if (converterQueue_.empty())
+			return;
+
+		Request *request = nullptr;
+		for (auto &item : converterQueue_.front()) {
+			FrameBuffer *outputBuffer = item.second;
+			request = outputBuffer->request();
+			pipe->completeBuffer(request, outputBuffer);
+		}
+		converterQueue_.pop();
+
+		if (request)
+			pipe->completeRequest(request);
+		return;
+	}
+
+	/*
+	 * Record the sensor's timestamp in the request metadata. The request
+	 * needs to be obtained from the user-facing buffer, as internal
+	 * buffers are free-wheeling and have no request associated with them.
+	 *
+	 * \todo The sensor timestamp should be better estimated by connecting
+	 * to the V4L2Device::frameStart signal if the platform provides it.
+	 */
+	Request *request = buffer->request();
+
+	if (useConverter_ && !converterQueue_.empty()) {
+		const std::map<unsigned int, FrameBuffer *> &outputs =
+			converterQueue_.front();
+		if (!outputs.empty()) {
+			FrameBuffer *outputBuffer = outputs.begin()->second;
+			if (outputBuffer)
+				request = outputBuffer->request();
+		}
+	}
+
+	if (request)
+		request->metadata().set(controls::SensorTimestamp,
+					buffer->metadata().timestamp);
+
+	/*
+	 * Queue the captured and the request buffer to the converter if format
+	 * conversion is needed. If there's no queued request, just requeue the
+	 * captured buffer for capture.
+	 */
+	if (useConverter_) {
+		if (converterQueue_.empty()) {
+			video_->queueBuffer(buffer);
+			return;
+		}
+
+		converter_->queueBuffers(buffer, converterQueue_.front());
+		converterQueue_.pop();
+		return;
+	}
+
+	/* Otherwise simply complete the request. */
+	pipe->completeBuffer(request, buffer);
+	pipe->completeRequest(request);
+}
+
 void SimpleCameraData::converterInputDone(FrameBuffer *buffer)
 {
 	/* Queue the input buffer back for capture. */
@@ -929,6 +1015,8 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		return ret;
 	}
 
+	video->bufferReady.connect(data, &SimpleCameraData::bufferReady);
+
 	ret = video->streamOn();
 	if (ret < 0) {
 		stop(camera);
@@ -962,6 +1050,8 @@ void SimplePipelineHandler::stop(Camera *camera)
 
 	video->streamOff();
 	video->releaseBuffers();
+
+	video->bufferReady.disconnect(data, &SimpleCameraData::bufferReady);
 
 	data->converterBuffers_.clear();
 	activeCamera_ = nullptr;
@@ -1143,8 +1233,6 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 					<< ": " << strerror(-ret);
 				return false;
 			}
-
-			video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
 			break;
 
 		case MediaEntity::Type::V4L2Subdevice:
@@ -1257,98 +1345,6 @@ void SimplePipelineHandler::releasePipeline(SimpleCameraData *data)
 			edata.owners.erase(iter);
 		}
 	}
-}
-
-/* -----------------------------------------------------------------------------
- * Buffer Handling
- */
-
-void SimplePipelineHandler::bufferReady(FrameBuffer *buffer)
-{
-	ASSERT(activeCamera_);
-	SimpleCameraData *data = cameraData(activeCamera_);
-
-	/*
-	 * If an error occurred during capture, or if the buffer was cancelled,
-	 * complete the request, even if the converter is in use as there's no
-	 * point converting an erroneous buffer.
-	 */
-	if (buffer->metadata().status != FrameMetadata::FrameSuccess) {
-		if (!data->useConverter_) {
-			/* No conversion, just complete the request. */
-			Request *request = buffer->request();
-			completeBuffer(request, buffer);
-			completeRequest(request);
-			return;
-		}
-
-		/*
-		 * The converter is in use. Requeue the internal buffer for
-		 * capture (unless the stream is being stopped), and complete
-		 * the request with all the user-facing buffers.
-		 */
-		if (buffer->metadata().status != FrameMetadata::FrameCancelled)
-			data->video_->queueBuffer(buffer);
-
-		if (data->converterQueue_.empty())
-			return;
-
-		Request *request = nullptr;
-		for (auto &item : data->converterQueue_.front()) {
-			FrameBuffer *outputBuffer = item.second;
-			request = outputBuffer->request();
-			completeBuffer(request, outputBuffer);
-		}
-		data->converterQueue_.pop();
-
-		if (request)
-			completeRequest(request);
-		return;
-	}
-
-	/*
-	 * Record the sensor's timestamp in the request metadata. The request
-	 * needs to be obtained from the user-facing buffer, as internal
-	 * buffers are free-wheeling and have no request associated with them.
-	 *
-	 * \todo The sensor timestamp should be better estimated by connecting
-	 * to the V4L2Device::frameStart signal if the platform provides it.
-	 */
-	Request *request = buffer->request();
-
-	if (data->useConverter_ && !data->converterQueue_.empty()) {
-		const std::map<unsigned int, FrameBuffer *> &outputs =
-			data->converterQueue_.front();
-		if (!outputs.empty()) {
-			FrameBuffer *outputBuffer = outputs.begin()->second;
-			if (outputBuffer)
-				request = outputBuffer->request();
-		}
-	}
-
-	if (request)
-		request->metadata().set(controls::SensorTimestamp,
-					buffer->metadata().timestamp);
-
-	/*
-	 * Queue the captured and the request buffer to the converter if format
-	 * conversion is needed. If there's no queued request, just requeue the
-	 * captured buffer for capture.
-	 */
-	if (data->useConverter_) {
-		if (data->converterQueue_.empty()) {
-			data->video_->queueBuffer(buffer);
-			return;
-		}
-
-		data->converter_->queueBuffers(buffer, data->converterQueue_.front());
-		data->converterQueue_.pop();
-		return;
-	}
-
-	/* Otherwise simply complete the request. */
-	completeBuffer(request, buffer);
-	completeRequest(request);
 }
 
 REGISTER_PIPELINE_HANDLER(SimplePipelineHandler)

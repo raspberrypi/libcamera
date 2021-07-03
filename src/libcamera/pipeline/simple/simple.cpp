@@ -267,6 +267,11 @@ protected:
 private:
 	static constexpr unsigned int kNumInternalBuffers = 3;
 
+	struct EntityData {
+		std::unique_ptr<V4L2VideoDevice> video;
+		std::unique_ptr<V4L2Subdevice> subdev;
+	};
+
 	SimpleCameraData *cameraData(Camera *camera)
 	{
 		return static_cast<SimpleCameraData *>(camera->_d());
@@ -279,8 +284,7 @@ private:
 	void converterOutputDone(FrameBuffer *buffer);
 
 	MediaDevice *media_;
-	std::map<const MediaEntity *, std::unique_ptr<V4L2VideoDevice>> videos_;
-	std::map<const MediaEntity *, V4L2Subdevice> subdevs_;
+	std::map<const MediaEntity *, EntityData> entities_;
 
 	std::unique_ptr<SimpleConverter> converter_;
 
@@ -1069,24 +1073,25 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/*
-	 * Create and open V4L2Subdevice instances for all entities
-	 * corresponding to a V4L2 subdevice.
+	 * Insert all entities in the global entities list. Create and open
+	 * V4L2Subdevice instances for each entity corresponding to a V4L2
+	 * subdevice.
 	 */
 	for (MediaEntity *entity : entities) {
-		if (entity->type() != MediaEntity::Type::V4L2Subdevice)
-			continue;
+		std::unique_ptr<V4L2Subdevice> subdev;
 
-		auto elem = subdevs_.emplace(std::piecewise_construct,
-					     std::forward_as_tuple(entity),
-					     std::forward_as_tuple(entity));
-		V4L2Subdevice *subdev = &elem.first->second;
-		int ret = subdev->open();
-		if (ret < 0) {
-			LOG(SimplePipeline, Error)
-				<< "Failed to open " << subdev->deviceNode()
-				<< ": " << strerror(-ret);
-			return false;
+		if (entity->type() == MediaEntity::Type::V4L2Subdevice) {
+			subdev = std::make_unique<V4L2Subdevice>(entity);
+			int ret = subdev->open();
+			if (ret < 0) {
+				LOG(SimplePipeline, Error)
+					<< "Failed to open " << subdev->deviceNode()
+					<< ": " << strerror(-ret);
+				return false;
+			}
 		}
+
+		entities_[entity] = { nullptr, std::move(subdev) };
 	}
 
 	/* Initialize each pipeline and register a corresponding camera. */
@@ -1120,28 +1125,30 @@ V4L2VideoDevice *SimplePipelineHandler::video(const MediaEntity *entity)
 	 * by constructing a new one.
 	 */
 
-	auto iter = videos_.find(entity);
-	if (iter != videos_.end())
-		return iter->second.get();
-
-	std::unique_ptr<V4L2VideoDevice> video =
-		std::make_unique<V4L2VideoDevice>(entity);
-	if (video->open() < 0)
+	auto iter = entities_.find(entity);
+	if (iter == entities_.end())
 		return nullptr;
 
-	video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
+	EntityData &data = iter->second;
+	if (data.video)
+		return data.video.get();
 
-	auto element = videos_.emplace(entity, std::move(video));
-	return element.first->second.get();
+	data.video = std::make_unique<V4L2VideoDevice>(entity);
+	if (data.video->open() < 0)
+		return nullptr;
+
+	data.video->bufferReady.connect(this, &SimplePipelineHandler::bufferReady);
+
+	return data.video.get();
 }
 
 V4L2Subdevice *SimplePipelineHandler::subdev(const MediaEntity *entity)
 {
-	auto iter = subdevs_.find(entity);
-	if (iter == subdevs_.end())
+	auto iter = entities_.find(entity);
+	if (iter == entities_.end())
 		return nullptr;
 
-	return &iter->second;
+	return iter->second.subdev.get();
 }
 
 /* -----------------------------------------------------------------------------

@@ -191,6 +191,7 @@ namespace {
 
 static const SimplePipelineInfo supportedDevices[] = {
 	{ "imx7-csi", { { "pxp", 1 } } },
+	{ "mxc-isi", {} },
 	{ "qcom-camss", {} },
 	{ "sun6i-csi", {} },
 };

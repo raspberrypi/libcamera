@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include <libcamera/base/signal.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
@@ -27,6 +29,8 @@ public:
 		      libcamera::CameraConfiguration *config);
 
 	int run(const OptionsParser::Options &options);
+
+	libcamera::Signal<> captureDone;
 
 private:
 	int capture(libcamera::FrameBufferAllocator *allocator);

@@ -38,6 +38,7 @@ public:
 private:
 	void cameraAdded(std::shared_ptr<Camera> cam);
 	void cameraRemoved(std::shared_ptr<Camera> cam);
+	void captureDone();
 	int parseOptions(int argc, char *argv[]);
 	int prepareConfig();
 	int listControls();
@@ -330,6 +331,11 @@ void CamApp::cameraRemoved(std::shared_ptr<Camera> cam)
 	std::cout << "Camera Removed: " << cam->id() << std::endl;
 }
 
+void CamApp::captureDone()
+{
+	EventLoop::instance()->exit(0);
+}
+
 int CamApp::run()
 {
 	int ret;
@@ -364,6 +370,7 @@ int CamApp::run()
 
 	if (options_.isSet(OptCapture)) {
 		CameraSession session(camera_, config_.get());
+		session.captureDone.connect(this, &CamApp::captureDone);
 		return session.run(options_);
 	}
 

@@ -232,7 +232,7 @@ void CameraSession::processRequest(Request *request)
 
 	captureCount_++;
 	if (captureLimit_ && captureCount_ >= captureLimit_) {
-		EventLoop::instance()->exit(0);
+		captureDone.emit();
 		return;
 	}
 

@@ -34,7 +34,8 @@ public:
 	bool hasEntry(uint32_t tag) const;
 
 	template<typename T,
-		 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
+		 std::enable_if_t<std::is_arithmetic_v<T> ||
+				  std::is_enum_v<T>> * = nullptr>
 	bool addEntry(uint32_t tag, const T &data)
 	{
 		return addEntry(tag, &data, 1, sizeof(T));

@@ -363,7 +363,7 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		CameraSession session(camera_, config_.get(), &loop_);
+		CameraSession session(camera_, config_.get());
 		return session.run(options_);
 	}
 

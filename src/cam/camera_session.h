@@ -18,17 +18,16 @@
 #include <libcamera/stream.h>
 
 #include "buffer_writer.h"
-#include "event_loop.h"
 #include "options.h"
 
 class CameraSession
 {
 public:
 	CameraSession(std::shared_ptr<libcamera::Camera> camera,
-		      libcamera::CameraConfiguration *config,
-		      EventLoop *loop);
+		      libcamera::CameraConfiguration *config);
 
 	int run(const OptionsParser::Options &options);
+
 private:
 	int capture(libcamera::FrameBufferAllocator *allocator);
 
@@ -43,7 +42,6 @@ private:
 	BufferWriter *writer_;
 	uint64_t last_;
 
-	EventLoop *loop_;
 	unsigned int queueCount_;
 	unsigned int captureCount_;
 	unsigned int captureLimit_;

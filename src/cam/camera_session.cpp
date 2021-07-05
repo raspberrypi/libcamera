@@ -13,13 +13,14 @@
 #include <libcamera/control_ids.h>
 
 #include "camera_session.h"
+#include "event_loop.h"
 #include "main.h"
 
 using namespace libcamera;
 
 CameraSession::CameraSession(std::shared_ptr<Camera> camera,
-			     CameraConfiguration *config, EventLoop *loop)
-	: camera_(camera), config_(config), writer_(nullptr), last_(0), loop_(loop),
+			     CameraConfiguration *config)
+	: camera_(camera), config_(config), writer_(nullptr), last_(0),
 	  queueCount_(0), captureCount_(0), captureLimit_(0),
 	  printMetadata_(false)
 {
@@ -145,7 +146,7 @@ int CameraSession::capture(FrameBufferAllocator *allocator)
 	else
 		std::cout << "Capture until user interrupts by SIGINT" << std::endl;
 
-	ret = loop_->exec();
+	ret = EventLoop::instance()->exec();
 	if (ret)
 		std::cout << "Failed to run capture loop" << std::endl;
 
@@ -175,7 +176,7 @@ void CameraSession::requestComplete(Request *request)
 	 * Defer processing of the completed request to the event loop, to avoid
 	 * blocking the camera manager thread.
 	 */
-	loop_->callLater([=]() { processRequest(request); });
+	EventLoop::instance()->callLater([=]() { processRequest(request); });
 }
 
 void CameraSession::processRequest(Request *request)
@@ -231,7 +232,7 @@ void CameraSession::processRequest(Request *request)
 
 	captureCount_++;
 	if (captureLimit_ && captureCount_ >= captureLimit_) {
-		loop_->exit(0);
+		EventLoop::instance()->exit(0);
 		return;
 	}
 

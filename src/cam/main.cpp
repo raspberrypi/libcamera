@@ -51,8 +51,11 @@ private:
 	static CamApp *app_;
 	OptionsParser::Options options_;
 	CameraManager *cm_;
+
 	std::shared_ptr<Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
+	std::unique_ptr<CameraSession> session_;
+
 	EventLoop loop_;
 
 	bool strictFormats_;
@@ -127,6 +130,9 @@ int CamApp::init(int argc, char **argv)
 			cleanup();
 			return ret;
 		}
+
+		session_ = std::make_unique<CameraSession>(camera_, config_.get());
+		session_->captureDone.connect(this, &CamApp::captureDone);
 	}
 
 	if (options_.isSet(OptMonitor)) {
@@ -369,10 +375,12 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		CameraSession session(camera_, config_.get());
-		session.captureDone.connect(this, &CamApp::captureDone);
+		if (!camera_) {
+			std::cout << "Can't capture without a camera" << std::endl;
+			return -ENODEV;
+		}
 
-		ret = session.start(options_);
+		ret = session_->start(options_);
 		if (ret) {
 			std::cout << "Failed to start camera session" << std::endl;
 			return ret;
@@ -380,7 +388,7 @@ int CamApp::run()
 
 		loop_.exec();
 
-		session.stop();
+		session_->stop();
 		return 0;
 	}
 

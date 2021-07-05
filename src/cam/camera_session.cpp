@@ -34,11 +34,6 @@ int CameraSession::start(const OptionsParser::Options &options)
 	captureLimit_ = options[OptCapture].toInteger();
 	printMetadata_ = options.isSet(OptMetadata);
 
-	if (!camera_) {
-		std::cout << "Can't capture without a camera" << std::endl;
-		return -ENODEV;
-	}
-
 	ret = camera_->configure(config_);
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;

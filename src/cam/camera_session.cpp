@@ -15,14 +15,53 @@
 #include "camera_session.h"
 #include "event_loop.h"
 #include "main.h"
+#include "stream_options.h"
 
 using namespace libcamera;
 
 CameraSession::CameraSession(std::shared_ptr<Camera> camera,
-			     CameraConfiguration *config)
-	: camera_(camera), config_(config), last_(0), queueCount_(0),
-	  captureCount_(0), captureLimit_(0), printMetadata_(false)
+			     const OptionsParser::Options &options)
+	: camera_(camera), last_(0), queueCount_(0), captureCount_(0),
+	  captureLimit_(0), printMetadata_(false)
 {
+	StreamRoles roles = StreamKeyValueParser::roles(options[OptStream]);
+
+	std::unique_ptr<CameraConfiguration> config =
+		camera_->generateConfiguration(roles);
+	if (!config || config->size() != roles.size()) {
+		std::cerr << "Failed to get default stream configuration"
+			  << std::endl;
+		return;
+	}
+
+	/* Apply configuration if explicitly requested. */
+	if (StreamKeyValueParser::updateConfiguration(config.get(),
+						      options[OptStream])) {
+		std::cerr << "Failed to update configuration" << std::endl;
+		return;
+	}
+
+	bool strictFormats = options.isSet(OptStrictFormats);
+
+	switch (config->validate()) {
+	case CameraConfiguration::Valid:
+		break;
+
+	case CameraConfiguration::Adjusted:
+		if (strictFormats) {
+			std::cout << "Adjusting camera configuration disallowed by --strict-formats argument"
+				  << std::endl;
+			return;
+		}
+		std::cout << "Camera configuration adjusted" << std::endl;
+		break;
+
+	case CameraConfiguration::Invalid:
+		std::cout << "Camera configuration invalid" << std::endl;
+		return;
+	}
+
+	config_ = std::move(config);
 }
 
 int CameraSession::start(const OptionsParser::Options &options)
@@ -34,7 +73,7 @@ int CameraSession::start(const OptionsParser::Options &options)
 	captureLimit_ = options[OptCapture].toInteger();
 	printMetadata_ = options.isSet(OptMetadata);
 
-	ret = camera_->configure(config_);
+	ret = camera_->configure(config_.get());
 	if (ret < 0) {
 		std::cout << "Failed to configure camera" << std::endl;
 		return ret;

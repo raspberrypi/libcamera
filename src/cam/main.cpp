@@ -40,7 +40,6 @@ private:
 	void cameraRemoved(std::shared_ptr<Camera> cam);
 	void captureDone();
 	int parseOptions(int argc, char *argv[]);
-	int prepareConfig();
 	int listControls();
 	int listProperties();
 	int infoConfiguration();
@@ -53,19 +52,15 @@ private:
 	CameraManager *cm_;
 
 	std::shared_ptr<Camera> camera_;
-	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	std::unique_ptr<CameraSession> session_;
 
 	EventLoop loop_;
-
-	bool strictFormats_;
 };
 
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr), camera_(nullptr), config_(nullptr),
-	  strictFormats_(false)
+	: cm_(nullptr), camera_(nullptr)
 {
 	CamApp::app_ = this;
 }
@@ -87,9 +82,6 @@ int CamApp::init(int argc, char **argv)
 	ret = parseOptions(argc, argv);
 	if (ret < 0)
 		return ret;
-
-	if (options_.isSet(OptStrictFormats))
-		strictFormats_ = true;
 
 	cm_ = new CameraManager();
 
@@ -125,13 +117,13 @@ int CamApp::init(int argc, char **argv)
 
 		std::cout << "Using camera " << camera_->id() << std::endl;
 
-		ret = prepareConfig();
-		if (ret) {
+		session_ = std::make_unique<CameraSession>(camera_, options_);
+		if (!session_->isValid()) {
+			std::cout << "Failed to create camera session" << std::endl;
 			cleanup();
-			return ret;
+			return -EINVAL;
 		}
 
-		session_ = std::make_unique<CameraSession>(camera_, config_.get());
 		session_->captureDone.connect(this, &CamApp::captureDone);
 	}
 
@@ -151,7 +143,7 @@ void CamApp::cleanup()
 		camera_.reset();
 	}
 
-	config_.reset();
+	session_.reset();
 
 	cm_->stop();
 }
@@ -220,45 +212,6 @@ int CamApp::parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-int CamApp::prepareConfig()
-{
-	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
-
-	config_ = camera_->generateConfiguration(roles);
-	if (!config_ || config_->size() != roles.size()) {
-		std::cerr << "Failed to get default stream configuration"
-			  << std::endl;
-		return -EINVAL;
-	}
-
-	/* Apply configuration if explicitly requested. */
-	if (StreamKeyValueParser::updateConfiguration(config_.get(),
-						      options_[OptStream])) {
-		std::cerr << "Failed to update configuration" << std::endl;
-		return -EINVAL;
-	}
-
-	switch (config_->validate()) {
-	case CameraConfiguration::Valid:
-		break;
-	case CameraConfiguration::Adjusted:
-		if (strictFormats_) {
-			std::cout << "Adjusting camera configuration disallowed by --strict-formats argument"
-				  << std::endl;
-			config_.reset();
-			return -EINVAL;
-		}
-		std::cout << "Camera configuration adjusted" << std::endl;
-		break;
-	case CameraConfiguration::Invalid:
-		std::cout << "Camera configuration invalid" << std::endl;
-		config_.reset();
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 int CamApp::listControls()
 {
 	if (!camera_) {
@@ -299,14 +252,14 @@ int CamApp::listProperties()
 
 int CamApp::infoConfiguration()
 {
-	if (!config_) {
+	if (!camera_) {
 		std::cout << "Cannot print stream information without a camera"
 			  << std::endl;
 		return -EINVAL;
 	}
 
 	unsigned int index = 0;
-	for (const StreamConfiguration &cfg : *config_) {
+	for (const StreamConfiguration &cfg : *session_->config()) {
 		std::cout << index << ": " << cfg.toString() << std::endl;
 
 		const StreamFormats &formats = cfg.formats();

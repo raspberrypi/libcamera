@@ -26,7 +26,10 @@ class CameraSession
 {
 public:
 	CameraSession(std::shared_ptr<libcamera::Camera> camera,
-		      libcamera::CameraConfiguration *config);
+		      const OptionsParser::Options &options);
+
+	bool isValid() const { return config_ != nullptr; }
+	libcamera::CameraConfiguration *config() { return config_.get(); }
 
 	int start(const OptionsParser::Options &options);
 	void stop();
@@ -41,7 +44,7 @@ private:
 	void processRequest(libcamera::Request *request);
 
 	std::shared_ptr<libcamera::Camera> camera_;
-	libcamera::CameraConfiguration *config_;
+	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
 	std::map<const libcamera::Stream *, std::string> streamName_;
 	std::unique_ptr<BufferWriter> writer_;

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * capture.cpp - Cam capture
+ * camera_session.cpp - Camera capture session
  */
 
 #include <iomanip>
@@ -12,20 +12,20 @@
 
 #include <libcamera/control_ids.h>
 
-#include "capture.h"
+#include "camera_session.h"
 #include "main.h"
 
 using namespace libcamera;
 
-Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
-		 EventLoop *loop)
+CameraSession::CameraSession(std::shared_ptr<Camera> camera,
+			     CameraConfiguration *config, EventLoop *loop)
 	: camera_(camera), config_(config), writer_(nullptr), last_(0), loop_(loop),
 	  queueCount_(0), captureCount_(0), captureLimit_(0),
 	  printMetadata_(false)
 {
 }
 
-int Capture::run(const OptionsParser::Options &options)
+int CameraSession::run(const OptionsParser::Options &options)
 {
 	int ret;
 
@@ -51,7 +51,7 @@ int Capture::run(const OptionsParser::Options &options)
 		streamName_[cfg.stream()] = "stream" + std::to_string(index);
 	}
 
-	camera_->requestCompleted.connect(this, &Capture::requestComplete);
+	camera_->requestCompleted.connect(this, &CameraSession::requestComplete);
 
 	if (options.isSet(OptFile)) {
 		if (!options[OptFile].toString().empty())
@@ -59,7 +59,6 @@ int Capture::run(const OptionsParser::Options &options)
 		else
 			writer_ = new BufferWriter();
 	}
-
 
 	FrameBufferAllocator *allocator = new FrameBufferAllocator(camera_);
 
@@ -77,7 +76,7 @@ int Capture::run(const OptionsParser::Options &options)
 	return ret;
 }
 
-int Capture::capture(FrameBufferAllocator *allocator)
+int CameraSession::capture(FrameBufferAllocator *allocator)
 {
 	int ret;
 
@@ -157,7 +156,7 @@ int Capture::capture(FrameBufferAllocator *allocator)
 	return ret;
 }
 
-int Capture::queueRequest(Request *request)
+int CameraSession::queueRequest(Request *request)
 {
 	if (captureLimit_ && queueCount_ >= captureLimit_)
 		return 0;
@@ -167,7 +166,7 @@ int Capture::queueRequest(Request *request)
 	return camera_->queueRequest(request);
 }
 
-void Capture::requestComplete(Request *request)
+void CameraSession::requestComplete(Request *request)
 {
 	if (request->status() == Request::RequestCancelled)
 		return;
@@ -179,7 +178,7 @@ void Capture::requestComplete(Request *request)
 	loop_->callLater([=]() { processRequest(request); });
 }
 
-void Capture::processRequest(Request *request)
+void CameraSession::processRequest(Request *request)
 {
 	const Request::BufferMap &buffers = request->buffers();
 

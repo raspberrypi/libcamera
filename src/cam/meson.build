@@ -11,7 +11,7 @@ cam_enabled = true
 
 cam_sources = files([
     'buffer_writer.cpp',
-    'capture.cpp',
+    'camera_session.cpp',
     'event_loop.cpp',
     'main.cpp',
     'options.cpp',

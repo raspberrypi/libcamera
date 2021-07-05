@@ -13,7 +13,7 @@
 #include <libcamera/libcamera.h>
 #include <libcamera/property_ids.h>
 
-#include "capture.h"
+#include "camera_session.h"
 #include "event_loop.h"
 #include "main.h"
 #include "options.h"
@@ -363,8 +363,8 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		Capture capture(camera_, config_.get(), &loop_);
-		return capture.run(options_);
+		CameraSession session(camera_, config_.get(), &loop_);
+		return session.run(options_);
 	}
 
 	if (options_.isSet(OptMonitor)) {

@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * capture.h - Cam capture
+ * camera_session.h - Camera capture session
  */
-#ifndef __CAM_CAPTURE_H__
-#define __CAM_CAPTURE_H__
+#ifndef __CAM_CAMERA_SESSION_H__
+#define __CAM_CAMERA_SESSION_H__
 
 #include <memory>
 #include <stdint.h>
@@ -21,12 +21,12 @@
 #include "event_loop.h"
 #include "options.h"
 
-class Capture
+class CameraSession
 {
 public:
-	Capture(std::shared_ptr<libcamera::Camera> camera,
-		libcamera::CameraConfiguration *config,
-		EventLoop *loop);
+	CameraSession(std::shared_ptr<libcamera::Camera> camera,
+		      libcamera::CameraConfiguration *config,
+		      EventLoop *loop);
 
 	int run(const OptionsParser::Options &options);
 private:
@@ -52,4 +52,4 @@ private:
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
 
-#endif /* __CAM_CAPTURE_H__ */
+#endif /* __CAM_CAMERA_SESSION_H__ */

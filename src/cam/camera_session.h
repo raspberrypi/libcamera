@@ -44,7 +44,7 @@ private:
 	libcamera::CameraConfiguration *config_;
 
 	std::map<const libcamera::Stream *, std::string> streamName_;
-	BufferWriter *writer_;
+	std::unique_ptr<BufferWriter> writer_;
 	uint64_t last_;
 
 	unsigned int queueCount_;
@@ -52,7 +52,7 @@ private:
 	unsigned int captureLimit_;
 	bool printMetadata_;
 
-	libcamera::FrameBufferAllocator *allocator_;
+	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
 

@@ -20,9 +20,8 @@ using namespace libcamera;
 
 CameraSession::CameraSession(std::shared_ptr<Camera> camera,
 			     CameraConfiguration *config)
-	: camera_(camera), config_(config), writer_(nullptr), last_(0),
-	  queueCount_(0), captureCount_(0), captureLimit_(0),
-	  printMetadata_(false), allocator_(nullptr)
+	: camera_(camera), config_(config), last_(0), queueCount_(0),
+	  captureCount_(0), captureLimit_(0), printMetadata_(false)
 {
 }
 
@@ -56,12 +55,12 @@ int CameraSession::start(const OptionsParser::Options &options)
 
 	if (options.isSet(OptFile)) {
 		if (!options[OptFile].toString().empty())
-			writer_ = new BufferWriter(options[OptFile]);
+			writer_ = std::make_unique<BufferWriter>(options[OptFile]);
 		else
-			writer_ = new BufferWriter();
+			writer_ = std::make_unique<BufferWriter>();
 	}
 
-	allocator_ = new FrameBufferAllocator(camera_);
+	allocator_ = std::make_unique<FrameBufferAllocator>(camera_);
 
 	return startCapture();
 }
@@ -72,12 +71,11 @@ void CameraSession::stop()
 	if (ret)
 		std::cout << "Failed to stop capture" << std::endl;
 
-	delete writer_;
-	writer_ = nullptr;
+	writer_.reset();
 
 	requests_.clear();
 
-	delete allocator_;
+	allocator_.reset();
 }
 
 int CameraSession::startCapture()

@@ -487,7 +487,7 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		 * for the torch mode we currently do not support.
 		 */
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE;
-		requestTemplate = capabilities_.requestTemplatePreview();
+		requestTemplate = capabilities_.requestTemplateStill();
 		break;
 	case CAMERA3_TEMPLATE_VIDEO_RECORD:
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD;
@@ -497,9 +497,12 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT;
 		requestTemplate = capabilities_.requestTemplateVideo();
 		break;
+	case CAMERA3_TEMPLATE_MANUAL:
+		captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_MANUAL;
+		requestTemplate = capabilities_.requestTemplateManual();
+		break;
 	/* \todo Implement templates generation for the remaining use cases. */
 	case CAMERA3_TEMPLATE_ZERO_SHUTTER_LAG:
-	case CAMERA3_TEMPLATE_MANUAL:
 	default:
 		LOG(HAL, Error) << "Unsupported template request type: " << type;
 		return nullptr;

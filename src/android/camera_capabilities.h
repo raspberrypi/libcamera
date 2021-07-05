@@ -32,7 +32,9 @@ public:
 	libcamera::PixelFormat toPixelFormat(int format) const;
 	unsigned int maxJpegBufferSize() const { return maxJpegBufferSize_; }
 
+	std::unique_ptr<CameraMetadata> requestTemplateManual() const;
 	std::unique_ptr<CameraMetadata> requestTemplatePreview() const;
+	std::unique_ptr<CameraMetadata> requestTemplateStill() const;
 	std::unique_ptr<CameraMetadata> requestTemplateVideo() const;
 
 private:

@@ -1322,6 +1322,15 @@ PixelFormat CameraCapabilities::toPixelFormat(int format) const
 	return it->second;
 }
 
+std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplateManual() const
+{
+	std::unique_ptr<CameraMetadata> manualTemplate = requestTemplatePreview();
+	if (!manualTemplate)
+		return nullptr;
+
+	return manualTemplate;
+}
+
 std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplatePreview() const
 {
 	/*
@@ -1409,6 +1418,15 @@ std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplatePreview() con
 				  captureIntent);
 
 	return requestTemplate;
+}
+
+std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplateStill() const
+{
+	std::unique_ptr<CameraMetadata> stillTemplate = requestTemplatePreview();
+	if (!stillTemplate)
+		return nullptr;
+
+	return stillTemplate;
 }
 
 std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplateVideo() const

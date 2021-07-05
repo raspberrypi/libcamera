@@ -79,9 +79,11 @@ public:
 		       OptionArgument argument = ArgumentNone);
 
 	virtual Options parse(const char *arguments);
-	void usage(int indent);
 
 private:
+	friend class OptionsParser;
+	void usage(int indent);
+
 	std::map<std::string, Option> optionsMap_;
 };
 

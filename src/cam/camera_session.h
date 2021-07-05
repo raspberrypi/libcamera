@@ -28,12 +28,13 @@ public:
 	CameraSession(std::shared_ptr<libcamera::Camera> camera,
 		      libcamera::CameraConfiguration *config);
 
-	int run(const OptionsParser::Options &options);
+	int start(const OptionsParser::Options &options);
+	void stop();
 
 	libcamera::Signal<> captureDone;
 
 private:
-	int capture(libcamera::FrameBufferAllocator *allocator);
+	int startCapture();
 
 	int queueRequest(libcamera::Request *request);
 	void requestComplete(libcamera::Request *request);
@@ -51,6 +52,7 @@ private:
 	unsigned int captureLimit_;
 	bool printMetadata_;
 
+	libcamera::FrameBufferAllocator *allocator_;
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
 

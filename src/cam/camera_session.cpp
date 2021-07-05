@@ -22,11 +22,11 @@ CameraSession::CameraSession(std::shared_ptr<Camera> camera,
 			     CameraConfiguration *config)
 	: camera_(camera), config_(config), writer_(nullptr), last_(0),
 	  queueCount_(0), captureCount_(0), captureLimit_(0),
-	  printMetadata_(false)
+	  printMetadata_(false), allocator_(nullptr)
 {
 }
 
-int CameraSession::run(const OptionsParser::Options &options)
+int CameraSession::start(const OptionsParser::Options &options)
 {
 	int ret;
 
@@ -61,36 +61,39 @@ int CameraSession::run(const OptionsParser::Options &options)
 			writer_ = new BufferWriter();
 	}
 
-	FrameBufferAllocator *allocator = new FrameBufferAllocator(camera_);
+	allocator_ = new FrameBufferAllocator(camera_);
 
-	ret = capture(allocator);
+	return startCapture();
+}
 
-	if (options.isSet(OptFile)) {
-		delete writer_;
-		writer_ = nullptr;
-	}
+void CameraSession::stop()
+{
+	int ret = camera_->stop();
+	if (ret)
+		std::cout << "Failed to stop capture" << std::endl;
+
+	delete writer_;
+	writer_ = nullptr;
 
 	requests_.clear();
 
-	delete allocator;
-
-	return ret;
+	delete allocator_;
 }
 
-int CameraSession::capture(FrameBufferAllocator *allocator)
+int CameraSession::startCapture()
 {
 	int ret;
 
 	/* Identify the stream with the least number of buffers. */
 	unsigned int nbuffers = UINT_MAX;
 	for (StreamConfiguration &cfg : *config_) {
-		ret = allocator->allocate(cfg.stream());
+		ret = allocator_->allocate(cfg.stream());
 		if (ret < 0) {
 			std::cerr << "Can't allocate buffers" << std::endl;
 			return -ENOMEM;
 		}
 
-		unsigned int allocated = allocator->buffers(cfg.stream()).size();
+		unsigned int allocated = allocator_->buffers(cfg.stream()).size();
 		nbuffers = std::min(nbuffers, allocated);
 	}
 
@@ -109,7 +112,7 @@ int CameraSession::capture(FrameBufferAllocator *allocator)
 		for (StreamConfiguration &cfg : *config_) {
 			Stream *stream = cfg.stream();
 			const std::vector<std::unique_ptr<FrameBuffer>> &buffers =
-				allocator->buffers(stream);
+				allocator_->buffers(stream);
 			const std::unique_ptr<FrameBuffer> &buffer = buffers[i];
 
 			ret = request->addBuffer(stream, buffer.get());
@@ -146,15 +149,7 @@ int CameraSession::capture(FrameBufferAllocator *allocator)
 	else
 		std::cout << "Capture until user interrupts by SIGINT" << std::endl;
 
-	ret = EventLoop::instance()->exec();
-	if (ret)
-		std::cout << "Failed to run capture loop" << std::endl;
-
-	ret = camera_->stop();
-	if (ret)
-		std::cout << "Failed to stop capture" << std::endl;
-
-	return ret;
+	return 0;
 }
 
 int CameraSession::queueRequest(Request *request)

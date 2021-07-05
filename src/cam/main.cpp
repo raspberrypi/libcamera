@@ -371,7 +371,17 @@ int CamApp::run()
 	if (options_.isSet(OptCapture)) {
 		CameraSession session(camera_, config_.get());
 		session.captureDone.connect(this, &CamApp::captureDone);
-		return session.run(options_);
+
+		ret = session.start(options_);
+		if (ret) {
+			std::cout << "Failed to start camera session" << std::endl;
+			return ret;
+		}
+
+		loop_.exec();
+
+		session.stop();
+		return 0;
 	}
 
 	if (options_.isSet(OptMonitor)) {

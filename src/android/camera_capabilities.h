@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <libcamera/base/class.h>
@@ -72,6 +73,10 @@ private:
 	std::map<int, libcamera::PixelFormat> formatsMap_;
 	std::unique_ptr<CameraMetadata> staticMetadata_;
 	unsigned int maxJpegBufferSize_;
+
+	std::set<int32_t> availableCharacteristicsKeys_;
+	std::set<int32_t> availableRequestKeys_;
+	std::set<int32_t> availableResultKeys_;
 };
 
 #endif /* __ANDROID_CAMERA_CAPABILITIES_H__ */

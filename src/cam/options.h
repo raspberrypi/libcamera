@@ -14,6 +14,7 @@
 
 class KeyValueParser;
 class OptionValue;
+struct Option;
 
 enum OptionArgument {
 	ArgumentNone,
@@ -26,21 +27,6 @@ enum OptionType {
 	OptionInteger,
 	OptionString,
 	OptionKeyValue,
-};
-
-struct Option {
-	int opt;
-	OptionType type;
-	const char *name;
-	OptionArgument argument;
-	const char *argumentName;
-	const char *help;
-	KeyValueParser *keyValueParser;
-	bool isArray;
-
-	bool hasShortOption() const { return isalnum(opt); }
-	bool hasLongOption() const { return name != nullptr; }
-	const char *typeName() const;
 };
 
 template<typename T>
@@ -73,7 +59,8 @@ public:
 	{
 	};
 
-	virtual ~KeyValueParser() = default;
+	KeyValueParser();
+	virtual ~KeyValueParser();
 
 	bool addOption(const char *name, OptionType type, const char *help,
 		       OptionArgument argument = ArgumentNone);
@@ -132,6 +119,9 @@ public:
 	class Options : public OptionsBase<int>
 	{
 	};
+
+	OptionsParser();
+	~OptionsParser();
 
 	bool addOption(int opt, OptionType type, const char *help,
 		       const char *name = nullptr,

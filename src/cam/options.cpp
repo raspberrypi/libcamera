@@ -17,6 +17,21 @@
  * Option
  */
 
+struct Option {
+	int opt;
+	OptionType type;
+	const char *name;
+	OptionArgument argument;
+	const char *argumentName;
+	const char *help;
+	KeyValueParser *keyValueParser;
+	bool isArray;
+
+	bool hasShortOption() const { return isalnum(opt); }
+	bool hasLongOption() const { return name != nullptr; }
+	const char *typeName() const;
+};
+
 const char *Option::typeName() const
 {
 	switch (type) {
@@ -128,6 +143,9 @@ template class OptionsBase<std::string>;
 /* -----------------------------------------------------------------------------
  * KeyValueParser
  */
+
+KeyValueParser::KeyValueParser() = default;
+KeyValueParser::~KeyValueParser() = default;
 
 bool KeyValueParser::addOption(const char *name, OptionType type,
 			       const char *help, OptionArgument argument)
@@ -348,6 +366,9 @@ std::vector<OptionValue> OptionValue::toArray() const
 /* -----------------------------------------------------------------------------
  * OptionsParser
  */
+
+OptionsParser::OptionsParser() = default;
+OptionsParser::~OptionsParser() = default;
 
 bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 			      const char *name, OptionArgument argument,

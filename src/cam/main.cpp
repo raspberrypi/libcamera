@@ -25,7 +25,6 @@ class CamApp
 {
 public:
 	CamApp();
-	~CamApp();
 
 	static CamApp *instance();
 
@@ -49,8 +48,8 @@ private:
 
 	static CamApp *app_;
 	OptionsParser::Options options_;
-	CameraManager *cm_;
 
+	std::unique_ptr<CameraManager> cm_;
 	std::unique_ptr<CameraSession> session_;
 
 	EventLoop loop_;
@@ -59,14 +58,8 @@ private:
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr)
 {
 	CamApp::app_ = this;
-}
-
-CamApp::~CamApp()
-{
-	delete cm_;
 }
 
 CamApp *CamApp::instance()
@@ -82,7 +75,7 @@ int CamApp::init(int argc, char **argv)
 	if (ret < 0)
 		return ret;
 
-	cm_ = new CameraManager();
+	cm_ = std::make_unique<CameraManager>();
 
 	ret = cm_->start();
 	if (ret) {
@@ -92,7 +85,7 @@ int CamApp::init(int argc, char **argv)
 	}
 
 	if (options_.isSet(OptCamera)) {
-		session_ = std::make_unique<CameraSession>(cm_, options_);
+		session_ = std::make_unique<CameraSession>(cm_.get(), options_);
 		if (!session_->isValid()) {
 			std::cout << "Failed to create camera session" << std::endl;
 			cleanup();

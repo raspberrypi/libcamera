@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <stdint.h>
+#include <string>
 #include <vector>
 
 #include <libcamera/base/signal.h>
@@ -27,10 +28,12 @@ class CameraSession
 {
 public:
 	CameraSession(libcamera::CameraManager *cm,
+		      const std::string &cameraId,
 		      const OptionsParser::Options &options);
 	~CameraSession();
 
 	bool isValid() const { return config_ != nullptr; }
+	const OptionsParser::Options &options() { return options_; }
 
 	libcamera::Camera *camera() { return camera_.get(); }
 	libcamera::CameraConfiguration *config() { return config_.get(); }
@@ -39,7 +42,7 @@ public:
 	void listProperties() const;
 	void infoConfiguration() const;
 
-	int start(const OptionsParser::Options &options);
+	int start();
 	void stop();
 
 	libcamera::Signal<> captureDone;
@@ -51,6 +54,7 @@ private:
 	void requestComplete(libcamera::Request *request);
 	void processRequest(libcamera::Request *request);
 
+	const OptionsParser::Options &options_;
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 

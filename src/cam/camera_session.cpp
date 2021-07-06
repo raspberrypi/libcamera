@@ -21,11 +21,11 @@
 using namespace libcamera;
 
 CameraSession::CameraSession(CameraManager *cm,
+			     const std::string &cameraId,
 			     const OptionsParser::Options &options)
-	: last_(0), queueCount_(0), captureCount_(0),
+	: options_(options), last_(0), queueCount_(0), captureCount_(0),
 	  captureLimit_(0), printMetadata_(false)
 {
-	const std::string &cameraId = options[OptCamera];
 	char *endptr;
 	unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
 	if (*endptr == '\0' && index > 0 && index <= cm->cameras().size())
@@ -44,7 +44,7 @@ CameraSession::CameraSession(CameraManager *cm,
 		return;
 	}
 
-	StreamRoles roles = StreamKeyValueParser::roles(options[OptStream]);
+	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
 
 	std::unique_ptr<CameraConfiguration> config =
 		camera_->generateConfiguration(roles);
@@ -56,12 +56,12 @@ CameraSession::CameraSession(CameraManager *cm,
 
 	/* Apply configuration if explicitly requested. */
 	if (StreamKeyValueParser::updateConfiguration(config.get(),
-						      options[OptStream])) {
+						      options_[OptStream])) {
 		std::cerr << "Failed to update configuration" << std::endl;
 		return;
 	}
 
-	bool strictFormats = options.isSet(OptStrictFormats);
+	bool strictFormats = options_.isSet(OptStrictFormats);
 
 	switch (config->validate()) {
 	case CameraConfiguration::Valid:
@@ -134,14 +134,14 @@ void CameraSession::infoConfiguration() const
 	}
 }
 
-int CameraSession::start(const OptionsParser::Options &options)
+int CameraSession::start()
 {
 	int ret;
 
 	queueCount_ = 0;
 	captureCount_ = 0;
-	captureLimit_ = options[OptCapture].toInteger();
-	printMetadata_ = options.isSet(OptMetadata);
+	captureLimit_ = options_[OptCapture].toInteger();
+	printMetadata_ = options_.isSet(OptMetadata);
 
 	ret = camera_->configure(config_.get());
 	if (ret < 0) {
@@ -157,9 +157,9 @@ int CameraSession::start(const OptionsParser::Options &options)
 
 	camera_->requestCompleted.connect(this, &CameraSession::requestComplete);
 
-	if (options.isSet(OptFile)) {
-		if (!options[OptFile].toString().empty())
-			writer_ = std::make_unique<BufferWriter>(options[OptFile]);
+	if (options_.isSet(OptFile)) {
+		if (!options_[OptFile].toString().empty())
+			writer_ = std::make_unique<BufferWriter>(options_[OptFile]);
 		else
 			writer_ = std::make_unique<BufferWriter>();
 	}

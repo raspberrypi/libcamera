@@ -113,19 +113,6 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on, by id or by index", "camera",
 			 ArgumentRequired, "camera");
-	parser.addOption(OptCapture, OptionInteger,
-			 "Capture until interrupted by user or until <count> frames captured",
-			 "capture", ArgumentOptional, "count");
-	parser.addOption(OptFile, OptionString,
-			 "Write captured frames to disk\n"
-			 "If the file name ends with a '/', it sets the directory in which\n"
-			 "to write files, using the default file name. Otherwise it sets the\n"
-			 "full file path and name. The first '#' character in the file name\n"
-			 "is expanded to the stream name and frame sequence number.\n"
-			 "The default file name is 'frame-#.bin'.",
-			 "file", ArgumentOptional, "filename");
-	parser.addOption(OptStream, &streamKeyValue,
-			 "Set configuration of a camera stream", "stream", true);
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
 	parser.addOption(OptInfo, OptionNone,
@@ -138,12 +125,32 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptMonitor, OptionNone,
 			 "Monitor for hotplug and unplug camera events",
 			 "monitor");
+
+	/* Sub-options of OptCamera: */
+	parser.addOption(OptCapture, OptionInteger,
+			 "Capture until interrupted by user or until <count> frames captured",
+			 "capture", ArgumentOptional, "count", false,
+			 OptCamera);
+	parser.addOption(OptFile, OptionString,
+			 "Write captured frames to disk\n"
+			 "If the file name ends with a '/', it sets the directory in which\n"
+			 "to write files, using the default file name. Otherwise it sets the\n"
+			 "full file path and name. The first '#' character in the file name\n"
+			 "is expanded to the stream name and frame sequence number.\n"
+			 "The default file name is 'frame-#.bin'.",
+			 "file", ArgumentOptional, "filename", false,
+			 OptCamera);
+	parser.addOption(OptStream, &streamKeyValue,
+			 "Set configuration of a camera stream", "stream", true,
+			 OptCamera);
 	parser.addOption(OptStrictFormats, OptionNone,
 			 "Do not allow requested stream format(s) to be adjusted",
-			 "strict-formats");
+			 "strict-formats", ArgumentNone, nullptr, false,
+			 OptCamera);
 	parser.addOption(OptMetadata, OptionNone,
 			 "Print the metadata for completed requests",
-			 "metadata");
+			 "metadata", ArgumentNone, nullptr, false,
+			 OptCamera);
 
 	options_ = parser.parse(argc, argv);
 	if (!options_.valid())
@@ -192,7 +199,10 @@ int CamApp::run()
 	std::unique_ptr<CameraSession> session;
 
 	if (options_.isSet(OptCamera)) {
-		session = std::make_unique<CameraSession>(cm_.get(), options_);
+		const OptionValue &camera = options_[OptCamera];
+		session = std::make_unique<CameraSession>(cm_.get(),
+							  camera.toString(),
+							  camera.children());
 		if (!session->isValid()) {
 			std::cout << "Failed to create camera session" << std::endl;
 			return -EINVAL;
@@ -223,13 +233,8 @@ int CamApp::run()
 	}
 
 	/* 4. Start capture. */
-	if (options_.isSet(OptCapture)) {
-		if (!session) {
-			std::cout << "Can't capture without a camera" << std::endl;
-			return -ENODEV;
-		}
-
-		ret = session->start(options_);
+	if (session && session->options().isSet(OptCapture)) {
+		ret = session->start();
 		if (ret) {
 			std::cout << "Failed to start camera session" << std::endl;
 			return ret;
@@ -253,7 +258,7 @@ int CamApp::run()
 		loop_.exec();
 
 	/* 6. Stop capture. */
-	if (options_.isSet(OptCapture))
+	if (session && session->options().isSet(OptCapture))
 		session->stop();
 
 	return 0;

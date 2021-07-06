@@ -14,6 +14,7 @@
 #include <libcamera/base/signal.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/camera_manager.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/request.h>
@@ -25,10 +26,13 @@
 class CameraSession
 {
 public:
-	CameraSession(std::shared_ptr<libcamera::Camera> camera,
+	CameraSession(libcamera::CameraManager *cm,
 		      const OptionsParser::Options &options);
+	~CameraSession();
 
 	bool isValid() const { return config_ != nullptr; }
+
+	libcamera::Camera *camera() { return camera_.get(); }
 	libcamera::CameraConfiguration *config() { return config_.get(); }
 
 	int start(const OptionsParser::Options &options);

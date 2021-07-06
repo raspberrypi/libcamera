@@ -51,7 +51,6 @@ private:
 	OptionsParser::Options options_;
 	CameraManager *cm_;
 
-	std::shared_ptr<Camera> camera_;
 	std::unique_ptr<CameraSession> session_;
 
 	EventLoop loop_;
@@ -60,7 +59,7 @@ private:
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
-	: cm_(nullptr), camera_(nullptr)
+	: cm_(nullptr)
 {
 	CamApp::app_ = this;
 }
@@ -93,36 +92,15 @@ int CamApp::init(int argc, char **argv)
 	}
 
 	if (options_.isSet(OptCamera)) {
-		const std::string &cameraId = options_[OptCamera];
-		char *endptr;
-		unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
-		if (*endptr == '\0' && index > 0 && index <= cm_->cameras().size())
-			camera_ = cm_->cameras()[index - 1];
-		else
-			camera_ = cm_->get(cameraId);
-
-		if (!camera_) {
-			std::cout << "Camera "
-				  << std::string(options_[OptCamera])
-				  << " not found" << std::endl;
-			cleanup();
-			return -ENODEV;
-		}
-
-		if (camera_->acquire()) {
-			std::cout << "Failed to acquire camera" << std::endl;
-			cleanup();
-			return -EINVAL;
-		}
-
-		std::cout << "Using camera " << camera_->id() << std::endl;
-
-		session_ = std::make_unique<CameraSession>(camera_, options_);
+		session_ = std::make_unique<CameraSession>(cm_, options_);
 		if (!session_->isValid()) {
 			std::cout << "Failed to create camera session" << std::endl;
 			cleanup();
 			return -EINVAL;
 		}
+
+		std::cout << "Using camera " << session_->camera()->id()
+			  << std::endl;
 
 		session_->captureDone.connect(this, &CamApp::captureDone);
 	}
@@ -138,11 +116,6 @@ int CamApp::init(int argc, char **argv)
 
 void CamApp::cleanup()
 {
-	if (camera_) {
-		camera_->release();
-		camera_.reset();
-	}
-
 	session_.reset();
 
 	cm_->stop();
@@ -214,13 +187,13 @@ int CamApp::parseOptions(int argc, char *argv[])
 
 int CamApp::listControls()
 {
-	if (!camera_) {
+	if (!session_) {
 		std::cout << "Cannot list controls without a camera"
 			  << std::endl;
 		return -EINVAL;
 	}
 
-	for (const auto &ctrl : camera_->controls()) {
+	for (const auto &ctrl : session_->camera()->controls()) {
 		const ControlId *id = ctrl.first;
 		const ControlInfo &info = ctrl.second;
 
@@ -233,13 +206,13 @@ int CamApp::listControls()
 
 int CamApp::listProperties()
 {
-	if (!camera_) {
+	if (!session_) {
 		std::cout << "Cannot list properties without a camera"
 			  << std::endl;
 		return -EINVAL;
 	}
 
-	for (const auto &prop : camera_->properties()) {
+	for (const auto &prop : session_->camera()->properties()) {
 		const ControlId *id = properties::properties.at(prop.first);
 		const ControlValue &value = prop.second;
 
@@ -252,7 +225,7 @@ int CamApp::listProperties()
 
 int CamApp::infoConfiguration()
 {
-	if (!camera_) {
+	if (!session_) {
 		std::cout << "Cannot print stream information without a camera"
 			  << std::endl;
 		return -EINVAL;
@@ -328,7 +301,7 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCapture)) {
-		if (!camera_) {
+		if (!session_) {
 			std::cout << "Can't capture without a camera" << std::endl;
 			return -ENODEV;
 		}

@@ -19,11 +19,30 @@
 
 using namespace libcamera;
 
-CameraSession::CameraSession(std::shared_ptr<Camera> camera,
+CameraSession::CameraSession(CameraManager *cm,
 			     const OptionsParser::Options &options)
-	: camera_(camera), last_(0), queueCount_(0), captureCount_(0),
+	: last_(0), queueCount_(0), captureCount_(0),
 	  captureLimit_(0), printMetadata_(false)
 {
+	const std::string &cameraId = options[OptCamera];
+	char *endptr;
+	unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
+	if (*endptr == '\0' && index > 0 && index <= cm->cameras().size())
+		camera_ = cm->cameras()[index - 1];
+	else
+		camera_ = cm->get(cameraId);
+
+	if (!camera_) {
+		std::cerr << "Camera " << cameraId << " not found" << std::endl;
+		return;
+	}
+
+	if (camera_->acquire()) {
+		std::cerr << "Failed to acquire camera " << cameraId
+			  << std::endl;
+		return;
+	}
+
 	StreamRoles roles = StreamKeyValueParser::roles(options[OptStream]);
 
 	std::unique_ptr<CameraConfiguration> config =
@@ -62,6 +81,12 @@ CameraSession::CameraSession(std::shared_ptr<Camera> camera,
 	}
 
 	config_ = std::move(config);
+}
+
+CameraSession::~CameraSession()
+{
+	if (camera_)
+		camera_->release();
 }
 
 int CameraSession::start(const OptionsParser::Options &options)

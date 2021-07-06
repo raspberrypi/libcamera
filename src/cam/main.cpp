@@ -118,7 +118,10 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "capture", ArgumentOptional, "count");
 	parser.addOption(OptFile, OptionString,
 			 "Write captured frames to disk\n"
-			 "The first '#' character in the file name is expanded to the stream name and frame sequence number.\n"
+			 "If the file name ends with a '/', it sets the directory in which\n"
+			 "to write files, using the default file name. Otherwise it sets the\n"
+			 "full file path and name. The first '#' character in the file name\n"
+			 "is expanded to the stream name and frame sequence number.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename");
 	parser.addOption(OptStream, &streamKeyValue,

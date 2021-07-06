@@ -49,7 +49,12 @@ int BufferWriter::write(FrameBuffer *buffer, const std::string &streamName)
 	size_t pos;
 	int fd, ret = 0;
 
-	filename = pattern_;
+	if (!pattern_.empty())
+		filename = pattern_;
+
+	if (filename.empty() || filename.back() == '/')
+		filename += "frame-#.bin";
+
 	pos = filename.find_first_of('#');
 	if (pos != std::string::npos) {
 		std::stringstream ss;

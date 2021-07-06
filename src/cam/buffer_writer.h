@@ -15,7 +15,7 @@
 class BufferWriter
 {
 public:
-	BufferWriter(const std::string &pattern = "frame-#.bin");
+	BufferWriter(const std::string &pattern = "");
 	~BufferWriter();
 
 	void mapBuffer(libcamera::FrameBuffer *buffer);

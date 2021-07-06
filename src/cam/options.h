@@ -74,6 +74,33 @@ private:
 	std::map<std::string, Option> optionsMap_;
 };
 
+class OptionsParser
+{
+public:
+	class Options : public OptionsBase<int>
+	{
+	};
+
+	OptionsParser();
+	~OptionsParser();
+
+	bool addOption(int opt, OptionType type, const char *help,
+		       const char *name = nullptr,
+		       OptionArgument argument = ArgumentNone,
+		       const char *argumentName = nullptr, bool array = false);
+	bool addOption(int opt, KeyValueParser *parser, const char *help,
+		       const char *name = nullptr, bool array = false);
+
+	Options parse(int argc, char *argv[]);
+	void usage();
+
+private:
+	void parseValueError(const Option &option);
+
+	std::list<Option> options_;
+	std::map<unsigned int, Option *> optionsMap_;
+};
+
 class OptionValue
 {
 public:
@@ -111,33 +138,6 @@ private:
 	std::string string_;
 	KeyValueParser::Options keyValues_;
 	std::vector<OptionValue> array_;
-};
-
-class OptionsParser
-{
-public:
-	class Options : public OptionsBase<int>
-	{
-	};
-
-	OptionsParser();
-	~OptionsParser();
-
-	bool addOption(int opt, OptionType type, const char *help,
-		       const char *name = nullptr,
-		       OptionArgument argument = ArgumentNone,
-		       const char *argumentName = nullptr, bool array = false);
-	bool addOption(int opt, KeyValueParser *parser, const char *help,
-		       const char *name = nullptr, bool array = false);
-
-	Options parse(int argc, char *argv[]);
-	void usage();
-
-private:
-	void parseValueError(const Option &option);
-
-	std::list<Option> options_;
-	std::map<unsigned int, Option *> optionsMap_;
 };
 
 #endif /* __CAM_OPTIONS_H__ */

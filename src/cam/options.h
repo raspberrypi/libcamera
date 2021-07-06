@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <list>
 #include <map>
+#include <tuple>
 #include <vector>
 
 class KeyValueParser;
@@ -91,9 +92,11 @@ public:
 	bool addOption(int opt, OptionType type, const char *help,
 		       const char *name = nullptr,
 		       OptionArgument argument = ArgumentNone,
-		       const char *argumentName = nullptr, bool array = false);
+		       const char *argumentName = nullptr, bool array = false,
+		       int parent = 0);
 	bool addOption(int opt, KeyValueParser *parser, const char *help,
-		       const char *name = nullptr, bool array = false);
+		       const char *name = nullptr, bool array = false,
+		       int parent = 0);
 
 	Options parse(int argc, char *argv[]);
 	void usage();
@@ -103,6 +106,10 @@ private:
 	OptionsParser &operator=(const OptionsParser &) = delete;
 
 	void usageOptions(const std::list<Option> &options, unsigned int indent);
+
+	std::tuple<OptionsParser::Options *, const Option *>
+	childOption(const Option *parent, Options *options);
+	bool parseValue(const Option &option, const char *arg, Options *options);
 
 	std::list<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
@@ -139,12 +146,15 @@ public:
 	KeyValueParser::Options toKeyValues() const;
 	std::vector<OptionValue> toArray() const;
 
+	const OptionsParser::Options &children() const;
+
 private:
 	ValueType type_;
 	int integer_;
 	std::string string_;
 	KeyValueParser::Options keyValues_;
 	std::vector<OptionValue> array_;
+	OptionsParser::Options children_;
 };
 
 #endif /* __CAM_OPTIONS_H__ */

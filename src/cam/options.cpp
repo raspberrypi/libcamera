@@ -79,6 +79,12 @@
  * \var Option::isArray
  * \brief Whether the option can appear once or multiple times
  *
+ * \var Option::parent
+ * \brief The parent option
+ *
+ * \var Option::children
+ * \brief List of child options, storing all options whose parent is this option
+ *
  * \fn Option::hasShortOption()
  * \brief Tell if the option has a short option specifier (e.g. `-f`)
  * \return True if the option has a short option specifier, false otherwise
@@ -96,6 +102,8 @@ struct Option {
 	const char *help;
 	KeyValueParser *keyValueParser;
 	bool isArray;
+	Option *parent;
+	std::list<Option> children;
 
 	bool hasShortOption() const { return isalnum(opt); }
 	bool hasLongOption() const { return name != nullptr; }
@@ -335,7 +343,7 @@ bool KeyValueParser::addOption(const char *name, OptionType type,
 		return false;
 
 	optionsMap_[name] = Option({ 0, type, name, argument, nullptr,
-				     help, nullptr, false });
+				     help, nullptr, false, nullptr, {} });
 	return true;
 }
 
@@ -472,6 +480,11 @@ void KeyValueParser::usage(int indent)
  * option. It supports empty values, integers, strings, key-value lists, as well
  * as arrays of those types. For array values, all array elements shall have the
  * same type.
+ *
+ * OptionValue instances are organized in a tree-based structure that matches
+ * the parent-child relationship of the options added to the parser. Children
+ * are retrieved with the children() function, and are stored as an
+ * OptionsBase<int>.
  */
 
 /**
@@ -662,6 +675,15 @@ std::vector<OptionValue> OptionValue::toArray() const
 	return array_;
 }
 
+/**
+ * \brief Retrieve the list of child values
+ * \return The list of child values
+ */
+const OptionsParser::Options &OptionValue::children() const
+{
+	return children_;
+}
+
 /* -----------------------------------------------------------------------------
  * OptionsParser
  */
@@ -724,6 +746,32 @@ std::vector<OptionValue> OptionValue::toArray() const
  * accept an argument, the option value can be access by Options::operator[]()
  * using the option identifier as the key. The order in which different options
  * are specified on the command line isn't preserved.
+ *
+ * Options can be created with parent-child relationships to organize them as a
+ * tree instead of a flat list. When parsing a command line, the child options
+ * are considered related to the parent option that precedes them. This is
+ * useful when the parent is an array option. The Options values list generated
+ * by the parser then turns into a tree, which each parent value storing the
+ * values of child options that follow that instance of the parent option.
+ * For instance, with a `capture` option specified as a child of a `camera`
+ * array option, parsing the command line
+ *
+ * `--camera 1 --capture=10 --camera 2 --capture=20`
+ *
+ * will return an Options instance containing a single OptionValue instance of
+ * array type, for the `camera` option. The OptionValue will contain two
+ * entries, with the first entry containing the integer value 1 and the second
+ * entry the integer value 2. Each of those entries will in turn store an
+ * Options instance that contains the respective children. The first entry will
+ * store in its children a `capture` option of value 10, and the second entry a
+ * `capture` option of value 20.
+ *
+ * The command line
+ *
+ * `--capture=10 --camera 1`
+ *
+ * would result in a parsing error, as the `capture` option has no preceding
+ * `camera` option on the command line.
  */
 
 /**
@@ -747,13 +795,14 @@ OptionsParser::~OptionsParser() = default;
  * mandatory argument, or no argument at all
  * \param[in] argumentName The argument name used in the help text
  * \param[in] array Whether the option can appear once or multiple times
+ * \param[in] parent The identifier of the parent option (optional)
  *
  * \return True if the option was added successfully, false if an error
  * occurred.
  */
 bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 			      const char *name, OptionArgument argument,
-			      const char *argumentName, bool array)
+			      const char *argumentName, bool array, int parent)
 {
 	/*
 	 * Options must have at least a short or long name, and a text message.
@@ -770,9 +819,31 @@ bool OptionsParser::addOption(int opt, OptionType type, const char *help,
 	if (optionsMap_.find(opt) != optionsMap_.end())
 		return false;
 
-	options_.push_back(Option({ opt, type, name, argument, argumentName,
-				    help, nullptr, array }));
-	optionsMap_[opt] = &options_.back();
+	/*
+	 * If a parent is specified, create the option as a child of its parent.
+	 * Otherwise, create it in the parser's options list.
+	 */
+	Option *option;
+
+	if (parent) {
+		auto iter = optionsMap_.find(parent);
+		if (iter == optionsMap_.end())
+			return false;
+
+		Option *parentOpt = iter->second;
+		parentOpt->children.push_back({
+			opt, type, name, argument, argumentName, help, nullptr,
+			array, parentOpt, {}
+		});
+		option = &parentOpt->children.back();
+	} else {
+		options_.push_back({ opt, type, name, argument, argumentName,
+				     help, nullptr, array, nullptr, {} });
+		option = &options_.back();
+	}
+
+	optionsMap_[opt] = option;
+
 	return true;
 }
 
@@ -790,13 +861,13 @@ bool OptionsParser::addOption(int opt, OptionType type, const char *help,
  * occurred.
  */
 bool OptionsParser::addOption(int opt, KeyValueParser *parser, const char *help,
-			      const char *name, bool array)
+			      const char *name, bool array, int parent)
 {
 	if (!addOption(opt, OptionKeyValue, help, name, ArgumentRequired,
-		       "key=value[,key=value,...]", array))
+		       "key=value[,key=value,...]", array, parent))
 		return false;
 
-	options_.back().keyValueParser = parser;
+	optionsMap_[opt]->keyValueParser = parser;
 	return true;
 }
 
@@ -821,26 +892,26 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 	 * Allocate short and long options arrays large enough to contain all
 	 * options.
 	 */
-	char shortOptions[options_.size() * 3 + 2];
-	struct option longOptions[options_.size() + 1];
+	char shortOptions[optionsMap_.size() * 3 + 2];
+	struct option longOptions[optionsMap_.size() + 1];
 	unsigned int ids = 0;
 	unsigned int idl = 0;
 
 	shortOptions[ids++] = ':';
 
-	for (const Option &option : options_) {
-		if (option.hasShortOption()) {
-			shortOptions[ids++] = option.opt;
-			if (option.argument != ArgumentNone)
+	for (const auto [opt, option] : optionsMap_) {
+		if (option->hasShortOption()) {
+			shortOptions[ids++] = opt;
+			if (option->argument != ArgumentNone)
 				shortOptions[ids++] = ':';
-			if (option.argument == ArgumentOptional)
+			if (option->argument == ArgumentOptional)
 				shortOptions[ids++] = ':';
 		}
 
-		if (option.hasLongOption()) {
-			longOptions[idl].name = option.name;
+		if (option->hasLongOption()) {
+			longOptions[idl].name = option->name;
 
-			switch (option.argument) {
+			switch (option->argument) {
 			case ArgumentNone:
 				longOptions[idl].has_arg = no_argument;
 				break;
@@ -853,7 +924,7 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 			}
 
 			longOptions[idl].flag = 0;
-			longOptions[idl].val = option.opt;
+			longOptions[idl].val = option->opt;
 			idl++;
 		}
 	}
@@ -881,10 +952,7 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 		}
 
 		const Option &option = *optionsMap_[c];
-		if (!options.parseValue(c, option, optarg)) {
-			std::cerr << "Can't parse " << option.typeName()
-				  << " argument for option " << option.optionName()
-				  << std::endl;
+		if (!parseValue(option, optarg, &options)) {
 			usage();
 			return options;
 		}
@@ -906,15 +974,16 @@ void OptionsParser::usage()
 {
 	unsigned int indent = 0;
 
-	for (const Option &option : options_) {
+	for (const auto &opt : optionsMap_) {
+		const Option *option = opt.second;
 		unsigned int length = 14;
-		if (option.hasLongOption())
-			length += 2 + strlen(option.name);
-		if (option.argument != ArgumentNone)
-			length += 1 + strlen(option.argumentName);
-		if (option.argument == ArgumentOptional)
+		if (option->hasLongOption())
+			length += 2 + strlen(option->name);
+		if (option->argument != ArgumentNone)
+			length += 1 + strlen(option->argumentName);
+		if (option->argument == ArgumentOptional)
 			length += 2;
-		if (option.isArray)
+		if (option->isArray)
 			length += 4;
 
 		if (length > indent)
@@ -937,6 +1006,8 @@ void OptionsParser::usage()
 void OptionsParser::usageOptions(const std::list<Option> &options,
 				 unsigned int indent)
 {
+	std::vector<const Option *> parentOptions;
+
 	for (const Option &option : options) {
 		std::string argument;
 		if (option.hasShortOption())
@@ -981,5 +1052,91 @@ void OptionsParser::usageOptions(const std::list<Option> &options,
 
 		if (option.keyValueParser)
 			option.keyValueParser->usage(indent);
+
+		if (!option.children.empty())
+			parentOptions.push_back(&option);
 	}
+
+	if (parentOptions.empty())
+		return;
+
+	for (const Option *option : parentOptions) {
+		std::cerr << std::endl << "Options valid in the context of "
+			  << option->optionName() << ":" << std::endl;
+		usageOptions(option->children, indent);
+	}
+}
+
+std::tuple<OptionsParser::Options *, const Option *>
+OptionsParser::childOption(const Option *parent, Options *options)
+{
+	/*
+	 * The parent argument points to the parent of the leaf node Option,
+	 * and the options argument to the root node of the Options tree. Use
+	 * recursive calls to traverse the Option tree up to the root node while
+	 * traversing the Options tree down to the leaf node:
+	 */
+
+	/*
+	 * - If we have no parent, we've reached the root node of the Option
+	 *   tree, the options argument is what we need.
+	 */
+	if (!parent)
+		return { options, nullptr };
+
+	/*
+	 * - If the parent has a parent, use recursion to move one level up the
+	 *   Option tree. This returns the Options corresponding to parent, or
+	 *   nullptr if a suitable Options child isn't found.
+	 */
+	if (parent->parent) {
+		const Option *error;
+		std::tie(options, error) = childOption(parent->parent, options);
+
+		/* Propagate the error all the way back up the call stack. */
+		if (!error)
+			return { options, error };
+	}
+
+	/*
+	 * - The parent has no parent, we're now one level down the root.
+	 *   Return the Options child corresponding to the parent. The child may
+	 *   not exist if options are specified in an incorrect order.
+	 */
+	if (!options->isSet(parent->opt))
+		return { nullptr, parent };
+
+	/*
+	 * If the child value is of array type, children are not stored in the
+	 * value .children() list, but in the .children() of the value's array
+	 * elements. Use the last array element in that case, as a child option
+	 * relates to the last instance of its parent option.
+	 */
+	const OptionValue *value = &(*options)[parent->opt];
+	if (value->type() == OptionValue::ValueArray)
+		value = &value->toArray().back();
+
+	return { const_cast<Options *>(&value->children()), nullptr };
+}
+
+bool OptionsParser::parseValue(const Option &option, const char *arg,
+			       Options *options)
+{
+	const Option *error;
+
+	std::tie(options, error) = childOption(option.parent, options);
+	if (error) {
+		std::cerr << "Option " << option.optionName() << " requires a "
+			  << error->optionName() << " context" << std::endl;
+		return false;
+	}
+
+	if (!options->parseValue(option.opt, option, arg)) {
+		std::cerr << "Can't parse " << option.typeName()
+			  << " argument for option " << option.optionName()
+			  << std::endl;
+		return false;
+	}
+
+	return true;
 }

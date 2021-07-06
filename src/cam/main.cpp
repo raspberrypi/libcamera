@@ -44,7 +44,7 @@ private:
 	int infoConfiguration();
 	int run();
 
-	std::string const cameraName(const Camera *camera);
+	static std::string cameraName(const Camera *camera);
 
 	static CamApp *app_;
 	OptionsParser::Options options_;
@@ -319,7 +319,7 @@ int CamApp::run()
 	return 0;
 }
 
-std::string const CamApp::cameraName(const Camera *camera)
+std::string CamApp::cameraName(const Camera *camera)
 {
 	const ControlList &props = camera->properties();
 	bool addModel = true;

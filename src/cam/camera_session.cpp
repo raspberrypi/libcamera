@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include <libcamera/control_ids.h>
+#include <libcamera/property_ids.h>
 
 #include "camera_session.h"
 #include "event_loop.h"
@@ -87,6 +88,50 @@ CameraSession::~CameraSession()
 {
 	if (camera_)
 		camera_->release();
+}
+
+void CameraSession::listControls() const
+{
+	for (const auto &ctrl : camera_->controls()) {
+		const ControlId *id = ctrl.first;
+		const ControlInfo &info = ctrl.second;
+
+		std::cout << "Control: " << id->name() << ": "
+			  << info.toString() << std::endl;
+	}
+}
+
+void CameraSession::listProperties() const
+{
+	for (const auto &prop : camera_->properties()) {
+		const ControlId *id = properties::properties.at(prop.first);
+		const ControlValue &value = prop.second;
+
+		std::cout << "Property: " << id->name() << " = "
+			  << value.toString() << std::endl;
+	}
+}
+
+void CameraSession::infoConfiguration() const
+{
+	unsigned int index = 0;
+	for (const StreamConfiguration &cfg : *config_) {
+		std::cout << index << ": " << cfg.toString() << std::endl;
+
+		const StreamFormats &formats = cfg.formats();
+		for (PixelFormat pixelformat : formats.pixelformats()) {
+			std::cout << " * Pixelformat: "
+				  << pixelformat.toString() << " "
+				  << formats.range(pixelformat).toString()
+				  << std::endl;
+
+			for (const Size &size : formats.sizes(pixelformat))
+				std::cout << "  - " << size.toString()
+					  << std::endl;
+		}
+
+		index++;
+	}
 }
 
 int CameraSession::start(const OptionsParser::Options &options)

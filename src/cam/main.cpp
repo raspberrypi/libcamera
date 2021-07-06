@@ -39,9 +39,6 @@ private:
 	void cameraRemoved(std::shared_ptr<Camera> cam);
 	void captureDone();
 	int parseOptions(int argc, char *argv[]);
-	int listControls();
-	int listProperties();
-	int infoConfiguration();
 	int run();
 
 	static std::string cameraName(const Camera *camera);
@@ -158,74 +155,6 @@ int CamApp::parseOptions(int argc, char *argv[])
 	return 0;
 }
 
-int CamApp::listControls()
-{
-	if (!session_) {
-		std::cout << "Cannot list controls without a camera"
-			  << std::endl;
-		return -EINVAL;
-	}
-
-	for (const auto &ctrl : session_->camera()->controls()) {
-		const ControlId *id = ctrl.first;
-		const ControlInfo &info = ctrl.second;
-
-		std::cout << "Control: " << id->name() << ": "
-			  << info.toString() << std::endl;
-	}
-
-	return 0;
-}
-
-int CamApp::listProperties()
-{
-	if (!session_) {
-		std::cout << "Cannot list properties without a camera"
-			  << std::endl;
-		return -EINVAL;
-	}
-
-	for (const auto &prop : session_->camera()->properties()) {
-		const ControlId *id = properties::properties.at(prop.first);
-		const ControlValue &value = prop.second;
-
-		std::cout << "Property: " << id->name() << " = "
-			  << value.toString() << std::endl;
-	}
-
-	return 0;
-}
-
-int CamApp::infoConfiguration()
-{
-	if (!session_) {
-		std::cout << "Cannot print stream information without a camera"
-			  << std::endl;
-		return -EINVAL;
-	}
-
-	unsigned int index = 0;
-	for (const StreamConfiguration &cfg : *session_->config()) {
-		std::cout << index << ": " << cfg.toString() << std::endl;
-
-		const StreamFormats &formats = cfg.formats();
-		for (PixelFormat pixelformat : formats.pixelformats()) {
-			std::cout << " * Pixelformat: "
-				  << pixelformat.toString() << " "
-				  << formats.range(pixelformat).toString()
-				  << std::endl;
-
-			for (const Size &size : formats.sizes(pixelformat))
-				std::cout << "  - " << size.toString()
-					  << std::endl;
-		}
-
-		index++;
-	}
-
-	return 0;
-}
-
 void CamApp::cameraAdded(std::shared_ptr<Camera> cam)
 {
 	std::cout << "Camera Added: " << cam->id() << std::endl;
@@ -269,21 +198,33 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptListControls)) {
-		ret = listControls();
-		if (ret)
-			return ret;
+		if (!session_) {
+			std::cout << "Cannot list controls without a camera"
+				  << std::endl;
+			return -EINVAL;
+		}
+
+		session_->listControls();
 	}
 
 	if (options_.isSet(OptListProperties)) {
-		ret = listProperties();
-		if (ret)
-			return ret;
+		if (!session_) {
+			std::cout << "Cannot list properties without a camera"
+				  << std::endl;
+			return -EINVAL;
+		}
+
+		session_->listProperties();
 	}
 
 	if (options_.isSet(OptInfo)) {
-		ret = infoConfiguration();
-		if (ret)
-			return ret;
+		if (!session_) {
+			std::cout << "Cannot print stream information without a camera"
+				  << std::endl;
+			return -EINVAL;
+		}
+
+		session_->infoConfiguration();
 	}
 
 	if (options_.isSet(OptCapture)) {

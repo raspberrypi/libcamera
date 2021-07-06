@@ -35,6 +35,10 @@ public:
 	libcamera::Camera *camera() { return camera_.get(); }
 	libcamera::CameraConfiguration *config() { return config_.get(); }
 
+	void listControls() const;
+	void listProperties() const;
+	void infoConfiguration() const;
+
 	int start(const OptionsParser::Options &options);
 	void stop();
 

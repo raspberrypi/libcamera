@@ -47,7 +47,6 @@ private:
 	OptionsParser::Options options_;
 
 	std::unique_ptr<CameraManager> cm_;
-	std::unique_ptr<CameraSession> session_;
 
 	EventLoop loop_;
 };
@@ -86,8 +85,6 @@ int CamApp::init(int argc, char **argv)
 
 void CamApp::cleanup()
 {
-	session_.reset();
-
 	cm_->stop();
 }
 
@@ -172,6 +169,7 @@ void CamApp::captureDone()
 
 int CamApp::run()
 {
+	std::unique_ptr<CameraSession> session;
 	int ret;
 
 	if (options_.isSet(OptList)) {
@@ -185,55 +183,55 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptCamera)) {
-		session_ = std::make_unique<CameraSession>(cm_.get(), options_);
-		if (!session_->isValid()) {
+		session = std::make_unique<CameraSession>(cm_.get(), options_);
+		if (!session->isValid()) {
 			std::cout << "Failed to create camera session" << std::endl;
 			return -EINVAL;
 		}
 
-		std::cout << "Using camera " << session_->camera()->id()
+		std::cout << "Using camera " << session->camera()->id()
 			  << std::endl;
 
-		session_->captureDone.connect(this, &CamApp::captureDone);
+		session->captureDone.connect(this, &CamApp::captureDone);
 	}
 
 	if (options_.isSet(OptListControls)) {
-		if (!session_) {
+		if (!session) {
 			std::cout << "Cannot list controls without a camera"
 				  << std::endl;
 			return -EINVAL;
 		}
 
-		session_->listControls();
+		session->listControls();
 	}
 
 	if (options_.isSet(OptListProperties)) {
-		if (!session_) {
+		if (!session) {
 			std::cout << "Cannot list properties without a camera"
 				  << std::endl;
 			return -EINVAL;
 		}
 
-		session_->listProperties();
+		session->listProperties();
 	}
 
 	if (options_.isSet(OptInfo)) {
-		if (!session_) {
+		if (!session) {
 			std::cout << "Cannot print stream information without a camera"
 				  << std::endl;
 			return -EINVAL;
 		}
 
-		session_->infoConfiguration();
+		session->infoConfiguration();
 	}
 
 	if (options_.isSet(OptCapture)) {
-		if (!session_) {
+		if (!session) {
 			std::cout << "Can't capture without a camera" << std::endl;
 			return -ENODEV;
 		}
 
-		ret = session_->start(options_);
+		ret = session->start(options_);
 		if (ret) {
 			std::cout << "Failed to start camera session" << std::endl;
 			return ret;
@@ -241,7 +239,7 @@ int CamApp::run()
 
 		loop_.exec();
 
-		session_->stop();
+		session->stop();
 		return 0;
 	}
 

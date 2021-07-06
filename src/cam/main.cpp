@@ -84,26 +84,6 @@ int CamApp::init(int argc, char **argv)
 		return ret;
 	}
 
-	if (options_.isSet(OptCamera)) {
-		session_ = std::make_unique<CameraSession>(cm_.get(), options_);
-		if (!session_->isValid()) {
-			std::cout << "Failed to create camera session" << std::endl;
-			cleanup();
-			return -EINVAL;
-		}
-
-		std::cout << "Using camera " << session_->camera()->id()
-			  << std::endl;
-
-		session_->captureDone.connect(this, &CamApp::captureDone);
-	}
-
-	if (options_.isSet(OptMonitor)) {
-		cm_->cameraAdded.connect(this, &CamApp::cameraAdded);
-		cm_->cameraRemoved.connect(this, &CamApp::cameraRemoved);
-		std::cout << "Monitoring new hotplug and unplug events" << std::endl;
-	}
-
 	return 0;
 }
 
@@ -275,6 +255,19 @@ int CamApp::run()
 		}
 	}
 
+	if (options_.isSet(OptCamera)) {
+		session_ = std::make_unique<CameraSession>(cm_.get(), options_);
+		if (!session_->isValid()) {
+			std::cout << "Failed to create camera session" << std::endl;
+			return -EINVAL;
+		}
+
+		std::cout << "Using camera " << session_->camera()->id()
+			  << std::endl;
+
+		session_->captureDone.connect(this, &CamApp::captureDone);
+	}
+
 	if (options_.isSet(OptListControls)) {
 		ret = listControls();
 		if (ret)
@@ -312,7 +305,12 @@ int CamApp::run()
 	}
 
 	if (options_.isSet(OptMonitor)) {
+		std::cout << "Monitoring new hotplug and unplug events" << std::endl;
 		std::cout << "Press Ctrl-C to interrupt" << std::endl;
+
+		cm_->cameraAdded.connect(this, &CamApp::cameraAdded);
+		cm_->cameraRemoved.connect(this, &CamApp::cameraRemoved);
+
 		loop_.exec();
 	}
 

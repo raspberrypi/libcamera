@@ -95,6 +95,8 @@ public:
 	void usage();
 
 private:
+	void usageOptions(const std::list<Option> &options, unsigned int indent);
+
 	std::list<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
 };

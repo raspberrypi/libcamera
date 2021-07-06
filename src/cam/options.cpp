@@ -902,8 +902,6 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
  */
 void OptionsParser::usage()
 {
-	std::cerr << "Options:" << std::endl;
-
 	unsigned int indent = 0;
 
 	for (const Option &option : options_) {
@@ -923,7 +921,15 @@ void OptionsParser::usage()
 
 	indent = (indent + 7) / 8 * 8;
 
-	for (const Option &option : options_) {
+	std::cerr << "Options:" << std::endl;
+
+	usageOptions(options_, indent);
+}
+
+void OptionsParser::usageOptions(const std::list<Option> &options,
+				 unsigned int indent)
+{
+	for (const Option &option : options) {
 		std::string argument;
 		if (option.hasShortOption())
 			argument = std::string("  -")

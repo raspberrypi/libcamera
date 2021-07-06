@@ -5,6 +5,7 @@
  * main.cpp - cam - The libcamera swiss army knife
  */
 
+#include <atomic>
 #include <iomanip>
 #include <iostream>
 #include <signal.h>
@@ -48,6 +49,7 @@ private:
 
 	std::unique_ptr<CameraManager> cm_;
 
+	std::atomic_uint loopUsers_;
 	EventLoop loop_;
 };
 
@@ -164,14 +166,15 @@ void CamApp::cameraRemoved(std::shared_ptr<Camera> cam)
 
 void CamApp::captureDone()
 {
-	EventLoop::instance()->exit(0);
+	if (--loopUsers_ == 0)
+		EventLoop::instance()->exit(0);
 }
 
 int CamApp::run()
 {
-	std::unique_ptr<CameraSession> session;
 	int ret;
 
+	/* 1. List all cameras. */
 	if (options_.isSet(OptList)) {
 		std::cout << "Available cameras:" << std::endl;
 
@@ -181,6 +184,9 @@ int CamApp::run()
 			index++;
 		}
 	}
+
+	/* 2. Create the camera session. */
+	std::unique_ptr<CameraSession> session;
 
 	if (options_.isSet(OptCamera)) {
 		session = std::make_unique<CameraSession>(cm_.get(), options_);
@@ -195,36 +201,25 @@ int CamApp::run()
 		session->captureDone.connect(this, &CamApp::captureDone);
 	}
 
-	if (options_.isSet(OptListControls)) {
+	/* 3. Print camera information. */
+	if (options_.isSet(OptListControls) ||
+	    options_.isSet(OptListProperties) ||
+	    options_.isSet(OptInfo)) {
 		if (!session) {
-			std::cout << "Cannot list controls without a camera"
+			std::cout << "Cannot print camera information without a camera"
 				  << std::endl;
 			return -EINVAL;
 		}
 
-		session->listControls();
+		if (options_.isSet(OptListControls))
+			session->listControls();
+		if (options_.isSet(OptListProperties))
+			session->listProperties();
+		if (options_.isSet(OptInfo))
+			session->infoConfiguration();
 	}
 
-	if (options_.isSet(OptListProperties)) {
-		if (!session) {
-			std::cout << "Cannot list properties without a camera"
-				  << std::endl;
-			return -EINVAL;
-		}
-
-		session->listProperties();
-	}
-
-	if (options_.isSet(OptInfo)) {
-		if (!session) {
-			std::cout << "Cannot print stream information without a camera"
-				  << std::endl;
-			return -EINVAL;
-		}
-
-		session->infoConfiguration();
-	}
-
+	/* 4. Start capture. */
 	if (options_.isSet(OptCapture)) {
 		if (!session) {
 			std::cout << "Can't capture without a camera" << std::endl;
@@ -237,12 +232,10 @@ int CamApp::run()
 			return ret;
 		}
 
-		loop_.exec();
-
-		session->stop();
-		return 0;
+		loopUsers_++;
 	}
 
+	/* 5. Enable hotplug monitoring. */
 	if (options_.isSet(OptMonitor)) {
 		std::cout << "Monitoring new hotplug and unplug events" << std::endl;
 		std::cout << "Press Ctrl-C to interrupt" << std::endl;
@@ -250,8 +243,15 @@ int CamApp::run()
 		cm_->cameraAdded.connect(this, &CamApp::cameraAdded);
 		cm_->cameraRemoved.connect(this, &CamApp::cameraRemoved);
 
-		loop_.exec();
+		loopUsers_++;
 	}
+
+	if (loopUsers_)
+		loop_.exec();
+
+	/* 6. Stop capture. */
+	if (options_.isSet(OptCapture))
+		session->stop();
 
 	return 0;
 }

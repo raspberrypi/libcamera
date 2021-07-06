@@ -68,6 +68,9 @@ public:
 	virtual Options parse(const char *arguments);
 
 private:
+	KeyValueParser(const KeyValueParser &) = delete;
+	KeyValueParser &operator=(const KeyValueParser &) = delete;
+
 	friend class OptionsParser;
 	void usage(int indent);
 
@@ -95,6 +98,9 @@ public:
 	void usage();
 
 private:
+	OptionsParser(const OptionsParser &) = delete;
+	OptionsParser &operator=(const OptionsParser &) = delete;
+
 	void usageOptions(const std::list<Option> &options, unsigned int indent);
 
 	std::list<Option> options_;

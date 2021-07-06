@@ -313,9 +313,7 @@ int CamApp::run()
 
 	if (options_.isSet(OptMonitor)) {
 		std::cout << "Press Ctrl-C to interrupt" << std::endl;
-		ret = loop_.exec();
-		if (ret)
-			std::cout << "Failed to run monitor loop" << std::endl;
+		loop_.exec();
 	}
 
 	return 0;

@@ -95,8 +95,6 @@ public:
 	void usage();
 
 private:
-	void parseValueError(const Option &option);
-
 	std::list<Option> options_;
 	std::map<unsigned int, Option *> optionsMap_;
 };

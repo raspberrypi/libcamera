@@ -100,6 +100,7 @@ struct Option {
 	bool hasShortOption() const { return isalnum(opt); }
 	bool hasLongOption() const { return name != nullptr; }
 	const char *typeName() const;
+	std::string optionName() const;
 };
 
 /**
@@ -123,6 +124,20 @@ const char *Option::typeName() const
 	}
 
 	return "unknown";
+}
+
+/**
+ * \brief Retrieve a string describing the option name, with leading dashes
+ * \return A string describing the option name, as a long option identifier
+ * (double dash) if the option has a name, or a short option identifier (single
+ * dash) otherwise
+ */
+std::string Option::optionName() const
+{
+	if (name)
+		return "--" + std::string(name);
+	else
+		return "-" + std::string(1, opt);
 }
 
 /* -----------------------------------------------------------------------------
@@ -865,7 +880,9 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 
 		const Option &option = *optionsMap_[c];
 		if (!options.parseValue(c, option, optarg)) {
-			parseValueError(option);
+			std::cerr << "Can't parse " << option.typeName()
+				  << " argument for option " << option.optionName()
+				  << std::endl;
 			usage();
 			return options;
 		}
@@ -951,17 +968,4 @@ void OptionsParser::usage()
 		if (option.keyValueParser)
 			option.keyValueParser->usage(indent);
 	}
-}
-
-void OptionsParser::parseValueError(const Option &option)
-{
-	std::string optionName;
-
-	if (option.name)
-		optionName = "--" + std::string(option.name);
-	else
-		optionName = "-" + std::string(1, option.opt);
-
-	std::cerr << "Can't parse " << option.typeName()
-		  << " argument for option " << optionName << std::endl;
 }

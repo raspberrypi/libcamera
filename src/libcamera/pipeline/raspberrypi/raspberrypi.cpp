@@ -1233,8 +1233,18 @@ int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 
-	IPASettings settings(ipa_->configurationFile(sensor_->model() + ".json"),
-			     sensor_->model());
+	/*
+	 * The configuration (tuning file) is made from the sensor name unless
+	 * the environment variable overrides it.
+	 */
+	std::string configurationFile;
+	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
+	if (!configFromEnv || *configFromEnv == '\0')
+		configurationFile = ipa_->configurationFile(sensor_->model() + ".json");
+	else
+		configurationFile = std::string(configFromEnv);
+
+	IPASettings settings(configurationFile, sensor_->model());
 
 	return ipa_->init(settings, sensorConfig);
 }

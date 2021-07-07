@@ -142,8 +142,8 @@ public:
 
 	int toInteger() const;
 	std::string toString() const;
-	KeyValueParser::Options toKeyValues() const;
-	std::vector<OptionValue> toArray() const;
+	const KeyValueParser::Options &toKeyValues() const;
+	const std::vector<OptionValue> &toArray() const;
 
 	const OptionsParser::Options &children() const;
 

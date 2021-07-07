@@ -638,27 +638,27 @@ std::string OptionValue::toString() const
 
 /**
  * \brief Retrieve the value as a key-value list
- * \return The option value as a KeyValueParser::Options, or an empty list if
- * the value type isn't ValueType::ValueKeyValue
+ *
+ * The behaviour is undefined if the value type isn't ValueType::ValueKeyValue.
+ *
+ * \return The option value as a KeyValueParser::Options
  */
-KeyValueParser::Options OptionValue::toKeyValues() const
+const KeyValueParser::Options &OptionValue::toKeyValues() const
 {
-	if (type_ != ValueKeyValue)
-		return KeyValueParser::Options();
-
+	assert(type_ == ValueKeyValue);
 	return keyValues_;
 }
 
 /**
  * \brief Retrieve the value as an array
- * \return The option value as a std::vector of OptionValue, or an empty vector
- * if the value type isn't ValueType::ValueArray
+ *
+ * The behaviour is undefined if the value type isn't ValueType::ValueArray.
+ *
+ * \return The option value as a std::vector of OptionValue
  */
-std::vector<OptionValue> OptionValue::toArray() const
+const std::vector<OptionValue> &OptionValue::toArray() const
 {
-	if (type_ != ValueArray)
-		return std::vector<OptionValue>{};
-
+	assert(type_ == ValueArray);
 	return array_;
 }
 

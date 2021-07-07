@@ -22,9 +22,11 @@ using namespace libcamera;
 
 CameraSession::CameraSession(CameraManager *cm,
 			     const std::string &cameraId,
+			     unsigned int cameraIndex,
 			     const OptionsParser::Options &options)
-	: options_(options), last_(0), queueCount_(0), captureCount_(0),
-	  captureLimit_(0), printMetadata_(false)
+	: options_(options), cameraIndex_(cameraIndex), last_(0),
+	  queueCount_(0), captureCount_(0), captureLimit_(0),
+	  printMetadata_(false)
 {
 	char *endptr;
 	unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
@@ -152,7 +154,8 @@ int CameraSession::start()
 	streamName_.clear();
 	for (unsigned int index = 0; index < config_->size(); ++index) {
 		StreamConfiguration &cfg = config_->at(index);
-		streamName_[cfg.stream()] = "stream" + std::to_string(index);
+		streamName_[cfg.stream()] = "cam" + std::to_string(cameraIndex_)
+					  + "-stream" + std::to_string(index);
 	}
 
 	camera_->requestCompleted.connect(this, &CameraSession::requestComplete);

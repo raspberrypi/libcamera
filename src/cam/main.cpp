@@ -136,7 +136,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "If the file name ends with a '/', it sets the directory in which\n"
 			 "to write files, using the default file name. Otherwise it sets the\n"
 			 "full file path and name. The first '#' character in the file name\n"
-			 "is expanded to the stream name and frame sequence number.\n"
+			 "is expanded to the camera index, stream name and frame sequence number.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename", false,
 			 OptCamera);
@@ -201,7 +201,7 @@ int CamApp::run()
 	if (options_.isSet(OptCamera)) {
 		const OptionValue &camera = options_[OptCamera];
 		session = std::make_unique<CameraSession>(cm_.get(),
-							  camera.toString(),
+							  camera.toString(), 0,
 							  camera.children());
 		if (!session->isValid()) {
 			std::cout << "Failed to create camera session" << std::endl;

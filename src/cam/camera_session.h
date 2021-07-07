@@ -28,7 +28,7 @@ class CameraSession
 {
 public:
 	CameraSession(libcamera::CameraManager *cm,
-		      const std::string &cameraId,
+		      const std::string &cameraId, unsigned int cameraIndex,
 		      const OptionsParser::Options &options);
 	~CameraSession();
 
@@ -60,6 +60,8 @@ private:
 
 	std::map<const libcamera::Stream *, std::string> streamName_;
 	std::unique_ptr<BufferWriter> writer_;
+	unsigned int cameraIndex_;
+
 	uint64_t last_;
 
 	unsigned int queueCount_;

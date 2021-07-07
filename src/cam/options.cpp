@@ -410,27 +410,30 @@ KeyValueParser::Options KeyValueParser::parse(const char *arguments)
 	return options;
 }
 
-void KeyValueParser::usage(int indent)
+unsigned int KeyValueParser::maxOptionLength() const
 {
-	unsigned int space = 0;
+	unsigned int maxLength = 0;
 
 	for (auto const &iter : optionsMap_) {
 		const Option &option = iter.second;
-		unsigned int length = 14;
+		unsigned int length = 10 + strlen(option.name);
 		if (option.argument != ArgumentNone)
 			length += 1 + strlen(option.typeName());
 		if (option.argument == ArgumentOptional)
 			length += 2;
 
-		if (length > space)
-			space = length;
+		if (length > maxLength)
+			maxLength = length;
 	}
 
-	space = (space + 7) / 8 * 8;
+	return maxLength;
+}
 
+void KeyValueParser::usage(int indent)
+{
 	for (auto const &iter : optionsMap_) {
 		const Option &option = iter.second;
-		std::string argument = option.name;
+		std::string argument = std::string("          ") + option.name;
 
 		if (option.argument != ArgumentNone) {
 			if (option.argument == ArgumentOptional)
@@ -442,14 +445,13 @@ void KeyValueParser::usage(int indent)
 				argument += "]";
 		}
 
-		std::cerr << std::setw(indent) << std::right << " "
-			  << std::setw(space) << std::left << argument;
+		std::cerr << std::setw(indent) << std::left << argument;
 
 		for (const char *help = option.help, *end = help; end;) {
 			end = strchr(help, '\n');
 			if (end) {
 				std::cerr << std::string(help, end - help + 1);
-				std::cerr << std::setw(indent + space) << " ";
+				std::cerr << std::setw(indent) << " ";
 				help = end + 1;
 			} else {
 				std::cerr << help << std::endl;
@@ -917,6 +919,12 @@ void OptionsParser::usage()
 
 		if (length > indent)
 			indent = length;
+
+		if (option->keyValueParser) {
+			length = option->keyValueParser->maxOptionLength();
+			if (length > indent)
+				indent = length;
+		}
 	}
 
 	indent = (indent + 7) / 8 * 8;

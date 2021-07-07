@@ -72,6 +72,7 @@ private:
 	KeyValueParser &operator=(const KeyValueParser &) = delete;
 
 	friend class OptionsParser;
+	unsigned int maxOptionLength() const;
 	void usage(int indent);
 
 	std::map<std::string, Option> optionsMap_;

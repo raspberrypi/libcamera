@@ -604,26 +604,6 @@ OptionValue::operator std::string() const
 }
 
 /**
- * \brief Cast the value to a key-value list
- * \return The option value as a KeyValueParser::Options, or an empty list if
- * the value type isn't ValueType::ValueKeyValue
- */
-OptionValue::operator KeyValueParser::Options() const
-{
-	return toKeyValues();
-}
-
-/**
- * \brief Cast the value to an array
- * \return The option value as a std::vector of OptionValue, or an empty vector
- * if the value type isn't ValueType::ValueArray
- */
-OptionValue::operator std::vector<OptionValue>() const
-{
-	return toArray();
-}
-
-/**
  * \brief Retrieve the value as an int
  * \return The option value as an int, or 0 if the value type isn't
  * ValueType::ValueInteger

@@ -48,11 +48,10 @@ StreamRoles StreamKeyValueParser::roles(const OptionValue &values)
 
 	StreamRoles roles;
 	for (auto const &value : streamParameters) {
-		KeyValueParser::Options opts = value.toKeyValues();
 		StreamRole role;
 
 		/* If role is invalid or not set default to viewfinder. */
-		if (!parseRole(&role, value))
+		if (!parseRole(&role, value.toKeyValues()))
 			role = StreamRole::Viewfinder;
 
 		roles.push_back(role);

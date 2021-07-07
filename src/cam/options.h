@@ -138,8 +138,6 @@ public:
 
 	operator int() const;
 	operator std::string() const;
-	operator KeyValueParser::Options() const;
-	operator std::vector<OptionValue>() const;
 
 	int toInteger() const;
 	std::string toString() const;

@@ -112,7 +112,7 @@ int CamApp::parseOptions(int argc, char *argv[])
 	OptionsParser parser;
 	parser.addOption(OptCamera, OptionString,
 			 "Specify which camera to operate on, by id or by index", "camera",
-			 ArgumentRequired, "camera");
+			 ArgumentRequired, "camera", true);
 	parser.addOption(OptHelp, OptionNone, "Display this help message",
 			 "help");
 	parser.addOption(OptInfo, OptionNone,
@@ -195,45 +195,52 @@ int CamApp::run()
 		}
 	}
 
-	/* 2. Create the camera session. */
-	std::unique_ptr<CameraSession> session;
+	/* 2. Create the camera sessions. */
+	std::vector<std::unique_ptr<CameraSession>> sessions;
 
 	if (options_.isSet(OptCamera)) {
-		const OptionValue &camera = options_[OptCamera];
-		session = std::make_unique<CameraSession>(cm_.get(),
-							  camera.toString(), 0,
-							  camera.children());
-		if (!session->isValid()) {
-			std::cout << "Failed to create camera session" << std::endl;
-			return -EINVAL;
+		unsigned int index = 0;
+
+		for (const OptionValue &camera : options_[OptCamera].toArray()) {
+			std::unique_ptr<CameraSession> session =
+				std::make_unique<CameraSession>(cm_.get(),
+								camera.toString(),
+								index,
+								camera.children());
+			if (!session->isValid()) {
+				std::cout << "Failed to create camera session" << std::endl;
+				return -EINVAL;
+			}
+
+			std::cout << "Using camera " << session->camera()->id()
+				  << " as cam" << index << std::endl;
+
+			session->captureDone.connect(this, &CamApp::captureDone);
+
+			sessions.push_back(std::move(session));
+			index++;
 		}
-
-		std::cout << "Using camera " << session->camera()->id()
-			  << std::endl;
-
-		session->captureDone.connect(this, &CamApp::captureDone);
 	}
 
 	/* 3. Print camera information. */
 	if (options_.isSet(OptListControls) ||
 	    options_.isSet(OptListProperties) ||
 	    options_.isSet(OptInfo)) {
-		if (!session) {
-			std::cout << "Cannot print camera information without a camera"
-				  << std::endl;
-			return -EINVAL;
+		for (const auto &session : sessions) {
+			if (options_.isSet(OptListControls))
+				session->listControls();
+			if (options_.isSet(OptListProperties))
+				session->listProperties();
+			if (options_.isSet(OptInfo))
+				session->infoConfiguration();
 		}
-
-		if (options_.isSet(OptListControls))
-			session->listControls();
-		if (options_.isSet(OptListProperties))
-			session->listProperties();
-		if (options_.isSet(OptInfo))
-			session->infoConfiguration();
 	}
 
 	/* 4. Start capture. */
-	if (session && session->options().isSet(OptCapture)) {
+	for (const auto &session : sessions) {
+		if (!session->options().isSet(OptCapture))
+			continue;
+
 		ret = session->start();
 		if (ret) {
 			std::cout << "Failed to start camera session" << std::endl;
@@ -258,8 +265,12 @@ int CamApp::run()
 		loop_.exec();
 
 	/* 6. Stop capture. */
-	if (session && session->options().isSet(OptCapture))
+	for (const auto &session : sessions) {
+		if (!session->options().isSet(OptCapture))
+			continue;
+
 		session->stop();
+	}
 
 	return 0;
 }

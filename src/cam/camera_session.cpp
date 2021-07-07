@@ -250,9 +250,13 @@ int CameraSession::startCapture()
 	}
 
 	if (captureLimit_)
-		std::cout << "Capture " << captureLimit_ << " frames" << std::endl;
+		std::cout << "cam" << cameraIndex_
+			  << ": Capture " << captureLimit_ << " frames"
+			  << std::endl;
 	else
-		std::cout << "Capture until user interrupts by SIGINT" << std::endl;
+		std::cout << "cam" << cameraIndex_
+			  << ": Capture until user interrupts by SIGINT"
+			  << std::endl;
 
 	return 0;
 }

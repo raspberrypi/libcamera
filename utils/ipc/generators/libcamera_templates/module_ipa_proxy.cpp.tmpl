@@ -184,6 +184,9 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 
 {{proxy_funcs.func_sig(proxy_name, method, "IPC")}}
 {
+{%- if method.mojom_name == "configure" %}
+	controlSerializer_.reset();
+{%- endif %}
 {%- set has_output = true if method|method_param_outputs|length > 0 or method|method_return_value != "void" %}
 {%- set cmd = cmd_enum_name + "::" + method.mojom_name|cap %}
 	IPCMessage::Header _header = { static_cast<uint32_t>({{cmd}}), seq_++ };

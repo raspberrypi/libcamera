@@ -183,7 +183,7 @@ V4L2BufferCache::V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>>
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers)
 		cache_.emplace_back(true,
 				    lastUsedCounter_.fetch_add(1, std::memory_order_acq_rel),
-				    buffer->planes());
+				    *buffer.get());
 }
 
 V4L2BufferCache::~V4L2BufferCache()

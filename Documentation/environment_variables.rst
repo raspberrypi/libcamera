@@ -24,6 +24,11 @@ LIBCAMERA_IPA_CONFIG_PATH
 
    Example value: ``${HOME}/.libcamera/share/ipa:/opt/libcamera/vendor/share/ipa``
 
+LIBCAMERA_IPA_FORCE_ISOLATION
+   When set to a non-empty string, force process isolation of all IPA modules.
+
+   Example value: ``1``
+
 LIBCAMERA_IPA_MODULE_PATH
    Define custom search locations for IPA modules (`more <IPA module_>`__).
 

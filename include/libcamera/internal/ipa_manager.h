@@ -31,8 +31,8 @@ public:
 
 	template<typename T>
 	static std::unique_ptr<T> createIPA(PipelineHandler *pipe,
-					    uint32_t maxVersion,
-					    uint32_t minVersion)
+					    uint32_t minVersion,
+					    uint32_t maxVersion)
 	{
 		IPAModule *m = nullptr;
 

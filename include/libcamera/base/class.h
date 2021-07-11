@@ -49,16 +49,12 @@ public:									\
 	friend class klass;						\
 	using Public = klass;
 
-#define LIBCAMERA_D_PTR()						\
-	_d();
-
 #define LIBCAMERA_O_PTR()						\
 	_o<Public>();
 
 #else
 #define LIBCAMERA_DECLARE_PRIVATE()
 #define LIBCAMERA_DECLARE_PUBLIC(klass)
-#define LIBCAMERA_D_PTR()
 #define LIBCAMERA_O_PTR()
 #endif
 

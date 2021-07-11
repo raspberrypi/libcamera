@@ -604,8 +604,7 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
  */
 const std::string &Camera::id() const
 {
-	const Private *const d = LIBCAMERA_D_PTR();
-	return d->id_;
+	return _d()->id_;
 }
 
 /**
@@ -655,18 +654,16 @@ Camera::~Camera()
  */
 void Camera::disconnect()
 {
-	Private *const d = LIBCAMERA_D_PTR();
-
 	LOG(Camera, Debug) << "Disconnecting camera " << id();
 
-	d->disconnect();
+	_d()->disconnect();
 	disconnected.emit(this);
 }
 
 int Camera::exportFrameBuffers(Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraConfigured);
 	if (ret < 0)
@@ -709,7 +706,7 @@ int Camera::exportFrameBuffers(Stream *stream,
  */
 int Camera::acquire()
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	/*
 	 * No manual locking is required as PipelineHandler::lock() is
@@ -746,7 +743,7 @@ int Camera::acquire()
  */
 int Camera::release()
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraAvailable,
 				     Private::CameraConfigured, true);
@@ -772,8 +769,7 @@ int Camera::release()
  */
 const ControlInfoMap &Camera::controls() const
 {
-	const Private *const d = LIBCAMERA_D_PTR();
-	return d->pipe_->controls(this);
+	return _d()->pipe_->controls(this);
 }
 
 /**
@@ -786,8 +782,7 @@ const ControlInfoMap &Camera::controls() const
  */
 const ControlList &Camera::properties() const
 {
-	const Private *const d = LIBCAMERA_D_PTR();
-	return d->pipe_->properties(this);
+	return _d()->pipe_->properties(this);
 }
 
 /**
@@ -803,8 +798,7 @@ const ControlList &Camera::properties() const
  */
 const std::set<Stream *> &Camera::streams() const
 {
-	const Private *const d = LIBCAMERA_D_PTR();
-	return d->streams_;
+	return _d()->streams_;
 }
 
 /**
@@ -825,7 +819,7 @@ const std::set<Stream *> &Camera::streams() const
  */
 std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamRoles &roles)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraAvailable,
 				     Private::CameraRunning);
@@ -886,7 +880,7 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(const StreamR
  */
 int Camera::configure(CameraConfiguration *config)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraAcquired,
 				     Private::CameraConfigured);
@@ -958,10 +952,8 @@ int Camera::configure(CameraConfiguration *config)
  */
 std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
 {
-	Private *const d = LIBCAMERA_D_PTR();
-
-	int ret = d->isAccessAllowed(Private::CameraConfigured,
-				     Private::CameraRunning);
+	int ret = _d()->isAccessAllowed(Private::CameraConfigured,
+					Private::CameraRunning);
 	if (ret < 0)
 		return nullptr;
 
@@ -992,7 +984,7 @@ std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
  */
 int Camera::queueRequest(Request *request)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraRunning);
 	if (ret < 0)
@@ -1044,7 +1036,7 @@ int Camera::queueRequest(Request *request)
  */
 int Camera::start(const ControlList *controls)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	int ret = d->isAccessAllowed(Private::CameraConfigured);
 	if (ret < 0)
@@ -1079,7 +1071,7 @@ int Camera::start(const ControlList *controls)
  */
 int Camera::stop()
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	/*
 	 * \todo Make calling stop() when not in 'Running' part of the state
@@ -1115,11 +1107,9 @@ int Camera::stop()
  */
 void Camera::requestComplete(Request *request)
 {
-	Private *const d = LIBCAMERA_D_PTR();
-
 	/* Disconnected cameras are still able to complete requests. */
-	if (d->isAccessAllowed(Private::CameraStopping, Private::CameraRunning,
-			       true))
+	if (_d()->isAccessAllowed(Private::CameraStopping, Private::CameraRunning,
+				  true))
 		LOG(Camera, Fatal) << "Trying to complete a request when stopped";
 
 	requestCompleted.emit(request);

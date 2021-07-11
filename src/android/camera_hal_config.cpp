@@ -375,8 +375,7 @@ int CameraHalConfig::parseConfigurationFile()
 
 	exists_ = true;
 
-	Private *const d = LIBCAMERA_D_PTR();
-	int ret = d->parseConfigFile(fh, &cameras_);
+	int ret = _d()->parseConfigFile(fh, &cameras_);
 	fclose(fh);
 	if (ret)
 		return -EINVAL;

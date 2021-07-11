@@ -291,11 +291,9 @@ CameraManager::~CameraManager()
  */
 int CameraManager::start()
 {
-	Private *const d = LIBCAMERA_D_PTR();
-
 	LOG(Camera, Info) << "libcamera " << version_;
 
-	int ret = d->start();
+	int ret = _d()->start();
 	if (ret)
 		LOG(Camera, Error) << "Failed to start camera manager: "
 				   << strerror(-ret);
@@ -315,7 +313,7 @@ int CameraManager::start()
  */
 void CameraManager::stop()
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 	d->exit();
 	d->wait();
 }
@@ -333,7 +331,7 @@ void CameraManager::stop()
  */
 std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
 {
-	const Private *const d = LIBCAMERA_D_PTR();
+	const Private *const d = _d();
 
 	MutexLocker locker(d->mutex_);
 
@@ -353,7 +351,7 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
  */
 std::shared_ptr<Camera> CameraManager::get(const std::string &id)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	MutexLocker locker(d->mutex_);
 
@@ -383,7 +381,7 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &id)
  */
 std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	MutexLocker locker(d->mutex_);
 
@@ -439,7 +437,7 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
 void CameraManager::addCamera(std::shared_ptr<Camera> camera,
 			      const std::vector<dev_t> &devnums)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	ASSERT(Thread::current() == d);
 
@@ -459,7 +457,7 @@ void CameraManager::addCamera(std::shared_ptr<Camera> camera,
  */
 void CameraManager::removeCamera(std::shared_ptr<Camera> camera)
 {
-	Private *const d = LIBCAMERA_D_PTR();
+	Private *const d = _d();
 
 	ASSERT(Thread::current() == d);
 

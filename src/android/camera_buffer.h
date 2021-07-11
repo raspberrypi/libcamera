@@ -40,27 +40,22 @@ CameraBuffer::~CameraBuffer()						\
 }									\
 bool CameraBuffer::isValid() const					\
 {									\
-	const Private *const d = LIBCAMERA_D_PTR();			\
-	return d->isValid();						\
+	return _d()->isValid();						\
 }									\
 unsigned int CameraBuffer::numPlanes() const				\
 {									\
-	const Private *const d = LIBCAMERA_D_PTR();			\
-	return d->numPlanes();						\
+	return _d()->numPlanes();					\
 }									\
 Span<const uint8_t> CameraBuffer::plane(unsigned int plane) const	\
 {									\
-	const Private *const d = LIBCAMERA_D_PTR();			\
-	return const_cast<Private *>(d)->plane(plane);			\
+	return const_cast<Private *>(_d())->plane(plane);		\
 }									\
 Span<uint8_t> CameraBuffer::plane(unsigned int plane)			\
 {									\
-	Private *const d = LIBCAMERA_D_PTR();				\
-	return d->plane(plane);						\
+	return _d()->plane(plane);					\
 }									\
 size_t CameraBuffer::jpegBufferSize(size_t maxJpegBufferSize) const	\
 {									\
-	const Private *const d = LIBCAMERA_D_PTR();			\
-	return d->jpegBufferSize(maxJpegBufferSize);			\
+	return _d()->jpegBufferSize(maxJpegBufferSize);			\
 }
 #endif /* __ANDROID_CAMERA_BUFFER_H__ */

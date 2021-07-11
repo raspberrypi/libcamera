@@ -34,15 +34,7 @@ public:
 					    uint32_t minVersion,
 					    uint32_t maxVersion)
 	{
-		IPAModule *m = nullptr;
-
-		for (IPAModule *module : self_->modules_) {
-			if (module->match(pipe, minVersion, maxVersion)) {
-				m = module;
-				break;
-			}
-		}
-
+		IPAModule *m = self_->module(pipe, minVersion, maxVersion);
 		if (!m)
 			return nullptr;
 
@@ -61,6 +53,9 @@ private:
 	void parseDir(const char *libDir, unsigned int maxDepth,
 		      std::vector<std::string> &files);
 	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);
+
+	IPAModule *module(PipelineHandler *pipe, uint32_t minVersion,
+			  uint32_t maxVersion);
 
 	bool isSignatureValid(IPAModule *ipa) const;
 

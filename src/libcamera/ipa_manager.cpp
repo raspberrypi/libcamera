@@ -246,6 +246,23 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
 }
 
 /**
+ * \brief Retrieve an IPA module that matches a given pipeline handler
+ * \param[in] pipe The pipeline handler
+ * \param[in] minVersion Minimum acceptable version of IPA module
+ * \param[in] maxVersion Maximum acceptable version of IPA module
+ */
+IPAModule *IPAManager::module(PipelineHandler *pipe, uint32_t minVersion,
+			      uint32_t maxVersion)
+{
+	for (IPAModule *module : modules_) {
+		if (module->match(pipe, minVersion, maxVersion))
+			return module;
+	}
+
+	return nullptr;
+}
+
+/**
  * \fn IPAManager::createIPA()
  * \brief Create an IPA proxy that matches a given pipeline handler
  * \param[in] pipe The pipeline handler that wants a matching IPA proxy

@@ -6,14 +6,23 @@
  */
 
 #include <assert.h>
+#include <cmath>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <libcamera/base/log.h>
 
 #include "cam_helper.hpp"
 #include "md_parser.hpp"
 
 using namespace RPiController;
+using namespace libcamera;
+using libcamera::utils::Duration;
+
+namespace libcamera {
+LOG_DECLARE_CATEGORY(IPARPI)
+}
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -34,6 +43,9 @@ public:
 	CamHelperImx477();
 	uint32_t GainCode(double gain) const override;
 	double Gain(uint32_t gain_code) const override;
+	void Prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
+	uint32_t GetVBlanking(Duration &exposure, Duration minFrameDuration,
+			      Duration maxFrameDuration) const override;
 	void GetDelays(int &exposure_delay, int &gain_delay,
 		       int &vblank_delay) const override;
 	bool SensorEmbeddedDataPresent() const override;
@@ -44,6 +56,10 @@ private:
 	 * in units of lines.
 	 */
 	static constexpr int frameIntegrationDiff = 22;
+	/* Maximum frame length allowable for long exposure calculations. */
+	static constexpr int frameLengthMax = 0xffdc;
+	/* Largest long exposure scale factor given as a left shift on the frame length. */
+	static constexpr int longExposureShiftMax = 7;
 
 	void PopulateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
@@ -62,6 +78,76 @@ uint32_t CamHelperImx477::GainCode(double gain) const
 double CamHelperImx477::Gain(uint32_t gain_code) const
 {
 	return 1024.0 / (1024 - gain_code);
+}
+
+void CamHelperImx477::Prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
+{
+	MdParser::RegisterMap registers;
+	DeviceStatus deviceStatus;
+
+	if (metadata.Get("device.status", deviceStatus)) {
+		LOG(IPARPI, Error) << "DeviceStatus not found from DelayedControls";
+		return;
+	}
+
+	parseEmbeddedData(buffer, metadata);
+
+	/*
+	 * The DeviceStatus struct is first populated with values obtained from
+	 * DelayedControls. If this reports frame length is > frameLengthMax,
+	 * it means we are using a long exposure mode. Since the long exposure
+	 * scale factor is not returned back through embedded data, we must rely
+	 * on the existing exposure lines and frame length values returned by
+	 * DelayedControls.
+	 *
+	 * Otherwise, all values are updated with what is reported in the
+	 * embedded data.
+	 */
+	if (deviceStatus.frame_length > frameLengthMax) {
+		DeviceStatus parsedDeviceStatus;
+
+		metadata.Get("device.status", parsedDeviceStatus);
+		parsedDeviceStatus.shutter_speed = deviceStatus.shutter_speed;
+		parsedDeviceStatus.frame_length = deviceStatus.frame_length;
+		metadata.Set("device.status", parsedDeviceStatus);
+
+		LOG(IPARPI, Debug) << "Metadata updated for long exposure: "
+				   << parsedDeviceStatus;
+	}
+}
+
+uint32_t CamHelperImx477::GetVBlanking(Duration &exposure,
+				       Duration minFrameDuration,
+				       Duration maxFrameDuration) const
+{
+	uint32_t frameLength, exposureLines;
+	unsigned int shift = 0;
+
+	frameLength = mode_.height + CamHelper::GetVBlanking(exposure, minFrameDuration,
+							     maxFrameDuration);
+	/*
+	 * Check if the frame length calculated needs to be setup for long
+	 * exposure mode. This will require us to use a long exposure scale
+	 * factor provided by a shift operation in the sensor.
+	 */
+	while (frameLength > frameLengthMax) {
+		if (++shift > longExposureShiftMax) {
+			shift = longExposureShiftMax;
+			frameLength = frameLengthMax;
+			break;
+		}
+		frameLength >>= 1;
+	}
+
+	if (shift) {
+		/* Account for any rounding in the scaled frame length value. */
+		frameLength <<= shift;
+		exposureLines = ExposureLines(exposure);
+		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
+		exposure = Exposure(exposureLines);
+	}
+
+	return frameLength - mode_.height;
 }
 
 void CamHelperImx477::GetDelays(int &exposure_delay, int &gain_delay,

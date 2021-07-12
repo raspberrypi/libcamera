@@ -172,7 +172,6 @@ Agc::Agc(Controller *controller)
 	// it's not been calculated yet (i.e. Process hasn't yet run).
 	memset(&status_, 0, sizeof(status_));
 	status_.ev = ev_;
-	memset(&last_device_status_, 0, sizeof(last_device_status_));
 }
 
 char const *Agc::Name() const

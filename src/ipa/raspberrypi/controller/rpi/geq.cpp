@@ -49,7 +49,7 @@ void Geq::Prepare(Metadata *image_metadata)
 	lux_status.lux = 400;
 	if (image_metadata->Get("lux.status", lux_status))
 		LOG(RPiGeq, Warning) << "no lux data found";
-	DeviceStatus device_status = {};
+	DeviceStatus device_status;
 	device_status.analogue_gain = 1.0; // in case not found
 	if (image_metadata->Get("device.status", device_status))
 		LOG(RPiGeq, Warning)

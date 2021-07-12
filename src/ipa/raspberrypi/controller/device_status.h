@@ -14,6 +14,12 @@
  */
 
 struct DeviceStatus {
+	DeviceStatus()
+		: shutter_speed(std::chrono::seconds(0)), analogue_gain(0.0),
+		  lens_position(0.0), aperture(0.0), flash_intensity(0.0)
+	{
+	}
+
 	/* time shutter is open */
 	libcamera::utils::Duration shutter_speed;
 	double analogue_gain;

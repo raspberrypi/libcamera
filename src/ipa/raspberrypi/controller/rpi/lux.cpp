@@ -60,14 +60,7 @@ void Lux::Prepare(Metadata *image_metadata)
 
 void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 {
-	// set some initial values to shut the compiler up
-	DeviceStatus device_status = {
-		.shutter_speed = 1.0ms,
-		.analogue_gain = 1.0,
-		.lens_position = 0.0,
-		.aperture = 0.0,
-		.flash_intensity = 0.0
-	};
+	DeviceStatus device_status;
 	if (image_metadata->Get("device.status", device_status) == 0) {
 		double current_gain = device_status.analogue_gain;
 		double current_aperture = device_status.aperture;

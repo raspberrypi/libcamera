@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <iostream>
+
 #include <libcamera/base/utils.h>
 
 /*
@@ -19,6 +21,8 @@ struct DeviceStatus {
 		  lens_position(0.0), aperture(0.0), flash_intensity(0.0)
 	{
 	}
+
+	friend std::ostream &operator<<(std::ostream &out, const DeviceStatus &d);
 
 	/* time shutter is open */
 	libcamera::utils::Duration shutter_speed;

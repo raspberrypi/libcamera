@@ -1019,10 +1019,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 	deviceStatus.shutter_speed = helper_->Exposure(exposureLines);
 	deviceStatus.analogue_gain = helper_->Gain(gainCode);
 
-	LOG(IPARPI, Debug) << "Metadata - Exposure : "
-			   << deviceStatus.shutter_speed
-			   << " Gain : "
-			   << deviceStatus.analogue_gain;
+	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 
 	rpiMetadata_.Set("device.status", deviceStatus);
 }

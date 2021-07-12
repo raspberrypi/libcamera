@@ -188,10 +188,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	deviceStatus.shutter_speed = parsedDeviceStatus.shutter_speed;
 	deviceStatus.analogue_gain = parsedDeviceStatus.analogue_gain;
 
-	LOG(IPARPI, Debug) << "Metadata updated - Exposure : "
-			   << deviceStatus.shutter_speed
-			   << " Gain : "
-			   << deviceStatus.analogue_gain;
+	LOG(IPARPI, Debug) << "Metadata updated - " << deviceStatus;
 
 	metadata.Set("device.status", deviceStatus);
 }

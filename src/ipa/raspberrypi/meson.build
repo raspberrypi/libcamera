@@ -40,6 +40,7 @@ rpi_ipa_sources = files([
     'controller/rpi/contrast.cpp',
     'controller/rpi/sdn.cpp',
     'controller/pwl.cpp',
+    'controller/device_status.cpp',
 ])
 
 mod = shared_module(ipa_name,

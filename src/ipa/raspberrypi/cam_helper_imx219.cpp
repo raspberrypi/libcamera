@@ -30,7 +30,10 @@ using namespace RPiController;
 constexpr uint32_t gainReg = 0x157;
 constexpr uint32_t expHiReg = 0x15a;
 constexpr uint32_t expLoReg = 0x15b;
-constexpr std::initializer_list<uint32_t> registerList [[maybe_unused]] = { expHiReg, expLoReg, gainReg };
+constexpr uint32_t frameLengthHiReg = 0x160;
+constexpr uint32_t frameLengthLoReg = 0x161;
+constexpr std::initializer_list<uint32_t> registerList [[maybe_unused]]
+	= { expHiReg, expLoReg, gainReg, frameLengthHiReg, frameLengthLoReg };
 
 class CamHelperImx219 : public CamHelper
 {
@@ -93,6 +96,7 @@ void CamHelperImx219::PopulateMetadata(const MdParser::RegisterMap &registers,
 
 	deviceStatus.shutter_speed = Exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
 	deviceStatus.analogue_gain = Gain(registers.at(gainReg));
+	deviceStatus.frame_length = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 
 	metadata.Set("device.status", deviceStatus);
 }

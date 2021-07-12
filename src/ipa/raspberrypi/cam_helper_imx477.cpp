@@ -23,7 +23,10 @@ constexpr uint32_t expHiReg = 0x0202;
 constexpr uint32_t expLoReg = 0x0203;
 constexpr uint32_t gainHiReg = 0x0204;
 constexpr uint32_t gainLoReg = 0x0205;
-constexpr std::initializer_list<uint32_t> registerList = { expHiReg, expLoReg, gainHiReg, gainLoReg };
+constexpr uint32_t frameLengthHiReg = 0x0340;
+constexpr uint32_t frameLengthLoReg = 0x0341;
+constexpr std::initializer_list<uint32_t> registerList =
+	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg  };
 
 class CamHelperImx477 : public CamHelper
 {
@@ -81,6 +84,7 @@ void CamHelperImx477::PopulateMetadata(const MdParser::RegisterMap &registers,
 
 	deviceStatus.shutter_speed = Exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
 	deviceStatus.analogue_gain = Gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
+	deviceStatus.frame_length = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 
 	metadata.Set("device.status", deviceStatus);
 }

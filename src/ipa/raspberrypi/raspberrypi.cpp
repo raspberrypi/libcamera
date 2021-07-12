@@ -59,8 +59,8 @@ using namespace std::literals::chrono_literals;
 using utils::Duration;
 
 /* Configure the sensor with these values initially. */
-constexpr double DefaultAnalogueGain = 1.0;
-constexpr Duration DefaultExposureTime = 20.0ms;
+constexpr double defaultAnalogueGain = 1.0;
+constexpr Duration defaultExposureTime = 20.0ms;
 constexpr Duration defaultMinFrameDuration = 1.0s / 30.0;
 constexpr Duration defaultMaxFrameDuration = 250.0s;
 
@@ -390,8 +390,8 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		/* Supply initial values for gain and exposure. */
 		ControlList ctrls(sensorCtrls_);
 		AgcStatus agcStatus;
-		agcStatus.shutter_time = DefaultExposureTime;
-		agcStatus.analogue_gain = DefaultAnalogueGain;
+		agcStatus.shutter_time = defaultExposureTime;
+		agcStatus.analogue_gain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
 		ASSERT(controls);

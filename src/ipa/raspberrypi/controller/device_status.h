@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2021, Raspberry Pi (Trading) Limited
  *
  * device_status.h - device (image sensor) status
  */
@@ -8,25 +8,19 @@
 
 #include <libcamera/base/utils.h>
 
-// Definition of "device metadata" which stores things like shutter time and
-// analogue gain that downstream control algorithms will want to know.
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+/*
+ * Definition of "device metadata" which stores things like shutter time and
+ * analogue gain that downstream control algorithms will want to know.
+ */
 
 struct DeviceStatus {
-	// time shutter is open
+	/* time shutter is open */
 	libcamera::utils::Duration shutter_speed;
 	double analogue_gain;
-	// 1.0/distance-in-metres, or 0 if unknown
+	/* 1.0/distance-in-metres, or 0 if unknown */
 	double lens_position;
-	// 1/f so that brightness quadruples when this doubles, or 0 if unknown
+	/* 1/f so that brightness quadruples when this doubles, or 0 if unknown */
 	double aperture;
-	// proportional to brightness with 0 = no flash, 1 = maximum flash
+	/* proportional to brightness with 0 = no flash, 1 = maximum flash */
 	double flash_intensity;
 };
-
-#ifdef __cplusplus
-}
-#endif

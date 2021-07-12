@@ -154,6 +154,7 @@ public:
 	void embeddedComplete(uint32_t bufferId);
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls);
+	void setSensorControls(ControlList &controls);
 
 	/* bufferComplete signal handlers. */
 	void unicamBufferDequeue(FrameBuffer *buffer);
@@ -828,7 +829,7 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
 	if (!startConfig.controls.empty())
-		data->unicam_[Unicam::Image].dev()->setControls(&startConfig.controls);
+		data->setSensorControls(startConfig.controls);
 
 	/* Configure the number of dropped frames required on startup. */
 	data->dropFrameCount_ = startConfig.dropFrameCount;
@@ -1075,7 +1076,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		ControlList ctrls(dev->controls());
 		ctrls.set(V4L2_CID_HFLIP, 0);
 		ctrls.set(V4L2_CID_VFLIP, 0);
-		dev->setControls(&ctrls);
+		data->setSensorControls(ctrls);
 	}
 
 	/* Look for a valid Bayer format. */
@@ -1294,21 +1295,19 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		return -EPIPE;
 	}
 
-	if (!controls.empty())
-		unicam_[Unicam::Image].dev()->setControls(&controls);
-
 	/*
 	 * Configure the H/V flip controls based on the combination of
 	 * the sensor and user transform.
 	 */
 	if (supportsFlips_) {
-		ControlList ctrls(unicam_[Unicam::Image].dev()->controls());
-		ctrls.set(V4L2_CID_HFLIP,
-			  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
-		ctrls.set(V4L2_CID_VFLIP,
-			  static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
-		unicam_[Unicam::Image].dev()->setControls(&ctrls);
+		controls.set(V4L2_CID_HFLIP,
+			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
+		controls.set(V4L2_CID_VFLIP,
+			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
 	}
+
+	if (!controls.empty())
+		setSensorControls(controls);
 
 	return 0;
 }
@@ -1377,6 +1376,28 @@ void RPiCameraData::setDelayedControls(const ControlList &controls)
 	if (!delayedCtrls_->push(controls))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 	handleState();
+}
+
+void RPiCameraData::setSensorControls(ControlList &controls)
+{
+	/*
+	 * We need to ensure that if both VBLANK and EXPOSURE are present, the
+	 * former must be written ahead of, and separately from EXPOSURE to avoid
+	 * V4L2 rejecting the latter. This is identical to what DelayedControls
+	 * does with the priority write flag.
+	 *
+	 * As a consequence of the below logic, VBLANK gets set twice, and we
+	 * rely on the v4l2 framework to not pass the second control set to the
+	 * driver as the actual control value has not changed.
+	 */
+	if (controls.contains(V4L2_CID_EXPOSURE) && controls.contains(V4L2_CID_VBLANK)) {
+		ControlList vblank_ctrl;
+
+		vblank_ctrl.set(V4L2_CID_VBLANK, controls.get(V4L2_CID_VBLANK));
+		unicam_[Unicam::Image].dev()->setControls(&vblank_ctrl);
+	}
+
+	unicam_[Unicam::Image].dev()->setControls(&controls);
 }
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)

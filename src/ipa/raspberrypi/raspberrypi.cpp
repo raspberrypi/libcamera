@@ -62,7 +62,7 @@ using utils::Duration;
 constexpr double DefaultAnalogueGain = 1.0;
 constexpr Duration DefaultExposureTime = 20.0ms;
 constexpr Duration defaultMinFrameDuration = 1.0s / 30.0;
-constexpr Duration defaultMaxFrameDuration = 100.0s;
+constexpr Duration defaultMaxFrameDuration = 250.0s;
 
 /*
  * Determine the minimum allowable inter-frame duration to run the controller

@@ -72,6 +72,11 @@ private:
 	class ThreadProxy : public Object
 	{
 	public:
+		ThreadProxy()
+			: ipa_(nullptr)
+		{
+		}
+
 		void setIPA({{interface_name}} *ipa)
 		{
 			ipa_ = ipa;

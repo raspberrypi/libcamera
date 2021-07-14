@@ -10,7 +10,6 @@
 
 #include <any>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <string>
 
@@ -107,7 +106,5 @@ private:
 	mutable std::mutex mutex_;
 	std::map<std::string, std::any> data_;
 };
-
-typedef std::shared_ptr<Metadata> MetadataPtr;
 
 } // namespace RPiController

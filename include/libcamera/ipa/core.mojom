@@ -15,40 +15,54 @@ module libcamera;
  *
  * Attributes:
  * - skipHeader - structs only, and only in core.mojom
- *   - designate that this struct shall not have a C++ header definition
- *     generated
+ *   - Do not generate a C++ definition for the structure
+ *   - Any type used in a mojom interface definition must have a corresponding
+ *     definition in a mojom file for the code generator to accept it, except
+ *     for types solely used as map/array members for which a definition is not
+ *     required
+ *   - This attribute allows defining a symbol for the code generator that
+ *     corresponds to a libcamera type without duplicating its definition in the
+ *     generated C++ headers
  * - skipSerdes - structs only, and only in core.mojom
- *   - designate that this struct shall not have a (de)serializer generated
- *   - all fields need a (de)serializer to be defined, either hand-written
- *     in ipa_data_serializer.h
+ *   - All types need a (de)serializer to be defined in order to be transported
+ *     over IPC. The (de)serializer can be:
+ *     - Manually implemented as a template specialization in
+ *       ipa_data_serializer.cpp in the libcamera sources
+ *     - Generated at build time for types defined in a mojom file
+ *   - This attribute instructs the build system that a (de)serializer is
+ *     available for the type and there's no need to generate one
  * - hasFd - struct fields or empty structs only
- *   - designate that this field or empty struct contains a FileDescriptor
+ *   - Designate that this field or empty struct contains a FileDescriptor
  *
  * Rules:
- * - Any struct that is used in a struct definition in mojom must also be
- *   defined in mojom
- *   - If the struct has both a definition in a C++ header and a (de)serializer
- *     in ipa_data_serializer.h, then the struct shall be declared as empty,
- *     with both the [skipHeader] and [skipSerdes] attributes
- *   - If the struct only has a definition in a C++ header, but no
- *     (de)serializer, then the struct definition should have the [skipHeader]
- *     attribute
- * - Nested structures (e.g. FrameBuffer::Plane) cannot be defined in mojom.
- *   - Avoid them, by defining them in a header in C++ and a (de)serializer in
- *     ipa_data_serializer.h
- * - If a struct is in an array/map inside a struct, then the struct that is
- *   the member of the array/map does not need a mojom definition if it is
- *   defined in a C++ header.
- *   - This can be used to embed nested structures. The C++ double colon is
- *     replaced with a dot (e.g. FrameBuffer::Plane -> FrameBuffer.Plane)
- *   - The struct must still be defined in a header in C++ and a (de)serializer
- *     implemented in ipa_data_serializer.h, as it cannot be defined in mojom
- * - [skipHeader] and [skipSerdes] only work here in core.mojom.
- * - If a struct definition has [skipHeader], then the header where the
- *   struct is defined must be #included in ipa_interface.h
+ * - If the type is defined in a libcamera C++ header *and* a (de)serializer is
+ *   available then the type shall be declared as empty with both attributes
+ *   associated and specified as: [skipHeader, skipSerdes]
+ *   - Example: [skipHeader, skipSerdes] ControlList {};
+ * - If the type is defined in libcamera but no (de)serializer is available
+ *   then the type definition in the core.mojom file should have the
+ *   [skipHeader] attribute only
+ *   - A (de)serializer will be generated for the type
+ * - If a type definition has [skipHeader], then the header where the type is
+ *   defined must be included in ipa_interface.h
+ * - Types that are solely used as array/map members do not require a mojom
+ *   definition if one exists in libcamera
+ * - Nested types (e.g. FrameBuffer::Plane) cannot be defined in mojom
+ *   - If used in mojom, the nested type shall be defined in a C++ header
+ *     and a (de)serializer shall be provided
+ *   - Nested types can only be used as array/map members
+ *   - When using the type, the C++ namespace separator :: is replaced with a
+ *     dot
+ *   - In example, to use the FrameBuffer::Plane type in mojom:
+ *     - Provide a definition of the FrameBuffer::Plane type in a C++ header
+ *     - Include the header in ipa_interface.h
+ *     - Provide a (de)serializer implementation ipa_data_serializer.cpp
+ *     - In mojom, reference the type as FrameBuffer.Plane and only as map/array
+ *       member
+ * - [skipHeader] and [skipSerdes] only work here in core.mojom
  * - If a field in a struct has a FileDescriptor, but is not explicitly
  *   defined so in mojom, then the field must be marked with the [hasFd]
- *   attribute.
+ *   attribute
  *
  * \todo Generate documentation from Doxygen comments in .mojom files
  * \todo Figure out how to keep the skipHeader structs in sync with their

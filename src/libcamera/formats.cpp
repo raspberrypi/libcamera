@@ -205,6 +205,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::BGRX8888, {
+		.name = "BGRX8888",
+		.format = formats::BGRX8888,
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_XRGB32),
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	{ formats::ABGR8888, {
 		.name = "ABGR8888",
 		.format = formats::ABGR8888,

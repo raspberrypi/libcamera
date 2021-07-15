@@ -135,6 +135,7 @@ public:
 	void addValue(const OptionValue &value);
 
 	ValueType type() const { return type_; }
+	bool empty() const { return type_ == ValueType::ValueNone; }
 
 	operator int() const;
 	operator std::string() const;

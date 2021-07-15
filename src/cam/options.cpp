@@ -584,6 +584,13 @@ void OptionValue::addValue(const OptionValue &value)
  */
 
 /**
+ * \fn OptionValue::empty()
+ * \brief Check if the value is empty
+ * \return True if the value is empty (type set to ValueType::ValueNone), or
+ * false otherwise
+ */
+
+/**
  * \brief Cast the value to an int
  * \return The option value as an int, or 0 if the value type isn't
  * ValueType::ValueInteger

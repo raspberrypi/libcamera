@@ -40,11 +40,11 @@ KeyValueParser::Options StreamKeyValueParser::parse(const char *arguments)
 
 StreamRoles StreamKeyValueParser::roles(const OptionValue &values)
 {
-	const std::vector<OptionValue> &streamParameters = values.toArray();
-
 	/* If no configuration values to examine default to viewfinder. */
-	if (streamParameters.empty())
+	if (values.empty())
 		return { StreamRole::Viewfinder };
+
+	const std::vector<OptionValue> &streamParameters = values.toArray();
 
 	StreamRoles roles;
 	for (auto const &value : streamParameters) {
@@ -63,16 +63,16 @@ StreamRoles StreamKeyValueParser::roles(const OptionValue &values)
 int StreamKeyValueParser::updateConfiguration(CameraConfiguration *config,
 					      const OptionValue &values)
 {
-	const std::vector<OptionValue> &streamParameters = values.toArray();
-
 	if (!config) {
 		std::cerr << "No configuration provided" << std::endl;
 		return -EINVAL;
 	}
 
 	/* If no configuration values nothing to do. */
-	if (!streamParameters.size())
+	if (values.empty())
 		return 0;
+
+	const std::vector<OptionValue> &streamParameters = values.toArray();
 
 	if (config->size() != streamParameters.size()) {
 		std::cerr

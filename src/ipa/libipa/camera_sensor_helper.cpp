@@ -300,7 +300,7 @@ class CameraSensorHelperOv5670 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5670()
 	{
-		analogueGainConstants_ = { AnalogueGainLinear, 1, 0, 0, 256 };
+		analogueGainConstants_ = { AnalogueGainLinear, 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5670", CameraSensorHelperOv5670)

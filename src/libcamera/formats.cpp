@@ -198,7 +198,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::XBGR8888, {
 		.name = "XBGR8888",
 		.format = formats::XBGR8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_XRGB32),
+		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGBX32),
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,

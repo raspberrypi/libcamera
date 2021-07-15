@@ -945,6 +945,13 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 		}
 	}
 
+	if (optind < argc) {
+		std::cerr << "Invalid non-option argument '" << argv[optind]
+			  << "'" << std::endl;
+		usage();
+		return options;
+	}
+
 	options.valid_ = true;
 	return options;
 }

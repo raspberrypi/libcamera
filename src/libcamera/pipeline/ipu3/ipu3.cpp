@@ -88,6 +88,8 @@ public:
 
 	std::queue<Request *> pendingRequests_;
 
+	ControlInfoMap ipaControls_;
+
 private:
 	void queueFrameAction(unsigned int id,
 			      const ipa::ipu3::IPU3Action &action);
@@ -954,7 +956,6 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 		return ret;
 
 	ControlInfoMap::Map controls = IPU3Controls;
-	const ControlInfoMap &sensorControls = sensor->controls();
 	const std::vector<int32_t> &testPatternModes = sensor->testPatternModes();
 	if (!testPatternModes.empty()) {
 		std::vector<ControlValue> values;
@@ -965,58 +966,6 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 
 		controls[&controls::draft::TestPatternMode] = ControlInfo(values);
 	}
-
-	/*
-	 * Compute exposure time limits.
-	 *
-	 * Initialize the control using the line length and pixel rate of the
-	 * current configuration converted to microseconds. Use the
-	 * V4L2_CID_EXPOSURE control to get exposure min, max and default and
-	 * convert it from lines to microseconds.
-	 */
-	double lineDuration = sensorInfo.lineLength
-			    / (sensorInfo.pixelRate / 1e6);
-	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
-	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
-	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
-	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
-
-	/*
-	 * \todo Report the actual exposure time, use the default for the
-	 * moment.
-	 */
-	data->exposureTime_ = defExposure;
-
-	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
-							defExposure);
-
-	/*
-	 * Compute the frame duration limits.
-	 *
-	 * The frame length is computed assuming a fixed line length combined
-	 * with the vertical frame sizes.
-	 */
-	const ControlInfo &v4l2HBlank = sensorControls.find(V4L2_CID_HBLANK)->second;
-	uint32_t hblank = v4l2HBlank.def().get<int32_t>();
-	uint32_t lineLength = sensorInfo.outputSize.width + hblank;
-
-	const ControlInfo &v4l2VBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
-	std::array<uint32_t, 3> frameHeights{
-		v4l2VBlank.min().get<int32_t>() + sensorInfo.outputSize.height,
-		v4l2VBlank.max().get<int32_t>() + sensorInfo.outputSize.height,
-		v4l2VBlank.def().get<int32_t>() + sensorInfo.outputSize.height,
-	};
-
-	std::array<int64_t, 3> frameDurations;
-	for (unsigned int i = 0; i < frameHeights.size(); ++i) {
-		uint64_t frameSize = lineLength * frameHeights[i];
-		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
-	}
-
-	controls[&controls::FrameDurationLimits] =
-		ControlInfo(frameDurations[0],
-			    frameDurations[1],
-			    frameDurations[2]);
 
 	/*
 	 * Compute the scaler crop limits.
@@ -1070,6 +1019,21 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 					       sensorInfo.outputSize);
 
 	controls[&controls::ScalerCrop] = ControlInfo(minCrop, maxCrop, maxCrop);
+
+	/*
+	 * \todo Report the actual exposure time, use the default for the
+	 * moment.
+	 */
+	const auto exposureInfo = data->ipaControls_.find(&controls::ExposureTime);
+	if (exposureInfo == data->ipaControls_.end()) {
+		LOG(IPU3, Error) << "Exposure control not initialized by the IPA";
+		return -EINVAL;
+	}
+	data->exposureTime_ = exposureInfo->second.def().get<int32_t>();
+
+	/* Add the IPA registered controls to list of camera controls. */
+	for (const auto &ipaControl : data->ipaControls_)
+		controls[ipaControl.first] = ipaControl.second;
 
 	data->controlInfo_ = ControlInfoMap(std::move(controls),
 					    controls::controls);
@@ -1223,8 +1187,31 @@ int IPU3CameraData::loadIPA()
 
 	ipa_->queueFrameAction.connect(this, &IPU3CameraData::queueFrameAction);
 
+	/*
+	 * Pass the sensor info to the IPA to initialize controls.
+	 *
+	 * \todo Find a way to initialize IPA controls without basing their
+	 * limits on a particular sensor mode. We currently pass sensor
+	 * information corresponding to the largest sensor resolution, and the
+	 * IPA uses this to compute limits for supported controls. There's a
+	 * discrepancy between the need to compute IPA control limits at init
+	 * time, and the fact that those limits may depend on the sensor mode.
+	 * Research is required to find out to handle this issue.
+	 */
 	CameraSensor *sensor = cio2_.sensor();
-	int ret = ipa_->init(IPASettings{ "", sensor->model() });
+	V4L2SubdeviceFormat sensorFormat = {};
+	sensorFormat.size = sensor->resolution();
+	int ret = sensor->setFormat(&sensorFormat);
+	if (ret)
+		return ret;
+
+	IPACameraSensorInfo sensorInfo{};
+	ret = sensor->sensorInfo(&sensorInfo);
+	if (ret)
+		return ret;
+
+	ret = ipa_->init(IPASettings{ "", sensor->model() }, sensorInfo,
+			 sensor->controls(), &ipaControls_);
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to initialise the IPU3 IPA";
 		return ret;

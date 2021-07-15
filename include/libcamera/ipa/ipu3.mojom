@@ -38,7 +38,10 @@ struct IPAConfigInfo {
 };
 
 interface IPAIPU3Interface {
-	init(libcamera.IPASettings settings) => (int32 ret);
+	init(libcamera.IPASettings settings,
+	     libcamera.IPACameraSensorInfo sensorInfo,
+	     libcamera.ControlInfoMap sensorControls)
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 	start() => (int32 ret);
 	stop();
 

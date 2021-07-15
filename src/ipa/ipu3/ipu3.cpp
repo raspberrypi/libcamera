@@ -5,7 +5,9 @@
  * ipu3.cpp - IPU3 Image Processing Algorithms
  */
 
+#include <array>
 #include <stdint.h>
+#include <utility>
 
 #include <linux/intel-ipu3.h>
 #include <linux/v4l2-controls.h>
@@ -37,7 +39,11 @@ namespace ipa::ipu3 {
 class IPAIPU3 : public IPAIPU3Interface
 {
 public:
-	int init(const IPASettings &settings) override;
+	int init(const IPASettings &settings,
+		 const IPACameraSensorInfo &sensorInfo,
+		 const ControlInfoMap &sensorControls,
+		 ControlInfoMap *ipaControls) override;
+
 	int start() override;
 	void stop() override {}
 
@@ -85,13 +91,73 @@ private:
 	struct ipu3_uapi_grid_config bdsGrid_;
 };
 
-int IPAIPU3::init(const IPASettings &settings)
+/**
+ * Initialize the IPA module and its controls.
+ *
+ * This function receives the camera sensor information from the pipeline
+ * handler, computes the limits of the controls it handles and returns
+ * them in the \a ipaControls output parameter.
+ */
+int IPAIPU3::init(const IPASettings &settings,
+		  const IPACameraSensorInfo &sensorInfo,
+		  const ControlInfoMap &sensorControls,
+		  ControlInfoMap *ipaControls)
 {
 	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
 	if (camHelper_ == nullptr) {
-		LOG(IPAIPU3, Error) << "Failed to create camera sensor helper for " << settings.sensorModel;
+		LOG(IPAIPU3, Error)
+			<< "Failed to create camera sensor helper for "
+			<< settings.sensorModel;
 		return -ENODEV;
 	}
+
+	/* Initialize Controls. */
+	ControlInfoMap::Map controls{};
+
+	/*
+	 * Compute exposure time limits.
+	 *
+	 * Initialize the control using the line length and pixel rate of the
+	 * current configuration converted to microseconds. Use the
+	 * V4L2_CID_EXPOSURE control to get exposure min, max and default and
+	 * convert it from lines to microseconds.
+	 */
+	double lineDuration = sensorInfo.lineLength / (sensorInfo.pixelRate / 1e6);
+	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
+	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
+							defExposure);
+
+	/*
+	 * Compute the frame duration limits.
+	 *
+	 * The frame length is computed assuming a fixed line length combined
+	 * with the vertical frame sizes.
+	 */
+	const ControlInfo &v4l2HBlank = sensorControls.find(V4L2_CID_HBLANK)->second;
+	uint32_t hblank = v4l2HBlank.def().get<int32_t>();
+	uint32_t lineLength = sensorInfo.outputSize.width + hblank;
+
+	const ControlInfo &v4l2VBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
+	std::array<uint32_t, 3> frameHeights{
+		v4l2VBlank.min().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.max().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.def().get<int32_t>() + sensorInfo.outputSize.height,
+	};
+
+	std::array<int64_t, 3> frameDurations;
+	for (unsigned int i = 0; i < frameHeights.size(); ++i) {
+		uint64_t frameSize = lineLength * frameHeights[i];
+		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
+	}
+
+	controls[&controls::FrameDurationLimits] = ControlInfo(frameDurations[0],
+							       frameDurations[1],
+							       frameDurations[2]);
+
+	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
 
 	return 0;
 }

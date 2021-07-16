@@ -29,6 +29,10 @@ public:
 	bool isValid() const { return valid_; }
 	bool getEntry(uint32_t tag, camera_metadata_ro_entry_t *entry) const;
 
+	template<typename T> bool entryContains(uint32_t tag, T value) const;
+
+	bool hasEntry(uint32_t tag) const;
+
 	template<typename T,
 		 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
 	bool addEntry(uint32_t tag, const T &data)

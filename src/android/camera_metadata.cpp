@@ -121,6 +121,26 @@ bool CameraMetadata::resize(size_t count, size_t size)
 	return true;
 }
 
+template<> bool CameraMetadata::entryContains(uint32_t tag, uint8_t value) const
+{
+	camera_metadata_ro_entry_t entry;
+	if (!getEntry(tag, &entry))
+		return false;
+
+	for (unsigned int i = 0; i < entry.count; i++) {
+		if (entry.data.u8[i] == value)
+			return true;
+	}
+
+	return false;
+}
+
+bool CameraMetadata::hasEntry(uint32_t tag) const
+{
+	camera_metadata_ro_entry_t entry;
+	return getEntry(tag, &entry);
+}
+
 bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count,
 			      size_t elementSize)
 {

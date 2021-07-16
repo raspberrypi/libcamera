@@ -8,8 +8,8 @@
 #include "ipu3_agc.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
-#include <numeric>
 
 #include <libcamera/base/log.h>
 

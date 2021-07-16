@@ -5,9 +5,15 @@
  * ipu3.cpp - IPU3 Image Processing Algorithms
  */
 
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <memory>
 #include <stdint.h>
 #include <utility>
+#include <vector>
 
 #include <linux/intel-ipu3.h>
 #include <linux/v4l2-controls.h>

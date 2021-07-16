@@ -7,9 +7,6 @@
 #ifndef __LIBCAMERA_IPU3_AGC_H__
 #define __LIBCAMERA_IPU3_AGC_H__
 
-#include <array>
-#include <unordered_map>
-
 #include <linux/intel-ipu3.h>
 
 #include <libcamera/base/utils.h>

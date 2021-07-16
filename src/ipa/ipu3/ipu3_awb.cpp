@@ -6,9 +6,8 @@
  */
 #include "ipu3_awb.h"
 
+#include <algorithm>
 #include <cmath>
-#include <numeric>
-#include <unordered_map>
 
 #include <libcamera/base/log.h>
 

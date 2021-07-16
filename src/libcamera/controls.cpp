@@ -592,7 +592,7 @@ std::string ControlInfo::toString() const
  *
  * The ControlInfoMap class describes controls supported by an object as an
  * unsorted map of ControlId pointers to ControlInfo instances. Unlike the
- * standard std::unsorted_map<> class, it is designed the be immutable once
+ * standard std::unsorted_map<> class, it is designed to be immutable once
  * constructed, and thus only exposes the read accessors of the
  * std::unsorted_map<> base class.
  *

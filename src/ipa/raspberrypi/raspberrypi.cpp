@@ -325,6 +325,12 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	 */
 	mode_.min_frame_length = sensorInfo.minFrameLength;
 	mode_.max_frame_length = sensorInfo.maxFrameLength;
+
+	/*
+	 * Some sensors may have different sensitivities in different modes;
+	 * the CamHelper will know the correct value.
+	 */
+	mode_.sensitivity = helper_->GetModeSensitivity(mode_);
 }
 
 int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,

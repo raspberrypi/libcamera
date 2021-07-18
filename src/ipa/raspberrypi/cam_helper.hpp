@@ -41,6 +41,8 @@ namespace RPiController {
 //
 // A method to query if the sensor outputs embedded data that can be parsed.
 //
+// A method to return the sensitivity of a given camera mode.
+//
 // A parser to parse the embedded data buffers provided by some sensors (for
 // example, the imx219 does; the ov5647 doesn't). This allows us to know for
 // sure the exposure and gain of the frame we're looking at. CamHelper
@@ -84,6 +86,7 @@ public:
 	virtual void GetDelays(int &exposure_delay, int &gain_delay,
 			       int &vblank_delay) const;
 	virtual bool SensorEmbeddedDataPresent() const;
+	virtual double GetModeSensitivity(const CameraMode &mode) const;
 	virtual unsigned int HideFramesStartup() const;
 	virtual unsigned int HideFramesModeSwitch() const;
 	virtual unsigned int MistrustFramesStartup() const;

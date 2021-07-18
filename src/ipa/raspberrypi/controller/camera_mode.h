@@ -41,6 +41,8 @@ struct CameraMode {
 	libcamera::Transform transform;
 	// minimum and maximum fame lengths in units of lines
 	uint32_t min_frame_length, max_frame_length;
+	// sensitivity of this mode
+	double sensitivity;
 };
 
 #ifdef __cplusplus

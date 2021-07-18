@@ -129,6 +129,17 @@ bool CamHelper::SensorEmbeddedDataPresent() const
 	return false;
 }
 
+double CamHelper::GetModeSensitivity([[maybe_unused]] const CameraMode &mode) const
+{
+	/*
+	 * Most sensors have the same sensitivity in every mode, but this
+	 * method can be overridden for those that do not. Note that it is
+	 * called before mode_ is set, so it must return the sensitivity
+	 * of the mode that is passed in.
+	 */
+	return 1.0;
+}
+
 unsigned int CamHelper::HideFramesStartup() const
 {
 	/*

@@ -126,6 +126,7 @@ private:
 	int lock_count_;
 	DeviceStatus last_device_status_;
 	libcamera::utils::Duration last_target_exposure_;
+	double last_sensitivity_; // sensitivity of the previous camera mode
 	// Below here the "settings" that applications can change.
 	std::string metering_mode_name_;
 	std::string exposure_mode_name_;

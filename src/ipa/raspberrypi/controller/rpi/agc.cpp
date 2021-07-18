@@ -163,7 +163,7 @@ Agc::Agc(Controller *controller)
 	: AgcAlgorithm(controller), metering_mode_(nullptr),
 	  exposure_mode_(nullptr), constraint_mode_(nullptr),
 	  frame_count_(0), lock_count_(0),
-	  last_target_exposure_(0s),
+	  last_target_exposure_(0s), last_sensitivity_(0.0),
 	  ev_(1.0), flicker_period_(0s),
 	  max_shutter_(0s), fixed_shutter_(0s), fixed_analogue_gain_(0.0)
 {
@@ -268,9 +268,12 @@ void Agc::SetConstraintMode(std::string const &constraint_mode_name)
 	constraint_mode_name_ = constraint_mode_name;
 }
 
-void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
+void Agc::SwitchMode(CameraMode const &camera_mode,
 		     Metadata *metadata)
 {
+	/* AGC expects the mode sensitivity always to be non-zero. */
+	ASSERT(camera_mode.sensitivity);
+
 	housekeepConfig();
 
 	Duration fixed_shutter = clipShutter(fixed_shutter_);
@@ -292,9 +295,20 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 		filtered_.shutter = fixed_shutter;
 		filtered_.analogue_gain = fixed_analogue_gain_;
 	} else if (status_.total_exposure_value) {
-		// On a mode switch, it's possible the exposure profile could change,
-		// or a fixed exposure/gain might be set so we divide up the exposure/
-		// gain again, but we don't change any target values.
+		// On a mode switch, various things could happen:
+		// - the exposure profile might change
+		// - a fixed exposure or gain might be set
+		// - the new mode's sensitivity might be different
+		// We cope with the last of these by scaling the target values. After
+		// that we just need to re-divide the exposure/gain according to the
+		// current exposure profile, which takes care of everything else.
+
+		double ratio = last_sensitivity_ / camera_mode.sensitivity;
+		target_.total_exposure_no_dg *= ratio;
+		target_.total_exposure *= ratio;
+		filtered_.total_exposure_no_dg *= ratio;
+		filtered_.total_exposure *= ratio;
+
 		divideUpExposure();
 	} else {
 		// We come through here on startup, when at least one of the shutter
@@ -308,6 +322,9 @@ void Agc::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 	}
 
 	writeAndFinish(metadata, false);
+
+	// We must remember the sensitivity of this mode for the next SwitchMode.
+	last_sensitivity_ = camera_mode.sensitivity;
 }
 
 void Agc::Prepare(Metadata *image_metadata)

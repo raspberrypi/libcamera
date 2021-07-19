@@ -295,6 +295,16 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx219", CameraSensorHelperImx219)
 
+class CameraSensorHelperImx258 : public CameraSensorHelper
+{
+public:
+        CameraSensorHelperImx258()
+        {
+                analogueGainConstants_ = { AnalogueGainLinear, 0, 512, -1, 512 };
+        }
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx258", CameraSensorHelperImx258)
+
 class CameraSensorHelperOv5670 : public CameraSensorHelper
 {
 public:

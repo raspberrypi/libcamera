@@ -11,6 +11,8 @@
 
 #include <libcamera/base/signal.h>
 
+#include <libcamera/file_descriptor.h>
+
 #include "libcamera/internal/ipc_unixsocket.h"
 
 namespace libcamera {
@@ -26,23 +28,23 @@ public:
 	IPCMessage();
 	IPCMessage(uint32_t cmd);
 	IPCMessage(const Header &header);
-	IPCMessage(const IPCUnixSocket::Payload &payload);
+	IPCMessage(IPCUnixSocket::Payload &payload);
 
 	IPCUnixSocket::Payload payload() const;
 
 	Header &header() { return header_; }
 	std::vector<uint8_t> &data() { return data_; }
-	std::vector<int32_t> &fds() { return fds_; }
+	std::vector<FileDescriptor> &fds() { return fds_; }
 
 	const Header &header() const { return header_; }
 	const std::vector<uint8_t> &data() const { return data_; }
-	const std::vector<int32_t> &fds() const { return fds_; }
+	const std::vector<FileDescriptor> &fds() const { return fds_; }
 
 private:
 	Header header_;
 
 	std::vector<uint8_t> data_;
-	std::vector<int32_t> fds_;
+	std::vector<FileDescriptor> fds_;
 };
 
 class IPCPipe

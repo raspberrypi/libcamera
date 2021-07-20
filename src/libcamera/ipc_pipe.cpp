@@ -77,13 +77,17 @@ IPCMessage::IPCMessage(const Header &header)
  *
  * This essentially converts an IPCUnixSocket payload into an IPCMessage.
  * The header is extracted from the payload into the IPCMessage's header field.
+ *
+ * If the IPCUnixSocket payload had any valid file descriptors, then they will
+ * all be invalidated.
  */
-IPCMessage::IPCMessage(const IPCUnixSocket::Payload &payload)
+IPCMessage::IPCMessage(IPCUnixSocket::Payload &payload)
 {
 	memcpy(&header_, payload.data.data(), sizeof(header_));
 	data_ = std::vector<uint8_t>(payload.data.begin() + sizeof(header_),
 				     payload.data.end());
-	fds_ = payload.fds;
+	for (int32_t &fd : payload.fds)
+		fds_.push_back(FileDescriptor(std::move(fd)));
 }
 
 /**
@@ -104,7 +108,9 @@ IPCUnixSocket::Payload IPCMessage::payload() const
 
 	/* \todo Make this work without copy */
 	memcpy(payload.data.data() + sizeof(Header), data_.data(), data_.size());
-	payload.fds = fds_;
+
+	for (const FileDescriptor &fd : fds_)
+		payload.fds.push_back(fd.fd());
 
 	return payload;
 }

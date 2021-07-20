@@ -54,7 +54,7 @@
 {%- for param in params %}
 	std::vector<uint8_t> {{param.mojom_name}}Buf;
 {%- if param|has_fd %}
-	std::vector<int32_t> {{param.mojom_name}}Fds;
+	std::vector<FileDescriptor> {{param.mojom_name}}Fds;
 	std::tie({{param.mojom_name}}Buf, {{param.mojom_name}}Fds) =
 {%- else %}
 	std::tie({{param.mojom_name}}Buf, std::ignore) =

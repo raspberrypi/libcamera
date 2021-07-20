@@ -40,7 +40,7 @@
 		retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
 {%- elif field|is_fd %}
 		std::vector<uint8_t> {{field.mojom_name}};
-		std::vector<int32_t> {{field.mojom_name}}Fds;
+		std::vector<FileDescriptor> {{field.mojom_name}}Fds;
 		std::tie({{field.mojom_name}}, {{field.mojom_name}}Fds) =
 			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
 		retData.insert(retData.end(), {{field.mojom_name}}.begin(), {{field.mojom_name}}.end());
@@ -58,7 +58,7 @@
 {%- elif field|is_plain_struct or field|is_array or field|is_map or field|is_str %}
 		std::vector<uint8_t> {{field.mojom_name}};
 	{%- if field|has_fd %}
-		std::vector<int32_t> {{field.mojom_name}}Fds;
+		std::vector<FileDescriptor> {{field.mojom_name}}Fds;
 		std::tie({{field.mojom_name}}, {{field.mojom_name}}Fds) =
 	{%- else %}
 		std::tie({{field.mojom_name}}, std::ignore) =
@@ -104,9 +104,9 @@
 		dataSize -= {{field_size}};
 	{%- endif %}
 {% elif field|is_fd %}
-	{%- set field_size = 1 %}
+	{%- set field_size = 4 %}
 		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
-		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + 1, n, n + 1, cs);
+		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field_size}}, n, n + 1, cs);
 	{%- if not loop.last %}
 		m += {{field_size}};
 		dataSize -= {{field_size}};
@@ -177,7 +177,7 @@
  # \a struct.
  #}
 {%- macro serializer(struct, namespace) %}
-	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+	static std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 	serialize(const {{struct|name_full}} &data,
 {%- if struct|needs_control_serializer %}
 		  ControlSerializer *cs)
@@ -187,7 +187,7 @@
 	{
 		std::vector<uint8_t> retData;
 {%- if struct|has_fd %}
-		std::vector<int32_t> retFds;
+		std::vector<FileDescriptor> retFds;
 {%- endif %}
 {%- for field in struct.fields %}
 {{serializer_field(field, namespace, loop)}}
@@ -210,7 +210,7 @@
 {%- macro deserializer_fd(struct, namespace) %}
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
-		    std::vector<int32_t> &fds,
+		    std::vector<FileDescriptor> &fds,
 {%- if struct|needs_control_serializer %}
 		    ControlSerializer *cs)
 {%- else %}
@@ -224,8 +224,8 @@
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 		    std::vector<uint8_t>::const_iterator dataEnd,
-		    std::vector<int32_t>::const_iterator fdsBegin,
-		    std::vector<int32_t>::const_iterator fdsEnd,
+		    std::vector<FileDescriptor>::const_iterator fdsBegin,
+		    std::vector<FileDescriptor>::const_iterator fdsEnd,
 {%- if struct|needs_control_serializer %}
 		    ControlSerializer *cs)
 {%- else %}
@@ -234,7 +234,7 @@
 	{
 		{{struct|name_full}} ret;
 		std::vector<uint8_t>::const_iterator m = dataBegin;
-		std::vector<int32_t>::const_iterator n = fdsBegin;
+		std::vector<FileDescriptor>::const_iterator n = fdsBegin;
 
 		size_t dataSize = std::distance(dataBegin, dataEnd);
 		[[maybe_unused]] size_t fdsSize = std::distance(fdsBegin, fdsEnd);
@@ -255,7 +255,7 @@
 {%- macro deserializer_fd_simple(struct, namespace) %}
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
-		    [[maybe_unused]] std::vector<int32_t> &fds,
+		    [[maybe_unused]] std::vector<FileDescriptor> &fds,
 		    ControlSerializer *cs = nullptr)
 	{
 		return IPADataSerializer<{{struct|name_full}}>::deserialize(data.cbegin(), data.cend(), cs);
@@ -264,8 +264,8 @@
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 		    std::vector<uint8_t>::const_iterator dataEnd,
-		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
-		    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+		    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsBegin,
+		    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 		    ControlSerializer *cs = nullptr)
 	{
 		return IPADataSerializer<{{struct|name_full}}>::deserialize(dataBegin, dataEnd, cs);

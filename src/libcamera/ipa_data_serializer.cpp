@@ -7,6 +7,8 @@
 
 #include "libcamera/internal/ipa_data_serializer.h"
 
+#include <unistd.h>
+
 #include <libcamera/base/log.h>
 
 /**
@@ -141,7 +143,7 @@ namespace {
 /**
  * \fn template<typename T> IPADataSerializer<T>::deserialize(
  * 	const std::vector<uint8_t> &data,
- * 	const std::vector<int32_t> &fds,
+ * 	const std::vector<FileDescriptor> &fds,
  * 	ControlSerializer *cs = nullptr)
  * \brief Deserialize byte vector and fd vector into an object
  * \tparam T Type of object to deserialize to
@@ -162,8 +164,8 @@ namespace {
  * \fn template<typename T> IPADataSerializer::deserialize(
  * 	std::vector<uint8_t>::const_iterator dataBegin,
  * 	std::vector<uint8_t>::const_iterator dataEnd,
- * 	std::vector<int32_t>::const_iterator fdsBegin,
- * 	std::vector<int32_t>::const_iterator fdsEnd,
+ * 	std::vector<FileDescriptor>::const_iterator fdsBegin,
+ * 	std::vector<FileDescriptor>::const_iterator fdsEnd,
  * 	ControlSerializer *cs = nullptr)
  * \brief Deserialize byte vector and fd vector into an object
  * \tparam T Type of object to deserialize to
@@ -187,7 +189,7 @@ namespace {
 #define DEFINE_POD_SERIALIZER(type)					\
 									\
 template<>								\
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>			\
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>		\
 IPADataSerializer<type>::serialize(const type &data,			\
 				  [[maybe_unused]] ControlSerializer *cs) \
 {									\
@@ -215,7 +217,7 @@ type IPADataSerializer<type>::deserialize(const std::vector<uint8_t> &data, \
 									\
 template<>								\
 type IPADataSerializer<type>::deserialize(const std::vector<uint8_t> &data, \
-					  [[maybe_unused]] const std::vector<int32_t> &fds, \
+					  [[maybe_unused]] const std::vector<FileDescriptor> &fds, \
 					  ControlSerializer *cs)	\
 {									\
 	return deserialize(data.cbegin(), data.end(), cs);		\
@@ -224,8 +226,8 @@ type IPADataSerializer<type>::deserialize(const std::vector<uint8_t> &data, \
 template<>								\
 type IPADataSerializer<type>::deserialize(std::vector<uint8_t>::const_iterator dataBegin, \
 					  std::vector<uint8_t>::const_iterator dataEnd, \
-					  [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin, \
-					  [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd, \
+					  [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsBegin, \
+					  [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd, \
 					  ControlSerializer *cs)	\
 {									\
 	return deserialize(dataBegin, dataEnd, cs);			\
@@ -249,7 +251,7 @@ DEFINE_POD_SERIALIZER(double)
  * function parameter serdes).
  */
 template<>
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 IPADataSerializer<std::string>::serialize(const std::string &data,
 					  [[maybe_unused]] ControlSerializer *cs)
 {
@@ -276,7 +278,7 @@ IPADataSerializer<std::string>::deserialize(std::vector<uint8_t>::const_iterator
 template<>
 std::string
 IPADataSerializer<std::string>::deserialize(const std::vector<uint8_t> &data,
-					    [[maybe_unused]] const std::vector<int32_t> &fds,
+					    [[maybe_unused]] const std::vector<FileDescriptor> &fds,
 					    [[maybe_unused]] ControlSerializer *cs)
 {
 	return { data.cbegin(), data.cend() };
@@ -286,8 +288,8 @@ template<>
 std::string
 IPADataSerializer<std::string>::deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 					    std::vector<uint8_t>::const_iterator dataEnd,
-					    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
-					    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+					    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsBegin,
+					    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 					    [[maybe_unused]] ControlSerializer *cs)
 {
 	return { dataBegin, dataEnd };
@@ -305,7 +307,7 @@ IPADataSerializer<std::string>::deserialize(std::vector<uint8_t>::const_iterator
  * be used. The serialized ControlInfoMap will have zero length.
  */
 template<>
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 IPADataSerializer<ControlList>::serialize(const ControlList &data, ControlSerializer *cs)
 {
 	if (!cs)
@@ -405,7 +407,7 @@ IPADataSerializer<ControlList>::deserialize(const std::vector<uint8_t> &data,
 template<>
 ControlList
 IPADataSerializer<ControlList>::deserialize(const std::vector<uint8_t> &data,
-					    [[maybe_unused]] const std::vector<int32_t> &fds,
+					    [[maybe_unused]] const std::vector<FileDescriptor> &fds,
 					    ControlSerializer *cs)
 {
 	return deserialize(data.cbegin(), data.end(), cs);
@@ -415,8 +417,8 @@ template<>
 ControlList
 IPADataSerializer<ControlList>::deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 					    std::vector<uint8_t>::const_iterator dataEnd,
-					    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
-					    [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+					    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsBegin,
+					    [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 					    ControlSerializer *cs)
 {
 	return deserialize(dataBegin, dataEnd, cs);
@@ -429,7 +431,7 @@ IPADataSerializer<ControlList>::deserialize(std::vector<uint8_t>::const_iterator
  * X bytes - Serialized ControlInfoMap (using ControlSerializer)
  */
 template<>
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 IPADataSerializer<ControlInfoMap>::serialize(const ControlInfoMap &map,
 					     ControlSerializer *cs)
 {
@@ -491,7 +493,7 @@ IPADataSerializer<ControlInfoMap>::deserialize(const std::vector<uint8_t> &data,
 template<>
 ControlInfoMap
 IPADataSerializer<ControlInfoMap>::deserialize(const std::vector<uint8_t> &data,
-					       [[maybe_unused]] const std::vector<int32_t> &fds,
+					       [[maybe_unused]] const std::vector<FileDescriptor> &fds,
 					       ControlSerializer *cs)
 {
 	return deserialize(data.cbegin(), data.end(), cs);
@@ -501,15 +503,15 @@ template<>
 ControlInfoMap
 IPADataSerializer<ControlInfoMap>::deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 					       std::vector<uint8_t>::const_iterator dataEnd,
-					       [[maybe_unused]] std::vector<int32_t>::const_iterator fdsBegin,
-					       [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+					       [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsBegin,
+					       [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 					       ControlSerializer *cs)
 {
 	return deserialize(dataBegin, dataEnd, cs);
 }
 
 /*
- * FileDescriptors are serialized into a single byte that tells if the
+ * FileDescriptors are serialized into four bytes that tells if the
  * FileDescriptor is valid or not. If it is valid, then for serialization
  * the fd will be written to the fd vector, or for deserialization the
  * fd vector const_iterator will be valid.
@@ -517,42 +519,47 @@ IPADataSerializer<ControlInfoMap>::deserialize(std::vector<uint8_t>::const_itera
  * This validity is necessary so that we don't send -1 fd over sendmsg(). It
  * also allows us to simply send the entire fd vector into the deserializer
  * and it will be recursively consumed as necessary.
- *
- * \todo Consider serializing the FileDescriptor in 4 bytes to ensure
- * 32-bit alignment of all serialized data
  */
 template<>
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 IPADataSerializer<FileDescriptor>::serialize(const FileDescriptor &data,
 					     [[maybe_unused]] ControlSerializer *cs)
 {
-	std::vector<uint8_t> dataVec = { data.isValid() };
-	std::vector<int32_t> fdVec;
+	std::vector<uint8_t> dataVec;
+	std::vector<FileDescriptor> fdVec;
+
+	/*
+	 * Store as uint32_t to prepare for conversion from validity flag
+	 * to index, and for alignment.
+	 */
+	appendPOD<uint32_t>(dataVec, data.isValid());
+
 	if (data.isValid())
-		fdVec.push_back(data.fd());
+		fdVec.push_back(data);
+
 
 	return { dataVec, fdVec };
 }
 
 template<>
-FileDescriptor IPADataSerializer<FileDescriptor>::deserialize(std::vector<uint8_t>::const_iterator dataBegin,
-							      std::vector<uint8_t>::const_iterator dataEnd,
-							      std::vector<int32_t>::const_iterator fdsBegin,
-							      std::vector<int32_t>::const_iterator fdsEnd,
+FileDescriptor IPADataSerializer<FileDescriptor>::deserialize([[maybe_unused]] std::vector<uint8_t>::const_iterator dataBegin,
+							      [[maybe_unused]] std::vector<uint8_t>::const_iterator dataEnd,
+							      std::vector<FileDescriptor>::const_iterator fdsBegin,
+							      std::vector<FileDescriptor>::const_iterator fdsEnd,
 							      [[maybe_unused]] ControlSerializer *cs)
 {
-	ASSERT(std::distance(dataBegin, dataEnd) >= 1);
+	ASSERT(std::distance(dataBegin, dataEnd) >= 4);
 
-	bool valid = !!(*dataBegin);
+	uint32_t valid = readPOD<uint32_t>(dataBegin, 0, dataEnd);
 
 	ASSERT(!(valid && std::distance(fdsBegin, fdsEnd) < 1));
 
-	return valid ? FileDescriptor(*fdsBegin) : FileDescriptor();
+	return valid ? *fdsBegin : FileDescriptor();
 }
 
 template<>
 FileDescriptor IPADataSerializer<FileDescriptor>::deserialize(const std::vector<uint8_t> &data,
-							      const std::vector<int32_t> &fds,
+							      const std::vector<FileDescriptor> &fds,
 							      [[maybe_unused]] ControlSerializer *cs)
 {
 	return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end());
@@ -561,19 +568,19 @@ FileDescriptor IPADataSerializer<FileDescriptor>::deserialize(const std::vector<
 /*
  * FrameBuffer::Plane is serialized as:
  *
- * 1 byte  - FileDescriptor
+ * 4 byte  - FileDescriptor
  * 4 bytes - uint32_t Length
  */
 template<>
-std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 IPADataSerializer<FrameBuffer::Plane>::serialize(const FrameBuffer::Plane &data,
 						 [[maybe_unused]] ControlSerializer *cs)
 {
 	std::vector<uint8_t> dataVec;
-	std::vector<int32_t> fdsVec;
+	std::vector<FileDescriptor> fdsVec;
 
 	std::vector<uint8_t> fdBuf;
-	std::vector<int32_t> fdFds;
+	std::vector<FileDescriptor> fdFds;
 	std::tie(fdBuf, fdFds) =
 		IPADataSerializer<FileDescriptor>::serialize(data.fd);
 	dataVec.insert(dataVec.end(), fdBuf.begin(), fdBuf.end());
@@ -588,15 +595,15 @@ template<>
 FrameBuffer::Plane
 IPADataSerializer<FrameBuffer::Plane>::deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 						   std::vector<uint8_t>::const_iterator dataEnd,
-						   std::vector<int32_t>::const_iterator fdsBegin,
-						   [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+						   std::vector<FileDescriptor>::const_iterator fdsBegin,
+						   [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 						   [[maybe_unused]] ControlSerializer *cs)
 {
 	FrameBuffer::Plane ret;
 
-	ret.fd = IPADataSerializer<FileDescriptor>::deserialize(dataBegin, dataBegin + 1,
+	ret.fd = IPADataSerializer<FileDescriptor>::deserialize(dataBegin, dataBegin + 4,
 								fdsBegin, fdsBegin + 1);
-	ret.length = readPOD<uint32_t>(dataBegin, 1, dataEnd);
+	ret.length = readPOD<uint32_t>(dataBegin, 4, dataEnd);
 
 	return ret;
 }
@@ -604,7 +611,7 @@ IPADataSerializer<FrameBuffer::Plane>::deserialize(std::vector<uint8_t>::const_i
 template<>
 FrameBuffer::Plane
 IPADataSerializer<FrameBuffer::Plane>::deserialize(const std::vector<uint8_t> &data,
-						   const std::vector<int32_t> &fds,
+						   const std::vector<FileDescriptor> &fds,
 						   ControlSerializer *cs)
 {
 	return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end(), cs);

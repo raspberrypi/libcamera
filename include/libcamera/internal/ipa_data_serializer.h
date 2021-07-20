@@ -66,7 +66,7 @@ template<typename T>
 class IPADataSerializer
 {
 public:
-	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+	static std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 	serialize(const T &data, ControlSerializer *cs = nullptr);
 
 	static T deserialize(const std::vector<uint8_t> &data,
@@ -76,12 +76,12 @@ public:
 			     ControlSerializer *cs = nullptr);
 
 	static T deserialize(const std::vector<uint8_t> &data,
-			     const std::vector<int32_t> &fds,
+			     const std::vector<FileDescriptor> &fds,
 			     ControlSerializer *cs = nullptr);
 	static T deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 			     std::vector<uint8_t>::const_iterator dataEnd,
-			     std::vector<int32_t>::const_iterator fdsBegin,
-			     std::vector<int32_t>::const_iterator fdsEnd,
+			     std::vector<FileDescriptor>::const_iterator fdsBegin,
+			     std::vector<FileDescriptor>::const_iterator fdsEnd,
 			     ControlSerializer *cs = nullptr);
 };
 
@@ -104,11 +104,11 @@ template<typename V>
 class IPADataSerializer<std::vector<V>>
 {
 public:
-	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+	static std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 	serialize(const std::vector<V> &data, ControlSerializer *cs = nullptr)
 	{
 		std::vector<uint8_t> dataVec;
-		std::vector<int32_t> fdsVec;
+		std::vector<FileDescriptor> fdsVec;
 
 		/* Serialize the length. */
 		uint32_t vecLen = data.size();
@@ -117,7 +117,7 @@ public:
 		/* Serialize the members. */
 		for (auto const &it : data) {
 			std::vector<uint8_t> dvec;
-			std::vector<int32_t> fvec;
+			std::vector<FileDescriptor> fvec;
 
 			std::tie(dvec, fvec) =
 				IPADataSerializer<V>::serialize(it, cs);
@@ -141,11 +141,11 @@ public:
 					  std::vector<uint8_t>::const_iterator dataEnd,
 					  ControlSerializer *cs = nullptr)
 	{
-		std::vector<int32_t> fds;
+		std::vector<FileDescriptor> fds;
 		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.end(), cs);
 	}
 
-	static std::vector<V> deserialize(std::vector<uint8_t> &data, std::vector<int32_t> &fds,
+	static std::vector<V> deserialize(std::vector<uint8_t> &data, std::vector<FileDescriptor> &fds,
 					  ControlSerializer *cs = nullptr)
 	{
 		return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end(), cs);
@@ -153,15 +153,15 @@ public:
 
 	static std::vector<V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 					  std::vector<uint8_t>::const_iterator dataEnd,
-					  std::vector<int32_t>::const_iterator fdsBegin,
-					  [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+					  std::vector<FileDescriptor>::const_iterator fdsBegin,
+					  [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 					  ControlSerializer *cs = nullptr)
 	{
 		uint32_t vecLen = readPOD<uint32_t>(dataBegin, 0, dataEnd);
 		std::vector<V> ret(vecLen);
 
 		std::vector<uint8_t>::const_iterator dataIter = dataBegin + 4;
-		std::vector<int32_t>::const_iterator fdIter = fdsBegin;
+		std::vector<FileDescriptor>::const_iterator fdIter = fdsBegin;
 		for (uint32_t i = 0; i < vecLen; i++) {
 			uint32_t sizeofData = readPOD<uint32_t>(dataIter, 0, dataEnd);
 			uint32_t sizeofFds  = readPOD<uint32_t>(dataIter, 4, dataEnd);
@@ -201,11 +201,11 @@ template<typename K, typename V>
 class IPADataSerializer<std::map<K, V>>
 {
 public:
-	static std::tuple<std::vector<uint8_t>, std::vector<int32_t>>
+	static std::tuple<std::vector<uint8_t>, std::vector<FileDescriptor>>
 	serialize(const std::map<K, V> &data, ControlSerializer *cs = nullptr)
 	{
 		std::vector<uint8_t> dataVec;
-		std::vector<int32_t> fdsVec;
+		std::vector<FileDescriptor> fdsVec;
 
 		/* Serialize the length. */
 		uint32_t mapLen = data.size();
@@ -214,7 +214,7 @@ public:
 		/* Serialize the members. */
 		for (auto const &it : data) {
 			std::vector<uint8_t> dvec;
-			std::vector<int32_t> fvec;
+			std::vector<FileDescriptor> fvec;
 
 			std::tie(dvec, fvec) =
 				IPADataSerializer<K>::serialize(it.first, cs);
@@ -247,11 +247,11 @@ public:
 					  std::vector<uint8_t>::const_iterator dataEnd,
 					  ControlSerializer *cs = nullptr)
 	{
-		std::vector<int32_t> fds;
+		std::vector<FileDescriptor> fds;
 		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.end(), cs);
 	}
 
-	static std::map<K, V> deserialize(std::vector<uint8_t> &data, std::vector<int32_t> &fds,
+	static std::map<K, V> deserialize(std::vector<uint8_t> &data, std::vector<FileDescriptor> &fds,
 					  ControlSerializer *cs = nullptr)
 	{
 		return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end(), cs);
@@ -259,8 +259,8 @@ public:
 
 	static std::map<K, V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
 					  std::vector<uint8_t>::const_iterator dataEnd,
-					  std::vector<int32_t>::const_iterator fdsBegin,
-					  [[maybe_unused]] std::vector<int32_t>::const_iterator fdsEnd,
+					  std::vector<FileDescriptor>::const_iterator fdsBegin,
+					  [[maybe_unused]] std::vector<FileDescriptor>::const_iterator fdsEnd,
 					  ControlSerializer *cs = nullptr)
 	{
 		std::map<K, V> ret;
@@ -268,7 +268,7 @@ public:
 		uint32_t mapLen = readPOD<uint32_t>(dataBegin, 0, dataEnd);
 
 		std::vector<uint8_t>::const_iterator dataIter = dataBegin + 4;
-		std::vector<int32_t>::const_iterator fdIter = fdsBegin;
+		std::vector<FileDescriptor>::const_iterator fdIter = fdsBegin;
 		for (uint32_t i = 0; i < mapLen; i++) {
 			uint32_t sizeofData = readPOD<uint32_t>(dataIter, 0, dataEnd);
 			uint32_t sizeofFds  = readPOD<uint32_t>(dataIter, 4, dataEnd);

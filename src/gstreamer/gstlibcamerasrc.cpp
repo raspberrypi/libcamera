@@ -113,6 +113,7 @@ struct GstLibcameraSrcState {
 	std::unique_ptr<CameraConfiguration> config_;
 	std::vector<GstPad *> srcpads_;
 	std::queue<std::unique_ptr<RequestWrap>> requests_;
+	guint group_id_;
 
 	void requestCompleted(Request *request);
 };
@@ -360,15 +361,14 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 
 	GST_DEBUG_OBJECT(self, "Streaming thread has started");
 
-	guint group_id = gst_util_group_id_next();
 	gint stream_id_num = 0;
 	StreamRoles roles;
 	for (GstPad *srcpad : state->srcpads_) {
 		/* Create stream-id and push stream-start. */
-		g_autofree gchar *stream_id_intermediate = g_strdup_printf("%i%i", group_id, stream_id_num++);
+		g_autofree gchar *stream_id_intermediate = g_strdup_printf("%i%i", state->group_id_, stream_id_num++);
 		g_autofree gchar *stream_id = gst_pad_create_stream_id(srcpad, GST_ELEMENT(self), stream_id_intermediate);
 		GstEvent *event = gst_event_new_stream_start(stream_id);
-		gst_event_set_group_id(event, group_id);
+		gst_event_set_group_id(event, state->group_id_);
 		gst_pad_push_event(srcpad, event);
 
 		/* Collect the streams roles for the next iteration. */
@@ -578,6 +578,7 @@ gst_libcamera_src_change_state(GstElement *element, GstStateChange transition)
 		break;
 	case GST_STATE_CHANGE_READY_TO_PAUSED:
 		/* This needs to be called after pads activation.*/
+		self->state->group_id_ = gst_util_group_id_next();
 		if (!gst_task_pause(self->task))
 			return GST_STATE_CHANGE_FAILURE;
 		ret = GST_STATE_CHANGE_NO_PREROLL;

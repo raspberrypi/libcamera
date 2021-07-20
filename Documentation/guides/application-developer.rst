@@ -596,12 +596,12 @@ has been installed in your system.
 
    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/
 
-Verify that ``pkg-config`` can identify the ``camera`` library with
+Verify that ``pkg-config`` can identify the ``libcamera`` library with
 
 .. code:: shell
 
-   $ pkg-config --libs --cflags camera
-     -I/usr/local/include/libcamera -L/usr/local/lib -lcamera
+   $ pkg-config --libs --cflags libcamera
+     -I/usr/local/include/libcamera -L/usr/local/lib -lcamera -lcamera-base
 
 ``meson`` can alternatively use ``cmake`` to locate packages, please refer to
 the ``meson`` documentation if you prefer to use it in place of ``pkgconfig``
@@ -621,11 +621,11 @@ accordingly. In this example, the application file has been named
 
    simpler_cam = executable('simple-cam',
        'simple-cam.cpp',
-       dependencies: dependency('camera', required : true))
+       dependencies: dependency('libcamera', required : true))
 
 The ``dependencies`` line instructs meson to ask ``pkgconfig`` (or ``cmake``) to
-locate the ``camera`` library, (libcamera without the lib prefix) which the test
-application will be dynamically linked against.
+locate the ``libcamera`` library,  which the test application will be
+dynamically linked against.
 
 With the build file in place, compile and run the application with:
 

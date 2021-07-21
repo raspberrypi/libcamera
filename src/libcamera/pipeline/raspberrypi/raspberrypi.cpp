@@ -1520,8 +1520,14 @@ void RPiCameraData::clearIncompleteRequests()
 
 		for (auto &b : request->buffers()) {
 			FrameBuffer *buffer = b.second;
-			buffer->cancel();
-			pipe_->completeBuffer(request, buffer);
+			/*
+			 * Has the buffer already been handed back to the
+			 * request? If not, do so now.
+			 */
+			if (buffer->request()) {
+				buffer->cancel();
+				pipe_->completeBuffer(request, buffer);
+			}
 		}
 
 		pipe_->completeRequest(request);

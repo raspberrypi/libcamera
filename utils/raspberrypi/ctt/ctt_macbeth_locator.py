@@ -597,10 +597,10 @@ def get_macbeth_chart(img, ref_data):
                     ref_cents.append(ref_cent)
 
                     """
-                    At least three squares need to have voted for a centre in
+                    At least four squares need to have voted for a centre in
                     order for a transform to be found
                     """
-            if len(sq_cents) < 3:
+            if len(sq_cents) < 4:
                 raise MacbethError(
                     '\nWARNING: No macbeth chart found!'
                     '\nNot enough squares found'

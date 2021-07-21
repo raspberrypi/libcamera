@@ -14,7 +14,7 @@ import imutils
 import sys
 import matplotlib.pyplot as plt
 from sklearn import cluster as cluster
-from sklearn.neighbors.nearest_centroid import NearestCentroid as get_centroids
+from sklearn.neighbors import NearestCentroid as get_centroids
 
 """
 This file contains some useful tools, the details of which aren't important to

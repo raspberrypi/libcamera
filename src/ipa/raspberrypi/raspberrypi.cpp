@@ -465,6 +465,8 @@ void IPARPi::reportMetadata()
 		libcameraMetadata_.set(controls::ExposureTime,
 				       deviceStatus->shutter_speed.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogue_gain);
+		libcameraMetadata_.set(controls::FrameDuration,
+				       helper_->Exposure(deviceStatus->frame_length).get<std::micro>());
 	}
 
 	AgcStatus *agcStatus = rpiMetadata_.GetLocked<AgcStatus>("agc.status");

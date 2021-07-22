@@ -18,10 +18,11 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**
- * \file camera.h
+ * \file libcamera/camera.h
  * \brief Camera device handling
  *
  * \page camera-model Camera Model
@@ -330,43 +331,6 @@ std::size_t CameraConfiguration::size() const
  * \var CameraConfiguration::config_
  * \brief The vector of stream configurations
  */
-
-class Camera::Private : public Extensible::Private
-{
-	LIBCAMERA_DECLARE_PUBLIC(Camera)
-
-public:
-	enum State {
-		CameraAvailable,
-		CameraAcquired,
-		CameraConfigured,
-		CameraStopping,
-		CameraRunning,
-	};
-
-	Private(PipelineHandler *pipe, const std::string &id,
-		const std::set<Stream *> &streams);
-	~Private();
-
-	bool isRunning() const;
-	int isAccessAllowed(State state, bool allowDisconnected = false,
-			    const char *from = __builtin_FUNCTION()) const;
-	int isAccessAllowed(State low, State high,
-			    bool allowDisconnected = false,
-			    const char *from = __builtin_FUNCTION()) const;
-
-	void disconnect();
-	void setState(State state);
-
-	std::shared_ptr<PipelineHandler> pipe_;
-	std::string id_;
-	std::set<Stream *> streams_;
-	std::set<const Stream *> activeStreams_;
-
-private:
-	bool disconnected_;
-	std::atomic<State> state_;
-};
 
 Camera::Private::Private(PipelineHandler *pipe,
 			 const std::string &id,

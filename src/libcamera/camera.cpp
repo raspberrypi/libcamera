@@ -332,11 +332,13 @@ std::size_t CameraConfiguration::size() const
  * \brief The vector of stream configurations
  */
 
-Camera::Private::Private(PipelineHandler *pipe,
-			 const std::string &id,
-			 const std::set<Stream *> &streams)
-	: pipe_(pipe->shared_from_this()), id_(id), streams_(streams),
-	  disconnected_(false), state_(CameraAvailable)
+/**
+ * \brief Construct a Camera::Private instance
+ * \param[in] pipe The pipeline handler responsible for the camera device
+ */
+Camera::Private::Private(PipelineHandler *pipe)
+	: pipe_(pipe->shared_from_this()), disconnected_(false),
+	  state_(CameraAvailable)
 {
 }
 
@@ -513,7 +515,7 @@ void Camera::Private::setState(State state)
 
 /**
  * \brief Create a camera instance
- * \param[in] pipe The pipeline handler responsible for the camera device
+ * \param[in] d Camera private data
  * \param[in] id The ID of the camera device
  * \param[in] streams Array of streams the camera provides
  *
@@ -527,10 +529,12 @@ void Camera::Private::setState(State state)
  *
  * \return A shared pointer to the newly created camera object
  */
-std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
+std::shared_ptr<Camera> Camera::create(std::unique_ptr<Private> d,
 				       const std::string &id,
 				       const std::set<Stream *> &streams)
 {
+	ASSERT(d);
+
 	struct Deleter : std::default_delete<Camera> {
 		void operator()(Camera *camera)
 		{
@@ -541,7 +545,7 @@ std::shared_ptr<Camera> Camera::create(PipelineHandler *pipe,
 		}
 	};
 
-	Camera *camera = new Camera(pipe, id, streams);
+	Camera *camera = new Camera(std::move(d), id, streams);
 
 	return std::shared_ptr<Camera>(camera, Deleter());
 }
@@ -594,10 +598,12 @@ const std::string &Camera::id() const
  * application API calls by returning errors immediately.
  */
 
-Camera::Camera(PipelineHandler *pipe, const std::string &id,
+Camera::Camera(std::unique_ptr<Private> d, const std::string &id,
 	       const std::set<Stream *> &streams)
-	: Extensible(std::make_unique<Private>(pipe, id, streams))
+	: Extensible(std::move(d))
 {
+	_d()->id_ = id;
+	_d()->streams_ = streams;
 }
 
 Camera::~Camera()

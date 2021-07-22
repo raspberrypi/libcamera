@@ -26,8 +26,7 @@ class Camera::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(Camera)
 
 public:
-	Private(PipelineHandler *pipe, const std::string &id,
-		const std::set<Stream *> &streams);
+	Private(PipelineHandler *pipe);
 	~Private();
 
 private:

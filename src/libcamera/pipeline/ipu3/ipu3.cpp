@@ -23,6 +23,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
@@ -1164,7 +1165,8 @@ int PipelineHandlerIPU3::registerCameras()
 		/* Create and register the Camera instance. */
 		std::string cameraId = cio2->sensor()->id();
 		std::shared_ptr<Camera> camera =
-			Camera::create(this, cameraId, streams);
+			Camera::create(std::make_unique<Camera::Private>(this),
+				       cameraId, streams);
 
 		registerCamera(std::move(camera), std::move(data));
 

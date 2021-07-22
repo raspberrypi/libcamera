@@ -29,6 +29,7 @@
 #include <linux/videodev2.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
@@ -1105,7 +1106,8 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 
 	/* Create and register the camera. */
 	std::shared_ptr<Camera> camera =
-		Camera::create(this, data->sensor_->id(), streams);
+		Camera::create(std::make_unique<Camera::Private>(this),
+			       data->sensor_->id(), streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	return true;

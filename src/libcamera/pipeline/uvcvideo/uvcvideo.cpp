@@ -22,6 +22,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -470,7 +471,9 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 	}
 
 	std::set<Stream *> streams{ &data->stream_ };
-	std::shared_ptr<Camera> camera = Camera::create(this, id, streams);
+	std::shared_ptr<Camera> camera =
+		Camera::create(std::make_unique<Camera::Private>(this), id,
+			       streams);
 	registerCamera(std::move(camera), std::move(data));
 
 	/* Enable hot-unplug notifications. */

@@ -78,7 +78,7 @@ class Camera final : public Object, public std::enable_shared_from_this<Camera>,
 	LIBCAMERA_DECLARE_PRIVATE()
 
 public:
-	static std::shared_ptr<Camera> create(PipelineHandler *pipe,
+	static std::shared_ptr<Camera> create(std::unique_ptr<Private> d,
 					      const std::string &id,
 					      const std::set<Stream *> &streams);
 
@@ -107,7 +107,7 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY(Camera)
 
-	Camera(PipelineHandler *pipe, const std::string &id,
+	Camera(std::unique_ptr<Private> d, const std::string &id,
 	       const std::set<Stream *> &streams);
 	~Camera();
 

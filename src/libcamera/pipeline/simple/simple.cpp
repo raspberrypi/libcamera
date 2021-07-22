@@ -28,6 +28,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
@@ -1046,7 +1047,8 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			       [](Stream &stream) { return &stream; });
 
 		std::shared_ptr<Camera> camera =
-			Camera::create(this, data->sensor_->id(), streams);
+			Camera::create(std::make_unique<Camera::Private>(this),
+				       data->sensor_->id(), streams);
 		registerCamera(std::move(camera), std::move(data));
 		registered = true;
 	}

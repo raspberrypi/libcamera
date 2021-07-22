@@ -102,6 +102,20 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				 */
 			},
 		} },
+		{ "ov8865", {
+			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 2, controls::draft::TestPatternModeColorBars },
+				/*
+				 * No corresponding test pattern mode for:
+				 * 1: "Random data"
+				 * 3: "Color bars with rolling bar"
+				 * 4: "Color squares"
+				 * 5: "Color squares with rolling bar"
+				 */
+			},
+		} },
 	};
 
 	const auto it = sensorProps.find(sensor);

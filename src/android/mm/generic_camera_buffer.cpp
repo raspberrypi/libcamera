@@ -34,9 +34,8 @@ public:
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 };
 
-CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
+CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer, int flags)
-	: Extensible::Private(cameraBuffer)
 {
 	maps_.reserve(camera3Buffer->numFds);
 	error_ = 0;

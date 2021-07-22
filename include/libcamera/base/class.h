@@ -64,7 +64,7 @@ public:
 	class Private
 	{
 	public:
-		Private(Extensible *o);
+		Private();
 		virtual ~Private();
 
 #ifndef __DOXYGEN__
@@ -82,6 +82,8 @@ public:
 #endif
 
 	private:
+		/* To initialize o_ from Extensible. */
+		friend class Extensible;
 		Extensible *const o_;
 	};
 

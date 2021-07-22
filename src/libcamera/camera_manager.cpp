@@ -39,7 +39,7 @@ class CameraManager::Private : public Extensible::Private, public Thread
 	LIBCAMERA_DECLARE_PUBLIC(CameraManager)
 
 public:
-	Private(CameraManager *cm);
+	Private();
 
 	int start();
 	void addCamera(std::shared_ptr<Camera> camera,
@@ -74,8 +74,8 @@ private:
 	ProcessManager processManager_;
 };
 
-CameraManager::Private::Private(CameraManager *cm)
-	: Extensible::Private(cm), initialized_(false)
+CameraManager::Private::Private()
+	: initialized_(false)
 {
 }
 
@@ -258,7 +258,7 @@ void CameraManager::Private::removeCamera(Camera *camera)
 CameraManager *CameraManager::self_ = nullptr;
 
 CameraManager::CameraManager()
-	: Extensible(new CameraManager::Private(this))
+	: Extensible(new CameraManager::Private())
 {
 	if (self_)
 		LOG(Camera, Fatal)

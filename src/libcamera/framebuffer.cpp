@@ -100,8 +100,8 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \brief Array of per-plane metadata
  */
 
-FrameBuffer::Private::Private(FrameBuffer *buffer)
-	: Extensible::Private(buffer), request_(nullptr)
+FrameBuffer::Private::Private()
+	: request_(nullptr)
 {
 }
 
@@ -176,7 +176,7 @@ FrameBuffer::Private::Private(FrameBuffer *buffer)
  * \param[in] cookie Cookie
  */
 FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
-	: Extensible(new Private(this)), planes_(planes), cookie_(cookie)
+	: Extensible(new Private()), planes_(planes), cookie_(cookie)
 {
 }
 

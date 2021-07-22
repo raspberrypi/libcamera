@@ -344,7 +344,7 @@ public:
 		CameraRunning,
 	};
 
-	Private(Camera *camera, PipelineHandler *pipe, const std::string &id,
+	Private(PipelineHandler *pipe, const std::string &id,
 		const std::set<Stream *> &streams);
 	~Private();
 
@@ -368,11 +368,11 @@ private:
 	std::atomic<State> state_;
 };
 
-Camera::Private::Private(Camera *camera, PipelineHandler *pipe,
+Camera::Private::Private(PipelineHandler *pipe,
 			 const std::string &id,
 			 const std::set<Stream *> &streams)
-	: Extensible::Private(camera), pipe_(pipe->shared_from_this()), id_(id),
-	  streams_(streams), disconnected_(false), state_(CameraAvailable)
+	: pipe_(pipe->shared_from_this()), id_(id), streams_(streams),
+	  disconnected_(false), state_(CameraAvailable)
 {
 }
 
@@ -632,7 +632,7 @@ const std::string &Camera::id() const
 
 Camera::Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams)
-	: Extensible(new Private(this, pipe, id, streams))
+	: Extensible(new Private(pipe, id, streams))
 {
 }
 

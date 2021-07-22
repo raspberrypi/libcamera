@@ -47,8 +47,8 @@ private:
 CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
 			       [[maybe_unused]] int flags)
-	: Extensible::Private(cameraBuffer), handle_(camera3Buffer),
-	  numPlanes_(0), valid_(false), registered_(false)
+	: handle_(camera3Buffer), numPlanes_(0), valid_(false),
+	  registered_(false)
 {
 	bufferManager_ = cros::CameraBufferManager::GetInstance();
 

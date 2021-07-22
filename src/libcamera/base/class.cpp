@@ -151,6 +151,7 @@ namespace libcamera {
 Extensible::Extensible(Extensible::Private *d)
 	: d_(d)
 {
+	*const_cast<Extensible **>(&d_->o_) = this;
 }
 
 /**
@@ -182,10 +183,9 @@ Extensible::Extensible(Extensible::Private *d)
 
 /**
  * \brief Construct an instance of an Extensible class private data
- * \param[in] o Pointer to the public class object
  */
-Extensible::Private::Private(Extensible *o)
-	: o_(o)
+Extensible::Private::Private()
+	: o_(nullptr)
 {
 }
 

@@ -52,7 +52,7 @@ class FrameBuffer::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(FrameBuffer)
 
 public:
-	Private(FrameBuffer *buffer);
+	Private();
 
 	void setRequest(Request *request) { request_ = request; }
 

@@ -32,7 +32,7 @@ class CameraHalConfig::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(CameraHalConfig)
 
 public:
-	Private(CameraHalConfig *halConfig);
+	Private();
 
 	int parseConfigFile(FILE *fh, std::map<std::string, CameraConfigData> *cameras);
 
@@ -50,8 +50,7 @@ private:
 	std::map<std::string, CameraConfigData> *cameras_;
 };
 
-CameraHalConfig::Private::Private(CameraHalConfig *halConfig)
-	: Extensible::Private(halConfig)
+CameraHalConfig::Private::Private()
 {
 }
 
@@ -344,7 +343,7 @@ int CameraHalConfig::Private::parseConfigFile(FILE *fh,
 }
 
 CameraHalConfig::CameraHalConfig()
-	: Extensible(new Private(this)), exists_(false), valid_(false)
+	: Extensible(new Private()), exists_(false), valid_(false)
 {
 	parseConfigurationFile();
 }

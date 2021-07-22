@@ -26,6 +26,11 @@ class Camera::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(Camera)
 
 public:
+	Private(PipelineHandler *pipe, const std::string &id,
+		const std::set<Stream *> &streams);
+	~Private();
+
+private:
 	enum State {
 		CameraAvailable,
 		CameraAcquired,
@@ -33,10 +38,6 @@ public:
 		CameraStopping,
 		CameraRunning,
 	};
-
-	Private(PipelineHandler *pipe, const std::string &id,
-		const std::set<Stream *> &streams);
-	~Private();
 
 	bool isRunning() const;
 	int isAccessAllowed(State state, bool allowDisconnected = false,
@@ -53,7 +54,6 @@ public:
 	std::set<Stream *> streams_;
 	std::set<const Stream *> activeStreams_;
 
-private:
 	bool disconnected_;
 	std::atomic<State> state_;
 };

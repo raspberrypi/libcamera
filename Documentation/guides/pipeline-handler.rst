@@ -106,7 +106,7 @@ functionalities descibed above. Below is a brief overview of each of those:
    Abstracts camera sensor handling by hiding the details of the V4L2 subdevice
    kernel API and caching sensor information.
 
--  `CameraData <http://libcamera.org/api-html/classlibcamera_1_1CameraData.html>`_:
+-  `Camera::Private <http://libcamera.org/api-html/classlibcamera_1_1Camera_1_1Private.html>`_:
    Represents device-specific data a pipeline handler associates to each Camera
    instance.
 
@@ -416,26 +416,26 @@ receivers port output.
 The Pipeline Handler is responsible for defining the set of Streams associated
 with the Camera.
 
-Each Camera has instance-specific data represented using the `CameraData`_
+Each Camera has instance-specific data represented using the `Camera::Private`_
 class, which can be extended for the specific needs of the pipeline handler.
 
-.. _CameraData: http://libcamera.org/api-html/classlibcamera_1_1CameraData.html
+.. _Camera::Private: http://libcamera.org/api-html/classlibcamera_1_1Camera_1_1Private.html
 
 
-To support the Camera we will later register, we need to create a CameraData
+To support the Camera we will later register, we need to create a Camera::Private
 class that we can implement for our specific Pipeline Handler.
 
-Define a new ``VividCameraData()`` class derived from ``CameraData`` by adding
-the following code before the PipelineHandlerVivid class definition where it
-will be used:
+Define a new ``VividCameraPrivate()`` class derived from ``Camera::Private`` by
+adding the following code before the PipelineHandlerVivid class definition where
+it will be used:
 
 .. code-block:: cpp
 
-   class VividCameraData : public CameraData
+   class VividCameraData : public Camera::Private
    {
    public:
           VividCameraData(PipelineHandler *pipe, MediaDevice *media)
-                : CameraData(pipe), media_(media), video_(nullptr)
+                : Camera::Private(pipe), media_(media), video_(nullptr)
           {
           }
 
@@ -457,17 +457,17 @@ single stream, represented by the ``VividCameraData`` class members. More
 complex pipeline handlers might register cameras composed of several video
 devices and sub-devices, or multiple streams per camera that represent the
 several components of the image capture pipeline. You should represent all these
-components in the ``CameraData`` derived class when developing a custom
+components in the ``Camera::Private`` derived class when developing a custom
 PipelineHandler.
 
 In our example VividCameraData we implement an ``init()`` function to prepare
-the object from our PipelineHandler, however the CameraData class does not
+the object from our PipelineHandler, however the Camera::Private class does not
 specify the interface for initialisation and PipelineHandlers can manage this
-based on their own needs. Derived CameraData classes are used only by their
+based on their own needs. Derived Camera::Private classes are used only by their
 respective pipeline handlers.
 
-The CameraData class stores the context required for each camera instance and
-is usually responsible for opening all Devices used in the capture pipeline.
+The Camera::Private class stores the context required for each camera instance
+and is usually responsible for opening all Devices used in the capture pipeline.
 
 We can now implement the ``init`` function for our example Pipeline Handler to
 create a new V4L2 video device from the media entity, which we can specify using
@@ -488,11 +488,11 @@ single capture device named 'vivid-000-vid-cap' by the device.
           return 0;
    }
 
-The CameraData should be created and initialised before we move on to register a
-new Camera device so we need to construct and initialise our
+The VividCameraData should be created and initialised before we move on to
+register a new Camera device so we need to construct and initialise our
 VividCameraData after we have identified our device within
 PipelineHandlerVivid::match(). The VividCameraData is wrapped by a
-std::unique_ptr to help manage the lifetime of our CameraData instance.
+std::unique_ptr to help manage the lifetime of the instance.
 
 If the camera data initialization fails, return ``false`` to indicate the
 failure to the ``match()`` function and prevent retrying of the pipeline
@@ -509,9 +509,9 @@ handler.
 Once the camera data has been initialized, the Camera device instances and the
 associated streams have to be registered. Create a set of streams for the
 camera, which for this device is only one. You create a camera using the static
-`Camera::create`_ function, passing the pipeline handler, the id of the camera,
-and the streams available. Then register the camera and its data with the
-pipeline handler and camera manager using `registerCamera`_.
+`Camera::create`_ function, passing the Camera::Private instance, the id of the
+camera, and the streams available. Then register the camera with the pipeline
+handler and camera manager using `registerCamera`_.
 
 Finally with a successful construction, we return 'true' indicating that the
 PipelineHandler successfully matched and constructed a device.
@@ -549,23 +549,24 @@ Our match function should now look like the following:
 
    	/* Create and register the camera. */
    	std::set<Stream *> streams{ &data->stream_ };
-   	std::shared_ptr<Camera> camera = Camera::create(this, data->video_->deviceName(), streams);
-   	registerCamera(std::move(camera), std::move(data));
+   	const std::string &id = data->video_->deviceName();
+   	std::shared_ptr<Camera> camera = Camera::create(data.release(), id, streams);
+   	registerCamera(std::move(camera));
 
    	return true;
    }
 
-We will need to use our custom CameraData class frequently throughout the
+We will need to use our custom VividCameraData class frequently throughout the
 pipeline handler, so we add a private convenience helper to our Pipeline handler
-to obtain and cast the custom CameraData instance from a Camera instance.
+to obtain and cast the custom VividCameraData instance from a Camera::Private
+instance.
 
 .. code-block:: cpp
 
    private:
-       VividCameraData *cameraData(const Camera *camera)
+       VividCameraData *cameraData(Camera *camera)
        {
-               return static_cast<VividCameraData *>(
-                        PipelineHandler::cameraData(camera));
+               return static_cast<VividCameraData *>(camera->_d());
        }
 
 At this point, you need to add the following new includes to provide the Camera
@@ -595,12 +596,12 @@ are defined by src/libcamera/`properties_ids.yaml`_.
 
 Pipeline handlers can optionally register the list of controls an application
 can set as well as a list of immutable camera properties. Being both
-Camera-specific values, they are represented in the ``CameraData`` base class,
-which provides two members for this purpose: the `CameraData::controlInfo_`_ and
-the `CameraData::properties_`_ fields.
+Camera-specific values, they are represented in the ``Camera::Private`` base
+class, which provides two members for this purpose: the
+`Camera::Private::controlInfo_`_ and the `Camera::Private::properties_`_ fields.
 
-.. _CameraData::controlInfo_: http://libcamera.org/api-html/classlibcamera_1_1CameraData.html#ab9fecd05c655df6084a2233872144a52
-.. _CameraData::properties_: http://libcamera.org/api-html/classlibcamera_1_1CameraData.html#a84002c29f45bd35566c172bb65e7ec0b
+.. _Camera::Private::controlInfo_: http://libcamera.org/api-html/classlibcamera_1_1Camera_1_1Private.html#ab4e183eb4dabe929d1b2bbbb519b969f
+.. _Camera::Private::properties_: http://libcamera.org/api-html/classlibcamera_1_1Camera_1_1Private.html#ad31f12f5ed9c1fbe25750902f4791064
 
 The ``controlInfo_`` field represents a map of ``ControlId`` instances
 associated with the limits of valid values supported for the control. More
@@ -618,7 +619,7 @@ Complete the initialization of the ``VividCameraData`` class by adding the
 following code to the ``VividCameraData::init()`` function to initialise the
 controls. For more complex control configurations, this could of course be
 broken out to a separate function, but for now we just initialise the small set
-inline in our CameraData init:
+inline in our VividCameraData init:
 
 .. code-block:: cpp
 

@@ -53,11 +53,11 @@ static const ControlInfoMap::Map IPU3Controls = {
 	{ &controls::draft::PipelineDepth, ControlInfo(2, 3) },
 };
 
-class IPU3CameraData : public CameraData
+class IPU3CameraData : public Camera::Private
 {
 public:
 	IPU3CameraData(PipelineHandler *pipe)
-		: CameraData(pipe), exposureTime_(0), supportsFlips_(false)
+		: Camera::Private(pipe), exposureTime_(0), supportsFlips_(false)
 	{
 	}
 
@@ -148,10 +148,9 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	IPU3CameraData *cameraData(const Camera *camera)
+	IPU3CameraData *cameraData(Camera *camera)
 	{
-		return static_cast<IPU3CameraData *>(
-			PipelineHandler::cameraData(camera));
+		return static_cast<IPU3CameraData *>(camera->_d());
 	}
 
 	int initControls(IPU3CameraData *data);
@@ -816,10 +815,10 @@ void IPU3CameraData::cancelPendingRequests()
 		for (auto it : request->buffers()) {
 			FrameBuffer *buffer = it.second;
 			buffer->cancel();
-			pipe_->completeBuffer(request, buffer);
+			pipe()->completeBuffer(request, buffer);
 		}
 
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 		pendingRequests_.pop();
 	}
 }
@@ -1163,12 +1162,11 @@ int PipelineHandlerIPU3::registerCameras()
 					&IPU3CameraData::statBufferReady);
 
 		/* Create and register the Camera instance. */
-		std::string cameraId = cio2->sensor()->id();
+		const std::string &cameraId = cio2->sensor()->id();
 		std::shared_ptr<Camera> camera =
-			Camera::create(std::make_unique<Camera::Private>(this),
-				       cameraId, streams);
+			Camera::create(std::move(data), cameraId, streams);
 
-		registerCamera(std::move(camera), std::move(data));
+		registerCamera(std::move(camera), nullptr);
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""
@@ -1183,7 +1181,7 @@ int PipelineHandlerIPU3::registerCameras()
 
 int IPU3CameraData::loadIPA()
 {
-	ipa_ = IPAManager::createIPA<ipa::ipu3::IPAProxyIPU3>(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::ipu3::IPAProxyIPU3>(pipe(), 1, 1);
 	if (!ipa_)
 		return -ENOENT;
 
@@ -1263,7 +1261,7 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 
 		info->metadataProcessed = true;
 		if (frameInfos_.tryComplete(info))
-			pipe_->completeRequest(request);
+			pipe()->completeRequest(request);
 
 		break;
 	}
@@ -1291,7 +1289,7 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 
 	Request *request = info->request;
 
-	pipe_->completeBuffer(request, buffer);
+	pipe()->completeBuffer(request, buffer);
 
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Move the ExposureTime control to the IPA. */
@@ -1302,7 +1300,7 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::ScalerCrop, cropRegion_);
 
 	if (frameInfos_.tryComplete(info))
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 }
 
 /**
@@ -1334,16 +1332,16 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 		for (auto it : request->buffers()) {
 			FrameBuffer *b = it.second;
 			b->cancel();
-			pipe_->completeBuffer(request, b);
+			pipe()->completeBuffer(request, b);
 		}
 
 		frameInfos_.remove(info);
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 		return;
 	}
 
 	if (request->findBuffer(&rawStream_))
-		pipe_->completeBuffer(request, buffer);
+		pipe()->completeBuffer(request, buffer);
 
 	ipa::ipu3::IPU3Event ev;
 	ev.op = ipa::ipu3::EventFillParams;
@@ -1369,7 +1367,7 @@ void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
 	Request *request = info->request;
 
 	if (frameInfos_.tryComplete(info))
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 }
 
 void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
@@ -1388,7 +1386,7 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		 * In that event, we must have obtained the Request before hand.
 		 */
 		if (frameInfos_.tryComplete(info))
-			pipe_->completeRequest(request);
+			pipe()->completeRequest(request);
 
 		return;
 	}

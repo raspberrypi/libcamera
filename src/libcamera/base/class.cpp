@@ -151,6 +151,23 @@ Extensible::Extensible(Extensible::Private *d)
 }
 
 /**
+ * \fn Extensible::_d() const
+ * \brief Retrieve the private data instance
+ *
+ * This template function isn't meant to be called directly. Instead, classes
+ * derived from Extensible get, through the LIBCAMERA_DECLARE_PRIVATE() macro,
+ * overriden _d() functions that return the correct pointer type to the
+ * corresponding derived Private class.
+ *
+ * \return A pointer to the private data instance
+ */
+
+/**
+ * \fn Extensible::_d()
+ * \copydoc Extensible::_d() const
+ */
+
+/**
  * \var Extensible::d_
  * \brief Pointer to the private data instance
  */

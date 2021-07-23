@@ -88,7 +88,6 @@ public:
 	Extensible(Private *d);
 
 protected:
-#ifndef __DOXYGEN__
 	template<typename T>
 	const T *_d() const
 	{
@@ -100,7 +99,6 @@ protected:
 	{
 		return static_cast<T *>(d_.get());
 	}
-#endif
 
 private:
 	const std::unique_ptr<Private> d_;

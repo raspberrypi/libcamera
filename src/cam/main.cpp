@@ -56,6 +56,7 @@ private:
 CamApp *CamApp::app_ = nullptr;
 
 CamApp::CamApp()
+	: loopUsers_(0)
 {
 	CamApp::app_ = this;
 }

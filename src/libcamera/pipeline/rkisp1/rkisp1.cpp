@@ -87,6 +87,7 @@ public:
 	{
 	}
 
+	PipelineHandlerRkISP1 *pipe();
 	int loadIPA(unsigned int hwRevision);
 
 	Stream mainPathStream_;
@@ -304,6 +305,11 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 	return nullptr;
 }
 
+PipelineHandlerRkISP1 *RkISP1CameraData::pipe()
+{
+	return static_cast<PipelineHandlerRkISP1 *>(Camera::Private::pipe());
+}
+
 int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 {
 	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe(), 1, 1);
@@ -332,8 +338,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 		break;
 	}
 	case ipa::rkisp1::ActionParamFilled: {
-		PipelineHandlerRkISP1 *pipe =
-			static_cast<PipelineHandlerRkISP1 *>(this->pipe());
+		PipelineHandlerRkISP1 *pipe = RkISP1CameraData::pipe();
 		RkISP1FrameInfo *info = frameInfo_.find(frame);
 		if (!info)
 			break;
@@ -360,9 +365,6 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 
 void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &metadata)
 {
-	PipelineHandlerRkISP1 *pipe =
-		static_cast<PipelineHandlerRkISP1 *>(this->pipe());
-
 	RkISP1FrameInfo *info = frameInfo_.find(frame);
 	if (!info)
 		return;
@@ -370,7 +372,7 @@ void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &meta
 	info->request->metadata().merge(metadata);
 	info->metadataProcessed = true;
 
-	pipe->tryCompleteRequest(info->request);
+	pipe()->tryCompleteRequest(info->request);
 }
 
 RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,

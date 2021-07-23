@@ -155,6 +155,7 @@ public:
 			 MediaEntity *sensor);
 
 	bool isValid() const { return sensor_ != nullptr; }
+	SimplePipelineHandler *pipe();
 
 	int init();
 	int setupLinks();
@@ -352,11 +353,14 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 			       [](const Entity &e) { return e.entity->name(); });
 }
 
+SimplePipelineHandler *SimpleCameraData::pipe()
+{
+	return static_cast<SimplePipelineHandler *>(Camera::Private::pipe());
+}
+
 int SimpleCameraData::init()
 {
-	SimplePipelineHandler *pipe =
-		static_cast<SimplePipelineHandler *>(this->pipe());
-	SimpleConverter *converter = pipe->converter();
+	SimpleConverter *converter = pipe()->converter();
 	int ret;
 
 	/*
@@ -480,8 +484,7 @@ int SimpleCameraData::setupLinks()
 int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 				   V4L2Subdevice::Whence whence)
 {
-	SimplePipelineHandler *pipe =
-		static_cast<SimplePipelineHandler *>(this->pipe());
+	SimplePipelineHandler *pipe = SimpleCameraData::pipe();
 	int ret;
 
 	/*
@@ -582,8 +585,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	}
 
 	/* Adjust the requested streams. */
-	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(data_->pipe());
-	SimpleConverter *converter = pipe->converter();
+	SimpleConverter *converter = data_->pipe()->converter();
 
 	/*
 	 * Enable usage of the converter when producing multiple streams, as

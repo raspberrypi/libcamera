@@ -42,11 +42,11 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(VIMC)
 
-class VimcCameraData : public CameraData
+class VimcCameraData : public Camera::Private
 {
 public:
 	VimcCameraData(PipelineHandler *pipe, MediaDevice *media)
-		: CameraData(pipe), media_(media)
+		: Camera::Private(pipe), media_(media)
 	{
 	}
 
@@ -100,10 +100,9 @@ public:
 private:
 	int processControls(VimcCameraData *data, Request *request);
 
-	VimcCameraData *cameraData(const Camera *camera)
+	VimcCameraData *cameraData(Camera *camera)
 	{
-		return static_cast<VimcCameraData *>(
-			PipelineHandler::cameraData(camera));
+		return static_cast<VimcCameraData *>(camera->_d());
 	}
 };
 
@@ -475,10 +474,10 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };
+	const std::string &id = data->sensor_->id();
 	std::shared_ptr<Camera> camera =
-		Camera::create(std::make_unique<Camera::Private>(this),
-			       data->sensor_->id(), streams);
-	registerCamera(std::move(camera), std::move(data));
+		Camera::create(std::move(data), id, streams);
+	registerCamera(std::move(camera), nullptr);
 
 	return true;
 }
@@ -567,6 +566,8 @@ int VimcCameraData::init()
 
 void VimcCameraData::bufferReady(FrameBuffer *buffer)
 {
+	PipelineHandlerVimc *pipe =
+		static_cast<PipelineHandlerVimc *>(this->pipe());
 	Request *request = buffer->request();
 
 	/* If the buffer is cancelled force a complete of the whole request. */
@@ -574,10 +575,10 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 		for (auto it : request->buffers()) {
 			FrameBuffer *b = it.second;
 			b->cancel();
-			pipe_->completeBuffer(request, b);
+			pipe->completeBuffer(request, b);
 		}
 
-		pipe_->completeRequest(request);
+		pipe->completeRequest(request);
 		return;
 	}
 
@@ -585,8 +586,8 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::SensorTimestamp,
 				buffer->metadata().timestamp);
 
-	pipe_->completeBuffer(request, buffer);
-	pipe_->completeRequest(request);
+	pipe->completeBuffer(request, buffer);
+	pipe->completeRequest(request);
 
 	ipa_->fillParams(request->sequence(), mockIPABufs_[0]->cookie());
 }

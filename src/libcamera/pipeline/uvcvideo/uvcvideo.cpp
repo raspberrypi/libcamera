@@ -33,11 +33,11 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(UVC)
 
-class UVCCameraData : public CameraData
+class UVCCameraData : public Camera::Private
 {
 public:
 	UVCCameraData(PipelineHandler *pipe)
-		: CameraData(pipe)
+		: Camera::Private(pipe)
 	{
 	}
 
@@ -87,10 +87,9 @@ private:
 			   const ControlValue &value);
 	int processControls(UVCCameraData *data, Request *request);
 
-	UVCCameraData *cameraData(const Camera *camera)
+	UVCCameraData *cameraData(Camera *camera)
 	{
-		return static_cast<UVCCameraData *>(
-			PipelineHandler::cameraData(camera));
+		return static_cast<UVCCameraData *>(camera->_d());
 	}
 };
 
@@ -472,9 +471,8 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera =
-		Camera::create(std::make_unique<Camera::Private>(this), id,
-			       streams);
-	registerCamera(std::move(camera), std::move(data));
+		Camera::create(std::move(data), id, streams);
+	registerCamera(std::move(camera), nullptr);
 
 	/* Enable hot-unplug notifications. */
 	hotplugMediaDevice(media);
@@ -669,8 +667,8 @@ void UVCCameraData::bufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::SensorTimestamp,
 				buffer->metadata().timestamp);
 
-	pipe_->completeBuffer(request, buffer);
-	pipe_->completeRequest(request);
+	pipe()->completeBuffer(request, buffer);
+	pipe()->completeRequest(request);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC)

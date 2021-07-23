@@ -477,7 +477,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	const std::string &id = data->sensor_->id();
 	std::shared_ptr<Camera> camera =
 		Camera::create(std::move(data), id, streams);
-	registerCamera(std::move(camera), nullptr);
+	registerCamera(std::move(camera));
 
 	return true;
 }

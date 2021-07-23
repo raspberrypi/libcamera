@@ -40,55 +40,6 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Pipeline)
 
 /**
- * \class CameraData
- * \brief Base class for platform-specific data associated with a camera
- *
- * The CameraData base abstract class represents platform specific-data
- * a pipeline handler might want to associate with a Camera to access them
- * at a later time.
- *
- * Pipeline handlers are expected to extend this base class with platform
- * specific implementation, associate instances of the derived classes
- * using the registerCamera() function, and access them at a later time
- * with cameraData().
- */
-
-/**
- * \fn CameraData::CameraData(PipelineHandler *pipe)
- * \brief Construct a CameraData instance for the given pipeline handler
- * \param[in] pipe The pipeline handler
- *
- * The reference to the pipeline handler is stored internally, the caller shall
- * guarantee that the pointer remains valid as long as the CameraData instance
- * exists.
- */
-
-/**
- * \var CameraData::pipe_
- * \brief The pipeline handler related to this CameraData instance
- *
- * The pipe_ pointer provides access to the PipelineHandler object that this
- * instance is related to. It is set when the CameraData instance is created
- * and remains valid until the instance is destroyed.
- */
-
-/**
- * \var CameraData::controlInfo_
- * \brief The set of controls supported by the camera
- *
- * The control information shall be initialised by the pipeline handler when
- * creating the camera, and shall not be modified afterwards.
- */
-
-/**
- * \var CameraData::properties_
- * \brief The list of properties supported by the camera
- *
- * The list of camera properties shall be initialised by the pipeline handler
- * when creating the camera, and shall not be modified afterwards.
- */
-
-/**
  * \class PipelineHandler
  * \brief Create and manage cameras based on a set of media devices
  *
@@ -471,28 +422,14 @@ void PipelineHandler::completeRequest(Request *request)
 /**
  * \brief Register a camera to the camera manager and pipeline handler
  * \param[in] camera The camera to be added
- * \param[in] data Pipeline-specific data for the camera
  *
  * This function is called by pipeline handlers to register the cameras they
- * handle with the camera manager. It associates the pipeline-specific \a data
- * with the camera, for later retrieval with cameraData(). Ownership of \a data
- * is transferred to the PipelineHandler.
+ * handle with the camera manager.
  *
  * \context This function shall be called from the CameraManager thread.
  */
-void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
-				     std::unique_ptr<CameraData> data)
+void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 {
-	/*
-	 * To be removed once all pipeline handlers will have migrated from
-	 * CameraData to Camera::Private.
-	 */
-	if (data) {
-		camera->_d()->controlInfo_ = std::move(data->controlInfo_);
-		camera->_d()->properties_ = std::move(data->properties_);
-	}
-
-	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
 
 	if (mediaDevices_.empty())
@@ -584,33 +521,6 @@ void PipelineHandler::disconnect()
 		camera->disconnect();
 		manager_->removeCamera(camera);
 	}
-}
-
-/**
- * \brief Retrieve the pipeline-specific data associated with a Camera
- * \param[in] camera The camera whose data to retrieve
- * \return A pointer to the pipeline-specific data passed to registerCamera().
- * The returned pointer is a borrowed reference and is guaranteed to remain
- * valid until the pipeline handler is destroyed. It shall not be deleted
- * manually by the caller.
- */
-CameraData *PipelineHandler::cameraData(const Camera *camera)
-{
-	ASSERT(cameraData_.count(camera));
-	return cameraData_[camera].get();
-}
-
-/**
- * \brief Retrieve the pipeline-specific data associated with a Camera
- * \param[in] camera The camera whose data to retrieve
- * \sa cameraData()
- * \return A const pointer to the pipeline-specific data passed to
- * registerCamera().
- */
-const CameraData *PipelineHandler::cameraData(const Camera *camera) const
-{
-	ASSERT(cameraData_.count(camera));
-	return cameraData_.at(camera).get();
 }
 
 /**

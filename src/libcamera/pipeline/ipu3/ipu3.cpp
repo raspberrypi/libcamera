@@ -1166,7 +1166,7 @@ int PipelineHandlerIPU3::registerCameras()
 		std::shared_ptr<Camera> camera =
 			Camera::create(std::move(data), cameraId, streams);
 
-		registerCamera(std::move(camera), nullptr);
+		registerCamera(std::move(camera));
 
 		LOG(IPU3, Info)
 			<< "Registered Camera[" << numCameras << "] \""

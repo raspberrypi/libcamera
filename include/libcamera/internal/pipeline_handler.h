@@ -7,14 +7,12 @@
 #ifndef __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
 #define __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
 
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/base/class.h>
 #include <libcamera/base/object.h>
 
 #include <libcamera/controls.h>
@@ -33,23 +31,6 @@ class FrameBuffer;
 class MediaDevice;
 class PipelineHandler;
 class Request;
-
-class CameraData
-{
-public:
-	explicit CameraData(PipelineHandler *pipe)
-		: pipe_(pipe)
-	{
-	}
-	virtual ~CameraData() = default;
-
-	PipelineHandler *pipe_;
-	ControlInfoMap controlInfo_;
-	ControlList properties_;
-
-private:
-	LIBCAMERA_DISABLE_COPY(CameraData)
-};
 
 class PipelineHandler : public std::enable_shared_from_this<PipelineHandler>,
 			public Object
@@ -87,14 +68,10 @@ public:
 	const char *name() const { return name_; }
 
 protected:
-	void registerCamera(std::shared_ptr<Camera> camera,
-			    std::unique_ptr<CameraData> data);
+	void registerCamera(std::shared_ptr<Camera> camera);
 	void hotplugMediaDevice(MediaDevice *media);
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
-
-	CameraData *cameraData(const Camera *camera);
-	const CameraData *cameraData(const Camera *camera) const;
 
 	CameraManager *manager_;
 
@@ -104,7 +81,6 @@ private:
 
 	std::vector<std::shared_ptr<MediaDevice>> mediaDevices_;
 	std::vector<std::weak_ptr<Camera>> cameras_;
-	std::map<const Camera *, std::unique_ptr<CameraData>> cameraData_;
 
 	const char *name_;
 

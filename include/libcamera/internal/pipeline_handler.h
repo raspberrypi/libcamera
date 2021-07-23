@@ -7,7 +7,6 @@
 #ifndef __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
 #define __LIBCAMERA_INTERNAL_PIPELINE_HANDLER_H__
 
-#include <list>
 #include <map>
 #include <memory>
 #include <set>
@@ -39,17 +38,14 @@ class CameraData
 {
 public:
 	explicit CameraData(PipelineHandler *pipe)
-		: pipe_(pipe), requestSequence_(0)
+		: pipe_(pipe)
 	{
 	}
 	virtual ~CameraData() = default;
 
 	PipelineHandler *pipe_;
-	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;
 	ControlList properties_;
-
-	uint32_t requestSequence_;
 
 private:
 	LIBCAMERA_DISABLE_COPY(CameraData)

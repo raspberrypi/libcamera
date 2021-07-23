@@ -16,6 +16,7 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/framebuffer.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/tracepoints.h"
@@ -72,17 +73,6 @@ LOG_DEFINE_CATEGORY(Pipeline)
  */
 
 /**
- * \var CameraData::queuedRequests_
- * \brief The list of queued and not yet completed request
- *
- * The list of queued request is used to track requests queued in order to
- * ensure completion of all requests when the pipeline handler is stopped.
- *
- * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
- * PipelineHandler::completeRequest()
- */
-
-/**
  * \var CameraData::controlInfo_
  * \brief The set of controls supported by the camera
  *
@@ -96,17 +86,6 @@ LOG_DEFINE_CATEGORY(Pipeline)
  *
  * The list of camera properties shall be initialised by the pipeline handler
  * when creating the camera, and shall not be modified afterwards.
- */
-
-/**
- * \var CameraData::requestSequence_
- * \brief The queuing sequence of the request
- *
- * When requests are queued, they are given a per-camera sequence number to
- * facilitate debugging of internal request usage.
- *
- * The requestSequence_ tracks the number of requests queued to a camera
- * over its lifetime.
  */
 
 /**
@@ -254,8 +233,7 @@ void PipelineHandler::unlock()
  */
 const ControlInfoMap &PipelineHandler::controls(const Camera *camera) const
 {
-	const CameraData *data = cameraData(camera);
-	return data->controlInfo_;
+	return camera->_d()->controlInfo_;
 }
 
 /**
@@ -265,8 +243,7 @@ const ControlInfoMap &PipelineHandler::controls(const Camera *camera) const
  */
 const ControlList &PipelineHandler::properties(const Camera *camera) const
 {
-	const CameraData *data = cameraData(camera);
-	return data->properties_;
+	return camera->_d()->properties_;
 }
 
 /**
@@ -380,8 +357,7 @@ const ControlList &PipelineHandler::properties(const Camera *camera) const
  */
 bool PipelineHandler::hasPendingRequests(const Camera *camera) const
 {
-	const CameraData *data = cameraData(camera);
-	return !data->queuedRequests_.empty();
+	return !camera->_d()->queuedRequests_.empty();
 }
 
 /**
@@ -406,7 +382,7 @@ void PipelineHandler::queueRequest(Request *request)
 	LIBCAMERA_TRACEPOINT(request_queue, request);
 
 	Camera *camera = request->camera_;
-	CameraData *data = cameraData(camera);
+	Camera::Private *data = camera->_d();
 	data->queuedRequests_.push_back(request);
 
 	request->sequence_ = data->requestSequence_++;
@@ -479,7 +455,7 @@ void PipelineHandler::completeRequest(Request *request)
 
 	request->complete();
 
-	CameraData *data = cameraData(camera);
+	Camera::Private *data = camera->_d();
 
 	while (!data->queuedRequests_.empty()) {
 		Request *req = data->queuedRequests_.front();
@@ -507,6 +483,15 @@ void PipelineHandler::completeRequest(Request *request)
 void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera,
 				     std::unique_ptr<CameraData> data)
 {
+	/*
+	 * To be removed once all pipeline handlers will have migrated from
+	 * CameraData to Camera::Private.
+	 */
+	if (data) {
+		camera->_d()->controlInfo_ = std::move(data->controlInfo_);
+		camera->_d()->properties_ = std::move(data->properties_);
+	}
+
 	cameraData_[camera.get()] = std::move(data);
 	cameras_.push_back(camera);
 

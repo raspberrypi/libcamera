@@ -333,12 +333,24 @@ std::size_t CameraConfiguration::size() const
  */
 
 /**
+ * \class Camera::Private
+ * \brief Base class for camera private data
+ *
+ * The Camera::Private class stores all private data associated with a camera.
+ * In addition to hiding core Camera data from the public API, it is expected to
+ * be subclassed by pipeline handlers to store pipeline-specific data.
+ *
+ * Pipeline handlers can obtain the Camera::Private instance associated with a
+ * camera by calling Camera::_d().
+ */
+
+/**
  * \brief Construct a Camera::Private instance
  * \param[in] pipe The pipeline handler responsible for the camera device
  */
 Camera::Private::Private(PipelineHandler *pipe)
-	: pipe_(pipe->shared_from_this()), disconnected_(false),
-	  state_(CameraAvailable)
+	: requestSequence_(0), pipe_(pipe->shared_from_this()),
+	  disconnected_(false), state_(CameraAvailable)
 {
 }
 
@@ -347,6 +359,55 @@ Camera::Private::~Private()
 	if (state_.load(std::memory_order_acquire) != Private::CameraAvailable)
 		LOG(Camera, Error) << "Removing camera while still in use";
 }
+
+/**
+ * \fn Camera::Private::pipe()
+ * \brief Retrieve the pipeline handler related to this camera
+ * \return The pipeline handler that created this camera
+ */
+
+/**
+ * \var Camera::Private::queuedRequests_
+ * \brief The list of queued and not yet completed request
+ *
+ * The list of queued request is used to track requests queued in order to
+ * ensure completion of all requests when the pipeline handler is stopped.
+ *
+ * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
+ * PipelineHandler::completeRequest()
+ */
+
+/**
+ * \var Camera::Private::controlInfo_
+ * \brief The set of controls supported by the camera
+ *
+ * The control information shall be initialised by the pipeline handler when
+ * creating the camera.
+ *
+ * \todo This member was initially meant to stay constant after the camera is
+ * created. Several pipeline handlers are already updating it when the camera
+ * is configured. Update the documentation accordingly, and possibly the API as
+ * well, when implementing official support for control info updates.
+ */
+
+/**
+ * \var Camera::Private::properties_
+ * \brief The list of properties supported by the camera
+ *
+ * The list of camera properties shall be initialised by the pipeline handler
+ * when creating the camera, and shall not be modified afterwards.
+ */
+
+/**
+ * \var Camera::Private::requestSequence_
+ * \brief The queuing sequence of the request
+ *
+ * When requests are queued, they are given a per-camera sequence number to
+ * facilitate debugging of internal request usage.
+ *
+ * The requestSequence_ tracks the number of requests queued to a camera
+ * over its lifetime.
+ */
 
 static const char *const camera_state_names[] = {
 	"Available",

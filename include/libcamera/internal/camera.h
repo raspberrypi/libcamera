@@ -8,6 +8,7 @@
 #define __LIBCAMERA_INTERNAL_CAMERA_H__
 
 #include <atomic>
+#include <list>
 #include <memory>
 #include <set>
 #include <string>
@@ -28,6 +29,14 @@ class Camera::Private : public Extensible::Private
 public:
 	Private(PipelineHandler *pipe);
 	~Private();
+
+	PipelineHandler *pipe() { return pipe_.get(); }
+
+	std::list<Request *> queuedRequests_;
+	ControlInfoMap controlInfo_;
+	ControlList properties_;
+
+	uint32_t requestSequence_;
 
 private:
 	enum State {

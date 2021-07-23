@@ -77,12 +77,12 @@ private:
 	std::map<unsigned int, RkISP1FrameInfo *> frameInfo_;
 };
 
-class RkISP1CameraData : public CameraData
+class RkISP1CameraData : public Camera::Private
 {
 public:
 	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
 			 RkISP1SelfPath *selfPath)
-		: CameraData(pipe), frame_(0), frameInfo_(pipe),
+		: Camera::Private(pipe), frame_(0), frameInfo_(pipe),
 		  mainPath_(mainPath), selfPath_(selfPath)
 	{
 	}
@@ -152,16 +152,15 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	RkISP1CameraData *cameraData(const Camera *camera)
+	RkISP1CameraData *cameraData(Camera *camera)
 	{
-		return static_cast<RkISP1CameraData *>(
-			PipelineHandler::cameraData(camera));
+		return static_cast<RkISP1CameraData *>(camera->_d());
 	}
 
 	friend RkISP1CameraData;
 	friend RkISP1Frames;
 
-	int initLinks(const Camera *camera, const CameraSensor *sensor,
+	int initLinks(Camera *camera, const CameraSensor *sensor,
 		      const RkISP1CameraConfiguration &config);
 	int createCamera(MediaEntity *sensor);
 	void tryCompleteRequest(Request *request);
@@ -307,7 +306,7 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 
 int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 {
-	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe(), 1, 1);
 	if (!ipa_)
 		return -ENOENT;
 
@@ -333,7 +332,8 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 		break;
 	}
 	case ipa::rkisp1::ActionParamFilled: {
-		PipelineHandlerRkISP1 *pipe = static_cast<PipelineHandlerRkISP1 *>(pipe_);
+		PipelineHandlerRkISP1 *pipe =
+			static_cast<PipelineHandlerRkISP1 *>(this->pipe());
 		RkISP1FrameInfo *info = frameInfo_.find(frame);
 		if (!info)
 			break;
@@ -361,7 +361,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &metadata)
 {
 	PipelineHandlerRkISP1 *pipe =
-		static_cast<PipelineHandlerRkISP1 *>(pipe_);
+		static_cast<PipelineHandlerRkISP1 *>(this->pipe());
 
 	RkISP1FrameInfo *info = frameInfo_.find(frame);
 	if (!info)
@@ -847,7 +847,7 @@ void PipelineHandlerRkISP1::stop(Camera *camera)
 		LOG(RkISP1, Warning)
 			<< "Failed to stop parameters for " << camera->id();
 
-	ASSERT(camera->_d()->queuedRequests_.empty());
+	ASSERT(data->queuedRequests_.empty());
 	data->frameInfo_.clear();
 
 	freeBuffers(camera);
@@ -879,7 +879,7 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
  * Match and Setup
  */
 
-int PipelineHandlerRkISP1::initLinks(const Camera *camera,
+int PipelineHandlerRkISP1::initLinks(Camera *camera,
 				     const CameraSensor *sensor,
 				     const RkISP1CameraConfiguration &config)
 {
@@ -971,10 +971,10 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 		&data->mainPathStream_,
 		&data->selfPathStream_,
 	};
+	const std::string &id = data->sensor_->id();
 	std::shared_ptr<Camera> camera =
-		Camera::create(std::make_unique<Camera::Private>(this),
-			       data->sensor_->id(), streams);
-	registerCamera(std::move(camera), std::move(data));
+		Camera::create(std::move(data), id, streams);
+	registerCamera(std::move(camera), nullptr);
 
 	return 0;
 }

@@ -100,6 +100,16 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \brief Array of per-plane metadata
  */
 
+/**
+ * \class FrameBuffer::Private
+ * \brief Base class for FrameBuffer private data
+ *
+ * The FrameBuffer::Private class stores all private data associated with a
+ * framebuffer. It implements the d-pointer design pattern to hide core
+ * FrameBuffer data from the public API, and exposes utility functions to
+ * pipeline handlers.
+ */
+
 FrameBuffer::Private::Private()
 	: request_(nullptr)
 {

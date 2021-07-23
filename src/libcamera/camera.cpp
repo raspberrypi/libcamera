@@ -368,10 +368,10 @@ Camera::Private::~Private()
 
 /**
  * \var Camera::Private::queuedRequests_
- * \brief The list of queued and not yet completed request
+ * \brief The list of queued and not yet completed requests
  *
- * The list of queued request is used to track requests queued in order to
- * ensure completion of all requests when the pipeline handler is stopped.
+ * This list tracks requests queued in order to ensure completion of all
+ * requests when the pipeline handler is stopped.
  *
  * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
  * PipelineHandler::completeRequest()
@@ -400,7 +400,7 @@ Camera::Private::~Private()
 
 /**
  * \var Camera::Private::requestSequence_
- * \brief The queuing sequence of the request
+ * \brief The queuing sequence number of the request
  *
  * When requests are queued, they are given a per-camera sequence number to
  * facilitate debugging of internal request usage.

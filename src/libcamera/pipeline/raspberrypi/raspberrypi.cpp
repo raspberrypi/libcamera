@@ -134,11 +134,11 @@ enum class Isp : unsigned int { Input, Output0, Output1, Stats };
 
 } /* namespace */
 
-class RPiCameraData : public CameraData
+class RPiCameraData : public Camera::Private
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: CameraData(pipe), state_(State::Stopped),
+		: Camera::Private(pipe), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  dropFrameCount_(0), ispOutputCount_(0)
 	{
@@ -262,9 +262,9 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	RPiCameraData *cameraData(const Camera *camera)
+	RPiCameraData *cameraData(Camera *camera)
 	{
-		return static_cast<RPiCameraData *>(PipelineHandler::cameraData(camera));
+		return static_cast<RPiCameraData *>(camera->_d());
 	}
 
 	int queueAllBuffers(Camera *camera);
@@ -1105,10 +1105,10 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	streams.insert(&data->isp_[Isp::Output1]);
 
 	/* Create and register the camera. */
+	const std::string &id = data->sensor_->id();
 	std::shared_ptr<Camera> camera =
-		Camera::create(std::make_unique<Camera::Private>(this),
-			       data->sensor_->id(), streams);
-	registerCamera(std::move(camera), std::move(data));
+		Camera::create(std::move(data), id, streams);
+	registerCamera(std::move(camera), nullptr);
 
 	return true;
 }
@@ -1223,7 +1223,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 
 int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 {
-	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe_, 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
@@ -1527,11 +1527,11 @@ void RPiCameraData::clearIncompleteRequests()
 			 */
 			if (buffer->request()) {
 				buffer->cancel();
-				pipe_->completeBuffer(request, buffer);
+				pipe()->completeBuffer(request, buffer);
 			}
 		}
 
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 		requestQueue_.pop_front();
 	}
 }
@@ -1555,7 +1555,7 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 			 * Tag the buffer as completed, returning it to the
 			 * application.
 			 */
-			pipe_->completeBuffer(request, buffer);
+			pipe()->completeBuffer(request, buffer);
 		} else {
 			/*
 			 * This buffer was not part of the Request, or there is no
@@ -1618,7 +1618,7 @@ void RPiCameraData::checkRequestCompleted()
 		if (state_ != State::IpaComplete)
 			return;
 
-		pipe_->completeRequest(request);
+		pipe()->completeRequest(request);
 		requestQueue_.pop_front();
 		requestCompleted = true;
 	}

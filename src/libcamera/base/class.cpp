@@ -98,8 +98,9 @@ namespace libcamera {
  * \def LIBCAMERA_O_PTR()
  * \brief Retrieve the public instance corresponding to the private data
  *
- * This macro is used in any member function of the private data class to access
- * the public class instance corresponding to the private data.
+ * This macro is part of the libcamera::Extensible class infrastructure. It may
+ * be used in any member function of a libcamera::Extensible::Private subclass
+ * to access the public class instance corresponding to the private data.
  */
 
 /**
@@ -139,6 +140,8 @@ namespace libcamera {
  * protected and private members.
  *
  * The PublicClass exposes its Private data pointer through the _d() function.
+ * In the other direction, the pointer to the PublicClass can be retrieved in
+ * functions of the Private class using the LIBCAMERA_O_PTR() macro.
  */
 
 /**

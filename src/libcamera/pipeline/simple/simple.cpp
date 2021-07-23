@@ -147,7 +147,7 @@ static const SimplePipelineInfo supportedDevices[] = {
 
 } /* namespace */
 
-class SimpleCameraData : public CameraData
+class SimpleCameraData : public Camera::Private
 {
 public:
 	SimpleCameraData(SimplePipelineHandler *pipe,
@@ -213,7 +213,7 @@ private:
 	 * reference to the camera data, store a new reference to the camera.
 	 */
 	std::shared_ptr<Camera> camera_;
-	const SimpleCameraData *data_;
+	SimpleCameraData *data_;
 
 	const SimpleCameraData::Configuration *pipeConfig_;
 	bool needConversion_;
@@ -246,10 +246,9 @@ protected:
 private:
 	static constexpr unsigned int kNumInternalBuffers = 3;
 
-	SimpleCameraData *cameraData(const Camera *camera)
+	SimpleCameraData *cameraData(Camera *camera)
 	{
-		return static_cast<SimpleCameraData *>(
-			PipelineHandler::cameraData(camera));
+		return static_cast<SimpleCameraData *>(camera->_d());
 	}
 
 	std::vector<MediaEntity *> locateSensors();
@@ -274,7 +273,7 @@ private:
 SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 				   unsigned int numStreams,
 				   MediaEntity *sensor)
-	: CameraData(pipe), streams_(numStreams)
+	: Camera::Private(pipe), streams_(numStreams)
 {
 	int ret;
 
@@ -355,7 +354,8 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 
 int SimpleCameraData::init()
 {
-	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(pipe_);
+	SimplePipelineHandler *pipe =
+		static_cast<SimplePipelineHandler *>(this->pipe());
 	SimpleConverter *converter = pipe->converter();
 	int ret;
 
@@ -480,7 +480,8 @@ int SimpleCameraData::setupLinks()
 int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 				   V4L2Subdevice::Whence whence)
 {
-	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(pipe_);
+	SimplePipelineHandler *pipe =
+		static_cast<SimplePipelineHandler *>(this->pipe());
 	int ret;
 
 	/*
@@ -581,7 +582,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	}
 
 	/* Adjust the requested streams. */
-	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(data_->pipe_);
+	SimplePipelineHandler *pipe = static_cast<SimplePipelineHandler *>(data_->pipe());
 	SimpleConverter *converter = pipe->converter();
 
 	/*
@@ -1046,10 +1047,10 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			       std::inserter(streams, streams.end()),
 			       [](Stream &stream) { return &stream; });
 
+		const std::string &id = data->sensor_->id();
 		std::shared_ptr<Camera> camera =
-			Camera::create(std::make_unique<Camera::Private>(this),
-				       data->sensor_->id(), streams);
-		registerCamera(std::move(camera), std::move(data));
+			Camera::create(std::move(data), id, streams);
+		registerCamera(std::move(camera), nullptr);
 		registered = true;
 	}
 

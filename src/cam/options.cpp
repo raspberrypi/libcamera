@@ -453,7 +453,7 @@ void KeyValueParser::usage(int indent)
 				argument += "]";
 		}
 
-		std::cerr << std::setw(indent) << std::left << argument;
+		std::cerr << std::setw(indent) << argument;
 
 		for (const char *help = option.help, *end = help; end;) {
 			end = strchr(help, '\n');
@@ -994,7 +994,12 @@ void OptionsParser::usage()
 
 	std::cerr << "Options:" << std::endl;
 
+	std::ios_base::fmtflags f(std::cerr.flags());
+	std::cerr << std::left;
+
 	usageOptions(options_, indent);
+
+	std::cerr.flags(f);
 }
 
 void OptionsParser::usageOptions(const std::list<Option> &options,
@@ -1031,7 +1036,7 @@ void OptionsParser::usageOptions(const std::list<Option> &options,
 		if (option.isArray)
 			argument += " ...";
 
-		std::cerr << std::setw(indent) << std::left << argument;
+		std::cerr << std::setw(indent) << argument;
 
 		for (const char *help = option.help, *end = help; end; ) {
 			end = strchr(help, '\n');

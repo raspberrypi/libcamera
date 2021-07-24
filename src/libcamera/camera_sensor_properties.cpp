@@ -72,23 +72,16 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ 4, controls::draft::TestPatternModePn9 },
 			},
 		} },
+		{ "ov5647", {
+			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {},
+		} },
 		{ "ov5670", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {
 				{ 0, controls::draft::TestPatternModeOff },
 				{ 1, controls::draft::TestPatternModeColorBars },
 			},
-		} },
-		{ "ov13858", {
-			.unitCellSize = { 1120, 1120 },
-			.testPatternModes =  {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeColorBars },
-			},
-		} },
-		{ "ov5647", {
-			.unitCellSize = { 1400, 1400 },
-			.testPatternModes = {},
 		} },
 		{ "ov5693", {
 			.unitCellSize = { 1400, 1400 },
@@ -114,6 +107,13 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				 * 4: "Color squares"
 				 * 5: "Color squares with rolling bar"
 				 */
+			},
+		} },
+		{ "ov13858", {
+			.unitCellSize = { 1120, 1120 },
+			.testPatternModes =  {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeColorBars },
 			},
 		} },
 	};

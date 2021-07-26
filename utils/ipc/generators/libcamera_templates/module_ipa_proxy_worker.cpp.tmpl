@@ -207,6 +207,18 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	/*
+	 * Shutdown of proxy worker can be pre-empted by events like
+	 * SIGINT/SIGTERM, even before the pipeline handler can request
+	 * shutdown. Hence, assign a new gid to prevent signals on the
+	 * application being delivered to the proxy.
+	 */
+	if (setpgid(0, 0) < 0) {
+		int err = errno;
+		LOG({{proxy_worker_name}}, Warning)
+			<< "Failed to set new gid: " << strerror(err);
+	}
+
 	{{proxy_worker_name}} proxyWorker;
 	int ret = proxyWorker.init(ipam, fd);
 	if (ret < 0) {

@@ -7,8 +7,6 @@ This tutorial shows how to create a C++ application that uses libcamera to
 interface with a camera on a system, capture frames from it for 3 seconds, and
 write metadata about the frames to standard out.
 
-.. TODO: Check how much of the example code runs before camera start etc?
-
 Application skeleton
 --------------------
 

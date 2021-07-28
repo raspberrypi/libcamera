@@ -140,6 +140,15 @@ protected:
 			return TestFail;
 		}
 
+		/* Make sure control limits looked up by id are not changed. */
+		const ControlInfo &newLimits = newInfoMap.at(&controls::Brightness);
+		const ControlInfo &initialLimits = infoMap.at(&controls::Brightness);
+		if (newLimits.min() != initialLimits.min() ||
+		    newLimits.max() != initialLimits.max()) {
+			cerr << "The brightness control limits have changed" << endl;
+			return TestFail;
+		}
+
 		/* Deserialize the control list and verify the contents. */
 		buffer = ByteStreamBuffer(const_cast<const uint8_t *>(listData.data()),
 					  listData.size());

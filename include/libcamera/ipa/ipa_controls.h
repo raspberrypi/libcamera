@@ -15,13 +15,20 @@ extern "C" {
 
 #define IPA_CONTROLS_FORMAT_VERSION	1
 
+enum ipa_controls_id_map_type {
+	IPA_CONTROL_ID_MAP_CONTROLS,
+	IPA_CONTROL_ID_MAP_PROPERTIES,
+	IPA_CONTROL_ID_MAP_V4L2,
+};
+
 struct ipa_controls_header {
 	uint32_t version;
 	uint32_t handle;
 	uint32_t entries;
 	uint32_t size;
 	uint32_t data_offset;
-	uint32_t reserved[3];
+	enum ipa_controls_id_map_type id_map_type;
+	uint32_t reserved[2];
 };
 
 struct ipa_control_value_entry {

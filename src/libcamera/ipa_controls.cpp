@@ -135,6 +135,33 @@
  */
 
 /**
+ * \var ipa_controls_id_map_type
+ * \brief Enumerates the different control id map types
+ *
+ * Each ControlInfoMap and ControlList refers to a control id map that
+ * associates the ControlId references to a numerical identifier.
+ * During the serialization procedure the raw pointers to the ControlId
+ * instances cannot be transported on the wire, hence their numerical id is
+ * used to identify them in the serialized data buffer. At deserialization time
+ * it is required to associate back to the numerical id the ControlId instance
+ * it represents. This enumeration describes which ControlIdMap should be
+ * used to perform such operation.
+ *
+ * \var ipa_controls_id_map_type::IPA_CONTROL_ID_MAP_CONTROLS
+ * \brief The numerical control identifier are resolved to a ControlId * using
+ * the global controls::controls id map
+ * \var ipa_controls_id_map_type::IPA_CONTROL_ID_MAP_PROPERTIES
+ * \brief The numerical control identifier are resolved to a ControlId * using
+ * the global properties::properties id map
+ * \var ipa_controls_id_map_type::IPA_CONTROL_ID_MAP_V4L2
+ * \brief ControlId for V4L2 defined controls are created by the video device
+ * that enumerates them, and are not available across the IPC boundaries. The
+ * deserializer shall create new ControlId instances for them as well as store
+ * them in a dedicated ControlIdMap. Only lookup by numerical id can be
+ * performed on de-serialized ControlInfoMap that represents V4L2 controls.
+ */
+
+/**
  * \struct ipa_controls_header
  * \brief Serialized control packet header
  * \var ipa_controls_header::version
@@ -149,6 +176,8 @@
  * The total packet size in bytes
  * \var ipa_controls_header::data_offset
  * Offset in bytes from the beginning of the packet of the data section start
+ * \var ipa_controls_header::id_map_type
+ * The id map type as defined by the ipa_controls_id_map_type enumeration
  * \var ipa_controls_header::reserved
  * Reserved for future extensions
  */

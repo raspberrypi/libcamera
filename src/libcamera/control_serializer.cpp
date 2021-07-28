@@ -16,6 +16,8 @@
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/property_ids.h>
+
 #include <libcamera/ipa/ipa_controls.h>
 
 #include "libcamera/internal/byte_stream_buffer.h"
@@ -188,6 +190,15 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 	for (const auto &ctrl : infoMap)
 		valuesSize += binarySize(ctrl.second);
 
+	const ControlIdMap *idmap = &infoMap.idmap();
+	enum ipa_controls_id_map_type idMapType;
+	if (idmap == &controls::controls)
+		idMapType = IPA_CONTROL_ID_MAP_CONTROLS;
+	else if (idmap == &properties::properties)
+		idMapType = IPA_CONTROL_ID_MAP_PROPERTIES;
+	else
+		idMapType = IPA_CONTROL_ID_MAP_V4L2;
+
 	/* Prepare the packet header, assign a handle to the ControlInfoMap. */
 	struct ipa_controls_header hdr;
 	hdr.version = IPA_CONTROLS_FORMAT_VERSION;
@@ -195,6 +206,7 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 	hdr.entries = infoMap.size();
 	hdr.size = sizeof(hdr) + entriesSize + valuesSize;
 	hdr.data_offset = sizeof(hdr) + entriesSize;
+	hdr.id_map_type = idMapType;
 
 	buffer.write(&hdr);
 
@@ -368,6 +380,33 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		return {};
 	}
 
+	/*
+	 * Use the ControlIdMap corresponding to the id map type. If the type
+	 * references a globally defined id map (such as controls::controls
+	 * or properties::properties), use it. Otherwise, create a local id map
+	 * that will be populated with dynamically created ControlId instances
+	 * when deserializing individual ControlInfoMap entries.
+	 */
+	const ControlIdMap *idMap = nullptr;
+	ControlIdMap *localIdMap = nullptr;
+	switch (hdr->id_map_type) {
+	case IPA_CONTROL_ID_MAP_CONTROLS:
+		idMap = &controls::controls;
+		break;
+	case IPA_CONTROL_ID_MAP_PROPERTIES:
+		idMap = &properties::properties;
+		break;
+	case IPA_CONTROL_ID_MAP_V4L2:
+		controlIdMaps_.emplace_back(std::make_unique<ControlIdMap>());
+		localIdMap = controlIdMaps_.back().get();
+		idMap = localIdMap;
+		break;
+	default:
+		LOG(Serializer, Error)
+			<< "Unknown id map type: " << hdr->id_map_type;
+		return {};
+	}
+
 	ByteStreamBuffer entries = buffer.carveOut(hdr->data_offset - sizeof(*hdr));
 	ByteStreamBuffer values = buffer.carveOut(hdr->size - hdr->data_offset);
 
@@ -377,9 +416,6 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	}
 
 	ControlInfoMap::Map ctrls;
-	controlIdMaps_.emplace_back(std::make_unique<ControlIdMap>());
-	ControlIdMap *localIdMap = controlIdMaps_.back().get();
-
 	for (unsigned int i = 0; i < hdr->entries; ++i) {
 		const struct ipa_control_info_entry *entry =
 			entries.read<decltype(*entry)>();
@@ -388,15 +424,21 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 			return {};
 		}
 
-		/* Create and cache the individual ControlId. */
 		ControlType type = static_cast<ControlType>(entry->type);
-		/**
-		 * \todo Find a way to preserve the control name for debugging
-		 * purpose.
-		 */
-		controlIds_.emplace_back(std::make_unique<ControlId>(entry->id, "", type));
-		ControlId *controlId = controlIds_.back().get();
-		(*localIdMap)[entry->id] = controlId;
+
+		/* If we're using a local id map, populate it. */
+		if (localIdMap) {
+			/**
+			 * \todo Find a way to preserve the control name for
+			 * debugging purpose.
+			 */
+			controlIds_.emplace_back(std::make_unique<ControlId>(entry->id,
+									     "", type));
+			(*localIdMap)[entry->id] = controlIds_.back().get();
+		}
+
+		const ControlId *controlId = idMap->at(entry->id);
+		ASSERT(controlId);
 
 		if (entry->offset != values.offset()) {
 			LOG(Serializer, Error)
@@ -413,7 +455,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	 * Create the ControlInfoMap in the cache, and store the map to handle
 	 * association.
 	 */
-	infoMaps_[hdr->handle] = ControlInfoMap(std::move(ctrls), *localIdMap);
+	infoMaps_[hdr->handle] = ControlInfoMap(std::move(ctrls), *idMap);
 	ControlInfoMap &map = infoMaps_[hdr->handle];
 	infoMapHandles_[&map] = hdr->handle;
 

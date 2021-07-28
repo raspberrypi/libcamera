@@ -149,7 +149,7 @@ GstStaticPadTemplate src_template = {
 
 /* More pads can be requested in state < PAUSED */
 GstStaticPadTemplate request_src_template = {
-	"src_%s", GST_PAD_SRC, GST_PAD_REQUEST, TEMPLATE_CAPS
+	"src_%u", GST_PAD_SRC, GST_PAD_REQUEST, TEMPLATE_CAPS
 };
 
 void

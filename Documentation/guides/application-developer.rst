@@ -61,11 +61,15 @@ variable for the camera to support the event call back later:
    std::shared_ptr<Camera> camera;
 
 Create a Camera Manager instance at the beginning of the main function, and then
-start it. An application should only create a single Camera Manager instance.
+start it. An application must only create a single Camera Manager instance.
+
+The CameraManager can be stored in a unique_ptr to automate deleting the
+instance when it is no longer used, but care must be taken to ensure all
+cameras are released explicitly before this happens.
 
 .. code:: cpp
 
-   CameraManager *cm = new CameraManager();
+   std::unique_ptr<CameraManager> cm = std::make_unique<CameraManager>();
    cm->start();
 
 During the application initialization, the Camera Manager is started to
@@ -559,6 +563,9 @@ uses, so needs to do the following:
    cm->stop();
 
    return 0;
+
+In this instance the CameraManager will automatically be deleted by the
+unique_ptr implementation when it goes out of scope.
 
 Build and run instructions
 --------------------------

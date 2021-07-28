@@ -309,12 +309,11 @@ public:
 
 	ControlInfoMap() = default;
 	ControlInfoMap(const ControlInfoMap &other) = default;
-	ControlInfoMap(std::initializer_list<Map::value_type> init);
-	ControlInfoMap(Map &&info);
+	ControlInfoMap(std::initializer_list<Map::value_type> init,
+		       const ControlIdMap &idmap);
+	ControlInfoMap(Map &&info, const ControlIdMap &idmap);
 
 	ControlInfoMap &operator=(const ControlInfoMap &other) = default;
-	ControlInfoMap &operator=(std::initializer_list<Map::value_type> init);
-	ControlInfoMap &operator=(Map &&info);
 
 	using Map::key_type;
 	using Map::mapped_type;
@@ -339,12 +338,12 @@ public:
 	iterator find(unsigned int key);
 	const_iterator find(unsigned int key) const;
 
-	const ControlIdMap &idmap() const { return idmap_; }
+	const ControlIdMap &idmap() const { return *idmap_; }
 
 private:
-	void generateIdmap();
+	bool validate();
 
-	ControlIdMap idmap_;
+	const ControlIdMap *idmap_;
 };
 
 class ControlList

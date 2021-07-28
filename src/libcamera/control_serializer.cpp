@@ -93,6 +93,7 @@ void ControlSerializer::reset()
 	infoMapHandles_.clear();
 	infoMaps_.clear();
 	controlIds_.clear();
+	controlIdMaps_.clear();
 }
 
 size_t ControlSerializer::binarySize(const ControlValue &value)
@@ -376,6 +377,8 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	}
 
 	ControlInfoMap::Map ctrls;
+	controlIdMaps_.emplace_back(std::make_unique<ControlIdMap>());
+	ControlIdMap *localIdMap = controlIdMaps_.back().get();
 
 	for (unsigned int i = 0; i < hdr->entries; ++i) {
 		const struct ipa_control_info_entry *entry =
@@ -392,6 +395,8 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		 * purpose.
 		 */
 		controlIds_.emplace_back(std::make_unique<ControlId>(entry->id, "", type));
+		ControlId *controlId = controlIds_.back().get();
+		(*localIdMap)[entry->id] = controlId;
 
 		if (entry->offset != values.offset()) {
 			LOG(Serializer, Error)
@@ -401,15 +406,15 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		}
 
 		/* Create and store the ControlInfo. */
-		ctrls.emplace(controlIds_.back().get(),
-			      loadControlInfo(type, values));
+		ctrls.emplace(controlId, loadControlInfo(type, values));
 	}
 
 	/*
 	 * Create the ControlInfoMap in the cache, and store the map to handle
 	 * association.
 	 */
-	ControlInfoMap &map = infoMaps_[hdr->handle] = std::move(ctrls);
+	infoMaps_[hdr->handle] = ControlInfoMap(std::move(ctrls), *localIdMap);
+	ControlInfoMap &map = infoMaps_[hdr->handle];
 	infoMapHandles_[&map] = hdr->handle;
 
 	return map;

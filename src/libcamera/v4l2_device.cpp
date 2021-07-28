@@ -611,12 +611,13 @@ void V4L2Device::listControls()
 				 << " (" << utils::hex(ctrl.id) << ")";
 
 		controlIds_.emplace_back(v4l2ControlId(ctrl));
+		controlIdMap_[ctrl.id] = controlIds_.back().get();
 		controlInfo_.emplace(ctrl.id, ctrl);
 
 		ctrls.emplace(controlIds_.back().get(), v4l2ControlInfo(ctrl));
 	}
 
-	controls_ = std::move(ctrls);
+	controls_ = ControlInfoMap(std::move(ctrls), controlIdMap_);
 }
 
 /**

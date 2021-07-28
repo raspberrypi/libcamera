@@ -1071,7 +1071,8 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 
 	controls[&controls::ScalerCrop] = ControlInfo(minCrop, maxCrop, maxCrop);
 
-	data->controlInfo_ = std::move(controls);
+	data->controlInfo_ = ControlInfoMap(std::move(controls),
+					    controls::controls);
 
 	return 0;
 }

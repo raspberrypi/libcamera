@@ -69,6 +69,7 @@ private:
 
 	std::map<unsigned int, struct v4l2_query_ext_ctrl> controlInfo_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;
+	ControlIdMap controlIdMap_;
 	ControlInfoMap controls_;
 	std::string deviceNode_;
 	int fd_;

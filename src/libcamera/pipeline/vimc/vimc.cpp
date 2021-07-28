@@ -512,7 +512,7 @@ int VimcCameraData::init()
 		ctrls.emplace(id, info);
 	}
 
-	controlInfo_ = std::move(ctrls);
+	controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 	/* Initialize the camera properties. */
 	properties_ = sensor_->properties();

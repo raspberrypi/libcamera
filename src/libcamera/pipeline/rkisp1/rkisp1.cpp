@@ -935,7 +935,8 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 		      std::forward_as_tuple(&controls::AeEnable),
 		      std::forward_as_tuple(false, true));
 
-	data->controlInfo_ = std::move(ctrls);
+	data->controlInfo_ = ControlInfoMap(std::move(ctrls),
+					    controls::controls);
 
 	data->sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = data->sensor_->init();

@@ -625,10 +625,10 @@ std::string ControlInfo::toString() const
  * constructed, and thus only exposes the read accessors of the
  * std::unsorted_map<> base class.
  *
- * In addition to the features of the standard unsorted map, this class also
- * provides access to the mapped elements using numerical ID keys. It maintains
- * an internal map of numerical ID to ControlId for this purpose, and exposes it
- * through the idmap() function to help construction of ControlList instances.
+ * The class is constructed with a reference to a ControlIdMap. This allows
+ * providing access to the mapped elements using numerical ID keys, in addition
+ * to the features of the standard unsorted map. All ControlId keys in the map
+ * must appear in the ControlIdMap.
  */
 
 /**
@@ -645,24 +645,27 @@ std::string ControlInfo::toString() const
 /**
  * \brief Construct a ControlInfoMap from an initializer list
  * \param[in] init The initializer list
+ * \param[in] idmap The idmap used by the ControlInfoMap
  */
-ControlInfoMap::ControlInfoMap(std::initializer_list<Map::value_type> init)
-	: Map(init)
+ControlInfoMap::ControlInfoMap(std::initializer_list<Map::value_type> init,
+			       const ControlIdMap &idmap)
+	: Map(init), idmap_(&idmap)
 {
-	generateIdmap();
+	ASSERT(validate());
 }
 
 /**
  * \brief Construct a ControlInfoMap from a plain map
  * \param[in] info The control info plain map
+ * \param[in] idmap The idmap used by the ControlInfoMap
  *
  * Construct a new ControlInfoMap and populate its contents with those of
  * \a info using move semantics. Upon return the \a info map will be empty.
  */
-ControlInfoMap::ControlInfoMap(Map &&info)
-	: Map(std::move(info))
+ControlInfoMap::ControlInfoMap(Map &&info, const ControlIdMap &idmap)
+	: Map(std::move(info)), idmap_(&idmap)
 {
-	generateIdmap();
+	ASSERT(validate());
 }
 
 /**
@@ -672,32 +675,41 @@ ControlInfoMap::ControlInfoMap(Map &&info)
  * \return A reference to the ControlInfoMap
  */
 
-/**
- * \brief Replace the contents with those from the initializer list
- * \param[in] init The initializer list
- * \return A reference to the ControlInfoMap
- */
-ControlInfoMap &ControlInfoMap::operator=(std::initializer_list<Map::value_type> init)
+bool ControlInfoMap::validate()
 {
-	Map::operator=(init);
-	generateIdmap();
-	return *this;
-}
+	for (const auto &ctrl : *this) {
+		const ControlId *id = ctrl.first;
+		auto it = idmap_->find(id->id());
 
-/**
- * \brief Move assignment operator from a plain map
- * \param[in] info The control info plain map
- *
- * Populate the map by replacing its contents with those of \a info using move
- * semantics. Upon return the \a info map will be empty.
- *
- * \return A reference to the populated ControlInfoMap
- */
-ControlInfoMap &ControlInfoMap::operator=(Map &&info)
-{
-	Map::operator=(std::move(info));
-	generateIdmap();
-	return *this;
+		/*
+		 * Make sure all control ids are part of the idmap and verify
+		 * the control info matches the expected type.
+		 */
+		if (it == idmap_->end() || it->second != id) {
+			LOG(Controls, Error)
+				<< "Control " << utils::hex(id->id())
+				<< " not in the idmap";
+			return false;
+		}
+
+		/*
+		 * For string controls, min and max define the valid
+		 * range for the string size, not for the individual
+		 * values.
+		 */
+		ControlType rangeType = id->type() == ControlTypeString
+				      ? ControlTypeInteger32 : id->type();
+		const ControlInfo &info = ctrl.second;
+
+		if (info.min().type() != rangeType) {
+			LOG(Controls, Error)
+				<< "Control " << utils::hex(id->id())
+				<< " type and info type mismatch";
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
@@ -707,7 +719,7 @@ ControlInfoMap &ControlInfoMap::operator=(Map &&info)
  */
 ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id)
 {
-	return at(idmap_.at(id));
+	return at(idmap_->at(id));
 }
 
 /**
@@ -717,7 +729,7 @@ ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id)
  */
 const ControlInfoMap::mapped_type &ControlInfoMap::at(unsigned int id) const
 {
-	return at(idmap_.at(id));
+	return at(idmap_->at(id));
 }
 
 /**
@@ -732,7 +744,7 @@ ControlInfoMap::size_type ControlInfoMap::count(unsigned int id) const
 	 * entries, we can thus just count the matching entries in idmap to
 	 * avoid an additional lookup.
 	 */
-	return idmap_.count(id);
+	return idmap_->count(id);
 }
 
 /**
@@ -743,8 +755,8 @@ ControlInfoMap::size_type ControlInfoMap::count(unsigned int id) const
  */
 ControlInfoMap::iterator ControlInfoMap::find(unsigned int id)
 {
-	auto iter = idmap_.find(id);
-	if (iter == idmap_.end())
+	auto iter = idmap_->find(id);
+	if (iter == idmap_->end())
 		return end();
 
 	return find(iter->second);
@@ -758,8 +770,8 @@ ControlInfoMap::iterator ControlInfoMap::find(unsigned int id)
  */
 ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
 {
-	auto iter = idmap_.find(id);
-	if (iter == idmap_.end())
+	auto iter = idmap_->find(id);
+	if (iter == idmap_->end())
 		return end();
 
 	return find(iter->second);
@@ -775,33 +787,6 @@ ControlInfoMap::const_iterator ControlInfoMap::find(unsigned int id) const
  *
  * \return The ControlId map
  */
-
-void ControlInfoMap::generateIdmap()
-{
-	idmap_.clear();
-
-	for (const auto &ctrl : *this) {
-		/*
-		 * For string controls, min and max define the valid
-		 * range for the string size, not for the individual
-		 * values.
-		 */
-		ControlType rangeType = ctrl.first->type() == ControlTypeString
-				      ? ControlTypeInteger32 : ctrl.first->type();
-		const ControlInfo &info = ctrl.second;
-
-		if (info.min().type() != rangeType) {
-			LOG(Controls, Error)
-				<< "Control " << utils::hex(ctrl.first->id())
-				<< " type and info type mismatch";
-			idmap_.clear();
-			clear();
-			return;
-		}
-
-		idmap_[ctrl.first->id()] = ctrl.first;
-	}
-}
 
 /**
  * \class ControlList

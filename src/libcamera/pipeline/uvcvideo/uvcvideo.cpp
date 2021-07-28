@@ -535,7 +535,7 @@ int UVCCameraData::init(MediaDevice *media)
 		addControl(cid, info, &ctrls);
 	}
 
-	controlInfo_ = std::move(ctrls);
+	controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 	return 0;
 }

@@ -48,6 +48,7 @@ private:
 
 	unsigned int serial_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;
+	std::vector<std::unique_ptr<ControlIdMap>> controlIdMaps_;
 	std::map<unsigned int, ControlInfoMap> infoMaps_;
 	std::map<const ControlInfoMap *, unsigned int> infoMapHandles_;
 };

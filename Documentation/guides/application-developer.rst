@@ -563,8 +563,8 @@ uses, so needs to do the following:
 Build and run instructions
 --------------------------
 
-To build the application, use the `Meson build system`_ which is also the
-official build system of the libcamera library.
+To build the application, we recommend that you use the `Meson build system`_
+which is also the official build system of the libcamera library.
 
 Make sure both ``meson`` and ``libcamera`` are installed in your system. Please
 refer to your distribution documentation to install meson and install the most
@@ -617,7 +617,7 @@ accordingly. In this example, the application file has been named
 
    project('simple-cam', 'cpp')
 
-   simpler_cam = executable('simple-cam',
+   simple_cam = executable('simple-cam',
        'simple-cam.cpp',
        dependencies: dependency('libcamera', required : true))
 

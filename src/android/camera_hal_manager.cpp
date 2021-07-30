@@ -133,9 +133,6 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 		}
 	}
 
-	/* Create a CameraDevice instance to wrap the libcamera Camera. */
-	std::unique_ptr<CameraDevice> camera = CameraDevice::create(id, cam);
-
 	/*
 	 * The configuration file must be valid, and contain a corresponding
 	 * entry for internal cameras. External cameras can be initialized
@@ -154,6 +151,9 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 			<< cam->id() << " is missing";
 		return;
 	}
+
+	/* Create a CameraDevice instance to wrap the libcamera Camera. */
+	std::unique_ptr<CameraDevice> camera = CameraDevice::create(id, cam);
 
 	int ret = camera->initialize(cameraConfigData);
 	if (ret) {

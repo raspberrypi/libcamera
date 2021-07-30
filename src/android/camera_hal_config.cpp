@@ -126,8 +126,6 @@ int CameraHalConfig::Private::parseCameraLocation(CameraConfigData *cameraConfig
 		cameraConfigData->facing = CAMERA_FACING_FRONT;
 	else if (location == "back")
 		cameraConfigData->facing = CAMERA_FACING_BACK;
-	else if (location == "external")
-		cameraConfigData->facing = CAMERA_FACING_EXTERNAL;
 	else
 		return -EINVAL;
 

@@ -46,9 +46,6 @@ public:
 	bool lock();
 	void unlock();
 
-	const ControlInfoMap &controls(const Camera *camera) const;
-	const ControlList &properties(const Camera *camera) const;
-
 	virtual CameraConfiguration *generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;
 	virtual int configure(Camera *camera, CameraConfiguration *config) = 0;

@@ -800,7 +800,7 @@ int Camera::release()
  */
 const ControlInfoMap &Camera::controls() const
 {
-	return _d()->pipe_->controls(this);
+	return _d()->controlInfo_;
 }
 
 /**
@@ -813,7 +813,7 @@ const ControlInfoMap &Camera::controls() const
  */
 const ControlList &Camera::properties() const
 {
-	return _d()->pipe_->properties(this);
+	return _d()->properties_;
 }
 
 /**

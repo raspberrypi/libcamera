@@ -177,27 +177,6 @@ void PipelineHandler::unlock()
 }
 
 /**
- * \brief Retrieve the list of controls for a camera
- * \param[in] camera The camera
- * \context This function is \threadsafe.
- * \return A ControlInfoMap listing the controls support by \a camera
- */
-const ControlInfoMap &PipelineHandler::controls(const Camera *camera) const
-{
-	return camera->_d()->controlInfo_;
-}
-
-/**
- * \brief Retrieve the list of properties for a camera
- * \param[in] camera The camera
- * \return A ControlList of properties supported by \a camera
- */
-const ControlList &PipelineHandler::properties(const Camera *camera) const
-{
-	return camera->_d()->properties_;
-}
-
-/**
  * \fn PipelineHandler::generateConfiguration()
  * \brief Generate a camera configuration for a specified camera
  * \param[in] camera The camera to generate a default configuration for

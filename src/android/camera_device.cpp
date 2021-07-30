@@ -330,7 +330,18 @@ int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 			facing_ = CAMERA_FACING_BACK;
 			break;
 		case properties::CameraLocationExternal:
-			facing_ = CAMERA_FACING_EXTERNAL;
+			/*
+			 * If the camera is reported as external, but the
+			 * CameraHalManager has overriden it, use what is
+			 * reported in the configuration file. This typically
+			 * happens for UVC cameras reported as 'External' by
+			 * libcamera but installed in fixed position on the
+			 * device.
+			 */
+			if (cameraConfigData && cameraConfigData->facing != -1)
+				facing_ = cameraConfigData->facing;
+			else
+				facing_ = CAMERA_FACING_EXTERNAL;
 			break;
 		}
 

@@ -145,6 +145,23 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 	}
 
 	const CameraConfigData *cameraConfigData = halConfig_.cameraConfigData(cam->id());
+
+	/*
+	 * Some cameras whose location is reported by libcamera as external may
+	 * actually be internal to the device. This is common with UVC cameras
+	 * that are integrated in a laptop. In that case the real location
+	 * should be specified in the configuration file.
+	 *
+	 * If the camera location is external and a configuration entry exists
+	 * for it, override its location.
+	 */
+	if (isCameraNew && isCameraExternal) {
+		if (cameraConfigData && cameraConfigData->facing != -1) {
+			isCameraExternal = false;
+			id = numInternalCameras_;
+		}
+	}
+
 	if (!isCameraExternal && !cameraConfigData) {
 		LOG(HAL, Error)
 			<< "HAL configuration entry for internal camera "

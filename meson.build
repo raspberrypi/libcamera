@@ -50,8 +50,8 @@ c_arguments = []
 cpp_arguments = []
 
 if cc.get_id() == 'clang'
-    if cc.version().version_compare('<5')
-        error('clang version is too old, libcamera requires 5.0 or newer')
+    if cc.version().version_compare('<9')
+        error('clang version is too old, libcamera requires 9.0 or newer')
     endif
 
     # Turn _FORTIFY_SOURCE by default on optimised builds (as it requires -O1

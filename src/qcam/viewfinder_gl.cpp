@@ -481,11 +481,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width(),
 			     size_.height(),
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
@@ -495,11 +495,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RG,
+			     GL_LUMINANCE_ALPHA,
 			     size_.width() / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
-			     GL_RG,
+			     GL_LUMINANCE_ALPHA,
 			     GL_UNSIGNED_BYTE,
 			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
@@ -511,11 +511,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width(),
 			     size_.height(),
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
@@ -525,11 +525,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width() / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
@@ -539,11 +539,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[2]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width() / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
@@ -555,11 +555,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width(),
 			     size_.height(),
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
@@ -569,11 +569,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[2]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width() / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_ + size_.width() * size_.height());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
@@ -583,11 +583,11 @@ void ViewFinderGL::doRender()
 		configureTexture(*textures_[1]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     size_.width() / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_ + size_.width() * size_.height() * 5 / 4);
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
@@ -674,18 +674,18 @@ void ViewFinderGL::doRender()
 	case libcamera::formats::SRGGB12_CSI2P:
 		/*
 		 * Raw Bayer 8-bit, and packed raw Bayer 10-bit/12-bit formats
-		 * are stored in GL_RED texture.
-		 * The texture width is equal to the stride.
+		 * are stored in a GL_LUMINANCE texture. The texture width is
+		 * equal to the stride.
 		 */
 		glActiveTexture(GL_TEXTURE0);
 		configureTexture(*textures_[0]);
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     stride_,
 			     size_.height(),
 			     0,
-			     GL_RED,
+			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     data_);
 		shaderProgram_.setUniformValue(textureUniformY_, 0);

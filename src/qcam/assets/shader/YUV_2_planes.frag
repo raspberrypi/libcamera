@@ -26,9 +26,9 @@ void main(void)
 	yuv.x = texture2D(tex_y, textureOut).r - 0.063;
 #if defined(YUV_PATTERN_UV)
 	yuv.y = texture2D(tex_u, textureOut).r - 0.500;
-	yuv.z = texture2D(tex_u, textureOut).g - 0.500;
+	yuv.z = texture2D(tex_u, textureOut).a - 0.500;
 #elif defined(YUV_PATTERN_VU)
-	yuv.y = texture2D(tex_u, textureOut).g - 0.500;
+	yuv.y = texture2D(tex_u, textureOut).a - 0.500;
 	yuv.z = texture2D(tex_u, textureOut).r - 0.500;
 #else
 #error Invalid pattern

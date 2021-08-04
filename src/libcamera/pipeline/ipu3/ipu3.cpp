@@ -248,6 +248,20 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	if (rawCount > 1 || yuvCount > 2) {
 		LOG(IPU3, Debug) << "Camera configuration not supported";
 		return Invalid;
+	} else if (rawCount && !yuvCount) {
+		/*
+		 * Disallow raw-only camera configuration. Currently, ImgU does
+		 * not get configured for raw-only streams and has early return
+		 * in configure(). To support raw-only stream, we do need the IPA
+		 * to get configured since it will setup the sensor controls for
+		 * the capture.
+		 *
+		 * \todo Configure the ImgU with internal buffers which will enable
+		 * the IPA to get configured for the raw-only camera configuration.
+		 */
+		LOG(IPU3, Debug)
+			<< "Camera configuration cannot support raw-only streams";
+		return Invalid;
 	}
 
 	/*

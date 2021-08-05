@@ -44,7 +44,7 @@ private:
 	} mem;
 };
 
-CameraBuffer::Private::Private(CameraBuffer *cameraBuffer,
+CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
 			       [[maybe_unused]] int flags)
 	: handle_(camera3Buffer), numPlanes_(0), valid_(false),

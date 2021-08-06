@@ -7,10 +7,11 @@
 #ifndef __LIBCAMERA_INTERNAL_MAPPED_FRAMEBUFFER_H__
 #define __LIBCAMERA_INTERNAL_MAPPED_FRAMEBUFFER_H__
 
-#include <sys/mman.h>
+#include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/span.h>
 
 #include <libcamera/framebuffer.h>
@@ -44,8 +45,18 @@ private:
 class MappedFrameBuffer : public MappedBuffer
 {
 public:
-	MappedFrameBuffer(const FrameBuffer *buffer, int flags);
+	enum class MapFlag {
+		Read = 1 << 0,
+		Write = 1 << 1,
+		ReadWrite = Read | Write,
+	};
+
+	using MapFlags = Flags<MapFlag>;
+
+	MappedFrameBuffer(const FrameBuffer *buffer, MapFlags flags);
 };
+
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(MappedFrameBuffer::MapFlag)
 
 } /* namespace libcamera */
 

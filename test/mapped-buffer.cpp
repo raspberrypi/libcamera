@@ -71,7 +71,7 @@ protected:
 		const std::unique_ptr<FrameBuffer> &buffer = allocator_->buffers(stream_).front();
 		std::vector<MappedBuffer> maps;
 
-		MappedFrameBuffer map(buffer.get(), PROT_READ);
+		MappedFrameBuffer map(buffer.get(), MappedFrameBuffer::MapFlag::Read);
 		if (!map.isValid()) {
 			cout << "Failed to successfully map buffer" << endl;
 			return TestFail;
@@ -90,13 +90,13 @@ protected:
 		}
 
 		/* Test for multiple successful maps on the same buffer. */
-		MappedFrameBuffer write_map(buffer.get(), PROT_WRITE);
+		MappedFrameBuffer write_map(buffer.get(), MappedFrameBuffer::MapFlag::Write);
 		if (!write_map.isValid()) {
 			cout << "Failed to map write buffer" << endl;
 			return TestFail;
 		}
 
-		MappedFrameBuffer rw_map(buffer.get(), PROT_READ | PROT_WRITE);
+		MappedFrameBuffer rw_map(buffer.get(), MappedFrameBuffer::MapFlag::ReadWrite);
 		if (!rw_map.isValid()) {
 			cout << "Failed to map RW buffer" << endl;
 			return TestFail;

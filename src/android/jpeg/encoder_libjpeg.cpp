@@ -12,7 +12,6 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
 
@@ -182,7 +181,7 @@ void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
 int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 			   Span<const uint8_t> exifData, unsigned int quality)
 {
-	MappedFrameBuffer frame(&source, PROT_READ);
+	MappedFrameBuffer frame(&source, MappedFrameBuffer::MapFlag::Read);
 	if (!frame.isValid()) {
 		LOG(JPEG, Error) << "Failed to map FrameBuffer : "
 				 << strerror(frame.error());

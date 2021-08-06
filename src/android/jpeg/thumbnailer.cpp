@@ -41,7 +41,7 @@ void Thumbnailer::createThumbnail(const FrameBuffer &source,
 				  const Size &targetSize,
 				  std::vector<unsigned char> *destination)
 {
-	MappedFrameBuffer frame(&source, PROT_READ);
+	MappedFrameBuffer frame(&source, MappedFrameBuffer::MapFlag::Read);
 	if (!frame.isValid()) {
 		LOG(Thumbnailer, Error)
 			<< "Failed to map FrameBuffer : "

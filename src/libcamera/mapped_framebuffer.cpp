@@ -141,20 +141,44 @@ MappedBuffer::~MappedBuffer()
  */
 
 /**
+ * \enum MappedFrameBuffer::MapFlag
+ * \brief Specify the mapping mode for the FrameBuffer
+ * \var MappedFrameBuffer::Read
+ * \brief Create a read-only mapping
+ * \var MappedFrameBuffer::Write
+ * \brief Create a write-only mapping
+ * \var MappedFrameBuffer::ReadWrite
+ * \brief Create a mapping that can be both read and written
+ */
+
+/**
+ * \typedef MappedFrameBuffer::MapFlags
+ * \brief A bitwise combination of MappedFrameBuffer::MapFlag values
+ */
+
+/**
  * \brief Map all planes of a FrameBuffer
  * \param[in] buffer FrameBuffer to be mapped
  * \param[in] flags Protection flags to apply to map
  *
- * Construct an object to map a frame buffer for CPU access.
- * The flags are passed directly to mmap and should be either PROT_READ,
- * PROT_WRITE, or a bitwise-or combination of both.
+ * Construct an object to map a frame buffer for CPU access. The mapping can be
+ * made as Read only, Write only or support Read and Write operations by setting
+ * the MapFlag flags accordingly.
  */
-MappedFrameBuffer::MappedFrameBuffer(const FrameBuffer *buffer, int flags)
+MappedFrameBuffer::MappedFrameBuffer(const FrameBuffer *buffer, MapFlags flags)
 {
 	maps_.reserve(buffer->planes().size());
 
+	int mmapFlags = 0;
+
+	if (flags & MapFlag::Read)
+		mmapFlags |= PROT_READ;
+
+	if (flags & MapFlag::Write)
+		mmapFlags |= PROT_WRITE;
+
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		void *address = mmap(nullptr, plane.length, flags,
+		void *address = mmap(nullptr, plane.length, mmapFlags,
 				     MAP_SHARED, plane.fd.fd(), 0);
 		if (address == MAP_FAILED) {
 			error_ = -errno;

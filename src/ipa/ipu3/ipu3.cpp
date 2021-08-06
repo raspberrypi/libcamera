@@ -6,7 +6,6 @@
  */
 
 #include <stdint.h>
-#include <sys/mman.h>
 
 #include <linux/intel-ipu3.h>
 #include <linux/v4l2-controls.h>
@@ -211,7 +210,7 @@ void IPAIPU3::mapBuffers(const std::vector<IPABuffer> &buffers)
 	for (const IPABuffer &buffer : buffers) {
 		const FrameBuffer fb(buffer.planes);
 		buffers_.emplace(buffer.id,
-				 MappedFrameBuffer(&fb, PROT_READ | PROT_WRITE));
+				 MappedFrameBuffer(&fb, MappedFrameBuffer::MapFlag::ReadWrite));
 	}
 }
 

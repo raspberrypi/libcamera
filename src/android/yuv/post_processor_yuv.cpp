@@ -57,7 +57,7 @@ int PostProcessorYuv::process(const FrameBuffer &source,
 	if (!isValidBuffers(source, *destination))
 		return -EINVAL;
 
-	const MappedFrameBuffer sourceMapped(&source, PROT_READ);
+	const MappedFrameBuffer sourceMapped(&source, MappedFrameBuffer::MapFlag::Read);
 	if (!sourceMapped.isValid()) {
 		LOG(YUV, Error) << "Failed to mmap camera frame buffer";
 		return -EINVAL;

@@ -411,7 +411,8 @@ void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
 		const FrameBuffer fb(buffer.planes);
-		buffers_.emplace(buffer.id, MappedFrameBuffer(&fb, PROT_READ | PROT_WRITE));
+		buffers_.emplace(buffer.id,
+				 MappedFrameBuffer(&fb, MappedFrameBuffer::MapFlag::ReadWrite));
 	}
 }
 

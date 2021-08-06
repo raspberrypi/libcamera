@@ -10,8 +10,6 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/framebuffer.h"
-
 #include "camera_buffer.h"
 
 class CameraMetadata;

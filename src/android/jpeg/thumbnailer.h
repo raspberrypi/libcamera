@@ -7,10 +7,10 @@
 #ifndef __ANDROID_JPEG_THUMBNAILER_H__
 #define __ANDROID_JPEG_THUMBNAILER_H__
 
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/framebuffer.h"
 
 class Thumbnailer
 {

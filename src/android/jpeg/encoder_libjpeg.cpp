@@ -23,6 +23,7 @@
 #include <libcamera/pixel_format.h>
 
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/mapped_framebuffer.h"
 
 using namespace libcamera;
 

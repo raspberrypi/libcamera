@@ -7,6 +7,8 @@
 
 #include "camera_stream.h"
 
+#include <sys/mman.h>
+
 #include "camera_buffer.h"
 #include "camera_device.h"
 #include "camera_metadata.h"

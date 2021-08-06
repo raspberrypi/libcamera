@@ -19,8 +19,6 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-#include "libcamera/internal/framebuffer.h"
-
 class CameraDevice;
 class CameraMetadata;
 class PostProcessor;

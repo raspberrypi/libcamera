@@ -10,7 +10,6 @@
 #include "encoder.h"
 
 #include "libcamera/internal/formats.h"
-#include "libcamera/internal/framebuffer.h"
 
 #include <jpeglib.h>
 

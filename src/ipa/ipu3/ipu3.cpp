@@ -20,7 +20,7 @@
 #include <libcamera/ipa/ipu3_ipa_interface.h>
 #include <libcamera/request.h>
 
-#include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/mapped_framebuffer.h"
 
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"

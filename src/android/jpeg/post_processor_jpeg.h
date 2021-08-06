@@ -13,8 +13,6 @@
 
 #include <libcamera/geometry.h>
 
-#include "libcamera/internal/framebuffer.h"
-
 class CameraDevice;
 
 class PostProcessorJpeg : public PostProcessor

@@ -11,6 +11,8 @@
 
 #include <libcamera/formats.h>
 
+#include "libcamera/internal/mapped_framebuffer.h"
+
 using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(Thumbnailer)

@@ -28,7 +28,7 @@
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/request.h>
 
-#include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/mapped_framebuffer.h"
 
 #include "agc_algorithm.hpp"
 #include "agc_status.h"

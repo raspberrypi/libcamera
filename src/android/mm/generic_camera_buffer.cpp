@@ -7,11 +7,12 @@
 
 #include "../camera_buffer.h"
 
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <libcamera/base/log.h>
 
-#include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/mapped_framebuffer.h"
 
 using namespace libcamera;
 

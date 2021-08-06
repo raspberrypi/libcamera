@@ -24,8 +24,6 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/framebuffer.h"
-
 #include "camera_capabilities.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"

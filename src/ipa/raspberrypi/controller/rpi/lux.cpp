@@ -6,7 +6,7 @@
  */
 #include <math.h>
 
-#include "linux/bcm2835-isp.h"
+#include <linux/bcm2835-isp.h>
 
 #include <libcamera/base/log.h>
 

@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <map>
 #include <memory>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <vector>
 

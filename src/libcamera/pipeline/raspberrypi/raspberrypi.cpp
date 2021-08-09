@@ -10,7 +10,6 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <sys/mman.h>
 #include <unordered_set>
 
 #include <libcamera/camera.h>

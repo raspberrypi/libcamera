@@ -7,6 +7,9 @@
 
 #include "cio2.h"
 
+#include <limits>
+#include <math.h>
+
 #include <linux/media-bus-format.h>
 
 #include <libcamera/formats.h>
@@ -187,7 +190,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	 * the CIO2 output device.
 	 */
 	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToPixelFormat);
-	sensorFormat = sensor_->getFormat(mbusCodes, size);
+	sensorFormat = getSensorFormat(mbusCodes, size);
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
@@ -225,7 +228,7 @@ StreamConfiguration CIO2Device::generateConfiguration(Size size) const
 
 	/* Query the sensor static information for closest match. */
 	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToPixelFormat);
-	V4L2SubdeviceFormat sensorFormat = sensor_->getFormat(mbusCodes, size);
+	V4L2SubdeviceFormat sensorFormat = getSensorFormat(mbusCodes, size);
 	if (!sensorFormat.mbus_code) {
 		LOG(IPU3, Error) << "Sensor does not support mbus code";
 		return {};
@@ -236,6 +239,87 @@ StreamConfiguration CIO2Device::generateConfiguration(Size size) const
 	cfg.bufferCount = CIO2_BUFFER_COUNT;
 
 	return cfg;
+}
+
+/**
+ * \brief Retrieve the best sensor format for a desired output
+ * \param[in] mbusCodes The list of acceptable media bus codes
+ * \param[in] size The desired size
+ *
+ * Media bus codes are selected from \a mbusCodes, which lists all acceptable
+ * codes in decreasing order of preference. Media bus codes supported by the
+ * sensor but not listed in \a mbusCodes are ignored. If none of the desired
+ * codes is supported, it returns an error.
+ *
+ * \a size indicates the desired size at the output of the sensor. This method
+ * selects the best media bus code and size supported by the sensor according
+ * to the following criteria.
+ *
+ * - The desired \a size shall fit in the sensor output size to avoid the need
+ *   to up-scale.
+ * - The sensor output size shall match the desired aspect ratio to avoid the
+ *   need to crop the field of view.
+ * - The sensor output size shall be as small as possible to lower the required
+ *   bandwidth.
+ * - The desired \a size shall be supported by one of the media bus code listed
+ *   in \a mbusCodes.
+ *
+ * When multiple media bus codes can produce the same size, the code at the
+ * lowest position in \a mbusCodes is selected.
+ *
+ * The returned sensor output format is guaranteed to be acceptable by the
+ * setFormat() method without any modification.
+ *
+ * \return The best sensor output format matching the desired media bus codes
+ * and size on success, or an empty format otherwise.
+ */
+V4L2SubdeviceFormat CIO2Device::getSensorFormat(const std::vector<unsigned int> &mbusCodes,
+						const Size &size) const
+{
+	unsigned int desiredArea = size.width * size.height;
+	unsigned int bestArea = std::numeric_limits<unsigned int>::max();
+	float desiredRatio = static_cast<float>(size.width) / size.height;
+	float bestRatio = std::numeric_limits<float>::max();
+	Size bestSize;
+	uint32_t bestCode = 0;
+
+	for (unsigned int code : mbusCodes) {
+		const auto sizes = sensor_->sizes(code);
+		if (!sizes.size())
+			continue;
+
+		for (const Size &sz : sizes) {
+			if (sz.width < size.width || sz.height < size.height)
+				continue;
+
+			float ratio = static_cast<float>(sz.width) / sz.height;
+			float ratioDiff = fabsf(ratio - desiredRatio);
+			unsigned int area = sz.width * sz.height;
+			unsigned int areaDiff = area - desiredArea;
+
+			if (ratioDiff > bestRatio)
+				continue;
+
+			if (ratioDiff < bestRatio || areaDiff < bestArea) {
+				bestRatio = ratioDiff;
+				bestArea = areaDiff;
+				bestSize = sz;
+				bestCode = code;
+			}
+		}
+	}
+
+	if (bestSize.isNull()) {
+		LOG(IPU3, Debug) << "No supported format or size found";
+		return {};
+	}
+
+	V4L2SubdeviceFormat format{
+		.mbus_code = bestCode,
+		.size = bestSize,
+	};
+
+	return format;
 }
 
 int CIO2Device::exportBuffers(unsigned int count,

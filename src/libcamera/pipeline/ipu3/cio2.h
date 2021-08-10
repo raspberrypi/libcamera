@@ -45,6 +45,9 @@ public:
 	int exportBuffers(unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
+	V4L2SubdeviceFormat getSensorFormat(const std::vector<unsigned int> &mbusCodes,
+					    const Size &size) const;
+
 	int start();
 	int stop();
 

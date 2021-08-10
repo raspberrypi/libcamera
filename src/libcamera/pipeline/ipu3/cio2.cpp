@@ -295,6 +295,14 @@ V4L2SubdeviceFormat CIO2Device::getSensorFormat(const std::vector<unsigned int> 
 				continue;
 
 			float ratio = static_cast<float>(sz.width) / sz.height;
+			/*
+			 * Ratios can differ by small mantissa difference which
+			 * can affect the selection of the sensor output size
+			 * wildly. We are interested in selection of the closest
+			 * size with respect to the desired output size, hence
+			 * comparing it with a single precision digit is enough.
+			 */
+			ratio = static_cast<unsigned int>(ratio * 10) / 10.0;
 			float ratioDiff = fabsf(ratio - desiredRatio);
 			unsigned int area = sz.width * sz.height;
 			unsigned int areaDiff = area - desiredArea;

@@ -353,8 +353,8 @@ private:
 
 public:
 	ControlList();
-	ControlList(const ControlIdMap &idmap, ControlValidator *validator = nullptr);
-	ControlList(const ControlInfoMap &infoMap, ControlValidator *validator = nullptr);
+	ControlList(const ControlIdMap &idmap, const ControlValidator *validator = nullptr);
+	ControlList(const ControlInfoMap &infoMap, const ControlValidator *validator = nullptr);
 
 	using iterator = ControlListMap::iterator;
 	using const_iterator = ControlListMap::const_iterator;
@@ -412,7 +412,7 @@ private:
 	const ControlValue *find(unsigned int id) const;
 	ControlValue *find(unsigned int id);
 
-	ControlValidator *validator_;
+	const ControlValidator *validator_;
 	const ControlIdMap *idmap_;
 	const ControlInfoMap *infoMap_;
 

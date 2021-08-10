@@ -821,7 +821,8 @@ ControlList::ControlList()
  * controls is provided by controls::controls and can be used as the \a idmap
  * argument.
  */
-ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
+ControlList::ControlList(const ControlIdMap &idmap,
+			 const ControlValidator *validator)
 	: validator_(validator), idmap_(&idmap), infoMap_(nullptr)
 {
 }
@@ -831,7 +832,8 @@ ControlList::ControlList(const ControlIdMap &idmap, ControlValidator *validator)
  * \param[in] infoMap The ControlInfoMap for the control list target object
  * \param[in] validator The validator (may be null)
  */
-ControlList::ControlList(const ControlInfoMap &infoMap, ControlValidator *validator)
+ControlList::ControlList(const ControlInfoMap &infoMap,
+			 const ControlValidator *validator)
 	: validator_(validator), idmap_(&infoMap.idmap()), infoMap_(&infoMap)
 {
 }

@@ -257,8 +257,8 @@ StreamConfiguration CIO2Device::generateConfiguration(Size size) const
  *
  * - The desired \a size shall fit in the sensor output size to avoid the need
  *   to up-scale.
- * - The sensor output size shall match the desired aspect ratio to avoid the
- *   need to crop the field of view.
+ * - The aspect ratio of sensor output size shall be as close as possible to
+ *   the sensor's native resolution field of view.
  * - The sensor output size shall be as small as possible to lower the required
  *   bandwidth.
  * - The desired \a size shall be supported by one of the media bus code listed
@@ -278,7 +278,9 @@ V4L2SubdeviceFormat CIO2Device::getSensorFormat(const std::vector<unsigned int> 
 {
 	unsigned int desiredArea = size.width * size.height;
 	unsigned int bestArea = std::numeric_limits<unsigned int>::max();
-	float desiredRatio = static_cast<float>(size.width) / size.height;
+	const Size &resolution = sensor_->resolution();
+	float desiredRatio = static_cast<float>(resolution.width) /
+			     resolution.height;
 	float bestRatio = std::numeric_limits<float>::max();
 	Size bestSize;
 	uint32_t bestCode = 0;

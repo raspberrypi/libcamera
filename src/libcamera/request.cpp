@@ -17,6 +17,7 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_controls.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/tracepoints.h"
@@ -77,12 +78,8 @@ Request::Request(Camera *camera, uint64_t cookie)
 	: camera_(camera), sequence_(0), cookie_(cookie),
 	  status_(RequestPending), cancelled_(false)
 {
-	/**
-	 * \todo Should the Camera expose a validator instance, to avoid
-	 * creating a new instance for each request?
-	 */
-	validator_ = new CameraControlValidator(camera);
-	controls_ = new ControlList(controls::controls, validator_);
+	controls_ = new ControlList(controls::controls,
+				    camera->_d()->validator());
 
 	/**
 	 * \todo: Add a validator for metadata controls.
@@ -100,7 +97,6 @@ Request::~Request()
 
 	delete metadata_;
 	delete controls_;
-	delete validator_;
 }
 
 /**

@@ -71,7 +71,6 @@ private:
 	bool completeBuffer(FrameBuffer *buffer);
 
 	Camera *camera_;
-	CameraControlValidator *validator_;
 	ControlList *controls_;
 	ControlList *metadata_;
 	BufferMap bufferMap_;

@@ -182,7 +182,8 @@ MappedFrameBuffer::MappedFrameBuffer(const FrameBuffer *buffer, MapFlags flags)
 				     MAP_SHARED, plane.fd.fd(), 0);
 		if (address == MAP_FAILED) {
 			error_ = -errno;
-			LOG(Buffer, Error) << "Failed to mmap plane";
+			LOG(Buffer, Error) << "Failed to mmap plane: "
+					   << strerror(-error_);
 			break;
 		}
 

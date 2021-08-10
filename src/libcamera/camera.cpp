@@ -19,6 +19,7 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera.h"
+#include "libcamera/internal/camera_controls.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**
@@ -367,6 +368,12 @@ Camera::Private::~Private()
  */
 
 /**
+ * \fn Camera::Private::validator()
+ * \brief Retrieve the control validator related to this camera
+ * \return The control validator associated with this camera
+ */
+
+/**
  * \var Camera::Private::queuedRequests_
  * \brief The list of queued and not yet completed requests
  *
@@ -665,6 +672,7 @@ Camera::Camera(std::unique_ptr<Private> d, const std::string &id,
 {
 	_d()->id_ = id;
 	_d()->streams_ = streams;
+	_d()->validator_ = std::make_unique<CameraControlValidator>(this);
 }
 
 Camera::~Camera()

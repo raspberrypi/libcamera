@@ -19,6 +19,7 @@
 
 namespace libcamera {
 
+class CameraControlValidator;
 class PipelineHandler;
 class Stream;
 
@@ -37,6 +38,8 @@ public:
 	ControlList properties_;
 
 	uint32_t requestSequence_;
+
+	const CameraControlValidator *validator() const { return validator_.get(); }
 
 private:
 	enum State {
@@ -64,6 +67,8 @@ private:
 
 	bool disconnected_;
 	std::atomic<State> state_;
+
+	std::unique_ptr<CameraControlValidator> validator_;
 };
 
 } /* namespace libcamera */

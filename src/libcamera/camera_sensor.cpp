@@ -472,14 +472,27 @@ int CameraSensor::initProperties()
  */
 
 /**
- * \fn CameraSensor::sizes()
- * \brief Retrieve the frame sizes supported by the camera sensor
+ * \brief Retrieve the supported frame sizes for a media bus code
+ * \param[in] mbusCode The media bus code for which sizes are requested
  *
- * The reported sizes span all media bus codes supported by the camera sensor.
- * Not all sizes may be supported by all media bus codes.
- *
- * \return The supported frame sizes sorted in increasing order
+ * \return The supported frame sizes for \a mbusCode sorted in increasing order
  */
+const std::vector<Size> CameraSensor::sizes(unsigned int mbusCode) const
+{
+	std::vector<Size> sizes;
+
+	const auto &format = formats_.find(mbusCode);
+	if (format == formats_.end())
+		return sizes;
+
+	const std::vector<SizeRange> &ranges = format->second;
+	std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes),
+		       [](const SizeRange &range) { return range.max; });
+
+	std::sort(sizes.begin(), sizes.end());
+
+	return sizes;
+}
 
 /**
  * \brief Retrieve the camera sensor resolution

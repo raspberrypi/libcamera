@@ -76,7 +76,7 @@ protected:
 			return TestFail;
 		}
 
-		const std::vector<Size> &sizes = sensor_->sizes();
+		const std::vector<Size> &sizes = sensor_->sizes(*iter);
 		auto iter2 = std::find(sizes.begin(), sizes.end(),
 				       Size(4096, 2160));
 		if (iter2 == sizes.end()) {

@@ -38,7 +38,7 @@ public:
 	const std::string &id() const { return id_; }
 	const MediaEntity *entity() const { return entity_; }
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
-	const std::vector<Size> &sizes() const { return sizes_; }
+	const std::vector<Size> sizes(unsigned int mbusCode) const;
 	Size resolution() const;
 	const std::vector<int32_t> &testPatternModes() const
 	{

@@ -457,7 +457,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			bufferCount = cio2Config.bufferCount;
 
 			for (const PixelFormat &format : data->cio2_.formats())
-				streamFormats[format] = data->cio2_.sizes();
+				streamFormats[format] = data->cio2_.sizes(format);
 
 			break;
 		}

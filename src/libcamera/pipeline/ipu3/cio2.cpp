@@ -62,16 +62,35 @@ std::vector<PixelFormat> CIO2Device::formats() const
 
 /**
  * \brief Retrieve the list of supported size ranges
- * \return The list of supported SizeRange
+ * \param[in] format The pixel format
+ *
+ * Retrieve the list of supported sizes for a particular \a format by matching
+ * the sensor produced media bus codes formats supported by the CIO2 unit.
+ *
+ * \return A list of supported sizes for the \a format or an empty list
+ * otherwise
  */
-std::vector<SizeRange> CIO2Device::sizes() const
+std::vector<SizeRange> CIO2Device::sizes(const PixelFormat &format) const
 {
+	int mbusCode = -1;
+
 	if (!sensor_)
 		return {};
 
 	std::vector<SizeRange> sizes;
-	for (const Size &size : sensor_->sizes())
-		sizes.emplace_back(size, size);
+	for (const auto &iter : mbusCodesToPixelFormat) {
+		if (iter.second != format)
+			continue;
+
+		mbusCode = iter.first;
+		break;
+	}
+
+	if (mbusCode == -1)
+		return {};
+
+	for (const Size &sz : sensor_->sizes(mbusCode))
+		sizes.emplace_back(sz);
 
 	return sizes;
 }

@@ -35,7 +35,7 @@ public:
 	CIO2Device();
 
 	std::vector<PixelFormat> formats() const;
-	std::vector<SizeRange> sizes() const;
+	std::vector<SizeRange> sizes(const PixelFormat &format) const;
 
 	int init(const MediaDevice *media, unsigned int index);
 	int configure(const Size &size, V4L2DeviceFormat *outputFormat);

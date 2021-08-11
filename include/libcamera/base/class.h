@@ -50,7 +50,7 @@ public:									\
 	using Public = klass;
 
 #define LIBCAMERA_O_PTR()						\
-	_o<Public>();
+	_o<Public>()
 
 #else
 #define LIBCAMERA_DECLARE_PRIVATE()

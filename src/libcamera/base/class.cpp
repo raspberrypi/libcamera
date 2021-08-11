@@ -147,9 +147,12 @@ namespace libcamera {
 /**
  * \brief Construct an instance of an Extensible class
  * \param[in] d Pointer to the private data instance
+ *
+ * The private data lifetime is managed by the Extensible class, which destroys
+ * it when the Extensible instance is destroyed.
  */
-Extensible::Extensible(Extensible::Private *d)
-	: d_(d)
+Extensible::Extensible(std::unique_ptr<Extensible::Private> d)
+	: d_(std::move(d))
 {
 	*const_cast<Extensible **>(&d_->o_) = this;
 }
@@ -162,6 +165,10 @@ Extensible::Extensible(Extensible::Private *d)
  * derived from Extensible get, through the LIBCAMERA_DECLARE_PRIVATE() macro,
  * overriden _d() functions that return the correct pointer type to the
  * corresponding derived Private class.
+ *
+ * The lifetime of the private data is tied to the Extensible class. The caller
+ * shall not retain any reference to the returned pointer for longer than it
+ * holds a reference to the Extensible instance.
  *
  * \return A pointer to the private data instance
  */

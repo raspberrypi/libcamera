@@ -32,7 +32,7 @@ public:
 
 #define PUBLIC_CAMERA_BUFFER_IMPLEMENTATION				\
 CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer, int flags)	\
-	: Extensible(new Private(this, camera3Buffer, flags))		\
+	: Extensible(std::make_unique<Private>(this, camera3Buffer, flags)) \
 {									\
 }									\
 CameraBuffer::~CameraBuffer()						\

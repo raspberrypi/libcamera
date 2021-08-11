@@ -181,7 +181,8 @@ FrameBuffer::Private::Private()
  * \param[in] cookie Cookie
  */
 FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
-	: Extensible(new Private()), planes_(planes), cookie_(cookie)
+	: Extensible(std::make_unique<Private>()), planes_(planes),
+	  cookie_(cookie)
 {
 }
 

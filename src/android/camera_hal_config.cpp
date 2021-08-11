@@ -341,7 +341,7 @@ int CameraHalConfig::Private::parseConfigFile(FILE *fh,
 }
 
 CameraHalConfig::CameraHalConfig()
-	: Extensible(new Private()), exists_(false), valid_(false)
+	: Extensible(std::make_unique<Private>()), exists_(false), valid_(false)
 {
 	parseConfigurationFile();
 }

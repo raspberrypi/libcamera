@@ -258,7 +258,7 @@ void CameraManager::Private::removeCamera(Camera *camera)
 CameraManager *CameraManager::self_ = nullptr;
 
 CameraManager::CameraManager()
-	: Extensible(new CameraManager::Private())
+	: Extensible(std::make_unique<CameraManager::Private>())
 {
 	if (self_)
 		LOG(Camera, Fatal)

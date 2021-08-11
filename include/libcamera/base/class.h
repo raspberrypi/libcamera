@@ -87,7 +87,7 @@ public:
 		Extensible *const o_;
 	};
 
-	Extensible(Private *d);
+	Extensible(std::unique_ptr<Private> d);
 
 protected:
 	template<typename T>

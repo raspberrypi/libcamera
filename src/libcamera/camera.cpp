@@ -596,7 +596,7 @@ const std::string &Camera::id() const
 
 Camera::Camera(PipelineHandler *pipe, const std::string &id,
 	       const std::set<Stream *> &streams)
-	: Extensible(new Private(pipe, id, streams))
+	: Extensible(std::make_unique<Private>(pipe, id, streams))
 {
 }
 

@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('algorithms')
+
 ipa_name = 'ipa_ipu3'
 
 ipu3_ipa_sources = files([
@@ -7,6 +9,8 @@ ipu3_ipa_sources = files([
     'ipu3_agc.cpp',
     'ipu3_awb.cpp',
 ])
+
+ipu3_ipa_sources += ipu3_ipa_algorithms
 
 mod = shared_module(ipa_name,
                     [ipu3_ipa_sources, libcamera_generated_ipa_headers],

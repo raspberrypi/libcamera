@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * algorithm.cpp - ISP control algorithms
+ * algorithm.cpp - IPU3 control algorithm interface
  */
 
 #include "algorithm.h"
@@ -14,26 +14,17 @@
 
 namespace libcamera {
 
-/**
- * \brief The IPA namespace
- *
- * The IPA namespace groups all types specific to IPA modules. It serves as the
- * top-level namespace for the IPA library libipa, and also contains
- * module-specific namespaces for IPA modules.
- */
-namespace ipa {
+namespace ipa::ipu3 {
 
 /**
  * \class Algorithm
- * \brief The base class for all IPA algorithms
+ * \brief The base class for all IPU3 algorithms
  *
  * The Algorithm class defines a standard interface for IPA algorithms. By
  * abstracting algorithms, it makes possible the implementation of generic code
  * to manage algorithms regardless of their specific type.
  */
 
-Algorithm::~Algorithm() = default;
-
-} /* namespace ipa */
+} /* namespace ipa::ipu3 */
 
 } /* namespace libcamera */

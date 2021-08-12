@@ -343,7 +343,7 @@ public:
 private:
 	bool validate();
 
-	const ControlIdMap *idmap_;
+	const ControlIdMap *idmap_ = nullptr;
 };
 
 class ControlList

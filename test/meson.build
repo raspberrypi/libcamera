@@ -11,6 +11,7 @@ subdir('libtest')
 
 subdir('camera')
 subdir('controls')
+subdir('gstreamer')
 subdir('ipa')
 subdir('ipc')
 subdir('log')

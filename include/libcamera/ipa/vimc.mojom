@@ -29,8 +29,17 @@ interface IPAVimcInterface {
 
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
+
+	/*
+	 * The vimc driver doesn't use parameters buffers. To maximize coverage
+	 * of unit tests that rely on the VIMC pipeline handler, we still define
+	 * interface functions that mimick how other pipeline handlers typically
+	 * handle parameters at runtime.
+	 */
+	[async] fillParams(uint32 frame, uint32 bufferId);
+	[async] processControls(uint32 frame, libcamera.ControlList controls);
 };
 
 interface IPAVimcEventInterface {
-	dummyEvent(uint32 val);
+	paramsFilled(uint32 bufferId);
 };

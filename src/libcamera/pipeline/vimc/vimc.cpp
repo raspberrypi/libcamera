@@ -334,6 +334,14 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] const ControlLis
 	if (ret < 0)
 		return ret;
 
+	/* Map the mock IPA buffers to VIMC IPA to exercise IPC code paths. */
+	std::vector<IPABuffer> ipaBuffers;
+	for (auto [i, buffer] : utils::enumerate(data->mockIPABufs_)) {
+		buffer->setCookie(i + 1);
+		ipaBuffers.emplace_back(buffer->cookie(), buffer->planes());
+	}
+	data->ipa_->mapBuffers(ipaBuffers);
+
 	ret = data->ipa_->start();
 	if (ret) {
 		data->video_->releaseBuffers();
@@ -354,7 +362,13 @@ void PipelineHandlerVimc::stop(Camera *camera)
 {
 	VimcCameraData *data = cameraData(camera);
 	data->video_->streamOff();
+
+	std::vector<unsigned int> ids;
+	for (const std::unique_ptr<FrameBuffer> &buffer : data->mockIPABufs_)
+		ids.push_back(buffer->cookie());
+	data->ipa_->unmapBuffers(ids);
 	data->ipa_->stop();
+
 	data->video_->releaseBuffers();
 }
 

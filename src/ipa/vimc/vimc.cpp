@@ -19,6 +19,8 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
+#include "libcamera/internal/mapped_framebuffer.h"
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAVimc)
@@ -38,11 +40,15 @@ public:
 		      const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls) override;
 
+	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
+	void unmapBuffers(const std::vector<unsigned int> &ids) override;
+
 private:
 	void initTrace();
 	void trace(enum ipa::vimc::IPAOperationCode operation);
 
 	int fd_;
+	std::map<unsigned int, MappedFrameBuffer> buffers_;
 };
 
 IPAVimc::IPAVimc()
@@ -97,6 +103,27 @@ int IPAVimc::configure([[maybe_unused]] const IPACameraSensorInfo &sensorInfo,
 	LOG(IPAVimc, Debug) << "configure()";
 
 	return 0;
+}
+
+void IPAVimc::mapBuffers(const std::vector<IPABuffer> &buffers)
+{
+	for (const IPABuffer &buffer : buffers) {
+		const FrameBuffer fb(buffer.planes);
+		buffers_.emplace(std::piecewise_construct,
+				 std::forward_as_tuple(buffer.id),
+				 std::forward_as_tuple(&fb, MappedFrameBuffer::MapFlag::Read));
+	}
+}
+
+void IPAVimc::unmapBuffers(const std::vector<unsigned int> &ids)
+{
+	for (unsigned int id : ids) {
+		auto it = buffers_.find(id);
+		if (it == buffers_.end())
+			continue;
+
+		buffers_.erase(it);
+	}
 }
 
 void IPAVimc::initTrace()

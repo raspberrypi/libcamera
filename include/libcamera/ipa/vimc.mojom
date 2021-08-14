@@ -26,6 +26,9 @@ interface IPAVimcInterface {
 
 	start() => (int32 ret);
 	stop();
+
+	mapBuffers(array<libcamera.IPABuffer> buffers);
+	unmapBuffers(array<uint32> ids);
 };
 
 interface IPAVimcEventInterface {

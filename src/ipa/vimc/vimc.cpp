@@ -34,6 +34,10 @@ public:
 	int start() override;
 	void stop() override;
 
+	int configure(const IPACameraSensorInfo &sensorInfo,
+		      const std::map<unsigned int, IPAStream> &streamConfig,
+		      const std::map<unsigned int, ControlInfoMap> &entityControls) override;
+
 private:
 	void initTrace();
 	void trace(enum ipa::vimc::IPAOperationCode operation);
@@ -84,6 +88,15 @@ void IPAVimc::stop()
 	trace(ipa::vimc::IPAOperationStop);
 
 	LOG(IPAVimc, Debug) << "stop vimc IPA!";
+}
+
+int IPAVimc::configure([[maybe_unused]] const IPACameraSensorInfo &sensorInfo,
+			[[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
+			[[maybe_unused]] const std::map<unsigned int, ControlInfoMap> &entityControls)
+{
+	LOG(IPAVimc, Debug) << "configure()";
+
+	return 0;
 }
 
 void IPAVimc::initTrace()

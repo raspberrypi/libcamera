@@ -19,6 +19,11 @@ enum IPAOperationCode {
 
 interface IPAVimcInterface {
 	init(libcamera.IPASettings settings) => (int32 ret);
+
+	configure(libcamera.IPACameraSensorInfo sensorInfo,
+		  map<uint32, libcamera.IPAStream> streamConfig,
+		  map<uint32, libcamera.ControlInfoMap> entityControls) => (int32 ret);
+
 	start() => (int32 ret);
 	stop();
 };

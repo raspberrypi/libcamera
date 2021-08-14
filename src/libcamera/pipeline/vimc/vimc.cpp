@@ -295,6 +295,22 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 
 	cfg.setStream(&data->stream_);
 
+	if (data->ipa_) {
+		/* Inform IPA of stream configuration and sensor controls. */
+		std::map<unsigned int, IPAStream> streamConfig;
+		streamConfig.emplace(std::piecewise_construct,
+				     std::forward_as_tuple(0),
+				     std::forward_as_tuple(cfg.pixelFormat, cfg.size));
+
+		std::map<unsigned int, ControlInfoMap> entityControls;
+		entityControls.emplace(0, data->sensor_->controls());
+
+		IPACameraSensorInfo sensorInfo;
+		data->sensor_->sensorInfo(&sensorInfo);
+
+		data->ipa_->configure(sensorInfo, streamConfig, entityControls);
+	}
+
 	return 0;
 }
 

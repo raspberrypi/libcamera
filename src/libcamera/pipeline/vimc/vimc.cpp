@@ -50,6 +50,7 @@ public:
 	}
 
 	int init();
+	int allocateMockIPABuffers();
 	void bufferReady(FrameBuffer *buffer);
 
 	MediaDevice *media_;
@@ -61,6 +62,7 @@ public:
 	Stream stream_;
 
 	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
+	std::vector<std::unique_ptr<FrameBuffer>> mockIPABufs_;
 };
 
 class VimcCameraConfiguration : public CameraConfiguration
@@ -500,6 +502,12 @@ int VimcCameraData::init()
 	if (raw_->open())
 		return -ENODEV;
 
+	ret = allocateMockIPABuffers();
+	if (ret < 0) {
+		LOG(VIMC, Warning) << "Cannot allocate mock IPA buffers";
+		return ret;
+	}
+
 	/* Initialise the supported controls. */
 	const ControlInfoMap &controls = sensor_->controls();
 	ControlInfoMap::Map ctrls;
@@ -546,6 +554,21 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 
 	pipe_->completeBuffer(request, buffer);
 	pipe_->completeRequest(request);
+}
+
+int VimcCameraData::allocateMockIPABuffers()
+{
+	constexpr unsigned int kBufCount = 2;
+
+	V4L2DeviceFormat format;
+	format.fourcc = video_->toV4L2PixelFormat(formats::BGR888);
+	format.size = Size (160, 120);
+
+	int ret = video_->setFormat(&format);
+	if (ret < 0)
+		return ret;
+
+	return video_->exportBuffers(kBufCount, &mockIPABufs_);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc)

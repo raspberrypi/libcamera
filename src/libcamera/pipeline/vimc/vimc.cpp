@@ -567,6 +567,18 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
+	/* If the buffer is cancelled force a complete of the whole request. */
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
+		for (auto it : request->buffers()) {
+			FrameBuffer *b = it.second;
+			b->cancel();
+			pipe_->completeBuffer(request, b);
+		}
+
+		pipe_->completeRequest(request);
+		return;
+	}
+
 	/* Record the sensor's timestamp in the request metadata. */
 	request->metadata().set(controls::SensorTimestamp,
 				buffer->metadata().timestamp);

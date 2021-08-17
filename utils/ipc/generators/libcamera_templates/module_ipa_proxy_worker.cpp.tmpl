@@ -164,7 +164,10 @@ private:
 
 		{{proxy_funcs.serialize_call(method|method_param_inputs, "_message.data()", "_message.fds()")}}
 
-		socket_.send(_message.payload());
+		int _ret = socket_.send(_message.payload());
+		if (_ret < 0)
+			LOG({{proxy_worker_name}}, Error)
+				<< "Sending event {{method.mojom_name}}() failed: " << _ret;
 
 		LOG({{proxy_worker_name}}, Debug) << "{{method.mojom_name}} done";
 	}

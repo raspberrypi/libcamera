@@ -13,9 +13,12 @@
 using namespace libcamera;
 using namespace std;
 
-CameraTest::CameraTest(const char *name)
+CameraTest::CameraTest(const char *name, bool isolate)
 {
 	cm_ = new CameraManager();
+
+	if (isolate)
+		setenv("LIBCAMERA_IPA_FORCE_ISOLATION", "1", 1);
 
 	if (cm_->start()) {
 		cerr << "Failed to start camera manager" << endl;

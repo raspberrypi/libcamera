@@ -17,7 +17,7 @@ using namespace libcamera;
 class CameraTest
 {
 public:
-	CameraTest(const char *name);
+	CameraTest(const char *name, bool isolate = false);
 	~CameraTest();
 
 protected:

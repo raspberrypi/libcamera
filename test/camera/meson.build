@@ -8,6 +8,7 @@ camera_tests = [
     ['buffer_import',           'buffer_import.cpp'],
     ['statemachine',            'statemachine.cpp'],
     ['capture',                 'capture.cpp'],
+    ['camera_reconfigure',      'camera_reconfigure.cpp'],
 ]
 
 foreach t : camera_tests

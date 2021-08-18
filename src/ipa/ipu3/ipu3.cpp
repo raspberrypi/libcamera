@@ -29,10 +29,10 @@
 
 #include "libcamera/internal/mapped_framebuffer.h"
 
+#include "algorithms/agc.h"
 #include "algorithms/algorithm.h"
 #include "algorithms/awb.h"
 #include "algorithms/tone_mapping.h"
-#include "ipu3_agc.h"
 #include "libipa/camera_sensor_helper.h"
 
 /**
@@ -187,8 +187,6 @@ private:
 	uint32_t minGain_;
 	uint32_t maxGain_;
 
-	/* Interface to the AEC/AGC algorithm */
-	std::unique_ptr<IPU3Agc> agcAlgo_;
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 
@@ -268,6 +266,7 @@ int IPAIPU3::init(const IPASettings &settings,
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
 
 	/* Construct our Algorithms */
+	algorithms_.push_back(std::make_unique<algorithms::Agc>());
 	algorithms_.push_back(std::make_unique<algorithms::Awb>());
 	algorithms_.push_back(std::make_unique<algorithms::ToneMapping>());
 
@@ -386,9 +385,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 			return ret;
 	}
 
-	agcAlgo_ = std::make_unique<IPU3Agc>();
-	agcAlgo_->configure(context_, configInfo);
-
 	return 0;
 }
 
@@ -476,15 +472,12 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 {
 	ControlList ctrls(controls::controls);
 
-	for (auto const &algo : algorithms_)
-		algo->process(context_, stats);
-
 	/* \todo These fields should not be written by the IPAIPU3 layer */
 	context_.frameContext.agc.gain = camHelper_->gain(gain_);
 	context_.frameContext.agc.exposure = exposure_;
-	agcAlgo_->process(context_, stats);
-	exposure_ = context_.frameContext.agc.exposure;
-	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
+
+	for (auto const &algo : algorithms_)
+		algo->process(context_, stats);
 
 	setControls(frame);
 
@@ -504,6 +497,9 @@ void IPAIPU3::setControls(unsigned int frame)
 {
 	IPU3Action op;
 	op.op = ActionSetSensorControls;
+
+	exposure_ = context_.frameContext.agc.exposure;
+	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));

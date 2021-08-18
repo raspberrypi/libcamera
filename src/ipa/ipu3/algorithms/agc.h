@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * ipu3_agc.h - IPU3 AGC/AEC control algorithm
+ * agc.h - IPU3 AGC/AEC control algorithm
  */
-#ifndef __LIBCAMERA_IPU3_AGC_H__
-#define __LIBCAMERA_IPU3_AGC_H__
+#ifndef __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
+#define __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
 
 #include <linux/intel-ipu3.h>
 
@@ -13,21 +13,21 @@
 
 #include <libcamera/geometry.h>
 
-#include "algorithms/algorithm.h"
+#include "algorithm.h"
 
 namespace libcamera {
 
 struct IPACameraSensorInfo;
 
-namespace ipa::ipu3 {
+namespace ipa::ipu3::algorithms {
 
 using utils::Duration;
 
-class IPU3Agc : public Algorithm
+class Agc : public Algorithm
 {
 public:
-	IPU3Agc();
-	~IPU3Agc() = default;
+	Agc();
+	~Agc() = default;
 
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
@@ -53,8 +53,8 @@ private:
 	Duration currentExposureNoDg_;
 };
 
-} /* namespace ipa::ipu3 */
+} /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */
 
-#endif /* __LIBCAMERA_IPU3_AGC_H__ */
+#endif /* __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__ */

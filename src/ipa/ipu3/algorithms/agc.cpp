@@ -5,7 +5,7 @@
  * ipu3_agc.cpp - AGC/AEC control algorithm
  */
 
-#include "ipu3_agc.h"
+#include "agc.h"
 
 #include <algorithm>
 #include <chrono>
@@ -21,7 +21,7 @@ namespace libcamera {
 
 using namespace std::literals::chrono_literals;
 
-namespace ipa::ipu3 {
+namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Agc)
 
@@ -50,14 +50,14 @@ static constexpr double kEvGainTarget = 0.5;
 /* A cell is 8 bytes and contains averages for RGB values and saturation ratio */
 static constexpr uint8_t kCellSize = 8;
 
-IPU3Agc::IPU3Agc()
+Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
 	  maxExposureTime_(0s), prevExposure_(0s), prevExposureNoDg_(0s),
 	  currentExposure_(0s), currentExposureNoDg_(0s)
 {
 }
 
-int IPU3Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
+int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 {
 	aeGrid_ = context.configuration.grid.bdsGrid;
 
@@ -68,7 +68,7 @@ int IPU3Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	return 0;
 }
 
-void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
+void Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 {
 	const struct ipu3_uapi_grid_config statsAeGrid = stats->stats_4a_config.awb_config.grid;
 	Rectangle aeRegion = { statsAeGrid.x_start,
@@ -109,7 +109,7 @@ void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 	iqMean_ = Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
 }
 
-void IPU3Agc::filterExposure()
+void Agc::filterExposure()
 {
 	double speed = 0.2;
 	if (prevExposure_ == 0s) {
@@ -143,7 +143,7 @@ void IPU3Agc::filterExposure()
 	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << prevExposure_;
 }
 
-void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
+void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 {
 	/* Algorithm initialization should wait for first valid frames */
 	/* \todo - have a number of frames given by DelayedControls ?
@@ -186,7 +186,7 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
 	lastFrame_ = frameCount_;
 }
 
-void IPU3Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
+void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	uint32_t &exposure = context.frameContext.agc.exposure;
 	double &gain = context.frameContext.agc.gain;
@@ -195,6 +195,6 @@ void IPU3Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	frameCount_++;
 }
 
-} /* namespace ipa::ipu3 */
+} /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

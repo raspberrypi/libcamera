@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * ipu3_awb.h - IPU3 AWB control algorithm
+ * awb.h - IPU3 AWB control algorithm
  */
-#ifndef __LIBCAMERA_IPU3_AWB_H__
-#define __LIBCAMERA_IPU3_AWB_H__
+#ifndef __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__
+#define __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__
 
 #include <vector>
 
@@ -13,21 +13,21 @@
 
 #include <libcamera/geometry.h>
 
-#include "algorithms/algorithm.h"
+#include "algorithm.h"
 
 namespace libcamera {
 
-namespace ipa::ipu3 {
+namespace ipa::ipu3::algorithms {
 
 /* Region size for the statistics generation algorithm */
 static constexpr uint32_t kAwbStatsSizeX = 16;
 static constexpr uint32_t kAwbStatsSizeY = 12;
 
-class IPU3Awb : public Algorithm
+class Awb : public Algorithm
 {
 public:
-	IPU3Awb();
-	~IPU3Awb();
+	Awb();
+	~Awb();
 
 	void prepare(IPAContext &context, ipu3_uapi_params *params) override;
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
@@ -85,7 +85,7 @@ private:
 	AwbStatus asyncResults_;
 };
 
-} /* namespace ipa::ipu3 */
+} /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera*/
-#endif /* __LIBCAMERA_IPU3_AWB_H__ */
+#endif /* __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__ */

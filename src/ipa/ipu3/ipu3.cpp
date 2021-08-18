@@ -30,9 +30,9 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 
 #include "algorithms/algorithm.h"
+#include "algorithms/awb.h"
 #include "algorithms/tone_mapping.h"
 #include "ipu3_agc.h"
-#include "ipu3_awb.h"
 #include "libipa/camera_sensor_helper.h"
 
 /**
@@ -187,8 +187,6 @@ private:
 	uint32_t minGain_;
 	uint32_t maxGain_;
 
-	/* Interface to the AWB algorithm */
-	std::unique_ptr<IPU3Awb> awbAlgo_;
 	/* Interface to the AEC/AGC algorithm */
 	std::unique_ptr<IPU3Agc> agcAlgo_;
 	/* Interface to the Camera Helper */
@@ -270,6 +268,7 @@ int IPAIPU3::init(const IPASettings &settings,
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
 
 	/* Construct our Algorithms */
+	algorithms_.push_back(std::make_unique<algorithms::Awb>());
 	algorithms_.push_back(std::make_unique<algorithms::ToneMapping>());
 
 	return 0;
@@ -387,7 +386,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 			return ret;
 	}
 
-	awbAlgo_ = std::make_unique<IPU3Awb>();
 	agcAlgo_ = std::make_unique<IPU3Agc>();
 	agcAlgo_->configure(context_, configInfo);
 
@@ -466,8 +464,6 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 	for (auto const &algo : algorithms_)
 		algo->prepare(context_, params);
 
-	awbAlgo_->prepare(context_, params);
-
 	IPU3Action op;
 	op.op = ActionParamFilled;
 
@@ -489,8 +485,6 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	agcAlgo_->process(context_, stats);
 	exposure_ = context_.frameContext.agc.exposure;
 	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
-
-	awbAlgo_->process(context_, stats);
 
 	setControls(frame);
 

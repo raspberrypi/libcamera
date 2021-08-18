@@ -2,9 +2,9 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * ipu3_awb.cpp - AWB control algorithm
+ * awb.cpp - AWB control algorithm
  */
-#include "ipu3_awb.h"
+#include "awb.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,7 +13,7 @@
 
 namespace libcamera {
 
-namespace ipa::ipu3 {
+namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Awb)
 
@@ -114,7 +114,7 @@ static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
 	0, 0, 8191, 0
 };
 
-IPU3Awb::IPU3Awb()
+Awb::Awb()
 	: Algorithm()
 {
 	asyncResults_.blueGain = 1.0;
@@ -125,7 +125,7 @@ IPU3Awb::IPU3Awb()
 	zones_.reserve(kAwbStatsSizeX * kAwbStatsSizeY);
 }
 
-IPU3Awb::~IPU3Awb() = default;
+Awb::~Awb() = default;
 
 /**
  * The function estimates the correlated color temperature using
@@ -141,7 +141,7 @@ IPU3Awb::~IPU3Awb() = default;
  * More detailed information can be found in:
  * https://en.wikipedia.org/wiki/Color_temperature#Approximation
  */
-uint32_t IPU3Awb::estimateCCT(double red, double green, double blue)
+uint32_t Awb::estimateCCT(double red, double green, double blue)
 {
 	/* Convert the RGB values to CIE tristimulus values (XYZ) */
 	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
@@ -158,7 +158,7 @@ uint32_t IPU3Awb::estimateCCT(double red, double green, double blue)
 }
 
 /* Generate an RGB vector with the average values for each region */
-void IPU3Awb::generateZones(std::vector<RGB> &zones)
+void Awb::generateZones(std::vector<RGB> &zones)
 {
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
 		RGB zone;
@@ -175,7 +175,7 @@ void IPU3Awb::generateZones(std::vector<RGB> &zones)
 }
 
 /* Translate the IPU3 statistics into the default statistics region array */
-void IPU3Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
+void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
 {
 	uint32_t regionWidth = round(awbGrid_.width / static_cast<double>(kAwbStatsSizeX));
 	uint32_t regionHeight = round(awbGrid_.height / static_cast<double>(kAwbStatsSizeY));
@@ -207,7 +207,7 @@ void IPU3Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
 	}
 }
 
-void IPU3Awb::clearAwbStats()
+void Awb::clearAwbStats()
 {
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
 		awbStats_[i].bSum = 0;
@@ -218,7 +218,7 @@ void IPU3Awb::clearAwbStats()
 	}
 }
 
-void IPU3Awb::awbGreyWorld()
+void Awb::awbGreyWorld()
 {
 	LOG(IPU3Awb, Debug) << "Grey world AWB";
 	/*
@@ -258,7 +258,7 @@ void IPU3Awb::awbGreyWorld()
 	asyncResults_.blueGain = blueGain;
 }
 
-void IPU3Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
+void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 {
 	ASSERT(stats->stats_3a_status.awb_en);
 	zones_.clear();
@@ -273,7 +273,7 @@ void IPU3Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 	}
 }
 
-void IPU3Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
+void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	calculateWBGains(stats);
 
@@ -287,7 +287,7 @@ void IPU3Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	context.frameContext.awb.gains.red = asyncResults_.redGain;
 }
 
-void IPU3Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
+void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 {
 	params->acc_param.awb.config.rgbs_thr_gr = 8191;
 	params->acc_param.awb.config.rgbs_thr_r = 8191;
@@ -336,6 +336,6 @@ void IPU3Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 	params->use.acc_ccm = 1;
 }
 
-} /* namespace ipa::ipu3 */
+} /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

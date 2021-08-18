@@ -110,7 +110,8 @@ QImage ViewFinderGL::getCurrentImage()
 	return grabFramebuffer();
 }
 
-void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
+void ViewFinderGL::render(libcamera::FrameBuffer *buffer,
+			  libcamera::Span<uint8_t> mem)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
@@ -120,7 +121,7 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
 	if (buffer_)
 		renderComplete(buffer_);
 
-	data_ = static_cast<unsigned char *>(map->memory);
+	data_ = mem.data();
 	/*
 	 * \todo Get the stride from the buffer instead of computing it naively
 	 */

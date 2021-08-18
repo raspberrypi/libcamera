@@ -106,7 +106,7 @@ private:
 	FrameBufferAllocator *allocator_;
 
 	std::unique_ptr<CameraConfiguration> config_;
-	std::map<FrameBuffer *, MappedBuffer> mappedBuffers_;
+	std::map<FrameBuffer *, Span<uint8_t>> mappedBuffers_;
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;

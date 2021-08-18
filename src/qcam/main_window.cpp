@@ -474,7 +474,8 @@ int MainWindow::startCapture()
 			const FrameBuffer::Plane &plane = buffer->planes().front();
 			void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
 					    plane.fd.fd(), 0);
-			mappedBuffers_[buffer.get()] = { memory, plane.length };
+			mappedBuffers_[buffer.get()] = { static_cast<uint8_t *>(memory),
+							 plane.length };
 
 			/* Store buffers on the free list. */
 			freeBuffers_[stream].enqueue(buffer.get());
@@ -537,8 +538,8 @@ error:
 	requests_.clear();
 
 	for (auto &iter : mappedBuffers_) {
-		const MappedBuffer &buffer = iter.second;
-		munmap(buffer.memory, buffer.size);
+		const Span<uint8_t> &buffer = iter.second;
+		munmap(buffer.data(), buffer.size());
 	}
 	mappedBuffers_.clear();
 
@@ -573,8 +574,8 @@ void MainWindow::stopCapture()
 	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
 
 	for (auto &iter : mappedBuffers_) {
-		const MappedBuffer &buffer = iter.second;
-		munmap(buffer.memory, buffer.size);
+		const Span<uint8_t> &buffer = iter.second;
+		munmap(buffer.data(), buffer.size());
 	}
 	mappedBuffers_.clear();
 
@@ -673,10 +674,10 @@ void MainWindow::processRaw(FrameBuffer *buffer,
 							"DNG Files (*.dng)");
 
 	if (!filename.isEmpty()) {
-		const MappedBuffer &mapped = mappedBuffers_[buffer];
+		const Span<uint8_t> &mapped = mappedBuffers_[buffer];
 		DNGWriter::write(filename.toStdString().c_str(), camera_.get(),
 				 rawStream_->configuration(), metadata, buffer,
-				 mapped.memory);
+				 mapped.data());
 	}
 #endif
 
@@ -753,7 +754,7 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 		<< "fps:" << Qt::fixed << qSetRealNumberPrecision(2) << fps;
 
 	/* Render the frame on the viewfinder. */
-	viewfinder_->render(buffer, &mappedBuffers_[buffer]);
+	viewfinder_->render(buffer, mappedBuffers_[buffer]);
 }
 
 void MainWindow::queueRequest(FrameBuffer *buffer)

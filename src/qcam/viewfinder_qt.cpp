@@ -78,14 +78,15 @@ int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
 	return 0;
 }
 
-void ViewFinderQt::render(libcamera::FrameBuffer *buffer, MappedBuffer *map)
+void ViewFinderQt::render(libcamera::FrameBuffer *buffer,
+			  libcamera::Span<uint8_t> mem)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
 		return;
 	}
 
-	unsigned char *memory = static_cast<unsigned char *>(map->memory);
+	unsigned char *memory = mem.data();
 	size_t size = buffer->metadata().planes[0].bytesused;
 
 	{

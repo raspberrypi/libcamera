@@ -260,7 +260,8 @@ int IPCUnixSocket::sendData(const void *buffer, size_t length,
 	msg.msg_control = cmsg;
 	msg.msg_controllen = cmsg->cmsg_len;
 	msg.msg_flags = 0;
-	memcpy(CMSG_DATA(cmsg), fds, num * sizeof(uint32_t));
+	if (fds)
+		memcpy(CMSG_DATA(cmsg), fds, num * sizeof(uint32_t));
 
 	if (sendmsg(fd_, &msg, 0) < 0) {
 		int ret = -errno;
@@ -304,7 +305,8 @@ int IPCUnixSocket::recvData(void *buffer, size_t length,
 		return ret;
 	}
 
-	memcpy(fds, CMSG_DATA(cmsg), num * sizeof(uint32_t));
+	if (fds)
+		memcpy(fds, CMSG_DATA(cmsg), num * sizeof(uint32_t));
 
 	return 0;
 }

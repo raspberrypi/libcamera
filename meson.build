@@ -108,10 +108,6 @@ if cc.has_argument('-Wno-c99-designator')
     ]
 endif
 
-# Do not warn when a function declaration hides virtual functions from
-# a base class
-cpp_arguments += '-Wno-overloaded-virtual'
-
 c_arguments += common_arguments
 cpp_arguments += common_arguments
 

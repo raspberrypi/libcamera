@@ -25,6 +25,11 @@ struct IPASessionConfiguration {
 
 struct IPAFrameContext {
 	struct {
+		uint32_t exposure;
+		double gain;
+	} agc;
+
+	struct {
 		struct {
 			double red;
 			double green;

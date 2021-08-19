@@ -29,10 +29,8 @@ public:
 	IPU3Agc();
 	~IPU3Agc() = default;
 
-	void initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraSensorInfo &sensorInfo);
-	void process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, double &gain);
-	bool converged() { return converged_; }
-	bool updateControls() { return updateControls_; }
+	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
+	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
 private:
 	void processBrightness(const ipu3_uapi_stats_3a *stats);
@@ -43,9 +41,6 @@ private:
 
 	uint64_t frameCount_;
 	uint64_t lastFrame_;
-
-	bool converged_;
-	bool updateControls_;
 
 	double iqMean_;
 

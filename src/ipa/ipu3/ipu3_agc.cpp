@@ -51,20 +51,21 @@ static constexpr double kEvGainTarget = 0.5;
 static constexpr uint8_t kCellSize = 8;
 
 IPU3Agc::IPU3Agc()
-	: frameCount_(0), lastFrame_(0), converged_(false),
-	  updateControls_(false), iqMean_(0.0),
-	  lineDuration_(0s), maxExposureTime_(0s),
-	  prevExposure_(0s), prevExposureNoDg_(0s),
+	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
+	  maxExposureTime_(0s), prevExposure_(0s), prevExposureNoDg_(0s),
 	  currentExposure_(0s), currentExposureNoDg_(0s)
 {
 }
 
-void IPU3Agc::initialise(struct ipu3_uapi_grid_config &bdsGrid, const IPACameraSensorInfo &sensorInfo)
+int IPU3Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 {
-	aeGrid_ = bdsGrid;
+	aeGrid_ = context.configuration.grid.bdsGrid;
 
-	lineDuration_ = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
+	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
+		      / configInfo.sensorInfo.pixelRate;
 	maxExposureTime_ = kMaxExposure * lineDuration_;
+
+	return 0;
 }
 
 void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
@@ -144,8 +145,6 @@ void IPU3Agc::filterExposure()
 
 void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
 {
-	updateControls_ = false;
-
 	/* Algorithm initialization should wait for first valid frames */
 	/* \todo - have a number of frames given by DelayedControls ?
 	 * - implement a function for IIR */
@@ -155,7 +154,6 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
 	/* Are we correctly exposed ? */
 	if (std::abs(iqMean_ - kEvGainTarget * knumHistogramBins) <= 1) {
 		LOG(IPU3Agc, Debug) << "!!! Good exposure with iqMean = " << iqMean_;
-		converged_ = true;
 	} else {
 		double newGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
@@ -178,20 +176,20 @@ void IPU3Agc::lockExposureGain(uint32_t &exposure, double &gain)
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_), kMinExposure, kMaxExposure);
 			newExposure = currentExposure_ / exposure;
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / newExposure), kMinGain, kMaxGain);
-			updateControls_ = true;
 		} else if (currentShutter >= maxExposureTime_) {
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / currentExposureNoDg_), kMinGain, kMaxGain);
 			newExposure = currentExposure_ / gain;
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / newExposure), kMinExposure, kMaxExposure);
-			updateControls_ = true;
 		}
 		LOG(IPU3Agc, Debug) << "Adjust exposure " << exposure * lineDuration_ << " and gain " << gain;
 	}
 	lastFrame_ = frameCount_;
 }
 
-void IPU3Agc::process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, double &gain)
+void IPU3Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
+	uint32_t &exposure = context.frameContext.agc.exposure;
+	double &gain = context.frameContext.agc.gain;
 	processBrightness(stats);
 	lockExposureGain(exposure, gain);
 	frameCount_++;

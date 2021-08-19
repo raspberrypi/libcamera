@@ -93,6 +93,22 @@
  */
 
 /**
+ * \struct IPAFrameContext::agc
+ * \brief Context for the Automatic Gain Control algorithm
+ *
+ * The exposure and gain determined are expected to be applied to the sensor
+ * at the earliest opportunity.
+ *
+ * \var IPAFrameContext::agc::exposure
+ * \brief Exposure time expressed as a number of lines
+ *
+ * \var IPAFrameContext::agc::gain
+ * \brief Analogue gain multiplier
+ *
+ * The gain should be adapted to the sensor specific gain code before applying.
+ */
+
+/**
  * \struct IPAFrameContext::awb
  * \brief Context for the Automatic White Balance algorithm
  *
@@ -183,7 +199,6 @@ private:
 
 	/* Local parameter storage */
 	struct IPAContext context_;
-	struct ipu3_uapi_params params_;
 };
 
 /**
@@ -361,8 +376,7 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 
 	defVBlank_ = itVBlank->second.def().get<int32_t>();
 
-	/* Clean context and IPU3 parameters at configuration */
-	params_ = {};
+	/* Clean context at configuration */
 	context_ = {};
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
@@ -375,7 +389,7 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 
 	awbAlgo_ = std::make_unique<IPU3Awb>();
 	agcAlgo_ = std::make_unique<IPU3Agc>();
-	agcAlgo_->initialise(context_.configuration.grid.bdsGrid, sensorInfo_);
+	agcAlgo_->configure(context_, configInfo);
 
 	return 0;
 }
@@ -450,12 +464,9 @@ void IPAIPU3::processControls([[maybe_unused]] unsigned int frame,
 void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 {
 	for (auto const &algo : algorithms_)
-		algo->prepare(context_, &params_);
+		algo->prepare(context_, params);
 
-	if (agcAlgo_->updateControls())
-		awbAlgo_->prepare(context_, &params_);
-
-	*params = params_;
+	awbAlgo_->prepare(context_, params);
 
 	IPU3Action op;
 	op.op = ActionParamFilled;
@@ -472,14 +483,16 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	for (auto const &algo : algorithms_)
 		algo->process(context_, stats);
 
-	double gain = camHelper_->gain(gain_);
-	agcAlgo_->process(stats, exposure_, gain);
-	gain_ = camHelper_->gainCode(gain);
+	/* \todo These fields should not be written by the IPAIPU3 layer */
+	context_.frameContext.agc.gain = camHelper_->gain(gain_);
+	context_.frameContext.agc.exposure = exposure_;
+	agcAlgo_->process(context_, stats);
+	exposure_ = context_.frameContext.agc.exposure;
+	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
 
 	awbAlgo_->process(context_, stats);
 
-	if (agcAlgo_->updateControls())
-		setControls(frame);
+	setControls(frame);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
 	int64_t frameDuration = sensorInfo_.lineLength * (defVBlank_ + sensorInfo_.outputSize.height) /

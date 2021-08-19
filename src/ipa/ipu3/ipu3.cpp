@@ -29,6 +29,7 @@
 
 #include "libcamera/internal/mapped_framebuffer.h"
 
+#include "algorithms/algorithm.h"
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"
 #include "libipa/camera_sensor_helper.h"
@@ -77,6 +78,17 @@
  * single frame context stores data related to both the current frame
  * and the previous frames, with fields being updated as the algorithms
  * are run. This needs to be turned into real per-frame data storage.
+ */
+
+/**
+ * \struct IPASessionConfiguration::grid
+ * \brief Grid configuration of the IPA
+ *
+ * \var IPASessionConfiguration::grid::bdsGrid
+ * \brief Bayer Down Scaler grid plane config used by the kernel
+ *
+ * \var IPASessionConfiguration::grid::bdsOutputSize
+ * \brief BDS output size configured by the pipeline handler
  */
 
 static constexpr uint32_t kMaxCellWidthPerSet = 160;
@@ -137,10 +149,12 @@ private:
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 
-	/* Local parameter storage */
-	struct ipu3_uapi_params params_;
+	/* Maintain the algorithms used by the IPA */
+	std::list<std::unique_ptr<ipa::ipu3::Algorithm>> algorithms_;
 
-	struct ipu3_uapi_grid_config bdsGrid_;
+	/* Local parameter storage */
+	struct IPAContext context_;
+	struct ipu3_uapi_params params_;
 };
 
 /**
@@ -237,7 +251,9 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 	uint32_t minError = std::numeric_limits<uint32_t>::max();
 	Size best;
 	Size bestLog2;
-	bdsGrid_ = {};
+
+	/* Set the BDS output size in the IPAConfiguration structure */
+	context_.configuration.grid.bdsOutputSize = bdsOutputSize;
 
 	for (uint32_t widthShift = 3; widthShift <= 7; ++widthShift) {
 		uint32_t width = std::min(kMaxCellWidthPerSet,
@@ -261,14 +277,17 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 		}
 	}
 
-	bdsGrid_.width = best.width >> bestLog2.width;
-	bdsGrid_.block_width_log2 = bestLog2.width;
-	bdsGrid_.height = best.height >> bestLog2.height;
-	bdsGrid_.block_height_log2 = bestLog2.height;
+	struct ipu3_uapi_grid_config &bdsGrid = context_.configuration.grid.bdsGrid;
+	bdsGrid.x_start = 0;
+	bdsGrid.y_start = 0;
+	bdsGrid.width = best.width >> bestLog2.width;
+	bdsGrid.block_width_log2 = bestLog2.width;
+	bdsGrid.height = best.height >> bestLog2.height;
+	bdsGrid.block_height_log2 = bestLog2.height;
 
 	LOG(IPAIPU3, Debug) << "Best grid found is: ("
-			    << (int)bdsGrid_.width << " << " << (int)bdsGrid_.block_width_log2 << ") x ("
-			    << (int)bdsGrid_.height << " << " << (int)bdsGrid_.block_height_log2 << ")";
+			    << (int)bdsGrid.width << " << " << (int)bdsGrid.block_width_log2 << ") x ("
+			    << (int)bdsGrid.height << " << " << (int)bdsGrid.block_height_log2 << ")";
 }
 
 int IPAIPU3::configure(const IPAConfigInfo &configInfo)
@@ -310,15 +329,23 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 
 	defVBlank_ = itVBlank->second.def().get<int32_t>();
 
+	/* Clean context and IPU3 parameters at configuration */
 	params_ = {};
+	context_ = {};
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
-	awbAlgo_ = std::make_unique<IPU3Awb>();
-	awbAlgo_->initialise(params_, configInfo.bdsOutputSize, bdsGrid_);
+	for (auto const &algo : algorithms_) {
+		int ret = algo->configure(context_, configInfo);
+		if (ret)
+			return ret;
+	}
 
+	awbAlgo_ = std::make_unique<IPU3Awb>();
+	awbAlgo_->initialise(params_, context_.configuration.grid.bdsOutputSize,
+			     context_.configuration.grid.bdsGrid);
 	agcAlgo_ = std::make_unique<IPU3Agc>();
-	agcAlgo_->initialise(bdsGrid_, sensorInfo_);
+	agcAlgo_->initialise(context_.configuration.grid.bdsGrid, sensorInfo_);
 
 	return 0;
 }
@@ -392,6 +419,9 @@ void IPAIPU3::processControls([[maybe_unused]] unsigned int frame,
 
 void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 {
+	for (auto const &algo : algorithms_)
+		algo->prepare(context_, &params_);
+
 	if (agcAlgo_->updateControls())
 		awbAlgo_->updateWbParameters(params_, agcAlgo_->gamma());
 
@@ -408,6 +438,9 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 			      [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	ControlList ctrls(controls::controls);
+
+	for (auto const &algo : algorithms_)
+		algo->process(context_, stats);
 
 	double gain = camHelper_->gain(gain_);
 	agcAlgo_->process(stats, exposure_, gain);

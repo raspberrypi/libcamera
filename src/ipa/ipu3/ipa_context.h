@@ -10,11 +10,17 @@
 
 #include <linux/intel-ipu3.h>
 
+#include <libcamera/geometry.h>
+
 namespace libcamera {
 
 namespace ipa::ipu3 {
 
 struct IPASessionConfiguration {
+	struct {
+		ipu3_uapi_grid_config bdsGrid;
+		Size bdsOutputSize;
+	} grid;
 };
 
 struct IPAFrameContext {

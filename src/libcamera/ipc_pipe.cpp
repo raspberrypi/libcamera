@@ -106,8 +106,11 @@ IPCUnixSocket::Payload IPCMessage::payload() const
 
 	memcpy(payload.data.data(), &header_, sizeof(Header));
 
-	/* \todo Make this work without copy */
-	memcpy(payload.data.data() + sizeof(Header), data_.data(), data_.size());
+	if (data_.size() > 0) {
+		/* \todo Make this work without copy */
+		memcpy(payload.data.data() + sizeof(Header),
+		       data_.data(), data_.size());
+	}
 
 	for (const FileDescriptor &fd : fds_)
 		payload.fds.push_back(fd.fd());

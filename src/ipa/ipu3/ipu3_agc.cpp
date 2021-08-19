@@ -52,7 +52,7 @@ static constexpr uint8_t kCellSize = 8;
 
 IPU3Agc::IPU3Agc()
 	: frameCount_(0), lastFrame_(0), converged_(false),
-	  updateControls_(false), iqMean_(0.0), gamma_(1.0),
+	  updateControls_(false), iqMean_(0.0),
 	  lineDuration_(0s), maxExposureTime_(0s),
 	  prevExposure_(0s), prevExposureNoDg_(0s),
 	  currentExposure_(0s), currentExposureNoDg_(0s)
@@ -103,9 +103,6 @@ void IPU3Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 			}
 		}
 	}
-
-	/* Limit the gamma effect for now */
-	gamma_ = 1.1;
 
 	/* Estimate the quantile mean of the top 2% of the histogram */
 	iqMean_ = Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);

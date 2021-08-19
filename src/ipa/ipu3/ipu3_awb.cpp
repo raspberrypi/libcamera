@@ -133,31 +133,6 @@ static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
 	0, 0, 8191, 0
 };
 
-/* Default settings for Gamma correction */
-const struct ipu3_uapi_gamma_corr_lut imguCssGammaLut = { {
-	63, 79, 95, 111, 127, 143, 159, 175, 191, 207, 223, 239, 255, 271, 287,
-	303, 319, 335, 351, 367, 383, 399, 415, 431, 447, 463, 479, 495, 511,
-	527, 543, 559, 575, 591, 607, 623, 639, 655, 671, 687, 703, 719, 735,
-	751, 767, 783, 799, 815, 831, 847, 863, 879, 895, 911, 927, 943, 959,
-	975, 991, 1007, 1023, 1039, 1055, 1071, 1087, 1103, 1119, 1135, 1151,
-	1167, 1183, 1199, 1215, 1231, 1247, 1263, 1279, 1295, 1311, 1327, 1343,
-	1359, 1375, 1391, 1407, 1423, 1439, 1455, 1471, 1487, 1503, 1519, 1535,
-	1551, 1567, 1583, 1599, 1615, 1631, 1647, 1663, 1679, 1695, 1711, 1727,
-	1743, 1759, 1775, 1791, 1807, 1823, 1839, 1855, 1871, 1887, 1903, 1919,
-	1935, 1951, 1967, 1983, 1999, 2015, 2031, 2047, 2063, 2079, 2095, 2111,
-	2143, 2175, 2207, 2239, 2271, 2303, 2335, 2367, 2399, 2431, 2463, 2495,
-	2527, 2559, 2591, 2623, 2655, 2687, 2719, 2751, 2783, 2815, 2847, 2879,
-	2911, 2943, 2975, 3007, 3039, 3071, 3103, 3135, 3167, 3199, 3231, 3263,
-	3295, 3327, 3359, 3391, 3423, 3455, 3487, 3519, 3551, 3583, 3615, 3647,
-	3679, 3711, 3743, 3775, 3807, 3839, 3871, 3903, 3935, 3967, 3999, 4031,
-	4063, 4095, 4127, 4159, 4223, 4287, 4351, 4415, 4479, 4543, 4607, 4671,
-	4735, 4799, 4863, 4927, 4991, 5055, 5119, 5183, 5247, 5311, 5375, 5439,
-	5503, 5567, 5631, 5695, 5759, 5823, 5887, 5951, 6015, 6079, 6143, 6207,
-	6271, 6335, 6399, 6463, 6527, 6591, 6655, 6719, 6783, 6847, 6911, 6975,
-	7039, 7103, 7167, 7231, 7295, 7359, 7423, 7487, 7551, 7615, 7679, 7743,
-	7807, 7871, 7935, 7999, 8063, 8127, 8191
-} };
-
 IPU3Awb::IPU3Awb()
 	: Algorithm()
 {
@@ -196,10 +171,6 @@ void IPU3Awb::initialise(ipu3_uapi_params &params, const Size &bdsOutputSize, st
 
 	params.use.acc_ccm = 1;
 	params.acc_param.ccm = imguCssCcmDefault;
-
-	params.use.acc_gamma = 1;
-	params.acc_param.gamma.gc_lut = imguCssGammaLut;
-	params.acc_param.gamma.gc_ctrl.enable = 1;
 
 	zones_.reserve(kAwbStatsSizeX * kAwbStatsSizeY);
 }
@@ -350,7 +321,7 @@ void IPU3Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 	}
 }
 
-void IPU3Awb::updateWbParameters(ipu3_uapi_params &params, double agcGamma)
+void IPU3Awb::updateWbParameters(ipu3_uapi_params &params)
 {
 	/*
 	 * Green gains should not be touched and considered 1.
@@ -362,18 +333,10 @@ void IPU3Awb::updateWbParameters(ipu3_uapi_params &params, double agcGamma)
 	params.acc_param.bnr.wb_gains.b = 4096 * asyncResults_.blueGain;
 	params.acc_param.bnr.wb_gains.gb = 16;
 
-	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK
-			    << " and gamma calculated: " << agcGamma;
+	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
 
 	/* The CCM matrix may change when color temperature will be used */
 	params.acc_param.ccm = imguCssCcmDefault;
-
-	for (uint32_t i = 0; i < 256; i++) {
-		double j = i / 255.0;
-		double gamma = std::pow(j, 1.0 / agcGamma);
-		/* The maximum value 255 is represented on 13 bits in the IPU3 */
-		params.acc_param.gamma.gc_lut.lut[i] = gamma * 8191;
-	}
 }
 
 } /* namespace ipa::ipu3 */

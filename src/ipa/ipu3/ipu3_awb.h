@@ -31,7 +31,7 @@ public:
 
 	void initialise(ipu3_uapi_params &params, const Size &bdsOutputSize, struct ipu3_uapi_grid_config &bdsGrid);
 	void calculateWBGains(const ipu3_uapi_stats_3a *stats);
-	void updateWbParameters(ipu3_uapi_params &params, double agcGamma);
+	void updateWbParameters(ipu3_uapi_params &params);
 
 	struct Ipu3AwbCell {
 		unsigned char greenRedAvg;

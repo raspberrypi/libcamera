@@ -30,6 +30,7 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 
 #include "algorithms/algorithm.h"
+#include "algorithms/tone_mapping.h"
 #include "ipu3_agc.h"
 #include "ipu3_awb.h"
 #include "libipa/camera_sensor_helper.h"
@@ -89,6 +90,17 @@
  *
  * \var IPASessionConfiguration::grid::bdsOutputSize
  * \brief BDS output size configured by the pipeline handler
+ */
+
+/**
+ * \struct IPAFrameContext::toneMapping
+ * \brief Context for ToneMapping and Gamma control
+ *
+ * \var IPAFrameContext::toneMapping::gammaCorrection
+ * \brief Per-pixel tone mapping implemented as a LUT
+ *
+ * The LUT structure is defined by the IPU3 kernel interface. See
+ * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
  */
 
 static constexpr uint32_t kMaxCellWidthPerSet = 160;
@@ -224,6 +236,9 @@ int IPAIPU3::init(const IPASettings &settings,
 							       frameDurations[2]);
 
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
+
+	/* Construct our Algorithms */
+	algorithms_.push_back(std::make_unique<algorithms::ToneMapping>());
 
 	return 0;
 }
@@ -423,7 +438,7 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 		algo->prepare(context_, &params_);
 
 	if (agcAlgo_->updateControls())
-		awbAlgo_->updateWbParameters(params_, agcAlgo_->gamma());
+		awbAlgo_->updateWbParameters(params_);
 
 	*params = params_;
 

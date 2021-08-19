@@ -33,8 +33,6 @@ public:
 	void process(const ipu3_uapi_stats_3a *stats, uint32_t &exposure, double &gain);
 	bool converged() { return converged_; }
 	bool updateControls() { return updateControls_; }
-	/* \todo Use a metadata exchange between IPAs */
-	double gamma() { return gamma_; }
 
 private:
 	void processBrightness(const ipu3_uapi_stats_3a *stats);
@@ -50,7 +48,6 @@ private:
 	bool updateControls_;
 
 	double iqMean_;
-	double gamma_;
 
 	Duration lineDuration_;
 	Duration maxExposureTime_;

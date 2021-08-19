@@ -24,6 +24,9 @@ struct IPASessionConfiguration {
 };
 
 struct IPAFrameContext {
+	struct {
+		struct ipu3_uapi_gamma_corr_lut gammaCorrection;
+	} toneMapping;
 };
 
 struct IPAContext {

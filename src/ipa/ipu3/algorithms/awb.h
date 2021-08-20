@@ -71,14 +71,14 @@ public:
 	};
 
 private:
-	void calculateWBGains(const ipu3_uapi_stats_3a *stats);
+	void calculateWBGains(const ipu3_uapi_stats_3a *stats,
+			      const ipu3_uapi_grid_config &grid);
 	void generateZones(std::vector<RGB> &zones);
-	void generateAwbStats(const ipu3_uapi_stats_3a *stats);
+	void generateAwbStats(const ipu3_uapi_stats_3a *stats,
+			      const ipu3_uapi_grid_config &grid);
 	void clearAwbStats();
 	void awbGreyWorld();
 	uint32_t estimateCCT(double red, double green, double blue);
-
-	struct ipu3_uapi_grid_config awbGrid_;
 
 	std::vector<RGB> zones_;
 	IspStatsRegion awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];

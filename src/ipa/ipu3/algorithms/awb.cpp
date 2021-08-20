@@ -175,20 +175,21 @@ void Awb::generateZones(std::vector<RGB> &zones)
 }
 
 /* Translate the IPU3 statistics into the default statistics region array */
-void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
+void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats,
+			   const ipu3_uapi_grid_config &grid)
 {
-	uint32_t regionWidth = round(awbGrid_.width / static_cast<double>(kAwbStatsSizeX));
-	uint32_t regionHeight = round(awbGrid_.height / static_cast<double>(kAwbStatsSizeY));
+	uint32_t regionWidth = round(grid.width / static_cast<double>(kAwbStatsSizeX));
+	uint32_t regionHeight = round(grid.height / static_cast<double>(kAwbStatsSizeY));
 
 	/*
 	 * Generate a (kAwbStatsSizeX x kAwbStatsSizeY) array from the IPU3 grid which is
-	 * (awbGrid_.width x awbGrid_.height).
+	 * (grid.width x grid.height).
 	 */
 	for (unsigned int j = 0; j < kAwbStatsSizeY * regionHeight; j++) {
 		for (unsigned int i = 0; i < kAwbStatsSizeX * regionWidth; i++) {
-			uint32_t cellPosition = j * awbGrid_.width + i;
+			uint32_t cellPosition = j * grid.width + i;
 			uint32_t cellX = (cellPosition / regionWidth) % kAwbStatsSizeX;
-			uint32_t cellY = ((cellPosition / awbGrid_.width) / regionHeight) % kAwbStatsSizeY;
+			uint32_t cellY = ((cellPosition / grid.width) / regionHeight) % kAwbStatsSizeY;
 
 			uint32_t awbRegionPosition = cellY * kAwbStatsSizeX + cellX;
 			cellPosition *= 8;
@@ -258,12 +259,13 @@ void Awb::awbGreyWorld()
 	asyncResults_.blueGain = blueGain;
 }
 
-void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
+void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats,
+			   const ipu3_uapi_grid_config &grid)
 {
 	ASSERT(stats->stats_3a_status.awb_en);
 	zones_.clear();
 	clearAwbStats();
-	generateAwbStats(stats);
+	generateAwbStats(stats, grid);
 	generateZones(zones_);
 	LOG(IPU3Awb, Debug) << "Valid zones: " << zones_.size();
 	if (zones_.size() > 10) {
@@ -275,7 +277,7 @@ void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 
 void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	calculateWBGains(stats);
+	calculateWBGains(stats, context.configuration.grid.bdsGrid);
 
 	/*
 	 * Gains are only recalculated if enough zones were detected.
@@ -296,7 +298,7 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 					       | IPU3_UAPI_AWB_RGBS_THR_B_EN
 					       | 8191;
 
-	awbGrid_ = context.configuration.grid.bdsGrid;
+	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
 
 	params->acc_param.awb.config.grid = context.configuration.grid.bdsGrid;
 
@@ -310,8 +312,8 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 	params->acc_param.bnr = imguCssBnrDefaults;
 	Size &bdsOutputSize = context.configuration.grid.bdsOutputSize;
 	params->acc_param.bnr.column_size = bdsOutputSize.width;
-	params->acc_param.bnr.opt_center.x_reset = awbGrid_.x_start - (bdsOutputSize.width / 2);
-	params->acc_param.bnr.opt_center.y_reset = awbGrid_.y_start - (bdsOutputSize.height / 2);
+	params->acc_param.bnr.opt_center.x_reset = grid.x_start - (bdsOutputSize.width / 2);
+	params->acc_param.bnr.opt_center.y_reset = grid.y_start - (bdsOutputSize.height / 2);
 	params->acc_param.bnr.opt_center_sqr.x_sqr_reset = params->acc_param.bnr.opt_center.x_reset
 							* params->acc_param.bnr.opt_center.x_reset;
 	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset

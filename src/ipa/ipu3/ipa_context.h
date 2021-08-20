@@ -25,6 +25,14 @@ struct IPASessionConfiguration {
 
 struct IPAFrameContext {
 	struct {
+		struct {
+			double red;
+			double green;
+			double blue;
+		} gains;
+	} awb;
+
+	struct {
 		struct ipu3_uapi_gamma_corr_lut gammaCorrection;
 	} toneMapping;
 };

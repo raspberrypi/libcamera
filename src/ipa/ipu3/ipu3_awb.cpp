@@ -107,25 +107,6 @@ static const struct ipu3_uapi_bnr_static_config imguCssBnrDefaults = {
 	.opt_center_sqr = { 419904, 133956 },
 };
 
-/* Default settings for Auto White Balance replicated from the Kernel*/
-static const struct ipu3_uapi_awb_config_s imguCssAwbDefaults = {
-	.rgbs_thr_gr = 8191,
-	.rgbs_thr_r = 8191,
-	.rgbs_thr_gb = 8191,
-	.rgbs_thr_b = 8191 | IPU3_UAPI_AWB_RGBS_THR_B_EN | IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT,
-	.grid = {
-		.width = 160,
-		.height = 36,
-		.block_width_log2 = 3,
-		.block_height_log2 = 4,
-		.height_per_slice = 1, /* Overridden by kernel. */
-		.x_start = 0,
-		.y_start = 0,
-		.x_end = 0,
-		.y_end = 0,
-	},
-};
-
 /* Default color correction matrix defined as an identity matrix */
 static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
 	8191, 0, 0, 0,
@@ -140,40 +121,11 @@ IPU3Awb::IPU3Awb()
 	asyncResults_.greenGain = 1.0;
 	asyncResults_.redGain = 1.0;
 	asyncResults_.temperatureK = 4500;
-}
-
-IPU3Awb::~IPU3Awb()
-{
-}
-
-void IPU3Awb::initialise(ipu3_uapi_params &params, const Size &bdsOutputSize, struct ipu3_uapi_grid_config &bdsGrid)
-{
-	params.use.acc_awb = 1;
-	params.acc_param.awb.config = imguCssAwbDefaults;
-
-	awbGrid_ = bdsGrid;
-	params.acc_param.awb.config.grid = awbGrid_;
-
-	params.use.acc_bnr = 1;
-	params.acc_param.bnr = imguCssBnrDefaults;
-	/**
-	 * Optical center is column (respectively row) startminus X (respectively Y) center.
-	 * For the moment use BDS as a first approximation, but it should
-	 * be calculated based on Shading (SHD) parameters.
-	 */
-	params.acc_param.bnr.column_size = bdsOutputSize.width;
-	params.acc_param.bnr.opt_center.x_reset = awbGrid_.x_start - (bdsOutputSize.width / 2);
-	params.acc_param.bnr.opt_center.y_reset = awbGrid_.y_start - (bdsOutputSize.height / 2);
-	params.acc_param.bnr.opt_center_sqr.x_sqr_reset = params.acc_param.bnr.opt_center.x_reset
-							* params.acc_param.bnr.opt_center.x_reset;
-	params.acc_param.bnr.opt_center_sqr.y_sqr_reset = params.acc_param.bnr.opt_center.y_reset
-							* params.acc_param.bnr.opt_center.y_reset;
-
-	params.use.acc_ccm = 1;
-	params.acc_param.ccm = imguCssCcmDefault;
 
 	zones_.reserve(kAwbStatsSizeX * kAwbStatsSizeY);
 }
+
+IPU3Awb::~IPU3Awb() = default;
 
 /**
  * The function estimates the correlated color temperature using
@@ -321,22 +273,67 @@ void IPU3Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 	}
 }
 
-void IPU3Awb::updateWbParameters(ipu3_uapi_params &params)
+void IPU3Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
+	calculateWBGains(stats);
+
+	/*
+	 * Gains are only recalculated if enough zones were detected.
+	 * The results are cached, so if no results were calculated, we set the
+	 * cached values from asyncResults_ here.
+	 */
+	context.frameContext.awb.gains.blue = asyncResults_.blueGain;
+	context.frameContext.awb.gains.green = asyncResults_.greenGain;
+	context.frameContext.awb.gains.red = asyncResults_.redGain;
+}
+
+void IPU3Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
+{
+	params->acc_param.awb.config.rgbs_thr_gr = 8191;
+	params->acc_param.awb.config.rgbs_thr_r = 8191;
+	params->acc_param.awb.config.rgbs_thr_gb = 8191;
+	params->acc_param.awb.config.rgbs_thr_b = IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT
+					       | IPU3_UAPI_AWB_RGBS_THR_B_EN
+					       | 8191;
+
+	awbGrid_ = context.configuration.grid.bdsGrid;
+
+	params->acc_param.awb.config.grid = context.configuration.grid.bdsGrid;
+
+	/*
+	 * Optical center is column start (respectively row start) of the
+	 * region of interest minus its X center (respectively Y center).
+	 *
+	 * For the moment use BDS as a first approximation, but it should
+	 * be calculated based on Shading (SHD) parameters.
+	 */
+	params->acc_param.bnr = imguCssBnrDefaults;
+	Size &bdsOutputSize = context.configuration.grid.bdsOutputSize;
+	params->acc_param.bnr.column_size = bdsOutputSize.width;
+	params->acc_param.bnr.opt_center.x_reset = awbGrid_.x_start - (bdsOutputSize.width / 2);
+	params->acc_param.bnr.opt_center.y_reset = awbGrid_.y_start - (bdsOutputSize.height / 2);
+	params->acc_param.bnr.opt_center_sqr.x_sqr_reset = params->acc_param.bnr.opt_center.x_reset
+							* params->acc_param.bnr.opt_center.x_reset;
+	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
+							* params->acc_param.bnr.opt_center.y_reset;
 	/*
 	 * Green gains should not be touched and considered 1.
 	 * Default is 16, so do not change it at all.
 	 * 4096 is the value for a gain of 1.0
 	 */
-	params.acc_param.bnr.wb_gains.gr = 16;
-	params.acc_param.bnr.wb_gains.r = 4096 * asyncResults_.redGain;
-	params.acc_param.bnr.wb_gains.b = 4096 * asyncResults_.blueGain;
-	params.acc_param.bnr.wb_gains.gb = 16;
+	params->acc_param.bnr.wb_gains.gr = 16 * context.frameContext.awb.gains.green;
+	params->acc_param.bnr.wb_gains.r = 4096 * context.frameContext.awb.gains.red;
+	params->acc_param.bnr.wb_gains.b = 4096 * context.frameContext.awb.gains.blue;
+	params->acc_param.bnr.wb_gains.gb = 16 * context.frameContext.awb.gains.green;
 
 	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
 
 	/* The CCM matrix may change when color temperature will be used */
-	params.acc_param.ccm = imguCssCcmDefault;
+	params->acc_param.ccm = imguCssCcmDefault;
+
+	params->use.acc_awb = 1;
+	params->use.acc_bnr = 1;
+	params->use.acc_ccm = 1;
 }
 
 } /* namespace ipa::ipu3 */

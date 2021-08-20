@@ -93,6 +93,23 @@
  */
 
 /**
+ * \struct IPAFrameContext::awb
+ * \brief Context for the Automatic White Balance algorithm
+ *
+ * \struct IPAFrameContext::awb::gains
+ * \brief White balance gains
+ *
+ * \var IPAFrameContext::awb::gains::red
+ * \brief White balance gain for R channel
+ *
+ * \var IPAFrameContext::awb::gains::green
+ * \brief White balance gain for G channel
+ *
+ * \var IPAFrameContext::awb::gains::blue
+ * \brief White balance gain for B channel
+ */
+
+/**
  * \struct IPAFrameContext::toneMapping
  * \brief Context for ToneMapping and Gamma control
  *
@@ -357,8 +374,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 	}
 
 	awbAlgo_ = std::make_unique<IPU3Awb>();
-	awbAlgo_->initialise(params_, context_.configuration.grid.bdsOutputSize,
-			     context_.configuration.grid.bdsGrid);
 	agcAlgo_ = std::make_unique<IPU3Agc>();
 	agcAlgo_->initialise(context_.configuration.grid.bdsGrid, sensorInfo_);
 
@@ -438,7 +453,7 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 		algo->prepare(context_, &params_);
 
 	if (agcAlgo_->updateControls())
-		awbAlgo_->updateWbParameters(params_);
+		awbAlgo_->prepare(context_, &params_);
 
 	*params = params_;
 
@@ -461,7 +476,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	agcAlgo_->process(stats, exposure_, gain);
 	gain_ = camHelper_->gainCode(gain);
 
-	awbAlgo_->calculateWBGains(stats);
+	awbAlgo_->process(context_, stats);
 
 	if (agcAlgo_->updateControls())
 		setControls(frame);

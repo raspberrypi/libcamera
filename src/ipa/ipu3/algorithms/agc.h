@@ -33,11 +33,10 @@ public:
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
 private:
-	void processBrightness(const ipu3_uapi_stats_3a *stats);
+	void processBrightness(const ipu3_uapi_stats_3a *stats,
+			       const ipu3_uapi_grid_config &grid);
 	void filterExposure();
 	void lockExposureGain(uint32_t &exposure, double &gain);
-
-	struct ipu3_uapi_grid_config aeGrid_;
 
 	uint64_t frameCount_;
 	uint64_t lastFrame_;

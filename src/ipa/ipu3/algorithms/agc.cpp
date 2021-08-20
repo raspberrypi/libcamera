@@ -57,10 +57,9 @@ Agc::Agc()
 {
 }
 
-int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
+int Agc::configure([[maybe_unused]] IPAContext &context,
+		   const IPAConfigInfo &configInfo)
 {
-	aeGrid_ = context.configuration.grid.bdsGrid;
-
 	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
 		      / configInfo.sensorInfo.pixelRate;
 	maxExposureTime_ = kMaxExposure * lineDuration_;
@@ -68,7 +67,8 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	return 0;
 }
 
-void Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
+void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
+			    const ipu3_uapi_grid_config &grid)
 {
 	const struct ipu3_uapi_grid_config statsAeGrid = stats->stats_4a_config.awb_config.grid;
 	Rectangle aeRegion = { statsAeGrid.x_start,
@@ -76,19 +76,19 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 			       static_cast<unsigned int>(statsAeGrid.x_end - statsAeGrid.x_start) + 1,
 			       static_cast<unsigned int>(statsAeGrid.y_end - statsAeGrid.y_start) + 1 };
 	Point topleft = aeRegion.topLeft();
-	int topleftX = topleft.x >> aeGrid_.block_width_log2;
-	int topleftY = topleft.y >> aeGrid_.block_height_log2;
+	int topleftX = topleft.x >> grid.block_width_log2;
+	int topleftY = topleft.y >> grid.block_height_log2;
 
 	/* Align to the grid cell width and height */
-	uint32_t startX = topleftX << aeGrid_.block_width_log2;
-	uint32_t startY = topleftY * aeGrid_.width << aeGrid_.block_width_log2;
-	uint32_t endX = (startX + (aeRegion.size().width >> aeGrid_.block_width_log2)) << aeGrid_.block_width_log2;
+	uint32_t startX = topleftX << grid.block_width_log2;
+	uint32_t startY = topleftY * grid.width << grid.block_width_log2;
+	uint32_t endX = (startX + (aeRegion.size().width >> grid.block_width_log2)) << grid.block_width_log2;
 	uint32_t i, j;
 	uint32_t count = 0;
 
 	uint32_t hist[knumHistogramBins] = { 0 };
 	for (j = topleftY;
-	     j < topleftY + (aeRegion.size().height >> aeGrid_.block_height_log2);
+	     j < topleftY + (aeRegion.size().height >> grid.block_height_log2);
 	     j++) {
 		for (i = startX + startY; i < endX + startY; i += kCellSize) {
 			/*
@@ -96,9 +96,9 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats)
 			 * We observed a bit shift which makes the value 160 to be 32 in the stats grid.
 			 * Use the one passed at init time.
 			 */
-			if (stats->awb_raw_buffer.meta_data[i + 4 + j * aeGrid_.width] == 0) {
-				uint8_t Gr = stats->awb_raw_buffer.meta_data[i + 0 + j * aeGrid_.width];
-				uint8_t Gb = stats->awb_raw_buffer.meta_data[i + 3 + j * aeGrid_.width];
+			if (stats->awb_raw_buffer.meta_data[i + 4 + j * grid.width] == 0) {
+				uint8_t Gr = stats->awb_raw_buffer.meta_data[i + 0 + j * grid.width];
+				uint8_t Gb = stats->awb_raw_buffer.meta_data[i + 3 + j * grid.width];
 				hist[(Gr + Gb) / 2]++;
 				count++;
 			}
@@ -190,7 +190,7 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	uint32_t &exposure = context.frameContext.agc.exposure;
 	double &gain = context.frameContext.agc.gain;
-	processBrightness(stats);
+	processBrightness(stats, context.configuration.grid.bdsGrid);
 	lockExposureGain(exposure, gain);
 	frameCount_++;
 }

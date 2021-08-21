@@ -55,12 +55,10 @@ protected:
 		setenv("ASAN_OPTIONS", "verify_asan_link_order=0", 1);
 
 		/* Initialize GStreamer */
-		GError *errInit = nullptr;
+		g_autoptr(GError) errInit = NULL;
 		if (!gst_init_check(nullptr, nullptr, &errInit)) {
 			g_printerr("Could not initialize GStreamer: %s\n",
 				   errInit ? errInit->message : "unknown error");
-			if (errInit)
-				g_error_free(errInit);
 
 			return TestFail;
 		}
@@ -138,7 +136,7 @@ protected:
 		/* Wait until error or EOS or timeout after 2 seconds */
 		constexpr GstMessageType msgType =
 			static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
-		constexpr GstClockTime timeout = 2000000000;
+		constexpr GstClockTime timeout = 2 * GST_SECOND;
 
 		g_autoptr(GstBus) bus = gst_element_get_bus(pipeline_);
 		g_autoptr(GstMessage) msg = gst_bus_timed_pop_filtered(bus, timeout, msgType);
@@ -167,16 +165,14 @@ protected:
 private:
 	void gstreamer_print_error(GstMessage *msg)
 	{
-		GError *err;
-		gchar *debug_info;
+		g_autoptr(GError) err = NULL;
+		g_autofree gchar *debug_info = NULL;
 
 		gst_message_parse_error(msg, &err, &debug_info);
 		g_printerr("Error received from element %s: %s\n",
 			   GST_OBJECT_NAME(msg->src), err->message);
 		g_printerr("Debugging information: %s\n",
 			   debug_info ? debug_info : "none");
-		g_clear_error(&err);
-		g_free(debug_info);
 	}
 
 	GstElement *pipeline_;

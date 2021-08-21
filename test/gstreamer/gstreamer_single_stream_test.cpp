@@ -36,23 +36,16 @@ protected:
 	int init() override
 	{
 		/*
-		 * GStreamer spawns a process to run the gst-plugin-scanner
-		 * helper. If libcamera is compiled with ASan enabled, and as
-		 * GStreamer is most likely not, this will cause the ASan link
-		 * order check to fail when gst-plugin-scanner dlopen()s the
-		 * plugin as many libraries will have already been loaded by
-		 * then. Work around this issue by disabling the link order
-		 * check. This will only affect child processes, as ASan is
-		 * already loaded for this process by the time this code is
-		 * executed, and should thus hopefully be safe.
-		 *
-		 * This option is not available in gcc older than 8, the only
-		 * option in that case is to skip the test.
+		 * GStreamer by default spawns a process to run the
+		 * gst-plugin-scanner helper. If libcamera is compiled with ASan
+		 * enabled, and as GStreamer is most likely not, this causes the
+		 * ASan link order check to fail when gst-plugin-scanner
+		 * dlopen()s the plugin as many libraries will have already been
+		 * loaded by then. Fix this issue by disabling spawning of a
+		 * child helper process when scanning the build directory for
+		 * plugins.
 		 */
-#if defined(__SANITIZE_ADDRESS__) && !defined(__clang__) && __GNUC__ < 8
-		return TestSkip;
-#endif
-		setenv("ASAN_OPTIONS", "verify_asan_link_order=0", 1);
+		gst_registry_fork_set_enabled(false);
 
 		/* Initialize GStreamer */
 		g_autoptr(GError) errInit = NULL;

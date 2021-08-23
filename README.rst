@@ -94,17 +94,32 @@ Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 
 To use GStreamer plugin from source tree, set the following environment so that
-GStreamer can find it.
+GStreamer can find it. This isn't necessary when libcamera is installed.
 
   export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
 
 The debugging tool ``gst-launch-1.0`` can be used to construct a pipeline and
 test it. The following pipeline will stream from the camera named "Camera 1"
-onto the default video display element on your system.
+onto the OpenGL accelerated display element on your system.
 
 .. code::
 
-  gst-launch-1.0 libcamerasrc camera-name="Camera 1" ! videoconvert ! autovideosink
+  gst-launch-1.0 libcamerasrc camera-name="Camera 1" ! glimagesink
+
+To show the first camera found you can omit the camera-name property, or you
+can list the cameras and their capabilities using:
+
+.. code::
+
+  gst-device-monitor-1.0 Video
+
+This will also show the supported stream sizes which can be manually selected
+if desired with a pipeline such as:
+
+.. code::
+
+  gst-launch-1.0 libcamerasrc ! 'video/x-raw,width=1280,height=720' ! \
+        glimagesink
 
 .. section-end-getting-started
 

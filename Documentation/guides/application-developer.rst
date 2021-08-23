@@ -466,10 +466,10 @@ and the bytes used by planes.
 A completed buffer contains of course image data which can be accessed through
 the per-plane dma-buf file descriptor transported by the ``FrameBuffer``
 instance. An example of how to write image data to disk is available in the
-`BufferWriter class`_ which is a part of the ``cam`` utility application in the
+`FileSink class`_ which is a part of the ``cam`` utility application in the
 libcamera repository.
 
-.. _BufferWriter class: https://git.linuxtv.org/libcamera.git/tree/src/cam/buffer_writer.cpp
+.. _FileSink class: https://git.linuxtv.org/libcamera.git/tree/src/cam/file_sink.cpp
 
 With the handling of this request completed, it is possible to re-use the
 buffers by adding them to a new ``Request`` instance with their matching

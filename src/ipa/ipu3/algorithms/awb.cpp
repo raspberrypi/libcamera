@@ -317,6 +317,7 @@ void Awb::awbGreyWorld()
 	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
 	asyncResults_.temperatureK = estimateCCT(sumRed.R, sumRed.G, sumBlue.B);
 	asyncResults_.redGain = redGain;
+	/* Hardcode the green gain to 1.0. */
 	asyncResults_.greenGain = 1.0;
 	asyncResults_.blueGain = blueGain;
 }
@@ -380,15 +381,11 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 							* params->acc_param.bnr.opt_center.x_reset;
 	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
 							* params->acc_param.bnr.opt_center.y_reset;
-	/*
-	 * Green gains should not be touched and considered 1.
-	 * Default is 16, so do not change it at all.
-	 * 4096 is the value for a gain of 1.0
-	 */
-	params->acc_param.bnr.wb_gains.gr = 16 * context.frameContext.awb.gains.green;
-	params->acc_param.bnr.wb_gains.r = 4096 * context.frameContext.awb.gains.red;
-	params->acc_param.bnr.wb_gains.b = 4096 * context.frameContext.awb.gains.blue;
-	params->acc_param.bnr.wb_gains.gb = 16 * context.frameContext.awb.gains.green;
+	/* Convert to u3.13 fixed point values */
+	params->acc_param.bnr.wb_gains.gr = 8192 * context.frameContext.awb.gains.green;
+	params->acc_param.bnr.wb_gains.r  = 8192 * context.frameContext.awb.gains.red;
+	params->acc_param.bnr.wb_gains.b  = 8192 * context.frameContext.awb.gains.blue;
+	params->acc_param.bnr.wb_gains.gb = 8192 * context.frameContext.awb.gains.green;
 
 	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
 

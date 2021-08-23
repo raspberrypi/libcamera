@@ -11,6 +11,10 @@
 
 #include <libcamera/base/log.h>
 
+/**
+ * \file awb.h
+ */
+
 namespace libcamera {
 
 namespace ipa::ipu3::algorithms {
@@ -41,47 +45,6 @@ static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 90 / 100;
 /**
  * \struct Accumulator
  * \brief RGB statistics for a given zone
- *
- * - Cells are defined in Pixels
- * - Zones are defined in Cells
- *
- *                             80 cells
- *            /───────────── 1280 pixels ───────────\
- *                             16 zones
- *             16
- *           ┌────┬────┬────┬────┬────┬─  ──────┬────┐   \
- *           │Cell│    │    │    │    │    |    │    │   │
- *        16 │ px │    │    │    │    │    |    │    │   │
- *           ├────┼────┼────┼────┼────┼─  ──────┼────┤   │
- *           │    │    │    │    │    │    |    │    │
- *           │    │    │    │    │    │    |    │    │   7
- *           │ ── │ ── │ ── │ ── │ ── │ ──  ── ─┤ ── │ 1 2 4
- *           │    │    │    │    │    │    |    │    │ 2 0 5
- *
- *           │    │    │    │    │    │    |    │    │ z p c
- *           ├────┼────┼────┼────┼────┼─  ──────┼────┤ o i e
- *           │    │    │    │    │    │    |    │    │ n x l
- *           │                        │    |    │    │ e e l
- *           ├───                  ───┼─  ──────┼────┤ s l s
- *           │                        │    |    │    │   s
- *           │                        │    |    │    │
- *           ├───   Zone of Cells  ───┼─  ──────┼────┤   │
- *           │        (5 x 4)         │    |    │    │   │
- *           │                        │    |    │    │   │
- *           ├──                   ───┼─  ──────┼────┤   │
- *           │                   │    │    |    │    │   │
- *           │    │    │    │    │    │    |    │    │   │
- *           └────┴────┴────┴────┴────┴─  ──────┴────┘   /
- *
- *
- * The algorithm works with a fixed number of zones \a kAwbStatsSizeX x
- * \a kAwbStatsSizeY. For example, a frame of 1280x720 is divided into 80x45
- * cells of [16x16] pixels. In the case of \a kAwbStatsSizeX=16 and
- * \a kAwbStatsSizeY=12 the zones are made of [5x4] cells. The cells are
- * left-aligned and calculated by IPAIPU3::calculateBdsGrid().
- *
- * Each statistics cell represents the average value of the pixels in that cell
- * split by colour components.
  *
  * The Accumulator structure stores the sum of the average of each cell in a
  * zone of the image, as well as the number of cells which were unsaturated and
@@ -151,6 +114,71 @@ static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
 	0, 8191, 0, 0,
 	0, 0, 8191, 0
 };
+
+/**
+ * \class Awb
+ * \brief A Grey world white balance correction algorithm
+ *
+ * The Grey World algorithm assumes that the scene, in average, is neutral grey.
+ * Reference: Lam, Edmund & Fung, George. (2008). Automatic White Balancing in
+ * Digital Photography. 10.1201/9781420054538.ch10.
+ *
+ * The IPU3 generates statistics from the Bayer Down Scaler output into a grid
+ * defined in the ipu3_uapi_awb_config_s structure.
+ *
+ * - Cells are defined in Pixels
+ * - Zones are defined in Cells
+ *
+ *                             80 cells
+ *            /───────────── 1280 pixels ───────────\
+ *                             16 zones
+ *             16
+ *           ┌────┬────┬────┬────┬────┬─  ──────┬────┐   \
+ *           │Cell│    │    │    │    │    |    │    │   │
+ *        16 │ px │    │    │    │    │    |    │    │   │
+ *           ├────┼────┼────┼────┼────┼─  ──────┼────┤   │
+ *           │    │    │    │    │    │    |    │    │
+ *           │    │    │    │    │    │    |    │    │   7
+ *           │ ── │ ── │ ── │ ── │ ── │ ──  ── ─┤ ── │ 1 2 4
+ *           │    │    │    │    │    │    |    │    │ 2 0 5
+ *
+ *           │    │    │    │    │    │    |    │    │ z p c
+ *           ├────┼────┼────┼────┼────┼─  ──────┼────┤ o i e
+ *           │    │    │    │    │    │    |    │    │ n x l
+ *           │                        │    |    │    │ e e l
+ *           ├───                  ───┼─  ──────┼────┤ s l s
+ *           │                        │    |    │    │   s
+ *           │                        │    |    │    │
+ *           ├───   Zone of Cells  ───┼─  ──────┼────┤   │
+ *           │        (5 x 4)         │    |    │    │   │
+ *           │                        │    |    │    │   │
+ *           ├──                   ───┼─  ──────┼────┤   │
+ *           │                   │    │    |    │    │   │
+ *           │    │    │    │    │    │    |    │    │   │
+ *           └────┴────┴────┴────┴────┴─  ──────┴────┘   /
+ *
+ *
+ * In each cell, the ImgU computes for each colour component the average of all
+ * unsaturated pixels (below a programmable threshold). It also provides the
+ * ratio of saturated pixels in the cell.
+ *
+ * The AWB algorithm operates on a coarser grid, made by grouping cells from the
+ * hardware grid into zones. The number of zones is fixed to \a kAwbStatsSizeX x
+ * \a kAwbStatsSizeY. For example, a frame of 1280x720 is divided into 80x45
+ * cells of [16x16] pixels and 16x12 zones of [5x4] cells each
+ * (\a kAwbStatsSizeX=16 and \a kAwbStatsSizeY=12). If the number of cells isn't
+ * an exact multiple of the number of zones, the right-most and bottom-most
+ * cells are ignored. The grid configuration is computed by
+ * IPAIPU3::calculateBdsGrid().
+ *
+ * Before calculating the gains, the algorithm aggregates the cell averages for
+ * each zone in generateAwbStats(). Cells that have a too high ratio of
+ * saturated pixels are ignored, and only zones that contain enough
+ * non-saturated cells are then used by the algorithm.
+ *
+ * The Grey World algorithm will then estimate the red and blue gains to apply, and
+ * store the results in the metadata. The green gain is always set to 1.
+ */
 
 Awb::Awb()
 	: Algorithm()

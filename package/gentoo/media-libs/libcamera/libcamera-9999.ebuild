@@ -16,9 +16,14 @@ SLOT="0"
 KEYWORDS="*"
 IUSE="udev"
 
-RDEPEND="udev? ( virtual/libudev )"
+RDEPEND="
+	>=net-libs/gnutls-3.3:=
+	udev? ( virtual/libudev )
+"
+
 DEPEND="
 	${RDEPEND}
+	dev-libs/openssl
 	$(python_gen_any_dep 'dev-python/pyyaml[${PYTHON_USEDEP}]')
 "
 

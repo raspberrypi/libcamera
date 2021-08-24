@@ -14,7 +14,7 @@ EGIT_BRANCH="master"
 LICENSE="LGPL-2.1+"
 SLOT="0"
 KEYWORDS="*"
-IUSE="doc test udev"
+IUSE="debug doc test udev"
 
 RDEPEND="
 	>=net-libs/gnutls-3.3:=
@@ -31,6 +31,7 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature doc documentation)
 		$(meson_use test)
+		--buildtype $(usex debug debug plain)
 	)
 	meson_src_configure
 }

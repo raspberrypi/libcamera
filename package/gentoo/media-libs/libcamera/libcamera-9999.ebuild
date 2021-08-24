@@ -2,7 +2,7 @@
 # Copyright 2019 Google Inc.
 
 EAPI=6
-PYTHON_COMPAT=( python3_{5,6,7} )
+PYTHON_COMPAT=( python3_{7..10} )
 
 inherit git-r3 meson python-any-r1
 

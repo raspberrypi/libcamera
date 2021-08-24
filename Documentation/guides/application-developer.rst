@@ -419,7 +419,7 @@ and the bytes used, as described in the `FrameMetadata`_ documentation.
        const FrameMetadata &metadata = buffer->metadata();
    }
 
-For this example application, inside the ``for`` loop from above, we ca print
+For this example application, inside the ``for`` loop from above, we can print
 the Frame sequence number and details of the planes.
 
 .. code:: cpp

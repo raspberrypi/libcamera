@@ -114,9 +114,9 @@ LOG_DECLARE_CATEGORY(Camera)
  * The CameraConfiguration holds an ordered list of stream configurations. It
  * supports iterators and operates as a vector of StreamConfiguration instances.
  * The stream configurations are inserted by addConfiguration(), and the
- * operator[](int) returns a reference to the StreamConfiguration based on its
- * insertion index. Accessing a stream configuration with an invalid index
- * results in undefined behaviour.
+ * at() function or operator[] return a reference to the StreamConfiguration
+ * based on its insertion index. Accessing a stream configuration with an
+ * invalid index results in undefined behaviour.
  *
  * CameraConfiguration instances are retrieved from the camera with
  * Camera::generateConfiguration(). Applications may then inspect the

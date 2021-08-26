@@ -38,6 +38,11 @@ public:
 	{
 	}
 
+	R returnValue()
+	{
+		return ret_;
+	}
+
 	std::tuple<typename std::remove_reference_t<Args>...> args_;
 	R ret_;
 };
@@ -48,6 +53,10 @@ class BoundMethodPack<void, Args...> : public BoundMethodPackBase
 public:
 	BoundMethodPack(const Args &... args)
 		: args_(args...)
+	{
+	}
+
+	void returnValue()
 	{
 	}
 
@@ -160,7 +169,7 @@ public:
 
 		auto pack = std::make_shared<PackType>(args...);
 		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
-		return sync ? pack->ret_ : R();
+		return sync ? pack->returnValue() : R();
 	}
 
 	R invoke(Args... args) override
@@ -171,41 +180,6 @@ public:
 
 private:
 	R (T::*func_)(Args...);
-};
-
-template<typename T, typename... Args>
-class BoundMethodMember<T, void, Args...> : public BoundMethodArgs<void, Args...>
-{
-public:
-	using PackType = typename BoundMethodArgs<void, Args...>::PackType;
-
-	BoundMethodMember(T *obj, Object *object, void (T::*func)(Args...),
-			  ConnectionType type = ConnectionTypeAuto)
-		: BoundMethodArgs<void, Args...>(obj, object, type), func_(func)
-	{
-	}
-
-	bool match(void (T::*func)(Args...)) const { return func == func_; }
-
-	void activate(Args... args, bool deleteMethod = false) override
-	{
-		if (!this->object_) {
-			T *obj = static_cast<T *>(this->obj_);
-			return (obj->*func_)(args...);
-		}
-
-		auto pack = std::make_shared<PackType>(args...);
-		BoundMethodBase::activatePack(pack, deleteMethod);
-	}
-
-	void invoke(Args... args) override
-	{
-		T *obj = static_cast<T *>(this->obj_);
-		return (obj->*func_)(args...);
-	}
-
-private:
-	void (T::*func_)(Args...);
 };
 
 template<typename R, typename... Args>

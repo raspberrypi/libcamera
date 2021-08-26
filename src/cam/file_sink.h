@@ -33,6 +33,7 @@ private:
 	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::string pattern_;
 	std::map<int, std::pair<void *, unsigned int>> mappedBuffers_;
+	std::map<const libcamera::FrameBuffer::Plane *, uint8_t *> planeData_;
 };
 
 #endif /* __CAM_FILE_SINK_H__ */

@@ -51,12 +51,22 @@ int FileSink::configure(const libcamera::CameraConfiguration &config)
 
 void FileSink::mapBuffer(FrameBuffer *buffer)
 {
+	/* \todo use MappedFrameBuffer. */
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
-				    plane.fd.fd(), 0);
+		const int fd = plane.fd.fd();
+		if (mappedBuffers_.find(fd) == mappedBuffers_.end()) {
+			/**
+			 * \todo Should we try to only map the portions of the
+			 * dmabuf that are used by planes ?
+			 */
+			size_t length = lseek(fd, 0, SEEK_END);
+			void *memory = mmap(NULL, plane.length, PROT_READ,
+					    MAP_SHARED, fd, 0);
+			mappedBuffers_[fd] = std::make_pair(memory, length);
+		}
 
-		mappedBuffers_[plane.fd.fd()] =
-			std::make_pair(memory, plane.length);
+		void *memory = mappedBuffers_[fd].first;
+		planeData_[&plane] = static_cast<uint8_t *>(memory) + plane.offset;
 	}
 }
 
@@ -102,7 +112,7 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 		const FrameBuffer::Plane &plane = buffer->planes()[i];
 		const FrameMetadata::Plane &meta = buffer->metadata().planes[i];
 
-		void *data = mappedBuffers_[plane.fd.fd()].first;
+		uint8_t *data = planeData_[&plane];
 		unsigned int length = std::min(meta.bytesused, plane.length);
 
 		if (meta.bytesused > plane.length)

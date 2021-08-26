@@ -70,6 +70,7 @@ private:
 	int orientation_;
 	bool rawStreamAvailable_;
 	camera_metadata_enum_android_info_supported_hardware_level hwLevel_;
+	std::set<camera_metadata_enum_android_request_available_capabilities> capabilities_;
 
 	std::vector<Camera3StreamConfiguration> streamConfigurations_;
 	std::map<int, libcamera::PixelFormat> formatsMap_;

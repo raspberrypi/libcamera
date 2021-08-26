@@ -1271,13 +1271,12 @@ int CameraCapabilities::initializeStaticMetadata()
 				  numOutStreams);
 
 	/* Check capabilities */
-	std::set<camera_metadata_enum_android_request_available_capabilities>
-		capabilities = computeCapabilities();
+	capabilities_ = computeCapabilities();
 	std::vector<camera_metadata_enum_android_request_available_capabilities>
-		capsVec(capabilities.begin(), capabilities.end());
+		capsVec(capabilities_.begin(), capabilities_.end());
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES, capsVec);
 
-	computeHwLevel(capabilities);
+	computeHwLevel(capabilities_);
 	staticMetadata_->addEntry(ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL, hwLevel_);
 
 	LOG(HAL, Info)
@@ -1326,6 +1325,11 @@ PixelFormat CameraCapabilities::toPixelFormat(int format) const
 
 std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplateManual() const
 {
+	if (!capabilities_.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR)) {
+		LOG(HAL, Error) << "Manual template not supported";
+		return nullptr;
+	}
+
 	std::unique_ptr<CameraMetadata> manualTemplate = requestTemplatePreview();
 	if (!manualTemplate)
 		return nullptr;

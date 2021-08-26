@@ -171,13 +171,17 @@ public:
 	int start() override;
 	void stop() override {}
 
-	int configure(const IPAConfigInfo &configInfo) override;
+	int configure(const IPAConfigInfo &configInfo,
+		      ControlInfoMap *ipaControls) override;
 
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void processEvent(const IPU3Event &event) override;
 
 private:
+	void updateControls(const IPACameraSensorInfo &sensorInfo,
+			    const ControlInfoMap &sensorControls,
+			    ControlInfoMap *ipaControls);
 	void processControls(unsigned int frame, const ControlList &controls);
 	void fillParams(unsigned int frame, ipu3_uapi_params *params);
 	void parseStatistics(unsigned int frame,
@@ -212,36 +216,30 @@ private:
 	struct IPAContext context_;
 };
 
-/**
- * Initialize the IPA module and its controls.
- *
- * This function receives the camera sensor information from the pipeline
- * handler, computes the limits of the controls it handles and returns
- * them in the \a ipaControls output parameter.
- */
-int IPAIPU3::init(const IPASettings &settings,
-		  const IPACameraSensorInfo &sensorInfo,
-		  const ControlInfoMap &sensorControls,
-		  ControlInfoMap *ipaControls)
-{
-	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
-	if (camHelper_ == nullptr) {
-		LOG(IPAIPU3, Error)
-			<< "Failed to create camera sensor helper for "
-			<< settings.sensorModel;
-		return -ENODEV;
-	}
 
-	/* Initialize Controls. */
+/*
+ * Compute camera controls using the sensor information and the sensor
+ * v4l2 controls.
+ *
+ * Some of the camera controls are computed by the pipeline handler, some others
+ * by the IPA module which is in charge of handling, for example, the exposure
+ * time and the frame duration.
+ *
+ * This function computes:
+ * - controls::ExposureTime
+ * - controls::FrameDurationLimits
+ */
+void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
+			     const ControlInfoMap &sensorControls,
+			     ControlInfoMap *ipaControls)
+{
 	ControlInfoMap::Map controls{};
 
 	/*
-	 * Compute exposure time limits.
-	 *
-	 * Initialize the control using the line length and pixel rate of the
-	 * current configuration converted to microseconds. Use the
-	 * V4L2_CID_EXPOSURE control to get exposure min, max and default and
-	 * convert it from lines to microseconds.
+	 * Compute exposure time limits by using line length and pixel rate
+	 * converted to microseconds. Use the V4L2_CID_EXPOSURE control to get
+	 * exposure min, max and default and convert it from lines to
+	 * microseconds.
 	 */
 	double lineDuration = sensorInfo.lineLength / (sensorInfo.pixelRate / 1e6);
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
@@ -279,12 +277,36 @@ int IPAIPU3::init(const IPASettings &settings,
 							       frameDurations[2]);
 
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
+}
+
+/**
+ * Initialize the IPA module and its controls.
+ *
+ * This function receives the camera sensor information from the pipeline
+ * handler, computes the limits of the controls it handles and returns
+ * them in the \a ipaControls output parameter.
+ */
+int IPAIPU3::init(const IPASettings &settings,
+		  const IPACameraSensorInfo &sensorInfo,
+		  const ControlInfoMap &sensorControls,
+		  ControlInfoMap *ipaControls)
+{
+	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
+	if (camHelper_ == nullptr) {
+		LOG(IPAIPU3, Error)
+			<< "Failed to create camera sensor helper for "
+			<< settings.sensorModel;
+		return -ENODEV;
+	}
 
 	/* Construct our Algorithms */
 	algorithms_.push_back(std::make_unique<algorithms::Agc>());
 	algorithms_.push_back(std::make_unique<algorithms::Awb>());
 	algorithms_.push_back(std::make_unique<algorithms::BlackLevelCorrection>());
 	algorithms_.push_back(std::make_unique<algorithms::ToneMapping>());
+
+	/* Initialize controls. */
+	updateControls(sensorInfo, sensorControls, ipaControls);
 
 	return 0;
 }
@@ -365,7 +387,8 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 			    << (int)bdsGrid.height << " << " << (int)bdsGrid.block_height_log2 << ")";
 }
 
-int IPAIPU3::configure(const IPAConfigInfo &configInfo)
+int IPAIPU3::configure(const IPAConfigInfo &configInfo,
+		       ControlInfoMap *ipaControls)
 {
 	if (configInfo.sensorControls.empty()) {
 		LOG(IPAIPU3, Error) << "No sensor controls provided";
@@ -374,6 +397,10 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 
 	sensorInfo_ = configInfo.sensorInfo;
 
+	/*
+	 * Compute the sensor V4L2 controls to be used by the algorithms and
+	 * to be set on the sensor.
+	 */
 	ctrls_ = configInfo.sensorControls;
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
@@ -414,6 +441,9 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 		if (ret)
 			return ret;
 	}
+
+	/* Update the camera controls using the new sensor settings. */
+	updateControls(sensorInfo_, ctrls_, ipaControls);
 
 	return 0;
 }

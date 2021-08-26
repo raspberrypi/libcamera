@@ -45,7 +45,8 @@ interface IPAIPU3Interface {
 	start() => (int32 ret);
 	stop();
 
-	configure(IPAConfigInfo configInfo) => (int32 ret);
+	configure(IPAConfigInfo configInfo)
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);

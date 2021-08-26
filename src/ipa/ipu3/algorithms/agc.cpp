@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * ipu3_agc.cpp - AGC/AEC control algorithm
+ * ipu3_agc.cpp - AGC/AEC mean-based control algorithm
  */
 
 #include "agc.h"
@@ -17,17 +17,37 @@
 
 #include "libipa/histogram.h"
 
+/**
+ * \file agc.h
+ */
+
 namespace libcamera {
 
 using namespace std::literals::chrono_literals;
 
 namespace ipa::ipu3::algorithms {
 
+/**
+ * \class Agc
+ * \brief A mean-based auto-exposure algorithm
+ *
+ * This algorithm calculates a shutter time and an analogue gain so that the
+ * average value of the green channel of the brightest 2% of pixels approaches
+ * 0.5. The AWB gains are not used here, and all cells in the grid have the same
+ * weight, like an average-metering case. In this metering mode, the camera uses
+ * light information from the entire scene and creates an average for the final
+ * exposure setting, giving no weighting to any particular portion of the
+ * metered area.
+ *
+ * Reference: Battiato, Messina & Castorina. (2008). Exposure
+ * Correction for Imaging Devices: An Overview. 10.1201/9781420054538.ch12.
+ */
+
 LOG_DEFINE_CATEGORY(IPU3Agc)
 
 /* Number of frames to wait before calculating stats on minimum exposure */
 static constexpr uint32_t kInitialFrameMinAECount = 4;
-/* Number of frames to wait between new gain/exposure estimations */
+/* Number of frames to wait between new gain/shutter time estimations */
 static constexpr uint32_t kFrameSkipCount = 6;
 
 /* Limits for analogue gain values */
@@ -36,6 +56,8 @@ static constexpr double kMaxAnalogueGain = 8.0;
 
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
+
+/* Target value to reach for the top 2% of the histogram */
 static constexpr double kEvGainTarget = 0.5;
 
 Agc::Agc()
@@ -45,10 +67,18 @@ Agc::Agc()
 {
 }
 
+/**
+ * \brief Configure the AGC given a configInfo
+ * \param[in] context The shared IPA context
+ * \param[in] configInfo The IPA configuration data
+ *
+ * \return 0
+ */
 int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 {
 	stride_ = context.configuration.grid.stride;
 
+	/* \todo use the IPAContext to provide the limits */
 	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
 		      / configInfo.sensorInfo.pixelRate;
 
@@ -70,9 +100,15 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	return 0;
 }
 
-void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
+/**
+ * \brief Estimate the mean value of the top 2% of the histogram
+ * \param[in] stats The statistics computed by the ImgU
+ * \param[in] grid The grid used to store the statistics in the IPU3
+ */
+void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 			    const ipu3_uapi_grid_config &grid)
 {
+	/* Initialise the histogram array */
 	uint32_t hist[knumHistogramBins] = { 0 };
 
 	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
@@ -87,6 +123,11 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
 			if (cell->sat_ratio == 0) {
 				uint8_t gr = cell->Gr_avg;
 				uint8_t gb = cell->Gb_avg;
+				/*
+				 * Store the average green value to estimate the
+				 * brightness. Even the overexposed pixels are
+				 * taken into account.
+				 */
 				hist[(gr + gb) / 2]++;
 			}
 		}
@@ -96,6 +137,9 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
 	iqMean_ = Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
 }
 
+/**
+ * \brief Apply a filter on the exposure value to limit the speed of changes
+ */
 void Agc::filterExposure()
 {
 	double speed = 0.2;
@@ -106,7 +150,7 @@ void Agc::filterExposure()
 		/*
 		 * If we are close to the desired result, go faster to avoid making
 		 * multiple micro-adjustments.
-		 * \ todo: Make this customisable?
+		 * \todo Make this customisable?
 		 */
 		if (filteredExposure_ < 1.2 * currentExposure_ &&
 		    filteredExposure_ > 0.8 * currentExposure_)
@@ -119,7 +163,12 @@ void Agc::filterExposure()
 	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << filteredExposure_;
 }
 
-void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
+/**
+ * \brief Estimate the new exposure and gain values
+ * \param[inout] exposure The exposure value reference as a number of lines
+ * \param[inout] gain The gain reference to be updated
+ */
+void Agc::computeExposure(uint32_t &exposure, double &analogueGain)
 {
 	/* Algorithm initialization should wait for first valid frames */
 	/* \todo - have a number of frames given by DelayedControls ?
@@ -136,19 +185,26 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 		return;
 	}
 
+	/* Estimate the gain needed to have the proportion wanted */
 	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
 	/* extracted from Rpi::Agc::computeTargetExposure */
+	/* Calculate the shutter time in seconds */
 	utils::Duration currentShutter = exposure * lineDuration_;
 	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentShutter * analogueGain
 			    << " Shutter speed " << currentShutter
 			    << " Gain " << analogueGain
 			    << " Needed ev gain " << evGain;
 
+	/*
+	 * Calculate the current exposure value for the scene as the latest
+	 * exposure value applied multiplied by the new estimated gain.
+	 */
 	currentExposure_ = prevExposureValue_ * evGain;
 	utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 	utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
 
+	/* Clamp the exposure value to the min and max authorized */
 	utils::Duration maxTotalExposure = maxShutterSpeed * maxAnalogueGain_;
 	currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 	LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
@@ -157,6 +213,7 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 	/* \todo: estimate if we need to desaturate */
 	filterExposure();
 
+	/* Divide the exposure value as new exposure and gain values */
 	utils::Duration exposureValue = filteredExposure_;
 	utils::Duration shutterTime = minShutterSpeed;
 
@@ -186,12 +243,21 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 	prevExposureValue_ = shutterTime * analogueGain;
 }
 
+/**
+ * \brief Process IPU3 statistics, and run AGC operations
+ * \param[in] context The shared IPA context
+ * \param[in] stats The IPU3 statistics and ISP results
+ *
+ * Identify the current image brightness, and use that to estimate the optimal
+ * new exposure and gain for the scene.
+ */
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
+	/* Get the latest exposure and gain applied */
 	uint32_t &exposure = context.frameContext.agc.exposure;
 	double &analogueGain = context.frameContext.agc.gain;
-	processBrightness(stats, context.configuration.grid.bdsGrid);
-	lockExposureGain(exposure, analogueGain);
+	measureBrightness(stats, context.configuration.grid.bdsGrid);
+	computeExposure(exposure, analogueGain);
 	frameCount_++;
 }
 

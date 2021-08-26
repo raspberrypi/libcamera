@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * agc.h - IPU3 AGC/AEC control algorithm
+ * agc.h - IPU3 AGC/AEC mean-based control algorithm
  */
 #ifndef __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
 #define __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
@@ -31,10 +31,10 @@ public:
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
 private:
-	void processBrightness(const ipu3_uapi_stats_3a *stats,
+	void measureBrightness(const ipu3_uapi_stats_3a *stats,
 			       const ipu3_uapi_grid_config &grid);
 	void filterExposure();
-	void lockExposureGain(uint32_t &exposure, double &gain);
+	void computeExposure(uint32_t &exposure, double &gain);
 
 	uint64_t frameCount_;
 	uint64_t lastFrame_;

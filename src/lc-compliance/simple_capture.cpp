@@ -62,7 +62,7 @@ void SimpleCapture::stop()
 
 	camera_->stop();
 
-	camera_->requestCompleted.disconnect(this, &SimpleCapture::requestComplete);
+	camera_->requestCompleted.disconnect(this);
 
 	Stream *stream = config_->at(0).stream();
 	allocator_->free(stream);

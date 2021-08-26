@@ -130,7 +130,7 @@ private:
 			return TestFail;
 		}
 
-		camera_->requestCompleted.disconnect(this, &CameraReconfigure::requestComplete);
+		camera_->requestCompleted.disconnect(this);
 
 		requests_.clear();
 

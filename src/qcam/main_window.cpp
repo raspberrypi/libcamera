@@ -536,7 +536,7 @@ int MainWindow::startCapture()
 	return 0;
 
 error_disconnect:
-	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
+	camera_->requestCompleted.disconnect(this);
 	camera_->stop();
 
 error:
@@ -577,7 +577,7 @@ void MainWindow::stopCapture()
 	if (ret)
 		qInfo() << "Failed to stop capture";
 
-	camera_->requestCompleted.disconnect(this, &MainWindow::requestComplete);
+	camera_->requestCompleted.disconnect(this);
 
 	for (auto &iter : mappedBuffers_) {
 		const Span<uint8_t> &buffer = iter.second;

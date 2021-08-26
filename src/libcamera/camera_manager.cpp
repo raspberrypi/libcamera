@@ -170,7 +170,7 @@ void CameraManager::Private::createPipelineHandlers()
 
 void CameraManager::Private::cleanup()
 {
-	enumerator_->devicesAdded.disconnect(this, &Private::createPipelineHandlers);
+	enumerator_->devicesAdded.disconnect(this);
 
 	/*
 	 * Release all references to cameras to ensure they all get destroyed

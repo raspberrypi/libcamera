@@ -1277,7 +1277,9 @@ int CameraCapabilities::initializeStaticMetadata()
 				  maxZoom);
 
 	std::vector<uint32_t> availableStreamConfigurations;
+	std::vector<int64_t> minFrameDurations;
 	availableStreamConfigurations.reserve(streamConfigurations_.size() * 4);
+	minFrameDurations.reserve(streamConfigurations_.size() * 4);
 	for (const auto &entry : streamConfigurations_) {
 		/*
 		 * Filter out YUV streams not capable of running at 30 FPS.
@@ -1296,11 +1298,18 @@ int CameraCapabilities::initializeStaticMetadata()
 		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB && fps < 30)
 			continue;
 
+		/* Stream configuration map. */
 		availableStreamConfigurations.push_back(entry.androidFormat);
 		availableStreamConfigurations.push_back(entry.resolution.width);
 		availableStreamConfigurations.push_back(entry.resolution.height);
 		availableStreamConfigurations.push_back(
 			ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT);
+
+		/* Per-stream durations. */
+		minFrameDurations.push_back(entry.androidFormat);
+		minFrameDurations.push_back(entry.resolution.width);
+		minFrameDurations.push_back(entry.resolution.height);
+		minFrameDurations.push_back(entry.minFrameDurationNsec);
 
 		LOG(HAL, Debug)
 			<< "Output Stream: " << utils::hex(entry.androidFormat)
@@ -1311,19 +1320,6 @@ int CameraCapabilities::initializeStaticMetadata()
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
 				  availableStreamConfigurations);
 
-	std::vector<int64_t> minFrameDurations;
-	minFrameDurations.reserve(streamConfigurations_.size() * 4);
-	for (const auto &entry : streamConfigurations_) {
-		unsigned int fps = static_cast<unsigned int>
-				   (floor(1e9 / entry.minFrameDurationNsec + 0.05f));
-		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB && fps < 30)
-			continue;
-
-		minFrameDurations.push_back(entry.androidFormat);
-		minFrameDurations.push_back(entry.resolution.width);
-		minFrameDurations.push_back(entry.resolution.height);
-		minFrameDurations.push_back(entry.minFrameDurationNsec);
-	}
 	staticMetadata_->addEntry(ANDROID_SCALER_AVAILABLE_MIN_FRAME_DURATIONS,
 				  minFrameDurations);
 

@@ -20,8 +20,9 @@ class CameraBuffer::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(CameraBuffer)
 
 public:
-	Private(CameraBuffer *cameraBuffer,
-		buffer_handle_t camera3Buffer, int flags);
+	Private(CameraBuffer *cameraBuffer, buffer_handle_t camera3Buffer,
+		libcamera::PixelFormat pixelFormat, const libcamera::Size &size,
+		int flags);
 	~Private();
 
 	bool isValid() const { return valid_; }
@@ -46,6 +47,8 @@ private:
 
 CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
+			       [[maybe_unused]] libcamera::PixelFormat pixelFormat,
+			       [[maybe_unused]] const libcamera::Size &size,
 			       [[maybe_unused]] int flags)
 	: handle_(camera3Buffer), numPlanes_(0), valid_(false),
 	  registered_(false)

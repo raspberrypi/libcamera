@@ -11,13 +11,17 @@
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/span.h>
+#include <libcamera/geometry.h>
+#include <libcamera/pixel_format.h>
 
 class CameraBuffer final : public libcamera::Extensible
 {
 	LIBCAMERA_DECLARE_PRIVATE()
 
 public:
-	CameraBuffer(buffer_handle_t camera3Buffer, int flags);
+	CameraBuffer(buffer_handle_t camera3Buffer,
+		     libcamera::PixelFormat pixelFormat,
+		     const libcamera::Size &size, int flags);
 	~CameraBuffer();
 
 	bool isValid() const;
@@ -31,8 +35,12 @@ public:
 };
 
 #define PUBLIC_CAMERA_BUFFER_IMPLEMENTATION				\
-CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer, int flags)	\
-	: Extensible(std::make_unique<Private>(this, camera3Buffer, flags)) \
+CameraBuffer::CameraBuffer(buffer_handle_t camera3Buffer,		\
+			   libcamera::PixelFormat pixelFormat,		\
+			   const libcamera::Size &size, int flags)	\
+	: Extensible(std::make_unique<Private>(this, camera3Buffer,	\
+					       pixelFormat, size,	\
+					       flags))			\
 {									\
 }									\
 CameraBuffer::~CameraBuffer()						\

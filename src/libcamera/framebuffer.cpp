@@ -131,7 +131,7 @@ FrameBuffer::Private::Private()
  *
  * The static information describes the memory planes that make a frame. The
  * planes are specified when creating the FrameBuffer and are expressed as a set
- * of dmabuf file descriptors and length.
+ * of dmabuf file descriptors, offset and length.
  *
  * The dynamic information is grouped in a FrameMetadata instance. It is updated
  * during the processing of a queued capture request, and is valid from the
@@ -151,24 +151,34 @@ FrameBuffer::Private::Private()
  *
  * Planar pixel formats use multiple memory regions to store the different
  * colour components of a frame. The Plane structure describes such a memory
- * region by a dmabuf file descriptor and a length. A FrameBuffer then
- * contains one or multiple planes, depending on the pixel format of the
- * frames it is meant to store.
+ * region by a dmabuf file descriptor, an offset within the dmabuf and a length.
+ * A FrameBuffer then contains one or multiple planes, depending on the pixel
+ * format of the frames it is meant to store.
+ *
+ * The offset identifies the location of the plane data from the start of the
+ * memory referenced by the dmabuf file descriptor. Multiple planes may be
+ * stored in the same dmabuf, in which case they will reference the same dmabuf
+ * and different offsets. No two planes may overlap, as specified by their
+ * offset and length.
  *
  * To support DMA access, planes are associated with dmabuf objects represented
  * by FileDescriptor handles. The Plane class doesn't handle mapping of the
  * memory to the CPU, but applications and IPAs may use the dmabuf file
  * descriptors to map the plane memory with mmap() and access its contents.
  *
- * \todo Once we have a Kernel API which can express offsets within a plane
- * this structure shall be extended to contain this information. See commit
- * 83148ce8be55e for initial documentation of this feature.
+ * \todo Specify how an application shall decide whether to use a single or
+ * multiple dmabufs, based on the camera requirements.
  */
 
 /**
  * \var FrameBuffer::Plane::fd
  * \brief The dmabuf file descriptor
  */
+
+/**
+ * \var FrameBuffer::Plane::offset
+ * \brief The plane offset in bytes
+*/
 
 /**
  * \var FrameBuffer::Plane::length

@@ -42,6 +42,7 @@ class FrameBuffer final : public Extensible
 public:
 	struct Plane {
 		FileDescriptor fd;
+		unsigned int offset;
 		unsigned int length;
 	};
 

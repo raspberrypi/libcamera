@@ -569,6 +569,7 @@ FileDescriptor IPADataSerializer<FileDescriptor>::deserialize(const std::vector<
  * FrameBuffer::Plane is serialized as:
  *
  * 4 byte  - FileDescriptor
+ * 4 bytes - uint32_t Offset
  * 4 bytes - uint32_t Length
  */
 template<>
@@ -586,6 +587,7 @@ IPADataSerializer<FrameBuffer::Plane>::serialize(const FrameBuffer::Plane &data,
 	dataVec.insert(dataVec.end(), fdBuf.begin(), fdBuf.end());
 	fdsVec.insert(fdsVec.end(), fdFds.begin(), fdFds.end());
 
+	appendPOD<uint32_t>(dataVec, data.offset);
 	appendPOD<uint32_t>(dataVec, data.length);
 
 	return { dataVec, fdsVec };
@@ -603,7 +605,8 @@ IPADataSerializer<FrameBuffer::Plane>::deserialize(std::vector<uint8_t>::const_i
 
 	ret.fd = IPADataSerializer<FileDescriptor>::deserialize(dataBegin, dataBegin + 4,
 								fdsBegin, fdsBegin + 1);
-	ret.length = readPOD<uint32_t>(dataBegin, 4, dataEnd);
+	ret.offset = readPOD<uint32_t>(dataBegin, 4, dataEnd);
+	ret.length = readPOD<uint32_t>(dataBegin, 8, dataEnd);
 
 	return ret;
 }

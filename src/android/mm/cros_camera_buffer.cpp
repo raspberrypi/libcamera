@@ -31,6 +31,10 @@ public:
 
 	Span<uint8_t> plane(unsigned int plane);
 
+	unsigned int stride(unsigned int plane) const;
+	unsigned int offset(unsigned int plane) const;
+	unsigned int size(unsigned int plane) const;
+
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 
 private:
@@ -109,6 +113,21 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 
 	return { static_cast<uint8_t *>(addr),
 		 bufferManager_->GetPlaneSize(handle_, plane) };
+}
+
+unsigned int CameraBuffer::Private::stride(unsigned int plane) const
+{
+	return cros::CameraBufferManager::GetPlaneStride(handle_, plane);
+}
+
+unsigned int CameraBuffer::Private::offset(unsigned int plane) const
+{
+	return cros::CameraBufferManager::GetPlaneOffset(handle_, plane);
+}
+
+unsigned int CameraBuffer::Private::size(unsigned int plane) const
+{
+	return cros::CameraBufferManager::GetPlaneSize(handle_, plane);
 }
 
 size_t CameraBuffer::Private::jpegBufferSize([[maybe_unused]] size_t maxJpegBufferSize) const

@@ -34,10 +34,15 @@ public:
 
 	Span<uint8_t> plane(unsigned int plane);
 
+	unsigned int stride(unsigned int plane) const;
+	unsigned int offset(unsigned int plane) const;
+	unsigned int size(unsigned int plane) const;
+
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 
 private:
 	struct PlaneInfo {
+		unsigned int stride;
 		unsigned int offset;
 		unsigned int size;
 	};
@@ -114,6 +119,7 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 		const unsigned int planeSize =
 			stride * ((size.height + vertSubSample - 1) / vertSubSample);
 
+		planeInfo_[i].stride = stride;
 		planeInfo_[i].offset = offset;
 		planeInfo_[i].size = planeSize;
 
@@ -146,6 +152,30 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 		return {};
 
 	return planes_[plane];
+}
+
+unsigned int CameraBuffer::Private::stride(unsigned int plane) const
+{
+	if (plane >= planeInfo_.size())
+		return 0;
+
+	return planeInfo_[plane].stride;
+}
+
+unsigned int CameraBuffer::Private::offset(unsigned int plane) const
+{
+	if (plane >= planeInfo_.size())
+		return 0;
+
+	return planeInfo_[plane].offset;
+}
+
+unsigned int CameraBuffer::Private::size(unsigned int plane) const
+{
+	if (plane >= planeInfo_.size())
+		return 0;
+
+	return planeInfo_[plane].size;
 }
 
 size_t CameraBuffer::Private::jpegBufferSize(size_t maxJpegBufferSize) const

@@ -31,6 +31,10 @@ public:
 	libcamera::Span<const uint8_t> plane(unsigned int plane) const;
 	libcamera::Span<uint8_t> plane(unsigned int plane);
 
+	unsigned int stride(unsigned int plane) const;
+	unsigned int offset(unsigned int plane) const;
+	unsigned int size(unsigned int plane) const;
+
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 };
 
@@ -61,6 +65,18 @@ Span<const uint8_t> CameraBuffer::plane(unsigned int plane) const	\
 Span<uint8_t> CameraBuffer::plane(unsigned int plane)			\
 {									\
 	return _d()->plane(plane);					\
+}									\
+unsigned int CameraBuffer::stride(unsigned int plane) const		\
+{									\
+	return _d()->stride(plane);					\
+}									\
+unsigned int CameraBuffer::offset(unsigned int plane) const		\
+{									\
+	return _d()->offset(plane);					\
+}									\
+unsigned int CameraBuffer::size(unsigned int plane) const		\
+{									\
+	return _d()->size(plane);					\
 }									\
 size_t CameraBuffer::jpegBufferSize(size_t maxJpegBufferSize) const	\
 {									\

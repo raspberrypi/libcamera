@@ -52,8 +52,10 @@ FrameWrap::FrameWrap(GstAllocator *allocator, FrameBuffer *buffer,
 	  outstandingPlanes_(0)
 {
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		GstMemory *mem = gst_fd_allocator_alloc(allocator, plane.fd.fd(), plane.length,
+		GstMemory *mem = gst_fd_allocator_alloc(allocator, plane.fd.fd(),
+							plane.offset + plane.length,
 							GST_FD_MEMORY_FLAG_DONT_CLOSE);
+		gst_memory_resize(mem, plane.offset, plane.length);
 		gst_mini_object_set_qdata(GST_MINI_OBJECT(mem), getQuark(), this, nullptr);
 		GST_MINI_OBJECT(mem)->dispose = gst_libcamera_allocator_release;
 		g_object_unref(mem->allocator);

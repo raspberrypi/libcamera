@@ -25,7 +25,7 @@ public:
 		int flags);
 	~Private();
 
-	bool isValid() const { return valid_; }
+	bool isValid() const { return registered_; }
 
 	unsigned int numPlanes() const;
 
@@ -34,10 +34,12 @@ public:
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 
 private:
+	void map();
+
 	cros::CameraBufferManager *bufferManager_;
 	buffer_handle_t handle_;
 	unsigned int numPlanes_;
-	bool valid_;
+	bool mapped_;
 	bool registered_;
 	union {
 		void *addr;
@@ -50,7 +52,7 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       [[maybe_unused]] libcamera::PixelFormat pixelFormat,
 			       [[maybe_unused]] const libcamera::Size &size,
 			       [[maybe_unused]] int flags)
-	: handle_(camera3Buffer), numPlanes_(0), valid_(false),
+	: handle_(camera3Buffer), numPlanes_(0), mapped_(false),
 	  registered_(false)
 {
 	bufferManager_ = cros::CameraBufferManager::GetInstance();
@@ -63,36 +65,11 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 
 	registered_ = true;
 	numPlanes_ = bufferManager_->GetNumPlanes(camera3Buffer);
-	switch (numPlanes_) {
-	case 1: {
-		ret = bufferManager_->Lock(handle_, 0, 0, 0, 0, 0, &mem.addr);
-		if (ret) {
-			LOG(HAL, Error) << "Single plane buffer mapping failed";
-			return;
-		}
-		break;
-	}
-	case 2:
-	case 3: {
-		ret = bufferManager_->LockYCbCr(handle_, 0, 0, 0, 0, 0,
-						&mem.ycbcr);
-		if (ret) {
-			LOG(HAL, Error) << "YCbCr buffer mapping failed";
-			return;
-		}
-		break;
-	}
-	default:
-		LOG(HAL, Error) << "Invalid number of planes: " << numPlanes_;
-		return;
-	}
-
-	valid_ = true;
 }
 
 CameraBuffer::Private::~Private()
 {
-	if (valid_)
+	if (mapped_)
 		bufferManager_->Unlock(handle_);
 	if (registered_)
 		bufferManager_->Deregister(handle_);
@@ -105,6 +82,11 @@ unsigned int CameraBuffer::Private::numPlanes() const
 
 Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 {
+	if (!mapped_)
+		map();
+	if (!mapped_)
+		return {};
+
 	void *addr;
 
 	switch (numPlanes()) {
@@ -132,6 +114,37 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 size_t CameraBuffer::Private::jpegBufferSize([[maybe_unused]] size_t maxJpegBufferSize) const
 {
 	return bufferManager_->GetPlaneSize(handle_, 0);
+}
+
+void CameraBuffer::Private::map()
+{
+	int ret;
+	switch (numPlanes_) {
+	case 1: {
+		ret = bufferManager_->Lock(handle_, 0, 0, 0, 0, 0, &mem.addr);
+		if (ret) {
+			LOG(HAL, Error) << "Single plane buffer mapping failed";
+			return;
+		}
+		break;
+	}
+	case 2:
+	case 3: {
+		ret = bufferManager_->LockYCbCr(handle_, 0, 0, 0, 0, 0,
+						&mem.ycbcr);
+		if (ret) {
+			LOG(HAL, Error) << "YCbCr buffer mapping failed";
+			return;
+		}
+		break;
+	}
+	default:
+		LOG(HAL, Error) << "Invalid number of planes: " << numPlanes_;
+		return;
+	}
+
+	mapped_ = true;
+	return;
 }
 
 PUBLIC_CAMERA_BUFFER_IMPLEMENTATION

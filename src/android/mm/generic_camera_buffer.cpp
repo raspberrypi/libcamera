@@ -37,6 +37,18 @@ public:
 	size_t jpegBufferSize(size_t maxJpegBufferSize) const;
 
 private:
+	struct PlaneInfo {
+		unsigned int offset;
+		unsigned int size;
+	};
+
+	void map();
+
+	int fd_;
+	int flags_;
+	off_t bufferLength_;
+	bool mapped_;
+	std::vector<PlaneInfo> planeInfo_;
 	/* \todo Remove planes_ when it will be added to MappedBuffer */
 	std::vector<Span<uint8_t>> planes_;
 };
@@ -45,6 +57,7 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
 			       libcamera::PixelFormat pixelFormat,
 			       const libcamera::Size &size, int flags)
+	: fd_(-1), flags_(flags), bufferLength_(0), mapped_(false)
 {
 	error_ = 0;
 
@@ -61,43 +74,35 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 	 * now that the buffer is backed by a single dmabuf, with planes being
 	 * stored contiguously.
 	 */
-	int fd = -1;
 	for (int i = 0; i < camera3Buffer->numFds; i++) {
-		if (camera3Buffer->data[i] == -1 || camera3Buffer->data[i] == fd)
+		if (camera3Buffer->data[i] == -1 || camera3Buffer->data[i] == fd_)
 			continue;
 
-		if (fd != -1) {
+		if (fd_ != -1) {
 			error_ = -EINVAL;
 			LOG(HAL, Error) << "Discontiguous planes are not supported";
 			return;
 		}
 
-		fd = camera3Buffer->data[i];
+		fd_ = camera3Buffer->data[i];
 	}
 
-	if (fd == -1) {
+	if (fd_ == -1) {
 		error_ = -EINVAL;
 		LOG(HAL, Error) << "No valid file descriptor";
 		return;
 	}
 
-	off_t bufferLength = lseek(fd, 0, SEEK_END);
-	if (bufferLength < 0) {
+	bufferLength_ = lseek(fd_, 0, SEEK_END);
+	if (bufferLength_ < 0) {
 		error_ = -errno;
 		LOG(HAL, Error) << "Failed to get buffer length";
 		return;
 	}
 
-	void *address = mmap(nullptr, bufferLength, flags, MAP_SHARED, fd, 0);
-	if (address == MAP_FAILED) {
-		error_ = -errno;
-		LOG(HAL, Error) << "Failed to mmap plane";
-		return;
-	}
-	maps_.emplace_back(static_cast<uint8_t *>(address), bufferLength);
-
 	const unsigned int numPlanes = info.numPlanes();
-	planes_.resize(numPlanes);
+	planeInfo_.resize(numPlanes);
+
 	unsigned int offset = 0;
 	for (unsigned int i = 0; i < numPlanes; ++i) {
 		/*
@@ -109,17 +114,17 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 		const unsigned int planeSize =
 			stride * ((size.height + vertSubSample - 1) / vertSubSample);
 
-		planes_[i] = libcamera::Span<uint8_t>(
-			static_cast<uint8_t *>(address) + offset, planeSize);
+		planeInfo_[i].offset = offset;
+		planeInfo_[i].size = planeSize;
 
-		if (bufferLength < offset + planeSize) {
-			error_ = -EINVAL;
-			LOG(HAL, Error) << "Plane " << i << " is out of buffer"
-					<< ", buffer length=" << bufferLength
-					<< ", offset=" << offset
-					<< ", size=" << planeSize;
+		if (bufferLength_ < offset + planeSize) {
+			LOG(HAL, Error) << "Plane " << i << " is out of buffer:"
+					<< " plane offset=" << offset
+					<< ", plane size=" << planeSize
+					<< ", buffer length=" << bufferLength_;
 			return;
 		}
+
 		offset += planeSize;
 	}
 }
@@ -130,12 +135,14 @@ CameraBuffer::Private::~Private()
 
 unsigned int CameraBuffer::Private::numPlanes() const
 {
-	return planes_.size();
+	return planeInfo_.size();
 }
 
 Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 {
-	if (plane >= planes_.size())
+	if (!mapped_)
+		map();
+	if (!mapped_)
 		return {};
 
 	return planes_[plane];
@@ -143,8 +150,31 @@ Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 
 size_t CameraBuffer::Private::jpegBufferSize(size_t maxJpegBufferSize) const
 {
-	return std::min<unsigned int>(maps_[0].size(),
-				      maxJpegBufferSize);
+	ASSERT(bufferLength_ >= 0);
+
+	return std::min<unsigned int>(bufferLength_, maxJpegBufferSize);
+}
+
+void CameraBuffer::Private::map()
+{
+	ASSERT(fd_ != -1);
+	ASSERT(bufferLength_ >= 0);
+
+	void *address = mmap(nullptr, bufferLength_, flags_, MAP_SHARED, fd_, 0);
+	if (address == MAP_FAILED) {
+		error_ = -errno;
+		LOG(HAL, Error) << "Failed to mmap plane";
+		return;
+	}
+	maps_.emplace_back(static_cast<uint8_t *>(address), bufferLength_);
+
+	planes_.reserve(planeInfo_.size());
+	for (const auto &info : planeInfo_) {
+		planes_.emplace_back(
+			static_cast<uint8_t *>(address) + info.offset, info.size);
+	}
+
+	mapped_ = true;
 }
 
 PUBLIC_CAMERA_BUFFER_IMPLEMENTATION

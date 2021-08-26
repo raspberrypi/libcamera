@@ -25,10 +25,6 @@
  *  - Add timestamp support
  *  - Use unique names to select the camera devices
  *  - Add GstVideoMeta support (strides and offsets)
- *
- * \todo libcamera UVC drivers picks the lowest possible resolution first, this
- * should be fixed so that we get a decent resolution and framerate for the
- * role by default.
  */
 
 #include "gstlibcamerasrc.h"

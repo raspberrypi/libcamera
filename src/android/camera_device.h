@@ -21,6 +21,8 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/geometry.h>
+#include <libcamera/pixel_format.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -91,7 +93,9 @@ private:
 
 	void stop();
 
-	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer);
+	libcamera::FrameBuffer *createFrameBuffer(const buffer_handle_t camera3buffer,
+						  libcamera::PixelFormat pixelFormat,
+						  const libcamera::Size &size);
 	void abortRequest(camera3_capture_request_t *request);
 	bool isValidRequest(camera3_capture_request_t *request) const;
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);

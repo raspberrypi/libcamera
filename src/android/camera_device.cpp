@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
 
@@ -744,31 +745,40 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
-FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer)
+FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
+					     libcamera::PixelFormat pixelFormat,
+					     const libcamera::Size &size)
 {
-	std::vector<FrameBuffer::Plane> planes;
+	FileDescriptor fd;
+	/*
+	 * This assumes all the planes are in the same dmabuf.
+	 *
+	 * \todo Verify that this assumption holds, fstat() can be used to check
+	 * if two fds refer to the same dmabuf.
+	 */
 	for (int i = 0; i < camera3buffer->numFds; i++) {
-		/* Skip unused planes. */
-		if (camera3buffer->data[i] == -1)
+		if (camera3buffer->data[i] != -1) {
+			fd = FileDescriptor(camera3buffer->data[i]);
 			break;
-
-		FrameBuffer::Plane plane;
-		plane.fd = FileDescriptor(camera3buffer->data[i]);
-		if (!plane.fd.isValid()) {
-			LOG(HAL, Error) << "Failed to obtain FileDescriptor ("
-					<< camera3buffer->data[i] << ") "
-					<< " on plane " << i;
-			return nullptr;
 		}
+	}
 
-		off_t length = lseek(plane.fd.fd(), 0, SEEK_END);
-		if (length == -1) {
-			LOG(HAL, Error) << "Failed to query plane length";
-			return nullptr;
-		}
+	if (!fd.isValid()) {
+		LOG(HAL, Fatal) << "No valid fd";
+		return nullptr;
+	}
 
-		plane.length = length;
-		planes.push_back(std::move(plane));
+	CameraBuffer buf(camera3buffer, pixelFormat, size, PROT_READ);
+	if (!buf.isValid()) {
+		LOG(HAL, Fatal) << "Failed to create CameraBuffer";
+		return nullptr;
+	}
+
+	std::vector<FrameBuffer::Plane> planes(buf.numPlanes());
+	for (size_t i = 0; i < buf.numPlanes(); ++i) {
+		planes[i].fd = fd;
+		planes[i].offset = buf.offset(i);
+		planes[i].length = buf.size(i);
 	}
 
 	return new FrameBuffer(std::move(planes));
@@ -976,7 +986,9 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * associate it with the Camera3RequestDescriptor for
 			 * lifetime management only.
 			 */
-			buffer = createFrameBuffer(*camera3Buffer.buffer);
+			buffer = createFrameBuffer(*camera3Buffer.buffer,
+						   cameraStream->configuration().pixelFormat,
+						   cameraStream->configuration().size);
 			descriptor.frameBuffers_.emplace_back(buffer);
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;

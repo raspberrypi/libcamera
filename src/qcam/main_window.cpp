@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <string>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <QComboBox>
 #include <QCoreApplication>
@@ -472,10 +473,14 @@ int MainWindow::startCapture()
 		for (const std::unique_ptr<FrameBuffer> &buffer : allocator_->buffers(stream)) {
 			/* Map memory buffers and cache the mappings. */
 			const FrameBuffer::Plane &plane = buffer->planes().front();
-			void *memory = mmap(NULL, plane.length, PROT_READ, MAP_SHARED,
+			size_t length = lseek(plane.fd.fd(), 0, SEEK_END);
+			void *memory = mmap(NULL, length, PROT_READ, MAP_SHARED,
 					    plane.fd.fd(), 0);
+
 			mappedBuffers_[buffer.get()] = { static_cast<uint8_t *>(memory),
 							 plane.length };
+			planeData_[buffer.get()] = { static_cast<uint8_t *>(memory) + plane.offset,
+						     plane.length };
 
 			/* Store buffers on the free list. */
 			freeBuffers_[stream].enqueue(buffer.get());
@@ -542,6 +547,7 @@ error:
 		munmap(buffer.data(), buffer.size());
 	}
 	mappedBuffers_.clear();
+	planeData_.clear();
 
 	freeBuffers_.clear();
 
@@ -578,6 +584,7 @@ void MainWindow::stopCapture()
 		munmap(buffer.data(), buffer.size());
 	}
 	mappedBuffers_.clear();
+	planeData_.clear();
 
 	requests_.clear();
 	freeQueue_.clear();
@@ -674,10 +681,10 @@ void MainWindow::processRaw(FrameBuffer *buffer,
 							"DNG Files (*.dng)");
 
 	if (!filename.isEmpty()) {
-		const Span<uint8_t> &mapped = mappedBuffers_[buffer];
+		uint8_t *memory = planeData_[buffer].data();
 		DNGWriter::write(filename.toStdString().c_str(), camera_.get(),
 				 rawStream_->configuration(), metadata, buffer,
-				 mapped.data());
+				 memory);
 	}
 #endif
 
@@ -754,7 +761,7 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 		<< "fps:" << Qt::fixed << qSetRealNumberPrecision(2) << fps;
 
 	/* Render the frame on the viewfinder. */
-	viewfinder_->render(buffer, mappedBuffers_[buffer]);
+	viewfinder_->render(buffer, planeData_[buffer]);
 }
 
 void MainWindow::queueRequest(FrameBuffer *buffer)

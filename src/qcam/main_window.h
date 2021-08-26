@@ -107,6 +107,7 @@ private:
 
 	std::unique_ptr<CameraConfiguration> config_;
 	std::map<FrameBuffer *, Span<uint8_t>> mappedBuffers_;
+	std::map<FrameBuffer *, Span<uint8_t>> planeData_;
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;

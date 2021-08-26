@@ -316,12 +316,6 @@ gst_libcamera_src_task_run(gpointer user_data)
 	}
 
 	{
-		/*
-		 * Here we need to decide if we want to pause or stop the task. This
-		 * needs to happen in lock step with the callback thread which may want
-		 * to resume the task.
-		 */
-		GLibLocker lock(GST_OBJECT(self));
 		if (ret != GST_FLOW_OK) {
 			if (ret == GST_FLOW_EOS) {
 				g_autoptr(GstEvent) eos = gst_event_new_eos();
@@ -336,6 +330,12 @@ gst_libcamera_src_task_run(gpointer user_data)
 			return;
 		}
 
+		/*
+		 * Here we need to decide if we want to pause. This needs to
+		 * happen in lock step with the callback thread which may want
+		 * to resume the task and might push pending buffers.
+		 */
+		GLibLocker lock(GST_OBJECT(self));
 		bool do_pause = true;
 		for (GstPad *srcpad : state->srcpads_) {
 			if (gst_libcamera_pad_has_pending(srcpad)) {

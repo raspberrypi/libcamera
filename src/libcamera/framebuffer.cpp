@@ -171,6 +171,11 @@ FrameBuffer::Private::Private()
  */
 
 /**
+ * \var FrameBuffer::Plane::kInvalidOffset
+ * \brief Invalid offset value, to identify uninitialized planes
+ */
+
+/**
  * \var FrameBuffer::Plane::fd
  * \brief The dmabuf file descriptor
  */

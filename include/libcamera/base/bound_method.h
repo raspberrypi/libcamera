@@ -98,35 +98,17 @@ public:
 	using PackType = BoundMethodPack<R, Args...>;
 
 private:
-	template<std::size_t... I>
-	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
+	template<std::size_t... I, typename T = R>
+	std::enable_if_t<!std::is_void<T>::value, void>
+	invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
 	{
 		PackType *args = static_cast<PackType *>(pack);
 		args->ret_ = invoke(std::get<I>(args->args_)...);
 	}
 
-public:
-	BoundMethodArgs(void *obj, Object *object, ConnectionType type)
-		: BoundMethodBase(obj, object, type) {}
-
-	void invokePack(BoundMethodPackBase *pack) override
-	{
-		invokePack(pack, std::make_index_sequence<sizeof...(Args)>{});
-	}
-
-	virtual R activate(Args... args, bool deleteMethod = false) = 0;
-	virtual R invoke(Args... args) = 0;
-};
-
-template<typename... Args>
-class BoundMethodArgs<void, Args...> : public BoundMethodBase
-{
-public:
-	using PackType = BoundMethodPack<void, Args...>;
-
-private:
-	template<std::size_t... I>
-	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
+	template<std::size_t... I, typename T = R>
+	std::enable_if_t<std::is_void<T>::value, void>
+	invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
 	{
 		/* args is effectively unused when the sequence I is empty. */
 		PackType *args [[gnu::unused]] = static_cast<PackType *>(pack);
@@ -142,8 +124,8 @@ public:
 		invokePack(pack, std::make_index_sequence<sizeof...(Args)>{});
 	}
 
-	virtual void activate(Args... args, bool deleteMethod = false) = 0;
-	virtual void invoke(Args... args) = 0;
+	virtual R activate(Args... args, bool deleteMethod = false) = 0;
+	virtual R invoke(Args... args) = 0;
 };
 
 template<typename T, typename R, typename... Args>

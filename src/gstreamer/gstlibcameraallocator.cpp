@@ -108,15 +108,18 @@ gst_libcamera_allocator_release(GstMiniObject *mini_object)
 {
 	GstMemory *mem = GST_MEMORY_CAST(mini_object);
 	GstLibcameraAllocator *self = GST_LIBCAMERA_ALLOCATOR(mem->allocator);
-	GLibLocker lock(GST_OBJECT(self));
-	auto *frame = reinterpret_cast<FrameWrap *>(gst_mini_object_get_qdata(mini_object, FrameWrap::getQuark()));
 
-	gst_memory_ref(mem);
+	{
+		GLibLocker lock(GST_OBJECT(self));
+		auto *frame = reinterpret_cast<FrameWrap *>(gst_mini_object_get_qdata(mini_object, FrameWrap::getQuark()));
 
-	if (frame->releasePlane()) {
-		auto *pool = reinterpret_cast<GQueue *>(g_hash_table_lookup(self->pools, frame->stream_));
-		g_return_val_if_fail(pool, TRUE);
-		g_queue_push_tail(pool, frame);
+		gst_memory_ref(mem);
+
+		if (frame->releasePlane()) {
+			auto *pool = reinterpret_cast<GQueue *>(g_hash_table_lookup(self->pools, frame->stream_));
+			g_return_val_if_fail(pool, TRUE);
+			g_queue_push_tail(pool, frame);
+		}
 	}
 
 	/* Keep last in case we are holding on the last allocator ref. */

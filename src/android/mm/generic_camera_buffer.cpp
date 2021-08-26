@@ -54,8 +54,6 @@ private:
 	off_t bufferLength_;
 	bool mapped_;
 	std::vector<PlaneInfo> planeInfo_;
-	/* \todo Remove planes_ when it will be added to MappedBuffer */
-	std::vector<Span<uint8_t>> planes_;
 };
 
 CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,

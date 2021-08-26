@@ -1283,6 +1283,12 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 
 		FrameBuffer::Plane plane;
 		plane.fd = std::move(fd);
+		/*
+		 * V4L2 API doesn't provide dmabuf offset information of plane.
+		 * Set 0 as a placeholder offset.
+		 * \todo Set the right offset once V4L2 API provides a way.
+		 */
+		plane.offset = 0;
 		plane.length = multiPlanar ?
 			buf.m.planes[nplane].length : buf.length;
 

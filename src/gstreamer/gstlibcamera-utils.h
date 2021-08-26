@@ -9,16 +9,18 @@
 #ifndef __GST_LIBCAMERA_UTILS_H__
 #define __GST_LIBCAMERA_UTILS_H__
 
+#include <libcamera/camera_manager.h>
+#include <libcamera/stream.h>
+
 #include <gst/gst.h>
 #include <gst/video/video.h>
-
-#include <libcamera/stream.h>
 
 GstCaps *gst_libcamera_stream_formats_to_caps(const libcamera::StreamFormats &formats);
 GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfiguration &stream_cfg);
 void gst_libcamera_configure_stream_from_caps(libcamera::StreamConfiguration &stream_cfg,
 					      GstCaps *caps);
 void gst_libcamera_resume_task(GstTask *task);
+std::shared_ptr<libcamera::CameraManager> gst_libcamera_get_camera_mananger(int &ret);
 
 /**
  * \class GLibLocker

@@ -178,3 +178,27 @@ gst_libcamera_resume_task(GstTask *task)
 		GST_TASK_SIGNAL(task);
 	}
 }
+
+G_LOCK_DEFINE_STATIC(cm_singleton_lock);
+std::weak_ptr<CameraManager> cm_singleton_ptr;
+
+std::shared_ptr<CameraManager>
+gst_libcamera_get_camera_mananger(int &ret)
+{
+	std::shared_ptr<CameraManager> cm;
+
+	G_LOCK(cm_singleton_lock);
+
+	cm = cm_singleton_ptr.lock();
+	if (!cm) {
+		cm = std::make_shared<CameraManager>();
+		cm_singleton_ptr = cm;
+		ret = cm->start();
+	} else {
+		ret = 0;
+	}
+
+	G_UNLOCK(cm_singleton_lock);
+
+	return cm;
+}

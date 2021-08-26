@@ -108,7 +108,7 @@ GstBuffer *RequestWrap::detachBuffer(Stream *stream)
 struct GstLibcameraSrcState {
 	GstLibcameraSrc *src_;
 
-	std::unique_ptr<CameraManager> cm_;
+	std::shared_ptr<CameraManager> cm_;
 	std::shared_ptr<Camera> cam_;
 	std::unique_ptr<CameraConfiguration> config_;
 	std::vector<GstPad *> srcpads_;
@@ -202,13 +202,13 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 static bool
 gst_libcamera_src_open(GstLibcameraSrc *self)
 {
-	std::unique_ptr<CameraManager> cm = std::make_unique<CameraManager>();
+	std::shared_ptr<CameraManager> cm;
 	std::shared_ptr<Camera> cam;
-	gint ret = 0;
+	gint ret;
 
 	GST_DEBUG_OBJECT(self, "Opening camera device ...");
 
-	ret = cm->start();
+	cm = gst_libcamera_get_camera_mananger(ret);
 	if (ret) {
 		GST_ELEMENT_ERROR(self, LIBRARY, INIT,
 				  ("Failed listing cameras."),
@@ -254,7 +254,7 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 	cam->requestCompleted.connect(self->state, &GstLibcameraSrcState::requestCompleted);
 
 	/* No need to lock here, we didn't start our threads yet. */
-	self->state->cm_ = std::move(cm);
+	self->state->cm_ = cm;
 	self->state->cam_ = cam;
 
 	return true;
@@ -521,7 +521,6 @@ gst_libcamera_src_close(GstLibcameraSrc *self)
 	}
 
 	state->cam_.reset();
-	state->cm_->stop();
 	state->cm_.reset();
 }
 

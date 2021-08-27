@@ -270,11 +270,15 @@ private:
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
 
+	static bool destroyed_;
+
 	std::unordered_set<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
 	std::shared_ptr<LogOutput> output_;
 };
+
+bool Logger::destroyed_ = false;
 
 /**
  * \enum LoggingTarget
@@ -372,6 +376,8 @@ void logSetLevel(const char *category, const char *level)
 
 Logger::~Logger()
 {
+	destroyed_ = true;
+
 	for (LogCategory *category : categories_)
 		delete category;
 }
@@ -387,6 +393,10 @@ Logger::~Logger()
 Logger *Logger::instance()
 {
 	static Logger instance;
+
+	if (destroyed_)
+		return nullptr;
+
 	return &instance;
 }
 
@@ -808,13 +818,17 @@ LogMessage::~LogMessage()
 	if (severity_ == LogInvalid)
 		return;
 
+	Logger *logger = Logger::instance();
+	if (!logger)
+		return;
+
 	msgStream_ << std::endl;
 
 	if (severity_ >= category_.severity())
-		Logger::instance()->write(*this);
+		logger->write(*this);
 
 	if (severity_ == LogSeverity::LogFatal) {
-		Logger::instance()->backtrace();
+		logger->backtrace();
 		std::abort();
 	}
 }

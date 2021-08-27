@@ -122,6 +122,30 @@ SignalBase::SlotList SignalBase::slots()
  */
 
 /**
+ * \fn Signal::connect(T *object, Func func)
+ * \brief Connect the signal to a function object slot
+ * \param[in] object The slot object pointer
+ * \param[in] func The function object
+ *
+ * If the typename T inherits from Object, the signal will be automatically
+ * disconnected from the \a func slot of \a object when \a object is destroyed.
+ * Otherwise the caller shall disconnect signals manually before destroying \a
+ * object.
+ *
+ * The function object is typically a lambda function, but may be any object
+ * that satisfies the FunctionObject named requirements. The types of the
+ * function object arguments shall match the types of the signal arguments.
+ *
+ * No matching disconnect() function exist, as it wouldn't be possible to pass
+ * to a disconnect() function the same lambda that was passed to connect(). The
+ * connection created by this function can not be removed selectively if the
+ * signal is connected to multiple slots of the same receiver, but may be
+ * otherwise be removed using the disconnect(T *object) function.
+ *
+ * \context This function is \threadsafe.
+ */
+
+/**
  * \fn Signal::connect(R (*func)(Args...))
  * \brief Connect the signal to a static function slot
  * \param[in] func The slot static function

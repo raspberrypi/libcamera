@@ -61,6 +61,25 @@ public:
 		SignalBase::connect(new BoundMethodMember<T, R, Args...>(obj, nullptr, func));
 	}
 
+#ifndef __DOXYGEN__
+	template<typename T, typename Func,
+		 typename std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
+	void connect(T *obj, Func func, ConnectionType type = ConnectionTypeAuto)
+	{
+		Object *object = static_cast<Object *>(obj);
+		SignalBase::connect(new BoundMethodFunctor<T, void, Func, Args...>(obj, object, func, type));
+	}
+
+	template<typename T, typename Func,
+		 typename std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
+#else
+	template<typename T, typename Func>
+#endif
+	void connect(T *obj, Func func)
+	{
+		SignalBase::connect(new BoundMethodFunctor<T, void, Func, Args...>(obj, nullptr, func));
+	}
+
 	template<typename R>
 	void connect(R (*func)(Args...))
 	{

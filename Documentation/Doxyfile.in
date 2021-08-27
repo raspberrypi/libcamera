@@ -878,6 +878,7 @@ EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
 
 EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          libcamera::BoundMethodBase \
+                         libcamera::BoundMethodFunctor \
                          libcamera::BoundMethodMember \
                          libcamera::BoundMethodPack \
                          libcamera::BoundMethodPackBase \

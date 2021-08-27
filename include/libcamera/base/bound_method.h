@@ -128,6 +128,37 @@ public:
 	virtual R invoke(Args... args) = 0;
 };
 
+template<typename T, typename R, typename Func, typename... Args>
+class BoundMethodFunctor : public BoundMethodArgs<R, Args...>
+{
+public:
+	using PackType = typename BoundMethodArgs<R, Args...>::PackType;
+
+	BoundMethodFunctor(T *obj, Object *object, Func func,
+			   ConnectionType type = ConnectionTypeAuto)
+		: BoundMethodArgs<R, Args...>(obj, object, type), func_(func)
+	{
+	}
+
+	R activate(Args... args, bool deleteMethod = false) override
+	{
+		if (!this->object_)
+			return func_(args...);
+
+		auto pack = std::make_shared<PackType>(args...);
+		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
+		return sync ? pack->returnValue() : R();
+	}
+
+	R invoke(Args... args) override
+	{
+		return func_(args...);
+	}
+
+private:
+	Func func_;
+};
+
 template<typename T, typename R, typename... Args>
 class BoundMethodMember : public BoundMethodArgs<R, Args...>
 {

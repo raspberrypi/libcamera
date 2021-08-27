@@ -239,7 +239,7 @@ class StagedChanges(Commit):
     def _parse(self):
         ret = subprocess.run(['git', 'diff', '--staged', '--name-status'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        self._title = "Staged changes"
+        self._title = 'Staged changes'
         self._files = [CommitFile(f) for f in ret.splitlines()]
 
     def get_diff(self, top_level, filename):
@@ -476,7 +476,7 @@ class Pep8Checker(StyleChecker):
             ret = subprocess.run(['pycodestyle', '--ignore=E501', '-'],
                                  input=data, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            issues.append(StyleIssue(0, None, "Please install pycodestyle to validate python additions"))
+            issues.append(StyleIssue(0, None, 'Please install pycodestyle to validate python additions'))
             return issues
 
         results = ret.stdout.decode('utf-8').splitlines()
@@ -509,7 +509,7 @@ class ShellChecker(StyleChecker):
             ret = subprocess.run(['shellcheck', '-Cnever', '-'],
                                  input=data, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            issues.append(StyleIssue(0, None, "Please install shellcheck to validate shell script additions"))
+            issues.append(StyleIssue(0, None, 'Please install shellcheck to validate shell script additions'))
             return issues
 
         results = ret.stdout.decode('utf-8').splitlines()
@@ -774,10 +774,10 @@ def check_style(top_level, commit):
         issues += check_file(top_level, commit, f)
 
     if issues == 0:
-        print("No issue detected")
+        print('No issue detected')
     else:
         print('---')
-        print("%u potential %s detected, please review" %
+        print('%u potential %s detected, please review' %
               (issues, 'issue' if issues == 1 else 'issues'))
 
     return issues
@@ -833,7 +833,7 @@ def main(argv):
     for command, mandatory in dependencies.items():
         found = shutil.which(command)
         if mandatory and not found:
-            print("Executable %s not found" % command)
+            print('Executable %s not found' % command)
             return 1
 
         dependencies[command] = found

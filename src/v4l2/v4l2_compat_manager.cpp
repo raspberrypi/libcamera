@@ -143,7 +143,7 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 
 	ret = getCameraIndex(fd);
 	if (ret < 0) {
-		LOG(V4L2Compat, Info) << "No camera found for " << path;
+		LOG(V4L2Compat, Debug) << "No camera found for " << path;
 		return fd;
 	}
 

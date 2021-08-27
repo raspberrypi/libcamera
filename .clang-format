@@ -77,7 +77,6 @@ IncludeCategories:
   # Qt includes (match before C++ standard library)
   - Regex:           '<Q([A-Za-z0-9\-_])+>'
     Priority:        9
-    CaseSensitive:   true
   # Headers in <> with an extension. (+system libraries)
   - Regex:           '<([A-Za-z0-9\-_])+\.h>'
     Priority:        2

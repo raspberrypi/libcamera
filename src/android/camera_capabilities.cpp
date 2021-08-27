@@ -646,6 +646,30 @@ int CameraCapabilities::initializeStreamConfigurations()
 
 			int64_t minFrameDuration = frameDurations->second.min().get<int64_t>() * 1000;
 			int64_t maxFrameDuration = frameDurations->second.max().get<int64_t>() * 1000;
+
+			/*
+			 * Cap min frame duration to 30 FPS.
+			 *
+			 * 30 frames per second has been validated as the most
+			 * opportune frame rate for quality tuning, and power
+			 * vs performances budget on Intel IPU3-based
+			 * Chromebooks.
+			 *
+			 * \todo This is a platform-specific decision that needs
+			 * to be abstracted and delegated to the configuration
+			 * file.
+			 *
+			 * \todo libcamera only allows to control frame duration
+			 * through the per-request controls::FrameDuration
+			 * control. If we cap the durations here, we should be
+			 * capable of configuring the camera to operate at such
+			 * duration without requiring to have the FrameDuration
+			 * control to be specified for each Request. Defer this
+			 * to the in-development configuration API rework.
+			 */
+			if (minFrameDuration < 1e9 / 30.0)
+				minFrameDuration = 1e9 / 30.0;
+
 			streamConfigurations_.push_back({
 				res, androidFormat, minFrameDuration, maxFrameDuration,
 			});

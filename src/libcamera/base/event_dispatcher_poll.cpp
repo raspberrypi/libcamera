@@ -278,7 +278,7 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 			}
 
 			if (pfd.revents & event.events)
-				notifier->activated.emit(notifier);
+				notifier->activated.emit();
 		}
 
 		/* Erase the notifiers_ entry if it is now empty. */
@@ -300,7 +300,7 @@ void EventDispatcherPoll::processTimers()
 
 		timers_.pop_front();
 		timer->stop();
-		timer->timeout.emit(timer);
+		timer->timeout.emit();
 	}
 }
 

@@ -238,7 +238,7 @@ private:
 	std::unique_ptr<FrameBuffer> createBuffer(unsigned int index);
 	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 
-	void bufferAvailable(EventNotifier *notifier);
+	void bufferAvailable();
 	FrameBuffer *dequeueBuffer();
 
 	V4L2Capability caps_;

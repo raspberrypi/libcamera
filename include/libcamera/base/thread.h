@@ -41,7 +41,7 @@ public:
 
 	bool isRunning();
 
-	Signal<Thread *> finished;
+	Signal<> finished;
 
 	static Thread *current();
 	static pid_t currentId();

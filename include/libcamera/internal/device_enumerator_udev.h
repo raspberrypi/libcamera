@@ -59,7 +59,7 @@ private:
 	std::string lookupDeviceNode(dev_t devnum);
 
 	int addV4L2Device(dev_t devnum);
-	void udevNotify(EventNotifier *notifier);
+	void udevNotify();
 
 	struct udev *udev_;
 	struct udev_monitor *monitor_;

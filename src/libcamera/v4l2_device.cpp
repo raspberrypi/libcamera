@@ -705,12 +705,11 @@ void V4L2Device::updateControls(ControlList *ctrls,
 
 /**
  * \brief Slot to handle V4L2 events from the V4L2 device
- * \param[in] notifier The event notifier
  *
  * When this slot is called, a V4L2 event is available to be dequeued from the
  * device.
  */
-void V4L2Device::eventAvailable([[maybe_unused]] EventNotifier *notifier)
+void V4L2Device::eventAvailable()
 {
 	struct v4l2_event event{};
 	int ret = ioctl(VIDIOC_DQEVENT, &event);

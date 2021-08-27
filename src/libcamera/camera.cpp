@@ -688,7 +688,7 @@ void Camera::disconnect()
 	LOG(Camera, Debug) << "Disconnecting camera " << id();
 
 	_d()->disconnect();
-	disconnected.emit(this);
+	disconnected.emit();
 }
 
 int Camera::exportFrameBuffers(Stream *stream,

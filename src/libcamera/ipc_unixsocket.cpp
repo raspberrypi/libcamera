@@ -311,7 +311,7 @@ int IPCUnixSocket::recvData(void *buffer, size_t length,
 	return 0;
 }
 
-void IPCUnixSocket::dataNotifier([[maybe_unused]] EventNotifier *notifier)
+void IPCUnixSocket::dataNotifier()
 {
 	int ret;
 
@@ -342,7 +342,7 @@ void IPCUnixSocket::dataNotifier([[maybe_unused]] EventNotifier *notifier)
 		return;
 
 	notifier_->setEnabled(false);
-	readyRead.emit(this);
+	readyRead.emit();
 }
 
 } /* namespace libcamera */

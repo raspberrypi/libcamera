@@ -34,7 +34,7 @@ public:
 	bool enabled() const { return enabled_; }
 	void setEnabled(bool enable);
 
-	Signal<EventNotifier *> activated;
+	Signal<> activated;
 
 protected:
 	void message(Message *msg) override;

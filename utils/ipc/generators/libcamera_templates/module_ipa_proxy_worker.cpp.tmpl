@@ -57,7 +57,7 @@ public:
 
 	~{{proxy_worker_name}}() {}
 
-	void readyRead([[maybe_unused]] IPCUnixSocket *socket)
+	void readyRead()
 	{
 		IPCUnixSocket::Payload _message;
 		int _retRecv = socket_.receive(&_message);

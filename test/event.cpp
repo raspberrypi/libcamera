@@ -22,7 +22,7 @@ using namespace libcamera;
 class EventTest : public Test
 {
 protected:
-	void readReady([[maybe_unused]] EventNotifier *notifier)
+	void readReady()
 	{
 		size_ = read(notifier_->fd(), data_, sizeof(data_));
 		notified_ = true;

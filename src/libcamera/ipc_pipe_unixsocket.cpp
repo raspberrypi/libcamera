@@ -82,7 +82,7 @@ int IPCPipeUnixSocket::sendAsync(const IPCMessage &data)
 	return 0;
 }
 
-void IPCPipeUnixSocket::readyRead([[maybe_unused]] IPCUnixSocket *socket)
+void IPCPipeUnixSocket::readyRead()
 {
 	IPCUnixSocket::Payload payload;
 	int ret = socket_->receive(&payload);

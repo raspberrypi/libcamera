@@ -35,7 +35,7 @@ private:
 		bool done;
 	};
 
-	void readyRead(IPCUnixSocket *socket);
+	void readyRead();
 	int call(const IPCUnixSocket::Payload &message,
 		 IPCUnixSocket::Payload *response, uint32_t seq);
 

@@ -65,7 +65,7 @@ private:
 	void updateControls(ControlList *ctrls,
 			    Span<const v4l2_ext_control> v4l2Ctrls);
 
-	void eventAvailable(EventNotifier *notifier);
+	void eventAvailable();
 
 	std::map<unsigned int, struct v4l2_query_ext_ctrl> controlInfo_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;

@@ -53,7 +53,7 @@ public:
 	MediaLink *link(const MediaPad *source, const MediaPad *sink);
 	int disableLinks();
 
-	Signal<MediaDevice *> disconnected;
+	Signal<> disconnected;
 
 protected:
 	std::string logPrefix() const override;

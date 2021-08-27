@@ -33,7 +33,7 @@ public:
 
 	std::chrono::steady_clock::time_point deadline() const { return deadline_; }
 
-	Signal<Timer *> timeout;
+	Signal<> timeout;
 
 protected:
 	void message(Message *msg) override;

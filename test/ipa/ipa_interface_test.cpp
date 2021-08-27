@@ -153,7 +153,7 @@ protected:
 	}
 
 private:
-	void readTrace([[maybe_unused]] EventNotifier *notifier)
+	void readTrace()
 	{
 		ssize_t s = read(notifier_->fd(), &trace_, sizeof(trace_));
 		if (s < 0) {

@@ -56,7 +56,7 @@ public:
 	}
 
 private:
-	void timeoutHandler([[maybe_unused]] Timer *timer)
+	void timeoutHandler()
 	{
 		expiration_ = std::chrono::steady_clock::now();
 		count_++;

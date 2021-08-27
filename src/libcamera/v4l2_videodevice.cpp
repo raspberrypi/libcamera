@@ -1524,7 +1524,6 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 
 /**
  * \brief Slot to handle completed buffer events from the V4L2 video device
- * \param[in] notifier The event notifier
  *
  * When this slot is called, a Buffer has become available from the device, and
  * will be emitted through the bufferReady Signal.
@@ -1532,7 +1531,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
  * For Capture video devices the FrameBuffer will contain valid data.
  * For Output video devices the FrameBuffer can be considered empty.
  */
-void V4L2VideoDevice::bufferAvailable([[maybe_unused]] EventNotifier *notifier)
+void V4L2VideoDevice::bufferAvailable()
 {
 	FrameBuffer *buffer = dequeueBuffer();
 	if (!buffer)

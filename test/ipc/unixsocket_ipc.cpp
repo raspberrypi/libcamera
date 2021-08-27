@@ -65,7 +65,7 @@ public:
 	}
 
 private:
-	void readyRead([[maybe_unused]] IPCUnixSocket *ipc)
+	void readyRead()
 	{
 		IPCUnixSocket::Payload message;
 		int ret;

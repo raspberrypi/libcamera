@@ -68,7 +68,7 @@ public:
 	}
 
 private:
-	void readyRead([[maybe_unused]] IPCUnixSocket *ipc)
+	void readyRead()
 	{
 		IPCUnixSocket::Payload message, response;
 		int ret;
@@ -447,7 +447,7 @@ private:
 		return 0;
 	}
 
-	void readyRead([[maybe_unused]] IPCUnixSocket *ipc)
+	void readyRead()
 	{
 		if (!callResponse_) {
 			cerr << "Read ready without expecting data, fail." << endl;

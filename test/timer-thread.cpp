@@ -39,7 +39,7 @@ public:
 	}
 
 private:
-	void timeoutHandler([[maybe_unused]] Timer *timer)
+	void timeoutHandler()
 	{
 		timeout_ = true;
 	}

@@ -86,7 +86,7 @@ public:
 
 	Signal<Request *, FrameBuffer *> bufferCompleted;
 	Signal<Request *> requestCompleted;
-	Signal<Camera *> disconnected;
+	Signal<> disconnected;
 
 	int acquire();
 	int release();

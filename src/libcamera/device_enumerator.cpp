@@ -288,7 +288,7 @@ void DeviceEnumerator::removeDevice(const std::string &deviceNode)
 	LOG(DeviceEnumerator, Debug)
 		<< "Media device for node " << deviceNode << " removed.";
 
-	media->disconnected.emit(media.get());
+	media->disconnected.emit();
 }
 
 /**

@@ -38,7 +38,7 @@ public:
 
 	void kill();
 
-	Signal<Process *, enum ExitStatus, int> finished;
+	Signal<enum ExitStatus, int> finished;
 
 private:
 	void closeAllFdsExcept(const std::vector<int> &fds);
@@ -70,7 +70,7 @@ public:
 private:
 	static ProcessManager *self_;
 
-	void sighandler(EventNotifier *notifier);
+	void sighandler();
 
 	std::list<Process *> processes_;
 

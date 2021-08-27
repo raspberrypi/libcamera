@@ -384,7 +384,7 @@ void Thread::finishThread()
 	data_->running_ = false;
 	data_->mutex_.unlock();
 
-	finished.emit(this);
+	finished.emit();
 	data_->cv_.notify_all();
 }
 

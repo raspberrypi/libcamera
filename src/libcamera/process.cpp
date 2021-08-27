@@ -66,7 +66,7 @@ void sigact(int signal, siginfo_t *info, void *ucontext)
 
 } /* namespace */
 
-void ProcessManager::sighandler([[maybe_unused]] EventNotifier *notifier)
+void ProcessManager::sighandler()
 {
 	char data;
 	ssize_t ret = read(pipe_[0], &data, sizeof(data));
@@ -326,7 +326,7 @@ void Process::died(int wstatus)
 	exitStatus_ = WIFEXITED(wstatus) ? NormalExit : SignalExit;
 	exitCode_ = exitStatus_ == NormalExit ? WEXITSTATUS(wstatus) : -1;
 
-	finished.emit(this, exitStatus_, exitCode_);
+	finished.emit(exitStatus_, exitCode_);
 }
 
 /**

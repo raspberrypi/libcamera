@@ -25,6 +25,7 @@
 
 #include <libcamera/file_descriptor.h>
 
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
 
@@ -579,6 +580,12 @@ int V4L2VideoDevice::open()
 		<< "Opened device " << caps_.bus_info() << ": "
 		<< caps_.driver() << ": " << caps_.card();
 
+	ret = getFormat(&format_);
+	if (ret) {
+		LOG(V4L2, Error) << "Failed to get format";
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -667,6 +674,12 @@ int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 	LOG(V4L2, Debug)
 		<< "Opened device " << caps_.bus_info() << ": "
 		<< caps_.driver() << ": " << caps_.card();
+
+	ret = getFormat(&format_);
+	if (ret) {
+		LOG(V4L2, Error) << "Failed to get format";
+		return ret;
+	}
 
 	return 0;
 }
@@ -761,12 +774,20 @@ int V4L2VideoDevice::tryFormat(V4L2DeviceFormat *format)
  */
 int V4L2VideoDevice::setFormat(V4L2DeviceFormat *format)
 {
+	int ret = 0;
 	if (caps_.isMeta())
-		return trySetFormatMeta(format, true);
+		ret = trySetFormatMeta(format, true);
 	else if (caps_.isMultiplanar())
-		return trySetFormatMultiplane(format, true);
+		ret = trySetFormatMultiplane(format, true);
 	else
-		return trySetFormatSingleplane(format, true);
+		ret = trySetFormatSingleplane(format, true);
+
+	/* Cache the set format on success. */
+	if (ret)
+		return ret;
+
+	format_ = *format;
+	return 0;
 }
 
 int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
@@ -1152,8 +1173,13 @@ int V4L2VideoDevice::requestBuffers(unsigned int count,
  * successful return the driver's internal buffer management is initialized in
  * MMAP mode, and the video device is ready to accept queueBuffer() calls.
  *
- * The number of planes and the plane sizes for the allocation are determined
- * by the currently active format on the device as set by setFormat().
+ * The number of planes and their offsets and sizes are determined by the
+ * currently active format on the device as set by setFormat(). They do not map
+ * to the V4L2 buffer planes, but to colour planes of the pixel format. For
+ * instance, if the active format is formats::NV12, the allocated FrameBuffer
+ * instances will have two planes, for the luma and chroma components,
+ * regardless of whether the device uses V4L2_PIX_FMT_NV12 or
+ * V4L2_PIX_FMT_NV12M.
  *
  * Buffers allocated with this function shall later be free with
  * releaseBuffers(). If buffers have already been allocated with
@@ -1190,8 +1216,13 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
  * usable with any V4L2 video device in DMABUF mode, or with other dmabuf
  * importers.
  *
- * The number of planes and the plane sizes for the allocation are determined
- * by the currently active format on the device as set by setFormat().
+ * The number of planes and their offsets and sizes are determined by the
+ * currently active format on the device as set by setFormat(). They do not map
+ * to the V4L2 buffer planes, but to colour planes of the pixel format. For
+ * instance, if the active format is formats::NV12, the allocated FrameBuffer
+ * instances will have two planes, for the luma and chroma components,
+ * regardless of whether the device uses V4L2_PIX_FMT_NV12 or
+ * V4L2_PIX_FMT_NV12M.
  *
  * Multiple independent sets of buffers can be allocated with multiple calls to
  * this function. Device-specific limitations may apply regarding the minimum
@@ -1289,10 +1320,30 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		 * \todo Set the right offset once V4L2 API provides a way.
 		 */
 		plane.offset = 0;
-		plane.length = multiPlanar ?
-			buf.m.planes[nplane].length : buf.length;
+		plane.length = multiPlanar ? buf.m.planes[nplane].length : buf.length;
 
 		planes.push_back(std::move(plane));
+	}
+
+	const auto &info = PixelFormatInfo::info(format_.fourcc);
+	if (info.isValid() && info.numPlanes() != numPlanes) {
+		ASSERT(numPlanes == 1u);
+		const size_t numColorPlanes = info.numPlanes();
+		planes.resize(numColorPlanes);
+		const FileDescriptor &fd = planes[0].fd;
+		size_t offset = 0;
+		for (size_t i = 0; i < numColorPlanes; ++i) {
+			planes[i].fd = fd;
+			planes[i].offset = offset;
+
+			/* \todo Take the V4L2 stride into account */
+			const unsigned int vertSubSample =
+				info.planes[i].verticalSubSampling;
+			planes[i].length =
+				info.stride(format_.size.width, i, 1u) *
+				((format_.size.height + vertSubSample - 1) / vertSubSample);
+			offset += planes[i].length;
+		}
 	}
 
 	return std::make_unique<FrameBuffer>(std::move(planes));

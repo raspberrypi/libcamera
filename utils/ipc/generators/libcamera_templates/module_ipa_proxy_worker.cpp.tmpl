@@ -57,10 +57,10 @@ public:
 
 	~{{proxy_worker_name}}() {}
 
-	void readyRead(IPCUnixSocket *socket)
+	void readyRead([[maybe_unused]] IPCUnixSocket *socket)
 	{
 		IPCUnixSocket::Payload _message;
-		int _retRecv = socket->receive(&_message);
+		int _retRecv = socket_.receive(&_message);
 		if (_retRecv) {
 			LOG({{proxy_worker_name}}, Error)
 				<< "Receive message failed: " << _retRecv;

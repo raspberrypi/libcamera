@@ -66,9 +66,9 @@ public:
 	}
 
 private:
-	void readReady(EventNotifier *notifier)
+	void readReady([[maybe_unused]] EventNotifier *notifier)
 	{
-		size_ = read(notifier->fd(), data_, sizeof(data_));
+		size_ = read(notifier_->fd(), data_, sizeof(data_));
 		notified_ = true;
 	}
 

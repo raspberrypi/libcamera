@@ -22,14 +22,16 @@ using namespace libcamera;
 class EventTest : public Test
 {
 protected:
-	void readReady(EventNotifier *notifier)
+	void readReady([[maybe_unused]] EventNotifier *notifier)
 	{
-		size_ = read(notifier->fd(), data_, sizeof(data_));
+		size_ = read(notifier_->fd(), data_, sizeof(data_));
 		notified_ = true;
 	}
 
 	int init()
 	{
+		notifier_ = nullptr;
+
 		return pipe(pipefd_);
 	}
 
@@ -40,8 +42,8 @@ protected:
 		Timer timeout;
 		ssize_t ret;
 
-		EventNotifier readNotifier(pipefd_[0], EventNotifier::Read);
-		readNotifier.activated.connect(this, &EventTest::readReady);
+		notifier_ = new EventNotifier(pipefd_[0], EventNotifier::Read);
+		notifier_->activated.connect(this, &EventTest::readReady);
 
 		/* Test read notification with data. */
 		memset(data_, 0, sizeof(data_));
@@ -76,7 +78,7 @@ protected:
 
 		/* Test read notifier disabling. */
 		notified_ = false;
-		readNotifier.setEnabled(false);
+		notifier_->setEnabled(false);
 
 		ret = write(pipefd_[1], data.data(), data.size());
 		if (ret < 0) {
@@ -95,7 +97,7 @@ protected:
 
 		/* Test read notifier enabling. */
 		notified_ = false;
-		readNotifier.setEnabled(true);
+		notifier_->setEnabled(true);
 
 		timeout.start(100);
 		dispatcher->processEvents();
@@ -111,6 +113,8 @@ protected:
 
 	void cleanup()
 	{
+		delete notifier_;
+
 		close(pipefd_[0]);
 		close(pipefd_[1]);
 	}
@@ -118,6 +122,7 @@ protected:
 private:
 	int pipefd_[2];
 
+	EventNotifier *notifier_;
 	bool notified_;
 	char data_[16];
 	ssize_t size_;

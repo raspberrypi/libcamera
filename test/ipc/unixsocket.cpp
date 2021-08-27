@@ -68,12 +68,12 @@ public:
 	}
 
 private:
-	void readyRead(IPCUnixSocket *ipc)
+	void readyRead([[maybe_unused]] IPCUnixSocket *ipc)
 	{
 		IPCUnixSocket::Payload message, response;
 		int ret;
 
-		ret = ipc->receive(&message);
+		ret = ipc_.receive(&message);
 		if (ret) {
 			cerr << "Receive message failed: " << ret << endl;
 			return;
@@ -447,14 +447,14 @@ private:
 		return 0;
 	}
 
-	void readyRead(IPCUnixSocket *ipc)
+	void readyRead([[maybe_unused]] IPCUnixSocket *ipc)
 	{
 		if (!callResponse_) {
 			cerr << "Read ready without expecting data, fail." << endl;
 			return;
 		}
 
-		if (ipc->receive(callResponse_)) {
+		if (ipc_.receive(callResponse_)) {
 			cerr << "Receive message failed" << endl;
 			return;
 		}

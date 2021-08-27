@@ -153,9 +153,9 @@ protected:
 	}
 
 private:
-	void readTrace(EventNotifier *notifier)
+	void readTrace([[maybe_unused]] EventNotifier *notifier)
 	{
-		ssize_t s = read(notifier->fd(), &trace_, sizeof(trace_));
+		ssize_t s = read(notifier_->fd(), &trace_, sizeof(trace_));
 		if (s < 0) {
 			int ret = errno;
 			cerr << "Failed to read from IPA test FIFO at '"

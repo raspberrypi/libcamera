@@ -82,10 +82,10 @@ int IPCPipeUnixSocket::sendAsync(const IPCMessage &data)
 	return 0;
 }
 
-void IPCPipeUnixSocket::readyRead(IPCUnixSocket *socket)
+void IPCPipeUnixSocket::readyRead([[maybe_unused]] IPCUnixSocket *socket)
 {
 	IPCUnixSocket::Payload payload;
-	int ret = socket->receive(&payload);
+	int ret = socket_->receive(&payload);
 	if (ret) {
 		LOG(IPCPipe, Error) << "Receive message failed" << ret;
 		return;

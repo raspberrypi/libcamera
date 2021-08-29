@@ -88,6 +88,8 @@ private:
 
 	const char *name_;
 
+	bool lockOwner_;
+
 	friend class PipelineHandlerFactory;
 };
 

@@ -63,8 +63,7 @@ LOG_DEFINE_CATEGORY(MediaDevice)
  * populate() before the media graph can be queried.
  */
 MediaDevice::MediaDevice(const std::string &deviceNode)
-	: deviceNode_(deviceNode), valid_(false), acquired_(false),
-	  lockOwner_(false)
+	: deviceNode_(deviceNode), valid_(false), acquired_(false)
 {
 }
 
@@ -145,14 +144,8 @@ bool MediaDevice::lock()
 	if (!fd_.isValid())
 		return false;
 
-	/* Do not allow nested locking in the same libcamera instance. */
-	if (lockOwner_)
-		return false;
-
 	if (lockf(fd_.get(), F_TLOCK, 0))
 		return false;
-
-	lockOwner_ = true;
 
 	return true;
 }
@@ -170,11 +163,6 @@ void MediaDevice::unlock()
 {
 	if (!fd_.isValid())
 		return;
-
-	if (!lockOwner_)
-		return;
-
-	lockOwner_ = false;
 
 	lockf(fd_.get(), F_ULOCK, 0);
 }

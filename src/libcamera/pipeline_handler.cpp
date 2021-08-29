@@ -67,7 +67,7 @@ LOG_DEFINE_CATEGORY(Pipeline)
  * respective factories.
  */
 PipelineHandler::PipelineHandler(CameraManager *manager)
-	: manager_(manager)
+	: manager_(manager), lockOwner_(false)
 {
 }
 
@@ -155,12 +155,18 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
  */
 bool PipelineHandler::lock()
 {
+	/* Do not allow nested locking in the same libcamera instance. */
+	if (lockOwner_)
+		return false;
+
 	for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
 		if (!media->lock()) {
 			unlock();
 			return false;
 		}
 	}
+
+	lockOwner_ = true;
 
 	return true;
 }
@@ -177,8 +183,13 @@ bool PipelineHandler::lock()
  */
 void PipelineHandler::unlock()
 {
+	if (!lockOwner_)
+		return;
+
 	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
 		media->unlock();
+
+	lockOwner_ = false;
 }
 
 /**

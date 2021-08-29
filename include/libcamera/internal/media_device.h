@@ -86,7 +86,6 @@ private:
 	UniqueFD fd_;
 	bool valid_;
 	bool acquired_;
-	bool lockOwner_;
 
 	std::map<unsigned int, MediaObject *> objects_;
 	std::vector<MediaEntity *> entities_;

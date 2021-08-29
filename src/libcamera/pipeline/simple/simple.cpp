@@ -202,10 +202,10 @@ public:
 		 */
 		const MediaPad *source;
 		/*
-		 * The link to the downstream entity, null for the video node at
-		 * the end of the pipeline.
+		 * The link on the source pad, to the downstream entity, null
+		 * for the video node at the end of the pipeline.
 		 */
-		MediaLink *link;
+		MediaLink *sourceLink;
 	};
 
 	struct Configuration {
@@ -537,13 +537,13 @@ int SimpleCameraData::setupLinks()
 	 * want to enable) before enabling the pipeline link.
 	 */
 	for (SimpleCameraData::Entity &e : entities_) {
-		if (!e.link)
+		if (!e.sourceLink)
 			break;
 
-		MediaEntity *remote = e.link->sink()->entity();
+		MediaEntity *remote = e.sourceLink->sink()->entity();
 		for (MediaPad *pad : remote->pads()) {
 			for (MediaLink *link : pad->links()) {
-				if (link == e.link)
+				if (link == e.sourceLink)
 					continue;
 
 				if ((link->flags() & MEDIA_LNK_FL_ENABLED) &&
@@ -555,8 +555,8 @@ int SimpleCameraData::setupLinks()
 			}
 		}
 
-		if (!(e.link->flags() & MEDIA_LNK_FL_ENABLED)) {
-			ret = e.link->setEnabled(true);
+		if (!(e.sourceLink->flags() & MEDIA_LNK_FL_ENABLED)) {
+			ret = e.sourceLink->setEnabled(true);
 			if (ret < 0)
 				return ret;
 		}
@@ -580,10 +580,10 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 		return ret;
 
 	for (const Entity &e : entities_) {
-		if (!e.link)
+		if (!e.sourceLink)
 			break;
 
-		MediaLink *link = e.link;
+		MediaLink *link = e.sourceLink;
 		MediaPad *source = link->source();
 		MediaPad *sink = link->sink();
 

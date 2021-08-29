@@ -508,6 +508,11 @@ static const char *const camera_state_names[] = {
 	"Running",
 };
 
+bool Camera::Private::isAcquired() const
+{
+	return state_.load(std::memory_order_acquire) == CameraRunning;
+}
+
 bool Camera::Private::isRunning() const
 {
 	return state_.load(std::memory_order_acquire) == CameraRunning;
@@ -811,7 +816,7 @@ int Camera::exportFrameBuffers(Stream *stream,
  * not blocking, if the device has already been acquired (by the same or another
  * process) the -EBUSY error code is returned.
  *
- * Acquiring a camera will limit usage of any other camera(s) provided by the
+ * Acquiring a camera may limit usage of any other camera(s) provided by the
  * same pipeline handler to the same instance of libcamera. The limit is in
  * effect until all cameras from the pipeline handler are released. Other
  * instances of libcamera can still list and examine the cameras but will fail
@@ -839,7 +844,7 @@ int Camera::acquire()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	if (!d->pipe_->lock()) {
+	if (!d->pipe_->acquire()) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;
@@ -873,7 +878,8 @@ int Camera::release()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	d->pipe_->unlock();
+	if (d->isAcquired())
+		d->pipe_->release();
 
 	d->setState(Private::CameraAvailable);
 

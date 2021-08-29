@@ -45,8 +45,8 @@ public:
 	MediaDevice *acquireMediaDevice(DeviceEnumerator *enumerator,
 					const DeviceMatch &dm);
 
-	bool lock();
-	void unlock();
+	bool acquire();
+	void release();
 
 	virtual CameraConfiguration *generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;
@@ -77,6 +77,8 @@ protected:
 	CameraManager *manager_;
 
 private:
+	void unlockMediaDevices();
+
 	void mediaDeviceDisconnected(MediaDevice *media);
 	virtual void disconnect();
 
@@ -91,7 +93,7 @@ private:
 	const char *name_;
 
 	Mutex lock_;
-	bool lockOwner_ LIBCAMERA_TSA_GUARDED_BY(lock_); /* *Not* ownership of lock_ */
+	unsigned int useCount_ LIBCAMERA_TSA_GUARDED_BY(lock_);
 
 	friend class PipelineHandlerFactory;
 };

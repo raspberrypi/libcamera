@@ -68,7 +68,7 @@ LOG_DEFINE_CATEGORY(Pipeline)
  * respective factories.
  */
 PipelineHandler::PipelineHandler(CameraManager *manager)
-	: manager_(manager), lockOwner_(false)
+	: manager_(manager), useCount_(0)
 {
 }
 
@@ -143,58 +143,75 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
 }
 
 /**
- * \brief Lock all media devices acquired by the pipeline
+ * \brief Acquire exclusive access to the pipeline handler for the process
  *
- * This function shall not be called from pipeline handler implementation, as
- * the Camera class handles locking directly.
+ * This function locks all the media devices used by the pipeline to ensure
+ * that no other process can access them concurrently.
+ *
+ * Access to a pipeline handler may be acquired recursively from within the
+ * same process. Every successful acquire() call shall be matched with a
+ * release() call. This allows concurrent access to the same pipeline handler
+ * from different cameras within the same process.
+ *
+ * Pipeline handlers shall not call this function directly as the Camera class
+ * handles access internally.
  *
  * \context This function is \threadsafe.
  *
- * \return True if the devices could be locked, false otherwise
- * \sa unlock()
- * \sa MediaDevice::lock()
+ * \return True if the pipeline handler was acquired, false if another process
+ * has already acquired it
+ * \sa release()
  */
-bool PipelineHandler::lock()
+bool PipelineHandler::acquire()
 {
 	MutexLocker locker(lock_);
 
-	/* Do not allow nested locking in the same libcamera instance. */
-	if (lockOwner_)
-		return false;
+	if (useCount_) {
+		++useCount_;
+		return true;
+	}
 
 	for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
 		if (!media->lock()) {
-			unlock();
+			unlockMediaDevices();
 			return false;
 		}
 	}
 
-	lockOwner_ = true;
-
+	++useCount_;
 	return true;
 }
 
 /**
- * \brief Unlock all media devices acquired by the pipeline
+ * \brief Release exclusive access to the pipeline handler
  *
- * This function shall not be called from pipeline handler implementation, as
- * the Camera class handles locking directly.
+ * This function releases access to the pipeline handler previously acquired by
+ * a call to acquire(). Every release() call shall match a previous successful
+ * acquire() call. Calling this function on a pipeline handler that hasn't been
+ * acquired results in undefined behaviour.
+ *
+ * Pipeline handlers shall not call this function directly as the Camera class
+ * handles access internally.
  *
  * \context This function is \threadsafe.
  *
- * \sa lock()
+ * \sa acquire()
  */
-void PipelineHandler::unlock()
+void PipelineHandler::release()
 {
 	MutexLocker locker(lock_);
 
-	if (!lockOwner_)
-		return;
+	ASSERT(useCount_);
 
+	unlockMediaDevices();
+
+	--useCount_;
+}
+
+void PipelineHandler::unlockMediaDevices()
+{
 	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
 		media->unlock();
-
-	lockOwner_ = false;
 }
 
 /**

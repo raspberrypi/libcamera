@@ -50,6 +50,7 @@ private:
 		CameraRunning,
 	};
 
+	bool isAcquired() const;
 	bool isRunning() const;
 	int isAccessAllowed(State state, bool allowDisconnected = false,
 			    const char *from = __builtin_FUNCTION()) const;

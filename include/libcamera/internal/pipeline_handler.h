@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/object.h>
 
 #include <libcamera/controls.h>
@@ -88,7 +89,8 @@ private:
 
 	const char *name_;
 
-	bool lockOwner_;
+	Mutex lock_;
+	bool lockOwner_ LIBCAMERA_TSA_GUARDED_BY(lock_); /* *Not* ownership of lock_ */
 
 	friend class PipelineHandlerFactory;
 };

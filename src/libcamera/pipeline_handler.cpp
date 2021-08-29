@@ -11,6 +11,7 @@
 #include <sys/sysmacros.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
@@ -155,6 +156,8 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
  */
 bool PipelineHandler::lock()
 {
+	MutexLocker locker(lock_);
+
 	/* Do not allow nested locking in the same libcamera instance. */
 	if (lockOwner_)
 		return false;
@@ -183,6 +186,8 @@ bool PipelineHandler::lock()
  */
 void PipelineHandler::unlock()
 {
+	MutexLocker locker(lock_);
+
 	if (!lockOwner_)
 		return;
 

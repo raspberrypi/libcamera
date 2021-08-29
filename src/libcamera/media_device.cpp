@@ -803,7 +803,11 @@ int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 	if (ret) {
 		ret = -errno;
 		LOG(MediaDevice, Error)
-			<< "Failed to setup link: "
+			<< "Failed to setup link "
+			<< source->entity()->name() << "["
+			<< source->index() << "] -> "
+			<< sink->entity()->name() << "["
+			<< sink->index() << "]: "
 			<< strerror(-ret);
 		return ret;
 	}

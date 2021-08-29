@@ -578,15 +578,23 @@ int SimpleCameraData::setupLinks()
 	 * multiple sink links to be enabled together, even on different sink
 	 * pads. We must thus start by disabling all sink links (but the one we
 	 * want to enable) before enabling the pipeline link.
+	 *
+	 * The entities_ list stores entities along with their source link. We
+	 * need to process the link in the context of the sink entity, so
+	 * record the source link of the current entity as the sink link of the
+	 * next entity, and skip the first entity in the loop.
 	 */
-	for (SimpleCameraData::Entity &e : entities_) {
-		if (!e.sourceLink)
-			break;
+	MediaLink *sinkLink = nullptr;
 
-		MediaEntity *remote = e.sourceLink->sink()->entity();
-		for (MediaPad *pad : remote->pads()) {
+	for (SimpleCameraData::Entity &e : entities_) {
+		if (!sinkLink) {
+			sinkLink = e.sourceLink;
+			continue;
+		}
+
+		for (MediaPad *pad : e.entity->pads()) {
 			for (MediaLink *link : pad->links()) {
-				if (link == e.sourceLink)
+				if (link == sinkLink)
 					continue;
 
 				if ((link->flags() & MEDIA_LNK_FL_ENABLED) &&
@@ -598,11 +606,13 @@ int SimpleCameraData::setupLinks()
 			}
 		}
 
-		if (!(e.sourceLink->flags() & MEDIA_LNK_FL_ENABLED)) {
-			ret = e.sourceLink->setEnabled(true);
+		if (!(sinkLink->flags() & MEDIA_LNK_FL_ENABLED)) {
+			ret = sinkLink->setEnabled(true);
 			if (ret < 0)
 				return ret;
 		}
+
+		sinkLink = e.sourceLink;
 	}
 
 	return 0;

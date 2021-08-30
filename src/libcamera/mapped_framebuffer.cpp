@@ -113,7 +113,7 @@ MappedBuffer::~MappedBuffer()
  */
 
 /**
- * \fn MappedBuffer::maps()
+ * \fn MappedBuffer::planes()
  * \brief Retrieve the mapped planes
  *
  * This function retrieves the successfully mapped planes stored as a vector

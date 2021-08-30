@@ -63,9 +63,9 @@ int PostProcessorYuv::process(const FrameBuffer &source,
 		return -EINVAL;
 	}
 
-	int ret = libyuv::NV12Scale(sourceMapped.maps()[0].data(),
+	int ret = libyuv::NV12Scale(sourceMapped.planes()[0].data(),
 				    sourceStride_[0],
-				    sourceMapped.maps()[1].data(),
+				    sourceMapped.planes()[1].data(),
 				    sourceStride_[1],
 				    sourceSize_.width, sourceSize_.height,
 				    destination->plane(0).data(),

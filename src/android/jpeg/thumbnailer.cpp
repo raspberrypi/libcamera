@@ -62,7 +62,7 @@ void Thumbnailer::createThumbnail(const FrameBuffer &source,
 	ASSERT(tw % 2 == 0 && th % 2 == 0);
 
 	/* Image scaling block implementing nearest-neighbour algorithm. */
-	unsigned char *src = static_cast<unsigned char *>(frame.maps()[0].data());
+	unsigned char *src = static_cast<unsigned char *>(frame.planes()[0].data());
 	unsigned char *srcC = src + sh * sw;
 	unsigned char *srcCb, *srcCr;
 	unsigned char *dstY, *srcY;

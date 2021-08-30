@@ -30,8 +30,7 @@ public:
 
 	bool isValid() const { return error_ == 0; }
 	int error() const { return error_; }
-	/* \todo rename to planes(). */
-	const std::vector<Plane> &maps() const { return planes_; }
+	const std::vector<Plane> &planes() const { return planes_; }
 
 protected:
 	MappedBuffer();

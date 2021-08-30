@@ -936,7 +936,7 @@ void IPARPi::prepareISP(const ipa::RPi::ISPConfig &data)
 		 */
 		auto it = buffers_.find(data.embeddedBufferId);
 		ASSERT(it != buffers_.end());
-		embeddedBuffer = it->second.maps()[0];
+		embeddedBuffer = it->second.planes()[0];
 	}
 
 	/*
@@ -1043,7 +1043,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		return;
 	}
 
-	Span<uint8_t> mem = it->second.maps()[0];
+	Span<uint8_t> mem = it->second.planes()[0];
 	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
 	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
 	helper_->Process(statistics, rpiMetadata_);

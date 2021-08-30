@@ -192,7 +192,7 @@ void IPARkISP1::processEvent(const RkISP1Event &event)
 
 		const rkisp1_stat_buffer *stats =
 			reinterpret_cast<rkisp1_stat_buffer *>(
-				mappedBuffers_.at(bufferId).maps()[0].data());
+				mappedBuffers_.at(bufferId).planes()[0].data());
 
 		updateStatistics(frame, stats);
 		break;
@@ -203,7 +203,7 @@ void IPARkISP1::processEvent(const RkISP1Event &event)
 
 		rkisp1_params_cfg *params =
 			reinterpret_cast<rkisp1_params_cfg *>(
-				mappedBuffers_.at(bufferId).maps()[0].data());
+				mappedBuffers_.at(bufferId).planes()[0].data());
 
 		queueRequest(frame, params, event.controls);
 		break;

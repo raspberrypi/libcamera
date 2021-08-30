@@ -422,7 +422,7 @@ void IPAIPU3::processEvent(const IPU3Event &event)
 			return;
 		}
 
-		Span<uint8_t> mem = it->second.maps()[0];
+		Span<uint8_t> mem = it->second.planes()[0];
 		const ipu3_uapi_stats_3a *stats =
 			reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
@@ -436,7 +436,7 @@ void IPAIPU3::processEvent(const IPU3Event &event)
 			return;
 		}
 
-		Span<uint8_t> mem = it->second.maps()[0];
+		Span<uint8_t> mem = it->second.planes()[0];
 		ipu3_uapi_params *params =
 			reinterpret_cast<ipu3_uapi_params *>(mem.data());
 

@@ -188,7 +188,7 @@ int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 		return frame.error();
 	}
 
-	return encode(frame.maps()[0], dest, exifData, quality);
+	return encode(frame.planes()[0], dest, exifData, quality);
 }
 
 int EncoderLibJpeg::encode(Span<const uint8_t> src, Span<uint8_t> dest,

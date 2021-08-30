@@ -60,7 +60,7 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
 			       libcamera::PixelFormat pixelFormat,
 			       const libcamera::Size &size, int flags)
-	: fd_(-1), flags_(flags), bufferLength_(0), mapped_(false)
+	: fd_(-1), flags_(flags), bufferLength_(-1), mapped_(false)
 {
 	error_ = 0;
 

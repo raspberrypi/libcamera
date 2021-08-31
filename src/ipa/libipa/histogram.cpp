@@ -139,7 +139,7 @@ double Histogram::interQuantileMean(double lowQuantile, double highQuantile) con
 		double freq = (cumulative_[bin + 1] - cumulative_[bin])
 			* (std::min(p_next, highPoint) - lowPoint);
 
-		/* Accumulate weigthed bin */
+		/* Accumulate weighted bin */
 		sumBinFreq += bin * freq;
 		/* Accumulate weights */
 		cumulFreq += freq;

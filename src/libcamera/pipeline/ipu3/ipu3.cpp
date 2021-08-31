@@ -654,7 +654,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	}
 
 	ipa::ipu3::IPAConfigInfo configInfo;
-	configInfo.entityControls.emplace(0, data->cio2_.sensor()->controls());
+	configInfo.sensorControls = data->cio2_.sensor()->controls();
 	configInfo.sensorInfo = sensorInfo;
 	configInfo.bdsOutputSize = config->imguConfig().bds;
 	configInfo.iif = config->imguConfig().iif;

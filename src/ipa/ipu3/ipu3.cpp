@@ -337,14 +337,14 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 
 int IPAIPU3::configure(const IPAConfigInfo &configInfo)
 {
-	if (configInfo.entityControls.empty()) {
-		LOG(IPAIPU3, Error) << "No controls provided";
+	if (configInfo.sensorControls.empty()) {
+		LOG(IPAIPU3, Error) << "No sensor controls provided";
 		return -ENODATA;
 	}
 
 	sensorInfo_ = configInfo.sensorInfo;
 
-	ctrls_ = configInfo.entityControls.at(0);
+	ctrls_ = configInfo.sensorControls;
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
 	if (itExp == ctrls_.end()) {

@@ -424,8 +424,6 @@ int CameraDevice::open(const hw_module_t *hardwareModule)
 
 void CameraDevice::close()
 {
-	streams_.clear();
-
 	stop();
 
 	camera_->release();
@@ -458,6 +456,7 @@ void CameraDevice::stop()
 	camera_->stop();
 
 	descriptors_ = {};
+	streams_.clear();
 
 	state_ = State::Stopped;
 }

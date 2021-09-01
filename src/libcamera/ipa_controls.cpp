@@ -108,17 +108,19 @@
  *           +-------------------------+       .
  *         / | ...                     |       | entry[n].offset
  *         | +-------------------------+ <-----´
- *    Data | | minimum value (#n)      | \
- * section | +-------------------------+ | Entry #n
- *         | | maximum value (#n)      | /
+ *         | | minimum value (#n)      | \
+ *    Data | +-------------------------+ |
+ * section | | maximum value (#n)      | | Entry #n
+ *         | +-------------------------+ |
+ *         | | default value (#n)      | /
  *         | +-------------------------+
  *         \ | ...                     |
  *           +-------------------------+
  * ~~~~
  *
- * The minimum and maximum value are stored in the platform's native data
- * format. The ipa_control_info_entry::offset field stores the offset from the
- * beginning of the data section to the info data.
+ * The minimum, maximum and default values are stored in the platform's native
+ * data format. The ipa_control_info_entry::offset field stores the offset from
+ * the beginning of the data section to the info data.
  *
  * Info data in the data section shall be stored in the same order as the
  * entries array, shall be aligned to a multiple of 8 bytes, and shall be

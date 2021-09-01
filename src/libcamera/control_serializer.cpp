@@ -105,7 +105,7 @@ size_t ControlSerializer::binarySize(const ControlValue &value)
 
 size_t ControlSerializer::binarySize(const ControlInfo &info)
 {
-	return binarySize(info.min()) + binarySize(info.max());
+	return binarySize(info.min()) + binarySize(info.max()) + binarySize(info.def());
 }
 
 /**
@@ -158,6 +158,7 @@ void ControlSerializer::store(const ControlInfo &info, ByteStreamBuffer &buffer)
 {
 	store(info.min(), buffer);
 	store(info.max(), buffer);
+	store(info.def(), buffer);
 }
 
 /**
@@ -346,8 +347,9 @@ ControlInfo ControlSerializer::loadControlInfo(ControlType type,
 
 	ControlValue min = loadControlValue(type, b);
 	ControlValue max = loadControlValue(type, b);
+	ControlValue def = loadControlValue(type, b);
 
-	return ControlInfo(min, max);
+	return ControlInfo(min, max, def);
 }
 
 /**

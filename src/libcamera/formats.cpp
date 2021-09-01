@@ -39,8 +39,15 @@ LOG_DEFINE_CATEGORY(Formats)
  * \var PixelFormatInfo::format
  * \brief The PixelFormat described by this instance
  *
- * \var PixelFormatInfo::v4l2Format
- * \brief The V4L2 pixel format corresponding to the PixelFormat
+ * \var PixelFormatInfo::v4l2Formats
+ * \brief The V4L2 pixel formats corresponding to the PixelFormat
+ *
+ * Multiple V4L2 formats may exist for one PixelFormat when the format uses
+ * multiple planes, as V4L2 defines separate 4CCs for contiguous and separate
+ * planes formats. The two entries in the array store the contiguous and
+ * non-contiguous V4L2 formats respectively. If the PixelFormat isn't a
+ * multiplanar format, or if no corresponding non-contiguous V4L2 format
+ * exists, the second entry is invalid.
  *
  * \var PixelFormatInfo::bitsPerPixel
  * \brief The average number of bits per pixel
@@ -149,7 +156,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::RGB565, {
 		.name = "RGB565",
 		.format = formats::RGB565,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB565),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_RGB565),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -159,7 +169,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::RGB565_BE, {
 		.name = "RGB565_BE",
 		.format = formats::RGB565_BE,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB565X),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_RGB565X),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -169,7 +182,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::BGR888, {
 		.name = "BGR888",
 		.format = formats::BGR888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGB24),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_RGB24),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -179,7 +195,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::RGB888, {
 		.name = "RGB888",
 		.format = formats::RGB888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGR24),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_BGR24),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -189,7 +208,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::XRGB8888, {
 		.name = "XRGB8888",
 		.format = formats::XRGB8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_XBGR32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_XBGR32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -199,7 +221,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::XBGR8888, {
 		.name = "XBGR8888",
 		.format = formats::XBGR8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGBX32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_RGBX32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -209,7 +234,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::BGRX8888, {
 		.name = "BGRX8888",
 		.format = formats::BGRX8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_XRGB32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_XRGB32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -219,7 +247,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::ABGR8888, {
 		.name = "ABGR8888",
 		.format = formats::ABGR8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_RGBA32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_RGBA32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -229,7 +260,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::ARGB8888, {
 		.name = "ARGB8888",
 		.format = formats::ARGB8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ABGR32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_ABGR32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -239,7 +273,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::BGRA8888, {
 		.name = "BGRA8888",
 		.format = formats::BGRA8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_ARGB32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_ARGB32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -249,7 +286,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::RGBA8888, {
 		.name = "RGBA8888",
 		.format = formats::RGBA8888,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_BGRA32),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_BGRA32),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
@@ -261,7 +301,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::YUYV, {
 		.name = "YUYV",
 		.format = formats::YUYV,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUYV),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_YUYV),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -271,7 +314,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::YVYU, {
 		.name = "YVYU",
 		.format = formats::YVYU,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVYU),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_YVYU),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -281,7 +327,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::UYVY, {
 		.name = "UYVY",
 		.format = formats::UYVY,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_UYVY),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_UYVY),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -291,7 +340,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::VYUY, {
 		.name = "VYUY",
 		.format = formats::VYUY,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_VYUY),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_VYUY),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -303,7 +355,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV12, {
 		.name = "NV12",
 		.format = formats::NV12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV12),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_NV12M),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -313,7 +368,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV21, {
 		.name = "NV21",
 		.format = formats::NV21,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV21),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_NV21M),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -323,7 +381,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV16, {
 		.name = "NV16",
 		.format = formats::NV16,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV16),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV16),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_NV16M),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -333,7 +394,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV61, {
 		.name = "NV61",
 		.format = formats::NV61,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV61),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV61),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_NV61M),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -343,7 +407,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV24, {
 		.name = "NV24",
 		.format = formats::NV24,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV24),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV24),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -353,7 +420,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::NV42, {
 		.name = "NV42",
 		.format = formats::NV42,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_NV42),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_NV42),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -363,7 +433,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::YUV420, {
 		.name = "YUV420",
 		.format = formats::YUV420,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV420),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_YUV420),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_YUV420M),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -373,7 +446,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::YVU420, {
 		.name = "YVU420",
 		.format = formats::YVU420,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YVU420),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_YVU420),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_YVU420M),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -383,7 +459,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::YUV422, {
 		.name = "YUV422",
 		.format = formats::YUV422,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_YUV422P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_YUV422P),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_YUV422M),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -395,7 +474,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::R8, {
 		.name = "R8",
 		.format = formats::R8,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_GREY),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_GREY),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -407,7 +489,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR8, {
 		.name = "SBGGR8",
 		.format = formats::SBGGR8,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -417,7 +502,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG8, {
 		.name = "SGBRG8",
 		.format = formats::SGBRG8,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -427,7 +515,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG8, {
 		.name = "SGRBG8",
 		.format = formats::SGRBG8,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -437,7 +528,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB8, {
 		.name = "SRGGB8",
 		.format = formats::SRGGB8,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -447,7 +541,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR10, {
 		.name = "SBGGR10",
 		.format = formats::SBGGR10,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -457,7 +554,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG10, {
 		.name = "SGBRG10",
 		.format = formats::SGBRG10,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -467,7 +567,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG10, {
 		.name = "SGRBG10",
 		.format = formats::SGRBG10,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -477,7 +580,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB10, {
 		.name = "SRGGB10",
 		.format = formats::SRGGB10,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -487,7 +593,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR10_CSI2P, {
 		.name = "SBGGR10_CSI2P",
 		.format = formats::SBGGR10_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -497,7 +606,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG10_CSI2P, {
 		.name = "SGBRG10_CSI2P",
 		.format = formats::SGBRG10_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -507,7 +619,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG10_CSI2P, {
 		.name = "SGRBG10_CSI2P",
 		.format = formats::SGRBG10_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -517,7 +632,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB10_CSI2P, {
 		.name = "SRGGB10_CSI2P",
 		.format = formats::SRGGB10_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -527,7 +645,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR12, {
 		.name = "SBGGR12",
 		.format = formats::SBGGR12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -537,7 +658,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG12, {
 		.name = "SGBRG12",
 		.format = formats::SGBRG12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -547,7 +671,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG12, {
 		.name = "SGRBG12",
 		.format = formats::SGRBG12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -557,7 +684,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB12, {
 		.name = "SRGGB12",
 		.format = formats::SRGGB12,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -567,7 +697,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR12_CSI2P, {
 		.name = "SBGGR12_CSI2P",
 		.format = formats::SBGGR12_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -577,7 +710,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG12_CSI2P, {
 		.name = "SGBRG12_CSI2P",
 		.format = formats::SGBRG12_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -587,7 +723,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG12_CSI2P, {
 		.name = "SGRBG12_CSI2P",
 		.format = formats::SGRBG12_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -597,7 +736,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB12_CSI2P, {
 		.name = "SRGGB12_CSI2P",
 		.format = formats::SRGGB12_CSI2P,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -607,7 +749,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR16, {
 		.name = "SBGGR16",
 		.format = formats::SBGGR16,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -617,7 +762,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG16, {
 		.name = "SGBRG16",
 		.format = formats::SGBRG16,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -627,7 +775,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG16, {
 		.name = "SGRBG16",
 		.format = formats::SGRBG16,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -637,7 +788,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB16, {
 		.name = "SRGGB16",
 		.format = formats::SRGGB16,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = false,
@@ -647,7 +801,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SBGGR10_IPU3, {
 		.name = "SBGGR10_IPU3",
 		.format = formats::SBGGR10_IPU3,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -658,7 +815,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGBRG10_IPU3, {
 		.name = "SGBRG10_IPU3",
 		.format = formats::SGBRG10_IPU3,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -668,7 +828,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SGRBG10_IPU3, {
 		.name = "SGRBG10_IPU3",
 		.format = formats::SGRBG10_IPU3,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -678,7 +841,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::SRGGB10_IPU3, {
 		.name = "SRGGB10_IPU3",
 		.format = formats::SRGGB10_IPU3,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
@@ -690,7 +856,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::MJPEG, {
 		.name = "MJPEG",
 		.format = formats::MJPEG,
-		.v4l2Format = V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
+			.multi = V4L2PixelFormat(),
+		},
 		.bitsPerPixel = 0,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,
@@ -736,7 +905,8 @@ const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
 {
 	const auto &info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
 					[format](auto pair) {
-						return pair.second.v4l2Format == format;
+						return pair.second.v4l2Formats.single == format ||
+						       pair.second.v4l2Formats.multi == format;
 					});
 	if (info == pixelFormatInfo.end())
 		return pixelFormatInfoInvalid;

@@ -54,7 +54,10 @@ public:
 	/* \todo Add support for non-contiguous memory planes */
 	const char *name;
 	PixelFormat format;
-	V4L2PixelFormat v4l2Format;
+	struct {
+		V4L2PixelFormat single;
+		V4L2PixelFormat multi;
+	} v4l2Formats;
 	unsigned int bitsPerPixel;
 	enum ColourEncoding colourEncoding;
 	bool packed;

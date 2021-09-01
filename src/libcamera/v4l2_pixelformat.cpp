@@ -67,12 +67,19 @@ const std::map<V4L2PixelFormat, PixelFormat> vpf2pf{
 
 	/* YUV planar formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16), formats::NV16 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16M), formats::NV16 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61), formats::NV61 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV61M), formats::NV61 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12), formats::NV12 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV12M), formats::NV12 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21), formats::NV21 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_NV21M), formats::NV21 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV420), formats::YUV420 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV420M), formats::YUV420 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_YVU420), formats::YVU420 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YVU420M), formats::YVU420 },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV422P), formats::YUV422 },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV422M), formats::YUV422 },
 
 	/* Greyscale formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_GREY), formats::R8 },
@@ -202,13 +209,13 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
  * \return The V4L2PixelFormat corresponding to \a pixelFormat
  */
 V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
-						 [[maybe_unused]] bool multiplanar)
+						 bool multiplanar)
 {
 	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid())
 		return V4L2PixelFormat();
 
-	return info.v4l2Format;
+	return multiplanar ? info.v4l2Formats.multi : info.v4l2Formats.single;
 }
 
 } /* namespace libcamera */

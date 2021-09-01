@@ -618,6 +618,35 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			continue;
 		}
 
+		/*
+		 * While gralloc usage flags are supposed to report usage
+		 * patterns to select a suitable buffer allocation strategy, in
+		 * practice they're also used to make other decisions, such as
+		 * selecting the actual format for the IMPLEMENTATION_DEFINED
+		 * HAL pixel format. To avoid issues, we thus have to set the
+		 * GRALLOC_USAGE_HW_CAMERA_WRITE flag unconditionally, even for
+		 * streams that will be produced in software.
+		 */
+		stream->usage |= GRALLOC_USAGE_HW_CAMERA_WRITE;
+
+		/*
+		 * If a CameraStream with the same size and format of the
+		 * current stream has already been requested, associate the two.
+		 */
+		auto iter = std::find_if(
+			streamConfigs.begin(), streamConfigs.end(),
+			[size, format](const Camera3StreamConfig &streamConfig) {
+				return streamConfig.config.size == size &&
+				       streamConfig.config.pixelFormat == format;
+			});
+		if (iter != streamConfigs.end()) {
+			/* Add usage to copy the buffer in streams[0] to stream. */
+			iter->streams[0].stream->usage |= GRALLOC_USAGE_SW_READ_OFTEN;
+			stream->usage |= GRALLOC_USAGE_SW_WRITE_OFTEN;
+			iter->streams.push_back({ stream, CameraStream::Type::Mapped });
+			continue;
+		}
+
 		Camera3StreamConfig streamConfig;
 		streamConfig.streams = { { stream, CameraStream::Type::Direct } };
 		streamConfig.config.size = size;

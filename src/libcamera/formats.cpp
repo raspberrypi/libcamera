@@ -24,22 +24,6 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Formats)
 
 /**
- * \class PixelFormatPlaneInfo
- * \brief Information about a single plane of a pixel format
- *
- * \var PixelFormatPlaneInfo::bytesPerGroup
- * \brief The number of bytes that a pixel group consumes
- *
- * \sa PixelFormatInfo::pixelsPerGroup
- *
- * \var PixelFormatPlaneInfo::verticalSubSampling
- * \brief Vertical subsampling multiplier
- *
- * This value is the ratio between the number of rows of pixels in the frame
- * to the number of rows of pixels in the plane.
- */
-
-/**
  * \class PixelFormatInfo
  * \brief Information about pixel formats
  *
@@ -87,7 +71,7 @@ LOG_DEFINE_CATEGORY(Formats)
  *
  * A pixel group is defined as the minimum number of pixels (including padding)
  * necessary in a row when the image has only one column of effective pixels.
- * pixelsPerGroup refers to this value. PixelFormatPlaneInfo::bytesPerGroup,
+ * pixelsPerGroup refers to this value. PixelFormatInfo::Plane::bytesPerGroup,
  * then, refers to the number of bytes that a pixel group consumes. This
  * definition of a pixel group allows simple calculation of stride, as
  * ceil(width / pixelsPerGroup) * bytesPerGroup. These values are determined
@@ -122,7 +106,7 @@ LOG_DEFINE_CATEGORY(Formats)
  * \var PixelFormatInfo::planes
  * \brief Information about pixels for each plane
  *
- * \sa PixelFormatPlaneInfo
+ * \sa PixelFormatInfo::Plane
  */
 
 /**
@@ -137,6 +121,22 @@ LOG_DEFINE_CATEGORY(Formats)
  *
  * \var PixelFormatInfo::ColourEncodingRAW
  * \brief RAW colour encoding
+ */
+
+/**
+ * \struct PixelFormatInfo::Plane
+ * \brief Information about a single plane of a pixel format
+ *
+ * \var PixelFormatInfo::Plane::bytesPerGroup
+ * \brief The number of bytes that a pixel group consumes
+ *
+ * \sa PixelFormatInfo::pixelsPerGroup
+ *
+ * \var PixelFormatInfo::Plane::verticalSubSampling
+ * \brief Vertical subsampling multiplier
+ *
+ * This value is the ratio between the number of rows of pixels in the frame
+ * to the number of rows of pixels in the plane.
  */
 
 namespace {
@@ -869,7 +869,7 @@ unsigned int PixelFormatInfo::numPlanes() const
 {
 	unsigned int count = 0;
 
-	for (const PixelFormatPlaneInfo &p : planes) {
+	for (const Plane &p : planes) {
 		if (p.bytesPerGroup == 0)
 			break;
 

@@ -19,12 +19,6 @@
 
 namespace libcamera {
 
-struct PixelFormatPlaneInfo
-{
-	unsigned int bytesPerGroup;
-	unsigned int verticalSubSampling;
-};
-
 class PixelFormatInfo
 {
 public:
@@ -32,6 +26,11 @@ public:
 		ColourEncodingRGB,
 		ColourEncodingYUV,
 		ColourEncodingRAW,
+	};
+
+	struct Plane {
+		unsigned int bytesPerGroup;
+		unsigned int verticalSubSampling;
 	};
 
 	bool isValid() const { return format.isValid(); }
@@ -58,7 +57,7 @@ public:
 
 	unsigned int pixelsPerGroup;
 
-	std::array<PixelFormatPlaneInfo, 3> planes;
+	std::array<Plane, 3> planes;
 };
 
 } /* namespace libcamera */

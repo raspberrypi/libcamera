@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 
 #include "camera_buffer.h"
+#include "camera_capabilities.h"
 #include "camera_device.h"
 #include "camera_metadata.h"
 #include "jpeg/post_processor_jpeg.h"
@@ -47,20 +48,6 @@ CameraStream::CameraStream(CameraDevice *const cameraDevice,
 	: cameraDevice_(cameraDevice), config_(config), type_(type),
 	  camera3Stream_(camera3Stream), index_(index)
 {
-	if (type_ == Type::Internal || type_ == Type::Mapped) {
-		/*
-		 * \todo There might be multiple post-processors. The logic
-		 * which should be instantiated here, is deferred for the
-		 * future. For now, we only have PostProcessorJpeg and that
-		 * is what we instantiate here.
-		 */
-		postProcessor_ = std::make_unique<PostProcessorJpeg>(cameraDevice_);
-	}
-
-	if (type == Type::Internal) {
-		allocator_ = std::make_unique<FrameBufferAllocator>(cameraDevice_->camera());
-		mutex_ = std::make_unique<std::mutex>();
-	}
 }
 
 const StreamConfiguration &CameraStream::configuration() const
@@ -75,15 +62,31 @@ Stream *CameraStream::stream() const
 
 int CameraStream::configure()
 {
-	if (postProcessor_) {
+	if (type_ == Type::Internal || type_ == Type::Mapped) {
+		const PixelFormat outFormat =
+			cameraDevice_->capabilities()->toPixelFormat(camera3Stream_->format);
 		StreamConfiguration output = configuration();
-		output.pixelFormat = formats::MJPEG;
+		output.pixelFormat = outFormat;
+
+		switch (outFormat) {
+		case formats::MJPEG:
+			postProcessor_ = std::make_unique<PostProcessorJpeg>(cameraDevice_);
+			break;
+
+		default:
+			LOG(HAL, Error) << "Unsupported format: " << outFormat;
+			return -EINVAL;
+		}
+
 		int ret = postProcessor_->configure(configuration(), output);
 		if (ret)
 			return ret;
 	}
 
-	if (allocator_) {
+	if (type_ == Type::Internal) {
+		allocator_ = std::make_unique<FrameBufferAllocator>(cameraDevice_->camera());
+		mutex_ = std::make_unique<std::mutex>();
+
 		int ret = allocator_->allocate(stream());
 		if (ret < 0)
 			return ret;

@@ -79,6 +79,9 @@ public:
 
 {% for method in interface_main.methods %}
 		case {{cmd_enum_name}}::{{method.mojom_name|cap}}: {
+{%- if method.mojom_name == "configure" %}
+			controlSerializer_.reset();
+{%- endif %}
 		{{proxy_funcs.deserialize_call(method|method_param_inputs, '_ipcMessage.data()', '_ipcMessage.fds()', false, true)|indent(16, true)}}
 {% for param in method|method_param_outputs %}
 			{{param|name}} {{param.mojom_name}};

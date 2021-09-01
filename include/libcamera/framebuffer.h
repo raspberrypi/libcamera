@@ -51,14 +51,7 @@ public:
 
 	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
 
-	const std::vector<Plane> &planes() const
-	{
-		/* \todo Remove the assertions after sufficient testing */
-		for (const auto &plane : planes_)
-			assert(plane.offset != Plane::kInvalidOffset);
-		return planes_;
-	}
-
+	const std::vector<Plane> &planes() const { return planes_; }
 	Request *request() const;
 	const FrameMetadata &metadata() const { return metadata_; }
 

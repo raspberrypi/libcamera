@@ -199,6 +199,8 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 	: Extensible(std::make_unique<Private>()), planes_(planes),
 	  cookie_(cookie)
 {
+	for (const auto &plane : planes_)
+		ASSERT(plane.offset != Plane::kInvalidOffset);
 }
 
 /**

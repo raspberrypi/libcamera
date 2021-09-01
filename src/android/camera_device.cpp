@@ -1131,12 +1131,12 @@ void CameraDevice::requestComplete(Request *request)
 		resultMetadata = std::make_unique<CameraMetadata>(0, 0);
 	}
 
-	/* Handle any JPEG compression. */
+	/* Handle post-processing. */
 	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(buffer.stream->priv);
 
-		if (cameraStream->camera3Stream().format != HAL_PIXEL_FORMAT_BLOB)
+		if (cameraStream->type() == CameraStream::Type::Direct)
 			continue;
 
 		FrameBuffer *src = request->findBuffer(cameraStream->stream());

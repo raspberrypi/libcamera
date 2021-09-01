@@ -9,13 +9,15 @@
 
 #include <sys/mman.h>
 
+#include <libcamera/formats.h>
+
+#include "jpeg/post_processor_jpeg.h"
+#include "yuv/post_processor_yuv.h"
+
 #include "camera_buffer.h"
 #include "camera_capabilities.h"
 #include "camera_device.h"
 #include "camera_metadata.h"
-#include "jpeg/post_processor_jpeg.h"
-
-#include <libcamera/formats.h>
 
 using namespace libcamera;
 
@@ -67,8 +69,14 @@ int CameraStream::configure()
 			cameraDevice_->capabilities()->toPixelFormat(camera3Stream_->format);
 		StreamConfiguration output = configuration();
 		output.pixelFormat = outFormat;
+		output.size.width = camera3Stream_->width;
+		output.size.height = camera3Stream_->height;
 
 		switch (outFormat) {
+		case formats::NV12:
+			postProcessor_ = std::make_unique<PostProcessorYuv>();
+			break;
+
 		case formats::MJPEG:
 			postProcessor_ = std::make_unique<PostProcessorJpeg>(cameraDevice_);
 			break;

@@ -1356,7 +1356,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		const FileDescriptor &fd = planes[0].fd;
 		size_t offset = 0;
 
-		for (size_t i = 0; i < planes.size(); ++i) {
+		for (auto [i, plane] : utils::enumerate(planes)) {
 			/*
 			 * The stride is reported by V4L2 for the first plane
 			 * only. Compute the stride of the other planes by
@@ -1368,11 +1368,11 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 					    * formatInfo_->planes[i].bytesPerGroup
 					    / formatInfo_->planes[0].bytesPerGroup;
 
-			planes[i].fd = fd;
-			planes[i].offset = offset;
-			planes[i].length = formatInfo_->planeSize(format_.size.height,
-								  i, stride);
-			offset += planes[i].length;
+			plane.fd = fd;
+			plane.offset = offset;
+			plane.length = formatInfo_->planeSize(format_.size.height,
+							      i, stride);
+			offset += plane.length;
 		}
 	}
 

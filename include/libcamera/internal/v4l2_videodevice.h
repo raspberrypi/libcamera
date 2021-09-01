@@ -241,6 +241,7 @@ private:
 
 	V4L2Capability caps_;
 	V4L2DeviceFormat format_;
+	const PixelFormatInfo *formatInfo_;
 
 	enum v4l2_buf_type bufferType_;
 	enum v4l2_memory memoryType_;

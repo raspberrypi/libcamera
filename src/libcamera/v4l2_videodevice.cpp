@@ -482,8 +482,8 @@ const std::string V4L2DeviceFormat::toString() const
  * \param[in] deviceNode The file-system path to the video device node
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
-	: V4L2Device(deviceNode), cache_(nullptr), fdBufferNotifier_(nullptr),
-	  streaming_(false)
+	: V4L2Device(deviceNode), formatInfo_(nullptr), cache_(nullptr),
+	  fdBufferNotifier_(nullptr), streaming_(false)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -586,6 +586,8 @@ int V4L2VideoDevice::open()
 		return ret;
 	}
 
+	formatInfo_ = &PixelFormatInfo::info(format_.fourcc);
+
 	return 0;
 }
 
@@ -681,6 +683,8 @@ int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
 		return ret;
 	}
 
+	formatInfo_ = &PixelFormatInfo::info(format_.fourcc);
+
 	return 0;
 }
 
@@ -694,6 +698,8 @@ void V4L2VideoDevice::close()
 
 	releaseBuffers();
 	delete fdBufferNotifier_;
+
+	formatInfo_ = nullptr;
 
 	V4L2Device::close();
 }
@@ -787,6 +793,8 @@ int V4L2VideoDevice::setFormat(V4L2DeviceFormat *format)
 		return ret;
 
 	format_ = *format;
+	formatInfo_ = &PixelFormatInfo::info(format_.fourcc);
+
 	return 0;
 }
 
@@ -1325,19 +1333,23 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		planes.push_back(std::move(plane));
 	}
 
-	const auto &info = PixelFormatInfo::info(format_.fourcc);
-	if (info.isValid() && info.numPlanes() != numPlanes) {
+	/*
+	 * The format info is not guaranteed to be valid, as there are no
+	 * PixelFormatInfo for metadata formats, so check it first.
+	 */
+	if (formatInfo_->isValid() && formatInfo_->numPlanes() != numPlanes) {
 		ASSERT(numPlanes == 1u);
-		const size_t numColorPlanes = info.numPlanes();
-		planes.resize(numColorPlanes);
+
+		planes.resize(formatInfo_->numPlanes());
 		const FileDescriptor &fd = planes[0].fd;
 		size_t offset = 0;
-		for (size_t i = 0; i < numColorPlanes; ++i) {
+
+		for (size_t i = 0; i < planes.size(); ++i) {
 			planes[i].fd = fd;
 			planes[i].offset = offset;
 
 			/* \todo Take the V4L2 stride into account */
-			planes[i].length = info.planeSize(format_.size, i);
+			planes[i].length = formatInfo_->planeSize(format_.size, i);
 			offset += planes[i].length;
 		}
 	}

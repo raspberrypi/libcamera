@@ -8,6 +8,8 @@
 #include <libcamera/file_descriptor.h>
 
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <utility>
 
@@ -219,6 +221,30 @@ FileDescriptor &FileDescriptor::operator=(FileDescriptor &&other)
 FileDescriptor FileDescriptor::dup() const
 {
 	return FileDescriptor(fd());
+}
+
+/**
+ * \brief Retrieve the file descriptor inode
+ *
+ * \todo Should this move to the File class ?
+ *
+ * \return The file descriptor inode on success, or 0 on error
+ */
+ino_t FileDescriptor::inode() const
+{
+	if (!isValid())
+		return 0;
+
+	struct stat st;
+	int ret = fstat(fd_->fd(), &st);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(FileDescriptor, Fatal)
+			<< "Failed to fstat() fd: " << strerror(-ret);
+		return 0;
+	}
+
+	return st.st_ino;
 }
 
 FileDescriptor::Descriptor::Descriptor(int fd, bool duplicate)

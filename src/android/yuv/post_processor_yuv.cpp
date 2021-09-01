@@ -134,11 +134,9 @@ void PostProcessorYuv::calculateLengths(const StreamConfiguration &inCfg,
 		sourceStride_[i] = inCfg.stride;
 		destinationStride_[i] = nv12Info.stride(destinationSize_.width, i, 1);
 
-		const unsigned int vertSubSample =
-			nv12Info.planes[i].verticalSubSampling;
-		sourceLength_[i] = sourceStride_[i] *
-			((sourceSize_.height + vertSubSample - 1) / vertSubSample);
-		destinationLength_[i] = destinationStride_[i] *
-			((destinationSize_.height + vertSubSample - 1) / vertSubSample);
+		sourceLength_[i] = nv12Info.planeSize(sourceSize_.height, i,
+						      sourceStride_[i]);
+		destinationLength_[i] = nv12Info.planeSize(destinationSize_.height, i,
+							   destinationStride_[i]);
 	}
 }

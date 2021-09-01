@@ -1337,11 +1337,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 			planes[i].offset = offset;
 
 			/* \todo Take the V4L2 stride into account */
-			const unsigned int vertSubSample =
-				info.planes[i].verticalSubSampling;
-			planes[i].length =
-				info.stride(format_.size.width, i, 1u) *
-				((format_.size.height + vertSubSample - 1) / vertSubSample);
+			planes[i].length = info.planeSize(format_.size, i);
 			offset += planes[i].length;
 		}
 	}

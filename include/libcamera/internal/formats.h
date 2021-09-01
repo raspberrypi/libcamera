@@ -41,6 +41,10 @@ public:
 
 	unsigned int stride(unsigned int width, unsigned int plane,
 			    unsigned int align = 1) const;
+	unsigned int planeSize(const Size &size, unsigned int plane,
+			       unsigned int align = 1) const;
+	unsigned int planeSize(unsigned int height, unsigned int plane,
+			       unsigned int stride) const;
 	unsigned int frameSize(const Size &size, unsigned int align = 1) const;
 	unsigned int frameSize(const Size &size,
 			       const std::array<unsigned int, 3> &strides) const;

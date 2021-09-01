@@ -107,16 +107,9 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 
 	unsigned int offset = 0;
 	for (unsigned int i = 0; i < numPlanes; ++i) {
-		/*
-		 * \todo Remove if this plane size computation function is
-		 * added to PixelFormatInfo.
-		 */
-		const unsigned int vertSubSample = info.planes[i].verticalSubSampling;
-		const unsigned int stride = info.stride(size.width, i, 1u);
-		const unsigned int planeSize =
-			stride * ((size.height + vertSubSample - 1) / vertSubSample);
+		const unsigned int planeSize = info.planeSize(size, i);
 
-		planeInfo_[i].stride = stride;
+		planeInfo_[i].stride = info.stride(size.width, i, 1u);
 		planeInfo_[i].offset = offset;
 		planeInfo_[i].size = planeSize;
 

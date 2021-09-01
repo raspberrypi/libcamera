@@ -1040,6 +1040,14 @@ void ControlList::set(unsigned int id, const ControlValue &value)
  * associated ControlInfoMap, nullptr is returned in that case.
  */
 
+/**
+ * \fn ControlList::idMap()
+ * \brief Retrieve the ControlId map used to construct the ControlList
+ * \return The ControlId map used to construct the ControlList. ControlList
+ * instances constructed with the default contructor have no associated idmap,
+ * nullptr is returned in that case.
+ */
+
 const ControlValue *ControlList::find(unsigned int id) const
 {
 	const auto iter = controls_.find(id);

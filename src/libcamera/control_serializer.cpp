@@ -275,6 +275,15 @@ int ControlSerializer::serialize(const ControlList &list,
 		infoMapHandle = 0;
 	}
 
+	const ControlIdMap *idmap = list.idMap();
+	enum ipa_controls_id_map_type idMapType;
+	if (idmap == &controls::controls)
+		idMapType = IPA_CONTROL_ID_MAP_CONTROLS;
+	else if (idmap == &properties::properties)
+		idMapType = IPA_CONTROL_ID_MAP_PROPERTIES;
+	else
+		idMapType = IPA_CONTROL_ID_MAP_V4L2;
+
 	size_t entriesSize = list.size() * sizeof(struct ipa_control_value_entry);
 	size_t valuesSize = 0;
 	for (const auto &ctrl : list)
@@ -287,6 +296,7 @@ int ControlSerializer::serialize(const ControlList &list,
 	hdr.entries = list.size();
 	hdr.size = sizeof(hdr) + entriesSize + valuesSize;
 	hdr.data_offset = sizeof(hdr) + entriesSize;
+	hdr.id_map_type = idMapType;
 
 	buffer.write(&hdr);
 
@@ -496,13 +506,15 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 	}
 
 	/*
-	 * Retrieve the ControlInfoMap associated with the ControlList based on
-	 * its ID. The mapping between infoMap and ID is set up when serializing
-	 * or deserializing ControlInfoMap. If no mapping is found (which is
-	 * currently the case for ControlList related to libcamera controls),
-	 * use the global control::control idmap.
+	 * Retrieve the ControlIdMap associated with the ControlList.
+	 *
+	 * The idmap is either retrieved from the list's ControlInfoMap when
+	 * a valid handle has been initialized at serialization time, or by
+	 * using the header's id_map_type field for lists that refer to the
+	 * globally defined libcamera controls and properties, for which no
+	 * ControlInfoMap is available.
 	 */
-	const ControlInfoMap *infoMap;
+	const ControlIdMap *idMap;
 	if (hdr->handle) {
 		auto iter = std::find_if(infoMapHandles_.begin(), infoMapHandles_.end(),
 					 [&](decltype(infoMapHandles_)::value_type &entry) {
@@ -514,12 +526,32 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 			return {};
 		}
 
-		infoMap = iter->first;
+		const ControlInfoMap *infoMap = iter->first;
+		idMap = &infoMap->idmap();
 	} else {
-		infoMap = nullptr;
+		switch (hdr->id_map_type) {
+		case IPA_CONTROL_ID_MAP_CONTROLS:
+			idMap = &controls::controls;
+			break;
+
+		case IPA_CONTROL_ID_MAP_PROPERTIES:
+			idMap = &properties::properties;
+			break;
+
+		case IPA_CONTROL_ID_MAP_V4L2:
+			LOG(Serializer, Fatal)
+				<< "A list of V4L2 controls requires an ControlInfoMap";
+			return {};
+		}
 	}
 
-	ControlList ctrls(infoMap ? infoMap->idmap() : controls::controls);
+	/*
+	 * \todo When available, initialize the list with the ControlInfoMap
+	 * so that controls can be validated against their limits.
+	 * Currently no validation is performed, so it's fine relying on the
+	 * idmap only.
+	 */
+	ControlList ctrls(*idMap);
 
 	for (unsigned int i = 0; i < hdr->entries; ++i) {
 		const struct ipa_control_value_entry *entry =

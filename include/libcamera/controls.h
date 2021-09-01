@@ -407,6 +407,7 @@ public:
 	void set(unsigned int id, const ControlValue &value);
 
 	const ControlInfoMap *infoMap() const { return infoMap_; }
+	const ControlIdMap *idMap() const { return idmap_; }
 
 private:
 	const ControlValue *find(unsigned int id) const;

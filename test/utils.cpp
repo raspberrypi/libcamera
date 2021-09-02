@@ -77,8 +77,8 @@ protected:
 
 	int testEnumerate()
 	{
-		std::vector<int> integers{ 1, 2, 3, 4, 5 };
-		int i = 0;
+		std::vector<unsigned int> integers{ 1, 2, 3, 4, 5 };
+		unsigned int i = 0;
 
 		for (auto [index, value] : utils::enumerate(integers)) {
 			if (index != i || value != i + 1) {
@@ -93,12 +93,12 @@ protected:
 			++i;
 		}
 
-		if (integers != std::vector<int>{ 0, 1, 2, 3, 4 }) {
+		if (integers != std::vector<unsigned int>{ 0, 1, 2, 3, 4 }) {
 			cerr << "Failed to modify container in enumerated range loop" << endl;
 			return TestFail;
 		}
 
-		Span<const int> span{ integers };
+		Span<const unsigned int> span{ integers };
 		i = 0;
 
 		for (auto [index, value] : utils::enumerate(span)) {
@@ -112,7 +112,7 @@ protected:
 			++i;
 		}
 
-		const int array[] = { 0, 2, 4, 6, 8 };
+		const unsigned int array[] = { 0, 2, 4, 6, 8 };
 		i = 0;
 
 		for (auto [index, value] : utils::enumerate(array)) {

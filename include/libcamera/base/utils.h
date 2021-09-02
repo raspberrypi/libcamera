@@ -246,7 +246,7 @@ private:
 
 public:
 	using difference_type = typename std::iterator_traits<Base>::difference_type;
-	using value_type = std::pair<const difference_type, base_reference>;
+	using value_type = std::pair<const std::size_t, base_reference>;
 	using pointer = value_type *;
 	using reference = value_type &;
 	using iterator_category = std::input_iterator_tag;
@@ -275,7 +275,7 @@ public:
 
 private:
 	Base current_;
-	difference_type pos_;
+	std::size_t pos_;
 };
 
 template<typename Base>

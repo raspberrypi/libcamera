@@ -33,9 +33,8 @@ struct Ipu3AwbCell {
 	unsigned char padding[3];
 } __attribute__((packed));
 
-struct IspStatsRegion {
+struct Accumulator {
 	unsigned int counted;
-	unsigned int uncounted;
 	unsigned long long rSum;
 	unsigned long long gSum;
 	unsigned long long bSum;
@@ -82,7 +81,7 @@ private:
 	uint32_t estimateCCT(double red, double green, double blue);
 
 	std::vector<RGB> zones_;
-	IspStatsRegion awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
+	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
 	AwbStatus asyncResults_;
 };
 

@@ -21,26 +21,69 @@ static constexpr uint32_t kMinZonesCounted = 16;
 static constexpr uint32_t kMinGreenLevelInZone = 32;
 
 /**
- * \struct IspStatsRegion
- * \brief RGB statistics for a given region
+ * \struct Accumulator
+ * \brief RGB statistics for a given zone
  *
- * The IspStatsRegion structure is intended to abstract the ISP specific
- * statistics and use an agnostic algorithm to compute AWB.
+ * - Cells are defined in Pixels
+ * - Zones are defined in Cells
  *
- * \var IspStatsRegion::counted
- * \brief Number of pixels used to calculate the sums
+ *                             80 cells
+ *            /───────────── 1280 pixels ───────────\
+ *                             16 zones
+ *             16
+ *           ┌────┬────┬────┬────┬────┬─  ──────┬────┐   \
+ *           │Cell│    │    │    │    │    |    │    │   │
+ *        16 │ px │    │    │    │    │    |    │    │   │
+ *           ├────┼────┼────┼────┼────┼─  ──────┼────┤   │
+ *           │    │    │    │    │    │    |    │    │
+ *           │    │    │    │    │    │    |    │    │   7
+ *           │ ── │ ── │ ── │ ── │ ── │ ──  ── ─┤ ── │ 1 2 4
+ *           │    │    │    │    │    │    |    │    │ 2 0 5
  *
- * \var IspStatsRegion::uncounted
- * \brief Remaining number of pixels in the region
+ *           │    │    │    │    │    │    |    │    │ z p c
+ *           ├────┼────┼────┼────┼────┼─  ──────┼────┤ o i e
+ *           │    │    │    │    │    │    |    │    │ n x l
+ *           │                        │    |    │    │ e e l
+ *           ├───                  ───┼─  ──────┼────┤ s l s
+ *           │                        │    |    │    │   s
+ *           │                        │    |    │    │
+ *           ├───   Zone of Cells  ───┼─  ──────┼────┤   │
+ *           │        (5 x 4)         │    |    │    │   │
+ *           │                        │    |    │    │   │
+ *           ├──                   ───┼─  ──────┼────┤   │
+ *           │                   │    │    |    │    │   │
+ *           │    │    │    │    │    │    |    │    │   │
+ *           └────┴────┴────┴────┴────┴─  ──────┴────┘   /
  *
- * \var IspStatsRegion::rSum
- * \brief Sum of the red values in the region
  *
- * \var IspStatsRegion::gSum
- * \brief Sum of the green values in the region
+ * The algorithm works with a fixed number of zones \a kAwbStatsSizeX x
+ * \a kAwbStatsSizeY. For example, a frame of 1280x720 is divided into 80x45
+ * cells of [16x16] pixels. In the case of \a kAwbStatsSizeX=16 and
+ * \a kAwbStatsSizeY=12 the zones are made of [5x4] cells. The cells are
+ * left-aligned and calculated by IPAIPU3::calculateBdsGrid().
  *
- * \var IspStatsRegion::bSum
- * \brief Sum of the blue values in the region
+ * Each statistics cell represents the average value of the pixels in that cell
+ * split by colour components.
+ *
+ * The Accumulator structure stores the sum of the average of each cell in a
+ * zone of the image, as well as the number of cells which were unsaturated and
+ * therefore included in the average.
+ * \todo move this description and structure into a common header
+ *
+ * Cells which are saturated beyond the threshold defined in
+ * ipu3_uapi_awb_config_s are not included in the average.
+ *
+ * \var Accumulator::counted
+ * \brief Number of unsaturated cells used to calculate the sums
+ *
+ * \var Accumulator::rSum
+ * \brief Sum of the average red values of each unsaturated cell in the zone
+ *
+ * \var Accumulator::gSum
+ * \brief Sum of the average green values of each unsaturated cell in the zone
+ *
+ * \var Accumulator::bSum
+ * \brief Sum of the average blue values of each unsaturated cell in the zone
  */
 
 /**
@@ -157,7 +200,7 @@ uint32_t Awb::estimateCCT(double red, double green, double blue)
 	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
 }
 
-/* Generate an RGB vector with the average values for each region */
+/* Generate an RGB vector with the average values for each zone */
 void Awb::generateZones(std::vector<RGB> &zones)
 {
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
@@ -174,7 +217,7 @@ void Awb::generateZones(std::vector<RGB> &zones)
 	}
 }
 
-/* Translate the IPU3 statistics into the default statistics region array */
+/* Translate the IPU3 statistics into the default statistics zone array */
 void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats,
 			   const ipu3_uapi_grid_config &grid)
 {
@@ -215,7 +258,6 @@ void Awb::clearAwbStats()
 		awbStats_[i].rSum = 0;
 		awbStats_[i].gSum = 0;
 		awbStats_[i].counted = 0;
-		awbStats_[i].uncounted = 0;
 	}
 }
 
@@ -304,7 +346,7 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 
 	/*
 	 * Optical center is column start (respectively row start) of the
-	 * region of interest minus its X center (respectively Y center).
+	 * cell of interest minus its X center (respectively Y center).
 	 *
 	 * For the moment use BDS as a first approximation, but it should
 	 * be calculated based on Shading (SHD) parameters.

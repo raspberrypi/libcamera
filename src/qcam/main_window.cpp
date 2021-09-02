@@ -20,6 +20,7 @@
 #include <QInputDialog>
 #include <QMutexLocker>
 #include <QStandardPaths>
+#include <QStringList>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -754,10 +755,14 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 	fps = lastBufferTime_ && fps ? 1000000000.0 / fps : 0.0;
 	lastBufferTime_ = metadata.timestamp;
 
+	QStringList bytesused;
+	for (const FrameMetadata::Plane &plane : metadata.planes())
+		bytesused << QString::number(plane.bytesused);
+
 	qDebug().noquote()
 		<< QString("seq: %1").arg(metadata.sequence, 6, 10, QLatin1Char('0'))
-		<< "bytesused:" << metadata.planes()[0].bytesused
-		<< "timestamp:" << metadata.timestamp
+		<< "bytesused: {" << bytesused.join(", ")
+		<< "} timestamp:" << metadata.timestamp
 		<< "fps:" << Qt::fixed << qSetRealNumberPrecision(2) << fps;
 
 	/* Render the frame on the viewfinder. */

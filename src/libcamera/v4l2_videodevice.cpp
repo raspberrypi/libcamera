@@ -22,10 +22,12 @@
 
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/file_descriptor.h>
 
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
 
@@ -1496,10 +1498,25 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
 	const std::vector<FrameBuffer::Plane> &planes = buffer->planes();
+	const unsigned int numV4l2Planes = format_.planesCount;
+
+	/*
+	 * Ensure that the frame buffer has enough planes, and that they're
+	 * contiguous if the V4L2 format requires them to be.
+	 */
+	if (planes.size() < numV4l2Planes) {
+		LOG(V4L2, Error) << "Frame buffer has too few planes";
+		return -EINVAL;
+	}
+
+	if (planes.size() != numV4l2Planes && !buffer->_d()->isContiguous()) {
+		LOG(V4L2, Error) << "Device format requires contiguous buffer";
+		return -EINVAL;
+	}
 
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
-			for (unsigned int p = 0; p < planes.size(); ++p)
+			for (unsigned int p = 0; p < numV4l2Planes; ++p)
 				v4l2Planes[p].m.fd = planes[p].fd.fd();
 		} else {
 			buf.m.fd = planes[0].fd.fd();
@@ -1507,23 +1524,58 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	}
 
 	if (multiPlanar) {
-		buf.length = planes.size();
+		buf.length = numV4l2Planes;
 		buf.m.planes = v4l2Planes;
 	}
 
 	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
 		const FrameMetadata &metadata = buffer->metadata();
 
-		if (multiPlanar) {
-			unsigned int nplane = 0;
-			for (const FrameMetadata::Plane &plane : metadata.planes) {
-				v4l2Planes[nplane].bytesused = plane.bytesused;
-				v4l2Planes[nplane].length = buffer->planes()[nplane].length;
-				nplane++;
+		if (numV4l2Planes != planes.size()) {
+			/*
+			 * If we have a multi-planar buffer with a V4L2
+			 * single-planar format, coalesce all planes. The length
+			 * and number of bytes used may only differ in the last
+			 * plane as any other situation can't be represented.
+			 */
+			unsigned int bytesused = 0;
+			unsigned int length = 0;
+
+			for (auto [i, plane] : utils::enumerate(planes)) {
+				bytesused += metadata.planes[i].bytesused;
+				length += plane.length;
+
+				if (i != planes.size() - 1 && bytesused != length) {
+					LOG(V4L2, Error)
+						<< "Holes in multi-planar buffer not supported";
+					return -EINVAL;
+				}
+			}
+
+			if (multiPlanar) {
+				v4l2Planes[0].bytesused = bytesused;
+				v4l2Planes[0].length = length;
+			} else {
+				buf.bytesused = bytesused;
+				buf.length = length;
+			}
+		} else if (multiPlanar) {
+			/*
+			 * If we use the multi-planar API, fill in the planes.
+			 * The number of planes in the frame buffer and in the
+			 * V4L2 buffer is guaranteed to be equal at this point.
+			 */
+			for (auto [i, plane] : utils::enumerate(planes)) {
+				v4l2Planes[i].bytesused = metadata.planes[i].bytesused;
+				v4l2Planes[i].length = plane.length;
 			}
 		} else {
-			if (metadata.planes.size())
-				buf.bytesused = metadata.planes[0].bytesused;
+			/*
+			 * Single-planar API with a single plane in the buffer
+			 * is trivial to handle.
+			 */
+			buf.bytesused = metadata.planes[0].bytesused;
+			buf.length = planes[0].length;
 		}
 
 		buf.sequence = metadata.sequence;

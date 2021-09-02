@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include <algorithm>
 #include <array>
 #include <fcntl.h>
 #include <iomanip>
@@ -1669,12 +1670,54 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	buffer->metadata_.timestamp = buf.timestamp.tv_sec * 1000000000ULL
 				    + buf.timestamp.tv_usec * 1000ULL;
 
-	buffer->metadata_.planes.clear();
-	if (multiPlanar) {
-		for (unsigned int nplane = 0; nplane < buf.length; nplane++)
-			buffer->metadata_.planes.push_back({ planes[nplane].bytesused });
+	if (V4L2_TYPE_IS_OUTPUT(buf.type))
+		return buffer;
+
+	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
+	FrameMetadata &metadata = buffer->metadata_;
+	metadata.planes.clear();
+
+	if (numV4l2Planes != buffer->planes().size()) {
+		/*
+		 * If we have a multi-planar buffer with a V4L2
+		 * single-planar format, split the V4L2 buffer across
+		 * the buffer planes. Only the last plane may have less
+		 * bytes used than its length.
+		 */
+		if (numV4l2Planes != 1) {
+			LOG(V4L2, Error)
+				<< "Invalid number of planes (" << numV4l2Planes
+				<< " != " << buffer->planes().size() << ")";
+
+			metadata.status = FrameMetadata::FrameError;
+			return buffer;
+		}
+
+		unsigned int bytesused = multiPlanar ? planes[0].bytesused
+				       : buf.bytesused;
+
+		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
+			if (!bytesused) {
+				LOG(V4L2, Error)
+					<< "Dequeued buffer is too small";
+
+				metadata.status = FrameMetadata::FrameError;
+				return buffer;
+			}
+
+			metadata.planes.push_back({ std::min(plane.length, bytesused) });
+			bytesused -= metadata.planes.back().bytesused;
+		}
+	} else if (multiPlanar) {
+		/*
+		 * If we use the multi-planar API, fill in the planes.
+		 * The number of planes in the frame buffer and in the
+		 * V4L2 buffer is guaranteed to be equal at this point.
+		 */
+		for (unsigned int i = 0; i < numV4l2Planes; ++i)
+			metadata.planes.push_back({ planes[i].bytesused });
 	} else {
-		buffer->metadata_.planes.push_back({ buf.bytesused });
+		metadata.planes.push_back({ buf.bytesused });
 	}
 
 	return buffer;

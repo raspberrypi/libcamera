@@ -52,6 +52,24 @@ LOG_DEFINE_CATEGORY(CameraSensorProperties)
 const CameraSensorProperties *CameraSensorProperties::get(const std::string &sensor)
 {
 	static const std::map<std::string, const CameraSensorProperties> sensorProps = {
+		{ "hi846", {
+			.unitCellSize = { 1120, 1120 },
+			.testPatternModes = {
+				{ 0, controls::draft::TestPatternModeOff },
+				{ 1, controls::draft::TestPatternModeSolidColor },
+				{ 2, controls::draft::TestPatternModeColorBars },
+				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
+				{ 4, controls::draft::TestPatternModePn9 },
+				/*
+				 * No corresponding test pattern mode for:
+				 * 5: "Gradient Horizontal"
+				 * 6: "Gradient Vertical"
+				 * 7: "Check Board"
+				 * 8: "Slant Pattern"
+				 * 9: "Resolution Pattern"
+				 */
+			},
+		} },
 		{ "imx219", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {

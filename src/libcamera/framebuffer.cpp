@@ -106,7 +106,7 @@ LOG_DEFINE_CATEGORY(Buffer)
  */
 
 FrameBuffer::Private::Private()
-	: request_(nullptr)
+	: request_(nullptr), isContiguous_(true)
 {
 }
 
@@ -118,6 +118,17 @@ FrameBuffer::Private::Private()
  * For buffers added to requests by applications, this function is called by
  * Request::addBuffer() or Request::reuse(). For buffers internal to pipeline
  * handlers, it is called by the pipeline handlers themselves.
+ */
+
+/**
+ * \fn FrameBuffer::Private::isContiguous()
+ * \brief Check if the frame buffer stores planes contiguously in memory
+ *
+ * Multi-planar frame buffers can store their planes contiguously in memory, or
+ * split them into discontiguous memory areas. This function checks in which of
+ * these two categories the frame buffer belongs.
+ *
+ * \return True if the planes are stored contiguously in memory, false otherwise
  */
 
 /**
@@ -199,8 +210,38 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 	: Extensible(std::make_unique<Private>()), planes_(planes),
 	  cookie_(cookie)
 {
-	for (const auto &plane : planes_)
+	unsigned int offset = 0;
+	bool isContiguous = true;
+	ino_t inode = 0;
+
+	for (const auto &plane : planes_) {
 		ASSERT(plane.offset != Plane::kInvalidOffset);
+
+		if (plane.offset != offset) {
+			isContiguous = false;
+			break;
+		}
+
+		/*
+		 * Two different dmabuf file descriptors may still refer to the
+		 * same dmabuf instance. Check this using inodes.
+		 */
+		if (plane.fd.fd() != planes_[0].fd.fd()) {
+			if (!inode)
+				inode = planes_[0].fd.inode();
+			if (plane.fd.inode() != inode) {
+				isContiguous = false;
+				break;
+			}
+		}
+
+		offset += plane.length;
+	}
+
+	LOG(Buffer, Debug)
+		<< "Buffer is " << (isContiguous ? "not " : "") << "contiguous";
+
+	_d()->isContiguous_ = isContiguous;
 }
 
 /**

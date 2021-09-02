@@ -21,9 +21,11 @@ public:
 	Private();
 
 	void setRequest(Request *request) { request_ = request; }
+	bool isContiguous() const { return isContiguous_; }
 
 private:
 	Request *request_;
+	bool isContiguous_;
 };
 
 } /* namespace libcamera */

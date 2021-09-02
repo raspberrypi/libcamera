@@ -110,7 +110,7 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 
 	for (unsigned int i = 0; i < buffer->planes().size(); ++i) {
 		const FrameBuffer::Plane &plane = buffer->planes()[i];
-		const FrameMetadata::Plane &meta = buffer->metadata().planes[i];
+		const FrameMetadata::Plane &meta = buffer->metadata().planes()[i];
 
 		uint8_t *data = planeData_[&plane];
 		unsigned int length = std::min(meta.bytesused, plane.length);

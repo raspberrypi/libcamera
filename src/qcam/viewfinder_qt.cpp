@@ -87,7 +87,7 @@ void ViewFinderQt::render(libcamera::FrameBuffer *buffer,
 	}
 
 	unsigned char *memory = mem.data();
-	size_t size = buffer->metadata().planes[0].bytesused;
+	size_t size = buffer->metadata().planes()[0].bytesused;
 
 	{
 		QMutexLocker locker(&mutex_);

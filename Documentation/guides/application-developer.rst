@@ -427,10 +427,10 @@ the Frame sequence number and details of the planes.
    std::cout << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence << " bytesused: ";
 
    unsigned int nplane = 0;
-   for (const FrameMetadata::Plane &plane : metadata.planes)
+   for (const FrameMetadata::Plane &plane : metadata.planes())
    {
        std::cout << plane.bytesused;
-       if (++nplane < metadata.planes.size()) std::cout << "/";
+       if (++nplane < metadata.planes().size()) std::cout << "/";
    }
 
    std::cout << std::endl;

@@ -756,7 +756,7 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 
 	qDebug().noquote()
 		<< QString("seq: %1").arg(metadata.sequence, 6, 10, QLatin1Char('0'))
-		<< "bytesused:" << metadata.planes[0].bytesused
+		<< "bytesused:" << metadata.planes()[0].bytesused
 		<< "timestamp:" << metadata.timestamp
 		<< "fps:" << Qt::fixed << qSetRealNumberPrecision(2) << fps;
 

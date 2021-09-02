@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/file_descriptor.h>
 
@@ -34,7 +35,14 @@ struct FrameMetadata {
 	Status status;
 	unsigned int sequence;
 	uint64_t timestamp;
-	std::vector<Plane> planes;
+
+	Span<Plane> planes() { return planes_; }
+	Span<const Plane> planes() const { return planes_; }
+
+private:
+	friend class FrameBuffer;
+
+	std::vector<Plane> planes_;
 };
 
 class FrameBuffer final : public Extensible

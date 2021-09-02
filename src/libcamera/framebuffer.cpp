@@ -91,8 +91,14 @@ LOG_DEFINE_CATEGORY(Buffer)
  */
 
 /**
- * \var FrameMetadata::planes
- * \brief Array of per-plane metadata
+ * \fn FrameMetadata::planes()
+ * \copydoc FrameMetadata::planes() const
+ */
+
+/**
+ * \fn FrameMetadata::planes() const
+ * \brief Retrieve the array of per-plane metadata
+ * \return The array of per-plane metadata
  */
 
 /**
@@ -210,7 +216,7 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 	: Extensible(std::make_unique<Private>()), planes_(planes),
 	  cookie_(cookie)
 {
-	metadata_.planes.resize(planes_.size());
+	metadata_.planes_.resize(planes_.size());
 
 	unsigned int offset = 0;
 	bool isContiguous = true;

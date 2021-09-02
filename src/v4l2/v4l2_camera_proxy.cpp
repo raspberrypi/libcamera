@@ -211,7 +211,7 @@ void V4L2CameraProxy::updateBuffers()
 
 		switch (fmd.status) {
 		case FrameMetadata::FrameSuccess:
-			buf.bytesused = fmd.planes[0].bytesused;
+			buf.bytesused = fmd.planes()[0].bytesused;
 			buf.field = V4L2_FIELD_NONE;
 			buf.timestamp.tv_sec = fmd.timestamp / 1000000000;
 			buf.timestamp.tv_usec = fmd.timestamp % 1000000;

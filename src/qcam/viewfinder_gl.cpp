@@ -125,7 +125,7 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer,
 	/*
 	 * \todo Get the stride from the buffer instead of computing it naively
 	 */
-	stride_ = buffer->metadata().planes[0].bytesused / size_.height();
+	stride_ = buffer->metadata().planes()[0].bytesused / size_.height();
 	update();
 	buffer_ = buffer;
 }

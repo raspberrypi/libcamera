@@ -1543,7 +1543,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 			unsigned int length = 0;
 
 			for (auto [i, plane] : utils::enumerate(planes)) {
-				bytesused += metadata.planes[i].bytesused;
+				bytesused += metadata.planes()[i].bytesused;
 				length += plane.length;
 
 				if (i != planes.size() - 1 && bytesused != length) {
@@ -1567,7 +1567,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 			 * V4L2 buffer is guaranteed to be equal at this point.
 			 */
 			for (auto [i, plane] : utils::enumerate(planes)) {
-				v4l2Planes[i].bytesused = metadata.planes[i].bytesused;
+				v4l2Planes[i].bytesused = metadata.planes()[i].bytesused;
 				v4l2Planes[i].length = plane.length;
 			}
 		} else {
@@ -1575,7 +1575,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 			 * Single-planar API with a single plane in the buffer
 			 * is trivial to handle.
 			 */
-			buf.bytesused = metadata.planes[0].bytesused;
+			buf.bytesused = metadata.planes()[0].bytesused;
 			buf.length = planes[0].length;
 		}
 
@@ -1704,9 +1704,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 				return buffer;
 			}
 
-			metadata.planes[i].bytesused =
+			metadata.planes()[i].bytesused =
 				std::min(plane.length, bytesused);
-			bytesused -= metadata.planes[i].bytesused;
+			bytesused -= metadata.planes()[i].bytesused;
 		}
 	} else if (multiPlanar) {
 		/*
@@ -1715,9 +1715,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		 * V4L2 buffer is guaranteed to be equal at this point.
 		 */
 		for (unsigned int i = 0; i < numV4l2Planes; ++i)
-			metadata.planes[i].bytesused = planes[i].bytesused;
+			metadata.planes()[i].bytesused = planes[i].bytesused;
 	} else {
-		metadata.planes[0].bytesused = buf.bytesused;
+		metadata.planes()[0].bytesused = buf.bytesused;
 	}
 
 	return buffer;

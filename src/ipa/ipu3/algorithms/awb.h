@@ -35,9 +35,11 @@ struct Ipu3AwbCell {
 
 struct Accumulator {
 	unsigned int counted;
-	unsigned long long rSum;
-	unsigned long long gSum;
-	unsigned long long bSum;
+	struct {
+		uint64_t red;
+		uint64_t green;
+		uint64_t blue;
+	} sum;
 };
 
 class Awb : public Algorithm

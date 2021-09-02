@@ -23,6 +23,24 @@ namespace ipa::ipu3::algorithms {
 static constexpr uint32_t kAwbStatsSizeX = 16;
 static constexpr uint32_t kAwbStatsSizeY = 12;
 
+/* \todo Move the cell layout into intel-ipu3.h kernel header */
+struct Ipu3AwbCell {
+	unsigned char greenRedAvg;
+	unsigned char redAvg;
+	unsigned char blueAvg;
+	unsigned char greenBlueAvg;
+	unsigned char satRatio;
+	unsigned char padding[3];
+} __attribute__((packed));
+
+struct IspStatsRegion {
+	unsigned int counted;
+	unsigned int uncounted;
+	unsigned long long rSum;
+	unsigned long long gSum;
+	unsigned long long bSum;
+};
+
 class Awb : public Algorithm
 {
 public:
@@ -32,16 +50,7 @@ public:
 	void prepare(IPAContext &context, ipu3_uapi_params *params) override;
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
-	struct Ipu3AwbCell {
-		unsigned char greenRedAvg;
-		unsigned char redAvg;
-		unsigned char blueAvg;
-		unsigned char greenBlueAvg;
-		unsigned char satRatio;
-		unsigned char padding[3];
-	} __attribute__((packed));
-
-	/* \todo Make these three structs available to all the ISPs ? */
+	/* \todo Make these structs available to all the ISPs ? */
 	struct RGB {
 		RGB(double _R = 0, double _G = 0, double _B = 0)
 			: R(_R), G(_G), B(_B)
@@ -53,14 +62,6 @@ public:
 			R += other.R, G += other.G, B += other.B;
 			return *this;
 		}
-	};
-
-	struct IspStatsRegion {
-		unsigned int counted;
-		unsigned int uncounted;
-		unsigned long long rSum;
-		unsigned long long gSum;
-		unsigned long long bSum;
 	};
 
 	struct AwbStatus {

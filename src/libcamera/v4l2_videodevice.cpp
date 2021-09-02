@@ -1675,7 +1675,6 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 
 	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
 	FrameMetadata &metadata = buffer->metadata_;
-	metadata.planes.clear();
 
 	if (numV4l2Planes != buffer->planes().size()) {
 		/*
@@ -1705,8 +1704,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 				return buffer;
 			}
 
-			metadata.planes.push_back({ std::min(plane.length, bytesused) });
-			bytesused -= metadata.planes.back().bytesused;
+			metadata.planes[i].bytesused =
+				std::min(plane.length, bytesused);
+			bytesused -= metadata.planes[i].bytesused;
 		}
 	} else if (multiPlanar) {
 		/*
@@ -1715,9 +1715,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		 * V4L2 buffer is guaranteed to be equal at this point.
 		 */
 		for (unsigned int i = 0; i < numV4l2Planes; ++i)
-			metadata.planes.push_back({ planes[i].bytesused });
+			metadata.planes[i].bytesused = planes[i].bytesused;
 	} else {
-		metadata.planes.push_back({ buf.bytesused });
+		metadata.planes[0].bytesused = buf.bytesused;
 	}
 
 	return buffer;

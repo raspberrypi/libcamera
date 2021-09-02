@@ -210,6 +210,8 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 	: Extensible(std::make_unique<Private>()), planes_(planes),
 	  cookie_(cookie)
 {
+	metadata_.planes.resize(planes_.size());
+
 	unsigned int offset = 0;
 	bool isContiguous = true;
 	ino_t inode = 0;

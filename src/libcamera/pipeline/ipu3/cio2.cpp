@@ -203,9 +203,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	if (itInfo == mbusCodesToPixelFormat.end())
 		return -EINVAL;
 
-	const PixelFormatInfo &info = PixelFormatInfo::info(itInfo->second);
-
-	outputFormat->fourcc = info.v4l2Format;
+	outputFormat->fourcc = V4L2PixelFormat::fromPixelFormat(itInfo->second);
 	outputFormat->size = sensorFormat.size;
 	outputFormat->planesCount = 1;
 

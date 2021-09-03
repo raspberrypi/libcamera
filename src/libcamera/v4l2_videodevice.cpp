@@ -1334,10 +1334,19 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 	}
 
 	/*
+	 * If we have a multi-planar format with a V4L2 single-planar buffer,
+	 * split the single V4L2 plane into multiple FrameBuffer planes by
+	 * computing the offsets manually.
+	 *
 	 * The format info is not guaranteed to be valid, as there are no
 	 * PixelFormatInfo for metadata formats, so check it first.
 	 */
 	if (formatInfo_->isValid() && formatInfo_->numPlanes() != numPlanes) {
+		/*
+		 * There's no valid situation where the number of colour planes
+		 * differs from the number of V4L2 planes and the V4L2 buffer
+		 * has more than one plane.
+		 */
 		ASSERT(numPlanes == 1u);
 
 		planes.resize(formatInfo_->numPlanes());

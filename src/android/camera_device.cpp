@@ -746,8 +746,8 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 }
 
 FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
-					     libcamera::PixelFormat pixelFormat,
-					     const libcamera::Size &size)
+					     PixelFormat pixelFormat,
+					     const Size &size)
 {
 	FileDescriptor fd;
 	/*
@@ -1140,7 +1140,7 @@ void CameraDevice::requestComplete(Request *request)
 	if (!resultMetadata) {
 		notifyError(descriptor.frameNumber_, nullptr, CAMERA3_MSG_ERROR_RESULT);
 
-		/* The camera framework expects an empy metadata pack on error. */
+		/* The camera framework expects an empty metadata pack on error. */
 		resultMetadata = std::make_unique<CameraMetadata>(0, 0);
 	}
 

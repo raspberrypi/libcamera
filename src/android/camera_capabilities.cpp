@@ -378,7 +378,7 @@ void CameraCapabilities::computeHwLevel(
 	hwLevel_ = hwLevel;
 }
 
-int CameraCapabilities::initialize(std::shared_ptr<libcamera::Camera> camera,
+int CameraCapabilities::initialize(std::shared_ptr<Camera> camera,
 				   int orientation, int facing)
 {
 	camera_ = camera;
@@ -429,7 +429,7 @@ CameraCapabilities::initializeYUVResolutions(const PixelFormat &pixelFormat,
 }
 
 std::vector<Size>
-CameraCapabilities::initializeRawResolutions(const libcamera::PixelFormat &pixelFormat)
+CameraCapabilities::initializeRawResolutions(const PixelFormat &pixelFormat)
 {
 	std::unique_ptr<CameraConfiguration> cameraConfig =
 		camera_->generateConfiguration({ StreamRole::Raw });

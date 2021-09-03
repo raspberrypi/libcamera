@@ -20,14 +20,13 @@ using namespace libcamera;
 LOG_DECLARE_CATEGORY(HAL)
 
 class CameraBuffer::Private : public Extensible::Private,
-			      public libcamera::MappedBuffer
+			      public MappedBuffer
 {
 	LIBCAMERA_DECLARE_PUBLIC(CameraBuffer)
 
 public:
 	Private(CameraBuffer *cameraBuffer, buffer_handle_t camera3Buffer,
-		libcamera::PixelFormat pixelFormat, const libcamera::Size &size,
-		int flags);
+		PixelFormat pixelFormat, const Size &size, int flags);
 	~Private();
 
 	unsigned int numPlanes() const;
@@ -58,13 +57,13 @@ private:
 
 CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 			       buffer_handle_t camera3Buffer,
-			       libcamera::PixelFormat pixelFormat,
-			       const libcamera::Size &size, int flags)
+			       PixelFormat pixelFormat,
+			       const Size &size, int flags)
 	: fd_(-1), flags_(flags), bufferLength_(-1), mapped_(false)
 {
 	error_ = 0;
 
-	const auto &info = libcamera::PixelFormatInfo::info(pixelFormat);
+	const auto &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid()) {
 		error_ = -EINVAL;
 		LOG(HAL, Error) << "Invalid pixel format: "

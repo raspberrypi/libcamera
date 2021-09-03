@@ -98,7 +98,7 @@ int CameraStream::configure()
 	return 0;
 }
 
-int CameraStream::process(const libcamera::FrameBuffer &source,
+int CameraStream::process(const FrameBuffer &source,
 			  buffer_handle_t camera3Dest,
 			  const CameraMetadata &requestMetadata,
 			  CameraMetadata *resultMetadata)
@@ -139,7 +139,7 @@ FrameBuffer *CameraStream::getBuffer()
 	return buffer;
 }
 
-void CameraStream::putBuffer(libcamera::FrameBuffer *buffer)
+void CameraStream::putBuffer(FrameBuffer *buffer)
 {
 	if (!allocator_)
 		return;

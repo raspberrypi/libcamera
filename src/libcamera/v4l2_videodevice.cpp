@@ -1354,11 +1354,21 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		size_t offset = 0;
 
 		for (size_t i = 0; i < planes.size(); ++i) {
+			/*
+			 * The stride is reported by V4L2 for the first plane
+			 * only. Compute the stride of the other planes by
+			 * taking the horizontal subsampling factor into
+			 * account, which is equal to the bytesPerGroup ratio of
+			 * the planes.
+			 */
+			unsigned int stride = format_.planes[0].bpl
+					    * formatInfo_->planes[i].bytesPerGroup
+					    / formatInfo_->planes[0].bytesPerGroup;
+
 			planes[i].fd = fd;
 			planes[i].offset = offset;
-
-			/* \todo Take the V4L2 stride into account */
-			planes[i].length = formatInfo_->planeSize(format_.size, i);
+			planes[i].length = formatInfo_->planeSize(format_.size.height,
+								  i, stride);
 			offset += planes[i].length;
 		}
 	}

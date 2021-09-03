@@ -212,8 +212,6 @@ public:
 	static std::unique_ptr<V4L2VideoDevice>
 	fromEntityName(const MediaDevice *media, const std::string &entity);
 
-	V4L2PixelFormat toV4L2PixelFormat(const PixelFormat &pixelFormat);
-
 protected:
 	std::string logPrefix() const override;
 

@@ -80,7 +80,7 @@ CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
 	cfg->bufferCount = RKISP1_BUFFER_COUNT;
 
 	V4L2DeviceFormat format;
-	format.fourcc = video_->toV4L2PixelFormat(cfg->pixelFormat);
+	format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg->pixelFormat);
 	format.size = cfg->size;
 
 	int ret = video_->tryFormat(&format);
@@ -146,7 +146,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 
 	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
 	V4L2DeviceFormat outputFormat;
-	outputFormat.fourcc = video_->toV4L2PixelFormat(config.pixelFormat);
+	outputFormat.fourcc = V4L2PixelFormat::fromPixelFormat(config.pixelFormat);
 	outputFormat.size = config.size;
 	outputFormat.planesCount = info.numPlanes();
 
@@ -155,7 +155,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 		return ret;
 
 	if (outputFormat.size != config.size ||
-	    outputFormat.fourcc != video_->toV4L2PixelFormat(config.pixelFormat)) {
+	    outputFormat.fourcc != V4L2PixelFormat::fromPixelFormat(config.pixelFormat)) {
 		LOG(RkISP1, Error)
 			<< "Unable to configure capture in " << config.toString();
 		return -EINVAL;

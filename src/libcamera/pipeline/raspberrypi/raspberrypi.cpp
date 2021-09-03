@@ -440,14 +440,14 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 		V4L2VideoDevice::Formats fmts = dev->formats();
 
-		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt, false)) == fmts.end()) {
+		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
 			cfgPixFmt = formats::NV12;
 			status = Adjusted;
 		}
 
 		V4L2DeviceFormat format;
-		format.fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
+		format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 
 		int ret = dev->tryFormat(&format);
@@ -647,7 +647,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		RPi::Stream *stream = i == maxIndex ? &data->isp_[Isp::Output0]
 						    : &data->isp_[Isp::Output1];
 
-		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg.pixelFormat);
+		V4L2PixelFormat fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 		format.fourcc = fourcc;
 
@@ -688,7 +688,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		maxSize = Size(320, 240);
 		format = {};
 		format.size = maxSize;
-		format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420, false);
+		format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420);
 		ret = data->isp_[Isp::Output0].dev()->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error)

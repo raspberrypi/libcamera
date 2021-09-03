@@ -38,7 +38,7 @@ public:
 
 	PixelFormat toPixelFormat() const;
 	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat,
-					       bool multiplanar);
+					       bool multiplanar = false);
 
 private:
 	uint32_t fourcc_;

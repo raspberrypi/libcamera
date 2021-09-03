@@ -1688,23 +1688,6 @@ V4L2VideoDevice::fromEntityName(const MediaDevice *media,
 }
 
 /**
- * \brief Convert \a PixelFormat to its corresponding V4L2 FourCC
- * \param[in] pixelFormat The PixelFormat to convert
- *
- * For multiplanar formats, the V4L2 format variant (contiguous or
- * non-contiguous planes) is selected automatically based on the capabilities
- * of the video device. If the video device supports the V4L2 multiplanar API,
- * non-contiguous formats are preferred.
- *
- * \return The V4L2_PIX_FMT_* pixel format code corresponding to \a pixelFormat
- */
-V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat)
-{
-	return V4L2PixelFormat::fromPixelFormat(pixelFormat,
-						caps_.isMultiplanar());
-}
-
-/**
  * \class V4L2M2MDevice
  * \brief Memory-to-Memory video device
  *

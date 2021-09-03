@@ -826,7 +826,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 				return Invalid;
 		} else {
 			V4L2DeviceFormat format;
-			format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
+			format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
 			format.size = cfg.size;
 
 			int ret = data_->video_->tryFormat(&format);
@@ -915,7 +915,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Configure the video node. */
-	V4L2PixelFormat videoFormat = video->toV4L2PixelFormat(pipeConfig->captureFormat);
+	V4L2PixelFormat videoFormat = V4L2PixelFormat::fromPixelFormat(pipeConfig->captureFormat);
 
 	V4L2DeviceFormat captureFormat;
 	captureFormat.fourcc = videoFormat;

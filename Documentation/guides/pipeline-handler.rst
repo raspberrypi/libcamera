@@ -970,8 +970,7 @@ with the fourcc and size attributes to apply directly to the capture device
 node. The fourcc attribute is a `V4L2PixelFormat`_ and differs from the
 ``libcamera::PixelFormat``. Converting the format requires knowledge of the
 plane configuration for multiplanar formats, so you must explicitly convert it
-using the helper ``V4L2VideoDevice::toV4L2PixelFormat()`` provided by the
-V4L2VideoDevice instance of which the format will be applied on.
+using the helper ``V4L2PixelFormat::fromPixelFormat()``.
 
 .. _V4L2DeviceFormat: http://libcamera.org/api-html/classlibcamera_1_1V4L2DeviceFormat.html
 .. _V4L2PixelFormat: http://libcamera.org/api-html/classlibcamera_1_1V4L2PixelFormat.html
@@ -981,7 +980,7 @@ Add the following code beneath the code from above:
 .. code-block:: cpp
 
    V4L2DeviceFormat format = {};
-   format.fourcc = data->video_->toV4L2PixelFormat(cfg.pixelFormat);
+   format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
    format.size = cfg.size;
 
 Set the video device format defined above using the
@@ -1001,7 +1000,7 @@ Continue the implementation with the following code:
           return ret;
 
    if (format.size != cfg.size ||
-          format.fourcc != data->video_->toV4L2PixelFormat(cfg.pixelFormat))
+          format.fourcc != V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat))
           return -EINVAL;
 
 Finally, store and set stream-specific data reflecting the state of the stream.

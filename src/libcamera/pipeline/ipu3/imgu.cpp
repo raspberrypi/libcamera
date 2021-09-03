@@ -575,7 +575,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 		return 0;
 
 	*outputFormat = {};
-	outputFormat->fourcc = dev->toV4L2PixelFormat(formats::NV12);
+	outputFormat->fourcc = V4L2PixelFormat::fromPixelFormat(formats::NV12);
 	outputFormat->size = cfg.size;
 	outputFormat->planesCount = 2;
 

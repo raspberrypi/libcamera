@@ -243,7 +243,7 @@ int V4L2CameraProxy::vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_fr
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_framesizes fd = " << file->efd();
 
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->pixel_format);
-	PixelFormat format = PixelFormatInfo::info(v4l2Format).format;
+	PixelFormat format = v4l2Format.toPixelFormat();
 	/*
 	 * \todo This might need to be expanded as few pipeline handlers
 	 * report StreamFormats.
@@ -299,7 +299,7 @@ int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 int V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 {
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
-	PixelFormat format = PixelFormatInfo::info(v4l2Format).format;
+	PixelFormat format = v4l2Format.toPixelFormat();
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
 
 	StreamConfiguration config;
@@ -348,8 +348,7 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 
 	Size size(arg->fmt.pix.width, arg->fmt.pix.height);
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->fmt.pix.pixelformat);
-	ret = vcam_->configure(&streamConfig_, size,
-			       PixelFormatInfo::info(v4l2Format).format,
+	ret = vcam_->configure(&streamConfig_, size, v4l2Format.toPixelFormat(),
 			       bufferCount_);
 	if (ret < 0)
 		return -EINVAL;
@@ -491,8 +490,7 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	Size size(v4l2PixFormat_.width, v4l2PixFormat_.height);
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(v4l2PixFormat_.pixelformat);
 	int ret = vcam_->configure(&streamConfig_, size,
-				   PixelFormatInfo::info(v4l2Format).format,
-				   arg->count);
+				   v4l2Format.toPixelFormat(), arg->count);
 	if (ret < 0)
 		return -EINVAL;
 

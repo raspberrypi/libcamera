@@ -749,25 +749,6 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 					     PixelFormat pixelFormat,
 					     const Size &size)
 {
-	FileDescriptor fd;
-	/*
-	 * This assumes all the planes are in the same dmabuf.
-	 *
-	 * \todo Verify that this assumption holds, fstat() can be used to check
-	 * if two fds refer to the same dmabuf.
-	 */
-	for (int i = 0; i < camera3buffer->numFds; i++) {
-		if (camera3buffer->data[i] != -1) {
-			fd = FileDescriptor(camera3buffer->data[i]);
-			break;
-		}
-	}
-
-	if (!fd.isValid()) {
-		LOG(HAL, Fatal) << "No valid fd";
-		return nullptr;
-	}
-
 	CameraBuffer buf(camera3buffer, pixelFormat, size, PROT_READ);
 	if (!buf.isValid()) {
 		LOG(HAL, Fatal) << "Failed to create CameraBuffer";
@@ -776,6 +757,12 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 
 	std::vector<FrameBuffer::Plane> planes(buf.numPlanes());
 	for (size_t i = 0; i < buf.numPlanes(); ++i) {
+		FileDescriptor fd{ camera3buffer->data[i] };
+		if (!fd.isValid()) {
+			LOG(HAL, Fatal) << "No valid fd";
+			return nullptr;
+		}
+
 		planes[i].fd = fd;
 		planes[i].offset = buf.offset(i);
 		planes[i].length = buf.size(i);

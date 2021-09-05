@@ -56,7 +56,7 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
-	: QOpenGLWidget(parent), buffer_(nullptr), data_(nullptr),
+	: QOpenGLWidget(parent), buffer_(nullptr), image_(nullptr),
 	  vertexBuffer_(QOpenGLBuffer::VertexBuffer)
 {
 }
@@ -102,6 +102,7 @@ void ViewFinderGL::stop()
 	if (buffer_) {
 		renderComplete(buffer_);
 		buffer_ = nullptr;
+		image_ = nullptr;
 	}
 }
 
@@ -114,15 +115,10 @@ QImage ViewFinderGL::getCurrentImage()
 
 void ViewFinderGL::render(libcamera::FrameBuffer *buffer, Image *image)
 {
-	if (buffer->planes().size() != 1) {
-		qWarning() << "Multi-planar buffers are not supported";
-		return;
-	}
-
 	if (buffer_)
 		renderComplete(buffer_);
 
-	data_ = image->data(0).data();
+	image_ = image;
 	/*
 	 * \todo Get the stride from the buffer instead of computing it naively
 	 */
@@ -489,7 +485,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture UV/VU */
@@ -503,7 +499,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE_ALPHA,
 			     GL_UNSIGNED_BYTE,
-			     data_ + size_.width() * size_.height());
+			     image_->data(1).data());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 
@@ -519,7 +515,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture U */
@@ -533,7 +529,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_ + size_.width() * size_.height());
+			     image_->data(1).data());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 
 		/* Activate texture V */
@@ -547,7 +543,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_ + size_.width() * size_.height() * 5 / 4);
+			     image_->data(2).data());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 		break;
 
@@ -563,7 +559,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/* Activate texture V */
@@ -577,7 +573,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_ + size_.width() * size_.height());
+			     image_->data(1).data());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
 
 		/* Activate texture U */
@@ -591,7 +587,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_ + size_.width() * size_.height() * 5 / 4);
+			     image_->data(2).data());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
 		break;
 
@@ -602,7 +598,7 @@ void ViewFinderGL::doRender()
 		/*
 		 * Packed YUV formats are stored in a RGBA texture to match the
 		 * OpenGL texel size with the 4 bytes repeating pattern in YUV.
-		 * The texture width is thus half of the image with.
+		 * The texture width is thus half of the image_ with.
 		 */
 		glActiveTexture(GL_TEXTURE0);
 		configureTexture(*textures_[0]);
@@ -614,7 +610,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RGBA,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 
 		/*
@@ -642,7 +638,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RGBA,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 		break;
 
@@ -658,7 +654,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_RGB,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 		break;
 
@@ -689,7 +685,7 @@ void ViewFinderGL::doRender()
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
-			     data_);
+			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
 		shaderProgram_.setUniformValue(textureUniformBayerFirstRed_,
 					       firstRed_);
@@ -714,7 +710,7 @@ void ViewFinderGL::paintGL()
 				   << "create fragment shader failed.";
 		}
 
-	if (data_) {
+	if (image_) {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

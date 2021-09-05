@@ -67,7 +67,7 @@ private:
 	libcamera::PixelFormat format_;
 	QSize size_;
 	unsigned int stride_;
-	unsigned char *data_;
+	Image *image_;
 
 	/* Shaders */
 	QOpenGLShaderProgram shaderProgram_;

@@ -7,6 +7,7 @@
 
 #include "viewfinder_qt.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <utility>
 
@@ -81,12 +82,6 @@ int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
 
 void ViewFinderQt::render(libcamera::FrameBuffer *buffer, Image *image)
 {
-	if (buffer->planes().size() != 1) {
-		qWarning() << "Multi-planar buffers are not supported";
-		return;
-	}
-
-	unsigned char *memory = image->data(0).data();
 	size_t size = buffer->metadata().planes()[0].bytesused;
 
 	{
@@ -103,8 +98,9 @@ void ViewFinderQt::render(libcamera::FrameBuffer *buffer, Image *image)
 			 * \todo Get the stride from the buffer instead of
 			 * computing it naively
 			 */
-			image_ = QImage(memory, size_.width(), size_.height(),
-					size / size_.height(),
+			assert(buffer->planes().size() == 1);
+			image_ = QImage(image->data(0).data(), size_.width(),
+					size_.height(), size / size_.height(),
 					::nativeFormats[format_]);
 			std::swap(buffer, buffer_);
 		} else {
@@ -112,7 +108,7 @@ void ViewFinderQt::render(libcamera::FrameBuffer *buffer, Image *image)
 			 * Otherwise, convert the format and release the frame
 			 * buffer immediately.
 			 */
-			converter_.convert(memory, size, &image_);
+			converter_.convert(image, size, &image_);
 		}
 	}
 

@@ -13,6 +13,8 @@
 
 #include <libcamera/formats.h>
 
+#include "../cam/image.h"
+
 #define RGBSHIFT		8
 #ifndef MAX
 #define MAX(a,b)		((a)>(b)?(a):(b))
@@ -154,12 +156,11 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 	return 0;
 }
 
-void FormatConverter::convert(const unsigned char *src, size_t size,
-			      QImage *dst)
+void FormatConverter::convert(const Image *src, size_t size, QImage *dst)
 {
 	switch (formatFamily_) {
 	case MJPEG:
-		dst->loadFromData(src, size, "JPEG");
+		dst->loadFromData(src->data(0).data(), size, "JPEG");
 		break;
 	case YUV:
 		convertYUV(src, dst->bits());
@@ -183,13 +184,14 @@ static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)
 	*b = CLIP(( 298 * c + 516 * d           + 128) >> RGBSHIFT);
 }
 
-void FormatConverter::convertNV(const unsigned char *src, unsigned char *dst)
+void FormatConverter::convertNV(const Image *srcImage, unsigned char *dst)
 {
 	unsigned int c_stride = width_ * (2 / horzSubSample_);
 	unsigned int c_inc = horzSubSample_ == 1 ? 2 : 0;
 	unsigned int cb_pos = nvSwap_ ? 1 : 0;
 	unsigned int cr_pos = nvSwap_ ? 0 : 1;
-	const unsigned char *src_c = src + width_ * height_;
+	const unsigned char *src = srcImage->data(0).data();
+	const unsigned char *src_c = srcImage->data(1).data();
 	int r, g, b;
 
 	for (unsigned int y = 0; y < height_; y++) {
@@ -223,8 +225,9 @@ void FormatConverter::convertNV(const unsigned char *src, unsigned char *dst)
 	}
 }
 
-void FormatConverter::convertRGB(const unsigned char *src, unsigned char *dst)
+void FormatConverter::convertRGB(const Image *srcImage, unsigned char *dst)
 {
+	const unsigned char *src = srcImage->data(0).data();
 	unsigned int x, y;
 	int r, g, b;
 
@@ -245,8 +248,9 @@ void FormatConverter::convertRGB(const unsigned char *src, unsigned char *dst)
 	}
 }
 
-void FormatConverter::convertYUV(const unsigned char *src, unsigned char *dst)
+void FormatConverter::convertYUV(const Image *srcImage, unsigned char *dst)
 {
+	const unsigned char *src = srcImage->data(0).data();
 	unsigned int src_x, src_y, dst_x, dst_y;
 	unsigned int src_stride;
 	unsigned int dst_stride;

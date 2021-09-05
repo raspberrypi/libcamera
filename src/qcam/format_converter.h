@@ -13,6 +13,7 @@
 
 #include <libcamera/pixel_format.h>
 
+class Image;
 class QImage;
 
 class FormatConverter
@@ -20,7 +21,7 @@ class FormatConverter
 public:
 	int configure(const libcamera::PixelFormat &format, const QSize &size);
 
-	void convert(const unsigned char *src, size_t size, QImage *dst);
+	void convert(const Image *src, size_t size, QImage *dst);
 
 private:
 	enum FormatFamily {
@@ -30,9 +31,9 @@ private:
 		YUV,
 	};
 
-	void convertNV(const unsigned char *src, unsigned char *dst);
-	void convertRGB(const unsigned char *src, unsigned char *dst);
-	void convertYUV(const unsigned char *src, unsigned char *dst);
+	void convertNV(const Image *src, unsigned char *dst);
+	void convertRGB(const Image *src, unsigned char *dst);
+	void convertYUV(const Image *src, unsigned char *dst);
 
 	libcamera::PixelFormat format_;
 	unsigned int width_;

@@ -14,6 +14,7 @@ cam_sources = files([
     'event_loop.cpp',
     'file_sink.cpp',
     'frame_sink.cpp',
+    'image.cpp',
     'main.cpp',
     'options.cpp',
     'stream_options.cpp',

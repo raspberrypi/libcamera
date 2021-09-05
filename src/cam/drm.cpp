@@ -623,7 +623,7 @@ std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 		fb->planes_.push_back({ handle });
 
 		handles[i] = handle;
-		offsets[i] = 0; /* TODO */
+		offsets[i] = plane.offset;
 		++i;
 	}
 

@@ -595,12 +595,12 @@ const Object *Device::object(uint32_t id)
 std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 	const libcamera::FrameBuffer &buffer,
 	const libcamera::PixelFormat &format,
-	const libcamera::Size &size, unsigned int stride)
+	const libcamera::Size &size,
+	const std::array<uint32_t, 4> &strides)
 {
 	std::unique_ptr<FrameBuffer> fb{ new FrameBuffer(this) };
 
 	uint32_t handles[4] = {};
-	uint32_t pitches[4] = {};
 	uint32_t offsets[4] = {};
 	int ret;
 
@@ -623,13 +623,12 @@ std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 		fb->planes_.push_back({ handle });
 
 		handles[i] = handle;
-		pitches[i] = stride;
 		offsets[i] = 0; /* TODO */
 		++i;
 	}
 
 	ret = drmModeAddFB2(fd_, size.width, size.height, format.fourcc(), handles,
-			    pitches, offsets, &fb->id_, 0);
+			    strides.data(), offsets, &fb->id_, 0);
 	if (ret < 0) {
 		ret = -errno;
 		std::cerr

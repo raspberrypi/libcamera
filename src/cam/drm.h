@@ -7,9 +7,11 @@
 #ifndef __CAM_DRM_H__
 #define __CAM_DRM_H__
 
+#include <array>
 #include <list>
 #include <map>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -298,7 +300,8 @@ public:
 	std::unique_ptr<FrameBuffer> createFrameBuffer(
 		const libcamera::FrameBuffer &buffer,
 		const libcamera::PixelFormat &format,
-		const libcamera::Size &size, unsigned int stride);
+		const libcamera::Size &size,
+		const std::array<uint32_t, 4> &strides);
 
 	libcamera::Signal<AtomicRequest *> requestComplete;
 

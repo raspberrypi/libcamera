@@ -7,10 +7,12 @@
 
 #include "kms_sink.h"
 
+#include <array>
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <memory>
+#include <stdint.h>
 #include <string.h>
 
 #include <libcamera/camera.h>
@@ -65,8 +67,32 @@ KMSSink::KMSSink(const std::string &connectorName)
 
 void KMSSink::mapBuffer(libcamera::FrameBuffer *buffer)
 {
+	std::array<uint32_t, 4> strides = {};
+
+	/* \todo Should libcamera report per-plane strides ? */
+	unsigned int uvStrideMultiplier;
+
+	switch (format_) {
+	case libcamera::formats::NV24:
+	case libcamera::formats::NV42:
+		uvStrideMultiplier = 4;
+		break;
+	case libcamera::formats::YUV420:
+	case libcamera::formats::YVU420:
+	case libcamera::formats::YUV422:
+		uvStrideMultiplier = 1;
+		break;
+	default:
+		uvStrideMultiplier = 2;
+		break;
+	}
+
+	strides[0] = stride_;
+	for (unsigned int i = 1; i < buffer->planes().size(); ++i)
+		strides[i] = stride_ * uvStrideMultiplier / 2;
+
 	std::unique_ptr<DRM::FrameBuffer> drmBuffer =
-		dev_.createFrameBuffer(*buffer, format_, size_, stride_);
+		dev_.createFrameBuffer(*buffer, format_, size_, strides);
 	if (!drmBuffer)
 		return;
 

@@ -34,6 +34,7 @@ using namespace libcamera;
 class QAction;
 class QComboBox;
 
+class Image;
 class HotplugEvent;
 
 enum {
@@ -106,8 +107,7 @@ private:
 	FrameBufferAllocator *allocator_;
 
 	std::unique_ptr<CameraConfiguration> config_;
-	std::map<FrameBuffer *, Span<uint8_t>> mappedBuffers_;
-	std::map<FrameBuffer *, Span<uint8_t>> planeData_;
+	std::map<FrameBuffer *, std::unique_ptr<Image>> mappedBuffers_;
 
 	/* Capture state, buffers queue and statistics */
 	bool isCapturing_;

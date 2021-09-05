@@ -15,6 +15,7 @@ endif
 qcam_enabled = true
 
 qcam_sources = files([
+    '../cam/image.cpp',
     '../cam/options.cpp',
     '../cam/stream_options.cpp',
     'format_converter.cpp',

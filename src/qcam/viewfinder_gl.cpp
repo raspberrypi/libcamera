@@ -13,6 +13,8 @@
 
 #include <libcamera/formats.h>
 
+#include "../cam/image.h"
+
 static const QList<libcamera::PixelFormat> supportedFormats{
 	/* YUV - packed (single plane) */
 	libcamera::formats::UYVY,
@@ -110,8 +112,7 @@ QImage ViewFinderGL::getCurrentImage()
 	return grabFramebuffer();
 }
 
-void ViewFinderGL::render(libcamera::FrameBuffer *buffer,
-			  libcamera::Span<uint8_t> mem)
+void ViewFinderGL::render(libcamera::FrameBuffer *buffer, Image *image)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
@@ -121,7 +122,7 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer,
 	if (buffer_)
 		renderComplete(buffer_);
 
-	data_ = mem.data();
+	data_ = image->data(0).data();
 	/*
 	 * \todo Get the stride from the buffer instead of computing it naively
 	 */

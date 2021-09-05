@@ -19,6 +19,7 @@
 
 #include <libcamera/formats.h>
 
+#include "../cam/image.h"
 #include "format_converter.h"
 
 static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats
@@ -78,15 +79,14 @@ int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
 	return 0;
 }
 
-void ViewFinderQt::render(libcamera::FrameBuffer *buffer,
-			  libcamera::Span<uint8_t> mem)
+void ViewFinderQt::render(libcamera::FrameBuffer *buffer, Image *image)
 {
 	if (buffer->planes().size() != 1) {
 		qWarning() << "Multi-planar buffers are not supported";
 		return;
 	}
 
-	unsigned char *memory = mem.data();
+	unsigned char *memory = image->data(0).data();
 	size_t size = buffer->metadata().planes()[0].bytesused;
 
 	{

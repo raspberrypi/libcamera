@@ -283,9 +283,9 @@ FrameBuffer::FrameBuffer(Device *dev)
 
 FrameBuffer::~FrameBuffer()
 {
-	for (FrameBuffer::Plane &plane : planes_) {
+	for (const auto &plane : planes_) {
 		struct drm_gem_close gem_close = {
-			.handle = plane.handle,
+			.handle = plane.second.handle,
 			.pad = 0,
 		};
 		int ret;
@@ -605,22 +605,27 @@ std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 	int ret;
 
 	const std::vector<libcamera::FrameBuffer::Plane> &planes = buffer.planes();
-	fb->planes_.reserve(planes.size());
 
 	unsigned int i = 0;
 	for (const libcamera::FrameBuffer::Plane &plane : planes) {
+		int fd = plane.fd.fd();
 		uint32_t handle;
 
-		ret = drmPrimeFDToHandle(fd_, plane.fd.fd(), &handle);
-		if (ret < 0) {
-			ret = -errno;
-			std::cerr
-				<< "Unable to import framebuffer dmabuf: "
-				<< strerror(-ret) << std::endl;
-			return nullptr;
-		}
+		auto iter = fb->planes_.find(fd);
+		if (iter == fb->planes_.end()) {
+			ret = drmPrimeFDToHandle(fd_, plane.fd.fd(), &handle);
+			if (ret < 0) {
+				ret = -errno;
+				std::cerr
+					<< "Unable to import framebuffer dmabuf: "
+					<< strerror(-ret) << std::endl;
+				return nullptr;
+			}
 
-		fb->planes_.push_back({ handle });
+			fb->planes_[fd] = { handle };
+		} else {
+			handle = iter->second.handle;
+		}
 
 		handles[i] = handle;
 		offsets[i] = plane.offset;

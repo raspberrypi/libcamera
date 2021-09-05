@@ -242,7 +242,7 @@ private:
 
 	FrameBuffer(Device *dev);
 
-	std::vector<Plane> planes_;
+	std::map<int, Plane> planes_;
 };
 
 class AtomicRequest

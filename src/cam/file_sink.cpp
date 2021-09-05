@@ -5,17 +5,18 @@
  * file_sink.cpp - File Sink
  */
 
+#include <assert.h>
 #include <fcntl.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <sys/mman.h>
 #include <unistd.h>
 
 #include <libcamera/camera.h>
 
 #include "file_sink.h"
+#include "image.h"
 
 using namespace libcamera;
 
@@ -26,12 +27,6 @@ FileSink::FileSink(const std::string &pattern)
 
 FileSink::~FileSink()
 {
-	for (auto &iter : mappedBuffers_) {
-		void *memory = iter.second.first;
-		unsigned int length = iter.second.second;
-		munmap(memory, length);
-	}
-	mappedBuffers_.clear();
 }
 
 int FileSink::configure(const libcamera::CameraConfiguration &config)
@@ -51,23 +46,11 @@ int FileSink::configure(const libcamera::CameraConfiguration &config)
 
 void FileSink::mapBuffer(FrameBuffer *buffer)
 {
-	/* \todo use MappedFrameBuffer. */
-	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		const int fd = plane.fd.fd();
-		if (mappedBuffers_.find(fd) == mappedBuffers_.end()) {
-			/**
-			 * \todo Should we try to only map the portions of the
-			 * dmabuf that are used by planes ?
-			 */
-			size_t length = lseek(fd, 0, SEEK_END);
-			void *memory = mmap(NULL, plane.length, PROT_READ,
-					    MAP_SHARED, fd, 0);
-			mappedBuffers_[fd] = std::make_pair(memory, length);
-		}
+	std::unique_ptr<Image> image =
+		Image::fromFrameBuffer(buffer, Image::MapMode::ReadOnly);
+	assert(image != nullptr);
 
-		void *memory = mappedBuffers_[fd].first;
-		planeData_[&plane] = static_cast<uint8_t *>(memory) + plane.offset;
-	}
+	mappedBuffers_[buffer] = std::move(image);
 }
 
 bool FileSink::processRequest(Request *request)
@@ -108,19 +91,20 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 		return;
 	}
 
+	Image *image = mappedBuffers_[buffer].get();
+
 	for (unsigned int i = 0; i < buffer->planes().size(); ++i) {
-		const FrameBuffer::Plane &plane = buffer->planes()[i];
 		const FrameMetadata::Plane &meta = buffer->metadata().planes()[i];
 
-		uint8_t *data = planeData_[&plane];
-		unsigned int length = std::min(meta.bytesused, plane.length);
+		Span<uint8_t> data = image->data(i);
+		unsigned int length = std::min<unsigned int>(meta.bytesused, data.size());
 
-		if (meta.bytesused > plane.length)
+		if (meta.bytesused > data.size())
 			std::cerr << "payload size " << meta.bytesused
-				  << " larger than plane size " << plane.length
+				  << " larger than plane size " << data.size()
 				  << std::endl;
 
-		ret = ::write(fd, data, length);
+		ret = ::write(fd, data.data(), length);
 		if (ret < 0) {
 			ret = -errno;
 			std::cerr << "write error: " << strerror(-ret)

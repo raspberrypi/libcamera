@@ -395,6 +395,7 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
 	textureUniformStep_ = shaderProgram_.uniformLocation("tex_step");
 	textureUniformSize_ = shaderProgram_.uniformLocation("tex_size");
+	textureUniformStrideFactor_ = shaderProgram_.uniformLocation("stride_factor");
 	textureUniformBayerFirstRed_ = shaderProgram_.uniformLocation("tex_bayer_first_red");
 
 	/* Create the textures. */
@@ -464,6 +465,9 @@ void ViewFinderGL::initializeGL()
 
 void ViewFinderGL::doRender()
 {
+	/* Stride of the first plane, in pixels. */
+	unsigned int stridePixels;
+
 	switch (format_) {
 	case libcamera::formats::NV12:
 	case libcamera::formats::NV21:
@@ -477,7 +481,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width(),
+			     stride_,
 			     size_.height(),
 			     0,
 			     GL_LUMINANCE,
@@ -491,13 +495,15 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE_ALPHA,
-			     size_.width() / horzSubSample_,
+			     stride_ / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
 			     GL_LUMINANCE_ALPHA,
 			     GL_UNSIGNED_BYTE,
 			     image_->data(1).data());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
+
+		stridePixels = stride_;
 		break;
 
 	case libcamera::formats::YUV420:
@@ -507,7 +513,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width(),
+			     stride_,
 			     size_.height(),
 			     0,
 			     GL_LUMINANCE,
@@ -521,7 +527,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width() / horzSubSample_,
+			     stride_ / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
 			     GL_LUMINANCE,
@@ -535,13 +541,15 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width() / horzSubSample_,
+			     stride_ / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     image_->data(2).data());
 		shaderProgram_.setUniformValue(textureUniformV_, 2);
+
+		stridePixels = stride_;
 		break;
 
 	case libcamera::formats::YVU420:
@@ -551,7 +559,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width(),
+			     stride_,
 			     size_.height(),
 			     0,
 			     GL_LUMINANCE,
@@ -565,7 +573,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width() / horzSubSample_,
+			     stride_ / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
 			     GL_LUMINANCE,
@@ -579,13 +587,15 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_LUMINANCE,
-			     size_.width() / horzSubSample_,
+			     stride_ / horzSubSample_,
 			     size_.height() / vertSubSample_,
 			     0,
 			     GL_LUMINANCE,
 			     GL_UNSIGNED_BYTE,
 			     image_->data(2).data());
 		shaderProgram_.setUniformValue(textureUniformU_, 1);
+
+		stridePixels = stride_;
 		break;
 
 	case libcamera::formats::UYVY:
@@ -602,7 +612,7 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RGBA,
-			     size_.width() / 2,
+			     stride_ / 4,
 			     size_.height(),
 			     0,
 			     GL_RGBA,
@@ -619,6 +629,8 @@ void ViewFinderGL::doRender()
 		shaderProgram_.setUniformValue(textureUniformStep_,
 					       1.0f / (size_.width() / 2 - 1),
 					       1.0f /* not used */);
+
+		stridePixels = stride_ / 2;
 		break;
 
 	case libcamera::formats::ABGR8888:
@@ -630,13 +642,15 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RGBA,
-			     size_.width(),
+			     stride_ / 4,
 			     size_.height(),
 			     0,
 			     GL_RGBA,
 			     GL_UNSIGNED_BYTE,
 			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
+
+		stridePixels = stride_ / 4;
 		break;
 
 	case libcamera::formats::BGR888:
@@ -646,13 +660,15 @@ void ViewFinderGL::doRender()
 		glTexImage2D(GL_TEXTURE_2D,
 			     0,
 			     GL_RGB,
-			     size_.width(),
+			     stride_ / 3,
 			     size_.height(),
 			     0,
 			     GL_RGB,
 			     GL_UNSIGNED_BYTE,
 			     image_->data(0).data());
 		shaderProgram_.setUniformValue(textureUniformY_, 0);
+
+		stridePixels = stride_ / 3;
 		break;
 
 	case libcamera::formats::SBGGR8:
@@ -692,11 +708,27 @@ void ViewFinderGL::doRender()
 		shaderProgram_.setUniformValue(textureUniformStep_,
 					       1.0f / (stride_ - 1),
 					       1.0f / (size_.height() - 1));
+
+		/*
+		 * The stride is already taken into account in the shaders, set
+		 * the generic stride factor to 1.0.
+		 */
+		stridePixels = size_.width();
 		break;
 
 	default:
+		stridePixels = size_.width();
 		break;
 	};
+
+	/*
+	 * Compute the stride factor for the vertex shader, to map the
+	 * horizontal texture coordinate range [0.0, 1.0] to the active portion
+	 * of the image.
+	 */
+	shaderProgram_.setUniformValue(textureUniformStrideFactor_,
+				       static_cast<float>(size_.width() - 1) /
+				       (stridePixels - 1));
 }
 
 void ViewFinderGL::paintGL()

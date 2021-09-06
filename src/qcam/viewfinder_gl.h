@@ -97,6 +97,7 @@ private:
 
 	/* Raw Bayer texture parameters */
 	GLuint textureUniformSize_;
+	GLuint textureUniformStrideFactor_;
 	GLuint textureUniformBayerFirstRed_;
 	QPointF firstRed_;
 

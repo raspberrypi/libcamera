@@ -11,6 +11,7 @@
 #include <array>
 #include <errno.h>
 #include <linux/videodev2.h>
+#include <numeric>
 #include <set>
 #include <string.h>
 #include <sys/mman.h>
@@ -211,7 +212,11 @@ void V4L2CameraProxy::updateBuffers()
 
 		switch (fmd.status) {
 		case FrameMetadata::FrameSuccess:
-			buf.bytesused = fmd.planes()[0].bytesused;
+			buf.bytesused = std::accumulate(fmd.planes().begin(),
+							fmd.planes().end(), 0,
+							[](unsigned int total, const auto &plane) {
+								return total + plane.bytesused;
+							});
 			buf.field = V4L2_FIELD_NONE;
 			buf.timestamp.tv_sec = fmd.timestamp / 1000000000;
 			buf.timestamp.tv_usec = fmd.timestamp % 1000000;

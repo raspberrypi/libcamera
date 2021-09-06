@@ -9,6 +9,8 @@
 
 #include "encoder.h"
 
+#include <vector>
+
 #include "libcamera/internal/formats.h"
 
 #include <jpeglib.h>
@@ -24,14 +26,14 @@ public:
 		   libcamera::Span<uint8_t> destination,
 		   libcamera::Span<const uint8_t> exifData,
 		   unsigned int quality) override;
-	int encode(libcamera::Span<const uint8_t> source,
+	int encode(const std::vector<libcamera::Span<uint8_t>> &planes,
 		   libcamera::Span<uint8_t> destination,
 		   libcamera::Span<const uint8_t> exifData,
 		   unsigned int quality);
 
 private:
-	void compressRGB(libcamera::Span<const uint8_t> frame);
-	void compressNV(libcamera::Span<const uint8_t> frame);
+	void compressRGB(const std::vector<libcamera::Span<uint8_t>> &planes);
+	void compressNV(const std::vector<libcamera::Span<uint8_t>> &planes);
 
 	struct jpeg_compress_struct compress_;
 	struct jpeg_error_mgr jerr_;

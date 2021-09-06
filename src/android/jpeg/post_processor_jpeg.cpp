@@ -72,7 +72,7 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 		 */
 		thumbnail->resize(rawThumbnail.size());
 
-		int jpeg_size = thumbnailEncoder_.encode(rawThumbnail,
+		int jpeg_size = thumbnailEncoder_.encode({ rawThumbnail },
 							 *thumbnail, {}, quality);
 		thumbnail->resize(jpeg_size);
 

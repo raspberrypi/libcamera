@@ -59,11 +59,12 @@ void Thumbnailer::createThumbnail(const FrameBuffer &source,
 	const unsigned int tw = targetSize.width;
 	const unsigned int th = targetSize.height;
 
+	ASSERT(frame.planes().size() == 2);
 	ASSERT(tw % 2 == 0 && th % 2 == 0);
 
 	/* Image scaling block implementing nearest-neighbour algorithm. */
-	unsigned char *src = static_cast<unsigned char *>(frame.planes()[0].data());
-	unsigned char *srcC = src + sh * sw;
+	unsigned char *src = frame.planes()[0].data();
+	unsigned char *srcC = frame.planes()[1].data();
 	unsigned char *srcCb, *srcCr;
 	unsigned char *dstY, *srcY;
 

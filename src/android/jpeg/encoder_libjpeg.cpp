@@ -103,9 +103,9 @@ int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 	return 0;
 }
 
-void EncoderLibJpeg::compressRGB(Span<const uint8_t> frame)
+void EncoderLibJpeg::compressRGB(const std::vector<Span<uint8_t>> &planes)
 {
-	unsigned char *src = const_cast<unsigned char *>(frame.data());
+	unsigned char *src = const_cast<unsigned char *>(planes[0].data());
 	/* \todo Stride information should come from buffer configuration. */
 	unsigned int stride = pixelFormatInfo_->stride(compress_.image_width, 0);
 
@@ -121,7 +121,7 @@ void EncoderLibJpeg::compressRGB(Span<const uint8_t> frame)
  * Compress the incoming buffer from a supported NV format.
  * This naively unpacks the semi-planar NV12 to a YUV888 format for libjpeg.
  */
-void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
+void EncoderLibJpeg::compressNV(const std::vector<Span<uint8_t>> &planes)
 {
 	uint8_t tmprowbuf[compress_.image_width * 3];
 
@@ -143,8 +143,8 @@ void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
 	unsigned int cb_pos = nvSwap_ ? 1 : 0;
 	unsigned int cr_pos = nvSwap_ ? 0 : 1;
 
-	const unsigned char *src = frame.data();
-	const unsigned char *src_c = src + y_stride * compress_.image_height;
+	const unsigned char *src = planes[0].data();
+	const unsigned char *src_c = planes[1].data();
 
 	JSAMPROW row_pointer[1];
 	row_pointer[0] = &tmprowbuf[0];
@@ -188,11 +188,12 @@ int EncoderLibJpeg::encode(const FrameBuffer &source, Span<uint8_t> dest,
 		return frame.error();
 	}
 
-	return encode(frame.planes()[0], dest, exifData, quality);
+	return encode(frame.planes(), dest, exifData, quality);
 }
 
-int EncoderLibJpeg::encode(Span<const uint8_t> src, Span<uint8_t> dest,
-			   Span<const uint8_t> exifData, unsigned int quality)
+int EncoderLibJpeg::encode(const std::vector<Span<uint8_t>> &src,
+			   Span<uint8_t> dest, Span<const uint8_t> exifData,
+			   unsigned int quality)
 {
 	unsigned char *destination = dest.data();
 	unsigned long size = dest.size();
@@ -219,6 +220,8 @@ int EncoderLibJpeg::encode(Span<const uint8_t> src, Span<uint8_t> dest,
 
 	LOG(JPEG, Debug) << "JPEG Encode Starting:" << compress_.image_width
 			 << "x" << compress_.image_height;
+
+	ASSERT(src.size() == pixelFormatInfo_->numPlanes());
 
 	if (nv_)
 		compressNV(src);

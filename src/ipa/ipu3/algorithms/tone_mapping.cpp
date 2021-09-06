@@ -43,6 +43,9 @@ void ToneMapping::process([[maybe_unused]] IPAContext &context,
 	 */
 	gamma_ = 1.1;
 
+	if (context.frameContext.toneMapping.gamma == gamma_)
+		return;
+
 	struct ipu3_uapi_gamma_corr_lut &lut =
 		context.frameContext.toneMapping.gammaCorrection;
 
@@ -53,6 +56,8 @@ void ToneMapping::process([[maybe_unused]] IPAContext &context,
 		/* The output value is expressed on 13 bits. */
 		lut.lut[i] = gamma * 8191;
 	}
+
+	context.frameContext.toneMapping.gamma = gamma_;
 }
 
 } /* namespace ipa::ipu3::algorithms */

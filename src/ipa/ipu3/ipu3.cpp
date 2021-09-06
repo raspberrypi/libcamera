@@ -151,6 +151,9 @@
  * \struct IPAFrameContext::toneMapping
  * \brief Context for ToneMapping and Gamma control
  *
+ * \var IPAFrameContext::toneMapping::gamma
+ * \brief Gamma value for the LUT
+ *
  * \var IPAFrameContext::toneMapping::gammaCorrection
  * \brief Per-pixel tone mapping implemented as a LUT
  *

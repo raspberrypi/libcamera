@@ -448,7 +448,8 @@ int MainWindow::startCapture()
 
 	/* Configure the viewfinder. */
 	ret = viewfinder_->setFormat(vfConfig.pixelFormat,
-				     QSize(vfConfig.size.width, vfConfig.size.height));
+				     QSize(vfConfig.size.width, vfConfig.size.height),
+				     vfConfig.stride);
 	if (ret < 0) {
 		qInfo() << "Failed to set viewfinder format";
 		return ret;

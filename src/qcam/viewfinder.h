@@ -23,7 +23,8 @@ public:
 
 	virtual const QList<libcamera::PixelFormat> &nativeFormats() const = 0;
 
-	virtual int setFormat(const libcamera::PixelFormat &format, const QSize &size) = 0;
+	virtual int setFormat(const libcamera::PixelFormat &format, const QSize &size,
+			      unsigned int stride) = 0;
 	virtual void render(libcamera::FrameBuffer *buffer, Image *image) = 0;
 	virtual void stop() = 0;
 

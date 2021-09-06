@@ -72,7 +72,7 @@ const QList<libcamera::PixelFormat> &ViewFinderGL::nativeFormats() const
 }
 
 int ViewFinderGL::setFormat(const libcamera::PixelFormat &format,
-			    const QSize &size)
+			    const QSize &size, unsigned int stride)
 {
 	if (format != format_) {
 		/*
@@ -92,6 +92,7 @@ int ViewFinderGL::setFormat(const libcamera::PixelFormat &format,
 	}
 
 	size_ = size;
+	stride_ = stride;
 
 	updateGeometry();
 	return 0;
@@ -119,10 +120,6 @@ void ViewFinderGL::render(libcamera::FrameBuffer *buffer, Image *image)
 		renderComplete(buffer_);
 
 	image_ = image;
-	/*
-	 * \todo Get the stride from the buffer instead of computing it naively
-	 */
-	stride_ = buffer->metadata().planes()[0].bytesused / size_.height();
 	update();
 	buffer_ = buffer;
 }

@@ -38,7 +38,8 @@ public:
 
 	const QList<libcamera::PixelFormat> &nativeFormats() const override;
 
-	int setFormat(const libcamera::PixelFormat &format, const QSize &size) override;
+	int setFormat(const libcamera::PixelFormat &format, const QSize &size,
+		      unsigned int stride) override;
 	void render(libcamera::FrameBuffer *buffer, Image *image) override;
 	void stop() override;
 

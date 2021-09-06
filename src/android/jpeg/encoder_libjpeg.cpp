@@ -152,7 +152,7 @@ void EncoderLibJpeg::compressNV(Span<const uint8_t> frame)
 	for (unsigned int y = 0; y < compress_.image_height; y++) {
 		unsigned char *dst = &tmprowbuf[0];
 
-		const unsigned char *src_y = src + y * compress_.image_width;
+		const unsigned char *src_y = src + y * y_stride;
 		const unsigned char *src_cb = src_c + (y / vertSubSample) * c_stride + cb_pos;
 		const unsigned char *src_cr = src_c + (y / vertSubSample) * c_stride + cr_pos;
 

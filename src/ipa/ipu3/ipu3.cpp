@@ -179,6 +179,74 @@ using namespace std::literals::chrono_literals;
 
 namespace ipa::ipu3 {
 
+/**
+ * \brief The IPU3 IPA implementation
+ *
+ * The IPU3 Pipeline defines an IPU3-specific interface for communication
+ * between the PipelineHandler and the IPA module.
+ *
+ * We extend the IPAIPU3Interface to implement our algorithms and handle events
+ * from the IPU3 PipelineHandler to satisfy requests from the application.
+ *
+ * At initialisation time, a CameraSensorHelper is instantiated to support
+ * camera-specific calculations, while the default controls are computed, and
+ * the algorithms are constructed and placed in an ordered list.
+ *
+ * The IPU3 ImgU operates with a grid layout to divide the overall frame into
+ * rectangular cells of pixels. When the IPA is configured, we determine the
+ * best grid for the statistics based on the pipeline handler Bayer Down Scaler
+ * output size.
+ *
+ * Two main events are then handled to operate the IPU3 ImgU by populating its
+ * parameter buffer, and adapting the settings of the sensor attached to the
+ * IPU3 CIO2 through sensor-specific V4L2 controls.
+ *
+ * When the event \a EventFillParams occurs we populate the ImgU parameter
+ * buffer with settings to configure the device in preparation for handling the
+ * frame queued in the Request.
+ *
+ * When the frame has completed processing, the ImgU will generate a statistics
+ * buffer which is given to the IPA as part of the \a EventStatReady event. At
+ * this event we run the algorithms to parse the statistics and cache any
+ * results for the next \a EventFillParams event.
+ *
+ * The individual algorithms are split into modular components that are called
+ * iteratively to allow them to process statistics from the ImgU in a defined
+ * order.
+ *
+ * The current implementation supports three core algorithms:
+ * - Automatic white balance (AWB)
+ * - Automatic gain and exposure control (AGC)
+ * - Black level correction (BLC)
+ * - Tone mapping (Gamma)
+ *
+ * AWB is implemented using a Greyworld algorithm, and calculates the red and
+ * blue gains to apply to generate a neutral grey frame overall.
+ *
+ * AGC is handled by calculating a histogram of the green channel to estimate an
+ * analogue gain and shutter time which will provide a well exposed frame. A
+ * low-pass IIR filter is used to smooth the changes to the sensor to reduce
+ * perceivable steps.
+ *
+ * The tone mapping algorithm provides a gamma correction table to improve the
+ * contrast of the scene.
+ *
+ * The black level compensation algorithm subtracts a hardcoded black level from
+ * all pixels.
+ *
+ * The IPU3 ImgU has further processing blocks to support image quality
+ * improvements through bayer and temporal noise reductions, however those are
+ * not supported in the current implementation, and will use default settings as
+ * provided by the kernel driver.
+ *
+ * Demosaicing is operating with the default parameters and could be further
+ * optimised to provide improved sharpening coefficients, checker artifact
+ * removal, and false color correction.
+ *
+ * Additional image enhancements can be made by providing lens and
+ * sensor-specific tuning to adapt for Black Level compensation (BLC), Lens
+ * shading correction (SHD) and Color correction (CCM).
+ */
 class IPAIPU3 : public IPAIPU3Interface
 {
 public:

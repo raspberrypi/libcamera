@@ -721,7 +721,7 @@ void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
  */
 void IPAIPU3::parseStatistics(unsigned int frame,
 			      [[maybe_unused]] int64_t frameTimestamp,
-			      [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
+			      const ipu3_uapi_stats_3a *stats)
 {
 	ControlList ctrls(controls::controls);
 

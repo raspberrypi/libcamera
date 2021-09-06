@@ -34,37 +34,37 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 {
 	switch (format) {
 	case libcamera::formats::NV12:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = false;
 		break;
 	case libcamera::formats::NV21:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		nvSwap_ = true;
 		break;
 	case libcamera::formats::NV16:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
 	case libcamera::formats::NV61:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
 		break;
 	case libcamera::formats::NV24:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = false;
 		break;
 	case libcamera::formats::NV42:
-		formatFamily_ = NV;
+		formatFamily_ = YUVSemiPlanar;
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		nvSwap_ = true;
@@ -121,22 +121,22 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		break;
 
 	case libcamera::formats::VYUY:
-		formatFamily_ = YUV;
+		formatFamily_ = YUVPacked;
 		y_pos_ = 1;
 		cb_pos_ = 2;
 		break;
 	case libcamera::formats::YVYU:
-		formatFamily_ = YUV;
+		formatFamily_ = YUVPacked;
 		y_pos_ = 0;
 		cb_pos_ = 3;
 		break;
 	case libcamera::formats::UYVY:
-		formatFamily_ = YUV;
+		formatFamily_ = YUVPacked;
 		y_pos_ = 1;
 		cb_pos_ = 0;
 		break;
 	case libcamera::formats::YUYV:
-		formatFamily_ = YUV;
+		formatFamily_ = YUVPacked;
 		y_pos_ = 0;
 		cb_pos_ = 1;
 		break;
@@ -163,14 +163,14 @@ void FormatConverter::convert(const Image *src, size_t size, QImage *dst)
 	case MJPEG:
 		dst->loadFromData(src->data(0).data(), size, "JPEG");
 		break;
-	case YUV:
-		convertYUV(src, dst->bits());
-		break;
 	case RGB:
 		convertRGB(src, dst->bits());
 		break;
-	case NV:
-		convertNV(src, dst->bits());
+	case YUVPacked:
+		convertYUVPacked(src, dst->bits());
+		break;
+	case YUVSemiPlanar:
+		convertYUVSemiPlanar(src, dst->bits());
 		break;
 	};
 }
@@ -185,7 +185,69 @@ static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)
 	*b = CLIP(( 298 * c + 516 * d           + 128) >> RGBSHIFT);
 }
 
-void FormatConverter::convertNV(const Image *srcImage, unsigned char *dst)
+void FormatConverter::convertRGB(const Image *srcImage, unsigned char *dst)
+{
+	const unsigned char *src = srcImage->data(0).data();
+	unsigned int x, y;
+	int r, g, b;
+
+	for (y = 0; y < height_; y++) {
+		for (x = 0; x < width_; x++) {
+			r = src[bpp_ * x + r_pos_];
+			g = src[bpp_ * x + g_pos_];
+			b = src[bpp_ * x + b_pos_];
+
+			dst[4 * x + 0] = b;
+			dst[4 * x + 1] = g;
+			dst[4 * x + 2] = r;
+			dst[4 * x + 3] = 0xff;
+		}
+
+		src += stride_;
+		dst += width_ * 4;
+	}
+}
+
+void FormatConverter::convertYUVPacked(const Image *srcImage, unsigned char *dst)
+{
+	const unsigned char *src = srcImage->data(0).data();
+	unsigned int src_x, src_y, dst_x, dst_y;
+	unsigned int src_stride;
+	unsigned int dst_stride;
+	unsigned int cr_pos;
+	int r, g, b, y, cr, cb;
+
+	cr_pos = (cb_pos_ + 2) % 4;
+	src_stride = stride_;
+	dst_stride = width_ * 4;
+
+	for (src_y = 0, dst_y = 0; dst_y < height_; src_y++, dst_y++) {
+		for (src_x = 0, dst_x = 0; dst_x < width_; ) {
+			cb = src[src_y * src_stride + src_x * 4 + cb_pos_];
+			cr = src[src_y * src_stride + src_x * 4 + cr_pos];
+
+			y = src[src_y * src_stride + src_x * 4 + y_pos_];
+			yuv_to_rgb(y, cb, cr, &r, &g, &b);
+			dst[dst_y * dst_stride + 4 * dst_x + 0] = b;
+			dst[dst_y * dst_stride + 4 * dst_x + 1] = g;
+			dst[dst_y * dst_stride + 4 * dst_x + 2] = r;
+			dst[dst_y * dst_stride + 4 * dst_x + 3] = 0xff;
+			dst_x++;
+
+			y = src[src_y * src_stride + src_x * 4 + y_pos_ + 2];
+			yuv_to_rgb(y, cb, cr, &r, &g, &b);
+			dst[dst_y * dst_stride + 4 * dst_x + 0] = b;
+			dst[dst_y * dst_stride + 4 * dst_x + 1] = g;
+			dst[dst_y * dst_stride + 4 * dst_x + 2] = r;
+			dst[dst_y * dst_stride + 4 * dst_x + 3] = 0xff;
+			dst_x++;
+
+			src_x++;
+		}
+	}
+}
+
+void FormatConverter::convertYUVSemiPlanar(const Image *srcImage, unsigned char *dst)
 {
 	unsigned int c_stride = stride_ * (2 / horzSubSample_);
 	unsigned int c_inc = horzSubSample_ == 1 ? 2 : 0;
@@ -222,68 +284,6 @@ void FormatConverter::convertNV(const Image *srcImage, unsigned char *dst)
 			src_cb += 2;
 			src_cr += 2;
 			dst += 4;
-		}
-	}
-}
-
-void FormatConverter::convertRGB(const Image *srcImage, unsigned char *dst)
-{
-	const unsigned char *src = srcImage->data(0).data();
-	unsigned int x, y;
-	int r, g, b;
-
-	for (y = 0; y < height_; y++) {
-		for (x = 0; x < width_; x++) {
-			r = src[bpp_ * x + r_pos_];
-			g = src[bpp_ * x + g_pos_];
-			b = src[bpp_ * x + b_pos_];
-
-			dst[4 * x + 0] = b;
-			dst[4 * x + 1] = g;
-			dst[4 * x + 2] = r;
-			dst[4 * x + 3] = 0xff;
-		}
-
-		src += stride_;
-		dst += width_ * 4;
-	}
-}
-
-void FormatConverter::convertYUV(const Image *srcImage, unsigned char *dst)
-{
-	const unsigned char *src = srcImage->data(0).data();
-	unsigned int src_x, src_y, dst_x, dst_y;
-	unsigned int src_stride;
-	unsigned int dst_stride;
-	unsigned int cr_pos;
-	int r, g, b, y, cr, cb;
-
-	cr_pos = (cb_pos_ + 2) % 4;
-	src_stride = stride_;
-	dst_stride = width_ * 4;
-
-	for (src_y = 0, dst_y = 0; dst_y < height_; src_y++, dst_y++) {
-		for (src_x = 0, dst_x = 0; dst_x < width_; ) {
-			cb = src[src_y * src_stride + src_x * 4 + cb_pos_];
-			cr = src[src_y * src_stride + src_x * 4 + cr_pos];
-
-			y = src[src_y * src_stride + src_x * 4 + y_pos_];
-			yuv_to_rgb(y, cb, cr, &r, &g, &b);
-			dst[dst_y * dst_stride + 4 * dst_x + 0] = b;
-			dst[dst_y * dst_stride + 4 * dst_x + 1] = g;
-			dst[dst_y * dst_stride + 4 * dst_x + 2] = r;
-			dst[dst_y * dst_stride + 4 * dst_x + 3] = 0xff;
-			dst_x++;
-
-			y = src[src_y * src_stride + src_x * 4 + y_pos_ + 2];
-			yuv_to_rgb(y, cb, cr, &r, &g, &b);
-			dst[dst_y * dst_stride + 4 * dst_x + 0] = b;
-			dst[dst_y * dst_stride + 4 * dst_x + 1] = g;
-			dst[dst_y * dst_stride + 4 * dst_x + 2] = r;
-			dst[dst_y * dst_stride + 4 * dst_x + 3] = 0xff;
-			dst_x++;
-
-			src_x++;
 		}
 	}
 }

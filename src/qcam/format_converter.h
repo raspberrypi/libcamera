@@ -27,14 +27,14 @@ public:
 private:
 	enum FormatFamily {
 		MJPEG,
-		NV,
 		RGB,
-		YUV,
+		YUVPacked,
+		YUVSemiPlanar,
 	};
 
-	void convertNV(const Image *src, unsigned char *dst);
 	void convertRGB(const Image *src, unsigned char *dst);
-	void convertYUV(const Image *src, unsigned char *dst);
+	void convertYUVPacked(const Image *src, unsigned char *dst);
+	void convertYUVSemiPlanar(const Image *src, unsigned char *dst);
 
 	libcamera::PixelFormat format_;
 	unsigned int width_;

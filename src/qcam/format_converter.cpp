@@ -8,6 +8,7 @@
 #include "format_converter.h"
 
 #include <errno.h>
+#include <utility>
 
 #include <QImage>
 
@@ -141,6 +142,25 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		cb_pos_ = 1;
 		break;
 
+	case libcamera::formats::YUV420:
+		formatFamily_ = YUVPlanar;
+		horzSubSample_ = 2;
+		vertSubSample_ = 2;
+		nvSwap_ = false;
+		break;
+	case libcamera::formats::YVU420:
+		formatFamily_ = YUVPlanar;
+		horzSubSample_ = 2;
+		vertSubSample_ = 2;
+		nvSwap_ = true;
+		break;
+	case libcamera::formats::YUV422:
+		formatFamily_ = YUVPlanar;
+		horzSubSample_ = 2;
+		vertSubSample_ = 1;
+		nvSwap_ = false;
+		break;
+
 	case libcamera::formats::MJPEG:
 		formatFamily_ = MJPEG;
 		break;
@@ -171,6 +191,9 @@ void FormatConverter::convert(const Image *src, size_t size, QImage *dst)
 		break;
 	case YUVSemiPlanar:
 		convertYUVSemiPlanar(src, dst->bits());
+		break;
+	case YUVPlanar:
+		convertYUVPlanar(src, dst->bits());
 		break;
 	};
 }
@@ -243,6 +266,49 @@ void FormatConverter::convertYUVPacked(const Image *srcImage, unsigned char *dst
 			dst_x++;
 
 			src_x++;
+		}
+	}
+}
+
+void FormatConverter::convertYUVPlanar(const Image *srcImage, unsigned char *dst)
+{
+	unsigned int c_stride = stride_ / horzSubSample_;
+	unsigned int c_inc = horzSubSample_ == 1 ? 1 : 0;
+	const unsigned char *src_y = srcImage->data(0).data();
+	const unsigned char *src_cb = srcImage->data(1).data();
+	const unsigned char *src_cr = srcImage->data(2).data();
+	int r, g, b;
+
+	if (nvSwap_)
+		std::swap(src_cb, src_cr);
+
+	for (unsigned int y = 0; y < height_; y++) {
+		const unsigned char *line_y = src_y + y * stride_;
+		const unsigned char *line_cb = src_cb + (y / vertSubSample_) *
+					       c_stride;
+		const unsigned char *line_cr = src_cr + (y / vertSubSample_) *
+					       c_stride;
+
+		for (unsigned int x = 0; x < width_; x += 2) {
+			yuv_to_rgb(*line_y, *line_cb, *line_cr, &r, &g, &b);
+			dst[0] = b;
+			dst[1] = g;
+			dst[2] = r;
+			dst[3] = 0xff;
+			line_y++;
+			line_cb += c_inc;
+			line_cr += c_inc;
+			dst += 4;
+
+			yuv_to_rgb(*line_y, *line_cb, *line_cr, &r, &g, &b);
+			dst[0] = b;
+			dst[1] = g;
+			dst[2] = r;
+			dst[3] = 0xff;
+			line_y++;
+			line_cb += 1;
+			line_cr += 1;
+			dst += 4;
 		}
 	}
 }

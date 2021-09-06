@@ -29,11 +29,13 @@ private:
 		MJPEG,
 		RGB,
 		YUVPacked,
+		YUVPlanar,
 		YUVSemiPlanar,
 	};
 
 	void convertRGB(const Image *src, unsigned char *dst);
 	void convertYUVPacked(const Image *src, unsigned char *dst);
+	void convertYUVPlanar(const Image *src, unsigned char *dst);
 	void convertYUVSemiPlanar(const Image *src, unsigned char *dst);
 
 	libcamera::PixelFormat format_;

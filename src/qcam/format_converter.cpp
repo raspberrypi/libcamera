@@ -30,7 +30,7 @@
 #endif
 
 int FormatConverter::configure(const libcamera::PixelFormat &format,
-			       const QSize &size)
+			       const QSize &size, unsigned int stride)
 {
 	switch (format) {
 	case libcamera::formats::NV12:
@@ -152,6 +152,7 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 	format_ = format;
 	width_ = size.width();
 	height_ = size.height();
+	stride_ = stride;
 
 	return 0;
 }
@@ -186,7 +187,7 @@ static void yuv_to_rgb(int y, int u, int v, int *r, int *g, int *b)
 
 void FormatConverter::convertNV(const Image *srcImage, unsigned char *dst)
 {
-	unsigned int c_stride = width_ * (2 / horzSubSample_);
+	unsigned int c_stride = stride_ * (2 / horzSubSample_);
 	unsigned int c_inc = horzSubSample_ == 1 ? 2 : 0;
 	unsigned int cb_pos = nvSwap_ ? 1 : 0;
 	unsigned int cr_pos = nvSwap_ ? 0 : 1;
@@ -195,7 +196,7 @@ void FormatConverter::convertNV(const Image *srcImage, unsigned char *dst)
 	int r, g, b;
 
 	for (unsigned int y = 0; y < height_; y++) {
-		const unsigned char *src_y = src + y * width_;
+		const unsigned char *src_y = src + y * stride_;
 		const unsigned char *src_cb = src_c + (y / vertSubSample_) *
 					      c_stride + cb_pos;
 		const unsigned char *src_cr = src_c + (y / vertSubSample_) *
@@ -243,7 +244,7 @@ void FormatConverter::convertRGB(const Image *srcImage, unsigned char *dst)
 			dst[4 * x + 3] = 0xff;
 		}
 
-		src += width_ * bpp_;
+		src += stride_;
 		dst += width_ * 4;
 	}
 }
@@ -258,7 +259,7 @@ void FormatConverter::convertYUV(const Image *srcImage, unsigned char *dst)
 	int r, g, b, y, cr, cb;
 
 	cr_pos = (cb_pos_ + 2) % 4;
-	src_stride = width_ * 2;
+	src_stride = stride_;
 	dst_stride = width_ * 4;
 
 	for (src_y = 0, dst_y = 0; dst_y < height_; src_y++, dst_y++) {

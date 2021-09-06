@@ -19,7 +19,8 @@ class QImage;
 class FormatConverter
 {
 public:
-	int configure(const libcamera::PixelFormat &format, const QSize &size);
+	int configure(const libcamera::PixelFormat &format, const QSize &size,
+		      unsigned int stride);
 
 	void convert(const Image *src, size_t size, QImage *dst);
 
@@ -38,6 +39,7 @@ private:
 	libcamera::PixelFormat format_;
 	unsigned int width_;
 	unsigned int height_;
+	unsigned int stride_;
 
 	enum FormatFamily formatFamily_;
 

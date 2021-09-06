@@ -52,8 +52,7 @@ const QList<libcamera::PixelFormat> &ViewFinderQt::nativeFormats() const
 }
 
 int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
-			    const QSize &size,
-			    [[maybe_unused]] unsigned int stride)
+			    const QSize &size, unsigned int stride)
 {
 	image_ = QImage();
 
@@ -62,7 +61,7 @@ int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
 	 * the destination image.
 	 */
 	if (!::nativeFormats.contains(format)) {
-		int ret = converter_.configure(format, size);
+		int ret = converter_.configure(format, size, stride);
 		if (ret < 0)
 			return ret;
 

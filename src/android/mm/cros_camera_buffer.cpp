@@ -73,10 +73,20 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 
 CameraBuffer::Private::~Private()
 {
-	if (mapped_)
-		bufferManager_->Unlock(handle_);
-	if (registered_)
-		bufferManager_->Deregister(handle_);
+	int ret;
+	if (mapped_) {
+		ret = bufferManager_->Unlock(handle_);
+		if (ret != 0)
+			LOG(HAL, Error) << "Failed to unlock buffer: "
+					<< strerror(-ret);
+	}
+
+	if (registered_) {
+		ret = bufferManager_->Deregister(handle_);
+		if (ret != 0)
+			LOG(HAL, Error) << "Failed to deregister buffer: "
+					<< strerror(-ret);
+	}
 }
 
 unsigned int CameraBuffer::Private::numPlanes() const

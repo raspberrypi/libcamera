@@ -20,7 +20,12 @@ class ByteStreamBuffer;
 class ControlSerializer
 {
 public:
-	ControlSerializer();
+	enum class Role {
+		Proxy,
+		Worker
+	};
+
+	ControlSerializer(Role role);
 
 	void reset();
 
@@ -47,6 +52,7 @@ private:
 	ControlInfo loadControlInfo(ControlType type, ByteStreamBuffer &buffer);
 
 	unsigned int serial_;
+	unsigned int serialSeed_;
 	std::vector<std::unique_ptr<ControlId>> controlIds_;
 	std::vector<std::unique_ptr<ControlIdMap>> controlIdMaps_;
 	std::map<unsigned int, ControlInfoMap> infoMaps_;

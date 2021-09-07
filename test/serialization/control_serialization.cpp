@@ -30,8 +30,8 @@ protected:
 
 	int run() override
 	{
-		ControlSerializer serializer;
-		ControlSerializer deserializer;
+		ControlSerializer serializer(ControlSerializer::Role::Proxy);
+		ControlSerializer deserializer(ControlSerializer::Role::Worker);
 
 		std::vector<uint8_t> infoData;
 		std::vector<uint8_t> listData;

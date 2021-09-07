@@ -62,6 +62,14 @@ LOG_DEFINE_CATEGORY(Serializer)
  * corresponding ControlInfoMap handle in the binary data, and when
  * deserializing to retrieve the corresponding ControlInfoMap.
  *
+ * As independent ControlSerializer instances are used on both sides of the IPC
+ * boundary, and the two instances operate without a shared point of control,
+ * there is a potential risk of collision of the numerical handles assigned to
+ * each serialized ControlInfoMap. For this reason the control serializer is
+ * initialized with a seed and the handle is incremented by 2, so that instances
+ * initialized with a different seed operate on a separate numerical space,
+ * avoiding any collision risk.
+ *
  * In order to perform those tasks, the serializer keeps an internal state that
  * needs to be properly populated. This mechanism requires the ControlInfoMap
  * corresponding to a ControlList to have been serialized or deserialized
@@ -77,9 +85,45 @@ LOG_DEFINE_CATEGORY(Serializer)
  * proceed with care to avoid stale references.
  */
 
-ControlSerializer::ControlSerializer()
-	: serial_(0)
+/**
+ * \enum ControlSerializer::Role
+ * \brief Define the role of the IPC component using the control serializer
+ *
+ * The role of the component that creates the serializer is used to initialize
+ * the handles numerical space.
+ *
+ * \var ControlSerializer::Role::Proxy
+ * \brief The control serializer is used by the IPC Proxy classes
+ *
+ * \var ControlSerializer::Role::Worker
+ * \brief The control serializer is used by the IPC ProxyWorker classes
+ */
+
+/**
+ * \brief Construct a new ControlSerializer
+ * \param[in] role The role of the IPC component using the serializer
+ */
+ControlSerializer::ControlSerializer(Role role)
 {
+	/*
+	 * Initialize the handle numerical space using the role of the
+	 * component that created the instance.
+	 *
+	 * Instances initialized for a different role will use a different
+	 * numerical handle space, avoiding any collision risk when, in example,
+	 * two instances of the ControlSerializer class are used at the IPC
+	 * boundaries.
+	 *
+	 * Start counting handles from '1' as '0' is a special value used as
+	 * place holder when serializing lists that do not have a ControlInfoMap
+	 * associated (in example list of libcamera controls::controls).
+	 *
+	 * \todo This is a temporary hack and should probably be better
+	 * engineered, but for the time being it avoids collisions on the handle
+	 * value when using IPC.
+	 */
+	serialSeed_ = role == Role::Proxy ? 1 : 2;
+	serial_ = serialSeed_;
 }
 
 /**
@@ -90,7 +134,7 @@ ControlSerializer::ControlSerializer()
  */
 void ControlSerializer::reset()
 {
-	serial_ = 0;
+	serial_ = serialSeed_;
 
 	infoMapHandles_.clear();
 	infoMaps_.clear();
@@ -200,16 +244,25 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 	else
 		idMapType = IPA_CONTROL_ID_MAP_V4L2;
 
-	/* Prepare the packet header, assign a handle to the ControlInfoMap. */
+	/* Prepare the packet header. */
 	struct ipa_controls_header hdr;
 	hdr.version = IPA_CONTROLS_FORMAT_VERSION;
-	hdr.handle = ++serial_;
+	hdr.handle = serial_;
 	hdr.entries = infoMap.size();
 	hdr.size = sizeof(hdr) + entriesSize + valuesSize;
 	hdr.data_offset = sizeof(hdr) + entriesSize;
 	hdr.id_map_type = idMapType;
 
 	buffer.write(&hdr);
+
+	/*
+	 * Increment the handle for the ControlInfoMap by 2 to keep the handles
+	 * numerical space partitioned between instances initialized for a
+	 * different role.
+	 *
+	 * \sa ControlSerializer::Role
+	 */
+	serial_ += 2;
 
 	/*
 	 * Serialize all entries.

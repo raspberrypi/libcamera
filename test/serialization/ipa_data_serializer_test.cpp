@@ -162,7 +162,7 @@ private:
 
 	int testControls()
 	{
-		ControlSerializer cs;
+		ControlSerializer cs(ControlSerializer::Role::Proxy);
 
 		const ControlInfoMap &infoMap = camera_->controls();
 		ControlList list = generateControlList(infoMap);
@@ -195,7 +195,7 @@ private:
 
 	int testVector()
 	{
-		ControlSerializer cs;
+		ControlSerializer cs(ControlSerializer::Role::Proxy);
 
 		/*
 		 * We don't test FileDescriptor serdes because it dup()s, so we
@@ -265,7 +265,7 @@ private:
 
 	int testMap()
 	{
-		ControlSerializer cs;
+		ControlSerializer cs(ControlSerializer::Role::Proxy);
 
 		/*
 		 * Realistically, only string and integral keys.

@@ -53,7 +53,9 @@ class {{proxy_worker_name}}
 {
 public:
 	{{proxy_worker_name}}()
-		: ipa_(nullptr), exit_(false) {}
+		: ipa_(nullptr),
+		  controlSerializer_(ControlSerializer::Role::Worker),
+		  exit_(false) {}
 
 	~{{proxy_worker_name}}() {}
 

@@ -46,7 +46,8 @@ namespace {{ns}} {
 {%- endif %}
 
 {{proxy_name}}::{{proxy_name}}(IPAModule *ipam, bool isolate)
-	: IPAProxy(ipam), isolate_(isolate), seq_(0)
+	: IPAProxy(ipam), isolate_(isolate),
+	  controlSerializer_(ControlSerializer::Role::Proxy), seq_(0)
 {
 	LOG(IPAProxy, Debug)
 		<< "initializing {{module_name}} proxy: loading IPA from "

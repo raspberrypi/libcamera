@@ -23,6 +23,29 @@ struct StreamConfiguration;
 class ImgUDevice
 {
 public:
+	static constexpr unsigned int kFilterWidth = 4;
+	static constexpr unsigned int kFilterHeight = 4;
+
+	static constexpr unsigned int kIFAlignWidth = 2;
+	static constexpr unsigned int kIFAlignHeight = 4;
+
+	static constexpr unsigned int kIFMaxCropWidth = 40;
+	static constexpr unsigned int kIFMaxCropHeight = 540;
+
+	static constexpr unsigned int kBDSAlignWidth = 2;
+	static constexpr unsigned int kBDSAlignHeight = 4;
+
+	static constexpr float kBDSSfMax = 2.5;
+	static constexpr float kBDSSfMin = 1.0;
+	static constexpr float kBDSSfStep = 0.03125;
+
+	static constexpr Size kOutputMinSize = { 2, 2 };
+	static constexpr Size kOutputMaxSize = { 4480, 34004 };
+	static constexpr unsigned int kOutputAlignWidth = 64;
+	static constexpr unsigned int kOutputAlignHeight = 4;
+	static constexpr unsigned int kOutputMarginWidth = 64;
+	static constexpr unsigned int kOutputMarginHeight = 32;
+
 	struct PipeConfig {
 		float bds_sf;
 		Size iif;

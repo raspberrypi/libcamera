@@ -34,22 +34,6 @@ namespace {
  * at revision: 243d13446e44 ("Fix some bug for some resolutions")
  */
 
-static constexpr unsigned int FILTER_W = 4;
-static constexpr unsigned int FILTER_H = 4;
-
-static constexpr unsigned int IF_ALIGN_W = 2;
-static constexpr unsigned int IF_ALIGN_H = 4;
-
-static constexpr unsigned int BDS_ALIGN_W = 2;
-static constexpr unsigned int BDS_ALIGN_H = 4;
-
-static constexpr unsigned int IF_CROP_MAX_W = 40;
-static constexpr unsigned int IF_CROP_MAX_H = 540;
-
-static constexpr float BDS_SF_MAX = 2.5;
-static constexpr float BDS_SF_MIN = 1.0;
-static constexpr float BDS_SF_STEP = 0.03125;
-
 /* BSD scaling factors: min=1, max=2.5, step=1/32 */
 const std::vector<float> bdsScalingFactors = {
 	1, 1.03125, 1.0625, 1.09375, 1.125, 1.15625, 1.1875, 1.21875, 1.25,
@@ -124,8 +108,8 @@ bool isSameRatio(const Size &in, const Size &out)
 void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc,
 			unsigned int bdsWidth, float bdsSF)
 {
-	unsigned int minIFHeight = iif.height - IF_CROP_MAX_H;
-	unsigned int minBDSHeight = gdc.height + FILTER_H * 2;
+	unsigned int minIFHeight = iif.height - ImgUDevice::kIFMaxCropHeight;
+	unsigned int minBDSHeight = gdc.height + ImgUDevice::kFilterHeight * 2;
 	unsigned int ifHeight;
 	float bdsHeight;
 
@@ -135,7 +119,7 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 				    static_cast<float>(gdc.width);
 		estIFHeight = std::clamp<float>(estIFHeight, minIFHeight, iif.height);
 
-		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
+		ifHeight = utils::alignUp(estIFHeight, ImgUDevice::kIFAlignHeight);
 		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
 		       ifHeight / bdsSF >= minBDSHeight) {
 
@@ -143,17 +127,17 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 			if (std::fmod(height, 1.0) == 0) {
 				unsigned int bdsIntHeight = static_cast<unsigned int>(height);
 
-				if (!(bdsIntHeight % BDS_ALIGN_H)) {
+				if (!(bdsIntHeight % ImgUDevice::kBDSAlignHeight)) {
 					foundIfHeight = ifHeight;
 					bdsHeight = height;
 					break;
 				}
 			}
 
-			ifHeight -= IF_ALIGN_H;
+			ifHeight -= ImgUDevice::kIFAlignHeight;
 		}
 
-		ifHeight = utils::alignUp(estIFHeight, IF_ALIGN_H);
+		ifHeight = utils::alignUp(estIFHeight, ImgUDevice::kIFAlignHeight);
 		while (ifHeight >= minIFHeight && ifHeight <= iif.height &&
 		       ifHeight / bdsSF >= minBDSHeight) {
 
@@ -161,14 +145,14 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 			if (std::fmod(height, 1.0) == 0) {
 				unsigned int bdsIntHeight = static_cast<unsigned int>(height);
 
-				if (!(bdsIntHeight % BDS_ALIGN_H)) {
+				if (!(bdsIntHeight % ImgUDevice::kBDSAlignHeight)) {
 					foundIfHeight = ifHeight;
 					bdsHeight = height;
 					break;
 				}
 			}
 
-			ifHeight += IF_ALIGN_H;
+			ifHeight += ImgUDevice::kIFAlignHeight;
 		}
 
 		if (foundIfHeight) {
@@ -179,32 +163,32 @@ void calculateBDSHeight(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc
 			return;
 		}
 	} else {
-		ifHeight = utils::alignUp(iif.height, IF_ALIGN_H);
+		ifHeight = utils::alignUp(iif.height, ImgUDevice::kIFAlignHeight);
 		while (ifHeight >= minIFHeight && ifHeight / bdsSF >= minBDSHeight) {
 
 			bdsHeight = ifHeight / bdsSF;
 			if (std::fmod(ifHeight, 1.0) == 0 && std::fmod(bdsHeight, 1.0) == 0) {
 				unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
 
-				if (!(ifHeight % IF_ALIGN_H) &&
-				    !(bdsIntHeight % BDS_ALIGN_H)) {
+				if (!(ifHeight % ImgUDevice::kIFAlignHeight) &&
+				    !(bdsIntHeight % ImgUDevice::kBDSAlignHeight)) {
 					pipeConfigs.push_back({ bdsSF, { iif.width, ifHeight },
 								{ bdsWidth, bdsIntHeight }, gdc });
 				}
 			}
 
-			ifHeight -= IF_ALIGN_H;
+			ifHeight -= ImgUDevice::kIFAlignHeight;
 		}
 	}
 }
 
 void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, float bdsSF)
 {
-	unsigned int minBDSWidth = gdc.width + FILTER_W * 2;
-	unsigned int minBDSHeight = gdc.height + FILTER_H * 2;
+	unsigned int minBDSWidth = gdc.width + ImgUDevice::kFilterWidth * 2;
+	unsigned int minBDSHeight = gdc.height + ImgUDevice::kFilterHeight * 2;
 
 	float sf = bdsSF;
-	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
+	while (sf <= ImgUDevice::kBDSSfMax && sf >= ImgUDevice::kBDSSfMin) {
 		float bdsWidth = static_cast<float>(iif.width) / sf;
 		float bdsHeight = static_cast<float>(iif.height) / sf;
 
@@ -212,16 +196,16 @@ void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, floa
 		    std::fmod(bdsHeight, 1.0) == 0) {
 			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
 			unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
-			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth &&
-			    !(bdsIntHeight % BDS_ALIGN_H) && bdsHeight >= minBDSHeight)
+			if (!(bdsIntWidth % ImgUDevice::kBDSAlignWidth) && bdsWidth >= minBDSWidth &&
+			    !(bdsIntHeight % ImgUDevice::kBDSAlignHeight) && bdsHeight >= minBDSHeight)
 				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
 		}
 
-		sf += BDS_SF_STEP;
+		sf += ImgUDevice::kBDSSfStep;
 	}
 
 	sf = bdsSF;
-	while (sf <= BDS_SF_MAX && sf >= BDS_SF_MIN) {
+	while (sf <= ImgUDevice::kBDSSfMax && sf >= ImgUDevice::kBDSSfMin) {
 		float bdsWidth = static_cast<float>(iif.width) / sf;
 		float bdsHeight = static_cast<float>(iif.height) / sf;
 
@@ -229,12 +213,12 @@ void calculateBDS(ImgUDevice::Pipe *pipe, const Size &iif, const Size &gdc, floa
 		    std::fmod(bdsHeight, 1.0) == 0) {
 			unsigned int bdsIntWidth = static_cast<unsigned int>(bdsWidth);
 			unsigned int bdsIntHeight = static_cast<unsigned int>(bdsHeight);
-			if (!(bdsIntWidth % BDS_ALIGN_W) && bdsWidth >= minBDSWidth &&
-			    !(bdsIntHeight % BDS_ALIGN_H) && bdsHeight >= minBDSHeight)
+			if (!(bdsIntWidth % ImgUDevice::kBDSAlignWidth) && bdsWidth >= minBDSWidth &&
+			    !(bdsIntHeight % ImgUDevice::kBDSAlignHeight) && bdsHeight >= minBDSHeight)
 				calculateBDSHeight(pipe, iif, gdc, bdsIntWidth, sf);
 		}
 
-		sf -= BDS_SF_STEP;
+		sf -= ImgUDevice::kBDSSfStep;
 	}
 }
 
@@ -412,7 +396,7 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	 * \todo Filter out all resolutions < IF_CROP_MAX.
 	 * See https://bugs.libcamera.org/show_bug.cgi?id=32
 	 */
-	if (in.width < IF_CROP_MAX_W || in.height < IF_CROP_MAX_H) {
+	if (in.width < ImgUDevice::kIFMaxCropWidth || in.height < ImgUDevice::kIFMaxCropHeight) {
 		LOG(IPU3, Error) << "Input resolution " << in.toString()
 				 << " not supported";
 		return {};
@@ -424,25 +408,25 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	float sf = findScaleFactor(bdsSF, bdsScalingFactors, true);
 
 	/* Populate the configurations vector by scaling width and height. */
-	unsigned int ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
-	unsigned int ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
-	unsigned int minIfWidth = in.width - IF_CROP_MAX_W;
-	unsigned int minIfHeight = in.height - IF_CROP_MAX_H;
+	unsigned int ifWidth = utils::alignUp(in.width, ImgUDevice::kIFAlignWidth);
+	unsigned int ifHeight = utils::alignUp(in.height, ImgUDevice::kIFAlignHeight);
+	unsigned int minIfWidth = in.width - ImgUDevice::kIFMaxCropWidth;
+	unsigned int minIfHeight = in.height - ImgUDevice::kIFMaxCropHeight;
 	while (ifWidth >= minIfWidth) {
 		while (ifHeight >= minIfHeight) {
 			Size iif{ ifWidth, ifHeight };
 			calculateBDS(pipe, iif, gdc, sf);
-			ifHeight -= IF_ALIGN_H;
+			ifHeight -= ImgUDevice::kIFAlignHeight;
 		}
 
-		ifWidth -= IF_ALIGN_W;
+		ifWidth -= ImgUDevice::kIFAlignWidth;
 	}
 
 	/* Repeat search by scaling width first. */
-	ifWidth = utils::alignUp(in.width, IF_ALIGN_W);
-	ifHeight = utils::alignUp(in.height, IF_ALIGN_H);
-	minIfWidth = in.width - IF_CROP_MAX_W;
-	minIfHeight = in.height - IF_CROP_MAX_H;
+	ifWidth = utils::alignUp(in.width, ImgUDevice::kIFAlignWidth);
+	ifHeight = utils::alignUp(in.height, ImgUDevice::kIFAlignHeight);
+	minIfWidth = in.width - ImgUDevice::kIFMaxCropWidth;
+	minIfHeight = in.height - ImgUDevice::kIFMaxCropHeight;
 	while (ifHeight >= minIfHeight) {
 		/*
 		 * \todo This procedure is probably broken:
@@ -451,10 +435,10 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 		while (ifWidth >= minIfWidth) {
 			Size iif{ ifWidth, ifHeight };
 			calculateBDS(pipe, iif, gdc, sf);
-			ifWidth -= IF_ALIGN_W;
+			ifWidth -= ImgUDevice::kIFAlignWidth;
 		}
 
-		ifHeight -= IF_ALIGN_H;
+		ifHeight -= ImgUDevice::kIFAlignHeight;
 	}
 
 	if (pipeConfigs.size() == 0) {

@@ -72,7 +72,22 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 		 */
 		thumbnail->resize(rawThumbnail.size());
 
-		int jpeg_size = thumbnailEncoder_.encode({ rawThumbnail },
+		/*
+		 * Split planes manually as the encoder expects a vector of
+		 * planes.
+		 *
+		 * \todo Pass a vector of planes directly to
+		 * Thumbnailer::createThumbnailer above and remove the manual
+		 * planes split from here.
+		 */
+		std::vector<Span<uint8_t>> thumbnailPlanes;
+		const PixelFormatInfo &formatNV12 = PixelFormatInfo::info(formats::NV12);
+		size_t YPlaneSize = formatNV12.planeSize(targetSize, 0);
+		size_t UVPlaneSize = formatNV12.planeSize(targetSize, 1);
+		thumbnailPlanes.push_back({ rawThumbnail.data(), YPlaneSize });
+		thumbnailPlanes.push_back({ rawThumbnail.data() + YPlaneSize, UVPlaneSize });
+
+		int jpeg_size = thumbnailEncoder_.encode(thumbnailPlanes,
 							 *thumbnail, {}, quality);
 		thumbnail->resize(jpeg_size);
 

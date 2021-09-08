@@ -10,7 +10,7 @@ gstreamer_tests = [
 gstreamer_dep = dependency('gstreamer-1.0', required: true)
 
 foreach t : gstreamer_tests
-    exe = executable(t[0], t[1],
+    exe = executable(t[0], t[1], 'gstreamer_test.cpp',
                      dependencies : [libcamera_private, gstreamer_dep],
                      link_with : test_libraries,
                      include_directories : test_includes_internal)

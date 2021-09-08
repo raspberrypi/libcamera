@@ -20,6 +20,11 @@ namespace libcamera {
 class V4L2PixelFormat
 {
 public:
+	struct Info {
+		PixelFormat format;
+		const char *description;
+	};
+
 	V4L2PixelFormat()
 		: fourcc_(0)
 	{

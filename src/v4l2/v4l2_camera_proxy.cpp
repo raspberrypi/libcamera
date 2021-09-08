@@ -276,8 +276,7 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 	PixelFormat format = streamConfig_.formats().pixelformats()[arg->index];
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat::fromPixelFormat(format);
 
-	/* \todo Set V4L2_FMT_FLAG_COMPRESSED for compressed formats. */
-	arg->flags = 0;
+	arg->flags = format == formats::MJPEG ? V4L2_FMT_FLAG_COMPRESSED : 0;
 	utils::strlcpy(reinterpret_cast<char *>(arg->description),
 		       v4l2Format.description(), sizeof(arg->description));
 	arg->pixelformat = v4l2Format;

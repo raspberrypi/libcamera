@@ -251,6 +251,28 @@ std::string V4L2PixelFormat::toString() const
 }
 
 /**
+ * \brief Retrieve the V4L2 description for the format
+ *
+ * The description matches the value used by the kernel, as would be reported
+ * by the VIDIOC_ENUM_FMT ioctl.
+ *
+ * \return The V4L2 description corresponding to the V4L2 format, or a
+ * placeholder description if not found
+ */
+const char *V4L2PixelFormat::description() const
+{
+	const auto iter = vpf2pf.find(*this);
+	if (iter == vpf2pf.end()) {
+		LOG(V4L2, Warning)
+			<< "Unsupported V4L2 pixel format "
+			<< toString();
+		return "Unsupported format";
+	}
+
+	return iter->second.description;
+}
+
+/**
  * \brief Convert the V4L2 pixel format to the corresponding PixelFormat
  * \return The PixelFormat corresponding to the V4L2 pixel format
  */

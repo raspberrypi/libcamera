@@ -40,6 +40,7 @@ public:
 	operator uint32_t() const { return fourcc_; }
 
 	std::string toString() const;
+	const char *description() const;
 
 	PixelFormat toPixelFormat() const;
 	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat,

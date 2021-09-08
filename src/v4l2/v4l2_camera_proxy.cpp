@@ -274,13 +274,13 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 		return -EINVAL;
 
 	PixelFormat format = streamConfig_.formats().pixelformats()[arg->index];
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat::fromPixelFormat(format);
 
 	/* \todo Set V4L2_FMT_FLAG_COMPRESSED for compressed formats. */
 	arg->flags = 0;
-	/* \todo Add map from format to description. */
 	utils::strlcpy(reinterpret_cast<char *>(arg->description),
-		       "Video Format Description", sizeof(arg->description));
-	arg->pixelformat = V4L2PixelFormat::fromPixelFormat(format);
+		       v4l2Format.description(), sizeof(arg->description));
+	arg->pixelformat = v4l2Format;
 
 	memset(arg->reserved, 0, sizeof(arg->reserved));
 

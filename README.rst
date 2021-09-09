@@ -88,7 +88,7 @@ for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools
 
 for android: [optional]
-        libexif libjpeg libyaml
+        libexif-dev libjpeg-dev libyaml-dev
 
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~

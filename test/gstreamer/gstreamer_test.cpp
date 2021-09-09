@@ -24,6 +24,7 @@ const char *__asan_default_options()
 }
 
 GstreamerTest::GstreamerTest()
+	: pipeline_(nullptr), libcameraSrc_(nullptr)
 {
 	/*
 	* GStreamer by default spawns a process to run the
@@ -69,12 +70,8 @@ GstreamerTest::GstreamerTest()
 
 GstreamerTest::~GstreamerTest()
 {
-	if (libcameraSrc_ &&
-	    !gst_object_has_as_ancestor(GST_OBJECT(libcameraSrc_),
-					GST_OBJECT(pipeline_)))
-		gst_object_unref(libcameraSrc_);
-	if (pipeline_)
-		gst_object_unref(pipeline_);
+	g_clear_object(&pipeline_);
+	g_clear_object(&libcameraSrc_);
 
 	gst_deinit();
 }

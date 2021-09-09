@@ -11,8 +11,6 @@
 
 #include <libcamera/geometry.h>
 
-class CameraDevice;
-
 class PostProcessorYuv : public PostProcessor
 {
 public:

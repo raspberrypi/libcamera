@@ -1654,9 +1654,28 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 
 	LOG(V4L2, Debug) << "Dequeuing buffer " << buf.index;
 
+	/*
+	 * If the video node fails to stream-on successfully (which can occur
+	 * when queuing a buffer), a vb2 kernel bug can lead to the buffer which
+	 * returns a failure upon queuing being mistakenly kept in the kernel.
+	 * This leads to the kernel notifying us that a buffer is available to
+	 * dequeue, which we have no awareness of being queued, and thus we will
+	 * not find it in the queuedBuffers_ list.
+	 *
+	 * Whilst this kernel bug has been fixed in mainline, ensure that we
+	 * safely ingore buffers which are unexpected to prevetn crashes on
+	 * older kernels.
+	 */
+	auto it = queuedBuffers_.find(buf.index);
+	if (it == queuedBuffers_.end()) {
+		LOG(V4L2, Error)
+			<< "Dequeued unexpected buffer index " << buf.index;
+
+		return nullptr;
+	}
+
 	cache_->put(buf.index);
 
-	auto it = queuedBuffers_.find(buf.index);
 	FrameBuffer *buffer = it->second;
 	queuedBuffers_.erase(it);
 

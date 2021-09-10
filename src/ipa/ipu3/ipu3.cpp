@@ -457,6 +457,17 @@ void IPAIPU3::processControls([[maybe_unused]] unsigned int frame,
 
 void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
 {
+	/*
+	 * The incoming params buffer may contain uninitialised data, or the
+	 * parameters of previously queued frames. Clearing the entire buffer
+	 * may be an expensive operation, and the kernel will only read from
+	 * structures which have their associated use-flag set.
+	 *
+	 * It is the responsibility of the algorithms to set the use flags
+	 * accordingly for any data structure they update during prepare().
+	 */
+	params->use = {};
+
 	for (auto const &algo : algorithms_)
 		algo->prepare(context_, params);
 

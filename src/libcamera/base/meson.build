@@ -20,6 +20,7 @@ libcamera_base_sources = files([
 
 libcamera_base_deps = [
     dependency('threads'),
+    libatomic,
 ]
 
 # Internal components must use the libcamera_base_private dependency to enable

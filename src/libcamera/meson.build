@@ -54,12 +54,13 @@ includes = [
     libcamera_includes,
 ]
 
+libatomic = cc.find_library('atomic', required : false)
+
 subdir('base')
 subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
 
-libatomic = cc.find_library('atomic', required : false)
 libdl = cc.find_library('dl')
 libgnutls = cc.find_library('gnutls', required : true)
 libudev = dependency('libudev', required : false)

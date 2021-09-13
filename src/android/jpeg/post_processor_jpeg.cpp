@@ -82,10 +82,10 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 		 */
 		std::vector<Span<uint8_t>> thumbnailPlanes;
 		const PixelFormatInfo &formatNV12 = PixelFormatInfo::info(formats::NV12);
-		size_t YPlaneSize = formatNV12.planeSize(targetSize, 0);
-		size_t UVPlaneSize = formatNV12.planeSize(targetSize, 1);
-		thumbnailPlanes.push_back({ rawThumbnail.data(), YPlaneSize });
-		thumbnailPlanes.push_back({ rawThumbnail.data() + YPlaneSize, UVPlaneSize });
+		size_t yPlaneSize = formatNV12.planeSize(targetSize, 0);
+		size_t uvPlaneSize = formatNV12.planeSize(targetSize, 1);
+		thumbnailPlanes.push_back({ rawThumbnail.data(), yPlaneSize });
+		thumbnailPlanes.push_back({ rawThumbnail.data() + yPlaneSize, uvPlaneSize });
 
 		int jpeg_size = thumbnailEncoder_.encode(thumbnailPlanes,
 							 *thumbnail, {}, quality);

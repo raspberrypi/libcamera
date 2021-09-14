@@ -12,5 +12,5 @@ foreach t : serialization_tests
                      dependencies : libcamera_private,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
-    test(t[0], exe, suite : 'serialization', is_parallel : true)
+    test(t[0], exe, suite : 'serialization', is_parallel : false)
 endforeach

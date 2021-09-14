@@ -134,6 +134,10 @@ def main(argv):
         if driver not in supported_pipelines:
             continue
 
+        # TODO: Add kernel version check when vimc supports scaling
+        if driver == "vimc":
+            continue
+
         if not args.all and driver in drivers_tested:
             continue
 

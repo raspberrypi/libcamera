@@ -147,6 +147,10 @@ def main(argv):
             print('success')
         drivers_tested[driver] = True
 
+    if len(drivers_tested) == 0:
+        print(f'No compatible drivers found')
+        return TestSkip
+
     if len(failed) > 0:
         print(f'Failed {len(failed)} tests:')
         for device in failed:

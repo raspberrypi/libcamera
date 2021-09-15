@@ -48,6 +48,7 @@ public:
 	Awb();
 	~Awb();
 
+	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
 	void prepare(IPAContext &context, ipu3_uapi_params *params) override;
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
@@ -85,6 +86,10 @@ private:
 	std::vector<RGB> zones_;
 	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
 	AwbStatus asyncResults_;
+
+	uint32_t cellsPerZoneX_;
+	uint32_t cellsPerZoneY_;
+	uint32_t cellsPerZoneThreshold_;
 };
 
 } /* namespace ipa::ipu3::algorithms */

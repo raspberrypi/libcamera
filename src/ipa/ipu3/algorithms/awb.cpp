@@ -17,7 +17,6 @@ namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Awb)
 
-static constexpr uint32_t kMinZonesCounted = 16;
 static constexpr uint32_t kMinGreenLevelInZone = 32;
 
 /**
@@ -173,6 +172,24 @@ Awb::Awb()
 
 Awb::~Awb() = default;
 
+int Awb::configure(IPAContext &context,
+		   [[maybe_unused]] const IPAConfigInfo &configInfo)
+{
+	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
+
+	cellsPerZoneX_ = std::round(grid.width / static_cast<double>(kAwbStatsSizeX));
+	cellsPerZoneY_ = std::round(grid.height / static_cast<double>(kAwbStatsSizeY));
+
+	/*
+	 * Configure the minimum proportion of cells counted within a zone
+	 * for it to be relevant for the grey world algorithm.
+	 * \todo This proportion could be configured.
+	 */
+	cellsPerZoneThreshold_ = cellsPerZoneX_ * cellsPerZoneY_ * 80 / 100;
+
+	return 0;
+}
+
 /**
  * The function estimates the correlated color temperature using
  * from RGB color space input.
@@ -209,7 +226,7 @@ void Awb::generateZones(std::vector<RGB> &zones)
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
 		RGB zone;
 		double counted = awbStats_[i].counted;
-		if (counted >= kMinZonesCounted) {
+		if (counted >= cellsPerZoneThreshold_) {
 			zone.G = awbStats_[i].sum.green / counted;
 			if (zone.G >= kMinGreenLevelInZone) {
 				zone.R = awbStats_[i].sum.red / counted;
@@ -224,19 +241,16 @@ void Awb::generateZones(std::vector<RGB> &zones)
 void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats,
 			   const ipu3_uapi_grid_config &grid)
 {
-	uint32_t cellsPerZoneX = round(grid.width / static_cast<double>(kAwbStatsSizeX));
-	uint32_t cellsPerZoneY = round(grid.height / static_cast<double>(kAwbStatsSizeY));
-
 	/*
 	 * Generate a (kAwbStatsSizeX x kAwbStatsSizeY) array from the IPU3 grid which is
 	 * (grid.width x grid.height).
 	 */
-	for (unsigned int cellY = 0; cellY < kAwbStatsSizeY * cellsPerZoneY; cellY++) {
-		for (unsigned int cellX = 0; cellX < kAwbStatsSizeX * cellsPerZoneX; cellX++) {
+	for (unsigned int cellY = 0; cellY < kAwbStatsSizeY * cellsPerZoneY_; cellY++) {
+		for (unsigned int cellX = 0; cellX < kAwbStatsSizeX * cellsPerZoneX_; cellX++) {
 			uint32_t cellPosition = (cellY * grid.width + cellX)
 					      * sizeof(Ipu3AwbCell);
-			uint32_t zoneX = cellX / cellsPerZoneX;
-			uint32_t zoneY = cellY / cellsPerZoneY;
+			uint32_t zoneX = cellX / cellsPerZoneX_;
+			uint32_t zoneY = cellY / cellsPerZoneY_;
 
 			uint32_t awbZonePosition = zoneY * kAwbStatsSizeX + zoneX;
 

@@ -42,6 +42,7 @@ public:
 	void prepare(IPAContext &context, ipu3_uapi_params *params) override;
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
+private:
 	/* \todo Make these structs available to all the ISPs ? */
 	struct RGB {
 		RGB(double _R = 0, double _G = 0, double _B = 0)

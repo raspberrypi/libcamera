@@ -71,7 +71,7 @@ static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 90 / 100;
  */
 
 /**
- * \struct AwbStatus
+ * \struct Awb::AwbStatus
  * \brief AWB parameters calculated
  *
  * The AwbStatus structure is intended to store the AWB

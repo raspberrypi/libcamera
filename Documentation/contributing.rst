@@ -30,14 +30,17 @@ Source Code
 -----------
 
 libcamera is in early stages of development, and no releases are available yet.
-The source code is available from the project's `git tree`_, hosted by `LinuxTV`_.
+The source code is available from the project's `git tree`_.
 
 .. code-block:: shell
 
-  $ git clone git://linuxtv.org/libcamera.git
+  $ git clone https://git.libcamera.org/libcamera/libcamera.git
 
-.. _git tree: https://git.linuxtv.org/libcamera.git/
-.. _LinuxTV: https://linuxtv.org/
+.. _git tree: https://git.libcamera.org/libcamera/libcamera.git/
+
+A mirror is also hosted on `LinuxTV`_.
+
+.. _LinuxTV: https://git.linuxtv.org/libcamera.git/
 
 Issue Tracker
 -------------

@@ -32,7 +32,7 @@ To fetch the sources, build and install:
 
 ::
 
-  git clone git://linuxtv.org/libcamera.git
+  git clone https://git.libcamera.org/libcamera/libcamera.git
   cd libcamera
   meson build
   ninja -C build install

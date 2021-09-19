@@ -8,7 +8,7 @@ inherit git-r3 meson python-any-r1
 
 DESCRIPTION="Camera support library for Linux"
 HOMEPAGE="http://libcamera.org"
-EGIT_REPO_URI="git://linuxtv.org/libcamera.git"
+EGIT_REPO_URI="https://git.libcamera.org/libcamera/libcamera.git"
 EGIT_BRANCH="master"
 
 LICENSE="LGPL-2.1+"

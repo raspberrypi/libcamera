@@ -469,7 +469,7 @@ instance. An example of how to write image data to disk is available in the
 `FileSink class`_ which is a part of the ``cam`` utility application in the
 libcamera repository.
 
-.. _FileSink class: https://git.linuxtv.org/libcamera.git/tree/src/cam/file_sink.cpp
+.. _FileSink class: https://git.libcamera.org/libcamera/libcamera.git/tree/src/cam/file_sink.cpp
 
 With the handling of this request completed, it is possible to re-use the
 buffers by adding them to a new ``Request`` instance with their matching
@@ -575,12 +575,12 @@ which is also the official build system of the libcamera library.
 
 Make sure both ``meson`` and ``libcamera`` are installed in your system. Please
 refer to your distribution documentation to install meson and install the most
-recent version of libcamera from the git repository at `Linux TV`_. You would
-also need to install the ``pkg-config`` tool to correctly identify the
-libcamera.so object install location in the system.
+recent version of libcamera from the `git repository`_. You would also need to
+install the ``pkg-config`` tool to correctly identify the libcamera.so object
+install location in the system.
 
 .. _Meson build system: https://mesonbuild.com/
-.. _Linux TV: https://git.linuxtv.org/libcamera.git/
+.. _git repository: https://git.libcamera.org/libcamera/libcamera.git/
 
 Dependencies
 ~~~~~~~~~~~~

@@ -33,20 +33,18 @@ protected:
 		if (status_ != TestPass)
 			return status_;
 
-		g_autoptr(GstElement) convert0 = gst_element_factory_make("videoconvert", "convert0");
-		g_autoptr(GstElement) sink0 = gst_element_factory_make("fakesink", "sink0");
-		g_object_ref_sink(convert0);
-		g_object_ref_sink(sink0);
+		const gchar *streamDescription = "videoconvert ! fakesink";
+		g_autoptr(GError) error0 = NULL;
+		stream0_ = gst_parse_bin_from_description_full(streamDescription, TRUE,
+						NULL,
+						GST_PARSE_FLAG_FATAL_ERRORS,
+						&error0);
 
-		if (!convert0 || !sink0) {
-			g_printerr("Not all elements could be created. %p.%p\n",
-				   convert0, sink0);
-
+		if (!stream0_) {
+			g_printerr("Bin could not be created (%s)\n", error0->message);
 			return TestFail;
 		}
-
-		convert0_ = reinterpret_cast<GstElement *>(g_steal_pointer(&convert0));
-		sink0_ = reinterpret_cast<GstElement *>(g_steal_pointer(&sink0));
+		g_object_ref_sink(stream0_);
 
 		if (createPipeline() != TestPass)
 			return TestFail;
@@ -57,8 +55,8 @@ protected:
 	int run() override
 	{
 		/* Build the pipeline */
-		gst_bin_add_many(GST_BIN(pipeline_), libcameraSrc_, convert0_, sink0_, NULL);
-		if (gst_element_link_many(libcameraSrc_, convert0_, sink0_, NULL) != TRUE) {
+		gst_bin_add_many(GST_BIN(pipeline_), libcameraSrc_, stream0_, NULL);
+		if (gst_element_link(libcameraSrc_, stream0_) != TRUE) {
 			g_printerr("Elements could not be linked.\n");
 			return TestFail;
 		}
@@ -74,13 +72,11 @@ protected:
 
 	void cleanup() override
 	{
-		g_clear_object(&convert0_);
-		g_clear_object(&sink0_);
+		g_clear_object(&stream0_);
 	}
 
 private:
-	GstElement *convert0_;
-	GstElement *sink0_;
+	GstElement *stream0_;
 };
 
 TEST_REGISTER(GstreamerSingleStreamTest)

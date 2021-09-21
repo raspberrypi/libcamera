@@ -78,18 +78,17 @@ GstreamerTest::~GstreamerTest()
 
 int GstreamerTest::createPipeline()
 {
-	g_autoptr(GstElement) libcameraSrc = gst_element_factory_make("libcamerasrc", "libcamera");
+	libcameraSrc_ = gst_element_factory_make("libcamerasrc", "libcamera");
 	pipeline_ = gst_pipeline_new("test-pipeline");
-	g_object_ref_sink(libcameraSrc);
 
-	if (!libcameraSrc || !pipeline_) {
+	if (!libcameraSrc_ || !pipeline_) {
 		g_printerr("Unable to create create pipeline %p.%p\n",
-			   libcameraSrc, pipeline_);
+			   libcameraSrc_, pipeline_);
 
 		return TestFail;
 	}
 
-	libcameraSrc_ = reinterpret_cast<GstElement *>(g_steal_pointer(&libcameraSrc));
+	g_object_ref_sink(libcameraSrc_);
 
 	return TestPass;
 }

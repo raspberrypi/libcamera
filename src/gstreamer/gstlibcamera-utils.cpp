@@ -16,19 +16,32 @@ static struct {
 	GstVideoFormat gst_format;
 	PixelFormat format;
 } format_map[] = {
+	/* Compressed */
 	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
+
+	/* RGB */
 	{ GST_VIDEO_FORMAT_RGB, formats::BGR888 },
 	{ GST_VIDEO_FORMAT_BGR, formats::RGB888 },
 	{ GST_VIDEO_FORMAT_ARGB, formats::BGRA8888 },
+
+	/* YUV Semiplanar */
 	{ GST_VIDEO_FORMAT_NV12, formats::NV12 },
 	{ GST_VIDEO_FORMAT_NV21, formats::NV21 },
 	{ GST_VIDEO_FORMAT_NV16, formats::NV16 },
 	{ GST_VIDEO_FORMAT_NV61, formats::NV61 },
 	{ GST_VIDEO_FORMAT_NV24, formats::NV24 },
+
+	/* YUV Planar */
+	{ GST_VIDEO_FORMAT_I420, formats::YUV420 },
+	{ GST_VIDEO_FORMAT_YV12, formats::YVU420 },
+	{ GST_VIDEO_FORMAT_Y42B, formats::YUV422 },
+
+	/* YUV Packed */
 	{ GST_VIDEO_FORMAT_UYVY, formats::UYVY },
 	{ GST_VIDEO_FORMAT_VYUY, formats::VYUY },
 	{ GST_VIDEO_FORMAT_YUY2, formats::YUYV },
 	{ GST_VIDEO_FORMAT_YVYU, formats::YVYU },
+
 	/* \todo NV42 is used in libcamera but is not mapped in GStreamer yet. */
 };
 

@@ -72,6 +72,12 @@ protected:
 		return TestPass;
 	}
 
+	void cleanup() override
+	{
+		g_clear_object(&convert0_);
+		g_clear_object(&sink0_);
+	}
+
 private:
 	GstElement *convert0_;
 	GstElement *sink0_;

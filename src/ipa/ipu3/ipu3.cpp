@@ -136,8 +136,8 @@
  * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
  */
 
-static constexpr uint32_t kMaxCellWidthPerSet = 160;
-static constexpr uint32_t kMaxCellHeightPerSet = 56;
+static constexpr uint32_t kMaxCellWidthPerSet = 80;
+static constexpr uint32_t kMaxCellHeightPerSet = 60;
 
 namespace libcamera {
 
@@ -300,11 +300,11 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 	/* Set the BDS output size in the IPAConfiguration structure */
 	context_.configuration.grid.bdsOutputSize = bdsOutputSize;
 
-	for (uint32_t widthShift = 3; widthShift <= 7; ++widthShift) {
+	for (uint32_t widthShift = 3; widthShift <= 6; ++widthShift) {
 		uint32_t width = std::min(kMaxCellWidthPerSet,
 					  bdsOutputSize.width >> widthShift);
 		width = width << widthShift;
-		for (uint32_t heightShift = 3; heightShift <= 7; ++heightShift) {
+		for (uint32_t heightShift = 3; heightShift <= 6; ++heightShift) {
 			int32_t height = std::min(kMaxCellHeightPerSet,
 						  bdsOutputSize.height >> heightShift);
 			height = height << heightShift;

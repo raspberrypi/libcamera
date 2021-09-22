@@ -236,7 +236,7 @@ gst_libcamera_resume_task(GstTask *task)
 }
 
 G_LOCK_DEFINE_STATIC(cm_singleton_lock);
-std::weak_ptr<CameraManager> cm_singleton_ptr;
+static std::weak_ptr<CameraManager> cm_singleton_ptr;
 
 std::shared_ptr<CameraManager>
 gst_libcamera_get_camera_mananger(int &ret)

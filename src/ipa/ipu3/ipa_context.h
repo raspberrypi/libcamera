@@ -20,6 +20,7 @@ struct IPASessionConfiguration {
 	struct {
 		ipu3_uapi_grid_config bdsGrid;
 		Size bdsOutputSize;
+		uint32_t stride;
 	} grid;
 };
 

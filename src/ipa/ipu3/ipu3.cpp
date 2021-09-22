@@ -91,6 +91,9 @@
  *
  * \var IPASessionConfiguration::grid::bdsOutputSize
  * \brief BDS output size configured by the pipeline handler
+ *
+ * \var IPASessionConfiguration::grid::stride
+ * \brief Number of cells on one line including the ImgU padding
  */
 
 /**
@@ -351,6 +354,9 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 	bdsGrid.block_width_log2 = bestLog2.width;
 	bdsGrid.height = best.height >> bestLog2.height;
 	bdsGrid.block_height_log2 = bestLog2.height;
+
+	/* The ImgU pads the lines to a multiple of 4 cells. */
+	context_.configuration.grid.stride = utils::alignUp(bdsGrid.width, 4);
 
 	LOG(IPAIPU3, Debug) << "Best grid found is: ("
 			    << (int)bdsGrid.width << " << " << (int)bdsGrid.block_width_log2 << ") x ("

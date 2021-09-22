@@ -74,11 +74,9 @@ public:
 	};
 
 private:
-	void calculateWBGains(const ipu3_uapi_stats_3a *stats,
-			      const ipu3_uapi_grid_config &grid);
+	void calculateWBGains(const ipu3_uapi_stats_3a *stats);
 	void generateZones(std::vector<RGB> &zones);
-	void generateAwbStats(const ipu3_uapi_stats_3a *stats,
-			      const ipu3_uapi_grid_config &grid);
+	void generateAwbStats(const ipu3_uapi_stats_3a *stats);
 	void clearAwbStats();
 	void awbGreyWorld();
 	uint32_t estimateCCT(double red, double green, double blue);
@@ -87,6 +85,7 @@ private:
 	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
 	AwbStatus asyncResults_;
 
+	uint32_t stride_;
 	uint32_t cellsPerZoneX_;
 	uint32_t cellsPerZoneY_;
 	uint32_t cellsPerZoneThreshold_;

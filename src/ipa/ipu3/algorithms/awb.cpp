@@ -176,6 +176,7 @@ int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
+	stride_ = context.configuration.grid.stride;
 
 	cellsPerZoneX_ = std::round(grid.width / static_cast<double>(kAwbStatsSizeX));
 	cellsPerZoneY_ = std::round(grid.height / static_cast<double>(kAwbStatsSizeY));
@@ -238,8 +239,7 @@ void Awb::generateZones(std::vector<RGB> &zones)
 }
 
 /* Translate the IPU3 statistics into the default statistics zone array */
-void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats,
-			   const ipu3_uapi_grid_config &grid)
+void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
 {
 	/*
 	 * Generate a (kAwbStatsSizeX x kAwbStatsSizeY) array from the IPU3 grid which is
@@ -247,7 +247,7 @@ void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats,
 	 */
 	for (unsigned int cellY = 0; cellY < kAwbStatsSizeY * cellsPerZoneY_; cellY++) {
 		for (unsigned int cellX = 0; cellX < kAwbStatsSizeX * cellsPerZoneX_; cellX++) {
-			uint32_t cellPosition = (cellY * grid.width + cellX)
+			uint32_t cellPosition = (cellY * stride_ + cellX)
 					      * sizeof(Ipu3AwbCell);
 			uint32_t zoneX = cellX / cellsPerZoneX_;
 			uint32_t zoneY = cellY / cellsPerZoneY_;
@@ -322,13 +322,12 @@ void Awb::awbGreyWorld()
 	asyncResults_.blueGain = blueGain;
 }
 
-void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats,
-			   const ipu3_uapi_grid_config &grid)
+void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 {
 	ASSERT(stats->stats_3a_status.awb_en);
 	zones_.clear();
 	clearAwbStats();
-	generateAwbStats(stats, grid);
+	generateAwbStats(stats);
 	generateZones(zones_);
 	LOG(IPU3Awb, Debug) << "Valid zones: " << zones_.size();
 	if (zones_.size() > 10) {
@@ -340,7 +339,7 @@ void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats,
 
 void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	calculateWBGains(stats, context.configuration.grid.bdsGrid);
+	calculateWBGains(stats);
 
 	/*
 	 * Gains are only recalculated if enough zones were detected.

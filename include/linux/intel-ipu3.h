@@ -59,17 +59,39 @@ struct ipu3_uapi_grid_config {
 	__u16 y_end;
 } __attribute__((packed));
 
+/**
+ * struct ipu3_uapi_awb_set_item - Memory layout for each cell in AWB
+ *
+ * @Gr_avg:	Green average for red lines in the cell.
+ * @R_avg:	Red average in the cell.
+ * @B_avg:	Blue average in the cell.
+ * @Gb_avg:	Green average for blue lines in the cell.
+ * @sat_ratio:	Percentage of pixels over a given threshold set in
+ *		ipu3_uapi_awb_config_s, coded from 0 to 255.
+ * @padding0:	Unused byte for padding.
+ * @padding1:	Unused byte for padding.
+ * @padding2:	Unused byte for padding.
+ */
+struct ipu3_uapi_awb_set_item {
+	unsigned char Gr_avg;
+	unsigned char R_avg;
+	unsigned char B_avg;
+	unsigned char Gb_avg;
+	unsigned char sat_ratio;
+	unsigned char padding0;
+	unsigned char padding1;
+	unsigned char padding2;
+} __attribute__((packed));
+
 /*
  * The grid based data is divided into "slices" called set, each slice of setX
  * refers to ipu3_uapi_grid_config width * height_per_slice.
  */
 #define IPU3_UAPI_AWB_MAX_SETS				60
 /* Based on grid size 80 * 60 and cell size 16 x 16 */
-#define IPU3_UAPI_AWB_SET_SIZE				1280
-#define IPU3_UAPI_AWB_MD_ITEM_SIZE			8
+#define IPU3_UAPI_AWB_SET_SIZE				160
 #define IPU3_UAPI_AWB_SPARE_FOR_BUBBLES \
-	(IPU3_UAPI_MAX_BUBBLE_SIZE * IPU3_UAPI_MAX_STRIPES * \
-	 IPU3_UAPI_AWB_MD_ITEM_SIZE)
+	(IPU3_UAPI_MAX_BUBBLE_SIZE * IPU3_UAPI_MAX_STRIPES)
 #define IPU3_UAPI_AWB_MAX_BUFFER_SIZE \
 	(IPU3_UAPI_AWB_MAX_SETS * \
 	 (IPU3_UAPI_AWB_SET_SIZE + IPU3_UAPI_AWB_SPARE_FOR_BUBBLES))
@@ -82,7 +104,7 @@ struct ipu3_uapi_grid_config {
  *		the average values for each color channel.
  */
 struct ipu3_uapi_awb_raw_buffer {
-	__u8 meta_data[IPU3_UAPI_AWB_MAX_BUFFER_SIZE]
+	struct ipu3_uapi_awb_set_item meta_data[IPU3_UAPI_AWB_MAX_BUFFER_SIZE]
 		__attribute__((aligned(32)));
 } __attribute__((packed));
 

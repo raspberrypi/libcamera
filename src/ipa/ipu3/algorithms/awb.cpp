@@ -108,32 +108,6 @@ static constexpr uint32_t kMinGreenLevelInZone = 32;
  * \brief Gain calculated for the blue channel
  */
 
-/**
- * \struct Ipu3AwbCell
- * \brief Memory layout for each cell in AWB metadata
- *
- * The Ipu3AwbCell structure is used to get individual values
- * such as red average or saturation ratio in a particular cell.
- *
- * \var Ipu3AwbCell::greenRedAvg
- * \brief Green average for red lines in the cell
- *
- * \var Ipu3AwbCell::redAvg
- * \brief Red average in the cell
- *
- * \var Ipu3AwbCell::blueAvg
- * \brief blue average in the cell
- *
- * \var Ipu3AwbCell::greenBlueAvg
- * \brief Green average for blue lines
- *
- * \var Ipu3AwbCell::satRatio
- * \brief Saturation ratio in the cell
- *
- * \var Ipu3AwbCell::padding
- * \brief array of unused bytes for padding
- */
-
 /* Default settings for Bayer noise reduction replicated from the Kernel */
 static const struct ipu3_uapi_bnr_static_config imguCssBnrDefaults = {
 	.wb_gains = { 16, 16, 16, 16 },
@@ -247,25 +221,24 @@ void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
 	 */
 	for (unsigned int cellY = 0; cellY < kAwbStatsSizeY * cellsPerZoneY_; cellY++) {
 		for (unsigned int cellX = 0; cellX < kAwbStatsSizeX * cellsPerZoneX_; cellX++) {
-			uint32_t cellPosition = (cellY * stride_ + cellX)
-					      * sizeof(Ipu3AwbCell);
+			uint32_t cellPosition = cellY * stride_ + cellX;
 			uint32_t zoneX = cellX / cellsPerZoneX_;
 			uint32_t zoneY = cellY / cellsPerZoneY_;
 
 			uint32_t awbZonePosition = zoneY * kAwbStatsSizeX + zoneX;
 
 			/* Cast the initial IPU3 structure to simplify the reading */
-			const Ipu3AwbCell *currentCell =
-				reinterpret_cast<const Ipu3AwbCell *>(
+			const ipu3_uapi_awb_set_item *currentCell =
+				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
-			if (currentCell->satRatio == 0) {
+			if (currentCell->sat_ratio == 0) {
 				/* The cell is not saturated, use the current cell */
 				awbStats_[awbZonePosition].counted++;
-				uint32_t greenValue = currentCell->greenRedAvg + currentCell->greenBlueAvg;
+				uint32_t greenValue = currentCell->Gr_avg + currentCell->Gb_avg;
 				awbStats_[awbZonePosition].sum.green += greenValue / 2;
-				awbStats_[awbZonePosition].sum.red += currentCell->redAvg;
-				awbStats_[awbZonePosition].sum.blue += currentCell->blueAvg;
+				awbStats_[awbZonePosition].sum.red += currentCell->R_avg;
+				awbStats_[awbZonePosition].sum.blue += currentCell->B_avg;
 			}
 		}
 	}

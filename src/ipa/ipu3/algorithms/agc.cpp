@@ -6,7 +6,6 @@
  */
 
 #include "agc.h"
-#include "awb.h"
 
 #include <algorithm>
 #include <chrono>
@@ -73,17 +72,16 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
 
 	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
 		for (unsigned int cellX = 0; cellX < grid.width; cellX++) {
-			uint32_t cellPosition = (cellY * stride_ + cellX)
-					      * sizeof(Ipu3AwbCell);
+			uint32_t cellPosition = cellY * stride_ + cellX;
 
-			const Ipu3AwbCell *cell =
-				reinterpret_cast<const Ipu3AwbCell *>(
+			const ipu3_uapi_awb_set_item *cell =
+				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
 
-			if (cell->satRatio == 0) {
-				uint8_t gr = cell->greenRedAvg;
-				uint8_t gb = cell->greenBlueAvg;
+			if (cell->sat_ratio == 0) {
+				uint8_t gr = cell->Gr_avg;
+				uint8_t gb = cell->Gb_avg;
 				hist[(gr + gb) / 2]++;
 			}
 		}

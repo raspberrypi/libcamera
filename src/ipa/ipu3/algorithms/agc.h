@@ -50,6 +50,8 @@ private:
 	Duration prevExposureNoDg_;
 	Duration currentExposure_;
 	Duration currentExposureNoDg_;
+
+	uint32_t stride_;
 };
 
 } /* namespace ipa::ipu3::algorithms */

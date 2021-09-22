@@ -6,6 +6,7 @@
  */
 
 #include "agc.h"
+#include "awb.h"
 
 #include <algorithm>
 #include <chrono>
@@ -47,9 +48,6 @@ static constexpr uint32_t kMaxExposure = 1976;
 static constexpr uint32_t knumHistogramBins = 256;
 static constexpr double kEvGainTarget = 0.5;
 
-/* A cell is 8 bytes and contains averages for RGB values and saturation ratio */
-static constexpr uint8_t kCellSize = 8;
-
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
 	  maxExposureTime_(0s), prevExposure_(0s), prevExposureNoDg_(0s),
@@ -57,9 +55,10 @@ Agc::Agc()
 {
 }
 
-int Agc::configure([[maybe_unused]] IPAContext &context,
-		   const IPAConfigInfo &configInfo)
+int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 {
+	stride_ = context.configuration.grid.stride;
+
 	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
 		      / configInfo.sensorInfo.pixelRate;
 	maxExposureTime_ = kMaxExposure * lineDuration_;
@@ -70,37 +69,22 @@ int Agc::configure([[maybe_unused]] IPAContext &context,
 void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
 			    const ipu3_uapi_grid_config &grid)
 {
-	const struct ipu3_uapi_grid_config statsAeGrid = stats->stats_4a_config.awb_config.grid;
-	Rectangle aeRegion = { statsAeGrid.x_start,
-			       statsAeGrid.y_start,
-			       static_cast<unsigned int>(statsAeGrid.x_end - statsAeGrid.x_start) + 1,
-			       static_cast<unsigned int>(statsAeGrid.y_end - statsAeGrid.y_start) + 1 };
-	Point topleft = aeRegion.topLeft();
-	int topleftX = topleft.x >> grid.block_width_log2;
-	int topleftY = topleft.y >> grid.block_height_log2;
-
-	/* Align to the grid cell width and height */
-	uint32_t startX = topleftX << grid.block_width_log2;
-	uint32_t startY = topleftY * grid.width << grid.block_width_log2;
-	uint32_t endX = (startX + (aeRegion.size().width >> grid.block_width_log2)) << grid.block_width_log2;
-	uint32_t i, j;
-	uint32_t count = 0;
-
 	uint32_t hist[knumHistogramBins] = { 0 };
-	for (j = topleftY;
-	     j < topleftY + (aeRegion.size().height >> grid.block_height_log2);
-	     j++) {
-		for (i = startX + startY; i < endX + startY; i += kCellSize) {
-			/*
-			 * The grid width (and maybe height) is not reliable.
-			 * We observed a bit shift which makes the value 160 to be 32 in the stats grid.
-			 * Use the one passed at init time.
-			 */
-			if (stats->awb_raw_buffer.meta_data[i + 4 + j * grid.width] == 0) {
-				uint8_t Gr = stats->awb_raw_buffer.meta_data[i + 0 + j * grid.width];
-				uint8_t Gb = stats->awb_raw_buffer.meta_data[i + 3 + j * grid.width];
-				hist[(Gr + Gb) / 2]++;
-				count++;
+
+	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
+		for (unsigned int cellX = 0; cellX < grid.width; cellX++) {
+			uint32_t cellPosition = (cellY * stride_ + cellX)
+					      * sizeof(Ipu3AwbCell);
+
+			const Ipu3AwbCell *cell =
+				reinterpret_cast<const Ipu3AwbCell *>(
+					&stats->awb_raw_buffer.meta_data[cellPosition]
+				);
+
+			if (cell->satRatio == 0) {
+				uint8_t gr = cell->greenRedAvg;
+				uint8_t gb = cell->greenBlueAvg;
+				hist[(gr + gb) / 2]++;
 			}
 		}
 	}

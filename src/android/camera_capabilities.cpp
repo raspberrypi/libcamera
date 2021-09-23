@@ -1340,8 +1340,12 @@ std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplateManual() cons
 std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplatePreview() const
 {
 	/*
-	 * \todo Keep this in sync with the actual number of entries.
-	 * Currently: 20 entries, 35 bytes
+	 * Give initial hint of entries and number of bytes to be allocated.
+	 * It is deliberate that the hint is slightly larger than required, to
+	 * avoid resizing the container.
+	 *
+	 * CameraMetadata is capable of resizing the container on the fly, if
+	 * adding a new entry will exceed its capacity.
 	 */
 	auto requestTemplate = std::make_unique<CameraMetadata>(21, 36);
 	if (!requestTemplate->isValid()) {

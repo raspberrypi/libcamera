@@ -1376,7 +1376,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		}
 	}
 
-	return std::make_unique<FrameBuffer>(std::move(planes));
+	return std::make_unique<FrameBuffer>(planes);
 }
 
 FileDescriptor V4L2VideoDevice::exportDmabufFd(unsigned int index,

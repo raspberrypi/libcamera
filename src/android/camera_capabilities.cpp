@@ -1347,7 +1347,7 @@ std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplatePreview() con
 	 * CameraMetadata is capable of resizing the container on the fly, if
 	 * adding a new entry will exceed its capacity.
 	 */
-	auto requestTemplate = std::make_unique<CameraMetadata>(21, 36);
+	auto requestTemplate = std::make_unique<CameraMetadata>(22, 38);
 	if (!requestTemplate->isValid()) {
 		return nullptr;
 	}
@@ -1367,6 +1367,16 @@ std::unique_ptr<CameraMetadata> CameraCapabilities::requestTemplatePreview() con
 	 */
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_TARGET_FPS_RANGE,
 				  entry.data.i32, 2);
+
+	/*
+	 * Get thumbnail sizes from static metadata and add the first non-zero
+	 * size to the template.
+	 */
+	found = staticMetadata_->getEntry(ANDROID_JPEG_AVAILABLE_THUMBNAIL_SIZES,
+					  &entry);
+	ASSERT(found && entry.count >= 4);
+	requestTemplate->addEntry(ANDROID_JPEG_THUMBNAIL_SIZE,
+				  entry.data.i32 + 2, 2);
 
 	uint8_t aeMode = ANDROID_CONTROL_AE_MODE_ON;
 	requestTemplate->addEntry(ANDROID_CONTROL_AE_MODE, aeMode);

@@ -774,9 +774,9 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
-FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
-					     PixelFormat pixelFormat,
-					     const Size &size)
+std::unique_ptr<FrameBuffer>
+CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
+				PixelFormat pixelFormat, const Size &size)
 {
 	CameraBuffer buf(camera3buffer, pixelFormat, size, PROT_READ);
 	if (!buf.isValid()) {
@@ -797,7 +797,7 @@ FrameBuffer *CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer
 		planes[i].length = buf.size(i);
 	}
 
-	return new FrameBuffer(std::move(planes));
+	return std::make_unique<FrameBuffer>(planes);
 }
 
 int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
@@ -1002,10 +1002,12 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * associate it with the Camera3RequestDescriptor for
 			 * lifetime management only.
 			 */
-			buffer = createFrameBuffer(*camera3Buffer.buffer,
-						   cameraStream->configuration().pixelFormat,
-						   cameraStream->configuration().size);
-			descriptor.frameBuffers_.emplace_back(buffer);
+			descriptor.frameBuffers_.push_back(
+				createFrameBuffer(*camera3Buffer.buffer,
+						  cameraStream->configuration().pixelFormat,
+						  cameraStream->configuration().size));
+
+			buffer = descriptor.frameBuffers_.back().get();
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 

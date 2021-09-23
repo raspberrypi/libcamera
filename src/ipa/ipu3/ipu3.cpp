@@ -19,6 +19,7 @@
 #include <linux/v4l2-controls.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/framebuffer.h>
@@ -136,8 +137,18 @@
  * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
  */
 
-static constexpr uint32_t kMaxCellWidthPerSet = 80;
-static constexpr uint32_t kMaxCellHeightPerSet = 60;
+/* Minimum grid width, expressed as a number of cells */
+static constexpr uint32_t kMinGridWidth = 16;
+/* Maximum grid width, expressed as a number of cells */
+static constexpr uint32_t kMaxGridWidth = 80;
+/* Minimum grid height, expressed as a number of cells */
+static constexpr uint32_t kMinGridHeight = 16;
+/* Maximum grid height, expressed as a number of cells */
+static constexpr uint32_t kMaxGridHeight = 60;
+/* log2 of the minimum grid cell width and height, in pixels */
+static constexpr uint32_t kMinCellSizeLog2 = 3;
+/* log2 of the maximum grid cell width and height, in pixels */
+static constexpr uint32_t kMaxCellSizeLog2 = 6;
 
 namespace libcamera {
 
@@ -281,45 +292,56 @@ int IPAIPU3::start()
 }
 
 /**
+ * \brief Calculate a grid for the AWB statistics
+ *
  * This function calculates a grid for the AWB algorithm in the IPU3 firmware.
  * Its input is the BDS output size calculated in the ImgU.
  * It is limited for now to the simplest method: find the lesser error
  * with the width/height and respective log2 width/height of the cells.
  *
- * \todo The frame is divided into cells which can be 8x8 => 128x128.
+ * \todo The frame is divided into cells which can be 8x8 => 64x64.
  * As a smaller cell improves the algorithm precision, adapting the
  * x_start and y_start parameters of the grid would provoke a loss of
  * some pixels but would also result in more accurate algorithms.
  */
 void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 {
-	uint32_t minError = std::numeric_limits<uint32_t>::max();
 	Size best;
 	Size bestLog2;
 
 	/* Set the BDS output size in the IPAConfiguration structure */
 	context_.configuration.grid.bdsOutputSize = bdsOutputSize;
 
-	for (uint32_t widthShift = 3; widthShift <= 6; ++widthShift) {
-		uint32_t width = std::min(kMaxCellWidthPerSet,
-					  bdsOutputSize.width >> widthShift);
-		width = width << widthShift;
-		for (uint32_t heightShift = 3; heightShift <= 6; ++heightShift) {
-			int32_t height = std::min(kMaxCellHeightPerSet,
-						  bdsOutputSize.height >> heightShift);
-			height = height << heightShift;
-			uint32_t error  = std::abs(static_cast<int>(width - bdsOutputSize.width))
-							+ std::abs(static_cast<int>(height - bdsOutputSize.height));
+	uint32_t minError = std::numeric_limits<uint32_t>::max();
+	for (uint32_t shift = kMinCellSizeLog2; shift <= kMaxCellSizeLog2; ++shift) {
+		uint32_t width = std::clamp(bdsOutputSize.width >> shift,
+					    kMinGridWidth,
+					    kMaxGridWidth);
 
-			if (error > minError)
-				continue;
+		width = width << shift;
+		uint32_t error = std::abs(static_cast<int>(width - bdsOutputSize.width));
+		if (error >= minError)
+			continue;
 
-			minError = error;
-			best.width = width;
-			best.height = height;
-			bestLog2.width = widthShift;
-			bestLog2.height = heightShift;
-		}
+		minError = error;
+		best.width = width;
+		bestLog2.width = shift;
+	}
+
+	minError = std::numeric_limits<uint32_t>::max();
+	for (uint32_t shift = kMinCellSizeLog2; shift <= kMaxCellSizeLog2; ++shift) {
+		uint32_t height = std::clamp(bdsOutputSize.height >> shift,
+					     kMinGridHeight,
+					     kMaxGridHeight);
+
+		height = height << shift;
+		uint32_t error = std::abs(static_cast<int>(height - bdsOutputSize.height));
+		if (error >= minError)
+			continue;
+
+		minError = error;
+		best.height = height;
+		bestLog2.height = shift;
 	}
 
 	struct ipu3_uapi_grid_config &bdsGrid = context_.configuration.grid.bdsGrid;

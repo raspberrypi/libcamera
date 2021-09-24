@@ -26,6 +26,9 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY(Backtrace)
 
+	bool backtraceTrace();
+	bool unwindTrace();
+
 	std::vector<void *> backtrace_;
 };
 

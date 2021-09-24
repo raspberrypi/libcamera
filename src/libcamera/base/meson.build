@@ -20,6 +20,7 @@ libcamera_base_sources = files([
 ])
 
 libdw = cc.find_library('libdw', required : false)
+libunwind = cc.find_library('libunwind', required : false)
 
 if cc.has_header_symbol('execinfo.h', 'backtrace')
     config_h.set('HAVE_BACKTRACE', 1)
@@ -29,10 +30,15 @@ if libdw.found()
     config_h.set('HAVE_DW', 1)
 endif
 
+if libunwind.found()
+    config_h.set('HAVE_UNWIND', 1)
+endif
+
 libcamera_base_deps = [
     dependency('threads'),
     libatomic,
     libdw,
+    libunwind,
 ]
 
 # Internal components must use the libcamera_base_private dependency to enable

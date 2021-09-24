@@ -18,6 +18,15 @@
 #include <unistd.h>
 #endif
 
+#if HAVE_UNWIND
+/*
+ * Disable support for remote unwinding to enable a more optimized
+ * implementation.
+ */
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+#endif
+
 #include <sstream>
 
 #include <libcamera/base/span.h>
@@ -147,16 +156,65 @@ std::string DwflParser::stackEntry(const void *ip)
  */
 Backtrace::Backtrace()
 {
+	/* Try libunwind first and fall back to backtrace() if it fails. */
+	if (unwindTrace())
+		return;
+
+	backtraceTrace();
+}
+
+/*
+ * Avoid inlining to make sure that the Backtrace constructor adds exactly two
+ * calls to the stack, which are later skipped in toString().
+ */
+__attribute__((__noinline__))
+bool Backtrace::backtraceTrace()
+{
 #if HAVE_BACKTRACE
 	backtrace_.resize(32);
 
 	int num_entries = backtrace(backtrace_.data(), backtrace_.size());
 	if (num_entries < 0) {
 		backtrace_.clear();
-		return;
+		return false;
 	}
 
 	backtrace_.resize(num_entries);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+__attribute__((__noinline__))
+bool Backtrace::unwindTrace()
+{
+#if HAVE_UNWIND
+	unw_context_t uc;
+	int ret = unw_getcontext(&uc);
+	if (ret)
+		return false;
+
+	unw_cursor_t cursor;
+	ret = unw_init_local(&cursor, &uc);
+	if (ret)
+		return false;
+
+	do {
+		unw_word_t ip;
+		ret = unw_get_reg(&cursor, UNW_REG_IP, &ip);
+		if (ret) {
+			backtrace_.push_back(nullptr);
+			continue;
+		}
+
+		backtrace_.push_back(reinterpret_cast<void *>(ip));
+	} while (unw_step(&cursor) > 0);
+
+	return true;
+#else
+	return false;
 #endif
 }
 
@@ -181,8 +239,11 @@ Backtrace::Backtrace()
  */
 std::string Backtrace::toString(unsigned int skipLevels) const
 {
-	/* Skip the first entry, corresponding to the Backtrace construction. */
-	skipLevels += 1;
+	/*
+	 * Skip the first two entries, corresponding to the Backtrace
+	 * construction.
+	 */
+	skipLevels += 2;
 
 	if (backtrace_.size() <= skipLevels)
 		return std::string();

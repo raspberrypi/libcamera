@@ -1065,12 +1065,14 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		state_ = State::Running;
 	}
 
-	worker_.queueRequest(descriptor.request_.get());
+	CaptureRequest *request = descriptor.request_.get();
 
 	{
 		MutexLocker descriptorsLock(descriptorsMutex_);
 		descriptors_[descriptor.request_->cookie()] = std::move(descriptor);
 	}
+
+	worker_.queueRequest(request);
 
 	return 0;
 }

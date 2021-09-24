@@ -7,7 +7,11 @@
 
 #include "camera_stream.h"
 
+#include <errno.h>
+#include <string.h>
 #include <sys/mman.h>
+#include <sys/poll.h>
+#include <unistd.h>
 
 #include <libcamera/formats.h>
 
@@ -109,11 +113,53 @@ int CameraStream::configure()
 	return 0;
 }
 
+int CameraStream::waitFence(int fence)
+{
+	/*
+	 * \todo The implementation here is copied from camera_worker.cpp
+	 * and both should be removed once libcamera is instrumented to handle
+	 * fences waiting in the core.
+	 *
+	 * \todo Better characterize the timeout. Currently equal to the one
+	 * used by the Rockchip Camera HAL on ChromeOS.
+	 */
+	constexpr unsigned int timeoutMs = 300;
+	struct pollfd fds = { fence, POLLIN, 0 };
+
+	do {
+		int ret = poll(&fds, 1, timeoutMs);
+		if (ret == 0)
+			return -ETIME;
+
+		if (ret > 0) {
+			if (fds.revents & (POLLERR | POLLNVAL))
+				return -EINVAL;
+
+			return 0;
+		}
+	} while (errno == EINTR || errno == EAGAIN);
+
+	return -errno;
+}
+
 int CameraStream::process(const FrameBuffer &source,
-			  buffer_handle_t camera3Dest,
+			  camera3_stream_buffer_t &camera3Dest,
 			  const CameraMetadata &requestMetadata,
 			  CameraMetadata *resultMetadata)
 {
+	/* Handle waiting on fences on the destination buffer. */
+	int fence = camera3Dest.acquire_fence;
+	if (fence != -1) {
+		int ret = waitFence(fence);
+		::close(fence);
+		camera3Dest.acquire_fence = -1;
+		if (ret < 0) {
+			LOG(HAL, Error) << "Failed waiting for fence: "
+					<< fence << ": " << strerror(-ret);
+			return ret;
+		}
+	}
+
 	if (!postProcessor_)
 		return 0;
 
@@ -122,7 +168,7 @@ int CameraStream::process(const FrameBuffer &source,
 	 * separate thread.
 	 */
 	const StreamConfiguration &output = configuration();
-	CameraBuffer dest(camera3Dest, formats::MJPEG, output.size,
+	CameraBuffer dest(*camera3Dest.buffer, formats::MJPEG, output.size,
 			  PROT_READ | PROT_WRITE);
 	if (!dest.isValid()) {
 		LOG(HAL, Error) << "Failed to map android blob buffer";

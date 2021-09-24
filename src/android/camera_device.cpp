@@ -983,9 +983,13 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 		/*
 		 * Inspect the camera stream type, create buffers opportunely
-		 * and add them to the Request if required.
+		 * and add them to the Request if required. Only acquire fences
+		 * for streams of type Direct are handled by the CameraWorker,
+		 * while fences for streams of type Internal and Mapped are
+		 * handled at post-processing time.
 		 */
 		FrameBuffer *buffer = nullptr;
+		int acquireFence = -1;
 		switch (cameraStream->type()) {
 		case CameraStream::Type::Mapped:
 			/*
@@ -1008,6 +1012,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 						  cameraStream->configuration().size));
 
 			buffer = descriptor.frameBuffers_.back().get();
+			acquireFence = camera3Buffer.acquire_fence;
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 
@@ -1030,7 +1035,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		}
 
 		descriptor.request_->addBuffer(cameraStream->stream(), buffer,
-						camera3Buffer.acquire_fence);
+					       acquireFence);
 	}
 
 	/*
@@ -1110,7 +1115,22 @@ void CameraDevice::requestComplete(Request *request)
 	captureResult.frame_number = descriptor.frameNumber_;
 	captureResult.num_output_buffers = descriptor.buffers_.size();
 	for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
-		buffer.acquire_fence = -1;
+		CameraStream *cameraStream =
+			static_cast<CameraStream *>(buffer.stream->priv);
+
+		/*
+		 * Streams of type Direct have been queued to the
+		 * libcamera::Camera and their acquire fences have
+		 * already been waited on by the CameraWorker.
+		 *
+		 * Acquire fences of streams of type Internal and Mapped
+		 * will be handled during post-processing.
+		 *
+		 * \todo Instrument the CameraWorker to set the acquire
+		 * fence to -1 once it has handled it and remove this check.
+		 */
+		if (cameraStream->type() == CameraStream::Type::Direct)
+			buffer.acquire_fence = -1;
 		buffer.release_fence = -1;
 		buffer.status = CAMERA3_BUFFER_STATUS_OK;
 	}
@@ -1130,8 +1150,17 @@ void CameraDevice::requestComplete(Request *request)
 			    CAMERA3_MSG_ERROR_REQUEST);
 
 		captureResult.partial_result = 0;
-		for (camera3_stream_buffer_t &buffer : descriptor.buffers_)
+		for (camera3_stream_buffer_t &buffer : descriptor.buffers_) {
+			/*
+			 * Signal to the framework it has to handle fences that
+			 * have not been waited on by setting the release fence
+			 * to the acquire fence value.
+			 */
+			buffer.release_fence = buffer.acquire_fence;
+			buffer.acquire_fence = -1;
 			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+		}
+
 		callbacks_->process_capture_result(callbacks_, &captureResult);
 
 		return;
@@ -1181,7 +1210,7 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		int ret = cameraStream->process(*src, *buffer.buffer,
+		int ret = cameraStream->process(*src, buffer,
 						descriptor.settings_,
 						resultMetadata.get());
 		/*

@@ -119,13 +119,15 @@ public:
 
 	int configure();
 	int process(const libcamera::FrameBuffer &source,
-		    buffer_handle_t camera3Dest,
+		    camera3_stream_buffer_t &camera3Buffer,
 		    const CameraMetadata &requestMetadata,
 		    CameraMetadata *resultMetadata);
 	libcamera::FrameBuffer *getBuffer();
 	void putBuffer(libcamera::FrameBuffer *buffer);
 
 private:
+	int waitFence(int fence);
+
 	CameraDevice *const cameraDevice_;
 	const libcamera::CameraConfiguration *config_;
 	const Type type_;

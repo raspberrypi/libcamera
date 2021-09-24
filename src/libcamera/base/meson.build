@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_base_sources = files([
+    'backtrace.cpp',
     'class.cpp',
     'bound_method.cpp',
     'event_dispatcher.cpp',
@@ -17,6 +18,10 @@ libcamera_base_sources = files([
     'timer.cpp',
     'utils.cpp',
 ])
+
+if cc.has_header_symbol('execinfo.h', 'backtrace')
+    config_h.set('HAVE_BACKTRACE', 1)
+endif
 
 libcamera_base_deps = [
     dependency('threads'),

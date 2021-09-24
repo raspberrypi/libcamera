@@ -29,10 +29,6 @@ cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 config_h = configuration_data()
 
-if cc.has_header_symbol('execinfo.h', 'backtrace')
-    config_h.set('HAVE_BACKTRACE', 1)
-endif
-
 if cc.has_header_symbol('unistd.h', 'issetugid')
     config_h.set('HAVE_ISSETUGID', 1)
 endif

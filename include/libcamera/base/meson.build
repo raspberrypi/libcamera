@@ -3,6 +3,7 @@
 libcamera_base_include_dir = libcamera_include_dir / 'base'
 
 libcamera_base_headers = files([
+    'backtrace.h',
     'bound_method.h',
     'class.h',
     'event_dispatcher.h',

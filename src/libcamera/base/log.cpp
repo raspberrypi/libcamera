@@ -8,9 +8,6 @@
 #include <libcamera/base/log.h>
 
 #include <array>
-#if HAVE_BACKTRACE
-#include <execinfo.h>
-#endif
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -23,6 +20,7 @@
 
 #include <libcamera/logging.h>
 
+#include <libcamera/base/backtrace.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 
@@ -418,31 +416,22 @@ void Logger::write(const LogMessage &msg)
  */
 void Logger::backtrace()
 {
-#if HAVE_BACKTRACE
 	std::shared_ptr<LogOutput> output = std::atomic_load(&output_);
 	if (!output)
 		return;
-
-	void *buffer[32];
-	int num_entries = ::backtrace(buffer, std::size(buffer));
-	char **strings = backtrace_symbols(buffer, num_entries);
-	if (!strings)
-		return;
-
-	std::ostringstream msg;
-	msg << "Backtrace:" << std::endl;
 
 	/*
 	 * Skip the first two entries that correspond to this function and
 	 * ~LogMessage().
 	 */
-	for (int i = 2; i < num_entries; ++i)
-		msg << strings[i] << std::endl;
+	std::string backtrace = Backtrace().toString(2);
+	if (backtrace.empty()) {
+		output->write("Backtrace not available\n");
+		return;
+	}
 
-	output->write(msg.str());
-
-	free(strings);
-#endif
+	output->write("Backtrace:\n");
+	output->write(backtrace);
 }
 
 /**

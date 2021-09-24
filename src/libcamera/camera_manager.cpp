@@ -12,10 +12,9 @@
 
 #include <libcamera/camera.h>
 
-#include <libcamera/base/utils.h>
-
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>
+#include <libcamera/base/utils.h>
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"

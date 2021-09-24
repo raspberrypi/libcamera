@@ -30,6 +30,7 @@ private:
 	bool unwindTrace();
 
 	std::vector<void *> backtrace_;
+	std::vector<std::string> backtraceText_;
 };
 
 } /* namespace libcamera */

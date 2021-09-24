@@ -202,6 +202,12 @@ bool Backtrace::unwindTrace()
 		return false;
 
 	do {
+#if HAVE_BACKTRACE || HAVE_DW
+		/*
+		 * If backtrace() or libdw is available, they will be used in
+		 * toString() to provide symbol information for the stack
+		 * frames using the IP register value.
+		 */
 		unw_word_t ip;
 		ret = unw_get_reg(&cursor, UNW_REG_IP, &ip);
 		if (ret) {
@@ -210,6 +216,29 @@ bool Backtrace::unwindTrace()
 		}
 
 		backtrace_.push_back(reinterpret_cast<void *>(ip));
+#else
+		/*
+		 * Otherwise, use libunwind to get the symbol information. As
+		 * the libunwind API uses cursors, we can't store the IP values
+		 * and delay symbol lookup to toString().
+		 */
+		char symbol[256];
+		unw_word_t offset = 0;
+		ret = unw_get_proc_name(&cursor, symbol, sizeof(symbol), &offset);
+		if (ret) {
+			backtraceText_.emplace_back("???\n");
+			continue;
+		}
+
+		std::ostringstream entry;
+
+		char *name = abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+		entry << (name ? name : symbol);
+		free(name);
+
+		entry << "+0x" << std::hex << offset << "\n";
+		backtraceText_.emplace_back(entry.str());
+#endif
 	} while (unw_step(&cursor) > 0);
 
 	return true;
@@ -245,8 +274,14 @@ std::string Backtrace::toString(unsigned int skipLevels) const
 	 */
 	skipLevels += 2;
 
-	if (backtrace_.size() <= skipLevels)
+	if (backtrace_.size() <= skipLevels &&
+	    backtraceText_.size() <= skipLevels)
 		return std::string();
+
+	if (!backtraceText_.empty()) {
+		Span<const std::string> trace{ backtraceText_ };
+		return utils::join(trace.subspan(skipLevels), "");
+	}
 
 #if HAVE_DW
 	DwflParser dwfl;

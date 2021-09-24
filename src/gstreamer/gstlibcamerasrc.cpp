@@ -204,7 +204,7 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 
 	GST_DEBUG_OBJECT(self, "Opening camera device ...");
 
-	cm = gst_libcamera_get_camera_mananger(ret);
+	cm = gst_libcamera_get_camera_manager(ret);
 	if (ret) {
 		GST_ELEMENT_ERROR(self, LIBRARY, INIT,
 				  ("Failed listing cameras."),

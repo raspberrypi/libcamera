@@ -239,7 +239,7 @@ G_LOCK_DEFINE_STATIC(cm_singleton_lock);
 static std::weak_ptr<CameraManager> cm_singleton_ptr;
 
 std::shared_ptr<CameraManager>
-gst_libcamera_get_camera_mananger(int &ret)
+gst_libcamera_get_camera_manager(int &ret)
 {
 	std::shared_ptr<CameraManager> cm;
 

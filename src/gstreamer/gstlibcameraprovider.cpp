@@ -180,7 +180,7 @@ gst_libcamera_provider_probe(GstDeviceProvider *provider)
 	 * gains monitoring support. Meanwhile we need to cycle start()/stop()
 	 * to ensure every probe() calls return the latest list.
 	 */
-	cm = gst_libcamera_get_camera_mananger(ret);
+	cm = gst_libcamera_get_camera_manager(ret);
 	if (ret) {
 		GST_ERROR_OBJECT(self, "Failed to retrieve device list: %s",
 				 g_strerror(-ret));

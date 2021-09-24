@@ -20,7 +20,7 @@ GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfi
 void gst_libcamera_configure_stream_from_caps(libcamera::StreamConfiguration &stream_cfg,
 					      GstCaps *caps);
 void gst_libcamera_resume_task(GstTask *task);
-std::shared_ptr<libcamera::CameraManager> gst_libcamera_get_camera_mananger(int &ret);
+std::shared_ptr<libcamera::CameraManager> gst_libcamera_get_camera_manager(int &ret);
 
 /**
  * \class GLibLocker

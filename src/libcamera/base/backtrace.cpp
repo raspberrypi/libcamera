@@ -12,9 +12,16 @@
 #include <stdlib.h>
 #endif
 
+#ifdef HAVE_DW
+#include <cxxabi.h>
+#include <elfutils/libdwfl.h>
+#include <unistd.h>
+#endif
+
 #include <sstream>
 
 #include <libcamera/base/span.h>
+#include <libcamera/base/utils.h>
 
 /**
  * \file backtrace.h
@@ -22,6 +29,101 @@
  */
 
 namespace libcamera {
+
+namespace {
+
+#if HAVE_DW
+class DwflParser
+{
+public:
+	DwflParser();
+	~DwflParser();
+
+	bool isValid() const { return valid_; }
+	std::string stackEntry(const void *ip);
+
+private:
+	Dwfl_Callbacks callbacks_;
+	Dwfl *dwfl_;
+	bool valid_;
+};
+
+DwflParser::DwflParser()
+	: callbacks_({}), dwfl_(nullptr), valid_(false)
+{
+	callbacks_.find_elf = dwfl_linux_proc_find_elf;
+	callbacks_.find_debuginfo = dwfl_standard_find_debuginfo;
+
+	dwfl_ = dwfl_begin(&callbacks_);
+	if (!dwfl_)
+		return;
+
+	int ret = dwfl_linux_proc_report(dwfl_, getpid());
+	if (ret)
+		return;
+
+	ret = dwfl_report_end(dwfl_, nullptr, nullptr);
+	if (ret)
+		return;
+
+	valid_ = true;
+}
+
+DwflParser::~DwflParser()
+{
+	if (dwfl_)
+		dwfl_end(dwfl_);
+}
+
+std::string DwflParser::stackEntry(const void *ip)
+{
+	Dwarf_Addr addr = reinterpret_cast<Dwarf_Addr>(ip);
+
+	Dwfl_Module *module = dwfl_addrmodule(dwfl_, addr);
+	if (!module)
+		return std::string();
+
+	std::ostringstream entry;
+
+	GElf_Off offset;
+	GElf_Sym sym;
+	const char *symbol = dwfl_module_addrinfo(module, addr, &offset, &sym,
+						  nullptr, nullptr, nullptr);
+	if (symbol) {
+		char *name = abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+		entry << (name ? name : symbol) << "+0x" << std::hex << offset
+		      << std::dec;
+		free(name);
+	} else {
+		entry << "??? [" << utils::hex(addr) << "]";
+	}
+
+	entry << " (";
+
+	Dwfl_Line *line = dwfl_module_getsrc(module, addr);
+	if (line) {
+		const char *filename;
+		int lineNumber = 0;
+
+		filename = dwfl_lineinfo(line, &addr, &lineNumber, nullptr,
+					 nullptr, nullptr);
+
+		entry << (filename ? filename : "???") << ":" << lineNumber;
+	} else {
+		const char *filename = nullptr;
+
+		dwfl_module_info(module, nullptr, nullptr, nullptr, nullptr,
+				 nullptr, &filename, nullptr);
+
+		entry << (filename ? filename : "???") << " [" << utils::hex(addr) << "]";
+	}
+
+	entry << ")";
+	return entry.str();
+}
+#endif /* HAVE_DW */
+
+} /* namespace */
 
 /**
  * \class Backtrace
@@ -84,6 +186,24 @@ std::string Backtrace::toString(unsigned int skipLevels) const
 
 	if (backtrace_.size() <= skipLevels)
 		return std::string();
+
+#if HAVE_DW
+	DwflParser dwfl;
+
+	if (dwfl.isValid()) {
+		std::ostringstream msg;
+
+		Span<void *const> trace{ backtrace_ };
+		for (const void *ip : trace.subspan(skipLevels)) {
+			if (ip)
+				msg << dwfl.stackEntry(ip) << std::endl;
+			else
+				msg << "???" << std::endl;
+		}
+
+		return msg.str();
+	}
+#endif
 
 #if HAVE_BACKTRACE
 	Span<void *const> trace{ backtrace_ };

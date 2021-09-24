@@ -6,6 +6,7 @@ endif
 
 gstreamer_tests = [
     ['single_stream_test',   'gstreamer_single_stream_test.cpp'],
+    ['multi_stream_test',    'gstreamer_multi_stream_test.cpp'],
 ]
 gstreamer_dep = dependency('gstreamer-1.0', required: true)
 

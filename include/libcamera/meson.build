@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+libcamera_include_dir = 'libcamera' / 'libcamera'
+
 libcamera_public_headers = files([
     'camera.h',
     'camera_manager.h',
@@ -16,14 +18,12 @@ libcamera_public_headers = files([
     'transform.h',
 ])
 
-include_dir = libcamera_include_dir / 'libcamera'
-
 subdir('base')
 subdir('internal')
 subdir('ipa')
 
 install_headers(libcamera_public_headers,
-                subdir : include_dir)
+                subdir : libcamera_include_dir)
 
 #
 # Generate headers from templates.
@@ -44,7 +44,7 @@ foreach header : control_source_files
                                      output : header + '.h',
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
                                      install : true,
-                                     install_dir : get_option('includedir') / include_dir)
+                                     install_dir : get_option('includedir') / libcamera_include_dir)
 endforeach
 
 libcamera_public_headers += control_headers
@@ -59,7 +59,7 @@ formats_h = custom_target('formats_h',
                           output : 'formats.h',
                           command : [gen_formats, '-o', '@OUTPUT@', '@INPUT@'],
                           install : true,
-                          install_dir : get_option('includedir') / include_dir)
+                          install_dir : get_option('includedir') / libcamera_include_dir)
 libcamera_public_headers += formats_h
 
 # libcamera.h
@@ -68,7 +68,7 @@ libcamera_h = custom_target('gen-header',
                             output : 'libcamera.h',
                             command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
                             install : true,
-                            install_dir : get_option('includedir') / include_dir)
+                            install_dir : get_option('includedir') / libcamera_include_dir)
 
 libcamera_public_headers += libcamera_h
 
@@ -82,4 +82,4 @@ libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
 configure_file(input : 'version.h.in',
                output : 'version.h',
                configuration : libcamera_version_config,
-               install_dir : get_option('includedir') / include_dir)
+               install_dir : get_option('includedir') / libcamera_include_dir)

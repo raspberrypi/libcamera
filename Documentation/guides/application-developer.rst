@@ -58,7 +58,7 @@ variable for the camera to support the event call back later:
 
 .. code:: cpp
 
-   std::shared_ptr<Camera> camera;
+   static std::shared_ptr<Camera> camera;
 
 Create a Camera Manager instance at the beginning of the main function, and then
 start it. An application must only create a single Camera Manager instance.

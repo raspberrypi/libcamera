@@ -109,9 +109,17 @@ the Camera Manager reports as available to applications.
 Camera devices are stored by the CameraManager in a list accessible by index, or
 can be retrieved by name through the ``CameraManager::get()`` function. The
 code below retrieves the name of the first available camera and gets the camera
-by name from the Camera Manager.
+by name from the Camera Manager, after making sure that at least one camera is
+available.
 
 .. code:: cpp
+
+   if (cm->cameras().empty()) {
+       std::cout << "No cameras were identified on the system."
+                 << std::endl;
+       cm->stop();
+       return EXIT_FAILURE;
+   }
 
    std::string cameraId = cm->cameras()[0]->id();
    camera = cm->get(cameraId);

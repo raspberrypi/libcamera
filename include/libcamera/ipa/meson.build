@@ -13,6 +13,8 @@ install_headers(libcamera_ipa_headers,
 
 libcamera_generated_ipa_headers = []
 
+ipa_headers_install_dir = get_option('includedir') / libcamera_ipa_include_dir
+
 #
 # Prepare IPA/IPC generation components
 #
@@ -34,7 +36,7 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_interface_h',
                   output : 'core_ipa_interface.h',
                   depends : mojom_templates,
                   install : true,
-                  install_dir : get_option('includedir') / libcamera_ipa_include_dir,
+                  install_dir : ipa_headers_install_dir,
                   command : [
                       mojom_generator, 'generate',
                       '-g', 'libcamera',
@@ -98,7 +100,7 @@ foreach file : ipa_mojom_files
                            output : name + '_ipa_interface.h',
                            depends : mojom_templates,
                            install : true,
-                           install_dir : get_option('includedir') / libcamera_ipa_include_dir,
+                           install_dir : ipa_headers_install_dir,
                            command : [
                                mojom_generator, 'generate',
                                '-g', 'libcamera',

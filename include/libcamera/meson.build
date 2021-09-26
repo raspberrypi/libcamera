@@ -29,6 +29,8 @@ install_headers(libcamera_public_headers,
 # Generate headers from templates.
 #
 
+libcamera_headers_install_dir = get_option('includedir') / libcamera_include_dir
+
 # control_ids.h and property_ids.h
 control_source_files = [
     'control_ids',
@@ -44,7 +46,7 @@ foreach header : control_source_files
                                      output : header + '.h',
                                      command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
                                      install : true,
-                                     install_dir : get_option('includedir') / libcamera_include_dir)
+                                     install_dir : libcamera_headers_install_dir)
 endforeach
 
 libcamera_public_headers += control_headers
@@ -59,7 +61,7 @@ formats_h = custom_target('formats_h',
                           output : 'formats.h',
                           command : [gen_formats, '-o', '@OUTPUT@', '@INPUT@'],
                           install : true,
-                          install_dir : get_option('includedir') / libcamera_include_dir)
+                          install_dir : libcamera_headers_install_dir)
 libcamera_public_headers += formats_h
 
 # libcamera.h
@@ -68,7 +70,7 @@ libcamera_h = custom_target('gen-header',
                             output : 'libcamera.h',
                             command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
                             install : true,
-                            install_dir : get_option('includedir') / libcamera_include_dir)
+                            install_dir : libcamera_headers_install_dir)
 
 libcamera_public_headers += libcamera_h
 
@@ -82,4 +84,4 @@ libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
 configure_file(input : 'version.h.in',
                output : 'version.h',
                configuration : libcamera_version_config,
-               install_dir : get_option('includedir') / libcamera_include_dir)
+               install_dir : libcamera_headers_install_dir)

@@ -278,7 +278,7 @@ as the parameter of the ``FrameBufferAllocator::buffers()`` function.
            return -ENOMEM;
        }
 
-       unsigned int allocated = allocator->buffers(cfg.stream()).size();
+       size_t allocated = allocator->buffers(cfg.stream()).size();
        std::cout << "Allocated " << allocated << " buffers for stream" << std::endl;
    }
 

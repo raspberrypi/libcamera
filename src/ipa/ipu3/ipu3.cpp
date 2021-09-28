@@ -135,7 +135,7 @@ public:
 		 ControlInfoMap *ipaControls) override;
 
 	int start() override;
-	void stop() override {}
+	void stop() override;
 
 	int configure(const IPAConfigInfo &configInfo,
 		      ControlInfoMap *ipaControls) override;
@@ -321,6 +321,13 @@ int IPAIPU3::start()
 	setControls(0);
 
 	return 0;
+}
+
+/**
+ * \brief Ensure that all processing has completed
+ */
+void IPAIPU3::stop()
+{
 }
 
 /**

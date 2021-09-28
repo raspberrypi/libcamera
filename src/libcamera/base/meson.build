@@ -29,6 +29,7 @@ libcamera_base_args = [ '-DLIBCAMERA_BASE_PRIVATE' ]
 
 libcamera_base_lib = shared_library('libcamera-base',
                                     [libcamera_base_sources, libcamera_base_headers],
+                                    version : libcamera_version,
                                     name_prefix : '',
                                     install : true,
                                     cpp_args : libcamera_base_args,

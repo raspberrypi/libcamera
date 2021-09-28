@@ -279,7 +279,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 		}
 	}
 
-	writeCount_++;
+	writeCount_ = sequence - firstSequence_ + 1;
 
 	while (writeCount_ > queueCount_) {
 		LOG(DelayedControls, Debug)

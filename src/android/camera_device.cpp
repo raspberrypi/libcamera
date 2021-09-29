@@ -860,7 +860,7 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 	return 0;
 }
 
-void CameraDevice::abortRequest(camera3_capture_request_t *request)
+void CameraDevice::abortRequest(camera3_capture_request_t *request) const
 {
 	notifyError(request->frame_number, nullptr, CAMERA3_MSG_ERROR_REQUEST);
 
@@ -1258,7 +1258,7 @@ void CameraDevice::notifyShutter(uint32_t frameNumber, uint64_t timestamp)
 }
 
 void CameraDevice::notifyError(uint32_t frameNumber, camera3_stream_t *stream,
-			       camera3_error_msg_code code)
+			       camera3_error_msg_code code) const
 {
 	camera3_notify_msg_t notify = {};
 

@@ -99,11 +99,11 @@ private:
 	createFrameBuffer(const buffer_handle_t camera3buffer,
 			  libcamera::PixelFormat pixelFormat,
 			  const libcamera::Size &size);
-	void abortRequest(camera3_capture_request_t *request);
+	void abortRequest(camera3_capture_request_t *request) const;
 	bool isValidRequest(camera3_capture_request_t *request) const;
 	void notifyShutter(uint32_t frameNumber, uint64_t timestamp);
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
-			 camera3_error_msg_code code);
+			 camera3_error_msg_code code) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
 		const Camera3RequestDescriptor &descriptor) const;

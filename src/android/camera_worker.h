@@ -8,6 +8,7 @@
 #define __ANDROID_CAMERA_WORKER_H__
 
 #include <memory>
+#include <stdint.h>
 
 #include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
@@ -22,7 +23,7 @@ class CameraDevice;
 class CaptureRequest
 {
 public:
-	CaptureRequest(libcamera::Camera *camera);
+	CaptureRequest(libcamera::Camera *camera, uint64_t cookie);
 
 	const std::vector<int> &fences() const { return acquireFences_; }
 	libcamera::ControlList &controls() { return request_->controls(); }

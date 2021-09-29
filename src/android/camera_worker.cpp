@@ -27,10 +27,10 @@ LOG_DECLARE_CATEGORY(HAL)
  * by the CameraWorker which queues it to the libcamera::Camera after handling
  * fences.
  */
-CaptureRequest::CaptureRequest(Camera *camera)
+CaptureRequest::CaptureRequest(Camera *camera, uint64_t cookie)
 	: camera_(camera)
 {
-	request_ = camera_->createRequest(reinterpret_cast<uint64_t>(this));
+	request_ = camera_->createRequest(cookie);
 }
 
 void CaptureRequest::addBuffer(Stream *stream, FrameBuffer *buffer, int fence)

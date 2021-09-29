@@ -860,25 +860,25 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 	return 0;
 }
 
-void CameraDevice::abortRequest(camera3_capture_request_t *request) const
+void CameraDevice::abortRequest(Camera3RequestDescriptor *descriptor) const
 {
-	notifyError(request->frame_number, nullptr, CAMERA3_MSG_ERROR_REQUEST);
+	notifyError(descriptor->frameNumber_, nullptr, CAMERA3_MSG_ERROR_REQUEST);
 
-	camera3_capture_result_t result = {};
-	result.num_output_buffers = request->num_output_buffers;
-	result.frame_number = request->frame_number;
+	camera3_capture_result_t &result = descriptor->captureResult_;
+	result.num_output_buffers = descriptor->buffers_.size();
+	result.frame_number = descriptor->frameNumber_;
 	result.partial_result = 0;
 
 	std::vector<camera3_stream_buffer_t> resultBuffers(result.num_output_buffers);
 	for (auto [i, buffer] : utils::enumerate(resultBuffers)) {
-		buffer = request->output_buffers[i];
-		buffer.release_fence = request->output_buffers[i].acquire_fence;
+		buffer = descriptor->buffers_[i];
+		buffer.release_fence = descriptor->buffers_[i].acquire_fence;
 		buffer.acquire_fence = -1;
 		buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
 	}
 	result.output_buffers = resultBuffers.data();
 
-	callbacks_->process_capture_result(callbacks_, &result);
+	descriptor->status_ = Camera3RequestDescriptor::Status::Error;
 }
 
 bool CameraDevice::isValidRequest(camera3_capture_request_t *camera3Request) const
@@ -1050,13 +1050,21 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		return ret;
 
 	/*
-	 * If flush is in progress abort the request. If the camera has been
-	 * stopped we have to re-start it to be able to process the request.
+	 * If flush is in progress set the request status to error and place it
+	 * on the queue to be later completed. If the camera has been stopped we
+	 * have to re-start it to be able to process the request.
 	 */
 	MutexLocker stateLock(stateMutex_);
 
 	if (state_ == State::Flushing) {
-		abortRequest(camera3Request);
+		abortRequest(descriptor.get());
+		{
+			MutexLocker descriptorsLock(descriptorsMutex_);
+			descriptors_.push(std::move(descriptor));
+		}
+
+		sendCaptureResults();
+
 		return 0;
 	}
 
@@ -1116,7 +1124,7 @@ void CameraDevice::requestComplete(Request *request)
 	 * The buffer status is set to OK and later changed to ERROR if
 	 * post-processing/compression fails.
 	 */
-	camera3_capture_result_t captureResult = {};
+	camera3_capture_result_t &captureResult = descriptor->captureResult_;
 	captureResult.frame_number = descriptor->frameNumber_;
 	captureResult.num_output_buffers = descriptor->buffers_.size();
 	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
@@ -1166,10 +1174,9 @@ void CameraDevice::requestComplete(Request *request)
 			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
 		}
 
-		callbacks_->process_capture_result(callbacks_, &captureResult);
+		descriptor->status_ = Camera3RequestDescriptor::Status::Error;
+		sendCaptureResults();
 
-		MutexLocker descriptorsLock(descriptorsMutex_);
-		descriptors_.pop();
 		return;
 	}
 
@@ -1235,10 +1242,27 @@ void CameraDevice::requestComplete(Request *request)
 	}
 
 	captureResult.result = resultMetadata->get();
-	callbacks_->process_capture_result(callbacks_, &captureResult);
+	descriptor->status_ = Camera3RequestDescriptor::Status::Success;
+	sendCaptureResults();
+}
 
-	MutexLocker descriptorsLock(descriptorsMutex_);
-	descriptors_.pop();
+void CameraDevice::sendCaptureResults()
+{
+	MutexLocker lock(descriptorsMutex_);
+	while (!descriptors_.empty() && !descriptors_.front()->isPending()) {
+		auto descriptor = std::move(descriptors_.front());
+		descriptors_.pop();
+
+		/*
+		 * \todo Releasing and re-acquiring the critical section for
+		 * every request completion (grain-locking) might have an
+		 * impact on performance which should be measured.
+		 */
+		lock.unlock();
+		callbacks_->process_capture_result(callbacks_,
+						   &descriptor->captureResult_);
+		lock.lock();
+	}
 }
 
 std::string CameraDevice::logPrefix() const

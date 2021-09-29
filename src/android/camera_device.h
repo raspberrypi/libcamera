@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <vector>
 
 #include <hardware/camera3.h>
@@ -125,7 +126,7 @@ private:
 	std::vector<CameraStream> streams_;
 
 	libcamera::Mutex descriptorsMutex_; /* Protects descriptors_. */
-	std::map<uint64_t, Camera3RequestDescriptor> descriptors_;
+	std::queue<std::unique_ptr<Camera3RequestDescriptor>> descriptors_;
 
 	std::string maker_;
 	std::string model_;

@@ -328,14 +328,29 @@ void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	context.frameContext.awb.gains.red = asyncResults_.redGain;
 }
 
+constexpr uint16_t Awb::threshold(float value)
+{
+	/* AWB thresholds are in the range [0, 8191] */
+	return value * 8191;
+}
+
 void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 {
-	params->acc_param.awb.config.rgbs_thr_gr = 8191;
-	params->acc_param.awb.config.rgbs_thr_r = 8191;
-	params->acc_param.awb.config.rgbs_thr_gb = 8191;
-	params->acc_param.awb.config.rgbs_thr_b = IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT
-					       | IPU3_UAPI_AWB_RGBS_THR_B_EN
-					       | 8191;
+	/*
+	 * Green saturation thresholds are reduced because we are using the
+	 * green channel only in the exposure computation.
+	 */
+	params->acc_param.awb.config.rgbs_thr_r = threshold(1.0);
+	params->acc_param.awb.config.rgbs_thr_gr = threshold(0.9);
+	params->acc_param.awb.config.rgbs_thr_gb = threshold(0.9);
+	params->acc_param.awb.config.rgbs_thr_b = threshold(1.0);
+
+	/*
+	 * Enable saturation inclusion on thr_b for ImgU to update the
+	 * ipu3_uapi_awb_set_item->sat_ratio field.
+	 */
+	params->acc_param.awb.config.rgbs_thr_b |= IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT |
+						   IPU3_UAPI_AWB_RGBS_THR_B_EN;
 
 	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
 

@@ -70,6 +70,7 @@ private:
 	void clearAwbStats();
 	void awbGreyWorld();
 	uint32_t estimateCCT(double red, double green, double blue);
+	static constexpr uint16_t threshold(float value);
 
 	std::vector<RGB> zones_;
 	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];

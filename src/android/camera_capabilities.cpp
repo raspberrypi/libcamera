@@ -408,6 +408,11 @@ CameraCapabilities::initializeYUVResolutions(const PixelFormat &pixelFormat,
 	std::vector<Size> supportedResolutions;
 	std::unique_ptr<CameraConfiguration> cameraConfig =
 		camera_->generateConfiguration({ StreamRole::Viewfinder });
+	if (!cameraConfig) {
+		LOG(HAL, Error) << "Failed to get supported YUV resolutions";
+		return supportedResolutions;
+	}
+
 	StreamConfiguration &cfg = cameraConfig->at(0);
 
 	for (const Size &res : resolutions) {
@@ -431,11 +436,17 @@ CameraCapabilities::initializeYUVResolutions(const PixelFormat &pixelFormat,
 std::vector<Size>
 CameraCapabilities::initializeRawResolutions(const PixelFormat &pixelFormat)
 {
+	std::vector<Size> supportedResolutions;
 	std::unique_ptr<CameraConfiguration> cameraConfig =
 		camera_->generateConfiguration({ StreamRole::Raw });
+	if (!cameraConfig) {
+		LOG(HAL, Error) << "Failed to get supported Raw resolutions";
+		return supportedResolutions;
+	}
+
 	StreamConfiguration &cfg = cameraConfig->at(0);
 	const StreamFormats &formats = cfg.formats();
-	std::vector<Size> supportedResolutions = formats.sizes(pixelFormat);
+	supportedResolutions = formats.sizes(pixelFormat);
 
 	return supportedResolutions;
 }

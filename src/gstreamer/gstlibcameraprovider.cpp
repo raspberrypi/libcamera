@@ -132,6 +132,10 @@ gst_libcamera_device_new(const std::shared_ptr<Camera> &camera)
 
 	roles.push_back(StreamRole::VideoRecording);
 	std::unique_ptr<CameraConfiguration> config = camera->generateConfiguration(roles);
+	if (!config || config->size() != roles.size()) {
+		GST_ERROR("Failed to generate a default configuration for %s", name);
+		return nullptr;
+	}
 
 	for (const StreamConfiguration &stream_cfg : *config) {
 		GstCaps *sub_caps = gst_libcamera_stream_formats_to_caps(stream_cfg.formats());
@@ -189,8 +193,16 @@ gst_libcamera_provider_probe(GstDeviceProvider *provider)
 
 	for (const std::shared_ptr<Camera> &camera : cm->cameras()) {
 		GST_INFO_OBJECT(self, "Found camera '%s'", camera->id().c_str());
+
+		GstDevice *dev = gst_libcamera_device_new(camera);
+		if (!dev) {
+			GST_ERROR_OBJECT(self, "Failed to add camera '%s'",
+					 camera->id().c_str());
+			return nullptr;
+		}
+
 		devices = g_list_append(devices,
-					g_object_ref_sink(gst_libcamera_device_new(camera)));
+					g_object_ref_sink(dev));
 	}
 
 	return devices;

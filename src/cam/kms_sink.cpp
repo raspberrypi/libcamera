@@ -174,24 +174,33 @@ int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
 					crtc_ = crtc;
 					plane_ = plane;
 					format_ = format;
-					return 0;
+					break;
 				}
 
 				if (plane->supportsFormat(xFormat)) {
 					crtc_ = crtc;
 					plane_ = plane;
 					format_ = xFormat;
-					return 0;
+					break;
 				}
 			}
 		}
 	}
 
-	std::cerr
-		<< "Unable to find display pipeline for format "
-		<< format.toString() << std::endl;
+	if (!crtc_) {
+		std::cerr
+			<< "Unable to find display pipeline for format "
+			<< format.toString() << std::endl;
 
-	return -EPIPE;
+		return -EPIPE;
+	}
+
+	std::cout
+		<< "Using KMS plane " << plane_->id() << ", CRTC " << crtc_->id()
+		<< ", connector " << connector_->name()
+		<< " (" << connector_->id() << ")" << std::endl;
+
+	return 0;
 }
 
 int KMSSink::start()

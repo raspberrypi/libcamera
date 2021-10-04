@@ -90,6 +90,9 @@ for tracing with lttng: [optional]
 for android: [optional]
         libexif-dev libjpeg-dev libyaml-dev
 
+for lc-compliance: [optional]
+        libevent-dev libgtest-dev
+
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 

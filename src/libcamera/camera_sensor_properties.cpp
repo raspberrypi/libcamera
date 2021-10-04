@@ -38,9 +38,9 @@ LOG_DEFINE_CATEGORY(CameraSensorProperties)
  * \brief The physical size of a pixel, including pixel edges, in nanometers.
  *
  * \var CameraSensorProperties::testPatternModes
- * \brief Map that associates the indexes of the sensor test pattern modes as
- * returned by V4L2_CID_TEST_PATTERN with the corresponding TestPattern
- * control value
+ * \brief Map that associates the TestPattern control value with the indexes of
+ * the corresponding sensor test pattern modes as returned by
+ * V4L2_CID_TEST_PATTERN.
  */
 
 /**
@@ -55,11 +55,11 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "hi846", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeSolidColor },
-				{ 2, controls::draft::TestPatternModeColorBars },
-				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
-				{ 4, controls::draft::TestPatternModePn9 },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeSolidColor, 1 },
+				{ controls::draft::TestPatternModeColorBars, 2 },
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 3 },
+				{ controls::draft::TestPatternModePn9, 4 },
 				/*
 				 * No corresponding test pattern mode for:
 				 * 5: "Gradient Horizontal"
@@ -73,21 +73,21 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "imx219", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeColorBars },
-				{ 2, controls::draft::TestPatternModeSolidColor },
-				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
-				{ 4, controls::draft::TestPatternModePn9 },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1 },
+				{ controls::draft::TestPatternModeSolidColor, 2 },
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 3 },
+				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
 		{ "imx258", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeSolidColor },
-				{ 2, controls::draft::TestPatternModeColorBars },
-				{ 3, controls::draft::TestPatternModeColorBarsFadeToGray },
-				{ 4, controls::draft::TestPatternModePn9 },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeSolidColor, 1 },
+				{ controls::draft::TestPatternModeColorBars, 2 },
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 3 },
+				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
 		{ "ov5647", {
@@ -97,15 +97,15 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "ov5670", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeColorBars },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1 },
 			},
 		} },
 		{ "ov5693", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 2, controls::draft::TestPatternModeColorBars },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 2 },
 				/*
 				 * No corresponding test pattern mode for
 				 * 1: "Random data" and 3: "Colour Bars with
@@ -116,8 +116,8 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "ov8865", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 2, controls::draft::TestPatternModeColorBars },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 2 },
 				/*
 				 * No corresponding test pattern mode for:
 				 * 1: "Random data"
@@ -130,8 +130,8 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "ov13858", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes =  {
-				{ 0, controls::draft::TestPatternModeOff },
-				{ 1, controls::draft::TestPatternModeColorBars },
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1 },
 			},
 		} },
 	};

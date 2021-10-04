@@ -320,11 +320,22 @@ void CameraSensor::initTestPatternModes(
 		return;
 	}
 
+	/*
+	 * Create a map that associates the V4L2 control index to the test
+	 * pattern mode by reversing the testPatternModes map provided by the
+	 * camera sensor properties. This makes it easier to verify if the
+	 * control index is supported in the below for loop that creates the
+	 * list of supported test patterns.
+	 */
+	std::map<int32_t, int32_t> indexToTestPatternMode;
+	for (const auto &it : testPatternModes)
+		indexToTestPatternMode[it.second] = it.first;
+
 	for (const ControlValue &value : v4l2TestPattern->second.values()) {
 		const int32_t index = value.get<int32_t>();
 
-		const auto it = testPatternModes.find(index);
-		if (it == testPatternModes.end()) {
+		const auto it = indexToTestPatternMode.find(index);
+		if (it == indexToTestPatternMode.end()) {
 			LOG(CameraSensor, Debug)
 				<< "Test pattern mode " << index << " ignored";
 			continue;

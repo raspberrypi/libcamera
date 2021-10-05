@@ -18,6 +18,8 @@
 #include "main_window.h"
 #include "message_handler.h"
 
+using namespace libcamera;
+
 void signalHandler([[maybe_unused]] int signal)
 {
 	qInfo() << "Exiting";
@@ -66,7 +68,7 @@ int main(int argc, char **argv)
 	sa.sa_handler = &signalHandler;
 	sigaction(SIGINT, &sa, nullptr);
 
-	CameraManager *cm = new CameraManager();
+	CameraManager *cm = new libcamera::CameraManager();
 
 	ret = cm->start();
 	if (ret) {

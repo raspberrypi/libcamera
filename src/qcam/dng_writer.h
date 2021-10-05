@@ -15,15 +15,13 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
-using namespace libcamera;
-
 class DNGWriter
 {
 public:
-	static int write(const char *filename, const Camera *camera,
-			 const StreamConfiguration &config,
-			 const ControlList &metadata,
-			 const FrameBuffer *buffer, const void *data);
+	static int write(const char *filename, const libcamera::Camera *camera,
+			 const libcamera::StreamConfiguration &config,
+			 const libcamera::ControlList &metadata,
+			 const libcamera::FrameBuffer *buffer, const void *data);
 };
 
 #endif /* HAVE_TIFF */

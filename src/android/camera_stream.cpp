@@ -168,7 +168,7 @@ int CameraStream::process(const FrameBuffer &source,
 	 * separate thread.
 	 */
 	const StreamConfiguration &output = configuration();
-	CameraBuffer dest(*camera3Dest.buffer, formats::MJPEG, output.size,
+	CameraBuffer dest(*camera3Dest.buffer, output.pixelFormat, output.size,
 			  PROT_READ | PROT_WRITE);
 	if (!dest.isValid()) {
 		LOG(HAL, Error) << "Failed to map android blob buffer";

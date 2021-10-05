@@ -17,8 +17,6 @@
 
 #include <gst/gst.h>
 
-using namespace std;
-
 class GstreamerTest
 {
 public:

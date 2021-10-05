@@ -12,8 +12,6 @@
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 
-using namespace libcamera;
-
 class CameraTest
 {
 public:
@@ -21,8 +19,8 @@ public:
 	~CameraTest();
 
 protected:
-	CameraManager *cm_;
-	std::shared_ptr<Camera> camera_;
+	libcamera::CameraManager *cm_;
+	std::shared_ptr<libcamera::Camera> camera_;
 	int status_;
 };
 

@@ -20,6 +20,8 @@
 
 #include "v4l2_videodevice_test.h"
 
+using namespace libcamera;
+
 class BufferSharingTest : public V4L2VideoDeviceTest
 {
 public:

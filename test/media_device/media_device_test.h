@@ -14,8 +14,6 @@
 
 #include "test.h"
 
-using namespace libcamera;
-
 class MediaDeviceTest : public Test
 {
 public:
@@ -25,10 +23,10 @@ public:
 protected:
 	int init();
 
-	std::shared_ptr<MediaDevice> media_;
+	std::shared_ptr<libcamera::MediaDevice> media_;
 
 private:
-	std::unique_ptr<DeviceEnumerator> enumerator_;
+	std::unique_ptr<libcamera::DeviceEnumerator> enumerator_;
 };
 
 #endif /* __LIBCAMERA_MEDIADEVICE_TEST_H__ */

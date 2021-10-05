@@ -15,6 +15,8 @@
 
 #include "v4l2_videodevice_test.h"
 
+using namespace libcamera;
+
 class CaptureAsyncTest : public V4L2VideoDeviceTest
 {
 public:

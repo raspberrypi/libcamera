@@ -12,20 +12,18 @@
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
-using namespace libcamera;
-
 class BufferSource
 {
 public:
 	BufferSource();
 	~BufferSource();
 
-	int allocate(const StreamConfiguration &config);
-	const std::vector<std::unique_ptr<FrameBuffer>> &buffers();
+	int allocate(const libcamera::StreamConfiguration &config);
+	const std::vector<std::unique_ptr<libcamera::FrameBuffer>> &buffers();
 
 private:
-	std::shared_ptr<MediaDevice> media_;
-	std::vector<std::unique_ptr<FrameBuffer>> buffers_;
+	std::shared_ptr<libcamera::MediaDevice> media_;
+	std::vector<std::unique_ptr<libcamera::FrameBuffer>> buffers_;
 };
 
 #endif /* __LIBCAMERA_BUFFER_SOURCE_TEST_H__ */

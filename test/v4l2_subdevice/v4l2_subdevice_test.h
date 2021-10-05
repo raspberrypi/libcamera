@@ -16,8 +16,6 @@
 
 #include "test.h"
 
-using namespace libcamera;
-
 class V4L2SubdeviceTest : public Test
 {
 public:
@@ -30,9 +28,9 @@ protected:
 	int init() override;
 	void cleanup() override;
 
-	std::unique_ptr<DeviceEnumerator> enumerator_;
-	std::shared_ptr<MediaDevice> media_;
-	V4L2Subdevice *scaler_;
+	std::unique_ptr<libcamera::DeviceEnumerator> enumerator_;
+	std::shared_ptr<libcamera::MediaDevice> media_;
+	libcamera::V4L2Subdevice *scaler_;
 };
 
 #endif /* __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__ */

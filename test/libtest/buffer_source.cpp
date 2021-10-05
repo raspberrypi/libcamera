@@ -14,6 +14,8 @@
 
 #include "test.h"
 
+using namespace libcamera;
+
 BufferSource::BufferSource()
 {
 }

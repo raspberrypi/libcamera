@@ -24,8 +24,6 @@
 
 namespace RPiController {
 
-using namespace std::literals::chrono_literals;
-
 struct AgcMeteringMode {
 	double weights[AGC_STATS_SIZE];
 	void Read(boost::property_tree::ptree const &params);
@@ -112,8 +110,8 @@ private:
 	uint64_t frame_count_;
 	AwbStatus awb_;
 	struct ExposureValues {
-		ExposureValues() : shutter(0s), analogue_gain(0),
-				   total_exposure(0s), total_exposure_no_dg(0s) {}
+		ExposureValues();
+
 		libcamera::utils::Duration shutter;
 		double analogue_gain;
 		libcamera::utils::Duration total_exposure;

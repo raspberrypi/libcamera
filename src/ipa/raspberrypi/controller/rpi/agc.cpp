@@ -22,6 +22,7 @@
 using namespace RPiController;
 using namespace libcamera;
 using libcamera::utils::Duration;
+using namespace std::literals::chrono_literals;
 
 LOG_DEFINE_CATEGORY(RPiAgc)
 
@@ -157,6 +158,12 @@ void AgcConfig::Read(boost::property_tree::ptree const &params)
 	// Start with quite a low value as ramping up is easier than ramping down.
 	default_exposure_time = params.get<double>("default_exposure_time", 1000) * 1us;
 	default_analogue_gain = params.get<double>("default_analogue_gain", 1.0);
+}
+
+Agc::ExposureValues::ExposureValues()
+	: shutter(0s), analogue_gain(0),
+	  total_exposure(0s), total_exposure_no_dg(0s)
+{
 }
 
 Agc::Agc(Controller *controller)

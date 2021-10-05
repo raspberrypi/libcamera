@@ -11,8 +11,6 @@
 
 #include "options.h"
 
-using namespace libcamera;
-
 class StreamKeyValueParser : public KeyValueParser
 {
 public:
@@ -20,12 +18,12 @@ public:
 
 	KeyValueParser::Options parse(const char *arguments) override;
 
-	static StreamRoles roles(const OptionValue &values);
-	static int updateConfiguration(CameraConfiguration *config,
+	static libcamera::StreamRoles roles(const OptionValue &values);
+	static int updateConfiguration(libcamera::CameraConfiguration *config,
 				       const OptionValue &values);
 
 private:
-	static bool parseRole(StreamRole *role,
+	static bool parseRole(libcamera::StreamRole *role,
 			      const KeyValueParser::Options &options);
 };
 

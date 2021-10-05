@@ -18,8 +18,6 @@
 
 #include "v4l2_camera_proxy.h"
 
-using namespace libcamera;
-
 class V4L2CompatManager
 {
 public:
@@ -64,7 +62,7 @@ private:
 
 	FileOperations fops_;
 
-	CameraManager *cm_;
+	libcamera::CameraManager *cm_;
 
 	std::vector<std::unique_ptr<V4L2CameraProxy>> proxies_;
 	std::map<int, std::shared_ptr<V4L2CameraFile>> files_;

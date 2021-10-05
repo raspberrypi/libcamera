@@ -19,14 +19,12 @@
 
 #include "v4l2_camera.h"
 
-using namespace libcamera;
-
 class V4L2CameraFile;
 
 class V4L2CameraProxy
 {
 public:
-	V4L2CameraProxy(unsigned int index, std::shared_ptr<Camera> camera);
+	V4L2CameraProxy(unsigned int index, std::shared_ptr<libcamera::Camera> camera);
 
 	int open(V4L2CameraFile *file);
 	void close(V4L2CameraFile *file);
@@ -38,8 +36,8 @@ public:
 private:
 	bool validateBufferType(uint32_t type);
 	bool validateMemoryType(uint32_t memory);
-	void setFmtFromConfig(const StreamConfiguration &streamConfig);
-	void querycap(std::shared_ptr<Camera> camera);
+	void setFmtFromConfig(const libcamera::StreamConfiguration &streamConfig);
+	void querycap(std::shared_ptr<libcamera::Camera> camera);
 	int tryFormat(struct v4l2_format *arg);
 	enum v4l2_priority maxPriority();
 	void updateBuffers();
@@ -59,7 +57,8 @@ private:
 	int vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg);
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
-	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg, MutexLocker *locker);
+	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
+			 libcamera::MutexLocker *locker);
 	int vidioc_streamon(V4L2CameraFile *file, int *arg);
 	int vidioc_streamoff(V4L2CameraFile *file, int *arg);
 
@@ -72,7 +71,7 @@ private:
 	unsigned int refcount_;
 	unsigned int index_;
 
-	StreamConfiguration streamConfig_;
+	libcamera::StreamConfiguration streamConfig_;
 	unsigned int bufferCount_;
 	unsigned int currentBuf_;
 	unsigned int sizeimage_;
@@ -99,7 +98,7 @@ private:
 	V4L2CameraFile *owner_;
 
 	/* This mutex is to serialize access to the proxy. */
-	Mutex proxyMutex_;
+	libcamera::Mutex proxyMutex_;
 };
 
 #endif /* __V4L2_CAMERA_PROXY_H__ */

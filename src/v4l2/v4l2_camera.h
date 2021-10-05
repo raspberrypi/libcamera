@@ -19,41 +19,40 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
 
-using namespace libcamera;
-
 class V4L2Camera
 {
 public:
 	struct Buffer {
-		Buffer(unsigned int index, const FrameMetadata &data)
+		Buffer(unsigned int index, const libcamera::FrameMetadata &data)
 			: index_(index), data_(data)
 		{
 		}
 
 		unsigned int index_;
-		FrameMetadata data_;
+		libcamera::FrameMetadata data_;
 	};
 
-	V4L2Camera(std::shared_ptr<Camera> camera);
+	V4L2Camera(std::shared_ptr<libcamera::Camera> camera);
 	~V4L2Camera();
 
-	int open(StreamConfiguration *streamConfig);
+	int open(libcamera::StreamConfiguration *streamConfig);
 	void close();
 	void bind(int efd);
 	void unbind();
 
 	std::vector<Buffer> completedBuffers();
 
-	int configure(StreamConfiguration *streamConfigOut,
-		      const Size &size, const PixelFormat &pixelformat,
+	int configure(libcamera::StreamConfiguration *streamConfigOut,
+		      const libcamera::Size &size,
+		      const libcamera::PixelFormat &pixelformat,
 		      unsigned int bufferCount);
-	int validateConfiguration(const PixelFormat &pixelformat,
-				  const Size &size,
-				  StreamConfiguration *streamConfigOut);
+	int validateConfiguration(const libcamera::PixelFormat &pixelformat,
+				  const libcamera::Size &size,
+				  libcamera::StreamConfiguration *streamConfigOut);
 
 	int allocBuffers(unsigned int count);
 	void freeBuffers();
-	FileDescriptor getBufferFd(unsigned int index);
+	libcamera::FileDescriptor getBufferFd(unsigned int index);
 
 	int streamOn();
 	int streamOff();
@@ -66,24 +65,24 @@ public:
 	bool isRunning();
 
 private:
-	void requestComplete(Request *request);
+	void requestComplete(libcamera::Request *request);
 
-	std::shared_ptr<Camera> camera_;
-	std::unique_ptr<CameraConfiguration> config_;
+	std::shared_ptr<libcamera::Camera> camera_;
+	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
 	bool isRunning_;
 
 	std::mutex bufferLock_;
-	FrameBufferAllocator *bufferAllocator_;
+	libcamera::FrameBufferAllocator *bufferAllocator_;
 
-	std::vector<std::unique_ptr<Request>> requestPool_;
+	std::vector<std::unique_ptr<libcamera::Request>> requestPool_;
 
-	std::deque<Request *> pendingRequests_;
+	std::deque<libcamera::Request *> pendingRequests_;
 	std::deque<std::unique_ptr<Buffer>> completedBuffers_;
 
 	int efd_;
 
-	Mutex bufferMutex_;
+	libcamera::Mutex bufferMutex_;
 	std::condition_variable bufferCV_;
 	unsigned int bufferAvailableCount_;
 };

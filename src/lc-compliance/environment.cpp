@@ -7,6 +7,8 @@
 
 #include "environment.h"
 
+using namespace libcamera;
+
 Environment *Environment::get()
 {
 	static Environment instance;

@@ -825,7 +825,8 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 
 	/* Start the IPA. */
 	ipa::RPi::StartConfig startConfig;
-	data->ipa_->start(controls ? *controls : ControlList{}, &startConfig);
+	data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
+			  &startConfig);
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
 	if (!startConfig.controls.empty())

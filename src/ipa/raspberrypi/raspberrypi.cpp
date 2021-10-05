@@ -389,20 +389,25 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	/* Pass the camera mode to the CamHelper to setup algorithms. */
 	helper_->SetCameraMode(mode_);
 
+	/*
+	 * Initialise this ControlList correctly, even if empty, in case the IPA is
+	 * running is isolation mode (passing the ControlList through the IPC layer).
+	 */
+	ControlList ctrls(sensorCtrls_);
+
 	if (firstStart_) {
 		/* Supply initial values for frame durations. */
 		applyFrameDurations(defaultMinFrameDuration, defaultMaxFrameDuration);
 
 		/* Supply initial values for gain and exposure. */
-		ControlList ctrls(sensorCtrls_);
 		AgcStatus agcStatus;
 		agcStatus.shutter_time = defaultExposureTime;
 		agcStatus.analogue_gain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
-
-		ASSERT(controls);
-		*controls = std::move(ctrls);
 	}
+
+	ASSERT(controls);
+	*controls = std::move(ctrls);
 
 	return 0;
 }

@@ -19,6 +19,18 @@ LOG_DEFINE_CATEGORY(IPU3Awb)
 
 static constexpr uint32_t kMinGreenLevelInZone = 32;
 
+/*
+ * Minimum proportion of non-saturated cells in a zone for the zone to be used
+ * by the AWB algorithm.
+ */
+static constexpr double kMaxCellSaturationRatio = 0.8;
+
+/*
+ * Maximum ratio of saturated pixels in a cell for the cell to be considered
+ * non-saturated and counted by the AWB algorithm.
+ */
+static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 90 / 100;
+
 /**
  * \struct Accumulator
  * \brief RGB statistics for a given zone
@@ -160,7 +172,8 @@ int Awb::configure(IPAContext &context,
 	 * for it to be relevant for the grey world algorithm.
 	 * \todo This proportion could be configured.
 	 */
-	cellsPerZoneThreshold_ = cellsPerZoneX_ * cellsPerZoneY_ * 80 / 100;
+	cellsPerZoneThreshold_ = cellsPerZoneX_ * cellsPerZoneY_ * kMaxCellSaturationRatio;
+	LOG(IPU3Awb, Debug) << "Threshold for AWB is set to " << cellsPerZoneThreshold_;
 
 	return 0;
 }
@@ -234,7 +247,18 @@ void Awb::generateAwbStats(const ipu3_uapi_stats_3a *stats)
 				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
-			if (currentCell->sat_ratio == 0) {
+
+			/*
+			 * Use cells which have less than 90%
+			 * saturation as an initial means to include
+			 * otherwise bright cells which are not fully
+			 * saturated.
+			 *
+			 * \todo The 90% saturation rate may require
+			 * further empirical measurements and
+			 * optimisation during camera tuning phases.
+			 */
+			if (currentCell->sat_ratio <= kMinCellsPerZoneRatio) {
 				/* The cell is not saturated, use the current cell */
 				awbStats_[awbZonePosition].counted++;
 				uint32_t greenValue = currentCell->Gr_avg + currentCell->Gb_avg;

@@ -98,6 +98,23 @@
  */
 
 /**
+ * \struct IPASessionConfiguration::agc
+ * \brief AGC parameters configuration of the IPA
+ *
+ * \var IPASessionConfiguration::agc::minShutterSpeed
+ * \brief Minimum shutter speed supported with the configured sensor
+ *
+ * \var IPASessionConfiguration::grid::maxShutterSpeed
+ * \brief Maximum shutter speed supported with the configured sensor
+ *
+ * \var IPASessionConfiguration::grid::minAnalogueGain
+ * \brief Minimum analogue gain supported with the configured sensor
+ *
+ * \var IPASessionConfiguration::grid::maxAnalogueGain
+ * \brief Maximum analogue gain supported with the configured sensor
+ */
+
+/**
  * \struct IPAFrameContext::agc
  * \brief Context for the Automatic Gain Control algorithm
  *
@@ -158,6 +175,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAIPU3)
 
+using namespace std::literals::chrono_literals;
+
 namespace ipa::ipu3 {
 
 class IPAIPU3 : public IPAIPU3Interface
@@ -182,6 +201,8 @@ private:
 	void updateControls(const IPACameraSensorInfo &sensorInfo,
 			    const ControlInfoMap &sensorControls,
 			    ControlInfoMap *ipaControls);
+	void updateSessionConfiguration(const IPACameraSensorInfo &sensorInfo,
+					const ControlInfoMap &sensorControls);
 	void processControls(unsigned int frame, const ControlList &controls);
 	void fillParams(unsigned int frame, ipu3_uapi_params *params);
 	void parseStatistics(unsigned int frame,
@@ -216,6 +237,36 @@ private:
 	struct IPAContext context_;
 };
 
+/*
+ * Compute IPASessionConfiguration using the sensor information and the sensor
+ * v4l2 controls.
+ */
+void IPAIPU3::updateSessionConfiguration(const IPACameraSensorInfo &sensorInfo,
+					 const ControlInfoMap &sensorControls)
+{
+	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
+
+	utils::Duration lineDuration = sensorInfo.lineLength * 1.0s
+				     / sensorInfo.pixelRate;
+
+	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
+	int32_t minGain = v4l2Gain.min().get<int32_t>();
+	int32_t maxGain = v4l2Gain.max().get<int32_t>();
+
+	/*
+	 * When the AGC computes the new exposure values for a frame, it needs
+	 * to know the limits for shutter speed and analogue gain.
+	 * As it depends on the sensor, update it with the controls.
+	 *
+	 * \todo take VBLANK into account for maximum shutter speed
+	 */
+	context_.configuration.agc.minShutterSpeed = minExposure * lineDuration;
+	context_.configuration.agc.maxShutterSpeed = maxExposure * lineDuration;
+	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
+	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
+}
 
 /*
  * Compute camera controls using the sensor information and the sensor
@@ -436,14 +487,17 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
+	/* Update the camera controls using the new sensor settings. */
+	updateControls(sensorInfo_, ctrls_, ipaControls);
+
+	/* Update the IPASessionConfiguration using the sensor settings. */
+	updateSessionConfiguration(sensorInfo_, ctrls_);
+
 	for (auto const &algo : algorithms_) {
 		int ret = algo->configure(context_, configInfo);
 		if (ret)
 			return ret;
 	}
-
-	/* Update the camera controls using the new sensor settings. */
-	updateControls(sensorInfo_, ctrls_, ipaControls);
 
 	return 0;
 }
@@ -542,10 +596,6 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 			      [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	ControlList ctrls(controls::controls);
-
-	/* \todo These fields should not be written by the IPAIPU3 layer */
-	context_.frameContext.agc.gain = camHelper_->gain(gain_);
-	context_.frameContext.agc.exposure = exposure_;
 
 	for (auto const &algo : algorithms_)
 		algo->process(context_, stats);

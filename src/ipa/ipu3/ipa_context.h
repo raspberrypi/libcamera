@@ -10,6 +10,8 @@
 
 #include <linux/intel-ipu3.h>
 
+#include <libcamera/base/utils.h>
+
 #include <libcamera/geometry.h>
 
 namespace libcamera {
@@ -22,6 +24,13 @@ struct IPASessionConfiguration {
 		Size bdsOutputSize;
 		uint32_t stride;
 	} grid;
+
+	struct {
+		utils::Duration minShutterSpeed;
+		utils::Duration maxShutterSpeed;
+		double minAnalogueGain;
+		double maxAnalogueGain;
+	} agc;
 };
 
 struct IPAFrameContext {

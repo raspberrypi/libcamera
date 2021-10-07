@@ -60,7 +60,13 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 
 	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
 		      / configInfo.sensorInfo.pixelRate;
-	maxExposureTime_ = kMaxExposure * lineDuration_;
+	maxExposureTime_ = context.configuration.agc.maxShutterSpeed;
+
+	/* Configure the default exposure and gain. */
+	context.frameContext.agc.gain =
+		context.configuration.agc.minAnalogueGain;
+	context.frameContext.agc.exposure =
+		context.configuration.agc.minShutterSpeed / lineDuration_;
 
 	return 0;
 }

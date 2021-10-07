@@ -60,6 +60,11 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 	  registered_(false)
 {
 	bufferManager_ = cros::CameraBufferManager::GetInstance();
+	if (!bufferManager_) {
+		LOG(HAL, Fatal)
+			<< "Failed to get cros CameraBufferManager instance";
+		return;
+	}
 
 	int ret = bufferManager_->Register(camera3Buffer);
 	if (ret) {

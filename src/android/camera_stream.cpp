@@ -171,7 +171,7 @@ int CameraStream::process(const FrameBuffer &source,
 	CameraBuffer dest(*camera3Dest.buffer, output.pixelFormat, output.size,
 			  PROT_READ | PROT_WRITE);
 	if (!dest.isValid()) {
-		LOG(HAL, Error) << "Failed to map android blob buffer";
+		LOG(HAL, Error) << "Failed to create destination buffer";
 		return -EINVAL;
 	}
 

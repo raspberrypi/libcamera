@@ -17,7 +17,14 @@ namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Awb)
 
-static constexpr uint32_t kMinGreenLevelInZone = 32;
+/*
+ * When zones are used for the grey world algorithm, they are only considered if
+ * their average green value is at least 16/255 (after black level subtraction)
+ * to exclude zones that are too dark and don't provide relevant colour
+ * information (on the opposite side of the spectrum, saturated regions are
+ * excluded by the ImgU statistics engine).
+ */
+static constexpr uint32_t kMinGreenLevelInZone = 16;
 
 /*
  * Minimum proportion of non-saturated cells in a zone for the zone to be used

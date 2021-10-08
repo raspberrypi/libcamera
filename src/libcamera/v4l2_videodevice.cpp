@@ -1713,19 +1713,25 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 
 		unsigned int bytesused = multiPlanar ? planes[0].bytesused
 				       : buf.bytesused;
+		unsigned int remaining = bytesused;
 
 		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
-			if (!bytesused) {
+			if (!remaining) {
 				LOG(V4L2, Error)
-					<< "Dequeued buffer is too small";
+					<< "Dequeued buffer (" << bytesused
+					<< " bytes) too small for plane lengths "
+					<< utils::join(buffer->planes(), "/",
+						       [](const FrameBuffer::Plane &p) {
+							       return p.length;
+						       });
 
 				metadata.status = FrameMetadata::FrameError;
 				return buffer;
 			}
 
 			metadata.planes()[i].bytesused =
-				std::min(plane.length, bytesused);
-			bytesused -= metadata.planes()[i].bytesused;
+				std::min(plane.length, remaining);
+			remaining -= metadata.planes()[i].bytesused;
 		}
 	} else if (multiPlanar) {
 		/*

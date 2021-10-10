@@ -124,6 +124,11 @@ if desired with a pipeline such as:
   gst-launch-1.0 libcamerasrc ! 'video/x-raw,width=1280,height=720' ! \
         glimagesink
 
+The libcamerasrc element has two log categories, named libcamera-provider (for
+the video device provider) and libcamerasrc (for the operation of the camera).
+All corresponding debug messages can be enabled by setting the ``GST_DEBUG``
+environment variable to ``libcamera*:7``.
+
 .. section-end-getting-started
 
 Troubleshooting

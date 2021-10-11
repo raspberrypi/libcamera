@@ -30,7 +30,7 @@ struct StreamConfiguration;
 class CIO2Device
 {
 public:
-	static constexpr unsigned int CIO2_BUFFER_COUNT = 4;
+	static constexpr unsigned int kBufferCount = 4;
 
 	CIO2Device();
 

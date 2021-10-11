@@ -39,10 +39,6 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPU3)
 
-static constexpr unsigned int IPU3_BUFFER_COUNT = 4;
-static constexpr unsigned int IPU3_MAX_STREAMS = 3;
-static constexpr Size IPU3ViewfinderSize(1280, 720);
-
 static const ControlInfoMap::Map IPU3Controls = {
 	{ &controls::draft::PipelineDepth, ControlInfo(2, 3) },
 };
@@ -93,6 +89,9 @@ private:
 class IPU3CameraConfiguration : public CameraConfiguration
 {
 public:
+	static constexpr unsigned int kBufferCount = 4;
+	static constexpr unsigned int kMaxStreams = 3;
+
 	IPU3CameraConfiguration(IPU3CameraData *data);
 
 	Status validate() override;
@@ -119,6 +118,7 @@ class PipelineHandlerIPU3 : public PipelineHandler
 {
 public:
 	static constexpr unsigned int V4L2_CID_IPU3_PIPE_MODE = 0x009819c1;
+	static constexpr Size kViewfinderSize{ 1280, 720 };
 
 	enum IPU3PipeModes {
 		IPU3PipeModeVideo = 0,
@@ -218,8 +218,8 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	combinedTransform_ = combined;
 
 	/* Cap the number of entries to the available streams. */
-	if (config_.size() > IPU3_MAX_STREAMS) {
-		config_.resize(IPU3_MAX_STREAMS);
+	if (config_.size() > kMaxStreams) {
+		config_.resize(kMaxStreams);
 		status = Adjusted;
 	}
 
@@ -356,7 +356,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 					      ImgUDevice::kOutputAlignHeight);
 
 			cfg->pixelFormat = formats::NV12;
-			cfg->bufferCount = IPU3_BUFFER_COUNT;
+			cfg->bufferCount = kBufferCount;
 			cfg->stride = info.stride(cfg->size.width, 0, 1);
 			cfg->frameSize = info.frameSize(cfg->size, 1);
 
@@ -444,7 +444,7 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 					       .alignedDownTo(ImgUDevice::kOutputMarginWidth,
 							      ImgUDevice::kOutputMarginHeight);
 			pixelFormat = formats::NV12;
-			bufferCount = IPU3_BUFFER_COUNT;
+			bufferCount = IPU3CameraConfiguration::kBufferCount;
 			streamFormats[pixelFormat] = { { ImgUDevice::kOutputMinSize, size } };
 
 			break;
@@ -469,11 +469,11 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * capped to the maximum sensor resolution and aligned
 			 * to the ImgU output constraints.
 			 */
-			size = sensorResolution.boundedTo(IPU3ViewfinderSize)
+			size = sensorResolution.boundedTo(kViewfinderSize)
 					       .alignedDownTo(ImgUDevice::kOutputAlignWidth,
 							      ImgUDevice::kOutputAlignHeight);
 			pixelFormat = formats::NV12;
-			bufferCount = IPU3_BUFFER_COUNT;
+			bufferCount = IPU3CameraConfiguration::kBufferCount;
 			streamFormats[pixelFormat] = { { ImgUDevice::kOutputMinSize, size } };
 
 			break;
@@ -1004,10 +1004,10 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	 * Either the smallest margin-aligned size larger than the viewfinder
 	 * size or the adjusted sensor resolution.
 	 */
-	minSize = IPU3ViewfinderSize.grownBy({ 1, 1 })
-				    .alignedUpTo(ImgUDevice::kOutputMarginWidth,
-						 ImgUDevice::kOutputMarginHeight)
-				    .boundedTo(minSize);
+	minSize = kViewfinderSize.grownBy({ 1, 1 })
+				 .alignedUpTo(ImgUDevice::kOutputMarginWidth,
+					      ImgUDevice::kOutputMarginHeight)
+				 .boundedTo(minSize);
 
 	/*
 	 * Re-scale in the sensor's native coordinates. Report (0,0) as

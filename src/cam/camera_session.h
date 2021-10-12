@@ -60,7 +60,7 @@ private:
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 
-	std::map<const libcamera::Stream *, std::string> streamName_;
+	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::unique_ptr<FrameSink> sink_;
 	unsigned int cameraIndex_;
 

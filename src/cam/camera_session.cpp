@@ -177,11 +177,11 @@ int CameraSession::start()
 		return ret;
 	}
 
-	streamName_.clear();
+	streamNames_.clear();
 	for (unsigned int index = 0; index < config_->size(); ++index) {
 		StreamConfiguration &cfg = config_->at(index);
-		streamName_[cfg.stream()] = "cam" + std::to_string(cameraIndex_)
-					  + "-stream" + std::to_string(index);
+		streamNames_[cfg.stream()] = "cam" + std::to_string(cameraIndex_)
+					   + "-stream" + std::to_string(index);
 	}
 
 	camera_->requestCompleted.connect(this, &CameraSession::requestComplete);
@@ -369,7 +369,7 @@ void CameraSession::processRequest(Request *request)
 
 		const FrameMetadata &metadata = buffer->metadata();
 
-		info << " " << streamName_[stream]
+		info << " " << streamNames_[stream]
 		     << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
 		     << " bytesused: ";
 

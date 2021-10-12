@@ -42,8 +42,7 @@ static constexpr double kEvGainTarget = 0.5;
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
 	  minExposureLines_(0), maxExposureLines_(0), filteredExposure_(0s),
-	  filteredExposureNoDg_(0s), currentExposure_(0s),
-	  currentExposureNoDg_(0s), prevExposureValue_(0s)
+	  currentExposure_(0s), prevExposureValue_(0s)
 {
 }
 
@@ -102,7 +101,6 @@ void Agc::filterExposure()
 	if (filteredExposure_ == 0s) {
 		/* DG stands for digital gain.*/
 		filteredExposure_ = currentExposure_;
-		filteredExposureNoDg_ = currentExposureNoDg_;
 	} else {
 		/*
 		 * If we are close to the desired result, go faster to avoid making
@@ -115,18 +113,8 @@ void Agc::filterExposure()
 
 		filteredExposure_ = speed * currentExposure_ +
 				filteredExposure_ * (1.0 - speed);
-		filteredExposureNoDg_ = speed * currentExposureNoDg_ +
-				filteredExposureNoDg_ * (1.0 - speed);
 	}
-	/*
-	 * We can't let the no_dg exposure deviate too far below the
-	 * total exposure, as there might not be enough digital gain available
-	 * in the ISP to hide it (which will cause nasty oscillation).
-	 */
-	double fastReduceThreshold = 0.4;
-	if (filteredExposureNoDg_ <
-	    filteredExposure_ * fastReduceThreshold)
-		filteredExposureNoDg_ = filteredExposure_ * fastReduceThreshold;
+
 	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << filteredExposure_;
 }
 
@@ -151,8 +139,7 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 
 	/* extracted from Rpi::Agc::computeTargetExposure */
 	utils::Duration currentShutter = exposure * lineDuration_;
-	currentExposureNoDg_ = currentShutter * analogueGain;
-	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
+	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentShutter * analogueGain
 			    << " Shutter speed " << currentShutter
 			    << " Gain " << analogueGain
 			    << " Needed ev gain " << evGain;

@@ -49,7 +49,7 @@ static constexpr double kEvGainTarget = 0.5;
 
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
-	  maxExposureTime_(0s), prevExposure_(0s), prevExposureNoDg_(0s),
+	  maxExposureTime_(0s), filteredExposure_(0s), filteredExposureNoDg_(0s),
 	  currentExposure_(0s), currentExposureNoDg_(0s)
 {
 }
@@ -100,24 +100,24 @@ void Agc::processBrightness(const ipu3_uapi_stats_3a *stats,
 void Agc::filterExposure()
 {
 	double speed = 0.2;
-	if (prevExposure_ == 0s) {
+	if (filteredExposure_ == 0s) {
 		/* DG stands for digital gain.*/
-		prevExposure_ = currentExposure_;
-		prevExposureNoDg_ = currentExposureNoDg_;
+		filteredExposure_ = currentExposure_;
+		filteredExposureNoDg_ = currentExposureNoDg_;
 	} else {
 		/*
 		 * If we are close to the desired result, go faster to avoid making
 		 * multiple micro-adjustments.
 		 * \ todo: Make this customisable?
 		 */
-		if (prevExposure_ < 1.2 * currentExposure_ &&
-		    prevExposure_ > 0.8 * currentExposure_)
+		if (filteredExposure_ < 1.2 * currentExposure_ &&
+		    filteredExposure_ > 0.8 * currentExposure_)
 			speed = sqrt(speed);
 
-		prevExposure_ = speed * currentExposure_ +
-				prevExposure_ * (1.0 - speed);
-		prevExposureNoDg_ = speed * currentExposureNoDg_ +
-				prevExposureNoDg_ * (1.0 - speed);
+		filteredExposure_ = speed * currentExposure_ +
+				filteredExposure_ * (1.0 - speed);
+		filteredExposureNoDg_ = speed * currentExposureNoDg_ +
+				filteredExposureNoDg_ * (1.0 - speed);
 	}
 	/*
 	 * We can't let the no_dg exposure deviate too far below the
@@ -125,10 +125,10 @@ void Agc::filterExposure()
 	 * in the ISP to hide it (which will cause nasty oscillation).
 	 */
 	double fastReduceThreshold = 0.4;
-	if (prevExposureNoDg_ <
-	    prevExposure_ * fastReduceThreshold)
-		prevExposureNoDg_ = prevExposure_ * fastReduceThreshold;
-	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << prevExposure_;
+	if (filteredExposureNoDg_ <
+	    filteredExposure_ * fastReduceThreshold)
+		filteredExposureNoDg_ = filteredExposure_ * fastReduceThreshold;
+	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << filteredExposure_;
 }
 
 void Agc::lockExposureGain(uint32_t &exposure, double &gain)

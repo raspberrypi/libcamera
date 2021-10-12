@@ -44,8 +44,8 @@ private:
 	utils::Duration lineDuration_;
 	utils::Duration maxExposureTime_;
 
-	utils::Duration prevExposure_;
-	utils::Duration prevExposureNoDg_;
+	utils::Duration filteredExposure_;
+	utils::Duration filteredExposureNoDg_;
 	utils::Duration currentExposure_;
 	utils::Duration currentExposureNoDg_;
 

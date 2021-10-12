@@ -42,7 +42,8 @@ private:
 	double iqMean_;
 
 	utils::Duration lineDuration_;
-	utils::Duration maxExposureTime_;
+	uint32_t minExposureLines_;
+	uint32_t maxExposureLines_;
 
 	utils::Duration filteredExposure_;
 	utils::Duration filteredExposureNoDg_;

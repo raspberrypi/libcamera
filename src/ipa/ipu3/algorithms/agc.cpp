@@ -39,18 +39,14 @@ static constexpr uint32_t kMaxISO = 1500;
 static constexpr uint32_t kMinGain = kMinISO / 100;
 static constexpr uint32_t kMaxGain = kMaxISO / 100;
 
-/* \todo use calculated value based on sensor */
-static constexpr uint32_t kMinExposure = 1;
-static constexpr uint32_t kMaxExposure = 1976;
-
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
 static constexpr double kEvGainTarget = 0.5;
 
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
-	  maxExposureTime_(0s), filteredExposure_(0s), filteredExposureNoDg_(0s),
-	  currentExposure_(0s), currentExposureNoDg_(0s)
+	  minExposureLines_(0), maxExposureLines_(0), filteredExposure_(0s),
+	  filteredExposureNoDg_(0s), currentExposure_(0s), currentExposureNoDg_(0s)
 {
 }
 
@@ -60,13 +56,15 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 
 	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
 		      / configInfo.sensorInfo.pixelRate;
-	maxExposureTime_ = context.configuration.agc.maxShutterSpeed;
+
+	/* \todo replace the exposure in lines storage with time based ones. */
+	minExposureLines_ = context.configuration.agc.minShutterSpeed / lineDuration_;
+	maxExposureLines_ = context.configuration.agc.maxShutterSpeed / lineDuration_;
 
 	/* Configure the default exposure and gain. */
 	context.frameContext.agc.gain =
 		context.configuration.agc.minAnalogueGain;
-	context.frameContext.agc.exposure =
-		context.configuration.agc.minShutterSpeed / lineDuration_;
+	context.frameContext.agc.exposure = minExposureLines_;
 
 	return 0;
 }
@@ -151,23 +149,30 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
 				    << " Shutter speed " << currentShutter
 				    << " Gain " << gain;
+
 		currentExposure_ = currentExposureNoDg_ * newGain;
-		utils::Duration maxTotalExposure = maxExposureTime_ * kMaxGain;
+		utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
+		utils::Duration maxTotalExposure = maxShutterSpeed * kMaxGain;
 		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
-		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_;
+		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
+				    << ", maximum is " << maxTotalExposure;
 
 		/* \todo: estimate if we need to desaturate */
 		filterExposure();
 
 		utils::Duration newExposure = 0.0s;
-		if (currentShutter < maxExposureTime_) {
-			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_), kMinExposure, kMaxExposure);
+		if (currentShutter < maxShutterSpeed) {
+			exposure = std::clamp<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_,
+							minExposureLines_,
+							maxExposureLines_);
 			newExposure = currentExposure_ / exposure;
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / newExposure), kMinGain, kMaxGain);
-		} else if (currentShutter >= maxExposureTime_) {
+		} else {
 			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / currentExposureNoDg_), kMinGain, kMaxGain);
 			newExposure = currentExposure_ / gain;
-			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / newExposure), kMinExposure, kMaxExposure);
+			exposure = std::clamp<uint32_t>(exposure * currentExposure_ / newExposure,
+							minExposureLines_,
+							maxExposureLines_);
 		}
 		LOG(IPU3Agc, Debug) << "Adjust exposure " << exposure * lineDuration_ << " and gain " << gain;
 	}

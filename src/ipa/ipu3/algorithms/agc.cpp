@@ -138,61 +138,64 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 	if ((frameCount_ < kInitialFrameMinAECount) || (frameCount_ - lastFrame_ < kFrameSkipCount))
 		return;
 
+	lastFrame_ = frameCount_;
+
 	/* Are we correctly exposed ? */
 	if (std::abs(iqMean_ - kEvGainTarget * knumHistogramBins) <= 1) {
-		LOG(IPU3Agc, Debug) << "!!! Good exposure with iqMean = " << iqMean_;
-	} else {
-		double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
-
-		/* extracted from Rpi::Agc::computeTargetExposure */
-		utils::Duration currentShutter = exposure * lineDuration_;
-		currentExposureNoDg_ = currentShutter * analogueGain;
-		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
-				    << " Shutter speed " << currentShutter
-				    << " Gain " << analogueGain
-				    << " Needed ev gain " << evGain;
-
-		currentExposure_ = prevExposureValue_ * evGain;
-		utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
-		utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
-
-		utils::Duration maxTotalExposure = maxShutterSpeed * kMaxGain;
-		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
-		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
-				    << ", maximum is " << maxTotalExposure;
-
-		/* \todo: estimate if we need to desaturate */
-		filterExposure();
-
-		utils::Duration exposureValue = filteredExposure_;
-		utils::Duration shutterTime = minShutterSpeed;
-
-		/*
-		 * Push the shutter time up to the maximum first, and only then
-		 * increase the gain.
-		 */
-		shutterTime = std::clamp<utils::Duration>(exposureValue / kMinGain,
-							  minShutterSpeed, maxShutterSpeed);
-		double stepGain = std::clamp(exposureValue / shutterTime,
-					     kMinGain, kMaxGain);
-		LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "
-				    << shutterTime << " and "
-				    << stepGain;
-
-		exposure = shutterTime / lineDuration_;
-		analogueGain = stepGain;
-
-		/*
-		 * Update the exposure value for the next process call.
-		 *
-		 * \todo Obtain the values of the exposure time and analog gain
-		 * that were actually used by the sensor, either from embedded
-		 * data when available, or from the delayed controls
-		 * infrastructure in case a slow down caused a mismatch.
-		 */
-		prevExposureValue_ = shutterTime * analogueGain;
+		LOG(IPU3Agc, Debug) << "We are well exposed (iqMean = "
+				    << iqMean_ << ")";
+		return;
 	}
-	lastFrame_ = frameCount_;
+
+	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
+
+	/* extracted from Rpi::Agc::computeTargetExposure */
+	utils::Duration currentShutter = exposure * lineDuration_;
+	currentExposureNoDg_ = currentShutter * analogueGain;
+	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
+			    << " Shutter speed " << currentShutter
+			    << " Gain " << analogueGain
+			    << " Needed ev gain " << evGain;
+
+	currentExposure_ = prevExposureValue_ * evGain;
+	utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
+	utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
+
+	utils::Duration maxTotalExposure = maxShutterSpeed * kMaxGain;
+	currentExposure_ = std::min(currentExposure_, maxTotalExposure);
+	LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
+			    << ", maximum is " << maxTotalExposure;
+
+	/* \todo: estimate if we need to desaturate */
+	filterExposure();
+
+	utils::Duration exposureValue = filteredExposure_;
+	utils::Duration shutterTime = minShutterSpeed;
+
+	/*
+	* Push the shutter time up to the maximum first, and only then
+	* increase the gain.
+	*/
+	shutterTime = std::clamp<utils::Duration>(exposureValue / kMinGain,
+						  minShutterSpeed, maxShutterSpeed);
+	double stepGain = std::clamp(exposureValue / shutterTime,
+				     kMinGain, kMaxGain);
+	LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "
+			    << shutterTime << " and "
+			    << stepGain;
+
+	exposure = shutterTime / lineDuration_;
+	analogueGain = stepGain;
+
+	/*
+	 * Update the exposure value for the next process call.
+	 *
+	 * \todo Obtain the values of the exposure time and analog gain
+	 * that were actually used by the sensor, either from embedded
+	 * data when available, or from the delayed controls
+	 * infrastructure in case a slow down caused a mismatch.
+	 */
+	prevExposureValue_ = shutterTime * analogueGain;
 }
 
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)

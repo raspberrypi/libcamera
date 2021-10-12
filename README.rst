@@ -63,6 +63,14 @@ for the libcamera core: [required]
 for IPA module signing: [required]
         libgnutls28-dev openssl
 
+for improved debugging: [optional]
+        libdw-dev libunwind-dev
+
+        libdw and libunwind provide backtraces to help debugging assertion
+        failures. Their functions overlap, libdw provides the most detailed
+        information, and libunwind is not needed if both libdw and the glibc
+        backtrace() function are available.
+
 for the Raspberry Pi IPA: [optional]
         libboost-dev
 

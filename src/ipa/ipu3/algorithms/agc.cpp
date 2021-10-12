@@ -30,14 +30,10 @@ static constexpr uint32_t kInitialFrameMinAECount = 4;
 /* Number of frames to wait between new gain/exposure estimations */
 static constexpr uint32_t kFrameSkipCount = 6;
 
-/* Maximum ISO value for analogue gain */
-static constexpr uint32_t kMinISO = 100;
-static constexpr uint32_t kMaxISO = 1500;
-
 /* Maximum analogue gain value
  * \todo grab it from a camera helper */
-static constexpr uint32_t kMinGain = kMinISO / 100;
-static constexpr uint32_t kMaxGain = kMaxISO / 100;
+static constexpr double kMinGain = 1.0;
+static constexpr double kMaxGain = 8.0;
 
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
@@ -166,9 +162,11 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 							minExposureLines_,
 							maxExposureLines_);
 			newExposure = currentExposure_ / exposure;
-			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / newExposure), kMinGain, kMaxGain);
+			gain = std::clamp(gain * currentExposure_ / newExposure,
+					  kMinGain, kMaxGain);
 		} else {
-			gain = std::clamp(static_cast<uint32_t>(gain * currentExposure_ / currentExposureNoDg_), kMinGain, kMaxGain);
+			gain = std::clamp(gain * currentExposure_ / currentExposureNoDg_,
+					  kMinGain, kMaxGain);
 			newExposure = currentExposure_ / gain;
 			exposure = std::clamp<uint32_t>(exposure * currentExposure_ / newExposure,
 							minExposureLines_,

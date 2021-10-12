@@ -20,7 +20,8 @@ class Image;
 class FileSink : public FrameSink
 {
 public:
-	FileSink(const std::string &pattern = "");
+	FileSink(const std::map<const libcamera::Stream *, std::string> &streamNames,
+		 const std::string &pattern = "");
 	~FileSink();
 
 	int configure(const libcamera::CameraConfiguration &config) override;

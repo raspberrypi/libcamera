@@ -193,9 +193,10 @@ int CameraSession::start()
 
 	if (options_.isSet(OptFile)) {
 		if (!options_[OptFile].toString().empty())
-			sink_ = std::make_unique<FileSink>(options_[OptFile]);
+			sink_ = std::make_unique<FileSink>(streamNames_,
+							   options_[OptFile]);
 		else
-			sink_ = std::make_unique<FileSink>();
+			sink_ = std::make_unique<FileSink>(streamNames_);
 	}
 
 	if (sink_) {

@@ -20,8 +20,9 @@
 
 using namespace libcamera;
 
-FileSink::FileSink(const std::string &pattern)
-	: pattern_(pattern)
+FileSink::FileSink(const std::map<const libcamera::Stream *, std::string> &streamNames,
+		   const std::string &pattern)
+	: streamNames_(streamNames), pattern_(pattern)
 {
 }
 
@@ -34,12 +35,6 @@ int FileSink::configure(const libcamera::CameraConfiguration &config)
 	int ret = FrameSink::configure(config);
 	if (ret < 0)
 		return ret;
-
-	streamNames_.clear();
-	for (unsigned int index = 0; index < config.size(); ++index) {
-		const StreamConfiguration &cfg = config.at(index);
-		streamNames_[cfg.stream()] = "stream" + std::to_string(index);
-	}
 
 	return 0;
 }

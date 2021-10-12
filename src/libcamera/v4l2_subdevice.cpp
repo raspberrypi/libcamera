@@ -425,6 +425,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	subdevFmt.format.width = format->size.width;
 	subdevFmt.format.height = format->size.height;
 	subdevFmt.format.code = format->mbus_code;
+	subdevFmt.format.field = V4L2_FIELD_NONE;
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {

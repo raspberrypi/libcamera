@@ -125,7 +125,7 @@ void Agc::filterExposure()
 	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << filteredExposure_;
 }
 
-void Agc::lockExposureGain(uint32_t &exposure, double &gain)
+void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 {
 	/* Algorithm initialization should wait for first valid frames */
 	/* \todo - have a number of frames given by DelayedControls ?
@@ -137,16 +137,17 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 	if (std::abs(iqMean_ - kEvGainTarget * knumHistogramBins) <= 1) {
 		LOG(IPU3Agc, Debug) << "!!! Good exposure with iqMean = " << iqMean_;
 	} else {
-		double newGain = kEvGainTarget * knumHistogramBins / iqMean_;
+		double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
 		/* extracted from Rpi::Agc::computeTargetExposure */
 		utils::Duration currentShutter = exposure * lineDuration_;
-		currentExposureNoDg_ = currentShutter * gain;
+		currentExposureNoDg_ = currentShutter * analogueGain;
 		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
 				    << " Shutter speed " << currentShutter
-				    << " Gain " << gain;
+				    << " Gain " << analogueGain
+				    << " Needed ev gain " << evGain;
 
-		currentExposure_ = currentExposureNoDg_ * newGain;
+		currentExposure_ = currentExposureNoDg_ * evGain;
 		utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 		utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
 
@@ -174,7 +175,7 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 				    << stepGain;
 
 		exposure = shutterTime / lineDuration_;
-		gain = stepGain;
+		analogueGain = stepGain;
 	}
 	lastFrame_ = frameCount_;
 }
@@ -182,9 +183,9 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	uint32_t &exposure = context.frameContext.agc.exposure;
-	double &gain = context.frameContext.agc.gain;
+	double &analogueGain = context.frameContext.agc.gain;
 	processBrightness(stats, context.configuration.grid.bdsGrid);
-	lockExposureGain(exposure, gain);
+	lockExposureGain(exposure, analogueGain);
 	frameCount_++;
 }
 

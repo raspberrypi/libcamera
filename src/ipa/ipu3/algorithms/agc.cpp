@@ -147,7 +147,9 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 				    << " Gain " << gain;
 
 		currentExposure_ = currentExposureNoDg_ * newGain;
+		utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 		utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
+
 		utils::Duration maxTotalExposure = maxShutterSpeed * kMaxGain;
 		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
@@ -156,23 +158,23 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 		/* \todo: estimate if we need to desaturate */
 		filterExposure();
 
-		utils::Duration newExposure = 0.0s;
-		if (currentShutter < maxShutterSpeed) {
-			exposure = std::clamp<uint32_t>(exposure * filteredExposure_ / currentExposureNoDg_,
-							minExposureLines_,
-							maxExposureLines_);
-			newExposure = filteredExposure_ / exposure;
-			gain = std::clamp(gain * filteredExposure_ / newExposure,
-					  kMinGain, kMaxGain);
-		} else {
-			gain = std::clamp(gain * filteredExposure_ / currentExposureNoDg_,
-					  kMinGain, kMaxGain);
-			newExposure = filteredExposure_ / gain;
-			exposure = std::clamp<uint32_t>(exposure * filteredExposure_ / newExposure,
-							minExposureLines_,
-							maxExposureLines_);
-		}
-		LOG(IPU3Agc, Debug) << "Adjust exposure " << exposure * lineDuration_ << " and gain " << gain;
+		utils::Duration exposureValue = filteredExposure_;
+		utils::Duration shutterTime = minShutterSpeed;
+
+		/*
+		 * Push the shutter time up to the maximum first, and only then
+		 * increase the gain.
+		 */
+		shutterTime = std::clamp<utils::Duration>(exposureValue / kMinGain,
+							  minShutterSpeed, maxShutterSpeed);
+		double stepGain = std::clamp(exposureValue / shutterTime,
+					     kMinGain, kMaxGain);
+		LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "
+				    << shutterTime << " and "
+				    << stepGain;
+
+		exposure = shutterTime / lineDuration_;
+		gain = stepGain;
 	}
 	lastFrame_ = frameCount_;
 }

@@ -49,6 +49,7 @@ private:
 	utils::Duration filteredExposureNoDg_;
 	utils::Duration currentExposure_;
 	utils::Duration currentExposureNoDg_;
+	utils::Duration prevExposureValue_;
 
 	uint32_t stride_;
 };

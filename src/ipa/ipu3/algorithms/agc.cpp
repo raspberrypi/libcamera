@@ -42,7 +42,8 @@ static constexpr double kEvGainTarget = 0.5;
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
 	  minExposureLines_(0), maxExposureLines_(0), filteredExposure_(0s),
-	  filteredExposureNoDg_(0s), currentExposure_(0s), currentExposureNoDg_(0s)
+	  filteredExposureNoDg_(0s), currentExposure_(0s),
+	  currentExposureNoDg_(0s), prevExposureValue_(0s)
 {
 }
 
@@ -61,6 +62,10 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	context.frameContext.agc.gain =
 		context.configuration.agc.minAnalogueGain;
 	context.frameContext.agc.exposure = minExposureLines_;
+
+	prevExposureValue_ = context.frameContext.agc.gain
+			   * context.frameContext.agc.exposure
+			   * lineDuration_;
 
 	return 0;
 }
@@ -147,7 +152,7 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 				    << " Gain " << analogueGain
 				    << " Needed ev gain " << evGain;
 
-		currentExposure_ = currentExposureNoDg_ * evGain;
+		currentExposure_ = prevExposureValue_ * evGain;
 		utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 		utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
 
@@ -176,6 +181,16 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 
 		exposure = shutterTime / lineDuration_;
 		analogueGain = stepGain;
+
+		/*
+		 * Update the exposure value for the next process call.
+		 *
+		 * \todo Obtain the values of the exposure time and analog gain
+		 * that were actually used by the sensor, either from embedded
+		 * data when available, or from the delayed controls
+		 * infrastructure in case a slow down caused a mismatch.
+		 */
+		prevExposureValue_ = shutterTime * analogueGain;
 	}
 	lastFrame_ = frameCount_;
 }

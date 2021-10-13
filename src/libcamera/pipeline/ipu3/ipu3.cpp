@@ -438,11 +438,10 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 			 * \todo Clarify the alignment constraints as explained
 			 * in validate()
 			 */
-			size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE);
-			size.width = utils::alignDown(size.width - 1,
-						      IMGU_OUTPUT_WIDTH_MARGIN);
-			size.height = utils::alignDown(size.height - 1,
-						       IMGU_OUTPUT_HEIGHT_MARGIN);
+			size = sensorResolution.boundedTo(IMGU_OUTPUT_MAX_SIZE)
+					       .shrunkBy({ 1, 1 })
+					       .alignedDownTo(IMGU_OUTPUT_WIDTH_MARGIN,
+							      IMGU_OUTPUT_HEIGHT_MARGIN);
 			pixelFormat = formats::NV12;
 			bufferCount = IPU3_BUFFER_COUNT;
 			streamFormats[pixelFormat] = { { IMGU_OUTPUT_MIN_SIZE, size } };
@@ -996,20 +995,18 @@ int PipelineHandlerIPU3::initControls(IPU3CameraData *data)
 	 */
 
 	/* The strictly smaller size than the sensor resolution, aligned to margins. */
-	Size minSize = Size(sensor->resolution().width - 1,
-			    sensor->resolution().height - 1)
-		       .alignedDownTo(IMGU_OUTPUT_WIDTH_MARGIN,
-				      IMGU_OUTPUT_HEIGHT_MARGIN);
+	Size minSize = sensor->resolution().shrunkBy({ 1, 1 })
+					   .alignedDownTo(IMGU_OUTPUT_WIDTH_MARGIN,
+							  IMGU_OUTPUT_HEIGHT_MARGIN);
 
 	/*
 	 * Either the smallest margin-aligned size larger than the viewfinder
 	 * size or the adjusted sensor resolution.
 	 */
-	minSize = Size(IPU3ViewfinderSize.width + 1,
-		       IPU3ViewfinderSize.height + 1)
-		  .alignedUpTo(IMGU_OUTPUT_WIDTH_MARGIN,
-			       IMGU_OUTPUT_HEIGHT_MARGIN)
-		  .boundedTo(minSize);
+	minSize = IPU3ViewfinderSize.grownBy({ 1, 1 })
+				    .alignedUpTo(IMGU_OUTPUT_WIDTH_MARGIN,
+						 IMGU_OUTPUT_HEIGHT_MARGIN)
+				    .boundedTo(minSize);
 
 	/*
 	 * Re-scale in the sensor's native coordinates. Report (0,0) as

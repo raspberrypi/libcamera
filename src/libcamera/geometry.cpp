@@ -174,6 +174,28 @@ const std::string Size::toString() const
  */
 
 /**
+ * \fn Size::growBy(const Size &margins)
+ * \brief Grow the size by \a margins in place
+ * \param[in] margins The margins to add to the size
+ *
+ * This function adds the width and height of the \a margin size to this size.
+ *
+ * \return A reference to this object
+ */
+
+/**
+ * \fn Size::shrinkBy(const Size &margins)
+ * \brief Shrink the size by \a margins in place
+ * \param[in] margins The margins to subtract to the size
+ *
+ * This function subtracts the width and height of the \a margin size from this
+ * size. If the width or height of the size are smaller than those of \a
+ * margins, the result is clamped to 0.
+ *
+ * \return A reference to this object
+ */
+
+/**
  * \fn Size::alignedDownTo(unsigned int hAlignment, unsigned int vAlignment)
  * \brief Align the size down horizontally and vertically
  * \param[in] hAlignment Horizontal alignment
@@ -207,6 +229,26 @@ const std::string Size::toString() const
  * \param[in] expand The minimum size
  * \return A Size whose width and height are the maximum of the width and
  * height of this size and the \a expand size
+ */
+
+/**
+ * \fn Size::grownBy(const Size &margins)
+ * \brief Grow the size by \a margins
+ * \param[in] margins The margins to add to the size
+ * \return A Size whose width and height are the sum of the width and height of
+ * this size and the \a margins size
+ */
+
+/**
+ * \fn Size::shrunkBy(const Size &margins)
+ * \brief Shrink the size by \a margins
+ * \param[in] margins The margins to subtract to the size
+ *
+ * If the width or height of the size are smaller than those of \a margins, the
+ * resulting size has its width or height clamped to 0.
+ *
+ * \return A Size whose width and height are the difference of the width and
+ * height of this size and the \a margins size, clamped to 0
  */
 
 /**

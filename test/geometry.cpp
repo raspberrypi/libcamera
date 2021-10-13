@@ -104,7 +104,10 @@ protected:
 			return TestFail;
 		}
 
-		/* Test alignDownTo(), alignUpTo(), boundTo() and expandTo() */
+		/*
+		 * Test alignDownTo(), alignUpTo(), boundTo(), expandTo(),
+		 * growBy() and shrinkBy()
+		 */
 		Size s(50, 50);
 
 		s.alignDownTo(16, 16);
@@ -131,14 +134,36 @@ protected:
 			return TestFail;
 		}
 
-		s.alignDownTo(16, 16).alignUpTo(32, 32)
-		 .boundTo({ 40, 80 }).expandTo({ 16, 80 });
-		if (s != Size(40, 80)) {
+		s.growBy({ 10, 20 });
+		if (s != Size(60, 70)) {
+			cout << "Size::growBy() test failed" << endl;
+			return TestFail;
+		}
+
+		s.shrinkBy({ 20, 10 });
+		if (s != Size(40, 60)) {
+			cout << "Size::shrinkBy() test failed" << endl;
+			return TestFail;
+		}
+
+		s.shrinkBy({ 100, 100 });
+		if (s != Size(0, 0)) {
+			cout << "Size::shrinkBy() clamp test failed" << endl;
+			return TestFail;
+		}
+
+		s = Size(50,50).alignDownTo(16, 16).alignUpTo(32, 32)
+		  .boundTo({ 40, 80 }).expandTo({ 16, 80 })
+		  .growBy({ 4, 4 }).shrinkBy({ 10, 20 });
+		if (s != Size(34, 64)) {
 			cout << "Size chained in-place modifiers test failed" << endl;
 			return TestFail;
 		}
 
-		/* Test alignedDownTo(), alignedUpTo(), boundedTo() and expandedTo() */
+		/*
+		 * Test alignedDownTo(), alignedUpTo(), boundedTo(),
+		 * expandedTo(), grownBy() and shrunkBy()
+		 */
 		if (Size(0, 0).alignedDownTo(16, 8) != Size(0, 0) ||
 		    Size(1, 1).alignedDownTo(16, 8) != Size(0, 0) ||
 		    Size(16, 8).alignedDownTo(16, 8) != Size(16, 8)) {
@@ -164,6 +189,19 @@ protected:
 		    Size(200, 50).expandedTo({ 100, 100 }) != Size(200, 100) ||
 		    Size(50, 200).expandedTo({ 100, 100 }) != Size(100, 200)) {
 			cout << "Size::expandedTo() test failed" << endl;
+			return TestFail;
+		}
+
+		if (Size(0, 0).grownBy({ 10, 20 }) != Size(10, 20) ||
+		    Size(200, 50).grownBy({ 10, 20 }) != Size(210, 70)) {
+			cout << "Size::grownBy() test failed" << endl;
+			return TestFail;
+		}
+
+		if (Size(200, 50).shrunkBy({ 10, 20 }) != Size(190, 30) ||
+		    Size(200, 50).shrunkBy({ 10, 100 }) != Size(190, 0) ||
+		    Size(200, 50).shrunkBy({ 300, 20 }) != Size(0, 30)) {
+			cout << "Size::shrunkBy() test failed" << endl;
 			return TestFail;
 		}
 

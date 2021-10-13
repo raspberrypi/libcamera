@@ -94,6 +94,20 @@ public:
 		return *this;
 	}
 
+	Size &growBy(const Size &margins)
+	{
+		width += margins.width;
+		height += margins.height;
+		return *this;
+	}
+
+	Size &shrinkBy(const Size &margins)
+	{
+		width = width > margins.width ? width - margins.width : 0;
+		height = height > margins.height ? height - margins.height : 0;
+		return *this;
+	}
+
 	__nodiscard constexpr Size alignedDownTo(unsigned int hAlignment,
 						 unsigned int vAlignment) const
 	{
@@ -125,6 +139,22 @@ public:
 		return {
 			std::max(width, expand.width),
 			std::max(height, expand.height)
+		};
+	}
+
+	__nodiscard constexpr Size grownBy(const Size &margins) const
+	{
+		return {
+			width + margins.width,
+			height + margins.height
+		};
+	}
+
+	__nodiscard constexpr Size shrunkBy(const Size &margins) const
+	{
+		return {
+			width > margins.width ? width - margins.width : 0,
+			height > margins.height ? height - margins.height : 0
 		};
 	}
 

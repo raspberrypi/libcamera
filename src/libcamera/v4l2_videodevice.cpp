@@ -1711,6 +1711,13 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 			return buffer;
 		}
 
+		/*
+		 * With a V4L2 single-planar format, all the data is stored in
+		 * a single memory plane. The number of bytes used is conveyed
+		 * through that plane when using the V4L2 multi-planar API, or
+		 * set directly in the buffer when using the V4L2 single-planar
+		 * API.
+		 */
 		unsigned int bytesused = multiPlanar ? planes[0].bytesused
 				       : buf.bytesused;
 		unsigned int remaining = bytesused;

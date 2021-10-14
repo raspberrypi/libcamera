@@ -1075,16 +1075,17 @@ void CameraDevice::requestComplete(Request *request)
 	if (descriptor->request_->cookie() != request->cookie()) {
 		/*
 		 * \todo Clarify if the Camera has to be closed on
-		 * ERROR_DEVICE and possibly demote the Fatal to simple
-		 * Error.
+		 * ERROR_DEVICE.
 		 */
-		notifyError(0, nullptr, CAMERA3_MSG_ERROR_DEVICE);
-		LOG(HAL, Fatal)
+		LOG(HAL, Error)
 			<< "Out-of-order completion for request "
 			<< utils::hex(request->cookie());
 
 		MutexLocker descriptorsLock(descriptorsMutex_);
 		descriptors_.pop();
+
+		notifyError(0, nullptr, CAMERA3_MSG_ERROR_DEVICE);
+
 		return;
 	}
 

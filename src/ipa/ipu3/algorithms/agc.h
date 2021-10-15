@@ -21,8 +21,6 @@ struct IPACameraSensorInfo;
 
 namespace ipa::ipu3::algorithms {
 
-using utils::Duration;
-
 class Agc : public Algorithm
 {
 public:
@@ -43,13 +41,13 @@ private:
 
 	double iqMean_;
 
-	Duration lineDuration_;
-	Duration maxExposureTime_;
+	utils::Duration lineDuration_;
+	utils::Duration maxExposureTime_;
 
-	Duration prevExposure_;
-	Duration prevExposureNoDg_;
-	Duration currentExposure_;
-	Duration currentExposureNoDg_;
+	utils::Duration prevExposure_;
+	utils::Duration prevExposureNoDg_;
+	utils::Duration currentExposure_;
+	utils::Duration currentExposureNoDg_;
 
 	uint32_t stride_;
 };

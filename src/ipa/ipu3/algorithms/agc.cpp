@@ -140,20 +140,20 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 		double newGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
 		/* extracted from Rpi::Agc::computeTargetExposure */
-		libcamera::utils::Duration currentShutter = exposure * lineDuration_;
+		utils::Duration currentShutter = exposure * lineDuration_;
 		currentExposureNoDg_ = currentShutter * gain;
 		LOG(IPU3Agc, Debug) << "Actual total exposure " << currentExposureNoDg_
 				    << " Shutter speed " << currentShutter
 				    << " Gain " << gain;
 		currentExposure_ = currentExposureNoDg_ * newGain;
-		libcamera::utils::Duration maxTotalExposure = maxExposureTime_ * kMaxGain;
+		utils::Duration maxTotalExposure = maxExposureTime_ * kMaxGain;
 		currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 		LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_;
 
 		/* \todo: estimate if we need to desaturate */
 		filterExposure();
 
-		libcamera::utils::Duration newExposure = 0.0s;
+		utils::Duration newExposure = 0.0s;
 		if (currentShutter < maxExposureTime_) {
 			exposure = std::clamp(static_cast<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_), kMinExposure, kMaxExposure);
 			newExposure = currentExposure_ / exposure;

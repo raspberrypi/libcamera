@@ -65,7 +65,7 @@ public:
 
 private:
 	void calculateWBGains(const ipu3_uapi_stats_3a *stats);
-	void generateZones(std::vector<RGB> &zones);
+	void generateZones();
 	void generateAwbStats(const ipu3_uapi_stats_3a *stats);
 	void clearAwbStats();
 	void awbGreyWorld();

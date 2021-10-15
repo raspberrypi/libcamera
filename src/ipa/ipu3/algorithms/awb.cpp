@@ -196,8 +196,10 @@ uint32_t Awb::estimateCCT(double red, double green, double blue)
 }
 
 /* Generate an RGB vector with the average values for each zone */
-void Awb::generateZones(std::vector<RGB> &zones)
+void Awb::generateZones()
 {
+	zones_.clear();
+
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
 		RGB zone;
 		double counted = awbStats_[i].counted;
@@ -206,7 +208,7 @@ void Awb::generateZones(std::vector<RGB> &zones)
 			if (zone.G >= kMinGreenLevelInZone) {
 				zone.R = awbStats_[i].sum.red / counted;
 				zone.B = awbStats_[i].sum.blue / counted;
-				zones.push_back(zone);
+				zones_.push_back(zone);
 			}
 		}
 	}
@@ -298,11 +300,13 @@ void Awb::awbGreyWorld()
 void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 {
 	ASSERT(stats->stats_3a_status.awb_en);
-	zones_.clear();
+
 	clearAwbStats();
 	generateAwbStats(stats);
-	generateZones(zones_);
+	generateZones();
+
 	LOG(IPU3Awb, Debug) << "Valid zones: " << zones_.size();
+
 	if (zones_.size() > 10) {
 		awbGreyWorld();
 		LOG(IPU3Awb, Debug) << "Gain found for red: " << asyncResults_.redGain

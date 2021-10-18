@@ -35,6 +35,7 @@ libcamera_internal_headers = files([
     'pipeline_handler.h',
     'process.h',
     'pub_key.h',
+    'request.h',
     'source_paths.h',
     'sysfs.h',
     'v4l2_device.h',

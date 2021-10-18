@@ -5,8 +5,9 @@
  * request.tp - Tracepoints for the request object
  */
 
+#include <libcamera/internal/request.h>
+
 #include <libcamera/framebuffer.h>
-#include <libcamera/request.h>
 
 TRACEPOINT_EVENT_CLASS(
 	libcamera,
@@ -62,7 +63,7 @@ TRACEPOINT_EVENT_INSTANCE(
 	request,
 	request_complete,
 	TP_ARGS(
-		libcamera::Request *, req
+		libcamera::Request::Private *, req
 	)
 )
 
@@ -71,7 +72,7 @@ TRACEPOINT_EVENT_INSTANCE(
 	request,
 	request_cancel,
 	TP_ARGS(
-		libcamera::Request *, req
+		libcamera::Request::Private *, req
 	)
 )
 
@@ -79,13 +80,13 @@ TRACEPOINT_EVENT(
 	libcamera,
 	request_complete_buffer,
 	TP_ARGS(
-		libcamera::Request *, req,
+		libcamera::Request::Private *, req,
 		libcamera::FrameBuffer *, buf
 	),
 	TP_FIELDS(
 		ctf_integer_hex(uintptr_t, request, reinterpret_cast<uintptr_t>(req))
-		ctf_integer(uint64_t, cookie, req->cookie())
-		ctf_integer(int, status, req->status())
+		ctf_integer(uint64_t, cookie, req->_o<libcamera::Request>()->cookie())
+		ctf_integer(int, status, req->_o<libcamera::Request>()->status())
 		ctf_integer_hex(uintptr_t, buffer, reinterpret_cast<uintptr_t>(buf))
 		ctf_enum(libcamera, buffer_status, uint32_t, buf_status, buf->metadata().status)
 	)

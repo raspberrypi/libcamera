@@ -5,7 +5,7 @@
  * request.cpp - Capture request handling
  */
 
-#include <libcamera/request.h>
+#include "libcamera/internal/request.h"
 
 #include <map>
 #include <sstream>
@@ -23,13 +23,146 @@
 #include "libcamera/internal/tracepoints.h"
 
 /**
- * \file request.h
+ * \file libcamera/request.h
  * \brief Describes a frame capture request to be processed by a camera
  */
 
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Request)
+
+/**
+ * \class Request::Private
+ * \brief Request private data
+ *
+ * The Request::Private class stores all private data associated with a
+ * request. It implements the d-pointer design pattern to hide core
+ * Request data from the public API, and exposes utility functions to
+ * internal users of the request (namely the PipelineHandler class and its
+ * subclasses).
+ */
+
+/**
+ * \brief Create a Request::Private
+ * \param camera The Camera that creates the request
+ */
+Request::Private::Private(Camera *camera)
+	: camera_(camera), cancelled_(false)
+{
+}
+
+Request::Private::~Private()
+{
+	doCancelRequest();
+}
+
+/**
+ * \fn Request::Private::camera()
+ * \brief Retrieve the camera this request has been queued to
+ * \return The Camera this request has been queued to, or nullptr if the
+ * request hasn't been queued
+ */
+
+/**
+ * \brief Check if a request has buffers yet to be completed
+ *
+ * \return True if the request has buffers pending for completion, false
+ * otherwise
+ */
+bool Request::Private::hasPendingBuffers() const
+{
+	return !pending_.empty();
+}
+
+/**
+ * \brief Complete a buffer for the request
+ * \param[in] buffer The buffer that has completed
+ *
+ * A request tracks the status of all buffers it contains through a set of
+ * pending buffers. This function removes the \a buffer from the set to mark it
+ * as complete. All buffers associate with the request shall be marked as
+ * complete by calling this function once and once only before reporting the
+ * request as complete with the complete() function.
+ *
+ * \return True if all buffers contained in the request have completed, false
+ * otherwise
+ */
+bool Request::Private::completeBuffer(FrameBuffer *buffer)
+{
+	LIBCAMERA_TRACEPOINT(request_complete_buffer, this, buffer);
+
+	int ret = pending_.erase(buffer);
+	ASSERT(ret == 1);
+
+	buffer->_d()->setRequest(nullptr);
+
+	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
+		cancelled_ = true;
+
+	return !hasPendingBuffers();
+}
+
+/**
+ * \brief Complete a queued request
+ *
+ * Mark the request as complete by updating its status to RequestComplete,
+ * unless buffers have been cancelled in which case the status is set to
+ * RequestCancelled.
+ */
+void Request::Private::complete()
+{
+	Request *request = _o<Request>();
+
+	ASSERT(request->status() == RequestPending);
+	ASSERT(!hasPendingBuffers());
+
+	request->status_ = cancelled_ ? RequestCancelled : RequestComplete;
+
+	LOG(Request, Debug) << request->toString();
+
+	LIBCAMERA_TRACEPOINT(request_complete, this);
+}
+
+void Request::Private::doCancelRequest()
+{
+	Request *request = _o<Request>();
+
+	for (FrameBuffer *buffer : pending_) {
+		buffer->cancel();
+		camera_->bufferCompleted.emit(request, buffer);
+	}
+
+	cancelled_ = true;
+	pending_.clear();
+}
+
+/**
+ * \brief Cancel a queued request
+ *
+ * Mark the request and its associated buffers as cancelled and complete it.
+ *
+ * Set each pending buffer in error state and emit the buffer completion signal
+ * before completing the Request.
+ */
+void Request::Private::cancel()
+{
+	LIBCAMERA_TRACEPOINT(request_cancel, this);
+
+	Request *request = _o<Request>();
+	ASSERT(request->status() == RequestPending);
+
+	doCancelRequest();
+}
+
+/**
+ * \copydoc Request::reuse()
+ */
+void Request::Private::reuse()
+{
+	sequence_ = 0;
+	cancelled_ = false;
+	pending_.clear();
+}
 
 /**
  * \enum Request::Status
@@ -75,8 +208,8 @@ LOG_DEFINE_CATEGORY(Request)
  * completely opaque to libcamera.
  */
 Request::Request(Camera *camera, uint64_t cookie)
-	: camera_(camera), sequence_(0), cookie_(cookie),
-	  status_(RequestPending), cancelled_(false)
+	: Extensible(std::make_unique<Private>(camera)),
+	  cookie_(cookie), status_(RequestPending)
 {
 	controls_ = new ControlList(controls::controls,
 				    camera->_d()->validator());
@@ -113,20 +246,19 @@ void Request::reuse(ReuseFlag flags)
 {
 	LIBCAMERA_TRACEPOINT(request_reuse, this);
 
-	pending_.clear();
+	_d()->reuse();
+
 	if (flags & ReuseBuffers) {
 		for (auto pair : bufferMap_) {
 			FrameBuffer *buffer = pair.second;
 			buffer->_d()->setRequest(this);
-			pending_.insert(buffer);
+			_d()->pending_.insert(buffer);
 		}
 	} else {
 		bufferMap_.clear();
 	}
 
-	sequence_ = 0;
 	status_ = RequestPending;
-	cancelled_ = false;
 
 	controls_->clear();
 	metadata_->clear();
@@ -188,7 +320,7 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer)
 	}
 
 	buffer->_d()->setRequest(this);
-	pending_.insert(buffer);
+	_d()->pending_.insert(buffer);
 	bufferMap_[stream] = buffer;
 
 	return 0;
@@ -227,7 +359,6 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  */
 
 /**
- * \fn Request::sequence()
  * \brief Retrieve the sequence number for the request
  *
  * When requests are queued, they are given a sequential number to track the
@@ -242,6 +373,10 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  *
  * \return The request sequence number
  */
+uint32_t Request::sequence() const
+{
+	return _d()->sequence_;
+}
 
 /**
  * \fn Request::cookie()
@@ -263,81 +398,14 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  */
 
 /**
- * \fn Request::hasPendingBuffers()
  * \brief Check if a request has buffers yet to be completed
  *
  * \return True if the request has buffers pending for completion, false
  * otherwise
  */
-
-/**
- * \brief Complete a queued request
- *
- * Mark the request as complete by updating its status to RequestComplete,
- * unless buffers have been cancelled in which case the status is set to
- * RequestCancelled.
- */
-void Request::complete()
+bool Request::hasPendingBuffers() const
 {
-	ASSERT(status_ == RequestPending);
-	ASSERT(!hasPendingBuffers());
-
-	status_ = cancelled_ ? RequestCancelled : RequestComplete;
-
-	LOG(Request, Debug) << toString();
-
-	LIBCAMERA_TRACEPOINT(request_complete, this);
-}
-
-/**
- * \brief Cancel a queued request
- *
- * Mark the request and its associated buffers as cancelled and complete it.
- *
- * Set each pending buffer in error state and emit the buffer completion signal
- * before completing the Request.
- */
-void Request::cancel()
-{
-	LIBCAMERA_TRACEPOINT(request_cancel, this);
-
-	ASSERT(status_ == RequestPending);
-
-	for (FrameBuffer *buffer : pending_) {
-		buffer->cancel();
-		camera_->bufferCompleted.emit(this, buffer);
-	}
-
-	pending_.clear();
-	cancelled_ = true;
-}
-
-/**
- * \brief Complete a buffer for the request
- * \param[in] buffer The buffer that has completed
- *
- * A request tracks the status of all buffers it contains through a set of
- * pending buffers. This function removes the \a buffer from the set to mark it
- * as complete. All buffers associate with the request shall be marked as
- * complete by calling this function once and once only before reporting the
- * request as complete with the complete() function.
- *
- * \return True if all buffers contained in the request have completed, false
- * otherwise
- */
-bool Request::completeBuffer(FrameBuffer *buffer)
-{
-	LIBCAMERA_TRACEPOINT(request_complete_buffer, this, buffer);
-
-	int ret = pending_.erase(buffer);
-	ASSERT(ret == 1);
-
-	buffer->_d()->setRequest(nullptr);
-
-	if (buffer->metadata().status == FrameMetadata::FrameCancelled)
-		cancelled_ = true;
-
-	return !hasPendingBuffers();
+	return !_d()->pending_.empty();
 }
 
 /**
@@ -356,8 +424,8 @@ std::string Request::toString() const
 	static const char *statuses = "PCX";
 
 	/* Example Output: Request(55:P:1/2:6523524) */
-	ss << "Request(" << sequence_ << ":" << statuses[status_] << ":"
-	   << pending_.size() << "/" << bufferMap_.size() << ":"
+	ss << "Request(" << sequence() << ":" << statuses[status_] << ":"
+	   << _d()->pending_.size() << "/" << bufferMap_.size() << ":"
 	   << cookie_ << ")";
 
 	return ss.str();

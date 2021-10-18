@@ -19,6 +19,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/tracepoints.h"
 
 /**
@@ -311,15 +312,15 @@ void PipelineHandler::queueRequest(Request *request)
 {
 	LIBCAMERA_TRACEPOINT(request_queue, request);
 
-	Camera *camera = request->camera_;
+	Camera *camera = request->_d()->camera();
 	Camera::Private *data = camera->_d();
 	data->queuedRequests_.push_back(request);
 
-	request->sequence_ = data->requestSequence_++;
+	request->_d()->sequence_ = data->requestSequence_++;
 
 	int ret = queueRequestDevice(camera, request);
 	if (ret) {
-		request->cancel();
+		request->_d()->cancel();
 		completeRequest(request);
 	}
 }
@@ -360,9 +361,9 @@ void PipelineHandler::queueRequest(Request *request)
  */
 bool PipelineHandler::completeBuffer(Request *request, FrameBuffer *buffer)
 {
-	Camera *camera = request->camera_;
+	Camera *camera = request->_d()->camera();
 	camera->bufferCompleted.emit(request, buffer);
-	return request->completeBuffer(buffer);
+	return request->_d()->completeBuffer(buffer);
 }
 
 /**
@@ -381,9 +382,9 @@ bool PipelineHandler::completeBuffer(Request *request, FrameBuffer *buffer)
  */
 void PipelineHandler::completeRequest(Request *request)
 {
-	Camera *camera = request->camera_;
+	Camera *camera = request->_d()->camera();
 
-	request->complete();
+	request->_d()->complete();
 
 	Camera::Private *data = camera->_d();
 

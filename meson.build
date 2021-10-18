@@ -25,6 +25,9 @@ endif
 
 libcamera_version = libcamera_git_version.split('+')[0]
 
+# This script gererates the .tarball-version file on a 'meson dist' command.
+meson.add_dist_script('utils/run-dist.sh')
+
 # Configure the build environment.
 cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')

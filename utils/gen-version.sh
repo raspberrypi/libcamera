@@ -6,6 +6,15 @@
 build_dir="$1"
 src_dir="$2"
 
+# If .tarball-version exists, output the version string from the file and exit.
+# This file is auto-generated on a 'meson dist' command from the run-dist.sh
+# script.
+if [ -n "$src_dir" ] && [ -f "$src_dir"/.tarball-version ]
+then
+	cat "$src_dir"/.tarball-version
+	exit 0
+fi
+
 # Bail out if the directory isn't under git control
 git_dir=$(git rev-parse --git-dir 2>&1) || exit 1
 

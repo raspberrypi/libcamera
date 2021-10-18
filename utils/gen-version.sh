@@ -4,10 +4,16 @@
 # Generate a version string using git describe
 
 build_dir="$1"
+src_dir="$2"
 
 # Bail out if the directory isn't under git control
-src_dir=$(git rev-parse --git-dir 2>&1) || exit 1
-src_dir=$(readlink -f "$src_dir/..")
+git_dir=$(git rev-parse --git-dir 2>&1) || exit 1
+
+# Derive the source directory from the git directory if not specified.
+if [ -z "$src_dir" ]
+then
+        src_dir=$(readlink -f "$git_dir/..")
+fi
 
 # Get a short description from the tree.
 version=$(git describe --abbrev=8 --match "v[0-9]*" 2>/dev/null)

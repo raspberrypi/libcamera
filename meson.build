@@ -17,7 +17,8 @@ project('libcamera', 'c', 'cpp',
 # git version tag, the build metadata (e.g. +211-c94a24f4) is omitted from
 # libcamera_git_version.
 libcamera_git_version = run_command('utils/gen-version.sh',
-                                    meson.build_root()).stdout().strip()
+                                    meson.build_root(),
+                                    meson.source_root()).stdout().strip()
 if libcamera_git_version == ''
     libcamera_git_version = meson.project_version()
 endif

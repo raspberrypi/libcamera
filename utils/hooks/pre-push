@@ -2,9 +2,9 @@
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-# A hook script to prevent pushing unsuitable commits to the master branch.
-# Unsuitable commits are commits that contain a local changelog below a '---'
-# line. The criteria may get extended later.
+# A hook script to prevent pushing unsuitable commits to the master or
+# integration branches. Criteria to determine unsuitable commits are listed
+# below.
 #
 # Information about the commits which are being pushed is supplied as lines to
 # the standard input in the form:
@@ -13,22 +13,42 @@
 
 z40=0000000000000000000000000000000000000000
 
+remote_name="$1"
+remote_url="$2"
+
 while read -r local_ref local_sha remote_ref remote_sha
 do
-	if [ "$remote_ref" != refs/heads/master ]
+	case "$remote_ref" in
+	refs/heads/master)
+		;;
+	refs/heads/integration/*)
+		;;
+	*)
+		continue
+	esac
+
+	# If the remote branch gets deleted, there's nothing to check.
+	if [ "$local_sha" = $z40 ]
 	then
 		continue
 	fi
 
-	# The remote master branch should never get deleted by this push, so we
-	# can assume that local_sha is not 0's. We may however be creating the
-	# remote branch, when pushing to a new empty repository for instance.
+	# Check if we are creating a new branch or updating an existing one.
 	if [ "$remote_sha" = $z40 ]
 	then
-		# New branch, examine all commits
-		range="$local_sha"
+		if [ "$remote_ref" = "refs/heads/master" ]
+		then
+			# There are known invalid commits in the full history,
+			# skip the checks if we are pushing the master branch
+			# (for instance to an empty repository).
+			continue
+		else
+			# We're pushing a new integration branch, check all
+			# commits on top of the master branch.
+			range="remotes/$remote_name/master..$local_sha"
+		fi
 	else
-		# Update to existing branch, examine new commits
+		# Update to existing branch, examine new commits only.
 		range="$remote_sha..$local_sha"
 	fi
 

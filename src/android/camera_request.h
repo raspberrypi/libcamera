@@ -29,6 +29,16 @@ public:
 		Error,
 	};
 
+	struct StreamBuffer {
+		camera3_stream_buffer_t buffer;
+		/*
+		 * FrameBuffer instances created by wrapping a camera3 provided
+		 * dmabuf are emplaced in this vector of unique_ptr<> for
+		 * lifetime management.
+		 */
+		std::unique_ptr<libcamera::FrameBuffer> frameBuffer;
+	};
+
 	Camera3RequestDescriptor(libcamera::Camera *camera,
 				 const camera3_capture_request_t *camera3Request);
 	~Camera3RequestDescriptor();
@@ -36,8 +46,9 @@ public:
 	bool isPending() const { return status_ == Status::Pending; }
 
 	uint32_t frameNumber_ = 0;
-	std::vector<camera3_stream_buffer_t> buffers_;
-	std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
+
+	std::vector<StreamBuffer> buffers_;
+
 	CameraMetadata settings_;
 	std::unique_ptr<CaptureRequest> request_;
 	std::unique_ptr<CameraMetadata> resultMetadata_;

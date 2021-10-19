@@ -23,15 +23,10 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 
 	/* Copy the camera3 request stream information for later access. */
 	const uint32_t numBuffers = camera3Request->num_output_buffers;
+
 	buffers_.resize(numBuffers);
 	for (uint32_t i = 0; i < numBuffers; i++)
-		buffers_[i] = camera3Request->output_buffers[i];
-
-	/*
-	 * FrameBuffer instances created by wrapping a camera3 provided dmabuf
-	 * are emplaced in this vector of unique_ptr<> for lifetime management.
-	 */
-	frameBuffers_.reserve(numBuffers);
+		buffers_[i].buffer = camera3Request->output_buffers[i];
 
 	/* Clone the controls associated with the camera3 request. */
 	settings_ = CameraMetadata(camera3Request->settings);

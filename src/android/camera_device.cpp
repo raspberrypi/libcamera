@@ -802,9 +802,9 @@ void CameraDevice::abortRequest(Camera3RequestDescriptor *descriptor) const
 	notifyError(descriptor->frameNumber_, nullptr, CAMERA3_MSG_ERROR_REQUEST);
 
 	for (auto &buffer : descriptor->buffers_) {
-		buffer.release_fence = buffer.acquire_fence;
-		buffer.acquire_fence = -1;
-		buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+		buffer.buffer.release_fence = buffer.buffer.acquire_fence;
+		buffer.buffer.acquire_fence = -1;
+		buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
 	}
 
 	descriptor->status_ = Camera3RequestDescriptor::Status::Error;
@@ -902,8 +902,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	LOG(HAL, Debug) << "Queueing request " << descriptor->request_->cookie()
 			<< " with " << descriptor->buffers_.size() << " streams";
 
-	for (const auto &[i, camera3Buffer] : utils::enumerate(descriptor->buffers_)) {
-		camera3_stream *camera3Stream = camera3Buffer.stream;
+	for (const auto &[i, buffer] : utils::enumerate(descriptor->buffers_)) {
+		camera3_stream *camera3Stream = buffer.buffer.stream;
 		CameraStream *cameraStream = static_cast<CameraStream *>(camera3Stream->priv);
 
 		std::stringstream ss;
@@ -920,7 +920,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		 * while fences for streams of type Internal and Mapped are
 		 * handled at post-processing time.
 		 */
-		FrameBuffer *buffer = nullptr;
+		FrameBuffer *frameBuffer = nullptr;
 		int acquireFence = -1;
 		switch (cameraStream->type()) {
 		case CameraStream::Type::Mapped:
@@ -938,13 +938,12 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * associate it with the Camera3RequestDescriptor for
 			 * lifetime management only.
 			 */
-			descriptor->frameBuffers_.push_back(
-				createFrameBuffer(*camera3Buffer.buffer,
+			buffer.frameBuffer =
+				createFrameBuffer(*buffer.buffer.buffer,
 						  cameraStream->configuration().pixelFormat,
-						  cameraStream->configuration().size));
-
-			buffer = descriptor->frameBuffers_.back().get();
-			acquireFence = camera3Buffer.acquire_fence;
+						  cameraStream->configuration().size);
+			frameBuffer = buffer.frameBuffer.get();
+			acquireFence = buffer.buffer.acquire_fence;
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 
@@ -956,18 +955,18 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * The buffer has to be returned to the CameraStream
 			 * once it has been processed.
 			 */
-			buffer = cameraStream->getBuffer();
+			frameBuffer = cameraStream->getBuffer();
 			LOG(HAL, Debug) << ss.str() << " (internal)";
 			break;
 		}
 
-		if (!buffer) {
-			LOG(HAL, Error) << "Failed to create buffer";
+		if (!frameBuffer) {
+			LOG(HAL, Error) << "Failed to create frame buffer";
 			return -ENOMEM;
 		}
 
-		descriptor->request_->addBuffer(cameraStream->stream(), buffer,
-					       acquireFence);
+		descriptor->request_->addBuffer(cameraStream->stream(),
+						frameBuffer, acquireFence);
 	}
 
 	/*
@@ -1054,9 +1053,9 @@ void CameraDevice::requestComplete(Request *request)
 	 * The buffer status is set to OK and later changed to ERROR if
 	 * post-processing/compression fails.
 	 */
-	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
+	for (auto &buffer : descriptor->buffers_) {
 		CameraStream *cameraStream =
-			static_cast<CameraStream *>(buffer.stream->priv);
+			static_cast<CameraStream *>(buffer.buffer.stream->priv);
 
 		/*
 		 * Streams of type Direct have been queued to the
@@ -1070,9 +1069,9 @@ void CameraDevice::requestComplete(Request *request)
 		 * fence to -1 once it has handled it and remove this check.
 		 */
 		if (cameraStream->type() == CameraStream::Type::Direct)
-			buffer.acquire_fence = -1;
-		buffer.release_fence = -1;
-		buffer.status = CAMERA3_BUFFER_STATUS_OK;
+			buffer.buffer.acquire_fence = -1;
+		buffer.buffer.release_fence = -1;
+		buffer.buffer.status = CAMERA3_BUFFER_STATUS_OK;
 	}
 
 	/*
@@ -1087,15 +1086,15 @@ void CameraDevice::requestComplete(Request *request)
 		notifyError(descriptor->frameNumber_, nullptr,
 			    CAMERA3_MSG_ERROR_REQUEST);
 
-		for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
+		for (auto &buffer : descriptor->buffers_) {
 			/*
 			 * Signal to the framework it has to handle fences that
 			 * have not been waited on by setting the release fence
 			 * to the acquire fence value.
 			 */
-			buffer.release_fence = buffer.acquire_fence;
-			buffer.acquire_fence = -1;
-			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+			buffer.buffer.release_fence = buffer.buffer.acquire_fence;
+			buffer.buffer.acquire_fence = -1;
+			buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
 		}
 
 		descriptor->status_ = Camera3RequestDescriptor::Status::Error;
@@ -1137,9 +1136,9 @@ void CameraDevice::requestComplete(Request *request)
 	}
 
 	/* Handle post-processing. */
-	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
+	for (auto &buffer : descriptor->buffers_) {
 		CameraStream *cameraStream =
-			static_cast<CameraStream *>(buffer.stream->priv);
+			static_cast<CameraStream *>(buffer.buffer.stream->priv);
 
 		if (cameraStream->type() == CameraStream::Type::Direct)
 			continue;
@@ -1147,13 +1146,13 @@ void CameraDevice::requestComplete(Request *request)
 		FrameBuffer *src = request->findBuffer(cameraStream->stream());
 		if (!src) {
 			LOG(HAL, Error) << "Failed to find a source stream buffer";
-			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
-			notifyError(descriptor->frameNumber_, buffer.stream,
+			buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+			notifyError(descriptor->frameNumber_, buffer.buffer.stream,
 				    CAMERA3_MSG_ERROR_BUFFER);
 			continue;
 		}
 
-		int ret = cameraStream->process(*src, buffer, descriptor);
+		int ret = cameraStream->process(*src, buffer.buffer, descriptor);
 
 		/*
 		 * Return the FrameBuffer to the CameraStream now that we're
@@ -1163,8 +1162,8 @@ void CameraDevice::requestComplete(Request *request)
 			cameraStream->putBuffer(src);
 
 		if (ret) {
-			buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
-			notifyError(descriptor->frameNumber_, buffer.stream,
+			buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
+			notifyError(descriptor->frameNumber_, buffer.buffer.stream,
 				    CAMERA3_MSG_ERROR_BUFFER);
 		}
 	}
@@ -1190,10 +1189,16 @@ void CameraDevice::sendCaptureResults()
 		camera3_capture_result_t captureResult = {};
 
 		captureResult.frame_number = descriptor->frameNumber_;
+
 		if (descriptor->resultMetadata_)
 			captureResult.result = descriptor->resultMetadata_->get();
-		captureResult.num_output_buffers = descriptor->buffers_.size();
-		captureResult.output_buffers = descriptor->buffers_.data();
+
+		std::vector<camera3_stream_buffer_t> resultBuffers;
+		for (const auto &buffer : descriptor->buffers_)
+			resultBuffers.emplace_back(buffer.buffer);
+
+		captureResult.num_output_buffers = resultBuffers.size();
+		captureResult.output_buffers = resultBuffers.data();
 
 		if (descriptor->status_ == Camera3RequestDescriptor::Status::Success)
 			captureResult.partial_result = 1;

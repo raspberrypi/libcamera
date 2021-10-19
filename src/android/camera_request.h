@@ -20,6 +20,8 @@
 #include "camera_metadata.h"
 #include "camera_worker.h"
 
+class CameraStream;
+
 class Camera3RequestDescriptor
 {
 public:
@@ -30,13 +32,11 @@ public:
 	};
 
 	struct StreamBuffer {
-		camera3_stream_buffer_t buffer;
-		/*
-		 * FrameBuffer instances created by wrapping a camera3 provided
-		 * dmabuf are emplaced in this vector of unique_ptr<> for
-		 * lifetime management.
-		 */
+		CameraStream *stream;
+		buffer_handle_t *camera3Buffer;
 		std::unique_ptr<libcamera::FrameBuffer> frameBuffer;
+		int fence;
+		Status status;
 	};
 
 	Camera3RequestDescriptor(libcamera::Camera *camera,

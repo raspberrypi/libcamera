@@ -7,6 +7,8 @@
 
 #include "camera_request.h"
 
+#include <libcamera/base/span.h>
+
 using namespace libcamera;
 
 /*
@@ -22,11 +24,20 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 	frameNumber_ = camera3Request->frame_number;
 
 	/* Copy the camera3 request stream information for later access. */
-	const uint32_t numBuffers = camera3Request->num_output_buffers;
+	const Span<const camera3_stream_buffer_t> buffers{
+		camera3Request->output_buffers,
+		camera3Request->num_output_buffers
+	};
 
-	buffers_.resize(numBuffers);
-	for (uint32_t i = 0; i < numBuffers; i++)
-		buffers_[i].buffer = camera3Request->output_buffers[i];
+	buffers_.reserve(buffers.size());
+
+	for (const camera3_stream_buffer_t &buffer : buffers) {
+		CameraStream *stream =
+			static_cast<CameraStream *>(buffer.stream->priv);
+
+		buffers_.push_back({ stream, buffer.buffer, nullptr,
+				     buffer.acquire_fence, Status::Pending });
+	}
 
 	/* Clone the controls associated with the camera3 request. */
 	settings_ = CameraMetadata(camera3Request->settings);

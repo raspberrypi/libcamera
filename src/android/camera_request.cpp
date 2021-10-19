@@ -10,10 +10,10 @@
 using namespace libcamera;
 
 /*
- * \struct Camera3RequestDescriptor
+ * \class Camera3RequestDescriptor
  *
- * A utility structure that groups information about a capture request to be
- * later re-used at request complete time to notify the framework.
+ * A utility class that groups information about a capture request to be later
+ * reused at request complete time to notify the framework.
  */
 
 Camera3RequestDescriptor::Camera3RequestDescriptor(
@@ -43,3 +43,5 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 	request_ = std::make_unique<CaptureRequest>(camera,
 						    reinterpret_cast<uint64_t>(this));
 }
+
+Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;

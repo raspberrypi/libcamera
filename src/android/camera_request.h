@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include <libcamera/base/class.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
 
@@ -18,18 +20,18 @@
 #include "camera_metadata.h"
 #include "camera_worker.h"
 
-struct Camera3RequestDescriptor {
+class Camera3RequestDescriptor
+{
+public:
 	enum class Status {
 		Pending,
 		Success,
 		Error,
 	};
 
-	Camera3RequestDescriptor() = default;
-	~Camera3RequestDescriptor() = default;
 	Camera3RequestDescriptor(libcamera::Camera *camera,
 				 const camera3_capture_request_t *camera3Request);
-	Camera3RequestDescriptor &operator=(Camera3RequestDescriptor &&) = default;
+	~Camera3RequestDescriptor();
 
 	bool isPending() const { return status_ == Status::Pending; }
 
@@ -41,6 +43,9 @@ struct Camera3RequestDescriptor {
 
 	camera3_capture_result_t captureResult_ = {};
 	Status status_ = Status::Pending;
+
+private:
+	LIBCAMERA_DISABLE_COPY(Camera3RequestDescriptor)
 };
 
 #endif /* __ANDROID_CAMERA_REQUEST_H__ */

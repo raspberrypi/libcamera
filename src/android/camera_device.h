@@ -33,7 +33,7 @@
 #include "camera_worker.h"
 #include "jpeg/encoder.h"
 
-struct Camera3RequestDescriptor;
+class Camera3RequestDescriptor;
 struct CameraConfigData;
 
 class CameraDevice : protected libcamera::Loggable

@@ -114,7 +114,7 @@ public:
 		     camera3_stream_t *camera3Stream, unsigned int index);
 
 	Type type() const { return type_; }
-	const camera3_stream_t &camera3Stream() const { return *camera3Stream_; }
+	camera3_stream_t *camera3Stream() const { return camera3Stream_; }
 	const libcamera::StreamConfiguration &configuration() const;
 	libcamera::Stream *stream() const;
 

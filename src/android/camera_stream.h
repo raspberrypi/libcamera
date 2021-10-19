@@ -112,6 +112,8 @@ public:
 	CameraStream(CameraDevice *const cameraDevice,
 		     libcamera::CameraConfiguration *config, Type type,
 		     camera3_stream_t *camera3Stream, unsigned int index);
+	CameraStream(CameraStream &&other);
+	~CameraStream();
 
 	Type type() const { return type_; }
 	camera3_stream_t *camera3Stream() const { return camera3Stream_; }

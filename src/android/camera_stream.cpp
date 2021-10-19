@@ -56,6 +56,10 @@ CameraStream::CameraStream(CameraDevice *const cameraDevice,
 {
 }
 
+CameraStream::CameraStream(CameraStream &&other) = default;
+
+CameraStream::~CameraStream() = default;
+
 const StreamConfiguration &CameraStream::configuration() const
 {
 	return config_->at(index_);

@@ -85,8 +85,8 @@ public:
 		return updateEntry(tag, data, count, sizeof(T));
 	}
 
-	camera_metadata_t *get();
-	const camera_metadata_t *get() const;
+	camera_metadata_t *getMetadata();
+	const camera_metadata_t *getMetadata() const;
 
 private:
 	bool resize(size_t count, size_t size);

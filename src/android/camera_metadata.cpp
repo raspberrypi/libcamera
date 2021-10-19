@@ -33,7 +33,7 @@ CameraMetadata::CameraMetadata(const camera_metadata_t *metadata)
 }
 
 CameraMetadata::CameraMetadata(const CameraMetadata &other)
-	: CameraMetadata(other.get())
+	: CameraMetadata(other.getMetadata())
 {
 }
 
@@ -51,7 +51,7 @@ CameraMetadata &CameraMetadata::operator=(const CameraMetadata &other)
 	if (metadata_)
 		free_camera_metadata(metadata_);
 
-	metadata_ = clone_camera_metadata(other.get());
+	metadata_ = clone_camera_metadata(other.getMetadata());
 	valid_ = metadata_ != nullptr;
 
 	return *this;
@@ -220,12 +220,12 @@ bool CameraMetadata::updateEntry(uint32_t tag, const void *data, size_t count,
 	return false;
 }
 
-camera_metadata_t *CameraMetadata::get()
+camera_metadata_t *CameraMetadata::getMetadata()
 {
 	return valid_ ? metadata_ : nullptr;
 }
 
-const camera_metadata_t *CameraMetadata::get() const
+const camera_metadata_t *CameraMetadata::getMetadata() const
 {
 	return valid_ ? metadata_ : nullptr;
 }

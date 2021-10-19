@@ -440,7 +440,7 @@ void CameraDevice::setCallbacks(const camera3_callback_ops_t *callbacks)
 
 const camera_metadata_t *CameraDevice::getStaticMetadata()
 {
-	return capabilities_.staticMetadata()->get();
+	return capabilities_.staticMetadata()->getMetadata();
 }
 
 /*
@@ -450,7 +450,7 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 {
 	auto it = requestTemplates_.find(type);
 	if (it != requestTemplates_.end())
-		return it->second->get();
+		return it->second->getMetadata();
 
 	/* Use the capture intent matching the requested template type. */
 	std::unique_ptr<CameraMetadata> requestTemplate;
@@ -496,7 +496,7 @@ const camera_metadata_t *CameraDevice::constructDefaultRequestSettings(int type)
 				     captureIntent);
 
 	requestTemplates_[type] = std::move(requestTemplate);
-	return requestTemplates_[type]->get();
+	return requestTemplates_[type]->getMetadata();
 }
 
 /*
@@ -1171,7 +1171,8 @@ void CameraDevice::sendCaptureResults()
 		captureResult.frame_number = descriptor->frameNumber_;
 
 		if (descriptor->resultMetadata_)
-			captureResult.result = descriptor->resultMetadata_->get();
+			captureResult.result =
+				descriptor->resultMetadata_->getMetadata();
 
 		std::vector<camera3_stream_buffer_t> resultBuffers;
 		resultBuffers.reserve(descriptor->buffers_.size());

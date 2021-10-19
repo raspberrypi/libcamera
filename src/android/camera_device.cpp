@@ -802,6 +802,11 @@ void CameraDevice::abortRequest(Camera3RequestDescriptor *descriptor) const
 	notifyError(descriptor->frameNumber_, nullptr, CAMERA3_MSG_ERROR_REQUEST);
 
 	for (auto &buffer : descriptor->buffers_) {
+		/*
+		 * Signal to the framework it has to handle fences that have not
+		 * been waited on by setting the release fence to the acquire
+		 * fence value.
+		 */
 		buffer.buffer.release_fence = buffer.buffer.acquire_fence;
 		buffer.buffer.acquire_fence = -1;
 		buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
@@ -1083,21 +1088,7 @@ void CameraDevice::requestComplete(Request *request)
 				<< " not successfully completed: "
 				<< request->status();
 
-		notifyError(descriptor->frameNumber_, nullptr,
-			    CAMERA3_MSG_ERROR_REQUEST);
-
-		for (auto &buffer : descriptor->buffers_) {
-			/*
-			 * Signal to the framework it has to handle fences that
-			 * have not been waited on by setting the release fence
-			 * to the acquire fence value.
-			 */
-			buffer.buffer.release_fence = buffer.buffer.acquire_fence;
-			buffer.buffer.acquire_fence = -1;
-			buffer.buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
-		}
-
-		descriptor->status_ = Camera3RequestDescriptor::Status::Error;
+		abortRequest(descriptor);
 		sendCaptureResults();
 
 		return;

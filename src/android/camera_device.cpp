@@ -801,19 +801,11 @@ void CameraDevice::abortRequest(Camera3RequestDescriptor *descriptor) const
 {
 	notifyError(descriptor->frameNumber_, nullptr, CAMERA3_MSG_ERROR_REQUEST);
 
-	camera3_capture_result_t &result = descriptor->captureResult_;
-	result.num_output_buffers = descriptor->buffers_.size();
-	result.frame_number = descriptor->frameNumber_;
-	result.partial_result = 0;
-
-	std::vector<camera3_stream_buffer_t> resultBuffers(result.num_output_buffers);
-	for (auto [i, buffer] : utils::enumerate(resultBuffers)) {
-		buffer = descriptor->buffers_[i];
-		buffer.release_fence = descriptor->buffers_[i].acquire_fence;
+	for (auto &buffer : descriptor->buffers_) {
+		buffer.release_fence = buffer.acquire_fence;
 		buffer.acquire_fence = -1;
 		buffer.status = CAMERA3_BUFFER_STATUS_ERROR;
 	}
-	result.output_buffers = resultBuffers.data();
 
 	descriptor->status_ = Camera3RequestDescriptor::Status::Error;
 }
@@ -1062,9 +1054,6 @@ void CameraDevice::requestComplete(Request *request)
 	 * The buffer status is set to OK and later changed to ERROR if
 	 * post-processing/compression fails.
 	 */
-	camera3_capture_result_t &captureResult = descriptor->captureResult_;
-	captureResult.frame_number = descriptor->frameNumber_;
-	captureResult.num_output_buffers = descriptor->buffers_.size();
 	for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
 		CameraStream *cameraStream =
 			static_cast<CameraStream *>(buffer.stream->priv);
@@ -1085,8 +1074,6 @@ void CameraDevice::requestComplete(Request *request)
 		buffer.release_fence = -1;
 		buffer.status = CAMERA3_BUFFER_STATUS_OK;
 	}
-	captureResult.output_buffers = descriptor->buffers_.data();
-	captureResult.partial_result = 1;
 
 	/*
 	 * If the Request has failed, abort the request by notifying the error
@@ -1100,7 +1087,6 @@ void CameraDevice::requestComplete(Request *request)
 		notifyError(descriptor->frameNumber_, nullptr,
 			    CAMERA3_MSG_ERROR_REQUEST);
 
-		captureResult.partial_result = 0;
 		for (camera3_stream_buffer_t &buffer : descriptor->buffers_) {
 			/*
 			 * Signal to the framework it has to handle fences that
@@ -1137,12 +1123,17 @@ void CameraDevice::requestComplete(Request *request)
 	 * Notify if the metadata generation has failed, but continue processing
 	 * buffers and return an empty metadata pack.
 	 */
-	std::unique_ptr<CameraMetadata> resultMetadata = getResultMetadata(*descriptor);
-	if (!resultMetadata) {
+	descriptor->resultMetadata_ = getResultMetadata(*descriptor);
+	if (!descriptor->resultMetadata_) {
 		notifyError(descriptor->frameNumber_, nullptr, CAMERA3_MSG_ERROR_RESULT);
 
-		/* The camera framework expects an empty metadata pack on error. */
-		resultMetadata = std::make_unique<CameraMetadata>(0, 0);
+		/*
+		 * The camera framework expects an empty metadata pack on error.
+		 *
+		 * \todo Check that the post-processor code handles this situation
+		 * correctly.
+		 */
+		descriptor->resultMetadata_ = std::make_unique<CameraMetadata>(0, 0);
 	}
 
 	/* Handle post-processing. */
@@ -1164,7 +1155,7 @@ void CameraDevice::requestComplete(Request *request)
 
 		int ret = cameraStream->process(*src, buffer,
 						descriptor->settings_,
-						resultMetadata.get());
+						descriptor->resultMetadata_.get());
 		/*
 		 * Return the FrameBuffer to the CameraStream now that we're
 		 * done processing it.
@@ -1179,7 +1170,6 @@ void CameraDevice::requestComplete(Request *request)
 		}
 	}
 
-	captureResult.result = resultMetadata->get();
 	descriptor->status_ = Camera3RequestDescriptor::Status::Success;
 	sendCaptureResults();
 }
@@ -1197,8 +1187,20 @@ void CameraDevice::sendCaptureResults()
 		 * impact on performance which should be measured.
 		 */
 		lock.unlock();
-		callbacks_->process_capture_result(callbacks_,
-						   &descriptor->captureResult_);
+
+		camera3_capture_result_t captureResult = {};
+
+		captureResult.frame_number = descriptor->frameNumber_;
+		if (descriptor->resultMetadata_)
+			captureResult.result = descriptor->resultMetadata_->get();
+		captureResult.num_output_buffers = descriptor->buffers_.size();
+		captureResult.output_buffers = descriptor->buffers_.data();
+
+		if (descriptor->status_ == Camera3RequestDescriptor::Status::Success)
+			captureResult.partial_result = 1;
+
+		callbacks_->process_capture_result(callbacks_, &captureResult);
+
 		lock.lock();
 	}
 }

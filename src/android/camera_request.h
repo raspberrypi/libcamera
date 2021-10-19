@@ -40,8 +40,8 @@ public:
 	std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
 	CameraMetadata settings_;
 	std::unique_ptr<CaptureRequest> request_;
+	std::unique_ptr<CameraMetadata> resultMetadata_;
 
-	camera3_capture_result_t captureResult_ = {};
 	Status status_ = Status::Pending;
 
 private:

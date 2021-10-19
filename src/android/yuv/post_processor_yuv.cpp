@@ -51,8 +51,7 @@ int PostProcessorYuv::configure(const StreamConfiguration &inCfg,
 
 int PostProcessorYuv::process(const FrameBuffer &source,
 			      CameraBuffer *destination,
-			      [[maybe_unused]] const CameraMetadata &requestMetadata,
-			      [[maybe_unused]] CameraMetadata *metadata)
+			      [[maybe_unused]] Camera3RequestDescriptor *request)
 {
 	if (!isValidBuffers(source, *destination))
 		return -EINVAL;

@@ -12,7 +12,7 @@
 
 #include "camera_buffer.h"
 
-class CameraMetadata;
+class Camera3RequestDescriptor;
 
 class PostProcessor
 {
@@ -23,8 +23,7 @@ public:
 			      const libcamera::StreamConfiguration &outCfg) = 0;
 	virtual int process(const libcamera::FrameBuffer &source,
 			    CameraBuffer *destination,
-			    const CameraMetadata &requestMetadata,
-			    CameraMetadata *resultMetadata) = 0;
+			    Camera3RequestDescriptor *request) = 0;
 };
 
 #endif /* __ANDROID_POST_PROCESSOR_H__ */

@@ -144,8 +144,7 @@ int CameraStream::waitFence(int fence)
 
 int CameraStream::process(const FrameBuffer &source,
 			  camera3_stream_buffer_t &camera3Dest,
-			  const CameraMetadata &requestMetadata,
-			  CameraMetadata *resultMetadata)
+			  Camera3RequestDescriptor *request)
 {
 	/* Handle waiting on fences on the destination buffer. */
 	int fence = camera3Dest.acquire_fence;
@@ -175,7 +174,7 @@ int CameraStream::process(const FrameBuffer &source,
 		return -EINVAL;
 	}
 
-	return postProcessor_->process(source, &dest, requestMetadata, resultMetadata);
+	return postProcessor_->process(source, &dest, request);
 }
 
 FrameBuffer *CameraStream::getBuffer()

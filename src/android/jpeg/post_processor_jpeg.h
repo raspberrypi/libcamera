@@ -24,8 +24,7 @@ public:
 		      const libcamera::StreamConfiguration &outcfg) override;
 	int process(const libcamera::FrameBuffer &source,
 		    CameraBuffer *destination,
-		    const CameraMetadata &requestMetadata,
-		    CameraMetadata *resultMetadata) override;
+		    Camera3RequestDescriptor *request) override;
 
 private:
 	void generateThumbnail(const libcamera::FrameBuffer &source,

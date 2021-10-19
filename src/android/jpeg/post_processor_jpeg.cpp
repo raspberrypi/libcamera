@@ -11,6 +11,7 @@
 
 #include "../camera_device.h"
 #include "../camera_metadata.h"
+#include "../camera_request.h"
 #include "encoder_libjpeg.h"
 #include "exif.h"
 
@@ -99,14 +100,15 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 
 int PostProcessorJpeg::process(const FrameBuffer &source,
 			       CameraBuffer *destination,
-			       const CameraMetadata &requestMetadata,
-			       CameraMetadata *resultMetadata)
+			       Camera3RequestDescriptor *request)
 {
 	if (!encoder_)
 		return 0;
 
 	ASSERT(destination->numPlanes() == 1);
 
+	const CameraMetadata &requestMetadata = request->settings_;
+	CameraMetadata *resultMetadata = request->resultMetadata_.get();
 	camera_metadata_ro_entry_t entry;
 	int ret;
 

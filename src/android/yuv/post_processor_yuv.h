@@ -20,8 +20,7 @@ public:
 		      const libcamera::StreamConfiguration &outcfg) override;
 	int process(const libcamera::FrameBuffer &source,
 		    CameraBuffer *destination,
-		    const CameraMetadata &requestMetadata,
-		    CameraMetadata *metadata) override;
+		    Camera3RequestDescriptor *request) override;
 
 private:
 	bool isValidBuffers(const libcamera::FrameBuffer &source,

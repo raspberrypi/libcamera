@@ -1153,9 +1153,8 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		int ret = cameraStream->process(*src, buffer,
-						descriptor->settings_,
-						descriptor->resultMetadata_.get());
+		int ret = cameraStream->process(*src, buffer, descriptor);
+
 		/*
 		 * Return the FrameBuffer to the CameraStream now that we're
 		 * done processing it.

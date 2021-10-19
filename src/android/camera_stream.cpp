@@ -143,15 +143,15 @@ int CameraStream::waitFence(int fence)
 }
 
 int CameraStream::process(const FrameBuffer &source,
-			  camera3_stream_buffer_t &camera3Dest,
+			  Camera3RequestDescriptor::StreamBuffer &dest,
 			  Camera3RequestDescriptor *request)
 {
 	/* Handle waiting on fences on the destination buffer. */
-	int fence = camera3Dest.acquire_fence;
+	int fence = dest.buffer.acquire_fence;
 	if (fence != -1) {
 		int ret = waitFence(fence);
 		::close(fence);
-		camera3Dest.acquire_fence = -1;
+		dest.buffer.acquire_fence = -1;
 		if (ret < 0) {
 			LOG(HAL, Error) << "Failed waiting for fence: "
 					<< fence << ": " << strerror(-ret);
@@ -167,14 +167,14 @@ int CameraStream::process(const FrameBuffer &source,
 	 * separate thread.
 	 */
 	const StreamConfiguration &output = configuration();
-	CameraBuffer dest(*camera3Dest.buffer, output.pixelFormat, output.size,
-			  PROT_READ | PROT_WRITE);
-	if (!dest.isValid()) {
+	CameraBuffer destBuffer(*dest.buffer.buffer, output.pixelFormat,
+				output.size, PROT_READ | PROT_WRITE);
+	if (!destBuffer.isValid()) {
 		LOG(HAL, Error) << "Failed to create destination buffer";
 		return -EINVAL;
 	}
 
-	return postProcessor_->process(source, &dest, request);
+	return postProcessor_->process(source, &destBuffer, request);
 }
 
 FrameBuffer *CameraStream::getBuffer()

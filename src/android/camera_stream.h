@@ -19,7 +19,8 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-class Camera3RequestDescriptor;
+#include "camera_request.h"
+
 class CameraDevice;
 class PostProcessor;
 
@@ -119,7 +120,7 @@ public:
 
 	int configure();
 	int process(const libcamera::FrameBuffer &source,
-		    camera3_stream_buffer_t &camera3Buffer,
+		    Camera3RequestDescriptor::StreamBuffer &dest,
 		    Camera3RequestDescriptor *request);
 	libcamera::FrameBuffer *getBuffer();
 	void putBuffer(libcamera::FrameBuffer *buffer);

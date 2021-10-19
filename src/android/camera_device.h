@@ -33,7 +33,9 @@
 #include "camera_worker.h"
 #include "jpeg/encoder.h"
 
+struct Camera3RequestDescriptor;
 struct CameraConfigData;
+
 class CameraDevice : protected libcamera::Loggable
 {
 public:
@@ -72,31 +74,6 @@ private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraDevice)
 
 	CameraDevice(unsigned int id, std::shared_ptr<libcamera::Camera> camera);
-
-	struct Camera3RequestDescriptor {
-		enum class Status {
-			Pending,
-			Success,
-			Error,
-		};
-
-		Camera3RequestDescriptor() = default;
-		~Camera3RequestDescriptor() = default;
-		Camera3RequestDescriptor(libcamera::Camera *camera,
-					 const camera3_capture_request_t *camera3Request);
-		Camera3RequestDescriptor &operator=(Camera3RequestDescriptor &&) = default;
-
-		bool isPending() const { return status_ == Status::Pending; }
-
-		uint32_t frameNumber_ = 0;
-		std::vector<camera3_stream_buffer_t> buffers_;
-		std::vector<std::unique_ptr<libcamera::FrameBuffer>> frameBuffers_;
-		CameraMetadata settings_;
-		std::unique_ptr<CaptureRequest> request_;
-
-		camera3_capture_result_t captureResult_ = {};
-		Status status_ = Status::Pending;
-	};
 
 	enum class State {
 		Stopped,

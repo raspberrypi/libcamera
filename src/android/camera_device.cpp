@@ -24,10 +24,10 @@
 
 #include "system/graphics.h"
 
+#include "camera_buffer.h"
 #include "camera_hal_config.h"
 #include "camera_ops.h"
 #include "camera_request.h"
-#include "post_processor.h"
 
 using namespace libcamera;
 

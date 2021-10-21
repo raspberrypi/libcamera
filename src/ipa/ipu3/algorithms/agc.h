@@ -45,6 +45,9 @@ private:
 	uint32_t minExposureLines_;
 	uint32_t maxExposureLines_;
 
+	double minAnalogueGain_;
+	double maxAnalogueGain_;
+
 	utils::Duration filteredExposure_;
 	utils::Duration currentExposure_;
 	utils::Duration prevExposureValue_;

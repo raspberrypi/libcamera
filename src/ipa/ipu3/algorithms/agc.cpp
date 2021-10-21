@@ -30,10 +30,9 @@ static constexpr uint32_t kInitialFrameMinAECount = 4;
 /* Number of frames to wait between new gain/exposure estimations */
 static constexpr uint32_t kFrameSkipCount = 6;
 
-/* Maximum analogue gain value
- * \todo grab it from a camera helper */
-static constexpr double kMinGain = 1.0;
-static constexpr double kMaxGain = 8.0;
+/* Limits for analogue gain values */
+static constexpr double kMinAnalogueGain = 1.0;
+static constexpr double kMaxAnalogueGain = 8.0;
 
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
@@ -57,9 +56,11 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	minExposureLines_ = context.configuration.agc.minShutterSpeed / lineDuration_;
 	maxExposureLines_ = context.configuration.agc.maxShutterSpeed / lineDuration_;
 
+	minAnalogueGain_ = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
+	maxAnalogueGain_ = std::min(context.configuration.agc.maxAnalogueGain, kMaxAnalogueGain);
+
 	/* Configure the default exposure and gain. */
-	context.frameContext.agc.gain =
-		context.configuration.agc.minAnalogueGain;
+	context.frameContext.agc.gain = minAnalogueGain_;
 	context.frameContext.agc.exposure = minExposureLines_;
 
 	prevExposureValue_ = context.frameContext.agc.gain
@@ -148,7 +149,7 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 	utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 	utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
 
-	utils::Duration maxTotalExposure = maxShutterSpeed * kMaxGain;
+	utils::Duration maxTotalExposure = maxShutterSpeed * maxAnalogueGain_;
 	currentExposure_ = std::min(currentExposure_, maxTotalExposure);
 	LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
 			    << ", maximum is " << maxTotalExposure;
@@ -163,10 +164,10 @@ void Agc::lockExposureGain(uint32_t &exposure, double &analogueGain)
 	* Push the shutter time up to the maximum first, and only then
 	* increase the gain.
 	*/
-	shutterTime = std::clamp<utils::Duration>(exposureValue / kMinGain,
+	shutterTime = std::clamp<utils::Duration>(exposureValue / minAnalogueGain_,
 						  minShutterSpeed, maxShutterSpeed);
 	double stepGain = std::clamp(exposureValue / shutterTime,
-				     kMinGain, kMaxGain);
+				     minAnalogueGain_, maxAnalogueGain_);
 	LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "
 			    << shutterTime << " and "
 			    << stepGain;

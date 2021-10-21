@@ -158,17 +158,17 @@ void Agc::lockExposureGain(uint32_t &exposure, double &gain)
 
 		utils::Duration newExposure = 0.0s;
 		if (currentShutter < maxShutterSpeed) {
-			exposure = std::clamp<uint32_t>(exposure * currentExposure_ / currentExposureNoDg_,
+			exposure = std::clamp<uint32_t>(exposure * filteredExposure_ / currentExposureNoDg_,
 							minExposureLines_,
 							maxExposureLines_);
-			newExposure = currentExposure_ / exposure;
-			gain = std::clamp(gain * currentExposure_ / newExposure,
+			newExposure = filteredExposure_ / exposure;
+			gain = std::clamp(gain * filteredExposure_ / newExposure,
 					  kMinGain, kMaxGain);
 		} else {
-			gain = std::clamp(gain * currentExposure_ / currentExposureNoDg_,
+			gain = std::clamp(gain * filteredExposure_ / currentExposureNoDg_,
 					  kMinGain, kMaxGain);
-			newExposure = currentExposure_ / gain;
-			exposure = std::clamp<uint32_t>(exposure * currentExposure_ / newExposure,
+			newExposure = filteredExposure_ / gain;
+			exposure = std::clamp<uint32_t>(exposure * filteredExposure_ / newExposure,
 							minExposureLines_,
 							maxExposureLines_);
 		}

@@ -46,12 +46,12 @@ static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 90 / 100;
  * \struct Accumulator
  * \brief RGB statistics for a given zone
  *
- * The Accumulator structure stores the sum of the average of each cell in a
- * zone of the image, as well as the number of cells which were unsaturated and
- * therefore included in the average.
+ * Accumulate red, green and blue values for each non-saturated item over a
+ * zone. Items can for instance be pixels, but also the average of groups of
+ * pixels, depending on who uses the accumulator.
  * \todo move this description and structure into a common header
  *
- * Cells which are saturated beyond the threshold defined in
+ * Zones which are saturated beyond the threshold defined in
  * ipu3_uapi_awb_config_s are not included in the average.
  *
  * \var Accumulator::counted

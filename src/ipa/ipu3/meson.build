@@ -5,6 +5,7 @@ subdir('algorithms')
 ipa_name = 'ipa_ipu3'
 
 ipu3_ipa_sources = files([
+    'ipa_context.cpp',
     'ipu3.cpp',
 ])
 

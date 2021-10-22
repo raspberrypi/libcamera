@@ -56,7 +56,7 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPASessionConfiguration::grid
+ * \var IPASessionConfiguration::grid
  * \brief Grid configuration of the IPA
  *
  * \var IPASessionConfiguration::grid::bdsGrid
@@ -70,7 +70,7 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPASessionConfiguration::agc
+ * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *
  * \var IPASessionConfiguration::agc::minShutterSpeed
@@ -87,7 +87,7 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPAFrameContext::agc
+ * \var IPAFrameContext::agc
  * \brief Context for the Automatic Gain Control algorithm
  *
  * The exposure and gain determined are expected to be applied to the sensor
@@ -103,7 +103,7 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPAFrameContext::awb
+ * \var IPAFrameContext::awb
  * \brief Context for the Automatic White Balance algorithm
  *
  * \struct IPAFrameContext::awb::gains
@@ -120,7 +120,7 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPAFrameContext::toneMapping
+ * \var IPAFrameContext::toneMapping
  * \brief Context for ToneMapping and Gamma control
  *
  * \var IPAFrameContext::toneMapping::gamma

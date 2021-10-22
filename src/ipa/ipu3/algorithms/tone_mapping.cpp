@@ -10,9 +10,21 @@
 #include <cmath>
 #include <string.h>
 
+/**
+ * \file tone_mapping.h
+ */
+
 namespace libcamera {
 
 namespace ipa::ipu3::algorithms {
+
+/**
+ * \class ToneMapping
+ * \brief A class to handle tone mapping based on gamma
+ *
+ * This algorithm improves the image dynamic using a look-up table which is
+ * generated based on a gamma parameter.
+ */
 
 ToneMapping::ToneMapping()
 	: gamma_(1.0)
@@ -35,6 +47,14 @@ int ToneMapping::configure(IPAContext &context,
 	return 0;
 }
 
+/**
+ * \brief Fill in the parameter structure, and enable gamma control
+ * \param context The shared IPA context
+ * \param params The IPU3 parameters
+ *
+ * Populate the IPU3 parameter structure with our tone mapping look up table and
+ * enable the gamma control module in the processing blocks.
+ */
 void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 			  ipu3_uapi_params *params)
 {
@@ -49,7 +69,15 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 	params->acc_param.gamma.gc_ctrl.enable = 1;
 }
 
-void ToneMapping::process([[maybe_unused]] IPAContext &context,
+/**
+ * \brief Calculate the tone mapping look up table
+ * \param context The shared IPA context
+ * \param stats The IPU3 statistics and ISP results
+ *
+ * The tone mapping look up table is generated as an inverse power curve from
+ * our gamma setting.
+ */
+void ToneMapping::process(IPAContext &context,
 			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	/*

@@ -19,6 +19,22 @@ ToneMapping::ToneMapping()
 {
 }
 
+/**
+ * \brief Configure the tone mapping given a configInfo
+ * \param[in] context The shared IPA context
+ * \param[in] configInfo The IPA configuration data
+ *
+ * \return 0
+ */
+int ToneMapping::configure(IPAContext &context,
+			   [[maybe_unused]] const IPAConfigInfo &configInfo)
+{
+	/* Initialise tone mapping gamma value. */
+	context.frameContext.toneMapping.gamma = 0.0;
+
+	return 0;
+}
+
 void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 			  ipu3_uapi_params *params)
 {

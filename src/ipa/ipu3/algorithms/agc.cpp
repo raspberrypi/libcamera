@@ -54,6 +54,9 @@ static constexpr uint32_t kFrameSkipCount = 6;
 static constexpr double kMinAnalogueGain = 1.0;
 static constexpr double kMaxAnalogueGain = 8.0;
 
+/* \todo Honour the FrameDurationLimits control instead of hardcoding a limit */
+static constexpr utils::Duration kMaxShutterSpeed = 60ms;
+
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
 
@@ -84,7 +87,8 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 
 	/* \todo replace the exposure in lines storage with time based ones. */
 	minExposureLines_ = context.configuration.agc.minShutterSpeed / lineDuration_;
-	maxExposureLines_ = context.configuration.agc.maxShutterSpeed / lineDuration_;
+	maxExposureLines_ = std::min(context.configuration.agc.maxShutterSpeed / lineDuration_,
+				     kMaxShutterSpeed / lineDuration_);
 
 	minAnalogueGain_ = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
 	maxAnalogueGain_ = std::min(context.configuration.agc.maxAnalogueGain, kMaxAnalogueGain);

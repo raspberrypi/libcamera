@@ -170,16 +170,16 @@ int CameraStream::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 	ASSERT(type_ != Type::Direct);
 
 	/* Handle waiting on fences on the destination buffer. */
-	if (streamBuffer->fence != -1) {
-		int ret = waitFence(streamBuffer->fence);
+	if (streamBuffer->fence.isValid()) {
+		int ret = waitFence(streamBuffer->fence.get());
 		if (ret < 0) {
 			LOG(HAL, Error) << "Failed waiting for fence: "
-					<< streamBuffer->fence << ": " << strerror(-ret);
+					<< streamBuffer->fence.get() << ": "
+					<< strerror(-ret);
 			return ret;
 		}
 
-		::close(streamBuffer->fence);
-		streamBuffer->fence = -1;
+		streamBuffer->fence.reset();
 	}
 
 	const StreamConfiguration &output = configuration();

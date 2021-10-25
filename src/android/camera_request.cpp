@@ -47,8 +47,7 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 	 * Create the CaptureRequest, stored as a unique_ptr<> to tie its
 	 * lifetime to the descriptor.
 	 */
-	request_ = std::make_unique<CaptureRequest>(camera,
-						    reinterpret_cast<uint64_t>(this));
+	request_ = camera->createRequest(reinterpret_cast<uint64_t>(this));
 }
 
 Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;

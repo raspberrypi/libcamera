@@ -47,7 +47,6 @@ android_hal_sources = files([
     'camera_ops.cpp',
     'camera_request.cpp',
     'camera_stream.cpp',
-    'camera_worker.cpp',
     'jpeg/encoder_libjpeg.cpp',
     'jpeg/exif.cpp',
     'jpeg/post_processor_jpeg.cpp',

@@ -14,10 +14,12 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/unique_fd.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+#include <libcamera/fence.h>
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
 
@@ -420,7 +422,6 @@ void CameraDevice::flush()
 		state_ = State::Flushing;
 	}
 
-	worker_.stop();
 	camera_->stop();
 
 	MutexLocker stateLock(stateMutex_);
@@ -433,7 +434,6 @@ void CameraDevice::stop()
 	if (state_ == State::Stopped)
 		return;
 
-	worker_.stop();
 	camera_->stop();
 
 	{
@@ -930,13 +930,10 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 		/*
 		 * Inspect the camera stream type, create buffers opportunely
-		 * and add them to the Request if required. Only acquire fences
-		 * for streams of type Direct are handled by the CameraWorker,
-		 * while fences for streams of type Internal and Mapped are
-		 * handled at post-processing time.
+		 * and add them to the Request if required.
 		 */
 		FrameBuffer *frameBuffer = nullptr;
-		int acquireFence = -1;
+		UniqueFD acquireFence;
 
 		MutexLocker lock(descriptor->streamsProcessMutex_);
 
@@ -964,7 +961,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 						  cameraStream->configuration().pixelFormat,
 						  cameraStream->configuration().size);
 			frameBuffer = buffer.frameBuffer.get();
-			acquireFence = buffer.fence;
+			acquireFence = std::move(buffer.fence);
 			LOG(HAL, Debug) << ss.str() << " (direct)";
 			break;
 
@@ -990,13 +987,14 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			return -ENOMEM;
 		}
 
+		auto fence = std::make_unique<Fence>(std::move(acquireFence));
 		descriptor->request_->addBuffer(cameraStream->stream(),
-						frameBuffer, acquireFence);
+						frameBuffer, std::move(fence));
 	}
 
 	/*
 	 * Translate controls from Android to libcamera and queue the request
-	 * to the CameraWorker thread.
+	 * to the camera.
 	 */
 	int ret = processControls(descriptor.get());
 	if (ret)
@@ -1022,26 +1020,23 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	}
 
 	if (state_ == State::Stopped) {
-		worker_.start();
-
 		ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";
-			worker_.stop();
 			return ret;
 		}
 
 		state_ = State::Running;
 	}
 
-	CaptureRequest *request = descriptor->request_.get();
+	Request *request = descriptor->request_.get();
 
 	{
 		MutexLocker descriptorsLock(descriptorsMutex_);
 		descriptors_.push(std::move(descriptor));
 	}
 
-	worker_.queueRequest(request);
+	camera_->queueRequest(request);
 
 	return 0;
 }
@@ -1063,16 +1058,17 @@ void CameraDevice::requestComplete(Request *request)
 		/*
 		 * Streams of type Direct have been queued to the
 		 * libcamera::Camera and their acquire fences have
-		 * already been waited on by the CameraWorker.
+		 * already been waited on by the library.
 		 *
 		 * Acquire fences of streams of type Internal and Mapped
 		 * will be handled during post-processing.
-		 *
-		 * \todo Instrument the CameraWorker to set the acquire
-		 * fence to -1 once it has handled it and remove this check.
 		 */
-		if (stream->type() == CameraStream::Type::Direct)
-			buffer.fence = -1;
+		if (stream->type() == CameraStream::Type::Direct) {
+			/* If handling of the fence has failed restore buffer.fence. */
+			std::unique_ptr<Fence> fence = buffer.frameBuffer->releaseFence();
+			if (fence)
+				buffer.fence = fence->release();
+		}
 		buffer.status = Camera3RequestDescriptor::Status::Success;
 	}
 
@@ -1193,7 +1189,7 @@ void CameraDevice::sendCaptureResults()
 		std::vector<camera3_stream_buffer_t> resultBuffers;
 		resultBuffers.reserve(descriptor->buffers_.size());
 
-		for (const auto &buffer : descriptor->buffers_) {
+		for (auto &buffer : descriptor->buffers_) {
 			camera3_buffer_status status = CAMERA3_BUFFER_STATUS_ERROR;
 
 			if (buffer.status == Camera3RequestDescriptor::Status::Success)
@@ -1207,7 +1203,7 @@ void CameraDevice::sendCaptureResults()
 			 */
 			resultBuffers.push_back({ buffer.stream->camera3Stream(),
 						  buffer.camera3Buffer, status,
-						  -1, buffer.fence });
+						  -1, buffer.fence.release() });
 		}
 
 		captureResult.num_output_buffers = resultBuffers.size();

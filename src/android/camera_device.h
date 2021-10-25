@@ -29,7 +29,6 @@
 #include "camera_capabilities.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"
-#include "camera_worker.h"
 #include "jpeg/encoder.h"
 
 class Camera3RequestDescriptor;
@@ -104,8 +103,6 @@ private:
 
 	unsigned int id_;
 	camera3_device_t camera3Device_;
-
-	CameraWorker worker_;
 
 	libcamera::Mutex stateMutex_; /* Protects access to the camera state. */
 	State state_ LIBCAMERA_TSA_GUARDED_BY(stateMutex_);

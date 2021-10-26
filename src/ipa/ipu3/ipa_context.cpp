@@ -59,13 +59,13 @@ namespace libcamera::ipa::ipu3 {
  * \var IPASessionConfiguration::grid
  * \brief Grid configuration of the IPA
  *
- * \var IPASessionConfiguration::grid::bdsGrid
+ * \var IPASessionConfiguration::grid.bdsGrid
  * \brief Bayer Down Scaler grid plane config used by the kernel
  *
- * \var IPASessionConfiguration::grid::bdsOutputSize
+ * \var IPASessionConfiguration::grid.bdsOutputSize
  * \brief BDS output size configured by the pipeline handler
  *
- * \var IPASessionConfiguration::grid::stride
+ * \var IPASessionConfiguration::grid.stride
  * \brief Number of cells on one line including the ImgU padding
  */
 
@@ -73,16 +73,16 @@ namespace libcamera::ipa::ipu3 {
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *
- * \var IPASessionConfiguration::agc::minShutterSpeed
+ * \var IPASessionConfiguration::agc.minShutterSpeed
  * \brief Minimum shutter speed supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid::maxShutterSpeed
+ * \var IPASessionConfiguration::grid.maxShutterSpeed
  * \brief Maximum shutter speed supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid::minAnalogueGain
+ * \var IPASessionConfiguration::grid.minAnalogueGain
  * \brief Minimum analogue gain supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid::maxAnalogueGain
+ * \var IPASessionConfiguration::grid.maxAnalogueGain
  * \brief Maximum analogue gain supported with the configured sensor
  */
 
@@ -93,10 +93,10 @@ namespace libcamera::ipa::ipu3 {
  * The exposure and gain determined are expected to be applied to the sensor
  * at the earliest opportunity.
  *
- * \var IPAFrameContext::agc::exposure
+ * \var IPAFrameContext::agc.exposure
  * \brief Exposure time expressed as a number of lines
  *
- * \var IPAFrameContext::agc::gain
+ * \var IPAFrameContext::agc.gain
  * \brief Analogue gain multiplier
  *
  * The gain should be adapted to the sensor specific gain code before applying.
@@ -106,16 +106,16 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAFrameContext::awb
  * \brief Context for the Automatic White Balance algorithm
  *
- * \struct IPAFrameContext::awb::gains
+ * \struct IPAFrameContext::awb.gains
  * \brief White balance gains
  *
- * \var IPAFrameContext::awb::gains::red
+ * \var IPAFrameContext::awb.gains.red
  * \brief White balance gain for R channel
  *
- * \var IPAFrameContext::awb::gains::green
+ * \var IPAFrameContext::awb.gains.green
  * \brief White balance gain for G channel
  *
- * \var IPAFrameContext::awb::gains::blue
+ * \var IPAFrameContext::awb.gains.blue
  * \brief White balance gain for B channel
  */
 
@@ -123,10 +123,10 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAFrameContext::toneMapping
  * \brief Context for ToneMapping and Gamma control
  *
- * \var IPAFrameContext::toneMapping::gamma
+ * \var IPAFrameContext::toneMapping.gamma
  * \brief Gamma value for the LUT
  *
- * \var IPAFrameContext::toneMapping::gammaCorrection
+ * \var IPAFrameContext::toneMapping.gammaCorrection
  * \brief Per-pixel tone mapping implemented as a LUT
  *
  * The LUT structure is defined by the IPU3 kernel interface. See

@@ -267,14 +267,40 @@ void PipelineHandler::unlock()
  */
 
 /**
- * \fn PipelineHandler::stop()
- * \brief Stop capturing from all running streams
+ * \brief Stop capturing from all running streams and cancel pending requests
  * \param[in] camera The camera to stop
  *
  * This function stops capturing and processing requests immediately. All
  * pending requests are cancelled and complete immediately in an error state.
  *
  * \context This function is called from the CameraManager thread.
+ */
+void PipelineHandler::stop(Camera *camera)
+{
+	/* Stop the pipeline handler and let the queued requests complete. */
+	stopDevice(camera);
+
+	/* Cancel and signal as complete all waiting requests. */
+	while (!waitingRequests_.empty()) {
+		Request *request = waitingRequests_.front();
+		waitingRequests_.pop();
+
+		request->_d()->cancel();
+		completeRequest(request);
+	}
+
+	/* Make sure no requests are pending. */
+	Camera::Private *data = camera->_d();
+	ASSERT(data->queuedRequests_.empty());
+}
+
+/**
+ * \fn PipelineHandler::stopDevice()
+ * \brief Stop capturing from all running streams
+ * \param[in] camera The camera to stop
+ *
+ * This function stops capturing and processing requests immediately. All
+ * pending requests are cancelled and complete immediately in an error state.
  */
 
 /**

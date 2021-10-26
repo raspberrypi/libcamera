@@ -139,7 +139,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -803,7 +803,7 @@ error:
 	return ret;
 }
 
-void PipelineHandlerIPU3::stop(Camera *camera)
+void PipelineHandlerIPU3::stopDevice(Camera *camera)
 {
 	IPU3CameraData *data = cameraData(camera);
 	int ret = 0;

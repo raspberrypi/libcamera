@@ -55,7 +55,7 @@ public:
 				       std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
 
 	virtual int start(Camera *camera, const ControlList *controls) = 0;
-	virtual void stop(Camera *camera) = 0;
+	void stop(Camera *camera);
 	bool hasPendingRequests(const Camera *camera) const;
 
 	void queueRequest(Request *request);
@@ -70,6 +70,7 @@ protected:
 	void hotplugMediaDevice(MediaDevice *media);
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
+	virtual void stopDevice(Camera *camera) = 0;
 
 	CameraManager *manager_;
 

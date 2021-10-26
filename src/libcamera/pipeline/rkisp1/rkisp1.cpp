@@ -146,7 +146,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -827,7 +827,7 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 	return ret;
 }
 
-void PipelineHandlerRkISP1::stop(Camera *camera)
+void PipelineHandlerRkISP1::stopDevice(Camera *camera)
 {
 	RkISP1CameraData *data = cameraData(camera);
 	int ret;

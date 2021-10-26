@@ -74,7 +74,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -250,7 +250,7 @@ int PipelineHandlerUVC::start(Camera *camera, [[maybe_unused]] const ControlList
 	return 0;
 }
 
-void PipelineHandlerUVC::stop(Camera *camera)
+void PipelineHandlerUVC::stopDevice(Camera *camera)
 {
 	UVCCameraData *data = cameraData(camera);
 	data->video_->streamOff();

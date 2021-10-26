@@ -298,7 +298,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -943,7 +943,7 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	return 0;
 }
 
-void PipelineHandlerRPi::stop(Camera *camera)
+void PipelineHandlerRPi::stopDevice(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 

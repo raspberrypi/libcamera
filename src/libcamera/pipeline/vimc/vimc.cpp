@@ -91,7 +91,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -359,7 +359,7 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] const ControlLis
 	return 0;
 }
 
-void PipelineHandlerVimc::stop(Camera *camera)
+void PipelineHandlerVimc::stopDevice(Camera *camera)
 {
 	VimcCameraData *data = cameraData(camera);
 	data->video_->streamOff();

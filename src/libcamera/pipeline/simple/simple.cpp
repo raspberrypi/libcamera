@@ -279,7 +279,7 @@ public:
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
 	int start(Camera *camera, const ControlList *controls) override;
-	void stop(Camera *camera) override;
+	void stopDevice(Camera *camera) override;
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -1036,7 +1036,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 	return 0;
 }
 
-void SimplePipelineHandler::stop(Camera *camera)
+void SimplePipelineHandler::stopDevice(Camera *camera)
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;

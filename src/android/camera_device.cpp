@@ -982,13 +982,13 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	MutexLocker stateLock(stateMutex_);
 
 	if (state_ == State::Flushing) {
-		abortRequest(descriptor.get());
+		Camera3RequestDescriptor *rawDescriptor = descriptor.get();
 		{
 			MutexLocker descriptorsLock(descriptorsMutex_);
 			descriptors_.push(std::move(descriptor));
 		}
-
-		sendCaptureResults();
+		abortRequest(rawDescriptor);
+		completeDescriptor(rawDescriptor);
 
 		return 0;
 	}
@@ -1079,7 +1079,7 @@ void CameraDevice::requestComplete(Request *request)
 				<< request->status();
 
 		abortRequest(descriptor);
-		sendCaptureResults();
+		completeDescriptor(descriptor);
 
 		return;
 	}
@@ -1129,6 +1129,7 @@ void CameraDevice::requestComplete(Request *request)
 			buffer.status = Camera3RequestDescriptor::Status::Error;
 			notifyError(descriptor->frameNumber_, stream->camera3Stream(),
 				    CAMERA3_MSG_ERROR_BUFFER);
+			descriptor->status_ = Camera3RequestDescriptor::Status::Error;
 			continue;
 		}
 
@@ -1145,26 +1146,26 @@ void CameraDevice::requestComplete(Request *request)
 			buffer.status = Camera3RequestDescriptor::Status::Error;
 			notifyError(descriptor->frameNumber_, stream->camera3Stream(),
 				    CAMERA3_MSG_ERROR_BUFFER);
+			descriptor->status_ = Camera3RequestDescriptor::Status::Error;
 		}
 	}
 
-	descriptor->status_ = Camera3RequestDescriptor::Status::Success;
+	completeDescriptor(descriptor);
+}
+
+void CameraDevice::completeDescriptor(Camera3RequestDescriptor *descriptor)
+{
+	MutexLocker lock(descriptorsMutex_);
+	descriptor->complete_ = true;
+
 	sendCaptureResults();
 }
 
 void CameraDevice::sendCaptureResults()
 {
-	MutexLocker lock(descriptorsMutex_);
 	while (!descriptors_.empty() && !descriptors_.front()->isPending()) {
 		auto descriptor = std::move(descriptors_.front());
 		descriptors_.pop();
-
-		/*
-		 * \todo Releasing and re-acquiring the critical section for
-		 * every request completion (grain-locking) might have an
-		 * impact on performance which should be measured.
-		 */
-		lock.unlock();
 
 		camera3_capture_result_t captureResult = {};
 
@@ -1201,8 +1202,6 @@ void CameraDevice::sendCaptureResults()
 			captureResult.partial_result = 1;
 
 		callbacks_->process_capture_result(callbacks_, &captureResult);
-
-		lock.lock();
 	}
 }
 

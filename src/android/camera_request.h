@@ -26,7 +26,6 @@ class Camera3RequestDescriptor
 {
 public:
 	enum class Status {
-		Pending,
 		Success,
 		Error,
 	};
@@ -43,7 +42,7 @@ public:
 				 const camera3_capture_request_t *camera3Request);
 	~Camera3RequestDescriptor();
 
-	bool isPending() const { return status_ == Status::Pending; }
+	bool isPending() const { return !complete_; }
 
 	uint32_t frameNumber_ = 0;
 
@@ -53,7 +52,8 @@ public:
 	std::unique_ptr<CaptureRequest> request_;
 	std::unique_ptr<CameraMetadata> resultMetadata_;
 
-	Status status_ = Status::Pending;
+	bool complete_ = false;
+	Status status_ = Status::Success;
 
 private:
 	LIBCAMERA_DISABLE_COPY(Camera3RequestDescriptor)

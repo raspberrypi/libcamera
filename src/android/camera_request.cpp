@@ -36,7 +36,7 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 			static_cast<CameraStream *>(buffer.stream->priv);
 
 		buffers_.push_back({ stream, buffer.buffer, nullptr,
-				     buffer.acquire_fence, Status::Pending });
+				     buffer.acquire_fence, Status::Success });
 	}
 
 	/* Clone the controls associated with the camera3 request. */

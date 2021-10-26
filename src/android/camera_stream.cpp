@@ -22,6 +22,7 @@
 #include "camera_capabilities.h"
 #include "camera_device.h"
 #include "camera_metadata.h"
+#include "post_processor.h"
 
 using namespace libcamera;
 
@@ -97,6 +98,20 @@ int CameraStream::configure()
 		int ret = postProcessor_->configure(configuration(), output);
 		if (ret)
 			return ret;
+
+		postProcessor_->processComplete.connect(
+			this, [&](Camera3RequestDescriptor::StreamBuffer *streamBuffer,
+				  PostProcessor::Status status) {
+				Camera3RequestDescriptor::Status bufferStatus;
+
+				if (status == PostProcessor::Status::Success)
+					bufferStatus = Camera3RequestDescriptor::Status::Success;
+				else
+					bufferStatus = Camera3RequestDescriptor::Status::Error;
+
+				cameraDevice_->streamProcessingComplete(streamBuffer,
+									bufferStatus);
+			});
 	}
 
 	if (type_ == Type::Internal) {

@@ -7,7 +7,9 @@
 #ifndef __ANDROID_CAMERA_REQUEST_H__
 #define __ANDROID_CAMERA_REQUEST_H__
 
+#include <map>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <libcamera/base/class.h>
@@ -42,6 +44,10 @@ public:
 		std::unique_ptr<CameraBuffer> dstBuffer;
 		Camera3RequestDescriptor *request;
 	};
+
+	/* Keeps track of streams requiring post-processing. */
+	std::map<CameraStream *, StreamBuffer *> pendingStreamsToProcess_;
+	std::mutex streamsProcessMutex_;
 
 	Camera3RequestDescriptor(libcamera::Camera *camera,
 				 const camera3_capture_request_t *camera3Request);

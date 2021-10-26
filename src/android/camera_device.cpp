@@ -926,6 +926,9 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * Request.
 			 */
 			LOG(HAL, Debug) << ss.str() << " (mapped)";
+
+			descriptor->pendingStreamsToProcess_.insert(
+				{ cameraStream, &buffer });
 			continue;
 
 		case CameraStream::Type::Direct:
@@ -955,6 +958,9 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			frameBuffer = cameraStream->getBuffer();
 			buffer.internalBuffer = frameBuffer;
 			LOG(HAL, Debug) << ss.str() << " (internal)";
+
+			descriptor->pendingStreamsToProcess_.insert(
+				{ cameraStream, &buffer });
 			break;
 		}
 
@@ -1118,42 +1124,42 @@ void CameraDevice::requestComplete(Request *request)
 	}
 
 	/* Handle post-processing. */
-	for (auto &buffer : descriptor->buffers_) {
-		CameraStream *stream = buffer.stream;
-
-		if (stream->type() == CameraStream::Type::Direct)
-			continue;
+	/*
+	 * \todo Protect the loop below with streamsProcessMutex_ when post
+	 * processor runs asynchronously.
+	 */
+	auto iter = descriptor->pendingStreamsToProcess_.begin();
+	while (iter != descriptor->pendingStreamsToProcess_.end()) {
+		CameraStream *stream = iter->first;
+		Camera3RequestDescriptor::StreamBuffer *buffer = iter->second;
 
 		FrameBuffer *src = request->findBuffer(stream->stream());
 		if (!src) {
 			LOG(HAL, Error) << "Failed to find a source stream buffer";
-			buffer.status = Camera3RequestDescriptor::Status::Error;
-			notifyError(descriptor->frameNumber_, stream->camera3Stream(),
-				    CAMERA3_MSG_ERROR_BUFFER);
-			descriptor->status_ = Camera3RequestDescriptor::Status::Error;
+			setBufferStatus(*buffer, Camera3RequestDescriptor::Status::Error);
+			iter = descriptor->pendingStreamsToProcess_.erase(iter);
 			continue;
 		}
 
-		buffer.srcBuffer = src;
+		buffer->srcBuffer = src;
 
-		int ret = stream->process(&buffer);
-
-		/*
-		 * If the framebuffer is internal to CameraStream return it back
-		 * now that we're done processing it.
-		 */
-		if (buffer.internalBuffer)
-			stream->putBuffer(buffer.internalBuffer);
-
+		++iter;
+		int ret = stream->process(buffer);
 		if (ret) {
-			buffer.status = Camera3RequestDescriptor::Status::Error;
-			notifyError(descriptor->frameNumber_, stream->camera3Stream(),
-				    CAMERA3_MSG_ERROR_BUFFER);
-			descriptor->status_ = Camera3RequestDescriptor::Status::Error;
+			setBufferStatus(*buffer, Camera3RequestDescriptor::Status::Error);
+			descriptor->pendingStreamsToProcess_.erase(stream);
+
+			/*
+			 * If the framebuffer is internal to CameraStream return
+			 * it back now that we're done processing it.
+			 */
+			if (buffer->internalBuffer)
+				stream->putBuffer(buffer->internalBuffer);
 		}
 	}
 
-	completeDescriptor(descriptor);
+	if (descriptor->pendingStreamsToProcess_.empty())
+		completeDescriptor(descriptor);
 }
 
 void CameraDevice::completeDescriptor(Camera3RequestDescriptor *descriptor)
@@ -1206,6 +1212,39 @@ void CameraDevice::sendCaptureResults()
 
 		callbacks_->process_capture_result(callbacks_, &captureResult);
 	}
+}
+
+void CameraDevice::setBufferStatus(Camera3RequestDescriptor::StreamBuffer &streamBuffer,
+				   Camera3RequestDescriptor::Status status)
+{
+	streamBuffer.status = status;
+	if (status != Camera3RequestDescriptor::Status::Success) {
+		notifyError(streamBuffer.request->frameNumber_,
+			    streamBuffer.stream->camera3Stream(),
+			    CAMERA3_MSG_ERROR_BUFFER);
+
+		/* Also set error status on entire request descriptor. */
+		streamBuffer.request->status_ =
+			Camera3RequestDescriptor::Status::Error;
+	}
+}
+
+void CameraDevice::streamProcessingComplete(Camera3RequestDescriptor::StreamBuffer *streamBuffer,
+					    Camera3RequestDescriptor::Status status)
+{
+	setBufferStatus(*streamBuffer, status);
+
+	/*
+	 * If the framebuffer is internal to CameraStream return it back now
+	 * that we're done processing it.
+	 */
+	if (streamBuffer->internalBuffer)
+		streamBuffer->stream->putBuffer(streamBuffer->internalBuffer);
+
+	Camera3RequestDescriptor *request = streamBuffer->request;
+	MutexLocker locker(request->streamsProcessMutex_);
+
+	request->pendingStreamsToProcess_.erase(streamBuffer->stream);
 }
 
 std::string CameraDevice::logPrefix() const

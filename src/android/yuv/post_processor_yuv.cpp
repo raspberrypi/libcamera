@@ -54,12 +54,15 @@ int PostProcessorYuv::process(Camera3RequestDescriptor::StreamBuffer *streamBuff
 	const FrameBuffer &source = *streamBuffer->srcBuffer;
 	CameraBuffer *destination = streamBuffer->dstBuffer.get();
 
-	if (!isValidBuffers(source, *destination))
+	if (!isValidBuffers(source, *destination)) {
+		processComplete.emit(streamBuffer, PostProcessor::Status::Error);
 		return -EINVAL;
+	}
 
 	const MappedFrameBuffer sourceMapped(&source, MappedFrameBuffer::MapFlag::Read);
 	if (!sourceMapped.isValid()) {
 		LOG(YUV, Error) << "Failed to mmap camera frame buffer";
+		processComplete.emit(streamBuffer, PostProcessor::Status::Error);
 		return -EINVAL;
 	}
 
@@ -77,8 +80,11 @@ int PostProcessorYuv::process(Camera3RequestDescriptor::StreamBuffer *streamBuff
 				    libyuv::FilterMode::kFilterBilinear);
 	if (ret) {
 		LOG(YUV, Error) << "Failed NV12 scaling: " << ret;
+		processComplete.emit(streamBuffer, PostProcessor::Status::Error);
 		return -EINVAL;
 	}
+
+	processComplete.emit(streamBuffer, PostProcessor::Status::Success);
 
 	return 0;
 }

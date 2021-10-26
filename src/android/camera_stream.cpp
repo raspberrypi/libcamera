@@ -150,6 +150,8 @@ int CameraStream::process(const FrameBuffer &source,
 			  Camera3RequestDescriptor::StreamBuffer &dest,
 			  Camera3RequestDescriptor *request)
 {
+	ASSERT(type_ != Type::Direct);
+
 	/* Handle waiting on fences on the destination buffer. */
 	if (dest.fence != -1) {
 		int ret = waitFence(dest.fence);
@@ -162,9 +164,6 @@ int CameraStream::process(const FrameBuffer &source,
 		::close(dest.fence);
 		dest.fence = -1;
 	}
-
-	if (!postProcessor_)
-		return 0;
 
 	/*
 	 * \todo Buffer mapping and processing should be moved to a

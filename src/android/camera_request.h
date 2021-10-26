@@ -20,6 +20,7 @@
 #include "camera_metadata.h"
 #include "camera_worker.h"
 
+class CameraBuffer;
 class CameraStream;
 
 class Camera3RequestDescriptor
@@ -36,6 +37,10 @@ public:
 		std::unique_ptr<libcamera::FrameBuffer> frameBuffer;
 		int fence;
 		Status status;
+		libcamera::FrameBuffer *internalBuffer;
+		const libcamera::FrameBuffer *srcBuffer;
+		std::unique_ptr<CameraBuffer> dstBuffer;
+		Camera3RequestDescriptor *request;
 	};
 
 	Camera3RequestDescriptor(libcamera::Camera *camera,

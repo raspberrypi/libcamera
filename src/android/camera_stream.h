@@ -121,9 +121,7 @@ public:
 	libcamera::Stream *stream() const;
 
 	int configure();
-	int process(const libcamera::FrameBuffer &source,
-		    Camera3RequestDescriptor::StreamBuffer &dest,
-		    Camera3RequestDescriptor *request);
+	int process(Camera3RequestDescriptor::StreamBuffer *streamBuffer);
 	libcamera::FrameBuffer *getBuffer();
 	void putBuffer(libcamera::FrameBuffer *buffer);
 

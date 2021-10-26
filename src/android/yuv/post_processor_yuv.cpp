@@ -49,10 +49,11 @@ int PostProcessorYuv::configure(const StreamConfiguration &inCfg,
 	return 0;
 }
 
-int PostProcessorYuv::process(const FrameBuffer &source,
-			      CameraBuffer *destination,
-			      [[maybe_unused]] Camera3RequestDescriptor *request)
+int PostProcessorYuv::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 {
+	const FrameBuffer &source = *streamBuffer->srcBuffer;
+	CameraBuffer *destination = streamBuffer->dstBuffer.get();
+
 	if (!isValidBuffers(source, *destination))
 		return -EINVAL;
 

@@ -9,6 +9,8 @@
 
 #include <libcamera/base/span.h>
 
+#include "camera_buffer.h"
+
 using namespace libcamera;
 
 /*
@@ -36,7 +38,8 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 			static_cast<CameraStream *>(buffer.stream->priv);
 
 		buffers_.push_back({ stream, buffer.buffer, nullptr,
-				     buffer.acquire_fence, Status::Success });
+				     buffer.acquire_fence, Status::Success,
+				     nullptr, nullptr, nullptr, this });
 	}
 
 	/* Clone the controls associated with the camera3 request. */

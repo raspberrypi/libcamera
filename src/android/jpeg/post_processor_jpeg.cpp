@@ -98,15 +98,17 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 	}
 }
 
-int PostProcessorJpeg::process(const FrameBuffer &source,
-			       CameraBuffer *destination,
-			       Camera3RequestDescriptor *request)
+int PostProcessorJpeg::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 {
 	ASSERT(encoder_);
+
+	const FrameBuffer &source = *streamBuffer->srcBuffer;
+	CameraBuffer *destination = streamBuffer->dstBuffer.get();
+
 	ASSERT(destination->numPlanes() == 1);
 
-	const CameraMetadata &requestMetadata = request->settings_;
-	CameraMetadata *resultMetadata = request->resultMetadata_.get();
+	const CameraMetadata &requestMetadata = streamBuffer->request->settings_;
+	CameraMetadata *resultMetadata = streamBuffer->request->resultMetadata_.get();
 	camera_metadata_ro_entry_t entry;
 	int ret;
 

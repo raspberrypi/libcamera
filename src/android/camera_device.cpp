@@ -953,6 +953,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 			 * once it has been processed.
 			 */
 			frameBuffer = cameraStream->getBuffer();
+			buffer.internalBuffer = frameBuffer;
 			LOG(HAL, Debug) << ss.str() << " (internal)";
 			break;
 		}
@@ -1133,14 +1134,16 @@ void CameraDevice::requestComplete(Request *request)
 			continue;
 		}
 
-		int ret = stream->process(*src, buffer, descriptor);
+		buffer.srcBuffer = src;
+
+		int ret = stream->process(&buffer);
 
 		/*
-		 * Return the FrameBuffer to the CameraStream now that we're
-		 * done processing it.
+		 * If the framebuffer is internal to CameraStream return it back
+		 * now that we're done processing it.
 		 */
-		if (stream->type() == CameraStream::Type::Internal)
-			stream->putBuffer(src);
+		if (buffer.internalBuffer)
+			stream->putBuffer(buffer.internalBuffer);
 
 		if (ret) {
 			buffer.status = Camera3RequestDescriptor::Status::Error;

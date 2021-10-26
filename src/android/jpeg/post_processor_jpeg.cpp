@@ -102,9 +102,7 @@ int PostProcessorJpeg::process(const FrameBuffer &source,
 			       CameraBuffer *destination,
 			       Camera3RequestDescriptor *request)
 {
-	if (!encoder_)
-		return 0;
-
+	ASSERT(encoder_);
 	ASSERT(destination->numPlanes() == 1);
 
 	const CameraMetadata &requestMetadata = request->settings_;

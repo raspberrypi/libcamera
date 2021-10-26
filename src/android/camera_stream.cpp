@@ -99,6 +99,7 @@ int CameraStream::configure()
 		if (ret)
 			return ret;
 
+		worker_ = std::make_unique<PostProcessorWorker>(postProcessor_.get());
 		postProcessor_->processComplete.connect(
 			this, [&](Camera3RequestDescriptor::StreamBuffer *streamBuffer,
 				  PostProcessor::Status status) {
@@ -112,6 +113,8 @@ int CameraStream::configure()
 				cameraDevice_->streamProcessingComplete(streamBuffer,
 									bufferStatus);
 			});
+
+		worker_->start();
 	}
 
 	if (type_ == Type::Internal) {
@@ -178,10 +181,6 @@ int CameraStream::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 		streamBuffer->fence = -1;
 	}
 
-	/*
-	 * \todo Buffer mapping and processing should be moved to a
-	 * separate thread.
-	 */
 	const StreamConfiguration &output = configuration();
 	streamBuffer->dstBuffer = std::make_unique<CameraBuffer>(
 		*streamBuffer->camera3Buffer, output.pixelFormat, output.size,
@@ -191,9 +190,17 @@ int CameraStream::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 		return -EINVAL;
 	}
 
-	postProcessor_->process(streamBuffer);
+	worker_->queueRequest(streamBuffer);
 
 	return 0;
+}
+
+void CameraStream::flush()
+{
+	if (!postProcessor_)
+		return;
+
+	worker_->flush();
 }
 
 FrameBuffer *CameraStream::getBuffer()
@@ -222,4 +229,88 @@ void CameraStream::putBuffer(FrameBuffer *buffer)
 	std::lock_guard<std::mutex> locker(*mutex_);
 
 	buffers_.push_back(buffer);
+}
+
+CameraStream::PostProcessorWorker::PostProcessorWorker(PostProcessor *postProcessor)
+	: postProcessor_(postProcessor)
+{
+}
+
+CameraStream::PostProcessorWorker::~PostProcessorWorker()
+{
+	{
+		libcamera::MutexLocker lock(mutex_);
+		state_ = State::Stopped;
+	}
+
+	cv_.notify_one();
+	wait();
+}
+
+void CameraStream::PostProcessorWorker::start()
+{
+	{
+		libcamera::MutexLocker lock(mutex_);
+		ASSERT(state_ != State::Running);
+		state_ = State::Running;
+	}
+
+	Thread::start();
+}
+
+void CameraStream::PostProcessorWorker::queueRequest(Camera3RequestDescriptor::StreamBuffer *dest)
+{
+	{
+		MutexLocker lock(mutex_);
+		ASSERT(state_ == State::Running);
+		requests_.push(dest);
+	}
+
+	cv_.notify_one();
+}
+
+void CameraStream::PostProcessorWorker::run()
+{
+	MutexLocker locker(mutex_);
+
+	while (1) {
+		cv_.wait(locker, [&] {
+			return state_ != State::Running || !requests_.empty();
+		});
+
+		if (state_ != State::Running)
+			break;
+
+		Camera3RequestDescriptor::StreamBuffer *streamBuffer = requests_.front();
+		requests_.pop();
+		locker.unlock();
+
+		postProcessor_->process(streamBuffer);
+
+		locker.lock();
+	}
+
+	if (state_ == State::Flushing) {
+		std::queue<Camera3RequestDescriptor::StreamBuffer *> requests =
+			std::move(requests_);
+		locker.unlock();
+
+		while (!requests.empty()) {
+			postProcessor_->processComplete.emit(
+				requests.front(), PostProcessor::Status::Error);
+			requests.pop();
+		}
+
+		locker.lock();
+		state_ = State::Stopped;
+	}
+}
+
+void CameraStream::PostProcessorWorker::flush()
+{
+	libcamera::MutexLocker lock(mutex_);
+	state_ = State::Flushing;
+	lock.unlock();
+
+	cv_.notify_one();
 }

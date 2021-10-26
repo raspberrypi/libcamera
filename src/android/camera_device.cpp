@@ -1027,29 +1027,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 void CameraDevice::requestComplete(Request *request)
 {
-	Camera3RequestDescriptor *descriptor;
-	{
-		MutexLocker descriptorsLock(descriptorsMutex_);
-		ASSERT(!descriptors_.empty());
-		descriptor = descriptors_.front().get();
-	}
-
-	if (descriptor->request_->cookie() != request->cookie()) {
-		/*
-		 * \todo Clarify if the Camera has to be closed on
-		 * ERROR_DEVICE.
-		 */
-		LOG(HAL, Error)
-			<< "Out-of-order completion for request "
-			<< utils::hex(request->cookie());
-
-		MutexLocker descriptorsLock(descriptorsMutex_);
-		descriptors_.pop();
-
-		notifyError(0, nullptr, CAMERA3_MSG_ERROR_DEVICE);
-
-		return;
-	}
+	Camera3RequestDescriptor *descriptor =
+		reinterpret_cast<Camera3RequestDescriptor *>(request->cookie());
 
 	/*
 	 * Prepare the capture result for the Android camera stack.
@@ -1124,9 +1103,13 @@ void CameraDevice::requestComplete(Request *request)
 	}
 
 	/* Handle post-processing. */
+	MutexLocker locker(descriptor->streamsProcessMutex_);
+
 	/*
-	 * \todo Protect the loop below with streamsProcessMutex_ when post
-	 * processor runs asynchronously.
+	 * Queue all the post-processing streams request at once. The completion
+	 * slot streamProcessingComplete() can only execute when we are out
+	 * this critical section. This helps to handle synchronous errors here
+	 * itself.
 	 */
 	auto iter = descriptor->pendingStreamsToProcess_.begin();
 	while (iter != descriptor->pendingStreamsToProcess_.end()) {
@@ -1158,8 +1141,10 @@ void CameraDevice::requestComplete(Request *request)
 		}
 	}
 
-	if (descriptor->pendingStreamsToProcess_.empty())
+	if (descriptor->pendingStreamsToProcess_.empty()) {
+		locker.unlock();
 		completeDescriptor(descriptor);
+	}
 }
 
 void CameraDevice::completeDescriptor(Camera3RequestDescriptor *descriptor)
@@ -1242,9 +1227,16 @@ void CameraDevice::streamProcessingComplete(Camera3RequestDescriptor::StreamBuff
 		streamBuffer->stream->putBuffer(streamBuffer->internalBuffer);
 
 	Camera3RequestDescriptor *request = streamBuffer->request;
-	MutexLocker locker(request->streamsProcessMutex_);
 
-	request->pendingStreamsToProcess_.erase(streamBuffer->stream);
+	{
+		MutexLocker locker(request->streamsProcessMutex_);
+
+		request->pendingStreamsToProcess_.erase(streamBuffer->stream);
+		if (!request->pendingStreamsToProcess_.empty())
+			return;
+	}
+
+	completeDescriptor(streamBuffer->request);
 }
 
 std::string CameraDevice::logPrefix() const

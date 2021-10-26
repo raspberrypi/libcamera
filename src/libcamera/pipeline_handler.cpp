@@ -312,6 +312,17 @@ void PipelineHandler::queueRequest(Request *request)
 {
 	LIBCAMERA_TRACEPOINT(request_queue, request);
 
+	waitingRequests_.push(request);
+	doQueueRequests();
+}
+
+/**
+ * \brief Queue one requests to the device
+ */
+void PipelineHandler::doQueueRequest(Request *request)
+{
+	LIBCAMERA_TRACEPOINT(request_device_queue, request);
+
 	Camera *camera = request->_d()->camera();
 	Camera::Private *data = camera->_d();
 	data->queuedRequests_.push_back(request);
@@ -322,6 +333,22 @@ void PipelineHandler::queueRequest(Request *request)
 	if (ret) {
 		request->_d()->cancel();
 		completeRequest(request);
+	}
+}
+
+/**
+ * \brief Queue requests to the device
+ *
+ * Iterate the list of waiting requests and queue them to the device one
+ * by one.
+ */
+void PipelineHandler::doQueueRequests()
+{
+	while (!waitingRequests_.empty()) {
+		Request *request = waitingRequests_.front();
+		waitingRequests_.pop();
+
+		doQueueRequest(request);
 	}
 }
 

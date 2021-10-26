@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <queue>
 #include <set>
 #include <string>
 #include <sys/types.h>
@@ -76,8 +77,13 @@ private:
 	void mediaDeviceDisconnected(MediaDevice *media);
 	virtual void disconnect();
 
+	void doQueueRequest(Request *request);
+	void doQueueRequests();
+
 	std::vector<std::shared_ptr<MediaDevice>> mediaDevices_;
 	std::vector<std::weak_ptr<Camera>> cameras_;
+
+	std::queue<Request *> waitingRequests_;
 
 	const char *name_;
 

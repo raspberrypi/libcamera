@@ -27,7 +27,7 @@ public:
 
 	virtual int configure(const libcamera::StreamConfiguration &inCfg,
 			      const libcamera::StreamConfiguration &outCfg) = 0;
-	virtual int process(Camera3RequestDescriptor::StreamBuffer *streamBuffer) = 0;
+	virtual void process(Camera3RequestDescriptor::StreamBuffer *streamBuffer) = 0;
 
 	libcamera::Signal<Camera3RequestDescriptor::StreamBuffer *, Status> processComplete;
 };

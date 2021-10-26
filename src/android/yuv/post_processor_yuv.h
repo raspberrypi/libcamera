@@ -18,7 +18,7 @@ public:
 
 	int configure(const libcamera::StreamConfiguration &incfg,
 		      const libcamera::StreamConfiguration &outcfg) override;
-	int process(Camera3RequestDescriptor::StreamBuffer *streamBuffer) override;
+	void process(Camera3RequestDescriptor::StreamBuffer *streamBuffer) override;
 
 private:
 	bool isValidBuffers(const libcamera::FrameBuffer &source,

@@ -191,7 +191,9 @@ int CameraStream::process(Camera3RequestDescriptor::StreamBuffer *streamBuffer)
 		return -EINVAL;
 	}
 
-	return postProcessor_->process(streamBuffer);
+	postProcessor_->process(streamBuffer);
+
+	return 0;
 }
 
 FrameBuffer *CameraStream::getBuffer()

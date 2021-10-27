@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/pipeline_handler.h"
 
+#include <chrono>
 #include <sys/sysmacros.h>
 
 #include <libcamera/base/log.h>
@@ -18,6 +19,7 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/request.h"
 #include "libcamera/internal/tracepoints.h"
@@ -35,6 +37,8 @@
  * Every subclass of PipelineHandler shall be registered with libcamera using
  * the REGISTER_PIPELINE_HANDLER() macro.
  */
+
+using namespace std::chrono_literals;
 
 namespace libcamera {
 
@@ -323,10 +327,16 @@ bool PipelineHandler::hasPendingRequests(const Camera *camera) const
  * \param[in] request The request to queue
  *
  * This function queues a capture request to the pipeline handler for
- * processing. The request is first added to the internal list of queued
- * requests, and then passed to the pipeline handler with a call to
- * queueRequestDevice(). If the pipeline handler fails in queuing the request
- * to the hardware the request is cancelled.
+ * processing. The request is first added to the internal list of waiting
+ * requests which have to be prepared to make sure they are ready for being
+ * queued to the pipeline handler.
+ *
+ * The queue of waiting requests is iterated and all prepared requests are
+ * passed to the pipeline handler in the same order they have been queued by
+ * calling this function.
+ *
+ * If a Request fails during the preparation phase or if the pipeline handler
+ * fails in queuing the request to the hardware the request is cancelled.
  *
  * Keeping track of queued requests ensures automatic completion of all requests
  * when the pipeline handler is stopped with stop(). Request completion shall be
@@ -339,7 +349,11 @@ void PipelineHandler::queueRequest(Request *request)
 	LIBCAMERA_TRACEPOINT(request_queue, request);
 
 	waitingRequests_.push(request);
-	doQueueRequests();
+
+	request->_d()->prepared.connect(this, [this]() {
+						doQueueRequests();
+					});
+	request->_d()->prepare(300ms);
 }
 
 /**
@@ -355,6 +369,11 @@ void PipelineHandler::doQueueRequest(Request *request)
 
 	request->_d()->sequence_ = data->requestSequence_++;
 
+	if (request->_d()->cancelled_) {
+		completeRequest(request);
+		return;
+	}
+
 	int ret = queueRequestDevice(camera, request);
 	if (ret) {
 		request->_d()->cancel();
@@ -363,18 +382,20 @@ void PipelineHandler::doQueueRequest(Request *request)
 }
 
 /**
- * \brief Queue requests to the device
+ * \brief Queue prepared requests to the device
  *
  * Iterate the list of waiting requests and queue them to the device one
- * by one.
+ * by one if they have been prepared.
  */
 void PipelineHandler::doQueueRequests()
 {
 	while (!waitingRequests_.empty()) {
 		Request *request = waitingRequests_.front();
-		waitingRequests_.pop();
+		if (!request->_d()->prepared_)
+			break;
 
 		doQueueRequest(request);
+		waitingRequests_.pop();
 	}
 }
 

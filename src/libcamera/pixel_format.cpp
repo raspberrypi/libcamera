@@ -132,7 +132,6 @@ std::string PixelFormat::toString() const
 
 /**
  * \brief Create a PixelFormat from a string
- * \return Pixel format
  * \return The PixelFormat represented by the \a name if known, or an
  * invalid pixel format otherwise.
  */

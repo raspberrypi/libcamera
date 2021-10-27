@@ -141,6 +141,12 @@ LOG_DECLARE_CATEGORY(V4L2)
  */
 
 /**
+ * \fn V4L2Capability::hasMediaController()
+ * \brief Determine if the video device uses Media Controller to configure I/O
+ * \return True if the video device is controlled by a Media Controller device
+ */
+
+/**
  * \class V4L2BufferCache
  * \brief Hot cache of associations between V4L2 buffer indexes and FrameBuffer
  *
@@ -1019,7 +1025,7 @@ std::vector<V4L2PixelFormat> V4L2VideoDevice::enumPixelformats(uint32_t code)
 	std::vector<V4L2PixelFormat> formats;
 	int ret;
 
-	if (code && !(caps_.device_caps() & V4L2_CAP_IO_MC)) {
+	if (code && !caps_.hasMediaController()) {
 		LOG(V4L2, Error)
 			<< "Media bus code filtering not supported by the device";
 		return {};

@@ -109,6 +109,10 @@ struct V4L2Capability final : v4l2_capability {
 	{
 		return device_caps() & V4L2_CAP_STREAMING;
 	}
+	bool hasMediaController() const
+	{
+		return device_caps() & V4L2_CAP_IO_MC;
+	}
 };
 
 class V4L2BufferCache

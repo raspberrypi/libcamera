@@ -217,6 +217,36 @@ global variable, should run a minimal amount of code in the constructor and
 destructor, and code that contains dependencies should be moved to a later
 point in time. 
 
+Error Handling
+~~~~~~~~~~~~~~
+
+Proper error handling is crucial to the stability of libcamera. The project
+follows a set of high-level rules:
+
+* Make errors impossible through API design. The best way to handle errors is
+  to prevent them from happening in the first place. The preferred option is
+  thus to prevent error conditions at the API design stage when possible.
+* Detect errors at compile time. Compile-test checking of errors not only
+  reduces the runtime complexity, but also ensures that errors are caught early
+  on during development instead of during testing or, worse, in production. The
+  static_assert() declaration should be used where possible for this purpose.
+* Validate all external API contracts. Explicit pre-condition checks shall be
+  used to validate API contracts. Whenever possible, appropriate errors should
+  be returned directly. As libcamera doesn't use exceptions, errors detected in
+  constructors shall result in the constructed object being marked as invalid,
+  with a public member function available to check validity. The checks should
+  be thorough for the public API, and may be lighter for internal APIs when
+  pre-conditions can reasonably be considered to be met through other means.
+* Use assertions for fatal issues only. The ASSERT() macro causes a program
+  abort when compiled in debug mode, and is a no-op otherwise. It is useful to
+  abort execution synchronously with the error check instead of letting the
+  error cause problems (such as segmentation faults) later, and to provide a
+  detailed backtrace. Assertions shall only be used to catch conditions that are
+  never supposed to happen without a serious bug in libcamera that would prevent
+  safe recovery. They shall never be used to validate API contracts. The
+  assertion conditions shall not cause any side effect as they are compiled out
+  in non-debug mode.
+
 C Compatibility Headers
 ~~~~~~~~~~~~~~~~~~~~~~~
 

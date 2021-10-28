@@ -37,9 +37,7 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 		CameraStream *stream =
 			static_cast<CameraStream *>(buffer.stream->priv);
 
-		buffers_.push_back({ stream, buffer.buffer, nullptr,
-				     buffer.acquire_fence, Status::Success,
-				     nullptr, nullptr, nullptr, this });
+		buffers_.emplace_back(stream, buffer, this);
 	}
 
 	/* Clone the controls associated with the camera3 request. */
@@ -54,3 +52,18 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 }
 
 Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;
+
+Camera3RequestDescriptor::StreamBuffer::StreamBuffer(
+	CameraStream *cameraStream, const camera3_stream_buffer_t &buffer,
+	Camera3RequestDescriptor *requestDescriptor)
+	: stream(cameraStream), camera3Buffer(buffer.buffer),
+	  fence(buffer.acquire_fence), request(requestDescriptor)
+{
+}
+
+Camera3RequestDescriptor::StreamBuffer::~StreamBuffer() = default;
+
+Camera3RequestDescriptor::StreamBuffer::StreamBuffer(StreamBuffer &&) = default;
+
+Camera3RequestDescriptor::StreamBuffer &
+Camera3RequestDescriptor::StreamBuffer::operator=(Camera3RequestDescriptor::StreamBuffer &&) = default;

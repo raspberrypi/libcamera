@@ -34,15 +34,26 @@ public:
 	};
 
 	struct StreamBuffer {
+		StreamBuffer(CameraStream *stream,
+			     const camera3_stream_buffer_t &buffer,
+			     Camera3RequestDescriptor *request);
+		~StreamBuffer();
+
+		StreamBuffer(StreamBuffer &&);
+		StreamBuffer &operator=(StreamBuffer &&);
+
 		CameraStream *stream;
 		buffer_handle_t *camera3Buffer;
 		std::unique_ptr<libcamera::FrameBuffer> frameBuffer;
 		int fence;
-		Status status;
-		libcamera::FrameBuffer *internalBuffer;
-		const libcamera::FrameBuffer *srcBuffer;
+		Status status = Status::Success;
+		libcamera::FrameBuffer *internalBuffer = nullptr;
+		const libcamera::FrameBuffer *srcBuffer = nullptr;
 		std::unique_ptr<CameraBuffer> dstBuffer;
 		Camera3RequestDescriptor *request;
+
+	private:
+		LIBCAMERA_DISABLE_COPY(StreamBuffer)
 	};
 
 	/* Keeps track of streams requiring post-processing. */

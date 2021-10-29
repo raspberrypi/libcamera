@@ -14,6 +14,8 @@
 
 #include <libcamera/base/signal.h>
 
+#include <libcamera/controls.h>
+
 namespace libcamera {
 
 class FrameBuffer;
@@ -33,6 +35,8 @@ public:
 		FrameBuffer *rawBuffer;
 		FrameBuffer *paramBuffer;
 		FrameBuffer *statBuffer;
+
+		ControlList effectiveSensorControls;
 
 		bool paramDequeued;
 		bool metadataProcessed;

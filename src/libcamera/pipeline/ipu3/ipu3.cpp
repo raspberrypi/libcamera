@@ -767,6 +767,8 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] const ControlLis
 	if (ret)
 		goto error;
 
+	data->delayedCtrls_->reset();
+
 	/*
 	 * Start the ImgU video devices, buffers will be queued to the
 	 * ImgU output and viewfinder when requests will be queued.
@@ -1363,6 +1365,8 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::SensorTimestamp,
 				buffer->metadata().timestamp);
 
+	info->effectiveSensorControls = delayedCtrls_->get(buffer->metadata().sequence);
+
 	if (request->findBuffer(&rawStream_))
 		pipe()->completeBuffer(request, buffer);
 
@@ -1419,6 +1423,7 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 	ev.frame = info->id;
 	ev.bufferId = info->statBuffer->cookie();
 	ev.frameTimestamp = request->metadata().get(controls::SensorTimestamp);
+	ev.sensorControls = info->effectiveSensorControls;
 	ipa_->processEvent(ev);
 }
 

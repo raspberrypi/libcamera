@@ -1248,7 +1248,7 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 {
 	switch (action.op) {
 	case ipa::ipu3::ActionSetSensorControls: {
-		const ControlList &controls = action.controls;
+		const ControlList &controls = action.sensorControls;
 		delayedCtrls_->push(controls);
 		break;
 	}

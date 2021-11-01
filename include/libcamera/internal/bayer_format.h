@@ -27,10 +27,10 @@ public:
 		MONO = 4
 	};
 
-	enum Packing : uint16_t {
+	enum class Packing : uint16_t {
 		None = 0,
-		CSI2Packed = 1,
-		IPU3Packed = 2,
+		CSI2 = 1,
+		IPU3 = 2,
 	};
 
 	constexpr BayerFormat()

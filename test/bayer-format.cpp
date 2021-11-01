@@ -30,7 +30,7 @@ protected:
 		}
 
 		/* A correct Bayer format has to be valid. */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		if (!bayerFmt.isValid()) {
 			cerr << "A correct BayerFormat has to be valid."
 			     << endl;
@@ -41,9 +41,9 @@ protected:
 		 * Two bayer formats created with the same order and bit depth
 		 * have to be equal.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		BayerFormat bayerFmtExpect = BayerFormat(BayerFormat::BGGR, 8,
-							 BayerFormat::None);
+							 BayerFormat::Packing::None);
 		if (bayerFmt != bayerFmtExpect) {
 			cerr << "Comparison of identical formats failed."
 			     << endl;
@@ -54,9 +54,9 @@ protected:
 		 * Two Bayer formats created with the same order but with a
 		 * different bitDepth are not equal.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		bayerFmtExpect = BayerFormat(BayerFormat::BGGR, 12,
-					     BayerFormat::None);
+					     BayerFormat::Packing::None);
 		if (bayerFmt == bayerFmtExpect) {
 			cerr << "Comparison of different formats failed."
 			     << endl;
@@ -96,7 +96,7 @@ protected:
 		 * to a Bayer format.
 		 */
 		bayerFmtExpect = BayerFormat(BayerFormat::BGGR, 8,
-					     BayerFormat::None);
+					     BayerFormat::Packing::None);
 		v4l2Fmt = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8);
 		bayerFmt = BayerFormat::fromV4L2PixelFormat(v4l2Fmt);
 		if (bayerFmt != bayerFmtExpect) {
@@ -123,7 +123,7 @@ protected:
 		 * Test if a valid Bayer format can be converted to a
 		 * string representation.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		if (bayerFmt.toString() != "BGGR-8") {
 			cerr << "String representation != 'BGGR-8' (got: '"
 			     << bayerFmt.toString() << "' ) " << endl;
@@ -145,9 +145,9 @@ protected:
 		 * Perform a horizontal Flip and make sure that the
 		 * order is adjusted accordingly.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		bayerFmtExpect = BayerFormat(BayerFormat::GBRG, 8,
-					     BayerFormat::None);
+					     BayerFormat::Packing::None);
 		BayerFormat hFlipFmt = bayerFmt.transform(Transform::HFlip);
 		if (hFlipFmt != bayerFmtExpect) {
 			cerr << "Horizontal flip of 'BGGR-8' should result in '"
@@ -160,9 +160,9 @@ protected:
 		 * Perform a vertical Flip and make sure that
 		 * the order is adjusted accordingly.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		bayerFmtExpect = BayerFormat(BayerFormat::GRBG, 8,
-					     BayerFormat::None);
+					     BayerFormat::Packing::None);
 		BayerFormat vFlipFmt = bayerFmt.transform(Transform::VFlip);
 		if (vFlipFmt != bayerFmtExpect) {
 			cerr << "Vertical flip of 'BGGR-8' should result in '"
@@ -176,7 +176,7 @@ protected:
 		 * pixels on the bottom left to top right diagonal and make
 		 * sure, that it doesn't change.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::BGGR, 8, BayerFormat::Packing::None);
 		BayerFormat transposeFmt = bayerFmt.transform(
 			Transform::Transpose);
 		if (transposeFmt != bayerFmt) {
@@ -192,9 +192,9 @@ protected:
 		 * on the bottom left to top right diagonal and make sure
 		 * that their positions are switched.
 		 */
-		bayerFmt = BayerFormat(BayerFormat::GBRG, 8, BayerFormat::None);
+		bayerFmt = BayerFormat(BayerFormat::GBRG, 8, BayerFormat::Packing::None);
 		bayerFmtExpect = BayerFormat(BayerFormat::GRBG, 8,
-					     BayerFormat::None);
+					     BayerFormat::Packing::None);
 		transposeFmt = bayerFmt.transform(Transform::Transpose);
 		if (transposeFmt != bayerFmtExpect) {
 			cerr << "Transpose with the red & blue pixels on the "

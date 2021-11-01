@@ -510,6 +510,19 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::R10_CSI2P, {
+		.name = "R10_CSI2P",
+		.format = formats::R10,
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_Y10P),
+			.multi = V4L2PixelFormat(),
+		},
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* Bayer formats. */
 	{ formats::SBGGR8, {

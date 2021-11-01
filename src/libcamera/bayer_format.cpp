@@ -13,6 +13,7 @@
 
 #include <linux/media-bus-format.h>
 
+#include <libcamera/formats.h>
 #include <libcamera/transform.h>
 
 /**
@@ -84,37 +85,72 @@ struct BayerFormatComparator {
 	}
 };
 
-const std::map<BayerFormat, V4L2PixelFormat, BayerFormatComparator> bayerToV4l2{
-	{ { BayerFormat::BGGR, 8, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8) },
-	{ { BayerFormat::GBRG, 8, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8) },
-	{ { BayerFormat::GRBG, 8, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8) },
-	{ { BayerFormat::RGGB, 8, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8) },
-	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10) },
-	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10) },
-	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10) },
-	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10) },
-	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P) },
-	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P) },
-	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P) },
-	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P) },
-	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::IPU3 }, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10) },
-	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::IPU3 }, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10) },
-	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::IPU3 }, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10) },
-	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::IPU3 }, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10) },
-	{ { BayerFormat::BGGR, 12, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12) },
-	{ { BayerFormat::GBRG, 12, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12) },
-	{ { BayerFormat::GRBG, 12, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12) },
-	{ { BayerFormat::RGGB, 12, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12) },
-	{ { BayerFormat::BGGR, 12, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P) },
-	{ { BayerFormat::GBRG, 12, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P) },
-	{ { BayerFormat::GRBG, 12, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P) },
-	{ { BayerFormat::RGGB, 12, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P) },
-	{ { BayerFormat::BGGR, 16, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16) },
-	{ { BayerFormat::GBRG, 16, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16) },
-	{ { BayerFormat::GRBG, 16, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16) },
-	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) },
-	{ { BayerFormat::MONO, 8, BayerFormat::Packing::None }, V4L2PixelFormat(V4L2_PIX_FMT_GREY) },
-	{ { BayerFormat::MONO, 10, BayerFormat::Packing::CSI2 }, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) },
+struct Formats {
+	PixelFormat pixelFormat;
+	V4L2PixelFormat v4l2Format;
+};
+
+const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
+	{ { BayerFormat::BGGR, 8, BayerFormat::Packing::None },
+		{ formats::SBGGR8, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8) } },
+	{ { BayerFormat::GBRG, 8, BayerFormat::Packing::None },
+		{ formats::SGBRG8, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG8) } },
+	{ { BayerFormat::GRBG, 8, BayerFormat::Packing::None },
+		{ formats::SGRBG8, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG8) } },
+	{ { BayerFormat::RGGB, 8, BayerFormat::Packing::None },
+		{ formats::SRGGB8, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB8) } },
+	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::None },
+		{ formats::SBGGR10, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10) } },
+	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::None },
+		{ formats::SGBRG10, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10) } },
+	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::None },
+		{ formats::SGRBG10, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10) } },
+	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::None },
+		{ formats::SRGGB10, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10) } },
+	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::CSI2 },
+		{ formats::SBGGR10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR10P) } },
+	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::CSI2 },
+		{ formats::SGBRG10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG10P) } },
+	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::CSI2 },
+		{ formats::SGRBG10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG10P) } },
+	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::CSI2 },
+		{ formats::SRGGB10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB10P) } },
+	{ { BayerFormat::BGGR, 10, BayerFormat::Packing::IPU3 },
+		{ formats::SBGGR10_IPU3, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SBGGR10) } },
+	{ { BayerFormat::GBRG, 10, BayerFormat::Packing::IPU3 },
+		{ formats::SGBRG10_IPU3, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGBRG10) } },
+	{ { BayerFormat::GRBG, 10, BayerFormat::Packing::IPU3 },
+		{ formats::SGRBG10_IPU3, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SGRBG10) } },
+	{ { BayerFormat::RGGB, 10, BayerFormat::Packing::IPU3 },
+		{ formats::SRGGB10_IPU3, V4L2PixelFormat(V4L2_PIX_FMT_IPU3_SRGGB10) } },
+	{ { BayerFormat::BGGR, 12, BayerFormat::Packing::None },
+		{ formats::SBGGR12, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12) } },
+	{ { BayerFormat::GBRG, 12, BayerFormat::Packing::None },
+		{ formats::SGBRG12, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12) } },
+	{ { BayerFormat::GRBG, 12, BayerFormat::Packing::None },
+		{ formats::SGRBG12, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12) } },
+	{ { BayerFormat::RGGB, 12, BayerFormat::Packing::None },
+		{ formats::SRGGB12, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12) } },
+	{ { BayerFormat::BGGR, 12, BayerFormat::Packing::CSI2 },
+		{ formats::SBGGR12_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR12P) } },
+	{ { BayerFormat::GBRG, 12, BayerFormat::Packing::CSI2 },
+		{ formats::SGBRG12_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG12P) } },
+	{ { BayerFormat::GRBG, 12, BayerFormat::Packing::CSI2 },
+		{ formats::SGRBG12_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG12P) } },
+	{ { BayerFormat::RGGB, 12, BayerFormat::Packing::CSI2 },
+		{ formats::SRGGB12_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB12P) } },
+	{ { BayerFormat::BGGR, 16, BayerFormat::Packing::None },
+		{ formats::SBGGR16, V4L2PixelFormat(V4L2_PIX_FMT_SBGGR16) } },
+	{ { BayerFormat::GBRG, 16, BayerFormat::Packing::None },
+		{ formats::SGBRG16, V4L2PixelFormat(V4L2_PIX_FMT_SGBRG16) } },
+	{ { BayerFormat::GRBG, 16, BayerFormat::Packing::None },
+		{ formats::SGRBG16, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16) } },
+	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::None },
+		{ formats::SRGGB16, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) } },
+	{ { BayerFormat::MONO, 8, BayerFormat::Packing::None },
+		{ formats::R8, V4L2PixelFormat(V4L2_PIX_FMT_GREY) } },
+	{ { BayerFormat::MONO, 10, BayerFormat::Packing::CSI2 },
+		{ formats::R10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) } },
 };
 
 const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
@@ -245,9 +281,9 @@ bool operator==(const BayerFormat &lhs, const BayerFormat &rhs)
  */
 V4L2PixelFormat BayerFormat::toV4L2PixelFormat() const
 {
-	const auto it = bayerToV4l2.find(*this);
-	if (it != bayerToV4l2.end())
-		return it->second;
+	const auto it = bayerToFormat.find(*this);
+	if (it != bayerToFormat.end())
+		return it->second.v4l2Format;
 
 	return V4L2PixelFormat();
 }
@@ -259,11 +295,11 @@ V4L2PixelFormat BayerFormat::toV4L2PixelFormat() const
  */
 BayerFormat BayerFormat::fromV4L2PixelFormat(V4L2PixelFormat v4l2Format)
 {
-	auto it = std::find_if(bayerToV4l2.begin(), bayerToV4l2.end(),
+	auto it = std::find_if(bayerToFormat.begin(), bayerToFormat.end(),
 			       [v4l2Format](const auto &i) {
-				       return i.second == v4l2Format;
+				       return i.second.v4l2Format == v4l2Format;
 			       });
-	if (it != bayerToV4l2.end())
+	if (it != bayerToFormat.end())
 		return it->first;
 
 	return BayerFormat();

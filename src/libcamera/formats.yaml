@@ -7,6 +7,10 @@
 formats:
   - R8:
       fourcc: DRM_FORMAT_R8
+  - R10:
+      fourcc: DRM_FORMAT_R10
+  - R12:
+      fourcc: DRM_FORMAT_R12
 
   - RGB565:
       fourcc: DRM_FORMAT_RGB565

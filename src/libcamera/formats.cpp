@@ -484,6 +484,32 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 1, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::R10, {
+		.name = "R10",
+		.format = formats::R10,
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_Y10),
+			.multi = V4L2PixelFormat(),
+		},
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::R12, {
+		.name = "R12",
+		.format = formats::R12,
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(V4L2_PIX_FMT_Y12),
+			.multi = V4L2PixelFormat(),
+		},
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* Bayer formats. */
 	{ formats::SBGGR8, {

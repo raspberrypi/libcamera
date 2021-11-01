@@ -995,7 +995,6 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	DeviceMatch unicam("unicam");
 	DeviceMatch isp("bcm2835-isp");
 
-	unicam.add("unicam-embedded");
 	unicam.add("unicam-image");
 
 	isp.add("bcm2835-isp0-output0"); /* Input */
@@ -1016,8 +1015,15 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Locate and open the unicam video streams. */
-	data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicam_->getEntityByName("unicam-embedded"));
 	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicam_->getEntityByName("unicam-image"));
+
+	/* An embedded data node will not be present if the sensor does not support it. */
+	MediaEntity *embeddedEntity = unicam_->getEntityByName("unicam-embedded");
+	if (embeddedEntity) {
+		data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", embeddedEntity);
+		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data.get(),
+									   &RPiCameraData::unicamBufferDequeue);
+	}
 
 	/* Tag the ISP input stream as an import stream. */
 	data->isp_[Isp::Input] = RPi::Stream("ISP Input", isp_->getEntityByName("bcm2835-isp0-output0"), true);
@@ -1028,7 +1034,6 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	/* Wire up all the buffer connections. */
 	data->unicam_[Unicam::Image].dev()->frameStart.connect(data.get(), &RPiCameraData::frameStarted);
 	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data.get(), &RPiCameraData::unicamBufferDequeue);
-	data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data.get(), &RPiCameraData::unicamBufferDequeue);
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispOutputDequeue);
@@ -1054,6 +1059,13 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return false;
+	}
+
+	if (sensorConfig.sensorMetadata ^ !!embeddedEntity) {
+		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
+		sensorConfig.sensorMetadata = false;
+		if (embeddedEntity)
+			data->unicam_[Unicam::Embedded].dev()->bufferReady.disconnect();
 	}
 
 	/*

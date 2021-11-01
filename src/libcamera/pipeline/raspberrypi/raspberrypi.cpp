@@ -26,6 +26,7 @@
 #include <libcamera/base/utils.h>
 
 #include <linux/bcm2835-isp.h>
+#include <linux/media-bus-format.h>
 #include <linux/videodev2.h>
 
 #include "libcamera/internal/bayer_format.h"
@@ -47,6 +48,53 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(RPI)
 
 namespace {
+
+/* Map of mbus codes to supported sizes reported by the sensor. */
+using SensorFormats = std::map<unsigned int, std::vector<Size>>;
+
+SensorFormats populateSensorFormats(std::unique_ptr<CameraSensor> &sensor)
+{
+	SensorFormats formats;
+
+	for (auto const mbusCode : sensor->mbusCodes())
+		formats.emplace(mbusCode, sensor->sizes(mbusCode));
+
+	return formats;
+}
+
+PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
+				  BayerFormat::Packing packingReq)
+{
+	BayerFormat bayer = BayerFormat::fromMbusCode(mbus_code);
+
+	ASSERT(bayer.isValid());
+
+	bayer.packing = packingReq;
+	PixelFormat pix = bayer.toPixelFormat();
+
+	/*
+	 * Not all formats (e.g. 8-bit or 16-bit Bayer formats) can have packed
+	 * variants. So if the PixelFormat returns as invalid, use the non-packed
+	 * conversion instead.
+	 */
+	if (!pix.isValid()) {
+		bayer.packing = BayerFormat::Packing::None;
+		pix = bayer.toPixelFormat();
+	}
+
+	return pix;
+}
+
+V4L2DeviceFormat toV4L2DeviceFormat(const V4L2SubdeviceFormat &format,
+				    BayerFormat::Packing packingReq)
+{
+	const PixelFormat pix = mbusCodeToPixelFormat(format.mbus_code, packingReq);
+	V4L2DeviceFormat deviceFormat;
+
+	deviceFormat.fourcc = V4L2PixelFormat::fromPixelFormat(pix);
+	deviceFormat.size = format.size;
+	return deviceFormat;
+}
 
 bool isRaw(PixelFormat &pixFmt)
 {
@@ -74,11 +122,10 @@ double scoreFormat(double desired, double actual)
 	return score;
 }
 
-V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
-			      const Size &req)
+V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &req)
 {
 	double bestScore = std::numeric_limits<double>::max(), score;
-	V4L2DeviceFormat bestMode;
+	V4L2SubdeviceFormat bestFormat;
 
 #define PENALTY_AR		1500.0
 #define PENALTY_8BIT		2000.0
@@ -88,19 +135,19 @@ V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
 
 	/* Calculate the closest/best mode from the user requested size. */
 	for (const auto &iter : formatsMap) {
-		V4L2PixelFormat v4l2Format = iter.first;
-		const PixelFormatInfo &info = PixelFormatInfo::info(v4l2Format);
+		const unsigned int mbusCode = iter.first;
+		const PixelFormat format = mbusCodeToPixelFormat(mbusCode,
+								 BayerFormat::Packing::None);
+		const PixelFormatInfo &info = PixelFormatInfo::info(format);
 
-		for (const SizeRange &sz : iter.second) {
-			double modeWidth = sz.contains(req) ? req.width : sz.max.width;
-			double modeHeight = sz.contains(req) ? req.height : sz.max.height;
+		for (const Size &size : iter.second) {
 			double reqAr = static_cast<double>(req.width) / req.height;
-			double modeAr = modeWidth / modeHeight;
+			double fmtAr = size.width / size.height;
 
 			/* Score the dimensions for closeness. */
-			score = scoreFormat(req.width, modeWidth);
-			score += scoreFormat(req.height, modeHeight);
-			score += PENALTY_AR * scoreFormat(reqAr, modeAr);
+			score = scoreFormat(req.width, size.width);
+			score += scoreFormat(req.height, size.height);
+			score += PENALTY_AR * scoreFormat(reqAr, fmtAr);
 
 			/* Add any penalties... this is not an exact science! */
 			if (!info.packed)
@@ -115,18 +162,18 @@ V4L2DeviceFormat findBestMode(V4L2VideoDevice::Formats &formatsMap,
 
 			if (score <= bestScore) {
 				bestScore = score;
-				bestMode.fourcc = v4l2Format;
-				bestMode.size = Size(modeWidth, modeHeight);
+				bestFormat.mbus_code = mbusCode;
+				bestFormat.size = size;
 			}
 
-			LOG(RPI, Info) << "Mode: " << modeWidth << "x" << modeHeight
-				       << " fmt " << v4l2Format.toString()
+			LOG(RPI, Info) << "Format: " << size.toString()
+				       << " fmt " << format.toString()
 				       << " Score: " << score
 				       << " (best " << bestScore << ")";
 		}
 	}
 
-	return bestMode;
+	return bestFormat;
 }
 
 enum class Unicam : unsigned int { Image, Embedded };
@@ -170,6 +217,7 @@ public:
 	std::unique_ptr<ipa::RPi::IPAProxyRPi> ipa_;
 
 	std::unique_ptr<CameraSensor> sensor_;
+	SensorFormats sensorFormats_;
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
 	RPi::Device<Unicam, 2> unicam_;
 	RPi::Device<Isp, 4> isp_;
@@ -352,9 +400,10 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 * Calculate the best sensor mode we can use based on
 			 * the user request.
 			 */
-			V4L2VideoDevice::Formats fmts = data_->unicam_[Unicam::Image].dev()->formats();
-			V4L2DeviceFormat sensorFormat = findBestMode(fmts, cfg.size);
-			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&sensorFormat);
+			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size);
+			V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(sensorFormat,
+									   BayerFormat::Packing::CSI2);
+			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&unicamFormat);
 			if (ret)
 				return Invalid;
 
@@ -366,7 +415,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 * fetch the "native" (i.e. untransformed) Bayer order,
 			 * because the sensor may currently be flipped!
 			 */
-			V4L2PixelFormat fourcc = sensorFormat.fourcc;
+			V4L2PixelFormat fourcc = unicamFormat.fourcc;
 			if (data_->flipsAlterBayerOrder_) {
 				BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(fourcc);
 				bayer.order = data_->nativeBayerOrder_;
@@ -374,16 +423,16 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 				fourcc = bayer.toV4L2PixelFormat();
 			}
 
-			PixelFormat sensorPixFormat = fourcc.toPixelFormat();
-			if (cfg.size != sensorFormat.size ||
-			    cfg.pixelFormat != sensorPixFormat) {
-				cfg.size = sensorFormat.size;
-				cfg.pixelFormat = sensorPixFormat;
+			PixelFormat unicamPixFormat = fourcc.toPixelFormat();
+			if (cfg.size != unicamFormat.size ||
+			    cfg.pixelFormat != unicamPixFormat) {
+				cfg.size = unicamFormat.size;
+				cfg.pixelFormat = unicamPixFormat;
 				status = Adjusted;
 			}
 
-			cfg.stride = sensorFormat.planes[0].bpl;
-			cfg.frameSize = sensorFormat.planes[0].size;
+			cfg.stride = unicamFormat.planes[0].bpl;
+			cfg.frameSize = unicamFormat.planes[0].size;
 
 			rawCount++;
 		} else {
@@ -472,7 +521,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 {
 	RPiCameraData *data = cameraData(camera);
 	CameraConfiguration *config = new RPiCameraConfiguration(data);
-	V4L2DeviceFormat sensorFormat;
+	V4L2SubdeviceFormat sensorFormat;
 	unsigned int bufferCount;
 	PixelFormat pixelFormat;
 	V4L2VideoDevice::Formats fmts;
@@ -487,9 +536,9 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 		switch (role) {
 		case StreamRole::Raw:
 			size = data->sensor_->resolution();
-			fmts = data->unicam_[Unicam::Image].dev()->formats();
-			sensorFormat = findBestMode(fmts, size);
-			pixelFormat = sensorFormat.fourcc.toPixelFormat();
+			sensorFormat = findBestFormat(data->sensorFormats_, size);
+			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
+							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
 			bufferCount = 2;
 			rawCount++;
@@ -572,6 +621,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const stream : data->streams_)
 		stream->reset();
 
+	BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
 	Size maxSize, sensorSize;
 	unsigned int maxIndex = 0;
 	bool rawStream = false;
@@ -590,6 +640,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 			 */
 			sensorSize = cfg.size;
 			rawStream = true;
+			/* Check if the user has explicitly set an unpacked format. */
+			packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
 		} else {
 			if (cfg.size > maxSize) {
 				maxSize = config->at(i).size;
@@ -615,24 +667,21 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	}
 
 	/* First calculate the best sensor mode we can use based on the user request. */
-	V4L2VideoDevice::Formats fmts = data->unicam_[Unicam::Image].dev()->formats();
-	V4L2DeviceFormat sensorFormat = findBestMode(fmts, rawStream ? sensorSize : maxSize);
-
-	ret = data->unicam_[Unicam::Image].dev()->setFormat(&sensorFormat);
+	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_, rawStream ? sensorSize : maxSize);
+	ret = data->sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
 
-	/*
-	 * The control ranges associated with the sensor may need updating
-	 * after a format change.
-	 * \todo Use the CameraSensor::setFormat API instead.
-	 */
-	data->sensor_->updateControlInfo();
+	V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(sensorFormat, packing);
+	ret = data->unicam_[Unicam::Image].dev()->setFormat(&unicamFormat);
+	if (ret)
+		return ret;
 
 	LOG(RPI, Info) << "Sensor: " << camera->id()
-		       << " - Selected mode: " << sensorFormat.toString();
+		       << " - Selected sensor format: " << sensorFormat.toString()
+		       << " - Selected unicam format: " << unicamFormat.toString();
 
-	ret = data->isp_[Isp::Input].dev()->setFormat(&sensorFormat);
+	ret = data->isp_[Isp::Input].dev()->setFormat(&unicamFormat);
 	if (ret)
 		return ret;
 
@@ -754,8 +803,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	data->ispMinCropSize_ = testCrop.size();
 
 	/* Adjust aspect ratio by providing crops on the input image. */
-	Size size = sensorFormat.size.boundedToAspectRatio(maxSize);
-	Rectangle crop = size.centeredTo(Rectangle(sensorFormat.size).center());
+	Size size = unicamFormat.size.boundedToAspectRatio(maxSize);
+	Rectangle crop = size.centeredTo(Rectangle(unicamFormat.size).center());
 	data->ispCrop_ = crop;
 
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
@@ -769,8 +818,11 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * supports it.
 	 */
 	if (data->sensorMetadata_) {
-		format = {};
+		V4L2SubdeviceFormat embeddedFormat;
+
+		data->sensor_->device()->getFormat(1, &embeddedFormat);
 		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
+		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
 
 		LOG(RPI, Debug) << "Setting embedded data format.";
 		ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
@@ -1000,6 +1052,8 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	if (data->sensor_->init())
 		return false;
 
+	data->sensorFormats_ = populateSensorFormats(data->sensor_);
+
 	ipa::RPi::SensorConfig sensorConfig;
 	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
@@ -1026,6 +1080,11 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 			return false;
 	}
 
+	if (!data->unicam_[Unicam::Image].dev()->caps().hasMediaController()) {
+		LOG(RPI, Error) << "Unicam driver does not use the MediaController, please update your kernel!";
+		return false;
+	}
+
 	/*
 	 * Setup our delayed control writer with the sensor default
 	 * gain and exposure delays. Mark VBLANK for priority write.
@@ -1035,7 +1094,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		{ V4L2_CID_EXPOSURE, { sensorConfig.exposureDelay, false } },
 		{ V4L2_CID_VBLANK, { sensorConfig.vblankDelay, true } }
 	};
-	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->unicam_[Unicam::Image].dev(), params);
+	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);
 	data->sensorMetadata_ = sensorConfig.sensorMetadata;
 
 	/* Register the controls that the Raspberry Pi IPA can handle. */
@@ -1062,15 +1121,14 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	 * As part of answering the final question, we reset the camera to
 	 * no transform at all.
 	 */
-
-	V4L2VideoDevice *dev = data->unicam_[Unicam::Image].dev();
-	const struct v4l2_query_ext_ctrl *hflipCtrl = dev->controlInfo(V4L2_CID_HFLIP);
+	const V4L2Subdevice *sensor = data->sensor_->device();
+	const struct v4l2_query_ext_ctrl *hflipCtrl = sensor->controlInfo(V4L2_CID_HFLIP);
 	if (hflipCtrl) {
 		/* We assume it will support vflips too... */
 		data->supportsFlips_ = true;
 		data->flipsAlterBayerOrder_ = hflipCtrl->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT;
 
-		ControlList ctrls(dev->controls());
+		ControlList ctrls(data->sensor_->controls());
 		ctrls.set(V4L2_CID_HFLIP, 0);
 		ctrls.set(V4L2_CID_VFLIP, 0);
 		data->setSensorControls(ctrls);
@@ -1078,9 +1136,8 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 
 	/* Look for a valid Bayer format. */
 	BayerFormat bayerFormat;
-	for (const auto &iter : dev->formats()) {
-		V4L2PixelFormat v4l2Format = iter.first;
-		bayerFormat = BayerFormat::fromV4L2PixelFormat(v4l2Format);
+	for (const auto &iter : data->sensorFormats_) {
+		bayerFormat = BayerFormat::fromMbusCode(iter.first);
 		if (bayerFormat.isValid())
 			break;
 	}
@@ -1263,7 +1320,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 		}
 	}
 
-	entityControls.emplace(0, unicam_[Unicam::Image].dev()->controls());
+	entityControls.emplace(0, sensor_->controls());
 	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
 
 	/* Always send the user transform to the IPA. */
@@ -1387,10 +1444,10 @@ void RPiCameraData::setSensorControls(ControlList &controls)
 		ControlList vblank_ctrl;
 
 		vblank_ctrl.set(V4L2_CID_VBLANK, controls.get(V4L2_CID_VBLANK));
-		unicam_[Unicam::Image].dev()->setControls(&vblank_ctrl);
+		sensor_->setControls(&vblank_ctrl);
 	}
 
-	unicam_[Unicam::Image].dev()->setControls(&controls);
+	sensor_->setControls(&controls);
 }
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)

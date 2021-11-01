@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <string>
 
+#include <libcamera/pixel_format.h>
+
 #include "libcamera/internal/v4l2_pixelformat.h"
 
 namespace libcamera {
@@ -50,6 +52,8 @@ public:
 
 	V4L2PixelFormat toV4L2PixelFormat() const;
 	static BayerFormat fromV4L2PixelFormat(V4L2PixelFormat v4l2Format);
+	PixelFormat toPixelFormat() const;
+	static BayerFormat fromPixelFormat(PixelFormat format);
 	BayerFormat transform(Transform t) const;
 
 	Order order;

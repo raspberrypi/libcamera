@@ -308,6 +308,35 @@ BayerFormat BayerFormat::fromV4L2PixelFormat(V4L2PixelFormat v4l2Format)
 }
 
 /**
+ * \brief Convert a BayerFormat into the corresponding PixelFormat
+ * \return The PixelFormat corresponding to this BayerFormat
+ */
+PixelFormat BayerFormat::toPixelFormat() const
+{
+	const auto it = bayerToFormat.find(*this);
+	if (it != bayerToFormat.end())
+		return it->second.pixelFormat;
+
+	return PixelFormat();
+}
+
+/**
+ * \brief Convert a PixelFormat into the corresponding BayerFormat
+ * \return The BayerFormat corresponding to this PixelFormat
+ */
+BayerFormat BayerFormat::fromPixelFormat(PixelFormat format)
+{
+	const auto it = std::find_if(bayerToFormat.begin(), bayerToFormat.end(),
+				     [format](const auto &i) {
+					     return i.second.pixelFormat == format;
+				     });
+	if (it != bayerToFormat.end())
+		return it->first;
+
+	return BayerFormat();
+}
+
+/**
  * \brief Apply a transform to this BayerFormat
  * \param[in] t The transform to apply
  *

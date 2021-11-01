@@ -598,14 +598,26 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		}
 	}
 
+	/*
+	 * Configure the H/V flip controls based on the combination of
+	 * the sensor and user transform.
+	 */
+	if (data->supportsFlips_) {
+		const RPiCameraConfiguration *rpiConfig =
+			static_cast<const RPiCameraConfiguration *>(config);
+		ControlList controls;
+
+		controls.set(V4L2_CID_HFLIP,
+			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
+		controls.set(V4L2_CID_VFLIP,
+			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
+		data->setSensorControls(controls);
+	}
+
 	/* First calculate the best sensor mode we can use based on the user request. */
 	V4L2VideoDevice::Formats fmts = data->unicam_[Unicam::Image].dev()->formats();
 	V4L2DeviceFormat sensorFormat = findBestMode(fmts, rawStream ? sensorSize : maxSize);
 
-	/*
-	 * Unicam image output format. The ISP input format gets set at start,
-	 * just in case we have swapped bayer orders due to flips.
-	 */
 	ret = data->unicam_[Unicam::Image].dev()->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
@@ -620,10 +632,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	LOG(RPI, Info) << "Sensor: " << camera->id()
 		       << " - Selected mode: " << sensorFormat.toString();
 
-	/*
-	 * This format may be reset on start() if the bayer order has changed
-	 * because of flips in the sensor.
-	 */
 	ret = data->isp_[Isp::Input].dev()->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
@@ -839,18 +847,6 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	ret = queueAllBuffers(camera);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to queue buffers";
-		stop(camera);
-		return ret;
-	}
-
-	/*
-	 * IPA configure may have changed the sensor flips - hence the bayer
-	 * order. Get the sensor format and set the ISP input now.
-	 */
-	V4L2DeviceFormat sensorFormat;
-	data->unicam_[Unicam::Image].dev()->getFormat(&sensorFormat);
-	ret = data->isp_[Isp::Input].dev()->setFormat(&sensorFormat);
-	if (ret) {
 		stop(camera);
 		return ret;
 	}
@@ -1253,10 +1249,6 @@ int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 
 int RPiCameraData::configureIPA(const CameraConfiguration *config)
 {
-	/* We know config must be an RPiCameraConfiguration. */
-	const RPiCameraConfiguration *rpiConfig =
-		static_cast<const RPiCameraConfiguration *>(config);
-
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::IPAConfig ipaConfig;
@@ -1305,17 +1297,6 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
-	}
-
-	/*
-	 * Configure the H/V flip controls based on the combination of
-	 * the sensor and user transform.
-	 */
-	if (supportsFlips_) {
-		controls.set(V4L2_CID_HFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
-		controls.set(V4L2_CID_VFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
 	}
 
 	if (!controls.empty())

@@ -141,7 +141,7 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 
 		for (const Size &size : iter.second) {
 			double reqAr = static_cast<double>(req.width) / req.height;
-			double fmtAr = size.width / size.height;
+			double fmtAr = static_cast<double>(size.width) / size.height;
 
 			/* Score the dimensions for closeness. */
 			score = scoreFormat(req.width, size.width);

@@ -247,7 +247,7 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 	}
 
 	LOG(Buffer, Debug)
-		<< "Buffer is " << (isContiguous ? "not " : "") << "contiguous";
+		<< "Buffer is " << (isContiguous ? "" : "not ") << "contiguous";
 
 	_d()->isContiguous_ = isContiguous;
 }

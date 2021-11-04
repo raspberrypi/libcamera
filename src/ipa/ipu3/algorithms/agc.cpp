@@ -45,11 +45,6 @@ namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Agc)
 
-/* Number of frames to wait before calculating stats on minimum exposure */
-static constexpr uint32_t kInitialFrameMinAECount = 4;
-/* Number of frames to wait between new gain/shutter time estimations */
-static constexpr uint32_t kFrameSkipCount = 6;
-
 /* Limits for analogue gain values */
 static constexpr double kMinAnalogueGain = 1.0;
 static constexpr double kMaxAnalogueGain = 8.0;
@@ -69,10 +64,13 @@ static constexpr double kEvGainTarget = 0.5;
  */
 static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 20 / 100;
 
+/* Number of frames to wait before calculating stats on minimum exposure */
+static constexpr uint32_t kNumStartupFrames = 10;
+
 Agc::Agc()
-	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
-	  minExposureLines_(0), maxExposureLines_(0), filteredExposure_(0s),
-	  currentExposure_(0s), prevExposureValue_(0s)
+	: frameCount_(0), iqMean_(0.0), lineDuration_(0s), minExposureLines_(0),
+	  maxExposureLines_(0), filteredExposure_(0s), currentExposure_(0s),
+	  prevExposureValue_(0s)
 {
 }
 
@@ -159,6 +157,11 @@ void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 void Agc::filterExposure()
 {
 	double speed = 0.2;
+
+	/* Adapt instantly if we are in startup phase */
+	if (frameCount_ < kNumStartupFrames)
+		speed = 1.0;
+
 	if (filteredExposure_ == 0s) {
 		/* DG stands for digital gain.*/
 		filteredExposure_ = currentExposure_;
@@ -185,13 +188,6 @@ void Agc::filterExposure()
  */
 void Agc::computeExposure(IPAFrameContext &frameContext)
 {
-	/* Algorithm initialization should wait for first valid frames */
-	/* \todo - have a number of frames given by DelayedControls ?
-	 * - implement a function for IIR */
-	if ((frameCount_ < kInitialFrameMinAECount) || (frameCount_ - lastFrame_ < kFrameSkipCount))
-		return;
-
-	lastFrame_ = frameCount_;
 
 	/* Are we correctly exposed ? */
 	if (std::abs(iqMean_ - kEvGainTarget * knumHistogramBins) <= 1) {

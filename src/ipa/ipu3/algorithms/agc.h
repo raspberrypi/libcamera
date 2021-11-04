@@ -37,7 +37,6 @@ private:
 	void computeExposure(IPAFrameContext &frameContext);
 
 	uint64_t frameCount_;
-	uint64_t lastFrame_;
 
 	double iqMean_;
 

@@ -45,8 +45,8 @@ private:
 	double iqMean_;
 
 	utils::Duration lineDuration_;
-	uint32_t minExposureLines_;
-	uint32_t maxExposureLines_;
+	utils::Duration minShutterSpeed_;
+	utils::Duration maxShutterSpeed_;
 
 	double minAnalogueGain_;
 	double maxAnalogueGain_;

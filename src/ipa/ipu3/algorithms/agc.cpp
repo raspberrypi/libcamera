@@ -188,20 +188,18 @@ void Agc::filterExposure()
  */
 void Agc::computeExposure(IPAFrameContext &frameContext)
 {
-
-	/* Are we correctly exposed ? */
-	if (std::abs(iqMean_ - kEvGainTarget * knumHistogramBins) <= 1) {
-		LOG(IPU3Agc, Debug) << "We are well exposed (iqMean = "
-				    << iqMean_ << ")";
-		return;
-	}
-
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
 
 	/* Estimate the gain needed to have the proportion wanted */
 	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
+
+	if (std::abs(evGain - 1.0) < 0.01) {
+		LOG(IPU3Agc, Debug) << "We are well exposed (iqMean = "
+				    << iqMean_ << ")";
+		return;
+	}
 
 	/* extracted from Rpi::Agc::computeTargetExposure */
 	/* Calculate the shutter time in seconds */

@@ -63,6 +63,12 @@ static constexpr uint32_t knumHistogramBins = 256;
 /* Target value to reach for the top 2% of the histogram */
 static constexpr double kEvGainTarget = 0.5;
 
+/*
+ * Maximum ratio of saturated pixels in a cell for the cell to be considered
+ * non-saturated and counted by the AGC algorithm.
+ */
+static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 20 / 100;
+
 Agc::Agc()
 	: frameCount_(0), lastFrame_(0), iqMean_(0.0), lineDuration_(0s),
 	  minExposureLines_(0), maxExposureLines_(0), filteredExposure_(0s),
@@ -124,7 +130,7 @@ void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
 
-			if (cell->sat_ratio == 0) {
+			if (cell->sat_ratio <= kMinCellsPerZoneRatio) {
 				uint8_t gr = cell->Gr_avg;
 				uint8_t gb = cell->Gb_avg;
 				/*
@@ -137,8 +143,14 @@ void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 		}
 	}
 
+	Histogram cumulativeHist = Histogram(Span<uint32_t>(hist));
 	/* Estimate the quantile mean of the top 2% of the histogram */
-	iqMean_ = Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
+	if (cumulativeHist.total() == 0) {
+		/* Force the value as histogram is empty */
+		iqMean_ = knumHistogramBins - 0.5;
+	} else {
+		iqMean_ = cumulativeHist.interQuantileMean(0.98, 1.0);
+	}
 }
 
 /**

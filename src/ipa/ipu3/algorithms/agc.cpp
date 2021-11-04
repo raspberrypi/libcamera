@@ -80,8 +80,7 @@ static constexpr double kNormalizedLumaTarget = 0.16;
 
 Agc::Agc()
 	: frameCount_(0), iqMean_(0.0), lineDuration_(0s), minExposureLines_(0),
-	  maxExposureLines_(0), filteredExposure_(0s), currentExposure_(0s),
-	  prevExposureValue_(0s)
+	  maxExposureLines_(0), filteredExposure_(0s), currentExposure_(0s)
 {
 }
 
@@ -111,10 +110,6 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	/* Configure the default exposure and gain. */
 	context.frameContext.agc.gain = minAnalogueGain_;
 	context.frameContext.agc.exposure = minExposureLines_;
-
-	prevExposureValue_ = context.frameContext.agc.gain
-			   * context.frameContext.agc.exposure
-			   * lineDuration_;
 
 	return 0;
 }
@@ -224,6 +219,13 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 
 	/* Calculate the shutter time in seconds */
 	utils::Duration currentShutter = exposure * lineDuration_;
+
+	/*
+	 * Update the exposure value for the next computation using the values
+	 * of exposure and gain really used by the sensor.
+	 */
+	utils::Duration effectiveExposureValue = currentShutter * analogueGain;
+
 	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentShutter * analogueGain
 			    << " Shutter speed " << currentShutter
 			    << " Gain " << analogueGain
@@ -233,7 +235,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 	 * Calculate the current exposure value for the scene as the latest
 	 * exposure value applied multiplied by the new estimated gain.
 	 */
-	currentExposure_ = prevExposureValue_ * evGain;
+	currentExposure_ = effectiveExposureValue * evGain;
 	utils::Duration minShutterSpeed = minExposureLines_ * lineDuration_;
 	utils::Duration maxShutterSpeed = maxExposureLines_ * lineDuration_;
 
@@ -265,16 +267,6 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 	/* Update the estimated exposure and gain. */
 	frameContext.agc.exposure = shutterTime / lineDuration_;
 	frameContext.agc.gain = stepGain;
-
-	/*
-	 * Update the exposure value for the next process call.
-	 *
-	 * \todo Obtain the values of the exposure time and analog gain
-	 * that were actually used by the sensor, either from embedded
-	 * data when available, or from the delayed controls
-	 * infrastructure in case a slow down caused a mismatch.
-	 */
-	prevExposureValue_ = shutterTime * analogueGain;
 }
 
 /**

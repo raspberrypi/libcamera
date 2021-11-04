@@ -67,6 +67,17 @@ static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 20 / 100;
 /* Number of frames to wait before calculating stats on minimum exposure */
 static constexpr uint32_t kNumStartupFrames = 10;
 
+/* Maximum luminance used for brightness normalization */
+static constexpr uint32_t kMaxLuminance = 255;
+
+/*
+ * Normalized luma value target.
+ *
+ * It's a number that's chosen so that, when the camera points at a grey
+ * target, the resulting image brightness is considered right.
+ */
+static constexpr double kNormalizedLumaTarget = 0.16;
+
 Agc::Agc()
 	: frameCount_(0), iqMean_(0.0), lineDuration_(0s), minExposureLines_(0),
 	  maxExposureLines_(0), filteredExposure_(0s), currentExposure_(0s),
@@ -185,23 +196,32 @@ void Agc::filterExposure()
 /**
  * \brief Estimate the new exposure and gain values
  * \param[inout] frameContext The shared IPA frame Context
+ * \param[in] currentYGain The gain calculated on the current brightness level
  */
-void Agc::computeExposure(IPAFrameContext &frameContext)
+void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 {
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
 
-	/* Estimate the gain needed to have the proportion wanted */
+	/*
+	 * Estimate the gain needed to have the proportion of pixels in a given
+	 * desired range. iqMean_ returns the mean value of the top 2% of the
+	 * cumulative histogram, and we want it to be as close as possible to a
+	 * configured target.
+	 */
 	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
-	if (std::abs(evGain - 1.0) < 0.01) {
+	if (evGain < currentYGain)
+		evGain = currentYGain;
+
+	/* Consider within 1% of the target as correctly exposed */
+	if (std::abs(evGain - 1.0) < 0.01)
 		LOG(IPU3Agc, Debug) << "We are well exposed (iqMean = "
 				    << iqMean_ << ")";
-		return;
-	}
 
 	/* extracted from Rpi::Agc::computeTargetExposure */
+
 	/* Calculate the shutter time in seconds */
 	utils::Duration currentShutter = exposure * lineDuration_;
 	LOG(IPU3Agc, Debug) << "Actual total exposure " << currentShutter * analogueGain
@@ -258,6 +278,56 @@ void Agc::computeExposure(IPAFrameContext &frameContext)
 }
 
 /**
+ * \brief Estimate the average brightness of the frame
+ * \param[in] frameContext The shared IPA frame context
+ * \param[in] grid The grid used to store the statistics in the IPU3
+ * \param[in] stats The IPU3 statistics and ISP results
+ * \param[in] currentYGain The gain calculated on the current brightness level
+ * \return The normalized luma
+ *
+ * Luma is the weighted sum of gamma-compressed R′G′B′ components of a color
+ * video. The luma values are normalized as 0.0 to 1.0, with 1.0 being a
+ * theoretical perfect reflector of 100% reference white. We use the Rec. 601
+ * luma here.
+ *
+ * More detailed information can be found in:
+ * https://en.wikipedia.org/wiki/Luma_(video)
+ */
+double Agc::computeInitialY(IPAFrameContext &frameContext,
+			    const ipu3_uapi_grid_config &grid,
+			    const ipu3_uapi_stats_3a *stats,
+			    double currentYGain)
+{
+	double redSum = 0, greenSum = 0, blueSum = 0;
+
+	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
+		for (unsigned int cellX = 0; cellX < grid.width; cellX++) {
+			uint32_t cellPosition = cellY * stride_ + cellX;
+
+			const ipu3_uapi_awb_set_item *cell =
+				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
+					&stats->awb_raw_buffer.meta_data[cellPosition]
+				);
+
+			redSum += cell->R_avg * currentYGain;
+			greenSum += (cell->Gr_avg + cell->Gb_avg) / 2 * currentYGain;
+			blueSum += cell->B_avg * currentYGain;
+		}
+	}
+
+	/*
+	 * Estimate the sum of the brightness values, weighted with the gains
+	 * applied on the channels in AWB as the Rec. 601 luma.
+	 */
+	double Y_sum = redSum * frameContext.awb.gains.red * .299 +
+		       greenSum * frameContext.awb.gains.green * .587 +
+		       blueSum * frameContext.awb.gains.blue * .114;
+
+	/* Return the normalized relative luminance. */
+	return Y_sum / (grid.height * grid.width) / kMaxLuminance;
+}
+
+/**
  * \brief Process IPU3 statistics, and run AGC operations
  * \param[in] context The shared IPA context
  * \param[in] stats The IPU3 statistics and ISP results
@@ -268,7 +338,29 @@ void Agc::computeExposure(IPAFrameContext &frameContext)
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	measureBrightness(stats, context.configuration.grid.bdsGrid);
-	computeExposure(context.frameContext);
+
+	double currentYGain = 1.0;
+	double targetY = kNormalizedLumaTarget;
+
+	/*
+	 * Do this calculation a few times as brightness increase can be
+	 * non-linear when there are saturated regions.
+	 */
+	for (int i = 0; i < 8; i++) {
+		double initialY = computeInitialY(context.frameContext,
+						  context.configuration.grid.bdsGrid,
+						  stats, currentYGain);
+		double extra_gain = std::min(10.0, targetY / (initialY + .001));
+
+		currentYGain *= extra_gain;
+		LOG(IPU3Agc, Debug) << "Initial Y " << initialY
+				    << " target " << targetY
+				    << " gives gain " << currentYGain;
+		if (extra_gain < 1.01)
+			break;
+	}
+
+	computeExposure(context.frameContext, currentYGain);
 	frameCount_++;
 }
 

@@ -45,6 +45,8 @@ struct IPAFrameContext {
 			double green;
 			double blue;
 		} gains;
+
+		double temperatureK;
 	} awb;
 
 	struct {

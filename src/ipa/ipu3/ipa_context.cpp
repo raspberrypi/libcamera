@@ -117,6 +117,9 @@ namespace libcamera::ipa::ipu3 {
  *
  * \var IPAFrameContext::awb.gains.blue
  * \brief White balance gain for B channel
+ *
+ * \var IPAFrameContext::awb.temperatureK
+ * \brief Estimated color temperature
  */
 
 /**

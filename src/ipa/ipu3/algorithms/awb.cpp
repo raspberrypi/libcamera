@@ -385,6 +385,7 @@ void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	context.frameContext.awb.gains.blue = asyncResults_.blueGain;
 	context.frameContext.awb.gains.green = asyncResults_.greenGain;
 	context.frameContext.awb.gains.red = asyncResults_.redGain;
+	context.frameContext.awb.temperatureK = asyncResults_.temperatureK;
 }
 
 constexpr uint16_t Awb::threshold(float value)

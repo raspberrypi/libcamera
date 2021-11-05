@@ -631,6 +631,16 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 				(sensorInfo_.pixelRate / 1e6);
 	ctrls.set(controls::FrameDuration, frameDuration);
 
+	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);
+
+	/*
+	 * \todo The Metadata provides a path to getting extended data
+	 * out to the application. Further data such as a simplifed Histogram
+	 * might have value to be exposed, however such data may be
+	 * difficult to report in a generically parsable way and we
+	 * likely want to avoid putting platform specific metadata in.
+	 */
+
 	IPU3Action op;
 	op.op = ActionMetadataReady;
 	op.controls = ctrls;

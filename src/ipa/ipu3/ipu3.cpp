@@ -628,6 +628,8 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	int64_t frameDuration = (defVBlank_ + sensorInfo_.outputSize.height) * lineDuration_.get<std::micro>();
 	ctrls.set(controls::FrameDuration, frameDuration);
 
+	ctrls.set(controls::AnalogueGain, context_.frameContext.agc.gain);
+
 	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);
 
 	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration_.get<std::micro>());

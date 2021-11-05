@@ -47,7 +47,7 @@ class IPU3CameraData : public Camera::Private
 {
 public:
 	IPU3CameraData(PipelineHandler *pipe)
-		: Camera::Private(pipe), exposureTime_(0), supportsFlips_(false)
+		: Camera::Private(pipe), supportsFlips_(false)
 	{
 	}
 
@@ -67,7 +67,6 @@ public:
 	Stream vfStream_;
 	Stream rawStream_;
 
-	uint32_t exposureTime_;
 	Rectangle cropRegion_;
 	bool supportsFlips_;
 	Transform rotationTransform_;
@@ -1045,17 +1044,6 @@ int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
 
 	controls[&controls::ScalerCrop] = ControlInfo(minCrop, maxCrop, maxCrop);
 
-	/*
-	 * \todo Report the actual exposure time, use the default for the
-	 * moment.
-	 */
-	const auto exposureInfo = data->ipaControls_.find(&controls::ExposureTime);
-	if (exposureInfo == data->ipaControls_.end()) {
-		LOG(IPU3, Error) << "Exposure control not initialized by the IPA";
-		return -EINVAL;
-	}
-	data->exposureTime_ = exposureInfo->second.def().get<int32_t>();
-
 	/* Add the IPA registered controls to list of camera controls. */
 	for (const auto &ipaControl : data->ipaControls_)
 		controls[ipaControl.first] = ipaControl.second;
@@ -1317,8 +1305,6 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 	pipe()->completeBuffer(request, buffer);
 
 	request->metadata().set(controls::draft::PipelineDepth, 3);
-	/* \todo Move the ExposureTime control to the IPA. */
-	request->metadata().set(controls::ExposureTime, exposureTime_);
 	/* \todo Actually apply the scaler crop region to the ImgU. */
 	if (request->controls().contains(controls::ScalerCrop))
 		cropRegion_ = request->controls().get(controls::ScalerCrop);

@@ -630,6 +630,8 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 
 	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);
 
+	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration_.get<std::micro>());
+
 	/*
 	 * \todo The Metadata provides a path to getting extended data
 	 * out to the application. Further data such as a simplifed Histogram

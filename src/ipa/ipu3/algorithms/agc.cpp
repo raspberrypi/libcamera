@@ -169,10 +169,9 @@ void Agc::filterExposure()
 
 /**
  * \brief Estimate the new exposure and gain values
- * \param[inout] exposure The exposure value reference as a number of lines
- * \param[inout] gain The gain reference to be updated
+ * \param[inout] frameContext The shared IPA frame Context
  */
-void Agc::computeExposure(uint32_t &exposure, double &analogueGain)
+void Agc::computeExposure(IPAFrameContext &frameContext)
 {
 	/* Algorithm initialization should wait for first valid frames */
 	/* \todo - have a number of frames given by DelayedControls ?
@@ -188,6 +187,10 @@ void Agc::computeExposure(uint32_t &exposure, double &analogueGain)
 				    << iqMean_ << ")";
 		return;
 	}
+
+	/* Get the effective exposure and gain applied on the sensor. */
+	uint32_t exposure = frameContext.sensor.exposure;
+	double analogueGain = frameContext.sensor.gain;
 
 	/* Estimate the gain needed to have the proportion wanted */
 	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
@@ -233,8 +236,9 @@ void Agc::computeExposure(uint32_t &exposure, double &analogueGain)
 			    << shutterTime << " and "
 			    << stepGain;
 
-	exposure = shutterTime / lineDuration_;
-	analogueGain = stepGain;
+	/* Update the estimated exposure and gain. */
+	frameContext.agc.exposure = shutterTime / lineDuration_;
+	frameContext.agc.gain = stepGain;
 
 	/*
 	 * Update the exposure value for the next process call.
@@ -257,11 +261,8 @@ void Agc::computeExposure(uint32_t &exposure, double &analogueGain)
  */
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	/* Get the latest exposure and gain applied */
-	uint32_t &exposure = context.frameContext.agc.exposure;
-	double &analogueGain = context.frameContext.agc.gain;
 	measureBrightness(stats, context.configuration.grid.bdsGrid);
-	computeExposure(exposure, analogueGain);
+	computeExposure(context.frameContext);
 	frameCount_++;
 }
 

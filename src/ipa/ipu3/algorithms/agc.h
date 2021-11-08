@@ -34,7 +34,7 @@ private:
 	void measureBrightness(const ipu3_uapi_stats_3a *stats,
 			       const ipu3_uapi_grid_config &grid);
 	void filterExposure();
-	void computeExposure(uint32_t &exposure, double &gain);
+	void computeExposure(IPAFrameContext &frameContext);
 
 	uint64_t frameCount_;
 	uint64_t lastFrame_;

@@ -48,6 +48,11 @@ struct IPAFrameContext {
 	} awb;
 
 	struct {
+		uint32_t exposure;
+		double gain;
+	} sensor;
+
+	struct {
 		double gamma;
 		struct ipu3_uapi_gamma_corr_lut gammaCorrection;
 	} toneMapping;

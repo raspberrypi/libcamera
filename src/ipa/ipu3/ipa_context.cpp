@@ -120,6 +120,17 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
+ * \var IPAFrameContext::sensor
+ * \brief Effective sensor values
+ *
+ * \var IPAFrameContext::sensor.exposure
+ * \brief Exposure time expressed as a number of lines
+ *
+ * \var IPAFrameContext::sensor.gain
+ * \brief Analogue gain multiplier
+ */
+
+/**
  * \var IPAFrameContext::toneMapping
  * \brief Context for ToneMapping and Gamma control
  *

@@ -549,6 +549,9 @@ void IPAIPU3::processEvent(const IPU3Event &event)
 		const ipu3_uapi_stats_3a *stats =
 			reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
+		context_.frameContext.sensor.exposure = event.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+		context_.frameContext.sensor.gain = camHelper_->gain(event.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
+
 		parseStatistics(event.frame, event.frameTimestamp, stats);
 		break;
 	}

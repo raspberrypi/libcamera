@@ -1039,7 +1039,7 @@ int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
 	 * top-left corner as we allow application to freely pan the crop area.
 	 */
 	Rectangle minCrop = Rectangle(minSize).scaledBy(analogueCrop.size(),
-					       sensorInfo.outputSize);
+							sensorInfo.outputSize);
 
 	controls[&controls::ScalerCrop] = ControlInfo(minCrop, maxCrop, maxCrop);
 

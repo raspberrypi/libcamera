@@ -148,8 +148,7 @@ private:
 	void updateControls(const IPACameraSensorInfo &sensorInfo,
 			    const ControlInfoMap &sensorControls,
 			    ControlInfoMap *ipaControls);
-	void updateSessionConfiguration(const IPACameraSensorInfo &sensorInfo,
-					const ControlInfoMap &sensorControls);
+	void updateSessionConfiguration(const ControlInfoMap &sensorControls);
 	void processControls(unsigned int frame, const ControlList &controls);
 	void fillParams(unsigned int frame, ipu3_uapi_params *params);
 	void parseStatistics(unsigned int frame,
@@ -174,6 +173,8 @@ private:
 	uint32_t minGain_;
 	uint32_t maxGain_;
 
+	utils::Duration lineDuration_;
+
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 
@@ -188,15 +189,11 @@ private:
  * \brief Compute IPASessionConfiguration using the sensor information and the
  * sensor V4L2 controls
  */
-void IPAIPU3::updateSessionConfiguration(const IPACameraSensorInfo &sensorInfo,
-					 const ControlInfoMap &sensorControls)
+void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 {
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
 	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
 	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
-
-	utils::Duration lineDuration = sensorInfo.lineLength * 1.0s
-				     / sensorInfo.pixelRate;
 
 	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
 	int32_t minGain = v4l2Gain.min().get<int32_t>();
@@ -209,8 +206,8 @@ void IPAIPU3::updateSessionConfiguration(const IPACameraSensorInfo &sensorInfo,
 	 *
 	 * \todo take VBLANK into account for maximum shutter speed
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure * lineDuration;
-	context_.configuration.agc.maxShutterSpeed = maxExposure * lineDuration;
+	context_.configuration.agc.minShutterSpeed = minExposure * lineDuration_;
+	context_.configuration.agc.maxShutterSpeed = maxExposure * lineDuration_;
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 }
@@ -239,11 +236,10 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 	 * exposure min, max and default and convert it from lines to
 	 * microseconds.
 	 */
-	double lineDuration = sensorInfo.lineLength / (sensorInfo.pixelRate / 1e6);
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
-	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
-	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
-	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration_.get<std::micro>();
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration_.get<std::micro>();
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration_.get<std::micro>();
 	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
 							defExposure);
 
@@ -463,11 +459,13 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
+	lineDuration_ = sensorInfo_.lineLength * 1.0s / sensorInfo_.pixelRate;
+
 	/* Update the camera controls using the new sensor settings. */
 	updateControls(sensorInfo_, ctrls_, ipaControls);
 
 	/* Update the IPASessionConfiguration using the sensor settings. */
-	updateSessionConfiguration(sensorInfo_, ctrls_);
+	updateSessionConfiguration(ctrls_);
 
 	for (auto const &algo : algorithms_) {
 		int ret = algo->configure(context_, configInfo);
@@ -627,8 +625,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	setControls(frame);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
-	int64_t frameDuration = sensorInfo_.lineLength * (defVBlank_ + sensorInfo_.outputSize.height) /
-				(sensorInfo_.pixelRate / 1e6);
+	int64_t frameDuration = (defVBlank_ + sensorInfo_.outputSize.height) * lineDuration_.get<std::micro>();
 	ctrls.set(controls::FrameDuration, frameDuration);
 
 	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);

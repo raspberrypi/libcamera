@@ -99,7 +99,7 @@ for android: [optional]
         libexif-dev libjpeg-dev libyaml-dev
 
 for lc-compliance: [optional]
-        libevent-dev libgtest-dev
+        libevent-dev
 
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -148,6 +148,45 @@ FrameBuffer::Private::~Private()
  */
 
 /**
+ * \fn FrameBuffer::Private::fence()
+ * \brief Retrieve a const pointer to the Fence
+ *
+ * This function does only return a reference to the the fence and does not
+ * change its ownership. The fence is stored in the FrameBuffer and can only be
+ * reset with FrameBuffer::releaseFence() in case the buffer has completed with
+ * error due to a Fence wait failure.
+ *
+ * If buffer with a Fence completes with errors due to a failure in handling
+ * the fence, applications are responsible for releasing the Fence before
+ * calling Request::addBuffer() again.
+ *
+ * \sa Request::addBuffer()
+ *
+ * \return A const pointer to the Fence if any, nullptr otherwise
+ */
+
+/**
+ * \fn FrameBuffer::Private::setFence()
+ * \brief Move a \a fence in this buffer
+ * \param[in] fence The Fence
+ *
+ * This function associates a Fence with this Framebuffer. The intended caller
+ * is the Request::addBuffer() function.
+ *
+ * Once a FrameBuffer is associated with a Fence, the FrameBuffer will only be
+ * made available to the hardware device once the Fence has been correctly
+ * signalled.
+ *
+ * \sa Request::prepare()
+ *
+ * If the FrameBuffer completes successfully the core releases the Fence and the
+ * Buffer can be reused immediately. If handling of the Fence fails during the
+ * request preparation, the Fence is not released and is left in the
+ * FrameBuffer. It is applications responsibility to correctly release the
+ * fence and handle it opportunely before using the buffer again.
+ */
+
+/**
  * \class FrameBuffer
  * \brief Frame buffer data and its associated dynamic metadata
  *
@@ -348,6 +387,25 @@ Request *FrameBuffer::request() const
  * modify the cookie value of buffers they haven't created themselves. The
  * libcamera core never modifies the buffer cookie.
  */
+
+/**
+ * \brief Extract the Fence associated with this Framebuffer
+ *
+ * This function moves the buffer's fence ownership to the caller.
+ * After the fence has been released, calling this function always return
+ * nullptr.
+ *
+ * If buffer with a Fence completes with errors due to a failure in handling
+ * the fence, applications are responsible for releasing the Fence before
+ * calling Request::addBuffer() again.
+ *
+ * \return A unique pointer to the Fence if set, or nullptr if the fence has
+ * been released already
+ */
+std::unique_ptr<Fence> FrameBuffer::releaseFence()
+{
+	return std::move(_d()->fence_);
+}
 
 /**
  * \fn FrameBuffer::cancel()

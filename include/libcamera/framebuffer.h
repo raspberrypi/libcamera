@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <limits>
+#include <memory>
 #include <stdint.h>
 #include <vector>
 
@@ -18,6 +19,7 @@
 
 namespace libcamera {
 
+class Fence;
 class Request;
 
 struct FrameMetadata {
@@ -66,6 +68,8 @@ public:
 
 	unsigned int cookie() const { return cookie_; }
 	void setCookie(unsigned int cookie) { cookie_ = cookie; }
+
+	std::unique_ptr<Fence> releaseFence();
 
 	void cancel() { metadata_.status = FrameMetadata::FrameCancelled; }
 

@@ -7,8 +7,12 @@
 
 #pragma once
 
+#include <memory>
+#include <utility>
+
 #include <libcamera/base/class.h>
 
+#include <libcamera/fence.h>
 #include <libcamera/framebuffer.h>
 
 namespace libcamera {
@@ -24,7 +28,11 @@ public:
 	void setRequest(Request *request) { request_ = request; }
 	bool isContiguous() const { return isContiguous_; }
 
+	Fence *fence() const { return fence_.get(); }
+	void setFence(std::unique_ptr<Fence> fence) { fence_ = std::move(fence); }
+
 private:
+	std::unique_ptr<Fence> fence_;
 	Request *request_;
 	bool isContiguous_;
 };

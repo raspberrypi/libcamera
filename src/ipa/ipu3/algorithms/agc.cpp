@@ -252,10 +252,19 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
  * \param[in] gain The gain to apply to the frame
  * \return The relative luminance
  *
- * Luma is the weighted sum of gamma-compressed R′G′B′ components of a color
- * video. The luma values are normalized as 0.0 to 1.0, with 1.0 being a
- * theoretical perfect reflector of 100% reference white. We use the Rec. 601
- * luma here.
+ * This function estimates the average relative luminance of the frame that
+ * would be output by the sensor if an additional \a gain was applied.
+ *
+ * The estimation is based on the AWB statistics for the current frame. Red,
+ * green and blue averages for all cells are first multiplied by the gain, and
+ * then saturated to approximate the sensor behaviour at high brightness
+ * values. The approximation is quite rough, as it doesn't take into account
+ * non-linearities when approaching saturation.
+ *
+ * The relative luminance (Y) is computed from the linear RGB components using
+ * the Rec. 601 formula. The values are normalized to the [0.0, 1.0] range,
+ * where 1.0 corresponds to a theoretical perfect reflector of 100% reference
+ * white.
  *
  * More detailed information can be found in:
  * https://en.wikipedia.org/wiki/Relative_luminance
@@ -267,6 +276,7 @@ double Agc::estimateLuminance(IPAFrameContext &frameContext,
 {
 	double redSum = 0, greenSum = 0, blueSum = 0;
 
+	/* Sum the per-channel averages, saturated to 255. */
 	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
 		for (unsigned int cellX = 0; cellX < grid.width; cellX++) {
 			uint32_t cellPosition = cellY * stride_ + cellX;
@@ -275,10 +285,11 @@ double Agc::estimateLuminance(IPAFrameContext &frameContext,
 				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
+			const uint8_t G_avg = (cell->Gr_avg + cell->Gb_avg) / 2;
 
-			redSum += cell->R_avg * gain;
-			greenSum += (cell->Gr_avg + cell->Gb_avg) / 2 * gain;
-			blueSum += cell->B_avg * gain;
+			redSum += std::min(cell->R_avg * gain, 255.0);
+			greenSum += std::min(G_avg * gain, 255.0);
+			blueSum += std::min(cell->B_avg * gain, 255.0);
 		}
 	}
 

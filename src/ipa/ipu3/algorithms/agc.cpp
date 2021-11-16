@@ -173,9 +173,9 @@ void Agc::filterExposure()
 /**
  * \brief Estimate the new exposure and gain values
  * \param[inout] frameContext The shared IPA frame Context
- * \param[in] currentYGain The gain calculated on the current brightness level
+ * \param[in] yGain The gain calculated based on the relative luminance target
  */
-void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
+void Agc::computeExposure(IPAFrameContext &frameContext, double yGain)
 {
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
@@ -189,8 +189,8 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 	 */
 	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
 
-	if (evGain < currentYGain)
-		evGain = currentYGain;
+	if (evGain < yGain)
+		evGain = yGain;
 
 	/* Consider within 1% of the target as correctly exposed */
 	if (std::abs(evGain - 1.0) < 0.01)
@@ -254,7 +254,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
  * \param[in] frameContext The shared IPA frame context
  * \param[in] grid The grid used to store the statistics in the IPU3
  * \param[in] stats The IPU3 statistics and ISP results
- * \param[in] currentYGain The gain calculated on the current brightness level
+ * \param[in] gain The gain to apply to the frame
  * \return The relative luminance
  *
  * Luma is the weighted sum of gamma-compressed R′G′B′ components of a color
@@ -268,7 +268,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 double Agc::estimateLuminance(IPAFrameContext &frameContext,
 			      const ipu3_uapi_grid_config &grid,
 			      const ipu3_uapi_stats_3a *stats,
-			      double currentYGain)
+			      double gain)
 {
 	double redSum = 0, greenSum = 0, blueSum = 0;
 
@@ -281,9 +281,9 @@ double Agc::estimateLuminance(IPAFrameContext &frameContext,
 					&stats->awb_raw_buffer.meta_data[cellPosition]
 				);
 
-			redSum += cell->R_avg * currentYGain;
-			greenSum += (cell->Gr_avg + cell->Gb_avg) / 2 * currentYGain;
-			blueSum += cell->B_avg * currentYGain;
+			redSum += cell->R_avg * gain;
+			greenSum += (cell->Gr_avg + cell->Gb_avg) / 2 * gain;
+			blueSum += cell->B_avg * gain;
 		}
 	}
 
@@ -310,7 +310,7 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	measureBrightness(stats, context.configuration.grid.bdsGrid);
 
-	double currentYGain = 1.0;
+	double yGain = 1.0;
 	double yTarget = kRelativeLuminanceTarget;
 
 	/*
@@ -320,18 +320,18 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	for (unsigned int i = 0; i < 8; i++) {
 		double yValue = estimateLuminance(context.frameContext,
 						  context.configuration.grid.bdsGrid,
-						  stats, currentYGain);
-		double extra_gain = std::min(10.0, yTarget / (yValue + .001));
+						  stats, yGain);
+		double extraGain = std::min(10.0, yTarget / (yValue + .001));
 
-		currentYGain *= extra_gain;
+		yGain *= extraGain;
 		LOG(IPU3Agc, Debug) << "Y value: " << yValue
 				    << ", Y target: " << yTarget
-				    << ", gives gain " << currentYGain;
-		if (extra_gain < 1.01)
+				    << ", gives gain " << yGain;
+		if (extraGain < 1.01)
 			break;
 	}
 
-	computeExposure(context.frameContext, currentYGain);
+	computeExposure(context.frameContext, yGain);
 	frameCount_++;
 }
 

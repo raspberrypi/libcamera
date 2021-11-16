@@ -61,9 +61,6 @@ static constexpr double kEvGainTarget = 0.5;
 /* Number of frames to wait before calculating stats on minimum exposure */
 static constexpr uint32_t kNumStartupFrames = 10;
 
-/* Maximum luminance used for brightness normalization */
-static constexpr uint32_t kMaxLuminance = 255;
-
 /*
  * Normalized luma value target.
  *
@@ -298,8 +295,7 @@ double Agc::computeInitialY(IPAFrameContext &frameContext,
 		       greenSum * frameContext.awb.gains.green * .587 +
 		       blueSum * frameContext.awb.gains.blue * .114;
 
-	/* Return the normalized relative luminance. */
-	return Y_sum / (grid.height * grid.width) / kMaxLuminance;
+	return Y_sum / (grid.height * grid.width) / 255;
 }
 
 /**

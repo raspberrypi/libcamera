@@ -35,10 +35,10 @@ private:
 			       const ipu3_uapi_grid_config &grid);
 	void filterExposure();
 	void computeExposure(IPAFrameContext &frameContext, double currentYGain);
-	double computeInitialY(IPAFrameContext &frameContext,
-			       const ipu3_uapi_grid_config &grid,
-			       const ipu3_uapi_stats_3a *stats,
-			       double currentYGain);
+	double estimateLuminance(IPAFrameContext &frameContext,
+				 const ipu3_uapi_grid_config &grid,
+				 const ipu3_uapi_stats_3a *stats,
+				 double currentYGain);
 
 	uint64_t frameCount_;
 

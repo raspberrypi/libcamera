@@ -62,12 +62,12 @@ static constexpr double kEvGainTarget = 0.5;
 static constexpr uint32_t kNumStartupFrames = 10;
 
 /*
- * Normalized luma value target.
+ * Relative luminance target.
  *
  * It's a number that's chosen so that, when the camera points at a grey
  * target, the resulting image brightness is considered right.
  */
-static constexpr double kNormalizedLumaTarget = 0.16;
+static constexpr double kRelativeLuminanceTarget = 0.16;
 
 Agc::Agc()
 	: frameCount_(0), iqMean_(0.0), lineDuration_(0s), minShutterSpeed_(0s),
@@ -250,12 +250,12 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
 }
 
 /**
- * \brief Estimate the average brightness of the frame
+ * \brief Estimate the relative luminance of the frame with a given gain
  * \param[in] frameContext The shared IPA frame context
  * \param[in] grid The grid used to store the statistics in the IPU3
  * \param[in] stats The IPU3 statistics and ISP results
  * \param[in] currentYGain The gain calculated on the current brightness level
- * \return The normalized luma
+ * \return The relative luminance
  *
  * Luma is the weighted sum of gamma-compressed R′G′B′ components of a color
  * video. The luma values are normalized as 0.0 to 1.0, with 1.0 being a
@@ -263,12 +263,12 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double currentYGain)
  * luma here.
  *
  * More detailed information can be found in:
- * https://en.wikipedia.org/wiki/Luma_(video)
+ * https://en.wikipedia.org/wiki/Relative_luminance
  */
-double Agc::computeInitialY(IPAFrameContext &frameContext,
-			    const ipu3_uapi_grid_config &grid,
-			    const ipu3_uapi_stats_3a *stats,
-			    double currentYGain)
+double Agc::estimateLuminance(IPAFrameContext &frameContext,
+			      const ipu3_uapi_grid_config &grid,
+			      const ipu3_uapi_stats_3a *stats,
+			      double currentYGain)
 {
 	double redSum = 0, greenSum = 0, blueSum = 0;
 
@@ -288,14 +288,14 @@ double Agc::computeInitialY(IPAFrameContext &frameContext,
 	}
 
 	/*
-	 * Estimate the sum of the brightness values, weighted with the gains
-	 * applied on the channels in AWB as the Rec. 601 luma.
+	 * Apply the AWB gains to approximate colours correctly, use the Rec.
+	 * 601 formula to calculate the relative luminance, and normalize it.
 	 */
-	double Y_sum = redSum * frameContext.awb.gains.red * .299 +
-		       greenSum * frameContext.awb.gains.green * .587 +
-		       blueSum * frameContext.awb.gains.blue * .114;
+	double ySum = redSum * frameContext.awb.gains.red * 0.299
+		    + greenSum * frameContext.awb.gains.green * 0.587
+		    + blueSum * frameContext.awb.gains.blue * 0.114;
 
-	return Y_sum / (grid.height * grid.width) / 255;
+	return ySum / (grid.height * grid.width) / 255;
 }
 
 /**
@@ -311,22 +311,22 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	measureBrightness(stats, context.configuration.grid.bdsGrid);
 
 	double currentYGain = 1.0;
-	double targetY = kNormalizedLumaTarget;
+	double yTarget = kRelativeLuminanceTarget;
 
 	/*
 	 * Do this calculation a few times as brightness increase can be
 	 * non-linear when there are saturated regions.
 	 */
-	for (int i = 0; i < 8; i++) {
-		double initialY = computeInitialY(context.frameContext,
+	for (unsigned int i = 0; i < 8; i++) {
+		double yValue = estimateLuminance(context.frameContext,
 						  context.configuration.grid.bdsGrid,
 						  stats, currentYGain);
-		double extra_gain = std::min(10.0, targetY / (initialY + .001));
+		double extra_gain = std::min(10.0, yTarget / (yValue + .001));
 
 		currentYGain *= extra_gain;
-		LOG(IPU3Agc, Debug) << "Initial Y " << initialY
-				    << " target " << targetY
-				    << " gives gain " << currentYGain;
+		LOG(IPU3Agc, Debug) << "Y value: " << yValue
+				    << ", Y target: " << yTarget
+				    << ", gives gain " << currentYGain;
 		if (extra_gain < 1.01)
 			break;
 	}

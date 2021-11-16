@@ -31,18 +31,17 @@ public:
 	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
 
 private:
-	void measureBrightness(const ipu3_uapi_stats_3a *stats,
-			       const ipu3_uapi_grid_config &grid);
+	double measureBrightness(const ipu3_uapi_stats_3a *stats,
+				 const ipu3_uapi_grid_config &grid) const;
 	void filterExposure();
-	void computeExposure(IPAFrameContext &frameContext, double yGain);
+	void computeExposure(IPAFrameContext &frameContext, double yGain,
+			     double iqMeanGain);
 	double estimateLuminance(IPAFrameContext &frameContext,
 				 const ipu3_uapi_grid_config &grid,
 				 const ipu3_uapi_stats_3a *stats,
 				 double gain);
 
 	uint64_t frameCount_;
-
-	double iqMean_;
 
 	utils::Duration lineDuration_;
 	utils::Duration minShutterSpeed_;

@@ -70,7 +70,7 @@ static constexpr uint32_t kNumStartupFrames = 10;
 static constexpr double kRelativeLuminanceTarget = 0.16;
 
 Agc::Agc()
-	: frameCount_(0), iqMean_(0.0), lineDuration_(0s), minShutterSpeed_(0s),
+	: frameCount_(0), lineDuration_(0s), minShutterSpeed_(0s),
 	  maxShutterSpeed_(0s), filteredExposure_(0s), currentExposure_(0s)
 {
 }
@@ -108,9 +108,10 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
  * \brief Estimate the mean value of the top 2% of the histogram
  * \param[in] stats The statistics computed by the ImgU
  * \param[in] grid The grid used to store the statistics in the IPU3
+ * \return The mean value of the top 2% of the histogram
  */
-void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
-			    const ipu3_uapi_grid_config &grid)
+double Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
+			      const ipu3_uapi_grid_config &grid) const
 {
 	/* Initialise the histogram array */
 	uint32_t hist[knumHistogramBins] = { 0 };
@@ -135,8 +136,8 @@ void Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 		}
 	}
 
-	/* Estimate the quantile mean of the top 2% of the histogram */
-	iqMean_ = Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
+	/* Estimate the quantile mean of the top 2% of the histogram. */
+	return Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
 }
 
 /**
@@ -174,28 +175,22 @@ void Agc::filterExposure()
  * \brief Estimate the new exposure and gain values
  * \param[inout] frameContext The shared IPA frame Context
  * \param[in] yGain The gain calculated based on the relative luminance target
+ * \param[in] iqMeanGain The gain calculated based on the relative luminance target
  */
-void Agc::computeExposure(IPAFrameContext &frameContext, double yGain)
+void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
+			  double iqMeanGain)
 {
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
 
-	/*
-	 * Estimate the gain needed to have the proportion of pixels in a given
-	 * desired range. iqMean_ returns the mean value of the top 2% of the
-	 * cumulative histogram, and we want it to be as close as possible to a
-	 * configured target.
-	 */
-	double evGain = kEvGainTarget * knumHistogramBins / iqMean_;
-
-	if (evGain < yGain)
-		evGain = yGain;
+	/* Use the highest of the two gain estimates. */
+	double evGain = std::max(yGain, iqMeanGain);
 
 	/* Consider within 1% of the target as correctly exposed */
 	if (std::abs(evGain - 1.0) < 0.01)
-		LOG(IPU3Agc, Debug) << "We are well exposed (iqMean = "
-				    << iqMean_ << ")";
+		LOG(IPU3Agc, Debug) << "We are well exposed (evGain = "
+				    << evGain << ")";
 
 	/* extracted from Rpi::Agc::computeTargetExposure */
 
@@ -308,15 +303,25 @@ double Agc::estimateLuminance(IPAFrameContext &frameContext,
  */
 void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	measureBrightness(stats, context.configuration.grid.bdsGrid);
+	/*
+	 * Estimate the gain needed to have the proportion of pixels in a given
+	 * desired range. iqMean is the mean value of the top 2% of the
+	 * cumulative histogram, and we want it to be as close as possible to a
+	 * configured target.
+	 */
+	double iqMean = measureBrightness(stats, context.configuration.grid.bdsGrid);
+	double iqMeanGain = kEvGainTarget * knumHistogramBins / iqMean;
 
+	/*
+	 * Estimate the gain needed to achieve a relative luminance target. To
+	 * account for non-linearity caused by saturation, the value needs to be
+	 * estimated in an iterative process, as multiplying by a gain will not
+	 * increase the relative luminance by the same factor if some image
+	 * regions are saturated.
+	 */
 	double yGain = 1.0;
 	double yTarget = kRelativeLuminanceTarget;
 
-	/*
-	 * Do this calculation a few times as brightness increase can be
-	 * non-linear when there are saturated regions.
-	 */
 	for (unsigned int i = 0; i < 8; i++) {
 		double yValue = estimateLuminance(context.frameContext,
 						  context.configuration.grid.bdsGrid,
@@ -331,7 +336,7 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 			break;
 	}
 
-	computeExposure(context.frameContext, yGain);
+	computeExposure(context.frameContext, yGain, iqMeanGain);
 	frameCount_++;
 }
 

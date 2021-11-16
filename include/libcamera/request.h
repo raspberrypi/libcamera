@@ -17,6 +17,7 @@
 #include <libcamera/base/signal.h>
 
 #include <libcamera/controls.h>
+#include <libcamera/fence.h>
 
 namespace libcamera {
 
@@ -51,7 +52,8 @@ public:
 	ControlList &controls() { return *controls_; }
 	ControlList &metadata() { return *metadata_; }
 	const BufferMap &buffers() const { return bufferMap_; }
-	int addBuffer(const Stream *stream, FrameBuffer *buffer);
+	int addBuffer(const Stream *stream, FrameBuffer *buffer,
+		      std::unique_ptr<Fence> fence = nullptr);
 	FrameBuffer *findBuffer(const Stream *stream) const;
 
 	uint32_t sequence() const;

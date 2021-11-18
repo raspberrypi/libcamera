@@ -25,6 +25,8 @@
 
 #include <libcamera/internal/mapped_framebuffer.h>
 
+#include "libipa/camera_sensor_helper.h"
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPARkISP1)
@@ -73,10 +75,12 @@ private:
 	unsigned int hwHistBinNMax_;
 	unsigned int hwGammaOutMaxSamples_;
 	unsigned int hwHistogramWeightGridsSize_;
+
+	/* Interface to the Camera Helper */
+	std::unique_ptr<CameraSensorHelper> camHelper_;
 };
 
-int IPARkISP1::init([[maybe_unused]] const IPASettings &settings,
-		    unsigned int hwRevision)
+int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 {
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
@@ -100,6 +104,15 @@ int IPARkISP1::init([[maybe_unused]] const IPASettings &settings,
 	}
 
 	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
+
+	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
+	if (!camHelper_) {
+		LOG(IPARkISP1, Error)
+			<< "Failed to create camera sensor helper for "
+			<< settings.sensorModel;
+		return -ENODEV;
+	}
+
 	return 0;
 }
 

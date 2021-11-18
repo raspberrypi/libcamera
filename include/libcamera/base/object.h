@@ -34,7 +34,7 @@ public:
 	template<typename T, typename R, typename... FuncArgs, typename... Args,
 		 typename std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
 	R invokeMethod(R (T::*func)(FuncArgs...), ConnectionType type,
-		       Args... args)
+		       Args&&... args)
 	{
 		T *obj = static_cast<T *>(this);
 		auto *method = new BoundMethodMember<T, R, FuncArgs...>(obj, this, func, type);

@@ -29,7 +29,9 @@ struct RkISP1Action {
 };
 
 interface IPARkISP1Interface {
-	init(uint32 hwRevision) => (int32 ret);
+	init(libcamera.IPASettings settings,
+	     uint32 hwRevision)
+		=> (int32 ret);
 	start() => (int32 ret);
 	stop();
 

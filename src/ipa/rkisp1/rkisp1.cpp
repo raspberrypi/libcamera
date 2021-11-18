@@ -34,7 +34,7 @@ namespace ipa::rkisp1 {
 class IPARkISP1 : public IPARkISP1Interface
 {
 public:
-	int init(unsigned int hwRevision) override;
+	int init(const IPASettings &settings, unsigned int hwRevision) override;
 	int start() override;
 	void stop() override {}
 
@@ -75,7 +75,8 @@ private:
 	unsigned int hwHistogramWeightGridsSize_;
 };
 
-int IPARkISP1::init(unsigned int hwRevision)
+int IPARkISP1::init([[maybe_unused]] const IPASettings &settings,
+		    unsigned int hwRevision)
 {
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {

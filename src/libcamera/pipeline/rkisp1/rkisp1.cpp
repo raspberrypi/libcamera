@@ -319,7 +319,7 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	ipa_->queueFrameAction.connect(this,
 				       &RkISP1CameraData::queueFrameAction);
 
-	int ret = ipa_->init(hwRevision);
+	int ret = ipa_->init(IPASettings{ "", sensor_->model() }, hwRevision);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;

@@ -96,7 +96,7 @@ V4L2DeviceFormat toV4L2DeviceFormat(const V4L2SubdeviceFormat &format,
 	return deviceFormat;
 }
 
-bool isRaw(PixelFormat &pixFmt)
+bool isRaw(const PixelFormat &pixFmt)
 {
 	/*
 	 * The isRaw test might be redundant right now the pipeline handler only

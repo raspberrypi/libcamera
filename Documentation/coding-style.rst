@@ -418,4 +418,12 @@ diff that fixes the issues, on top of the corresponding commit. As the script is
 in early development false positive are expected. The flagged issues should be
 reviewed, but the diff doesn't need to be applied blindly.
 
+Execution of checkstyle.py can be automated through git commit hooks. Example
+of pre-commit and post-commit hooks are available in `utils/hooks/pre-commit`
+and `utils/hooks/post-commit`. You can install either hook by copying it to
+`.git/hooks/`. The post-commit hook is easier to start with as it will only flag
+potential issues after committing, while the pre-commit hook will abort the
+commit if issues are detected and requires usage of `git commit --no-verify` to
+ignore false positives.
+
 Happy hacking, libcamera awaits your patches!

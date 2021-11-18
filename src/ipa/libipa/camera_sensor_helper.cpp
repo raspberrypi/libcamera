@@ -290,7 +290,7 @@ class CameraSensorHelperImx219 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx219()
 	{
-		analogueGainConstants_ = { AnalogueGainLinear, 0, -1, 256, 256 };
+		analogueGainConstants_ = { AnalogueGainLinear, 0, 256, -1, 256 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx219", CameraSensorHelperImx219)

@@ -21,11 +21,13 @@ struct RkISP1Event {
 	uint32 frame;
 	uint32 bufferId;
 	libcamera.ControlList controls;
+	libcamera.ControlList sensorControls;
 };
 
 struct RkISP1Action {
 	RkISP1Operations op;
 	libcamera.ControlList controls;
+	libcamera.ControlList sensorControls;
 };
 
 interface IPARkISP1Interface {

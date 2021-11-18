@@ -333,7 +333,7 @@ void RkISP1CameraData::queueFrameAction(unsigned int frame,
 {
 	switch (action.op) {
 	case ipa::rkisp1::ActionV4L2Set: {
-		const ControlList &controls = action.controls;
+		const ControlList &controls = action.sensorControls;
 		delayedCtrls_->push(controls);
 		break;
 	}
@@ -1124,6 +1124,7 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	ev.op = ipa::rkisp1::EventSignalStatBuffer;
 	ev.frame = info->frame;
 	ev.bufferId = info->statBuffer->cookie();
+	ev.sensorControls = data->delayedCtrls_->get(buffer->metadata().sequence);
 	data->ipa_->processEvent(ev);
 }
 

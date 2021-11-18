@@ -314,7 +314,7 @@ void IPARkISP1::setControls(unsigned int frame)
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
-	op.controls = ctrls;
+	op.sensorControls = ctrls;
 
 	queueFrameAction.emit(frame, op);
 }

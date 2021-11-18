@@ -1211,21 +1211,42 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
+	unsigned int numRawBuffers = 0;
 	int ret;
 
-	/*
-	 * Decide how many internal buffers to allocate. For now, simply look
-	 * at how many external buffers will be provided. We'll need to improve
-	 * this logic. However, we really must have all streams allocate the same
-	 * number of buffers to simplify error handling in queueRequestDevice().
-	 */
-	unsigned int maxBuffers = 0;
-	for (const Stream *s : camera->streams())
-		if (static_cast<const RPi::Stream *>(s)->isExternal())
-			maxBuffers = std::max(maxBuffers, s->configuration().bufferCount);
+	for (Stream *s : camera->streams()) {
+		if (isRaw(s->configuration().pixelFormat)) {
+			numRawBuffers = s->configuration().bufferCount;
+			break;
+		}
+	}
 
+	/* Decide how many internal buffers to allocate. */
 	for (auto const stream : data->streams_) {
-		ret = stream->prepareBuffers(maxBuffers);
+		unsigned int numBuffers;
+
+		if (stream == &data->unicam_[Unicam::Image] ||
+		    stream == &data->unicam_[Unicam::Embedded]) {
+			/*
+			 * For Unicam, allocate a minimum of 4 buffers as we want
+			 * to avoid any frame drops. If an application has configured
+			 * a RAW stream, allocate additional buffers to make up the
+			 * minimum, but ensure we have at least 2 sets of internal
+			 * buffers to use to minimise frame drops.
+			 */
+			constexpr unsigned int minBuffers = 4;
+			numBuffers = std::max<int>(2, minBuffers - numRawBuffers);
+		} else {
+			/*
+			 * Since the ISP runs synchronous with the IPA and requests,
+			 * we only ever need one set of internal buffers. Any buffers
+			 * the application wants to hold onto will already be exported
+			 * through PipelineHandlerRPi::exportFrameBuffers().
+			 */
+			numBuffers = 1;
+		}
+
+		ret = stream->prepareBuffers(numBuffers);
 		if (ret < 0)
 			return ret;
 	}

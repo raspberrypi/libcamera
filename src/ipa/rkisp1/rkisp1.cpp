@@ -25,6 +25,7 @@
 
 #include <libcamera/internal/mapped_framebuffer.h>
 
+#include "ipa_context.h"
 #include "libipa/camera_sensor_helper.h"
 
 namespace libcamera {
@@ -78,6 +79,9 @@ private:
 
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
+
+	/* Local parameter storage */
+	struct IPAContext context_;
 };
 
 int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
@@ -163,6 +167,9 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	LOG(IPARkISP1, Info)
 		<< "Exposure: " << minExposure_ << "-" << maxExposure_
 		<< " Gain: " << minGain_ << "-" << maxGain_;
+
+	/* Clean context at configuration */
+	context_ = {};
 
 	return 0;
 }

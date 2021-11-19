@@ -76,13 +76,13 @@ namespace libcamera::ipa::ipu3 {
  * \var IPASessionConfiguration::agc.minShutterSpeed
  * \brief Minimum shutter speed supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid.maxShutterSpeed
+ * \var IPASessionConfiguration::agc.maxShutterSpeed
  * \brief Maximum shutter speed supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid.minAnalogueGain
+ * \var IPASessionConfiguration::agc.minAnalogueGain
  * \brief Minimum analogue gain supported with the configured sensor
  *
- * \var IPASessionConfiguration::grid.maxAnalogueGain
+ * \var IPASessionConfiguration::agc.maxAnalogueGain
  * \brief Maximum analogue gain supported with the configured sensor
  */
 

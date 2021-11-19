@@ -8,11 +8,16 @@
 
 #pragma once
 
+#include <linux/rkisp1-config.h>
+
 namespace libcamera {
 
 namespace ipa::rkisp1 {
 
 struct IPASessionConfiguration {
+	struct {
+		rkisp1_cif_isp_version revision;
+	} hw;
 };
 
 struct IPAFrameContext {

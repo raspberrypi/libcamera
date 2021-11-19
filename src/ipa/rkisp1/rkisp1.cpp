@@ -74,6 +74,7 @@ private:
 	uint32_t maxGain_;
 
 	/* revision-specific data */
+	rkisp1_cif_isp_version hwRevision_;
 	unsigned int hwAeMeanMax_;
 	unsigned int hwHistBinNMax_;
 	unsigned int hwGammaOutMaxSamples_;
@@ -113,6 +114,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 	}
 
 	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
+
+	/* Cache the value to set it in configure. */
+	hwRevision_ = static_cast<rkisp1_cif_isp_version>(hwRevision);
 
 	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
 	if (!camHelper_) {
@@ -175,6 +179,9 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 
 	/* Clean context at configuration */
 	context_ = {};
+
+	/* Set the hardware revision for the algorithms. */
+	context_.configuration.hw.revision = hwRevision_;
 
 	return 0;
 }

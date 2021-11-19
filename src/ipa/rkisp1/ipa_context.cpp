@@ -55,4 +55,12 @@ namespace libcamera::ipa::rkisp1 {
  * are run. This needs to be turned into real per-frame data storage.
  */
 
+/**
+ * \var IPASessionConfiguration::hw
+ * \brief RkISP1-specific hardware information
+ *
+ * \var IPASessionConfiguration::hw.revision
+ * \brief Hardware revision of the ISP
+ */
+
 } /* namespace libcamera::ipa::rkisp1 */

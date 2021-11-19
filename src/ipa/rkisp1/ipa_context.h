@@ -10,17 +10,39 @@
 
 #include <linux/rkisp1-config.h>
 
+#include <libcamera/base/utils.h>
+
 namespace libcamera {
 
 namespace ipa::rkisp1 {
 
 struct IPASessionConfiguration {
 	struct {
+		utils::Duration minShutterSpeed;
+		utils::Duration maxShutterSpeed;
+		double minAnalogueGain;
+		double maxAnalogueGain;
+	} agc;
+
+	struct {
+		utils::Duration lineDuration;
+	} sensor;
+
+	struct {
 		rkisp1_cif_isp_version revision;
 	} hw;
 };
 
 struct IPAFrameContext {
+	struct {
+		uint32_t exposure;
+		double gain;
+	} agc;
+
+	struct {
+		uint32_t exposure;
+		double gain;
+	} sensor;
 };
 
 struct IPAContext {

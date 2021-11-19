@@ -280,6 +280,13 @@ void Agc::process(IPAContext &context, const rkisp1_stat_buffer *stats)
 	frameCount_++;
 }
 
+void Agc::prepare([[maybe_unused]] IPAContext &context,
+		  rkisp1_params_cfg *params)
+{
+	params->module_ens |= RKISP1_CIF_ISP_MODULE_AEC;
+	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AEC;
+}
+
 } /* namespace ipa::rkisp1::algorithms */
 
 } /* namespace libcamera */

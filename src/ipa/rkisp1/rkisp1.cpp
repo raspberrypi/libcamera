@@ -272,19 +272,13 @@ void IPARkISP1::processEvent(const RkISP1Event &event)
 }
 
 void IPARkISP1::queueRequest(unsigned int frame, rkisp1_params_cfg *params,
-			     const ControlList &controls)
+			     [[maybe_unused]] const ControlList &controls)
 {
 	/* Prepare parameters buffer. */
 	memset(params, 0, sizeof(*params));
 
-	/* Auto Exposure on/off. */
-	if (controls.contains(controls::AeEnable)) {
-		autoExposure_ = controls.get(controls::AeEnable);
-		if (autoExposure_)
-			params->module_ens = RKISP1_CIF_ISP_MODULE_AEC;
-
-		params->module_en_update = RKISP1_CIF_ISP_MODULE_AEC;
-	}
+	for (auto const &algo : algorithms_)
+		algo->prepare(context_, params);
 
 	RkISP1Action op;
 	op.op = ActionParamFilled;

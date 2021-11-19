@@ -109,7 +109,7 @@ protected:
 			}
 
 			if (request->addBuffer(stream, buffer.get())) {
-				cout << "Failed to associating buffer with request" << endl;
+				cout << "Failed to associate buffer with request" << endl;
 				return TestFail;
 			}
 

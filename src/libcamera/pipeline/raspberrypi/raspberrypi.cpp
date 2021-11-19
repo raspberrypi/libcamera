@@ -1907,7 +1907,7 @@ void RPiCameraData::clearIncompleteRequests()
 			 * request? If not, do so now.
 			 */
 			if (buffer->request()) {
-				buffer->cancel();
+				buffer->_d()->cancel();
 				pipe()->completeBuffer(request, buffer);
 			}
 		}

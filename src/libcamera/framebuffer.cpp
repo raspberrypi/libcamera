@@ -187,6 +187,14 @@ FrameBuffer::Private::~Private()
  */
 
 /**
+ * \fn FrameBuffer::Private::cancel()
+ * \brief Marks the buffer as cancelled
+ *
+ * If a buffer is not used by a request, it shall be marked as cancelled to
+ * indicate that the metadata is invalid.
+ */
+
+/**
  * \class FrameBuffer
  * \brief Frame buffer data and its associated dynamic metadata
  *
@@ -406,13 +414,5 @@ std::unique_ptr<Fence> FrameBuffer::releaseFence()
 {
 	return std::move(_d()->fence_);
 }
-
-/**
- * \fn FrameBuffer::cancel()
- * \brief Marks the buffer as cancelled
- *
- * If a buffer is not used by a request, it shall be marked as cancelled to
- * indicate that the metadata is invalid.
- */
 
 } /* namespace libcamera */

@@ -28,6 +28,7 @@
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -836,7 +837,7 @@ void IPU3CameraData::cancelPendingRequests()
 
 		for (auto it : request->buffers()) {
 			FrameBuffer *buffer = it.second;
-			buffer->cancel();
+			buffer->_d()->cancel();
 			pipe()->completeBuffer(request, buffer);
 		}
 
@@ -1356,7 +1357,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
 		for (auto it : request->buffers()) {
 			FrameBuffer *b = it.second;
-			b->cancel();
+			b->_d()->cancel();
 			pipe()->completeBuffer(request, b);
 		}
 

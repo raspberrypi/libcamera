@@ -31,6 +31,8 @@ public:
 	Fence *fence() const { return fence_.get(); }
 	void setFence(std::unique_ptr<Fence> fence) { fence_ = std::move(fence); }
 
+	void cancel() { LIBCAMERA_O_PTR()->metadata_.status = FrameMetadata::FrameCancelled; }
+
 private:
 	std::unique_ptr<Fence> fence_;
 	Request *request_;

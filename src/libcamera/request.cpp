@@ -135,6 +135,8 @@ void Request::Private::doCancelRequest()
 
 	cancelled_ = true;
 	pending_.clear();
+	notifiers_.clear();
+	timer_.reset();
 }
 
 /**
@@ -162,7 +164,138 @@ void Request::Private::reuse()
 {
 	sequence_ = 0;
 	cancelled_ = false;
+	prepared_ = false;
 	pending_.clear();
+	notifiers_.clear();
+	timer_.reset();
+}
+
+/*
+ * Helper function to save some lines of code and make sure prepared_ is set
+ * to true before emitting the signal.
+ */
+void Request::Private::emitPrepareCompleted()
+{
+	prepared_ = true;
+	prepared.emit();
+}
+
+/**
+ * \brief Prepare the Request to be queued to the device
+ * \param[in] timeout Optional expiration timeout
+ *
+ * Prepare a Request to be queued to the hardware device by ensuring it is
+ * ready for the incoming memory transfers.
+ *
+ * This currently means waiting on each frame buffer acquire fence to be
+ * signalled. An optional expiration timeout can be specified. If not all the
+ * fences have been signalled correctly before the timeout expires the Request
+ * is cancelled.
+ *
+ * The function immediately emits the prepared signal if all the prepare
+ * operations have been completed synchronously. If instead the prepare
+ * operations require to wait the completion of asynchronous events, such as
+ * fences notifications or timer expiration, the prepared signal is emitted upon
+ * the asynchronous event completion.
+ *
+ * As we currently only handle fences, the function emits the prepared signal
+ * immediately if there are no fences to wait on. Otherwise the prepared signal
+ * is emitted when all fences have been signalled or the optional timeout has
+ * expired.
+ *
+ * If not all the fences have been correctly signalled or the optional timeout
+ * has expired the Request will be cancelled and the Request::prepared signal
+ * emitted.
+ *
+ * The intended user of this function is the PipelineHandler base class, which
+ * 'prepares' a Request before queuing it to the hardware device.
+ */
+void Request::Private::prepare(std::chrono::milliseconds timeout)
+{
+	/* Create and connect one notifier for each synchronization fence. */
+	for (FrameBuffer *buffer : pending_) {
+		const Fence *fence = buffer->_d()->fence();
+		if (!fence)
+			continue;
+
+		std::unique_ptr<EventNotifier> notifier =
+			std::make_unique<EventNotifier>(fence->fd().get(),
+							EventNotifier::Read);
+
+		notifier->activated.connect(this, [this, buffer] {
+							notifierActivated(buffer);
+					    });
+
+		notifiers_[buffer] = std::move(notifier);
+	}
+
+	if (notifiers_.empty()) {
+		emitPrepareCompleted();
+		return;
+	}
+
+	/*
+	 * In case a timeout is specified, create a timer and set it up.
+	 *
+	 * The timer must be created here instead of in the Request constructor,
+	 * in order to be bound to the pipeline handler thread.
+	 */
+	if (timeout != 0ms) {
+		timer_ = std::make_unique<Timer>();
+		timer_->timeout.connect(this, &Request::Private::timeout);
+		timer_->start(timeout);
+	}
+}
+
+/**
+ * \var Request::Private::prepared
+ * \brief Request preparation completed Signal
+ *
+ * The signal is emitted once the request preparation has completed and is ready
+ * to be queued. The Request might complete with errors in which case it is
+ * cancelled.
+ *
+ * The intended slot for this signal is the PipelineHandler::doQueueRequests()
+ * function which queues Request after they have been prepared or cancel them
+ * if they have failed preparing.
+ */
+
+void Request::Private::notifierActivated(FrameBuffer *buffer)
+{
+	/* Close the fence if successfully signalled. */
+	ASSERT(buffer);
+	buffer->releaseFence();
+
+	/* Remove the entry from the map and check if other fences are pending. */
+	auto it = notifiers_.find(buffer);
+	ASSERT(it != notifiers_.end());
+	notifiers_.erase(it);
+
+	Request *request = _o<Request>();
+	LOG(Request, Debug)
+		<< "Request " << request->cookie() << " buffer " << buffer
+		<< " fence signalled";
+
+	if (!notifiers_.empty())
+		return;
+
+	/* All fences completed, delete the timer and emit the prepared signal. */
+	timer_.reset();
+	emitPrepareCompleted();
+}
+
+void Request::Private::timeout()
+{
+	/* A timeout can only happen if there are fences not yet signalled. */
+	ASSERT(!notifiers_.empty());
+	notifiers_.clear();
+
+	Request *request = _o<Request>();
+	LOG(Request, Debug) << "Request prepare timeout: " << request->cookie();
+
+	cancel();
+
+	emitPrepareCompleted();
 }
 
 /**

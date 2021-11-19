@@ -7,9 +7,16 @@
 #ifndef __LIBCAMERA_INTERNAL_REQUEST_H__
 #define __LIBCAMERA_INTERNAL_REQUEST_H__
 
+#include <chrono>
+#include <map>
 #include <memory>
 
+#include <libcamera/base/event_notifier.h>
+#include <libcamera/base/timer.h>
+
 #include <libcamera/request.h>
+
+using namespace std::chrono_literals;
 
 namespace libcamera {
 
@@ -32,16 +39,25 @@ public:
 	void cancel();
 	void reuse();
 
+	void prepare(std::chrono::milliseconds timeout = 0ms);
+	Signal<> prepared;
+
 private:
 	friend class PipelineHandler;
 
 	void doCancelRequest();
+	void emitPrepareCompleted();
+	void notifierActivated(FrameBuffer *buffer);
+	void timeout();
 
 	Camera *camera_;
 	bool cancelled_;
 	uint32_t sequence_ = 0;
+	bool prepared_ = false;
 
 	std::unordered_set<FrameBuffer *> pending_;
+	std::map<FrameBuffer *, std::unique_ptr<EventNotifier>> notifiers_;
+	std::unique_ptr<Timer> timer_;
 };
 
 } /* namespace libcamera */

@@ -70,8 +70,11 @@ if libgnutls.found()
 endif
 
 if liblttng.found()
+    tracing_enabled = true
     config_h.set('HAVE_TRACING', 1)
     libcamera_sources += files(['tracepoints.cpp'])
+else
+    tracing_enabled = false
 endif
 
 if libudev.found()

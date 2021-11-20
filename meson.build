@@ -172,6 +172,7 @@ py_mod.find_installation('python3', modules: py_modules)
 summary({
             'Enabled pipelines': pipelines,
             'Enabled IPA modules': ipa_modules,
+            'Tracing support': tracing_enabled,
             'Android support': android_enabled,
             'GStreamer support': gst_enabled,
             'V4L2 emulation support': v4l2_enabled,

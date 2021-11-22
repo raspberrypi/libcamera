@@ -357,8 +357,10 @@ CameraCapabilities::computeCapabilities()
 void CameraCapabilities::computeHwLevel(
 	const std::set<camera_metadata_enum_android_request_available_capabilities> &caps)
 {
+	const char *noFull = "Hardware level FULL unavailable: ";
 	camera_metadata_ro_entry_t entry;
 	bool found;
+
 	camera_metadata_enum_android_info_supported_hardware_level
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_FULL;
 
@@ -372,8 +374,10 @@ void CameraCapabilities::computeHwLevel(
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
 
 	found = staticMetadata_->getEntry(ANDROID_SYNC_MAX_LATENCY, &entry);
-	if (!found || *entry.data.i32 != 0)
+	if (!found || *entry.data.i32 != 0) {
+		LOG(HAL, Info) << noFull << "missing or invalid max sync latency";
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+	}
 
 	hwLevel_ = hwLevel;
 }

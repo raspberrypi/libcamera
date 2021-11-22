@@ -339,8 +339,11 @@ CameraCapabilities::computeCapabilities()
 
 	capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE);
 
-	if (validateManualSensorCapability())
+	if (validateManualSensorCapability()) {
 		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR);
+		/* The requirements for READ_SENSOR_SETTINGS are a subset of MANUAL_SENSOR */
+		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_READ_SENSOR_SETTINGS);
+	}
 
 	if (validateManualPostProcessingCapability())
 		capabilities.insert(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING);

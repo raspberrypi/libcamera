@@ -139,11 +139,11 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 
 	autoExposure_ = true;
 
-	minExposure_ = std::max<uint32_t>(itExp->second.min().get<int32_t>(), 1);
+	minExposure_ = itExp->second.min().get<int32_t>();
 	maxExposure_ = itExp->second.max().get<int32_t>();
 	exposure_ = minExposure_;
 
-	minGain_ = std::max<uint32_t>(itGain->second.min().get<int32_t>(), 1);
+	minGain_ = itGain->second.min().get<int32_t>();
 	maxGain_ = itGain->second.max().get<int32_t>();
 	gain_ = minGain_;
 

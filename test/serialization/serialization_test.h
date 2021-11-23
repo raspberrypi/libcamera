@@ -4,8 +4,8 @@
  *
  * serialization_test.h - Base class for serialization tests
  */
-#ifndef __LIBCAMERA_SERIALIZATION_TEST_H__
-#define __LIBCAMERA_SERIALIZATION_TEST_H__
+
+#pragma once
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
@@ -27,5 +27,3 @@ public:
 	static bool equals(const libcamera::ControlList &lhs,
 			   const libcamera::ControlList &rhs);
 };
-
-#endif /* __LIBCAMERA_SERIALIZATION_TEST_H__ */

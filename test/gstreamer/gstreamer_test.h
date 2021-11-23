@@ -5,8 +5,7 @@
  * gstreamer_test.cpp - GStreamer test base class
  */
 
-#ifndef __LIBCAMERA_GSTREAMER_TEST_H__
-#define __LIBCAMERA_GSTREAMER_TEST_H__
+#pragma once
 
 #include <iostream>
 #include <unistd.h>
@@ -33,5 +32,3 @@ protected:
 	GstElement *libcameraSrc_;
 	int status_;
 };
-
-#endif /* __LIBCAMERA_GSTREAMER_TEST_H__ */

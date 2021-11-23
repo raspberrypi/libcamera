@@ -4,8 +4,8 @@
  *
  * buffer_source.h - libcamera camera test helper to create FrameBuffers
  */
-#ifndef __LIBCAMERA_BUFFER_SOURCE_TEST_H__
-#define __LIBCAMERA_BUFFER_SOURCE_TEST_H__
+
+#pragma once
 
 #include <libcamera/stream.h>
 
@@ -25,5 +25,3 @@ private:
 	std::shared_ptr<libcamera::MediaDevice> media_;
 	std::vector<std::unique_ptr<libcamera::FrameBuffer>> buffers_;
 };
-
-#endif /* __LIBCAMERA_BUFFER_SOURCE_TEST_H__ */

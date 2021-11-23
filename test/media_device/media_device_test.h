@@ -4,8 +4,8 @@
  *
  * media_device_test.h - libcamera media device test base class
  */
-#ifndef __LIBCAMERA_MEDIADEVICE_TEST_H__
-#define __LIBCAMERA_MEDIADEVICE_TEST_H__
+
+#pragma once
 
 #include <memory>
 
@@ -28,5 +28,3 @@ protected:
 private:
 	std::unique_ptr<libcamera::DeviceEnumerator> enumerator_;
 };
-
-#endif /* __LIBCAMERA_MEDIADEVICE_TEST_H__ */

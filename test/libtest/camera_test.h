@@ -4,8 +4,8 @@
  *
  * camera_test.h - libcamera camera test base class
  */
-#ifndef __LIBCAMERA_CAMERA_TEST_H__
-#define __LIBCAMERA_CAMERA_TEST_H__
+
+#pragma once
 
 #include <memory>
 
@@ -23,5 +23,3 @@ protected:
 	std::shared_ptr<libcamera::Camera> camera_;
 	int status_;
 };
-
-#endif /* __LIBCAMERA_CAMERA_TEST_H__ */

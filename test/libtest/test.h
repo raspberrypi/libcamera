@@ -4,8 +4,8 @@
  *
  * test.h - libcamera test base class
  */
-#ifndef __TEST_TEST_H__
-#define __TEST_TEST_H__
+
+#pragma once
 
 #include <sstream>
 
@@ -34,5 +34,3 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])	\
 {									\
 	return klass().execute();					\
 }
-
-#endif /* __TEST_TEST_H__ */

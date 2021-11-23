@@ -5,8 +5,7 @@
  * v4l2_subdevice_test.h - VIMC-based V4L2 subdevice test
  */
 
-#ifndef __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__
-#define __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__
+#pragma once
 
 #include <libcamera/framebuffer.h>
 
@@ -32,5 +31,3 @@ protected:
 	std::shared_ptr<libcamera::MediaDevice> media_;
 	libcamera::V4L2Subdevice *scaler_;
 };
-
-#endif /* __LIBCAMERA_V4L2_SUBDEVICE_TEST_H__ */

@@ -4,8 +4,8 @@
  *
  * vl42device_test.h - libcamera v4l2device test base class
  */
-#ifndef __LIBCAMERA_V4L2_DEVICE_TEST_H_
-#define __LIBCAMERA_V4L2_DEVICE_TEST_H_
+
+#pragma once
 
 #include <memory>
 
@@ -41,5 +41,3 @@ protected:
 	libcamera::V4L2VideoDevice *capture_;
 	std::vector<std::unique_ptr<libcamera::FrameBuffer>> buffers_;
 };
-
-#endif /* __LIBCAMERA_V4L2_DEVICE_TEST_H_ */

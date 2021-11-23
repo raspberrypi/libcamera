@@ -4,8 +4,8 @@
  *
  * drm.h - DRM/KMS Helpers
  */
-#ifndef __CAM_DRM_H__
-#define __CAM_DRM_H__
+
+#pragma once
 
 #include <array>
 #include <list>
@@ -330,5 +330,3 @@ private:
 };
 
 } /* namespace DRM */
-
-#endif /* __CAM_DRM_H__ */

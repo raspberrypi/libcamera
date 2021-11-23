@@ -4,8 +4,8 @@
  *
  * event_loop.h - cam - Event loop
  */
-#ifndef __CAM_EVENT_LOOP_H__
-#define __CAM_EVENT_LOOP_H__
+
+#pragma once
 
 #include <functional>
 #include <memory>
@@ -61,5 +61,3 @@ private:
 				     void *param);
 	void dispatchCall();
 };
-
-#endif /* __CAM_EVENT_LOOP_H__ */

@@ -4,8 +4,8 @@
  *
  * image.h - Multi-planar image with access to pixel data
  */
-#ifndef __CAM_IMAGE_H__
-#define __CAM_IMAGE_H__
+
+#pragma once
 
 #include <memory>
 #include <stdint.h>
@@ -48,5 +48,3 @@ private:
 namespace libcamera {
 LIBCAMERA_FLAGS_ENABLE_OPERATORS(Image::MapMode)
 }
-
-#endif /* __CAM_IMAGE_H__ */

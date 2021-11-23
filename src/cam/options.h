@@ -4,8 +4,8 @@
  *
  * options.h - cam - Options parsing
  */
-#ifndef __CAM_OPTIONS_H__
-#define __CAM_OPTIONS_H__
+
+#pragma once
 
 #include <ctype.h>
 #include <list>
@@ -155,5 +155,3 @@ private:
 	std::vector<OptionValue> array_;
 	OptionsParser::Options children_;
 };
-
-#endif /* __CAM_OPTIONS_H__ */

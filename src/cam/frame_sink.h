@@ -4,8 +4,8 @@
  *
  * frame_sink.h - Base Frame Sink Class
  */
-#ifndef __CAM_FRAME_SINK_H__
-#define __CAM_FRAME_SINK_H__
+
+#pragma once
 
 #include <libcamera/base/signal.h>
 
@@ -30,5 +30,3 @@ public:
 	virtual bool processRequest(libcamera::Request *request) = 0;
 	libcamera::Signal<libcamera::Request *> requestProcessed;
 };
-
-#endif /* __CAM_FRAME_SINK_H__ */

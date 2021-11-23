@@ -4,8 +4,8 @@
  *
  * kms_sink.h - KMS Sink
  */
-#ifndef __CAM_KMS_SINK_H__
-#define __CAM_KMS_SINK_H__
+
+#pragma once
 
 #include <list>
 #include <memory>
@@ -68,5 +68,3 @@ private:
 	std::unique_ptr<Request> queued_;
 	std::unique_ptr<Request> active_;
 };
-
-#endif /* __CAM_KMS_SINK_H__ */

@@ -4,8 +4,8 @@
  *
  * file_sink.h - File Sink
  */
-#ifndef __CAM_FILE_SINK_H__
-#define __CAM_FILE_SINK_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -38,5 +38,3 @@ private:
 	std::string pattern_;
 	std::map<libcamera::FrameBuffer *, std::unique_ptr<Image>> mappedBuffers_;
 };
-
-#endif /* __CAM_FILE_SINK_H__ */

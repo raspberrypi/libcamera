@@ -1388,8 +1388,8 @@ int CameraCapabilities::initializeStaticMetadata()
 
 	/* Check capabilities */
 	capabilities_ = computeCapabilities();
-	std::vector<camera_metadata_enum_android_request_available_capabilities>
-		capsVec(capabilities_.begin(), capabilities_.end());
+	/* This *must* be uint8_t. */
+	std::vector<uint8_t> capsVec(capabilities_.begin(), capabilities_.end());
 	staticMetadata_->addEntry(ANDROID_REQUEST_AVAILABLE_CAPABILITIES, capsVec);
 
 	computeHwLevel(capabilities_);

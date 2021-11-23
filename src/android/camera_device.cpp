@@ -1313,7 +1313,7 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	 * Total bytes for JPEG metadata: 82
 	 */
 	std::unique_ptr<CameraMetadata> resultMetadata =
-		std::make_unique<CameraMetadata>(44, 166);
+		std::make_unique<CameraMetadata>(88, 166);
 	if (!resultMetadata->isValid()) {
 		LOG(HAL, Error) << "Failed to allocate result metadata";
 		return nullptr;

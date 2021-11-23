@@ -57,6 +57,8 @@ public:
 	};
 
 	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
+	FrameBuffer(std::unique_ptr<Private> d,
+		    const std::vector<Plane> &planes, unsigned int cookie = 0);
 
 	const std::vector<Plane> &planes() const { return planes_; }
 	Request *request() const;

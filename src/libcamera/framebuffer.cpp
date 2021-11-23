@@ -120,6 +120,13 @@ FrameBuffer::Private::Private()
 }
 
 /**
+ * \brief FrameBuffer::Private destructor
+ */
+FrameBuffer::Private::~Private()
+{
+}
+
+/**
  * \fn FrameBuffer::Private::setRequest()
  * \brief Set the request this buffer belongs to
  * \param[in] request Request to set
@@ -237,8 +244,21 @@ ino_t fileDescriptorInode(const SharedFD &fd)
  * \param[in] cookie Cookie
  */
 FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
-	: Extensible(std::make_unique<Private>()), planes_(planes),
-	  cookie_(cookie)
+	: FrameBuffer(std::make_unique<Private>(), planes, cookie)
+{
+}
+
+/**
+ * \brief Construct a FrameBuffer with an extensible private class and an array
+ * of planes
+ * \param[in] d The extensible private class
+ * \param[in] planes The frame memory planes
+ * \param[in] cookie Cookie
+ */
+FrameBuffer::FrameBuffer(std::unique_ptr<Private> d,
+			 const std::vector<Plane> &planes,
+			 unsigned int cookie)
+	: Extensible(std::move(d)), planes_(planes), cookie_(cookie)
 {
 	metadata_.planes_.resize(planes_.size());
 

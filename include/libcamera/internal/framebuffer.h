@@ -19,6 +19,7 @@ class FrameBuffer::Private : public Extensible::Private
 
 public:
 	Private();
+	virtual ~Private();
 
 	void setRequest(Request *request) { request_ = request; }
 	bool isContiguous() const { return isContiguous_; }

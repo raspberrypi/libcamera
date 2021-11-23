@@ -193,6 +193,9 @@ Awb::Awb()
 
 Awb::~Awb() = default;
 
+/**
+ * \copydoc libcamera::ipa::Algorithm::configure
+ */
 int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
@@ -373,6 +376,9 @@ void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 	}
 }
 
+/**
+ * \copydoc libcamera::ipa::Algorithm::process
+ */
 void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
 	calculateWBGains(stats);
@@ -394,6 +400,9 @@ constexpr uint16_t Awb::threshold(float value)
 	return value * 8191;
 }
 
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
 void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 {
 	/*

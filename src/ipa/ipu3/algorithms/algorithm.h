@@ -9,21 +9,15 @@
 
 #include <libcamera/ipa/ipu3_ipa_interface.h>
 
+#include <libipa/algorithm.h>
+
 #include "ipa_context.h"
 
 namespace libcamera {
 
 namespace ipa::ipu3 {
 
-class Algorithm
-{
-public:
-	virtual ~Algorithm() {}
-
-	virtual int configure(IPAContext &context, const IPAConfigInfo &configInfo);
-	virtual void prepare(IPAContext &context, ipu3_uapi_params *params);
-	virtual void process(IPAContext &context, const ipu3_uapi_stats_3a *stats);
-};
+using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPAConfigInfo, ipu3_uapi_params, ipu3_uapi_stats_3a>;
 
 } /* namespace ipa::ipu3 */
 

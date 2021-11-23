@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libipa_headers = files([
+    'algorithm.h',
     'camera_sensor_helper.h',
     'histogram.h'
 ])

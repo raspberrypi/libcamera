@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * algorithm.cpp - IPU3 control algorithm interface
+ * algorithm.cpp - IPA control algorithm interface
  */
 
 #include "algorithm.h"
@@ -14,11 +14,15 @@
 
 namespace libcamera {
 
-namespace ipa::ipu3 {
+namespace ipa {
 
 /**
  * \class Algorithm
- * \brief The base class for all IPU3 algorithms
+ * \brief The base class for all IPA algorithms
+ * \tparam Context The type of shared IPA context
+ * \tparam Config The type of the IPA configuration data
+ * \tparam Params The type of the ISP specific parameters
+ * \tparam Stats The type of the IPA statistics and ISP results
  *
  * The Algorithm class defines a standard interface for IPA algorithms. By
  * abstracting algorithms, it makes possible the implementation of generic code
@@ -26,6 +30,7 @@ namespace ipa::ipu3 {
  */
 
 /**
+ * \fn Algorithm::configure()
  * \brief Configure the Algorithm given an IPAConfigInfo
  * \param[in] context The shared IPA context
  * \param[in] configInfo The IPA configuration data, received from the pipeline
@@ -39,37 +44,30 @@ namespace ipa::ipu3 {
  *
  * \return 0 if successful, an error code otherwise
  */
-int Algorithm::configure([[maybe_unused]] IPAContext &context,
-			 [[maybe_unused]] const IPAConfigInfo &configInfo)
-{
-	return 0;
-}
 
 /**
+ * \fn Algorithm::prepare()
  * \brief Fill the \a params buffer with ISP processing parameters for a frame
  * \param[in] context The shared IPA context
- * \param[out] params The IPU3 specific parameters.
+ * \param[out] params The ISP specific parameters.
  *
  * This function is called for every frame when the camera is running before it
- * is processed by the ImgU to prepare the ImgU processing parameters for that
+ * is processed by the ISP to prepare the ISP processing parameters for that
  * frame.
  *
  * Algorithms shall fill in the parameter structure fields appropriately to
- * configure the ImgU processing blocks that they are responsible for. This
+ * configure the ISP processing blocks that they are responsible for. This
  * includes setting fields and flags that enable those processing blocks.
  */
-void Algorithm::prepare([[maybe_unused]] IPAContext &context,
-			[[maybe_unused]] ipu3_uapi_params *params)
-{
-}
 
 /**
+ * \fn Algorithm::process()
  * \brief Process ISP statistics, and run algorithm operations
  * \param[in] context The shared IPA context
- * \param[in] stats The IPU3 statistics and ISP results
+ * \param[in] stats The IPA statistics and ISP results
  *
  * This function is called while camera is running for every frame processed by
- * the ImgU, to process statistics generated from that frame by the ImgU.
+ * the ISP, to process statistics generated from that frame by the ISP.
  * Algorithms shall use this data to run calculations and update their state
  * accordingly.
  *
@@ -91,11 +89,7 @@ void Algorithm::prepare([[maybe_unused]] IPAContext &context,
  * Care shall be taken to ensure the ordering of access to the information
  * such that the algorithms use up to date state as required.
  */
-void Algorithm::process([[maybe_unused]] IPAContext &context,
-			[[maybe_unused]] const ipu3_uapi_stats_3a *stats)
-{
-}
 
-} /* namespace ipa::ipu3 */
+} /* namespace ipa */
 
 } /* namespace libcamera */

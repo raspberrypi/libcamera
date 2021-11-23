@@ -4,8 +4,8 @@
  *
  * raspberrypi.h - Image Processing Algorithm interface for Raspberry Pi
  */
-#ifndef __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__
-#define __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__
+
+#pragma once
 
 #include <stdint.h>
 
@@ -53,5 +53,3 @@ static const ControlInfoMap Controls({
 } /* namespace libcamera */
 
 #endif /* __DOXYGEN__ */
-
-#endif /* __LIBCAMERA_IPA_INTERFACE_RASPBERRYPI_H__ */

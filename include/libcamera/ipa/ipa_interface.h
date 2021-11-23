@@ -4,8 +4,8 @@
  *
  * ipa_interface.h - Image Processing Algorithm interface
  */
-#ifndef __LIBCAMERA_IPA_INTERFACE_H__
-#define __LIBCAMERA_IPA_INTERFACE_H__
+
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -37,5 +37,3 @@ public:
 extern "C" {
 libcamera::IPAInterface *ipaCreate();
 }
-
-#endif /* __LIBCAMERA_IPA_INTERFACE_H__ */

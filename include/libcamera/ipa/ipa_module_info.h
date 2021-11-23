@@ -4,8 +4,8 @@
  *
  * ipa_module_info.h - Image Processing Algorithm module information
  */
-#ifndef __LIBCAMERA_IPA_MODULE_INFO_H__
-#define __LIBCAMERA_IPA_MODULE_INFO_H__
+
+#pragma once
 
 #include <stdint.h>
 
@@ -25,5 +25,3 @@ extern const struct IPAModuleInfo ipaModuleInfo;
 }
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPA_MODULE_INFO_H__ */

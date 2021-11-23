@@ -4,8 +4,8 @@
  *
  * ipa_controls.h - IPA Control handling
  */
-#ifndef __LIBCAMERA_IPA_CONTROLS_H__
-#define __LIBCAMERA_IPA_CONTROLS_H__
+
+#pragma once
 
 #include <stdint.h>
 
@@ -50,5 +50,3 @@ struct ipa_control_info_entry {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __LIBCAMERA_IPA_CONTROLS_H__ */

@@ -6,8 +6,7 @@
  * gstlibcameraallocator.h - GStreamer Custom Allocator
  */
 
-#ifndef __GST_LIBCAMERA_ALLOCATOR_H__
-#define __GST_LIBCAMERA_ALLOCATOR_H__
+#pragma once
 
 #include <gst/gst.h>
 #include <gst/allocators/allocators.h>
@@ -30,5 +29,3 @@ gsize gst_libcamera_allocator_get_pool_size(GstLibcameraAllocator *allocator,
 					    libcamera::Stream *stream);
 
 libcamera::FrameBuffer *gst_libcamera_memory_get_frame_buffer(GstMemory *mem);
-
-#endif /* __GST_LIBCAMERA_ALLOCATOR_H__ */

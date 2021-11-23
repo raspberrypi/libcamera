@@ -6,8 +6,7 @@
  * gstlibcamera-utils.h - GStreamer libcamera Utility Functions
  */
 
-#ifndef __GST_LIBCAMERA_UTILS_H__
-#define __GST_LIBCAMERA_UTILS_H__
+#pragma once
 
 #include <libcamera/camera_manager.h>
 #include <libcamera/stream.h>
@@ -71,5 +70,3 @@ public:
 private:
 	GRecMutex *mutex_;
 };
-
-#endif /* __GST_LIBCAMERA_UTILS_H__ */

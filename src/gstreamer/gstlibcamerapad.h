@@ -6,8 +6,7 @@
  * gstlibcamerapad.h - GStreamer Capture Element
  */
 
-#ifndef __GST_LIBCAMERA_PAD_H__
-#define __GST_LIBCAMERA_PAD_H__
+#pragma once
 
 #include "gstlibcamerapool.h"
 
@@ -33,5 +32,3 @@ GstFlowReturn gst_libcamera_pad_push_pending(GstPad *pad);
 bool gst_libcamera_pad_has_pending(GstPad *pad);
 
 void gst_libcamera_pad_set_latency(GstPad *pad, GstClockTime latency);
-
-#endif /* __GST_LIBCAMERA_PAD_H__ */

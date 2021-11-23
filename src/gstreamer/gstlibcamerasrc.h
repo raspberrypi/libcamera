@@ -6,8 +6,7 @@
  * gstlibcamerasrc.h - GStreamer Capture Element
  */
 
-#ifndef __GST_LIBCAMERA_SRC_H__
-#define __GST_LIBCAMERA_SRC_H__
+#pragma once
 
 #include <gst/gst.h>
 
@@ -18,5 +17,3 @@ G_DECLARE_FINAL_TYPE(GstLibcameraSrc, gst_libcamera_src,
 		     GST_LIBCAMERA, SRC, GstElement)
 
 G_END_DECLS
-
-#endif /* __GST_LIBCAMERA_SRC_H__ */

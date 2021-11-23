@@ -6,8 +6,7 @@
  * gstlibcameraprovider.h - GStreamer Device Provider
  */
 
-#ifndef __GST_LIBCAMERA_PROVIDER_H__
-#define __GST_LIBCAMERA_PROVIDER_H__
+#pragma once
 
 #include <gst/gst.h>
 
@@ -18,6 +17,3 @@ G_DECLARE_FINAL_TYPE(GstLibcameraProvider, gst_libcamera_provider,
 		     GST_LIBCAMERA, PROVIDER, GstDeviceProvider)
 
 G_END_DECLS
-
-#endif /* __GST_LIBCAMERA_PROVIDER_H__ */
-

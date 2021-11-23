@@ -4,8 +4,8 @@
  *
  * camera_sensor_helper.h - Helper class that performs sensor-specific parameter computations
  */
-#ifndef __LIBCAMERA_IPA_LIBIPA_CAMERA_SENSOR_HELPER_H__
-#define __LIBCAMERA_IPA_LIBIPA_CAMERA_SENSOR_HELPER_H__
+
+#pragma once
 
 #include <stdint.h>
 
@@ -85,5 +85,3 @@ static helper##Factory global_##helper##Factory;
 } /* namespace ipa */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPA_LIBIPA_CAMERA_SENSOR_HELPER_H__ */

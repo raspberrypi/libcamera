@@ -4,8 +4,8 @@
  *
  * histogram.h - histogram calculation interface
  */
-#ifndef __LIBCAMERA_IPA_LIBIPA_HISTOGRAM_H__
-#define __LIBCAMERA_IPA_LIBIPA_HISTOGRAM_H__
+
+#pragma once
 
 #include <assert.h>
 #include <limits.h>
@@ -36,5 +36,3 @@ private:
 } /* namespace ipa */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPA_LIBIPA_HISTOGRAM_H__ */

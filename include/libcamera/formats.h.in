@@ -6,8 +6,8 @@
  *
  * This file is auto-generated. Do not edit.
  */
-#ifndef __LIBCAMERA_FORMATS_H__
-#define __LIBCAMERA_FORMATS_H__
+
+#pragma once
 
 #include <stdint.h>
 
@@ -40,5 +40,3 @@ ${formats}
 } /* namespace formats */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_FORMATS_H__ */

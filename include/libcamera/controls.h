@@ -5,8 +5,7 @@
  * controls.h - Control handling
  */
 
-#ifndef __LIBCAMERA_CONTROLS_H__
-#define __LIBCAMERA_CONTROLS_H__
+#pragma once
 
 #include <assert.h>
 #include <set>
@@ -421,5 +420,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_CONTROLS_H__ */

@@ -4,8 +4,8 @@
  *
  * framebuffer.h - Frame buffer handling
  */
-#ifndef __LIBCAMERA_FRAMEBUFFER_H__
-#define __LIBCAMERA_FRAMEBUFFER_H__
+
+#pragma once
 
 #include <assert.h>
 #include <limits>
@@ -81,5 +81,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_FRAMEBUFFER_H__ */

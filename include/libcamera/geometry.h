@@ -5,8 +5,7 @@
  * geometry.h - Geometry-related classes
  */
 
-#ifndef __LIBCAMERA_GEOMETRY_H__
-#define __LIBCAMERA_GEOMETRY_H__
+#pragma once
 
 #include <algorithm>
 #include <string>
@@ -293,5 +292,3 @@ static inline bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
 }
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_GEOMETRY_H__ */

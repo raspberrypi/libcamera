@@ -4,8 +4,8 @@
  *
  * pixel_format.h - libcamera Pixel Format
  */
-#ifndef __LIBCAMERA_PIXEL_FORMAT_H__
-#define __LIBCAMERA_PIXEL_FORMAT_H__
+
+#pragma once
 
 #include <set>
 #include <stdint.h>
@@ -46,5 +46,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIXEL_FORMAT_H__ */

@@ -4,8 +4,8 @@
  *
  * logging.h - Logging infrastructure
  */
-#ifndef __LIBCAMERA_LOGGING_H__
-#define __LIBCAMERA_LOGGING_H__
+
+#pragma once
 
 namespace libcamera {
 
@@ -22,5 +22,3 @@ int logSetTarget(LoggingTarget target);
 void logSetLevel(const char *category, const char *level);
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_LOGGING_H__ */

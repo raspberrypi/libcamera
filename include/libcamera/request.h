@@ -4,8 +4,8 @@
  *
  * request.h - Capture request handling
  */
-#ifndef __LIBCAMERA_REQUEST_H__
-#define __LIBCAMERA_REQUEST_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -83,5 +83,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_REQUEST_H__ */

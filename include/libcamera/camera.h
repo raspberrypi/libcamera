@@ -4,8 +4,8 @@
  *
  * camera.h - Camera object interface
  */
-#ifndef __LIBCAMERA_CAMERA_H__
-#define __LIBCAMERA_CAMERA_H__
+
+#pragma once
 
 #include <memory>
 #include <set>
@@ -121,5 +121,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_CAMERA_H__ */

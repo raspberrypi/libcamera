@@ -4,8 +4,8 @@
  *
  * framebuffer_allocator.h - FrameBuffer allocator
  */
-#ifndef __LIBCAMERA_FRAMEBUFFER_ALLOCATOR_H__
-#define __LIBCAMERA_FRAMEBUFFER_ALLOCATOR_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -39,5 +39,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_FRAMEBUFFER_ALLOCATOR_H__ */

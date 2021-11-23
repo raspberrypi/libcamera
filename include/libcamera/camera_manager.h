@@ -4,8 +4,8 @@
  *
  * camera_manager.h - Camera management
  */
-#ifndef __LIBCAMERA_CAMERA_MANAGER_H__
-#define __LIBCAMERA_CAMERA_MANAGER_H__
+
+#pragma once
 
 #include <memory>
 #include <string>
@@ -51,5 +51,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_CAMERA_MANAGER_H__ */

@@ -4,8 +4,8 @@
  *
  * file_descriptor.h - File descriptor wrapper
  */
-#ifndef __LIBCAMERA_FILE_DESCRIPTOR_H__
-#define __LIBCAMERA_FILE_DESCRIPTOR_H__
+
+#pragma once
 
 #include <memory>
 #include <sys/types.h>
@@ -47,5 +47,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_FILE_DESCRIPTOR_H__ */

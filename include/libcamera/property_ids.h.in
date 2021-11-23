@@ -7,8 +7,7 @@
  * This file is auto-generated. Do not edit.
  */
 
-#ifndef __LIBCAMERA_PROPERTY_IDS_H__
-#define __LIBCAMERA_PROPERTY_IDS_H__
+#pragma once
 
 #include <stdint.h>
 
@@ -35,5 +34,3 @@ extern const ControlIdMap properties;
 } /* namespace properties */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PROPERTY_IDS_H__ */

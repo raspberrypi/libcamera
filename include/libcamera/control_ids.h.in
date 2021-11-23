@@ -7,8 +7,7 @@
  * This file is auto-generated. Do not edit.
  */
 
-#ifndef __LIBCAMERA_CONTROL_IDS_H__
-#define __LIBCAMERA_CONTROL_IDS_H__
+#pragma once
 
 #include <array>
 #include <stdint.h>
@@ -36,5 +35,3 @@ ${draft_controls}
 } /* namespace controls */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_CONTROL_IDS_H__ */

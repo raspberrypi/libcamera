@@ -4,8 +4,8 @@
  *
  * stream.h - Video stream for a Camera
  */
-#ifndef __LIBCAMERA_STREAM_H__
-#define __LIBCAMERA_STREAM_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -81,5 +81,3 @@ protected:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_STREAM_H__ */

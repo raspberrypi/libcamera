@@ -25,8 +25,10 @@
 
 #include <libcamera/internal/mapped_framebuffer.h>
 
-#include "ipa_context.h"
+#include "algorithms/algorithm.h"
 #include "libipa/camera_sensor_helper.h"
+
+#include "ipa_context.h"
 
 namespace libcamera {
 
@@ -82,6 +84,9 @@ private:
 
 	/* Local parameter storage */
 	struct IPAContext context_;
+
+	/* Maintain the algorithms used by the IPA */
+	std::list<std::unique_ptr<ipa::rkisp1::Algorithm>> algorithms_;
 };
 
 int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)

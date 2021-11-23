@@ -4,8 +4,8 @@
  *
  * object.h - Base object
  */
-#ifndef __LIBCAMERA_BASE_OBJECT_H__
-#define __LIBCAMERA_BASE_OBJECT_H__
+
+#pragma once
 
 #include <list>
 #include <memory>
@@ -67,5 +67,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_OBJECT_H__ */

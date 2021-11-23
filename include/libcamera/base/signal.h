@@ -4,8 +4,8 @@
  *
  * signal.h - Signal & slot implementation
  */
-#ifndef __LIBCAMERA_BASE_SIGNAL_H__
-#define __LIBCAMERA_BASE_SIGNAL_H__
+
+#pragma once
 
 #include <functional>
 #include <list>
@@ -147,5 +147,3 @@ public:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_SIGNAL_H__ */

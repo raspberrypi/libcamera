@@ -4,8 +4,8 @@
  *
  * utils.h - Miscellaneous utility functions
  */
-#ifndef __LIBCAMERA_BASE_UTILS_H__
-#define __LIBCAMERA_BASE_UTILS_H__
+
+#pragma once
 
 #include <algorithm>
 #include <chrono>
@@ -355,5 +355,3 @@ std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> 
 #endif
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_UTILS_H__ */

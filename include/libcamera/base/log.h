@@ -4,8 +4,8 @@
  *
  * log.h - Logging infrastructure
  */
-#ifndef __LIBCAMERA_BASE_LOG_H__
-#define __LIBCAMERA_BASE_LOG_H__
+
+#pragma once
 
 #include <chrono>
 #include <sstream>
@@ -128,5 +128,3 @@ LogMessage _log(const LogCategory *category, LogSeverity severity,
 #endif
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_LOG_H__ */

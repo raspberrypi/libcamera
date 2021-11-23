@@ -4,8 +4,8 @@
  *
  * event_dispatcher_poll.h - Poll-based event dispatcher
  */
-#ifndef __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__
-#define __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__
+
+#pragma once
 
 #include <list>
 #include <map>
@@ -56,5 +56,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_EVENT_DISPATCHER_POLL_H__ */

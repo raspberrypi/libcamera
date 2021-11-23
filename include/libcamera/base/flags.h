@@ -4,8 +4,8 @@
  *
  * flags.h - Type-safe enum-based bitfields
  */
-#ifndef __LIBCAMERA_BASE_FLAGS_H__
-#define __LIBCAMERA_BASE_FLAGS_H__
+
+#pragma once
 
 #include <type_traits>
 
@@ -191,5 +191,3 @@ struct flags_enable_operators<_enum> {					\
 #endif /* __DOXYGEN__ */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_FLAGS_H__ */

@@ -4,8 +4,8 @@
  *
  * bound_method.h - Method bind and invocation
  */
-#ifndef __LIBCAMERA_BASE_BOUND_METHOD_H__
-#define __LIBCAMERA_BASE_BOUND_METHOD_H__
+
+#pragma once
 
 #include <memory>
 #include <tuple>
@@ -222,5 +222,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_BOUND_METHOD_H__ */

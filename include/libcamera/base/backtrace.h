@@ -4,8 +4,8 @@
  *
  * backtrace.h - Call stack backtraces
  */
-#ifndef __LIBCAMERA_BASE_BACKTRACE_H__
-#define __LIBCAMERA_BASE_BACKTRACE_H__
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -34,5 +34,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_BACKTRACE_H__ */

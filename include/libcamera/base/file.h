@@ -4,8 +4,8 @@
  *
  * file.h - File I/O operations
  */
-#ifndef __LIBCAMERA_BASE_FILE_H__
-#define __LIBCAMERA_BASE_FILE_H__
+
+#pragma once
 
 #include <sys/types.h>
 
@@ -84,5 +84,3 @@ LIBCAMERA_FLAGS_ENABLE_OPERATORS(File::MapFlag)
 LIBCAMERA_FLAGS_ENABLE_OPERATORS(File::OpenModeFlag)
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_FILE_H__ */

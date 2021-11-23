@@ -4,8 +4,8 @@
  *
  * thread.h - Thread support
  */
-#ifndef __LIBCAMERA_BASE_THREAD_H__
-#define __LIBCAMERA_BASE_THREAD_H__
+
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -74,5 +74,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_BASE_THREAD_H__ */

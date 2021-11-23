@@ -4,8 +4,8 @@
  *
  * viewfinder_qt.h - qcam - QPainter-based ViewFinder
  */
-#ifndef __QCAM_VIEWFINDER_QT_H__
-#define __QCAM_VIEWFINDER_QT_H__
+
+#pragma once
 
 #include <QIcon>
 #include <QImage>
@@ -61,5 +61,3 @@ private:
 	QImage image_;
 	QMutex mutex_; /* Prevent concurrent access to image_ */
 };
-
-#endif /* __QCAM_VIEWFINDER_QT_H__ */

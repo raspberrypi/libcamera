@@ -4,8 +4,8 @@
  *
  * format_convert.h - qcam - Convert buffer to RGB
  */
-#ifndef __QCAM_FORMAT_CONVERTER_H__
-#define __QCAM_FORMAT_CONVERTER_H__
+
+#pragma once
 
 #include <stddef.h>
 
@@ -60,5 +60,3 @@ private:
 	unsigned int y_pos_;
 	unsigned int cb_pos_;
 };
-
-#endif /* __QCAM_FORMAT_CONVERTER_H__ */

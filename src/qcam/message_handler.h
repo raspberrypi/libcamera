@@ -4,8 +4,8 @@
  *
  * message_handler.cpp - qcam - Log message handling
  */
-#ifndef __QCAM_MESSAGE_HANDLER_H__
-#define __QCAM_MESSAGE_HANDLER_H__
+
+#pragma once
 
 #include <QtGlobal>
 
@@ -22,5 +22,3 @@ private:
 	static QtMessageHandler handler_;
 	static bool verbose_;
 };
-
-#endif /* __QCAM_MESSAGE_HANDLER_H__ */

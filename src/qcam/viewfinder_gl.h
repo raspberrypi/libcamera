@@ -5,8 +5,8 @@
  * viewfinder_GL.h - OpenGL Viewfinder for rendering by OpenGL shader
  *
  */
-#ifndef __VIEWFINDER_GL_H__
-#define __VIEWFINDER_GL_H__
+
+#pragma once
 
 #include <array>
 #include <memory>
@@ -103,5 +103,3 @@ private:
 
 	QMutex mutex_; /* Prevent concurrent access to image_ */
 };
-
-#endif /* __VIEWFINDER_GL_H__ */

@@ -4,8 +4,8 @@
  *
  * dng_writer.h - DNG writer
  */
-#ifndef __QCAM_DNG_WRITER_H__
-#define __QCAM_DNG_WRITER_H__
+
+#pragma once
 
 #ifdef HAVE_TIFF
 #define HAVE_DNG
@@ -25,5 +25,3 @@ public:
 };
 
 #endif /* HAVE_TIFF */
-
-#endif /* __QCAM_DNG_WRITER_H__ */

@@ -4,8 +4,8 @@
  *
  * main_window.h - qcam - Main application window
  */
-#ifndef __QCAM_MAIN_WINDOW_H__
-#define __QCAM_MAIN_WINDOW_H__
+
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -126,5 +126,3 @@ private:
 
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
-
-#endif /* __QCAM_MAIN_WINDOW__ */

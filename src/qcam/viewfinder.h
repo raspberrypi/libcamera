@@ -4,8 +4,8 @@
  *
  * viewfinder.h - qcam - Viewfinder base class
  */
-#ifndef __QCAM_VIEWFINDER_H__
-#define __QCAM_VIEWFINDER_H__
+
+#pragma once
 
 #include <QImage>
 #include <QList>
@@ -30,5 +30,3 @@ public:
 
 	virtual QImage getCurrentImage() = 0;
 };
-
-#endif /* __QCAM_VIEWFINDER_H__ */

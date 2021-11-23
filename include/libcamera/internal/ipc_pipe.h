@@ -4,8 +4,8 @@
  *
  * ipc_pipe.h - Image Processing Algorithm IPC module for IPA proxies
  */
-#ifndef __LIBCAMERA_INTERNAL_IPA_IPC_H__
-#define __LIBCAMERA_INTERNAL_IPA_IPC_H__
+
+#pragma once
 
 #include <vector>
 
@@ -67,5 +67,3 @@ protected:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_IPA_IPC_H__ */

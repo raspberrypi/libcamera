@@ -4,8 +4,8 @@
  *
  * camera.h - Camera private data
  */
-#ifndef __LIBCAMERA_INTERNAL_CAMERA_H__
-#define __LIBCAMERA_INTERNAL_CAMERA_H__
+
+#pragma once
 
 #include <atomic>
 #include <list>
@@ -72,5 +72,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_CAMERA_H__ */

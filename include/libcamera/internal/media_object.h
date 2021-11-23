@@ -4,8 +4,8 @@
  *
  * media_object.h - Media Device objects: entities, pads and links.
  */
-#ifndef __LIBCAMERA_INTERNAL_MEDIA_OBJECT_H__
-#define __LIBCAMERA_INTERNAL_MEDIA_OBJECT_H__
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -132,5 +132,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_MEDIA_OBJECT_H__ */

@@ -4,8 +4,8 @@
  *
  * camera_sensor_properties.h - Database of camera sensor properties
  */
-#ifndef __LIBCAMERA_SENSOR_CAMERA_SENSOR_PROPERTIES_H__
-#define __LIBCAMERA_SENSOR_CAMERA_SENSOR_PROPERTIES_H__
+
+#pragma once
 
 #include <map>
 #include <string>
@@ -22,5 +22,3 @@ struct CameraSensorProperties {
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_SENSOR_CAMERA_SENSOR_PROPERTIES_H__ */

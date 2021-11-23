@@ -4,8 +4,8 @@
  *
  * camera_sensor.h - A camera sensor
  */
-#ifndef __LIBCAMERA_INTERNAL_CAMERA_SENSOR_H__
-#define __LIBCAMERA_INTERNAL_CAMERA_SENSOR_H__
+
+#pragma once
 
 #include <memory>
 #include <string>
@@ -94,5 +94,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_CAMERA_SENSOR_H__ */

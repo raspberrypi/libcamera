@@ -4,8 +4,8 @@
  *
  * mapped_framebuffer.h - Frame buffer memory mapping support
  */
-#ifndef __LIBCAMERA_INTERNAL_MAPPED_FRAMEBUFFER_H__
-#define __LIBCAMERA_INTERNAL_MAPPED_FRAMEBUFFER_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -60,5 +60,3 @@ public:
 LIBCAMERA_FLAGS_ENABLE_OPERATORS(MappedFrameBuffer::MapFlag)
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_MAPPED_FRAMEBUFFER_H__ */

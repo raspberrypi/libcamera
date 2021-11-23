@@ -5,8 +5,7 @@
  * ipc_unixsocket.h - IPC mechanism based on Unix sockets
  */
 
-#ifndef __LIBCAMERA_INTERNAL_IPC_UNIXSOCKET_H__
-#define __LIBCAMERA_INTERNAL_IPC_UNIXSOCKET_H__
+#pragma once
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -57,5 +56,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_IPC_UNIXSOCKET_H__ */

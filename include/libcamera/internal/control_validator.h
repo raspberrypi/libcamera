@@ -4,8 +4,8 @@
  *
  * control_validator.h - Control validator
  */
-#ifndef __LIBCAMERA_INTERNAL_CONTROL_VALIDATOR_H__
-#define __LIBCAMERA_INTERNAL_CONTROL_VALIDATOR_H__
+
+#pragma once
 
 #include <string>
 
@@ -23,5 +23,3 @@ public:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_CONTROL_VALIDATOR_H__ */

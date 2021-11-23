@@ -4,8 +4,8 @@
  *
  * sysfs.h - Miscellaneous utility functions to access sysfs
  */
-#ifndef __LIBCAMERA_INTERNAL_SYSFS_H__
-#define __LIBCAMERA_INTERNAL_SYSFS_H__
+
+#pragma once
 
 #include <string>
 
@@ -20,5 +20,3 @@ std::string firmwareNodePath(const std::string &device);
 } /* namespace sysfs */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_SYSFS_H__ */

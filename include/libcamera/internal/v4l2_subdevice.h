@@ -4,8 +4,8 @@
  *
  * v4l2_subdevice.h - V4L2 Subdevice
  */
-#ifndef __LIBCAMERA_INTERNAL_V4L2_SUBDEVICE_H__
-#define __LIBCAMERA_INTERNAL_V4L2_SUBDEVICE_H__
+
+#pragma once
 
 #include <memory>
 #include <string>
@@ -78,5 +78,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_V4L2_SUBDEVICE_H__ */

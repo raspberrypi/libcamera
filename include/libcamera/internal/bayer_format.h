@@ -4,8 +4,8 @@
  *
  * bayer_format.h - Bayer Pixel Format
  */
-#ifndef __LIBCAMERA_INTERNAL_BAYER_FORMAT_H__
-#define __LIBCAMERA_INTERNAL_BAYER_FORMAT_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <string>
@@ -69,5 +69,3 @@ static inline bool operator!=(const BayerFormat &lhs, const BayerFormat &rhs)
 }
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_BAYER_FORMAT_H__ */

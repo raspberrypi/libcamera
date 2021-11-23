@@ -4,8 +4,8 @@
  *
  * delayed_controls.h - Helper to deal with controls that take effect with a delay
  */
-#ifndef __LIBCAMERA_INTERNAL_DELAYED_CONTROLS_H__
-#define __LIBCAMERA_INTERNAL_DELAYED_CONTROLS_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <unordered_map>
@@ -82,5 +82,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_DELAYED_CONTROLS_H__ */

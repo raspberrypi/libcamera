@@ -4,8 +4,8 @@
  *
  * device_enumerator_udev.h - udev-based device enumerator
  */
-#ifndef __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_UDEV_H__
-#define __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_UDEV_H__
+
+#pragma once
 
 #include <list>
 #include <map>
@@ -71,5 +71,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif	/* __LIBCAMERA_INTERNAL_DEVICE_ENUMERATOR_UDEV_H__ */

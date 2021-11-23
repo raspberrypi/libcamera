@@ -4,8 +4,8 @@
  *
  * framebuffer.h - Internal frame buffer handling
  */
-#ifndef __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__
-#define __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__
+
+#pragma once
 
 #include <libcamera/base/class.h>
 
@@ -29,5 +29,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_FRAMEBUFFER_H__ */

@@ -4,8 +4,8 @@
  *
  * source_paths.h - Identify libcamera source and build paths
  */
-#ifndef __LIBCAMERA_INTERNAL_SOURCE_PATHS_H__
-#define __LIBCAMERA_INTERNAL_SOURCE_PATHS_H__
+
+#pragma once
 
 #include <string>
 
@@ -15,5 +15,3 @@ std::string libcameraBuildPath();
 std::string libcameraSourcePath();
 
 } /* namespace libcamera::utils */
-
-#endif /* __LIBCAMERA_INTERNAL_SOURCE_PATHS_H__ */

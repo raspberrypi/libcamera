@@ -4,8 +4,8 @@
  *
  * process.h - Process object
  */
-#ifndef __LIBCAMERA_INTERNAL_PROCESS_H__
-#define __LIBCAMERA_INTERNAL_PROCESS_H__
+
+#pragma once
 
 #include <signal.h>
 #include <string>
@@ -80,5 +80,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_PROCESS_H__ */

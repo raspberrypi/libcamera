@@ -4,8 +4,8 @@
  *
  * ipa_proxy.h - Image Processing Algorithm proxy
  */
-#ifndef __LIBCAMERA_INTERNAL_IPA_PROXY_H__
-#define __LIBCAMERA_INTERNAL_IPA_PROXY_H__
+
+#pragma once
 
 #include <memory>
 #include <string>
@@ -44,5 +44,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_IPA_PROXY_H__ */

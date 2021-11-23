@@ -4,8 +4,8 @@
  *
  * control_serializer.h - Control (de)serializer
  */
-#ifndef __LIBCAMERA_INTERNAL_CONTROL_SERIALIZER_H__
-#define __LIBCAMERA_INTERNAL_CONTROL_SERIALIZER_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -60,5 +60,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_CONTROL_SERIALIZER_H__ */

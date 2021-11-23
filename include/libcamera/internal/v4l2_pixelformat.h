@@ -5,8 +5,8 @@
  *
  * v4l2_pixelformat.h - V4L2 Pixel Format
  */
-#ifndef __LIBCAMERA_INTERNAL_V4L2_PIXELFORMAT_H__
-#define __LIBCAMERA_INTERNAL_V4L2_PIXELFORMAT_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <string>
@@ -51,5 +51,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_V4L2_PIXELFORMAT_H__ */

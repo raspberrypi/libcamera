@@ -4,8 +4,8 @@
  *
  * ipa_data_serializer.h - Image Processing Algorithm data serializer
  */
-#ifndef __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_H__
-#define __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_H__
+
+#pragma once
 
 #include <deque>
 #include <iostream>
@@ -304,5 +304,3 @@ public:
 #endif /* __DOXYGEN__ */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_IPA_DATA_SERIALIZER_H__ */

@@ -4,8 +4,8 @@
  *
  * ipa_manager.h - Image Processing Algorithm module manager
  */
-#ifndef __LIBCAMERA_INTERNAL_IPA_MANAGER_H__
-#define __LIBCAMERA_INTERNAL_IPA_MANAGER_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -68,5 +68,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_INTERNAL_IPA_MANAGER_H__ */

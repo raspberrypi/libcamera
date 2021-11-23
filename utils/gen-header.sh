@@ -11,8 +11,8 @@ cat <<EOF > "$dst_file"
  *
  * libcamera.h - libcamera public API
  */
-#ifndef __LIBCAMERA_LIBCAMERA_H__
-#define __LIBCAMERA_LIBCAMERA_H__
+
+#pragma once
 
 EOF
 
@@ -25,8 +25,3 @@ done | sort)
 for header in $headers ; do
 	echo "#include <libcamera/$header>" >> "$dst_file"
 done
-
-cat <<EOF >> "$dst_file"
-
-#endif /* __LIBCAMERA_LIBCAMERA_H__ */
-EOF

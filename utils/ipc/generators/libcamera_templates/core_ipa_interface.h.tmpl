@@ -12,8 +12,7 @@
  * This file is auto-generated. Do not edit.
  */
 
-#ifndef __LIBCAMERA_IPA_INTERFACE_CORE_GENERATED_H__
-#define __LIBCAMERA_IPA_INTERFACE_CORE_GENERATED_H__
+#pragma once
 
 {% if has_map %}#include <map>{% endif %}
 {% if has_array %}#include <vector>{% endif %}
@@ -36,5 +35,3 @@ static const {{const.kind|name}} {{const.mojom_name}} = {{const.value}};
 {% endfor %}
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPA_INTERFACE_CORE_GENERATED_H__ */

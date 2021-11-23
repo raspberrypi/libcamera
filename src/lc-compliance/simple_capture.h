@@ -4,8 +4,8 @@
  *
  * simple_capture.h - Simple capture helper
  */
-#ifndef __LC_COMPLIANCE_SIMPLE_CAPTURE_H__
-#define __LC_COMPLIANCE_SIMPLE_CAPTURE_H__
+
+#pragma once
 
 #include <memory>
 
@@ -63,5 +63,3 @@ private:
 	unsigned int captureCount_;
 	unsigned int captureLimit_;
 };
-
-#endif /* __LC_COMPLIANCE_SIMPLE_CAPTURE_H__ */

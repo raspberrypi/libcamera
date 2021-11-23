@@ -4,8 +4,8 @@
  *
  * environment.h - Common environment for tests
  */
-#ifndef __LC_COMPLIANCE_ENVIRONMENT_H__
-#define __LC_COMPLIANCE_ENVIRONMENT_H__
+
+#pragma once
 
 #include <libcamera/libcamera.h>
 
@@ -25,5 +25,3 @@ private:
 	std::string cameraId_;
 	libcamera::CameraManager *cm_;
 };
-
-#endif /* __LC_COMPLIANCE_ENVIRONMENT_H__ */

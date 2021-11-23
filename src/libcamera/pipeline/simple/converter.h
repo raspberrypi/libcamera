@@ -5,8 +5,7 @@
  * converter.h - Format converter for simple pipeline handler
  */
 
-#ifndef __LIBCAMERA_PIPELINE_SIMPLE_CONVERTER_H__
-#define __LIBCAMERA_PIPELINE_SIMPLE_CONVERTER_H__
+#pragma once
 
 #include <functional>
 #include <map>
@@ -97,5 +96,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_SIMPLE_CONVERTER_H__ */

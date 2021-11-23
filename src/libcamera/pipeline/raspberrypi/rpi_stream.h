@@ -4,8 +4,8 @@
  *
  * rpi_stream.h - Raspberry Pi device stream abstraction class.
  */
-#ifndef __LIBCAMERA_PIPELINE_RPI_STREAM_H__
-#define __LIBCAMERA_PIPELINE_RPI_STREAM_H__
+
+#pragma once
 
 #include <queue>
 #include <string>
@@ -177,5 +177,3 @@ public:
 } /* namespace RPi */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_RPI_STREAM_H__ */

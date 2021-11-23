@@ -4,8 +4,8 @@
  *
  * frames.h - Intel IPU3 Frames helper
  */
-#ifndef __LIBCAMERA_PIPELINE_IPU3_FRAMES_H__
-#define __LIBCAMERA_PIPELINE_IPU3_FRAMES_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -65,5 +65,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_IPU3_FRAMES_H__ */

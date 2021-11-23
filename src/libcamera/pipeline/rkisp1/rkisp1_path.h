@@ -4,8 +4,8 @@
  *
  * rkisp1path.h - Rockchip ISP1 path helper
  */
-#ifndef __LIBCAMERA_PIPELINE_RKISP1_PATH_H__
-#define __LIBCAMERA_PIPELINE_RKISP1_PATH_H__
+
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -84,5 +84,3 @@ public:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_RKISP1_PATH_H__ */

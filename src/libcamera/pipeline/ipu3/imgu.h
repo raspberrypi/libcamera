@@ -4,8 +4,8 @@
  *
  * imgu.h - Intel IPU3 ImgU
  */
-#ifndef __LIBCAMERA_PIPELINE_IPU3_IMGU_H__
-#define __LIBCAMERA_PIPELINE_IPU3_IMGU_H__
+
+#pragma once
 
 #include <memory>
 #include <string>
@@ -122,5 +122,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_IPU3_IMGU_H__ */

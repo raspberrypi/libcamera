@@ -4,8 +4,8 @@
  *
  * dma_heaps.h - Helper class for dma-heap allocations.
  */
-#ifndef __LIBCAMERA_PIPELINE_RASPBERRYPI_DMA_HEAPS_H__
-#define __LIBCAMERA_PIPELINE_RASPBERRYPI_DMA_HEAPS_H__
+
+#pragma once
 
 #include <libcamera/file_descriptor.h>
 
@@ -28,5 +28,3 @@ private:
 } /* namespace RPi */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_RASPBERRYPI_DMA_HEAPS_H__ */

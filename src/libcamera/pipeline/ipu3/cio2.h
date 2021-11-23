@@ -4,8 +4,8 @@
  *
  * cio2.h - Intel IPU3 CIO2
  */
-#ifndef __LIBCAMERA_PIPELINE_IPU3_CIO2_H__
-#define __LIBCAMERA_PIPELINE_IPU3_CIO2_H__
+
+#pragma once
 
 #include <memory>
 #include <queue>
@@ -75,5 +75,3 @@ private:
 };
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_PIPELINE_IPU3_CIO2_H__ */

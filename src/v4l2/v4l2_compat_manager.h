@@ -5,8 +5,7 @@
  * v4l2_compat_manager.h - V4L2 compatibility manager
  */
 
-#ifndef __V4L2_COMPAT_MANAGER_H__
-#define __V4L2_COMPAT_MANAGER_H__
+#pragma once
 
 #include <fcntl.h>
 #include <map>
@@ -68,5 +67,3 @@ private:
 	std::map<int, std::shared_ptr<V4L2CameraFile>> files_;
 	std::map<void *, V4L2CameraProxy *> mmaps_;
 };
-
-#endif /* __V4L2_COMPAT_MANAGER_H__ */

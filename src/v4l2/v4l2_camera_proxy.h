@@ -5,8 +5,7 @@
  * v4l2_camera_proxy.h - Proxy to V4L2 compatibility camera
  */
 
-#ifndef __V4L2_CAMERA_PROXY_H__
-#define __V4L2_CAMERA_PROXY_H__
+#pragma once
 
 #include <linux/videodev2.h>
 #include <map>
@@ -100,5 +99,3 @@ private:
 	/* This mutex is to serialize access to the proxy. */
 	libcamera::Mutex proxyMutex_;
 };
-
-#endif /* __V4L2_CAMERA_PROXY_H__ */

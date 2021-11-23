@@ -5,8 +5,7 @@
  * v4l2_camera_file.h - V4L2 compatibility camera file information
  */
 
-#ifndef __V4L2_CAMERA_FILE_H__
-#define __V4L2_CAMERA_FILE_H__
+#pragma once
 
 #include <linux/videodev2.h>
 
@@ -33,5 +32,3 @@ private:
 	int efd_;
 	enum v4l2_priority priority_;
 };
-
-#endif /* __V4L2_CAMERA_FILE_H__ */

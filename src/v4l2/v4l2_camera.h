@@ -5,8 +5,7 @@
  * v4l2_camera.h - V4L2 compatibility camera
  */
 
-#ifndef __V4L2_CAMERA_H__
-#define __V4L2_CAMERA_H__
+#pragma once
 
 #include <deque>
 #include <mutex>
@@ -86,5 +85,3 @@ private:
 	std::condition_variable bufferCV_;
 	unsigned int bufferAvailableCount_;
 };
-
-#endif /* __V4L2_CAMERA_H__ */

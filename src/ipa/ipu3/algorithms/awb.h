@@ -4,8 +4,8 @@
  *
  * awb.h - IPU3 AWB control algorithm
  */
-#ifndef __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__
-#define __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__
+
+#pragma once
 
 #include <vector>
 
@@ -86,4 +86,3 @@ private:
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera*/
-#endif /* __LIBCAMERA_IPU3_ALGORITHMS_AWB_H__ */

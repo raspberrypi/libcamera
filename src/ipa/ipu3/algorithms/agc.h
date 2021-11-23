@@ -4,8 +4,8 @@
  *
  * agc.h - IPU3 AGC/AEC mean-based control algorithm
  */
-#ifndef __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
-#define __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__
+
+#pragma once
 
 #include <linux/intel-ipu3.h>
 
@@ -59,5 +59,3 @@ private:
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPU3_ALGORITHMS_AGC_H__ */

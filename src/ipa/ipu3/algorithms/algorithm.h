@@ -4,8 +4,8 @@
  *
  * algorithm.h - IPU3 control algorithm interface
  */
-#ifndef __LIBCAMERA_IPA_IPU3_ALGORITHM_H__
-#define __LIBCAMERA_IPA_IPU3_ALGORITHM_H__
+
+#pragma once
 
 #include <libcamera/ipa/ipu3_ipa_interface.h>
 
@@ -28,5 +28,3 @@ public:
 } /* namespace ipa::ipu3 */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPA_IPU3_ALGORITHM_H__ */

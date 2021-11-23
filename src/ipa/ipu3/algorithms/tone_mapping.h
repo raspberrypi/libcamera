@@ -4,8 +4,8 @@
  *
  * tone_mapping.h - IPU3 ToneMapping and Gamma control
  */
-#ifndef __LIBCAMERA_IPU3_ALGORITHMS_TONE_MAPPING_H__
-#define __LIBCAMERA_IPU3_ALGORITHMS_TONE_MAPPING_H__
+
+#pragma once
 
 #include "algorithm.h"
 
@@ -29,5 +29,3 @@ private:
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPU3_ALGORITHMS_TONE_MAPPING_H__ */

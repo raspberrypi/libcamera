@@ -4,8 +4,8 @@
  *
  * black_correction.h - IPU3 Black Level Correction control
  */
-#ifndef __LIBCAMERA_IPU3_ALGORITHMS_BLC_H__
-#define __LIBCAMERA_IPU3_ALGORITHMS_BLC_H__
+
+#pragma once
 
 #include "algorithm.h"
 
@@ -24,5 +24,3 @@ public:
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */
-
-#endif /* __LIBCAMERA_IPU3_ALGORITHMS_BLC_H__ */

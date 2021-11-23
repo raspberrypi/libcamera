@@ -5,8 +5,8 @@
  * ipa_context.h - IPU3 IPA Context
  *
  */
-#ifndef __LIBCAMERA_IPU3_IPA_CONTEXT_H__
-#define __LIBCAMERA_IPU3_IPA_CONTEXT_H__
+
+#pragma once
 
 #include <linux/intel-ipu3.h>
 
@@ -68,5 +68,3 @@ struct IPAContext {
 } /* namespace ipa::ipu3 */
 
 } /* namespace libcamera*/
-
-#endif /* __LIBCAMERA_IPU3_IPA_CONTEXT_H__ */

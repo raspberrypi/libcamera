@@ -4,8 +4,8 @@
  *
  * camera_hal_config.h - Camera HAL configuration file manager
  */
-#ifndef __ANDROID_CAMERA_HAL_CONFIG_H__
-#define __ANDROID_CAMERA_HAL_CONFIG_H__
+
+#pragma once
 
 #include <map>
 #include <string>
@@ -36,4 +36,3 @@ private:
 
 	int parseConfigurationFile();
 };
-#endif /* __ANDROID_CAMERA_HAL_CONFIG_H__ */

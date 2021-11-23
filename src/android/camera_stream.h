@@ -4,8 +4,8 @@
  *
  * camera_stream.h - Camera HAL stream
  */
-#ifndef __ANDROID_CAMERA_STREAM_H__
-#define __ANDROID_CAMERA_STREAM_H__
+
+#pragma once
 
 #include <condition_variable>
 #include <memory>
@@ -179,5 +179,3 @@ private:
 
 	std::unique_ptr<PostProcessorWorker> worker_;
 };
-
-#endif /* __ANDROID_CAMERA_STREAM__ */

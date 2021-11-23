@@ -4,8 +4,8 @@
  *
  * post_processor_yuv.h - Post Processor using libyuv
  */
-#ifndef __ANDROID_POST_PROCESSOR_YUV_H__
-#define __ANDROID_POST_PROCESSOR_YUV_H__
+
+#pragma once
 
 #include "../post_processor.h"
 
@@ -33,5 +33,3 @@ private:
 	unsigned int sourceStride_[2] = {};
 	unsigned int destinationStride_[2] = {};
 };
-
-#endif /* __ANDROID_POST_PROCESSOR_YUV_H__ */

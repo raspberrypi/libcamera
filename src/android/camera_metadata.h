@@ -4,8 +4,8 @@
  *
  * camera_metadata.h - libcamera Android Camera Metadata Helper
  */
-#ifndef __ANDROID_CAMERA_METADATA_H__
-#define __ANDROID_CAMERA_METADATA_H__
+
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -99,5 +99,3 @@ private:
 	bool valid_;
 	bool resized_;
 };
-
-#endif /* __ANDROID_CAMERA_METADATA_H__ */

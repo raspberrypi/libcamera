@@ -4,8 +4,8 @@
  *
  * exif.h - EXIF tag creator using libexif
  */
-#ifndef __ANDROID_JPEG_EXIF_H__
-#define __ANDROID_JPEG_EXIF_H__
+
+#pragma once
 
 #include <chrono>
 #include <string>
@@ -107,5 +107,3 @@ private:
 	unsigned char *exifData_;
 	unsigned int size_;
 };
-
-#endif /* __ANDROID_JPEG_EXIF_H__ */

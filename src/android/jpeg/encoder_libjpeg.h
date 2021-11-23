@@ -4,8 +4,8 @@
  *
  * encoder_libjpeg.h - JPEG encoding using libjpeg
  */
-#ifndef __ANDROID_JPEG_ENCODER_LIBJPEG_H__
-#define __ANDROID_JPEG_ENCODER_LIBJPEG_H__
+
+#pragma once
 
 #include "encoder.h"
 
@@ -43,5 +43,3 @@ private:
 	bool nv_;
 	bool nvSwap_;
 };
-
-#endif /* __ANDROID_JPEG_ENCODER_LIBJPEG_H__ */

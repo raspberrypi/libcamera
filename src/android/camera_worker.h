@@ -4,8 +4,8 @@
  *
  * camera_worker.h - Process capture requests on behalf of the Camera HAL
  */
-#ifndef __ANDROID_CAMERA_WORKER_H__
-#define __ANDROID_CAMERA_WORKER_H__
+
+#pragma once
 
 #include <memory>
 #include <stdint.h>
@@ -68,5 +68,3 @@ private:
 
 	Worker worker_;
 };
-
-#endif /* __ANDROID_CAMERA_WORKER_H__ */

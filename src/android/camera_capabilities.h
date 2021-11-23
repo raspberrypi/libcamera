@@ -4,8 +4,8 @@
  *
  * camera_capabilities.h - Camera static properties manager
  */
-#ifndef __ANDROID_CAMERA_CAPABILITIES_H__
-#define __ANDROID_CAMERA_CAPABILITIES_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -84,5 +84,3 @@ private:
 	std::set<int32_t> availableRequestKeys_;
 	std::set<int32_t> availableResultKeys_;
 };
-
-#endif /* __ANDROID_CAMERA_CAPABILITIES_H__ */

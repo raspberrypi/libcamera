@@ -4,8 +4,8 @@
  *
  * camera_hal_manager.h - libcamera Android Camera Manager
  */
-#ifndef __ANDROID_CAMERA_MANAGER_H__
-#define __ANDROID_CAMERA_MANAGER_H__
+
+#pragma once
 
 #include <map>
 #include <mutex>
@@ -69,5 +69,3 @@ private:
 	unsigned int numInternalCameras_;
 	unsigned int nextExternalCameraId_;
 };
-
-#endif /* __ANDROID_CAMERA_MANAGER_H__ */

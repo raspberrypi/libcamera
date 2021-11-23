@@ -4,8 +4,8 @@
  *
  * camera_device.h - libcamera Android Camera Device
  */
-#ifndef __ANDROID_CAMERA_DEVICE_H__
-#define __ANDROID_CAMERA_DEVICE_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -130,5 +130,3 @@ private:
 
 	CameraMetadata lastSettings_;
 };
-
-#endif /* __ANDROID_CAMERA_DEVICE_H__ */

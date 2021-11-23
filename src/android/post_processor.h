@@ -4,8 +4,8 @@
  *
  * post_processor.h - CameraStream Post Processing Interface
  */
-#ifndef __ANDROID_POST_PROCESSOR_H__
-#define __ANDROID_POST_PROCESSOR_H__
+
+#pragma once
 
 #include <libcamera/base/signal.h>
 
@@ -31,5 +31,3 @@ public:
 
 	libcamera::Signal<Camera3RequestDescriptor::StreamBuffer *, Status> processComplete;
 };
-
-#endif /* __ANDROID_POST_PROCESSOR_H__ */

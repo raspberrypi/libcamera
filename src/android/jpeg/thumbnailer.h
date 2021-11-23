@@ -4,8 +4,8 @@
  *
  * thumbnailer.h - Simple image thumbnailer
  */
-#ifndef __ANDROID_JPEG_THUMBNAILER_H__
-#define __ANDROID_JPEG_THUMBNAILER_H__
+
+#pragma once
 
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
@@ -30,5 +30,3 @@ private:
 
 	bool valid_;
 };
-
-#endif /* __ANDROID_JPEG_THUMBNAILER_H__ */

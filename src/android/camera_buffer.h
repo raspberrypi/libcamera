@@ -4,8 +4,8 @@
  *
  * camera_buffer.h - Frame buffer handling interface definition
  */
-#ifndef __ANDROID_CAMERA_BUFFER_H__
-#define __ANDROID_CAMERA_BUFFER_H__
+
+#pragma once
 
 #include <hardware/camera3.h>
 
@@ -82,4 +82,3 @@ size_t CameraBuffer::jpegBufferSize(size_t maxJpegBufferSize) const	\
 {									\
 	return _d()->jpegBufferSize(maxJpegBufferSize);			\
 }
-#endif /* __ANDROID_CAMERA_BUFFER_H__ */

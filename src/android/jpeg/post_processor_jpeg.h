@@ -4,8 +4,8 @@
  *
  * post_processor_jpeg.h - JPEG Post Processor
  */
-#ifndef __ANDROID_POST_PROCESSOR_JPEG_H__
-#define __ANDROID_POST_PROCESSOR_JPEG_H__
+
+#pragma once
 
 #include "../post_processor.h"
 #include "encoder_libjpeg.h"
@@ -36,5 +36,3 @@ private:
 	EncoderLibJpeg thumbnailEncoder_;
 	Thumbnailer thumbnailer_;
 };
-
-#endif /* __ANDROID_POST_PROCESSOR_JPEG_H__ */

@@ -4,8 +4,8 @@
  *
  * encoder.h - Image encoding interface
  */
-#ifndef __ANDROID_JPEG_ENCODER_H__
-#define __ANDROID_JPEG_ENCODER_H__
+
+#pragma once
 
 #include <libcamera/base/span.h>
 
@@ -23,5 +23,3 @@ public:
 			   libcamera::Span<const uint8_t> exifData,
 			   unsigned int quality) = 0;
 };
-
-#endif /* __ANDROID_JPEG_ENCODER_H__ */

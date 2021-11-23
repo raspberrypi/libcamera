@@ -4,8 +4,8 @@
  *
  * camera_request.h - libcamera Android Camera Request Descriptor
  */
-#ifndef __ANDROID_CAMERA_REQUEST_H__
-#define __ANDROID_CAMERA_REQUEST_H__
+
+#pragma once
 
 #include <map>
 #include <memory>
@@ -80,5 +80,3 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY(Camera3RequestDescriptor)
 };
-
-#endif /* __ANDROID_CAMERA_REQUEST_H__ */

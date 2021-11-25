@@ -17,9 +17,9 @@ _libcamera_ for the Raspberry Pi allows users to:
 
 ## How to install and run _libcamera_ on the Raspberry Pi
 
-Please follow the instructions [here](https://github.com/raspberrypi/documentation/tree/master/linux/software/libcamera/README.md).
+Please follow the instructions [here](https://www.raspberrypi.com/documentation/accessories/camera.html).
 
 ## Documentation
 
 Full documentation for the _Raspberry Pi Camera Algorithm and Tuning Guide_ can
-be found [here](https://github.com/raspberrypi/documentation/tree/master/linux/software/libcamera/rpi_SOFT_libcamera_1p0.pdf).
+be found [here](https://datasheets.raspberrypi.com/camera/raspberry-pi-camera-guide.pdf).

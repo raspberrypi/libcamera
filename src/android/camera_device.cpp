@@ -175,6 +175,21 @@ const char *rotationToString(int rotation)
 	return "INVALID";
 }
 
+const char *directionToString(int stream_type)
+{
+	switch (stream_type) {
+	case CAMERA3_STREAM_OUTPUT:
+		return "Output";
+	case CAMERA3_STREAM_INPUT:
+		return "Input";
+	case CAMERA3_STREAM_BIDIRECTIONAL:
+		return "Bidirectional";
+	default:
+		LOG(HAL, Warning) << "Unknown stream type: " << stream_type;
+		return "Unknown";
+	}
+}
+
 #if defined(OS_CHROMEOS)
 /*
  * Check whether the crop_rotate_scale_degrees values for all streams in
@@ -548,7 +563,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 		PixelFormat format = capabilities_.toPixelFormat(stream->format);
 
 		LOG(HAL, Info) << "Stream #" << i
-			       << ", direction: " << stream->stream_type
+			       << ", direction: " << directionToString(stream->stream_type)
 			       << ", width: " << stream->width
 			       << ", height: " << stream->height
 			       << ", format: " << utils::hex(stream->format)

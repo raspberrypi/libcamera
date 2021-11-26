@@ -314,14 +314,11 @@ private:
 		return static_cast<RPiCameraData *>(camera->_d());
 	}
 
-	bool registerCamera();
+	int registerCamera(MediaDevice *unicam, MediaDevice *isp);
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
 	void freeBuffers(Camera *camera);
 	void mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask);
-
-	MediaDevice *unicam_;
-	MediaDevice *isp_;
 };
 
 RPiCameraConfiguration::RPiCameraConfiguration(const RPiCameraData *data)
@@ -512,7 +509,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 }
 
 PipelineHandlerRPi::PipelineHandlerRPi(CameraManager *manager)
-	: PipelineHandler(manager), unicam_(nullptr), isp_(nullptr)
+	: PipelineHandler(manager)
 {
 }
 
@@ -997,48 +994,62 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch unicam("unicam");
+	MediaDevice *unicamDevice = acquireMediaDevice(enumerator, unicam);
+
+	if (!unicamDevice) {
+		LOG(RPI, Debug) << "Unable to acquire a Unicam instance";
+		return false;
+	}
+
 	DeviceMatch isp("bcm2835-isp");
+	MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
 
-	unicam.add("unicam-image");
-
-	isp.add("bcm2835-isp0-output0"); /* Input */
-	isp.add("bcm2835-isp0-capture1"); /* Output 0 */
-	isp.add("bcm2835-isp0-capture2"); /* Output 1 */
-	isp.add("bcm2835-isp0-capture3"); /* Stats */
-
-	unicam_ = acquireMediaDevice(enumerator, unicam);
-	if (!unicam_)
+	if (!ispDevice) {
+		LOG(RPI, Debug) << "Unable to acquire ISP instance";
 		return false;
+	}
 
-	isp_ = acquireMediaDevice(enumerator, isp);
-	if (!isp_)
+	int ret = registerCamera(unicamDevice, ispDevice);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to register camera: " << ret;
 		return false;
+	}
 
-	return registerCamera();
+	return true;
 }
 
-bool PipelineHandlerRPi::registerCamera()
+int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp)
 {
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
+
 	if (!data->dmaHeap_.isValid())
-		return false;
+		return -ENOMEM;
+
+	MediaEntity *unicamImage = unicam->getEntityByName("unicam-image");
+	MediaEntity *ispOutput0 = isp->getEntityByName("bcm2835-isp0-output0");
+	MediaEntity *ispCapture1 = isp->getEntityByName("bcm2835-isp0-capture1");
+	MediaEntity *ispCapture2 = isp->getEntityByName("bcm2835-isp0-capture2");
+	MediaEntity *ispCapture3 = isp->getEntityByName("bcm2835-isp0-capture3");
+
+	if (!unicamImage || !ispOutput0 || !ispCapture1 || !ispCapture2 || !ispCapture3)
+		return -ENOENT;
 
 	/* Locate and open the unicam video streams. */
-	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicam_->getEntityByName("unicam-image"));
+	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicamImage);
 
 	/* An embedded data node will not be present if the sensor does not support it. */
-	MediaEntity *embeddedEntity = unicam_->getEntityByName("unicam-embedded");
-	if (embeddedEntity) {
-		data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", embeddedEntity);
+	MediaEntity *unicamEmbedded = unicam->getEntityByName("unicam-embedded");
+	if (unicamEmbedded) {
+		data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicamEmbedded);
 		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data.get(),
 									   &RPiCameraData::unicamBufferDequeue);
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = RPi::Stream("ISP Input", isp_->getEntityByName("bcm2835-isp0-output0"), true);
-	data->isp_[Isp::Output0] = RPi::Stream("ISP Output0", isp_->getEntityByName("bcm2835-isp0-capture1"));
-	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", isp_->getEntityByName("bcm2835-isp0-capture2"));
-	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", isp_->getEntityByName("bcm2835-isp0-capture3"));
+	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, true);
+	data->isp_[Isp::Output0] = RPi::Stream("ISP Output0", ispCapture1);
+	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", ispCapture2);
+	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", ispCapture3);
 
 	/* Wire up all the buffer connections. */
 	data->unicam_[Unicam::Image].dev()->frameStart.connect(data.get(), &RPiCameraData::frameStarted);
@@ -1049,7 +1060,7 @@ bool PipelineHandlerRPi::registerCamera()
 	data->isp_[Isp::Stats].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispOutputDequeue);
 
 	/* Identify the sensor. */
-	for (MediaEntity *entity : unicam_->entities()) {
+	for (MediaEntity *entity : unicam->entities()) {
 		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR) {
 			data->sensor_ = std::make_unique<CameraSensor>(entity);
 			break;
@@ -1057,23 +1068,23 @@ bool PipelineHandlerRPi::registerCamera()
 	}
 
 	if (!data->sensor_)
-		return false;
+		return -EINVAL;
 
 	if (data->sensor_->init())
-		return false;
+		return -EINVAL;
 
 	data->sensorFormats_ = populateSensorFormats(data->sensor_);
 
 	ipa::RPi::SensorConfig sensorConfig;
 	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
-		return false;
+		return -EINVAL;
 	}
 
-	if (sensorConfig.sensorMetadata ^ !!embeddedEntity) {
+	if (sensorConfig.sensorMetadata ^ !!unicamEmbedded) {
 		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
 		sensorConfig.sensorMetadata = false;
-		if (embeddedEntity)
+		if (unicamEmbedded)
 			data->unicam_[Unicam::Embedded].dev()->bufferReady.disconnect();
 	}
 
@@ -1093,13 +1104,14 @@ bool PipelineHandlerRPi::registerCamera()
 		data->streams_.push_back(&stream);
 
 	for (auto stream : data->streams_) {
-		if (stream->dev()->open())
-			return false;
+		int ret = stream->dev()->open();
+		if (ret)
+			return ret;
 	}
 
 	if (!data->unicam_[Unicam::Image].dev()->caps().hasMediaController()) {
 		LOG(RPI, Error) << "Unicam driver does not use the MediaController, please update your kernel!";
-		return false;
+		return -EINVAL;
 	}
 
 	/*
@@ -1161,7 +1173,7 @@ bool PipelineHandlerRPi::registerCamera()
 
 	if (!bayerFormat.isValid()) {
 		LOG(RPI, Error) << "No Bayer format found";
-		return false;
+		return -EINVAL;
 	}
 	data->nativeBayerOrder_ = bayerFormat.order;
 
@@ -1181,7 +1193,10 @@ bool PipelineHandlerRPi::registerCamera()
 		Camera::create(std::move(data), id, streams);
 	PipelineHandler::registerCamera(std::move(camera));
 
-	return true;
+	LOG(RPI, Info) << "Registered camera " << id
+		       << " to Unicam device " << unicam->deviceNode()
+		       << " and ISP device " << isp->deviceNode();
+	return 0;
 }
 
 int PipelineHandlerRPi::queueAllBuffers(Camera *camera)

@@ -117,6 +117,12 @@ A trace can be collected fairly simply from lttng:
 
 See the `lttng documentation <https://lttng.org/docs/>`_ for further details.
 
+The location of the trace file is printed when running
+``lttng create $SESSION_NAME``. After destroying the session, it can still be
+viewed by: ``lttng view -t $PATH_TO_TRACE``, where ``$PATH_TO_TRACE`` is the
+path that was printed when the session was created. This is the same path that
+is used when analyzing traces programatically, as described in the next section.
+
 Analyzing a trace
 -----------------
 

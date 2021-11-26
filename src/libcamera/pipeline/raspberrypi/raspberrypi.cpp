@@ -314,6 +314,7 @@ private:
 		return static_cast<RPiCameraData *>(camera->_d());
 	}
 
+	bool registerCamera();
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
 	void freeBuffers(Camera *camera);
@@ -1013,6 +1014,11 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	if (!isp_)
 		return false;
 
+	return registerCamera();
+}
+
+bool PipelineHandlerRPi::registerCamera()
+{
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
 	if (!data->dmaHeap_.isValid())
 		return false;
@@ -1173,7 +1179,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	const std::string &id = data->sensor_->id();
 	std::shared_ptr<Camera> camera =
 		Camera::create(std::move(data), id, streams);
-	registerCamera(std::move(camera));
+	PipelineHandler::registerCamera(std::move(camera));
 
 	return true;
 }

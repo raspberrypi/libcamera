@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <string>
 
-#include <libcamera/compiler.h>
+#include <libcamera/base/compiler.h>
 
 namespace libcamera {
 

@@ -6,6 +6,7 @@ libcamera_base_headers = files([
     'backtrace.h',
     'bound_method.h',
     'class.h',
+    'compiler.h',
     'event_dispatcher.h',
     'event_dispatcher_poll.h',
     'event_notifier.h',

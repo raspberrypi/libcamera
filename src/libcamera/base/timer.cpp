@@ -96,7 +96,7 @@ void Timer::start(std::chrono::milliseconds duration)
 void Timer::start(std::chrono::steady_clock::time_point deadline)
 {
 	if (Thread::current() != thread()) {
-		LOG(Timer, Error) << "Timer can't be started from another thread";
+		LOG(Timer, Error) << "Timer " << this << " << can't be started from another thread";
 		return;
 	}
 
@@ -128,7 +128,7 @@ void Timer::stop()
 		return;
 
 	if (Thread::current() != thread()) {
-		LOG(Timer, Error) << "Timer can't be stopped from another thread";
+		LOG(Timer, Error) << "Timer " << this << " can't be stopped from another thread";
 		return;
 	}
 

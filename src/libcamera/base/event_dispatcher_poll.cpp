@@ -214,7 +214,8 @@ int EventDispatcherPoll::poll(std::vector<struct pollfd> *pollfds)
 			timeout = { 0, 0 };
 
 		LOG(Event, Debug)
-			<< "timeout " << timeout.tv_sec << "."
+			<< "next timer " << nextTimer << " expires in "
+			<< timeout.tv_sec << "."
 			<< std::setfill('0') << std::setw(9)
 			<< timeout.tv_nsec;
 	}

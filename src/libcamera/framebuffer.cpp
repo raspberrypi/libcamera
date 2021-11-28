@@ -8,6 +8,9 @@
 #include <libcamera/framebuffer.h>
 #include "libcamera/internal/framebuffer.h"
 
+#include <sys/stat.h>
+
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
 
 /**
@@ -207,6 +210,27 @@ FrameBuffer::Private::Private()
  * \brief The plane length in bytes
  */
 
+namespace {
+
+ino_t fileDescriptorInode(const FileDescriptor &fd)
+{
+	if (!fd.isValid())
+		return 0;
+
+	struct stat st;
+	int ret = fstat(fd.fd(), &st);
+	if (ret < 0) {
+		ret = -errno;
+		LOG(Buffer, Fatal)
+			<< "Failed to fstat() fd: " << strerror(-ret);
+		return 0;
+	}
+
+	return st.st_ino;
+}
+
+} /* namespace */
+
 /**
  * \brief Construct a FrameBuffer with an array of planes
  * \param[in] planes The frame memory planes
@@ -236,8 +260,8 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 		 */
 		if (plane.fd.fd() != planes_[0].fd.fd()) {
 			if (!inode)
-				inode = planes_[0].fd.inode();
-			if (plane.fd.inode() != inode) {
+				inode = fileDescriptorInode(planes_[0].fd);
+			if (fileDescriptorInode(plane.fd) != inode) {
 				isContiguous = false;
 				break;
 			}

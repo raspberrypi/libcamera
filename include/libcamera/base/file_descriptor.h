@@ -8,7 +8,6 @@
 #pragma once
 
 #include <memory>
-#include <sys/types.h>
 
 namespace libcamera {
 
@@ -27,8 +26,6 @@ public:
 	bool isValid() const { return fd_ != nullptr; }
 	int fd() const { return fd_ ? fd_->fd() : -1; }
 	FileDescriptor dup() const;
-
-	ino_t inode() const;
 
 private:
 	class Descriptor

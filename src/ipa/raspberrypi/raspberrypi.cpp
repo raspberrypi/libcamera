@@ -15,12 +15,12 @@
 
 #include <linux/bcm2835-isp.h>
 
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
-#include <libcamera/file_descriptor.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>

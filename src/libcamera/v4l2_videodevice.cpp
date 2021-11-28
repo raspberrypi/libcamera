@@ -22,10 +22,9 @@
 #include <linux/version.h>
 
 #include <libcamera/base/event_notifier.h>
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
-
-#include <libcamera/file_descriptor.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/framebuffer.h"

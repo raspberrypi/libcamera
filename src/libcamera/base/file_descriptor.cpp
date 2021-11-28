@@ -5,7 +5,7 @@
  * file_descriptor.cpp - File descriptor wrapper
  */
 
-#include <libcamera/file_descriptor.h>
+#include <libcamera/base/file_descriptor.h>
 
 #include <string.h>
 #include <sys/stat.h>
@@ -16,7 +16,7 @@
 #include <libcamera/base/log.h>
 
 /**
- * \file file_descriptor.h
+ * \file base/file_descriptor.h
  * \brief File descriptor wrapper
  */
 

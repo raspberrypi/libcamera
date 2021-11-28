@@ -11,8 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/file_descriptor.h>
-
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/utils.h>
 
 #include "test.h"

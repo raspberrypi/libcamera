@@ -15,7 +15,6 @@ libcamera_sources = files([
     'delayed_controls.cpp',
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',
-    'file_descriptor.cpp',
     'formats.cpp',
     'framebuffer.cpp',
     'framebuffer_allocator.cpp',

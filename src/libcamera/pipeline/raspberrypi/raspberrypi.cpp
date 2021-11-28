@@ -13,9 +13,10 @@
 #include <queue>
 #include <unordered_set>
 
+#include <libcamera/base/file_descriptor.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
-#include <libcamera/file_descriptor.h>
 #include <libcamera/formats.h>
 #include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>

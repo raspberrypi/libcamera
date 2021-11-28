@@ -13,9 +13,8 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/span.h>
-
-#include <libcamera/file_descriptor.h>
 
 namespace libcamera {
 

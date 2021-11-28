@@ -9,9 +9,8 @@
 
 #include <vector>
 
+#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/signal.h>
-
-#include <libcamera/file_descriptor.h>
 
 #include "libcamera/internal/ipc_unixsocket.h"
 

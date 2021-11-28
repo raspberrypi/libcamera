@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <libcamera/file_descriptor.h>
+#include <libcamera/base/file_descriptor.h>
 
 namespace libcamera {
 

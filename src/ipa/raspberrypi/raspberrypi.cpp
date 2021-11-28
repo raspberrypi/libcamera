@@ -15,8 +15,8 @@
 
 #include <linux/bcm2835-isp.h>
 
-#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
@@ -164,7 +164,7 @@ private:
 	bool processPending_;
 
 	/* LS table allocation passed in from the pipeline handler. */
-	FileDescriptor lsTableHandle_;
+	SharedFD lsTableHandle_;
 	void *lsTable_;
 
 	/* Distinguish the first camera start from others. */

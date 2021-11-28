@@ -237,7 +237,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 void {{proxy_name}}::{{method.mojom_name}}IPC(
 	std::vector<uint8_t>::const_iterator data,
 	size_t dataSize,
-	[[maybe_unused]] const std::vector<FileDescriptor> &fds)
+	[[maybe_unused]] const std::vector<SharedFD> &fds)
 {
 {%- for param in method.parameters %}
 	{{param|name}} {{param.mojom_name}};

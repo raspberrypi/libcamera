@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * file_descriptor.cpp - FileDescriptor test
+ * shared_fd.cpp - SharedFD test
  */
 
 #include <fcntl.h>
@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <libcamera/base/file_descriptor.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/utils.h>
 
 #include "test.h"
@@ -19,7 +19,7 @@
 using namespace libcamera;
 using namespace std;
 
-class FileDescriptorTest : public Test
+class SharedFDTest : public Test
 {
 protected:
 	int init()
@@ -43,8 +43,8 @@ protected:
 
 	int run()
 	{
-		/* Test creating empty FileDescriptor. */
-		desc1_ = new FileDescriptor();
+		/* Test creating empty SharedFD. */
+		desc1_ = new SharedFD();
 
 		if (desc1_->fd() != -1) {
 			std::cout << "Failed fd numerical check (default constructor)"
@@ -56,10 +56,10 @@ protected:
 		desc1_ = nullptr;
 
 		/*
-		 * Test creating FileDescriptor by copying numerical file
+		 * Test creating SharedFD by copying numerical file
 		 * descriptor.
 		 */
-		desc1_ = new FileDescriptor(fd_);
+		desc1_ = new SharedFD(fd_);
 		if (desc1_->fd() == fd_) {
 			std::cout << "Failed fd numerical check (lvalue ref constructor)"
 				  << std::endl;
@@ -84,13 +84,13 @@ protected:
 		}
 
 		/*
-		 * Test creating FileDescriptor by taking ownership of
+		 * Test creating SharedFD by taking ownership of
 		 * numerical file descriptor.
 		 */
 		int dupFd = dup(fd_);
 		int dupFdCopy = dupFd;
 
-		desc1_ = new FileDescriptor(std::move(dupFd));
+		desc1_ = new SharedFD(std::move(dupFd));
 		if (desc1_->fd() != dupFdCopy) {
 			std::cout << "Failed fd numerical check (rvalue ref constructor)"
 				  << std::endl;
@@ -114,9 +114,9 @@ protected:
 			return TestFail;
 		}
 
-		/* Test creating FileDescriptor from other FileDescriptor. */
-		desc1_ = new FileDescriptor(fd_);
-		desc2_ = new FileDescriptor(*desc1_);
+		/* Test creating SharedFD from other SharedFD. */
+		desc1_ = new SharedFD(fd_);
+		desc2_ = new SharedFD(*desc1_);
 
 		if (desc1_->fd() == fd_ || desc2_->fd() == fd_ || desc1_->fd() != desc2_->fd()) {
 			std::cout << "Failed fd numerical check (copy constructor)"
@@ -142,10 +142,10 @@ protected:
 		delete desc2_;
 		desc2_ = nullptr;
 
-		/* Test creating FileDescriptor by taking over other FileDescriptor. */
-		desc1_ = new FileDescriptor(fd_);
+		/* Test creating SharedFD by taking over other SharedFD. */
+		desc1_ = new SharedFD(fd_);
 		fd = desc1_->fd();
-		desc2_ = new FileDescriptor(std::move(*desc1_));
+		desc2_ = new SharedFD(std::move(*desc1_));
 
 		if (desc1_->fd() != -1 || desc2_->fd() != fd) {
 			std::cout << "Failed fd numerical check (move constructor)"
@@ -164,9 +164,9 @@ protected:
 		delete desc2_;
 		desc2_ = nullptr;
 
-		/* Test creating FileDescriptor by copy assignment. */
-		desc1_ = new FileDescriptor();
-		desc2_ = new FileDescriptor(fd_);
+		/* Test creating SharedFD by copy assignment. */
+		desc1_ = new SharedFD();
+		desc2_ = new SharedFD(fd_);
 
 		fd = desc2_->fd();
 		*desc1_ = *desc2_;
@@ -188,9 +188,9 @@ protected:
 		delete desc2_;
 		desc2_ = nullptr;
 
-		/* Test creating FileDescriptor by move assignment. */
-		desc1_ = new FileDescriptor();
-		desc2_ = new FileDescriptor(fd_);
+		/* Test creating SharedFD by move assignment. */
+		desc1_ = new SharedFD();
+		desc2_ = new SharedFD(fd_);
 
 		fd = desc2_->fd();
 		*desc1_ = std::move(*desc2_);
@@ -237,7 +237,7 @@ private:
 
 	int fd_;
 	ino_t inodeNr_;
-	FileDescriptor *desc1_, *desc2_;
+	SharedFD *desc1_, *desc2_;
 };
 
-TEST_REGISTER(FileDescriptorTest)
+TEST_REGISTER(SharedFDTest)

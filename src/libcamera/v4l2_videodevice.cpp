@@ -22,8 +22,8 @@
 #include <linux/version.h>
 
 #include <libcamera/base/event_notifier.h>
-#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/unique_fd.h>
 #include <libcamera/base/utils.h>
 
@@ -617,7 +617,7 @@ int V4L2VideoDevice::open()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2VideoDevice::open(FileDescriptor handle, enum v4l2_buf_type type)
+int V4L2VideoDevice::open(SharedFD handle, enum v4l2_buf_type type)
 {
 	UniqueFD newFd = handle.dup();
 	if (!newFd.isValid()) {
@@ -1323,7 +1323,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 			return nullptr;
 
 		FrameBuffer::Plane plane;
-		plane.fd = FileDescriptor(std::move(fd));
+		plane.fd = SharedFD(std::move(fd));
 		/*
 		 * V4L2 API doesn't provide dmabuf offset information of plane.
 		 * Set 0 as a placeholder offset.
@@ -1352,7 +1352,7 @@ std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 		ASSERT(numPlanes == 1u);
 
 		planes.resize(formatInfo_->numPlanes());
-		const FileDescriptor &fd = planes[0].fd;
+		const SharedFD &fd = planes[0].fd;
 		size_t offset = 0;
 
 		for (auto [i, plane] : utils::enumerate(planes)) {
@@ -1900,8 +1900,8 @@ int V4L2M2MDevice::open()
 	 * The output and capture V4L2VideoDevice instances use the same file
 	 * handle for the same device node.
 	 */
-	FileDescriptor fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
-				  O_RDWR | O_NONBLOCK));
+	SharedFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
+			    O_RDWR | O_NONBLOCK));
 	if (!fd.isValid()) {
 		ret = -errno;
 		LOG(V4L2, Error) << "Failed to open V4L2 M2M device: "

@@ -64,7 +64,7 @@ private:
 	void {{method.mojom_name}}IPC(
 		std::vector<uint8_t>::const_iterator data,
 		size_t dataSize,
-		const std::vector<FileDescriptor> &fds);
+		const std::vector<SharedFD> &fds);
 {% endfor %}
 
 	/* Helper class to invoke async functions in another thread. */

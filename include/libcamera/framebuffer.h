@@ -13,7 +13,7 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/file_descriptor.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/span.h>
 
 namespace libcamera {
@@ -51,7 +51,7 @@ class FrameBuffer final : public Extensible
 public:
 	struct Plane {
 		static constexpr unsigned int kInvalidOffset = std::numeric_limits<unsigned int>::max();
-		FileDescriptor fd;
+		SharedFD fd;
 		unsigned int offset = kInvalidOffset;
 		unsigned int length;
 	};

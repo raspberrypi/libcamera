@@ -743,7 +743,7 @@ CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
 
 	std::vector<FrameBuffer::Plane> planes(buf.numPlanes());
 	for (size_t i = 0; i < buf.numPlanes(); ++i) {
-		FileDescriptor fd{ camera3buffer->data[i] };
+		SharedFD fd{ camera3buffer->data[i] };
 		if (!fd.isValid()) {
 			LOG(HAL, Fatal) << "No valid fd";
 			return nullptr;

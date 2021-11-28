@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include <libcamera/base/file_descriptor.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/signal.h>
 
 #include "libcamera/internal/ipc_unixsocket.h"
@@ -33,17 +33,17 @@ public:
 
 	Header &header() { return header_; }
 	std::vector<uint8_t> &data() { return data_; }
-	std::vector<FileDescriptor> &fds() { return fds_; }
+	std::vector<SharedFD> &fds() { return fds_; }
 
 	const Header &header() const { return header_; }
 	const std::vector<uint8_t> &data() const { return data_; }
-	const std::vector<FileDescriptor> &fds() const { return fds_; }
+	const std::vector<SharedFD> &fds() const { return fds_; }
 
 private:
 	Header header_;
 
 	std::vector<uint8_t> data_;
-	std::vector<FileDescriptor> fds_;
+	std::vector<SharedFD> fds_;
 };
 
 class IPCPipe

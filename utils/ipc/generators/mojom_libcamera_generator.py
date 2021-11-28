@@ -77,7 +77,7 @@ def GetDefaultValue(element):
     if mojom.IsEnumKind(element.kind):
         return f'static_cast<{element.kind.mojom_name}>(0)'
     if isinstance(element.kind, mojom.Struct) and \
-       element.kind.mojom_name == 'FileDescriptor':
+       element.kind.mojom_name == 'SharedFD':
         return '-1'
     return ''
 
@@ -140,7 +140,7 @@ def HasFd(element):
         types = GetAllTypes(element)
     else:
         types = GetAllTypes(element.kind)
-    return "FileDescriptor" in types or (attrs is not None and "hasFd" in attrs)
+    return "SharedFD" in types or (attrs is not None and "hasFd" in attrs)
 
 def WithDefaultValues(element):
     return [x for x in element if HasDefaultValue(x)]
@@ -221,7 +221,7 @@ def IsEnum(element):
     return mojom.IsEnumKind(element.kind)
 
 def IsFd(element):
-    return mojom.IsStructKind(element.kind) and element.kind.mojom_name == "FileDescriptor"
+    return mojom.IsStructKind(element.kind) and element.kind.mojom_name == "SharedFD"
 
 def IsMap(element):
     return mojom.IsMapKind(element.kind)

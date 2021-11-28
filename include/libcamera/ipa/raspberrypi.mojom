@@ -35,7 +35,7 @@ struct ISPConfig {
 
 struct IPAConfig {
 	uint32 transform;
-	libcamera.FileDescriptor lsTableHandle;
+	libcamera.SharedFD lsTableHandle;
 };
 
 struct StartConfig {

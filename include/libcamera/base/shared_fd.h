@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * file_descriptor.h - File descriptor wrapper
+ * shared_fd.h - File descriptor wrapper with shared ownership
  */
 
 #pragma once
@@ -13,18 +13,18 @@ namespace libcamera {
 
 class UniqueFD;
 
-class FileDescriptor final
+class SharedFD final
 {
 public:
-	explicit FileDescriptor(const int &fd = -1);
-	explicit FileDescriptor(int &&fd);
-	explicit FileDescriptor(UniqueFD fd);
-	FileDescriptor(const FileDescriptor &other);
-	FileDescriptor(FileDescriptor &&other);
-	~FileDescriptor();
+	explicit SharedFD(const int &fd = -1);
+	explicit SharedFD(int &&fd);
+	explicit SharedFD(UniqueFD fd);
+	SharedFD(const SharedFD &other);
+	SharedFD(SharedFD &&other);
+	~SharedFD();
 
-	FileDescriptor &operator=(const FileDescriptor &other);
-	FileDescriptor &operator=(FileDescriptor &&other);
+	SharedFD &operator=(const SharedFD &other);
+	SharedFD &operator=(SharedFD &&other);
 
 	bool isValid() const { return fd_ != nullptr; }
 	int fd() const { return fd_ ? fd_->fd() : -1; }

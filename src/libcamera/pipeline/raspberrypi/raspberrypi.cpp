@@ -13,7 +13,7 @@
 #include <queue>
 #include <unordered_set>
 
-#include <libcamera/base/file_descriptor.h>
+#include <libcamera/base/shared_fd.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
@@ -224,7 +224,7 @@ public:
 
 	/* DMAHEAP allocation helper. */
 	RPi::DmaHeap dmaHeap_;
-	FileDescriptor lsTable_;
+	SharedFD lsTable_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
@@ -1393,7 +1393,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
-		lsTable_ = FileDescriptor(dmaHeap_.alloc("ls_grid", ipa::RPi::MaxLsGridSize));
+		lsTable_ = SharedFD(dmaHeap_.alloc("ls_grid", ipa::RPi::MaxLsGridSize));
 		if (!lsTable_.isValid())
 			return -ENOMEM;
 

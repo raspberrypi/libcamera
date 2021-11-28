@@ -10,8 +10,8 @@
 
 #include <sys/stat.h>
 
-#include <libcamera/base/file_descriptor.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/shared_fd.h>
 
 /**
  * \file libcamera/framebuffer.h
@@ -182,9 +182,9 @@ FrameBuffer::Private::Private()
  * offset and length.
  *
  * To support DMA access, planes are associated with dmabuf objects represented
- * by FileDescriptor handles. The Plane class doesn't handle mapping of the
- * memory to the CPU, but applications and IPAs may use the dmabuf file
- * descriptors to map the plane memory with mmap() and access its contents.
+ * by SharedFD handles. The Plane class doesn't handle mapping of the memory to
+ * the CPU, but applications and IPAs may use the dmabuf file descriptors to map
+ * the plane memory with mmap() and access its contents.
  *
  * \todo Specify how an application shall decide whether to use a single or
  * multiple dmabufs, based on the camera requirements.
@@ -212,7 +212,7 @@ FrameBuffer::Private::Private()
 
 namespace {
 
-ino_t fileDescriptorInode(const FileDescriptor &fd)
+ino_t fileDescriptorInode(const SharedFD &fd)
 {
 	if (!fd.isValid())
 		return 0;

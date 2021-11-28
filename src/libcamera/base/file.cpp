@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/shared_fd.h>
 
 /**
  * \file base/file.h

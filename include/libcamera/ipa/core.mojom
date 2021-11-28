@@ -32,7 +32,7 @@ module libcamera;
  *   - This attribute instructs the build system that a (de)serializer is
  *     available for the type and there's no need to generate one
  * - hasFd - struct fields or empty structs only
- *   - Designate that this field or empty struct contains a FileDescriptor
+ *   - Designate that this field or empty struct contains a SharedFD
  *
  * Rules:
  * - If the type is defined in a libcamera C++ header *and* a (de)serializer is
@@ -60,7 +60,7 @@ module libcamera;
  *     - In mojom, reference the type as FrameBuffer.Plane and only as map/array
  *       member
  * - [skipHeader] and [skipSerdes] only work here in core.mojom
- * - If a field in a struct has a FileDescriptor, but is not explicitly
+ * - If a field in a struct has a SharedFD, but is not explicitly
  *   defined so in mojom, then the field must be marked with the [hasFd]
  *   attribute
  *
@@ -71,7 +71,7 @@ module libcamera;
  */
 [skipSerdes, skipHeader] struct ControlInfoMap {};
 [skipSerdes, skipHeader] struct ControlList {};
-[skipSerdes, skipHeader] struct FileDescriptor {};
+[skipSerdes, skipHeader] struct SharedFD {};
 
 [skipHeader] struct Point {
 	int32 x;

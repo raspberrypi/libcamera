@@ -87,7 +87,7 @@ IPCMessage::IPCMessage(IPCUnixSocket::Payload &payload)
 	data_ = std::vector<uint8_t>(payload.data.begin() + sizeof(header_),
 				     payload.data.end());
 	for (int32_t &fd : payload.fds)
-		fds_.push_back(FileDescriptor(std::move(fd)));
+		fds_.push_back(SharedFD(std::move(fd)));
 }
 
 /**
@@ -112,7 +112,7 @@ IPCUnixSocket::Payload IPCMessage::payload() const
 		       data_.data(), data_.size());
 	}
 
-	for (const FileDescriptor &fd : fds_)
+	for (const SharedFD &fd : fds_)
 		payload.fds.push_back(fd.fd());
 
 	return payload;

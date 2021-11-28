@@ -28,7 +28,7 @@ public:
 
 	bool isValid() const { return fd_ != nullptr; }
 	int fd() const { return fd_ ? fd_->fd() : -1; }
-	FileDescriptor dup() const;
+	UniqueFD dup() const;
 
 private:
 	class Descriptor

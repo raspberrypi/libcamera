@@ -222,17 +222,23 @@ FileDescriptor &FileDescriptor::operator=(FileDescriptor &&other)
  * \brief Duplicate a FileDescriptor
  *
  * Duplicating a FileDescriptor creates a duplicate of the wrapped file
- * descriptor and returns a new FileDescriptor instance that wraps the
- * duplicate. The fd() function of the original and duplicate instances will
- * return different values. The duplicate instance will not be affected by
- * destruction of the original instance or its copies.
+ * descriptor and returns a UniqueFD that owns the duplicate. The fd() function
+ * of the original and the get() function of the duplicate will return different
+ * values. The duplicate instance will not be affected by destruction of the
+ * original instance or its copies.
  *
- * \return A new FileDescriptor instance wrapping a duplicate of the original
- * file descriptor
+ * \return A UniqueFD owning a duplicate of the original file descriptor
  */
-FileDescriptor FileDescriptor::dup() const
+UniqueFD FileDescriptor::dup() const
 {
-	return FileDescriptor(fd());
+	UniqueFD dupFd(::dup(fd()));
+	if (!dupFd.isValid()) {
+		int ret = -errno;
+		LOG(FileDescriptor, Error)
+			<< "Failed to dup() fd: " << strerror(-ret);
+	}
+
+	return dupFd;
 }
 
 FileDescriptor::Descriptor::Descriptor(int fd, bool duplicate)

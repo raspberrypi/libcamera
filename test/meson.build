@@ -53,6 +53,7 @@ internal_tests = [
     ['threads',                         'threads.cpp'],
     ['timer',                           'timer.cpp'],
     ['timer-thread',                    'timer-thread.cpp'],
+    ['unique-fd',                       'unique-fd.cpp'],
     ['utils',                           'utils.cpp'],
 ]
 

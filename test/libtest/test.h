@@ -8,6 +8,7 @@
 #pragma once
 
 #include <sstream>
+#include <string>
 
 enum TestStatus {
 	TestPass = 0,
@@ -21,16 +22,24 @@ public:
 	Test();
 	virtual ~Test();
 
+	void setArgs(int argc, char *argv[]);
 	int execute();
+
+	const std::string &self() const { return self_; }
 
 protected:
 	virtual int init() { return 0; }
 	virtual int run() = 0;
 	virtual void cleanup() {}
+
+private:
+	std::string self_;
 };
 
-#define TEST_REGISTER(klass)						\
-int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])	\
+#define TEST_REGISTER(Klass)						\
+int main(int argc, char *argv[])					\
 {									\
-	return klass().execute();					\
+	Klass klass;							\
+	klass.setArgs(argc, argv);					\
+	return klass.execute();						\
 }

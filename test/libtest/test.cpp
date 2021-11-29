@@ -17,6 +17,11 @@ Test::~Test()
 {
 }
 
+void Test::setArgs([[maybe_unused]] int argc, char *argv[])
+{
+	self_ = argv[0];
+}
+
 int Test::execute()
 {
 	int ret;

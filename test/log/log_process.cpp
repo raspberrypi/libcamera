@@ -154,5 +154,7 @@ int main(int argc, char **argv)
 		return child.run(status, num);
 	}
 
-	return LogProcessTest().execute();
+	LogProcessTest test;
+	test.setArgs(argc, argv);
+	return test.execute();
 }

@@ -501,5 +501,7 @@ int main(int argc, char **argv)
 		return slave.run(ipcfd);
 	}
 
-	return UnixSocketTest().execute();
+	UnixSocketTest test;
+	test.setArgs(argc, argv);
+	return test.execute();
 }

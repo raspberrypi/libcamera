@@ -227,5 +227,7 @@ int main(int argc, char **argv)
 		return slave.run(ipcfd);
 	}
 
-	return UnixSocketTestIPC().execute();
+	UnixSocketTestIPC test;
+	test.setArgs(argc, argv);
+	return test.execute();
 }

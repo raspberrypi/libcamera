@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <vector>
 
-
 #include <libcamera/base/event_dispatcher.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
@@ -106,5 +105,7 @@ int main(int argc, char **argv)
 		return child.run(status);
 	}
 
-	return ProcessTest().execute();
+	ProcessTest test;
+	test.setArgs(argc, argv);
+	return test.execute();
 }

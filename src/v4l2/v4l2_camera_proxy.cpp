@@ -624,6 +624,32 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 	return 0;
 }
 
+int V4L2CameraProxy::vidioc_expbuf(V4L2CameraFile *file, struct v4l2_exportbuffer *arg)
+{
+	LOG(V4L2Compat, Debug) << "Servicing vidioc_expbuf fd = " << file->efd();
+
+	if (!hasOwnership(file))
+		return -EBUSY;
+
+	/* \todo Verify that the memory type is MMAP when adding DMABUF support */
+	if (!validateBufferType(arg->type))
+		return -EINVAL;
+
+	if (arg->index >= bufferCount_)
+		return -EINVAL;
+
+	if (arg->flags & ~(O_CLOEXEC | O_ACCMODE))
+		return -EINVAL;
+
+	memset(arg->reserved, 0, sizeof(arg->reserved));
+
+	/* \todo honor the O_ACCMODE flags passed to this function */
+	arg->fd = fcntl(vcam_->getBufferFd(arg->index),
+			arg->flags & O_CLOEXEC ? F_DUPFD_CLOEXEC : F_DUPFD, 0);
+
+	return 0;
+}
+
 int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamon fd = " << file->efd();
@@ -685,6 +711,7 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_QUERYBUF,
 	VIDIOC_QBUF,
 	VIDIOC_DQBUF,
+	VIDIOC_EXPBUF,
 	VIDIOC_STREAMON,
 	VIDIOC_STREAMOFF,
 };
@@ -754,6 +781,9 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 		break;
 	case VIDIOC_DQBUF:
 		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg), &proxyMutex_);
+		break;
+	case VIDIOC_EXPBUF:
+		ret = vidioc_expbuf(file, static_cast<struct v4l2_exportbuffer *>(arg));
 		break;
 	case VIDIOC_STREAMON:
 		ret = vidioc_streamon(file, static_cast<int *>(arg));

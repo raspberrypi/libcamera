@@ -38,7 +38,7 @@ IPCPipeUnixSocket::IPCPipeUnixSocket(const char *ipaModulePath,
 	}
 	socket_->readyRead.connect(this, &IPCPipeUnixSocket::readyRead);
 	args.push_back(std::to_string(fd.get()));
-	fds.push_back(fd.release());
+	fds.push_back(fd.get());
 
 	proc_ = std::make_unique<Process>();
 	int ret = proc_->start(ipaProxyWorkerPath, args, fds);

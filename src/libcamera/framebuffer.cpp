@@ -258,7 +258,7 @@ FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
 		 * Two different dmabuf file descriptors may still refer to the
 		 * same dmabuf instance. Check this using inodes.
 		 */
-		if (plane.fd.fd() != planes_[0].fd.fd()) {
+		if (plane.fd != planes_[0].fd) {
 			if (!inode)
 				inode = fileDescriptorInode(planes_[0].fd);
 			if (fileDescriptorInode(plane.fd) != inode) {

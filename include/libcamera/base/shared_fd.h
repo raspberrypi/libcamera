@@ -46,4 +46,14 @@ private:
 	std::shared_ptr<Descriptor> fd_;
 };
 
+static inline bool operator==(const SharedFD &lhs, const SharedFD &rhs)
+{
+	return lhs.get() == rhs.get();
+}
+
+static inline bool operator!=(const SharedFD &lhs, const SharedFD &rhs)
+{
+	return !(lhs == rhs);
+}
+
 } /* namespace libcamera */

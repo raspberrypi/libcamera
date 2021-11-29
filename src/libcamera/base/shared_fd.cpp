@@ -215,6 +215,32 @@ SharedFD &SharedFD::operator=(SharedFD &&other)
  */
 
 /**
+ * \fn bool operator==(const SharedFD &lhs, const SharedFD &rhs)
+ * \brief Compare the owned file descriptors of two SharedFD for equality
+ * \param[in] lhs The first SharedFD
+ * \param[in] rhs The second SharedFD
+ *
+ * Two file descriptors are considered equal if they have the same numerical
+ * value. File descriptors with different values that both reference the same
+ * file (for instance obtained using dup()) are considered not equal.
+ *
+ * \return True if the two file descriptors are equal, false otherwise
+ */
+
+/**
+ * \fn bool operator!=(const SharedFD &lhs, const SharedFD &rhs)
+ * \brief Compare the owned file descriptors of two SharedFD for equality
+ * \param[in] lhs The first SharedFD
+ * \param[in] rhs The second SharedFD
+ *
+ * Two file descriptors are considered equal if they have the same numerical
+ * value. File descriptors with different values that both reference the same
+ * file (for instance obtained using dup()) are considered not equal.
+ *
+ * \return True if the two file descriptors are not equal, false otherwise
+ */
+
+/**
  * \brief Duplicate a SharedFD
  *
  * Duplicating a SharedFD creates a duplicate of the wrapped file descriptor and

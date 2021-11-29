@@ -173,7 +173,7 @@ protected:
 
 	int run()
 	{
-		ipc_ = std::make_unique<IPCPipeUnixSocket>("", "/proc/self/exe");
+		ipc_ = std::make_unique<IPCPipeUnixSocket>("", self().c_str());
 		if (!ipc_->isConnected()) {
 			cerr << "Failed to create IPCPipe" << endl;
 			return TestFail;

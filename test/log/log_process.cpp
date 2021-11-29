@@ -74,7 +74,7 @@ protected:
 		vector<std::string> args;
 		args.push_back(to_string(exitCode));
 		args.push_back(to_string(num_));
-		int ret = proc_.start("/proc/self/exe", args);
+		int ret = proc_.start(self(), args);
 		if (ret) {
 			cerr << "failed to start process" << endl;
 			return TestFail;

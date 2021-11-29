@@ -209,8 +209,7 @@ protected:
 
 		if (!pid_) {
 			std::string arg = std::to_string(fd);
-			execl("/proc/self/exe", "/proc/self/exe",
-			      arg.c_str(), nullptr);
+			execl(self().c_str(), self().c_str(), arg.c_str(), nullptr);
 
 			/* Only get here if exec fails. */
 			exit(TestFail);
@@ -464,7 +463,7 @@ private:
 
 	int prepareFDs(IPCUnixSocket::Payload *message, unsigned int num)
 	{
-		int fd = open("/proc/self/exe", O_RDONLY);
+		int fd = open(self().c_str(), O_RDONLY);
 		if (fd < 0)
 			return fd;
 

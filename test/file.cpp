@@ -180,7 +180,7 @@ protected:
 		}
 
 		/* Test size(). */
-		file.setFileName("/proc/self/exe");
+		file.setFileName(self());
 
 		if (file.size() >= 0) {
 			cerr << "File has valid size before open" << endl;
@@ -277,7 +277,7 @@ protected:
 		file.close();
 
 		/* Test mapping and unmapping. */
-		file.setFileName("/proc/self/exe");
+		file.setFileName(self());
 		file.open(File::OpenModeFlag::ReadOnly);
 
 		Span<uint8_t> data = file.map();

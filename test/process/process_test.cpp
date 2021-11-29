@@ -55,7 +55,7 @@ protected:
 		proc_.kill();
 
 		/* Test starting the process and retrieving the exit code. */
-		int ret = proc_.start("/proc/self/exe", args);
+		int ret = proc_.start(self(), args);
 		if (ret) {
 			cerr << "failed to start process" << endl;
 			return TestFail;

@@ -282,7 +282,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 		return false;
 
 	for (unsigned int i = 0; i < planes.size(); i++)
-		if (planes_[i].fd != planes[i].fd.fd() ||
+		if (planes_[i].fd != planes[i].fd.get() ||
 		    planes_[i].length != planes[i].length)
 			return false;
 	return true;
@@ -1517,9 +1517,9 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
 			for (unsigned int p = 0; p < numV4l2Planes; ++p)
-				v4l2Planes[p].m.fd = planes[p].fd.fd();
+				v4l2Planes[p].m.fd = planes[p].fd.get();
 		} else {
-			buf.m.fd = planes[0].fd.fd();
+			buf.m.fd = planes[0].fd.get();
 		}
 	}
 

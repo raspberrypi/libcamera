@@ -46,7 +46,7 @@ protected:
 		/* Test creating empty SharedFD. */
 		desc1_ = new SharedFD();
 
-		if (desc1_->fd() != -1) {
+		if (desc1_->get() != -1) {
 			std::cout << "Failed fd numerical check (default constructor)"
 				  << std::endl;
 			return TestFail;
@@ -60,19 +60,19 @@ protected:
 		 * descriptor.
 		 */
 		desc1_ = new SharedFD(fd_);
-		if (desc1_->fd() == fd_) {
+		if (desc1_->get() == fd_) {
 			std::cout << "Failed fd numerical check (lvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (!isValidFd(fd_) || !isValidFd(desc1_->fd())) {
+		if (!isValidFd(fd_) || !isValidFd(desc1_->get())) {
 			std::cout << "Failed fd validity after construction (lvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		int fd = desc1_->fd();
+		int fd = desc1_->get();
 
 		delete desc1_;
 		desc1_ = nullptr;
@@ -91,19 +91,19 @@ protected:
 		int dupFdCopy = dupFd;
 
 		desc1_ = new SharedFD(std::move(dupFd));
-		if (desc1_->fd() != dupFdCopy) {
+		if (desc1_->get() != dupFdCopy) {
 			std::cout << "Failed fd numerical check (rvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (dupFd != -1 || !isValidFd(fd_) || !isValidFd(desc1_->fd())) {
+		if (dupFd != -1 || !isValidFd(fd_) || !isValidFd(desc1_->get())) {
 			std::cout << "Failed fd validity after construction (rvalue ref constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		fd = desc1_->fd();
+		fd = desc1_->get();
 
 		delete desc1_;
 		desc1_ = nullptr;
@@ -118,13 +118,14 @@ protected:
 		desc1_ = new SharedFD(fd_);
 		desc2_ = new SharedFD(*desc1_);
 
-		if (desc1_->fd() == fd_ || desc2_->fd() == fd_ || desc1_->fd() != desc2_->fd()) {
+		if (desc1_->get() == fd_ || desc2_->get() == fd_ ||
+		    desc1_->get() != desc2_->get()) {
 			std::cout << "Failed fd numerical check (copy constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (!isValidFd(desc1_->fd()) || !isValidFd(desc2_->fd())) {
+		if (!isValidFd(desc1_->get()) || !isValidFd(desc2_->get())) {
 			std::cout << "Failed fd validity after construction (copy constructor)"
 				  << std::endl;
 			return TestFail;
@@ -133,7 +134,7 @@ protected:
 		delete desc1_;
 		desc1_ = nullptr;
 
-		if (!isValidFd(desc2_->fd())) {
+		if (!isValidFd(desc2_->get())) {
 			std::cout << "Failed fd validity after destruction (copy constructor)"
 				  << std::endl;
 			return TestFail;
@@ -144,16 +145,16 @@ protected:
 
 		/* Test creating SharedFD by taking over other SharedFD. */
 		desc1_ = new SharedFD(fd_);
-		fd = desc1_->fd();
+		fd = desc1_->get();
 		desc2_ = new SharedFD(std::move(*desc1_));
 
-		if (desc1_->fd() != -1 || desc2_->fd() != fd) {
+		if (desc1_->get() != -1 || desc2_->get() != fd) {
 			std::cout << "Failed fd numerical check (move constructor)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (!isValidFd(desc2_->fd())) {
+		if (!isValidFd(desc2_->get())) {
 			std::cout << "Failed fd validity after construction (move constructor)"
 				  << std::endl;
 			return TestFail;
@@ -168,16 +169,16 @@ protected:
 		desc1_ = new SharedFD();
 		desc2_ = new SharedFD(fd_);
 
-		fd = desc2_->fd();
+		fd = desc2_->get();
 		*desc1_ = *desc2_;
 
-		if (desc1_->fd() != fd || desc2_->fd() != fd) {
+		if (desc1_->get() != fd || desc2_->get() != fd) {
 			std::cout << "Failed fd numerical check (copy assignment)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (!isValidFd(desc1_->fd()) || !isValidFd(desc2_->fd())) {
+		if (!isValidFd(desc1_->get()) || !isValidFd(desc2_->get())) {
 			std::cout << "Failed fd validity after construction (copy assignment)"
 				  << std::endl;
 			return TestFail;
@@ -192,16 +193,16 @@ protected:
 		desc1_ = new SharedFD();
 		desc2_ = new SharedFD(fd_);
 
-		fd = desc2_->fd();
+		fd = desc2_->get();
 		*desc1_ = std::move(*desc2_);
 
-		if (desc1_->fd() != fd || desc2_->fd() != -1) {
+		if (desc1_->get() != fd || desc2_->get() != -1) {
 			std::cout << "Failed fd numerical check (move assignment)"
 				  << std::endl;
 			return TestFail;
 		}
 
-		if (!isValidFd(desc1_->fd())) {
+		if (!isValidFd(desc1_->get())) {
 			std::cout << "Failed fd validity after construction (move assignment)"
 				  << std::endl;
 			return TestFail;

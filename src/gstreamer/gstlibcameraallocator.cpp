@@ -52,7 +52,7 @@ FrameWrap::FrameWrap(GstAllocator *allocator, FrameBuffer *buffer,
 	  outstandingPlanes_(0)
 {
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		GstMemory *mem = gst_fd_allocator_alloc(allocator, plane.fd.fd(),
+		GstMemory *mem = gst_fd_allocator_alloc(allocator, plane.fd.get(),
 							plane.offset + plane.length,
 							GST_FD_MEMORY_FLAG_DONT_CLOSE);
 		gst_memory_resize(mem, plane.offset, plane.length);

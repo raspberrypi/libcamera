@@ -208,7 +208,7 @@ SharedFD &SharedFD::operator=(SharedFD &&other)
  */
 
 /**
- * \fn SharedFD::fd()
+ * \fn SharedFD::get()
  * \brief Retrieve the numerical file descriptor
  * \return The numerical file descriptor, which may be -1 if the SharedFD
  * instance is invalid
@@ -227,7 +227,7 @@ SharedFD &SharedFD::operator=(SharedFD &&other)
  */
 UniqueFD SharedFD::dup() const
 {
-	UniqueFD dupFd(::dup(fd()));
+	UniqueFD dupFd(::dup(get()));
 	if (!dupFd.isValid()) {
 		int ret = -errno;
 		LOG(SharedFD, Error)

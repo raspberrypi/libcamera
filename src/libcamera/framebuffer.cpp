@@ -218,7 +218,7 @@ ino_t fileDescriptorInode(const SharedFD &fd)
 		return 0;
 
 	struct stat st;
-	int ret = fstat(fd.fd(), &st);
+	int ret = fstat(fd.get(), &st);
 	if (ret < 0) {
 		ret = -errno;
 		LOG(Buffer, Fatal)

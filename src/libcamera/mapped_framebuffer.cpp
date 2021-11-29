@@ -198,7 +198,7 @@ MappedFrameBuffer::MappedFrameBuffer(const FrameBuffer *buffer, MapFlags flags)
 	std::map<int, MappedBufferInfo> mappedBuffers;
 
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		const int fd = plane.fd.fd();
+		const int fd = plane.fd.get();
 		if (mappedBuffers.find(fd) == mappedBuffers.end()) {
 			const size_t length = lseek(fd, 0, SEEK_END);
 			mappedBuffers[fd] = MappedBufferInfo{ nullptr, 0, length };
@@ -220,7 +220,7 @@ MappedFrameBuffer::MappedFrameBuffer(const FrameBuffer *buffer, MapFlags flags)
 	}
 
 	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		const int fd = plane.fd.fd();
+		const int fd = plane.fd.get();
 		auto &info = mappedBuffers[fd];
 		if (!info.address) {
 			void *address = mmap(nullptr, info.mapLength, mmapFlags,

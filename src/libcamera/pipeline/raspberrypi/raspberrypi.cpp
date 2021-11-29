@@ -1479,7 +1479,7 @@ void RPiCameraData::setIspControls(const ControlList &controls)
 		Span<uint8_t> s = value.data();
 		bcm2835_isp_lens_shading *ls =
 			reinterpret_cast<bcm2835_isp_lens_shading *>(s.data());
-		ls->dmabuf = lsTable_.fd();
+		ls->dmabuf = lsTable_.get();
 	}
 
 	isp_[Isp::Input].dev()->setControls(&ctrls);

@@ -27,7 +27,7 @@ public:
 	SharedFD &operator=(SharedFD &&other);
 
 	bool isValid() const { return fd_ != nullptr; }
-	int fd() const { return fd_ ? fd_->fd() : -1; }
+	int get() const { return fd_ ? fd_->fd() : -1; }
 	UniqueFD dup() const;
 
 private:

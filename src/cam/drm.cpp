@@ -608,12 +608,12 @@ std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 
 	unsigned int i = 0;
 	for (const libcamera::FrameBuffer::Plane &plane : planes) {
-		int fd = plane.fd.fd();
+		int fd = plane.fd.get();
 		uint32_t handle;
 
 		auto iter = fb->planes_.find(fd);
 		if (iter == fb->planes_.end()) {
-			ret = drmPrimeFDToHandle(fd_, plane.fd.fd(), &handle);
+			ret = drmPrimeFDToHandle(fd_, plane.fd.get(), &handle);
 			if (ret < 0) {
 				ret = -errno;
 				std::cerr

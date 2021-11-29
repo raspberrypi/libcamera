@@ -377,7 +377,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		lsTableHandle_ = std::move(ipaConfig.lsTableHandle);
 		if (lsTableHandle_.isValid()) {
 			lsTable_ = mmap(nullptr, ipa::RPi::MaxLsGridSize, PROT_READ | PROT_WRITE,
-					MAP_SHARED, lsTableHandle_.fd(), 0);
+					MAP_SHARED, lsTableHandle_.get(), 0);
 
 			if (lsTable_ == MAP_FAILED) {
 				LOG(IPARPI, Error) << "dmaHeap mmap failure for LS table.";

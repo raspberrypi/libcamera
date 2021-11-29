@@ -195,7 +195,7 @@ int V4L2Camera::getBufferFd(unsigned int index)
 	if (buffers.size() <= index)
 		return -1;
 
-	return buffers[index]->planes()[0].fd.fd();
+	return buffers[index]->planes()[0].fd.get();
 }
 
 int V4L2Camera::streamOn()

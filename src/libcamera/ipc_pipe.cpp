@@ -113,7 +113,7 @@ IPCUnixSocket::Payload IPCMessage::payload() const
 	}
 
 	for (const SharedFD &fd : fds_)
-		payload.fds.push_back(fd.fd());
+		payload.fds.push_back(fd.get());
 
 	return payload;
 }

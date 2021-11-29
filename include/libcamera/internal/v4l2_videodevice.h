@@ -140,7 +140,7 @@ private:
 	private:
 		struct Plane {
 			Plane(const FrameBuffer::Plane &plane)
-				: fd(plane.fd.fd()), length(plane.length)
+				: fd(plane.fd.get()), length(plane.length)
 			{
 			}
 

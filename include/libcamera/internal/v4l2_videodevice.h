@@ -184,7 +184,7 @@ public:
 	~V4L2VideoDevice();
 
 	int open();
-	int open(int handle, enum v4l2_buf_type type);
+	int open(FileDescriptor handle, enum v4l2_buf_type type);
 	void close();
 
 	const char *driverName() const { return caps_.driver(); }

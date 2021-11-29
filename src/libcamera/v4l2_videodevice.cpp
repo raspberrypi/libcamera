@@ -612,16 +612,14 @@ int V4L2VideoDevice::open()
  * its type from the capabilities. This can be used to force a given device type
  * for memory-to-memory devices.
  *
- * The file descriptor \a handle is duplicated, and the caller is responsible
- * for closing the \a handle when it has no further use for it. The close()
- * function will close the duplicated file descriptor, leaving \a handle
- * untouched.
+ * The file descriptor \a handle is duplicated, no reference to the original
+ * handle is kept.
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2VideoDevice::open(int handle, enum v4l2_buf_type type)
+int V4L2VideoDevice::open(FileDescriptor handle, enum v4l2_buf_type type)
 {
-	UniqueFD newFd(dup(handle));
+	UniqueFD newFd = handle.dup();
 	if (!newFd.isValid()) {
 		LOG(V4L2, Error) << "Failed to duplicate file handle: "
 				 << strerror(errno);
@@ -1900,12 +1898,10 @@ int V4L2M2MDevice::open()
 
 	/*
 	 * The output and capture V4L2VideoDevice instances use the same file
-	 * handle for the same device node. The local file handle can be closed
-	 * as the V4L2VideoDevice::open() retains a handle by duplicating the
-	 * fd passed in.
+	 * handle for the same device node.
 	 */
-	UniqueFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
-			    O_RDWR | O_NONBLOCK));
+	FileDescriptor fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
+				  O_RDWR | O_NONBLOCK));
 	if (!fd.isValid()) {
 		ret = -errno;
 		LOG(V4L2, Error) << "Failed to open V4L2 M2M device: "
@@ -1913,11 +1909,11 @@ int V4L2M2MDevice::open()
 		return ret;
 	}
 
-	ret = output_->open(fd.get(), V4L2_BUF_TYPE_VIDEO_OUTPUT);
+	ret = output_->open(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT);
 	if (ret)
 		goto err;
 
-	ret = capture_->open(fd.get(), V4L2_BUF_TYPE_VIDEO_CAPTURE);
+	ret = capture_->open(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE);
 	if (ret)
 		goto err;
 

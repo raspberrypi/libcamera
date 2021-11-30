@@ -53,7 +53,7 @@ static constexpr uint32_t kNumStartupFrames = 10;
 static constexpr double kRelativeLuminanceTarget = 0.4;
 
 Agc::Agc()
-	: frameCount_(0), filteredExposure_(0s)
+	: frameCount_(0), numCells_(0), filteredExposure_(0s)
 {
 }
 

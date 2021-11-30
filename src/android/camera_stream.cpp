@@ -22,6 +22,7 @@
 #include "camera_capabilities.h"
 #include "camera_device.h"
 #include "camera_metadata.h"
+#include "frame_buffer_allocator.h"
 #include "post_processor.h"
 
 using namespace libcamera;
@@ -59,7 +60,15 @@ CameraStream::CameraStream(CameraDevice *const cameraDevice,
 
 CameraStream::CameraStream(CameraStream &&other) = default;
 
-CameraStream::~CameraStream() = default;
+CameraStream::~CameraStream()
+{
+	/*
+	 * Manually delete buffers and then the allocator to make sure buffers
+	 * are released while the allocator is still valid.
+	 */
+	allocatedBuffers_.clear();
+	allocator_.reset();
+}
 
 const StreamConfiguration &CameraStream::configuration() const
 {
@@ -118,17 +127,8 @@ int CameraStream::configure()
 	}
 
 	if (type_ == Type::Internal) {
-		allocator_ = std::make_unique<FrameBufferAllocator>(cameraDevice_->camera());
+		allocator_ = std::make_unique<PlatformFrameBufferAllocator>(cameraDevice_);
 		mutex_ = std::make_unique<Mutex>();
-
-		int ret = allocator_->allocate(stream());
-		if (ret < 0)
-			return ret;
-
-		MutexLocker lock(*mutex_);
-		/* Save a pointer to the reserved frame buffers */
-		for (const auto &frameBuffer : allocator_->buffers(stream()))
-			buffers_.push_back(frameBuffer.get());
 	}
 
 	camera3Stream_->max_buffers = configuration().bufferCount;
@@ -212,8 +212,20 @@ FrameBuffer *CameraStream::getBuffer()
 	MutexLocker locker(*mutex_);
 
 	if (buffers_.empty()) {
-		LOG(HAL, Error) << "Buffer underrun";
-		return nullptr;
+		/*
+		 * Use HAL_PIXEL_FORMAT_YCBCR_420_888 unconditionally.
+		 *
+		 * YCBCR_420 is the source format for both the JPEG and the YUV
+		 * post-processors.
+		 *
+		 * \todo Store a reference to the format of the source stream
+		 * instead of hardcoding.
+		 */
+		auto frameBuffer = allocator_->allocate(HAL_PIXEL_FORMAT_YCBCR_420_888,
+							configuration().size,
+							camera3Stream_->usage);
+		allocatedBuffers_.push_back(std::move(frameBuffer));
+		buffers_.emplace_back(allocatedBuffers_.back().get());
 	}
 
 	FrameBuffer *buffer = buffers_.back();

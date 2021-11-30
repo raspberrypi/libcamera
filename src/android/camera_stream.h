@@ -18,7 +18,6 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
-#include <libcamera/framebuffer_allocator.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
@@ -26,6 +25,7 @@
 #include "post_processor.h"
 
 class CameraDevice;
+class PlatformFrameBufferAllocator;
 
 class CameraStream
 {
@@ -169,7 +169,8 @@ private:
 	camera3_stream_t *camera3Stream_;
 	const unsigned int index_;
 
-	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
+	std::unique_ptr<PlatformFrameBufferAllocator> allocator_;
+	std::vector<std::unique_ptr<libcamera::FrameBuffer>> allocatedBuffers_;
 	std::vector<libcamera::FrameBuffer *> buffers_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	/*
 	 * The class has to be MoveConstructible as instances are stored in

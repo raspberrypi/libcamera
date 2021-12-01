@@ -1248,18 +1248,25 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	/* Decide how many internal buffers to allocate. */
 	for (auto const stream : data->streams_) {
 		unsigned int numBuffers;
-
-		if (stream == &data->unicam_[Unicam::Image] ||
-		    stream == &data->unicam_[Unicam::Embedded]) {
+		/*
+		 * For Unicam, allocate a minimum of 4 buffers as we want
+		 * to avoid any frame drops.
+		 */
+		constexpr unsigned int minBuffers = 4;
+		if (stream == &data->unicam_[Unicam::Image]) {
 			/*
-			 * For Unicam, allocate a minimum of 4 buffers as we want
-			 * to avoid any frame drops. If an application has configured
-			 * a RAW stream, allocate additional buffers to make up the
-			 * minimum, but ensure we have at least 2 sets of internal
-			 * buffers to use to minimise frame drops.
+			 * If an application has configured a RAW stream, allocate
+			 * additional buffers to make up the minimum, but ensure
+			 * we have at least 2 sets of internal buffers to use to
+			 * minimise frame drops.
 			 */
-			constexpr unsigned int minBuffers = 4;
 			numBuffers = std::max<int>(2, minBuffers - numRawBuffers);
+		} else if (stream == &data->unicam_[Unicam::Embedded]) {
+			/*
+			 * Embedded data buffers are (currently) for internal use,
+			 * so allocate the minimum required to avoid frame drops.
+			 */
+			numBuffers = minBuffers;
 		} else {
 			/*
 			 * Since the ISP runs synchronous with the IPA and requests,

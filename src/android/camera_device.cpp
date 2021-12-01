@@ -436,7 +436,11 @@ void CameraDevice::stop()
 	worker_.stop();
 	camera_->stop();
 
-	descriptors_ = {};
+	{
+		MutexLocker descriptorsLock(descriptorsMutex_);
+		descriptors_ = {};
+	}
+
 	streams_.clear();
 
 	state_ = State::Stopped;
@@ -933,6 +937,9 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		 */
 		FrameBuffer *frameBuffer = nullptr;
 		int acquireFence = -1;
+
+		MutexLocker lock(descriptor->streamsProcessMutex_);
+
 		switch (cameraStream->type()) {
 		case CameraStream::Type::Mapped:
 			/*

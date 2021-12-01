@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <condition_variable>
-
 #include <libcamera/base/private.h>
 #include <libcamera/base/thread.h>
 
@@ -26,7 +24,7 @@ public:
 
 private:
 	Mutex mutex_;
-	std::condition_variable cv_;
+	ConditionVariable cv_;
 	unsigned int available_;
 };
 

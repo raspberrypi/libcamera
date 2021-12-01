@@ -8,7 +8,6 @@
 #include <libcamera/base/thread.h>
 
 #include <atomic>
-#include <condition_variable>
 #include <list>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -158,7 +157,7 @@ private:
 
 	std::atomic<EventDispatcher *> dispatcher_;
 
-	std::condition_variable cv_;
+	ConditionVariable cv_;
 	std::atomic<bool> exit_;
 	int exitCode_;
 
@@ -204,6 +203,11 @@ ThreadData *ThreadData::current()
 	currentThreadData = data;
 	return data;
 }
+
+/**
+ * \typedef ConditionVariable
+ * \brief An alias for std::condition_variable
+ */
 
 /**
  * \typedef Mutex

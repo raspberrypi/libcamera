@@ -7,7 +7,6 @@
 
 #include <libcamera/camera_manager.h>
 
-#include <condition_variable>
 #include <map>
 
 #include <libcamera/camera.h>
@@ -63,7 +62,7 @@ private:
 	void createPipelineHandlers();
 	void cleanup();
 
-	std::condition_variable cv_;
+	ConditionVariable cv_;
 	bool initialized_;
 	int status_;
 

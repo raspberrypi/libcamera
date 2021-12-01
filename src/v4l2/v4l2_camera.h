@@ -82,6 +82,6 @@ private:
 	int efd_;
 
 	libcamera::Mutex bufferMutex_;
-	std::condition_variable bufferCV_;
+	libcamera::ConditionVariable bufferCV_;
 	unsigned int bufferAvailableCount_;
 };

@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -154,7 +153,7 @@ private:
 		PostProcessor *postProcessor_;
 
 		libcamera::Mutex mutex_;
-		std::condition_variable cv_;
+		libcamera::ConditionVariable cv_;
 
 		std::queue<Camera3RequestDescriptor::StreamBuffer *> requests_;
 		State state_ = State::Stopped;

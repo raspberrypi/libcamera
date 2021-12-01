@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <sys/types.h>
@@ -26,6 +27,7 @@ class Object;
 class ThreadData;
 class ThreadMain;
 
+using ConditionVariable = std::condition_variable;
 using Mutex = std::mutex;
 using MutexLocker = std::unique_lock<std::mutex>;
 

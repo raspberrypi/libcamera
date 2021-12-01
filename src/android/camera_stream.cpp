@@ -275,7 +275,7 @@ void CameraStream::PostProcessorWorker::run()
 	MutexLocker locker(mutex_);
 
 	while (1) {
-		cv_.wait(locker, [&] {
+		cv_.wait(locker, [&]() LIBCAMERA_TSA_REQUIRES(mutex_) {
 			return state_ != State::Running || !requests_.empty();
 		});
 

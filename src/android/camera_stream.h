@@ -155,8 +155,10 @@ private:
 		libcamera::Mutex mutex_;
 		libcamera::ConditionVariable cv_;
 
-		std::queue<Camera3RequestDescriptor::StreamBuffer *> requests_;
-		State state_ = State::Stopped;
+		std::queue<Camera3RequestDescriptor::StreamBuffer *> requests_
+			LIBCAMERA_TSA_GUARDED_BY(mutex_);
+
+		State state_ LIBCAMERA_TSA_GUARDED_BY(mutex_) = State::Stopped;
 	};
 
 	int waitFence(int fence);
@@ -168,7 +170,7 @@ private:
 	const unsigned int index_;
 
 	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
-	std::vector<libcamera::FrameBuffer *> buffers_;
+	std::vector<libcamera::FrameBuffer *> buffers_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	/*
 	 * The class has to be MoveConstructible as instances are stored in
 	 * an std::vector in CameraDevice.

@@ -11,6 +11,7 @@ libcamera_base_sources = files([
     'flags.cpp',
     'log.cpp',
     'message.cpp',
+    'mutex.cpp',
     'object.cpp',
     'semaphore.cpp',
     'signal.cpp',

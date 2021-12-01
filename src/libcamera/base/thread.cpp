@@ -205,21 +205,6 @@ ThreadData *ThreadData::current()
 }
 
 /**
- * \typedef ConditionVariable
- * \brief An alias for std::condition_variable
- */
-
-/**
- * \typedef Mutex
- * \brief An alias for std::mutex
- */
-
-/**
- * \typedef MutexLocker
- * \brief An alias for std::unique_lock<std::mutex>
- */
-
-/**
  * \class Thread
  * \brief A thread of execution
  *

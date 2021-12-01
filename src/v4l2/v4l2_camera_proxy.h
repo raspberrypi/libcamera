@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/base/thread.h>
+#include <libcamera/base/mutex.h>
 
 #include <libcamera/camera.h>
 
@@ -59,7 +59,7 @@ private:
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
-			 libcamera::Mutex *lock);
+			 libcamera::Mutex *lock) LIBCAMERA_TSA_REQUIRES(*lock);
 	int vidioc_streamon(V4L2CameraFile *file, int *arg);
 	int vidioc_streamoff(V4L2CameraFile *file, int *arg);
 

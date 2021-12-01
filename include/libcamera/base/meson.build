@@ -13,6 +13,7 @@ libcamera_base_headers = files([
     'flags.h',
     'log.h',
     'message.h',
+    'mutex.h',
     'object.h',
     'private.h',
     'semaphore.h',

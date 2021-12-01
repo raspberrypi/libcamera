@@ -7,15 +7,14 @@
 
 #pragma once
 
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <sys/types.h>
 #include <thread>
 
 #include <libcamera/base/private.h>
 
 #include <libcamera/base/message.h>
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 
@@ -26,10 +25,6 @@ class Message;
 class Object;
 class ThreadData;
 class ThreadMain;
-
-using ConditionVariable = std::condition_variable;
-using Mutex = std::mutex;
-using MutexLocker = std::unique_lock<std::mutex>;
 
 class Thread
 {

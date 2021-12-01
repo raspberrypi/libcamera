@@ -10,8 +10,8 @@
 #include <deque>
 #include <utility>
 
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/semaphore.h>
-#include <libcamera/base/thread.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/file_descriptor.h>

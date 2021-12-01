@@ -7,7 +7,7 @@
 
 #include <libcamera/base/signal.h>
 
-#include <libcamera/base/thread.h>
+#include <libcamera/base/mutex.h>
 
 /**
  * \file base/signal.h

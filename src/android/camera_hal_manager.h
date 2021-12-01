@@ -17,7 +17,7 @@
 #include <system/camera_metadata.h>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/thread.h>
+#include <libcamera/base/mutex.h>
 
 #include <libcamera/camera_manager.h>
 

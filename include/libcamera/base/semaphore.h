@@ -8,7 +8,8 @@
 #pragma once
 
 #include <libcamera/base/private.h>
-#include <libcamera/base/thread.h>
+
+#include <libcamera/base/mutex.h>
 
 namespace libcamera {
 

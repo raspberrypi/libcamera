@@ -6,7 +6,6 @@
  */
 
 #include <libcamera/base/semaphore.h>
-#include <libcamera/base/thread.h>
 
 /**
  * \file base/semaphore.h

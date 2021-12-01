@@ -14,6 +14,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <libcamera/base/utils.h>
+
 #define LIBCAMERA_PUBLIC __attribute__((visibility("default")))
 
 using namespace libcamera;

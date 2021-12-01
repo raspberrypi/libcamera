@@ -14,7 +14,6 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>

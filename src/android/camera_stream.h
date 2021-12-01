@@ -13,6 +13,7 @@
 
 #include <hardware/camera3.h>
 
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/thread.h>
 
 #include <libcamera/camera.h>

@@ -17,6 +17,7 @@
 #include <libcamera/base/event_dispatcher_poll.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/message.h>
+#include <libcamera/base/mutex.h>
 
 /**
  * \page thread Thread Support

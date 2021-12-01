@@ -14,7 +14,6 @@
 #include <libcamera/base/private.h>
 
 #include <libcamera/base/message.h>
-#include <libcamera/base/mutex.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 

@@ -12,6 +12,7 @@
 #include <libcamera/camera.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 

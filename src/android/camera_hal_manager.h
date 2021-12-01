@@ -53,14 +53,14 @@ private:
 	void cameraAdded(std::shared_ptr<libcamera::Camera> cam);
 	void cameraRemoved(std::shared_ptr<libcamera::Camera> cam);
 
-	CameraDevice *cameraDeviceFromHalId(unsigned int id);
+	CameraDevice *cameraDeviceFromHalId(unsigned int id) LIBCAMERA_TSA_REQUIRES(mutex_);
 
 	std::unique_ptr<libcamera::CameraManager> cameraManager_;
 	CameraHalConfig halConfig_;
 
 	const camera_module_callbacks_t *callbacks_;
-	std::vector<std::unique_ptr<CameraDevice>> cameras_;
-	std::map<std::string, unsigned int> cameraIdsMap_;
+	std::vector<std::unique_ptr<CameraDevice>> cameras_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
+	std::map<std::string, unsigned int> cameraIdsMap_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	libcamera::Mutex mutex_;
 
 	unsigned int numInternalCameras_;

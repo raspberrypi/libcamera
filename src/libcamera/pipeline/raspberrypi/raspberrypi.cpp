@@ -6,6 +6,7 @@
  */
 #include <algorithm>
 #include <assert.h>
+#include <cmath>
 #include <fcntl.h>
 #include <memory>
 #include <mutex>
@@ -48,6 +49,8 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(RPI)
 
 namespace {
+
+constexpr unsigned int defaultRawBitDepth = 12;
 
 /* Map of mbus codes to supported sizes reported by the sensor. */
 using SensorFormats = std::map<unsigned int, std::vector<Size>>;
@@ -125,15 +128,13 @@ double scoreFormat(double desired, double actual)
 	return score;
 }
 
-V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &req)
+V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &req, unsigned int bitDepth)
 {
 	double bestScore = std::numeric_limits<double>::max(), score;
 	V4L2SubdeviceFormat bestFormat;
 
-#define PENALTY_AR		1500.0
-#define PENALTY_8BIT		2000.0
-#define PENALTY_10BIT		1000.0
-#define PENALTY_12BIT		   0.0
+	constexpr float penaltyAr = 1500.0;
+	constexpr float penaltyBitDepth = 500.0;
 
 	/* Calculate the closest/best mode from the user requested size. */
 	for (const auto &iter : formatsMap) {
@@ -149,15 +150,10 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 			/* Score the dimensions for closeness. */
 			score = scoreFormat(req.width, size.width);
 			score += scoreFormat(req.height, size.height);
-			score += PENALTY_AR * scoreFormat(reqAr, fmtAr);
+			score += penaltyAr * scoreFormat(reqAr, fmtAr);
 
 			/* Add any penalties... this is not an exact science! */
-			if (info.bitsPerPixel == 12)
-				score += PENALTY_12BIT;
-			else if (info.bitsPerPixel == 10)
-				score += PENALTY_10BIT;
-			else if (info.bitsPerPixel == 8)
-				score += PENALTY_8BIT;
+			score += std::abs(static_cast<int>(info.bitsPerPixel - bitDepth)) * penaltyBitDepth;
 
 			if (score <= bestScore) {
 				bestScore = score;
@@ -397,9 +393,14 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 * Calculate the best sensor mode we can use based on
 			 * the user request.
 			 */
-			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size);
+			const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
+			unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
+			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
+			BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
+			if (info.isValid() && !info.packed)
+				packing = BayerFormat::Packing::None;
 			V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(sensorFormat,
-									   BayerFormat::Packing::CSI2);
+									   packing);
 			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&unicamFormat);
 			if (ret)
 				return Invalid;
@@ -533,7 +534,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 		switch (role) {
 		case StreamRole::Raw:
 			size = data->sensor_->resolution();
-			sensorFormat = findBestFormat(data->sensorFormats_, size);
+			sensorFormat = findBestFormat(data->sensorFormats_, size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
 							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
@@ -622,6 +623,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	Size maxSize, sensorSize;
 	unsigned int maxIndex = 0;
 	bool rawStream = false;
+	unsigned int bitDepth = defaultRawBitDepth;
 
 	/*
 	 * Look for the RAW stream (if given) size as well as the largest
@@ -638,7 +640,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 			sensorSize = cfg.size;
 			rawStream = true;
 			/* Check if the user has explicitly set an unpacked format. */
-			packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
+			BayerFormat bayerFormat = BayerFormat::fromPixelFormat(cfg.pixelFormat);
+			packing = bayerFormat.packing;
+			bitDepth = bayerFormat.bitDepth;
 		} else {
 			if (cfg.size > maxSize) {
 				maxSize = config->at(i).size;
@@ -664,7 +668,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	}
 
 	/* First calculate the best sensor mode we can use based on the user request. */
-	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_, rawStream ? sensorSize : maxSize);
+	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_, rawStream ? sensorSize : maxSize, bitDepth);
 	ret = data->sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;

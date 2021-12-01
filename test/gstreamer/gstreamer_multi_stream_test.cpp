@@ -15,6 +15,14 @@
 #include "gstreamer_test.h"
 #include "test.h"
 
+#if !GST_CHECK_VERSION(1, 19, 1)
+static inline GstPad *gst_element_request_pad_simple(GstElement *element,
+						     const gchar *name)
+{
+	return gst_element_get_request_pad(element, name);
+}
+#endif
+
 using namespace std;
 
 class GstreamerMultiStreamTest : public GstreamerTest, public Test
@@ -87,7 +95,7 @@ protected:
 				 stream0_, stream1_, NULL);
 
 		g_autoptr(GstPad) src_pad = gst_element_get_static_pad(libcameraSrc_, "src");
-		g_autoptr(GstPad) request_pad = gst_element_get_request_pad(libcameraSrc_, "src_%u");
+		g_autoptr(GstPad) request_pad = gst_element_request_pad_simple(libcameraSrc_, "src_%u");
 
 		{
 			g_autoptr(GstPad) queue0_sink_pad = gst_element_get_static_pad(stream0_, "sink");

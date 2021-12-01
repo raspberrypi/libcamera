@@ -13,7 +13,6 @@
 #endif
 
 #ifdef HAVE_DW
-#include <cxxabi.h>
 #include <elfutils/libdwfl.h>
 #include <unistd.h>
 #endif
@@ -27,6 +26,7 @@
 #include <libunwind.h>
 #endif
 
+#include <cxxabi.h>
 #include <sstream>
 
 #include <libcamera/base/span.h>

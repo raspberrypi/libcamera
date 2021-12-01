@@ -119,7 +119,7 @@ int CameraStream::configure()
 
 	if (type_ == Type::Internal) {
 		allocator_ = std::make_unique<FrameBufferAllocator>(cameraDevice_->camera());
-		mutex_ = std::make_unique<std::mutex>();
+		mutex_ = std::make_unique<Mutex>();
 
 		int ret = allocator_->allocate(stream());
 		if (ret < 0)
@@ -208,7 +208,7 @@ FrameBuffer *CameraStream::getBuffer()
 	if (!allocator_)
 		return nullptr;
 
-	std::lock_guard<std::mutex> locker(*mutex_);
+	MutexLocker locker(*mutex_);
 
 	if (buffers_.empty()) {
 		LOG(HAL, Error) << "Buffer underrun";
@@ -226,7 +226,7 @@ void CameraStream::putBuffer(FrameBuffer *buffer)
 	if (!allocator_)
 		return;
 
-	std::lock_guard<std::mutex> locker(*mutex_);
+	MutexLocker locker(*mutex_);
 
 	buffers_.push_back(buffer);
 }
@@ -239,7 +239,7 @@ CameraStream::PostProcessorWorker::PostProcessorWorker(PostProcessor *postProces
 CameraStream::PostProcessorWorker::~PostProcessorWorker()
 {
 	{
-		libcamera::MutexLocker lock(mutex_);
+		MutexLocker lock(mutex_);
 		state_ = State::Stopped;
 	}
 
@@ -250,7 +250,7 @@ CameraStream::PostProcessorWorker::~PostProcessorWorker()
 void CameraStream::PostProcessorWorker::start()
 {
 	{
-		libcamera::MutexLocker lock(mutex_);
+		MutexLocker lock(mutex_);
 		ASSERT(state_ != State::Running);
 		state_ = State::Running;
 	}
@@ -308,7 +308,7 @@ void CameraStream::PostProcessorWorker::run()
 
 void CameraStream::PostProcessorWorker::flush()
 {
-	libcamera::MutexLocker lock(mutex_);
+	MutexLocker lock(mutex_);
 	state_ = State::Flushing;
 	lock.unlock();
 

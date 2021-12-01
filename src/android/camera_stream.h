@@ -8,7 +8,6 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <vector>
 
@@ -173,7 +172,7 @@ private:
 	 * The class has to be MoveConstructible as instances are stored in
 	 * an std::vector in CameraDevice.
 	 */
-	std::unique_ptr<std::mutex> mutex_;
+	std::unique_ptr<libcamera::Mutex> mutex_;
 	std::unique_ptr<PostProcessor> postProcessor_;
 
 	std::unique_ptr<PostProcessorWorker> worker_;

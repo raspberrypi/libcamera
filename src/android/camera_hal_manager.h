@@ -8,7 +8,6 @@
 #pragma once
 
 #include <map>
-#include <mutex>
 #include <stddef.h>
 #include <tuple>
 #include <vector>
@@ -18,6 +17,7 @@
 #include <system/camera_metadata.h>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/thread.h>
 
 #include <libcamera/camera_manager.h>
 
@@ -44,9 +44,6 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraHalManager)
 
-	using Mutex = std::mutex;
-	using MutexLocker = std::unique_lock<std::mutex>;
-
 	static constexpr unsigned int firstExternalCameraId_ = 1000;
 
 	CameraHalManager();
@@ -64,7 +61,7 @@ private:
 	const camera_module_callbacks_t *callbacks_;
 	std::vector<std::unique_ptr<CameraDevice>> cameras_;
 	std::map<std::string, unsigned int> cameraIdsMap_;
-	Mutex mutex_;
+	libcamera::Mutex mutex_;
 
 	unsigned int numInternalCameras_;
 	unsigned int nextExternalCameraId_;

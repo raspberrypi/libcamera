@@ -9,10 +9,10 @@
 
 #include <map>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/thread.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
@@ -58,7 +58,7 @@ public:
 
 	/* Keeps track of streams requiring post-processing. */
 	std::map<CameraStream *, StreamBuffer *> pendingStreamsToProcess_;
-	std::mutex streamsProcessMutex_;
+	libcamera::Mutex streamsProcessMutex_;
 
 	Camera3RequestDescriptor(libcamera::Camera *camera,
 				 const camera3_capture_request_t *camera3Request);

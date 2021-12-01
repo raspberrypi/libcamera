@@ -125,6 +125,7 @@ int CameraStream::configure()
 		if (ret < 0)
 			return ret;
 
+		MutexLocker lock(*mutex_);
 		/* Save a pointer to the reserved frame buffers */
 		for (const auto &frameBuffer : allocator_->buffers(stream()))
 			buffers_.push_back(frameBuffer.get());

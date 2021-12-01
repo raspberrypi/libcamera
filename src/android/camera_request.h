@@ -57,7 +57,8 @@ public:
 	};
 
 	/* Keeps track of streams requiring post-processing. */
-	std::map<CameraStream *, StreamBuffer *> pendingStreamsToProcess_;
+	std::map<CameraStream *, StreamBuffer *> pendingStreamsToProcess_
+		LIBCAMERA_TSA_GUARDED_BY(streamsProcessMutex_);
 	libcamera::Mutex streamsProcessMutex_;
 
 	Camera3RequestDescriptor(libcamera::Camera *camera,

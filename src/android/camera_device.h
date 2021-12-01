@@ -82,7 +82,7 @@ private:
 		Running,
 	};
 
-	void stop();
+	void stop() LIBCAMERA_TSA_EXCLUDES(stateMutex_);
 
 	std::unique_ptr<libcamera::FrameBuffer>
 	createFrameBuffer(const buffer_handle_t camera3buffer,
@@ -94,8 +94,9 @@ private:
 	void notifyError(uint32_t frameNumber, camera3_stream_t *stream,
 			 camera3_error_msg_code code) const;
 	int processControls(Camera3RequestDescriptor *descriptor);
-	void completeDescriptor(Camera3RequestDescriptor *descriptor);
-	void sendCaptureResults();
+	void completeDescriptor(Camera3RequestDescriptor *descriptor)
+		LIBCAMERA_TSA_EXCLUDES(descriptorsMutex_);
+	void sendCaptureResults() LIBCAMERA_TSA_REQUIRES(descriptorsMutex_);
 	void setBufferStatus(Camera3RequestDescriptor::StreamBuffer &buffer,
 			     Camera3RequestDescriptor::Status status);
 	std::unique_ptr<CameraMetadata> getResultMetadata(
@@ -107,7 +108,7 @@ private:
 	CameraWorker worker_;
 
 	libcamera::Mutex stateMutex_; /* Protects access to the camera state. */
-	State state_;
+	State state_ LIBCAMERA_TSA_GUARDED_BY(stateMutex_);
 
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
@@ -118,8 +119,9 @@ private:
 
 	std::vector<CameraStream> streams_;
 
-	libcamera::Mutex descriptorsMutex_; /* Protects descriptors_. */
-	std::queue<std::unique_ptr<Camera3RequestDescriptor>> descriptors_;
+	libcamera::Mutex descriptorsMutex_ LIBCAMERA_TSA_ACQUIRED_AFTER(stateMutex_);
+	std::queue<std::unique_ptr<Camera3RequestDescriptor>> descriptors_
+		LIBCAMERA_TSA_GUARDED_BY(descriptorsMutex_);
 
 	std::string maker_;
 	std::string model_;

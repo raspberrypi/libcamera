@@ -575,7 +575,7 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 }
 
 int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
-				  MutexLocker *locker)
+				  Mutex *lock)
 {
 	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
 
@@ -593,9 +593,9 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 		return -EINVAL;
 
 	if (!file->nonBlocking()) {
-		locker->unlock();
+		lock->unlock();
 		vcam_->waitForBufferAvailable();
-		locker->lock();
+		lock->lock();
 	} else if (!vcam_->isBufferAvailable())
 		return -EAGAIN;
 
@@ -753,7 +753,7 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 		ret = vidioc_qbuf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_DQBUF:
-		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg), &locker);
+		ret = vidioc_dqbuf(file, static_cast<struct v4l2_buffer *>(arg), &proxyMutex_);
 		break;
 	case VIDIOC_STREAMON:
 		ret = vidioc_streamon(file, static_cast<int *>(arg));

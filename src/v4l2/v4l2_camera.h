@@ -8,10 +8,10 @@
 #pragma once
 
 #include <deque>
-#include <mutex>
 #include <utility>
 
 #include <libcamera/base/semaphore.h>
+#include <libcamera/base/thread.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/file_descriptor.h>
@@ -71,7 +71,7 @@ private:
 
 	bool isRunning_;
 
-	std::mutex bufferLock_;
+	libcamera::Mutex bufferLock_;
 	libcamera::FrameBufferAllocator *bufferAllocator_;
 
 	std::vector<std::unique_ptr<libcamera::Request>> requestPool_;

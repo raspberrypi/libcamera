@@ -21,3 +21,4 @@
    Tracing guide <guides/tracing>
    Environment variables <environment_variables>
    Sensor driver requirements <sensor_driver_requirements>
+   Lens driver requirements <lens_driver_requirements>

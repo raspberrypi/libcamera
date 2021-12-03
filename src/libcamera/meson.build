@@ -5,6 +5,7 @@ libcamera_sources = files([
     'byte_stream_buffer.cpp',
     'camera.cpp',
     'camera_controls.cpp',
+    'camera_lens.cpp',
     'camera_manager.cpp',
     'camera_sensor.cpp',
     'camera_sensor_properties.cpp',

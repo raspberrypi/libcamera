@@ -66,6 +66,7 @@ if sphinx.found()
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',
+        'lens_driver_requirements.rst',
         'sensor_driver_requirements.rst',
        '../README.rst',
     ]

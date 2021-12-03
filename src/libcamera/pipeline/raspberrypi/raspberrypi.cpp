@@ -589,12 +589,23 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			return nullptr;
 		}
 
-		/* Translate the V4L2PixelFormat to PixelFormat. */
 		std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-		for (const auto &format : fmts) {
-			PixelFormat pf = format.first.toPixelFormat();
-			if (pf.isValid())
-				deviceFormats[pf] = format.second;
+		if (role == StreamRole::Raw) {
+			/* Translate the MBUS codes to a PixelFormat. */
+			for (const auto &format : data->sensorFormats_) {
+				PixelFormat pf = mbusCodeToPixelFormat(format.first,
+								       BayerFormat::Packing::CSI2);
+				if (pf.isValid())
+					deviceFormats.emplace(std::piecewise_construct,	std::forward_as_tuple(pf),
+						std::forward_as_tuple(format.second.begin(), format.second.end()));
+			}
+		} else {
+			/* Translate the V4L2PixelFormat to PixelFormat. */
+			for (const auto &format : fmts) {
+				PixelFormat pf = format.first.toPixelFormat();
+				if (pf.isValid())
+					deviceFormats[pf] = format.second;
+			}
 		}
 
 		/* Add the stream format based on the device node used for the use case. */

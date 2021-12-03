@@ -20,6 +20,7 @@
 #include <libcamera/base/utils.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
@@ -786,6 +787,14 @@ void CameraSensor::updateControlInfo()
 {
 	subdev_->updateControlInfo();
 }
+
+/**
+ * \fn CameraSensor::focusLens_()
+ * \brief Retrieve the focus lens controller
+ *
+ * \return The focus lens controller. nullptr if no focus lens controller is
+ * connected to the sensor
+ */
 
 std::string CameraSensor::logPrefix() const
 {

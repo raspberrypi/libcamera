@@ -24,6 +24,7 @@
 namespace libcamera {
 
 class BayerFormat;
+class CameraLens;
 class MediaEntity;
 
 class CameraSensor : protected Loggable
@@ -60,6 +61,8 @@ public:
 
 	void updateControlInfo();
 
+	CameraLens *focusLens() { return focusLens_.get(); }
+
 protected:
 	std::string logPrefix() const override;
 
@@ -91,6 +94,8 @@ private:
 	const BayerFormat *bayerFormat_;
 
 	ControlList properties_;
+
+	std::unique_ptr<CameraLens> focusLens_;
 };
 
 } /* namespace libcamera */

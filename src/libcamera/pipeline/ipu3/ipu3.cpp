@@ -1242,13 +1242,19 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 		const ControlList &sensorControls = action.sensorControls;
 		delayedCtrls_->push(sensorControls);
 
+		CameraLens *focusLens = cio2_.sensor()->focusLens();
+		if (!focusLens)
+			break;
+
 		const ControlList lensControls = action.lensControls;
+		if (!lensControls.contains(V4L2_CID_FOCUS_ABSOLUTE))
+			break;
+
 		const ControlValue &focusValue =
 			lensControls.get(V4L2_CID_FOCUS_ABSOLUTE);
 
-		CameraLens *focusLens = cio2_.sensor()->focusLens();
-		if (focusLens && !focusValue.isNone())
-			focusLens->setFocusPostion(focusValue.get<int32_t>());
+		focusLens->setFocusPostion(focusValue.get<int32_t>());
+
 		break;
 	}
 	case ipa::ipu3::ActionParamFilled: {

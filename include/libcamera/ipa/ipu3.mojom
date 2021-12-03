@@ -24,12 +24,14 @@ struct IPU3Event {
 	uint32 bufferId;
 	libcamera.ControlList controls;
 	libcamera.ControlList sensorControls;
+	libcamera.ControlList lensControls;
 };
 
 struct IPU3Action {
 	IPU3Operations op;
 	libcamera.ControlList controls;
 	libcamera.ControlList sensorControls;
+	libcamera.ControlList lensControls;
 };
 
 struct IPAConfigInfo {

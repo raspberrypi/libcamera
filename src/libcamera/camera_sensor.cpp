@@ -789,7 +789,7 @@ void CameraSensor::updateControlInfo()
 }
 
 /**
- * \fn CameraSensor::focusLens_()
+ * \fn CameraSensor::focusLens()
  * \brief Retrieve the focus lens controller
  *
  * \return The focus lens controller. nullptr if no focus lens controller is

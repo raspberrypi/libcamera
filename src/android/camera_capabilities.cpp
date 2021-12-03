@@ -648,7 +648,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 			int64_t maxFrameDuration = frameDurations->second.max().get<int64_t>() * 1000;
 
 			/*
-			 * Cap min frame duration to 30 FPS.
+			 * Cap min frame duration to 30 FPS with 1% tolerance.
 			 *
 			 * 30 frames per second has been validated as the most
 			 * opportune frame rate for quality tuning, and power
@@ -667,8 +667,18 @@ int CameraCapabilities::initializeStreamConfigurations()
 			 * control to be specified for each Request. Defer this
 			 * to the in-development configuration API rework.
 			 */
-			if (minFrameDuration < 1e9 / 30.0)
-				minFrameDuration = 1e9 / 30.0;
+			int64_t minFrameDurationCap = 1e9 / 30.0;
+			if (minFrameDuration < minFrameDurationCap) {
+				float tolerance =
+					(minFrameDurationCap - minFrameDuration) * 100.0 / minFrameDurationCap;
+
+				/*
+				 * If the tolerance is less than 1%, do not cap
+				 * the frame duration.
+				 */
+				if (tolerance > 1.0)
+					minFrameDuration = minFrameDurationCap;
+			}
 
 			streamConfigurations_.push_back({
 				res, androidFormat, minFrameDuration, maxFrameDuration,

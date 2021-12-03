@@ -61,6 +61,8 @@ public:
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 		      Whence whence = ActiveFormat);
 
+	const std::string &model();
+
 	static std::unique_ptr<V4L2Subdevice>
 	fromEntityName(const MediaDevice *media, const std::string &entity);
 
@@ -75,6 +77,8 @@ private:
 					    unsigned int code);
 
 	const MediaEntity *entity_;
+
+	std::string model_;
 };
 
 } /* namespace libcamera */

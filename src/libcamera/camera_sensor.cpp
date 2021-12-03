@@ -13,7 +13,6 @@
 #include <iomanip>
 #include <limits.h>
 #include <math.h>
-#include <regex>
 #include <string.h>
 
 #include <libcamera/property_ids.h>
@@ -347,34 +346,7 @@ void CameraSensor::initTestPatternModes(
 
 int CameraSensor::initProperties()
 {
-	/*
-	 * Extract the camera sensor model name from the media entity name.
-	 *
-	 * There is no standardized naming scheme for sensor entities in the
-	 * Linux kernel at the moment.
-	 *
-	 * - The most common rule, used by I2C sensors, associates the model
-	 *   name with the I2C bus number and address (e.g. 'imx219 0-0010').
-	 *
-	 * - When the sensor exposes multiple subdevs, the model name is
-	 *   usually followed by a function name, as in the smiapp driver (e.g.
-	 *   'jt8ew9 pixel_array 0-0010').
-	 *
-	 * - The vimc driver names its sensors 'Sensor A' and 'Sensor B'.
-	 *
-	 * Other schemes probably exist. As a best effort heuristic, use the
-	 * part of the entity name before the first space if the name contains
-	 * an I2C address, and use the full entity name otherwise.
-	 */
-	std::string entityName = entity_->name();
-	std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
-	std::smatch match;
-
-	if (std::regex_search(entityName, match, i2cRegex))
-		model_ = entityName.substr(0, entityName.find(' '));
-	else
-		model_ = entityName;
-
+	model_ = subdev_->model();
 	properties_.set(properties::Model, utils::toAscii(model_));
 
 	/* Generate a unique ID for the sensor. */
@@ -832,7 +804,7 @@ int CameraSensor::generateId()
 	/*
 	 * Virtual sensors not described in firmware
 	 *
-	 * Verify it's a platform device and construct ID from the deive path
+	 * Verify it's a platform device and construct ID from the device path
 	 * and model of sensor.
 	 */
 	if (devPath.find("/sys/devices/platform/", 0) == 0) {

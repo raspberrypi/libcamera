@@ -695,12 +695,9 @@ bool MediaDevice::populateLinks(const struct media_v2_topology &topology)
 					   (topology.ptr_links);
 
 	for (unsigned int i = 0; i < topology.num_links; ++i) {
-		/*
-		 * Skip links between entities and interfaces: we only care
-		 * about pad-2-pad links here.
-		 */
-		if ((mediaLinks[i].flags & MEDIA_LNK_FL_LINK_TYPE) ==
-		    MEDIA_LNK_FL_INTERFACE_LINK)
+		/* We only care about pad-2-pad links here. */
+		if ((mediaLinks[i].flags & MEDIA_LNK_FL_LINK_TYPE) !=
+		    MEDIA_LNK_FL_DATA_LINK)
 			continue;
 
 		/* Store references to source and sink pads in the link. */

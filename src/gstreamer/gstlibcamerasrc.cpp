@@ -32,10 +32,10 @@
 #include <queue>
 #include <vector>
 
-#include <gst/base/base.h>
-
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+
+#include <gst/base/base.h>
 
 #include "gstlibcameraallocator.h"
 #include "gstlibcamerapad.h"

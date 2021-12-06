@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/geometry.h>
 
 namespace libcamera {
@@ -18,7 +19,7 @@ struct CameraSensorProperties {
 	static const CameraSensorProperties *get(const std::string &sensor);
 
 	Size unitCellSize;
-	std::map<int32_t, int32_t> testPatternModes;
+	std::map<controls::draft::TestPatternModeEnum, int32_t> testPatternModes;
 };
 
 } /* namespace libcamera */

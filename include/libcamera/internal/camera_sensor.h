@@ -14,8 +14,10 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/formats.h"
@@ -41,7 +43,7 @@ public:
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	const std::vector<Size> sizes(unsigned int mbusCode) const;
 	Size resolution() const;
-	const std::vector<int32_t> &testPatternModes() const
+	const std::vector<controls::draft::TestPatternModeEnum> &testPatternModes() const
 	{
 		return testPatternModes_;
 	}
@@ -74,7 +76,8 @@ private:
 	void initVimcDefaultProperties();
 	void initStaticProperties();
 	void initTestPatternModes(
-		const std::map<int32_t, int32_t> &testPatternModeMap);
+		const std::map<controls::draft::TestPatternModeEnum, int32_t>
+			&testPatternModeMap);
 	int initProperties();
 
 	const MediaEntity *entity_;
@@ -87,7 +90,7 @@ private:
 	V4L2Subdevice::Formats formats_;
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
-	std::vector<int32_t> testPatternModes_;
+	std::vector<controls::draft::TestPatternModeEnum> testPatternModes_;
 
 	Size pixelArraySize_;
 	Rectangle activeArea_;

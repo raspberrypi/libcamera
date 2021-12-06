@@ -311,7 +311,7 @@ void CameraSensor::initStaticProperties()
 }
 
 void CameraSensor::initTestPatternModes(
-	const std::map<int32_t, int32_t> &testPatternModes)
+	const std::map<controls::draft::TestPatternModeEnum, int32_t> &testPatternModes)
 {
 	const auto &v4l2TestPattern = controls().find(V4L2_CID_TEST_PATTERN);
 	if (v4l2TestPattern == controls().end()) {
@@ -327,7 +327,7 @@ void CameraSensor::initTestPatternModes(
 	 * control index is supported in the below for loop that creates the
 	 * list of supported test patterns.
 	 */
-	std::map<int32_t, int32_t> indexToTestPatternMode;
+	std::map<int32_t, controls::draft::TestPatternModeEnum> indexToTestPatternMode;
 	for (const auto &it : testPatternModes)
 		indexToTestPatternMode[it.second] = it.first;
 

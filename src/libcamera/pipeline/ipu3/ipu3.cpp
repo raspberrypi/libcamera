@@ -983,13 +983,14 @@ int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
 		return ret;
 
 	ControlInfoMap::Map controls = IPU3Controls;
-	const std::vector<int32_t> &testPatternModes = sensor->testPatternModes();
+	const std::vector<controls::draft::TestPatternModeEnum>
+		&testPatternModes = sensor->testPatternModes();
 	if (!testPatternModes.empty()) {
 		std::vector<ControlValue> values;
 		values.reserve(testPatternModes.size());
 
-		for (int32_t pattern : testPatternModes)
-			values.emplace_back(pattern);
+		for (auto pattern : testPatternModes)
+			values.emplace_back(static_cast<int32_t>(pattern));
 
 		controls[&controls::draft::TestPatternMode] = ControlInfo(values);
 	}

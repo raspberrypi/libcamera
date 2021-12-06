@@ -29,6 +29,8 @@ class BayerFormat;
 class CameraLens;
 class MediaEntity;
 
+struct CameraSensorProperties;
+
 class CameraSensor : protected Loggable
 {
 public:
@@ -47,6 +49,7 @@ public:
 	{
 		return testPatternModes_;
 	}
+	int setTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
@@ -75,14 +78,15 @@ private:
 	int validateSensorDriver();
 	void initVimcDefaultProperties();
 	void initStaticProperties();
-	void initTestPatternModes(
-		const std::map<controls::draft::TestPatternModeEnum, int32_t>
-			&testPatternModeMap);
+	void initTestPatternModes();
 	int initProperties();
+	int applyTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 	const MediaEntity *entity_;
 	std::unique_ptr<V4L2Subdevice> subdev_;
 	unsigned int pad_;
+
+	const CameraSensorProperties *staticProps_;
 
 	std::string model_;
 	std::string id_;
@@ -91,6 +95,7 @@ private:
 	std::vector<unsigned int> mbusCodes_;
 	std::vector<Size> sizes_;
 	std::vector<controls::draft::TestPatternModeEnum> testPatternModes_;
+	controls::draft::TestPatternModeEnum testPatternMode_;
 
 	Size pixelArraySize_;
 	Rectangle activeArea_;

@@ -54,8 +54,8 @@ LOG_DEFINE_CATEGORY(CameraSensor)
  * Once constructed the instance must be initialized with init().
  */
 CameraSensor::CameraSensor(const MediaEntity *entity)
-	: entity_(entity), pad_(UINT_MAX), bayerFormat_(nullptr),
-	  properties_(properties::properties)
+	: entity_(entity), pad_(UINT_MAX), staticProps_(nullptr),
+	  bayerFormat_(nullptr), properties_(properties::properties)
 {
 }
 
@@ -161,7 +161,7 @@ int CameraSensor::init()
 	if (ret)
 		return ret;
 
-	return 0;
+	return applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);
 }
 
 int CameraSensor::validateSensorDriver()
@@ -300,21 +300,30 @@ void CameraSensor::initVimcDefaultProperties()
 
 void CameraSensor::initStaticProperties()
 {
-	const CameraSensorProperties *props = CameraSensorProperties::get(model_);
-	if (!props)
+	staticProps_ = CameraSensorProperties::get(model_);
+	if (!staticProps_)
 		return;
 
 	/* Register the properties retrieved from the sensor database. */
-	properties_.set(properties::UnitCellSize, props->unitCellSize);
+	properties_.set(properties::UnitCellSize, staticProps_->unitCellSize);
 
-	initTestPatternModes(props->testPatternModes);
+	initTestPatternModes();
 }
 
-void CameraSensor::initTestPatternModes(
-	const std::map<controls::draft::TestPatternModeEnum, int32_t> &testPatternModes)
+void CameraSensor::initTestPatternModes()
 {
 	const auto &v4l2TestPattern = controls().find(V4L2_CID_TEST_PATTERN);
 	if (v4l2TestPattern == controls().end()) {
+		LOG(CameraSensor, Debug) << "V4L2_CID_TEST_PATTERN is not supported";
+		return;
+	}
+
+	const auto &testPatternModes = staticProps_->testPatternModes;
+	if (testPatternModes.empty()) {
+		/*
+		 * The camera sensor supports test patterns but we don't know
+		 * how to map them so this should be fixed.
+		 */
 		LOG(CameraSensor, Debug) << "No static test pattern map for \'"
 					 << model() << "\'";
 		return;
@@ -503,6 +512,53 @@ Size CameraSensor::resolution() const
  *
  * \return The list of test pattern modes
  */
+
+/**
+ * \brief Set the test pattern mode for the camera sensor
+ * \param[in] mode The test pattern mode
+ *
+ * The new \a mode is applied to the sensor if it differs from the active test
+ * pattern mode. Otherwise, this function is a no-op. Setting the same test
+ * pattern mode for every frame thus incurs no performance penalty.
+ */
+int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
+{
+	if (testPatternMode_ == mode)
+		return 0;
+
+	return applyTestPatternMode(mode);
+}
+
+int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
+{
+	if (testPatternModes_.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Camera sensor does not support test pattern modes.";
+		return 0;
+	}
+
+	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
+			    mode);
+	if (it == testPatternModes_.end()) {
+		LOG(CameraSensor, Error) << "Unsupported test pattern mode "
+					 << mode;
+		return -EINVAL;
+	}
+
+	LOG(CameraSensor, Debug) << "Apply test pattern mode " << mode;
+
+	int32_t index = staticProps_->testPatternModes.at(mode);
+	ControlList ctrls{ controls() };
+	ctrls.set(V4L2_CID_TEST_PATTERN, index);
+
+	int ret = setControls(&ctrls);
+	if (ret)
+		return ret;
+
+	testPatternMode_ = mode;
+
+	return 0;
+}
 
 /**
  * \brief Retrieve the best sensor format for a desired output

@@ -14,6 +14,7 @@
 #include <unordered_set>
 
 #include <libcamera/base/shared_fd.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
@@ -24,8 +25,6 @@
 #include <libcamera/logging.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/request.h>
-
-#include <libcamera/base/utils.h>
 
 #include <linux/bcm2835-isp.h>
 #include <linux/media-bus-format.h>
@@ -154,7 +153,7 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 			score += penaltyAr * scoreFormat(reqAr, fmtAr);
 
 			/* Add any penalties... this is not an exact science! */
-			score += std::abs(static_cast<int>(info.bitsPerPixel - bitDepth)) * penaltyBitDepth;
+			score += utils::abs_diff(info.bitsPerPixel, bitDepth) * penaltyBitDepth;
 
 			if (score <= bestScore) {
 				bestScore = score;

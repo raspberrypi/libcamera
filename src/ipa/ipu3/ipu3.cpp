@@ -354,7 +354,7 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 					    kMaxGridWidth);
 
 		width = width << shift;
-		uint32_t error = std::abs(static_cast<int>(width - bdsOutputSize.width));
+		uint32_t error = utils::abs_diff(width, bdsOutputSize.width);
 		if (error >= minError)
 			continue;
 
@@ -370,7 +370,7 @@ void IPAIPU3::calculateBdsGrid(const Size &bdsOutputSize)
 					     kMaxGridHeight);
 
 		height = height << shift;
-		uint32_t error = std::abs(static_cast<int>(height - bdsOutputSize.height));
+		uint32_t error = utils::abs_diff(height, bdsOutputSize.height);
 		if (error >= minError)
 			continue;
 

@@ -81,7 +81,7 @@ float findScaleFactor(float sf, const std::vector<float> &range,
 	float bestDiff = std::numeric_limits<float>::max();
 	unsigned int index = 0;
 	for (unsigned int i = 0; i < range.size(); ++i) {
-		float diff = std::abs(sf - range[i]);
+		float diff = utils::abs_diff(sf, range[i]);
 		if (diff < bestDiff) {
 			bestDiff = diff;
 			index = i;
@@ -99,7 +99,7 @@ bool isSameRatio(const Size &in, const Size &out)
 	float inRatio = static_cast<float>(in.width) / in.height;
 	float outRatio = static_cast<float>(out.width) / out.height;
 
-	if (std::abs(inRatio - outRatio) > 0.1)
+	if (utils::abs_diff(inRatio, outRatio) > 0.1)
 		return false;
 
 	return true;

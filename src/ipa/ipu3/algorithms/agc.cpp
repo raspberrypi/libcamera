@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
@@ -188,7 +189,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
 	double evGain = std::max(yGain, iqMeanGain);
 
 	/* Consider within 1% of the target as correctly exposed */
-	if (std::abs(evGain - 1.0) < 0.01)
+	if (utils::abs_diff(evGain, 1.0) < 0.01)
 		LOG(IPU3Agc, Debug) << "We are well exposed (evGain = "
 				    << evGain << ")";
 

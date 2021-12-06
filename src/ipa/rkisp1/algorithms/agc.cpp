@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
@@ -145,7 +146,7 @@ void Agc::computeExposure(IPAContext &context, double yGain)
 					  kMaxAnalogueGain);
 
 	/* Consider within 1% of the target as correctly exposed. */
-	if (std::abs(yGain - 1.0) < 0.01)
+	if (utils::abs_diff(yGain, 1.0) < 0.01)
 		return;
 
 	/* extracted from Rpi::Agc::computeTargetExposure. */

@@ -11,6 +11,9 @@
 #include <iomanip>
 #include <string>
 
+#include <libcamera/camera_manager.h>
+#include <libcamera/version.h>
+
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QFileDialog>
@@ -24,9 +27,6 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QtDebug>
-
-#include <libcamera/camera_manager.h>
-#include <libcamera/version.h>
 
 #include "../cam/image.h"
 #include "dng_writer.h"

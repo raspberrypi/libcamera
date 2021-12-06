@@ -60,6 +60,7 @@ public:
 	void statBufferReady(FrameBuffer *buffer);
 	void queuePendingRequests();
 	void cancelPendingRequests();
+	void frameStart(uint32_t sequence);
 
 	CIO2Device cio2_;
 	ImgUDevice *imgu_;
@@ -77,7 +78,10 @@ public:
 
 	std::unique_ptr<ipa::ipu3::IPAProxyIPU3> ipa_;
 
+	/* Requests for which no buffer has been queued to the CIO2 device yet. */
 	std::queue<Request *> pendingRequests_;
+	/* Requests queued to the CIO2 device but not yet processed by the ImgU. */
+	std::queue<Request *> processingRequests_;
 
 	ControlInfoMap ipaControls_;
 
@@ -758,6 +762,12 @@ int PipelineHandlerIPU3::start(Camera *camera, [[maybe_unused]] const ControlLis
 	ImgUDevice *imgu = data->imgu_;
 	int ret;
 
+	/* Disable test pattern mode on the sensor, if any. */
+	ret = cio2->sensor()->setTestPatternMode(
+		controls::draft::TestPatternModeEnum::TestPatternModeOff);
+	if (ret)
+		return ret;
+
 	/* Allocate buffers for internal pipeline usage. */
 	ret = allocateBuffers(camera);
 	if (ret)
@@ -812,6 +822,8 @@ void PipelineHandlerIPU3::stop(Camera *camera)
 
 void IPU3CameraData::cancelPendingRequests()
 {
+	processingRequests_ = {};
+
 	while (!pendingRequests_.empty()) {
 		Request *request = pendingRequests_.front();
 
@@ -861,6 +873,7 @@ void IPU3CameraData::queuePendingRequests()
 		ipa_->processEvent(ev);
 
 		pendingRequests_.pop();
+		processingRequests_.push(request);
 	}
 }
 
@@ -1122,8 +1135,8 @@ int PipelineHandlerIPU3::registerCameras()
 		data->delayedCtrls_ =
 			std::make_unique<DelayedControls>(cio2->sensor()->device(),
 							  params);
-		data->cio2_.frameStart().connect(data->delayedCtrls_.get(),
-						 &DelayedControls::applyControls);
+		data->cio2_.frameStart().connect(data.get(),
+						 &IPU3CameraData::frameStart);
 
 		/* Convert the sensor rotation to a transformation */
 		int32_t rotation = 0;
@@ -1427,6 +1440,51 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 	ev.frameTimestamp = request->metadata().get(controls::SensorTimestamp);
 	ev.sensorControls = info->effectiveSensorControls;
 	ipa_->processEvent(ev);
+}
+
+/*
+ * \brief Handle the start of frame exposure signal
+ * \param[in] sequence The sequence number of frame
+ *
+ * Inspect the list of pending requests waiting for a RAW frame to be
+ * produced and apply controls for the 'next' one.
+ *
+ * Some controls need to be applied immediately, such as the
+ * TestPatternMode one. Other controls are handled through the delayed
+ * controls class.
+ */
+void IPU3CameraData::frameStart(uint32_t sequence)
+{
+	delayedCtrls_->applyControls(sequence);
+
+	if (processingRequests_.empty())
+		return;
+
+	/*
+	 * Handle controls to be set immediately on the next frame.
+	 * This currently only handle the TestPatternMode control.
+         *
+	 * \todo Synchronize with the sequence number
+	 */
+	Request *request = processingRequests_.front();
+	processingRequests_.pop();
+
+	if (!request->controls().contains(controls::draft::TestPatternMode))
+		return;
+
+	const int32_t testPatternMode = request->controls().get(
+		controls::draft::TestPatternMode);
+
+	int ret = cio2_.sensor()->setTestPatternMode(
+		static_cast<controls::draft::TestPatternModeEnum>(testPatternMode));
+	if (ret) {
+		LOG(IPU3, Error) << "Failed to set test pattern mode: "
+				 << ret;
+		return;
+	}
+
+	request->metadata().set(controls::draft::TestPatternMode,
+				testPatternMode);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)

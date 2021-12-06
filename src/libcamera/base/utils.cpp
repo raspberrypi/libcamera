@@ -437,6 +437,23 @@ std::string toAscii(const std::string &str)
  * \return True if \a Duration is a non-zero time value, False otherwise
  */
 
+/**
+ * \fn abs_diff(const T& a, const T& b)
+ * \brief Calculates the absolute value of the difference between two elements
+ * \param[in] a The first element
+ * \param[in] b The second element
+ *
+ * This function calculates the absolute value of the difference between two
+ * elements of the same type, in such a way that a negative value will never
+ * occur during the calculation.
+ *
+ * This is inspired by the std::abs_diff() candidate proposed in N4318
+ * (http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4318.pdf).
+ *
+ * \return The absolute value of the difference of the two parameters \a a and
+ * \a b
+ */
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

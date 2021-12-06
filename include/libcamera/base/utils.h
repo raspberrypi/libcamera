@@ -346,6 +346,15 @@ public:
 	}
 };
 
+template<typename T>
+decltype(auto) abs_diff(const T &a, const T &b)
+{
+	if (a < b)
+		return b - a;
+	else
+		return a - b;
+}
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

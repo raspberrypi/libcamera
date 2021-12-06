@@ -253,6 +253,9 @@ SharedFD &SharedFD::operator=(SharedFD &&other)
  */
 UniqueFD SharedFD::dup() const
 {
+	if (!isValid())
+		return {};
+
 	UniqueFD dupFd(::dup(get()));
 	if (!dupFd.isValid()) {
 		int ret = -errno;

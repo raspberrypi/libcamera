@@ -530,10 +530,11 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 
 	unsigned int rawCount = 0;
 	unsigned int outCount = 0;
+	Size sensorSize = data->sensor_->resolution();
 	for (const StreamRole role : roles) {
 		switch (role) {
 		case StreamRole::Raw:
-			size = data->sensor_->resolution();
+			size = sensorSize;
 			sensorFormat = findBestFormat(data->sensorFormats_, size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
 							    BayerFormat::Packing::CSI2);
@@ -546,7 +547,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			fmts = data->isp_[Isp::Output0].dev()->formats();
 			pixelFormat = formats::NV12;
 			/* Return the largest sensor resolution. */
-			size = data->sensor_->resolution();
+			size = sensorSize;
 			bufferCount = 1;
 			outCount++;
 			break;
@@ -599,11 +600,15 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 						std::forward_as_tuple(format.second.begin(), format.second.end()));
 			}
 		} else {
-			/* Translate the V4L2PixelFormat to PixelFormat. */
+			/*
+			 * Translate the V4L2PixelFormat to PixelFormat. Note that we
+			 * limit the recommended largest ISP output size to match the
+			 * sensor resolution.
+			 */
 			for (const auto &format : fmts) {
 				PixelFormat pf = format.first.toPixelFormat();
 				if (pf.isValid())
-					deviceFormats[pf] = format.second;
+					deviceFormats[pf].emplace_back(sensorSize);
 			}
 		}
 

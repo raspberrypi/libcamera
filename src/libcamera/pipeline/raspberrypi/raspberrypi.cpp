@@ -161,10 +161,10 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 				bestFormat.size = size;
 			}
 
-			LOG(RPI, Info) << "Format: " << size.toString()
-				       << " fmt " << format.toString()
-				       << " Score: " << score
-				       << " (best " << bestScore << ")";
+			LOG(RPI, Debug) << "Format: " << size.toString()
+					<< " fmt " << format.toString()
+					<< " Score: " << score
+					<< " (best " << bestScore << ")";
 		}
 	}
 
@@ -1746,8 +1746,8 @@ void RPiCameraData::checkRequestCompleted()
 		state_ = State::Idle;
 		if (dropFrameCount_) {
 			dropFrameCount_--;
-			LOG(RPI, Info) << "Dropping frame at the request of the IPA ("
-				       << dropFrameCount_ << " left)";
+			LOG(RPI, Debug) << "Dropping frame at the request of the IPA ("
+					<< dropFrameCount_ << " left)";
 		}
 	}
 }

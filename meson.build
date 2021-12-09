@@ -180,6 +180,7 @@ summary({
             'Tracing support': tracing_enabled,
             'Android support': android_enabled,
             'GStreamer support': gst_enabled,
+            'Python bindings': pycamera_enabled,
             'V4L2 emulation support': v4l2_enabled,
             'cam application': cam_enabled,
             'qcam application': qcam_enabled,

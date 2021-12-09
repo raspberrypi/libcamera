@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: CC0-1.0
+
+py3_dep = dependency('python3', required : get_option('pycamera'))
+
+if not py3_dep.found()
+    pycamera_enabled = false
+    subdir_done()
+endif
+
+pycamera_enabled = true
+
+pybind11_proj = subproject('pybind11')
+pybind11_dep = pybind11_proj.get_variable('pybind11_dep')
+
+pycamera_sources = files([
+    'pymain.cpp',
+])
+
+pycamera_deps = [
+    libcamera_public,
+    py3_dep,
+    pybind11_dep,
+]
+
+pycamera_args = ['-fvisibility=hidden']
+pycamera_args += ['-Wno-shadow']
+
+destdir = get_option('libdir') + '/python' + py3_dep.version() + '/site-packages/libcamera'
+
+pycamera = shared_module('_libcamera',
+                         pycamera_sources,
+                         install : true,
+                         install_dir : destdir,
+                         name_prefix : '',
+                         dependencies : pycamera_deps,
+                         cpp_args : pycamera_args)
+
+run_command('ln', '-fsT', '../../../../src/py/libcamera/__init__.py',
+            meson.current_build_dir() / '__init__.py')
+
+install_data(['__init__.py'], install_dir : destdir)

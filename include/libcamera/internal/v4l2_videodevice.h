@@ -10,6 +10,7 @@
 #include <array>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -21,6 +22,7 @@
 #include <libcamera/base/signal.h>
 #include <libcamera/base/unique_fd.h>
 
+#include <libcamera/color_space.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
@@ -167,6 +169,7 @@ public:
 
 	V4L2PixelFormat fourcc;
 	Size size;
+	std::optional<ColorSpace> colorSpace;
 
 	std::array<Plane, 3> planes;
 	unsigned int planesCount = 0;

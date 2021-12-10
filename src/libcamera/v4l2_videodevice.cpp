@@ -384,6 +384,21 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  */
 
 /**
+ * \var V4L2DeviceFormat::colorSpace
+ * \brief The color space of the pixels
+ *
+ * The color space of the image. When setting the format this may be
+ * unset, in which case the driver gets to use its default color space.
+ * After being set, this value should contain the color space that
+ * was actually used. If this value is unset, then the color space chosen
+ * by the driver could not be represented by the ColorSpace class (and
+ * should probably be added).
+ *
+ * It is up to the pipeline handler or application to check if the
+ * resulting color space is acceptable.
+ */
+
+/**
  * \var V4L2DeviceFormat::planes
  * \brief The per-plane memory size information
  *
@@ -871,6 +886,7 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 	format->size.height = pix->height;
 	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
+	format->colorSpace = toColorSpace(*pix);
 
 	for (unsigned int i = 0; i < format->planesCount; ++i) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
@@ -892,6 +908,7 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 	pix->pixelformat = format->fourcc;
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
+	fromColorSpace(format->colorSpace, *pix);
 
 	ASSERT(pix->num_planes <= std::size(pix->plane_fmt));
 
@@ -920,6 +937,7 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }
@@ -943,6 +961,7 @@ int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }
@@ -959,6 +978,8 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
 	pix->pixelformat = format->fourcc;
 	pix->bytesperline = format->planes[0].bpl;
 	pix->field = V4L2_FIELD_NONE;
+	fromColorSpace(format->colorSpace, *pix);
+
 	ret = ioctl(set ? VIDIOC_S_FMT : VIDIOC_TRY_FMT, &v4l2Format);
 	if (ret) {
 		LOG(V4L2, Error)
@@ -977,6 +998,7 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }

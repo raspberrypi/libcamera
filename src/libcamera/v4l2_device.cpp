@@ -10,11 +10,15 @@
 #include <fcntl.h>
 #include <iomanip>
 #include <limits.h>
+#include <map>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <vector>
+
+#include <linux/v4l2-mediabus.h>
 
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
@@ -727,5 +731,211 @@ void V4L2Device::eventAvailable()
 
 	frameStart.emit(event.u.frame_sync.frame_sequence);
 }
+
+static const std::map<uint32_t, ColorSpace> v4l2ToColorSpace = {
+	{ V4L2_COLORSPACE_RAW, ColorSpace::Raw },
+	{ V4L2_COLORSPACE_JPEG, ColorSpace::Jpeg },
+	{ V4L2_COLORSPACE_SRGB, ColorSpace::Srgb },
+	{ V4L2_COLORSPACE_SMPTE170M, ColorSpace::Smpte170m },
+	{ V4L2_COLORSPACE_REC709, ColorSpace::Rec709 },
+	{ V4L2_COLORSPACE_BT2020, ColorSpace::Rec2020 },
+};
+
+static const std::map<uint32_t, ColorSpace::TransferFunction> v4l2ToTransferFunction = {
+	{ V4L2_XFER_FUNC_NONE, ColorSpace::TransferFunction::Linear },
+	{ V4L2_XFER_FUNC_SRGB, ColorSpace::TransferFunction::Srgb },
+	{ V4L2_XFER_FUNC_709, ColorSpace::TransferFunction::Rec709 },
+};
+
+static const std::map<uint32_t, ColorSpace::YcbcrEncoding> v4l2ToYcbcrEncoding = {
+	{ V4L2_YCBCR_ENC_601, ColorSpace::YcbcrEncoding::Rec601 },
+	{ V4L2_YCBCR_ENC_709, ColorSpace::YcbcrEncoding::Rec709 },
+	{ V4L2_YCBCR_ENC_BT2020, ColorSpace::YcbcrEncoding::Rec2020 },
+};
+
+static const std::map<uint32_t, ColorSpace::Range> v4l2ToRange = {
+	{ V4L2_QUANTIZATION_FULL_RANGE, ColorSpace::Range::Full },
+	{ V4L2_QUANTIZATION_LIM_RANGE, ColorSpace::Range::Limited },
+};
+
+static const std::vector<std::pair<ColorSpace, v4l2_colorspace>> colorSpaceToV4l2 = {
+	{ ColorSpace::Raw, V4L2_COLORSPACE_RAW },
+	{ ColorSpace::Jpeg, V4L2_COLORSPACE_JPEG },
+	{ ColorSpace::Srgb, V4L2_COLORSPACE_SRGB },
+	{ ColorSpace::Smpte170m, V4L2_COLORSPACE_SMPTE170M },
+	{ ColorSpace::Rec709, V4L2_COLORSPACE_REC709 },
+	{ ColorSpace::Rec2020, V4L2_COLORSPACE_BT2020 },
+};
+
+static const std::map<ColorSpace::Primaries, v4l2_colorspace> primariesToV4l2 = {
+	{ ColorSpace::Primaries::Raw, V4L2_COLORSPACE_RAW },
+	{ ColorSpace::Primaries::Smpte170m, V4L2_COLORSPACE_SMPTE170M },
+	{ ColorSpace::Primaries::Rec709, V4L2_COLORSPACE_REC709 },
+	{ ColorSpace::Primaries::Rec2020, V4L2_COLORSPACE_BT2020 },
+};
+
+static const std::map<ColorSpace::TransferFunction, v4l2_xfer_func> transferFunctionToV4l2 = {
+	{ ColorSpace::TransferFunction::Linear, V4L2_XFER_FUNC_NONE },
+	{ ColorSpace::TransferFunction::Srgb, V4L2_XFER_FUNC_SRGB },
+	{ ColorSpace::TransferFunction::Rec709, V4L2_XFER_FUNC_709 },
+};
+
+static const std::map<ColorSpace::YcbcrEncoding, v4l2_ycbcr_encoding> ycbcrEncodingToV4l2 = {
+	{ ColorSpace::YcbcrEncoding::Rec601, V4L2_YCBCR_ENC_601 },
+	{ ColorSpace::YcbcrEncoding::Rec709, V4L2_YCBCR_ENC_709 },
+	{ ColorSpace::YcbcrEncoding::Rec2020, V4L2_YCBCR_ENC_BT2020 },
+};
+
+static const std::map<ColorSpace::Range, v4l2_quantization> rangeToV4l2 = {
+	{ ColorSpace::Range::Full, V4L2_QUANTIZATION_FULL_RANGE },
+	{ ColorSpace::Range::Limited, V4L2_QUANTIZATION_LIM_RANGE },
+};
+
+/**
+ * \brief Convert the color space fields in a V4L2 format to a ColorSpace
+ * \param[in] v4l2Format A V4L2 format containing color space information
+ *
+ * The colorspace, ycbcr_enc, xfer_func and quantization fields within a
+ * V4L2 format structure are converted to a corresponding ColorSpace.
+ *
+ * If any V4L2 fields are not recognised then we return an "unset"
+ * color space.
+ *
+ * \return The ColorSpace corresponding to the input V4L2 format
+ * \retval std::nullopt One or more V4L2 color space fields were not recognised
+ */
+template<typename T>
+std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format)
+{
+	auto itColor = v4l2ToColorSpace.find(v4l2Format.colorspace);
+	if (itColor == v4l2ToColorSpace.end())
+		return std::nullopt;
+
+	/* This sets all the color space fields to the correct "default" values. */
+	ColorSpace colorSpace = itColor->second;
+
+	if (v4l2Format.xfer_func != V4L2_XFER_FUNC_DEFAULT) {
+		auto itTransfer = v4l2ToTransferFunction.find(v4l2Format.xfer_func);
+		if (itTransfer == v4l2ToTransferFunction.end())
+			return std::nullopt;
+
+		colorSpace.transferFunction = itTransfer->second;
+	}
+
+	if (v4l2Format.ycbcr_enc != V4L2_YCBCR_ENC_DEFAULT) {
+		auto itYcbcrEncoding = v4l2ToYcbcrEncoding.find(v4l2Format.ycbcr_enc);
+		if (itYcbcrEncoding == v4l2ToYcbcrEncoding.end())
+			return std::nullopt;
+
+		colorSpace.ycbcrEncoding = itYcbcrEncoding->second;
+	}
+
+	if (v4l2Format.quantization != V4L2_QUANTIZATION_DEFAULT) {
+		auto itRange = v4l2ToRange.find(v4l2Format.quantization);
+		if (itRange == v4l2ToRange.end())
+			return std::nullopt;
+
+		colorSpace.range = itRange->second;
+	}
+
+	return colorSpace;
+}
+
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format &);
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format_mplane &);
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_mbus_framefmt &);
+
+/**
+ * \brief Fill in the color space fields of a V4L2 format from a ColorSpace
+ * \param[in] colorSpace The ColorSpace to be converted
+ * \param[out] v4l2Format A V4L2 format containing color space information
+ *
+ * The colorspace, ycbcr_enc, xfer_func and quantization fields within a
+ * V4L2 format structure are filled in from a corresponding ColorSpace.
+ *
+ * An error is returned if any of the V4L2 fields do not support the
+ * value given in the ColorSpace. Such fields are set to the V4L2
+ * "default" values, but all other fields are still filled in where
+ * possible.
+ *
+ * If the color space is completely unset, "default" V4L2 values are used
+ * everywhere, so a driver would then choose its preferred color space.
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \retval -EINVAL The ColorSpace does not have a representation using V4L2 enums
+ */
+template<typename T>
+int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v4l2Format)
+{
+	v4l2Format.colorspace = V4L2_COLORSPACE_DEFAULT;
+	v4l2Format.xfer_func = V4L2_XFER_FUNC_DEFAULT;
+	v4l2Format.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
+	v4l2Format.quantization = V4L2_QUANTIZATION_DEFAULT;
+
+	if (!colorSpace)
+		return 0;
+
+	auto itColor = std::find_if(colorSpaceToV4l2.begin(), colorSpaceToV4l2.end(),
+				    [&colorSpace](const auto &item) {
+					    return colorSpace == item.first;
+				    });
+	if (itColor != colorSpaceToV4l2.end()) {
+		v4l2Format.colorspace = itColor->second;
+		/* Leaving all the other fields as "default" should be fine. */
+		return 0;
+	}
+
+	/*
+	 * If the colorSpace doesn't precisely match a standard color space,
+	 * then we must choose a V4L2 colorspace with matching primaries.
+	 */
+	int ret = 0;
+
+	auto itPrimaries = primariesToV4l2.find(colorSpace->primaries);
+	if (itPrimaries != primariesToV4l2.end()) {
+		v4l2Format.colorspace = itPrimaries->second;
+	} else {
+		libcamera::LOG(V4L2, Warning)
+			<< "Unrecognised primaries in "
+			<< ColorSpace::toString(colorSpace);
+		ret = -EINVAL;
+	}
+
+	auto itTransfer = transferFunctionToV4l2.find(colorSpace->transferFunction);
+	if (itTransfer != transferFunctionToV4l2.end()) {
+		v4l2Format.xfer_func = itTransfer->second;
+	} else {
+		libcamera::LOG(V4L2, Warning)
+			<< "Unrecognised transfer function in "
+			<< ColorSpace::toString(colorSpace);
+		ret = -EINVAL;
+	}
+
+	auto itYcbcrEncoding = ycbcrEncodingToV4l2.find(colorSpace->ycbcrEncoding);
+	if (itYcbcrEncoding != ycbcrEncodingToV4l2.end()) {
+		v4l2Format.ycbcr_enc = itYcbcrEncoding->second;
+	} else {
+		libcamera::LOG(V4L2, Warning)
+			<< "Unrecognised YCbCr encoding in "
+			<< ColorSpace::toString(colorSpace);
+		ret = -EINVAL;
+	}
+
+	auto itRange = rangeToV4l2.find(colorSpace->range);
+	if (itRange != rangeToV4l2.end()) {
+		v4l2Format.quantization = itRange->second;
+	} else {
+		libcamera::LOG(V4L2, Warning)
+			<< "Unrecognised quantization in "
+			<< ColorSpace::toString(colorSpace);
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+template int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &, struct v4l2_pix_format &);
+template int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &, struct v4l2_pix_format_mplane &);
+template int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &, struct v4l2_mbus_framefmt &);
 
 } /* namespace libcamera */

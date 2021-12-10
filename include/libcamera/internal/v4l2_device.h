@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <linux/videodev2.h>
@@ -18,6 +19,7 @@
 #include <libcamera/base/span.h>
 #include <libcamera/base/unique_fd.h>
 
+#include <libcamera/color_space.h>
 #include <libcamera/controls.h>
 
 namespace libcamera {
@@ -55,6 +57,12 @@ protected:
 	int ioctl(unsigned long request, void *argp);
 
 	int fd() const { return fd_.get(); }
+
+	template<typename T>
+	static std::optional<ColorSpace> toColorSpace(const T &v4l2Format);
+
+	template<typename T>
+	static int fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v4l2Format);
 
 private:
 	static ControlType v4l2CtrlType(uint32_t ctrlType);

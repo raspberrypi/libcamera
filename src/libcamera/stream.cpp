@@ -330,6 +330,26 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  */
 
 /**
+ * \var StreamConfiguration::colorSpace
+ * \brief The ColorSpace for this stream
+ *
+ * This field allows a ColorSpace to be selected for this Stream.
+ *
+ * The field is optional and an application can choose to leave it unset.
+ * Platforms that support the use of color spaces may provide default
+ * values through the generateConfiguration() method. An application can
+ * override these when necessary.
+ *
+ * If a specific ColorSpace is requested but the Camera cannot deliver it,
+ * then the StreamConfiguration will be adjusted to a value that can be
+ * delivered. In this case the validate() method will indicate via its
+ * return value that the CameraConfiguration has been adjusted.
+ *
+ * Note that platforms will typically have different constraints on what
+ * color spaces can be supported and in what combinations.
+ */
+
+/**
  * \fn StreamConfiguration::stream()
  * \brief Retrieve the stream associated with the configuration
  *

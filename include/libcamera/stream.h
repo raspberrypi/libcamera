@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/color_space.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
@@ -46,6 +47,8 @@ struct StreamConfiguration {
 	unsigned int frameSize;
 
 	unsigned int bufferCount;
+
+	std::optional<ColorSpace> colorSpace;
 
 	Stream *stream() const { return stream_; }
 	void setStream(Stream *stream) { stream_ = stream; }

@@ -8,12 +8,14 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 
+#include <libcamera/color_space.h>
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/formats.h"
@@ -27,6 +29,7 @@ class MediaDevice;
 struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
 	Size size;
+	std::optional<ColorSpace> colorSpace;
 
 	const std::string toString() const;
 	uint8_t bitsPerPixel() const;

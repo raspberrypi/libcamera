@@ -457,7 +457,9 @@ int SimpleCameraData::init()
 	 * formats on the video node.
 	 */
 	for (unsigned int code : sensor_->mbusCodes()) {
-		V4L2SubdeviceFormat format{ code, sensor_->resolution() };
+		V4L2SubdeviceFormat format{};
+		format.mbus_code = code;
+		format.size = sensor_->resolution();
 
 		ret = setupFormats(&format, V4L2Subdevice::TryFormat);
 		if (ret < 0) {
@@ -908,7 +910,9 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	const SimpleCameraData::Configuration *pipeConfig = config->pipeConfig();
-	V4L2SubdeviceFormat format{ pipeConfig->code, data->sensor_->resolution() };
+	V4L2SubdeviceFormat format{};
+	format.mbus_code = pipeConfig->code;
+	format.size = data->sensor_->resolution();
 
 	ret = data->setupFormats(&format, V4L2Subdevice::ActiveFormat);
 	if (ret < 0)

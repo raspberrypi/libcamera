@@ -322,10 +322,9 @@ V4L2SubdeviceFormat CIO2Device::getSensorFormat(const std::vector<unsigned int> 
 		return {};
 	}
 
-	V4L2SubdeviceFormat format{
-		.mbus_code = bestCode,
-		.size = bestSize,
-	};
+	V4L2SubdeviceFormat format{};
+	format.mbus_code = bestCode;
+	format.size = bestSize;
 
 	return format;
 }

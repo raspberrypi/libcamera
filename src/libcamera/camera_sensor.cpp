@@ -642,6 +642,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 	V4L2SubdeviceFormat format{
 		.mbus_code = bestCode,
 		.size = *bestSize,
+		.colorSpace = ColorSpace::Raw,
 	};
 
 	return format;

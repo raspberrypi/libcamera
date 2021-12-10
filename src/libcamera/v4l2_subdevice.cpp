@@ -415,6 +415,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
+	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
 }
@@ -442,6 +443,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	subdevFmt.format.height = format->size.height;
 	subdevFmt.format.code = format->mbus_code;
 	subdevFmt.format.field = V4L2_FIELD_NONE;
+	fromColorSpace(format->colorSpace, subdevFmt.format);
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {
@@ -454,6 +456,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
+	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
 }

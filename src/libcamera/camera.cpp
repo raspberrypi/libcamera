@@ -14,12 +14,14 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>
 
+#include <libcamera/color_space.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_controls.h"
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**
@@ -312,6 +314,87 @@ bool CameraConfiguration::empty() const
 std::size_t CameraConfiguration::size() const
 {
 	return config_.size();
+}
+
+namespace {
+
+bool isRaw(const PixelFormat &pixFmt)
+{
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
+	return info.isValid() &&
+	       info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+}
+
+} /* namespace */
+
+/**
+ * \enum CameraConfiguration::ColorSpaceFlag
+ * \brief Specify the behaviour of validateColorSpaces
+ * \var CameraConfiguration::ColorSpaceFlag::None
+ * \brief No extra validation of color spaces is required
+ * \var CameraConfiguration::ColorSpaceFlag::StreamsShareColorSpace
+ * \brief Non-raw output streams must share the same color space
+ */
+
+/**
+ * \typedef CameraConfiguration::ColorSpaceFlags
+ * \brief A bitwise combination of ColorSpaceFlag values
+ */
+
+/**
+ * \brief Check the color spaces requested for each stream
+ * \param[in] flags Flags to control the behaviour of this function
+ *
+ * This function performs certain consistency checks on the color spaces of
+ * the streams and may adjust them so that:
+ *
+ * - Any raw streams have the Raw color space
+ * - If the StreamsShareColorSpace flag is set, all output streams are forced
+ * to share the same color space (this may be a constraint on some platforms).
+ *
+ * It is optional for a pipeline handler to use this function.
+ *
+ * \return A CameraConfiguration::Status value that describes the validation
+ * status.
+ * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * and is now valid. The color space of some or all of the streams may bave
+ * benn changed. The caller shall check the color spaces carefully.
+ * \retval CameraConfiguration::Valid The configuration was already valid and
+ * hasn't been adjusted.
+ */
+CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceFlags flags)
+{
+	Status status = Valid;
+
+	/*
+	 * Set all raw streams to the Raw color space, and make a note of the largest
+	 * non-raw stream with a defined color space (if there is one).
+	 */
+	int index = -1;
+	for (auto [i, cfg] : utils::enumerate(config_)) {
+		if (isRaw(cfg.pixelFormat)) {
+			if (cfg.colorSpace != ColorSpace::Raw) {
+				cfg.colorSpace = ColorSpace::Raw;
+				status = Adjusted;
+			}
+		} else if (cfg.colorSpace && (index == -1 || cfg.size > config_[i].size)) {
+			index = i;
+		}
+	}
+
+	if (index < 0 || !(flags & ColorSpaceFlag::StreamsShareColorSpace))
+		return status;
+
+	/* Make all output color spaces the same, if requested. */
+	for (auto &cfg : config_) {
+		if (!isRaw(cfg.pixelFormat) &&
+		    cfg.colorSpace != config_[index].colorSpace) {
+			cfg.colorSpace = config_[index].colorSpace;
+			status = Adjusted;
+		}
+	}
+
+	return status;
 }
 
 /**

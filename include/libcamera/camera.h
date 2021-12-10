@@ -13,6 +13,7 @@
 #include <string>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
 
@@ -68,6 +69,15 @@ public:
 
 protected:
 	CameraConfiguration();
+
+	enum class ColorSpaceFlag {
+		None,
+		StreamsShareColorSpace,
+	};
+
+	using ColorSpaceFlags = Flags<ColorSpaceFlag>;
+
+	Status validateColorSpaces(ColorSpaceFlags flags = ColorSpaceFlag::None);
 
 	std::vector<StreamConfiguration> config_;
 };

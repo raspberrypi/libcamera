@@ -56,6 +56,7 @@ private:
 	Stream *stream_;
 
 	bool expectedCompletionResult_ = true;
+	bool setFence_ = true;
 
 	unsigned int completedRequest_;
 
@@ -193,7 +194,7 @@ void FenceTest::requestRequeue(Request *request)
 
 	request->reuse();
 
-	if (cookie == signalledRequestId_) {
+	if (cookie == signalledRequestId_ && setFence_) {
 		/*
 		 * The second time this request is queued add a fence to it.
 		 *
@@ -257,6 +258,7 @@ void FenceTest::signalFence()
 	if (ret != sizeof(value))
 		cerr << "Failed to signal fence" << endl;
 
+	setFence_ = false;
 	dispatcher_->processEvents();
 }
 
@@ -316,7 +318,7 @@ int FenceTest::run()
 	Timer timer;
 	timer.start(1000);
 	while (timer.isRunning() && expectedCompletionResult_) {
-		if (completedRequest_ == signalledRequestId_)
+		if (completedRequest_ == signalledRequestId_ && setFence_)
 			/*
 			 * signalledRequestId_ has just completed and it has
 			 * been re-queued with a fence. Start the timer to

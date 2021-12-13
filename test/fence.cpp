@@ -251,7 +251,12 @@ void FenceTest::requestComplete(Request *request)
 void FenceTest::signalFence()
 {
 	uint64_t value = 1;
-	write(efd2_, &value, sizeof(value));
+	int ret;
+
+	ret = write(efd2_, &value, sizeof(value));
+	if (ret != sizeof(value))
+		cerr << "Failed to signal fence" << endl;
+
 	dispatcher_->processEvents();
 }
 

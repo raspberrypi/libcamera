@@ -47,7 +47,9 @@ A C++ toolchain: [required]
         Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.55) ninja-build pkg-config
+        meson (>= 0.53) ninja-build pkg-config
+
+        meson (>= 0.55) is required for building Android (-Dandroid=enabled)
 
         If your distribution doesn't provide a recent enough version of meson,
         you can install or upgrade it using pip3.

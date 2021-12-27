@@ -44,7 +44,7 @@ The following Debian/Ubuntu packages are required for building libcamera.
 Other distributions may have differing package names:
 
 A C++ toolchain: [required]
-	Either {g++, clang}
+        Either {g++, clang}
 
 Meson Build system: [required]
         meson (>= 0.55) ninja-build pkg-config
@@ -78,19 +78,19 @@ for the Raspberry Pi IPA: [optional]
          'pipelines' option to avoid this dependency.
 
 for device hotplug enumeration: [optional]
-	libudev-dev
+        libudev-dev
 
 for documentation: [optional]
-	python3-sphinx doxygen graphviz texlive-latex-extra
+        python3-sphinx doxygen graphviz texlive-latex-extra
 
 for gstreamer: [optional]
-	libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+        libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
 for cam: [optional]
         libevent-dev
 
 for qcam: [optional]
-	qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev
+        qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev
 
 for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools

@@ -158,6 +158,7 @@ int V4L2CompatManager::openat(int dirfd, const char *path, int oflag, mode_t mod
 	V4L2CameraProxy *proxy = proxies_[ret].get();
 	files_.emplace(efd, std::make_shared<V4L2CameraFile>(efd, oflag & O_NONBLOCK, proxy));
 
+	LOG(V4L2Compat, Debug) << "Opened " << path << " -> fd " << efd;
 	return efd;
 }
 

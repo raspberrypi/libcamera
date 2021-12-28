@@ -445,8 +445,6 @@ int V4L2CameraProxy::vidioc_s_input(V4L2CameraFile *file, int *arg)
 
 void V4L2CameraProxy::freeBuffers()
 {
-	LOG(V4L2Compat, Debug) << "Freeing libcamera bufs";
-
 	vcam_->freeBuffers();
 	buffers_.clear();
 	bufferCount_ = 0;

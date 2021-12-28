@@ -17,7 +17,7 @@ by vendors without a common architecture or API for application developers.
 
 libcamera provides a complete camera stack for Linux based systems to abstract
 functionality desired by camera application developers and process the
-configuration of hardware and image control algorithms requried to obtain
+configuration of hardware and image control algorithms required to obtain
 desireable results from the camera.
 
 .. _Video for Linux 2: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/v4l/v4l2.html
@@ -152,9 +152,9 @@ Architecture
 While offering a unified API towards upper layers, and presenting itself as a
 single library, libcamera isn’t monolithic. It exposes multiple components
 through its public API and is built around a set of separate helpers internally.
-Hardware abstractractions are handled through the use of device-specific
-components where required and dynamically loadable plugins are used to separate
-image processing algorithms from the core libcamera codebase.
+Hardware abstractions are handled through the use of device-specific components
+where required and dynamically loadable plugins are used to separate image
+processing algorithms from the core libcamera codebase.
 
 ::
 

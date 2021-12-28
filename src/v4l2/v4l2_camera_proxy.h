@@ -29,8 +29,9 @@ public:
 
 	int open(V4L2CameraFile *file);
 	void close(V4L2CameraFile *file);
-	void *mmap(void *addr, size_t length, int prot, int flags, off64_t offset);
-	int munmap(void *addr, size_t length);
+	void *mmap(V4L2CameraFile *file, void *addr, size_t length, int prot,
+		   int flags, off64_t offset);
+	int munmap(V4L2CameraFile *file, void *addr, size_t length);
 
 	int ioctl(V4L2CameraFile *file, unsigned long request, void *arg);
 
@@ -44,7 +45,7 @@ private:
 	void updateBuffers();
 	void freeBuffers();
 
-	int vidioc_querycap(struct v4l2_capability *arg);
+	int vidioc_querycap(V4L2CameraFile *file, struct v4l2_capability *arg);
 	int vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_frmsizeenum *arg);
 	int vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg);
 	int vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg);

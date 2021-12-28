@@ -194,7 +194,8 @@ void *V4L2CompatManager::mmap(void *addr, size_t length, int prot, int flags,
 	if (!file)
 		return fops_.mmap(addr, length, prot, flags, fd, offset);
 
-	void *map = file->proxy()->mmap(addr, length, prot, flags, offset);
+	void *map = file->proxy()->mmap(file.get(), addr, length, prot, flags,
+					offset);
 	if (map == MAP_FAILED)
 		return map;
 
@@ -210,7 +211,7 @@ int V4L2CompatManager::munmap(void *addr, size_t length)
 
 	V4L2CameraFile *file = device->second.get();
 
-	int ret = file->proxy()->munmap(addr, length);
+	int ret = file->proxy()->munmap(file, addr, length);
 	if (ret < 0)
 		return ret;
 

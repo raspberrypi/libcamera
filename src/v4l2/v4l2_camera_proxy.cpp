@@ -46,7 +46,8 @@ V4L2CameraProxy::V4L2CameraProxy(unsigned int index,
 
 int V4L2CameraProxy::open(V4L2CameraFile *file)
 {
-	LOG(V4L2Compat, Debug) << "Servicing open fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	MutexLocker locker(proxyMutex_);
 
@@ -80,7 +81,8 @@ int V4L2CameraProxy::open(V4L2CameraFile *file)
 
 void V4L2CameraProxy::close(V4L2CameraFile *file)
 {
-	LOG(V4L2Compat, Debug) << "Servicing close fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	MutexLocker locker(proxyMutex_);
 
@@ -94,10 +96,11 @@ void V4L2CameraProxy::close(V4L2CameraFile *file)
 	vcam_->close();
 }
 
-void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
-			    off64_t offset)
+void *V4L2CameraProxy::mmap(V4L2CameraFile *file, void *addr, size_t length,
+			    int prot, int flags, off64_t offset)
 {
-	LOG(V4L2Compat, Debug) << "Servicing mmap";
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	MutexLocker locker(proxyMutex_);
 
@@ -131,9 +134,10 @@ void *V4L2CameraProxy::mmap(void *addr, size_t length, int prot, int flags,
 	return map;
 }
 
-int V4L2CameraProxy::munmap(void *addr, size_t length)
+int V4L2CameraProxy::munmap(V4L2CameraFile *file, void *addr, size_t length)
 {
-	LOG(V4L2Compat, Debug) << "Servicing munmap";
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	MutexLocker locker(proxyMutex_);
 
@@ -233,9 +237,10 @@ void V4L2CameraProxy::updateBuffers()
 	}
 }
 
-int V4L2CameraProxy::vidioc_querycap(struct v4l2_capability *arg)
+int V4L2CameraProxy::vidioc_querycap(V4L2CameraFile *file, struct v4l2_capability *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_querycap";
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	*arg = capabilities_;
 
@@ -244,7 +249,8 @@ int V4L2CameraProxy::vidioc_querycap(struct v4l2_capability *arg)
 
 int V4L2CameraProxy::vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_frmsizeenum *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_framesizes fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	V4L2PixelFormat v4l2Format = V4L2PixelFormat(arg->pixel_format);
 	PixelFormat format = v4l2Format.toPixelFormat();
@@ -267,7 +273,8 @@ int V4L2CameraProxy::vidioc_enum_framesizes(V4L2CameraFile *file, struct v4l2_fr
 
 int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_enum_fmt fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(arg->type) ||
 	    arg->index >= streamConfig_.formats().pixelformats().size())
@@ -288,7 +295,8 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 
 int V4L2CameraProxy::vidioc_g_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_fmt fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -331,7 +339,8 @@ int V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 
 int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_fmt fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -361,7 +370,8 @@ int V4L2CameraProxy::vidioc_s_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 
 int V4L2CameraProxy::vidioc_try_fmt(V4L2CameraFile *file, struct v4l2_format *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_try_fmt fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(arg->type))
 		return -EINVAL;
@@ -384,7 +394,8 @@ enum v4l2_priority V4L2CameraProxy::maxPriority()
 
 int V4L2CameraProxy::vidioc_g_priority(V4L2CameraFile *file, enum v4l2_priority *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_priority fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	*arg = maxPriority();
 
@@ -394,7 +405,7 @@ int V4L2CameraProxy::vidioc_g_priority(V4L2CameraFile *file, enum v4l2_priority 
 int V4L2CameraProxy::vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority *arg)
 {
 	LOG(V4L2Compat, Debug)
-		<< "Servicing vidioc_s_priority fd = " << file->efd();
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (*arg > V4L2_PRIORITY_RECORD)
 		return -EINVAL;
@@ -409,7 +420,8 @@ int V4L2CameraProxy::vidioc_s_priority(V4L2CameraFile *file, enum v4l2_priority 
 
 int V4L2CameraProxy::vidioc_enuminput(V4L2CameraFile *file, struct v4l2_input *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_enuminput fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (arg->index != 0)
 		return -EINVAL;
@@ -426,7 +438,8 @@ int V4L2CameraProxy::vidioc_enuminput(V4L2CameraFile *file, struct v4l2_input *a
 
 int V4L2CameraProxy::vidioc_g_input(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_g_input fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	*arg = 0;
 
@@ -435,7 +448,8 @@ int V4L2CameraProxy::vidioc_g_input(V4L2CameraFile *file, int *arg)
 
 int V4L2CameraProxy::vidioc_s_input(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_s_input fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (*arg != 0)
 		return -EINVAL;
@@ -452,7 +466,8 @@ void V4L2CameraProxy::freeBuffers()
 
 int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_reqbufs fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(arg->type) ||
 	    !validateMemoryType(arg->memory))
@@ -527,7 +542,8 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 
 int V4L2CameraProxy::vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_querybuf fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (arg->index >= bufferCount_)
 		return -EINVAL;
@@ -545,8 +561,9 @@ int V4L2CameraProxy::vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *a
 
 int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_qbuf, index = "
-			       << arg->index << " fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__
+		<< "(index=" << arg->index << ")";
 
 	if (arg->index >= bufferCount_)
 		return -EINVAL;
@@ -576,7 +593,8 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 				  Mutex *lock)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_dqbuf fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (arg->index >= bufferCount_)
 		return -EINVAL;
@@ -625,7 +643,8 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 
 int V4L2CameraProxy::vidioc_expbuf(V4L2CameraFile *file, struct v4l2_exportbuffer *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_expbuf fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!hasOwnership(file))
 		return -EBUSY;
@@ -651,7 +670,8 @@ int V4L2CameraProxy::vidioc_expbuf(V4L2CameraFile *file, struct v4l2_exportbuffe
 
 int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamon fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (bufferCount_ == 0)
 		return -EINVAL;
@@ -675,7 +695,8 @@ int V4L2CameraProxy::vidioc_streamon(V4L2CameraFile *file, int *arg)
 
 int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 {
-	LOG(V4L2Compat, Debug) << "Servicing vidioc_streamoff fd = " << file->efd();
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
 
 	if (!validateBufferType(*arg))
 		return -EINVAL;
@@ -737,7 +758,7 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *ar
 	int ret;
 	switch (request) {
 	case VIDIOC_QUERYCAP:
-		ret = vidioc_querycap(static_cast<struct v4l2_capability *>(arg));
+		ret = vidioc_querycap(file, static_cast<struct v4l2_capability *>(arg));
 		break;
 	case VIDIOC_ENUM_FRAMESIZES:
 		ret = vidioc_enum_framesizes(file, static_cast<struct v4l2_frmsizeenum *>(arg));

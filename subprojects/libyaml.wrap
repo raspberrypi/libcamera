@@ -1,0 +1,5 @@
+[wrap-git]
+directory = libyaml
+url = https://github.com/yaml/libyaml
+# tags/0.2.5
+revision = 2c891fc7a770e8ba2fec34fc6b545c672beb37e6

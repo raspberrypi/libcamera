@@ -1,4 +1,5 @@
 /googletest-release*
+/libyaml
 /libyuv
 /packagecache
 /pybind11

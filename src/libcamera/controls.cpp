@@ -527,7 +527,7 @@ ControlInfo::ControlInfo(Span<const ControlValue> values,
 ControlInfo::ControlInfo(std::set<bool> values, bool def)
 	: min_(false), max_(true), def_(def), values_({ false, true })
 {
-	assert(values.count(def) && values.size() == 2);
+	ASSERT(values.count(def) && values.size() == 2);
 }
 
 /**

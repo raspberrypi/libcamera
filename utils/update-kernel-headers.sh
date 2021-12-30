@@ -66,8 +66,8 @@ done
 
 # The IPU3 header is a special case, as it's stored in staging. Handle it
 # manually.
-(cd "${install_dir}" ; "${kernel_dir}scripts/headers_install.sh" \
-	"${kernel_dir}/drivers/staging/media/ipu3/include/intel-ipu3.h" \
+(cd "${install_dir}" ; "${kernel_dir}/scripts/headers_install.sh" \
+	"${kernel_dir}/drivers/staging/media/ipu3/include/uapi/intel-ipu3.h" \
 	"${header_dir}/intel-ipu3.h")
 
 # Update the README file

@@ -1,0 +1,47 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+help() {
+	echo "$0: Load an application with libcamera V4L2 compatibility layer preload"
+	echo " $0 [OPTIONS...] executable [args]"
+	echo " -d, --debug	Increase log level"
+}
+
+debug=0
+while [ $# -gt 0 ]; do
+	case $1 in
+		-d|--debug)
+			debug=$((debug+1))
+			;;
+		-h)
+			help;
+			exit 0
+			;;
+		--)
+			shift;
+			break;;
+		-*)
+			echo "Unrecognised option: $1";
+			help;
+			exit 1
+			;;
+		*)
+			break
+			;;
+	esac
+	shift
+done
+
+[ $debug -gt 0 ] && loglevel=V4L2Compat:0
+[ $debug -gt 1 ] && loglevel=0
+[ "$loglevel" != "" ] && export LIBCAMERA_LOG_LEVELS=$loglevel
+
+if [ "$LD_PRELOAD" = "" ] ; then
+   LD_PRELOAD='@LIBCAMERA_V4L2_SO@'
+else
+   LD_PRELOAD="$LD_PRELOAD "'@LIBCAMERA_V4L2_SO@'
+fi
+
+export LD_PRELOAD
+
+exec "$@"

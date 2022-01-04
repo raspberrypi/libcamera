@@ -1164,6 +1164,17 @@ void CameraDevice::requestComplete(Request *request)
 	}
 }
 
+/**
+ * \brief Complete the Camera3RequestDescriptor
+ * \param[in] descriptor The Camera3RequestDescriptor that has completed
+ *
+ * The function marks the Camera3RequestDescriptor as 'complete'. It shall be
+ * called when all the streams in the Camera3RequestDescriptor have completed
+ * capture (or have been generated via post-processing) and the request is ready
+ * to be sent back to the framework.
+ *
+ * \context This function is \threadsafe.
+ */
 void CameraDevice::completeDescriptor(Camera3RequestDescriptor *descriptor)
 {
 	MutexLocker lock(descriptorsMutex_);
@@ -1172,6 +1183,19 @@ void CameraDevice::completeDescriptor(Camera3RequestDescriptor *descriptor)
 	sendCaptureResults();
 }
 
+/**
+ * \brief Sequentially send capture results to the framework
+ *
+ * Iterate over the descriptors queue to send completed descriptors back to the
+ * framework, in the same order as they have been queued. For each complete
+ * descriptor, populate a locally-scoped camera3_capture_result_t from the
+ * descriptor, send the capture result back by calling the
+ * process_capture_result() callback, and remove the descriptor from the queue.
+ * Stop iterating if the descriptor at the front of the queue is not complete.
+ *
+ * This function should never be called directly in the codebase. Use
+ * completeDescriptor() instead.
+ */
 void CameraDevice::sendCaptureResults()
 {
 	while (!descriptors_.empty() && !descriptors_.front()->isPending()) {
@@ -1231,6 +1255,19 @@ void CameraDevice::setBufferStatus(Camera3RequestDescriptor::StreamBuffer &strea
 	}
 }
 
+/**
+ * \brief Handle post-processing completion of a stream in a capture request
+ * \param[in] streamBuffer The StreamBuffer for which processing is complete
+ * \param[in] status Stream post-processing status
+ *
+ * This function is called from the post-processor's thread whenever a camera
+ * stream has finished post processing. The corresponding entry is dropped from
+ * the descriptor's pendingStreamsToProcess_ map.
+ *
+ * If the pendingStreamsToProcess_ map is then empty, all streams requiring to
+ * be generated from post-processing have been completed. Mark the descriptor as
+ * complete using completeDescriptor() in that case.
+ */
 void CameraDevice::streamProcessingComplete(Camera3RequestDescriptor::StreamBuffer *streamBuffer,
 					    Camera3RequestDescriptor::Status status)
 {

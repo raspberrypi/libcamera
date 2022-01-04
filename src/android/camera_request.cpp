@@ -52,6 +52,44 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 
 Camera3RequestDescriptor::~Camera3RequestDescriptor() = default;
 
+/**
+ * \struct Camera3RequestDescriptor::StreamBuffer
+ * \brief Group information for per-stream buffer of Camera3RequestDescriptor
+ *
+ * A capture request placed to the libcamera HAL can contain multiple streams.
+ * Each stream will have an associated buffer to be filled. StreamBuffer
+ * tracks this buffer with contextual information which aids in the stream's
+ * generation. The generation of the stream will depend on its type (refer to
+ * the CameraStream::Type documentation).
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::stream
+ * \brief Pointer to the corresponding CameraStream
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::camera3Buffer
+ * \brief Native handle to the buffer
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::frameBuffer
+ * \brief Encapsulate the dmabuf handle inside a libcamera::FrameBuffer for
+ * direct streams
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::fence
+ * \brief Acquire fence of the buffer
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::status
+ * \brief Track the status of the buffer
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::internalBuffer
+ * \brief Pointer to a buffer internally handled by CameraStream (if any)
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::srcBuffer
+ * \brief Pointer to the source frame buffer used for post-processing
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::dstBuffer
+ * \brief Pointer to the destination frame buffer used for post-processing
+ *
+ * \var Camera3RequestDescriptor::StreamBuffer::request
+ * \brief Back pointer to the Camera3RequestDescriptor to which the StreamBuffer belongs
+ */
 Camera3RequestDescriptor::StreamBuffer::StreamBuffer(
 	CameraStream *cameraStream, const camera3_stream_buffer_t &buffer,
 	Camera3RequestDescriptor *requestDescriptor)

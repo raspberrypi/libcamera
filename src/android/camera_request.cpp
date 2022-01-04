@@ -18,6 +18,94 @@ using namespace libcamera;
  *
  * A utility class that groups information about a capture request to be later
  * reused at request complete time to notify the framework.
+ *
+ *******************************************************************************
+ * Lifetime of a Camera3RequestDescriptor tracking a capture request placed by
+ * Android Framework
+ *******************************************************************************
+ *
+ *
+ *  Android Framework
+ *     │
+ *     │    ┌──────────────────────────────────┐
+ *     │    │camera3_capture_request_t         │
+ *     │    │                                  │
+ *     │    │Requested output streams          │
+ *     │    │  stream1   stream2   stream3 ... │
+ *     │    └──────────────────────────────────┘
+ *     ▼
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │ libcamera HAL                                               │
+ * ├─────────────────────────────────────────────────────────────┤
+ * │  CameraDevice                                               │
+ * │                                                             │
+ * │  processCaptureRequest(camera3_capture_request_t request)   │
+ * │                                                             │
+ * │   - Create Camera3RequestDescriptor tracking this request   │
+ * │   - Streams requiring post-processing are stored in the     │
+ * │     pendingStreamsToProcess map                             │
+ * │   - Add this Camera3RequestDescriptor to descriptors' queue │
+ * │     CameraDevice::descriptors_                              │
+ * │                                                             │ ┌─────────────────────────┐
+ * │   - Queue the capture request to libcamera core ────────────┤►│libcamera core           │
+ * │                                                             │ ├─────────────────────────┤
+ * │                                                             │ │- Capture from Camera    │
+ * │                                                             │ │                         │
+ * │                                                             │ │- Emit                   │
+ * │                                                             │ │  Camera::requestComplete│
+ * │  requestCompleted(Request *request) ◄───────────────────────┼─┼────                     │
+ * │                                                             │ │                         │
+ * │   - Check request completion status                         │ └─────────────────────────┘
+ * │                                                             │
+ * │   - if (pendingStreamsToProcess > 0)                        │
+ * │      Queue all entries from pendingStreamsToProcess         │
+ * │    else                                   │                 │
+ * │      completeDescriptor()                 │                 └──────────────────────┐
+ * │                                           │                                        │
+ * │                ┌──────────────────────────┴───┬──────────────────┐                 │
+ * │                │                              │                  │                 │
+ * │     ┌──────────▼────────────┐     ┌───────────▼─────────┐        ▼                 │
+ * │     │CameraStream1          │     │CameraStream2        │      ....                │
+ * │     ├┬───┬───┬──────────────┤     ├┬───┬───┬────────────┤                          │
+ * │     ││   │   │              │     ││   │   │            │                          │
+ * │     │▼───▼───▼──────────────┤     │▼───▼───▼────────────┤                          │
+ * │     │PostProcessorWorker    │     │PostProcessorWorker  │                          │
+ * │     │                       │     │                     │                          │
+ * │     │ +------------------+  │     │ +------------------+│                          │
+ * │     │ | PostProcessor    |  │     │ | PostProcessor    |│                          │
+ * │     │ |     process()    |  │     │ |     process()    |│                          │
+ * │     │ |                  |  │     │ |                  |│                          │
+ * │     │ | Emit             |  │     │ | Emit             |│                          │
+ * │     │ | processComplete  |  │     │ | processComplete  |│                          │
+ * │     │ |                  |  │     │ |                  |│                          │
+ * │     │ +--------------│---+  │     │ +--------------│---+│                          │
+ * │     │                │      │     │                │    │                          │
+ * │     │                │      │     │                │    │                          │
+ * │     └────────────────┼──────┘     └────────────────┼────┘                          │
+ * │                      │                             │                               │
+ * │                      │                             │                               │
+ * │                      │                             │                               │
+ * │                      ▼                             ▼                               │
+ * │ +---------------------------------------+     +--------------+                     │
+ * │ | CameraDevice                          |     |              |                     │
+ * │ |                                       |     |              |                     │
+ * │ | streamProcessingComplete()            |     |              |                     │
+ * │ |                                       |     |              |                     │
+ * │ | - Check and set buffer status         |     |     ....     |                     │
+ * │ | - Remove post+processing entry        |     |              |                     │
+ * │ |   from pendingStreamsToProcess        |     |              |                     │
+ * │ |                                       |     |              |                     │
+ * │ | - if (pendingStreamsToProcess.empty())|     |              |                     │
+ * │ |        completeDescriptor             |     |              |                     │
+ * │ |                                       |     |              |                     │
+ * │ +---------------------------------------+     +--------------+                     │
+ * │                                                                                    │
+ * └────────────────────────────────────────────────────────────────────────────────────┘
+ *
+ *   +-------------+
+ *   |             | - PostProcessorWorker's thread
+ *   |             |
+ *   +-------------+
  */
 
 Camera3RequestDescriptor::Camera3RequestDescriptor(

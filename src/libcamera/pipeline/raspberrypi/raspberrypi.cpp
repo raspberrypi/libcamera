@@ -312,7 +312,7 @@ private:
 		return static_cast<RPiCameraData *>(camera->_d());
 	}
 
-	int registerCamera(MediaDevice *unicam, MediaDevice *isp);
+	int registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity);
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
 	void freeBuffers(Camera *camera);
@@ -1069,16 +1069,28 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	int ret = registerCamera(unicamDevice, ispDevice);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to register camera: " << ret;
-		return false;
+	/*
+	 * The loop below is used to register multiple cameras behind one or more
+	 * video mux devices that are attached to a particular Unicam instance.
+	 * Obviously these cameras cannot be used simultaneously.
+	 */
+	unsigned int numCameras = 0;
+	for (MediaEntity *entity : unicamDevice->entities()) {
+		if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
+			continue;
+
+		int ret = registerCamera(unicamDevice, ispDevice, entity);
+		if (ret)
+			LOG(RPI, Error) << "Failed to register camera "
+					<< entity->name() << ": " << ret;
+		else
+			numCameras++;
 	}
 
-	return true;
+	return !!numCameras;
 }
 
-int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp)
+int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity)
 {
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
 
@@ -1119,14 +1131,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp)
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispOutputDequeue);
 	data->isp_[Isp::Stats].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispOutputDequeue);
 
-	/* Identify the sensor. */
-	for (MediaEntity *entity : unicam->entities()) {
-		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR) {
-			data->sensor_ = std::make_unique<CameraSensor>(entity);
-			break;
-		}
-	}
-
+	data->sensor_ = std::make_unique<CameraSensor>(sensorEntity);
 	if (!data->sensor_)
 		return -EINVAL;
 

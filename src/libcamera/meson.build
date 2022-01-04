@@ -162,7 +162,6 @@ libcamera_private = declare_dependency(sources : [
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libcamera,
                  libraries : libcamera_base_lib,
-                 version : '1.0',
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')
 

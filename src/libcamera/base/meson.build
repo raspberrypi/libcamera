@@ -65,7 +65,6 @@ libcamera_base = declare_dependency(sources : [
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libcamera_base_lib,
-                 version : '1.0',
                  description : 'Camera support base utility library',
                  subdirs : 'libcamera')
 

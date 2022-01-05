@@ -297,6 +297,18 @@ int V4L2Device::setControls(ControlList *ctrls)
 		/* Set the v4l2_ext_control value for the write operation. */
 		ControlValue &value = ctrl->second;
 		switch (iter->first->type()) {
+		case ControlTypeInteger32: {
+			if (value.isArray()) {
+				Span<uint8_t> data = value.data();
+				v4l2Ctrl.p_u32 = reinterpret_cast<uint32_t *>(data.data());
+				v4l2Ctrl.size = data.size();
+			} else {
+				v4l2Ctrl.value = value.get<int32_t>();
+			}
+
+			break;
+		}
+
 		case ControlTypeInteger64:
 			v4l2Ctrl.value64 = value.get<int64_t>();
 			break;
@@ -671,6 +683,14 @@ void V4L2Device::updateControls(ControlList *ctrls,
 		const unsigned int id = v4l2Ctrl.id;
 
 		ControlValue value = ctrls->get(id);
+		if (value.isArray()) {
+			/*
+			 * No action required, the VIDIOC_[GS]_EXT_CTRLS ioctl
+			 * accessed the ControlValue storage directly for array
+			 * controls.
+			 */
+			continue;
+		}
 
 		const auto iter = controls_.find(id);
 		ASSERT(iter != controls_.end());
@@ -680,19 +700,10 @@ void V4L2Device::updateControls(ControlList *ctrls,
 			value.set<int64_t>(v4l2Ctrl.value64);
 			break;
 
-		case ControlTypeInteger32:
-			value.set<int32_t>(v4l2Ctrl.value);
-			break;
-
-		case ControlTypeByte:
-			/*
-			 * No action required, the VIDIOC_[GS]_EXT_CTRLS ioctl
-			 * accessed the ControlValue storage directly.
-			 */
-			break;
-
 		default:
 			/*
+			 * Note: this catches the ControlTypeInteger32 case.
+			 *
 			 * \todo To be changed when support for string controls
 			 * will be added.
 			 */

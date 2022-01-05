@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /* Copyright (C) 2017 - 2018 Intel Corporation */
 
 #ifndef __IPU3_UAPI_H
@@ -9,8 +9,10 @@
 /* from /drivers/staging/media/ipu3/include/videodev2.h */
 
 /* Vendor specific - used for IPU3 camera sub-system */
-#define V4L2_META_FMT_IPU3_PARAMS	v4l2_fourcc('i', 'p', '3', 'p') /* IPU3 processing parameters */
-#define V4L2_META_FMT_IPU3_STAT_3A	v4l2_fourcc('i', 'p', '3', 's') /* IPU3 3A statistics */
+/* IPU3 processing parameters */
+#define V4L2_META_FMT_IPU3_PARAMS	v4l2_fourcc('i', 'p', '3', 'p')
+/* IPU3 3A statistics */
+#define V4L2_META_FMT_IPU3_STAT_3A	v4l2_fourcc('i', 'p', '3', 's')
 
 /* from include/uapi/linux/v4l2-controls.h */
 #define V4L2_CID_INTEL_IPU3_BASE	(V4L2_CID_USER_BASE + 0x10c0)
@@ -255,7 +257,9 @@ struct ipu3_uapi_ae_ccm {
  * struct ipu3_uapi_ae_config - AE config
  *
  * @grid_cfg:	config for auto exposure statistics grid. See struct
- *		&ipu3_uapi_ae_grid_config
+ *		&ipu3_uapi_ae_grid_config, as Imgu did not support output
+ *		auto exposure statistics, so user can ignore this configuration
+ *		and use the RGB table in auto-whitebalance statistics instead.
  * @weights:	&IPU3_UAPI_AE_WEIGHTS is based on 32x24 blocks in the grid.
  *		Each grid cell has a corresponding value in weights LUT called
  *		grid value, global histogram is updated based on grid value and
@@ -266,8 +270,8 @@ struct ipu3_uapi_ae_ccm {
  */
 struct ipu3_uapi_ae_config {
 	struct ipu3_uapi_ae_grid_config grid_cfg __attribute__((aligned(32)));
-	struct ipu3_uapi_ae_weight_elem weights[
-			IPU3_UAPI_AE_WEIGHTS] __attribute__((aligned(32)));
+	struct ipu3_uapi_ae_weight_elem weights[IPU3_UAPI_AE_WEIGHTS]
+						__attribute__((aligned(32)));
 	struct ipu3_uapi_ae_ccm ae_ccm __attribute__((aligned(32)));
 } __attribute__((packed));
 
@@ -555,6 +559,9 @@ struct ipu3_uapi_ff_status {
  *
  * @awb_raw_buffer: auto white balance meta data &ipu3_uapi_awb_raw_buffer
  * @ae_raw_buffer: auto exposure raw data &ipu3_uapi_ae_raw_buffer_aligned
+ *                 current Imgu does not output the auto exposure statistics
+ *                 to ae_raw_buffer, the user such as 3A algorithm can use the
+ *                 RGB table in &ipu3_uapi_awb_raw_buffer to do auto-exposure.
  * @af_raw_buffer: &ipu3_uapi_af_raw_buffer for auto focus meta data
  * @awb_fr_raw_buffer: value as specified by &ipu3_uapi_awb_fr_raw_buffer
  * @stats_4a_config: 4a statistics config as defined by &ipu3_uapi_4a_config.
@@ -652,7 +659,7 @@ struct ipu3_uapi_bnr_static_config_wb_gains_thr_config {
  * @cg:	Gain coefficient for threshold calculation, [0, 31], default 8.
  * @ci:	Intensity coefficient for threshold calculation. range [0, 0x1f]
  *	default 6.
- * 	format: u3.2 (3 most significant bits represent whole number,
+ *	format: u3.2 (3 most significant bits represent whole number,
  *	2 least significant bits represent the fractional part
  *	with each count representing 0.25)
  *	e.g. 6 in binary format is 00110, that translates to 1.5

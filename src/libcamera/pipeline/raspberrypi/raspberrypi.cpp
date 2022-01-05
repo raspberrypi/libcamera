@@ -272,6 +272,12 @@ public:
 
 	unsigned int dropFrameCount_;
 
+	/*
+	 * If set, this stores the value that represets a gain of one for
+	 * the V4L2_CID_NOTIFY_GAINS control.
+	 */
+	std::optional<int32_t> notifyGainsUnity_;
+
 private:
 	void checkRequestCompleted();
 	void fillRequestMetadata(const ControlList &bufferControls,
@@ -1249,6 +1255,15 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	data->properties_ = data->sensor_->properties();
 
 	/*
+	 * The V4L2_CID_NOTIFY_GAINS control, if present, is used to inform the
+	 * sensor of the colour gains. It is defined to be a linear gain where
+	 * the default value represents a gain of exactly one.
+	 */
+	auto it = data->sensor_->controls().find(V4L2_CID_NOTIFY_GAINS);
+	if (it != data->sensor_->controls().end())
+		data->notifyGainsUnity_ = it->second.def().get<int32_t>();
+
+	/*
 	 * Set a default value for the ScalerCropMaximum property to show
 	 * that we support its use, however, initialise it to zero because
 	 * it's not meaningful until a camera mode has been chosen.
@@ -1643,6 +1658,25 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 	/* Add to the Request metadata buffer what the IPA has provided. */
 	Request *request = requestQueue_.front();
 	request->metadata().merge(controls);
+
+	/*
+	 * Inform the sensor of the latest colour gains if it has the
+	 * V4L2_CID_NOTIFY_GAINS control (which means notifyGainsUnity_ is set).
+	 */
+	if (notifyGainsUnity_ && controls.contains(libcamera::controls::ColourGains)) {
+		libcamera::Span<const float> colourGains = controls.get(libcamera::controls::ColourGains);
+		/* The control wants linear gains in the order B, Gb, Gr, R. */
+		ControlList ctrls(sensor_->controls());
+		std::array<int32_t, 4> gains{
+			static_cast<int32_t>(colourGains[1] * *notifyGainsUnity_),
+			*notifyGainsUnity_,
+			*notifyGainsUnity_,
+			static_cast<int32_t>(colourGains[0] * *notifyGainsUnity_)
+		};
+		ctrls.set(V4L2_CID_NOTIFY_GAINS, Span<const int32_t>{ gains });
+
+		sensor_->setControls(&ctrls);
+	}
 
 	state_ = State::IpaComplete;
 	handleState();

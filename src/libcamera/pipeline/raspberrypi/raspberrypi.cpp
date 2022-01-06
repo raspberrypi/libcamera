@@ -653,8 +653,11 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			 */
 			for (const auto &format : fmts) {
 				PixelFormat pf = format.first.toPixelFormat();
-				if (pf.isValid())
-					deviceFormats[pf].emplace_back(sensorSize);
+				if (pf.isValid()) {
+					const SizeRange &ispSizes = format.second[0];
+					deviceFormats[pf].emplace_back(ispSizes.min, sensorSize,
+								       ispSizes.hStep, ispSizes.vStep);
+				}
 			}
 		}
 

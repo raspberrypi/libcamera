@@ -905,15 +905,6 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 					<< format.toString();
 			return ret;
 		}
-
-		/*
-		 * If a RAW/Bayer stream has been requested by the application,
-		 * we must set both Unicam streams as external, even though the
-		 * application may only request RAW frames. This is because we
-		 * match timestamps on both streams to synchronise buffers.
-		 */
-		if (rawStream)
-			data->unicam_[Unicam::Embedded].setExternal(true);
 	}
 
 	/*

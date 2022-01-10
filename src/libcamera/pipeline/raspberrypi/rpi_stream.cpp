@@ -130,8 +130,8 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 	 */
 	if (!buffer) {
 		if (availableBuffers_.empty()) {
-			LOG(RPISTREAM, Info) << "No buffers available for "
-						<< name_;
+			LOG(RPISTREAM, Debug) << "No buffers available for "
+					      << name_;
 			/*
 			 * Note that we need to queue an internal buffer as soon
 			 * as one becomes available.

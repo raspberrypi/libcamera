@@ -469,6 +469,7 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 		return -EBUSY;
 
 	arg->capabilities = V4L2_BUF_CAP_SUPPORTS_MMAP;
+	arg->flags = 0;
 	memset(arg->reserved, 0, sizeof(arg->reserved));
 
 	if (arg->count == 0) {

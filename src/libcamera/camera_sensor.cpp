@@ -107,6 +107,17 @@ int CameraSensor::init()
 	if (ret < 0)
 		return ret;
 
+	/*
+	 * Clear any flips to be sure we get the "native" Bayer order. This is
+	 * harmless for sensors where the flips don't affect the Bayer order.
+	 */
+	ControlList ctrls(subdev_->controls());
+	if (subdev_->controls().find(V4L2_CID_HFLIP) != subdev_->controls().end())
+		ctrls.set(V4L2_CID_HFLIP, 0);
+	if (subdev_->controls().find(V4L2_CID_VFLIP) != subdev_->controls().end())
+		ctrls.set(V4L2_CID_VFLIP, 0);
+	subdev_->setControls(&ctrls);
+
 	/* Enumerate, sort and cache media bus codes and sizes. */
 	formats_ = subdev_->formats(pad_);
 	if (formats_.empty()) {
@@ -461,6 +472,11 @@ int CameraSensor::initProperties()
 /**
  * \fn CameraSensor::mbusCodes()
  * \brief Retrieve the media bus codes supported by the camera sensor
+ *
+ * Any Bayer formats are listed using the sensor's native Bayer order,
+ * that is, with the effect of V4L2_CID_HFLIP and V4L2_CID_VFLIP undone
+ * (where these controls exist).
+ *
  * \return The supported media bus codes sorted in increasing order
  */
 

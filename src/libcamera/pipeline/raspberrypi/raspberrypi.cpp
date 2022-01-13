@@ -1279,8 +1279,8 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	 * Thirdly, what is the "native" Bayer order, when no transforms are
 	 * applied?
 	 *
-	 * As part of answering the final question, we reset the camera to
-	 * no transform at all.
+	 * We note that the sensor's cached list of supported formats is
+	 * already in the "native" order, with any flips having been undone.
 	 */
 	const V4L2Subdevice *sensor = data->sensor_->device();
 	const struct v4l2_query_ext_ctrl *hflipCtrl = sensor->controlInfo(V4L2_CID_HFLIP);
@@ -1288,11 +1288,6 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 		/* We assume it will support vflips too... */
 		data->supportsFlips_ = true;
 		data->flipsAlterBayerOrder_ = hflipCtrl->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT;
-
-		ControlList ctrls(data->sensor_->controls());
-		ctrls.set(V4L2_CID_HFLIP, 0);
-		ctrls.set(V4L2_CID_VFLIP, 0);
-		data->setSensorControls(ctrls);
 	}
 
 	/* Look for a valid Bayer format. */

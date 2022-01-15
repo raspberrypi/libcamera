@@ -65,7 +65,7 @@ def test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, base_driver):
 
     result = extract_result(output[-2])
     if result['failed'] == 0:
-        return TestPass, None
+        return TestPass, output
 
     # vimc will fail s_fmt because it only supports framesizes that are
     # multiples of 3
@@ -73,7 +73,7 @@ def test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, base_driver):
         failures = grep('fail', output)
         if re.search('S_FMT cannot handle an invalid format', failures[0]) is None:
             return TestFail, output
-        return TestPass, None
+        return TestPass, output
 
     return TestFail, output
 
@@ -82,6 +82,8 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--all', action='store_true',
                         help='Test all available cameras')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Make the output verbose')
     parser.add_argument('v4l2_compat', type=str,
                         help='Path to v4l2-compat.so')
     args = parser.parse_args(argv[1:])
@@ -146,9 +148,12 @@ def main(argv):
         if ret == TestFail:
             failed.append(device)
             print('failed')
-            print('\n'.join(msg))
         else:
             print('success')
+
+        if ret == TestFail or args.verbose:
+            print('\n'.join(msg))
+
         drivers_tested[driver] = True
 
     if len(drivers_tested) == 0:

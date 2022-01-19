@@ -338,6 +338,23 @@ bool PipelineHandler::hasPendingRequests(const Camera *camera) const
 }
 
 /**
+ * \fn PipelineHandler::registerRequest()
+ * \brief Register a request for use by the pipeline handler
+ * \param[in] request The request to register
+ *
+ * This function is called when the request is created, and allows the pipeline
+ * handler to perform any one-time initialization it requries for the request.
+ */
+void PipelineHandler::registerRequest(Request *request)
+{
+	/*
+	 * Connect the request prepared signal to notify the pipeline handler
+	 * when a request is ready to be processed.
+	 */
+	request->_d()->prepared.connect(this, &PipelineHandler::doQueueRequests);
+}
+
+/**
  * \fn PipelineHandler::queueRequest()
  * \brief Queue a request
  * \param[in] request The request to queue
@@ -366,9 +383,6 @@ void PipelineHandler::queueRequest(Request *request)
 
 	waitingRequests_.push(request);
 
-	request->_d()->prepared.connect(this, [this]() {
-						doQueueRequests();
-					});
 	request->_d()->prepare(300ms);
 }
 

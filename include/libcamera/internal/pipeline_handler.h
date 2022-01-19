@@ -59,6 +59,7 @@ public:
 	void stop(Camera *camera);
 	bool hasPendingRequests(const Camera *camera) const;
 
+	void registerRequest(Request *request);
 	void queueRequest(Request *request);
 
 	bool completeBuffer(Request *request, FrameBuffer *buffer);

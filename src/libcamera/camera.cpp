@@ -1074,12 +1074,19 @@ int Camera::configure(CameraConfiguration *config)
  */
 std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
 {
-	int ret = _d()->isAccessAllowed(Private::CameraConfigured,
-					Private::CameraRunning);
+	Private *const d = _d();
+
+	int ret = d->isAccessAllowed(Private::CameraConfigured,
+				     Private::CameraRunning);
 	if (ret < 0)
 		return nullptr;
 
-	return std::make_unique<Request>(this, cookie);
+	std::unique_ptr<Request> request = std::make_unique<Request>(this, cookie);
+
+	/* Associate the request with the pipeline handler. */
+	d->pipe_->registerRequest(request.get());
+
+	return request;
 }
 
 /**

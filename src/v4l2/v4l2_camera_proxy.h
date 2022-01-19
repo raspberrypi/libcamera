@@ -58,6 +58,7 @@ private:
 	int vidioc_s_input(V4L2CameraFile *file, int *arg);
 	int vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuffers *arg);
 	int vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
+	int vidioc_prepare_buf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg);
 	int vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 			 libcamera::Mutex *lock) LIBCAMERA_TSA_REQUIRES(*lock);

@@ -559,6 +559,38 @@ int V4L2CameraProxy::vidioc_querybuf(V4L2CameraFile *file, struct v4l2_buffer *a
 	return 0;
 }
 
+int V4L2CameraProxy::vidioc_prepare_buf(V4L2CameraFile *file, struct v4l2_buffer *arg)
+{
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__
+		<< "(index=" << arg->index << ")";
+
+	if (!hasOwnership(file))
+		return -EBUSY;
+
+	if (arg->index >= bufferCount_)
+		return -EINVAL;
+
+	if (arg->flags & V4L2_BUF_FLAG_REQUEST_FD)
+		return -EINVAL;
+
+	if (!validateBufferType(arg->type) ||
+	    !validateMemoryType(arg->memory))
+		return -EINVAL;
+
+	struct v4l2_buffer &buffer = buffers_[arg->index];
+
+	if (buffer.flags & V4L2_BUF_FLAG_QUEUED ||
+	    buffer.flags & V4L2_BUF_FLAG_PREPARED)
+		return -EINVAL;
+
+	buffer.flags |= V4L2_BUF_FLAG_PREPARED;
+
+	arg->flags = buffer.flags;
+
+	return 0;
+}
+
 int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 {
 	LOG(V4L2Compat, Debug)
@@ -627,7 +659,7 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 
 	struct v4l2_buffer &buf = buffers_[currentBuf_];
 
-	buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);
+	buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE | V4L2_BUF_FLAG_PREPARED);
 	buf.length = sizeimage_;
 	*arg = buf;
 
@@ -729,6 +761,7 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_S_INPUT,
 	VIDIOC_REQBUFS,
 	VIDIOC_QUERYBUF,
+	VIDIOC_PREPARE_BUF,
 	VIDIOC_QBUF,
 	VIDIOC_DQBUF,
 	VIDIOC_EXPBUF,

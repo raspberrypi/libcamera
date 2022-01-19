@@ -93,9 +93,7 @@ SignalBase::SlotList SignalBase::slots()
  * Connecting a signal to a slot results in the slot being called with the
  * arguments passed to the emit() function when the signal is emitted. Multiple
  * slots can be connected to the same signal, and multiple signals can connected
- * to the same slot. Duplicate connections between a signal and a slot are
- * allowed and result in the slot being called multiple times for the same
- * signal emission.
+ * to the same slot.
  *
  * When a slot belongs to an instance of the Object class, the slot is called
  * in the context of the thread that the object is bound to. If the signal is
@@ -105,6 +103,9 @@ SignalBase::SlotList SignalBase::slots()
  * loop, after the Signal::emit() function returns, with a copy of the signal's
  * arguments. The emitter shall thus ensure that any pointer or reference
  * passed through the signal will remain valid after the signal is emitted.
+ *
+ * Duplicate connections between a signal and a slot are not expected and use of
+ * the Object class to manage signals will enforce this restriction.
  */
 
 /**

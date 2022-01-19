@@ -212,17 +212,19 @@ protected:
 		/* ----------------- Signal -> Object tests ----------------- */
 
 		/*
-		 * Test automatic disconnection on object deletion. Connect the
-		 * slot twice to ensure all instances are disconnected.
+		 * Test automatic disconnection on object deletion. Connect two
+		 * signals to ensure all instances are disconnected.
 		 */
 		signalVoid_.disconnect();
+		signalVoid2_.disconnect();
 
 		SlotObject *slotObject = new SlotObject();
 		signalVoid_.connect(slotObject, &SlotObject::slot);
-		signalVoid_.connect(slotObject, &SlotObject::slot);
+		signalVoid2_.connect(slotObject, &SlotObject::slot);
 		delete slotObject;
 		valueStatic_ = 0;
 		signalVoid_.emit();
+		signalVoid2_.emit();
 		if (valueStatic_ != 0) {
 			cout << "Signal disconnection on object deletion test failed" << endl;
 			return TestFail;
@@ -298,17 +300,19 @@ protected:
 		/* --------- Signal -> Object (multiple inheritance) -------- */
 
 		/*
-		 * Test automatic disconnection on object deletion. Connect the
-		 * slot twice to ensure all instances are disconnected.
+		 * Test automatic disconnection on object deletion. Connect two
+		 * signals to ensure all instances are disconnected.
 		 */
 		signalVoid_.disconnect();
+		signalVoid2_.disconnect();
 
 		SlotMulti *slotMulti = new SlotMulti();
 		signalVoid_.connect(slotMulti, &SlotMulti::slot);
-		signalVoid_.connect(slotMulti, &SlotMulti::slot);
+		signalVoid2_.connect(slotMulti, &SlotMulti::slot);
 		delete slotMulti;
 		valueStatic_ = 0;
 		signalVoid_.emit();
+		signalVoid2_.emit();
 		if (valueStatic_ != 0) {
 			cout << "Signal disconnection on object deletion test failed" << endl;
 			return TestFail;
@@ -345,6 +349,7 @@ protected:
 
 private:
 	Signal<> signalVoid_;
+	Signal<> signalVoid2_;
 	Signal<int> signalInt_;
 	Signal<int, const std::string &> signalMultiArgs_;
 

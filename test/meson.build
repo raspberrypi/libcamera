@@ -39,11 +39,9 @@ internal_tests = [
     ['event',                           'event.cpp'],
     ['event-dispatcher',                'event-dispatcher.cpp'],
     ['event-thread',                    'event-thread.cpp'],
-    ['fence',                           'fence.cpp'],
     ['file',                            'file.cpp'],
     ['flags',                           'flags.cpp'],
     ['hotplug-cameras',                 'hotplug-cameras.cpp'],
-    ['mapped-buffer',                   'mapped-buffer.cpp'],
     ['message',                         'message.cpp'],
     ['object',                          'object.cpp'],
     ['object-delete',                   'object-delete.cpp'],
@@ -56,6 +54,11 @@ internal_tests = [
     ['timer-thread',                    'timer-thread.cpp'],
     ['unique-fd',                       'unique-fd.cpp'],
     ['utils',                           'utils.cpp'],
+]
+
+internal_non_parallel_tests = [
+    ['fence',                           'fence.cpp'],
+    ['mapped-buffer',                   'mapped-buffer.cpp'],
 ]
 
 foreach t : public_tests
@@ -74,4 +77,13 @@ foreach t : internal_tests
                      include_directories : test_includes_internal)
 
     test(t[0], exe)
+endforeach
+
+foreach t : internal_non_parallel_tests
+    exe = executable(t[0], t[1],
+                     dependencies : libcamera_private,
+                     link_with : test_libraries,
+                     include_directories : test_includes_internal)
+
+    test(t[0], exe, is_parallel : false)
 endforeach

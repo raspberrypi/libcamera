@@ -173,6 +173,9 @@ private:
 	/* Frame duration (1/fps) limits. */
 	Duration minFrameDuration_;
 	Duration maxFrameDuration_;
+
+	/* Maximum gain code for the sensor. */
+	uint32_t maxSensorGainCode_;
 };
 
 int IPARPi::init(const IPASettings &settings, ipa::RPi::SensorConfig *sensorConfig)
@@ -356,6 +359,8 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		LOG(IPARPI, Error) << "ISP control validation failed.";
 		return -1;
 	}
+
+	maxSensorGainCode_ = sensorCtrls_.at(V4L2_CID_ANALOGUE_GAIN).max().get<int32_t>();
 
 	/* Setup a metadata ControlList to output metadata. */
 	libcameraMetadata_ = ControlList(controls::controls);
@@ -1112,6 +1117,13 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
+
+	/*
+	 * Ensure anything larger than the max gain code will not be passed to
+	 * DelayedControls. The AGC will correctly handle a lower gain returned
+	 * by the sensor, provided it knows the actual gain used.
+	 */
+	gainCode = std::min<int32_t>(gainCode, maxSensorGainCode_);
 
 	/* GetVBlanking might clip exposure time to the fps limits. */
 	Duration exposure = agcStatus->shutter_time;

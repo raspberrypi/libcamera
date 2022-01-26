@@ -170,8 +170,11 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 }
 
 
-enum class Cfe : unsigned int { Output0, Output1, Embedded, Stats };
-enum class Isp : unsigned int { Input, Config, Output0, Output1, TdnOutput, HogOutput, StitchOutput };
+//enum class Cfe : unsigned int { Output0, Output1, Embedded, Stats };
+//enum class Isp : unsigned int { Input, Config, Output0, Output1, TdnOutput, HogOutput, StitchOutput };
+
+enum class Cfe : unsigned int { Output0, Embedded, Stats };
+enum class Isp : unsigned int { Config, Output0, Output1 };
 
 } /* namespace */
 
@@ -215,8 +218,8 @@ public:
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
 	/* Array of CFE and ISP device streams and associated buffers/streams. */
-	PiSP::Device<Cfe, 4> cfe_;
-	PiSP::Device<Isp, 7> isp_;
+	PiSP::Device<Cfe, 3> cfe_;
+	PiSP::Device<Isp, 3> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<PiSP::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
@@ -739,7 +742,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 		        << " - Selected sensor format: " << sensorFormat.toString()
 		        << " - Selected cfe format: " << cfeFormat.toString();
 
-	ret = data->isp_[Isp::Input].dev()->setFormat(&cfeFormat);
+	//ret = data->isp_[Isp::Input].dev()->setFormat(&cfeFormat);
 	if (ret)
 		return ret;
 
@@ -865,7 +868,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);
-	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &testCrop);
+	//data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &testCrop);
 	data->ispMinCropSize_ = testCrop.size();
 
 	/* Adjust aspect ratio by providing crops on the input image. */
@@ -873,7 +876,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	Rectangle crop = size.centeredTo(Rectangle(cfeFormat.size).center());
 	data->ispCrop_ = crop;
 
-	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
+	//data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
 	ret = data->configureIPA(config);
 	if (ret)
@@ -1131,23 +1134,22 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 {
 	std::unique_ptr<PiSPCameraData> data = std::make_unique<PiSPCameraData>(this);
 
-	MediaEntity *cfeImage = cfe->getEntityByName("cfe-image");
-	MediaEntity *cfeStats = cfe->getEntityByName("cfe-stats");
-	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
+	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-csi2_ch0");
+	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
+	//MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
 	MediaEntity *ispConfig = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
 	MediaEntity *ispOutput1 = isp->getEntityByName("pispbe-output1");
-	MediaEntity *ispHogOutput = isp->getEntityByName("pispbe-hog_output");
-	MediaEntity *ispTdnOutput = isp->getEntityByName("pispbe-tdn_output");
-	MediaEntity *ispStitchOutput = isp->getEntityByName("pispbe-stitch_output");
+	//MediaEntity *ispHogOutput = isp->getEntityByName("pispbe-hog_output");
+	//MediaEntity *ispTdnOutput = isp->getEntityByName("pispbe-tdn_output");
+	//MediaEntity *ispStitchOutput = isp->getEntityByName("pispbe-stitch_output");
 
-	if (!cfeImage || cfeStats || !ispInput || !ispConfig || !ispOutput0 || !ispOutput1 ||
-	    !ispHogOutput || !ispTdnOutput || !ispTdnOutput || !ispStitchOutput)
+	if (!cfeImage || !cfeStats || !ispConfig || !ispOutput0 || !ispOutput1)
 		return -ENOENT;
 
 	/* Locate and open the cfe video streams. */
 	data->cfe_[Cfe::Output0] = PiSP::Stream("CFE Image", cfeImage);
-	data->cfe_[Cfe::Stats] = PiSP::Stream("ISP Stats", cfeImage);
+	data->cfe_[Cfe::Stats] = PiSP::Stream("CFE Stats", cfeStats);
 
 	/* An embedded data node will not be present if the sensor does not support it. */
 	MediaEntity *cfeEmbedded = cfe->getEntityByName("cfe-embedded");
@@ -1158,14 +1160,15 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true);
+	//data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true);
+	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", ispConfig);
 	data->isp_[Isp::Output0] = PiSP::Stream("ISP Output0", ispOutput0);
 	data->isp_[Isp::Output1] = PiSP::Stream("ISP Output1", ispOutput1);
 
 	/* Wire up all the buffer connections. */
 	data->cfe_[Cfe::Output0].dev()->frameStart.connect(data.get(), &PiSPCameraData::frameStarted);
 	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
-	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
+	//data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 
@@ -1207,6 +1210,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	 * iterate over all streams in one go.
 	 */
 	data->streams_.push_back(&data->cfe_[Cfe::Output0]);
+	data->streams_.push_back(&data->cfe_[Cfe::Stats]);
 	//if (sensorConfig.sensorMetadata)
 	//	data->streams_.push_back(&data->cfe_[Cfe::Embedded]);
 
@@ -1662,7 +1666,7 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 	LOG(PISP, Debug) << "Input re-queue to ISP, buffer id " << bufferId
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
-	isp_[Isp::Input].queueBuffer(buffer);
+	//isp_[Isp::Input].queueBuffer(buffer);
 	ispOutputCount_ = 0;
 	handleState();
 }
@@ -1964,7 +1968,7 @@ void PiSPCameraData::applyScalerCrop(const ControlList &controls)
 		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
 
 		if (ispCrop != ispCrop_) {
-			isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop);
+			//isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop);
 			ispCrop_ = ispCrop;
 
 			/*

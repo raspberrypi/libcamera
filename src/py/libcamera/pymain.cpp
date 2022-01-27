@@ -70,19 +70,30 @@ static py::object ControlValueToPy(const ControlValue &cv)
 	}
 }
 
+template<typename T>
+static ControlValue ControlValueMaybeArray(const py::object &ob)
+{
+	try {
+		std::vector<T> vec = ob.cast<std::vector<T>>();
+		return ControlValue(Span<const T>(vec));
+	} catch (py::cast_error const &e) {
+	}
+	return ControlValue(ob.cast<T>());
+}
+
 static ControlValue PyToControlValue(const py::object &ob, ControlType type)
 {
 	switch (type) {
 	case ControlTypeBool:
 		return ControlValue(ob.cast<bool>());
 	case ControlTypeByte:
-		return ControlValue(ob.cast<uint8_t>());
+		return ControlValueMaybeArray<uint8_t>(ob);
 	case ControlTypeInteger32:
-		return ControlValue(ob.cast<int32_t>());
+		return ControlValueMaybeArray<int32_t>(ob);
 	case ControlTypeInteger64:
-		return ControlValue(ob.cast<int64_t>());
+		return ControlValueMaybeArray<int64_t>(ob);
 	case ControlTypeFloat:
-		return ControlValue(ob.cast<float>());
+		return ControlValueMaybeArray<float>(ob);
 	case ControlTypeString:
 		return ControlValue(ob.cast<string>());
 	case ControlTypeRectangle:

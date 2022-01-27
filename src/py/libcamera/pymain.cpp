@@ -211,15 +211,34 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("id", &Camera::id)
 		.def("acquire", &Camera::acquire)
 		.def("release", &Camera::release)
-		.def("start", [](shared_ptr<Camera> &self) {
+		.def("start", [](shared_ptr<Camera> &self, py::dict controls) {
 			self->requestCompleted.connect(handleRequestCompleted);
 
-			int ret = self->start();
+			const ControlInfoMap &controlMap = self->controls();
+			ControlList controlList(controlMap);
+			for (std::pair<py::handle, py::handle> item : controls) {
+				auto key = item.first.cast<std::string>();
+
+				auto it = find_if(controlMap.begin(), controlMap.end(),
+						  [&key](const auto &kvp) {
+							  return kvp.first->name() == key; });
+
+				if (it == controlMap.end())
+					throw runtime_error("Control " + key + " not found");
+
+				const auto &id = it->first;
+				auto obj = py::cast<py::object>(item.second);
+
+				controlList.set(id->id(), PyToControlValue(obj, id->type()));
+			}
+
+			int ret = self->start(&controlList);
 			if (ret)
 				self->requestCompleted.disconnect(handleRequestCompleted);
 
 			return ret;
-		})
+		},
+		py::arg("controls") = py::dict())
 
 		.def("stop", [](shared_ptr<Camera> &self) {
 			int ret = self->stop();

@@ -104,8 +104,16 @@ void *V4L2CameraProxy::mmap(V4L2CameraFile *file, void *addr, size_t length,
 
 	MutexLocker locker(proxyMutex_);
 
-	/* \todo Validate prot and flags properly. */
-	if (prot != (PROT_READ | PROT_WRITE)) {
+	/*
+	 * Mimic the videobuf2 behaviour, which requires PROT_READ and
+	 * MAP_SHARED.
+	 */
+	if (!(prot & PROT_READ)) {
+		errno = EINVAL;
+		return MAP_FAILED;
+	}
+
+	if (!(flags & MAP_SHARED)) {
 		errno = EINVAL;
 		return MAP_FAILED;
 	}

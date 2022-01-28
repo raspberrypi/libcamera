@@ -178,6 +178,7 @@ private:
 	std::unique_ptr<V4L2Subdevice> isp_;
 	std::unique_ptr<V4L2VideoDevice> param_;
 	std::unique_ptr<V4L2VideoDevice> stat_;
+	std::unique_ptr<V4L2Subdevice> csi_;
 
 	RkISP1MainPath mainPath_;
 	RkISP1SelfPath selfPath_;
@@ -188,6 +189,8 @@ private:
 	std::queue<FrameBuffer *> availableStatBuffers_;
 
 	Camera *activeCamera_;
+
+	const MediaPad *ispSink_;
 };
 
 RkISP1Frames::RkISP1Frames(PipelineHandler *pipe)
@@ -599,6 +602,12 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug) << "Sensor configured with " << format;
 
+	if (csi_) {
+		ret = csi_->setFormat(0, &format);
+		if (ret < 0)
+			return ret;
+	}
+
 	ret = isp_->setFormat(0, &format);
 	if (ret < 0)
 		return ret;
@@ -900,8 +909,7 @@ int PipelineHandlerRkISP1::initLinks(Camera *camera,
 	 * Configure the sensor links: enable the link corresponding to this
 	 * camera.
 	 */
-	const MediaPad *pad = isp_->entity()->getPadByIndex(0);
-	for (MediaLink *link : pad->links()) {
+	for (MediaLink *link : ispSink_->links()) {
 		if (link->source()->entity() != sensor->entity())
 			continue;
 
@@ -909,6 +917,14 @@ int PipelineHandlerRkISP1::initLinks(Camera *camera,
 			<< "Enabling link from sensor '"
 			<< link->source()->entity()->name()
 			<< "' to ISP";
+
+		ret = link->setEnabled(true);
+		if (ret < 0)
+			return ret;
+	}
+
+	if (csi_) {
+		MediaLink *link = isp_->entity()->getPadByIndex(0)->links().at(0);
 
 		ret = link->setEnabled(true);
 		if (ret < 0)
@@ -1013,6 +1029,22 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (isp_->open() < 0)
 		return false;
 
+	/* Locate and open the optional CSI-2 receiver. */
+	ispSink_ = isp_->entity()->getPadByIndex(0);
+	if (!ispSink_ || ispSink_->links().empty())
+		return false;
+
+	pad = ispSink_->links().at(0)->source();
+	if (pad->entity()->function() == MEDIA_ENT_F_VID_IF_BRIDGE) {
+		csi_ = std::make_unique<V4L2Subdevice>(pad->entity());
+		if (csi_->open() < 0)
+			return false;
+
+		ispSink_ = csi_->entity()->getPadByIndex(0);
+		if (!ispSink_)
+			return false;
+	}
+
 	/* Locate and open the stats and params video nodes. */
 	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
 	if (stat_->open() < 0)
@@ -1038,12 +1070,8 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	 * Enumerate all sensors connected to the ISP and create one
 	 * camera instance for each of them.
 	 */
-	pad = isp_->entity()->getPadByIndex(0);
-	if (!pad)
-		return false;
-
 	bool registered = false;
-	for (MediaLink *link : pad->links()) {
+	for (MediaLink *link : ispSink_->links()) {
 		if (!createCamera(link->source()->entity()))
 			registered = true;
 	}

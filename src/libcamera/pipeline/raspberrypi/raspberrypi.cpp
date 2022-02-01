@@ -2079,7 +2079,7 @@ void RPiCameraData::tryRunPipeline()
 		ispPrepare.embeddedBufferPresent = true;
 
 		LOG(RPI, Debug) << "Signalling signalIspPrepare:"
-				<< " Bayer buffer id: " << embeddedId;
+				<< " Embedded buffer id: " << embeddedId;
 	}
 
 	ipa_->signalIspPrepare(ispPrepare);

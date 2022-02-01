@@ -1391,6 +1391,14 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 			 * minimise frame drops.
 			 */
 			numBuffers = std::max<int>(2, minBuffers - numRawBuffers);
+		} else if (stream == &data->isp_[Isp::Input]) {
+			/*
+			 * ISP input buffers are imported from Unicam, so follow
+			 * similar logic as above to count all the RAW buffers
+			 * available.
+			 */
+			numBuffers = numRawBuffers + std::max<int>(2, minBuffers - numRawBuffers);
+
 		} else if (stream == &data->unicam_[Unicam::Embedded]) {
 			/*
 			 * Embedded data buffers are (currently) for internal use,

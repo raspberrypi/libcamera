@@ -174,7 +174,7 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 //enum class Isp : unsigned int { Input, Config, Output0, Output1, TdnOutput, HogOutput, StitchOutput };
 
 enum class Cfe : unsigned int { Output0, Embedded, Stats };
-enum class Isp : unsigned int { Config, Output0, Output1 };
+enum class Isp : unsigned int { Input, Config, Output0, Output1 };
 
 } /* namespace */
 
@@ -219,7 +219,7 @@ public:
 	SensorFormats sensorFormats_;
 	/* Array of CFE and ISP device streams and associated buffers/streams. */
 	PiSP::Device<Cfe, 3> cfe_;
-	PiSP::Device<Isp, 3> isp_;
+	PiSP::Device<Isp, 4> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<PiSP::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
@@ -742,7 +742,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 		        << " - Selected sensor format: " << sensorFormat.toString()
 		        << " - Selected cfe format: " << cfeFormat.toString();
 
-	//ret = data->isp_[Isp::Input].dev()->setFormat(&cfeFormat);
+	ret = data->isp_[Isp::Input].dev()->setFormat(&cfeFormat);
 	if (ret)
 		return ret;
 
@@ -1136,7 +1136,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 
 	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-csi2_ch0");
 	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
-	//MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
+	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
 	MediaEntity *ispConfig = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
 	MediaEntity *ispOutput1 = isp->getEntityByName("pispbe-output1");
@@ -1160,7 +1160,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	//data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true);
+	data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true);
 	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", ispConfig);
 	data->isp_[Isp::Output0] = PiSP::Stream("ISP Output0", ispOutput0);
 	data->isp_[Isp::Output1] = PiSP::Stream("ISP Output1", ispOutput1);
@@ -1168,7 +1168,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	/* Wire up all the buffer connections. */
 	data->cfe_[Cfe::Output0].dev()->frameStart.connect(data.get(), &PiSPCameraData::frameStarted);
 	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
-	//data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
+	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 
@@ -1379,6 +1379,13 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			 * minimise frame drops.
 			 */
 			numBuffers = std::max<int>(2, minBuffers - numRawBuffers);
+		} else if (stream == &data->isp_[Isp::Input]) {
+			/*
+			 * ISP input buffers are imported from Unicam, so follow
+			 * similar logic as above to count all the RAW buffers
+			 * available.
+			 */
+			numBuffers = numRawBuffers + std::max<int>(2, minBuffers - numRawBuffers);
 		} else if (stream == &data->cfe_[Cfe::Embedded]) {
 			/*
 			 * Embedded data buffers are (currently) for internal use,
@@ -1666,7 +1673,7 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 	LOG(PISP, Debug) << "Input re-queue to ISP, buffer id " << bufferId
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
-	//isp_[Isp::Input].queueBuffer(buffer);
+	isp_[Isp::Input].queueBuffer(buffer);
 	ispOutputCount_ = 0;
 	handleState();
 }

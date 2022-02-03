@@ -83,6 +83,10 @@ public:
 	char const *Name() const override;
 	void Initialise() override;
 	void Read(boost::property_tree::ptree const &params) override;
+	// AWB handles "pausing" for itself.
+	bool IsPaused() const override;
+	void Pause() override;
+	void Resume() override;
 	unsigned int GetConvergenceFrames() const override;
 	void SetMode(std::string const &name) override;
 	void SetManualGains(double manual_r, double manual_b) override;

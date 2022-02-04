@@ -96,8 +96,14 @@ static ControlValue PyToControlValue(const py::object &ob, ControlType type)
 		return ControlValueMaybeArray<float>(ob);
 	case ControlTypeString:
 		return ControlValue(ob.cast<string>());
-	case ControlTypeRectangle:
-	case ControlTypeSize:
+	case ControlTypeRectangle: {
+		std::array<int32_t, 4> array = ob.cast<std::array<int32_t, 4>>();
+		return ControlValue(Rectangle(array[0], array[1], array[2], array[3]));
+	}
+	case ControlTypeSize: {
+		std::array<int32_t, 2> array = ob.cast<std::array<int32_t, 2>>();
+		return ControlValue(Size(array[0], array[1]));
+	}
 	case ControlTypeNone:
 	default:
 		throw runtime_error("Control type not implemented");

@@ -2083,122 +2083,43 @@ void RPiCameraData::tryRunPipeline()
 
 bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)
 {
-	unsigned int embeddedRequeueCount = 0, bayerRequeueCount = 0;
+	if (bayerQueue_.empty())
+		return false;
 
-	/* Loop until we find a matching bayer and embedded data buffer. */
-	while (!bayerQueue_.empty()) {
-		/* Start with the front of the bayer queue. */
-		FrameBuffer *bayerBuffer = bayerQueue_.front().buffer;
+	/* Start with the front of the bayer queue. */
+	bayerFrame = std::move(bayerQueue_.front());
+	bayerQueue_.pop();
 
-		/*
-		 * Find the embedded data buffer with a matching timestamp to pass to
-		 * the IPA. Any embedded buffers with a timestamp lower than the
-		 * current bayer buffer will be removed and re-queued to the driver.
-		 */
-		uint64_t ts = bayerBuffer->metadata().timestamp;
-		embeddedBuffer = nullptr;
-		while (!embeddedQueue_.empty()) {
-			FrameBuffer *b = embeddedQueue_.front();
-			if (!unicam_[Unicam::Embedded].isExternal() && b->metadata().timestamp < ts) {
-				embeddedQueue_.pop();
-				unicam_[Unicam::Embedded].returnBuffer(b);
-				embeddedRequeueCount++;
-				LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
-						  << unicam_[Unicam::Embedded].name();
-			} else if (unicam_[Unicam::Embedded].isExternal() || b->metadata().timestamp == ts) {
-				/* We pop the item from the queue lower down. */
-				embeddedBuffer = b;
-				break;
-			} else {
-				break; /* Only higher timestamps from here. */
-			}
-		}
-
-		if (!embeddedBuffer) {
-			bool flushedBuffers = false;
-
-			LOG(RPI, Debug) << "Could not find matching embedded buffer";
-
-			if (!sensorMetadata_) {
-				/*
-				 * If there is no sensor metadata, simply return the
-				 * first bayer frame in the queue.
-				 */
-				LOG(RPI, Debug) << "Returning bayer frame without a match";
-				bayerFrame = std::move(bayerQueue_.front());
-				bayerQueue_.pop();
-				embeddedBuffer = nullptr;
-				return true;
-			}
-
-			if (!embeddedQueue_.empty()) {
-				/*
-				 * Not found a matching embedded buffer for the bayer buffer in
-				 * the front of the queue. This buffer is now orphaned, so requeue
-				 * it back to the device.
-				 */
-				unicam_[Unicam::Image].returnBuffer(bayerQueue_.front().buffer);
-				bayerQueue_.pop();
-				bayerRequeueCount++;
-				LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
-						  << unicam_[Unicam::Image].name();
-			}
-
-			/*
-			 * If we have requeued all available embedded data buffers in this loop,
-			 * then we are fully out of sync, so might as well requeue all the pending
-			 * bayer buffers.
-			 */
-			if (embeddedRequeueCount == unicam_[Unicam::Embedded].getBuffers().size()) {
-				/* The embedded queue must be empty at this point! */
-				ASSERT(embeddedQueue_.empty());
-
-				LOG(RPI, Warning) << "Flushing bayer stream!";
-				while (!bayerQueue_.empty()) {
-					unicam_[Unicam::Image].returnBuffer(bayerQueue_.front().buffer);
-					bayerQueue_.pop();
-				}
-				flushedBuffers = true;
-			}
-
-			/*
-			 * Similar to the above, if we have requeued all available bayer buffers in
-			 * the loop, then we are fully out of sync, so might as well requeue all the
-			 * pending embedded data buffers.
-			 */
-			if (bayerRequeueCount == unicam_[Unicam::Image].getBuffers().size()) {
-				/* The bayer queue must be empty at this point! */
-				ASSERT(bayerQueue_.empty());
-
-				LOG(RPI, Warning) << "Flushing embedded data stream!";
-				while (!embeddedQueue_.empty()) {
-					unicam_[Unicam::Embedded].returnBuffer(embeddedQueue_.front());
-					embeddedQueue_.pop();
-				}
-				flushedBuffers = true;
-			}
-
-			/*
-			 * If the embedded queue has become empty, we cannot do any more.
-			 * Similarly, if we have flushed any one of our queues, we cannot do
-			 * any more. Return from here without a buffer pair.
-			 */
-			if (embeddedQueue_.empty() || flushedBuffers)
-				return false;
-		} else {
-			/*
-			 * We have found a matching bayer and embedded data buffer, so
-			 * nothing more to do apart from assigning the bayer frame and
-			 * popping the buffers from the queue.
-			 */
-			bayerFrame = std::move(bayerQueue_.front());
-			bayerQueue_.pop();
+	/*
+	 * Find the embedded data buffer with a matching timestamp to pass to
+	 * the IPA. Any embedded buffers with a timestamp lower than the
+	 * current bayer buffer will be removed and re-queued to the driver.
+	 */
+	uint64_t ts = bayerFrame.buffer->metadata().timestamp;
+	embeddedBuffer = nullptr;
+	while (!embeddedQueue_.empty()) {
+		FrameBuffer *b = embeddedQueue_.front();
+		if (b->metadata().timestamp < ts) {
 			embeddedQueue_.pop();
-			return true;
+			unicam_[Unicam::Embedded].returnBuffer(b);
+			LOG(RPI, Debug) << "Dropping unmatched input frame in stream "
+					<< unicam_[Unicam::Embedded].name();
+		} else if (b->metadata().timestamp == ts) {
+			/* Found a match! */
+			embeddedBuffer = b;
+			embeddedQueue_.pop();
+			break;
+		} else {
+			break; /* Only higher timestamps from here. */
 		}
 	}
 
-	return false;
+	if (!embeddedBuffer && sensorMetadata_) {
+		/* Log if there is no matching embedded data buffer found. */
+		LOG(RPI, Debug) << "Returning bayer frame without a matching embedded buffer.";
+	}
+
+	return true;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRPi)

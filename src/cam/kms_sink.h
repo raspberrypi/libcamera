@@ -47,6 +47,7 @@ private:
 		libcamera::Request *camRequest_;
 	};
 
+	int selectPipeline(const libcamera::PixelFormat &format);
 	int configurePipeline(const libcamera::PixelFormat &format);
 	void requestComplete(DRM::AtomicRequest *request);
 

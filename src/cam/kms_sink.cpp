@@ -136,7 +136,7 @@ int KMSSink::configure(const libcamera::CameraConfiguration &config)
 	return 0;
 }
 
-int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
+int KMSSink::selectPipeline(const libcamera::PixelFormat &format)
 {
 	/*
 	 * If the requested format has an alpha channel, also consider the X
@@ -174,25 +174,31 @@ int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
 					crtc_ = crtc;
 					plane_ = plane;
 					format_ = format;
-					break;
+					return 0;
 				}
 
 				if (plane->supportsFormat(xFormat)) {
 					crtc_ = crtc;
 					plane_ = plane;
 					format_ = xFormat;
-					break;
+					return 0;
 				}
 			}
 		}
 	}
 
-	if (!crtc_) {
+	return -EPIPE;
+}
+
+int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
+{
+	const int ret = selectPipeline(format);
+	if (ret) {
 		std::cerr
 			<< "Unable to find display pipeline for format "
 			<< format.toString() << std::endl;
 
-		return -EPIPE;
+		return ret;
 	}
 
 	std::cout

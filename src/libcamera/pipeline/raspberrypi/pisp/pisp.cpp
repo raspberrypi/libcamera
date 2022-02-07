@@ -173,8 +173,9 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 //enum class Cfe : unsigned int { Output0, Output1, Embedded, Stats };
 //enum class Isp : unsigned int { Input, Config, Output0, Output1, TdnOutput, HogOutput, StitchOutput };
 
-enum class Cfe : unsigned int { Output0, Embedded, Stats };
-enum class Isp : unsigned int { Input, Config, Output0, Output1 };
+/* Config node must be the last one!. */
+enum class Cfe : unsigned int { Output0, Embedded, Stats, Config };
+enum class Isp : unsigned int { Input, Output0, Output1, Config };
 
 } /* namespace */
 
@@ -244,6 +245,15 @@ public:
 	struct BayerFrame {
 		FrameBuffer *buffer;
 		ControlList controls;
+	};
+
+	struct RequestJob {
+		Request *request;
+		FrameBuffer *bayerFrame;
+		FrameBuffer *embeddedFrame;
+		FrameBuffer *feConfig;
+		FrameBuffer *beConfig;
+		ControlList sensorControls;
 	};
 
 	std::queue<BayerFrame> bayerQueue_;
@@ -1136,6 +1146,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 
 	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-csi2_ch0");
 	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
+	MediaEntity *cfeConfig = cfe->getEntityByName("py-cfe-config");
 	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
 	MediaEntity *ispConfig = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
@@ -1144,12 +1155,13 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	//MediaEntity *ispTdnOutput = isp->getEntityByName("pispbe-tdn_output");
 	//MediaEntity *ispStitchOutput = isp->getEntityByName("pispbe-stitch_output");
 
-	if (!cfeImage || !cfeStats || !ispConfig || !ispOutput0 || !ispOutput1)
+	if (!cfeImage || !cfeStats || !cfeConfig || !ispConfig || !ispOutput0 || !ispOutput1)
 		return -ENOENT;
 
 	/* Locate and open the cfe video streams. */
 	data->cfe_[Cfe::Output0] = PiSP::Stream("CFE Image", cfeImage);
 	data->cfe_[Cfe::Stats] = PiSP::Stream("CFE Stats", cfeStats);
+	data->cfe_[Cfe::Config] = PiSP::Stream("CFE Config", cfeConfig);
 
 	/* An embedded data node will not be present if the sensor does not support it. */
 	MediaEntity *cfeEmbedded = cfe->getEntityByName("cfe-embedded");
@@ -1168,6 +1180,9 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	/* Wire up all the buffer connections. */
 	data->cfe_[Cfe::Output0].dev()->frameStart.connect(data.get(), &PiSPCameraData::frameStarted);
 	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
+	data->cfe_[Cfe::Stats].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
+	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
+
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
@@ -1759,7 +1774,11 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
 		bayerQueue_.push({ buffer, std::move(ctrl) });
+	} else if (stream == &cfe_[Cfe::Stats]) { 
+
+		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
 	} else {
+	
 		embeddedQueue_.push(buffer);
 	}
 
@@ -1851,34 +1870,29 @@ void PiSPCameraData::clearIncompleteRequests()
 
 void PiSPCameraData::handleStreamBuffer(FrameBuffer *buffer, PiSP::Stream *stream)
 {
-	if (stream->isExternal()) {
+	Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
+	/*
+	 * It is possible to be here without a pending request, so check
+	 * that we actually have one to action, otherwise we just return
+	 * buffer back to the stream.
+	 */
+	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 		/*
-		 * It is possible to be here without a pending request, so check
-		 * that we actually have one to action, otherwise we just return
-		 * buffer back to the stream.
+		 * Check if this is an externally provided buffer, and if
+		 * so, we must stop tracking it in the pipeline handler.
 		 */
-		Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
-		if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
-			/*
-			 * Check if this is an externally provided buffer, and if
-			 * so, we must stop tracking it in the pipeline handler.
-			 */
-			handleExternalBuffer(buffer, stream);
-			/*
-			 * Tag the buffer as completed, returning it to the
-			 * application.
-			 */
-			pipe()->completeBuffer(request, buffer);
-		} else {
-			/*
-			 * This buffer was not part of the Request, or there is no
-			 * pending request, so we can recycle it.
-			 */
-			stream->returnBuffer(buffer);
-		}
+		handleExternalBuffer(buffer, stream);
+		/*
+		 * Tag the buffer as completed, returning it to the
+		 * application.
+		 */
+		pipe()->completeBuffer(request, buffer);
 	} else {
-		/* Simply re-queue the buffer to the requested stream. */
-		stream->queueBuffer(buffer);
+		/*
+		 * This buffer was not part of the Request, or there is no
+		 * pending request, so we can recycle it.
+		 */
+		stream->returnBuffer(buffer);
 	}
 }
 

@@ -8,6 +8,8 @@
 #ifndef _PISP_TYPES_H_
 #define _PISP_TYPES_H_
 
+#include <stdint.h>
+
 /* This definition must match the format description in the hardware exactly! */
 struct pisp_image_format_config {
 	/* size in pixels */

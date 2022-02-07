@@ -60,6 +60,7 @@ public:
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
 	void returnBuffer(FrameBuffer *buffer);
+	FrameBuffer *getBuffer();
 
 	int queueAllBuffers();
 	void releaseBuffers();
@@ -75,32 +76,24 @@ private:
 
 		int get()
 		{
-			int id;
-			if (!recycle_.empty()) {
-				id = recycle_.front();
-				recycle_.pop();
-			} else {
-				id = id_++;
-				ASSERT(id_ <= max_);
-			}
-			return id;
+			int ret = id_;
+
+			id_ = (id_ + 1) % max_;
+			return ret;
 		}
 
-		void release(int id)
+		void release([[maybe_unused]] int id)
 		{
-			recycle_.push(id);
 		}
 
 		void reset()
 		{
 			id_ = 0;
-			recycle_ = {};
 		}
 
 	private:
 		int max_;
 		int id_;
-		std::queue<int> recycle_;
 	};
 
 	void clearBuffers();

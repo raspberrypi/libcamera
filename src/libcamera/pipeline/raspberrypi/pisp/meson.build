@@ -3,6 +3,7 @@
 pisp_source = files([
     'pisp.cpp',
     'rpi_stream.cpp',
+    'frontend/frontend.cpp'
 ])
 
 libcamera_sources += pisp_source

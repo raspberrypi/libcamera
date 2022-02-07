@@ -162,6 +162,11 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 
 void Stream::returnBuffer(FrameBuffer *buffer)
 {
+	if (!external_) {
+		queueBuffer(buffer);
+		return;
+	}
+	
 	/* This can only be called for external streams. */
 	ASSERT(external_);
 
@@ -197,6 +202,18 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 		requestBuffers_.pop();
 		queueToDevice(requestBuffer);
 	}
+}
+
+FrameBuffer *Stream::getBuffer()
+{
+	FrameBuffer *buffer = nullptr;
+
+	if (!availableBuffers_.empty()) {
+		buffer = availableBuffers_.front();
+		availableBuffers_.pop();
+	}
+
+	return buffer;
 }
 
 int Stream::queueAllBuffers()

@@ -8,7 +8,7 @@
 #ifndef _PISP_FE_CONFIG_
 #define _PISP_FE_CONFIG_
 
-#include <media/raspberrypi/pisp_common.h>
+#include "../pisp_common.h"
 
 #include "pisp_statistics.h"
 
@@ -37,11 +37,6 @@ enum pisp_fe_enable {
 	PISP_FE_ENABLE_COMPRESS1 = 0x400000,
 	PISP_FE_ENABLE_OUTPUT1 = 0x800000
 };
-
-#define PISP_FE_ENABLE_CROP(i) (PISP_FE_ENABLE_CROP0 << (4 * i))
-#define PISP_FE_ENABLE_DOWNSCALE(i) (PISP_FE_ENABLE_DOWNSCALE0 << (4 * i))
-#define PISP_FE_ENABLE_COMPRESS(i) (PISP_FE_ENABLE_COMPRESS0 << (4 * i))
-#define PISP_FE_ENABLE_OUTPUT(i) (PISP_FE_ENABLE_OUTPUT0 << (4 * i))
 
 /*
  * We use the enable flags to show when blocks are "dirty", but we need some

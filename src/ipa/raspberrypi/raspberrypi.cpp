@@ -70,7 +70,7 @@ constexpr Duration defaultMaxFrameDuration = 250.0s;
  * we rate-limit the controller Prepare() and Process() calls to lower than or
  * equal to this rate.
  */
-constexpr Duration controllerMinFrameDuration = 1.0s / 60.0;
+constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
 LOG_DEFINE_CATEGORY(IPARPI)
 

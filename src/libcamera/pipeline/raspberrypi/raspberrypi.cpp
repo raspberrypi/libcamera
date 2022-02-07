@@ -1877,34 +1877,31 @@ void RPiCameraData::clearIncompleteRequests()
 
 void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 {
-	if (stream->isExternal()) {
+	/*
+	 * It is possible to be here without a pending request, so check
+	 * that we actually have one to action, otherwise we just return
+	 * buffer back to the stream.
+	 */
+	Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
+	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 		/*
-		 * It is possible to be here without a pending request, so check
-		 * that we actually have one to action, otherwise we just return
-		 * buffer back to the stream.
+		 * Check if this is an externally provided buffer, and if
+		 * so, we must stop tracking it in the pipeline handler.
 		 */
-		Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
-		if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
-			/*
-			 * Check if this is an externally provided buffer, and if
-			 * so, we must stop tracking it in the pipeline handler.
-			 */
-			handleExternalBuffer(buffer, stream);
-			/*
-			 * Tag the buffer as completed, returning it to the
-			 * application.
-			 */
-			pipe()->completeBuffer(request, buffer);
-		} else {
-			/*
-			 * This buffer was not part of the Request, or there is no
-			 * pending request, so we can recycle it.
-			 */
-			stream->returnBuffer(buffer);
-		}
+		handleExternalBuffer(buffer, stream);
+		/*
+		 * Tag the buffer as completed, returning it to the
+		 * application.
+		 */
+		pipe()->completeBuffer(request, buffer);
 	} else {
-		/* Simply re-queue the buffer to the requested stream. */
-		stream->queueBuffer(buffer);
+		/*
+		 * This buffer was not part of the Request (which happens if an
+		 * internal buffer was used for an external stream, or
+		 * unconditionally for internal streams), or there is no pending
+		 * request, so we can recycle it.
+		 */
+		stream->returnBuffer(buffer);
 	}
 }
 
@@ -2104,7 +2101,7 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 			FrameBuffer *b = embeddedQueue_.front();
 			if (!unicam_[Unicam::Embedded].isExternal() && b->metadata().timestamp < ts) {
 				embeddedQueue_.pop();
-				unicam_[Unicam::Embedded].queueBuffer(b);
+				unicam_[Unicam::Embedded].returnBuffer(b);
 				embeddedRequeueCount++;
 				LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
 						  << unicam_[Unicam::Embedded].name();
@@ -2140,7 +2137,7 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 				 * the front of the queue. This buffer is now orphaned, so requeue
 				 * it back to the device.
 				 */
-				unicam_[Unicam::Image].queueBuffer(bayerQueue_.front().buffer);
+				unicam_[Unicam::Image].returnBuffer(bayerQueue_.front().buffer);
 				bayerQueue_.pop();
 				bayerRequeueCount++;
 				LOG(RPI, Warning) << "Dropping unmatched input frame in stream "
@@ -2158,7 +2155,7 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 
 				LOG(RPI, Warning) << "Flushing bayer stream!";
 				while (!bayerQueue_.empty()) {
-					unicam_[Unicam::Image].queueBuffer(bayerQueue_.front().buffer);
+					unicam_[Unicam::Image].returnBuffer(bayerQueue_.front().buffer);
 					bayerQueue_.pop();
 				}
 				flushedBuffers = true;
@@ -2175,7 +2172,7 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 
 				LOG(RPI, Warning) << "Flushing embedded data stream!";
 				while (!embeddedQueue_.empty()) {
-					unicam_[Unicam::Embedded].queueBuffer(embeddedQueue_.front());
+					unicam_[Unicam::Embedded].returnBuffer(embeddedQueue_.front());
 					embeddedQueue_.pop();
 				}
 				flushedBuffers = true;

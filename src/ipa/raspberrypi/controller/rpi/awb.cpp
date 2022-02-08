@@ -172,6 +172,26 @@ void Awb::Initialise()
 	async_results_ = sync_results_;
 }
 
+bool Awb::IsPaused() const
+{
+	return false;
+}
+
+void Awb::Pause()
+{
+	// "Pause" by fixing everything to the most recent values.
+	manual_r_ = sync_results_.gain_r = prev_sync_results_.gain_r;
+	manual_b_ = sync_results_.gain_b = prev_sync_results_.gain_b;
+	sync_results_.gain_g = prev_sync_results_.gain_g;
+	sync_results_.temperature_K = prev_sync_results_.temperature_K;
+}
+
+void Awb::Resume()
+{
+	manual_r_ = 0.0;
+	manual_b_ = 0.0;
+}
+
 unsigned int Awb::GetConvergenceFrames() const
 {
 	// If not in auto mode, there is no convergence

@@ -887,6 +887,11 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
 
+	/* Set the scaler crop to the value that we are using. */
+	data->scalerCrop_ = data->ispCrop_.scaledBy(data->sensorInfo_.analogCrop.size(),
+						    data->sensorInfo_.outputSize);
+	data->scalerCrop_.translateBy(data->sensorInfo_.analogCrop.topLeft());
+
 	/*
 	 * Configure the Unicam embedded data output format only if the sensor
 	 * supports it.

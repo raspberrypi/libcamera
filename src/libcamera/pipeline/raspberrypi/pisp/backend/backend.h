@@ -4,7 +4,7 @@
 
 #include "tiling/pisp_tiling.h"
 #include "pisp_be_config.h"
-
+#include "../variants/pisp_variant.h"
 
 // Definition of the PiSP Back End class.
 
@@ -32,7 +32,7 @@ public:
 		unsigned int flags; /* An "or" of the Flags above */
 	};
 
-	BackEnd(BackEndHal *hal, Config const &user_config);
+	BackEnd(Config const &user_config, PiSPVariant &variant);
 	~BackEnd();
 
 	void SetGlobal(pisp_be_global_config const &global);
@@ -90,16 +90,16 @@ public:
 
 private:
 	void finaliseConfig();
-	void finaliseTiling(std::vector<pisp_tile> &tiles);
+	void finaliseTiling();
 	void threadFunc();
 	void updateTiles();
-	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
+	void retilePipeline(TilingConfig const &tiling_config);
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 	void getHogOffset(int x, int y, uint64_t &addr_offset);
-	void invokePostCallback(BackEndOutput &output);
 
 	Config config_;
-	PISP_BACK_END_CONFIG_T be_config_;
+	PiSPVariant variant_;
+	pisp_be_config be_config_;
 	pisp_image_format_config max_input_;
 	int tdn_input_index_, tdn_output_index_;
 	int stitch_input_index_, stitch_output_index_;
@@ -107,32 +107,6 @@ private:
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
-	State state_;
-	std::thread thread_;
-	BackEndPreCallback pre_callback_;
-	BackEndPostCallback post_callback_;
-	BackEndInitialiseCallback initialise_callback_;
-	BackEndSwitchModeCallback switch_mode_callback_;
-	std::mutex mutex_;
-	BackEndHal *hal_;
-	uint32_t jobs_requested_, jobs_done_;
-	std::thread::id thread_id_;
-	PISP_DEVICE_MODE_T current_mode_;
-	std::thread post_process_thread_;
-	void postProcessThreadFunc();
-	// Payload for the event queue.
-	enum class Event { Stop,
-			   PostCallback,
-			   QueueInput };
-	typedef boost::variant<struct BackEndInput> MsgType;
-	typedef struct Message<Event, MsgType> EventMsg;
-	EventQueue<EventMsg> event_queue_;
-	// Payload for the postprocess queue.
-	enum class PostProcessEvent { Stop,
-				      PostCallback };
-	typedef boost::variant<struct BackEndOutput> PostProcessMsgType;
-	typedef struct Message<PostProcessEvent, PostProcessMsgType> PostProcessEventMsg;
-	EventQueue<PostProcessEventMsg> post_process_queue_;
 };
 
 } // namespace PiSP

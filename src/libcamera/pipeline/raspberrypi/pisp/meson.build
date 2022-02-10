@@ -5,6 +5,7 @@ pisp_sources = files([
     'rpi_stream.cpp',
 ])
 
+subdir('variants')
 subdir('frontend')
 subdir('backend')
 

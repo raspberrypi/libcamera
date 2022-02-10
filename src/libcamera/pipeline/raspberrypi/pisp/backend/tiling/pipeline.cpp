@@ -1,12 +1,15 @@
-#include "pipeline.hpp"
+#include "pipeline.h"
 
-#include "common/pisp_logging.hpp"
+#include <libcamera/base/log.h>
 
-#include "input_stage.hpp"
-#include "output_stage.hpp"
-#include "stages.hpp"
+#include "input_stage.h"
+#include "output_stage.h"
+#include "stages.h"
 
+using namespace libcamera;
 using namespace tiling;
+
+LOG_DECLARE_CATEGORY(PISP_TILING);
 
 Pipeline::Pipeline(char const *name, Config const &config)
 	: name_(name), config_(config)
@@ -60,14 +63,15 @@ void Pipeline::reset()
 
 int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_size)
 {
-	PISP_LOG(debug, "tiling direction " << dir);
+	LOG(PISP_TILING, Debug) << "Tiling direction " << dir;
+
 	reset();
 	bool done = false;
 	unsigned int num_tiles = 0;
 	for (; !done; num_tiles++) {
-		PISP_LOG(debug, "----------------------------------------------------------------");
+		LOG(PISP_TILING, Debug) << "----------------------------------------------------------------";
 		if (num_tiles == num_items)
-			throw std::runtime_error("Pipeline::Tile: too many tiles");
+			LOG(PISP_TILING, Error) << "Too many tiles!";
 		for (auto s : outputs_)
 			s->PushStartUp(s->GetOutputInterval().End(), dir);
 		for (auto s : inputs_)
@@ -81,6 +85,8 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 		for (auto s : outputs_)
 			done &= s->Done(dir);
 	}
-	PISP_LOG(debug, "Made " << num_tiles << " tiles in direction " << dir);
+
+	LOG(PISP_TILING, Debug) << "Made " << num_tiles << " tiles in direction " << dir;
 	return num_tiles;
 }
+

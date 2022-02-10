@@ -1,10 +1,10 @@
 Code to tile up an image for processing by the PiSP.
 
-Essentially we have a wrapper class, Pipeline (pipeline.hpp), which contains some configuration
-and points to all the processing stages. Then we have the abstract Stage class (stages.hpp) which
+Essentially we have a wrapper class, Pipeline (pipeline.h), which contains some configuration
+and points to all the processing stages. Then we have the abstract Stage class (stages.h) which
 is specialised to describe how a tile going through it will change. Most stages have a single
 upstream and a single downstream stage, and these can be conveniently derived from BasicStage
-(also stages.hpp), though there are other kinds of stages too (e.g. SplitStage in split_stage.hpp).
+(also stages.h), though there are other kinds of stages too (e.g. SplitStage in split_stage.hpp).
 
 The algorithm requires 3 principle methods to be defined on each derived version of the stage
 class. Note that the tiling algorithm is agnostic about the direction (X or Y) in which it is

@@ -8,6 +8,7 @@ enum class Dir {
 	X = 0,
 	Y = 1
 };
+
 inline std::ostream &operator<<(std::ostream &os, Dir dir)
 {
 	return os << (dir == Dir::X ? "X" : "Y");
@@ -25,6 +26,7 @@ struct Length2 {
 	Length2 operator-(Length2 const &other) { return Length2(dx - other.dx, dy - other.dy); }
 	Length2 operator/(int num) { return Length2(dx / num, dy / num); }
 };
+
 inline std::ostream &operator<<(std::ostream &os, Length2 const &l)
 {
 	return os << "(" << l.dx << ", " << l.dy << ")";
@@ -40,6 +42,7 @@ struct Crop {
 	int start, end;
 	Crop operator+(Crop const &other) { return Crop(start + other.start, end + other.end); }
 };
+
 inline std::ostream &operator<<(std::ostream &os, Crop const &c)
 {
 	return os << "<s " << c.start << " e " << c.end << ">";
@@ -70,6 +73,7 @@ struct Interval {
 		return *this;
 	}
 };
+
 inline std::ostream &operator<<(std::ostream &os, Interval const &i)
 {
 	return os << "[off " << i.offset << " len " << i.length << "]";
@@ -84,6 +88,7 @@ struct Crop2 {
 	Crop &operator[](Dir dir) { return dir == Dir::Y ? y : x; }
 	Crop2 operator+(Crop2 const &other) { return Crop2(x + other.x, y + other.y); }
 };
+
 inline std::ostream &operator<<(std::ostream &os, Crop2 const &c)
 {
 	return os << "< X " << c.x << " Y " << c.y << " >";
@@ -101,6 +106,7 @@ struct Interval2 {
 	bool operator==(Interval2 const &other) { return x == other.x && y == other.y; }
 	bool operator!=(Interval2 const &other) { return !(*this == other); }
 };
+
 inline std::ostream &operator<<(std::ostream &os, Interval2 const &i)
 {
 	return os << "[ X " << i.x << " Y " << i.y << " ]";
@@ -111,6 +117,7 @@ struct Region {
 	Crop2 crop;
 	Interval2 output;
 };
+
 inline std::ostream &operator<<(std::ostream &os, Region const &r)
 {
 	os << "\t{ input " << r.input << std::endl;

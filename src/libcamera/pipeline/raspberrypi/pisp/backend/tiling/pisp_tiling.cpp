@@ -1,32 +1,44 @@
-#include "pisp_tiling.hpp"
+#include "pisp_tiling.h"
 
 #include <memory>
-#include <stdexcept>
 
-#include "common/pisp_logging.hpp"
+#include <libcamera/base/log.h>
 
-#include "tiling.hpp"
+#include "context_stage.h"
+#include "crop_stage.h"
+#include "input_stage.h"
+#include "output_stage.h"
+#include "pipeline.h"
+#include "rescale_stage.h"
+#include "split_stage.h"
 
-using namespace PiSP;
+using namespace libcamera;
 using namespace tiling;
 
-#define INPUT_ALIGN_X 16
-#define INPUT_ALIGN_Y 1
-#define PIPELINE_CONTEXT_X 16
-#define PIPELINE_CONTEXT_Y 16
-#define PIPELINE_ALIGN_X 2
-#define PIPELINE_ALIGN_Y 2
-#define COMPRESSION_ALIGN 8
+LOG_DEFINE_CATEGORY(PISP_TILING);
+
+namespace {
+
+constexpr unsigned int PipelineContextX = 16;
+constexpr unsigned int PipelineContextY = 16;
+constexpr unsigned int PipelineAlignX = 2;
+constexpr unsigned int PipelineAlignY = 2;
+constexpr unsigned int CompressionAlign = 8;
 
 // Resampling parameters
-#define START_CONTEXT 2
-#define END_CONTEXT 3
-#define SCALE_PRECISION 12
-#define ROUND_UP ((1 << SCALE_PRECISION) - 1)
+constexpr unsigned int StartContext = 2;
+constexpr unsigned int EndContext = 3;
+constexpr unsigned int ScalePrecision = 12;
+constexpr unsigned int RoundUp = (1 << ScalePrecision) - 1;
 
-void PiSP::tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Length2 *grid)
+} // namespace
+
+namespace PiSP {
+
+void tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles, Length2 *grid)
 {
-	PISP_LOG(info, config);
+	LOG(PISP_TILING, Info) << config;
+
 	// First set up the pipeline.
 	Pipeline::Config pipeline_config(config.max_tile_size, config.min_tile_size);
 	Pipeline pipeline("PiSP", pipeline_config);
@@ -34,12 +46,12 @@ void PiSP::tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles,
 	InputStage::Config input_config(
 		config.input_image_size,
 		config.input_alignment,
-		config.compressed_input ? COMPRESSION_ALIGN : 0);
+		config.compressed_input ? CompressionAlign : 0);
 	InputStage input_stage("input", &pipeline, input_config, offsetof(Tile, input));
 
 	ContextStage::Config context_config(
-		Crop2(Crop(PIPELINE_CONTEXT_X), Crop(PIPELINE_CONTEXT_Y)),
-		Length2(PIPELINE_ALIGN_X, PIPELINE_ALIGN_Y));
+		Crop2(Crop(PipelineContextX), Crop(PipelineContextY)),
+		Length2(PipelineAlignX, PipelineAlignY));
 	ContextStage context_stage("context", &input_stage, context_config, offsetof(Tile, context));
 
 	CropStage::Config crop_config(config.crop);
@@ -47,11 +59,11 @@ void PiSP::tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles,
 
 	SplitStage split_stage("split", &crop_stage);
 
-	std::unique_ptr<Stage> downscale_stages[NUM_OUTPUT_BRANCHES];
-	std::unique_ptr<Stage> resample_stages[NUM_OUTPUT_BRANCHES];
-	std::unique_ptr<Stage> output_stages[NUM_OUTPUT_BRANCHES];
+	std::unique_ptr<Stage> downscale_stages[NumOutputBranches];
+	std::unique_ptr<Stage> resample_stages[NumOutputBranches];
+	std::unique_ptr<Stage> output_stages[NumOutputBranches];
 	std::unique_ptr<Stage> hog_stage;
-	for (int i = 0; i < NUM_OUTPUT_BRANCHES; i++) {
+	for (int i = 0; i < NumOutputBranches; i++) {
 		Length2 const &output_image_size = config.output_image_size[i];
 		// A zero-dimension output disables that branch.
 		if (output_image_size.dx == 0 || output_image_size.dy == 0)
@@ -66,16 +78,20 @@ void PiSP::tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles,
 			sprintf(name, "downscale%d", i);
 			Length2 const &downscale_image_size = config.downscale_image_size[i];
 			// There is only right context here - and it is the scale factor rounded up.
-			Length2 context_right = Length2(((config.downscale_factor[i][Dir::X] + ROUND_UP) >> SCALE_PRECISION) - 1,
-							((config.downscale_factor[i][Dir::Y] + ROUND_UP) >> SCALE_PRECISION) - 1);
-			RescaleStage::Config downscale_config(downscale_image_size, config.downscale_factor[i], Length2(0, 0), context_right, SCALE_PRECISION, RescaleStage::RescalerType::Downscaler);
+			Length2 context_right = Length2(((config.downscale_factor[i][Dir::X] + RoundUp) >> ScalePrecision) - 1,
+							((config.downscale_factor[i][Dir::Y] + RoundUp) >> ScalePrecision) - 1);
+			RescaleStage::Config downscale_config(downscale_image_size, config.downscale_factor[i],
+							      Length2(0, 0), context_right, ScalePrecision,
+							      RescaleStage::RescalerType::Downscaler);
 			downscale_stages[i] = std::unique_ptr<Stage>(new RescaleStage(
 				name, prev_stage, downscale_config, offsetof(Tile, downscale) + i * sizeof(Region)));
 			prev_stage = downscale_stages[i].get();
 		}
 		if (config.resample_enables & (1 << i)) {
 			sprintf(name, "resample%d", i);
-			RescaleStage::Config resample_config(output_image_size, config.resample_factor[i], Length2(START_CONTEXT, START_CONTEXT), Length2(END_CONTEXT, END_CONTEXT), SCALE_PRECISION, RescaleStage::RescalerType::Resampler);
+			RescaleStage::Config resample_config(output_image_size, config.resample_factor[i],
+							     Length2(StartContext, StartContext), Length2(EndContext, EndContext),
+							     ScalePrecision, RescaleStage::RescalerType::Resampler);
 			resample_stages[i] = std::unique_ptr<Stage>(new RescaleStage(
 				name, prev_stage, resample_config, offsetof(Tile, resample) + i * sizeof(Region)));
 			prev_stage = resample_stages[i].get();
@@ -89,5 +105,7 @@ void PiSP::tile_pipeline(TilingConfig const &config, Tile *tiles, int num_tiles,
 
 	// Now tile it.
 	pipeline.Tile(tiles, num_tiles, sizeof(Tile), grid);
-	PISP_LOG(info, "Made " << grid->dx << "x" << grid->dy << " tiles");
+	LOG(PISP_TILING, Info) << "Made " << grid->dx << "x" << grid->dy << " tiles";
 }
+
+} // namespace PiSP

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "stages.hpp"
+#include "stages.h"
 
 namespace tiling {
 

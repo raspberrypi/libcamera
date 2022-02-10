@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "types.hpp"
+#include "types.h"
 
 namespace tiling {
 
@@ -20,6 +20,7 @@ public:
 		Length2 max_tile_size;
 		Length2 min_tile_size;
 	};
+
 	Pipeline(char const *name, Config const &config);
 	Config const &GetConfig() const;
 	void AddStage(Stage *stage);

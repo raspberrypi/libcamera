@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include "types.hpp"
-
-#define PISP_TILING_LOG(sev, rest) PISP_LOG(sev, "(" << name_ << ") " rest)
+#include "types.h"
 
 namespace tiling {
 

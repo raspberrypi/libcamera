@@ -6,6 +6,6 @@ pisp_sources = files([
 ])
 
 subdir('frontend')
-#subdir('backend')
+subdir('backend')
 
 libcamera_sources += pisp_sources

@@ -1,12 +1,13 @@
-#include "rescale_stage.hpp"
+#include "rescale_stage.h"
 
-#include <cassert>
+#include <libcamera/base/log.h>
 
-#include "common/pisp_logging.hpp"
+#include "pipeline.h"
 
-#include "pipeline.hpp"
-
+using namespace libcamera;
 using namespace tiling;
+
+LOG_DECLARE_CATEGORY(PISP_TILING);
 
 RescaleStage::RescaleStage(char const *name, Stage *upstream, Config const &config, int struct_offset)
 	: BasicStage(name, upstream->GetPipeline(), upstream, struct_offset), config_(config)
@@ -25,15 +26,18 @@ Length2 RescaleStage::GetOutputImageSize() const
 
 void RescaleStage::PushStartUp(int output_start, Dir dir)
 {
-	PISP_TILING_LOG(debug, "enter with output_start " << output_start);
+	LOG(PISP_TILING, Debug) << "Enter with output_start " << output_start;
+
 	int input_start_P = output_start * config_.scale[dir];
 	int input_start = input_start_P >> config_.precision;
 	int input_start_w_context = input_start - config_.start_context[dir];
+
 	if (input_start_w_context < 0)
 		input_start_w_context = 0;
 	output_interval_.offset = output_start;
 	input_interval_.offset = input_start_w_context;
-	PISP_TILING_LOG(debug, "exit with input_start " << input_start_w_context);
+
+	LOG(PISP_TILING, Debug) << "Exit with input_start " << input_start_w_context;
 	upstream_->PushStartUp(input_start_w_context, dir);
 }
 
@@ -43,10 +47,12 @@ void RescaleStage::PushStartUp(int output_start, Dir dir)
 
 int RescaleStage::PushEndDown(int input_end, Dir dir)
 {
-	PISP_TILING_LOG(debug, "enter with input_end " << input_end);
+	LOG(PISP_TILING, Debug) << "Enter with input_end " << input_end;
+
 	int input_image_size = GetInputImageSize()[dir];
 	input_interval_.SetEnd(input_end);
 	int output_end_exc;
+
 	if (config_.rescaler_type == RescalerType::Downscaler) {
 		// Trapezoidal downscaler has a variable-sized kernel. Round down its end
 		// position to get the number of complete output samples that can be generated
@@ -65,27 +71,34 @@ int RescaleStage::PushEndDown(int input_end, Dir dir)
 		int output_end_inc = (input_end_inc_no_context_P + round_up) / config_.scale[dir];
 		output_end_exc = output_end_inc + 1;
 	}
+
 	if (output_end_exc > config_.output_image_size[dir])
 		output_end_exc = config_.output_image_size[dir];
+
 	// Upscaling could generate larger output tiles than we can handle, so avoid doing that!
 	if (output_end_exc > output_interval_.offset + GetPipeline()->GetConfig().max_tile_size[dir])
 		output_end_exc = GetPipeline()->GetConfig().max_tile_size[dir] + output_interval_.offset;
+
 	output_interval_.SetEnd(output_end_exc);
-	PISP_TILING_LOG(debug, "exit with output_end " << output_end_exc);
+
+	LOG(PISP_TILING, Debug) << "Exit with output_end " << output_end_exc;
 	PushEndUp(downstream_->PushEndDown(output_end_exc, dir), dir);
+
 	// If we didn't quite finish the output then we can't get too close to the end of the input because another tile will be
 	// needed, and we can't let that become infeasibly small. So pull our input_end back and simply try again.
 	if (output_interval_.End() < config_.output_image_size[dir] &&
 	    input_interval_.End() > input_image_size - GetPipeline()->GetConfig().min_tile_size[dir]) {
-		PISP_TILING_LOG(debug, "Too close to input image edge - try again");
+		LOG(PISP_TILING, Debug) << "Too close to input image edge - try again";
 		PushEndDown(input_image_size - GetPipeline()->GetConfig().min_tile_size[dir], dir);
 	}
+
 	return input_interval_.End();
 }
 
 void RescaleStage::PushEndUp(int output_end, Dir dir)
 {
-	PISP_TILING_LOG(debug, "enter with output_end " << output_end);
+	LOG(PISP_TILING, Debug) << "Enter with output_end " << output_end;
+
 	int input_end_w_context_exc;
 	if (config_.rescaler_type == RescalerType::Downscaler) {
 		// Trapezoidal downscaler has a variable-sized kernel. Round up its fractional end position.
@@ -101,20 +114,25 @@ void RescaleStage::PushEndUp(int output_end, Dir dir)
 		int input_end_w_context = input_end + config_.end_context[dir] + 2;
 		input_end_w_context_exc = input_end_w_context + 1;
 	}
+
 	Length2 input_image_size(GetInputImageSize());
 	if (input_end_w_context_exc > input_image_size[dir])
 		input_end_w_context_exc = input_image_size[dir];
+
 	output_interval_.SetEnd(output_end);
 	input_interval_.SetEnd(input_end_w_context_exc);
-	PISP_TILING_LOG(debug, "exit with input_end " << input_end_w_context_exc);
+
+	LOG(PISP_TILING, Debug) << "Exit with input_end " << input_end_w_context_exc;
 }
 
 void RescaleStage::PushCropDown(Interval interval, Dir dir)
 {
-	PISP_TILING_LOG(debug, "enter with interval " << interval);
-	assert(interval > input_interval_);
+	LOG(PISP_TILING, Debug) << "Enter with interval " << interval;
+
+	ASSERT(interval > input_interval_);
 	crop_ = interval - input_interval_;
 	input_interval_ = interval;
-	PISP_TILING_LOG(debug, "exit with interval " << output_interval_);
+
+	LOG(PISP_TILING, Debug) << "Exit with interval " << output_interval_;
 	downstream_->PushCropDown(output_interval_, dir);
 }

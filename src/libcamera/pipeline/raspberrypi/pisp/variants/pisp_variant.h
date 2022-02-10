@@ -64,6 +64,11 @@ public:
 		return (id < numFrontEnds_ && branch < numFrontEndBranches_[id]) ? frontEndDownscaler_[id][branch] : 0;
 	}
 
+	unsigned int numBackEndBranches(unsigned int id) const
+	{
+		return id < numBackEnds_ ? numBackEndBranches_[id] : 0;
+	}
+
 	unsigned int backEndMaxTileWidth(unsigned int id) const
 	{
 		return (id < numBackEnds_) ? backEndMaxTileWidth_ : 0;

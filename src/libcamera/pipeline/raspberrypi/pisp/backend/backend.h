@@ -22,8 +22,8 @@ public:
 			HIGH_PRIORITY = 2 /* Not currently implemented */
 		};
 
-		Config(unsigned int max_stripe_height = 0, unsigned int max_tile_width = 0, unsigned int flags = 0)
-			: max_stripe_height(max_stripe_height), max_tile_width(max_tile_width), flags(flags)
+		Config(unsigned int _max_stripe_height = 0, unsigned int _max_tile_width = 0, unsigned int _flags = 0)
+			: max_stripe_height(_max_stripe_height), max_tile_width(_max_tile_width), flags(_flags)
 		{
 		}
 
@@ -34,7 +34,7 @@ public:
 
 	BackEnd(Config const &user_config, PiSPVariant &variant);
 	~BackEnd();
-
+	
 	void SetGlobal(pisp_be_global_config const &global);
 	void GetGlobal(pisp_be_global_config &global) const;
 	void SetInputFormat(pisp_image_format_config const &input_format);
@@ -76,24 +76,27 @@ public:
 	void SetGamma(pisp_be_gamma_config const &gamma);
 	void GetGamma(pisp_be_gamma_config &gamma);
 	void SetCrop(pisp_be_crop_config const &crop);
-	void SetCsc(int i, pisp_be_ccm_config const &csc);
-	void SetOutputFormat(int i, pisp_be_output_format_config const &output_format);
-	void GetOutputFormat(int i, pisp_be_output_format_config &output_format) const;
-	void SetResample(int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra);
-	void SetResample(int i, pisp_be_resample_extra const &resample_extra);
-	void SetDownscale(int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra);
-	void SetDownscale(int i, pisp_be_downscale_extra const &downscale_extra);
+	void SetCsc(unsigned int i, pisp_be_ccm_config const &csc);
+	void SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format);
+	void GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const;
+	void SetResample(unsigned int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra);
+	void SetResample(unsigned int i, pisp_be_resample_extra const &resample_extra);
+	void SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra);
+	void SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra);
 	void SetHog(pisp_be_hog_config const &hog);
 
-	bool ComputeOutputImageFormat(int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+	void InitialiseConfig();
+
+	void Prepare();
+	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
 	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+
 
 private:
 	void finaliseConfig();
-	void finaliseTiling();
-	void threadFunc();
 	void updateTiles();
 	void retilePipeline(TilingConfig const &tiling_config);
+	void finaliseTiling();
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
 	void getHogOffset(int x, int y, uint64_t &addr_offset);
 

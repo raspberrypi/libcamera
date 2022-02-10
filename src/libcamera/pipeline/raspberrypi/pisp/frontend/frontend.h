@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../pisp_types.h"
+#include "../common/pisp_types.h"
 
 #include "pisp_fe_config.h"
 #include "pisp_statistics.h"

@@ -8,23 +8,15 @@ using namespace PiSP;
 
 LOG_DEFINE_CATEGORY(PISPBE)
 
-// HoG feature constants
-constexpr unsigned int HogCellSize = 8;
-
-// Gives software a chance to initialise certain parameters to sensible non-zero values.
-static void initialise_config(pisp_be_config &config);
-
 BackEnd::BackEnd(Config const &config, PiSPVariant &variant)
 	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
 {
-	int max_tile_width = variant_.backEndMaxTileWidth(0);
+	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);
 
-	// Just complain if the max tile width is too large but don't change it - this allows software simulations still
-	// to run in full image (or "single tile") mode.
-	if (config_.max_tile_width > max_tile_width)
-		LOG(PISPBE, Warning) << "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width;
+        if (config_.max_tile_width > max_tile_width)
+		LOG(PISPBE, Error) << "Configured max tile width " << config_.max_tile_width << " exceeds " << max_tile_width;
 
-	initialise_config(be_config_);
+	InitialiseConfig();
 }
 
 BackEnd::~BackEnd()
@@ -34,9 +26,11 @@ BackEnd::~BackEnd()
 void BackEnd::SetGlobal(pisp_be_global_config const &global)
 {
 	uint32_t changed_rgb_enables = (global.rgb_enables ^ be_config_.global.rgb_enables);
+
 	if (changed_rgb_enables &
 	    (PISP_BE_RGB_ENABLE_DOWNSCALE0 | PISP_BE_RGB_ENABLE_DOWNSCALE1 | PISP_BE_RGB_ENABLE_RESAMPLE0 | PISP_BE_RGB_ENABLE_RESAMPLE1 | PISP_BE_RGB_ENABLE_HOG))
 		retile_ = true; // must retile when rescaling OR HoG blocks change
+
 	be_config_.dirty_flags_bayer |= (global.bayer_enables & ~be_config_.global.bayer_enables); // label anything newly enabled as dirty
 	be_config_.dirty_flags_rgb |= (global.rgb_enables & ~be_config_.global.rgb_enables); // label anything newly enabled as dirty
 	be_config_.global = global;
@@ -61,20 +55,20 @@ void BackEnd::SetInputBuffer(pisp_be_input_buffer_config const &input_buffer)
 	be_config_.input_buffer = input_buffer;
 }
 
-void BackEnd::SetDecompress(PISP_BE_DECOMPRESS_CONFIG_T const &decompress)
+void BackEnd::SetDecompress(pisp_decompress_config const &decompress)
 {
 	be_config_.decompress = decompress;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DECOMPRESS;
 }
 
-void BackEnd::SetDpc(PISP_BE_DPC_CONFIG_T const &dpc)
+void BackEnd::SetDpc(pisp_be_dpc_config const &dpc)
 {
 	be_config_.dpc = dpc;
 	be_config_.dpc.pad = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DPC;
 }
 
-void BackEnd::SetGeq(PISP_BE_GEQ_CONFIG_T const &geq)
+void BackEnd::SetGeq(pisp_be_geq_config const &geq)
 {
 	be_config_.geq = geq;
 	be_config_.geq.slope_sharper &= (PISP_BE_GEQ_SLOPE | PISP_BE_GEQ_SHARPER);
@@ -88,25 +82,25 @@ void BackEnd::SetTdnInputFormat(pisp_image_format_config const &tdn_input_format
 	finalise_tiling_ = true;
 }
 
-void BackEnd::SetTdnDecompress(PISP_BE_TDN_DECOMPRESS_CONFIG_T const &tdn_decompress)
+void BackEnd::SetTdnDecompress(pisp_decompress_config const &tdn_decompress)
 {
 	be_config_.tdn_decompress = tdn_decompress;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS;
 }
 
-void BackEnd::SetTdn(PISP_BE_TDN_CONFIG_T const &tdn)
+void BackEnd::SetTdn(pisp_be_tdn_config const &tdn)
 {
 	be_config_.tdn = tdn;
 	be_config_.tdn.pad = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_TDN;
 }
 
-void BackEnd::GetTdn(PISP_BE_TDN_CONFIG_T &tdn) const
+void BackEnd::GetTdn(pisp_be_tdn_config &tdn) const
 {
 	tdn = be_config_.tdn;
 }
 
-void BackEnd::SetTdnCompress(PISP_BE_TDN_COMPRESS_CONFIG_T const &tdn_compress)
+void BackEnd::SetTdnCompress(pisp_compress_config const &tdn_compress)
 {
 	be_config_.tdn_compress = tdn_compress;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_TDN_COMPRESS;
@@ -124,14 +118,14 @@ void BackEnd::GetTdnOutputFormat(pisp_image_format_config &tdn_output_format) co
 	tdn_output_format = be_config_.tdn_output_format;
 }
 
-void BackEnd::SetSdn(PISP_BE_SDN_CONFIG_T const &sdn)
+void BackEnd::SetSdn(pisp_be_sdn_config const &sdn)
 {
 	be_config_.sdn = sdn;
 	be_config_.sdn.pad = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_SDN;
 }
 
-void BackEnd::SetBlc(PISP_BE_BLC_CONFIG_T const &blc)
+void BackEnd::SetBlc(pisp_bla_config const &blc)
 {
 	be_config_.blc = blc;
 	be_config_.blc.pad[0] = be_config_.blc.pad[1] = 0;
@@ -151,19 +145,19 @@ void BackEnd::GetStitchInputFormat(pisp_image_format_config &stitch_input_format
 	stitch_input_format = be_config_.stitch_input_format;
 }
 
-void BackEnd::SetStitchDecompress(PISP_BE_STITCH_DECOMPRESS_CONFIG_T const &stitch_decompress)
+void BackEnd::SetStitchDecompress(pisp_decompress_config const &stitch_decompress)
 {
 	be_config_.stitch_decompress = stitch_decompress;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS;
 }
 
-void BackEnd::SetStitch(PISP_BE_STITCH_CONFIG_T const &stitch)
+void BackEnd::SetStitch(pisp_be_stitch_config const &stitch)
 {
 	be_config_.stitch = stitch;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_STITCH;
 }
 
-void BackEnd::SetStitchCompress(PISP_BE_STITCH_COMPRESS_CONFIG_T const &stitch_compress)
+void BackEnd::SetStitchCompress(pisp_compress_config const &stitch_compress)
 {
 	be_config_.stitch_compress = stitch_compress;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_STITCH_COMPRESS;
@@ -181,20 +175,20 @@ void BackEnd::GetStitchOutputFormat(pisp_image_format_config &stitch_output_form
 	stitch_output_format = be_config_.stitch_output_format;
 }
 
-void BackEnd::SetCdn(PISP_BE_CDN_CONFIG_T const &cdn)
+void BackEnd::SetCdn(pisp_be_cdn_config const &cdn)
 {
 	be_config_.cdn = cdn;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_CDN;
 }
 
-void BackEnd::SetWbg(PISP_BE_WBG_CONFIG_T const &wbg)
+void BackEnd::SetWbg(pisp_wbg_config const &wbg)
 {
 	be_config_.wbg = wbg;
 	be_config_.wbg.pad[0] = be_config_.wbg.pad[1] = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_WBG;
 }
 
-void BackEnd::SetLsc(PISP_BE_LSC_CONFIG_T const &lsc, PISP_BE_LSC_EXTRA_T lsc_extra)
+void BackEnd::SetLsc(pisp_be_lsc_config const &lsc, pisp_be_lsc_extra lsc_extra)
 {
 	// Should not need a finalise_tile if only the cell coefficients have changed.
 	finalise_tiling_ |= be_config_.lsc.grid_step_x != lsc.grid_step_x || be_config_.lsc.grid_step_y != lsc.grid_step_y;
@@ -203,7 +197,7 @@ void BackEnd::SetLsc(PISP_BE_LSC_CONFIG_T const &lsc, PISP_BE_LSC_EXTRA_T lsc_ex
 	be_config_.lsc_extra = lsc_extra;
 }
 
-void BackEnd::SetCac(PISP_BE_CAC_CONFIG_T const &cac, PISP_BE_CAC_EXTRA_T cac_extra)
+void BackEnd::SetCac(pisp_be_cac_config const &cac, pisp_be_cac_extra cac_extra)
 {
 	finalise_tiling_ |= be_config_.cac.grid_step_x != cac.grid_step_x || be_config_.cac.grid_step_y != cac.grid_step_y;
 	be_config_.cac = cac;
@@ -211,60 +205,60 @@ void BackEnd::SetCac(PISP_BE_CAC_CONFIG_T const &cac, PISP_BE_CAC_EXTRA_T cac_ex
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_CAC;
 }
 
-void BackEnd::SetDebin(PISP_BE_DEBIN_CONFIG_T const &debin)
+void BackEnd::SetDebin(pisp_be_debin_config const &debin)
 {
 	be_config_.debin = debin;
 	be_config_.debin.pad[0] = be_config_.debin.pad[1] = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 }
 
-void BackEnd::SetTonemap(PISP_BE_TONEMAP_CONFIG_T const &tonemap)
+void BackEnd::SetTonemap(pisp_be_tonemap_config const &tonemap)
 {
 	be_config_.tonemap = tonemap;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_TONEMAP;
 }
 
-void BackEnd::SetDemosaic(PISP_BE_DEMOSAIC_CONFIG_T const &demosaic)
+void BackEnd::SetDemosaic(pisp_be_demosaic_config const &demosaic)
 {
 	be_config_.demosaic = demosaic;
 	be_config_.demosaic.pad[0] = be_config_.demosaic.pad[1] = 0;
 	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 }
 
-void BackEnd::GetDemosaic(PISP_BE_DEMOSAIC_CONFIG_T &demosaic) const
+void BackEnd::GetDemosaic(pisp_be_demosaic_config &demosaic) const
 {
 	demosaic = be_config_.demosaic;
 }
 
-void BackEnd::SetCcm(PISP_BE_CCM_CONFIG_T const &ccm)
+void BackEnd::SetCcm(pisp_be_ccm_config const &ccm)
 {
 	be_config_.ccm = ccm;
 	be_config_.ccm.pad[0] = be_config_.ccm.pad[1] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_CCM;
 }
 
-void BackEnd::SetSatControl(PISP_BE_SAT_CONTROL_CONFIG_T const &sat_control)
+void BackEnd::SetSatControl(pisp_be_sat_control_config const &sat_control)
 {
 	be_config_.sat_control = sat_control;
 	be_config_.sat_control.pad = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SAT_CONTROL;
 }
 
-void BackEnd::SetYcbcr(PISP_BE_YCBCR_CONFIG_T const &ycbcr)
+void BackEnd::SetYcbcr(pisp_be_ccm_config const &ycbcr)
 {
 	be_config_.ycbcr = ycbcr;
 	be_config_.ycbcr.pad[0] = be_config_.ycbcr.pad[1] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR;
 }
 
-void BackEnd::SetFalseColour(PISP_BE_FALSE_COLOUR_CONFIG_T const &false_colour)
+void BackEnd::SetFalseColour(pisp_be_false_colour_config const &false_colour)
 {
 	be_config_.false_colour = false_colour;
 	be_config_.false_colour.pad[0] = be_config_.false_colour.pad[1] = be_config_.false_colour.pad[2] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 }
 
-void BackEnd::SetSharpen(PISP_BE_SHARPEN_CONFIG_T const &sharpen)
+void BackEnd::SetSharpen(pisp_be_sharpen_config const &sharpen)
 {
 	be_config_.sharpen = sharpen;
 	be_config_.sharpen.pad0[0] = be_config_.sharpen.pad0[1] = be_config_.sharpen.pad0[2] = 0;
@@ -276,45 +270,45 @@ void BackEnd::SetSharpen(PISP_BE_SHARPEN_CONFIG_T const &sharpen)
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_SHARPEN;
 }
 
-void BackEnd::SetShFcCombine(PISP_BE_SH_FC_COMBINE_CONFIG_T const &sh_fc_combine)
+void BackEnd::SetShFcCombine(pisp_be_sh_fc_combine_config const &sh_fc_combine)
 {
 	be_config_.sh_fc_combine = sh_fc_combine;
 	be_config_.sh_fc_combine.pad = 0;
 	be_config_.dirty_flags_extra |= PISP_BE_DIRTY_SH_FC_COMBINE;
 }
 
-void BackEnd::SetYcbcrInverse(PISP_BE_YCBCR_INVERSE_CONFIG_T const &ycbcr_inverse)
+void BackEnd::SetYcbcrInverse(pisp_be_ccm_config const &ycbcr_inverse)
 {
 	be_config_.ycbcr_inverse = ycbcr_inverse;
 	be_config_.ycbcr_inverse.pad[0] = be_config_.ycbcr_inverse.pad[1] = 0;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
 }
 
-void BackEnd::SetGamma(PISP_BE_GAMMA_CONFIG_T const &gamma)
+void BackEnd::SetGamma(pisp_be_gamma_config const &gamma)
 {
 	be_config_.gamma = gamma;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_GAMMA;
 }
 
-void BackEnd::GetGamma(PISP_BE_GAMMA_CONFIG_T &gamma)
+void BackEnd::GetGamma(pisp_be_gamma_config &gamma)
 {
 	gamma = be_config_.gamma;
 }
 
-void BackEnd::SetCrop(PISP_BE_CROP_CONFIG_T const &crop)
+void BackEnd::SetCrop(pisp_be_crop_config const &crop)
 {
 	be_config_.crop = crop;
 	be_config_.dirty_flags_extra |= PISP_BE_DIRTY_CROP;
 	retile_ = true;
 }
 
-void BackEnd::SetCsc(int i, PISP_BE_CSC_CONFIG_T const &csc)
+void BackEnd::SetCsc(unsigned int i, pisp_be_ccm_config const &csc)
 {
 	be_config_.csc[i] = csc;
 	be_config_.dirty_flags_bayer |= PISP_BE_RGB_ENABLE_CSC(i);
 }
 
-void BackEnd::SetDownscale(int i, PISP_BE_DOWNSCALE_CONFIG_T const &downscale, PISP_BE_DOWNSCALE_EXTRA_T const &downscale_extra)
+void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra)
 {
 	be_config_.downscale[i] = downscale;
 	be_config_.downscale_extra[i] = downscale_extra;
@@ -322,14 +316,14 @@ void BackEnd::SetDownscale(int i, PISP_BE_DOWNSCALE_CONFIG_T const &downscale, P
 	retile_ = true;
 }
 
-void BackEnd::SetDownscale(int i, PISP_BE_DOWNSCALE_EXTRA_T const &downscale_extra)
+void BackEnd::SetDownscale(unsigned int i, pisp_be_downscale_extra const &downscale_extra)
 {
 	be_config_.downscale_extra[i] = downscale_extra;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_DOWNSCALE(i);
 	retile_ = true;
 }
 
-void BackEnd::SetResample(int i, PISP_BE_RESAMPLE_CONFIG_T const &resample, PISP_BE_RESAMPLE_EXTRA_T const &resample_extra)
+void BackEnd::SetResample(unsigned int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra)
 {
 	be_config_.resample[i] = resample;
 	be_config_.resample_extra[i] = resample_extra;
@@ -337,16 +331,16 @@ void BackEnd::SetResample(int i, PISP_BE_RESAMPLE_CONFIG_T const &resample, PISP
 	retile_ = true;
 }
 
-void BackEnd::SetResample(int i, PISP_BE_RESAMPLE_EXTRA_T const &resample_extra)
+void BackEnd::SetResample(unsigned int i, pisp_be_resample_extra const &resample_extra)
 {
 	be_config_.resample_extra[i] = resample_extra;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	retile_ = true;
 }
 
-void BackEnd::SetOutputFormat(int i, PISP_BE_OUTPUT_FORMAT_CONFIG_T const &output_format)
+void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format)
 {
-	assert(i < PISP_BACK_END_NUM_OUTPUTS);
+	ASSERT(i < variant_.numBackEndBranches(0));
 	be_config_.output_format[i] = output_format;
 
 	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
@@ -363,24 +357,15 @@ void BackEnd::SetOutputFormat(int i, PISP_BE_OUTPUT_FORMAT_CONFIG_T const &outpu
 	retile_ = true;
 }
 
-void BackEnd::SetHog(PISP_BE_HOG_CONFIG_T const &hog)
+void BackEnd::SetHog(pisp_be_hog_config const &hog)
 {
 	be_config_.hog = hog;
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_HOG;
 	finalise_tiling_ = true;
 }
 
-void BackEnd::GetOutputFormat(int i, PISP_BE_OUTPUT_FORMAT_CONFIG_T &output_format) const
+void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
 {
-	assert(i < PISP_BACK_END_NUM_OUTPUTS);
+	ASSERT(i < variant_.numBackEndBranches(0));
 	output_format = be_config_.output_format[i];
-}
-
-{
-	static const std::thread::id noid;
-	if (thread_id_ != noid) {
-		bool is_same = (thread_id_ == std::this_thread::get_id());
-		if (from_backend_thread ^ is_same)
-			throw std::logic_error("BackEnd API called from an invalid thread context.");
-	}
 }

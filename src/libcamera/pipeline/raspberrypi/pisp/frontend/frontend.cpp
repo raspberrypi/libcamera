@@ -3,6 +3,8 @@
 
 #include <libcamera/base/log.h>
 
+#include "../common/utils.h"
+
 using namespace libcamera;
 using namespace PiSP;
 
@@ -141,79 +143,6 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 	if ((enables & block_enable(PISP_FE_ENABLE_COMPRESS, i)) && !PISP_IMAGE_FORMAT_bps_8(fmt))
 		LOG(PISPFE, Error)
 			<< "FrontEnd::finalise: compressed output is not 8 bit";
-}
-
-uint32_t compute_x_offset(uint32_t /* pisp_image_format */ format, int x)
-{
-	ASSERT(x >= 0 && x < 65536);
-	uint32_t x_offset = 0;
-	uint32_t bps = format & PISP_IMAGE_FORMAT_BPS_MASK;
-
-	/* HoG features are slightly different from the rest. */
-	if (PISP_IMAGE_FORMAT_HOG(format)) {
-		/*
-		 * x here is in units of cells.
-		 * Output 16-bit word samples per bin. This is then packed to:
-		 * 32-bytes for an unsigned histogram cell.
-		 * 48-bytes for a signed histogram cell.
-		 */
-		x_offset = x * ((format & PISP_IMAGE_FORMAT_HOG_UNSIGNED) ? 32 : 48);
-	} else if (format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
-		/* 32-bit words per sample. */
-		x_offset = x * 4;
-	} else {
-		if (bps == PISP_IMAGE_FORMAT_BPS_16)
-			x_offset = x * 2;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_12)
-			x_offset = (x * 3 + 1) / 2;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_10)
-			x_offset = (x / 3) * 4;
-		else if (bps == PISP_IMAGE_FORMAT_BPS_8)
-			x_offset = x;
-		else
-			ASSERT(0);
-
-		if (format & PISP_IMAGE_FORMAT_THREE_CHANNEL) {
-			if (PISP_IMAGE_FORMAT_interleaved(format))
-				x_offset *= PISP_IMAGE_FORMAT_sampling_422(format) ? 2 : 3;
-		}
-	}
-	return x_offset;
-}
-
-void compute_stride_align(pisp_image_format_config &config, int align)
-{
-	if (PISP_IMAGE_FORMAT_wallpaper(config.format)) {
-		config.stride2 = config.stride = config.height * PISP_WALLPAPER_WIDTH;
-		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
-			config.stride2 /= 2;
-		return;
-	}
-
-	uint16_t width = config.width;
-	if (PISP_IMAGE_FORMAT_compressed(config.format))
-		width = (width + 7) & ~7; /* compression uses blocks of 8 samples */
-
-	config.stride = compute_x_offset(config.format, width);
-	config.stride2 = 0;
-	if (!PISP_IMAGE_FORMAT_HOG(config.format)) {
-		switch (config.format & PISP_IMAGE_FORMAT_PLANARITY_MASK) {
-		case PISP_IMAGE_FORMAT_PLANARITY_PLANAR:
-			if (PISP_IMAGE_FORMAT_sampling_422(config.format) || PISP_IMAGE_FORMAT_sampling_420(config.format))
-				config.stride2 = config.stride >> 1;
-			else if (PISP_IMAGE_FORMAT_three_channel(config.format))
-				config.stride2 = config.stride;
-			break;
-		case PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR:
-			ASSERT(PISP_IMAGE_FORMAT_sampling_422(config.format) || PISP_IMAGE_FORMAT_sampling_420(config.format));
-			config.stride2 = config.stride;
-			break;
-		}
-
-		/* image in memory must be sufficiently aligned .*/
-		config.stride = (config.stride + align - 1) & ~(align - 1);
-		config.stride2 = (config.stride2 + align - 1) & ~(align - 1);
-	}
 }
 
 }; /* namespace */

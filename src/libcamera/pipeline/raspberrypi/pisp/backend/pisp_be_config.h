@@ -10,7 +10,7 @@
 
 #include <linux/types.h>
 
-#include "../pisp_common.h"
+#include "../common/pisp_common.h"
 
 /* byte alignment for inputs */
 #define PISP_BACK_END_INPUT_ALIGN 4u

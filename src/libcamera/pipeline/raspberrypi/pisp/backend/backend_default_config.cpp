@@ -1,3 +1,5 @@
+#include "backend.h"
+
 #include <string.h>
 
 #include "pisp_be_config.h"
@@ -88,20 +90,20 @@ void initialise_resample(pisp_be_resample_config &resample)
 
 namespace PiSP {
 
-void initialise_config(pisp_be_config &config)
+void BackEnd::InitialiseConfig()
 {
-	memset(&config, 0, sizeof(config));
-	initialise_debin(config.debin);
-	config.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
+	memset(&be_config_, 0, sizeof(be_config_));
+	initialise_debin(be_config_.debin);
+	be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;
 
-	initialise_ycbcr(config.ycbcr);
-	initialise_ycbcr_inverse(config.ycbcr_inverse);
-	initialise_gamma(config.gamma);
-	config.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR | PISP_BE_RGB_ENABLE_YCBCR_INVERSE | PISP_BE_RGB_ENABLE_GAMMA;
+	initialise_ycbcr(be_config_.ycbcr);
+	initialise_ycbcr_inverse(be_config_.ycbcr_inverse);
+	initialise_gamma(be_config_.gamma);
+	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR | PISP_BE_RGB_ENABLE_YCBCR_INVERSE | PISP_BE_RGB_ENABLE_GAMMA;
 
-	for (int i = 0; i < PISP_BACK_END_NUM_OUTPUTS; i++) {
-		initialise_resample(config.resample[i]);
-		config.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
+	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
+		initialise_resample(be_config_.resample[i]);
+		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}
 }
 

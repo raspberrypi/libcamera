@@ -1,0 +1,136 @@
+#pragma once
+
+#include <vector>
+
+#include "pisp_be_config.h"
+
+// Definition of the PiSP Back End class.
+
+namespace PiSP {
+
+class BackEndHal;
+
+class BackEnd
+{
+public:
+	struct Config {
+		enum Flags {
+			NONE = 0,
+			LOW_LATENCY = 1, /* Attempt to process image with lowest possible latency (no longer implemented) */
+			HIGH_PRIORITY = 2 /* Not currently implemented */
+		};
+
+		Config(unsigned int max_stripe_height = 0, unsigned int max_tile_width = 0, unsigned int flags = 0)
+			: max_stripe_height(max_stripe_height), max_tile_width(max_tile_width), flags(flags)
+		{
+		}
+
+		unsigned int max_stripe_height; /* Use zero to get "default behaviour" */
+		unsigned int max_tile_width; /* Can only go larger than h/w defined limit in simulations */
+		unsigned int flags; /* An "or" of the Flags above */
+	};
+
+	BackEnd(BackEndHal *hal, Config const &user_config);
+	~BackEnd();
+
+	void SetGlobal(pisp_be_global_config const &global);
+	void GetGlobal(pisp_be_global_config &global) const;
+	void SetInputFormat(pisp_image_format_config const &input_format);
+	void SetInputBuffer(pisp_be_input_buffer_config const &input_buffer);
+	void SetDecompress(pisp_decompress_config const &decompress);
+	void SetDpc(pisp_be_dpc_config const &dpc);
+	void SetGeq(pisp_be_geq_config const &geq);
+	void SetTdnInputFormat(pisp_image_format_config const &tdn_input_format);
+	void SetTdnDecompress(pisp_decompress_config const &tdn_decompress);
+	void SetTdn(pisp_be_tdn_config const &tdn);
+	void GetTdn(pisp_be_tdn_config &tdn) const;
+	void SetTdnCompress(pisp_compress_config const &tdn_compress);
+	void SetTdnOutputFormat(pisp_image_format_config const &tdn_output_format);
+	void GetTdnOutputFormat(pisp_image_format_config &tdn_output_format) const;
+	void SetSdn(pisp_be_sdn_config const &sdn);
+	void SetBlc(pisp_bla_config const &blc);
+	void SetStitchInputFormat(pisp_image_format_config const &stitch_input_format);
+	void GetStitchInputFormat(pisp_image_format_config &stitch_input_format) const;
+	void SetStitchDecompress(pisp_decompress_config const &stitch_decompress);
+	void SetStitch(pisp_be_stitch_config const &stitch);
+	void SetStitchCompress(pisp_compress_config const &stitch_compress);
+	void SetStitchOutputFormat(pisp_image_format_config const &stitch_output_format);
+	void GetStitchOutputFormat(pisp_image_format_config &stitch_output_format) const;
+	void SetWbg(pisp_wbg_config const &wbg);
+	void SetCdn(pisp_be_cdn_config const &cdn);
+	void SetLsc(pisp_be_lsc_config const &lsc, pisp_be_lsc_extra lsc_extra = { 0, 0 });
+	void SetCac(pisp_be_cac_config const &cac, pisp_be_cac_extra cac_extra = { 0, 0 });
+	void SetDebin(pisp_be_debin_config const &debin);
+	void SetTonemap(pisp_be_tonemap_config const &tonemap);
+	void SetDemosaic(pisp_be_demosaic_config const &demosaic);
+	void GetDemosaic(pisp_be_demosaic_config &demosaic) const;
+	void SetCcm(pisp_be_ccm_config const &ccm);
+	void SetSatControl(pisp_be_sat_control_config const &sat_control);
+	void SetYcbcr(pisp_be_ccm_config const &ycbcr);
+	void SetFalseColour(pisp_be_false_colour_config const &false_colour);
+	void SetSharpen(pisp_be_sharpen_config const &sharpen);
+	void SetShFcCombine(pisp_be_sh_fc_combine_config const &sh_fc_combine);
+	void SetYcbcrInverse(pisp_be_ccm_config const &ycbcr_inverse);
+	void SetGamma(pisp_be_gamma_config const &gamma);
+	void GetGamma(pisp_be_gamma_config &gamma);
+	void SetCrop(pisp_be_crop_config const &crop);
+	void SetCsc(int i, pisp_be_ccm_config const &csc);
+	void SetOutputFormat(int i, pisp_be_output_format_config const &output_format);
+	void GetOutputFormat(int i, pisp_be_output_format_config &output_format) const;
+	void SetResample(int i, pisp_be_resample_config const &resample, pisp_be_resample_extra const &resample_extra);
+	void SetResample(int i, pisp_be_resample_extra const &resample_extra);
+	void SetDownscale(int i, pisp_be_downscale_config const &downscale, pisp_be_downscale_extra const &downscale_extra);
+	void SetDownscale(int i, pisp_be_downscale_extra const &downscale_extra);
+	void SetHog(pisp_be_hog_config const &hog);
+
+	bool ComputeOutputImageFormat(int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+
+private:
+	void finaliseConfig();
+	void finaliseTiling(std::vector<pisp_tile> &tiles);
+	void threadFunc();
+	void updateTiles();
+	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
+	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
+	void getHogOffset(int x, int y, uint64_t &addr_offset);
+	void invokePostCallback(BackEndOutput &output);
+
+	Config config_;
+	PISP_BACK_END_CONFIG_T be_config_;
+	pisp_image_format_config max_input_;
+	int tdn_input_index_, tdn_output_index_;
+	int stitch_input_index_, stitch_output_index_;
+	bool retile_;
+	bool finalise_tiling_;
+	std::vector<pisp_tile> tiles_;
+	int num_tiles_x_, num_tiles_y_;
+	State state_;
+	std::thread thread_;
+	BackEndPreCallback pre_callback_;
+	BackEndPostCallback post_callback_;
+	BackEndInitialiseCallback initialise_callback_;
+	BackEndSwitchModeCallback switch_mode_callback_;
+	std::mutex mutex_;
+	BackEndHal *hal_;
+	uint32_t jobs_requested_, jobs_done_;
+	std::thread::id thread_id_;
+	PISP_DEVICE_MODE_T current_mode_;
+	std::thread post_process_thread_;
+	void postProcessThreadFunc();
+	// Payload for the event queue.
+	enum class Event { Stop,
+			   PostCallback,
+			   QueueInput };
+	typedef boost::variant<struct BackEndInput> MsgType;
+	typedef struct Message<Event, MsgType> EventMsg;
+	EventQueue<EventMsg> event_queue_;
+	// Payload for the postprocess queue.
+	enum class PostProcessEvent { Stop,
+				      PostCallback };
+	typedef boost::variant<struct BackEndOutput> PostProcessMsgType;
+	typedef struct Message<PostProcessEvent, PostProcessMsgType> PostProcessEventMsg;
+	EventQueue<PostProcessEventMsg> post_process_queue_;
+};
+
+} // namespace PiSP

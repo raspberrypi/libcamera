@@ -1797,8 +1797,8 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 	} else if (stream == &cfe_[Cfe::Stats]) { 
 
 		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
+		handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
 	} else {
-	
 		embeddedQueue_.push(buffer);
 	}
 
@@ -1842,16 +1842,7 @@ void PiSPCameraData::ispOutputDequeue(FrameBuffer *buffer)
 			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
-	/*
-	 * ISP statistics buffer must not be re-queued or sent back to the
-	 * application until after the IPA signals so.
-	 */
-	if (stream == &cfe_[Cfe::Stats]) {
-		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
-	} else {
-		/* Any other ISP output can be handed back to the application now. */
-		handleStreamBuffer(buffer, stream);
-	}
+	handleStreamBuffer(buffer, stream);
 
 	/*
 	 * Increment the number of ISP outputs generated.
@@ -1975,7 +1966,7 @@ void PiSPCameraData::checkRequestCompleted()
 	 * frame.
 	 */
 	if (state_ == State::IpaComplete &&
-	    ((ispOutputCount_ == 3 && dropFrameCount_) || requestCompleted)) {
+	    ((ispOutputCount_ == 2 && dropFrameCount_) || requestCompleted)) {
 		state_ = State::Idle;
 		if (dropFrameCount_) {
 			dropFrameCount_--;
@@ -2090,6 +2081,7 @@ void PiSPCameraData::tryRunPipeline()
 	}
 
 	//ipa_->signalIspPrepare(ispPrepare);
+	runIsp(bayerId);
 }
 
 bool PiSPCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)

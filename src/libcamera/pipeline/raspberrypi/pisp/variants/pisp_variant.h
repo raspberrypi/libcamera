@@ -16,6 +16,17 @@ private:
 	static constexpr unsigned int MaxFrontEndBranchs = 4;
 	static constexpr unsigned int MaxBackEndBranches = 4;
 
+	unsigned int numFrontEnds_;
+	unsigned int numBackEnds_;
+	std::array<unsigned int, MaxFrontEnds> numFrontEndBranches_;
+	std::array<unsigned int, MaxFrontEnds> frontEndMaxWidth_;
+	std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> frontEndDownscaler_;
+	std::array<std::array<unsigned int, MaxFrontEndBranchs>, MaxFrontEnds> frontEndDownscalerMaxWidth_;
+	unsigned int backEndMaxTileWidth_;
+	std::array<unsigned int, MaxBackEnds> numBackEndBranches_;
+	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndIntegralImage_;
+	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndDownscaler_;
+
 public:
 	PiSPVariant(unsigned int numFrontEnds, unsigned int numBackEnds,
 		    /* FrontEnd */
@@ -36,8 +47,15 @@ public:
 	{
 	}
 
-	unsigned int numFrontEnds() const { return numFrontEnds_; }
-	unsigned int numBackEnds() const { return numBackEnds_; }
+	unsigned int numFrontEnds() const
+	{
+		return numFrontEnds_;
+	}
+	
+	unsigned int numBackEnds() const
+	{
+		return numBackEnds_;
+	}
 
 	unsigned int frontEndNumBranches(unsigned int id) const
 	{
@@ -78,18 +96,8 @@ public:
 	{
 		return (id < numBackEnds_ && branch < numBackEndBranches_[id]) ? backEndDownscaler_[id][branch] : 0;
 	}
-
-protected:
-	unsigned int numFrontEnds_;
-	unsigned int numBackEnds_;
-	std::array<unsigned int, MaxFrontEnds> numFrontEndBranches_;
-	std::array<unsigned int, MaxFrontEnds> frontEndMaxWidth_;
-	std::array<std::array<bool, MaxFrontEndBranchs>, MaxFrontEnds> frontEndDownscaler_;
-	std::array<std::array<unsigned int, MaxFrontEndBranchs>, MaxFrontEnds> frontEndDownscalerMaxWidth_;
-	unsigned int backEndMaxTileWidth_;
-	std::array<unsigned int, MaxBackEnds> numBackEndBranches_;
-	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndIntegralImage_;
-	std::array<std::array<bool, MaxBackEndBranches>, MaxBackEnds> backEndDownscaler_;
 };
+
+extern const PiSPVariant BCM2712_HW;
 
 } // namespace PiSP

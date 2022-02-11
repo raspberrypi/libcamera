@@ -32,7 +32,7 @@ public:
 		unsigned int flags; /* An "or" of the Flags above */
 	};
 
-	BackEnd(Config const &user_config, PiSPVariant &variant);
+	BackEnd(Config const &user_config, PiSPVariant const &variant);
 	~BackEnd();
 	
 	void SetGlobal(pisp_be_global_config const &global);
@@ -99,7 +99,7 @@ private:
 	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
 
 	Config config_;
-	PiSPVariant variant_;
+	const PiSPVariant variant_;
 	pisp_be_config be_config_;
 	pisp_image_format_config max_input_;
 	int tdn_input_index_, tdn_output_index_;

@@ -38,6 +38,10 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include "backend/backend.h"
+#include "frontend/frontend.h"
+#include "variants/pisp_variant.h"
+
 #include "rpi_stream.h"
 
 namespace libcamera {
@@ -189,6 +193,8 @@ public:
 	{
 	}
 
+	void initPiSP();
+
 	void frameStarted(uint32_t sequence);
 
 	//int loadIPA(ipa::PiSP::SensorConfig *sensorConfig);
@@ -230,6 +236,9 @@ public:
 	 * Unicam together with media link across the entities.
 	 */
 	std::vector<std::pair<std::unique_ptr<V4L2Subdevice>, MediaLink *>> bridgeDevices_;
+
+	std::unique_ptr<::PiSP::FrontEnd> fe_;
+	std::unique_ptr<::PiSP::BackEnd> be_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
@@ -1194,6 +1203,8 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	if (data->sensor_->init())
 		return -EINVAL;
 
+	data->initPiSP();
+
 	/*
 	 * Enumerate all the Video Mux/Bridge devices across the sensor -> cfe
 	 * link. There may be a cascade of devices in this link!
@@ -1465,6 +1476,15 @@ void PipelineHandlerPiSP::freeBuffers(Camera *camera)
 
 	for (auto const stream : data->streams_)
 		stream->releaseBuffers();
+}
+
+void PiSPCameraData::initPiSP()
+{
+	using namespace ::PiSP;
+	BackEnd::Config config(0, 0, BackEnd::Config::Flags::NONE);
+
+	fe_ = std::make_unique<FrontEnd>(true, BCM2712_HW);
+	be_ = std::make_unique<BackEnd>(config, BCM2712_HW);
 }
 
 void PiSPCameraData::frameStarted(uint32_t sequence)

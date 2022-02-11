@@ -147,7 +147,7 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 
 }; /* namespace */
 
-FrontEnd::FrontEnd(PiSPVariant &variant, bool streaming = true)
+FrontEnd::FrontEnd(bool streaming, PiSPVariant const &variant)
 	: variant_(variant)
 {
 	pisp_fe_input_config input;

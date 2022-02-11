@@ -14,7 +14,7 @@ public:
 	static constexpr uint32_t ScalePrecision = 10;
 	static constexpr uint32_t InterpPrecision = 6;
 
-	FrontEnd(PiSPVariant &variant_, bool streaming);
+	FrontEnd(bool streaming, PiSPVariant const &variant);
 	~FrontEnd();
 
 	void SetGlobal(pisp_fe_global_config const &global);
@@ -46,7 +46,7 @@ private:
 	void finalise();
 	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
-	PiSPVariant variant_;
+	const PiSPVariant variant_;
 	pisp_fe_config fe_config_;
 	int align_;
 };

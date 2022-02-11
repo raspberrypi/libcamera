@@ -8,7 +8,7 @@ using namespace PiSP;
 
 LOG_DEFINE_CATEGORY(PISPBE)
 
-BackEnd::BackEnd(Config const &config, PiSPVariant &variant)
+BackEnd::BackEnd(Config const &config, PiSPVariant const &variant)
 	: config_(config), variant_(variant), retile_(true), finalise_tiling_(true)
 {
 	unsigned int max_tile_width = variant_.backEndMaxTileWidth(0);

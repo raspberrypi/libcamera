@@ -3,7 +3,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "../common/utils.h"
+#include "../common/pisp_utils.h"
 
 using namespace libcamera;
 using namespace PiSP;

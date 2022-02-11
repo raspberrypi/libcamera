@@ -88,17 +88,15 @@ public:
 	void InitialiseConfig();
 
 	void Prepare();
-	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
-	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
-
 
 private:
 	void finaliseConfig();
 	void updateTiles();
-	void retilePipeline(TilingConfig const &tiling_config);
+	std::vector<pisp_tile> retilePipeline(TilingConfig const &tiling_config);
 	void finaliseTiling();
 	void getOutputSize(int output_num, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const;
-	void getHogOffset(int x, int y, uint64_t &addr_offset);
+	bool ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
+	bool ComputeHogOutputImageFormat(pisp_image_format_config &output_format, pisp_image_format_config const &input_format) const;
 
 	Config config_;
 	PiSPVariant variant_;

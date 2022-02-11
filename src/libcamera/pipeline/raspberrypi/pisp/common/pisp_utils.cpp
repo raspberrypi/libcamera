@@ -90,6 +90,47 @@ void compute_stride(pisp_image_format_config &config)
 	compute_stride_align(config, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 }
 
+void compute_addr_offset(const pisp_image_format_config &config, int x, int y,
+			 uint32_t *addr_offset, uint32_t *addr_offset2)
+{
+	if (PISP_IMAGE_FORMAT_wallpaper(config.format)) {
+		int pixels_in_roll = PISP_IMAGE_FORMAT_bps_8(config.format) ? PISP_WALLPAPER_WIDTH : (PISP_IMAGE_FORMAT_bps_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
+		int pixel_offset_in_roll = x % pixels_in_roll;
+		int pixel_offset_in_bytes;
+
+		if (PISP_IMAGE_FORMAT_bps_8(config.format))
+			pixel_offset_in_bytes = pixel_offset_in_roll;
+		else if (PISP_IMAGE_FORMAT_bps_16(config.format))
+			pixel_offset_in_bytes = pixel_offset_in_roll * 2;
+		else {
+			// 10-bit format. Whinge if not a multiple of 3 into the roll.
+			ASSERT(pixel_offset_in_roll % 3 == 0);
+			pixel_offset_in_bytes = pixel_offset_in_roll / 3 * 4;
+		}
+
+		int num_rolls = x / pixels_in_roll;
+		*addr_offset = num_rolls * config.stride + y * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
+		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
+			*addr_offset2 = num_rolls * config.stride2 + y / 2 * PISP_WALLPAPER_WIDTH + pixel_offset_in_bytes;
+		else
+			*addr_offset2 = *addr_offset;
+
+		return;
+	}
+
+	uint32_t x_byte_offset = compute_x_offset(config.format, x);
+	*addr_offset = y * config.stride + x_byte_offset;
+	if (addr_offset2 && !PISP_IMAGE_FORMAT_interleaved(config.format)) {
+		if (PISP_IMAGE_FORMAT_sampling_420(config.format))
+			y /= 2;
+
+		if (PISP_IMAGE_FORMAT_planar(config.format) && !PISP_IMAGE_FORMAT_sampling_444(config.format))
+			x_byte_offset /= 2;
+
+		*addr_offset2 = y * config.stride2 + x_byte_offset;
+	}
+}
+
 int num_planes(pisp_image_format format)
 {
 	int planes = 1;
@@ -118,10 +159,10 @@ std::size_t get_plane_size(const pisp_image_format_config &config, int plane)
 
 	if (PISP_IMAGE_FORMAT_wallpaper(config.format)) {
 		int pixels_in_roll = PISP_IMAGE_FORMAT_bps_8(config.format) ? PISP_WALLPAPER_WIDTH : (PISP_IMAGE_FORMAT_bps_16(config.format) ? PISP_WALLPAPER_WIDTH / 2 : PISP_WALLPAPER_WIDTH / 4 * 3);
-		size_t num_rolls = (config.width + pixels_in_roll - 1) / pixels_in_roll;
+		std::size_t num_rolls = (config.width + pixels_in_roll - 1) / pixels_in_roll;
 		plane_size = num_rolls * stride;
 	} else {
-		size_t height = plane && PISP_IMAGE_FORMAT_sampling_420(config.format) ? config.height >> 1 : config.height;
+		std::size_t height = plane && PISP_IMAGE_FORMAT_sampling_420(config.format) ? config.height >> 1 : config.height;
 		plane_size = height * stride;
 	}
 

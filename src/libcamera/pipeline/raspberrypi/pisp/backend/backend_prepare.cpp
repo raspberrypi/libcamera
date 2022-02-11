@@ -2,7 +2,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "../common/utils.h"
+#include "../common/pisp_utils.h"
 #include "tiling/types.h"
 
 using namespace libcamera;
@@ -19,6 +19,21 @@ constexpr unsigned int ScalePrecision = 12;
 constexpr unsigned int UnityScale = 1 << 12;
 // HoG feature constants
 constexpr unsigned int HogCellSize = 8;
+
+void check_stride(pisp_image_format_config const &config)
+{
+	if (config.stride % PISP_BACK_END_OUTPUT_MIN_ALIGN || config.stride2 % PISP_BACK_END_OUTPUT_MIN_ALIGN)
+		LOG(PISPBE, Error) << "Output stride values not sufficiently aligned";
+
+	if (PISP_IMAGE_FORMAT_wallpaper(config.format) && (config.stride % 128 || config.stride2 % 128))
+		LOG(PISPBE, Error) << "Wallpaper format should have 128-byte aligned rolls";
+
+	pisp_image_format_config check = config;
+	compute_stride_align(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
+	if (check.stride > config.stride || check.stride2 > config.stride2) {
+		LOG(PISPBE, Error) << "Strides should be at least " << check.stride << " and " << check.stride2 << " but are " << config.stride << " and " << config.stride2;
+	}
+}
 
 void finalise_bayer_rgb_inputs(pisp_image_format_config const &config)
 {
@@ -81,7 +96,7 @@ void finalise_resample(pisp_be_resample_config &resample, pisp_be_resample_extra
 
 	if ((scale_factor_h < UnityScale / 16 || scale_factor_h >= 16 * UnityScale) ||
 	    (scale_factor_v < UnityScale / 16 || scale_factor_v >= 16 * UnityScale))
-		LOG(PISPBE, Error) << "finalise_resample: Invalid scaling factors (must be < 16x down/upscale).");
+		LOG(PISPBE, Error) << "finalise_resample: Invalid scaling factors (must be < 16x down/upscale).";
 
 	resample.scale_factor_h = scale_factor_h;
 	resample.scale_factor_v = scale_factor_v;
@@ -257,8 +272,8 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 			if ((rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i)) == 0)
 				continue;
 
-			int width_after_crop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
-			int height_after_crop = tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i];
+			unsigned int width_after_crop = tile.input_width - tile.crop_x_start[i] - tile.crop_x_end[i];
+			unsigned int height_after_crop = tile.input_height - tile.crop_y_start[i] - tile.crop_y_end[i];
 
 			// A tile that gets cropped away completely can't produce output, and vice versa.
 			ASSERT((width_after_crop * height_after_crop == 0) == (tile.output_width[i] * tile.output_height[i] == 0));
@@ -267,7 +282,7 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 			if (width_after_crop && height_after_crop) {
 				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH || height_after_crop < PISP_BACK_END_MIN_TILE_HEIGHT)
 					LOG(PISPBE, Error) << "Tile too small after crop";
-			
+
                         	if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH ||
                                     tile.resample_in_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
 					LOG(PISPBE, Error) << "Tile too small after downscale";
@@ -340,7 +355,7 @@ static tiling::Length2 calculate_output_alignment(uint32_t format, int align = P
 void calculate_input_addr_offset(int x, int y, pisp_image_format_config const &input_format, uint32_t *addr_offset, uint32_t *addr_offset2 = nullptr)
 {
 	uint32_t offset2 = 0;
-	
+
         compute_addr_offset(input_format, x, y, addr_offset, &offset2);
 	if (addr_offset2)
 		*addr_offset2 = offset2;
@@ -352,16 +367,22 @@ void BackEnd::finaliseConfig()
 {
 	uint32_t dirty_flags_bayer = be_config_.dirty_flags_bayer & be_config_.global.bayer_enables; // only finalise blocks that are dirty *and* enabled
 	uint32_t dirty_flags_rgb = be_config_.dirty_flags_rgb & be_config_.global.rgb_enables; // only finalise blocks that are dirty *and* enabled
+
 	if ((dirty_flags_bayer & PISP_BE_BAYER_ENABLE_INPUT) || (dirty_flags_rgb & PISP_BE_RGB_ENABLE_INPUT))
 		finalise_bayer_rgb_inputs(be_config_.input_format);
+
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_INPUT)
 		finalise_inputs(be_config_);
+
 	if (dirty_flags_bayer & (PISP_BE_BAYER_ENABLE_INPUT | PISP_BE_BAYER_ENABLE_DECOMPRESS))
 		finalise_decompression(be_config_);
+
 	if ((be_config_.dirty_flags_bayer &
 	     (PISP_BE_BAYER_ENABLE_TDN | PISP_BE_BAYER_ENABLE_TDN_INPUT | PISP_BE_BAYER_ENABLE_TDN_DECOMPRESS |
 	      PISP_BE_BAYER_ENABLE_TDN_COMPRESS | PISP_BE_BAYER_ENABLE_TDN_OUTPUT))) {
 		finalise_tdn(be_config_);
+
+                #if 0
 		// The address will have to be filled in by the HAL, but it needs the index. Hackily, we pass this in the address field.
 		be_config_.tdn_input_buffer.addr[0] = tdn_input_index_;
 		be_config_.tdn_output_buffer.addr[0] = tdn_output_index_;
@@ -369,11 +390,15 @@ void BackEnd::finaliseConfig()
 			hal_->GetTdnBuffer(tdn_input_index_).format = be_config_.tdn_input_format;
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_TDN_OUTPUT)
 			hal_->GetTdnBuffer(tdn_output_index_).format = be_config_.tdn_output_format;
+                #endif
 	}
+
 	if (be_config_.dirty_flags_bayer &
 	    (PISP_BE_BAYER_ENABLE_STITCH | PISP_BE_BAYER_ENABLE_STITCH_INPUT | PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS |
 	     PISP_BE_BAYER_ENABLE_STITCH_COMPRESS | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)) {
 		finalise_stitch(be_config_);
+
+                #if 0
 		// The address will have to be filled in by the HAL, but it needs the index. Hackily, we pass this in the address field.
 		be_config_.stitch_input_buffer.addr[0] = stitch_input_index_;
 		be_config_.stitch_output_buffer.addr[0] = stitch_output_index_;
@@ -381,30 +406,39 @@ void BackEnd::finaliseConfig()
 			hal_->GetStitchBuffer(stitch_input_index_).format = be_config_.stitch_input_format;
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_STITCH_OUTPUT)
 			hal_->GetStitchBuffer(stitch_output_index_).format = be_config_.stitch_output_format;
+                #endif
 	}
+
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_LSC)
 		finalise_lsc(be_config_.lsc, be_config_.lsc_extra, be_config_.input_format.width, be_config_.input_format.height);
+
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_CAC)
 		finalise_cac(be_config_.cac, be_config_.cac_extra, be_config_.input_format.width, be_config_.input_format.height);
-	for (int j = 0; j < NUM_OUTPUT_BRANCHES; j++) {
+
+	for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
 		bool enabled = be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j);
+
 		if (j == PISP_BACK_END_HOG_OUTPUT)
 			enabled |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
+
 		if (enabled) {
 			// crop is enabled when it contains non-zero width/height
 			uint16_t w = be_config_.crop.width ? be_config_.crop.width : be_config_.input_format.width;
 			uint16_t h = be_config_.crop.width ? be_config_.crop.height : be_config_.input_format.height;
+
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_DOWNSCALE(j)) {
-				if (pisp_variant_downscaler_available(j))
+				if (variant_.backEndDownscalerAvailable(0, j))
 					finalise_downscale(be_config_.downscale[j], be_config_.downscale_extra[j], w, h);
 				else
 					LOG(PISPBE, Error) << "Downscale is not available in output branch " + std::to_string(j);
 			}
+
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j)) {
 				// If the downscale is enabled, we update the input width/height for the resample stage.
 				w = be_config_.downscale_extra[j].scaled_width;
 				h = be_config_.downscale_extra[j].scaled_height;
 			}
+
 			if (dirty_flags_rgb & PISP_BE_RGB_ENABLE_RESAMPLE(j))
 				finalise_resample(be_config_.resample[j], be_config_.resample_extra[j], w, h);
 
@@ -415,11 +449,14 @@ void BackEnd::finaliseConfig()
 	// Finally check for a sane collection of enable bits.
 	if (!((be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) || (be_config_.global.bayer_enables == 0)))
 		LOG(PISPBE, Error) << "BackEnd::finalise: Bayer input disabled but Bayer pipe active";
+
 	if (!!(be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) + !!(be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) != 1)
 		LOG(PISPBE, Error) << "BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled";
+
 	uint32_t output_enables = be_config_.global.bayer_enables & (PISP_BE_BAYER_ENABLE_TDN_OUTPUT | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT);
-	for (int i = 0; i < variant_.numBackEndBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++)
 		output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i);
+
 	output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
 	if (output_enables == 0)
 		LOG(PISPBE, Error) << "BackEnd::finalise: PiSP not configured to do anything";
@@ -427,21 +464,24 @@ void BackEnd::finaliseConfig()
 
 void BackEnd::updateTiles()
 {
-	static_ASSERT(NUM_OUTPUT_BRANCHES == variant_.numBackEndBranches(0),
-		      "NUM_OUTPUT_BRANCHES and variant_.numBackEndBranches(0) should be the same");
 	if (retile_) {
-		retile_ = false;
 		TilingConfig tiling_config;
 		pisp_be_config const &c = be_config_;
+
+		retile_ = false;
 		tiling_config.input_alignment = calculate_input_alignment(c);
+
 		LOG(PISPBE, Debug) << "Input alignments are " << tiling_config.input_alignment << " pixels";
+
 		tiling_config.input_image_size = tiling::Length2(c.input_format.width, c.input_format.height);
-		tiling_config.crop = Interval2(Interval(c.crop.offset_x, c.crop.width),
-					       Interval(c.crop.offset_y, c.crop.height));
+		tiling_config.crop = tiling::Interval2(tiling::Interval(c.crop.offset_x, c.crop.width),
+						       tiling::Interval(c.crop.offset_y, c.crop.height));
+
 		if (tiling_config.crop.x.length == 0 || tiling_config.crop.y.length == 0)
 			tiling_config.crop =
-				Interval2(Interval(0, c.input_format.width), Interval(0, c.input_format.height));
-		for (int i = 0; i < NUM_OUTPUT_BRANCHES; i++) {
+				tiling::Interval2(tiling::Interval(0, c.input_format.width), tiling::Interval(0, c.input_format.height));
+
+		for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
 			tiling_config.output_h_mirror[i] = be_config_.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] = tiling::Length2(c.downscale[i].scale_factor_h, c.downscale[i].scale_factor_v);
 			tiling_config.resample_factor[i] = tiling::Length2(c.resample[i].scale_factor_h, c.resample[i].scale_factor_v);
@@ -450,20 +490,24 @@ void BackEnd::updateTiles()
 			tiling_config.output_max_alignment[i] = calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MAX_ALIGN);
 			tiling_config.output_min_alignment[i] = calculate_output_alignment(c.output_format[i].image.format, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 		}
+
 		// If HOG output is enabled, but the corresponding regular output isn't, we'll have to for that branch to get tiled up too.
 		if ((c.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(PISP_BACK_END_HOG_OUTPUT)) == 0 &&
 		    (c.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG)) {
 			uint16_t width, height;
+
 			getOutputSize(PISP_BACK_END_HOG_OUTPUT, &width, &height, be_config_.input_format);
 			tiling_config.output_image_size[PISP_BACK_END_HOG_OUTPUT] = tiling::Length2(width, height);
 			tiling_config.output_min_alignment[PISP_BACK_END_HOG_OUTPUT] = tiling::Length2(8, 1); // I think 8 is basically right
 			tiling_config.output_max_alignment[PISP_BACK_END_HOG_OUTPUT] = tiling::Length2(32, 1); // and this one probably doesn't much matter
 		}
-		tiling_config.max_tile_size.dx = config_.max_tile_width ? config_.max_tile_width : pisp_variant_get_back_end_max_tile_width(GetId());
+
+		tiling_config.max_tile_size.dx = config_.max_tile_width ? config_.max_tile_width : variant_.backEndMaxTileWidth(0);
 		tiling_config.max_tile_size.dy = config_.max_stripe_height ? config_.max_stripe_height : MaxStripeHeight;
 		tiling_config.min_tile_size = tiling::Length2(PISP_BACK_END_MIN_TILE_WIDTH, PISP_BACK_END_MIN_TILE_HEIGHT);
 		tiling_config.resample_enables = be_config_.global.rgb_enables / (int)PISP_BE_RGB_ENABLE_RESAMPLE0;
 		tiling_config.downscale_enables = be_config_.global.rgb_enables / (int)PISP_BE_RGB_ENABLE_DOWNSCALE0;
+
 		// Set compressed_input to false as otherwise the tiling would pad tiles up to multiples of 8 pixels even when these lie
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
@@ -471,25 +515,29 @@ void BackEnd::updateTiles()
 		check_tiles(tiles_, c.global.rgb_enables, variant_.numBackEndBranches(0));
 		finalise_tiling_ = true;
 	}
+
 	if (finalise_tiling_) {
-		finaliseTiling(tiles_);
+		finaliseTiling();
 		finalise_tiling_ = false;
 	}
 }
 
-std::vector<PISP_TILE_T> BackEnd::retilePipeline(TilingConfig const &tiling_config)
+std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config)
 {
 	// The tiling library provides tiles in a SW Tile structure.
 	Tile tiles[PISP_BACK_END_NUM_TILES];
-	Length2 grid;
+	tiling::Length2 grid;
+
 	tile_pipeline(tiling_config, tiles, PISP_BACK_END_NUM_TILES, &grid);
 	num_tiles_x_ = grid.dx;
 	num_tiles_y_ = grid.dy;
-	std::vector<PISP_TILE_T> tile_vector(num_tiles_x_ * num_tiles_y_);
-	// Finally convert the Tiles into PISP_TILE_Ts.
+
+	std::vector<pisp_tile> tile_vector(num_tiles_x_ * num_tiles_y_);
+	// Finally convert the Tiles into pisp_tiles.
 	for (int i = 0; i < num_tiles_x_ * num_tiles_y_; i++) {
-		PISP_TILE_T &t = tile_vector[i];
-		memset(&t, 0, sizeof(PISP_TILE_T));
+		pisp_tile &t = tile_vector[i];
+
+		memset(&t, 0, sizeof(pisp_tile));
 		t.edge = 0;
 		if (i < num_tiles_x_)
 			t.edge |= PISP_TOP_EDGE;
@@ -508,10 +556,12 @@ std::vector<PISP_TILE_T> BackEnd::retilePipeline(TilingConfig const &tiling_conf
 		if (tiles[i].input.output != tiles[i].input.input)
 			LOG(PISPBE, Error) << "BackEnd::retilePipeline: tiling error in Bayer pipe";
 
-		for (int j = 0; j < NUM_OUTPUT_BRANCHES; j++) {
+		for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
 			bool enabled = (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j));
+
 			if (j == PISP_BACK_END_HOG_OUTPUT)
 				enabled |= (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG);
+
 			if (enabled && (tiles[i].output[j].output.x.length == 0 || tiles[i].output[j].output.y.length == 0)) {
 				// If a tile produces no output there's no point sending anything down this branch, so ensure the crop
 				// "eats" everything and set everything else to zero.
@@ -528,20 +578,22 @@ std::vector<PISP_TILE_T> BackEnd::retilePipeline(TilingConfig const &tiling_conf
 				continue;
 			}
 
-			Crop2 downscale_crop;
-			Interval2 resample_size = tiles[i].crop.output;
+			tiling::Crop2 downscale_crop;
+			tiling::Interval2 resample_size = tiles[i].crop.output;
 			resample_size.x = resample_size.x - tiles[i].resample[j].crop.x;
 			resample_size.y = resample_size.y - tiles[i].resample[j].crop.y;
+
 			// When a resize stage is disabled, the tile size after the stage is found from the input of the
 			// next block. Also there will be no extra crop necessary for the resize operation.
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j)) {
 				downscale_crop = tiles[i].downscale[j].crop + tiles[i].crop.crop;
 				// Size of the tile going into the resample block needs to be set here.
 				resample_size = tiles[i].downscale[j].output;
-			} else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j))
+			} else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j)) {
 				downscale_crop = tiles[i].resample[j].crop + tiles[i].crop.crop;
-			else
+			} else {
 				downscale_crop = tiles[i].output[j].crop + tiles[i].crop.crop;
+			}
 
 			t.crop_x_start[j] = downscale_crop.x.start;
 			t.crop_x_end[j] = downscale_crop.x.end;
@@ -560,35 +612,39 @@ std::vector<PISP_TILE_T> BackEnd::retilePipeline(TilingConfig const &tiling_conf
 					unsigned int frac_x = (resample_size.x.offset * be_config_.downscale[j].scale_factor_h) & ((1 << ScalePrecision) - 1);
 					unsigned int frac_y = (resample_size.y.offset * be_config_.downscale[j].scale_factor_v) & ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
-					t.downscale_phase_x[p * NUM_OUTPUT_BRANCHES + j] = (UnityScale acx ); 
-				t.downscale_phase_y[p * NUM_OUTPUT_BRANCHES + j] = (UnityScale acy ); 
-			}
+					t.downscale_phase_x[p * variant_.numBackEndBranches(0) + j] = (UnityScale - frac_x);
+					t.downscale_phase_y[p * variant_.numBackEndBranches(0) + j] = (UnityScale - frac_y);
+				}
+
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j)) {
 					const int NUM_PHASES = 16;
 					// Location of the output pixel in the interpolated (input) image.
 					unsigned int interpolated_pix_x = (t.output_offset_x[j] * NUM_PHASES * be_config_.resample[j].scale_factor_h) >> ScalePrecision;
 					unsigned int interpolated_pix_y = (t.output_offset_y[j] * NUM_PHASES * be_config_.resample[j].scale_factor_v) >> ScalePrecision;
 					// Phase of the interpolated input pixel.
-					t.resample_phase_x[p * NUM_OUTPUT_BRANCHES + j] = ((interpolated_pix_x % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
-					t.resample_phase_y[p * NUM_OUTPUT_BRANCHES + j] = ((interpolated_pix_y % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
+					t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] = ((interpolated_pix_x % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
+					t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] = ((interpolated_pix_y % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
 					// Account for any user defined initial phase - this could be negative!
-					t.resample_phase_x[p * NUM_OUTPUT_BRANCHES + j] += be_config_.resample_extra[j].initial_phase_h[p];
-					t.resample_phase_y[p * NUM_OUTPUT_BRANCHES + j] += be_config_.resample_extra[j].initial_phase_v[p];
+					t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] += be_config_.resample_extra[j].initial_phase_h[p];
+					t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] += be_config_.resample_extra[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
-					ASSERT(t.resample_phase_x[p * NUM_OUTPUT_BRANCHES + j] <= 2 * (UnityScale );	 		 		SSERT(t.resample_phase_y[p * NUM_OUTPUT_BRANCHES + j] <= 2 * (UnityScale );	 		 	}			}
+					ASSERT(t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] <= 2 * (UnityScale - 1));
+					ASSERT(t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] <= 2 * (UnityScale - 1));
+				}
+			}
 
 			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j)) {
-				int phase_max = (be_config_.resample[j].scale_factor_h * UnityScale  >  Sc alPrecision;
-				if (std::abs(t.resample_phase_x[0 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_x[1 * NUM_OUTPUT_BRANCHES + j]) > phase_max ||
-				    std::abs(t.resample_phase_x[1 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_x[2 * NUM_OUTPUT_BRANCHES + j]) > phase_max ||
-				    std::abs(t.resample_phase_x[0 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_x[2 * NUM_OUTPUT_BRANCHES + j]) > phase_max) {
+				int phase_max = (be_config_.resample[j].scale_factor_h * UnityScale / 2) >> ScalePrecision;
+				if (std::abs(t.resample_phase_x[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[1 * variant_.numBackEndBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_x[1 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[2 * variant_.numBackEndBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_x[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[2 * variant_.numBackEndBranches(0) + j]) > phase_max) {
 					LOG(PISPBE, Error) << "Resample phase x for tile is > 0.5 pixels on the output dimensions.";
 				}
-				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale  >  Sc alPrecision;
-				if (std::abs(t.resample_phase_y[0 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_y[1 * NUM_OUTPUT_BRANCHES + j]) > phase_max ||
-				    std::abs(t.resample_phase_y[1 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_y[2 * NUM_OUTPUT_BRANCHES + j]) > phase_max ||
-				    std::abs(t.resample_phase_y[0 * NUM_OUTPUT_BRANCHES + j] - t.resample_phase_y[2 * NUM_OUTPUT_BRANCHES + j]) > phase_max) {
+				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale / 2) >> ScalePrecision;
+				if (std::abs(t.resample_phase_y[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[1 * variant_.numBackEndBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_y[1 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[2 * variant_.numBackEndBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_y[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[2 * variant_.numBackEndBranches(0) + j]) > phase_max) {
 					LOG(PISPBE, Error) << "Resample phase y for tile is > 0.5 pixels on the output dimensions.";
 				}
 			}
@@ -597,35 +653,40 @@ std::vector<PISP_TILE_T> BackEnd::retilePipeline(TilingConfig const &tiling_conf
 	return tile_vector;
 }
 
-void BackEnd::finaliseTiling(std::vector<PISP_TILE_T> &tiles)
+void BackEnd::finaliseTiling()
 {
 	// Update tile parameters (offsets/strides) from on the BE pipeline configuration.
-	for (PISP_TILE_T &t : tiles) {
+	for (pisp_tile &t : tiles_) {
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.input_format, &t.input_addr_offset, &t.input_addr_offset2);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.tdn_input_format, &t.tdn_input_addr_offset);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.tdn_output_format, &t.tdn_output_addr_offset);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.stitch_input_format, &t.stitch_input_addr_offset);
 		calculate_input_addr_offset(t.input_offset_x, t.input_offset_y, be_config_.stitch_output_format, &t.stitch_output_addr_offset);
-		LOG(PISPBE, Debug) << "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets " << t.input_addr_offset << " and " << .input_addr_offset2);
+		LOG(PISPBE, Debug) << "Input offsets " << t.input_offset_x << "," << t.input_offset_y << " address offsets " << t.input_addr_offset << " and " << t.input_addr_offset2;
 
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_LSC) {
 			t.lsc_grid_offset_x = (t.input_offset_x + be_config_.lsc_extra.offset_x) * be_config_.lsc.grid_step_x;
 			t.lsc_grid_offset_y = (t.input_offset_y + be_config_.lsc_extra.offset_y) * be_config_.lsc.grid_step_y;
 		}
+
 		if (be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_CAC) {
 			t.cac_grid_offset_x = (t.input_offset_x + be_config_.cac_extra.offset_x) * be_config_.cac.grid_step_x;
 			t.cac_grid_offset_y = (t.input_offset_y + be_config_.cac_extra.offset_y) * be_config_.cac.grid_step_y;
 		}
 
-		for (int j = 0; j < NUM_OUTPUT_BRANCHES; j++) {
+		for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
+
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_HFLIP)
 				t.output_offset_x[j] = be_config_.output_format[j].image.width - output_offset_x_unflipped - t.output_width[j];
+
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_VFLIP)
 				t.output_offset_y[j] = be_config_.output_format[j].image.height - output_offset_y_unflipped - 1;
-			PISP_IMAGE_FORMAT_compute_addr_offset(&be_config_.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
-							      &t.output_addr_offset[j], &t.output_addr_offset2[j]);
-			LOG(PISPBE, Debug) << "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j] << " address offsets " << .output_addr_offset[j] << " and " << t.output_addr_offset2[j]);
+
+			compute_addr_offset(be_config_.output_format[j].image, t.output_offset_x[j], t.output_offset_y[j],
+					    &t.output_addr_offset[j], &t.output_addr_offset2[j]);
+
+			LOG(PISPBE, Debug) << "Branch " << j << " output offsets " << t.output_offset_x[j] << "," << t.output_offset_y[j] << " address offsets " << t.output_addr_offset[j] << " and " << t.output_addr_offset2[j];
 
 			if (j == PISP_BACK_END_HOG_OUTPUT) {
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG) {
@@ -633,11 +694,69 @@ void BackEnd::finaliseTiling(std::vector<PISP_TILE_T> &tiles)
 					// Use *unflipped* offsets as HOG doesn't flip its output.
 					int cell_offset_x = output_offset_x_unflipped / HogCellSize;
 					int cell_offset_y = output_offset_y_unflipped / HogCellSize;
-					PISP_IMAGE_FORMAT_compute_addr_offset(&be_config_.hog_format, cell_offset_x, cell_offset_y,
+					compute_addr_offset(be_config_.hog_format, cell_offset_x, cell_offset_y,
 									      &t.output_hog_addr_offset, nullptr);
 				}
 			}
 		}
+	}
+}
+
+void BackEnd::getOutputSize(int i, uint16_t *width, uint16_t *height, pisp_image_format_config const &ifmt) const
+{
+	// This internal version doesn't check if the output is enabled
+	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(i))
+		*width = be_config_.resample_extra[i].scaled_width, *height = be_config_.resample_extra[i].scaled_height;
+	else if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(i))
+		*width = be_config_.downscale_extra[i].scaled_width, *height = be_config_.downscale_extra[i].scaled_height;
+	else if (be_config_.crop.width) // crop width and height will be zero when crop disabled
+		*width = be_config_.crop.width, *height = be_config_.crop.height;
+	else
+		*width = ifmt.width, *height = ifmt.height;
+}
+
+bool BackEnd::ComputeOutputImageFormat(unsigned int i, pisp_image_format_config &fmt, pisp_image_format_config const &ifmt) const
+{
+	ASSERT(i < PISP_BACK_END_NUM_OUTPUTS);
+
+	if (&fmt != &be_config_.output_format[i].image)
+		fmt = be_config_.output_format[i].image;
+
+	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i)) {
+		getOutputSize(i, &fmt.width, &fmt.height, ifmt);
+		if (!fmt.stride)
+			compute_stride(fmt);
+		else
+			check_stride(fmt);
+		return true;
+	} else {
+		fmt.width = 0;
+		fmt.height = 0;
+		fmt.stride = 0;
+		fmt.stride2 = 0;
+		return false;
+	}
+}
+
+bool BackEnd::ComputeHogOutputImageFormat(pisp_image_format_config &fmt, pisp_image_format_config const &ifmt) const
+{
+	fmt.format = be_config_.hog.compute_signed ? PISP_IMAGE_FORMAT_HOG_SIGNED : PISP_IMAGE_FORMAT_HOG_UNSIGNED;
+	fmt.stride2 = 0;
+
+	if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG) {
+		uint16_t w, h;
+
+		getOutputSize(PISP_BACK_END_HOG_OUTPUT, &w, &h, ifmt);
+		// Configure HoG dimensions. The hardware only generates output for each complete cell.
+		fmt.width = w / HogCellSize;
+		fmt.height = h / HogCellSize;
+		compute_stride(fmt);
+		return true;
+	} else {
+		fmt.width = 0;
+		fmt.height = 0;
+		fmt.stride = 0;
+		return false;
 	}
 }
 
@@ -659,12 +778,11 @@ void BackEnd::Prepare()
 	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
 	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
-
 		pisp_image_format_config &config = be_config_.output_format[i].image;
 		ComputeOutputImageFormat(i, config, be_config_.input_format);
 
 		if (config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
-			if (!pisp_variant_get_integral_image_support())
+			if (!variant_.backEndIntegralImage(0, i))
 				LOG(PISPBE, Error) << "Integral images are not supported in the current configuration.";
 			integral_image_output = true;
 		}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common/pisp_types.h"
+#include "../variants/pisp_variant.h"
 
 #include "pisp_fe_config.h"
 #include "pisp_statistics.h"
@@ -13,7 +14,7 @@ public:
 	static constexpr uint32_t ScalePrecision = 10;
 	static constexpr uint32_t InterpPrecision = 6;
 
-	FrontEnd(bool streaming);
+	FrontEnd(PiSPVariant &variant_, bool streaming);
 	~FrontEnd();
 
 	void SetGlobal(pisp_fe_global_config const &global);
@@ -32,19 +33,20 @@ public:
 	void SetAwbStats(pisp_fe_awb_stats_config const &awb_stats);
 	void SetFloatingStats(pisp_fe_floating_stats_config const &floating_stats);
 	void SetCdafStats(pisp_fe_cdaf_stats_config const &cdaf_stats);
-	void SetCrop(int output_num, pisp_fe_crop_config const &crop);
-	void SetDownscale(int output_num, pisp_fe_downscale_config const &downscale);
-	void SetCompress(int output_num, pisp_compress_config const &compress);
-	void SetOutputFormat(int output_num, pisp_image_format_config const &output_format);
-	void SetOutputBuffer(int output_num, pisp_fe_output_buffer_config const &output_buffer);
-	void SetOutputIntrLines(int output_num, int lines);
+	void SetCrop(unsigned int output_num, pisp_fe_crop_config const &crop);
+	void SetDownscale(unsigned int output_num, pisp_fe_downscale_config const &downscale);
+	void SetCompress(unsigned int output_num, pisp_compress_config const &compress);
+	void SetOutputFormat(unsigned int output_num, pisp_image_format_config const &output_format);
+	void SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_config const &output_buffer);
+	void SetOutputIntrLines(unsigned int output_num, int lines);
 	void SetOutputAXI(pisp_fe_output_axi_config const &output_axi);
 	void MergeConfig(const pisp_fe_config &config);
 
 private:
 	void finalise();
-	void getOutputSize(int output_num, uint16_t &width, uint16_t &height) const;
+	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
+	PiSPVariant variant_;
 	pisp_fe_config fe_config_;
 	int align_;
 };

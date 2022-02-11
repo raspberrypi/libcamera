@@ -340,7 +340,7 @@ void BackEnd::SetResample(unsigned int i, pisp_be_resample_extra const &resample
 
 void BackEnd::SetOutputFormat(unsigned int i, pisp_be_output_format_config const &output_format)
 {
-	ASSERT(i < variant_.numBackEndBranches(0));
+	ASSERT(i < variant_.backEndNumBranches(0));
 	be_config_.output_format[i] = output_format;
 
 	if (output_format.image.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
@@ -366,6 +366,6 @@ void BackEnd::SetHog(pisp_be_hog_config const &hog)
 
 void BackEnd::GetOutputFormat(unsigned int i, pisp_be_output_format_config &output_format) const
 {
-	ASSERT(i < variant_.numBackEndBranches(0));
+	ASSERT(i < variant_.backEndNumBranches(0));
 	output_format = be_config_.output_format[i];
 }

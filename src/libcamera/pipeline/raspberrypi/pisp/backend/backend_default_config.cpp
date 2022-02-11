@@ -101,7 +101,7 @@ void BackEnd::InitialiseConfig()
 	initialise_gamma(be_config_.gamma);
 	be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_YCBCR | PISP_BE_RGB_ENABLE_YCBCR_INVERSE | PISP_BE_RGB_ENABLE_GAMMA;
 
-	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++) {
 		initialise_resample(be_config_.resample[i]);
 		be_config_.dirty_flags_rgb |= PISP_BE_RGB_ENABLE_RESAMPLE(i);
 	}

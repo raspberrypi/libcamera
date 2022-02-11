@@ -415,7 +415,7 @@ void BackEnd::finaliseConfig()
 	if (dirty_flags_bayer & PISP_BE_BAYER_ENABLE_CAC)
 		finalise_cac(be_config_.cac, be_config_.cac_extra, be_config_.input_format.width, be_config_.input_format.height);
 
-	for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
+	for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++) {
 		bool enabled = be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j);
 
 		if (j == PISP_BACK_END_HOG_OUTPUT)
@@ -454,7 +454,7 @@ void BackEnd::finaliseConfig()
 		LOG(PISPBE, Error) << "BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled";
 
 	uint32_t output_enables = be_config_.global.bayer_enables & (PISP_BE_BAYER_ENABLE_TDN_OUTPUT | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT);
-	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++)
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
 		output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i);
 
 	output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
@@ -481,7 +481,7 @@ void BackEnd::updateTiles()
 			tiling_config.crop =
 				tiling::Interval2(tiling::Interval(0, c.input_format.width), tiling::Interval(0, c.input_format.height));
 
-		for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
+		for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++) {
 			tiling_config.output_h_mirror[i] = be_config_.output_format[i].transform & PISP_BE_TRANSFORM_HFLIP;
 			tiling_config.downscale_factor[i] = tiling::Length2(c.downscale[i].scale_factor_h, c.downscale[i].scale_factor_v);
 			tiling_config.resample_factor[i] = tiling::Length2(c.resample[i].scale_factor_h, c.resample[i].scale_factor_v);
@@ -512,7 +512,7 @@ void BackEnd::updateTiles()
 		// outside the actual image width (and we've chosen not to handle compression like that).
 		tiling_config.compressed_input = false;
 		tiles_ = retilePipeline(tiling_config);
-		check_tiles(tiles_, c.global.rgb_enables, variant_.numBackEndBranches(0));
+		check_tiles(tiles_, c.global.rgb_enables, variant_.backEndNumBranches(0));
 		finalise_tiling_ = true;
 	}
 
@@ -556,7 +556,7 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 		if (tiles[i].input.output != tiles[i].input.input)
 			LOG(PISPBE, Error) << "BackEnd::retilePipeline: tiling error in Bayer pipe";
 
-		for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
+		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++) {
 			bool enabled = (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j));
 
 			if (j == PISP_BACK_END_HOG_OUTPUT)
@@ -612,8 +612,8 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					unsigned int frac_x = (resample_size.x.offset * be_config_.downscale[j].scale_factor_h) & ((1 << ScalePrecision) - 1);
 					unsigned int frac_y = (resample_size.y.offset * be_config_.downscale[j].scale_factor_v) & ((1 << ScalePrecision) - 1);
 					// Fractional component of the input required to generate the output pixel.
-					t.downscale_phase_x[p * variant_.numBackEndBranches(0) + j] = (UnityScale - frac_x);
-					t.downscale_phase_y[p * variant_.numBackEndBranches(0) + j] = (UnityScale - frac_y);
+					t.downscale_phase_x[p * variant_.backEndNumBranches(0) + j] = (UnityScale - frac_x);
+					t.downscale_phase_y[p * variant_.backEndNumBranches(0) + j] = (UnityScale - frac_y);
 				}
 
 				if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j)) {
@@ -622,29 +622,29 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 					unsigned int interpolated_pix_x = (t.output_offset_x[j] * NUM_PHASES * be_config_.resample[j].scale_factor_h) >> ScalePrecision;
 					unsigned int interpolated_pix_y = (t.output_offset_y[j] * NUM_PHASES * be_config_.resample[j].scale_factor_v) >> ScalePrecision;
 					// Phase of the interpolated input pixel.
-					t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] = ((interpolated_pix_x % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
-					t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] = ((interpolated_pix_y % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
+					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] = ((interpolated_pix_x % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
+					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] = ((interpolated_pix_y % NUM_PHASES) << ScalePrecision) / NUM_PHASES;
 					// Account for any user defined initial phase - this could be negative!
-					t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] += be_config_.resample_extra[j].initial_phase_h[p];
-					t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] += be_config_.resample_extra[j].initial_phase_v[p];
+					t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] += be_config_.resample_extra[j].initial_phase_h[p];
+					t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] += be_config_.resample_extra[j].initial_phase_v[p];
 					// Have to be within this range, else some calculation went wrong.
-					ASSERT(t.resample_phase_x[p * variant_.numBackEndBranches(0) + j] <= 2 * (UnityScale - 1));
-					ASSERT(t.resample_phase_y[p * variant_.numBackEndBranches(0) + j] <= 2 * (UnityScale - 1));
+					ASSERT(t.resample_phase_x[p * variant_.backEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
+					ASSERT(t.resample_phase_y[p * variant_.backEndNumBranches(0) + j] <= 2 * (UnityScale - 1));
 				}
 			}
 
 			// Phase difference between planes cannot be > 0.5 pixels on the output dimenstions.
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_RESAMPLE(j)) {
 				int phase_max = (be_config_.resample[j].scale_factor_h * UnityScale / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_x[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[1 * variant_.numBackEndBranches(0) + j]) > phase_max ||
-				    std::abs(t.resample_phase_x[1 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[2 * variant_.numBackEndBranches(0) + j]) > phase_max ||
-				    std::abs(t.resample_phase_x[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_x[2 * variant_.numBackEndBranches(0) + j]) > phase_max) {
+				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max) {
 					LOG(PISPBE, Error) << "Resample phase x for tile is > 0.5 pixels on the output dimensions.";
 				}
 				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale / 2) >> ScalePrecision;
-				if (std::abs(t.resample_phase_y[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[1 * variant_.numBackEndBranches(0) + j]) > phase_max ||
-				    std::abs(t.resample_phase_y[1 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[2 * variant_.numBackEndBranches(0) + j]) > phase_max ||
-				    std::abs(t.resample_phase_y[0 * variant_.numBackEndBranches(0) + j] - t.resample_phase_y[2 * variant_.numBackEndBranches(0) + j]) > phase_max) {
+				if (std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
+				    std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max) {
 					LOG(PISPBE, Error) << "Resample phase y for tile is > 0.5 pixels on the output dimensions.";
 				}
 			}
@@ -674,7 +674,7 @@ void BackEnd::finaliseTiling()
 			t.cac_grid_offset_y = (t.input_offset_y + be_config_.cac_extra.offset_y) * be_config_.cac.grid_step_y;
 		}
 
-		for (unsigned int j = 0; j < variant_.numBackEndBranches(0); j++) {
+		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++) {
 			int output_offset_x_unflipped = t.output_offset_x[j], output_offset_y_unflipped = t.output_offset_y[j];
 
 			if (be_config_.output_format[j].transform & PISP_BE_TRANSFORM_HFLIP)
@@ -777,7 +777,7 @@ void BackEnd::Prepare()
 
 	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
-	for (unsigned int i = 0; i < variant_.numBackEndBranches(0); i++) {
+	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++) {
 		pisp_image_format_config &config = be_config_.output_format[i].image;
 		ComputeOutputImageFormat(i, config, be_config_.input_format);
 

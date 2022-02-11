@@ -39,14 +39,9 @@ public:
 	unsigned int numFrontEnds() const { return numFrontEnds_; }
 	unsigned int numBackEnds() const { return numBackEnds_; }
 
-	unsigned int numFrontBranches(unsigned int id) const
+	unsigned int frontEndNumBranches(unsigned int id) const
 	{
 		return id < numFrontEnds_ ? numFrontEndBranches_[id] : 0;
-	}
-
-	bool frontEndDownscaler(unsigned int id, unsigned int branch) const
-	{
-		return (id < numFrontEnds_ && branch < numFrontEndBranches_[id]) ? frontEndDownscaler_[id][branch] : 0;
 	}
 
 	unsigned int frontEndMaxWidth(unsigned int id) const
@@ -64,7 +59,7 @@ public:
 		return (id < numFrontEnds_ && branch < numFrontEndBranches_[id]) ? frontEndDownscaler_[id][branch] : 0;
 	}
 
-	unsigned int numBackEndBranches(unsigned int id) const
+	unsigned int backEndNumBranches(unsigned int id) const
 	{
 		return id < numBackEnds_ ? numBackEndBranches_[id] : 0;
 	}

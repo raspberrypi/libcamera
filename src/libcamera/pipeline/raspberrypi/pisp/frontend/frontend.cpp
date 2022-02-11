@@ -147,7 +147,8 @@ void finalise_compression(pisp_fe_config const &fe_config, int i)
 
 }; /* namespace */
 
-FrontEnd::FrontEnd(bool streaming = true)
+FrontEnd::FrontEnd(PiSPVariant &variant, bool streaming = true)
+	: variant_(variant)
 {
 	pisp_fe_input_config input;
 
@@ -267,38 +268,51 @@ void FrontEnd::SetCdafStats(pisp_fe_cdaf_stats_config const &cdaf_stats)
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_CDAF_STATS;
 }
 
-void FrontEnd::SetCrop(int output_num, pisp_fe_crop_config const &crop)
+void FrontEnd::SetCrop(unsigned int output_num, pisp_fe_crop_config const &crop)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+
 	fe_config_.ch[output_num].crop = crop;
 	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_CROP, output_num);
 }
 
-void FrontEnd::SetDownscale(int output_num, pisp_fe_downscale_config const &downscale)
+void FrontEnd::SetDownscale(unsigned int output_num, pisp_fe_downscale_config const &downscale)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+	ASSERT(variant_.frontEndDownscalerAvailable(0, output_num));
+
 	fe_config_.ch[output_num].downscale = downscale;
 	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_DOWNSCALE, output_num);
 }
 
-void FrontEnd::SetCompress(int output_num, pisp_compress_config const &compress)
+void FrontEnd::SetCompress(unsigned int output_num, pisp_compress_config const &compress)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+
 	fe_config_.ch[output_num].compress = compress;
 	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_COMPRESS, output_num);
 }
 
-void FrontEnd::SetOutputFormat(int output_num, pisp_image_format_config const &output_format)
+void FrontEnd::SetOutputFormat(unsigned int output_num, pisp_image_format_config const &output_format)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+
 	fe_config_.ch[output_num].output.format = output_format;
 	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_OUTPUT, output_num);
 }
 
-void FrontEnd::SetOutputIntrLines(int output_num, int ilines)
+void FrontEnd::SetOutputIntrLines(unsigned int output_num, int ilines)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+
 	fe_config_.ch[output_num].output.ilines = ilines;
 	fe_config_.dirty_flags |= block_enable(PISP_FE_ENABLE_OUTPUT, output_num);
 }
 
-void FrontEnd::SetOutputBuffer(int output_num, pisp_fe_output_buffer_config const &output_buffer)
+void FrontEnd::SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_config const &output_buffer)
 {
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
+
 	fe_config_.output_buffer[output_num] = output_buffer;
 	/* Assume these always get written. */
 }
@@ -372,9 +386,9 @@ void FrontEnd::finalise()
 	}
 }
 
-void FrontEnd::getOutputSize(int output_num, uint16_t &width, uint16_t &height) const
+void FrontEnd::getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const
 {
-	ASSERT(output_num < PISP_FE_NUM_OUTPUTS);
+	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	width = height = 0;
 

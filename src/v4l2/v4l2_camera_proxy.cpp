@@ -231,7 +231,7 @@ void V4L2CameraProxy::updateBuffers()
 							});
 			buf.field = V4L2_FIELD_NONE;
 			buf.timestamp.tv_sec = fmd.timestamp / 1000000000;
-			buf.timestamp.tv_usec = fmd.timestamp % 1000000;
+			buf.timestamp.tv_usec = (fmd.timestamp / 1000) % 1000000;
 			buf.sequence = fmd.sequence;
 
 			buf.flags |= V4L2_BUF_FLAG_DONE;

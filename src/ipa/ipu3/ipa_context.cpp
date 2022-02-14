@@ -70,6 +70,29 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
+ * \var IPASessionConfiguration::af
+ * \brief AF grid configuration of the IPA
+ *
+ * \var IPASessionConfiguration::af.afGrid
+ * \brief AF scene grid configuration.
+ */
+
+/**
+ * \var IPAFrameContext::af
+ * \brief Context for the Automatic Focus algorithm
+ *
+ * \struct  IPAFrameContext::af
+ * \var IPAFrameContext::af.focus
+ * \brief Current position of the lens
+ *
+ * \var IPAFrameContext::af.maxVariance
+ * \brief The maximum variance of the current image.
+ *
+ * \var IPAFrameContext::af.stable
+ * \brief It is set to true, if the best focus is found.
+ */
+
+/**
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *

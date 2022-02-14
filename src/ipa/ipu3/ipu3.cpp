@@ -30,6 +30,7 @@
 
 #include "libcamera/internal/mapped_framebuffer.h"
 
+#include "algorithms/af.h"
 #include "algorithms/agc.h"
 #include "algorithms/algorithm.h"
 #include "algorithms/awb.h"
@@ -297,6 +298,7 @@ int IPAIPU3::init(const IPASettings &settings,
 	context_.configuration.sensor.lineDuration = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Construct our Algorithms */
+	algorithms_.push_back(std::make_unique<algorithms::Af>());
 	algorithms_.push_back(std::make_unique<algorithms::Agc>());
 	algorithms_.push_back(std::make_unique<algorithms::Awb>());
 	algorithms_.push_back(std::make_unique<algorithms::BlackLevelCorrection>());

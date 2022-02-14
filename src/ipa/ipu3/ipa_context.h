@@ -26,6 +26,10 @@ struct IPASessionConfiguration {
 	} grid;
 
 	struct {
+		ipu3_uapi_grid_config afGrid;
+	} af;
+
+	struct {
 		utils::Duration minShutterSpeed;
 		utils::Duration maxShutterSpeed;
 		double minAnalogueGain;
@@ -38,6 +42,12 @@ struct IPASessionConfiguration {
 };
 
 struct IPAFrameContext {
+	struct {
+		uint32_t focus;
+		double maxVariance;
+		bool stable;
+	} af;
+
 	struct {
 		uint32_t exposure;
 		double gain;

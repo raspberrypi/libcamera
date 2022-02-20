@@ -120,10 +120,7 @@ CameraSession::~CameraSession()
 
 void CameraSession::listControls() const
 {
-	for (const auto &ctrl : camera_->controls()) {
-		const ControlId *id = ctrl.first;
-		const ControlInfo &info = ctrl.second;
-
+	for (const auto &[id, info] : camera_->controls()) {
 		std::cout << "Control: " << id->name() << ": "
 			  << info.toString() << std::endl;
 	}
@@ -131,9 +128,8 @@ void CameraSession::listControls() const
 
 void CameraSession::listProperties() const
 {
-	for (const auto &prop : camera_->properties()) {
-		const ControlId *id = properties::properties.at(prop.first);
-		const ControlValue &value = prop.second;
+	for (const auto &[key, value] : camera_->properties()) {
+		const ControlId *id = properties::properties.at(key);
 
 		std::cout << "Property: " << id->name() << " = "
 			  << value.toString() << std::endl;
@@ -374,10 +370,7 @@ void CameraSession::processRequest(Request *request)
 	     << std::setw(6) << std::setfill('0') << ts / 1000 % 1000000
 	     << " (" << std::fixed << std::setprecision(2) << fps << " fps)";
 
-	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
-		const Stream *stream = it->first;
-		FrameBuffer *buffer = it->second;
-
+	for (const auto &[stream, buffer] : buffers) {
 		const FrameMetadata &metadata = buffer->metadata();
 
 		info << " " << streamNames_[stream]
@@ -401,10 +394,10 @@ void CameraSession::processRequest(Request *request)
 
 	if (printMetadata_) {
 		const ControlList &requestMetadata = request->metadata();
-		for (const auto &ctrl : requestMetadata) {
-			const ControlId *id = controls::controls.at(ctrl.first);
+		for (const auto &[key, value] : requestMetadata) {
+			const ControlId *id = controls::controls.at(key);
 			std::cout << "\t" << id->name() << " = "
-				  << ctrl.second.toString() << std::endl;
+				  << value.toString() << std::endl;
 		}
 	}
 

@@ -81,11 +81,11 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<7')
-        error('gcc version is too old, libcamera requires 7.0 or newer')
+    if cc.version().version_compare('<8')
+        error('gcc version is too old, libcamera requires 8.0 or newer')
     endif
 
-    # On gcc 7 and 8, the file system library is provided in a separate static
+    # On gcc 8, the file system library is provided in a separate static
     # library.
     if cc.version().version_compare('<9')
         cpp_arguments += [
@@ -95,9 +95,8 @@ if cc.get_id() == 'gcc'
 
     # gcc 7.1 introduced processor-specific ABI breakages related to parameter
     # passing on ARM platforms. This generates a large number of messages
-    # during compilation with gcc >=7.1. Silence them.
-    if (host_machine.cpu_family() == 'arm' and
-        cc.version().version_compare('>=7.1'))
+    # during compilation. Silence them.
+    if host_machine.cpu_family() == 'arm'
         cpp_arguments += [
             '-Wno-psabi',
         ]

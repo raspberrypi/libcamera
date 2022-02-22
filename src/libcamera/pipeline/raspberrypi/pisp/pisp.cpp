@@ -34,6 +34,7 @@
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
+#include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -231,6 +232,10 @@ public:
 	std::vector<PiSP::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
 	std::unordered_set<unsigned int> ipaBuffers_;
+
+	std::map<unsigned int, MappedFrameBuffer> feConfigBuffers_;
+	std::map<unsigned int, MappedFrameBuffer> beConfigBuffers_;
+
 	/*
 	 * Stores a cascade of Video Mux or Bridge devices between the sensor and
 	 * Unicam together with media link across the entities.
@@ -1193,6 +1198,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
+	data->isp_[Isp::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
 
@@ -1433,6 +1439,16 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			return ret;
 	}
 
+	for (auto const fb : data->isp_[Isp::Config].getBuffers()) {
+		data->beConfigBuffers_.emplace(fb.first,
+			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
+	}
+
+	for (auto const fb : data->cfe_[Cfe::Config].getBuffers()) {
+		data->feConfigBuffers_.emplace(fb.first,
+			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
+	}
+
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
@@ -1470,9 +1486,11 @@ void PipelineHandlerPiSP::freeBuffers(Camera *camera)
 	PiSPCameraData *data = cameraData(camera);
 
 	/* Copy the buffer ids from the unordered_set to a vector to pass to the IPA. */
-	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
+	//std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
 	//data->ipa_->unmapBuffers(ipaBuffers);
 	data->ipaBuffers_.clear();
+	data->beConfigBuffers_.clear();
+	data->feConfigBuffers_.clear();
 
 	for (auto const stream : data->streams_)
 		stream->releaseBuffers();
@@ -1703,13 +1721,85 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 	if (state_ == State::Stopped)
 		return;
 
+	ispOutputCount_ = 0;
+
 	FrameBuffer *buffer = cfe_[Cfe::Output0].getBuffers().at(bufferId);
 
 	LOG(PISP, Debug) << "Input re-queue to ISP, buffer id " << bufferId
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
-	ispOutputCount_ = 0;
+
+	FrameBuffer *configBuffer = isp_[Isp::Input].getBuffer();
+
+	auto it = beConfigBuffers_.find(isp_[Isp::Input].getBufferId(configBuffer));
+	ASSERT(it != beConfigBuffers_.end());
+	Span<uint8_t> config = it->second.planes()[0];
+
+	{
+
+		pisp_image_format_config inputFormat;
+		V4L2DeviceFormat cfeFormat;
+		isp_[Isp::Input].dev()->getFormat(&cfeFormat);
+		inputFormat.width = cfeFormat.size.width;
+		inputFormat.height = cfeFormat.size.height;
+		inputFormat.stride = cfeFormat.planes[0].bpl;
+		inputFormat.format = PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED;
+
+		pisp_be_global_config global;
+		global.bayer_enables = PISP_BE_BAYER_ENABLE_INPUT + PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
+		global.rgb_enables = PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT0;
+
+		BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
+		switch (bayer.order) {
+		case BayerFormat::Order::BGGR:
+			global.bayer_order = PISP_BAYER_ORDER_BGGR;
+			break;
+		case BayerFormat::Order::GBRG:
+			global.bayer_order = PISP_BAYER_ORDER_GBRG;
+			break;
+		case BayerFormat::Order::GRBG:
+			global.bayer_order = PISP_BAYER_ORDER_GRBG;
+			break;
+		case BayerFormat::Order::RGGB:
+			global.bayer_order = PISP_BAYER_ORDER_RGGB;
+			break;
+		default:
+			ASSERT(0);
+		}
+
+		pisp_be_ccm_config csc;
+		float coeffs[] = { 0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419, -0.081 };
+		float offsets[] = { 0, 32768, 32768 };
+
+		for (int i = 0; i < 9; i++)
+			csc.coeffs[i] = coeffs[i] * (1 << 10);
+		for (int i = 0; i < 9; i++)
+			csc.offsets[i] = offsets[i] * (1 << 10);
+		
+		V4L2DeviceFormat ispFormat;
+		isp_[Isp::Output0].dev()->getFormat(&ispFormat);
+		pisp_be_output_format_config outputFormat;
+		memset(&outputFormat, 0, sizeof(outputFormat));
+		outputFormat.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+					    PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
+		outputFormat.image.width = ispFormat.size.width;
+		outputFormat.image.height = ispFormat.size.height;
+		outputFormat.image.stride = ispFormat.planes[0].bpl;
+		outputFormat.image.stride2 = 0;
+
+		be_->SetInputFormat(inputFormat);
+		be_->SetGlobal(global);
+		be_->SetBlc({16 << 8, 16 << 8, 16 << 8, 16 << 8, 16 << 8, /* pad */ 0});
+		be_->SetWbg({(uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), /* pad */ 0});
+		be_->SetDemosaic({2 << 3, 1, /* pad */ 0});
+		be_->SetCsc(0, csc);
+		be_->SetOutputFormat(0, outputFormat);
+	}
+
+	be_->Prepare(reinterpret_cast<pisp_be_tiles_config *>(config.data()));
+	isp_[Isp::Config].queueBuffer(configBuffer);
+
 	handleState();
 }
 
@@ -1794,7 +1884,7 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
 		bayerQueue_.push({ buffer, std::move(ctrl) });
-	} else if (stream == &cfe_[Cfe::Stats]) { 
+	} else if (stream == &cfe_[Cfe::Stats]) {
 
 		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
 		handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
@@ -1966,7 +2056,7 @@ void PiSPCameraData::checkRequestCompleted()
 	 * frame.
 	 */
 	if (state_ == State::IpaComplete &&
-	    ((ispOutputCount_ == 2 && dropFrameCount_) || requestCompleted)) {
+	    ((ispOutputCount_ == 3 && dropFrameCount_) || requestCompleted)) {
 		state_ = State::Idle;
 		if (dropFrameCount_) {
 			dropFrameCount_--;
@@ -2086,122 +2176,43 @@ void PiSPCameraData::tryRunPipeline()
 
 bool PiSPCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)
 {
-	unsigned int embeddedRequeueCount = 0, bayerRequeueCount = 0;
+	if (bayerQueue_.empty())
+		return false;
 
-	/* Loop until we find a matching bayer and embedded data buffer. */
-	while (!bayerQueue_.empty()) {
-		/* Start with the front of the bayer queue. */
-		FrameBuffer *bayerBuffer = bayerQueue_.front().buffer;
+	/* Start with the front of the bayer queue. */
+	bayerFrame = std::move(bayerQueue_.front());
+	bayerQueue_.pop();
 
-		/*
-		 * Find the embedded data buffer with a matching timestamp to pass to
-		 * the IPA. Any embedded buffers with a timestamp lower than the
-		 * current bayer buffer will be removed and re-queued to the driver.
-		 */
-		uint64_t ts = bayerBuffer->metadata().timestamp;
-		embeddedBuffer = nullptr;
-		while (!embeddedQueue_.empty()) {
-			FrameBuffer *b = embeddedQueue_.front();
-			if (!cfe_[Cfe::Embedded].isExternal() && b->metadata().timestamp < ts) {
-				embeddedQueue_.pop();
-				cfe_[Cfe::Embedded].queueBuffer(b);
-				embeddedRequeueCount++;
-				LOG(PISP, Warning) << "Dropping unmatched input frame in stream "
-						  << cfe_[Cfe::Embedded].name();
-			} else if (cfe_[Cfe::Embedded].isExternal() || b->metadata().timestamp == ts) {
-				/* We pop the item from the queue lower down. */
-				embeddedBuffer = b;
-				break;
-			} else {
-				break; /* Only higher timestamps from here. */
-			}
-		}
-
-		if (!embeddedBuffer) {
-			bool flushedBuffers = false;
-
-			LOG(PISP, Debug) << "Could not find matching embedded buffer";
-
-			if (!sensorMetadata_) {
-				/*
-				 * If there is no sensor metadata, simply return the
-				 * first bayer frame in the queue.
-				 */
-				LOG(PISP, Debug) << "Returning bayer frame without a match";
-				bayerFrame = std::move(bayerQueue_.front());
-				bayerQueue_.pop();
-				embeddedBuffer = nullptr;
-				return true;
-			}
-
-			if (!embeddedQueue_.empty()) {
-				/*
-				 * Not found a matching embedded buffer for the bayer buffer in
-				 * the front of the queue. This buffer is now orphaned, so requeue
-				 * it back to the device.
-				 */
-				cfe_[Cfe::Output0].queueBuffer(bayerQueue_.front().buffer);
-				bayerQueue_.pop();
-				bayerRequeueCount++;
-				LOG(PISP, Warning) << "Dropping unmatched input frame in stream "
-						  << cfe_[Cfe::Output0].name();
-			}
-
-			/*
-			 * If we have requeued all available embedded data buffers in this loop,
-			 * then we are fully out of sync, so might as well requeue all the pending
-			 * bayer buffers.
-			 */
-			if (embeddedRequeueCount == cfe_[Cfe::Embedded].getBuffers().size()) {
-				/* The embedded queue must be empty at this point! */
-				ASSERT(embeddedQueue_.empty());
-
-				LOG(PISP, Warning) << "Flushing bayer stream!";
-				while (!bayerQueue_.empty()) {
-					cfe_[Cfe::Output0].queueBuffer(bayerQueue_.front().buffer);
-					bayerQueue_.pop();
-				}
-				flushedBuffers = true;
-			}
-
-			/*
-			 * Similar to the above, if we have requeued all available bayer buffers in
-			 * the loop, then we are fully out of sync, so might as well requeue all the
-			 * pending embedded data buffers.
-			 */
-			if (bayerRequeueCount == cfe_[Cfe::Output0].getBuffers().size()) {
-				/* The bayer queue must be empty at this point! */
-				ASSERT(bayerQueue_.empty());
-
-				LOG(PISP, Warning) << "Flushing embedded data stream!";
-				while (!embeddedQueue_.empty()) {
-					cfe_[Cfe::Embedded].queueBuffer(embeddedQueue_.front());
-					embeddedQueue_.pop();
-				}
-				flushedBuffers = true;
-			}
-
-			/*
-			 * If the embedded queue has become empty, we cannot do any more.
-			 * Similarly, if we have flushed any one of our queues, we cannot do
-			 * any more. Return from here without a buffer pair.
-			 */
-			if (embeddedQueue_.empty() || flushedBuffers)
-				return false;
-		} else {
-			/*
-			 * We have found a matching bayer and embedded data buffer, so
-			 * nothing more to do apart from assigning the bayer frame and
-			 * popping the buffers from the queue.
-			 */
-			bayerFrame = std::move(bayerQueue_.front());
-			bayerQueue_.pop();
+	/*
+	 * Find the embedded data buffer with a matching timestamp to pass to
+	 * the IPA. Any embedded buffers with a timestamp lower than the
+	 * current bayer buffer will be removed and re-queued to the driver.
+	 */
+	uint64_t ts = bayerFrame.buffer->metadata().timestamp;
+	embeddedBuffer = nullptr;
+	while (!embeddedQueue_.empty()) {
+		FrameBuffer *b = embeddedQueue_.front();
+		if (b->metadata().timestamp < ts) {
 			embeddedQueue_.pop();
-			return true;
+			cfe_[Cfe::Embedded].returnBuffer(b);
+			LOG(PISP, Debug) << "Dropping unmatched input frame in stream "
+					 << cfe_[Cfe::Embedded].name();
+		} else if (b->metadata().timestamp == ts) {
+			/* Found a match! */
+			embeddedBuffer = b;
+			embeddedQueue_.pop();
+			break;
+		} else {
+			break; /* Only higher timestamps from here. */
 		}
 	}
 
-	return false;
+	if (!embeddedBuffer && sensorMetadata_) {
+		/* Log if there is no matching embedded data buffer found. */
+		LOG(PISP, Debug) << "Returning bayer frame without a matching embedded buffer.";
+	}
+
+	return true;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerPiSP)

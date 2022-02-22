@@ -163,12 +163,10 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 void Stream::returnBuffer(FrameBuffer *buffer)
 {
 	if (!external_) {
-		queueBuffer(buffer);
+		/* For internal buffers, simply requeue back to the device. */
+		queueToDevice(buffer);
 		return;
 	}
-	
-	/* This can only be called for external streams. */
-	ASSERT(external_);
 
 	/* Push this buffer back into the queue to be used again. */
 	availableBuffers_.push(buffer);

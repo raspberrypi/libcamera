@@ -41,9 +41,9 @@ public:
 	void SetOutputIntrLines(unsigned int output_num, int lines);
 	void SetOutputAXI(pisp_fe_output_axi_config const &output_axi);
 	void MergeConfig(const pisp_fe_config &config);
+	void Prepare(pisp_fe_config *config);
 
 private:
-	void finalise();
 	void getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const;
 
 	const PiSPVariant variant_;

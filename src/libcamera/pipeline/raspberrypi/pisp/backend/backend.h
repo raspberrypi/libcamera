@@ -86,8 +86,7 @@ public:
 	void SetHog(pisp_be_hog_config const &hog);
 
 	void InitialiseConfig();
-
-	void Prepare();
+	void Prepare(pisp_be_tiles_config *config);
 
 private:
 	void finaliseConfig();

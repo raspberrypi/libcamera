@@ -338,7 +338,7 @@ void FrontEnd::MergeConfig(const pisp_fe_config &config)
 	}
 }
 
-void FrontEnd::finalise()
+void FrontEnd::Prepare(pisp_fe_config *config)
 {
 	/* Only finalise blocks that are dirty *and* enabled. */
 	uint32_t dirty_flags = fe_config_.dirty_flags & fe_config_.global.enables;
@@ -378,12 +378,15 @@ void FrontEnd::finalise()
 			finalise_compression(fe_config_, i);
 
 		if (dirty_flags & block_enable(PISP_FE_ENABLE_OUTPUT, i)) {
-			pisp_image_format_config &config = fe_config_.ch[i].output.format;
+			pisp_image_format_config &image_config = fe_config_.ch[i].output.format;
 
-			getOutputSize(i, config.width, config.height);
-			compute_stride_align(config, align_);
+			getOutputSize(i, image_config.width, image_config.height);
+			compute_stride_align(image_config, align_);
 		}
 	}
+
+	*config = fe_config_;
+	fe_config_.dirty_flags = fe_config_.dirty_flags_extra = 0;
 }
 
 void FrontEnd::getOutputSize(unsigned int output_num, uint16_t &width, uint16_t &height) const

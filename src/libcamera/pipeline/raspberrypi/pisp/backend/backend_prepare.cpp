@@ -1,5 +1,7 @@
 #include "backend.h"
 
+#include <string.h>
+
 #include <libcamera/base/log.h>
 
 #include "../common/pisp_utils.h"
@@ -760,7 +762,7 @@ bool BackEnd::ComputeHogOutputImageFormat(pisp_image_format_config &fmt, pisp_im
 	}
 }
 
-void BackEnd::Prepare()
+void BackEnd::Prepare(pisp_be_tiles_config *config)
 {
 	LOG(PISPBE, Debug) << "New frame!";
 
@@ -778,10 +780,10 @@ void BackEnd::Prepare()
 	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++) {
-		pisp_image_format_config &config = be_config_.output_format[i].image;
-		ComputeOutputImageFormat(i, config, be_config_.input_format);
+		pisp_image_format_config &image_config = be_config_.output_format[i].image;
+		ComputeOutputImageFormat(i, image_config, be_config_.input_format);
 
-		if (config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
+		if (image_config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
 			if (!variant_.backEndIntegralImage(0, i))
 				LOG(PISPBE, Error) << "Integral images are not supported in the current configuration.";
 			integral_image_output = true;
@@ -797,6 +799,14 @@ void BackEnd::Prepare()
 	finaliseConfig();
 	updateTiles();
 
-	// Sanity check - integral images are only valid for a single tile output.
+	// Integral images are only valid for a single tile output.
 	ASSERT((num_tiles_x_ * num_tiles_y_ == 1) || !integral_image_output);
+
+	// 4. Write the config and tiles to the provided buffer to send to the hardware.
+	config->num_tiles = num_tiles_x_ * num_tiles_y_;
+	memcpy(config->tiles, tiles_.data(), config->num_tiles * sizeof(pisp_tile));
+	config->config = be_config_;
+
+	// 5. Clear any dirty flags for the next configuration update.
+	be_config_.dirty_flags_bayer = be_config_.dirty_flags_rgb = be_config_.dirty_flags_extra = 0;
 }

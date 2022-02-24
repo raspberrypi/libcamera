@@ -433,9 +433,9 @@ CameraConfiguration::Status PiSPCameraConfiguration::validate()
 			const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 			unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
 			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
-			BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
-			if (info.isValid() && !info.packed)
-				packing = BayerFormat::Packing::None;
+			BayerFormat::Packing packing = BayerFormat::Packing::None;
+			//if (info.isValid() && !info.packed)
+			//	packing = BayerFormat::Packing::None;
 			V4L2DeviceFormat cfeFormat = toV4L2DeviceFormat(sensorFormat,
 									   packing);
 			int ret = data_->cfe_[Cfe::Output0].dev()->tryFormat(&cfeFormat);
@@ -588,7 +588,7 @@ CameraConfiguration *PipelineHandlerPiSP::generateConfiguration(Camera *camera,
 			size = sensorSize;
 			sensorFormat = findBestFormat(data->sensorFormats_, size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
-							    BayerFormat::Packing::CSI2);
+							    BayerFormat::Packing::None);
 			ASSERT(pixelFormat.isValid());
 			colorSpace = ColorSpace::Raw;
 			bufferCount = 2;
@@ -658,7 +658,7 @@ CameraConfiguration *PipelineHandlerPiSP::generateConfiguration(Camera *camera,
 			/* Translate the MBUS codes to a PixelFormat. */
 			for (const auto &format : data->sensorFormats_) {
 				PixelFormat pf = mbusCodeToPixelFormat(format.first,
-								       BayerFormat::Packing::CSI2);
+								       BayerFormat::Packing::None);
 				if (pf.isValid())
 					deviceFormats.emplace(std::piecewise_construct,	std::forward_as_tuple(pf),
 						std::forward_as_tuple(format.second.begin(), format.second.end()));
@@ -703,7 +703,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const stream : data->streams_)
 		stream->reset();
 
-	BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
+	BayerFormat::Packing packing = BayerFormat::Packing::None;
 	Size maxSize, sensorSize;
 	unsigned int maxIndex = 0;
 	bool rawStream = false;
@@ -1160,7 +1160,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 
 	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-csi2_ch0");
 	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
-	MediaEntity *cfeConfig = cfe->getEntityByName("py-cfe-config");
+	MediaEntity *cfeConfig = cfe->getEntityByName("py-cfe-fe_config");
 	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
 	MediaEntity *ispConfig = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
@@ -1175,7 +1175,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	/* Locate and open the cfe video streams. */
 	data->cfe_[Cfe::Output0] = PiSP::Stream("CFE Image", cfeImage);
 	data->cfe_[Cfe::Stats] = PiSP::Stream("CFE Stats", cfeStats);
-	data->cfe_[Cfe::Config] = PiSP::Stream("CFE Config", cfeConfig);
+	//data->cfe_[Cfe::Config] = PiSP::Stream("CFE Config", *);
 
 	/* An embedded data node will not be present if the sensor does not support it. */
 	MediaEntity *cfeEmbedded = cfe->getEntityByName("cfe-embedded");
@@ -1186,8 +1186,8 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true);
-	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", ispConfig);
+	data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true, false);
+	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", ispConfig, false, true);
 	data->isp_[Isp::Output0] = PiSP::Stream("ISP Output0", ispOutput0);
 	data->isp_[Isp::Output1] = PiSP::Stream("ISP Output1", ispOutput1);
 
@@ -1195,7 +1195,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	data->cfe_[Cfe::Output0].dev()->frameStart.connect(data.get(), &PiSPCameraData::frameStarted);
 	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 	data->cfe_[Cfe::Stats].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
-	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
+	//data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
 	data->isp_[Isp::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
@@ -1444,10 +1444,10 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
 	}
 
-	for (auto const fb : data->cfe_[Cfe::Config].getBuffers()) {
-		data->feConfigBuffers_.emplace(fb.first,
-			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
-	}
+	//for (auto const fb : data->cfe_[Cfe::Config].getBuffers()) {
+	//	data->feConfigBuffers_.emplace(fb.first,
+	//		MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
+	//}
 
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
@@ -1730,14 +1730,12 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 
 	isp_[Isp::Input].queueBuffer(buffer);
 
-	FrameBuffer *configBuffer = isp_[Isp::Input].getBuffer();
-
-	auto it = beConfigBuffers_.find(isp_[Isp::Input].getBufferId(configBuffer));
+	FrameBuffer *configBuffer = isp_[Isp::Config].getBuffer();
+	auto it = beConfigBuffers_.find(isp_[Isp::Config].getBufferId(configBuffer));
 	ASSERT(it != beConfigBuffers_.end());
 	Span<uint8_t> config = it->second.planes()[0];
 
 	{
-
 		pisp_image_format_config inputFormat;
 		V4L2DeviceFormat cfeFormat;
 		isp_[Isp::Input].dev()->getFormat(&cfeFormat);
@@ -1790,7 +1788,7 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 
 		be_->SetInputFormat(inputFormat);
 		be_->SetGlobal(global);
-		be_->SetBlc({16 << 8, 16 << 8, 16 << 8, 16 << 8, 16 << 8, /* pad */ 0});
+		be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
 		be_->SetWbg({(uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), /* pad */ 0});
 		be_->SetDemosaic({2 << 3, 1, /* pad */ 0});
 		be_->SetCsc(0, csc);
@@ -1940,6 +1938,9 @@ void PiSPCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 */
 	ispOutputCount_++;
 
+	if (ispOutputCount_ > 2)
+		state_ = State::IpaComplete;
+
 	handleState();
 }
 
@@ -1999,13 +2000,15 @@ void PiSPCameraData::handleStreamBuffer(FrameBuffer *buffer, PiSP::Stream *strea
 
 void PiSPCameraData::handleExternalBuffer(FrameBuffer *buffer, PiSP::Stream *stream)
 {
+	(void) stream;
+	(void) buffer;
 	//unsigned int id = stream->getBufferId(buffer);
 
 	//if (!(id & ipa::PiSP::MaskExternalBuffer))
 	//	return;
 
 	/* Stop the Stream object from tracking the buffer. */
-	stream->removeExternalBuffer(buffer);
+	//stream->removeExternalBuffer(buffer);
 }
 
 void PiSPCameraData::handleState()

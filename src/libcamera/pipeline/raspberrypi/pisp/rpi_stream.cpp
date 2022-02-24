@@ -162,7 +162,7 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 
 void Stream::returnBuffer(FrameBuffer *buffer)
 {
-	if (!external_) {
+	if (!external_ && !config_) {
 		/* For internal buffers, simply requeue back to the device. */
 		queueToDevice(buffer);
 		return;
@@ -206,6 +206,8 @@ FrameBuffer *Stream::getBuffer()
 {
 	FrameBuffer *buffer = nullptr;
 
+	ASSERT(config_);
+
 	if (!availableBuffers_.empty()) {
 		buffer = availableBuffers_.front();
 		availableBuffers_.pop();
@@ -218,7 +220,7 @@ int Stream::queueAllBuffers()
 {
 	int ret;
 
-	if (external_)
+	if (external_ || config_)
 		return 0;
 
 	while (!availableBuffers_.empty()) {

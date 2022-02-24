@@ -1784,7 +1784,7 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 		outputFormat.image.width = ispFormat.size.width;
 		outputFormat.image.height = ispFormat.size.height;
 		outputFormat.image.stride = ispFormat.planes[0].bpl;
-		outputFormat.image.stride2 = 0;
+		outputFormat.image.stride2 = ispFormat.planes[0].bpl / 2;
 
 		be_->SetInputFormat(inputFormat);
 		be_->SetGlobal(global);

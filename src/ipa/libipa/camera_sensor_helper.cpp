@@ -7,6 +7,8 @@
  */
 #include "camera_sensor_helper.h"
 
+#include <cmath>
+
 #include <libcamera/base/log.h>
 
 /**
@@ -51,20 +53,28 @@ namespace ipa {
  * This function aims to abstract the calculation of the gain letting the IPA
  * use the real gain for its estimations.
  *
- * The parameters come from the MIPI Alliance Camera Specification for
- * Camera Command Set (CCS).
- *
  * \return The gain code to pass to V4L2
  */
 uint32_t CameraSensorHelper::gainCode(double gain) const
 {
 	const AnalogueGainConstants &k = gainConstants_;
 
-	ASSERT(gainType_ == AnalogueGainLinear);
-	ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
+	switch (gainType_) {
+	case AnalogueGainLinear:
+		ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
 
-	return (k.linear.c0 - k.linear.c1 * gain) /
-	       (k.linear.m1 * gain - k.linear.m0);
+		return (k.linear.c0 - k.linear.c1 * gain) /
+		       (k.linear.m1 * gain - k.linear.m0);
+
+	case AnalogueGainExponential:
+		ASSERT(k.exp.a != 0 && k.exp.m != 0);
+
+		return std::log2(gain / k.exp.a) / k.exp.m;
+
+	default:
+		ASSERT(false);
+		return 0;
+	}
 }
 
 /**
@@ -75,20 +85,29 @@ uint32_t CameraSensorHelper::gainCode(double gain) const
  * use the real gain for its estimations. It is the counterpart of the function
  * CameraSensorHelper::gainCode.
  *
- * The parameters come from the MIPI Alliance Camera Specification for
- * Camera Command Set (CCS).
- *
  * \return The real gain
  */
 double CameraSensorHelper::gain(uint32_t gainCode) const
 {
 	const AnalogueGainConstants &k = gainConstants_;
+	double gain = static_cast<double>(gainCode);
 
-	ASSERT(gainType_ == AnalogueGainLinear);
-	ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
+	switch (gainType_) {
+	case AnalogueGainLinear:
+		ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
 
-	return (k.linear.m0 * static_cast<double>(gainCode) + k.linear.c0) /
-	       (k.linear.m1 * static_cast<double>(gainCode) + k.linear.c1);
+		return (k.linear.m0 * gain + k.linear.c0) /
+		       (k.linear.m1 * gain + k.linear.c1);
+
+	case AnalogueGainExponential:
+		ASSERT(k.exp.a != 0 && k.exp.m != 0);
+
+		return k.exp.a * std::exp2(k.exp.m * gain);
+
+	default:
+		ASSERT(false);
+		return 0.0;
+	}
 }
 
 /**
@@ -120,15 +139,22 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 
 /**
  * \var CameraSensorHelper::AnalogueGainExponential
- * \brief Gain is computed using exponential gain estimation
- * (introduced in CCS v1.1)
+ * \brief Gain is expressed using an exponential model
  *
- * Starting with CCS v1.1, Alternate Global Analogue Gain is also available.
- * If the image sensor supports it, then the global analogue gain can be
- * controlled by linear and exponential gain formula:
+ * The relationship between the integer gain parameter and the resulting gain
+ * multiplier is given by the following equation:
  *
- * \f$gain = analogLinearGainGlobal * 2^{analogExponentialGainGlobal}\f$
- * \todo not implemented in libipa
+ * \f$gain = a \cdot 2^{m \cdot x}\f$
+ *
+ * Where 'x' is the gain control parameter, and 'a' and 'm' are image
+ * sensor-specific constants.
+ *
+ * This is a subset of the MIPI CCS exponential gain model with the linear
+ * factor 'a' being a constant, but with the exponent being configurable
+ * through the 'm' coefficient.
+ *
+ * When the gain is expressed in dB, 'a' is equal to 1 and 'm' to
+ * \f$log_{2}{10^{frac{1}{20}}}\f$.
  */
 
 /**
@@ -153,6 +179,17 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  */
 
 /**
+ * \struct CameraSensorHelper::AnalogueGainExpConstants
+ * \brief Analogue gain constants for the exponential gain model
+ *
+ * \var CameraSensorHelper::AnalogueGainExpConstants::a
+ * \brief Constant used in the exponential gain coding/decoding
+ *
+ * \var CameraSensorHelper::AnalogueGainExpConstants::m
+ * \brief Constant used in the exponential gain coding/decoding
+ */
+
+/**
  * \struct CameraSensorHelper::AnalogueGainConstants
  * \brief Analogue gain model constants
  *
@@ -161,6 +198,9 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  *
  * \var CameraSensorHelper::AnalogueGainConstants::linear
  * \brief Constants for the linear gain model
+ *
+ * \var CameraSensorHelper::AnalogueGainConstants::exp
+ * \brief Constants for the exponential gain model
  */
 
 /**

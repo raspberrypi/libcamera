@@ -41,8 +41,14 @@ protected:
 		int16_t c1;
 	};
 
+	struct AnalogueGainExpConstants {
+		double a;
+		double m;
+	};
+
 	union AnalogueGainConstants {
 		AnalogueGainLinearConstants linear;
+		AnalogueGainExpConstants exp;
 	};
 
 	AnalogueGainType gainType_;

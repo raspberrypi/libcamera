@@ -173,8 +173,6 @@ private:
 	uint32_t minGain_;
 	uint32_t maxGain_;
 
-	utils::Duration lineDuration_;
-
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 
@@ -206,8 +204,8 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 	 *
 	 * \todo take VBLANK into account for maximum shutter speed
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure * lineDuration_;
-	context_.configuration.agc.maxShutterSpeed = maxExposure * lineDuration_;
+	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 }
@@ -229,6 +227,7 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 			     ControlInfoMap *ipaControls)
 {
 	ControlInfoMap::Map controls{};
+	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
 
 	/*
 	 * Compute exposure time limits by using line length and pixel rate
@@ -237,9 +236,9 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 	 * microseconds.
 	 */
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
-	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration_.get<std::micro>();
-	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration_.get<std::micro>();
-	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration_.get<std::micro>();
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
 	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
 							defExposure);
 
@@ -292,6 +291,10 @@ int IPAIPU3::init(const IPASettings &settings,
 			<< settings.sensorModel;
 		return -ENODEV;
 	}
+
+	/* Clean context */
+	context_ = {};
+	context_.configuration.sensor.lineDuration = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Construct our Algorithms */
 	algorithms_.push_back(std::make_unique<algorithms::Agc>());
@@ -454,12 +457,10 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	defVBlank_ = itVBlank->second.def().get<int32_t>();
 
-	/* Clean context at configuration */
-	context_ = {};
-
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
-	lineDuration_ = sensorInfo_.lineLength * 1.0s / sensorInfo_.pixelRate;
+	/* Clean frameContext at each reconfiguration. */
+	context_.frameContext = {};
 
 	/* Update the camera controls using the new sensor settings. */
 	updateControls(sensorInfo_, ctrls_, ipaControls);
@@ -620,6 +621,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 			      [[maybe_unused]] int64_t frameTimestamp,
 			      const ipu3_uapi_stats_3a *stats)
 {
+	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
 	ControlList ctrls(controls::controls);
 
 	for (auto const &algo : algorithms_)
@@ -628,14 +630,14 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	setControls(frame);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
-	int64_t frameDuration = (defVBlank_ + sensorInfo_.outputSize.height) * lineDuration_.get<std::micro>();
+	int64_t frameDuration = (defVBlank_ + sensorInfo_.outputSize.height) * lineDuration;
 	ctrls.set(controls::FrameDuration, frameDuration);
 
 	ctrls.set(controls::AnalogueGain, context_.frameContext.sensor.gain);
 
 	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);
 
-	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration_.get<std::micro>());
+	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration);
 
 	/*
 	 * \todo The Metadata provides a path to getting extended data

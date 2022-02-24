@@ -71,7 +71,7 @@ static constexpr uint32_t kNumStartupFrames = 10;
 static constexpr double kRelativeLuminanceTarget = 0.16;
 
 Agc::Agc()
-	: frameCount_(0), lineDuration_(0s), minShutterSpeed_(0s),
+	: frameCount_(0), minShutterSpeed_(0s),
 	  maxShutterSpeed_(0s), filteredExposure_(0s)
 {
 }
@@ -83,13 +83,13 @@ Agc::Agc()
  *
  * \return 0
  */
-int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
+int Agc::configure(IPAContext &context,
+		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	stride_ = context.configuration.grid.stride;
+	IPASessionConfiguration &configuration = context.configuration;
+	IPAFrameContext &frameContext = context.frameContext;
 
-	/* \todo use the IPAContext to provide the limits */
-	lineDuration_ = configInfo.sensorInfo.lineLength * 1.0s
-		      / configInfo.sensorInfo.pixelRate;
+	stride_ = configuration.grid.stride;
 
 	minShutterSpeed_ = context.configuration.agc.minShutterSpeed;
 	maxShutterSpeed_ = std::min(context.configuration.agc.maxShutterSpeed,
@@ -99,8 +99,8 @@ int Agc::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	maxAnalogueGain_ = std::min(context.configuration.agc.maxAnalogueGain, kMaxAnalogueGain);
 
 	/* Configure the default exposure and gain. */
-	context.frameContext.agc.gain = minAnalogueGain_;
-	context.frameContext.agc.exposure = minShutterSpeed_ / lineDuration_;
+	frameContext.agc.gain = std::max(minAnalogueGain_, kMinAnalogueGain);
+	frameContext.agc.exposure = 10ms / configuration.sensor.lineDuration;
 
 	return 0;
 }
@@ -182,9 +182,11 @@ utils::Duration Agc::filterExposure(utils::Duration exposureValue)
  * \param[in] yGain The gain calculated based on the relative luminance target
  * \param[in] iqMeanGain The gain calculated based on the relative luminance target
  */
-void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
+void Agc::computeExposure(IPAContext &context, double yGain,
 			  double iqMeanGain)
 {
+	const IPASessionConfiguration &configuration = context.configuration;
+	IPAFrameContext &frameContext = context.frameContext;
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
@@ -200,7 +202,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
 	/* extracted from Rpi::Agc::computeTargetExposure */
 
 	/* Calculate the shutter time in seconds */
-	utils::Duration currentShutter = exposure * lineDuration_;
+	utils::Duration currentShutter = exposure * configuration.sensor.lineDuration;
 
 	/*
 	 * Update the exposure value for the next computation using the values
@@ -247,7 +249,7 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
 			    << stepGain;
 
 	/* Update the estimated exposure and gain. */
-	frameContext.agc.exposure = shutterTime / lineDuration_;
+	frameContext.agc.exposure = shutterTime / configuration.sensor.lineDuration;
 	frameContext.agc.gain = stepGain;
 }
 
@@ -354,7 +356,7 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 			break;
 	}
 
-	computeExposure(context.frameContext, yGain, iqMeanGain);
+	computeExposure(context, yGain, iqMeanGain);
 	frameCount_++;
 }
 

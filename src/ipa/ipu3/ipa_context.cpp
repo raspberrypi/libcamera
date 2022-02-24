@@ -87,6 +87,14 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
+ * \var IPASessionConfiguration::sensor
+ * \brief Sensor-specific configuration of the IPA
+ *
+ * \var IPASessionConfiguration::sensor.lineDuration
+ * \brief Line duration in microseconds
+ */
+
+/**
  * \var IPAFrameContext::agc
  * \brief Context for the Automatic Gain Control algorithm
  *

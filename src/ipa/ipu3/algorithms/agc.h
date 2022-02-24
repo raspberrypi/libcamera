@@ -34,7 +34,7 @@ private:
 	double measureBrightness(const ipu3_uapi_stats_3a *stats,
 				 const ipu3_uapi_grid_config &grid) const;
 	utils::Duration filterExposure(utils::Duration currentExposure);
-	void computeExposure(IPAFrameContext &frameContext, double yGain,
+	void computeExposure(IPAContext &context, double yGain,
 			     double iqMeanGain);
 	double estimateLuminance(IPAFrameContext &frameContext,
 				 const ipu3_uapi_grid_config &grid,
@@ -43,7 +43,6 @@ private:
 
 	uint64_t frameCount_;
 
-	utils::Duration lineDuration_;
 	utils::Duration minShutterSpeed_;
 	utils::Duration maxShutterSpeed_;
 

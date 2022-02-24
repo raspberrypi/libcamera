@@ -31,6 +31,10 @@ struct IPASessionConfiguration {
 		double minAnalogueGain;
 		double maxAnalogueGain;
 	} agc;
+
+	struct {
+		utils::Duration lineDuration;
+	} sensor;
 };
 
 struct IPAFrameContext {

@@ -22,6 +22,7 @@ struct IPASessionConfiguration {
 		utils::Duration maxShutterSpeed;
 		double minAnalogueGain;
 		double maxAnalogueGain;
+		struct rkisp1_cif_isp_window measureWindow;
 	} agc;
 
 	struct {

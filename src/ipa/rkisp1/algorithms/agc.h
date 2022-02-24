@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2021, Ideas On Board
+ * Copyright (C) 2021-2022, Ideas On Board
  *
  * agc.h - RkISP1 AGC/AEC mean-based control algorithm
  */
@@ -32,13 +32,15 @@ public:
 	void process(IPAContext &context, const rkisp1_stat_buffer *stats) override;
 
 private:
-	void computeExposure(IPAContext &Context, double yGain);
+	void computeExposure(IPAContext &Context, double yGain, double iqMeanGain);
 	utils::Duration filterExposure(utils::Duration exposureValue);
 	double estimateLuminance(const rkisp1_cif_isp_ae_stat *ae, double gain);
+	double measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const;
 
 	uint64_t frameCount_;
 
 	uint32_t numCells_;
+	uint32_t numHistBins_;
 
 	utils::Duration filteredExposure_;
 };

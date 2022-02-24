@@ -71,6 +71,9 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPASessionConfiguration::agc.maxAnalogueGain
  * \brief Maximum analogue gain supported with the configured sensor
  *
+ * \var IPASessionConfiguration::agc.measureWindow
+ * \brief AGC measure window
+ *
  * \var IPASessionConfiguration::hw
  * \brief RkISP1-specific hardware information
  *

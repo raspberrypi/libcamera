@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2021, Ideas On Board
+ * Copyright (C) 2021-2022, Ideas On Board
  *
  * agc.cpp - AGC/AEC mean-based control algorithm
  */
@@ -15,6 +15,8 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
+
+#include "libipa/histogram.h"
 
 /**
  * \file agc.h
@@ -43,6 +45,9 @@ static constexpr utils::Duration kMaxShutterSpeed = 60ms;
 /* Number of frames to wait before calculating stats on minimum exposure */
 static constexpr uint32_t kNumStartupFrames = 10;
 
+/* Target value to reach for the top 2% of the histogram */
+static constexpr double kEvGainTarget = 0.5;
+
 /*
  * Relative luminance target.
  *
@@ -54,7 +59,7 @@ static constexpr uint32_t kNumStartupFrames = 10;
 static constexpr double kRelativeLuminanceTarget = 0.4;
 
 Agc::Agc()
-	: frameCount_(0), numCells_(0), filteredExposure_(0s)
+	: frameCount_(0), numCells_(0), numHistBins_(0), filteredExposure_(0s)
 {
 }
 
@@ -65,8 +70,7 @@ Agc::Agc()
  *
  * \return 0
  */
-int Agc::configure(IPAContext &context,
-		   [[maybe_unused]] const IPACameraSensorInfo &configInfo)
+int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 {
 	/* Configure the default exposure and gain. */
 	context.frameContext.agc.gain = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
@@ -77,10 +81,22 @@ int Agc::configure(IPAContext &context,
 	 * - versions < V12 have RKISP1_CIF_ISP_AE_MEAN_MAX_V10 entries,
 	 * - versions >= V12 have RKISP1_CIF_ISP_AE_MEAN_MAX_V12 entries.
 	 */
-	if (context.configuration.hw.revision < RKISP1_V12)
+	if (context.configuration.hw.revision < RKISP1_V12) {
 		numCells_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V10;
-	else
+		numHistBins_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10;
+	} else {
 		numCells_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V12;
+		numHistBins_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12;
+	}
+
+	/*
+	 * Define the measurement window for AGC as a centered rectangle
+	 * covering 3/4 of the image width and height.
+	 */
+	context.configuration.agc.measureWindow.h_offs = configInfo.outputSize.width / 8;
+	context.configuration.agc.measureWindow.v_offs = configInfo.outputSize.height / 8;
+	context.configuration.agc.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
+	context.configuration.agc.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
 
 	/* \todo Use actual frame index by populating it in the frameContext. */
 	frameCount_ = 0;
@@ -126,8 +142,9 @@ utils::Duration Agc::filterExposure(utils::Duration exposureValue)
  * \brief Estimate the new exposure and gain values
  * \param[inout] frameContext The shared IPA frame Context
  * \param[in] yGain The gain calculated on the current brightness level
+ * \param[in] iqMeanGain The gain calculated based on the relative luminance target
  */
-void Agc::computeExposure(IPAContext &context, double yGain)
+void Agc::computeExposure(IPAContext &context, double yGain, double iqMeanGain)
 {
 	IPASessionConfiguration &configuration = context.configuration;
 	IPAFrameContext &frameContext = context.frameContext;
@@ -135,6 +152,9 @@ void Agc::computeExposure(IPAContext &context, double yGain)
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
+
+	/* Use the highest of the two gain estimates. */
+	double evGain = std::max(yGain, iqMeanGain);
 
 	utils::Duration minShutterSpeed = configuration.agc.minShutterSpeed;
 	utils::Duration maxShutterSpeed = std::min(configuration.agc.maxShutterSpeed,
@@ -146,7 +166,7 @@ void Agc::computeExposure(IPAContext &context, double yGain)
 					  kMaxAnalogueGain);
 
 	/* Consider within 1% of the target as correctly exposed. */
-	if (utils::abs_diff(yGain, 1.0) < 0.01)
+	if (utils::abs_diff(evGain, 1.0) < 0.01)
 		return;
 
 	/* extracted from Rpi::Agc::computeTargetExposure. */
@@ -163,13 +183,13 @@ void Agc::computeExposure(IPAContext &context, double yGain)
 	LOG(RkISP1Agc, Debug) << "Actual total exposure " << currentShutter * analogueGain
 			      << " Shutter speed " << currentShutter
 			      << " Gain " << analogueGain
-			      << " Needed ev gain " << yGain;
+			      << " Needed ev gain " << evGain;
 
 	/*
 	 * Calculate the current exposure value for the scene as the latest
 	 * exposure value applied multiplied by the new estimated gain.
 	 */
-	utils::Duration exposureValue = effectiveExposureValue * yGain;
+	utils::Duration exposureValue = effectiveExposureValue * evGain;
 
 	/* Clamp the exposure value to the min and max authorized. */
 	utils::Duration maxTotalExposure = maxShutterSpeed * maxAnalogueGain;
@@ -241,6 +261,18 @@ double Agc::estimateLuminance(const rkisp1_cif_isp_ae_stat *ae,
 }
 
 /**
+ * \brief Estimate the mean value of the top 2% of the histogram
+ * \param[in] hist The histogram statistics computed by the ImgU
+ * \return The mean value of the top 2% of the histogram
+ */
+double Agc::measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const
+{
+	Histogram histogram{ Span<const uint32_t>(hist->hist_bins, numHistBins_) };
+	/* Estimate the quantile mean of the top 2% of the histogram. */
+	return histogram.interQuantileMean(0.98, 1.0);
+}
+
+/**
  * \brief Process RkISP1 statistics, and run AGC operations
  * \param[in] context The shared IPA context
  * \param[in] stats The RKISP1 statistics and ISP results
@@ -254,6 +286,10 @@ void Agc::process(IPAContext &context, const rkisp1_stat_buffer *stats)
 	ASSERT(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP);
 
 	const rkisp1_cif_isp_ae_stat *ae = &params->ae;
+	const rkisp1_cif_isp_hist_stat *hist = &params->hist;
+
+	double iqMean = measureBrightness(hist);
+	double iqMeanGain = kEvGainTarget * numHistBins_ / iqMean;
 
 	/*
 	 * Estimate the gain needed to achieve a relative luminance target. To
@@ -277,15 +313,44 @@ void Agc::process(IPAContext &context, const rkisp1_stat_buffer *stats)
 			break;
 	}
 
-	computeExposure(context, yGain);
+	computeExposure(context, yGain, iqMeanGain);
 	frameCount_++;
 }
 
-void Agc::prepare([[maybe_unused]] IPAContext &context,
-		  rkisp1_params_cfg *params)
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Agc::prepare(IPAContext &context, rkisp1_params_cfg *params)
 {
+	if (context.frameContext.frameCount > 0)
+		return;
+
+	/* Configure the measurement window. */
+	params->meas.aec_config.meas_window = context.configuration.agc.measureWindow;
+	/* Use a continuous method for measure. */
+	params->meas.aec_config.autostop = RKISP1_CIF_ISP_EXP_CTRL_AUTOSTOP_0;
+	/* Estimate Y as (R + G + B) x (85/256). */
+	params->meas.aec_config.mode = RKISP1_CIF_ISP_EXP_MEASURING_MODE_1;
+
+	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AEC;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_AEC;
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AEC;
+
+	/* Configure histogram. */
+	params->meas.hst_config.meas_window = context.configuration.agc.measureWindow;
+	/* Produce the luminance histogram. */
+	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+	/* Set an average weighted histogram. */
+	for (unsigned int histBin = 0; histBin < numHistBins_; histBin++)
+		params->meas.hst_config.hist_weight[histBin] = 1;
+	/* Step size can't be less than 3. */
+	params->meas.hst_config.histogram_predivider = 4;
+
+	/* Update the configuration for histogram. */
+	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_HST;
+	/* Enable the histogram measure unit. */
+	params->module_ens |= RKISP1_CIF_ISP_MODULE_HST;
+	params->module_en_update |= RKISP1_CIF_ISP_MODULE_HST;
 }
 
 } /* namespace ipa::rkisp1::algorithms */

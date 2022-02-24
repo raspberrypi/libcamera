@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2021, Ideas On Board
+ * Copyright (C) 2021-2022, Ideas On Board
  *
  * ipa_context.cpp - RkISP1 IPA Context
  */
@@ -111,6 +111,15 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::sensor.gain
  * \brief Analogue gain multiplier
+ */
+
+/**
+ * \var IPAFrameContext::frameCount
+ * \brief Counter of requests queued to the IPA module
+ *
+ * The counter is reset to 0 when the IPA module is configured, and is
+ * incremented for each request being queued, after calling the
+ * Algorithm::prepare() function of all algorithms.
  */
 
 } /* namespace libcamera::ipa::rkisp1 */

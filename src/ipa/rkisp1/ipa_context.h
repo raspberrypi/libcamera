@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2021, Ideas On Board
+ * Copyright (C) 2021-2022, Ideas On Board
  *
  * ipa_context.h - RkISP1 IPA Context
  *
@@ -43,6 +43,8 @@ struct IPAFrameContext {
 		uint32_t exposure;
 		double gain;
 	} sensor;
+
+	unsigned int frameCount;
 };
 
 struct IPAContext {

@@ -353,6 +353,14 @@ void Awb::awbGreyWorld()
 
 	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
 	asyncResults_.temperatureK = estimateCCT(sumRed.R, sumRed.G, sumBlue.B);
+
+	/*
+	 * Gain values are unsigned integer value ranging [0, 8) with 13 bit
+	 * fractional part.
+	 */
+	redGain = std::clamp(redGain, 0.0, 65535.0 / 8192);
+	blueGain = std::clamp(blueGain, 0.0, 65535.0 / 8192);
+
 	asyncResults_.redGain = redGain;
 	/* Hardcode the green gain to 1.0. */
 	asyncResults_.greenGain = 1.0;

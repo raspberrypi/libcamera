@@ -34,15 +34,19 @@ protected:
 		AnalogueGainExponential,
 	};
 
-	struct AnalogueGainConstants {
-		AnalogueGainType type;
+	struct AnalogueGainLinearConstants {
 		int16_t m0;
 		int16_t c0;
 		int16_t m1;
 		int16_t c1;
 	};
 
-	AnalogueGainConstants analogueGainConstants_;
+	union AnalogueGainConstants {
+		AnalogueGainLinearConstants linear;
+	};
+
+	AnalogueGainType gainType_;
+	AnalogueGainConstants gainConstants_;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelper)

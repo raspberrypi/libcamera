@@ -72,7 +72,7 @@ static constexpr double kRelativeLuminanceTarget = 0.16;
 
 Agc::Agc()
 	: frameCount_(0), lineDuration_(0s), minShutterSpeed_(0s),
-	  maxShutterSpeed_(0s), filteredExposure_(0s), currentExposure_(0s)
+	  maxShutterSpeed_(0s), filteredExposure_(0s)
 {
 }
 
@@ -143,33 +143,37 @@ double Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 
 /**
  * \brief Apply a filter on the exposure value to limit the speed of changes
+ * \param[in] exposureValue The target exposure from the AGC algorithm
+ *
+ * The speed of the filter is adaptive, and will produce the target quicker
+ * during startup, or when the target exposure is within 20% of the most recent
+ * filter output.
+ *
+ * \return The filtered exposure
  */
-void Agc::filterExposure()
+utils::Duration Agc::filterExposure(utils::Duration exposureValue)
 {
 	double speed = 0.2;
 
-	/* Adapt instantly if we are in startup phase */
+	/* Adapt instantly if we are in startup phase. */
 	if (frameCount_ < kNumStartupFrames)
 		speed = 1.0;
 
-	if (filteredExposure_ == 0s) {
-		/* DG stands for digital gain.*/
-		filteredExposure_ = currentExposure_;
-	} else {
-		/*
-		 * If we are close to the desired result, go faster to avoid making
-		 * multiple micro-adjustments.
-		 * \todo Make this customisable?
-		 */
-		if (filteredExposure_ < 1.2 * currentExposure_ &&
-		    filteredExposure_ > 0.8 * currentExposure_)
-			speed = sqrt(speed);
+	/*
+	 * If we are close to the desired result, go faster to avoid making
+	 * multiple micro-adjustments.
+	 * \todo Make this customisable?
+	 */
+	if (filteredExposure_ < 1.2 * exposureValue &&
+	    filteredExposure_ > 0.8 * exposureValue)
+		speed = sqrt(speed);
 
-		filteredExposure_ = speed * currentExposure_ +
-				filteredExposure_ * (1.0 - speed);
-	}
+	filteredExposure_ = speed * exposureValue +
+			    filteredExposure_ * (1.0 - speed);
 
-	LOG(IPU3Agc, Debug) << "After filtering, total_exposure " << filteredExposure_;
+	LOG(IPU3Agc, Debug) << "After filtering, exposure " << filteredExposure_;
+
+	return filteredExposure_;
 }
 
 /**
@@ -213,27 +217,29 @@ void Agc::computeExposure(IPAFrameContext &frameContext, double yGain,
 	 * Calculate the current exposure value for the scene as the latest
 	 * exposure value applied multiplied by the new estimated gain.
 	 */
-	currentExposure_ = effectiveExposureValue * evGain;
+	utils::Duration exposureValue = effectiveExposureValue * evGain;
 
 	/* Clamp the exposure value to the min and max authorized */
 	utils::Duration maxTotalExposure = maxShutterSpeed_ * maxAnalogueGain_;
-	currentExposure_ = std::min(currentExposure_, maxTotalExposure);
-	LOG(IPU3Agc, Debug) << "Target total exposure " << currentExposure_
+	exposureValue = std::min(exposureValue, maxTotalExposure);
+	LOG(IPU3Agc, Debug) << "Target total exposure " << exposureValue
 			    << ", maximum is " << maxTotalExposure;
 
-	/* \todo: estimate if we need to desaturate */
-	filterExposure();
-
-	/* Divide the exposure value as new exposure and gain values */
-	utils::Duration exposureValue = filteredExposure_;
-	utils::Duration shutterTime;
+	/*
+	 * Filter the exposure.
+	 * \todo: estimate if we need to desaturate
+	 */
+	exposureValue = filterExposure(exposureValue);
 
 	/*
-	* Push the shutter time up to the maximum first, and only then
-	* increase the gain.
-	*/
-	shutterTime = std::clamp<utils::Duration>(exposureValue / minAnalogueGain_,
-						  minShutterSpeed_, maxShutterSpeed_);
+	 * Divide the exposure value as new exposure and gain values.
+	 *
+	 * Push the shutter time up to the maximum first, and only then
+	 * increase the gain.
+	 */
+	utils::Duration shutterTime =
+		std::clamp<utils::Duration>(exposureValue / minAnalogueGain_,
+					    minShutterSpeed_, maxShutterSpeed_);
 	double stepGain = std::clamp(exposureValue / shutterTime,
 				     minAnalogueGain_, maxAnalogueGain_);
 	LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "

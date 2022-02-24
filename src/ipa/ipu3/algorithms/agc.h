@@ -33,7 +33,7 @@ public:
 private:
 	double measureBrightness(const ipu3_uapi_stats_3a *stats,
 				 const ipu3_uapi_grid_config &grid) const;
-	void filterExposure();
+	utils::Duration filterExposure(utils::Duration currentExposure);
 	void computeExposure(IPAFrameContext &frameContext, double yGain,
 			     double iqMeanGain);
 	double estimateLuminance(IPAFrameContext &frameContext,
@@ -51,7 +51,6 @@ private:
 	double maxAnalogueGain_;
 
 	utils::Duration filteredExposure_;
-	utils::Duration currentExposure_;
 
 	uint32_t stride_;
 };

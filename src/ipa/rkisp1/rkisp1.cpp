@@ -27,6 +27,7 @@
 
 #include "algorithms/agc.h"
 #include "algorithms/algorithm.h"
+#include "algorithms/awb.h"
 #include "algorithms/blc.h"
 #include "libipa/camera_sensor_helper.h"
 
@@ -121,6 +122,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 
 	/* Construct our Algorithms */
 	algorithms_.push_back(std::make_unique<algorithms::Agc>());
+	algorithms_.push_back(std::make_unique<algorithms::Awb>());
 	algorithms_.push_back(std::make_unique<algorithms::BlackLevelCorrection>());
 
 	return 0;

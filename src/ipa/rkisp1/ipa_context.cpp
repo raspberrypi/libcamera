@@ -82,6 +82,14 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPASessionConfiguration::awb
+ * \brief AWB parameters configuration of the IPA
+ *
+ * \var IPASessionConfiguration::awb.measureWindow
+ * \brief AWB measure window
+ */
+
+/**
  * \var IPASessionConfiguration::sensor
  * \brief Sensor-specific configuration of the IPA
  *
@@ -103,6 +111,26 @@ namespace libcamera::ipa::rkisp1 {
  * \brief Analogue gain multiplier
  *
  * The gain should be adapted to the sensor specific gain code before applying.
+ */
+
+/**
+ * \var IPAFrameContext::awb
+ * \brief Context for the Automatic White Balance algorithm
+ *
+ * \struct IPAFrameContext::awb.gains
+ * \brief White balance gains
+ *
+ * \var IPAFrameContext::awb.gains.red
+ * \brief White balance gain for R channel
+ *
+ * \var IPAFrameContext::awb.gains.green
+ * \brief White balance gain for G channel
+ *
+ * \var IPAFrameContext::awb.gains.blue
+ * \brief White balance gain for B channel
+ *
+ * \var IPAFrameContext::awb.temperatureK
+ * \brief Estimated color temperature
  */
 
 /**

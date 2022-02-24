@@ -12,6 +12,8 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/geometry.h>
+
 namespace libcamera {
 
 namespace ipa::rkisp1 {
@@ -24,6 +26,10 @@ struct IPASessionConfiguration {
 		double maxAnalogueGain;
 		struct rkisp1_cif_isp_window measureWindow;
 	} agc;
+
+	struct {
+		struct rkisp1_cif_isp_window measureWindow;
+	} awb;
 
 	struct {
 		utils::Duration lineDuration;
@@ -39,6 +45,16 @@ struct IPAFrameContext {
 		uint32_t exposure;
 		double gain;
 	} agc;
+
+	struct {
+		struct {
+			double red;
+			double green;
+			double blue;
+		} gains;
+
+		double temperatureK;
+	} awb;
 
 	struct {
 		uint32_t exposure;

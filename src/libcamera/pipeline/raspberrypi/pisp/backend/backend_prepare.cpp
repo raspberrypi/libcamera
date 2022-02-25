@@ -25,22 +25,22 @@ constexpr unsigned int HogCellSize = 8;
 void check_stride(pisp_image_format_config const &config)
 {
 	if (config.stride % PISP_BACK_END_OUTPUT_MIN_ALIGN || config.stride2 % PISP_BACK_END_OUTPUT_MIN_ALIGN)
-		LOG(PISPBE, Error) << "Output stride values not sufficiently aligned";
+		LOG(PISPBE, Fatal) << "Output stride values not sufficiently aligned";
 
 	if (PISP_IMAGE_FORMAT_wallpaper(config.format) && (config.stride % 128 || config.stride2 % 128))
-		LOG(PISPBE, Error) << "Wallpaper format should have 128-byte aligned rolls";
+		LOG(PISPBE, Fatal) << "Wallpaper format should have 128-byte aligned rolls";
 
 	pisp_image_format_config check = config;
 	compute_stride_align(check, PISP_BACK_END_OUTPUT_MIN_ALIGN);
 	if (check.stride > config.stride || check.stride2 > config.stride2) {
-		LOG(PISPBE, Error) << "Strides should be at least " << check.stride << " and " << check.stride2 << " but are " << config.stride << " and " << config.stride2;
+		LOG(PISPBE, Fatal) << "Strides should be at least " << check.stride << " and " << check.stride2 << " but are " << config.stride << " and " << config.stride2;
 	}
 }
 
 void finalise_bayer_rgb_inputs(pisp_image_format_config const &config)
 {
 	if (config.width < PISP_BACK_END_MIN_TILE_WIDTH || config.height < PISP_BACK_END_MIN_TILE_HEIGHT)
-		LOG(PISPBE, Error) << "finalise_bayer_rgb_inputs: input image too small";
+		LOG(PISPBE, Fatal) << "finalise_bayer_rgb_inputs: input image too small";
 }
 
 void finalise_inputs(pisp_be_config &config)
@@ -48,19 +48,19 @@ void finalise_inputs(pisp_be_config &config)
 	// Not so much finalising, just checking that input dimensions and strides are OK.
 	if (config.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) {
 		if ((config.input_format.width & 1) || (config.input_format.height & 1))
-			LOG(PISPBE, Error) << "finalise_inputs: Bayer pipe image dimensions must be even";
+			LOG(PISPBE, Fatal) << "finalise_inputs: Bayer pipe image dimensions must be even";
 		if (config.input_format.stride & 15)
-			LOG(PISPBE, Error) << "finalise_inputs: input stride should be at least 16-byte aligned";
+			LOG(PISPBE, Fatal) << "finalise_inputs: input stride should be at least 16-byte aligned";
 	} else if (config.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) {
 		if (PISP_IMAGE_FORMAT_sampling_420(config.input_format.format) && (config.input_format.width & 1))
-			LOG(PISPBE, Error) << "finalise_inputs: 420 input height must be even";
+			LOG(PISPBE, Fatal) << "finalise_inputs: 420 input height must be even";
 		else if ((PISP_IMAGE_FORMAT_sampling_420(config.input_format.format) || PISP_IMAGE_FORMAT_sampling_422(config.input_format.format)) && (config.input_format.width & 1))
-			LOG(PISPBE, Error) << "finalise_inputs: 420/422 input width must be even";
+			LOG(PISPBE, Fatal) << "finalise_inputs: 420/422 input width must be even";
 		if (PISP_IMAGE_FORMAT_wallpaper(config.input_format.format)) {
 			if ((config.input_format.stride & 127) || (config.input_format.stride2 & 127))
-				LOG(PISPBE, Error) << "finalise_inputs: wallpaper format strides must be at least 128-byte aligned";
+				LOG(PISPBE, Fatal) << "finalise_inputs: wallpaper format strides must be at least 128-byte aligned";
 		} else if ((config.input_format.stride & 15) || (config.input_format.stride2 & 15))
-			LOG(PISPBE, Error) << "finalise_inputs: input strides must be at least 16-byte aligned";
+			LOG(PISPBE, Fatal) << "finalise_inputs: input strides must be at least 16-byte aligned";
 	}
 }
 
@@ -98,7 +98,7 @@ void finalise_resample(pisp_be_resample_config &resample, pisp_be_resample_extra
 
 	if ((scale_factor_h < UnityScale / 16 || scale_factor_h >= 16 * UnityScale) ||
 	    (scale_factor_v < UnityScale / 16 || scale_factor_v >= 16 * UnityScale))
-		LOG(PISPBE, Error) << "finalise_resample: Invalid scaling factors (must be < 16x down/upscale).";
+		LOG(PISPBE, Fatal) << "finalise_resample: Invalid scaling factors (must be < 16x down/upscale).";
 
 	resample.scale_factor_h = scale_factor_h;
 	resample.scale_factor_v = scale_factor_v;
@@ -115,7 +115,7 @@ void finalise_downscale(pisp_be_downscale_config &downscale, pisp_be_downscale_e
 
 	if ((scale_factor_h != UnityScale && (scale_factor_h < 2 * UnityScale || scale_factor_h > 8 * UnityScale)) ||
 	    (scale_factor_v != UnityScale && (scale_factor_v < 2 * UnityScale || scale_factor_v > 8 * UnityScale)))
-		LOG(PISPBE, Error) << "finalise_downscale: Invalid scaling factors (must be 1x or >= 2x && <= 8x).";
+		LOG(PISPBE, Fatal) << "finalise_downscale: Invalid scaling factors (must be 1x or >= 2x && <= 8x).";
 
 	downscale.scale_factor_h = scale_factor_h;
 	downscale.scale_factor_v = scale_factor_v;
@@ -131,13 +131,13 @@ void finalise_decompression(pisp_be_config const &be_config)
 	uint32_t fmt = be_config.input_format.format, bayer_enables = be_config.global.bayer_enables;
 
 	if (PISP_IMAGE_FORMAT_compressed(fmt) && !(bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
-		LOG(PISPBE, Error) << "BackEnd::finalise: input compressed but decompression not enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: input compressed but decompression not enabled";
 
 	if (!PISP_IMAGE_FORMAT_compressed(fmt) && (bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS))
-		LOG(PISPBE, Error) << "BackEnd::finalise: input uncompressed but decompression enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: input uncompressed but decompression enabled";
 
 	if ((bayer_enables & PISP_BE_BAYER_ENABLE_DECOMPRESS) && !PISP_IMAGE_FORMAT_bps_8(fmt))
-		LOG(PISPBE, Error) << "BackEnd::finalise: compressed input is not 8bpp";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: compressed input is not 8bpp";
 }
 
 void finalise_tdn(pisp_be_config &config)
@@ -150,16 +150,16 @@ void finalise_tdn(pisp_be_config &config)
 	uint32_t fmt = config.tdn_output_format.format;
 
 	if (tdn_enabled && !tdn_output_enable)
-		LOG(PISPBE, Error) << "BackEnd::finalise: TDN output not enabled when TDN enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN output not enabled when TDN enabled";
 
 	if (PISP_IMAGE_FORMAT_compressed(fmt) && !tdn_compress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: TDN output compressed but compression not enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN output compressed but compression not enabled";
 
 	if (!PISP_IMAGE_FORMAT_compressed(fmt) && tdn_compress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: TDN output uncompressed but compression enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN output uncompressed but compression enabled";
 
 	if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(fmt))
-		LOG(PISPBE, Error) << "BackEnd::finalise: TDN output does not match compression mode";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN output does not match compression mode";
 
 	// TDN output width/height must match the input, though the format may differ.
 	config.tdn_output_format.width = config.input_format.width;
@@ -168,23 +168,23 @@ void finalise_tdn(pisp_be_config &config)
 
 	if (!tdn_enabled) {
 		if (tdn_input_enabled)
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN input enabled but TDN not enabled";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN input enabled but TDN not enabled";
 		// I suppose there is a weird (and entirely pointless) case where TDN is not enabled but TDN output is, which we allow.
 	} else if (config.tdn.reset) {
 		if (tdn_input_enabled)
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN input enabled but TDN being reset";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN input enabled but TDN being reset";
 	} else {
 		if (!tdn_input_enabled)
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN input not enabled but TDN not being reset";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN input not enabled but TDN not being reset";
 		// Make the TDN input match the output if it's unset. Usually this will be the sensible thing to do.
 		if (config.tdn_input_format.width == 0 && config.tdn_input_format.height == 0)
 			config.tdn_input_format = config.tdn_output_format;
 		if (PISP_IMAGE_FORMAT_compressed(fmt) && !tdn_decompress_enabled)
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN input compressed but decompression not enabled";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN input compressed but decompression not enabled";
 		if (!PISP_IMAGE_FORMAT_compressed(fmt) && tdn_decompress_enabled)
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN input uncompressed but decompression enabled";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN input uncompressed but decompression enabled";
 		if (tdn_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(fmt))
-			LOG(PISPBE, Error) << "BackEnd::finalise: TDN output does not match compression mode";
+			LOG(PISPBE, Fatal) << "BackEnd::finalise: TDN output does not match compression mode";
 	}
 }
 
@@ -199,19 +199,19 @@ void finalise_stitch(pisp_be_config &config)
 	uint32_t output_fmt = config.stitch_output_format.format;
 
 	if (stitch_enabled != stitch_input_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch and stitch_input should be enabled/disabled together";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch and stitch_input should be enabled/disabled together";
 	if (stitch_input_enabled && PISP_IMAGE_FORMAT_compressed(input_fmt) && !stitch_decompress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch output compressed but decompression not enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch output compressed but decompression not enabled";
 	if (stitch_input_enabled && !PISP_IMAGE_FORMAT_compressed(input_fmt) && stitch_decompress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch output uncompressed but decompression enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch output uncompressed but decompression enabled";
 	if (stitch_output_enabled && PISP_IMAGE_FORMAT_compressed(output_fmt) && !stitch_compress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch output compressed but compression not enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch output compressed but compression not enabled";
 	if (stitch_output_enabled && !PISP_IMAGE_FORMAT_compressed(output_fmt) && stitch_compress_enabled)
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch output uncompressed but compression enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch output uncompressed but compression enabled";
 	if (stitch_decompress_enabled && !PISP_IMAGE_FORMAT_bps_8(input_fmt))
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch input does not match compression mode";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch input does not match compression mode";
 	if (stitch_compress_enabled && !PISP_IMAGE_FORMAT_bps_8(output_fmt))
-		LOG(PISPBE, Error) << "BackEnd::finalise: stitch output does not match compression mode";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: stitch output does not match compression mode";
 
 	if (config.stitch_output_format.width == 0 && config.stitch_output_format.height == 0) {
 		config.stitch_output_format.width = config.input_format.width;
@@ -246,20 +246,20 @@ void finalise_output(pisp_be_output_format_config &config)
 
 	// Do some checking on output image dimensions and strides.
 	if (config.image.width < PISP_BACK_END_MIN_TILE_WIDTH || config.image.height < PISP_BACK_END_MIN_TILE_HEIGHT)
-		LOG(PISPBE, Error) << "finalise_output: output image too small";
+		LOG(PISPBE, Fatal) << "finalise_output: output image too small";
 
 	if (PISP_IMAGE_FORMAT_sampling_420(config.image.format) && (config.image.height & 1))
-		LOG(PISPBE, Error) << "finalise_output: 420 image height should be even";
+		LOG(PISPBE, Fatal) << "finalise_output: 420 image height should be even";
 
 	if ((PISP_IMAGE_FORMAT_sampling_420(config.image.format) ||
              PISP_IMAGE_FORMAT_sampling_422(config.image.format)) && (config.image.width & 1))
-		LOG(PISPBE, Error) << "finalise_output: 420/422 image width should be even";
+		LOG(PISPBE, Fatal) << "finalise_output: 420/422 image width should be even";
 
 	if (PISP_IMAGE_FORMAT_wallpaper(config.image.format)) {
 		if ((config.image.stride & 127) || (config.image.stride2 & 127))
-			LOG(PISPBE, Error) << "finalise_output: wallpaper image stride should be at least 128-byte aligned";
+			LOG(PISPBE, Fatal) << "finalise_output: wallpaper image stride should be at least 128-byte aligned";
 	} else if ((config.image.stride & 15) || (config.image.stride2 & 15))
-		LOG(PISPBE, Error) << "finalise_output: image stride should be at least 16-byte aligned";
+		LOG(PISPBE, Fatal) << "finalise_output: image stride should be at least 16-byte aligned";
 }
 
 void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsigned int numBranches)
@@ -268,7 +268,7 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 		ASSERT(tile.input_width && tile.input_height); // zero inputs shouldn't be possible
 
 		if (tile.input_width < PISP_BACK_END_MIN_TILE_WIDTH || tile.input_height < PISP_BACK_END_MIN_TILE_HEIGHT)
-			LOG(PISPBE, Error) << "Tile too small at input";
+			LOG(PISPBE, Fatal) << "Tile too small at input";
 
 		for (unsigned int i = 0; i < numBranches; i++) {
 			if ((rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(i)) == 0)
@@ -283,14 +283,14 @@ void check_tiles(std::vector<pisp_tile> const &tiles, uint32_t rgb_enables, unsi
 			// A zero-sized tile is legitimate meaning "no output", but otherwise minimum tile sizes must be respected.
 			if (width_after_crop && height_after_crop) {
 				if (width_after_crop < PISP_BACK_END_MIN_TILE_WIDTH || height_after_crop < PISP_BACK_END_MIN_TILE_HEIGHT)
-					LOG(PISPBE, Error) << "Tile too small after crop";
+					LOG(PISPBE, Fatal) << "Tile too small after crop";
 
                         	if (tile.resample_in_width[i] < PISP_BACK_END_MIN_TILE_WIDTH ||
                                     tile.resample_in_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
-					LOG(PISPBE, Error) << "Tile too small after downscale";
+					LOG(PISPBE, Fatal) << "Tile too small after downscale";
 				if (tile.output_width[i] < PISP_BACK_END_MIN_TILE_WIDTH ||
                                     tile.output_height[i] < PISP_BACK_END_MIN_TILE_HEIGHT)
-					LOG(PISPBE, Error) << "Tile too small at output";
+					LOG(PISPBE, Fatal) << "Tile too small at output";
 			}
 		}
 	}
@@ -432,7 +432,7 @@ void BackEnd::finaliseConfig()
 				if (variant_.backEndDownscalerAvailable(0, j))
 					finalise_downscale(be_config_.downscale[j], be_config_.downscale_extra[j], w, h);
 				else
-					LOG(PISPBE, Error) << "Downscale is not available in output branch " + std::to_string(j);
+					LOG(PISPBE, Fatal) << "Downscale is not available in output branch " + std::to_string(j);
 			}
 
 			if (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_DOWNSCALE(j)) {
@@ -450,10 +450,10 @@ void BackEnd::finaliseConfig()
 	}
 	// Finally check for a sane collection of enable bits.
 	if (!((be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) || (be_config_.global.bayer_enables == 0)))
-		LOG(PISPBE, Error) << "BackEnd::finalise: Bayer input disabled but Bayer pipe active";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: Bayer input disabled but Bayer pipe active";
 
 	if (!!(be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) + !!(be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) != 1)
-		LOG(PISPBE, Error) << "BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: exactly one of Bayer and RGB inputs should be enabled";
 
 	uint32_t output_enables = be_config_.global.bayer_enables & (PISP_BE_BAYER_ENABLE_TDN_OUTPUT | PISP_BE_BAYER_ENABLE_STITCH_OUTPUT);
 	for (unsigned int i = 0; i < variant_.backEndNumBranches(0); i++)
@@ -461,7 +461,7 @@ void BackEnd::finaliseConfig()
 
 	output_enables |= be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_HOG;
 	if (output_enables == 0)
-		LOG(PISPBE, Error) << "BackEnd::finalise: PiSP not configured to do anything";
+		LOG(PISPBE, Fatal) << "BackEnd::finalise: PiSP not configured to do anything";
 }
 
 void BackEnd::updateTiles()
@@ -556,7 +556,7 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 		t.input_height = tiles[i].input.input.y.length;
 
 		if (tiles[i].input.output != tiles[i].input.input)
-			LOG(PISPBE, Error) << "BackEnd::retilePipeline: tiling error in Bayer pipe";
+			LOG(PISPBE, Fatal) << "BackEnd::retilePipeline: tiling error in Bayer pipe";
 
 		for (unsigned int j = 0; j < variant_.backEndNumBranches(0); j++) {
 			bool enabled = (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT(j));
@@ -641,13 +641,13 @@ std::vector<pisp_tile> BackEnd::retilePipeline(TilingConfig const &tiling_config
 				if (std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 				    std::abs(t.resample_phase_x[1 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 				    std::abs(t.resample_phase_x[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_x[2 * variant_.backEndNumBranches(0) + j]) > phase_max) {
-					LOG(PISPBE, Error) << "Resample phase x for tile is > 0.5 pixels on the output dimensions.";
+					LOG(PISPBE, Fatal) << "Resample phase x for tile is > 0.5 pixels on the output dimensions.";
 				}
 				phase_max = (be_config_.resample[j].scale_factor_v * UnityScale / 2) >> ScalePrecision;
 				if (std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 				    std::abs(t.resample_phase_y[1 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max ||
 				    std::abs(t.resample_phase_y[0 * variant_.backEndNumBranches(0) + j] - t.resample_phase_y[2 * variant_.backEndNumBranches(0) + j]) > phase_max) {
-					LOG(PISPBE, Error) << "Resample phase y for tile is > 0.5 pixels on the output dimensions.";
+					LOG(PISPBE, Fatal) << "Resample phase y for tile is > 0.5 pixels on the output dimensions.";
 				}
 			}
 		}
@@ -772,10 +772,10 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 	// 1. Check the input configuration appears sensible.
 	if ((be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) == 0 &&
 	    (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT) == 0)
-		LOG(PISPBE, Error) << "BackEnd::preFrameUpdate: neither Bayer nor RGB inputs are enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::preFrameUpdate: neither Bayer nor RGB inputs are enabled";
 	else if ((be_config_.global.bayer_enables & PISP_BE_BAYER_ENABLE_INPUT) &&
 		 (be_config_.global.rgb_enables & PISP_BE_RGB_ENABLE_INPUT))
-		LOG(PISPBE, Error) << "BackEnd::preFrameUpdate: both Bayer and RGB inputs are enabled";
+		LOG(PISPBE, Fatal) << "BackEnd::preFrameUpdate: both Bayer and RGB inputs are enabled";
 
 	// 2. Also check the output configuration (including HOG) is all filled in and looks sensible. Again, addresses must be
 	// left to the HAL.
@@ -785,7 +785,7 @@ void BackEnd::Prepare(pisp_be_tiles_config *config)
 
 		if (image_config.format & PISP_IMAGE_FORMAT_INTEGRAL_IMAGE) {
 			if (!variant_.backEndIntegralImage(0, i))
-				LOG(PISPBE, Error) << "Integral images are not supported in the current configuration.";
+				LOG(PISPBE, Fatal) << "Integral images are not supported in the current configuration.";
 			integral_image_output = true;
 		}
 	}

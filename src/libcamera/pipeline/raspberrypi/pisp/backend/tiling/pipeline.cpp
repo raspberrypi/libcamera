@@ -71,7 +71,7 @@ int Pipeline::tileDirection(Dir dir, void *mem, size_t num_items, size_t item_si
 	for (; !done; num_tiles++) {
 		LOG(PISP_TILING, Debug) << "----------------------------------------------------------------";
 		if (num_tiles == num_items)
-			LOG(PISP_TILING, Error) << "Too many tiles!";
+			LOG(PISP_TILING, Fatal) << "Too many tiles!";
 		for (auto s : outputs_)
 			s->PushStartUp(s->GetOutputInterval().End(), dir);
 		for (auto s : inputs_)

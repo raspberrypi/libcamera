@@ -864,11 +864,14 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	 */
 	if (!output1Set) {
 		V4L2DeviceFormat output1Format = format;
+/*		
 		constexpr Size maxDimensions(1200, 1200);
 		const Size limit = maxDimensions.boundedToAspectRatio(format.size);
 
 		output1Format.size = (format.size / 2).boundedTo(limit).alignedDownTo(2, 2);
-
+		output1Format.fourcc = format.fourcc;
+		output1Format.colorSpace = format.colorSpace;
+*/
 		LOG(PISP, Debug) << "Setting ISP Output1 (internal) to "
 				<< output1Format.toString();
 
@@ -1775,16 +1778,30 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 		for (int i = 0; i < 9; i++)
 			csc.offsets[i] = offsets[i] * (1 << 10);
 		
-		V4L2DeviceFormat ispFormat;
-		isp_[Isp::Output0].dev()->getFormat(&ispFormat);
-		pisp_be_output_format_config outputFormat;
-		memset(&outputFormat, 0, sizeof(outputFormat));
-		outputFormat.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+		V4L2DeviceFormat ispFormat0, ispFormat1;
+		pisp_be_output_format_config outputFormat0, outputFormat1;
+
+		memset(&outputFormat0, 0, sizeof(outputFormat0));
+		memset(&outputFormat1, 0, sizeof(outputFormat1));
+
+		isp_[Isp::Output0].dev()->getFormat(&ispFormat0);
+		outputFormat0.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
 					    PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
-		outputFormat.image.width = ispFormat.size.width;
-		outputFormat.image.height = ispFormat.size.height;
-		outputFormat.image.stride = ispFormat.planes[0].bpl;
-		outputFormat.image.stride2 = ispFormat.planes[0].bpl / 2;
+		outputFormat0.image.width = ispFormat0.size.width;
+		outputFormat0.image.height = ispFormat0.size.height;
+		outputFormat0.image.stride = ispFormat0.planes[0].bpl;
+		outputFormat0.image.stride2 = ispFormat0.planes[0].bpl / 2;
+
+		isp_[Isp::Output1].dev()->getFormat(&ispFormat1);
+		outputFormat1.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+					    PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
+		outputFormat1.image.width = ispFormat1.size.width;
+		outputFormat1.image.height = ispFormat1.size.height;
+		outputFormat1.image.stride = ispFormat1.planes[0].bpl;
+		outputFormat1.image.stride2 = ispFormat1.planes[0].bpl / 2;
+
+		if (ispFormat1.size != ispFormat0.size)
+			global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE1;
 
 		be_->SetInputFormat(inputFormat);
 		be_->SetGlobal(global);
@@ -1792,7 +1809,9 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 		be_->SetWbg({(uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), /* pad */ 0});
 		be_->SetDemosaic({2 << 3, 1, /* pad */ 0});
 		be_->SetCsc(0, csc);
-		be_->SetOutputFormat(0, outputFormat);
+		be_->SetCsc(1, csc);
+		be_->SetOutputFormat(0, outputFormat0);
+		be_->SetOutputFormat(1, outputFormat1);
 	}
 
 	be_->Prepare(reinterpret_cast<pisp_be_tiles_config *>(config.data()));

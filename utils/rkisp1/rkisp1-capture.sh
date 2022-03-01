@@ -171,7 +171,7 @@ mediactl="media-ctl -d $mdev"
 
 get_sensor_format "$sensor"
 if [[ $raw == true ]] ; then
-	capture_format=$(echo $sensor_mbus_code | sed 's/_[0-9X]$//')
+	capture_format=$(echo $sensor_mbus_code | sed 's/_[0-9X]*$//')
 	capture_mbus_code=$sensor_mbus_code
 else
 	capture_format=YUYV

@@ -169,11 +169,7 @@ private:
 	/* Camera sensor controls. */
 	uint32_t defVBlank_;
 	uint32_t exposure_;
-	uint32_t minExposure_;
-	uint32_t maxExposure_;
 	uint32_t gain_;
-	uint32_t minGain_;
-	uint32_t maxGain_;
 
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
@@ -194,10 +190,12 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
 	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
 	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
+	exposure_ = minExposure;
 
 	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
 	int32_t minGain = v4l2Gain.min().get<int32_t>();
 	int32_t maxGain = v4l2Gain.max().get<int32_t>();
+	gain_ = minGain;
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
@@ -434,31 +432,11 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	 */
 	sensorCtrls_ = configInfo.sensorControls;
 
-	const auto itExp = sensorCtrls_.find(V4L2_CID_EXPOSURE);
-	if (itExp == sensorCtrls_.end()) {
-		LOG(IPAIPU3, Error) << "Can't find exposure control";
-		return -EINVAL;
-	}
-
-	const auto itGain = sensorCtrls_.find(V4L2_CID_ANALOGUE_GAIN);
-	if (itGain == sensorCtrls_.end()) {
-		LOG(IPAIPU3, Error) << "Can't find gain control";
-		return -EINVAL;
-	}
-
 	const auto itVBlank = sensorCtrls_.find(V4L2_CID_VBLANK);
 	if (itVBlank == sensorCtrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find VBLANK control";
 		return -EINVAL;
 	}
-
-	minExposure_ = itExp->second.min().get<int32_t>();
-	maxExposure_ = itExp->second.max().get<int32_t>();
-	exposure_ = minExposure_;
-
-	minGain_ = itGain->second.min().get<int32_t>();
-	maxGain_ = itGain->second.max().get<int32_t>();
-	gain_ = minGain_;
 
 	defVBlank_ = itVBlank->second.def().get<int32_t>();
 

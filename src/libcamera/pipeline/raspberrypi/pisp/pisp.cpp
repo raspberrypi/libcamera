@@ -1161,7 +1161,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 {
 	std::unique_ptr<PiSPCameraData> data = std::make_unique<PiSPCameraData>(this);
 
-	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-csi2_ch0");
+	MediaEntity *cfeImage = cfe->getEntityByName("py-cfe-fe_image0");
 	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
 	MediaEntity *cfeConfig = cfe->getEntityByName("py-cfe-fe_config");
 	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
@@ -1749,7 +1749,7 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 
 		pisp_be_global_config global;
 		global.bayer_enables = PISP_BE_BAYER_ENABLE_INPUT + PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
-		global.rgb_enables = PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT0;
+		global.rgb_enables =  PISP_BE_RGB_ENABLE_OUTPUT0 + PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT1;
 
 		BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
 		switch (bayer.order) {
@@ -1806,8 +1806,8 @@ void PiSPCameraData::runIsp(uint32_t bufferId)
 		be_->SetInputFormat(inputFormat);
 		be_->SetGlobal(global);
 		be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
-		be_->SetWbg({(uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.0 * 1024), /* pad */ 0});
-		be_->SetDemosaic({2 << 3, 1, /* pad */ 0});
+		be_->SetWbg({(uint16_t)(2 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.5 * 1024), /* pad */ 0});
+		be_->SetDemosaic({8, 2, /* pad */ 0});
 		be_->SetCsc(0, csc);
 		be_->SetCsc(1, csc);
 		be_->SetOutputFormat(0, outputFormat0);

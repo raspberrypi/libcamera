@@ -88,6 +88,7 @@ capture_frames() {
 
 	if [[ $save_file -eq 1 ]]; then
 		file_op="--file=/tmp/frame-#.bin"
+		rm -f /tmp/frame-*.bin
 	fi
 
 	yavta -c$frame_count -n5 -I -f $capture_format -s $capture_size \

@@ -51,7 +51,7 @@ get_sensor_format() {
 	local format
 	local sensor=$1
 
-	format=$($mediactl --get-v4l2 "'$sensor':0" | sed 's/\[\([^ ]*\).*/\1/')
+	format=$($mediactl --get-v4l2 "'$sensor':0" | grep 'fmt:' | sed 's/.*\(fmt:\S*\).*/\1/')
 	sensor_mbus_code=$(echo $format | sed 's/fmt:\([A-Z0-9_]*\).*/\1/')
 	sensor_size=$(echo $format | sed 's/[^\/]*\/\([0-9x]*\).*/\1/')
 

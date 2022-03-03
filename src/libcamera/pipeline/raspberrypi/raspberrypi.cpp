@@ -212,6 +212,7 @@ public:
 	void handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream);
 	void handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *stream);
 	void handleState();
+	Rectangle scaleIspCrop(const Rectangle &ispCrop) const;
 	void applyScalerCrop(const ControlList &controls);
 
 	std::unique_ptr<ipa::RPi::IPAProxyRPi> ipa_;
@@ -886,6 +887,12 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	ret = data->configureIPA(config);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
+
+	/*
+	 * Set the scaler crop to the value we are using (scaled to native sensor
+	 * coordinates).
+	 */
+	data->scalerCrop_ = data->scaleIspCrop(data->ispCrop_);
 
 	/*
 	 * Configure the Unicam embedded data output format only if the sensor
@@ -1974,6 +1981,18 @@ void RPiCameraData::checkRequestCompleted()
 	}
 }
 
+Rectangle RPiCameraData::scaleIspCrop(const Rectangle &ispCrop) const
+{
+	/*
+	 * Scale a crop rectangle defined in the ISP's coordinates into native sensor
+	 * coordinates.
+	 */
+	Rectangle nativeCrop = ispCrop.scaledBy(sensorInfo_.analogCrop.size(),
+						sensorInfo_.outputSize);
+	nativeCrop.translateBy(sensorInfo_.analogCrop.topLeft());
+	return nativeCrop;
+}
+
 void RPiCameraData::applyScalerCrop(const ControlList &controls)
 {
 	if (controls.contains(controls::ScalerCrop)) {
@@ -2006,9 +2025,7 @@ void RPiCameraData::applyScalerCrop(const ControlList &controls)
 			 * used. But we must first rescale that from ISP (camera mode) pixels
 			 * back into sensor native pixels.
 			 */
-			scalerCrop_ = ispCrop_.scaledBy(sensorInfo_.analogCrop.size(),
-							sensorInfo_.outputSize);
-			scalerCrop_.translateBy(sensorInfo_.analogCrop.topLeft());
+			scalerCrop_ = scaleIspCrop(ispCrop_);
 		}
 	}
 }

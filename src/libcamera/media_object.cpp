@@ -423,4 +423,19 @@ void MediaEntity::addPad(MediaPad *pad)
 	pads_.push_back(pad);
 }
 
+/**
+ * \brief Add a MediaEntity to the list of ancillary entities
+ * \param[in] ancillaryEntity The instance of MediaEntity to add
+ */
+void MediaEntity::addAncillaryEntity(MediaEntity *ancillaryEntity)
+{
+	ancillaryEntities_.push_back(ancillaryEntity);
+}
+
+/**
+ * \fn MediaEntity::ancillaryEntities()
+ * \brief Retrieve all ancillary entities of the entity
+ * \return The list of the entity's ancillary entities
+ */
+
 } /* namespace libcamera */

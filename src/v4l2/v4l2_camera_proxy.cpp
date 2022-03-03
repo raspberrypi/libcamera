@@ -10,19 +10,20 @@
 #include <algorithm>
 #include <array>
 #include <errno.h>
-#include <linux/videodev2.h>
 #include <numeric>
 #include <set>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <libcamera/camera.h>
-#include <libcamera/formats.h>
+#include <linux/videodev2.h>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/object.h>
 #include <libcamera/base/utils.h>
+
+#include <libcamera/camera.h>
+#include <libcamera/formats.h>
 
 #include "libcamera/internal/formats.h"
 

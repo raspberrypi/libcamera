@@ -115,6 +115,9 @@ namespace libcamera::ipa::ipu3 {
  *
  * \var IPASessionConfiguration::sensor.lineDuration
  * \brief Line duration in microseconds
+ *
+ * \var IPASessionConfiguration::sensor.defVBlank
+ * \brief The default vblank value of the sensor
  */
 
 /**

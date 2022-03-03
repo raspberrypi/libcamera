@@ -37,6 +37,7 @@ struct IPASessionConfiguration {
 	} agc;
 
 	struct {
+		int32_t defVBlank;
 		utils::Duration lineDuration;
 	} sensor;
 };

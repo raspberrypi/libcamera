@@ -166,11 +166,6 @@ private:
 
 	IPACameraSensorInfo sensorInfo_;
 
-	/* Camera sensor controls. */
-	uint32_t defVBlank_;
-	uint32_t exposure_;
-	uint32_t gain_;
-
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 
@@ -187,15 +182,16 @@ private:
  */
 void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 {
+	const ControlInfo vBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
+	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();
+
 	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
 	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
 	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
-	exposure_ = minExposure;
 
 	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
 	int32_t minGain = v4l2Gain.min().get<int32_t>();
 	int32_t maxGain = v4l2Gain.max().get<int32_t>();
-	gain_ = minGain;
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
@@ -432,14 +428,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	 */
 	sensorCtrls_ = configInfo.sensorControls;
 
-	const auto itVBlank = sensorCtrls_.find(V4L2_CID_VBLANK);
-	if (itVBlank == sensorCtrls_.end()) {
-		LOG(IPAIPU3, Error) << "Can't find VBLANK control";
-		return -EINVAL;
-	}
-
-	defVBlank_ = itVBlank->second.def().get<int32_t>();
-
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
 	/* Clean frameContext at each reconfiguration. */
@@ -605,6 +593,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 			      const ipu3_uapi_stats_3a *stats)
 {
 	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
+	int32_t vBlank = context_.configuration.sensor.defVBlank;
 	ControlList ctrls(controls::controls);
 
 	for (auto const &algo : algorithms_)
@@ -613,7 +602,7 @@ void IPAIPU3::parseStatistics(unsigned int frame,
 	setControls(frame);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
-	int64_t frameDuration = (defVBlank_ + sensorInfo_.outputSize.height) * lineDuration;
+	int64_t frameDuration = (vBlank + sensorInfo_.outputSize.height) * lineDuration;
 	ctrls.set(controls::FrameDuration, frameDuration);
 
 	ctrls.set(controls::AnalogueGain, context_.frameContext.sensor.gain);
@@ -649,12 +638,12 @@ void IPAIPU3::setControls(unsigned int frame)
 	IPU3Action op;
 	op.op = ActionSetSensorControls;
 
-	exposure_ = context_.frameContext.agc.exposure;
-	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
+	int32_t exposure = context_.frameContext.agc.exposure;
+	int32_t gain = camHelper_->gainCode(context_.frameContext.agc.gain);
 
 	ControlList ctrls(sensorCtrls_);
-	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
-	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
+	ctrls.set(V4L2_CID_EXPOSURE, exposure);
+	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gain);
 	op.sensorControls = ctrls;
 
 	ControlList lensCtrls(lensCtrls_);

@@ -81,6 +81,7 @@ private:
 	void initTestPatternModes();
 	int initProperties();
 	int applyTestPatternMode(controls::draft::TestPatternModeEnum mode);
+	int discoverAncillaryDevices();
 
 	const MediaEntity *entity_;
 	std::unique_ptr<V4L2Subdevice> subdev_;

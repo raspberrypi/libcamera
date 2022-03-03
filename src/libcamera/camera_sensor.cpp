@@ -172,6 +172,10 @@ int CameraSensor::init()
 	if (ret)
 		return ret;
 
+	ret = discoverAncillaryDevices();
+	if (ret)
+		return ret;
+
 	return applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);
 }
 
@@ -438,6 +442,42 @@ int CameraSensor::initProperties()
 		}
 
 		properties_.set(properties::draft::ColorFilterArrangement, cfa);
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Check for and initialise any ancillary devices
+ *
+ * Sensors sometimes have ancillary devices such as a Lens or Flash that could
+ * be linked to their MediaEntity by the kernel. Search for and handle any
+ * such device.
+ *
+ * \todo Handle MEDIA_ENT_F_FLASH too.
+ */
+int CameraSensor::discoverAncillaryDevices()
+{
+	int ret;
+
+	for (MediaEntity *ancillary : entity_->ancillaryEntities()) {
+		switch (ancillary->function()) {
+		case MEDIA_ENT_F_LENS:
+			focusLens_ = std::make_unique<CameraLens>(ancillary);
+			ret = focusLens_->init();
+			if (ret) {
+				LOG(CameraSensor, Error)
+					<< "CameraLens initialisation failed";
+				return ret;
+			}
+			break;
+
+		default:
+			LOG(CameraSensor, Warning)
+				<< "Unsupported ancillary entity function "
+				<< ancillary->function();
+			break;
+		}
 	}
 
 	return 0;

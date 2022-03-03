@@ -660,6 +660,11 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 
 	ipa::ipu3::IPAConfigInfo configInfo;
 	configInfo.sensorControls = data->cio2_.sensor()->controls();
+
+	CameraLens *lens = data->cio2_.sensor()->focusLens();
+	if (lens)
+		configInfo.lensControls = lens->controls();
+
 	configInfo.sensorInfo = sensorInfo;
 	configInfo.bdsOutputSize = config->imguConfig().bds;
 	configInfo.iif = config->imguConfig().iif;

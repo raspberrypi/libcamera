@@ -162,6 +162,7 @@ private:
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
 	ControlInfoMap ctrls_;
+	ControlInfoMap lensCtrls_;
 
 	IPACameraSensorInfo sensorInfo_;
 
@@ -424,6 +425,8 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	}
 
 	sensorInfo_ = configInfo.sensorInfo;
+
+	lensCtrls_ = configInfo.lensControls;
 
 	/*
 	 * Compute the sensor V4L2 controls to be used by the algorithms and

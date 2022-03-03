@@ -37,6 +37,7 @@ struct IPU3Action {
 struct IPAConfigInfo {
 	libcamera.IPACameraSensorInfo sensorInfo;
 	libcamera.ControlInfoMap sensorControls;
+	libcamera.ControlInfoMap lensControls;
 	libcamera.Size bdsOutputSize;
 	libcamera.Size iif;
 };

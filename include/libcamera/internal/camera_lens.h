@@ -12,6 +12,8 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 
+#include <libcamera/controls.h>
+
 namespace libcamera {
 
 class MediaEntity;
@@ -27,6 +29,8 @@ public:
 	int setFocusPosition(int32_t position);
 
 	const std::string &model() const { return model_; }
+
+	const ControlInfoMap &controls() const;
 
 protected:
 	std::string logPrefix() const override;

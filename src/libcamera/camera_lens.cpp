@@ -139,4 +139,15 @@ std::string CameraLens::logPrefix() const
 	return "'" + entity_->name() + "'";
 }
 
+/**
+ * \fn CameraLens::controls()
+ * \brief Retrieve the V4L2 controls of the lens' subdev
+ *
+ * \return A map of the V4L2 controls supported by the lens' driver
+ */
+const ControlInfoMap &CameraLens::controls() const
+{
+	return subdev_->controls();
+}
+
 } /* namespace libcamera */

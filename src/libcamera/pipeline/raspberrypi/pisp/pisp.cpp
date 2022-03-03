@@ -433,7 +433,7 @@ CameraConfiguration::Status PiSPCameraConfiguration::validate()
 			const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 			unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
 			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
-			BayerFormat::Packing packing = BayerFormat::Packing::None;
+			BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
 			//if (info.isValid() && !info.packed)
 			//	packing = BayerFormat::Packing::None;
 			V4L2DeviceFormat cfeFormat = toV4L2DeviceFormat(sensorFormat,
@@ -588,7 +588,7 @@ CameraConfiguration *PipelineHandlerPiSP::generateConfiguration(Camera *camera,
 			size = sensorSize;
 			sensorFormat = findBestFormat(data->sensorFormats_, size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
-							    BayerFormat::Packing::None);
+							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
 			colorSpace = ColorSpace::Raw;
 			bufferCount = 2;
@@ -658,7 +658,7 @@ CameraConfiguration *PipelineHandlerPiSP::generateConfiguration(Camera *camera,
 			/* Translate the MBUS codes to a PixelFormat. */
 			for (const auto &format : data->sensorFormats_) {
 				PixelFormat pf = mbusCodeToPixelFormat(format.first,
-								       BayerFormat::Packing::None);
+								       BayerFormat::Packing::CSI2);
 				if (pf.isValid())
 					deviceFormats.emplace(std::piecewise_construct,	std::forward_as_tuple(pf),
 						std::forward_as_tuple(format.second.begin(), format.second.end()));
@@ -703,7 +703,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const stream : data->streams_)
 		stream->reset();
 
-	BayerFormat::Packing packing = BayerFormat::Packing::None;
+	BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
 	Size maxSize, sensorSize;
 	unsigned int maxIndex = 0;
 	bool rawStream = false;

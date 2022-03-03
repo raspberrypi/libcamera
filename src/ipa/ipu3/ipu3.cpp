@@ -161,7 +161,7 @@ private:
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
-	ControlInfoMap ctrls_;
+	ControlInfoMap sensorCtrls_;
 	ControlInfoMap lensCtrls_;
 
 	IPACameraSensorInfo sensorInfo_;
@@ -432,22 +432,22 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	 * Compute the sensor V4L2 controls to be used by the algorithms and
 	 * to be set on the sensor.
 	 */
-	ctrls_ = configInfo.sensorControls;
+	sensorCtrls_ = configInfo.sensorControls;
 
-	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
-	if (itExp == ctrls_.end()) {
+	const auto itExp = sensorCtrls_.find(V4L2_CID_EXPOSURE);
+	if (itExp == sensorCtrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find exposure control";
 		return -EINVAL;
 	}
 
-	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
-	if (itGain == ctrls_.end()) {
+	const auto itGain = sensorCtrls_.find(V4L2_CID_ANALOGUE_GAIN);
+	if (itGain == sensorCtrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find gain control";
 		return -EINVAL;
 	}
 
-	const auto itVBlank = ctrls_.find(V4L2_CID_VBLANK);
-	if (itVBlank == ctrls_.end()) {
+	const auto itVBlank = sensorCtrls_.find(V4L2_CID_VBLANK);
+	if (itVBlank == sensorCtrls_.end()) {
 		LOG(IPAIPU3, Error) << "Can't find VBLANK control";
 		return -EINVAL;
 	}
@@ -468,10 +468,10 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	context_.frameContext = {};
 
 	/* Update the camera controls using the new sensor settings. */
-	updateControls(sensorInfo_, ctrls_, ipaControls);
+	updateControls(sensorInfo_, sensorCtrls_, ipaControls);
 
 	/* Update the IPASessionConfiguration using the sensor settings. */
-	updateSessionConfiguration(ctrls_);
+	updateSessionConfiguration(sensorCtrls_);
 
 	for (auto const &algo : algorithms_) {
 		int ret = algo->configure(context_, configInfo);
@@ -674,7 +674,7 @@ void IPAIPU3::setControls(unsigned int frame)
 	exposure_ = context_.frameContext.agc.exposure;
 	gain_ = camHelper_->gainCode(context_.frameContext.agc.gain);
 
-	ControlList ctrls(ctrls_);
+	ControlList ctrls(sensorCtrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure_));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain_));
 	op.sensorControls = ctrls;

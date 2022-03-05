@@ -86,8 +86,10 @@ public:
 	ControlInfoMap ipaControls_;
 
 private:
-	void queueFrameAction(unsigned int id,
-			      const ipa::ipu3::IPU3Action &action);
+	void metadataReady(unsigned int id, const ControlList &metadata);
+	void paramsBufferReady(unsigned int id);
+	void setSensorControls(unsigned int id, const ControlList &sensorControls,
+			       const ControlList &lensControls);
 };
 
 class IPU3CameraConfiguration : public CameraConfiguration
@@ -871,11 +873,7 @@ void IPU3CameraData::queuePendingRequests()
 
 		info->rawBuffer = rawBuffer;
 
-		ipa::ipu3::IPU3Event ev;
-		ev.op = ipa::ipu3::EventProcessControls;
-		ev.frame = info->id;
-		ev.controls = request->controls();
-		ipa_->processEvent(ev);
+		ipa_->queueRequest(info->id, request->controls());
 
 		pendingRequests_.pop();
 		processingRequests_.push(request);
@@ -1218,7 +1216,9 @@ int IPU3CameraData::loadIPA()
 	if (!ipa_)
 		return -ENOENT;
 
-	ipa_->queueFrameAction.connect(this, &IPU3CameraData::queueFrameAction);
+	ipa_->setSensorControls.connect(this, &IPU3CameraData::setSensorControls);
+	ipa_->paramsBufferReady.connect(this, &IPU3CameraData::paramsBufferReady);
+	ipa_->metadataReady.connect(this, &IPU3CameraData::metadataReady);
 
 	/*
 	 * Pass the sensor info to the IPA to initialize controls.
@@ -1253,69 +1253,58 @@ int IPU3CameraData::loadIPA()
 	return 0;
 }
 
-void IPU3CameraData::queueFrameAction(unsigned int id,
-				      const ipa::ipu3::IPU3Action &action)
+void IPU3CameraData::setSensorControls([[maybe_unused]] unsigned int id,
+				       const ControlList &sensorControls,
+				       const ControlList &lensControls)
 {
-	switch (action.op) {
-	case ipa::ipu3::ActionSetSensorControls: {
-		const ControlList &sensorControls = action.sensorControls;
-		delayedCtrls_->push(sensorControls);
+	delayedCtrls_->push(sensorControls);
 
-		CameraLens *focusLens = cio2_.sensor()->focusLens();
-		if (!focusLens)
-			break;
+	CameraLens *focusLens = cio2_.sensor()->focusLens();
+	if (!focusLens)
+		return;
 
-		const ControlList lensControls = action.lensControls;
-		if (!lensControls.contains(V4L2_CID_FOCUS_ABSOLUTE))
-			break;
+	if (!lensControls.contains(V4L2_CID_FOCUS_ABSOLUTE))
+		return;
 
-		const ControlValue &focusValue =
-			lensControls.get(V4L2_CID_FOCUS_ABSOLUTE);
+	const ControlValue &focusValue = lensControls.get(V4L2_CID_FOCUS_ABSOLUTE);
 
-		focusLens->setFocusPosition(focusValue.get<int32_t>());
+	focusLens->setFocusPosition(focusValue.get<int32_t>());
+}
 
-		break;
+void IPU3CameraData::paramsBufferReady(unsigned int id)
+{
+	IPU3Frames::Info *info = frameInfos_.find(id);
+	if (!info)
+		return;
+
+	/* Queue all buffers from the request aimed for the ImgU. */
+	for (auto it : info->request->buffers()) {
+		const Stream *stream = it.first;
+		FrameBuffer *outbuffer = it.second;
+
+		if (stream == &outStream_)
+			imgu_->output_->queueBuffer(outbuffer);
+		else if (stream == &vfStream_)
+			imgu_->viewfinder_->queueBuffer(outbuffer);
 	}
-	case ipa::ipu3::ActionParamFilled: {
-		IPU3Frames::Info *info = frameInfos_.find(id);
-		if (!info)
-			break;
 
-		/* Queue all buffers from the request aimed for the ImgU. */
-		for (auto it : info->request->buffers()) {
-			const Stream *stream = it.first;
-			FrameBuffer *outbuffer = it.second;
+	imgu_->param_->queueBuffer(info->paramBuffer);
+	imgu_->stat_->queueBuffer(info->statBuffer);
+	imgu_->input_->queueBuffer(info->rawBuffer);
+}
 
-			if (stream == &outStream_)
-				imgu_->output_->queueBuffer(outbuffer);
-			else if (stream == &vfStream_)
-				imgu_->viewfinder_->queueBuffer(outbuffer);
-		}
+void IPU3CameraData::metadataReady(unsigned int id, const ControlList &metadata)
+{
+	IPU3Frames::Info *info = frameInfos_.find(id);
+	if (!info)
+		return;
 
-		imgu_->param_->queueBuffer(info->paramBuffer);
-		imgu_->stat_->queueBuffer(info->statBuffer);
-		imgu_->input_->queueBuffer(info->rawBuffer);
+	Request *request = info->request;
+	request->metadata().merge(metadata);
 
-		break;
-	}
-	case ipa::ipu3::ActionMetadataReady: {
-		IPU3Frames::Info *info = frameInfos_.find(id);
-		if (!info)
-			break;
-
-		Request *request = info->request;
-		request->metadata().merge(action.controls);
-
-		info->metadataProcessed = true;
-		if (frameInfos_.tryComplete(info))
-			pipe()->completeRequest(request);
-
-		break;
-	}
-	default:
-		LOG(IPU3, Error) << "Unknown action " << action.op;
-		break;
-	}
+	info->metadataProcessed = true;
+	if (frameInfos_.tryComplete(info))
+		pipe()->completeRequest(request);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1390,11 +1379,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (request->findBuffer(&rawStream_))
 		pipe()->completeBuffer(request, buffer);
 
-	ipa::ipu3::IPU3Event ev;
-	ev.op = ipa::ipu3::EventFillParams;
-	ev.frame = info->id;
-	ev.bufferId = info->paramBuffer->cookie();
-	ipa_->processEvent(ev);
+	ipa_->fillParamsBuffer(info->id, info->paramBuffer->cookie());
 }
 
 void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
@@ -1438,13 +1423,8 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	ipa::ipu3::IPU3Event ev;
-	ev.op = ipa::ipu3::EventStatReady;
-	ev.frame = info->id;
-	ev.bufferId = info->statBuffer->cookie();
-	ev.frameTimestamp = request->metadata().get(controls::SensorTimestamp);
-	ev.sensorControls = info->effectiveSensorControls;
-	ipa_->processEvent(ev);
+	ipa_->processStatsBuffer(info->id, request->metadata().get(controls::SensorTimestamp),
+				 info->statBuffer->cookie(), info->effectiveSensorControls);
 }
 
 /*

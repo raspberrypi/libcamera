@@ -25,7 +25,8 @@ from applications, and managing events from the pipeline handler.
       └─┬───┬───┬──────┬────┬────┬────┬─┴────▼─┬──┘    1: init()
         │   │   │      │ ▲  │ ▲  │ ▲  │ ▲      │       2: configure()
         │1  │2  │3     │4│  │4│  │4│  │4│      │5      3: mapBuffers(), start()
-        ▼   ▼   ▼      ▼ │  ▼ │  ▼ │  ▼ │      ▼       4: processEvent()
+        │   │   │      │ │  │ │  │ │  │ │      │       4: (▼) queueRequest(), fillParamsBuffer(), processStatsBuffer()
+        ▼   ▼   ▼      ▼ │  ▼ │  ▼ │  ▼ │      ▼          (▲) setSensorControls, paramsBufferReady, metadataReady Signals
       ┌──────────────────┴────┴────┴────┴─────────┐    5: stop(), unmapBuffers()
       │ IPU3 IPA                                  │
       │                 ┌───────────────────────┐ │
@@ -100,8 +101,9 @@ There are three main interactions with the algorithms for the IPU3 IPA
 to operate when running:
 
 -  configure()
--  processEvent(``EventFillParams``)
--  processEvent(``EventStatReady``)
+-  queueRequest()
+-  fillParamsBuffer()
+-  processStatsBuffer()
 
 The configuration phase allows the pipeline-handler to inform the IPA of
 the current stream configurations, which is then passed into each
@@ -114,8 +116,8 @@ Pre-frame preparation
 When configured, the IPA is notified by the pipeline handler of the
 Camera ``start()`` event, after which incoming requests will be queued
 for processing, requiring a parameter buffer (``ipu3_uapi_params``) to
-be populated for the ImgU. This is given to the IPA through the
-``EventFillParams`` event, and then passed directly to each algorithm
+be populated for the ImgU. This is given to the IPA through
+``fillParamsBuffer()``, and then passed directly to each algorithm
 through the ``prepare()`` call allowing the ISP configuration to be
 updated for the needs of each component that the algorithm is
 responsible for.
@@ -125,7 +127,7 @@ structure that it modifies, and it should take care to ensure that any
 structure set by a use flag is fully initialised to suitable values.
 
 The parameter buffer is returned to the pipeline handler through the
-``ActionParamFilled`` event, and from there queued to the ImgU along
+``paramsBufferReady`` signal, and from there queued to the ImgU along
 with a raw frame captured with the CIO2.
 
 Post-frame completion
@@ -133,8 +135,8 @@ Post-frame completion
 
 When the capture of an image is completed, and successfully processed
 through the ImgU, the generated statistics buffer
-(``ipu3_uapi_stats_3a``) is given to the IPA through the
-``EventStatReady`` event. This provides the IPA with an opportunity to
+(``ipu3_uapi_stats_3a``) is given to the IPA through
+``processStatsBuffer()``. This provides the IPA with an opportunity to
 examine the results of the ISP and run the calculations required by each
 algorithm on the new data. The algorithms may require context from the
 operations of other algorithms, for example, the AWB might choose to use
@@ -145,11 +147,14 @@ before they are needed.
 The ordering of the algorithm processing is determined by their
 placement in the ``IPU3::algorithms_`` ordered list.
 
+Finally, the IPA metadata for the completed frame is returned back via
+the ``metadataReady`` signal.
+
 Sensor Controls
 ~~~~~~~~~~~~~~~
 
 The AutoExposure and AutoGain (AGC) algorithm differs slightly from the
 others as it requires operating directly on the sensor, as opposed to
-through the ImgU ISP. To support this, there is a dedicated action
-`ActionSetSensorControls` to allow the IPA to request controls to be set
-on the camera sensor through the pipeline handler.
+through the ImgU ISP. To support this, there is a ``setSensorControls``
+signal to allow the IPA to request controls to be set on the camera
+sensor through the pipeline handler.

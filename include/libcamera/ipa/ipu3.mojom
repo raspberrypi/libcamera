@@ -8,32 +8,6 @@ module ipa.ipu3;
 
 import "include/libcamera/ipa/core.mojom";
 
-enum IPU3Operations {
-	ActionSetSensorControls = 1,
-	ActionParamFilled = 2,
-	ActionMetadataReady = 3,
-	EventProcessControls = 4,
-	EventStatReady = 5,
-	EventFillParams = 6,
-};
-
-struct IPU3Event {
-	IPU3Operations op;
-	uint32 frame;
-	int64 frameTimestamp;
-	uint32 bufferId;
-	libcamera.ControlList controls;
-	libcamera.ControlList sensorControls;
-	libcamera.ControlList lensControls;
-};
-
-struct IPU3Action {
-	IPU3Operations op;
-	libcamera.ControlList controls;
-	libcamera.ControlList sensorControls;
-	libcamera.ControlList lensControls;
-};
-
 struct IPAConfigInfo {
 	libcamera.IPACameraSensorInfo sensorInfo;
 	libcamera.ControlInfoMap sensorControls;
@@ -56,9 +30,15 @@ interface IPAIPU3Interface {
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
 
-	[async] processEvent(IPU3Event ev);
+	[async] queueRequest(uint32 frame, libcamera.ControlList controls);
+	[async] fillParamsBuffer(uint32 frame, uint32 bufferId);
+	[async] processStatsBuffer(uint32 frame, int64 frameTimestamp,
+				   uint32 bufferId, libcamera.ControlList sensorControls);
 };
 
 interface IPAIPU3EventInterface {
-	queueFrameAction(uint32 frame, IPU3Action action);
+	setSensorControls(uint32 frame, libcamera.ControlList sensorControls,
+			  libcamera.ControlList lensControls);
+	paramsBufferReady(uint32 frame);
+	metadataReady(uint32 frame, libcamera.ControlList metadata);
 };

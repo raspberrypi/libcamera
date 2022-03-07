@@ -87,6 +87,7 @@ public:
 
 	void InitialiseConfig();
 	void Prepare(pisp_be_tiles_config *config);
+	void MergeConfig(const pisp_be_config &config);
 
 private:
 	void finaliseConfig();

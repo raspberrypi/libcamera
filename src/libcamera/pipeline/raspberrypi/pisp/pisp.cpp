@@ -885,13 +885,13 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 
 	/* ISP statistics output format. */
 	format = {};
-	//format.fourcc = V4L2PixelFormat(V4L2_META_FMT_BCM2835_ISP_STATS);
-	//ret = data->cfe_[Cfe::Stats].dev()->setFormat(&format);
-	//if (ret) {
-	//	LOG(PISP, Error) << "Failed to set format on ISP stats stream: "
-	//			<< format.toString();
-	//	return ret;
-	//}
+	format.fourcc = V4L2PixelFormat(V4L2_META_FMT_RPI_FE_STATS);
+	ret = data->cfe_[Cfe::Stats].dev()->setFormat(&format);
+	if (ret) {
+		LOG(PISP, Error) << "Failed to set format on ISP stats stream: "
+				 << format.toString();
+		return ret;
+	}
 
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);

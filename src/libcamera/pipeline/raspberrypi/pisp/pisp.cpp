@@ -1774,10 +1774,6 @@ void PiSPCameraData::runCfe()
 	input.format.height = cfeFormat.size.height;
 	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
 
-	pisp_fe_output_axi_config axi;
-	memset(&axi, 0, sizeof(axi));
-	axi.maxlen_flags = 0x8f;
-
 	pisp_image_format_config image;
 	memset(&image, 0, sizeof(image));
 	image.width = cfeFormat.size.width;
@@ -1787,7 +1783,6 @@ void PiSPCameraData::runCfe()
 
 	fe_->SetGlobal(global);
 	fe_->SetInput(input);
-	fe_->SetOutputAXI(axi);
 	fe_->SetOutputFormat(0, image);
 	fe_->Prepare(reinterpret_cast<pisp_fe_config *>(config.data()));
 	cfe_[Cfe::Config].queueBuffer(configBuffer);

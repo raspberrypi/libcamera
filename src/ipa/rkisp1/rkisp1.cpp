@@ -69,10 +69,6 @@ private:
 
 	/* Camera sensor controls. */
 	bool autoExposure_;
-	uint32_t minExposure_;
-	uint32_t maxExposure_;
-	uint32_t minGain_;
-	uint32_t maxGain_;
 
 	/* revision-specific data */
 	rkisp1_cif_isp_version hwRevision_;
@@ -166,15 +162,15 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 
 	autoExposure_ = true;
 
-	minExposure_ = itExp->second.min().get<int32_t>();
-	maxExposure_ = itExp->second.max().get<int32_t>();
+	int32_t minExposure = itExp->second.min().get<int32_t>();
+	int32_t maxExposure = itExp->second.max().get<int32_t>();
 
-	minGain_ = itGain->second.min().get<int32_t>();
-	maxGain_ = itGain->second.max().get<int32_t>();
+	int32_t minGain = itGain->second.min().get<int32_t>();
+	int32_t maxGain = itGain->second.max().get<int32_t>();
 
 	LOG(IPARkISP1, Info)
-		<< "Exposure: " << minExposure_ << "-" << maxExposure_
-		<< " Gain: " << minGain_ << "-" << maxGain_;
+		<< "Exposure: " << minExposure << "-" << maxExposure
+		<< " Gain: " << minGain << "-" << maxGain;
 
 	/* Clean context at configuration */
 	context_ = {};
@@ -191,10 +187,10 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	 *
 	 * \todo take VBLANK into account for maximum shutter speed
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure_ * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.maxShutterSpeed = maxExposure_ * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain_);
-	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain_);
+	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
+	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 
 	for (auto const &algo : algorithms_) {
 		int ret = algo->configure(context_, info);

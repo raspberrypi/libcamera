@@ -204,7 +204,8 @@ public:
 	void enumerateVideoDevices(MediaLink *link);
 
 	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
-	void runIsp(uint32_t bufferId);
+	void runCfe();
+	void runBackend(uint32_t bufferId);
 	void embeddedComplete(uint32_t bufferId);
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls);
@@ -226,7 +227,7 @@ public:
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
 	/* Array of CFE and ISP device streams and associated buffers/streams. */
-	PiSP::Device<Cfe, 3> cfe_;
+	PiSP::Device<Cfe, 4> cfe_;
 	PiSP::Device<Isp, 4> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<PiSP::Stream *> streams_;
@@ -883,12 +884,22 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 		}
 	}
 
-	/* ISP statistics output format. */
+	/* CFE statistics output format. */
 	format = {};
 	format.fourcc = V4L2PixelFormat(V4L2_META_FMT_RPI_FE_STATS);
 	ret = data->cfe_[Cfe::Stats].dev()->setFormat(&format);
 	if (ret) {
-		LOG(PISP, Error) << "Failed to set format on ISP stats stream: "
+		LOG(PISP, Error) << "Failed to set format on CFE stats stream: "
+				 << format.toString();
+		return ret;
+	}
+
+	/* CFE config format. */
+	format = {};
+	format.fourcc = V4L2PixelFormat(V4L2_META_FMT_RPI_FE_CFG);
+	ret = data->cfe_[Cfe::Config].dev()->setFormat(&format);
+	if (ret) {
+		LOG(PISP, Error) << "Failed to set format on CFE config stream: "
 				 << format.toString();
 		return ret;
 	}
@@ -1178,7 +1189,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	/* Locate and open the cfe video streams. */
 	data->cfe_[Cfe::Output0] = PiSP::Stream("CFE Image", cfeImage);
 	data->cfe_[Cfe::Stats] = PiSP::Stream("CFE Stats", cfeStats);
-	//data->cfe_[Cfe::Config] = PiSP::Stream("CFE Config", *);
+	data->cfe_[Cfe::Config] = PiSP::Stream("CFE Config", cfeConfig, false, true);
 
 	/* An embedded data node will not be present if the sensor does not support it. */
 	MediaEntity *cfeEmbedded = cfe->getEntityByName("cfe-embedded");
@@ -1198,7 +1209,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	data->cfe_[Cfe::Output0].dev()->frameStart.connect(data.get(), &PiSPCameraData::frameStarted);
 	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 	data->cfe_[Cfe::Stats].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
-	//data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
+	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
 	data->isp_[Isp::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
@@ -1245,6 +1256,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	 * iterate over all streams in one go.
 	 */
 	data->streams_.push_back(&data->cfe_[Cfe::Output0]);
+	data->streams_.push_back(&data->cfe_[Cfe::Config]);
 	data->streams_.push_back(&data->cfe_[Cfe::Stats]);
 	//if (sensorConfig.sensorMetadata)
 	//	data->streams_.push_back(&data->cfe_[Cfe::Embedded]);
@@ -1427,6 +1439,8 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			 * so allocate the minimum required to avoid frame drops.
 			 */
 			numBuffers = minBuffers;
+		} else if (stream == &data->cfe_[Cfe::Config] || stream == &data->isp_[Isp::Config]) {
+			numBuffers = 4;
 		} else {
 			/*
 			 * Since the ISP runs synchronous with the IPA and requests,
@@ -1447,10 +1461,12 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
 	}
 
-	//for (auto const fb : data->cfe_[Cfe::Config].getBuffers()) {
-	//	data->feConfigBuffers_.emplace(fb.first,
-	//		MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
-	//}
+	for (auto const fb : data->cfe_[Cfe::Config].getBuffers()) {
+		data->feConfigBuffers_.emplace(fb.first,
+			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
+	}
+
+	data->runCfe();
 
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
@@ -1524,7 +1540,7 @@ void PiSPCameraData::frameStarted(uint32_t sequence)
 	// 	return -ENOENT;
 
 	// ipa_->statsMetadataComplete.connect(this, &PiSPCameraData::statsMetadataComplete);
-	// ipa_->runIsp.connect(this, &PiSPCameraData::runIsp);
+	// ipa_->runBackend.connect(this, &PiSPCameraData::runBackend);
 	// ipa_->embeddedComplete.connect(this, &PiSPCameraData::embeddedComplete);
 	// ipa_->setIspControls.connect(this, &PiSPCameraData::setIspControls);
 	// ipa_->setDelayedControls.connect(this, &PiSPCameraData::setDelayedControls);
@@ -1719,7 +1735,65 @@ void PiSPCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList 
 	handleState();
 }
 
-void PiSPCameraData::runIsp(uint32_t bufferId)
+void PiSPCameraData::runCfe()
+{
+	FrameBuffer *configBuffer = cfe_[Cfe::Config].getBuffer();
+	auto it = feConfigBuffers_.find(cfe_[Cfe::Config].getBufferId(configBuffer));
+	ASSERT(it != feConfigBuffers_.end());
+	Span<uint8_t> config = it->second.planes()[0];
+
+	V4L2DeviceFormat cfeFormat;
+	isp_[Isp::Input].dev()->getFormat(&cfeFormat);
+
+	pisp_fe_global_config global;
+	global.enables = PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_AGC_STATS |
+			 PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_OUTPUT0;
+
+	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
+	switch (bayer.order) {
+	case BayerFormat::Order::BGGR:
+		global.bayer_order = PISP_BAYER_ORDER_BGGR;
+		break;
+	case BayerFormat::Order::GBRG:
+		global.bayer_order = PISP_BAYER_ORDER_GBRG;
+		break;
+	case BayerFormat::Order::GRBG:
+		global.bayer_order = PISP_BAYER_ORDER_GRBG;
+		break;
+	case BayerFormat::Order::RGGB:
+		global.bayer_order = PISP_BAYER_ORDER_RGGB;
+		break;
+	default:
+		ASSERT(0);
+	}
+
+	pisp_fe_input_config input;
+	memset(&input, 0, sizeof(input));
+	input.streaming = 1;
+	input.format.width = cfeFormat.size.width;
+	input.format.height = cfeFormat.size.height;
+	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
+
+	pisp_fe_output_axi_config axi;
+	memset(&axi, 0, sizeof(axi));
+	axi.maxlen_flags = 0x8f;
+
+	pisp_image_format_config image;
+	memset(&image, 0, sizeof(image));
+	image.width = cfeFormat.size.width;
+	image.height = cfeFormat.size.height;
+	image.stride = cfeFormat.planes[0].bpl;
+	image.format = PISP_IMAGE_FORMAT_BPS_16;
+
+	fe_->SetGlobal(global);
+	fe_->SetInput(input);
+	fe_->SetOutputAXI(axi);
+	fe_->SetOutputFormat(0, image);
+	fe_->Prepare(reinterpret_cast<pisp_fe_config *>(config.data()));
+	cfe_[Cfe::Config].queueBuffer(configBuffer);
+}
+
+void PiSPCameraData::runBackend(uint32_t bufferId)
 {
 	if (state_ == State::Stopped)
 		return;
@@ -1905,7 +1979,10 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 
 		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
 		handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
-	} else {
+	} else if (stream == &cfe_[Cfe::Config]) {
+		handleStreamBuffer(buffer, &cfe_[Cfe::Config]);
+	}
+	else {
 		embeddedQueue_.push(buffer);
 	}
 
@@ -2193,7 +2270,8 @@ void PiSPCameraData::tryRunPipeline()
 	}
 
 	//ipa_->signalIspPrepare(ispPrepare);
-	runIsp(bayerId);
+	runBackend(bayerId);
+	runCfe();
 }
 
 bool PiSPCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)

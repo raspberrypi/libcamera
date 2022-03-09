@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "../common/pisp_types.h"
 #include "../variants/pisp_variant.h"
 
@@ -49,6 +51,7 @@ private:
 	const PiSPVariant variant_;
 	pisp_fe_config fe_config_;
 	int align_;
+	mutable std::mutex mutex_;
 };
 
 } // namespace PiSP

@@ -178,6 +178,7 @@ FrontEnd::~FrontEnd()
 
 void FrontEnd::SetGlobal(pisp_fe_global_config const &global)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	/* label anything that has become enabled as dirty */
 	fe_config_.dirty_flags |= (global.enables & ~fe_config_.global.enables);
 	fe_config_.global = global;
@@ -186,23 +187,27 @@ void FrontEnd::SetGlobal(pisp_fe_global_config const &global)
 
 void FrontEnd::GetGlobal(pisp_fe_global_config &global) const
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	global = fe_config_.global;
 }
 
 void FrontEnd::SetInput(pisp_fe_input_config const &input)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.input = input;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_INPUT;
 }
 
 void FrontEnd::SetDecompress(pisp_decompress_config const &decompress)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.decompress = decompress;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_DECOMPRESS;
 }
 
 void FrontEnd::SetDecompand(pisp_fe_decompand_config const &decompand)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.decompand = decompand;
 	fe_config_.decompand.pad = 0;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_DECOMPAND;
@@ -216,60 +221,70 @@ void FrontEnd::SetDpc(pisp_fe_dpc_config const &dpc)
 
 void FrontEnd::SetBla(pisp_bla_config const &bla)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.bla = bla;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_BLA;
 }
 
 void FrontEnd::SetStatsCrop(pisp_fe_crop_config const &stats_crop)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.stats_crop = stats_crop;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_STATS_CROP;
 }
 
 void FrontEnd::SetBlc(pisp_bla_config const &blc)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.blc = blc;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_BLC;
 }
 
 void FrontEnd::SetLsc(pisp_fe_lsc_config const &lsc)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.lsc = lsc;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_LSC;
 }
 
 void FrontEnd::SetRGBY(pisp_fe_rgby_config const &rgby)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.rgby = rgby;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_RGBY;
 }
 
 void FrontEnd::SetAgcStats(pisp_fe_agc_stats_config const &agc_stats)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.agc_stats = agc_stats;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_AGC_STATS;
 }
 
 void FrontEnd::SetAwbStats(pisp_fe_awb_stats_config const &awb_stats)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.awb_stats = awb_stats;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_AWB_STATS;
 }
 
 void FrontEnd::SetFloatingStats(pisp_fe_floating_stats_config const &floating_stats)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.floating_stats = floating_stats;
 	fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_FLOATING;
 }
 
 void FrontEnd::SetCdafStats(pisp_fe_cdaf_stats_config const &cdaf_stats)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.cdaf_stats = cdaf_stats;
 	fe_config_.dirty_flags |= PISP_FE_ENABLE_CDAF_STATS;
 }
 
 void FrontEnd::SetCrop(unsigned int output_num, pisp_fe_crop_config const &crop)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	fe_config_.ch[output_num].crop = crop;
@@ -278,6 +293,7 @@ void FrontEnd::SetCrop(unsigned int output_num, pisp_fe_crop_config const &crop)
 
 void FrontEnd::SetDownscale(unsigned int output_num, pisp_fe_downscale_config const &downscale)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 	ASSERT(variant_.frontEndDownscalerAvailable(0, output_num));
 
@@ -287,6 +303,7 @@ void FrontEnd::SetDownscale(unsigned int output_num, pisp_fe_downscale_config co
 
 void FrontEnd::SetCompress(unsigned int output_num, pisp_compress_config const &compress)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	fe_config_.ch[output_num].compress = compress;
@@ -295,6 +312,7 @@ void FrontEnd::SetCompress(unsigned int output_num, pisp_compress_config const &
 
 void FrontEnd::SetOutputFormat(unsigned int output_num, pisp_image_format_config const &output_format)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	fe_config_.ch[output_num].output.format = output_format;
@@ -303,6 +321,7 @@ void FrontEnd::SetOutputFormat(unsigned int output_num, pisp_image_format_config
 
 void FrontEnd::SetOutputIntrLines(unsigned int output_num, int ilines)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	fe_config_.ch[output_num].output.ilines = ilines;
@@ -311,6 +330,7 @@ void FrontEnd::SetOutputIntrLines(unsigned int output_num, int ilines)
 
 void FrontEnd::SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_config const &output_buffer)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	ASSERT(output_num < variant_.frontEndNumBranches(0));
 
 	fe_config_.output_buffer[output_num] = output_buffer;
@@ -319,12 +339,15 @@ void FrontEnd::SetOutputBuffer(unsigned int output_num, pisp_fe_output_buffer_co
 
 void FrontEnd::SetOutputAXI(pisp_fe_output_axi_config const &output_axi)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	fe_config_.output_axi = output_axi;
 	fe_config_.dirty_flags_extra |= PISP_FE_DIRTY_OUTPUT_AXI;
 }
 
 void FrontEnd::MergeConfig(const pisp_fe_config &config)
 {
+	std::lock_guard<std::mutex> l(mutex_);
+
 	for (auto const &param : config_map) {
 		if ((param.dirty_flag & config.dirty_flags) ||
 		    (param.dirty_flag_extra & config.dirty_flags_extra)) {
@@ -340,6 +363,7 @@ void FrontEnd::MergeConfig(const pisp_fe_config &config)
 
 void FrontEnd::Prepare(pisp_fe_config *config)
 {
+	std::lock_guard<std::mutex> l(mutex_);
 	/* Only finalise blocks that are dirty *and* enabled. */
 	uint32_t dirty_flags = fe_config_.dirty_flags & fe_config_.global.enables;
 	uint16_t width = fe_config_.input.format.width, height = fe_config_.input.format.height;

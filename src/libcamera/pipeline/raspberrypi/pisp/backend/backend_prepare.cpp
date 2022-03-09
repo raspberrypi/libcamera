@@ -764,6 +764,8 @@ bool BackEnd::ComputeHogOutputImageFormat(pisp_image_format_config &fmt, pisp_im
 
 void BackEnd::Prepare(pisp_be_tiles_config *config)
 {
+	std::lock_guard<std::mutex> l(mutex_);
+
 	LOG(PISPBE, Debug) << "New frame!";
 
 	bool integral_image_output = false;

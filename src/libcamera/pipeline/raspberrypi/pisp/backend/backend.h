@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <vector>
 
 #include "tiling/pisp_tiling.h"
@@ -108,6 +109,7 @@ private:
 	bool finalise_tiling_;
 	std::vector<pisp_tile> tiles_;
 	int num_tiles_x_, num_tiles_y_;
+	mutable std::mutex mutex_;
 };
 
 } // namespace PiSP

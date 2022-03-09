@@ -10,8 +10,6 @@
 #include <stddef.h>
 #include <sys/mman.h>
 
-//#include <libcamera/logging.h>
-
 #include <libcamera/base/shared_fd.h>
 #include <libcamera/base/unique_fd.h>
 
@@ -35,21 +33,20 @@ template<class T>
 class DmaHeapObject
 {
 public:
+	static constexpr std::size_t SIZE = sizeof(T);
+
 	template<class... Args>
-	DmaHeapObject(Args... args)
-		: dmaHeap_(), obj_(nullptr), fd_()
+	DmaHeapObject(Args &&... args)
+		: dmaHeap_(), fd_(), obj_(nullptr)
 	{
 		void *mem;
 
-		//ASSERT(dmaHeap_->isValid());
-
-		fd_ = dmaHeap_.alloc("DmaHeapObject", sizeof(T));
+		fd_ = SharedFD(dmaHeap_.alloc("DmaHeapObject", SIZE));
 		if (!fd_.isValid())
 			return;
 
-		mem = mmap(nullptr, sizeof(T), PROT_READ | PROT_WRITE,
+		mem = mmap(nullptr, SIZE, PROT_READ | PROT_WRITE,
 			   MAP_SHARED, fd_.get(), 0);
-
 		if (mem == MAP_FAILED)
 			return;
 
@@ -60,7 +57,7 @@ public:
 	{
 		if (obj_) {
 			obj_->~T();
-			munmap(obj_, sizeof(T));
+			munmap(obj_, SIZE);
 		}
 	}
 
@@ -69,10 +66,15 @@ public:
 		return obj_;
 	}
 
+	const SharedFD &getFD() const
+	{
+		return fd_;
+	}
+
 private:
 	DmaHeap dmaHeap_;
-	T *obj_;
 	SharedFD fd_;
+	T *obj_;
 };
 
 } /* namespace RPi */

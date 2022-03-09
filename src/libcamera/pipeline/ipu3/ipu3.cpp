@@ -1267,7 +1267,7 @@ void IPU3CameraData::queueFrameAction(unsigned int id,
 		const ControlValue &focusValue =
 			lensControls.get(V4L2_CID_FOCUS_ABSOLUTE);
 
-		focusLens->setFocusPostion(focusValue.get<int32_t>());
+		focusLens->setFocusPosition(focusValue.get<int32_t>());
 
 		break;
 	}

@@ -84,7 +84,7 @@ int CameraLens::init()
  *
  * \return 0 on success or -EINVAL otherwise
  */
-int CameraLens::setFocusPostion(int32_t position)
+int CameraLens::setFocusPosition(int32_t position)
 {
 	ControlList lensCtrls(subdev_->controls());
 	lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE, static_cast<int32_t>(position));

@@ -2,3 +2,6 @@
 
 subdir('bcm2835')
 subdir('pisp')
+subdir('common')
+
+includes += include_directories('common')

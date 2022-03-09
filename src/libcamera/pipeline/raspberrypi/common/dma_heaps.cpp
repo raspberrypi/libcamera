@@ -9,10 +9,11 @@
 
 #include <array>
 #include <fcntl.h>
-#include <linux/dma-buf.h>
-#include <linux/dma-heap.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
 
 #include <libcamera/base/log.h>
 

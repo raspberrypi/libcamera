@@ -174,13 +174,8 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 	return bestFormat;
 }
 
-
-//enum class Cfe : unsigned int { Output0, Output1, Embedded, Stats };
-//enum class Isp : unsigned int { Input, Config, Output0, Output1, TdnOutput, HogOutput, StitchOutput };
-
-/* Config node must be the last one!. */
-enum class Cfe : unsigned int { Output0, Embedded, Stats, Config };
-enum class Isp : unsigned int { Input, Output0, Output1, Config };
+enum class Cfe : unsigned int { Output0, Embedded, Stats, Config, Max };
+enum class Isp : unsigned int { Input, Output0, Output1, Config, Max };
 
 } /* namespace */
 
@@ -227,8 +222,8 @@ public:
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
 	/* Array of CFE and ISP device streams and associated buffers/streams. */
-	PiSP::Device<Cfe, 4> cfe_;
-	PiSP::Device<Isp, 4> isp_;
+	PiSP::Device<Cfe> cfe_;
+	PiSP::Device<Isp> isp_;
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<PiSP::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
@@ -311,7 +306,10 @@ private:
 class PiSPCameraConfiguration : public CameraConfiguration
 {
 public:
-	PiSPCameraConfiguration(const PiSPCameraData *data);
+	PiSPCameraConfiguration(const PiSPCameraData *data)
+		: CameraConfiguration(), data_(data)
+	{
+	}
 
 	Status validate() override;
 
@@ -325,7 +323,10 @@ private:
 class PipelineHandlerPiSP : public PipelineHandler
 {
 public:
-	PipelineHandlerPiSP(CameraManager *manager);
+	PipelineHandlerPiSP(CameraManager *manager)
+		: PipelineHandler(manager)
+	{
+	}
 
 	CameraConfiguration *generateConfiguration(Camera *camera, const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
@@ -352,11 +353,6 @@ private:
 	void freeBuffers(Camera *camera);
 	void mapBuffers(Camera *camera, const PiSP::BufferMap &buffers, unsigned int mask);
 };
-
-PiSPCameraConfiguration::PiSPCameraConfiguration(const PiSPCameraData *data)
-	: CameraConfiguration(), data_(data)
-{
-}
 
 CameraConfiguration::Status PiSPCameraConfiguration::validate()
 {
@@ -560,10 +556,6 @@ CameraConfiguration::Status PiSPCameraConfiguration::validate()
 	return status;
 }
 
-PipelineHandlerPiSP::PipelineHandlerPiSP(CameraManager *manager)
-	: PipelineHandler(manager)
-{
-}
 
 CameraConfiguration *PipelineHandlerPiSP::generateConfiguration(Camera *camera,
 							       const StreamRoles &roles)

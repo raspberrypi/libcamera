@@ -149,13 +149,17 @@ private:
  * The following class is just a convenient (and typesafe) array of device
  * streams indexed with an enum class.
  */
-template<typename E, std::size_t N>
-class Device : public std::array<class Stream, N>
+template<typename E>
+class Device : public std::array<class Stream,
+				 static_cast<std::underlying_type_t<E>>(E::Max)>
 {
 private:
+	using T = std::underlying_type_t<E>;
+	static constexpr T N = static_cast<std::underlying_type_t<E>>(E::Max);
+
 	constexpr auto index(E e) const noexcept
 	{
-		return static_cast<std::underlying_type_t<E>>(e);
+		return static_cast<T>(e);
 	}
 public:
 	Stream &operator[](E e)

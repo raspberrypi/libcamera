@@ -202,11 +202,13 @@ public:
 
 	//int loadIPA(ipa::PiSP::SensorConfig *sensorConfig);
 	int configureIPA(const CameraConfiguration *config);
+	int configureCfe();
+	int configureBe();
 
 	void enumerateVideoDevices(MediaLink *link);
 
 	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
-	void runCfe();
+	void prepareCfe();
 	void runBackend(uint32_t bufferId);
 	void embeddedComplete(uint32_t bufferId);
 	void setIspControls(const ControlList &controls);
@@ -264,18 +266,9 @@ public:
 		ControlList controls;
 	};
 
-	struct RequestJob {
-		Request *request;
-		FrameBuffer *bayerFrame;
-		FrameBuffer *embeddedFrame;
-		FrameBuffer *feConfig;
-		FrameBuffer *beConfig;
-		ControlList sensorControls;
-	};
-
 	std::queue<BayerFrame> bayerQueue_;
 	std::queue<FrameBuffer *> embeddedQueue_;
-	std::deque<Request *> requestQueue_;
+	std::queue<Request *> requestQueue_;
 
 	/*
 	 * Manage horizontal and vertical flips supported (or not) by the
@@ -864,7 +857,7 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	 */
 	if (!output1Set) {
 		V4L2DeviceFormat output1Format = format;
-/*		
+/*
 		constexpr Size maxDimensions(1200, 1200);
 		const Size limit = maxDimensions.boundedToAspectRatio(format.size);
 
@@ -985,6 +978,9 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 				 << " on pad " << sinkPad->index();
 	}
 
+	data->configureCfe();
+	data->configureBe();
+
 	return ret;
 }
 
@@ -1046,6 +1042,7 @@ int PipelineHandlerPiSP::start(Camera *camera, const ControlList *controls)
 	 */
 	data->delayedCtrls_->reset();
 
+	data->prepareCfe();
 	data->state_ = PiSPCameraData::State::Idle;
 
 	/* Start all streams. */
@@ -1122,7 +1119,7 @@ int PipelineHandlerPiSP::queueRequestDevice(Camera *camera, Request *request)
 	}
 
 	/* Push the request to the back of the queue. */
-	data->requestQueue_.push_back(request);
+	data->requestQueue_.push(request);
 	data->handleState();
 
 	return 0;
@@ -1463,8 +1460,6 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			MappedFrameBuffer(fb.second, MappedFrameBuffer::MapFlag::ReadWrite));
 	}
 
-	data->runCfe();
-
 	/*
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
@@ -1591,6 +1586,134 @@ int PiSPCameraData::configureIPA(const CameraConfiguration *config)
 
 	// if (!controls.empty())
 	// 	setSensorControls(controls);
+
+	return 0;
+}
+
+int PiSPCameraData::configureCfe()
+{
+	V4L2DeviceFormat cfeFormat;
+	cfe_[Cfe::Output0].dev()->getFormat(&cfeFormat);
+
+	pisp_fe_global_config global;
+	global.enables = PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_AGC_STATS |
+			 PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_OUTPUT0;
+
+	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
+	switch (bayer.order) {
+	case BayerFormat::Order::BGGR:
+		global.bayer_order = PISP_BAYER_ORDER_BGGR;
+		break;
+	case BayerFormat::Order::GBRG:
+		global.bayer_order = PISP_BAYER_ORDER_GBRG;
+		break;
+	case BayerFormat::Order::GRBG:
+		global.bayer_order = PISP_BAYER_ORDER_GRBG;
+		break;
+	case BayerFormat::Order::RGGB:
+		global.bayer_order = PISP_BAYER_ORDER_RGGB;
+		break;
+	default:
+		ASSERT(0);
+	}
+
+	pisp_fe_input_config input;
+	memset(&input, 0, sizeof(input));
+	input.streaming = 1;
+	input.format.width = cfeFormat.size.width;
+	input.format.height = cfeFormat.size.height;
+	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
+
+	pisp_image_format_config image;
+	memset(&image, 0, sizeof(image));
+	image.width = cfeFormat.size.width;
+	image.height = cfeFormat.size.height;
+	image.stride = cfeFormat.planes[0].bpl;
+	image.format = PISP_IMAGE_FORMAT_BPS_16;
+
+	fe_->SetGlobal(global);
+	fe_->SetInput(input);
+	fe_->SetOutputFormat(0, image);
+
+	return 0;
+}
+
+int PiSPCameraData::configureBe()
+{
+	pisp_image_format_config inputFormat;
+	V4L2DeviceFormat cfeFormat;
+
+	isp_[Isp::Input].dev()->getFormat(&cfeFormat);
+	inputFormat.width = cfeFormat.size.width;
+	inputFormat.height = cfeFormat.size.height;
+	inputFormat.stride = cfeFormat.planes[0].bpl;
+	inputFormat.format = PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED;
+
+	pisp_be_global_config global;
+	global.bayer_enables = PISP_BE_BAYER_ENABLE_INPUT + PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
+	global.rgb_enables = PISP_BE_RGB_ENABLE_OUTPUT0 + PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT1;
+
+	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
+	switch (bayer.order) {
+	case BayerFormat::Order::BGGR:
+		global.bayer_order = PISP_BAYER_ORDER_BGGR;
+		break;
+	case BayerFormat::Order::GBRG:
+		global.bayer_order = PISP_BAYER_ORDER_GBRG;
+		break;
+	case BayerFormat::Order::GRBG:
+		global.bayer_order = PISP_BAYER_ORDER_GRBG;
+		break;
+	case BayerFormat::Order::RGGB:
+		global.bayer_order = PISP_BAYER_ORDER_RGGB;
+		break;
+	default:
+		ASSERT(0);
+	}
+
+	pisp_be_ccm_config csc;
+	float coeffs[] = { 0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419, -0.081 };
+	float offsets[] = { 0, 32768, 32768 };
+
+	for (int i = 0; i < 9; i++)
+		csc.coeffs[i] = coeffs[i] * (1 << 10);
+	for (int i = 0; i < 3; i++)
+		csc.offsets[i] = offsets[i] * (1 << 10);
+
+	V4L2DeviceFormat ispFormat0, ispFormat1;
+	pisp_be_output_format_config outputFormat0, outputFormat1;
+
+	memset(&outputFormat0, 0, sizeof(outputFormat0));
+	memset(&outputFormat1, 0, sizeof(outputFormat1));
+
+	isp_[Isp::Output0].dev()->getFormat(&ispFormat0);
+	outputFormat0.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+				     PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
+	outputFormat0.image.width = ispFormat0.size.width;
+	outputFormat0.image.height = ispFormat0.size.height;
+	outputFormat0.image.stride = ispFormat0.planes[0].bpl;
+	outputFormat0.image.stride2 = ispFormat0.planes[0].bpl / 2;
+
+	isp_[Isp::Output1].dev()->getFormat(&ispFormat1);
+	outputFormat1.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+				     PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
+	outputFormat1.image.width = ispFormat1.size.width;
+	outputFormat1.image.height = ispFormat1.size.height;
+	outputFormat1.image.stride = ispFormat1.planes[0].bpl;
+	outputFormat1.image.stride2 = ispFormat1.planes[0].bpl / 2;
+
+	if (ispFormat1.size != ispFormat0.size)
+		global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE1;
+
+	be_->SetInputFormat(inputFormat);
+	be_->SetGlobal(global);
+	be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
+	be_->SetWbg({(uint16_t)(2 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.5 * 1024), /* pad */ 0});
+	be_->SetDemosaic({8, 2, /* pad */ 0});
+	be_->SetCsc(0, csc);
+	be_->SetCsc(1, csc);
+	be_->SetOutputFormat(0, outputFormat0);
+	be_->SetOutputFormat(1, outputFormat1);
 
 	return 0;
 }
@@ -1723,55 +1846,14 @@ void PiSPCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList 
 	handleState();
 }
 
-void PiSPCameraData::runCfe()
+void PiSPCameraData::prepareCfe()
 {
 	FrameBuffer *configBuffer = cfe_[Cfe::Config].getBuffer();
 	auto it = feConfigBuffers_.find(cfe_[Cfe::Config].getBufferId(configBuffer));
+
 	ASSERT(it != feConfigBuffers_.end());
+
 	Span<uint8_t> config = it->second.planes()[0];
-
-	V4L2DeviceFormat cfeFormat;
-	isp_[Isp::Input].dev()->getFormat(&cfeFormat);
-
-	pisp_fe_global_config global;
-	global.enables = PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_AGC_STATS |
-			 PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_OUTPUT0;
-
-	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
-	switch (bayer.order) {
-	case BayerFormat::Order::BGGR:
-		global.bayer_order = PISP_BAYER_ORDER_BGGR;
-		break;
-	case BayerFormat::Order::GBRG:
-		global.bayer_order = PISP_BAYER_ORDER_GBRG;
-		break;
-	case BayerFormat::Order::GRBG:
-		global.bayer_order = PISP_BAYER_ORDER_GRBG;
-		break;
-	case BayerFormat::Order::RGGB:
-		global.bayer_order = PISP_BAYER_ORDER_RGGB;
-		break;
-	default:
-		ASSERT(0);
-	}
-
-	pisp_fe_input_config input;
-	memset(&input, 0, sizeof(input));
-	input.streaming = 1;
-	input.format.width = cfeFormat.size.width;
-	input.format.height = cfeFormat.size.height;
-	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
-
-	pisp_image_format_config image;
-	memset(&image, 0, sizeof(image));
-	image.width = cfeFormat.size.width;
-	image.height = cfeFormat.size.height;
-	image.stride = cfeFormat.planes[0].bpl;
-	image.format = PISP_IMAGE_FORMAT_BPS_16;
-
-	fe_->SetGlobal(global);
-	fe_->SetInput(input);
-	fe_->SetOutputFormat(0, image);
 	fe_->Prepare(reinterpret_cast<pisp_fe_config *>(config.data()));
 	cfe_[Cfe::Config].queueBuffer(configBuffer);
 }
@@ -1792,85 +1874,10 @@ void PiSPCameraData::runBackend(uint32_t bufferId)
 
 	FrameBuffer *configBuffer = isp_[Isp::Config].getBuffer();
 	auto it = beConfigBuffers_.find(isp_[Isp::Config].getBufferId(configBuffer));
+
 	ASSERT(it != beConfigBuffers_.end());
+
 	Span<uint8_t> config = it->second.planes()[0];
-
-	{
-		pisp_image_format_config inputFormat;
-		V4L2DeviceFormat cfeFormat;
-		isp_[Isp::Input].dev()->getFormat(&cfeFormat);
-		inputFormat.width = cfeFormat.size.width;
-		inputFormat.height = cfeFormat.size.height;
-		inputFormat.stride = cfeFormat.planes[0].bpl;
-		inputFormat.format = PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED;
-
-		pisp_be_global_config global;
-		global.bayer_enables = PISP_BE_BAYER_ENABLE_INPUT + PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
-		global.rgb_enables =  PISP_BE_RGB_ENABLE_OUTPUT0 + PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT1;
-
-		BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
-		switch (bayer.order) {
-		case BayerFormat::Order::BGGR:
-			global.bayer_order = PISP_BAYER_ORDER_BGGR;
-			break;
-		case BayerFormat::Order::GBRG:
-			global.bayer_order = PISP_BAYER_ORDER_GBRG;
-			break;
-		case BayerFormat::Order::GRBG:
-			global.bayer_order = PISP_BAYER_ORDER_GRBG;
-			break;
-		case BayerFormat::Order::RGGB:
-			global.bayer_order = PISP_BAYER_ORDER_RGGB;
-			break;
-		default:
-			ASSERT(0);
-		}
-
-		pisp_be_ccm_config csc;
-		float coeffs[] = { 0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419, -0.081 };
-		float offsets[] = { 0, 32768, 32768 };
-
-		for (int i = 0; i < 9; i++)
-			csc.coeffs[i] = coeffs[i] * (1 << 10);
-		for (int i = 0; i < 9; i++)
-			csc.offsets[i] = offsets[i] * (1 << 10);
-		
-		V4L2DeviceFormat ispFormat0, ispFormat1;
-		pisp_be_output_format_config outputFormat0, outputFormat1;
-
-		memset(&outputFormat0, 0, sizeof(outputFormat0));
-		memset(&outputFormat1, 0, sizeof(outputFormat1));
-
-		isp_[Isp::Output0].dev()->getFormat(&ispFormat0);
-		outputFormat0.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
-					    PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
-		outputFormat0.image.width = ispFormat0.size.width;
-		outputFormat0.image.height = ispFormat0.size.height;
-		outputFormat0.image.stride = ispFormat0.planes[0].bpl;
-		outputFormat0.image.stride2 = ispFormat0.planes[0].bpl / 2;
-
-		isp_[Isp::Output1].dev()->getFormat(&ispFormat1);
-		outputFormat1.image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
-					    PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
-		outputFormat1.image.width = ispFormat1.size.width;
-		outputFormat1.image.height = ispFormat1.size.height;
-		outputFormat1.image.stride = ispFormat1.planes[0].bpl;
-		outputFormat1.image.stride2 = ispFormat1.planes[0].bpl / 2;
-
-		if (ispFormat1.size != ispFormat0.size)
-			global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE1;
-
-		be_->SetInputFormat(inputFormat);
-		be_->SetGlobal(global);
-		be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
-		be_->SetWbg({(uint16_t)(2 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.5 * 1024), /* pad */ 0});
-		be_->SetDemosaic({8, 2, /* pad */ 0});
-		be_->SetCsc(0, csc);
-		be_->SetCsc(1, csc);
-		be_->SetOutputFormat(0, outputFormat0);
-		be_->SetOutputFormat(1, outputFormat1);
-	}
-
 	be_->Prepare(reinterpret_cast<pisp_be_tiles_config *>(config.data()));
 	isp_[Isp::Config].queueBuffer(configBuffer);
 
@@ -1964,6 +1971,7 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
 	} else if (stream == &cfe_[Cfe::Config]) {
 		handleStreamBuffer(buffer, &cfe_[Cfe::Config]);
+		prepareCfe();
 	}
 	else {
 		embeddedQueue_.push(buffer);
@@ -2045,7 +2053,7 @@ void PiSPCameraData::clearIncompleteRequests()
 		}
 
 		pipe()->completeRequest(request);
-		requestQueue_.pop_front();
+		requestQueue_.pop();
 	}
 }
 
@@ -2129,7 +2137,7 @@ void PiSPCameraData::checkRequestCompleted()
 			return;
 
 		pipe()->completeRequest(request);
-		requestQueue_.pop_front();
+		requestQueue_.pop();
 		requestCompleted = true;
 	}
 
@@ -2254,7 +2262,6 @@ void PiSPCameraData::tryRunPipeline()
 
 	//ipa_->signalIspPrepare(ispPrepare);
 	runBackend(bayerId);
-	runCfe();
 }
 
 bool PiSPCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)

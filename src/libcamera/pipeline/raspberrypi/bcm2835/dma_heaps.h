@@ -8,7 +8,11 @@
 #pragma once
 
 #include <stddef.h>
+#include <sys/mman.h>
 
+//#include <libcamera/logging.h>
+
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -25,6 +29,50 @@ public:
 
 private:
 	UniqueFD dmaHeapHandle_;
+};
+
+template<class T>
+class DmaHeapObject
+{
+public:
+	template<class... Args>
+	DmaHeapObject(Args... args)
+		: dmaHeap_(), obj_(nullptr), fd_()
+	{
+		void *mem;
+
+		//ASSERT(dmaHeap_->isValid());
+
+		fd_ = dmaHeap_.alloc("DmaHeapObject", sizeof(T));
+		if (!fd_.isValid())
+			return;
+
+		mem = mmap(nullptr, sizeof(T), PROT_READ | PROT_WRITE,
+			   MAP_SHARED, fd_.get(), 0);
+
+		if (mem == MAP_FAILED)
+			return;
+
+		obj_ = new (mem) T(std::forward<Args>(args)...);
+	}
+
+	~DmaHeapObject()
+	{
+		if (obj_) {
+			obj_->~T();
+			munmap(obj_, sizeof(T));
+		}
+	}
+
+	T *operator->()
+	{
+		return obj_;
+	}
+
+private:
+	DmaHeap dmaHeap_;
+	T *obj_;
+	SharedFD fd_;
 };
 
 } /* namespace RPi */

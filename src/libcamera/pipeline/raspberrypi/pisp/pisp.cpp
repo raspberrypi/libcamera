@@ -180,15 +180,18 @@ enum class Isp : unsigned int { Input, Output0, Output1, Config, Max };
 
 } /* namespace */
 
+using ::PiSP::BackEnd;
+using ::PiSP::FrontEnd;
+using ::PiSP::BCM2712_HW;
+
 class PiSPCameraData : public Camera::Private
 {
 public:
 	PiSPCameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe),
-		  fe_(true, ::PiSP::BCM2712_HW),
-		  be_(::PiSP::BackEnd::Config(0, 0, ::PiSP::BackEnd::Config::Flags::NONE), ::PiSP::BCM2712_HW),
-		  state_(State::Stopped),
-		  supportsFlips_(false), flipsAlterBayerOrder_(false),
+		  fe_(true, BCM2712_HW),
+		  be_(BackEnd::Config(0, 0, BackEnd::Config::Flags::NONE), BCM2712_HW),
+		  state_(State::Stopped), supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  dropFrameCount_(0), ispOutputCount_(0)
 	{
 	}
@@ -242,8 +245,8 @@ public:
 	 */
 	std::vector<std::pair<std::unique_ptr<V4L2Subdevice>, MediaLink *>> bridgeDevices_;
 
-	RPi::DmaHeapObject<::PiSP::FrontEnd> fe_;
-	RPi::DmaHeapObject<::PiSP::BackEnd> be_;
+	RPi::DmaHeapObject<FrontEnd> fe_;
+	RPi::DmaHeapObject<BackEnd> be_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;

@@ -11,8 +11,6 @@
 
 namespace PiSP {
 
-class BackEndHal;
-
 class BackEnd
 {
 public:

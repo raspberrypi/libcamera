@@ -92,7 +92,6 @@ namespace PiSP {
 
 void BackEnd::InitialiseConfig()
 {
-	std::lock_guard<std::mutex> l(mutex_);
 	memset(&be_config_, 0, sizeof(be_config_));
 	initialise_debin(be_config_.debin);
 	//be_config_.dirty_flags_bayer |= PISP_BE_BAYER_ENABLE_DEBIN;

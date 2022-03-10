@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <map>
+#include <memory>
 #include <string.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -24,7 +25,27 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
 
-static std::map<std::string, CamHelperCreateFunc> cam_helpers;
+namespace {
+/*
+ * Wrap the cam helper map in a function to prevent static initialisation
+ * failures caused by random ordering of static variable initialisation.
+ * See https://isocpp.org/wiki/faq/ctors#static-init-order for more details.
+ */
+std::map<std::string, CamHelperCreateFunc> *GetCamHelpers()
+{
+	static std::unique_ptr<std::map<std::string, CamHelperCreateFunc>> cam_helpers =
+			std::make_unique<std::map<std::string, CamHelperCreateFunc>>();
+	return cam_helpers.get();
+}
+
+} /* namespace */
+
+RegisterCamHelper::RegisterCamHelper(char const *cam_name,
+				     CamHelperCreateFunc create_func)
+{
+	auto map = GetCamHelpers();
+	map->emplace(cam_name, create_func);
+}
 
 CamHelper *CamHelper::Create(std::string const &cam_name)
 {
@@ -32,7 +53,7 @@ CamHelper *CamHelper::Create(std::string const &cam_name)
 	 * CamHelpers get registered by static RegisterCamHelper
 	 * initialisers.
 	 */
-	for (auto &p : cam_helpers) {
+	for (auto &p : *GetCamHelpers()) {
 		if (cam_name.find(p.first) != std::string::npos)
 			return p.second();
 	}
@@ -208,10 +229,4 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 void CamHelper::PopulateMetadata([[maybe_unused]] const MdParser::RegisterMap &registers,
 				 [[maybe_unused]] Metadata &metadata) const
 {
-}
-
-RegisterCamHelper::RegisterCamHelper(char const *cam_name,
-				     CamHelperCreateFunc create_func)
-{
-	cam_helpers[std::string(cam_name)] = create_func;
 }

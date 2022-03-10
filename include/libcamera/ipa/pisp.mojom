@@ -122,6 +122,6 @@ interface IPAPiSPInterface {
 };
 
 interface IPAPiSPEventInterface {
-	[async] ipaPrepareComplete(IpaBuffers buffers);
+	[async] ipaPrepareComplete(IpaBuffers buffers, libcamera.ControlList metadata);
 	[async] setDelayedControls(libcamera.ControlList controls);
 };

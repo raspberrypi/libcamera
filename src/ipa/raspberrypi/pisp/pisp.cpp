@@ -32,8 +32,13 @@
 #include "backend.h"
 #include "frontend.h"
 
+#include "agc_algorithm.hpp"
+#include "agc_status.h"
+#include "awb_algorithm.hpp"
+#include "awb_status.h"
 #include "cam_helper.hpp"
 #include "controller.hpp"
+#include "lux_status.h"
 
 namespace libcamera {
 
@@ -63,7 +68,7 @@ class IPAPiSP : public ipa::PiSP::IPAPiSPInterface
 {
 public:
 	IPAPiSP()
-		: controller_(), frameCount_(0), checkCount_(0), mistrustCount_(0),
+		: controller_(), frameCount_(0), mistrustCount_(0),
 		  lastRunTimestamp_(0), fe_(nullptr), be_(nullptr), firstStart_(true)
 	{
 	}
@@ -89,21 +94,17 @@ public:
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void signalIpaPrepare(const ipa::PiSP::PrepareConfig &config) override;
-	//void signalStatReady(const uint32_t bufferId) override;
-	//void signalQueueRequest(const ControlList &controls) override;
 
 private:
 	void setMode(const IPACameraSensorInfo &sensorInfo);
-	bool validateSensorControls();
-	void queueRequest(const ControlList &controls);
-	void returnEmbeddedBuffer(unsigned int bufferId);
-	void prepareISP(const ipa::PiSP::PrepareConfig &config);
 	void reportMetadata();
+	bool validateSensorControls();
+	void applyControls(const ControlList &controls);
+	void prepareController(const ipa::PiSP::PrepareConfig &config);
 	void fillDeviceStatus(const ControlList &sensorControls);
-	void processStats(unsigned int bufferId);
 	void applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
-	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
+	void applyAWB(const struct AwbStatus *awbStatus);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -125,9 +126,6 @@ private:
 	 */
 	uint64_t frameCount_;
 
-	/* For checking the sequencing of Prepare/Process calls. */
-	uint64_t checkCount_;
-
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrustCount_;
 
@@ -138,7 +136,7 @@ private:
 	uint64_t lastRunTimestamp_;
 
 	/* Do we run a Controller::process() for this frame? */
-	bool processPending_;
+	bool preparePending_;
 
 	/* Frontend/Backend objects passed in from the pipeline handler. */
 	SharedFD feFD_;
@@ -218,7 +216,7 @@ void IPAPiSP::start(const ControlList &controls, ipa::PiSP::StartConfig *startCo
 	ASSERT(startConfig);
 	if (!controls.empty()) {
 		/* We have been given some controls to action before start. */
-		queueRequest(controls);
+		applyControls(controls);
 	}
 
 	controller_.SwitchMode(mode_, &metadata);
@@ -241,7 +239,6 @@ void IPAPiSP::start(const ControlList &controls, ipa::PiSP::StartConfig *startCo
 	 * or merely a mode switch in a running system.
 	 */
 	frameCount_ = 0;
-	checkCount_ = 0;
 	if (firstStart_) {
 		dropFrameCount_ = helper_->HideFramesStartup();
 		mistrustCount_ = helper_->MistrustFramesStartup();
@@ -336,21 +333,12 @@ void IPAPiSP::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensitivity = helper_->GetModeSensitivity(mode_);
 }
 
-#if 0
-
 int IPAPiSP::configure(const IPACameraSensorInfo &sensorInfo,
-		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
-		      const std::map<unsigned int, ControlInfoMap> &entityControls,
-		      const ipa::PiSP::IPAConfig &ipaConfig,
-		      ControlList *controls)
+		       [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
+		       const ControlInfoMap &sensorControls, const uint32_t transform,
+		       ControlList *controls)
 {
-	if (entityControls.size() != 2) {
-		LOG(IPAPISP, Error) << "No ISP or sensor controls found.";
-		return -1;
-	}
-
-	sensorCtrls_ = entityControls.at(0);
-	ispCtrls_ = entityControls.at(1);
+	sensorCtrls_ = std::move(sensorControls);
 
 	if (!validateSensorControls()) {
 		LOG(IPAPISP, Error) << "Sensor control validation failed.";
@@ -365,28 +353,7 @@ int IPAPiSP::configure(const IPACameraSensorInfo &sensorInfo,
 	/* Re-assemble camera mode using the sensor info. */
 	setMode(sensorInfo);
 
-	mode_.transform = static_cast<libcamera::Transform>(ipaConfig.transform);
-
-	/* Store the lens shading table pointer and handle if available. */
-	if (ipaConfig.lsTableHandle.isValid()) {
-		/* Remove any previous table, if there was one. */
-		if (lsTable_) {
-			munmap(lsTable_, ipa::PiSP::MaxLsGridSize);
-			lsTable_ = nullptr;
-		}
-
-		/* Map the LS table buffer into user space. */
-		lsTableHandle_ = std::move(ipaConfig.lsTableHandle);
-		if (lsTableHandle_.isValid()) {
-			lsTable_ = mmap(nullptr, ipa::PiSP::MaxLsGridSize, PROT_READ | PROT_WRITE,
-					MAP_SHARED, lsTableHandle_.get(), 0);
-
-			if (lsTable_ == MAP_FAILED) {
-				LOG(IPAPISP, Error) << "dmaHeap mmap failure for LS table.";
-				lsTable_ = nullptr;
-			}
-		}
-	}
+	mode_.transform = static_cast<libcamera::Transform>(transform);
 
 	/* Pass the camera mode to the CamHelper to setup algorithms. */
 	helper_->SetCameraMode(mode_);
@@ -434,35 +401,23 @@ void IPAPiSP::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPAPiSP::signalStatReady(uint32_t bufferId)
+void IPAPiSP::signalIpaPrepare(const ipa::PiSP::PrepareConfig &config)
 {
-	if (++checkCount_ != frameCount_) /* assert here? */
-		LOG(IPAPISP, Error) << "WARNING: Prepare/Process mismatch!!!";
-	if (processPending_ && frameCount_ > mistrustCount_)
-		processStats(bufferId);
+	if (!config.requestControls.empty())
+		applyControls(config.requestControls);
 
-	reportMetadata();
-
-	statsMetadataComplete.emit(bufferId & ipa::PiSP::MaskID, libcameraMetadata_);
-}
-
-void IPAPiSP::signalQueueRequest(const ControlList &controls)
-{
-	queueRequest(controls);
-}
-
-void IPAPiSP::signalIspPrepare(const ipa::PiSP::ISPConfig &data)
-{
 	/*
 	 * At start-up, or after a mode-switch, we may want to
 	 * avoid running the control algos for a few frames in case
 	 * they are "unreliable".
 	 */
-	prepareISP(data);
+	if (frameCount_ > mistrustCount_)
+		prepareController(config);
+
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
-	runIsp.emit(data.bayerBufferId & ipa::PiSP::MaskID);
+	ipaPrepareComplete.emit(config.buffers, libcameraMetadata_);
 }
 
 void IPAPiSP::reportMetadata()
@@ -499,33 +454,6 @@ void IPAPiSP::reportMetadata()
 								static_cast<float>(awbStatus->gain_b) });
 		libcameraMetadata_.set(controls::ColourTemperature, awbStatus->temperature_K);
 	}
-
-	BlackLevelStatus *blackLevelStatus = rpiMetadata_.GetLocked<BlackLevelStatus>("black_level.status");
-	if (blackLevelStatus)
-		libcameraMetadata_.set(controls::SensorBlackLevels,
-				       { static_cast<int32_t>(blackLevelStatus->black_level_r),
-					 static_cast<int32_t>(blackLevelStatus->black_level_g),
-					 static_cast<int32_t>(blackLevelStatus->black_level_g),
-					 static_cast<int32_t>(blackLevelStatus->black_level_b) });
-
-	FocusStatus *focusStatus = rpiMetadata_.GetLocked<FocusStatus>("focus.status");
-	if (focusStatus && focusStatus->num == 12) {
-		/*
-		 * We get a 4x3 grid of regions by default. Calculate the average
-		 * FoM over the central two positions to give an overall scene FoM.
-		 * This can change later if it is not deemed suitable.
-		 */
-		int32_t focusFoM = (focusStatus->focus_measures[5] + focusStatus->focus_measures[6]) / 2;
-		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
-	}
-
-	CcmStatus *ccmStatus = rpiMetadata_.GetLocked<CcmStatus>("ccm.status");
-	if (ccmStatus) {
-		float m[9];
-		for (unsigned int i = 0; i < 9; i++)
-			m[i] = ccmStatus->matrix[i];
-		libcameraMetadata_.set(controls::ColourCorrectionMatrix, m);
-	}
 }
 
 bool IPAPiSP::validateSensorControls()
@@ -547,51 +475,7 @@ bool IPAPiSP::validateSensorControls()
 	return true;
 }
 
-/*
- * Converting between enums (used in the libcamera API) and the names that
- * we use to identify different modes. Unfortunately, the conversion tables
- * must be kept up-to-date by hand.
- */
-static const std::map<int32_t, std::string> MeteringModeTable = {
-	{ controls::MeteringCentreWeighted, "centre-weighted" },
-	{ controls::MeteringSpot, "spot" },
-	{ controls::MeteringMatrix, "matrix" },
-	{ controls::MeteringCustom, "custom" },
-};
-
-static const std::map<int32_t, std::string> ConstraintModeTable = {
-	{ controls::ConstraintNormal, "normal" },
-	{ controls::ConstraintHighlight, "highlight" },
-	{ controls::ConstraintCustom, "custom" },
-};
-
-static const std::map<int32_t, std::string> ExposureModeTable = {
-	{ controls::ExposureNormal, "normal" },
-	{ controls::ExposureShort, "short" },
-	{ controls::ExposureLong, "long" },
-	{ controls::ExposureCustom, "custom" },
-};
-
-static const std::map<int32_t, std::string> AwbModeTable = {
-	{ controls::AwbAuto, "normal" },
-	{ controls::AwbIncandescent, "incandescent" },
-	{ controls::AwbTungsten, "tungsten" },
-	{ controls::AwbFluorescent, "fluorescent" },
-	{ controls::AwbIndoor, "indoor" },
-	{ controls::AwbDaylight, "daylight" },
-	{ controls::AwbCloudy, "cloudy" },
-	{ controls::AwbCustom, "custom" },
-};
-
-static const std::map<int32_t, RPiController::DenoiseMode> DenoiseModeTable = {
-	{ controls::draft::NoiseReductionModeOff, RPiController::DenoiseMode::Off },
-	{ controls::draft::NoiseReductionModeFast, RPiController::DenoiseMode::ColourFast },
-	{ controls::draft::NoiseReductionModeHighQuality, RPiController::DenoiseMode::ColourHighQuality },
-	{ controls::draft::NoiseReductionModeMinimal, RPiController::DenoiseMode::ColourOff },
-	{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
-};
-
-void IPAPiSP::queueRequest(const ControlList &controls)
+void IPAPiSP::applyControls(const ControlList &controls)
 {
 	/* Clear the return metadata buffer. */
 	libcameraMetadata_.clear();
@@ -602,251 +486,6 @@ void IPAPiSP::queueRequest(const ControlList &controls)
 				  << " = " << ctrl.second.toString();
 
 		switch (ctrl.first) {
-		case controls::AE_ENABLE: {
-			RPiController::Algorithm *agc = controller_.GetAlgorithm("agc");
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AE_ENABLE - no AGC algorithm";
-				break;
-			}
-
-			if (ctrl.second.get<bool>() == false)
-				agc->Pause();
-			else
-				agc->Resume();
-
-			libcameraMetadata_.set(controls::AeEnable, ctrl.second.get<bool>());
-			break;
-		}
-
-		case controls::EXPOSURE_TIME: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set EXPOSURE_TIME - no AGC algorithm";
-				break;
-			}
-
-			/* The control provides units of microseconds. */
-			agc->SetFixedShutter(ctrl.second.get<int32_t>() * 1.0us);
-
-			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
-			break;
-		}
-
-		case controls::ANALOGUE_GAIN: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set ANALOGUE_GAIN - no AGC algorithm";
-				break;
-			}
-
-			agc->SetFixedAnalogueGain(ctrl.second.get<float>());
-
-			libcameraMetadata_.set(controls::AnalogueGain,
-					       ctrl.second.get<float>());
-			break;
-		}
-
-		case controls::AE_METERING_MODE: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AE_METERING_MODE - no AGC algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			if (MeteringModeTable.count(idx)) {
-				agc->SetMeteringMode(MeteringModeTable.at(idx));
-				libcameraMetadata_.set(controls::AeMeteringMode, idx);
-			} else {
-				LOG(IPAPISP, Error) << "Metering mode " << idx
-						   << " not recognised";
-			}
-			break;
-		}
-
-		case controls::AE_CONSTRAINT_MODE: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AE_CONSTRAINT_MODE - no AGC algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			if (ConstraintModeTable.count(idx)) {
-				agc->SetConstraintMode(ConstraintModeTable.at(idx));
-				libcameraMetadata_.set(controls::AeConstraintMode, idx);
-			} else {
-				LOG(IPAPISP, Error) << "Constraint mode " << idx
-						   << " not recognised";
-			}
-			break;
-		}
-
-		case controls::AE_EXPOSURE_MODE: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AE_EXPOSURE_MODE - no AGC algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			if (ExposureModeTable.count(idx)) {
-				agc->SetExposureMode(ExposureModeTable.at(idx));
-				libcameraMetadata_.set(controls::AeExposureMode, idx);
-			} else {
-				LOG(IPAPISP, Error) << "Exposure mode " << idx
-						   << " not recognised";
-			}
-			break;
-		}
-
-		case controls::EXPOSURE_VALUE: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.GetAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set EXPOSURE_VALUE - no AGC algorithm";
-				break;
-			}
-
-			/*
-			 * The SetEv() function takes in a direct exposure multiplier.
-			 * So convert to 2^EV
-			 */
-			double ev = pow(2.0, ctrl.second.get<float>());
-			agc->SetEv(ev);
-			libcameraMetadata_.set(controls::ExposureValue,
-					       ctrl.second.get<float>());
-			break;
-		}
-
-		case controls::AWB_ENABLE: {
-			RPiController::Algorithm *awb = controller_.GetAlgorithm("awb");
-			if (!awb) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AWB_ENABLE - no AWB algorithm";
-				break;
-			}
-
-			if (ctrl.second.get<bool>() == false)
-				awb->Pause();
-			else
-				awb->Resume();
-
-			libcameraMetadata_.set(controls::AwbEnable,
-					       ctrl.second.get<bool>());
-			break;
-		}
-
-		case controls::AWB_MODE: {
-			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
-				controller_.GetAlgorithm("awb"));
-			if (!awb) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set AWB_MODE - no AWB algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			if (AwbModeTable.count(idx)) {
-				awb->SetMode(AwbModeTable.at(idx));
-				libcameraMetadata_.set(controls::AwbMode, idx);
-			} else {
-				LOG(IPAPISP, Error) << "AWB mode " << idx
-						   << " not recognised";
-			}
-			break;
-		}
-
-		case controls::COLOUR_GAINS: {
-			auto gains = ctrl.second.get<Span<const float>>();
-			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
-				controller_.GetAlgorithm("awb"));
-			if (!awb) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set COLOUR_GAINS - no AWB algorithm";
-				break;
-			}
-
-			awb->SetManualGains(gains[0], gains[1]);
-			if (gains[0] != 0.0f && gains[1] != 0.0f)
-				/* A gain of 0.0f will switch back to auto mode. */
-				libcameraMetadata_.set(controls::ColourGains,
-						       { gains[0], gains[1] });
-			break;
-		}
-
-		case controls::BRIGHTNESS: {
-			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
-				controller_.GetAlgorithm("contrast"));
-			if (!contrast) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set BRIGHTNESS - no contrast algorithm";
-				break;
-			}
-
-			contrast->SetBrightness(ctrl.second.get<float>() * 65536);
-			libcameraMetadata_.set(controls::Brightness,
-					       ctrl.second.get<float>());
-			break;
-		}
-
-		case controls::CONTRAST: {
-			RPiController::ContrastAlgorithm *contrast = dynamic_cast<RPiController::ContrastAlgorithm *>(
-				controller_.GetAlgorithm("contrast"));
-			if (!contrast) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set CONTRAST - no contrast algorithm";
-				break;
-			}
-
-			contrast->SetContrast(ctrl.second.get<float>());
-			libcameraMetadata_.set(controls::Contrast,
-					       ctrl.second.get<float>());
-			break;
-		}
-
-		case controls::SATURATION: {
-			RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
-				controller_.GetAlgorithm("ccm"));
-			if (!ccm) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set SATURATION - no ccm algorithm";
-				break;
-			}
-
-			ccm->SetSaturation(ctrl.second.get<float>());
-			libcameraMetadata_.set(controls::Saturation,
-					       ctrl.second.get<float>());
-			break;
-		}
-
-		case controls::SHARPNESS: {
-			RPiController::SharpenAlgorithm *sharpen = dynamic_cast<RPiController::SharpenAlgorithm *>(
-				controller_.GetAlgorithm("sharpen"));
-			if (!sharpen) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set SHARPNESS - no sharpen algorithm";
-				break;
-			}
-
-			sharpen->SetStrength(ctrl.second.get<float>());
-			libcameraMetadata_.set(controls::Sharpness,
-					       ctrl.second.get<float>());
-			break;
-		}
-
 		case controls::SCALER_CROP: {
 			/* We do nothing with this, but should avoid the warning below. */
 			break;
@@ -855,33 +494,6 @@ void IPAPiSP::queueRequest(const ControlList &controls)
 		case controls::FRAME_DURATION_LIMITS: {
 			auto frameDurations = ctrl.second.get<Span<const int64_t>>();
 			applyFrameDurations(frameDurations[0] * 1.0us, frameDurations[1] * 1.0us);
-			break;
-		}
-
-		case controls::NOISE_REDUCTION_MODE: {
-			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
-				controller_.GetAlgorithm("SDN"));
-			if (!sdn) {
-				LOG(IPAPISP, Warning)
-					<< "Could not set NOISE_REDUCTION_MODE - no SDN algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			auto mode = DenoiseModeTable.find(idx);
-			if (mode != DenoiseModeTable.end()) {
-				sdn->SetMode(mode->second);
-
-				/*
-				 * \todo If the colour denoise is not going to run due to an
-				 * analysis image resolution or format mismatch, we should
-				 * report the status correctly in the metadata.
-				 */
-				libcameraMetadata_.set(controls::draft::NoiseReductionMode, idx);
-			} else {
-				LOG(IPAPISP, Error) << "Noise reduction mode " << idx
-						   << " not recognised";
-			}
 			break;
 		}
 
@@ -894,26 +506,21 @@ void IPAPiSP::queueRequest(const ControlList &controls)
 	}
 }
 
-void IPAPiSP::returnEmbeddedBuffer(unsigned int bufferId)
+void IPAPiSP::prepareController(const ipa::PiSP::PrepareConfig &config)
 {
-	embeddedComplete.emit(bufferId & ipa::PiSP::MaskID);
-}
-
-void IPAPiSP::prepareISP(const ipa::PiSP::ISPConfig &data)
-{
-	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp);
+	int64_t frameTimestamp = config.sensorControls.get(controls::SensorTimestamp);
 	RPiController::Metadata lastMetadata;
 	Span<uint8_t> embeddedBuffer;
 
 	lastMetadata = std::move(rpiMetadata_);
-	fillDeviceStatus(data.controls);
+	fillDeviceStatus(config.sensorControls);
 
-	if (data.embeddedBufferPresent) {
+	if (config.embeddedBufferPresent) {
 		/*
 		 * Pipeline handler has supplied us with an embedded data buffer,
 		 * we must pass it to the CamHelper for parsing.
 		 */
-		auto it = buffers_.find(data.embeddedBufferId);
+		auto it = buffers_.find(config.buffers.embeddedBufferId);
 		ASSERT(it != buffers_.end());
 		embeddedBuffer = it->second.planes()[0];
 	}
@@ -923,10 +530,6 @@ void IPAPiSP::prepareISP(const ipa::PiSP::ISPConfig &data)
 	 * metadata, and may also do additional custom processing.
 	 */
 	helper_->Prepare(embeddedBuffer, rpiMetadata_);
-
-	/* Done with embedded data now, return to pipeline handler asap. */
-	if (data.embeddedBufferPresent)
-		returnEmbeddedBuffer(data.embeddedBufferId);
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
@@ -939,14 +542,12 @@ void IPAPiSP::prepareISP(const ipa::PiSP::ISPConfig &data)
 		 * in helper_->Prepare().
 		 */
 		rpiMetadata_.Merge(lastMetadata);
-		processPending_ = false;
+		preparePending_ = false;
 		return;
 	}
 
 	lastRunTimestamp_ = frameTimestamp;
-	processPending_ = true;
-
-	ControlList ctrls(ispCtrls_);
+	preparePending_ = true;
 
 	controller_.Prepare(&rpiMetadata_);
 
@@ -955,10 +556,14 @@ void IPAPiSP::prepareISP(const ipa::PiSP::ISPConfig &data)
 
 	AwbStatus *awbStatus = rpiMetadata_.GetLocked<AwbStatus>("awb.status");
 	if (awbStatus)
-		applyAWB(awbStatus, ctrls);
+		applyAWB(awbStatus);
 
-	if (!ctrls.empty())
-		setIspControls.emit(ctrls);
+	AgcStatus *agcStatus = rpiMetadata_.GetLocked<AgcStatus>("agc.status");
+	if (agcStatus) {
+		ControlList ctrls(sensorCtrls_);
+		applyAGC(agcStatus, ctrls);
+		setDelayedControls.emit(ctrls);
+	}
 }
 
 void IPAPiSP::fillDeviceStatus(const ControlList &sensorControls)
@@ -978,33 +583,10 @@ void IPAPiSP::fillDeviceStatus(const ControlList &sensorControls)
 	rpiMetadata_.Set("device.status", deviceStatus);
 }
 
-void IPAPiSP::processStats(unsigned int bufferId)
-{
-	auto it = buffers_.find(bufferId);
-	if (it == buffers_.end()) {
-		LOG(IPAPISP, Error) << "Could not find stats buffer!";
-		return;
-	}
-
-	Span<uint8_t> mem = it->second.planes()[0];
-	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
-	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
-	helper_->Process(statistics, rpiMetadata_);
-	controller_.Process(statistics, &rpiMetadata_);
-
-	struct AgcStatus agcStatus;
-	if (rpiMetadata_.Get("agc.status", agcStatus) == 0) {
-		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
-
-		setDelayedControls.emit(ctrls);
-	}
-}
-
-void IPAPiSP::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
+void IPAPiSP::applyAWB(const struct AwbStatus *awbStatus)
 {
 	LOG(IPAPISP, Debug) << "Applying WB R: " << awbStatus->gain_r << " B: "
-			   << awbStatus->gain_b;
+			    << awbStatus->gain_b;
 }
 
 void IPAPiSP::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
@@ -1073,8 +655,6 @@ void IPAPiSP::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_EXPOSURE, exposureLines);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
 }
-
-#endif
 
 /*
  * External IPA module interface

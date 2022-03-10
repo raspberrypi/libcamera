@@ -10,10 +10,13 @@ pisp_ipa_deps = [
 
 pisp_ipa_includes = [
     rpi_ipa_common_includes,
+    include_directories('controller')
 ]
 
 pisp_ipa_sources = files([
     'pisp.cpp',
+    'controller/rpi/agc.cpp',
+    'controller/rpi/awb.cpp',
 ])
 
 pisp_ipa_sources += frontend_sources
@@ -38,3 +41,4 @@ if ipa_sign_module
                   build_by_default : true)
 endif
 
+subdir('data')

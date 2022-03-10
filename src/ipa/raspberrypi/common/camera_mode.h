@@ -6,17 +6,13 @@
  */
 #pragma once
 
-#include <libcamera/transform.h>
-
 #include <libcamera/base/utils.h>
+
+#include <libcamera/transform.h>
 
 // Description of a "camera mode", holding enough information for control
 // algorithms to adapt their behaviour to the different modes of the camera,
 // including binning, scaling, cropping etc.
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define CAMERA_MODE_NAME_LEN 32
 
@@ -44,7 +40,3 @@ struct CameraMode {
 	// sensitivity of this mode
 	double sensitivity;
 };
-
-#ifdef __cplusplus
-}
-#endif

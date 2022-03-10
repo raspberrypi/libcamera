@@ -62,7 +62,8 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
 
 ipa_mojom_files = [
     'ipu3.mojom',
-    'raspberrypi.mojom',
+    'pisp.mojom',
+    'bcm2835.mojom',
     'rkisp1.mojom',
     'vimc.mojom',
 ]
@@ -78,7 +79,7 @@ ipa_mojoms = []
 foreach file : ipa_mojom_files
     name = file.split('.')[0]
 
-    if name not in pipelines
+    if name not in pipelines_stripped
         continue
     endif
 

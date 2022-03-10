@@ -139,6 +139,15 @@ if get_option('test') and 'vimc' not in pipelines
     pipelines += ['vimc']
 endif
 
+pipelines_stripped = []
+foreach pipeline : pipelines
+    if pipeline.contains('/')
+        pipeline = pipeline.split('/')[1]
+    endif
+
+    pipelines_stripped += pipeline
+endforeach
+
 # Utilities are parsed first to provide support for other components.
 subdir('utils')
 

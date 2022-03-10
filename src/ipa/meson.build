@@ -28,6 +28,10 @@ ipa_names = []
 
 ipa_modules = get_option('ipas')
 
+if pipelines.contains('raspberrypi/bcm2835') or pipeline.contains('raspberrypi/pisp')
+    subdir('raspberrypi/common')
+endif
+
 # The ipa-sign-install.sh script which uses the ipa_names variable will itself
 # prepend MESON_INSTALL_DESTDIR_PREFIX to each ipa module name, therefore we
 # must not include the prefix string here.

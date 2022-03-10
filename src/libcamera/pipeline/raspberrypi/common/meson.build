@@ -5,3 +5,4 @@ common_source = files([
 ])
 
 libcamera_sources += common_source
+includes += include_directories('.')

@@ -41,7 +41,7 @@ public:
 	{
 		void *mem;
 
-		fd_ = dmaHeap_.alloc("DmaHeapObject", SIZE);
+		fd_ = SharedFD(dmaHeap_.alloc("DmaHeapObject", SIZE));
 		if (!fd_.isValid())
 			return;
 
@@ -66,14 +66,14 @@ public:
 		return obj_;
 	}
 
-	const UniqueFD &getFD() const
+	const SharedFD &getFD() const
 	{
 		return fd_;
 	}
 
 private:
 	DmaHeap dmaHeap_;
-	UniqueFD fd_;
+	SharedFD fd_;
 	T *obj_;
 };
 

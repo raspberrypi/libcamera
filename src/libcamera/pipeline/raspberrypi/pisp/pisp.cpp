@@ -200,7 +200,7 @@ public:
 
 	void frameStarted(uint32_t sequence);
 
-	//int loadIPA(ipa::PiSP::SensorConfig *sensorConfig);
+	int loadIPA(ipa::PiSP::SensorConfig *sensorConfig);
 	int configureIPA(const CameraConfiguration *config);
 	int configureCfe();
 	int configureBe();
@@ -226,7 +226,7 @@ public:
 	void handleState();
 	void applyScalerCrop(const ControlList &controls);
 
-	//std::unique_ptr<ipa::PiSP::IPAProxyPiSP> ipa_;
+	std::unique_ptr<ipa::PiSP::IPAProxyPiSP> ipa_;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
@@ -1228,18 +1228,18 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 
 	data->sensorFormats_ = populateSensorFormats(data->sensor_);
 
-	//ipa::PiSP::SensorConfig sensorConfig;
-	//if (data->loadIPA(&sensorConfig)) {
-	//	LOG(PISP, Error) << "Failed to load a suitable IPA library";
-	//	return -EINVAL;
-	//}
+	ipa::PiSP::SensorConfig sensorConfig;
+	if (data->loadIPA(&sensorConfig)) {
+		LOG(PISP, Error) << "Failed to load a suitable IPA library";
+		return -EINVAL;
+	}
 
-	//if (sensorConfig.sensorMetadata ^ !!cfeEmbedded) {
-	//	LOG(PISP, Warning) << "Mismatch between CFE and CamHelper for embedded data usage!";
-	//	sensorConfig.sensorMetadata = false;
-	//	if (cfeEmbedded)
-	//		data->cfe_[Cfe::Embedded].dev()->bufferReady.disconnect();
-	//}
+	if (sensorConfig.sensorMetadata ^ !!cfeEmbedded) {
+		LOG(PISP, Warning) << "Mismatch between CFE and CamHelper for embedded data usage!";
+		sensorConfig.sensorMetadata = false;
+		if (cfeEmbedded)
+			data->cfe_[Cfe::Embedded].dev()->bufferReady.disconnect();
+	}
 
 	/*
 	 * Open all CFE and ISP streams. The exception is the embedded data
@@ -1252,8 +1252,8 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	data->streams_.push_back(&data->cfe_[Cfe::Output0]);
 	data->streams_.push_back(&data->cfe_[Cfe::Config]);
 	data->streams_.push_back(&data->cfe_[Cfe::Stats]);
-	//if (sensorConfig.sensorMetadata)
-	//	data->streams_.push_back(&data->cfe_[Cfe::Embedded]);
+	if (sensorConfig.sensorMetadata)
+		data->streams_.push_back(&data->cfe_[Cfe::Embedded]);
 
 	for (auto &stream : data->isp_)
 		data->streams_.push_back(&stream);
@@ -1274,15 +1274,15 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	 * gain and exposure delays. Mark VBLANK for priority write.
 	 */
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-	//	{ V4L2_CID_ANALOGUE_GAIN, { sensorConfig.gainDelay, false } },
-	//	{ V4L2_CID_EXPOSURE, { sensorConfig.exposureDelay, false } },
-	//	{ V4L2_CID_VBLANK, { sensorConfig.vblankDelay, true } }
+		{ V4L2_CID_ANALOGUE_GAIN, { sensorConfig.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { sensorConfig.exposureDelay, false } },
+		{ V4L2_CID_VBLANK, { sensorConfig.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);
-	//data->sensorMetadata_ = sensorConfig.sensorMetadata;
+	data->sensorMetadata_ = sensorConfig.sensorMetadata;
 
 	/* Register the controls that the Raspberry Pi IPA can handle. */
-	//data->controlInfo_ = PiSP::Controls;
+	data->controlInfo_ = RPi::Controls;
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
 
@@ -1489,7 +1489,7 @@ void PipelineHandlerPiSP::mapBuffers(Camera *camera, const PiSP::BufferMap &buff
 		data->ipaBuffers_.insert(mask | it.first);
 	}
 
-	//data->ipa_->mapBuffers(ipaBuffers);
+	data->ipa_->mapBuffers(ipaBuffers);
 }
 
 void PipelineHandlerPiSP::freeBuffers(Camera *camera)
@@ -1497,8 +1497,8 @@ void PipelineHandlerPiSP::freeBuffers(Camera *camera)
 	PiSPCameraData *data = cameraData(camera);
 
 	/* Copy the buffer ids from the unordered_set to a vector to pass to the IPA. */
-	//std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
-	//data->ipa_->unmapBuffers(ipaBuffers);
+	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
+	data->ipa_->unmapBuffers(ipaBuffers);
 	data->ipaBuffers_.clear();
 	data->beConfigBuffers_.clear();
 	data->feConfigBuffers_.clear();
@@ -1515,77 +1515,66 @@ void PiSPCameraData::frameStarted(uint32_t sequence)
 	delayedCtrls_->applyControls(sequence);
 }
 
-//int PiSPCameraData::loadIPA(ipa::PiSP::SensorConfig *sensorConfig)
-//{
-	// //ipa_ = IPAManager::createIPA<ipa::PiSP::IPAProxyPiSP>(pipe(), 1, 1);
+int PiSPCameraData::loadIPA(ipa::PiSP::SensorConfig *sensorConfig)
+{
+	ipa_ = IPAManager::createIPA<ipa::PiSP::IPAProxyPiSP>(pipe(), 1, 1);
 
-	// //if (!ipa_)
-	// 	return -ENOENT;
+	if (!ipa_)
+		return -ENOENT;
 
-	// ipa_->statsMetadataComplete.connect(this, &PiSPCameraData::statsMetadataComplete);
-	// ipa_->runBackend.connect(this, &PiSPCameraData::runBackend);
-	// ipa_->embeddedComplete.connect(this, &PiSPCameraData::embeddedComplete);
-	// ipa_->setIspControls.connect(this, &PiSPCameraData::setIspControls);
-	// ipa_->setDelayedControls.connect(this, &PiSPCameraData::setDelayedControls);
+	ipa_->setDelayedControls.connect(this, &PiSPCameraData::setDelayedControls);
 
-	// /*
-	//  * The configuration (tuning file) is made from the sensor name unless
-	//  * the environment variable overrides it.
-	//  */
-	// std::string configurationFile;
-	// char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
-	// if (!configFromEnv || *configFromEnv == '\0')
-	// 	configurationFile = ipa_->configurationFile(sensor_->model() + ".json");
-	// else
-	// 	configurationFile = std::string(configFromEnv);
+	/*
+	 * The configuration (tuning file) is made from the sensor name unless
+	 * the environment variable overrides it.
+	 */
+	std::string configurationFile;
+	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
+	if (!configFromEnv || *configFromEnv == '\0')
+		configurationFile = ipa_->configurationFile(sensor_->model() + ".json");
+	else
+		configurationFile = std::string(configFromEnv);
 
-	// IPASettings settings(configurationFile, sensor_->model());
-
-	// return ipa_->init(settings, sensorConfig);
-	//return 0;
-//}
+	IPASettings settings(configurationFile, sensor_->model());
+	ipa::PiSP::InitConfig initConfig(fe_.getFD(), be_.getFD());
+	return ipa_->init(settings, initConfig, sensorConfig);
+	return 0;
+}
 
 int PiSPCameraData::configureIPA(const CameraConfiguration *config)
 {
 	(void)(config);
-	// std::map<unsigned int, IPAStream> streamConfig;
-	// std::map<unsigned int, ControlInfoMap> entityControls;
-	// ipa::PiSP::IPAConfig ipaConfig;
+	std::map<unsigned int, IPAStream> streamConfig;
 
-	// /* Inform IPA of stream configuration and sensor controls. */
-	// unsigned int i = 0;
-	// for (auto const &stream : isp_) {
-	// 	if (stream.isExternal()) {
-	// 		streamConfig[i++] = IPAStream(
-	// 			stream.configuration().pixelFormat,
-	// 			stream.configuration().size);
-	// 	}
-	// }
+	/* Inform IPA of stream configuration and sensor controls. */
+	unsigned int i = 0;
+	for (auto const &stream : isp_) {
+		if (stream.isExternal()) {
+			streamConfig[i++] = IPAStream(
+				stream.configuration().pixelFormat,
+				stream.configuration().size);
+		}
+	}
 
-	// entityControls.emplace(0, sensor_->controls());
-	// entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
+	/* We store the IPACameraSensorInfo for digital zoom calculations. */
+	int ret = sensor_->sensorInfo(&sensorInfo_);
+	if (ret) {
+		LOG(PISP, Error) << "Failed to retrieve camera sensor info";
+		return ret;
+	}
 
-	// /* Always send the user transform to the IPA. */
-	// ipaConfig.transform = static_cast<unsigned int>(config->transform);
+	/* Ready the IPA - it must know about the sensor resolution. */
+	ControlList controls;
+	ret = ipa_->configure(sensorInfo_, streamConfig, sensor_->controls(),
+			      static_cast<unsigned int>(config->transform),
+			      &controls);
+	if (ret < 0) {
+		LOG(PISP, Error) << "IPA configuration failed!";
+		return -EPIPE;
+	}
 
-	// /* We store the IPACameraSensorInfo for digital zoom calculations. */
-	// int ret = sensor_->sensorInfo(&sensorInfo_);
-	// if (ret) {
-	// 	LOG(PISP, Error) << "Failed to retrieve camera sensor info";
-	// 	return ret;
-	// }
-
-	// /* Ready the IPA - it must know about the sensor resolution. */
-	// ControlList controls;
-	// ret = ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
-	// 		      &controls);
-	// if (ret < 0) {
-	// 	LOG(PISP, Error) << "IPA configuration failed!";
-	// 	return -EPIPE;
-	// }
-
-	// if (!controls.empty())
-	// 	setSensorControls(controls);
+	if (!controls.empty())
+		setSensorControls(controls);
 
 	return 0;
 }

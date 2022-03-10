@@ -16,6 +16,10 @@ pisp_ipa_sources = files([
     'pisp.cpp',
 ])
 
+pisp_ipa_sources += frontend_sources
+pisp_ipa_sources += backend_sources
+pisp_ipa_includes += [frontend_include_dir, backend_include_dir]
+
 mod = shared_module(ipa_name,
                     [pisp_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',

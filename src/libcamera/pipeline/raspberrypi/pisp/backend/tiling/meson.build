@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-pisp_sources += files([
+backend_sources += files([
     'context_stage.cpp',
     'crop_stage.cpp',
     'input_stage.cpp',

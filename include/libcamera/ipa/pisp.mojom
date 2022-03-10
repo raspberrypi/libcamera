@@ -46,7 +46,7 @@ struct StartConfig {
 	int32 dropFrameCount;
 };
 
-interface IPARPiInterface {
+interface IPAPiSPInterface {
 	init(libcamera.IPASettings settings, InitConfig config)
 		=> (int32 ret, SensorConfig sensorConfig);
 
@@ -121,7 +121,7 @@ interface IPARPiInterface {
 	[async] signalIpaPrepare(PrepareConfig config);
 };
 
-interface IPARPiEventInterface {
+interface IPAPiSPEventInterface {
 	[async] ipaPrepareComplete(IpaBuffers buffers);
 	[async] setDelayedControls(libcamera.ControlList controls);
 };

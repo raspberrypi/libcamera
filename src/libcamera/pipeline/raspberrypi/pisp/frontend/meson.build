@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
-pisp_sources += files([
+frontend_sources = files([
     'frontend.cpp'
 ])
+
+frontend_include_dir = include_directories('.')

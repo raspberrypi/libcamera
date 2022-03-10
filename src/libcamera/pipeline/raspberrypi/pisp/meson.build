@@ -10,4 +10,7 @@ subdir('variants')
 subdir('frontend')
 subdir('backend')
 
+pisp_sources += frontend_sources
+pisp_sources += backend_sources
+
 libcamera_sources += pisp_sources

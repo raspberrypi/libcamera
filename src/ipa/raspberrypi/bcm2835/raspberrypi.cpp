@@ -25,7 +25,7 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/raspberrypi.h>
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
+#include <libcamera/ipa/bcm2835_ipa_interface.h>
 #include <libcamera/request.h>
 
 #include "libcamera/internal/mapped_framebuffer.h"

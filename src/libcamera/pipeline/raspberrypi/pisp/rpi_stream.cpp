@@ -8,8 +8,6 @@
 
 #include <libcamera/base/log.h>
 
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
-
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(PISPSTREAM)
@@ -72,7 +70,7 @@ int Stream::getBufferId(FrameBuffer *buffer) const
 
 void Stream::setExternalBuffer(FrameBuffer *buffer)
 {
-	bufferMap_.emplace(ipa::RPi::MaskExternalBuffer | id_.get(), buffer);
+	bufferMap_.emplace(ipa::PiSP::MaskExternalBuffer | id_.get(), buffer);
 }
 
 void Stream::removeExternalBuffer(FrameBuffer *buffer)
@@ -80,7 +78,7 @@ void Stream::removeExternalBuffer(FrameBuffer *buffer)
 	int id = getBufferId(buffer);
 
 	/* Ensure we have this buffer in the stream, and it is marked external. */
-	ASSERT(id != -1 && (id & ipa::RPi::MaskExternalBuffer));
+	ASSERT(id != -1 && (id & ipa::PiSP::MaskExternalBuffer));
 	bufferMap_.erase(id);
 }
 

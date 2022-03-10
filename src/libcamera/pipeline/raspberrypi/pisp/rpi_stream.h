@@ -13,7 +13,7 @@
 #include <vector>
 
 #include <libcamera/ipa/raspberrypi.h>
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
+#include <libcamera/ipa/pisp_ipa_interface.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -32,13 +32,13 @@ class Stream : public libcamera::Stream
 {
 public:
 	Stream()
-		: id_(ipa::RPi::MaskID)
+		: id_(ipa::PiSP::MaskID)
 	{
 	}
 
 	Stream(const char *name, MediaEntity *dev, bool importOnly = false, bool config = false)
 		: external_(false), config_(config), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(ipa::RPi::MaskID)
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(ipa::PiSP::MaskID)
 	{
 	}
 

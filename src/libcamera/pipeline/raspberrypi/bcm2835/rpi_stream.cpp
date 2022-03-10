@@ -8,8 +8,6 @@
 
 #include <libcamera/base/log.h>
 
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
-
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RPISTREAM)

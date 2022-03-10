@@ -30,6 +30,8 @@ rpi_ipa_sources = files([
     'controller/rpi/sdn.cpp',
 ])
 
+rpi_ipa_sources += rpi_ipa_common_sources
+
 mod = shared_module(ipa_name,
                     [rpi_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',

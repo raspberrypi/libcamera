@@ -19,6 +19,7 @@ pisp_ipa_sources = files([
     'controller/rpi/awb.cpp',
 ])
 
+pisp_ipa_sources += rpi_ipa_common_sources
 pisp_ipa_sources += frontend_sources
 pisp_ipa_sources += backend_sources
 pisp_ipa_includes += [frontend_include_dir, backend_include_dir]

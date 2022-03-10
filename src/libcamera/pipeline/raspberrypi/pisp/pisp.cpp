@@ -1014,16 +1014,16 @@ int PipelineHandlerPiSP::start(Camera *camera, const ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
-	//ipa::PiSP::StartConfig startConfig;
-	//data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
-	//		  &startConfig);
+	ipa::PiSP::StartConfig startConfig;
+	data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
+			  &startConfig);
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	//if (!startConfig.controls.empty())
-	//	data->setSensorControls(startConfig.controls);
+	if (!startConfig.controls.empty())
+		data->setSensorControls(startConfig.controls);
 
 	/* Configure the number of dropped frames required on startup. */
-	//data->dropFrameCount_ = startConfig.dropFrameCount;
+	data->dropFrameCount_ = startConfig.dropFrameCount;
 
 	/* We need to set the dropFrameCount_ before queueing buffers. */
 	ret = queueAllBuffers(camera);
@@ -1172,14 +1172,14 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	MediaEntity *cfeStats = cfe->getEntityByName("py-cfe-fe_stats");
 	MediaEntity *cfeConfig = cfe->getEntityByName("py-cfe-fe_config");
 	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
-	MediaEntity *ispConfig = isp->getEntityByName("pispbe-config");
+	MediaEntity *IpaPrepare = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
 	MediaEntity *ispOutput1 = isp->getEntityByName("pispbe-output1");
 	//MediaEntity *ispHogOutput = isp->getEntityByName("pispbe-hog_output");
 	//MediaEntity *ispTdnOutput = isp->getEntityByName("pispbe-tdn_output");
 	//MediaEntity *ispStitchOutput = isp->getEntityByName("pispbe-stitch_output");
 
-	if (!cfeImage || !cfeStats || !cfeConfig || !ispConfig || !ispOutput0 || !ispOutput1)
+	if (!cfeImage || !cfeStats || !cfeConfig || !IpaPrepare || !ispOutput0 || !ispOutput1)
 		return -ENOENT;
 
 	/* Locate and open the cfe video streams. */
@@ -1197,7 +1197,7 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 
 	/* Tag the ISP input stream as an import stream. */
 	data->isp_[Isp::Input] = PiSP::Stream("ISP Input", ispInput, true, false);
-	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", ispConfig, false, true);
+	data->isp_[Isp::Config] = PiSP::Stream("ISP Config", IpaPrepare, false, true);
 	data->isp_[Isp::Output0] = PiSP::Stream("ISP Output0", ispOutput0);
 	data->isp_[Isp::Output1] = PiSP::Stream("ISP Output1", ispOutput1);
 
@@ -1464,10 +1464,10 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	//mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::PiSP::MaskStats);
-	//if (data->sensorMetadata_)
-	//	mapBuffers(camera, data->cfe_[Cfe::Embedded].getBuffers(),
-	//		   ipa::PiSP::MaskEmbeddedData);
+	mapBuffers(camera, data->cfe_[Cfe::Stats].getBuffers(), ipa::PiSP::MaskStats);
+	if (data->sensorMetadata_)
+		mapBuffers(camera, data->cfe_[Cfe::Embedded].getBuffers(),
+			   ipa::PiSP::MaskEmbeddedData);
 
 	return 0;
 }
@@ -2076,15 +2076,13 @@ void PiSPCameraData::handleStreamBuffer(FrameBuffer *buffer, PiSP::Stream *strea
 
 void PiSPCameraData::handleExternalBuffer(FrameBuffer *buffer, PiSP::Stream *stream)
 {
-	(void) stream;
-	(void) buffer;
-	//unsigned int id = stream->getBufferId(buffer);
+	unsigned int id = stream->getBufferId(buffer);
 
-	//if (!(id & ipa::PiSP::MaskExternalBuffer))
-	//	return;
+	if (!(id & ipa::PiSP::MaskExternalBuffer))
+		return;
 
 	/* Stop the Stream object from tracking the buffer. */
-	//stream->removeExternalBuffer(buffer);
+	stream->removeExternalBuffer(buffer);
 }
 
 void PiSPCameraData::handleState()
@@ -2235,15 +2233,16 @@ void PiSPCameraData::tryRunPipeline()
 	LOG(PISP, Debug) << "Signalling signalIspPrepare:"
 			<< " Bayer buffer id: " << bayerId;
 
-	//ipa::PiSP::ISPConfig ispPrepare;
-	//ispPrepare.bayerBufferId = ipa::PiSP::MaskBayerData | bayerId;
-	//ispPrepare.controls = std::move(bayerFrame.controls);
+	ipa::PiSP::PrepareConfig prepare;
+	prepare.buffers.bayerBufferId = ipa::PiSP::MaskBayerData | bayerId;
+	prepare.sensorControls = std::move(bayerFrame.controls);
+	prepare.requestControls = request->controls();
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = cfe_[Cfe::Embedded].getBufferId(embeddedBuffer);
 
-		//ispPrepare.embeddedBufferId = ipa::PiSP::MaskEmbeddedData | embeddedId;
-		//ispPrepare.embeddedBufferPresent = true;
+		prepare.buffers.embeddedBufferId = ipa::PiSP::MaskEmbeddedData | embeddedId;
+		prepare.embeddedBufferPresent = true;
 
 		LOG(PISP, Debug) << "Signalling signalIspPrepare:"
 				<< " Bayer buffer id: " << embeddedId;

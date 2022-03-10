@@ -4,6 +4,7 @@
  *
  * algorithm.cpp - ISP control algorithms
  */
+#include <memory>
 
 #include "algorithm.hpp"
 
@@ -29,16 +30,30 @@ void Algorithm::Process([[maybe_unused]] StatisticsPtr &stats,
 {
 }
 
-// For registering algorithms with the system:
+namespace {
 
-static std::map<std::string, AlgoCreateFunc> algorithms;
+/*
+ * Wrap the algorithm map in a function to prevent static initialisation
+ * failures caused by random ordering of static variable initialisation.
+ * See https://isocpp.org/wiki/faq/ctors#static-init-order for more details.
+ */
+std::map<std::string, AlgoCreateFunc> *GetAlgorithmMap()
+{
+	static std::unique_ptr<std::map<std::string, AlgoCreateFunc>> algorithms =
+			std::make_unique<std::map<std::string, AlgoCreateFunc>>();
+	return algorithms.get();
+}
+
+} /* namespace */
+
 std::map<std::string, AlgoCreateFunc> const &RPiController::GetAlgorithms()
 {
-	return algorithms;
+	return *GetAlgorithmMap();
 }
 
 RegisterAlgorithm::RegisterAlgorithm(char const *name,
 				     AlgoCreateFunc create_func)
 {
-	algorithms[std::string(name)] = create_func;
+	auto map = GetAlgorithmMap();
+	map->emplace(name, create_func);
 }

@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <thread>
 
-#include "../algorithm.hpp"
+#include "algorithm.hpp"
 #include "../alsc_status.h"
 
 namespace RPiController {

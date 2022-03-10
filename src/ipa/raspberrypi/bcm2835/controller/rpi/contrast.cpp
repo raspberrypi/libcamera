@@ -9,7 +9,7 @@
 #include <libcamera/base/log.h>
 
 #include "../contrast_status.h"
-#include "../histogram.hpp"
+#include "histogram.hpp"
 
 #include "contrast.hpp"
 

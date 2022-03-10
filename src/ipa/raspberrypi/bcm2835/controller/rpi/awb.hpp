@@ -11,7 +11,7 @@
 #include <thread>
 
 #include "../awb_algorithm.hpp"
-#include "../pwl.hpp"
+#include "pwl.hpp"
 #include "../awb_status.h"
 
 namespace RPiController {

@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include "../algorithm.hpp"
+#include "algorithm.hpp"
 #include "../noise_status.h"
 
 // This is our implementation of the "noise algorithm".

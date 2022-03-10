@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include "../algorithm.hpp"
+#include "algorithm.hpp"
 #include "../dpc_status.h"
 
 namespace RPiController {

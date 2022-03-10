@@ -12,10 +12,10 @@
 #include <libcamera/base/log.h>
 
 #include "../awb_status.h"
-#include "../device_status.h"
-#include "../histogram.hpp"
+#include "device_status.h"
+#include "histogram.hpp"
 #include "../lux_status.h"
-#include "../metadata.hpp"
+#include "metadata.hpp"
 
 #include "agc.hpp"
 

@@ -13,8 +13,8 @@
 #include <libcamera/base/utils.h>
 
 #include "camera_mode.h"
-#include "controller/controller.hpp"
-#include "controller/metadata.hpp"
+#include "controller.hpp"
+#include "metadata.hpp"
 #include "md_parser.hpp"
 
 #include "libcamera/internal/v4l2_videodevice.h"

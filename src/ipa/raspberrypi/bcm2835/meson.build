@@ -15,9 +15,6 @@ rpi_ipa_includes = [
 
 rpi_ipa_sources = files([
     'raspberrypi.cpp',
-    'controller/controller.cpp',
-    'controller/histogram.cpp',
-    'controller/algorithm.cpp',
     'controller/rpi/alsc.cpp',
     'controller/rpi/awb.cpp',
     'controller/rpi/sharpen.cpp',
@@ -31,8 +28,6 @@ rpi_ipa_sources = files([
     'controller/rpi/ccm.cpp',
     'controller/rpi/contrast.cpp',
     'controller/rpi/sdn.cpp',
-    'controller/pwl.cpp',
-    'controller/device_status.cpp',
 ])
 
 mod = shared_module(ipa_name,

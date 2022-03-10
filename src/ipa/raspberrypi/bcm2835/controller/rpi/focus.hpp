@@ -6,8 +6,8 @@
  */
 #pragma once
 
-#include "../algorithm.hpp"
-#include "../metadata.hpp"
+#include "algorithm.hpp"
+#include "metadata.hpp"
 
 /*
  * The "focus" algorithm. All it does it print out a version of the

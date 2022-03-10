@@ -9,6 +9,11 @@ rpi_ipa_common_sources = files([
     'cam_helper_imx477.cpp',
     'cam_helper_imx519.cpp',
     'cam_helper_ov9281.cpp',
+    'controller.cpp',
+    'algorithm.cpp',
+    'pwl.cpp',
+    'histogram.cpp',
+    'device_status.cpp',
 ])
 
 rpi_ipa_common_includes = [

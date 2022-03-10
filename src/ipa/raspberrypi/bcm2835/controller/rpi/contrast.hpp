@@ -9,7 +9,7 @@
 #include <mutex>
 
 #include "../contrast_algorithm.hpp"
-#include "../pwl.hpp"
+#include "pwl.hpp"
 
 namespace RPiController {
 

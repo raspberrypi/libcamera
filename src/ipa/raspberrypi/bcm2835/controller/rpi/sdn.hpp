@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include "../algorithm.hpp"
+#include "algorithm.hpp"
 #include "../denoise_algorithm.hpp"
 
 namespace RPiController {

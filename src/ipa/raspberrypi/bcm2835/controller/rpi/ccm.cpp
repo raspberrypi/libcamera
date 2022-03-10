@@ -10,7 +10,7 @@
 #include "../awb_status.h"
 #include "../ccm_status.h"
 #include "../lux_status.h"
-#include "../metadata.hpp"
+#include "metadata.hpp"
 
 #include "ccm.hpp"
 

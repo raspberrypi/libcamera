@@ -7,9 +7,9 @@
 
 #include <libcamera/base/log.h>
 
-#include "../device_status.h"
+#include "device_status.h"
 #include "../lux_status.h"
-#include "../pwl.hpp"
+#include "pwl.hpp"
 
 #include "geq.hpp"
 

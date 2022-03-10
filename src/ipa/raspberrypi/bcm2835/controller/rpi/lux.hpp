@@ -11,7 +11,7 @@
 #include <libcamera/base/utils.h>
 
 #include "../lux_status.h"
-#include "../algorithm.hpp"
+#include "algorithm.hpp"
 
 // This is our implementation of the "lux control algorithm".
 

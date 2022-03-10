@@ -10,7 +10,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "../device_status.h"
+#include "device_status.h"
 
 #include "lux.hpp"
 

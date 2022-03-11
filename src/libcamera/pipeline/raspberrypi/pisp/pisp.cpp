@@ -226,18 +226,16 @@ public:
 
 	void enumerateVideoDevices(MediaLink *link);
 
-	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
 	void prepareCfe();
 	void runBackend(uint32_t bufferId);
-	void embeddedComplete(uint32_t bufferId);
-	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls);
 	void setSensorControls(ControlList &controls);
+	void ipaPrepareComplete(const ipa::PiSP::IpaBuffers &buffers, const ControlList &metadata);
 
 	/* bufferComplete signal handlers. */
 	void cfeBufferDequeue(FrameBuffer *buffer);
-	void ispInputDequeue(FrameBuffer *buffer);
-	void ispOutputDequeue(FrameBuffer *buffer);
+	void beInputDequeue(FrameBuffer *buffer);
+	void beOutputDequeue(FrameBuffer *buffer);
 
 	void clearIncompleteRequests();
 	void handleStreamBuffer(FrameBuffer *buffer, PiSP::Stream *stream);
@@ -280,13 +278,7 @@ public:
 	enum class State { Stopped, Idle, Busy, IpaComplete };
 	State state_;
 
-	struct BayerFrame {
-		FrameBuffer *buffer;
-		ControlList controls;
-	};
 
-	std::queue<BayerFrame> bayerQueue_;
-	std::queue<FrameBuffer *> embeddedQueue_;
 	std::queue<Request *> requestQueue_;
 
 	/*
@@ -312,12 +304,35 @@ public:
 	 */
 	std::optional<int32_t> notifyGainsUnity_;
 
+	struct CfeJob {
+		CfeJob(bool embeddedData)
+			: bayerBuffer(nullptr), embeddedBuffer(nullptr),
+			  statsBuffer(nullptr), sensorControls(),
+			  embeddedData_(embeddedData)
+		{
+		}
+
+		bool isComplete()
+		{
+			return bayerBuffer && statsBuffer && (!embeddedData_ || embeddedBuffer);
+		}
+
+		FrameBuffer *bayerBuffer;
+		FrameBuffer *embeddedBuffer;
+		FrameBuffer *statsBuffer;
+		ControlList sensorControls;
+
+	private:
+		bool embeddedData_;
+	};
+
+	std::queue<CfeJob> cfeJobQueue_;
+
 private:
 	void checkRequestCompleted();
-	void fillRequestMetadata(const ControlList &bufferControls,
+	void fillRequestMetadata(const ControlList &sensorControls,
 				 Request *request);
 	void tryRunPipeline();
-	bool findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer);
 
 	unsigned int ispOutputCount_;
 };
@@ -1089,8 +1104,7 @@ void PipelineHandlerPiSP::stopDevice(Camera *camera)
 		stream->dev()->streamOff();
 
 	data->clearIncompleteRequests();
-	data->bayerQueue_ = {};
-	data->embeddedQueue_ = {};
+	data->cfeJobQueue_ = {};
 
 	/* Stop the IPA. */
 	//data->ipa_->stop();
@@ -1226,10 +1240,10 @@ int PipelineHandlerPiSP::registerCamera(MediaDevice *cfe, MediaDevice *isp, Medi
 	data->cfe_[Cfe::Stats].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::cfeBufferDequeue);
 
-	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispInputDequeue);
-	data->isp_[Isp::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
-	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
-	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::ispOutputDequeue);
+	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &PiSPCameraData::beInputDequeue);
+	data->isp_[Isp::Config].dev()->bufferReady.connect(data.get(), &PiSPCameraData::beOutputDequeue);
+	data->isp_[Isp::Output0].dev()->bufferReady.connect(data.get(), &PiSPCameraData::beOutputDequeue);
+	data->isp_[Isp::Output1].dev()->bufferReady.connect(data.get(), &PiSPCameraData::beOutputDequeue);
 
 	data->sensor_ = std::make_unique<CameraSensor>(sensorEntity);
 	if (!data->sensor_)
@@ -1542,6 +1556,7 @@ int PiSPCameraData::loadIPA(ipa::PiSP::SensorConfig *sensorConfig)
 		return -ENOENT;
 
 	ipa_->setDelayedControls.connect(this, &PiSPCameraData::setDelayedControls);
+	ipa_->ipaPrepareComplete.connect(this, &PiSPCameraData::ipaPrepareComplete);
 
 	/*
 	 * The configuration (tuning file) is made from the sensor name unless
@@ -1772,42 +1787,6 @@ void PiSPCameraData::enumerateVideoDevices(MediaLink *link)
 	}
 }
 
-void PiSPCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &controls)
-{
-	if (state_ == State::Stopped)
-		return;
-
-	FrameBuffer *buffer = cfe_[Cfe::Stats].getBuffers().at(bufferId);
-
-	handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
-
-	/* Add to the Request metadata buffer what the IPA has provided. */
-	Request *request = requestQueue_.front();
-	request->metadata().merge(controls);
-
-	/*
-	 * Inform the sensor of the latest colour gains if it has the
-	 * V4L2_CID_NOTIFY_GAINS control (which means notifyGainsUnity_ is set).
-	 */
-	if (notifyGainsUnity_ && controls.contains(libcamera::controls::ColourGains)) {
-		libcamera::Span<const float> colourGains = controls.get(libcamera::controls::ColourGains);
-		/* The control wants linear gains in the order B, Gb, Gr, R. */
-		ControlList ctrls(sensor_->controls());
-		std::array<int32_t, 4> gains{
-			static_cast<int32_t>(colourGains[1] * *notifyGainsUnity_),
-			*notifyGainsUnity_,
-			*notifyGainsUnity_,
-			static_cast<int32_t>(colourGains[0] * *notifyGainsUnity_)
-		};
-		ctrls.set(V4L2_CID_NOTIFY_GAINS, Span<const int32_t>{ gains });
-
-		sensor_->setControls(&ctrls);
-	}
-
-	state_ = State::IpaComplete;
-	handleState();
-}
-
 void PiSPCameraData::prepareCfe()
 {
 	FrameBuffer *configBuffer = cfe_[Cfe::Config].getBuffer();
@@ -1842,32 +1821,12 @@ void PiSPCameraData::runBackend(uint32_t bufferId)
 	Span<uint8_t> config = it->second.planes()[0];
 	be_->Prepare(reinterpret_cast<pisp_be_tiles_config *>(config.data()));
 	isp_[Isp::Config].queueBuffer(configBuffer);
-
-	handleState();
-}
-
-void PiSPCameraData::embeddedComplete(uint32_t bufferId)
-{
-	if (state_ == State::Stopped)
-		return;
-
-	FrameBuffer *buffer = cfe_[Cfe::Embedded].getBuffers().at(bufferId);
-	handleStreamBuffer(buffer, &cfe_[Cfe::Embedded]);
-	handleState();
-}
-
-void PiSPCameraData::setIspControls(const ControlList &controls)
-{
-	ControlList ctrls = controls;
-
-	handleState();
 }
 
 void PiSPCameraData::setDelayedControls(const ControlList &controls)
 {
 	if (!delayedCtrls_->push(controls))
 		LOG(PISP, Error) << "V4L2 DelayedControl set failed";
-	handleState();
 }
 
 void PiSPCameraData::setSensorControls(ControlList &controls)
@@ -1892,6 +1851,45 @@ void PiSPCameraData::setSensorControls(ControlList &controls)
 	sensor_->setControls(&controls);
 }
 
+void PiSPCameraData::ipaPrepareComplete(const ipa::PiSP::IpaBuffers &buffers,
+					const ControlList &metadata)
+{
+	handleStreamBuffer(cfe_[Cfe::Stats].getBuffers().at(buffers.statsBufferId & ~ipa::PiSP::MaskStats),
+			   &cfe_[Cfe::Stats]);
+	if (sensorMetadata_)
+		handleStreamBuffer(cfe_[Cfe::Embedded].getBuffers().at(buffers.embeddedBufferId & ~ipa::PiSP::MaskStats),
+				   &cfe_[Cfe::Embedded]);
+
+	runBackend(buffers.bayerBufferId & ~ipa::PiSP::MaskBayerData);
+
+	/* Add to the Request metadata buffer what the IPA has provided. */
+	Request *request = requestQueue_.front();
+	request->metadata().merge(metadata);
+
+	/*
+	 * Inform the sensor of the latest colour gains if it has the
+	 * V4L2_CID_NOTIFY_GAINS control (which means notifyGainsUnity_ is set).
+	 */
+	if (notifyGainsUnity_ && metadata.contains(libcamera::controls::ColourGains)) {
+		libcamera::Span<const float> colourGains = metadata.get(libcamera::controls::ColourGains);
+		/* The control wants linear gains in the order B, Gb, Gr, R. */
+		ControlList ctrls(sensor_->controls());
+		std::array<int32_t, 4> gains{
+			static_cast<int32_t>(colourGains[1] * *notifyGainsUnity_),
+			*notifyGainsUnity_,
+			*notifyGainsUnity_,
+			static_cast<int32_t>(colourGains[0] * *notifyGainsUnity_)
+		};
+		ctrls.set(V4L2_CID_NOTIFY_GAINS, Span<const int32_t>{ gains });
+
+		sensor_->setControls(&ctrls);
+	}
+
+	state_ = State::IpaComplete;
+
+	handleState();
+}
+
 void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 {
 	PiSP::Stream *stream = nullptr;
@@ -1907,6 +1905,9 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 			break;
 		}
 	}
+
+	if (cfeJobQueue_.empty() || cfeJobQueue_.back().isComplete())
+		cfeJobQueue_.push({ sensorMetadata_ });
 
 	/* The buffer must belong to one of our streams. */
 	ASSERT(stream);
@@ -1926,23 +1927,22 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 * as it does not receive the FrameBuffer object.
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
-		bayerQueue_.push({ buffer, std::move(ctrl) });
+		cfeJobQueue_.back().bayerBuffer = buffer;
+		cfeJobQueue_.back().sensorControls = std::move(ctrl);
 	} else if (stream == &cfe_[Cfe::Stats]) {
-
-		//ipa_->signalStatReady(ipa::PiSP::MaskStats | static_cast<unsigned int>(index));
-		handleStreamBuffer(buffer, &cfe_[Cfe::Stats]);
+		cfeJobQueue_.back().statsBuffer = buffer;
 	} else if (stream == &cfe_[Cfe::Config]) {
 		handleStreamBuffer(buffer, &cfe_[Cfe::Config]);
 		prepareCfe();
 	}
 	else {
-		embeddedQueue_.push(buffer);
+		cfeJobQueue_.back().embeddedBuffer = buffer;
 	}
 
 	handleState();
 }
 
-void PiSPCameraData::ispInputDequeue(FrameBuffer *buffer)
+void PiSPCameraData::beInputDequeue(FrameBuffer *buffer)
 {
 	if (state_ == State::Stopped)
 		return;
@@ -1956,7 +1956,7 @@ void PiSPCameraData::ispInputDequeue(FrameBuffer *buffer)
 	handleState();
 }
 
-void PiSPCameraData::ispOutputDequeue(FrameBuffer *buffer)
+void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 {
 	PiSP::Stream *stream = nullptr;
 	int index;
@@ -1987,8 +1987,8 @@ void PiSPCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 */
 	ispOutputCount_++;
 
-	if (ispOutputCount_ > 2)
-		state_ = State::IpaComplete;
+	//if (ispOutputCount_ > 2)
+	//	state_ = State::IpaComplete;
 
 	handleState();
 }
@@ -2155,26 +2155,20 @@ void PiSPCameraData::applyScalerCrop(const ControlList &controls)
 	}
 }
 
-void PiSPCameraData::fillRequestMetadata(const ControlList &bufferControls,
+void PiSPCameraData::fillRequestMetadata(const ControlList &sensorControls,
 					Request *request)
 {
 	request->metadata().set(controls::SensorTimestamp,
-				bufferControls.get(controls::SensorTimestamp));
+				sensorControls.get(controls::SensorTimestamp));
 
 	request->metadata().set(controls::ScalerCrop, scalerCrop_);
 }
 
 void PiSPCameraData::tryRunPipeline()
 {
-	FrameBuffer *embeddedBuffer;
-	BayerFrame bayerFrame;
-
 	/* If any of our request or buffer queues are empty, we cannot proceed. */
 	if (state_ != State::Idle || requestQueue_.empty() ||
-	    bayerQueue_.empty() || (embeddedQueue_.empty() && sensorMetadata_))
-		return;
-
-	if (!findMatchingBuffers(bayerFrame, embeddedBuffer))
+	    cfeJobQueue_.empty() || !cfeJobQueue_.front().isComplete())
 		return;
 
 	/* Take the first request from the queue and action the IPA. */
@@ -2189,7 +2183,7 @@ void PiSPCameraData::tryRunPipeline()
 	 * may have been populated if we have dropped the previous frame.
 	 */
 	request->metadata().clear();
-	fillRequestMetadata(bayerFrame.controls, request);
+	fillRequestMetadata(cfeJobQueue_.front().sensorControls, request);
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we
@@ -2201,69 +2195,34 @@ void PiSPCameraData::tryRunPipeline()
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
-	unsigned int bayerId = cfe_[Cfe::Output0].getBufferId(bayerFrame.buffer);
+	unsigned int bayerId = cfe_[Cfe::Output0].getBufferId(cfeJobQueue_.front().bayerBuffer);
+	unsigned int statsId = cfe_[Cfe::Stats].getBufferId(cfeJobQueue_.front().statsBuffer);
+	ASSERT(bayerId != -1u && statsId != -1u);
 
-	LOG(PISP, Debug) << "Signalling signalIspPrepare:"
-			<< " Bayer buffer id: " << bayerId;
+	LOG(PISP, Debug) << "Signalling signalIpaPrepare:"
+			 << " Bayer buffer id: " << bayerId
+			 << " Stats buffer id: " << statsId;
 
 	ipa::PiSP::PrepareConfig prepare;
 	prepare.buffers.bayerBufferId = ipa::PiSP::MaskBayerData | bayerId;
-	prepare.sensorControls = std::move(bayerFrame.controls);
+	prepare.buffers.statsBufferId = ipa::PiSP::MaskStats | statsId;
+	prepare.sensorControls = std::move(cfeJobQueue_.front().sensorControls);
 	prepare.requestControls = request->controls();
 
-	if (embeddedBuffer) {
-		unsigned int embeddedId = cfe_[Cfe::Embedded].getBufferId(embeddedBuffer);
+	if (sensorMetadata_) {
+		unsigned int embeddedId = cfe_[Cfe::Embedded].getBufferId(cfeJobQueue_.front().embeddedBuffer);
+		ASSERT(embeddedId != -1u);
 
 		prepare.buffers.embeddedBufferId = ipa::PiSP::MaskEmbeddedData | embeddedId;
 		prepare.embeddedBufferPresent = true;
 
-		LOG(PISP, Debug) << "Signalling signalIspPrepare:"
-				<< " Bayer buffer id: " << embeddedId;
+		LOG(PISP, Debug) << "Signalling signalIpaPrepare:"
+				 << " Bayer buffer id: " << embeddedId;
 	}
 
-	//ipa_->signalIspPrepare(ispPrepare);
-	runBackend(bayerId);
-}
+	cfeJobQueue_.pop();
 
-bool PiSPCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)
-{
-	if (bayerQueue_.empty())
-		return false;
-
-	/* Start with the front of the bayer queue. */
-	bayerFrame = std::move(bayerQueue_.front());
-	bayerQueue_.pop();
-
-	/*
-	 * Find the embedded data buffer with a matching timestamp to pass to
-	 * the IPA. Any embedded buffers with a timestamp lower than the
-	 * current bayer buffer will be removed and re-queued to the driver.
-	 */
-	uint64_t ts = bayerFrame.buffer->metadata().timestamp;
-	embeddedBuffer = nullptr;
-	while (!embeddedQueue_.empty()) {
-		FrameBuffer *b = embeddedQueue_.front();
-		if (b->metadata().timestamp < ts) {
-			embeddedQueue_.pop();
-			cfe_[Cfe::Embedded].returnBuffer(b);
-			LOG(PISP, Debug) << "Dropping unmatched input frame in stream "
-					 << cfe_[Cfe::Embedded].name();
-		} else if (b->metadata().timestamp == ts) {
-			/* Found a match! */
-			embeddedBuffer = b;
-			embeddedQueue_.pop();
-			break;
-		} else {
-			break; /* Only higher timestamps from here. */
-		}
-	}
-
-	if (!embeddedBuffer && sensorMetadata_) {
-		/* Log if there is no matching embedded data buffer found. */
-		LOG(PISP, Debug) << "Returning bayer frame without a matching embedded buffer.";
-	}
-
-	return true;
+	ipa_->signalIpaPrepare(prepare);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerPiSP)

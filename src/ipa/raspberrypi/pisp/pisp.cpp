@@ -105,6 +105,7 @@ private:
 	void applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 	void applyAWB(const struct AwbStatus *awbStatus);
+	void setDefaultConfig();
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -206,6 +207,8 @@ int IPAPiSP::init(const IPASettings &settings, const ipa::PiSP::InitConfig &conf
 		return -ENODEV;
 	}
 
+	setDefaultConfig();
+
 	return 0;
 }
 
@@ -229,7 +232,7 @@ void IPAPiSP::start(const ControlList &controls, ipa::PiSP::StartConfig *startCo
 	metadata.Get("agc.status", agcStatus);
 	if (agcStatus.shutter_time && agcStatus.analogue_gain) {
 		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
+		//applyAGC(&agcStatus, ctrls);
 		startConfig->controls = std::move(ctrls);
 	}
 
@@ -549,7 +552,7 @@ void IPAPiSP::prepareController(const ipa::PiSP::PrepareConfig &config)
 	lastRunTimestamp_ = frameTimestamp;
 	preparePending_ = true;
 
-	controller_.Prepare(&rpiMetadata_);
+	//controller_.Prepare(&rpiMetadata_);
 
 	/* Lock the metadata buffer to avoid constant locks/unlocks. */
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
@@ -656,6 +659,30 @@ void IPAPiSP::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
 }
 
+void IPAPiSP::setDefaultConfig()
+{
+	pisp_be_global_config global;
+	pisp_be_ccm_config csc;
+	float coeffs[] = { 0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419, -0.081 };
+	float offsets[] = { 0, 32768, 32768 };
+
+	for (int i = 0; i < 9; i++)
+		csc.coeffs[i] = coeffs[i] * (1 << 10);
+	for (int i = 0; i < 3; i++)
+		csc.offsets[i] = offsets[i] * (1 << 10);
+
+	be_->GetGlobal(global);
+	global.bayer_enables += PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
+	global.rgb_enables += PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_CSC1;
+
+	be_->SetGlobal(global);
+	be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
+	be_->SetWbg({(uint16_t)(2 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.5 * 1024), /* pad */ 0});
+	be_->SetDemosaic({8, 2, /* pad */ 0});
+	be_->SetCsc(0, csc);
+	be_->SetCsc(1, csc);
+
+}
 /*
  * External IPA module interface
  */

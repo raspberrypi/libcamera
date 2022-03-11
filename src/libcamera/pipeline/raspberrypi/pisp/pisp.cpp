@@ -118,6 +118,25 @@ bool isRaw(const PixelFormat &pixFmt)
 	return info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
 }
 
+uint32_t toPiSPBayerOrder(V4L2PixelFormat format)
+{
+	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(format);
+
+	switch (bayer.order) {
+	case BayerFormat::Order::BGGR:
+		return PISP_BAYER_ORDER_BGGR;
+	case BayerFormat::Order::GBRG:
+		return PISP_BAYER_ORDER_GBRG;
+	case BayerFormat::Order::GRBG:
+		return PISP_BAYER_ORDER_GRBG;
+	case BayerFormat::Order::RGGB:
+		return PISP_BAYER_ORDER_RGGB;
+	default:
+		ASSERT(0);
+		return -1;
+	}
+}
+
 double scoreFormat(double desired, double actual)
 {
 	double score = desired - actual;
@@ -733,14 +752,14 @@ int PipelineHandlerPiSP::configure(Camera *camera, CameraConfiguration *config)
 	 * the sensor and user transform.
 	 */
 	if (data->supportsFlips_) {
-		const PiSPCameraConfiguration *rpiConfig =
+		const PiSPCameraConfiguration *cfg =
 			static_cast<const PiSPCameraConfiguration *>(config);
 		ControlList controls;
 
 		controls.set(V4L2_CID_HFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
+			     static_cast<int32_t>(!!(cfg->combinedTransform_ & Transform::HFlip)));
 		controls.set(V4L2_CID_VFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
+			     static_cast<int32_t>(!!(cfg->combinedTransform_ & Transform::VFlip)));
 		data->setSensorControls(controls);
 	}
 
@@ -1472,7 +1491,8 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 	return 0;
 }
 
-void PipelineHandlerPiSP::mapBuffers(Camera *camera, const PiSP::BufferMap &buffers, unsigned int mask)
+void PipelineHandlerPiSP::mapBuffers(Camera *camera, const PiSP::BufferMap &buffers,
+				     unsigned int mask)
 {
 	PiSPCameraData *data = cameraData(camera);
 	std::vector<IPABuffer> ipaBuffers;
@@ -1484,8 +1504,7 @@ void PipelineHandlerPiSP::mapBuffers(Camera *camera, const PiSP::BufferMap &buff
 	 * handler and the IPA.
 	 */
 	for (auto const &it : buffers) {
-		ipaBuffers.push_back(IPABuffer(mask | it.first,
-					       it.second->planes()));
+		ipaBuffers.push_back(IPABuffer(mask | it.first, it.second->planes()));
 		data->ipaBuffers_.insert(mask | it.first);
 	}
 
@@ -1587,24 +1606,7 @@ int PiSPCameraData::configureCfe()
 	pisp_fe_global_config global;
 	global.enables = PISP_FE_ENABLE_AWB_STATS | PISP_FE_ENABLE_AGC_STATS |
 			 PISP_FE_ENABLE_CDAF_STATS | PISP_FE_ENABLE_OUTPUT0;
-
-	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
-	switch (bayer.order) {
-	case BayerFormat::Order::BGGR:
-		global.bayer_order = PISP_BAYER_ORDER_BGGR;
-		break;
-	case BayerFormat::Order::GBRG:
-		global.bayer_order = PISP_BAYER_ORDER_GBRG;
-		break;
-	case BayerFormat::Order::GRBG:
-		global.bayer_order = PISP_BAYER_ORDER_GRBG;
-		break;
-	case BayerFormat::Order::RGGB:
-		global.bayer_order = PISP_BAYER_ORDER_RGGB;
-		break;
-	default:
-		ASSERT(0);
-	}
+	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
 	pisp_fe_input_config input;
 	memset(&input, 0, sizeof(input));
@@ -1639,35 +1641,11 @@ int PiSPCameraData::configureBe()
 	inputFormat.format = PISP_IMAGE_FORMAT_BPS_16 + PISP_IMAGE_FORMAT_UNCOMPRESSED;
 
 	pisp_be_global_config global;
-	global.bayer_enables = PISP_BE_BAYER_ENABLE_INPUT + PISP_BE_BAYER_ENABLE_BLC + PISP_BE_BAYER_ENABLE_WBG + PISP_BE_BAYER_ENABLE_DEMOSAIC;
-	global.rgb_enables = PISP_BE_RGB_ENABLE_OUTPUT0 + PISP_BE_RGB_ENABLE_CSC0 + PISP_BE_RGB_ENABLE_OUTPUT1;
 
-	BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc);
-	switch (bayer.order) {
-	case BayerFormat::Order::BGGR:
-		global.bayer_order = PISP_BAYER_ORDER_BGGR;
-		break;
-	case BayerFormat::Order::GBRG:
-		global.bayer_order = PISP_BAYER_ORDER_GBRG;
-		break;
-	case BayerFormat::Order::GRBG:
-		global.bayer_order = PISP_BAYER_ORDER_GRBG;
-		break;
-	case BayerFormat::Order::RGGB:
-		global.bayer_order = PISP_BAYER_ORDER_RGGB;
-		break;
-	default:
-		ASSERT(0);
-	}
-
-	pisp_be_ccm_config csc;
-	float coeffs[] = { 0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419, -0.081 };
-	float offsets[] = { 0, 32768, 32768 };
-
-	for (int i = 0; i < 9; i++)
-		csc.coeffs[i] = coeffs[i] * (1 << 10);
-	for (int i = 0; i < 3; i++)
-		csc.offsets[i] = offsets[i] * (1 << 10);
+	be_->GetGlobal(global);
+	global.bayer_enables += PISP_BE_BAYER_ENABLE_INPUT;
+	global.rgb_enables += PISP_BE_RGB_ENABLE_OUTPUT0 + PISP_BE_RGB_ENABLE_OUTPUT1;
+	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
 	V4L2DeviceFormat ispFormat0, ispFormat1;
 	pisp_be_output_format_config outputFormat0, outputFormat1;
@@ -1694,13 +1672,8 @@ int PiSPCameraData::configureBe()
 	if (ispFormat1.size != ispFormat0.size)
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_RESAMPLE1;
 
-	be_->SetInputFormat(inputFormat);
 	be_->SetGlobal(global);
-	be_->SetBlc({4096, 4096, 4096, 4096, 0, /* pad */ 0});
-	be_->SetWbg({(uint16_t)(2 * 1024), (uint16_t)(1.0 * 1024), (uint16_t)(1.5 * 1024), /* pad */ 0});
-	be_->SetDemosaic({8, 2, /* pad */ 0});
-	be_->SetCsc(0, csc);
-	be_->SetCsc(1, csc);
+	be_->SetInputFormat(inputFormat);
 	be_->SetOutputFormat(0, outputFormat0);
 	be_->SetOutputFormat(1, outputFormat1);
 

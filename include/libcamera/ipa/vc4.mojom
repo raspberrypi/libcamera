@@ -43,7 +43,7 @@ struct StartConfig {
 	int32 dropFrameCount;
 };
 
-interface IPARPiInterface {
+interface IPAVC4Interface {
 	init(libcamera.IPASettings settings)
 		=> (int32 ret, SensorConfig sensorConfig);
 	start(libcamera.ControlList controls) => (StartConfig startConfig);

@@ -1,19 +1,19 @@
 # SPDX-License-Identifier: CC0-1.0
 
-ipa_name = 'ipa_rpi'
+ipa_name = 'ipa_vc4'
 
-rpi_ipa_deps = [
+vc4_ipa_deps = [
     libcamera_private,
     dependency('boost'),
     libatomic,
 ]
 
-rpi_ipa_includes = [
+vc4_ipa_includes = [
     rpi_ipa_common_includes,
     include_directories('controller')
 ]
 
-rpi_ipa_sources = files([
+vc4_ipa_sources = files([
     'raspberrypi.cpp',
     'controller/rpi/alsc.cpp',
     'controller/rpi/awb.cpp',
@@ -30,13 +30,13 @@ rpi_ipa_sources = files([
     'controller/rpi/sdn.cpp',
 ])
 
-rpi_ipa_sources += rpi_ipa_common_sources
+vc4_ipa_sources += rpi_ipa_common_sources
 
 mod = shared_module(ipa_name,
-                    [rpi_ipa_sources, libcamera_generated_ipa_headers],
+                    [vc4_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',
-                    include_directories : rpi_ipa_includes,
-                    dependencies : rpi_ipa_deps,
+                    include_directories : vc4_ipa_includes,
+                    dependencies : vc4_ipa_deps,
                     link_with : libipa,
                     install : true,
                     install_dir : ipa_install_dir)

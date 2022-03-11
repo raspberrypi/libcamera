@@ -4,7 +4,7 @@
  * \todo Document the interface and remove the related EXCLUDE_PATTERNS entry.
  */
 
-module ipa.RPi;
+module ipa.vc4;
 
 import "include/libcamera/ipa/core.mojom";
 

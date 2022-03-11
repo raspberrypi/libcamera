@@ -191,7 +191,7 @@ public:
 
 	void frameStarted(uint32_t sequence);
 
-	int loadIPA(ipa::RPi::SensorConfig *sensorConfig);
+	int loadIPA(ipa::vc4::SensorConfig *sensorConfig);
 	int configureIPA(const CameraConfiguration *config);
 
 	void enumerateVideoDevices(MediaLink *link);
@@ -214,7 +214,7 @@ public:
 	void handleState();
 	void applyScalerCrop(const ControlList &controls);
 
-	std::unique_ptr<ipa::RPi::IPAProxyRPi> ipa_;
+	std::unique_ptr<ipa::vc4::IPAProxyRPi> ipa_;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
@@ -986,7 +986,7 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
-	ipa::RPi::StartConfig startConfig;
+	ipa::vc4::StartConfig startConfig;
 	data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
 			  &startConfig);
 
@@ -1192,7 +1192,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 
 	data->sensorFormats_ = populateSensorFormats(data->sensor_);
 
-	ipa::RPi::SensorConfig sensorConfig;
+	ipa::vc4::SensorConfig sensorConfig;
 	if (data->loadIPA(&sensorConfig)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return -EINVAL;
@@ -1415,10 +1415,10 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::RPi::MaskStats);
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::vc4::MaskStats);
 	if (data->sensorMetadata_)
 		mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(),
-			   ipa::RPi::MaskEmbeddedData);
+			   ipa::vc4::MaskEmbeddedData);
 
 	return 0;
 }
@@ -1464,9 +1464,9 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 	delayedCtrls_->applyControls(sequence);
 }
 
-int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
+int RPiCameraData::loadIPA(ipa::vc4::SensorConfig *sensorConfig)
 {
-	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::vc4::IPAProxyRPi>(pipe(), 1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
@@ -1497,7 +1497,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 {
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
-	ipa::RPi::IPAConfig ipaConfig;
+	ipa::vc4::IPAConfig ipaConfig;
 
 	/* Inform IPA of stream configuration and sensor controls. */
 	unsigned int i = 0;
@@ -1517,7 +1517,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
-		lsTable_ = SharedFD(dmaHeap_.alloc("ls_grid", ipa::RPi::MaxLsGridSize));
+		lsTable_ = SharedFD(dmaHeap_.alloc("ls_grid", ipa::vc4::MaxLsGridSize));
 		if (!lsTable_.isValid())
 			return -ENOMEM;
 
@@ -1834,7 +1834,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 * application until after the IPA signals so.
 	 */
 	if (stream == &isp_[Isp::Stats]) {
-		ipa_->signalStatReady(ipa::RPi::MaskStats | static_cast<unsigned int>(index));
+		ipa_->signalStatReady(ipa::vc4::MaskStats | static_cast<unsigned int>(index));
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
 		handleStreamBuffer(buffer, stream);
@@ -1909,7 +1909,7 @@ void RPiCameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *strea
 {
 	unsigned int id = stream->getBufferId(buffer);
 
-	if (!(id & ipa::RPi::MaskExternalBuffer))
+	if (!(id & ipa::vc4::MaskExternalBuffer))
 		return;
 
 	/* Stop the Stream object from tracking the buffer. */
@@ -2064,14 +2064,14 @@ void RPiCameraData::tryRunPipeline()
 	LOG(RPI, Debug) << "Signalling signalIspPrepare:"
 			<< " Bayer buffer id: " << bayerId;
 
-	ipa::RPi::ISPConfig ispPrepare;
-	ispPrepare.bayerBufferId = ipa::RPi::MaskBayerData | bayerId;
+	ipa::vc4::ISPConfig ispPrepare;
+	ispPrepare.bayerBufferId = ipa::vc4::MaskBayerData | bayerId;
 	ispPrepare.controls = std::move(bayerFrame.controls);
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
-		ispPrepare.embeddedBufferId = ipa::RPi::MaskEmbeddedData | embeddedId;
+		ispPrepare.embeddedBufferId = ipa::vc4::MaskEmbeddedData | embeddedId;
 		ispPrepare.embeddedBufferPresent = true;
 
 		LOG(RPI, Debug) << "Signalling signalIspPrepare:"

@@ -16,4 +16,4 @@ conf_files = files([
 ])
 
 install_data(conf_files,
-             install_dir : ipa_data_dir / 'PiSP')
+             install_dir : ipa_data_dir / 'pisp')

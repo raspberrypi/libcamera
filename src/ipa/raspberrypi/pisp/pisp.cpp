@@ -664,7 +664,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
 	"PipelineHandlerPiSP",
-	"PiSP",
+	"pisp",
 };
 
 IPAInterface *ipaCreate()

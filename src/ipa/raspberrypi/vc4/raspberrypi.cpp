@@ -74,16 +74,16 @@ constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
 LOG_DEFINE_CATEGORY(IPARPI)
 
-class IPARPi : public ipa::vc4::IPARPiInterface
+class IPAVC4 : public ipa::vc4::IPAVC4Interface
 {
 public:
-	IPARPi()
+	IPAVC4()
 		: controller_(), frameCount_(0), checkCount_(0), mistrustCount_(0),
 		  lastRunTimestamp_(0), lsTable_(nullptr), firstStart_(true)
 	{
 	}
 
-	~IPARPi()
+	~IPAVC4()
 	{
 		if (lsTable_)
 			munmap(lsTable_, ipa::vc4::MaxLsGridSize);
@@ -178,7 +178,7 @@ private:
 	uint32_t maxSensorGainCode_;
 };
 
-int IPARPi::init(const IPASettings &settings, ipa::vc4::SensorConfig *sensorConfig)
+int IPAVC4::init(const IPASettings &settings, ipa::vc4::SensorConfig *sensorConfig)
 {
 	/*
 	 * Load the "helper" for this sensor. This tells us all the device specific stuff
@@ -212,7 +212,7 @@ int IPARPi::init(const IPASettings &settings, ipa::vc4::SensorConfig *sensorConf
 	return 0;
 }
 
-void IPARPi::start(const ControlList &controls, ipa::vc4::StartConfig *startConfig)
+void IPAVC4::start(const ControlList &controls, ipa::vc4::StartConfig *startConfig)
 {
 	RPiController::Metadata metadata;
 
@@ -285,7 +285,7 @@ void IPARPi::start(const ControlList &controls, ipa::vc4::StartConfig *startConf
 	lastRunTimestamp_ = 0;
 }
 
-void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
+void IPAVC4::setMode(const IPACameraSensorInfo &sensorInfo)
 {
 	mode_.bitdepth = sensorInfo.bitsPerPixel;
 	mode_.width = sensorInfo.outputSize.width;
@@ -336,7 +336,7 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensitivity = helper_->GetModeSensitivity(mode_);
 }
 
-int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
+int IPAVC4::configure(const IPACameraSensorInfo &sensorInfo,
 		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const ipa::vc4::IPAConfig &ipaConfig,
@@ -417,7 +417,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	return 0;
 }
 
-void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
+void IPAVC4::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
 		const FrameBuffer fb(buffer.planes);
@@ -426,7 +426,7 @@ void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
 	}
 }
 
-void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
+void IPAVC4::unmapBuffers(const std::vector<unsigned int> &ids)
 {
 	for (unsigned int id : ids) {
 		auto it = buffers_.find(id);
@@ -437,7 +437,7 @@ void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARPi::signalStatReady(uint32_t bufferId)
+void IPAVC4::signalStatReady(uint32_t bufferId)
 {
 	if (++checkCount_ != frameCount_) /* assert here? */
 		LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
@@ -449,12 +449,12 @@ void IPARPi::signalStatReady(uint32_t bufferId)
 	statsMetadataComplete.emit(bufferId & ipa::vc4::MaskID, libcameraMetadata_);
 }
 
-void IPARPi::signalQueueRequest(const ControlList &controls)
+void IPAVC4::signalQueueRequest(const ControlList &controls)
 {
 	queueRequest(controls);
 }
 
-void IPARPi::signalIspPrepare(const ipa::vc4::ISPConfig &data)
+void IPAVC4::signalIspPrepare(const ipa::vc4::ISPConfig &data)
 {
 	/*
 	 * At start-up, or after a mode-switch, we may want to
@@ -468,7 +468,7 @@ void IPARPi::signalIspPrepare(const ipa::vc4::ISPConfig &data)
 	runIsp.emit(data.bayerBufferId & ipa::vc4::MaskID);
 }
 
-void IPARPi::reportMetadata()
+void IPAVC4::reportMetadata()
 {
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata_);
 
@@ -531,7 +531,7 @@ void IPARPi::reportMetadata()
 	}
 }
 
-bool IPARPi::validateSensorControls()
+bool IPAVC4::validateSensorControls()
 {
 	static const uint32_t ctrls[] = {
 		V4L2_CID_ANALOGUE_GAIN,
@@ -550,7 +550,7 @@ bool IPARPi::validateSensorControls()
 	return true;
 }
 
-bool IPARPi::validateIspControls()
+bool IPAVC4::validateIspControls()
 {
 	static const uint32_t ctrls[] = {
 		V4L2_CID_RED_BALANCE,
@@ -622,7 +622,7 @@ static const std::map<int32_t, RPiController::DenoiseMode> DenoiseModeTable = {
 	{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
 };
 
-void IPARPi::queueRequest(const ControlList &controls)
+void IPAVC4::queueRequest(const ControlList &controls)
 {
 	/* Clear the return metadata buffer. */
 	libcameraMetadata_.clear();
@@ -925,12 +925,12 @@ void IPARPi::queueRequest(const ControlList &controls)
 	}
 }
 
-void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
+void IPAVC4::returnEmbeddedBuffer(unsigned int bufferId)
 {
 	embeddedComplete.emit(bufferId & ipa::vc4::MaskID);
 }
 
-void IPARPi::prepareISP(const ipa::vc4::ISPConfig &data)
+void IPAVC4::prepareISP(const ipa::vc4::ISPConfig &data)
 {
 	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp);
 	RPiController::Metadata lastMetadata;
@@ -1028,7 +1028,7 @@ void IPARPi::prepareISP(const ipa::vc4::ISPConfig &data)
 		setIspControls.emit(ctrls);
 }
 
-void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
+void IPAVC4::fillDeviceStatus(const ControlList &sensorControls)
 {
 	DeviceStatus deviceStatus = {};
 
@@ -1045,7 +1045,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 	rpiMetadata_.Set("device.status", deviceStatus);
 }
 
-void IPARPi::processStats(unsigned int bufferId)
+void IPAVC4::processStats(unsigned int bufferId)
 {
 	auto it = buffers_.find(bufferId);
 	if (it == buffers_.end()) {
@@ -1068,7 +1068,7 @@ void IPARPi::processStats(unsigned int bufferId)
 	}
 }
 
-void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
+void IPAVC4::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 {
 	LOG(IPARPI, Debug) << "Applying WB R: " << awbStatus->gain_r << " B: "
 			   << awbStatus->gain_b;
@@ -1079,7 +1079,7 @@ void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 		  static_cast<int32_t>(awbStatus->gain_b * 1000));
 }
 
-void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
+void IPAVC4::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
 {
 	const Duration minSensorFrameDuration = mode_.min_frame_length * mode_.line_length;
 	const Duration maxSensorFrameDuration = mode_.max_frame_length * mode_.line_length;
@@ -1114,7 +1114,7 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 	agc->SetMaxShutter(maxShutter);
 }
 
-void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IPAVC4::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	int32_t gainCode = helper_->GainCode(agcStatus->analogue_gain);
 
@@ -1146,13 +1146,13 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
 }
 
-void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)
+void IPAVC4::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)
 {
 	ctrls.set(V4L2_CID_DIGITAL_GAIN,
 		  static_cast<int32_t>(dgStatus->digital_gain * 1000));
 }
 
-void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
+void IPAVC4::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 {
 	bcm2835_isp_custom_ccm ccm;
 
@@ -1169,7 +1169,7 @@ void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CC_MATRIX, c);
 }
 
-void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls)
+void IPAVC4::applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls)
 {
 	struct bcm2835_isp_gamma gamma;
 
@@ -1184,7 +1184,7 @@ void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GAMMA, c);
 }
 
-void IPARPi::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls)
+void IPAVC4::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls)
 {
 	bcm2835_isp_black_level blackLevel;
 
@@ -1198,7 +1198,7 @@ void IPARPi::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, Co
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL, c);
 }
 
-void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
+void IPAVC4::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 {
 	bcm2835_isp_geq geq;
 
@@ -1212,7 +1212,7 @@ void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GEQ, c);
 }
 
-void IPARPi::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls)
+void IPAVC4::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls)
 {
 	using RPiController::DenoiseMode;
 
@@ -1250,7 +1250,7 @@ void IPARPi::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CDN, c);
 }
 
-void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls)
+void IPAVC4::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls)
 {
 	bcm2835_isp_sharpen sharpen;
 
@@ -1267,7 +1267,7 @@ void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_SHARPEN, c);
 }
 
-void IPARPi::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
+void IPAVC4::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
 {
 	bcm2835_isp_dpc dpc;
 
@@ -1279,7 +1279,7 @@ void IPARPi::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DPC, c);
 }
 
-void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
+void IPAVC4::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 {
 	/*
 	 * Program lens shading tables into pipeline.
@@ -1340,7 +1340,7 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
  * Resamples a 16x12 table with central sampling to destW x destH with corner
  * sampling.
  */
-void IPARPi::resampleTable(uint16_t dest[], double const src[12][16],
+void IPAVC4::resampleTable(uint16_t dest[], double const src[12][16],
 			   int destW, int destH)
 {
 	/*
@@ -1383,13 +1383,13 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"PipelineHandlerRPi",
+	"PipelineHandlerVC4",
 	"vc4",
 };
 
 IPAInterface *ipaCreate()
 {
-	return new IPARPi();
+	return new IPAVC4();
 }
 
 } /* extern "C" */

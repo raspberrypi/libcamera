@@ -214,7 +214,7 @@ public:
 	void handleState();
 	void applyScalerCrop(const ControlList &controls);
 
-	std::unique_ptr<ipa::vc4::IPAProxyRPi> ipa_;
+	std::unique_ptr<ipa::vc4::IPAProxyVC4> ipa_;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	SensorFormats sensorFormats_;
@@ -302,10 +302,10 @@ private:
 	const RPiCameraData *data_;
 };
 
-class PipelineHandlerRPi : public PipelineHandler
+class PipelineHandlerVC4 : public PipelineHandler
 {
 public:
-	PipelineHandlerRPi(CameraManager *manager);
+	PipelineHandlerVC4(CameraManager *manager);
 
 	CameraConfiguration *generateConfiguration(Camera *camera, const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
@@ -541,12 +541,12 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	return status;
 }
 
-PipelineHandlerRPi::PipelineHandlerRPi(CameraManager *manager)
+PipelineHandlerVC4::PipelineHandlerVC4(CameraManager *manager)
 	: PipelineHandler(manager)
 {
 }
 
-CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
+CameraConfiguration *PipelineHandlerVC4::generateConfiguration(Camera *camera,
 							       const StreamRoles &roles)
 {
 	RPiCameraData *data = cameraData(camera);
@@ -676,7 +676,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 	return config;
 }
 
-int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
+int PipelineHandlerVC4::configure(Camera *camera, CameraConfiguration *config)
 {
 	RPiCameraData *data = cameraData(camera);
 	int ret;
@@ -956,7 +956,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	return ret;
 }
 
-int PipelineHandlerRPi::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
+int PipelineHandlerVC4::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
 					   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	RPi::Stream *s = static_cast<RPi::Stream *>(stream);
@@ -968,7 +968,7 @@ int PipelineHandlerRPi::exportFrameBuffers([[maybe_unused]] Camera *camera, Stre
 	return ret;
 }
 
-int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
+int PipelineHandlerVC4::start(Camera *camera, const ControlList *controls)
 {
 	RPiCameraData *data = cameraData(camera);
 	int ret;
@@ -1028,7 +1028,7 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	return 0;
 }
 
-void PipelineHandlerRPi::stopDevice(Camera *camera)
+void PipelineHandlerVC4::stopDevice(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 
@@ -1050,7 +1050,7 @@ void PipelineHandlerRPi::stopDevice(Camera *camera)
 	freeBuffers(camera);
 }
 
-int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
+int PipelineHandlerVC4::queueRequestDevice(Camera *camera, Request *request)
 {
 	RPiCameraData *data = cameraData(camera);
 
@@ -1096,7 +1096,7 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 	return 0;
 }
 
-bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
+bool PipelineHandlerVC4::match(DeviceEnumerator *enumerator)
 {
 	DeviceMatch unicam("unicam");
 	MediaDevice *unicamDevice = acquireMediaDevice(enumerator, unicam);
@@ -1135,7 +1135,7 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	return !!numCameras;
 }
 
-int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity)
+int PipelineHandlerVC4::registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity)
 {
 	std::unique_ptr<RPiCameraData> data = std::make_unique<RPiCameraData>(this);
 
@@ -1320,7 +1320,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	return 0;
 }
 
-int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
+int PipelineHandlerVC4::queueAllBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 	int ret;
@@ -1353,7 +1353,7 @@ int PipelineHandlerRPi::queueAllBuffers(Camera *camera)
 	return 0;
 }
 
-int PipelineHandlerRPi::prepareBuffers(Camera *camera)
+int PipelineHandlerVC4::prepareBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 	unsigned int numRawBuffers = 0;
@@ -1401,7 +1401,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 			 * Since the ISP runs synchronous with the IPA and requests,
 			 * we only ever need one set of internal buffers. Any buffers
 			 * the application wants to hold onto will already be exported
-			 * through PipelineHandlerRPi::exportFrameBuffers().
+			 * through PipelineHandlerVC4::exportFrameBuffers().
 			 */
 			numBuffers = 1;
 		}
@@ -1423,7 +1423,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	return 0;
 }
 
-void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask)
+void PipelineHandlerVC4::mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask)
 {
 	RPiCameraData *data = cameraData(camera);
 	std::vector<IPABuffer> ipaBuffers;
@@ -1443,7 +1443,7 @@ void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffer
 	data->ipa_->mapBuffers(ipaBuffers);
 }
 
-void PipelineHandlerRPi::freeBuffers(Camera *camera)
+void PipelineHandlerVC4::freeBuffers(Camera *camera)
 {
 	RPiCameraData *data = cameraData(camera);
 
@@ -1466,7 +1466,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 
 int RPiCameraData::loadIPA(ipa::vc4::SensorConfig *sensorConfig)
 {
-	ipa_ = IPAManager::createIPA<ipa::vc4::IPAProxyRPi>(pipe(), 1, 1);
+	ipa_ = IPAManager::createIPA<ipa::vc4::IPAProxyVC4>(pipe(), 1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
@@ -2122,6 +2122,6 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerRPi)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVC4)
 
 } /* namespace libcamera */

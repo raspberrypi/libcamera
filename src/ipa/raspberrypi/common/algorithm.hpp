@@ -36,16 +36,35 @@ public:
 	virtual void Read(boost::property_tree::ptree const &params);
 	virtual void Initialise();
 	virtual void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
-	virtual void Prepare(Metadata *image_metadata);
-	virtual void Process(StatisticsPtr &stats, Metadata *image_metadata);
-	Metadata &GetGlobalMetadata() const
-	{
-		return controller_->GetGlobalMetadata();
-	}
 
 private:
 	Controller *controller_;
 	bool paused_;
+};
+
+class VC4Algorithm : public Algorithm
+{
+public:
+	VC4Algorithm(Controller *controller)
+		: Algorithm(controller)
+	{
+	}
+
+	virtual ~VC4Algorithm() = default;
+	virtual void Prepare(Metadata *image_metadata);
+	virtual void Process(VC4StatisticsPtr &stats, Metadata *image_metadata);
+};
+
+class PiSPAlgorithm : public Algorithm
+{
+public:
+	PiSPAlgorithm(Controller *controller)
+		: Algorithm(controller)
+	{
+	}
+
+	virtual ~PiSPAlgorithm() = default;
+	virtual void Prepare(PiSPStatisticsPtr &stats, Metadata *image_metadata);
 };
 
 // This code is for automatic registration of Front End algorithms with the

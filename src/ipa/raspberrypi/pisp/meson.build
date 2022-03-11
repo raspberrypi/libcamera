@@ -17,6 +17,7 @@ pisp_ipa_sources = files([
     'pisp.cpp',
     'controller/rpi/agc.cpp',
     'controller/rpi/awb.cpp',
+    'controller/rpi/lux.cpp',
 ])
 
 pisp_ipa_sources += rpi_ipa_common_sources

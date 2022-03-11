@@ -77,7 +77,7 @@ void CamHelper::Prepare(Span<const uint8_t> buffer,
 	parseEmbeddedData(buffer, metadata);
 }
 
-void CamHelper::Process([[maybe_unused]] StatisticsPtr &stats,
+void CamHelper::Process([[maybe_unused]] VC4StatisticsPtr &stats,
 			[[maybe_unused]] Metadata &metadata)
 {
 }

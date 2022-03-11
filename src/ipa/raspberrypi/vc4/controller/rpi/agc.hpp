@@ -88,7 +88,7 @@ public:
 	void SetConstraintMode(std::string const &contraint_mode_name) override;
 	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Process(VC4StatisticsPtr &stats, Metadata *image_metadata) override;
 
 private:
 	void updateLockStatus(DeviceStatus const &device_status);

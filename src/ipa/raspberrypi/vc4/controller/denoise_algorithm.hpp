@@ -12,10 +12,10 @@ namespace RPiController {
 
 enum class DenoiseMode { Off, ColourOff, ColourFast, ColourHighQuality };
 
-class DenoiseAlgorithm : public Algorithm
+class DenoiseAlgorithm : public VC4Algorithm
 {
 public:
-	DenoiseAlgorithm(Controller *controller) : Algorithm(controller) {}
+	DenoiseAlgorithm(Controller *controller) : VC4Algorithm(controller) {}
 	// A Denoise algorithm must provide the following:
 	virtual void SetMode(DenoiseMode mode) = 0;
 };

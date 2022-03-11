@@ -54,8 +54,7 @@ constexpr Duration defaultMaxFrameDuration = 250.0s;
 /*
  * Determine the minimum allowable inter-frame duration to run the controller
  * algorithms. If the pipeline handler provider frames at a rate higher than this,
- * we rate-limit the controller Prepare() and Process() calls to lower than or
- * equal to this rate.
+ * we rate-limit the controller Prepare() calls to lower than or qual to this rate.
  */
 constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
@@ -118,7 +117,7 @@ private:
 
 	/* Raspberry Pi controller specific defines. */
 	std::unique_ptr<RPiController::CamHelper> helper_;
-	RPiController::Controller controller_;
+	RPiController::PiSPController controller_;
 	RPiController::Metadata rpiMetadata_;
 
 	/*

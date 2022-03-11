@@ -17,7 +17,7 @@ struct DpcConfig {
 	int strength;
 };
 
-class Dpc : public Algorithm
+class Dpc : public VC4Algorithm
 {
 public:
 	Dpc(Controller *controller);

@@ -91,8 +91,7 @@ public:
 	void SetMode(std::string const &name) override;
 	void SetManualGains(double manual_r, double manual_b) override;
 	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
-	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Prepare(PiSPStatisticsPtr &stats, Metadata *image_metadata) override;
 	struct RGB {
 		RGB(double _R = 0, double _G = 0, double _B = 0)
 			: R(_R), G(_G), B(_B)
@@ -135,10 +134,10 @@ private:
 	std::string mode_name_;
 	// The following are for the asynchronous thread to use, though the main
 	// thread can set/reset them if the async thread is known to be idle:
-	void restartAsync(StatisticsPtr &stats, double lux);
+	void restartAsync(VC4StatisticsPtr &stats, double lux);
 	// copy out the results from the async thread so that it can be restarted
 	void fetchAsyncResults();
-	StatisticsPtr statistics_;
+	VC4StatisticsPtr statistics_;
 	AwbMode *mode_;
 	double lux_;
 	AwbStatus async_results_;

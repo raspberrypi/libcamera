@@ -255,7 +255,7 @@ void Awb::fetchAsyncResults()
 		sync_results_ = async_results_;
 }
 
-void Awb::restartAsync(StatisticsPtr &stats, double lux)
+void Awb::restartAsync(VC4StatisticsPtr &stats, double lux)
 {
 	LOG(RPiAwb, Debug) << "Starting AWB calculation";
 	// this makes a new reference which belongs to the asynchronous thread
@@ -311,7 +311,7 @@ void Awb::Prepare(Metadata *image_metadata)
 		<< prev_sync_results_.gain_b;
 }
 
-void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Awb::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	// Count frames since we last poked the async thread.
 	if (frame_phase_ < (int)config_.frame_period)

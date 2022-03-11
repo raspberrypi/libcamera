@@ -10,10 +10,10 @@
 
 namespace RPiController {
 
-class SharpenAlgorithm : public Algorithm
+class SharpenAlgorithm : public VC4Algorithm
 {
 public:
-	SharpenAlgorithm(Controller *controller) : Algorithm(controller) {}
+	SharpenAlgorithm(Controller *controller) : VC4Algorithm(controller) {}
 	// A sharpness control algorithm must provide the following:
 	virtual void SetStrength(double strength) = 0;
 };

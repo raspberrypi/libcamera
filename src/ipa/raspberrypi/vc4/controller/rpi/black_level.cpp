@@ -22,7 +22,7 @@ LOG_DEFINE_CATEGORY(RPiBlackLevel)
 #define NAME "rpi.black_level"
 
 BlackLevel::BlackLevel(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 }
 

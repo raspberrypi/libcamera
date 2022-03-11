@@ -20,7 +20,7 @@ LOG_DEFINE_CATEGORY(RPiDpc)
 #define NAME "rpi.dpc"
 
 Dpc::Dpc(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 }
 

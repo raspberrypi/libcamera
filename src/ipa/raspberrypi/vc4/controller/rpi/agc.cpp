@@ -368,7 +368,7 @@ void Agc::Prepare(Metadata *image_metadata)
 	}
 }
 
-void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Agc::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	frame_count_++;
 	// First a little bit of housekeeping, fetching up-to-date settings and

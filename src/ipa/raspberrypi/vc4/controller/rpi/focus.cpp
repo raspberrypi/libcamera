@@ -19,7 +19,7 @@ LOG_DEFINE_CATEGORY(RPiFocus)
 #define NAME "rpi.focus"
 
 Focus::Focus(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 }
 
@@ -28,7 +28,7 @@ char const *Focus::Name() const
 	return NAME;
 }
 
-void Focus::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Focus::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	FocusStatus status;
 	unsigned int i;

@@ -32,6 +32,9 @@ vc4_ipa_sources = files([
 
 vc4_ipa_sources += rpi_ipa_common_sources
 
+# Need this for the controller FE stats header
+vc4_ipa_includes += frontend_include_dir
+
 mod = shared_module(ipa_name,
                     [vc4_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',

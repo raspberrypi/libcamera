@@ -43,7 +43,7 @@ struct AlscConfig {
 	double threshold; // iteration termination threshold
 };
 
-class Alsc : public Algorithm
+class Alsc : public VC4Algorithm
 {
 public:
 	Alsc(Controller *controller = NULL);
@@ -53,7 +53,7 @@ public:
 	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
 	void Read(boost::property_tree::ptree const &params) override;
 	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Process(VC4StatisticsPtr &stats, Metadata *image_metadata) override;
 
 private:
 	// configuration is read-only, and available to both threads
@@ -89,7 +89,7 @@ private:
 	void waitForAysncThread();
 	// The following are for the asynchronous thread to use, though the main
 	// thread can set/reset them if the async thread is known to be idle:
-	void restartAsync(StatisticsPtr &stats, Metadata *image_metadata);
+	void restartAsync(VC4StatisticsPtr &stats, Metadata *image_metadata);
 	// copy out the results from the async thread so that it can be restarted
 	void fetchAsyncResults();
 	double ct_;

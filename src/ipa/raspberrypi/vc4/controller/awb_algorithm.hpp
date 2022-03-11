@@ -10,10 +10,10 @@
 
 namespace RPiController {
 
-class AwbAlgorithm : public Algorithm
+class AwbAlgorithm : public VC4Algorithm
 {
 public:
-	AwbAlgorithm(Controller *controller) : Algorithm(controller) {}
+	AwbAlgorithm(Controller *controller) : VC4Algorithm(controller) {}
 	// An AWB algorithm must provide the following:
 	virtual unsigned int GetConvergenceFrames() const = 0;
 	virtual void SetMode(std::string const &mode_name) = 0;

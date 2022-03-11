@@ -19,7 +19,7 @@ struct GeqConfig {
 	Pwl strength; // lux to strength factor
 };
 
-class Geq : public Algorithm
+class Geq : public VC4Algorithm
 {
 public:
 	Geq(Controller *controller);

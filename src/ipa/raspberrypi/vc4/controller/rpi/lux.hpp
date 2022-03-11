@@ -17,14 +17,14 @@
 
 namespace RPiController {
 
-class Lux : public Algorithm
+class Lux : public VC4Algorithm
 {
 public:
 	Lux(Controller *controller);
 	char const *Name() const override;
 	void Read(boost::property_tree::ptree const &params) override;
 	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Process(VC4StatisticsPtr &stats, Metadata *image_metadata) override;
 	void SetCurrentAperture(double aperture);
 
 private:

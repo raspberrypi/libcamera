@@ -17,12 +17,12 @@
 
 namespace RPiController {
 
-class Focus : public Algorithm
+class Focus : public VC4Algorithm
 {
 public:
 	Focus(Controller *controller);
 	char const *Name() const override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Process(VC4StatisticsPtr &stats, Metadata *image_metadata) override;
 };
 
 } /* namespace RPiController */

@@ -10,10 +10,10 @@
 
 namespace RPiController {
 
-class ContrastAlgorithm : public Algorithm
+class ContrastAlgorithm : public VC4Algorithm
 {
 public:
-	ContrastAlgorithm(Controller *controller) : Algorithm(controller) {}
+	ContrastAlgorithm(Controller *controller) : VC4Algorithm(controller) {}
 	// A contrast algorithm must provide the following:
 	virtual void SetBrightness(double brightness) = 0;
 	virtual void SetContrast(double contrast) = 0;

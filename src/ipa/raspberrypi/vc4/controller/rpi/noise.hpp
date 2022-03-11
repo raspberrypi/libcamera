@@ -13,7 +13,7 @@
 
 namespace RPiController {
 
-class Noise : public Algorithm
+class Noise : public VC4Algorithm
 {
 public:
 	Noise(Controller *controller);

@@ -147,7 +147,7 @@ Pwl apply_manual_contrast(Pwl const &gamma_curve, double brightness,
 	return new_gamma_curve;
 }
 
-void Contrast::Process(StatisticsPtr &stats,
+void Contrast::Process(VC4StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *image_metadata)
 {
 	Histogram histogram(stats->hist[0].g_hist, NUM_HISTOGRAM_BINS);

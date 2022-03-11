@@ -10,10 +10,10 @@
 
 namespace RPiController {
 
-class CcmAlgorithm : public Algorithm
+class CcmAlgorithm : public VC4Algorithm
 {
 public:
-	CcmAlgorithm(Controller *controller) : Algorithm(controller) {}
+	CcmAlgorithm(Controller *controller) : VC4Algorithm(controller) {}
 	// A CCM algorithm must provide the following:
 	virtual void SetSaturation(double saturation) = 0;
 };

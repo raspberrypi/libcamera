@@ -37,7 +37,7 @@ public:
 	void SetContrast(double contrast) override;
 	void Initialise() override;
 	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	void Process(VC4StatisticsPtr &stats, Metadata *image_metadata) override;
 
 private:
 	ContrastConfig config_;

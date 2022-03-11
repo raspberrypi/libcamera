@@ -19,11 +19,15 @@
 #include "device_status.h"
 #include "metadata.hpp"
 
+#include "pisp_statistics.h"
+
 namespace RPiController {
 
 class Algorithm;
-typedef std::unique_ptr<Algorithm> AlgorithmPtr;
-typedef std::shared_ptr<bcm2835_isp_stats> StatisticsPtr;
+using AlgorithmPtr = std::unique_ptr<Algorithm>;
+using VC4StatisticsPtr = std::shared_ptr<bcm2835_isp_stats>;
+using PiSPStatisticsPtr = std::shared_ptr<pisp_statistics>;
+
 
 // The Controller holds a pointer to some global_metadata, which is how
 // different controllers and control algorithms within them can exchange
@@ -35,20 +39,52 @@ class Controller
 public:
 	Controller();
 	Controller(char const *json_filename);
-	~Controller();
+	virtual ~Controller() = 0;
 	Algorithm *CreateAlgorithm(char const *name);
 	void Read(char const *filename);
 	void Initialise();
 	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
-	void Prepare(Metadata *image_metadata);
-	void Process(StatisticsPtr stats, Metadata *image_metadata);
-	Metadata &GetGlobalMetadata();
 	Algorithm *GetAlgorithm(std::string const &name) const;
 
 protected:
-	Metadata global_metadata_;
 	std::vector<AlgorithmPtr> algorithms_;
 	bool switch_mode_called_;
 };
+
+class VC4Controller : public Controller
+{
+public:
+	VC4Controller()
+		: Controller()
+	{
+	}
+
+	VC4Controller(char const *json_filename)
+		: Controller(json_filename)
+	{
+	}
+
+	~VC4Controller() = default;
+	void Prepare(Metadata *image_metadata);
+	void Process(VC4StatisticsPtr stats, Metadata *image_metadata);
+};
+
+class PiSPController : public Controller
+{
+public:
+	PiSPController()
+		: Controller()
+	{
+	}
+
+	PiSPController(char const *json_filename)
+		: Controller(json_filename)
+	{
+	}
+
+	~PiSPController() = default;
+	void Prepare(PiSPStatisticsPtr stats, Metadata *image_metadata);
+};
+
 
 } // namespace RPiController

@@ -26,7 +26,7 @@ static const int XY = X * Y;
 static const double INSUFFICIENT_DATA = -1.0;
 
 Alsc::Alsc(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 	async_abort_ = async_start_ = async_started_ = async_finished_ = false;
 	async_thread_ = std::thread(std::bind(&Alsc::asyncFunc, this));
@@ -275,7 +275,7 @@ double get_ct(Metadata *metadata, double default_ct)
 	return awb_status.temperature_K;
 }
 
-static void copy_stats(bcm2835_isp_stats_region regions[XY], StatisticsPtr &stats,
+static void copy_stats(bcm2835_isp_stats_region regions[XY], VC4StatisticsPtr &stats,
 		       AlscStatus const &status)
 {
 	bcm2835_isp_stats_region *input_regions = stats->awb_stats;
@@ -291,7 +291,7 @@ static void copy_stats(bcm2835_isp_stats_region regions[XY], StatisticsPtr &stat
 	}
 }
 
-void Alsc::restartAsync(StatisticsPtr &stats, Metadata *image_metadata)
+void Alsc::restartAsync(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	LOG(RPiAlsc, Debug) << "Starting ALSC calculation";
 	// Get the current colour temperature. It's all we need from the
@@ -350,7 +350,7 @@ void Alsc::Prepare(Metadata *image_metadata)
 	image_metadata->Set("alsc.status", status);
 }
 
-void Alsc::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Alsc::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	// Count frames since we started, and since we last poked the async
 	// thread.

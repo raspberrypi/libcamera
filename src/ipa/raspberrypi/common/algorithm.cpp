@@ -21,12 +21,17 @@ void Algorithm::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
 {
 }
 
-void Algorithm::Prepare([[maybe_unused]] Metadata *image_metadata)
+void VC4Algorithm::Prepare([[maybe_unused]] Metadata *image_metadata)
 {
 }
 
-void Algorithm::Process([[maybe_unused]] StatisticsPtr &stats,
-			[[maybe_unused]] Metadata *image_metadata)
+void VC4Algorithm::Process([[maybe_unused]] VC4StatisticsPtr &stats,
+			   [[maybe_unused]] Metadata *image_metadata)
+{
+}
+
+void PiSPAlgorithm::Prepare([[maybe_unused]] PiSPStatisticsPtr &stats,
+			    [[maybe_unused]] Metadata *image_metadata)
 {
 }
 

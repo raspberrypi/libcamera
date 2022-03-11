@@ -334,7 +334,7 @@ void Agc::SwitchMode(CameraMode const &camera_mode,
 	last_sensitivity_ = camera_mode.sensitivity;
 }
 
-void Agc::Prepare(Metadata *image_metadata)
+void Agc::Prepare([[maybe_unused]] PiSPStatisticsPtr &stats, Metadata *image_metadata)
 {
 	status_.digital_gain = 1.0;
 	fetchAwbStatus(image_metadata); // always fetch it so that Process knows it's been done
@@ -368,7 +368,8 @@ void Agc::Prepare(Metadata *image_metadata)
 	}
 }
 
-void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
+#if 0
+void Agc::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	frame_count_++;
 	// First a little bit of housekeeping, fetching up-to-date settings and
@@ -393,6 +394,7 @@ void Agc::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	// Finally advertise what we've done.
 	writeAndFinish(image_metadata, desaturate);
 }
+#endif
 
 void Agc::updateLockStatus(DeviceStatus const &device_status)
 {

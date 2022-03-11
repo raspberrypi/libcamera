@@ -22,7 +22,7 @@ LOG_DEFINE_CATEGORY(RPiNoise)
 #define NAME "rpi.noise"
 
 Noise::Noise(Controller *controller)
-	: Algorithm(controller), mode_factor_(1.0)
+	: VC4Algorithm(controller), mode_factor_(1.0)
 {
 }
 

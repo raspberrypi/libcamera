@@ -139,7 +139,7 @@ private:
 
 	/* Raspberry Pi controller specific defines. */
 	std::unique_ptr<RPiController::CamHelper> helper_;
-	RPiController::Controller controller_;
+	RPiController::VC4Controller controller_;
 	RPiController::Metadata rpiMetadata_;
 
 	/*
@@ -1055,7 +1055,7 @@ void IPAVC4::processStats(unsigned int bufferId)
 
 	Span<uint8_t> mem = it->second.planes()[0];
 	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
-	RPiController::StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
+	RPiController::VC4StatisticsPtr statistics = std::make_shared<bcm2835_isp_stats>(*stats);
 	helper_->Process(statistics, rpiMetadata_);
 	controller_.Process(statistics, &rpiMetadata_);
 

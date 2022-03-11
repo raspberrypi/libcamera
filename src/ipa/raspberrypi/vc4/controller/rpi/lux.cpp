@@ -23,7 +23,7 @@ LOG_DEFINE_CATEGORY(RPiLux)
 #define NAME "rpi.lux"
 
 Lux::Lux(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 	// Put in some defaults as there will be no meaningful values until
 	// Process has run.
@@ -58,7 +58,7 @@ void Lux::Prepare(Metadata *image_metadata)
 	image_metadata->Set("lux.status", status_);
 }
 
-void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Lux::Process(VC4StatisticsPtr &stats, Metadata *image_metadata)
 {
 	DeviceStatus device_status;
 	if (image_metadata->Get("device.status", device_status) == 0) {

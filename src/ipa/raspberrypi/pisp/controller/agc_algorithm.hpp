@@ -12,10 +12,10 @@
 
 namespace RPiController {
 
-class AgcAlgorithm : public Algorithm
+class AgcAlgorithm : public PiSPAlgorithm
 {
 public:
-	AgcAlgorithm(Controller *controller) : Algorithm(controller) {}
+	AgcAlgorithm(Controller *controller) : PiSPAlgorithm(controller) {}
 	// An AGC algorithm must provide the following:
 	virtual unsigned int GetConvergenceFrames() const = 0;
 	virtual void SetEv(double ev) = 0;

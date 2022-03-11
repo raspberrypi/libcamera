@@ -64,25 +64,34 @@ void Controller::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
 	switch_mode_called_ = true;
 }
 
-void Controller::Prepare(Metadata *image_metadata)
+void VC4Controller::Prepare(Metadata *image_metadata)
 {
 	assert(switch_mode_called_);
-	for (auto &algo : algorithms_)
+	for (auto &a : algorithms_) {
+		VC4Algorithm *algo = dynamic_cast<VC4Algorithm *>(a.get());
 		if (!algo->IsPaused())
 			algo->Prepare(image_metadata);
+	}
 }
 
-void Controller::Process(StatisticsPtr stats, Metadata *image_metadata)
+void VC4Controller::Process(VC4StatisticsPtr stats, Metadata *image_metadata)
 {
 	assert(switch_mode_called_);
-	for (auto &algo : algorithms_)
+	for (auto &a : algorithms_) {
+		VC4Algorithm *algo = dynamic_cast<VC4Algorithm *>(a.get());
 		if (!algo->IsPaused())
 			algo->Process(stats, image_metadata);
+	}
 }
 
-Metadata &Controller::GetGlobalMetadata()
+void PiSPController::Prepare(PiSPStatisticsPtr stats, Metadata *image_metadata)
 {
-	return global_metadata_;
+	assert(switch_mode_called_);
+	for (auto &a : algorithms_) {
+		PiSPAlgorithm *algo = dynamic_cast<PiSPAlgorithm *>(a.get());
+		if (!algo->IsPaused())
+			algo->Prepare(stats, image_metadata);
+	}
 }
 
 Algorithm *Controller::GetAlgorithm(std::string const &name) const

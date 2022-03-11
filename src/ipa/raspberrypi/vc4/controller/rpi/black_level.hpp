@@ -13,7 +13,7 @@
 
 namespace RPiController {
 
-class BlackLevel : public Algorithm
+class BlackLevel : public VC4Algorithm
 {
 public:
 	BlackLevel(Controller *controller);

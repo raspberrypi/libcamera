@@ -24,7 +24,7 @@ LOG_DEFINE_CATEGORY(RPiGeq)
 #define NAME "rpi.geq"
 
 Geq::Geq(Controller *controller)
-	: Algorithm(controller)
+	: VC4Algorithm(controller)
 {
 }
 

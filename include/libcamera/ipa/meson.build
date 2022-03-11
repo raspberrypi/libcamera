@@ -63,8 +63,8 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
 ipa_mojom_files = [
     'ipu3.mojom',
     'pisp.mojom',
-    'bcm2835.mojom',
     'rkisp1.mojom',
+    'vc4.mojom',
     'vimc.mojom',
 ]
 

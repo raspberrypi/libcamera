@@ -21,8 +21,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
 #include <libcamera/ipa/raspberrypi.h>
-#include <libcamera/ipa/bcm2835_ipa_interface.h>
-#include <libcamera/ipa/bcm2835_ipa_proxy.h>
+#include <libcamera/ipa/vc4_ipa_interface.h>
+#include <libcamera/ipa/vc4_ipa_proxy.h>
 #include <libcamera/logging.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/request.h>

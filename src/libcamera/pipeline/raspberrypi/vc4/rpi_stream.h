@@ -13,7 +13,7 @@
 #include <vector>
 
 #include <libcamera/ipa/raspberrypi.h>
-#include <libcamera/ipa/bcm2835_ipa_interface.h>
+#include <libcamera/ipa/vc4_ipa_interface.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"

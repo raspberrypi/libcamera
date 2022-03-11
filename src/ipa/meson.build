@@ -28,7 +28,7 @@ ipa_names = []
 
 ipa_modules = get_option('ipas')
 
-if pipelines.contains('raspberrypi/bcm2835') or pipeline.contains('raspberrypi/pisp')
+if pipelines.contains('raspberrypi/vc4') or pipeline.contains('raspberrypi/pisp')
     subdir('raspberrypi/common')
 endif
 

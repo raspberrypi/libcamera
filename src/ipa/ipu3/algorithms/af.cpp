@@ -29,59 +29,30 @@
  * \file af.h
  */
 
-/**
- * \var kAfMinGridWidth
- * \brief the minimum width of AF grid.
- * The minimum grid horizontal dimensions.
+/*
+ * Static variables from ChromiumOS Intel Camera HAL and ia_imaging library:
+ * - https://chromium.googlesource.com/chromiumos/platform/arc-camera/+/master/hal/intel/psl/ipu3/statsConverter/ipu3-stats.h
+ * - https://chromium.googlesource.com/chromiumos/platform/camera/+/refs/heads/main/hal/intel/ipu3/include/ia_imaging/af_public.h
  */
 
-/**
- * \var kAfMinGridHeight
- * \brief the minimum height of AF grid.
- * The minimum grid vertical dimensions.
- */
-
-/**
- * \var kAfMaxGridWidth
- * \brief the maximum width of AF grid.
- * The maximum grid horizontal dimensions.
- */
-
-/**
- * \var kAfMaxGridHeight
- * \brief The maximum height of AF grid.
- * The maximum grid vertical dimensions.
- */
-
-/**
- * \var kAfMinGridBlockWidth
- * \brief The minimum block size of the width.
- * The minimum value of Log2 of the width of the grid cell.
- */
-
-/**
- * \var kAfMinGridBlockHeight
- * \brief The minimum block size of the height.
- * The minimum value of Log2 of the height of the grid cell.
- */
-
-/**
- * \def kAfMaxGridBlockWidth
- * \brief The maximum block size of the width.
- * The maximum value of Log2 of the width of the grid cell.
- */
-
-/**
- * \var kAfMaxGridBlockHeight
- * \brief The maximum block size of the height.
- * The maximum value of Log2 of the height of the grid cell.
- */
-
-/**
- * \var kAfDefaultHeightPerSlice
- * \brief The default number of blocks in vertical axis per slice.
- * The number of blocks in vertical axis per slice.
- */
+/** The minimum horizontal grid dimension. */
+static constexpr uint8_t kAfMinGridWidth = 16;
+/** The minimum vertical grid dimension. */
+static constexpr uint8_t kAfMinGridHeight = 16;
+/** The maximum horizontal grid dimension. */
+static constexpr uint8_t kAfMaxGridWidth = 32;
+/** The maximum vertical grid dimension. */
+static constexpr uint8_t kAfMaxGridHeight = 24;
+/** The minimum value of Log2 of the width of the grid cell. */
+static constexpr uint16_t kAfMinGridBlockWidth = 4;
+/** The minimum value of Log2 of the height of the grid cell. */
+static constexpr uint16_t kAfMinGridBlockHeight = 3;
+/** The maximum value of Log2 of the width of the grid cell. */
+static constexpr uint16_t kAfMaxGridBlockWidth = 6;
+/** The maximum value of Log2 of the height of the grid cell. */
+static constexpr uint16_t kAfMaxGridBlockHeight = 6;
+/** The number of blocks in vertical axis per slice. */
+static constexpr uint16_t kAfDefaultHeightPerSlice = 2;
 
 namespace libcamera {
 

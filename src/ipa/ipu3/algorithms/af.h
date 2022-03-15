@@ -15,17 +15,6 @@
 
 #include "algorithm.h"
 
-/* Static variables from repo of chromium */
-static constexpr uint8_t kAfMinGridWidth = 16;
-static constexpr uint8_t kAfMinGridHeight = 16;
-static constexpr uint8_t kAfMaxGridWidth = 32;
-static constexpr uint8_t kAfMaxGridHeight = 24;
-static constexpr uint16_t kAfMinGridBlockWidth = 4;
-static constexpr uint16_t kAfMinGridBlockHeight = 3;
-static constexpr uint16_t kAfMaxGridBlockWidth = 6;
-static constexpr uint16_t kAfMaxGridBlockHeight = 6;
-static constexpr uint16_t kAfDefaultHeightPerSlice = 2;
-
 namespace libcamera {
 
 namespace ipa::ipu3::algorithms {

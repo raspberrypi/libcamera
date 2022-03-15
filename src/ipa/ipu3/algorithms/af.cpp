@@ -160,16 +160,23 @@ int Af::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 
 	grid.height_per_slice = kAfDefaultHeightPerSlice;
 
-	/* x_start and y start are default to BDS center */
-	grid.x_start = (configInfo.bdsOutputSize.width / 2) -
-		       (((grid.width << grid.block_width_log2) / 2));
-	grid.y_start = (configInfo.bdsOutputSize.height / 2) -
-		       (((grid.height << grid.block_height_log2) / 2));
+	/* Position the AF grid in the center of the BDS output. */
+	Rectangle bds(configInfo.bdsOutputSize);
+	Size gridSize(grid.width << grid.block_width_log2,
+		      grid.height << grid.block_height_log2);
+
+	/*
+	 * \todo - Support request metadata
+	 * - Set the ROI based on any input controls in the request
+	 * - Return the AF ROI as metadata in the Request
+	 */
+	Rectangle roi = gridSize.centeredTo(bds.center());
+	Point start = roi.topLeft();
 
 	/* x_start and y_start should be even */
-	grid.x_start = (grid.x_start / 2) * 2;
-	grid.y_start = (grid.y_start / 2) * 2;
-	grid.y_start = grid.y_start | IPU3_UAPI_GRID_Y_START_EN;
+	grid.x_start = utils::alignDown(start.x, 2);
+	grid.y_start = utils::alignDown(start.y, 2);
+	grid.y_start |= IPU3_UAPI_GRID_Y_START_EN;
 
 	/* Initial max focus step */
 	maxStep_ = kMaxFocusSteps;

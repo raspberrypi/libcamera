@@ -41,7 +41,7 @@ private:
 	void afReset(IPAContext &context);
 	bool afNeedIgnoreFrame();
 	void afIgnoreFrameReset();
-	double afEstimateVariance(y_table_item_t *y_item, uint32_t len,
+	double afEstimateVariance(const y_table_item_t *y_item, uint32_t len,
 				  bool isY1);
 	bool afIsOutOfFocus(IPAContext context);
 

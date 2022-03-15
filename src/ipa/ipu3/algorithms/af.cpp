@@ -354,7 +354,7 @@ void Af::afIgnoreFrameReset()
  *
  * \return The variance of the values in the data set \a y_item selected by \a isY1
  */
-double Af::afEstimateVariance(y_table_item_t *y_item, uint32_t len,
+double Af::afEstimateVariance(const y_table_item_t *y_item, uint32_t len,
 			      bool isY1)
 {
 	uint32_t z = 0;
@@ -424,25 +424,21 @@ bool Af::afIsOutOfFocus(IPAContext context)
  */
 void Af::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	y_table_item_t y_item[IPU3_UAPI_AF_Y_TABLE_MAX_SIZE / sizeof(y_table_item_t)];
+	const y_table_item_t *y_item = reinterpret_cast<const y_table_item_t *>(&stats->af_raw_buffer.y_table);
 	uint32_t afRawBufferLen;
 
 	/* Evaluate the AF buffer length */
 	afRawBufferLen = context.configuration.af.afGrid.width *
 			 context.configuration.af.afGrid.height;
 
-	memcpy(y_item, stats->af_raw_buffer.y_table,
-	       afRawBufferLen * sizeof(y_table_item_t));
+	ASSERT(afRawBufferLen < IPU3_UAPI_AF_Y_TABLE_MAX_SIZE);
 
 	/*
 	 * Calculate the mean and the variance of AF statistics for a given grid.
 	 * For coarse: y1 are used.
 	 * For fine: y2 results are used.
 	 */
-	if (coarseCompleted_)
-		currentVariance_ = afEstimateVariance(y_item, afRawBufferLen, false);
-	else
-		currentVariance_ = afEstimateVariance(y_item, afRawBufferLen, true);
+	currentVariance_ = afEstimateVariance(y_item, afRawBufferLen, !coarseCompleted_);
 
 	if (!context.frameContext.af.stable) {
 		afCoarseScan(context);

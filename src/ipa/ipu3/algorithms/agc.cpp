@@ -102,6 +102,7 @@ int Agc::configure(IPAContext &context,
 	frameContext.agc.gain = std::max(minAnalogueGain_, kMinAnalogueGain);
 	frameContext.agc.exposure = 10ms / configuration.sensor.lineDuration;
 
+	frameCount_ = 0;
 	return 0;
 }
 

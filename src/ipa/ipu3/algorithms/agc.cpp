@@ -86,17 +86,17 @@ Agc::Agc()
 int Agc::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	IPASessionConfiguration &configuration = context.configuration;
+	const IPASessionConfiguration &configuration = context.configuration;
 	IPAFrameContext &frameContext = context.frameContext;
 
 	stride_ = configuration.grid.stride;
 
-	minShutterSpeed_ = context.configuration.agc.minShutterSpeed;
-	maxShutterSpeed_ = std::min(context.configuration.agc.maxShutterSpeed,
+	minShutterSpeed_ = configuration.agc.minShutterSpeed;
+	maxShutterSpeed_ = std::min(configuration.agc.maxShutterSpeed,
 				    kMaxShutterSpeed);
 
-	minAnalogueGain_ = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
-	maxAnalogueGain_ = std::min(context.configuration.agc.maxAnalogueGain, kMaxAnalogueGain);
+	minAnalogueGain_ = std::max(configuration.agc.minAnalogueGain, kMinAnalogueGain);
+	maxAnalogueGain_ = std::min(configuration.agc.maxAnalogueGain, kMaxAnalogueGain);
 
 	/* Configure the default exposure and gain. */
 	frameContext.agc.gain = std::max(minAnalogueGain_, kMinAnalogueGain);

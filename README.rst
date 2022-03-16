@@ -139,6 +139,25 @@ the video device provider) and libcamerasrc (for the operation of the camera).
 All corresponding debug messages can be enabled by setting the ``GST_DEBUG``
 environment variable to ``libcamera*:7``.
 
+Presently, to prevent element negotiation failures it is required to specify
+the colorimetry and framerate as part of your pipeline construction. For
+instance, to capture and encode as a JPEG stream and receive on another device
+the following example could be used as a starting point:
+
+.. code::
+
+   gst-launch-1.0 libcamerasrc ! \
+        video/x-raw,colorimetry=bt709,format=NV12,width=1280,height=720,framerate=30/1 ! \
+        jpegenc ! multipartmux ! \
+        tcpserversink host=0.0.0.0 port=5000
+
+Which can be received on another device over the network with:
+
+.. code::
+
+   gst-launch-1.0 tcpclientsrc host=$DEVICE_IP port=5000 ! \
+        multipartdemux ! jpegdec ! autovideosink
+
 .. section-end-getting-started
 
 Troubleshooting

@@ -604,7 +604,7 @@ static const std::map<int32_t, std::string> ExposureModeTable = {
 };
 
 static const std::map<int32_t, std::string> AwbModeTable = {
-	{ controls::AwbAuto, "normal" },
+	{ controls::AwbAuto, "auto" },
 	{ controls::AwbIncandescent, "incandescent" },
 	{ controls::AwbTungsten, "tungsten" },
 	{ controls::AwbFluorescent, "fluorescent" },

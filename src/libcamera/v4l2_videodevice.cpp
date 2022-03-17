@@ -1600,7 +1600,6 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 			buf.length = planes[0].length;
 		}
 
-		buf.sequence = metadata.sequence;
 		buf.timestamp.tv_sec = metadata.timestamp / 1000000000;
 		buf.timestamp.tv_usec = (metadata.timestamp / 1000) % 1000000;
 	}

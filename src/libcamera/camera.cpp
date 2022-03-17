@@ -23,6 +23,7 @@
 #include "libcamera/internal/camera_controls.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 
 /**
  * \file libcamera/camera.h
@@ -1108,6 +1109,7 @@ std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
  * \return 0 on success or a negative error code otherwise
  * \retval -ENODEV The camera has been disconnected from the system
  * \retval -EACCES The camera is not running so requests can't be queued
+ * \retval -EXDEV The request does not belong to this camera
  * \retval -EINVAL The request is invalid
  * \retval -ENOMEM No buffer memory was available to handle the request
  */
@@ -1118,6 +1120,12 @@ int Camera::queueRequest(Request *request)
 	int ret = d->isAccessAllowed(Private::CameraRunning);
 	if (ret < 0)
 		return ret;
+
+	/* Requests can only be queued to the camera that created them. */
+	if (request->_d()->camera() != this) {
+		LOG(Camera, Error) << "Request was not created by this camera";
+		return -EXDEV;
+	}
 
 	/*
 	 * The camera state may change until the end of the function. No locking

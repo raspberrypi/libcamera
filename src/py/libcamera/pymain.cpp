@@ -611,4 +611,94 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_static("Smpte170m", []() { return ColorSpace::Smpte170m; })
 		.def_static("Rec709", []() { return ColorSpace::Rec709; })
 		.def_static("Rec2020", []() { return ColorSpace::Rec2020; });
+
+	py::enum_<libcamera::controls::AeMeteringModeEnum>(m, "AeMeteringMode")
+		.value("CentreWeighted", libcamera::controls::MeteringCentreWeighted)
+		.value("Spot", libcamera::controls::MeteringSpot)
+		.value("Matrix", libcamera::controls::MeteringMatrix)
+		.value("Custom", libcamera::controls::MeteringCustom);
+
+	py::enum_<libcamera::controls::AeConstraintModeEnum>(m, "AeConstraintMode")
+		.value("Normal", libcamera::controls::ConstraintNormal)
+		.value("Highlight", libcamera::controls::ConstraintHighlight)
+		.value("Shadows", libcamera::controls::ConstraintShadows)
+		.value("Custom", libcamera::controls::ConstraintCustom);
+
+	py::enum_<libcamera::controls::AeExposureModeEnum>(m, "AeExposureMode")
+		.value("Normal", libcamera::controls::ExposureNormal)
+		.value("Short", libcamera::controls::ExposureShort)
+		.value("Long", libcamera::controls::ExposureLong)
+		.value("Custom", libcamera::controls::ExposureCustom);
+
+	py::enum_<libcamera::controls::AwbModeEnum>(m, "AwbMode")
+		.value("Auto", libcamera::controls::AwbAuto)
+		.value("Incandescent", libcamera::controls::AwbIncandescent)
+		.value("Tungsten", libcamera::controls::AwbTungsten)
+		.value("Fluorescent", libcamera::controls::AwbFluorescent)
+		.value("Indoor", libcamera::controls::AwbIndoor)
+		.value("Daylight", libcamera::controls::AwbDaylight)
+		.value("Cloudy", libcamera::controls::AwbCloudy)
+		.value("Custom", libcamera::controls::AwbCustom);
+
+	py::enum_<libcamera::controls::draft::AePrecaptureTriggerEnum>(m, "AePrecaptureTrigger")
+		.value("Idle", libcamera::controls::draft::AePrecaptureTriggerIdle)
+		.value("Start", libcamera::controls::draft::AePrecaptureTriggerStart)
+		.value("Cancel", libcamera::controls::draft::AePrecaptureTriggerCancel);
+
+	py::enum_<libcamera::controls::draft::AfTriggerEnum>(m, "AfTrigger")
+		.value("Idle", libcamera::controls::draft::AfTriggerIdle)
+		.value("Start", libcamera::controls::draft::AfTriggerStart)
+		.value("Cancel", libcamera::controls::draft::AfTriggerCancel);
+
+	py::enum_<libcamera::controls::draft::NoiseReductionModeEnum>(m, "NoiseReductionMode")
+		.value("Off", libcamera::controls::draft::NoiseReductionModeOff)
+		.value("Fast", libcamera::controls::draft::NoiseReductionModeFast)
+		.value("HighQuality", libcamera::controls::draft::NoiseReductionModeHighQuality)
+		.value("Minimal", libcamera::controls::draft::NoiseReductionModeMinimal)
+		.value("ZSL", libcamera::controls::draft::NoiseReductionModeZSL);
+
+	py::enum_<libcamera::controls::draft::ColorCorrectionAberrationModeEnum>(m, "ColorCorrectionAberrationMode")
+		.value("Off", libcamera::controls::draft::ColorCorrectionAberrationOff)
+		.value("Fast", libcamera::controls::draft::ColorCorrectionAberrationFast)
+		.value("HighQuality", libcamera::controls::draft::ColorCorrectionAberrationHighQuality);
+
+	py::enum_<libcamera::controls::draft::AeStateEnum>(m, "AeState")
+		.value("Inactive", libcamera::controls::draft::AeStateInactive)
+		.value("Searching", libcamera::controls::draft::AeStateSearching)
+		.value("Converged", libcamera::controls::draft::AeStateConverged)
+		.value("Locked", libcamera::controls::draft::AeStateLocked)
+		.value("FlashRequired", libcamera::controls::draft::AeStateFlashRequired)
+		.value("Precapture", libcamera::controls::draft::AeStatePrecapture);
+
+	py::enum_<libcamera::controls::draft::AfStateEnum>(m, "AfState")
+		.value("Inactive", libcamera::controls::draft::AfStateInactive)
+		.value("PassiveScan", libcamera::controls::draft::AfStatePassiveScan)
+		.value("PassiveFocused", libcamera::controls::draft::AfStatePassiveFocused)
+		.value("ActiveScan", libcamera::controls::draft::AfStateActiveScan)
+		.value("FocusedLock", libcamera::controls::draft::AfStateFocusedLock)
+		.value("NotFocusedLock", libcamera::controls::draft::AfStateNotFocusedLock)
+		.value("PassiveUnfocused", libcamera::controls::draft::AfStatePassiveUnfocused);
+
+	py::enum_<libcamera::controls::draft::AwbStateEnum>(m, "AwbState")
+		.value("StateInactive", libcamera::controls::draft::AwbStateInactive)
+		.value("StateSearching", libcamera::controls::draft::AwbStateSearching)
+		.value("Converged", libcamera::controls::draft::AwbConverged)
+		.value("Locked", libcamera::controls::draft::AwbLocked);
+
+	py::enum_<libcamera::controls::draft::LensShadingMapModeEnum>(m, "LensShadingMapMode")
+		.value("Off", libcamera::controls::draft::LensShadingMapModeOff)
+		.value("On", libcamera::controls::draft::LensShadingMapModeOn);
+
+	py::enum_<libcamera::controls::draft::SceneFlickerEnum>(m, "SceneFlicker")
+		.value("Off", libcamera::controls::draft::SceneFickerOff)
+		.value("50Hz", libcamera::controls::draft::SceneFicker50Hz)
+		.value("60Hz", libcamera::controls::draft::SceneFicker60Hz);
+
+	py::enum_<libcamera::controls::draft::TestPatternModeEnum>(m, "TestPatternMode")
+		.value("Off", libcamera::controls::draft::TestPatternModeOff)
+		.value("SolidColor", libcamera::controls::draft::TestPatternModeSolidColor)
+		.value("ColorBars", libcamera::controls::draft::TestPatternModeColorBars)
+		.value("ColorBarsFadeToGray", libcamera::controls::draft::TestPatternModeColorBarsFadeToGray)
+		.value("Pn9", libcamera::controls::draft::TestPatternModePn9)
+		.value("Custom1", libcamera::controls::draft::TestPatternModeCustom1);
 }

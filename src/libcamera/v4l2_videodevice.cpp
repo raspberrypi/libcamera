@@ -1600,6 +1600,14 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 			buf.length = planes[0].length;
 		}
 
+		/*
+		 * Timestamps are to be supplied if the device is a mem-to-mem
+		 * device. The drivers will have V4L2_BUF_FLAG_TIMESTAMP_COPY
+		 * set hence these timestamps will be copied from the output
+		 * buffers to capture buffers. If the device is not mem-to-mem,
+		 * there is no harm in setting the timestamps as they will be
+		 * ignored (and over-written).
+		 */
 		buf.timestamp.tv_sec = metadata.timestamp / 1000000000;
 		buf.timestamp.tv_usec = (metadata.timestamp / 1000) % 1000000;
 	}

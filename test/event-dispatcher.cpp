@@ -16,8 +16,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 static EventDispatcher *dispatcher;
 static bool interrupt;
@@ -50,7 +51,7 @@ protected:
 		/* Event processing interruption by signal. */
 		std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-		timer.start(1000);
+		timer.start(1000ms);
 
 		struct itimerval itimer = {};
 		itimer.it_value.tv_usec = 500000;
@@ -69,7 +70,7 @@ protected:
 		}
 
 		/* Event processing interruption. */
-		timer.start(1000);
+		timer.start(1000ms);
 		dispatcher->interrupt();
 
 		dispatcher->processEvents();
@@ -79,7 +80,7 @@ protected:
 			return TestFail;
 		}
 
-		timer.start(1000);
+		timer.start(1000ms);
 		itimer.it_value.tv_usec = 500000;
 		interrupt = true;
 		setitimer(ITIMER_REAL, &itimer, nullptr);

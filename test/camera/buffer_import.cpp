@@ -25,6 +25,7 @@
 #include "test.h"
 
 using namespace libcamera;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -135,7 +136,7 @@ protected:
 		EventDispatcher *dispatcher = Thread::current()->eventDispatcher();
 
 		Timer timer;
-		timer.start(1000);
+		timer.start(1000ms);
 		while (timer.isRunning())
 			dispatcher->processEvents();
 

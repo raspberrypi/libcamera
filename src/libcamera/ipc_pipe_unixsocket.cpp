@@ -18,6 +18,8 @@
 #include "libcamera/internal/ipc_unixsocket.h"
 #include "libcamera/internal/process.h"
 
+using namespace std::chrono_literals;
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(IPCPipe)
@@ -126,7 +128,7 @@ int IPCPipeUnixSocket::call(const IPCUnixSocket::Payload &message,
 	}
 
 	/* \todo Make this less dangerous, see IPCPipe::sendSync() */
-	timeout.start(2000);
+	timeout.start(2000ms);
 	while (!iter->second.done) {
 		if (!timeout.isRunning()) {
 			LOG(IPCPipe, Error) << "Call timeout!";

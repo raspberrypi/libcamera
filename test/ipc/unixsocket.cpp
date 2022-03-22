@@ -30,8 +30,9 @@
 #define CMD_LEN_CMP	3
 #define CMD_JOIN	4
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 int calculateLength(int fd)
 {
@@ -430,7 +431,7 @@ private:
 		if (ret)
 			return ret;
 
-		timeout.start(200);
+		timeout.start(200ms);
 		while (!callDone_) {
 			if (!timeout.isRunning()) {
 				cerr << "Call timeout!" << endl;

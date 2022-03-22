@@ -22,9 +22,9 @@
 #include "camera_test.h"
 #include "test.h"
 
-using namespace std::chrono_literals;
 using namespace libcamera;
 using namespace std;
+using namespace std::chrono_literals;
 
 class FenceTest : public CameraTest, public Test
 {
@@ -316,7 +316,7 @@ int FenceTest::run()
 
 	/* Loop for one second. */
 	Timer timer;
-	timer.start(1000);
+	timer.start(1000ms);
 	while (timer.isRunning() && expectedCompletionResult_) {
 		if (completedRequest_ == signalledRequestId_ && setFence_)
 			/*
@@ -324,7 +324,7 @@ int FenceTest::run()
 			 * been re-queued with a fence. Start the timer to
 			 * signal the fence in 10 msec.
 			 */
-			fenceTimer.start(10);
+			fenceTimer.start(10ms);
 
 		dispatcher_->processEvents();
 	}

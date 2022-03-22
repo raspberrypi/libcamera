@@ -26,8 +26,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 static const string message("hello from the child");
 
@@ -80,7 +81,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(200);
+		timeout.start(200ms);
 		while (timeout.isRunning())
 			dispatcher->processEvents();
 

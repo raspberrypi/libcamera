@@ -19,8 +19,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 class V4L2M2MDeviceTest : public Test
 {
@@ -155,7 +156,7 @@ protected:
 		}
 
 		Timer timeout;
-		timeout.start(5000);
+		timeout.start(5000ms);
 		while (timeout.isRunning()) {
 			dispatcher->processEvents();
 			if (captureFrames_ > 30)

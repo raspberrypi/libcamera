@@ -14,8 +14,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 class ManagedTimer : public Timer
 {
@@ -26,7 +27,7 @@ public:
 		timeout.connect(this, &ManagedTimer::timeoutHandler);
 	}
 
-	void start(int msec)
+	void start(std::chrono::milliseconds msec)
 	{
 		count_ = 0;
 		start_ = std::chrono::steady_clock::now();
@@ -82,7 +83,7 @@ protected:
 		ManagedTimer timer2;
 
 		/* Timer expiration. */
-		timer.start(1000);
+		timer.start(1000ms);
 
 		if (!timer.isRunning()) {
 			cout << "Timer expiration test failed" << endl;
@@ -101,7 +102,7 @@ protected:
 		 * Nanosecond resolution in a 32 bit value wraps at 4.294967
 		 * seconds (0xFFFFFFFF / 1000000)
 		 */
-		timer.start(4295);
+		timer.start(4295ms);
 		dispatcher->processEvents();
 
 		if (timer.hasFailed()) {
@@ -110,7 +111,7 @@ protected:
 		}
 
 		/* Timer restart. */
-		timer.start(500);
+		timer.start(500ms);
 
 		if (!timer.isRunning()) {
 			cout << "Timer restart test failed" << endl;
@@ -125,9 +126,9 @@ protected:
 		}
 
 		/* Timer restart before expiration. */
-		timer.start(50);
-		timer.start(100);
-		timer.start(150);
+		timer.start(50ms);
+		timer.start(100ms);
+		timer.start(150ms);
 
 		dispatcher->processEvents();
 
@@ -147,8 +148,8 @@ protected:
 		}
 
 		/* Two timers. */
-		timer.start(1000);
-		timer2.start(300);
+		timer.start(1000ms);
+		timer2.start(300ms);
 
 		dispatcher->processEvents();
 
@@ -170,8 +171,8 @@ protected:
 		}
 
 		/* Restart timer before expiration. */
-		timer.start(1000);
-		timer2.start(300);
+		timer.start(1000ms);
+		timer2.start(300ms);
 
 		dispatcher->processEvents();
 
@@ -180,7 +181,7 @@ protected:
 			return TestFail;
 		}
 
-		timer.start(1000);
+		timer.start(1000ms);
 
 		dispatcher->processEvents();
 
@@ -194,10 +195,10 @@ protected:
 		 * deleted. This will result in a crash on failure.
 		 */
 		ManagedTimer *dyntimer = new ManagedTimer();
-		dyntimer->start(100);
+		dyntimer->start(100ms);
 		delete dyntimer;
 
-		timer.start(200);
+		timer.start(200ms);
 		dispatcher->processEvents();
 
 		return TestPass;

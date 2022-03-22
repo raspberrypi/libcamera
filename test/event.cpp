@@ -16,8 +16,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 class EventTest : public Test
 {
@@ -55,7 +56,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(100);
+		timeout.start(100ms);
 		dispatcher->processEvents();
 		timeout.stop();
 
@@ -67,7 +68,7 @@ protected:
 		/* Test read notification without data. */
 		notified_ = false;
 
-		timeout.start(100);
+		timeout.start(100ms);
 		dispatcher->processEvents();
 		timeout.stop();
 
@@ -86,7 +87,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(100);
+		timeout.start(100ms);
 		dispatcher->processEvents();
 		timeout.stop();
 
@@ -99,7 +100,7 @@ protected:
 		notified_ = false;
 		notifier_->setEnabled(true);
 
-		timeout.start(100);
+		timeout.start(100ms);
 		dispatcher->processEvents();
 		timeout.stop();
 

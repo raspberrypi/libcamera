@@ -16,6 +16,7 @@
 #include "v4l2_videodevice_test.h"
 
 using namespace libcamera;
+using namespace std::chrono_literals;
 
 class CaptureAsyncTest : public V4L2VideoDeviceTest
 {
@@ -60,7 +61,7 @@ protected:
 		if (ret)
 			return TestFail;
 
-		timeout.start(10000);
+		timeout.start(10000ms);
 		while (timeout.isRunning()) {
 			dispatcher->processEvents();
 			if (frames > 30)

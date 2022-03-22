@@ -21,6 +21,7 @@
 #include "v4l2_videodevice_test.h"
 
 using namespace libcamera;
+using namespace std::chrono_literals;
 
 class BufferSharingTest : public V4L2VideoDeviceTest
 {
@@ -145,7 +146,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(10000);
+		timeout.start(10000ms);
 		while (timeout.isRunning()) {
 			dispatcher->processEvents();
 			if (framesCaptured_ > 30 && framesOutput_ > 30)

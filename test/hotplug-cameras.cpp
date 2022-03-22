@@ -22,6 +22,7 @@
 #include "test.h"
 
 using namespace libcamera;
+using namespace std::chrono_literals;
 
 class HotplugTest : public Test
 {
@@ -88,7 +89,7 @@ protected:
 		std::ofstream(uvcDriverDir_ + "unbind", std::ios::binary)
 			<< uvcDeviceDir;
 		Timer timer;
-		timer.start(1000);
+		timer.start(1000ms);
 		while (timer.isRunning() && !cameraRemoved_)
 			Thread::current()->eventDispatcher()->processEvents();
 		if (!cameraRemoved_) {
@@ -99,7 +100,7 @@ protected:
 		/* Bind the camera again and process events. */
 		std::ofstream(uvcDriverDir_ + "bind", std::ios::binary)
 			<< uvcDeviceDir;
-		timer.start(1000);
+		timer.start(1000ms);
 		while (timer.isRunning() && !cameraAdded_)
 			Thread::current()->eventDispatcher()->processEvents();
 		if (!cameraAdded_) {

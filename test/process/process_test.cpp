@@ -18,8 +18,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 class ProcessTestChild
 {
@@ -61,7 +62,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(2000);
+		timeout.start(2000ms);
 		while (timeout.isRunning() && exitStatus_ == Process::NotExited)
 			dispatcher->processEvents();
 

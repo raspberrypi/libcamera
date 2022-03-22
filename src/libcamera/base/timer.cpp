@@ -63,16 +63,6 @@ Timer::~Timer()
 }
 
 /**
- * \fn Timer::start(unsigned int msec)
- * \brief Start or restart the timer with a timeout of \a msec
- * \param[in] msec The timer duration in milliseconds
- *
- * If the timer is already running it will be stopped and restarted.
- *
- * \context This function is \threadbound.
- */
-
-/**
  * \brief Start or restart the timer with a timeout of \a duration
  * \param[in] duration The timer duration in milliseconds
  *

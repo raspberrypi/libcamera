@@ -14,8 +14,9 @@
 
 #include "test.h"
 
-using namespace std;
 using namespace libcamera;
+using namespace std;
+using namespace std::chrono_literals;
 
 class TimeoutHandler : public Object
 {
@@ -24,13 +25,13 @@ public:
 		: timer_(this), timeout_(false)
 	{
 		timer_.timeout.connect(this, &TimeoutHandler::timeoutHandler);
-		timer_.start(100);
+		timer_.start(100ms);
 	}
 
 	void restart()
 	{
 		timeout_ = false;
-		timer_.start(100);
+		timer_.start(100ms);
 	}
 
 	bool timeout() const

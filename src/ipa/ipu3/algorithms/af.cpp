@@ -360,20 +360,14 @@ double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
 	double mean;
 	double var_sum = 0;
 
-	for (auto y : y_items) {
-		if (isY1)
-			total += y.y1_avg;
-		else
-			total += y.y2_avg;
-	}
+	for (auto y : y_items)
+		total += isY1 ? y.y1_avg : y.y2_avg;
 
 	mean = total / y_items.size();
 
 	for (auto y : y_items) {
-		if (isY1)
-			var_sum += pow(y.y1_avg - mean, 2);
-		else
-			var_sum += pow(y.y2_avg - mean, 2);
+		double avg = isY1 ? y.y1_avg : y.y2_avg;
+		var_sum += pow(avg - mean, 2);
 	}
 
 	return var_sum / y_items.size();

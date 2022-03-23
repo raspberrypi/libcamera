@@ -30,7 +30,7 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \brief Metadata related to a captured frame
  *
  * The FrameMetadata structure stores all metadata related to a captured frame,
- * as stored in a FrameBuffer, such as capture status, timestamp and bytesused.
+ * as stored in a FrameBuffer, such as capture status, timestamp and bytes used.
  */
 
 /**

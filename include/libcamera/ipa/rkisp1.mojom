@@ -8,28 +8,6 @@ module ipa.rkisp1;
 
 import "include/libcamera/ipa/core.mojom";
 
-enum RkISP1Operations {
-	ActionV4L2Set = 1,
-	ActionParamFilled = 2,
-	ActionMetadata = 3,
-	EventSignalStatBuffer = 4,
-	EventQueueRequest = 5,
-};
-
-struct RkISP1Event {
-	RkISP1Operations op;
-	uint32 frame;
-	uint32 bufferId;
-	libcamera.ControlList controls;
-	libcamera.ControlList sensorControls;
-};
-
-struct RkISP1Action {
-	RkISP1Operations op;
-	libcamera.ControlList controls;
-	libcamera.ControlList sensorControls;
-};
-
 interface IPARkISP1Interface {
 	init(libcamera.IPASettings settings,
 	     uint32 hwRevision)
@@ -45,9 +23,14 @@ interface IPARkISP1Interface {
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
 
-	[async] processEvent(RkISP1Event ev);
+	[async] queueRequest(uint32 frame, uint32 bufferId,
+			     libcamera.ControlList reqControls);
+	[async] processStatsBuffer(uint32 frame, uint32 bufferId,
+				   libcamera.ControlList sensorControls);
 };
 
 interface IPARkISP1EventInterface {
-	queueFrameAction(uint32 frame, RkISP1Action action);
+	paramsBufferReady(uint32 frame);
+	setSensorControls(uint32 frame, libcamera.ControlList sensorControls);
+	metadataReady(uint32 frame, libcamera.ControlList metadata);
 };

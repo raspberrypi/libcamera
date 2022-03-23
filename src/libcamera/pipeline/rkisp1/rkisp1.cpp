@@ -104,8 +104,9 @@ public:
 	std::unique_ptr<ipa::rkisp1::IPAProxyRkISP1> ipa_;
 
 private:
-	void queueFrameAction(unsigned int frame,
-			      const ipa::rkisp1::RkISP1Action &action);
+	void paramFilled(unsigned int frame);
+	void setSensorControls(unsigned int frame,
+			       const ControlList &sensorControls);
 
 	void metadataReady(unsigned int frame, const ControlList &metadata);
 };
@@ -316,8 +317,9 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	if (!ipa_)
 		return -ENOENT;
 
-	ipa_->queueFrameAction.connect(this,
-				       &RkISP1CameraData::queueFrameAction);
+	ipa_->setSensorControls.connect(this, &RkISP1CameraData::setSensorControls);
+	ipa_->paramsBufferReady.connect(this, &RkISP1CameraData::paramFilled);
+	ipa_->metadataReady.connect(this, &RkISP1CameraData::metadataReady);
 
 	int ret = ipa_->init(IPASettings{ "", sensor_->model() }, hwRevision);
 	if (ret < 0) {
@@ -328,39 +330,27 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	return 0;
 }
 
-void RkISP1CameraData::queueFrameAction(unsigned int frame,
-					const ipa::rkisp1::RkISP1Action &action)
+void RkISP1CameraData::paramFilled(unsigned int frame)
 {
-	switch (action.op) {
-	case ipa::rkisp1::ActionV4L2Set: {
-		const ControlList &controls = action.sensorControls;
-		delayedCtrls_->push(controls);
-		break;
-	}
-	case ipa::rkisp1::ActionParamFilled: {
-		PipelineHandlerRkISP1 *pipe = RkISP1CameraData::pipe();
-		RkISP1FrameInfo *info = frameInfo_.find(frame);
-		if (!info)
-			break;
+	PipelineHandlerRkISP1 *pipe = RkISP1CameraData::pipe();
+	RkISP1FrameInfo *info = frameInfo_.find(frame);
+	if (!info)
+		return;
 
-		pipe->param_->queueBuffer(info->paramBuffer);
-		pipe->stat_->queueBuffer(info->statBuffer);
+	pipe->param_->queueBuffer(info->paramBuffer);
+	pipe->stat_->queueBuffer(info->statBuffer);
 
-		if (info->mainPathBuffer)
-			mainPath_->queueBuffer(info->mainPathBuffer);
+	if (info->mainPathBuffer)
+		mainPath_->queueBuffer(info->mainPathBuffer);
 
-		if (info->selfPathBuffer)
-			selfPath_->queueBuffer(info->selfPathBuffer);
+	if (info->selfPathBuffer)
+		selfPath_->queueBuffer(info->selfPathBuffer);
+}
 
-		break;
-	}
-	case ipa::rkisp1::ActionMetadata:
-		metadataReady(frame, action.controls);
-		break;
-	default:
-		LOG(RkISP1, Error) << "Unknown action " << action.op;
-		break;
-	}
+void RkISP1CameraData::setSensorControls([[maybe_unused]] unsigned int frame,
+					 const ControlList &sensorControls)
+{
+	delayedCtrls_->push(sensorControls);
 }
 
 void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &metadata)
@@ -865,13 +855,8 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 	if (!info)
 		return -ENOENT;
 
-	ipa::rkisp1::RkISP1Event ev;
-	ev.op = ipa::rkisp1::EventQueueRequest;
-	ev.frame = data->frame_;
-	ev.bufferId = info->paramBuffer->cookie();
-	ev.controls = request->controls();
-	data->ipa_->processEvent(ev);
-
+	data->ipa_->queueRequest(data->frame_, info->paramBuffer->cookie(),
+				 request->controls());
 	data->frame_++;
 
 	return 0;
@@ -1120,12 +1105,8 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	if (data->frame_ <= buffer->metadata().sequence)
 		data->frame_ = buffer->metadata().sequence + 1;
 
-	ipa::rkisp1::RkISP1Event ev;
-	ev.op = ipa::rkisp1::EventSignalStatBuffer;
-	ev.frame = info->frame;
-	ev.bufferId = info->statBuffer->cookie();
-	ev.sensorControls = data->delayedCtrls_->get(buffer->metadata().sequence);
-	data->ipa_->processEvent(ev);
+	data->ipa_->processStatsBuffer(info->frame, info->statBuffer->cookie(),
+				       data->delayedCtrls_->get(buffer->metadata().sequence));
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)

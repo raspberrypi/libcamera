@@ -51,16 +51,14 @@ public:
 		      const std::map<uint32_t, ControlInfoMap> &entityControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void processEvent(const RkISP1Event &event) override;
 
+	void queueRequest(const uint32_t frame, const uint32_t bufferId,
+			  const ControlList &controls) override;
+	void processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
+				const ControlList &sensorControls) override;
 private:
-	void queueRequest(unsigned int frame, rkisp1_params_cfg *params,
-			  const ControlList &controls);
-	void updateStatistics(unsigned int frame,
-			      const rkisp1_stat_buffer *stats);
-
 	void setControls(unsigned int frame);
-	void metadataReady(unsigned int frame, unsigned int aeState);
+	void prepareMetadata(unsigned int frame, unsigned int aeState);
 
 	std::map<unsigned int, FrameBuffer> buffers_;
 	std::map<unsigned int, MappedFrameBuffer> mappedBuffers_;
@@ -231,60 +229,34 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARkISP1::processEvent(const RkISP1Event &event)
-{
-	switch (event.op) {
-	case EventSignalStatBuffer: {
-		unsigned int frame = event.frame;
-		unsigned int bufferId = event.bufferId;
-
-		const rkisp1_stat_buffer *stats =
-			reinterpret_cast<rkisp1_stat_buffer *>(
-				mappedBuffers_.at(bufferId).planes()[0].data());
-
-		context_.frameContext.sensor.exposure =
-			event.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-		context_.frameContext.sensor.gain =
-			camHelper_->gain(event.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
-
-		updateStatistics(frame, stats);
-		break;
-	}
-	case EventQueueRequest: {
-		unsigned int frame = event.frame;
-		unsigned int bufferId = event.bufferId;
-
-		rkisp1_params_cfg *params =
-			reinterpret_cast<rkisp1_params_cfg *>(
-				mappedBuffers_.at(bufferId).planes()[0].data());
-
-		queueRequest(frame, params, event.controls);
-		break;
-	}
-	default:
-		LOG(IPARkISP1, Error) << "Unknown event " << event.op;
-		break;
-	}
-}
-
-void IPARkISP1::queueRequest(unsigned int frame, rkisp1_params_cfg *params,
+void IPARkISP1::queueRequest(const uint32_t frame, const uint32_t bufferId,
 			     [[maybe_unused]] const ControlList &controls)
 {
+	rkisp1_params_cfg *params =
+		reinterpret_cast<rkisp1_params_cfg *>(
+			mappedBuffers_.at(bufferId).planes()[0].data());
+
 	/* Prepare parameters buffer. */
 	memset(params, 0, sizeof(*params));
 
 	for (auto const &algo : algorithms_)
 		algo->prepare(context_, params);
 
-	RkISP1Action op;
-	op.op = ActionParamFilled;
-
-	queueFrameAction.emit(frame, op);
+	paramsBufferReady.emit(frame);
 }
 
-void IPARkISP1::updateStatistics(unsigned int frame,
-				 const rkisp1_stat_buffer *stats)
+void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
+				   const ControlList &sensorControls)
 {
+	const rkisp1_stat_buffer *stats =
+		reinterpret_cast<rkisp1_stat_buffer *>(
+			mappedBuffers_.at(bufferId).planes()[0].data());
+
+	context_.frameContext.sensor.exposure =
+		sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	context_.frameContext.sensor.gain =
+		camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
+
 	unsigned int aeState = 0;
 
 	for (auto const &algo : algorithms_)
@@ -292,37 +264,29 @@ void IPARkISP1::updateStatistics(unsigned int frame,
 
 	setControls(frame);
 
-	metadataReady(frame, aeState);
+	prepareMetadata(frame, aeState);
 }
 
 void IPARkISP1::setControls(unsigned int frame)
 {
-	RkISP1Action op;
-	op.op = ActionV4L2Set;
-
 	uint32_t exposure = context_.frameContext.agc.exposure;
 	uint32_t gain = camHelper_->gainCode(context_.frameContext.agc.gain);
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
-	op.sensorControls = ctrls;
 
-	queueFrameAction.emit(frame, op);
+	setSensorControls.emit(frame, ctrls);
 }
 
-void IPARkISP1::metadataReady(unsigned int frame, unsigned int aeState)
+void IPARkISP1::prepareMetadata(unsigned int frame, unsigned int aeState)
 {
 	ControlList ctrls(controls::controls);
 
 	if (aeState)
 		ctrls.set(controls::AeLocked, aeState == 2);
 
-	RkISP1Action op;
-	op.op = ActionMetadata;
-	op.controls = ctrls;
-
-	queueFrameAction.emit(frame, op);
+	metadataReady.emit(frame, ctrls);
 }
 
 } /* namespace ipa::rkisp1 */

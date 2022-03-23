@@ -41,8 +41,8 @@ private:
 	void afReset(IPAContext &context);
 	bool afNeedIgnoreFrame();
 	void afIgnoreFrameReset();
-	double afEstimateVariance(const y_table_item_t *y_item, uint32_t len,
-				  bool isY1);
+	double afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1);
+
 	bool afIsOutOfFocus(IPAContext context);
 
 	/* VCM step configuration. It is the current setting of the VCM step. */

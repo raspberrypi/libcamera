@@ -354,29 +354,29 @@ void Af::afIgnoreFrameReset()
  *
  * \return The variance of the values in the data set \a y_item selected by \a isY1
  */
-double Af::afEstimateVariance(const y_table_item_t *y_item, uint32_t len,
-			      bool isY1)
+double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
 {
-	uint32_t z = 0;
 	uint32_t total = 0;
 	double mean;
 	double var_sum = 0;
 
-	for (z = 0; z < len; z++) {
+	for (auto y : y_items) {
 		if (isY1)
-			total += y_item[z].y1_avg;
+			total += y.y1_avg;
 		else
-			total += y_item[z].y2_avg;
-	}
-	mean = total / len;
-	for (z = 0; z < len; z++) {
-		if (isY1)
-			var_sum += pow((y_item[z].y1_avg - mean), 2);
-		else
-			var_sum += pow((y_item[z].y2_avg - mean), 2);
+			total += y.y2_avg;
 	}
 
-	return var_sum / static_cast<double>(len);
+	mean = total / y_items.size();
+
+	for (auto y : y_items) {
+		if (isY1)
+			var_sum += pow(y.y1_avg - mean, 2);
+		else
+			var_sum += pow(y.y2_avg - mean, 2);
+	}
+
+	return var_sum / y_items.size();
 }
 
 /**
@@ -424,21 +424,21 @@ bool Af::afIsOutOfFocus(IPAContext context)
  */
 void Af::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 {
-	const y_table_item_t *y_item = reinterpret_cast<const y_table_item_t *>(&stats->af_raw_buffer.y_table);
-	uint32_t afRawBufferLen;
-
 	/* Evaluate the AF buffer length */
-	afRawBufferLen = context.configuration.af.afGrid.width *
-			 context.configuration.af.afGrid.height;
+	uint32_t afRawBufferLen = context.configuration.af.afGrid.width *
+				  context.configuration.af.afGrid.height;
 
 	ASSERT(afRawBufferLen < IPU3_UAPI_AF_Y_TABLE_MAX_SIZE);
+
+	Span<const y_table_item_t> y_items(reinterpret_cast<const y_table_item_t *>(&stats->af_raw_buffer.y_table),
+					   afRawBufferLen);
 
 	/*
 	 * Calculate the mean and the variance of AF statistics for a given grid.
 	 * For coarse: y1 are used.
 	 * For fine: y2 results are used.
 	 */
-	currentVariance_ = afEstimateVariance(y_item, afRawBufferLen, !coarseCompleted_);
+	currentVariance_ = afEstimateVariance(y_items, !coarseCompleted_);
 
 	if (!context.frameContext.af.stable) {
 		afCoarseScan(context);

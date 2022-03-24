@@ -50,12 +50,13 @@ bool RkISP1Path::init(MediaDevice *media)
 
 StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
 {
-	Size maxResolution = resolution;
-	maxResolution.boundTo(maxResolution_);
+	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
+					   .boundedTo(resolution);
+	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
 
 	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
 	for (const PixelFormat &format : formats_)
-		streamFormats[format] = { { minResolution_, maxResolution } };
+		streamFormats[format] = { { minResolution, maxResolution } };
 
 	StreamFormats formats(streamFormats);
 	StreamConfiguration cfg(formats);

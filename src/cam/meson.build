@@ -25,11 +25,11 @@ cam_cpp_args = []
 libdrm = dependency('libdrm', required : false)
 
 if libdrm.found()
-cam_cpp_args += [ '-DHAVE_KMS' ]
-cam_sources += files([
-    'drm.cpp',
-    'kms_sink.cpp'
-])
+    cam_cpp_args += [ '-DHAVE_KMS' ]
+    cam_sources += files([
+        'drm.cpp',
+        'kms_sink.cpp'
+    ])
 endif
 
 cam  = executable('cam', cam_sources,

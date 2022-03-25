@@ -126,6 +126,35 @@ public:
 		return TestPass;
 	}
 
+	int testIsEmpty(const std::vector<std::unique_ptr<FrameBuffer>> &buffers)
+	{
+		V4L2BufferCache cache(buffers.size());
+
+		if (!cache.isEmpty())
+			return TestFail;
+
+		for (auto const &buffer : buffers) {
+			FrameBuffer &b = *buffer.get();
+			cache.get(b);
+		}
+
+		if (cache.isEmpty())
+			return TestFail;
+
+		unsigned int i;
+		for (i = 0; i < buffers.size() - 1; i++)
+			cache.put(i);
+
+		if (cache.isEmpty())
+			return TestFail;
+
+		cache.put(i);
+		if (!cache.isEmpty())
+			return TestFail;
+
+		return TestPass;
+	}
+
 	int init() override
 	{
 		std::random_device rd;
@@ -202,6 +231,13 @@ public:
 			return TestFail;
 
 		if (testHot(&cacheHalf, buffers, numBuffers / 2) != TestPass)
+			return TestFail;
+
+		/*
+		 * Test that the isEmpty function reports the correct result at
+		 * various levels of cache fullness.
+		 */
+		if (testIsEmpty(buffers) != TestPass)
 			return TestFail;
 
 		return TestPass;

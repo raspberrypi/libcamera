@@ -1491,6 +1491,9 @@ int V4L2VideoDevice::releaseBuffers()
  * The best available V4L2 buffer is picked for \a buffer using the V4L2 buffer
  * cache.
  *
+ * Note that queueBuffer() will fail if the device is in the process of being
+ * stopped from a streaming state through streamOff().
+ *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
@@ -1498,6 +1501,11 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
 	struct v4l2_buffer buf = {};
 	int ret;
+
+	if (state_ == State::Stopping) {
+		LOG(V4L2, Error) << "Device is in a stopping state.";
+		return -ESHUTDOWN;
+	}
 
 	/*
 	 * Pipeline handlers should not requeue buffers after releasing the

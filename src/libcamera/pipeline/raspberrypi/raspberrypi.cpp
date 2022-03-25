@@ -185,8 +185,13 @@ public:
 	RPiCameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
-		  dropFrameCount_(0), ispOutputCount_(0)
+		  dropFrameCount_(0), buffersAllocated_(false), ispOutputCount_(0)
 	{
+	}
+
+	~RPiCameraData()
+	{
+		freeBuffers();
 	}
 
 	void freeBuffers();
@@ -279,6 +284,9 @@ public:
 	 * the V4L2_CID_NOTIFY_GAINS control.
 	 */
 	std::optional<int32_t> notifyGainsUnity_;
+
+	/* Have internal buffers been allocated? */
+	bool buffersAllocated_;
 
 private:
 	void checkRequestCompleted();
@@ -682,7 +690,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	RPiCameraData *data = cameraData(camera);
 	int ret;
 
-	/* Start by resetting the Unicam and ISP stream states. */
+	/* Start by freeing all buffers and reset the Unicam and ISP stream states. */
+	data->freeBuffers();
 	for (auto const stream : data->streams_)
 		stream->reset();
 
@@ -982,12 +991,16 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	RPiCameraData *data = cameraData(camera);
 	int ret;
 
-	/* Allocate buffers for internal pipeline usage. */
-	ret = prepareBuffers(camera);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to allocate buffers";
-		stop(camera);
-		return ret;
+	if (!data->buffersAllocated_) {
+		/* Allocate buffers for internal pipeline usage. */
+		ret = prepareBuffers(camera);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to allocate buffers";
+			data->freeBuffers();
+			stop(camera);
+			return ret;
+		}
+		data->buffersAllocated_ = true;
 	}
 
 	/* Check if a ScalerCrop control was specified. */
@@ -1055,8 +1068,6 @@ void PipelineHandlerRPi::stopDevice(Camera *camera)
 
 	/* Stop the IPA. */
 	data->ipa_->stop();
-
-	data->freeBuffers();
 }
 
 int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
@@ -1461,6 +1472,8 @@ void RPiCameraData::freeBuffers()
 
 	for (auto const stream : streams_)
 		stream->releaseBuffers();
+
+	buffersAllocated_ = false;
 }
 
 void RPiCameraData::frameStarted(uint32_t sequence)

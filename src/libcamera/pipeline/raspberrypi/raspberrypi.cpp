@@ -693,7 +693,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	/* Start by freeing all buffers and reset the Unicam and ISP stream states. */
 	data->freeBuffers();
 	for (auto const stream : data->streams_)
-		stream->reset();
+		stream->setExternal(false);
 
 	BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
 	Size maxSize, sensorSize;
@@ -990,6 +990,9 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 {
 	RPiCameraData *data = cameraData(camera);
 	int ret;
+
+	for (auto const stream : data->streams_)
+		stream->resetBuffers();
 
 	if (!data->buffersAllocated_) {
 		/* Allocate buffers for internal pipeline usage. */

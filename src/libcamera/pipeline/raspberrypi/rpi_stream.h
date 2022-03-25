@@ -45,7 +45,7 @@ public:
 	V4L2VideoDevice *dev() const;
 	std::string name() const;
 	bool isImporter() const;
-	void reset();
+	void resetBuffers();
 
 	void setExternal(bool external);
 	bool isExternal() const;

@@ -26,10 +26,12 @@ std::string Stream::name() const
 	return name_;
 }
 
-void Stream::reset()
+void Stream::resetBuffers()
 {
-	external_ = false;
-	clearBuffers();
+	/* Add all internal buffers to the queue of usable buffers. */
+	availableBuffers_ = {};
+	for (auto const &buffer : internalBuffers_)
+		availableBuffers_.push(buffer.get());
 }
 
 void Stream::setExternal(bool external)
@@ -97,10 +99,7 @@ int Stream::prepareBuffers(unsigned int count)
 
 			/* Add these exported buffers to the internal/external buffer list. */
 			setExportedBuffers(&internalBuffers_);
-
-			/* Add these buffers to the queue of internal usable buffers. */
-			for (auto const &buffer : internalBuffers_)
-				availableBuffers_.push(buffer.get());
+			resetBuffers();
 		}
 
 		/* We must import all internal/external exported buffers. */

@@ -189,6 +189,7 @@ public:
 	{
 	}
 
+	void freeBuffers();
 	void frameStarted(uint32_t sequence);
 
 	int loadIPA(ipa::RPi::SensorConfig *sensorConfig);
@@ -330,7 +331,6 @@ private:
 	int registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity);
 	int queueAllBuffers(Camera *camera);
 	int prepareBuffers(Camera *camera);
-	void freeBuffers(Camera *camera);
 	void mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask);
 };
 
@@ -1056,7 +1056,7 @@ void PipelineHandlerRPi::stopDevice(Camera *camera)
 	/* Stop the IPA. */
 	data->ipa_->stop();
 
-	freeBuffers(camera);
+	data->freeBuffers();
 }
 
 int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
@@ -1452,16 +1452,14 @@ void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffer
 	data->ipa_->mapBuffers(ipaBuffers);
 }
 
-void PipelineHandlerRPi::freeBuffers(Camera *camera)
+void RPiCameraData::freeBuffers()
 {
-	RPiCameraData *data = cameraData(camera);
-
 	/* Copy the buffer ids from the unordered_set to a vector to pass to the IPA. */
-	std::vector<unsigned int> ipaBuffers(data->ipaBuffers_.begin(), data->ipaBuffers_.end());
-	data->ipa_->unmapBuffers(ipaBuffers);
-	data->ipaBuffers_.clear();
+	std::vector<unsigned int> ipaBuffers(ipaBuffers_.begin(), ipaBuffers_.end());
+	ipa_->unmapBuffers(ipaBuffers);
+	ipaBuffers_.clear();
 
-	for (auto const stream : data->streams_)
+	for (auto const stream : streams_)
 		stream->releaseBuffers();
 }
 

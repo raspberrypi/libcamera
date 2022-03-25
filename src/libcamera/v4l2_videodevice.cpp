@@ -507,7 +507,7 @@ const std::string V4L2DeviceFormat::toString() const
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 	: V4L2Device(deviceNode), formatInfo_(nullptr), cache_(nullptr),
-	  fdBufferNotifier_(nullptr), streaming_(false)
+	  fdBufferNotifier_(nullptr), state_(State::Stopped)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -1803,7 +1803,7 @@ int V4L2VideoDevice::streamOn()
 		return ret;
 	}
 
-	streaming_ = true;
+	state_ = State::Streaming;
 
 	return 0;
 }
@@ -1825,7 +1825,7 @@ int V4L2VideoDevice::streamOff()
 {
 	int ret;
 
-	if (!streaming_ && queuedBuffers_.empty())
+	if (state_ != State::Streaming && queuedBuffers_.empty())
 		return 0;
 
 	ret = ioctl(VIDIOC_STREAMOFF, &bufferType_);
@@ -1834,6 +1834,8 @@ int V4L2VideoDevice::streamOff()
 			<< "Failed to stop streaming: " << strerror(-ret);
 		return ret;
 	}
+
+	state_ = State::Stopping;
 
 	/* Send back all queued buffers. */
 	for (auto it : queuedBuffers_) {
@@ -1845,7 +1847,7 @@ int V4L2VideoDevice::streamOff()
 
 	queuedBuffers_.clear();
 	fdBufferNotifier_->setEnabled(false);
-	streaming_ = false;
+	state_ = State::Stopped;
 
 	return 0;
 }

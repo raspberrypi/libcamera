@@ -225,6 +225,12 @@ protected:
 private:
 	LIBCAMERA_DISABLE_COPY(V4L2VideoDevice)
 
+	enum class State {
+		Streaming,
+		Stopping,
+		Stopped,
+	};
+
 	int getFormatMeta(V4L2DeviceFormat *format);
 	int trySetFormatMeta(V4L2DeviceFormat *format, bool set);
 
@@ -258,7 +264,7 @@ private:
 
 	EventNotifier *fdBufferNotifier_;
 
-	bool streaming_;
+	State state_;
 };
 
 class V4L2M2MDevice

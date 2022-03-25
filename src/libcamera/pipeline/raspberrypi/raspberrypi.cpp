@@ -845,11 +845,13 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * colour denoise will not run.
 	 */
 	if (!output1Set) {
-		V4L2DeviceFormat output1Format = format;
+		V4L2DeviceFormat output1Format;
 		constexpr Size maxDimensions(1200, 1200);
 		const Size limit = maxDimensions.boundedToAspectRatio(format.size);
 
 		output1Format.size = (format.size / 2).boundedTo(limit).alignedDownTo(2, 2);
+		output1Format.colorSpace = format.colorSpace;
+		output1Format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420);
 
 		LOG(RPI, Debug) << "Setting ISP Output1 (internal) to "
 				<< output1Format.toString();

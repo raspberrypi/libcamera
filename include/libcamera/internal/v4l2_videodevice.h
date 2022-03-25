@@ -124,6 +124,7 @@ public:
 	V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers);
 	~V4L2BufferCache();
 
+	bool isEmpty() const;
 	int get(const FrameBuffer &buffer);
 	void put(unsigned int index);
 

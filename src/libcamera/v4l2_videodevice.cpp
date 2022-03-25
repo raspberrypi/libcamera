@@ -202,6 +202,19 @@ V4L2BufferCache::~V4L2BufferCache()
 }
 
 /**
+ * \brief Check if all the entries in the cache are unused
+ */
+bool V4L2BufferCache::isEmpty() const
+{
+	for (auto const &entry : cache_) {
+		if (!entry.free_)
+			return false;
+	}
+
+	return true;
+}
+
+/**
  * \brief Find the best V4L2 buffer for a FrameBuffer
  * \param[in] buffer The FrameBuffer
  *
@@ -1849,9 +1862,12 @@ int V4L2VideoDevice::streamOff()
 	for (auto it : queuedBuffers_) {
 		FrameBuffer *buffer = it.second;
 
+		cache_->put(it.first);
 		buffer->metadata_.status = FrameMetadata::FrameCancelled;
 		bufferReady.emit(buffer);
 	}
+
+	ASSERT(cache_->isEmpty());
 
 	queuedBuffers_.clear();
 	fdBufferNotifier_->setEnabled(false);

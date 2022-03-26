@@ -67,13 +67,21 @@ do
 			errors=$((errors+1))
 		fi
 
-		# 2. The commit message shall have a Signed-off-by line
-		# corresponding the committer.
+		# 2. The commit message shall have Signed-off-by lines
+		# corresponding the committer and the author.
 		committer=$(echo "$msg" | grep '^committer ' | head -1 | \
 				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
 		if ! echo "$msg" | grep -F -q "Signed-off-by: ${committer}"
 		then
 			echo >&2 "Missing committer Signed-off-by in commit $commit"
+			errors=$((errors+1))
+		fi
+
+		author=$(echo "$msg" | grep '^author ' | head -1 | \
+				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
+		if ! echo "$msg" | grep -F -q "Signed-off-by: ${author}"
+		then
+			echo >&2 "Missing author Signed-off-by in commit $commit"
 			errors=$((errors+1))
 		fi
 

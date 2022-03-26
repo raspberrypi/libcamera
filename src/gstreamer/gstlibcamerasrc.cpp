@@ -284,7 +284,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 						     &buffer, nullptr);
 		if (ret != GST_FLOW_OK) {
 			/*
-			 * RequestWrap has ownership of the rquest, and we
+			 * RequestWrap has ownership of the request, and we
 			 * won't be queueing this one due to lack of buffers.
 			 */
 			wrap.release();

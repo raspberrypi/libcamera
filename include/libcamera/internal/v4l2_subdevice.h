@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <linux/v4l2-subdev.h>
+
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 
@@ -44,8 +46,8 @@ public:
 	using Formats = std::map<unsigned int, std::vector<SizeRange>>;
 
 	enum Whence {
-		ActiveFormat,
-		TryFormat,
+		TryFormat = V4L2_SUBDEV_FORMAT_TRY,
+		ActiveFormat = V4L2_SUBDEV_FORMAT_ACTIVE,
 	};
 
 	explicit V4L2Subdevice(const MediaEntity *entity);

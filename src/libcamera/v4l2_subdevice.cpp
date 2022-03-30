@@ -416,8 +416,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = whence == ActiveFormat ? V4L2_SUBDEV_FORMAT_ACTIVE
-			: V4L2_SUBDEV_FORMAT_TRY;
+	subdevFmt.which = whence;
 	subdevFmt.pad = pad;
 
 	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
@@ -452,8 +451,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = whence == ActiveFormat ? V4L2_SUBDEV_FORMAT_ACTIVE
-			: V4L2_SUBDEV_FORMAT_TRY;
+	subdevFmt.which = whence;
 	subdevFmt.pad = pad;
 	subdevFmt.format.width = format->size.width;
 	subdevFmt.format.height = format->size.height;

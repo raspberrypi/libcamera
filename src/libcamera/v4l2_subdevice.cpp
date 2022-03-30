@@ -134,6 +134,30 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 } /* namespace */
 
 /**
+ * \struct V4L2SubdeviceCapability
+ * \brief struct v4l2_subdev_capability object wrapper and helpers
+ *
+ * The V4L2SubdeviceCapability structure manages the information returned by the
+ * VIDIOC_SUBDEV_QUERYCAP ioctl.
+ */
+
+/**
+ * \fn V4L2SubdeviceCapability::isReadOnly()
+ * \brief Retrieve if a subdevice is registered as read-only
+ *
+ * A V4L2 subdevice is registered as read-only if V4L2_SUBDEV_CAP_RO_SUBDEV
+ * is listed as part of its capabilities.
+ *
+ * \return True if the subdevice is registered as read-only, false otherwise
+ */
+
+/**
+ * \fn V4L2SubdeviceCapability::hasStreams()
+ * \brief Retrieve if a subdevice supports the V4L2 streams API
+ * \return True if the subdevice supports the streams API, false otherwise
+ */
+
+/**
  * \struct V4L2SubdeviceFormat
  * \brief The V4L2 sub-device image format and sizes
  *
@@ -284,7 +308,25 @@ V4L2Subdevice::~V4L2Subdevice()
  */
 int V4L2Subdevice::open()
 {
-	return V4L2Device::open(O_RDWR);
+	int ret = V4L2Device::open(O_RDWR);
+	if (ret)
+		return ret;
+
+	/*
+	 * Try to query the subdev capabilities. The VIDIOC_SUBDEV_QUERYCAP API
+	 * was introduced in kernel v5.8, ENOTTY errors must be ignored to
+	 * support older kernels.
+	 */
+	caps_ = {};
+	ret = ioctl(VIDIOC_SUBDEV_QUERYCAP, &caps_);
+	if (ret < 0 && errno != ENOTTY) {
+		ret = -errno;
+		LOG(V4L2, Error)
+			<< "Unable to query capabilities: " << strerror(-ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 /**
@@ -526,6 +568,12 @@ const std::string &V4L2Subdevice::model()
 
 	return model_;
 }
+
+/**
+ * \fn V4L2Subdevice::caps()
+ * \brief Retrieve the subdevice V4L2 capabilities
+ * \return The subdevice V4L2 capabilities
+ */
 
 /**
  * \brief Create a new video subdevice instance from \a entity in media device

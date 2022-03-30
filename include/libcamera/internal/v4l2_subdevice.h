@@ -29,6 +29,17 @@ namespace libcamera {
 
 class MediaDevice;
 
+struct V4L2SubdeviceCapability final : v4l2_subdev_capability {
+	bool isReadOnly() const
+	{
+		return capabilities & V4L2_SUBDEV_CAP_RO_SUBDEV;
+	}
+	bool hasStreams() const
+	{
+		return capabilities & V4L2_SUBDEV_CAP_MPLEXED;
+	}
+};
+
 struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
 	Size size;
@@ -70,6 +81,7 @@ public:
 		      Whence whence = ActiveFormat);
 
 	const std::string &model();
+	const V4L2SubdeviceCapability &caps() const { return caps_; }
 
 	static std::unique_ptr<V4L2Subdevice>
 	fromEntityName(const MediaDevice *media, const std::string &entity);
@@ -87,6 +99,7 @@ private:
 	const MediaEntity *entity_;
 
 	std::string model_;
+	struct V4L2SubdeviceCapability caps_;
 };
 
 } /* namespace libcamera */

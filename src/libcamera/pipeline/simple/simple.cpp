@@ -332,6 +332,7 @@ private:
 	}
 
 	std::vector<MediaEntity *> locateSensors();
+	static int resetRoutingTable(V4L2Subdevice *subdev);
 
 	const MediaPad *acquirePipeline(SimpleCameraData *data);
 	void releasePipeline(SimpleCameraData *data);
@@ -1260,6 +1261,37 @@ std::vector<MediaEntity *> SimplePipelineHandler::locateSensors()
 	return sensors;
 }
 
+int SimplePipelineHandler::resetRoutingTable(V4L2Subdevice *subdev)
+{
+	/* Reset the media entity routing table to its default state. */
+	V4L2Subdevice::Routing routing = {};
+
+	int ret = subdev->getRouting(&routing, V4L2Subdevice::TryFormat);
+	if (ret)
+		return ret;
+
+	ret = subdev->setRouting(&routing, V4L2Subdevice::ActiveFormat);
+	if (ret)
+		return ret;
+
+	/*
+	 * If the routing table is empty we won't be able to meaningfully use
+	 * the subdev.
+	 */
+	if (routing.empty()) {
+		LOG(SimplePipeline, Error)
+			<< "Default routing table of " << subdev->deviceNode()
+			<< " is empty";
+		return -EINVAL;
+	}
+
+	LOG(SimplePipeline, Debug)
+		<< "Routing table of " << subdev->deviceNode()
+		<< " reset to " << routing.toString();
+
+	return 0;
+}
+
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
 	const SimplePipelineInfo *info = nullptr;
@@ -1352,6 +1384,23 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 					<< ": " << strerror(-ret);
 				return false;
 			}
+
+			if (subdev->caps().hasStreams()) {
+				/*
+				 * Reset the routing table to its default state
+				 * to make sure entities are enumerate according
+				 * to the defaul routing configuration.
+				 */
+				ret = resetRoutingTable(subdev.get());
+				if (ret) {
+					LOG(SimplePipeline, Error)
+						<< "Failed to reset routes for "
+						<< subdev->deviceNode() << ": "
+						<< strerror(-ret);
+					return false;
+				}
+			}
+
 			break;
 
 		default:

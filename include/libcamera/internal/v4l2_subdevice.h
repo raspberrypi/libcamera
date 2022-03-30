@@ -61,6 +61,12 @@ public:
 		ActiveFormat = V4L2_SUBDEV_FORMAT_ACTIVE,
 	};
 
+	class Routing : public std::vector<struct v4l2_subdev_route>
+	{
+	public:
+		std::string toString() const;
+	};
+
 	explicit V4L2Subdevice(const MediaEntity *entity);
 	~V4L2Subdevice();
 
@@ -79,6 +85,9 @@ public:
 		      Whence whence = ActiveFormat);
 	int setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 		      Whence whence = ActiveFormat);
+
+	int getRouting(Routing *routing, Whence whence = ActiveFormat);
+	int setRouting(Routing *routing, Whence whence = ActiveFormat);
 
 	const std::string &model();
 	const V4L2SubdeviceCapability &caps() const { return caps_; }

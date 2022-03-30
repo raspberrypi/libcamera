@@ -289,6 +289,33 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
  */
 
 /**
+ * \class V4L2Subdevice::Routing
+ * \brief V4L2 subdevice routing table
+ *
+ * This class stores a subdevice routing table as a vector of routes.
+ */
+
+/**
+ * \brief Assemble and return a string describing the routing table
+ * \return A string describing the routing table
+ */
+std::string V4L2Subdevice::Routing::toString() const
+{
+	std::stringstream routing;
+
+	for (const auto &[i, route] : utils::enumerate(*this)) {
+		routing << "[" << i << "] "
+			<< route.sink_pad << "/" << route.sink_stream << " -> "
+			<< route.source_pad << "/" << route.source_stream
+			<< " (" << utils::hex(route.flags) << ")";
+		if (i != size() - 1)
+			routing << ", ";
+	}
+
+	return routing.str();
+}
+
+/**
  * \brief Create a V4L2 subdevice from a MediaEntity using its device node
  * path
  */
@@ -513,6 +540,85 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
 	format->colorSpace = toColorSpace(subdevFmt.format);
+
+	return 0;
+}
+
+/**
+ * \brief Retrieve the subdevice's internal routing table
+ * \param[out] routing The routing table
+ * \param[in] whence The routing table to get, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
+{
+	if (!caps_.hasStreams())
+		return 0;
+
+	struct v4l2_subdev_routing rt = {};
+
+	rt.which = whence;
+
+	int ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
+	if (ret == 0 || ret == -ENOTTY)
+		return ret;
+
+	if (ret != -ENOSPC) {
+		LOG(V4L2, Error)
+			<< "Failed to retrieve number of routes: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	routing->resize(rt.num_routes);
+	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+
+	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
+	if (ret) {
+		LOG(V4L2, Error)
+			<< "Failed to retrieve routes: " << strerror(-ret);
+		return ret;
+	}
+
+	if (rt.num_routes != routing->size()) {
+		LOG(V4L2, Error) << "Invalid number of routes";
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * \brief Set a routing table on the V4L2 subdevice
+ * \param[inout] routing The routing table
+ * \param[in] whence The routing table to set, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ *
+ * Apply to the V4L2 subdevice the routing table \a routing and update its
+ * content to reflect the actually applied routing table as getRouting() would
+ * do.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
+{
+	if (!caps_.hasStreams())
+		return 0;
+
+	struct v4l2_subdev_routing rt = {};
+	rt.which = whence;
+	rt.num_routes = routing->size();
+	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+
+	int ret = ioctl(VIDIOC_SUBDEV_S_ROUTING, &rt);
+	if (ret) {
+		LOG(V4L2, Error) << "Failed to set routes: " << strerror(-ret);
+		return ret;
+	}
+
+	routing->resize(rt.num_routes);
 
 	return 0;
 }

@@ -156,7 +156,6 @@ private:
 			    ControlInfoMap *ipaControls);
 	void updateSessionConfiguration(const ControlInfoMap &sensorControls);
 
-	void fillParams(unsigned int frame, ipu3_uapi_params *params);
 	void parseStatistics(unsigned int frame,
 			     int64_t frameTimestamp,
 			     const ipu3_uapi_stats_3a *stats);
@@ -513,6 +512,9 @@ void IPAIPU3::unmapBuffers(const std::vector<unsigned int> &ids)
  * \brief Fill and return a buffer with ISP processing parameters for a frame
  * \param[in] frame The frame number
  * \param[in] bufferId ID of the parameter buffer to fill
+ *
+ * Algorithms are expected to fill the IPU3 parameter buffer for the next
+ * frame given their most recent processing of the ImgU statistics.
  */
 void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 {
@@ -526,7 +528,21 @@ void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	ipu3_uapi_params *params =
 		reinterpret_cast<ipu3_uapi_params *>(mem.data());
 
-	fillParams(frame, params);
+	/*
+	 * The incoming params buffer may contain uninitialised data, or the
+	 * parameters of previously queued frames. Clearing the entire buffer
+	 * may be an expensive operation, and the kernel will only read from
+	 * structures which have their associated use-flag set.
+	 *
+	 * It is the responsibility of the algorithms to set the use flags
+	 * accordingly for any data structure they update during prepare().
+	 */
+	params->use = {};
+
+	for (auto const &algo : algorithms_)
+		algo->prepare(context_, params);
+
+	paramsBufferReady.emit(frame);
 }
 
 /**
@@ -568,33 +584,6 @@ void IPAIPU3::queueRequest([[maybe_unused]] const uint32_t frame,
 			   [[maybe_unused]] const ControlList &controls)
 {
 	/* \todo Start processing for 'frame' based on 'controls'. */
-}
-
-/**
- * \brief Fill the ImgU parameter buffer for the next frame
- * \param[in] frame The number of the latest frame processed
- * \param[out] params The parameter buffer to fill
- *
- * Algorithms are expected to fill the IPU3 parameter buffer for the next
- * frame given their most recent processing of the ImgU statistics.
- */
-void IPAIPU3::fillParams(unsigned int frame, ipu3_uapi_params *params)
-{
-	/*
-	 * The incoming params buffer may contain uninitialised data, or the
-	 * parameters of previously queued frames. Clearing the entire buffer
-	 * may be an expensive operation, and the kernel will only read from
-	 * structures which have their associated use-flag set.
-	 *
-	 * It is the responsibility of the algorithms to set the use flags
-	 * accordingly for any data structure they update during prepare().
-	 */
-	params->use = {};
-
-	for (auto const &algo : algorithms_)
-		algo->prepare(context_, params);
-
-	paramsBufferReady.emit(frame);
 }
 
 /**

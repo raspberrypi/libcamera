@@ -54,8 +54,8 @@ public:
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
-	void queueRequest(const uint32_t frame, const uint32_t bufferId,
-			  const ControlList &controls) override;
+	void queueRequest(const uint32_t frame, const ControlList &controls) override;
+	void fillParamsBuffer(const uint32_t frame, const uint32_t bufferId) override;
 	void processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
 				const ControlList &sensorControls) override;
 private:
@@ -235,8 +235,13 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARkISP1::queueRequest(const uint32_t frame, const uint32_t bufferId,
+void IPARkISP1::queueRequest([[maybe_unused]] const uint32_t frame,
 			     [[maybe_unused]] const ControlList &controls)
+{
+	/* \todo Start processing for 'frame' based on 'controls'. */
+}
+
+void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 {
 	rkisp1_params_cfg *params =
 		reinterpret_cast<rkisp1_params_cfg *>(

@@ -23,8 +23,8 @@ interface IPARkISP1Interface {
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);
 
-	[async] queueRequest(uint32 frame, uint32 bufferId,
-			     libcamera.ControlList reqControls);
+	[async] queueRequest(uint32 frame, libcamera.ControlList reqControls);
+	[async] fillParamsBuffer(uint32 frame, uint32 bufferId);
 	[async] processStatsBuffer(uint32 frame, uint32 bufferId,
 				   libcamera.ControlList sensorControls);
 };

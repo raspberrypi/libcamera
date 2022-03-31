@@ -855,8 +855,9 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 	if (!info)
 		return -ENOENT;
 
-	data->ipa_->queueRequest(data->frame_, info->paramBuffer->cookie(),
-				 request->controls());
+	data->ipa_->queueRequest(data->frame_, request->controls());
+	data->ipa_->fillParamsBuffer(data->frame_, info->paramBuffer->cookie());
+
 	data->frame_++;
 
 	return 0;

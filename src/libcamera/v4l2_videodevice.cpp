@@ -647,14 +647,17 @@ int V4L2VideoDevice::open()
  */
 int V4L2VideoDevice::open(SharedFD handle, enum v4l2_buf_type type)
 {
+	int ret;
+
 	UniqueFD newFd = handle.dup();
 	if (!newFd.isValid()) {
+		ret = -errno;
 		LOG(V4L2, Error) << "Failed to duplicate file handle: "
-				 << strerror(errno);
-		return -errno;
+				 << strerror(-ret);
+		return ret;
 	}
 
-	int ret = V4L2Device::setFd(std::move(newFd));
+	ret = V4L2Device::setFd(std::move(newFd));
 	if (ret < 0) {
 		LOG(V4L2, Error) << "Failed to set file handle: "
 				 << strerror(-ret);

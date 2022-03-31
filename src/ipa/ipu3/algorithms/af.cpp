@@ -168,6 +168,25 @@ int Af::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	grid.height = kAfMinGridHeight;
 	grid.block_width_log2 = kAfMinGridBlockWidth;
 	grid.block_height_log2 = kAfMinGridBlockHeight;
+
+	/*
+	 * \todo - while this clamping code is effectively a no-op, it satisfies
+	 * the compiler that the constant definitions of the hardware limits
+	 * are used, and paves the way to support dynamic grid sizing in the
+	 * future. While the block_{width,height}_log2 remain assigned to the
+	 * minimum, this code should be optimized out by the compiler.
+	 */
+	grid.width = std::clamp(grid.width, kAfMinGridWidth, kAfMaxGridWidth);
+	grid.height = std::clamp(grid.height, kAfMinGridHeight, kAfMaxGridHeight);
+
+	grid.block_width_log2 = std::clamp(grid.block_width_log2,
+					   kAfMinGridBlockWidth,
+					   kAfMaxGridBlockWidth);
+
+	grid.block_height_log2 = std::clamp(grid.block_height_log2,
+					    kAfMinGridBlockHeight,
+					    kAfMaxGridBlockHeight);
+
 	grid.height_per_slice = kAfDefaultHeightPerSlice;
 
 	/* x_start and y start are default to BDS center */

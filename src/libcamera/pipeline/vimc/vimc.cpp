@@ -432,7 +432,7 @@ int PipelineHandlerVimc::queueRequestDevice(Camera *camera, Request *request)
 	if (ret < 0)
 		return ret;
 
-	data->ipa_->processControls(request->sequence(), request->controls());
+	data->ipa_->queueRequest(request->sequence(), request->controls());
 
 	return 0;
 }

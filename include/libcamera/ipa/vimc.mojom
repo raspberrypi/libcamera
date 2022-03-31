@@ -37,7 +37,7 @@ interface IPAVimcInterface {
 	 * handle parameters at runtime.
 	 */
 	[async] fillParams(uint32 frame, uint32 bufferId);
-	[async] processControls(uint32 frame, libcamera.ControlList controls);
+	[async] queueRequest(uint32 frame, libcamera.ControlList controls);
 };
 
 interface IPAVimcEventInterface {

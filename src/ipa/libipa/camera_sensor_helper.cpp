@@ -332,6 +332,26 @@ std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
 
 #ifndef __DOXYGEN__
 
+/*
+ * Helper function to compute the m parameter of the exponential gain model
+ * when the gain code is expressed in dB.
+ */
+static constexpr double expGainDb(double step)
+{
+	constexpr double log2_10 = 3.321928094887362;
+
+	/*
+	 * The gain code is expressed in step * dB (e.g. in 0.1 dB steps):
+	 *
+	 * G_code = G_dB/step = 20/step*log10(G_linear)
+	 *
+	 * Inverting the formula, we get
+	 *
+	 * G_linear = 10^(step/20*G_code) = 2^(log2(10)*step/20*G_code)
+	 */
+	return log2_10 * step / 20;
+}
+
 class CameraSensorHelperImx219 : public CameraSensorHelper
 {
 public:
@@ -353,6 +373,17 @@ public:
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx258", CameraSensorHelperImx258)
+
+class CameraSensorHelperImx290 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx290()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx290", CameraSensorHelperImx290)
 
 class CameraSensorHelperOv2740 : public CameraSensorHelper
 {

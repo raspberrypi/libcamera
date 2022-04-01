@@ -9,7 +9,7 @@ collectively as V4L2 (`Video for Linux 2`_) and the `Media Controller`_ API
 which provide an interface to interact and control media devices.
 
 Included in this subsystem are drivers for camera sensors, CSI2 (Camera
-Serial Interface) recievers, and ISPs (Image Signal Processors)
+Serial Interface) receivers, and ISPs (Image Signal Processors)
 
 The usage of these drivers to provide a functioning camera stack is a
 responsibility that lies in userspace which is commonly implemented separately
@@ -18,7 +18,7 @@ by vendors without a common architecture or API for application developers.
 libcamera provides a complete camera stack for Linux based systems to abstract
 functionality desired by camera application developers and process the
 configuration of hardware and image control algorithms required to obtain
-desireable results from the camera.
+desirable results from the camera.
 
 .. _Video for Linux 2: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/v4l/v4l2.html
 .. _Media Controller: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/mediactl/media-controller.html

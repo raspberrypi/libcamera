@@ -526,7 +526,7 @@ int CameraSensor::discoverAncillaryDevices()
  *
  * \return The supported frame sizes for \a mbusCode sorted in increasing order
  */
-const std::vector<Size> CameraSensor::sizes(unsigned int mbusCode) const
+std::vector<Size> CameraSensor::sizes(unsigned int mbusCode) const
 {
 	std::vector<Size> sizes;
 

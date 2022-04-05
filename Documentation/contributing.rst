@@ -68,6 +68,12 @@ code that is as easy to read, understand and maintain as possible. This is
 made possible by a set of :ref:`coding-style-guidelines` that all submissions
 are expected to follow.
 
+The patch submission process for libcamera is similar to the Linux kernel, and
+goes through the `libcamera-devel`_ mailing list. If you have no previous
+experience with ``git-send-email``, or just experience trouble configuring it
+for your e-mail provider, the sourcehut developers have put together a detailed
+guide available at https://git-send-email.io/.
+
 Patches submitted to the libcamera project must be certified as suitable for
 integration into an open source project. As such libcamera follows the same
 model as utilised by the Linux kernel, and requires the use of 'Signed-off-by:'

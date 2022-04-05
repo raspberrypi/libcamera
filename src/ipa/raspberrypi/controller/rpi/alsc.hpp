@@ -41,6 +41,7 @@ struct AlscConfig {
 	std::vector<AlscCalibration> calibrations_Cb;
 	double default_ct; // colour temperature if no metadata found
 	double threshold; // iteration termination threshold
+	double lambda_bound; // upper/lower bound for lambda from a value of 1
 };
 
 class Alsc : public Algorithm

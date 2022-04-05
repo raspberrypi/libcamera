@@ -4,9 +4,12 @@
  *
  * alsc.cpp - ALSC (auto lens shading correction) control algorithm
  */
+
 #include <math.h>
+#include <numeric>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
 
 #include "../awb_status.h"
 #include "alsc.hpp"
@@ -149,6 +152,7 @@ void Alsc::Read(boost::property_tree::ptree const &params)
 	read_calibrations(config_.calibrations_Cb, params, "calibrations_Cb");
 	config_.default_ct = params.get<double>("default_ct", 4500.0);
 	config_.threshold = params.get<double>("threshold", 1e-3);
+	config_.lambda_bound = params.get<double>("lambda_bound", 0.05);
 }
 
 static double get_ct(Metadata *metadata, double default_ct);
@@ -610,30 +614,47 @@ static double compute_lambda_top_end(int i, double const M[XY][4],
 
 // Gauss-Seidel iteration with over-relaxation.
 static double gauss_seidel2_SOR(double const M[XY][4], double omega,
-				double lambda[XY])
+				double lambda[XY], double lambda_bound)
 {
+	const double min = 1 - lambda_bound, max = 1 + lambda_bound;
 	double old_lambda[XY];
 	int i;
 	for (i = 0; i < XY; i++)
 		old_lambda[i] = lambda[i];
 	lambda[0] = compute_lambda_bottom_start(0, M, lambda);
-	for (i = 1; i < X; i++)
+	lambda[0] = std::clamp(lambda[0], min, max);
+	for (i = 1; i < X; i++) {
 		lambda[i] = compute_lambda_bottom(i, M, lambda);
-	for (; i < XY - X; i++)
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
+	for (; i < XY - X; i++) {
 		lambda[i] = compute_lambda_interior(i, M, lambda);
-	for (; i < XY - 1; i++)
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
+	for (; i < XY - 1; i++) {
 		lambda[i] = compute_lambda_top(i, M, lambda);
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
 	lambda[i] = compute_lambda_top_end(i, M, lambda);
+	lambda[i] = std::clamp(lambda[i], min, max);
 	// Also solve the system from bottom to top, to help spread the updates
 	// better.
 	lambda[i] = compute_lambda_top_end(i, M, lambda);
-	for (i = XY - 2; i >= XY - X; i--)
+	lambda[i] = std::clamp(lambda[i], min, max);
+	for (i = XY - 2; i >= XY - X; i--) {
 		lambda[i] = compute_lambda_top(i, M, lambda);
-	for (; i >= X; i--)
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
+	for (; i >= X; i--) {
 		lambda[i] = compute_lambda_interior(i, M, lambda);
-	for (; i >= 1; i--)
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
+	for (; i >= 1; i--) {
 		lambda[i] = compute_lambda_bottom(i, M, lambda);
+		lambda[i] = std::clamp(lambda[i], min, max);
+	}
 	lambda[0] = compute_lambda_bottom_start(0, M, lambda);
+	lambda[0] = std::clamp(lambda[0], min, max);
 	double max_diff = 0;
 	for (i = 0; i < XY; i++) {
 		lambda[i] = old_lambda[i] + (lambda[i] - old_lambda[i]) * omega;
@@ -653,15 +674,24 @@ static void normalise(double *ptr, size_t n)
 		ptr[i] /= minval;
 }
 
+// Rescale the values so that the average value is 1.
+static void reaverage(Span<double> data)
+{
+	double sum = std::accumulate(data.begin(), data.end(), 0.0);
+	double ratio = 1 / (sum / data.size());
+	for (double &d : data)
+		d *= ratio;
+}
+
 static void run_matrix_iterations(double const C[XY], double lambda[XY],
 				  double const W[XY][4], double omega,
-				  int n_iter, double threshold)
+				  int n_iter, double threshold, double lambda_bound)
 {
 	double M[XY][4];
 	construct_M(C, W, M);
 	double last_max_diff = std::numeric_limits<double>::max();
 	for (int i = 0; i < n_iter; i++) {
-		double max_diff = fabs(gauss_seidel2_SOR(M, omega, lambda));
+		double max_diff = fabs(gauss_seidel2_SOR(M, omega, lambda, lambda_bound));
 		if (max_diff < threshold) {
 			LOG(RPiAlsc, Debug)
 				<< "Stop after " << i + 1 << " iterations";
@@ -675,10 +705,8 @@ static void run_matrix_iterations(double const C[XY], double lambda[XY],
 				<< last_max_diff << " to " << max_diff;
 		last_max_diff = max_diff;
 	}
-	// We're going to normalise the lambdas so the smallest is 1. Not sure
-	// this is really necessary as they get renormalised later, but I
-	// suppose it does stop these quantities from wandering off...
-	normalise(lambda, XY);
+	// We're going to normalise the lambdas so the total average is 1.
+	reaverage({ lambda, XY });
 }
 
 static void add_luminance_rb(double result[XY], double const lambda[XY],
@@ -737,9 +765,9 @@ void Alsc::doAlsc()
 	compute_W(Cb, config_.sigma_Cb, Wb);
 	// Run Gauss-Seidel iterations over the resulting matrix, for R and B.
 	run_matrix_iterations(Cr, lambda_r_, Wr, config_.omega, config_.n_iter,
-			      config_.threshold);
+			      config_.threshold, config_.lambda_bound);
 	run_matrix_iterations(Cb, lambda_b_, Wb, config_.omega, config_.n_iter,
-			      config_.threshold);
+			      config_.threshold, config_.lambda_bound);
 	// Fold the calibrated gains into our final lambda values. (Note that on
 	// the next run, we re-start with the lambda values that don't have the
 	// calibration gains included.)

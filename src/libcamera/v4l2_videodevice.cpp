@@ -1716,7 +1716,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	 * not find it in the queuedBuffers_ list.
 	 *
 	 * Whilst this kernel bug has been fixed in mainline, ensure that we
-	 * safely ingore buffers which are unexpected to prevetn crashes on
+	 * safely ignore buffers which are unexpected to prevent crashes on
 	 * older kernels.
 	 */
 	auto it = queuedBuffers_.find(buf.index);

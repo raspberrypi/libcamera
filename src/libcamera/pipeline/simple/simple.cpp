@@ -95,6 +95,21 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  * valid pipeline configurations are found, a Camera is registered for the
  * SimpleCameraData instance.
  *
+ * Pipeline Traversal
+ * ------------------
+ *
+ * During the breadth-first search, the pipeline is traversed from entity to
+ * entity, by following media graph links from source to sink, starting at the
+ * camera sensor. When reaching an entity (on its sink side), all its source
+ * pads are considered to continue the graph traversal.
+ *
+ * The shortest path between the camera sensor and a video node is stored in
+ * SimpleCameraData::entities_ as a list of SimpleCameraData::Entity structures,
+ * ordered along the data path from the camera sensor to the video node. The
+ * Entity structure stores a pointer to the MediaEntity, as well as information
+ * about how it is connected in that particular path for later usage when
+ * configuring the pipeline.
+ *
  * Pipeline Configuration
  * ----------------------
  *

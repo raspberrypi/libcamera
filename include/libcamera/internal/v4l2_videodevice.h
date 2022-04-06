@@ -20,7 +20,9 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/timer.h>
 #include <libcamera/base/unique_fd.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/color_space.h>
 #include <libcamera/framebuffer.h>
@@ -217,6 +219,9 @@ public:
 	int streamOn();
 	int streamOff();
 
+	void setDequeueTimeout(utils::Duration timeout);
+	Signal<> dequeueTimeout;
+
 	static std::unique_ptr<V4L2VideoDevice>
 	fromEntityName(const MediaDevice *media, const std::string &entity);
 
@@ -253,6 +258,8 @@ private:
 	void bufferAvailable();
 	FrameBuffer *dequeueBuffer();
 
+	void watchdogExpired();
+
 	V4L2Capability caps_;
 	V4L2DeviceFormat format_;
 	const PixelFormatInfo *formatInfo_;
@@ -266,6 +273,9 @@ private:
 	EventNotifier *fdBufferNotifier_;
 
 	State state_;
+
+	Timer watchdog_;
+	utils::Duration watchdogDuration_;
 };
 
 class V4L2M2MDevice

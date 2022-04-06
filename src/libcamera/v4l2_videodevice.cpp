@@ -539,6 +539,7 @@ V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 V4L2VideoDevice::V4L2VideoDevice(const MediaEntity *entity)
 	: V4L2VideoDevice(entity->deviceNode())
 {
+	watchdog_.timeout.connect(this, &V4L2VideoDevice::watchdogExpired);
 }
 
 V4L2VideoDevice::~V4L2VideoDevice()
@@ -1726,6 +1727,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		return nullptr;
 	}
 
+	if (watchdogDuration_.count())
+		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
+
 	cache_->put(buf.index);
 
 	FrameBuffer *buffer = it->second;
@@ -1828,6 +1832,8 @@ int V4L2VideoDevice::streamOn()
 	}
 
 	state_ = State::Streaming;
+	if (watchdogDuration_.count())
+		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
 
 	return 0;
 }
@@ -1851,6 +1857,9 @@ int V4L2VideoDevice::streamOff()
 
 	if (state_ != State::Streaming && queuedBuffers_.empty())
 		return 0;
+
+	if (watchdogDuration_.count())
+		watchdog_.stop();
 
 	ret = ioctl(VIDIOC_STREAMOFF, &bufferType_);
 	if (ret < 0) {
@@ -1877,6 +1886,50 @@ int V4L2VideoDevice::streamOff()
 	state_ = State::Stopped;
 
 	return 0;
+}
+
+/**
+ * \brief Set the dequeue timeout value
+ * \param[in] timeout The timeout value to be used
+ *
+ * Sets a timeout value, given by \a timeout, that will be used by a watchdog
+ * timer to ensure buffer dequeue events are periodically occurring when the
+ * device is streaming. The watchdog timer is only active when the device is
+ * streaming, so it is not necessary to disable it when the device stops
+ * streaming. The timeout value can be safely updated at any time.
+ *
+ * If the timer expires, the \ref V4L2VideoDevice::dequeueTimeout signal is
+ * emitted. This can typically be used by pipeline handlers to be notified of
+ * stalled devices.
+ *
+ * Set \a timeout to 0 to disable the watchdog timer.
+ */
+void V4L2VideoDevice::setDequeueTimeout(utils::Duration timeout)
+{
+	watchdogDuration_ = timeout;
+
+	watchdog_.stop();
+	if (watchdogDuration_.count() && state_ == State::Streaming)
+		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(timeout));
+}
+
+/**
+ * \var V4L2VideoDevice::dequeueTimeout
+ * \brief A Signal emitted when the dequeue watchdog timer expires
+ */
+
+/**
+ * \brief Slot to handle an expired dequeue timer
+ *
+ * When this slot is called, the time between successive dequeue events is over
+ * the required timeout. Emit the \ref V4L2VideoDevice::dequeueTimeout signal.
+ */
+void V4L2VideoDevice::watchdogExpired()
+{
+	LOG(V4L2, Warning)
+		<< "Dequeue timer of " << watchdogDuration_ << " has expired!";
+
+	dequeueTimeout.emit();
 }
 
 /**

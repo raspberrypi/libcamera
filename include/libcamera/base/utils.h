@@ -327,6 +327,12 @@ class Duration : public std::chrono::duration<double, std::nano>
 public:
 	Duration() = default;
 
+	template<typename Rep>
+	constexpr explicit Duration(const Rep &r)
+		: BaseDuration(r)
+	{
+	}
+
 	template<typename Rep, typename Period>
 	constexpr Duration(const std::chrono::duration<Rep, Period> &d)
 		: BaseDuration(d)

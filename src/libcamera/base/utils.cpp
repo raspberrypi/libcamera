@@ -407,6 +407,15 @@ std::string toAscii(const std::string &str)
  */
 
 /**
+ * \fn Duration::Duration(const Rep &r)
+ * \brief Construct a Duration with \a r ticks
+ * \param[in] r The number of ticks
+ *
+ * The constructed \a Duration object is internally represented in double
+ * precision with \a r nanoseconds ticks.
+ */
+
+/**
  * \fn Duration::Duration(const std::chrono::duration<Rep, Period> &d)
  * \brief Construct a Duration by converting an arbitrary std::chrono::duration
  * \param[in] d The std::chrono::duration object to convert from

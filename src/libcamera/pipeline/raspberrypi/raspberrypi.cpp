@@ -45,6 +45,8 @@
 #include "dma_heaps.h"
 #include "rpi_stream.h"
 
+using namespace std::chrono_literals;
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RPI)
@@ -208,6 +210,7 @@ public:
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls);
 	void setSensorControls(ControlList &controls);
+	void unicamTimeout();
 
 	/* bufferComplete signal handlers. */
 	void unicamBufferDequeue(FrameBuffer *buffer);
@@ -1050,6 +1053,14 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		}
 	}
 
+	/*
+	 * Set the dequeue timeout to the larger of 2x the maximum possible
+	 * frame duration or 1 second.
+	 */
+	utils::Duration timeout =
+		std::max<utils::Duration>(1s, 2 * startConfig.maxSensorFrameLengthMs * 1ms);
+	data->unicam_[Unicam::Image].dev()->setDequeueTimeout(timeout);
+
 	return 0;
 }
 
@@ -1192,6 +1203,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", ispCapture3);
 
 	/* Wire up all the buffer connections. */
+	data->unicam_[Unicam::Image].dev()->dequeueTimeout.connect(data.get(), &RPiCameraData::unicamTimeout);
 	data->unicam_[Unicam::Image].dev()->frameStart.connect(data.get(), &RPiCameraData::frameStarted);
 	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data.get(), &RPiCameraData::unicamBufferDequeue);
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data.get(), &RPiCameraData::ispInputDequeue);
@@ -1771,6 +1783,13 @@ void RPiCameraData::setSensorControls(ControlList &controls)
 	}
 
 	sensor_->setControls(&controls);
+}
+
+void RPiCameraData::unicamTimeout()
+{
+	LOG(RPI, Error) << "Unicam has timed out!";
+	LOG(RPI, Error) << "Please check that your camera sensor connector is attached securely.";
+	LOG(RPI, Error) << "Alternatively, try another cable and/or sensor.";
 }
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)

@@ -280,6 +280,8 @@ void IPARPi::start(const ControlList &controls, ipa::RPi::StartConfig *startConf
 	}
 
 	startConfig->dropFrameCount = dropFrameCount_;
+	const Duration maxSensorFrameDuration = mode_.max_frame_length * mode_.line_length;
+	startConfig->maxSensorFrameLengthMs = maxSensorFrameDuration.get<std::milli>();
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;

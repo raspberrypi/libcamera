@@ -41,6 +41,7 @@ struct IPAConfig {
 struct StartConfig {
 	libcamera.ControlList controls;
 	int32 dropFrameCount;
+	uint32 maxSensorFrameLengthMs;
 };
 
 interface IPARPiInterface {

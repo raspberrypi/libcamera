@@ -225,6 +225,7 @@ public:
 
 	struct Configuration {
 		uint32_t code;
+		Size sensorSize;
 		PixelFormat captureFormat;
 		Size captureSize;
 		std::vector<PixelFormat> outputFormats;
@@ -542,6 +543,7 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 
 		Configuration config;
 		config.code = code;
+		config.sensorSize = size;
 		config.captureFormat = pixelFormat;
 		config.captureSize = format.size;
 
@@ -943,7 +945,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	const SimpleCameraData::Configuration *pipeConfig = config->pipeConfig();
 	V4L2SubdeviceFormat format{};
 	format.mbus_code = pipeConfig->code;
-	format.size = data->sensor_->resolution();
+	format.size = pipeConfig->sensorSize;
 
 	ret = data->setupFormats(&format, V4L2Subdevice::ActiveFormat);
 	if (ret < 0)

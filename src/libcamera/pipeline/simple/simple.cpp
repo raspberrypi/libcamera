@@ -250,6 +250,8 @@ public:
 	std::queue<std::map<unsigned int, FrameBuffer *>> converterQueue_;
 
 private:
+	void tryPipeline(unsigned int code, const Size &size);
+
 	void converterInputDone(FrameBuffer *buffer);
 	void converterOutputDone(FrameBuffer *buffer);
 };
@@ -466,58 +468,11 @@ int SimpleCameraData::init()
 		return ret;
 
 	/*
-	 * Enumerate the possible pipeline configurations. For each media bus
-	 * format supported by the sensor, propagate the formats through the
-	 * pipeline, and enumerate the corresponding possible V4L2 pixel
-	 * formats on the video node.
+	 * Generate the list of possible pipeline configurations by trying each
+	 * media bus format supported by the sensor.
 	 */
-	for (unsigned int code : sensor_->mbusCodes()) {
-		V4L2SubdeviceFormat format{};
-		format.mbus_code = code;
-		format.size = sensor_->resolution();
-
-		ret = setupFormats(&format, V4L2Subdevice::TryFormat);
-		if (ret < 0) {
-			LOG(SimplePipeline, Debug)
-				<< "Media bus code " << utils::hex(code, 4)
-				<< " not supported for this pipeline";
-			/* Try next mbus_code supported by the sensor */
-			continue;
-		}
-
-		V4L2VideoDevice::Formats videoFormats =
-			video_->formats(format.mbus_code);
-
-		LOG(SimplePipeline, Debug)
-			<< "Adding configuration for " << format.size
-			<< " in pixel formats [ "
-			<< utils::join(videoFormats, ", ",
-				       [](const auto &f) {
-					       return f.first.toString();
-				       })
-			<< " ]";
-
-		for (const auto &videoFormat : videoFormats) {
-			PixelFormat pixelFormat = videoFormat.first.toPixelFormat();
-			if (!pixelFormat)
-				continue;
-
-			Configuration config;
-			config.code = code;
-			config.captureFormat = pixelFormat;
-			config.captureSize = format.size;
-
-			if (!converter_) {
-				config.outputFormats = { pixelFormat };
-				config.outputSizes = config.captureSize;
-			} else {
-				config.outputFormats = converter_->formats(pixelFormat);
-				config.outputSizes = converter_->sizes(format.size);
-			}
-
-			configs_.push_back(config);
-		}
-	}
+	for (unsigned int code : sensor_->mbusCodes())
+		tryPipeline(code, sensor_->resolution());
 
 	if (configs_.empty()) {
 		LOG(SimplePipeline, Error) << "No valid configuration found";
@@ -539,6 +494,67 @@ int SimpleCameraData::init()
 	properties_ = sensor_->properties();
 
 	return 0;
+}
+
+/*
+ * Generate a list of supported pipeline configurations for a sensor media bus
+ * code and size.
+ *
+ * First propagate the media bus code and size through the pipeline from the
+ * camera sensor to the video node. Then, query the video node for all supported
+ * pixel formats compatible with the media bus code. For each pixel format, store
+ * a full pipeline configuration in the configs_ vector.
+ */
+void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
+{
+	/*
+	 * Propagate the format through the pipeline, and enumerate the
+	 * corresponding possible V4L2 pixel formats on the video node.
+	 */
+	V4L2SubdeviceFormat format{};
+	format.mbus_code = code;
+	format.size = size;
+
+	int ret = setupFormats(&format, V4L2Subdevice::TryFormat);
+	if (ret < 0) {
+		/* Pipeline configuration failed, skip this configuration. */
+		LOG(SimplePipeline, Debug)
+			<< "Media bus code " << utils::hex(code, 4)
+			<< " not supported for this pipeline";
+		return;
+	}
+
+	V4L2VideoDevice::Formats videoFormats = video_->formats(format.mbus_code);
+
+	LOG(SimplePipeline, Debug)
+		<< "Adding configuration for " << format.size
+		<< " in pixel formats [ "
+		<< utils::join(videoFormats, ", ",
+			       [](const auto &f) {
+				       return f.first.toString();
+			       })
+		<< " ]";
+
+	for (const auto &videoFormat : videoFormats) {
+		PixelFormat pixelFormat = videoFormat.first.toPixelFormat();
+		if (!pixelFormat)
+			continue;
+
+		Configuration config;
+		config.code = code;
+		config.captureFormat = pixelFormat;
+		config.captureSize = format.size;
+
+		if (!converter_) {
+			config.outputFormats = { pixelFormat };
+			config.outputSizes = config.captureSize;
+		} else {
+			config.outputFormats = converter_->formats(pixelFormat);
+			config.outputSizes = converter_->sizes(format.size);
+		}
+
+		configs_.push_back(config);
+	}
 }
 
 int SimpleCameraData::setupLinks()

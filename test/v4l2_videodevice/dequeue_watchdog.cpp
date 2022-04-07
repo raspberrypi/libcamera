@@ -33,8 +33,10 @@ protected:
 		Timer timeout;
 
 		int ret = capture_->allocateBuffers(bufferCount, &buffers_);
-		if (ret < 0)
+		if (ret < 0) {
+			std::cout << "Failed to allocate buffers" << std::endl;
 			return TestFail;
+		}
 
 		capture_->dequeueTimeout.connect(this, &DequeueWatchdogTest::barkCounter);
 		capture_->setDequeueTimeout(5ms);

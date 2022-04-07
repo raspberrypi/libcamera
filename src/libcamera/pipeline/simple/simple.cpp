@@ -115,16 +115,25 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  *
  * The simple pipeline handler configures the pipeline by propagating V4L2
  * subdev formats from the camera sensor to the video node. The format is first
- * set on the camera sensor's output, using the native camera sensor
- * resolution. Then, on every link in the pipeline, the format is retrieved on
- * the link source and set unmodified on the link sink.
+ * set on the camera sensor's output, picking a resolution supported by the
+ * sensor that best matches the needs of the requested streams. Then, on every
+ * link in the pipeline, the format is retrieved on the link source and set
+ * unmodified on the link sink.
  *
- * When initializating the camera data, this above procedure is repeated for
- * every media bus format supported by the camera sensor. Upon reaching the
- * video node, the pixel formats compatible with the media bus format are
- * enumerated. Each of those pixel formats corresponds to one possible pipeline
- * configuration, stored as an instance of SimpleCameraData::Configuration in
- * the SimpleCameraData::formats_ map.
+ * The best sensor resolution is selected using a heuristic that tries to
+ * minimize the required bus and memory bandwidth, as the simple pipeline
+ * handler is typically used on smaller, less powerful systems. To avoid the
+ * need to upscale, the pipeline handler picks the smallest sensor resolution
+ * large enough to accommodate the need of all streams. Resolutions that
+ * significantly restrict the field of view are ignored.
+ *
+ * When initializating the camera data, the above format propagation procedure
+ * is repeated for every media bus format and size supported by the camera
+ * sensor. Upon reaching the video node, the pixel formats compatible with the
+ * media bus format are enumerated. Each combination of the input media bus
+ * format, output pixel format and output size are recorded in an instance of
+ * the SimpleCameraData::Configuration structure, stored in the
+ * SimpleCameraData::configs_ vector.
  *
  * Format Conversion and Scaling
  * -----------------------------
@@ -243,7 +252,7 @@ public:
 	V4L2VideoDevice *video_;
 
 	std::vector<Configuration> configs_;
-	std::map<PixelFormat, const Configuration *> formats_;
+	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
 
 	std::unique_ptr<SimpleConverter> converter_;
 	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
@@ -470,26 +479,24 @@ int SimpleCameraData::init()
 
 	/*
 	 * Generate the list of possible pipeline configurations by trying each
-	 * media bus format supported by the sensor.
+	 * media bus format and size supported by the sensor.
 	 */
-	for (unsigned int code : sensor_->mbusCodes())
-		tryPipeline(code, sensor_->resolution());
+	for (unsigned int code : sensor_->mbusCodes()) {
+		for (const Size &size : sensor_->sizes(code))
+			tryPipeline(code, size);
+	}
 
 	if (configs_.empty()) {
 		LOG(SimplePipeline, Error) << "No valid configuration found";
 		return -EINVAL;
 	}
 
-	/*
-	 * Map the pixel formats to configurations. Any previously stored value
-	 * is overwritten, as the pipeline handler currently doesn't care about
-	 * how a particular PixelFormat is achieved.
-	 */
+	/* Map the pixel formats to configurations. */
 	for (const Configuration &config : configs_) {
-		formats_[config.captureFormat] = &config;
+		formats_[config.captureFormat].push_back(&config);
 
 		for (PixelFormat fmt : config.outputFormats)
-			formats_[fmt] = &config;
+			formats_[fmt].push_back(&config);
 	}
 
 	properties_ = sensor_->properties();
@@ -519,8 +526,10 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 	int ret = setupFormats(&format, V4L2Subdevice::TryFormat);
 	if (ret < 0) {
 		/* Pipeline configuration failed, skip this configuration. */
+		format.mbus_code = code;
+		format.size = size;
 		LOG(SimplePipeline, Debug)
-			<< "Media bus code " << utils::hex(code, 4)
+			<< "Sensor format " << format
 			<< " not supported for this pipeline";
 		return;
 	}
@@ -791,21 +800,69 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		status = Adjusted;
 	}
 
+	/* Find the largest stream size. */
+	Size maxStreamSize;
+	for (const StreamConfiguration &cfg : config_)
+		maxStreamSize.expandTo(cfg.size);
+
+	LOG(SimplePipeline, Debug)
+		<< "Largest stream size is " << maxStreamSize;
+
 	/*
-	 * Pick a configuration for the pipeline based on the pixel format for
-	 * the streams (ordered from highest to lowest priority). Default to
-	 * the first pipeline configuration if no streams requests a supported
-	 * pixel format.
+	 * Find the best configuration for the pipeline using a heuristic.
+	 * First select the pixel format based on the streams (which are
+	 * considered ordered from highest to lowest priority). Default to the
+	 * first pipeline configuration if no streams request a supported pixel
+	 * format.
 	 */
-	pipeConfig_ = data_->formats_.begin()->second;
+	const std::vector<const SimpleCameraData::Configuration *> *configs =
+		&data_->formats_.begin()->second;
 
 	for (const StreamConfiguration &cfg : config_) {
 		auto it = data_->formats_.find(cfg.pixelFormat);
 		if (it != data_->formats_.end()) {
-			pipeConfig_ = it->second;
+			configs = &it->second;
 			break;
 		}
 	}
+
+	/*
+	 * \todo Pick the best sensor output media bus format when the
+	 * requested pixel format can be produced from multiple sensor media
+	 * bus formats.
+	 */
+
+	/*
+	 * Then pick, among the possible configuration for the pixel format,
+	 * the smallest sensor resolution that can accommodate all streams
+	 * without upscaling.
+	 */
+	const SimpleCameraData::Configuration *maxPipeConfig = nullptr;
+	pipeConfig_ = nullptr;
+
+	for (const SimpleCameraData::Configuration *pipeConfig : *configs) {
+		const Size &size = pipeConfig->captureSize;
+
+		if (size.width >= maxStreamSize.width &&
+		    size.height >= maxStreamSize.height) {
+			if (!pipeConfig_ || size < pipeConfig_->captureSize)
+				pipeConfig_ = pipeConfig;
+		}
+
+		if (!maxPipeConfig || maxPipeConfig->captureSize < size)
+			maxPipeConfig = pipeConfig;
+	}
+
+	/* If no configuration was large enough, select the largest one. */
+	if (!pipeConfig_)
+		pipeConfig_ = maxPipeConfig;
+
+	LOG(SimplePipeline, Debug)
+		<< "Picked "
+		<< V4L2SubdeviceFormat{ pipeConfig_->code, pipeConfig_->sensorSize, {} }
+		<< " -> " << pipeConfig_->captureSize
+		<< "-" << pipeConfig_->captureFormat
+		<< " for max stream size " << maxStreamSize;
 
 	/*
 	 * Adjust the requested streams.
@@ -899,13 +956,32 @@ CameraConfiguration *SimplePipelineHandler::generateConfiguration(Camera *camera
 
 	/* Create the formats map. */
 	std::map<PixelFormat, std::vector<SizeRange>> formats;
-	std::transform(data->formats_.begin(), data->formats_.end(),
-		       std::inserter(formats, formats.end()),
-		       [](const auto &format) -> decltype(formats)::value_type {
-			       const PixelFormat &pixelFormat = format.first;
-			       const Size &size = format.second->captureSize;
-			       return { pixelFormat, { size } };
-		       });
+
+	for (const SimpleCameraData::Configuration &cfg : data->configs_) {
+		for (PixelFormat format : cfg.outputFormats)
+			formats[format].push_back(cfg.outputSizes);
+	}
+
+	/* Sort the sizes and merge any consecutive overlapping ranges. */
+	for (auto &[format, sizes] : formats) {
+		std::sort(sizes.begin(), sizes.end(),
+			  [](SizeRange &a, SizeRange &b) {
+				  return a.min < b.min;
+			  });
+
+		auto cur = sizes.begin();
+		auto next = cur;
+
+		while (++next != sizes.end()) {
+			if (cur->max.width >= next->min.width &&
+			    cur->max.height >= next->min.height)
+				cur->max = next->max;
+			else if (++cur != next)
+				*cur = *next;
+		}
+
+		sizes.erase(++cur, sizes.end());
+	}
 
 	/*
 	 * Create the stream configurations. Take the first entry in the formats

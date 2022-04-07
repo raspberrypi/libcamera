@@ -520,7 +520,8 @@ const std::string V4L2DeviceFormat::toString() const
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 	: V4L2Device(deviceNode), formatInfo_(nullptr), cache_(nullptr),
-	  fdBufferNotifier_(nullptr), state_(State::Stopped)
+	  fdBufferNotifier_(nullptr), state_(State::Stopped),
+	  watchdogDuration_(0.0)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will

@@ -60,6 +60,9 @@ int V4L2VideoDeviceTest::init()
 	if (capture_->getFormat(&format))
 		return TestFail;
 
+	format.size.width = 640;
+	format.size.height = 480;
+
 	if (driver_ == "vimc") {
 		sensor_ = new CameraSensor(media_->getEntityByName("Sensor A"));
 		if (sensor_->init())
@@ -82,8 +85,6 @@ int V4L2VideoDeviceTest::init()
 			return TestFail;
 	}
 
-	format.size.width = 640;
-	format.size.height = 480;
 	if (capture_->setFormat(&format))
 		return TestFail;
 

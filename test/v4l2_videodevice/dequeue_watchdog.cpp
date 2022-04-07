@@ -50,7 +50,11 @@ protected:
 			}
 		}
 
-		capture_->streamOn();
+		ret = capture_->streamOn();
+		if (ret < 0) {
+			std::cout << "Failed to start streaming" << std::endl;
+			return TestFail;
+		}
 
 		timeout.start(5s);
 		while (timeout.isRunning()) {

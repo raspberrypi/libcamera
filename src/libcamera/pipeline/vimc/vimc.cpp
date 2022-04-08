@@ -53,7 +53,7 @@ public:
 	int init();
 	int allocateMockIPABuffers();
 	void bufferReady(FrameBuffer *buffer);
-	void paramsFilled(unsigned int id);
+	void paramsBufferReady(unsigned int id);
 
 	MediaDevice *media_;
 	std::unique_ptr<CameraSensor> sensor_;
@@ -467,7 +467,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	data->ipa_->paramsFilled.connect(data.get(), &VimcCameraData::paramsFilled);
+	data->ipa_->paramsBufferReady.connect(data.get(), &VimcCameraData::paramsBufferReady);
 
 	std::string conf = data->ipa_->configurationFile("vimc.conf");
 	data->ipa_->init(IPASettings{ conf, data->sensor_->model() });
@@ -589,7 +589,7 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 	pipe->completeBuffer(request, buffer);
 	pipe->completeRequest(request);
 
-	ipa_->fillParams(request->sequence(), mockIPABufs_[0]->cookie());
+	ipa_->fillParamsBuffer(request->sequence(), mockIPABufs_[0]->cookie());
 }
 
 int VimcCameraData::allocateMockIPABuffers()
@@ -607,7 +607,7 @@ int VimcCameraData::allocateMockIPABuffers()
 	return video_->exportBuffers(kBufCount, &mockIPABufs_);
 }
 
-void VimcCameraData::paramsFilled([[maybe_unused]] unsigned int id)
+void VimcCameraData::paramsBufferReady([[maybe_unused]] unsigned int id)
 {
 }
 

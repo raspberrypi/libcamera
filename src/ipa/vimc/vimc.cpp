@@ -43,8 +43,8 @@ public:
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
-	void fillParams(uint32_t frame, uint32_t bufferId) override;
 	void queueRequest(uint32_t frame, const ControlList &controls) override;
+	void fillParams(uint32_t frame, uint32_t bufferId) override;
 
 private:
 	void initTrace();
@@ -129,6 +129,11 @@ void IPAVimc::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
+void IPAVimc::queueRequest([[maybe_unused]] uint32_t frame,
+			   [[maybe_unused]] const ControlList &controls)
+{
+}
+
 void IPAVimc::fillParams([[maybe_unused]] uint32_t frame, uint32_t bufferId)
 {
 	auto it = buffers_.find(bufferId);
@@ -138,11 +143,6 @@ void IPAVimc::fillParams([[maybe_unused]] uint32_t frame, uint32_t bufferId)
 	}
 
 	paramsFilled.emit(bufferId);
-}
-
-void IPAVimc::queueRequest([[maybe_unused]] uint32_t frame,
-			   [[maybe_unused]] const ControlList &controls)
-{
 }
 
 void IPAVimc::initTrace()

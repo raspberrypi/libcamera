@@ -10,14 +10,6 @@
 #include <memory>
 #include <vector>
 
-#include <QElapsedTimer>
-#include <QIcon>
-#include <QMainWindow>
-#include <QMutex>
-#include <QObject>
-#include <QQueue>
-#include <QTimer>
-
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/controls.h>
@@ -26,7 +18,16 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
+#include <QElapsedTimer>
+#include <QIcon>
+#include <QMainWindow>
+#include <QMutex>
+#include <QObject>
+#include <QQueue>
+#include <QTimer>
+
 #include "../cam/stream_options.h"
+
 #include "viewfinder.h"
 
 class QAction;

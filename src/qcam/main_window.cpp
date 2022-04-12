@@ -29,6 +29,7 @@
 #include <QtDebug>
 
 #include "../cam/image.h"
+
 #include "dng_writer.h"
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"

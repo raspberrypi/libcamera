@@ -181,6 +181,9 @@ int Af::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	/* Initial max focus step */
 	maxStep_ = kMaxFocusSteps;
 
+	/* Initial frame ignore counter */
+	afIgnoreFrameReset();
+
 	/* Initial focus value */
 	context.frameContext.af.focus = 0;
 	/* Maximum variance of the AF statistics */

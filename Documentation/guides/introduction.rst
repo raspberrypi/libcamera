@@ -67,7 +67,7 @@ through an adaptation layer integrating libcamera into a larger framework.
     Adaptation Layer                                 |
      /    +--------------+  +--------------+         |          +--------------+
      |    |    V4L2      |  |  gstreamer   |         |          |   Android    |
-     |    | Compatability|  |   element    |         |          |   Camera     |
+     |    | Compatibility|  |   element    |         |          |   Camera     |
      |    |  (preload)   |  |(libcamerasrc)|         |          |     HAL      |
      \    +--------------+  +--------------+         |          +--------------+
                                                      |

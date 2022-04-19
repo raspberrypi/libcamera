@@ -46,6 +46,8 @@ static inline bool operator!=(const Point &lhs, const Point &rhs)
 	return !(lhs == rhs);
 }
 
+std::ostream &operator<<(std::ostream &out, const Point &p);
+
 class Size
 {
 public:
@@ -192,6 +194,8 @@ static inline bool operator>=(const Size &lhs, const Size &rhs)
 	return !(lhs < rhs);
 }
 
+std::ostream &operator<<(std::ostream &out, const Size &s);
+
 class SizeRange
 {
 public:
@@ -231,6 +235,8 @@ static inline bool operator!=(const SizeRange &lhs, const SizeRange &rhs)
 {
 	return !(lhs == rhs);
 }
+
+std::ostream &operator<<(std::ostream &out, const SizeRange &sr);
 
 class Rectangle
 {
@@ -290,5 +296,7 @@ static inline bool operator!=(const Rectangle &lhs, const Rectangle &rhs)
 {
 	return !(lhs == rhs);
 }
+
+std::ostream &operator<<(std::ostream &out, const Rectangle &r);
 
 } /* namespace libcamera */

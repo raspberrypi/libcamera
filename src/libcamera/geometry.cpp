@@ -56,8 +56,7 @@ namespace libcamera {
 const std::string Point::toString() const
 {
 	std::stringstream ss;
-
-	ss << "(" << x << "," << y << ")";
+	ss << *this;
 
 	return ss.str();
 }
@@ -82,6 +81,18 @@ bool operator==(const Point &lhs, const Point &rhs)
  * \brief Compare points for inequality
  * \return True if the two points are not equal, false otherwise
  */
+
+/**
+ * \brief Insert a text representation of a Point into an output stream
+ * \param[in] out The output stream
+ * \param[in] p The point
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const Point &p)
+{
+	out << "(" << p.x << ", " << p.y << ")";
+	return out;
+}
 
 /**
  * \struct Size
@@ -124,7 +135,10 @@ bool operator==(const Point &lhs, const Point &rhs)
  */
 const std::string Size::toString() const
 {
-	return std::to_string(width) + "x" + std::to_string(height);
+	std::stringstream ss;
+	ss << *this;
+
+	return ss.str();
 }
 
 /**
@@ -429,6 +443,18 @@ bool operator<(const Size &lhs, const Size &rhs)
  */
 
 /**
+ * \brief Insert a text representation of a Size into an output stream
+ * \param[in] out The output stream
+ * \param[in] s The size
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const Size &s)
+{
+	out << s.width << "x" << s.height;
+	return out;
+}
+
+/**
  * \struct SizeRange
  * \brief Describe a range of sizes
  *
@@ -528,9 +554,7 @@ bool SizeRange::contains(const Size &size) const
 std::string SizeRange::toString() const
 {
 	std::stringstream ss;
-
-	ss << "(" << min.toString() << ")-(" << max.toString() << ")/(+"
-	   << hStep << ",+" << vStep << ")";
+	ss << *this;
 
 	return ss.str();
 }
@@ -549,6 +573,20 @@ bool operator==(const SizeRange &lhs, const SizeRange &rhs)
  * \brief Compare size ranges for inequality
  * \return True if the two size ranges are not equal, false otherwise
  */
+
+/**
+ * \brief Insert a text representation of a SizeRange into an output stream
+ * \param[in] out The output stream
+ * \param[in] sr The size range
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
+{
+	out << "(" << sr.min << ")-(" << sr.max << ")/(+"
+	    << sr.hStep << ",+" << sr.vStep << ")";
+
+	return out;
+}
 
 /**
  * \struct Rectangle
@@ -624,8 +662,7 @@ bool operator==(const SizeRange &lhs, const SizeRange &rhs)
 const std::string Rectangle::toString() const
 {
 	std::stringstream ss;
-
-	ss << "(" << x << "x" << y << ")/" << width << "x" << height;
+	ss << *this;
 
 	return ss.str();
 }
@@ -795,5 +832,17 @@ bool operator==(const Rectangle &lhs, const Rectangle &rhs)
  * \brief Compare rectangles for inequality
  * \return True if the two rectangles are not equal, false otherwise
  */
+
+/**
+ * \brief Insert a text representation of a Rectangle into an output stream
+ * \param[in] out The output stream
+ * \param[in] r The rectangle
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const Rectangle &r)
+{
+	out << "(" << r.x << "x" << r.y << ")/" << r.width << "x" << r.height;
+	return out;
+}
 
 } /* namespace libcamera */

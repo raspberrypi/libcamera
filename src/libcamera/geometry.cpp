@@ -841,7 +841,7 @@ bool operator==(const Rectangle &lhs, const Rectangle &rhs)
  */
 std::ostream &operator<<(std::ostream &out, const Rectangle &r)
 {
-	out << "(" << r.x << "x" << r.y << ")/" << r.width << "x" << r.height;
+	out << "(" << r.x << ", " << r.y << ")/" << r.width << "x" << r.height;
 	return out;
 }
 

@@ -99,7 +99,7 @@ public:
 		      const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const IPAConfig &data,
-		      ControlList *controls) override;
+		      ControlList *controls, IPAConfigResult *result) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void signalStatReady(const uint32_t bufferId) override;
@@ -344,7 +344,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const IPAConfig &ipaConfig,
-		      ControlList *controls)
+		      ControlList *controls, IPAConfigResult *result)
 {
 	if (entityControls.size() != 2) {
 		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
@@ -403,6 +403,9 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	 * running is isolation mode (passing the ControlList through the IPC layer).
 	 */
 	ControlList ctrls(sensorCtrls_);
+
+	/* The pipeline handler passes out the mode's sensitivity. */
+	result->modeSensitivity = mode_.sensitivity;
 
 	if (firstStart_) {
 		/* Supply initial values for frame durations. */

@@ -38,6 +38,10 @@ struct IPAConfig {
 	libcamera.SharedFD lsTableHandle;
 };
 
+struct IPAConfigResult {
+       float modeSensitivity;
+};
+
 struct StartConfig {
 	libcamera.ControlList controls;
 	int32 dropFrameCount;
@@ -58,6 +62,7 @@ interface IPARPiInterface {
 	 * \param[in] entityControls Controls provided by the pipeline entities
 	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
 	 * \param[out] controls Controls to apply by the pipeline entity
+	 * \param[out] result Other results that the pipeline handler may require
 	 *
 	 * This function shall be called when the camera is configured to inform
 	 * the IPA of the camera's streams and the sensor settings.
@@ -72,7 +77,7 @@ interface IPARPiInterface {
 		  map<uint32, libcamera.IPAStream> streamConfig,
 		  map<uint32, libcamera.ControlInfoMap> entityControls,
 		  IPAConfig ipaConfig)
-		=> (int32 ret, libcamera.ControlList controls);
+		=> (int32 ret, libcamera.ControlList controls, IPAConfigResult result);
 
 	/**
 	 * \fn mapBuffers()

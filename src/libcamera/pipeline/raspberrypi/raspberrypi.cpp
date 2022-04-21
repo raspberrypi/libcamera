@@ -200,7 +200,7 @@ public:
 	void frameStarted(uint32_t sequence);
 
 	int loadIPA(ipa::RPi::SensorConfig *sensorConfig);
-	int configureIPA(const CameraConfiguration *config);
+	int configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result);
 
 	void enumerateVideoDevices(MediaLink *link);
 
@@ -898,7 +898,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
-	ret = data->configureIPA(config);
+	ipa::RPi::IPAConfigResult result;
+	ret = data->configureIPA(config, &result);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
 
@@ -936,6 +937,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * controls are available and set it at validate() time
 	 */
 	data->properties_.set(properties::ScalerCropMaximum, data->sensorInfo_.analogCrop);
+
+	/* Store the mode sensitivity for the application. */
+	data->properties_.set(properties::SensorSensitivity, result.modeSensitivity);
 
 	/* Setup the Video Mux/Bridge entities. */
 	for (auto &[device, link] : data->bridgeDevices_) {
@@ -1528,7 +1532,7 @@ int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 	return ipa_->init(settings, sensorConfig);
 }
 
-int RPiCameraData::configureIPA(const CameraConfiguration *config)
+int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result)
 {
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
@@ -1574,7 +1578,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config)
 	/* Ready the IPA - it must know about the sensor resolution. */
 	ControlList controls;
 	ret = ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
-			      &controls);
+			      &controls, result);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;

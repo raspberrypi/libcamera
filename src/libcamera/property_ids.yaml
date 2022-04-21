@@ -678,6 +678,18 @@ controls:
         \todo Turn this property into a "maximum control value" for the
         ScalerCrop control once "dynamic" controls have been implemented.
 
+  - SensorSensitivity:
+      type: float
+      description: |
+        The relative sensitivity of the chosen sensor mode.
+
+        Some sensors have readout modes with different sensitivities. For example,
+        a binned camera mode might, with the same exposure and gains, produce
+        twice the signal level of the full resolution readout. This would be
+        signalled by the binned mode, when it is chosen, indicating a value here
+        that is twice that of the full resolution mode. This value will be valid
+        after the configure method has returned successfully.
+
   # ----------------------------------------------------------------------------
   # Draft properties section
 

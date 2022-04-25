@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
@@ -56,6 +57,10 @@ protected:
 			cerr << "Unable to initialise camera sensor" << endl;
 			return TestFail;
 		}
+
+		lens_ = sensor_->focusLens();
+		if (lens_)
+			cout << "Found lens controller" << endl;
 
 		return TestPass;
 	}
@@ -103,6 +108,11 @@ protected:
 			return TestFail;
 		}
 
+		if (lens_ && lens_->setFocusPosition(10)) {
+			cerr << "Failed to set lens focus position" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 
@@ -115,6 +125,7 @@ private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
 	CameraSensor *sensor_;
+	CameraLens *lens_;
 };
 
 TEST_REGISTER(CameraSensorTest)

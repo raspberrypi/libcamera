@@ -152,7 +152,12 @@ int CameraSensor::init()
 	 */
 	if (entity_->device()->driver() == "vimc") {
 		initVimcDefaultProperties();
-		return initProperties();
+
+		ret = initProperties();
+		if (ret)
+			return ret;
+
+		return discoverAncillaryDevices();
 	}
 
 	/* Get the color filter array pattern (only for RAW sensors). */

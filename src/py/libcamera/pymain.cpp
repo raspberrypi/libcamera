@@ -35,7 +35,7 @@ static py::object ValueOrTuple(const ControlValue &cv)
 		for (size_t i = 0; i < cv.numElements(); ++i)
 			t[i] = v[i];
 
-		return t;
+		return std::move(t);
 	}
 
 	return py::cast(cv.get<T>());

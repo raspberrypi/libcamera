@@ -189,7 +189,11 @@ void Object::message(Message *msg)
 {
 	switch (msg->type()) {
 	case Message::InvokeMessage: {
-		InvokeMessage *iMsg = static_cast<InvokeMessage *>(msg);
+		/*
+		 * A static_cast should be enough, but gcc 10 and 11 choke on
+		 * it in release mode (with -O2 or -O3).
+		 */
+		InvokeMessage *iMsg = dynamic_cast<InvokeMessage *>(msg);
 		Semaphore *semaphore = iMsg->semaphore();
 		iMsg->invoke();
 

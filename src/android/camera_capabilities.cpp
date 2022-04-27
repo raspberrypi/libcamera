@@ -694,6 +694,14 @@ int CameraCapabilities::initializeStreamConfigurations()
 					minFrameDuration = minFrameDurationCap;
 			}
 
+			/*
+			 * Calculate FPS as CTS does and adjust the minimum
+			 * frame duration accordingly: see
+			 * Camera2SurfaceViewTestCase.java:getSuitableFpsRangeForDuration()
+			 */
+			minFrameDuration =
+				1e9 / static_cast<unsigned int>(floor(1e9 / minFrameDuration + 0.05f));
+
 			streamConfigurations_.push_back({
 				res, androidFormat, minFrameDuration, maxFrameDuration,
 			});
@@ -1293,12 +1301,10 @@ int CameraCapabilities::initializeStaticMetadata()
 		 * recording profile. Inspecting the Intel IPU3 HAL
 		 * implementation confirms this but no reference has been found
 		 * in the metadata documentation.
-		 *
-		 * Calculate FPS as CTS does: see
-		 * Camera2SurfaceViewTestCase.java:getSuitableFpsRangeForDuration()
 		 */
-		unsigned int fps = static_cast<unsigned int>
-				   (floor(1e9 / entry.minFrameDurationNsec + 0.05f));
+		unsigned int fps =
+			static_cast<unsigned int>(floor(1e9 / entry.minFrameDurationNsec));
+
 		if (entry.androidFormat != HAL_PIXEL_FORMAT_BLOB && fps < 30)
 			continue;
 

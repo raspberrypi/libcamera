@@ -54,6 +54,7 @@ internal_tests = [
     ['timer-thread',                    'timer-thread.cpp'],
     ['unique-fd',                       'unique-fd.cpp'],
     ['utils',                           'utils.cpp'],
+    ['yaml-parser',                     'yaml-parser.cpp'],
 ]
 
 internal_non_parallel_tests = [

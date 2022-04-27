@@ -31,13 +31,20 @@ namespace {
 
 /*
  * \var camera3Resolutions
- * \brief The list of image resolutions defined as mandatory to be supported by
- * the Android Camera3 specification
+ * \brief The list of image resolutions commonly supported by Android
+ *
+ * The following are defined as mandatory to be supported by the Android
+ * Camera3 specification: (320x240), (640x480), (1280x720), (1920x1080).
+ *
+ * The following 4:3 resolutions are defined as optional, but commonly
+ * supported by Android devices: (1280x960), (1600x1200).
  */
 const std::vector<Size> camera3Resolutions = {
 	{ 320, 240 },
 	{ 640, 480 },
 	{ 1280, 720 },
+	{ 1280, 960 },
+	{ 1600, 1200 },
 	{ 1920, 1080 }
 };
 
@@ -492,8 +499,8 @@ int CameraCapabilities::initializeStreamConfigurations()
 	/*
 	 * Build the list of supported image resolutions.
 	 *
-	 * The resolutions listed in camera3Resolution are mandatory to be
-	 * supported, up to the camera maximum resolution.
+	 * The resolutions listed in camera3Resolution are supported, up to the
+	 * camera maximum resolution.
 	 *
 	 * Augment the list by adding resolutions calculated from the camera
 	 * maximum one.

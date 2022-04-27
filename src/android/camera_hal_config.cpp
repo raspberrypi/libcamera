@@ -14,14 +14,14 @@ namespace filesystem = std::experimental::filesystem;
 #else
 #include <filesystem>
 #endif
-#include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <yaml.h>
 
 #include <hardware/camera3.h>
 
 #include <libcamera/base/log.h>
+
+#include <libcamera/internal/yaml_parser.h>
 
 using namespace libcamera;
 
@@ -37,16 +37,10 @@ public:
 	int parseConfigFile(FILE *fh, std::map<std::string, CameraConfigData> *cameras);
 
 private:
-	std::string parseValue();
-	std::string parseKey();
-	int parseValueBlock();
-	int parseCameraLocation(CameraConfigData *cameraConfigData,
-				const std::string &location);
-	int parseCameraConfigData(const std::string &cameraId);
-	int parseCameras();
-	int parseEntry();
+	int parseCameraConfigData(const std::string &cameraId, const YamlObject &);
+	int parseLocation(const YamlObject &, CameraConfigData &cameraConfigData);
+	int parseRotation(const YamlObject &, CameraConfigData &cameraConfigData);
 
-	yaml_parser_t parser_;
 	std::map<std::string, CameraConfigData> *cameras_;
 };
 
@@ -54,168 +48,11 @@ CameraHalConfig::Private::Private()
 {
 }
 
-std::string CameraHalConfig::Private::parseValue()
+int CameraHalConfig::Private::parseConfigFile(FILE *fh,
+					      std::map<std::string, CameraConfigData> *cameras)
 {
-	yaml_token_t token;
-
-	/* Make sure the token type is a value and get its content. */
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_VALUE_TOKEN) {
-		yaml_token_delete(&token);
-		return "";
-	}
-	yaml_token_delete(&token);
-
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_SCALAR_TOKEN) {
-		yaml_token_delete(&token);
-		return "";
-	}
-
-	std::string value(reinterpret_cast<char *>(token.data.scalar.value),
-			  token.data.scalar.length);
-	yaml_token_delete(&token);
-
-	return value;
-}
-
-std::string CameraHalConfig::Private::parseKey()
-{
-	yaml_token_t token;
-
-	/* Make sure the token type is a key and get its value. */
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_SCALAR_TOKEN) {
-		yaml_token_delete(&token);
-		return "";
-	}
-
-	std::string value(reinterpret_cast<char *>(token.data.scalar.value),
-			  token.data.scalar.length);
-	yaml_token_delete(&token);
-
-	return value;
-}
-
-int CameraHalConfig::Private::parseValueBlock()
-{
-	yaml_token_t token;
-
-	/* Make sure the next token are VALUE and BLOCK_MAPPING_START. */
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_VALUE_TOKEN) {
-		yaml_token_delete(&token);
-		return -EINVAL;
-	}
-	yaml_token_delete(&token);
-
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
-		yaml_token_delete(&token);
-		return -EINVAL;
-	}
-	yaml_token_delete(&token);
-
-	return 0;
-}
-
-int CameraHalConfig::Private::parseCameraLocation(CameraConfigData *cameraConfigData,
-						  const std::string &location)
-{
-	if (location == "front")
-		cameraConfigData->facing = CAMERA_FACING_FRONT;
-	else if (location == "back")
-		cameraConfigData->facing = CAMERA_FACING_BACK;
-	else
-		return -EINVAL;
-
-	return 0;
-}
-
-int CameraHalConfig::Private::parseCameraConfigData(const std::string &cameraId)
-{
-	int ret = parseValueBlock();
-	if (ret)
-		return ret;
-
 	/*
-	 * Parse the camera properties and store them in a cameraConfigData
-	 * instance.
-	 *
-	 * Add a safety counter to make sure we don't loop indefinitely in case
-	 * the configuration file is malformed.
-	 */
-	CameraConfigData cameraConfigData;
-	unsigned int sentinel = 100;
-	bool blockEnd = false;
-	yaml_token_t token;
-
-	do {
-		yaml_parser_scan(&parser_, &token);
-		switch (token.type) {
-		case YAML_KEY_TOKEN: {
-			yaml_token_delete(&token);
-
-			/*
-			 * Parse the camera property key and make sure it is
-			 * valid.
-			 */
-			std::string key = parseKey();
-			std::string value = parseValue();
-			if (key.empty() || value.empty())
-				return -EINVAL;
-
-			if (key == "location") {
-				ret = parseCameraLocation(&cameraConfigData, value);
-				if (ret) {
-					LOG(HALConfig, Error)
-						<< "Unknown location: " << value;
-					return -EINVAL;
-				}
-			} else if (key == "rotation") {
-				ret = std::stoi(value);
-				if (ret < 0 || ret >= 360) {
-					LOG(HALConfig, Error)
-						<< "Unknown rotation: " << value;
-					return -EINVAL;
-				}
-				cameraConfigData.rotation = ret;
-			} else {
-				LOG(HALConfig, Error)
-					<< "Unknown key: " << key;
-				return -EINVAL;
-			}
-			break;
-		}
-
-		case YAML_BLOCK_END_TOKEN:
-			blockEnd = true;
-			[[fallthrough]];
-		default:
-			yaml_token_delete(&token);
-			break;
-		}
-
-		--sentinel;
-	} while (!blockEnd && sentinel);
-	if (!sentinel)
-		return -EINVAL;
-
-	(*cameras_)[cameraId] = cameraConfigData;
-
-	return 0;
-}
-
-int CameraHalConfig::Private::parseCameras()
-{
-	int ret = parseValueBlock();
-	if (ret) {
-		LOG(HALConfig, Error) << "Configuration file is not valid";
-		return ret;
-	}
-
-	/*
-	 * Parse the camera properties.
+	 * Parse the HAL properties.
 	 *
 	 * Each camera properties block is a list of properties associated
 	 * with the ID (as assembled by CameraSensor::generateId()) of the
@@ -223,121 +60,98 @@ int CameraHalConfig::Private::parseCameras()
 	 *
 	 * cameras:
 	 *   "camera0 id":
-	 *     key: value
-	 *     key: value
+	 *     location: value
+	 *     rotation: value
 	 *     ...
 	 *
 	 *   "camera1 id":
-	 *     key: value
-	 *     key: value
+	 *     location: value
+	 *     rotation: value
 	 *     ...
 	 */
-	bool blockEnd = false;
-	yaml_token_t token;
-	do {
-		yaml_parser_scan(&parser_, &token);
-		switch (token.type) {
-		case YAML_KEY_TOKEN: {
-			yaml_token_delete(&token);
 
-			/* Parse the camera ID as key of the property list. */
-			std::string cameraId = parseKey();
-			if (cameraId.empty())
-				return -EINVAL;
+	cameras_ = cameras;
 
-			ret = parseCameraConfigData(cameraId);
-			if (ret)
-				return -EINVAL;
-			break;
-		}
-		case YAML_BLOCK_END_TOKEN:
-			blockEnd = true;
-			[[fallthrough]];
-		default:
-			yaml_token_delete(&token);
-			break;
-		}
-	} while (!blockEnd);
+	std::unique_ptr<YamlObject> root = YamlParser::parse(fh);
+	if (!root)
+		return -EINVAL;
+
+	if (!root->isDictionary())
+		return -EINVAL;
+
+	/* Parse property "cameras" */
+	if (!root->contains("cameras"))
+		return -EINVAL;
+
+	const YamlObject &yamlObjectCameras = (*root)["cameras"];
+
+	if (!yamlObjectCameras.isDictionary())
+		return -EINVAL;
+
+	std::vector<std::string> cameraIds = yamlObjectCameras.memberNames();
+	for (const std::string &cameraId : cameraIds) {
+		if (parseCameraConfigData(cameraId,
+					  yamlObjectCameras[cameraId]))
+			return -EINVAL;
+	}
 
 	return 0;
 }
 
-int CameraHalConfig::Private::parseEntry()
+int CameraHalConfig::Private::parseCameraConfigData(const std::string &cameraId,
+						    const YamlObject &cameraObject)
+
 {
-	int ret = -EINVAL;
+	if (!cameraObject.isDictionary())
+		return -EINVAL;
 
-	/*
-	 * Parse each key we find in the file.
-	 *
-	 * The 'cameras' keys maps to a list of (lists) of camera properties.
-	 */
+	CameraConfigData &cameraConfigData = (*cameras_)[cameraId];
 
-	std::string key = parseKey();
-	if (key.empty())
-		return ret;
+	/* Parse property "location" */
+	if (parseLocation(cameraObject, cameraConfigData))
+		return -EINVAL;
 
-	if (key == "cameras")
-		ret = parseCameras();
-	else
-		LOG(HALConfig, Error) << "Unknown key: " << key;
+	/* Parse property "rotation" */
+	if (parseRotation(cameraObject, cameraConfigData))
+		return -EINVAL;
 
-	return ret;
+	return 0;
 }
 
-int CameraHalConfig::Private::parseConfigFile(FILE *fh,
-					      std::map<std::string, CameraConfigData> *cameras)
+int CameraHalConfig::Private::parseLocation(const YamlObject &cameraObject,
+					    CameraConfigData &cameraConfigData)
 {
-	cameras_ = cameras;
+	if (!cameraObject.contains("location"))
+		return -EINVAL;
 
-	int ret = yaml_parser_initialize(&parser_);
-	if (!ret) {
-		LOG(HALConfig, Error) << "Failed to initialize yaml parser";
+	std::string location = cameraObject["location"].get<std::string>("");
+
+	if (location == "front")
+		cameraConfigData.facing = CAMERA_FACING_FRONT;
+	else if (location == "back")
+		cameraConfigData.facing = CAMERA_FACING_BACK;
+	else
+		return -EINVAL;
+
+	return 0;
+}
+
+int CameraHalConfig::Private::parseRotation(const YamlObject &cameraObject,
+					    CameraConfigData &cameraConfigData)
+{
+	if (!cameraObject.contains("rotation"))
+		return -EINVAL;
+
+	int32_t rotation = cameraObject["rotation"].get<int32_t>(-1);
+
+	if (rotation < 0 || rotation >= 360) {
+		LOG(HALConfig, Error)
+			<< "Unknown rotation: " << rotation;
 		return -EINVAL;
 	}
-	yaml_parser_set_input_file(&parser_, fh);
 
-	yaml_token_t token;
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_STREAM_START_TOKEN) {
-		LOG(HALConfig, Error) << "Configuration file is not valid";
-		yaml_token_delete(&token);
-		yaml_parser_delete(&parser_);
-		return -EINVAL;
-	}
-	yaml_token_delete(&token);
-
-	yaml_parser_scan(&parser_, &token);
-	if (token.type != YAML_BLOCK_MAPPING_START_TOKEN) {
-		LOG(HALConfig, Error) << "Configuration file is not valid";
-		yaml_token_delete(&token);
-		yaml_parser_delete(&parser_);
-		return -EINVAL;
-	}
-	yaml_token_delete(&token);
-
-	/* Parse the file and parse each single key one by one. */
-	do {
-		yaml_parser_scan(&parser_, &token);
-		switch (token.type) {
-		case YAML_KEY_TOKEN:
-			yaml_token_delete(&token);
-			ret = parseEntry();
-			break;
-
-		case YAML_STREAM_END_TOKEN:
-			ret = -ENOENT;
-			[[fallthrough]];
-		default:
-			yaml_token_delete(&token);
-			break;
-		}
-	} while (ret >= 0);
-	yaml_parser_delete(&parser_);
-
-	if (ret && ret != -ENOENT)
-		LOG(HALConfig, Error) << "Configuration file is not valid";
-
-	return ret == -ENOENT ? 0 : ret;
+	cameraConfigData.rotation = rotation;
+	return 0;
 }
 
 CameraHalConfig::CameraHalConfig()

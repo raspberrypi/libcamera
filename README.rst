@@ -60,7 +60,7 @@ Meson Build system: [required]
             pip3 install --user --upgrade meson
 
 for the libcamera core: [required]
-        python3-yaml python3-ply python3-jinja2
+        libyaml-dev python3-yaml python3-ply python3-jinja2
 
 for IPA module signing: [required]
         libgnutls28-dev openssl
@@ -98,7 +98,7 @@ for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools
 
 for android: [optional]
-        libexif-dev libjpeg-dev libyaml-dev
+        libexif-dev libjpeg-dev
 
 for lc-compliance: [optional]
         libevent-dev

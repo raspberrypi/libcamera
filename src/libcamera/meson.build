@@ -46,6 +46,7 @@ libcamera_sources = files([
     'v4l2_pixelformat.cpp',
     'v4l2_subdevice.cpp',
     'v4l2_videodevice.cpp',
+    'yaml_parser.cpp',
 ])
 
 libcamera_sources += libcamera_public_headers
@@ -66,6 +67,7 @@ subdir('proxy')
 libdl = cc.find_library('dl')
 libgnutls = cc.find_library('gnutls', required : true)
 libudev = dependency('libudev', required : false)
+libyaml = dependency('yaml-0.1', required : true)
 
 if libgnutls.found()
     config_h.set('HAVE_GNUTLS', 1)
@@ -126,6 +128,7 @@ libcamera_deps = [
     libgnutls,
     liblttng,
     libudev,
+    libyaml,
 ]
 
 # We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.

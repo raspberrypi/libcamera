@@ -42,4 +42,5 @@ libcamera_internal_headers = files([
     'v4l2_pixelformat.h',
     'v4l2_subdevice.h',
     'v4l2_videodevice.h',
+    'yaml_parser.h',
 ])

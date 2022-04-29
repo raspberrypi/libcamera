@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <ostream>
 #include <set>
 #include <stdint.h>
 #include <string>
@@ -44,5 +45,7 @@ private:
 	uint32_t fourcc_;
 	uint64_t modifier_;
 };
+
+std::ostream &operator<<(std::ostream &out, const PixelFormat &f);
 
 } /* namespace libcamera */

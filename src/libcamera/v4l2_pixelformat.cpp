@@ -316,4 +316,17 @@ V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
 	return multiplanar ? info.v4l2Formats.multi : info.v4l2Formats.single;
 }
 
+/**
+ * \brief Insert a text representation of a V4L2PixelFormat into an output
+ * stream
+ * \param[in] out The output stream
+ * \param[in] f The V4L2PixelFormat
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2PixelFormat &f)
+{
+	out << f.toString();
+	return out;
+}
+
 } /* namespace libcamera */

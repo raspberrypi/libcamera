@@ -140,4 +140,16 @@ PixelFormat PixelFormat::fromString(const std::string &name)
 	return PixelFormatInfo::info(name).format;
 }
 
+/**
+ * \brief Insert a text representation of a PixelFormat into an output stream
+ * \param[in] out The output stream
+ * \param[in] f The PixelFormat
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const PixelFormat &f)
+{
+	out << f.toString();
+	return out;
+}
+
 } /* namespace libcamera */

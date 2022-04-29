@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <ostream>
 #include <stdint.h>
 #include <string>
 
@@ -49,5 +50,7 @@ public:
 private:
 	uint32_t fourcc_;
 };
+
+std::ostream &operator<<(std::ostream &out, const V4L2PixelFormat &f);
 
 } /* namespace libcamera */

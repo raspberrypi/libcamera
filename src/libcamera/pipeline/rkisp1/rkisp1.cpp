@@ -573,13 +573,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	 * the pipeline.
 	 */
 	V4L2SubdeviceFormat format = config->sensorFormat();
-	LOG(RkISP1, Debug) << "Configuring sensor with " << format.toString();
+	LOG(RkISP1, Debug) << "Configuring sensor with " << format;
 
 	ret = sensor->setFormat(&format);
 	if (ret < 0)
 		return ret;
 
-	LOG(RkISP1, Debug) << "Sensor configured with " << format.toString();
+	LOG(RkISP1, Debug) << "Sensor configured with " << format;
 
 	ret = isp_->setFormat(0, &format);
 	if (ret < 0)
@@ -591,13 +591,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	LOG(RkISP1, Debug)
-		<< "ISP input pad configured with " << format.toString()
+		<< "ISP input pad configured with " << format
 		<< " crop " << rect;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
 	LOG(RkISP1, Debug)
-		<< "Configuring ISP output pad with " << format.toString()
+		<< "Configuring ISP output pad with " << format
 		<< " crop " << rect;
 
 	ret = isp_->setSelection(2, V4L2_SEL_TGT_CROP, &rect);
@@ -609,7 +609,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	LOG(RkISP1, Debug)
-		<< "ISP output pad configured with " << format.toString()
+		<< "ISP output pad configured with " << format
 		<< " crop " << rect;
 
 	std::map<unsigned int, IPAStream> streamConfig;

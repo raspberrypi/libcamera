@@ -607,10 +607,10 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 				LOG(SimplePipeline, Debug)
 					<< "Source '" << source->entity()->name()
 					<< "':" << source->index()
-					<< " produces " << sourceFormat.toString()
+					<< " produces " << sourceFormat
 					<< ", sink '" << sink->entity()->name()
 					<< "':" << sink->index()
-					<< " requires " << format->toString();
+					<< " requires " << format;
 				return -EINVAL;
 			}
 		}
@@ -620,7 +620,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 			<< "':" << source->index()
 			<< " -> '" << sink->entity()->name()
 			<< "':" << sink->index()
-			<< " configured with format " << format->toString();
+			<< " configured with format " << format;
 	}
 
 	return 0;
@@ -939,8 +939,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	    captureFormat.size != pipeConfig->captureSize) {
 		LOG(SimplePipeline, Error)
 			<< "Unable to configure capture in "
-			<< pipeConfig->captureSize << "-"
-			<< videoFormat.toString();
+			<< pipeConfig->captureSize << "-" << videoFormat;
 		return -EINVAL;
 	}
 

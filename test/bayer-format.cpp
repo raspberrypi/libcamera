@@ -72,8 +72,8 @@ protected:
 		bayerFmt = BayerFormat::fromV4L2PixelFormat(v4l2FmtExpect);
 		V4L2PixelFormat v4l2Fmt = bayerFmt.toV4L2PixelFormat();
 		if (v4l2Fmt != v4l2FmtExpect) {
-			cerr << "Expected: '" << v4l2FmtExpect.toString()
-			     << "' got: '" << v4l2Fmt.toString() << "'" << endl;
+			cerr << "Expected: '" << v4l2FmtExpect
+			     << "' got: '" << v4l2Fmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -86,7 +86,7 @@ protected:
 		v4l2Fmt = bayerFmt.toV4L2PixelFormat();
 		if (v4l2Fmt != v4l2FmtExpect) {
 			cerr << "Expected: empty V4L2PixelFormat got: '"
-			     << v4l2Fmt.toString() << "'" << endl;
+			     << v4l2Fmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -101,8 +101,8 @@ protected:
 		bayerFmt = BayerFormat::fromV4L2PixelFormat(v4l2Fmt);
 		if (bayerFmt != bayerFmtExpect) {
 			cerr << "Expected BayerFormat '"
-			     << bayerFmtExpect.toString() << "', got: '"
-			     << bayerFmt.toString() << "'" << endl;
+			     << bayerFmtExpect << "', got: '"
+			     << bayerFmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -115,7 +115,7 @@ protected:
 		bayerFmt = BayerFormat::fromV4L2PixelFormat(v4l2FmtUnknown);
 		if (bayerFmt.isValid()) {
 			cerr << "Expected empty BayerFormat got: '"
-			     << bayerFmt.toString() << "'" << endl;
+			     << bayerFmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -151,8 +151,8 @@ protected:
 		BayerFormat hFlipFmt = bayerFmt.transform(Transform::HFlip);
 		if (hFlipFmt != bayerFmtExpect) {
 			cerr << "Horizontal flip of 'BGGR-8' should result in '"
-			     << bayerFmtExpect.toString() << "', got: '"
-			     << hFlipFmt.toString() << "'" << endl;
+			     << bayerFmtExpect << "', got: '"
+			     << hFlipFmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -166,8 +166,8 @@ protected:
 		BayerFormat vFlipFmt = bayerFmt.transform(Transform::VFlip);
 		if (vFlipFmt != bayerFmtExpect) {
 			cerr << "Vertical flip of 'BGGR-8' should result in '"
-			     << bayerFmtExpect.toString() << "', got: '"
-			     << vFlipFmt.toString() << "'" << endl;
+			     << bayerFmtExpect << "', got: '"
+			     << vFlipFmt << "'" << endl;
 			return TestFail;
 		}
 
@@ -182,7 +182,7 @@ protected:
 		if (transposeFmt != bayerFmt) {
 			cerr << "Transpose with both green pixels on the "
 			     << "antidiagonal should not change the order "
-			     << "(got '" << transposeFmt.toString() << "')"
+			     << "(got '" << transposeFmt << "')"
 			     << endl;
 			return TestFail;
 		}
@@ -199,7 +199,7 @@ protected:
 		if (transposeFmt != bayerFmtExpect) {
 			cerr << "Transpose with the red & blue pixels on the "
 			     << "antidiagonal should switch their position "
-			     << "(got '" << transposeFmt.toString() << "')"
+			     << "(got '" << transposeFmt << "')"
 			     << endl;
 			return TestFail;
 		}

@@ -99,7 +99,7 @@ protected:
 		    format.size != Size(4096, 2160)) {
 			cerr << "Failed to get a suitable format, expected 4096x2160-0x"
 			     << utils::hex(MEDIA_BUS_FMT_SBGGR10_1X10)
-			     << ", got " << format.toString() << endl;
+			     << ", got " << format << endl;
 			return TestFail;
 		}
 

@@ -30,7 +30,7 @@ void Thumbnailer::configure(const Size &sourceSize, PixelFormat pixelFormat)
 	if (pixelFormat_ != formats::NV12) {
 		LOG(Thumbnailer, Error)
 			<< "Failed to configure: Pixel Format "
-			<< pixelFormat_.toString() << " unsupported.";
+			<< pixelFormat_ << " unsupported.";
 		return;
 	}
 

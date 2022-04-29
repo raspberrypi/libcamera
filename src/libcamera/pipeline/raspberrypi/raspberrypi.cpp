@@ -167,7 +167,7 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 			}
 
 			LOG(RPI, Debug) << "Format: " << size
-					<< " fmt " << format.toString()
+					<< " fmt " << format
 					<< " Score: " << score
 					<< " (best " << bestScore << ")";
 		}
@@ -758,8 +758,8 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	LOG(RPI, Info) << "Sensor: " << camera->id()
-		       << " - Selected sensor format: " << sensorFormat.toString()
-		       << " - Selected unicam format: " << unicamFormat.toString();
+		       << " - Selected sensor format: " << sensorFormat
+		       << " - Selected unicam format: " << unicamFormat;
 
 	ret = data->isp_[Isp::Input].dev()->setFormat(&unicamFormat);
 	if (ret)
@@ -790,7 +790,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		format.colorSpace = cfg.colorSpace;
 
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
-				<< format.toString();
+				<< format;
 
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
@@ -799,7 +799,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		if (format.size != cfg.size || format.fourcc != fourcc) {
 			LOG(RPI, Error)
 				<< "Failed to set requested format on " << stream->name()
-				<< ", returned " << format.toString();
+				<< ", returned " << format;
 			return -EINVAL;
 		}
 
@@ -842,7 +842,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		}
 
 		LOG(RPI, Debug) << "Defaulting ISP Output0 format to "
-				<< format.toString();
+				<< format;
 	}
 
 	/*
@@ -866,7 +866,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		output1Format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420);
 
 		LOG(RPI, Debug) << "Setting ISP Output1 (internal) to "
-				<< output1Format.toString();
+				<< output1Format;
 
 		ret = data->isp_[Isp::Output1].dev()->setFormat(&output1Format);
 		if (ret) {
@@ -882,7 +882,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	ret = data->isp_[Isp::Stats].dev()->setFormat(&format);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to set format on ISP stats stream: "
-				<< format.toString();
+				<< format;
 		return ret;
 	}
 
@@ -923,7 +923,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		ret = data->unicam_[Unicam::Embedded].dev()->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
-					<< format.toString();
+					<< format;
 			return ret;
 		}
 	}
@@ -965,7 +965,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on " << device->entity()->name()
 					<< " pad " << sinkPad->index()
-					<< " with format  " << format.toString()
+					<< " with format  " << format
 					<< ": " << ret;
 			return ret;
 		}

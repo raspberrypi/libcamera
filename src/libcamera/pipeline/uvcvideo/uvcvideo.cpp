@@ -126,9 +126,8 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 	if (iter == pixelFormats.end()) {
 		cfg.pixelFormat = pixelFormats.front();
 		LOG(UVC, Debug)
-			<< "Adjusting pixel format from "
-			<< pixelFormat.toString() << " to "
-			<< cfg.pixelFormat.toString();
+			<< "Adjusting pixel format from " << pixelFormat
+			<< " to " << cfg.pixelFormat;
 		status = Adjusted;
 	}
 

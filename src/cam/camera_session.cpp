@@ -145,7 +145,7 @@ void CameraSession::infoConfiguration() const
 		const StreamFormats &formats = cfg.formats();
 		for (PixelFormat pixelformat : formats.pixelformats()) {
 			std::cout << " * Pixelformat: "
-				  << pixelformat.toString() << " "
+				  << pixelformat << " "
 				  << formats.range(pixelformat).toString()
 				  << std::endl;
 

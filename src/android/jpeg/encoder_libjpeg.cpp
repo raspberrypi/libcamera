@@ -59,7 +59,7 @@ const struct JPEGPixelFormatInfo &findPixelInfo(const PixelFormat &format)
 	const auto iter = pixelInfo.find(format);
 	if (iter == pixelInfo.end()) {
 		LOG(JPEG, Error) << "Unsupported pixel format for JPEG encoder: "
-				 << format.toString();
+				 << format;
 		return invalidPixelFormat;
 	}
 

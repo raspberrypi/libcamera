@@ -119,13 +119,13 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 
 	LOG(RkISP1, Debug)
 		<< "Configured " << name_ << " resizer input pad with "
-		<< ispFormat.toString() << " crop " << rect;
+		<< ispFormat << " crop " << rect;
 
 	ispFormat.size = config.size;
 
 	LOG(RkISP1, Debug)
 		<< "Configuring " << name_ << " resizer output pad with "
-		<< ispFormat.toString();
+		<< ispFormat;
 
 	switch (config.pixelFormat) {
 	case formats::NV12:
@@ -143,7 +143,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 
 	LOG(RkISP1, Debug)
 		<< "Configured " << name_ << " resizer output pad with "
-		<< ispFormat.toString();
+		<< ispFormat;
 
 	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
 	V4L2DeviceFormat outputFormat;

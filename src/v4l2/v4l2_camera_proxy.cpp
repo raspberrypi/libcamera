@@ -327,7 +327,7 @@ int V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 	if (ret < 0) {
 		LOG(V4L2Compat, Error)
 			<< "Failed to negotiate a valid format: "
-			<< format.toString();
+			<< format;
 		return -EINVAL;
 	}
 

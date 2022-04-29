@@ -206,7 +206,7 @@ uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
 	const auto it = formatInfoMap.find(mbus_code);
 	if (it == formatInfoMap.end()) {
 		LOG(V4L2, Error) << "No information available for format '"
-				 << toString() << "'";
+				 << *this << "'";
 		return 0;
 	}
 

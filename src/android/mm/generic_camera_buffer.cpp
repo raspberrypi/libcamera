@@ -66,8 +66,7 @@ CameraBuffer::Private::Private([[maybe_unused]] CameraBuffer *cameraBuffer,
 	const auto &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid()) {
 		error_ = -EINVAL;
-		LOG(HAL, Error) << "Invalid pixel format: "
-				<< pixelFormat.toString();
+		LOG(HAL, Error) << "Invalid pixel format: " << pixelFormat;
 		return;
 	}
 

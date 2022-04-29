@@ -209,7 +209,7 @@ CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
 			if (pixelformat.first != formats::BGR888) {
 				LOG(VIMC, Info)
 					<< "Skipping unsupported pixel format "
-					<< pixelformat.first.toString();
+					<< pixelformat.first;
 				continue;
 			}
 		}

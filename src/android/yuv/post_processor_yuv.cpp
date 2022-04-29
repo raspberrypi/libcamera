@@ -27,8 +27,8 @@ int PostProcessorYuv::configure(const StreamConfiguration &inCfg,
 {
 	if (inCfg.pixelFormat != outCfg.pixelFormat) {
 		LOG(YUV, Error) << "Pixel format conversion is not supported"
-				<< " (from " << inCfg.pixelFormat.toString()
-				<< " to " << outCfg.pixelFormat.toString() << ")";
+				<< " (from " << inCfg.pixelFormat
+				<< " to " << outCfg.pixelFormat << ")";
 		return -EINVAL;
 	}
 

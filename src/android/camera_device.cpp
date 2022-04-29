@@ -575,7 +575,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 			       << ", crop_rotate_scale_degrees: "
 			       << rotationToString(stream->crop_rotate_scale_degrees)
 #endif
-			       << " (" << format.toString() << ")";
+			       << " (" << format << ")";
 
 		if (!format.isValid())
 			return -EINVAL;
@@ -926,7 +926,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		   << camera3Stream->height << ")"
 		   << "[" << utils::hex(camera3Stream->format) << "] -> "
 		   << "(" << cameraStream->configuration().size << ")["
-		   << cameraStream->configuration().pixelFormat.toString() << "]";
+		   << cameraStream->configuration().pixelFormat << "]";
 
 		/*
 		 * Inspect the camera stream type, create buffers opportunely

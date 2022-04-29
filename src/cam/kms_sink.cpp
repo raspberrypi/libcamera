@@ -194,7 +194,7 @@ int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
 	if (ret) {
 		std::cerr
 			<< "Unable to find display pipeline for format "
-			<< format.toString() << std::endl;
+			<< format << std::endl;
 
 		return ret;
 	}

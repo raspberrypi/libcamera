@@ -554,7 +554,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 			formatsMap_[androidFormat] = formats::MJPEG;
 			LOG(HAL, Debug) << "Mapped Android format "
 					<< camera3Format.name << " to "
-					<< formats::MJPEG.toString()
+					<< formats::MJPEG
 					<< " (fixed mapping)";
 			continue;
 		}
@@ -566,7 +566,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 		PixelFormat mappedFormat;
 		for (const PixelFormat &pixelFormat : libcameraFormats) {
 
-			LOG(HAL, Debug) << "Testing " << pixelFormat.toString();
+			LOG(HAL, Debug) << "Testing " << pixelFormat;
 
 			/*
 			 * The stream configuration size can be adjusted,
@@ -605,7 +605,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 		formatsMap_[androidFormat] = mappedFormat;
 		LOG(HAL, Debug) << "Mapped Android format "
 				<< camera3Format.name << " to "
-				<< mappedFormat.toString();
+				<< mappedFormat;
 
 		std::vector<Size> resolutions;
 		const PixelFormatInfo &info = PixelFormatInfo::info(mappedFormat);

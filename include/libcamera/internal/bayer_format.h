@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <ostream>
 #include <stdint.h>
 #include <string>
 
@@ -67,5 +68,7 @@ static inline bool operator!=(const BayerFormat &lhs, const BayerFormat &rhs)
 {
 	return !(lhs == rhs);
 }
+
+std::ostream &operator<<(std::ostream &out, const BayerFormat &f);
 
 } /* namespace libcamera */

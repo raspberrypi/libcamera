@@ -8,6 +8,7 @@
 #pragma once
 
 #include <algorithm>
+#include <ostream>
 #include <string>
 
 #include <libcamera/base/compiler.h>

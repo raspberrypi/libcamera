@@ -433,8 +433,22 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 const std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
-	ss << size << "-" << fourcc.toString();
+	ss << *this;
+
 	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a V4L2DeviceFormat into an output
+ * stream
+ * \param[in] out The output stream
+ * \param[in] f The V4L2DeviceFormat
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f)
+{
+	out << f.size << "-" << f.fourcc;
+	return out;
 }
 
 /**

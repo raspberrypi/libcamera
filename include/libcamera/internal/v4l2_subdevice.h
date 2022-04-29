@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,8 @@ struct V4L2SubdeviceFormat {
 	const std::string toString() const;
 	uint8_t bitsPerPixel() const;
 };
+
+std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f);
 
 class V4L2Subdevice : public V4L2Device
 {

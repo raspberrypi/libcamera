@@ -11,6 +11,7 @@
 #include <atomic>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -179,6 +180,8 @@ public:
 
 	const std::string toString() const;
 };
+
+std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f);
 
 class V4L2VideoDevice : public V4L2Device
 {

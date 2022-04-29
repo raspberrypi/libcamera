@@ -190,17 +190,10 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
  */
 const std::string V4L2SubdeviceFormat::toString() const
 {
-	std::stringstream mbus;
-	mbus << size << "-";
+	std::stringstream ss;
+	ss << *this;
 
-	const auto it = formatInfoMap.find(mbus_code);
-
-	if (it == formatInfoMap.end())
-		mbus << utils::hex(mbus_code, 4);
-	else
-		mbus << it->second.name;
-
-	return mbus.str();
+	return ss.str();
 }
 
 /**
@@ -218,6 +211,27 @@ uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
 	}
 
 	return it->second.bitsPerPixel;
+}
+
+/**
+ * \brief Insert a text representation of a V4L2SubdeviceFormat into an output
+ * stream
+ * \param[in] out The output stream
+ * \param[in] f The V4L2SubdeviceFormat
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
+{
+	out << f.size << "-";
+
+	const auto it = formatInfoMap.find(f.mbus_code);
+
+	if (it == formatInfoMap.end())
+		out << utils::hex(f.mbus_code, 4);
+	else
+		out << it->second.name;
+
+	return out;
 }
 
 /**

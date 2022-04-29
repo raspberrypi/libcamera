@@ -487,7 +487,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 	 * JPEG encoder requirements into account (alignment and aspect ratio).
 	 */
 	const Size maxRes = cfg.size;
-	LOG(HAL, Debug) << "Maximum supported resolution: " << maxRes.toString();
+	LOG(HAL, Debug) << "Maximum supported resolution: " << maxRes;
 
 	/*
 	 * Build the list of supported image resolutions.
@@ -729,7 +729,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 
 	LOG(HAL, Debug) << "Collected stream configuration map: ";
 	for (const auto &entry : streamConfigurations_)
-		LOG(HAL, Debug) << "{ " << entry.resolution.toString() << " - "
+		LOG(HAL, Debug) << "{ " << entry.resolution << " - "
 				<< utils::hex(entry.androidFormat) << " }";
 
 	return 0;
@@ -1321,7 +1321,7 @@ int CameraCapabilities::initializeStaticMetadata()
 
 		LOG(HAL, Debug)
 			<< "Output Stream: " << utils::hex(entry.androidFormat)
-			<< " (" << entry.resolution.toString() << ")["
+			<< " (" << entry.resolution << ")["
 			<< entry.minFrameDurationNsec << "]"
 			<< "@" << fps;
 	}

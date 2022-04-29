@@ -191,7 +191,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 const std::string V4L2SubdeviceFormat::toString() const
 {
 	std::stringstream mbus;
-	mbus << size.toString() << "-";
+	mbus << size << "-";
 
 	const auto it = formatInfoMap.find(mbus_code);
 

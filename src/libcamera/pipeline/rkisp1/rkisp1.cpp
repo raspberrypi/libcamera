@@ -592,13 +592,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug)
 		<< "ISP input pad configured with " << format.toString()
-		<< " crop " << rect.toString();
+		<< " crop " << rect;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
 	LOG(RkISP1, Debug)
 		<< "Configuring ISP output pad with " << format.toString()
-		<< " crop " << rect.toString();
+		<< " crop " << rect;
 
 	ret = isp_->setSelection(2, V4L2_SEL_TGT_CROP, &rect);
 	if (ret < 0)
@@ -610,7 +610,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug)
 		<< "ISP output pad configured with " << format.toString()
-		<< " crop " << rect.toString();
+		<< " crop " << rect;
 
 	std::map<unsigned int, IPAStream> streamConfig;
 

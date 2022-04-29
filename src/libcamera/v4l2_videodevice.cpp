@@ -433,7 +433,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 const std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
-	ss << size.toString() << "-" << fourcc.toString();
+	ss << size << "-" << fourcc.toString();
 	return ss.str();
 }
 

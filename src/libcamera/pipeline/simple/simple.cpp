@@ -474,7 +474,7 @@ int SimpleCameraData::init()
 			video_->formats(format.mbus_code);
 
 		LOG(SimplePipeline, Debug)
-			<< "Adding configuration for " << format.size.toString()
+			<< "Adding configuration for " << format.size
 			<< " in pixel formats [ "
 			<< utils::join(videoFormats, ", ",
 				       [](const auto &f) {
@@ -808,8 +808,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 
 		if (!pipeConfig_->outputSizes.contains(cfg.size)) {
 			LOG(SimplePipeline, Debug)
-				<< "Adjusting size from " << cfg.size.toString()
-				<< " to " << pipeConfig_->captureSize.toString();
+				<< "Adjusting size from " << cfg.size
+				<< " to " << pipeConfig_->captureSize;
 			cfg.size = pipeConfig_->captureSize;
 			status = Adjusted;
 		}
@@ -939,7 +939,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	    captureFormat.size != pipeConfig->captureSize) {
 		LOG(SimplePipeline, Error)
 			<< "Unable to configure capture in "
-			<< pipeConfig->captureSize.toString() << "-"
+			<< pipeConfig->captureSize << "-"
 			<< videoFormat.toString();
 		return -EINVAL;
 	}

@@ -143,8 +143,7 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 
 	if (cfg.size != size) {
 		LOG(UVC, Debug)
-			<< "Adjusting size from " << size.toString()
-			<< " to " << cfg.size.toString();
+			<< "Adjusting size from " << size << " to " << cfg.size;
 		status = Adjusted;
 	}
 

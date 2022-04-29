@@ -238,7 +238,7 @@ int CameraSensor::validateSensorDriver()
 
 		LOG(CameraSensor, Warning)
 			<< "The PixelArraySize property has been defaulted to "
-			<< pixelArraySize_.toString();
+			<< pixelArraySize_;
 		err = -EINVAL;
 	} else {
 		pixelArraySize_ = rect.size();
@@ -249,7 +249,7 @@ int CameraSensor::validateSensorDriver()
 		activeArea_ = Rectangle(pixelArraySize_);
 		LOG(CameraSensor, Warning)
 			<< "The PixelArrayActiveAreas property has been defaulted to "
-			<< activeArea_.toString();
+			<< activeArea_;
 		err = -EINVAL;
 	}
 

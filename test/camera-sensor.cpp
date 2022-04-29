@@ -86,8 +86,7 @@ protected:
 
 		const Size &resolution = sensor_->resolution();
 		if (resolution != Size(4096, 2160)) {
-			cerr << "Incorrect sensor resolution "
-			     << resolution.toString() << endl;
+			cerr << "Incorrect sensor resolution " << resolution << endl;
 			return TestFail;
 		}
 

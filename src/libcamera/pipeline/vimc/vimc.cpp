@@ -164,7 +164,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 
 	if (cfg.size != size) {
 		LOG(VIMC, Debug)
-			<< "Adjusting size to " << cfg.size.toString();
+			<< "Adjusting size to " << cfg.size;
 		status = Adjusted;
 	}
 

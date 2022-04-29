@@ -925,7 +925,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		ss << i << " - (" << camera3Stream->width << "x"
 		   << camera3Stream->height << ")"
 		   << "[" << utils::hex(camera3Stream->format) << "] -> "
-		   << "(" << cameraStream->configuration().size.toString() << ")["
+		   << "(" << cameraStream->configuration().size << ")["
 		   << cameraStream->configuration().pixelFormat.toString() << "]";
 
 		/*

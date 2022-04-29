@@ -166,7 +166,7 @@ V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &
 				bestFormat.size = size;
 			}
 
-			LOG(RPI, Debug) << "Format: " << size.toString()
+			LOG(RPI, Debug) << "Format: " << size
 					<< " fmt " << format.toString()
 					<< " Score: " << score
 					<< " (best " << bestScore << ")";

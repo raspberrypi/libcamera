@@ -386,9 +386,9 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	pipeConfigs.clear();
 
 	LOG(IPU3, Debug) << "Calculating pipe configuration for: ";
-	LOG(IPU3, Debug) << "input: " << pipe->input.toString();
-	LOG(IPU3, Debug) << "main: " << pipe->main.toString();
-	LOG(IPU3, Debug) << "vf: " << pipe->viewfinder.toString();
+	LOG(IPU3, Debug) << "input: " << pipe->input;
+	LOG(IPU3, Debug) << "main: " << pipe->main;
+	LOG(IPU3, Debug) << "vf: " << pipe->viewfinder;
 
 	const Size &in = pipe->input;
 
@@ -397,8 +397,7 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	 * See https://bugs.libcamera.org/show_bug.cgi?id=32
 	 */
 	if (in.width < ImgUDevice::kIFMaxCropWidth || in.height < ImgUDevice::kIFMaxCropHeight) {
-		LOG(IPU3, Error) << "Input resolution " << in.toString()
-				 << " not supported";
+		LOG(IPU3, Error) << "Input resolution " << in << " not supported";
 		return {};
 	}
 
@@ -460,9 +459,9 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	}
 
 	LOG(IPU3, Debug) << "Computed pipe configuration: ";
-	LOG(IPU3, Debug) << "IF: " << pipeConfigs[bestIndex].iif.toString();
-	LOG(IPU3, Debug) << "BDS: " << pipeConfigs[bestIndex].bds.toString();
-	LOG(IPU3, Debug) << "GDC: " << pipeConfigs[bestIndex].gdc.toString();
+	LOG(IPU3, Debug) << "IF: " << pipeConfigs[bestIndex].iif;
+	LOG(IPU3, Debug) << "BDS: " << pipeConfigs[bestIndex].bds;
+	LOG(IPU3, Debug) << "GDC: " << pipeConfigs[bestIndex].gdc;
 
 	return pipeConfigs[bestIndex];
 }
@@ -496,13 +495,13 @@ int ImgUDevice::configure(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputF
 	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_CROP, &iif);
 	if (ret)
 		return ret;
-	LOG(IPU3, Debug) << "ImgU IF rectangle = " << iif.toString();
+	LOG(IPU3, Debug) << "ImgU IF rectangle = " << iif;
 
 	Rectangle bds{ 0, 0, pipeConfig.bds };
 	ret = imgu_->setSelection(PAD_INPUT, V4L2_SEL_TGT_COMPOSE, &bds);
 	if (ret)
 		return ret;
-	LOG(IPU3, Debug) << "ImgU BDS rectangle = " << bds.toString();
+	LOG(IPU3, Debug) << "ImgU BDS rectangle = " << bds;
 
 	V4L2SubdeviceFormat gdcFormat = {};
 	gdcFormat.mbus_code = MEDIA_BUS_FMT_FIXED;

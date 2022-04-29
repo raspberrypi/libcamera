@@ -150,8 +150,7 @@ void CameraSession::infoConfiguration() const
 				  << std::endl;
 
 			for (const Size &size : formats.sizes(pixelformat))
-				std::cout << "  - " << size.toString()
-					  << std::endl;
+				std::cout << "  - " << size << std::endl;
 		}
 
 		index++;

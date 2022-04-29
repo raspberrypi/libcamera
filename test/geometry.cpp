@@ -25,9 +25,7 @@ protected:
 		bool result = op(lhs, rhs);
 
 		if (result != expect) {
-			cout << lhs.toString()
-			     << opName << " "
-			     << rhs.toString()
+			cout << lhs << opName << " " << rhs
 			     << "test failed" << std::endl;
 			return false;
 		}

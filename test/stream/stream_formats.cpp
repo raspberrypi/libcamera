@@ -40,10 +40,10 @@ protected:
 			cout << "Failed " << name << endl;
 			cout << "Sizes to test:" << endl;
 			for (Size &size : test)
-				cout << size.toString() << endl;
+				cout << size << endl;
 			cout << "Valid sizes:" << endl;
 			for (Size &size : valid)
-				cout << size.toString() << endl;
+				cout << size << endl;
 
 			return TestFail;
 		}

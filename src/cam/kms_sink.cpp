@@ -119,9 +119,7 @@ int KMSSink::configure(const libcamera::CameraConfiguration &config)
 						      mode.vdisplay == cfg.size.height;
 				       });
 	if (iter == modes.end()) {
-		std::cerr
-			<< "No mode matching " << cfg.size.toString()
-			<< std::endl;
+		std::cerr << "No mode matching " << cfg.size << std::endl;
 		return -EINVAL;
 	}
 

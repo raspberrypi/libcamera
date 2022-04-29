@@ -34,8 +34,8 @@ int PostProcessorYuv::configure(const StreamConfiguration &inCfg,
 
 	if (inCfg.size < outCfg.size) {
 		LOG(YUV, Error) << "Up-scaling is not supported"
-				<< " (from " << inCfg.size.toString()
-				<< " to " << outCfg.size.toString() << ")";
+				<< " (from " << inCfg.size
+				<< " to " << outCfg.size << ")";
 		return -EINVAL;
 	}
 

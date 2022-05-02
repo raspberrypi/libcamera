@@ -81,6 +81,10 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 		{ formats::UYVY, "UYVY 4:2:2" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_VYUY),
 		{ formats::VYUY, "VYUY 4:2:2" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUVA32),
+		{ formats::AVUY8888, "32-bit YUVA 8-8-8-8" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YUVX32),
+		{ formats::XVUY8888, "32-bit YUVX 8-8-8-8" } },
 
 	/* YUV planar formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_NV16),

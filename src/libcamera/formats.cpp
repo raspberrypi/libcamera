@@ -312,6 +312,26 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 2,
 		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::AVUY8888, {
+		.name = "AVUY8888",
+		.format = formats::AVUY8888,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_YUVA32), },
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::XVUY8888, {
+		.name = "XVUY8888",
+		.format = formats::XVUY8888,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_YUVX32), },
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* YUV planar formats. */
 	{ formats::NV12, {

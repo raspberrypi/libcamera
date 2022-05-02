@@ -49,6 +49,10 @@ formats:
       fourcc: DRM_FORMAT_UYVY
   - VYUY:
       fourcc: DRM_FORMAT_VYUY
+  - AVUY8888:
+      fourcc: DRM_FORMAT_AVUY8888
+  - XVUY8888:
+      fourcc: DRM_FORMAT_XVUY8888
 
   - NV12:
       fourcc: DRM_FORMAT_NV12

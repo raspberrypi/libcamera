@@ -495,6 +495,32 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 2,
 		.planes = {{ { 2, 1 }, { 1, 1 }, { 1, 1 } }},
 	} },
+	{ formats::YUV444, {
+		.name = "YUV444",
+		.format = formats::YUV444,
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_YUV444M),
+		},
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 1, 1 }, { 1, 1 } }},
+	} },
+	{ formats::YVU444, {
+		.name = "YVU444",
+		.format = formats::YVU444,
+		.v4l2Formats = {
+			.single = V4L2PixelFormat(),
+			.multi = V4L2PixelFormat(V4L2_PIX_FMT_YVU444M),
+		},
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 1, 1 }, { 1, 1 } }},
+	} },
 
 	/* Greyscale formats. */
 	{ formats::R8, {

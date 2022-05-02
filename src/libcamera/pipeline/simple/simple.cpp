@@ -939,7 +939,8 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	    captureFormat.size != pipeConfig->captureSize) {
 		LOG(SimplePipeline, Error)
 			<< "Unable to configure capture in "
-			<< pipeConfig->captureSize << "-" << videoFormat;
+			<< pipeConfig->captureSize << "-" << videoFormat
+			<< " (got " << captureFormat << ")";
 		return -EINVAL;
 	}
 

@@ -75,7 +75,7 @@ Prerequisite knowledge: libcamera architecture
 ----------------------------------------------
 
 A pipeline handler makes use of the following libcamera classes to realize the
-functionalities descibed above. Below is a brief overview of each of those:
+functionalities described above. Below is a brief overview of each of those:
 
 .. TODO: (All) Convert to sphinx refs
 .. TODO: (MediaDevice) Reference to the Media Device API (possibly with versioning requirements)
@@ -405,7 +405,7 @@ Creating camera devices
 If the pipeline handler successfully matches with the system it is running on,
 it can proceed to initialization, by creating all the required instances of the
 ``V4L2VideoDevice``, ``V4L2Subdevice`` and ``CameraSensor`` hardware abstraction
-classes. If the Pipeline handler supports an ISP, it can then also Initialise
+classes. If the Pipeline handler supports an ISP, it can then also initialise
 the IPA module before proceeding to the creation of the Camera devices.
 
 An image ``Stream`` represents a sequence of images and data of known size and
@@ -687,8 +687,8 @@ and validated to adjust it to a supported configuration. This may involve
 adjusting the formats or image sizes or alignments for example to match the
 capabilities of the device.
 
-Applications may choose to repeat validation stages, adjusting paramters until a
-set of validated StreamConfigurations are returned that is acceptable for the
+Applications may choose to repeat validation stages, adjusting parameters until
+a set of validated StreamConfigurations are returned that is acceptable for the
 applications needs. When the pipeline handler receives a valid camera
 configuration it can use the image stream configurations to apply settings to
 the hardware devices.
@@ -765,15 +765,16 @@ example (with only one stream), the pipeline handler always returns the same
 configuration, inferred from the underlying V4L2VideoDevice.
 
 How it does this is shown below, but examination of the more full-featured
-pipelines for IPU3, RKISP1 and RaspberryPi are recommend to explore more
+pipelines for IPU3, RKISP1 and RaspberryPi are recommended to explore more
 complex examples.
 
 To generate a ``StreamConfiguration``, you need a list of pixel formats and
-frame sizes which supported outputs of the stream. You can fetch a map of the
-``V4LPixelFormat`` and ``SizeRange`` supported by the underlying output device,
-but the pipeline handler needs to convert this to a ``libcamera::PixelFormat``
-type to pass to applications. We do this here using ``std::transform`` to
-convert the formats and populate a new ``PixelFormat`` map as shown below.
+frame sizes which are supported as outputs of the stream. You can fetch a map of
+the ``V4LPixelFormat`` and ``SizeRange`` supported by the underlying output
+device, but the pipeline handler needs to convert this to a
+``libcamera::PixelFormat`` type to pass to applications. We do this here using
+``std::transform`` to convert the formats and populate a new ``PixelFormat`` map
+as shown below.
 
 Continue adding the following code example to our ``generateConfiguration``
 implementation.
@@ -811,8 +812,8 @@ Continue adding the following code to support this:
    StreamConfiguration cfg(formats);
 
 As well as a list of supported StreamFormats, the StreamConfiguration is also
-expected to provide an initialsed default configuration. This may be arbitrary,
-but depending on use case you may which to select an output that matches the
+expected to provide an initialised default configuration. This may be arbitrary,
+but depending on use case you may wish to select an output that matches the
 Sensor output, or prefer a pixelformat which might provide higher performance on
 the hardware. The bufferCount represents the number of buffers required to
 support functional continuous processing on this stream.
@@ -826,7 +827,7 @@ support functional continuous processing on this stream.
 Finally add each ``StreamConfiguration`` generated to the
 ``CameraConfiguration``, and ensure that it has been validated before returning
 it to the application. With only a single supported stream, this code adds only
-a single StreamConfiguration however a StreamConfiguration should be added for
+a single StreamConfiguration. However a StreamConfiguration should be added for
 each supported role in a device that can handle more streams.
 
 Add the following code to complete the implementation of
@@ -841,7 +842,7 @@ Add the following code to complete the implementation of
    return config;
 
 To validate a camera configuration, a pipeline handler must implement the
-`CameraConfiguration::validate()`_ function in it's derived class to inspect all
+`CameraConfiguration::validate()`_ function in its derived class to inspect all
 the stream configuration associated to it, make any adjustments required to make
 the configuration valid, and return the validation status.
 
@@ -1372,9 +1373,9 @@ classes documentation.
 .. _libcamera Signal and Slot: http://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
 
 In order to notify applications about the availability of new frames and data,
-the ``Camera`` device exposes two ``Signals`` which applications can connect to
-be notified of frame completion events. The ``bufferComplete`` signal serves to
-report to applications the completion event of a single ``Stream`` part of a
+the ``Camera`` device exposes two ``Signals`` to which applications can connect
+to be notified of frame completion events. The ``bufferComplete`` signal serves
+to report to applications the completion event of a single ``Stream`` part of a
 ``Request``, while the ``requestComplete`` signal notifies the completion of all
 the ``Streams`` and data submitted as part of a request. This mechanism allows
 implementation of partial request completion, which allows an application to

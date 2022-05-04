@@ -221,7 +221,7 @@ Camera Device
   of producing one or more image streams, and provides the API to interact with
   the underlying device.
 
-  If a system has multiple instances of the same hardware attached, each has it's
+  If a system has multiple instances of the same hardware attached, each has its
   own instance of the camera class.
 
   The API exposes full control of the device to upper layers of libcamera through

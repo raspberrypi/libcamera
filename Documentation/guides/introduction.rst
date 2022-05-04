@@ -214,7 +214,7 @@ Camera Manager
 
   Read the `Camera Manager API`_ documentation for more details.
 
-.. _Camera Manager API: http://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
+.. _Camera Manager API: https://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
 
 Camera Device
   The Camera class represents a single item of camera hardware that is capable
@@ -231,7 +231,7 @@ Camera Device
 
   Read the `Camera API`_ documentation for more details.
 
-..  _Camera API: http://libcamera.org/api-html/classlibcamera_1_1Camera.html
+.. _Camera API: https://libcamera.org/api-html/classlibcamera_1_1Camera.html
 
 Pipeline Handler
   The Pipeline Handler manages the complex pipelines exposed by the kernel
@@ -254,7 +254,7 @@ Pipeline Handler
   More details can be found in the `PipelineHandler API`_ documentation, and the
   `Pipeline Handler Writers Guide`_.
 
-.. _PipelineHandler API: http://libcamera.org/api-html/classlibcamera_1_1PipelineHandler.html
+.. _PipelineHandler API: https://libcamera.org/api-html/classlibcamera_1_1PipelineHandler.html
 
 Image Processing Algorithms
   An image processing algorithm (IPA) component is a loadable plugin that

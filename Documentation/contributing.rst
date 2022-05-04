@@ -56,8 +56,8 @@ Documentation
 Project documentation is created using `Sphinx`_.  Source level documentation
 uses `Doxygen`_.  Please make sure to document all code during development.
 
-.. _Sphinx: http://www.sphinx-doc.org
-.. _Doxygen: http://www.doxygen.nl
+.. _Sphinx: https://www.sphinx-doc.org
+.. _Doxygen: https://www.doxygen.nl
 
 Submitting Patches
 ------------------

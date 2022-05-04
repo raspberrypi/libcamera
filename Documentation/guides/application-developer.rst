@@ -49,7 +49,7 @@ abstracts and manages the complex pipelines that kernel drivers expose through
 the `Linux Media Controller`_ and `Video for Linux`_ (V4L2) APIs, meaning that
 an application doesn't need to handle device or driver specific details.
 
-.. _CameraManager: http://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
+.. _CameraManager: https://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
 .. _Linux Media Controller: https://www.kernel.org/doc/html/latest/media/uapi/mediactl/media-controller-intro.html
 .. _Video for Linux: https://www.linuxtv.org/docs.php
 
@@ -207,7 +207,7 @@ supported values.
 The ``validate`` function returns a `Status`_ which applications shall check to
 see if the Pipeline Handler adjusted the configuration.
 
-.. _Status: http://libcamera.org/api-html/classlibcamera_1_1CameraConfiguration.html#a64163f21db2fe1ce0a6af5a6f6847744
+.. _Status: https://libcamera.org/api-html/classlibcamera_1_1CameraConfiguration.html#a64163f21db2fe1ce0a6af5a6f6847744
 
 For example, the code above set the width and height to 640x480, but if the
 camera cannot produce an image that large, it might adjust the configuration to
@@ -345,7 +345,7 @@ Event handling and callbacks
 The libcamera library uses the concept of `signals and slots` (similar to `Qt
 Signals and Slots`_) to connect events with callbacks to handle them.
 
-.. _signals and slots: http://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
+.. _signals and slots: https://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
 .. _Qt Signals and Slots: https://doc.qt.io/qt-5/signalsandslots.html
 
 The ``Camera`` device emits two signals that applications can connect to in
@@ -418,7 +418,7 @@ in this request, and access the metadata associated to each frame.
 The metadata buffer contains information such the capture status, a timestamp,
 and the bytes used, as described in the `FrameMetadata`_ documentation.
 
-.. _FrameMetaData: http://libcamera.org/api-html/structlibcamera_1_1FrameMetadata.html
+.. _FrameMetaData: https://libcamera.org/api-html/structlibcamera_1_1FrameMetadata.html
 
 .. code:: cpp
 

@@ -47,7 +47,7 @@ runs for the life of the application. When the Camera Manager starts, it
 enumerates all the cameras detected in the system. Behind the scenes, libcamera
 abstracts and manages the complex pipelines that kernel drivers expose through
 the `Linux Media Controller`_ and `Video for Linux`_ (V4L2) APIs, meaning that
-an application doesn’t need to handle device or driver specific details.
+an application doesn't need to handle device or driver specific details.
 
 .. _CameraManager: http://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
 .. _Linux Media Controller: https://www.kernel.org/doc/html/latest/media/uapi/mediactl/media-controller-intro.html
@@ -236,8 +236,8 @@ applied to the system.
 
    camera->configure(config.get());
 
-If an application doesn’t first validate the configuration before calling
-``Camera::configure()``, there’s a chance that calling the function can fail, if
+If an application doesn't first validate the configuration before calling
+``Camera::configure()``, there's a chance that calling the function can fail, if
 the given configuration would have to be adjusted.
 
 Allocate FrameBuffers
@@ -259,7 +259,7 @@ of suitable buffers, for instance, when no other device is involved, or on Linux
 platforms that lack a centralized allocator. The ``FrameBufferAllocator`` class
 provides a buffer allocator an application can use in these situations.
 
-An application doesn’t have to use the default ``FrameBufferAllocator`` that
+An application doesn't have to use the default ``FrameBufferAllocator`` that
 libcamera provides. It can instead allocate memory manually and pass the buffers
 in ``Request``\s (read more about ``Request`` in `the frame capture section
 <#frame-capture>`_ of this guide). The example in this guide covers using the
@@ -392,7 +392,7 @@ Create the ``requestComplete`` function by matching the slot signature:
 
 Request completion events can be emitted for requests which have been canceled,
 for example, by unexpected application shutdown. To avoid an application
-processing invalid image data, it’s worth checking that the request has
+processing invalid image data, it's worth checking that the request has
 completed successfully. The list of request completion statuses is available in
 the `Request::Status`_ class enum documentation.
 

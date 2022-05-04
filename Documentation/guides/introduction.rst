@@ -150,7 +150,7 @@ Architecture
 ------------
 
 While offering a unified API towards upper layers, and presenting itself as a
-single library, libcamera isn’t monolithic. It exposes multiple components
+single library, libcamera isn't monolithic. It exposes multiple components
 through its public API and is built around a set of separate helpers internally.
 Hardware abstractions are handled through the use of device-specific components
 where required and dynamically loadable plugins are used to separate image

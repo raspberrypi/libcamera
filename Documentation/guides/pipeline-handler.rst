@@ -1036,8 +1036,8 @@ values. Handling of device controls is again performed using the libcamera
 .. _Controls Framework: http://libcamera.org/api-html/controls_8h.html
 
 This section is particularly specific to Vivid as it sets the initial values of
-controls to match `Vivid Controls`_ defined by the kernel driver. You won’t need
-any of the code below for your pipeline handler, but it’s included as an example
+controls to match `Vivid Controls`_ defined by the kernel driver. You won't need
+any of the code below for your pipeline handler, but it's included as an example
 of how to implement functionality your pipeline handler might need.
 
 .. _Vivid Controls: https://www.kernel.org/doc/html/latest/admin-guide/media/vivid.html#controls

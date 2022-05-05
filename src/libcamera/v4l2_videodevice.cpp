@@ -1662,8 +1662,11 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 		return ret;
 	}
 
-	if (queuedBuffers_.empty())
+	if (queuedBuffers_.empty()) {
 		fdBufferNotifier_->setEnabled(true);
+		if (watchdogDuration_)
+			watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
+	}
 
 	queuedBuffers_[buf.index] = buffer;
 
@@ -1742,16 +1745,21 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		return nullptr;
 	}
 
-	if (watchdogDuration_.count())
-		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
-
 	cache_->put(buf.index);
 
 	FrameBuffer *buffer = it->second;
 	queuedBuffers_.erase(it);
 
-	if (queuedBuffers_.empty())
+	if (queuedBuffers_.empty()) {
 		fdBufferNotifier_->setEnabled(false);
+		watchdog_.stop();
+	} else if (watchdogDuration_) {
+		/*
+		 * Restart the watchdog timer if there are buffers still queued
+		 * in the device.
+		 */
+		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
+	}
 
 	buffer->metadata_.status = buf.flags & V4L2_BUF_FLAG_ERROR
 				 ? FrameMetadata::FrameError
@@ -1847,7 +1855,7 @@ int V4L2VideoDevice::streamOn()
 	}
 
 	state_ = State::Streaming;
-	if (watchdogDuration_.count())
+	if (watchdogDuration_ && !queuedBuffers_.empty())
 		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
 
 	return 0;
@@ -1924,7 +1932,7 @@ void V4L2VideoDevice::setDequeueTimeout(utils::Duration timeout)
 	watchdogDuration_ = timeout;
 
 	watchdog_.stop();
-	if (watchdogDuration_.count() && state_ == State::Streaming)
+	if (watchdogDuration_ && state_ == State::Streaming && !queuedBuffers_.empty())
 		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(timeout));
 }
 

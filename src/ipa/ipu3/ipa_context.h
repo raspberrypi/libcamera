@@ -42,7 +42,7 @@ struct IPASessionConfiguration {
 	} sensor;
 };
 
-struct IPAFrameContext {
+struct IPAActiveState {
 	struct {
 		uint32_t focus;
 		double maxVariance;
@@ -65,18 +65,22 @@ struct IPAFrameContext {
 	} awb;
 
 	struct {
-		uint32_t exposure;
-		double gain;
-	} sensor;
-
-	struct {
 		double gamma;
 		struct ipu3_uapi_gamma_corr_lut gammaCorrection;
 	} toneMapping;
 };
 
+struct IPAFrameContext {
+	struct {
+		uint32_t exposure;
+		double gain;
+	} sensor;
+};
+
 struct IPAContext {
 	IPASessionConfiguration configuration;
+	IPAActiveState activeState;
+
 	IPAFrameContext frameContext;
 };
 

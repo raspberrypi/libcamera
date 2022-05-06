@@ -25,18 +25,30 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
+ * \struct IPAActiveState
+ * \brief The active state of the IPA algorithms
+ *
+ * The IPA is fed with the statistics generated from the latest frame captured
+ * by the hardware. The statistics are then processed by the IPA algorithms to
+ * compute ISP parameters required for the next frame capture. The current state
+ * of the algorithms is reflected through the IPAActiveState to store the values
+ * most recently computed by the IPA algorithms.
+ */
+
+/**
  * \struct IPAFrameContext
- * \brief Per-frame context for algorithms
+ * \brief Context for a frame
  *
  * The frame context stores data specific to a single frame processed by the
  * IPA. Each frame processed by the IPA has a context associated with it,
  * accessible through the IPAContext structure.
  *
- * \todo Detail how to access contexts for a particular frame
- *
- * Each of the fields in the frame context belongs to either a specific
- * algorithm, or to the top-level IPA module. A field may be read by any
- * algorithm, but should only be written by its owner.
+ * Fields in the frame context should reflect values and controls
+ * associated with the specific frame as requested by the application, and
+ * as configured by the hardware. Fields can be read by algorithms to
+ * determine if they should update any specific action for this frame, and
+ * finally to update the metadata control lists when the frame is fully
+ * completed.
  */
 
 /**
@@ -49,10 +61,10 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAContext::frameContext
  * \brief The frame context for the frame being processed
  *
- * \todo While the frame context is supposed to be per-frame, this
- * single frame context stores data related to both the current frame
- * and the previous frames, with fields being updated as the algorithms
- * are run. This needs to be turned into real per-frame data storage.
+ * \var IPAContext::activeState
+ * \brief The current state of IPA algorithms
+ *
+ * \todo The frame context needs to be turned into real per-frame data storage.
  */
 
 /**
@@ -78,17 +90,17 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \var IPAFrameContext::af
+ * \var IPAActiveState::af
  * \brief Context for the Automatic Focus algorithm
  *
- * \struct  IPAFrameContext::af
- * \var IPAFrameContext::af.focus
+ * \struct IPAActiveState::af
+ * \var IPAActiveState::af.focus
  * \brief Current position of the lens
  *
- * \var IPAFrameContext::af.maxVariance
+ * \var IPAActiveState::af.maxVariance
  * \brief The maximum variance of the current image.
  *
- * \var IPAFrameContext::af.stable
+ * \var IPAActiveState::af.stable
  * \brief It is set to true, if the best focus is found.
  */
 
@@ -121,64 +133,64 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \var IPAFrameContext::agc
+ * \var IPAActiveState::agc
  * \brief Context for the Automatic Gain Control algorithm
  *
  * The exposure and gain determined are expected to be applied to the sensor
  * at the earliest opportunity.
  *
- * \var IPAFrameContext::agc.exposure
+ * \var IPAActiveState::agc.exposure
  * \brief Exposure time expressed as a number of lines
  *
- * \var IPAFrameContext::agc.gain
+ * \var IPAActiveState::agc.gain
  * \brief Analogue gain multiplier
  *
  * The gain should be adapted to the sensor specific gain code before applying.
  */
 
 /**
- * \var IPAFrameContext::awb
+ * \var IPAActiveState::awb
  * \brief Context for the Automatic White Balance algorithm
  *
- * \struct IPAFrameContext::awb.gains
+ * \struct IPAActiveState::awb.gains
  * \brief White balance gains
  *
- * \var IPAFrameContext::awb.gains.red
+ * \var IPAActiveState::awb.gains.red
  * \brief White balance gain for R channel
  *
- * \var IPAFrameContext::awb.gains.green
+ * \var IPAActiveState::awb.gains.green
  * \brief White balance gain for G channel
  *
- * \var IPAFrameContext::awb.gains.blue
+ * \var IPAActiveState::awb.gains.blue
  * \brief White balance gain for B channel
  *
- * \var IPAFrameContext::awb.temperatureK
+ * \var IPAActiveState::awb.temperatureK
  * \brief Estimated color temperature
  */
 
 /**
+ * \var IPAActiveState::toneMapping
+ * \brief Context for ToneMapping and Gamma control
+ *
+ * \var IPAActiveState::toneMapping.gamma
+ * \brief Gamma value for the LUT
+ *
+ * \var IPAActiveState::toneMapping.gammaCorrection
+ * \brief Per-pixel tone mapping implemented as a LUT
+ *
+ * The LUT structure is defined by the IPU3 kernel interface. See
+ * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
+ */
+
+/**
  * \var IPAFrameContext::sensor
- * \brief Effective sensor values
+ * \brief Effective sensor values that were applied for the frame
  *
  * \var IPAFrameContext::sensor.exposure
  * \brief Exposure time expressed as a number of lines
  *
  * \var IPAFrameContext::sensor.gain
  * \brief Analogue gain multiplier
- */
-
-/**
- * \var IPAFrameContext::toneMapping
- * \brief Context for ToneMapping and Gamma control
- *
- * \var IPAFrameContext::toneMapping.gamma
- * \brief Gamma value for the LUT
- *
- * \var IPAFrameContext::toneMapping.gammaCorrection
- * \brief Per-pixel tone mapping implemented as a LUT
- *
- * The LUT structure is defined by the IPU3 kernel interface. See
- * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
  */
 
 } /* namespace libcamera::ipa::ipu3 */

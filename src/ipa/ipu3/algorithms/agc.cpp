@@ -87,7 +87,7 @@ int Agc::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	const IPASessionConfiguration &configuration = context.configuration;
-	IPAFrameContext &frameContext = context.frameContext;
+	IPAActiveState &activeState = context.activeState;
 
 	stride_ = configuration.grid.stride;
 
@@ -99,8 +99,8 @@ int Agc::configure(IPAContext &context,
 	maxAnalogueGain_ = std::min(configuration.agc.maxAnalogueGain, kMaxAnalogueGain);
 
 	/* Configure the default exposure and gain. */
-	frameContext.agc.gain = std::max(minAnalogueGain_, kMinAnalogueGain);
-	frameContext.agc.exposure = 10ms / configuration.sensor.lineDuration;
+	activeState.agc.gain = std::max(minAnalogueGain_, kMinAnalogueGain);
+	activeState.agc.exposure = 10ms / configuration.sensor.lineDuration;
 
 	frameCount_ = 0;
 	return 0;
@@ -249,9 +249,10 @@ void Agc::computeExposure(IPAContext &context, double yGain,
 			    << shutterTime << " and "
 			    << stepGain;
 
+	IPAActiveState &activeState = context.activeState;
 	/* Update the estimated exposure and gain. */
-	frameContext.agc.exposure = shutterTime / configuration.sensor.lineDuration;
-	frameContext.agc.gain = stepGain;
+	activeState.agc.exposure = shutterTime / configuration.sensor.lineDuration;
+	activeState.agc.gain = stepGain;
 }
 
 /**
@@ -279,7 +280,7 @@ void Agc::computeExposure(IPAContext &context, double yGain,
  * More detailed information can be found in:
  * https://en.wikipedia.org/wiki/Relative_luminance
  */
-double Agc::estimateLuminance(IPAFrameContext &frameContext,
+double Agc::estimateLuminance(IPAActiveState &activeState,
 			      const ipu3_uapi_grid_config &grid,
 			      const ipu3_uapi_stats_3a *stats,
 			      double gain)
@@ -307,9 +308,9 @@ double Agc::estimateLuminance(IPAFrameContext &frameContext,
 	 * Apply the AWB gains to approximate colours correctly, use the Rec.
 	 * 601 formula to calculate the relative luminance, and normalize it.
 	 */
-	double ySum = redSum * frameContext.awb.gains.red * 0.299
-		    + greenSum * frameContext.awb.gains.green * 0.587
-		    + blueSum * frameContext.awb.gains.blue * 0.114;
+	double ySum = redSum * activeState.awb.gains.red * 0.299
+		    + greenSum * activeState.awb.gains.green * 0.587
+		    + blueSum * activeState.awb.gains.blue * 0.114;
 
 	return ySum / (grid.height * grid.width) / 255;
 }
@@ -344,7 +345,7 @@ void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	double yTarget = kRelativeLuminanceTarget;
 
 	for (unsigned int i = 0; i < 8; i++) {
-		double yValue = estimateLuminance(context.frameContext,
+		double yValue = estimateLuminance(context.activeState,
 						  context.configuration.grid.bdsGrid,
 						  stats, yGain);
 		double extraGain = std::min(10.0, yTarget / (yValue + .001));

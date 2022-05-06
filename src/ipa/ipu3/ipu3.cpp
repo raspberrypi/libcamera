@@ -454,7 +454,8 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
-	/* Clean frameContext at each reconfiguration. */
+	/* Clean IPAActiveState at each reconfiguration. */
+	context_.activeState = {};
 	context_.frameContext = {};
 
 	if (!validateSensorControls()) {
@@ -585,7 +586,7 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 
 	ctrls.set(controls::AnalogueGain, context_.frameContext.sensor.gain);
 
-	ctrls.set(controls::ColourTemperature, context_.frameContext.awb.temperatureK);
+	ctrls.set(controls::ColourTemperature, context_.activeState.awb.temperatureK);
 
 	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration);
 
@@ -623,8 +624,8 @@ void IPAIPU3::queueRequest([[maybe_unused]] const uint32_t frame,
  */
 void IPAIPU3::setControls(unsigned int frame)
 {
-	int32_t exposure = context_.frameContext.agc.exposure;
-	int32_t gain = camHelper_->gainCode(context_.frameContext.agc.gain);
+	int32_t exposure = context_.activeState.agc.exposure;
+	int32_t gain = camHelper_->gainCode(context_.activeState.agc.gain);
 
 	ControlList ctrls(sensorCtrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, exposure);
@@ -632,7 +633,7 @@ void IPAIPU3::setControls(unsigned int frame)
 
 	ControlList lensCtrls(lensCtrls_);
 	lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE,
-		      static_cast<int32_t>(context_.frameContext.af.focus));
+		      static_cast<int32_t>(context_.activeState.af.focus));
 
 	setSensorControls.emit(frame, ctrls, lensCtrls);
 }

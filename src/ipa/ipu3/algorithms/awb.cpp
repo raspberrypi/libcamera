@@ -396,10 +396,10 @@ void Awb::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
 	 * The results are cached, so if no results were calculated, we set the
 	 * cached values from asyncResults_ here.
 	 */
-	context.frameContext.awb.gains.blue = asyncResults_.blueGain;
-	context.frameContext.awb.gains.green = asyncResults_.greenGain;
-	context.frameContext.awb.gains.red = asyncResults_.redGain;
-	context.frameContext.awb.temperatureK = asyncResults_.temperatureK;
+	context.activeState.awb.gains.blue = asyncResults_.blueGain;
+	context.activeState.awb.gains.green = asyncResults_.greenGain;
+	context.activeState.awb.gains.red = asyncResults_.redGain;
+	context.activeState.awb.temperatureK = asyncResults_.temperatureK;
 }
 
 constexpr uint16_t Awb::threshold(float value)
@@ -450,10 +450,10 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
 							* params->acc_param.bnr.opt_center.y_reset;
 	/* Convert to u3.13 fixed point values */
-	params->acc_param.bnr.wb_gains.gr = 8192 * context.frameContext.awb.gains.green;
-	params->acc_param.bnr.wb_gains.r  = 8192 * context.frameContext.awb.gains.red;
-	params->acc_param.bnr.wb_gains.b  = 8192 * context.frameContext.awb.gains.blue;
-	params->acc_param.bnr.wb_gains.gb = 8192 * context.frameContext.awb.gains.green;
+	params->acc_param.bnr.wb_gains.gr = 8192 * context.activeState.awb.gains.green;
+	params->acc_param.bnr.wb_gains.r  = 8192 * context.activeState.awb.gains.red;
+	params->acc_param.bnr.wb_gains.b  = 8192 * context.activeState.awb.gains.blue;
+	params->acc_param.bnr.wb_gains.gb = 8192 * context.activeState.awb.gains.green;
 
 	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
 

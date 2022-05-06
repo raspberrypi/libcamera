@@ -36,7 +36,7 @@ private:
 	utils::Duration filterExposure(utils::Duration currentExposure);
 	void computeExposure(IPAContext &context, double yGain,
 			     double iqMeanGain);
-	double estimateLuminance(IPAFrameContext &frameContext,
+	double estimateLuminance(IPAActiveState &activeState,
 				 const ipu3_uapi_grid_config &grid,
 				 const ipu3_uapi_stats_3a *stats,
 				 double gain);

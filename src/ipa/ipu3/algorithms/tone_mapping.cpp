@@ -42,7 +42,7 @@ int ToneMapping::configure(IPAContext &context,
 			   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	/* Initialise tone mapping gamma value. */
-	context.frameContext.toneMapping.gamma = 0.0;
+	context.activeState.toneMapping.gamma = 0.0;
 
 	return 0;
 }
@@ -60,7 +60,7 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 {
 	/* Copy the calculated LUT into the parameters buffer. */
 	memcpy(params->acc_param.gamma.gc_lut.lut,
-	       context.frameContext.toneMapping.gammaCorrection.lut,
+	       context.activeState.toneMapping.gammaCorrection.lut,
 	       IPU3_UAPI_GAMMA_CORR_LUT_ENTRIES *
 	       sizeof(params->acc_param.gamma.gc_lut.lut[0]));
 
@@ -87,11 +87,11 @@ void ToneMapping::process(IPAContext &context,
 	 */
 	gamma_ = 1.1;
 
-	if (context.frameContext.toneMapping.gamma == gamma_)
+	if (context.activeState.toneMapping.gamma == gamma_)
 		return;
 
 	struct ipu3_uapi_gamma_corr_lut &lut =
-		context.frameContext.toneMapping.gammaCorrection;
+		context.activeState.toneMapping.gammaCorrection;
 
 	for (uint32_t i = 0; i < std::size(lut.lut); i++) {
 		double j = static_cast<double>(i) / (std::size(lut.lut) - 1);
@@ -101,7 +101,7 @@ void ToneMapping::process(IPAContext &context,
 		lut.lut[i] = gamma * 8191;
 	}
 
-	context.frameContext.toneMapping.gamma = gamma_;
+	context.activeState.toneMapping.gamma = gamma_;
 }
 
 } /* namespace ipa::ipu3::algorithms */

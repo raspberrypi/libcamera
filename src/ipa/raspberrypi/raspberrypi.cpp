@@ -632,9 +632,9 @@ void IPARPi::queueRequest(const ControlList &controls)
 	libcameraMetadata_.clear();
 
 	for (auto const &ctrl : controls) {
-		LOG(IPARPI, Info) << "Request ctrl: "
-				  << controls::controls.at(ctrl.first)->name()
-				  << " = " << ctrl.second.toString();
+		LOG(IPARPI, Debug) << "Request ctrl: "
+				   << controls::controls.at(ctrl.first)->name()
+				   << " = " << ctrl.second.toString();
 
 		switch (ctrl.first) {
 		case controls::AE_ENABLE: {

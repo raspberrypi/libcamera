@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
+ *
+ * Python bindings - Auto-generated enums
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <libcamera/libcamera.h>
+
+#include <pybind11/smart_holder.h>
+
+namespace py = pybind11;
+
+using namespace libcamera;
+
+void init_pyenums_generated(py::module& m)
+{
+${enums}
+}

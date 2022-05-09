@@ -17,6 +17,18 @@ pycamera_sources = files([
     'pymain.cpp',
 ])
 
+gen_input_files = [
+    meson.project_source_root() / 'src' / 'libcamera' / 'control_ids.yaml',
+    'pyenums_generated.cpp.in',
+]
+
+generated_sources = custom_target('py_gen_controls',
+                                  input : gen_input_files,
+                                  output : ['pyenums_generated.cpp'],
+                                  command : ['gen-py-control-enums.py', '-o', '@OUTPUT@', '@INPUT@'])
+
+pycamera_sources += generated_sources
+
 pycamera_deps = [
     libcamera_public,
     py3_dep,

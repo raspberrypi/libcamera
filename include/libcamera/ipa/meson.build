@@ -25,8 +25,8 @@ ipa_mojom_core = custom_target(core_mojom_file.split('.')[0] + '_mojom_module',
                                output : core_mojom_file + '-module',
                                command : [
                                    mojom_parser,
-                                   '--output-root', meson.build_root(),
-                                   '--input-root', meson.source_root(),
+                                   '--output-root', meson.project_build_root(),
+                                   '--input-root', meson.project_source_root(),
                                    '--mojoms', '@INPUT@'
                                ])
 
@@ -89,8 +89,8 @@ foreach file : ipa_mojom_files
                           depends : ipa_mojom_core,
                           command : [
                               mojom_parser,
-                              '--output-root', meson.build_root(),
-                              '--input-root', meson.source_root(),
+                              '--output-root', meson.project_build_root(),
+                              '--input-root', meson.project_source_root(),
                               '--mojoms', '@INPUT@'
                           ])
 

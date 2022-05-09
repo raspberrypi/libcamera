@@ -100,11 +100,11 @@ endforeach
 
 libcamera_sources += control_sources
 
-gen_version = meson.source_root() / 'utils' / 'gen-version.sh'
+gen_version = meson.project_source_root() / 'utils' / 'gen-version.sh'
 
 # Use vcs_tag() and not configure_file() or run_command(), to ensure that the
 # version gets updated with every ninja build and not just at meson setup time.
-version_cpp = vcs_tag(command : [gen_version, meson.build_root(), meson.source_root()],
+version_cpp = vcs_tag(command : [gen_version, meson.project_build_root(), meson.project_source_root()],
                       input : 'version.cpp.in',
                       output : 'version.cpp',
                       fallback : meson.project_version())

@@ -17,8 +17,8 @@ project('libcamera', 'c', 'cpp',
 # git version tag, the build metadata (e.g. +211-c94a24f4) is omitted from
 # libcamera_git_version.
 libcamera_git_version = run_command('utils/gen-version.sh',
-                                    meson.build_root(),
-                                    meson.source_root()).stdout().strip()
+                                    meson.project_build_root(),
+                                    meson.project_source_root()).stdout().strip()
 if libcamera_git_version == ''
     libcamera_git_version = meson.project_version()
 endif
@@ -160,7 +160,7 @@ endif
 # Create a symlink from the build root to the source root. This is used when
 # running libcamera from the build directory to locate resources in the source
 # directory (such as IPA configuration files).
-run_command('ln', '-fsT', meson.source_root(), meson.build_root() / 'source')
+run_command('ln', '-fsT', meson.project_source_root(), meson.project_build_root() / 'source')
 
 configure_file(output : 'config.h', configuration : config_h)
 

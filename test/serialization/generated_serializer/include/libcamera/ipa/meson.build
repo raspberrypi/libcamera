@@ -6,8 +6,8 @@ mojom = custom_target('test_mojom_module',
                       output : 'test.mojom-module',
                       command : [
                           mojom_parser,
-                          '--output-root', meson.build_root(),
-                          '--input-root', meson.source_root(),
+                          '--output-root', meson.project_build_root(),
+                          '--input-root', meson.project_source_root(),
                           '--mojoms', '@INPUT@'
                       ])
 

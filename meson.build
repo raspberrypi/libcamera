@@ -18,7 +18,8 @@ project('libcamera', 'c', 'cpp',
 # libcamera_git_version.
 libcamera_git_version = run_command('utils/gen-version.sh',
                                     meson.project_build_root(),
-                                    meson.project_source_root()).stdout().strip()
+                                    meson.project_source_root(),
+                                    check: false).stdout().strip()
 if libcamera_git_version == ''
     libcamera_git_version = meson.project_version()
 endif
@@ -148,7 +149,7 @@ subdir('test')
 
 if not meson.is_cross_build()
     kernel_version_req = '>= 5.0.0'
-    kernel_version = run_command('uname', '-r').stdout().strip()
+    kernel_version = run_command('uname', '-r', check: true).stdout().strip()
     if not kernel_version.version_compare(kernel_version_req)
         warning('The current running kernel version @0@ is too old to run libcamera.'
                 .format(kernel_version))
@@ -160,7 +161,8 @@ endif
 # Create a symlink from the build root to the source root. This is used when
 # running libcamera from the build directory to locate resources in the source
 # directory (such as IPA configuration files).
-run_command('ln', '-fsT', meson.project_source_root(), meson.project_build_root() / 'source')
+run_command('ln', '-fsT', meson.project_source_root(), meson.project_build_root() / 'source',
+            check: true)
 
 configure_file(output : 'config.h', configuration : config_h)
 

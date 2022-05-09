@@ -1,11 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('libcamera', 'c', 'cpp',
-    # Use of the Android component requires meson 0.55, but Ubuntu 20.04 LTS
-    # ships meson 0.53. Improve the Ubuntu experience at the expense of
-    # Android as the former is a much more common use case than the latter at
-    # this point. This should be fixed after Ubuntu releases 22.04 LTS.
-    meson_version : '>= 0.53',
+    meson_version : '>= 0.56',
     version : '0.0.0',
     default_options : [
         'werror=true',

@@ -22,10 +22,12 @@ gen_input_files = [
     'pyenums_generated.cpp.in',
 ]
 
+gen_py_control_enums = files('gen-py-control-enums.py')
+
 generated_sources = custom_target('py_gen_controls',
                                   input : gen_input_files,
                                   output : ['pyenums_generated.cpp'],
-                                  command : ['gen-py-control-enums.py', '-o', '@OUTPUT@', '@INPUT@'])
+                                  command : [gen_py_control_enums, '-o', '@OUTPUT@', '@INPUT@'])
 
 pycamera_sources += generated_sources
 

@@ -51,7 +51,7 @@ struct RequestWrap {
 	RequestWrap(std::unique_ptr<Request> request);
 	~RequestWrap();
 
-	void attachBuffer(GstBuffer *buffer);
+	void attachBuffer(Stream *stream, GstBuffer *buffer);
 	GstBuffer *detachBuffer(Stream *stream);
 
 	std::unique_ptr<Request> request_;
@@ -71,10 +71,9 @@ RequestWrap::~RequestWrap()
 	}
 }
 
-void RequestWrap::attachBuffer(GstBuffer *buffer)
+void RequestWrap::attachBuffer(Stream *stream, GstBuffer *buffer)
 {
 	FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
-	Stream *stream = gst_libcamera_buffer_get_stream(buffer);
 
 	request_->addBuffer(stream, fb);
 
@@ -275,6 +274,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 		std::make_unique<RequestWrap>(std::move(request));
 
 	for (GstPad *srcpad : state->srcpads_) {
+		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
 		GstBuffer *buffer;
 		GstFlowReturn ret;
@@ -290,7 +290,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 			break;
 		}
 
-		wrap->attachBuffer(buffer);
+		wrap->attachBuffer(stream, buffer);
 	}
 
 	if (wrap) {

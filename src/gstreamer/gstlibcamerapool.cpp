@@ -134,13 +134,6 @@ gst_libcamera_pool_get_stream(GstLibcameraPool *self)
 	return self->stream;
 }
 
-Stream *
-gst_libcamera_buffer_get_stream(GstBuffer *buffer)
-{
-	auto *self = (GstLibcameraPool *)buffer->pool;
-	return self->stream;
-}
-
 FrameBuffer *
 gst_libcamera_buffer_get_frame_buffer(GstBuffer *buffer)
 {

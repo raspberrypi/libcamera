@@ -66,8 +66,8 @@ public:
 	Request *request() const;
 	const FrameMetadata &metadata() const { return metadata_; }
 
-	unsigned int cookie() const { return cookie_; }
-	void setCookie(unsigned int cookie) { cookie_ = cookie; }
+	uint64_t cookie() const { return cookie_; }
+	void setCookie(uint64_t cookie) { cookie_ = cookie; }
 
 	std::unique_ptr<Fence> releaseFence();
 
@@ -80,7 +80,7 @@ private:
 
 	FrameMetadata metadata_;
 
-	unsigned int cookie_;
+	uint64_t cookie_;
 };
 
 } /* namespace libcamera */

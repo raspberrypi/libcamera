@@ -165,10 +165,9 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		return;
 	}
 
-	GstBuffer *buffer;
 	for (GstPad *srcpad : srcpads_) {
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
-		buffer = wrap->detachBuffer(stream);
+		GstBuffer *buffer = wrap->detachBuffer(stream);
 
 		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
 

@@ -30,6 +30,11 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Awb)
 
+Awb::Awb()
+	: rgbMode_(false)
+{
+}
+
 /**
  * \copydoc libcamera::ipa::Algorithm::configure
  */
@@ -98,38 +103,60 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 	/* Update the gains. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
 
-	/* If we already have configured the gains and window, return. */
+	/* If we have already set the AWB measurement parameters, return. */
 	if (frame > 0)
 		return;
 
-	/* Configure the gains to apply. */
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
-	/* Update the ISP to apply the gains configured. */
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
+	rkisp1_cif_isp_awb_meas_config &awb_config = params->meas.awb_meas_config;
 
 	/* Configure the measure window for AWB. */
-	params->meas.awb_meas_config.awb_wnd = context.configuration.awb.measureWindow;
-	/*
-	 * Measure Y, Cr and Cb means.
-	 * \todo RGB is not working, the kernel seems to not configure it ?
-	 */
-	params->meas.awb_meas_config.awb_mode = RKISP1_CIF_ISP_AWB_MODE_YCBCR;
-	/* Reference Cr and Cb. */
-	params->meas.awb_meas_config.awb_ref_cb = 128;
-	params->meas.awb_meas_config.awb_ref_cr = 128;
-	/* Y values to include are between min_y and max_y only. */
-	params->meas.awb_meas_config.min_y = 16;
-	params->meas.awb_meas_config.max_y = 250;
-	/* Maximum Cr+Cb value to take into account for awb. */
-	params->meas.awb_meas_config.max_csum = 250;
-	/* Minimum Cr and Cb values to take into account. */
-	params->meas.awb_meas_config.min_c = 16;
-	/* Number of frames to use to estimate the mean (0 means 1 frame). */
-	params->meas.awb_meas_config.frames = 0;
+	awb_config.awb_wnd = context.configuration.awb.measureWindow;
 
-	/* Update AWB measurement unit configuration. */
+	/* Number of frames to use to estimate the means (0 means 1 frame). */
+	awb_config.frames = 0;
+
+	/* Select RGB or YCbCr means measurement. */
+	if (rgbMode_) {
+		awb_config.awb_mode = RKISP1_CIF_ISP_AWB_MODE_RGB;
+
+		/*
+		 * For RGB-based measurements, pixels are selected with maximum
+		 * red, green and blue thresholds that are set in the
+		 * awb_ref_cr, awb_min_y and awb_ref_cb respectively. The other
+		 * values are not used, set them to 0.
+		 */
+		awb_config.awb_ref_cr = 250;
+		awb_config.min_y = 250;
+		awb_config.awb_ref_cb = 250;
+
+		awb_config.max_y = 0;
+		awb_config.min_c = 0;
+		awb_config.max_csum = 0;
+	} else {
+		awb_config.awb_mode = RKISP1_CIF_ISP_AWB_MODE_YCBCR;
+
+		/* Set the reference Cr and Cb (AWB target) to white. */
+		awb_config.awb_ref_cb = 128;
+		awb_config.awb_ref_cr = 128;
+
+		/*
+		 * Filter out pixels based on luminance and chrominance values.
+		 * The acceptable luma values are specified as a [16, 250]
+		 * range, while the acceptable chroma values are specified with
+		 * a minimum of 16 and a maximum Cb+Cr sum of 250.
+		 */
+		awb_config.min_y = 16;
+		awb_config.max_y = 250;
+		awb_config.min_c = 16;
+		awb_config.max_csum = 250;
+	}
+
+	/* Enable the AWB gains. */
+	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
+	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
+
+	/* Update the AWB measurement parameters and enable the AWB module. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB;
-	/* Make sure the ISP is measuring the means for the next frame. */
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AWB;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB;
 }
@@ -182,30 +209,39 @@ void Awb::process(IPAContext &context,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
 	IPAActiveState &activeState = context.activeState;
+	double greenMean;
+	double redMean;
+	double blueMean;
 
-	/* Get the YCbCr mean values */
-	double yMean = awb->awb_mean[0].mean_y_or_g;
-	double crMean = awb->awb_mean[0].mean_cr_or_r;
-	double cbMean = awb->awb_mean[0].mean_cb_or_b;
+	if (rgbMode_) {
+		greenMean = awb->awb_mean[0].mean_y_or_g;
+		redMean = awb->awb_mean[0].mean_cr_or_r;
+		blueMean = awb->awb_mean[0].mean_cb_or_b;
+	} else {
+		/* Get the YCbCr mean values */
+		double yMean = awb->awb_mean[0].mean_y_or_g;
+		double cbMean = awb->awb_mean[0].mean_cb_or_b;
+		double crMean = awb->awb_mean[0].mean_cr_or_r;
 
-	/*
-	 * Convert from YCbCr to RGB.
-	 * The hardware uses the following formulas:
-	 * Y = 16 + 0.2500 R + 0.5000 G + 0.1094 B
-	 * Cb = 128 - 0.1406 R - 0.2969 G + 0.4375 B
-	 * Cr = 128 + 0.4375 R - 0.3750 G - 0.0625 B
-	 *
-	 * The inverse matrix is thus:
-	 * [[1,1636, -0,0623,  1,6008]
-	 *  [1,1636, -0,4045, -0,7949]
-	 *  [1,1636,  1,9912, -0,0250]]
-	 */
-	yMean -= 16;
-	cbMean -= 128;
-	crMean -= 128;
-	double redMean = 1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean;
-	double greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
-	double blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
+		/*
+		 * Convert from YCbCr to RGB.
+		 * The hardware uses the following formulas:
+		 * Y = 16 + 0.2500 R + 0.5000 G + 0.1094 B
+		 * Cb = 128 - 0.1406 R - 0.2969 G + 0.4375 B
+		 * Cr = 128 + 0.4375 R - 0.3750 G - 0.0625 B
+		 *
+		 * The inverse matrix is thus:
+		 * [[1,1636, -0,0623,  1,6008]
+		 *  [1,1636, -0,4045, -0,7949]
+		 *  [1,1636,  1,9912, -0,0250]]
+		 */
+		yMean -= 16;
+		cbMean -= 128;
+		crMean -= 128;
+		redMean = 1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean;
+		greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
+		blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
+	}
 
 	/*
 	 * The ISP computes the AWB means after applying the colour gains,

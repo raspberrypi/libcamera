@@ -16,7 +16,7 @@ namespace ipa::rkisp1::algorithms {
 class Awb : public Algorithm
 {
 public:
-	Awb() = default;
+	Awb();
 	~Awb() = default;
 
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
@@ -32,6 +32,8 @@ public:
 
 private:
 	uint32_t estimateCCT(double red, double green, double blue);
+
+	bool rgbMode_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

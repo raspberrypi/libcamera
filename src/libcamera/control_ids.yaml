@@ -381,6 +381,307 @@ controls:
         \todo Define how the sensor timestamp has to be used in the reprocessing
         use case.
 
+  - AfMode:
+      type: int32_t
+      description: |
+        Control to set the mode of the AF (autofocus) algorithm.
+
+        An implementation may choose not to implement all the modes.
+
+      enum:
+        - name: AfModeManual
+          value: 0
+          description: |
+            The AF algorithm is in manual mode. In this mode it will never
+            perform any action nor move the lens of its own accord, but an
+            application can specify the desired lens position using the
+            LensPosition control.
+
+            In this mode the AfState will always report AfStateIdle.
+        - name: AfModeAuto
+          value: 1
+          description: |
+            The AF algorithm is in auto mode. This means that the algorithm
+            will never move the lens or change state unless the AfTrigger
+            control is used. The AfTrigger control can be used to initiate a
+            focus scan, the results of which will be reported by AfState.
+
+            If the autofocus algorithm is moved from AfModeAuto to another
+            mode while a scan is in progress, the scan is cancelled
+            immediately, without waiting for the scan to finish.
+
+            When first entering this mode the AfState will report
+            AfStateIdle. When a trigger control is sent, AfState will
+            report AfStateScanning for a period before spontaneously
+            changing to AfStateFocused or AfStateFailed, depending on
+            the outcome of the scan. It will remain in this state until
+            another scan is initiated by the AfTrigger control. If a scan is
+            cancelled (without changing to another mode), AfState will return
+            to AfStateIdle.
+        - name: AfModeContinuous
+          value: 2
+          description: |
+            The AF algorithm is in continuous mode. This means that the lens can
+            re-start a scan spontaneously at any moment, without any user
+            intervention. The AfState still reports whether the algorithm is
+            currently scanning or not, though the application has no ability to
+            initiate or cancel scans, nor to move the lens for itself.
+
+            However, applications can pause the AF algorithm from continuously
+            scanning by using the AfPause control. This allows video or still
+            images to be captured whilst guaranteeing that the focus is fixed.
+
+            When set to AfModeContinuous, the system will immediately initiate a
+            scan so AfState will report AfStateScanning, and will settle on one
+            of AfStateFocused or AfStateFailed, depending on the scan result.
+
+  - AfRange:
+      type: int32_t
+      description: |
+        Control to set the range of focus distances that is scanned. An
+        implementation may choose not to implement all the options here.
+      enum:
+        - name: AfRangeNormal
+          value: 0
+          description: |
+            A wide range of focus distances is scanned, all the way from
+            infinity down to close distances, though depending on the
+            implementation, possibly not including the very closest macro
+            positions.
+        - name: AfRangeMacro
+          value: 1
+          description: Only close distances are scanned.
+        - name: AfRangeFull
+          value: 2
+          description: |
+            The full range of focus distances is scanned just as with
+            AfRangeNormal but this time including the very closest macro
+            positions.
+
+  - AfSpeed:
+      type: int32_t
+      description: |
+        Control that determines whether the AF algorithm is to move the lens
+        as quickly as possible or more steadily. For example, during video
+        recording it may be desirable not to move the lens too abruptly, but
+        when in a preview mode (waiting for a still capture) it may be
+        helpful to move the lens as quickly as is reasonably possible.
+      enum:
+        - name: AfSpeedNormal
+          value: 0
+          description: Move the lens at its usual speed.
+        - name: AfSpeedFast
+          value: 1
+          description: Move the lens more quickly.
+
+  - AfMetering:
+      type: int32_t
+      description: |
+        Instruct the AF algorithm how it should decide which parts of the image
+        should be used to measure focus.
+      enum:
+        - name: AfMeteringAuto
+          value: 0
+          description: The AF algorithm should decide for itself where it will
+            measure focus.
+        - name: AfMeteringWindows
+          value: 1
+          description: The AF algorithm should use the rectangles defined by
+            the AfWindows control to measure focus. If no windows are specified
+            the behaviour is platform dependent.
+
+  - AfWindows:
+      type: Rectangle
+      description: |
+        Sets the focus windows used by the AF algorithm when AfMetering is set
+        to AfMeteringWindows. The units used are pixels within the rectangle
+        returned by the ScalerCropMaximum property.
+
+        In order to be activated, a rectangle must be programmed with non-zero
+        width and height. Internally, these rectangles are intersected with the
+        ScalerCropMaximum rectangle. If the window becomes empty after this
+        operation, then the window is ignored. If all the windows end up being
+        ignored, then the behaviour is platform dependent.
+
+        On platforms that support the ScalerCrop control (for implementing
+        digital zoom, for example), no automatic recalculation or adjustment of
+        AF windows is performed internally if the ScalerCrop is changed. If any
+        window lies outside the output image after the scaler crop has been
+        applied, it is up to the application to recalculate them.
+
+        The details of how the windows are used are platform dependent. We note
+        that when there is more than one AF window, a typical implementation
+        might find the optimal focus position for each one and finally select
+        the window where the focal distance for the objects shown in that part
+        of the image are closest to the camera.
+
+      size: [n]
+
+  - AfTrigger:
+      type: int32_t
+      description: |
+        This control starts an autofocus scan when AfMode is set to AfModeAuto,
+        and can also be used to terminate a scan early.
+
+        It is ignored if AfMode is set to AfModeManual or AfModeContinuous.
+
+      enum:
+        - name: AfTriggerStart
+          value: 0
+          description: Start an AF scan. Ignored if a scan is in progress.
+        - name: AfTriggerCancel
+          value: 1
+          description: Cancel an AF scan. This does not cause the lens to move
+            anywhere else. Ignored if no scan is in progress.
+
+  - AfPause:
+      type: int32_t
+      description: |
+        This control has no effect except when in continuous autofocus mode
+        (AfModeContinuous). It can be used to pause any lens movements while
+        (for example) images are captured. The algorithm remains inactive
+        until it is instructed to resume.
+
+      enum:
+        - name: AfPauseImmediate
+          value: 0
+          description: |
+            Pause the continuous autofocus algorithm immediately, whether or not
+            any kind of scan is underway. AfPauseState will subsequently report
+            AfPauseStatePaused. AfState may report any of AfStateScanning,
+            AfStateFocused or AfStateFailed, depending on the algorithm's state
+            when it received this control.
+        - name: AfPauseDeferred
+          value: 1
+          description: |
+            This is similar to AfPauseImmediate, and if the AfState is currently
+            reporting AfStateFocused or AfStateFailed it will remain in that
+            state and AfPauseState will report AfPauseStatePaused.
+
+            However, if the algorithm is scanning (AfStateScanning),
+            AfPauseState will report AfPauseStatePausing until the scan is
+            finished, at which point AfState will report one of AfStateFocused
+            or AfStateFailed, and AfPauseState will change to
+            AfPauseStatePaused.
+
+        - name: AfPauseResume
+          value: 2
+          description: |
+            Resume continuous autofocus operation. The algorithm starts again
+            from exactly where it left off, and AfPauseState will report
+            AfPauseStateRunning.
+
+  - LensPosition:
+      type: float
+      description: |
+        Acts as a control to instruct the lens to move to a particular position
+        and also reports back the position of the lens for each frame.
+
+        The LensPosition control is ignored unless the AfMode is set to
+        AfModeManual, though the value is reported back unconditionally in all
+        modes.
+
+        The units are a reciprocal distance scale like dioptres but normalised
+        for the hyperfocal distance. That is, for a lens with hyperfocal
+        distance H, and setting it to a focal distance D, the lens position LP,
+        which is generally a non-integer, is given by
+
+        \f$LP = \frac{H}{D}\f$
+
+        For example:
+
+        0 moves the lens to infinity.
+        0.5 moves the lens to twice the hyperfocal distance.
+        1 moves the lens to the hyperfocal position.
+        And larger values will focus the lens ever closer.
+
+        \todo Define a property to report the Hyperforcal distance of calibrated
+        lenses.
+
+        \todo Define a property to report the maximum and minimum positions of
+        this lens. The minimum value will often be zero (meaning infinity).
+
+  - AfState:
+      type: int32_t
+      description: |
+        Reports the current state of the AF algorithm in conjunction with the
+        reported AfMode value and (in continuous AF mode) the AfPauseState
+        value. The possible state changes are described below, though we note
+        the following state transitions that occur when the AfMode is changed.
+
+        If the AfMode is set to AfModeManual, then the AfState will always
+        report AfStateIdle (even if the lens is subsequently moved). Changing to
+        the AfModeManual state does not initiate any lens movement.
+
+        If the AfMode is set to AfModeAuto then the AfState will report
+        AfStateIdle. However, if AfModeAuto and AfTriggerStart are sent together
+        then AfState will omit AfStateIdle and move straight to AfStateScanning
+        (and start a scan).
+
+        If the AfMode is set to AfModeContinuous then the AfState will initially
+        report AfStateScanning.
+
+      enum:
+        - name: AfStateIdle
+          value: 0
+          description: |
+            The AF algorithm is in manual mode (AfModeManual) or in auto mode
+            (AfModeAuto) and a scan has not yet been triggered, or an
+            in-progress scan was cancelled.
+        - name: AfStateScanning
+          value: 1
+          description: |
+            The AF algorithm is in auto mode (AfModeAuto), and a scan has been
+            started using the AfTrigger control. The scan can be cancelled by
+            sending AfTriggerCancel at which point the algorithm will either
+            move back to AfStateIdle or, if the scan actually completes before
+            the cancel request is processed, to one of AfStateFocused or
+            AfStateFailed.
+
+            Alternatively the AF algorithm could be in continuous mode
+            (AfModeContinuous) at which point it may enter this state
+            spontaneously whenever it determines that a rescan is needed.
+        - name: AfStateFocused
+          value: 2
+          description: |
+            The AF algorithm is in auto (AfModeAuto) or continuous
+            (AfModeContinuous) mode and a scan has completed with the result
+            that the algorithm believes the image is now in focus.
+        - name: AfStateFailed
+          value: 3
+          description: |
+            The AF algorithm is in auto (AfModeAuto) or continuous
+            (AfModeContinuous) mode and a scan has completed with the result
+            that the algorithm did not find a good focus position.
+
+  - AfPauseState:
+      type: int32_t
+      description: |
+        Only applicable in continuous (AfModeContinuous) mode, this reports
+        whether the algorithm is currently running, paused or pausing (that is,
+        will pause as soon as any in-progress scan completes).
+
+        Any change to AfMode will cause AfPauseStateRunning to be reported.
+
+      enum:
+        - name: AfPauseStateRunning
+          value: 0
+          description: |
+            Continuous AF is running and the algorithm may restart a scan
+            spontaneously.
+        - name: AfPauseStatePausing
+          value: 1
+          description: |
+            Continuous AF has been sent an AfPauseDeferred control, and will
+            pause as soon as any in-progress scan completes (and then report
+            AfPauseStatePaused). No new scans will be start spontaneously until
+            the AfPauseResume control is sent.
+        - name: AfPauseStatePaused
+          value: 2
+          description: |
+            Continuous AF is paused. No further state changes or lens movements
+            will occur until the AfPauseResume control is sent.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 
@@ -405,27 +706,6 @@ controls:
           description: |
             The camera will cancel any active or completed metering sequence.
             The AE algorithm is reset to its initial state.
-
-  - AfTrigger:
-      type: int32_t
-      draft: true
-      description: |
-       Control for AF trigger. Currently identical to
-       ANDROID_CONTROL_AF_TRIGGER.
-
-        Whether the camera device will trigger autofocus for this request.
-      enum:
-        - name: AfTriggerIdle
-          value: 0
-          description: The trigger is idle.
-        - name: AfTriggerStart
-          value: 1
-          description: The AF routine is started by the camera.
-        - name: AfTriggerCancel
-          value: 2
-          description: |
-            The camera will cancel any active trigger and the AF routine is
-            reset to its initial state.
 
   - NoiseReductionMode:
       type: int32_t
@@ -506,45 +786,6 @@ controls:
           description: |
             The AE algorithm has started a pre-capture metering session.
             \sa AePrecaptureTrigger
-
-  - AfState:
-      type: int32_t
-      draft: true
-      description: |
-       Control to report the current AF algorithm state. Currently identical to
-       ANDROID_CONTROL_AF_STATE.
-
-        Current state of the AF algorithm.
-      enum:
-        - name: AfStateInactive
-          value: 0
-          description: The AF algorithm is inactive.
-        - name: AfStatePassiveScan
-          value: 1
-          description: |
-            AF is performing a passive scan of the scene in continuous
-            auto-focus mode.
-        - name: AfStatePassiveFocused
-          value: 2
-          description: |
-            AF believes the scene is in focus, but might restart scanning.
-        - name: AfStateActiveScan
-          value: 3
-          description: |
-            AF is performing a scan triggered by an AF trigger request.
-            \sa AfTrigger
-        - name: AfStateFocusedLock
-          value: 4
-          description: |
-            AF believes has focused correctly and has locked focus.
-        - name: AfStateNotFocusedLock
-          value: 5
-          description: |
-            AF has not been able to focus and has locked.
-        - name: AfStatePassiveUnfocused
-          value: 6
-          description: |
-            AF has completed a passive scan without finding focus.
 
   - AwbState:
       type: int32_t

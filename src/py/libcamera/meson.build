@@ -54,7 +54,7 @@ pycamera = shared_module('_libcamera',
                          dependencies : pycamera_deps,
                          cpp_args : pycamera_args)
 
-run_command('ln', '-fsT', '../../../../src/py/libcamera/__init__.py',
+run_command('ln', '-fsT', files('__init__.py'),
             meson.current_build_dir() / '__init__.py',
             check: true)
 

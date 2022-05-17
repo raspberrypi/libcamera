@@ -75,7 +75,6 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAActiveState::af
  * \brief Context for the Automatic Focus algorithm
  *
- * \struct IPAActiveState::af
  * \var IPAActiveState::af.focus
  * \brief Current position of the lens
  *
@@ -134,7 +133,7 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAActiveState::awb
  * \brief Context for the Automatic White Balance algorithm
  *
- * \struct IPAActiveState::awb.gains
+ * \var IPAActiveState::awb.gains
  * \brief White balance gains
  *
  * \var IPAActiveState::awb.gains.red

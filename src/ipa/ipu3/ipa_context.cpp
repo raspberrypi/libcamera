@@ -58,13 +58,11 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAContext::configuration
  * \brief The IPA session configuration, immutable during the session
  *
- * \var IPAContext::frameContext
- * \brief The frame context for the frame being processed
+ * \var IPAContext::frameContexts
+ * \brief Ring buffer of the IPAFrameContext(s)
  *
  * \var IPAContext::activeState
  * \brief The current state of IPA algorithms
- *
- * \todo The frame context needs to be turned into real per-frame data storage.
  */
 
 /**
@@ -183,6 +181,26 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
+ * \brief Default constructor for IPAFrameContext
+ */
+IPAFrameContext::IPAFrameContext() = default;
+
+/**
+ * \brief Construct a IPAFrameContext instance
+ */
+IPAFrameContext::IPAFrameContext(uint32_t id, const ControlList &reqControls)
+	: frame(id), frameControls(reqControls)
+{
+	sensor = {};
+}
+
+/**
+ * \var IPAFrameContext::frame
+ * \brief The frame number
+ *
+ * \var IPAFrameContext::frameControls
+ * \brief Controls sent in by the application while queuing the request
+ *
  * \var IPAFrameContext::sensor
  * \brief Effective sensor values that were applied for the frame
  *

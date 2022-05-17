@@ -8,15 +8,21 @@
 
 #pragma once
 
+#include <array>
+
 #include <linux/intel-ipu3.h>
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 namespace libcamera {
 
 namespace ipa::ipu3 {
+
+/* Maximum number of frame contexts to be held */
+static constexpr uint32_t kMaxFrameContexts = 16;
 
 struct IPASessionConfiguration {
 	struct {
@@ -71,17 +77,23 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext {
+	IPAFrameContext();
+	IPAFrameContext(uint32_t id, const ControlList &reqControls);
+
 	struct {
 		uint32_t exposure;
 		double gain;
 	} sensor;
+
+	uint32_t frame;
+	ControlList frameControls;
 };
 
 struct IPAContext {
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 
-	IPAFrameContext frameContext;
+	std::array<IPAFrameContext, kMaxFrameContexts> frameContexts;
 };
 
 } /* namespace ipa::ipu3 */

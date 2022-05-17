@@ -313,7 +313,7 @@ int IPAIPU3::init(const IPASettings &settings,
 	}
 
 	/* Clean context */
-	context_ = {};
+	context_.configuration = {};
 	context_.configuration.sensor.lineDuration = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Construct our Algorithms */
@@ -456,7 +456,8 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	/* Clean IPAActiveState at each reconfiguration. */
 	context_.activeState = {};
-	context_.frameContext = {};
+	IPAFrameContext initFrameContext;
+	context_.frameContexts.fill(initFrameContext);
 
 	if (!validateSensorControls()) {
 		LOG(IPAIPU3, Error) << "Sensor control validation failed.";
@@ -568,15 +569,20 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	const ipu3_uapi_stats_3a *stats =
 		reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
-	context_.frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-	context_.frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
+	IPAFrameContext &frameContext = context_.frameContexts[frame % kMaxFrameContexts];
+
+	if (frameContext.frame != frame)
+		LOG(IPAIPU3, Warning) << "Frame " << frame << " does not match its frame context";
+
+	frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
 	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
 	int32_t vBlank = context_.configuration.sensor.defVBlank;
 	ControlList ctrls(controls::controls);
 
 	for (auto const &algo : algorithms_)
-		algo->process(context_, nullptr, stats);
+		algo->process(context_, &frameContext, stats);
 
 	setControls(frame);
 
@@ -584,11 +590,11 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	int64_t frameDuration = (vBlank + sensorInfo_.outputSize.height) * lineDuration;
 	ctrls.set(controls::FrameDuration, frameDuration);
 
-	ctrls.set(controls::AnalogueGain, context_.frameContext.sensor.gain);
+	ctrls.set(controls::AnalogueGain, frameContext.sensor.gain);
 
 	ctrls.set(controls::ColourTemperature, context_.activeState.awb.temperatureK);
 
-	ctrls.set(controls::ExposureTime, context_.frameContext.sensor.exposure * lineDuration);
+	ctrls.set(controls::ExposureTime, frameContext.sensor.exposure * lineDuration);
 
 	/*
 	 * \todo The Metadata provides a path to getting extended data
@@ -609,10 +615,10 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
  * Parse the request to handle any IPA-managed controls that were set from the
  * application such as manual sensor settings.
  */
-void IPAIPU3::queueRequest([[maybe_unused]] const uint32_t frame,
-			   [[maybe_unused]] const ControlList &controls)
+void IPAIPU3::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	/* \todo Start processing for 'frame' based on 'controls'. */
+	context_.frameContexts[frame % kMaxFrameContexts] = { frame, controls };
 }
 
 /**

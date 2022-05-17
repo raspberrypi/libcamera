@@ -10,7 +10,8 @@ namespace libcamera {
 
 namespace ipa {
 
-template<typename Context, typename Config, typename Params, typename Stats>
+template<typename Context, typename FrameContext, typename Config,
+	 typename Params, typename Stats>
 class Algorithm
 {
 public:
@@ -28,6 +29,7 @@ public:
 	}
 
 	virtual void process([[maybe_unused]] Context &context,
+			     [[maybe_unused]] FrameContext *frameContext,
 			     [[maybe_unused]] const Stats *stats)
 	{
 	}

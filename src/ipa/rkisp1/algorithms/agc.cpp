@@ -280,7 +280,9 @@ double Agc::measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const
  * Identify the current image brightness, and use that to estimate the optimal
  * new exposure and gain for the scene.
  */
-void Agc::process(IPAContext &context, const rkisp1_stat_buffer *stats)
+void Agc::process(IPAContext &context,
+		  [[maybe_unused]] IPAFrameContext *frameContext,
+		  const rkisp1_stat_buffer *stats)
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	ASSERT(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP);

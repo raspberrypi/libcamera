@@ -64,6 +64,7 @@ namespace ipa {
  * \fn Algorithm::process()
  * \brief Process ISP statistics, and run algorithm operations
  * \param[in] context The shared IPA context
+ * \param[in] frameContext The current frame's context
  * \param[in] stats The IPA statistics and ISP results
  *
  * This function is called while camera is running for every frame processed by

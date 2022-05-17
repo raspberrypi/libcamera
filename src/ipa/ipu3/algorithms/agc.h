@@ -28,7 +28,8 @@ public:
 	~Agc() = default;
 
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
-	void process(IPAContext &context, const ipu3_uapi_stats_3a *stats) override;
+	void process(IPAContext &context, IPAFrameContext *frameContext,
+		     const ipu3_uapi_stats_3a *stats) override;
 
 private:
 	double measureBrightness(const ipu3_uapi_stats_3a *stats,

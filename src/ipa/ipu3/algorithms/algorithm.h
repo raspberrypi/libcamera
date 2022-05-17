@@ -17,7 +17,9 @@ namespace libcamera {
 
 namespace ipa::ipu3 {
 
-using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPAConfigInfo, ipu3_uapi_params, ipu3_uapi_stats_3a>;
+using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPAFrameContext,
+					    IPAConfigInfo, ipu3_uapi_params,
+					    ipu3_uapi_stats_3a>;
 
 } /* namespace ipa::ipu3 */
 

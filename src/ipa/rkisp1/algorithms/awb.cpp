@@ -119,7 +119,9 @@ void Awb::prepare(IPAContext &context, rkisp1_params_cfg *params)
 /**
  * \copydoc libcamera::ipa::Algorithm::process
  */
-void Awb::process([[maybe_unused]] IPAContext &context, const rkisp1_stat_buffer *stats)
+void Awb::process([[maybe_unused]] IPAContext &context,
+		  [[maybe_unused]] IPAFrameContext *frameCtx,
+		  const rkisp1_stat_buffer *stats)
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;

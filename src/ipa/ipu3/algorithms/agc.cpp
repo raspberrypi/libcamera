@@ -318,12 +318,14 @@ double Agc::estimateLuminance(IPAActiveState &activeState,
 /**
  * \brief Process IPU3 statistics, and run AGC operations
  * \param[in] context The shared IPA context
+ * \param[in] frameContext The current frame context
  * \param[in] stats The IPU3 statistics and ISP results
  *
  * Identify the current image brightness, and use that to estimate the optimal
  * new exposure and gain for the scene.
  */
-void Agc::process(IPAContext &context, const ipu3_uapi_stats_3a *stats)
+void Agc::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameContext,
+		  const ipu3_uapi_stats_3a *stats)
 {
 	/*
 	 * Estimate the gain needed to have the proportion of pixels in a given

@@ -19,7 +19,9 @@ namespace libcamera {
 
 namespace ipa::rkisp1 {
 
-using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPACameraSensorInfo, rkisp1_params_cfg, rkisp1_stat_buffer>;
+using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPAFrameContext,
+					    IPACameraSensorInfo, rkisp1_params_cfg,
+					    rkisp1_stat_buffer>;
 
 } /* namespace ipa::rkisp1 */
 

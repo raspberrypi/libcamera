@@ -131,13 +131,13 @@ static void handleRequestCompleted(Request *req)
 }
 
 void init_py_enums(py::module &m);
-void init_py_enums_generated(py::module &m);
+void init_py_control_enums_generated(py::module &m);
 void init_py_geometry(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
 {
 	init_py_enums(m);
-	init_py_enums_generated(m);
+	init_py_control_enums_generated(m);
 	init_py_geometry(m);
 
 	/* Forward declarations */

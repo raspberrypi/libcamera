@@ -2,20 +2,18 @@
 /*
  * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
  *
- * Python bindings - Auto-generated enums
+ * Python bindings - Auto-generated control enums
  *
  * This file is auto-generated. Do not edit.
  */
 
-#include <libcamera/libcamera.h>
+#include <libcamera/control_ids.h>
 
 #include <pybind11/smart_holder.h>
 
 namespace py = pybind11;
 
-using namespace libcamera;
-
-void init_py_enums_generated(py::module& m)
+void init_py_control_enums_generated(py::module& m)
 {
 ${enums}
 }

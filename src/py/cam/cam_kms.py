@@ -10,6 +10,7 @@ FMT_MAP = {
     'YUYV': pykms.PixelFormat.YUYV,
     'ARGB8888': pykms.PixelFormat.ARGB8888,
     'XRGB8888': pykms.PixelFormat.XRGB8888,
+    'NV12': pykms.PixelFormat.NV12,
 }
 
 
@@ -133,10 +134,16 @@ class KMSRenderer:
 
                 for fb in ctx['allocator'].buffers(stream):
                     w, h = cfg.size
-                    stride = cfg.stride
-                    fd = fb.fd(0)
+                    fds = []
+                    strides = []
+                    offsets = []
+                    for i in range(fb.num_planes):
+                        fds.append(fb.fd(i))
+                        strides.append(cfg.stride)
+                        offsets.append(fb.offset(i))
+
                     drmfb = pykms.DmabufFramebuffer(self.card, w, h, fmt,
-                                                    [fd], [stride], [0])
+                                                    fds, strides, offsets)
                     self.cam_2_drm[fb] = drmfb
 
                 idx += 1

@@ -18,7 +18,7 @@ namespace py = pybind11;
 
 using namespace libcamera;
 
-void init_pygeometry(py::module &m)
+void init_py_geometry(py::module &m)
 {
 	auto pyPoint = py::class_<Point>(m, "Point");
 	auto pySize = py::class_<Size>(m, "Size");

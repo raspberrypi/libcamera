@@ -13,21 +13,21 @@ pybind11_proj = subproject('pybind11')
 pybind11_dep = pybind11_proj.get_variable('pybind11_dep')
 
 pycamera_sources = files([
-    'pyenums.cpp',
-    'pygeometry.cpp',
-    'pymain.cpp',
+    'py_enums.cpp',
+    'py_geometry.cpp',
+    'py_main.cpp',
 ])
 
 gen_input_files = files([
     '../../libcamera/control_ids.yaml',
-    'pyenums_generated.cpp.in',
+    'py_enums_generated.cpp.in',
 ])
 
 gen_py_control_enums = files('gen-py-control-enums.py')
 
 generated_sources = custom_target('py_gen_controls',
                                   input : gen_input_files,
-                                  output : ['pyenums_generated.cpp'],
+                                  output : ['py_enums_generated.cpp'],
                                   command : [gen_py_control_enums, '-o', '@OUTPUT@', '@INPUT@'])
 
 pycamera_sources += generated_sources

@@ -130,15 +130,15 @@ static void handleRequestCompleted(Request *req)
 		LOG(Fatal) << "Unable to write to eventfd";
 }
 
-void init_pyenums(py::module &m);
-void init_pyenums_generated(py::module &m);
-void init_pygeometry(py::module &m);
+void init_py_enums(py::module &m);
+void init_py_enums_generated(py::module &m);
+void init_py_geometry(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
 {
-	init_pyenums(m);
-	init_pyenums_generated(m);
-	init_pygeometry(m);
+	init_py_enums(m);
+	init_py_enums_generated(m);
+	init_py_geometry(m);
 
 	/* Forward declarations */
 

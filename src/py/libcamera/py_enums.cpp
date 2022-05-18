@@ -13,7 +13,7 @@ namespace py = pybind11;
 
 using namespace libcamera;
 
-void init_pyenums(py::module &m)
+void init_py_enums(py::module &m)
 {
 	py::enum_<StreamRole>(m, "StreamRole")
 		.value("StillCapture", StreamRole::StillCapture)

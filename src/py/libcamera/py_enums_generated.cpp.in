@@ -15,7 +15,7 @@ namespace py = pybind11;
 
 using namespace libcamera;
 
-void init_pyenums_generated(py::module& m)
+void init_py_enums_generated(py::module& m)
 {
 ${enums}
 }

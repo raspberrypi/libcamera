@@ -19,19 +19,8 @@ def rgb_to_pix(rgb):
     return pix
 
 
-def separate_components(data, r0, g0, g1, b0):
-    # Now to split the data up into its red, green, and blue components. The
-    # Bayer pattern of the OV5647 sensor is BGGR. In other words the first
-    # row contains alternating green/blue elements, the second row contains
-    # alternating red/green elements, and so on as illustrated below:
-    #
-    # GBGBGBGBGBGBGB
-    # RGRGRGRGRGRGRG
-    # GBGBGBGBGBGBGB
-    # RGRGRGRGRGRGRG
-    #
-    # Please note that if you use vflip or hflip to change the orientation
-    # of the capture, you must flip the Bayer pattern accordingly
+def demosaic(data, r0, g0, g1, b0):
+    # Separate the components from the Bayer data to RGB planes
 
     rgb = np.zeros(data.shape + (3,), dtype=data.dtype)
     rgb[r0[1]::2, r0[0]::2, 0] = data[r0[1]::2, r0[0]::2]  # Red
@@ -39,17 +28,9 @@ def separate_components(data, r0, g0, g1, b0):
     rgb[g1[1]::2, g1[0]::2, 1] = data[g1[1]::2, g1[0]::2]  # Green
     rgb[b0[1]::2, b0[0]::2, 2] = data[b0[1]::2, b0[0]::2]  # Blue
 
-    return rgb
-
-
-def demosaic(rgb, r0, g0, g1, b0):
-    # At this point we now have the raw Bayer data with the correct values
-    # and colors but the data still requires de-mosaicing and
-    # post-processing. If you wish to do this yourself, end the script here!
-    #
     # Below we present a fairly naive de-mosaic method that simply
     # calculates the weighted average of a pixel based on the pixels
-    # surrounding it. The weighting is provided b0[1] a b0[1]te representation of
+    # surrounding it. The weighting is provided by a byte representation of
     # the Bayer filter which we construct first:
 
     bayer = np.zeros(rgb.shape, dtype=np.uint8)
@@ -69,29 +50,6 @@ def demosaic(rgb, r0, g0, g1, b0):
     borders = (window[0] - 1, window[1] - 1)
     border = (borders[0] // 2, borders[1] // 2)
 
-    # rgb_pad = np.zeros((
-    #    rgb.shape[0] + borders[0],
-    #    rgb.shape[1] + borders[1],
-    #    rgb.shape[2]), dtype=rgb.dtype)
-    # rgb_pad[
-    #    border[0]:rgb_pad.shape[0] - border[0],
-    #    border[1]:rgb_pad.shape[1] - border[1],
-    #    :] = rgb
-    # rgb = rgb_pad
-    #
-    # bayer_pad = np.zeros((
-    #    bayer.shape[0] + borders[0],
-    #    bayer.shape[1] + borders[1],
-    #    bayer.shape[2]), dtype=bayer.dtype)
-    # bayer_pad[
-    #    border[0]:bayer_pad.shape[0] - border[0],
-    #    border[1]:bayer_pad.shape[1] - border[1],
-    #    :] = bayer
-    # bayer = bayer_pad
-
-    # In numpy >=1.7.0 just use np.pad (version in Raspbian is 1.6.2 at the
-    # time of writing...)
-    #
     rgb = np.pad(rgb, [
         (border[0], border[0]),
         (border[1], border[1]),
@@ -168,7 +126,7 @@ def to_rgb(fmt, size, data):
         bayer_pattern = fmt[1:5]
         bitspp = int(fmt[5:])
 
-        # TODO: shifting leaves the lowest bits 0
+        # \todo shifting leaves the lowest bits 0
         if bitspp == 8:
             data = data.reshape((h, w))
             data = data.astype(np.uint16) << 8
@@ -195,13 +153,19 @@ def to_rgb(fmt, size, data):
         assert(idx != -1)
         b0 = (idx % 2, idx // 2)
 
-        rgb = separate_components(data, r0, g0, g1, b0)
-        rgb = demosaic(rgb, r0, g0, g1, b0)
+        rgb = demosaic(data, r0, g0, g1, b0)
         rgb = (rgb >> 8).astype(np.uint8)
 
     else:
         rgb = None
 
+    return rgb
+
+
+# A naive format conversion to 24-bit RGB
+def mfb_to_rgb(mfb, cfg):
+    data = np.array(mfb.planes[0], dtype=np.uint8)
+    rgb = to_rgb(cfg.pixel_format, cfg.size, data)
     return rgb
 
 
@@ -334,9 +298,7 @@ class MainWindow(QtWidgets.QWidget):
                 qim = ImageQt(img).copy()
                 pix = QtGui.QPixmap.fromImage(qim)
             else:
-                data = np.array(mfb.planes[0], dtype=np.uint8)
-                rgb = to_rgb(cfg.pixel_format, cfg.size, data)
-
+                rgb = mfb_to_rgb(mfb, cfg)
                 if rgb is None:
                     raise Exception('Format not supported: ' + cfg.pixel_format)
 

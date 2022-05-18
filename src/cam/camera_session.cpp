@@ -418,7 +418,7 @@ void CameraSession::processRequest(Request *request)
 		return;
 
 	request->reuse(Request::ReuseBuffers);
-	camera_->queueRequest(request);
+	queueRequest(request);
 }
 
 void CameraSession::sinkRelease(Request *request)

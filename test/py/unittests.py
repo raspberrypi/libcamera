@@ -262,8 +262,8 @@ class SimpleCaptureMethods(CameraTesterBase):
         running = True
         while running:
             events = sel.select()
-            for key, mask in events:
-                os.read(key.fileobj, 8)
+            for key, _ in events:
+                os.read(key.fd, 8)
 
                 ready_reqs = cm.get_ready_requests()
 

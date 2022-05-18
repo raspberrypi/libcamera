@@ -268,7 +268,8 @@ class MainWindow(QtWidgets.QWidget):
     def create_texture(self, stream, fb):
         cfg = stream.configuration
         fmt = cfg.pixel_format.fourcc
-        w, h = cfg.size
+        w = cfg.size.width
+        h = cfg.size.height
 
         attribs = [
             EGL_WIDTH, w,

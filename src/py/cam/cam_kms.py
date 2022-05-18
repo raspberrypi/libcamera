@@ -126,7 +126,8 @@ class KMSRenderer:
                 })
 
                 for fb in ctx['allocator'].buffers(stream):
-                    w, h = cfg.size
+                    w = cfg.size.width
+                    h = cfg.size.height
                     fds = []
                     strides = []
                     offsets = []

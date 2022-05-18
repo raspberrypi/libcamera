@@ -84,8 +84,8 @@ def demosaic(data, r0, g0, g1, b0):
 
 
 def to_rgb(fmt, size, data):
-    w = size[0]
-    h = size[1]
+    w = size.width
+    h = size.height
 
     fmt = str(fmt)
 
@@ -292,7 +292,8 @@ class MainWindow(QtWidgets.QWidget):
     def buf_to_qpixmap(self, stream, fb):
         with fb.mmap() as mfb:
             cfg = stream.configuration
-            w, h = cfg.size
+            w = cfg.size.width
+            h = cfg.size.height
             pitch = cfg.stride
 
             if str(cfg.pixel_format) == 'MJPEG':

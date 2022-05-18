@@ -6,7 +6,6 @@
  */
 
 /*
- * \todo Add geometry classes (Point, Rectangle...)
  * \todo Add bindings for the ControlInfo class
  */
 
@@ -61,11 +60,11 @@ static py::object controlValueToPy(const ControlValue &cv)
 		return py::cast(cv.get<std::string>());
 	case ControlTypeRectangle: {
 		const Rectangle *v = reinterpret_cast<const Rectangle *>(cv.data().data());
-		return py::make_tuple(v->x, v->y, v->width, v->height);
+		return py::cast(v);
 	}
 	case ControlTypeSize: {
 		const Size *v = reinterpret_cast<const Size *>(cv.data().data());
-		return py::make_tuple(v->width, v->height);
+		return py::cast(v);
 	}
 	case ControlTypeNone:
 	default:
@@ -99,14 +98,10 @@ static ControlValue pyToControlValue(const py::object &ob, ControlType type)
 		return controlValueMaybeArray<float>(ob);
 	case ControlTypeString:
 		return ControlValue(ob.cast<std::string>());
-	case ControlTypeRectangle: {
-		auto array = ob.cast<std::array<int32_t, 4>>();
-		return ControlValue(Rectangle(array[0], array[1], array[2], array[3]));
-	}
-	case ControlTypeSize: {
-		auto array = ob.cast<std::array<int32_t, 2>>();
-		return ControlValue(Size(array[0], array[1]));
-	}
+	case ControlTypeRectangle:
+		return ControlValue(ob.cast<Rectangle>());
+	case ControlTypeSize:
+		return ControlValue(ob.cast<Size>());
 	case ControlTypeNone:
 	default:
 		throw std::runtime_error("Control type not implemented");
@@ -397,15 +392,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def("__str__", &StreamConfiguration::toString)
 		.def_property_readonly("stream", &StreamConfiguration::stream,
 				       py::return_value_policy::reference_internal)
-		.def_property(
-			"size",
-			[](StreamConfiguration &self) {
-				return std::make_tuple(self.size.width, self.size.height);
-			},
-			[](StreamConfiguration &self, std::tuple<uint32_t, uint32_t> size) {
-				self.size.width = std::get<0>(size);
-				self.size.height = std::get<1>(size);
-			})
+		.def_readwrite("size", &StreamConfiguration::size)
 		.def_readwrite("pixel_format", &StreamConfiguration::pixelFormat)
 		.def_readwrite("stride", &StreamConfiguration::stride)
 		.def_readwrite("frame_size", &StreamConfiguration::frameSize)
@@ -416,18 +403,8 @@ PYBIND11_MODULE(_libcamera, m)
 
 	pyStreamFormats
 		.def_property_readonly("pixel_formats", &StreamFormats::pixelformats)
-		.def("sizes", [](StreamFormats &self, const PixelFormat &pixelFormat) {
-			std::vector<std::tuple<uint32_t, uint32_t>> fmts;
-			for (const auto &s : self.sizes(pixelFormat))
-				fmts.push_back(std::make_tuple(s.width, s.height));
-			return fmts;
-		})
-		.def("range", [](StreamFormats &self, const PixelFormat &pixelFormat) {
-			const auto &range = self.range(pixelFormat);
-			return make_tuple(std::make_tuple(range.hStep, range.vStep),
-					  std::make_tuple(range.min.width, range.min.height),
-					  std::make_tuple(range.max.width, range.max.height));
-		});
+		.def("sizes", &StreamFormats::sizes)
+		.def("range", &StreamFormats::range);
 
 	pyFrameBufferAllocator
 		.def(py::init<std::shared_ptr<Camera>>(), py::keep_alive<1, 2>())

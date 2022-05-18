@@ -160,8 +160,11 @@ def configure(ctx):
     for idx, stream_opts in enumerate(streams):
         stream_config = camconfig.at(idx)
 
-        if 'width' in stream_opts and 'height' in stream_opts:
-            stream_config.size = (stream_opts['width'], stream_opts['height'])
+        if 'width' in stream_opts:
+            stream_config.size.width = stream_opts['width']
+
+        if 'height' in stream_opts:
+            stream_config.size.height = stream_opts['height']
 
         if 'pixelformat' in stream_opts:
             stream_config.pixel_format = libcam.PixelFormat(stream_opts['pixelformat'])

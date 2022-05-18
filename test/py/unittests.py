@@ -10,6 +10,7 @@ import libcamera as libcam
 import os
 import selectors
 import time
+import typing
 import unittest
 import weakref
 
@@ -70,6 +71,9 @@ class SimpleTestMethods(BaseTestCase):
 
 
 class CameraTesterBase(BaseTestCase):
+    cm: typing.Any
+    cam: typing.Any
+
     def setUp(self):
         self.cm = libcam.CameraManager.singleton()
         self.cam = next((cam for cam in self.cm.cameras if 'platform/vimc' in cam.id), None)
@@ -131,6 +135,7 @@ class AllocatorTestMethods(CameraTesterBase):
         wr_allocator = weakref.ref(allocator)
 
         buffers = allocator.buffers(stream)
+        self.assertIsNotNone(buffers)
         buffers = None
 
         buffer = allocator.buffers(stream)[0]
@@ -166,6 +171,8 @@ class SimpleCaptureMethods(CameraTesterBase):
 
         streamconfig = camconfig.at(0)
         fmts = streamconfig.formats
+        self.assertIsNotNone(fmts)
+        fmts = None
 
         ret = cam.configure(camconfig)
         self.assertZero(ret)
@@ -225,6 +232,8 @@ class SimpleCaptureMethods(CameraTesterBase):
 
         streamconfig = camconfig.at(0)
         fmts = streamconfig.formats
+        self.assertIsNotNone(fmts)
+        fmts = None
 
         ret = cam.configure(camconfig)
         self.assertZero(ret)
@@ -348,9 +357,9 @@ if __name__ == '__main__':
         gc.unfreeze()
         gc.collect()
 
-        obs_after = get_all_objects([obs_before])
+        obs_after = get_all_objects([obs_before])   # type: ignore
 
-        before = create_type_count_map(obs_before)
+        before = create_type_count_map(obs_before)  # type: ignore
         after = create_type_count_map(obs_after)
 
         leaks = diff_type_count_maps(before, after)

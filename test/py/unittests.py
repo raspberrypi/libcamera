@@ -83,6 +83,9 @@ class CameraTesterBase(BaseTestCase):
             self.cm = None
             raise Exception('Failed to acquire camera')
 
+        self.wr_cam = weakref.ref(self.cam)
+        self.wr_cm = weakref.ref(self.cm)
+
     def tearDown(self):
         # If a test fails, the camera may be in running state. So always stop.
         self.cam.stop()
@@ -93,6 +96,9 @@ class CameraTesterBase(BaseTestCase):
 
         self.cam = None
         self.cm = None
+
+        self.assertIsNone(self.wr_cm())
+        self.assertIsNone(self.wr_cam())
 
 
 class AllocatorTestMethods(CameraTesterBase):

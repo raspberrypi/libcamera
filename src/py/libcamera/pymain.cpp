@@ -137,11 +137,13 @@ static void handleRequestCompleted(Request *req)
 
 void init_pyenums(py::module &m);
 void init_pyenums_generated(py::module &m);
+void init_pygeometry(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
 {
 	init_pyenums(m);
 	init_pyenums_generated(m);
+	init_pygeometry(m);
 
 	/* Forward declarations */
 

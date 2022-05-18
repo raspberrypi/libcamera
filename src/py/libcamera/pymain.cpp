@@ -394,7 +394,7 @@ PYBIND11_MODULE(_libcamera, m)
 	pyStreamConfiguration
 		.def("__str__", &StreamConfiguration::toString)
 		.def_property_readonly("stream", &StreamConfiguration::stream,
-		                       py::return_value_policy::reference_internal)
+				       py::return_value_policy::reference_internal)
 		.def_property(
 			"size",
 			[](StreamConfiguration &self) {
@@ -416,7 +416,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_readwrite("frame_size", &StreamConfiguration::frameSize)
 		.def_readwrite("buffer_count", &StreamConfiguration::bufferCount)
 		.def_property_readonly("formats", &StreamConfiguration::formats,
-		                       py::return_value_policy::reference_internal)
+				       py::return_value_policy::reference_internal)
 		.def_readwrite("color_space", &StreamConfiguration::colorSpace);
 
 	pyStreamFormats

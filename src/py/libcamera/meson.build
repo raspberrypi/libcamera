@@ -17,10 +17,10 @@ pycamera_sources = files([
     'pymain.cpp',
 ])
 
-gen_input_files = [
-    meson.project_source_root() / 'src' / 'libcamera' / 'control_ids.yaml',
+gen_input_files = files([
+    '../../libcamera/control_ids.yaml',
     'pyenums_generated.cpp.in',
-]
+])
 
 gen_py_control_enums = files('gen-py-control-enums.py')
 

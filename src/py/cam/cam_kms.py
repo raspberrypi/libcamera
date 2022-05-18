@@ -75,12 +75,13 @@ class KMSRenderer:
 
         buffers = drmreq['camreq'].buffers
 
+        req = pykms.AtomicReq(self.card)
+
         for stream, fb in buffers.items():
             drmfb = self.cam_2_drm.get(fb, None)
-
-            req = pykms.AtomicReq(self.card)
             self.add_plane(req, stream, drmfb)
-            req.commit()
+
+        req.commit()
 
     def handle_page_flip(self, frame, time):
         old = self.current

@@ -14,6 +14,7 @@
 #include <libcamera/property_ids.h>
 
 #include "camera_session.h"
+#include "capture_script.h"
 #include "event_loop.h"
 #include "file_sink.h"
 #ifdef HAVE_KMS
@@ -90,6 +91,16 @@ CameraSession::CameraSession(CameraManager *cm,
 		}
 	}
 #endif
+
+	if (options_.isSet(OptCaptureScript)) {
+		std::string scriptName = options_[OptCaptureScript].toString();
+		script_ = std::make_unique<CaptureScript>(camera_, scriptName);
+		if (!script_->valid()) {
+			std::cerr << "Invalid capture script '" << scriptName
+				  << "'" << std::endl;
+			return;
+		}
+	}
 
 	switch (config->validate()) {
 	case CameraConfiguration::Valid:
@@ -321,6 +332,9 @@ int CameraSession::queueRequest(Request *request)
 {
 	if (captureLimit_ && queueCount_ >= captureLimit_)
 		return 0;
+
+	if (script_)
+		request->controls() = script_->frameControls(queueCount_);
 
 	queueCount_++;
 

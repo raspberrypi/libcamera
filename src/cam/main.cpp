@@ -158,6 +158,10 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "Print the metadata for completed requests",
 			 "metadata", ArgumentNone, nullptr, false,
 			 OptCamera);
+	parser.addOption(OptCaptureScript, OptionString,
+			 "Load a capture session configuration script from a file",
+			 "script", ArgumentRequired, "script", false,
+			 OptCamera);
 
 	options_ = parser.parse(argc, argv);
 	if (!options_.valid())

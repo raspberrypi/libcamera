@@ -21,4 +21,5 @@ enum {
 	OptListControls = 256,
 	OptStrictFormats = 257,
 	OptMetadata = 258,
+	OptCaptureScript = 259,
 };

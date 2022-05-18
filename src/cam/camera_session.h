@@ -23,6 +23,7 @@
 
 #include "options.h"
 
+class CaptureScript;
 class FrameSink;
 
 class CameraSession
@@ -59,6 +60,8 @@ private:
 	const OptionsParser::Options &options_;
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
+
+	std::unique_ptr<CaptureScript> script_;
 
 	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::unique_ptr<FrameSink> sink_;

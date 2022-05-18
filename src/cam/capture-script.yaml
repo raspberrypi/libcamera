@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: CC0-1.0
+
+# Capture script example
+#
+# A capture script allows to associate a list of controls and their values
+# to frame numbers.
+
+# \todo Formally define the capture script structure with a schema
+
+# Notes:
+# - Controls have to be specified by name, as defined in the
+#   libcamera::controls:: enumeration
+# - Controls not supported by the camera currently operated are ignored
+# - Frame numbers shall be monotonically incrementing, gaps are allowed
+
+# Example:
+frames:
+  - 1:
+      Brightness: 0.0
+
+  - 40:
+      Brightness: 0.2
+
+  - 80:
+      Brightness: 0.4
+
+  - 120:
+      Brightness: 0.8
+
+  - 160:
+      Brightness: 0.4
+
+  - 200:
+      Brightness: 0.2
+
+  - 240:
+      Brightness: 0.0
+
+  - 280:
+      Brightness: -0.2
+
+  - 300:
+      Brightness: -0.4
+
+  - 340:
+      Brightness: -0.8

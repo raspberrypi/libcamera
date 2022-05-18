@@ -11,6 +11,7 @@ cam_enabled = true
 
 cam_sources = files([
     'camera_session.cpp',
+    'capture_script.cpp',
     'event_loop.cpp',
     'file_sink.cpp',
     'frame_sink.cpp',
@@ -38,6 +39,7 @@ cam  = executable('cam', cam_sources,
                       libcamera_public,
                       libdrm,
                       libevent,
+                      libyaml,
                   ],
                   cpp_args : cam_cpp_args,
                   install : true)

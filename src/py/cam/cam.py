@@ -11,6 +11,7 @@ import binascii
 import libcamera as libcam
 import os
 import sys
+import traceback
 
 
 class CustomAction(argparse.Action):
@@ -286,19 +287,23 @@ def capture_start(contexts):
 
 # Called from renderer when there is a libcamera event
 def event_handler(state):
-    cm = state['cm']
-    contexts = state['contexts']
+    try:
+        cm = state['cm']
+        contexts = state['contexts']
 
-    os.read(cm.efd, 8)
+        os.read(cm.efd, 8)
 
-    reqs = cm.get_ready_requests()
+        reqs = cm.get_ready_requests()
 
-    for req in reqs:
-        ctx = next(ctx for ctx in contexts if ctx['idx'] == req.cookie)
-        request_handler(state, ctx, req)
+        for req in reqs:
+            ctx = next(ctx for ctx in contexts if ctx['idx'] == req.cookie)
+            request_handler(state, ctx, req)
 
-    running = any(ctx['reqs-completed'] < ctx['opt-capture'] for ctx in contexts)
-    return running
+        running = any(ctx['reqs-completed'] < ctx['opt-capture'] for ctx in contexts)
+        return running
+    except Exception as e:
+        traceback.print_exc()
+        return False
 
 
 def request_handler(state, ctx, req):

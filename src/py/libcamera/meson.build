@@ -63,4 +63,3 @@ install_data(['__init__.py'], install_dir : destdir)
 # \todo Generate stubs when building. See https://peps.python.org/pep-0484/#stub-files
 # Note: Depends on pybind11-stubgen. To generate pylibcamera stubs:
 # $ PYTHONPATH=build/src/py pybind11-stubgen --no-setup-py -o build/src/py libcamera
-# $ mv build/src/py/libcamera-stubs/* build/src/py/libcamera/

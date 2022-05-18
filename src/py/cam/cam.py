@@ -164,7 +164,7 @@ def configure(ctx):
             stream_config.size = (stream_opts['width'], stream_opts['height'])
 
         if 'pixelformat' in stream_opts:
-            stream_config.pixel_format = stream_opts['pixelformat']
+            stream_config.pixel_format = libcam.PixelFormat(stream_opts['pixelformat'])
 
     stat = camconfig.validate()
 

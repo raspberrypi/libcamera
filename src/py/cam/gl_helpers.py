@@ -30,14 +30,6 @@ def getglEGLImageTargetTexture2DOES():
 
 glEGLImageTargetTexture2DOES = getglEGLImageTargetTexture2DOES()
 
-# \todo This can be dropped when we have proper PixelFormat bindings
-def str_to_fourcc(str):
-    assert(len(str) == 4)
-    fourcc = 0
-    for i, v in enumerate([ord(c) for c in str]):
-        fourcc |= v << (i * 8)
-    return fourcc
-
 
 def get_gl_extensions():
     n = GLint()

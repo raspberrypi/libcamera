@@ -8,7 +8,6 @@
 /*
  * \todo Add geometry classes (Point, Rectangle...)
  * \todo Add bindings for the ControlInfo class
- * \todo Add bindings for the PixelFormat class
  */
 
 #include <mutex>
@@ -173,6 +172,7 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyColorSpaceTransferFunction = py::enum_<ColorSpace::TransferFunction>(pyColorSpace, "TransferFunction");
 	auto pyColorSpaceYcbcrEncoding = py::enum_<ColorSpace::YcbcrEncoding>(pyColorSpace, "YcbcrEncoding");
 	auto pyColorSpaceRange = py::enum_<ColorSpace::Range>(pyColorSpace, "Range");
+	auto pyPixelFormat = py::class_<PixelFormat>(m, "PixelFormat");
 
 	/* Global functions */
 	m.def("log_set_level", &logSetLevel);
@@ -404,14 +404,7 @@ PYBIND11_MODULE(_libcamera, m)
 				self.size.width = std::get<0>(size);
 				self.size.height = std::get<1>(size);
 			})
-		.def_property(
-			"pixel_format",
-			[](StreamConfiguration &self) {
-				return self.pixelFormat.toString();
-			},
-			[](StreamConfiguration &self, std::string fmt) {
-				self.pixelFormat = PixelFormat::fromString(fmt);
-			})
+		.def_readwrite("pixel_format", &StreamConfiguration::pixelFormat)
 		.def_readwrite("stride", &StreamConfiguration::stride)
 		.def_readwrite("frame_size", &StreamConfiguration::frameSize)
 		.def_readwrite("buffer_count", &StreamConfiguration::bufferCount)
@@ -420,22 +413,15 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_readwrite("color_space", &StreamConfiguration::colorSpace);
 
 	pyStreamFormats
-		.def_property_readonly("pixel_formats", [](StreamFormats &self) {
-			std::vector<std::string> fmts;
-			for (auto &fmt : self.pixelformats())
-				fmts.push_back(fmt.toString());
-			return fmts;
-		})
-		.def("sizes", [](StreamFormats &self, const std::string &pixelFormat) {
-			auto fmt = PixelFormat::fromString(pixelFormat);
+		.def_property_readonly("pixel_formats", &StreamFormats::pixelformats)
+		.def("sizes", [](StreamFormats &self, const PixelFormat &pixelFormat) {
 			std::vector<std::tuple<uint32_t, uint32_t>> fmts;
-			for (const auto &s : self.sizes(fmt))
+			for (const auto &s : self.sizes(pixelFormat))
 				fmts.push_back(std::make_tuple(s.width, s.height));
 			return fmts;
 		})
-		.def("range", [](StreamFormats &self, const std::string &pixelFormat) {
-			auto fmt = PixelFormat::fromString(pixelFormat);
-			const auto &range = self.range(fmt);
+		.def("range", [](StreamFormats &self, const PixelFormat &pixelFormat) {
+			const auto &range = self.range(pixelFormat);
 			return make_tuple(std::make_tuple(range.hStep, range.vStep),
 					  std::make_tuple(range.min.width, range.min.height),
 					  std::make_tuple(range.max.width, range.max.height));
@@ -648,4 +634,18 @@ PYBIND11_MODULE(_libcamera, m)
 	pyColorSpaceRange
 		.value("Full", ColorSpace::Range::Full)
 		.value("Limited", ColorSpace::Range::Limited);
+
+	pyPixelFormat
+		.def(py::init<>())
+		.def(py::init<uint32_t, uint64_t>())
+		.def(py::init<>([](const std::string &str) {
+			return PixelFormat::fromString(str);
+		}))
+		.def_property_readonly("fourcc", &PixelFormat::fourcc)
+		.def_property_readonly("modifier", &PixelFormat::modifier)
+		.def(py::self == py::self)
+		.def("__str__", &PixelFormat::toString)
+		.def("__repr__", [](const PixelFormat &self) {
+			return "libcamera.PixelFormat('" + self.toString() + "')";
+		});
 }

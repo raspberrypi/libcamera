@@ -5,14 +5,6 @@ import pykms
 import selectors
 import sys
 
-FMT_MAP = {
-    'RGB888': pykms.PixelFormat.RGB888,
-    'YUYV': pykms.PixelFormat.YUYV,
-    'ARGB8888': pykms.PixelFormat.ARGB8888,
-    'XRGB8888': pykms.PixelFormat.XRGB8888,
-    'NV12': pykms.PixelFormat.NV12,
-}
-
 
 class KMSRenderer:
     def __init__(self, state):
@@ -120,7 +112,7 @@ class KMSRenderer:
 
                 cfg = stream.configuration
                 fmt = cfg.pixel_format
-                fmt = FMT_MAP[fmt]
+                fmt = pykms.PixelFormat(fmt.fourcc)
 
                 plane = self.resman.reserve_generic_plane(self.crtc, fmt)
                 assert(plane is not None)

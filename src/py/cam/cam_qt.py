@@ -87,6 +87,8 @@ def to_rgb(fmt, size, data):
     w = size[0]
     h = size[1]
 
+    fmt = str(fmt)
+
     if fmt == 'YUYV':
         # YUV422
         yuyv = data.reshape((h, w // 2 * 4))
@@ -293,7 +295,7 @@ class MainWindow(QtWidgets.QWidget):
             w, h = cfg.size
             pitch = cfg.stride
 
-            if cfg.pixel_format == 'MJPEG':
+            if str(cfg.pixel_format) == 'MJPEG':
                 img = Image.open(BytesIO(mfb.planes[0]))
                 qim = ImageQt(img).copy()
                 pix = QtGui.QPixmap.fromImage(qim)

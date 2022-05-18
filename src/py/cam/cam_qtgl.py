@@ -30,14 +30,6 @@ from OpenGL.GL import shaders
 
 from gl_helpers import *
 
-# libcamera format string -> DRM fourcc
-FMT_MAP = {
-    'RGB888': 'RG24',
-    'XRGB8888': 'XR24',
-    'ARGB8888': 'AR24',
-    'YUYV': 'YUYV',
-}
-
 
 class EglState:
     def __init__(self):
@@ -204,12 +196,6 @@ class MainWindow(QtWidgets.QWidget):
             self.current[ctx['idx']] = []
 
             for stream in ctx['streams']:
-                fmt = stream.configuration.pixel_format
-                size = stream.configuration.size
-
-                if fmt not in FMT_MAP:
-                    raise Exception('Unsupported pixel format: ' + str(fmt))
-
                 self.textures[stream] = None
 
         num_tiles = len(self.textures)
@@ -281,8 +267,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def create_texture(self, stream, fb):
         cfg = stream.configuration
-        fmt = cfg.pixel_format
-        fmt = str_to_fourcc(FMT_MAP[fmt])
+        fmt = cfg.pixel_format.fourcc
         w, h = cfg.size
 
         attribs = [

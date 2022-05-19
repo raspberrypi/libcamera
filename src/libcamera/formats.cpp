@@ -926,7 +926,7 @@ const PixelFormatInfo &PixelFormatInfo::info(const PixelFormat &format)
 	const auto iter = pixelFormatInfo.find(format);
 	if (iter == pixelFormatInfo.end()) {
 		LOG(Formats, Warning)
-			<< "Unsupported pixel format 0x"
+			<< "Unsupported pixel format "
 			<< utils::hex(format.fourcc());
 		return pixelFormatInfoInvalid;
 	}

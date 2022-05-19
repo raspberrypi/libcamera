@@ -61,6 +61,8 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 		{ formats::BGRX8888, "32-bit XRGB 8-8-8-8" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBX32),
 		{ formats::XBGR8888, "32-bit RGBX 8-8-8-8" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_BGRX32),
+		{ formats::RGBX8888, "32-bit XBGR 8-8-8-8" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_RGBA32),
 		{ formats::ABGR8888, "32-bit RGBA 8-8-8-8" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_ABGR32),

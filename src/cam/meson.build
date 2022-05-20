@@ -24,6 +24,7 @@ cam_sources = files([
 cam_cpp_args = []
 
 libdrm = dependency('libdrm', required : false)
+libsdl2 = dependency('SDL2', required : false)
 
 if libdrm.found()
     cam_cpp_args += [ '-DHAVE_KMS' ]
@@ -33,12 +34,22 @@ if libdrm.found()
     ])
 endif
 
+if libsdl2.found()
+    cam_cpp_args += ['-DHAVE_SDL']
+    cam_sources += files([
+        'sdl_sink.cpp',
+        'sdl_texture.cpp',
+        'sdl_texture_yuyv.cpp'
+    ])
+endif
+
 cam  = executable('cam', cam_sources,
                   dependencies : [
                       libatomic,
                       libcamera_public,
                       libdrm,
                       libevent,
+                      libsdl2,
                       libyaml,
                   ],
                   cpp_args : cam_cpp_args,

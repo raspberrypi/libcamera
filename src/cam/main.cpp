@@ -147,6 +147,10 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename", false,
 			 OptCamera);
+#ifdef HAVE_SDL
+	parser.addOption(OptSDL, OptionNone, "Display viewfinder through SDL",
+			 "sdl", ArgumentNone, "", false, OptCamera);
+#endif
 	parser.addOption(OptStream, &streamKeyValue,
 			 "Set configuration of a camera stream", "stream", true,
 			 OptCamera);

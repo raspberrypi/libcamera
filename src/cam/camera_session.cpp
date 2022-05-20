@@ -21,6 +21,9 @@
 #include "kms_sink.h"
 #endif
 #include "main.h"
+#ifdef HAVE_SDL
+#include "sdl_sink.h"
+#endif
 #include "stream_options.h"
 
 using namespace libcamera;
@@ -195,6 +198,11 @@ int CameraSession::start()
 #ifdef HAVE_KMS
 	if (options_.isSet(OptDisplay))
 		sink_ = std::make_unique<KMSSink>(options_[OptDisplay].toString());
+#endif
+
+#ifdef HAVE_SDL
+	if (options_.isSet(OptSDL))
+		sink_ = std::make_unique<SDLSink>();
 #endif
 
 	if (options_.isSet(OptFile)) {

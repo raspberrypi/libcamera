@@ -1484,10 +1484,16 @@ void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffer
 
 void RPiCameraData::freeBuffers()
 {
-	/* Copy the buffer ids from the unordered_set to a vector to pass to the IPA. */
-	std::vector<unsigned int> ipaBuffers(ipaBuffers_.begin(), ipaBuffers_.end());
-	ipa_->unmapBuffers(ipaBuffers);
-	ipaBuffers_.clear();
+	if (ipa_) {
+		/*
+		 * Copy the buffer ids from the unordered_set to a vector to
+		 * pass to the IPA.
+		 */
+		std::vector<unsigned int> ipaBuffers(ipaBuffers_.begin(),
+						     ipaBuffers_.end());
+		ipa_->unmapBuffers(ipaBuffers);
+		ipaBuffers_.clear();
+	}
 
 	for (auto const stream : streams_)
 		stream->releaseBuffers();

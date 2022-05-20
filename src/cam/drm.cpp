@@ -432,8 +432,8 @@ int Device::init()
 	if (ret < 0)
 		return ret;
 
-	EventLoop::instance()->addEvent(fd_, EventLoop::Read,
-					std::bind(&Device::drmEvent, this));
+	EventLoop::instance()->addFdEvent(fd_, EventLoop::Read,
+					  std::bind(&Device::drmEvent, this));
 
 	return 0;
 }

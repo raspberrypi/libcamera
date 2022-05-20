@@ -60,8 +60,8 @@ void EventLoop::callLater(const std::function<void()> &func)
 	event_base_once(base_, -1, EV_TIMEOUT, dispatchCallback, this, nullptr);
 }
 
-void EventLoop::addEvent(int fd, EventType type,
-			 const std::function<void()> &callback)
+void EventLoop::addFdEvent(int fd, EventType type,
+			   const std::function<void()> &callback)
 {
 	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
 	short events = (type & Read ? EV_READ : 0)

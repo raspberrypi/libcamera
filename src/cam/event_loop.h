@@ -34,8 +34,8 @@ public:
 
 	void callLater(const std::function<void()> &func);
 
-	void addEvent(int fd, EventType type,
-		      const std::function<void()> &handler);
+	void addFdEvent(int fd, EventType type,
+			const std::function<void()> &handler);
 
 private:
 	struct Event {

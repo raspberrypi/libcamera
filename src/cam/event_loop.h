@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <chrono>
 #include <functional>
-#include <memory>
 #include <list>
+#include <memory>
 #include <mutex>
 
 #include <event2/util.h>
@@ -36,6 +37,10 @@ public:
 
 	void addFdEvent(int fd, EventType type,
 			const std::function<void()> &handler);
+
+	using duration = std::chrono::steady_clock::duration;
+	void addTimerEvent(const std::chrono::microseconds period,
+			   const std::function<void()> &handler);
 
 private:
 	struct Event {

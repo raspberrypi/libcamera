@@ -84,6 +84,30 @@ void EventLoop::addFdEvent(int fd, EventType type,
 	events_.push_back(std::move(event));
 }
 
+void EventLoop::addTimerEvent(const std::chrono::microseconds period,
+			      const std::function<void()> &callback)
+{
+	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
+	event->event_ = event_new(base_, -1, EV_PERSIST, &EventLoop::Event::dispatch,
+				  event.get());
+	if (!event->event_) {
+		std::cerr << "Failed to create timer event" << std::endl;
+		return;
+	}
+
+	struct timeval tv;
+	tv.tv_sec = period.count() / 1000000ULL;
+	tv.tv_usec = period.count() % 1000000ULL;
+
+	int ret = event_add(event->event_, &tv);
+	if (ret < 0) {
+		std::cerr << "Failed to add timer event" << std::endl;
+		return;
+	}
+
+	events_.push_back(std::move(event));
+}
+
 void EventLoop::dispatchCallback([[maybe_unused]] evutil_socket_t fd,
 				 [[maybe_unused]] short flags, void *param)
 {

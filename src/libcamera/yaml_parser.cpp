@@ -47,7 +47,7 @@ void setOk(bool *ok, bool result)
  */
 
 YamlObject::YamlObject()
-	: type_(Value)
+	: type_(Type::Value)
 {
 }
 
@@ -99,7 +99,7 @@ bool YamlObject::get(const bool &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != Value)
+	if (type_ != Type::Value)
 		return defaultValue;
 
 	if (value_ == "true") {
@@ -118,7 +118,7 @@ int32_t YamlObject::get(const int32_t &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != Value)
+	if (type_ != Type::Value)
 		return defaultValue;
 
 	if (value_ == "")
@@ -141,7 +141,7 @@ uint32_t YamlObject::get(const uint32_t &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != Value)
+	if (type_ != Type::Value)
 		return defaultValue;
 
 	if (value_ == "")
@@ -175,7 +175,7 @@ double YamlObject::get(const double &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != Value)
+	if (type_ != Type::Value)
 		return defaultValue;
 
 	if (value_ == "")
@@ -198,7 +198,7 @@ std::string YamlObject::get(const std::string &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != Value)
+	if (type_ != Type::Value)
 		return defaultValue;
 
 	setOk(ok, true);
@@ -210,7 +210,7 @@ Size YamlObject::get(const Size &defaultValue, bool *ok) const
 {
 	setOk(ok, false);
 
-	if (type_ != List)
+	if (type_ != Type::List)
 		return defaultValue;
 
 	if (list_.size() != 2)
@@ -248,7 +248,7 @@ Size YamlObject::get(const Size &defaultValue, bool *ok) const
  */
 std::size_t YamlObject::size() const
 {
-	if (type_ != List)
+	if (type_ != Type::List)
 		return 0;
 
 	return list_.size();
@@ -266,7 +266,7 @@ std::size_t YamlObject::size() const
  */
 const YamlObject &YamlObject::operator[](std::size_t index) const
 {
-	if (type_ != List || index >= size())
+	if (type_ != Type::List || index >= size())
 		return empty;
 
 	return *list_[index];
@@ -326,7 +326,7 @@ std::vector<std::string> YamlObject::memberNames() const
  */
 const YamlObject &YamlObject::operator[](const std::string &key) const
 {
-	if (type_ != Dictionary || !contains(key))
+	if (type_ != Type::Dictionary || !contains(key))
 		return empty;
 
 	auto iter = dictionary_.find(key);
@@ -510,7 +510,7 @@ int YamlParserContext::parseDictionaryOrList(YamlObject::Type type,
 					     const std::function<int(EventPtr event)> &parseItem)
 {
 	yaml_event_type_t endEventType = YAML_SEQUENCE_END_EVENT;
-	if (type == YamlObject::Dictionary)
+	if (type == YamlObject::Type::Dictionary)
 		endEventType = YAML_MAPPING_END_EVENT;
 
 	/*
@@ -554,22 +554,22 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 
 	switch (event->type) {
 	case YAML_SCALAR_EVENT:
-		yamlObject.type_ = YamlObject::Value;
+		yamlObject.type_ = YamlObject::Type::Value;
 		readValue(yamlObject.value_, std::move(event));
 		return 0;
 
 	case YAML_SEQUENCE_START_EVENT: {
-		yamlObject.type_ = YamlObject::List;
+		yamlObject.type_ = YamlObject::Type::List;
 		auto &list = yamlObject.list_;
 		auto handler = [this, &list](EventPtr evt) {
 			list.emplace_back(new YamlObject());
 			return parseNextYamlObject(*list.back(), std::move(evt));
 		};
-		return parseDictionaryOrList(YamlObject::List, handler);
+		return parseDictionaryOrList(YamlObject::Type::List, handler);
 	}
 
 	case YAML_MAPPING_START_EVENT: {
-		yamlObject.type_ = YamlObject::Dictionary;
+		yamlObject.type_ = YamlObject::Type::Dictionary;
 		auto &dictionary = yamlObject.dictionary_;
 		auto handler = [this, &dictionary](EventPtr evtKey) {
 			/* Parse key */
@@ -592,7 +592,7 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 			auto elem = dictionary.emplace(key, std::make_unique<YamlObject>());
 			return parseNextYamlObject(*elem.first->second.get(), std::move(evtValue));
 		};
-		return parseDictionaryOrList(YamlObject::Dictionary, handler);
+		return parseDictionaryOrList(YamlObject::Type::Dictionary, handler);
 	}
 
 	default:

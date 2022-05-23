@@ -28,15 +28,15 @@ public:
 
 	bool isValue() const
 	{
-		return type_ == Value;
+		return type_ == Type::Value;
 	}
 	bool isList() const
 	{
-		return type_ == List;
+		return type_ == Type::List;
 	}
 	bool isDictionary() const
 	{
-		return type_ == Dictionary;
+		return type_ == Type::Dictionary;
 	}
 
 #ifndef __DOXYGEN__
@@ -65,7 +65,7 @@ private:
 
 	friend class YamlParserContext;
 
-	enum Type {
+	enum class Type {
 		Dictionary,
 		List,
 		Value,

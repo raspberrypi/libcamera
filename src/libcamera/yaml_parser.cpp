@@ -260,6 +260,45 @@ Size YamlObject::get(const Size &defaultValue, bool *ok) const
 #endif /* __DOXYGEN__ */
 
 /**
+ * \fn YamlObject::asDict() const
+ * \brief Wrap a dictionary YamlObject in an adapter that exposes iterators
+ *
+ * The YamlObject class doesn't directly implement iterators, as the iterator
+ * type depends on whether the object is a Dictionary or List. This function
+ * wraps a YamlObject of Dictionary type into an adapter that exposes
+ * iterators, as well as begin() and end() functions, allowing usage of
+ * range-based for loops with YamlObject. As YAML mappings are not ordered, the
+ * iteration order is not specified.
+ *
+ * The iterator's value_type is a
+ * <em>std::pair<const std::string &, const \ref YamlObject &></em>.
+ *
+ * If the YamlObject is not of Dictionary type, the returned adapter operates
+ * as an empty container.
+ *
+ * \return An adapter of unspecified type compatible with range-based for loops
+ */
+
+/**
+ * \fn YamlObject::asList() const
+ * \brief Wrap a list YamlObject in an adapter that exposes iterators
+ *
+ * The YamlObject class doesn't directly implement iterators, as the iterator
+ * type depends on whether the object is a Dictionary or List. This function
+ * wraps a YamlObject of List type into an adapter that exposes iterators, as
+ * well as begin() and end() functions, allowing usage of range-based for loops
+ * with YamlObject. As YAML lists are ordered, the iteration order is identical
+ * to the list order in the YAML data.
+ *
+ * The iterator's value_type is a <em>const YamlObject &</em>.
+ *
+ * If the YamlObject is not of List type, the returned adapter operates as an
+ * empty container.
+ *
+ * \return An adapter of unspecified type compatible with range-based for loops
+ */
+
+/**
  * \fn YamlObject::operator[](std::size_t index) const
  * \brief Retrieve the element from list YamlObject by index
  *

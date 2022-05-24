@@ -5,11 +5,14 @@
  * yaml-parser.cpp - YAML parser operations tests
  */
 
+#include <array>
 #include <iostream>
+#include <map>
 #include <string>
 #include <unistd.h>
 
 #include <libcamera/base/file.h>
+#include <libcamera/base/utils.h>
 
 #include "libcamera/internal/yaml_parser.h"
 
@@ -373,15 +376,39 @@ protected:
 			return TestFail;
 		}
 
-		if (listObj.size() > 2) {
+		static constexpr std::array<const char *, 2> listValues{
+			"James",
+			"Mary",
+		};
+
+		if (listObj.size() != listValues.size()) {
 			cerr << "List object parse with wrong size" << std::endl;
 			return TestFail;
 		}
 
-		if (listObj[0].get<string>("") != "James" ||
-		    listObj[1].get<string>("") != "Mary") {
-			cerr << "List object parse as wrong value" << std::endl;
-			return TestFail;
+		unsigned int i = 0;
+		for (auto &elem : listObj.asList()) {
+			if (i >= listValues.size()) {
+				std::cerr << "Too many elements in list during iteration"
+					  << std::endl;
+				return TestFail;
+			}
+
+			std::string value = listValues[i];
+
+			if (&elem != &listObj[i]) {
+				std::cerr << "List element " << i << " has wrong address"
+					  << std::endl;
+				return TestFail;
+			}
+
+			if (elem.get<std::string>("") != value) {
+				std::cerr << "List element " << i << " has wrong value"
+					  << std::endl;
+				return TestFail;
+			}
+
+			i++;
 		}
 
 		/* Test dictionary object */
@@ -422,30 +449,64 @@ protected:
 			return TestFail;
 		}
 
-		if (dictObj.size() != 3) {
-			cerr << "Dictionary object parse with wrong size" << std::endl;
+		std::map<std::string, int> dictValues{ {
+			{ "a", 1 },
+			{ "b", 2 },
+			{ "c", 3 },
+		} };
+
+		size_t dictSize = dictValues.size();
+
+		if (dictObj.size() != dictSize) {
+			cerr << "Dictionary object has wrong size" << std::endl;
 			return TestFail;
 		}
+
+		i = 0;
+		for (const auto &[key, elem] : dictObj.asDict()) {
+			if (i >= dictSize) {
+				std::cerr << "Too many elements in dictionary during iteration"
+					  << std::endl;
+				return TestFail;
+			}
+
+			const auto item = dictValues.find(key);
+			if (item == dictValues.end()) {
+				std::cerr << "Dictionary key " << i << " has wrong value"
+					  << std::endl;
+				return TestFail;
+			}
+
+			if (&elem != &dictObj[key]) {
+				std::cerr << "Dictionary element " << i << " has wrong address"
+					  << std::endl;
+				return TestFail;
+			}
+
+			if (elem.get<int32_t>(0) != item->second) {
+				std::cerr << "Dictionary element " << i << " has wrong value"
+					  << std::endl;
+				return TestFail;
+			}
+
+			/*
+			 * Erase the item to make sure that each iteration
+			 * produces a different value.
+			 */
+			dictValues.erase(item);
+			i++;
+		}
+
+		/* Make sure utils::map_keys() works on the adapter. */
+		(void)utils::map_keys(dictObj.asDict());
 
 		auto memeberNames = dictObj.memberNames();
 		sort(memeberNames.begin(), memeberNames.end());
-
-		if (memeberNames.size() != 3) {
-			cerr << "Dictionary object fail to extra member names" << std::endl;
-			return TestFail;
-		}
 
 		if (memeberNames[0] != "a" ||
 		    memeberNames[1] != "b" ||
 		    memeberNames[2] != "c") {
 			cerr << "Dictionary object fail to parse member names" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj["a"].get<int32_t>(0) != 1 ||
-		    dictObj["b"].get<int32_t>(0) != 2 ||
-		    dictObj["c"].get<int32_t>(0) != 3) {
-			cerr << "Dictionary object fail to parse member value" << std::endl;
 			return TestFail;
 		}
 

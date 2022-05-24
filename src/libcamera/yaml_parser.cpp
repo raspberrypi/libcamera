@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <errno.h>
 #include <functional>
+#include <limits>
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
@@ -151,9 +152,11 @@ int32_t YamlObject::get(const int32_t &defaultValue, bool *ok) const
 	char *end;
 
 	errno = 0;
-	int32_t value = std::strtol(value_.c_str(), &end, 10);
+	long value = std::strtol(value_.c_str(), &end, 10);
 
-	if ('\0' != *end || errno == ERANGE)
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<int32_t>::min() ||
+	    value > std::numeric_limits<int32_t>::max())
 		return defaultValue;
 
 	setOk(ok, true);
@@ -185,9 +188,11 @@ uint32_t YamlObject::get(const uint32_t &defaultValue, bool *ok) const
 	char *end;
 
 	errno = 0;
-	uint32_t value = std::strtoul(value_.c_str(), &end, 10);
+	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
 
-	if ('\0' != *end || errno == ERANGE)
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<uint32_t>::min() ||
+	    value > std::numeric_limits<uint32_t>::max())
 		return defaultValue;
 
 	setOk(ok, true);

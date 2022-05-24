@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 
 #include "libcamera/internal/yaml_parser.h"
@@ -27,7 +28,7 @@ class CameraHalConfig::Private : public Extensible::Private
 public:
 	Private();
 
-	int parseConfigFile(FILE *fh, std::map<std::string, CameraConfigData> *cameras);
+	int parseConfigFile(File &file, std::map<std::string, CameraConfigData> *cameras);
 
 private:
 	int parseCameraConfigData(const std::string &cameraId, const YamlObject &);
@@ -41,7 +42,7 @@ CameraHalConfig::Private::Private()
 {
 }
 
-int CameraHalConfig::Private::parseConfigFile(FILE *fh,
+int CameraHalConfig::Private::parseConfigFile(File &file,
 					      std::map<std::string, CameraConfigData> *cameras)
 {
 	/*
@@ -65,7 +66,7 @@ int CameraHalConfig::Private::parseConfigFile(FILE *fh,
 
 	cameras_ = cameras;
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(fh);
+	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
 	if (!root)
 		return -EINVAL;
 
@@ -169,9 +170,9 @@ int CameraHalConfig::parseConfigurationFile()
 		return -ENOENT;
 	}
 
-	FILE *fh = fopen(filePath.c_str(), "r");
-	if (!fh) {
-		int ret = -errno;
+	File file(filePath);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		int ret = file.error();
 		LOG(HALConfig, Error) << "Failed to open configuration file "
 				      << filePath << ": " << strerror(-ret);
 		return ret;
@@ -179,8 +180,7 @@ int CameraHalConfig::parseConfigurationFile()
 
 	exists_ = true;
 
-	int ret = _d()->parseConfigFile(fh, &cameras_);
-	fclose(fh);
+	int ret = _d()->parseConfigFile(file, &cameras_);
 	if (ret)
 		return -EINVAL;
 

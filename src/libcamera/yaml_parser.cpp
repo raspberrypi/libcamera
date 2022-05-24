@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <functional>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 
 #include <yaml.h>
@@ -345,7 +346,7 @@ public:
 	YamlParserContext();
 	~YamlParserContext();
 
-	int init(std::FILE *fh);
+	int init(File &file);
 	int parseContent(YamlObject &yamlObject);
 
 private:
@@ -357,6 +358,9 @@ private:
 		}
 	};
 	using EventPtr = std::unique_ptr<yaml_event_t, EventDeleter>;
+
+	static int yamlRead(void *data, unsigned char *buffer, size_t size,
+			    size_t *sizeRead);
 
 	EventPtr nextEvent();
 
@@ -399,13 +403,13 @@ YamlParserContext::~YamlParserContext()
  * \param[in] fh The YAML file to parse
  *
  * Prior to parsing the YAML content, the YamlParserContext must be initialized
- * with an opened FILE to create an internal parser. The FILE needs to stay
- * valid during the process.
+ * with a file to create an internal parser. The file needs to stay valid until
+ * parsing completes.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -EINVAL The parser has failed to initialize
  */
-int YamlParserContext::init(std::FILE *fh)
+int YamlParserContext::init(File &file)
 {
 	/* yaml_parser_initialize returns 1 when it succeededs */
 	if (!yaml_parser_initialize(&parser_)) {
@@ -413,9 +417,23 @@ int YamlParserContext::init(std::FILE *fh)
 		return -EINVAL;
 	}
 	parserValid_ = true;
-	yaml_parser_set_input_file(&parser_, fh);
+	yaml_parser_set_input(&parser_, &YamlParserContext::yamlRead, &file);
 
 	return 0;
+}
+
+int YamlParserContext::yamlRead(void *data, unsigned char *buffer, size_t size,
+				size_t *sizeRead)
+{
+	File *file = static_cast<File *>(data);
+
+	Span<unsigned char> buf{ buffer, size };
+	ssize_t ret = file->read(buf);
+	if (ret < 0)
+		return 0;
+
+	*sizeRead = ret;
+	return 1;
 }
 
 /**
@@ -655,21 +673,20 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  */
 
 /**
- * \fn YamlParser::parse()
  * \brief Parse a YAML file as a YamlObject
- * \param[in] fh The YAML file to parse
+ * \param[in] file The YAML file to parse
  *
- * The YamlParser::parse() function takes an open FILE, parses its contents, and
+ * The YamlParser::parse() function takes a file, parses its contents, and
  * returns a pointer to a YamlObject corresponding to the root node of the YAML
- * document. The caller is responsible for closing the file.
+ * document.
  *
  * \return Pointer to result YamlObject on success or nullptr otherwise
  */
-std::unique_ptr<YamlObject> YamlParser::parse(std::FILE *fh)
+std::unique_ptr<YamlObject> YamlParser::parse(File &file)
 {
 	YamlParserContext context;
 
-	if (context.init(fh))
+	if (context.init(file))
 		return nullptr;
 
 	std::unique_ptr<YamlObject> root(new YamlObject());

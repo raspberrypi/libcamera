@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <cstdio>
 #include <map>
 #include <string>
 #include <vector>
@@ -18,6 +17,7 @@
 
 namespace libcamera {
 
+class File;
 class YamlParserContext;
 
 class YamlObject
@@ -82,7 +82,7 @@ private:
 class YamlParser final
 {
 public:
-	static std::unique_ptr<YamlObject> parse(std::FILE *fh);
+	static std::unique_ptr<YamlObject> parse(File &file);
 };
 
 } /* namespace libcamera */

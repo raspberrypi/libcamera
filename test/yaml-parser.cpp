@@ -9,6 +9,8 @@
 #include <string>
 #include <unistd.h>
 
+#include <libcamera/base/file.h>
+
 #include "libcamera/internal/yaml_parser.h"
 
 #include "test.h"
@@ -69,29 +71,27 @@ protected:
 	int run()
 	{
 		/* Test invalid YAML file */
-		FILE *fh = fopen(invalidYamlFile_.c_str(), "r");
-		if (!fh) {
+		File file{ invalidYamlFile_ };
+		if (!file.open(File::OpenModeFlag::ReadOnly)) {
 			cerr << "Fail to open invalid YAML file" << std::endl;
 			return TestFail;
 		}
 
-		std::unique_ptr<YamlObject> root = YamlParser::parse(fh);
-		fclose(fh);
-
+		std::unique_ptr<YamlObject> root = YamlParser::parse(file);
 		if (root) {
 			cerr << "Invalid YAML file parse successfully" << std::endl;
 			return TestFail;
 		}
 
 		/* Test YAML file */
-		fh = fopen(testYamlFile_.c_str(), "r");
-		if (!fh) {
+		file.close();
+		file.setFileName(testYamlFile_);
+		if (!file.open(File::OpenModeFlag::ReadOnly)) {
 			cerr << "Fail to open test YAML file" << std::endl;
 			return TestFail;
 		}
 
-		root = YamlParser::parse(fh);
-		fclose(fh);
+		root = YamlParser::parse(file);
 
 		if (!root) {
 			cerr << "Fail to parse test YAML file: " << std::endl;

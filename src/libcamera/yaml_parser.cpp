@@ -336,28 +336,6 @@ bool YamlObject::contains(const std::string &key) const
 }
 
 /**
- * \fn YamlObject::memberNames()
- * \brief Retrieve all member names of the dictionary
- *
- * This function retrieve member names of a YamlObject. Only YamlObject
- * instances of Dictionary type associate elements with names, calling this
- * function on other types of instances is invalid and results in undefined
- * behaviour.
- *
- * \todo Replace this function with an iterator-based API
- *
- * \return A vector of string as the member names
- */
-std::vector<std::string> YamlObject::memberNames() const
-{
-	std::vector<std::string> memberNames;
-	for (auto &[key, _] : dictionary_)
-		memberNames.push_back(key);
-
-	return memberNames;
-}
-
-/**
  * \fn YamlObject::operator[](const std::string &key) const
  * \brief Retrieve a member by name from the dictionary
  *

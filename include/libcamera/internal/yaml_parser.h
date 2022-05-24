@@ -172,7 +172,6 @@ public:
 
 	bool contains(const std::string &key) const;
 	const YamlObject &operator[](const std::string &key) const;
-	std::vector<std::string> memberNames() const;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(YamlObject)

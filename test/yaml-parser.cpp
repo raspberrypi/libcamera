@@ -500,16 +500,6 @@ protected:
 		/* Make sure utils::map_keys() works on the adapter. */
 		(void)utils::map_keys(dictObj.asDict());
 
-		auto memeberNames = dictObj.memberNames();
-		sort(memeberNames.begin(), memeberNames.end());
-
-		if (memeberNames[0] != "a" ||
-		    memeberNames[1] != "b" ||
-		    memeberNames[2] != "c") {
-			cerr << "Dictionary object fail to parse member names" << std::endl;
-			return TestFail;
-		}
-
 		/* Test leveled objects */
 		auto &level1Obj = (*root)["level1"];
 

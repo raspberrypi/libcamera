@@ -139,6 +139,67 @@ bool YamlObject::get(const bool &defaultValue, bool *ok) const
 }
 
 template<>
+int16_t YamlObject::get(const int16_t &defaultValue, bool *ok) const
+{
+	setOk(ok, false);
+
+	if (type_ != Type::Value)
+		return defaultValue;
+
+	if (value_ == "")
+		return defaultValue;
+
+	char *end;
+
+	errno = 0;
+	int16_t value = std::strtol(value_.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<int16_t>::min() ||
+	    value > std::numeric_limits<int16_t>::max())
+		return defaultValue;
+
+	setOk(ok, true);
+	return value;
+}
+
+template<>
+uint16_t YamlObject::get(const uint16_t &defaultValue, bool *ok) const
+{
+	setOk(ok, false);
+
+	if (type_ != Type::Value)
+		return defaultValue;
+
+	if (value_ == "")
+		return defaultValue;
+
+	/*
+	 * libyaml parses all scalar values as strings. When a string has
+	 * leading spaces before a minus sign, for example "  -10", strtoul
+	 * skips leading spaces, accepts the leading minus sign, and the
+	 * calculated digits are negated as if by unary minus. Rule it out in
+	 * case the user gets a large number when the value is negative.
+	 */
+	std::size_t found = value_.find_first_not_of(" \t");
+	if (found != std::string::npos && value_[found] == '-')
+		return defaultValue;
+
+	char *end;
+
+	errno = 0;
+	uint16_t value = std::strtoul(value_.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<uint16_t>::min() ||
+	    value > std::numeric_limits<uint16_t>::max())
+		return defaultValue;
+
+	setOk(ok, true);
+	return value;
+}
+
+template<>
 int32_t YamlObject::get(const int32_t &defaultValue, bool *ok) const
 {
 	setOk(ok, false);

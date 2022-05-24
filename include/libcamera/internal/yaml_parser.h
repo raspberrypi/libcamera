@@ -39,6 +39,8 @@ public:
 		return type_ == Type::Dictionary;
 	}
 
+	std::size_t size() const;
+
 #ifndef __DOXYGEN__
 	template<typename T,
 		 typename std::enable_if_t<
@@ -53,7 +55,6 @@ public:
 #endif
 	T get(const T &defaultValue, bool *ok = nullptr) const;
 
-	std::size_t size() const;
 	const YamlObject &operator[](std::size_t index) const;
 
 	bool contains(const std::string &key) const;

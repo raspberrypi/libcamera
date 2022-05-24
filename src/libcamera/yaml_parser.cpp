@@ -75,6 +75,29 @@ YamlObject::~YamlObject() = default;
  */
 
 /**
+ * \fn YamlObject::size()
+ * \brief Retrieve the number of elements in a dictionary or list YamlObject
+ *
+ * This function retrieves the size of the YamlObject, defined as the number of
+ * child elements it contains. Only YamlObject instances of Dictionary or List
+ * types have a size, calling this function on other types of instances is
+ * invalid and results in undefined behaviour.
+ *
+ * \return The size of the YamlObject
+ */
+std::size_t YamlObject::size() const
+{
+	switch (type_) {
+	case Type::Dictionary:
+		return dictionary_.size();
+	case Type::List:
+		return list_.size();
+	default:
+		return 0;
+	}
+}
+
+/**
  * \fn template<typename T> YamlObject::get<T>(
  *	const T &defaultValue, bool *ok) const
  * \brief Parse the YamlObject as a \a T value
@@ -234,25 +257,6 @@ Size YamlObject::get(const Size &defaultValue, bool *ok) const
 }
 
 #endif /* __DOXYGEN__ */
-
-/**
- * \fn YamlObject::size()
- * \brief Retrieve the number of elements in a list YamlObject
- *
- * This function retrieves the size of the YamlObject, defined as the number of
- * child elements it contains. Only YamlObject instances of List type have a
- * size, calling this function on other types of instances is invalid and
- * results in undefined behaviour.
- *
- * \return The size of the YamlObject
- */
-std::size_t YamlObject::size() const
-{
-	if (type_ != Type::List)
-		return 0;
-
-	return list_.size();
-}
 
 /**
  * \fn YamlObject::operator[](std::size_t index) const

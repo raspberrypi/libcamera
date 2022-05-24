@@ -421,6 +421,11 @@ protected:
 			return TestFail;
 		}
 
+		if (dictObj.size() != 3) {
+			cerr << "Dictionary object parse with wrong size" << std::endl;
+			return TestFail;
+		}
+
 		auto memeberNames = dictObj.memberNames();
 		sort(memeberNames.begin(), memeberNames.end());
 

@@ -82,10 +82,8 @@ int CameraHalConfig::Private::parseConfigFile(File &file,
 	if (!yamlObjectCameras.isDictionary())
 		return -EINVAL;
 
-	std::vector<std::string> cameraIds = yamlObjectCameras.memberNames();
-	for (const std::string &cameraId : cameraIds) {
-		if (parseCameraConfigData(cameraId,
-					  yamlObjectCameras[cameraId]))
+	for (const auto &[cameraId, configData] : yamlObjectCameras.asDict()) {
+		if (parseCameraConfigData(cameraId, configData))
 			return -EINVAL;
 	}
 

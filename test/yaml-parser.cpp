@@ -49,10 +49,11 @@ protected:
 		if (fd == -1)
 			return false;
 
-		FILE *fh = fdopen(fd, "w");
-		fputs(content.c_str(), fh);
+		int ret = write(fd, content.c_str(), content.size());
+		close(fd);
 
-		fclose(fh);
+		if (ret != static_cast<int>(content.size()))
+			return false;
 
 		return true;
 	}

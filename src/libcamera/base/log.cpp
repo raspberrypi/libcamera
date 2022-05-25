@@ -46,11 +46,11 @@
  * their category are output to the log, while other messages are silently
  * discarded.
  *
- * By default log messages are output to stderr. They can be redirected to a log
- * file by setting the LIBCAMERA_LOG_FILE environment variable to the name of
- * the file. The file must be writable and is truncated if it exists. If any
+ * By default log messages are output to std::cerr. They can be redirected to a
+ * log file by setting the LIBCAMERA_LOG_FILE environment variable to the name
+ * of the file. The file must be writable and is truncated if it exists. If any
  * error occurs when opening the file, the file is ignored and the log is output
- * to stderr.
+ * to std::cerr.
  */
 
 /**
@@ -527,7 +527,8 @@ Logger::Logger()
  * If the LIBCAMERA_LOG_FILE environment variable is set, open the file it
  * points to and redirect the logger output to it. If the environment variable
  * is set to "syslog", then the logger output will be directed to syslog. Errors
- * are silently ignored and don't affect the logger output (set to stderr).
+ * are silently ignored and don't affect the logger output (set to std::cerr by
+ * default).
  */
 void Logger::parseLogFile()
 {

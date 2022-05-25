@@ -477,15 +477,11 @@ int Logger::logSetStream(std::ostream *stream)
  */
 int Logger::logSetTarget(enum LoggingTarget target)
 {
-	std::shared_ptr<LogOutput> output;
-
 	switch (target) {
 	case LoggingTargetSyslog:
-		output = std::make_shared<LogOutput>();
-		std::atomic_store(&output_, output);
+		std::atomic_store(&output_, std::make_shared<LogOutput>());
 		break;
 	case LoggingTargetNone:
-		output = nullptr;
 		std::atomic_store(&output_, std::shared_ptr<LogOutput>());
 		break;
 	default:

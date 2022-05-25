@@ -517,6 +517,8 @@ void Logger::logSetLevel(const char *category, const char *level)
  */
 Logger::Logger()
 {
+	logSetStream(&std::cerr);
+
 	parseLogFile();
 	parseLogLevels();
 }
@@ -533,10 +535,8 @@ Logger::Logger()
 void Logger::parseLogFile()
 {
 	const char *file = utils::secure_getenv("LIBCAMERA_LOG_FILE");
-	if (!file) {
-		logSetStream(&std::cerr);
+	if (!file)
 		return;
-	}
 
 	if (!strcmp(file, "syslog")) {
 		logSetTarget(LoggingTargetSyslog);

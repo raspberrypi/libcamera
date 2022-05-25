@@ -154,7 +154,7 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  * through the 'm' coefficient.
  *
  * When the gain is expressed in dB, 'a' is equal to 1 and 'm' to
- * \f$log_{2}{10^{frac{1}{20}}}\f$.
+ * \f$log_{2}{10^{\frac{1}{20}}}\f$.
  */
 
 /**

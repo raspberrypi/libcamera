@@ -10,6 +10,8 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+namespace libcamera {
+
 extern "C" {
 #endif
 
@@ -48,5 +50,7 @@ struct ipa_control_info_entry {
 };
 
 #ifdef __cplusplus
+} /* namespace libcamera */
+
 }
 #endif

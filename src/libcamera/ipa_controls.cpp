@@ -131,6 +131,8 @@
  * shall be ignored when parsing the packet.
  */
 
+namespace libcamera {
+
 /**
  * \def IPA_CONTROLS_FORMAT_VERSION
  * \brief The current control serialization format version
@@ -224,3 +226,5 @@ static_assert(sizeof(ipa_control_value_entry) == 16,
 
 static_assert(sizeof(ipa_control_info_entry) == 16,
 	      "Invalid ABI size change for struct ipa_control_info_entry");
+
+} /* namespace libcamera */

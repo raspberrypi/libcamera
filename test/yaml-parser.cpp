@@ -9,7 +9,7 @@
 #include <string>
 #include <unistd.h>
 
-#include <libcamera/internal/yaml_parser.h>
+#include "libcamera/internal/yaml_parser.h"
 
 #include "test.h"
 

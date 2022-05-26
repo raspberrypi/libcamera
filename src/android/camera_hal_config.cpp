@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <string>
 
-#include <hardware/camera3.h>
-
 #include <libcamera/base/log.h>
 
-#include <libcamera/internal/yaml_parser.h>
+#include "libcamera/internal/yaml_parser.h"
+
+#include <hardware/camera3.h>
 
 using namespace libcamera;
 

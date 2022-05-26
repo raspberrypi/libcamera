@@ -23,7 +23,7 @@
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/request.h>
 
-#include <libcamera/internal/mapped_framebuffer.h>
+#include "libcamera/internal/mapped_framebuffer.h"
 
 #include "algorithms/agc.h"
 #include "algorithms/algorithm.h"

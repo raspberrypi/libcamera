@@ -38,9 +38,9 @@ public:
 	int populate();
 	bool isValid() const { return valid_; }
 
-	const std::string driver() const { return driver_; }
-	const std::string deviceNode() const { return deviceNode_; }
-	const std::string model() const { return model_; }
+	const std::string &driver() const { return driver_; }
+	const std::string &deviceNode() const { return deviceNode_; }
+	const std::string &model() const { return model_; }
 	unsigned int version() const { return version_; }
 	unsigned int hwRevision() const { return hwRevision_; }
 

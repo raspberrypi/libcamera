@@ -279,6 +279,8 @@ class ClassRegistry(type):
         newclass = super().__new__(cls, clsname, bases, attrs)
         if bases:
             bases[0].subclasses.append(newclass)
+            bases[0].subclasses.sort(key=lambda x: getattr(x, 'priority', 0),
+                                     reverse=True)
         return newclass
 
 
@@ -568,6 +570,7 @@ class Formatter(metaclass=ClassRegistry):
 
 class CLangFormatter(Formatter):
     patterns = ('*.c', '*.cpp', '*.h')
+    priority = -1
 
     @classmethod
     def format(cls, filename, data):

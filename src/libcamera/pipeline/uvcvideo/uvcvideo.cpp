@@ -501,12 +501,35 @@ int UVCCameraData::init(MediaDevice *media)
 
 	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
 
-	/*
-	 * \todo Find a way to tell internal and external UVC cameras apart.
-	 * Until then, treat all UVC cameras as external.
-	 */
-	properties_.set(properties::Location, properties::CameraLocationExternal);
 	properties_.set(properties::Model, utils::toAscii(media->model()));
+
+	/*
+	 * Derive the location from the device removable attribute in sysfs.
+	 * Non-removable devices are assumed to be front as we lack detailed
+	 * location information, and removable device are considered external.
+	 *
+	 * The sysfs removable attribute is derived from the ACPI _UPC attribute
+	 * if available, or from the USB hub descriptors otherwise. ACPI data
+	 * may not be very reliable, and the USB hub descriptors may not be
+	 * accurate on DT-based platforms. A heuristic may need to be
+	 * implemented later if too many devices end up being miscategorized.
+	 *
+	 * \todo Find a way to tell front and back devices apart. This could
+	 * come from the ACPI _PLD, but that may be even more unreliable than
+	 * the _UPC.
+	 */
+	properties::LocationEnum location = properties::CameraLocationExternal;
+	std::ifstream file(video_->devicePath() + "/../removable");
+	if (file.is_open()) {
+		std::string value;
+		std::getline(file, value);
+		file.close();
+
+		if (value == "fixed")
+			location = properties::CameraLocationFront;
+	}
+
+	properties_.set(properties::Location, location);
 
 	/*
 	 * Get the current format in order to initialize the sensor array

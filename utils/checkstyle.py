@@ -643,7 +643,7 @@ class DPointerFormatter(Formatter):
 class IncludeOrderFormatter(Formatter):
     patterns = ('*.cpp', '*.h')
 
-    include_regex = re.compile('^#include ["<]([^">]*)[">]')
+    include_regex = re.compile('^#include (["<])([^">]*)([">])')
 
     @classmethod
     def format(cls, filename, data):
@@ -657,7 +657,21 @@ class IncludeOrderFormatter(Formatter):
             if match:
                 # If the current line is an #include statement, add it to the
                 # includes group and continue to the next line.
-                includes.append((line, match.group(1)))
+                open_token = match.group(1)
+                file_name = match.group(2)
+                close_token = match.group(3)
+
+                # Ensure the "..." include style for internal headers and the
+                # <...> style for all other libcamera headers.
+                if (file_name.startswith('libcamera/internal')):
+                    open_token = '"'
+                    close_token = '"'
+                elif (file_name.startswith('libcamera/')):
+                    open_token = '<'
+                    close_token = '>'
+
+                line = f'#include {open_token}{file_name}{close_token}'
+                includes.append((line, file_name))
                 continue
 
             # The current line is not an #include statement, output the sorted

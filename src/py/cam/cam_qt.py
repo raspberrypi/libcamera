@@ -187,7 +187,6 @@ class QtRenderer:
         for ctx in self.contexts:
             for stream in ctx['streams']:
                 window = MainWindow(ctx, stream)
-                window.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
                 window.show()
                 windows.append(window)
 

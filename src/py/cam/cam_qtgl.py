@@ -137,7 +137,6 @@ class QtRenderer:
         self.app = QtWidgets.QApplication([])
 
         window = MainWindow(self.state)
-        window.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
         window.show()
 
         self.window = window

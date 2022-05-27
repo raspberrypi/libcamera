@@ -72,6 +72,10 @@ run_command('ln', '-fsT', files('__init__.py'),
             meson.current_build_dir() / '__init__.py',
             check: true)
 
+run_command('ln', '-fsT', meson.current_source_dir() / 'utils',
+            meson.current_build_dir() / 'utils',
+            check: true)
+
 install_data(['__init__.py'], install_dir : destdir)
 
 # \todo Generate stubs when building. See https://peps.python.org/pep-0484/#stub-files

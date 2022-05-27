@@ -9,6 +9,7 @@ from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtCore, QtGui, QtWidgets
 import libcamera as libcam
+import libcamera.utils
 import numpy as np
 import sys
 
@@ -285,7 +286,7 @@ class MainWindow(QtWidgets.QWidget):
         controlsLayout.addStretch()
 
     def buf_to_qpixmap(self, stream, fb):
-        with fb.mmap() as mfb:
+        with libcamera.utils.MappedFrameBuffer(fb) as mfb:
             cfg = stream.configuration
 
             if cfg.pixel_format == libcam.formats.MJPEG:

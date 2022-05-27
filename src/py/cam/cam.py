@@ -9,6 +9,7 @@
 import argparse
 import binascii
 import libcamera as libcam
+import libcamera.utils
 import sys
 import traceback
 
@@ -327,7 +328,7 @@ def request_handler(state, ctx, req):
 
         crcs = []
         if ctx['opt-crc']:
-            with fb.mmap() as mfb:
+            with libcamera.utils.MappedFrameBuffer(fb) as mfb:
                 plane_crcs = [binascii.crc32(p) for p in mfb.planes]
                 crcs.append(plane_crcs)
 
@@ -345,7 +346,7 @@ def request_handler(state, ctx, req):
                 print(f'\t{ctrl} = {val}')
 
         if ctx['opt-save-frames']:
-            with fb.mmap() as mfb:
+            with libcamera.utils.MappedFrameBuffer(fb) as mfb:
                 filename = 'frame-{}-{}-{}.data'.format(ctx['id'], stream_name, ctx['reqs-completed'])
                 with open(filename, 'wb') as f:
                     for p in mfb.planes:

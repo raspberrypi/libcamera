@@ -46,14 +46,14 @@ class CameraContext:
     def do_cmd_list_props(self):
         print('Properties for', self.id)
 
-        for name, prop in self.camera.properties.items():
-            print('\t{}: {}'.format(name, prop))
+        for cid, val in self.camera.properties.items():
+            print('\t{}: {}'.format(cid, val))
 
     def do_cmd_list_controls(self):
         print('Controls for', self.id)
 
-        for name, prop in self.camera.controls.items():
-            print('\t{}: {}'.format(name, prop))
+        for cid, info in self.camera.controls.items():
+            print('\t{}: {}'.format(cid, info))
 
     def do_cmd_info(self):
         print('Stream info for', self.id)

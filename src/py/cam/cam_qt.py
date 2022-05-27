@@ -267,9 +267,9 @@ class MainWindow(QtWidgets.QWidget):
 
         camera = ctx.camera
 
-        for k, v in camera.properties.items():
+        for cid, cv in camera.properties.items():
             lab = QtWidgets.QLabel()
-            lab.setText(k + ' = ' + str(v))
+            lab.setText('{} = {}'.format(cid, cv))
             groupLayout.addWidget(lab)
 
         group = QtWidgets.QGroupBox('Controls')
@@ -277,9 +277,10 @@ class MainWindow(QtWidgets.QWidget):
         group.setLayout(groupLayout)
         controlsLayout.addWidget(group)
 
-        for k, (min, max, default) in camera.controls.items():
+        for cid, cinfo in camera.controls.items():
             lab = QtWidgets.QLabel()
-            lab.setText('{} = {}/{}/{}'.format(k, min, max, default))
+            lab.setText('{} = {}/{}/{}'
+                        .format(cid, cinfo.min, cinfo.max, cinfo.default))
             groupLayout.addWidget(lab)
 
         controlsLayout.addStretch()

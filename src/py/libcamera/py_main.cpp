@@ -5,10 +5,6 @@
  * Python bindings
  */
 
-/*
- * \todo Add bindings for the ControlInfo class
- */
-
 #include <mutex>
 #include <stdexcept>
 #include <sys/eventfd.h>
@@ -159,6 +155,7 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyFrameBuffer = py::class_<FrameBuffer>(m, "FrameBuffer");
 	auto pyStream = py::class_<Stream>(m, "Stream");
 	auto pyControlId = py::class_<ControlId>(m, "ControlId");
+	auto pyControlInfo = py::class_<ControlInfo>(m, "ControlInfo");
 	auto pyRequest = py::class_<Request>(m, "Request");
 	auto pyRequestStatus = py::enum_<Request::Status>(pyRequest, "Status");
 	auto pyRequestReuse = py::enum_<Request::ReuseFlag>(pyRequest, "Reuse");
@@ -260,28 +257,17 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("id", &Camera::id)
 		.def("acquire", &Camera::acquire)
 		.def("release", &Camera::release)
-		.def("start", [](Camera &self, py::dict controls) {
+		.def("start", [](Camera &self,
+		                 const std::unordered_map<const ControlId *, py::object> &controls) {
 			/* \todo What happens if someone calls start() multiple times? */
 
 			self.requestCompleted.connect(handleRequestCompleted);
 
-			const ControlInfoMap &controlMap = self.controls();
-			ControlList controlList(controlMap);
-			for (const auto& [hkey, hval]: controls) {
-				auto key = hkey.cast<std::string>();
+			ControlList controlList(self.controls());
 
-				auto it = std::find_if(controlMap.begin(), controlMap.end(),
-						       [&key](const auto &kvp) {
-								return kvp.first->name() == key;
-						       });
-
-				if (it == controlMap.end())
-					throw std::runtime_error("Control " + key + " not found");
-
-				const auto &id = it->first;
-				auto obj = py::cast<py::object>(hval);
-
-				controlList.set(id->id(), pyToControlValue(obj, id->type()));
+			for (const auto& [id, obj]: controls) {
+				auto val = pyToControlValue(obj, id->type());
+				controlList.set(id->id(), val);
 			}
 
 			int ret = self.start(&controlList);
@@ -291,7 +277,7 @@ PYBIND11_MODULE(_libcamera, m)
 			}
 
 			return 0;
-		}, py::arg("controls") = py::dict())
+		}, py::arg("controls") = std::unordered_map<const ControlId *, py::object>())
 
 		.def("stop", [](Camera &self) {
 			int ret = self.stop();
@@ -341,40 +327,26 @@ PYBIND11_MODULE(_libcamera, m)
 			return set;
 		})
 
-		.def("find_control", [](Camera &self, const std::string &name) {
-			const auto &controls = self.controls();
-
-			auto it = std::find_if(controls.begin(), controls.end(),
-					       [&name](const auto &kvp) {
-							return kvp.first->name() == name;
-					       });
-
-			if (it == controls.end())
-				throw std::runtime_error("Control '" + name + "' not found");
-
-			return it->first;
-		}, py::return_value_policy::reference_internal)
-
 		.def_property_readonly("controls", [](Camera &self) {
-			py::dict ret;
+			/* Convert ControlInfoMap to std container */
 
-			for (const auto &[id, ci] : self.controls()) {
-				ret[id->name().c_str()] = std::make_tuple<py::object>(controlValueToPy(ci.min()),
-										      controlValueToPy(ci.max()),
-										      controlValueToPy(ci.def()));
-			}
+			std::unordered_map<const ControlId *, ControlInfo> ret;
+
+			for (const auto &[k, cv] : self.controls())
+				ret[k] = cv;
 
 			return ret;
 		})
 
 		.def_property_readonly("properties", [](Camera &self) {
-			py::dict ret;
+			/* Convert ControlList to std container */
 
-			for (const auto &[key, cv] : self.properties()) {
-				const ControlId *id = properties::properties.at(key);
+			std::unordered_map<const ControlId *, py::object> ret;
+
+			for (const auto &[k, cv] : self.properties()) {
+				const ControlId *id = properties::properties.at(k);
 				py::object ob = controlValueToPy(cv);
-
-				ret[id->name().c_str()] = ob;
+				ret[id] = ob;
 			}
 
 			return ret;
@@ -464,7 +436,34 @@ PYBIND11_MODULE(_libcamera, m)
 	pyControlId
 		.def_property_readonly("id", &ControlId::id)
 		.def_property_readonly("name", &ControlId::name)
-		.def_property_readonly("type", &ControlId::type);
+		.def_property_readonly("type", &ControlId::type)
+		.def("__str__", [](const ControlId &self) { return self.name(); })
+		.def("__repr__", [](const ControlId &self) {
+			return py::str("libcamera.ControlId({}, {}, {})")
+				.format(self.id(), self.name(), self.type());
+		});
+
+	pyControlInfo
+		.def_property_readonly("min", [](const ControlInfo &self) {
+			return controlValueToPy(self.min());
+		})
+		.def_property_readonly("max", [](const ControlInfo &self) {
+			return controlValueToPy(self.max());
+		})
+		.def_property_readonly("default", [](const ControlInfo &self) {
+			return controlValueToPy(self.def());
+		})
+		.def_property_readonly("values", [](const ControlInfo &self) {
+			py::list l;
+			for (const auto &v : self.values())
+				l.append(controlValueToPy(v));
+			return l;
+		})
+		.def("__str__", &ControlInfo::toString)
+		.def("__repr__", [](const ControlInfo &self) {
+			return py::str("libcamera.ControlInfo({})")
+				.format(self.toString());
+		});
 
 	pyRequest
 		/* \todo Fence is not supported, so we cannot expose addBuffer() directly */
@@ -475,17 +474,18 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("buffers", &Request::buffers)
 		.def_property_readonly("cookie", &Request::cookie)
 		.def_property_readonly("has_pending_buffers", &Request::hasPendingBuffers)
-		.def("set_control", [](Request &self, ControlId &id, py::object value) {
+		.def("set_control", [](Request &self, const ControlId &id, py::object value) {
 			self.controls().set(id.id(), pyToControlValue(value, id.type()));
 		})
 		.def_property_readonly("metadata", [](Request &self) {
-			py::dict ret;
+			/* Convert ControlList to std container */
+
+			std::unordered_map<const ControlId *, py::object> ret;
 
 			for (const auto &[key, cv] : self.metadata()) {
 				const ControlId *id = controls::controls.at(key);
 				py::object ob = controlValueToPy(cv);
-
-				ret[id->name().c_str()] = ob;
+				ret[id] = ob;
 			}
 
 			return ret;

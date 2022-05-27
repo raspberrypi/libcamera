@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
  *
- * Python bindings - Auto-generated control enums
+ * Python bindings - Auto-generated controls
  *
  * This file is auto-generated. Do not edit.
  */
@@ -13,7 +13,18 @@
 
 namespace py = pybind11;
 
-void init_py_control_enums_generated(py::module& m)
+class PyControls
 {
-${enums}
+};
+
+class PyDraftControls
+{
+};
+
+void init_py_controls_generated(py::module& m)
+{
+	auto controls = py::class_<PyControls>(m, "controls");
+	auto draft = py::class_<PyDraftControls>(controls, "draft");
+
+${controls}
 }

@@ -18,17 +18,21 @@ pycamera_sources = files([
     'py_main.cpp',
 ])
 
-gen_py_control_enums_input_files = files([
+# Generate controls
+
+gen_py_controls_input_files = files([
     '../../libcamera/control_ids.yaml',
-    'py_control_enums_generated.cpp.in',
+    'py_controls_generated.cpp.in',
 ])
 
-gen_py_control_enums = files('gen-py-control-enums.py')
+gen_py_controls = files('gen-py-controls.py')
 
 pycamera_sources += custom_target('py_gen_controls',
-                                  input : gen_py_control_enums_input_files,
-                                  output : ['py_control_enums_generated.cpp'],
-                                  command : [gen_py_control_enums, '-o', '@OUTPUT@', '@INPUT@'])
+                                  input : gen_py_controls_input_files,
+                                  output : ['py_controls_generated.cpp'],
+                                  command : [gen_py_controls, '-o', '@OUTPUT@', '@INPUT@'])
+
+# Generate formats
 
 gen_py_formats_input_files = files([
     '../../libcamera/formats.yaml',

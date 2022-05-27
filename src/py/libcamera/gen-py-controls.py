@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Generate Python bindings enums for controls from YAML
+# Generate Python bindings controls from YAML
 
 import argparse
 import string
@@ -27,18 +27,22 @@ def generate_py(controls):
     for ctrl in controls:
         name, ctrl = ctrl.popitem()
 
+        if ctrl.get('draft'):
+            ns = 'libcamera::controls::draft::'
+            container = 'draft'
+        else:
+            ns = 'libcamera::controls::'
+            container = 'controls'
+
+        out += f'\t{container}.def_readonly_static("{name}", static_cast<const libcamera::ControlId *>(&{ns}{name}));\n\n'
+
         enum = ctrl.get('enum')
         if not enum:
             continue
 
-        if ctrl.get('draft'):
-            ns = 'libcamera::controls::draft::'
-        else:
-            ns = 'libcamera::controls::'
-
         cpp_enum = name + 'Enum'
 
-        out += '\tpy::enum_<{}{}>(m, \"{}\")\n'.format(ns, cpp_enum, name)
+        out += '\tpy::enum_<{}{}>({}, \"{}\")\n'.format(ns, cpp_enum, container, cpp_enum)
 
         if name == 'LensShadingMapMode':
             prefix = 'LensShadingMapMode'
@@ -54,9 +58,9 @@ def generate_py(controls):
 
             out += '\t\t.value(\"{}\", {}{})\n'.format(py_enum, ns, cpp_enum)
 
-        out += '\t;\n'
+        out += '\t;\n\n'
 
-    return {'enums': out}
+    return {'controls': out}
 
 
 def fill_template(template, data):

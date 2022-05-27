@@ -1185,7 +1185,7 @@ void CameraDevice::requestComplete(Request *request)
 	notifyShutter(descriptor->frameNumber_, sensorTimestamp);
 
 	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
-			<< descriptor->buffers_.size() << " streams";
+			<< descriptor->request_->buffers().size() << " streams";
 
 	/*
 	 * Generate the metadata associated with the captured buffers.

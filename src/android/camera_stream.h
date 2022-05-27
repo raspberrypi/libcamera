@@ -114,7 +114,9 @@ public:
 	};
 	CameraStream(CameraDevice *const cameraDevice,
 		     libcamera::CameraConfiguration *config, Type type,
-		     camera3_stream_t *camera3Stream, unsigned int index);
+		     camera3_stream_t *camera3Stream,
+		     CameraStream *const sourceStream,
+		     unsigned int index);
 	CameraStream(CameraStream &&other);
 	~CameraStream();
 
@@ -122,6 +124,7 @@ public:
 	camera3_stream_t *camera3Stream() const { return camera3Stream_; }
 	const libcamera::StreamConfiguration &configuration() const;
 	libcamera::Stream *stream() const;
+	CameraStream *sourceStream() const { return sourceStream_; }
 
 	int configure();
 	int process(Camera3RequestDescriptor::StreamBuffer *streamBuffer);
@@ -167,6 +170,7 @@ private:
 	const libcamera::CameraConfiguration *config_;
 	const Type type_;
 	camera3_stream_t *camera3Stream_;
+	CameraStream *const sourceStream_;
 	const unsigned int index_;
 
 	std::unique_ptr<PlatformFrameBufferAllocator> allocator_;

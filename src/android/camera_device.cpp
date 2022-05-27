@@ -681,10 +681,23 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	for (const auto &streamConfig : streamConfigs) {
 		config->addConfiguration(streamConfig.config);
 
+		CameraStream *sourceStream = nullptr;
 		for (auto &stream : streamConfig.streams) {
 			streams_.emplace_back(this, config.get(), stream.type,
-					      stream.stream, config->size() - 1);
+					      stream.stream, sourceStream,
+					      config->size() - 1);
 			stream.stream->priv = static_cast<void *>(&streams_.back());
+
+			/*
+			 * The streamConfig.streams vector contains as its first
+			 * element a Direct (or Internal) stream, and then an
+			 * optional set of Mapped streams derived from the
+			 * Direct stream. Cache the Direct stream pointer, to
+			 * be used when constructing the subsequent mapped
+			 * streams.
+			 */
+			if (stream.type == CameraStream::Type::Direct)
+				sourceStream = &streams_.back();
 		}
 	}
 

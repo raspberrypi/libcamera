@@ -128,10 +128,8 @@ int CameraStream::configure()
 		worker_->start();
 	}
 
-	if (type_ == Type::Internal) {
-		allocator_ = std::make_unique<PlatformFrameBufferAllocator>(cameraDevice_);
-		mutex_ = std::make_unique<Mutex>();
-	}
+	allocator_ = std::make_unique<PlatformFrameBufferAllocator>(cameraDevice_);
+	mutex_ = std::make_unique<Mutex>();
 
 	camera3Stream_->max_buffers = configuration().bufferCount;
 

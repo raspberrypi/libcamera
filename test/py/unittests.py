@@ -7,7 +7,6 @@ from collections import defaultdict
 import errno
 import gc
 import libcamera as libcam
-import os
 import selectors
 import time
 import typing
@@ -278,7 +277,7 @@ class SimpleCaptureMethods(CameraTesterBase):
         while running:
             events = sel.select()
             for key, _ in events:
-                os.read(key.fd, 8)
+                cm.read_event()
 
                 ready_reqs = cm.get_ready_requests()
 

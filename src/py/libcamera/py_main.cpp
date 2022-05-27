@@ -212,6 +212,14 @@ PYBIND11_MODULE(_libcamera, m)
 			return gEventfd;
 		})
 
+		.def("read_event", [](CameraManager &) {
+			uint8_t buf[8];
+
+			int ret = read(gEventfd, buf, 8);
+			if (ret != 8)
+				throw std::system_error(errno, std::generic_category());
+		})
+
 		.def("get_ready_requests", [](CameraManager &) {
 			std::vector<Request *> v;
 

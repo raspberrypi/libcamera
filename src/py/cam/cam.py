@@ -9,7 +9,6 @@
 import argparse
 import binascii
 import libcamera as libcam
-import os
 import sys
 import traceback
 
@@ -294,7 +293,7 @@ def event_handler(state):
         cm = state['cm']
         contexts = state['contexts']
 
-        os.read(cm.efd, 8)
+        cm.read_event()
 
         reqs = cm.get_ready_requests()
 

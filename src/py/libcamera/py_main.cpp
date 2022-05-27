@@ -205,7 +205,7 @@ PYBIND11_MODULE(_libcamera, m)
 
 		.def_property_readonly("version", &CameraManager::version)
 
-		.def_property_readonly("efd", [](CameraManager &) {
+		.def_property_readonly("event_fd", [](CameraManager &) {
 			return gEventfd;
 		})
 

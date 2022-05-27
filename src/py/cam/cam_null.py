@@ -23,7 +23,7 @@ class NullRenderer:
         self.running = True
 
         sel = selectors.DefaultSelector()
-        sel.register(self.cm.efd, selectors.EVENT_READ, self.readcam)
+        sel.register(self.cm.event_fd, selectors.EVENT_READ, self.readcam)
         sel.register(sys.stdin, selectors.EVENT_READ, self.readkey)
 
         print('Press enter to exit')

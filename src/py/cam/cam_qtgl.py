@@ -142,7 +142,7 @@ class QtRenderer:
         self.window = window
 
     def run(self):
-        camnotif = QtCore.QSocketNotifier(self.state.cm.efd, QtCore.QSocketNotifier.Read)
+        camnotif = QtCore.QSocketNotifier(self.state.cm.event_fd, QtCore.QSocketNotifier.Read)
         camnotif.activated.connect(lambda _: self.readcam())
 
         keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)

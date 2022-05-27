@@ -269,7 +269,7 @@ class SimpleCaptureMethods(CameraTesterBase):
         gc.collect()
 
         sel = selectors.DefaultSelector()
-        sel.register(cm.efd, selectors.EVENT_READ)
+        sel.register(cm.event_fd, selectors.EVENT_READ)
 
         reqs = []
 

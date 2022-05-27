@@ -10,8 +10,8 @@ class KMSRenderer:
     def __init__(self, state):
         self.state = state
 
-        self.cm = state['cm']
-        self.contexts = state['contexts']
+        self.cm = state.cm
+        self.contexts = state.contexts
         self.running = False
 
         card = pykms.Card()
@@ -92,7 +92,7 @@ class KMSRenderer:
         if old:
             req = old['camreq']
             ctx = old['camctx']
-            self.state['request_prcessed'](ctx, req)
+            self.state.request_processed(ctx, req)
 
     def queue(self, drmreq):
         if not self.next:
@@ -108,7 +108,7 @@ class KMSRenderer:
 
         idx = 0
         for ctx in self.contexts:
-            for stream in ctx['streams']:
+            for stream in ctx.streams:
 
                 cfg = stream.configuration
                 fmt = cfg.pixel_format
@@ -125,7 +125,7 @@ class KMSRenderer:
                     'size': cfg.size,
                 })
 
-                for fb in ctx['allocator'].buffers(stream):
+                for fb in ctx.allocator.buffers(stream):
                     w = cfg.size.width
                     h = cfg.size.height
                     fds = []
@@ -148,7 +148,7 @@ class KMSRenderer:
                 self.handle_page_flip(ev.seq, ev.time)
 
     def readcam(self, fd):
-        self.running = self.state['event_handler'](self.state)
+        self.running = self.state.event_handler()
 
     def readkey(self, fileobj):
         sys.stdin.readline()

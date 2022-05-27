@@ -176,8 +176,8 @@ class QtRenderer:
     def __init__(self, state):
         self.state = state
 
-        self.cm = state['cm']
-        self.contexts = state['contexts']
+        self.cm = state.cm
+        self.contexts = state.contexts
 
     def setup(self):
         self.app = QtWidgets.QApplication([])
@@ -185,7 +185,7 @@ class QtRenderer:
         windows = []
 
         for ctx in self.contexts:
-            for stream in ctx['streams']:
+            for stream in ctx.streams:
                 window = MainWindow(ctx, stream)
                 window.show()
                 windows.append(window)
@@ -206,7 +206,7 @@ class QtRenderer:
         print('Exiting...')
 
     def readcam(self):
-        running = self.state['event_handler'](self.state)
+        running = self.state.event_handler()
 
         if not running:
             self.app.quit()
@@ -223,7 +223,7 @@ class QtRenderer:
 
             wnd.handle_request(stream, fb)
 
-        self.state['request_prcessed'](ctx, req)
+        self.state.request_processed(ctx, req)
 
     def cleanup(self):
         for w in self.windows:
@@ -254,7 +254,7 @@ class MainWindow(QtWidgets.QWidget):
         group.setLayout(groupLayout)
         controlsLayout.addWidget(group)
 
-        lab = QtWidgets.QLabel(ctx['id'])
+        lab = QtWidgets.QLabel(ctx.id)
         groupLayout.addWidget(lab)
 
         self.frameLabel = QtWidgets.QLabel()
@@ -265,7 +265,7 @@ class MainWindow(QtWidgets.QWidget):
         group.setLayout(groupLayout)
         controlsLayout.addWidget(group)
 
-        camera = ctx['camera']
+        camera = ctx.camera
 
         for k, v in camera.properties.items():
             lab = QtWidgets.QLabel()
@@ -308,4 +308,4 @@ class MainWindow(QtWidgets.QWidget):
         self.label.setPixmap(pix)
 
         self.frameLabel.setText('Queued: {}\nDone: {}\nFps: {:.2f}'
-                                .format(ctx['reqs-queued'], ctx['reqs-completed'], ctx['fps']))
+                                .format(ctx.reqs_queued, ctx.reqs_completed, ctx.fps))

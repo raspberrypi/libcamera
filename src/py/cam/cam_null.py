@@ -9,8 +9,8 @@ class NullRenderer:
     def __init__(self, state):
         self.state = state
 
-        self.cm = state['cm']
-        self.contexts = state['contexts']
+        self.cm = state.cm
+        self.contexts = state.contexts
 
         self.running = False
 
@@ -37,11 +37,11 @@ class NullRenderer:
         print('Exiting...')
 
     def readcam(self, fd):
-        self.running = self.state['event_handler'](self.state)
+        self.running = self.state.event_handler()
 
     def readkey(self, fileobj):
         sys.stdin.readline()
         self.running = False
 
     def request_handler(self, ctx, req):
-        self.state['request_prcessed'](ctx, req)
+        self.state.request_processed(ctx, req)

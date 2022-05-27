@@ -142,7 +142,7 @@ class QtRenderer:
         self.window = window
 
     def run(self):
-        camnotif = QtCore.QSocketNotifier(self.state['cm'].efd, QtCore.QSocketNotifier.Read)
+        camnotif = QtCore.QSocketNotifier(self.state.cm.efd, QtCore.QSocketNotifier.Read)
         camnotif.activated.connect(lambda _: self.readcam())
 
         keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)
@@ -155,7 +155,7 @@ class QtRenderer:
         print('Exiting...')
 
     def readcam(self):
-        running = self.state['event_handler'](self.state)
+        running = self.state.event_handler()
 
         if not running:
             self.app.quit()
@@ -184,12 +184,12 @@ class MainWindow(QtWidgets.QWidget):
         self.reqqueue = {}
         self.current = {}
 
-        for ctx in self.state['contexts']:
+        for ctx in self.state.contexts:
 
-            self.reqqueue[ctx['idx']] = []
-            self.current[ctx['idx']] = []
+            self.reqqueue[ctx.idx] = []
+            self.current[ctx.idx] = []
 
-            for stream in ctx['streams']:
+            for stream in ctx.streams:
                 self.textures[stream] = None
 
         num_tiles = len(self.textures)
@@ -312,12 +312,12 @@ class MainWindow(QtWidgets.QWidget):
             if len(queue) == 0:
                 continue
 
-            ctx = next(ctx for ctx in self.state['contexts'] if ctx['idx'] == ctx_idx)
+            ctx = next(ctx for ctx in self.state.contexts if ctx.idx == ctx_idx)
 
             if self.current[ctx_idx]:
                 old = self.current[ctx_idx]
                 self.current[ctx_idx] = None
-                self.state['request_prcessed'](ctx, old)
+                self.state.request_processed(ctx, old)
 
             next_req = queue.pop(0)
             self.current[ctx_idx] = next_req
@@ -336,8 +336,8 @@ class MainWindow(QtWidgets.QWidget):
 
         size = self.size()
 
-        for idx, ctx in enumerate(self.state['contexts']):
-            for stream in ctx['streams']:
+        for idx, ctx in enumerate(self.state.contexts):
+            for stream in ctx.streams:
                 if self.textures[stream] is None:
                     continue
 
@@ -359,5 +359,5 @@ class MainWindow(QtWidgets.QWidget):
         assert(b)
 
     def handle_request(self, ctx, req):
-        self.reqqueue[ctx['idx']].append(req)
+        self.reqqueue[ctx.idx].append(req)
         self.update()

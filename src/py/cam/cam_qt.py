@@ -8,6 +8,7 @@ from numpy.lib.stride_tricks import as_strided
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from PyQt5 import QtCore, QtGui, QtWidgets
+import libcamera as libcam
 import numpy as np
 import sys
 
@@ -87,9 +88,7 @@ def to_rgb(fmt, size, data):
     w = size.width
     h = size.height
 
-    fmt = str(fmt)
-
-    if fmt == 'YUYV':
+    if fmt == libcam.formats.YUYV:
         # YUV422
         yuyv = data.reshape((h, w // 2 * 4))
 
@@ -111,20 +110,21 @@ def to_rgb(fmt, size, data):
         rgb[:, :, 2] -= 226.8183044444304
         rgb = rgb.astype(np.uint8)
 
-    elif fmt == 'RGB888':
+    elif fmt == libcam.formats.RGB888:
         rgb = data.reshape((h, w, 3))
         rgb[:, :, [0, 1, 2]] = rgb[:, :, [2, 1, 0]]
 
-    elif fmt == 'BGR888':
+    elif fmt == libcam.formats.BGR888:
         rgb = data.reshape((h, w, 3))
 
-    elif fmt in ['ARGB8888', 'XRGB8888']:
+    elif fmt in [libcam.formats.ARGB8888, libcam.formats.XRGB8888]:
         rgb = data.reshape((h, w, 4))
         rgb = np.flip(rgb, axis=2)
         # drop alpha component
         rgb = np.delete(rgb, np.s_[0::4], axis=2)
 
-    elif fmt.startswith('S'):
+    elif str(fmt).startswith('S'):
+        fmt = str(fmt)
         bayer_pattern = fmt[1:5]
         bitspp = int(fmt[5:])
 
@@ -296,7 +296,7 @@ class MainWindow(QtWidgets.QWidget):
             h = cfg.size.height
             pitch = cfg.stride
 
-            if str(cfg.pixel_format) == 'MJPEG':
+            if cfg.pixel_format == libcam.formats.MJPEG:
                 img = Image.open(BytesIO(mfb.planes[0]))
                 qim = ImageQt(img).copy()
                 pix = QtGui.QPixmap.fromImage(qim)

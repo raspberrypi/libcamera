@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
+ *
+ * Python bindings - Auto-generated formats
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <libcamera/formats.h>
+
+#include <pybind11/smart_holder.h>
+
+namespace py = pybind11;
+
+class PyFormats
+{
+};
+
+void init_py_formats_generated(py::module& m)
+{
+	py::class_<PyFormats>(m, "formats")
+${formats}
+	;
+}

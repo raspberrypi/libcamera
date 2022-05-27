@@ -132,6 +132,7 @@ static void handleRequestCompleted(Request *req)
 
 void init_py_enums(py::module &m);
 void init_py_control_enums_generated(py::module &m);
+void init_py_formats_generated(py::module &m);
 void init_py_geometry(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
@@ -170,6 +171,8 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyColorSpaceYcbcrEncoding = py::enum_<ColorSpace::YcbcrEncoding>(pyColorSpace, "YcbcrEncoding");
 	auto pyColorSpaceRange = py::enum_<ColorSpace::Range>(pyColorSpace, "Range");
 	auto pyPixelFormat = py::class_<PixelFormat>(m, "PixelFormat");
+
+	init_py_formats_generated(m);
 
 	/* Global functions */
 	m.def("log_set_level", &logSetLevel);

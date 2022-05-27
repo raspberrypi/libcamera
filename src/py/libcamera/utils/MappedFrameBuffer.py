@@ -1,8 +1,14 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
 
+import libcamera
+from typing import Tuple
+
 class MappedFrameBuffer:
-    def __init__(self, fb):
+    """
+    Provides memoryviews for the FrameBuffer's planes
+    """
+    def __init__(self, fb: libcamera.FrameBuffer):
         self.__fb = fb
 
     def __enter__(self):
@@ -70,5 +76,6 @@ class MappedFrameBuffer:
             mm.close()
 
     @property
-    def planes(self):
+    def planes(self) -> Tuple[memoryview, ...]:
+        """memoryviews for the planes"""
         return self.__planes

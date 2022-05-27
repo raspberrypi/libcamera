@@ -184,12 +184,7 @@ class QtRenderer:
         windows = []
 
         for ctx in self.contexts:
-            camera = ctx['camera']
-
             for stream in ctx['streams']:
-                fmt = stream.configuration.pixel_format
-                size = stream.configuration.size
-
                 window = MainWindow(ctx, stream)
                 window.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
                 window.show()
@@ -199,10 +194,10 @@ class QtRenderer:
 
     def run(self):
         camnotif = QtCore.QSocketNotifier(self.cm.efd, QtCore.QSocketNotifier.Read)
-        camnotif.activated.connect(lambda x: self.readcam())
+        camnotif.activated.connect(lambda _: self.readcam())
 
         keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)
-        keynotif.activated.connect(lambda x: self.readkey())
+        keynotif.activated.connect(lambda _: self.readkey())
 
         print('Capturing...')
 
@@ -292,9 +287,6 @@ class MainWindow(QtWidgets.QWidget):
     def buf_to_qpixmap(self, stream, fb):
         with fb.mmap() as mfb:
             cfg = stream.configuration
-            w = cfg.size.width
-            h = cfg.size.height
-            pitch = cfg.stride
 
             if cfg.pixel_format == libcam.formats.MJPEG:
                 img = Image.open(BytesIO(mfb.planes[0]))

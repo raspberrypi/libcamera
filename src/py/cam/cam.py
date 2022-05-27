@@ -304,7 +304,7 @@ def event_handler(state):
 
         running = any(ctx['reqs-completed'] < ctx['opt-capture'] for ctx in contexts)
         return running
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return False
 

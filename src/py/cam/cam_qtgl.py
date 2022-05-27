@@ -5,16 +5,11 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 
 import math
-import numpy as np
 import os
 import sys
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
-import OpenGL
-# OpenGL.FULL_LOGGING = True
-
-from OpenGL import GL as gl
 from OpenGL.EGL.EXT.image_dma_buf_import import *
 from OpenGL.EGL.KHR.image import *
 from OpenGL.EGL.VERSION.EGL_1_0 import *
@@ -149,10 +144,10 @@ class QtRenderer:
 
     def run(self):
         camnotif = QtCore.QSocketNotifier(self.state['cm'].efd, QtCore.QSocketNotifier.Read)
-        camnotif.activated.connect(lambda x: self.readcam())
+        camnotif.activated.connect(lambda _: self.readcam())
 
         keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)
-        keynotif.activated.connect(lambda x: self.readkey())
+        keynotif.activated.connect(lambda _: self.readkey())
 
         print('Capturing...')
 

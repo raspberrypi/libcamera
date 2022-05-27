@@ -22,7 +22,7 @@ void init_py_enums(py::module &m)
 		.value("Viewfinder", StreamRole::Viewfinder);
 
 	py::enum_<ControlType>(m, "ControlType")
-		.value("None", ControlType::ControlTypeNone)
+		.value("Null", ControlType::ControlTypeNone)
 		.value("Bool", ControlType::ControlTypeBool)
 		.value("Byte", ControlType::ControlTypeByte)
 		.value("Integer32", ControlType::ControlTypeInteger32)

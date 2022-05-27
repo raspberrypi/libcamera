@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <set>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
@@ -930,6 +931,14 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	LOG(HAL, Debug) << "Queueing request " << descriptor->request_->cookie()
 			<< " with " << descriptor->buffers_.size() << " streams";
 
+	/*
+	 * Process all the Direct and Internal streams first, they map directly
+	 * to a libcamera stream. Streams of type Mapped will be handled later.
+	 *
+	 * Collect the CameraStream associated to each requested capture stream.
+	 * Since requestedStreams is an std:set<>, no duplications can happen.
+	 */
+	std::set<CameraStream *> requestedStreams;
 	for (const auto &[i, buffer] : utils::enumerate(descriptor->buffers_)) {
 		CameraStream *cameraStream = buffer.stream;
 		camera3_stream_t *camera3Stream = cameraStream->camera3Stream();
@@ -952,14 +961,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 
 		switch (cameraStream->type()) {
 		case CameraStream::Type::Mapped:
-			/*
-			 * Mapped streams don't need buffers added to the
-			 * Request.
-			 */
-			LOG(HAL, Debug) << ss.str() << " (mapped)";
-
-			descriptor->pendingStreamsToProcess_.insert(
-				{ cameraStream, &buffer });
+			/* Mapped streams will be handled in the next loop. */
 			continue;
 
 		case CameraStream::Type::Direct:
@@ -1003,6 +1005,52 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		auto fence = std::make_unique<Fence>(std::move(acquireFence));
 		descriptor->request_->addBuffer(cameraStream->stream(),
 						frameBuffer, std::move(fence));
+
+		requestedStreams.insert(cameraStream);
+	}
+
+	/*
+	 * Now handle the Mapped streams. If no buffer has been added for them
+	 * because their corresponding direct source stream is not part of this
+	 * particular request, add one here.
+	 */
+	for (const auto &[i, buffer] : utils::enumerate(descriptor->buffers_)) {
+		CameraStream *cameraStream = buffer.stream;
+		camera3_stream_t *camera3Stream = cameraStream->camera3Stream();
+
+		if (cameraStream->type() != CameraStream::Type::Mapped)
+			continue;
+
+		LOG(HAL, Debug) << i << " - (" << camera3Stream->width << "x"
+				<< camera3Stream->height << ")"
+				<< "[" << utils::hex(camera3Stream->format) << "] -> "
+				<< "(" << cameraStream->configuration().size << ")["
+				<< cameraStream->configuration().pixelFormat << "]"
+				<< " (mapped)";
+
+		MutexLocker lock(descriptor->streamsProcessMutex_);
+		descriptor->pendingStreamsToProcess_.insert({ cameraStream, &buffer });
+
+		/*
+		 * Make sure the CameraStream this stream is mapped on has been
+		 * added to the request.
+		 */
+		CameraStream *sourceStream = cameraStream->sourceStream();
+		ASSERT(sourceStream);
+		if (requestedStreams.find(sourceStream) != requestedStreams.end())
+			continue;
+
+		/*
+		 * If that's not the case, we need to add a buffer to the request
+		 * for this stream.
+		 */
+		FrameBuffer *frameBuffer = cameraStream->getBuffer();
+		buffer.internalBuffer = frameBuffer;
+
+		descriptor->request_->addBuffer(sourceStream->stream(),
+						frameBuffer, nullptr);
+
+		requestedStreams.erase(sourceStream);
 	}
 
 	/*

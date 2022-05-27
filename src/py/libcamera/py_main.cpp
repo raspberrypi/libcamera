@@ -130,12 +130,14 @@ void init_py_enums(py::module &m);
 void init_py_controls_generated(py::module &m);
 void init_py_formats_generated(py::module &m);
 void init_py_geometry(py::module &m);
+void init_py_properties_generated(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
 {
 	init_py_enums(m);
 	init_py_controls_generated(m);
 	init_py_geometry(m);
+	init_py_properties_generated(m);
 
 	/* Forward declarations */
 

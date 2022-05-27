@@ -1,0 +1,30 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
+ *
+ * Python bindings - Auto-generated properties
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <libcamera/property_ids.h>
+
+#include <pybind11/smart_holder.h>
+
+namespace py = pybind11;
+
+class PyProperties
+{
+};
+
+class PyDraftProperties
+{
+};
+
+void init_py_properties_generated(py::module& m)
+{
+	auto controls = py::class_<PyProperties>(m, "properties");
+	auto draft = py::class_<PyDraftProperties>(controls, "draft");
+
+${controls}
+}

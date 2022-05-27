@@ -21,17 +21,17 @@ def find_common_prefix(strings):
     return prefix
 
 
-def generate_py(controls):
+def generate_py(controls, mode):
     out = ''
 
     for ctrl in controls:
         name, ctrl = ctrl.popitem()
 
         if ctrl.get('draft'):
-            ns = 'libcamera::controls::draft::'
+            ns = 'libcamera::{}::draft::'.format(mode)
             container = 'draft'
         else:
-            ns = 'libcamera::controls::'
+            ns = 'libcamera::{}::'.format(mode)
             container = 'controls'
 
         out += f'\t{container}.def_readonly_static("{name}", static_cast<const libcamera::ControlId *>(&{ns}{name}));\n\n'
@@ -44,12 +44,17 @@ def generate_py(controls):
 
         out += '\tpy::enum_<{}{}>({}, \"{}\")\n'.format(ns, cpp_enum, container, cpp_enum)
 
-        if name == 'LensShadingMapMode':
-            prefix = 'LensShadingMapMode'
-        elif name == 'SceneFlicker':
-            # If we strip the prefix, we would get '50Hz', which is illegal name
-            prefix = ''
+        if mode == 'controls':
+            # Adjustments for controls
+            if name == 'LensShadingMapMode':
+                prefix = 'LensShadingMapMode'
+            elif name == 'SceneFlicker':
+                # If we strip the prefix, we would get '50Hz', which is illegal name
+                prefix = ''
+            else:
+                prefix = find_common_prefix([e['name'] for e in enum])
         else:
+            # Adjustments for properties
             prefix = find_common_prefix([e['name'] for e in enum])
 
         for entry in enum:
@@ -79,12 +84,18 @@ def main(argv):
                         help='Input file name.')
     parser.add_argument('template', type=str,
                         help='Template file name.')
+    parser.add_argument('--mode', type=str, required=True,
+                        help='Mode is either "controls" or "properties"')
     args = parser.parse_args(argv[1:])
+
+    if args.mode not in ['controls', 'properties']:
+        print(f'Invalid mode option "{args.mode}"', file=sys.stderr)
+        return -1
 
     data = open(args.input, 'rb').read()
     controls = yaml.safe_load(data)['controls']
 
-    data = generate_py(controls)
+    data = generate_py(controls, args.mode)
 
     data = fill_template(args.template, data)
 

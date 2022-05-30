@@ -99,3 +99,7 @@ class MappedFrameBuffer:
             raise RuntimeError('MappedFrameBuffer not mmapped')
 
         return self.__planes
+
+    @property
+    def fb(self):
+        return self.__fb

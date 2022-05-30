@@ -10,8 +10,19 @@ class MappedFrameBuffer:
     """
     def __init__(self, fb: libcamera.FrameBuffer):
         self.__fb = fb
+        self.__planes = ()
+        self.__maps = ()
 
     def __enter__(self):
+        return self.mmap()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.munmap()
+
+    def mmap(self):
+        if self.__planes:
+            raise RuntimeError('MappedFrameBuffer already mmapped')
+
         import os
         import mmap
 
@@ -68,14 +79,23 @@ class MappedFrameBuffer:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def munmap(self):
+        if not self.__planes:
+            raise RuntimeError('MappedFrameBuffer not mmapped')
+
         for p in self.__planes:
             p.release()
 
         for mm in self.__maps:
             mm.close()
 
+        self.__planes = ()
+        self.__maps = ()
+
     @property
     def planes(self) -> Tuple[memoryview, ...]:
         """memoryviews for the planes"""
+        if not self.__planes:
+            raise RuntimeError('MappedFrameBuffer not mmapped')
+
         return self.__planes

@@ -496,7 +496,8 @@ PYBIND11_MODULE(_libcamera, m)
 		 * \todo As we add a keep_alive to the fb in addBuffers(), we
 		 * can only allow reuse with ReuseBuffers.
 		 */
-		.def("reuse", [](Request &self) { self.reuse(Request::ReuseFlag::ReuseBuffers); });
+		.def("reuse", [](Request &self) { self.reuse(Request::ReuseFlag::ReuseBuffers); })
+		.def("__str__", &Request::toString);
 
 	pyRequestStatus
 		.value("Pending", Request::RequestPending)

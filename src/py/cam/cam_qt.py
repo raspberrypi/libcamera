@@ -52,6 +52,16 @@ class QtRenderer:
 
         self.windows = windows
 
+        buf_mmap_map = {}
+
+        for ctx in self.contexts:
+            for stream in ctx.streams:
+                for buf in ctx.allocator.buffers(stream):
+                    mfb = libcamera.utils.MappedFrameBuffer(buf).mmap()
+                    buf_mmap_map[buf] = mfb
+
+        self.buf_mmap_map = buf_mmap_map
+
     def run(self):
         camnotif = QtCore.QSocketNotifier(self.cm.event_fd, QtCore.QSocketNotifier.Read)
         camnotif.activated.connect(lambda _: self.readcam())
@@ -81,7 +91,9 @@ class QtRenderer:
         for stream, fb in buffers.items():
             wnd = next(wnd for wnd in self.windows if wnd.stream == stream)
 
-            wnd.handle_request(stream, fb)
+            mfb = self.buf_mmap_map[fb]
+
+            wnd.handle_request(stream, mfb)
 
         self.state.request_processed(ctx, req)
 
@@ -145,26 +157,25 @@ class MainWindow(QtWidgets.QWidget):
 
         controlsLayout.addStretch()
 
-    def buf_to_qpixmap(self, stream, fb):
-        with libcamera.utils.MappedFrameBuffer(fb) as mfb:
-            cfg = stream.configuration
+    def buf_to_qpixmap(self, stream, mfb):
+        cfg = stream.configuration
 
-            if cfg.pixel_format == libcam.formats.MJPEG:
-                pix = QtGui.QPixmap(cfg.size.width, cfg.size.height)
-                pix.loadFromData(mfb.planes[0])
-            else:
-                rgb = mfb_to_rgb(mfb, cfg)
-                if rgb is None:
-                    raise Exception('Format not supported: ' + cfg.pixel_format)
+        if cfg.pixel_format == libcam.formats.MJPEG:
+            pix = QtGui.QPixmap(cfg.size.width, cfg.size.height)
+            pix.loadFromData(mfb.planes[0])
+        else:
+            rgb = mfb_to_rgb(mfb, cfg)
+            if rgb is None:
+                raise Exception('Format not supported: ' + cfg.pixel_format)
 
-                pix = rgb_to_pix(rgb)
+            pix = rgb_to_pix(rgb)
 
         return pix
 
-    def handle_request(self, stream, fb):
+    def handle_request(self, stream, mfb):
         ctx = self.ctx
 
-        pix = self.buf_to_qpixmap(stream, fb)
+        pix = self.buf_to_qpixmap(stream, mfb)
         self.label.setPixmap(pix)
 
         self.frameLabel.setText('Queued: {}\nDone: {}\nFps: {:.2f}'

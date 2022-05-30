@@ -285,7 +285,8 @@ class CaptureState:
             print('{:.6f} ({:.2f} fps) {}-{}: seq {}, bytes {}, CRCs {}'
                   .format(ts / 1000000000, fps,
                           ctx.id, stream_name,
-                          meta.sequence, meta.bytesused,
+                          meta.sequence,
+                          '/'.join([str(p.bytes_used) for p in meta.planes]),
                           crcs))
 
             if ctx.opt_metadata:

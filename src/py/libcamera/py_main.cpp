@@ -163,6 +163,7 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyRequestReuse = py::enum_<Request::ReuseFlag>(pyRequest, "Reuse");
 	auto pyFrameMetadata = py::class_<FrameMetadata>(m, "FrameMetadata");
 	auto pyFrameMetadataStatus = py::enum_<FrameMetadata::Status>(pyFrameMetadata, "Status");
+	auto pyFrameMetadataPlane = py::class_<FrameMetadata::Plane>(pyFrameMetadata, "Plane");
 	auto pyTransform = py::class_<Transform>(m, "Transform");
 	auto pyColorSpace = py::class_<ColorSpace>(m, "ColorSpace");
 	auto pyColorSpacePrimaries = py::enum_<ColorSpace::Primaries>(pyColorSpace, "Primaries");
@@ -512,11 +513,10 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_readonly("status", &FrameMetadata::status)
 		.def_readonly("sequence", &FrameMetadata::sequence)
 		.def_readonly("timestamp", &FrameMetadata::timestamp)
-		/* \todo Implement FrameMetadata::Plane properly */
-		.def_property_readonly("bytesused", [](FrameMetadata &self) {
-			std::vector<unsigned int> v;
-			v.resize(self.planes().size());
-			transform(self.planes().begin(), self.planes().end(), v.begin(), [](const auto &p) { return p.bytesused; });
+		.def_property_readonly("planes", [](const FrameMetadata &self) {
+			/* Convert from Span<> to std::vector<> */
+			/* Note: this creates a copy */
+			std::vector<FrameMetadata::Plane> v(self.planes().begin(), self.planes().end());
 			return v;
 		});
 
@@ -524,6 +524,9 @@ PYBIND11_MODULE(_libcamera, m)
 		.value("Success", FrameMetadata::FrameSuccess)
 		.value("Error", FrameMetadata::FrameError)
 		.value("Cancelled", FrameMetadata::FrameCancelled);
+
+	pyFrameMetadataPlane
+		.def_readwrite("bytes_used", &FrameMetadata::Plane::bytesused);
 
 	pyTransform
 		.def(py::init([](int rotation, bool hflip, bool vflip, bool transpose) {

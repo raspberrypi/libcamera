@@ -287,8 +287,6 @@ class SimpleCaptureMethods(CameraTesterBase):
 
                 ready_reqs = cm.get_ready_requests()
 
-                self.assertTrue(len(ready_reqs) > 0)
-
                 reqs += ready_reqs
 
                 if len(reqs) == num_bufs:

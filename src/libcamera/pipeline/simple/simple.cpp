@@ -610,7 +610,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 					<< " produces " << sourceFormat
 					<< ", sink '" << sink->entity()->name()
 					<< "':" << sink->index()
-					<< " requires " << format;
+					<< " requires " << *format;
 				return -EINVAL;
 			}
 		}
@@ -620,7 +620,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 			<< "':" << source->index()
 			<< " -> '" << sink->entity()->name()
 			<< "':" << sink->index()
-			<< " configured with format " << format;
+			<< " configured with format " << *format;
 	}
 
 	return 0;

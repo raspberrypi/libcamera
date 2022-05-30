@@ -211,7 +211,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	if (ret)
 		return ret;
 
-	LOG(IPU3, Debug) << "CIO2 output format " << outputFormat;
+	LOG(IPU3, Debug) << "CIO2 output format " << *outputFormat;
 
 	return 0;
 }

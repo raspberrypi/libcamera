@@ -479,7 +479,7 @@ int ImgUDevice::configure(const PipeConfig &pipeConfig, V4L2DeviceFormat *inputF
 	if (ret)
 		return ret;
 
-	LOG(IPU3, Debug) << "ImgU input format = " << inputFormat;
+	LOG(IPU3, Debug) << "ImgU input format = " << *inputFormat;
 
 	/*
 	 * \todo The IPU3 driver implementation shall be changed to use the
@@ -568,7 +568,7 @@ int ImgUDevice::configureVideoDevice(V4L2VideoDevice *dev, unsigned int pad,
 
 	const char *name = dev == output_.get() ? "output" : "viewfinder";
 	LOG(IPU3, Debug) << "ImgU " << name << " format = "
-			 << outputFormat;
+			 << *outputFormat;
 
 	return 0;
 }

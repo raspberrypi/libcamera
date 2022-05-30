@@ -243,8 +243,6 @@ class CaptureState:
     # Called from renderer when there is a libcamera event
     def event_handler(self):
         try:
-            self.cm.read_event()
-
             reqs = self.cm.get_ready_requests()
 
             for req in reqs:

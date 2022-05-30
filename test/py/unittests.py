@@ -210,8 +210,6 @@ class SimpleCaptureMethods(CameraTesterBase):
         reqs = []
 
         while True:
-            cm.read_event()
-
             ready_reqs = cm.get_ready_requests()
 
             reqs += ready_reqs
@@ -283,8 +281,6 @@ class SimpleCaptureMethods(CameraTesterBase):
         while running:
             events = sel.select()
             for key, _ in events:
-                cm.read_event()
-
                 ready_reqs = cm.get_ready_requests()
 
                 reqs += ready_reqs

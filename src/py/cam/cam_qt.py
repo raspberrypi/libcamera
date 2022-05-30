@@ -2,18 +2,32 @@
 # Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
 
 from helpers import mfb_to_rgb
-from io import BytesIO
-from PIL import Image
-from PIL.ImageQt import ImageQt
 from PyQt5 import QtCore, QtGui, QtWidgets
 import libcamera as libcam
 import libcamera.utils
 import sys
 
 
+# Loading MJPEG to a QPixmap produces corrupt JPEG data warnings. Ignore these.
+def qt_message_handler(msg_type, msg_log_context, msg_string):
+    if msg_string.startswith("Corrupt JPEG data"):
+        return
+
+    # For some reason qInstallMessageHandler returns None, so we won't
+    # call the old handler
+    if old_msg_handler is not None:
+        old_msg_handler(msg_type, msg_log_context, msg_string)
+    else:
+        print(msg_string)
+
+
+old_msg_handler = QtCore.qInstallMessageHandler(qt_message_handler)
+
+
 def rgb_to_pix(rgb):
-    img = Image.frombuffer('RGB', (rgb.shape[1], rgb.shape[0]), rgb)
-    qim = ImageQt(img).copy()
+    w = rgb.shape[1]
+    h = rgb.shape[0]
+    qim = QtGui.QImage(rgb, w, h, QtGui.QImage.Format.Format_RGB888)
     pix = QtGui.QPixmap.fromImage(qim)
     return pix
 
@@ -136,9 +150,8 @@ class MainWindow(QtWidgets.QWidget):
             cfg = stream.configuration
 
             if cfg.pixel_format == libcam.formats.MJPEG:
-                img = Image.open(BytesIO(mfb.planes[0]))
-                qim = ImageQt(img).copy()
-                pix = QtGui.QPixmap.fromImage(qim)
+                pix = QtGui.QPixmap(cfg.size.width, cfg.size.height)
+                pix.loadFromData(mfb.planes[0])
             else:
                 rgb = mfb_to_rgb(mfb, cfg)
                 if rgb is None:

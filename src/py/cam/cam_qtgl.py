@@ -269,7 +269,7 @@ class MainWindow(QtWidgets.QWidget):
             EGL_WIDTH, w,
             EGL_HEIGHT, h,
             EGL_LINUX_DRM_FOURCC_EXT, fmt,
-            EGL_DMA_BUF_PLANE0_FD_EXT, fb.fd(0),
+            EGL_DMA_BUF_PLANE0_FD_EXT, fb.planes[0].fd,
             EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
             EGL_DMA_BUF_PLANE0_PITCH_EXT, cfg.stride,
             EGL_NONE,

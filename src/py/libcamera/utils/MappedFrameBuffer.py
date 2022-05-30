@@ -21,8 +21,8 @@ class MappedFrameBuffer:
 
         bufinfos = {}
 
-        for i in range(fb.num_planes):
-            fd = fb.fd(i)
+        for plane in fb.planes:
+            fd = plane.fd
 
             if fd not in bufinfos:
                 buflen = os.lseek(fd, 0, os.SEEK_END)
@@ -30,11 +30,11 @@ class MappedFrameBuffer:
             else:
                 buflen = bufinfos[fd]['buflen']
 
-            if fb.offset(i) > buflen or fb.offset(i) + fb.length(i) > buflen:
+            if plane.offset > buflen or plane.offset + plane.length > buflen:
                 raise RuntimeError(f'plane is out of buffer: buffer length={buflen}, ' +
-                                   f'plane offset={fb.offset(i)}, plane length={fb.length(i)}')
+                                   f'plane offset={plane.offset}, plane length={plane.length}')
 
-            bufinfos[fd]['maplen'] = max(bufinfos[fd]['maplen'], fb.offset(i) + fb.length(i))
+            bufinfos[fd]['maplen'] = max(bufinfos[fd]['maplen'], plane.offset + plane.length)
 
         # mmap the buffers
 
@@ -51,14 +51,14 @@ class MappedFrameBuffer:
 
         planes = []
 
-        for i in range(fb.num_planes):
-            fd = fb.fd(i)
+        for plane in fb.planes:
+            fd = plane.fd
             info = bufinfos[fd]
 
             mv = memoryview(info['map'])
 
-            start = fb.offset(i)
-            end = fb.offset(i) + fb.length(i)
+            start = plane.offset
+            end = plane.offset + plane.length
 
             mv = mv[start:end]
 

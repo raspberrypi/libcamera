@@ -155,6 +155,7 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyStreamFormats = py::class_<StreamFormats>(m, "StreamFormats");
 	auto pyFrameBufferAllocator = py::class_<FrameBufferAllocator>(m, "FrameBufferAllocator");
 	auto pyFrameBuffer = py::class_<FrameBuffer>(m, "FrameBuffer");
+	auto pyFrameBufferPlane = py::class_<FrameBuffer::Plane>(pyFrameBuffer, "Plane");
 	auto pyStream = py::class_<Stream>(m, "Stream");
 	auto pyControlId = py::class_<ControlId>(m, "ControlId");
 	auto pyControlInfo = py::class_<ControlInfo>(m, "ControlInfo");
@@ -408,30 +409,30 @@ PYBIND11_MODULE(_libcamera, m)
 		});
 
 	pyFrameBuffer
-		/* \todo implement FrameBuffer::Plane properly */
-		.def(py::init([](std::vector<std::tuple<int, unsigned int>> planes, unsigned int cookie) {
-			std::vector<FrameBuffer::Plane> v;
-			for (const auto &t : planes)
-				v.push_back({ SharedFD(std::get<0>(t)), FrameBuffer::Plane::kInvalidOffset, std::get<1>(t) });
-			return new FrameBuffer(v, cookie);
-		}))
+		.def(py::init<std::vector<FrameBuffer::Plane>, unsigned int>(),
+		     py::arg("planes"), py::arg("cookie") = 0)
 		.def_property_readonly("metadata", &FrameBuffer::metadata, py::return_value_policy::reference_internal)
-		.def_property_readonly("num_planes", [](const FrameBuffer &self) {
-			return self.planes().size();
-		})
-		.def("length", [](FrameBuffer &self, uint32_t idx) {
-			const FrameBuffer::Plane &plane = self.planes()[idx];
-			return plane.length;
-		})
-		.def("fd", [](FrameBuffer &self, uint32_t idx) {
-			const FrameBuffer::Plane &plane = self.planes()[idx];
-			return plane.fd.get();
-		})
-		.def("offset", [](FrameBuffer &self, uint32_t idx) {
-			const FrameBuffer::Plane &plane = self.planes()[idx];
-			return plane.offset;
-		})
+		.def_property_readonly("planes", &FrameBuffer::planes)
 		.def_property("cookie", &FrameBuffer::cookie, &FrameBuffer::setCookie);
+
+	pyFrameBufferPlane
+		.def(py::init())
+		.def(py::init([](int fd, unsigned int offset, unsigned int length) {
+			auto p = FrameBuffer::Plane();
+			p.fd = SharedFD(fd);
+			p.offset = offset;
+			p.length = length;
+			return p;
+		}), py::arg("fd"), py::arg("offset"), py::arg("length"))
+		.def_property("fd",
+			[](const FrameBuffer::Plane &self) {
+				return self.fd.get();
+			},
+			[](FrameBuffer::Plane &self, int fd) {
+				self.fd = SharedFD(fd);
+			})
+		.def_readwrite("offset", &FrameBuffer::Plane::offset)
+		.def_readwrite("length", &FrameBuffer::Plane::length);
 
 	pyStream
 		.def_property_readonly("configuration", &Stream::configuration);

@@ -131,10 +131,10 @@ class KMSRenderer:
                     fds = []
                     strides = []
                     offsets = []
-                    for i in range(fb.num_planes):
-                        fds.append(fb.fd(i))
+                    for plane in fb.planes:
+                        fds.append(plane.fd)
                         strides.append(cfg.stride)
-                        offsets.append(fb.offset(i))
+                        offsets.append(plane.offset)
 
                     drmfb = pykms.DmabufFramebuffer(self.card, w, h, fmt,
                                                     fds, strides, offsets)

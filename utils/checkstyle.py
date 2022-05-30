@@ -760,9 +760,11 @@ def check_file(top_level, commit, filename):
     if len(issues):
         issues = sorted(issues, key=lambda i: i.line_number)
         for issue in issues:
-            print('%s#%u: %s' % (Colours.fg(Colours.Yellow), issue.line_number, issue.msg))
+            print('%s#%u: %s%s' % (Colours.fg(Colours.Yellow), issue.line_number,
+                                   issue.msg, Colours.reset()))
             if issue.line is not None:
-                print('+%s%s' % (issue.line.rstrip(), Colours.reset()))
+                print('%s+%s%s' % (Colours.fg(Colours.Yellow), issue.line.rstrip(),
+                                   Colours.reset()))
 
     return len(formatted_diff) + len(issues)
 

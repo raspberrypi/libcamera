@@ -161,7 +161,7 @@ class AllocatorTestMethods(CameraTesterBase):
 
 
 class SimpleCaptureMethods(CameraTesterBase):
-    def test_sleep(self):
+    def test_blocking(self):
         cm = self.cm
         cam = self.cam
 
@@ -207,11 +207,17 @@ class SimpleCaptureMethods(CameraTesterBase):
         reqs = None
         gc.collect()
 
-        time.sleep(0.5)
+        reqs = []
 
-        reqs = cm.get_ready_requests()
+        while True:
+            cm.read_event()
 
-        self.assertTrue(len(reqs) == num_bufs)
+            ready_reqs = cm.get_ready_requests()
+
+            reqs += ready_reqs
+
+            if len(reqs) == num_bufs:
+                break
 
         for i, req in enumerate(reqs):
             self.assertTrue(i == req.cookie)

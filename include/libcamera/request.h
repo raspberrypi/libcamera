@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <ostream>
 #include <stdint.h>
 #include <string>
 #include <unordered_set>
@@ -74,5 +75,7 @@ private:
 	const uint64_t cookie_;
 	Status status_;
 };
+
+std::ostream &operator<<(std::ostream &out, const Request &r);
 
 } /* namespace libcamera */

@@ -44,6 +44,7 @@ public:
 
 private:
 	friend class PipelineHandler;
+	friend std::ostream &operator<<(std::ostream &out, const Request &r);
 
 	void doCancelRequest();
 	void emitPrepareCompleted();

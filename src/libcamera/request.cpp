@@ -582,16 +582,28 @@ bool Request::hasPendingBuffers() const
 std::string Request::toString() const
 {
 	std::stringstream ss;
+	ss << *this;
 
+	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a Request into an output stream
+ * \param[in] out The output stream
+ * \param[in] r The Request
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const Request &r)
+{
 	/* Pending, Completed, Cancelled(X). */
 	static const char *statuses = "PCX";
 
 	/* Example Output: Request(55:P:1/2:6523524) */
-	ss << "Request(" << sequence() << ":" << statuses[status_] << ":"
-	   << _d()->pending_.size() << "/" << bufferMap_.size() << ":"
-	   << cookie_ << ")";
+	out << "Request(" << r.sequence() << ":" << statuses[r.status()] << ":"
+	    << r._d()->pending_.size() << "/" << r.buffers().size() << ":"
+	    << r.cookie() << ")";
 
-	return ss.str();
+	return out;
 }
 
 } /* namespace libcamera */

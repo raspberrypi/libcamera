@@ -1449,7 +1449,7 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 	/*
 	 * Handle controls to be set immediately on the next frame.
 	 * This currently only handle the TestPatternMode control.
-         *
+	 *
 	 * \todo Synchronize with the sequence number
 	 */
 	Request *request = processingRequests_.front();

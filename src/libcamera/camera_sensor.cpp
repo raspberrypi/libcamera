@@ -582,16 +582,19 @@ int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
 	if (testPatternMode_ == mode)
 		return 0;
 
+	if (testPatternModes_.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Camera sensor does not support test pattern modes.";
+		return -EINVAL;
+	}
+
 	return applyTestPatternMode(mode);
 }
 
 int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
 {
-	if (testPatternModes_.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Camera sensor does not support test pattern modes.";
+	if (testPatternModes_.empty())
 		return 0;
-	}
 
 	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
 			    mode);

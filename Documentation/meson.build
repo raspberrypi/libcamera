@@ -67,6 +67,7 @@ if sphinx.found()
         'guides/tracing.rst',
         'index.rst',
         'lens_driver_requirements.rst',
+        'python-bindings.rst',
         'sensor_driver_requirements.rst',
        '../README.rst',
     ]

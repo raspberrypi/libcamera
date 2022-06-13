@@ -308,7 +308,7 @@ the camera.
 
    Stream *stream = streamConfig.stream();
    const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator->buffers(stream);
-   std::vector<Request *> requests;
+   std::vector<std::unique_ptr<Request>> requests;
 
 Proceed to fill the request vector by creating ``Request`` instances from the
 camera device, and associate a buffer for each of them for the ``Stream``.
@@ -316,7 +316,7 @@ camera device, and associate a buffer for each of them for the ``Stream``.
 .. code:: cpp
 
        for (unsigned int i = 0; i < buffers.size(); ++i) {
-           Request *request = camera->createRequest();
+           std::unique_ptr<Request> request = camera->createRequest();
            if (!request)
            {
                std::cerr << "Can't create request" << std::endl;
@@ -332,7 +332,7 @@ camera device, and associate a buffer for each of them for the ``Stream``.
                return ret;
            }
 
-           requests.push_back(request);
+           requests.push_back(std::move(request));
        }
 
 .. TODO: Controls
@@ -517,8 +517,8 @@ and queue all the previously created requests.
 .. code:: cpp
 
    camera->start();
-   for (Request *request : requests)
-       camera->queueRequest(request);
+   for (std::unique_ptr<Request> &request : requests)
+      camera->queueRequest(request.get());
 
 Start an event loop
 ~~~~~~~~~~~~~~~~~~~

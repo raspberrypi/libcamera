@@ -409,6 +409,23 @@ constexpr uint16_t Awb::threshold(float value)
 	return value * 8191;
 }
 
+constexpr uint16_t Awb::gainValue(double gain)
+{
+	/*
+	 * The colour gains applied by the BNR for the four channels (Gr, R, B
+	 * and Gb) are expressed in the parameters structure as 16-bit integers
+	 * that store a fixed-point U3.13 value in the range [0, 8[.
+	 *
+	 * The real gain value is equal to the gain parameter plus one, i.e.
+	 *
+	 * Pout = Pin * (1 + gain / 8192)
+	 *
+	 * where 'Pin' is the input pixel value, 'Pout' the output pixel value,
+	 * and 'gain' the gain in the parameters structure as a 16-bit integer.
+	 */
+	return std::clamp((gain - 1.0) * 8192, 0.0, 65535.0);
+}
+
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
@@ -450,11 +467,11 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 							* params->acc_param.bnr.opt_center.x_reset;
 	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
 							* params->acc_param.bnr.opt_center.y_reset;
-	/* Convert to u3.13 fixed point values */
-	params->acc_param.bnr.wb_gains.gr = 8192 * context.activeState.awb.gains.green;
-	params->acc_param.bnr.wb_gains.r  = 8192 * context.activeState.awb.gains.red;
-	params->acc_param.bnr.wb_gains.b  = 8192 * context.activeState.awb.gains.blue;
-	params->acc_param.bnr.wb_gains.gb = 8192 * context.activeState.awb.gains.green;
+
+	params->acc_param.bnr.wb_gains.gr = gainValue(context.activeState.awb.gains.green);
+	params->acc_param.bnr.wb_gains.r  = gainValue(context.activeState.awb.gains.red);
+	params->acc_param.bnr.wb_gains.b  = gainValue(context.activeState.awb.gains.blue);
+	params->acc_param.bnr.wb_gains.gb = gainValue(context.activeState.awb.gains.green);
 
 	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
 

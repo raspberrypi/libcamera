@@ -507,7 +507,10 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 	TIFFSetField(tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
 	TIFFSetField(tif, TIFFTAG_CFAREPEATPATTERNDIM, cfaRepeatPatternDim);
-	TIFFSetField(tif, TIFFTAG_CFAPATTERN, info->pattern);
+	if (TIFFLIB_VERSION < 20201219)
+		TIFFSetField(tif, TIFFTAG_CFAPATTERN, info->pattern);
+	else
+		TIFFSetField(tif, TIFFTAG_CFAPATTERN, 4, info->pattern);
 	TIFFSetField(tif, TIFFTAG_CFAPLANECOLOR, 3, cfaPlaneColor);
 	TIFFSetField(tif, TIFFTAG_CFALAYOUT, 1);
 

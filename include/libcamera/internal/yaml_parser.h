@@ -44,12 +44,12 @@ public:
 #ifndef __DOXYGEN__
 	template<typename T,
 		 typename std::enable_if_t<
-			 std::is_same<bool, T>::value ||
-			 std::is_same<double, T>::value ||
-			 std::is_same<int32_t, T>::value ||
-			 std::is_same<uint32_t, T>::value ||
-			 std::is_same<std::string, T>::value ||
-			 std::is_same<Size, T>::value> * = nullptr>
+			 std::is_same_v<bool, T> ||
+			 std::is_same_v<double, T> ||
+			 std::is_same_v<int32_t, T> ||
+			 std::is_same_v<uint32_t, T> ||
+			 std::is_same_v<std::string, T> ||
+			 std::is_same_v<Size, T>> * = nullptr>
 #else
 	template<typename T>
 #endif

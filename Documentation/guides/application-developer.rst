@@ -410,7 +410,7 @@ images.
 
 .. code:: cpp
 
-   const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
+   const std::map<const Stream *, FrameBuffer *> &buffers = request->buffers();
 
 Iterating through the map allows applications to inspect each completed buffer
 in this request, and access the metadata associated to each frame.

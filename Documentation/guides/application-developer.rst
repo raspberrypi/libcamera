@@ -480,26 +480,12 @@ libcamera repository.
 .. _FileSink class: https://git.libcamera.org/libcamera/libcamera.git/tree/src/cam/file_sink.cpp
 
 With the handling of this request completed, it is possible to re-use the
-buffers by adding them to a new ``Request`` instance with their matching
-streams, and finally, queue the new capture request to the camera device:
+request and the associated buffers and re-queue it to the camera
+device:
 
 .. code:: cpp
 
-   request = camera->createRequest();
-   if (!request)
-   {
-       std::cerr << "Can't create request" << std::endl;
-       return;
-   }
-
-   for (auto it = buffers.begin(); it != buffers.end(); ++it)
-   {
-       Stream *stream = it->first;
-       FrameBuffer *buffer = it->second;
-
-       request->addBuffer(stream, buffer);
-   }
-
+   request->reuse(Request::ReuseBuffers);
    camera->queueRequest(request);
 
 Request queueing

@@ -7,6 +7,10 @@
 
 #include "blc.h"
 
+#include <libcamera/base/log.h>
+
+#include "libcamera/internal/yaml_parser.h"
+
 /**
  * \file blc.h
  */
@@ -29,6 +33,35 @@ namespace ipa::rkisp1::algorithms {
  * isn't currently supported.
  */
 
+LOG_DEFINE_CATEGORY(RkISP1Blc)
+
+BlackLevelCorrection::BlackLevelCorrection()
+	: tuningParameters_(false)
+{
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int BlackLevelCorrection::init([[maybe_unused]] IPAContext &context,
+			       const YamlObject &tuningData)
+{
+	blackLevelRed_ = tuningData["R"].get<int16_t>(256);
+	blackLevelGreenR_ = tuningData["Gr"].get<int16_t>(256);
+	blackLevelGreenB_ = tuningData["Gb"].get<int16_t>(256);
+	blackLevelBlue_ = tuningData["B"].get<int16_t>(256);
+
+	tuningParameters_ = true;
+
+	LOG(RkISP1Blc, Debug)
+		<< "Black levels: red " << blackLevelRed_
+		<< ", green (red) " << blackLevelGreenR_
+		<< ", green (blue) " << blackLevelGreenB_
+		<< ", blue " << blackLevelBlue_;
+
+	return 0;
+}
+
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
@@ -37,15 +70,15 @@ void BlackLevelCorrection::prepare(IPAContext &context,
 {
 	if (context.frameContext.frameCount > 0)
 		return;
-	/*
-	 * Substract fixed values taken from imx219 tuning file.
-	 * \todo Use a configuration file for it ?
-	 */
+
+	if (!tuningParameters_)
+		return;
+
 	params->others.bls_config.enable_auto = 0;
-	params->others.bls_config.fixed_val.r = 256;
-	params->others.bls_config.fixed_val.gr = 256;
-	params->others.bls_config.fixed_val.gb = 256;
-	params->others.bls_config.fixed_val.b = 256;
+	params->others.bls_config.fixed_val.r = blackLevelRed_;
+	params->others.bls_config.fixed_val.gr = blackLevelGreenR_;
+	params->others.bls_config.fixed_val.gb = blackLevelGreenB_;
+	params->others.bls_config.fixed_val.b = blackLevelBlue_;
 
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_BLS;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_BLS;

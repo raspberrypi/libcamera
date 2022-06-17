@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <limits.h>
 #include <memory>
 #include <stdint.h>
 #include <string.h>
@@ -112,14 +113,32 @@ int KMSSink::configure(const libcamera::CameraConfiguration &config)
 
 	const libcamera::StreamConfiguration &cfg = config.at(0);
 
+	/* Find the best mode for the stream size. */
 	const std::vector<DRM::Mode> &modes = connector_->modes();
-	const auto iter = std::find_if(modes.begin(), modes.end(),
-				       [&](const DRM::Mode &mode) {
-					       return mode.hdisplay == cfg.size.width &&
-						      mode.vdisplay == cfg.size.height;
-				       });
-	if (iter == modes.end()) {
-		std::cerr << "No mode matching " << cfg.size << std::endl;
+
+	unsigned int cfgArea = cfg.size.width * cfg.size.height;
+	unsigned int bestDistance = UINT_MAX;
+
+	for (const DRM::Mode &mode : modes) {
+		unsigned int modeArea = mode.hdisplay * mode.vdisplay;
+		unsigned int distance = modeArea > cfgArea ? modeArea - cfgArea
+				      : cfgArea - modeArea;
+
+		if (distance < bestDistance) {
+			mode_ = &mode;
+			bestDistance = distance;
+
+			/*
+			 * If the sizes match exactly, there will be no better
+			 * match.
+			 */
+			if (distance == 0)
+				break;
+		}
+	}
+
+	if (!mode_) {
+		std::cerr << "No modes\n";
 		return -EINVAL;
 	}
 
@@ -127,7 +146,6 @@ int KMSSink::configure(const libcamera::CameraConfiguration &config)
 	if (ret < 0)
 		return ret;
 
-	mode_ = &*iter;
 	size_ = cfg.size;
 	stride_ = cfg.stride;
 
@@ -202,7 +220,8 @@ int KMSSink::configurePipeline(const libcamera::PixelFormat &format)
 	std::cout
 		<< "Using KMS plane " << plane_->id() << ", CRTC " << crtc_->id()
 		<< ", connector " << connector_->name()
-		<< " (" << connector_->id() << ")" << std::endl;
+		<< " (" << connector_->id() << "), mode " << mode_->hdisplay
+		<< "x" << mode_->vdisplay << "@" << mode_->vrefresh << std::endl;
 
 	return 0;
 }
@@ -295,12 +314,12 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 		drmRequest->addProperty(plane_, "CRTC_ID", crtc_->id());
 		drmRequest->addProperty(plane_, "SRC_X", 0 << 16);
 		drmRequest->addProperty(plane_, "SRC_Y", 0 << 16);
-		drmRequest->addProperty(plane_, "SRC_W", mode_->hdisplay << 16);
-		drmRequest->addProperty(plane_, "SRC_H", mode_->vdisplay << 16);
+		drmRequest->addProperty(plane_, "SRC_W", size_.width << 16);
+		drmRequest->addProperty(plane_, "SRC_H", size_.height << 16);
 		drmRequest->addProperty(plane_, "CRTC_X", 0);
 		drmRequest->addProperty(plane_, "CRTC_Y", 0);
-		drmRequest->addProperty(plane_, "CRTC_W", mode_->hdisplay);
-		drmRequest->addProperty(plane_, "CRTC_H", mode_->vdisplay);
+		drmRequest->addProperty(plane_, "CRTC_W", size_.width);
+		drmRequest->addProperty(plane_, "CRTC_H", size_.height);
 
 		flags |= DRM::AtomicRequest::FlagAllowModeset;
 	}

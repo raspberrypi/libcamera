@@ -321,7 +321,25 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	ipa_->paramsBufferReady.connect(this, &RkISP1CameraData::paramFilled);
 	ipa_->metadataReady.connect(this, &RkISP1CameraData::metadataReady);
 
-	int ret = ipa_->init(IPASettings{ "", sensor_->model() }, hwRevision);
+	/*
+	 * The API tuning file is made from the sensor name unless the
+	 * environment variable overrides it. If
+	 */
+	std::string ipaTuningFile;
+	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RKISP1_TUNING_FILE");
+	if (!configFromEnv || *configFromEnv == '\0') {
+		ipaTuningFile = ipa_->configurationFile(sensor_->model() + ".yaml");
+		/*
+		 * If the tuning file isn't found, fall back to the
+		 * 'uncalibrated' configuration file.
+		 */
+		if (ipaTuningFile.empty())
+			ipaTuningFile = ipa_->configurationFile("uncalibrated.yaml");
+	} else {
+		ipaTuningFile = std::string(configFromEnv);
+	}
+
+	int ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;

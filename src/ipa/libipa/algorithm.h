@@ -11,6 +11,8 @@
 
 namespace libcamera {
 
+class YamlObject;
+
 namespace ipa {
 
 template<typename _Module>
@@ -20,6 +22,12 @@ public:
 	using Module = _Module;
 
 	virtual ~Algorithm() {}
+
+	virtual int init([[maybe_unused]] typename Module::Context &context,
+			 [[maybe_unused]] const YamlObject &tuningData)
+	{
+		return 0;
+	}
 
 	virtual int configure([[maybe_unused]] typename Module::Context &context,
 			      [[maybe_unused]] const typename Module::Config &configInfo)

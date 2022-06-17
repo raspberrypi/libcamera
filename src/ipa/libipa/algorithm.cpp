@@ -38,6 +38,19 @@ namespace ipa {
  */
 
 /**
+ * \fn Algorithm::init()
+ * \brief Initialize the Algorithm with tuning data
+ * \param[in] context The shared IPA context
+ * \param[in] tuningData The tuning data for the algorithm
+ *
+ * This function is called once, when the IPA module is initialized, to
+ * initialize the algorithm. The \a tuningData YamlObject contains the tuning
+ * data for algorithm.
+ *
+ * \return 0 if successful, an error code otherwise
+ */
+
+/**
  * \fn Algorithm::configure()
  * \brief Configure the Algorithm given an IPAConfigInfo
  * \param[in] context The shared IPA context

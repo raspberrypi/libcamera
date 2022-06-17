@@ -8,6 +8,7 @@
 #include "drm.h"
 
 #include <algorithm>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <iostream>
@@ -393,24 +394,10 @@ Device::~Device()
 
 int Device::init()
 {
-	constexpr size_t NODE_NAME_MAX = sizeof("/dev/dri/card255");
-	char name[NODE_NAME_MAX];
-	int ret;
-
-	/*
-	 * Open the first DRM/KMS device. The libdrm drmOpen*() functions
-	 * require either a module name or a bus ID, which we don't have, so
-	 * bypass them. The automatic module loading and device node creation
-	 * from drmOpen() is of no practical use as any modern system will
-	 * handle that through udev or an equivalent component.
-	 */
-	snprintf(name, sizeof(name), "/dev/dri/card%u", 0);
-	fd_ = open(name, O_RDWR | O_CLOEXEC);
-	if (fd_ < 0) {
-		ret = -errno;
-		std::cerr
-			<< "Failed to open DRM/KMS device " << name << ": "
-			<< strerror(-ret) << std::endl;
+	int ret = openCard();
+	if (ret < 0) {
+		std::cerr << "Failed to open any DRM/KMS device: "
+			  << strerror(-ret) << std::endl;
 		return ret;
 	}
 
@@ -436,6 +423,48 @@ int Device::init()
 					  std::bind(&Device::drmEvent, this));
 
 	return 0;
+}
+
+int Device::openCard()
+{
+	const std::string dirName = "/dev/dri/";
+	int ret = -ENOENT;
+
+	/*
+	 * Open the first DRM/KMS device beginning with /dev/dri/card. The
+	 * libdrm drmOpen*() functions require either a module name or a bus ID,
+	 * which we don't have, so bypass them. The automatic module loading and
+	 * device node creation from drmOpen() is of no practical use as any
+	 * modern system will handle that through udev or an equivalent
+	 * component.
+	 */
+	DIR *folder = opendir(dirName.c_str());
+	if (!folder) {
+		ret = -errno;
+		std::cerr << "Failed to open " << dirName
+			  << " directory: " << strerror(-ret) << std::endl;
+		return ret;
+	}
+
+	for (struct dirent *res; (res = readdir(folder));) {
+		if (strncmp(res->d_name, "card", 4))
+			continue;
+
+		const std::string devName = dirName + res->d_name;
+		fd_ = open(devName.c_str(), O_RDWR | O_CLOEXEC);
+		if (fd_ >= 0) {
+			ret = 0;
+			break;
+		}
+
+		ret = -errno;
+		std::cerr << "Failed to open DRM/KMS device " << devName << ": "
+			  << strerror(-ret) << std::endl;
+	}
+
+	closedir(folder);
+
+	return ret;
 }
 
 int Device::getResources()

@@ -311,6 +311,7 @@ private:
 	Device &operator=(const Device &) = delete;
 	Device &operator=(const Device &&) = delete;
 
+	int openCard();
 	int getResources();
 
 	void drmEvent();

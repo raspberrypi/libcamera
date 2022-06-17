@@ -52,6 +52,8 @@ void BlackLevelCorrection::prepare(IPAContext &context,
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_BLS;
 }
 
+REGISTER_IPA_ALGORITHM(BlackLevelCorrection, "BlackLevelCorrection")
+
 } /* namespace ipa::rkisp1::algorithms */
 
 } /* namespace libcamera */

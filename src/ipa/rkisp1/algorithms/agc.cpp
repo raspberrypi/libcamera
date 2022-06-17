@@ -355,6 +355,8 @@ void Agc::prepare(IPAContext &context, rkisp1_params_cfg *params)
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_HST;
 }
 
+REGISTER_IPA_ALGORITHM(Agc, "Agc")
+
 } /* namespace ipa::rkisp1::algorithms */
 
 } /* namespace libcamera */

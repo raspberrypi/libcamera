@@ -175,6 +175,8 @@ void Awb::process([[maybe_unused]] IPAContext &context,
 			      << " and for blue: " << context.frameContext.awb.gains.blue;
 }
 
+REGISTER_IPA_ALGORITHM(Awb, "Awb")
+
 } /* namespace ipa::rkisp1::algorithms */
 
 } /* namespace libcamera */

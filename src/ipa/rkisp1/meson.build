@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 subdir('algorithms')
+subdir('data')
 
 ipa_name = 'ipa_rkisp1'
 

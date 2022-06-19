@@ -14,6 +14,13 @@
 
 namespace libcamera {
 
+/**
+ * \brief The IPA namespace
+ *
+ * The IPA namespace groups all types specific to IPA modules. It serves as the
+ * top-level namespace for the IPA library libipa, and also contains
+ * module-specific namespaces for IPA modules.
+ */
 namespace ipa {
 
 /**

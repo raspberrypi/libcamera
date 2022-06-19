@@ -11,7 +11,6 @@ libipa_sources = files([
     'algorithm.cpp',
     'camera_sensor_helper.cpp',
     'histogram.cpp',
-    'libipa.cpp',
     'module.cpp',
 ])
 

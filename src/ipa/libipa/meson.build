@@ -3,13 +3,16 @@
 libipa_headers = files([
     'algorithm.h',
     'camera_sensor_helper.h',
-    'histogram.h'
+    'histogram.h',
+    'module.h',
 ])
 
 libipa_sources = files([
+    'algorithm.cpp',
     'camera_sensor_helper.cpp',
     'histogram.cpp',
     'libipa.cpp',
+    'module.cpp',
 ])
 
 libipa_includes = include_directories('..')

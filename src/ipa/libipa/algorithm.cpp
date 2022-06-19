@@ -19,14 +19,17 @@ namespace ipa {
 /**
  * \class Algorithm
  * \brief The base class for all IPA algorithms
- * \tparam Context The type of shared IPA context
- * \tparam Config The type of the IPA configuration data
- * \tparam Params The type of the ISP specific parameters
- * \tparam Stats The type of the IPA statistics and ISP results
+ * \tparam Module The IPA module type for this class of algorithms
  *
- * The Algorithm class defines a standard interface for IPA algorithms. By
- * abstracting algorithms, it makes possible the implementation of generic code
- * to manage algorithms regardless of their specific type.
+ * The Algorithm class defines a standard interface for IPA algorithms
+ * compatible with the \a Module. By abstracting algorithms, it makes possible
+ * the implementation of generic code to manage algorithms regardless of their
+ * specific type.
+ *
+ * To specialize the Algorithm class template, an IPA module shall specialize
+ * the Module class template with module-specific context and configuration
+ * types, and pass the specialized Module class as the \a Module template
+ * argument.
  */
 
 /**

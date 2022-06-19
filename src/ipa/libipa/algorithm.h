@@ -10,27 +10,26 @@ namespace libcamera {
 
 namespace ipa {
 
-template<typename Context, typename FrameContext, typename Config,
-	 typename Params, typename Stats>
+template<typename Module>
 class Algorithm
 {
 public:
 	virtual ~Algorithm() {}
 
-	virtual int configure([[maybe_unused]] Context &context,
-			      [[maybe_unused]] const Config &configInfo)
+	virtual int configure([[maybe_unused]] typename Module::Context &context,
+			      [[maybe_unused]] const typename Module::Config &configInfo)
 	{
 		return 0;
 	}
 
-	virtual void prepare([[maybe_unused]] Context &context,
-			     [[maybe_unused]] Params *params)
+	virtual void prepare([[maybe_unused]] typename Module::Context &context,
+			     [[maybe_unused]] typename Module::Params *params)
 	{
 	}
 
-	virtual void process([[maybe_unused]] Context &context,
-			     [[maybe_unused]] FrameContext *frameContext,
-			     [[maybe_unused]] const Stats *stats)
+	virtual void process([[maybe_unused]] typename Module::Context &context,
+			     [[maybe_unused]] typename Module::FrameContext *frameContext,
+			     [[maybe_unused]] const typename Module::Stats *stats)
 	{
 	}
 };

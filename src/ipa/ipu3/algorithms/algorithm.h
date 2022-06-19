@@ -7,19 +7,15 @@
 
 #pragma once
 
-#include <libcamera/ipa/ipu3_ipa_interface.h>
-
 #include <libipa/algorithm.h>
 
-#include "ipa_context.h"
+#include "module.h"
 
 namespace libcamera {
 
 namespace ipa::ipu3 {
 
-using Algorithm = libcamera::ipa::Algorithm<IPAContext, IPAFrameContext,
-					    IPAConfigInfo, ipu3_uapi_params,
-					    ipu3_uapi_stats_3a>;
+using Algorithm = libcamera::ipa::Algorithm<Module>;
 
 } /* namespace ipa::ipu3 */
 

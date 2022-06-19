@@ -33,6 +33,11 @@ namespace ipa {
  */
 
 /**
+ * \typedef Algorithm::Module
+ * \brief The IPA module type for this class of algorithms
+ */
+
+/**
  * \fn Algorithm::configure()
  * \brief Configure the Algorithm given an IPAConfigInfo
  * \param[in] context The shared IPA context
@@ -92,6 +97,49 @@ namespace ipa {
  *
  * Care shall be taken to ensure the ordering of access to the information
  * such that the algorithms use up to date state as required.
+ */
+
+/**
+ * \class AlgorithmFactory
+ * \brief Registration of Algorithm classes and creation of instances
+ * \tparam _Algorithm The algorithm class type for this factory
+ *
+ * To facilitate instantiation of Algorithm classes, the AlgorithmFactory class
+ * implements auto-registration of algorithms with the IPA Module class. Each
+ * Algorithm subclass shall register itself using the REGISTER_IPA_ALGORITHM()
+ * macro, which will create a corresponding instance of an AlgorithmFactory and
+ * register it with the IPA Module.
+ */
+
+/**
+ * \fn AlgorithmFactory::AlgorithmFactory()
+ * \brief Construct an algorithm factory
+ * \param[in] name Name of the algorithm class
+ *
+ * Creating an instance of the factory automatically registers is with the IPA
+ * Module class, enabling creation of algorithm instances through
+ * Module::createAlgorithm().
+ *
+ * The factory \a name identifies the algorithm and shall be unique.
+ */
+
+/**
+ * \fn AlgorithmFactory::create()
+ * \brief Create an instance of the Algorithm corresponding to the factory
+ * \return A pointer to a newly constructed instance of the Algorithm subclass
+ * corresponding to the factory
+ */
+
+/**
+ * \def REGISTER_IPA_ALGORITHM
+ * \brief Register an algorithm with the IPA module
+ * \param[in] algorithm Class name of Algorithm derived class to register
+ * \param[in] name Name of the algorithm
+ *
+ * Register an Algorithm subclass with the IPA module to make it available for
+ * instantiation through Module::createAlgorithm(). The \a name identifies the
+ * algorithm and must be unique across all algorithms registered for the IPA
+ * module.
  */
 
 } /* namespace ipa */

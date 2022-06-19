@@ -75,6 +75,30 @@ namespace ipa {
  * \brief The type of the IPA statistics and ISP results
  */
 
+/**
+ * \fn Module::createAlgorithm()
+ * \brief Create an instance of an Algorithm by name
+ * \param[in] name The algorithm name
+ *
+ * This function is the entry point to algorithm instantiation for the IPA
+ * module. It creates and returns an instance of an algorithm identified by its
+ * \a name. If no such algorithm exists, the function returns nullptr.
+ *
+ * To make an algorithm available to the IPA module, it shall be registered with
+ * the REGISTER_IPA_ALGORITHM() macro.
+ *
+ * \return A new instance of the Algorithm subclass corresponding to the \a name
+ */
+
+/**
+ * \fn Module::registerAlgorithm()
+ * \brief Add an algorithm factory class to the list of available algorithms
+ * \param[in] factory Factory to use to construct the algorithm
+ *
+ * This function registers an algorithm factory. It is meant to be called by the
+ * AlgorithmFactory constructor only.
+ */
+
 } /* namespace ipa */
 
 } /* namespace libcamera */

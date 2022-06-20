@@ -7,13 +7,21 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
+
+#include "libcamera/internal/yaml_parser.h"
+
 #include "algorithm.h"
 
 namespace libcamera {
+
+LOG_DECLARE_CATEGORY(IPAModuleAlgo)
 
 namespace ipa {
 
@@ -30,6 +38,63 @@ public:
 
 	virtual ~Module() {}
 
+	const std::list<std::unique_ptr<Algorithm<Module>>> &algorithms() const
+	{
+		return algorithms_;
+	}
+
+	int createAlgorithms(Context &context, const YamlObject &algorithms)
+	{
+		const auto &list = algorithms.asList();
+
+		for (const auto &[i, algo] : utils::enumerate(list)) {
+			if (!algo.isDictionary()) {
+				LOG(IPAModuleAlgo, Error)
+					<< "Invalid YAML syntax for algorithm " << i;
+				algorithms_.clear();
+				return -EINVAL;
+			}
+
+			int ret = createAlgorithm(context, algo);
+			if (ret) {
+				algorithms_.clear();
+				return ret;
+			}
+		}
+
+		return 0;
+	}
+
+	static void registerAlgorithm(AlgorithmFactoryBase<Module> *factory)
+	{
+		factories().push_back(factory);
+	}
+
+private:
+	int createAlgorithm(Context &context, const YamlObject &data)
+	{
+		const auto &[name, algoData] = *data.asDict().begin();
+		std::unique_ptr<Algorithm<Module>> algo = createAlgorithm(name);
+		if (!algo) {
+			LOG(IPAModuleAlgo, Error)
+				<< "Algorithm '" << name << "' not found";
+			return -EINVAL;
+		}
+
+		int ret = algo->init(context, algoData);
+		if (ret) {
+			LOG(IPAModuleAlgo, Error)
+				<< "Algorithm '" << name << "' failed to initialize";
+			return ret;
+		}
+
+		LOG(IPAModuleAlgo, Debug)
+			<< "Instantiated algorithm '" << name << "'";
+
+		algorithms_.push_back(std::move(algo));
+		return 0;
+	}
+
 	static std::unique_ptr<Algorithm<Module>> createAlgorithm(const std::string &name)
 	{
 		for (const AlgorithmFactoryBase<Module> *factory : factories()) {
@@ -40,12 +105,6 @@ public:
 		return nullptr;
 	}
 
-	static void registerAlgorithm(AlgorithmFactoryBase<Module> *factory)
-	{
-		factories().push_back(factory);
-	}
-
-private:
 	static std::vector<AlgorithmFactoryBase<Module> *> &factories()
 	{
 		/*
@@ -56,6 +115,8 @@ private:
 		static std::vector<AlgorithmFactoryBase<Module> *> factories;
 		return factories;
 	}
+
+	std::list<std::unique_ptr<Algorithm<Module>>> algorithms_;
 };
 
 } /* namespace ipa */

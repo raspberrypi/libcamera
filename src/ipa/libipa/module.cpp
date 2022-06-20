@@ -14,6 +14,8 @@
 
 namespace libcamera {
 
+LOG_DEFINE_CATEGORY(IPAModuleAlgo)
+
 /**
  * \brief The IPA namespace
  *
@@ -76,7 +78,36 @@ namespace ipa {
  */
 
 /**
- * \fn Module::createAlgorithm()
+ * \fn Module::algorithms()
+ * \brief Retrieve the list of instantiated algorithms
+ * \return The list of instantiated algorithms
+ */
+
+/**
+ * \fn Module::createAlgorithms()
+ * \brief Create algorithms from YAML configuration data
+ * \param[in] context The IPA context
+ * \param[in] algorithms Algorithms configuration data as a parsed YamlObject
+ *
+ * This function iterates over the list of \a algorithms parsed from the YAML
+ * configuration file, and instantiates and initializes the corresponding
+ * algorithms. The configuration data is expected to be correct, any error
+ * causes the function to fail and return immediately.
+ *
+ * \return 0 on success, or a negative error code on failure
+ */
+
+/**
+ * \fn Module::registerAlgorithm()
+ * \brief Add an algorithm factory class to the list of available algorithms
+ * \param[in] factory Factory to use to construct the algorithm
+ *
+ * This function registers an algorithm factory. It is meant to be called by the
+ * AlgorithmFactory constructor only.
+ */
+
+/**
+ * \fn Module::createAlgorithm(const std::string &name)
  * \brief Create an instance of an Algorithm by name
  * \param[in] name The algorithm name
  *
@@ -88,15 +119,6 @@ namespace ipa {
  * the REGISTER_IPA_ALGORITHM() macro.
  *
  * \return A new instance of the Algorithm subclass corresponding to the \a name
- */
-
-/**
- * \fn Module::registerAlgorithm()
- * \brief Add an algorithm factory class to the list of available algorithms
- * \param[in] factory Factory to use to construct the algorithm
- *
- * This function registers an algorithm factory. It is meant to be called by the
- * AlgorithmFactory constructor only.
  */
 
 } /* namespace ipa */

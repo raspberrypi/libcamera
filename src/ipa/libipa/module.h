@@ -27,7 +27,7 @@ namespace ipa {
 
 template<typename _Context, typename _FrameContext, typename _Config,
 	 typename _Params, typename _Stats>
-class Module
+class Module : public Loggable
 {
 public:
 	using Context = _Context;

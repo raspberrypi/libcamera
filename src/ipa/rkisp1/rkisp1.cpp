@@ -14,6 +14,7 @@
 #include <linux/rkisp1-config.h>
 #include <linux/v4l2-controls.h>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
@@ -24,6 +25,7 @@
 #include <libcamera/request.h>
 
 #include "libcamera/internal/mapped_framebuffer.h"
+#include "libcamera/internal/yaml_parser.h"
 
 #include "algorithms/agc.h"
 #include "algorithms/algorithm.h"
@@ -41,7 +43,7 @@ using namespace std::literals::chrono_literals;
 
 namespace ipa::rkisp1 {
 
-class IPARkISP1 : public IPARkISP1Interface
+class IPARkISP1 : public IPARkISP1Interface, public Module
 {
 public:
 	int init(const IPASettings &settings, unsigned int hwRevision) override;
@@ -58,6 +60,10 @@ public:
 	void fillParamsBuffer(const uint32_t frame, const uint32_t bufferId) override;
 	void processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
 				const ControlList &sensorControls) override;
+
+protected:
+	std::string logPrefix() const override;
+
 private:
 	void setControls(unsigned int frame);
 	void prepareMetadata(unsigned int frame, unsigned int aeState);
@@ -81,10 +87,12 @@ private:
 
 	/* Local parameter storage */
 	struct IPAContext context_;
-
-	/* Maintain the algorithms used by the IPA */
-	std::list<std::unique_ptr<ipa::rkisp1::Algorithm>> algorithms_;
 };
+
+std::string IPARkISP1::logPrefix() const
+{
+	return "rkisp1";
+}
 
 int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 {
@@ -120,12 +128,34 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 		return -ENODEV;
 	}
 
-	/* Construct our Algorithms */
-	algorithms_.push_back(std::make_unique<algorithms::Agc>());
-	algorithms_.push_back(std::make_unique<algorithms::Awb>());
-	algorithms_.push_back(std::make_unique<algorithms::BlackLevelCorrection>());
+	/* Load the tuning data file. */
+	File file(settings.configurationFile.c_str());
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		int ret = file.error();
+		LOG(IPARkISP1, Error)
+			<< "Failed to open configuration file "
+			<< settings.configurationFile << ": " << strerror(-ret);
+		return ret;
+	}
 
-	return 0;
+	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	if (!data)
+		return -EINVAL;
+
+	unsigned int version = (*data)["version"].get<uint32_t>(0);
+	if (version != 1) {
+		LOG(IPARkISP1, Error)
+			<< "Invalid tuning file version " << version;
+		return -EINVAL;
+	}
+
+	if (!data->contains("algorithms")) {
+		LOG(IPARkISP1, Error)
+			<< "Tuning file doesn't contain any algorithm";
+		return -EINVAL;
+	}
+
+	return createAlgorithms(context_, (*data)["algorithms"]);
 }
 
 int IPARkISP1::start()
@@ -196,7 +226,7 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 
 	context_.frameContext.frameCount = 0;
 
-	for (auto const &algo : algorithms_) {
+	for (auto const &algo : algorithms()) {
 		int ret = algo->configure(context_, info);
 		if (ret)
 			return ret;
@@ -250,7 +280,7 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	/* Prepare parameters buffer. */
 	memset(params, 0, sizeof(*params));
 
-	for (auto const &algo : algorithms_)
+	for (auto const &algo : algorithms())
 		algo->prepare(context_, params);
 
 	paramsBufferReady.emit(frame);
@@ -271,7 +301,7 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 	unsigned int aeState = 0;
 
-	for (auto const &algo : algorithms_)
+	for (auto const &algo : algorithms())
 		algo->process(context_, nullptr, stats);
 
 	setControls(frame);

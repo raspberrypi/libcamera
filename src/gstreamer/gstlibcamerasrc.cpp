@@ -259,6 +259,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 int GstLibcameraSrcState::processRequest()
 {
 	std::unique_ptr<RequestWrap> wrap;
+	int err = 0;
 
 	{
 		MutexLocker locker(lock_);
@@ -267,10 +268,13 @@ int GstLibcameraSrcState::processRequest()
 			wrap = std::move(completedRequests_.front());
 			completedRequests_.pop();
 		}
+
+		if (completedRequests_.empty())
+			err = -ENOBUFS;
 	}
 
 	if (!wrap)
-		return -ENODATA;
+		return -ENOBUFS;
 
 	GstFlowReturn ret = GST_FLOW_OK;
 	gst_flow_combiner_reset(src_->flow_combiner);
@@ -310,7 +314,7 @@ int GstLibcameraSrcState::processRequest()
 		return -EPIPE;
 	}
 
-	return 0;
+	return err;
 }
 
 static bool
@@ -381,46 +385,71 @@ gst_libcamera_src_task_run(gpointer user_data)
 	GstLibcameraSrcState *state = self->state;
 
 	/*
+	 * Start by pausing the task. The task may also get resumed by the
+	 * buffer-notify signal when new buffers are queued back to the pool,
+	 * or by the request completion handler when a new request has
+	 * completed.  Both will resume the task after adding the buffers or
+	 * request to their respective lists, which are checked below to decide
+	 * if the task needs to be resumed for another iteration. This is thus
+	 * guaranteed to be race-free, the lock taken by gst_task_pause() and
+	 * gst_task_resume() serves as a memory barrier.
+	 */
+	gst_task_pause(self->task);
+
+	bool doResume = false;
+
+	/*
 	 * Create and queue one request. If no buffers are available the
 	 * function returns -ENOBUFS, which we ignore here as that's not a
 	 * fatal error.
 	 */
 	int ret = state->queueRequest();
-	if (ret == -ENOMEM) {
+	switch (ret) {
+	case 0:
+		/*
+		 * The request was successfully queued, there may be enough
+		 * buffers to create a new one. Don't pause the task to give it
+		 * another try.
+		 */
+		doResume = true;
+		break;
+
+	case -ENOMEM:
 		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
 				  ("Failed to allocate request for camera '%s'.",
 				   state->cam_->id().c_str()),
 				  ("libcamera::Camera::createRequest() failed"));
 		gst_task_stop(self->task);
 		return;
+
+	case -ENOBUFS:
+	default:
+		break;
 	}
 
-	/* Process one completed request, if available. */
+	/*
+	 * Process one completed request, if available, and record if further
+	 * requests are ready for processing.
+	 */
 	ret = state->processRequest();
 	switch (ret) {
+	case 0:
+		/* Another completed request is available, resume the task. */
+		doResume = true;
+		break;
+
 	case -EPIPE:
 		gst_task_stop(self->task);
 		return;
 
-	case -ENODATA:
-		gst_task_pause(self->task);
-		return;
+	case -ENOBUFS:
+	default:
+		break;
 	}
 
-	/*
-	 * Here we need to decide if we want to pause. This needs to
-	 * happen in lock step with the callback thread which may want
-	 * to resume the task and might push pending buffers.
-	 */
-	bool do_pause;
-
-	{
-		MutexLocker locker(state->lock_);
-		do_pause = state->completedRequests_.empty();
-	}
-
-	if (do_pause)
-		gst_task_pause(self->task);
+	/* Resume the task for another iteration if needed. */
+	if (doResume)
+		gst_task_resume(self->task);
 }
 
 static void

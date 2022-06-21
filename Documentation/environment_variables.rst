@@ -87,7 +87,7 @@ global environment:
    :~$ cam --list
 
 Log levels
-~~~~~~~~~~~
+~~~~~~~~~~
 
 This is the list of available log levels, notice that all levels below
 the chosen one are printed, while those above are discarded.
@@ -103,7 +103,7 @@ If you choose WARN (2), you will be able to see WARN (2), ERROR (3) and FATAL (4
 but not DEBUG (0) and INFO (1).
 
 Log categories
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 Every category represents a specific area of the libcamera codebase,
 the names can be located within the source code, for example:
@@ -141,7 +141,7 @@ storage locations to search for those configuration files.
 `Examples <https://git.libcamera.org/libcamera/libcamera.git/tree/src/ipa/raspberrypi/data>`__
 
 IPA module
-~~~~~~~~~~~
+~~~~~~~~~~
 
 In order to locate the correct IPA module for your hardware, libcamera gathers
 existing IPA modules from multiple locations. The default locations for this

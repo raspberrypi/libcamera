@@ -108,7 +108,7 @@ struct GstLibcameraSrcState {
 	std::shared_ptr<Camera> cam_;
 	std::unique_ptr<CameraConfiguration> config_;
 	std::vector<GstPad *> srcpads_;
-	std::queue<std::unique_ptr<RequestWrap>> requests_;
+	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_;
 	guint group_id_;
 
 	void requestCompleted(Request *request);
@@ -155,8 +155,8 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 
 	GST_DEBUG_OBJECT(src_, "buffers are ready");
 
-	std::unique_ptr<RequestWrap> wrap = std::move(requests_.front());
-	requests_.pop();
+	std::unique_ptr<RequestWrap> wrap = std::move(queuedRequests_.front());
+	queuedRequests_.pop();
 
 	g_return_if_fail(wrap->request_.get() == request);
 
@@ -311,7 +311,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 		GLibLocker lock(GST_OBJECT(self));
 		GST_TRACE_OBJECT(self, "Requesting buffers");
 		state->cam_->queueRequest(wrap->request_.get());
-		state->requests_.push(std::move(wrap));
+		state->queuedRequests_.push(std::move(wrap));
 
 		/* The RequestWrap will be deleted in the completion handler. */
 	}

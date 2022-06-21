@@ -192,7 +192,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		gst_libcamera_pad_queue_buffer(srcpad, buffer);
 	}
 
-	gst_libcamera_resume_task(this->src_->task);
+	gst_task_resume(src_->task);
 }
 
 static bool
@@ -453,7 +453,7 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
 								stream_cfg.stream());
 		g_signal_connect_swapped(pool, "buffer-notify",
-					 G_CALLBACK(gst_libcamera_resume_task), task);
+					 G_CALLBACK(gst_task_resume), task);
 
 		gst_libcamera_pad_set_pool(srcpad, pool);
 		gst_flow_combiner_add_pad(self->flow_combiner, srcpad);

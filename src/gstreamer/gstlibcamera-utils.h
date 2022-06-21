@@ -18,7 +18,9 @@ GstCaps *gst_libcamera_stream_formats_to_caps(const libcamera::StreamFormats &fo
 GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfiguration &stream_cfg);
 void gst_libcamera_configure_stream_from_caps(libcamera::StreamConfiguration &stream_cfg,
 					      GstCaps *caps);
-void gst_libcamera_resume_task(GstTask *task);
+#if !GST_CHECK_VERSION(1, 17, 1)
+gboolean gst_task_resume(GstTask *task);
+#endif
 std::shared_ptr<libcamera::CameraManager> gst_libcamera_get_camera_manager(int &ret);
 
 /**

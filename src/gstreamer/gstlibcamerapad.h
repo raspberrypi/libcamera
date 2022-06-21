@@ -25,10 +25,4 @@ void gst_libcamera_pad_set_pool(GstPad *pad, GstLibcameraPool *pool);
 
 libcamera::Stream *gst_libcamera_pad_get_stream(GstPad *pad);
 
-void gst_libcamera_pad_queue_buffer(GstPad *pad, GstBuffer *buffer);
-
-GstFlowReturn gst_libcamera_pad_push_pending(GstPad *pad);
-
-bool gst_libcamera_pad_has_pending(GstPad *pad);
-
 void gst_libcamera_pad_set_latency(GstPad *pad, GstClockTime latency);

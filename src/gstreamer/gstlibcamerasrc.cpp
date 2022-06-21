@@ -311,6 +311,9 @@ gst_libcamera_src_task_run(gpointer user_data)
 		return;
 	}
 
+	GstFlowReturn ret = GST_FLOW_OK;
+	gst_flow_combiner_reset(self->flow_combiner);
+
 	for (GstPad *srcpad : state->srcpads_) {
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		GstBuffer *buffer = wrap->detachBuffer(stream);
@@ -327,13 +330,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 		GST_BUFFER_OFFSET(buffer) = fb->metadata().sequence;
 		GST_BUFFER_OFFSET_END(buffer) = fb->metadata().sequence;
 
-		gst_libcamera_pad_queue_buffer(srcpad, buffer);
-	}
-
-	GstFlowReturn ret = GST_FLOW_OK;
-	gst_flow_combiner_reset(self->flow_combiner);
-	for (GstPad *srcpad : state->srcpads_) {
-		ret = gst_libcamera_pad_push_pending(srcpad);
+		ret = gst_pad_push(srcpad, buffer);
 		ret = gst_flow_combiner_update_pad_flow(self->flow_combiner,
 							srcpad, ret);
 	}

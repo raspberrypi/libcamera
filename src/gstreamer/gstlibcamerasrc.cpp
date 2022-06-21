@@ -57,10 +57,13 @@ struct RequestWrap {
 
 	std::unique_ptr<Request> request_;
 	std::map<Stream *, GstBuffer *> buffers_;
+
+	GstClockTime latency_;
+	GstClockTime pts_;
 };
 
 RequestWrap::RequestWrap(std::unique_ptr<Request> request)
-	: request_(std::move(request))
+	: request_(std::move(request)), latency_(0), pts_(GST_CLOCK_TIME_NONE)
 {
 }
 
@@ -109,6 +112,7 @@ struct GstLibcameraSrcState {
 	std::unique_ptr<CameraConfiguration> config_;
 	std::vector<GstPad *> srcpads_;
 	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_;
+	std::queue<std::unique_ptr<RequestWrap>> completedRequests_;
 	guint group_id_;
 
 	void requestCompleted(Request *request);
@@ -165,9 +169,6 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		return;
 	}
 
-	GstClockTime latency;
-	GstClockTime pts;
-
 	if (GST_ELEMENT_CLOCK(src_)) {
 		int64_t timestamp = request->metadata().get(controls::SensorTimestamp);
 
@@ -178,31 +179,11 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 
 		/* Deduced from: sys_now - sys_base_time == gst_now - gst_base_time */
 		GstClockTime sys_base_time = sys_now - (gst_now - gst_base_time);
-		pts = timestamp - sys_base_time;
-		latency = sys_now - timestamp;
-	} else {
-		latency = 0;
-		pts = GST_CLOCK_TIME_NONE;
+		wrap->pts_ = timestamp - sys_base_time;
+		wrap->latency_ = sys_now - timestamp;
 	}
 
-	for (GstPad *srcpad : srcpads_) {
-		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
-		GstBuffer *buffer = wrap->detachBuffer(stream);
-
-		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
-
-		if (GST_CLOCK_TIME_IS_VALID(pts)) {
-			GST_BUFFER_PTS(buffer) = pts;
-			gst_libcamera_pad_set_latency(srcpad, latency);
-		} else {
-			GST_BUFFER_PTS(buffer) = 0;
-		}
-
-		GST_BUFFER_OFFSET(buffer) = fb->metadata().sequence;
-		GST_BUFFER_OFFSET_END(buffer) = fb->metadata().sequence;
-
-		gst_libcamera_pad_queue_buffer(srcpad, buffer);
-	}
+	completedRequests_.push(std::move(wrap));
 
 	gst_task_resume(src_->task);
 }
@@ -316,6 +297,39 @@ gst_libcamera_src_task_run(gpointer user_data)
 		/* The RequestWrap will be deleted in the completion handler. */
 	}
 
+	{
+		GLibLocker lock(GST_OBJECT(self));
+
+		if (!state->completedRequests_.empty()) {
+			wrap = std::move(state->completedRequests_.front());
+			state->completedRequests_.pop();
+		}
+	}
+
+	if (!wrap) {
+		gst_task_pause(self->task);
+		return;
+	}
+
+	for (GstPad *srcpad : state->srcpads_) {
+		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
+		GstBuffer *buffer = wrap->detachBuffer(stream);
+
+		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
+
+		if (GST_CLOCK_TIME_IS_VALID(wrap->pts_)) {
+			GST_BUFFER_PTS(buffer) = wrap->pts_;
+			gst_libcamera_pad_set_latency(srcpad, wrap->latency_);
+		} else {
+			GST_BUFFER_PTS(buffer) = 0;
+		}
+
+		GST_BUFFER_OFFSET(buffer) = fb->metadata().sequence;
+		GST_BUFFER_OFFSET_END(buffer) = fb->metadata().sequence;
+
+		gst_libcamera_pad_queue_buffer(srcpad, buffer);
+	}
+
 	GstFlowReturn ret = GST_FLOW_OK;
 	gst_flow_combiner_reset(self->flow_combiner);
 	for (GstPad *srcpad : state->srcpads_) {
@@ -344,13 +358,11 @@ gst_libcamera_src_task_run(gpointer user_data)
 		 * happen in lock step with the callback thread which may want
 		 * to resume the task and might push pending buffers.
 		 */
-		GLibLocker lock(GST_OBJECT(self));
-		bool do_pause = true;
-		for (GstPad *srcpad : state->srcpads_) {
-			if (gst_libcamera_pad_has_pending(srcpad)) {
-				do_pause = false;
-				break;
-			}
+		bool do_pause;
+
+		{
+			GLibLocker lock(GST_OBJECT(self));
+			do_pause = state->completedRequests_.empty();
 		}
 
 		if (do_pause)
@@ -503,6 +515,8 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 	GST_DEBUG_OBJECT(self, "Streaming thread is about to stop");
 
 	state->cam_->stop();
+
+	state->completedRequests_ = {};
 
 	for (GstPad *srcpad : state->srcpads_)
 		gst_libcamera_pad_set_pool(srcpad, nullptr);

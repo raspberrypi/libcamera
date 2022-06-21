@@ -34,6 +34,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/control_ids.h>
 
 #include <gst/base/base.h>
 
@@ -164,22 +165,35 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		return;
 	}
 
+	GstClockTime latency;
+	GstClockTime pts;
+
+	if (GST_ELEMENT_CLOCK(src_)) {
+		int64_t timestamp = request->metadata().get(controls::SensorTimestamp);
+
+		GstClockTime gst_base_time = GST_ELEMENT(src_)->base_time;
+		GstClockTime gst_now = gst_clock_get_time(GST_ELEMENT_CLOCK(src_));
+		/* \todo Need to expose which reference clock the timestamp relates to. */
+		GstClockTime sys_now = g_get_monotonic_time() * 1000;
+
+		/* Deduced from: sys_now - sys_base_time == gst_now - gst_base_time */
+		GstClockTime sys_base_time = sys_now - (gst_now - gst_base_time);
+		pts = timestamp - sys_base_time;
+		latency = sys_now - timestamp;
+	} else {
+		latency = 0;
+		pts = GST_CLOCK_TIME_NONE;
+	}
+
 	for (GstPad *srcpad : srcpads_) {
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		GstBuffer *buffer = wrap->detachBuffer(stream);
 
 		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
 
-		if (GST_ELEMENT_CLOCK(src_)) {
-			GstClockTime gst_base_time = GST_ELEMENT(src_)->base_time;
-			GstClockTime gst_now = gst_clock_get_time(GST_ELEMENT_CLOCK(src_));
-			/* \todo Need to expose which reference clock the timestamp relates to. */
-			GstClockTime sys_now = g_get_monotonic_time() * 1000;
-
-			/* Deduced from: sys_now - sys_base_time == gst_now - gst_base_time */
-			GstClockTime sys_base_time = sys_now - (gst_now - gst_base_time);
-			GST_BUFFER_PTS(buffer) = fb->metadata().timestamp - sys_base_time;
-			gst_libcamera_pad_set_latency(srcpad, sys_now - fb->metadata().timestamp);
+		if (GST_CLOCK_TIME_IS_VALID(pts)) {
+			GST_BUFFER_PTS(buffer) = pts;
+			gst_libcamera_pad_set_latency(srcpad, latency);
 		} else {
 			GST_BUFFER_PTS(buffer) = 0;
 		}

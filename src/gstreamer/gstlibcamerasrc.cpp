@@ -133,6 +133,7 @@ struct GstLibcameraSrcState {
 
 	guint group_id_;
 
+	int queueRequest();
 	void requestCompleted(Request *request);
 };
 
@@ -169,6 +170,47 @@ GstStaticPadTemplate src_template = {
 GstStaticPadTemplate request_src_template = {
 	"src_%u", GST_PAD_SRC, GST_PAD_REQUEST, TEMPLATE_CAPS
 };
+
+/* Must be called with stream_lock held. */
+int GstLibcameraSrcState::queueRequest()
+{
+	std::unique_ptr<Request> request = cam_->createRequest();
+	if (!request)
+		return -ENOMEM;
+
+	std::unique_ptr<RequestWrap> wrap =
+		std::make_unique<RequestWrap>(std::move(request));
+
+	for (GstPad *srcpad : srcpads_) {
+		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
+		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
+		GstBuffer *buffer;
+		GstFlowReturn ret;
+
+		ret = gst_buffer_pool_acquire_buffer(GST_BUFFER_POOL(pool),
+						     &buffer, nullptr);
+		if (ret != GST_FLOW_OK) {
+			/*
+			 * RequestWrap has ownership of the request, and we
+			 * won't be queueing this one due to lack of buffers.
+			 */
+			return -ENOBUFS;
+		}
+
+		wrap->attachBuffer(stream, buffer);
+	}
+
+	GST_TRACE_OBJECT(src_, "Requesting buffers");
+	cam_->queueRequest(wrap->request_.get());
+
+	{
+		MutexLocker locker(lock_);
+		queuedRequests_.push(std::move(wrap));
+	}
+
+	/* The RequestWrap will be deleted in the completion handler. */
+	return 0;
+}
 
 void
 GstLibcameraSrcState::requestCompleted(Request *request)
@@ -279,8 +321,8 @@ gst_libcamera_src_task_run(gpointer user_data)
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
 	GstLibcameraSrcState *state = self->state;
 
-	std::unique_ptr<Request> request = state->cam_->createRequest();
-	if (!request) {
+	int err = state->queueRequest();
+	if (err == -ENOMEM) {
 		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
 				  ("Failed to allocate request for camera '%s'.",
 				   state->cam_->id().c_str()),
@@ -289,38 +331,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 		return;
 	}
 
-	std::unique_ptr<RequestWrap> wrap =
-		std::make_unique<RequestWrap>(std::move(request));
-
-	for (GstPad *srcpad : state->srcpads_) {
-		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
-		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
-		GstBuffer *buffer;
-		GstFlowReturn ret;
-
-		ret = gst_buffer_pool_acquire_buffer(GST_BUFFER_POOL(pool),
-						     &buffer, nullptr);
-		if (ret != GST_FLOW_OK) {
-			/*
-			 * RequestWrap has ownership of the request, and we
-			 * won't be queueing this one due to lack of buffers.
-			 */
-			wrap.release();
-			break;
-		}
-
-		wrap->attachBuffer(stream, buffer);
-	}
-
-	if (wrap) {
-		GST_TRACE_OBJECT(self, "Requesting buffers");
-		state->cam_->queueRequest(wrap->request_.get());
-
-		MutexLocker locker(state->lock_);
-		state->queuedRequests_.push(std::move(wrap));
-
-		/* The RequestWrap will be deleted in the completion handler. */
-	}
+	std::unique_ptr<RequestWrap> wrap;
 
 	{
 		MutexLocker locker(state->lock_);

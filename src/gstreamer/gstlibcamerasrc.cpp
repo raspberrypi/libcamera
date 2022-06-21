@@ -32,6 +32,8 @@
 #include <queue>
 #include <vector>
 
+#include <libcamera/base/mutex.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
@@ -111,8 +113,18 @@ struct GstLibcameraSrcState {
 	std::shared_ptr<Camera> cam_;
 	std::unique_ptr<CameraConfiguration> config_;
 	std::vector<GstPad *> srcpads_;
-	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_;
-	std::queue<std::unique_ptr<RequestWrap>> completedRequests_;
+
+	/*
+	 * Contention on this lock_ must be minimized, as it has to be taken in
+	 * the realtime-sensitive requestCompleted() handler to protect
+	 * queuedRequests_ and completedRequests_.
+	 */
+	Mutex lock_;
+	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_
+		LIBCAMERA_TSA_GUARDED_BY(lock_);
+	std::queue<std::unique_ptr<RequestWrap>> completedRequests_
+		LIBCAMERA_TSA_GUARDED_BY(lock_);
+
 	guint group_id_;
 
 	void requestCompleted(Request *request);
@@ -155,12 +167,15 @@ GstStaticPadTemplate request_src_template = {
 void
 GstLibcameraSrcState::requestCompleted(Request *request)
 {
-	GLibLocker lock(GST_OBJECT(src_));
-
 	GST_DEBUG_OBJECT(src_, "buffers are ready");
 
-	std::unique_ptr<RequestWrap> wrap = std::move(queuedRequests_.front());
-	queuedRequests_.pop();
+	std::unique_ptr<RequestWrap> wrap;
+
+	{
+		MutexLocker locker(lock_);
+		wrap = std::move(queuedRequests_.front());
+		queuedRequests_.pop();
+	}
 
 	g_return_if_fail(wrap->request_.get() == request);
 
@@ -183,7 +198,10 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 		wrap->latency_ = sys_now - timestamp;
 	}
 
-	completedRequests_.push(std::move(wrap));
+	{
+		MutexLocker locker(lock_);
+		completedRequests_.push(std::move(wrap));
+	}
 
 	gst_task_resume(src_->task);
 }
@@ -289,16 +307,17 @@ gst_libcamera_src_task_run(gpointer user_data)
 	}
 
 	if (wrap) {
-		GLibLocker lock(GST_OBJECT(self));
 		GST_TRACE_OBJECT(self, "Requesting buffers");
 		state->cam_->queueRequest(wrap->request_.get());
+
+		MutexLocker locker(state->lock_);
 		state->queuedRequests_.push(std::move(wrap));
 
 		/* The RequestWrap will be deleted in the completion handler. */
 	}
 
 	{
-		GLibLocker lock(GST_OBJECT(self));
+		MutexLocker locker(state->lock_);
 
 		if (!state->completedRequests_.empty()) {
 			wrap = std::move(state->completedRequests_.front());
@@ -358,7 +377,7 @@ gst_libcamera_src_task_run(gpointer user_data)
 		bool do_pause;
 
 		{
-			GLibLocker lock(GST_OBJECT(self));
+			MutexLocker locker(state->lock_);
 			do_pause = state->completedRequests_.empty();
 		}
 
@@ -513,7 +532,10 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 
 	state->cam_->stop();
 
-	state->completedRequests_ = {};
+	{
+		MutexLocker locker(state->lock_);
+		state->completedRequests_ = {};
+	}
 
 	for (GstPad *srcpad : state->srcpads_)
 		gst_libcamera_pad_set_pool(srcpad, nullptr);

@@ -940,6 +940,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	/* Store the mode sensitivity for the application. */
 	data->properties_.set(properties::SensorSensitivity, result.modeSensitivity);
 
+	/* Update the controls that the Raspberry Pi IPA can handle. */
+	data->controlInfo_ = result.controlInfo;
+
 	/* Setup the Video Mux/Bridge entities. */
 	for (auto &[device, link] : data->bridgeDevices_) {
 		/*

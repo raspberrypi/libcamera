@@ -45,6 +45,7 @@ struct IPAConfig {
 
 struct IPAConfigResult {
        float modeSensitivity;
+       libcamera.ControlInfoMap controlInfo;
 };
 
 struct StartConfig {

@@ -74,8 +74,8 @@ constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 /* List of controls handled by the Raspberry Pi IPA */
 static const ControlInfoMap::Map ipaControls{
 	{ &controls::AeEnable, ControlInfo(false, true) },
-	{ &controls::ExposureTime, ControlInfo(0, 999999) },
-	{ &controls::AnalogueGain, ControlInfo(1.0f, 32.0f) },
+	{ &controls::ExposureTime, ControlInfo(0, 66666) },
+	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
@@ -89,7 +89,7 @@ static const ControlInfoMap::Map ipaControls{
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ColourCorrectionMatrix, ControlInfo(-16.0f, 16.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(1000), INT64_C(1000000000)) },
+	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) }
 };
 
@@ -446,6 +446,33 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	ASSERT(controls);
 	*controls = std::move(ctrls);
 
+	/*
+	 * Apply the correct limits to the exposure, gain and frame duration controls
+	 * based on the current sensor mode.
+	 */
+	ControlInfoMap::Map ctrlMap = ipaControls;
+	const Duration minSensorFrameDuration = mode_.min_frame_length * mode_.line_length;
+	const Duration maxSensorFrameDuration = mode_.max_frame_length * mode_.line_length;
+	ctrlMap[&controls::FrameDurationLimits] =
+		ControlInfo(static_cast<int64_t>(minSensorFrameDuration.get<std::micro>()),
+			    static_cast<int64_t>(maxSensorFrameDuration.get<std::micro>()));
+
+	ctrlMap[&controls::AnalogueGain] =
+		ControlInfo(1.0f, static_cast<float>(helper_->Gain(maxSensorGainCode_)));
+
+	/*
+	 * Calculate the max exposure limit from the frame duration limit as V4L2
+	 * will limit the maximum control value based on the current VBLANK value.
+	 */
+	Duration maxShutter = Duration::max();
+	helper_->GetVBlanking(maxShutter, minSensorFrameDuration, maxSensorFrameDuration);
+	const uint32_t exposureMin = sensorCtrls_.at(V4L2_CID_EXPOSURE).min().get<int32_t>();
+
+	ctrlMap[&controls::ExposureTime] =
+		ControlInfo(static_cast<int32_t>(helper_->Exposure(exposureMin).get<std::micro>()),
+			    static_cast<int32_t>(maxShutter.get<std::micro>()));
+
+	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 	return 0;
 }
 

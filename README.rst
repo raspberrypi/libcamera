@@ -87,7 +87,13 @@ for gstreamer: [optional]
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
 for cam: [optional]
-        libevent-dev
+        libevent-dev is required to support cam, however the following
+        optional dependencies bring more functionality to the cam test
+        tool:
+
+        - libdrm-dev: Enables the KMS sink
+        - libsdl2-dev: Enables the SDL sink
+        - libsdl2-image-dev: Supports MJPEG on the SDL sink
 
 for qcam: [optional]
         qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev

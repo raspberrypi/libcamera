@@ -20,7 +20,6 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
-#include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/ipa/raspberrypi_ipa_proxy.h>
 #include <libcamera/logging.h>
@@ -199,7 +198,7 @@ public:
 	void freeBuffers();
 	void frameStarted(uint32_t sequence);
 
-	int loadIPA(ipa::RPi::SensorConfig *sensorConfig);
+	int loadIPA(ipa::RPi::IPAInitResult *result);
 	int configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result);
 
 	void enumerateVideoDevices(MediaLink *link);
@@ -1231,15 +1230,15 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 
 	data->sensorFormats_ = populateSensorFormats(data->sensor_);
 
-	ipa::RPi::SensorConfig sensorConfig;
-	if (data->loadIPA(&sensorConfig)) {
+	ipa::RPi::IPAInitResult result;
+	if (data->loadIPA(&result)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return -EINVAL;
 	}
 
-	if (sensorConfig.sensorMetadata ^ !!unicamEmbedded) {
+	if (result.sensorConfig.sensorMetadata ^ !!unicamEmbedded) {
 		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
-		sensorConfig.sensorMetadata = false;
+		result.sensorConfig.sensorMetadata = false;
 		if (unicamEmbedded)
 			data->unicam_[Unicam::Embedded].dev()->bufferReady.disconnect();
 	}
@@ -1253,7 +1252,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	 * iterate over all streams in one go.
 	 */
 	data->streams_.push_back(&data->unicam_[Unicam::Image]);
-	if (sensorConfig.sensorMetadata)
+	if (result.sensorConfig.sensorMetadata)
 		data->streams_.push_back(&data->unicam_[Unicam::Embedded]);
 
 	for (auto &stream : data->isp_)
@@ -1275,15 +1274,16 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	 * gain and exposure delays. Mark VBLANK for priority write.
 	 */
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-		{ V4L2_CID_ANALOGUE_GAIN, { sensorConfig.gainDelay, false } },
-		{ V4L2_CID_EXPOSURE, { sensorConfig.exposureDelay, false } },
-		{ V4L2_CID_VBLANK, { sensorConfig.vblankDelay, true } }
+		{ V4L2_CID_ANALOGUE_GAIN, { result.sensorConfig.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { result.sensorConfig.exposureDelay, false } },
+		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);
-	data->sensorMetadata_ = sensorConfig.sensorMetadata;
+	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
 
-	/* Register the controls that the Raspberry Pi IPA can handle. */
-	data->controlInfo_ = RPi::Controls;
+	/* Register initial controls that the Raspberry Pi IPA can handle. */
+	data->controlInfo_ = std::move(result.controlInfo);
+
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
 
@@ -1509,7 +1509,7 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 	delayedCtrls_->applyControls(sequence);
 }
 
-int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
+int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 {
 	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
 
@@ -1535,7 +1535,7 @@ int RPiCameraData::loadIPA(ipa::RPi::SensorConfig *sensorConfig)
 
 	IPASettings settings(configurationFile, sensor_->model());
 
-	return ipa_->init(settings, sensorConfig);
+	return ipa_->init(settings, result);
 }
 
 int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result)

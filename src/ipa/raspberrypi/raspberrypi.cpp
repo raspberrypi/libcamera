@@ -24,7 +24,6 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
-#include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/request.h>
 
@@ -72,6 +71,28 @@ constexpr Duration defaultMaxFrameDuration = 250.0s;
  */
 constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
+/* List of controls handled by the Raspberry Pi IPA */
+static const ControlInfoMap::Map ipaControls{
+	{ &controls::AeEnable, ControlInfo(false, true) },
+	{ &controls::ExposureTime, ControlInfo(0, 999999) },
+	{ &controls::AnalogueGain, ControlInfo(1.0f, 32.0f) },
+	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
+	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
+	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
+	{ &controls::ExposureValue, ControlInfo(-8.0f, 8.0f, 0.0f) },
+	{ &controls::AwbEnable, ControlInfo(false, true) },
+	{ &controls::ColourGains, ControlInfo(0.0f, 32.0f) },
+	{ &controls::AwbMode, ControlInfo(controls::AwbModeValues) },
+	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
+	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
+	{ &controls::Saturation, ControlInfo(0.0f, 32.0f, 1.0f) },
+	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
+	{ &controls::ColourCorrectionMatrix, ControlInfo(-16.0f, 16.0f) },
+	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
+	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(1000), INT64_C(1000000000)) },
+	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) }
+};
+
 LOG_DEFINE_CATEGORY(IPARPI)
 
 namespace ipa::RPi {
@@ -91,7 +112,7 @@ public:
 			munmap(lsTable_, MaxLsGridSize);
 	}
 
-	int init(const IPASettings &settings, SensorConfig *sensorConfig) override;
+	int init(const IPASettings &settings, IPAInitResult *result) override;
 	void start(const ControlList &controls, StartConfig *startConfig) override;
 	void stop() override {}
 
@@ -180,7 +201,7 @@ private:
 	uint32_t maxSensorGainCode_;
 };
 
-int IPARPi::init(const IPASettings &settings, SensorConfig *sensorConfig)
+int IPARPi::init(const IPASettings &settings, IPAInitResult *result)
 {
 	/*
 	 * Load the "helper" for this sensor. This tells us all the device specific stuff
@@ -202,14 +223,18 @@ int IPARPi::init(const IPASettings &settings, SensorConfig *sensorConfig)
 	helper_->GetDelays(exposureDelay, gainDelay, vblankDelay);
 	sensorMetadata = helper_->SensorEmbeddedDataPresent();
 
-	sensorConfig->gainDelay = gainDelay;
-	sensorConfig->exposureDelay = exposureDelay;
-	sensorConfig->vblankDelay = vblankDelay;
-	sensorConfig->sensorMetadata = sensorMetadata;
+	result->sensorConfig.gainDelay = gainDelay;
+	result->sensorConfig.exposureDelay = exposureDelay;
+	result->sensorConfig.vblankDelay = vblankDelay;
+	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */
 	controller_.Read(settings.configurationFile.c_str());
 	controller_.Initialise();
+
+	/* Return the controls handled by the IPA */
+	ControlInfoMap::Map ctrlMap = ipaControls;
+	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
 	return 0;
 }

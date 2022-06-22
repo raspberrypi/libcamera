@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <libcamera/ipa/raspberrypi.h>
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/stream.h>
 

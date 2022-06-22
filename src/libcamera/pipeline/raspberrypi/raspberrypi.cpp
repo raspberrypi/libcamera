@@ -941,7 +941,15 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	data->properties_.set(properties::SensorSensitivity, result.modeSensitivity);
 
 	/* Update the controls that the Raspberry Pi IPA can handle. */
-	data->controlInfo_ = result.controlInfo;
+	ControlInfoMap::Map ctrlMap;
+	for (auto const &c : result.controlInfo)
+		ctrlMap.emplace(c.first, c.second);
+
+	/* Add the ScalerCrop control limits based on the current mode. */
+	ctrlMap.emplace(&controls::ScalerCrop,
+			ControlInfo(Rectangle(data->ispMinCropSize_), Rectangle(data->sensorInfo_.outputSize)));
+
+	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 
 	/* Setup the Video Mux/Bridge entities. */
 	for (auto &[device, link] : data->bridgeDevices_) {

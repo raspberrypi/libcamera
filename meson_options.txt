@@ -61,5 +61,5 @@ option('v4l2',
 
 option('pycamera',
         type : 'feature',
-        value : 'auto',
+        value : 'disabled',
         description : 'Enable libcamera Python bindings (experimental)')

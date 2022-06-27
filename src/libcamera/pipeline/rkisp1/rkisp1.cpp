@@ -180,6 +180,8 @@ private:
 	std::unique_ptr<V4L2VideoDevice> stat_;
 	std::unique_ptr<V4L2Subdevice> csi_;
 
+	bool hasSelfPath_;
+
 	RkISP1MainPath mainPath_;
 	RkISP1SelfPath selfPath_;
 
@@ -364,7 +366,7 @@ void RkISP1CameraData::paramFilled(unsigned int frame)
 	if (info->mainPathBuffer)
 		mainPath_->queueBuffer(info->mainPathBuffer);
 
-	if (info->selfPathBuffer)
+	if (selfPath_ && info->selfPathBuffer)
 		selfPath_->queueBuffer(info->selfPathBuffer);
 }
 
@@ -403,7 +405,7 @@ bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 		return false;
 
 	config = cfg;
-	if (data_->selfPath_->validate(&config) != Valid)
+	if (data_->selfPath_ && data_->selfPath_->validate(&config) != Valid)
 		return false;
 
 	return true;
@@ -412,6 +414,7 @@ bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
 	const CameraSensor *sensor = data_->sensor_.get();
+	unsigned int pathCount = data_->selfPath_ ? 2 : 1;
 	Status status = Valid;
 
 	if (config_.empty())
@@ -423,8 +426,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	}
 
 	/* Cap the number of entries to the available streams. */
-	if (config_.size() > 2) {
-		config_.resize(2);
+	if (config_.size() > pathCount) {
+		config_.resize(pathCount);
 		status = Adjusted;
 	}
 
@@ -441,7 +444,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		std::reverse(order.begin(), order.end());
 
 	bool mainPathAvailable = true;
-	bool selfPathAvailable = true;
+	bool selfPathAvailable = data_->selfPath_;
 	for (unsigned int index : order) {
 		StreamConfiguration &cfg = config_[index];
 
@@ -520,7 +523,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 }
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager)
+	: PipelineHandler(manager), hasSelfPath_(true)
 {
 }
 
@@ -532,12 +535,19 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 	const StreamRoles &roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
+
+	unsigned int pathCount = data->selfPath_ ? 2 : 1;
+	if (roles.size() > pathCount) {
+		LOG(RkISP1, Error) << "Too many stream roles requested";
+		return nullptr;
+	}
+
 	CameraConfiguration *config = new RkISP1CameraConfiguration(camera, data);
 	if (roles.empty())
 		return config;
 
 	bool mainPathAvailable = true;
-	bool selfPathAvailable = true;
+	bool selfPathAvailable = data->selfPath_;
 	for (const StreamRole role : roles) {
 		bool useMainPath;
 
@@ -646,10 +656,12 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			ret = mainPath_.configure(cfg, format);
 			streamConfig[0] = IPAStream(cfg.pixelFormat,
 						    cfg.size);
-		} else {
+		} else if (hasSelfPath_) {
 			ret = selfPath_.configure(cfg, format);
 			streamConfig[1] = IPAStream(cfg.pixelFormat,
 						    cfg.size);
+		} else {
+			return -ENODEV;
 		}
 
 		if (ret)
@@ -697,7 +709,7 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 
 	if (stream == &data->mainPathStream_)
 		return mainPath_.exportBuffers(count, buffers);
-	else if (stream == &data->selfPathStream_)
+	else if (hasSelfPath_ && stream == &data->selfPathStream_)
 		return selfPath_.exportBuffers(count, buffers);
 
 	return -EINVAL;
@@ -826,7 +838,7 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 		}
 	}
 
-	if (data->selfPath_->isEnabled()) {
+	if (hasSelfPath_ && data->selfPath_->isEnabled()) {
 		ret = selfPath_.start();
 		if (ret) {
 			mainPath_.stop();
@@ -853,7 +865,8 @@ void PipelineHandlerRkISP1::stopDevice(Camera *camera)
 
 	data->ipa_->stop();
 
-	selfPath_.stop();
+	if (hasSelfPath_)
+		selfPath_.stop();
 	mainPath_.stop();
 
 	ret = stat_->streamOff();
@@ -934,7 +947,7 @@ int PipelineHandlerRkISP1::initLinks(Camera *camera,
 	for (const StreamConfiguration &cfg : config) {
 		if (cfg.stream() == &data->mainPathStream_)
 			ret = data->mainPath_->setEnabled(true);
-		else if (cfg.stream() == &data->selfPathStream_)
+		else if (hasSelfPath_ && cfg.stream() == &data->selfPathStream_)
 			ret = data->selfPath_->setEnabled(true);
 		else
 			return -EINVAL;
@@ -951,7 +964,8 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	int ret;
 
 	std::unique_ptr<RkISP1CameraData> data =
-		std::make_unique<RkISP1CameraData>(this, &mainPath_, &selfPath_);
+		std::make_unique<RkISP1CameraData>(this, &mainPath_,
+						   hasSelfPath_ ? &selfPath_ : nullptr);
 
 	ControlInfoMap::Map ctrls;
 	ctrls.emplace(std::piecewise_construct,
@@ -1007,9 +1021,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 
 	DeviceMatch dm("rkisp1");
 	dm.add("rkisp1_isp");
-	dm.add("rkisp1_resizer_selfpath");
 	dm.add("rkisp1_resizer_mainpath");
-	dm.add("rkisp1_selfpath");
 	dm.add("rkisp1_mainpath");
 	dm.add("rkisp1_stats");
 	dm.add("rkisp1_params");
@@ -1023,6 +1035,8 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 			<< "The rkisp1 driver is too old, v5.11 or newer is required";
 		return false;
 	}
+
+	hasSelfPath_ = !!media_->getEntityByName("rkisp1_selfpath");
 
 	/* Create the V4L2 subdevices we will need. */
 	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_isp");
@@ -1058,11 +1072,12 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	if (!mainPath_.init(media_))
 		return false;
 
-	if (!selfPath_.init(media_))
+	if (hasSelfPath_ && !selfPath_.init(media_))
 		return false;
 
 	mainPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
-	selfPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
+	if (hasSelfPath_)
+		selfPath_.bufferReady().connect(this, &PipelineHandlerRkISP1::bufferReady);
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramReady);
 

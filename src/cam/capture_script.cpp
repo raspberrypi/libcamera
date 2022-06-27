@@ -150,7 +150,9 @@ int CaptureScript::parseScript(FILE *script)
 		std::string section = eventScalarValue(event);
 
 		if (section == "frames") {
-			parseFrames();
+			ret = parseFrames();
+			if (ret)
+				return ret;
 		} else {
 			std::cerr << "Unsupported section '" << section << "'"
 				  << std::endl;

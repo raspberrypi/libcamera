@@ -232,12 +232,15 @@ int CaptureScript::parseControl(EventPtr event, ControlList &controls)
 		return -EINVAL;
 	}
 
-	std::string value = parseScalar();
-	if (value.empty())
-		return -EINVAL;
-
 	const ControlId *controlId = it->second;
-	ControlValue val = unpackControl(controlId, value);
+
+	ControlValue val = unpackControl(controlId);
+	if (val.isNone()) {
+		std::cerr << "Error unpacking control '" << name << "'"
+			  << std::endl;
+		return -EINVAL;
+	}
+
 	controls.set(controlId->id(), val);
 
 	return 0;
@@ -250,6 +253,104 @@ std::string CaptureScript::parseScalar()
 		return "";
 
 	return eventScalarValue(event);
+}
+
+ControlValue CaptureScript::parseRectangles()
+{
+	std::vector<libcamera::Rectangle> rectangles;
+
+	std::vector<std::vector<std::string>> arrays = parseArrays();
+	if (arrays.empty())
+		return {};
+
+	for (const std::vector<std::string> &values : arrays) {
+		if (values.size() != 4) {
+			std::cerr << "Error parsing Rectangle: expected "
+				  << "array with 4 parameters" << std::endl;
+			return {};
+		}
+
+		Rectangle rect = unpackRectangle(values);
+		rectangles.push_back(rect);
+	}
+
+	ControlValue controlValue;
+	controlValue.set(Span<const Rectangle>(rectangles));
+
+	return controlValue;
+}
+
+std::vector<std::vector<std::string>> CaptureScript::parseArrays()
+{
+	EventPtr event = nextEvent(YAML_SEQUENCE_START_EVENT);
+	if (!event)
+		return {};
+
+	event = nextEvent();
+	if (!event)
+		return {};
+
+	std::vector<std::vector<std::string>> valueArrays;
+
+	/* Parse single array. */
+	if (event->type == YAML_SCALAR_EVENT) {
+		std::string firstValue = eventScalarValue(event);
+		if (firstValue.empty())
+			return {};
+
+		std::vector<std::string> remaining = parseSingleArray();
+
+		std::vector<std::string> values = { firstValue };
+		values.insert(std::end(values),
+			      std::begin(remaining), std::end(remaining));
+		valueArrays.push_back(values);
+
+		return valueArrays;
+	}
+
+	/* Parse array of arrays. */
+	while (1) {
+		switch (event->type) {
+		case YAML_SEQUENCE_START_EVENT: {
+			std::vector<std::string> values = parseSingleArray();
+			valueArrays.push_back(values);
+			break;
+		}
+		case YAML_SEQUENCE_END_EVENT:
+			return valueArrays;
+		default:
+			return {};
+		}
+
+		event = nextEvent();
+		if (!event)
+			return {};
+	}
+}
+
+std::vector<std::string> CaptureScript::parseSingleArray()
+{
+	std::vector<std::string> values;
+
+	while (1) {
+		EventPtr event = nextEvent();
+		if (!event)
+			return {};
+
+		switch (event->type) {
+		case YAML_SCALAR_EVENT: {
+			std::string value = eventScalarValue(event);
+			if (value.empty())
+				return {};
+			values.push_back(value);
+			break;
+		}
+		case YAML_SEQUENCE_END_EVENT:
+			return values;
+		default:
+			return {};
+		}
+	}
 }
 
 void CaptureScript::unpackFailure(const ControlId *id, const std::string &repr)
@@ -277,9 +378,24 @@ void CaptureScript::unpackFailure(const ControlId *id, const std::string &repr)
 		  << typeName << " control " << id->name() << std::endl;
 }
 
-ControlValue CaptureScript::unpackControl(const ControlId *id,
-					  const std::string &repr)
+ControlValue CaptureScript::unpackControl(const ControlId *id)
 {
+	/* Parse complex types. */
+	switch (id->type()) {
+	case ControlTypeRectangle:
+		return parseRectangles();
+	case ControlTypeSize:
+		/* \todo Parse Sizes. */
+		return {};
+	default:
+		break;
+	}
+
+	/* Parse basic types represented by a single scalar. */
+	const std::string repr = parseScalar();
+	if (repr.empty())
+		return {};
+
 	ControlValue value{};
 
 	switch (id->type()) {
@@ -324,13 +440,20 @@ ControlValue CaptureScript::unpackControl(const ControlId *id,
 		value.set<std::string>(repr);
 		break;
 	}
-	case ControlTypeRectangle:
-		/* \todo Parse rectangles. */
-		break;
-	case ControlTypeSize:
-		/* \todo Parse Sizes. */
+	default:
+		std::cerr << "Unsupported control type" << std::endl;
 		break;
 	}
 
 	return value;
+}
+
+libcamera::Rectangle CaptureScript::unpackRectangle(const std::vector<std::string> &strVec)
+{
+	int x = strtol(strVec[0].c_str(), NULL, 10);
+	int y = strtol(strVec[1].c_str(), NULL, 10);
+	unsigned int width = strtoul(strVec[2].c_str(), NULL, 10);
+	unsigned int height = strtoul(strVec[3].c_str(), NULL, 10);
+
+	return Rectangle(x, y, width, height);
 }

@@ -54,9 +54,12 @@ private:
 	int parseControl(EventPtr event, libcamera::ControlList &controls);
 
 	std::string parseScalar();
+	libcamera::ControlValue parseRectangles();
+	std::vector<std::vector<std::string>> parseArrays();
+	std::vector<std::string> parseSingleArray();
 
 	void unpackFailure(const libcamera::ControlId *id,
 			   const std::string &repr);
-	libcamera::ControlValue unpackControl(const libcamera::ControlId *id,
-					      const std::string &repr);
+	libcamera::ControlValue unpackControl(const libcamera::ControlId *id);
+	libcamera::Rectangle unpackRectangle(const std::vector<std::string> &strVec);
 };

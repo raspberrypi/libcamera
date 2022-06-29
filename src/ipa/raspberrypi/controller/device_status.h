@@ -7,6 +7,7 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 
 #include <libcamera/base/utils.h>
 
@@ -36,4 +37,6 @@ struct DeviceStatus {
 	double aperture;
 	/* proportional to brightness with 0 = no flash, 1 = maximum flash */
 	double flash_intensity;
+	/* Sensor reported temperature value (in degrees) */
+	std::optional<double> sensor_temperature;
 };

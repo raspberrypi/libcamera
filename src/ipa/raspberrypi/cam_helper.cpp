@@ -185,9 +185,9 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	metadata.Merge(parsedMetadata);
 
 	/*
-	 * Overwrite the exposure/gain values in the existing DeviceStatus with
-	 * values from the parsed embedded buffer. Fetch it first in case any
-	 * other fields were set meaningfully.
+	 * Overwrite the exposure/gain, frame length and sensor temperature values
+	 * in the existing DeviceStatus with values from the parsed embedded buffer.
+	 * Fetch it first in case any other fields were set meaningfully.
 	 */
 	DeviceStatus deviceStatus, parsedDeviceStatus;
 	if (metadata.Get("device.status", deviceStatus) ||
@@ -199,6 +199,8 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	deviceStatus.shutter_speed = parsedDeviceStatus.shutter_speed;
 	deviceStatus.analogue_gain = parsedDeviceStatus.analogue_gain;
 	deviceStatus.frame_length = parsedDeviceStatus.frame_length;
+	if (parsedDeviceStatus.sensor_temperature)
+		deviceStatus.sensor_temperature = parsedDeviceStatus.sensor_temperature;
 
 	LOG(IPARPI, Debug) << "Metadata updated - " << deviceStatus;
 

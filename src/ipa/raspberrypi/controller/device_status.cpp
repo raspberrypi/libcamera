@@ -17,5 +17,8 @@ std::ostream &operator<<(std::ostream &out, const DeviceStatus &d)
 	    << " Lens: " << d.lens_position
 	    << " Flash: " << d.flash_intensity;
 
+	if (d.sensor_temperature)
+		out << " Temperature: " << *d.sensor_temperature;
+
 	return out;
 }

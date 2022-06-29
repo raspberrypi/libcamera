@@ -367,6 +367,16 @@ controls:
 
       size: [2]
 
+  - SensorTemperature:
+      type: float
+      description: |
+        Temperature measure from the camera sensor in Celsius. This is typically
+        obtained by a thermal sensor present on-die or in the camera module. The
+        range of reported temperatures is device dependent.
+
+        The SensorTemperature control will only be returned in metadata if a
+        themal sensor is present.
+
   - SensorTimestamp:
       type: int64_t
       description: |

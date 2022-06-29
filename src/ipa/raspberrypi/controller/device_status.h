@@ -19,8 +19,7 @@
 struct DeviceStatus {
 	DeviceStatus()
 		: shutter_speed(std::chrono::seconds(0)), frame_length(0),
-		  analogue_gain(0.0), lens_position(0.0), aperture(0.0),
-		  flash_intensity(0.0)
+		  analogue_gain(0.0)
 	{
 	}
 
@@ -32,11 +31,11 @@ struct DeviceStatus {
 	uint32_t frame_length;
 	double analogue_gain;
 	/* 1.0/distance-in-metres, or 0 if unknown */
-	double lens_position;
+	std::optional<double> lens_position;
 	/* 1/f so that brightness quadruples when this doubles, or 0 if unknown */
-	double aperture;
+	std::optional<double> aperture;
 	/* proportional to brightness with 0 = no flash, 1 = maximum flash */
-	double flash_intensity;
+	std::optional<double> flash_intensity;
 	/* Sensor reported temperature value (in degrees) */
 	std::optional<double> sensor_temperature;
 };

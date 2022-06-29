@@ -63,9 +63,7 @@ void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
 	DeviceStatus device_status;
 	if (image_metadata->Get("device.status", device_status) == 0) {
 		double current_gain = device_status.analogue_gain;
-		double current_aperture = device_status.aperture;
-		if (current_aperture == 0)
-			current_aperture = current_aperture_;
+		double current_aperture = device_status.aperture.value_or(current_aperture_);
 		uint64_t sum = 0;
 		uint32_t num = 0;
 		uint32_t *bin = stats->hist[0].g_hist;

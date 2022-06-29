@@ -12,10 +12,16 @@ std::ostream &operator<<(std::ostream &out, const DeviceStatus &d)
 {
 	out << "Exposure: " << d.shutter_speed
 	    << " Frame length: " << d.frame_length
-	    << " Gain: " << d.analogue_gain
-	    << " Aperture: " << d.aperture
-	    << " Lens: " << d.lens_position
-	    << " Flash: " << d.flash_intensity;
+	    << " Gain: " << d.analogue_gain;
+
+	if (d.aperture)
+		out << " Aperture: " << *d.aperture;
+
+	if (d.lens_position)
+		out << " Lens: " << *d.lens_position;
+
+	if (d.flash_intensity)
+		out << " Flash: " << *d.flash_intensity;
 
 	if (d.sensor_temperature)
 		out << " Temperature: " << *d.sensor_temperature;

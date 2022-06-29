@@ -5,6 +5,7 @@
  * cam_helper_imx477.cpp - camera helper for imx477 sensor
  */
 
+#include <algorithm>
 #include <assert.h>
 #include <cmath>
 #include <stddef.h>
@@ -34,8 +35,9 @@ constexpr uint32_t gainHiReg = 0x0204;
 constexpr uint32_t gainLoReg = 0x0205;
 constexpr uint32_t frameLengthHiReg = 0x0340;
 constexpr uint32_t frameLengthLoReg = 0x0341;
+constexpr uint32_t temperatureReg = 0x013a;
 constexpr std::initializer_list<uint32_t> registerList =
-	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg  };
+	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg, temperatureReg  };
 
 class CamHelperImx477 : public CamHelper
 {
@@ -171,6 +173,7 @@ void CamHelperImx477::PopulateMetadata(const MdParser::RegisterMap &registers,
 	deviceStatus.shutter_speed = Exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
 	deviceStatus.analogue_gain = Gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frame_length = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
+	deviceStatus.sensor_temperature = std::clamp<int8_t>(registers.at(temperatureReg), -20, 80);
 
 	metadata.Set("device.status", deviceStatus);
 }

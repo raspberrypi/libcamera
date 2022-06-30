@@ -746,7 +746,7 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 	gst_task_set_lock(self->task, &self->stream_lock);
 
 	state->srcpads_.push_back(gst_pad_new_from_template(templ, "src"));
-	gst_element_add_pad(GST_ELEMENT(self), state->srcpads_[0]);
+	gst_element_add_pad(GST_ELEMENT(self), state->srcpads_.back());
 
 	/* C-style friend. */
 	state->src_ = self;

@@ -434,7 +434,10 @@ def main():
         if args.info:
             ctx.do_cmd_info()
 
-    if args.capture:
+    # Filter out capture contexts which are not marked for capture
+    contexts = [ctx for ctx in contexts if ctx.opt_capture > 0]
+
+    if contexts:
         state = CaptureState(cm, contexts)
 
         if args.renderer == 'null':

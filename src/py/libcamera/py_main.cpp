@@ -5,6 +5,8 @@
  * Python bindings
  */
 
+#include "py_main.h"
+
 #include <mutex>
 #include <stdexcept>
 #include <sys/eventfd.h>
@@ -22,6 +24,12 @@
 namespace py = pybind11;
 
 using namespace libcamera;
+
+namespace libcamera {
+
+LOG_DEFINE_CATEGORY(Python)
+
+}
 
 template<typename T>
 static py::object valueOrTuple(const ControlValue &cv)
@@ -120,10 +128,10 @@ static void handleRequestCompleted(Request *req)
 	size_t s = write(gEventfd, &v, 8);
 	/*
 	 * We should never fail, and have no simple means to manage the error,
-	 * so let's use LOG(Fatal).
+	 * so let's log a fatal error.
 	 */
 	if (s != 8)
-		LOG(Fatal) << "Unable to write to eventfd";
+		LOG(Python, Fatal) << "Unable to write to eventfd";
 }
 
 void init_py_enums(py::module &m);

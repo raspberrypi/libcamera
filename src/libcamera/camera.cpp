@@ -497,7 +497,7 @@ Camera::Private::~Private()
  * facilitate debugging of internal request usage.
  *
  * The requestSequence_ tracks the number of requests queued to a camera
- * over its lifetime.
+ * over a single capture session.
  */
 
 static const char *const camera_state_names[] = {
@@ -1180,6 +1180,8 @@ int Camera::start(const ControlList *controls)
 		return ret;
 
 	LOG(Camera, Debug) << "Starting capture";
+
+	ASSERT(d->requestSequence_ == 0);
 
 	ret = d->pipe_->invokeMethod(&PipelineHandler::start,
 				     ConnectionTypeBlocking, this, controls);

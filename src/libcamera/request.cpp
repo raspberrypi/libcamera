@@ -526,8 +526,8 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
  *
  * When requests are queued, they are given a sequential number to track the
  * order in which requests are queued to a camera. This number counts all
- * requests given to a camera through its lifetime, and is not reset to zero
- * between camera stop/start sequences.
+ * requests given to a camera and is reset to zero between camera stop/start
+ * sequences.
  *
  * It can be used to support debugging and identifying the flow of requests
  * through a pipeline, but does not guarantee to represent the sequence number

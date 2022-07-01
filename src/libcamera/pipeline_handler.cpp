@@ -312,6 +312,8 @@ void PipelineHandler::stop(Camera *camera)
 	/* Make sure no requests are pending. */
 	Camera::Private *data = camera->_d();
 	ASSERT(data->queuedRequests_.empty());
+
+	data->requestSequence_ = 0;
 }
 
 /**

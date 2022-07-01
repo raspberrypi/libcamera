@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
 
-# \todo Convert ctx and state dicts to proper classes, and move relevant
-#       functions to those classes.
-
 from typing import Any
 import argparse
 import binascii

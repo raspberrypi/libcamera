@@ -115,8 +115,6 @@ DelayedControls::DelayedControls(V4L2Device *device,
  */
 void DelayedControls::reset()
 {
-	running_ = false;
-	firstSequence_ = 0;
 	queueCount_ = 1;
 	writeCount_ = 0;
 
@@ -204,8 +202,7 @@ bool DelayedControls::push(const ControlList &controls)
  */
 ControlList DelayedControls::get(uint32_t sequence)
 {
-	uint32_t adjustedSeq = sequence - firstSequence_;
-	unsigned int index = std::max<int>(0, adjustedSeq - maxDelay_);
+	unsigned int index = std::max<int>(0, sequence - maxDelay_);
 
 	ControlList out(device_->controls());
 	for (const auto &ctrl : values_) {
@@ -235,11 +232,6 @@ ControlList DelayedControls::get(uint32_t sequence)
 void DelayedControls::applyControls(uint32_t sequence)
 {
 	LOG(DelayedControls, Debug) << "frame " << sequence << " started";
-
-	if (!running_) {
-		firstSequence_ = sequence;
-		running_ = true;
-	}
 
 	/*
 	 * Create control list peeking ahead in the value queue to ensure
@@ -279,7 +271,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 		}
 	}
 
-	writeCount_ = sequence - firstSequence_ + 1;
+	writeCount_ = sequence + 1;
 
 	while (writeCount_ > queueCount_) {
 		LOG(DelayedControls, Debug)

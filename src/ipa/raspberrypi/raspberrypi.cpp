@@ -993,7 +993,7 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 
 void IPARPi::prepareISP(const ISPConfig &data)
 {
-	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp);
+	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp).value_or(0);
 	RPiController::Metadata lastMetadata;
 	Span<uint8_t> embeddedBuffer;
 

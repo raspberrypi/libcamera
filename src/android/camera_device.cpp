@@ -306,7 +306,7 @@ int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 	const ControlList &properties = camera_->properties();
 
 	if (properties.contains(properties::Location)) {
-		int32_t location = properties.get(properties::Location);
+		int32_t location = *properties.get(properties::Location);
 		switch (location) {
 		case properties::CameraLocationFront:
 			facing_ = CAMERA_FACING_FRONT;
@@ -356,7 +356,7 @@ int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 	 * metadata.
 	 */
 	if (properties.contains(properties::Rotation)) {
-		int rotation = properties.get(properties::Rotation);
+		int rotation = *properties.get(properties::Rotation);
 		orientation_ = (360 - rotation) % 360;
 		if (cameraConfigData && cameraConfigData->rotation != -1 &&
 		    orientation_ != cameraConfigData->rotation) {
@@ -1181,7 +1181,8 @@ void CameraDevice::requestComplete(Request *request)
 	 * as soon as possible, earlier than request completion time.
 	 */
 	uint64_t sensorTimestamp = static_cast<uint64_t>(request->metadata()
-							 .get(controls::SensorTimestamp));
+								 .get(controls::SensorTimestamp)
+								 .value_or(0));
 	notifyShutter(descriptor->frameNumber_, sensorTimestamp);
 
 	LOG(HAL, Debug) << "Request " << request->cookie() << " completed with "
@@ -1560,29 +1561,28 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 				 rolling_shutter_skew);
 
 	/* Add metadata tags reported by libcamera. */
-	const int64_t timestamp = metadata.get(controls::SensorTimestamp);
+	const int64_t timestamp = metadata.get(controls::SensorTimestamp).value_or(0);
 	resultMetadata->addEntry(ANDROID_SENSOR_TIMESTAMP, timestamp);
 
 	if (metadata.contains(controls::draft::PipelineDepth)) {
-		uint8_t pipeline_depth =
-			metadata.get<int32_t>(controls::draft::PipelineDepth);
+		uint8_t pipeline_depth = *metadata.get<int32_t>(controls::draft::PipelineDepth);
 		resultMetadata->addEntry(ANDROID_REQUEST_PIPELINE_DEPTH,
 					 pipeline_depth);
 	}
 
 	if (metadata.contains(controls::ExposureTime)) {
-		int64_t exposure = metadata.get(controls::ExposureTime) * 1000ULL;
+		int64_t exposure = *metadata.get(controls::ExposureTime) * 1000ULL;
 		resultMetadata->addEntry(ANDROID_SENSOR_EXPOSURE_TIME, exposure);
 	}
 
 	if (metadata.contains(controls::FrameDuration)) {
-		int64_t duration = metadata.get(controls::FrameDuration) * 1000;
+		int64_t duration = *metadata.get(controls::FrameDuration) * 1000;
 		resultMetadata->addEntry(ANDROID_SENSOR_FRAME_DURATION,
 					 duration);
 	}
 
 	if (metadata.contains(controls::ScalerCrop)) {
-		Rectangle crop = metadata.get(controls::ScalerCrop);
+		Rectangle crop = *metadata.get(controls::ScalerCrop);
 		int32_t cropRect[] = {
 			crop.x, crop.y, static_cast<int32_t>(crop.width),
 			static_cast<int32_t>(crop.height),
@@ -1591,8 +1591,7 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	}
 
 	if (metadata.contains(controls::draft::TestPatternMode)) {
-		const int32_t testPatternMode =
-			metadata.get(controls::draft::TestPatternMode);
+		const int32_t testPatternMode = *metadata.get(controls::draft::TestPatternMode);
 		resultMetadata->addEntry(ANDROID_SENSOR_TEST_PATTERN_MODE,
 					 testPatternMode);
 	}

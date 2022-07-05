@@ -392,7 +392,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_MAKE, "libcamera");
 
 	if (cameraProperties.contains(properties::Model)) {
-		std::string model = cameraProperties.get(properties::Model);
+		std::string model = *cameraProperties.get(properties::Model);
 		TIFFSetField(tif, TIFFTAG_MODEL, model.c_str());
 		/* \todo set TIFFTAG_UNIQUECAMERAMODEL. */
 	}
@@ -438,16 +438,15 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	const double eps = 1e-2;
 
 	if (metadata.contains(controls::ColourGains)) {
-		Span<const float> const &colourGains = metadata.get(controls::ColourGains);
-		if (colourGains[0] > eps && colourGains[1] > eps) {
-			wbGain = Matrix3d::diag(colourGains[0], 1, colourGains[1]);
-			neutral[0] = 1.0 / colourGains[0]; /* red */
-			neutral[2] = 1.0 / colourGains[1]; /* blue */
+		const auto &colourGains = metadata.get(controls::ColourGains);
+		if ((*colourGains)[0] > eps && (*colourGains)[1] > eps) {
+			wbGain = Matrix3d::diag((*colourGains)[0], 1, (*colourGains)[1]);
+			neutral[0] = 1.0 / (*colourGains)[0]; /* red */
+			neutral[2] = 1.0 / (*colourGains)[1]; /* blue */
 		}
 	}
 	if (metadata.contains(controls::ColourCorrectionMatrix)) {
-		Span<const float> const &coeffs = metadata.get(controls::ColourCorrectionMatrix);
-		Matrix3d ccmSupplied(coeffs);
+		Matrix3d ccmSupplied(*metadata.get(controls::ColourCorrectionMatrix));
 		if (ccmSupplied.determinant() > eps)
 			ccm = ccmSupplied;
 	}
@@ -515,7 +514,8 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	uint32_t whiteLevel = (1 << info->bitsPerSample) - 1;
 
 	if (metadata.contains(controls::SensorBlackLevels)) {
-		Span<const int32_t> levels = metadata.get(controls::SensorBlackLevels);
+		Span<const int32_t> levels =
+			*metadata.get(controls::SensorBlackLevels);
 
 		/*
 		 * The black levels control is specified in R, Gr, Gb, B order.
@@ -593,13 +593,13 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, EXIFTAG_DATETIMEDIGITIZED, strTime);
 
 	if (metadata.contains(controls::AnalogueGain)) {
-		float gain = metadata.get(controls::AnalogueGain);
+		float gain = *metadata.get(controls::AnalogueGain);
 		uint16_t iso = std::min(std::max(gain * 100, 0.0f), 65535.0f);
 		TIFFSetField(tif, EXIFTAG_ISOSPEEDRATINGS, 1, &iso);
 	}
 
 	if (metadata.contains(controls::ExposureTime)) {
-		float exposureTime = metadata.get(controls::ExposureTime) / 1e6;
+		float exposureTime = *metadata.get(controls::ExposureTime) / 1e6;
 		TIFFSetField(tif, EXIFTAG_EXPOSURETIME, exposureTime);
 	}
 

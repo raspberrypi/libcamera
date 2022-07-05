@@ -232,7 +232,7 @@ int32_t CameraHalManager::cameraLocation(const Camera *cam)
 	if (!properties.contains(properties::Location))
 		return -1;
 
-	return properties.get(properties::Location);
+	return *properties.get(properties::Location);
 }
 
 CameraDevice *CameraHalManager::cameraDeviceFromHalId(unsigned int id)

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <assert.h>
+#include <optional>
 #include <set>
 #include <stdint.h>
 #include <string>
@@ -373,11 +374,11 @@ public:
 	bool contains(unsigned int id) const;
 
 	template<typename T>
-	T get(const Control<T> &ctrl) const
+	std::optional<T> get(const Control<T> &ctrl) const
 	{
 		const ControlValue *val = find(ctrl.id());
 		if (!val)
-			return T{};
+			return std::nullopt;
 
 		return val->get<T>();
 	}

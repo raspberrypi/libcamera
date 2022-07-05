@@ -301,7 +301,7 @@ std::string CamApp::cameraName(const Camera *camera)
 	 * is only used if the location isn't present or is set to External.
 	 */
 	if (props.contains(properties::Location)) {
-		switch (props.get(properties::Location)) {
+		switch (*props.get(properties::Location)) {
 		case properties::CameraLocationFront:
 			addModel = false;
 			name = "Internal front camera ";
@@ -321,7 +321,7 @@ std::string CamApp::cameraName(const Camera *camera)
 		 * If the camera location is not availble use the camera model
 		 * to build the camera name.
 		 */
-		name = "'" + props.get(properties::Model) + "' ";
+		name = "'" + *props.get(properties::Model) + "' ";
 	}
 
 	name += "(" + camera->id() + ")";

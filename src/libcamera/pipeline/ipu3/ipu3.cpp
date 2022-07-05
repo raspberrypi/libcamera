@@ -1145,7 +1145,7 @@ int PipelineHandlerIPU3::registerCameras()
 		/* Convert the sensor rotation to a transformation */
 		int32_t rotation = 0;
 		if (data->properties_.contains(properties::Rotation))
-			rotation = data->properties_.get(properties::Rotation);
+			rotation = *(data->properties_.get(properties::Rotation));
 		else
 			LOG(IPU3, Warning) << "Rotation control not exposed by "
 					   << cio2->sensor()->id()
@@ -1331,7 +1331,7 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Actually apply the scaler crop region to the ImgU. */
 	if (request->controls().contains(controls::ScalerCrop))
-		cropRegion_ = request->controls().get(controls::ScalerCrop);
+		cropRegion_ = *(request->controls().get(controls::ScalerCrop));
 	request->metadata().set(controls::ScalerCrop, cropRegion_);
 
 	if (frameInfos_.tryComplete(info))
@@ -1424,7 +1424,7 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	ipa_->processStatsBuffer(info->id, request->metadata().get(controls::SensorTimestamp),
+	ipa_->processStatsBuffer(info->id, request->metadata().get(controls::SensorTimestamp).value_or(0),
 				 info->statBuffer->cookie(), info->effectiveSensorControls);
 }
 
@@ -1458,8 +1458,7 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 	if (!request->controls().contains(controls::draft::TestPatternMode))
 		return;
 
-	const int32_t testPatternMode = request->controls().get(
-		controls::draft::TestPatternMode);
+	const int32_t testPatternMode = *(request->controls().get(controls::draft::TestPatternMode));
 
 	int ret = cio2_.sensor()->setTestPatternMode(
 		static_cast<controls::draft::TestPatternModeEnum>(testPatternMode));

@@ -234,7 +234,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 	}
 
 	if (GST_ELEMENT_CLOCK(src_)) {
-		int64_t timestamp = request->metadata().get(controls::SensorTimestamp);
+		int64_t timestamp = request->metadata().get(controls::SensorTimestamp).value_or(0);
 
 		GstClockTime gst_base_time = GST_ELEMENT(src_)->base_time;
 		GstClockTime gst_now = gst_clock_get_time(GST_ELEMENT_CLOCK(src_));

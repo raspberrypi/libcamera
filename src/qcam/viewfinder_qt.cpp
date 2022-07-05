@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <utility>
 
+#include <libcamera/formats.h>
+
 #include <QImage>
 #include <QImageWriter>
 #include <QMap>
@@ -18,9 +20,8 @@
 #include <QPainter>
 #include <QtDebug>
 
-#include <libcamera/formats.h>
-
 #include "../cam/image.h"
+
 #include "format_converter.h"
 
 static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats

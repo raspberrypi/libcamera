@@ -946,8 +946,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		ctrlMap.emplace(c.first, c.second);
 
 	/* Add the ScalerCrop control limits based on the current mode. */
-	ctrlMap.emplace(&controls::ScalerCrop,
-			ControlInfo(Rectangle(data->ispMinCropSize_), Rectangle(data->sensorInfo_.outputSize)));
+	Rectangle ispMinCrop(data->ispMinCropSize_);
+	ispMinCrop.scaleBy(data->sensorInfo_.analogCrop.size(), data->sensorInfo_.outputSize);
+	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, Rectangle(data->sensorInfo_.analogCrop.size()));
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 

@@ -155,7 +155,7 @@ protected:
 		return TestPass;
 	}
 
-	int dualControlsWithDelay(uint32_t startOffset)
+	int dualControlsWithDelay()
 	{
 		static const unsigned int maxDelay = 2;
 
@@ -175,25 +175,24 @@ protected:
 		delayed->reset();
 
 		/* Trigger the first frame start event */
-		delayed->applyControls(startOffset);
+		delayed->applyControls(0);
 
 		/* Test dual control with delay. */
 		for (unsigned int i = 1; i < 100; i++) {
-			uint32_t frame = startOffset + i;
 			int32_t value = 10 + i;
 
 			ctrls.set(V4L2_CID_BRIGHTNESS, value);
 			ctrls.set(V4L2_CID_CONTRAST, value + 1);
 			delayed->push(ctrls);
 
-			delayed->applyControls(frame);
+			delayed->applyControls(i);
 
-			ControlList result = delayed->get(frame);
+			ControlList result = delayed->get(i);
 			int32_t brightness = result.get(V4L2_CID_BRIGHTNESS).get<int32_t>();
 			int32_t contrast = result.get(V4L2_CID_CONTRAST).get<int32_t>();
 			if (brightness != expected || contrast != expected + 1) {
 				cerr << "Failed dual controls"
-				     << " frame " << frame
+				     << " frame " << i
 				     << " brightness " << brightness
 				     << " contrast " << contrast
 				     << " expected " << expected
@@ -283,17 +282,7 @@ protected:
 			return ret;
 
 		/* Test dual controls with different delays. */
-		ret = dualControlsWithDelay(0);
-		if (ret)
-			return ret;
-
-		/* Test dual controls with non-zero sequence start. */
-		ret = dualControlsWithDelay(10000);
-		if (ret)
-			return ret;
-
-		/* Test dual controls with sequence number wraparound. */
-		ret = dualControlsWithDelay(UINT32_MAX - 50);
+		ret = dualControlsWithDelay();
 		if (ret)
 			return ret;
 

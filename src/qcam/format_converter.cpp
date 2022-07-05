@@ -93,6 +93,7 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		bpp_ = 3;
 		break;
 	case libcamera::formats::ARGB8888:
+	case libcamera::formats::XRGB8888:
 		formatFamily_ = RGB;
 		r_pos_ = 2;
 		g_pos_ = 1;
@@ -100,6 +101,7 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		bpp_ = 4;
 		break;
 	case libcamera::formats::RGBA8888:
+	case libcamera::formats::RGBX8888:
 		formatFamily_ = RGB;
 		r_pos_ = 3;
 		g_pos_ = 2;
@@ -107,6 +109,7 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		bpp_ = 4;
 		break;
 	case libcamera::formats::ABGR8888:
+	case libcamera::formats::XBGR8888:
 		formatFamily_ = RGB;
 		r_pos_ = 0;
 		g_pos_ = 1;
@@ -114,6 +117,7 @@ int FormatConverter::configure(const libcamera::PixelFormat &format,
 		bpp_ = 4;
 		break;
 	case libcamera::formats::BGRA8888:
+	case libcamera::formats::BGRX8888:
 		formatFamily_ = RGB;
 		r_pos_ = 1;
 		g_pos_ = 2;

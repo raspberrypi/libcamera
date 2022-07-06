@@ -358,6 +358,11 @@ def load_image(Cam, im_str, mac_config=None, show=False, mac=True, show_meta=Fal
             Img = dng_load_image(Cam, im_str)
         else:
             Img = brcm_load_image(Cam, im_str)
+        """
+        handle errors smoothly if loading image failed
+        """
+        if Img == 0:
+            return 0
         if show_meta:
             Img.print_meta()
 

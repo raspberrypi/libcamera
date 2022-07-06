@@ -44,7 +44,7 @@ endif
 
 common_arguments = [
     '-Wshadow',
-    '-include', 'config.h',
+    '-include', meson.current_build_dir() / 'config.h',
 ]
 
 c_arguments = []

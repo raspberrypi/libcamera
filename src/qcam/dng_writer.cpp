@@ -391,9 +391,9 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 	TIFFSetField(tif, TIFFTAG_MAKE, "libcamera");
 
-	if (cameraProperties.contains(properties::Model)) {
-		std::string model = *cameraProperties.get(properties::Model);
-		TIFFSetField(tif, TIFFTAG_MODEL, model.c_str());
+	const auto &model = cameraProperties.get(properties::Model);
+	if (model) {
+		TIFFSetField(tif, TIFFTAG_MODEL, model->c_str());
 		/* \todo set TIFFTAG_UNIQUECAMERAMODEL. */
 	}
 
@@ -437,16 +437,18 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	 */
 	const double eps = 1e-2;
 
-	if (metadata.contains(controls::ColourGains)) {
-		const auto &colourGains = metadata.get(controls::ColourGains);
+	const auto &colourGains = metadata.get(controls::ColourGains);
+	if (colourGains) {
 		if ((*colourGains)[0] > eps && (*colourGains)[1] > eps) {
 			wbGain = Matrix3d::diag((*colourGains)[0], 1, (*colourGains)[1]);
 			neutral[0] = 1.0 / (*colourGains)[0]; /* red */
 			neutral[2] = 1.0 / (*colourGains)[1]; /* blue */
 		}
 	}
-	if (metadata.contains(controls::ColourCorrectionMatrix)) {
-		Matrix3d ccmSupplied(*metadata.get(controls::ColourCorrectionMatrix));
+
+	const auto &ccmControl = metadata.get(controls::ColourCorrectionMatrix);
+	if (ccmControl) {
+		Matrix3d ccmSupplied(*ccmControl);
 		if (ccmSupplied.determinant() > eps)
 			ccm = ccmSupplied;
 	}
@@ -513,9 +515,9 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	float blackLevel[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	uint32_t whiteLevel = (1 << info->bitsPerSample) - 1;
 
-	if (metadata.contains(controls::SensorBlackLevels)) {
-		Span<const int32_t> levels =
-			*metadata.get(controls::SensorBlackLevels);
+	const auto &blackLevels = metadata.get(controls::SensorBlackLevels);
+	if (blackLevels) {
+		Span<const int32_t> levels = *blackLevels;
 
 		/*
 		 * The black levels control is specified in R, Gr, Gb, B order.
@@ -592,16 +594,15 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	TIFFSetField(tif, EXIFTAG_DATETIMEORIGINAL, strTime);
 	TIFFSetField(tif, EXIFTAG_DATETIMEDIGITIZED, strTime);
 
-	if (metadata.contains(controls::AnalogueGain)) {
-		float gain = *metadata.get(controls::AnalogueGain);
-		uint16_t iso = std::min(std::max(gain * 100, 0.0f), 65535.0f);
+	const auto &analogGain = metadata.get(controls::AnalogueGain);
+	if (analogGain) {
+		uint16_t iso = std::min(std::max(*analogGain * 100, 0.0f), 65535.0f);
 		TIFFSetField(tif, EXIFTAG_ISOSPEEDRATINGS, 1, &iso);
 	}
 
-	if (metadata.contains(controls::ExposureTime)) {
-		float exposureTime = *metadata.get(controls::ExposureTime) / 1e6;
-		TIFFSetField(tif, EXIFTAG_EXPOSURETIME, exposureTime);
-	}
+	const auto &exposureTime = metadata.get(controls::ExposureTime);
+	if (exposureTime)
+		TIFFSetField(tif, EXIFTAG_EXPOSURETIME, *exposureTime / 1e6);
 
 	TIFFWriteCustomDirectory(tif, &exifIFDOffset);
 

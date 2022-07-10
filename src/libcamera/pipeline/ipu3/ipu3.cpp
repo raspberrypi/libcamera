@@ -1143,18 +1143,17 @@ int PipelineHandlerIPU3::registerCameras()
 						 &IPU3CameraData::frameStart);
 
 		/* Convert the sensor rotation to a transformation */
-		int32_t rotation = 0;
-		if (data->properties_.contains(properties::Rotation))
-			rotation = *(data->properties_.get(properties::Rotation));
-		else
+		const auto &rotation = data->properties_.get(properties::Rotation);
+		if (!rotation)
 			LOG(IPU3, Warning) << "Rotation control not exposed by "
 					   << cio2->sensor()->id()
 					   << ". Assume rotation 0";
 
+		int32_t rotationValue = rotation.value_or(0);
 		bool success;
-		data->rotationTransform_ = transformFromRotation(rotation, &success);
+		data->rotationTransform_ = transformFromRotation(rotationValue, &success);
 		if (!success)
-			LOG(IPU3, Warning) << "Invalid rotation of " << rotation
+			LOG(IPU3, Warning) << "Invalid rotation of " << rotationValue
 					   << " degrees: ignoring";
 
 		ControlList ctrls = cio2->sensor()->getControls({ V4L2_CID_HFLIP });
@@ -1330,8 +1329,9 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 
 	request->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Actually apply the scaler crop region to the ImgU. */
-	if (request->controls().contains(controls::ScalerCrop))
-		cropRegion_ = *(request->controls().get(controls::ScalerCrop));
+	const auto &scalerCrop = request->controls().get(controls::ScalerCrop);
+	if (scalerCrop)
+		cropRegion_ = *scalerCrop;
 	request->metadata().set(controls::ScalerCrop, cropRegion_);
 
 	if (frameInfos_.tryComplete(info))
@@ -1455,13 +1455,12 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 	Request *request = processingRequests_.front();
 	processingRequests_.pop();
 
-	if (!request->controls().contains(controls::draft::TestPatternMode))
+	const auto &testPatternMode = request->controls().get(controls::draft::TestPatternMode);
+	if (!testPatternMode)
 		return;
 
-	const int32_t testPatternMode = *(request->controls().get(controls::draft::TestPatternMode));
-
 	int ret = cio2_.sensor()->setTestPatternMode(
-		static_cast<controls::draft::TestPatternModeEnum>(testPatternMode));
+		static_cast<controls::draft::TestPatternModeEnum>(*testPatternMode));
 	if (ret) {
 		LOG(IPU3, Error) << "Failed to set test pattern mode: "
 				 << ret;
@@ -1469,7 +1468,7 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 	}
 
 	request->metadata().set(controls::draft::TestPatternMode,
-				testPatternMode);
+				*testPatternMode);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)

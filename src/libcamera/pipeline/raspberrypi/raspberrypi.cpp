@@ -1717,16 +1717,15 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 	 * Inform the sensor of the latest colour gains if it has the
 	 * V4L2_CID_NOTIFY_GAINS control (which means notifyGainsUnity_ is set).
 	 */
-	if (notifyGainsUnity_ && controls.contains(libcamera::controls::ColourGains)) {
-		libcamera::Span<const float> colourGains =
-			*controls.get(libcamera::controls::ColourGains);
+	const auto &colourGains = controls.get(libcamera::controls::ColourGains);
+	if (notifyGainsUnity_ && colourGains) {
 		/* The control wants linear gains in the order B, Gb, Gr, R. */
 		ControlList ctrls(sensor_->controls());
 		std::array<int32_t, 4> gains{
-			static_cast<int32_t>(colourGains[1] * *notifyGainsUnity_),
+			static_cast<int32_t>((*colourGains)[1] * *notifyGainsUnity_),
 			*notifyGainsUnity_,
 			*notifyGainsUnity_,
-			static_cast<int32_t>(colourGains[0] * *notifyGainsUnity_)
+			static_cast<int32_t>((*colourGains)[0] * *notifyGainsUnity_)
 		};
 		ctrls.set(V4L2_CID_NOTIFY_GAINS, Span<const int32_t>{ gains });
 
@@ -2053,8 +2052,9 @@ Rectangle RPiCameraData::scaleIspCrop(const Rectangle &ispCrop) const
 
 void RPiCameraData::applyScalerCrop(const ControlList &controls)
 {
-	if (controls.contains(controls::ScalerCrop)) {
-		Rectangle nativeCrop = *controls.get<Rectangle>(controls::ScalerCrop);
+	const auto &scalerCrop = controls.get<Rectangle>(controls::ScalerCrop);
+	if (scalerCrop) {
+		Rectangle nativeCrop = *scalerCrop;
 
 		if (!nativeCrop.width || !nativeCrop.height)
 			nativeCrop = { 0, 0, 1, 1 };

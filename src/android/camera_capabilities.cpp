@@ -1049,8 +1049,8 @@ int CameraCapabilities::initializeStaticMetadata()
 					  pixelArraySize);
 	}
 
-	if (properties.contains(properties::UnitCellSize)) {
-		const auto &cellSize = properties.get<Size>(properties::UnitCellSize);
+	const auto &cellSize = properties.get<Size>(properties::UnitCellSize);
+	if (cellSize) {
 		std::array<float, 2> physicalSize{
 			cellSize->width * pixelArraySize[0] / 1e6f,
 			cellSize->height * pixelArraySize[1] / 1e6f
@@ -1079,11 +1079,10 @@ int CameraCapabilities::initializeStaticMetadata()
 				  sensitivityRange);
 
 	/* Report the color filter arrangement if the camera reports it. */
-	if (properties.contains(properties::draft::ColorFilterArrangement)) {
-		uint8_t filterArr = *properties.get(properties::draft::ColorFilterArrangement);
+	const auto &filterArr = properties.get(properties::draft::ColorFilterArrangement);
+	if (filterArr)
 		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT,
-					  filterArr);
-	}
+					  *filterArr);
 
 	const auto &exposureInfo = controlsInfo.find(&controls::ExposureTime);
 	if (exposureInfo != controlsInfo.end()) {

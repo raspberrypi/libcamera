@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
 		ret = write(out_fd, out_data, 50);
 		if (ret < -1) {
-			fprintf(stderr, "Failed to read input data: %s\n",
+			fprintf(stderr, "Failed to write output data: %s\n",
 				strerror(errno));
 			goto done;
 		}

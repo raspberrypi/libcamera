@@ -668,7 +668,7 @@ class Camera:
         - incorrect filename/extension
         - images from different cameras
     """
-    def check_imgs(self):
+    def check_imgs(self, macbeth=True):
         self.log += '\n\nImages found:'
         self.log += '\nMacbeth : {}'.format(len(self.imgs))
         self.log += '\nALSC : {} '.format(len(self.imgs_alsc))
@@ -676,9 +676,13 @@ class Camera:
         """
         check usable images found
         """
-        if len(self.imgs) == 0:
+        if len(self.imgs) == 0 and macbeth:
             print('\nERROR: No usable macbeth chart images found')
             self.log += '\nERROR: No usable macbeth chart images found'
+            return 0
+        elif len(self.imgs) == 0 and len(self.imgs_alsc) == 0:
+            print('\nERROR: No usable images found')
+            self.log += '\nERROR: No usable images found'
             return 0
         """
         Double check that every image has come from the same camera...
@@ -708,7 +712,7 @@ class Camera:
             return 0
 
 
-def run_ctt(json_output, directory, config, log_output):
+def run_ctt(json_output, directory, config, log_output, alsc_only=False):
     """
     check input files are jsons
     """
@@ -770,6 +774,8 @@ def run_ctt(json_output, directory, config, log_output):
     try:
         Cam = Camera(json_output)
         Cam.log_user_input(json_output, directory, config, log_output)
+        if alsc_only:
+            disable = set(Cam.json.keys()).symmetric_difference({"rpi.alsc"})
         Cam.disable = disable
         Cam.plot = plot
         Cam.add_imgs(directory, mac_config, blacklevel)
@@ -783,8 +789,9 @@ def run_ctt(json_output, directory, config, log_output):
     ccm also technically does an awb but it measures this from the macbeth
     chart in the image rather than using calibration data
     """
-    if Cam.check_imgs():
-        Cam.json['rpi.black_level']['black_level'] = Cam.blacklevel_16
+    if Cam.check_imgs(macbeth=not alsc_only):
+        if not alsc_only:
+            Cam.json['rpi.black_level']['black_level'] = Cam.blacklevel_16
         Cam.json_remove(disable)
         print('\nSTARTING CALIBRATIONS')
         Cam.alsc_cal(luminance_strength, do_alsc_colour)

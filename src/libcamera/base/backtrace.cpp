@@ -191,10 +191,22 @@ __attribute__((__noinline__))
 bool Backtrace::unwindTrace()
 {
 #if HAVE_UNWIND
+/*
+ * unw_getcontext() for ARM32 is an inline assembly function using the stmia
+ * instruction to store SP and PC. This is considered by clang-11 as deprecated,
+ * and generates a warning.
+ */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winline-asm"
+#endif
 	unw_context_t uc;
 	int ret = unw_getcontext(&uc);
 	if (ret)
 		return false;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 	unw_cursor_t cursor;
 	ret = unw_init_local(&cursor, &uc);

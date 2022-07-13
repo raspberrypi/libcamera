@@ -2161,16 +2161,12 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 	if (bayerQueue_.empty())
 		return false;
 
-	/* Start with the front of the bayer queue. */
-	bayerFrame = std::move(bayerQueue_.front());
-	bayerQueue_.pop();
-
 	/*
 	 * Find the embedded data buffer with a matching timestamp to pass to
 	 * the IPA. Any embedded buffers with a timestamp lower than the
 	 * current bayer buffer will be removed and re-queued to the driver.
 	 */
-	uint64_t ts = bayerFrame.buffer->metadata().timestamp;
+	uint64_t ts = bayerQueue_.front().buffer->metadata().timestamp;
 	embeddedBuffer = nullptr;
 	while (!embeddedQueue_.empty()) {
 		FrameBuffer *b = embeddedQueue_.front();
@@ -2190,9 +2186,22 @@ bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 	}
 
 	if (!embeddedBuffer && sensorMetadata_) {
+		if (embeddedQueue_.empty()) {
+			/*
+			 * If the embedded buffer queue is empty, wait for the next
+			 * buffer to arrive - dequeue ordering may send the image
+			 * buffer first.
+			 */
+			LOG(RPI, Debug) << "Waiting for next embedded buffer.";
+			return false;
+		}
+
 		/* Log if there is no matching embedded data buffer found. */
 		LOG(RPI, Debug) << "Returning bayer frame without a matching embedded buffer.";
 	}
+
+	bayerFrame = std::move(bayerQueue_.front());
+	bayerQueue_.pop();
 
 	return true;
 }

@@ -17,8 +17,6 @@
 
 namespace libcamera {
 
-struct IPACameraSensorInfo;
-
 namespace ipa::rkisp1::algorithms {
 
 class Agc : public Algorithm

@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <linux/rkisp1-config.h>
-
 #include "algorithm.h"
 
 namespace libcamera {

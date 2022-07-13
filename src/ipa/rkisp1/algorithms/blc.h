@@ -7,13 +7,9 @@
 
 #pragma once
 
-#include <linux/rkisp1-config.h>
-
 #include "algorithm.h"
 
 namespace libcamera {
-
-struct IPACameraSensorInfo;
 
 namespace ipa::rkisp1::algorithms {
 

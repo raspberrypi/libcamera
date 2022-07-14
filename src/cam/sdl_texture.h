@@ -14,8 +14,7 @@
 class SDLTexture
 {
 public:
-	SDLTexture(const SDL_Rect &rect, SDL_PixelFormatEnum pixelFormat,
-		   const int pitch);
+	SDLTexture(const SDL_Rect &rect, uint32_t pixelFormat, const int pitch);
 	virtual ~SDLTexture();
 	int create(SDL_Renderer *renderer);
 	virtual void update(const libcamera::Span<uint8_t> &data) = 0;
@@ -24,6 +23,6 @@ public:
 protected:
 	SDL_Texture *ptr_;
 	const SDL_Rect rect_;
-	const SDL_PixelFormatEnum pixelFormat_;
+	const uint32_t pixelFormat_;
 	const int pitch_;
 };

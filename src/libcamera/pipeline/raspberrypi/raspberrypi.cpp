@@ -523,7 +523,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		}
 
 		V4L2DeviceFormat format;
-		format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
+		format.fourcc = V4L2PixelFormat::fromPixelFormat(cfgPixFmt);
 		format.size = cfg.size;
 		format.colorSpace = cfg.colorSpace;
 

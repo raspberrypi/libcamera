@@ -987,22 +987,14 @@ const PixelFormatInfo &PixelFormatInfo::info(const PixelFormat &format)
 }
 
 /**
- * \brief Retrieve information about a pixel format
+ * \brief Retrieve information about a V4L2 pixel format
  * \param[in] format The V4L2 pixel format
  * \return The PixelFormatInfo describing the V4L2 \a format if known, or an
  * invalid PixelFormatInfo otherwise
  */
 const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
 {
-	const auto &info = std::find_if(pixelFormatInfo.begin(), pixelFormatInfo.end(),
-					[format](auto pair) {
-						return pair.second.v4l2Formats.single == format ||
-						       pair.second.v4l2Formats.multi == format;
-					});
-	if (info == pixelFormatInfo.end())
-		return pixelFormatInfoInvalid;
-
-	return info->second;
+	return info(format.toPixelFormat());
 }
 
 /**

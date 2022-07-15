@@ -90,13 +90,14 @@ PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
 	return pix;
 }
 
-V4L2DeviceFormat toV4L2DeviceFormat(const V4L2SubdeviceFormat &format,
+V4L2DeviceFormat toV4L2DeviceFormat(const V4L2VideoDevice *dev,
+				    const V4L2SubdeviceFormat &format,
 				    BayerFormat::Packing packingReq)
 {
 	const PixelFormat pix = mbusCodeToPixelFormat(format.mbus_code, packingReq);
 	V4L2DeviceFormat deviceFormat;
 
-	deviceFormat.fourcc = V4L2PixelFormat::fromPixelFormat(pix);
+	deviceFormat.fourcc = dev->toV4L2PixelFormat(pix);
 	deviceFormat.size = format.size;
 	deviceFormat.colorSpace = format.colorSpace;
 	return deviceFormat;
@@ -422,15 +423,15 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			 * Calculate the best sensor mode we can use based on
 			 * the user request.
 			 */
+			V4L2VideoDevice *unicam = data_->unicam_[Unicam::Image].dev();
 			const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 			unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
 			V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
 			BayerFormat::Packing packing = BayerFormat::Packing::CSI2;
 			if (info.isValid() && !info.packed)
 				packing = BayerFormat::Packing::None;
-			V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(sensorFormat,
-									   packing);
-			int ret = data_->unicam_[Unicam::Image].dev()->tryFormat(&unicamFormat);
+			V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(unicam, sensorFormat, packing);
+			int ret = unicam->tryFormat(&unicamFormat);
 			if (ret)
 				return Invalid;
 
@@ -516,14 +517,14 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 		V4L2VideoDevice::Formats fmts = dev->formats();
 
-		if (fmts.find(V4L2PixelFormat::fromPixelFormat(cfgPixFmt)) == fmts.end()) {
+		if (fmts.find(dev->toV4L2PixelFormat(cfgPixFmt)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
 			cfgPixFmt = formats::NV12;
 			status = Adjusted;
 		}
 
 		V4L2DeviceFormat format;
-		format.fourcc = V4L2PixelFormat::fromPixelFormat(cfgPixFmt);
+		format.fourcc = dev->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 		format.colorSpace = cfg.colorSpace;
 
@@ -751,8 +752,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(sensorFormat, packing);
-	ret = data->unicam_[Unicam::Image].dev()->setFormat(&unicamFormat);
+	V4L2VideoDevice *unicam = data->unicam_[Unicam::Image].dev();
+	V4L2DeviceFormat unicamFormat = toV4L2DeviceFormat(unicam, sensorFormat, packing);
+	ret = unicam->setFormat(&unicamFormat);
 	if (ret)
 		return ret;
 
@@ -783,7 +785,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		RPi::Stream *stream = i == maxIndex ? &data->isp_[Isp::Output0]
 						    : &data->isp_[Isp::Output1];
 
-		V4L2PixelFormat fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
+		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
 		format.fourcc = fourcc;
 		format.colorSpace = cfg.colorSpace;
@@ -826,13 +828,15 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * statistics coming from the hardware.
 	 */
 	if (!output0Set) {
+		V4L2VideoDevice *dev = data->isp_[Isp::Output0].dev();
+
 		maxSize = Size(320, 240);
 		format = {};
 		format.size = maxSize;
-		format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420);
+		format.fourcc = dev->toV4L2PixelFormat(formats::YUV420);
 		/* No one asked for output, so the color space doesn't matter. */
 		format.colorSpace = ColorSpace::Jpeg;
-		ret = data->isp_[Isp::Output0].dev()->setFormat(&format);
+		ret = dev->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error)
 				<< "Failed to set default format on ISP Output0: "
@@ -856,18 +860,20 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	 * colour denoise will not run.
 	 */
 	if (!output1Set) {
+		V4L2VideoDevice *dev = data->isp_[Isp::Output1].dev();
+
 		V4L2DeviceFormat output1Format;
 		constexpr Size maxDimensions(1200, 1200);
 		const Size limit = maxDimensions.boundedToAspectRatio(format.size);
 
 		output1Format.size = (format.size / 2).boundedTo(limit).alignedDownTo(2, 2);
 		output1Format.colorSpace = format.colorSpace;
-		output1Format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::YUV420);
+		output1Format.fourcc = dev->toV4L2PixelFormat(formats::YUV420);
 
 		LOG(RPI, Debug) << "Setting ISP Output1 (internal) to "
 				<< output1Format;
 
-		ret = data->isp_[Isp::Output1].dev()->setFormat(&output1Format);
+		ret = dev->setFormat(&output1Format);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on ISP Output1: "
 					<< ret;

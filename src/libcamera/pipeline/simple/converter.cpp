@@ -46,7 +46,7 @@ int SimpleConverter::Stream::configure(const StreamConfiguration &inputCfg,
 				       const StreamConfiguration &outputCfg)
 {
 	V4L2PixelFormat videoFormat =
-		V4L2PixelFormat::fromPixelFormat(inputCfg.pixelFormat);
+		m2m_->output()->toV4L2PixelFormat(inputCfg.pixelFormat);
 
 	V4L2DeviceFormat format;
 	format.fourcc = videoFormat;
@@ -71,7 +71,7 @@ int SimpleConverter::Stream::configure(const StreamConfiguration &inputCfg,
 	}
 
 	/* Set the pixel format and size on the output. */
-	videoFormat = V4L2PixelFormat::fromPixelFormat(outputCfg.pixelFormat);
+	videoFormat = m2m_->capture()->toV4L2PixelFormat(outputCfg.pixelFormat);
 	format = {};
 	format.fourcc = videoFormat;
 	format.size = outputCfg.size;
@@ -210,7 +210,7 @@ std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
 	 * enumerate the conversion capabilities on its output (V4L2 capture).
 	 */
 	V4L2DeviceFormat v4l2Format;
-	v4l2Format.fourcc = V4L2PixelFormat::fromPixelFormat(input);
+	v4l2Format.fourcc = m2m_->output()->toV4L2PixelFormat(input);
 	v4l2Format.size = { 1, 1 };
 
 	int ret = m2m_->output()->setFormat(&v4l2Format);
@@ -220,7 +220,7 @@ std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
 		return {};
 	}
 
-	if (v4l2Format.fourcc != V4L2PixelFormat::fromPixelFormat(input)) {
+	if (v4l2Format.fourcc != m2m_->output()->toV4L2PixelFormat(input)) {
 		LOG(SimplePipeline, Debug)
 			<< "Input format " << input << " not supported.";
 		return {};
@@ -287,7 +287,7 @@ SimpleConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
 				    const Size &size)
 {
 	V4L2DeviceFormat format;
-	format.fourcc = V4L2PixelFormat::fromPixelFormat(pixelFormat);
+	format.fourcc = m2m_->capture()->toV4L2PixelFormat(pixelFormat);
 	format.size = size;
 
 	int ret = m2m_->capture()->tryFormat(&format);

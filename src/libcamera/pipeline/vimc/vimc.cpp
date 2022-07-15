@@ -171,7 +171,7 @@ CameraConfiguration::Status VimcCameraConfiguration::validate()
 	cfg.bufferCount = 4;
 
 	V4L2DeviceFormat format;
-	format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
+	format.fourcc = data_->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 
 	int ret = data_->video_->tryFormat(&format);
@@ -275,7 +275,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	V4L2DeviceFormat format;
-	format.fourcc = V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
+	format.fourcc = data->video_->toV4L2PixelFormat(cfg.pixelFormat);
 	format.size = cfg.size;
 
 	ret = data->video_->setFormat(&format);
@@ -283,7 +283,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	if (format.size != cfg.size ||
-	    format.fourcc != V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat))
+	    format.fourcc != data->video_->toV4L2PixelFormat(cfg.pixelFormat))
 		return -EINVAL;
 
 	/*
@@ -598,7 +598,7 @@ int VimcCameraData::allocateMockIPABuffers()
 	constexpr unsigned int kBufCount = 2;
 
 	V4L2DeviceFormat format;
-	format.fourcc = V4L2PixelFormat::fromPixelFormat(formats::BGR888);
+	format.fourcc = video_->toV4L2PixelFormat(formats::BGR888);
 	format.size = Size (160, 120);
 
 	int ret = video_->setFormat(&format);

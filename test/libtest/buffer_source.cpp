@@ -72,7 +72,7 @@ int BufferSource::allocate(const StreamConfiguration &config)
 	}
 
 	format.size = config.size;
-	format.fourcc = V4L2PixelFormat::fromPixelFormat(config.pixelFormat);
+	format.fourcc = video->toV4L2PixelFormat(config.pixelFormat);
 	if (video->setFormat(&format)) {
 		std::cout << "Failed to set format on output device" << std::endl;
 		return TestFail;

@@ -220,6 +220,12 @@ std::vector<PixelFormat> SimpleConverter::formats(PixelFormat input)
 		return {};
 	}
 
+	if (v4l2Format.fourcc != V4L2PixelFormat::fromPixelFormat(input)) {
+		LOG(SimplePipeline, Debug)
+			<< "Input format " << input << " not supported.";
+		return {};
+	}
+
 	std::vector<PixelFormat> pixelFormats;
 
 	for (const auto &format : m2m_->capture()->formats()) {

@@ -183,6 +183,8 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 	/* Compressed formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
 		{ formats::MJPEG, "Motion-JPEG" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_JPEG),
+		{ formats::MJPEG, "JPEG JFIF" } },
 };
 
 } /* namespace */

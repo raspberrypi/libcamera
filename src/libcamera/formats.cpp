@@ -785,7 +785,10 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	{ formats::MJPEG, {
 		.name = "MJPEG",
 		.format = formats::MJPEG,
-		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_MJPEG), },
+		.v4l2Formats = {
+			V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),
+			V4L2PixelFormat(V4L2_PIX_FMT_JPEG),
+		},
 		.bitsPerPixel = 0,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = false,

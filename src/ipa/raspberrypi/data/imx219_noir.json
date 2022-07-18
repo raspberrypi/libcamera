@@ -31,7 +31,7 @@
     },
     "rpi.awb":
     {
-	"bayes": 0
+        "bayes": 0
     },
     "rpi.agc":
     {
@@ -121,10 +121,10 @@
                     ]
                 }
             ],
-	    "shadows":
-	    [
-		{
-		    "bound": "LOWER", "q_lo": 0.0, "q_hi": 0.5, "y_target":
+            "shadows":
+            [
+                {
+                    "bound": "LOWER", "q_lo": 0.0, "q_hi": 0.5, "y_target":
                     [
                         0, 0.17, 1000, 0.17
                     ]

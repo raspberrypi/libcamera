@@ -334,8 +334,8 @@
     },
     "rpi.sharpen":
     {
-	"threshold": 2.0,
-	"strength": 0.5,
-	"limit": 0.5
+        "threshold": 2.0,
+        "strength": 0.5,
+        "limit": 0.5
     }
 }

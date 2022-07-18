@@ -189,10 +189,10 @@
                     ]
                 }
             ],
-	    "shadows":
-	    [
-		{
-		    "bound": "LOWER", "q_lo": 0.0, "q_hi": 0.5, "y_target":
+            "shadows":
+            [
+                {
+                    "bound": "LOWER", "q_lo": 0.0, "q_hi": 0.5, "y_target":
                     [
                         0, 0.17, 1000, 0.17
                     ]
@@ -203,7 +203,7 @@
         [
             0, 0.16, 1000, 0.165, 10000, 0.17
         ],
-	"base_ev": 1.25
+        "base_ev": 1.25
     },
     "rpi.alsc":
     {

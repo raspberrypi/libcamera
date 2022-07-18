@@ -44,26 +44,58 @@ int Controller::read(char const *filename)
 	}
 
 	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	double version = (*root)["version"].get<double>(1.0);
 
-	for (auto const &[key, value] : root->asDict()) {
-		Algorithm *algo = createAlgorithm(key.c_str());
-		if (algo) {
-			int ret = algo->read(value);
+	if (version < 2.0) {
+		LOG(RPiController, Warning)
+			<< "This format of the tuning file will be deprecated soon!"
+			<< " Please use the convert_tuning.py utility to update to version 2.0.";
+
+		for (auto const &[key, value] : root->asDict()) {
+			int ret = createAlgorithm(key, value);
 			if (ret)
 				return ret;
-			algorithms_.push_back(AlgorithmPtr(algo));
-		} else
-			LOG(RPiController, Warning)
-				<< "No algorithm found for \"" << key << "\"";
+		}
+	} else if (version < 3.0) {
+		if (!root->contains("algorithms")) {
+			LOG(RPiController, Error)
+				<< "Tuning file " << filename
+				<< " does not have an \"algorithms\" list!";
+			return -EINVAL;
+		}
+
+		for (auto const &rootAlgo : (*root)["algorithms"].asList())
+			for (auto const &[key, value] : rootAlgo.asDict()) {
+				int ret = createAlgorithm(key, value);
+				if (ret)
+					return ret;
+			}
+	} else {
+		LOG(RPiController, Error)
+			<< "Unrecognised version " << version
+			<< " for the tuning file " << filename;
+		return -EINVAL;
 	}
 
 	return 0;
 }
 
-Algorithm *Controller::createAlgorithm(char const *name)
+int Controller::createAlgorithm(const std::string &name, const YamlObject &params)
 {
-	auto it = getAlgorithms().find(std::string(name));
-	return it != getAlgorithms().end() ? (*it->second)(this) : nullptr;
+	auto it = getAlgorithms().find(name);
+	if (it == getAlgorithms().end()) {
+		LOG(RPiController, Warning)
+			<< "No algorithm found for \"" << name << "\"";
+		return 0;
+	}
+
+	Algorithm *algo = (*it->second)(this);
+	int ret = algo->read(params);
+	if (ret)
+		return ret;
+
+	algorithms_.push_back(AlgorithmPtr(algo));
+	return 0;
 }
 
 void Controller::initialise()

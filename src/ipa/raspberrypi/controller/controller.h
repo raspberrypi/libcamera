@@ -17,6 +17,8 @@
 
 #include <linux/bcm2835-isp.h>
 
+#include "libcamera/internal/yaml_parser.h"
+
 #include "camera_mode.h"
 #include "device_status.h"
 #include "metadata.h"
@@ -40,7 +42,6 @@ public:
 	Controller();
 	Controller(char const *jsonFilename);
 	~Controller();
-	Algorithm *createAlgorithm(char const *name);
 	int read(char const *filename);
 	void initialise();
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
@@ -50,6 +51,8 @@ public:
 	Algorithm *getAlgorithm(std::string const &name) const;
 
 protected:
+	int createAlgorithm(const std::string &name, const libcamera::YamlObject &params);
+
 	Metadata globalMetadata_;
 	std::vector<AlgorithmPtr> algorithms_;
 	bool switchModeCalled_;

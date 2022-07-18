@@ -25,12 +25,21 @@ class YamlParserContext;
 class YamlObject
 {
 private:
-	using DictContainer = std::map<std::string, std::unique_ptr<YamlObject>>;
+	struct Value {
+		Value(std::string &&k, std::unique_ptr<YamlObject> &&v)
+			: key(std::move(k)), value(std::move(v))
+		{
+		}
+		std::string key;
+		std::unique_ptr<YamlObject> value;
+	};
+
+	using Container = std::vector<Value>;
 	using ListContainer = std::vector<std::unique_ptr<YamlObject>>;
 
 public:
 #ifndef __DOXYGEN__
-	template<typename Container, typename Derived>
+	template<typename Derived>
 	class Iterator
 	{
 	public:
@@ -66,10 +75,10 @@ public:
 		}
 
 	protected:
-		typename Container::const_iterator it_;
+		Container::const_iterator it_;
 	};
 
-	template<typename Container, typename Iterator>
+	template<typename Iterator>
 	class Adapter
 	{
 	public:
@@ -92,7 +101,7 @@ public:
 		const Container &container_;
 	};
 
-	class ListIterator : public Iterator<ListContainer, ListIterator>
+	class ListIterator : public Iterator<ListIterator>
 	{
 	public:
 		using value_type = const YamlObject &;
@@ -101,16 +110,16 @@ public:
 
 		value_type operator*() const
 		{
-			return *it_->get();
+			return *it_->value.get();
 		}
 
 		pointer operator->() const
 		{
-			return it_->get();
+			return it_->value.get();
 		}
 	};
 
-	class DictIterator : public Iterator<DictContainer, DictIterator>
+	class DictIterator : public Iterator<DictIterator>
 	{
 	public:
 		using value_type = std::pair<const std::string &, const YamlObject &>;
@@ -119,17 +128,17 @@ public:
 
 		value_type operator*() const
 		{
-			return { it_->first, *it_->second.get() };
+			return { it_->key, *it_->value.get() };
 		}
 	};
 
-	class DictAdapter : public Adapter<DictContainer, DictIterator>
+	class DictAdapter : public Adapter<DictIterator>
 	{
 	public:
 		using key_type = std::string;
 	};
 
-	class ListAdapter : public Adapter<ListContainer, ListIterator>
+	class ListAdapter : public Adapter<ListIterator>
 	{
 	};
 #endif /* __DOXYGEN__ */
@@ -174,7 +183,7 @@ public:
 		return get<T>().value_or(defaultValue);
 	}
 
-	DictAdapter asDict() const { return DictAdapter{ dictionary_ }; }
+	DictAdapter asDict() const { return DictAdapter{ list_ }; }
 	ListAdapter asList() const { return ListAdapter{ list_ }; }
 
 	const YamlObject &operator[](std::size_t index) const;
@@ -196,8 +205,8 @@ private:
 	Type type_;
 
 	std::string value_;
-	ListContainer list_;
-	DictContainer dictionary_;
+	Container list_;
+	std::map<std::string, YamlObject *> dictionary_;
 };
 
 class YamlParser final

@@ -85,7 +85,6 @@ std::size_t YamlObject::size() const
 {
 	switch (type_) {
 	case Type::Dictionary:
-		return dictionary_.size();
 	case Type::List:
 		return list_.size();
 	default:
@@ -280,11 +279,11 @@ std::optional<Size> YamlObject::get() const
 	if (list_.size() != 2)
 		return {};
 
-	auto width = list_[0]->get<uint32_t>();
+	auto width = list_[0].value->get<uint32_t>();
 	if (!width)
 		return {};
 
-	auto height = list_[1]->get<uint32_t>();
+	auto height = list_[1].value->get<uint32_t>();
 	if (!height)
 		return {};
 
@@ -347,7 +346,7 @@ const YamlObject &YamlObject::operator[](std::size_t index) const
 	if (type_ != Type::List || index >= size())
 		return empty;
 
-	return *list_[index];
+	return *list_[index].value;
 }
 
 /**
@@ -363,7 +362,7 @@ const YamlObject &YamlObject::operator[](std::size_t index) const
  */
 bool YamlObject::contains(const std::string &key) const
 {
-	if (dictionary_.find(key) == dictionary_.end())
+	if (dictionary_.find(std::ref(key)) == dictionary_.end())
 		return false;
 
 	return true;
@@ -635,16 +634,16 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 		yamlObject.type_ = YamlObject::Type::List;
 		auto &list = yamlObject.list_;
 		auto handler = [this, &list](EventPtr evt) {
-			list.emplace_back(new YamlObject());
-			return parseNextYamlObject(*list.back(), std::move(evt));
+			list.emplace_back(std::string{}, std::make_unique<YamlObject>());
+			return parseNextYamlObject(*list.back().value, std::move(evt));
 		};
 		return parseDictionaryOrList(YamlObject::Type::List, handler);
 	}
 
 	case YAML_MAPPING_START_EVENT: {
 		yamlObject.type_ = YamlObject::Type::Dictionary;
-		auto &dictionary = yamlObject.dictionary_;
-		auto handler = [this, &dictionary](EventPtr evtKey) {
+		auto &list = yamlObject.list_;
+		auto handler = [this, &list](EventPtr evtKey) {
 			/* Parse key */
 			if (evtKey->type != YAML_SCALAR_EVENT) {
 				LOG(YamlParser, Error) << "Expect key at line: "
@@ -662,10 +661,19 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 			if (!evtValue)
 				return -EINVAL;
 
-			auto elem = dictionary.emplace(key, std::make_unique<YamlObject>());
-			return parseNextYamlObject(*elem.first->second.get(), std::move(evtValue));
+			auto &elem = list.emplace_back(std::move(key),
+						       std::make_unique<YamlObject>());
+			return parseNextYamlObject(*elem.value, std::move(evtValue));
 		};
-		return parseDictionaryOrList(YamlObject::Type::Dictionary, handler);
+		int ret = parseDictionaryOrList(YamlObject::Type::Dictionary, handler);
+		if (ret)
+			return ret;
+
+		auto &dictionary = yamlObject.dictionary_;
+		for (const auto &elem : list)
+			dictionary.emplace(elem.key, elem.value.get());
+
+		return 0;
 	}
 
 	default:
@@ -721,6 +729,9 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  * The YamlParser::parse() function takes an open FILE, parses its contents, and
  * returns a pointer to a YamlObject corresponding to the root node of the YAML
  * document.
+ *
+ * The parser preserves the order of items in the YAML file, for both lists and
+ * dictionaries.
  */
 
 /**

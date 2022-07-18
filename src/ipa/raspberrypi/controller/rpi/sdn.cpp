@@ -34,10 +34,10 @@ char const *Sdn::name() const
 	return NAME;
 }
 
-int Sdn::read(boost::property_tree::ptree const &params)
+int Sdn::read(const libcamera::YamlObject &params)
 {
-	deviation_ = params.get<double>("deviation", 3.2);
-	strength_ = params.get<double>("strength", 0.75);
+	deviation_ = params["deviation"].get<double>(3.2);
+	strength_ = params["strength"].get<double>(0.75);
 	return 0;
 }
 

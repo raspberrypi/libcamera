@@ -38,14 +38,30 @@ char const *Lux::name() const
 	return NAME;
 }
 
-int Lux::read(boost::property_tree::ptree const &params)
+int Lux::read(const libcamera::YamlObject &params)
 {
-	referenceShutterSpeed_ =
-		params.get<double>("reference_shutter_speed") * 1.0us;
-	referenceGain_ = params.get<double>("reference_gain");
-	referenceAperture_ = params.get<double>("reference_aperture", 1.0);
-	referenceY_ = params.get<double>("reference_Y");
-	referenceLux_ = params.get<double>("reference_lux");
+	auto value = params["reference_shutter_speed"].get<double>();
+	if (!value)
+		return -EINVAL;
+	referenceShutterSpeed_ = *value * 1.0us;
+
+	value = params["reference_gain"].get<double>();
+	if (!value)
+		return -EINVAL;
+	referenceGain_ = *value;
+
+	referenceAperture_ = params["reference_aperture"].get<double>(1.0);
+
+	value = params["reference_Y"].get<double>();
+	if (!value)
+		return -EINVAL;
+	referenceY_ = *value;
+
+	value = params["reference_lux"].get<double>();
+	if (!value)
+		return -EINVAL;
+	referenceLux_ = *value;
+
 	currentAperture_ = referenceAperture_;
 	return 0;
 }

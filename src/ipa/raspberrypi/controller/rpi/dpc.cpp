@@ -31,13 +31,14 @@ char const *Dpc::name() const
 	return NAME;
 }
 
-int Dpc::read(boost::property_tree::ptree const &params)
+int Dpc::read(const libcamera::YamlObject &params)
 {
-	config_.strength = params.get<int>("strength", 1);
+	config_.strength = params["strength"].get<int>(1);
 	if (config_.strength < 0 || config_.strength > 2) {
-		LOG(RPiDpc, Error) << "bad strength value";
+		LOG(RPiDpc, Error) << "Bad strength value";
 		return -EINVAL;
 	}
+
 	return 0;
 }
 

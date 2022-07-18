@@ -28,13 +28,13 @@ namespace RPiController {
 
 struct AgcMeteringMode {
 	double weights[AgcStatsSize];
-	int read(boost::property_tree::ptree const &params);
+	int read(const libcamera::YamlObject &params);
 };
 
 struct AgcExposureMode {
 	std::vector<libcamera::utils::Duration> shutter;
 	std::vector<double> gain;
-	int read(boost::property_tree::ptree const &params);
+	int read(const libcamera::YamlObject &params);
 };
 
 struct AgcConstraint {
@@ -43,13 +43,13 @@ struct AgcConstraint {
 	double qLo;
 	double qHi;
 	Pwl yTarget;
-	int read(boost::property_tree::ptree const &params);
+	int read(const libcamera::YamlObject &params);
 };
 
 typedef std::vector<AgcConstraint> AgcConstraintMode;
 
 struct AgcConfig {
-	int read(boost::property_tree::ptree const &params);
+	int read(const libcamera::YamlObject &params);
 	std::map<std::string, AgcMeteringMode> meteringModes;
 	std::map<std::string, AgcExposureMode> exposureModes;
 	std::map<std::string, AgcConstraintMode> constraintModes;
@@ -74,7 +74,7 @@ class Agc : public AgcAlgorithm
 public:
 	Agc(Controller *controller);
 	char const *name() const override;
-	int read(boost::property_tree::ptree const &params) override;
+	int read(const libcamera::YamlObject &params) override;
 	/* AGC handles "pausing" for itself. */
 	bool isPaused() const override;
 	void pause() override;

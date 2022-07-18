@@ -38,21 +38,21 @@ char const *Contrast::name() const
 	return NAME;
 }
 
-int Contrast::read(boost::property_tree::ptree const &params)
+int Contrast::read(const libcamera::YamlObject &params)
 {
-	/* enable adaptive enhancement by default */
-	config_.ceEnable = params.get<int>("ce_enable", 1);
-	/* the point near the bottom of the histogram to move */
-	config_.loHistogram = params.get<double>("lo_histogram", 0.01);
-	/* where in the range to try and move it to */
-	config_.loLevel = params.get<double>("lo_level", 0.015);
-	/* but don't move by more than this */
-	config_.loMax = params.get<double>("lo_max", 500);
-	/* equivalent values for the top of the histogram... */
-	config_.hiHistogram = params.get<double>("hi_histogram", 0.95);
-	config_.hiLevel = params.get<double>("hi_level", 0.95);
-	config_.hiMax = params.get<double>("hi_max", 2000);
-	return config_.gammaCurve.read(params.get_child("gamma_curve"));
+	// enable adaptive enhancement by default
+	config_.ceEnable = params["ce_enable"].get<int>(1);
+	// the point near the bottom of the histogram to move
+	config_.loHistogram = params["lo_histogram"].get<double>(0.01);
+	// where in the range to try and move it to
+	config_.loLevel = params["lo_level"].get<double>(0.015);
+	// but don't move by more than this
+	config_.loMax = params["lo_max"].get<double>(500);
+	// equivalent values for the top of the histogram...
+	config_.hiHistogram = params["hi_histogram"].get<double>(0.95);
+	config_.hiLevel = params["hi_level"].get<double>(0.95);
+	config_.hiMax = params["hi_max"].get<double>(2000);
+	return config_.gammaCurve.read(params["gamma_curve"]);
 }
 
 void Contrast::setBrightness(double brightness)

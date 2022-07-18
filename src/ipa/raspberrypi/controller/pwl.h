@@ -9,7 +9,7 @@
 #include <math.h>
 #include <vector>
 
-#include <boost/property_tree/ptree.hpp>
+#include "libcamera/internal/yaml_parser.h"
 
 namespace RPiController {
 
@@ -57,7 +57,7 @@ public:
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	int read(boost::property_tree::ptree const &params);
+	int read(const libcamera::YamlObject &params);
 	void append(double x, double y, const double eps = 1e-6);
 	void prepend(double x, double y, const double eps = 1e-6);
 	Interval domain() const;

@@ -12,16 +12,27 @@
 
 using namespace RPiController;
 
-int Pwl::read(boost::property_tree::ptree const &params)
+int Pwl::read(const libcamera::YamlObject &params)
 {
-	for (auto it = params.begin(); it != params.end(); it++) {
-		double x = it->second.get_value<double>();
-		assert(it == params.begin() || x > points_.back().x);
-		it++;
-		double y = it->second.get_value<double>();
-		points_.push_back(Point(x, y));
+	if (!params.size() || params.size() % 2)
+		return -EINVAL;
+
+	const auto &list = params.asList();
+
+	for (auto it = list.begin(); it != list.end(); it++) {
+		auto x = it->get<double>();
+		if (!x)
+			return -EINVAL;
+		if (it != list.begin() && *x <= points_.back().x)
+			return -EINVAL;
+
+		auto y = (++it)->get<double>();
+		if (!y)
+			return -EINVAL;
+
+		points_.push_back(Point(*x, *y));
 	}
-	assert(points_.size() >= 2);
+
 	return 0;
 }
 

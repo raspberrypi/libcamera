@@ -37,11 +37,11 @@ void Sharpen::switchMode(CameraMode const &cameraMode,
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-int Sharpen::read(boost::property_tree::ptree const &params)
+int Sharpen::read(const libcamera::YamlObject &params)
 {
-	threshold_ = params.get<double>("threshold", 1.0);
-	strength_ = params.get<double>("strength", 1.0);
-	limit_ = params.get<double>("limit", 1.0);
+	threshold_ = params["threshold"].get<double>(1.0);
+	strength_ = params["strength"].get<double>(1.0);
+	limit_ = params["limit"].get<double>(1.0);
 	LOG(RPiSharpen, Debug)
 		<< "Read threshold " << threshold_
 		<< " strength " << strength_

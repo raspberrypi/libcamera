@@ -9,7 +9,7 @@
 
 using namespace RPiController;
 
-int Algorithm::read([[maybe_unused]] boost::property_tree::ptree const &params)
+int Algorithm::read([[maybe_unused]] const libcamera::YamlObject &params)
 {
 	return 0;
 }

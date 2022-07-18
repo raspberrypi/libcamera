@@ -52,7 +52,7 @@ public:
 	char const *name() const override;
 	void initialise() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
-	int read(boost::property_tree::ptree const &params) override;
+	int read(const libcamera::YamlObject &params) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 

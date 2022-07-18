@@ -19,7 +19,7 @@ public:
 	Sharpen(Controller *controller);
 	char const *name() const override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
-	int read(boost::property_tree::ptree const &params) override;
+	int read(const libcamera::YamlObject &params) override;
 	void setStrength(double strength) override;
 	void prepare(Metadata *imageMetadata) override;
 

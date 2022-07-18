@@ -5,6 +5,8 @@
  * awb.cpp - AWB control algorithm
  */
 
+#include <assert.h>
+
 #include <libcamera/base/log.h>
 
 #include "../lux_status.h"
@@ -26,62 +28,87 @@ static constexpr unsigned int AwbStatsSizeY = DEFAULT_AWB_REGIONS_Y;
  * elsewhere (ALSC and AGC).
  */
 
-int AwbMode::read(boost::property_tree::ptree const &params)
+int AwbMode::read(const libcamera::YamlObject &params)
 {
-	ctLo = params.get<double>("lo");
-	ctHi = params.get<double>("hi");
+	auto value = params["lo"].get<double>();
+	if (!value)
+		return -EINVAL;
+	ctLo = *value;
+
+	value = params["hi"].get<double>();
+	if (!value)
+		return -EINVAL;
+	ctHi = *value;
+
 	return 0;
 }
 
-int AwbPrior::read(boost::property_tree::ptree const &params)
+int AwbPrior::read(const libcamera::YamlObject &params)
 {
-	lux = params.get<double>("lux");
-	return prior.read(params.get_child("prior"));
+	auto value = params["lux"].get<double>();
+	if (!value)
+		return -EINVAL;
+	lux = *value;
+
+	return prior.read(params["prior"]);
 }
 
-static int readCtCurve(Pwl &ctR, Pwl &ctB,
-		       boost::property_tree::ptree const &params)
+static int readCtCurve(Pwl &ctR, Pwl &ctB, const libcamera::YamlObject &params)
 {
-	int num = 0;
-	for (auto it = params.begin(); it != params.end(); it++) {
-		double ct = it->second.get_value<double>();
-		assert(it == params.begin() || ct != ctR.domain().end);
-		if (++it == params.end()) {
-			LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
-			return -EINVAL;
-		}
-		ctR.append(ct, it->second.get_value<double>());
-		if (++it == params.end()) {
-			LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
-			return -EINVAL;
-		}
-		ctB.append(ct, it->second.get_value<double>());
-		num++;
+	if (params.size() % 3) {
+		LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
+		return -EINVAL;
 	}
-	if (num < 2) {
+
+	if (params.size() < 6) {
 		LOG(RPiAwb, Error) << "AwbConfig: insufficient points in CT curve";
 		return -EINVAL;
 	}
+
+	const auto &list = params.asList();
+
+	for (auto it = list.begin(); it != list.end(); it++) {
+		auto value = it->get<double>();
+		if (!value)
+			return -EINVAL;
+		double ct = *value;
+
+		assert(it == list.begin() || ct != ctR.domain().end);
+
+		value = (++it)->get<double>();
+		if (!value)
+			return -EINVAL;
+		ctR.append(ct, *value);
+
+		value = (++it)->get<double>();
+		if (!value)
+			return -EINVAL;
+		ctB.append(ct, *value);
+	}
+
 	return 0;
 }
 
-int AwbConfig::read(boost::property_tree::ptree const &params)
+int AwbConfig::read(const libcamera::YamlObject &params)
 {
 	int ret;
-	bayes = params.get<int>("bayes", 1);
-	framePeriod = params.get<uint16_t>("framePeriod", 10);
-	startupFrames = params.get<uint16_t>("startupFrames", 10);
-	convergenceFrames = params.get<unsigned int>("convergence_frames", 3);
-	speed = params.get<double>("speed", 0.05);
-	if (params.get_child_optional("ct_curve")) {
-		ret = readCtCurve(ctR, ctB, params.get_child("ct_curve"));
+
+	bayes = params["bayes"].get<int>(1);
+	framePeriod = params["frame_period"].get<uint16_t>(10);
+	startupFrames = params["startup_frames"].get<uint16_t>(10);
+	convergenceFrames = params["convergence_frames"].get<unsigned int>(3);
+	speed = params["speed"].get<double>(0.05);
+
+	if (params.contains("ct_curve")) {
+		ret = readCtCurve(ctR, ctB, params["ct_curve"]);
 		if (ret)
 			return ret;
 	}
-	if (params.get_child_optional("priors")) {
-		for (auto &p : params.get_child("priors")) {
+
+	if (params.contains("priors")) {
+		for (const auto &p : params["priors"].asList()) {
 			AwbPrior prior;
-			ret = prior.read(p.second);
+			ret = prior.read(p);
 			if (ret)
 				return ret;
 			if (!priors.empty() && prior.lux <= priors.back().lux) {
@@ -95,32 +122,35 @@ int AwbConfig::read(boost::property_tree::ptree const &params)
 			return ret;
 		}
 	}
-	if (params.get_child_optional("modes")) {
-		for (auto &p : params.get_child("modes")) {
-			ret = modes[p.first].read(p.second);
+	if (params.contains("modes")) {
+		for (const auto &[key, value] : params["modes"].asDict()) {
+			ret = modes[key].read(value);
 			if (ret)
 				return ret;
 			if (defaultMode == nullptr)
-				defaultMode = &modes[p.first];
+				defaultMode = &modes[key];
 		}
 		if (defaultMode == nullptr) {
 			LOG(RPiAwb, Error) << "AwbConfig: no AWB modes configured";
 			return -EINVAL;
 		}
 	}
-	minPixels = params.get<double>("min_pixels", 16.0);
-	minG = params.get<uint16_t>("min_G", 32);
-	minRegions = params.get<uint32_t>("min_regions", 10);
-	deltaLimit = params.get<double>("delta_limit", 0.2);
-	coarseStep = params.get<double>("coarse_step", 0.2);
-	transversePos = params.get<double>("transverse_pos", 0.01);
-	transverseNeg = params.get<double>("transverse_neg", 0.01);
+
+	minPixels = params["min_pixels"].get<double>(16.0);
+	minG = params["min_G"].get<uint16_t>(32);
+	minRegions = params["min_regions"].get<uint32_t>(10);
+	deltaLimit = params["delta_limit"].get<double>(0.2);
+	coarseStep = params["coarse_step"].get<double>(0.2);
+	transversePos = params["transverse_pos"].get<double>(0.01);
+	transverseNeg = params["transverse_neg"].get<double>(0.01);
 	if (transversePos <= 0 || transverseNeg <= 0) {
 		LOG(RPiAwb, Error) << "AwbConfig: transverse_pos/neg must be > 0";
 		return -EINVAL;
 	}
-	sensitivityR = params.get<double>("sensitivity_r", 1.0);
-	sensitivityB = params.get<double>("sensitivity_b", 1.0);
+
+	sensitivityR = params["sensitivity_r"].get<double>(1.0);
+	sensitivityB = params["sensitivity_b"].get<double>(1.0);
+
 	if (bayes) {
 		if (ctR.empty() || ctB.empty() || priors.empty() ||
 		    defaultMode == nullptr) {
@@ -129,9 +159,9 @@ int AwbConfig::read(boost::property_tree::ptree const &params)
 			bayes = false;
 		}
 	}
-	fast = params.get<int>("fast", bayes); /* default to fast for Bayesian, otherwise slow */
-	whitepointR = params.get<double>("whitepoint_r", 0.0);
-	whitepointB = params.get<double>("whitepoint_b", 0.0);
+	fast = params[fast].get<int>(bayes); /* default to fast for Bayesian, otherwise slow */
+	whitepointR = params["whitepoint_r"].get<double>(0.0);
+	whitepointB = params["whitepoint_b"].get<double>(0.0);
 	if (bayes == false)
 		sensitivityR = sensitivityB = 1.0; /* nor do sensitivities make any sense */
 	return 0;
@@ -162,7 +192,7 @@ char const *Awb::name() const
 	return NAME;
 }
 
-int Awb::read(boost::property_tree::ptree const &params)
+int Awb::read(const libcamera::YamlObject &params)
 {
 	return config_.read(params);
 }

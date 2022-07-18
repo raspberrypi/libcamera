@@ -31,13 +31,13 @@ char const *BlackLevel::name() const
 	return NAME;
 }
 
-int BlackLevel::read(boost::property_tree::ptree const &params)
+int BlackLevel::read(const libcamera::YamlObject &params)
 {
-	uint16_t blackLevel = params.get<uint16_t>(
-		"black_level", 4096); /* 64 in 10 bits scaled to 16 bits */
-	blackLevelR_ = params.get<uint16_t>("black_level_r", blackLevel);
-	blackLevelG_ = params.get<uint16_t>("black_level_g", blackLevel);
-	blackLevelB_ = params.get<uint16_t>("black_level_b", blackLevel);
+	/* 64 in 10 bits scaled to 16 bits */
+	uint16_t blackLevel = params["black_level"].get<uint16_t>(4096);
+	blackLevelR_ = params["black_level_r"].get<uint16_t>(blackLevel);
+	blackLevelG_ = params["black_level_g"].get<uint16_t>(blackLevel);
+	blackLevelB_ = params["black_level_b"].get<uint16_t>(blackLevel);
 	LOG(RPiBlackLevel, Debug)
 		<< " Read black levels red " << blackLevelR_
 		<< " green " << blackLevelG_

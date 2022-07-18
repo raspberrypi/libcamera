@@ -5,6 +5,7 @@
  * alsc.cpp - ALSC (auto lens shading correction) control algorithm
  */
 
+#include <functional>
 #include <math.h>
 #include <numeric>
 
@@ -50,15 +51,15 @@ char const *Alsc::name() const
 	return NAME;
 }
 
-static int generateLut(double *lut, boost::property_tree::ptree const &params)
+static int generateLut(double *lut, const libcamera::YamlObject &params)
 {
-	double cstrength = params.get<double>("corner_strength", 2.0);
+	double cstrength = params["corner_strength"].get<double>(2.0);
 	if (cstrength <= 1.0) {
 		LOG(RPiAlsc, Error) << "corner_strength must be > 1.0";
 		return -EINVAL;
 	}
 
-	double asymmetry = params.get<double>("asymmetry", 1.0);
+	double asymmetry = params["asymmetry"].get<double>(1.0);
 	if (asymmetry < 0) {
 		LOG(RPiAlsc, Error) << "asymmetry must be >= 0";
 		return -EINVAL;
@@ -80,34 +81,35 @@ static int generateLut(double *lut, boost::property_tree::ptree const &params)
 	return 0;
 }
 
-static int readLut(double *lut, boost::property_tree::ptree const &params)
+static int readLut(double *lut, const libcamera::YamlObject &params)
 {
-	int num = 0;
-	const int maxNum = XY;
-
-	for (auto &p : params) {
-		if (num == maxNum) {
-			LOG(RPiAlsc, Error) << "Too many entries in LSC table";
-			return -EINVAL;
-		}
-		lut[num++] = p.second.get_value<double>();
-	}
-
-	if (num < maxNum) {
-		LOG(RPiAlsc, Error) << "Too few entries in LSC table";
+	if (params.size() != XY) {
+		LOG(RPiAlsc, Error) << "Invalid number of entries in LSC table";
 		return -EINVAL;
 	}
+
+	int num = 0;
+	for (const auto &p : params.asList()) {
+		auto value = p.get<double>();
+		if (!value)
+			return -EINVAL;
+		lut[num++] = *value;
+	}
+
 	return 0;
 }
 
 static int readCalibrations(std::vector<AlscCalibration> &calibrations,
-			    boost::property_tree::ptree const &params,
+			    const libcamera::YamlObject &params,
 			    std::string const &name)
 {
-	if (params.get_child_optional(name)) {
+	if (params.contains(name)) {
 		double lastCt = 0;
-		for (auto &p : params.get_child(name)) {
-			double ct = p.second.get<double>("ct");
+		for (const auto &p : params[name].asList()) {
+			auto value = p["ct"].get<double>();
+			if (!value)
+				return -EINVAL;
+			double ct = *value;
 			if (ct <= lastCt) {
 				LOG(RPiAlsc, Error)
 					<< "Entries in " << name << " must be in increasing ct order";
@@ -115,23 +117,23 @@ static int readCalibrations(std::vector<AlscCalibration> &calibrations,
 			}
 			AlscCalibration calibration;
 			calibration.ct = lastCt = ct;
-			boost::property_tree::ptree const &table =
-				p.second.get_child("table");
-			int num = 0;
-			for (auto it = table.begin(); it != table.end(); it++) {
-				if (num == XY) {
-					LOG(RPiAlsc, Error)
-						<< "Too many values for ct " << ct << " in " << name;
-					return -EINVAL;
-				}
-				calibration.table[num++] =
-					it->second.get_value<double>();
-			}
-			if (num != XY) {
+
+			const libcamera::YamlObject &table = p["table"];
+			if (table.size() != XY) {
 				LOG(RPiAlsc, Error)
-					<< "Too few values for ct " << ct << " in " << name;
+					<< "Incorrect number of values for ct "
+					<< ct << " in " << name;
 				return -EINVAL;
 			}
+
+			int num = 0;
+			for (const auto &elem : table.asList()) {
+				value = elem.get<double>();
+				if (!value)
+					return -EINVAL;
+				calibration.table[num++] = *value;
+			}
+
 			calibrations.push_back(calibration);
 			LOG(RPiAlsc, Debug)
 				<< "Read " << name << " calibration for ct " << ct;
@@ -140,30 +142,29 @@ static int readCalibrations(std::vector<AlscCalibration> &calibrations,
 	return 0;
 }
 
-int Alsc::read(boost::property_tree::ptree const &params)
+int Alsc::read(const libcamera::YamlObject &params)
 {
-	config_.framePeriod = params.get<uint16_t>("frame_period", 12);
-	config_.startupFrames = params.get<uint16_t>("startup_frames", 10);
-	config_.speed = params.get<double>("speed", 0.05);
-	double sigma = params.get<double>("sigma", 0.01);
-	config_.sigmaCr = params.get<double>("sigma_Cr", sigma);
-	config_.sigmaCb = params.get<double>("sigma_Cb", sigma);
-	config_.minCount = params.get<double>("min_count", 10.0);
-	config_.minG = params.get<uint16_t>("min_G", 50);
-	config_.omega = params.get<double>("omega", 1.3);
-	config_.nIter = params.get<uint32_t>("n_iter", X + Y);
+	config_.framePeriod = params["frame_period"].get<uint16_t>(12);
+	config_.startupFrames = params["startup_frames"].get<uint16_t>(10);
+	config_.speed = params["speed"].get<double>(0.05);
+	double sigma = params["sigma"].get<double>(0.01);
+	config_.sigmaCr = params["sigma_Cr"].get<double>(sigma);
+	config_.sigmaCb = params["sigma_Cb"].get<double>(sigma);
+	config_.minCount = params["min_count"].get<double>(10.0);
+	config_.minG = params["min_G"].get<uint16_t>(50);
+	config_.omega = params["omega"].get<double>(1.3);
+	config_.nIter = params["n_iter"].get<uint32_t>(X + Y);
 	config_.luminanceStrength =
-		params.get<double>("luminance_strength", 1.0);
+		params["luminance_strength"].get<double>(1.0);
 	for (int i = 0; i < XY; i++)
 		config_.luminanceLut[i] = 1.0;
 
 	int ret = 0;
 
-	if (params.get_child_optional("corner_strength"))
+	if (params.contains("corner_strength"))
 		ret = generateLut(config_.luminanceLut, params);
-	else if (params.get_child_optional("luminance_lut"))
-		ret = readLut(config_.luminanceLut,
-			      params.get_child("luminance_lut"));
+	else if (params.contains("luminance_lut"))
+		ret = readLut(config_.luminanceLut, params["luminance_lut"]);
 	else
 		LOG(RPiAlsc, Warning)
 			<< "no luminance table - assume unity everywhere";
@@ -177,9 +178,9 @@ int Alsc::read(boost::property_tree::ptree const &params)
 	if (ret)
 		return ret;
 
-	config_.defaultCt = params.get<double>("default_ct", 4500.0);
-	config_.threshold = params.get<double>("threshold", 1e-3);
-	config_.lambdaBound = params.get<double>("lambda_bound", 0.05);
+	config_.defaultCt = params["default_ct"].get<double>(4500.0);
+	config_.threshold = params["threshold"].get<double>(1e-3);
+	config_.lambdaBound = params["lambda_bound"].get<double>(0.05);
 
 	return 0;
 }

@@ -71,12 +71,6 @@ for improved debugging: [optional]
         information, and libunwind is not needed if both libdw and the glibc
         backtrace() function are available.
 
-for the Raspberry Pi IPA: [optional]
-        libboost-dev
-
-        Support for Raspberry Pi can be disabled through the meson
-         'pipelines' option to avoid this dependency.
-
 for device hotplug enumeration: [optional]
         libudev-dev
 

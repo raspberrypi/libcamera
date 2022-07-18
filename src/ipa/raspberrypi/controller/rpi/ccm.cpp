@@ -39,21 +39,22 @@ Matrix::Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
 	m[0][0] = m0, m[0][1] = m1, m[0][2] = m2, m[1][0] = m3, m[1][1] = m4,
 	m[1][2] = m5, m[2][0] = m6, m[2][1] = m7, m[2][2] = m8;
 }
-int Matrix::read(boost::property_tree::ptree const &params)
+int Matrix::read(const libcamera::YamlObject &params)
 {
 	double *ptr = (double *)m;
-	int n = 0;
-	for (auto it = params.begin(); it != params.end(); it++) {
-		if (n++ == 9) {
-			LOG(RPiCcm, Error) << "Too many values in CCM";
-			return -EINVAL;
-		}
-		*ptr++ = it->second.get_value<double>();
-	}
-	if (n < 9) {
-		LOG(RPiCcm, Error) << "Too few values in CCM";
+
+	if (params.size() != 9) {
+		LOG(RPiCcm, Error) << "Wrong number of values in CCM";
 		return -EINVAL;
 	}
+
+	for (const auto &param : params.asList()) {
+		auto value = param.get<double>();
+		if (!value)
+			return -EINVAL;
+		*ptr++ = *value;
+	}
+
 	return 0;
 }
 
@@ -65,27 +66,33 @@ char const *Ccm::name() const
 	return NAME;
 }
 
-int Ccm::read(boost::property_tree::ptree const &params)
+int Ccm::read(const libcamera::YamlObject &params)
 {
 	int ret;
 
-	if (params.get_child_optional("saturation")) {
-		ret = config_.saturation.read(params.get_child("saturation"));
+	if (params.contains("saturation")) {
+		ret = config_.saturation.read(params["saturation"]);
 		if (ret)
 			return ret;
 	}
 
-	for (auto &p : params.get_child("ccms")) {
+	for (auto &p : params["ccms"].asList()) {
+		auto value = p["ct"].get<double>();
+		if (!value)
+			return -EINVAL;
+
 		CtCcm ctCcm;
-		ctCcm.ct = p.second.get<double>("ct");
-		ret = ctCcm.ccm.read(p.second.get_child("ccm"));
+		ctCcm.ct = *value;
+		ret = ctCcm.ccm.read(p["ccm"]);
 		if (ret)
 			return ret;
-		if (!config_.ccms.empty() &&
-		    ctCcm.ct <= config_.ccms.back().ct) {
-			LOG(RPiCcm, Error) << "CCM not in increasing colour temperature order";
+
+		if (!config_.ccms.empty() && ctCcm.ct <= config_.ccms.back().ct) {
+			LOG(RPiCcm, Error)
+				<< "CCM not in increasing colour temperature order";
 			return -EINVAL;
 		}
+
 		config_.ccms.push_back(std::move(ctCcm));
 	}
 

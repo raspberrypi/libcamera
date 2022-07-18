@@ -5,13 +5,15 @@
  * controller.cpp - ISP controller
  */
 
+#include <assert.h>
+
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
+
+#include "libcamera/internal/yaml_parser.h"
 
 #include "algorithm.h"
 #include "controller.h"
-
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 
 using namespace RPiController;
 using namespace libcamera;
@@ -34,18 +36,25 @@ Controller::~Controller() {}
 
 int Controller::read(char const *filename)
 {
-	boost::property_tree::ptree root;
-	boost::property_tree::read_json(filename, root);
-	for (auto const &keyAndValue : root) {
-		Algorithm *algo = createAlgorithm(keyAndValue.first.c_str());
+	File file(filename);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		LOG(RPiController, Warning)
+			<< "Failed to open tuning file '" << filename << "'";
+		return -EINVAL;
+	}
+
+	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+
+	for (auto const &[key, value] : root->asDict()) {
+		Algorithm *algo = createAlgorithm(key.c_str());
 		if (algo) {
-			int ret = algo->read(keyAndValue.second);
+			int ret = algo->read(value);
 			if (ret)
 				return ret;
 			algorithms_.push_back(AlgorithmPtr(algo));
 		} else
 			LOG(RPiController, Warning)
-				<< "No algorithm found for \"" << keyAndValue.first << "\"";
+				<< "No algorithm found for \"" << key << "\"";
 	}
 
 	return 0;

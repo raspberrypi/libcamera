@@ -34,7 +34,7 @@ class Contrast : public ContrastAlgorithm
 public:
 	Contrast(Controller *controller = NULL);
 	char const *name() const override;
-	int read(boost::property_tree::ptree const &params) override;
+	int read(const libcamera::YamlObject &params) override;
 	void setBrightness(double brightness) override;
 	void setContrast(double contrast) override;
 	void initialise() override;

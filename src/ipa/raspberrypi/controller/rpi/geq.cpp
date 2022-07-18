@@ -35,17 +35,17 @@ char const *Geq::name() const
 	return NAME;
 }
 
-int Geq::read(boost::property_tree::ptree const &params)
+int Geq::read(const libcamera::YamlObject &params)
 {
-	config_.offset = params.get<uint16_t>("offset", 0);
-	config_.slope = params.get<double>("slope", 0.0);
+	config_.offset = params["offset"].get<uint16_t>(0);
+	config_.slope = params["slope"].get<double>(0.0);
 	if (config_.slope < 0.0 || config_.slope >= 1.0) {
 		LOG(RPiGeq, Error) << "Bad slope value";
 		return -EINVAL;
 	}
 
-	if (params.get_child_optional("strength")) {
-		int ret = config_.strength.read(params.get_child("strength"));
+	if (params.contains("strength")) {
+		int ret = config_.strength.read(params["strength"]);
 		if (ret)
 			return ret;
 	}

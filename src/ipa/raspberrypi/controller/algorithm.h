@@ -15,9 +15,9 @@
 #include <memory>
 #include <map>
 
-#include "controller.h"
+#include "libcamera/internal/yaml_parser.h"
 
-#include <boost/property_tree/ptree.hpp>
+#include "controller.h"
 
 namespace RPiController {
 
@@ -35,7 +35,7 @@ public:
 	virtual bool isPaused() const { return paused_; }
 	virtual void pause() { paused_ = true; }
 	virtual void resume() { paused_ = false; }
-	virtual int read(boost::property_tree::ptree const &params);
+	virtual int read(const libcamera::YamlObject &params);
 	virtual void initialise();
 	virtual void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	virtual void prepare(Metadata *imageMetadata);

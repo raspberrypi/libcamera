@@ -31,67 +31,76 @@ LOG_DEFINE_CATEGORY(RPiAgc)
 
 static constexpr unsigned int PipelineBits = 13; /* seems to be a 13-bit pipeline */
 
-int AgcMeteringMode::read(boost::property_tree::ptree const &params)
+int AgcMeteringMode::read(const libcamera::YamlObject &params)
 {
-	int num = 0;
-
-	for (auto &p : params.get_child("weights")) {
-		if (num == AgcStatsSize) {
-			LOG(RPiAgc, Error) << "AgcMeteringMode: too many weights";
-			return -EINVAL;
-		}
-		weights[num++] = p.second.get_value<double>();
+	const YamlObject &yamlWeights = params["weights"];
+	if (yamlWeights.size() != AgcStatsSize) {
+		LOG(RPiAgc, Error) << "AgcMeteringMode: Incorrect number of weights";
+		return -EINVAL;
 	}
 
-	if (num != AgcStatsSize) {
-		LOG(RPiAgc, Error) << "AgcMeteringMode: insufficient weights";
-		return -EINVAL;
+	unsigned int num = 0;
+	for (const auto &p : yamlWeights.asList()) {
+		auto value = p.get<double>();
+		if (!value)
+			return -EINVAL;
+		weights[num++] = *value;
 	}
 
 	return 0;
 }
 
 static std::tuple<int, std::string>
-readMeteringModes(std::map<std::string, AgcMeteringMode> &meteringModes,
-		  boost::property_tree::ptree const &params)
+readMeteringModes(std::map<std::string, AgcMeteringMode> &metering_modes,
+		  const libcamera::YamlObject &params)
 {
 	std::string first;
 	int ret;
 
-	for (auto &p : params) {
+	for (const auto &[key, value] : params.asDict()) {
 		AgcMeteringMode meteringMode;
-		ret = meteringMode.read(p.second);
+		ret = meteringMode.read(value);
 		if (ret)
 			return { ret, {} };
 
-		meteringModes[p.first] = std::move(meteringMode);
+		metering_modes[key] = std::move(meteringMode);
 		if (first.empty())
-			first = p.first;
+			first = key;
 	}
 
 	return { 0, first };
 }
 
 static int readList(std::vector<double> &list,
-		    boost::property_tree::ptree const &params)
+		    const libcamera::YamlObject &params)
 {
-	for (auto &p : params)
-		list.push_back(p.second.get_value<double>());
+	for (const auto &p : params.asList()) {
+		auto value = p.get<double>();
+		if (!value)
+			return -EINVAL;
+		list.push_back(*value);
+	}
+
 	return list.size();
 }
 
 static int readList(std::vector<Duration> &list,
-		    boost::property_tree::ptree const &params)
+		    const libcamera::YamlObject &params)
 {
-	for (auto &p : params)
-		list.push_back(p.second.get_value<double>() * 1us);
+	for (const auto &p : params.asList()) {
+		auto value = p.get<double>();
+		if (!value)
+			return -EINVAL;
+		list.push_back(*value * 1us);
+	}
+
 	return list.size();
 }
 
-int AgcExposureMode::read(boost::property_tree::ptree const &params)
+int AgcExposureMode::read(const libcamera::YamlObject &params)
 {
-	int numShutters = readList(shutter, params.get_child("shutter"));
-	int numAgs = readList(gain, params.get_child("gain"));
+	int numShutters = readList(shutter, params["shutter"]);
+	int numAgs = readList(gain, params["gain"]);
 
 	if (numShutters < 2 || numAgs < 2) {
 		LOG(RPiAgc, Error)
@@ -110,28 +119,28 @@ int AgcExposureMode::read(boost::property_tree::ptree const &params)
 
 static std::tuple<int, std::string>
 readExposureModes(std::map<std::string, AgcExposureMode> &exposureModes,
-		  boost::property_tree::ptree const &params)
+		  const libcamera::YamlObject &params)
 {
 	std::string first;
 	int ret;
 
-	for (auto &p : params) {
+	for (const auto &[key, value] : params.asDict()) {
 		AgcExposureMode exposureMode;
-		ret = exposureMode.read(p.second);
+		ret = exposureMode.read(value);
 		if (ret)
 			return { ret, {} };
 
-		exposureModes[p.first] = std::move(exposureMode);
+		exposureModes[key] = std::move(exposureMode);
 		if (first.empty())
-			first = p.first;
+			first = key;
 	}
 
 	return { 0, first };
 }
 
-int AgcConstraint::read(boost::property_tree::ptree const &params)
+int AgcConstraint::read(const libcamera::YamlObject &params)
 {
-	std::string boundString = params.get<std::string>("bound", "");
+	std::string boundString = params["bound"].get<std::string>("");
 	transform(boundString.begin(), boundString.end(),
 		  boundString.begin(), ::toupper);
 	if (boundString != "UPPER" && boundString != "LOWER") {
@@ -139,20 +148,29 @@ int AgcConstraint::read(boost::property_tree::ptree const &params)
 		return -EINVAL;
 	}
 	bound = boundString == "UPPER" ? Bound::UPPER : Bound::LOWER;
-	qLo = params.get<double>("q_lo");
-	qHi = params.get<double>("q_hi");
-	return yTarget.read(params.get_child("y_target"));
+
+	auto value = params["q_lo"].get<double>();
+	if (!value)
+		return -EINVAL;
+	qLo = *value;
+
+	value = params["q_hi"].get<double>();
+	if (!value)
+		return -EINVAL;
+	qHi = *value;
+
+	return yTarget.read(params["y_target"]);
 }
 
 static std::tuple<int, AgcConstraintMode>
-readConstraintMode(boost::property_tree::ptree const &params)
+readConstraintMode(const libcamera::YamlObject &params)
 {
 	AgcConstraintMode mode;
 	int ret;
 
-	for (auto &p : params) {
+	for (const auto &p : params.asList()) {
 		AgcConstraint constraint;
-		ret = constraint.read(p.second);
+		ret = constraint.read(p);
 		if (ret)
 			return { ret, {} };
 
@@ -164,53 +182,55 @@ readConstraintMode(boost::property_tree::ptree const &params)
 
 static std::tuple<int, std::string>
 readConstraintModes(std::map<std::string, AgcConstraintMode> &constraintModes,
-		    boost::property_tree::ptree const &params)
+		    const libcamera::YamlObject &params)
 {
 	std::string first;
 	int ret;
 
-	for (auto &p : params) {
-		std::tie(ret, constraintModes[p.first]) = readConstraintMode(p.second);
+	for (const auto &[key, value] : params.asDict()) {
+		std::tie(ret, constraintModes[key]) = readConstraintMode(value);
 		if (ret)
 			return { ret, {} };
 
 		if (first.empty())
-			first = p.first;
+			first = key;
 	}
 
 	return { 0, first };
 }
 
-int AgcConfig::read(boost::property_tree::ptree const &params)
+int AgcConfig::read(const libcamera::YamlObject &params)
 {
 	LOG(RPiAgc, Debug) << "AgcConfig";
 	int ret;
 
 	std::tie(ret, defaultMeteringMode) =
-		readMeteringModes(meteringModes, params.get_child("metering_modes"));
+		readMeteringModes(meteringModes, params["metering_modes"]);
 	if (ret)
 		return ret;
 	std::tie(ret, defaultExposureMode) =
-		readExposureModes(exposureModes, params.get_child("exposure_modes"));
+		readExposureModes(exposureModes, params["exposure_modes"]);
 	if (ret)
 		return ret;
 	std::tie(ret, defaultConstraintMode) =
-		readConstraintModes(constraintModes, params.get_child("constraint_modes"));
+		readConstraintModes(constraintModes, params["constraint_modes"]);
 	if (ret)
 		return ret;
 
-	ret = yTarget.read(params.get_child("y_target"));
+	ret = yTarget.read(params["y_target"]);
 	if (ret)
 		return ret;
 
-	speed = params.get<double>("speed", 0.2);
-	startupFrames = params.get<uint16_t>("startup_frames", 10);
-	convergenceFrames = params.get<unsigned int>("convergence_frames", 6);
-	fastReduceThreshold = params.get<double>("fast_reduce_threshold", 0.4);
-	baseEv = params.get<double>("base_ev", 1.0);
+	speed = params["speed"].get<double>(0.2);
+	startupFrames = params["startup_frames"].get<uint16_t>(10);
+	convergenceFrames = params["convergence_frames"].get<unsigned int>(6);
+	fastReduceThreshold = params["fast_reduce_threshold"].get<double>(0.4);
+	baseEv = params["base_ev"].get<double>(1.0);
+
 	/* Start with quite a low value as ramping up is easier than ramping down. */
-	defaultExposureTime = params.get<double>("default_exposure_time", 1000) * 1us;
-	defaultAnalogueGain = params.get<double>("default_analogueGain", 1.0);
+	defaultExposureTime = params["default_exposure_time"].get<double>(1000) * 1us;
+	defaultAnalogueGain = params["default_analogue_gain"].get<double>(1.0);
+
 	return 0;
 }
 
@@ -242,7 +262,7 @@ char const *Agc::name() const
 	return NAME;
 }
 
-int Agc::read(boost::property_tree::ptree const &params)
+int Agc::read(const libcamera::YamlObject &params)
 {
 	LOG(RPiAgc, Debug) << "Agc";
 

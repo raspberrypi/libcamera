@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>

@@ -22,7 +22,7 @@ class Lux : public Algorithm
 public:
 	Lux(Controller *controller);
 	char const *name() const override;
-	int read(boost::property_tree::ptree const &params) override;
+	int read(const libcamera::YamlObject &params) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 	void setCurrentAperture(double aperture);

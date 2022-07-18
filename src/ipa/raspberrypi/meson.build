@@ -4,7 +4,6 @@ ipa_name = 'ipa_rpi'
 
 rpi_ipa_deps = [
     libcamera_private,
-    dependency('boost'),
     libatomic,
 ]
 

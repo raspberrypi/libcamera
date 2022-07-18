@@ -1,106 +1,116 @@
+#!/usr/bin/env python3
+#
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2019, Raspberry Pi Ltd
+# Copyright 2022 Raspberry Pi Ltd
 #
-# ctt_pretty_print_json.py - camera tuning tool JSON formatter
+# Script to pretty print a Raspberry Pi tuning config JSON structure in
+# version 2.0 and later formats.
 
-import sys
+import argparse
+import json
+import textwrap
 
 
-class JSONPrettyPrinter(object):
-    """
-    Take a collapsed JSON file and make it more readable
-    """
-    def __init__(self, fout):
-        self.state = {
-            "indent": 0,
-            "inarray": [False],
-            "arraycount": [],
-            "skipnewline": True,
-            "need_indent": False,
-            "need_space": False,
+class Encoder(json.JSONEncoder):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.indentation_level = 0
+        self.hard_break = 120
+        self.custom_elems = {
+            'table': 16,
+            'luminance_lut': 16,
+            'ct_curve': 3,
+            'ccm': 3,
+            'gamma_curve': 2,
+            'y_target': 2,
+            'prior': 2
         }
 
-        self.fout = fout
-
-    def newline(self):
-        if not self.state["skipnewline"]:
-            self.fout.write('\n')
-            self.state["need_indent"] = True
-            self.state["need_space"] = False
-        self.state["skipnewline"] = True
-
-    def write(self, c):
-        if self.state["need_indent"]:
-            self.fout.write(' ' * self.state["indent"] * 4)
-            self.state["need_indent"] = False
-        if self.state["need_space"]:
-            self.fout.write(' ')
-            self.state["need_space"] = False
-        self.fout.write(c)
-        self.state["skipnewline"] = False
-
-    def process_char(self, c):
-        if c == '{':
-            self.newline()
-            self.write(c)
-            self.state["indent"] += 1
-            self.newline()
-        elif c == '}':
-            self.state["indent"] -= 1
-            self.newline()
-            self.write(c)
-        elif c == '[':
-            self.newline()
-            self.write(c)
-            self.state["indent"] += 1
-            self.newline()
-            self.state["inarray"] = [True] + self.state["inarray"]
-            self.state["arraycount"] = [0] + self.state["arraycount"]
-        elif c == ']':
-            self.state["indent"] -= 1
-            self.newline()
-            self.state["inarray"].pop(0)
-            self.state["arraycount"].pop(0)
-            self.write(c)
-        elif c == ':':
-            self.write(c)
-            self.state["need_space"] = True
-        elif c == ',':
-            if not self.state["inarray"][0]:
-                self.write(c)
-                self.newline()
-            else:
-                self.write(c)
-                self.state["arraycount"][0] += 1
-                if self.state["arraycount"][0] == 16:
-                    self.state["arraycount"][0] = 0
-                    self.newline()
+    def encode(self, o, node_key=None):
+        if isinstance(o, (list, tuple)):
+            # Check if we are a flat list of numbers.
+            if not any(isinstance(el, (list, tuple, dict)) for el in o):
+                s = ', '.join(json.dumps(el) for el in o)
+                if node_key in self.custom_elems.keys():
+                    # Special case handling to specify number of elements in a row for tables, ccm, etc.
+                    self.indentation_level += 1
+                    sl = s.split(', ')
+                    num = self.custom_elems[node_key]
+                    chunk = [self.indent_str + ', '.join(sl[x:x + num]) for x in range(0, len(sl), num)]
+                    t = ',\n'.join(chunk)
+                    self.indentation_level -= 1
+                    output = f'\n{self.indent_str}[\n{t}\n{self.indent_str}]'
+                elif len(s) > self.hard_break - len(self.indent_str):
+                    # Break a long list with wraps.
+                    self.indentation_level += 1
+                    t = textwrap.fill(s, self.hard_break, break_long_words=False,
+                                      initial_indent=self.indent_str, subsequent_indent=self.indent_str)
+                    self.indentation_level -= 1
+                    output = f'\n{self.indent_str}[\n{t}\n{self.indent_str}]'
                 else:
-                    self.state["need_space"] = True
-        elif c.isspace():
-            pass
+                    # Smaller lists can remain on a single line.
+                    output = f' [ {s} ]'
+                return output
+            else:
+                # Sub-structures in the list case.
+                self.indentation_level += 1
+                output = [self.indent_str + self.encode(el) for el in o]
+                self.indentation_level -= 1
+                output = ',\n'.join(output)
+                return f' [\n{output}\n{self.indent_str}]'
+
+        elif isinstance(o, dict):
+            self.indentation_level += 1
+            output = []
+            for k, v in o.items():
+                if isinstance(v, dict) and len(v) == 0:
+                    # Empty config block special case.
+                    output.append(self.indent_str + f'{json.dumps(k)}: {{ }}')
+                else:
+                    # Only linebreak if the next node is a config block.
+                    sep = f'\n{self.indent_str}' if isinstance(v, dict) else ''
+                    output.append(self.indent_str + f'{json.dumps(k)}:{sep}{self.encode(v, k)}')
+            output = ',\n'.join(output)
+            self.indentation_level -= 1
+            return f'{{\n{output}\n{self.indent_str}}}'
+
         else:
-            self.write(c)
+            return ' ' + json.dumps(o)
 
-    def print(self, string):
-        for c in string:
-            self.process_char(c)
-        self.newline()
+    @property
+    def indent_str(self) -> str:
+        return ' ' * self.indentation_level * self.indent
 
-
-def pretty_print_json(str_in, output_filename):
-    with open(output_filename, "w") as fout:
-        printer = JSONPrettyPrinter(fout)
-        printer.print(str_in)
+    def iterencode(self, o, **kwargs):
+        return self.encode(o)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: %s filename" % sys.argv[0])
-        sys.exit(1)
+def pretty_print(in_json: dict) -> str:
 
-    input_filename = sys.argv[1]
-    with open(input_filename, "r") as fin:
-        printer = JSONPrettyPrinter(sys.stdout)
-        printer.print(fin.read())
+    if 'version' not in in_json or \
+       'target' not in in_json or \
+       'algorithms' not in in_json or \
+       in_json['version'] < 2.0:
+        raise RuntimeError('Incompatible JSON dictionary has been provided')
+
+    return json.dumps(in_json, cls=Encoder, indent=4, sort_keys=False)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description=
+                    'Prettify a version 2.0 camera tuning config JSON file.')
+    parser.add_argument('input', type=str, help='Input tuning file.')
+    parser.add_argument('output', type=str, nargs='?',
+                        help='Output converted tuning file. If not provided, the input file will be updated in-place.',
+                        default=None)
+    args = parser.parse_args()
+
+    with open(args.input, 'r') as f:
+        in_json = json.load(f)
+
+    out_json = pretty_print(in_json)
+
+    with open(args.output if args.output is not None else args.input, 'w') as f:
+        f.write(out_json)

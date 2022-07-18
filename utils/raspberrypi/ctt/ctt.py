@@ -15,7 +15,7 @@ from ctt_alsc import *
 from ctt_lux import *
 from ctt_noise import *
 from ctt_geq import *
-from ctt_pretty_print_json import *
+from ctt_pretty_print_json import pretty_print
 import random
 import json
 import re
@@ -511,13 +511,17 @@ class Camera:
     """
     def write_json(self):
         """
-        Write json dictionary to file
+        Write json dictionary to file using our version 2 format
         """
-        jstring = json.dumps(self.json, sort_keys=False)
-        """
-        make it pretty :)
-        """
-        pretty_print_json(jstring, self.jf)
+
+        out_json = {
+            "version": 2.0,
+            'target': 'bcm2835',
+            "algorithms": [{name: data} for name, data in self.json.items()],
+        }
+
+        with open(self.jf, 'w') as f:
+            f.write(pretty_print(out_json))
 
     """
     add a new section to the log file

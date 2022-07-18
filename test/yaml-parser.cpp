@@ -32,8 +32,8 @@ static const string testYaml =
 	"  - Mary\n"
 	"dictionary:\n"
 	"  a: 1\n"
-	"  b: 2\n"
 	"  c: 3\n"
+	"  b: 2\n"
 	"level1:\n"
 	"  level2:\n"
 	"    - [1, 2]\n"
@@ -448,10 +448,10 @@ protected:
 			return TestFail;
 		}
 
-		std::map<std::string, int> dictValues{ {
+		static constexpr std::array<std::pair<const char *, int>, 3> dictValues{ {
 			{ "a", 1 },
-			{ "b", 2 },
 			{ "c", 3 },
+			{ "b", 2 },
 		} };
 
 		size_t dictSize = dictValues.size();
@@ -469,8 +469,8 @@ protected:
 				return TestFail;
 			}
 
-			const auto item = dictValues.find(key);
-			if (item == dictValues.end()) {
+			const auto &item = dictValues[i];
+			if (item.first != key) {
 				std::cerr << "Dictionary key " << i << " has wrong value"
 					  << std::endl;
 				return TestFail;
@@ -482,17 +482,12 @@ protected:
 				return TestFail;
 			}
 
-			if (elem.get<int32_t>(0) != item->second) {
+			if (elem.get<int32_t>(0) != item.second) {
 				std::cerr << "Dictionary element " << i << " has wrong value"
 					  << std::endl;
 				return TestFail;
 			}
 
-			/*
-			 * Erase the item to make sure that each iteration
-			 * produces a different value.
-			 */
-			dictValues.erase(item);
 			i++;
 		}
 

@@ -349,7 +349,7 @@ Request::Request(Camera *camera, uint64_t cookie)
 				    camera->_d()->validator());
 
 	/**
-	 * \todo: Add a validator for metadata controls.
+	 * \todo Add a validator for metadata controls.
 	 */
 	metadata_ = new ControlList(controls::controls);
 

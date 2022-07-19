@@ -184,12 +184,12 @@ void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
  * This function adjusts the camera configuration to the closest valid
  * configuration and returns the validation status.
  *
- * \todo: Define exactly when to return each status code. Should stream
+ * \todo Define exactly when to return each status code. Should stream
  * parameters set to 0 by the caller be adjusted without returning Adjusted ?
  * This would potentially be useful for applications but would get in the way
  * in Camera::configure(). Do we need an extra status code to signal this ?
  *
- * \todo: Handle validation of buffers count when refactoring the buffers API.
+ * \todo Handle validation of buffers count when refactoring the buffers API.
  *
  * \return A CameraConfiguration::Status value that describes the validation
  * status.

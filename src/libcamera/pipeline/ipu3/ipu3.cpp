@@ -552,7 +552,7 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/*
-	 * \todo: Enable links selectively based on the requested streams.
+	 * \todo Enable links selectively based on the requested streams.
 	 * As of now, enable all links unconditionally.
 	 * \todo Don't configure the ImgU at all if we only have a single
 	 * stream which is for raw capture, in which case no buffers will

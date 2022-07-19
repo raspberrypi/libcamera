@@ -908,7 +908,7 @@ ControlList::ControlList(const ControlInfoMap &infoMap,
 void ControlList::merge(const ControlList &source)
 {
 	/**
-	 * \todo: ASSERT that the current and source ControlList are derived
+	 * \todo ASSERT that the current and source ControlList are derived
 	 * from a compatible ControlIdMap, to prevent undefined behaviour due to
 	 * id collisions.
 	 *

@@ -229,7 +229,7 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext *frameContext,
 
 	/*
 	 * Filter the exposure.
-	 * \todo: estimate if we need to desaturate
+	 * \todo estimate if we need to desaturate
 	 */
 	exposureValue = filterExposure(exposureValue);
 

@@ -50,7 +50,7 @@ protected:
 			return TestFail;
 		}
 
-		if (list.contains(controls::Brightness)) {
+		if (list.get(controls::Brightness)) {
 			cout << "List should not contain Brightness control" << endl;
 			return TestFail;
 		}
@@ -80,7 +80,7 @@ protected:
 			return TestFail;
 		}
 
-		if (!list.contains(controls::Brightness)) {
+		if (!list.get(controls::Brightness)) {
 			cout << "List should contain Brightness control" << endl;
 			return TestFail;
 		}
@@ -99,7 +99,7 @@ protected:
 			return TestFail;
 		}
 
-		if (list.contains(controls::Contrast)) {
+		if (list.get(controls::Contrast)) {
 			cout << "List should not contain Contract control" << endl;
 			return TestFail;
 		}
@@ -108,8 +108,8 @@ protected:
 		list.set(controls::Brightness, 0.0f);
 		list.set(controls::Contrast, 1.5f);
 
-		if (!list.contains(controls::Brightness) ||
-		    !list.contains(controls::Contrast)) {
+		if (!list.get(controls::Brightness) ||
+		    !list.get(controls::Contrast)) {
 			cout << "List should contain Brightness and Contrast controls"
 			     << endl;
 			return TestFail;
@@ -145,7 +145,7 @@ protected:
 		 */
 		list.set(controls::AwbEnable, true);
 
-		if (list.contains(controls::AwbEnable)) {
+		if (list.get(controls::AwbEnable)) {
 			cout << "List shouldn't contain AwbEnable control" << endl;
 			return TestFail;
 		}
@@ -171,9 +171,9 @@ protected:
 			return TestFail;
 		}
 
-		if (!mergeList.contains(controls::Brightness) ||
-		    !mergeList.contains(controls::Contrast) ||
-		    !mergeList.contains(controls::Saturation)) {
+		if (!mergeList.get(controls::Brightness) ||
+		    !mergeList.get(controls::Contrast) ||
+		    !mergeList.get(controls::Saturation)) {
 			cout << "Merged list does not contain all controls" << endl;
 			return TestFail;
 		}

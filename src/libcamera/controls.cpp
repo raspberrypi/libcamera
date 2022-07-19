@@ -954,7 +954,7 @@ bool ControlList::contains(unsigned int id) const
 }
 
 /**
- * \fn template<typename T> T ControlList::get(const Control<T> &ctrl) const
+ * \fn ControlList::get(const Control<T> &ctrl) const
  * \brief Get the value of control \a ctrl
  * \param[in] ctrl The control
  *
@@ -969,7 +969,7 @@ bool ControlList::contains(unsigned int id) const
  */
 
 /**
- * \fn template<typename T, typename V> void ControlList::set(const Control<T> &ctrl, const V &value)
+ * \fn ControlList::set(const Control<T> &ctrl, const V &value)
  * \brief Set the control \a ctrl value to \a value
  * \param[in] ctrl The control
  * \param[in] value The control value
@@ -983,8 +983,7 @@ bool ControlList::contains(unsigned int id) const
  */
 
 /**
- * \fn template<typename T, typename V> \
- * void ControlList::set(const Control<T> &ctrl, const std::initializer_list<V> &value)
+ * \fn ControlList::set(const Control<T> &ctrl, const std::initializer_list<V> &value)
  * \copydoc ControlList::set(const Control<T> &ctrl, const V &value)
  */
 

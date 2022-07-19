@@ -933,17 +933,6 @@ void ControlList::merge(const ControlList &source)
 
 /**
  * \brief Check if the list contains a control with the specified \a id
- * \param[in] id The control ID
- *
- * \return True if the list contains a matching control, false otherwise
- */
-bool ControlList::contains(const ControlId &id) const
-{
-	return controls_.find(id.id()) != controls_.end();
-}
-
-/**
- * \brief Check if the list contains a control with the specified \a id
  * \param[in] id The control numerical ID
  *
  * \return True if the list contains a matching control, false otherwise
@@ -957,6 +946,10 @@ bool ControlList::contains(unsigned int id) const
  * \fn ControlList::get(const Control<T> &ctrl) const
  * \brief Get the value of control \a ctrl
  * \param[in] ctrl The control
+ *
+ * Beside getting the value of a control, this function can also be used to
+ * check if a control is present in the ControlList by converting the returned
+ * std::optional<T> to bool (or calling its has_value() function).
  *
  * \return A std::optional<T> containing the control value, or std::nullopt if
  * the control \a ctrl is not present in the list

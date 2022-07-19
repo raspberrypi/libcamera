@@ -370,7 +370,6 @@ public:
 	void clear() { controls_.clear(); }
 	void merge(const ControlList &source);
 
-	bool contains(const ControlId &id) const;
 	bool contains(unsigned int id) const;
 
 	template<typename T>

@@ -958,14 +958,8 @@ bool ControlList::contains(unsigned int id) const
  * \brief Get the value of control \a ctrl
  * \param[in] ctrl The control
  *
- * The behaviour is undefined if the control \a ctrl is not present in the
- * list. Use ControlList::contains() to test for the presence of a control in
- * the list before retrieving its value.
- *
- * The control value type shall match the type T, otherwise the behaviour is
- * undefined.
- *
- * \return The control value
+ * \return A std::optional<T> containing the control value, or std::nullopt if
+ * the control \a ctrl is not present in the list
  */
 
 /**

@@ -24,8 +24,8 @@ cam_sources = files([
 cam_cpp_args = []
 
 libdrm = dependency('libdrm', required : false)
+libjpeg = dependency('libjpeg', required : false)
 libsdl2 = dependency('SDL2', required : false)
-libsdl2_image = dependency('SDL2_image', required : false)
 
 if libdrm.found()
     cam_cpp_args += [ '-DHAVE_KMS' ]
@@ -43,8 +43,8 @@ if libsdl2.found()
         'sdl_texture_yuyv.cpp'
     ])
 
-    if libsdl2_image.found()
-        cam_cpp_args += ['-DHAVE_SDL_IMAGE']
+    if libjpeg.found()
+        cam_cpp_args += ['-DHAVE_LIBJPEG']
         cam_sources += files([
             'sdl_texture_mjpg.cpp'
         ])
@@ -57,8 +57,8 @@ cam  = executable('cam', cam_sources,
                       libcamera_public,
                       libdrm,
                       libevent,
+                      libjpeg,
                       libsdl2,
-                      libsdl2_image,
                       libyaml,
                   ],
                   cpp_args : cam_cpp_args,

@@ -86,8 +86,8 @@ for cam: [optional]
         tool:
 
         - libdrm-dev: Enables the KMS sink
+        - libjpeg-dev: Enables MJPEG on the SDL sink
         - libsdl2-dev: Enables the SDL sink
-        - libsdl2-image-dev: Supports MJPEG on the SDL sink
 
 for qcam: [optional]
         qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5 qttools5-dev-tools libtiff-dev

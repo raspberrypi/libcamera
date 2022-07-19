@@ -21,7 +21,7 @@
 
 #include "event_loop.h"
 #include "image.h"
-#ifdef HAVE_SDL_IMAGE
+#ifdef HAVE_LIBJPEG
 #include "sdl_texture_mjpg.h"
 #endif
 #include "sdl_texture_yuyv.h"
@@ -62,7 +62,7 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 	rect_.h = cfg.size.height;
 
 	switch (cfg.pixelFormat) {
-#ifdef HAVE_SDL_IMAGE
+#ifdef HAVE_LIBJPEG
 	case libcamera::formats::MJPEG:
 		texture_ = std::make_unique<SDLTextureMJPG>(rect_);
 		break;

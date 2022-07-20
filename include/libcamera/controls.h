@@ -375,11 +375,12 @@ public:
 	template<typename T>
 	std::optional<T> get(const Control<T> &ctrl) const
 	{
-		const ControlValue *val = find(ctrl.id());
-		if (!val)
+		const auto entry = controls_.find(ctrl.id());
+		if (entry == controls_.end())
 			return std::nullopt;
 
-		return val->get<T>();
+		const ControlValue &val = entry->second;
+		return val.get<T>();
 	}
 
 	template<typename T, typename V>

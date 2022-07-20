@@ -82,6 +82,22 @@ namespace ipa {
  */
 
 /**
+ * \fn Algorithm::queueRequest()
+ * \brief Provide control values to the algorithm
+ * \param[in] context The shared IPA context
+ * \param[in] frame The frame number to apply the control values
+ * \param[in] controls The list of user controls
+ *
+ * This function is called for each request queued to the camera. It provides
+ * the controls stored in the request to the algorithm. The \a frame number
+ * is the Request sequence number and identifies the desired corresponding
+ * frame to target for the controls to take effect.
+ *
+ * Algorithms shall read the applicable controls and store their value for later
+ * use during frame processing.
+ */
+
+/**
  * \fn Algorithm::process()
  * \brief Process ISP statistics, and run algorithm operations
  * \param[in] context The shared IPA context

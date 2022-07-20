@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 
+#include <libcamera/controls.h>
+
 namespace libcamera {
 
 class YamlObject;
@@ -37,6 +39,12 @@ public:
 
 	virtual void prepare([[maybe_unused]] typename Module::Context &context,
 			     [[maybe_unused]] typename Module::Params *params)
+	{
+	}
+
+	virtual void queueRequest([[maybe_unused]] typename Module::Context &context,
+				  [[maybe_unused]] const uint32_t frame,
+				  [[maybe_unused]] const ControlList &controls)
 	{
 	}
 

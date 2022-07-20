@@ -265,10 +265,10 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARkISP1::queueRequest([[maybe_unused]] const uint32_t frame,
-			     [[maybe_unused]] const ControlList &controls)
+void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 {
-	/* \todo Start processing for 'frame' based on 'controls'. */
+	for (auto const &algo : algorithms())
+		algo->queueRequest(context_, frame, controls);
 }
 
 void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)

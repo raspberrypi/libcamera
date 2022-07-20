@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <libcamera/base/signal.h>
@@ -57,14 +58,17 @@ public:
 	Signal<FrameBuffer *> &bufferReady() { return video_->bufferReady; }
 
 private:
+	void populateFormats();
+
 	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
 	const char *name_;
 	bool running_;
 
 	const Span<const PixelFormat> formats_;
-	const Size minResolution_;
-	const Size maxResolution_;
+	std::set<PixelFormat> streamFormats_;
+	Size minResolution_;
+	Size maxResolution_;
 
 	std::unique_ptr<V4L2Subdevice> resizer_;
 	std::unique_ptr<V4L2VideoDevice> video_;

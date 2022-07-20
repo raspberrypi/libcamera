@@ -41,11 +41,48 @@ bool RkISP1Path::init(MediaDevice *media)
 	if (video_->open() < 0)
 		return false;
 
+	populateFormats();
+
 	link_ = media->link("rkisp1_isp", 2, resizer, 0);
 	if (!link_)
 		return false;
 
 	return true;
+}
+
+void RkISP1Path::populateFormats()
+{
+	V4L2VideoDevice::Formats v4l2Formats = video_->formats();
+	if (v4l2Formats.empty()) {
+		LOG(RkISP1, Info)
+			<< "Failed to enumerate supported formats and sizes, using defaults";
+
+		for (const PixelFormat &format : formats_)
+			streamFormats_.insert(format);
+		return;
+	}
+
+	minResolution_ = { 65535, 65535 };
+	maxResolution_ = { 0, 0 };
+
+	std::vector<PixelFormat> formats;
+	for (const auto &[format, sizes] : v4l2Formats) {
+		const PixelFormat pixelFormat = format.toPixelFormat();
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+
+		/* \todo Add support for RAW formats. */
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			continue;
+
+		streamFormats_.insert(pixelFormat);
+
+		for (const auto &size : sizes) {
+			if (minResolution_ > size.min)
+				minResolution_ = size.min;
+			if (maxResolution_ < size.max)
+				maxResolution_ = size.max;
+		}
+	}
 }
 
 StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
@@ -55,7 +92,7 @@ StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
 	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
 
 	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-	for (const PixelFormat &format : formats_)
+	for (const auto &format : streamFormats_)
 		streamFormats[format] = { { minResolution, maxResolution } };
 
 	StreamFormats formats(streamFormats);
@@ -72,8 +109,12 @@ CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
 	const StreamConfiguration reqCfg = *cfg;
 	CameraConfiguration::Status status = CameraConfiguration::Valid;
 
-	if (std::find(formats_.begin(), formats_.end(), cfg->pixelFormat) ==
-	    formats_.end())
+	/*
+	 * Default to NV12 if the requested format is not supported. All
+	 * versions of the ISP are guaranteed to support NV12 on both the main
+	 * and self paths.
+	 */
+	if (!streamFormats_.count(cfg->pixelFormat))
 		cfg->pixelFormat = formats::NV12;
 
 	cfg->size.boundTo(maxResolution_);
@@ -204,6 +245,10 @@ void RkISP1Path::stop()
 	running_ = false;
 }
 
+/*
+ * \todo Remove the hardcoded resolutions and formats once all users will have
+ * migrated to a recent enough kernel.
+ */
 namespace {
 constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };

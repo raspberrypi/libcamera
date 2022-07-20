@@ -14,7 +14,7 @@ SDLTextureYUYV::SDLTextureYUYV(const SDL_Rect &rect)
 {
 }
 
-void SDLTextureYUYV::update(const Span<uint8_t> &data)
+void SDLTextureYUYV::update(Span<const uint8_t> data)
 {
 	SDL_UpdateTexture(ptr_, &rect_, data.data(), pitch_);
 }

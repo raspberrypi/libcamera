@@ -607,9 +607,6 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 
 	IPAFrameContext &frameContext = context_.frameContexts[frame % kMaxFrameContexts];
 
-	if (frameContext.frame != frame)
-		LOG(IPAIPU3, Warning) << "Frame " << frame << " does not match its frame context";
-
 	frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
@@ -654,7 +651,7 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 void IPAIPU3::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	/* \todo Start processing for 'frame' based on 'controls'. */
-	context_.frameContexts[frame % kMaxFrameContexts] = { frame, controls };
+	context_.frameContexts[frame % kMaxFrameContexts] = { controls };
 }
 
 /**

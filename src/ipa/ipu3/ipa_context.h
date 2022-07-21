@@ -17,6 +17,8 @@
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
+#include <libipa/fc_queue.h>
+
 namespace libcamera {
 
 namespace ipa::ipu3 {
@@ -76,16 +78,15 @@ struct IPAActiveState {
 	} toneMapping;
 };
 
-struct IPAFrameContext {
+struct IPAFrameContext : public FrameContext {
 	IPAFrameContext();
-	IPAFrameContext(uint32_t id, const ControlList &reqControls);
+	IPAFrameContext(const ControlList &reqControls);
 
 	struct {
 		uint32_t exposure;
 		double gain;
 	} sensor;
 
-	uint32_t frame;
 	ControlList frameControls;
 };
 

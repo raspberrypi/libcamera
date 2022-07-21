@@ -36,22 +36,6 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \struct IPAFrameContext
- * \brief Context for a frame
- *
- * The frame context stores data specific to a single frame processed by the
- * IPA. Each frame processed by the IPA has a context associated with it,
- * accessible through the IPAContext structure.
- *
- * Fields in the frame context should reflect values and controls
- * associated with the specific frame as requested by the application, and
- * as configured by the hardware. Fields can be read by algorithms to
- * determine if they should update any specific action for this frame, and
- * finally to update the metadata control lists when the frame is fully
- * completed.
- */
-
-/**
  * \struct IPAContext
  * \brief Global IPA context data shared between all algorithms
  *
@@ -188,15 +172,15 @@ IPAFrameContext::IPAFrameContext() = default;
 /**
  * \brief Construct a IPAFrameContext instance
  */
-IPAFrameContext::IPAFrameContext(uint32_t id, const ControlList &reqControls)
-	: frame(id), frameControls(reqControls)
+IPAFrameContext::IPAFrameContext(const ControlList &reqControls)
+	: frameControls(reqControls)
 {
 	sensor = {};
 }
 
 /**
- * \var IPAFrameContext::frame
- * \brief The frame number
+ * \struct IPAFrameContext
+ * \brief IPU3-specific FrameContext
  *
  * \var IPAFrameContext::frameControls
  * \brief Controls sent in by the application while queuing the request

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/log.h>
@@ -16,6 +17,15 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(FCQueue)
 
 namespace ipa {
+
+template<typename FrameContext>
+class FCQueue;
+
+struct FrameContext {
+private:
+	template<typename T> friend class FCQueue;
+	uint32_t frame;
+};
 
 template<typename FrameContext>
 class FCQueue

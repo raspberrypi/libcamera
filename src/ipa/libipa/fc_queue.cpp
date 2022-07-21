@@ -21,6 +21,24 @@ namespace ipa {
  */
 
 /**
+ * \struct FrameContext
+ * \brief Context for a frame
+ *
+ * The frame context stores data specific to a single frame processed by the
+ * IPA module. Each frame processed by the IPA module has a context associated
+ * with it, accessible through the Frame Context Queue.
+ *
+ * Fields in the frame context should reflect values and controls associated
+ * with the specific frame as requested by the application, and as configured by
+ * the hardware. Fields can be read by algorithms to determine if they should
+ * update any specific action for this frame, and finally to update the metadata
+ * control lists when the frame is fully completed.
+ *
+ * \var FrameContext::frame
+ * \brief The frame number
+ */
+
+/**
  * \class FCQueue
  * \brief A support class for managing FrameContext instances in IPA modules
  * \tparam FrameContext The IPA module-specific FrameContext derived class type
@@ -65,6 +83,10 @@ namespace ipa {
  * allowed to overflow, which must be ensured by pipeline handlers never
  * queuing more in-flight requests to the IPA module than the queue size. If an
  * overflow condition is detected, the queue will log a fatal error.
+ *
+ * IPA module-specific frame context implementations shall inherit from the
+ * FrameContext base class to support the minimum required features for a
+ * FrameContext.
  */
 
 /**

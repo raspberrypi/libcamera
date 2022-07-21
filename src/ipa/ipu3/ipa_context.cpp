@@ -165,20 +165,6 @@ namespace libcamera::ipa::ipu3 {
  */
 
 /**
- * \brief Default constructor for IPAFrameContext
- */
-IPAFrameContext::IPAFrameContext() = default;
-
-/**
- * \brief Construct a IPAFrameContext instance
- */
-IPAFrameContext::IPAFrameContext(const ControlList &reqControls)
-	: frameControls(reqControls)
-{
-	sensor = {};
-}
-
-/**
  * \struct IPAFrameContext
  * \brief IPU3-specific FrameContext
  *

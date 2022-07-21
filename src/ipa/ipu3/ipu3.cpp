@@ -40,6 +40,8 @@
 #include "algorithms/tone_mapping.h"
 #include "libipa/camera_sensor_helper.h"
 
+#include "ipa_context.h"
+
 /* Minimum grid width, expressed as a number of cells */
 static constexpr uint32_t kMinGridWidth = 16;
 /* Maximum grid width, expressed as a number of cells */
@@ -52,6 +54,9 @@ static constexpr uint32_t kMaxGridHeight = 60;
 static constexpr uint32_t kMinCellSizeLog2 = 3;
 /* log2 of the maximum grid cell width and height, in pixels */
 static constexpr uint32_t kMaxCellSizeLog2 = 6;
+
+/* Maximum number of frame contexts to be held */
+static constexpr uint32_t kMaxFrameContexts = 16;
 
 namespace libcamera {
 
@@ -135,6 +140,8 @@ namespace ipa::ipu3 {
 class IPAIPU3 : public IPAIPU3Interface, public Module
 {
 public:
+	IPAIPU3();
+
 	int init(const IPASettings &settings,
 		 const IPACameraSensorInfo &sensorInfo,
 		 const ControlInfoMap &sensorControls,
@@ -183,6 +190,11 @@ private:
 	struct IPAContext context_;
 };
 
+IPAIPU3::IPAIPU3()
+	: context_({ {}, {}, { kMaxFrameContexts } })
+{
+}
+
 std::string IPAIPU3::logPrefix() const
 {
 	return "ipu3";
@@ -204,6 +216,11 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
 	int32_t minGain = v4l2Gain.min().get<int32_t>();
 	int32_t maxGain = v4l2Gain.max().get<int32_t>();
+
+	/* Clear the IPA context before the streaming session. */
+	context_.configuration = {};
+	context_.activeState = {};
+	context_.frameContexts.clear();
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
@@ -382,6 +399,7 @@ int IPAIPU3::start()
  */
 void IPAIPU3::stop()
 {
+	context_.frameContexts.clear();
 }
 
 /**
@@ -488,11 +506,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
 
-	/* Clean IPAActiveState at each reconfiguration. */
-	context_.activeState = {};
-	IPAFrameContext initFrameContext;
-	context_.frameContexts.fill(initFrameContext);
-
 	if (!validateSensorControls()) {
 		LOG(IPAIPU3, Error) << "Sensor control validation failed.";
 		return -EINVAL;
@@ -572,7 +585,7 @@ void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	 */
 	params->use = {};
 
-	IPAFrameContext &frameContext = context_.frameContexts[frame % kMaxFrameContexts];
+	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params);
@@ -605,7 +618,7 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	const ipu3_uapi_stats_3a *stats =
 		reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
-	IPAFrameContext &frameContext = context_.frameContexts[frame % kMaxFrameContexts];
+	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
 	frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
@@ -651,7 +664,10 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 void IPAIPU3::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	/* \todo Start processing for 'frame' based on 'controls'. */
-	context_.frameContexts[frame % kMaxFrameContexts] = { controls };
+	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
+
+	/* \todo Implement queueRequest to each algorithm. */
+	frameContext.frameControls = controls;
 }
 
 /**

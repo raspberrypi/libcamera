@@ -663,11 +663,10 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
  */
 void IPAIPU3::queueRequest(const uint32_t frame, const ControlList &controls)
 {
-	/* \todo Start processing for 'frame' based on 'controls'. */
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
 
-	/* \todo Implement queueRequest to each algorithm. */
-	frameContext.frameControls = controls;
+	for (auto const &algo : algorithms())
+		algo->queueRequest(context_, frame, frameContext, controls);
 }
 
 /**

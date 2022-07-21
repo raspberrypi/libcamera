@@ -168,9 +168,6 @@ namespace libcamera::ipa::ipu3 {
  * \struct IPAFrameContext
  * \brief IPU3-specific FrameContext
  *
- * \var IPAFrameContext::frameControls
- * \brief Controls sent in by the application while queuing the request
- *
  * \var IPAFrameContext::sensor
  * \brief Effective sensor values that were applied for the frame
  *

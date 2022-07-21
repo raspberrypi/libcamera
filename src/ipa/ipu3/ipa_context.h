@@ -12,7 +12,6 @@
 
 #include <libcamera/base/utils.h>
 
-#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include <libipa/fc_queue.h>
@@ -78,8 +77,6 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 	} sensor;
-
-	ControlList frameControls;
 };
 
 struct IPAContext {

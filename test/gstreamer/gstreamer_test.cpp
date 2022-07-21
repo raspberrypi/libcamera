@@ -5,6 +5,8 @@
  * libcamera Gstreamer element API tests
  */
 
+#include <libcamera/libcamera.h>
+
 #include <libcamera/base/utils.h>
 
 #include "gstreamer_test.h"
@@ -25,7 +27,7 @@ const char *__asan_default_options()
 }
 }
 
-GstreamerTest::GstreamerTest()
+GstreamerTest::GstreamerTest(unsigned int numStreams)
 	: pipeline_(nullptr), libcameraSrc_(nullptr)
 {
 	/*
@@ -67,7 +69,36 @@ GstreamerTest::GstreamerTest()
 		return;
 	}
 
+	/*
+	 * Atleast one camera should be available with numStreams streams,
+	 * otherwise skip the test entirely.
+	 */
+	if (!checkMinCameraStreams(numStreams)) {
+		status_ = TestSkip;
+		return;
+	}
+
 	status_ = TestPass;
+}
+
+bool GstreamerTest::checkMinCameraStreams(unsigned int numStreams)
+{
+	libcamera::CameraManager cm;
+	bool cameraFound = false;
+
+	cm.start();
+
+	for (auto &camera : cm.cameras()) {
+		if (camera->streams().size() < numStreams)
+			continue;
+
+		cameraFound = true;
+		break;
+	}
+
+	cm.stop();
+
+	return cameraFound;
 }
 
 GstreamerTest::~GstreamerTest()

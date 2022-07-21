@@ -205,8 +205,7 @@ namespace libcamera::ipa::rkisp1 {
  * \struct IPAFrameContext
  * \brief Per-frame context for algorithms
  *
- * This structure is currently unused and will be replaced by a real per-frame
- * context.
+ * \todo Populate the frame context for all algorithms
  */
 
 /**
@@ -219,7 +218,8 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAContext::activeState
  * \brief The IPA active state, storing the latest state for all algorithms
  *
- * \todo Introduce per-frame contexts
+ * \var IPAContext::frameContexts
+ * \brief Ring buffer of per-frame contexts
  */
 
 } /* namespace libcamera::ipa::rkisp1 */

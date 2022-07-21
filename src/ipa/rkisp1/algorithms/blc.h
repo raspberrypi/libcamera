@@ -20,7 +20,9 @@ public:
 	~BlackLevelCorrection() = default;
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
-	void prepare(IPAContext &context, rkisp1_params_cfg *params) override;
+	void prepare(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameContext,
+		     rkisp1_params_cfg *params) override;
 
 private:
 	bool tuningParameters_;

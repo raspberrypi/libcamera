@@ -39,13 +39,17 @@ BlackLevelCorrection::BlackLevelCorrection()
 /**
  * \brief Fill in the parameter structure, and enable black level correction
  * \param[in] context The shared IPA context
+ * \param[in] frame The frame context sequence number
+ * \param[in] frameContext The FrameContext for this frame
  * \param[out] params The IPU3 parameters
  *
  * Populate the IPU3 parameter structure with the correction values for each
  * channel and enable the corresponding ImgU block processing.
  */
 void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
-			      ipu3_uapi_params *params)
+				   [[maybe_unused]] const uint32_t frame,
+				   [[maybe_unused]] IPAFrameContext &frameContext,
+				   ipu3_uapi_params *params)
 {
 	/*
 	 * The Optical Black Level correction values

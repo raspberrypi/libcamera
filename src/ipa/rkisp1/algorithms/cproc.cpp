@@ -71,6 +71,8 @@ void ColorProcessing::queueRequest(IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void ColorProcessing::prepare(IPAContext &context,
+			      [[maybe_unused]] const uint32_t frame,
+			      [[maybe_unused]] IPAFrameContext &frameContext,
 			      rkisp1_params_cfg *params)
 {
 	auto &cproc = context.frameContext.cproc;

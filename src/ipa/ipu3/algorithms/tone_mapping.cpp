@@ -50,12 +50,16 @@ int ToneMapping::configure(IPAContext &context,
 /**
  * \brief Fill in the parameter structure, and enable gamma control
  * \param[in] context The shared IPA context
+ * \param[in] frame The frame context sequence number
+ * \param[in] frameContext The FrameContext for this frame
  * \param[out] params The IPU3 parameters
  *
  * Populate the IPU3 parameter structure with our tone mapping look up table and
  * enable the gamma control module in the processing blocks.
  */
 void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
+			  [[maybe_unused]] const uint32_t frame,
+			  [[maybe_unused]] IPAFrameContext &frameContext,
 			  ipu3_uapi_params *params)
 {
 	/* Copy the calculated LUT into the parameters buffer. */

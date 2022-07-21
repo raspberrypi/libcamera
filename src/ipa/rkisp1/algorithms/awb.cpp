@@ -74,7 +74,10 @@ uint32_t Awb::estimateCCT(double red, double green, double blue)
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Awb::prepare(IPAContext &context, rkisp1_params_cfg *params)
+void Awb::prepare(IPAContext &context,
+		  [[maybe_unused]] const uint32_t frame,
+		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  rkisp1_params_cfg *params)
 {
 	params->others.awb_gain_config.gain_green_b = 256 * context.frameContext.awb.gains.green;
 	params->others.awb_gain_config.gain_blue = 256 * context.frameContext.awb.gains.blue;

@@ -572,8 +572,10 @@ void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	 */
 	params->use = {};
 
+	IPAFrameContext &frameContext = context_.frameContexts[frame % kMaxFrameContexts];
+
 	for (auto const &algo : algorithms())
-		algo->prepare(context_, params);
+		algo->prepare(context_, frame, frameContext, params);
 
 	paramsBufferReady.emit(frame);
 }

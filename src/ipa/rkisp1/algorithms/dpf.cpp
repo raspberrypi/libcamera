@@ -206,7 +206,9 @@ void Dpf::queueRequest(IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Dpf::prepare(IPAContext &context, rkisp1_params_cfg *params)
+void Dpf::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  rkisp1_params_cfg *params)
 {
 	if (!initialized_)
 		return;

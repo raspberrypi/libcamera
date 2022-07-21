@@ -116,7 +116,10 @@ Af::Af()
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Af::prepare(IPAContext &context, ipu3_uapi_params *params)
+void Af::prepare(IPAContext &context,
+		 [[maybe_unused]] const uint32_t frame,
+		 [[maybe_unused]] IPAFrameContext &frameContext,
+		 ipu3_uapi_params *params)
 {
 	const struct ipu3_uapi_grid_config &grid = context.configuration.af.afGrid;
 	params->acc_param.af.grid_cfg = grid;

@@ -232,6 +232,8 @@ int DefectPixelClusterCorrection::init([[maybe_unused]] IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void DefectPixelClusterCorrection::prepare(IPAContext &context,
+					   [[maybe_unused]] const uint32_t frame,
+					   [[maybe_unused]] IPAFrameContext &frameContext,
 					   rkisp1_params_cfg *params)
 {
 	if (context.frameContext.frameCount > 0)

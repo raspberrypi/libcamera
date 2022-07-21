@@ -5,6 +5,8 @@
  * libcamera Gstreamer element API tests
  */
 
+#include <libcamera/base/utils.h>
+
 #include "gstreamer_test.h"
 
 #include "test.h"

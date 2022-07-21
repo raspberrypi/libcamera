@@ -10,10 +10,6 @@
 #include <iostream>
 #include <unistd.h>
 
-#include <libcamera/base/utils.h>
-
-#include "libcamera/internal/source_paths.h"
-
 #include <gst/gst.h>
 
 class GstreamerTest

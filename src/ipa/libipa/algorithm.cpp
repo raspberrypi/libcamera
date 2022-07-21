@@ -88,6 +88,7 @@ namespace ipa {
  * \brief Provide control values to the algorithm
  * \param[in] context The shared IPA context
  * \param[in] frame The frame number to apply the control values
+ * \param[in] frameContext The current frame's context
  * \param[in] controls The list of user controls
  *
  * This function is called for each request queued to the camera. It provides

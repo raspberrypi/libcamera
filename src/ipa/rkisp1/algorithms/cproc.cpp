@@ -38,6 +38,7 @@ LOG_DEFINE_CATEGORY(RkISP1CProc)
  */
 void ColorProcessing::queueRequest(IPAContext &context,
 				   [[maybe_unused]] const uint32_t frame,
+				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   const ControlList &controls)
 {
 	auto &cproc = context.frameContext.cproc;

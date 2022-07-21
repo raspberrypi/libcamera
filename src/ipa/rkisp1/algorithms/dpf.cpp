@@ -176,6 +176,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
  */
 void Dpf::queueRequest(IPAContext &context,
 		       [[maybe_unused]] const uint32_t frame,
+		       [[maybe_unused]] IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
 	auto &dpf = context.frameContext.dpf;

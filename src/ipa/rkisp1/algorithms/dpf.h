@@ -23,6 +23,7 @@ public:
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext,
 			  const ControlList &controls) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,

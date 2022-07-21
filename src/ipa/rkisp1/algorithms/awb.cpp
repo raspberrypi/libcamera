@@ -128,6 +128,7 @@ void Awb::prepare(IPAContext &context,
  */
 void Awb::queueRequest(IPAContext &context,
 		       [[maybe_unused]] const uint32_t frame,
+		       [[maybe_unused]] IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
 	auto &awb = context.frameContext.awb;

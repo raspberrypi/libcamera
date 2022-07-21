@@ -44,6 +44,7 @@ static constexpr uint32_t kFiltModeDefault = 0x000004f2;
  */
 void Filter::queueRequest(IPAContext &context,
 			  [[maybe_unused]] const uint32_t frame,
+			  [[maybe_unused]] IPAFrameContext &frameContext,
 			  const ControlList &controls)
 {
 	auto &filter = context.frameContext.filter;

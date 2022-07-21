@@ -25,7 +25,8 @@ public:
 		     rkisp1_params_cfg *params) override;
 	void queueRequest(IPAContext &context, const uint32_t frame,
 			  const ControlList &controls) override;
-	void process(IPAContext &context, IPAFrameContext &frameCtx,
+	void process(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameCtx,
 		     const rkisp1_stat_buffer *stats) override;
 
 private:

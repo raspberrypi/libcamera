@@ -103,6 +103,7 @@ namespace ipa {
  * \fn Algorithm::process()
  * \brief Process ISP statistics, and run algorithm operations
  * \param[in] context The shared IPA context
+ * \param[in] frame The frame context sequence number
  * \param[in] frameContext The current frame's context
  * \param[in] stats The IPA statistics and ISP results
  *

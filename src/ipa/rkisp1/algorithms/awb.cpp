@@ -155,6 +155,7 @@ void Awb::queueRequest(IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::process
  */
 void Awb::process([[maybe_unused]] IPAContext &context,
+		  [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameCtx,
 		  const rkisp1_stat_buffer *stats)
 {

@@ -332,7 +332,7 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 	IPAFrameContext frameContext;
 
 	for (auto const &algo : algorithms())
-		algo->process(context_, frameContext, stats);
+		algo->process(context_, frame, frameContext, stats);
 
 	setControls(frame);
 

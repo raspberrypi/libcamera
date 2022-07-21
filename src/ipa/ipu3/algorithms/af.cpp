@@ -406,6 +406,7 @@ bool Af::afIsOutOfFocus(IPAContext &context)
 /**
  * \brief Determine the max contrast image and lens position.
  * \param[in] context The IPA context.
+ * \param[in] frame The frame context sequence number
  * \param[in] frameContext The current frame context
  * \param[in] stats The statistics buffer of IPU3.
  *
@@ -420,7 +421,8 @@ bool Af::afIsOutOfFocus(IPAContext &context)
  *
  * [1] Hill Climbing Algorithm, https://en.wikipedia.org/wiki/Hill_climbing
  */
-void Af::process(IPAContext &context, [[maybe_unused]] IPAFrameContext &frameContext,
+void Af::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		 [[maybe_unused]] IPAFrameContext &frameContext,
 		 const ipu3_uapi_stats_3a *stats)
 {
 	/* Evaluate the AF buffer length */

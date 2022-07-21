@@ -76,13 +76,15 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 /**
  * \brief Calculate the tone mapping look up table
  * \param[in] context The shared IPA context
+ * \param[in] frame The current frame sequence number
  * \param[in] frameContext The current frame context
  * \param[in] stats The IPU3 statistics and ISP results
  *
  * The tone mapping look up table is generated as an inverse power curve from
  * our gamma setting.
  */
-void ToneMapping::process(IPAContext &context, [[maybe_unused]] IPAFrameContext &frameContext,
+void ToneMapping::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+			  [[maybe_unused]] IPAFrameContext &frameContext,
 			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	/*

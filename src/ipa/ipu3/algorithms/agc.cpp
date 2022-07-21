@@ -183,13 +183,13 @@ utils::Duration Agc::filterExposure(utils::Duration exposureValue)
  * \param[in] yGain The gain calculated based on the relative luminance target
  * \param[in] iqMeanGain The gain calculated based on the relative luminance target
  */
-void Agc::computeExposure(IPAContext &context, IPAFrameContext *frameContext,
+void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 			  double yGain, double iqMeanGain)
 {
 	const IPASessionConfiguration &configuration = context.configuration;
 	/* Get the effective exposure and gain applied on the sensor. */
-	uint32_t exposure = frameContext->sensor.exposure;
-	double analogueGain = frameContext->sensor.gain;
+	uint32_t exposure = frameContext.sensor.exposure;
+	double analogueGain = frameContext.sensor.gain;
 
 	/* Use the highest of the two gain estimates. */
 	double evGain = std::max(yGain, iqMeanGain);
@@ -323,7 +323,7 @@ double Agc::estimateLuminance(IPAActiveState &activeState,
  * Identify the current image brightness, and use that to estimate the optimal
  * new exposure and gain for the scene.
  */
-void Agc::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameContext,
+void Agc::process(IPAContext &context, IPAFrameContext &frameContext,
 		  const ipu3_uapi_stats_3a *stats)
 {
 	/*

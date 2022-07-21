@@ -325,8 +325,11 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 	unsigned int aeState = 0;
 
+	/* \todo Obtain the frame context to pass to process from the FCQueue */
+	IPAFrameContext frameContext;
+
 	for (auto const &algo : algorithms())
-		algo->process(context_, nullptr, stats);
+		algo->process(context_, frameContext, stats);
 
 	setControls(frame);
 

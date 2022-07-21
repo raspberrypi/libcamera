@@ -387,7 +387,7 @@ void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
 /**
  * \copydoc libcamera::ipa::Algorithm::process
  */
-void Awb::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameContext,
+void Awb::process(IPAContext &context, [[maybe_unused]] IPAFrameContext &frameContext,
 		  const ipu3_uapi_stats_3a *stats)
 {
 	calculateWBGains(stats);

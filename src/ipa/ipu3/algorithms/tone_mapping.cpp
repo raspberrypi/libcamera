@@ -78,7 +78,7 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
  * The tone mapping look up table is generated as an inverse power curve from
  * our gamma setting.
  */
-void ToneMapping::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameContext,
+void ToneMapping::process(IPAContext &context, [[maybe_unused]] IPAFrameContext &frameContext,
 			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
 {
 	/*

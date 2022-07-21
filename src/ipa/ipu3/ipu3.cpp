@@ -616,7 +616,7 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	ControlList ctrls(controls::controls);
 
 	for (auto const &algo : algorithms())
-		algo->process(context_, &frameContext, stats);
+		algo->process(context_, frameContext, stats);
 
 	setControls(frame);
 

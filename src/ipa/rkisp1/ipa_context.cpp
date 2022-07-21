@@ -85,119 +85,128 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
- * \struct IPAFrameContext
- * \brief Per-frame context for algorithms
+ * \struct IPAActiveState
+ * \brief Active state for algorithms
  *
- * The frame context stores data specific to a single frame processed by the
- * IPA. Each frame processed by the IPA has a context associated with it,
- * accessible through the IPAContext structure.
+ * The active state stores algorithm-specific data that needs to be shared
+ * between multiple algorithms and the IPA module. It is accessible through the
+ * IPAContext structure.
  *
- * \todo Detail how to access contexts for a particular frame
+ * \todo Split the data contained in this structure between the active state
+ * and the frame contexts.
  *
- * Each of the fields in the frame context belongs to either a specific
+ * Each of the fields in the active state belongs to either a specific
  * algorithm, or to the top-level IPA module. A field may be read by any
  * algorithm, but should only be written by its owner.
  */
 
 /**
- * \var IPAFrameContext::agc
- * \brief Context for the Automatic Gain Control algorithm
+ * \var IPAActiveState::agc
+ * \brief State for the Automatic Gain Control algorithm
  *
  * The exposure and gain determined are expected to be applied to the sensor
  * at the earliest opportunity.
  *
- * \var IPAFrameContext::agc.exposure
+ * \var IPAActiveState::agc.exposure
  * \brief Exposure time expressed as a number of lines
  *
- * \var IPAFrameContext::agc.gain
+ * \var IPAActiveState::agc.gain
  * \brief Analogue gain multiplier
  *
  * The gain should be adapted to the sensor specific gain code before applying.
  */
 
 /**
- * \var IPAFrameContext::awb
- * \brief Context for the Automatic White Balance algorithm
+ * \var IPAActiveState::awb
+ * \brief State for the Automatic White Balance algorithm
  *
- * \struct IPAFrameContext::awb.gains
+ * \struct IPAActiveState::awb.gains
  * \brief White balance gains
  *
- * \var IPAFrameContext::awb.gains.red
+ * \var IPAActiveState::awb.gains.red
  * \brief White balance gain for R channel
  *
- * \var IPAFrameContext::awb.gains.green
+ * \var IPAActiveState::awb.gains.green
  * \brief White balance gain for G channel
  *
- * \var IPAFrameContext::awb.gains.blue
+ * \var IPAActiveState::awb.gains.blue
  * \brief White balance gain for B channel
  *
- * \var IPAFrameContext::awb.temperatureK
+ * \var IPAActiveState::awb.temperatureK
  * \brief Estimated color temperature
  *
- * \var IPAFrameContext::awb.autoEnabled
+ * \var IPAActiveState::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
  */
 
 /**
- * \var IPAFrameContext::cproc
- * \brief Context for the Color Processing algorithm
+ * \var IPAActiveState::cproc
+ * \brief State for the Color Processing algorithm
  *
- * \struct IPAFrameContext::cproc.brightness
+ * \struct IPAActiveState::cproc.brightness
  * \brief Brightness level
  *
- * \var IPAFrameContext::cproc.contrast
+ * \var IPAActiveState::cproc.contrast
  * \brief Contrast level
  *
- * \var IPAFrameContext::cproc.saturation
+ * \var IPAActiveState::cproc.saturation
  * \brief Saturation level
  *
- * \var IPAFrameContext::cproc.updateParams
+ * \var IPAActiveState::cproc.updateParams
  * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
- * \var IPAFrameContext::dpf
- * \brief Context for the Denoise Pre-Filter algorithm
+ * \var IPAActiveState::dpf
+ * \brief State for the Denoise Pre-Filter algorithm
  *
- * \var IPAFrameContext::dpf.denoise
+ * \var IPAActiveState::dpf.denoise
  * \brief Indicates if denoise is activated
  *
- * \var IPAFrameContext::dpf.updateParams
+ * \var IPAActiveState::dpf.updateParams
  * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
- * \var IPAFrameContext::filter
- * \brief Context for the Filter algorithm
+ * \var IPAActiveState::filter
+ * \brief State for the Filter algorithm
  *
- * \struct IPAFrameContext::filter.denoise
+ * \struct IPAActiveState::filter.denoise
  * \brief Denoising level
  *
- * \var IPAFrameContext::filter.sharpness
+ * \var IPAActiveState::filter.sharpness
  * \brief Sharpness level
  *
- * \var IPAFrameContext::filter.updateParams
+ * \var IPAActiveState::filter.updateParams
  * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
- * \var IPAFrameContext::sensor
+ * \var IPAActiveState::sensor
  * \brief Effective sensor values
  *
- * \var IPAFrameContext::sensor.exposure
+ * \var IPAActiveState::sensor.exposure
  * \brief Exposure time expressed as a number of lines
  *
- * \var IPAFrameContext::sensor.gain
+ * \var IPAActiveState::sensor.gain
  * \brief Analogue gain multiplier
  */
 
 /**
- * \var IPAFrameContext::frameCount
+ * \var IPAActiveState::frameCount
  * \brief Counter of requests queued to the IPA module
  *
  * The counter is reset to 0 when the IPA module is configured, and is
  * incremented for each request being queued, after calling the
  * Algorithm::prepare() function of all algorithms.
+ */
+
+/**
+ * \struct IPAFrameContext
+ * \brief Per-frame context for algorithms
+ *
+ * This structure is currently unused and will be replaced by a real per-frame
+ * context.
  */
 
 /**
@@ -207,13 +216,10 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAContext::configuration
  * \brief The IPA session configuration, immutable during the session
  *
- * \var IPAContext::frameContext
- * \brief The frame context for the frame being processed
+ * \var IPAContext::activeState
+ * \brief The IPA active state, storing the latest state for all algorithms
  *
- * \todo While the frame context is supposed to be per-frame, this
- * single frame context stores data related to both the current frame
- * and the previous frames, with fields being updated as the algorithms
- * are run. This needs to be turned into real per-frame data storage.
+ * \todo Introduce per-frame contexts
  */
 
 } /* namespace libcamera::ipa::rkisp1 */

@@ -123,7 +123,7 @@ void GammaSensorLinearization::prepare(IPAContext &context,
 				       [[maybe_unused]] IPAFrameContext &frameContext,
 				       rkisp1_params_cfg *params)
 {
-	if (context.frameContext.frameCount > 0)
+	if (context.activeState.frameCount > 0)
 		return;
 
 	if (!initialized_)

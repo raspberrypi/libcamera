@@ -73,8 +73,8 @@ Agc::Agc()
 int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 {
 	/* Configure the default exposure and gain. */
-	context.frameContext.agc.gain = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
-	context.frameContext.agc.exposure = 10ms / context.configuration.sensor.lineDuration;
+	context.activeState.agc.gain = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
+	context.activeState.agc.exposure = 10ms / context.configuration.sensor.lineDuration;
 
 	/*
 	 * According to the RkISP1 documentation:
@@ -98,7 +98,10 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.configuration.agc.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
 	context.configuration.agc.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
 
-	/* \todo Use actual frame index by populating it in the frameContext. */
+	/*
+	 * \todo Use the upcoming per-frame context API that will provide a
+	 * frame index
+	 */
 	frameCount_ = 0;
 	return 0;
 }
@@ -140,18 +143,18 @@ utils::Duration Agc::filterExposure(utils::Duration exposureValue)
 
 /**
  * \brief Estimate the new exposure and gain values
- * \param[inout] frameContext The shared IPA frame Context
+ * \param[inout] context The shared IPA Context
  * \param[in] yGain The gain calculated on the current brightness level
  * \param[in] iqMeanGain The gain calculated based on the relative luminance target
  */
 void Agc::computeExposure(IPAContext &context, double yGain, double iqMeanGain)
 {
 	IPASessionConfiguration &configuration = context.configuration;
-	IPAFrameContext &frameContext = context.frameContext;
+	IPAActiveState &activeState = context.activeState;
 
 	/* Get the effective exposure and gain applied on the sensor. */
-	uint32_t exposure = frameContext.sensor.exposure;
-	double analogueGain = frameContext.sensor.gain;
+	uint32_t exposure = activeState.sensor.exposure;
+	double analogueGain = activeState.sensor.gain;
 
 	/* Use the highest of the two gain estimates. */
 	double evGain = std::max(yGain, iqMeanGain);
@@ -216,8 +219,8 @@ void Agc::computeExposure(IPAContext &context, double yGain, double iqMeanGain)
 			      << stepGain;
 
 	/* Update the estimated exposure and gain. */
-	frameContext.agc.exposure = shutterTime / configuration.sensor.lineDuration;
-	frameContext.agc.gain = stepGain;
+	activeState.agc.exposure = shutterTime / configuration.sensor.lineDuration;
+	activeState.agc.gain = stepGain;
 }
 
 /**
@@ -329,7 +332,7 @@ void Agc::prepare(IPAContext &context,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  rkisp1_params_cfg *params)
 {
-	if (context.frameContext.frameCount > 0)
+	if (context.activeState.frameCount > 0)
 		return;
 
 	/* Configure the measurement window. */

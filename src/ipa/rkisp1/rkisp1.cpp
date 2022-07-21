@@ -243,7 +243,7 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 
-	context_.frameContext.frameCount = 0;
+	context_.activeState.frameCount = 0;
 
 	for (auto const &algo : algorithms()) {
 		int ret = algo->configure(context_, info);
@@ -309,7 +309,7 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 		algo->prepare(context_, frame, frameContext, params);
 
 	paramsBufferReady.emit(frame);
-	context_.frameContext.frameCount++;
+	context_.activeState.frameCount++;
 }
 
 void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
@@ -319,9 +319,9 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 		reinterpret_cast<rkisp1_stat_buffer *>(
 			mappedBuffers_.at(bufferId).planes()[0].data());
 
-	context_.frameContext.sensor.exposure =
+	context_.activeState.sensor.exposure =
 		sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-	context_.frameContext.sensor.gain =
+	context_.activeState.sensor.gain =
 		camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
 	unsigned int aeState = 0;
@@ -339,8 +339,8 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 void IPARkISP1::setControls(unsigned int frame)
 {
-	uint32_t exposure = context_.frameContext.agc.exposure;
-	uint32_t gain = camHelper_->gainCode(context_.frameContext.agc.gain);
+	uint32_t exposure = context_.activeState.agc.exposure;
+	uint32_t gain = camHelper_->gainCode(context_.activeState.agc.gain);
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));

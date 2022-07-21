@@ -41,7 +41,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   const ControlList &controls)
 {
-	auto &cproc = context.frameContext.cproc;
+	auto &cproc = context.activeState.cproc;
 
 	const auto &brightness = controls.get(controls::Brightness);
 	if (brightness) {
@@ -76,7 +76,7 @@ void ColorProcessing::prepare(IPAContext &context,
 			      [[maybe_unused]] IPAFrameContext &frameContext,
 			      rkisp1_params_cfg *params)
 {
-	auto &cproc = context.frameContext.cproc;
+	auto &cproc = context.activeState.cproc;
 
 	/* Check if the algorithm configuration has been updated. */
 	if (!cproc.updateParams)

@@ -36,10 +36,10 @@ LOG_DEFINE_CATEGORY(RkISP1Awb)
 int Awb::configure(IPAContext &context,
 		   const IPACameraSensorInfo &configInfo)
 {
-	context.frameContext.awb.gains.red = 1.0;
-	context.frameContext.awb.gains.blue = 1.0;
-	context.frameContext.awb.gains.green = 1.0;
-	context.frameContext.awb.autoEnabled = true;
+	context.activeState.awb.gains.red = 1.0;
+	context.activeState.awb.gains.blue = 1.0;
+	context.activeState.awb.gains.green = 1.0;
+	context.activeState.awb.autoEnabled = true;
 
 	/*
 	 * Define the measurement window for AWB as a centered rectangle
@@ -79,16 +79,16 @@ void Awb::prepare(IPAContext &context,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  rkisp1_params_cfg *params)
 {
-	params->others.awb_gain_config.gain_green_b = 256 * context.frameContext.awb.gains.green;
-	params->others.awb_gain_config.gain_blue = 256 * context.frameContext.awb.gains.blue;
-	params->others.awb_gain_config.gain_red = 256 * context.frameContext.awb.gains.red;
-	params->others.awb_gain_config.gain_green_r = 256 * context.frameContext.awb.gains.green;
+	params->others.awb_gain_config.gain_green_b = 256 * context.activeState.awb.gains.green;
+	params->others.awb_gain_config.gain_blue = 256 * context.activeState.awb.gains.blue;
+	params->others.awb_gain_config.gain_red = 256 * context.activeState.awb.gains.red;
+	params->others.awb_gain_config.gain_green_r = 256 * context.activeState.awb.gains.green;
 
 	/* Update the gains. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
 
 	/* If we already have configured the gains and window, return. */
-	if (context.frameContext.frameCount > 0)
+	if (context.activeState.frameCount > 0)
 		return;
 
 	/* Configure the gains to apply. */
@@ -131,7 +131,7 @@ void Awb::queueRequest(IPAContext &context,
 		       [[maybe_unused]] IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
-	auto &awb = context.frameContext.awb;
+	auto &awb = context.activeState.awb;
 
 	const auto &awbEnable = controls.get(controls::AwbEnable);
 	if (awbEnable && *awbEnable != awb.autoEnabled) {
@@ -162,7 +162,7 @@ void Awb::process([[maybe_unused]] IPAContext &context,
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
-	IPAFrameContext &frameContext = context.frameContext;
+	IPAActiveState &activeState = context.activeState;
 
 	/* Get the YCbCr mean values */
 	double yMean = awb->awb_mean[0].mean_y_or_g;
@@ -194,24 +194,24 @@ void Awb::process([[maybe_unused]] IPAContext &context,
 
 	/* Filter the values to avoid oscillations. */
 	double speed = 0.2;
-	redGain = speed * redGain + (1 - speed) * frameContext.awb.gains.red;
-	blueGain = speed * blueGain + (1 - speed) * frameContext.awb.gains.blue;
+	redGain = speed * redGain + (1 - speed) * activeState.awb.gains.red;
+	blueGain = speed * blueGain + (1 - speed) * activeState.awb.gains.blue;
 
 	/*
 	 * Gain values are unsigned integer value, range 0 to 4 with 8 bit
 	 * fractional part.
 	 */
-	if (frameContext.awb.autoEnabled) {
-		frameContext.awb.gains.red = std::clamp(redGain, 0.0, 1023.0 / 256);
-		frameContext.awb.gains.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
+	if (activeState.awb.autoEnabled) {
+		activeState.awb.gains.red = std::clamp(redGain, 0.0, 1023.0 / 256);
+		activeState.awb.gains.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
 	}
 	/* Hardcode the green gain to 1.0. */
-	frameContext.awb.gains.green = 1.0;
+	activeState.awb.gains.green = 1.0;
 
-	frameContext.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
+	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
 
-	LOG(RkISP1Awb, Debug) << "Gain found for red: " << context.frameContext.awb.gains.red
-			      << " and for blue: " << context.frameContext.awb.gains.blue;
+	LOG(RkISP1Awb, Debug) << "Gain found for red: " << context.activeState.awb.gains.red
+			      << " and for blue: " << context.activeState.awb.gains.blue;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

@@ -179,7 +179,7 @@ void Dpf::queueRequest(IPAContext &context,
 		       [[maybe_unused]] IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
-	auto &dpf = context.frameContext.dpf;
+	auto &dpf = context.activeState.dpf;
 
 	const auto &denoise = controls.get(controls::draft::NoiseReductionMode);
 	if (denoise) {
@@ -214,9 +214,9 @@ void Dpf::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	if (!initialized_)
 		return;
 
-	auto &dpf = context.frameContext.dpf;
+	auto &dpf = context.activeState.dpf;
 
-	if (context.frameContext.frameCount == 0) {
+	if (context.activeState.frameCount == 0) {
 		params->others.dpf_config = config_;
 		params->others.dpf_strength_config = strengthConfig_;
 

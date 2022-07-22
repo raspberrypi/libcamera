@@ -518,6 +518,12 @@ protected:
 			return TestFail;
 		}
 
+		const auto &values = firstElement.getList<uint16_t>();
+		if (!values || values->size() != 2 || (*values)[0] != 1 || (*values)[1] != 2) {
+			cerr << "getList() failed to return correct vector" << std::endl;
+			return TestFail;
+		}
+
 		auto &secondElement = level2Obj[1];
 		if (!secondElement.isDictionary() ||
 		    !secondElement.contains("one") ||

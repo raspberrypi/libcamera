@@ -293,6 +293,59 @@ std::optional<Size> YamlObject::get() const
 #endif /* __DOXYGEN__ */
 
 /**
+ * \fn template<typename T> YamlObject::getList<T>() const
+ * \brief Parse the YamlObject as a list of \a T
+ *
+ * This function parses the value of the YamlObject as a list of \a T objects,
+ * and returns the value as a \a std::vector<T>. If parsing fails, std::nullopt
+ * is returned.
+ *
+ * \return The YamlObject value as a std::vector<T>, or std::nullopt if parsing
+ * failed
+ */
+
+#ifndef __DOXYGEN__
+
+template<typename T,
+	 typename std::enable_if_t<
+		 std::is_same_v<bool, T> ||
+		 std::is_same_v<double, T> ||
+		 std::is_same_v<int16_t, T> ||
+		 std::is_same_v<uint16_t, T> ||
+		 std::is_same_v<int32_t, T> ||
+		 std::is_same_v<uint32_t, T> ||
+		 std::is_same_v<std::string, T> ||
+		 std::is_same_v<Size, T>> *>
+std::optional<std::vector<T>> YamlObject::getList() const
+{
+	if (type_ != Type::List)
+		return {};
+
+	std::vector<T> values;
+	values.reserve(list_.size());
+
+	for (const YamlObject &entry : asList()) {
+		const auto value = entry.get<T>();
+		if (!value)
+			return {};
+		values.emplace_back(*value);
+	}
+
+	return values;
+}
+
+template std::optional<std::vector<bool>> YamlObject::getList<bool>() const;
+template std::optional<std::vector<double>> YamlObject::getList<double>() const;
+template std::optional<std::vector<int16_t>> YamlObject::getList<int16_t>() const;
+template std::optional<std::vector<uint16_t>> YamlObject::getList<uint16_t>() const;
+template std::optional<std::vector<int32_t>> YamlObject::getList<int32_t>() const;
+template std::optional<std::vector<uint32_t>> YamlObject::getList<uint32_t>() const;
+template std::optional<std::vector<std::string>> YamlObject::getList<std::string>() const;
+template std::optional<std::vector<Size>> YamlObject::getList<Size>() const;
+
+#endif /* __DOXYGEN__ */
+
+/**
  * \fn YamlObject::asDict() const
  * \brief Wrap a dictionary YamlObject in an adapter that exposes iterators
  *

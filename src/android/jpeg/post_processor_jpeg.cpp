@@ -166,7 +166,7 @@ void PostProcessorJpeg::process(Camera3RequestDescriptor::StreamBuffer *streamBu
 			std::vector<unsigned char> thumbnail;
 			generateThumbnail(source, thumbnailSize, quality, &thumbnail);
 			if (!thumbnail.empty())
-				exif.setThumbnail(thumbnail, Exif::Compression::JPEG);
+				exif.setThumbnail(std::move(thumbnail), Exif::Compression::JPEG);
 		}
 
 		resultMetadata->addEntry(ANDROID_JPEG_THUMBNAIL_SIZE, data, 2);

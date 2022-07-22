@@ -10,6 +10,7 @@
 #include <chrono>
 #include <string>
 #include <time.h>
+#include <vector>
 
 #include <libexif/exif-data.h>
 
@@ -60,7 +61,7 @@ public:
 
 	void setOrientation(int orientation);
 	void setSize(const libcamera::Size &size);
-	void setThumbnail(libcamera::Span<const unsigned char> thumbnail,
+	void setThumbnail(std::vector<unsigned char> &&thumbnail,
 			  Compression compression);
 	void setTimestamp(time_t timestamp, std::chrono::milliseconds msec);
 
@@ -106,4 +107,6 @@ private:
 
 	unsigned char *exifData_;
 	unsigned int size_;
+
+	std::vector<unsigned char> thumbnailData_;
 };

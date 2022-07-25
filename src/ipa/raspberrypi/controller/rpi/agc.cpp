@@ -6,6 +6,7 @@
  */
 
 #include <map>
+#include <tuple>
 
 #include <linux/bcm2835-isp.h>
 
@@ -43,19 +44,25 @@ int AgcMeteringMode::read(boost::property_tree::ptree const &params)
 	return 0;
 }
 
-static std::string
+static std::tuple<int, std::string>
 readMeteringModes(std::map<std::string, AgcMeteringMode> &meteringModes,
 		  boost::property_tree::ptree const &params)
 {
 	std::string first;
+	int ret;
+
 	for (auto &p : params) {
 		AgcMeteringMode meteringMode;
-		meteringMode.read(p.second);
+		ret = meteringMode.read(p.second);
+		if (ret)
+			return { ret, {} };
+
 		meteringModes[p.first] = std::move(meteringMode);
 		if (first.empty())
 			first = p.first;
 	}
-	return first;
+
+	return { 0, first };
 }
 
 static int readList(std::vector<double> &list,
@@ -87,19 +94,25 @@ int AgcExposureMode::read(boost::property_tree::ptree const &params)
 	return 0;
 }
 
-static std::string
+static std::tuple<int, std::string>
 readExposureModes(std::map<std::string, AgcExposureMode> &exposureModes,
 		  boost::property_tree::ptree const &params)
 {
 	std::string first;
+	int ret;
+
 	for (auto &p : params) {
 		AgcExposureMode exposureMode;
-		exposureMode.read(p.second);
+		ret = exposureMode.read(p.second);
+		if (ret)
+			return { ret, {} };
+
 		exposureModes[p.first] = std::move(exposureMode);
 		if (first.empty())
 			first = p.first;
 	}
-	return first;
+
+	return { 0, first };
 }
 
 int AgcConstraint::read(boost::property_tree::ptree const &params)
@@ -115,38 +128,62 @@ int AgcConstraint::read(boost::property_tree::ptree const &params)
 	return yTarget.read(params.get_child("y_target"));
 }
 
-static AgcConstraintMode
+static std::tuple<int, AgcConstraintMode>
 readConstraintMode(boost::property_tree::ptree const &params)
 {
 	AgcConstraintMode mode;
+	int ret;
+
 	for (auto &p : params) {
 		AgcConstraint constraint;
-		constraint.read(p.second);
+		ret = constraint.read(p.second);
+		if (ret)
+			return { ret, {} };
+
 		mode.push_back(std::move(constraint));
 	}
-	return mode;
+
+	return { 0, mode };
 }
 
-static std::string readConstraintModes(std::map<std::string, AgcConstraintMode> &constraintModes,
-				       boost::property_tree::ptree const &params)
+static std::tuple<int, std::string>
+readConstraintModes(std::map<std::string, AgcConstraintMode> &constraintModes,
+		    boost::property_tree::ptree const &params)
 {
 	std::string first;
+	int ret;
+
 	for (auto &p : params) {
-		constraintModes[p.first] = readConstraintMode(p.second);
+		std::tie(ret, constraintModes[p.first]) = readConstraintMode(p.second);
+		if (ret)
+			return { ret, {} };
+
 		if (first.empty())
 			first = p.first;
 	}
-	return first;
+
+	return { 0, first };
 }
 
 int AgcConfig::read(boost::property_tree::ptree const &params)
 {
 	LOG(RPiAgc, Debug) << "AgcConfig";
-	defaultMeteringMode = readMeteringModes(meteringModes, params.get_child("metering_modes"));
-	defaultExposureMode = readExposureModes(exposureModes, params.get_child("exposure_modes"));
-	defaultConstraintMode = readConstraintModes(constraintModes, params.get_child("constraint_modes"));
+	int ret;
 
-	int ret = yTarget.read(params.get_child("y_target"));
+	std::tie(ret, defaultMeteringMode) =
+		readMeteringModes(meteringModes, params.get_child("metering_modes"));
+	if (ret)
+		return ret;
+	std::tie(ret, defaultExposureMode) =
+		readExposureModes(exposureModes, params.get_child("exposure_modes"));
+	if (ret)
+		return ret;
+	std::tie(ret, defaultConstraintMode) =
+		readConstraintModes(constraintModes, params.get_child("constraint_modes"));
+	if (ret)
+		return ret;
+
+	ret = yTarget.read(params.get_child("y_target"));
 	if (ret)
 		return ret;
 

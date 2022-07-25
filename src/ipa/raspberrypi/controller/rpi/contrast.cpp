@@ -38,7 +38,7 @@ char const *Contrast::name() const
 	return NAME;
 }
 
-void Contrast::read(boost::property_tree::ptree const &params)
+int Contrast::read(boost::property_tree::ptree const &params)
 {
 	/* enable adaptive enhancement by default */
 	config_.ceEnable = params.get<int>("ce_enable", 1);
@@ -52,7 +52,7 @@ void Contrast::read(boost::property_tree::ptree const &params)
 	config_.hiHistogram = params.get<double>("hi_histogram", 0.95);
 	config_.hiLevel = params.get<double>("hi_level", 0.95);
 	config_.hiMax = params.get<double>("hi_max", 2000);
-	config_.gammaCurve.read(params.get_child("gamma_curve"));
+	return config_.gammaCurve.read(params.get_child("gamma_curve"));
 }
 
 void Contrast::setBrightness(double brightness)

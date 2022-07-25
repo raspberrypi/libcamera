@@ -41,10 +41,11 @@ void Noise::switchMode(CameraMode const &cameraMode,
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-void Noise::read(boost::property_tree::ptree const &params)
+int Noise::read(boost::property_tree::ptree const &params)
 {
 	referenceConstant_ = params.get<double>("reference_constant");
 	referenceSlope_ = params.get<double>("reference_slope");
+	return 0;
 }
 
 void Noise::prepare(Metadata *imageMetadata)

@@ -41,7 +41,7 @@ public:
 	Controller(char const *jsonFilename);
 	~Controller();
 	Algorithm *createAlgorithm(char const *name);
-	void read(char const *filename);
+	int read(char const *filename);
 	void initialise();
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	void prepare(Metadata *imageMetadata);

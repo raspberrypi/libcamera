@@ -30,7 +30,7 @@ LOG_DEFINE_CATEGORY(RPiAgc)
 
 static constexpr unsigned int PipelineBits = 13; /* seems to be a 13-bit pipeline */
 
-void AgcMeteringMode::read(boost::property_tree::ptree const &params)
+int AgcMeteringMode::read(boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	for (auto &p : params.get_child("weights")) {
@@ -40,6 +40,7 @@ void AgcMeteringMode::read(boost::property_tree::ptree const &params)
 	}
 	if (num != AgcStatsSize)
 		LOG(RPiAgc, Fatal) << "AgcMeteringMode: insufficient weights";
+	return 0;
 }
 
 static std::string
@@ -73,7 +74,7 @@ static int readList(std::vector<Duration> &list,
 	return list.size();
 }
 
-void AgcExposureMode::read(boost::property_tree::ptree const &params)
+int AgcExposureMode::read(boost::property_tree::ptree const &params)
 {
 	int numShutters = readList(shutter, params.get_child("shutter"));
 	int numAgs = readList(gain, params.get_child("gain"));
@@ -83,6 +84,7 @@ void AgcExposureMode::read(boost::property_tree::ptree const &params)
 	if (numShutters != numAgs)
 		LOG(RPiAgc, Fatal)
 			<< "AgcExposureMode: expect same number of exposure and gain entries in exposure profile";
+	return 0;
 }
 
 static std::string
@@ -100,7 +102,7 @@ readExposureModes(std::map<std::string, AgcExposureMode> &exposureModes,
 	return first;
 }
 
-void AgcConstraint::read(boost::property_tree::ptree const &params)
+int AgcConstraint::read(boost::property_tree::ptree const &params)
 {
 	std::string boundString = params.get<std::string>("bound", "");
 	transform(boundString.begin(), boundString.end(),
@@ -110,7 +112,7 @@ void AgcConstraint::read(boost::property_tree::ptree const &params)
 	bound = boundString == "UPPER" ? Bound::UPPER : Bound::LOWER;
 	qLo = params.get<double>("q_lo");
 	qHi = params.get<double>("q_hi");
-	yTarget.read(params.get_child("y_target"));
+	return yTarget.read(params.get_child("y_target"));
 }
 
 static AgcConstraintMode
@@ -137,13 +139,17 @@ static std::string readConstraintModes(std::map<std::string, AgcConstraintMode> 
 	return first;
 }
 
-void AgcConfig::read(boost::property_tree::ptree const &params)
+int AgcConfig::read(boost::property_tree::ptree const &params)
 {
 	LOG(RPiAgc, Debug) << "AgcConfig";
 	defaultMeteringMode = readMeteringModes(meteringModes, params.get_child("metering_modes"));
 	defaultExposureMode = readExposureModes(exposureModes, params.get_child("exposure_modes"));
 	defaultConstraintMode = readConstraintModes(constraintModes, params.get_child("constraint_modes"));
-	yTarget.read(params.get_child("y_target"));
+
+	int ret = yTarget.read(params.get_child("y_target"));
+	if (ret)
+		return ret;
+
 	speed = params.get<double>("speed", 0.2);
 	startupFrames = params.get<uint16_t>("startup_frames", 10);
 	convergenceFrames = params.get<unsigned int>("convergence_frames", 6);
@@ -152,6 +158,7 @@ void AgcConfig::read(boost::property_tree::ptree const &params)
 	/* Start with quite a low value as ramping up is easier than ramping down. */
 	defaultExposureTime = params.get<double>("default_exposure_time", 1000) * 1us;
 	defaultAnalogueGain = params.get<double>("default_analogueGain", 1.0);
+	return 0;
 }
 
 Agc::ExposureValues::ExposureValues()
@@ -182,10 +189,14 @@ char const *Agc::name() const
 	return NAME;
 }
 
-void Agc::read(boost::property_tree::ptree const &params)
+int Agc::read(boost::property_tree::ptree const &params)
 {
 	LOG(RPiAgc, Debug) << "Agc";
-	config_.read(params);
+
+	int ret = config_.read(params);
+	if (ret)
+		return ret;
+
 	/*
 	 * Set the config's defaults (which are the first ones it read) as our
 	 * current modes, until someone changes them.  (they're all known to
@@ -200,6 +211,7 @@ void Agc::read(boost::property_tree::ptree const &params)
 	/* Set up the "last shutter/gain" values, in case AGC starts "disabled". */
 	status_.shutterTime = config_.defaultExposureTime;
 	status_.analogueGain = config_.defaultAnalogueGain;
+	return 0;
 }
 
 bool Agc::isPaused() const

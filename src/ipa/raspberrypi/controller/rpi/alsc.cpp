@@ -50,7 +50,7 @@ char const *Alsc::name() const
 	return NAME;
 }
 
-static void generateLut(double *lut, boost::property_tree::ptree const &params)
+static int generateLut(double *lut, boost::property_tree::ptree const &params)
 {
 	double cstrength = params.get<double>("corner_strength", 2.0);
 	if (cstrength <= 1.0)
@@ -71,9 +71,10 @@ static void generateLut(double *lut, boost::property_tree::ptree const &params)
 				(f2 * f2); /* this reproduces the cos^4 rule */
 		}
 	}
+	return 0;
 }
 
-static void readLut(double *lut, boost::property_tree::ptree const &params)
+static int readLut(double *lut, boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	const int maxNum = XY;
@@ -84,11 +85,12 @@ static void readLut(double *lut, boost::property_tree::ptree const &params)
 	}
 	if (num < maxNum)
 		LOG(RPiAlsc, Fatal) << "Alsc: too few entries in LSC table";
+	return 0;
 }
 
-static void readCalibrations(std::vector<AlscCalibration> &calibrations,
-			     boost::property_tree::ptree const &params,
-			     std::string const &name)
+static int readCalibrations(std::vector<AlscCalibration> &calibrations,
+			    boost::property_tree::ptree const &params,
+			    std::string const &name)
 {
 	if (params.get_child_optional(name)) {
 		double lastCt = 0;
@@ -117,9 +119,10 @@ static void readCalibrations(std::vector<AlscCalibration> &calibrations,
 				<< "Read " << name << " calibration for ct " << ct;
 		}
 	}
+	return 0;
 }
 
-void Alsc::read(boost::property_tree::ptree const &params)
+int Alsc::read(boost::property_tree::ptree const &params)
 {
 	config_.framePeriod = params.get<uint16_t>("frame_period", 12);
 	config_.startupFrames = params.get<uint16_t>("startup_frames", 10);
@@ -135,19 +138,32 @@ void Alsc::read(boost::property_tree::ptree const &params)
 		params.get<double>("luminance_strength", 1.0);
 	for (int i = 0; i < XY; i++)
 		config_.luminanceLut[i] = 1.0;
+
+	int ret = 0;
+
 	if (params.get_child_optional("corner_strength"))
-		generateLut(config_.luminanceLut, params);
+		ret = generateLut(config_.luminanceLut, params);
 	else if (params.get_child_optional("luminance_lut"))
-		readLut(config_.luminanceLut,
-			params.get_child("luminance_lut"));
+		ret = readLut(config_.luminanceLut,
+			      params.get_child("luminance_lut"));
 	else
 		LOG(RPiAlsc, Warning)
 			<< "no luminance table - assume unity everywhere";
-	readCalibrations(config_.calibrationsCr, params, "calibrations_Cr");
-	readCalibrations(config_.calibrationsCb, params, "calibrations_Cb");
+	if (ret)
+		return ret;
+
+	ret = readCalibrations(config_.calibrationsCr, params, "calibrations_Cr");
+	if (ret)
+		return ret;
+	ret = readCalibrations(config_.calibrationsCb, params, "calibrations_Cb");
+	if (ret)
+		return ret;
+
 	config_.defaultCt = params.get<double>("default_ct", 4500.0);
 	config_.threshold = params.get<double>("threshold", 1e-3);
 	config_.lambdaBound = params.get<double>("lambda_bound", 0.05);
+
+	return 0;
 }
 
 static double getCt(Metadata *metadata, double defaultCt);

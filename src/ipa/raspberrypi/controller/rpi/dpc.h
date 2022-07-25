@@ -22,7 +22,7 @@ class Dpc : public Algorithm
 public:
 	Dpc(Controller *controller);
 	char const *name() const override;
-	void read(boost::property_tree::ptree const &params) override;
+	int read(boost::property_tree::ptree const &params) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:

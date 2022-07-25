@@ -19,20 +19,20 @@ namespace RPiController {
 /* Control algorithm to perform AWB calculations. */
 
 struct AwbMode {
-	void read(boost::property_tree::ptree const &params);
+	int read(boost::property_tree::ptree const &params);
 	double ctLo; /* low CT value for search */
 	double ctHi; /* high CT value for search */
 };
 
 struct AwbPrior {
-	void read(boost::property_tree::ptree const &params);
+	int read(boost::property_tree::ptree const &params);
 	double lux; /* lux level */
 	Pwl prior; /* maps CT to prior log likelihood for this lux level */
 };
 
 struct AwbConfig {
 	AwbConfig() : defaultMode(nullptr) {}
-	void read(boost::property_tree::ptree const &params);
+	int read(boost::property_tree::ptree const &params);
 	/* Only repeat the AWB calculation every "this many" frames */
 	uint16_t framePeriod;
 	/* number of initial frames for which speed taken as 1.0 (maximum) */
@@ -90,7 +90,7 @@ public:
 	~Awb();
 	char const *name() const override;
 	void initialise() override;
-	void read(boost::property_tree::ptree const &params) override;
+	int read(boost::property_tree::ptree const &params) override;
 	/* AWB handles "pausing" for itself. */
 	bool isPaused() const override;
 	void pause() override;

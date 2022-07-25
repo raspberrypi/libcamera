@@ -26,20 +26,21 @@ static constexpr unsigned int AwbStatsSizeY = DEFAULT_AWB_REGIONS_Y;
  * elsewhere (ALSC and AGC).
  */
 
-void AwbMode::read(boost::property_tree::ptree const &params)
+int AwbMode::read(boost::property_tree::ptree const &params)
 {
 	ctLo = params.get<double>("lo");
 	ctHi = params.get<double>("hi");
+	return 0;
 }
 
-void AwbPrior::read(boost::property_tree::ptree const &params)
+int AwbPrior::read(boost::property_tree::ptree const &params)
 {
 	lux = params.get<double>("lux");
-	prior.read(params.get_child("prior"));
+	return prior.read(params.get_child("prior"));
 }
 
-static void readCtCurve(Pwl &ctR, Pwl &ctB,
-			boost::property_tree::ptree const &params)
+static int readCtCurve(Pwl &ctR, Pwl &ctB,
+		       boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	for (auto it = params.begin(); it != params.end(); it++) {
@@ -55,21 +56,28 @@ static void readCtCurve(Pwl &ctR, Pwl &ctB,
 	}
 	if (num < 2)
 		LOG(RPiAwb, Fatal) << "AwbConfig: insufficient points in CT curve";
+	return 0;
 }
 
-void AwbConfig::read(boost::property_tree::ptree const &params)
+int AwbConfig::read(boost::property_tree::ptree const &params)
 {
+	int ret;
 	bayes = params.get<int>("bayes", 1);
 	framePeriod = params.get<uint16_t>("framePeriod", 10);
 	startupFrames = params.get<uint16_t>("startupFrames", 10);
 	convergenceFrames = params.get<unsigned int>("convergence_frames", 3);
 	speed = params.get<double>("speed", 0.05);
-	if (params.get_child_optional("ct_curve"))
-		readCtCurve(ctR, ctB, params.get_child("ct_curve"));
+	if (params.get_child_optional("ct_curve")) {
+		ret = readCtCurve(ctR, ctB, params.get_child("ct_curve"));
+		if (ret)
+			return ret;
+	}
 	if (params.get_child_optional("priors")) {
 		for (auto &p : params.get_child("priors")) {
 			AwbPrior prior;
-			prior.read(p.second);
+			ret = prior.read(p.second);
+			if (ret)
+				return ret;
 			if (!priors.empty() && prior.lux <= priors.back().lux)
 				LOG(RPiAwb, Fatal) << "AwbConfig: Prior must be ordered in increasing lux value";
 			priors.push_back(prior);
@@ -79,7 +87,9 @@ void AwbConfig::read(boost::property_tree::ptree const &params)
 	}
 	if (params.get_child_optional("modes")) {
 		for (auto &p : params.get_child("modes")) {
-			modes[p.first].read(p.second);
+			ret = modes[p.first].read(p.second);
+			if (ret)
+				return ret;
 			if (defaultMode == nullptr)
 				defaultMode = &modes[p.first];
 		}
@@ -110,6 +120,7 @@ void AwbConfig::read(boost::property_tree::ptree const &params)
 	whitepointB = params.get<double>("whitepoint_b", 0.0);
 	if (bayes == false)
 		sensitivityR = sensitivityB = 1.0; /* nor do sensitivities make any sense */
+	return 0;
 }
 
 Awb::Awb(Controller *controller)
@@ -137,9 +148,9 @@ char const *Awb::name() const
 	return NAME;
 }
 
-void Awb::read(boost::property_tree::ptree const &params)
+int Awb::read(boost::property_tree::ptree const &params)
 {
-	config_.read(params);
+	return config_.read(params);
 }
 
 void Awb::initialise()

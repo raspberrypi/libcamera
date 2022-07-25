@@ -35,7 +35,7 @@ public:
 	virtual bool isPaused() const { return paused_; }
 	virtual void pause() { paused_ = true; }
 	virtual void resume() { paused_ = false; }
-	virtual void read(boost::property_tree::ptree const &params);
+	virtual int read(boost::property_tree::ptree const &params);
 	virtual void initialise();
 	virtual void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	virtual void prepare(Metadata *imageMetadata);

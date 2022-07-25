@@ -34,10 +34,11 @@ char const *Sdn::name() const
 	return NAME;
 }
 
-void Sdn::read(boost::property_tree::ptree const &params)
+int Sdn::read(boost::property_tree::ptree const &params)
 {
 	deviation_ = params.get<double>("deviation", 3.2);
 	strength_ = params.get<double>("strength", 0.75);
+	return 0;
 }
 
 void Sdn::initialise()

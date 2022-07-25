@@ -18,7 +18,7 @@ class Sdn : public DenoiseAlgorithm
 public:
 	Sdn(Controller *controller = NULL);
 	char const *name() const override;
-	void read(boost::property_tree::ptree const &params) override;
+	int read(boost::property_tree::ptree const &params) override;
 	void initialise() override;
 	void prepare(Metadata *imageMetadata) override;
 	void setMode(DenoiseMode mode) override;

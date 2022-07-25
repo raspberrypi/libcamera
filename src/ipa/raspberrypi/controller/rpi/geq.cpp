@@ -35,14 +35,20 @@ char const *Geq::name() const
 	return NAME;
 }
 
-void Geq::read(boost::property_tree::ptree const &params)
+int Geq::read(boost::property_tree::ptree const &params)
 {
 	config_.offset = params.get<uint16_t>("offset", 0);
 	config_.slope = params.get<double>("slope", 0.0);
 	if (config_.slope < 0.0 || config_.slope >= 1.0)
 		LOG(RPiGeq, Fatal) << "Geq: bad slope value";
-	if (params.get_child_optional("strength"))
-		config_.strength.read(params.get_child("strength"));
+
+	if (params.get_child_optional("strength")) {
+		int ret = config_.strength.read(params.get_child("strength"));
+		if (ret)
+			return ret;
+	}
+
+	return 0;
 }
 
 void Geq::prepare(Metadata *imageMetadata)

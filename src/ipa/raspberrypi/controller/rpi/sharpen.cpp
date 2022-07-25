@@ -37,7 +37,7 @@ void Sharpen::switchMode(CameraMode const &cameraMode,
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-void Sharpen::read(boost::property_tree::ptree const &params)
+int Sharpen::read(boost::property_tree::ptree const &params)
 {
 	threshold_ = params.get<double>("threshold", 1.0);
 	strength_ = params.get<double>("strength", 1.0);
@@ -46,6 +46,7 @@ void Sharpen::read(boost::property_tree::ptree const &params)
 		<< "Read threshold " << threshold_
 		<< " strength " << strength_
 		<< " limit " << limit_;
+	return 0;
 }
 
 void Sharpen::setStrength(double strength)

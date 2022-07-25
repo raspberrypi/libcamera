@@ -31,7 +31,7 @@ char const *BlackLevel::name() const
 	return NAME;
 }
 
-void BlackLevel::read(boost::property_tree::ptree const &params)
+int BlackLevel::read(boost::property_tree::ptree const &params)
 {
 	uint16_t blackLevel = params.get<uint16_t>(
 		"black_level", 4096); /* 64 in 10 bits scaled to 16 bits */
@@ -42,6 +42,7 @@ void BlackLevel::read(boost::property_tree::ptree const &params)
 		<< " Read black levels red " << blackLevelR_
 		<< " green " << blackLevelG_
 		<< " blue " << blackLevelB_;
+	return 0;
 }
 
 void BlackLevel::prepare(Metadata *imageMetadata)

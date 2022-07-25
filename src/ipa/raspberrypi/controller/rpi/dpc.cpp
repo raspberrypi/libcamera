@@ -31,11 +31,12 @@ char const *Dpc::name() const
 	return NAME;
 }
 
-void Dpc::read(boost::property_tree::ptree const &params)
+int Dpc::read(boost::property_tree::ptree const &params)
 {
 	config_.strength = params.get<int>("strength", 1);
 	if (config_.strength < 0 || config_.strength > 2)
 		LOG(RPiDpc, Fatal) << "Dpc: bad strength value";
+	return 0;
 }
 
 void Dpc::prepare(Metadata *imageMetadata)

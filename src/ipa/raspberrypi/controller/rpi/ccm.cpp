@@ -39,7 +39,7 @@ Matrix::Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
 	m[0][0] = m0, m[0][1] = m1, m[0][2] = m2, m[1][0] = m3, m[1][1] = m4,
 	m[1][2] = m5, m[2][0] = m6, m[2][1] = m7, m[2][2] = m8;
 }
-void Matrix::read(boost::property_tree::ptree const &params)
+int Matrix::read(boost::property_tree::ptree const &params)
 {
 	double *ptr = (double *)m;
 	int n = 0;
@@ -50,6 +50,7 @@ void Matrix::read(boost::property_tree::ptree const &params)
 	}
 	if (n < 9)
 		LOG(RPiCcm, Fatal) << "Ccm: too few values in CCM";
+	return 0;
 }
 
 Ccm::Ccm(Controller *controller)
@@ -60,21 +61,32 @@ char const *Ccm::name() const
 	return NAME;
 }
 
-void Ccm::read(boost::property_tree::ptree const &params)
+int Ccm::read(boost::property_tree::ptree const &params)
 {
-	if (params.get_child_optional("saturation"))
-		config_.saturation.read(params.get_child("saturation"));
+	int ret;
+
+	if (params.get_child_optional("saturation")) {
+		ret = config_.saturation.read(params.get_child("saturation"));
+		if (ret)
+			return ret;
+	}
+
 	for (auto &p : params.get_child("ccms")) {
 		CtCcm ctCcm;
 		ctCcm.ct = p.second.get<double>("ct");
-		ctCcm.ccm.read(p.second.get_child("ccm"));
+		ret = ctCcm.ccm.read(p.second.get_child("ccm"));
+		if (ret)
+			return ret;
 		if (!config_.ccms.empty() &&
 		    ctCcm.ct <= config_.ccms.back().ct)
 			LOG(RPiCcm, Fatal) << "Ccm: CCM not in increasing colour temperature order";
 		config_.ccms.push_back(std::move(ctCcm));
 	}
+
 	if (config_.ccms.empty())
 		LOG(RPiCcm, Fatal) << "Ccm: no CCMs specified";
+
+	return 0;
 }
 
 void Ccm::setSaturation(double saturation)

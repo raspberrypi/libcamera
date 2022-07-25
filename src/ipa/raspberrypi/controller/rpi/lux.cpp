@@ -38,7 +38,7 @@ char const *Lux::name() const
 	return NAME;
 }
 
-void Lux::read(boost::property_tree::ptree const &params)
+int Lux::read(boost::property_tree::ptree const &params)
 {
 	referenceShutterSpeed_ =
 		params.get<double>("reference_shutter_speed") * 1.0us;
@@ -47,6 +47,7 @@ void Lux::read(boost::property_tree::ptree const &params)
 	referenceY_ = params.get<double>("reference_Y");
 	referenceLux_ = params.get<double>("reference_lux");
 	currentAperture_ = referenceAperture_;
+	return 0;
 }
 
 void Lux::setCurrentAperture(double aperture)

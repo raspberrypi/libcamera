@@ -32,19 +32,23 @@ Controller::Controller(char const *jsonFilename)
 
 Controller::~Controller() {}
 
-void Controller::read(char const *filename)
+int Controller::read(char const *filename)
 {
 	boost::property_tree::ptree root;
 	boost::property_tree::read_json(filename, root);
 	for (auto const &keyAndValue : root) {
 		Algorithm *algo = createAlgorithm(keyAndValue.first.c_str());
 		if (algo) {
-			algo->read(keyAndValue.second);
+			int ret = algo->read(keyAndValue.second);
+			if (ret)
+				return ret;
 			algorithms_.push_back(AlgorithmPtr(algo));
 		} else
 			LOG(RPiController, Warning)
 				<< "No algorithm found for \"" << keyAndValue.first << "\"";
 	}
+
+	return 0;
 }
 
 Algorithm *Controller::createAlgorithm(char const *name)

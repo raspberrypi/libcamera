@@ -229,7 +229,14 @@ int IPARPi::init(const IPASettings &settings, IPAInitResult *result)
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */
-	controller_.read(settings.configurationFile.c_str());
+	int ret = controller_.read(settings.configurationFile.c_str());
+	if (ret) {
+		LOG(IPARPI, Error)
+			<< "Failed to load tuning data file "
+			<< settings.configurationFile;
+		return ret;
+	}
+
 	controller_.initialise();
 
 	/* Return the controls handled by the IPA */

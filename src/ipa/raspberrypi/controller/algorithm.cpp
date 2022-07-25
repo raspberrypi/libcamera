@@ -9,8 +9,9 @@
 
 using namespace RPiController;
 
-void Algorithm::read([[maybe_unused]] boost::property_tree::ptree const &params)
+int Algorithm::read([[maybe_unused]] boost::property_tree::ptree const &params)
 {
+	return 0;
 }
 
 void Algorithm::initialise()

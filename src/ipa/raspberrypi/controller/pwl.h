@@ -57,7 +57,7 @@ public:
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	void read(boost::property_tree::ptree const &params);
+	int read(boost::property_tree::ptree const &params);
 	void append(double x, double y, const double eps = 1e-6);
 	void prepend(double x, double y, const double eps = 1e-6);
 	Interval domain() const;

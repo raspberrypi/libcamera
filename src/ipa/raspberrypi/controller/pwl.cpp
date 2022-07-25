@@ -12,7 +12,7 @@
 
 using namespace RPiController;
 
-void Pwl::read(boost::property_tree::ptree const &params)
+int Pwl::read(boost::property_tree::ptree const &params)
 {
 	for (auto it = params.begin(); it != params.end(); it++) {
 		double x = it->second.get_value<double>();
@@ -22,6 +22,7 @@ void Pwl::read(boost::property_tree::ptree const &params)
 		points_.push_back(Point(x, y));
 	}
 	assert(points_.size() >= 2);
+	return 0;
 }
 
 void Pwl::append(double x, double y, const double eps)

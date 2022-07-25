@@ -53,11 +53,17 @@ char const *Alsc::name() const
 static int generateLut(double *lut, boost::property_tree::ptree const &params)
 {
 	double cstrength = params.get<double>("corner_strength", 2.0);
-	if (cstrength <= 1.0)
-		LOG(RPiAlsc, Fatal) << "Alsc: corner_strength must be > 1.0";
+	if (cstrength <= 1.0) {
+		LOG(RPiAlsc, Error) << "corner_strength must be > 1.0";
+		return -EINVAL;
+	}
+
 	double asymmetry = params.get<double>("asymmetry", 1.0);
-	if (asymmetry < 0)
-		LOG(RPiAlsc, Fatal) << "Alsc: asymmetry must be >= 0";
+	if (asymmetry < 0) {
+		LOG(RPiAlsc, Error) << "asymmetry must be >= 0";
+		return -EINVAL;
+	}
+
 	double f1 = cstrength - 1, f2 = 1 + sqrt(cstrength);
 	double R2 = X * Y / 4 * (1 + asymmetry * asymmetry);
 	int num = 0;
@@ -78,13 +84,19 @@ static int readLut(double *lut, boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	const int maxNum = XY;
+
 	for (auto &p : params) {
-		if (num == maxNum)
-			LOG(RPiAlsc, Fatal) << "Alsc: too many entries in LSC table";
+		if (num == maxNum) {
+			LOG(RPiAlsc, Error) << "Too many entries in LSC table";
+			return -EINVAL;
+		}
 		lut[num++] = p.second.get_value<double>();
 	}
-	if (num < maxNum)
-		LOG(RPiAlsc, Fatal) << "Alsc: too few entries in LSC table";
+
+	if (num < maxNum) {
+		LOG(RPiAlsc, Error) << "Too few entries in LSC table";
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -96,24 +108,30 @@ static int readCalibrations(std::vector<AlscCalibration> &calibrations,
 		double lastCt = 0;
 		for (auto &p : params.get_child(name)) {
 			double ct = p.second.get<double>("ct");
-			if (ct <= lastCt)
-				LOG(RPiAlsc, Fatal)
-					<< "Alsc: entries in " << name << " must be in increasing ct order";
+			if (ct <= lastCt) {
+				LOG(RPiAlsc, Error)
+					<< "Entries in " << name << " must be in increasing ct order";
+				return -EINVAL;
+			}
 			AlscCalibration calibration;
 			calibration.ct = lastCt = ct;
 			boost::property_tree::ptree const &table =
 				p.second.get_child("table");
 			int num = 0;
 			for (auto it = table.begin(); it != table.end(); it++) {
-				if (num == XY)
-					LOG(RPiAlsc, Fatal)
-						<< "Alsc: too many values for ct " << ct << " in " << name;
+				if (num == XY) {
+					LOG(RPiAlsc, Error)
+						<< "Too many values for ct " << ct << " in " << name;
+					return -EINVAL;
+				}
 				calibration.table[num++] =
 					it->second.get_value<double>();
 			}
-			if (num != XY)
-				LOG(RPiAlsc, Fatal)
-					<< "Alsc: too few values for ct " << ct << " in " << name;
+			if (num != XY) {
+				LOG(RPiAlsc, Error)
+					<< "Too few values for ct " << ct << " in " << name;
+				return -EINVAL;
+			}
 			calibrations.push_back(calibration);
 			LOG(RPiAlsc, Debug)
 				<< "Read " << name << " calibration for ct " << ct;

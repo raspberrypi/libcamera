@@ -44,12 +44,16 @@ int Matrix::read(boost::property_tree::ptree const &params)
 	double *ptr = (double *)m;
 	int n = 0;
 	for (auto it = params.begin(); it != params.end(); it++) {
-		if (n++ == 9)
-			LOG(RPiCcm, Fatal) << "Ccm: too many values in CCM";
+		if (n++ == 9) {
+			LOG(RPiCcm, Error) << "Too many values in CCM";
+			return -EINVAL;
+		}
 		*ptr++ = it->second.get_value<double>();
 	}
-	if (n < 9)
-		LOG(RPiCcm, Fatal) << "Ccm: too few values in CCM";
+	if (n < 9) {
+		LOG(RPiCcm, Error) << "Too few values in CCM";
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -78,13 +82,17 @@ int Ccm::read(boost::property_tree::ptree const &params)
 		if (ret)
 			return ret;
 		if (!config_.ccms.empty() &&
-		    ctCcm.ct <= config_.ccms.back().ct)
-			LOG(RPiCcm, Fatal) << "Ccm: CCM not in increasing colour temperature order";
+		    ctCcm.ct <= config_.ccms.back().ct) {
+			LOG(RPiCcm, Error) << "CCM not in increasing colour temperature order";
+			return -EINVAL;
+		}
 		config_.ccms.push_back(std::move(ctCcm));
 	}
 
-	if (config_.ccms.empty())
-		LOG(RPiCcm, Fatal) << "Ccm: no CCMs specified";
+	if (config_.ccms.empty()) {
+		LOG(RPiCcm, Error) << "No CCMs specified";
+		return -EINVAL;
+	}
 
 	return 0;
 }

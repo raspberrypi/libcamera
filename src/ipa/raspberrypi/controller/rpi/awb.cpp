@@ -46,16 +46,22 @@ static int readCtCurve(Pwl &ctR, Pwl &ctB,
 	for (auto it = params.begin(); it != params.end(); it++) {
 		double ct = it->second.get_value<double>();
 		assert(it == params.begin() || ct != ctR.domain().end);
-		if (++it == params.end())
-			LOG(RPiAwb, Fatal) << "AwbConfig: incomplete CT curve entry";
+		if (++it == params.end()) {
+			LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
+			return -EINVAL;
+		}
 		ctR.append(ct, it->second.get_value<double>());
-		if (++it == params.end())
-			LOG(RPiAwb, Fatal) << "AwbConfig: incomplete CT curve entry";
+		if (++it == params.end()) {
+			LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
+			return -EINVAL;
+		}
 		ctB.append(ct, it->second.get_value<double>());
 		num++;
 	}
-	if (num < 2)
-		LOG(RPiAwb, Fatal) << "AwbConfig: insufficient points in CT curve";
+	if (num < 2) {
+		LOG(RPiAwb, Error) << "AwbConfig: insufficient points in CT curve";
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -78,12 +84,16 @@ int AwbConfig::read(boost::property_tree::ptree const &params)
 			ret = prior.read(p.second);
 			if (ret)
 				return ret;
-			if (!priors.empty() && prior.lux <= priors.back().lux)
-				LOG(RPiAwb, Fatal) << "AwbConfig: Prior must be ordered in increasing lux value";
+			if (!priors.empty() && prior.lux <= priors.back().lux) {
+				LOG(RPiAwb, Error) << "AwbConfig: Prior must be ordered in increasing lux value";
+				return -EINVAL;
+			}
 			priors.push_back(prior);
 		}
-		if (priors.empty())
-			LOG(RPiAwb, Fatal) << "AwbConfig: no AWB priors configured";
+		if (priors.empty()) {
+			LOG(RPiAwb, Error) << "AwbConfig: no AWB priors configured";
+			return ret;
+		}
 	}
 	if (params.get_child_optional("modes")) {
 		for (auto &p : params.get_child("modes")) {
@@ -93,8 +103,10 @@ int AwbConfig::read(boost::property_tree::ptree const &params)
 			if (defaultMode == nullptr)
 				defaultMode = &modes[p.first];
 		}
-		if (defaultMode == nullptr)
-			LOG(RPiAwb, Fatal) << "AwbConfig: no AWB modes configured";
+		if (defaultMode == nullptr) {
+			LOG(RPiAwb, Error) << "AwbConfig: no AWB modes configured";
+			return -EINVAL;
+		}
 	}
 	minPixels = params.get<double>("min_pixels", 16.0);
 	minG = params.get<uint16_t>("min_G", 32);
@@ -103,8 +115,10 @@ int AwbConfig::read(boost::property_tree::ptree const &params)
 	coarseStep = params.get<double>("coarse_step", 0.2);
 	transversePos = params.get<double>("transverse_pos", 0.01);
 	transverseNeg = params.get<double>("transverse_neg", 0.01);
-	if (transversePos <= 0 || transverseNeg <= 0)
-		LOG(RPiAwb, Fatal) << "AwbConfig: transverse_pos/neg must be > 0";
+	if (transversePos <= 0 || transverseNeg <= 0) {
+		LOG(RPiAwb, Error) << "AwbConfig: transverse_pos/neg must be > 0";
+		return -EINVAL;
+	}
 	sensitivityR = params.get<double>("sensitivity_r", 1.0);
 	sensitivityB = params.get<double>("sensitivity_b", 1.0);
 	if (bayes) {

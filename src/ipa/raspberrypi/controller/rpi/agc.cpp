@@ -34,13 +34,20 @@ static constexpr unsigned int PipelineBits = 13; /* seems to be a 13-bit pipelin
 int AgcMeteringMode::read(boost::property_tree::ptree const &params)
 {
 	int num = 0;
+
 	for (auto &p : params.get_child("weights")) {
-		if (num == AgcStatsSize)
-			LOG(RPiAgc, Fatal) << "AgcMeteringMode: too many weights";
+		if (num == AgcStatsSize) {
+			LOG(RPiAgc, Error) << "AgcMeteringMode: too many weights";
+			return -EINVAL;
+		}
 		weights[num++] = p.second.get_value<double>();
 	}
-	if (num != AgcStatsSize)
-		LOG(RPiAgc, Fatal) << "AgcMeteringMode: insufficient weights";
+
+	if (num != AgcStatsSize) {
+		LOG(RPiAgc, Error) << "AgcMeteringMode: insufficient weights";
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -85,12 +92,19 @@ int AgcExposureMode::read(boost::property_tree::ptree const &params)
 {
 	int numShutters = readList(shutter, params.get_child("shutter"));
 	int numAgs = readList(gain, params.get_child("gain"));
-	if (numShutters < 2 || numAgs < 2)
-		LOG(RPiAgc, Fatal)
+
+	if (numShutters < 2 || numAgs < 2) {
+		LOG(RPiAgc, Error)
 			<< "AgcExposureMode: must have at least two entries in exposure profile";
-	if (numShutters != numAgs)
-		LOG(RPiAgc, Fatal)
+		return -EINVAL;
+	}
+
+	if (numShutters != numAgs) {
+		LOG(RPiAgc, Error)
 			<< "AgcExposureMode: expect same number of exposure and gain entries in exposure profile";
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -120,8 +134,10 @@ int AgcConstraint::read(boost::property_tree::ptree const &params)
 	std::string boundString = params.get<std::string>("bound", "");
 	transform(boundString.begin(), boundString.end(),
 		  boundString.begin(), ::toupper);
-	if (boundString != "UPPER" && boundString != "LOWER")
-		LOG(RPiAgc, Fatal) << "AGC constraint type should be UPPER or LOWER";
+	if (boundString != "UPPER" && boundString != "LOWER") {
+		LOG(RPiAgc, Error) << "AGC constraint type should be UPPER or LOWER";
+		return -EINVAL;
+	}
 	bound = boundString == "UPPER" ? Bound::UPPER : Bound::LOWER;
 	qLo = params.get<double>("q_lo");
 	qHi = params.get<double>("q_hi");

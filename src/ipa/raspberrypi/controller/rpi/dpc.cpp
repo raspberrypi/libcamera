@@ -34,8 +34,10 @@ char const *Dpc::name() const
 int Dpc::read(boost::property_tree::ptree const &params)
 {
 	config_.strength = params.get<int>("strength", 1);
-	if (config_.strength < 0 || config_.strength > 2)
-		LOG(RPiDpc, Fatal) << "Dpc: bad strength value";
+	if (config_.strength < 0 || config_.strength > 2) {
+		LOG(RPiDpc, Error) << "bad strength value";
+		return -EINVAL;
+	}
 	return 0;
 }
 

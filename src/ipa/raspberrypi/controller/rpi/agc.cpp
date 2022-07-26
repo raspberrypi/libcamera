@@ -5,6 +5,7 @@
  * agc.cpp - AGC/AEC control algorithm
  */
 
+#include <algorithm>
 #include <map>
 #include <tuple>
 
@@ -71,44 +72,26 @@ readMeteringModes(std::map<std::string, AgcMeteringMode> &metering_modes,
 	return { 0, first };
 }
 
-static int readList(std::vector<double> &list,
-		    const libcamera::YamlObject &params)
-{
-	for (const auto &p : params.asList()) {
-		auto value = p.get<double>();
-		if (!value)
-			return -EINVAL;
-		list.push_back(*value);
-	}
-
-	return list.size();
-}
-
-static int readList(std::vector<Duration> &list,
-		    const libcamera::YamlObject &params)
-{
-	for (const auto &p : params.asList()) {
-		auto value = p.get<double>();
-		if (!value)
-			return -EINVAL;
-		list.push_back(*value * 1us);
-	}
-
-	return list.size();
-}
-
 int AgcExposureMode::read(const libcamera::YamlObject &params)
 {
-	int numShutters = readList(shutter, params["shutter"]);
-	int numAgs = readList(gain, params["gain"]);
+	auto value = params["shutter"].getList<double>();
+	if (!value)
+		return -EINVAL;
+	std::transform(value->begin(), value->end(), std::back_inserter(shutter),
+		       [](double v) { return v * 1us; });
 
-	if (numShutters < 2 || numAgs < 2) {
+	value = params["gain"].getList<double>();
+	if (!value)
+		return -EINVAL;
+	gain = std::move(*value);
+
+	if (shutter.size() < 2 || gain.size() < 2) {
 		LOG(RPiAgc, Error)
 			<< "AgcExposureMode: must have at least two entries in exposure profile";
 		return -EINVAL;
 	}
 
-	if (numShutters != numAgs) {
+	if (shutter.size() != gain.size()) {
 		LOG(RPiAgc, Error)
 			<< "AgcExposureMode: expect same number of exposure and gain entries in exposure profile";
 		return -EINVAL;

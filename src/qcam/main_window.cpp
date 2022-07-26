@@ -119,14 +119,14 @@ MainWindow::MainWindow(CameraManager *cm, const OptionsParser::Options &options)
 	if (renderType == "qt") {
 		ViewFinderQt *viewfinder = new ViewFinderQt(this);
 		connect(viewfinder, &ViewFinderQt::renderComplete,
-			this, &MainWindow::queueRequest);
+			this, &MainWindow::renderComplete);
 		viewfinder_ = viewfinder;
 		setCentralWidget(viewfinder);
 #ifndef QT_NO_OPENGL
 	} else if (renderType == "gles") {
 		ViewFinderGL *viewfinder = new ViewFinderGL(this);
 		connect(viewfinder, &ViewFinderGL::renderComplete,
-			this, &MainWindow::queueRequest);
+			this, &MainWindow::renderComplete);
 		viewfinder_ = viewfinder;
 		setCentralWidget(viewfinder);
 #endif
@@ -517,7 +517,7 @@ int MainWindow::startCapture()
 
 	/* Queue all requests. */
 	for (std::unique_ptr<Request> &request : requests_) {
-		ret = camera_->queueRequest(request.get());
+		ret = queueRequest(request.get());
 		if (ret < 0) {
 			qWarning() << "Can't queue request";
 			goto error_disconnect;
@@ -750,7 +750,7 @@ void MainWindow::processViewfinder(FrameBuffer *buffer)
 	viewfinder_->render(buffer, mappedBuffers_[buffer].get());
 }
 
-void MainWindow::queueRequest(FrameBuffer *buffer)
+void MainWindow::renderComplete(FrameBuffer *buffer)
 {
 	Request *request;
 	{
@@ -779,6 +779,10 @@ void MainWindow::queueRequest(FrameBuffer *buffer)
 			qWarning() << "No free buffer available for RAW capture";
 		}
 	}
+	queueRequest(request);
+}
 
-	camera_->queueRequest(request);
+int MainWindow::queueRequest(Request *request)
+{
+	return camera_->queueRequest(request);
 }

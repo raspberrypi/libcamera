@@ -148,7 +148,6 @@ protected:
 		}
 
 		/* Test string object */
-		bool ok;
 		auto &strObj = (*root)["string"];
 
 		if (strObj.isDictionary()) {
@@ -161,27 +160,27 @@ protected:
 			return TestFail;
 		}
 
-		if (strObj.get<string>("", &ok) != "libcamera" || !ok) {
+		if (strObj.get<string>().value_or("") != "libcamera") {
 			cerr << "String object parse as wrong content" << std::endl;
 			return TestFail;
 		}
 
-		if (strObj.get<int32_t>(-1, &ok) != -1 || ok) {
+		if (strObj.get<int32_t>()) {
 			cerr << "String object parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (strObj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (strObj.get<uint32_t>()) {
 			cerr << "String object parse as unsigned integer" << std::endl;
 			return TestFail;
 		}
 
-		if (strObj.get<double>(1.0, &ok) != 1.0 || ok) {
+		if (strObj.get<double>()) {
 			cerr << "String object parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (strObj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (strObj.get<Size>()) {
 			cerr << "String object parse as Size" << std::endl;
 			return TestFail;
 		}
@@ -199,27 +198,27 @@ protected:
 			return TestFail;
 		}
 
-		if (int32Obj.get<int32_t>(-100, &ok) != -100 || !ok) {
+		if (int32Obj.get<int32_t>().value_or(0) != -100) {
 			cerr << "Integer object parse as wrong value" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<string>("", &ok) != "-100" || !ok) {
+		if (int32Obj.get<string>().value_or("") != "-100") {
 			cerr << "Integer object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<double>(1.0, &ok) != -100.0 || !ok) {
+		if (int32Obj.get<double>().value_or(0.0) != -100.0) {
 			cerr << "Integer object fail to parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (int32Obj.get<uint32_t>()) {
 			cerr << "Negative integer object parse as unsigned integer" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (int32Obj.get<Size>()) {
 			cerr << "Integer object parse as Size" << std::endl;
 			return TestFail;
 		}
@@ -237,27 +236,27 @@ protected:
 			return TestFail;
 		}
 
-		if (uint32Obj.get<int32_t>(-1, &ok) != 100 || !ok) {
+		if (uint32Obj.get<int32_t>().value_or(0) != 100) {
 			cerr << "Unsigned integer object fail to parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<string>("", &ok) != "100" || !ok) {
+		if (uint32Obj.get<string>().value_or("") != "100") {
 			cerr << "Unsigned integer object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<double>(1.0, &ok) != 100.0 || !ok) {
+		if (uint32Obj.get<double>().value_or(0.0) != 100.0) {
 			cerr << "Unsigned integer object fail to parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<uint32_t>(100, &ok) != 100 || !ok) {
+		if (uint32Obj.get<uint32_t>().value_or(0) != 100) {
 			cerr << "Unsigned integer object parsed as wrong value" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (uint32Obj.get<Size>()) {
 			cerr << "Unsigned integer object parsed as Size" << std::endl;
 			return TestFail;
 		}
@@ -275,27 +274,27 @@ protected:
 			return TestFail;
 		}
 
-		if (doubleObj.get<string>("", &ok) != "3.14159" || !ok) {
+		if (doubleObj.get<string>().value_or("") != "3.14159") {
 			cerr << "Double object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (doubleObj.get<double>(1.0, &ok) != 3.14159 || !ok) {
+		if (doubleObj.get<double>().value_or(0.0) != 3.14159) {
 			cerr << "Double object parse as wrong value" << std::endl;
 			return TestFail;
 		}
 
-		if (doubleObj.get<int32_t>(-1, &ok) != -1 || ok) {
+		if (doubleObj.get<int32_t>()) {
 			cerr << "Double object parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (doubleObj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (doubleObj.get<uint32_t>()) {
 			cerr << "Double object parse as unsigned integer" << std::endl;
 			return TestFail;
 		}
 
-		if (doubleObj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (doubleObj.get<Size>()) {
 			cerr << "Double object parse as Size" << std::endl;
 			return TestFail;
 		}
@@ -313,27 +312,27 @@ protected:
 			return TestFail;
 		}
 
-		if (sizeObj.get<string>("", &ok) != "" || ok) {
+		if (sizeObj.get<string>()) {
 			cerr << "Size object parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (sizeObj.get<double>(1.0, &ok) != 1.0 || ok) {
+		if (sizeObj.get<double>()) {
 			cerr << "Size object parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (sizeObj.get<int32_t>(-1, &ok) != -1 || ok) {
+		if (sizeObj.get<int32_t>()) {
 			cerr << "Size object parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (sizeObj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (sizeObj.get<uint32_t>()) {
 			cerr << "Size object parse as unsigned integer" << std::endl;
 			return TestFail;
 		}
 
-		if (sizeObj.get<Size>(Size(0, 0), &ok) != Size(1920, 1080) || !ok) {
+		if (sizeObj.get<Size>().value_or(Size(0, 0)) != Size(1920, 1080)) {
 			cerr << "Size object parse as wrong value" << std::endl;
 			return TestFail;
 		}
@@ -351,27 +350,27 @@ protected:
 			return TestFail;
 		}
 
-		if (listObj.get<string>("", &ok) != "" || ok) {
+		if (listObj.get<string>()) {
 			cerr << "List object parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (listObj.get<double>(1.0, &ok) != 1.0 || ok) {
+		if (listObj.get<double>()) {
 			cerr << "List object parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (listObj.get<int32_t>(-1, &ok) != -1 || ok) {
+		if (listObj.get<int32_t>()) {
 			cerr << "List object parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (listObj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (listObj.get<uint32_t>()) {
 			cerr << "List object parse as unsigne integer" << std::endl;
 			return TestFail;
 		}
 
-		if (listObj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (listObj.get<Size>()) {
 			cerr << "String list object parse as Size" << std::endl;
 			return TestFail;
 		}
@@ -424,27 +423,27 @@ protected:
 			return TestFail;
 		}
 
-		if (dictObj.get<string>("", &ok) != "" || ok) {
+		if (dictObj.get<string>()) {
 			cerr << "Dictionary object parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (dictObj.get<double>(1.0, &ok) != 1.0 || ok) {
+		if (dictObj.get<double>()) {
 			cerr << "Dictionary object parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (dictObj.get<int32_t>(-1, &ok) != -1 || ok) {
+		if (dictObj.get<int32_t>()) {
 			cerr << "Dictionary object parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (dictObj.get<uint32_t>(1, &ok) != 1 || ok) {
+		if (dictObj.get<uint32_t>()) {
 			cerr << "Dictionary object parse as unsigned integer" << std::endl;
 			return TestFail;
 		}
 
-		if (dictObj.get<Size>(Size(0, 0), &ok) != Size(0, 0) || ok) {
+		if (dictObj.get<Size>()) {
 			cerr << "Dictionary object parse as Size" << std::endl;
 			return TestFail;
 		}

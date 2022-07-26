@@ -31,12 +31,6 @@ namespace {
 /* Empty static YamlObject as a safe result for invalid operations */
 static const YamlObject empty;
 
-void setOk(bool *ok, bool result)
-{
-	if (ok)
-		*ok = result;
-}
-
 } /* namespace */
 
 /**
@@ -100,54 +94,52 @@ std::size_t YamlObject::size() const
 }
 
 /**
- * \fn template<typename T> YamlObject::get<T>(
- *	const T &defaultValue, bool *ok) const
+ * \fn template<typename T> YamlObject::get<T>() const
  * \brief Parse the YamlObject as a \a T value
- * \param[in] defaultValue The default value when failing to parse
- * \param[out] ok The result of whether the parse succeeded
  *
  * This function parses the value of the YamlObject as a \a T object, and
  * returns the value. If parsing fails (usually because the YamlObject doesn't
- * store a \a T value), the \a defaultValue is returned, and \a ok is set to
- * false. Otherwise, the YamlObject value is returned, and \a ok is set to true.
+ * store a \a T value), std::nullopt is returned.
  *
- * The \a ok pointer is optional and can be a nullptr if the caller doesn't
- * need to know if parsing succeeded.
+ * \return The YamlObject value, or std::nullopt if parsing failed
+ */
+
+/**
+ * \fn template<typename T> YamlObject::get<T>(const T &defaultValue) const
+ * \brief Parse the YamlObject as a \a T value
+ * \param[in] defaultValue The default value when failing to parse
  *
- * \return Value as a bool type
+ * This function parses the value of the YamlObject as a \a T object, and
+ * returns the value. If parsing fails (usually because the YamlObject doesn't
+ * store a \a T value), the \a defaultValue is returned.
+ *
+ * \return The YamlObject value, or \a defaultValue if parsing failed
  */
 
 #ifndef __DOXYGEN__
 
 template<>
-bool YamlObject::get(const bool &defaultValue, bool *ok) const
+std::optional<bool> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
-	if (value_ == "true") {
-		setOk(ok, true);
+	if (value_ == "true")
 		return true;
-	} else if (value_ == "false") {
-		setOk(ok, true);
+	else if (value_ == "false")
 		return false;
-	}
 
-	return defaultValue;
+	return {};
 }
 
 template<>
-int16_t YamlObject::get(const int16_t &defaultValue, bool *ok) const
+std::optional<int16_t> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
 	if (value_ == "")
-		return defaultValue;
+		return {};
 
 	char *end;
 
@@ -157,22 +149,19 @@ int16_t YamlObject::get(const int16_t &defaultValue, bool *ok) const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<int16_t>::min() ||
 	    value > std::numeric_limits<int16_t>::max())
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value;
 }
 
 template<>
-uint16_t YamlObject::get(const uint16_t &defaultValue, bool *ok) const
+std::optional<uint16_t> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
 	if (value_ == "")
-		return defaultValue;
+		return {};
 
 	/*
 	 * libyaml parses all scalar values as strings. When a string has
@@ -183,7 +172,7 @@ uint16_t YamlObject::get(const uint16_t &defaultValue, bool *ok) const
 	 */
 	std::size_t found = value_.find_first_not_of(" \t");
 	if (found != std::string::npos && value_[found] == '-')
-		return defaultValue;
+		return {};
 
 	char *end;
 
@@ -193,22 +182,19 @@ uint16_t YamlObject::get(const uint16_t &defaultValue, bool *ok) const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<uint16_t>::min() ||
 	    value > std::numeric_limits<uint16_t>::max())
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value;
 }
 
 template<>
-int32_t YamlObject::get(const int32_t &defaultValue, bool *ok) const
+std::optional<int32_t> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
 	if (value_ == "")
-		return defaultValue;
+		return {};
 
 	char *end;
 
@@ -218,22 +204,19 @@ int32_t YamlObject::get(const int32_t &defaultValue, bool *ok) const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<int32_t>::min() ||
 	    value > std::numeric_limits<int32_t>::max())
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value;
 }
 
 template<>
-uint32_t YamlObject::get(const uint32_t &defaultValue, bool *ok) const
+std::optional<uint32_t> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
 	if (value_ == "")
-		return defaultValue;
+		return {};
 
 	/*
 	 * libyaml parses all scalar values as strings. When a string has
@@ -244,7 +227,7 @@ uint32_t YamlObject::get(const uint32_t &defaultValue, bool *ok) const
 	 */
 	std::size_t found = value_.find_first_not_of(" \t");
 	if (found != std::string::npos && value_[found] == '-')
-		return defaultValue;
+		return {};
 
 	char *end;
 
@@ -254,22 +237,19 @@ uint32_t YamlObject::get(const uint32_t &defaultValue, bool *ok) const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<uint32_t>::min() ||
 	    value > std::numeric_limits<uint32_t>::max())
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value;
 }
 
 template<>
-double YamlObject::get(const double &defaultValue, bool *ok) const
+std::optional<double> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
 	if (value_ == "")
-		return defaultValue;
+		return {};
 
 	char *end;
 
@@ -277,50 +257,38 @@ double YamlObject::get(const double &defaultValue, bool *ok) const
 	double value = std::strtod(value_.c_str(), &end);
 
 	if ('\0' != *end || errno == ERANGE)
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value;
 }
 
 template<>
-std::string YamlObject::get(const std::string &defaultValue, bool *ok) const
+std::optional<std::string> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::Value)
-		return defaultValue;
+		return {};
 
-	setOk(ok, true);
 	return value_;
 }
 
 template<>
-Size YamlObject::get(const Size &defaultValue, bool *ok) const
+std::optional<Size> YamlObject::get() const
 {
-	setOk(ok, false);
-
 	if (type_ != Type::List)
-		return defaultValue;
+		return {};
 
 	if (list_.size() != 2)
-		return defaultValue;
+		return {};
 
-	/*
-	 * Add a local variable to validate each dimension in case
-	 * that ok == nullptr.
-	 */
-	bool valid;
-	uint32_t width = list_[0]->get<uint32_t>(0, &valid);
-	if (!valid)
-		return defaultValue;
+	auto width = list_[0]->get<uint32_t>();
+	if (!width)
+		return {};
 
-	uint32_t height = list_[1]->get<uint32_t>(0, &valid);
-	if (!valid)
-		return defaultValue;
+	auto height = list_[1]->get<uint32_t>();
+	if (!height)
+		return {};
 
-	setOk(ok, true);
-	return Size(width, height);
+	return Size(*width, *height);
 }
 
 #endif /* __DOXYGEN__ */

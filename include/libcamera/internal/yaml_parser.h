@@ -9,6 +9,7 @@
 
 #include <iterator>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -165,7 +166,13 @@ public:
 #else
 	template<typename T>
 #endif
-	T get(const T &defaultValue, bool *ok = nullptr) const;
+	std::optional<T> get() const;
+
+	template<typename T>
+	T get(const T &defaultValue) const
+	{
+		return get<T>().value_or(defaultValue);
+	}
 
 	DictAdapter asDict() const { return DictAdapter{ dictionary_ }; }
 	ListAdapter asList() const { return ListAdapter{ list_ }; }

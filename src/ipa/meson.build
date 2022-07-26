@@ -27,6 +27,7 @@ ipa_sign = files('ipa-sign.sh')
 ipa_names = []
 
 ipa_modules = get_option('ipas')
+enabled_ipa_modules = []
 
 # The ipa-sign-install.sh script which uses the ipa_names variable will itself
 # prepend MESON_INSTALL_DESTDIR_PREFIX to each ipa module name, therefore we
@@ -35,6 +36,7 @@ foreach pipeline : pipelines
     if ipa_modules.contains(pipeline)
         subdir(pipeline)
         ipa_names += ipa_install_dir / ipa_name + '.so'
+        enabled_ipa_modules += pipeline
     endif
 endforeach
 

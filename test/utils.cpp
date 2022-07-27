@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -169,6 +170,55 @@ protected:
 		return TestPass;
 	}
 
+	int testDefopt()
+	{
+		static bool defaultConstructed = false;
+
+		struct ValueType {
+			ValueType()
+				: value_(-1)
+			{
+				defaultConstructed = true;
+			}
+
+			ValueType(int value)
+				: value_(value)
+			{
+			}
+
+			int value_;
+		};
+
+		/*
+		 * Test that utils::defopt doesn't cause default-construction
+		 * of a ValueType instance when value_or(utils::defopt) is
+		 * called on a std::optional that has a value.
+		 */
+		std::optional<ValueType> opt = ValueType(0);
+		ValueType value = opt.value_or(utils::defopt);
+
+		if (defaultConstructed || value.value_ != 0) {
+			std::cerr << "utils::defopt didn't prevent default construction"
+				  << std::endl;
+			return TestFail;
+		}
+
+		/*
+		 * Then test that the ValueType is correctly default-constructed
+		 * when the std::optional has no value.
+		 */
+		opt = std::nullopt;
+		value = opt.value_or(utils::defopt);
+
+		if (!defaultConstructed || value.value_ != -1) {
+			std::cerr << "utils::defopt didn't cause default construction"
+				  << std::endl;
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
 	int run()
 	{
 		/* utils::hex() test. */
@@ -279,6 +329,10 @@ protected:
 
 		/* utils::Duration test. */
 		if (testDuration() != TestPass)
+			return TestFail;
+
+		/* utils::defopt test. */
+		if (testDefopt() != TestPass)
 			return TestFail;
 
 		return TestPass;

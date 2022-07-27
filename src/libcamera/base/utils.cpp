@@ -463,6 +463,27 @@ std::string toAscii(const std::string &str)
  * \a b
  */
 
+/**
+ * \var defopt
+ * \brief Constant used with std::optional::value_or() to create a
+ * default-constructed object
+ *
+ * The std::optional<T>::value_or(U &&default_value) function returns the
+ * contained value if available, or \a default_value if the std::optional has no
+ * value. If the desired default value is a default-constructed T, the obvious
+ * option is to call std::optional<T>::value_or(T{}). This approach has two
+ * drawbacks:
+ *
+ * * The \a default_value T{} is constructed even if the std::optional instance
+ *   has a value, which impacts efficiency.
+ * * The T{} default constructor needs to be spelled out explicitly in the
+ *   value_or() call, leading to long lines if the type is complex.
+ *
+ * The defopt variable solves these issues by providing a value that can be
+ * passed to std::optional<T>::value_or() and get implicitly converted to a
+ * default-constructed T.
+ */
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

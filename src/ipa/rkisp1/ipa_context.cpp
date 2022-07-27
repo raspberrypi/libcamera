@@ -95,6 +95,9 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPASessionConfiguration::sensor.lineDuration
  * \brief Line duration in microseconds
+ *
+ * \var IPASessionConfiguration::sensor.size
+ * \brief Sensor output resolution
  */
 
 /**

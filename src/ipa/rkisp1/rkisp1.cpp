@@ -210,6 +210,7 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	/* Set the hardware revision for the algorithms. */
 	context_.configuration.hw.revision = hwRevision_;
 
+	context_.configuration.sensor.size = info.outputSize;
 	context_.configuration.sensor.lineDuration = info.lineLength * 1.0s / info.pixelRate;
 
 	/*

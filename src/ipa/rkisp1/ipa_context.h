@@ -33,6 +33,7 @@ struct IPASessionConfiguration {
 
 	struct {
 		utils::Duration lineDuration;
+		Size size;
 	} sensor;
 
 	struct {

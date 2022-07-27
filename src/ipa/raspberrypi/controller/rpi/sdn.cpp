@@ -17,8 +17,10 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiSdn)
 
-// Calculate settings for the spatial denoise block using the noise profile in
-// the image metadata.
+/*
+ * Calculate settings for the spatial denoise block using the noise profile in
+ * the image metadata.
+ */
 
 #define NAME "rpi.sdn"
 
@@ -45,7 +47,7 @@ void Sdn::initialise()
 void Sdn::prepare(Metadata *imageMetadata)
 {
 	struct NoiseStatus noiseStatus = {};
-	noiseStatus.noiseSlope = 3.0; // in case no metadata
+	noiseStatus.noiseSlope = 3.0; /* in case no metadata */
 	if (imageMetadata->get("noise.status", noiseStatus) != 0)
 		LOG(RPiSdn, Warning) << "no noise profile found";
 	LOG(RPiSdn, Debug)
@@ -65,11 +67,11 @@ void Sdn::prepare(Metadata *imageMetadata)
 
 void Sdn::setMode(DenoiseMode mode)
 {
-	// We only distinguish between off and all other modes.
+	/* We only distinguish between off and all other modes. */
 	mode_ = mode;
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Sdn(controller);

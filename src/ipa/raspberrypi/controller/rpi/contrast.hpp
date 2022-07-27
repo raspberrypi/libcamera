@@ -13,8 +13,10 @@
 
 namespace RPiController {
 
-// Back End algorithm to appaly correct digital gain. Should be placed after
-// Back End AWB.
+/*
+ * Back End algorithm to appaly correct digital gain. Should be placed after
+ * Back End AWB.
+ */
 
 struct ContrastConfig {
 	bool ceEnable;
@@ -47,4 +49,4 @@ private:
 	std::mutex mutex_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

@@ -9,7 +9,7 @@
 #include "../sharpen_algorithm.hpp"
 #include "../sharpen_status.h"
 
-// This is our implementation of the "sharpen algorithm".
+/* This is our implementation of the "sharpen algorithm". */
 
 namespace RPiController {
 
@@ -31,4 +31,4 @@ private:
 	double userStrength_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

@@ -8,20 +8,24 @@
 
 #include <libcamera/base/utils.h>
 
-// The AGC algorithm should post the following structure into the image's
-// "agc.status" metadata.
+/*
+ * The AGC algorithm should post the following structure into the image's
+ * "agc.status" metadata.
+ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Note: total_exposure_value will be reported as zero until the algorithm has
-// seen statistics and calculated meaningful values. The contents should be
-// ignored until then.
+/*
+ * Note: total_exposure_value will be reported as zero until the algorithm has
+ * seen statistics and calculated meaningful values. The contents should be
+ * ignored until then.
+ */
 
 struct AgcStatus {
-	libcamera::utils::Duration totalExposureValue; // value for all exposure and gain for this image
-	libcamera::utils::Duration targetExposureValue; // (unfiltered) target total exposure AGC is aiming for
+	libcamera::utils::Duration totalExposureValue; /* value for all exposure and gain for this image */
+	libcamera::utils::Duration targetExposureValue; /* (unfiltered) target total exposure AGC is aiming for */
 	libcamera::utils::Duration shutterTime;
 	double analogueGain;
 	char exposureMode[32];

@@ -6,7 +6,7 @@
  */
 #pragma once
 
-// The "ccm" algorithm generates an appropriate colour matrix.
+/* The "ccm" algorithm generates an appropriate colour matrix. */
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,7 +6,7 @@
  */
 #pragma once
 
-// The "noise" algorithm stores an estimate of the noise profile for this image.
+/* The "noise" algorithm stores an estimate of the noise profile for this image. */
 
 #ifdef __cplusplus
 extern "C" {

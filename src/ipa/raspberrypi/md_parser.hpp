@@ -152,4 +152,4 @@ private:
 	OffsetMap offsets_;
 };
 
-} // namespace RPi
+} /* namespace RPi */

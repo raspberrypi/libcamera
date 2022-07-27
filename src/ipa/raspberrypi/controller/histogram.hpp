@@ -10,8 +10,10 @@
 #include <vector>
 #include <cassert>
 
-// A simple histogram class, for use in particular to find "quantiles" and
-// averages between "quantiles".
+/*
+ * A simple histogram class, for use in particular to find "quantiles" and
+ * averages between "quantiles".
+ */
 
 namespace RPiController {
 
@@ -29,16 +31,18 @@ public:
 	}
 	uint32_t bins() const { return cumulative_.size() - 1; }
 	uint64_t total() const { return cumulative_[cumulative_.size() - 1]; }
-	// Cumulative frequency up to a (fractional) point in a bin.
+	/* Cumulative frequency up to a (fractional) point in a bin. */
 	uint64_t cumulativeFreq(double bin) const;
-	// Return the (fractional) bin of the point q (0 <= q <= 1) through the
-	// histogram. Optionally provide limits to help.
+	/*
+	 * Return the (fractional) bin of the point q (0 <= q <= 1) through the
+	 * histogram. Optionally provide limits to help.
+	 */
 	double quantile(double q, int first = -1, int last = -1) const;
-	// Return the average histogram bin value between the two quantiles.
+	/* Return the average histogram bin value between the two quantiles. */
 	double interQuantileMean(double qLo, double qHi) const;
 
 private:
 	std::vector<uint64_t> cumulative_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

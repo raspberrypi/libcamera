@@ -66,11 +66,15 @@ double Pwl::eval(double x, int *spanPtr, bool updateSpan) const
 
 int Pwl::findSpan(double x, int span) const
 {
-	// Pwls are generally small, so linear search may well be faster than
-	// binary, though could review this if large PWls start turning up.
+	/*
+	 * Pwls are generally small, so linear search may well be faster than
+	 * binary, though could review this if large PWls start turning up.
+	 */
 	int lastSpan = points_.size() - 2;
-	// some algorithms may call us with span pointing directly at the last
-	// control point
+	/*
+	 * some algorithms may call us with span pointing directly at the last
+	 * control point
+	 */
 	span = std::max(0, std::min(lastSpan, span));
 	while (span < lastSpan && x >= points_[span + 1].x)
 		span++;
@@ -87,7 +91,7 @@ Pwl::PerpType Pwl::invert(Point const &xy, Point &perp, int &span,
 	for (span = span + 1; span < (int)points_.size() - 1; span++) {
 		Point spanVec = points_[span + 1] - points_[span];
 		double t = ((xy - points_[span]) % spanVec) / spanVec.len2();
-		if (t < -eps) // off the start of this span
+		if (t < -eps) /* off the start of this span */
 		{
 			if (span == 0) {
 				perp = points_[span];
@@ -96,14 +100,14 @@ Pwl::PerpType Pwl::invert(Point const &xy, Point &perp, int &span,
 				perp = points_[span];
 				return PerpType::Vertex;
 			}
-		} else if (t > 1 + eps) // off the end of this span
+		} else if (t > 1 + eps) /* off the end of this span */
 		{
 			if (span == (int)points_.size() - 2) {
 				perp = points_[span + 1];
 				return PerpType::End;
 			}
 			prevOffEnd = true;
-		} else // a true perpendicular
+		} else /* a true perpendicular */
 		{
 			perp = points_[span] + spanVec * t;
 			return PerpType::Perpendicular;
@@ -133,9 +137,11 @@ Pwl Pwl::inverse(bool *trueInverse, const double eps) const
 			neither = true;
 	}
 
-	// This is not a proper inverse if we found ourselves putting points
-	// onto both ends of the inverse, or if there were points that couldn't
-	// go on either.
+	/*
+	 * This is not a proper inverse if we found ourselves putting points
+	 * onto both ends of the inverse, or if there were points that couldn't
+	 * go on either.
+	 */
 	if (trueInverse)
 		*trueInverse = !(neither || (appended && prepended));
 
@@ -154,8 +160,10 @@ Pwl Pwl::compose(Pwl const &other, const double eps) const
 		    otherSpan + 1 < (int)other.points_.size() &&
 		    points_[thisSpan + 1].y >=
 			    other.points_[otherSpan + 1].x + eps) {
-			// next control point in result will be where this
-			// function's y reaches the next span in other
+			/*
+			 * next control point in result will be where this
+			 * function's y reaches the next span in other
+			 */
 			thisX = points_[thisSpan].x +
 				(other.points_[otherSpan + 1].x -
 				 points_[thisSpan].y) *
@@ -164,15 +172,17 @@ Pwl Pwl::compose(Pwl const &other, const double eps) const
 		} else if (abs(dy) > eps && otherSpan > 0 &&
 			   points_[thisSpan + 1].y <=
 				   other.points_[otherSpan - 1].x - eps) {
-			// next control point in result will be where this
-			// function's y reaches the previous span in other
+			/*
+			 * next control point in result will be where this
+			 * function's y reaches the previous span in other
+			 */
 			thisX = points_[thisSpan].x +
 				(other.points_[otherSpan + 1].x -
 				 points_[thisSpan].y) *
 					dx / dy;
 			thisY = other.points_[--otherSpan].x;
 		} else {
-			// we stay in the same span in other
+			/* we stay in the same span in other */
 			thisSpan++;
 			thisX = points_[thisSpan].x,
 			thisY = points_[thisSpan].y;

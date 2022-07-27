@@ -11,7 +11,7 @@
 
 namespace RPiController {
 
-// Algorithm to calculate correct spatial denoise (SDN) settings.
+/* Algorithm to calculate correct spatial denoise (SDN) settings. */
 
 class Sdn : public DenoiseAlgorithm
 {
@@ -29,4 +29,4 @@ private:
 	DenoiseMode mode_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

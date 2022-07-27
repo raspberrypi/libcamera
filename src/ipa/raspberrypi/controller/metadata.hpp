@@ -6,7 +6,7 @@
  */
 #pragma once
 
-// A simple class for carrying arbitrary metadata, for example about an image.
+/* A simple class for carrying arbitrary metadata, for example about an image. */
 
 #include <any>
 #include <map>
@@ -81,8 +81,10 @@ public:
 	template<typename T>
 	T *getLocked(std::string const &tag)
 	{
-		// This allows in-place access to the Metadata contents,
-		// for which you should be holding the lock.
+		/*
+		 * This allows in-place access to the Metadata contents,
+		 * for which you should be holding the lock.
+		 */
 		auto it = data_.find(tag);
 		if (it == data_.end())
 			return nullptr;
@@ -92,13 +94,15 @@ public:
 	template<typename T>
 	void setLocked(std::string const &tag, T const &value)
 	{
-		// Use this only if you're holding the lock yourself.
+		/* Use this only if you're holding the lock yourself. */
 		data_[tag] = value;
 	}
 
-	// Note: use of (lowercase) lock and unlock means you can create scoped
-	// locks with the standard lock classes.
-	// e.g. std::lock_guard<RPiController::Metadata> lock(metadata)
+	/*
+	 * Note: use of (lowercase) lock and unlock means you can create scoped
+	 * locks with the standard lock classes.
+	 * e.g. std::lock_guard<RPiController::Metadata> lock(metadata)
+	 */
 	void lock() { mutex_.lock(); }
 	void unlock() { mutex_.unlock(); }
 
@@ -107,4 +111,4 @@ private:
 	std::map<std::string, std::any> data_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

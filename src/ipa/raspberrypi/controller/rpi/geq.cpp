@@ -18,8 +18,10 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiGeq)
 
-// We use the lux status so that we can apply stronger settings in darkness (if
-// necessary).
+/*
+ * We use the lux status so that we can apply stronger settings in darkness (if
+ * necessary).
+ */
 
 #define NAME "rpi.geq"
 
@@ -50,7 +52,7 @@ void Geq::prepare(Metadata *imageMetadata)
 	if (imageMetadata->get("lux.status", luxStatus))
 		LOG(RPiGeq, Warning) << "no lux data found";
 	DeviceStatus deviceStatus;
-	deviceStatus.analogueGain = 1.0; // in case not found
+	deviceStatus.analogueGain = 1.0; /* in case not found */
 	if (imageMetadata->get("device.status", deviceStatus))
 		LOG(RPiGeq, Warning)
 			<< "no device metadata - use analogue gain of 1x";
@@ -71,7 +73,7 @@ void Geq::prepare(Metadata *imageMetadata)
 	imageMetadata->set("geq.status", geqStatus);
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Geq(controller);

@@ -34,7 +34,7 @@ char const *BlackLevel::name() const
 void BlackLevel::read(boost::property_tree::ptree const &params)
 {
 	uint16_t blackLevel = params.get<uint16_t>(
-		"black_level", 4096); // 64 in 10 bits scaled to 16 bits
+		"black_level", 4096); /* 64 in 10 bits scaled to 16 bits */
 	blackLevelR_ = params.get<uint16_t>("black_level_r", blackLevel);
 	blackLevelG_ = params.get<uint16_t>("black_level_g", blackLevel);
 	blackLevelB_ = params.get<uint16_t>("black_level_b", blackLevel);
@@ -46,8 +46,10 @@ void BlackLevel::read(boost::property_tree::ptree const &params)
 
 void BlackLevel::prepare(Metadata *imageMetadata)
 {
-	// Possibly we should think about doing this in a switchMode or
-	// something?
+	/*
+	 * Possibly we should think about doing this in a switchMode or
+	 * something?
+	 */
 	struct BlackLevelStatus status;
 	status.blackLevelR = blackLevelR_;
 	status.blackLevelG = blackLevelG_;
@@ -55,7 +57,7 @@ void BlackLevel::prepare(Metadata *imageMetadata)
 	imageMetadata->set("black_level.status", status);
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return new BlackLevel(controller);

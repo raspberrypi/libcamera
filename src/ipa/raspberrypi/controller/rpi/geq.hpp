@@ -11,12 +11,12 @@
 
 namespace RPiController {
 
-// Back End algorithm to apply appropriate GEQ settings.
+/* Back End algorithm to apply appropriate GEQ settings. */
 
 struct GeqConfig {
 	uint16_t offset;
 	double slope;
-	Pwl strength; // lux to strength factor
+	Pwl strength; /* lux to strength factor */
 };
 
 class Geq : public Algorithm
@@ -31,4 +31,4 @@ private:
 	GeqConfig config_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

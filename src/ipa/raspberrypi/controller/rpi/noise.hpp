@@ -9,7 +9,7 @@
 #include "../algorithm.hpp"
 #include "../noise_status.h"
 
-// This is our implementation of the "noise algorithm".
+/* This is our implementation of the "noise algorithm". */
 
 namespace RPiController {
 
@@ -23,10 +23,10 @@ public:
 	void prepare(Metadata *imageMetadata) override;
 
 private:
-	// the noise profile for analogue gain of 1.0
+	/* the noise profile for analogue gain of 1.0 */
 	double referenceConstant_;
 	double referenceSlope_;
 	double modeFactor_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

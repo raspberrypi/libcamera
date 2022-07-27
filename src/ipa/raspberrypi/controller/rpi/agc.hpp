@@ -15,10 +15,12 @@
 #include "../agc_status.h"
 #include "../pwl.hpp"
 
-// This is our implementation of AGC.
+/* This is our implementation of AGC. */
 
-// This is the number actually set up by the firmware, not the maximum possible
-// number (which is 16).
+/*
+ * This is the number actually set up by the firmware, not the maximum possible
+ * number (which is 16).
+ */
 
 #define AGC_STATS_SIZE 15
 
@@ -73,7 +75,7 @@ public:
 	Agc(Controller *controller);
 	char const *name() const override;
 	void read(boost::property_tree::ptree const &params) override;
-	// AGC handles "pausing" for itself.
+	/* AGC handles "pausing" for itself. */
 	bool isPaused() const override;
 	void pause() override;
 	void resume() override;
@@ -115,17 +117,17 @@ private:
 		libcamera::utils::Duration shutter;
 		double analogueGain;
 		libcamera::utils::Duration totalExposure;
-		libcamera::utils::Duration totalExposureNoDG; // without digital gain
+		libcamera::utils::Duration totalExposureNoDG; /* without digital gain */
 	};
-	ExposureValues current_;  // values for the current frame
-	ExposureValues target_;   // calculate the values we want here
-	ExposureValues filtered_; // these values are filtered towards target
+	ExposureValues current_;  /* values for the current frame */
+	ExposureValues target_;   /* calculate the values we want here */
+	ExposureValues filtered_; /* these values are filtered towards target */
 	AgcStatus status_;
 	int lockCount_;
 	DeviceStatus lastDeviceStatus_;
 	libcamera::utils::Duration lastTargetExposure_;
-	double lastSensitivity_; // sensitivity of the previous camera mode
-	// Below here the "settings" that applications can change.
+	double lastSensitivity_; /* sensitivity of the previous camera mode */
+	/* Below here the "settings" that applications can change. */
 	std::string meteringModeName_;
 	std::string exposureModeName_;
 	std::string constraintModeName_;
@@ -136,4 +138,4 @@ private:
 	double fixedAnalogueGain_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

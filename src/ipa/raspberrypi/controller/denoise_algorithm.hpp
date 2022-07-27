@@ -16,8 +16,8 @@ class DenoiseAlgorithm : public Algorithm
 {
 public:
 	DenoiseAlgorithm(Controller *controller) : Algorithm(controller) {}
-	// A Denoise algorithm must provide the following:
+	/* A Denoise algorithm must provide the following: */
 	virtual void setMode(DenoiseMode mode) = 0;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

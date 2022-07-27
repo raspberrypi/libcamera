@@ -14,8 +14,8 @@ class CcmAlgorithm : public Algorithm
 {
 public:
 	CcmAlgorithm(Controller *controller) : Algorithm(controller) {}
-	// A CCM algorithm must provide the following:
+	/* A CCM algorithm must provide the following: */
 	virtual void setSaturation(double saturation) = 0;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

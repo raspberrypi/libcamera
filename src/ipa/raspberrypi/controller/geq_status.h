@@ -6,7 +6,7 @@
  */
 #pragma once
 
-// The "GEQ" algorithm calculates the green equalisation thresholds
+/* The "GEQ" algorithm calculates the green equalisation thresholds */
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,20 +6,20 @@
  */
 #pragma once
 
-// The "sharpen" algorithm stores the strength to use.
+/* The "sharpen" algorithm stores the strength to use. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct SharpenStatus {
-	// controls the smallest level of detail (or noise!) that sharpening will pick up
+	/* controls the smallest level of detail (or noise!) that sharpening will pick up */
 	double threshold;
-	// the rate at which the sharpening response ramps once above the threshold
+	/* the rate at which the sharpening response ramps once above the threshold */
 	double strength;
-	// upper limit of the allowed sharpening response
+	/* upper limit of the allowed sharpening response */
 	double limit;
-	// The sharpening strength requested by the user or application.
+	/* The sharpening strength requested by the user or application. */
 	double userStrength;
 };
 

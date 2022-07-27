@@ -6,8 +6,10 @@
  */
 #pragma once
 
-// The ALSC algorithm should post the following structure into the image's
-// "alsc.status" metadata.
+/*
+ * The ALSC algorithm should post the following structure into the image's
+ * "alsc.status" metadata.
+ */
 
 #ifdef __cplusplus
 extern "C" {

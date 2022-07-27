@@ -63,44 +63,56 @@ public:
 	Interval domain() const;
 	Interval range() const;
 	bool empty() const;
-	// Evaluate Pwl, optionally supplying an initial guess for the
-	// "span". The "span" may be optionally be updated.  If you want to know
-	// the "span" value but don't have an initial guess you can set it to
-	// -1.
+	/*
+	 * Evaluate Pwl, optionally supplying an initial guess for the
+	 * "span". The "span" may be optionally be updated.  If you want to know
+	 * the "span" value but don't have an initial guess you can set it to
+	 * -1.
+	 */
 	double eval(double x, int *spanPtr = nullptr,
 		    bool updateSpan = true) const;
-	// Find perpendicular closest to xy, starting from span+1 so you can
-	// call it repeatedly to check for multiple closest points (set span to
-	// -1 on the first call). Also returns "pseudo" perpendiculars; see
-	// PerpType enum.
+	/*
+	 * Find perpendicular closest to xy, starting from span+1 so you can
+	 * call it repeatedly to check for multiple closest points (set span to
+	 * -1 on the first call). Also returns "pseudo" perpendiculars; see
+	 * PerpType enum.
+	 */
 	enum class PerpType {
-		None, // no perpendicular found
-		Start, // start of Pwl is closest point
-		End, // end of Pwl is closest point
-		Vertex, // vertex of Pwl is closest point
-		Perpendicular // true perpendicular found
+		None, /* no perpendicular found */
+		Start, /* start of Pwl is closest point */
+		End, /* end of Pwl is closest point */
+		Vertex, /* vertex of Pwl is closest point */
+		Perpendicular /* true perpendicular found */
 	};
 	PerpType invert(Point const &xy, Point &perp, int &span,
 			const double eps = 1e-6) const;
-	// Compute the inverse function. Indicate if it is a proper (true)
-	// inverse, or only a best effort (e.g. input was non-monotonic).
+	/*
+	 * Compute the inverse function. Indicate if it is a proper (true)
+	 * inverse, or only a best effort (e.g. input was non-monotonic).
+	 */
 	Pwl inverse(bool *trueInverse = nullptr, const double eps = 1e-6) const;
-	// Compose two Pwls together, doing "this" first and "other" after.
+	/* Compose two Pwls together, doing "this" first and "other" after. */
 	Pwl compose(Pwl const &other, const double eps = 1e-6) const;
-	// Apply function to (x,y) values at every control point.
+	/* Apply function to (x,y) values at every control point. */
 	void map(std::function<void(double x, double y)> f) const;
-	// Apply function to (x, y0, y1) values wherever either Pwl has a
-	// control point.
+	/*
+	 * Apply function to (x, y0, y1) values wherever either Pwl has a
+	 * control point.
+	 */
 	static void map2(Pwl const &pwl0, Pwl const &pwl1,
 			 std::function<void(double x, double y0, double y1)> f);
-	// Combine two Pwls, meaning we create a new Pwl where the y values are
-	// given by running f wherever either has a knot.
+	/*
+	 * Combine two Pwls, meaning we create a new Pwl where the y values are
+	 * given by running f wherever either has a knot.
+	 */
 	static Pwl
 	combine(Pwl const &pwl0, Pwl const &pwl1,
 		std::function<double(double x, double y0, double y1)> f,
 		const double eps = 1e-6);
-	// Make "this" match (at least) the given domain. Any extension my be
-	// clipped or linear.
+	/*
+	 * Make "this" match (at least) the given domain. Any extension my be
+	 * clipped or linear.
+	 */
 	void matchDomain(Interval const &domain, bool clip = true,
 			 const double eps = 1e-6);
 	Pwl &operator*=(double d);
@@ -111,4 +123,4 @@ private:
 	std::vector<Point> points_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

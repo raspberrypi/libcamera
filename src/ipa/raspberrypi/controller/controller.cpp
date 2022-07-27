@@ -89,8 +89,10 @@ Metadata &Controller::getGlobalMetadata()
 
 Algorithm *Controller::getAlgorithm(std::string const &name) const
 {
-	// The passed name must be the entire algorithm name, or must match the
-	// last part of it with a period (.) just before.
+	/*
+	 * The passed name must be the entire algorithm name, or must match the
+	 * last part of it with a period (.) just before.
+	 */
 	size_t nameLen = name.length();
 	for (auto &algo : algorithms_) {
 		char const *algoName = algo->name();

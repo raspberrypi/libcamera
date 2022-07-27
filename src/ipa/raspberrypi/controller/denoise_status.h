@@ -6,7 +6,7 @@
  */
 #pragma once
 
-// This stores the parameters required for Denoise.
+/* This stores the parameters required for Denoise. */
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,7 +9,7 @@
 #include "../algorithm.hpp"
 #include "../black_level_status.h"
 
-// This is our implementation of the "black level algorithm".
+/* This is our implementation of the "black level algorithm". */
 
 namespace RPiController {
 
@@ -27,4 +27,4 @@ private:
 	double blackLevelB_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

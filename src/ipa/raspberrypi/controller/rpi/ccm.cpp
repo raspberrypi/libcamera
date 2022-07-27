@@ -19,11 +19,13 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiCcm)
 
-// This algorithm selects a CCM (Colour Correction Matrix) according to the
-// colour temperature estimated by AWB (interpolating between known matricies as
-// necessary). Additionally the amount of colour saturation can be controlled
-// both according to the current estimated lux level and according to a
-// saturation setting that is exposed to applications.
+/*
+ * This algorithm selects a CCM (Colour Correction Matrix) according to the
+ * colour temperature estimated by AWB (interpolating between known matricies as
+ * necessary). Additionally the amount of colour saturation can be controlled
+ * both according to the current estimated lux level and according to a
+ * saturation setting that is exposed to applications.
+ */
 
 #define NAME "rpi.ccm"
 
@@ -125,11 +127,11 @@ void Ccm::prepare(Metadata *imageMetadata)
 {
 	bool awbOk = false, luxOk = false;
 	struct AwbStatus awb = {};
-	awb.temperatureK = 4000; // in case no metadata
+	awb.temperatureK = 4000; /* in case no metadata */
 	struct LuxStatus lux = {};
-	lux.lux = 400; // in case no metadata
+	lux.lux = 400; /* in case no metadata */
 	{
-		// grab mutex just once to get everything
+		/* grab mutex just once to get everything */
 		std::lock_guard<Metadata> lock(*imageMetadata);
 		awbOk = getLocked(imageMetadata, "awb.status", awb);
 		luxOk = getLocked(imageMetadata, "lux.status", lux);
@@ -162,7 +164,7 @@ void Ccm::prepare(Metadata *imageMetadata)
 	imageMetadata->set("ccm.status", ccmStatus);
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Ccm(controller);

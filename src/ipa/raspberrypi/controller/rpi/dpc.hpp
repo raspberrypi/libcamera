@@ -11,7 +11,7 @@
 
 namespace RPiController {
 
-// Back End algorithm to apply appropriate GEQ settings.
+/* Back End algorithm to apply appropriate GEQ settings. */
 
 struct DpcConfig {
 	int strength;
@@ -29,4 +29,4 @@ private:
 	DpcConfig config_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

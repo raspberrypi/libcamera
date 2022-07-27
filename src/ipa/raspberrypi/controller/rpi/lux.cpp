@@ -25,8 +25,10 @@ LOG_DEFINE_CATEGORY(RPiLux)
 Lux::Lux(Controller *controller)
 	: Algorithm(controller)
 {
-	// Put in some defaults as there will be no meaningful values until
-	// Process has run.
+	/*
+	 * Put in some defaults as there will be no meaningful values until
+	 * Process has run.
+	 */
 	status_.aperture = 1.0;
 	status_.lux = 400;
 }
@@ -71,7 +73,7 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 				    sizeof(stats->hist[0].g_hist[0]);
 		for (int i = 0; i < numBins; i++)
 			sum += bin[i] * (uint64_t)i, num += bin[i];
-		// add .5 to reflect the mid-points of bins
+		/* add .5 to reflect the mid-points of bins */
 		double currentY = sum / (double)num + .5;
 		double gainRatio = referenceGain_ / currentGain;
 		double shutterSpeedRatio =
@@ -89,14 +91,16 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 			std::unique_lock<std::mutex> lock(mutex_);
 			status_ = status;
 		}
-		// Overwrite the metadata here as well, so that downstream
-		// algorithms get the latest value.
+		/*
+		 * Overwrite the metadata here as well, so that downstream
+		 * algorithms get the latest value.
+		 */
 		imageMetadata->set("lux.status", status);
 	} else
 		LOG(RPiLux, Warning) << ": no device metadata";
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Lux(controller);

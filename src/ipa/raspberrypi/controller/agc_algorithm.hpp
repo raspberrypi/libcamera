@@ -16,7 +16,7 @@ class AgcAlgorithm : public Algorithm
 {
 public:
 	AgcAlgorithm(Controller *controller) : Algorithm(controller) {}
-	// An AGC algorithm must provide the following:
+	/* An AGC algorithm must provide the following: */
 	virtual unsigned int getConvergenceFrames() const = 0;
 	virtual void setEv(double ev) = 0;
 	virtual void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) = 0;
@@ -28,4 +28,4 @@ public:
 	virtual void setConstraintMode(std::string const &contraintModeName) = 0;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

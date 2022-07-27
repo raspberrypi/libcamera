@@ -16,63 +16,71 @@
 
 namespace RPiController {
 
-// Control algorithm to perform AWB calculations.
+/* Control algorithm to perform AWB calculations. */
 
 struct AwbMode {
 	void read(boost::property_tree::ptree const &params);
-	double ctLo; // low CT value for search
-	double ctHi; // high CT value for search
+	double ctLo; /* low CT value for search */
+	double ctHi; /* high CT value for search */
 };
 
 struct AwbPrior {
 	void read(boost::property_tree::ptree const &params);
-	double lux; // lux level
-	Pwl prior; // maps CT to prior log likelihood for this lux level
+	double lux; /* lux level */
+	Pwl prior; /* maps CT to prior log likelihood for this lux level */
 };
 
 struct AwbConfig {
 	AwbConfig() : defaultMode(nullptr) {}
 	void read(boost::property_tree::ptree const &params);
-	// Only repeat the AWB calculation every "this many" frames
+	/* Only repeat the AWB calculation every "this many" frames */
 	uint16_t framePeriod;
-	// number of initial frames for which speed taken as 1.0 (maximum)
+	/* number of initial frames for which speed taken as 1.0 (maximum) */
 	uint16_t startupFrames;
-	unsigned int convergenceFrames; // approx number of frames to converge
-	double speed; // IIR filter speed applied to algorithm results
-	bool fast; // "fast" mode uses a 16x16 rather than 32x32 grid
-	Pwl ctR; // function maps CT to r (= R/G)
-	Pwl ctB; // function maps CT to b (= B/G)
-	// table of illuminant priors at different lux levels
+	unsigned int convergenceFrames; /* approx number of frames to converge */
+	double speed; /* IIR filter speed applied to algorithm results */
+	bool fast; /* "fast" mode uses a 16x16 rather than 32x32 grid */
+	Pwl ctR; /* function maps CT to r (= R/G) */
+	Pwl ctB; /* function maps CT to b (= B/G) */
+	/* table of illuminant priors at different lux levels */
 	std::vector<AwbPrior> priors;
-	// AWB "modes" (determines the search range)
+	/* AWB "modes" (determines the search range) */
 	std::map<std::string, AwbMode> modes;
-	AwbMode *defaultMode; // mode used if no mode selected
-	// minimum proportion of pixels counted within AWB region for it to be
-	// "useful"
+	AwbMode *defaultMode; /* mode used if no mode selected */
+	/*
+	 * minimum proportion of pixels counted within AWB region for it to be
+	 * "useful"
+	 */
 	double minPixels;
-	// minimum G value of those pixels, to be regarded a "useful"
+	/* minimum G value of those pixels, to be regarded a "useful" */
 	uint16_t minG;
-	// number of AWB regions that must be "useful" in order to do the AWB
-	// calculation
+	/*
+	 * number of AWB regions that must be "useful" in order to do the AWB
+	 * calculation
+	 */
 	uint32_t minRegions;
-	// clamp on colour error term (so as not to penalise non-grey excessively)
+	/* clamp on colour error term (so as not to penalise non-grey excessively) */
 	double deltaLimit;
-	// step size control in coarse search
+	/* step size control in coarse search */
 	double coarseStep;
-	// how far to wander off CT curve towards "more purple"
+	/* how far to wander off CT curve towards "more purple" */
 	double transversePos;
-	// how far to wander off CT curve towards "more green"
+	/* how far to wander off CT curve towards "more green" */
 	double transverseNeg;
-	// red sensitivity ratio (set to canonical sensor's R/G divided by this
-	// sensor's R/G)
+	/*
+	 * red sensitivity ratio (set to canonical sensor's R/G divided by this
+	 * sensor's R/G)
+	 */
 	double sensitivityR;
-	// blue sensitivity ratio (set to canonical sensor's B/G divided by this
-	// sensor's B/G)
+	/*
+	 * blue sensitivity ratio (set to canonical sensor's B/G divided by this
+	 * sensor's B/G)
+	 */
 	double sensitivityB;
-	// The whitepoint (which we normally "aim" for) can be moved.
+	/* The whitepoint (which we normally "aim" for) can be moved. */
 	double whitepointR;
 	double whitepointB;
-	bool bayes; // use Bayesian algorithm
+	bool bayes; /* use Bayesian algorithm */
 };
 
 class Awb : public AwbAlgorithm
@@ -83,7 +91,7 @@ public:
 	char const *name() const override;
 	void initialise() override;
 	void read(boost::property_tree::ptree const &params) override;
-	// AWB handles "pausing" for itself.
+	/* AWB handles "pausing" for itself. */
 	bool isPaused() const override;
 	void pause() override;
 	void resume() override;
@@ -108,35 +116,39 @@ public:
 
 private:
 	bool isAutoEnabled() const;
-	// configuration is read-only, and available to both threads
+	/* configuration is read-only, and available to both threads */
 	AwbConfig config_;
 	std::thread asyncThread_;
-	void asyncFunc(); // asynchronous thread function
+	void asyncFunc(); /* asynchronous thread function */
 	std::mutex mutex_;
-	// condvar for async thread to wait on
+	/* condvar for async thread to wait on */
 	std::condition_variable asyncSignal_;
-	// condvar for synchronous thread to wait on
+	/* condvar for synchronous thread to wait on */
 	std::condition_variable syncSignal_;
-	// for sync thread to check  if async thread finished (requires mutex)
+	/* for sync thread to check  if async thread finished (requires mutex) */
 	bool asyncFinished_;
-	// for async thread to check if it's been told to run (requires mutex)
+	/* for async thread to check if it's been told to run (requires mutex) */
 	bool asyncStart_;
-	// for async thread to check if it's been told to quit (requires mutex)
+	/* for async thread to check if it's been told to quit (requires mutex) */
 	bool asyncAbort_;
 
-	// The following are only for the synchronous thread to use:
-	// for sync thread to note its has asked async thread to run
+	/*
+	 * The following are only for the synchronous thread to use:
+	 * for sync thread to note its has asked async thread to run
+	 */
 	bool asyncStarted_;
-	// counts up to framePeriod before restarting the async thread
+	/* counts up to framePeriod before restarting the async thread */
 	int framePhase_;
-	int frameCount_; // counts up to startup_frames
+	int frameCount_; /* counts up to startup_frames */
 	AwbStatus syncResults_;
 	AwbStatus prevSyncResults_;
 	std::string modeName_;
-	// The following are for the asynchronous thread to use, though the main
-	// thread can set/reset them if the async thread is known to be idle:
+	/*
+	 * The following are for the asynchronous thread to use, though the main
+	 * thread can set/reset them if the async thread is known to be idle:
+	 */
 	void restartAsync(StatisticsPtr &stats, double lux);
-	// copy out the results from the async thread so that it can be restarted
+	/* copy out the results from the async thread so that it can be restarted */
 	void fetchAsyncResults();
 	StatisticsPtr statistics_;
 	AwbMode *mode_;
@@ -152,11 +164,11 @@ private:
 	void fineSearch(double &t, double &r, double &b, Pwl const &prior);
 	std::vector<RGB> zones_;
 	std::vector<Pwl::Point> points_;
-	// manual r setting
+	/* manual r setting */
 	double manualR_;
-	// manual b setting
+	/* manual b setting */
 	double manualB_;
-	bool firstSwitchMode_; // is this the first call to SwitchMode?
+	bool firstSwitchMode_; /* is this the first call to SwitchMode? */
 };
 
 static inline Awb::RGB operator+(Awb::RGB const &a, Awb::RGB const &b)
@@ -176,4 +188,4 @@ static inline Awb::RGB operator*(Awb::RGB const &rgb, double d)
 	return d * rgb;
 }
 
-} // namespace RPiController
+} /* namespace RPiController */

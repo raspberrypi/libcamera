@@ -6,8 +6,10 @@
  */
 #pragma once
 
-// All algorithms should be derived from this class and made available to the
-// Controller.
+/*
+ * All algorithms should be derived from this class and made available to the
+ * Controller.
+ */
 
 #include <string>
 #include <memory>
@@ -19,7 +21,7 @@
 
 namespace RPiController {
 
-// This defines the basic interface for all control algorithms.
+/* This defines the basic interface for all control algorithms. */
 
 class Algorithm
 {
@@ -48,8 +50,10 @@ private:
 	bool paused_;
 };
 
-// This code is for automatic registration of Front End algorithms with the
-// system.
+/*
+ * This code is for automatic registration of Front End algorithms with the
+ * system.
+ */
 
 typedef Algorithm *(*AlgoCreateFunc)(Controller *controller);
 struct RegisterAlgorithm {
@@ -57,4 +61,4 @@ struct RegisterAlgorithm {
 };
 std::map<std::string, AlgoCreateFunc> const &getAlgorithms();
 
-} // namespace RPiController
+} /* namespace RPiController */

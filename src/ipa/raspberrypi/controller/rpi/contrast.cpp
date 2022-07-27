@@ -18,11 +18,13 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiContrast)
 
-// This is a very simple control algorithm which simply retrieves the results of
-// AGC and AWB via their "status" metadata, and applies digital gain to the
-// colour channels in accordance with those instructions. We take care never to
-// apply less than unity gains, as that would cause fully saturated pixels to go
-// off-white.
+/*
+ * This is a very simple control algorithm which simply retrieves the results of
+ * AGC and AWB via their "status" metadata, and applies digital gain to the
+ * colour channels in accordance with those instructions. We take care never to
+ * apply less than unity gains, as that would cause fully saturated pixels to go
+ * off-white.
+ */
 
 #define NAME "rpi.contrast"
 
@@ -38,15 +40,15 @@ char const *Contrast::name() const
 
 void Contrast::read(boost::property_tree::ptree const &params)
 {
-	// enable adaptive enhancement by default
+	/* enable adaptive enhancement by default */
 	config_.ceEnable = params.get<int>("ce_enable", 1);
-	// the point near the bottom of the histogram to move
+	/* the point near the bottom of the histogram to move */
 	config_.loHistogram = params.get<double>("lo_histogram", 0.01);
-	// where in the range to try and move it to
+	/* where in the range to try and move it to */
 	config_.loLevel = params.get<double>("lo_level", 0.015);
-	// but don't move by more than this
+	/* but don't move by more than this */
 	config_.loMax = params.get<double>("lo_max", 500);
-	// equivalent values for the top of the histogram...
+	/* equivalent values for the top of the histogram... */
 	config_.hiHistogram = params.get<double>("hi_histogram", 0.95);
 	config_.hiLevel = params.get<double>("hi_level", 0.95);
 	config_.hiMax = params.get<double>("hi_max", 2000);
@@ -81,8 +83,10 @@ static void fillInStatus(ContrastStatus &status, double brightness,
 
 void Contrast::initialise()
 {
-	// Fill in some default values as Prepare will run before Process gets
-	// called.
+	/*
+	 * Fill in some default values as Prepare will run before Process gets
+	 * called.
+	 */
 	fillInStatus(status_, brightness_, contrast_, config_.gammaCurve);
 }
 
@@ -97,8 +101,10 @@ Pwl computeStretchCurve(Histogram const &histogram,
 {
 	Pwl enhance;
 	enhance.append(0, 0);
-	// If the start of the histogram is rather empty, try to pull it down a
-	// bit.
+	/*
+	 * If the start of the histogram is rather empty, try to pull it down a
+	 * bit.
+	 */
 	double histLo = histogram.quantile(config.loHistogram) *
 			(65536 / NUM_HISTOGRAM_BINS);
 	double levelLo = config.loLevel * 65536;
@@ -109,13 +115,17 @@ Pwl computeStretchCurve(Histogram const &histogram,
 	LOG(RPiContrast, Debug)
 		<< "Final values " << histLo << " -> " << levelLo;
 	enhance.append(histLo, levelLo);
-	// Keep the mid-point (median) in the same place, though, to limit the
-	// apparent amount of global brightness shift.
+	/*
+	 * Keep the mid-point (median) in the same place, though, to limit the
+	 * apparent amount of global brightness shift.
+	 */
 	double mid = histogram.quantile(0.5) * (65536 / NUM_HISTOGRAM_BINS);
 	enhance.append(mid, mid);
 
-	// If the top to the histogram is empty, try to pull the pixel values
-	// there up.
+	/*
+	 * If the top to the histogram is empty, try to pull the pixel values
+	 * there up.
+	 */
 	double histHi = histogram.quantile(config.hiHistogram) *
 			(65536 / NUM_HISTOGRAM_BINS);
 	double levelHi = config.hiLevel * 65536;
@@ -149,22 +159,30 @@ void Contrast::process(StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *imageMetadata)
 {
 	Histogram histogram(stats->hist[0].g_hist, NUM_HISTOGRAM_BINS);
-	// We look at the histogram and adjust the gamma curve in the following
-	// ways: 1. Adjust the gamma curve so as to pull the start of the
-	// histogram down, and possibly push the end up.
+	/*
+	 * We look at the histogram and adjust the gamma curve in the following
+	 * ways: 1. Adjust the gamma curve so as to pull the start of the
+	 * histogram down, and possibly push the end up.
+	 */
 	Pwl gammaCurve = config_.gammaCurve;
 	if (config_.ceEnable) {
 		if (config_.loMax != 0 || config_.hiMax != 0)
 			gammaCurve = computeStretchCurve(histogram, config_).compose(gammaCurve);
-		// We could apply other adjustments (e.g. partial equalisation)
-		// based on the histogram...?
+		/*
+		 * We could apply other adjustments (e.g. partial equalisation)
+		 * based on the histogram...?
+		 */
 	}
-	// 2. Finally apply any manually selected brightness/contrast
-	// adjustment.
+	/*
+	 * 2. Finally apply any manually selected brightness/contrast
+	 * adjustment.
+	 */
 	if (brightness_ != 0 || contrast_ != 1.0)
 		gammaCurve = applyManualContrast(gammaCurve, brightness_, contrast_);
-	// And fill in the status for output. Use more points towards the bottom
-	// of the curve.
+	/*
+	 * And fill in the status for output. Use more points towards the bottom
+	 * of the curve.
+	 */
 	ContrastStatus status;
 	fillInStatus(status, brightness_, contrast_, gammaCurve);
 	{
@@ -173,7 +191,7 @@ void Contrast::process(StatisticsPtr &stats,
 	}
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Contrast(controller);

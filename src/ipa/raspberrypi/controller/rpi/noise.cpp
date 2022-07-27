@@ -34,8 +34,10 @@ char const *Noise::name() const
 void Noise::switchMode(CameraMode const &cameraMode,
 		       [[maybe_unused]] Metadata *metadata)
 {
-	// For example, we would expect a 2x2 binned mode to have a "noise
-	// factor" of sqrt(2x2) = 2. (can't be less than one, right?)
+	/*
+	 * For example, we would expect a 2x2 binned mode to have a "noise
+	 * factor" of sqrt(2x2) = 2. (can't be less than one, right?)
+	 */
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
@@ -48,14 +50,16 @@ void Noise::read(boost::property_tree::ptree const &params)
 void Noise::prepare(Metadata *imageMetadata)
 {
 	struct DeviceStatus deviceStatus;
-	deviceStatus.analogueGain = 1.0; // keep compiler calm
+	deviceStatus.analogueGain = 1.0; /* keep compiler calm */
 	if (imageMetadata->get("device.status", deviceStatus) == 0) {
-		// There is a slight question as to exactly how the noise
-		// profile, specifically the constant part of it, scales. For
-		// now we assume it all scales the same, and we'll revisit this
-		// if it proves substantially wrong.  NOTE: we may also want to
-		// make some adjustments based on the camera mode (such as
-		// binning), if we knew how to discover it...
+		/*
+		 * There is a slight question as to exactly how the noise
+		 * profile, specifically the constant part of it, scales. For
+		 * now we assume it all scales the same, and we'll revisit this
+		 * if it proves substantially wrong.  NOTE: we may also want to
+		 * make some adjustments based on the camera mode (such as
+		 * binning), if we knew how to discover it...
+		 */
 		double factor = sqrt(deviceStatus.analogueGain) / modeFactor_;
 		struct NoiseStatus status;
 		status.noiseConstant = referenceConstant_ * factor;
@@ -68,7 +72,7 @@ void Noise::prepare(Metadata *imageMetadata)
 		LOG(RPiNoise, Warning) << " no metadata";
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return new Noise(controller);

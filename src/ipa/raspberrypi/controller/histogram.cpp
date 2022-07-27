@@ -30,13 +30,13 @@ double Histogram::quantile(double q, int first, int last) const
 		last = cumulative_.size() - 2;
 	assert(first <= last);
 	uint64_t items = q * total();
-	while (first < last) // binary search to find the right bin
+	while (first < last) /* binary search to find the right bin */
 	{
 		int middle = (first + last) / 2;
 		if (cumulative_[middle + 1] > items)
-			last = middle; // between first and middle
+			last = middle; /* between first and middle */
 		else
-			first = middle + 1; // after middle
+			first = middle + 1; /* after middle */
 	}
 	assert(items >= cumulative_[first] && items <= cumulative_[last + 1]);
 	double frac = cumulative_[first + 1] == cumulative_[first] ? 0
@@ -59,6 +59,6 @@ double Histogram::interQuantileMean(double qLo, double qHi) const
 		sumBinFreq += bin * freq;
 		cumulFreq += freq;
 	}
-	// add 0.5 to give an average for bin mid-points
+	/* add 0.5 to give an average for bin mid-points */
 	return sumBinFreq / cumulFreq + 0.5;
 }

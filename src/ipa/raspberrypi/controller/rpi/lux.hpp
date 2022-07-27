@@ -13,7 +13,7 @@
 #include "../lux_status.h"
 #include "../algorithm.hpp"
 
-// This is our implementation of the "lux control algorithm".
+/* This is our implementation of the "lux control algorithm". */
 
 namespace RPiController {
 
@@ -28,16 +28,18 @@ public:
 	void setCurrentAperture(double aperture);
 
 private:
-	// These values define the conditions of the reference image, against
-	// which we compare the new image.
+	/*
+	 * These values define the conditions of the reference image, against
+	 * which we compare the new image.
+	 */
 	libcamera::utils::Duration referenceShutterSpeed_;
 	double referenceGain_;
-	double referenceAperture_; // units of 1/f
-	double referenceY_; // out of 65536
+	double referenceAperture_; /* units of 1/f */
+	double referenceY_; /* out of 65536 */
 	double referenceLux_;
 	double currentAperture_;
 	LuxStatus status_;
 	std::mutex mutex_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

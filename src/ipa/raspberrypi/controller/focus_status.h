@@ -8,9 +8,11 @@
 
 #include <linux/bcm2835-isp.h>
 
-// The focus algorithm should post the following structure into the image's
-// "focus.status" metadata. Recall that it's only reporting focus (contrast)
-// measurements, it's not driving any kind of auto-focus algorithm!
+/*
+ * The focus algorithm should post the following structure into the image's
+ * "focus.status" metadata. Recall that it's only reporting focus (contrast)
+ * measurements, it's not driving any kind of auto-focus algorithm!
+ */
 
 #ifdef __cplusplus
 extern "C" {

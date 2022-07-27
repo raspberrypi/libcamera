@@ -21,50 +21,52 @@
 
 namespace RPiController {
 
-// The CamHelper class provides a number of facilities that anyone trying
-// to drive a camera will need to know, but which are not provided by the
-// standard driver framework. Specifically, it provides:
-//
-// A "CameraMode" structure to describe extra information about the chosen
-// mode of the driver. For example, how it is cropped from the full sensor
-// area, how it is scaled, whether pixels are averaged compared to the full
-// resolution.
-//
-// The ability to convert between number of lines of exposure and actual
-// exposure time, and to convert between the sensor's gain codes and actual
-// gains.
-//
-// A function to return the number of frames of delay between updating exposure,
-// analogue gain and vblanking, and for the changes to take effect. For many
-// sensors these take the values 2, 1 and 2 respectively, but sensors that are
-// different will need to over-ride the default function provided.
-//
-// A function to query if the sensor outputs embedded data that can be parsed.
-//
-// A function to return the sensitivity of a given camera mode.
-//
-// A parser to parse the embedded data buffers provided by some sensors (for
-// example, the imx219 does; the ov5647 doesn't). This allows us to know for
-// sure the exposure and gain of the frame we're looking at. CamHelper
-// provides functions for converting analogue gains to and from the sensor's
-// native gain codes.
-//
-// Finally, a set of functions that determine how to handle the vagaries of
-// different camera modules on start-up or when switching modes. Some
-// modules may produce one or more frames that are not yet correctly exposed,
-// or where the metadata may be suspect. We have the following functions:
-// HideFramesStartup(): Tell the pipeline handler not to return this many
-//     frames at start-up. This can also be used to hide initial frames
-//     while the AGC and other algorithms are sorting themselves out.
-// HideFramesModeSwitch(): Tell the pipeline handler not to return this
-//     many frames after a mode switch (other than start-up). Some sensors
-//     may produce innvalid frames after a mode switch; others may not.
-// MistrustFramesStartup(): At start-up a sensor may return frames for
-//    which we should not run any control algorithms (for example, metadata
-//    may be invalid).
-// MistrustFramesModeSwitch(): The number of frames, after a mode switch
-//    (other than start-up), for which control algorithms should not run
-//    (for example, metadata may be unreliable).
+/*
+ * The CamHelper class provides a number of facilities that anyone trying
+ * to drive a camera will need to know, but which are not provided by the
+ * standard driver framework. Specifically, it provides:
+ *
+ * A "CameraMode" structure to describe extra information about the chosen
+ * mode of the driver. For example, how it is cropped from the full sensor
+ * area, how it is scaled, whether pixels are averaged compared to the full
+ * resolution.
+ *
+ * The ability to convert between number of lines of exposure and actual
+ * exposure time, and to convert between the sensor's gain codes and actual
+ * gains.
+ *
+ * A function to return the number of frames of delay between updating exposure,
+ * analogue gain and vblanking, and for the changes to take effect. For many
+ * sensors these take the values 2, 1 and 2 respectively, but sensors that are
+ * different will need to over-ride the default function provided.
+ *
+ * A function to query if the sensor outputs embedded data that can be parsed.
+ *
+ * A function to return the sensitivity of a given camera mode.
+ *
+ * A parser to parse the embedded data buffers provided by some sensors (for
+ * example, the imx219 does; the ov5647 doesn't). This allows us to know for
+ * sure the exposure and gain of the frame we're looking at. CamHelper
+ * provides functions for converting analogue gains to and from the sensor's
+ * native gain codes.
+ *
+ * Finally, a set of functions that determine how to handle the vagaries of
+ * different camera modules on start-up or when switching modes. Some
+ * modules may produce one or more frames that are not yet correctly exposed,
+ * or where the metadata may be suspect. We have the following functions:
+ * HideFramesStartup(): Tell the pipeline handler not to return this many
+ *     frames at start-up. This can also be used to hide initial frames
+ *     while the AGC and other algorithms are sorting themselves out.
+ * HideFramesModeSwitch(): Tell the pipeline handler not to return this
+ *     many frames after a mode switch (other than start-up). Some sensors
+ *     may produce innvalid frames after a mode switch; others may not.
+ * MistrustFramesStartup(): At start-up a sensor may return frames for
+ *    which we should not run any control algorithms (for example, metadata
+ *    may be invalid).
+ * MistrustFramesModeSwitch(): The number of frames, after a mode switch
+ *    (other than start-up), for which control algorithms should not run
+ *    (for example, metadata may be unreliable).
+ */
 
 class CamHelper
 {
@@ -110,8 +112,10 @@ private:
 	unsigned int frameIntegrationDiff_;
 };
 
-// This is for registering camera helpers with the system, so that the
-// CamHelper::Create function picks them up automatically.
+/*
+ * This is for registering camera helpers with the system, so that the
+ * CamHelper::Create function picks them up automatically.
+ */
 
 typedef CamHelper *(*CamHelperCreateFunc)();
 struct RegisterCamHelper
@@ -120,4 +124,4 @@ struct RegisterCamHelper
 			  CamHelperCreateFunc createFunc);
 };
 
-} // namespace RPi
+} /* namespace RPi */

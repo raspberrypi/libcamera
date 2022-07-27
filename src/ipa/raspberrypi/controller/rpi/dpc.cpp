@@ -14,8 +14,10 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiDpc)
 
-// We use the lux status so that we can apply stronger settings in darkness (if
-// necessary).
+/*
+ * We use the lux status so that we can apply stronger settings in darkness (if
+ * necessary).
+ */
 
 #define NAME "rpi.dpc"
 
@@ -39,13 +41,13 @@ void Dpc::read(boost::property_tree::ptree const &params)
 void Dpc::prepare(Metadata *imageMetadata)
 {
 	DpcStatus dpcStatus = {};
-	// Should we vary this with lux level or analogue gain? TBD.
+	/* Should we vary this with lux level or analogue gain? TBD. */
 	dpcStatus.strength = config_.strength;
 	LOG(RPiDpc, Debug) << "strength " << dpcStatus.strength;
 	imageMetadata->set("dpc.status", dpcStatus);
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Dpc(controller);

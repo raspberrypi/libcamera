@@ -13,7 +13,7 @@
 
 namespace RPiController {
 
-// Algorithm to calculate colour matrix. Should be placed after AWB.
+/* Algorithm to calculate colour matrix. Should be placed after AWB. */
 
 struct Matrix {
 	Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
@@ -72,4 +72,4 @@ private:
 	double saturation_;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

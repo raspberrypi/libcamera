@@ -31,7 +31,7 @@ void Algorithm::process([[maybe_unused]] StatisticsPtr &stats,
 {
 }
 
-// For registering algorithms with the system:
+/* For registering algorithms with the system: */
 
 static std::map<std::string, AlgoCreateFunc> algorithms;
 std::map<std::string, AlgoCreateFunc> const &RPiController::getAlgorithms()

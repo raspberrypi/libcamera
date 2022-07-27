@@ -6,14 +6,14 @@
  */
 #pragma once
 
-// The "black level" algorithm stores the black levels to use.
+/* The "black level" algorithm stores the black levels to use. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct BlackLevelStatus {
-	uint16_t blackLevelR; // out of 16 bits
+	uint16_t blackLevelR; /* out of 16 bits */
 	uint16_t blackLevelG;
 	uint16_t blackLevelB;
 };

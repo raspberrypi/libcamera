@@ -6,8 +6,10 @@
  */
 #pragma once
 
-// The "contrast" algorithm creates a gamma curve, optionally doing a little bit
-// of contrast stretching based on the AGC histogram.
+/*
+ * The "contrast" algorithm creates a gamma curve, optionally doing a little bit
+ * of contrast stretching based on the AGC histogram.
+ */
 
 #ifdef __cplusplus
 extern "C" {

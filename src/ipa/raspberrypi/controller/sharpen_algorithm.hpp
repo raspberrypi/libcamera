@@ -14,8 +14,8 @@ class SharpenAlgorithm : public Algorithm
 {
 public:
 	SharpenAlgorithm(Controller *controller) : Algorithm(controller) {}
-	// A sharpness control algorithm must provide the following:
+	/* A sharpness control algorithm must provide the following: */
 	virtual void setStrength(double strength) = 0;
 };
 
-} // namespace RPiController
+} /* namespace RPiController */

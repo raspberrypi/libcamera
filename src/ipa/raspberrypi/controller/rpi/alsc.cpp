@@ -14,7 +14,7 @@
 #include "../awb_status.h"
 #include "alsc.hpp"
 
-// Raspberry Pi ALSC (Auto Lens Shading Correction) algorithm.
+/* Raspberry Pi ALSC (Auto Lens Shading Correction) algorithm. */
 
 using namespace RPiController;
 using namespace libcamera;
@@ -68,7 +68,7 @@ static void generateLut(double *lut, boost::property_tree::ptree const &params)
 			double r2 = (dx * dx + dy * dy) / R2;
 			lut[num++] =
 				(f1 * r2 + f2) * (f1 * r2 + f2) /
-				(f2 * f2); // this reproduces the cos^4 rule
+				(f2 * f2); /* this reproduces the cos^4 rule */
 		}
 	}
 }
@@ -171,7 +171,7 @@ void Alsc::initialise()
 	frameCount2_ = frameCount_ = framePhase_ = 0;
 	firstTime_ = true;
 	ct_ = config_.defaultCt;
-	// The lambdas are initialised in the SwitchMode.
+	/* The lambdas are initialised in the SwitchMode. */
 }
 
 void Alsc::waitForAysncThread()
@@ -188,8 +188,10 @@ void Alsc::waitForAysncThread()
 
 static bool compareModes(CameraMode const &cm0, CameraMode const &cm1)
 {
-	// Return true if the modes crop from the sensor significantly differently,
-	// or if the user transform has changed.
+	/*
+	 * Return true if the modes crop from the sensor significantly differently,
+	 * or if the user transform has changed.
+	 */
 	if (cm0.transform != cm1.transform)
 		return true;
 	int leftDiff = abs(cm0.cropX - cm1.cropX);
@@ -198,9 +200,11 @@ static bool compareModes(CameraMode const &cm0, CameraMode const &cm1)
 			     cm1.cropX - cm1.scaleX * cm1.width);
 	int bottomDiff = fabs(cm0.cropY + cm0.scaleY * cm0.height -
 			      cm1.cropY - cm1.scaleY * cm1.height);
-	// These thresholds are a rather arbitrary amount chosen to trigger
-	// when carrying on with the previously calculated tables might be
-	// worse than regenerating them (but without the adaptive algorithm).
+	/*
+	 * These thresholds are a rather arbitrary amount chosen to trigger
+	 * when carrying on with the previously calculated tables might be
+	 * worse than regenerating them (but without the adaptive algorithm).
+	 */
 	int thresholdX = cm0.sensorWidth >> 4;
 	int thresholdY = cm0.sensorHeight >> 4;
 	return leftDiff > thresholdX || rightDiff > thresholdX ||
@@ -210,28 +214,34 @@ static bool compareModes(CameraMode const &cm0, CameraMode const &cm1)
 void Alsc::switchMode(CameraMode const &cameraMode,
 		      [[maybe_unused]] Metadata *metadata)
 {
-	// We're going to start over with the tables if there's any "significant"
-	// change.
+	/*
+	 * We're going to start over with the tables if there's any "significant"
+	 * change.
+	 */
 	bool resetTables = firstTime_ || compareModes(cameraMode_, cameraMode);
 
-	// Believe the colour temperature from the AWB, if there is one.
+	/* Believe the colour temperature from the AWB, if there is one. */
 	ct_ = getCt(metadata, ct_);
 
-	// Ensure the other thread isn't running while we do this.
+	/* Ensure the other thread isn't running while we do this. */
 	waitForAysncThread();
 
 	cameraMode_ = cameraMode;
 
-	// We must resample the luminance table like we do the others, but it's
-	// fixed so we can simply do it up front here.
+	/*
+	 * We must resample the luminance table like we do the others, but it's
+	 * fixed so we can simply do it up front here.
+	 */
 	resampleCalTable(config_.luminanceLut, cameraMode_, luminanceTable_);
 
 	if (resetTables) {
-		// Upon every "table reset", arrange for something sensible to be
-		// generated. Construct the tables for the previous recorded colour
-		// temperature. In order to start over from scratch we initialise
-		// the lambdas, but the rest of this code then echoes the code in
-		// doAlsc, without the adaptive algorithm.
+		/*
+		 * Upon every "table reset", arrange for something sensible to be
+		 * generated. Construct the tables for the previous recorded colour
+		 * temperature. In order to start over from scratch we initialise
+		 * the lambdas, but the rest of this code then echoes the code in
+		 * doAlsc, without the adaptive algorithm.
+		 */
 		for (int i = 0; i < XY; i++)
 			lambdaR_[i] = lambdaB_[i] = 1.0;
 		double calTableR[XY], calTableB[XY], calTableTmp[XY];
@@ -244,7 +254,7 @@ void Alsc::switchMode(CameraMode const &cameraMode,
 		addLuminanceToTables(syncResults_, asyncLambdaR_, 1.0, asyncLambdaB_,
 				     luminanceTable_, config_.luminanceStrength);
 		memcpy(prevSyncResults_, syncResults_, sizeof(prevSyncResults_));
-		framePhase_ = config_.framePeriod; // run the algo again asap
+		framePhase_ = config_.framePeriod; /* run the algo again asap */
 		firstTime_ = false;
 	}
 }
@@ -260,7 +270,7 @@ void Alsc::fetchAsyncResults()
 double getCt(Metadata *metadata, double defaultCt)
 {
 	AwbStatus awbStatus;
-	awbStatus.temperatureK = defaultCt; // in case nothing found
+	awbStatus.temperatureK = defaultCt; /* in case nothing found */
 	if (metadata->get("awb.status", awbStatus) != 0)
 		LOG(RPiAlsc, Debug) << "no AWB results found, using "
 				    << awbStatus.temperatureK;
@@ -282,18 +292,22 @@ static void copyStats(bcm2835_isp_stats_region regions[XY], StatisticsPtr &stats
 		regions[i].g_sum = inputRegions[i].g_sum / gTable[i];
 		regions[i].b_sum = inputRegions[i].b_sum / bTable[i];
 		regions[i].counted = inputRegions[i].counted;
-		// (don't care about the uncounted value)
+		/* (don't care about the uncounted value) */
 	}
 }
 
 void Alsc::restartAsync(StatisticsPtr &stats, Metadata *imageMetadata)
 {
 	LOG(RPiAlsc, Debug) << "Starting ALSC calculation";
-	// Get the current colour temperature. It's all we need from the
-	// metadata. Default to the last CT value (which could be the default).
+	/*
+	 * Get the current colour temperature. It's all we need from the
+	 * metadata. Default to the last CT value (which could be the default).
+	 */
 	ct_ = getCt(imageMetadata, ct_);
-	// We have to copy the statistics here, dividing out our best guess of
-	// the LSC table that the pipeline applied to them.
+	/*
+	 * We have to copy the statistics here, dividing out our best guess of
+	 * the LSC table that the pipeline applied to them.
+	 */
 	AlscStatus alscStatus;
 	if (imageMetadata->get("alsc.status", alscStatus) != 0) {
 		LOG(RPiAlsc, Warning)
@@ -317,8 +331,10 @@ void Alsc::restartAsync(StatisticsPtr &stats, Metadata *imageMetadata)
 
 void Alsc::prepare(Metadata *imageMetadata)
 {
-	// Count frames since we started, and since we last poked the async
-	// thread.
+	/*
+	 * Count frames since we started, and since we last poked the async
+	 * thread.
+	 */
 	if (frameCount_ < (int)config_.startupFrames)
 		frameCount_++;
 	double speed = frameCount_ < (int)config_.startupFrames
@@ -331,12 +347,12 @@ void Alsc::prepare(Metadata *imageMetadata)
 		if (asyncStarted_ && asyncFinished_)
 			fetchAsyncResults();
 	}
-	// Apply IIR filter to results and program into the pipeline.
+	/* Apply IIR filter to results and program into the pipeline. */
 	double *ptr = (double *)syncResults_,
 	       *pptr = (double *)prevSyncResults_;
 	for (unsigned int i = 0; i < sizeof(syncResults_) / sizeof(double); i++)
 		pptr[i] = speed * ptr[i] + (1.0 - speed) * pptr[i];
-	// Put output values into status metadata.
+	/* Put output values into status metadata. */
 	AlscStatus status;
 	memcpy(status.r, prevSyncResults_[0], sizeof(status.r));
 	memcpy(status.g, prevSyncResults_[1], sizeof(status.g));
@@ -346,8 +362,10 @@ void Alsc::prepare(Metadata *imageMetadata)
 
 void Alsc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
-	// Count frames since we started, and since we last poked the async
-	// thread.
+	/*
+	 * Count frames since we started, and since we last poked the async
+	 * thread.
+	 */
 	if (framePhase_ < (int)config_.framePeriod)
 		framePhase_++;
 	if (frameCount2_ < (int)config_.startupFrames)
@@ -415,8 +433,10 @@ void getCalTable(double ct, std::vector<AlscCalibration> const &calibrations,
 void resampleCalTable(double const calTableIn[XY],
 		      CameraMode const &cameraMode, double calTableOut[XY])
 {
-	// Precalculate and cache the x sampling locations and phases to save
-	// recomputing them on every row.
+	/*
+	 * Precalculate and cache the x sampling locations and phases to save
+	 * recomputing them on every row.
+	 */
 	int xLo[X], xHi[X];
 	double xf[X];
 	double scaleX = cameraMode.sensorWidth /
@@ -434,7 +454,7 @@ void resampleCalTable(double const calTableIn[XY],
 			xHi[i] = X - 1 - xHi[i];
 		}
 	}
-	// Now march over the output table generating the new values.
+	/* Now march over the output table generating the new values. */
 	double scaleY = cameraMode.sensorHeight /
 			(cameraMode.height * cameraMode.scaleY);
 	double yOff = cameraMode.cropY / (double)cameraMode.sensorHeight;
@@ -461,7 +481,7 @@ void resampleCalTable(double const calTableIn[XY],
 	}
 }
 
-// Calculate chrominance statistics (R/G and B/G) for each region.
+/* Calculate chrominance statistics (R/G and B/G) for each region. */
 static_assert(XY == AWB_REGIONS, "ALSC/AWB statistics region mismatch");
 static void calculateCrCb(bcm2835_isp_stats_region *awbRegion, double cr[XY],
 			  double cb[XY], uint32_t minCount, uint16_t minG)
@@ -512,8 +532,10 @@ void compensateLambdasForCal(double const calTable[XY],
 	printf("]\n");
 }
 
-// Compute weight out of 1.0 which reflects how similar we wish to make the
-// colours of these two regions.
+/*
+ * Compute weight out of 1.0 which reflects how similar we wish to make the
+ * colours of these two regions.
+ */
 static double computeWeight(double Ci, double Cj, double sigma)
 {
 	if (Ci == InsufficientData || Cj == InsufficientData)
@@ -522,11 +544,11 @@ static double computeWeight(double Ci, double Cj, double sigma)
 	return exp(-diff * diff / 2);
 }
 
-// Compute all weights.
+/* Compute all weights. */
 static void computeW(double const C[XY], double sigma, double W[XY][4])
 {
 	for (int i = 0; i < XY; i++) {
-		// Start with neighbour above and go clockwise.
+		/* Start with neighbour above and go clockwise. */
 		W[i][0] = i >= X ? computeWeight(C[i], C[i - X], sigma) : 0;
 		W[i][1] = i % X < X - 1 ? computeWeight(C[i], C[i + 1], sigma) : 0;
 		W[i][2] = i < XY - X ? computeWeight(C[i], C[i + X], sigma) : 0;
@@ -534,17 +556,19 @@ static void computeW(double const C[XY], double sigma, double W[XY][4])
 	}
 }
 
-// Compute M, the large but sparse matrix such that M * lambdas = 0.
+/* Compute M, the large but sparse matrix such that M * lambdas = 0. */
 static void constructM(double const C[XY], double const W[XY][4],
 		       double M[XY][4])
 {
 	double epsilon = 0.001;
 	for (int i = 0; i < XY; i++) {
-		// Note how, if C[i] == INSUFFICIENT_DATA, the weights will all
-		// be zero so the equation is still set up correctly.
+		/*
+		 * Note how, if C[i] == INSUFFICIENT_DATA, the weights will all
+		 * be zero so the equation is still set up correctly.
+		 */
 		int m = !!(i >= X) + !!(i % X < X - 1) + !!(i < XY - X) +
-			!!(i % X); // total number of neighbours
-		// we'll divide the diagonal out straight away
+			!!(i % X); /* total number of neighbours */
+		/* we'll divide the diagonal out straight away */
 		double diagonal = (epsilon + W[i][0] + W[i][1] + W[i][2] + W[i][3]) * C[i];
 		M[i][0] = i >= X ? (W[i][0] * C[i - X] + epsilon / m * C[i]) / diagonal : 0;
 		M[i][1] = i % X < X - 1 ? (W[i][1] * C[i + 1] + epsilon / m * C[i]) / diagonal : 0;
@@ -553,9 +577,11 @@ static void constructM(double const C[XY], double const W[XY][4],
 	}
 }
 
-// In the compute_lambda_ functions, note that the matrix coefficients for the
-// left/right neighbours are zero down the left/right edges, so we don't need
-// need to test the i value to exclude them.
+/*
+ * In the compute_lambda_ functions, note that the matrix coefficients for the
+ * left/right neighbours are zero down the left/right edges, so we don't need
+ * need to test the i value to exclude them.
+ */
 static double computeLambdaBottom(int i, double const M[XY][4],
 				  double lambda[XY])
 {
@@ -585,7 +611,7 @@ static double computeLambdaTopEnd(int i, double const M[XY][4],
 	return M[i][0] * lambda[i - X] + M[i][3] * lambda[i - 1];
 }
 
-// Gauss-Seidel iteration with over-relaxation.
+/* Gauss-Seidel iteration with over-relaxation. */
 static double gaussSeidel2Sor(double const M[XY][4], double omega,
 			      double lambda[XY], double lambdaBound)
 {
@@ -610,8 +636,10 @@ static double gaussSeidel2Sor(double const M[XY][4], double omega,
 	}
 	lambda[i] = computeLambdaTopEnd(i, M, lambda);
 	lambda[i] = std::clamp(lambda[i], min, max);
-	// Also solve the system from bottom to top, to help spread the updates
-	// better.
+	/*
+	 * Also solve the system from bottom to top, to help spread the updates
+	 * better.
+	 */
 	lambda[i] = computeLambdaTopEnd(i, M, lambda);
 	lambda[i] = std::clamp(lambda[i], min, max);
 	for (i = XY - 2; i >= XY - X; i--) {
@@ -637,7 +665,7 @@ static double gaussSeidel2Sor(double const M[XY][4], double omega,
 	return maxDiff;
 }
 
-// Normalise the values so that the smallest value is 1.
+/* Normalise the values so that the smallest value is 1. */
 static void normalise(double *ptr, size_t n)
 {
 	double minval = ptr[0];
@@ -647,7 +675,7 @@ static void normalise(double *ptr, size_t n)
 		ptr[i] /= minval;
 }
 
-// Rescale the values so that the average value is 1.
+/* Rescale the values so that the average value is 1. */
 static void reaverage(Span<double> data)
 {
 	double sum = std::accumulate(data.begin(), data.end(), 0.0);
@@ -670,15 +698,17 @@ static void runMatrixIterations(double const C[XY], double lambda[XY],
 				<< "Stop after " << i + 1 << " iterations";
 			break;
 		}
-		// this happens very occasionally (so make a note), though
-		// doesn't seem to matter
+		/*
+		 * this happens very occasionally (so make a note), though
+		 * doesn't seem to matter
+		 */
 		if (maxDiff > lastMaxDiff)
 			LOG(RPiAlsc, Debug)
 				<< "Iteration " << i << ": maxDiff gone up "
 				<< lastMaxDiff << " to " << maxDiff;
 		lastMaxDiff = maxDiff;
 	}
-	// We're going to normalise the lambdas so the total average is 1.
+	/* We're going to normalise the lambdas so the total average is 1. */
 	reaverage({ lambda, XY });
 }
 
@@ -712,41 +742,49 @@ void addLuminanceToTables(double results[3][Y][X], double const lambdaR[XY],
 void Alsc::doAlsc()
 {
 	double cr[XY], cb[XY], wr[XY][4], wb[XY][4], calTableR[XY], calTableB[XY], calTableTmp[XY];
-	// Calculate our R/B ("Cr"/"Cb") colour statistics, and assess which are
-	// usable.
+	/*
+	 * Calculate our R/B ("Cr"/"Cb") colour statistics, and assess which are
+	 * usable.
+	 */
 	calculateCrCb(statistics_, cr, cb, config_.minCount, config_.minG);
-	// Fetch the new calibrations (if any) for this CT. Resample them in
-	// case the camera mode is not full-frame.
+	/*
+	 * Fetch the new calibrations (if any) for this CT. Resample them in
+	 * case the camera mode is not full-frame.
+	 */
 	getCalTable(ct_, config_.calibrationsCr, calTableTmp);
 	resampleCalTable(calTableTmp, cameraMode_, calTableR);
 	getCalTable(ct_, config_.calibrationsCb, calTableTmp);
 	resampleCalTable(calTableTmp, cameraMode_, calTableB);
-	// You could print out the cal tables for this image here, if you're
-	// tuning the algorithm...
-	// Apply any calibration to the statistics, so the adaptive algorithm
-	// makes only the extra adjustments.
+	/*
+	 * You could print out the cal tables for this image here, if you're
+	 * tuning the algorithm...
+	 * Apply any calibration to the statistics, so the adaptive algorithm
+	 * makes only the extra adjustments.
+	 */
 	applyCalTable(calTableR, cr);
 	applyCalTable(calTableB, cb);
-	// Compute weights between zones.
+	/* Compute weights between zones. */
 	computeW(cr, config_.sigmaCr, wr);
 	computeW(cb, config_.sigmaCb, wb);
-	// Run Gauss-Seidel iterations over the resulting matrix, for R and B.
+	/* Run Gauss-Seidel iterations over the resulting matrix, for R and B. */
 	runMatrixIterations(cr, lambdaR_, wr, config_.omega, config_.nIter,
 			    config_.threshold, config_.lambdaBound);
 	runMatrixIterations(cb, lambdaB_, wb, config_.omega, config_.nIter,
 			    config_.threshold, config_.lambdaBound);
-	// Fold the calibrated gains into our final lambda values. (Note that on
-	// the next run, we re-start with the lambda values that don't have the
-	// calibration gains included.)
+	/*
+	 * Fold the calibrated gains into our final lambda values. (Note that on
+	 * the next run, we re-start with the lambda values that don't have the
+	 * calibration gains included.)
+	 */
 	compensateLambdasForCal(calTableR, lambdaR_, asyncLambdaR_);
 	compensateLambdasForCal(calTableB, lambdaB_, asyncLambdaB_);
-	// Fold in the luminance table at the appropriate strength.
+	/* Fold in the luminance table at the appropriate strength. */
 	addLuminanceToTables(asyncResults_, asyncLambdaR_, 1.0,
 			     asyncLambdaB_, luminanceTable_,
 			     config_.luminanceStrength);
 }
 
-// Register algorithm with the system.
+/* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Alsc(controller);

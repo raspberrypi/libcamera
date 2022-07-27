@@ -12,7 +12,7 @@
 #include <libcamera/base/span.h>
 
 #include "../awb_status.h"
-#include "alsc.hpp"
+#include "alsc.h"
 
 /* Raspberry Pi ALSC (Auto Lens Shading Correction) algorithm. */
 

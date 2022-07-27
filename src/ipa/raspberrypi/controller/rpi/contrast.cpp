@@ -9,9 +9,9 @@
 #include <libcamera/base/log.h>
 
 #include "../contrast_status.h"
-#include "../histogram.hpp"
+#include "../histogram.h"
 
-#include "contrast.hpp"
+#include "contrast.h"
 
 using namespace RPiController;
 using namespace libcamera;

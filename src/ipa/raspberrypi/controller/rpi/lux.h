@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * lux.hpp - Lux control algorithm
+ * lux.h - Lux control algorithm
  */
 #pragma once
 
@@ -11,7 +11,7 @@
 #include <libcamera/base/utils.h>
 
 #include "../lux_status.h"
-#include "../algorithm.hpp"
+#include "../algorithm.h"
 
 /* This is our implementation of the "lux control algorithm". */
 

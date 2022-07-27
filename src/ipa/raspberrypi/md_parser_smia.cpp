@@ -6,7 +6,7 @@
  */
 
 #include <libcamera/base/log.h>
-#include "md_parser.hpp"
+#include "md_parser.h"
 
 using namespace RPiController;
 using namespace libcamera;

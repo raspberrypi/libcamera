@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * agc.hpp - AGC/AEC control algorithm
+ * agc.h - AGC/AEC control algorithm
  */
 #pragma once
 
@@ -11,9 +11,9 @@
 
 #include <libcamera/base/utils.h>
 
-#include "../agc_algorithm.hpp"
+#include "../agc_algorithm.h"
 #include "../agc_status.h"
-#include "../pwl.hpp"
+#include "../pwl.h"
 
 /* This is our implementation of AGC. */
 

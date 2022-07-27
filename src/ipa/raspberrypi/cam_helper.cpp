@@ -13,8 +13,8 @@
 
 #include "libcamera/internal/v4l2_videodevice.h"
 
-#include "cam_helper.hpp"
-#include "md_parser.hpp"
+#include "cam_helper.h"
+#include "md_parser.h"
 
 using namespace RPiController;
 using namespace libcamera;

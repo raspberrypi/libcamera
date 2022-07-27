@@ -10,7 +10,7 @@
 #include "../denoise_status.h"
 #include "../noise_status.h"
 
-#include "sdn.hpp"
+#include "sdn.h"
 
 using namespace RPiController;
 using namespace libcamera;

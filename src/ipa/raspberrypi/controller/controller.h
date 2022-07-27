@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * controller.hpp - ISP controller interface
+ * controller.h - ISP controller interface
  */
 #pragma once
 
@@ -19,7 +19,7 @@
 
 #include "camera_mode.h"
 #include "device_status.h"
-#include "metadata.hpp"
+#include "metadata.h"
 
 namespace RPiController {
 

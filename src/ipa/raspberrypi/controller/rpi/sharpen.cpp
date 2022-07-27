@@ -11,7 +11,7 @@
 
 #include "../sharpen_status.h"
 
-#include "sharpen.hpp"
+#include "sharpen.h"
 
 using namespace RPiController;
 using namespace libcamera;

@@ -9,9 +9,9 @@
 
 #include "../device_status.h"
 #include "../lux_status.h"
-#include "../pwl.hpp"
+#include "../pwl.h"
 
-#include "geq.hpp"
+#include "geq.h"
 
 using namespace RPiController;
 using namespace libcamera;

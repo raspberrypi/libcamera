@@ -16,9 +16,9 @@
  */
 #define ENABLE_EMBEDDED_DATA 0
 
-#include "cam_helper.hpp"
+#include "cam_helper.h"
 #if ENABLE_EMBEDDED_DATA
-#include "md_parser.hpp"
+#include "md_parser.h"
 #endif
 
 using namespace RPiController;

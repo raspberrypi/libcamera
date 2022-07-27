@@ -8,7 +8,7 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "pwl.hpp"
+#include "pwl.h"
 
 using namespace RPiController;
 

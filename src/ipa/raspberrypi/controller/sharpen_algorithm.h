@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Limited
  *
- * sharpen_algorithm.hpp - sharpness control algorithm interface
+ * sharpen_algorithm.h - sharpness control algorithm interface
  */
 #pragma once
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 namespace RPiController {
 

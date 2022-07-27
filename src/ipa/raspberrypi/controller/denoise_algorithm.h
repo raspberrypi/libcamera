@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2021, Raspberry Pi (Trading) Limited
  *
- * denoise.hpp - Denoise control algorithm interface
+ * denoise.h - Denoise control algorithm interface
  */
 #pragma once
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 namespace RPiController {
 

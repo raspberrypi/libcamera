@@ -2,14 +2,14 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * contrast.hpp - contrast (gamma) control algorithm
+ * contrast.h - contrast (gamma) control algorithm
  */
 #pragma once
 
 #include <mutex>
 
-#include "../contrast_algorithm.hpp"
-#include "../pwl.hpp"
+#include "../contrast_algorithm.h"
+#include "../pwl.h"
 
 namespace RPiController {
 

@@ -2,12 +2,12 @@
 /*
  * Copyright (C) 2020, Raspberry Pi (Trading) Limited
  *
- * focus.hpp - focus algorithm
+ * focus.h - focus algorithm
  */
 #pragma once
 
-#include "../algorithm.hpp"
-#include "../metadata.hpp"
+#include "../algorithm.h"
+#include "../metadata.h"
 
 /*
  * The "focus" algorithm. All it does it print out a version of the

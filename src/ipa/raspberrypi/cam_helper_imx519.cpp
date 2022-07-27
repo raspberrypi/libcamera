@@ -15,8 +15,8 @@
 
 #include <libcamera/base/log.h>
 
-#include "cam_helper.hpp"
-#include "md_parser.hpp"
+#include "cam_helper.h"
+#include "md_parser.h"
 
 using namespace RPiController;
 using namespace libcamera;

@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * contrast_algorithm.hpp - contrast (gamma) control algorithm interface
+ * contrast_algorithm.h - contrast (gamma) control algorithm interface
  */
 #pragma once
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 namespace RPiController {
 

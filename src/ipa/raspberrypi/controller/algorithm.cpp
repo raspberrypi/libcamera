@@ -5,7 +5,7 @@
  * algorithm.cpp - ISP control algorithms
  */
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 using namespace RPiController;
 

@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * awb_algorithm.hpp - AWB control algorithm interface
+ * awb_algorithm.h - AWB control algorithm interface
  */
 #pragma once
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 namespace RPiController {
 

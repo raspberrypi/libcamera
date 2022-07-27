@@ -9,7 +9,7 @@
 #include <cmath>
 #include <stddef.h>
 
-#include "cam_helper.hpp"
+#include "cam_helper.h"
 
 using namespace RPiController;
 using libcamera::utils::Duration;

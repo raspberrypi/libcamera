@@ -13,11 +13,11 @@
 
 #include "../awb_status.h"
 #include "../device_status.h"
-#include "../histogram.hpp"
+#include "../histogram.h"
 #include "../lux_status.h"
-#include "../metadata.hpp"
+#include "../metadata.h"
 
-#include "agc.hpp"
+#include "agc.h"
 
 using namespace RPiController;
 using namespace libcamera;

@@ -2,13 +2,13 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * agc_algorithm.hpp - AGC/AEC control algorithm interface
+ * agc_algorithm.h - AGC/AEC control algorithm interface
  */
 #pragma once
 
 #include <libcamera/base/utils.h>
 
-#include "algorithm.hpp"
+#include "algorithm.h"
 
 namespace RPiController {
 

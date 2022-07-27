@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * black_level.hpp - black level control algorithm
+ * black_level.h - black level control algorithm
  */
 #pragma once
 
-#include "../algorithm.hpp"
+#include "../algorithm.h"
 #include "../black_level_status.h"
 
 /* This is our implementation of the "black level algorithm". */

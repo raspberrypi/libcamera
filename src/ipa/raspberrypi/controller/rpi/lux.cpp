@@ -12,7 +12,7 @@
 
 #include "../device_status.h"
 
-#include "lux.hpp"
+#include "lux.h"
 
 using namespace RPiController;
 using namespace libcamera;

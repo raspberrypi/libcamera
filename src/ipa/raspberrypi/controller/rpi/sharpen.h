@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * sharpen.hpp - sharpening control algorithm
+ * sharpen.h - sharpening control algorithm
  */
 #pragma once
 
-#include "../sharpen_algorithm.hpp"
+#include "../sharpen_algorithm.h"
 #include "../sharpen_status.h"
 
 /* This is our implementation of the "sharpen algorithm". */

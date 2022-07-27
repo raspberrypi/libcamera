@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * alsc.hpp - ALSC (auto lens shading correction) control algorithm
+ * alsc.h - ALSC (auto lens shading correction) control algorithm
  */
 #pragma once
 
@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <thread>
 
-#include "../algorithm.hpp"
+#include "../algorithm.h"
 #include "../alsc_status.h"
 
 namespace RPiController {

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * algorithm.hpp - ISP control algorithm interface
+ * algorithm.h - ISP control algorithm interface
  */
 #pragma once
 
@@ -15,7 +15,7 @@
 #include <memory>
 #include <map>
 
-#include "controller.hpp"
+#include "controller.h"
 
 #include <boost/property_tree/ptree.hpp>
 

@@ -12,7 +12,7 @@
 
 #include "../black_level_status.h"
 
-#include "black_level.hpp"
+#include "black_level.h"
 
 using namespace RPiController;
 using namespace libcamera;

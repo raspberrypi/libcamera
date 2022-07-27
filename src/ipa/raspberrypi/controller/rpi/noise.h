@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * noise.hpp - Noise control algorithm
+ * noise.h - Noise control algorithm
  */
 #pragma once
 
-#include "../algorithm.hpp"
+#include "../algorithm.h"
 #include "../noise_status.h"
 
 /* This is our implementation of the "noise algorithm". */

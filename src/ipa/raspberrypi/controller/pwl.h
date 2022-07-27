@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * pwl.hpp - piecewise linear functions interface
+ * pwl.h - piecewise linear functions interface
  */
 #pragma once
 

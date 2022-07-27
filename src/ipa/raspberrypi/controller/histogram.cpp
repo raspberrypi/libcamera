@@ -7,7 +7,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "histogram.hpp"
+#include "histogram.h"
 
 using namespace RPiController;
 

@@ -9,7 +9,7 @@
 #include <libcamera/base/log.h>
 
 #include "../focus_status.h"
-#include "focus.hpp"
+#include "focus.h"
 
 using namespace RPiController;
 using namespace libcamera;

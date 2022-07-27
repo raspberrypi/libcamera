@@ -2,14 +2,14 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * ccm.hpp - CCM (colour correction matrix) control algorithm
+ * ccm.h - CCM (colour correction matrix) control algorithm
  */
 #pragma once
 
 #include <vector>
 
-#include "../ccm_algorithm.hpp"
-#include "../pwl.hpp"
+#include "../ccm_algorithm.h"
+#include "../pwl.h"
 
 namespace RPiController {
 

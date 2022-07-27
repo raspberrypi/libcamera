@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * cam_helper.hpp - helper class providing camera information
+ * cam_helper.h - helper class providing camera information
  */
 #pragma once
 
@@ -13,9 +13,9 @@
 #include <libcamera/base/utils.h>
 
 #include "camera_mode.h"
-#include "controller/controller.hpp"
-#include "controller/metadata.hpp"
-#include "md_parser.hpp"
+#include "controller/controller.h"
+#include "controller/metadata.h"
+#include "md_parser.h"
 
 #include "libcamera/internal/v4l2_videodevice.h"
 

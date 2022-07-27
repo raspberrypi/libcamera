@@ -12,7 +12,7 @@
 #include "../device_status.h"
 #include "../noise_status.h"
 
-#include "noise.hpp"
+#include "noise.h"
 
 using namespace RPiController;
 using namespace libcamera;

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * histogram.hpp - histogram calculation interface
+ * histogram.h - histogram calculation interface
  */
 #pragma once
 

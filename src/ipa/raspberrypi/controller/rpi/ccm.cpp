@@ -10,9 +10,9 @@
 #include "../awb_status.h"
 #include "../ccm_status.h"
 #include "../lux_status.h"
-#include "../metadata.hpp"
+#include "../metadata.h"
 
-#include "ccm.hpp"
+#include "ccm.h"
 
 using namespace RPiController;
 using namespace libcamera;

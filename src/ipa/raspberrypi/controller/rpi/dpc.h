@@ -2,33 +2,31 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * geq.hpp - GEQ (green equalisation) control algorithm
+ * dpc.h - DPC (defective pixel correction) control algorithm
  */
 #pragma once
 
-#include "../algorithm.hpp"
-#include "../geq_status.h"
+#include "../algorithm.h"
+#include "../dpc_status.h"
 
 namespace RPiController {
 
 /* Back End algorithm to apply appropriate GEQ settings. */
 
-struct GeqConfig {
-	uint16_t offset;
-	double slope;
-	Pwl strength; /* lux to strength factor */
+struct DpcConfig {
+	int strength;
 };
 
-class Geq : public Algorithm
+class Dpc : public Algorithm
 {
 public:
-	Geq(Controller *controller);
+	Dpc(Controller *controller);
 	char const *name() const override;
 	void read(boost::property_tree::ptree const &params) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:
-	GeqConfig config_;
+	DpcConfig config_;
 };
 
 } /* namespace RPiController */

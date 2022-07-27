@@ -2,12 +2,12 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * sdn.hpp - SDN (spatial denoise) control algorithm
+ * sdn.h - SDN (spatial denoise) control algorithm
  */
 #pragma once
 
-#include "../algorithm.hpp"
-#include "../denoise_algorithm.hpp"
+#include "../algorithm.h"
+#include "../denoise_algorithm.h"
 
 namespace RPiController {
 

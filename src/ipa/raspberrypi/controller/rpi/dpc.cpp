@@ -7,7 +7,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "dpc.hpp"
+#include "dpc.h"
 
 using namespace RPiController;
 using namespace libcamera;

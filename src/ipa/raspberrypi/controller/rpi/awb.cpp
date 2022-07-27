@@ -9,7 +9,7 @@
 
 #include "../lux_status.h"
 
-#include "awb.hpp"
+#include "awb.h"
 
 using namespace RPiController;
 using namespace libcamera;

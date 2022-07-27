@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi (Trading) Limited
  *
- * awb.hpp - AWB control algorithm
+ * awb.h - AWB control algorithm
  */
 #pragma once
 
@@ -10,8 +10,8 @@
 #include <condition_variable>
 #include <thread>
 
-#include "../awb_algorithm.hpp"
-#include "../pwl.hpp"
+#include "../awb_algorithm.h"
+#include "../pwl.h"
 #include "../awb_status.h"
 
 namespace RPiController {

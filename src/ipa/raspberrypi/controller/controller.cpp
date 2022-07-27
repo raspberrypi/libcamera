@@ -7,8 +7,8 @@
 
 #include <libcamera/base/log.h>
 
-#include "algorithm.hpp"
-#include "controller.hpp"
+#include "algorithm.h"
+#include "controller.h"
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>

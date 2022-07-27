@@ -8,15 +8,7 @@
 
 /* The "GEQ" algorithm calculates the green equalisation thresholds */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct GeqStatus {
 	uint16_t offset;
 	double slope;
 };
-
-#ifdef __cplusplus
-}
-#endif

@@ -8,17 +8,9 @@
 
 /* This stores the parameters required for Denoise. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct DenoiseStatus {
 	double noiseConstant;
 	double noiseSlope;
 	double strength;
 	unsigned int mode;
 };
-
-#ifdef __cplusplus
-}
-#endif

@@ -13,10 +13,6 @@
  * "agc.status" metadata.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
  * Note: total_exposure_value will be reported as zero until the algorithm has
  * seen statistics and calculated meaningful values. The contents should be
@@ -39,7 +35,3 @@ struct AgcStatus {
 	double digitalGain;
 	int locked;
 };
-
-#ifdef __cplusplus
-}
-#endif

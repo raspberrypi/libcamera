@@ -14,15 +14,7 @@
  * measurements, it's not driving any kind of auto-focus algorithm!
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct FocusStatus {
 	unsigned int num;
 	uint32_t focusMeasures[FOCUS_REGIONS];
 };
-
-#ifdef __cplusplus
-}
-#endif

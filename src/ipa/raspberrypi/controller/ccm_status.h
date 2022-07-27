@@ -8,15 +8,7 @@
 
 /* The "ccm" algorithm generates an appropriate colour matrix. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct CcmStatus {
 	double matrix[9];
 	double saturation;
 };
-
-#ifdef __cplusplus
-}
-#endif

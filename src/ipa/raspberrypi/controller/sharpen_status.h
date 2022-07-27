@@ -8,10 +8,6 @@
 
 /* The "sharpen" algorithm stores the strength to use. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct SharpenStatus {
 	/* controls the smallest level of detail (or noise!) that sharpening will pick up */
 	double threshold;
@@ -22,7 +18,3 @@ struct SharpenStatus {
 	/* The sharpening strength requested by the user or application. */
 	double userStrength;
 };
-
-#ifdef __cplusplus
-}
-#endif

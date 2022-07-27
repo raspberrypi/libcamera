@@ -16,10 +16,6 @@
  * including binning, scaling, cropping etc.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define CAMERA_MODE_NAME_LEN 32
 
 struct CameraMode {
@@ -46,7 +42,3 @@ struct CameraMode {
 	/* sensitivity of this mode */
 	double sensitivity;
 };
-
-#ifdef __cplusplus
-}
-#endif

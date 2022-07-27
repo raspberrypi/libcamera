@@ -11,10 +11,6 @@
  * under the tag "awb.status".
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct AwbStatus {
 	char mode[32];
 	double temperatureK;
@@ -22,7 +18,3 @@ struct AwbStatus {
 	double gainG;
 	double gainB;
 };
-
-#ifdef __cplusplus
-}
-#endif

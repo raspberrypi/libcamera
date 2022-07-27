@@ -8,15 +8,7 @@
 
 /* The "noise" algorithm stores an estimate of the noise profile for this image. */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct NoiseStatus {
 	double noiseConstant;
 	double noiseSlope;
 };
-
-#ifdef __cplusplus
-}
-#endif

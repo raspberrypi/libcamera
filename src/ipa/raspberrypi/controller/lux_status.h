@@ -17,15 +17,7 @@
  * (presumably meaningless) value in the image metadata.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct LuxStatus {
 	double lux;
 	double aperture;
 };
-
-#ifdef __cplusplus
-}
-#endif

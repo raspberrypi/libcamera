@@ -95,4 +95,64 @@ algorithms:
             1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
             1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
           ]
+  - DefectPixelClusterCorrection:
+      fixed-set: false
+      sets:
+        # PG, LC, RO, RND, RG
+        - line-threshold:
+            green: 8
+            red-blue: 8
+          line-mad-factor:
+            green: 4
+            red-blue: 4
+          pg-factor:
+            green: 8
+            red-blue: 8
+          rnd-threshold:
+            green: 10
+            red-blue: 10
+          rg-factor:
+            green: 32
+            red-blue: 32
+          ro-limits:
+            green: 1
+            red-blue: 1
+          rnd-offsets:
+            green: 2
+            red-blue: 2
+        # PG, LC, RO
+        - line-threshold:
+            green: 24
+            red-blue: 32
+          line-mad-factor:
+            green: 16
+            red-blue: 24
+          pg-factor:
+            green: 6
+            red-blue: 8
+          ro-limits:
+            green: 2
+            red-blue: 2
+        # PG, LC, RO, RND, RG
+        - line-threshold:
+            green: 32
+            red-blue: 32
+          line-mad-factor:
+            green: 4
+            red-blue: 4
+          pg-factor:
+            green: 10
+            red-blue: 10
+          rnd-threshold:
+            green: 6
+            red-blue: 8
+          rg-factor:
+            green: 4
+            red-blue: 4
+          ro-limits:
+            green: 1
+            red-blue: 2
+          rnd-offsets:
+            green: 2
+            red-blue: 2
 ...

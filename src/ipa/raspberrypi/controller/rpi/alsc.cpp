@@ -23,8 +23,8 @@ LOG_DEFINE_CATEGORY(RPiAlsc)
 
 #define NAME "rpi.alsc"
 
-static const int X = ALSC_CELLS_X;
-static const int Y = ALSC_CELLS_Y;
+static const int X = AlscCellsX;
+static const int Y = AlscCellsY;
 static const int XY = X * Y;
 static const double InsufficientData = -1.0;
 

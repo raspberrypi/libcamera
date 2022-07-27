@@ -16,8 +16,6 @@
  * including binning, scaling, cropping etc.
  */
 
-#define CAMERA_MODE_NAME_LEN 32
-
 struct CameraMode {
 	/* bit depth of the raw camera output */
 	uint32_t bitdepth;

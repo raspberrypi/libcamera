@@ -11,11 +11,11 @@
  * "alsc.status" metadata.
  */
 
-#define ALSC_CELLS_X 16
-#define ALSC_CELLS_Y 12
+constexpr unsigned int AlscCellsX = 16;
+constexpr unsigned int AlscCellsY = 12;
 
 struct AlscStatus {
-	double r[ALSC_CELLS_Y][ALSC_CELLS_X];
-	double g[ALSC_CELLS_Y][ALSC_CELLS_X];
-	double b[ALSC_CELLS_Y][ALSC_CELLS_X];
+	double r[AlscCellsY][AlscCellsX];
+	double g[AlscCellsY][AlscCellsX];
+	double b[AlscCellsY][AlscCellsX];
 };

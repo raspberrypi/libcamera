@@ -70,15 +70,15 @@ static void fillInStatus(ContrastStatus &status, double brightness,
 {
 	status.brightness = brightness;
 	status.contrast = contrast;
-	for (int i = 0; i < CONTRAST_NUM_POINTS - 1; i++) {
+	for (unsigned int i = 0; i < ContrastNumPoints - 1; i++) {
 		int x = i < 16 ? i * 1024
 			       : (i < 24 ? (i - 16) * 2048 + 16384
 					 : (i - 24) * 4096 + 32768);
 		status.points[i].x = x;
 		status.points[i].y = std::min(65535.0, gammaCurve.eval(x));
 	}
-	status.points[CONTRAST_NUM_POINTS - 1].x = 65535;
-	status.points[CONTRAST_NUM_POINTS - 1].y = 65535;
+	status.points[ContrastNumPoints - 1].x = 65535;
+	status.points[ContrastNumPoints - 1].y = 65535;
 }
 
 void Contrast::initialise()

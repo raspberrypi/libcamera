@@ -18,8 +18,8 @@ LOG_DEFINE_CATEGORY(RPiAwb)
 
 #define NAME "rpi.awb"
 
-#define AWB_STATS_SIZE_X DEFAULT_AWB_REGIONS_X
-#define AWB_STATS_SIZE_Y DEFAULT_AWB_REGIONS_Y
+static constexpr unsigned int AwbStatsSizeX = DEFAULT_AWB_REGIONS_X;
+static constexpr unsigned int AwbStatsSizeY = DEFAULT_AWB_REGIONS_Y;
 
 /*
  * todo - the locking in this algorithm needs some tidying up as has been done
@@ -357,7 +357,7 @@ static void generateStats(std::vector<Awb::RGB> &zones,
 			  bcm2835_isp_stats_region *stats, double minPixels,
 			  double minG)
 {
-	for (int i = 0; i < AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y; i++) {
+	for (unsigned int i = 0; i < AwbStatsSizeX * AwbStatsSizeY; i++) {
 		Awb::RGB zone;
 		double counted = stats[i].counted;
 		if (counted >= minPixels) {
@@ -599,7 +599,7 @@ void Awb::awbBayes()
 	 * valid... not entirely sure about this.
 	 */
 	Pwl prior = interpolatePrior();
-	prior *= zones_.size() / (double)(AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y);
+	prior *= zones_.size() / (double)(AwbStatsSizeX * AwbStatsSizeY);
 	prior.map([](double x, double y) {
 		LOG(RPiAwb, Debug) << "(" << x << "," << y << ")";
 	});

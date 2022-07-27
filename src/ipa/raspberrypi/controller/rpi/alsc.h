@@ -19,7 +19,7 @@ namespace RPiController {
 
 struct AlscCalibration {
 	double ct;
-	double table[ALSC_CELLS_X * ALSC_CELLS_Y];
+	double table[AlscCellsX * AlscCellsY];
 };
 
 struct AlscConfig {
@@ -35,7 +35,7 @@ struct AlscConfig {
 	uint16_t minG;
 	double omega;
 	uint32_t nIter;
-	double luminanceLut[ALSC_CELLS_X * ALSC_CELLS_Y];
+	double luminanceLut[AlscCellsX * AlscCellsY];
 	double luminanceStrength;
 	std::vector<AlscCalibration> calibrationsCr;
 	std::vector<AlscCalibration> calibrationsCb;
@@ -61,7 +61,7 @@ private:
 	AlscConfig config_;
 	bool firstTime_;
 	CameraMode cameraMode_;
-	double luminanceTable_[ALSC_CELLS_X * ALSC_CELLS_Y];
+	double luminanceTable_[AlscCellsX * AlscCellsY];
 	std::thread asyncThread_;
 	void asyncFunc(); /* asynchronous thread function */
 	std::mutex mutex_;
@@ -87,8 +87,8 @@ private:
 	int frameCount_;
 	/* counts up to startupFrames for Process function */
 	int frameCount2_;
-	double syncResults_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
-	double prevSyncResults_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
+	double syncResults_[3][AlscCellsY][AlscCellsX];
+	double prevSyncResults_[3][AlscCellsY][AlscCellsX];
 	void waitForAysncThread();
 	/*
 	 * The following are for the asynchronous thread to use, though the main
@@ -98,13 +98,13 @@ private:
 	/* copy out the results from the async thread so that it can be restarted */
 	void fetchAsyncResults();
 	double ct_;
-	bcm2835_isp_stats_region statistics_[ALSC_CELLS_Y * ALSC_CELLS_X];
-	double asyncResults_[3][ALSC_CELLS_Y][ALSC_CELLS_X];
-	double asyncLambdaR_[ALSC_CELLS_X * ALSC_CELLS_Y];
-	double asyncLambdaB_[ALSC_CELLS_X * ALSC_CELLS_Y];
+	bcm2835_isp_stats_region statistics_[AlscCellsY * AlscCellsX];
+	double asyncResults_[3][AlscCellsY][AlscCellsX];
+	double asyncLambdaR_[AlscCellsX * AlscCellsY];
+	double asyncLambdaB_[AlscCellsX * AlscCellsY];
 	void doAlsc();
-	double lambdaR_[ALSC_CELLS_X * ALSC_CELLS_Y];
-	double lambdaB_[ALSC_CELLS_X * ALSC_CELLS_Y];
+	double lambdaR_[AlscCellsX * AlscCellsY];
+	double lambdaB_[AlscCellsX * AlscCellsY];
 };
 
 } /* namespace RPiController */

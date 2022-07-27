@@ -28,17 +28,17 @@ LOG_DEFINE_CATEGORY(RPiAgc)
 
 #define NAME "rpi.agc"
 
-#define PIPELINE_BITS 13 /* seems to be a 13-bit pipeline */
+static constexpr unsigned int PipelineBits = 13; /* seems to be a 13-bit pipeline */
 
 void AgcMeteringMode::read(boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	for (auto &p : params.get_child("weights")) {
-		if (num == AGC_STATS_SIZE)
+		if (num == AgcStatsSize)
 			LOG(RPiAgc, Fatal) << "AgcConfig: too many weights";
 		weights[num++] = p.second.get_value<double>();
 	}
-	if (num != AGC_STATS_SIZE)
+	if (num != AgcStatsSize)
 		LOG(RPiAgc, Fatal) << "AgcConfig: insufficient weights";
 }
 
@@ -525,11 +525,11 @@ static double computeInitialY(bcm2835_isp_stats *stats, AwbStatus const &awb,
 	 * "average" metering (i.e. all pixels equally important).
 	 */
 	double rSum = 0, gSum = 0, bSum = 0, pixelSum = 0;
-	for (int i = 0; i < AGC_STATS_SIZE; i++) {
+	for (unsigned int i = 0; i < AgcStatsSize; i++) {
 		double counted = regions[i].counted;
-		double rAcc = std::min(regions[i].r_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
-		double gAcc = std::min(regions[i].g_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
-		double bAcc = std::min(regions[i].b_sum * gain, ((1 << PIPELINE_BITS) - 1) * counted);
+		double rAcc = std::min(regions[i].r_sum * gain, ((1 << PipelineBits) - 1) * counted);
+		double gAcc = std::min(regions[i].g_sum * gain, ((1 << PipelineBits) - 1) * counted);
+		double bAcc = std::min(regions[i].b_sum * gain, ((1 << PipelineBits) - 1) * counted);
 		rSum += rAcc * weights[i];
 		gSum += gAcc * weights[i];
 		bSum += bAcc * weights[i];
@@ -542,7 +542,7 @@ static double computeInitialY(bcm2835_isp_stats *stats, AwbStatus const &awb,
 	double ySum = rSum * awb.gainR * .299 +
 		      gSum * awb.gainG * .587 +
 		      bSum * awb.gainB * .114;
-	return ySum / pixelSum / (1 << PIPELINE_BITS);
+	return ySum / pixelSum / (1 << PipelineBits);
 }
 
 /*
@@ -553,13 +553,13 @@ static double computeInitialY(bcm2835_isp_stats *stats, AwbStatus const &awb,
  * (contrived) cases.
  */
 
-#define EV_GAIN_Y_TARGET_LIMIT 0.9
+static constexpr double EvGainYTargetLimit = 0.9;
 
 static double constraintComputeGain(AgcConstraint &c, Histogram &h, double lux,
 				    double evGain, double &targetY)
 {
 	targetY = c.yTarget.eval(c.yTarget.domain().clip(lux));
-	targetY = std::min(EV_GAIN_Y_TARGET_LIMIT, targetY * evGain);
+	targetY = std::min(EvGainYTargetLimit, targetY * evGain);
 	double iqm = h.interQuantileMean(c.qLo, c.qHi);
 	return (targetY * NUM_HISTOGRAM_BINS) / iqm;
 }
@@ -578,7 +578,7 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *imageMetadata,
 	 * that we consider the histogram constraints.
 	 */
 	targetY = config_.yTarget.eval(config_.yTarget.domain().clip(lux.lux));
-	targetY = std::min(EV_GAIN_Y_TARGET_LIMIT, targetY * evGain);
+	targetY = std::min(EvGainYTargetLimit, targetY * evGain);
 
 	/*
 	 * Do this calculation a few times as brightness increase can be

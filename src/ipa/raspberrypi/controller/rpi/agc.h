@@ -22,12 +22,12 @@
  * number (which is 16).
  */
 
-#define AGC_STATS_SIZE 15
+constexpr unsigned int AgcStatsSize = 15;
 
 namespace RPiController {
 
 struct AgcMeteringMode {
-	double weights[AGC_STATS_SIZE];
+	double weights[AgcStatsSize];
 	void read(boost::property_tree::ptree const &params);
 };
 

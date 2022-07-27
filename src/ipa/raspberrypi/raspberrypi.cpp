@@ -1235,7 +1235,7 @@ void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList
 	struct bcm2835_isp_gamma gamma;
 
 	gamma.enabled = 1;
-	for (int i = 0; i < CONTRAST_NUM_POINTS; i++) {
+	for (unsigned int i = 0; i < ContrastNumPoints; i++) {
 		gamma.x[i] = contrastStatus->points[i].x;
 		gamma.y[i] = contrastStatus->points[i].y;
 	}

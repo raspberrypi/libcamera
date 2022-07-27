@@ -46,18 +46,15 @@ static void readCtCurve(Pwl &ctR, Pwl &ctB,
 		double ct = it->second.get_value<double>();
 		assert(it == params.begin() || ct != ctR.domain().end);
 		if (++it == params.end())
-			throw std::runtime_error(
-				"AwbConfig: incomplete CT curve entry");
+			LOG(RPiAwb, Fatal) << "AwbConfig: incomplete CT curve entry";
 		ctR.append(ct, it->second.get_value<double>());
 		if (++it == params.end())
-			throw std::runtime_error(
-				"AwbConfig: incomplete CT curve entry");
+			LOG(RPiAwb, Fatal) << "AwbConfig: incomplete CT curve entry";
 		ctB.append(ct, it->second.get_value<double>());
 		num++;
 	}
 	if (num < 2)
-		throw std::runtime_error(
-			"AwbConfig: insufficient points in CT curve");
+		LOG(RPiAwb, Fatal) << "AwbConfig: insufficient points in CT curve";
 }
 
 void AwbConfig::read(boost::property_tree::ptree const &params)
@@ -74,12 +71,11 @@ void AwbConfig::read(boost::property_tree::ptree const &params)
 			AwbPrior prior;
 			prior.read(p.second);
 			if (!priors.empty() && prior.lux <= priors.back().lux)
-				throw std::runtime_error("AwbConfig: Prior must be ordered in increasing lux value");
+				LOG(RPiAwb, Fatal) << "AwbConfig: Prior must be ordered in increasing lux value";
 			priors.push_back(prior);
 		}
 		if (priors.empty())
-			throw std::runtime_error(
-				"AwbConfig: no AWB priors configured");
+			LOG(RPiAwb, Fatal) << "AwbConfig: no AWB priors configured";
 	}
 	if (params.get_child_optional("modes")) {
 		for (auto &p : params.get_child("modes")) {
@@ -88,7 +84,7 @@ void AwbConfig::read(boost::property_tree::ptree const &params)
 				defaultMode = &modes[p.first];
 		}
 		if (defaultMode == nullptr)
-			throw std::runtime_error("AwbConfig: no AWB modes configured");
+			LOG(RPiAwb, Fatal) << "AwbConfig: no AWB modes configured";
 	}
 	minPixels = params.get<double>("min_pixels", 16.0);
 	minG = params.get<uint16_t>("min_G", 32);
@@ -98,7 +94,7 @@ void AwbConfig::read(boost::property_tree::ptree const &params)
 	transversePos = params.get<double>("transverse_pos", 0.01);
 	transverseNeg = params.get<double>("transverse_neg", 0.01);
 	if (transversePos <= 0 || transverseNeg <= 0)
-		throw std::runtime_error("AwbConfig: transverse_pos/neg must be > 0");
+		LOG(RPiAwb, Fatal) << "AwbConfig: transverse_pos/neg must be > 0";
 	sensitivityR = params.get<double>("sensitivity_r", 1.0);
 	sensitivityB = params.get<double>("sensitivity_b", 1.0);
 	if (bayes) {

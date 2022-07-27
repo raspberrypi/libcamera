@@ -45,11 +45,11 @@ void Matrix::read(boost::property_tree::ptree const &params)
 	int n = 0;
 	for (auto it = params.begin(); it != params.end(); it++) {
 		if (n++ == 9)
-			throw std::runtime_error("Ccm: too many values in CCM");
+			LOG(RPiCcm, Fatal) << "Ccm: too many values in CCM";
 		*ptr++ = it->second.get_value<double>();
 	}
 	if (n < 9)
-		throw std::runtime_error("Ccm: too few values in CCM");
+		LOG(RPiCcm, Fatal) << "Ccm: too few values in CCM";
 }
 
 Ccm::Ccm(Controller *controller)
@@ -70,12 +70,11 @@ void Ccm::read(boost::property_tree::ptree const &params)
 		ctCcm.ccm.read(p.second.get_child("ccm"));
 		if (!config_.ccms.empty() &&
 		    ctCcm.ct <= config_.ccms.back().ct)
-			throw std::runtime_error(
-				"Ccm: CCM not in increasing colour temperature order");
+			LOG(RPiCcm, Fatal) << "Ccm: CCM not in increasing colour temperature order";
 		config_.ccms.push_back(std::move(ctCcm));
 	}
 	if (config_.ccms.empty())
-		throw std::runtime_error("Ccm: no CCMs specified");
+		LOG(RPiCcm, Fatal) << "Ccm: no CCMs specified";
 }
 
 void Ccm::setSaturation(double saturation)

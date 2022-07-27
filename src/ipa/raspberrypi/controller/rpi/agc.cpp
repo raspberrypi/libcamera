@@ -35,11 +35,11 @@ void AgcMeteringMode::read(boost::property_tree::ptree const &params)
 	int num = 0;
 	for (auto &p : params.get_child("weights")) {
 		if (num == AGC_STATS_SIZE)
-			throw std::runtime_error("AgcConfig: too many weights");
+			LOG(RPiAgc, Fatal) << "AgcConfig: too many weights";
 		weights[num++] = p.second.get_value<double>();
 	}
 	if (num != AGC_STATS_SIZE)
-		throw std::runtime_error("AgcConfig: insufficient weights");
+		LOG(RPiAgc, Fatal) << "AgcConfig: insufficient weights";
 }
 
 static std::string
@@ -78,11 +78,11 @@ void AgcExposureMode::read(boost::property_tree::ptree const &params)
 	int numShutters = readList(shutter, params.get_child("shutter"));
 	int numAgs = readList(gain, params.get_child("gain"));
 	if (numShutters < 2 || numAgs < 2)
-		throw std::runtime_error(
-			"AgcConfig: must have at least two entries in exposure profile");
+		LOG(RPiAgc, Fatal)
+			<< "AgcConfig: must have at least two entries in exposure profile";
 	if (numShutters != numAgs)
-		throw std::runtime_error(
-			"AgcConfig: expect same number of exposure and gain entries in exposure profile");
+		LOG(RPiAgc, Fatal)
+			<< "AgcConfig: expect same number of exposure and gain entries in exposure profile";
 }
 
 static std::string
@@ -106,8 +106,7 @@ void AgcConstraint::read(boost::property_tree::ptree const &params)
 	transform(boundString.begin(), boundString.end(),
 		  boundString.begin(), ::toupper);
 	if (boundString != "UPPER" && boundString != "LOWER")
-		throw std::runtime_error(
-			"AGC constraint type should be UPPER or LOWER");
+		LOG(RPiAgc, Fatal) << "AGC constraint type should be UPPER or LOWER";
 	bound = boundString == "UPPER" ? Bound::UPPER : Bound::LOWER;
 	qLo = params.get<double>("q_lo");
 	qHi = params.get<double>("q_hi");
@@ -465,8 +464,7 @@ void Agc::housekeepConfig()
 	if (strcmp(meteringModeName_.c_str(), status_.meteringMode)) {
 		auto it = config_.meteringModes.find(meteringModeName_);
 		if (it == config_.meteringModes.end())
-			throw std::runtime_error("Agc: no metering mode " +
-						 meteringModeName_);
+			LOG(RPiAgc, Fatal) << "Agc: no metering mode " << meteringModeName_;
 		meteringMode_ = &it->second;
 		copyString(meteringModeName_, status_.meteringMode,
 			   sizeof(status_.meteringMode));
@@ -474,8 +472,7 @@ void Agc::housekeepConfig()
 	if (strcmp(exposureModeName_.c_str(), status_.exposureMode)) {
 		auto it = config_.exposureModes.find(exposureModeName_);
 		if (it == config_.exposureModes.end())
-			throw std::runtime_error("Agc: no exposure profile " +
-						 exposureModeName_);
+			LOG(RPiAgc, Fatal) << "Agc: no exposure profile " << exposureModeName_;
 		exposureMode_ = &it->second;
 		copyString(exposureModeName_, status_.exposureMode,
 			   sizeof(status_.exposureMode));
@@ -484,8 +481,7 @@ void Agc::housekeepConfig()
 		auto it =
 			config_.constraintModes.find(constraintModeName_);
 		if (it == config_.constraintModes.end())
-			throw std::runtime_error("Agc: no constraint list " +
-						 constraintModeName_);
+			LOG(RPiAgc, Fatal) << "Agc: no constraint list " << constraintModeName_;
 		constraintMode_ = &it->second;
 		copyString(constraintModeName_, status_.constraintMode,
 			   sizeof(status_.constraintMode));
@@ -502,7 +498,7 @@ void Agc::fetchCurrentExposure(Metadata *imageMetadata)
 	DeviceStatus *deviceStatus =
 		imageMetadata->getLocked<DeviceStatus>("device.status");
 	if (!deviceStatus)
-		throw std::runtime_error("Agc: no device metadata");
+		LOG(RPiAgc, Fatal) << "Agc: no device metadata";
 	current_.shutter = deviceStatus->shutterSpeed;
 	current_.analogueGain = deviceStatus->analogueGain;
 	AgcStatus *agcStatus =

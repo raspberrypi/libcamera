@@ -35,7 +35,7 @@ void Dpc::read(boost::property_tree::ptree const &params)
 {
 	config_.strength = params.get<int>("strength", 1);
 	if (config_.strength < 0 || config_.strength > 2)
-		throw std::runtime_error("Dpc: bad strength value");
+		LOG(RPiDpc, Fatal) << "Dpc: bad strength value";
 }
 
 void Dpc::prepare(Metadata *imageMetadata)

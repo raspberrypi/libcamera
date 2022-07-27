@@ -35,11 +35,11 @@ void AgcMeteringMode::read(boost::property_tree::ptree const &params)
 	int num = 0;
 	for (auto &p : params.get_child("weights")) {
 		if (num == AgcStatsSize)
-			LOG(RPiAgc, Fatal) << "AgcConfig: too many weights";
+			LOG(RPiAgc, Fatal) << "AgcMeteringMode: too many weights";
 		weights[num++] = p.second.get_value<double>();
 	}
 	if (num != AgcStatsSize)
-		LOG(RPiAgc, Fatal) << "AgcConfig: insufficient weights";
+		LOG(RPiAgc, Fatal) << "AgcMeteringMode: insufficient weights";
 }
 
 static std::string
@@ -79,10 +79,10 @@ void AgcExposureMode::read(boost::property_tree::ptree const &params)
 	int numAgs = readList(gain, params.get_child("gain"));
 	if (numShutters < 2 || numAgs < 2)
 		LOG(RPiAgc, Fatal)
-			<< "AgcConfig: must have at least two entries in exposure profile";
+			<< "AgcExposureMode: must have at least two entries in exposure profile";
 	if (numShutters != numAgs)
 		LOG(RPiAgc, Fatal)
-			<< "AgcConfig: expect same number of exposure and gain entries in exposure profile";
+			<< "AgcExposureMode: expect same number of exposure and gain entries in exposure profile";
 }
 
 static std::string
@@ -464,7 +464,7 @@ void Agc::housekeepConfig()
 	if (strcmp(meteringModeName_.c_str(), status_.meteringMode)) {
 		auto it = config_.meteringModes.find(meteringModeName_);
 		if (it == config_.meteringModes.end())
-			LOG(RPiAgc, Fatal) << "Agc: no metering mode " << meteringModeName_;
+			LOG(RPiAgc, Fatal) << "No metering mode " << meteringModeName_;
 		meteringMode_ = &it->second;
 		copyString(meteringModeName_, status_.meteringMode,
 			   sizeof(status_.meteringMode));
@@ -472,7 +472,7 @@ void Agc::housekeepConfig()
 	if (strcmp(exposureModeName_.c_str(), status_.exposureMode)) {
 		auto it = config_.exposureModes.find(exposureModeName_);
 		if (it == config_.exposureModes.end())
-			LOG(RPiAgc, Fatal) << "Agc: no exposure profile " << exposureModeName_;
+			LOG(RPiAgc, Fatal) << "No exposure profile " << exposureModeName_;
 		exposureMode_ = &it->second;
 		copyString(exposureModeName_, status_.exposureMode,
 			   sizeof(status_.exposureMode));
@@ -481,7 +481,7 @@ void Agc::housekeepConfig()
 		auto it =
 			config_.constraintModes.find(constraintModeName_);
 		if (it == config_.constraintModes.end())
-			LOG(RPiAgc, Fatal) << "Agc: no constraint list " << constraintModeName_;
+			LOG(RPiAgc, Fatal) << "No constraint list " << constraintModeName_;
 		constraintMode_ = &it->second;
 		copyString(constraintModeName_, status_.constraintMode,
 			   sizeof(status_.constraintMode));
@@ -498,7 +498,7 @@ void Agc::fetchCurrentExposure(Metadata *imageMetadata)
 	DeviceStatus *deviceStatus =
 		imageMetadata->getLocked<DeviceStatus>("device.status");
 	if (!deviceStatus)
-		LOG(RPiAgc, Fatal) << "Agc: no device metadata";
+		LOG(RPiAgc, Fatal) << "No device metadata";
 	current_.shutter = deviceStatus->shutterSpeed;
 	current_.analogueGain = deviceStatus->analogueGain;
 	AgcStatus *agcStatus =
@@ -513,7 +513,7 @@ void Agc::fetchAwbStatus(Metadata *imageMetadata)
 	awb_.gainG = 1.0;
 	awb_.gainB = 1.0;
 	if (imageMetadata->get("awb.status", awb_) != 0)
-		LOG(RPiAgc, Debug) << "Agc: no AWB status found";
+		LOG(RPiAgc, Debug) << "No AWB status found";
 }
 
 static double computeInitialY(bcm2835_isp_stats *stats, AwbStatus const &awb,
@@ -570,7 +570,7 @@ void Agc::computeGain(bcm2835_isp_stats *statistics, Metadata *imageMetadata,
 	struct LuxStatus lux = {};
 	lux.lux = 400; /* default lux level to 400 in case no metadata found */
 	if (imageMetadata->get("lux.status", lux) != 0)
-		LOG(RPiAgc, Warning) << "Agc: no lux level found";
+		LOG(RPiAgc, Warning) << "No lux level found";
 	Histogram h(statistics->hist[0].g_hist, NUM_HISTOGRAM_BINS);
 	double evGain = status_.ev * config_.baseEv;
 	/*

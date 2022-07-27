@@ -11,25 +11,25 @@
 
 using namespace RPiController;
 
-uint64_t Histogram::CumulativeFreq(double bin) const
+uint64_t Histogram::cumulativeFreq(double bin) const
 {
 	if (bin <= 0)
 		return 0;
-	else if (bin >= Bins())
-		return Total();
+	else if (bin >= bins())
+		return total();
 	int b = (int)bin;
 	return cumulative_[b] +
 	       (bin - b) * (cumulative_[b + 1] - cumulative_[b]);
 }
 
-double Histogram::Quantile(double q, int first, int last) const
+double Histogram::quantile(double q, int first, int last) const
 {
 	if (first == -1)
 		first = 0;
 	if (last == -1)
 		last = cumulative_.size() - 2;
 	assert(first <= last);
-	uint64_t items = q * Total();
+	uint64_t items = q * total();
 	while (first < last) // binary search to find the right bin
 	{
 		int middle = (first + last) / 2;
@@ -45,20 +45,20 @@ double Histogram::Quantile(double q, int first, int last) const
 	return first + frac;
 }
 
-double Histogram::InterQuantileMean(double q_lo, double q_hi) const
+double Histogram::interQuantileMean(double qLo, double qHi) const
 {
-	assert(q_hi > q_lo);
-	double p_lo = Quantile(q_lo);
-	double p_hi = Quantile(q_hi, (int)p_lo);
-	double sum_bin_freq = 0, cumul_freq = 0;
-	for (double p_next = floor(p_lo) + 1.0; p_next <= ceil(p_hi);
-	     p_lo = p_next, p_next += 1.0) {
-		int bin = floor(p_lo);
+	assert(qHi > qLo);
+	double pLo = quantile(qLo);
+	double pHi = quantile(qHi, (int)pLo);
+	double sumBinFreq = 0, cumulFreq = 0;
+	for (double pNext = floor(pLo) + 1.0; pNext <= ceil(pHi);
+	     pLo = pNext, pNext += 1.0) {
+		int bin = floor(pLo);
 		double freq = (cumulative_[bin + 1] - cumulative_[bin]) *
-			      (std::min(p_next, p_hi) - p_lo);
-		sum_bin_freq += bin * freq;
-		cumul_freq += freq;
+			      (std::min(pNext, pHi) - pLo);
+		sumBinFreq += bin * freq;
+		cumulFreq += freq;
 	}
 	// add 0.5 to give an average for bin mid-points
-	return sum_bin_freq / cumul_freq + 0.5;
+	return sumBinFreq / cumulFreq + 0.5;
 }

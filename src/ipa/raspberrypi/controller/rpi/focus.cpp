@@ -23,28 +23,28 @@ Focus::Focus(Controller *controller)
 {
 }
 
-char const *Focus::Name() const
+char const *Focus::name() const
 {
 	return NAME;
 }
 
-void Focus::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Focus::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
 	FocusStatus status;
 	unsigned int i;
 	for (i = 0; i < FOCUS_REGIONS; i++)
-		status.focus_measures[i] = stats->focus_stats[i].contrast_val[1][1] / 1000;
+		status.focusMeasures[i] = stats->focus_stats[i].contrast_val[1][1] / 1000;
 	status.num = i;
-	image_metadata->Set("focus.status", status);
+	imageMetadata->set("focus.status", status);
 
 	LOG(RPiFocus, Debug)
 		<< "Focus contrast measure: "
-		<< (status.focus_measures[5] + status.focus_measures[6]) / 10;
+		<< (status.focusMeasures[5] + status.focusMeasures[6]) / 10;
 }
 
 /* Register algorithm with the system. */
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return new Focus(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

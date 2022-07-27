@@ -22,55 +22,55 @@ LOG_DEFINE_CATEGORY(RPiNoise)
 #define NAME "rpi.noise"
 
 Noise::Noise(Controller *controller)
-	: Algorithm(controller), mode_factor_(1.0)
+	: Algorithm(controller), modeFactor_(1.0)
 {
 }
 
-char const *Noise::Name() const
+char const *Noise::name() const
 {
 	return NAME;
 }
 
-void Noise::SwitchMode(CameraMode const &camera_mode,
+void Noise::switchMode(CameraMode const &cameraMode,
 		       [[maybe_unused]] Metadata *metadata)
 {
 	// For example, we would expect a 2x2 binned mode to have a "noise
 	// factor" of sqrt(2x2) = 2. (can't be less than one, right?)
-	mode_factor_ = std::max(1.0, camera_mode.noise_factor);
+	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-void Noise::Read(boost::property_tree::ptree const &params)
+void Noise::read(boost::property_tree::ptree const &params)
 {
-	reference_constant_ = params.get<double>("reference_constant");
-	reference_slope_ = params.get<double>("reference_slope");
+	referenceConstant_ = params.get<double>("reference_constant");
+	referenceSlope_ = params.get<double>("reference_slope");
 }
 
-void Noise::Prepare(Metadata *image_metadata)
+void Noise::prepare(Metadata *imageMetadata)
 {
-	struct DeviceStatus device_status;
-	device_status.analogue_gain = 1.0; // keep compiler calm
-	if (image_metadata->Get("device.status", device_status) == 0) {
+	struct DeviceStatus deviceStatus;
+	deviceStatus.analogueGain = 1.0; // keep compiler calm
+	if (imageMetadata->get("device.status", deviceStatus) == 0) {
 		// There is a slight question as to exactly how the noise
 		// profile, specifically the constant part of it, scales. For
 		// now we assume it all scales the same, and we'll revisit this
 		// if it proves substantially wrong.  NOTE: we may also want to
 		// make some adjustments based on the camera mode (such as
 		// binning), if we knew how to discover it...
-		double factor = sqrt(device_status.analogue_gain) / mode_factor_;
+		double factor = sqrt(deviceStatus.analogueGain) / modeFactor_;
 		struct NoiseStatus status;
-		status.noise_constant = reference_constant_ * factor;
-		status.noise_slope = reference_slope_ * factor;
-		image_metadata->Set("noise.status", status);
+		status.noiseConstant = referenceConstant_ * factor;
+		status.noiseSlope = referenceSlope_ * factor;
+		imageMetadata->set("noise.status", status);
 		LOG(RPiNoise, Debug)
-			<< "constant " << status.noise_constant
-			<< " slope " << status.noise_slope;
+			<< "constant " << status.noiseConstant
+			<< " slope " << status.noiseSlope;
 	} else
 		LOG(RPiNoise, Warning) << " no metadata";
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return new Noise(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

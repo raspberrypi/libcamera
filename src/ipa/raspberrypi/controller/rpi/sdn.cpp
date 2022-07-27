@@ -27,49 +27,51 @@ Sdn::Sdn(Controller *controller)
 {
 }
 
-char const *Sdn::Name() const
+char const *Sdn::name() const
 {
 	return NAME;
 }
 
-void Sdn::Read(boost::property_tree::ptree const &params)
+void Sdn::read(boost::property_tree::ptree const &params)
 {
 	deviation_ = params.get<double>("deviation", 3.2);
 	strength_ = params.get<double>("strength", 0.75);
 }
 
-void Sdn::Initialise() {}
-
-void Sdn::Prepare(Metadata *image_metadata)
+void Sdn::initialise()
 {
-	struct NoiseStatus noise_status = {};
-	noise_status.noise_slope = 3.0; // in case no metadata
-	if (image_metadata->Get("noise.status", noise_status) != 0)
+}
+
+void Sdn::prepare(Metadata *imageMetadata)
+{
+	struct NoiseStatus noiseStatus = {};
+	noiseStatus.noiseSlope = 3.0; // in case no metadata
+	if (imageMetadata->get("noise.status", noiseStatus) != 0)
 		LOG(RPiSdn, Warning) << "no noise profile found";
 	LOG(RPiSdn, Debug)
-		<< "Noise profile: constant " << noise_status.noise_constant
-		<< " slope " << noise_status.noise_slope;
+		<< "Noise profile: constant " << noiseStatus.noiseConstant
+		<< " slope " << noiseStatus.noiseSlope;
 	struct DenoiseStatus status;
-	status.noise_constant = noise_status.noise_constant * deviation_;
-	status.noise_slope = noise_status.noise_slope * deviation_;
+	status.noiseConstant = noiseStatus.noiseConstant * deviation_;
+	status.noiseSlope = noiseStatus.noiseSlope * deviation_;
 	status.strength = strength_;
 	status.mode = static_cast<std::underlying_type_t<DenoiseMode>>(mode_);
-	image_metadata->Set("denoise.status", status);
+	imageMetadata->set("denoise.status", status);
 	LOG(RPiSdn, Debug)
-		<< "programmed constant " << status.noise_constant
-		<< " slope " << status.noise_slope
+		<< "programmed constant " << status.noiseConstant
+		<< " slope " << status.noiseSlope
 		<< " strength " << status.strength;
 }
 
-void Sdn::SetMode(DenoiseMode mode)
+void Sdn::setMode(DenoiseMode mode)
 {
 	// We only distinguish between off and all other modes.
 	mode_ = mode;
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Sdn(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

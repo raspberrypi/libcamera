@@ -24,33 +24,33 @@ LOG_DEFINE_CATEGORY(RPiAwb)
 // todo - the locking in this algorithm needs some tidying up as has been done
 // elsewhere (ALSC and AGC).
 
-void AwbMode::Read(boost::property_tree::ptree const &params)
+void AwbMode::read(boost::property_tree::ptree const &params)
 {
-	ct_lo = params.get<double>("lo");
-	ct_hi = params.get<double>("hi");
+	ctLo = params.get<double>("lo");
+	ctHi = params.get<double>("hi");
 }
 
-void AwbPrior::Read(boost::property_tree::ptree const &params)
+void AwbPrior::read(boost::property_tree::ptree const &params)
 {
 	lux = params.get<double>("lux");
-	prior.Read(params.get_child("prior"));
+	prior.read(params.get_child("prior"));
 }
 
-static void read_ct_curve(Pwl &ct_r, Pwl &ct_b,
-			  boost::property_tree::ptree const &params)
+static void readCtCurve(Pwl &ctR, Pwl &ctB,
+			boost::property_tree::ptree const &params)
 {
 	int num = 0;
 	for (auto it = params.begin(); it != params.end(); it++) {
 		double ct = it->second.get_value<double>();
-		assert(it == params.begin() || ct != ct_r.Domain().end);
+		assert(it == params.begin() || ct != ctR.domain().end);
 		if (++it == params.end())
 			throw std::runtime_error(
 				"AwbConfig: incomplete CT curve entry");
-		ct_r.Append(ct, it->second.get_value<double>());
+		ctR.append(ct, it->second.get_value<double>());
 		if (++it == params.end())
 			throw std::runtime_error(
 				"AwbConfig: incomplete CT curve entry");
-		ct_b.Append(ct, it->second.get_value<double>());
+		ctB.append(ct, it->second.get_value<double>());
 		num++;
 	}
 	if (num < 2)
@@ -58,22 +58,21 @@ static void read_ct_curve(Pwl &ct_r, Pwl &ct_b,
 			"AwbConfig: insufficient points in CT curve");
 }
 
-void AwbConfig::Read(boost::property_tree::ptree const &params)
+void AwbConfig::read(boost::property_tree::ptree const &params)
 {
 	bayes = params.get<int>("bayes", 1);
-	frame_period = params.get<uint16_t>("frame_period", 10);
-	startup_frames = params.get<uint16_t>("startup_frames", 10);
-	convergence_frames = params.get<unsigned int>("convergence_frames", 3);
+	framePeriod = params.get<uint16_t>("framePeriod", 10);
+	startupFrames = params.get<uint16_t>("startupFrames", 10);
+	convergenceFrames = params.get<unsigned int>("convergence_frames", 3);
 	speed = params.get<double>("speed", 0.05);
 	if (params.get_child_optional("ct_curve"))
-		read_ct_curve(ct_r, ct_b, params.get_child("ct_curve"));
+		readCtCurve(ctR, ctB, params.get_child("ct_curve"));
 	if (params.get_child_optional("priors")) {
 		for (auto &p : params.get_child("priors")) {
 			AwbPrior prior;
-			prior.Read(p.second);
+			prior.read(p.second);
 			if (!priors.empty() && prior.lux <= priors.back().lux)
-				throw std::runtime_error(
-					"AwbConfig: Prior must be ordered in increasing lux value");
+				throw std::runtime_error("AwbConfig: Prior must be ordered in increasing lux value");
 			priors.push_back(prior);
 		}
 		if (priors.empty())
@@ -82,177 +81,170 @@ void AwbConfig::Read(boost::property_tree::ptree const &params)
 	}
 	if (params.get_child_optional("modes")) {
 		for (auto &p : params.get_child("modes")) {
-			modes[p.first].Read(p.second);
-			if (default_mode == nullptr)
-				default_mode = &modes[p.first];
+			modes[p.first].read(p.second);
+			if (defaultMode == nullptr)
+				defaultMode = &modes[p.first];
 		}
-		if (default_mode == nullptr)
-			throw std::runtime_error(
-				"AwbConfig: no AWB modes configured");
+		if (defaultMode == nullptr)
+			throw std::runtime_error("AwbConfig: no AWB modes configured");
 	}
-	min_pixels = params.get<double>("min_pixels", 16.0);
-	min_G = params.get<uint16_t>("min_G", 32);
-	min_regions = params.get<uint32_t>("min_regions", 10);
-	delta_limit = params.get<double>("delta_limit", 0.2);
-	coarse_step = params.get<double>("coarse_step", 0.2);
-	transverse_pos = params.get<double>("transverse_pos", 0.01);
-	transverse_neg = params.get<double>("transverse_neg", 0.01);
-	if (transverse_pos <= 0 || transverse_neg <= 0)
-		throw std::runtime_error(
-			"AwbConfig: transverse_pos/neg must be > 0");
-	sensitivity_r = params.get<double>("sensitivity_r", 1.0);
-	sensitivity_b = params.get<double>("sensitivity_b", 1.0);
+	minPixels = params.get<double>("min_pixels", 16.0);
+	minG = params.get<uint16_t>("min_G", 32);
+	minRegions = params.get<uint32_t>("min_regions", 10);
+	deltaLimit = params.get<double>("delta_limit", 0.2);
+	coarseStep = params.get<double>("coarse_step", 0.2);
+	transversePos = params.get<double>("transverse_pos", 0.01);
+	transverseNeg = params.get<double>("transverse_neg", 0.01);
+	if (transversePos <= 0 || transverseNeg <= 0)
+		throw std::runtime_error("AwbConfig: transverse_pos/neg must be > 0");
+	sensitivityR = params.get<double>("sensitivity_r", 1.0);
+	sensitivityB = params.get<double>("sensitivity_b", 1.0);
 	if (bayes) {
-		if (ct_r.Empty() || ct_b.Empty() || priors.empty() ||
-		    default_mode == nullptr) {
+		if (ctR.empty() || ctB.empty() || priors.empty() ||
+		    defaultMode == nullptr) {
 			LOG(RPiAwb, Warning)
 				<< "Bayesian AWB mis-configured - switch to Grey method";
 			bayes = false;
 		}
 	}
-	fast = params.get<int>(
-		"fast", bayes); // default to fast for Bayesian, otherwise slow
-	whitepoint_r = params.get<double>("whitepoint_r", 0.0);
-	whitepoint_b = params.get<double>("whitepoint_b", 0.0);
+	fast = params.get<int>("fast", bayes); // default to fast for Bayesian, otherwise slow
+	whitepointR = params.get<double>("whitepoint_r", 0.0);
+	whitepointB = params.get<double>("whitepoint_b", 0.0);
 	if (bayes == false)
-		sensitivity_r = sensitivity_b =
-			1.0; // nor do sensitivities make any sense
+		sensitivityR = sensitivityB = 1.0; // nor do sensitivities make any sense
 }
 
 Awb::Awb(Controller *controller)
 	: AwbAlgorithm(controller)
 {
-	async_abort_ = async_start_ = async_started_ = async_finished_ = false;
+	asyncAbort_ = asyncStart_ = asyncStarted_ = asyncFinished_ = false;
 	mode_ = nullptr;
-	manual_r_ = manual_b_ = 0.0;
-	first_switch_mode_ = true;
-	async_thread_ = std::thread(std::bind(&Awb::asyncFunc, this));
+	manualR_ = manualB_ = 0.0;
+	firstSwitchMode_ = true;
+	asyncThread_ = std::thread(std::bind(&Awb::asyncFunc, this));
 }
 
 Awb::~Awb()
 {
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
-		async_abort_ = true;
+		asyncAbort_ = true;
 	}
-	async_signal_.notify_one();
-	async_thread_.join();
+	asyncSignal_.notify_one();
+	asyncThread_.join();
 }
 
-char const *Awb::Name() const
+char const *Awb::name() const
 {
 	return NAME;
 }
 
-void Awb::Read(boost::property_tree::ptree const &params)
+void Awb::read(boost::property_tree::ptree const &params)
 {
-	config_.Read(params);
+	config_.read(params);
 }
 
-void Awb::Initialise()
+void Awb::initialise()
 {
-	frame_count_ = frame_phase_ = 0;
+	frameCount_ = framePhase_ = 0;
 	// Put something sane into the status that we are filtering towards,
 	// just in case the first few frames don't have anything meaningful in
 	// them.
-	if (!config_.ct_r.Empty() && !config_.ct_b.Empty()) {
-		sync_results_.temperature_K = config_.ct_r.Domain().Clip(4000);
-		sync_results_.gain_r =
-			1.0 / config_.ct_r.Eval(sync_results_.temperature_K);
-		sync_results_.gain_g = 1.0;
-		sync_results_.gain_b =
-			1.0 / config_.ct_b.Eval(sync_results_.temperature_K);
+	if (!config_.ctR.empty() && !config_.ctB.empty()) {
+		syncResults_.temperatureK = config_.ctR.domain().clip(4000);
+		syncResults_.gainR = 1.0 / config_.ctR.eval(syncResults_.temperatureK);
+		syncResults_.gainG = 1.0;
+		syncResults_.gainB = 1.0 / config_.ctB.eval(syncResults_.temperatureK);
 	} else {
 		// random values just to stop the world blowing up
-		sync_results_.temperature_K = 4500;
-		sync_results_.gain_r = sync_results_.gain_g =
-			sync_results_.gain_b = 1.0;
+		syncResults_.temperatureK = 4500;
+		syncResults_.gainR = syncResults_.gainG = syncResults_.gainB = 1.0;
 	}
-	prev_sync_results_ = sync_results_;
-	async_results_ = sync_results_;
+	prevSyncResults_ = syncResults_;
+	asyncResults_ = syncResults_;
 }
 
-bool Awb::IsPaused() const
+bool Awb::isPaused() const
 {
 	return false;
 }
 
-void Awb::Pause()
+void Awb::pause()
 {
 	// "Pause" by fixing everything to the most recent values.
-	manual_r_ = sync_results_.gain_r = prev_sync_results_.gain_r;
-	manual_b_ = sync_results_.gain_b = prev_sync_results_.gain_b;
-	sync_results_.gain_g = prev_sync_results_.gain_g;
-	sync_results_.temperature_K = prev_sync_results_.temperature_K;
+	manualR_ = syncResults_.gainR = prevSyncResults_.gainR;
+	manualB_ = syncResults_.gainB = prevSyncResults_.gainB;
+	syncResults_.gainG = prevSyncResults_.gainG;
+	syncResults_.temperatureK = prevSyncResults_.temperatureK;
 }
 
-void Awb::Resume()
+void Awb::resume()
 {
-	manual_r_ = 0.0;
-	manual_b_ = 0.0;
+	manualR_ = 0.0;
+	manualB_ = 0.0;
 }
 
-unsigned int Awb::GetConvergenceFrames() const
+unsigned int Awb::getConvergenceFrames() const
 {
 	// If not in auto mode, there is no convergence
 	// to happen, so no need to drop any frames - return zero.
 	if (!isAutoEnabled())
 		return 0;
 	else
-		return config_.convergence_frames;
+		return config_.convergenceFrames;
 }
 
-void Awb::SetMode(std::string const &mode_name)
+void Awb::setMode(std::string const &modeName)
 {
-	mode_name_ = mode_name;
+	modeName_ = modeName;
 }
 
-void Awb::SetManualGains(double manual_r, double manual_b)
+void Awb::setManualGains(double manualR, double manualB)
 {
 	// If any of these are 0.0, we swich back to auto.
-	manual_r_ = manual_r;
-	manual_b_ = manual_b;
-	// If not in auto mode, set these values into the sync_results which
+	manualR_ = manualR;
+	manualB_ = manualB;
+	// If not in auto mode, set these values into the syncResults which
 	// means that Prepare() will adopt them immediately.
 	if (!isAutoEnabled()) {
-		sync_results_.gain_r = prev_sync_results_.gain_r = manual_r_;
-		sync_results_.gain_g = prev_sync_results_.gain_g = 1.0;
-		sync_results_.gain_b = prev_sync_results_.gain_b = manual_b_;
+		syncResults_.gainR = prevSyncResults_.gainR = manualR_;
+		syncResults_.gainG = prevSyncResults_.gainG = 1.0;
+		syncResults_.gainB = prevSyncResults_.gainB = manualB_;
 	}
 }
 
-void Awb::SwitchMode([[maybe_unused]] CameraMode const &camera_mode,
+void Awb::switchMode([[maybe_unused]] CameraMode const &cameraMode,
 		     Metadata *metadata)
 {
 	// On the first mode switch we'll have no meaningful colour
 	// temperature, so try to dead reckon one if in manual mode.
-	if (!isAutoEnabled() && first_switch_mode_ && config_.bayes) {
-		Pwl ct_r_inverse = config_.ct_r.Inverse();
-		Pwl ct_b_inverse = config_.ct_b.Inverse();
-		double ct_r = ct_r_inverse.Eval(ct_r_inverse.Domain().Clip(1 / manual_r_));
-		double ct_b = ct_b_inverse.Eval(ct_b_inverse.Domain().Clip(1 / manual_b_));
-		prev_sync_results_.temperature_K = (ct_r + ct_b) / 2;
-		sync_results_.temperature_K = prev_sync_results_.temperature_K;
+	if (!isAutoEnabled() && firstSwitchMode_ && config_.bayes) {
+		Pwl ctRInverse = config_.ctR.inverse();
+		Pwl ctBInverse = config_.ctB.inverse();
+		double ctR = ctRInverse.eval(ctRInverse.domain().clip(1 / manualR_));
+		double ctB = ctBInverse.eval(ctBInverse.domain().clip(1 / manualB_));
+		prevSyncResults_.temperatureK = (ctR + ctB) / 2;
+		syncResults_.temperatureK = prevSyncResults_.temperatureK;
 	}
 	// Let other algorithms know the current white balance values.
-	metadata->Set("awb.status", prev_sync_results_);
-	first_switch_mode_ = false;
+	metadata->set("awb.status", prevSyncResults_);
+	firstSwitchMode_ = false;
 }
 
 bool Awb::isAutoEnabled() const
 {
-	return manual_r_ == 0.0 || manual_b_ == 0.0;
+	return manualR_ == 0.0 || manualB_ == 0.0;
 }
 
 void Awb::fetchAsyncResults()
 {
 	LOG(RPiAwb, Debug) << "Fetch AWB results";
-	async_finished_ = false;
-	async_started_ = false;
+	asyncFinished_ = false;
+	asyncStarted_ = false;
 	// It's possible manual gains could be set even while the async
 	// thread was running, so only copy the results if still in auto mode.
 	if (isAutoEnabled())
-		sync_results_ = async_results_;
+		syncResults_ = asyncResults_;
 }
 
 void Awb::restartAsync(StatisticsPtr &stats, double lux)
@@ -261,75 +253,74 @@ void Awb::restartAsync(StatisticsPtr &stats, double lux)
 	// this makes a new reference which belongs to the asynchronous thread
 	statistics_ = stats;
 	// store the mode as it could technically change
-	auto m = config_.modes.find(mode_name_);
+	auto m = config_.modes.find(modeName_);
 	mode_ = m != config_.modes.end()
 			? &m->second
-			: (mode_ == nullptr ? config_.default_mode : mode_);
+			: (mode_ == nullptr ? config_.defaultMode : mode_);
 	lux_ = lux;
-	frame_phase_ = 0;
-	async_started_ = true;
-	size_t len = mode_name_.copy(async_results_.mode,
-				     sizeof(async_results_.mode) - 1);
-	async_results_.mode[len] = '\0';
+	framePhase_ = 0;
+	asyncStarted_ = true;
+	size_t len = modeName_.copy(asyncResults_.mode,
+				    sizeof(asyncResults_.mode) - 1);
+	asyncResults_.mode[len] = '\0';
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
-		async_start_ = true;
+		asyncStart_ = true;
 	}
-	async_signal_.notify_one();
+	asyncSignal_.notify_one();
 }
 
-void Awb::Prepare(Metadata *image_metadata)
+void Awb::prepare(Metadata *imageMetadata)
 {
-	if (frame_count_ < (int)config_.startup_frames)
-		frame_count_++;
-	double speed = frame_count_ < (int)config_.startup_frames
+	if (frameCount_ < (int)config_.startupFrames)
+		frameCount_++;
+	double speed = frameCount_ < (int)config_.startupFrames
 			       ? 1.0
 			       : config_.speed;
 	LOG(RPiAwb, Debug)
-		<< "frame_count " << frame_count_ << " speed " << speed;
+		<< "frame_count " << frameCount_ << " speed " << speed;
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		if (async_started_ && async_finished_)
+		if (asyncStarted_ && asyncFinished_)
 			fetchAsyncResults();
 	}
 	// Finally apply IIR filter to results and put into metadata.
-	memcpy(prev_sync_results_.mode, sync_results_.mode,
-	       sizeof(prev_sync_results_.mode));
-	prev_sync_results_.temperature_K =
-		speed * sync_results_.temperature_K +
-		(1.0 - speed) * prev_sync_results_.temperature_K;
-	prev_sync_results_.gain_r = speed * sync_results_.gain_r +
-				    (1.0 - speed) * prev_sync_results_.gain_r;
-	prev_sync_results_.gain_g = speed * sync_results_.gain_g +
-				    (1.0 - speed) * prev_sync_results_.gain_g;
-	prev_sync_results_.gain_b = speed * sync_results_.gain_b +
-				    (1.0 - speed) * prev_sync_results_.gain_b;
-	image_metadata->Set("awb.status", prev_sync_results_);
+	memcpy(prevSyncResults_.mode, syncResults_.mode,
+	       sizeof(prevSyncResults_.mode));
+	prevSyncResults_.temperatureK = speed * syncResults_.temperatureK +
+					(1.0 - speed) * prevSyncResults_.temperatureK;
+	prevSyncResults_.gainR = speed * syncResults_.gainR +
+				 (1.0 - speed) * prevSyncResults_.gainR;
+	prevSyncResults_.gainG = speed * syncResults_.gainG +
+				 (1.0 - speed) * prevSyncResults_.gainG;
+	prevSyncResults_.gainB = speed * syncResults_.gainB +
+				 (1.0 - speed) * prevSyncResults_.gainB;
+	imageMetadata->set("awb.status", prevSyncResults_);
 	LOG(RPiAwb, Debug)
-		<< "Using AWB gains r " << prev_sync_results_.gain_r << " g "
-		<< prev_sync_results_.gain_g << " b "
-		<< prev_sync_results_.gain_b;
+		<< "Using AWB gains r " << prevSyncResults_.gainR << " g "
+		<< prevSyncResults_.gainG << " b "
+		<< prevSyncResults_.gainB;
 }
 
-void Awb::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Awb::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
 	// Count frames since we last poked the async thread.
-	if (frame_phase_ < (int)config_.frame_period)
-		frame_phase_++;
-	LOG(RPiAwb, Debug) << "frame_phase " << frame_phase_;
+	if (framePhase_ < (int)config_.framePeriod)
+		framePhase_++;
+	LOG(RPiAwb, Debug) << "frame_phase " << framePhase_;
 	// We do not restart the async thread if we're not in auto mode.
 	if (isAutoEnabled() &&
-	    (frame_phase_ >= (int)config_.frame_period ||
-	     frame_count_ < (int)config_.startup_frames)) {
+	    (framePhase_ >= (int)config_.framePeriod ||
+	     frameCount_ < (int)config_.startupFrames)) {
 		// Update any settings and any image metadata that we need.
-		struct LuxStatus lux_status = {};
-		lux_status.lux = 400; // in case no metadata
-		if (image_metadata->Get("lux.status", lux_status) != 0)
+		struct LuxStatus luxStatus = {};
+		luxStatus.lux = 400; // in case no metadata
+		if (imageMetadata->get("lux.status", luxStatus) != 0)
 			LOG(RPiAwb, Debug) << "No lux metadata found";
-		LOG(RPiAwb, Debug) << "Awb lux value is " << lux_status.lux;
+		LOG(RPiAwb, Debug) << "Awb lux value is " << luxStatus.lux;
 
-		if (async_started_ == false)
-			restartAsync(stats, lux_status.lux);
+		if (asyncStarted_ == false)
+			restartAsync(stats, luxStatus.lux);
 	}
 }
 
@@ -338,32 +329,32 @@ void Awb::asyncFunc()
 	while (true) {
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
-			async_signal_.wait(lock, [&] {
-				return async_start_ || async_abort_;
+			asyncSignal_.wait(lock, [&] {
+				return asyncStart_ || asyncAbort_;
 			});
-			async_start_ = false;
-			if (async_abort_)
+			asyncStart_ = false;
+			if (asyncAbort_)
 				break;
 		}
 		doAwb();
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
-			async_finished_ = true;
+			asyncFinished_ = true;
 		}
-		sync_signal_.notify_one();
+		syncSignal_.notify_one();
 	}
 }
 
-static void generate_stats(std::vector<Awb::RGB> &zones,
-			   bcm2835_isp_stats_region *stats, double min_pixels,
-			   double min_G)
+static void generateStats(std::vector<Awb::RGB> &zones,
+			  bcm2835_isp_stats_region *stats, double minPixels,
+			  double minG)
 {
 	for (int i = 0; i < AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y; i++) {
 		Awb::RGB zone;
 		double counted = stats[i].counted;
-		if (counted >= min_pixels) {
+		if (counted >= minPixels) {
 			zone.G = stats[i].g_sum / counted;
-			if (zone.G >= min_G) {
+			if (zone.G >= minG) {
 				zone.R = stats[i].r_sum / counted;
 				zone.B = stats[i].b_sum / counted;
 				zones.push_back(zone);
@@ -377,32 +368,33 @@ void Awb::prepareStats()
 	zones_.clear();
 	// LSC has already been applied to the stats in this pipeline, so stop
 	// any LSC compensation.  We also ignore config_.fast in this version.
-	generate_stats(zones_, statistics_->awb_stats, config_.min_pixels,
-		       config_.min_G);
+	generateStats(zones_, statistics_->awb_stats, config_.minPixels,
+		      config_.minG);
 	// we're done with these; we may as well relinquish our hold on the
 	// pointer.
 	statistics_.reset();
 	// apply sensitivities, so values appear to come from our "canonical"
 	// sensor.
-	for (auto &zone : zones_)
-		zone.R *= config_.sensitivity_r,
-			zone.B *= config_.sensitivity_b;
+	for (auto &zone : zones_) {
+		zone.R *= config_.sensitivityR;
+		zone.B *= config_.sensitivityB;
+	}
 }
 
-double Awb::computeDelta2Sum(double gain_r, double gain_b)
+double Awb::computeDelta2Sum(double gainR, double gainB)
 {
 	// Compute the sum of the squared colour error (non-greyness) as it
 	// appears in the log likelihood equation.
-	double delta2_sum = 0;
+	double delta2Sum = 0;
 	for (auto &z : zones_) {
-		double delta_r = gain_r * z.R - 1 - config_.whitepoint_r;
-		double delta_b = gain_b * z.B - 1 - config_.whitepoint_b;
-		double delta2 = delta_r * delta_r + delta_b * delta_b;
-		//LOG(RPiAwb, Debug) << "delta_r " << delta_r << " delta_b " << delta_b << " delta2 " << delta2;
-		delta2 = std::min(delta2, config_.delta_limit);
-		delta2_sum += delta2;
+		double deltaR = gainR * z.R - 1 - config_.whitepointR;
+		double deltaB = gainB * z.B - 1 - config_.whitepointB;
+		double delta2 = deltaR * deltaR + deltaB * deltaB;
+		//LOG(RPiAwb, Debug) << "deltaR " << deltaR << " deltaB " << deltaB << " delta2 " << delta2;
+		delta2 = std::min(delta2, config_.deltaLimit);
+		delta2Sum += delta2;
 	}
-	return delta2_sum;
+	return delta2Sum;
 }
 
 Pwl Awb::interpolatePrior()
@@ -420,7 +412,7 @@ Pwl Awb::interpolatePrior()
 			idx++;
 		double lux0 = config_.priors[idx].lux,
 		       lux1 = config_.priors[idx + 1].lux;
-		return Pwl::Combine(config_.priors[idx].prior,
+		return Pwl::combine(config_.priors[idx].prior,
 				    config_.priors[idx + 1].prior,
 				    [&](double /*x*/, double y0, double y1) {
 					    return y0 + (y1 - y0) *
@@ -429,62 +421,60 @@ Pwl Awb::interpolatePrior()
 	}
 }
 
-static double interpolate_quadatric(Pwl::Point const &A, Pwl::Point const &B,
-				    Pwl::Point const &C)
+static double interpolateQuadatric(Pwl::Point const &a, Pwl::Point const &b,
+				   Pwl::Point const &c)
 {
 	// Given 3 points on a curve, find the extremum of the function in that
 	// interval by fitting a quadratic.
 	const double eps = 1e-3;
-	Pwl::Point CA = C - A, BA = B - A;
-	double denominator = 2 * (BA.y * CA.x - CA.y * BA.x);
+	Pwl::Point ca = c - a, ba = b - a;
+	double denominator = 2 * (ba.y * ca.x - ca.y * ba.x);
 	if (abs(denominator) > eps) {
-		double numerator = BA.y * CA.x * CA.x - CA.y * BA.x * BA.x;
-		double result = numerator / denominator + A.x;
-		return std::max(A.x, std::min(C.x, result));
+		double numerator = ba.y * ca.x * ca.x - ca.y * ba.x * ba.x;
+		double result = numerator / denominator + a.x;
+		return std::max(a.x, std::min(c.x, result));
 	}
 	// has degenerated to straight line segment
-	return A.y < C.y - eps ? A.x : (C.y < A.y - eps ? C.x : B.x);
+	return a.y < c.y - eps ? a.x : (c.y < a.y - eps ? c.x : b.x);
 }
 
 double Awb::coarseSearch(Pwl const &prior)
 {
 	points_.clear(); // assume doesn't deallocate memory
-	size_t best_point = 0;
-	double t = mode_->ct_lo;
-	int span_r = 0, span_b = 0;
+	size_t bestPoint = 0;
+	double t = mode_->ctLo;
+	int spanR = 0, spanB = 0;
 	// Step down the CT curve evaluating log likelihood.
 	while (true) {
-		double r = config_.ct_r.Eval(t, &span_r);
-		double b = config_.ct_b.Eval(t, &span_b);
-		double gain_r = 1 / r, gain_b = 1 / b;
-		double delta2_sum = computeDelta2Sum(gain_r, gain_b);
-		double prior_log_likelihood =
-			prior.Eval(prior.Domain().Clip(t));
-		double final_log_likelihood = delta2_sum - prior_log_likelihood;
+		double r = config_.ctR.eval(t, &spanR);
+		double b = config_.ctB.eval(t, &spanB);
+		double gainR = 1 / r, gainB = 1 / b;
+		double delta2Sum = computeDelta2Sum(gainR, gainB);
+		double priorLogLikelihood = prior.eval(prior.domain().clip(t));
+		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
 		LOG(RPiAwb, Debug)
-			<< "t: " << t << " gain_r " << gain_r << " gain_b "
-			<< gain_b << " delta2_sum " << delta2_sum
-			<< " prior " << prior_log_likelihood << " final "
-			<< final_log_likelihood;
-		points_.push_back(Pwl::Point(t, final_log_likelihood));
-		if (points_.back().y < points_[best_point].y)
-			best_point = points_.size() - 1;
-		if (t == mode_->ct_hi)
+			<< "t: " << t << " gain R " << gainR << " gain B "
+			<< gainB << " delta2_sum " << delta2Sum
+			<< " prior " << priorLogLikelihood << " final "
+			<< finalLogLikelihood;
+		points_.push_back(Pwl::Point(t, finalLogLikelihood));
+		if (points_.back().y < points_[bestPoint].y)
+			bestPoint = points_.size() - 1;
+		if (t == mode_->ctHi)
 			break;
 		// for even steps along the r/b curve scale them by the current t
-		t = std::min(t + t / 10 * config_.coarse_step,
-			     mode_->ct_hi);
+		t = std::min(t + t / 10 * config_.coarseStep, mode_->ctHi);
 	}
-	t = points_[best_point].x;
+	t = points_[bestPoint].x;
 	LOG(RPiAwb, Debug) << "Coarse search found CT " << t;
 	// We have the best point of the search, but refine it with a quadratic
 	// interpolation around its neighbours.
 	if (points_.size() > 2) {
-		unsigned long bp = std::min(best_point, points_.size() - 2);
-		best_point = std::max(1UL, bp);
-		t = interpolate_quadatric(points_[best_point - 1],
-					  points_[best_point],
-					  points_[best_point + 1]);
+		unsigned long bp = std::min(bestPoint, points_.size() - 2);
+		bestPoint = std::max(1UL, bp);
+		t = interpolateQuadatric(points_[bestPoint - 1],
+					 points_[bestPoint],
+					 points_[bestPoint + 1]);
 		LOG(RPiAwb, Debug)
 			<< "After quadratic refinement, coarse search has CT "
 			<< t;
@@ -494,80 +484,76 @@ double Awb::coarseSearch(Pwl const &prior)
 
 void Awb::fineSearch(double &t, double &r, double &b, Pwl const &prior)
 {
-	int span_r = -1, span_b = -1;
-	config_.ct_r.Eval(t, &span_r);
-	config_.ct_b.Eval(t, &span_b);
-	double step = t / 10 * config_.coarse_step * 0.1;
+	int spanR = -1, spanB = -1;
+	config_.ctR.eval(t, &spanR);
+	config_.ctB.eval(t, &spanB);
+	double step = t / 10 * config_.coarseStep * 0.1;
 	int nsteps = 5;
-	double r_diff = config_.ct_r.Eval(t + nsteps * step, &span_r) -
-			config_.ct_r.Eval(t - nsteps * step, &span_r);
-	double b_diff = config_.ct_b.Eval(t + nsteps * step, &span_b) -
-			config_.ct_b.Eval(t - nsteps * step, &span_b);
-	Pwl::Point transverse(b_diff, -r_diff);
-	if (transverse.Len2() < 1e-6)
+	double rDiff = config_.ctR.eval(t + nsteps * step, &spanR) -
+		       config_.ctR.eval(t - nsteps * step, &spanR);
+	double bDiff = config_.ctB.eval(t + nsteps * step, &spanB) -
+		       config_.ctB.eval(t - nsteps * step, &spanB);
+	Pwl::Point transverse(bDiff, -rDiff);
+	if (transverse.len2() < 1e-6)
 		return;
 	// unit vector orthogonal to the b vs. r function (pointing outwards
 	// with r and b increasing)
-	transverse = transverse / transverse.Len();
-	double best_log_likelihood = 0, best_t = 0, best_r = 0, best_b = 0;
-	double transverse_range =
-		config_.transverse_neg + config_.transverse_pos;
-	const int MAX_NUM_DELTAS = 12;
+	transverse = transverse / transverse.len();
+	double bestLogLikelihood = 0, bestT = 0, bestR = 0, bestB = 0;
+	double transverseRange = config_.transverseNeg + config_.transversePos;
+	const int maxNumDeltas = 12;
 	// a transverse step approximately every 0.01 r/b units
-	int num_deltas = floor(transverse_range * 100 + 0.5) + 1;
-	num_deltas = num_deltas < 3 ? 3 :
-		     (num_deltas > MAX_NUM_DELTAS ? MAX_NUM_DELTAS : num_deltas);
+	int numDeltas = floor(transverseRange * 100 + 0.5) + 1;
+	numDeltas = numDeltas < 3 ? 3 : (numDeltas > maxNumDeltas ? maxNumDeltas : numDeltas);
 	// Step down CT curve. March a bit further if the transverse range is
 	// large.
-	nsteps += num_deltas;
+	nsteps += numDeltas;
 	for (int i = -nsteps; i <= nsteps; i++) {
-		double t_test = t + i * step;
-		double prior_log_likelihood =
-			prior.Eval(prior.Domain().Clip(t_test));
-		double r_curve = config_.ct_r.Eval(t_test, &span_r);
-		double b_curve = config_.ct_b.Eval(t_test, &span_b);
+		double tTest = t + i * step;
+		double priorLogLikelihood =
+			prior.eval(prior.domain().clip(tTest));
+		double rCurve = config_.ctR.eval(tTest, &spanR);
+		double bCurve = config_.ctB.eval(tTest, &spanB);
 		// x will be distance off the curve, y the log likelihood there
-		Pwl::Point points[MAX_NUM_DELTAS];
-		int best_point = 0;
+		Pwl::Point points[maxNumDeltas];
+		int bestPoint = 0;
 		// Take some measurements transversely *off* the CT curve.
-		for (int j = 0; j < num_deltas; j++) {
-			points[j].x = -config_.transverse_neg +
-				      (transverse_range * j) / (num_deltas - 1);
-			Pwl::Point rb_test = Pwl::Point(r_curve, b_curve) +
-					     transverse * points[j].x;
-			double r_test = rb_test.x, b_test = rb_test.y;
-			double gain_r = 1 / r_test, gain_b = 1 / b_test;
-			double delta2_sum = computeDelta2Sum(gain_r, gain_b);
-			points[j].y = delta2_sum - prior_log_likelihood;
+		for (int j = 0; j < numDeltas; j++) {
+			points[j].x = -config_.transverseNeg +
+				      (transverseRange * j) / (numDeltas - 1);
+			Pwl::Point rbTest = Pwl::Point(rCurve, bCurve) +
+					    transverse * points[j].x;
+			double rTest = rbTest.x, bTest = rbTest.y;
+			double gainR = 1 / rTest, gainB = 1 / bTest;
+			double delta2Sum = computeDelta2Sum(gainR, gainB);
+			points[j].y = delta2Sum - priorLogLikelihood;
 			LOG(RPiAwb, Debug)
-				<< "At t " << t_test << " r " << r_test << " b "
-				<< b_test << ": " << points[j].y;
-			if (points[j].y < points[best_point].y)
-				best_point = j;
+				<< "At t " << tTest << " r " << rTest << " b "
+				<< bTest << ": " << points[j].y;
+			if (points[j].y < points[bestPoint].y)
+				bestPoint = j;
 		}
 		// We have NUM_DELTAS points transversely across the CT curve,
 		// now let's do a quadratic interpolation for the best result.
-		best_point = std::max(1, std::min(best_point, num_deltas - 2));
-		Pwl::Point rb_test =
-			Pwl::Point(r_curve, b_curve) +
-			transverse *
-				interpolate_quadatric(points[best_point - 1],
-						      points[best_point],
-						      points[best_point + 1]);
-		double r_test = rb_test.x, b_test = rb_test.y;
-		double gain_r = 1 / r_test, gain_b = 1 / b_test;
-		double delta2_sum = computeDelta2Sum(gain_r, gain_b);
-		double final_log_likelihood = delta2_sum - prior_log_likelihood;
+		bestPoint = std::max(1, std::min(bestPoint, numDeltas - 2));
+		Pwl::Point rbTest = Pwl::Point(rCurve, bCurve) +
+					transverse * interpolateQuadatric(points[bestPoint - 1],
+									points[bestPoint],
+									points[bestPoint + 1]);
+		double rTest = rbTest.x, bTest = rbTest.y;
+		double gainR = 1 / rTest, gainB = 1 / bTest;
+		double delta2Sum = computeDelta2Sum(gainR, gainB);
+		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
 		LOG(RPiAwb, Debug)
 			<< "Finally "
-			<< t_test << " r " << r_test << " b " << b_test << ": "
-			<< final_log_likelihood
-			<< (final_log_likelihood < best_log_likelihood ? " BEST" : "");
-		if (best_t == 0 || final_log_likelihood < best_log_likelihood)
-			best_log_likelihood = final_log_likelihood,
-			best_t = t_test, best_r = r_test, best_b = b_test;
+			<< tTest << " r " << rTest << " b " << bTest << ": "
+			<< finalLogLikelihood
+			<< (finalLogLikelihood < bestLogLikelihood ? " BEST" : "");
+		if (bestT == 0 || finalLogLikelihood < bestLogLikelihood)
+			bestLogLikelihood = finalLogLikelihood,
+			bestT = tTest, bestR = rTest, bestB = bTest;
 	}
-	t = best_t, r = best_r, b = best_b;
+	t = bestT, r = bestR, b = bestB;
 	LOG(RPiAwb, Debug)
 		<< "Fine search found t " << t << " r " << r << " b " << b;
 }
@@ -582,12 +568,12 @@ void Awb::awbBayes()
 	// valid... not entirely sure about this.
 	Pwl prior = interpolatePrior();
 	prior *= zones_.size() / (double)(AWB_STATS_SIZE_X * AWB_STATS_SIZE_Y);
-	prior.Map([](double x, double y) {
+	prior.map([](double x, double y) {
 		LOG(RPiAwb, Debug) << "(" << x << "," << y << ")";
 	});
 	double t = coarseSearch(prior);
-	double r = config_.ct_r.Eval(t);
-	double b = config_.ct_b.Eval(t);
+	double r = config_.ctR.eval(t);
+	double b = config_.ctB.eval(t);
 	LOG(RPiAwb, Debug)
 		<< "After coarse search: r " << r << " b " << b << " (gains r "
 		<< 1 / r << " b " << 1 / b << ")";
@@ -604,10 +590,10 @@ void Awb::awbBayes()
 	// Write results out for the main thread to pick up. Remember to adjust
 	// the gains from the ones that the "canonical sensor" would require to
 	// the ones needed by *this* sensor.
-	async_results_.temperature_K = t;
-	async_results_.gain_r = 1.0 / r * config_.sensitivity_r;
-	async_results_.gain_g = 1.0;
-	async_results_.gain_b = 1.0 / b * config_.sensitivity_b;
+	asyncResults_.temperatureK = t;
+	asyncResults_.gainR = 1.0 / r * config_.sensitivityR;
+	asyncResults_.gainG = 1.0;
+	asyncResults_.gainB = 1.0 / b * config_.sensitivityB;
 }
 
 void Awb::awbGrey()
@@ -617,51 +603,51 @@ void Awb::awbGrey()
 	// that we can sort them to exclude the extreme gains.  We could
 	// consider some variations, such as normalising all the zones first, or
 	// doing an L2 average etc.
-	std::vector<RGB> &derivs_R(zones_);
-	std::vector<RGB> derivs_B(derivs_R);
-	std::sort(derivs_R.begin(), derivs_R.end(),
+	std::vector<RGB> &derivsR(zones_);
+	std::vector<RGB> derivsB(derivsR);
+	std::sort(derivsR.begin(), derivsR.end(),
 		  [](RGB const &a, RGB const &b) {
 			  return a.G * b.R < b.G * a.R;
 		  });
-	std::sort(derivs_B.begin(), derivs_B.end(),
+	std::sort(derivsB.begin(), derivsB.end(),
 		  [](RGB const &a, RGB const &b) {
 			  return a.G * b.B < b.G * a.B;
 		  });
 	// Average the middle half of the values.
-	int discard = derivs_R.size() / 4;
-	RGB sum_R(0, 0, 0), sum_B(0, 0, 0);
-	for (auto ri = derivs_R.begin() + discard,
-		  bi = derivs_B.begin() + discard;
-	     ri != derivs_R.end() - discard; ri++, bi++)
-		sum_R += *ri, sum_B += *bi;
-	double gain_r = sum_R.G / (sum_R.R + 1),
-	       gain_b = sum_B.G / (sum_B.B + 1);
-	async_results_.temperature_K = 4500; // don't know what it is
-	async_results_.gain_r = gain_r;
-	async_results_.gain_g = 1.0;
-	async_results_.gain_b = gain_b;
+	int discard = derivsR.size() / 4;
+	RGB sumR(0, 0, 0), sumB(0, 0, 0);
+	for (auto ri = derivsR.begin() + discard,
+		  bi = derivsB.begin() + discard;
+	     ri != derivsR.end() - discard; ri++, bi++)
+		sumR += *ri, sumB += *bi;
+	double gainR = sumR.G / (sumR.R + 1),
+	       gainB = sumB.G / (sumB.B + 1);
+	asyncResults_.temperatureK = 4500; // don't know what it is
+	asyncResults_.gainR = gainR;
+	asyncResults_.gainG = 1.0;
+	asyncResults_.gainB = gainB;
 }
 
 void Awb::doAwb()
 {
 	prepareStats();
 	LOG(RPiAwb, Debug) << "Valid zones: " << zones_.size();
-	if (zones_.size() > config_.min_regions) {
+	if (zones_.size() > config_.minRegions) {
 		if (config_.bayes)
 			awbBayes();
 		else
 			awbGrey();
 		LOG(RPiAwb, Debug)
 			<< "CT found is "
-			<< async_results_.temperature_K
-			<< " with gains r " << async_results_.gain_r
-			<< " and b " << async_results_.gain_b;
+			<< asyncResults_.temperatureK
+			<< " with gains r " << asyncResults_.gainR
+			<< " and b " << asyncResults_.gainB;
 	}
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Awb(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

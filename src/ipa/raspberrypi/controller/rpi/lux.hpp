@@ -21,21 +21,21 @@ class Lux : public Algorithm
 {
 public:
 	Lux(Controller *controller);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
-	void SetCurrentAperture(double aperture);
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
+	void prepare(Metadata *imageMetadata) override;
+	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
+	void setCurrentAperture(double aperture);
 
 private:
 	// These values define the conditions of the reference image, against
 	// which we compare the new image.
-	libcamera::utils::Duration reference_shutter_speed_;
-	double reference_gain_;
-	double reference_aperture_; // units of 1/f
-	double reference_Y_; // out of 65536
-	double reference_lux_;
-	double current_aperture_;
+	libcamera::utils::Duration referenceShutterSpeed_;
+	double referenceGain_;
+	double referenceAperture_; // units of 1/f
+	double referenceY_; // out of 65536
+	double referenceLux_;
+	double currentAperture_;
 	LuxStatus status_;
 	std::mutex mutex_;
 };

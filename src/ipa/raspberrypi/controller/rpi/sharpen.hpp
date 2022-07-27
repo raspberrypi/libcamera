@@ -17,18 +17,18 @@ class Sharpen : public SharpenAlgorithm
 {
 public:
 	Sharpen(Controller *controller);
-	char const *Name() const override;
-	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void SetStrength(double strength) override;
-	void Prepare(Metadata *image_metadata) override;
+	char const *name() const override;
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
+	void read(boost::property_tree::ptree const &params) override;
+	void setStrength(double strength) override;
+	void prepare(Metadata *imageMetadata) override;
 
 private:
 	double threshold_;
 	double strength_;
 	double limit_;
-	double mode_factor_;
-	double user_strength_;
+	double modeFactor_;
+	double userStrength_;
 };
 
 } // namespace RPiController

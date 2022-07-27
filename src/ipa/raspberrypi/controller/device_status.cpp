@@ -10,21 +10,21 @@ using namespace libcamera; /* for the Duration operator<< overload */
 
 std::ostream &operator<<(std::ostream &out, const DeviceStatus &d)
 {
-	out << "Exposure: " << d.shutter_speed
-	    << " Frame length: " << d.frame_length
-	    << " Gain: " << d.analogue_gain;
+	out << "Exposure: " << d.shutterSpeed
+	    << " Frame length: " << d.frameLength
+	    << " Gain: " << d.analogueGain;
 
 	if (d.aperture)
 		out << " Aperture: " << *d.aperture;
 
-	if (d.lens_position)
-		out << " Lens: " << *d.lens_position;
+	if (d.lensPosition)
+		out << " Lens: " << *d.lensPosition;
 
-	if (d.flash_intensity)
-		out << " Flash: " << *d.flash_intensity;
+	if (d.flashIntensity)
+		out << " Flash: " << *d.flashIntensity;
 
-	if (d.sensor_temperature)
-		out << " Temperature: " << *d.sensor_temperature;
+	if (d.sensorTemperature)
+		out << " Temperature: " << *d.sensorTemperature;
 
 	return out;
 }

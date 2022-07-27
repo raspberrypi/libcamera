@@ -19,85 +19,87 @@ using namespace libcamera;
 LOG_DEFINE_CATEGORY(RPiController)
 
 Controller::Controller()
-	: switch_mode_called_(false) {}
-
-Controller::Controller(char const *json_filename)
-	: switch_mode_called_(false)
+	: switchModeCalled_(false)
 {
-	Read(json_filename);
-	Initialise();
+}
+
+Controller::Controller(char const *jsonFilename)
+	: switchModeCalled_(false)
+{
+	read(jsonFilename);
+	initialise();
 }
 
 Controller::~Controller() {}
 
-void Controller::Read(char const *filename)
+void Controller::read(char const *filename)
 {
 	boost::property_tree::ptree root;
 	boost::property_tree::read_json(filename, root);
-	for (auto const &key_and_value : root) {
-		Algorithm *algo = CreateAlgorithm(key_and_value.first.c_str());
+	for (auto const &keyAndValue : root) {
+		Algorithm *algo = createAlgorithm(keyAndValue.first.c_str());
 		if (algo) {
-			algo->Read(key_and_value.second);
+			algo->read(keyAndValue.second);
 			algorithms_.push_back(AlgorithmPtr(algo));
 		} else
 			LOG(RPiController, Warning)
-				<< "No algorithm found for \"" << key_and_value.first << "\"";
+				<< "No algorithm found for \"" << keyAndValue.first << "\"";
 	}
 }
 
-Algorithm *Controller::CreateAlgorithm(char const *name)
+Algorithm *Controller::createAlgorithm(char const *name)
 {
-	auto it = GetAlgorithms().find(std::string(name));
-	return it != GetAlgorithms().end() ? (*it->second)(this) : nullptr;
+	auto it = getAlgorithms().find(std::string(name));
+	return it != getAlgorithms().end() ? (*it->second)(this) : nullptr;
 }
 
-void Controller::Initialise()
-{
-	for (auto &algo : algorithms_)
-		algo->Initialise();
-}
-
-void Controller::SwitchMode(CameraMode const &camera_mode, Metadata *metadata)
+void Controller::initialise()
 {
 	for (auto &algo : algorithms_)
-		algo->SwitchMode(camera_mode, metadata);
-	switch_mode_called_ = true;
+		algo->initialise();
 }
 
-void Controller::Prepare(Metadata *image_metadata)
+void Controller::switchMode(CameraMode const &cameraMode, Metadata *metadata)
 {
-	assert(switch_mode_called_);
 	for (auto &algo : algorithms_)
-		if (!algo->IsPaused())
-			algo->Prepare(image_metadata);
+		algo->switchMode(cameraMode, metadata);
+	switchModeCalled_ = true;
 }
 
-void Controller::Process(StatisticsPtr stats, Metadata *image_metadata)
+void Controller::prepare(Metadata *imageMetadata)
 {
-	assert(switch_mode_called_);
+	assert(switchModeCalled_);
 	for (auto &algo : algorithms_)
-		if (!algo->IsPaused())
-			algo->Process(stats, image_metadata);
+		if (!algo->isPaused())
+			algo->prepare(imageMetadata);
 }
 
-Metadata &Controller::GetGlobalMetadata()
+void Controller::process(StatisticsPtr stats, Metadata *imageMetadata)
 {
-	return global_metadata_;
+	assert(switchModeCalled_);
+	for (auto &algo : algorithms_)
+		if (!algo->isPaused())
+			algo->process(stats, imageMetadata);
 }
 
-Algorithm *Controller::GetAlgorithm(std::string const &name) const
+Metadata &Controller::getGlobalMetadata()
+{
+	return globalMetadata_;
+}
+
+Algorithm *Controller::getAlgorithm(std::string const &name) const
 {
 	// The passed name must be the entire algorithm name, or must match the
 	// last part of it with a period (.) just before.
-	size_t name_len = name.length();
+	size_t nameLen = name.length();
 	for (auto &algo : algorithms_) {
-		char const *algo_name = algo->Name();
-		size_t algo_name_len = strlen(algo_name);
-		if (algo_name_len >= name_len &&
+		char const *algoName = algo->name();
+		size_t algoNameLen = strlen(algoName);
+		if (algoNameLen >= nameLen &&
 		    strcasecmp(name.c_str(),
-			       algo_name + algo_name_len - name_len) == 0 &&
-		    (name_len == algo_name_len ||
-		     algo_name[algo_name_len - name_len - 1] == '.'))
+			       algoName + algoNameLen - nameLen) == 0 &&
+		    (nameLen == algoNameLen ||
+		     algoName[algoNameLen - nameLen - 1] == '.'))
 			return algo.get();
 	}
 	return nullptr;

@@ -19,59 +19,59 @@ namespace RPiController {
 // Control algorithm to perform AWB calculations.
 
 struct AwbMode {
-	void Read(boost::property_tree::ptree const &params);
-	double ct_lo; // low CT value for search
-	double ct_hi; // high CT value for search
+	void read(boost::property_tree::ptree const &params);
+	double ctLo; // low CT value for search
+	double ctHi; // high CT value for search
 };
 
 struct AwbPrior {
-	void Read(boost::property_tree::ptree const &params);
+	void read(boost::property_tree::ptree const &params);
 	double lux; // lux level
 	Pwl prior; // maps CT to prior log likelihood for this lux level
 };
 
 struct AwbConfig {
-	AwbConfig() : default_mode(nullptr) {}
-	void Read(boost::property_tree::ptree const &params);
+	AwbConfig() : defaultMode(nullptr) {}
+	void read(boost::property_tree::ptree const &params);
 	// Only repeat the AWB calculation every "this many" frames
-	uint16_t frame_period;
+	uint16_t framePeriod;
 	// number of initial frames for which speed taken as 1.0 (maximum)
-	uint16_t startup_frames;
-	unsigned int convergence_frames; // approx number of frames to converge
+	uint16_t startupFrames;
+	unsigned int convergenceFrames; // approx number of frames to converge
 	double speed; // IIR filter speed applied to algorithm results
 	bool fast; // "fast" mode uses a 16x16 rather than 32x32 grid
-	Pwl ct_r; // function maps CT to r (= R/G)
-	Pwl ct_b; // function maps CT to b (= B/G)
+	Pwl ctR; // function maps CT to r (= R/G)
+	Pwl ctB; // function maps CT to b (= B/G)
 	// table of illuminant priors at different lux levels
 	std::vector<AwbPrior> priors;
 	// AWB "modes" (determines the search range)
 	std::map<std::string, AwbMode> modes;
-	AwbMode *default_mode; // mode used if no mode selected
+	AwbMode *defaultMode; // mode used if no mode selected
 	// minimum proportion of pixels counted within AWB region for it to be
 	// "useful"
-	double min_pixels;
+	double minPixels;
 	// minimum G value of those pixels, to be regarded a "useful"
-	uint16_t min_G;
+	uint16_t minG;
 	// number of AWB regions that must be "useful" in order to do the AWB
 	// calculation
-	uint32_t min_regions;
+	uint32_t minRegions;
 	// clamp on colour error term (so as not to penalise non-grey excessively)
-	double delta_limit;
+	double deltaLimit;
 	// step size control in coarse search
-	double coarse_step;
+	double coarseStep;
 	// how far to wander off CT curve towards "more purple"
-	double transverse_pos;
+	double transversePos;
 	// how far to wander off CT curve towards "more green"
-	double transverse_neg;
+	double transverseNeg;
 	// red sensitivity ratio (set to canonical sensor's R/G divided by this
 	// sensor's R/G)
-	double sensitivity_r;
+	double sensitivityR;
 	// blue sensitivity ratio (set to canonical sensor's B/G divided by this
 	// sensor's B/G)
-	double sensitivity_b;
+	double sensitivityB;
 	// The whitepoint (which we normally "aim" for) can be moved.
-	double whitepoint_r;
-	double whitepoint_b;
+	double whitepointR;
+	double whitepointB;
 	bool bayes; // use Bayesian algorithm
 };
 
@@ -80,22 +80,22 @@ class Awb : public AwbAlgorithm
 public:
 	Awb(Controller *controller = NULL);
 	~Awb();
-	char const *Name() const override;
-	void Initialise() override;
-	void Read(boost::property_tree::ptree const &params) override;
+	char const *name() const override;
+	void initialise() override;
+	void read(boost::property_tree::ptree const &params) override;
 	// AWB handles "pausing" for itself.
-	bool IsPaused() const override;
-	void Pause() override;
-	void Resume() override;
-	unsigned int GetConvergenceFrames() const override;
-	void SetMode(std::string const &name) override;
-	void SetManualGains(double manual_r, double manual_b) override;
-	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
-	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	bool isPaused() const override;
+	void pause() override;
+	void resume() override;
+	unsigned int getConvergenceFrames() const override;
+	void setMode(std::string const &name) override;
+	void setManualGains(double manualR, double manualB) override;
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
+	void prepare(Metadata *imageMetadata) override;
+	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 	struct RGB {
-		RGB(double _R = 0, double _G = 0, double _B = 0)
-			: R(_R), G(_G), B(_B)
+		RGB(double r = 0, double g = 0, double b = 0)
+			: R(r), G(g), B(b)
 		{
 		}
 		double R, G, B;
@@ -110,29 +110,29 @@ private:
 	bool isAutoEnabled() const;
 	// configuration is read-only, and available to both threads
 	AwbConfig config_;
-	std::thread async_thread_;
+	std::thread asyncThread_;
 	void asyncFunc(); // asynchronous thread function
 	std::mutex mutex_;
 	// condvar for async thread to wait on
-	std::condition_variable async_signal_;
+	std::condition_variable asyncSignal_;
 	// condvar for synchronous thread to wait on
-	std::condition_variable sync_signal_;
+	std::condition_variable syncSignal_;
 	// for sync thread to check  if async thread finished (requires mutex)
-	bool async_finished_;
+	bool asyncFinished_;
 	// for async thread to check if it's been told to run (requires mutex)
-	bool async_start_;
+	bool asyncStart_;
 	// for async thread to check if it's been told to quit (requires mutex)
-	bool async_abort_;
+	bool asyncAbort_;
 
 	// The following are only for the synchronous thread to use:
 	// for sync thread to note its has asked async thread to run
-	bool async_started_;
-	// counts up to frame_period before restarting the async thread
-	int frame_phase_;
-	int frame_count_; // counts up to startup_frames
-	AwbStatus sync_results_;
-	AwbStatus prev_sync_results_;
-	std::string mode_name_;
+	bool asyncStarted_;
+	// counts up to framePeriod before restarting the async thread
+	int framePhase_;
+	int frameCount_; // counts up to startup_frames
+	AwbStatus syncResults_;
+	AwbStatus prevSyncResults_;
+	std::string modeName_;
 	// The following are for the asynchronous thread to use, though the main
 	// thread can set/reset them if the async thread is known to be idle:
 	void restartAsync(StatisticsPtr &stats, double lux);
@@ -141,22 +141,22 @@ private:
 	StatisticsPtr statistics_;
 	AwbMode *mode_;
 	double lux_;
-	AwbStatus async_results_;
+	AwbStatus asyncResults_;
 	void doAwb();
 	void awbBayes();
 	void awbGrey();
 	void prepareStats();
-	double computeDelta2Sum(double gain_r, double gain_b);
+	double computeDelta2Sum(double gainR, double gainB);
 	Pwl interpolatePrior();
 	double coarseSearch(Pwl const &prior);
 	void fineSearch(double &t, double &r, double &b, Pwl const &prior);
 	std::vector<RGB> zones_;
 	std::vector<Pwl::Point> points_;
 	// manual r setting
-	double manual_r_;
+	double manualR_;
 	// manual b setting
-	double manual_b_;
-	bool first_switch_mode_; // is this the first call to SwitchMode?
+	double manualB_;
+	bool firstSwitchMode_; // is this the first call to SwitchMode?
 };
 
 static inline Awb::RGB operator+(Awb::RGB const &a, Awb::RGB const &b)

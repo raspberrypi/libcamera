@@ -17,16 +17,15 @@ class AgcAlgorithm : public Algorithm
 public:
 	AgcAlgorithm(Controller *controller) : Algorithm(controller) {}
 	// An AGC algorithm must provide the following:
-	virtual unsigned int GetConvergenceFrames() const = 0;
-	virtual void SetEv(double ev) = 0;
-	virtual void SetFlickerPeriod(libcamera::utils::Duration flicker_period) = 0;
-	virtual void SetFixedShutter(libcamera::utils::Duration fixed_shutter) = 0;
-	virtual void SetMaxShutter(libcamera::utils::Duration max_shutter) = 0;
-	virtual void SetFixedAnalogueGain(double fixed_analogue_gain) = 0;
-	virtual void SetMeteringMode(std::string const &metering_mode_name) = 0;
-	virtual void SetExposureMode(std::string const &exposure_mode_name) = 0;
-	virtual void
-	SetConstraintMode(std::string const &contraint_mode_name) = 0;
+	virtual unsigned int getConvergenceFrames() const = 0;
+	virtual void setEv(double ev) = 0;
+	virtual void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) = 0;
+	virtual void setFixedShutter(libcamera::utils::Duration fixedShutter) = 0;
+	virtual void setMaxShutter(libcamera::utils::Duration maxShutter) = 0;
+	virtual void setFixedAnalogueGain(double fixedAnalogueGain) = 0;
+	virtual void setMeteringMode(std::string const &meteringModeName) = 0;
+	virtual void setExposureMode(std::string const &exposureModeName) = 0;
+	virtual void setConstraintMode(std::string const &contraintModeName) = 0;
 };
 
 } // namespace RPiController

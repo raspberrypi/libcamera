@@ -26,114 +26,114 @@ namespace RPiController {
 
 struct AgcMeteringMode {
 	double weights[AGC_STATS_SIZE];
-	void Read(boost::property_tree::ptree const &params);
+	void read(boost::property_tree::ptree const &params);
 };
 
 struct AgcExposureMode {
 	std::vector<libcamera::utils::Duration> shutter;
 	std::vector<double> gain;
-	void Read(boost::property_tree::ptree const &params);
+	void read(boost::property_tree::ptree const &params);
 };
 
 struct AgcConstraint {
 	enum class Bound { LOWER = 0, UPPER = 1 };
 	Bound bound;
-	double q_lo;
-	double q_hi;
-	Pwl Y_target;
-	void Read(boost::property_tree::ptree const &params);
+	double qLo;
+	double qHi;
+	Pwl yTarget;
+	void read(boost::property_tree::ptree const &params);
 };
 
 typedef std::vector<AgcConstraint> AgcConstraintMode;
 
 struct AgcConfig {
-	void Read(boost::property_tree::ptree const &params);
-	std::map<std::string, AgcMeteringMode> metering_modes;
-	std::map<std::string, AgcExposureMode> exposure_modes;
-	std::map<std::string, AgcConstraintMode> constraint_modes;
-	Pwl Y_target;
+	void read(boost::property_tree::ptree const &params);
+	std::map<std::string, AgcMeteringMode> meteringModes;
+	std::map<std::string, AgcExposureMode> exposureModes;
+	std::map<std::string, AgcConstraintMode> constraintModes;
+	Pwl yTarget;
 	double speed;
-	uint16_t startup_frames;
-	unsigned int convergence_frames;
-	double max_change;
-	double min_change;
-	double fast_reduce_threshold;
-	double speed_up_threshold;
-	std::string default_metering_mode;
-	std::string default_exposure_mode;
-	std::string default_constraint_mode;
-	double base_ev;
-	libcamera::utils::Duration default_exposure_time;
-	double default_analogue_gain;
+	uint16_t startupFrames;
+	unsigned int convergenceFrames;
+	double maxChange;
+	double minChange;
+	double fastReduceThreshold;
+	double speedUpThreshold;
+	std::string defaultMeteringMode;
+	std::string defaultExposureMode;
+	std::string defaultConstraintMode;
+	double baseEv;
+	libcamera::utils::Duration defaultExposureTime;
+	double defaultAnalogueGain;
 };
 
 class Agc : public AgcAlgorithm
 {
 public:
 	Agc(Controller *controller);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
 	// AGC handles "pausing" for itself.
-	bool IsPaused() const override;
-	void Pause() override;
-	void Resume() override;
-	unsigned int GetConvergenceFrames() const override;
-	void SetEv(double ev) override;
-	void SetFlickerPeriod(libcamera::utils::Duration flicker_period) override;
-	void SetMaxShutter(libcamera::utils::Duration max_shutter) override;
-	void SetFixedShutter(libcamera::utils::Duration fixed_shutter) override;
-	void SetFixedAnalogueGain(double fixed_analogue_gain) override;
-	void SetMeteringMode(std::string const &metering_mode_name) override;
-	void SetExposureMode(std::string const &exposure_mode_name) override;
-	void SetConstraintMode(std::string const &contraint_mode_name) override;
-	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
-	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	bool isPaused() const override;
+	void pause() override;
+	void resume() override;
+	unsigned int getConvergenceFrames() const override;
+	void setEv(double ev) override;
+	void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) override;
+	void setMaxShutter(libcamera::utils::Duration maxShutter) override;
+	void setFixedShutter(libcamera::utils::Duration fixedShutter) override;
+	void setFixedAnalogueGain(double fixedAnalogueGain) override;
+	void setMeteringMode(std::string const &meteringModeName) override;
+	void setExposureMode(std::string const &exposureModeName) override;
+	void setConstraintMode(std::string const &contraintModeName) override;
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
+	void prepare(Metadata *imageMetadata) override;
+	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 
 private:
-	void updateLockStatus(DeviceStatus const &device_status);
+	void updateLockStatus(DeviceStatus const &deviceStatus);
 	AgcConfig config_;
 	void housekeepConfig();
-	void fetchCurrentExposure(Metadata *image_metadata);
-	void fetchAwbStatus(Metadata *image_metadata);
-	void computeGain(bcm2835_isp_stats *statistics, Metadata *image_metadata,
-			 double &gain, double &target_Y);
+	void fetchCurrentExposure(Metadata *imageMetadata);
+	void fetchAwbStatus(Metadata *imageMetadata);
+	void computeGain(bcm2835_isp_stats *statistics, Metadata *imageMetadata,
+			 double &gain, double &targetY);
 	void computeTargetExposure(double gain);
-	bool applyDigitalGain(double gain, double target_Y);
+	bool applyDigitalGain(double gain, double targetY);
 	void filterExposure(bool desaturate);
 	void divideUpExposure();
-	void writeAndFinish(Metadata *image_metadata, bool desaturate);
+	void writeAndFinish(Metadata *imageMetadata, bool desaturate);
 	libcamera::utils::Duration clipShutter(libcamera::utils::Duration shutter);
-	AgcMeteringMode *metering_mode_;
-	AgcExposureMode *exposure_mode_;
-	AgcConstraintMode *constraint_mode_;
-	uint64_t frame_count_;
+	AgcMeteringMode *meteringMode_;
+	AgcExposureMode *exposureMode_;
+	AgcConstraintMode *constraintMode_;
+	uint64_t frameCount_;
 	AwbStatus awb_;
 	struct ExposureValues {
 		ExposureValues();
 
 		libcamera::utils::Duration shutter;
-		double analogue_gain;
-		libcamera::utils::Duration total_exposure;
-		libcamera::utils::Duration total_exposure_no_dg; // without digital gain
+		double analogueGain;
+		libcamera::utils::Duration totalExposure;
+		libcamera::utils::Duration totalExposureNoDG; // without digital gain
 	};
 	ExposureValues current_;  // values for the current frame
 	ExposureValues target_;   // calculate the values we want here
 	ExposureValues filtered_; // these values are filtered towards target
 	AgcStatus status_;
-	int lock_count_;
-	DeviceStatus last_device_status_;
-	libcamera::utils::Duration last_target_exposure_;
-	double last_sensitivity_; // sensitivity of the previous camera mode
+	int lockCount_;
+	DeviceStatus lastDeviceStatus_;
+	libcamera::utils::Duration lastTargetExposure_;
+	double lastSensitivity_; // sensitivity of the previous camera mode
 	// Below here the "settings" that applications can change.
-	std::string metering_mode_name_;
-	std::string exposure_mode_name_;
-	std::string constraint_mode_name_;
+	std::string meteringModeName_;
+	std::string exposureModeName_;
+	std::string constraintModeName_;
 	double ev_;
-	libcamera::utils::Duration flicker_period_;
-	libcamera::utils::Duration max_shutter_;
-	libcamera::utils::Duration fixed_shutter_;
-	double fixed_analogue_gain_;
+	libcamera::utils::Duration flickerPeriod_;
+	libcamera::utils::Duration maxShutter_;
+	libcamera::utils::Duration fixedShutter_;
+	double fixedAnalogueGain_;
 };
 
 } // namespace RPiController

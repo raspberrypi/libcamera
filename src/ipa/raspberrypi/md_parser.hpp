@@ -75,40 +75,40 @@ public:
 	};
 
 	MdParser()
-		: reset_(true), bits_per_pixel_(0), num_lines_(0), line_length_bytes_(0)
+		: reset_(true), bitsPerPixel_(0), numLines_(0), lineLengthBytes_(0)
 	{
 	}
 
 	virtual ~MdParser() = default;
 
-	void Reset()
+	void reset()
 	{
 		reset_ = true;
 	}
 
-	void SetBitsPerPixel(int bpp)
+	void setBitsPerPixel(int bpp)
 	{
-		bits_per_pixel_ = bpp;
+		bitsPerPixel_ = bpp;
 	}
 
-	void SetNumLines(unsigned int num_lines)
+	void setNumLines(unsigned int numLines)
 	{
-		num_lines_ = num_lines;
+		numLines_ = numLines;
 	}
 
-	void SetLineLengthBytes(unsigned int num_bytes)
+	void setLineLengthBytes(unsigned int numBytes)
 	{
-		line_length_bytes_ = num_bytes;
+		lineLengthBytes_ = numBytes;
 	}
 
-	virtual Status Parse(libcamera::Span<const uint8_t> buffer,
+	virtual Status parse(libcamera::Span<const uint8_t> buffer,
 			     RegisterMap &registers) = 0;
 
 protected:
 	bool reset_;
-	int bits_per_pixel_;
-	unsigned int num_lines_;
-	unsigned int line_length_bytes_;
+	int bitsPerPixel_;
+	unsigned int numLines_;
+	unsigned int lineLengthBytes_;
 };
 
 /*
@@ -123,7 +123,7 @@ class MdParserSmia final : public MdParser
 public:
 	MdParserSmia(std::initializer_list<uint32_t> registerList);
 
-	MdParser::Status Parse(libcamera::Span<const uint8_t> buffer,
+	MdParser::Status parse(libcamera::Span<const uint8_t> buffer,
 			       RegisterMap &registers) override;
 
 private:
@@ -133,18 +133,18 @@ private:
 	/*
 	 * Note that error codes > 0 are regarded as non-fatal; codes < 0
 	 * indicate a bad data buffer. Status codes are:
-	 * PARSE_OK     - found all registers, much happiness
-	 * MISSING_REGS - some registers found; should this be a hard error?
+	 * ParseOk     - found all registers, much happiness
+	 * MissingRegs - some registers found; should this be a hard error?
 	 * The remaining codes are all hard errors.
 	 */
 	enum ParseStatus {
-		PARSE_OK      =  0,
-		MISSING_REGS  =  1,
-		NO_LINE_START = -1,
-		ILLEGAL_TAG   = -2,
-		BAD_DUMMY     = -3,
-		BAD_LINE_END  = -4,
-		BAD_PADDING   = -5
+		ParseOk      =  0,
+		MissingRegs  =  1,
+		NoLineStart  = -1,
+		IllegalTag   = -2,
+		BadDummy     = -3,
+		BadLineEnd   = -4,
+		BadPadding   = -5
 	};
 
 	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer);

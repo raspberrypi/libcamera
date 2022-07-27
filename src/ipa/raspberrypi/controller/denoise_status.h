@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 struct DenoiseStatus {
-	double noise_constant;
-	double noise_slope;
+	double noiseConstant;
+	double noiseSlope;
 	double strength;
 	unsigned int mode;
 };

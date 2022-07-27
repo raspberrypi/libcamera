@@ -21,23 +21,23 @@ LOG_DEFINE_CATEGORY(RPiSharpen)
 #define NAME "rpi.sharpen"
 
 Sharpen::Sharpen(Controller *controller)
-	: SharpenAlgorithm(controller), user_strength_(1.0)
+	: SharpenAlgorithm(controller), userStrength_(1.0)
 {
 }
 
-char const *Sharpen::Name() const
+char const *Sharpen::name() const
 {
 	return NAME;
 }
 
-void Sharpen::SwitchMode(CameraMode const &camera_mode,
+void Sharpen::switchMode(CameraMode const &cameraMode,
 			 [[maybe_unused]] Metadata *metadata)
 {
 	// can't be less than one, right?
-	mode_factor_ = std::max(1.0, camera_mode.noise_factor);
+	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-void Sharpen::Read(boost::property_tree::ptree const &params)
+void Sharpen::read(boost::property_tree::ptree const &params)
 {
 	threshold_ = params.get<double>("threshold", 1.0);
 	strength_ = params.get<double>("strength", 1.0);
@@ -48,38 +48,38 @@ void Sharpen::Read(boost::property_tree::ptree const &params)
 		<< " limit " << limit_;
 }
 
-void Sharpen::SetStrength(double strength)
+void Sharpen::setStrength(double strength)
 {
 	// Note that this function is how an application sets the overall
 	// sharpening "strength". We call this the "user strength" field
 	// as there already is a strength_ field - being an internal gain
 	// parameter that gets passed to the ISP control code. Negative
 	// values are not allowed - coerce them to zero (no sharpening).
-	user_strength_ = std::max(0.0, strength);
+	userStrength_ = std::max(0.0, strength);
 }
 
-void Sharpen::Prepare(Metadata *image_metadata)
+void Sharpen::prepare(Metadata *imageMetadata)
 {
-	// The user_strength_ affects the algorithm's internal gain directly, but
+	// The userStrength_ affects the algorithm's internal gain directly, but
 	// we adjust the limit and threshold less aggressively. Using a sqrt
 	// function is an arbitrary but gentle way of accomplishing this.
-	double user_strength_sqrt = sqrt(user_strength_);
+	double userStrengthSqrt = sqrt(userStrength_);
 	struct SharpenStatus status;
 	// Binned modes seem to need the sharpening toned down with this
-	// pipeline, thus we use the mode_factor here. Also avoid
-	// divide-by-zero with the user_strength_sqrt.
-	status.threshold = threshold_ * mode_factor_ /
-			   std::max(0.01, user_strength_sqrt);
-	status.strength = strength_ / mode_factor_ * user_strength_;
-	status.limit = limit_ / mode_factor_ * user_strength_sqrt;
-	// Finally, report any application-supplied parameters that were used.
-	status.user_strength = user_strength_;
-	image_metadata->Set("sharpen.status", status);
+	// pipeline, thus we use the modeFactor_ here. Also avoid
+	// divide-by-zero with the userStrengthSqrt.
+	status.threshold = threshold_ * modeFactor_ /
+			   std::max(0.01, userStrengthSqrt);
+	status.strength = strength_ / modeFactor_ * userStrength_;
+	status.limit = limit_ / modeFactor_ * userStrengthSqrt;
+	/* Finally, report any application-supplied parameters that were used. */
+	status.userStrength = userStrength_;
+	imageMetadata->set("sharpen.status", status);
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return new Sharpen(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

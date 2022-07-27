@@ -27,15 +27,15 @@ public:
 			cumulative_.push_back(cumulative_.back() +
 					      histogram[i]);
 	}
-	uint32_t Bins() const { return cumulative_.size() - 1; }
-	uint64_t Total() const { return cumulative_[cumulative_.size() - 1]; }
+	uint32_t bins() const { return cumulative_.size() - 1; }
+	uint64_t total() const { return cumulative_[cumulative_.size() - 1]; }
 	// Cumulative frequency up to a (fractional) point in a bin.
-	uint64_t CumulativeFreq(double bin) const;
+	uint64_t cumulativeFreq(double bin) const;
 	// Return the (fractional) bin of the point q (0 <= q <= 1) through the
 	// histogram. Optionally provide limits to help.
-	double Quantile(double q, int first = -1, int last = -1) const;
+	double quantile(double q, int first = -1, int last = -1) const;
 	// Return the average histogram bin value between the two quantiles.
-	double InterQuantileMean(double q_lo, double q_hi) const;
+	double interQuantileMean(double qLo, double qHi) const;
 
 private:
 	std::vector<uint64_t> cumulative_;

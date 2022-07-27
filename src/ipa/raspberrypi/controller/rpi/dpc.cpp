@@ -24,30 +24,30 @@ Dpc::Dpc(Controller *controller)
 {
 }
 
-char const *Dpc::Name() const
+char const *Dpc::name() const
 {
 	return NAME;
 }
 
-void Dpc::Read(boost::property_tree::ptree const &params)
+void Dpc::read(boost::property_tree::ptree const &params)
 {
 	config_.strength = params.get<int>("strength", 1);
 	if (config_.strength < 0 || config_.strength > 2)
 		throw std::runtime_error("Dpc: bad strength value");
 }
 
-void Dpc::Prepare(Metadata *image_metadata)
+void Dpc::prepare(Metadata *imageMetadata)
 {
-	DpcStatus dpc_status = {};
+	DpcStatus dpcStatus = {};
 	// Should we vary this with lux level or analogue gain? TBD.
-	dpc_status.strength = config_.strength;
-	LOG(RPiDpc, Debug) << "strength " << dpc_status.strength;
-	image_metadata->Set("dpc.status", dpc_status);
+	dpcStatus.strength = config_.strength;
+	LOG(RPiDpc, Debug) << "strength " << dpcStatus.strength;
+	imageMetadata->set("dpc.status", dpcStatus);
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Dpc(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

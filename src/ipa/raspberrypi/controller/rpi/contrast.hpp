@@ -17,27 +17,27 @@ namespace RPiController {
 // Back End AWB.
 
 struct ContrastConfig {
-	bool ce_enable;
-	double lo_histogram;
-	double lo_level;
-	double lo_max;
-	double hi_histogram;
-	double hi_level;
-	double hi_max;
-	Pwl gamma_curve;
+	bool ceEnable;
+	double loHistogram;
+	double loLevel;
+	double loMax;
+	double hiHistogram;
+	double hiLevel;
+	double hiMax;
+	Pwl gammaCurve;
 };
 
 class Contrast : public ContrastAlgorithm
 {
 public:
 	Contrast(Controller *controller = NULL);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void SetBrightness(double brightness) override;
-	void SetContrast(double contrast) override;
-	void Initialise() override;
-	void Prepare(Metadata *image_metadata) override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
+	void setBrightness(double brightness) override;
+	void setContrast(double contrast) override;
+	void initialise() override;
+	void prepare(Metadata *imageMetadata) override;
+	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 
 private:
 	ContrastConfig config_;

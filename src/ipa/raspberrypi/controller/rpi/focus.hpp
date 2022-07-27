@@ -21,8 +21,8 @@ class Focus : public Algorithm
 {
 public:
 	Focus(Controller *controller);
-	char const *Name() const override;
-	void Process(StatisticsPtr &stats, Metadata *image_metadata) override;
+	char const *name() const override;
+	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 };
 
 } /* namespace RPiController */

@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 struct NoiseStatus {
-	double noise_constant;
-	double noise_slope;
+	double noiseConstant;
+	double noiseSlope;
 };
 
 #ifdef __cplusplus

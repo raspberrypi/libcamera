@@ -15,10 +15,10 @@ extern "C" {
 
 struct AwbStatus {
 	char mode[32];
-	double temperature_K;
-	double gain_r;
-	double gain_g;
-	double gain_b;
+	double temperatureK;
+	double gainR;
+	double gainG;
+	double gainB;
 };
 
 #ifdef __cplusplus

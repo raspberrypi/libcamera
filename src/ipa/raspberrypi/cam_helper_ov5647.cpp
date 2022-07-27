@@ -15,14 +15,14 @@ class CamHelperOv5647 : public CamHelper
 {
 public:
 	CamHelperOv5647();
-	uint32_t GainCode(double gain) const override;
-	double Gain(uint32_t gain_code) const override;
-	void GetDelays(int &exposure_delay, int &gain_delay,
-		       int &vblank_delay) const override;
-	unsigned int HideFramesStartup() const override;
-	unsigned int HideFramesModeSwitch() const override;
-	unsigned int MistrustFramesStartup() const override;
-	unsigned int MistrustFramesModeSwitch() const override;
+	uint32_t gainCode(double gain) const override;
+	double gain(uint32_t gainCode) const override;
+	void getDelays(int &exposureDelay, int &gainDelay,
+		       int &vblankDelay) const override;
+	unsigned int hideFramesStartup() const override;
+	unsigned int hideFramesModeSwitch() const override;
+	unsigned int mistrustFramesStartup() const override;
+	unsigned int mistrustFramesModeSwitch() const override;
 
 private:
 	/*
@@ -42,29 +42,29 @@ CamHelperOv5647::CamHelperOv5647()
 {
 }
 
-uint32_t CamHelperOv5647::GainCode(double gain) const
+uint32_t CamHelperOv5647::gainCode(double gain) const
 {
 	return static_cast<uint32_t>(gain * 16.0);
 }
 
-double CamHelperOv5647::Gain(uint32_t gain_code) const
+double CamHelperOv5647::gain(uint32_t gainCode) const
 {
-	return static_cast<double>(gain_code) / 16.0;
+	return static_cast<double>(gainCode) / 16.0;
 }
 
-void CamHelperOv5647::GetDelays(int &exposure_delay, int &gain_delay,
-				int &vblank_delay) const
+void CamHelperOv5647::getDelays(int &exposureDelay, int &gainDelay,
+				int &vblankDelay) const
 {
 	/*
 	 * We run this sensor in a mode where the gain delay is bumped up to
 	 * 2. It seems to be the only way to make the delays "predictable".
 	 */
-	exposure_delay = 2;
-	gain_delay = 2;
-	vblank_delay = 2;
+	exposureDelay = 2;
+	gainDelay = 2;
+	vblankDelay = 2;
 }
 
-unsigned int CamHelperOv5647::HideFramesStartup() const
+unsigned int CamHelperOv5647::hideFramesStartup() const
 {
 	/*
 	 * On startup, we get a couple of under-exposed frames which
@@ -73,7 +73,7 @@ unsigned int CamHelperOv5647::HideFramesStartup() const
 	return 2;
 }
 
-unsigned int CamHelperOv5647::HideFramesModeSwitch() const
+unsigned int CamHelperOv5647::hideFramesModeSwitch() const
 {
 	/*
 	 * After a mode switch, we get a couple of under-exposed frames which
@@ -82,7 +82,7 @@ unsigned int CamHelperOv5647::HideFramesModeSwitch() const
 	return 2;
 }
 
-unsigned int CamHelperOv5647::MistrustFramesStartup() const
+unsigned int CamHelperOv5647::mistrustFramesStartup() const
 {
 	/*
 	 * First couple of frames are under-exposed and are no good for control
@@ -91,7 +91,7 @@ unsigned int CamHelperOv5647::MistrustFramesStartup() const
 	return 2;
 }
 
-unsigned int CamHelperOv5647::MistrustFramesModeSwitch() const
+unsigned int CamHelperOv5647::mistrustFramesModeSwitch() const
 {
 	/*
 	 * First couple of frames are under-exposed even after a simple
@@ -100,9 +100,9 @@ unsigned int CamHelperOv5647::MistrustFramesModeSwitch() const
 	return 2;
 }
 
-static CamHelper *Create()
+static CamHelper *create()
 {
 	return new CamHelperOv5647();
 }
 
-static RegisterCamHelper reg("ov5647", &Create);
+static RegisterCamHelper reg("ov5647", &create);

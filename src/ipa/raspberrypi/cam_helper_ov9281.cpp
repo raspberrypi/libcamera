@@ -15,10 +15,10 @@ class CamHelperOv9281 : public CamHelper
 {
 public:
 	CamHelperOv9281();
-	uint32_t GainCode(double gain) const override;
-	double Gain(uint32_t gain_code) const override;
-	void GetDelays(int &exposure_delay, int &gain_delay,
-		       int &vblank_delay) const override;
+	uint32_t gainCode(double gain) const override;
+	double gain(uint32_t gainCode) const override;
+	void getDelays(int &exposureDelay, int &gainDelay,
+		       int &vblankDelay) const override;
 
 private:
 	/*
@@ -38,28 +38,28 @@ CamHelperOv9281::CamHelperOv9281()
 {
 }
 
-uint32_t CamHelperOv9281::GainCode(double gain) const
+uint32_t CamHelperOv9281::gainCode(double gain) const
 {
 	return static_cast<uint32_t>(gain * 16.0);
 }
 
-double CamHelperOv9281::Gain(uint32_t gain_code) const
+double CamHelperOv9281::gain(uint32_t gainCode) const
 {
-	return static_cast<double>(gain_code) / 16.0;
+	return static_cast<double>(gainCode) / 16.0;
 }
 
-void CamHelperOv9281::GetDelays(int &exposure_delay, int &gain_delay,
-				int &vblank_delay) const
+void CamHelperOv9281::getDelays(int &exposureDelay, int &gainDelay,
+				int &vblankDelay) const
 {
 	/* The driver appears to behave as follows: */
-	exposure_delay = 2;
-	gain_delay = 2;
-	vblank_delay = 2;
+	exposureDelay = 2;
+	gainDelay = 2;
+	vblankDelay = 2;
 }
 
-static CamHelper *Create()
+static CamHelper *create()
 {
 	return new CamHelperOv9281();
 }
 
-static RegisterCamHelper reg("ov9281", &Create);
+static RegisterCamHelper reg("ov9281", &create);

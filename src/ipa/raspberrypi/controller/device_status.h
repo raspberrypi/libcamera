@@ -18,24 +18,24 @@
 
 struct DeviceStatus {
 	DeviceStatus()
-		: shutter_speed(std::chrono::seconds(0)), frame_length(0),
-		  analogue_gain(0.0)
+		: shutterSpeed(std::chrono::seconds(0)), frameLength(0),
+		  analogueGain(0.0)
 	{
 	}
 
 	friend std::ostream &operator<<(std::ostream &out, const DeviceStatus &d);
 
 	/* time shutter is open */
-	libcamera::utils::Duration shutter_speed;
+	libcamera::utils::Duration shutterSpeed;
 	/* frame length given in number of lines */
-	uint32_t frame_length;
-	double analogue_gain;
+	uint32_t frameLength;
+	double analogueGain;
 	/* 1.0/distance-in-metres, or 0 if unknown */
-	std::optional<double> lens_position;
+	std::optional<double> lensPosition;
 	/* 1/f so that brightness quadruples when this doubles, or 0 if unknown */
 	std::optional<double> aperture;
 	/* proportional to brightness with 0 = no flash, 1 = maximum flash */
-	std::optional<double> flash_intensity;
+	std::optional<double> flashIntensity;
 	/* Sensor reported temperature value (in degrees) */
-	std::optional<double> sensor_temperature;
+	std::optional<double> sensorTemperature;
 };

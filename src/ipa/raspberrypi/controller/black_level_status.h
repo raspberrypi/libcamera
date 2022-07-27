@@ -13,9 +13,9 @@ extern "C" {
 #endif
 
 struct BlackLevelStatus {
-	uint16_t black_level_r; // out of 16 bits
-	uint16_t black_level_g;
-	uint16_t black_level_b;
+	uint16_t blackLevelR; // out of 16 bits
+	uint16_t blackLevelG;
+	uint16_t blackLevelB;
 };
 
 #ifdef __cplusplus

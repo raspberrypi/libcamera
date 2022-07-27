@@ -20,19 +20,19 @@ extern "C" {
 // ignored until then.
 
 struct AgcStatus {
-	libcamera::utils::Duration total_exposure_value; // value for all exposure and gain for this image
-	libcamera::utils::Duration target_exposure_value; // (unfiltered) target total exposure AGC is aiming for
-	libcamera::utils::Duration shutter_time;
-	double analogue_gain;
-	char exposure_mode[32];
-	char constraint_mode[32];
-	char metering_mode[32];
+	libcamera::utils::Duration totalExposureValue; // value for all exposure and gain for this image
+	libcamera::utils::Duration targetExposureValue; // (unfiltered) target total exposure AGC is aiming for
+	libcamera::utils::Duration shutterTime;
+	double analogueGain;
+	char exposureMode[32];
+	char constraintMode[32];
+	char meteringMode[32];
 	double ev;
-	libcamera::utils::Duration flicker_period;
-	int floating_region_enable;
-	libcamera::utils::Duration fixed_shutter;
-	double fixed_analogue_gain;
-	double digital_gain;
+	libcamera::utils::Duration flickerPeriod;
+	int floatingRegionEnable;
+	libcamera::utils::Duration fixedShutter;
+	double fixedAnalogueGain;
+	double digitalGain;
 	int locked;
 };
 

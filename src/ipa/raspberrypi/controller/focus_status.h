@@ -18,7 +18,7 @@ extern "C" {
 
 struct FocusStatus {
 	unsigned int num;
-	uint32_t focus_measures[FOCUS_REGIONS];
+	uint32_t focusMeasures[FOCUS_REGIONS];
 };
 
 #ifdef __cplusplus

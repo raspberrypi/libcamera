@@ -23,9 +23,9 @@ class Geq : public Algorithm
 {
 public:
 	Geq(Controller *controller);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void Prepare(Metadata *image_metadata) override;
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
+	void prepare(Metadata *imageMetadata) override;
 
 private:
 	GeqConfig config_;

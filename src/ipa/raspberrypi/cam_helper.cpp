@@ -24,16 +24,16 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
 
-static std::map<std::string, CamHelperCreateFunc> cam_helpers;
+static std::map<std::string, CamHelperCreateFunc> camHelpers;
 
-CamHelper *CamHelper::Create(std::string const &cam_name)
+CamHelper *CamHelper::create(std::string const &camName)
 {
 	/*
 	 * CamHelpers get registered by static RegisterCamHelper
 	 * initialisers.
 	 */
-	for (auto &p : cam_helpers) {
-		if (cam_name.find(p.first) != std::string::npos)
+	for (auto &p : camHelpers) {
+		if (camName.find(p.first) != std::string::npos)
 			return p.second();
 	}
 
@@ -50,35 +50,35 @@ CamHelper::~CamHelper()
 {
 }
 
-void CamHelper::Prepare(Span<const uint8_t> buffer,
+void CamHelper::prepare(Span<const uint8_t> buffer,
 			Metadata &metadata)
 {
 	parseEmbeddedData(buffer, metadata);
 }
 
-void CamHelper::Process([[maybe_unused]] StatisticsPtr &stats,
+void CamHelper::process([[maybe_unused]] StatisticsPtr &stats,
 			[[maybe_unused]] Metadata &metadata)
 {
 }
 
-uint32_t CamHelper::ExposureLines(const Duration exposure) const
+uint32_t CamHelper::exposureLines(const Duration exposure) const
 {
 	assert(initialized_);
-	return exposure / mode_.line_length;
+	return exposure / mode_.lineLength;
 }
 
-Duration CamHelper::Exposure(uint32_t exposure_lines) const
+Duration CamHelper::exposure(uint32_t exposureLines) const
 {
 	assert(initialized_);
-	return exposure_lines * mode_.line_length;
+	return exposureLines * mode_.lineLength;
 }
 
-uint32_t CamHelper::GetVBlanking(Duration &exposure,
+uint32_t CamHelper::getVBlanking(Duration &exposure,
 				 Duration minFrameDuration,
 				 Duration maxFrameDuration) const
 {
 	uint32_t frameLengthMin, frameLengthMax, vblank;
-	uint32_t exposureLines = ExposureLines(exposure);
+	uint32_t exposureLines = CamHelper::exposureLines(exposure);
 
 	assert(initialized_);
 
@@ -86,15 +86,15 @@ uint32_t CamHelper::GetVBlanking(Duration &exposure,
 	 * minFrameDuration and maxFrameDuration are clamped by the caller
 	 * based on the limits for the active sensor mode.
 	 */
-	frameLengthMin = minFrameDuration / mode_.line_length;
-	frameLengthMax = maxFrameDuration / mode_.line_length;
+	frameLengthMin = minFrameDuration / mode_.lineLength;
+	frameLengthMax = maxFrameDuration / mode_.lineLength;
 
 	/*
 	 * Limit the exposure to the maximum frame duration requested, and
 	 * re-calculate if it has been clipped.
 	 */
 	exposureLines = std::min(frameLengthMax - frameIntegrationDiff_, exposureLines);
-	exposure = Exposure(exposureLines);
+	exposure = CamHelper::exposure(exposureLines);
 
 	/* Limit the vblank to the range allowed by the frame length limits. */
 	vblank = std::clamp(exposureLines + frameIntegrationDiff_,
@@ -102,34 +102,34 @@ uint32_t CamHelper::GetVBlanking(Duration &exposure,
 	return vblank;
 }
 
-void CamHelper::SetCameraMode(const CameraMode &mode)
+void CamHelper::setCameraMode(const CameraMode &mode)
 {
 	mode_ = mode;
 	if (parser_) {
-		parser_->SetBitsPerPixel(mode.bitdepth);
-		parser_->SetLineLengthBytes(0); /* We use SetBufferSize. */
+		parser_->setBitsPerPixel(mode.bitdepth);
+		parser_->setLineLengthBytes(0); /* We use SetBufferSize. */
 	}
 	initialized_ = true;
 }
 
-void CamHelper::GetDelays(int &exposure_delay, int &gain_delay,
-			  int &vblank_delay) const
+void CamHelper::getDelays(int &exposureDelay, int &gainDelay,
+			  int &vblankDelay) const
 {
 	/*
 	 * These values are correct for many sensors. Other sensors will
 	 * need to over-ride this function.
 	 */
-	exposure_delay = 2;
-	gain_delay = 1;
-	vblank_delay = 2;
+	exposureDelay = 2;
+	gainDelay = 1;
+	vblankDelay = 2;
 }
 
-bool CamHelper::SensorEmbeddedDataPresent() const
+bool CamHelper::sensorEmbeddedDataPresent() const
 {
 	return false;
 }
 
-double CamHelper::GetModeSensitivity([[maybe_unused]] const CameraMode &mode) const
+double CamHelper::getModeSensitivity([[maybe_unused]] const CameraMode &mode) const
 {
 	/*
 	 * Most sensors have the same sensitivity in every mode, but this
@@ -140,7 +140,7 @@ double CamHelper::GetModeSensitivity([[maybe_unused]] const CameraMode &mode) co
 	return 1.0;
 }
 
-unsigned int CamHelper::HideFramesStartup() const
+unsigned int CamHelper::hideFramesStartup() const
 {
 	/*
 	 * The number of frames when a camera first starts that shouldn't be
@@ -149,19 +149,19 @@ unsigned int CamHelper::HideFramesStartup() const
 	return 0;
 }
 
-unsigned int CamHelper::HideFramesModeSwitch() const
+unsigned int CamHelper::hideFramesModeSwitch() const
 {
 	/* After a mode switch, many sensors return valid frames immediately. */
 	return 0;
 }
 
-unsigned int CamHelper::MistrustFramesStartup() const
+unsigned int CamHelper::mistrustFramesStartup() const
 {
 	/* Many sensors return a single bad frame on start-up. */
 	return 1;
 }
 
-unsigned int CamHelper::MistrustFramesModeSwitch() const
+unsigned int CamHelper::mistrustFramesModeSwitch() const
 {
 	/* Many sensors return valid metadata immediately. */
 	return 0;
@@ -176,13 +176,13 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	if (buffer.empty())
 		return;
 
-	if (parser_->Parse(buffer, registers) != MdParser::Status::OK) {
+	if (parser_->parse(buffer, registers) != MdParser::Status::OK) {
 		LOG(IPARPI, Error) << "Embedded data buffer parsing failed";
 		return;
 	}
 
-	PopulateMetadata(registers, parsedMetadata);
-	metadata.Merge(parsedMetadata);
+	populateMetadata(registers, parsedMetadata);
+	metadata.merge(parsedMetadata);
 
 	/*
 	 * Overwrite the exposure/gain, frame length and sensor temperature values
@@ -190,30 +190,30 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	 * Fetch it first in case any other fields were set meaningfully.
 	 */
 	DeviceStatus deviceStatus, parsedDeviceStatus;
-	if (metadata.Get("device.status", deviceStatus) ||
-	    parsedMetadata.Get("device.status", parsedDeviceStatus)) {
+	if (metadata.get("device.status", deviceStatus) ||
+	    parsedMetadata.get("device.status", parsedDeviceStatus)) {
 		LOG(IPARPI, Error) << "DeviceStatus not found";
 		return;
 	}
 
-	deviceStatus.shutter_speed = parsedDeviceStatus.shutter_speed;
-	deviceStatus.analogue_gain = parsedDeviceStatus.analogue_gain;
-	deviceStatus.frame_length = parsedDeviceStatus.frame_length;
-	if (parsedDeviceStatus.sensor_temperature)
-		deviceStatus.sensor_temperature = parsedDeviceStatus.sensor_temperature;
+	deviceStatus.shutterSpeed = parsedDeviceStatus.shutterSpeed;
+	deviceStatus.analogueGain = parsedDeviceStatus.analogueGain;
+	deviceStatus.frameLength = parsedDeviceStatus.frameLength;
+	if (parsedDeviceStatus.sensorTemperature)
+		deviceStatus.sensorTemperature = parsedDeviceStatus.sensorTemperature;
 
 	LOG(IPARPI, Debug) << "Metadata updated - " << deviceStatus;
 
-	metadata.Set("device.status", deviceStatus);
+	metadata.set("device.status", deviceStatus);
 }
 
-void CamHelper::PopulateMetadata([[maybe_unused]] const MdParser::RegisterMap &registers,
+void CamHelper::populateMetadata([[maybe_unused]] const MdParser::RegisterMap &registers,
 				 [[maybe_unused]] Metadata &metadata) const
 {
 }
 
-RegisterCamHelper::RegisterCamHelper(char const *cam_name,
-				     CamHelperCreateFunc create_func)
+RegisterCamHelper::RegisterCamHelper(char const *camName,
+				     CamHelperCreateFunc createFunc)
 {
-	cam_helpers[std::string(cam_name)] = create_func;
+	camHelpers[std::string(camName)] = createFunc;
 }

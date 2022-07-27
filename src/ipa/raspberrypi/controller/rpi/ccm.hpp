@@ -20,7 +20,7 @@ struct Matrix {
 	       double m6, double m7, double m8);
 	Matrix();
 	double m[3][3];
-	void Read(boost::property_tree::ptree const &params);
+	void read(boost::property_tree::ptree const &params);
 };
 static inline Matrix operator*(double d, Matrix const &m)
 {
@@ -61,11 +61,11 @@ class Ccm : public CcmAlgorithm
 {
 public:
 	Ccm(Controller *controller = NULL);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void SetSaturation(double saturation) override;
-	void Initialise() override;
-	void Prepare(Metadata *image_metadata) override;
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
+	void setSaturation(double saturation) override;
+	void initialise() override;
+	void prepare(Metadata *imageMetadata) override;
 
 private:
 	CcmConfig config_;

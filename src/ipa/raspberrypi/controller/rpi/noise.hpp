@@ -17,16 +17,16 @@ class Noise : public Algorithm
 {
 public:
 	Noise(Controller *controller);
-	char const *Name() const override;
-	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata) override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void Prepare(Metadata *image_metadata) override;
+	char const *name() const override;
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
+	void read(boost::property_tree::ptree const &params) override;
+	void prepare(Metadata *imageMetadata) override;
 
 private:
 	// the noise profile for analogue gain of 1.0
-	double reference_constant_;
-	double reference_slope_;
-	double mode_factor_;
+	double referenceConstant_;
+	double referenceSlope_;
+	double modeFactor_;
 };
 
 } // namespace RPiController

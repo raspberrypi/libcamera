@@ -69,33 +69,33 @@ namespace RPiController {
 class CamHelper
 {
 public:
-	static CamHelper *Create(std::string const &cam_name);
+	static CamHelper *create(std::string const &camName);
 	CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
-	void SetCameraMode(const CameraMode &mode);
-	virtual void Prepare(libcamera::Span<const uint8_t> buffer,
+	void setCameraMode(const CameraMode &mode);
+	virtual void prepare(libcamera::Span<const uint8_t> buffer,
 			     Metadata &metadata);
-	virtual void Process(StatisticsPtr &stats, Metadata &metadata);
-	virtual uint32_t ExposureLines(libcamera::utils::Duration exposure) const;
-	virtual libcamera::utils::Duration Exposure(uint32_t exposure_lines) const;
-	virtual uint32_t GetVBlanking(libcamera::utils::Duration &exposure,
+	virtual void process(StatisticsPtr &stats, Metadata &metadata);
+	virtual uint32_t exposureLines(libcamera::utils::Duration exposure) const;
+	virtual libcamera::utils::Duration exposure(uint32_t exposureLines) const;
+	virtual uint32_t getVBlanking(libcamera::utils::Duration &exposure,
 				      libcamera::utils::Duration minFrameDuration,
 				      libcamera::utils::Duration maxFrameDuration) const;
-	virtual uint32_t GainCode(double gain) const = 0;
-	virtual double Gain(uint32_t gain_code) const = 0;
-	virtual void GetDelays(int &exposure_delay, int &gain_delay,
-			       int &vblank_delay) const;
-	virtual bool SensorEmbeddedDataPresent() const;
-	virtual double GetModeSensitivity(const CameraMode &mode) const;
-	virtual unsigned int HideFramesStartup() const;
-	virtual unsigned int HideFramesModeSwitch() const;
-	virtual unsigned int MistrustFramesStartup() const;
-	virtual unsigned int MistrustFramesModeSwitch() const;
+	virtual uint32_t gainCode(double gain) const = 0;
+	virtual double gain(uint32_t gainCode) const = 0;
+	virtual void getDelays(int &exposureDelay, int &gainDelay,
+			       int &vblankDelay) const;
+	virtual bool sensorEmbeddedDataPresent() const;
+	virtual double getModeSensitivity(const CameraMode &mode) const;
+	virtual unsigned int hideFramesStartup() const;
+	virtual unsigned int hideFramesModeSwitch() const;
+	virtual unsigned int mistrustFramesStartup() const;
+	virtual unsigned int mistrustFramesModeSwitch() const;
 
 protected:
 	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
 			       Metadata &metadata);
-	virtual void PopulateMetadata(const MdParser::RegisterMap &registers,
+	virtual void populateMetadata(const MdParser::RegisterMap &registers,
 				      Metadata &metadata) const;
 
 	std::unique_ptr<MdParser> parser_;
@@ -116,8 +116,8 @@ private:
 typedef CamHelper *(*CamHelperCreateFunc)();
 struct RegisterCamHelper
 {
-	RegisterCamHelper(char const *cam_name,
-			  CamHelperCreateFunc create_func);
+	RegisterCamHelper(char const *camName,
+			  CamHelperCreateFunc createFunc);
 };
 
 } // namespace RPi

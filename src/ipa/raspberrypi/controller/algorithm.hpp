@@ -29,18 +29,18 @@ public:
 	{
 	}
 	virtual ~Algorithm() = default;
-	virtual char const *Name() const = 0;
-	virtual bool IsPaused() const { return paused_; }
-	virtual void Pause() { paused_ = true; }
-	virtual void Resume() { paused_ = false; }
-	virtual void Read(boost::property_tree::ptree const &params);
-	virtual void Initialise();
-	virtual void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
-	virtual void Prepare(Metadata *image_metadata);
-	virtual void Process(StatisticsPtr &stats, Metadata *image_metadata);
-	Metadata &GetGlobalMetadata() const
+	virtual char const *name() const = 0;
+	virtual bool isPaused() const { return paused_; }
+	virtual void pause() { paused_ = true; }
+	virtual void resume() { paused_ = false; }
+	virtual void read(boost::property_tree::ptree const &params);
+	virtual void initialise();
+	virtual void switchMode(CameraMode const &cameraMode, Metadata *metadata);
+	virtual void prepare(Metadata *imageMetadata);
+	virtual void process(StatisticsPtr &stats, Metadata *imageMetadata);
+	Metadata &getGlobalMetadata() const
 	{
-		return controller_->GetGlobalMetadata();
+		return controller_->getGlobalMetadata();
 	}
 
 private:
@@ -53,8 +53,8 @@ private:
 
 typedef Algorithm *(*AlgoCreateFunc)(Controller *controller);
 struct RegisterAlgorithm {
-	RegisterAlgorithm(char const *name, AlgoCreateFunc create_func);
+	RegisterAlgorithm(char const *name, AlgoCreateFunc createFunc);
 };
-std::map<std::string, AlgoCreateFunc> const &GetAlgorithms();
+std::map<std::string, AlgoCreateFunc> const &getAlgorithms();
 
 } // namespace RPiController

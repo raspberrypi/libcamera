@@ -20,12 +20,12 @@ using namespace libcamera;
  * sensors, I think.
  */
 
-constexpr unsigned int LINE_START = 0x0a;
-constexpr unsigned int LINE_END_TAG = 0x07;
-constexpr unsigned int REG_HI_BITS = 0xaa;
-constexpr unsigned int REG_LOW_BITS = 0xa5;
-constexpr unsigned int REG_VALUE = 0x5a;
-constexpr unsigned int REG_SKIP = 0x55;
+constexpr unsigned int LineStart = 0x0a;
+constexpr unsigned int LineEndTag = 0x07;
+constexpr unsigned int RegHiBits = 0xaa;
+constexpr unsigned int RegLowBits = 0xa5;
+constexpr unsigned int RegValue = 0x5a;
+constexpr unsigned int RegSkip = 0x55;
 
 MdParserSmia::MdParserSmia(std::initializer_list<uint32_t> registerList)
 {
@@ -33,7 +33,7 @@ MdParserSmia::MdParserSmia(std::initializer_list<uint32_t> registerList)
 		offsets_[r] = {};
 }
 
-MdParser::Status MdParserSmia::Parse(libcamera::Span<const uint8_t> buffer,
+MdParser::Status MdParserSmia::parse(libcamera::Span<const uint8_t> buffer,
 				     RegisterMap &registers)
 {
 	if (reset_) {
@@ -41,7 +41,7 @@ MdParser::Status MdParserSmia::Parse(libcamera::Span<const uint8_t> buffer,
 		 * Search again through the metadata for all the registers
 		 * requested.
 		 */
-		ASSERT(bits_per_pixel_);
+		ASSERT(bitsPerPixel_);
 
 		for (const auto &kv : offsets_)
 			offsets_[kv.first] = {};
@@ -53,7 +53,7 @@ MdParser::Status MdParserSmia::Parse(libcamera::Span<const uint8_t> buffer,
 		 *
 		 * In either case, we retry parsing on the next frame.
 		 */
-		if (ret != PARSE_OK)
+		if (ret != ParseOk)
 			return ERROR;
 
 		reset_ = false;
@@ -76,74 +76,74 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> 
 {
 	ASSERT(offsets_.size());
 
-	if (buffer[0] != LINE_START)
-		return NO_LINE_START;
+	if (buffer[0] != LineStart)
+		return NoLineStart;
 
-	unsigned int current_offset = 1; /* after the LINE_START */
-	unsigned int current_line_start = 0, current_line = 0;
-	unsigned int reg_num = 0, regs_done = 0;
+	unsigned int currentOffset = 1; /* after the LineStart */
+	unsigned int currentLineStart = 0, currentLine = 0;
+	unsigned int regNum = 0, regsDone = 0;
 
 	while (1) {
-		int tag = buffer[current_offset++];
+		int tag = buffer[currentOffset++];
 
-		if ((bits_per_pixel_ == 10 &&
-		     (current_offset + 1 - current_line_start) % 5 == 0) ||
-		    (bits_per_pixel_ == 12 &&
-		     (current_offset + 1 - current_line_start) % 3 == 0)) {
-			if (buffer[current_offset++] != REG_SKIP)
-				return BAD_DUMMY;
+		if ((bitsPerPixel_ == 10 &&
+		     (currentOffset + 1 - currentLineStart) % 5 == 0) ||
+		    (bitsPerPixel_ == 12 &&
+		     (currentOffset + 1 - currentLineStart) % 3 == 0)) {
+			if (buffer[currentOffset++] != RegSkip)
+				return BadDummy;
 		}
 
-		int data_byte = buffer[current_offset++];
+		int dataByte = buffer[currentOffset++];
 
-		if (tag == LINE_END_TAG) {
-			if (data_byte != LINE_END_TAG)
-				return BAD_LINE_END;
+		if (tag == LineEndTag) {
+			if (dataByte != LineEndTag)
+				return BadLineEnd;
 
-			if (num_lines_ && ++current_line == num_lines_)
-				return MISSING_REGS;
+			if (numLines_ && ++currentLine == numLines_)
+				return MissingRegs;
 
-			if (line_length_bytes_) {
-				current_offset = current_line_start + line_length_bytes_;
+			if (lineLengthBytes_) {
+				currentOffset = currentLineStart + lineLengthBytes_;
 
 				/* Require whole line to be in the buffer (if buffer size set). */
 				if (buffer.size() &&
-				    current_offset + line_length_bytes_ > buffer.size())
-					return MISSING_REGS;
+				    currentOffset + lineLengthBytes_ > buffer.size())
+					return MissingRegs;
 
-				if (buffer[current_offset] != LINE_START)
-					return NO_LINE_START;
+				if (buffer[currentOffset] != LineStart)
+					return NoLineStart;
 			} else {
 				/* allow a zero line length to mean "hunt for the next line" */
-				while (current_offset < buffer.size() &&
-				       buffer[current_offset] != LINE_START)
-					current_offset++;
+				while (currentOffset < buffer.size() &&
+				       buffer[currentOffset] != LineStart)
+					currentOffset++;
 
-				if (current_offset == buffer.size())
-					return NO_LINE_START;
+				if (currentOffset == buffer.size())
+					return NoLineStart;
 			}
 
-			/* inc current_offset to after LINE_START */
-			current_line_start = current_offset++;
+			/* inc currentOffset to after LineStart */
+			currentLineStart = currentOffset++;
 		} else {
-			if (tag == REG_HI_BITS)
-				reg_num = (reg_num & 0xff) | (data_byte << 8);
-			else if (tag == REG_LOW_BITS)
-				reg_num = (reg_num & 0xff00) | data_byte;
-			else if (tag == REG_SKIP)
-				reg_num++;
-			else if (tag == REG_VALUE) {
-				auto reg = offsets_.find(reg_num);
+			if (tag == RegHiBits)
+				regNum = (regNum & 0xff) | (dataByte << 8);
+			else if (tag == RegLowBits)
+				regNum = (regNum & 0xff00) | dataByte;
+			else if (tag == RegSkip)
+				regNum++;
+			else if (tag == RegValue) {
+				auto reg = offsets_.find(regNum);
 
 				if (reg != offsets_.end()) {
-					offsets_[reg_num] = current_offset - 1;
+					offsets_[regNum] = currentOffset - 1;
 
-					if (++regs_done == offsets_.size())
-						return PARSE_OK;
+					if (++regsDone == offsets_.size())
+						return ParseOk;
 				}
-				reg_num++;
+				regNum++;
 			} else
-				return ILLEGAL_TAG;
+				return IllegalTag;
 		}
 	}
 }

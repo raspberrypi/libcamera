@@ -17,24 +17,26 @@ class Pwl
 {
 public:
 	struct Interval {
-		Interval(double _start, double _end) : start(_start), end(_end)
+		Interval(double _start, double _end)
+			: start(_start), end(_end)
 		{
 		}
 		double start, end;
-		bool Contains(double value)
+		bool contains(double value)
 		{
 			return value >= start && value <= end;
 		}
-		double Clip(double value)
+		double clip(double value)
 		{
 			return value < start ? start
 					     : (value > end ? end : value);
 		}
-		double Len() const { return end - start; }
+		double len() const { return end - start; }
 	};
 	struct Point {
 		Point() : x(0), y(0) {}
-		Point(double _x, double _y) : x(_x), y(_y) {}
+		Point(double _x, double _y)
+			: x(_x), y(_y) {}
 		double x, y;
 		Point operator-(Point const &p) const
 		{
@@ -50,23 +52,23 @@ public:
 		}
 		Point operator*(double f) const { return Point(x * f, y * f); }
 		Point operator/(double f) const { return Point(x / f, y / f); }
-		double Len2() const { return x * x + y * y; }
-		double Len() const { return sqrt(Len2()); }
+		double len2() const { return x * x + y * y; }
+		double len() const { return sqrt(len2()); }
 	};
 	Pwl() {}
 	Pwl(std::vector<Point> const &points) : points_(points) {}
-	void Read(boost::property_tree::ptree const &params);
-	void Append(double x, double y, const double eps = 1e-6);
-	void Prepend(double x, double y, const double eps = 1e-6);
-	Interval Domain() const;
-	Interval Range() const;
-	bool Empty() const;
+	void read(boost::property_tree::ptree const &params);
+	void append(double x, double y, const double eps = 1e-6);
+	void prepend(double x, double y, const double eps = 1e-6);
+	Interval domain() const;
+	Interval range() const;
+	bool empty() const;
 	// Evaluate Pwl, optionally supplying an initial guess for the
 	// "span". The "span" may be optionally be updated.  If you want to know
 	// the "span" value but don't have an initial guess you can set it to
 	// -1.
-	double Eval(double x, int *span_ptr = nullptr,
-		    bool update_span = true) const;
+	double eval(double x, int *spanPtr = nullptr,
+		    bool updateSpan = true) const;
 	// Find perpendicular closest to xy, starting from span+1 so you can
 	// call it repeatedly to check for multiple closest points (set span to
 	// -1 on the first call). Also returns "pseudo" perpendiculars; see
@@ -78,31 +80,31 @@ public:
 		Vertex, // vertex of Pwl is closest point
 		Perpendicular // true perpendicular found
 	};
-	PerpType Invert(Point const &xy, Point &perp, int &span,
+	PerpType invert(Point const &xy, Point &perp, int &span,
 			const double eps = 1e-6) const;
 	// Compute the inverse function. Indicate if it is a proper (true)
 	// inverse, or only a best effort (e.g. input was non-monotonic).
-	Pwl Inverse(bool *true_inverse = nullptr, const double eps = 1e-6) const;
+	Pwl inverse(bool *trueInverse = nullptr, const double eps = 1e-6) const;
 	// Compose two Pwls together, doing "this" first and "other" after.
-	Pwl Compose(Pwl const &other, const double eps = 1e-6) const;
+	Pwl compose(Pwl const &other, const double eps = 1e-6) const;
 	// Apply function to (x,y) values at every control point.
-	void Map(std::function<void(double x, double y)> f) const;
+	void map(std::function<void(double x, double y)> f) const;
 	// Apply function to (x, y0, y1) values wherever either Pwl has a
 	// control point.
-	static void Map2(Pwl const &pwl0, Pwl const &pwl1,
+	static void map2(Pwl const &pwl0, Pwl const &pwl1,
 			 std::function<void(double x, double y0, double y1)> f);
 	// Combine two Pwls, meaning we create a new Pwl where the y values are
 	// given by running f wherever either has a knot.
 	static Pwl
-	Combine(Pwl const &pwl0, Pwl const &pwl1,
+	combine(Pwl const &pwl0, Pwl const &pwl1,
 		std::function<double(double x, double y0, double y1)> f,
 		const double eps = 1e-6);
 	// Make "this" match (at least) the given domain. Any extension my be
 	// clipped or linear.
-	void MatchDomain(Interval const &domain, bool clip = true,
+	void matchDomain(Interval const &domain, bool clip = true,
 			 const double eps = 1e-6);
 	Pwl &operator*=(double d);
-	void Debug(FILE *fp = stdout) const;
+	void debug(FILE *fp = stdout) const;
 
 private:
 	int findSpan(double x, int span) const;

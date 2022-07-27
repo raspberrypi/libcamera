@@ -34,21 +34,21 @@ class Controller
 {
 public:
 	Controller();
-	Controller(char const *json_filename);
+	Controller(char const *jsonFilename);
 	~Controller();
-	Algorithm *CreateAlgorithm(char const *name);
-	void Read(char const *filename);
-	void Initialise();
-	void SwitchMode(CameraMode const &camera_mode, Metadata *metadata);
-	void Prepare(Metadata *image_metadata);
-	void Process(StatisticsPtr stats, Metadata *image_metadata);
-	Metadata &GetGlobalMetadata();
-	Algorithm *GetAlgorithm(std::string const &name) const;
+	Algorithm *createAlgorithm(char const *name);
+	void read(char const *filename);
+	void initialise();
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
+	void prepare(Metadata *imageMetadata);
+	void process(StatisticsPtr stats, Metadata *imageMetadata);
+	Metadata &getGlobalMetadata();
+	Algorithm *getAlgorithm(std::string const &name) const;
 
 protected:
-	Metadata global_metadata_;
+	Metadata globalMetadata_;
 	std::vector<AlgorithmPtr> algorithms_;
-	bool switch_mode_called_;
+	bool switchModeCalled_;
 };
 
 } // namespace RPiController

@@ -31,74 +31,74 @@ Lux::Lux(Controller *controller)
 	status_.lux = 400;
 }
 
-char const *Lux::Name() const
+char const *Lux::name() const
 {
 	return NAME;
 }
 
-void Lux::Read(boost::property_tree::ptree const &params)
+void Lux::read(boost::property_tree::ptree const &params)
 {
-	reference_shutter_speed_ =
+	referenceShutterSpeed_ =
 		params.get<double>("reference_shutter_speed") * 1.0us;
-	reference_gain_ = params.get<double>("reference_gain");
-	reference_aperture_ = params.get<double>("reference_aperture", 1.0);
-	reference_Y_ = params.get<double>("reference_Y");
-	reference_lux_ = params.get<double>("reference_lux");
-	current_aperture_ = reference_aperture_;
+	referenceGain_ = params.get<double>("reference_gain");
+	referenceAperture_ = params.get<double>("reference_aperture", 1.0);
+	referenceY_ = params.get<double>("reference_Y");
+	referenceLux_ = params.get<double>("reference_lux");
+	currentAperture_ = referenceAperture_;
 }
 
-void Lux::SetCurrentAperture(double aperture)
+void Lux::setCurrentAperture(double aperture)
 {
-	current_aperture_ = aperture;
+	currentAperture_ = aperture;
 }
 
-void Lux::Prepare(Metadata *image_metadata)
+void Lux::prepare(Metadata *imageMetadata)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	image_metadata->Set("lux.status", status_);
+	imageMetadata->set("lux.status", status_);
 }
 
-void Lux::Process(StatisticsPtr &stats, Metadata *image_metadata)
+void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
-	DeviceStatus device_status;
-	if (image_metadata->Get("device.status", device_status) == 0) {
-		double current_gain = device_status.analogue_gain;
-		double current_aperture = device_status.aperture.value_or(current_aperture_);
+	DeviceStatus deviceStatus;
+	if (imageMetadata->get("device.status", deviceStatus) == 0) {
+		double currentGain = deviceStatus.analogueGain;
+		double currentAperture = deviceStatus.aperture.value_or(currentAperture_);
 		uint64_t sum = 0;
 		uint32_t num = 0;
 		uint32_t *bin = stats->hist[0].g_hist;
-		const int num_bins = sizeof(stats->hist[0].g_hist) /
-				     sizeof(stats->hist[0].g_hist[0]);
-		for (int i = 0; i < num_bins; i++)
+		const int numBins = sizeof(stats->hist[0].g_hist) /
+				    sizeof(stats->hist[0].g_hist[0]);
+		for (int i = 0; i < numBins; i++)
 			sum += bin[i] * (uint64_t)i, num += bin[i];
 		// add .5 to reflect the mid-points of bins
-		double current_Y = sum / (double)num + .5;
-		double gain_ratio = reference_gain_ / current_gain;
-		double shutter_speed_ratio =
-			reference_shutter_speed_ / device_status.shutter_speed;
-		double aperture_ratio = reference_aperture_ / current_aperture;
-		double Y_ratio = current_Y * (65536 / num_bins) / reference_Y_;
-		double estimated_lux = shutter_speed_ratio * gain_ratio *
-				       aperture_ratio * aperture_ratio *
-				       Y_ratio * reference_lux_;
+		double currentY = sum / (double)num + .5;
+		double gainRatio = referenceGain_ / currentGain;
+		double shutterSpeedRatio =
+			referenceShutterSpeed_ / deviceStatus.shutterSpeed;
+		double apertureRatio = referenceAperture_ / currentAperture;
+		double yRatio = currentY * (65536 / numBins) / referenceY_;
+		double estimatedLux = shutterSpeedRatio * gainRatio *
+				      apertureRatio * apertureRatio *
+				      yRatio * referenceLux_;
 		LuxStatus status;
-		status.lux = estimated_lux;
-		status.aperture = current_aperture;
-		LOG(RPiLux, Debug) << ": estimated lux " << estimated_lux;
+		status.lux = estimatedLux;
+		status.aperture = currentAperture;
+		LOG(RPiLux, Debug) << ": estimated lux " << estimatedLux;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);
 			status_ = status;
 		}
 		// Overwrite the metadata here as well, so that downstream
 		// algorithms get the latest value.
-		image_metadata->Set("lux.status", status);
+		imageMetadata->set("lux.status", status);
 	} else
 		LOG(RPiLux, Warning) << ": no device metadata";
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Lux(controller);
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

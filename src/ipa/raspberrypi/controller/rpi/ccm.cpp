@@ -37,7 +37,7 @@ Matrix::Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
 	m[0][0] = m0, m[0][1] = m1, m[0][2] = m2, m[1][0] = m3, m[1][1] = m4,
 	m[1][2] = m5, m[2][0] = m6, m[2][1] = m7, m[2][2] = m8;
 }
-void Matrix::Read(boost::property_tree::ptree const &params)
+void Matrix::read(boost::property_tree::ptree const &params)
 {
 	double *ptr = (double *)m;
 	int n = 0;
@@ -53,47 +53,49 @@ void Matrix::Read(boost::property_tree::ptree const &params)
 Ccm::Ccm(Controller *controller)
 	: CcmAlgorithm(controller), saturation_(1.0) {}
 
-char const *Ccm::Name() const
+char const *Ccm::name() const
 {
 	return NAME;
 }
 
-void Ccm::Read(boost::property_tree::ptree const &params)
+void Ccm::read(boost::property_tree::ptree const &params)
 {
 	if (params.get_child_optional("saturation"))
-		config_.saturation.Read(params.get_child("saturation"));
+		config_.saturation.read(params.get_child("saturation"));
 	for (auto &p : params.get_child("ccms")) {
-		CtCcm ct_ccm;
-		ct_ccm.ct = p.second.get<double>("ct");
-		ct_ccm.ccm.Read(p.second.get_child("ccm"));
+		CtCcm ctCcm;
+		ctCcm.ct = p.second.get<double>("ct");
+		ctCcm.ccm.read(p.second.get_child("ccm"));
 		if (!config_.ccms.empty() &&
-		    ct_ccm.ct <= config_.ccms.back().ct)
+		    ctCcm.ct <= config_.ccms.back().ct)
 			throw std::runtime_error(
 				"Ccm: CCM not in increasing colour temperature order");
-		config_.ccms.push_back(std::move(ct_ccm));
+		config_.ccms.push_back(std::move(ctCcm));
 	}
 	if (config_.ccms.empty())
 		throw std::runtime_error("Ccm: no CCMs specified");
 }
 
-void Ccm::SetSaturation(double saturation)
+void Ccm::setSaturation(double saturation)
 {
 	saturation_ = saturation;
 }
 
-void Ccm::Initialise() {}
+void Ccm::initialise()
+{
+}
 
 template<typename T>
-static bool get_locked(Metadata *metadata, std::string const &tag, T &value)
+static bool getLocked(Metadata *metadata, std::string const &tag, T &value)
 {
-	T *ptr = metadata->GetLocked<T>(tag);
+	T *ptr = metadata->getLocked<T>(tag);
 	if (ptr == nullptr)
 		return false;
 	value = *ptr;
 	return true;
 }
 
-Matrix calculate_ccm(std::vector<CtCcm> const &ccms, double ct)
+Matrix calculateCcm(std::vector<CtCcm> const &ccms, double ct)
 {
 	if (ct <= ccms.front().ct)
 		return ccms.front().ccm;
@@ -109,7 +111,7 @@ Matrix calculate_ccm(std::vector<CtCcm> const &ccms, double ct)
 	}
 }
 
-Matrix apply_saturation(Matrix const &ccm, double saturation)
+Matrix applySaturation(Matrix const &ccm, double saturation)
 {
 	Matrix RGB2Y(0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419,
 		     -0.081);
@@ -119,51 +121,51 @@ Matrix apply_saturation(Matrix const &ccm, double saturation)
 	return Y2RGB * S * RGB2Y * ccm;
 }
 
-void Ccm::Prepare(Metadata *image_metadata)
+void Ccm::prepare(Metadata *imageMetadata)
 {
-	bool awb_ok = false, lux_ok = false;
+	bool awbOk = false, luxOk = false;
 	struct AwbStatus awb = {};
-	awb.temperature_K = 4000; // in case no metadata
+	awb.temperatureK = 4000; // in case no metadata
 	struct LuxStatus lux = {};
 	lux.lux = 400; // in case no metadata
 	{
 		// grab mutex just once to get everything
-		std::lock_guard<Metadata> lock(*image_metadata);
-		awb_ok = get_locked(image_metadata, "awb.status", awb);
-		lux_ok = get_locked(image_metadata, "lux.status", lux);
+		std::lock_guard<Metadata> lock(*imageMetadata);
+		awbOk = getLocked(imageMetadata, "awb.status", awb);
+		luxOk = getLocked(imageMetadata, "lux.status", lux);
 	}
-	if (!awb_ok)
+	if (!awbOk)
 		LOG(RPiCcm, Warning) << "no colour temperature found";
-	if (!lux_ok)
+	if (!luxOk)
 		LOG(RPiCcm, Warning) << "no lux value found";
-	Matrix ccm = calculate_ccm(config_.ccms, awb.temperature_K);
+	Matrix ccm = calculateCcm(config_.ccms, awb.temperatureK);
 	double saturation = saturation_;
-	struct CcmStatus ccm_status;
-	ccm_status.saturation = saturation;
-	if (!config_.saturation.Empty())
-		saturation *= config_.saturation.Eval(
-			config_.saturation.Domain().Clip(lux.lux));
-	ccm = apply_saturation(ccm, saturation);
+	struct CcmStatus ccmStatus;
+	ccmStatus.saturation = saturation;
+	if (!config_.saturation.empty())
+		saturation *= config_.saturation.eval(
+			config_.saturation.domain().clip(lux.lux));
+	ccm = applySaturation(ccm, saturation);
 	for (int j = 0; j < 3; j++)
 		for (int i = 0; i < 3; i++)
-			ccm_status.matrix[j * 3 + i] =
+			ccmStatus.matrix[j * 3 + i] =
 				std::max(-8.0, std::min(7.9999, ccm.m[j][i]));
 	LOG(RPiCcm, Debug)
-		<< "colour temperature " << awb.temperature_K << "K";
+		<< "colour temperature " << awb.temperatureK << "K";
 	LOG(RPiCcm, Debug)
-		<< "CCM: " << ccm_status.matrix[0] << " " << ccm_status.matrix[1]
-		<< " " << ccm_status.matrix[2] << "     "
-		<< ccm_status.matrix[3] << " " << ccm_status.matrix[4]
-		<< " " << ccm_status.matrix[5] << "     "
-		<< ccm_status.matrix[6] << " " << ccm_status.matrix[7]
-		<< " " << ccm_status.matrix[8];
-	image_metadata->Set("ccm.status", ccm_status);
+		<< "CCM: " << ccmStatus.matrix[0] << " " << ccmStatus.matrix[1]
+		<< " " << ccmStatus.matrix[2] << "     "
+		<< ccmStatus.matrix[3] << " " << ccmStatus.matrix[4]
+		<< " " << ccmStatus.matrix[5] << "     "
+		<< ccmStatus.matrix[6] << " " << ccmStatus.matrix[7]
+		<< " " << ccmStatus.matrix[8];
+	imageMetadata->set("ccm.status", ccmStatus);
 }
 
 // Register algorithm with the system.
-static Algorithm *Create(Controller *controller)
+static Algorithm *create(Controller *controller)
 {
 	return (Algorithm *)new Ccm(controller);
 	;
 }
-static RegisterAlgorithm reg(NAME, &Create);
+static RegisterAlgorithm reg(NAME, &create);

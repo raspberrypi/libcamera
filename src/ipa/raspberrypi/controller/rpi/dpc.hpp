@@ -21,9 +21,9 @@ class Dpc : public Algorithm
 {
 public:
 	Dpc(Controller *controller);
-	char const *Name() const override;
-	void Read(boost::property_tree::ptree const &params) override;
-	void Prepare(Metadata *image_metadata) override;
+	char const *name() const override;
+	void read(boost::property_tree::ptree const &params) override;
+	void prepare(Metadata *imageMetadata) override;
 
 private:
 	DpcConfig config_;

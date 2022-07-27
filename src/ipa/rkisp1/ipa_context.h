@@ -58,6 +58,12 @@ struct IPAFrameContext {
 	} awb;
 
 	struct {
+		uint8_t denoise;
+		uint8_t sharpness;
+		bool updateParams;
+	} filter;
+
+	struct {
 		uint32_t exposure;
 		double gain;
 	} sensor;

@@ -155,4 +155,5 @@ algorithms:
           rnd-offsets:
             green: 2
             red-blue: 2
+  - Filter:
 ...

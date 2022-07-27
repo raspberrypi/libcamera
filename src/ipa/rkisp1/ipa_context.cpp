@@ -137,6 +137,20 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAFrameContext::filter
+ * \brief Context for the Filter algorithm
+ *
+ * \struct IPAFrameContext::filter.denoise
+ * \brief Denoising level
+ *
+ * \var IPAFrameContext::filter.sharpness
+ * \brief Sharpness level
+ *
+ * \var IPAFrameContext::filter.updateParams
+ * \brief Indicates if ISP parameters need to be updated
+ */
+
+/**
  * \var IPAFrameContext::sensor
  * \brief Effective sensor values
  *

@@ -4,7 +4,7 @@
  *
  * BCM2835 ISP driver - user space header file.
  *
- * Copyright © 2019-2020 Raspberry Pi (Trading) Ltd.
+ * Copyright © 2019-2020 Raspberry Pi Ltd
  *
  * Author: Naushir Patuck (naush@raspberrypi.com)
  *

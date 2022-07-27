@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019-2021, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
  * sdn.cpp - SDN (spatial denoise) control algorithm
  */

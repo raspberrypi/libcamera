@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019-2020, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019-2020, Raspberry Pi Ltd
  *
  * camera_mode.h - description of a particular operating mode of a sensor
  */

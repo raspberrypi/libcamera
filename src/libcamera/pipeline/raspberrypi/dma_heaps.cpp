@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2020, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2020, Raspberry Pi Ltd
  *
  * dma_heaps.h - Helper class for dma-heap allocations.
  */

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2021, Raspberry Pi Ltd
  *
  * cam_helper_ov9281.cpp - camera information for ov9281 sensor
  */

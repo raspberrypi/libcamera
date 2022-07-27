@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2019, Raspberry Pi (Trading) Limited
+# Copyright (C) 2019, Raspberry Pi Ltd
 #
 # ctt_alsc.py - camera tuning tool for ALSC (auto lens shading correction)
 

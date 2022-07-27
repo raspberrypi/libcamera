@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2020, Raspberry Pi Ltd
  *
  * stream_options.h - Helper to parse options for streams
  */

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019, Raspberry Pi Ltd
  *
  * geq_status.h - GEQ (green equalisation) control algorithm status
  */

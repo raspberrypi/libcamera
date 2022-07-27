@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2021, Raspberry Pi Ltd
  *
  * denoise.h - Denoise control algorithm interface
  */

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2019, Raspberry Pi Ltd
  *
  * cam_helper_ov5647.cpp - camera information for ov5647 sensor
  */

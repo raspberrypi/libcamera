@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2019-2020, Raspberry Pi (Trading) Limited
+# Copyright (C) 2019-2020, Raspberry Pi Ltd
 #
 # ctt_image_load.py - camera tuning tool image loading
 

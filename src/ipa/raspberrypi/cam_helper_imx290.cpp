@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2021, Raspberry Pi Ltd
  *
  * cam_helper_imx290.cpp - camera helper for imx290 sensor
  */

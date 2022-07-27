@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2020, Raspberry Pi Ltd
  *
  * delayed_controls.h - Helper to deal with controls that take effect with a delay
  */

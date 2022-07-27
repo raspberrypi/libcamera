@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2019, Google Inc.
- * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2020, Raspberry Pi Ltd
  *
  * v4l2_pixelformat.cpp - V4L2 Pixel Format
  */

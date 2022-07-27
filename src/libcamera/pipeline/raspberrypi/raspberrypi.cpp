@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2019-2021, Raspberry Pi (Trading) Ltd.
+ * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
  * raspberrypi.cpp - Pipeline handler for Raspberry Pi devices
  */

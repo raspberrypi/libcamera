@@ -6,7 +6,7 @@ Source: https://git.libcamera.org/libcamera/libcamera.git/
 Files: src/ipa/raspberrypi/data/*.json
        utils/raspberrypi/ctt/ctt_config_example.json
        utils/raspberrypi/ctt/ctt_ref.pgm
-Copyright: 2019-2020 Raspberry Pi (Trading) Ltd.
+Copyright: 2019-2020 Raspberry Pi Ltd
 License: BSD-2-Clause
 
 Files: src/qcam/assets/feathericons/*.svg

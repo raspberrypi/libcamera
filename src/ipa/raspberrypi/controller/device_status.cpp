@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2021, Raspberry Pi Ltd
  *
  * device_status.cpp - device (image sensor) status
  */

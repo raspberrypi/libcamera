@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2020, Raspberry Pi (Trading) Limited
+ * Copyright (C) 2020, Raspberry Pi Ltd
  *
  * cam_helper_imx296.cpp - Camera helper for IMX296 sensor
  */

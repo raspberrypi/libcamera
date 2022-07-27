@@ -137,6 +137,23 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAFrameContext::cproc
+ * \brief Context for the Color Processing algorithm
+ *
+ * \struct IPAFrameContext::cproc.brightness
+ * \brief Brightness level
+ *
+ * \var IPAFrameContext::cproc.contrast
+ * \brief Contrast level
+ *
+ * \var IPAFrameContext::cproc.saturation
+ * \brief Saturation level
+ *
+ * \var IPAFrameContext::cproc.updateParams
+ * \brief Indicates if ISP parameters need to be updated
+ */
+
+/**
  * \var IPAFrameContext::filter
  * \brief Context for the Filter algorithm
  *

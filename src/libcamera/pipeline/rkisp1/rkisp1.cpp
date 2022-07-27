@@ -973,6 +973,18 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 		      std::forward_as_tuple(0.0f, 10.0f, 1.0f));
 
 	ctrls.emplace(std::piecewise_construct,
+		      std::forward_as_tuple(&controls::Brightness),
+		      std::forward_as_tuple(-1.0f, 0.993f));
+
+	ctrls.emplace(std::piecewise_construct,
+		      std::forward_as_tuple(&controls::Contrast),
+		      std::forward_as_tuple(0.0f, 1.993f));
+
+	ctrls.emplace(std::piecewise_construct,
+		      std::forward_as_tuple(&controls::Saturation),
+		      std::forward_as_tuple(0.0f, 1.993f));
+
+	ctrls.emplace(std::piecewise_construct,
 		      std::forward_as_tuple(&controls::draft::NoiseReductionMode),
 		      std::forward_as_tuple(controls::draft::NoiseReductionModeValues));
 

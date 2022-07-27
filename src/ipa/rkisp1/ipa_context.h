@@ -58,6 +58,13 @@ struct IPAFrameContext {
 	} awb;
 
 	struct {
+		int8_t brightness;
+		uint8_t contrast;
+		uint8_t saturation;
+		bool updateParams;
+	} cproc;
+
+	struct {
 		uint8_t denoise;
 		uint8_t sharpness;
 		bool updateParams;

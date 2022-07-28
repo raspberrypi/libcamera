@@ -25,13 +25,6 @@ Controller::Controller()
 {
 }
 
-Controller::Controller(char const *jsonFilename)
-	: switchModeCalled_(false)
-{
-	read(jsonFilename);
-	initialise();
-}
-
 Controller::~Controller() {}
 
 int Controller::read(char const *filename)

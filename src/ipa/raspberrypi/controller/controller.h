@@ -40,7 +40,6 @@ class Controller
 {
 public:
 	Controller();
-	Controller(char const *jsonFilename);
 	~Controller();
 	int read(char const *filename);
 	void initialise();

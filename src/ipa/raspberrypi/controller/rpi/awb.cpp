@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <functional>
 
 #include <libcamera/base/log.h>
 

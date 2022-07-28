@@ -44,7 +44,7 @@ public:
 	}
 
 #ifndef __DOXYGEN__
-	template<typename T, typename R, typename std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
+	template<typename T, typename R, std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
 	void connect(T *obj, R (T::*func)(Args...),
 		     ConnectionType type = ConnectionTypeAuto)
 	{
@@ -52,7 +52,7 @@ public:
 		SignalBase::connect(new BoundMethodMember<T, R, Args...>(obj, object, func, type));
 	}
 
-	template<typename T, typename R, typename std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
+	template<typename T, typename R, std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
 #else
 	template<typename T, typename R>
 #endif
@@ -63,7 +63,7 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename Func,
-		 typename std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
+		 std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
 	void connect(T *obj, Func func, ConnectionType type = ConnectionTypeAuto)
 	{
 		Object *object = static_cast<Object *>(obj);
@@ -71,7 +71,7 @@ public:
 	}
 
 	template<typename T, typename Func,
-		 typename std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
+		 std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
 #else
 	template<typename T, typename Func>
 #endif

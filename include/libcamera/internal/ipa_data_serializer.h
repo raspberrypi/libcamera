@@ -32,7 +32,7 @@ LOG_DECLARE_CATEGORY(IPADataSerializer)
 namespace {
 
 template<typename T,
-	 typename std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
+	 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
 void appendPOD(std::vector<uint8_t> &vec, T val)
 {
 	constexpr size_t byteWidth = sizeof(val);

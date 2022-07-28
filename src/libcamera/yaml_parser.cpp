@@ -307,7 +307,7 @@ std::optional<Size> YamlObject::get() const
 #ifndef __DOXYGEN__
 
 template<typename T,
-	 typename std::enable_if_t<
+	 std::enable_if_t<
 		 std::is_same_v<bool, T> ||
 		 std::is_same_v<double, T> ||
 		 std::is_same_v<int16_t, T> ||

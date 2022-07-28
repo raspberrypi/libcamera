@@ -32,7 +32,7 @@ public:
 	void postMessage(std::unique_ptr<Message> msg);
 
 	template<typename T, typename R, typename... FuncArgs, typename... Args,
-		 typename std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
+		 std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
 	R invokeMethod(R (T::*func)(FuncArgs...), ConnectionType type,
 		       Args&&... args)
 	{

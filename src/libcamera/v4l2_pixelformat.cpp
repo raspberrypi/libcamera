@@ -302,22 +302,24 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
 }
 
 /**
- * \brief Convert \a pixelFormat to its corresponding V4L2PixelFormat
+ * \brief Retrieve the list of V4L2PixelFormat associated with \a pixelFormat
  * \param[in] pixelFormat The PixelFormat to convert
  *
  * Multiple V4L2 formats may exist for one PixelFormat as V4L2 defines separate
  * 4CCs for contiguous and non-contiguous versions of the same image format.
- * When that is the case, this function returns the contiguous planes format.
  *
- * \return The V4L2PixelFormat corresponding to \a pixelFormat
+ * \return The list of V4L2PixelFormat corresponding to \a pixelFormat
  */
-V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat)
+const std::vector<V4L2PixelFormat> &
+V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat)
 {
+	static const std::vector<V4L2PixelFormat> empty;
+
 	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid())
-		return V4L2PixelFormat();
+		return empty;
 
-	return info.v4l2Formats[0];
+	return info.v4l2Formats;
 }
 
 /**

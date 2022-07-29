@@ -182,7 +182,7 @@ void V4L2CameraProxy::setFmtFromConfig(const StreamConfiguration &streamConfig)
 
 	v4l2PixFormat_.width        = size.width;
 	v4l2PixFormat_.height       = size.height;
-	v4l2PixFormat_.pixelformat  = V4L2PixelFormat::fromPixelFormat(streamConfig.pixelFormat);
+	v4l2PixFormat_.pixelformat  = V4L2PixelFormat::fromPixelFormat(streamConfig.pixelFormat)[0];
 	v4l2PixFormat_.field        = V4L2_FIELD_NONE;
 	v4l2PixFormat_.bytesperline = streamConfig.stride;
 	v4l2PixFormat_.sizeimage    = streamConfig.frameSize;
@@ -290,7 +290,7 @@ int V4L2CameraProxy::vidioc_enum_fmt(V4L2CameraFile *file, struct v4l2_fmtdesc *
 		return -EINVAL;
 
 	PixelFormat format = streamConfig_.formats().pixelformats()[arg->index];
-	V4L2PixelFormat v4l2Format = V4L2PixelFormat::fromPixelFormat(format);
+	V4L2PixelFormat v4l2Format = V4L2PixelFormat::fromPixelFormat(format)[0];
 
 	arg->flags = format == formats::MJPEG ? V4L2_FMT_FLAG_COMPRESSED : 0;
 	utils::strlcpy(reinterpret_cast<char *>(arg->description),
@@ -333,7 +333,7 @@ int V4L2CameraProxy::tryFormat(struct v4l2_format *arg)
 
 	arg->fmt.pix.width        = config.size.width;
 	arg->fmt.pix.height       = config.size.height;
-	arg->fmt.pix.pixelformat  = V4L2PixelFormat::fromPixelFormat(config.pixelFormat);
+	arg->fmt.pix.pixelformat  = V4L2PixelFormat::fromPixelFormat(config.pixelFormat)[0];
 	arg->fmt.pix.field        = V4L2_FIELD_NONE;
 	arg->fmt.pix.bytesperline = config.stride;
 	arg->fmt.pix.sizeimage    = config.frameSize;

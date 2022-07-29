@@ -11,6 +11,7 @@
 #include <ostream>
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 #include <linux/videodev2.h>
 
@@ -44,7 +45,8 @@ public:
 	const char *description() const;
 
 	PixelFormat toPixelFormat() const;
-	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat);
+	static const std::vector<V4L2PixelFormat> &
+	fromPixelFormat(const PixelFormat &pixelFormat);
 
 private:
 	uint32_t fourcc_;

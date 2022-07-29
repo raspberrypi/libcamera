@@ -2000,7 +2000,7 @@ V4L2VideoDevice::fromEntityName(const MediaDevice *media,
  */
 V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelFormat) const
 {
-	return V4L2PixelFormat::fromPixelFormat(pixelFormat);
+	return V4L2PixelFormat::fromPixelFormat(pixelFormat)[0];
 }
 
 /**

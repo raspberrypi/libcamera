@@ -304,24 +304,20 @@ PixelFormat V4L2PixelFormat::toPixelFormat() const
 /**
  * \brief Convert \a pixelFormat to its corresponding V4L2PixelFormat
  * \param[in] pixelFormat The PixelFormat to convert
- * \param[in] multiplanar V4L2 Multiplanar API support flag
  *
- * Multiple V4L2 formats may exist for one PixelFormat when the format uses
- * multiple planes, as V4L2 defines separate 4CCs for contiguous and separate
- * planes formats. Set the \a multiplanar parameter to false to select a format
- * with contiguous planes, or to true to select a format with non-contiguous
- * planes.
+ * Multiple V4L2 formats may exist for one PixelFormat as V4L2 defines separate
+ * 4CCs for contiguous and non-contiguous versions of the same image format.
+ * When that is the case, this function returns the contiguous planes format.
  *
  * \return The V4L2PixelFormat corresponding to \a pixelFormat
  */
-V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat,
-						 bool multiplanar)
+V4L2PixelFormat V4L2PixelFormat::fromPixelFormat(const PixelFormat &pixelFormat)
 {
 	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 	if (!info.isValid())
 		return V4L2PixelFormat();
 
-	return multiplanar ? info.v4l2Formats.multi : info.v4l2Formats.single;
+	return info.v4l2Formats[0];
 }
 
 /**

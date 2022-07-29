@@ -44,8 +44,7 @@ public:
 	const char *description() const;
 
 	PixelFormat toPixelFormat() const;
-	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat,
-					       bool multiplanar = false);
+	static V4L2PixelFormat fromPixelFormat(const PixelFormat &pixelFormat);
 
 private:
 	uint32_t fourcc_;

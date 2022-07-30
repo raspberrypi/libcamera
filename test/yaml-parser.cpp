@@ -160,7 +160,8 @@ protected:
 			return TestFail;
 		}
 
-		if (strObj.get<string>().value_or("") != "libcamera") {
+		if (strObj.get<string>().value_or("") != "libcamera" ||
+		    strObj.get<string>("") != "libcamera") {
 			cerr << "String object parse as wrong content" << std::endl;
 			return TestFail;
 		}
@@ -198,17 +199,20 @@ protected:
 			return TestFail;
 		}
 
-		if (int32Obj.get<int32_t>().value_or(0) != -100) {
+		if (int32Obj.get<int32_t>().value_or(0) != -100 ||
+		    int32Obj.get<int32_t>(0) != -100) {
 			cerr << "Integer object parse as wrong value" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<string>().value_or("") != "-100") {
+		if (int32Obj.get<string>().value_or("") != "-100" ||
+		    int32Obj.get<string>("") != "-100") {
 			cerr << "Integer object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (int32Obj.get<double>().value_or(0.0) != -100.0) {
+		if (int32Obj.get<double>().value_or(0.0) != -100.0 ||
+		    int32Obj.get<double>(0.0) != -100.0) {
 			cerr << "Integer object fail to parse as double" << std::endl;
 			return TestFail;
 		}
@@ -236,22 +240,26 @@ protected:
 			return TestFail;
 		}
 
-		if (uint32Obj.get<int32_t>().value_or(0) != 100) {
+		if (uint32Obj.get<int32_t>().value_or(0) != 100 ||
+		    uint32Obj.get<int32_t>(0) != 100) {
 			cerr << "Unsigned integer object fail to parse as integer" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<string>().value_or("") != "100") {
+		if (uint32Obj.get<string>().value_or("") != "100" ||
+		    uint32Obj.get<string>("") != "100") {
 			cerr << "Unsigned integer object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<double>().value_or(0.0) != 100.0) {
+		if (uint32Obj.get<double>().value_or(0.0) != 100.0 ||
+		    uint32Obj.get<double>(0.0) != 100.0) {
 			cerr << "Unsigned integer object fail to parse as double" << std::endl;
 			return TestFail;
 		}
 
-		if (uint32Obj.get<uint32_t>().value_or(0) != 100) {
+		if (uint32Obj.get<uint32_t>().value_or(0) != 100 ||
+		    uint32Obj.get<uint32_t>(0) != 100) {
 			cerr << "Unsigned integer object parsed as wrong value" << std::endl;
 			return TestFail;
 		}
@@ -274,12 +282,14 @@ protected:
 			return TestFail;
 		}
 
-		if (doubleObj.get<string>().value_or("") != "3.14159") {
+		if (doubleObj.get<string>().value_or("") != "3.14159" ||
+		    doubleObj.get<string>("") != "3.14159") {
 			cerr << "Double object fail to parse as string" << std::endl;
 			return TestFail;
 		}
 
-		if (doubleObj.get<double>().value_or(0.0) != 3.14159) {
+		if (doubleObj.get<double>().value_or(0.0) != 3.14159 ||
+		    doubleObj.get<double>(0.0) != 3.14159) {
 			cerr << "Double object parse as wrong value" << std::endl;
 			return TestFail;
 		}
@@ -332,7 +342,8 @@ protected:
 			return TestFail;
 		}
 
-		if (sizeObj.get<Size>().value_or(Size(0, 0)) != Size(1920, 1080)) {
+		if (sizeObj.get<Size>().value_or(Size(0, 0)) != Size(1920, 1080) ||
+		    sizeObj.get<Size>(Size(0, 0)) != Size(1920, 1080)) {
 			cerr << "Size object parse as wrong value" << std::endl;
 			return TestFail;
 		}

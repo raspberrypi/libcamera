@@ -11,7 +11,7 @@ import "include/libcamera/ipa/core.mojom";
 interface IPARkISP1Interface {
 	init(libcamera.IPASettings settings,
 	     uint32 hwRevision)
-		=> (int32 ret);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 	start() => (int32 ret);
 	stop();
 

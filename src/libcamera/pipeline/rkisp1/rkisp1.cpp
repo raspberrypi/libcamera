@@ -344,7 +344,8 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 		ipaTuningFile = std::string(configFromEnv);
 	}
 
-	int ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision);
+	int ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision,
+			     &controlInfo_);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;
@@ -966,34 +967,6 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	std::unique_ptr<RkISP1CameraData> data =
 		std::make_unique<RkISP1CameraData>(this, &mainPath_,
 						   hasSelfPath_ ? &selfPath_ : nullptr);
-
-	ControlInfoMap::Map ctrls;
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::Sharpness),
-		      std::forward_as_tuple(0.0f, 10.0f, 1.0f));
-
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::Brightness),
-		      std::forward_as_tuple(-1.0f, 0.993f));
-
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::Contrast),
-		      std::forward_as_tuple(0.0f, 1.993f));
-
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::Saturation),
-		      std::forward_as_tuple(0.0f, 1.993f));
-
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::draft::NoiseReductionMode),
-		      std::forward_as_tuple(controls::draft::NoiseReductionModeValues));
-
-	ctrls.emplace(std::piecewise_construct,
-		      std::forward_as_tuple(&controls::AeEnable),
-		      std::forward_as_tuple(false, true));
-
-	data->controlInfo_ = ControlInfoMap(std::move(ctrls),
-					    controls::controls);
 
 	data->sensor_ = std::make_unique<CameraSensor>(sensor);
 	ret = data->sensor_->init();

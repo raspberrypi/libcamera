@@ -46,7 +46,8 @@ namespace ipa::rkisp1 {
 class IPARkISP1 : public IPARkISP1Interface, public Module
 {
 public:
-	int init(const IPASettings &settings, unsigned int hwRevision) override;
+	int init(const IPASettings &settings, unsigned int hwRevision,
+		 ControlInfoMap *ipaControls) override;
 	int start() override;
 	void stop() override {}
 
@@ -89,12 +90,27 @@ private:
 	struct IPAContext context_;
 };
 
+namespace {
+
+/* List of controls handled by the RkISP1 IPA */
+const ControlInfoMap::Map rkisp1Controls{
+	{ &controls::AeEnable, ControlInfo(false, true) },
+	{ &controls::Brightness, ControlInfo(-1.0f, 0.993f) },
+	{ &controls::Contrast, ControlInfo(0.0f, 1.993f) },
+	{ &controls::Saturation, ControlInfo(0.0f, 1.993f) },
+	{ &controls::Sharpness, ControlInfo(0.0f, 10.0f, 1.0f) },
+	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
+};
+
+} /* namespace */
+
 std::string IPARkISP1::logPrefix() const
 {
 	return "rkisp1";
 }
 
-int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
+int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+		    ControlInfoMap *ipaControls)
 {
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
@@ -155,7 +171,15 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision)
 		return -EINVAL;
 	}
 
-	return createAlgorithms(context_, (*data)["algorithms"]);
+	int ret = createAlgorithms(context_, (*data)["algorithms"]);
+	if (ret)
+		return ret;
+
+	/* Return the controls handled by the IPA. */
+	ControlInfoMap::Map ctrlMap = rkisp1Controls;
+	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
+
+	return 0;
 }
 
 int IPARkISP1::start()

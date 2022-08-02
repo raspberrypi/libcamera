@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <functional>
 #include <ostream>
 #include <stdint.h>
 #include <string>
@@ -55,3 +56,15 @@ private:
 std::ostream &operator<<(std::ostream &out, const V4L2PixelFormat &f);
 
 } /* namespace libcamera */
+
+namespace std {
+
+template<>
+struct hash<libcamera::V4L2PixelFormat> {
+	size_t operator()(libcamera::V4L2PixelFormat const &format) const noexcept
+	{
+		return format.fourcc();
+	}
+};
+
+} /* namespace std */

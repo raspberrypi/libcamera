@@ -106,6 +106,7 @@ void CamHelper::setCameraMode(const CameraMode &mode)
 {
 	mode_ = mode;
 	if (parser_) {
+		parser_->reset();
 		parser_->setBitsPerPixel(mode.bitdepth);
 		parser_->setLineLengthBytes(0); /* We use SetBufferSize. */
 	}

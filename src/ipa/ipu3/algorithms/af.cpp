@@ -450,6 +450,8 @@ void Af::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameCon
 	}
 }
 
+REGISTER_IPA_ALGORITHM(Af, "Af")
+
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

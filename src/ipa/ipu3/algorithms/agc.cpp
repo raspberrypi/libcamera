@@ -363,6 +363,8 @@ void Agc::process(IPAContext &context, [[maybe_unused]] IPAFrameContext *frameCo
 	frameCount_++;
 }
 
+REGISTER_IPA_ALGORITHM(Agc, "Agc")
+
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

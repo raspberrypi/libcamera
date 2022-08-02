@@ -483,6 +483,8 @@ void Awb::prepare(IPAContext &context, ipu3_uapi_params *params)
 	params->use.acc_ccm = 1;
 }
 
+REGISTER_IPA_ALGORITHM(Awb, "Awb")
+
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

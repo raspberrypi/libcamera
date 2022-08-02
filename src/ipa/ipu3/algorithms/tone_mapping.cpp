@@ -105,6 +105,8 @@ void ToneMapping::process(IPAContext &context, [[maybe_unused]] IPAFrameContext 
 	context.activeState.toneMapping.gamma = gamma_;
 }
 
+REGISTER_IPA_ALGORITHM(ToneMapping, "ToneMapping")
+
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

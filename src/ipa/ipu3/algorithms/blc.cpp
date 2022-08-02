@@ -62,6 +62,8 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	params->use.obgrid_param = 1;
 }
 
+REGISTER_IPA_ALGORITHM(BlackLevelCorrection, "BlackLevelCorrection")
+
 } /* namespace ipa::ipu3::algorithms */
 
 } /* namespace libcamera */

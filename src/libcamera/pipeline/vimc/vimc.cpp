@@ -471,7 +471,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	data->ipa_->paramsBufferReady.connect(data.get(), &VimcCameraData::paramsBufferReady);
 
 	std::string conf = data->ipa_->configurationFile("vimc.conf");
-	data->ipa_->init(IPASettings{ conf, data->sensor_->model() });
+	data->ipa_->init(IPASettings{ conf, data->sensor_->model() }, ipa::vimc::IPAOperationInit);
 
 	/* Create and register the camera. */
 	std::set<Stream *> streams{ &data->stream_ };

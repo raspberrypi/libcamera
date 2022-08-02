@@ -31,7 +31,7 @@ public:
 	IPAVimc();
 	~IPAVimc();
 
-	int init(const IPASettings &settings) override;
+	int init(const IPASettings &settings, const ipa::vimc::IPAOperationCode code) override;
 
 	int start() override;
 	void stop() override;
@@ -66,13 +66,15 @@ IPAVimc::~IPAVimc()
 		::close(fd_);
 }
 
-int IPAVimc::init(const IPASettings &settings)
+int IPAVimc::init(const IPASettings &settings, const ipa::vimc::IPAOperationCode code)
 {
 	trace(ipa::vimc::IPAOperationInit);
 
 	LOG(IPAVimc, Debug)
 		<< "initializing vimc IPA with configuration file "
 		<< settings.configurationFile;
+
+	LOG(IPAVimc, Debug) << "Got opcode " << code;
 
 	File conf(settings.configurationFile);
 	if (!conf.open(File::OpenModeFlag::ReadOnly)) {

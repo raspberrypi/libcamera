@@ -517,7 +517,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 
 	const auto &blackLevels = metadata.get(controls::SensorBlackLevels);
 	if (blackLevels) {
-		Span<const int32_t> levels = *blackLevels;
+		Span<const int32_t, 4> levels = *blackLevels;
 
 		/*
 		 * The black levels control is specified in R, Gr, Gb, B order.

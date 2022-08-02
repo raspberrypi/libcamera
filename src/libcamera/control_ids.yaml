@@ -291,7 +291,7 @@ controls:
         transformation. The 3x3 matrix is stored in conventional reading
         order in an array of 9 floating point values.
 
-      size: [3x3]
+      size: [3,3]
 
   - ScalerCrop:
       type: Rectangle
@@ -525,7 +525,7 @@ controls:
         the window where the focal distance for the objects shown in that part
         of the image are closest to the camera.
 
-      size: [n]
+      size: []
 
   - AfTrigger:
       type: int32_t

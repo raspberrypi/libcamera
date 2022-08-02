@@ -168,7 +168,7 @@ public:
 
 		using V = typename T::value_type;
 		const V *value = reinterpret_cast<const V *>(data().data());
-		return { value, numElements_ };
+		return T{ value, numElements_ };
 	}
 
 #ifndef __DOXYGEN__

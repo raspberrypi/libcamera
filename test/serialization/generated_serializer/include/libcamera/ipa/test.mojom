@@ -18,6 +18,7 @@ struct TestStruct {
 	string s2;
 	int32 i;
 	string s3;
+	IPAOperationCode c;
 };
 
 interface IPATestInterface {

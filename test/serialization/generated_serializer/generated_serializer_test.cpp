@@ -51,6 +51,7 @@ if (struct1.field != struct2.field) {				\
 		t.s2 = "goodbye";
 		t.s3 = "lorem ipsum";
 		t.i  = 58527;
+		t.c = ipa::test::IPAOperationInit;
 
 		std::vector<uint8_t> serialized;
 
@@ -69,6 +70,7 @@ if (struct1.field != struct2.field) {				\
 		TEST_FIELD_EQUALITY(t, u, s2);
 		TEST_FIELD_EQUALITY(t, u, s3);
 		TEST_FIELD_EQUALITY(t, u, i);
+		TEST_FIELD_EQUALITY(t, u, c);
 
 
 		/* Test vector of generated structs */
@@ -92,11 +94,13 @@ if (struct1.field != struct2.field) {				\
 		TEST_FIELD_EQUALITY(v[0], w[0], s2);
 		TEST_FIELD_EQUALITY(v[0], w[0], s3);
 		TEST_FIELD_EQUALITY(v[0], w[0], i);
+		TEST_FIELD_EQUALITY(v[0], w[0], c);
 
 		TEST_FIELD_EQUALITY(v[1], w[1], s1);
 		TEST_FIELD_EQUALITY(v[1], w[1], s2);
 		TEST_FIELD_EQUALITY(v[1], w[1], s3);
 		TEST_FIELD_EQUALITY(v[1], w[1], i);
+		TEST_FIELD_EQUALITY(v[1], w[1], c);
 
 		return TestPass;
 	}

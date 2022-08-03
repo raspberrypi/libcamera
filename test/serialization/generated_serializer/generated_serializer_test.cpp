@@ -35,6 +35,13 @@ if (struct1.field != struct2.field) {				\
 	return TestFail;					\
 }
 
+#define TEST_SCOPED_ENUM_EQUALITY(struct1, struct2, field)	\
+if (struct1.field != struct2.field) {				\
+	cerr << #field << " field incorrect" << endl;		\
+	return TestFail;					\
+}
+
+
 		ipa::test::TestStruct t, u;
 
 		t.m = {
@@ -52,6 +59,12 @@ if (struct1.field != struct2.field) {				\
 		t.s3 = "lorem ipsum";
 		t.i  = 58527;
 		t.c = ipa::test::IPAOperationInit;
+		t.e = ipa::test::ErrorFlags::Error1;
+
+		Flags<ipa::test::ErrorFlags> flags;
+		flags |= ipa::test::ErrorFlags::Error1;
+		flags |= ipa::test::ErrorFlags::Error2;
+		t.f = flags;
 
 		std::vector<uint8_t> serialized;
 
@@ -72,6 +85,8 @@ if (struct1.field != struct2.field) {				\
 		TEST_FIELD_EQUALITY(t, u, i);
 		TEST_FIELD_EQUALITY(t, u, c);
 
+		TEST_SCOPED_ENUM_EQUALITY(t, u, e);
+		TEST_SCOPED_ENUM_EQUALITY(t, u, f);
 
 		/* Test vector of generated structs */
 		std::vector<ipa::test::TestStruct> v = { t, u };
@@ -96,11 +111,17 @@ if (struct1.field != struct2.field) {				\
 		TEST_FIELD_EQUALITY(v[0], w[0], i);
 		TEST_FIELD_EQUALITY(v[0], w[0], c);
 
+		TEST_SCOPED_ENUM_EQUALITY(v[0], w[0], e);
+		TEST_SCOPED_ENUM_EQUALITY(v[0], w[0], f);
+
 		TEST_FIELD_EQUALITY(v[1], w[1], s1);
 		TEST_FIELD_EQUALITY(v[1], w[1], s2);
 		TEST_FIELD_EQUALITY(v[1], w[1], s3);
 		TEST_FIELD_EQUALITY(v[1], w[1], i);
 		TEST_FIELD_EQUALITY(v[1], w[1], c);
+
+		TEST_SCOPED_ENUM_EQUALITY(v[1], w[1], e);
+		TEST_SCOPED_ENUM_EQUALITY(v[1], w[1], f);
 
 		return TestPass;
 	}

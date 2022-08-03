@@ -9,6 +9,13 @@ enum IPAOperationCode {
 	IPAOperationStop,
 };
 
+[scopedEnum] enum ErrorFlags {
+	Error1 = 0x1,
+	Error2 = 0x2,
+	Error3 = 0x4,
+	Error4 = 0x8,
+};
+
 struct IPASettings {};
 
 struct TestStruct {
@@ -19,6 +26,8 @@ struct TestStruct {
 	int32 i;
 	string s3;
 	IPAOperationCode c;
+	ErrorFlags e;
+	[flags] ErrorFlags f;
 };
 
 interface IPATestInterface {

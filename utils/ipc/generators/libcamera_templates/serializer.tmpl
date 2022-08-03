@@ -34,6 +34,10 @@
 		std::tie({{field.mojom_name}}, std::ignore) =
 	{%- if field|is_pod %}
 			IPADataSerializer<{{field|name}}>::serialize(data.{{field.mojom_name}});
+	{%- elif field|is_flags %}
+			IPADataSerializer<{{field|name_full}}>::serialize(data.{{field.mojom_name}});
+	{%- elif field|is_enum_scoped %}
+			IPADataSerializer<uint{{field|bit_width}}_t>::serialize(static_cast<uint{{field|bit_width}}_t>(data.{{field.mojom_name}}));
 	{%- elif field|is_enum %}
 			IPADataSerializer<uint{{field|bit_width}}_t>::serialize(data.{{field.mojom_name}});
 	{%- endif %}
@@ -96,6 +100,8 @@
 		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
 		{%- if field|is_pod %}
 		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name}}>::deserialize(m, m + {{field_size}});
+		{%- elif field|is_flags %}
+		ret.{{field.mojom_name}} = IPADataSerializer<{{field|name_full}}>::deserialize(m, m + {{field_size}});
 		{%- else %}
 		ret.{{field.mojom_name}} = static_cast<{{field|name_full}}>(IPADataSerializer<uint{{field|bit_width}}_t>::deserialize(m, m + {{field_size}}));
 		{%- endif %}

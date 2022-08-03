@@ -9,7 +9,7 @@
  # \param enum Enum object whose definition is to be generated
  #}
 {%- macro define_enum(enum) -%}
-enum {{enum.mojom_name}} {
+enum{{" class" if enum|is_scoped}} {{enum.mojom_name}} {
 {%- for field in enum.fields %}
 	{{field.mojom_name}} = {{field.numeric_value}},
 {%- endfor %}

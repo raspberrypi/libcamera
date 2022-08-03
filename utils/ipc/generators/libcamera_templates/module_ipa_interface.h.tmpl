@@ -69,7 +69,7 @@ public:
 {%- for method in interface_event.methods %}
 	Signal<
 {%- for param in method.parameters -%}
-		{{"const " if not param|is_pod}}{{param|name}}{{" &" if not param|is_pod}}
+		{{"const " if not param|is_pod}}{{param|name}}{{" &" if not param|is_pod and not param|is_enum}}
 		{{- ", " if not loop.last}}
 {%- endfor -%}
 > {{method.mojom_name}};

@@ -74,6 +74,8 @@ def GetDefaultValue(element):
         return element.default
     if type(element.kind) == mojom.Kind:
         return '0'
+    if IsFlags(element):
+        return ''
     if mojom.IsEnumKind(element.kind):
         return f'static_cast<{element.kind.mojom_name}>(0)'
     if isinstance(element.kind, mojom.Struct) and \
@@ -184,7 +186,7 @@ def MethodParameters(method):
     params = []
     for param in method.parameters:
         params.append('const %s %s%s' % (GetNameForElement(param),
-                                         '&' if not IsPod(param) else '',
+                                         '' if IsPod(param) or IsEnum(param) else '&',
                                          param.mojom_name))
     for param in MethodParamOutputs(method):
         params.append(f'{GetNameForElement(param)} *{param.mojom_name}')
@@ -220,8 +222,29 @@ def IsControls(element):
 def IsEnum(element):
     return mojom.IsEnumKind(element.kind)
 
+
+# Only works the enum definition, not types
+def IsScoped(element):
+    attributes = getattr(element, 'attributes', None)
+    if not attributes:
+        return False
+    return 'scopedEnum' in attributes
+
+
+def IsEnumScoped(element):
+    if not IsEnum(element):
+        return False
+    return IsScoped(element.kind)
+
 def IsFd(element):
     return mojom.IsStructKind(element.kind) and element.kind.mojom_name == "SharedFD"
+
+
+def IsFlags(element):
+    attributes = getattr(element, 'attributes', None)
+    if not attributes:
+        return False
+    return 'flags' in attributes
 
 def IsMap(element):
     return mojom.IsMapKind(element.kind)
@@ -251,9 +274,11 @@ def ByteWidthFromCppType(t):
         raise Exception('invalid type')
     return str(int(_bit_widths[key]) // 8)
 
-
 # Get the type name for a given element
 def GetNameForElement(element):
+    # Flags
+    if IsFlags(element):
+        return f'Flags<{GetFullNameForElement(element.kind)}>'
     # structs
     if (mojom.IsEnumKind(element) or
         mojom.IsInterfaceKind(element) or
@@ -302,15 +327,18 @@ def GetNameForElement(element):
 def GetFullNameForElement(element):
     name = GetNameForElement(element)
     namespace_str = ''
-    if mojom.IsStructKind(element):
+    if (mojom.IsStructKind(element) or mojom.IsEnumKind(element)):
         namespace_str = element.module.mojom_namespace.replace('.', '::')
     elif (hasattr(element, 'kind') and
-             (mojom.IsStructKind(element.kind) or
-              mojom.IsEnumKind(element.kind))):
+          (mojom.IsStructKind(element.kind) or mojom.IsEnumKind(element.kind))):
         namespace_str = element.kind.module.mojom_namespace.replace('.', '::')
 
     if namespace_str == '':
         return name
+
+    if IsFlags(element):
+        return GetNameForElement(element)
+
     return f'{namespace_str}::{name}'
 
 def ValidateZeroLength(l, s, cap=True):
@@ -407,10 +435,13 @@ class Generator(generator.Generator):
             'is_array': IsArray,
             'is_controls': IsControls,
             'is_enum': IsEnum,
+            'is_enum_scoped': IsEnumScoped,
             'is_fd': IsFd,
+            'is_flags': IsFlags,
             'is_map': IsMap,
             'is_plain_struct': IsPlainStruct,
             'is_pod': IsPod,
+            'is_scoped': IsScoped,
             'is_str': IsStr,
             'method_input_has_fd': MethodInputHasFd,
             'method_output_has_fd': MethodOutputHasFd,

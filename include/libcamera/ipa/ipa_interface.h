@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 
+#include <libcamera/base/flags.h>
 #include <libcamera/base/signal.h>
 
 #include <libcamera/controls.h>

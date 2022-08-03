@@ -33,6 +33,15 @@ module libcamera;
  *     available for the type and there's no need to generate one
  * - hasFd - struct fields or empty structs only
  *   - Designate that this field or empty struct contains a SharedFD
+ * - scopedEnum - enum definitions
+ *   - Designate that this enum should be an enum class, as opposed to a pure
+ *     enum
+ * - flags - struct fields or function parameters that are enums
+ *   - Designate that this enum type E should be Flags<E> in the generated C++
+ *     code
+ *   - For example, if a struct field is defined as `[flags] ErrorFlag f;`
+ *     (where ErrorFlag is defined as an enum elsewhere in mojom), then the
+ *     generated code for this field will be `Flags<ErrorFlag> f`
  *
  * Rules:
  * - If the type is defined in a libcamera C++ header *and* a (de)serializer is

@@ -14,6 +14,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <libcamera/base/flags.h>
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
@@ -298,6 +299,51 @@ public:
 		}
 
 		return ret;
+	}
+};
+
+/* Serialization format for Flags is same as for PODs */
+template<typename E>
+class IPADataSerializer<Flags<E>>
+{
+public:
+	static std::tuple<std::vector<uint8_t>, std::vector<SharedFD>>
+	serialize(const Flags<E> &data, [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		std::vector<uint8_t> dataVec;
+		dataVec.reserve(sizeof(Flags<E>));
+		appendPOD<uint32_t>(dataVec, static_cast<typename Flags<E>::Type>(data));
+
+		return { dataVec, {} };
+	}
+
+	static Flags<E> deserialize(std::vector<uint8_t> &data,
+				    [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(data.cbegin(), data.cend());
+	}
+
+	static Flags<E> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+				    std::vector<uint8_t>::const_iterator dataEnd,
+				    [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return Flags<E>{ static_cast<E>(readPOD<uint32_t>(dataBegin, 0, dataEnd)) };
+	}
+
+	static Flags<E> deserialize(std::vector<uint8_t> &data,
+				    [[maybe_unused]] std::vector<SharedFD> &fds,
+				    [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(data.cbegin(), data.cend());
+	}
+
+	static Flags<E> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+				    std::vector<uint8_t>::const_iterator dataEnd,
+				    [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsBegin,
+				    [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsEnd,
+				    [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(dataBegin, dataEnd);
 	}
 };
 

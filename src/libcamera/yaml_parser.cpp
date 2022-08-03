@@ -319,7 +319,7 @@ template<typename T,
 std::optional<std::vector<T>> YamlObject::getList() const
 {
 	if (type_ != Type::List)
-		return {};
+		return std::nullopt;
 
 	std::vector<T> values;
 	values.reserve(list_.size());
@@ -327,7 +327,7 @@ std::optional<std::vector<T>> YamlObject::getList() const
 	for (const YamlObject &entry : asList()) {
 		const auto value = entry.get<T>();
 		if (!value)
-			return {};
+			return std::nullopt;
 		values.emplace_back(*value);
 	}
 

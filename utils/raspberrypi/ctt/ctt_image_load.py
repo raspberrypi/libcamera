@@ -301,17 +301,35 @@ def dng_load_image(Cam, im_str):
         metadata.read()
 
         Img.ver = 100  # random value
-        Img.w = metadata['Exif.SubImage1.ImageWidth'].value
+        """
+        The DNG and TIFF/EP specifications use different IFDs to store the raw
+        image data and the Exif tags. DNG stores them in a SubIFD and in an Exif
+        IFD respectively (named "SubImage1" and "Photo" by pyexiv2), while
+        TIFF/EP stores them both in IFD0 (name "Image"). Both are used in "DNG"
+        files, with libcamera-apps following the DNG recommendation and
+        applications based on picamera2 following TIFF/EP.
+
+        This code detects which tags are being used, and therefore extracts the
+        correct values.
+        """
+        try:
+            Img.w = metadata['Exif.SubImage1.ImageWidth'].value
+            subimage = "SubImage1"
+            photo = "Photo"
+        except KeyError:
+            Img.w = metadata['Exif.Image.ImageWidth'].value
+            subimage = "Image"
+            photo = "Image"
         Img.pad = 0
-        Img.h = metadata['Exif.SubImage1.ImageLength'].value
-        white = metadata['Exif.SubImage1.WhiteLevel'].value
+        Img.h = metadata[f'Exif.{subimage}.ImageLength'].value
+        white = metadata[f'Exif.{subimage}.WhiteLevel'].value
         Img.sigbits = int(white).bit_length()
         Img.fmt = (Img.sigbits - 4) // 2
-        Img.exposure = int(metadata['Exif.Photo.ExposureTime'].value*1000000)
-        Img.againQ8 = metadata['Exif.Photo.ISOSpeedRatings'].value*256/100
+        Img.exposure = int(metadata[f'Exif.{photo}.ExposureTime'].value * 1000000)
+        Img.againQ8 = metadata[f'Exif.{photo}.ISOSpeedRatings'].value * 256 / 100
         Img.againQ8_norm = Img.againQ8 / 256
         Img.camName = metadata['Exif.Image.Model'].value
-        Img.blacklevel = int(metadata['Exif.SubImage1.BlackLevel'].value[0])
+        Img.blacklevel = int(metadata[f'Exif.{subimage}.BlackLevel'].value[0])
         Img.blacklevel_16 = Img.blacklevel << (16 - Img.sigbits)
         bayer_case = {
             '0 1 1 2': (0, (0, 1, 2, 3)),
@@ -319,7 +337,7 @@ def dng_load_image(Cam, im_str):
             '2 1 1 0': (2, (3, 2, 1, 0)),
             '1 0 2 1': (3, (1, 0, 3, 2))
         }
-        cfa_pattern = metadata['Exif.SubImage1.CFAPattern'].value
+        cfa_pattern = metadata[f'Exif.{subimage}.CFAPattern'].value
         Img.pattern = bayer_case[cfa_pattern][0]
         Img.order = bayer_case[cfa_pattern][1]
 

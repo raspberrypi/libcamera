@@ -289,7 +289,7 @@ features:
 .. code-block:: cpp
 
    #include <libcamera/base/log.h>
-   
+
    #include "libcamera/internal/pipeline_handler.h"
 
 Run the following commands:

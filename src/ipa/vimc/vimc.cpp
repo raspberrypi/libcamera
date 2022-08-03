@@ -31,7 +31,10 @@ public:
 	IPAVimc();
 	~IPAVimc();
 
-	int init(const IPASettings &settings, const ipa::vimc::IPAOperationCode code) override;
+	int init(const IPASettings &settings,
+		 const ipa::vimc::IPAOperationCode code,
+		 const Flags<ipa::vimc::TestFlag> inFlags,
+		 Flags<ipa::vimc::TestFlag> *outFlags) override;
 
 	int start() override;
 	void stop() override;
@@ -66,7 +69,10 @@ IPAVimc::~IPAVimc()
 		::close(fd_);
 }
 
-int IPAVimc::init(const IPASettings &settings, const ipa::vimc::IPAOperationCode code)
+int IPAVimc::init(const IPASettings &settings,
+		  const ipa::vimc::IPAOperationCode code,
+		  const Flags<ipa::vimc::TestFlag> inFlags,
+		  Flags<ipa::vimc::TestFlag> *outFlags)
 {
 	trace(ipa::vimc::IPAOperationInit);
 
@@ -75,6 +81,13 @@ int IPAVimc::init(const IPASettings &settings, const ipa::vimc::IPAOperationCode
 		<< settings.configurationFile;
 
 	LOG(IPAVimc, Debug) << "Got opcode " << code;
+
+	LOG(IPAVimc, Debug)
+		<< "Flag 2 was "
+		<< (inFlags & ipa::vimc::TestFlag::Flag2 ? "" : "not ")
+		<< "set";
+
+	*outFlags |= ipa::vimc::TestFlag::Flag1;
 
 	File conf(settings.configurationFile);
 	if (!conf.open(File::OpenModeFlag::ReadOnly)) {
@@ -144,7 +157,8 @@ void IPAVimc::fillParamsBuffer([[maybe_unused]] uint32_t frame, uint32_t bufferI
 		return;
 	}
 
-	paramsBufferReady.emit(bufferId);
+	Flags<ipa::vimc::TestFlag> flags;
+	paramsBufferReady.emit(bufferId, flags);
 }
 
 void IPAVimc::initTrace()

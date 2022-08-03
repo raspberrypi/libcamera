@@ -17,8 +17,18 @@ enum IPAOperationCode {
 	IPAOperationStop,
 };
 
+[scopedEnum] enum TestFlag {
+	Flag1 = 0x1,
+	Flag2 = 0x2,
+	Flag3 = 0x4,
+	Flag4 = 0x8,
+};
+
 interface IPAVimcInterface {
-	init(libcamera.IPASettings settings, IPAOperationCode code) => (int32 ret);
+	init(libcamera.IPASettings settings,
+	     IPAOperationCode code,
+	     [flags] TestFlag inFlags)
+	=> (int32 ret, [flags] TestFlag outFlags);
 
 	configure(libcamera.IPACameraSensorInfo sensorInfo,
 		  map<uint32, libcamera.IPAStream> streamConfig,
@@ -41,5 +51,5 @@ interface IPAVimcInterface {
 };
 
 interface IPAVimcEventInterface {
-	paramsBufferReady(uint32 bufferId);
+	paramsBufferReady(uint32 bufferId, [flags] TestFlag flags);
 };

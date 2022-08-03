@@ -106,7 +106,11 @@ protected:
 
 		/* Test initialization of IPA module. */
 		std::string conf = ipa_->configurationFile("vimc.conf");
-		int ret = ipa_->init(IPASettings{ conf, "vimc" }, ipa::vimc::IPAOperationInit);
+		Flags<ipa::vimc::TestFlag> inFlags;
+		Flags<ipa::vimc::TestFlag> outFlags;
+		int ret = ipa_->init(IPASettings{ conf, "vimc" },
+				     ipa::vimc::IPAOperationInit,
+				     inFlags, &outFlags);
 		if (ret < 0) {
 			cerr << "IPA interface init() failed" << endl;
 			return TestFail;

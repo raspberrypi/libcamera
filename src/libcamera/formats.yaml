@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2020, Google Inc.
 #
-%YAML 1.2
+%YAML 1.1
 ---
 formats:
   - R8:

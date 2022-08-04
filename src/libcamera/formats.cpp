@@ -509,7 +509,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 	} },
 	{ formats::R10_CSI2P, {
 		.name = "R10_CSI2P",
-		.format = formats::R10,
+		.format = formats::R10_CSI2P,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y10P), },
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,

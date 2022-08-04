@@ -131,6 +131,8 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 		{ formats::R8, "8-bit Greyscale" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_Y10),
 		{ formats::R10, "10-bit Greyscale" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_Y10P),
+		{ formats::R10_CSI2P, "10-bit Greyscale Packed" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_Y12),
 		{ formats::R12, "12-bit Greyscale" } },
 

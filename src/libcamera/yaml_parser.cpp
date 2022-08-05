@@ -121,24 +121,24 @@ template<>
 std::optional<bool> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "true")
 		return true;
 	else if (value_ == "false")
 		return false;
 
-	return {};
+	return std::nullopt;
 }
 
 template<>
 std::optional<int16_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "")
-		return {};
+		return std::nullopt;
 
 	char *end;
 
@@ -148,7 +148,7 @@ std::optional<int16_t> YamlObject::get() const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<int16_t>::min() ||
 	    value > std::numeric_limits<int16_t>::max())
-		return {};
+		return std::nullopt;
 
 	return value;
 }
@@ -157,10 +157,10 @@ template<>
 std::optional<uint16_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "")
-		return {};
+		return std::nullopt;
 
 	/*
 	 * libyaml parses all scalar values as strings. When a string has
@@ -171,7 +171,7 @@ std::optional<uint16_t> YamlObject::get() const
 	 */
 	std::size_t found = value_.find_first_not_of(" \t");
 	if (found != std::string::npos && value_[found] == '-')
-		return {};
+		return std::nullopt;
 
 	char *end;
 
@@ -181,7 +181,7 @@ std::optional<uint16_t> YamlObject::get() const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<uint16_t>::min() ||
 	    value > std::numeric_limits<uint16_t>::max())
-		return {};
+		return std::nullopt;
 
 	return value;
 }
@@ -190,10 +190,10 @@ template<>
 std::optional<int32_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "")
-		return {};
+		return std::nullopt;
 
 	char *end;
 
@@ -203,7 +203,7 @@ std::optional<int32_t> YamlObject::get() const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<int32_t>::min() ||
 	    value > std::numeric_limits<int32_t>::max())
-		return {};
+		return std::nullopt;
 
 	return value;
 }
@@ -212,10 +212,10 @@ template<>
 std::optional<uint32_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "")
-		return {};
+		return std::nullopt;
 
 	/*
 	 * libyaml parses all scalar values as strings. When a string has
@@ -226,7 +226,7 @@ std::optional<uint32_t> YamlObject::get() const
 	 */
 	std::size_t found = value_.find_first_not_of(" \t");
 	if (found != std::string::npos && value_[found] == '-')
-		return {};
+		return std::nullopt;
 
 	char *end;
 
@@ -236,7 +236,7 @@ std::optional<uint32_t> YamlObject::get() const
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<uint32_t>::min() ||
 	    value > std::numeric_limits<uint32_t>::max())
-		return {};
+		return std::nullopt;
 
 	return value;
 }
@@ -245,10 +245,10 @@ template<>
 std::optional<double> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	if (value_ == "")
-		return {};
+		return std::nullopt;
 
 	char *end;
 
@@ -256,7 +256,7 @@ std::optional<double> YamlObject::get() const
 	double value = std::strtod(value_.c_str(), &end);
 
 	if ('\0' != *end || errno == ERANGE)
-		return {};
+		return std::nullopt;
 
 	return value;
 }
@@ -265,7 +265,7 @@ template<>
 std::optional<std::string> YamlObject::get() const
 {
 	if (type_ != Type::Value)
-		return {};
+		return std::nullopt;
 
 	return value_;
 }
@@ -274,18 +274,18 @@ template<>
 std::optional<Size> YamlObject::get() const
 {
 	if (type_ != Type::List)
-		return {};
+		return std::nullopt;
 
 	if (list_.size() != 2)
-		return {};
+		return std::nullopt;
 
 	auto width = list_[0].value->get<uint32_t>();
 	if (!width)
-		return {};
+		return std::nullopt;
 
 	auto height = list_[1].value->get<uint32_t>();
 	if (!height)
-		return {};
+		return std::nullopt;
 
 	return Size(*width, *height);
 }

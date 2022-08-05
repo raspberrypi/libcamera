@@ -29,6 +29,7 @@ struct IPASessionConfiguration {
 
 	struct {
 		struct rkisp1_cif_isp_window measureWindow;
+		bool enabled;
 	} awb;
 
 	struct {

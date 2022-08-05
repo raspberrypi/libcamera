@@ -87,6 +87,13 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPASessionConfiguration::awb.measureWindow
  * \brief AWB measure window
+ *
+ * \var IPASessionConfiguration::awb.enabled
+ * \brief Indicates if the AWB hardware is enabled and applies colour gains
+ *
+ * The AWB module of the ISP applies colour gains and computes statistics. It is
+ * enabled when the AWB algorithm is loaded, regardless of whether the algorithm
+ * operates in manual or automatic mode.
  */
 
 /**

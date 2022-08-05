@@ -50,6 +50,8 @@ int Awb::configure(IPAContext &context,
 	context.configuration.awb.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
 	context.configuration.awb.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
 
+	context.configuration.awb.enabled = true;
+
 	return 0;
 }
 

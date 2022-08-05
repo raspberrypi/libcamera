@@ -120,6 +120,16 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::configure
+ */
+int LensShadingCorrection::configure(IPAContext &context,
+				     [[maybe_unused]] const IPACameraSensorInfo &configInfo)
+{
+	context.configuration.lsc.enabled = initialized_;
+	return 0;
+}
+
+/**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void LensShadingCorrection::prepare(IPAContext &context,

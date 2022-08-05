@@ -20,6 +20,7 @@ public:
 	~LensShadingCorrection() = default;
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
 	void prepare(IPAContext &context, rkisp1_params_cfg *params) override;
 
 private:

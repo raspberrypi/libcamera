@@ -97,6 +97,14 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPASessionConfiguration::lsc
+ * \brief Lens Shading Correction configuration of the IPA
+ *
+ * \var IPASessionConfiguration::lsc.enabled
+ * \brief Indicates if the LSC hardware is enabled
+ */
+
+/**
  * \var IPASessionConfiguration::sensor
  * \brief Sensor-specific configuration of the IPA
  *

@@ -33,6 +33,10 @@ struct IPASessionConfiguration {
 	} awb;
 
 	struct {
+		bool enabled;
+	} lsc;
+
+	struct {
 		utils::Duration lineDuration;
 		Size size;
 	} sensor;

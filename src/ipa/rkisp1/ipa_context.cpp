@@ -172,6 +172,17 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAFrameContext::dpf
+ * \brief Context for the Denoise Pre-Filter algorithm
+ *
+ * \var IPAFrameContext::dpf.denoise
+ * \brief Indicates if denoise is activated
+ *
+ * \var IPAFrameContext::dpf.updateParams
+ * \brief Indicates if ISP parameters need to be updated
+ */
+
+/**
  * \var IPAFrameContext::filter
  * \brief Context for the Filter algorithm
  *

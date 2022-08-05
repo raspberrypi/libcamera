@@ -71,6 +71,11 @@ struct IPAFrameContext {
 	} cproc;
 
 	struct {
+		bool denoise;
+		bool updateParams;
+	} dpf;
+
+	struct {
 		uint8_t denoise;
 		uint8_t sharpness;
 		bool updateParams;

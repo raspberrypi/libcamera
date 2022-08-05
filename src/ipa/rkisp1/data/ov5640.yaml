@@ -156,5 +156,20 @@ algorithms:
           rnd-offsets:
             green: 2
             red-blue: 2
+  - Dpf:
+      DomainFilter:
+        g: [ 16, 16, 16, 16, 16, 16 ]
+        rb: [ 16, 16, 16, 16, 16, 16 ]
+      NoiseLevelFunction:
+        coeff: [
+          1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023,
+          1023, 1023, 1023, 1023, 1023, 1023, 1023, 1023,
+          1023
+        ]
+        scale-mode: "linear"
+      FilterStrength:
+        r: 64
+        g: 64
+        b: 64
   - Filter:
 ...

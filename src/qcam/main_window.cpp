@@ -594,10 +594,12 @@ void MainWindow::stopCapture()
 void MainWindow::processHotplug(HotplugEvent *e)
 {
 	Camera *camera = e->camera();
+	QString cameraId = QString::fromStdString(camera->id());
 	HotplugEvent::PlugEvent event = e->hotplugEvent();
 
 	if (event == HotplugEvent::HotPlug) {
-		cameraCombo_->addItem(QString::fromStdString(camera->id()));
+		cameraCombo_->addItem(cameraId);
+		cameraSelectorDialog_->addCamera(cameraId);
 	} else if (event == HotplugEvent::HotUnplug) {
 		/* Check if the currently-streaming camera is removed. */
 		if (camera == camera_.get()) {
@@ -607,8 +609,9 @@ void MainWindow::processHotplug(HotplugEvent *e)
 			cameraCombo_->setCurrentIndex(0);
 		}
 
-		int camIndex = cameraCombo_->findText(QString::fromStdString(camera->id()));
+		int camIndex = cameraCombo_->findText(cameraId);
 		cameraCombo_->removeItem(camIndex);
+		cameraSelectorDialog_->removeCamera(cameraId);
 	}
 }
 

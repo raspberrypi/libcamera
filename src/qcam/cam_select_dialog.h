@@ -13,6 +13,7 @@
 #include <libcamera/camera_manager.h>
 
 #include <QDialog>
+#include <QString>
 
 class QComboBox;
 
@@ -25,6 +26,10 @@ public:
 	~CameraSelectorDialog();
 
 	std::string getCameraId();
+
+	/* Hotplug / Unplug Support. */
+	void addCamera(QString cameraId);
+	void removeCamera(QString cameraId);
 
 private:
 	libcamera::CameraManager *cm_;

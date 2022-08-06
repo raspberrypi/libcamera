@@ -2,10 +2,10 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_texture_yuyv.cpp - SDL Texture YUYV
+ * sdl_texture_yuv.cpp - SDL Texture YUYV
  */
 
-#include "sdl_texture_yuyv.h"
+#include "sdl_texture_yuv.h"
 
 using namespace libcamera;
 

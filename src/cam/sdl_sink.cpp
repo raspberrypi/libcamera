@@ -24,7 +24,7 @@
 #ifdef HAVE_LIBJPEG
 #include "sdl_texture_mjpg.h"
 #endif
-#include "sdl_texture_yuyv.h"
+#include "sdl_texture_yuv.h"
 
 using namespace libcamera;
 

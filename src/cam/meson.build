@@ -40,7 +40,7 @@ if libsdl2.found()
     cam_sources += files([
         'sdl_sink.cpp',
         'sdl_texture.cpp',
-        'sdl_texture_yuyv.cpp'
+        'sdl_texture_yuv.cpp',
     ])
 
     if libjpeg.found()

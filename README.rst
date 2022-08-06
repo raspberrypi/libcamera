@@ -61,7 +61,7 @@ for the libcamera core: [required]
         libyaml-dev python3-yaml python3-ply python3-jinja2
 
 for IPA module signing: [required]
-        libgnutls28-dev openssl
+        Either libgnutls28-dev or libssl-dev, openssl
 
 for improved debugging: [optional]
         libdw-dev libunwind-dev

@@ -11,7 +11,9 @@
 
 #include <libcamera/base/span.h>
 
-#if HAVE_GNUTLS
+#if HAVE_CRYPTO
+struct evp_pkey_st;
+#elif HAVE_GNUTLS
 struct gnutls_pubkey_st;
 #endif
 
@@ -28,7 +30,9 @@ public:
 
 private:
 	bool valid_;
-#if HAVE_GNUTLS
+#if HAVE_CRYPTO
+	struct evp_pkey_st *pubkey_;
+#elif HAVE_GNUTLS
 	struct gnutls_pubkey_st *pubkey_;
 #endif
 };

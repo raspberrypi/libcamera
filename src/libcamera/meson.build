@@ -65,12 +65,16 @@ subdir('pipeline')
 subdir('proxy')
 
 libdl = cc.find_library('dl')
-libgnutls = dependency('gnutls', required : true)
 libudev = dependency('libudev', required : false)
 libyaml = dependency('yaml-0.1', required : false)
 
-if libgnutls.found()
+# Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.
+libcrypto = dependency('gnutls', required : false)
+if libcrypto.found()
     config_h.set('HAVE_GNUTLS', 1)
+else
+    libcrypto = dependency('libcrypto', required : true)
+    config_h.set('HAVE_CRYPTO', 1)
 endif
 
 if liblttng.found()
@@ -135,8 +139,8 @@ libcamera_deps = [
     libatomic,
     libcamera_base,
     libcamera_base_private,
+    libcrypto,
     libdl,
-    libgnutls,
     liblttng,
     libudev,
     libyaml,

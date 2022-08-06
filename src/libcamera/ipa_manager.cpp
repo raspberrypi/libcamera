@@ -109,6 +109,9 @@ IPAManager::IPAManager()
 		LOG(IPAManager, Fatal)
 			<< "Multiple IPAManager objects are not allowed";
 
+	if (!pubKey_.isValid())
+		LOG(IPAManager, Warning) << "Public key not valid";
+
 	unsigned int ipaCount = 0;
 
 	/* User-specified paths take precedence. */

@@ -76,6 +76,9 @@ PubKey::~PubKey()
 bool PubKey::verify([[maybe_unused]] Span<const uint8_t> data,
 		    [[maybe_unused]] Span<const uint8_t> sig) const
 {
+	if (!valid_)
+		return false;
+
 #if HAVE_GNUTLS
 	const gnutls_datum_t gnuTlsData{
 		const_cast<unsigned char *>(data.data()),

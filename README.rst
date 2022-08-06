@@ -60,8 +60,11 @@ Meson Build system: [required]
 for the libcamera core: [required]
         libyaml-dev python3-yaml python3-ply python3-jinja2
 
-for IPA module signing: [required]
+for IPA module signing: [recommended]
         Either libgnutls28-dev or libssl-dev, openssl
+
+        Without IPA module signing, all IPA modules will be isolated in a
+        separate process. This adds an unnecessary extra overhead at runtime.
 
 for improved debugging: [optional]
         libdw-dev libunwind-dev

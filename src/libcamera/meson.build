@@ -73,8 +73,14 @@ libcrypto = dependency('gnutls', required : false)
 if libcrypto.found()
     config_h.set('HAVE_GNUTLS', 1)
 else
-    libcrypto = dependency('libcrypto', required : true)
-    config_h.set('HAVE_CRYPTO', 1)
+    libcrypto = dependency('libcrypto', required : false)
+    if libcrypto.found()
+        config_h.set('HAVE_CRYPTO', 1)
+    endif
+endif
+
+if not libcrypto.found()
+    warning('Neither gnutls nor libcrypto found, all IPA modules will be isolated')
 endif
 
 if liblttng.found()

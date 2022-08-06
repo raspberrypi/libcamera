@@ -14,7 +14,7 @@ summary({
          }, section : 'Paths')
 
 # Module Signing
-openssl = find_program('openssl', required : true)
+openssl = find_program('openssl', required : false)
 if openssl.found()
     ipa_priv_key = custom_target('ipa-priv-key',
                                  output : ['ipa-priv-key.pem'],
@@ -22,6 +22,7 @@ if openssl.found()
     config_h.set('HAVE_IPA_PUBKEY', 1)
     ipa_sign_module = true
 else
+    warning('openssl not found, all IPA modules will be isolated')
     ipa_sign_module = false
 endif
 

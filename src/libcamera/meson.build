@@ -65,7 +65,7 @@ subdir('pipeline')
 subdir('proxy')
 
 libdl = cc.find_library('dl')
-libgnutls = cc.find_library('gnutls', required : true)
+libgnutls = dependency('gnutls', required : true)
 libudev = dependency('libudev', required : false)
 libyaml = dependency('yaml-0.1', required : false)
 

@@ -377,6 +377,8 @@ int AtomicRequest::commit(unsigned int flags)
 		drmFlags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
 	if (flags & FlagAsync)
 		drmFlags |= DRM_MODE_PAGE_FLIP_EVENT | DRM_MODE_ATOMIC_NONBLOCK;
+	if (flags & FlagTestOnly)
+		drmFlags |= DRM_MODE_ATOMIC_TEST_ONLY;
 
 	return drmModeAtomicCommit(dev_->fd(), request_, drmFlags, this);
 }

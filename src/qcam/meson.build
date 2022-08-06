@@ -18,6 +18,7 @@ qcam_sources = files([
     '../cam/image.cpp',
     '../cam/options.cpp',
     '../cam/stream_options.cpp',
+    'cam_select_dialog.cpp',
     'format_converter.cpp',
     'main.cpp',
     'main_window.cpp',
@@ -26,6 +27,7 @@ qcam_sources = files([
 ])
 
 qcam_moc_headers = files([
+    'cam_select_dialog.h',
     'main_window.h',
     'viewfinder_qt.h',
 ])

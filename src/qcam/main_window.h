@@ -33,6 +33,7 @@
 class QAction;
 class QComboBox;
 
+class CameraSelectorDialog;
 class Image;
 class HotplugEvent;
 
@@ -98,6 +99,8 @@ private:
 
 	QString title_;
 	QTimer titleTimer_;
+
+	CameraSelectorDialog *cameraSelectorDialog_;
 
 	/* Options */
 	const OptionsParser::Options &options_;

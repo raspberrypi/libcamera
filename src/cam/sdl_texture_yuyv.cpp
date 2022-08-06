@@ -9,8 +9,8 @@
 
 using namespace libcamera;
 
-SDLTextureYUYV::SDLTextureYUYV(const SDL_Rect &rect)
-	: SDLTexture(rect, SDL_PIXELFORMAT_YUY2, 4 * ((rect.w + 1) / 2))
+SDLTextureYUYV::SDLTextureYUYV(const SDL_Rect &rect, unsigned int stride)
+	: SDLTexture(rect, SDL_PIXELFORMAT_YUY2, stride)
 {
 }
 

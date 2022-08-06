@@ -14,7 +14,7 @@ class SDLTextureMJPG : public SDLTexture
 public:
 	SDLTextureMJPG(const SDL_Rect &rect);
 
-	void update(libcamera::Span<const uint8_t> data) override;
+	void update(const std::vector<libcamera::Span<const uint8_t>> &data) override;
 
 private:
 	int decompress(libcamera::Span<const uint8_t> data);

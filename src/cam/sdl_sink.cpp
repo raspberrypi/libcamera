@@ -185,16 +185,23 @@ void SDLSink::renderBuffer(FrameBuffer *buffer)
 {
 	Image *image = mappedBuffers_[buffer].get();
 
-	/* \todo Implement support for multi-planar formats. */
-	const FrameMetadata::Plane &meta = buffer->metadata().planes()[0];
+	std::vector<Span<const uint8_t>> planes;
+	unsigned int i = 0;
 
-	Span<uint8_t> data = image->data(0);
-	if (meta.bytesused > data.size())
-		std::cerr << "payload size " << meta.bytesused
-			  << " larger than plane size " << data.size()
-			  << std::endl;
+	planes.reserve(buffer->metadata()->planes().size());
 
-	texture_->update(data);
+	for (const FrameMetadata::Plane &meta : buffer->metadata().planes()) {
+		Span<uint8_t> data = image->data(i);
+		if (meta.bytesused > data.size())
+			std::cerr << "payload size " << meta.bytesused
+				  << " larger than plane size " << data.size()
+				  << std::endl;
+
+		planes.push_back(data);
+		i++;
+	}
+
+	texture_->update(planes);
 
 	SDL_RenderClear(renderer_);
 	SDL_RenderCopy(renderer_, texture_->get(), nullptr, nullptr);

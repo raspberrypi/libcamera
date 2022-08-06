@@ -67,6 +67,9 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 		texture_ = std::make_unique<SDLTextureMJPG>(rect_);
 		break;
 #endif
+	case libcamera::formats::NV12:
+		texture_ = std::make_unique<SDLTextureNV12>(rect_, cfg.stride);
+		break;
 	case libcamera::formats::YUYV:
 		texture_ = std::make_unique<SDLTextureYUYV>(rect_, cfg.stride);
 		break;
@@ -188,7 +191,7 @@ void SDLSink::renderBuffer(FrameBuffer *buffer)
 	std::vector<Span<const uint8_t>> planes;
 	unsigned int i = 0;
 
-	planes.reserve(buffer->metadata()->planes().size());
+	planes.reserve(buffer->metadata().planes().size());
 
 	for (const FrameMetadata::Plane &meta : buffer->metadata().planes()) {
 		Span<uint8_t> data = image->data(i);

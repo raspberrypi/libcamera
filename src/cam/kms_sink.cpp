@@ -284,6 +284,94 @@ int KMSSink::stop()
 	return FrameSink::stop();
 }
 
+bool KMSSink::testModeSet(DRM::FrameBuffer *drmBuffer,
+			  const libcamera::Rectangle &src,
+			  const libcamera::Rectangle &dst)
+{
+	DRM::AtomicRequest drmRequest{ &dev_ };
+
+	drmRequest.addProperty(connector_, "CRTC_ID", crtc_->id());
+
+	drmRequest.addProperty(crtc_, "ACTIVE", 1);
+	drmRequest.addProperty(crtc_, "MODE_ID", mode_->toBlob(&dev_));
+
+	drmRequest.addProperty(plane_, "CRTC_ID", crtc_->id());
+	drmRequest.addProperty(plane_, "FB_ID", drmBuffer->id());
+	drmRequest.addProperty(plane_, "SRC_X", src.x << 16);
+	drmRequest.addProperty(plane_, "SRC_Y", src.y << 16);
+	drmRequest.addProperty(plane_, "SRC_W", src.width << 16);
+	drmRequest.addProperty(plane_, "SRC_H", src.height << 16);
+	drmRequest.addProperty(plane_, "CRTC_X", dst.x);
+	drmRequest.addProperty(plane_, "CRTC_Y", dst.y);
+	drmRequest.addProperty(plane_, "CRTC_W", dst.width);
+	drmRequest.addProperty(plane_, "CRTC_H", dst.height);
+
+	return !drmRequest.commit(DRM::AtomicRequest::FlagAllowModeset |
+				  DRM::AtomicRequest::FlagTestOnly);
+}
+
+bool KMSSink::setupComposition(DRM::FrameBuffer *drmBuffer)
+{
+	/*
+	 * Test composition options, from most to least desirable, to select the
+	 * best one.
+	 */
+	const libcamera::Rectangle framebuffer{ size_ };
+	const libcamera::Rectangle display{ 0, 0, mode_->hdisplay, mode_->vdisplay };
+
+	/* 1. Scale the frame buffer to full screen, preserving aspect ratio. */
+	libcamera::Rectangle src = framebuffer;
+	libcamera::Rectangle dst = display.size().boundedToAspectRatio(framebuffer.size())
+						 .centeredTo(display.center());
+
+	if (testModeSet(drmBuffer, src, dst)) {
+		std::cout << "KMS: full-screen scaled output, square pixels"
+			  << std::endl;
+		src_ = src;
+		dst_ = dst;
+		return true;
+	}
+
+	/*
+	 * 2. Scale the frame buffer to full screen, without preserving aspect
+	 *    ratio.
+	 */
+	src = framebuffer;
+	dst = display;
+
+	if (testModeSet(drmBuffer, src, dst)) {
+		std::cout << "KMS: full-screen scaled output, non-square pixels"
+			  << std::endl;
+		src_ = src;
+		dst_ = dst;
+		return true;
+	}
+
+	/* 3. Center the frame buffer on the display. */
+	src = display.size().centeredTo(framebuffer.center()).boundedTo(framebuffer);
+	dst = framebuffer.size().centeredTo(display.center()).boundedTo(display);
+
+	if (testModeSet(drmBuffer, src, dst)) {
+		std::cout << "KMS: centered output" << std::endl;
+		src_ = src;
+		dst_ = dst;
+		return true;
+	}
+
+	/* 4. Align the frame buffer on the top-left of the display. */
+	src = framebuffer.boundedTo(display);
+	dst = display.boundedTo(framebuffer);
+
+	if (testModeSet(drmBuffer, src, dst)) {
+		std::cout << "KMS: top-left aligned output" << std::endl;
+		src_ = src;
+		dst_ = dst;
+		return true;
+	}
+
+	return false;
+}
+
 bool KMSSink::processRequest(libcamera::Request *camRequest)
 {
 	/*
@@ -307,20 +395,25 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 
 	if (!active_ && !queued_) {
 		/* Enable the display pipeline on the first frame. */
+		if (!setupComposition(drmBuffer)) {
+			std::cerr << "Failed to setup composition" << std::endl;
+			return true;
+		}
+
 		drmRequest->addProperty(connector_, "CRTC_ID", crtc_->id());
 
 		drmRequest->addProperty(crtc_, "ACTIVE", 1);
 		drmRequest->addProperty(crtc_, "MODE_ID", mode_->toBlob(&dev_));
 
 		drmRequest->addProperty(plane_, "CRTC_ID", crtc_->id());
-		drmRequest->addProperty(plane_, "SRC_X", 0 << 16);
-		drmRequest->addProperty(plane_, "SRC_Y", 0 << 16);
-		drmRequest->addProperty(plane_, "SRC_W", size_.width << 16);
-		drmRequest->addProperty(plane_, "SRC_H", size_.height << 16);
-		drmRequest->addProperty(plane_, "CRTC_X", 0);
-		drmRequest->addProperty(plane_, "CRTC_Y", 0);
-		drmRequest->addProperty(plane_, "CRTC_W", size_.width);
-		drmRequest->addProperty(plane_, "CRTC_H", size_.height);
+		drmRequest->addProperty(plane_, "SRC_X", src_.x << 16);
+		drmRequest->addProperty(plane_, "SRC_Y", src_.y << 16);
+		drmRequest->addProperty(plane_, "SRC_W", src_.width << 16);
+		drmRequest->addProperty(plane_, "SRC_H", src_.height << 16);
+		drmRequest->addProperty(plane_, "CRTC_X", dst_.x);
+		drmRequest->addProperty(plane_, "CRTC_Y", dst_.y);
+		drmRequest->addProperty(plane_, "CRTC_W", dst_.width);
+		drmRequest->addProperty(plane_, "CRTC_H", dst_.height);
 
 		flags |= DRM::AtomicRequest::FlagAllowModeset;
 	}

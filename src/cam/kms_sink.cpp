@@ -301,7 +301,8 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 	DRM::FrameBuffer *drmBuffer = iter->second.get();
 
 	unsigned int flags = DRM::AtomicRequest::FlagAsync;
-	DRM::AtomicRequest *drmRequest = new DRM::AtomicRequest(&dev_);
+	std::unique_ptr<DRM::AtomicRequest> drmRequest =
+		std::make_unique<DRM::AtomicRequest>(&dev_);
 	drmRequest->addProperty(plane_, "FB_ID", drmBuffer->id());
 
 	if (!active_ && !queued_) {
@@ -324,12 +325,12 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 		flags |= DRM::AtomicRequest::FlagAllowModeset;
 	}
 
-	pending_ = std::make_unique<Request>(drmRequest, camRequest);
+	pending_ = std::make_unique<Request>(std::move(drmRequest), camRequest);
 
 	std::lock_guard<std::mutex> lock(lock_);
 
 	if (!queued_) {
-		int ret = drmRequest->commit(flags);
+		int ret = pending_->drmRequest_->commit(flags);
 		if (ret < 0) {
 			std::cerr
 				<< "Failed to commit atomic request: "

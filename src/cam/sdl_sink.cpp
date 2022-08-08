@@ -67,9 +67,11 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 		texture_ = std::make_unique<SDLTextureMJPG>(rect_);
 		break;
 #endif
+#if SDL_VERSION_ATLEAST(2, 0, 16)
 	case libcamera::formats::NV12:
 		texture_ = std::make_unique<SDLTextureNV12>(rect_, cfg.stride);
 		break;
+#endif
 	case libcamera::formats::YUYV:
 		texture_ = std::make_unique<SDLTextureYUYV>(rect_, cfg.stride);
 		break;

@@ -9,6 +9,8 @@
 
 #include <atomic>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/bound_method.h>
 
 namespace libcamera {

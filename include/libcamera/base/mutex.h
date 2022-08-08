@@ -10,6 +10,8 @@
 #include <condition_variable>
 #include <mutex>
 
+#include <libcamera/base/private.h>
+
 #include <libcamera/base/thread_annotations.h>
 
 namespace libcamera {

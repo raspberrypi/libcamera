@@ -852,7 +852,15 @@ const PixelFormatInfo &PixelFormatInfo::info(const PixelFormat &format)
  */
 const PixelFormatInfo &PixelFormatInfo::info(const V4L2PixelFormat &format)
 {
-	return info(format.toPixelFormat());
+	PixelFormat pixelFormat = format.toPixelFormat(false);
+	if (!pixelFormat.isValid())
+		return pixelFormatInfoInvalid;
+
+	const auto iter = pixelFormatInfo.find(pixelFormat);
+	if (iter == pixelFormatInfo.end())
+		return pixelFormatInfoInvalid;
+
+	return iter->second;
 }
 
 /**

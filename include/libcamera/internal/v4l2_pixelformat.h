@@ -45,7 +45,7 @@ public:
 	std::string toString() const;
 	const char *description() const;
 
-	PixelFormat toPixelFormat() const;
+	PixelFormat toPixelFormat(bool warn = true) const;
 	static const std::vector<V4L2PixelFormat> &
 	fromPixelFormat(const PixelFormat &pixelFormat);
 

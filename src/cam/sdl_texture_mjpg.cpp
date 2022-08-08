@@ -39,7 +39,7 @@ struct JpegErrorManager : public jpeg_error_mgr {
 
 SDLTextureMJPG::SDLTextureMJPG(const SDL_Rect &rect)
 	: SDLTexture(rect, SDL_PIXELFORMAT_RGB24, rect.w * 3),
-	  rgb_(std::make_unique<unsigned char[]>(pitch_ * rect.h))
+	  rgb_(std::make_unique<unsigned char[]>(stride_ * rect.h))
 {
 }
 
@@ -65,7 +65,7 @@ int SDLTextureMJPG::decompress(Span<const uint8_t> data)
 	jpeg_start_decompress(&cinfo);
 
 	for (int i = 0; cinfo.output_scanline < cinfo.output_height; ++i) {
-		JSAMPROW rowptr = rgb_.get() + i * pitch_;
+		JSAMPROW rowptr = rgb_.get() + i * stride_;
 		jpeg_read_scanlines(&cinfo, &rowptr, 1);
 	}
 
@@ -79,5 +79,5 @@ int SDLTextureMJPG::decompress(Span<const uint8_t> data)
 void SDLTextureMJPG::update(const std::vector<libcamera::Span<const uint8_t>> &data)
 {
 	decompress(data[0]);
-	SDL_UpdateTexture(ptr_, nullptr, rgb_.get(), pitch_);
+	SDL_UpdateTexture(ptr_, nullptr, rgb_.get(), stride_);
 }

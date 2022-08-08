@@ -14,7 +14,6 @@
 #include <libcamera/camera_manager.h>
 #include <libcamera/version.h>
 
-#include <QComboBox>
 #include <QCoreApplication>
 #include <QFileDialog>
 #include <QImage>
@@ -195,14 +194,11 @@ int MainWindow::createToolbars()
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selector. */
-	cameraCombo_ = new QComboBox();
-	connect(cameraCombo_, QOverload<int>::of(&QComboBox::activated),
+	cameraSelectButton_ = new QPushButton;
+	connect(cameraSelectButton_, &QPushButton::clicked,
 		this, &MainWindow::switchCamera);
 
-	for (const std::shared_ptr<Camera> &cam : cm_->cameras())
-		cameraCombo_->addItem(QString::fromStdString(cam->id()));
-
-	toolbar_->addWidget(cameraCombo_);
+	toolbar_->addWidget(cameraSelectButton_);
 
 	toolbar_->addSeparator();
 
@@ -262,14 +258,18 @@ void MainWindow::updateTitle()
  * Camera Selection
  */
 
-void MainWindow::switchCamera(int index)
+void MainWindow::switchCamera()
 {
 	/* Get and acquire the new camera. */
-	const auto &cameras = cm_->cameras();
-	if (static_cast<unsigned int>(index) >= cameras.size())
+	std::string newCameraId = chooseCamera();
+
+	if (newCameraId.empty())
 		return;
 
-	const std::shared_ptr<Camera> &cam = cameras[index];
+	if (camera_ && newCameraId == camera_->id())
+		return;
+
+	const std::shared_ptr<Camera> &cam = cm_->get(newCameraId);
 
 	if (cam->acquire()) {
 		qInfo() << "Failed to acquire camera" << cam->id().c_str();
@@ -288,6 +288,9 @@ void MainWindow::switchCamera(int index)
 	camera_ = cam;
 
 	startStopAction_->setChecked(true);
+
+	/* Display the current cameraId in the toolbar .*/
+	cameraSelectButton_->setText(QString::fromStdString(newCameraId));
 }
 
 std::string MainWindow::chooseCamera()
@@ -327,8 +330,8 @@ int MainWindow::openCamera()
 		return -EBUSY;
 	}
 
-	/* Set the combo-box entry with the currently selected Camera. */
-	cameraCombo_->setCurrentText(QString::fromStdString(cameraName));
+	/* Set the camera switch button with the currently selected Camera id. */
+	cameraSelectButton_->setText(QString::fromStdString(cameraName));
 
 	return 0;
 }
@@ -598,7 +601,6 @@ void MainWindow::processHotplug(HotplugEvent *e)
 	HotplugEvent::PlugEvent event = e->hotplugEvent();
 
 	if (event == HotplugEvent::HotPlug) {
-		cameraCombo_->addItem(cameraId);
 		cameraSelectorDialog_->addCamera(cameraId);
 	} else if (event == HotplugEvent::HotUnplug) {
 		/* Check if the currently-streaming camera is removed. */
@@ -606,11 +608,8 @@ void MainWindow::processHotplug(HotplugEvent *e)
 			toggleCapture(false);
 			camera_->release();
 			camera_.reset();
-			cameraCombo_->setCurrentIndex(0);
 		}
 
-		int camIndex = cameraCombo_->findText(cameraId);
-		cameraCombo_->removeItem(camIndex);
 		cameraSelectorDialog_->removeCamera(cameraId);
 	}
 }

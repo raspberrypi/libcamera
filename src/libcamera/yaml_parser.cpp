@@ -841,7 +841,9 @@ std::unique_ptr<YamlObject> YamlParser::parse(File &file)
 	std::unique_ptr<YamlObject> root(new YamlObject());
 
 	if (context.parseContent(*root)) {
-		LOG(YamlParser, Error) << "Failed to parse YAML content";
+		LOG(YamlParser, Error)
+			<< "Failed to parse YAML content from "
+			<< file.fileName();
 		return nullptr;
 	}
 

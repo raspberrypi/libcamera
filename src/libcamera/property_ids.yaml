@@ -497,7 +497,7 @@ controls:
 
   - PixelArrayOpticalBlackRectangles:
       type: Rectangle
-      size: []
+      size: [n]
       description: |
         The pixel array region(s) which contain optical black pixels
         considered valid for calibration purposes.
@@ -592,7 +592,7 @@ controls:
 
   - PixelArrayActiveAreas:
       type: Rectangle
-      size: []
+      size: [n]
       description: |
         The PixelArrayActiveAreas property defines the (possibly multiple and
         overlapping) portions of the camera sensor readable pixel matrix

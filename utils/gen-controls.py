@@ -39,10 +39,32 @@ class Control(object):
         self.__name = name
         self.__data = data
         self.__enum_values = None
+        self.__size = None
 
         enum_values = data.get('enum')
         if enum_values is not None:
             self.__enum_values = [ControlEnum(enum) for enum in enum_values]
+
+        size = self.__data.get('size')
+        if size is not None:
+            if len(size) == 0:
+                raise RuntimeError(f'Control `{self.__name}` size must have at least one dimension')
+
+            # Compute the total number of elements in the array. If any of the
+            # array dimension is a string, the array is variable-sized.
+            num_elems = 1
+            for dim in size:
+                if type(dim) is str:
+                    num_elems = 0
+                    break
+
+                dim = int(dim)
+                if dim <= 0:
+                    raise RuntimeError(f'Control `{self.__name}` size must have positive values only')
+
+                num_elems *= dim
+
+            self.__size = num_elems
 
     @property
     def description(self):
@@ -86,15 +108,12 @@ class Control(object):
         if typ == 'string':
             return 'std::string'
 
-        if size is None:
+        if self.__size is None:
             return typ
 
-        if len(size) > 0:
-            # fixed-sized Span
-            span_size = reduce(operator.mul, size)
-            return f"Span<const {typ}, {span_size}>"
+        if self.__size:
+            return f"Span<const {typ}, {self.__size}>"
         else:
-            # variable-sized Span
             return f"Span<const {typ}>"
 
 

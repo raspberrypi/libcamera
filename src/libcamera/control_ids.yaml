@@ -525,7 +525,7 @@ controls:
         the window where the focal distance for the objects shown in that part
         of the image are closest to the camera.
 
-      size: []
+      size: [n]
 
   - AfTrigger:
       type: int32_t

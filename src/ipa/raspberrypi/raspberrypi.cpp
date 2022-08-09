@@ -566,19 +566,18 @@ void IPARPi::reportMetadata()
 
 	AwbStatus *awbStatus = rpiMetadata_.getLocked<AwbStatus>("awb.status");
 	if (awbStatus) {
-		libcameraMetadata_.set(controls::ColourGains,
-				       Span<const float, 2>({ static_cast<float>(awbStatus->gainR),
-							      static_cast<float>(awbStatus->gainB) }));
+		libcameraMetadata_.set(controls::ColourGains, { static_cast<float>(awbStatus->gainR),
+								static_cast<float>(awbStatus->gainB) });
 		libcameraMetadata_.set(controls::ColourTemperature, awbStatus->temperatureK);
 	}
 
 	BlackLevelStatus *blackLevelStatus = rpiMetadata_.getLocked<BlackLevelStatus>("black_level.status");
 	if (blackLevelStatus)
 		libcameraMetadata_.set(controls::SensorBlackLevels,
-				       Span<const int32_t, 4>({ static_cast<int32_t>(blackLevelStatus->blackLevelR),
-								static_cast<int32_t>(blackLevelStatus->blackLevelG),
-								static_cast<int32_t>(blackLevelStatus->blackLevelG),
-								static_cast<int32_t>(blackLevelStatus->blackLevelB) }));
+				       { static_cast<int32_t>(blackLevelStatus->blackLevelR),
+					 static_cast<int32_t>(blackLevelStatus->blackLevelG),
+					 static_cast<int32_t>(blackLevelStatus->blackLevelG),
+					 static_cast<int32_t>(blackLevelStatus->blackLevelB) });
 
 	FocusStatus *focusStatus = rpiMetadata_.getLocked<FocusStatus>("focus.status");
 	if (focusStatus && focusStatus->num == 12) {
@@ -883,7 +882,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 			if (gains[0] != 0.0f && gains[1] != 0.0f)
 				/* A gain of 0.0f will switch back to auto mode. */
 				libcameraMetadata_.set(controls::ColourGains,
-						       Span<const float, 2>({ gains[0], gains[1] }));
+						       { gains[0], gains[1] });
 			break;
 		}
 
@@ -1167,8 +1166,8 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 
 	/* Return the validated limits via metadata. */
 	libcameraMetadata_.set(controls::FrameDurationLimits,
-			       Span<const int64_t, 2>({ static_cast<int64_t>(minFrameDuration_.get<std::micro>()),
-							static_cast<int64_t>(maxFrameDuration_.get<std::micro>()) }));
+			       { static_cast<int64_t>(minFrameDuration_.get<std::micro>()),
+				 static_cast<int64_t>(maxFrameDuration_.get<std::micro>()) });
 
 	/*
 	 * Calculate the maximum exposure time possible for the AGC to use.

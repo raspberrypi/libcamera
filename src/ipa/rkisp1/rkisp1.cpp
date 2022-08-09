@@ -27,10 +27,7 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/yaml_parser.h"
 
-#include "algorithms/agc.h"
 #include "algorithms/algorithm.h"
-#include "algorithms/awb.h"
-#include "algorithms/blc.h"
 #include "libipa/camera_sensor_helper.h"
 
 #include "ipa_context.h"

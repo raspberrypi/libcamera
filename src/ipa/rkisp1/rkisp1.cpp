@@ -71,9 +71,6 @@ private:
 
 	ControlInfoMap ctrls_;
 
-	/* Camera sensor controls. */
-	bool autoExposure_;
-
 	/* revision-specific data */
 	rkisp1_cif_isp_version hwRevision_;
 	unsigned int hwHistBinNMax_;
@@ -214,8 +211,6 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 		LOG(IPARkISP1, Error) << "Can't find gain control";
 		return -EINVAL;
 	}
-
-	autoExposure_ = true;
 
 	int32_t minExposure = itExp->second.min().get<int32_t>();
 	int32_t maxExposure = itExp->second.max().get<int32_t>();

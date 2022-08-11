@@ -970,7 +970,7 @@ bool ControlList::contains(unsigned int id) const
  */
 
 /**
- * \fn ControlList::set(const Control<T> &ctrl, const std::initializer_list<V> &value)
+ * \fn ControlList::set(const Control<Span<T, Size>> &ctrl, const std::initializer_list<V> &value)
  * \copydoc ControlList::set(const Control<T> &ctrl, const V &value)
  */
 

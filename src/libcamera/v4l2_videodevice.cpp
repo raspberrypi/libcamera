@@ -953,7 +953,12 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 	pix->pixelformat = format->fourcc;
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
-	fromColorSpace(format->colorSpace, *pix);
+	if (format->colorSpace) {
+		fromColorSpace(format->colorSpace, *pix);
+
+		if (caps_.isVideoCapture())
+			pix->flags |= V4L2_PIX_FMT_FLAG_SET_CSC;
+	}
 
 	ASSERT(pix->num_planes <= std::size(pix->plane_fmt));
 
@@ -1023,7 +1028,12 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
 	pix->pixelformat = format->fourcc;
 	pix->bytesperline = format->planes[0].bpl;
 	pix->field = V4L2_FIELD_NONE;
-	fromColorSpace(format->colorSpace, *pix);
+	if (format->colorSpace) {
+		fromColorSpace(format->colorSpace, *pix);
+
+		if (caps_.isVideoCapture())
+			pix->flags |= V4L2_PIX_FMT_FLAG_SET_CSC;
+	}
 
 	ret = ioctl(set ? VIDIOC_S_FMT : VIDIOC_TRY_FMT, &v4l2Format);
 	if (ret) {

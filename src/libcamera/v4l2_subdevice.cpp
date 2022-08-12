@@ -526,7 +526,13 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	subdevFmt.format.height = format->size.height;
 	subdevFmt.format.code = format->mbus_code;
 	subdevFmt.format.field = V4L2_FIELD_NONE;
-	fromColorSpace(format->colorSpace, subdevFmt.format);
+	if (format->colorSpace) {
+		fromColorSpace(format->colorSpace, subdevFmt.format);
+
+		/* The CSC flag is only applicable to source pads. */
+		if (entity_->pads()[pad]->flags() & MEDIA_PAD_FL_SOURCE)
+			subdevFmt.format.flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
+	}
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {

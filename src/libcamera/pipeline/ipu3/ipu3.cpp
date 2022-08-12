@@ -243,6 +243,7 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	 */
 	unsigned int rawCount = 0;
 	unsigned int yuvCount = 0;
+	Size rawRequirement;
 	Size maxYuvSize;
 	Size rawSize;
 
@@ -251,10 +252,11 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 
 		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
 			rawCount++;
-			rawSize.expandTo(cfg.size);
+			rawSize = std::max(rawSize, cfg.size);
 		} else {
 			yuvCount++;
-			maxYuvSize.expandTo(cfg.size);
+			maxYuvSize = std::max(maxYuvSize, cfg.size);
+			rawRequirement.expandTo(cfg.size);
 		}
 	}
 
@@ -283,17 +285,17 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	 * The output YUV streams will be limited in size to the maximum frame
 	 * size requested for the RAW stream, if present.
 	 *
-	 * If no raw stream is requested generate a size as large as the maximum
-	 * requested YUV size aligned to the ImgU constraints and bound by the
-	 * sensor's maximum resolution. See
+	 * If no raw stream is requested, generate a size from the largest YUV
+	 * stream, aligned to the ImgU constraints and bound
+	 * by the sensor's maximum resolution. See
 	 * https://bugs.libcamera.org/show_bug.cgi?id=32
 	 */
 	if (rawSize.isNull())
-		rawSize = maxYuvSize.expandedTo({ ImgUDevice::kIFMaxCropWidth,
-						  ImgUDevice::kIFMaxCropHeight })
-				    .grownBy({ ImgUDevice::kOutputMarginWidth,
-					       ImgUDevice::kOutputMarginHeight })
-				    .boundedTo(data_->cio2_.sensor()->resolution());
+		rawSize = rawRequirement.expandedTo({ ImgUDevice::kIFMaxCropWidth,
+						      ImgUDevice::kIFMaxCropHeight })
+				  .grownBy({ ImgUDevice::kOutputMarginWidth,
+					     ImgUDevice::kOutputMarginHeight })
+				  .boundedTo(data_->cio2_.sensor()->resolution());
 
 	cio2Configuration_ = data_->cio2_.generateConfiguration(rawSize);
 	if (!cio2Configuration_.pixelFormat.isValid())

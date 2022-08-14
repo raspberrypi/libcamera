@@ -122,7 +122,7 @@ libcamera_includes = include_directories('include')
 py_modules = []
 
 # Libraries used by multiple components
-liblttng = cc.find_library('lttng-ust', required : get_option('tracing'))
+liblttng = dependency('lttng-ust', required : get_option('tracing'))
 
 # Pipeline handlers
 #

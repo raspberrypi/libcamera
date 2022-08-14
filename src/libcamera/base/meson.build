@@ -22,8 +22,8 @@ libcamera_base_sources = files([
     'utils.cpp',
 ])
 
-libdw = cc.find_library('libdw', required : false)
-libunwind = cc.find_library('libunwind', required : false)
+libdw = dependency('libdw', required : false)
+libunwind = dependency('libunwind', required : false)
 
 if cc.has_header_symbol('execinfo.h', 'backtrace')
     config_h.set('HAVE_BACKTRACE', 1)

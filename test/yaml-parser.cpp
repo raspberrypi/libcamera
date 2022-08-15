@@ -24,6 +24,8 @@ using namespace std;
 static const string testYaml =
 	"string: libcamera\n"
 	"double: 3.14159\n"
+	"int8_t: -100\n"
+	"uint8_t: 100\n"
 	"int16_t: -1000\n"
 	"uint16_t: 1000\n"
 	"int32_t: -100000\n"
@@ -76,6 +78,8 @@ protected:
 
 	enum class Type {
 		String,
+		Int8,
+		UInt8,
 		Int16,
 		UInt16,
 		Int32,
@@ -90,10 +94,13 @@ protected:
 	{
 		bool isList = type == Type::List || type == Type::Size;
 		bool isScalar = !isList && type != Type::Dictionary;
+		bool isInteger8 = type == Type::Int8 || type == Type::UInt8;
 		bool isInteger16 = type == Type::Int16 || type == Type::UInt16;
 		bool isInteger32 = type == Type::Int32 || type == Type::UInt32;
-		bool isInteger = isInteger16 || isInteger32;
-		bool isSigned = type == Type::Int16 || type == Type::Int32;
+		bool isIntegerUpTo16 = isInteger8 || isInteger16;
+		bool isIntegerUpTo32 = isIntegerUpTo16 || isInteger32;
+		bool isSigned = type == Type::Int8 || type == Type::Int16 ||
+			        type == Type::Int32;
 
 		if ((isScalar && !obj.isValue()) || (!isScalar && obj.isValue())) {
 			std::cerr
@@ -124,35 +131,49 @@ protected:
 			return TestFail;
 		}
 
-		if (!isInteger16 && obj.get<int16_t>()) {
+		if (!isInteger8 && obj.get<int8_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "int8_t" << std::endl;
+			return TestFail;
+		}
+
+		if ((!isInteger8 || isSigned) && obj.get<uint8_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "uint8_t" << std::endl;
+			return TestFail;
+		}
+
+		if (!isIntegerUpTo16 && obj.get<int16_t>()) {
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "int16_t" << std::endl;
 			return TestFail;
 		}
 
-		if ((!isInteger16 || isSigned) && obj.get<uint16_t>()) {
+		if ((!isIntegerUpTo16 || isSigned) && obj.get<uint16_t>()) {
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "uint16_t" << std::endl;
 			return TestFail;
 		}
 
-		if (!isInteger && obj.get<int32_t>()) {
+		if (!isIntegerUpTo32 && obj.get<int32_t>()) {
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "int32_t" << std::endl;
 			return TestFail;
 		}
 
-		if ((!isInteger || isSigned) && obj.get<uint32_t>()) {
+		if ((!isIntegerUpTo32 || isSigned) && obj.get<uint32_t>()) {
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "uint32_t" << std::endl;
 			return TestFail;
 		}
 
-		if (!isInteger && type != Type::Double && obj.get<double>()) {
+		if (!isIntegerUpTo32 && type != Type::Double && obj.get<double>()) {
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "double" << std::endl;
@@ -174,8 +195,10 @@ protected:
 	{
 		uint64_t unsignedValue = static_cast<uint64_t>(value);
 		std::string strValue = std::to_string(value);
+		bool isInteger8 = type == Type::Int8 || type == Type::UInt8;
 		bool isInteger16 = type == Type::Int16 || type == Type::UInt16;
-		bool isSigned = type == Type::Int16 || type == Type::Int32;
+		bool isSigned = type == Type::Int8 || type == Type::Int16 ||
+				type == Type::Int32;
 
 		/* All integers can be parsed as strings or double. */
 
@@ -195,7 +218,27 @@ protected:
 			return TestFail;
 		}
 
-		if (isInteger16) {
+		if (isInteger8) {
+			if (obj.get<int8_t>().value_or(0) != value ||
+			    obj.get<int8_t>(0) != value) {
+				std::cerr
+					<< "Object " << name << " failed to parse as "
+					<< "int8_t" << std::endl;
+				return TestFail;
+			}
+		}
+
+		if (isInteger8 && !isSigned) {
+			if (obj.get<uint8_t>().value_or(0) != unsignedValue ||
+			    obj.get<uint8_t>(0) != unsignedValue) {
+				std::cerr
+					<< "Object " << name << " failed to parse as "
+					<< "uint8_t" << std::endl;
+				return TestFail;
+			}
+		}
+
+		if (isInteger8 || isInteger16) {
 			if (obj.get<int16_t>().value_or(0) != value ||
 			    obj.get<int16_t>(0) != value) {
 				std::cerr
@@ -205,7 +248,7 @@ protected:
 			}
 		}
 
-		if (isInteger16 && !isSigned) {
+		if ((isInteger8 || isInteger16) && !isSigned) {
 			if (obj.get<uint16_t>().value_or(0) != unsignedValue ||
 			    obj.get<uint16_t>(0) != unsignedValue) {
 				std::cerr
@@ -272,8 +315,9 @@ protected:
 		}
 
 		std::vector<const char *> rootElemNames = {
-			"string", "double", "int16_t", "uint16_t", "int32_t",
-			"uint32_t", "size", "list", "dictionary", "level1",
+			"string", "double", "int8_t", "uint8_t", "int16_t",
+			"uint16_t", "int32_t", "uint32_t", "size", "list",
+			"dictionary", "level1",
 		};
 
 		for (const char *name : rootElemNames) {
@@ -295,6 +339,24 @@ protected:
 			cerr << "String object parse as wrong content" << std::endl;
 			return TestFail;
 		}
+
+		/* Test int8_t object */
+		auto &int8Obj = (*root)["int8_t"];
+
+		if (testObjectType(int8Obj, "int8_t", Type::Int8) != TestPass)
+			return TestFail;
+
+		if (testIntegerObject(int8Obj, "int8_t", Type::Int8, -100) != TestPass)
+			return TestFail;
+
+		/* Test uint8_t object */
+		auto &uint8Obj = (*root)["uint8_t"];
+
+		if (testObjectType(uint8Obj, "uint8_t", Type::UInt8) != TestPass)
+			return TestFail;
+
+		if (testIntegerObject(uint8Obj, "uint8_t", Type::UInt8, 100) != TestPass)
+			return TestFail;
 
 		/* Test int16_t object */
 		auto &int16Obj = (*root)["int16_t"];

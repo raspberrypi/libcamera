@@ -166,6 +166,8 @@ public:
 		 std::enable_if_t<
 			 std::is_same_v<bool, T> ||
 			 std::is_same_v<double, T> ||
+			 std::is_same_v<int8_t, T> ||
+			 std::is_same_v<uint8_t, T> ||
 			 std::is_same_v<int16_t, T> ||
 			 std::is_same_v<uint16_t, T> ||
 			 std::is_same_v<int32_t, T> ||
@@ -188,6 +190,8 @@ public:
 		 std::enable_if_t<
 			 std::is_same_v<bool, T> ||
 			 std::is_same_v<double, T> ||
+			 std::is_same_v<int8_t, T> ||
+			 std::is_same_v<uint8_t, T> ||
 			 std::is_same_v<int16_t, T> ||
 			 std::is_same_v<uint16_t, T> ||
 			 std::is_same_v<int32_t, T> ||

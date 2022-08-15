@@ -132,6 +132,61 @@ std::optional<bool> YamlObject::get() const
 }
 
 template<>
+std::optional<int8_t> YamlObject::get() const
+{
+	if (type_ != Type::Value)
+		return std::nullopt;
+
+	if (value_ == "")
+		return std::nullopt;
+
+	char *end;
+
+	errno = 0;
+	long value = std::strtol(value_.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<int8_t>::min() ||
+	    value > std::numeric_limits<int8_t>::max())
+		return std::nullopt;
+
+	return value;
+}
+
+template<>
+std::optional<uint8_t> YamlObject::get() const
+{
+	if (type_ != Type::Value)
+		return std::nullopt;
+
+	if (value_ == "")
+		return std::nullopt;
+
+	/*
+	 * libyaml parses all scalar values as strings. When a string has
+	 * leading spaces before a minus sign, for example "  -10", strtoul
+	 * skips leading spaces, accepts the leading minus sign, and the
+	 * calculated digits are negated as if by unary minus. Rule it out in
+	 * case the user gets a large number when the value is negative.
+	 */
+	std::size_t found = value_.find_first_not_of(" \t");
+	if (found != std::string::npos && value_[found] == '-')
+		return std::nullopt;
+
+	char *end;
+
+	errno = 0;
+	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE ||
+	    value < std::numeric_limits<uint8_t>::min() ||
+	    value > std::numeric_limits<uint8_t>::max())
+		return std::nullopt;
+
+	return value;
+}
+
+template<>
 std::optional<int16_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
@@ -310,6 +365,8 @@ template<typename T,
 	 std::enable_if_t<
 		 std::is_same_v<bool, T> ||
 		 std::is_same_v<double, T> ||
+		 std::is_same_v<int8_t, T> ||
+		 std::is_same_v<uint8_t, T> ||
 		 std::is_same_v<int16_t, T> ||
 		 std::is_same_v<uint16_t, T> ||
 		 std::is_same_v<int32_t, T> ||
@@ -336,6 +393,8 @@ std::optional<std::vector<T>> YamlObject::getList() const
 
 template std::optional<std::vector<bool>> YamlObject::getList<bool>() const;
 template std::optional<std::vector<double>> YamlObject::getList<double>() const;
+template std::optional<std::vector<int8_t>> YamlObject::getList<int8_t>() const;
+template std::optional<std::vector<uint8_t>> YamlObject::getList<uint8_t>() const;
 template std::optional<std::vector<int16_t>> YamlObject::getList<int16_t>() const;
 template std::optional<std::vector<uint16_t>> YamlObject::getList<uint16_t>() const;
 template std::optional<std::vector<int32_t>> YamlObject::getList<int32_t>() const;

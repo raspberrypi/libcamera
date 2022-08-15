@@ -149,6 +149,52 @@ protected:
 		return TestPass;
 	}
 
+	int testIntegerObject(const YamlObject &obj, const char *name, Type type,
+			      int64_t value)
+	{
+		uint64_t unsignedValue = static_cast<uint64_t>(value);
+		std::string strValue = std::to_string(value);
+		bool isSigned = type == Type::Int32;
+
+		/* All integers can be parsed as strings or double. */
+
+		if (obj.get<string>().value_or("") != strValue ||
+		    obj.get<string>("") != strValue) {
+			std::cerr
+				<< "Object " << name << " failed to parse as "
+				<< "string" << std::endl;
+			return TestFail;
+		}
+
+		if (obj.get<double>().value_or(0.0) != value ||
+		    obj.get<double>(0.0) != value) {
+			std::cerr
+				<< "Object " << name << " failed to parse as "
+				<< "double" << std::endl;
+			return TestFail;
+		}
+
+		if (obj.get<int32_t>().value_or(0) != value ||
+		    obj.get<int32_t>(0) != value) {
+			std::cerr
+				<< "Object " << name << " failed to parse as "
+				<< "int32_t" << std::endl;
+			return TestFail;
+		}
+
+		if (!isSigned) {
+			if (obj.get<uint32_t>().value_or(0) != unsignedValue ||
+			    obj.get<uint32_t>(0) != unsignedValue) {
+				std::cerr
+					<< "Object " << name << " failed to parse as "
+					<< "uint32_t" << std::endl;
+				return TestFail;
+			}
+		}
+
+		return TestPass;
+	}
+
 	int run()
 	{
 		/* Test invalid YAML file */
@@ -215,23 +261,8 @@ protected:
 		if (testObjectType(int32Obj, "int32_t", Type::Int32) != TestPass)
 			return TestFail;
 
-		if (int32Obj.get<int32_t>().value_or(0) != -100 ||
-		    int32Obj.get<int32_t>(0) != -100) {
-			cerr << "Integer object parse as wrong value" << std::endl;
+		if (testIntegerObject(int32Obj, "int32_t", Type::Int32, -100) != TestPass)
 			return TestFail;
-		}
-
-		if (int32Obj.get<string>().value_or("") != "-100" ||
-		    int32Obj.get<string>("") != "-100") {
-			cerr << "Integer object fail to parse as string" << std::endl;
-			return TestFail;
-		}
-
-		if (int32Obj.get<double>().value_or(0.0) != -100.0 ||
-		    int32Obj.get<double>(0.0) != -100.0) {
-			cerr << "Integer object fail to parse as double" << std::endl;
-			return TestFail;
-		}
 
 		/* Test uint32_t object */
 		auto &uint32Obj = (*root)["uint32_t"];
@@ -239,29 +270,8 @@ protected:
 		if (testObjectType(uint32Obj, "uint32_t", Type::UInt32) != TestPass)
 			return TestFail;
 
-		if (uint32Obj.get<int32_t>().value_or(0) != 100 ||
-		    uint32Obj.get<int32_t>(0) != 100) {
-			cerr << "Unsigned integer object fail to parse as integer" << std::endl;
+		if (testIntegerObject(uint32Obj, "uint32_t", Type::UInt32, 100) != TestPass)
 			return TestFail;
-		}
-
-		if (uint32Obj.get<string>().value_or("") != "100" ||
-		    uint32Obj.get<string>("") != "100") {
-			cerr << "Unsigned integer object fail to parse as string" << std::endl;
-			return TestFail;
-		}
-
-		if (uint32Obj.get<double>().value_or(0.0) != 100.0 ||
-		    uint32Obj.get<double>(0.0) != 100.0) {
-			cerr << "Unsigned integer object fail to parse as double" << std::endl;
-			return TestFail;
-		}
-
-		if (uint32Obj.get<uint32_t>().value_or(0) != 100 ||
-		    uint32Obj.get<uint32_t>(0) != 100) {
-			cerr << "Unsigned integer object parsed as wrong value" << std::endl;
-			return TestFail;
-		}
 
 		/* Test double value */
 		auto &doubleObj = (*root)["double"];

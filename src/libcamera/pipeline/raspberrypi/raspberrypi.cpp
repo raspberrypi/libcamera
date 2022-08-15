@@ -105,18 +105,8 @@ V4L2DeviceFormat toV4L2DeviceFormat(const V4L2VideoDevice *dev,
 
 bool isRaw(const PixelFormat &pixFmt)
 {
-	/*
-	 * The isRaw test might be redundant right now the pipeline handler only
-	 * supports RAW sensors. Leave it in for now, just as a sanity check.
-	 */
-	if (!pixFmt.isValid())
-		return false;
-
-	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
-	if (!info.isValid())
-		return false;
-
-	return info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+	/* This test works for both Bayer and raw mono formats. */
+	return BayerFormat::fromPixelFormat(pixFmt).isValid();
 }
 
 double scoreFormat(double desired, double actual)

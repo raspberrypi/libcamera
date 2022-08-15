@@ -143,7 +143,7 @@ std::optional<int16_t> YamlObject::get() const
 	char *end;
 
 	errno = 0;
-	int16_t value = std::strtol(value_.c_str(), &end, 10);
+	long value = std::strtol(value_.c_str(), &end, 10);
 
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<int16_t>::min() ||
@@ -176,7 +176,7 @@ std::optional<uint16_t> YamlObject::get() const
 	char *end;
 
 	errno = 0;
-	uint16_t value = std::strtoul(value_.c_str(), &end, 10);
+	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
 
 	if ('\0' != *end || errno == ERANGE ||
 	    value < std::numeric_limits<uint16_t>::min() ||

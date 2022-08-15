@@ -24,8 +24,10 @@ using namespace std;
 static const string testYaml =
 	"string: libcamera\n"
 	"double: 3.14159\n"
-	"uint32_t: 100\n"
-	"int32_t: -100\n"
+	"int16_t: -1000\n"
+	"uint16_t: 1000\n"
+	"int32_t: -100000\n"
+	"uint32_t: 100000\n"
 	"size: [1920, 1080]\n"
 	"list:\n"
 	"  - James\n"
@@ -74,6 +76,8 @@ protected:
 
 	enum class Type {
 		String,
+		Int16,
+		UInt16,
 		Int32,
 		UInt32,
 		Double,
@@ -86,8 +90,10 @@ protected:
 	{
 		bool isList = type == Type::List || type == Type::Size;
 		bool isScalar = !isList && type != Type::Dictionary;
-		bool isInteger = type == Type::Int32 || type == Type::UInt32;
-		bool isSigned = type == Type::Int32;
+		bool isInteger16 = type == Type::Int16 || type == Type::UInt16;
+		bool isInteger32 = type == Type::Int32 || type == Type::UInt32;
+		bool isInteger = isInteger16 || isInteger32;
+		bool isSigned = type == Type::Int16 || type == Type::Int32;
 
 		if ((isScalar && !obj.isValue()) || (!isScalar && obj.isValue())) {
 			std::cerr
@@ -115,6 +121,20 @@ protected:
 			std::cerr
 				<< "Object " << name << " didn't fail to parse as "
 				<< "string" << std::endl;
+			return TestFail;
+		}
+
+		if (!isInteger16 && obj.get<int16_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "int16_t" << std::endl;
+			return TestFail;
+		}
+
+		if ((!isInteger16 || isSigned) && obj.get<uint16_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "uint16_t" << std::endl;
 			return TestFail;
 		}
 
@@ -154,7 +174,8 @@ protected:
 	{
 		uint64_t unsignedValue = static_cast<uint64_t>(value);
 		std::string strValue = std::to_string(value);
-		bool isSigned = type == Type::Int32;
+		bool isInteger16 = type == Type::Int16 || type == Type::UInt16;
+		bool isSigned = type == Type::Int16 || type == Type::Int32;
 
 		/* All integers can be parsed as strings or double. */
 
@@ -172,6 +193,26 @@ protected:
 				<< "Object " << name << " failed to parse as "
 				<< "double" << std::endl;
 			return TestFail;
+		}
+
+		if (isInteger16) {
+			if (obj.get<int16_t>().value_or(0) != value ||
+			    obj.get<int16_t>(0) != value) {
+				std::cerr
+					<< "Object " << name << " failed to parse as "
+					<< "int16_t" << std::endl;
+				return TestFail;
+			}
+		}
+
+		if (isInteger16 && !isSigned) {
+			if (obj.get<uint16_t>().value_or(0) != unsignedValue ||
+			    obj.get<uint16_t>(0) != unsignedValue) {
+				std::cerr
+					<< "Object " << name << " failed to parse as "
+					<< "uint16_t" << std::endl;
+				return TestFail;
+			}
 		}
 
 		if (obj.get<int32_t>().value_or(0) != value ||
@@ -231,8 +272,8 @@ protected:
 		}
 
 		std::vector<const char *> rootElemNames = {
-			"string", "double", "int32_t", "uint32_t", "size",
-			"list", "dictionary", "level1",
+			"string", "double", "int16_t", "uint16_t", "int32_t",
+			"uint32_t", "size", "list", "dictionary", "level1",
 		};
 
 		for (const char *name : rootElemNames) {
@@ -255,13 +296,31 @@ protected:
 			return TestFail;
 		}
 
+		/* Test int16_t object */
+		auto &int16Obj = (*root)["int16_t"];
+
+		if (testObjectType(int16Obj, "int16_t", Type::Int16) != TestPass)
+			return TestFail;
+
+		if (testIntegerObject(int16Obj, "int16_t", Type::Int16, -1000) != TestPass)
+			return TestFail;
+
+		/* Test uint16_t object */
+		auto &uint16Obj = (*root)["uint16_t"];
+
+		if (testObjectType(uint16Obj, "uint16_t", Type::UInt16) != TestPass)
+			return TestFail;
+
+		if (testIntegerObject(uint16Obj, "uint16_t", Type::UInt16, 1000) != TestPass)
+			return TestFail;
+
 		/* Test int32_t object */
 		auto &int32Obj = (*root)["int32_t"];
 
 		if (testObjectType(int32Obj, "int32_t", Type::Int32) != TestPass)
 			return TestFail;
 
-		if (testIntegerObject(int32Obj, "int32_t", Type::Int32, -100) != TestPass)
+		if (testIntegerObject(int32Obj, "int32_t", Type::Int32, -100000) != TestPass)
 			return TestFail;
 
 		/* Test uint32_t object */
@@ -270,7 +329,7 @@ protected:
 		if (testObjectType(uint32Obj, "uint32_t", Type::UInt32) != TestPass)
 			return TestFail;
 
-		if (testIntegerObject(uint32Obj, "uint32_t", Type::UInt32, 100) != TestPass)
+		if (testIntegerObject(uint32Obj, "uint32_t", Type::UInt32, 100000) != TestPass)
 			return TestFail;
 
 		/* Test double value */

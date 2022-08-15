@@ -72,6 +72,83 @@ protected:
 		return TestPass;
 	}
 
+	enum class Type {
+		String,
+		Int32,
+		UInt32,
+		Double,
+		Size,
+		List,
+		Dictionary,
+	};
+
+	int testObjectType(const YamlObject &obj, const char *name, Type type)
+	{
+		bool isList = type == Type::List || type == Type::Size;
+		bool isScalar = !isList && type != Type::Dictionary;
+		bool isInteger = type == Type::Int32 || type == Type::UInt32;
+		bool isSigned = type == Type::Int32;
+
+		if ((isScalar && !obj.isValue()) || (!isScalar && obj.isValue())) {
+			std::cerr
+				<< "Object " << name << " type mismatch when compared to "
+				<< "value" << std::endl;
+			return TestFail;
+		}
+
+		if ((isList && !obj.isList()) || (!isList && obj.isList())) {
+			std::cerr
+				<< "Object " << name << " type mismatch when compared to "
+				<< "list" << std::endl;
+			return TestFail;
+		}
+
+		if ((type == Type::Dictionary && !obj.isDictionary()) ||
+		    (type != Type::Dictionary && obj.isDictionary())) {
+			std::cerr
+				<< "Object " << name << " type mismatch when compared to "
+				<< "dictionary" << std::endl;
+			return TestFail;
+		}
+
+		if (!isScalar && obj.get<std::string>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "string" << std::endl;
+			return TestFail;
+		}
+
+		if (!isInteger && obj.get<int32_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "int32_t" << std::endl;
+			return TestFail;
+		}
+
+		if ((!isInteger || isSigned) && obj.get<uint32_t>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "uint32_t" << std::endl;
+			return TestFail;
+		}
+
+		if (!isInteger && type != Type::Double && obj.get<double>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "double" << std::endl;
+			return TestFail;
+		}
+
+		if (type != Type::Size && obj.get<Size>()) {
+			std::cerr
+				<< "Object " << name << " didn't fail to parse as "
+				<< "Size" << std::endl;
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
 	int run()
 	{
 		/* Test invalid YAML file */
@@ -107,58 +184,24 @@ protected:
 			return TestFail;
 		}
 
-		if (!root->contains("string")) {
-			cerr << "Missing string object in YAML root" << std::endl;
-			return TestFail;
-		}
+		std::vector<const char *> rootElemNames = {
+			"string", "double", "int32_t", "uint32_t", "size",
+			"list", "dictionary", "level1",
+		};
 
-		if (!root->contains("double")) {
-			cerr << "Missing double object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("int32_t")) {
-			cerr << "Missing int32_t object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("uint32_t")) {
-			cerr << "Missing uint32_t object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("size")) {
-			cerr << "Missing Size object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("list")) {
-			cerr << "Missing list object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("dictionary")) {
-			cerr << "Missing dictionary object in YAML root" << std::endl;
-			return TestFail;
-		}
-
-		if (!root->contains("level1")) {
-			cerr << "Missing leveled object in YAML root" << std::endl;
-			return TestFail;
+		for (const char *name : rootElemNames) {
+			if (!root->contains(name)) {
+				cerr << "Missing " << name << " object in YAML root"
+				     << std::endl;
+				return TestFail;
+			}
 		}
 
 		/* Test string object */
 		auto &strObj = (*root)["string"];
 
-		if (strObj.isDictionary()) {
-			cerr << "String object parse as Dictionary" << std::endl;
+		if (testObjectType(strObj, "string", Type::String) != TestPass)
 			return TestFail;
-		}
-
-		if (strObj.isList()) {
-			cerr << "String object parse as List" << std::endl;
-			return TestFail;
-		}
 
 		if (strObj.get<string>().value_or("") != "libcamera" ||
 		    strObj.get<string>("") != "libcamera") {
@@ -166,38 +209,11 @@ protected:
 			return TestFail;
 		}
 
-		if (strObj.get<int32_t>()) {
-			cerr << "String object parse as integer" << std::endl;
-			return TestFail;
-		}
-
-		if (strObj.get<uint32_t>()) {
-			cerr << "String object parse as unsigned integer" << std::endl;
-			return TestFail;
-		}
-
-		if (strObj.get<double>()) {
-			cerr << "String object parse as double" << std::endl;
-			return TestFail;
-		}
-
-		if (strObj.get<Size>()) {
-			cerr << "String object parse as Size" << std::endl;
-			return TestFail;
-		}
-
 		/* Test int32_t object */
 		auto &int32Obj = (*root)["int32_t"];
 
-		if (int32Obj.isDictionary()) {
-			cerr << "Integer object parse as Dictionary" << std::endl;
+		if (testObjectType(int32Obj, "int32_t", Type::Int32) != TestPass)
 			return TestFail;
-		}
-
-		if (int32Obj.isList()) {
-			cerr << "Integer object parse as Integer" << std::endl;
-			return TestFail;
-		}
 
 		if (int32Obj.get<int32_t>().value_or(0) != -100 ||
 		    int32Obj.get<int32_t>(0) != -100) {
@@ -217,28 +233,11 @@ protected:
 			return TestFail;
 		}
 
-		if (int32Obj.get<uint32_t>()) {
-			cerr << "Negative integer object parse as unsigned integer" << std::endl;
-			return TestFail;
-		}
-
-		if (int32Obj.get<Size>()) {
-			cerr << "Integer object parse as Size" << std::endl;
-			return TestFail;
-		}
-
 		/* Test uint32_t object */
 		auto &uint32Obj = (*root)["uint32_t"];
 
-		if (uint32Obj.isDictionary()) {
-			cerr << "Unsigned integer object parse as Dictionary" << std::endl;
+		if (testObjectType(uint32Obj, "uint32_t", Type::UInt32) != TestPass)
 			return TestFail;
-		}
-
-		if (uint32Obj.isList()) {
-			cerr << "Unsigned integer object parse as List" << std::endl;
-			return TestFail;
-		}
 
 		if (uint32Obj.get<int32_t>().value_or(0) != 100 ||
 		    uint32Obj.get<int32_t>(0) != 100) {
@@ -264,23 +263,11 @@ protected:
 			return TestFail;
 		}
 
-		if (uint32Obj.get<Size>()) {
-			cerr << "Unsigned integer object parsed as Size" << std::endl;
-			return TestFail;
-		}
-
 		/* Test double value */
 		auto &doubleObj = (*root)["double"];
 
-		if (doubleObj.isDictionary()) {
-			cerr << "Double object parse as Dictionary" << std::endl;
+		if (testObjectType(doubleObj, "double", Type::Double) != TestPass)
 			return TestFail;
-		}
-
-		if (doubleObj.isList()) {
-			cerr << "Double object parse as List" << std::endl;
-			return TestFail;
-		}
 
 		if (doubleObj.get<string>().value_or("") != "3.14159" ||
 		    doubleObj.get<string>("") != "3.14159") {
@@ -294,53 +281,11 @@ protected:
 			return TestFail;
 		}
 
-		if (doubleObj.get<int32_t>()) {
-			cerr << "Double object parse as integer" << std::endl;
-			return TestFail;
-		}
-
-		if (doubleObj.get<uint32_t>()) {
-			cerr << "Double object parse as unsigned integer" << std::endl;
-			return TestFail;
-		}
-
-		if (doubleObj.get<Size>()) {
-			cerr << "Double object parse as Size" << std::endl;
-			return TestFail;
-		}
-
 		/* Test Size value */
 		auto &sizeObj = (*root)["size"];
 
-		if (sizeObj.isDictionary()) {
-			cerr << "Size object parse as Dictionary" << std::endl;
+		if (testObjectType(sizeObj, "size", Type::Size) != TestPass)
 			return TestFail;
-		}
-
-		if (!sizeObj.isList()) {
-			cerr << "Size object parse as List" << std::endl;
-			return TestFail;
-		}
-
-		if (sizeObj.get<string>()) {
-			cerr << "Size object parse as string" << std::endl;
-			return TestFail;
-		}
-
-		if (sizeObj.get<double>()) {
-			cerr << "Size object parse as double" << std::endl;
-			return TestFail;
-		}
-
-		if (sizeObj.get<int32_t>()) {
-			cerr << "Size object parse as integer" << std::endl;
-			return TestFail;
-		}
-
-		if (sizeObj.get<uint32_t>()) {
-			cerr << "Size object parse as unsigned integer" << std::endl;
-			return TestFail;
-		}
 
 		if (sizeObj.get<Size>().value_or(Size(0, 0)) != Size(1920, 1080) ||
 		    sizeObj.get<Size>(Size(0, 0)) != Size(1920, 1080)) {
@@ -351,40 +296,8 @@ protected:
 		/* Test list object */
 		auto &listObj = (*root)["list"];
 
-		if (listObj.isDictionary()) {
-			cerr << "List object parse as Dictionary" << std::endl;
+		if (testObjectType(listObj, "list", Type::List) != TestPass)
 			return TestFail;
-		}
-
-		if (!listObj.isList()) {
-			cerr << "List object fail to parse as List" << std::endl;
-			return TestFail;
-		}
-
-		if (listObj.get<string>()) {
-			cerr << "List object parse as string" << std::endl;
-			return TestFail;
-		}
-
-		if (listObj.get<double>()) {
-			cerr << "List object parse as double" << std::endl;
-			return TestFail;
-		}
-
-		if (listObj.get<int32_t>()) {
-			cerr << "List object parse as integer" << std::endl;
-			return TestFail;
-		}
-
-		if (listObj.get<uint32_t>()) {
-			cerr << "List object parse as unsigne integer" << std::endl;
-			return TestFail;
-		}
-
-		if (listObj.get<Size>()) {
-			cerr << "String list object parse as Size" << std::endl;
-			return TestFail;
-		}
 
 		static constexpr std::array<const char *, 2> listValues{
 			"James",
@@ -424,40 +337,8 @@ protected:
 		/* Test dictionary object */
 		auto &dictObj = (*root)["dictionary"];
 
-		if (!dictObj.isDictionary()) {
-			cerr << "Dictionary object fail to parse as Dictionary" << std::endl;
+		if (testObjectType(dictObj, "dictionary", Type::Dictionary) != TestPass)
 			return TestFail;
-		}
-
-		if (dictObj.isList()) {
-			cerr << "Dictionary object parse as List" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj.get<string>()) {
-			cerr << "Dictionary object parse as string" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj.get<double>()) {
-			cerr << "Dictionary object parse as double" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj.get<int32_t>()) {
-			cerr << "Dictionary object parse as integer" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj.get<uint32_t>()) {
-			cerr << "Dictionary object parse as unsigned integer" << std::endl;
-			return TestFail;
-		}
-
-		if (dictObj.get<Size>()) {
-			cerr << "Dictionary object parse as Size" << std::endl;
-			return TestFail;
-		}
 
 		static constexpr std::array<std::pair<const char *, int>, 3> dictValues{ {
 			{ "a", 1 },

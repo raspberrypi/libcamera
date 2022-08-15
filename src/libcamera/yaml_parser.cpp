@@ -131,23 +131,66 @@ std::optional<bool> YamlObject::get() const
 	return std::nullopt;
 }
 
+namespace {
+
+bool parseSignedInteger(const std::string &str, long min, long max,
+			long *result)
+{
+	if (str == "")
+		return false;
+
+	char *end;
+
+	errno = 0;
+	long value = std::strtol(str.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE || value < min || value > max)
+		return false;
+
+	*result = value;
+	return true;
+}
+
+bool parseUnsignedInteger(const std::string &str, unsigned long max,
+			  unsigned long *result)
+{
+	if (str == "")
+		return false;
+
+	/*
+	 * strtoul() accepts strings representing a negative number, in which
+	 * case it negates the converted value. We don't want to silently accept
+	 * negative values and return a large positive number, so check for a
+	 * minus sign (after optional whitespace) and return an error.
+	 */
+	std::size_t found = str.find_first_not_of(" \t");
+	if (found != std::string::npos && str[found] == '-')
+		return false;
+
+	char *end;
+
+	errno = 0;
+	unsigned long value = std::strtoul(str.c_str(), &end, 10);
+
+	if ('\0' != *end || errno == ERANGE || value > max)
+		return false;
+
+	*result = value;
+	return true;
+}
+
+} /* namespace */
+
 template<>
 std::optional<int8_t> YamlObject::get() const
 {
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	long value;
 
-	char *end;
-
-	errno = 0;
-	long value = std::strtol(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<int8_t>::min() ||
-	    value > std::numeric_limits<int8_t>::max())
+	if (!parseSignedInteger(value_, std::numeric_limits<int8_t>::min(),
+				std::numeric_limits<int8_t>::max(), &value))
 		return std::nullopt;
 
 	return value;
@@ -159,28 +202,10 @@ std::optional<uint8_t> YamlObject::get() const
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	unsigned long value;
 
-	/*
-	 * libyaml parses all scalar values as strings. When a string has
-	 * leading spaces before a minus sign, for example "  -10", strtoul
-	 * skips leading spaces, accepts the leading minus sign, and the
-	 * calculated digits are negated as if by unary minus. Rule it out in
-	 * case the user gets a large number when the value is negative.
-	 */
-	std::size_t found = value_.find_first_not_of(" \t");
-	if (found != std::string::npos && value_[found] == '-')
-		return std::nullopt;
-
-	char *end;
-
-	errno = 0;
-	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<uint8_t>::min() ||
-	    value > std::numeric_limits<uint8_t>::max())
+	if (!parseUnsignedInteger(value_, std::numeric_limits<uint8_t>::max(),
+				  &value))
 		return std::nullopt;
 
 	return value;
@@ -192,17 +217,10 @@ std::optional<int16_t> YamlObject::get() const
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	long value;
 
-	char *end;
-
-	errno = 0;
-	long value = std::strtol(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<int16_t>::min() ||
-	    value > std::numeric_limits<int16_t>::max())
+	if (!parseSignedInteger(value_, std::numeric_limits<int16_t>::min(),
+				std::numeric_limits<int16_t>::max(), &value))
 		return std::nullopt;
 
 	return value;
@@ -214,28 +232,10 @@ std::optional<uint16_t> YamlObject::get() const
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	unsigned long value;
 
-	/*
-	 * libyaml parses all scalar values as strings. When a string has
-	 * leading spaces before a minus sign, for example "  -10", strtoul
-	 * skips leading spaces, accepts the leading minus sign, and the
-	 * calculated digits are negated as if by unary minus. Rule it out in
-	 * case the user gets a large number when the value is negative.
-	 */
-	std::size_t found = value_.find_first_not_of(" \t");
-	if (found != std::string::npos && value_[found] == '-')
-		return std::nullopt;
-
-	char *end;
-
-	errno = 0;
-	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<uint16_t>::min() ||
-	    value > std::numeric_limits<uint16_t>::max())
+	if (!parseUnsignedInteger(value_, std::numeric_limits<uint16_t>::max(),
+				  &value))
 		return std::nullopt;
 
 	return value;
@@ -247,17 +247,10 @@ std::optional<int32_t> YamlObject::get() const
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	long value;
 
-	char *end;
-
-	errno = 0;
-	long value = std::strtol(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<int32_t>::min() ||
-	    value > std::numeric_limits<int32_t>::max())
+	if (!parseSignedInteger(value_, std::numeric_limits<int32_t>::min(),
+				std::numeric_limits<int32_t>::max(), &value))
 		return std::nullopt;
 
 	return value;
@@ -269,28 +262,10 @@ std::optional<uint32_t> YamlObject::get() const
 	if (type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
-		return std::nullopt;
+	unsigned long value;
 
-	/*
-	 * libyaml parses all scalar values as strings. When a string has
-	 * leading spaces before a minus sign, for example "  -10", strtoul
-	 * skips leading spaces, accepts the leading minus sign, and the
-	 * calculated digits are negated as if by unary minus. Rule it out in
-	 * case the user gets a large number when the value is negative.
-	 */
-	std::size_t found = value_.find_first_not_of(" \t");
-	if (found != std::string::npos && value_[found] == '-')
-		return std::nullopt;
-
-	char *end;
-
-	errno = 0;
-	unsigned long value = std::strtoul(value_.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE ||
-	    value < std::numeric_limits<uint32_t>::min() ||
-	    value > std::numeric_limits<uint32_t>::max())
+	if (!parseUnsignedInteger(value_, std::numeric_limits<uint32_t>::max(),
+				  &value))
 		return std::nullopt;
 
 	return value;

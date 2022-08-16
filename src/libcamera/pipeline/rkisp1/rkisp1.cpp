@@ -688,7 +688,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		/* \todo Turn this into a hard failure. */
 		LOG(RkISP1, Warning) << "Camera sensor information not available";
 		sensorInfo = {};
-		ret = 0;
 	}
 
 	std::map<uint32_t, ControlInfoMap> entityControls;

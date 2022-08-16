@@ -340,12 +340,8 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 {
 	ControlList controls(data->video_->controls());
 
-	for (auto it : request->controls()) {
-		unsigned int id = it.first;
-		ControlValue &value = it.second;
-
+	for (const auto &[id, value] : request->controls())
 		processControl(&controls, id, value);
-	}
 
 	for (const auto &ctrl : controls)
 		LOG(UVC, Debug)

@@ -189,7 +189,7 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 {
 	MutexLocker locker(mutex_);
 
-	for (std::shared_ptr<Camera> c : cameras_) {
+	for (const std::shared_ptr<Camera> &c : cameras_) {
 		if (c->id() == camera->id()) {
 			LOG(Camera, Fatal)
 				<< "Trying to register a camera with a duplicated ID '"

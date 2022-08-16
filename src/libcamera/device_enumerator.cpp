@@ -161,7 +161,7 @@ std::unique_ptr<DeviceEnumerator> DeviceEnumerator::create()
 
 DeviceEnumerator::~DeviceEnumerator()
 {
-	for (std::shared_ptr<MediaDevice> media : devices_) {
+	for (const std::shared_ptr<MediaDevice> &media : devices_) {
 		if (media->busy())
 			LOG(DeviceEnumerator, Error)
 				<< "Removing media device " << media->deviceNode()

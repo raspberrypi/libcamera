@@ -616,7 +616,7 @@ void PipelineHandler::disconnect()
 	 */
 	std::vector<std::weak_ptr<Camera>> cameras{ std::move(cameras_) };
 
-	for (std::weak_ptr<Camera> ptr : cameras) {
+	for (const std::weak_ptr<Camera> &ptr : cameras) {
 		std::shared_ptr<Camera> camera = ptr.lock();
 		if (!camera)
 			continue;

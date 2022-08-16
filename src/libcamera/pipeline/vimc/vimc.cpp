@@ -378,7 +378,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 {
 	ControlList controls(data->sensor_->controls());
 
-	for (auto it : request->controls()) {
+	for (const auto &it : request->controls()) {
 		unsigned int id = it.first;
 		unsigned int offset;
 		uint32_t cid;

@@ -20,11 +20,7 @@
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 
-#include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_data_serializer.h"
-#include "libcamera/internal/ipa_manager.h"
-#include "libcamera/internal/ipa_module.h"
-#include "libcamera/internal/pipeline_handler.h"
 
 #include "serialization_test.h"
 #include "test.h"

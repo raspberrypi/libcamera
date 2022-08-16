@@ -49,7 +49,6 @@
 #include "geq_status.h"
 #include "lux_status.h"
 #include "metadata.h"
-#include "noise_status.h"
 #include "sharpen_algorithm.h"
 #include "sharpen_status.h"
 

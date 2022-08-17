@@ -18,6 +18,7 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/color_space.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer.h>
@@ -416,10 +417,12 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
 	const CameraSensor *sensor = data_->sensor_.get();
 	unsigned int pathCount = data_->selfPath_ ? 2 : 1;
-	Status status = Valid;
+	Status status;
 
 	if (config_.empty())
 		return Invalid;
+
+	status = validateColorSpaces(ColorSpaceFlag::StreamsShareColorSpace);
 
 	if (transform != Transform::Identity) {
 		transform = Transform::Identity;
@@ -547,21 +550,44 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 	if (roles.empty())
 		return config;
 
+	/*
+	 * As the ISP can't output different color spaces for the main and self
+	 * path, pick a sensible default color space based on the role of the
+	 * first stream and use it for all streams.
+	 */
+	std::optional<ColorSpace> colorSpace;
+
 	bool mainPathAvailable = true;
 	bool selfPathAvailable = data->selfPath_;
+
 	for (const StreamRole role : roles) {
 		bool useMainPath;
 
 		switch (role) {
-		case StreamRole::StillCapture: {
+		case StreamRole::StillCapture:
 			useMainPath = mainPathAvailable;
+			/* JPEG encoders typically expect sYCC. */
+			if (!colorSpace)
+				colorSpace = ColorSpace::Sycc;
 			break;
-		}
+
 		case StreamRole::Viewfinder:
-		case StreamRole::VideoRecording: {
 			useMainPath = !selfPathAvailable;
+			/*
+			 * sYCC is the YCbCr encoding of sRGB, which is commonly
+			 * used by displays.
+			 */
+			if (!colorSpace)
+				colorSpace = ColorSpace::Sycc;
 			break;
-		}
+
+		case StreamRole::VideoRecording:
+			useMainPath = !selfPathAvailable;
+			/* Rec. 709 is a good default for HD video recording. */
+			if (!colorSpace)
+				colorSpace = ColorSpace::Rec709;
+			break;
+
 		default:
 			LOG(RkISP1, Warning)
 				<< "Requested stream role not supported: " << role;
@@ -580,6 +606,7 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 			selfPathAvailable = false;
 		}
 
+		cfg.colorSpace = colorSpace;
 		config->addConfiguration(cfg);
 	}
 
@@ -642,6 +669,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
+	format.colorSpace = config->at(0).colorSpace;
 	ret = isp_->setFormat(2, &format);
 	if (ret < 0)
 		return ret;

@@ -745,8 +745,8 @@ void V4L2Device::eventAvailable()
 
 static const std::map<uint32_t, ColorSpace> v4l2ToColorSpace = {
 	{ V4L2_COLORSPACE_RAW, ColorSpace::Raw },
-	{ V4L2_COLORSPACE_JPEG, ColorSpace::Jpeg },
 	{ V4L2_COLORSPACE_SRGB, ColorSpace::Srgb },
+	{ V4L2_COLORSPACE_JPEG, ColorSpace::Sycc },
 	{ V4L2_COLORSPACE_SMPTE170M, ColorSpace::Smpte170m },
 	{ V4L2_COLORSPACE_REC709, ColorSpace::Rec709 },
 	{ V4L2_COLORSPACE_BT2020, ColorSpace::Rec2020 },
@@ -771,8 +771,8 @@ static const std::map<uint32_t, ColorSpace::Range> v4l2ToRange = {
 
 static const std::vector<std::pair<ColorSpace, v4l2_colorspace>> colorSpaceToV4l2 = {
 	{ ColorSpace::Raw, V4L2_COLORSPACE_RAW },
-	{ ColorSpace::Jpeg, V4L2_COLORSPACE_JPEG },
 	{ ColorSpace::Srgb, V4L2_COLORSPACE_SRGB },
+	{ ColorSpace::Sycc, V4L2_COLORSPACE_JPEG },
 	{ ColorSpace::Smpte170m, V4L2_COLORSPACE_SMPTE170M },
 	{ ColorSpace::Rec709, V4L2_COLORSPACE_REC709 },
 	{ ColorSpace::Rec2020, V4L2_COLORSPACE_BT2020 },

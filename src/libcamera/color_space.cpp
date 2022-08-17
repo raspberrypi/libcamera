@@ -29,21 +29,28 @@ namespace libcamera {
  * (sometimes also referred to as the quantisation) of the color space.
  *
  * Certain combinations of these fields form well-known standard color
- * spaces such as "JPEG" or "REC709".
+ * spaces such as "sRGB" or "Rec709".
  *
  * In the strictest sense a "color space" formally only refers to the
  * color primaries and white point. Here, however, the ColorSpace class
  * adopts the common broader usage that includes the transfer function,
  * Y'CbCr encoding method and quantisation.
  *
- * For more information on the specific color spaces described here, please
- * see:
+ * More information on color spaces is available in the V4L2 documentation, see
+ * in particular
  *
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-srgb">sRGB</a>
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-jpeg">JPEG</a>
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-smpte-170m">SMPTE 170M</a>
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-rec709">Rec.709</a>
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-bt2020">Rec.2020</a>
+ *
+ * Note that there is no guarantee of a 1:1 mapping between color space names
+ * and definitions in libcamera and V4L2. A notable difference is that the sYCC
+ * libcamera color space is called JPEG in V4L2 due to historical reasons.
+ *
+ * \todo Define the color space fully in the libcamera API to avoid referencing
+ * V4L2
  */
 
 /**
@@ -121,8 +128,8 @@ namespace libcamera {
  * \brief Assemble and return a readable string representation of the
  * ColorSpace
  *
- * If the color space matches a standard ColorSpace (such as ColorSpace::Jpeg)
- * then the short name of the color space ("JPEG") is returned. Otherwise
+ * If the color space matches a standard ColorSpace (such as ColorSpace::Sycc)
+ * then the short name of the color space ("sYCC") is returned. Otherwise
  * the four constituent parts of the ColorSpace are assembled into a longer
  * string.
  *
@@ -134,8 +141,8 @@ std::string ColorSpace::toString() const
 
 	static const std::array<std::pair<ColorSpace, const char *>, 6> colorSpaceNames = { {
 		{ ColorSpace::Raw, "RAW" },
-		{ ColorSpace::Jpeg, "JPEG" },
 		{ ColorSpace::Srgb, "sRGB" },
+		{ ColorSpace::Sycc, "sYCC" },
 		{ ColorSpace::Smpte170m, "SMPTE170M" },
 		{ ColorSpace::Rec709, "Rec709" },
 		{ ColorSpace::Rec2020, "Rec2020" },
@@ -243,20 +250,9 @@ const ColorSpace ColorSpace::Raw = {
 };
 
 /**
- * \brief A constant representing the JPEG color space used for
- * encoding JPEG images
- */
-const ColorSpace ColorSpace::Jpeg = {
-	Primaries::Rec709,
-	TransferFunction::Srgb,
-	YcbcrEncoding::Rec601,
-	Range::Full
-};
-
-/**
  * \brief A constant representing the sRGB color space
  *
- * This is identical to the JPEG color space except that the Y'CbCr
+ * This is identical to the sYCC color space except that the Y'CbCr
  * range is limited rather than full.
  */
 const ColorSpace ColorSpace::Srgb = {
@@ -264,6 +260,17 @@ const ColorSpace ColorSpace::Srgb = {
 	TransferFunction::Srgb,
 	YcbcrEncoding::Rec601,
 	Range::Limited
+};
+
+/**
+ * \brief A constant representing the sYCC color space, typically used for
+ * encoding JPEG images
+ */
+const ColorSpace ColorSpace::Sycc = {
+	Primaries::Rec709,
+	TransferFunction::Srgb,
+	YcbcrEncoding::Rec601,
+	Range::Full
 };
 
 /**

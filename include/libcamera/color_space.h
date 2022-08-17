@@ -46,8 +46,8 @@ public:
 	}
 
 	static const ColorSpace Raw;
-	static const ColorSpace Jpeg;
 	static const ColorSpace Srgb;
+	static const ColorSpace Sycc;
 	static const ColorSpace Smpte170m;
 	static const ColorSpace Rec709;
 	static const ColorSpace Rec2020;

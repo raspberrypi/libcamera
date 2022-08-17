@@ -593,11 +593,11 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 			fmts = data->isp_[Isp::Output0].dev()->formats();
 			pixelFormat = formats::NV12;
 			/*
-			 * Still image codecs usually expect the JPEG color space.
+			 * Still image codecs usually expect the sYCC color space.
 			 * Even RGB codecs will be fine as the RGB we get with the
-			 * JPEG color space is the same as sRGB.
+			 * sYCC color space is the same as sRGB.
 			 */
-			colorSpace = ColorSpace::Jpeg;
+			colorSpace = ColorSpace::Sycc;
 			/* Return the largest sensor resolution. */
 			size = sensorSize;
 			bufferCount = 1;
@@ -628,7 +628,7 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 		case StreamRole::Viewfinder:
 			fmts = data->isp_[Isp::Output0].dev()->formats();
 			pixelFormat = formats::ARGB8888;
-			colorSpace = ColorSpace::Jpeg;
+			colorSpace = ColorSpace::Sycc;
 			size = { 800, 600 };
 			bufferCount = 4;
 			outCount++;
@@ -835,7 +835,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		format.size = maxSize;
 		format.fourcc = dev->toV4L2PixelFormat(formats::YUV420);
 		/* No one asked for output, so the color space doesn't matter. */
-		format.colorSpace = ColorSpace::Jpeg;
+		format.colorSpace = ColorSpace::Sycc;
 		ret = dev->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error)

@@ -55,6 +55,7 @@ struct IPAFrameContext {
 		} gains;
 
 		double temperatureK;
+		bool autoEnabled;
 	} awb;
 
 	struct {

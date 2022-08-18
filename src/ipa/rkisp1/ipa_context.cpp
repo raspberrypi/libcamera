@@ -134,6 +134,9 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::awb.temperatureK
  * \brief Estimated color temperature
+ *
+ * \var IPAFrameContext::awb.autoEnabled
+ * \brief Whether the Auto White Balance algorithm is enabled
  */
 
 /**

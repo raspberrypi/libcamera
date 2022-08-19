@@ -13,6 +13,7 @@ pybind11_proj = subproject('pybind11')
 pybind11_dep = pybind11_proj.get_variable('pybind11_dep')
 
 pycamera_sources = files([
+    'py_camera_manager.cpp',
     'py_enums.cpp',
     'py_geometry.cpp',
     'py_helpers.cpp',

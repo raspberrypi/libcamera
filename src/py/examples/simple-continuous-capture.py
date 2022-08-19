@@ -88,8 +88,9 @@ class CaptureContext:
     camera_contexts: list[CameraCaptureContext] = []
 
     def handle_camera_event(self):
-        # cm.get_ready_requests() will not block here, as we know there is an event
-        # to read.
+        # cm.get_ready_requests() returns the ready requests, which in our case
+        # should almost always return a single Request, but in some cases there
+        # could be multiple or none.
 
         reqs = self.cm.get_ready_requests()
 

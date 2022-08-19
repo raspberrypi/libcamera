@@ -24,7 +24,7 @@ PyCameraManager::PyCameraManager()
 
 	cameraManager_ = std::make_unique<CameraManager>();
 
-	int fd = eventfd(0, EFD_CLOEXEC);
+	int fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
 	if (fd == -1)
 		throw std::system_error(errno, std::generic_category(),
 					"Failed to create eventfd");
@@ -62,7 +62,13 @@ py::list PyCameraManager::cameras()
 
 std::vector<py::object> PyCameraManager::getReadyRequests()
 {
-	readFd();
+	int ret = readFd();
+
+	if (ret == -EAGAIN)
+		return std::vector<py::object>();
+
+	if (ret != 0)
+		throw std::system_error(-ret, std::generic_category());
 
 	std::vector<py::object> py_reqs;
 
@@ -96,12 +102,18 @@ void PyCameraManager::writeFd()
 		LOG(Python, Fatal) << "Unable to write to eventfd";
 }
 
-void PyCameraManager::readFd()
+int PyCameraManager::readFd()
 {
 	uint8_t buf[8];
 
-	if (read(eventFd_.get(), buf, 8) != 8)
-		throw std::system_error(errno, std::generic_category());
+	ssize_t ret = read(eventFd_.get(), buf, 8);
+
+	if (ret == 8)
+		return 0;
+	else if (ret < 0)
+		return -errno;
+	else
+		return -EIO;
 }
 
 void PyCameraManager::pushRequest(Request *req)

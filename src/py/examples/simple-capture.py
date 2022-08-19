@@ -14,6 +14,7 @@
 
 import argparse
 import libcamera as libcam
+import selectors
 import sys
 
 # Number of frames to capture
@@ -107,10 +108,17 @@ def main():
     # The main loop. Wait for the queued Requests to complete, process them,
     # and re-queue them again.
 
+    sel = selectors.DefaultSelector()
+    sel.register(cm.event_fd, selectors.EVENT_READ)
+
     while frames_done < TOTAL_FRAMES:
-        # cm.get_ready_requests() blocks until there is an event and returns
-        # all the ready requests. Here we should almost always get a single
+        # cm.get_ready_requests() does not block, so we use a Selector to wait
+        # for a camera event. Here we should almost always get a single
         # Request, but in some cases there could be multiple or none.
+
+        events = sel.select()
+        if not events:
+            continue
 
         reqs = cm.get_ready_requests()
 

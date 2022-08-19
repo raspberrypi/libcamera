@@ -207,9 +207,16 @@ class SimpleCaptureMethods(CameraTesterBase):
         reqs = None
         gc.collect()
 
+        sel = selectors.DefaultSelector()
+        sel.register(cm.event_fd, selectors.EVENT_READ)
+
         reqs = []
 
         while True:
+            events = sel.select()
+            if not events:
+                continue
+
             ready_reqs = cm.get_ready_requests()
 
             reqs += ready_reqs

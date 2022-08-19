@@ -39,7 +39,7 @@ private:
 		LIBCAMERA_TSA_GUARDED_BY(completedRequestsMutex_);
 
 	void writeFd();
-	void readFd();
+	int readFd();
 	void pushRequest(Request *req);
 	std::vector<Request *> getCompletedRequests();
 };

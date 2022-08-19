@@ -24,7 +24,7 @@ public:
 
 	static const std::string &version() { return CameraManager::version(); }
 
-	int eventFd() const { return eventFd_; }
+	int eventFd() const { return eventFd_.get(); }
 
 	std::vector<pybind11::object> getReadyRequests();
 
@@ -33,7 +33,7 @@ public:
 private:
 	std::unique_ptr<CameraManager> cameraManager_;
 
-	int eventFd_ = -1;
+	UniqueFD eventFd_;
 	std::mutex completedRequestsMutex_;
 	std::vector<Request *> completedRequests_;
 

@@ -29,25 +29,17 @@ PyCameraManager::PyCameraManager()
 		throw std::system_error(errno, std::generic_category(),
 					"Failed to create eventfd");
 
-	eventFd_ = fd;
+	eventFd_ = UniqueFD(fd);
 
 	int ret = cameraManager_->start();
-	if (ret) {
-		close(fd);
-		eventFd_ = -1;
+	if (ret)
 		throw std::system_error(-ret, std::generic_category(),
 					"Failed to start CameraManager");
-	}
 }
 
 PyCameraManager::~PyCameraManager()
 {
 	LOG(Python, Debug) << "~PyCameraManager()";
-
-	if (eventFd_ != -1) {
-		close(eventFd_);
-		eventFd_ = -1;
-	}
 }
 
 py::list PyCameraManager::cameras()
@@ -95,7 +87,7 @@ void PyCameraManager::writeFd()
 {
 	uint64_t v = 1;
 
-	size_t s = write(eventFd_, &v, 8);
+	size_t s = write(eventFd_.get(), &v, 8);
 	/*
 	 * We should never fail, and have no simple means to manage the error,
 	 * so let's log a fatal error.
@@ -108,7 +100,7 @@ void PyCameraManager::readFd()
 {
 	uint8_t buf[8];
 
-	if (read(eventFd_, buf, 8) != 8)
+	if (read(eventFd_.get(), buf, 8) != 8)
 		throw std::system_error(errno, std::generic_category());
 }
 

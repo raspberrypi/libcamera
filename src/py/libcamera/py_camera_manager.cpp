@@ -24,7 +24,7 @@ PyCameraManager::PyCameraManager()
 
 	cameraManager_ = std::make_unique<CameraManager>();
 
-	int fd = eventfd(0, 0);
+	int fd = eventfd(0, EFD_CLOEXEC);
 	if (fd == -1)
 		throw std::system_error(errno, std::generic_category(),
 					"Failed to create eventfd");

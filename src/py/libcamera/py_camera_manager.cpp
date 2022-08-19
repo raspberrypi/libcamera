@@ -106,14 +106,14 @@ void PyCameraManager::readFd()
 
 void PyCameraManager::pushRequest(Request *req)
 {
-	std::lock_guard guard(completedRequestsMutex_);
+	MutexLocker guard(completedRequestsMutex_);
 	completedRequests_.push_back(req);
 }
 
 std::vector<Request *> PyCameraManager::getCompletedRequests()
 {
 	std::vector<Request *> v;
-	std::lock_guard guard(completedRequestsMutex_);
+	MutexLocker guard(completedRequestsMutex_);
 	swap(v, completedRequests_);
 	return v;
 }

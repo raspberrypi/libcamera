@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <mutex>
+#include <libcamera/base/mutex.h>
 
 #include <libcamera/libcamera.h>
 
@@ -34,8 +34,9 @@ private:
 	std::unique_ptr<CameraManager> cameraManager_;
 
 	UniqueFD eventFd_;
-	std::mutex completedRequestsMutex_;
-	std::vector<Request *> completedRequests_;
+	libcamera::Mutex completedRequestsMutex_;
+	std::vector<Request *> completedRequests_
+		LIBCAMERA_TSA_GUARDED_BY(completedRequestsMutex_);
 
 	void writeFd();
 	void readFd();

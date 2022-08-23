@@ -19,9 +19,21 @@ static struct {
 	/* Compressed */
 	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
 
-	/* RGB */
+	/* RGB16 */
+	{ GST_VIDEO_FORMAT_RGB16, formats::RGB565 },
+
+	/* RGB24 */
 	{ GST_VIDEO_FORMAT_RGB, formats::BGR888 },
 	{ GST_VIDEO_FORMAT_BGR, formats::RGB888 },
+
+	/* RGB32 */
+	{ GST_VIDEO_FORMAT_BGRx, formats::XRGB8888 },
+	{ GST_VIDEO_FORMAT_RGBx, formats::XBGR8888 },
+	{ GST_VIDEO_FORMAT_xBGR, formats::RGBX8888 },
+	{ GST_VIDEO_FORMAT_xRGB, formats::BGRX8888 },
+	{ GST_VIDEO_FORMAT_BGRA, formats::ARGB8888 },
+	{ GST_VIDEO_FORMAT_RGBA, formats::ABGR8888 },
+	{ GST_VIDEO_FORMAT_ABGR, formats::RGBA8888 },
 	{ GST_VIDEO_FORMAT_ARGB, formats::BGRA8888 },
 
 	/* YUV Semiplanar */

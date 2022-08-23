@@ -276,6 +276,14 @@ protected:
 			return TestFail;
 		}
 
+		const auto &split = utils::split(path, ":");
+		dirs = std::vector<std::string>{ split.begin(), split.end() };
+
+		if (dirs != elements) {
+			cerr << "utils::split() LegacyInputIterator test failed" << endl;
+			return TestFail;
+		}
+
 		/* utils::join() with conversion function test. */
 		std::vector<Size> sizes = { { 0, 0 }, { 100, 100 } };
 		s = utils::join(sizes, "/", [](const Size &size) {

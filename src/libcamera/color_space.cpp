@@ -12,6 +12,9 @@
 #include <map>
 #include <sstream>
 #include <utility>
+#include <vector>
+
+#include <libcamera/base/utils.h>
 
 /**
  * \file color_space.h
@@ -208,6 +211,44 @@ const ColorSpace ColorSpace::Rec2020 = {
  * \brief The pixel range used with by color space
  */
 
+namespace {
+
+const std::array<std::pair<ColorSpace, const char *>, 6> colorSpaceNames = { {
+	{ ColorSpace::Raw, "RAW" },
+	{ ColorSpace::Srgb, "sRGB" },
+	{ ColorSpace::Sycc, "sYCC" },
+	{ ColorSpace::Smpte170m, "SMPTE170M" },
+	{ ColorSpace::Rec709, "Rec709" },
+	{ ColorSpace::Rec2020, "Rec2020" },
+} };
+
+const std::map<ColorSpace::Primaries, std::string> primariesNames = {
+	{ ColorSpace::Primaries::Raw, "RAW" },
+	{ ColorSpace::Primaries::Smpte170m, "SMPTE170M" },
+	{ ColorSpace::Primaries::Rec709, "Rec709" },
+	{ ColorSpace::Primaries::Rec2020, "Rec2020" },
+};
+
+const std::map<ColorSpace::TransferFunction, std::string> transferNames = {
+	{ ColorSpace::TransferFunction::Linear, "Linear" },
+	{ ColorSpace::TransferFunction::Srgb, "sRGB" },
+	{ ColorSpace::TransferFunction::Rec709, "Rec709" },
+};
+
+const std::map<ColorSpace::YcbcrEncoding, std::string> encodingNames = {
+	{ ColorSpace::YcbcrEncoding::None, "None" },
+	{ ColorSpace::YcbcrEncoding::Rec601, "Rec601" },
+	{ ColorSpace::YcbcrEncoding::Rec709, "Rec709" },
+	{ ColorSpace::YcbcrEncoding::Rec2020, "Rec2020" },
+};
+
+const std::map<ColorSpace::Range, std::string> rangeNames = {
+	{ ColorSpace::Range::Full, "Full" },
+	{ ColorSpace::Range::Limited, "Limited" },
+};
+
+} /* namespace */
+
 /**
  * \brief Assemble and return a readable string representation of the
  * ColorSpace
@@ -223,14 +264,6 @@ std::string ColorSpace::toString() const
 {
 	/* Print out a brief name only for standard color spaces. */
 
-	static const std::array<std::pair<ColorSpace, const char *>, 6> colorSpaceNames = { {
-		{ ColorSpace::Raw, "RAW" },
-		{ ColorSpace::Srgb, "sRGB" },
-		{ ColorSpace::Sycc, "sYCC" },
-		{ ColorSpace::Smpte170m, "SMPTE170M" },
-		{ ColorSpace::Rec709, "Rec709" },
-		{ ColorSpace::Rec2020, "Rec2020" },
-	} };
 	auto it = std::find_if(colorSpaceNames.begin(), colorSpaceNames.end(),
 			       [this](const auto &item) {
 				       return *this == item.first;
@@ -239,28 +272,6 @@ std::string ColorSpace::toString() const
 		return std::string(it->second);
 
 	/* Assemble a name made of the constituent fields. */
-
-	static const std::map<Primaries, std::string> primariesNames = {
-		{ Primaries::Raw, "RAW" },
-		{ Primaries::Smpte170m, "SMPTE170M" },
-		{ Primaries::Rec709, "Rec709" },
-		{ Primaries::Rec2020, "Rec2020" },
-	};
-	static const std::map<TransferFunction, std::string> transferNames = {
-		{ TransferFunction::Linear, "Linear" },
-		{ TransferFunction::Srgb, "sRGB" },
-		{ TransferFunction::Rec709, "Rec709" },
-	};
-	static const std::map<YcbcrEncoding, std::string> encodingNames = {
-		{ YcbcrEncoding::None, "None" },
-		{ YcbcrEncoding::Rec601, "Rec601" },
-		{ YcbcrEncoding::Rec709, "Rec709" },
-		{ YcbcrEncoding::Rec2020, "Rec2020" },
-	};
-	static const std::map<Range, std::string> rangeNames = {
-		{ Range::Full, "Full" },
-		{ Range::Limited, "Limited" },
-	};
 
 	auto itPrimaries = primariesNames.find(primaries);
 	std::string primariesName =
@@ -301,6 +312,88 @@ std::string ColorSpace::toString(const std::optional<ColorSpace> &colorSpace)
 		return "Unset";
 
 	return colorSpace->toString();
+}
+
+/**
+ * \brief Construct a color space from a string
+ * \param[in] str The string
+ *
+ * The string \a str can contain the name of a well-known color space, or be
+ * made of the four color space components separated by a '/' character, ordered
+ * as
+ *
+ * \verbatim primaries '/' transferFunction '/' ycbcrEncoding '/' range \endverbatim
+ *
+ * Any failure to parse the string, either because it doesn't match the expected
+ * format, or because the one of the names isn't recognized, will cause this
+ * function to return std::nullopt.
+ *
+ * \return The ColorSpace corresponding to the string, or std::nullopt if the
+ * string doesn't describe a known color space
+ */
+std::optional<ColorSpace> ColorSpace::fromString(const std::string &str)
+{
+	/* First search for a standard color space name match. */
+	auto itColorSpace = std::find_if(colorSpaceNames.begin(), colorSpaceNames.end(),
+					 [&str](const auto &item) {
+						 return str == item.second;
+					 });
+	if (itColorSpace != colorSpaceNames.end())
+		return itColorSpace->first;
+
+	/*
+	 * If not found, the string must contain the four color space
+	 * components separated by a '/' character.
+	 */
+	const auto &split = utils::split(str, "/");
+	std::vector<std::string> components{ split.begin(), split.end() };
+
+	if (components.size() != 4)
+		return std::nullopt;
+
+	ColorSpace colorSpace = ColorSpace::Raw;
+
+	/* Color primaries */
+	auto itPrimaries = std::find_if(primariesNames.begin(), primariesNames.end(),
+					[&components](const auto &item) {
+						return components[0] == item.second;
+					});
+	if (itPrimaries == primariesNames.end())
+		return std::nullopt;
+
+	colorSpace.primaries = itPrimaries->first;
+
+	/* Transfer function */
+	auto itTransfer = std::find_if(transferNames.begin(), transferNames.end(),
+				       [&components](const auto &item) {
+					       return components[1] == item.second;
+				       });
+	if (itTransfer == transferNames.end())
+		return std::nullopt;
+
+	colorSpace.transferFunction = itTransfer->first;
+
+	/* YCbCr encoding */
+	auto itEncoding = std::find_if(encodingNames.begin(), encodingNames.end(),
+				       [&components](const auto &item) {
+					       return components[2] == item.second;
+				       });
+	if (itEncoding == encodingNames.end())
+		return std::nullopt;
+
+	colorSpace.ycbcrEncoding = itEncoding->first;
+
+	/* Quantization range */
+	auto itRange = std::find_if(rangeNames.begin(), rangeNames.end(),
+				    [&components](const auto &item) {
+					    return components[3] == item.second;
+				    });
+	if (itRange == rangeNames.end())
+		return std::nullopt;
+
+	colorSpace.range = itRange->first;
+
+	return colorSpace;
 }
 
 /**

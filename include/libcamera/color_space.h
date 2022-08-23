@@ -59,6 +59,8 @@ public:
 
 	std::string toString() const;
 	static std::string toString(const std::optional<ColorSpace> &colorSpace);
+
+	static std::optional<ColorSpace> fromString(const std::string &str);
 };
 
 bool operator==(const ColorSpace &lhs, const ColorSpace &rhs);

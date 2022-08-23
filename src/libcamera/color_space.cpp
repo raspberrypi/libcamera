@@ -125,6 +125,90 @@ namespace libcamera {
  */
 
 /**
+ * \brief A constant representing a raw color space (from a sensor)
+ */
+const ColorSpace ColorSpace::Raw = {
+	Primaries::Raw,
+	TransferFunction::Linear,
+	YcbcrEncoding::None,
+	Range::Full
+};
+
+/**
+ * \brief A constant representing the sRGB color space
+ *
+ * This is identical to the sYCC color space except that the Y'CbCr
+ * range is limited rather than full.
+ */
+const ColorSpace ColorSpace::Srgb = {
+	Primaries::Rec709,
+	TransferFunction::Srgb,
+	YcbcrEncoding::Rec601,
+	Range::Limited
+};
+
+/**
+ * \brief A constant representing the sYCC color space, typically used for
+ * encoding JPEG images
+ */
+const ColorSpace ColorSpace::Sycc = {
+	Primaries::Rec709,
+	TransferFunction::Srgb,
+	YcbcrEncoding::Rec601,
+	Range::Full
+};
+
+/**
+ * \brief A constant representing the SMPTE170M color space
+ */
+const ColorSpace ColorSpace::Smpte170m = {
+	Primaries::Smpte170m,
+	TransferFunction::Rec709,
+	YcbcrEncoding::Rec601,
+	Range::Limited
+};
+
+/**
+ * \brief A constant representing the Rec.709 color space
+ */
+const ColorSpace ColorSpace::Rec709 = {
+	Primaries::Rec709,
+	TransferFunction::Rec709,
+	YcbcrEncoding::Rec709,
+	Range::Limited
+};
+
+/**
+ * \brief A constant representing the Rec.2020 color space
+ */
+const ColorSpace ColorSpace::Rec2020 = {
+	Primaries::Rec2020,
+	TransferFunction::Rec709,
+	YcbcrEncoding::Rec2020,
+	Range::Limited
+};
+
+/**
+ * \var ColorSpace::primaries
+ * \brief The color primaries of this color space
+ */
+
+/**
+ * \var ColorSpace::transferFunction
+ * \brief The transfer function used by this color space
+ */
+
+/**
+ * \var ColorSpace::ycbcrEncoding
+ * \brief The Y'CbCr encoding used by this color space
+ */
+
+/**
+ * \var ColorSpace::range
+ * \brief The pixel range used with by color space
+ */
+
+/**
  * \brief Assemble and return a readable string representation of the
  * ColorSpace
  *
@@ -218,90 +302,6 @@ std::string ColorSpace::toString(const std::optional<ColorSpace> &colorSpace)
 
 	return colorSpace->toString();
 }
-
-/**
- * \var ColorSpace::primaries
- * \brief The color primaries of this color space
- */
-
-/**
- * \var ColorSpace::transferFunction
- * \brief The transfer function used by this color space
- */
-
-/**
- * \var ColorSpace::ycbcrEncoding
- * \brief The Y'CbCr encoding used by this color space
- */
-
-/**
- * \var ColorSpace::range
- * \brief The pixel range used with by color space
- */
-
-/**
- * \brief A constant representing a raw color space (from a sensor)
- */
-const ColorSpace ColorSpace::Raw = {
-	Primaries::Raw,
-	TransferFunction::Linear,
-	YcbcrEncoding::None,
-	Range::Full
-};
-
-/**
- * \brief A constant representing the sRGB color space
- *
- * This is identical to the sYCC color space except that the Y'CbCr
- * range is limited rather than full.
- */
-const ColorSpace ColorSpace::Srgb = {
-	Primaries::Rec709,
-	TransferFunction::Srgb,
-	YcbcrEncoding::Rec601,
-	Range::Limited
-};
-
-/**
- * \brief A constant representing the sYCC color space, typically used for
- * encoding JPEG images
- */
-const ColorSpace ColorSpace::Sycc = {
-	Primaries::Rec709,
-	TransferFunction::Srgb,
-	YcbcrEncoding::Rec601,
-	Range::Full
-};
-
-/**
- * \brief A constant representing the SMPTE170M color space
- */
-const ColorSpace ColorSpace::Smpte170m = {
-	Primaries::Smpte170m,
-	TransferFunction::Rec709,
-	YcbcrEncoding::Rec601,
-	Range::Limited
-};
-
-/**
- * \brief A constant representing the Rec.709 color space
- */
-const ColorSpace ColorSpace::Rec709 = {
-	Primaries::Rec709,
-	TransferFunction::Rec709,
-	YcbcrEncoding::Rec709,
-	Range::Limited
-};
-
-/**
- * \brief A constant representing the Rec.2020 color space
- */
-const ColorSpace ColorSpace::Rec2020 = {
-	Primaries::Rec2020,
-	TransferFunction::Rec709,
-	YcbcrEncoding::Rec2020,
-	Range::Limited
-};
 
 /**
  * \brief Compare color spaces for equality

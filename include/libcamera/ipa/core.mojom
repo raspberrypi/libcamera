@@ -14,8 +14,8 @@ module libcamera;
  * - structs
  *
  * Attributes:
- * - skipHeader - structs only, and only in core.mojom
- *   - Do not generate a C++ definition for the structure
+ * - skipHeader - allowed only for structs and enums in core.mojom
+ *   - Do not generate a C++ definition for the structure or enum
  *   - Any type used in a mojom interface definition must have a corresponding
  *     definition in a mojom file for the code generator to accept it, except
  *     for types solely used as map/array members for which a definition is not
@@ -52,6 +52,8 @@ module libcamera;
  *   then the type definition in the core.mojom file should have the
  *   [skipHeader] attribute only
  *   - A (de)serializer will be generated for the type
+ *   - enums that are defined in a libcamera C++ header also fall in this
+ *     category
  * - If a type definition has [skipHeader], then the header where the type is
  *   defined must be included in ipa_interface.h
  * - Types that are solely used as array/map members do not require a mojom

@@ -483,7 +483,7 @@ class Generator(generator.Generator):
     def _GetJinjaExportsForCore(self):
         return {
             'consts': self.module.constants,
-            'enums': self.module.enums,
+            'enums_gen_header': [x for x in self.module.enums if x.attributes is None or 'skipHeader' not in x.attributes],
             'has_array': len([x for x in self.module.kinds.keys() if x[0] == 'a']) > 0,
             'has_map': len([x for x in self.module.kinds.keys() if x[0] == 'm']) > 0,
             'structs_gen_header': [x for x in self.module.structs if x.attributes is None or 'skipHeader' not in x.attributes],

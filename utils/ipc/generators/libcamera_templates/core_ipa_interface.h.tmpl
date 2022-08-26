@@ -26,7 +26,7 @@ namespace libcamera {
 static const {{const.kind|name}} {{const.mojom_name}} = {{const.value}};
 {% endfor %}
 
-{% for enum in enums %}
+{% for enum in enums_gen_header %}
 {{funcs.define_enum(enum)}}
 {% endfor %}
 

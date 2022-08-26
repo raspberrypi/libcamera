@@ -23,8 +23,8 @@
 namespace libcamera {
 
 /*
- * Structs that are defined in core.mojom and have the skipHeader tag must be
- * #included here.
+ * Structs and enums that are defined in core.mojom that have the skipHeader
+ * tag must be #included here.
  */
 
 class IPAInterface

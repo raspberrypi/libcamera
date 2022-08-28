@@ -7,9 +7,12 @@
 
 #include "viewfinder_gl.h"
 
+#include <array>
+
 #include <QByteArray>
 #include <QFile>
 #include <QImage>
+#include <QStringList>
 
 #include <libcamera/formats.h>
 
@@ -56,7 +59,8 @@ static const QList<libcamera::PixelFormat> supportedFormats{
 };
 
 ViewFinderGL::ViewFinderGL(QWidget *parent)
-	: QOpenGLWidget(parent), buffer_(nullptr), image_(nullptr),
+	: QOpenGLWidget(parent), buffer_(nullptr),
+	  colorSpace_(libcamera::ColorSpace::Raw), image_(nullptr),
 	  vertexBuffer_(QOpenGLBuffer::VertexBuffer)
 {
 }
@@ -72,10 +76,10 @@ const QList<libcamera::PixelFormat> &ViewFinderGL::nativeFormats() const
 }
 
 int ViewFinderGL::setFormat(const libcamera::PixelFormat &format, const QSize &size,
-			    [[maybe_unused]] const libcamera::ColorSpace &colorSpace,
+			    const libcamera::ColorSpace &colorSpace,
 			    unsigned int stride)
 {
-	if (format != format_) {
+	if (format != format_ || colorSpace != colorSpace_) {
 		/*
 		 * If the fragment already exists, remove it and create a new
 		 * one for the new format.
@@ -89,7 +93,10 @@ int ViewFinderGL::setFormat(const libcamera::PixelFormat &format, const QSize &s
 		if (!selectFormat(format))
 			return -1;
 
+		selectColorSpace(colorSpace);
+
 		format_ = format;
+		colorSpace_ = colorSpace;
 	}
 
 	size_ = size;
@@ -316,6 +323,72 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	};
 
 	return ret;
+}
+
+void ViewFinderGL::selectColorSpace(const libcamera::ColorSpace &colorSpace)
+{
+	std::array<double, 9> yuv2rgb;
+
+	/* OpenGL stores arrays in column-major order. */
+	switch (colorSpace.ycbcrEncoding) {
+	case libcamera::ColorSpace::YcbcrEncoding::None:
+		yuv2rgb = {
+			1.0000,  0.0000,  0.0000,
+			0.0000,  1.0000,  0.0000,
+			0.0000,  0.0000,  1.0000,
+		};
+		break;
+
+	case libcamera::ColorSpace::YcbcrEncoding::Rec601:
+		yuv2rgb = {
+			1.0000,  1.0000,  1.0000,
+			0.0000, -0.3441,  1.7720,
+			1.4020, -0.7141,  0.0000,
+		};
+		break;
+
+	case libcamera::ColorSpace::YcbcrEncoding::Rec709:
+		yuv2rgb = {
+			1.0000,  1.0000,  1.0000,
+			0.0000, -0.1873,  1.8856,
+			1.5748, -0.4681,  0.0000,
+		};
+		break;
+
+	case libcamera::ColorSpace::YcbcrEncoding::Rec2020:
+		yuv2rgb = {
+			1.0000,  1.0000,  1.0000,
+			0.0000, -0.1646,  1.8814,
+			1.4746, -0.5714,  0.0000,
+		};
+		break;
+	}
+
+	double offset;
+
+	switch (colorSpace.range) {
+	case libcamera::ColorSpace::Range::Full:
+		offset = 0.0;
+		break;
+
+	case libcamera::ColorSpace::Range::Limited:
+		offset = 16.0;
+
+		for (unsigned int i = 0; i < 3; ++i)
+			yuv2rgb[i] *= 255.0 / 219.0;
+		for (unsigned int i = 4; i < 9; ++i)
+			yuv2rgb[i] *= 255.0 / 224.0;
+		break;
+	}
+
+	QStringList matrix;
+
+	for (double coeff : yuv2rgb)
+		matrix.append(QString::number(coeff, 'f'));
+
+	fragmentShaderDefines_.append("#define YUV2RGB_MATRIX " + matrix.join(", "));
+	fragmentShaderDefines_.append(QString("#define YUV2RGB_Y_OFFSET %1")
+		.arg(offset, 0, 'f', 1));
 }
 
 bool ViewFinderGL::createVertexShader()

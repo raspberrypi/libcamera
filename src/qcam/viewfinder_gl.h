@@ -57,6 +57,7 @@ protected:
 
 private:
 	bool selectFormat(const libcamera::PixelFormat &format);
+	void selectColorSpace(const libcamera::ColorSpace &colorSpace);
 
 	void configureTexture(QOpenGLTexture &texture);
 	bool createFragmentShader();
@@ -67,6 +68,7 @@ private:
 	/* Captured image size, format and buffer */
 	libcamera::FrameBuffer *buffer_;
 	libcamera::PixelFormat format_;
+	libcamera::ColorSpace colorSpace_;
 	QSize size_;
 	unsigned int stride_;
 	Image *image_;

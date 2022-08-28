@@ -13,27 +13,30 @@ varying vec2 textureOut;
 uniform sampler2D tex_y;
 uniform sampler2D tex_u;
 
+const mat3 yuv2rgb_matrix = mat3(
+	YUV2RGB_MATRIX
+);
+
+const vec3 yuv2rgb_offset = vec3(
+	YUV2RGB_Y_OFFSET / 255.0, 128.0 / 255.0, 128.0 / 255.0
+);
+
 void main(void)
 {
 	vec3 yuv;
-	vec3 rgb;
-	mat3 yuv2rgb_bt601_mat = mat3(
-		vec3(1.164,  1.164, 1.164),
-		vec3(0.000, -0.392, 2.017),
-		vec3(1.596, -0.813, 0.000)
-	);
 
-	yuv.x = texture2D(tex_y, textureOut).r - 0.063;
+	yuv.x = texture2D(tex_y, textureOut).r;
 #if defined(YUV_PATTERN_UV)
-	yuv.y = texture2D(tex_u, textureOut).r - 0.500;
-	yuv.z = texture2D(tex_u, textureOut).a - 0.500;
+	yuv.y = texture2D(tex_u, textureOut).r;
+	yuv.z = texture2D(tex_u, textureOut).a;
 #elif defined(YUV_PATTERN_VU)
-	yuv.y = texture2D(tex_u, textureOut).a - 0.500;
-	yuv.z = texture2D(tex_u, textureOut).r - 0.500;
+	yuv.y = texture2D(tex_u, textureOut).a;
+	yuv.z = texture2D(tex_u, textureOut).r;
 #else
 #error Invalid pattern
 #endif
 
-	rgb = yuv2rgb_bt601_mat * yuv;
+	vec3 rgb = yuv2rgb_matrix * (vec3(y, uv) - yuv2rgb_offset);
+
 	gl_FragColor = vec4(rgb, 1.0);
 }

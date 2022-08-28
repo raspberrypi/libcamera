@@ -14,15 +14,16 @@ varying vec2 textureOut;
 uniform sampler2D tex_y;
 uniform vec2 tex_step;
 
+const mat3 yuv2rgb_matrix = mat3(
+	YUV2RGB_MATRIX
+);
+
+const vec3 yuv2rgb_offset = vec3(
+	YUV2RGB_Y_OFFSET / 255.0, 128.0 / 255.0, 128.0 / 255.0
+);
+
 void main(void)
 {
-	mat3 yuv2rgb_bt601_mat = mat3(
-		vec3(1.164,  1.164, 1.164),
-		vec3(0.000, -0.392, 2.017),
-		vec3(1.596, -0.813, 0.000)
-	);
-	vec3 yuv2rgb_bt601_offset = vec3(0.063, 0.500, 0.500);
-
 	/*
 	 * The sampler won't interpolate the texture correctly along the X axis,
 	 * as each RGBA pixel effectively stores two pixels. We thus need to
@@ -76,7 +77,7 @@ void main(void)
 
 	float y = mix(y_left, y_right, step(0.5, f_x));
 
-	vec3 rgb = yuv2rgb_bt601_mat * (vec3(y, uv) - yuv2rgb_bt601_offset);
+	vec3 rgb = yuv2rgb_matrix * (vec3(y, uv) - yuv2rgb_offset);
 
 	gl_FragColor = vec4(rgb, 1.0);
 }

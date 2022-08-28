@@ -11,6 +11,7 @@
 #include <QList>
 #include <QSize>
 
+#include <libcamera/color_space.h>
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer.h>
 
@@ -24,6 +25,7 @@ public:
 	virtual const QList<libcamera::PixelFormat> &nativeFormats() const = 0;
 
 	virtual int setFormat(const libcamera::PixelFormat &format, const QSize &size,
+			      const libcamera::ColorSpace &colorSpace,
 			      unsigned int stride) = 0;
 	virtual void render(libcamera::FrameBuffer *buffer, Image *image) = 0;
 	virtual void stop() = 0;

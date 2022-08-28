@@ -71,8 +71,9 @@ const QList<libcamera::PixelFormat> &ViewFinderGL::nativeFormats() const
 	return supportedFormats;
 }
 
-int ViewFinderGL::setFormat(const libcamera::PixelFormat &format,
-			    const QSize &size, unsigned int stride)
+int ViewFinderGL::setFormat(const libcamera::PixelFormat &format, const QSize &size,
+			    [[maybe_unused]] const libcamera::ColorSpace &colorSpace,
+			    unsigned int stride)
 {
 	if (format != format_) {
 		/*

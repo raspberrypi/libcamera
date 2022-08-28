@@ -447,9 +447,13 @@ int MainWindow::startCapture()
 	else
 		rawStream_ = nullptr;
 
-	/* Configure the viewfinder. */
+	/*
+	 * Configure the viewfinder. If no color space is reported, default to
+	 * sYCC.
+	 */
 	ret = viewfinder_->setFormat(vfConfig.pixelFormat,
 				     QSize(vfConfig.size.width, vfConfig.size.height),
+				     vfConfig.colorSpace.value_or(ColorSpace::Sycc),
 				     vfConfig.stride);
 	if (ret < 0) {
 		qInfo() << "Failed to set viewfinder format";

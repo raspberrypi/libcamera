@@ -54,8 +54,9 @@ const QList<libcamera::PixelFormat> &ViewFinderQt::nativeFormats() const
 	return formats;
 }
 
-int ViewFinderQt::setFormat(const libcamera::PixelFormat &format,
-			    const QSize &size, unsigned int stride)
+int ViewFinderQt::setFormat(const libcamera::PixelFormat &format, const QSize &size,
+			    [[maybe_unused]] const libcamera::ColorSpace &colorSpace,
+			    unsigned int stride)
 {
 	image_ = QImage();
 

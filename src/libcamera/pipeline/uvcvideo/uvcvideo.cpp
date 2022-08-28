@@ -159,6 +159,11 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 	cfg.stride = format.planes[0].bpl;
 	cfg.frameSize = format.planes[0].size;
 
+	if (cfg.colorSpace != format.colorSpace) {
+		cfg.colorSpace = format.colorSpace;
+		status = Adjusted;
+	}
+
 	return status;
 }
 

@@ -179,7 +179,7 @@ private:
 				continue;
 
 			string pname("/proc/" + string(ptr->d_name) + "/comm");
-			if (File::exists(pname.c_str())) {
+			if (File::exists(pname)) {
 				ifstream pfile(pname.c_str());
 				string comm;
 				getline(pfile, comm);

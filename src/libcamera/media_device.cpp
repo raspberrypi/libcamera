@@ -352,8 +352,9 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
  * entity with name \a sourceName, to the pad at index \a sinkIdx of the
  * sink entity with name \a sinkName, if any.
  *
- * \sa MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx, const MediaEntity *sink, unsigned int sinkIdx) const
- * \sa MediaDevice::link(const MediaPad *source, const MediaPad *sink) const
+ * \sa link(const MediaEntity *source, unsigned int sourceIdx,
+ *          const MediaEntity *sink, unsigned int sinkIdx)
+ * \sa link(const MediaPad *source, const MediaPad *sink)
  *
  * \return The link that connects the two pads, or nullptr if no such a link
  * exists
@@ -381,8 +382,9 @@ MediaLink *MediaDevice::link(const std::string &sourceName, unsigned int sourceI
  * entity \a source, to the pad at index \a sinkIdx of the sink entity \a
  * sink, if any.
  *
- * \sa MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx, const std::string &sinkName, unsigned int sinkIdx) const
- * \sa MediaDevice::link(const MediaPad *source, const MediaPad *sink) const
+ * \sa link(const std::string &sourceName, unsigned int sourceIdx,
+ *          const std::string &sinkName, unsigned int sinkIdx)
+ * \sa link(const MediaPad *source, const MediaPad *sink)
  *
  * \return The link that connects the two pads, or nullptr if no such a link
  * exists
@@ -404,8 +406,10 @@ MediaLink *MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx,
  * \param[in] source The source pad
  * \param[in] sink The sink pad
  *
- * \sa MediaDevice::link(const std::string &sourceName, unsigned int sourceIdx, const std::string &sinkName, unsigned int sinkIdx) const
- * \sa MediaDevice::link(const MediaEntity *source, unsigned int sourceIdx, const MediaEntity *sink, unsigned int sinkIdx) const
+ * \sa link(const std::string &sourceName, unsigned int sourceIdx,
+ *          const std::string &sinkName, unsigned int sinkIdx)
+ * \sa link(const MediaEntity *source, unsigned int sourceIdx,
+ *          const MediaEntity *sink, unsigned int sinkIdx)
  *
  * \return The link that connects the two pads, or nullptr if no such a link
  * exists

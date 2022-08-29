@@ -58,7 +58,7 @@ static std::vector<double> parseSizes(const YamlObject &tuningData,
 	 * prevent an exact match (further adjustments will be performed in
 	 * LensShadingCorrection::prepare()).
 	 */
-	float sum = std::accumulate(sizes.begin(), sizes.end(), 0.0f);
+	double sum = std::accumulate(sizes.begin(), sizes.end(), 0.0);
 	if (sum < 0.495 || sum > 0.505) {
 		LOG(RkISP1Lsc, Error)
 			<< "Invalid '" << prop << "' values: sum of the elements"

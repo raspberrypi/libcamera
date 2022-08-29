@@ -29,7 +29,7 @@ enum LogSeverity {
 class LogCategory
 {
 public:
-	explicit LogCategory(const char *name);
+	static LogCategory *create(const char *name);
 
 	const std::string &name() const { return name_; }
 	LogSeverity severity() const { return severity_; }
@@ -38,6 +38,8 @@ public:
 	static const LogCategory &defaultCategory();
 
 private:
+	explicit LogCategory(const char *name);
+
 	const std::string name_;
 	LogSeverity severity_;
 };
@@ -49,7 +51,7 @@ extern const LogCategory &_LOG_CATEGORY(name)();
 const LogCategory &_LOG_CATEGORY(name)()				\
 {									\
 	/* The instance will be deleted by the Logger destructor. */	\
-	static LogCategory *category = new LogCategory(#name);		\
+	static LogCategory *category = LogCategory::create(#name);	\
 	return *category;						\
 }
 

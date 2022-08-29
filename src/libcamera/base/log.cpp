@@ -314,10 +314,11 @@ private:
 
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
+	LogCategory *findCategory(const char *name) const;
 
 	static bool destroyed_;
 
-	std::unordered_set<LogCategory *> categories_;
+	std::vector<LogCategory *> categories_;
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
 	std::shared_ptr<LogOutput> output_;
@@ -707,12 +708,12 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
  * \brief Register a log category with the logger
  * \param[in] category The log category
  *
- * Log categories must have unique names. If a category with the same name
- * already exists this function performs no operation.
+ * Log categories must have unique names. It is invalid to call this function
+ * if a log category with the same name already exists.
  */
 void Logger::registerCategory(LogCategory *category)
 {
-	categories_.insert(category);
+	categories_.push_back(category);
 
 	const std::string &name = category->name();
 	for (const std::pair<std::string, LogSeverity> &level : levels_) {
@@ -734,6 +735,22 @@ void Logger::registerCategory(LogCategory *category)
 			break;
 		}
 	}
+}
+
+/**
+ * \brief Find an existing log category with the given name
+ * \param[in] name Name of the log category
+ * \return The pointer to the found log category or nullptr if not found
+ */
+LogCategory *Logger::findCategory(const char *name) const
+{
+	if (auto it = std::find_if(categories_.begin(), categories_.end(),
+				   [name](auto c) { return c->name() == name; });
+	    it != categories_.end()) {
+		return *it;
+	}
+
+	return nullptr;
 }
 
 /**
@@ -761,13 +778,33 @@ void Logger::registerCategory(LogCategory *category)
  */
 
 /**
+ * \brief Create a new LogCategory or return an existing one
+ * \param[in] name Name of the log category
+ *
+ * Create and return a new LogCategory with the given name if such a category
+ * does not yet exist, or return the existing one.
+ *
+ * \return The pointer to the LogCategory
+ */
+LogCategory *LogCategory::create(const char *name)
+{
+	LogCategory *category = Logger::instance()->findCategory(name);
+
+	if (!category) {
+		category = new LogCategory(name);
+		Logger::instance()->registerCategory(category);
+	}
+
+	return category;
+}
+
+/**
  * \brief Construct a log category
  * \param[in] name The category name
  */
 LogCategory::LogCategory(const char *name)
 	: name_(name), severity_(LogSeverity::LogInfo)
 {
-	Logger::instance()->registerCategory(this);
 }
 
 /**
@@ -804,7 +841,7 @@ void LogCategory::setSeverity(LogSeverity severity)
  */
 const LogCategory &LogCategory::defaultCategory()
 {
-	static const LogCategory *category = new LogCategory("default");
+	static const LogCategory *category = LogCategory::create("default");
 	return *category;
 }
 

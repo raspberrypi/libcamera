@@ -568,7 +568,7 @@ void Logger::logSetLevel(const char *category, const char *level)
 		return;
 
 	for (LogCategory *c : categories_) {
-		if (!strcmp(c->name(), category)) {
+		if (c->name() == category) {
 			c->setSeverity(severity);
 			break;
 		}

@@ -31,14 +31,14 @@ class LogCategory
 public:
 	explicit LogCategory(const char *name);
 
-	const char *name() const { return name_; }
+	const std::string &name() const { return name_; }
 	LogSeverity severity() const { return severity_; }
 	void setSeverity(LogSeverity severity);
 
 	static const LogCategory &defaultCategory();
 
 private:
-	const char *name_;
+	const std::string name_;
 	LogSeverity severity_;
 };
 

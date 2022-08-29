@@ -144,7 +144,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	}
 
 	/* Load the tuning data file. */
-	File file(settings.configurationFile.c_str());
+	File file(settings.configurationFile);
 	if (!file.open(File::OpenModeFlag::ReadOnly)) {
 		int ret = file.error();
 		LOG(IPARkISP1, Error)

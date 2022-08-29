@@ -327,7 +327,7 @@ int IPAIPU3::init(const IPASettings &settings,
 	context_.configuration.sensor.lineDuration = sensorInfo.lineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Load the tuning data file. */
-	File file(settings.configurationFile.c_str());
+	File file(settings.configurationFile);
 	if (!file.open(File::OpenModeFlag::ReadOnly)) {
 		int ret = file.error();
 		LOG(IPAIPU3, Error)

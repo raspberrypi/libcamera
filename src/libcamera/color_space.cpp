@@ -49,8 +49,13 @@ namespace libcamera {
  * - <a href="https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/colorspaces-details.html#col-bt2020">Rec.2020</a>
  *
  * Note that there is no guarantee of a 1:1 mapping between color space names
- * and definitions in libcamera and V4L2. A notable difference is that the sYCC
- * libcamera color space is called JPEG in V4L2 due to historical reasons.
+ * and definitions in libcamera and V4L2. Two notable differences are
+ *
+ * - The sRGB libcamera color space is defined for RGB formats only with no
+ *   Y'CbCr encoding and a full quantization range, while the V4L2 SRGB color
+ *   space has a Y'CbCr encoding and a limited quantization range.
+ * - The sYCC libcamera color space is called JPEG in V4L2 due to historical
+ *   reasons.
  *
  * \todo Define the color space fully in the libcamera API to avoid referencing
  * V4L2
@@ -138,16 +143,13 @@ const ColorSpace ColorSpace::Raw = {
 };
 
 /**
- * \brief A constant representing the sRGB color space
- *
- * This is identical to the sYCC color space except that the Y'CbCr
- * range is limited rather than full.
+ * \brief A constant representing the sRGB color space (RGB formats only)
  */
 const ColorSpace ColorSpace::Srgb = {
 	Primaries::Rec709,
 	TransferFunction::Srgb,
-	YcbcrEncoding::Rec601,
-	Range::Limited
+	YcbcrEncoding::None,
+	Range::Full
 };
 
 /**

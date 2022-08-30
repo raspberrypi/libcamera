@@ -931,7 +931,8 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 	format->size.height = pix->height;
 	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
-	format->colorSpace = toColorSpace(*pix);
+	format->colorSpace =
+		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
 
 	for (unsigned int i = 0; i < format->planesCount; ++i) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
@@ -987,7 +988,8 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
-	format->colorSpace = toColorSpace(*pix);
+	format->colorSpace =
+		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
 
 	return 0;
 }
@@ -1011,7 +1013,8 @@ int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
-	format->colorSpace = toColorSpace(*pix);
+	format->colorSpace =
+		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
 
 	return 0;
 }
@@ -1053,7 +1056,8 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
-	format->colorSpace = toColorSpace(*pix);
+	format->colorSpace =
+		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
 
 	return 0;
 }

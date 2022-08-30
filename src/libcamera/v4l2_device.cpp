@@ -24,6 +24,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
 
 /**
@@ -805,6 +806,7 @@ static const std::map<ColorSpace::Range, v4l2_quantization> rangeToV4l2 = {
 /**
  * \brief Convert the color space fields in a V4L2 format to a ColorSpace
  * \param[in] v4l2Format A V4L2 format containing color space information
+ * \param[in] colourEncoding Type of colour encoding
  *
  * The colorspace, ycbcr_enc, xfer_func and quantization fields within a
  * V4L2 format structure are converted to a corresponding ColorSpace.
@@ -816,7 +818,8 @@ static const std::map<ColorSpace::Range, v4l2_quantization> rangeToV4l2 = {
  * \retval std::nullopt One or more V4L2 color space fields were not recognised
  */
 template<typename T>
-std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format)
+std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format,
+						   PixelFormatInfo::ColourEncoding colourEncoding)
 {
 	auto itColor = v4l2ToColorSpace.find(v4l2Format.colorspace);
 	if (itColor == v4l2ToColorSpace.end())
@@ -839,6 +842,14 @@ std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format)
 			return std::nullopt;
 
 		colorSpace.ycbcrEncoding = itYcbcrEncoding->second;
+
+		/*
+		 * V4L2 has no "none" encoding, override the value returned by
+		 * the kernel for non-YUV formats as YCbCr encoding isn't
+		 * applicable in that case.
+		 */
+		if (colourEncoding != PixelFormatInfo::ColourEncodingYUV)
+			colorSpace.ycbcrEncoding = ColorSpace::YcbcrEncoding::None;
 	}
 
 	if (v4l2Format.quantization != V4L2_QUANTIZATION_DEFAULT) {
@@ -847,14 +858,24 @@ std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format)
 			return std::nullopt;
 
 		colorSpace.range = itRange->second;
+
+		/*
+		 * "Limited" quantization range is only meant for YUV formats.
+		 * Override the range to "Full" for all other formats.
+		 */
+		if (colourEncoding != PixelFormatInfo::ColourEncodingYUV)
+			colorSpace.range = ColorSpace::Range::Full;
 	}
 
 	return colorSpace;
 }
 
-template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format &);
-template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format_mplane &);
-template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_mbus_framefmt &);
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format &,
+							    PixelFormatInfo::ColourEncoding);
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_pix_format_mplane &,
+							    PixelFormatInfo::ColourEncoding);
+template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_mbus_framefmt &,
+							    PixelFormatInfo::ColourEncoding);
 
 /**
  * \brief Fill in the color space fields of a V4L2 format from a ColorSpace

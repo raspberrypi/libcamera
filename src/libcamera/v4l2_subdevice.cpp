@@ -503,7 +503,20 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
-	format->colorSpace = toColorSpace(subdevFmt.format);
+
+	PixelFormatInfo::ColourEncoding colourEncoding;
+	auto iter = formatInfoMap.find(subdevFmt.format.code);
+	if (iter != formatInfoMap.end()) {
+		colourEncoding = iter->second.colourEncoding;
+	} else {
+		LOG(V4L2, Warning)
+			<< "Unknown subdev format "
+			<< utils::hex(subdevFmt.format.code, 4)
+			<< ", defaulting to RGB encoding";
+
+		colourEncoding = PixelFormatInfo::ColourEncodingRGB;
+	}
+	format->colorSpace = toColorSpace(subdevFmt.format, colourEncoding);
 
 	return 0;
 }
@@ -549,7 +562,20 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
-	format->colorSpace = toColorSpace(subdevFmt.format);
+
+	PixelFormatInfo::ColourEncoding colourEncoding;
+	auto iter = formatInfoMap.find(subdevFmt.format.code);
+	if (iter != formatInfoMap.end()) {
+		colourEncoding = iter->second.colourEncoding;
+	} else {
+		LOG(V4L2, Warning)
+			<< "Unknown subdev format "
+			<< utils::hex(subdevFmt.format.code, 4)
+			<< ", defaulting to RGB encoding";
+
+		colourEncoding = PixelFormatInfo::ColourEncodingRGB;
+	}
+	format->colorSpace = toColorSpace(subdevFmt.format, colourEncoding);
 
 	return 0;
 }

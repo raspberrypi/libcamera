@@ -22,6 +22,8 @@
 #include <libcamera/color_space.h>
 #include <libcamera/controls.h>
 
+#include "libcamera/internal/formats.h"
+
 namespace libcamera {
 
 class EventNotifier;
@@ -59,7 +61,8 @@ protected:
 	int fd() const { return fd_.get(); }
 
 	template<typename T>
-	static std::optional<ColorSpace> toColorSpace(const T &v4l2Format);
+	static std::optional<ColorSpace> toColorSpace(const T &v4l2Format,
+						      PixelFormatInfo::ColourEncoding colourEncoding);
 
 	template<typename T>
 	static int fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v4l2Format);

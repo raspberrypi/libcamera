@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: CC-BY-SA-4.0
-# Doxyfile 1.8.14
+# Doxyfile 1.9.5
 
 PROJECT_NAME           = "libcamera"
 PROJECT_NUMBER         = "@VERSION@"
@@ -9,9 +9,9 @@ OUTPUT_DIRECTORY       = Documentation
 
 STRIP_FROM_PATH        = "@TOP_SRCDIR@"
 
-ALIASES                = "context=\xrefitem context \"Thread Safety\" \"Thread Safety\""
-ALIASES               += "threadbound=\ref thread-bound \"thread-bound\""
-ALIASES               += "threadsafe=\ref thread-safe \"thread-safe\""
+ALIASES                = "context=\xrefitem context \"Thread Safety\" \"Thread Safety\"" \
+                         "threadbound=\ref thread-bound \"thread-bound\"" \
+                         "threadsafe=\ref thread-safe \"thread-safe\""
 
 EXTENSION_MAPPING      = h=C++
 
@@ -23,10 +23,10 @@ QUIET                  = YES
 
 INPUT                  = "@TOP_SRCDIR@/include/libcamera" \
                          "@TOP_SRCDIR@/src/ipa/ipu3" \
-			 "@TOP_SRCDIR@/src/ipa/libipa" \
-			 "@TOP_SRCDIR@/src/libcamera" \
-			 "@TOP_BUILDDIR@/include/libcamera" \
-			 "@TOP_BUILDDIR@/src/libcamera"
+                         "@TOP_SRCDIR@/src/ipa/libipa" \
+                         "@TOP_SRCDIR@/src/libcamera" \
+                         "@TOP_BUILDDIR@/include/libcamera" \
+                         "@TOP_BUILDDIR@/src/libcamera"
 
 FILE_PATTERNS          = *.c \
                          *.cpp \
@@ -35,23 +35,23 @@ FILE_PATTERNS          = *.c \
 RECURSIVE              = YES
 
 EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
-			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
-			 @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
-			 @TOP_SRCDIR@/include/libcamera/internal/ipc_pipe_unixsocket.h \
-			 @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp \
-			 @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
-			 @TOP_SRCDIR@/src/libcamera/ipc_pipe_unixsocket.cpp \
-			 @TOP_SRCDIR@/src/libcamera/pipeline/ \
-			 @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
-			 @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
-			 @TOP_BUILDDIR@/src/libcamera/proxy/
+                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
+                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
+                         @TOP_SRCDIR@/include/libcamera/internal/ipc_pipe_unixsocket.h \
+                         @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp \
+                         @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
+                         @TOP_SRCDIR@/src/libcamera/ipc_pipe_unixsocket.cpp \
+                         @TOP_SRCDIR@/src/libcamera/pipeline/ \
+                         @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
+                         @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
+                         @TOP_BUILDDIR@/src/libcamera/proxy/
 
 EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/*_proxy.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/ipu3_*.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/raspberrypi_*.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/rkisp1_*.h \
-                         @TOP_BUILDDIR@/include/libcamera/ipa/vimc_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/vimc_*.h
 
 EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          libcamera::BoundMethodBase \

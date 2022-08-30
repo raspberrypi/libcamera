@@ -158,9 +158,12 @@ void Request::Private::cancel()
 }
 
 /**
- * \copydoc Request::reuse()
+ * \brief Reset the request internal data to default values
+ *
+ * After calling this function, all request internal data will have default
+ * values as if the Request::Private instance had just been constructed.
  */
-void Request::Private::reuse()
+void Request::Private::reset()
 {
 	sequence_ = 0;
 	cancelled_ = false;
@@ -380,7 +383,7 @@ void Request::reuse(ReuseFlag flags)
 {
 	LIBCAMERA_TRACEPOINT(request_reuse, this);
 
-	_d()->reuse();
+	_d()->reset();
 
 	if (flags & ReuseBuffers) {
 		for (auto pair : bufferMap_) {

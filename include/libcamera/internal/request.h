@@ -37,7 +37,7 @@ public:
 	bool completeBuffer(FrameBuffer *buffer);
 	void complete();
 	void cancel();
-	void reuse();
+	void reset();
 
 	void prepare(std::chrono::milliseconds timeout = 0ms);
 	Signal<> prepared;

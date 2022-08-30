@@ -63,7 +63,11 @@ public:
 
 #ifndef __DOXYGEN__
 	template<typename T, typename Func,
-		 std::enable_if_t<std::is_base_of<Object, T>::value> * = nullptr>
+		 std::enable_if_t<std::is_base_of<Object, T>::value
+#if __cplusplus >= 201703L
+				  && std::is_invocable_v<Func, Args...>
+#endif
+				  > * = nullptr>
 	void connect(T *obj, Func func, ConnectionType type = ConnectionTypeAuto)
 	{
 		Object *object = static_cast<Object *>(obj);
@@ -71,7 +75,11 @@ public:
 	}
 
 	template<typename T, typename Func,
-		 std::enable_if_t<!std::is_base_of<Object, T>::value> * = nullptr>
+		 std::enable_if_t<!std::is_base_of<Object, T>::value
+#if __cplusplus >= 201703L
+				  && std::is_invocable_v<Func, Args...>
+#endif
+				  > * = nullptr>
 #else
 	template<typename T, typename Func>
 #endif

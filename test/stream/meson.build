@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 stream_tests = [
+    ['stream_colorspace', 'stream_colorspace.cpp'],
     ['stream_formats',  'stream_formats.cpp'],
 ]
 

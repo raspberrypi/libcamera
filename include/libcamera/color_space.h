@@ -12,6 +12,8 @@
 
 namespace libcamera {
 
+class PixelFormat;
+
 class ColorSpace
 {
 public:
@@ -61,6 +63,8 @@ public:
 	static std::string toString(const std::optional<ColorSpace> &colorSpace);
 
 	static std::optional<ColorSpace> fromString(const std::string &str);
+
+	bool adjust(PixelFormat format);
 };
 
 bool operator==(const ColorSpace &lhs, const ColorSpace &rhs);

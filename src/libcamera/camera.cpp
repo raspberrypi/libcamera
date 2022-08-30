@@ -317,17 +317,6 @@ std::size_t CameraConfiguration::size() const
 	return config_.size();
 }
 
-namespace {
-
-bool isRaw(const PixelFormat &pixFmt)
-{
-	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
-	return info.isValid() &&
-	       info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
-}
-
-} /* namespace */
-
 /**
  * \enum CameraConfiguration::ColorSpaceFlag
  * \brief Specify the behaviour of validateColorSpaces
@@ -368,29 +357,31 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
 	Status status = Valid;
 
 	/*
-	 * Set all raw streams to the Raw color space, and make a note of the largest
-	 * non-raw stream with a defined color space (if there is one).
+	 * Set all raw streams to the Raw color space, and make a note of the
+	 * largest non-raw stream with a defined color space (if there is one).
 	 */
-	int index = -1;
+	std::optional<ColorSpace> colorSpace;
+
 	for (auto [i, cfg] : utils::enumerate(config_)) {
-		if (isRaw(cfg.pixelFormat)) {
-			if (cfg.colorSpace != ColorSpace::Raw) {
-				cfg.colorSpace = ColorSpace::Raw;
-				status = Adjusted;
-			}
-		} else if (cfg.colorSpace && (index == -1 || cfg.size > config_[i].size)) {
-			index = i;
-		}
+		if (!cfg.colorSpace)
+			continue;
+
+		if (cfg.colorSpace->adjust(cfg.pixelFormat))
+			status = Adjusted;
+
+		if (cfg.colorSpace != ColorSpace::Raw &&
+		    (!colorSpace || cfg.size > config_[i].size))
+			colorSpace = cfg.colorSpace;
 	}
 
-	if (index < 0 || !(flags & ColorSpaceFlag::StreamsShareColorSpace))
+	if (!colorSpace || !(flags & ColorSpaceFlag::StreamsShareColorSpace))
 		return status;
 
 	/* Make all output color spaces the same, if requested. */
 	for (auto &cfg : config_) {
-		if (!isRaw(cfg.pixelFormat) &&
-		    cfg.colorSpace != config_[index].colorSpace) {
-			cfg.colorSpace = config_[index].colorSpace;
+		if (cfg.colorSpace != ColorSpace::Raw &&
+		    cfg.colorSpace != colorSpace) {
+			cfg.colorSpace = colorSpace;
 			status = Adjusted;
 		}
 	}

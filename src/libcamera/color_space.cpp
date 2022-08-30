@@ -16,6 +16,8 @@
 
 #include <libcamera/base/utils.h>
 
+#include "libcamera/internal/formats.h"
+
 /**
  * \file color_space.h
  * \brief Class and enums to represent color spaces
@@ -396,6 +398,105 @@ std::optional<ColorSpace> ColorSpace::fromString(const std::string &str)
 	colorSpace.range = itRange->first;
 
 	return colorSpace;
+}
+
+/**
+ * \brief Adjust the color space to match a pixel format
+ * \param[in] format The pixel format
+ *
+ * Not all combinations of pixel formats and color spaces make sense. For
+ * instance, nobody uses a limited quantization range with raw Bayer formats,
+ * and the YcbcrEncoding::None encoding isn't valid for YUV formats. This
+ * function adjusts the ColorSpace to make it compatible with the given \a
+ * format, by applying the following rules:
+ *
+ * - The color space for RAW formats must be Raw.
+ * - The Y'CbCr encoding and quantization range for RGB formats must be
+ *   YcbcrEncoding::None and Range::Full respectively.
+ * - The Y'CbCr encoding for YUV formats must not be YcbcrEncoding::None. The
+ *   best encoding is in that case guessed based on the primaries and transfer
+ *   function.
+ *
+ * \return True if the color space has been adjusted, or false if it was
+ * already compatible with the format and hasn't been changed
+ */
+bool ColorSpace::adjust(PixelFormat format)
+{
+	const PixelFormatInfo &info = PixelFormatInfo::info(format);
+	bool adjusted = false;
+
+	switch (info.colourEncoding) {
+	case PixelFormatInfo::ColourEncodingRAW:
+		/* Raw formats must use the raw color space. */
+		if (*this != ColorSpace::Raw) {
+			*this = ColorSpace::Raw;
+			adjusted = true;
+		}
+		break;
+
+	case PixelFormatInfo::ColourEncodingRGB:
+		/*
+		 * RGB formats can't have a Y'CbCr encoding, and must use full
+		 * range quantization.
+		 */
+		if (ycbcrEncoding != YcbcrEncoding::None) {
+			ycbcrEncoding = YcbcrEncoding::None;
+			adjusted = true;
+		}
+
+		if (range != Range::Full) {
+			range = Range::Full;
+			adjusted = true;
+		}
+		break;
+
+	case PixelFormatInfo::ColourEncodingYUV:
+		if (ycbcrEncoding != YcbcrEncoding::None)
+			break;
+
+		/*
+		 * YUV formats must have a Y'CbCr encoding. Infer the most
+		 * probable option from the transfer function and primaries.
+		 */
+		switch (transferFunction) {
+		case TransferFunction::Linear:
+			/*
+			 * Linear YUV is not used in any standard color space,
+			 * pick the widely supported and used Rec601 as default.
+			 */
+			ycbcrEncoding = YcbcrEncoding::Rec601;
+			break;
+
+		case TransferFunction::Rec709:
+			switch (primaries) {
+			/* Raw should never happen. */
+			case Primaries::Raw:
+			case Primaries::Smpte170m:
+				ycbcrEncoding = YcbcrEncoding::Rec601;
+				break;
+			case Primaries::Rec709:
+				ycbcrEncoding = YcbcrEncoding::Rec709;
+				break;
+			case Primaries::Rec2020:
+				ycbcrEncoding = YcbcrEncoding::Rec2020;
+				break;
+			}
+			break;
+
+		case TransferFunction::Srgb:
+			/*
+			 * Only the sYCC color space uses the sRGB transfer
+			 * function, the corresponding encoding is Rec601.
+			 */
+			ycbcrEncoding = YcbcrEncoding::Rec601;
+			break;
+		}
+
+		adjusted = true;
+		break;
+	}
+
+	return adjusted;
 }
 
 /**

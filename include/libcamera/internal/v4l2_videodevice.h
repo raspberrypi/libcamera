@@ -268,6 +268,9 @@ private:
 
 	void watchdogExpired();
 
+	template<typename T>
+	static std::optional<ColorSpace> toColorSpace(const T &v4l2Format);
+
 	V4L2Capability caps_;
 	V4L2DeviceFormat format_;
 	const PixelFormatInfo *formatInfo_;

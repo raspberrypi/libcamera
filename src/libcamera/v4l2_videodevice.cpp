@@ -914,6 +914,13 @@ int V4L2VideoDevice::trySetFormatMeta(V4L2DeviceFormat *format, bool set)
 	return 0;
 }
 
+template<typename T>
+std::optional<ColorSpace> V4L2VideoDevice::toColorSpace(const T &v4l2Format)
+{
+	V4L2PixelFormat fourcc{ v4l2Format.pixelformat };
+	return V4L2Device::toColorSpace(v4l2Format, PixelFormatInfo::info(fourcc).colourEncoding);
+}
+
 int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
@@ -931,8 +938,7 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 	format->size.height = pix->height;
 	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
-	format->colorSpace =
-		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
+	format->colorSpace = toColorSpace(*pix);
 
 	for (unsigned int i = 0; i < format->planesCount; ++i) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
@@ -988,8 +994,7 @@ int V4L2VideoDevice::trySetFormatMultiplane(V4L2DeviceFormat *format, bool set)
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
-	format->colorSpace =
-		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }
@@ -1013,8 +1018,7 @@ int V4L2VideoDevice::getFormatSingleplane(V4L2DeviceFormat *format)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
-	format->colorSpace =
-		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }
@@ -1056,8 +1060,7 @@ int V4L2VideoDevice::trySetFormatSingleplane(V4L2DeviceFormat *format, bool set)
 	format->planesCount = 1;
 	format->planes[0].bpl = pix->bytesperline;
 	format->planes[0].size = pix->sizeimage;
-	format->colorSpace =
-		toColorSpace(*pix, PixelFormatInfo::info(format->fourcc).colourEncoding);
+	format->colorSpace = toColorSpace(*pix);
 
 	return 0;
 }

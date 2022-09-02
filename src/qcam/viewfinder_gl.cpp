@@ -332,6 +332,7 @@ void ViewFinderGL::selectColorSpace(const libcamera::ColorSpace &colorSpace)
 	/* OpenGL stores arrays in column-major order. */
 	switch (colorSpace.ycbcrEncoding) {
 	case libcamera::ColorSpace::YcbcrEncoding::None:
+	default:
 		yuv2rgb = {
 			1.0000,  0.0000,  0.0000,
 			0.0000,  1.0000,  0.0000,
@@ -368,6 +369,7 @@ void ViewFinderGL::selectColorSpace(const libcamera::ColorSpace &colorSpace)
 
 	switch (colorSpace.range) {
 	case libcamera::ColorSpace::Range::Full:
+	default:
 		offset = 0.0;
 		break;
 

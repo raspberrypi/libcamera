@@ -38,8 +38,8 @@ BlackLevelCorrection::BlackLevelCorrection()
 
 /**
  * \brief Fill in the parameter structure, and enable black level correction
- * \param context The shared IPA context
- * \param params The IPU3 parameters
+ * \param[in] context The shared IPA context
+ * \param[out] params The IPU3 parameters
  *
  * Populate the IPU3 parameter structure with the correction values for each
  * channel and enable the corresponding ImgU block processing.

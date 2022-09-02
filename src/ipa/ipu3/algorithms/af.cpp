@@ -196,10 +196,10 @@ int Af::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 
 /**
  * \brief AF coarse scan
- *
- * Find a near focused image using a coarse step. The step is determined by coarseSearchStep.
- *
  * \param[in] context The shared IPA context
+ *
+ * Find a near focused image using a coarse step. The step is determined by
+ * kCoarseSearchStep.
  */
 void Af::afCoarseScan(IPAContext &context)
 {
@@ -223,10 +223,9 @@ void Af::afCoarseScan(IPAContext &context)
 
 /**
  * \brief AF fine scan
+ * \param[in] context The shared IPA context
  *
  * Find an optimum lens position with moving 1 step for each search.
- *
- * \param[in] context The shared IPA context
  */
 void Af::afFineScan(IPAContext &context)
 {
@@ -244,10 +243,9 @@ void Af::afFineScan(IPAContext &context)
 
 /**
  * \brief AF reset
+ * \param[in] context The shared IPA context
  *
  * Reset all the parameters to start over the AF process.
- *
- * \param[in] context The shared IPA context
  */
 void Af::afReset(IPAContext &context)
 {
@@ -268,7 +266,7 @@ void Af::afReset(IPAContext &context)
 /**
  * \brief AF variance comparison.
  * \param[in] context The IPA context
- * \param min_step The VCM movement step.
+ * \param[in] min_step The VCM movement step.
  *
  * We always pick the largest variance to replace the previous one. The image
  * with a larger variance also indicates it is a clearer image than previous
@@ -343,9 +341,8 @@ void Af::afIgnoreFrameReset()
 
 /**
  * \brief Estimate variance
- * \param y_item The AF filter data set from the IPU3 statistics buffer
- * \param len The quantity of table item entries which are valid to process
- * \param isY1 Selects between filter Y1 or Y2 to calculate the variance
+ * \param[in] y_items The AF filter data set from the IPU3 statistics buffer
+ * \param[in] isY1 Selects between filter Y1 or Y2 to calculate the variance
  *
  * Calculate the mean of the data set provided by \a y_item, and then calculate
  * the variance of that data set from the mean.
@@ -378,13 +375,13 @@ double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
 
 /**
  * \brief Determine out-of-focus situation.
- * \param context The IPA context.
+ * \param[in] context The IPA context.
  *
  * Out-of-focus means that the variance change rate for a focused and a new
  * variance is greater than a threshold.
  *
  * \return True if the variance threshold is crossed indicating lost focus,
- *         false otherwise.
+ * false otherwise
  */
 bool Af::afIsOutOfFocus(IPAContext context)
 {

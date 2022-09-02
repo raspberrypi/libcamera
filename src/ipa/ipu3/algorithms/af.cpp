@@ -383,7 +383,7 @@ double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
  * \return True if the variance threshold is crossed indicating lost focus,
  * false otherwise
  */
-bool Af::afIsOutOfFocus(IPAContext context)
+bool Af::afIsOutOfFocus(IPAContext &context)
 {
 	const uint32_t diff_var = std::abs(currentVariance_ -
 					   context.activeState.af.maxVariance);

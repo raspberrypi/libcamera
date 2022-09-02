@@ -44,7 +44,7 @@ private:
 	void afIgnoreFrameReset();
 	double afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1);
 
-	bool afIsOutOfFocus(IPAContext context);
+	bool afIsOutOfFocus(IPAContext &context);
 
 	/* VCM step configuration. It is the current setting of the VCM step. */
 	uint32_t focus_;

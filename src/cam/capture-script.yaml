@@ -4,6 +4,19 @@
 #
 # A capture script allows to associate a list of controls and their values
 # to frame numbers.
+#
+# The script allows defining a list of frames associated with controls
+# and an optional list of properties that can control the script behaviour.
+
+# properties:
+#   # Repeat the controls every 'idx' frames.
+#   - loop: idx
+#
+# # List of frame number with associated a list of controls to be applied
+# frames:
+#   - frame-number:
+#       Control1: value1
+#       Control2: value2
 
 # \todo Formally define the capture script structure with a schema
 
@@ -12,10 +25,16 @@
 #   libcamera::controls:: enumeration
 # - Controls not supported by the camera currently operated are ignored
 # - Frame numbers shall be monotonically incrementing, gaps are allowed
+# - If a loop limit is specified, frame numbers in the 'frames' list shall be
+#   less than the loop control
 
-# Example:
+# Example: Turn brightness up and down every 460 frames
+
+properties:
+  - loop: 460
+
 frames:
-  - 1:
+  - 0:
       Brightness: 0.0
 
   - 40:
@@ -44,3 +63,9 @@ frames:
 
   - 340:
       Brightness: -0.8
+
+  - 380:
+      Brightness: -0.4
+
+  - 420:
+      Brightness: -0.2

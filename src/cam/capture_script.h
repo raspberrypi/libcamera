@@ -40,6 +40,7 @@ private:
 	std::map<unsigned int, libcamera::ControlList> frameControls_;
 	std::shared_ptr<libcamera::Camera> camera_;
 	yaml_parser_t parser_;
+	unsigned int loop_;
 	bool valid_;
 
 	EventPtr nextEvent(yaml_event_type_t expectedType = YAML_NO_EVENT);
@@ -49,6 +50,8 @@ private:
 
 	int parseScript(FILE *script);
 
+	int parseProperties();
+	int parseProperty();
 	int parseFrames();
 	int parseFrame(EventPtr event);
 	int parseControl(EventPtr event, libcamera::ControlList &controls);

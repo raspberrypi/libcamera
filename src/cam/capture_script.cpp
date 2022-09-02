@@ -15,7 +15,7 @@ using namespace libcamera;
 
 CaptureScript::CaptureScript(std::shared_ptr<Camera> camera,
 			     const std::string &fileName)
-	: camera_(camera), valid_(false)
+	: camera_(camera), loop_(0), valid_(false)
 {
 	FILE *fh = fopen(fileName.c_str(), "r");
 	if (!fh) {
@@ -44,8 +44,13 @@ CaptureScript::CaptureScript(std::shared_ptr<Camera> camera,
 const ControlList &CaptureScript::frameControls(unsigned int frame)
 {
 	static ControlList controls{};
+	unsigned int idx = frame;
 
-	auto it = frameControls_.find(frame);
+	/* If we loop, repeat the controls every 'loop_' frames. */
+	if (loop_)
+		idx = frame % loop_;
+
+	auto it = frameControls_.find(idx);
 	if (it == frameControls_.end())
 		return controls;
 
@@ -149,7 +154,11 @@ int CaptureScript::parseScript(FILE *script)
 
 		std::string section = eventScalarValue(event);
 
-		if (section == "frames") {
+		if (section == "properties") {
+			ret = parseProperties();
+			if (ret)
+				return ret;
+		} else if (section == "frames") {
 			ret = parseFrames();
 			if (ret)
 				return ret;
@@ -159,6 +168,65 @@ int CaptureScript::parseScript(FILE *script)
 			return -EINVAL;
 		}
 	}
+}
+
+int CaptureScript::parseProperty()
+{
+	EventPtr event = nextEvent(YAML_MAPPING_START_EVENT);
+	if (!event)
+		return -EINVAL;
+
+	std::string prop = parseScalar();
+	if (prop.empty())
+		return -EINVAL;
+
+	if (prop == "loop") {
+		event = nextEvent();
+		if (!event)
+			return -EINVAL;
+
+		std::string value = eventScalarValue(event);
+		if (value.empty())
+			return -EINVAL;
+
+		loop_ = atoi(value.c_str());
+		if (!loop_) {
+			std::cerr << "Invalid loop limit '" << loop_ << "'"
+				  << std::endl;
+			return -EINVAL;
+		}
+	} else {
+		std::cerr << "Unsupported property '" << prop << "'" << std::endl;
+		return -EINVAL;
+	}
+
+	event = nextEvent(YAML_MAPPING_END_EVENT);
+	if (!event)
+		return -EINVAL;
+
+	return 0;
+}
+
+int CaptureScript::parseProperties()
+{
+	EventPtr event = nextEvent(YAML_SEQUENCE_START_EVENT);
+	if (!event)
+		return -EINVAL;
+
+	while (1) {
+		if (event->type == YAML_SEQUENCE_END_EVENT)
+			return 0;
+
+		int ret = parseProperty();
+		if (ret)
+			return ret;
+
+		event = nextEvent();
+		if (!event)
+			return -EINVAL;
+	}
+
+	return 0;
 }
 
 int CaptureScript::parseFrames()
@@ -191,6 +259,12 @@ int CaptureScript::parseFrame(EventPtr event)
 		return -EINVAL;
 
 	unsigned int frameId = atoi(key.c_str());
+	if (loop_ && frameId >= loop_) {
+		std::cerr
+			<< "Frame id (" << frameId << ") shall be smaller than"
+			<< "loop limit (" << loop_ << ")" << std::endl;
+		return -EINVAL;
+	}
 
 	event = nextEvent(YAML_MAPPING_START_EVENT);
 	if (!event)

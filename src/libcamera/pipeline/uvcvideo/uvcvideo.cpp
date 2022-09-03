@@ -50,6 +50,7 @@ public:
 
 	std::unique_ptr<V4L2VideoDevice> video_;
 	Stream stream_;
+	std::map<PixelFormat, std::vector<SizeRange>> formats_;
 
 private:
 	bool generateId();
@@ -186,15 +187,7 @@ CameraConfiguration *PipelineHandlerUVC::generateConfiguration(Camera *camera,
 	if (roles.empty())
 		return config;
 
-	V4L2VideoDevice::Formats v4l2Formats = data->video_->formats();
-	std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-	for (const auto &format : v4l2Formats) {
-		PixelFormat pixelFormat = format.first.toPixelFormat();
-		if (pixelFormat.isValid())
-			deviceFormats[pixelFormat] = format.second;
-	}
-
-	StreamFormats formats(deviceFormats);
+	StreamFormats formats(data->formats_);
 	StreamConfiguration cfg(formats);
 
 	cfg.pixelFormat = formats.pixelformats().front();
@@ -445,6 +438,26 @@ int UVCCameraData::init(MediaDevice *media)
 		return -EINVAL;
 	}
 
+	/*
+	 * Populate the map of supported formats, and infer the camera sensor
+	 * resolution from the largest size it advertises.
+	 */
+	Size resolution;
+	for (const auto &format : video_->formats()) {
+		PixelFormat pixelFormat = format.first.toPixelFormat();
+		if (!pixelFormat.isValid())
+			continue;
+
+		formats_[pixelFormat] = format.second;
+
+		const std::vector<SizeRange> &sizeRanges = format.second;
+		for (const SizeRange &sizeRange : sizeRanges) {
+			if (sizeRange.max > resolution)
+				resolution = sizeRange.max;
+		}
+	}
+
+	/* Populate the camera properties. */
 	properties_.set(properties::Model, utils::toAscii(media->model()));
 
 	/*
@@ -474,19 +487,6 @@ int UVCCameraData::init(MediaDevice *media)
 	}
 
 	properties_.set(properties::Location, location);
-
-	/*
-	 * Get the current format in order to initialize the sensor array
-	 * properties.
-	 */
-	Size resolution;
-	for (const auto &it : video_->formats()) {
-		const std::vector<SizeRange> &sizeRanges = it.second;
-		for (const SizeRange &sizeRange : sizeRanges) {
-			if (sizeRange.max > resolution)
-				resolution = sizeRange.max;
-		}
-	}
 
 	properties_.set(properties::PixelArraySize, resolution);
 	properties_.set(properties::PixelArrayActiveAreas, { Rectangle(resolution) });

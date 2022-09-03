@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 
 #include <libcamera/base/log.h>
 
@@ -271,8 +272,12 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
 	activeState.awb.gains.automatic.green = 1.0;
 
-	LOG(RkISP1Awb, Debug) << "Gain found for red: " << activeState.awb.gains.automatic.red
-			      << " and for blue: " << activeState.awb.gains.automatic.blue;
+	LOG(RkISP1Awb, Debug) << std::showpoint
+		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean
+		<< "], gains [" << activeState.awb.gains.automatic.red << ", "
+		<< activeState.awb.gains.automatic.green << ", "
+		<< activeState.awb.gains.automatic.blue << "], temp "
+		<< frameContext.awb.temperatureK << "K";
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

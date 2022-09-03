@@ -467,8 +467,8 @@ int CameraSensor::discoverAncillaryDevices()
 			ret = focusLens_->init();
 			if (ret) {
 				LOG(CameraSensor, Error)
-					<< "CameraLens initialisation failed";
-				return ret;
+					<< "Lens initialisation failed, lens disabled";
+				focusLens_.reset();
 			}
 			break;
 

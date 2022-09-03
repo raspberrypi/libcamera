@@ -268,9 +268,9 @@ private:
 class ControlInfo
 {
 public:
-	explicit ControlInfo(const ControlValue &min = 0,
-			     const ControlValue &max = 0,
-			     const ControlValue &def = 0);
+	explicit ControlInfo(const ControlValue &min = {},
+			     const ControlValue &max = {},
+			     const ControlValue &def = {});
 	explicit ControlInfo(Span<const ControlValue> values,
 			     const ControlValue &def = {});
 	explicit ControlInfo(std::set<bool> values, bool def);

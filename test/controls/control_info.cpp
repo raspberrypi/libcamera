@@ -26,8 +26,8 @@ protected:
 		 */
 		ControlInfo brightness;
 
-		if (brightness.min().get<int32_t>() != 0 ||
-		    brightness.max().get<int32_t>() != 0) {
+		if (brightness.min().type() != ControlType::ControlTypeNone ||
+		    brightness.max().type() != ControlType::ControlTypeNone) {
 			cout << "Invalid control range for Brightness" << endl;
 			return TestFail;
 		}

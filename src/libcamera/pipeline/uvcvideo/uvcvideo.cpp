@@ -46,8 +46,15 @@ public:
 			ControlInfoMap::Map *ctrls);
 	void bufferReady(FrameBuffer *buffer);
 
+	const std::string &id() const { return id_; }
+
 	std::unique_ptr<V4L2VideoDevice> video_;
 	Stream stream_;
+
+private:
+	bool generateId();
+
+	std::string id_;
 };
 
 class UVCCameraConfiguration : public CameraConfiguration
@@ -81,8 +88,6 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	std::string generateId(const UVCCameraData *data);
-
 	int processControl(ControlList *controls, unsigned int id,
 			   const ControlValue &value);
 	int processControls(UVCCameraData *data, Request *request);
@@ -384,69 +389,6 @@ int PipelineHandlerUVC::queueRequestDevice(Camera *camera, Request *request)
 	return 0;
 }
 
-std::string PipelineHandlerUVC::generateId(const UVCCameraData *data)
-{
-	const std::string path = data->video_->devicePath();
-
-	/* Create a controller ID from first device described in firmware. */
-	std::string controllerId;
-	std::string searchPath = path;
-	while (true) {
-		std::string::size_type pos = searchPath.rfind('/');
-		if (pos <= 1) {
-			LOG(UVC, Error) << "Can not find controller ID";
-			return {};
-		}
-
-		searchPath = searchPath.substr(0, pos);
-
-		controllerId = sysfs::firmwareNodePath(searchPath);
-		if (!controllerId.empty())
-			break;
-	}
-
-	/*
-	 * Create a USB ID from the device path which has the known format:
-	 *
-	 *	path = bus, "-", ports, ":", config, ".", interface ;
-	 *	bus = number ;
-	 *	ports = port, [ ".", ports ] ;
-	 *	port = number ;
-	 *	config = number ;
-	 *	interface = number ;
-	 *
-	 * Example: 3-2.4:1.0
-	 *
-	 * The bus is not guaranteed to be stable and needs to be stripped from
-	 * the USB ID. The final USB ID is built up of the ports, config and
-	 * interface properties.
-	 *
-	 * Example 2.4:1.0.
-	 */
-	std::string usbId = utils::basename(path.c_str());
-	usbId = usbId.substr(usbId.find('-') + 1);
-
-	/* Creata a device ID from the USB devices vendor and product ID. */
-	std::string deviceId;
-	for (const char *name : { "idVendor", "idProduct" }) {
-		std::ifstream file(path + "/../" + name);
-
-		if (!file.is_open())
-			return {};
-
-		std::string value;
-		std::getline(file, value);
-		file.close();
-
-		if (!deviceId.empty())
-			deviceId += ":";
-
-		deviceId += value;
-	}
-
-	return controllerId + "-" + usbId + "-" + deviceId;
-}
-
 bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
 	MediaDevice *media;
@@ -462,12 +404,7 @@ bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Create and register the camera. */
-	std::string id = generateId(data.get());
-	if (id.empty()) {
-		LOG(UVC, Error) << "Failed to generate camera ID";
-		return false;
-	}
-
+	std::string id = data->id();
 	std::set<Stream *> streams{ &data->stream_ };
 	std::shared_ptr<Camera> camera =
 		Camera::create(std::move(data), id, streams);
@@ -501,6 +438,12 @@ int UVCCameraData::init(MediaDevice *media)
 		return ret;
 
 	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
+
+	/* Generate the camera ID. */
+	if (!generateId()) {
+		LOG(UVC, Error) << "Failed to generate camera ID";
+		return -EINVAL;
+	}
 
 	properties_.set(properties::Model, utils::toAscii(media->model()));
 
@@ -561,6 +504,70 @@ int UVCCameraData::init(MediaDevice *media)
 	controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 	return 0;
+}
+
+bool UVCCameraData::generateId()
+{
+	const std::string path = video_->devicePath();
+
+	/* Create a controller ID from first device described in firmware. */
+	std::string controllerId;
+	std::string searchPath = path;
+	while (true) {
+		std::string::size_type pos = searchPath.rfind('/');
+		if (pos <= 1) {
+			LOG(UVC, Error) << "Can not find controller ID";
+			return false;
+		}
+
+		searchPath = searchPath.substr(0, pos);
+
+		controllerId = sysfs::firmwareNodePath(searchPath);
+		if (!controllerId.empty())
+			break;
+	}
+
+	/*
+	 * Create a USB ID from the device path which has the known format:
+	 *
+	 *	path = bus, "-", ports, ":", config, ".", interface ;
+	 *	bus = number ;
+	 *	ports = port, [ ".", ports ] ;
+	 *	port = number ;
+	 *	config = number ;
+	 *	interface = number ;
+	 *
+	 * Example: 3-2.4:1.0
+	 *
+	 * The bus is not guaranteed to be stable and needs to be stripped from
+	 * the USB ID. The final USB ID is built up of the ports, config and
+	 * interface properties.
+	 *
+	 * Example 2.4:1.0.
+	 */
+	std::string usbId = utils::basename(path.c_str());
+	usbId = usbId.substr(usbId.find('-') + 1);
+
+	/* Creata a device ID from the USB devices vendor and product ID. */
+	std::string deviceId;
+	for (const char *name : { "idVendor", "idProduct" }) {
+		std::ifstream file(path + "/../" + name);
+
+		if (!file.is_open())
+			return false;
+
+		std::string value;
+		std::getline(file, value);
+		file.close();
+
+		if (!deviceId.empty())
+			deviceId += ":";
+
+		deviceId += value;
+	}
+
+	id_ = controllerId + "-" + usbId + "-" + deviceId;
+	return true;
 }
 
 void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,

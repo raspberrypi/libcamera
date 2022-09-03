@@ -457,6 +457,13 @@ int UVCCameraData::init(MediaDevice *media)
 		}
 	}
 
+	if (formats_.empty()) {
+		LOG(UVC, Error)
+			<< "Camera " << id_ << " (" << media->model()
+			<< ") doesn't expose any supported format";
+		return -EINVAL;
+	}
+
 	/* Populate the camera properties. */
 	properties_.set(properties::Model, utils::toAscii(media->model()));
 

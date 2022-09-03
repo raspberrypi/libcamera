@@ -796,6 +796,8 @@ static const std::map<ColorSpace::TransferFunction, v4l2_xfer_func> transferFunc
 };
 
 static const std::map<ColorSpace::YcbcrEncoding, v4l2_ycbcr_encoding> ycbcrEncodingToV4l2 = {
+	/* V4L2 has no "none" encoding. */
+	{ ColorSpace::YcbcrEncoding::None, V4L2_YCBCR_ENC_DEFAULT },
 	{ ColorSpace::YcbcrEncoding::Rec601, V4L2_YCBCR_ENC_601 },
 	{ ColorSpace::YcbcrEncoding::Rec709, V4L2_YCBCR_ENC_709 },
 	{ ColorSpace::YcbcrEncoding::Rec2020, V4L2_YCBCR_ENC_BT2020 },

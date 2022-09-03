@@ -75,7 +75,6 @@ struct IPAActiveState {
 		int8_t brightness;
 		uint8_t contrast;
 		uint8_t saturation;
-		bool updateParams;
 	} cproc;
 
 	struct {
@@ -106,6 +105,13 @@ struct IPAFrameContext : public FrameContext {
 		double temperatureK;
 		bool autoEnabled;
 	} awb;
+
+	struct {
+		int8_t brightness;
+		uint8_t contrast;
+		uint8_t saturation;
+		bool update;
+	} cproc;
 
 	struct {
 		uint32_t exposure;

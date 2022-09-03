@@ -38,55 +38,66 @@ LOG_DEFINE_CATEGORY(RkISP1CProc)
  */
 void ColorProcessing::queueRequest(IPAContext &context,
 				   [[maybe_unused]] const uint32_t frame,
-				   [[maybe_unused]] IPAFrameContext &frameContext,
+				   IPAFrameContext &frameContext,
 				   const ControlList &controls)
 {
 	auto &cproc = context.activeState.cproc;
+	bool update = false;
 
 	const auto &brightness = controls.get(controls::Brightness);
 	if (brightness) {
-		cproc.brightness = std::clamp<int>(std::lround(*brightness * 128), -128, 127);
-		cproc.updateParams = true;
+		int value = std::clamp<int>(std::lround(*brightness * 128), -128, 127);
+		if (cproc.brightness != value) {
+			cproc.brightness = value;
+			update = true;
+		}
 
-		LOG(RkISP1CProc, Debug) << "Set brightness to " << *brightness;
+		LOG(RkISP1CProc, Debug) << "Set brightness to " << value;
 	}
 
 	const auto &contrast = controls.get(controls::Contrast);
 	if (contrast) {
-		cproc.contrast = std::clamp<int>(std::lround(*contrast * 128), 0, 255);
-		cproc.updateParams = true;
+		int value = std::clamp<int>(std::lround(*contrast * 128), 0, 255);
+		if (cproc.contrast != value) {
+			cproc.contrast = value;
+			update = true;
+		}
 
-		LOG(RkISP1CProc, Debug) << "Set contrast to " << *contrast;
+		LOG(RkISP1CProc, Debug) << "Set contrast to " << value;
 	}
 
 	const auto saturation = controls.get(controls::Saturation);
 	if (saturation) {
-		cproc.saturation = std::clamp<int>(std::lround(*saturation * 128), 0, 255);
-		cproc.updateParams = true;
+		int value = std::clamp<int>(std::lround(*saturation * 128), 0, 255);
+		if (cproc.saturation != value) {
+			cproc.saturation = value;
+			update = true;
+		}
 
-		LOG(RkISP1CProc, Debug) << "Set saturation to " << *saturation;
+		LOG(RkISP1CProc, Debug) << "Set saturation to " << value;
 	}
+
+	frameContext.cproc.brightness = cproc.brightness;
+	frameContext.cproc.contrast = cproc.contrast;
+	frameContext.cproc.saturation = cproc.saturation;
+	frameContext.cproc.update = update;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void ColorProcessing::prepare(IPAContext &context,
+void ColorProcessing::prepare([[maybe_unused]] IPAContext &context,
 			      [[maybe_unused]] const uint32_t frame,
-			      [[maybe_unused]] IPAFrameContext &frameContext,
+			      IPAFrameContext &frameContext,
 			      rkisp1_params_cfg *params)
 {
-	auto &cproc = context.activeState.cproc;
-
 	/* Check if the algorithm configuration has been updated. */
-	if (!cproc.updateParams)
+	if (!frameContext.cproc.update)
 		return;
 
-	cproc.updateParams = false;
-
-	params->others.cproc_config.brightness = cproc.brightness;
-	params->others.cproc_config.contrast = cproc.contrast;
-	params->others.cproc_config.sat = cproc.saturation;
+	params->others.cproc_config.brightness = frameContext.cproc.brightness;
+	params->others.cproc_config.contrast = frameContext.cproc.contrast;
+	params->others.cproc_config.sat = frameContext.cproc.saturation;
 
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_CPROC;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_CPROC;

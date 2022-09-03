@@ -160,9 +160,6 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAActiveState::cproc.saturation
  * \brief Saturation level
- *
- * \var IPAActiveState::cproc.updateParams
- * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
@@ -234,6 +231,24 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
+ */
+
+/**
+ * \var IPAFrameContext::cproc
+ * \brief Color Processing parameters for this frame
+ *
+ * \struct IPAFrameContext::cproc.brightness
+ * \brief Brightness level
+ *
+ * \var IPAFrameContext::cproc.contrast
+ * \brief Contrast level
+ *
+ * \var IPAFrameContext::cproc.saturation
+ * \brief Saturation level
+ *
+ * \var IPAFrameContext::cproc.update
+ * \brief Indicates if the color processing parameters have been updated
+ * compared to the previous frame
  */
 
 /**

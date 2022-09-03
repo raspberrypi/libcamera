@@ -47,9 +47,9 @@ private:
 	static void store(const ControlValue &value, ByteStreamBuffer &buffer);
 	static void store(const ControlInfo &info, ByteStreamBuffer &buffer);
 
-	ControlValue loadControlValue(ControlType type, ByteStreamBuffer &buffer,
+	ControlValue loadControlValue(ByteStreamBuffer &buffer,
 				      bool isArray = false, unsigned int count = 1);
-	ControlInfo loadControlInfo(ControlType type, ByteStreamBuffer &buffer);
+	ControlInfo loadControlInfo(ByteStreamBuffer &buffer);
 
 	unsigned int serial_;
 	unsigned int serialSeed_;

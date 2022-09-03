@@ -144,7 +144,7 @@ void ControlSerializer::reset()
 
 size_t ControlSerializer::binarySize(const ControlValue &value)
 {
-	return value.data().size_bytes();
+	return sizeof(ControlType) + value.data().size_bytes();
 }
 
 size_t ControlSerializer::binarySize(const ControlInfo &info)
@@ -195,6 +195,8 @@ size_t ControlSerializer::binarySize(const ControlList &list)
 void ControlSerializer::store(const ControlValue &value,
 			      ByteStreamBuffer &buffer)
 {
+	const ControlType type = value.type();
+	buffer.write(&type);
 	buffer.write(value.data());
 }
 
@@ -379,11 +381,13 @@ int ControlSerializer::serialize(const ControlList &list,
 	return 0;
 }
 
-ControlValue ControlSerializer::loadControlValue(ControlType type,
-						 ByteStreamBuffer &buffer,
+ControlValue ControlSerializer::loadControlValue(ByteStreamBuffer &buffer,
 						 bool isArray,
 						 unsigned int count)
 {
+	ControlType type;
+	buffer.read(&type);
+
 	ControlValue value;
 
 	value.reserve(type, isArray, count);
@@ -392,15 +396,11 @@ ControlValue ControlSerializer::loadControlValue(ControlType type,
 	return value;
 }
 
-ControlInfo ControlSerializer::loadControlInfo(ControlType type,
-					       ByteStreamBuffer &b)
+ControlInfo ControlSerializer::loadControlInfo(ByteStreamBuffer &b)
 {
-	if (type == ControlTypeString)
-		type = ControlTypeInteger32;
-
-	ControlValue min = loadControlValue(type, b);
-	ControlValue max = loadControlValue(type, b);
-	ControlValue def = loadControlValue(type, b);
+	ControlValue min = loadControlValue(b);
+	ControlValue max = loadControlValue(b);
+	ControlValue def = loadControlValue(b);
 
 	return ControlInfo(min, max, def);
 }
@@ -513,7 +513,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		}
 
 		/* Create and store the ControlInfo. */
-		ctrls.emplace(controlId, loadControlInfo(type, values));
+		ctrls.emplace(controlId, loadControlInfo(values));
 	}
 
 	/*
@@ -624,10 +624,8 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 			return {};
 		}
 
-		ControlType type = static_cast<ControlType>(entry->type);
 		ctrls.set(entry->id,
-			  loadControlValue(type, values, entry->is_array,
-					   entry->count));
+			  loadControlValue(values, entry->is_array, entry->count));
 	}
 
 	return ctrls;

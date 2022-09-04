@@ -203,9 +203,11 @@ void Awb::process(IPAContext &context,
 		}};
 	} else {
 		/* Get the YCbCr mean values */
-		double yMean = awb->awb_mean[0].mean_y_or_g;
-		double cbMean = awb->awb_mean[0].mean_cb_or_b;
-		double crMean = awb->awb_mean[0].mean_cr_or_r;
+		Vector<double, 3> yuvMeans({
+			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
+			static_cast<double>(awb->awb_mean[0].mean_cb_or_b),
+			static_cast<double>(awb->awb_mean[0].mean_cr_or_r)
+		});
 
 		/*
 		 * Convert from YCbCr to RGB.
@@ -219,14 +221,16 @@ void Awb::process(IPAContext &context,
 		 *  [1,1636, -0,4045, -0,7949]
 		 *  [1,1636,  1,9912, -0,0250]]
 		 */
-		yMean -= 16;
-		cbMean -= 128;
-		crMean -= 128;
-		rgbMeans = {{
-			1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean,
-			1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean,
-			1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean
-		}};
+		static const Matrix<double, 3, 3> yuv2rgbMatrix({
+			1.1636, -0.0623,  1.6008,
+			1.1636, -0.4045, -0.7949,
+			1.1636,  1.9912, -0.0250
+		});
+		static const Vector<double, 3> yuv2rgbOffset({
+			16, 128, 128
+		});
+
+		rgbMeans = yuv2rgbMatrix * (yuvMeans - yuv2rgbOffset);
 
 		/*
 		 * Due to hardware rounding errors in the YCbCr means, the

@@ -265,21 +265,29 @@ void Awb::process(IPAContext &context,
 
 	frameContext.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
 
-	/* Estimate the red and blue gains to apply in a grey world. */
+	/*
+	 * Estimate the red and blue gains to apply in a grey world. The green
+	 * gain is hardcoded to 1.0.
+	 */
 	double redGain = greenMean / (redMean + 1);
 	double blueGain = greenMean / (blueMean + 1);
+
+	/*
+	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
+	 * unsigned integer values. Set the minimum just above zero to avoid
+	 * divisions by zero when computing the raw means in subsequent
+	 * iterations.
+	 */
+	redGain = std::clamp(redGain, 1.0 / 256, 1023.0 / 256);
+	blueGain = std::clamp(blueGain, 1.0 / 256, 1023.0 / 256);
 
 	/* Filter the values to avoid oscillations. */
 	double speed = 0.2;
 	redGain = speed * redGain + (1 - speed) * activeState.awb.gains.automatic.red;
 	blueGain = speed * blueGain + (1 - speed) * activeState.awb.gains.automatic.blue;
 
-	/*
-	 * Gain values are unsigned integer value, range 0 to 4 with 8 bit
-	 * fractional part. Hardcode the green gain to 1.0.
-	 */
-	activeState.awb.gains.automatic.red = std::clamp(redGain, 0.0, 1023.0 / 256);
-	activeState.awb.gains.automatic.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
+	activeState.awb.gains.automatic.red = redGain;
+	activeState.awb.gains.automatic.blue = blueGain;
 	activeState.awb.gains.automatic.green = 1.0;
 
 	LOG(RkISP1Awb, Debug) << std::showpoint

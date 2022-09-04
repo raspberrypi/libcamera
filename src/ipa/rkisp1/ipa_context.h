@@ -100,7 +100,7 @@ struct IPAFrameContext : public FrameContext {
 			double blue;
 		} gains;
 
-		double temperatureK;
+		unsigned int temperatureK;
 		bool autoEnabled;
 	} awb;
 

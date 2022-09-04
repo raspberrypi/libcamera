@@ -242,6 +242,16 @@ void Awb::process(IPAContext &context,
 		redMean = 1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean;
 		greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
 		blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
+
+		/*
+		 * Due to hardware rounding errors in the YCbCr means, the
+		 * calculated RGB means may be negative. This would lead to
+		 * negative gains, messing up calculation. Prevent this by
+		 * clamping the means to positive values.
+		 */
+		redMean = std::max(redMean, 0.0);
+		greenMean = std::max(greenMean, 0.0);
+		blueMean = std::max(blueMean, 0.0);
 	}
 
 	/*

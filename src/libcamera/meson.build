@@ -189,4 +189,6 @@ pkg_mod.generate(libcamera,
                  description : 'Complex Camera Support Library',
                  subdirs : 'libcamera')
 
+meson.override_dependency('libcamera', libcamera_public)
+
 subdir('proxy/worker')

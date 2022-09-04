@@ -47,6 +47,7 @@ option('qcam',
 
 option('test',
         type : 'boolean',
+        value : false,
         description: 'Compile and include the tests')
 
 option('tracing',

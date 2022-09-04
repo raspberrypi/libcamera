@@ -31,6 +31,9 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Awb)
 
+/* Minimum mean value below which AWB can't operate. */
+constexpr double kMeanMinThreshold = 2.0;
+
 Awb::Awb()
 	: rgbMode_(false)
 {
@@ -263,7 +266,17 @@ void Awb::process(IPAContext &context,
 	greenMean /= frameContext.awb.gains.green;
 	blueMean /= frameContext.awb.gains.blue;
 
-	frameContext.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
+	/*
+	 * If the means are too small we don't have enough information to
+	 * meaningfully calculate gains. Freeze the algorithm in that case.
+	 */
+	if (redMean < kMeanMinThreshold && greenMean < kMeanMinThreshold &&
+	    blueMean < kMeanMinThreshold) {
+		frameContext.awb.temperatureK = activeState.awb.temperatureK;
+		return;
+	}
+
+	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
 
 	/*
 	 * Estimate the red and blue gains to apply in a grey world. The green
@@ -289,6 +302,8 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.red = redGain;
 	activeState.awb.gains.automatic.blue = blueGain;
 	activeState.awb.gains.automatic.green = 1.0;
+
+	frameContext.awb.temperatureK = activeState.awb.temperatureK;
 
 	LOG(RkISP1Awb, Debug) << std::showpoint
 		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean

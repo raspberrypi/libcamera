@@ -68,6 +68,7 @@ struct IPAActiveState {
 			} automatic;
 		} gains;
 
+		unsigned int temperatureK;
 		bool autoEnabled;
 	} awb;
 

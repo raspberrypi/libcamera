@@ -156,6 +156,9 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::awb.gains.automatic.blue
  * \brief Automatic white balance gain for B channel
  *
+ * \var IPAActiveState::awb.temperatureK
+ * \brief Estimated color temperature
+ *
  * \var IPAActiveState::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
  */

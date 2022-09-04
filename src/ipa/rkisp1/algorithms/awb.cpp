@@ -280,10 +280,11 @@ void Awb::process(IPAContext &context,
 
 	/*
 	 * Estimate the red and blue gains to apply in a grey world. The green
-	 * gain is hardcoded to 1.0.
+	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
+	 * divisor to a minimum value of 1.0.
 	 */
-	double redGain = greenMean / (redMean + 1);
-	double blueGain = greenMean / (blueMean + 1);
+	double redGain = greenMean / std::max(redMean, 1.0);
+	double blueGain = greenMean / std::max(blueMean, 1.0);
 
 	/*
 	 * Clamp the gain values to the hardware, which expresses gains as Q2.8

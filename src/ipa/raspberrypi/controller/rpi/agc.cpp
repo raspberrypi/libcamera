@@ -408,6 +408,12 @@ void Agc::switchMode(CameraMode const &cameraMode,
 
 void Agc::prepare(Metadata *imageMetadata)
 {
+	Duration totalExposureValue = status_.totalExposureValue;
+	AgcStatus delayedStatus;
+
+	if (!imageMetadata->get("agc.delayed_status", delayedStatus))
+		totalExposureValue = delayedStatus.totalExposureValue;
+
 	status_.digitalGain = 1.0;
 	fetchAwbStatus(imageMetadata); /* always fetch it so that Process knows it's been done */
 
@@ -418,8 +424,8 @@ void Agc::prepare(Metadata *imageMetadata)
 			Duration actualExposure = deviceStatus.shutterSpeed *
 						  deviceStatus.analogueGain;
 			if (actualExposure) {
-				status_.digitalGain = status_.totalExposureValue / actualExposure;
-				LOG(RPiAgc, Debug) << "Want total exposure " << status_.totalExposureValue;
+				status_.digitalGain = totalExposureValue / actualExposure;
+				LOG(RPiAgc, Debug) << "Want total exposure " << totalExposureValue;
 				/*
 				 * Never ask for a gain < 1.0, and also impose
 				 * some upper limit. Make it customisable?

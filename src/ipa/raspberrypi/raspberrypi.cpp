@@ -168,6 +168,7 @@ private:
 	RPiController::Controller controller_;
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
 	unsigned int metadataIdx_;
+	unsigned int lastMetadataIdx_;
 
 	/*
 	 * We count frames to decide if the frame must be hidden (e.g. from
@@ -323,7 +324,6 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
-	metadataIdx_ = 0;
 }
 
 void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
@@ -532,6 +532,8 @@ void IPARPi::signalIspPrepare(const ISPConfig &data)
 	 * avoid running the control algos for a few frames in case
 	 * they are "unreliable".
 	 */
+	lastMetadataIdx_ = metadataIdx_;
+	metadataIdx_ = data.ipaCookie % rpiMetadata_.size();
 	prepareISP(data);
 	frameCount_++;
 
@@ -1008,11 +1010,10 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 void IPARPi::prepareISP(const ISPConfig &data)
 {
 	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp).value_or(0);
-	RPiController::Metadata lastMetadata;
 	RPiController::Metadata &rpiMetadata = rpiMetadata_[metadataIdx_];
 	Span<uint8_t> embeddedBuffer;
 
-	lastMetadata = std::move(rpiMetadata);
+	rpiMetadata.clear();
 	fillDeviceStatus(data.controls);
 
 	if (data.embeddedBufferPresent) {
@@ -1045,7 +1046,8 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
-		rpiMetadata.merge(lastMetadata);
+		RPiController::Metadata &lastMetadata = rpiMetadata_[lastMetadataIdx_];
+		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 		return;
 	}
@@ -1142,7 +1144,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 
-		setDelayedControls.emit(ctrls);
+		setDelayedControls.emit(ctrls, metadataIdx_);
 	}
 }
 

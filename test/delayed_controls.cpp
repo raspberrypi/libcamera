@@ -96,7 +96,7 @@ protected:
 
 			delayed->applyControls(i);
 
-			ControlList result = delayed->get(i);
+			auto [result, cookie] = delayed->get(i);
 			int32_t brightness = result.get(V4L2_CID_BRIGHTNESS).get<int32_t>();
 			if (brightness != value) {
 				cerr << "Failed single control without delay"
@@ -138,7 +138,7 @@ protected:
 
 			delayed->applyControls(i);
 
-			ControlList result = delayed->get(i);
+			auto [result, cookie] = delayed->get(i);
 			int32_t brightness = result.get(V4L2_CID_BRIGHTNESS).get<int32_t>();
 			if (brightness != expected) {
 				cerr << "Failed single control with delay"
@@ -187,7 +187,7 @@ protected:
 
 			delayed->applyControls(i);
 
-			ControlList result = delayed->get(i);
+			auto [result, cookie] = delayed->get(i);
 			int32_t brightness = result.get(V4L2_CID_BRIGHTNESS).get<int32_t>();
 			int32_t contrast = result.get(V4L2_CID_CONTRAST).get<int32_t>();
 			if (brightness != expected || contrast != expected + 1) {
@@ -247,7 +247,7 @@ protected:
 
 			delayed->applyControls(i);
 
-			ControlList result = delayed->get(i);
+			auto [result, cookie] = delayed->get(i);
 
 			int32_t brightness = result.get(V4L2_CID_BRIGHTNESS).get<int32_t>();
 			int32_t contrast = result.get(V4L2_CID_CONTRAST).get<int32_t>();

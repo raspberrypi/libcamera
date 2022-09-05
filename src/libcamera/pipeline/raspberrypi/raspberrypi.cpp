@@ -1864,7 +1864,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * Lookup the sensor controls used for this frame sequence from
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
-		ControlList ctrl = delayedCtrls_->get(buffer->metadata().sequence);
+		auto [ctrl, cookie] = delayedCtrls_->get(buffer->metadata().sequence);
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
 		 * as it does not receive the FrameBuffer object.

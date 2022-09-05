@@ -109,14 +109,16 @@ DelayedControls::DelayedControls(V4L2Device *device,
 
 /**
  * \brief Reset state machine
+ * \param[in] cookie User supplied reset cookie value
  *
  * Resets the state machine to a starting position based on control values
  * retrieved from the device.
  */
-void DelayedControls::reset()
+void DelayedControls::reset(unsigned int cookie)
 {
 	queueCount_ = 1;
 	writeCount_ = 0;
+	cookies_[0] = cookie;
 
 	/* Retrieve control as reported by the device. */
 	std::vector<uint32_t> ids;
@@ -140,13 +142,15 @@ void DelayedControls::reset()
 /**
  * \brief Push a set of controls on the queue
  * \param[in] controls List of controls to add to the device queue
+ * \param[in] cookie User supplied cookie value for \a controls
  *
  * Push a set of controls to the control queue. This increases the control queue
- * depth by one.
+ * depth by one. The \a cookie value will be subsequently returned from
+ * \a get() for the frame with all controls applied.
  *
  * \returns true if \a controls are accepted, or false otherwise
  */
-bool DelayedControls::push(const ControlList &controls)
+bool DelayedControls::push(const ControlList &controls, const unsigned int cookie)
 {
 	/* Copy state from previous frame. */
 	for (auto &ctrl : values_) {
@@ -180,6 +184,7 @@ bool DelayedControls::push(const ControlList &controls)
 			<< " at index " << queueCount_;
 	}
 
+	cookies_[queueCount_] = cookie;
 	queueCount_++;
 
 	return true;
@@ -198,9 +203,10 @@ bool DelayedControls::push(const ControlList &controls)
  * push(). The max history from the current sequence number that yields valid
  * values are thus 16 minus number of controls pushed.
  *
- * \return The controls at \a sequence number
+ * \return The controls at \a sequence number and associated user supplied
+ * cookie value.
  */
-ControlList DelayedControls::get(uint32_t sequence)
+std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
 {
 	unsigned int index = std::max<int>(0, sequence - maxDelay_);
 
@@ -217,7 +223,7 @@ ControlList DelayedControls::get(uint32_t sequence)
 			<< " at index " << index;
 	}
 
-	return out;
+	return { out, cookies_[index] };
 }
 
 /**
@@ -276,7 +282,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 	while (writeCount_ > queueCount_) {
 		LOG(DelayedControls, Debug)
 			<< "Queue is empty, auto queue no-op.";
-		push({});
+		push({}, cookies_[queueCount_ - 1]);
 	}
 
 	device_->setControls(&out);

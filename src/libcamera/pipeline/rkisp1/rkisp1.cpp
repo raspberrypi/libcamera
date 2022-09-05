@@ -1187,8 +1187,9 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 	if (data->frame_ <= buffer->metadata().sequence)
 		data->frame_ = buffer->metadata().sequence + 1;
 
+	auto [controls, cookie] = data->delayedCtrls_->get(buffer->metadata().sequence);
 	data->ipa_->processStatsBuffer(info->frame, info->statBuffer->cookie(),
-				       data->delayedCtrls_->get(buffer->metadata().sequence));
+				       controls);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)

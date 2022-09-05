@@ -1385,7 +1385,8 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	request->metadata().set(controls::SensorTimestamp,
 				buffer->metadata().timestamp);
 
-	info->effectiveSensorControls = delayedCtrls_->get(buffer->metadata().sequence);
+	auto [controls, cookie] = delayedCtrls_->get(buffer->metadata().sequence);
+	info->effectiveSensorControls = std::move(controls);
 
 	if (request->findBuffer(&rawStream_))
 		pipe()->completeBuffer(request, buffer);

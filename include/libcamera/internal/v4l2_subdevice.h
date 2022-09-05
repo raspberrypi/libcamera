@@ -101,6 +101,9 @@ protected:
 private:
 	LIBCAMERA_DISABLE_COPY(V4L2Subdevice)
 
+	std::optional<ColorSpace>
+	toColorSpace(const v4l2_mbus_framefmt &format) const;
+
 	std::vector<unsigned int> enumPadCodes(unsigned int pad);
 	std::vector<SizeRange> enumPadSizes(unsigned int pad,
 					    unsigned int code);

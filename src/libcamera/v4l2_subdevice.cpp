@@ -477,6 +477,36 @@ V4L2Subdevice::Formats V4L2Subdevice::formats(unsigned int pad)
 	return formats;
 }
 
+std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &format) const
+{
+	/*
+	 * Only image formats have a color space, for other formats (such as
+	 * metadata formats) the color space concept isn't applicable. V4L2
+	 * subdev drivers return a colorspace set to V4L2_COLORSPACE_DEFAULT in
+	 * that case (as well as for image formats when the driver hasn't
+	 * bothered implementing color space support). Check the colorspace
+	 * field here and return std::nullopt directly to avoid logging a
+	 * warning.
+	 */
+	if (format.colorspace == V4L2_COLORSPACE_DEFAULT)
+		return std::nullopt;
+
+	PixelFormatInfo::ColourEncoding colourEncoding;
+	auto iter = formatInfoMap.find(format.code);
+	if (iter != formatInfoMap.end()) {
+		colourEncoding = iter->second.colourEncoding;
+	} else {
+		LOG(V4L2, Warning)
+			<< "Unknown subdev format "
+			<< utils::hex(format.code, 4)
+			<< ", defaulting to RGB encoding";
+
+		colourEncoding = PixelFormatInfo::ColourEncodingRGB;
+	}
+
+	return V4L2Device::toColorSpace(format, colourEncoding);
+}
+
 /**
  * \brief Retrieve the image format set on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
@@ -503,20 +533,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
-
-	PixelFormatInfo::ColourEncoding colourEncoding;
-	auto iter = formatInfoMap.find(subdevFmt.format.code);
-	if (iter != formatInfoMap.end()) {
-		colourEncoding = iter->second.colourEncoding;
-	} else {
-		LOG(V4L2, Warning)
-			<< "Unknown subdev format "
-			<< utils::hex(subdevFmt.format.code, 4)
-			<< ", defaulting to RGB encoding";
-
-		colourEncoding = PixelFormatInfo::ColourEncodingRGB;
-	}
-	format->colorSpace = toColorSpace(subdevFmt.format, colourEncoding);
+	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
 }
@@ -562,20 +579,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
 	format->mbus_code = subdevFmt.format.code;
-
-	PixelFormatInfo::ColourEncoding colourEncoding;
-	auto iter = formatInfoMap.find(subdevFmt.format.code);
-	if (iter != formatInfoMap.end()) {
-		colourEncoding = iter->second.colourEncoding;
-	} else {
-		LOG(V4L2, Warning)
-			<< "Unknown subdev format "
-			<< utils::hex(subdevFmt.format.code, 4)
-			<< ", defaulting to RGB encoding";
-
-		colourEncoding = PixelFormatInfo::ColourEncodingRGB;
-	}
-	format->colorSpace = toColorSpace(subdevFmt.format, colourEncoding);
+	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
 }

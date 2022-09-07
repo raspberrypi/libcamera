@@ -207,6 +207,15 @@ void Awb::process(IPAContext &context,
 	double greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
 	double blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
 
+	/*
+	 * The ISP computes the AWB means after applying the colour gains,
+	 * divide by the gains that were used to get the raw means from the
+	 * sensor.
+	 */
+	redMean /= frameContext.awb.gains.red;
+	greenMean /= frameContext.awb.gains.green;
+	blueMean /= frameContext.awb.gains.blue;
+
 	frameContext.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
 
 	/* Estimate the red and blue gains to apply in a grey world. */

@@ -104,16 +104,13 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc
  * \brief State for the Automatic Gain Control algorithm
  *
- * The exposure and gain determined are expected to be applied to the sensor
- * at the earliest opportunity.
+ * The exposure and gain are the latest values computed by the AGC algorithm.
  *
  * \var IPAActiveState::agc.exposure
  * \brief Exposure time expressed as a number of lines
  *
  * \var IPAActiveState::agc.gain
  * \brief Analogue gain multiplier
- *
- * The gain should be adapted to the sensor specific gain code before applying.
  */
 
 /**
@@ -182,21 +179,37 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
- * \var IPAActiveState::sensor
- * \brief Effective sensor values
- *
- * \var IPAActiveState::sensor.exposure
- * \brief Exposure time expressed as a number of lines
- *
- * \var IPAActiveState::sensor.gain
- * \brief Analogue gain multiplier
- */
-
-/**
  * \struct IPAFrameContext
  * \brief Per-frame context for algorithms
  *
  * \todo Populate the frame context for all algorithms
+ */
+
+/**
+ * \var IPAFrameContext::agc
+ * \brief Automatic Gain Control parameters for this frame
+ *
+ * The exposure and gain are provided by the AGC algorithm, and are to be
+ * applied to the sensor in order to take effect for this frame.
+ *
+ * \var IPAFrameContext::agc.exposure
+ * \brief Exposure time expressed as a number of lines
+ *
+ * \var IPAFrameContext::agc.gain
+ * \brief Analogue gain multiplier
+ *
+ * The gain should be adapted to the sensor specific gain code before applying.
+ */
+
+/**
+ * \var IPAFrameContext::sensor
+ * \brief Sensor configuration that used been used for this frame
+ *
+ * \var IPAFrameContext::sensor.exposure
+ * \brief Exposure time expressed as a number of lines
+ *
+ * \var IPAFrameContext::sensor.gain
+ * \brief Analogue gain multiplier
  */
 
 /**

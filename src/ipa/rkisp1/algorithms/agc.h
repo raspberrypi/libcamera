@@ -34,7 +34,8 @@ public:
 		     const rkisp1_stat_buffer *stats) override;
 
 private:
-	void computeExposure(IPAContext &Context, double yGain, double iqMeanGain);
+	void computeExposure(IPAContext &Context, IPAFrameContext &frameContext,
+			     double yGain, double iqMeanGain);
 	utils::Duration filterExposure(utils::Duration exposureValue);
 	double estimateLuminance(const rkisp1_cif_isp_ae_stat *ae, double gain);
 	double measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const;

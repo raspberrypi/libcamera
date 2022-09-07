@@ -82,14 +82,18 @@ struct IPAActiveState {
 		uint8_t sharpness;
 		bool updateParams;
 	} filter;
+};
+
+struct IPAFrameContext : public FrameContext {
+	struct {
+		uint32_t exposure;
+		double gain;
+	} agc;
 
 	struct {
 		uint32_t exposure;
 		double gain;
 	} sensor;
-};
-
-struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {

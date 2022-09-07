@@ -333,9 +333,9 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 		reinterpret_cast<rkisp1_stat_buffer *>(
 			mappedBuffers_.at(bufferId).planes()[0].data());
 
-	context_.activeState.sensor.exposure =
+	frameContext.sensor.exposure =
 		sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-	context_.activeState.sensor.gain =
+	frameContext.sensor.gain =
 		camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
 	unsigned int aeState = 0;
@@ -350,8 +350,14 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 void IPARkISP1::setControls(unsigned int frame)
 {
-	uint32_t exposure = context_.activeState.agc.exposure;
-	uint32_t gain = camHelper_->gainCode(context_.activeState.agc.gain);
+	/*
+	 * \todo The frame number is most likely wrong here, we need to take
+	 * internal sensor delays and other timing parameters into account.
+	 */
+
+	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
+	uint32_t exposure = frameContext.agc.exposure;
+	uint32_t gain = camHelper_->gainCode(frameContext.agc.gain);
 
 	ControlList ctrls(ctrls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));

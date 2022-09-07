@@ -193,15 +193,6 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
- * \var IPAActiveState::frameCount
- * \brief Counter of requests queued to the IPA module
- *
- * The counter is reset to 0 when the IPA module is configured, and is
- * incremented for each request being queued, after calling the
- * Algorithm::prepare() function of all algorithms.
- */
-
-/**
  * \struct IPAFrameContext
  * \brief Per-frame context for algorithms
  *

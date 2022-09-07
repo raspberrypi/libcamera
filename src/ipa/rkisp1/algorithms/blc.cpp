@@ -65,12 +65,12 @@ int BlackLevelCorrection::init([[maybe_unused]] IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void BlackLevelCorrection::prepare(IPAContext &context,
-				   [[maybe_unused]] const uint32_t frame,
+void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
+				   const uint32_t frame,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   rkisp1_params_cfg *params)
 {
-	if (context.activeState.frameCount > 0)
+	if (frame > 0)
 		return;
 
 	if (!tuningParameters_)

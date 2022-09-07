@@ -74,8 +74,7 @@ uint32_t Awb::estimateCCT(double red, double green, double blue)
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Awb::prepare(IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
+void Awb::prepare(IPAContext &context, const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  rkisp1_params_cfg *params)
 {
@@ -88,7 +87,7 @@ void Awb::prepare(IPAContext &context,
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
 
 	/* If we already have configured the gains and window, return. */
-	if (context.activeState.frameCount > 0)
+	if (frame > 0)
 		return;
 
 	/* Configure the gains to apply. */

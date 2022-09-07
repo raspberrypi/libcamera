@@ -260,8 +260,6 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 
-	context_.activeState.frameCount = 0;
-
 	for (auto const &algo : algorithms()) {
 		int ret = algo->configure(context_, info);
 		if (ret)
@@ -324,7 +322,6 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 		algo->prepare(context_, frame, frameContext, params);
 
 	paramsBufferReady.emit(frame);
-	context_.activeState.frameCount++;
 }
 
 void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,

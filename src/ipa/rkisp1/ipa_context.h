@@ -87,8 +87,6 @@ struct IPAActiveState {
 		uint32_t exposure;
 		double gain;
 	} sensor;
-
-	unsigned int frameCount;
 };
 
 struct IPAFrameContext : public FrameContext {

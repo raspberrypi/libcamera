@@ -207,7 +207,7 @@ void Dpf::queueRequest(IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Dpf::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+void Dpf::prepare(IPAContext &context, const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  rkisp1_params_cfg *params)
 {
@@ -216,7 +216,7 @@ void Dpf::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 
 	auto &dpf = context.activeState.dpf;
 
-	if (context.activeState.frameCount == 0) {
+	if (frame == 0) {
 		params->others.dpf_config = config_;
 		params->others.dpf_strength_config = strengthConfig_;
 

@@ -120,17 +120,29 @@ namespace libcamera::ipa::rkisp1 {
  * \struct IPAActiveState::awb.gains
  * \brief White balance gains
  *
- * \var IPAActiveState::awb.gains.red
- * \brief White balance gain for R channel
+ * \struct IPAActiveState::awb.gains.manual
+ * \brief Manual white balance gains (set through requests)
  *
- * \var IPAActiveState::awb.gains.green
- * \brief White balance gain for G channel
+ * \var IPAActiveState::awb.gains.manual.red
+ * \brief Manual white balance gain for R channel
  *
- * \var IPAActiveState::awb.gains.blue
- * \brief White balance gain for B channel
+ * \var IPAActiveState::awb.gains.manual.green
+ * \brief Manual white balance gain for G channel
  *
- * \var IPAActiveState::awb.temperatureK
- * \brief Estimated color temperature
+ * \var IPAActiveState::awb.gains.manual.blue
+ * \brief Manual white balance gain for B channel
+ *
+ * \struct IPAActiveState::awb.gains.automatic
+ * \brief Automatic white balance gains (computed by the algorithm)
+ *
+ * \var IPAActiveState::awb.gains.automatic.red
+ * \brief Automatic white balance gain for R channel
+ *
+ * \var IPAActiveState::awb.gains.automatic.green
+ * \brief Automatic white balance gain for G channel
+ *
+ * \var IPAActiveState::awb.gains.automatic.blue
+ * \brief Automatic white balance gain for B channel
  *
  * \var IPAActiveState::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
@@ -199,6 +211,29 @@ namespace libcamera::ipa::rkisp1 {
  * \brief Analogue gain multiplier
  *
  * The gain should be adapted to the sensor specific gain code before applying.
+ */
+
+/**
+ * \var IPAFrameContext::awb
+ * \brief Automatic White Balance parameters for this frame
+ *
+ * \struct IPAFrameContext::awb.gains
+ * \brief White balance gains
+ *
+ * \var IPAFrameContext::awb.gains.red
+ * \brief White balance gain for R channel
+ *
+ * \var IPAFrameContext::awb.gains.green
+ * \brief White balance gain for G channel
+ *
+ * \var IPAFrameContext::awb.gains.blue
+ * \brief White balance gain for B channel
+ *
+ * \var IPAFrameContext::awb.temperatureK
+ * \brief Estimated color temperature
+ *
+ * \var IPAFrameContext::awb.autoEnabled
+ * \brief Whether the Auto White Balance algorithm is enabled
  */
 
 /**

@@ -36,9 +36,12 @@ LOG_DEFINE_CATEGORY(RkISP1Awb)
 int Awb::configure(IPAContext &context,
 		   const IPACameraSensorInfo &configInfo)
 {
-	context.activeState.awb.gains.red = 1.0;
-	context.activeState.awb.gains.blue = 1.0;
-	context.activeState.awb.gains.green = 1.0;
+	context.activeState.awb.gains.manual.red = 1.0;
+	context.activeState.awb.gains.manual.blue = 1.0;
+	context.activeState.awb.gains.manual.green = 1.0;
+	context.activeState.awb.gains.automatic.red = 1.0;
+	context.activeState.awb.gains.automatic.blue = 1.0;
+	context.activeState.awb.gains.automatic.green = 1.0;
 	context.activeState.awb.autoEnabled = true;
 
 	/*
@@ -75,13 +78,22 @@ uint32_t Awb::estimateCCT(double red, double green, double blue)
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Awb::prepare(IPAContext &context, const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
 {
-	params->others.awb_gain_config.gain_green_b = 256 * context.activeState.awb.gains.green;
-	params->others.awb_gain_config.gain_blue = 256 * context.activeState.awb.gains.blue;
-	params->others.awb_gain_config.gain_red = 256 * context.activeState.awb.gains.red;
-	params->others.awb_gain_config.gain_green_r = 256 * context.activeState.awb.gains.green;
+	/*
+	 * This is the latest time we can read the active state. This is the
+	 * most up-to-date automatic values we can read.
+	 */
+	if (frameContext.awb.autoEnabled) {
+		frameContext.awb.gains.red = context.activeState.awb.gains.automatic.red;
+		frameContext.awb.gains.green = context.activeState.awb.gains.automatic.green;
+		frameContext.awb.gains.blue = context.activeState.awb.gains.automatic.blue;
+	}
+
+	params->others.awb_gain_config.gain_green_b = 256 * frameContext.awb.gains.green;
+	params->others.awb_gain_config.gain_blue = 256 * frameContext.awb.gains.blue;
+	params->others.awb_gain_config.gain_red = 256 * frameContext.awb.gains.red;
+	params->others.awb_gain_config.gain_green_r = 256 * frameContext.awb.gains.green;
 
 	/* Update the gains. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
@@ -127,7 +139,7 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
  */
 void Awb::queueRequest(IPAContext &context,
 		       [[maybe_unused]] const uint32_t frame,
-		       [[maybe_unused]] IPAFrameContext &frameContext,
+		       IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
 	auto &awb = context.activeState.awb;
@@ -142,21 +154,29 @@ void Awb::queueRequest(IPAContext &context,
 
 	const auto &colourGains = controls.get(controls::ColourGains);
 	if (colourGains && !awb.autoEnabled) {
-		awb.gains.red = (*colourGains)[0];
-		awb.gains.blue = (*colourGains)[1];
+		awb.gains.manual.red = (*colourGains)[0];
+		awb.gains.manual.blue = (*colourGains)[1];
 
 		LOG(RkISP1Awb, Debug)
-			<< "Set colour gains to red: " << awb.gains.red
-			<< ", blue: " << awb.gains.blue;
+			<< "Set colour gains to red: " << awb.gains.manual.red
+			<< ", blue: " << awb.gains.manual.blue;
+	}
+
+	frameContext.awb.autoEnabled = awb.autoEnabled;
+
+	if (!awb.autoEnabled) {
+		frameContext.awb.gains.red = awb.gains.manual.red;
+		frameContext.awb.gains.green = 1.0;
+		frameContext.awb.gains.blue = awb.gains.manual.blue;
 	}
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::process
  */
-void Awb::process([[maybe_unused]] IPAContext &context,
+void Awb::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameCtx,
+		  IPAFrameContext &frameContext,
 		  const rkisp1_stat_buffer *stats)
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
@@ -187,30 +207,27 @@ void Awb::process([[maybe_unused]] IPAContext &context,
 	double greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
 	double blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
 
+	frameContext.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
+
 	/* Estimate the red and blue gains to apply in a grey world. */
 	double redGain = greenMean / (redMean + 1);
 	double blueGain = greenMean / (blueMean + 1);
 
 	/* Filter the values to avoid oscillations. */
 	double speed = 0.2;
-	redGain = speed * redGain + (1 - speed) * activeState.awb.gains.red;
-	blueGain = speed * blueGain + (1 - speed) * activeState.awb.gains.blue;
+	redGain = speed * redGain + (1 - speed) * activeState.awb.gains.automatic.red;
+	blueGain = speed * blueGain + (1 - speed) * activeState.awb.gains.automatic.blue;
 
 	/*
 	 * Gain values are unsigned integer value, range 0 to 4 with 8 bit
-	 * fractional part.
+	 * fractional part. Hardcode the green gain to 1.0.
 	 */
-	if (activeState.awb.autoEnabled) {
-		activeState.awb.gains.red = std::clamp(redGain, 0.0, 1023.0 / 256);
-		activeState.awb.gains.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
-	}
-	/* Hardcode the green gain to 1.0. */
-	activeState.awb.gains.green = 1.0;
+	activeState.awb.gains.automatic.red = std::clamp(redGain, 0.0, 1023.0 / 256);
+	activeState.awb.gains.automatic.blue = std::clamp(blueGain, 0.0, 1023.0 / 256);
+	activeState.awb.gains.automatic.green = 1.0;
 
-	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
-
-	LOG(RkISP1Awb, Debug) << "Gain found for red: " << context.activeState.awb.gains.red
-			      << " and for blue: " << context.activeState.awb.gains.blue;
+	LOG(RkISP1Awb, Debug) << "Gain found for red: " << activeState.awb.gains.automatic.red
+			      << " and for blue: " << activeState.awb.gains.automatic.blue;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

@@ -56,12 +56,18 @@ struct IPAActiveState {
 
 	struct {
 		struct {
-			double red;
-			double green;
-			double blue;
+			struct {
+				double red;
+				double green;
+				double blue;
+			} manual;
+			struct {
+				double red;
+				double green;
+				double blue;
+			} automatic;
 		} gains;
 
-		double temperatureK;
 		bool autoEnabled;
 	} awb;
 
@@ -89,6 +95,17 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 	} agc;
+
+	struct {
+		struct {
+			double red;
+			double green;
+			double blue;
+		} gains;
+
+		double temperatureK;
+		bool autoEnabled;
+	} awb;
 
 	struct {
 		uint32_t exposure;

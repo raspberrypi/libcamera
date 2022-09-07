@@ -284,7 +284,9 @@ void MainWindow::switchCamera()
 	 */
 	startStopAction_->setChecked(false);
 
-	camera_->release();
+	if (camera_)
+		camera_->release();
+
 	camera_ = cam;
 
 	startStopAction_->setChecked(true);

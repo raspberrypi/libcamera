@@ -176,10 +176,11 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
  */
 void Dpf::queueRequest(IPAContext &context,
 		       [[maybe_unused]] const uint32_t frame,
-		       [[maybe_unused]] IPAFrameContext &frameContext,
+		       IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
 	auto &dpf = context.activeState.dpf;
+	bool update = false;
 
 	const auto &denoise = controls.get(controls::draft::NoiseReductionMode);
 	if (denoise) {
@@ -187,34 +188,39 @@ void Dpf::queueRequest(IPAContext &context,
 
 		switch (*denoise) {
 		case controls::draft::NoiseReductionModeOff:
-			dpf.denoise = false;
-			dpf.updateParams = true;
+			if (dpf.denoise) {
+				dpf.denoise = false;
+				update = true;
+			}
 			break;
 		case controls::draft::NoiseReductionModeMinimal:
 		case controls::draft::NoiseReductionModeHighQuality:
 		case controls::draft::NoiseReductionModeFast:
-			dpf.denoise = true;
-			dpf.updateParams = true;
+			if (!dpf.denoise) {
+				dpf.denoise = true;
+				update = true;
+			}
 			break;
 		default:
 			LOG(RkISP1Dpf, Error)
 				<< "Unsupported denoise value "
 				<< *denoise;
+			break;
 		}
 	}
+
+	frameContext.dpf.denoise = dpf.denoise;
+	frameContext.dpf.update = update;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Dpf::prepare(IPAContext &context, const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
 {
 	if (!initialized_)
 		return;
-
-	auto &dpf = context.activeState.dpf;
 
 	if (frame == 0) {
 		params->others.dpf_config = config_;
@@ -245,12 +251,10 @@ void Dpf::prepare(IPAContext &context, const uint32_t frame,
 					     RKISP1_CIF_ISP_MODULE_DPF_STRENGTH;
 	}
 
-	if (dpf.updateParams) {
+	if (frameContext.dpf.update) {
 		params->module_en_update |= RKISP1_CIF_ISP_MODULE_DPF;
-		if (dpf.denoise)
+		if (frameContext.dpf.denoise)
 			params->module_ens |= RKISP1_CIF_ISP_MODULE_DPF;
-
-		dpf.updateParams = false;
 	}
 }
 

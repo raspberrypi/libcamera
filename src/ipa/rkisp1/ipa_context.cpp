@@ -168,9 +168,6 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAActiveState::dpf.denoise
  * \brief Indicates if denoise is activated
- *
- * \var IPAActiveState::dpf.updateParams
- * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
@@ -248,6 +245,18 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::cproc.update
  * \brief Indicates if the color processing parameters have been updated
+ * compared to the previous frame
+ */
+
+/**
+ * \var IPAFrameContext::dpf
+ * \brief Denoise Pre-Filter parameters for this frame
+ *
+ * \var IPAFrameContext::dpf.denoise
+ * \brief Indicates if denoise is activated
+ *
+ * \var IPAFrameContext::dpf.update
+ * \brief Indicates if the denoise pre-filter parameters have been updated
  * compared to the previous frame
  */
 

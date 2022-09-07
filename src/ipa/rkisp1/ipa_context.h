@@ -79,7 +79,6 @@ struct IPAActiveState {
 
 	struct {
 		bool denoise;
-		bool updateParams;
 	} dpf;
 
 	struct {
@@ -112,6 +111,11 @@ struct IPAFrameContext : public FrameContext {
 		uint8_t saturation;
 		bool update;
 	} cproc;
+
+	struct {
+		bool denoise;
+		bool update;
+	} dpf;
 
 	struct {
 		uint32_t exposure;

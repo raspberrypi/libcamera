@@ -44,15 +44,20 @@ static constexpr uint32_t kFiltModeDefault = 0x000004f2;
  */
 void Filter::queueRequest(IPAContext &context,
 			  [[maybe_unused]] const uint32_t frame,
-			  [[maybe_unused]] IPAFrameContext &frameContext,
+			  IPAFrameContext &frameContext,
 			  const ControlList &controls)
 {
 	auto &filter = context.activeState.filter;
+	bool update = false;
 
 	const auto &sharpness = controls.get(controls::Sharpness);
 	if (sharpness) {
-		filter.sharpness = std::round(std::clamp(*sharpness, 0.0f, 10.0f));
-		filter.updateParams = true;
+		unsigned int value = std::round(std::clamp(*sharpness, 0.0f, 10.0f));
+
+		if (filter.sharpness != value) {
+			filter.sharpness = value;
+			update = true;
+		}
 
 		LOG(RkISP1Filter, Debug) << "Set sharpness to " << *sharpness;
 	}
@@ -63,41 +68,47 @@ void Filter::queueRequest(IPAContext &context,
 
 		switch (*denoise) {
 		case controls::draft::NoiseReductionModeOff:
-			filter.denoise = 0;
-			filter.updateParams = true;
+			if (filter.denoise != 0) {
+				filter.denoise = 0;
+				update = true;
+			}
 			break;
 		case controls::draft::NoiseReductionModeMinimal:
-			filter.denoise = 1;
-			filter.updateParams = true;
+			if (filter.denoise != 1) {
+				filter.denoise = 1;
+				update = true;
+			}
 			break;
 		case controls::draft::NoiseReductionModeHighQuality:
 		case controls::draft::NoiseReductionModeFast:
-			filter.denoise = 3;
-			filter.updateParams = true;
+			if (filter.denoise != 3) {
+				filter.denoise = 3;
+				update = true;
+			}
 			break;
 		default:
 			LOG(RkISP1Filter, Error)
 				<< "Unsupported denoise value "
 				<< *denoise;
+			break;
 		}
 	}
+
+	frameContext.filter.denoise = filter.denoise;
+	frameContext.filter.sharpness = filter.sharpness;
+	frameContext.filter.update = update;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Filter::prepare(IPAContext &context,
+void Filter::prepare([[maybe_unused]] IPAContext &context,
 		     [[maybe_unused]] const uint32_t frame,
-		     [[maybe_unused]] IPAFrameContext &frameContext,
-		     rkisp1_params_cfg *params)
+		     IPAFrameContext &frameContext, rkisp1_params_cfg *params)
 {
-	auto &filter = context.activeState.filter;
-
 	/* Check if the algorithm configuration has been updated. */
-	if (!filter.updateParams)
+	if (!frameContext.filter.update)
 		return;
-
-	filter.updateParams = false;
 
 	static constexpr uint16_t filt_fac_sh0[] = {
 		0x04, 0x07, 0x0a, 0x0c, 0x10, 0x14, 0x1a, 0x1e, 0x24, 0x2a, 0x30
@@ -147,8 +158,8 @@ void Filter::prepare(IPAContext &context,
 		0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
 	};
 
-	uint8_t denoise = filter.denoise;
-	uint8_t sharpness = filter.sharpness;
+	uint8_t denoise = frameContext.filter.denoise;
+	uint8_t sharpness = frameContext.filter.sharpness;
 	auto &flt_config = params->others.flt_config;
 
 	flt_config.fac_sh0 = filt_fac_sh0[sharpness];

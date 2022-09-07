@@ -179,9 +179,6 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAActiveState::filter.sharpness
  * \brief Sharpness level
- *
- * \var IPAActiveState::filter.updateParams
- * \brief Indicates if ISP parameters need to be updated
  */
 
 /**
@@ -258,6 +255,21 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAFrameContext::dpf.update
  * \brief Indicates if the denoise pre-filter parameters have been updated
  * compared to the previous frame
+ */
+
+/**
+ * \var IPAFrameContext::filter
+ * \brief Filter parameters for this frame
+ *
+ * \struct IPAFrameContext::filter.denoise
+ * \brief Denoising level
+ *
+ * \var IPAFrameContext::filter.sharpness
+ * \brief Sharpness level
+ *
+ * \var IPAFrameContext::filter.updateParams
+ * \brief Indicates if the filter parameters have been updated compared to the
+ * previous frame
  */
 
 /**

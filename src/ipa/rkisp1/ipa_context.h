@@ -84,7 +84,6 @@ struct IPAActiveState {
 	struct {
 		uint8_t denoise;
 		uint8_t sharpness;
-		bool updateParams;
 	} filter;
 };
 
@@ -116,6 +115,12 @@ struct IPAFrameContext : public FrameContext {
 		bool denoise;
 		bool update;
 	} dpf;
+
+	struct {
+		uint8_t denoise;
+		uint8_t sharpness;
+		bool update;
+	} filter;
 
 	struct {
 		uint32_t exposure;

@@ -25,37 +25,6 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
- * \struct IPAFrameContext
- * \brief Per-frame context for algorithms
- *
- * The frame context stores data specific to a single frame processed by the
- * IPA. Each frame processed by the IPA has a context associated with it,
- * accessible through the IPAContext structure.
- *
- * \todo Detail how to access contexts for a particular frame
- *
- * Each of the fields in the frame context belongs to either a specific
- * algorithm, or to the top-level IPA module. A field may be read by any
- * algorithm, but should only be written by its owner.
- */
-
-/**
- * \struct IPAContext
- * \brief Global IPA context data shared between all algorithms
- *
- * \var IPAContext::configuration
- * \brief The IPA session configuration, immutable during the session
- *
- * \var IPAContext::frameContext
- * \brief The frame context for the frame being processed
- *
- * \todo While the frame context is supposed to be per-frame, this
- * single frame context stores data related to both the current frame
- * and the previous frames, with fields being updated as the algorithms
- * are run. This needs to be turned into real per-frame data storage.
- */
-
-/**
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *
@@ -113,6 +82,21 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPASessionConfiguration::sensor.size
  * \brief Sensor output resolution
+ */
+
+/**
+ * \struct IPAFrameContext
+ * \brief Per-frame context for algorithms
+ *
+ * The frame context stores data specific to a single frame processed by the
+ * IPA. Each frame processed by the IPA has a context associated with it,
+ * accessible through the IPAContext structure.
+ *
+ * \todo Detail how to access contexts for a particular frame
+ *
+ * Each of the fields in the frame context belongs to either a specific
+ * algorithm, or to the top-level IPA module. A field may be read by any
+ * algorithm, but should only be written by its owner.
  */
 
 /**
@@ -214,6 +198,22 @@ namespace libcamera::ipa::rkisp1 {
  * The counter is reset to 0 when the IPA module is configured, and is
  * incremented for each request being queued, after calling the
  * Algorithm::prepare() function of all algorithms.
+ */
+
+/**
+ * \struct IPAContext
+ * \brief Global IPA context data shared between all algorithms
+ *
+ * \var IPAContext::configuration
+ * \brief The IPA session configuration, immutable during the session
+ *
+ * \var IPAContext::frameContext
+ * \brief The frame context for the frame being processed
+ *
+ * \todo While the frame context is supposed to be per-frame, this
+ * single frame context stores data related to both the current frame
+ * and the previous frames, with fields being updated as the algorithms
+ * are run. This needs to be turned into real per-frame data storage.
  */
 
 } /* namespace libcamera::ipa::rkisp1 */

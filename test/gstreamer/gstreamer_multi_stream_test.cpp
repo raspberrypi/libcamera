@@ -70,8 +70,6 @@ protected:
 
 	int run() override
 	{
-		g_object_set(libcameraSrc_, "camera-name", cameraName_.c_str(), NULL);
-
 		/* Build the pipeline */
 		gst_bin_add_many(GST_BIN(pipeline_), libcameraSrc_,
 				 stream0_, stream1_, NULL);
@@ -106,7 +104,6 @@ protected:
 	}
 
 private:
-	std::string cameraName_;
 	GstElement *stream0_;
 	GstElement *stream1_;
 };

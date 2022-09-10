@@ -24,10 +24,11 @@ protected:
 	int processEvent();
 	void printError(GstMessage *msg);
 
+	std::string cameraName_;
 	GstElement *pipeline_;
 	GstElement *libcameraSrc_;
 	int status_;
 
 private:
-	bool checkMinCameraStreams(unsigned int numStreams);
+	bool checkMinCameraStreamsAndSetCameraName(unsigned int numStreams);
 };

@@ -116,7 +116,7 @@ int GstreamerTest::createPipeline()
 	pipeline_ = gst_pipeline_new("test-pipeline");
 
 	if (!libcameraSrc_ || !pipeline_) {
-		g_printerr("Unable to create create pipeline %p.%p\n",
+		g_printerr("Unable to create pipeline %p.%p\n",
 			   libcameraSrc_, pipeline_);
 
 		return TestFail;

@@ -154,9 +154,11 @@ colorspace_from_colorimetry(const GstVideoColorimetry &colorimetry)
 	case GST_VIDEO_TRANSFER_SRGB:
 		colorspace->transferFunction = ColorSpace::TransferFunction::Srgb;
 		break;
+#if GST_CHECK_VERSION(1, 18, 0)
 	case GST_VIDEO_TRANSFER_BT601:
-	case GST_VIDEO_TRANSFER_BT2020_12:
 	case GST_VIDEO_TRANSFER_BT2020_10:
+#endif
+	case GST_VIDEO_TRANSFER_BT2020_12:
 	case GST_VIDEO_TRANSFER_BT709:
 		colorspace->transferFunction = ColorSpace::TransferFunction::Rec709;
 		break;

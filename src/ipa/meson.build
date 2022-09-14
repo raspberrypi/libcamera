@@ -27,6 +27,14 @@ ipa_sign = files('ipa-sign.sh')
 ipa_names = []
 
 ipa_modules = get_option('ipas')
+
+# Tests require the vimc IPA, similar to vimc pipline-handler for their
+# execution. Include it automatically when tests are enabled.
+if get_option('test') and 'vimc' not in ipa_modules
+  message('Enabling vimc IPA to support tests')
+  ipa_modules += ['vimc']
+endif
+
 enabled_ipa_modules = []
 
 # The ipa-sign-install.sh script which uses the ipa_names variable will itself

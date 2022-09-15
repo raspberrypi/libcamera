@@ -515,6 +515,16 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		goto done;
 	}
 
+	ret = state->cam_->configure(state->config_.get());
+	if (ret) {
+		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+				  ("Failed to configure camera: %s", g_strerror(-ret)),
+				  ("Camera::configure() failed with error code %i", ret));
+		gst_task_stop(task);
+		flow_ret = GST_FLOW_NOT_NEGOTIATED;
+		goto done;
+	}
+
 	/*
 	 * Regardless if it has been modified, create clean caps and push the
 	 * caps event. Downstream will decide if the caps are acceptable.
@@ -533,15 +543,6 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		GstSegment segment;
 		gst_segment_init(&segment, GST_FORMAT_TIME);
 		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
-	}
-
-	ret = state->cam_->configure(state->config_.get());
-	if (ret) {
-		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-				  ("Failed to configure camera: %s", g_strerror(-ret)),
-				  ("Camera::configure() failed with error code %i", ret));
-		gst_task_stop(task);
-		return;
 	}
 
 	self->allocator = gst_libcamera_allocator_new(state->cam_, state->config_.get());

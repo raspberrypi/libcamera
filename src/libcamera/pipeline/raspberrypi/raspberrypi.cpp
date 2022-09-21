@@ -1823,6 +1823,17 @@ void RPiCameraData::unicamTimeout()
 	LOG(RPI, Error) << "Unicam has timed out!";
 	LOG(RPI, Error) << "Please check that your camera sensor connector is attached securely.";
 	LOG(RPI, Error) << "Alternatively, try another cable and/or sensor.";
+
+	state_ = RPiCameraData::State::Error;
+	/*
+	 * To allow the application to attempt a recovery from this timeout,
+	 * stop all devices streaming, and return any outstanding requests as
+	 * incomplete and cancelled.
+	 */
+	for (auto const stream : streams_)
+		stream->dev()->streamOff();
+
+	clearIncompleteRequests();
 }
 
 void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)

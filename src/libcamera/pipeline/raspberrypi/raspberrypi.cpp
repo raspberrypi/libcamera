@@ -253,8 +253,13 @@ public:
 	 * thread. So, we do not need to have any mutex to protect access to any
 	 * of the variables below.
 	 */
-	enum class State { Stopped, Idle, Busy, IpaComplete };
+	enum class State { Stopped, Idle, Busy, IpaComplete, Error };
 	State state_;
+
+	bool isRunning()
+	{
+		return state_ != State::Stopped && state_ != State::Error;
+	}
 
 	struct BayerFrame {
 		FrameBuffer *buffer;
@@ -1109,7 +1114,7 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 {
 	RPiCameraData *data = cameraData(camera);
 
-	if (data->state_ == RPiCameraData::State::Stopped)
+	if (!data->isRunning())
 		return -EINVAL;
 
 	LOG(RPI, Debug) << "queueRequestDevice: New request.";
@@ -1708,7 +1713,7 @@ void RPiCameraData::enumerateVideoDevices(MediaLink *link)
 
 void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &controls)
 {
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
@@ -1744,7 +1749,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 
 void RPiCameraData::runIsp(uint32_t bufferId)
 {
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
@@ -1759,7 +1764,7 @@ void RPiCameraData::runIsp(uint32_t bufferId)
 
 void RPiCameraData::embeddedComplete(uint32_t bufferId)
 {
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId);
@@ -1825,7 +1830,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 	RPi::Stream *stream = nullptr;
 	int index;
 
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	for (RPi::Stream &s : unicam_) {
@@ -1864,7 +1869,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 
 void RPiCameraData::ispInputDequeue(FrameBuffer *buffer)
 {
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
@@ -1881,7 +1886,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	RPi::Stream *stream = nullptr;
 	int index;
 
-	if (state_ == State::Stopped)
+	if (!isRunning())
 		return;
 
 	for (RPi::Stream &s : isp_) {
@@ -1991,6 +1996,7 @@ void RPiCameraData::handleState()
 	switch (state_) {
 	case State::Stopped:
 	case State::Busy:
+	case State::Error:
 		break;
 
 	case State::IpaComplete:

@@ -244,7 +244,8 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 		}
 
 		/* A specific control failed. */
-		LOG(V4L2, Error) << "Unable to read control " << errorIdx
+		const unsigned int id = v4l2Ctrls[errorIdx].id;
+		LOG(V4L2, Error) << "Unable to read control " << utils::hex(id)
 				 << ": " << strerror(-ret);
 
 		v4l2Ctrls.resize(errorIdx);
@@ -354,7 +355,8 @@ int V4L2Device::setControls(ControlList *ctrls)
 		}
 
 		/* A specific control failed. */
-		LOG(V4L2, Error) << "Unable to set control " << errorIdx
+		const unsigned int id = v4l2Ctrls[errorIdx].id;
+		LOG(V4L2, Error) << "Unable to set control " << utils::hex(id)
 				 << ": " << strerror(-ret);
 
 		v4l2Ctrls.resize(errorIdx);

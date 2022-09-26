@@ -23,6 +23,7 @@ public:
 	double gain(uint32_t gainCode) const override;
 	uint32_t exposureLines(Duration exposure) const override;
 	Duration exposure(uint32_t exposureLines) const override;
+	void getDelays(int &exposureDelay, int &gainDelay, int &vblankDelay) const override;
 
 private:
 	static constexpr uint32_t maxGainCode = 239;
@@ -59,6 +60,14 @@ uint32_t CamHelperImx296::exposureLines(Duration exposure) const
 Duration CamHelperImx296::exposure(uint32_t exposureLines) const
 {
 	return exposureLines * timePerLine + 14.26us;
+}
+
+void CamHelperImx296::getDelays(int &exposureDelay, int &gainDelay,
+				int &vblankDelay) const
+{
+	exposureDelay = 2;
+	gainDelay = 2;
+	vblankDelay = 2;
 }
 
 static CamHelper *create()

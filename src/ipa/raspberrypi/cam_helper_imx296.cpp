@@ -26,6 +26,7 @@ public:
 	void getDelays(int &exposureDelay, int &gainDelay, int &vblankDelay) const override;
 
 private:
+	static constexpr uint32_t minExposureLines = 1;
 	static constexpr uint32_t maxGainCode = 239;
 	static constexpr Duration timePerLine = 550.0 / 37.125e6 * 1.0s;
 
@@ -54,12 +55,12 @@ double CamHelperImx296::gain(uint32_t gainCode) const
 
 uint32_t CamHelperImx296::exposureLines(Duration exposure) const
 {
-	return (exposure - 14.26us) / timePerLine;
+	return std::max<uint32_t>(minExposureLines, (exposure - 14.26us) / timePerLine);
 }
 
 Duration CamHelperImx296::exposure(uint32_t exposureLines) const
 {
-	return exposureLines * timePerLine + 14.26us;
+	return std::max<uint32_t>(minExposureLines, exposureLines) * timePerLine + 14.26us;
 }
 
 void CamHelperImx296::getDelays(int &exposureDelay, int &gainDelay,

@@ -7,6 +7,7 @@
 
 import argparse
 import enum
+import numpy as np
 import sys
 
 
@@ -63,9 +64,8 @@ class Quantization(enum.Enum):
     LIMITED = 1
 
 
-def scale_coeff(coeff, quantization, luma, precision):
-    """Scale a coefficient to the output range dictated by the quantization and
-    the precision.
+def scale_coeff(coeff, quantization, luma):
+    """Scale a coefficient to the output range dictated by the quantization.
 
     Parameters
     ----------
@@ -75,9 +75,6 @@ def scale_coeff(coeff, quantization, luma, precision):
         The quantization, either FULL or LIMITED
     luma : bool
         True if the coefficient corresponds to a luma value, False otherwise
-    precision : int
-        The desired precision for the scaled coefficient as a number of
-        fractional bits
     """
 
     # Assume the input range is 8 bits. The output range is set by the
@@ -91,7 +88,7 @@ def scale_coeff(coeff, quantization, luma, precision):
     else:
         out_range = 240 - 16
 
-    return coeff * out_range / in_range * (1 << precision)
+    return coeff * out_range / in_range
 
 
 def round_array(values):
@@ -150,6 +147,8 @@ def main(argv):
         description='Generate color space conversion table coefficients with '
         'configurable fixed-point precision.'
     )
+    parser.add_argument('--invert', '-i', action='store_true',
+                        help='Invert the color space conversion (YUV -> RGB)')
     parser.add_argument('--precision', '-p', default='Q1.7',
                         help='The output fixed point precision in Q notation (sign bit excluded)')
     parser.add_argument('--quantization', '-q', choices=['full', 'limited'],
@@ -171,13 +170,25 @@ def main(argv):
     luma = True
     scaled_coeffs = []
     for line in encoding:
-        line = [scale_coeff(coeff, quantization, luma, precision.fractional) for coeff in line]
+        line = [scale_coeff(coeff, quantization, luma) for coeff in line]
         scaled_coeffs.append(line)
         luma = False
 
+    if args.invert:
+        scaled_coeffs = np.linalg.inv(scaled_coeffs)
+
     rounded_coeffs = []
     for line in scaled_coeffs:
-        line = round_array(line)
+        line = [coeff * (1 << precision.fractional) for coeff in line]
+        # For the RGB to YUV conversion, use a rounding method that preserves
+        # the rounded sum of each line to avoid biases and overflow, as the sum
+        # of luma and chroma coefficients should be 1.0 and 0.0 respectively
+        # (in full range). For the YUV to RGB conversion, there is no such
+        # constraint, so use simple rounding.
+        if args.invert:
+            line = [round(coeff) for coeff in line]
+        else:
+            line = round_array(line)
 
         # Convert coefficients to the number of bits selected by the precision.
         # Negative values will be turned into positive integers using 2's
@@ -188,7 +199,7 @@ def main(argv):
     # Print the result as C code.
     nbits = 1 << (precision.total - 1).bit_length()
     nbytes = nbits // 4
-    print(f'static const u{nbits} rgb2yuv_{args.encoding}_{quantization.name.lower()}_coeffs[] = {{')
+    print(f'static const u{nbits} {"yuv2rgb" if args.invert else "rgb2yuv"}_{args.encoding}_{quantization.name.lower()}_coeffs[] = {{')
 
     for line in rounded_coeffs:
         line = [f'0x{coeff:0{nbytes}x}' for coeff in line]

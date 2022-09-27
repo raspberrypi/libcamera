@@ -430,7 +430,8 @@ int Device::init()
 int Device::openCard()
 {
 	const std::string dirName = "/dev/dri/";
-	int ret = -ENOENT;
+	bool found = false;
+	int ret;
 
 	/*
 	 * Open the first DRM/KMS device beginning with /dev/dri/card. The
@@ -449,24 +450,42 @@ int Device::openCard()
 	}
 
 	for (struct dirent *res; (res = readdir(folder));) {
+		uint64_t cap;
+
 		if (strncmp(res->d_name, "card", 4))
 			continue;
 
 		const std::string devName = dirName + res->d_name;
 		fd_ = open(devName.c_str(), O_RDWR | O_CLOEXEC);
-		if (fd_ >= 0) {
-			ret = 0;
-			break;
+		if (fd_ < 0) {
+			ret = -errno;
+			std::cerr << "Failed to open DRM/KMS device " << devName << ": "
+				  << strerror(-ret) << std::endl;
+			continue;
 		}
 
-		ret = -errno;
-		std::cerr << "Failed to open DRM/KMS device " << devName << ": "
-			  << strerror(-ret) << std::endl;
+		/*
+		 * Skip devices that don't support the modeset API, to avoid
+		 * selecting a DRM device corresponding to a GPU. There is no
+		 * modeset capability, but the kernel returns an error for most
+		 * caps if mode setting isn't support by the driver. The
+		 * DRM_CAP_DUMB_BUFFER capability is one of those, other would
+		 * do as well. The capability value itself isn't relevant.
+		 */
+		ret = drmGetCap(fd_, DRM_CAP_DUMB_BUFFER, &cap);
+		if (ret < 0) {
+			drmClose(fd_);
+			fd_ = -1;
+			continue;
+		}
+
+		found = true;
+		break;
 	}
 
 	closedir(folder);
 
-	return ret;
+	return found ? 0 : -ENOENT;
 }
 
 int Device::getResources()

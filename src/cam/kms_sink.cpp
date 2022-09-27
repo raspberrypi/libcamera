@@ -149,6 +149,81 @@ int KMSSink::configure(const libcamera::CameraConfiguration &config)
 	size_ = cfg.size;
 	stride_ = cfg.stride;
 
+	/* Configure color space. */
+	colorEncoding_ = std::nullopt;
+	colorRange_ = std::nullopt;
+
+	if (cfg.colorSpace->ycbcrEncoding == libcamera::ColorSpace::YcbcrEncoding::None)
+		return 0;
+
+	/*
+	 * The encoding and range enums are defined in the kernel but not
+	 * exposed in public headers.
+	 */
+	enum drm_color_encoding {
+		DRM_COLOR_YCBCR_BT601,
+		DRM_COLOR_YCBCR_BT709,
+		DRM_COLOR_YCBCR_BT2020,
+	};
+
+	enum drm_color_range {
+		DRM_COLOR_YCBCR_LIMITED_RANGE,
+		DRM_COLOR_YCBCR_FULL_RANGE,
+	};
+
+	const DRM::Property *colorEncoding = plane_->property("COLOR_ENCODING");
+	const DRM::Property *colorRange = plane_->property("COLOR_RANGE");
+
+	if (colorEncoding) {
+		drm_color_encoding encoding;
+
+		switch (cfg.colorSpace->ycbcrEncoding) {
+		case libcamera::ColorSpace::YcbcrEncoding::Rec601:
+		default:
+			encoding = DRM_COLOR_YCBCR_BT601;
+			break;
+		case libcamera::ColorSpace::YcbcrEncoding::Rec709:
+			encoding = DRM_COLOR_YCBCR_BT709;
+			break;
+		case libcamera::ColorSpace::YcbcrEncoding::Rec2020:
+			encoding = DRM_COLOR_YCBCR_BT2020;
+			break;
+		}
+
+		for (const auto &[id, name] : colorEncoding->enums()) {
+			if (id == encoding) {
+				colorEncoding_ = encoding;
+				break;
+			}
+		}
+	}
+
+	if (colorRange) {
+		drm_color_range range;
+
+		switch (cfg.colorSpace->range) {
+		case libcamera::ColorSpace::Range::Limited:
+		default:
+			range = DRM_COLOR_YCBCR_LIMITED_RANGE;
+			break;
+		case libcamera::ColorSpace::Range::Full:
+			range = DRM_COLOR_YCBCR_FULL_RANGE;
+			break;
+		}
+
+		for (const auto &[id, name] : colorRange->enums()) {
+			if (id == range) {
+				colorRange_ = range;
+				break;
+			}
+		}
+	}
+
+	if (!colorEncoding_ || !colorRange_)
+		std::cerr << "Color space " << cfg.colorSpace->toString()
+			  << " not supported by the display device."
+			  << " Colors may be wrong." << std::endl;
+
 	return 0;
 }
 
@@ -414,6 +489,11 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 		drmRequest->addProperty(plane_, "CRTC_Y", dst_.y);
 		drmRequest->addProperty(plane_, "CRTC_W", dst_.width);
 		drmRequest->addProperty(plane_, "CRTC_H", dst_.height);
+
+		if (colorEncoding_)
+			drmRequest->addProperty(plane_, "COLOR_ENCODING", *colorEncoding_);
+		if (colorRange_)
+			drmRequest->addProperty(plane_, "COLOR_RANGE", *colorRange_);
 
 		flags |= DRM::AtomicRequest::FlagAllowModeset;
 	}

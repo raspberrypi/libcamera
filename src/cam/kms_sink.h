@@ -10,6 +10,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -67,6 +68,8 @@ private:
 	libcamera::PixelFormat format_;
 	libcamera::Size size_;
 	unsigned int stride_;
+	std::optional<unsigned int> colorEncoding_;
+	std::optional<unsigned int> colorRange_;
 
 	libcamera::Rectangle src_;
 	libcamera::Rectangle dst_;

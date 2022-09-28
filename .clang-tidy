@@ -1,2 +1,4 @@
+# SPDX-License-Identifier: CC0-1.0
+
 Checks:		-clang-diagnostic-c99-designator
 FormatStyle:	file

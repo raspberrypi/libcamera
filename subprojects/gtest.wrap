@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 [wrap-file]
 directory = googletest-release-1.11.0
 source_url = https://github.com/google/googletest/archive/release-1.11.0.zip

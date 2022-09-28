@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 cameras:
   "\\_SB_.PCI0.I2C4.CAM1":
     location: front

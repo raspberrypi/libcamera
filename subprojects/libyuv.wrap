@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 [wrap-git]
 directory = libyuv
 url = https://chromium.googlesource.com/libyuv/libyuv.git

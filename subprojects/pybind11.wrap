@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+
 [wrap-git]
 url = https://github.com/pybind/pybind11.git
 # This is the head of 'smart_holder' branch

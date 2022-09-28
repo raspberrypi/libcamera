@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: CC-BY-SA-4.0
+
 IPU3 IPA Architecture Design and Overview
 =========================================
 

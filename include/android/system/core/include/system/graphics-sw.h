@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 #ifndef SYSTEM_CORE_GRAPHICS_SW_H_
 #define SYSTEM_CORE_GRAPHICS_SW_H_
 

@@ -3,6 +3,10 @@ Upstream-Name: libcamera
 Upstream-Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Source: https://git.libcamera.org/libcamera/libcamera.git/
 
+Files: Documentation/theme/static/search.png
+Copyright: 2022 Fonticons, Inc.
+License: CC-BY-4.0
+
 Files: src/ipa/raspberrypi/data/*.json
        utils/raspberrypi/ctt/ctt_config_example.json
        utils/raspberrypi/ctt/ctt_ref.pgm

@@ -745,6 +745,15 @@ void PipelineHandlerBase::releaseDevice(Camera *camera)
 	data->freeBuffers();
 }
 
+static void jumpQueueBehaviour(std::deque<Request *> &queue)
+{
+	auto r = queue.rbegin() + 1;
+	for (; r != queue.rend() && (*r)->controls().empty(); r++)
+		(*r)->controlListId = queue.back()->controlListId;
+	if (r - 1 != queue.rbegin())
+		(*(r - 1))->controls() = std::move(queue.back()->controls());
+}
+
 int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 {
 	CameraData *data = cameraData(camera);
@@ -788,6 +797,10 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Push the request to the back of the queue. */
 	data->requestQueue_.push_back(request);
+	const int behaviour = 1;
+	if (behaviour == 1)
+		jumpQueueBehaviour(data->requestQueue_);
+
 	data->handleState();
 
 	return 0;

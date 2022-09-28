@@ -1129,6 +1129,15 @@ void PipelineHandlerRPi::stopDevice(Camera *camera)
 	data->ipa_->stop();
 }
 
+static void jumpQueueBehaviour(std::deque<Request *> &queue)
+{
+	auto r = queue.rbegin() + 1;
+	for (; r != queue.rend() && (*r)->controls().empty(); r++)
+		(*r)->controlListId = queue.back()->controlListId;
+	if (r - 1 != queue.rbegin())
+		(*(r - 1))->controls() = std::move(queue.back()->controls());
+}
+
 int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 {
 	RPiCameraData *data = cameraData(camera);
@@ -1170,6 +1179,10 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Push the request to the back of the queue. */
 	data->requestQueue_.push_back(request);
+	const int behaviour = 1;
+	if (behaviour == 1)
+		jumpQueueBehaviour(data->requestQueue_);
+
 	data->handleState();
 
 	return 0;

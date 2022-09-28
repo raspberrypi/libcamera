@@ -1006,6 +1006,16 @@ void Vc4CameraData::tryRunPipeline()
 	request->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, request);
 
+	/*
+	 * We know we that we added an entry for every delayContext, so we can
+	 * find the one for this Bayer frame, and this links us to the correct
+	 * control list. Anything ahead of "our" entry in the queue is old, so
+	 * can be dropped.
+	 */
+	while (syncTable_.front().ipaCookie != bayerFrame.delayContext)
+		syncTable_.pop();
+	request->syncId = syncTable_.front().controlListId;
+
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 

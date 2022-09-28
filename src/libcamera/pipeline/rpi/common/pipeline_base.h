@@ -180,6 +180,12 @@ public:
 
 	ClockRecovery wallClockRecovery_;
 
+	struct SyncTableEntry {
+		uint32_t ipaCookie;
+		uint64_t controlListId;
+	};
+	std::queue<SyncTableEntry> syncTable_;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);

@@ -65,6 +65,10 @@ public:
 
 	std::string toString() const;
 
+	uint64_t submitId;
+	uint64_t syncId;
+	uint64_t controlListId;
+
 private:
 	LIBCAMERA_DISABLE_COPY(Request)
 

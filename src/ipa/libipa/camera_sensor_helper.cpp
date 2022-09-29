@@ -366,6 +366,35 @@ static constexpr double expGainDb(double step)
 	return log2_10 * step / 20;
 }
 
+class CameraSensorHelperAr0521 : public CameraSensorHelper
+{
+public:
+	uint32_t gainCode(double gain) const override;
+	double gain(uint32_t gainCode) const override;
+
+private:
+	static constexpr double kStep_ = 16;
+};
+
+uint32_t CameraSensorHelperAr0521::gainCode(double gain) const
+{
+	gain = std::clamp(gain, 1.0, 15.5);
+	unsigned int coarse = std::log2(gain);
+	unsigned int fine = (gain / (1 << coarse) - 1) * kStep_;
+
+	return (coarse << 4) | (fine & 0xf);
+}
+
+double CameraSensorHelperAr0521::gain(uint32_t gainCode) const
+{
+	unsigned int coarse = gainCode >> 4;
+	unsigned int fine = gainCode & 0xf;
+
+	return (1 << coarse) * (1 + fine / kStep_);
+}
+
+REGISTER_CAMERA_SENSOR_HELPER("ar0521", CameraSensorHelperAr0521)
+
 class CameraSensorHelperImx219 : public CameraSensorHelper
 {
 public:

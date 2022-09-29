@@ -246,6 +246,7 @@ public:
 	SharedFD lsTable_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
+	unsigned int maxDelay_;
 	bool sensorMetadata_;
 
 	/*
@@ -1138,6 +1139,17 @@ static void jumpQueueBehaviour(std::deque<Request *> &queue)
 		(*(r - 1))->controls() = std::move(queue.back()->controls());
 }
 
+static void androidQueueBehaviour(std::deque<Request *> &queue, int delay)
+{
+	auto r = queue.rbegin() + 1;
+	for (; r != queue.rend() && delay; r++, delay--)
+		(*r)->controlListId = queue.back()->controlListId;
+	if (r - 1 != queue.rbegin()) {
+		(*(r - 1))->controls().merge(queue.back()->controls(), true);
+		queue.back()->controls().clear();
+	}
+}
+
 int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 {
 	RPiCameraData *data = cameraData(camera);
@@ -1179,9 +1191,16 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Push the request to the back of the queue. */
 	data->requestQueue_.push_back(request);
-	const int behaviour = 1;
+
+	const int behaviour = 2;
 	if (behaviour == 1)
 		jumpQueueBehaviour(data->requestQueue_);
+	else if (behaviour == 2)
+		/*
+		 * There are 2 extra frame delays, one caused by the pipeline
+		 * handler, the other by the AGC (as it needs statistics to run).
+		 */
+		androidQueueBehaviour(data->requestQueue_, data->maxDelay_ + 2);
 
 	data->handleState();
 
@@ -1334,6 +1353,8 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);
+	data->maxDelay_ = std::max({ result.sensorConfig.gainDelay, result.sensorConfig.exposureDelay,
+				     result.sensorConfig.vblankDelay });
 	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
 
 	/* Register initial controls that the Raspberry Pi IPA can handle. */

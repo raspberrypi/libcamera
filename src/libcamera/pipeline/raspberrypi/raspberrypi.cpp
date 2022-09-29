@@ -185,7 +185,7 @@ class RPiCameraData : public Camera::Private
 {
 public:
 	RPiCameraData(PipelineHandler *pipe)
-		: Camera::Private(pipe), state_(State::Stopped),
+		: Camera::Private(pipe), state_(State::Stopped), currentRequest_(nullptr),
 		  supportsFlips_(false), flipsAlterBayerOrder_(false),
 		  dropFrameCount_(0), buffersAllocated_(false), ispOutputCount_(0)
 	{
@@ -270,6 +270,7 @@ public:
 	std::queue<BayerFrame> bayerQueue_;
 	std::queue<FrameBuffer *> embeddedQueue_;
 	std::deque<Request *> requestQueue_;
+	Request *currentRequest_;
 
 	/*
 	 * Manage horizontal and vertical flips supported (or not) by the
@@ -1739,8 +1740,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
 
 	/* Add to the Request metadata buffer what the IPA has provided. */
-	Request *request = requestQueue_.front();
-	request->metadata().merge(controls);
+	currentRequest_->metadata().merge(controls);
 
 	/*
 	 * Inform the sensor of the latest colour gains if it has the
@@ -1812,7 +1812,7 @@ void RPiCameraData::setDelayedControls(const ControlList &controls, uint32_t del
 	if (!delayedCtrls_->push(controls, delayCookie))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 	/* Record which control list corresponds to this ipaCookie. */
-	syncTable_.emplace(SyncTableEntry{ ipaCookie, requestQueue_.front()->controlListId });
+	syncTable_.emplace(SyncTableEntry{ ipaCookie, currentRequest_->controlListId });
 	handleState();
 }
 
@@ -1961,6 +1961,10 @@ void RPiCameraData::clearIncompleteRequests()
 	 * All outstanding requests (and associated buffers) must be returned
 	 * back to the application.
 	 */
+	if (currentRequest_) {
+		requestQueue_.push_front(currentRequest_);
+		currentRequest_ = nullptr;
+	}
 	while (!requestQueue_.empty()) {
 		Request *request = requestQueue_.front();
 
@@ -1988,8 +1992,7 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 	 * that we actually have one to action, otherwise we just return
 	 * buffer back to the stream.
 	 */
-	Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
-	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
+	if (!dropFrameCount_ && currentRequest_ && currentRequest_->findBuffer(stream) == buffer) {
 		/*
 		 * Check if this is an externally provided buffer, and if
 		 * so, we must stop tracking it in the pipeline handler.
@@ -1999,7 +2002,7 @@ void RPiCameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 		 * Tag the buffer as completed, returning it to the
 		 * application.
 		 */
-		pipe()->completeBuffer(request, buffer);
+		pipe()->completeBuffer(currentRequest_, buffer);
 	} else {
 		/*
 		 * This buffer was not part of the Request (which happens if an
@@ -2053,16 +2056,15 @@ void RPiCameraData::checkRequestCompleted()
 	 * change the state to IDLE when ready.
 	 */
 	if (!dropFrameCount_) {
-		Request *request = requestQueue_.front();
-		if (request->hasPendingBuffers())
+		if (currentRequest_->hasPendingBuffers())
 			return;
 
 		/* Must wait for metadata to be filled in before completing. */
 		if (state_ != State::IpaComplete)
 			return;
 
-		pipe()->completeRequest(request);
-		requestQueue_.pop_front();
+		pipe()->completeRequest(currentRequest_);
+		currentRequest_ = nullptr;
 		requestCompleted = true;
 	}
 
@@ -2154,18 +2156,22 @@ void RPiCameraData::tryRunPipeline()
 		return;
 
 	/* Take the first request from the queue and action the IPA. */
-	Request *request = requestQueue_.front();
+
+	currentRequest_ = requestQueue_.front();
+	/* Do not pop this request if we're not going to return it to the user. */
+	if (!dropFrameCount_)
+		requestQueue_.pop_front();
 
 	/* See if a new ScalerCrop value needs to be applied. */
-	applyScalerCrop(request->controls());
+	applyScalerCrop(currentRequest_->controls());
 
 	/*
 	 * Clear the request metadata and fill it with some initial non-IPA
 	 * related controls. We clear it first because the request metadata
 	 * may have been populated if we have dropped the previous frame.
 	 */
-	request->metadata().clear();
-	fillRequestMetadata(bayerFrame.controls, request);
+	currentRequest_->metadata().clear();
+	fillRequestMetadata(bayerFrame.controls, currentRequest_);
 
 	/*
 	 * We know we that we added an entry for every ipaCookie, so we can
@@ -2175,14 +2181,14 @@ void RPiCameraData::tryRunPipeline()
 	 */
 	while (syncTable_.front().ipaCookie != bayerFrame.ipaCookie)
 		syncTable_.pop();
-	request->syncId = syncTable_.front().controlListId;
+	currentRequest_->syncId = syncTable_.front().controlListId;
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we
 	 * queue the ISP output buffer listed in the request to start the HW
 	 * pipeline.
 	 */
-	ipa_->signalQueueRequest(request->controls());
+	ipa_->signalQueueRequest(currentRequest_->controls());
 
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;

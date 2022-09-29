@@ -993,18 +993,21 @@ void Vc4CameraData::tryRunPipeline()
 		return;
 
 	/* Take the first request from the queue and action the IPA. */
-	Request *request = requestQueue_.front();
+	currentRequest_ = requestQueue_.front();
+	/* Do not pop this request if we're not going to return it to the user. */
+	if (!dropFrameCount_)
+		requestQueue_.pop_front();
 
 	/* See if a new ScalerCrop value needs to be applied. */
-	applyScalerCrop(request->controls());
+	applyScalerCrop(currentRequest_->controls());
 
 	/*
 	 * Clear the request metadata and fill it with some initial non-IPA
 	 * related controls. We clear it first because the request metadata
 	 * may have been populated if we have dropped the previous frame.
 	 */
-	request->metadata().clear();
-	fillRequestMetadata(bayerFrame.controls, request);
+	currentRequest_->metadata().clear();
+	fillRequestMetadata(bayerFrame.controls, currentRequest_);
 
 	/*
 	 * We know we that we added an entry for every delayContext, so we can
@@ -1014,7 +1017,7 @@ void Vc4CameraData::tryRunPipeline()
 	 */
 	while (syncTable_.front().ipaCookie != bayerFrame.delayContext)
 		syncTable_.pop();
-	request->syncId = syncTable_.front().controlListId;
+	currentRequest_->syncId = syncTable_.front().controlListId;
 
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
@@ -1027,8 +1030,8 @@ void Vc4CameraData::tryRunPipeline()
 	ipa::RPi::PrepareParams params;
 	params.buffers.bayer = RPi::MaskBayerData | bayer;
 	params.sensorControls = std::move(bayerFrame.controls);
-	params.requestControls = request->controls();
-	params.ipaContext = request->sequence();
+	params.requestControls = currentRequest_->controls();
+	params.ipaContext = currentRequest_->sequence();
 	params.delayContext = bayerFrame.delayContext;
 	params.buffers.embedded = 0;
 

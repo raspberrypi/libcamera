@@ -5,6 +5,7 @@
  * Pipeline handler base class for Raspberry Pi devices
  */
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <optional>
@@ -49,7 +50,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  dropFrameCount_(0), buffersAllocated_(false),
+		  dropFrameCount_(0), buffersAllocated_(false),  currentRequest_(nullptr),
 		  ispOutputCount_(0), ispOutputTotal_(0)
 	{
 	}
@@ -130,7 +131,8 @@ public:
 		return state_ != State::Stopped && state_ != State::Error;
 	}
 
-	std::queue<Request *> requestQueue_;
+	std::deque<Request *> requestQueue_;
+	Request *currentRequest_;
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;

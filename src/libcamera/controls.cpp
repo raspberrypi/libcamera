@@ -905,7 +905,7 @@ ControlList::ControlList(const ControlInfoMap &infoMap,
  * \todo Reimplement or implement an overloaded version which internally uses
  * std::unordered_map::merge() and accepts a non-const argument.
  */
-void ControlList::merge(const ControlList &source)
+void ControlList::merge(const ControlList &source, bool overwrite)
 {
 	/**
 	 * \todo ASSERT that the current and source ControlList are derived
@@ -920,7 +920,7 @@ void ControlList::merge(const ControlList &source)
 	 */
 
 	for (const auto &ctrl : source) {
-		if (contains(ctrl.first)) {
+		if (!overwrite && contains(ctrl.first)) {
 			const ControlId *id = idmap_->at(ctrl.first);
 			LOG(Controls, Warning)
 				<< "Control " << id->name() << " not overwritten";

@@ -368,7 +368,7 @@ public:
 	std::size_t size() const { return controls_.size(); }
 
 	void clear() { controls_.clear(); }
-	void merge(const ControlList &source);
+	void merge(const ControlList &source, bool overwrite = false);
 
 	bool contains(unsigned int id) const;
 

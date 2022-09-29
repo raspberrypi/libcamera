@@ -116,6 +116,7 @@ public:
 	std::vector<std::pair<std::unique_ptr<V4L2Subdevice>, MediaLink *>> bridgeDevices_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
+	unsigned int maxDelay_;
 	bool sensorMetadata_;
 
 	/*

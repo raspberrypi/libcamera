@@ -352,6 +352,8 @@ PYBIND11_MODULE(_libcamera, m)
 
 			return ret;
 		})
+		.def_property_readonly("submit_id", [](Request &self) { return self.submitId; })
+		.def_property_readonly("sync_id", [](Request &self) { return self.syncId; })
 		/*
 		 * \todo As we add a keep_alive to the fb in addBuffers(), we
 		 * can only allow reuse with ReuseBuffers.

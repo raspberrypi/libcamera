@@ -26,7 +26,7 @@ endif
 
 libcamera_version = libcamera_git_version.split('+')[0]
 
-# This script gererates the .tarball-version file on a 'meson dist' command.
+# This script generates the .tarball-version file on a 'meson dist' command.
 meson.add_dist_script('utils/run-dist.sh')
 
 # Configure the build environment.

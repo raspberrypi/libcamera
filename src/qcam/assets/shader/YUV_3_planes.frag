@@ -30,7 +30,7 @@ void main(void)
 	yuv.y = texture2D(tex_u, textureOut).r;
 	yuv.z = texture2D(tex_v, textureOut).r;
 
-	vec3 rgb = yuv2rgb_matrix * (vec3(y, uv) - yuv2rgb_offset);
+	vec3 rgb = yuv2rgb_matrix * (yuv - yuv2rgb_offset);
 
 	gl_FragColor = vec4(rgb, 1.0);
 }

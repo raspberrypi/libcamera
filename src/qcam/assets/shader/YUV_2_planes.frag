@@ -36,7 +36,7 @@ void main(void)
 #error Invalid pattern
 #endif
 
-	vec3 rgb = yuv2rgb_matrix * (vec3(y, uv) - yuv2rgb_offset);
+	vec3 rgb = yuv2rgb_matrix * (yuv - yuv2rgb_offset);
 
 	gl_FragColor = vec4(rgb, 1.0);
 }

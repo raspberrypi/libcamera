@@ -55,6 +55,7 @@ py::object controlValueToPy(const ControlValue &cv)
 		return py::cast(v);
 	}
 	case ControlTypeNone:
+		return py::none();
 	default:
 		throw std::runtime_error("Unsupported ControlValue type");
 	}
@@ -91,6 +92,7 @@ ControlValue pyToControlValue(const py::object &ob, ControlType type)
 	case ControlTypeSize:
 		return ControlValue(ob.cast<Size>());
 	case ControlTypeNone:
+		return ControlValue();
 	default:
 		throw std::runtime_error("Control type not implemented");
 	}

@@ -217,11 +217,6 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 	int32_t minGain = v4l2Gain.min().get<int32_t>();
 	int32_t maxGain = v4l2Gain.max().get<int32_t>();
 
-	/* Clear the IPA context before the streaming session. */
-	context_.configuration = {};
-	context_.activeState = {};
-	context_.frameContexts.clear();
-
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
 	 * to know the limits for shutter speed and analogue gain.
@@ -497,6 +492,14 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	sensorInfo_ = configInfo.sensorInfo;
 
 	lensCtrls_ = configInfo.lensControls;
+
+	/* Clear the IPA context for the new streaming session. */
+	context_.activeState = {};
+	context_.configuration = {};
+	context_.frameContexts.clear();
+
+	/* Initialise the sensor configuration. */
+	context_.configuration.sensor.lineDuration = sensorInfo_.lineLength * 1.0s / sensorInfo_.pixelRate;
 
 	/*
 	 * Compute the sensor V4L2 controls to be used by the algorithms and

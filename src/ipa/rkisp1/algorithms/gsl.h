@@ -25,7 +25,6 @@ public:
 		     rkisp1_params_cfg *params) override;
 
 private:
-	bool initialized_;
 	uint32_t gammaDx_[2];
 	std::vector<uint16_t> curveYr_;
 	std::vector<uint16_t> curveYg_;

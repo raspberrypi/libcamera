@@ -37,7 +37,7 @@ namespace ipa::rkisp1::algorithms {
 LOG_DEFINE_CATEGORY(RkISP1Dpcc)
 
 DefectPixelClusterCorrection::DefectPixelClusterCorrection()
-	: initialized_(false), config_({})
+	: config_({})
 {
 }
 
@@ -223,8 +223,6 @@ int DefectPixelClusterCorrection::init([[maybe_unused]] IPAContext &context,
 		}
 	}
 
-	initialized_ = true;
-
 	return 0;
 }
 
@@ -237,9 +235,6 @@ void DefectPixelClusterCorrection::prepare([[maybe_unused]] IPAContext &context,
 					   rkisp1_params_cfg *params)
 {
 	if (frame > 0)
-		return;
-
-	if (!initialized_)
 		return;
 
 	params->others.dpcc_config = config_;

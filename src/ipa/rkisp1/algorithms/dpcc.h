@@ -25,7 +25,6 @@ public:
 		     rkisp1_params_cfg *params) override;
 
 private:
-	bool initialized_;
 	rkisp1_cif_isp_dpcc_config config_;
 };
 

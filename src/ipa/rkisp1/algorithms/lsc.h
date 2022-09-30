@@ -26,8 +26,6 @@ public:
 		     rkisp1_params_cfg *params) override;
 
 private:
-	bool initialized_;
-
 	std::vector<uint16_t> rData_;
 	std::vector<uint16_t> grData_;
 	std::vector<uint16_t> gbData_;

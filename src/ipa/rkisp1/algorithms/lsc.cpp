@@ -89,7 +89,6 @@ static std::vector<uint16_t> parseTable(const YamlObject &tuningData,
 }
 
 LensShadingCorrection::LensShadingCorrection()
-	: initialized_(false)
 {
 }
 
@@ -114,8 +113,6 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 	    gbData_.empty() || bData_.empty())
 		return -EINVAL;
 
-	initialized_ = true;
-
 	return 0;
 }
 
@@ -125,7 +122,7 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 int LensShadingCorrection::configure(IPAContext &context,
 				     [[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
-	context.configuration.lsc.enabled = initialized_;
+	context.configuration.lsc.enabled = true;
 	return 0;
 }
 
@@ -137,9 +134,6 @@ void LensShadingCorrection::prepare(IPAContext &context, const uint32_t frame,
 				    rkisp1_params_cfg *params)
 {
 	if (frame > 0)
-		return;
-
-	if (!initialized_)
 		return;
 
 	struct rkisp1_cif_isp_lsc_config &config = params->others.lsc_config;

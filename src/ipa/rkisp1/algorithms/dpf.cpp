@@ -35,7 +35,7 @@ namespace ipa::rkisp1::algorithms {
 LOG_DEFINE_CATEGORY(RkISP1Dpf)
 
 Dpf::Dpf()
-	: initialized_(false), config_({}), strengthConfig_({})
+	: config_({}), strengthConfig_({})
 {
 }
 
@@ -166,8 +166,6 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	strengthConfig_.g = fSObject["g"].get<uint16_t>(64);
 	strengthConfig_.b = fSObject["b"].get<uint16_t>(64);
 
-	initialized_ = true;
-
 	return 0;
 }
 
@@ -219,9 +217,6 @@ void Dpf::queueRequest(IPAContext &context,
 void Dpf::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
 {
-	if (!initialized_)
-		return;
-
 	if (frame == 0) {
 		params->others.dpf_config = config_;
 		params->others.dpf_strength_config = strengthConfig_;

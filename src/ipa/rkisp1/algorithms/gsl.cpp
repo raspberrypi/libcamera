@@ -49,7 +49,6 @@ LOG_DEFINE_CATEGORY(RkISP1Gsl)
 static constexpr unsigned int kDegammaXIntervals = 16;
 
 GammaSensorLinearization::GammaSensorLinearization()
-	: initialized_(false)
 {
 }
 
@@ -111,7 +110,6 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	initialized_ = true;
 	return 0;
 }
 
@@ -124,9 +122,6 @@ void GammaSensorLinearization::prepare([[maybe_unused]] IPAContext &context,
 				       rkisp1_params_cfg *params)
 {
 	if (frame > 0)
-		return;
-
-	if (!initialized_)
 		return;
 
 	params->others.sdg_config.xa_pnts.gamma_dx0 = gammaDx_[0];

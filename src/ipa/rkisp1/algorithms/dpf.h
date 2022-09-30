@@ -30,7 +30,6 @@ public:
 		     rkisp1_params_cfg *params) override;
 
 private:
-	bool initialized_;
 	struct rkisp1_cif_isp_dpf_config config_;
 	struct rkisp1_cif_isp_dpf_strength_config strengthConfig_;
 };

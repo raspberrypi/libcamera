@@ -26,6 +26,38 @@ endif
 
 libcamera_version = libcamera_git_version.split('+')[0]
 
+# A shallow clone, or a clone without a reachable tag equivalent to the
+# meson.project_version() could leave the project in a mis-described state.
+# Produce a warning in this event, and fix to a best effort.
+if libcamera_version != meson.project_version()
+    warning('The sources disagree about the version: '
+            + libcamera_version + ' != ' + meson.project_version())
+
+    summary({'libcamera git version' : libcamera_git_version,
+             'Source version match' : false,
+            },
+            bool_yn : true, section : 'Versions')
+
+    libcamera_git_version = libcamera_git_version.replace(libcamera_version,
+                                                          meson.project_version())
+    libcamera_version = meson.project_version()
+
+    # Append a marker to show we have modified this version string
+    libcamera_git_version += '-nvm'
+endif
+
+# Until we make ABI compatible releases, the full libcamera version is used as
+# the soname. No ABI/API compatibility is guaranteed between releases (x.y.z).
+#
+# When automatic ABI based detection is used to increment the version, this
+# will bump the minor number (x.y).
+#
+# When we declare a stable ABI/API we will provide a 1.0 release and the
+# soversion at that point will be the 'major' release value (x).
+libcamera_soversion = libcamera_version
+
+summary({ 'Sources': libcamera_git_version, }, section : 'Versions')
+
 # This script generates the .tarball-version file on a 'meson dist' command.
 meson.add_dist_script('utils/run-dist.sh')
 

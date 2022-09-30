@@ -66,6 +66,8 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          *::details \
                          std::*
 
+EXCLUDE_SYMLINKS       = YES
+
 HTML_OUTPUT            = api-html
 
 GENERATE_LATEX         = NO

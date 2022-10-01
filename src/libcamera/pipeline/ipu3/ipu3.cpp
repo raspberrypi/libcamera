@@ -11,6 +11,8 @@
 #include <queue>
 #include <vector>
 
+#include <linux/intel-ipu3.h>
+
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
@@ -1298,6 +1300,8 @@ void IPU3CameraData::paramsBufferReady(unsigned int id)
 			imgu_->viewfinder_->queueBuffer(outbuffer);
 	}
 
+	info->paramBuffer->_d()->metadata().planes()[0].bytesused =
+		sizeof(struct ipu3_uapi_params);
 	imgu_->param_->queueBuffer(info->paramBuffer);
 	imgu_->stat_->queueBuffer(info->statBuffer);
 	imgu_->input_->queueBuffer(info->rawBuffer);

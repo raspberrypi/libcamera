@@ -32,8 +32,10 @@ class GenericFrameBufferData : public FrameBuffer::Private
 
 public:
 	GenericFrameBufferData(struct alloc_device_t *allocDevice,
-			       buffer_handle_t handle)
-		: allocDevice_(allocDevice), handle_(handle)
+			       buffer_handle_t handle,
+			       const std::vector<FrameBuffer::Plane> &planes)
+		: FrameBuffer::Private(planes), allocDevice_(allocDevice),
+		  handle_(handle)
 	{
 		ASSERT(allocDevice_);
 		ASSERT(handle_);
@@ -136,8 +138,7 @@ PlatformFrameBufferAllocator::Private::allocate(int halPixelFormat,
 	}
 
 	return std::make_unique<FrameBuffer>(
-		std::make_unique<GenericFrameBufferData>(allocDevice_, handle),
-		planes);
+		std::make_unique<GenericFrameBufferData>(allocDevice_, handle, planes));
 }
 
 PUBLIC_FRAME_BUFFER_ALLOCATOR_IMPLEMENTATION

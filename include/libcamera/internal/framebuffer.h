@@ -22,7 +22,7 @@ class FrameBuffer::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(FrameBuffer)
 
 public:
-	Private();
+	Private(const std::vector<Plane> &planes, uint64_t cookie = 0);
 	virtual ~Private();
 
 	void setRequest(Request *request) { request_ = request; }
@@ -31,9 +31,15 @@ public:
 	Fence *fence() const { return fence_.get(); }
 	void setFence(std::unique_ptr<Fence> fence) { fence_ = std::move(fence); }
 
-	void cancel() { LIBCAMERA_O_PTR()->metadata_.status = FrameMetadata::FrameCancelled; }
+	void cancel() { metadata_.status = FrameMetadata::FrameCancelled; }
+
+	FrameMetadata &metadata() { return metadata_; }
 
 private:
+	std::vector<Plane> planes_;
+	FrameMetadata metadata_;
+	uint64_t cookie_;
+
 	std::unique_ptr<Fence> fence_;
 	Request *request_;
 	bool isContiguous_;

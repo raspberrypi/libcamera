@@ -28,8 +28,9 @@ class CrosFrameBufferData : public FrameBuffer::Private
 	LIBCAMERA_DECLARE_PUBLIC(FrameBuffer)
 
 public:
-	CrosFrameBufferData(cros::ScopedBufferHandle scopedHandle)
-		: FrameBuffer::Private(), scopedHandle_(std::move(scopedHandle))
+	CrosFrameBufferData(cros::ScopedBufferHandle scopedHandle,
+			    const std::vector<FrameBuffer::Plane> &planes)
+		: FrameBuffer::Private(planes), scopedHandle_(std::move(scopedHandle))
 	{
 	}
 
@@ -81,8 +82,7 @@ PlatformFrameBufferAllocator::Private::allocate(int halPixelFormat,
 	}
 
 	return std::make_unique<FrameBuffer>(
-		std::make_unique<CrosFrameBufferData>(std::move(scopedHandle)),
-		planes);
+		std::make_unique<CrosFrameBufferData>(std::move(scopedHandle), planes));
 }
 
 PUBLIC_FRAME_BUFFER_ALLOCATOR_IMPLEMENTATION

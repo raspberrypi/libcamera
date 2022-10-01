@@ -59,28 +59,19 @@ public:
 	};
 
 	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
-	FrameBuffer(std::unique_ptr<Private> d,
-		    const std::vector<Plane> &planes, unsigned int cookie = 0);
+	FrameBuffer(std::unique_ptr<Private> d);
 
-	const std::vector<Plane> &planes() const { return planes_; }
+	const std::vector<Plane> &planes() const;
 	Request *request() const;
-	const FrameMetadata &metadata() const { return metadata_; }
+	const FrameMetadata &metadata() const;
 
-	uint64_t cookie() const { return cookie_; }
-	void setCookie(uint64_t cookie) { cookie_ = cookie; }
+	uint64_t cookie() const;
+	void setCookie(uint64_t cookie);
 
 	std::unique_ptr<Fence> releaseFence();
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(FrameBuffer)
-
-	friend class V4L2VideoDevice; /* Needed to update metadata_. */
-
-	std::vector<Plane> planes_;
-
-	FrameMetadata metadata_;
-
-	uint64_t cookie_;
 };
 
 } /* namespace libcamera */

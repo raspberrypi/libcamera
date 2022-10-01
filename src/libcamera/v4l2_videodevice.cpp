@@ -1791,12 +1791,14 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
 	}
 
-	buffer->metadata_.status = buf.flags & V4L2_BUF_FLAG_ERROR
-				 ? FrameMetadata::FrameError
-				 : FrameMetadata::FrameSuccess;
-	buffer->metadata_.sequence = buf.sequence;
-	buffer->metadata_.timestamp = buf.timestamp.tv_sec * 1000000000ULL
-				    + buf.timestamp.tv_usec * 1000ULL;
+	FrameMetadata &metadata = buffer->_d()->metadata();
+
+	metadata.status = buf.flags & V4L2_BUF_FLAG_ERROR
+			? FrameMetadata::FrameError
+			: FrameMetadata::FrameSuccess;
+	metadata.sequence = buf.sequence;
+	metadata.timestamp = buf.timestamp.tv_sec * 1000000000ULL
+			   + buf.timestamp.tv_usec * 1000ULL;
 
 	if (V4L2_TYPE_IS_OUTPUT(buf.type))
 		return buffer;
@@ -1812,10 +1814,9 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 				<< buf.sequence << ")";
 		firstFrame_ = buf.sequence;
 	}
-	buffer->metadata_.sequence -= firstFrame_.value();
+	metadata.sequence -= firstFrame_.value();
 
 	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
-	FrameMetadata &metadata = buffer->metadata_;
 
 	if (numV4l2Planes != buffer->planes().size()) {
 		/*
@@ -1941,9 +1942,10 @@ int V4L2VideoDevice::streamOff()
 	/* Send back all queued buffers. */
 	for (auto it : queuedBuffers_) {
 		FrameBuffer *buffer = it.second;
+		FrameMetadata &metadata = buffer->_d()->metadata();
 
 		cache_->put(it.first);
-		buffer->metadata_.status = FrameMetadata::FrameCancelled;
+		metadata.status = FrameMetadata::FrameCancelled;
 		bufferReady.emit(buffer);
 	}
 

@@ -114,9 +114,16 @@ LOG_DEFINE_CATEGORY(Buffer)
  * pipeline handlers.
  */
 
-FrameBuffer::Private::Private()
-	: request_(nullptr), isContiguous_(true)
+/**
+ * \brief Construct a FrameBuffer::Private instance
+ * \param[in] planes The frame memory planes
+ * \param[in] cookie Cookie
+ */
+FrameBuffer::Private::Private(const std::vector<Plane> &planes, uint64_t cookie)
+	: planes_(planes), cookie_(cookie), request_(nullptr),
+	  isContiguous_(true)
 {
+	metadata_.planes_.resize(planes_.size());
 }
 
 /**
@@ -192,6 +199,12 @@ FrameBuffer::Private::~Private()
  *
  * If a buffer is not used by a request, it shall be marked as cancelled to
  * indicate that the metadata is invalid.
+ */
+
+/**
+ * \fn FrameBuffer::Private::metadata()
+ * \brief Retrieve the dynamic metadata
+ * \return Dynamic metadata for the frame contained in the buffer
  */
 
 /**
@@ -291,29 +304,22 @@ ino_t fileDescriptorInode(const SharedFD &fd)
  * \param[in] cookie Cookie
  */
 FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
-	: FrameBuffer(std::make_unique<Private>(), planes, cookie)
+	: FrameBuffer(std::make_unique<Private>(planes, cookie))
 {
 }
 
 /**
- * \brief Construct a FrameBuffer with an extensible private class and an array
- * of planes
+ * \brief Construct a FrameBuffer with an extensible private class
  * \param[in] d The extensible private class
- * \param[in] planes The frame memory planes
- * \param[in] cookie Cookie
  */
-FrameBuffer::FrameBuffer(std::unique_ptr<Private> d,
-			 const std::vector<Plane> &planes,
-			 unsigned int cookie)
-	: Extensible(std::move(d)), planes_(planes), cookie_(cookie)
+FrameBuffer::FrameBuffer(std::unique_ptr<Private> d)
+	: Extensible(std::move(d))
 {
-	metadata_.planes_.resize(planes_.size());
-
 	unsigned int offset = 0;
 	bool isContiguous = true;
 	ino_t inode = 0;
 
-	for (const auto &plane : planes_) {
+	for (const auto &plane : _d()->planes_) {
 		ASSERT(plane.offset != Plane::kInvalidOffset);
 
 		if (plane.offset != offset) {
@@ -325,9 +331,9 @@ FrameBuffer::FrameBuffer(std::unique_ptr<Private> d,
 		 * Two different dmabuf file descriptors may still refer to the
 		 * same dmabuf instance. Check this using inodes.
 		 */
-		if (plane.fd != planes_[0].fd) {
+		if (plane.fd != _d()->planes_[0].fd) {
 			if (!inode)
-				inode = fileDescriptorInode(planes_[0].fd);
+				inode = fileDescriptorInode(_d()->planes_[0].fd);
 			if (fileDescriptorInode(plane.fd) != inode) {
 				isContiguous = false;
 				break;
@@ -344,10 +350,13 @@ FrameBuffer::FrameBuffer(std::unique_ptr<Private> d,
 }
 
 /**
- * \fn FrameBuffer::planes()
  * \brief Retrieve the static plane descriptors
  * \return Array of plane descriptors
  */
+const std::vector<FrameBuffer::Plane> &FrameBuffer::planes() const
+{
+	return _d()->planes_;
+}
 
 /**
  * \brief Retrieve the request this buffer belongs to
@@ -368,13 +377,15 @@ Request *FrameBuffer::request() const
 }
 
 /**
- * \fn FrameBuffer::metadata()
  * \brief Retrieve the dynamic metadata
  * \return Dynamic metadata for the frame contained in the buffer
  */
+const FrameMetadata &FrameBuffer::metadata() const
+{
+	return _d()->metadata_;
+}
 
 /**
- * \fn FrameBuffer::cookie()
  * \brief Retrieve the cookie
  *
  * The cookie belongs to the creator of the FrameBuffer, which controls its
@@ -384,9 +395,12 @@ Request *FrameBuffer::request() const
  *
  * \return The cookie
  */
+uint64_t FrameBuffer::cookie() const
+{
+	return _d()->cookie_;
+}
 
 /**
- * \fn FrameBuffer::setCookie()
  * \brief Set the cookie
  * \param[in] cookie Cookie to set
  *
@@ -395,6 +409,10 @@ Request *FrameBuffer::request() const
  * modify the cookie value of buffers they haven't created themselves. The
  * libcamera core never modifies the buffer cookie.
  */
+void FrameBuffer::setCookie(uint64_t cookie)
+{
+	_d()->cookie_ = cookie;
+}
 
 /**
  * \brief Extract the Fence associated with this Framebuffer

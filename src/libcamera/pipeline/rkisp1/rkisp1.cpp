@@ -13,6 +13,7 @@
 #include <queue>
 
 #include <linux/media-bus-format.h>
+#include <linux/rkisp1-config.h>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
@@ -32,6 +33,7 @@
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -362,6 +364,8 @@ void RkISP1CameraData::paramFilled(unsigned int frame)
 	if (!info)
 		return;
 
+	info->paramBuffer->_d()->metadata().planes()[0].bytesused =
+		sizeof(struct rkisp1_params_cfg);
 	pipe->param_->queueBuffer(info->paramBuffer);
 	pipe->stat_->queueBuffer(info->statBuffer);
 

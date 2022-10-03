@@ -189,6 +189,12 @@ public:
 	};
 	std::queue<SyncTableEntry> syncTable_;
 
+	struct ImmediateControlsEntry {
+		uint64_t controlListId;
+		ControlList controls;
+	};
+	std::queue<ImmediateControlsEntry> immediateControls_;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);

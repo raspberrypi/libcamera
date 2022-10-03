@@ -979,6 +979,14 @@ void Vc4CameraData::setCameraTimeout(uint32_t maxFrameLengthMs)
 	unicam_[Unicam::Image].dev()->setDequeueTimeout(timeout);
 }
 
+static bool isControlDelayed(unsigned int id)
+{
+	return id == controls::ExposureTime ||
+	       id == controls::AnalogueGain ||
+	       id == controls::FrameDurationLimits ||
+	       id == controls::AeEnable;
+}
+
 void Vc4CameraData::tryRunPipeline()
 {
 	FrameBuffer *embeddedBuffer;
@@ -1018,6 +1026,27 @@ void Vc4CameraData::tryRunPipeline()
 	while (syncTable_.front().ipaCookie != bayerFrame.delayContext)
 		syncTable_.pop();
 	currentRequest_->syncId = syncTable_.front().controlListId;
+
+	/*
+	 * Controls that take effect immediately (typically ISP controls) have to be
+	 * delayed so as to synchronise with those controls that do get delayed. So we
+	 * must remove them from the current request, and push them onto a queue so
+	 * that they can be used later.
+	 */
+	ControlList controls = std::move(currentRequest_->controls());
+	immediateControls_.push({ currentRequest_->controlListId, currentRequest_->controls() });
+	for (const auto &ctrl : controls) {
+		if (isControlDelayed(ctrl.first))
+			currentRequest_->controls().set(ctrl.first, ctrl.second);
+		else
+			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
+	}
+	/* "Immediate" controls that have become due are now merged back into this request. */
+	while (!immediateControls_.empty() &&
+	       immediateControls_.front().controlListId <= currentRequest_->syncId) {
+		currentRequest_->controls().merge(immediateControls_.front().controls, true);
+		immediateControls_.pop();
+	}
 
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;

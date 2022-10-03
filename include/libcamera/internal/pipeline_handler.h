@@ -113,7 +113,8 @@ public:
 private:
 	static void registerType(PipelineHandlerFactory *factory);
 
-	virtual PipelineHandler *createInstance(CameraManager *manager) const = 0;
+	virtual std::unique_ptr<PipelineHandler>
+	createInstance(CameraManager *manager) const = 0;
 
 	std::string name_;
 };
@@ -125,9 +126,10 @@ public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
 									\
 private:								\
-	PipelineHandler *createInstance(CameraManager *manager) const	\
+	std::unique_ptr<PipelineHandler>				\
+	createInstance(CameraManager *manager) const			\
 	{								\
-		return new handler(manager);				\
+		return std::make_unique<handler>(manager);		\
 	}								\
 };									\
 static handler##Factory global_##handler##Factory;

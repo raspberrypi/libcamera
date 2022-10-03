@@ -43,7 +43,8 @@ namespace ipa {
  * \brief Construct a CameraSensorHelper instance
  *
  * CameraSensorHelper derived class instances shall never be constructed
- * manually but always through the CameraSensorHelperFactory::create() function.
+ * manually but always through the CameraSensorHelperFactoryBase::create()
+ * function.
  */
 
 /**
@@ -217,27 +218,25 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  */
 
 /**
- * \class CameraSensorHelperFactory
- * \brief Registration of CameraSensorHelperFactory classes and creation of instances
+ * \class CameraSensorHelperFactoryBase
+ * \brief Base class for camera sensor helper factories
  *
- * To facilitate discovery and instantiation of CameraSensorHelper classes, the
- * CameraSensorHelperFactory class maintains a registry of camera sensor helper
- * sub-classes. Each CameraSensorHelper subclass shall register itself using the
- * REGISTER_CAMERA_SENSOR_HELPER() macro, which will create a corresponding
- * instance of a CameraSensorHelperFactory subclass and register it with the
- * static list of factories.
+ * The CameraSensorHelperFactoryBase class is the base of all specializations of
+ * the CameraSensorHelperFactory class template. It implements the factory
+ * registration, maintains a registry of factories, and provides access to the
+ * registered factories.
  */
 
 /**
- * \brief Construct a camera sensor helper factory
+ * \brief Construct a camera sensor helper factory base
  * \param[in] name Name of the camera sensor helper class
  *
- * Creating an instance of the factory registers it with the global list of
+ * Creating an instance of the factory base registers it with the global list of
  * factories, accessible through the factories() function.
  *
- * The factory \a name is used for debug purpose and shall be unique.
+ * The factory \a name is used to look up factories and shall be unique.
  */
-CameraSensorHelperFactory::CameraSensorHelperFactory(const std::string name)
+CameraSensorHelperFactoryBase::CameraSensorHelperFactoryBase(const std::string name)
 	: name_(name)
 {
 	registerType(this);
@@ -252,12 +251,12 @@ CameraSensorHelperFactory::CameraSensorHelperFactory(const std::string name)
  * corresponding to the named factory or a null pointer if no such factory
  * exists
  */
-std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std::string &name)
+std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactoryBase::create(const std::string &name)
 {
-	const std::vector<CameraSensorHelperFactory *> &factories =
-		CameraSensorHelperFactory::factories();
+	const std::vector<CameraSensorHelperFactoryBase *> &factories =
+		CameraSensorHelperFactoryBase::factories();
 
-	for (const CameraSensorHelperFactory *factory : factories) {
+	for (const CameraSensorHelperFactoryBase *factory : factories) {
 		if (name != factory->name_)
 			continue;
 
@@ -274,10 +273,10 @@ std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std:
  * The caller is responsible to guarantee the uniqueness of the camera sensor
  * helper name.
  */
-void CameraSensorHelperFactory::registerType(CameraSensorHelperFactory *factory)
+void CameraSensorHelperFactoryBase::registerType(CameraSensorHelperFactoryBase *factory)
 {
-	std::vector<CameraSensorHelperFactory *> &factories =
-		CameraSensorHelperFactory::factories();
+	std::vector<CameraSensorHelperFactoryBase *> &factories =
+		CameraSensorHelperFactoryBase::factories();
 
 	factories.push_back(factory);
 }
@@ -286,33 +285,49 @@ void CameraSensorHelperFactory::registerType(CameraSensorHelperFactory *factory)
  * \brief Retrieve the list of all camera sensor helper factories
  * \return The list of camera sensor helper factories
  */
-std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
+std::vector<CameraSensorHelperFactoryBase *> &CameraSensorHelperFactoryBase::factories()
 {
 	/*
 	 * The static factories map is defined inside the function to ensure
 	 * it gets initialized on first use, without any dependency on link
 	 * order.
 	 */
-	static std::vector<CameraSensorHelperFactory *> factories;
+	static std::vector<CameraSensorHelperFactoryBase *> factories;
 	return factories;
 }
+
+/**
+ * \class CameraSensorHelperFactory
+ * \brief Registration of CameraSensorHelperFactory classes and creation of instances
+ * \tparam _Helper The camera sensor helper class type for this factory
+ *
+ * To facilitate discovery and instantiation of CameraSensorHelper classes, the
+ * CameraSensorHelperFactory class implements auto-registration of camera sensor
+ * helpers. Each CameraSensorHelper subclass shall register itself using the
+ * REGISTER_CAMERA_SENSOR_HELPER() macro, which will create a corresponding
+ * instance of a CameraSensorHelperFactory subclass and register it with the
+ * static list of factories.
+ */
+
+/**
+ * \fn CameraSensorHelperFactory::CameraSensorHelperFactory(const char *name)
+ * \brief Construct a camera sensor helper factory
+ * \param[in] name Name of the camera sensor helper class
+ *
+ * Creating an instance of the factory registers it with the global list of
+ * factories, accessible through the CameraSensorHelperFactoryBase::factories()
+ * function.
+ *
+ * The factory \a name is used to look up factories and shall be unique.
+ */
 
 /**
  * \fn CameraSensorHelperFactory::createInstance() const
  * \brief Create an instance of the CameraSensorHelper corresponding to the
  * factory
  *
- * This virtual function is implemented by the REGISTER_CAMERA_SENSOR_HELPER()
- * macro. It creates a camera sensor helper instance associated with the camera
- * sensor model.
- *
  * \return A unique pointer to a newly constructed instance of the
  * CameraSensorHelper subclass corresponding to the factory
- */
-
-/**
- * \var CameraSensorHelperFactory::name_
- * \brief The name of the factory
  */
 
 /**

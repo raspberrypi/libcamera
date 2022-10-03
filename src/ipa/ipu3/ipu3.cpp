@@ -326,7 +326,7 @@ int IPAIPU3::init(const IPASettings &settings,
 		  const ControlInfoMap &sensorControls,
 		  ControlInfoMap *ipaControls)
 {
-	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
+	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (camHelper_ == nullptr) {
 		LOG(IPAIPU3, Error)
 			<< "Failed to create camera sensor helper for "

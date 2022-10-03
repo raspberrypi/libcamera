@@ -142,7 +142,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	/* Cache the value to set it in configure. */
 	hwRevision_ = static_cast<rkisp1_cif_isp_version>(hwRevision);
 
-	camHelper_ = CameraSensorHelperFactory::create(settings.sensorModel);
+	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!camHelper_) {
 		LOG(IPARkISP1, Error)
 			<< "Failed to create camera sensor helper for "

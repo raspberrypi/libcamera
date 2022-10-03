@@ -58,39 +58,44 @@ private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelper)
 };
 
-class CameraSensorHelperFactory
+class CameraSensorHelperFactoryBase
 {
 public:
-	CameraSensorHelperFactory(const std::string name);
-	virtual ~CameraSensorHelperFactory() = default;
+	CameraSensorHelperFactoryBase(const std::string name);
+	virtual ~CameraSensorHelperFactoryBase() = default;
 
 	static std::unique_ptr<CameraSensorHelper> create(const std::string &name);
 
-	static std::vector<CameraSensorHelperFactory *> &factories();
+	static std::vector<CameraSensorHelperFactoryBase *> &factories();
 
 private:
-	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactory)
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactoryBase)
 
-	static void registerType(CameraSensorHelperFactory *factory);
+	static void registerType(CameraSensorHelperFactoryBase *factory);
 
 	virtual std::unique_ptr<CameraSensorHelper> createInstance() const = 0;
 
 	std::string name_;
 };
 
-#define REGISTER_CAMERA_SENSOR_HELPER(name, helper)		\
-class helper##Factory final : public CameraSensorHelperFactory	\
-{								\
-public: 							\
-	helper##Factory() : CameraSensorHelperFactory(name) {}	\
-								\
-private:							\
-	std::unique_ptr<CameraSensorHelper> createInstance() const \
-	{							\
-		return std::make_unique<helper>();		\
-	}							\
-};								\
-static helper##Factory global_##helper##Factory;
+template<typename _Helper>
+class CameraSensorHelperFactory final : public CameraSensorHelperFactoryBase
+{
+public:
+	CameraSensorHelperFactory(const char *name)
+		: CameraSensorHelperFactoryBase(name)
+	{
+	}
+
+private:
+	std::unique_ptr<CameraSensorHelper> createInstance() const
+	{
+		return std::make_unique<_Helper>();
+	}
+};
+
+#define REGISTER_CAMERA_SENSOR_HELPER(name, helper) \
+static CameraSensorHelperFactory<helper> global_##helper##Factory(name);
 
 } /* namespace ipa */
 

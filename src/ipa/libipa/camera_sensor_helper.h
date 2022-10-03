@@ -73,7 +73,7 @@ private:
 
 	static void registerType(CameraSensorHelperFactory *factory);
 
-	virtual CameraSensorHelper *createInstance() const = 0;
+	virtual std::unique_ptr<CameraSensorHelper> createInstance() const = 0;
 
 	std::string name_;
 };
@@ -85,9 +85,9 @@ public: 							\
 	helper##Factory() : CameraSensorHelperFactory(name) {}	\
 								\
 private:							\
-	CameraSensorHelper *createInstance() const		\
+	std::unique_ptr<CameraSensorHelper> createInstance() const \
 	{							\
-		return new helper();				\
+		return std::make_unique<helper>();		\
 	}							\
 };								\
 static helper##Factory global_##helper##Factory;

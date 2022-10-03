@@ -261,8 +261,7 @@ std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std:
 		if (name != factory->name_)
 			continue;
 
-		CameraSensorHelper *helper = factory->createInstance();
-		return std::unique_ptr<CameraSensorHelper>(helper);
+		return factory->createInstance();
 	}
 
 	return nullptr;
@@ -307,8 +306,8 @@ std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
  * macro. It creates a camera sensor helper instance associated with the camera
  * sensor model.
  *
- * \return A pointer to a newly constructed instance of the CameraSensorHelper
- * subclass corresponding to the factory
+ * \return A unique pointer to a newly constructed instance of the
+ * CameraSensorHelper subclass corresponding to the factory
  */
 
 /**

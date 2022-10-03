@@ -33,6 +33,10 @@ private:
 
 	std::vector<double> xSize_;
 	std::vector<double> ySize_;
+	uint16_t xGrad_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
+	uint16_t yGrad_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
+	uint16_t xSizes_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
+	uint16_t ySizes_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
 };
 
 } /* namespace ipa::rkisp1::algorithms */

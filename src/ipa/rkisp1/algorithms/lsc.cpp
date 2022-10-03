@@ -122,27 +122,12 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 int LensShadingCorrection::configure(IPAContext &context,
 				     [[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
-	context.configuration.lsc.enabled = true;
-	return 0;
-}
-
-/**
- * \copydoc libcamera::ipa::Algorithm::prepare
- */
-void LensShadingCorrection::prepare(IPAContext &context, const uint32_t frame,
-				    [[maybe_unused]] IPAFrameContext &frameContext,
-				    rkisp1_params_cfg *params)
-{
-	if (frame > 0)
-		return;
-
-	struct rkisp1_cif_isp_lsc_config &config = params->others.lsc_config;
 	const Size &size = context.configuration.sensor.size;
 	Size totalSize{};
 
 	for (unsigned int i = 0; i < RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE; ++i) {
-		config.x_size_tbl[i] = xSize_[i] * size.width;
-		config.y_size_tbl[i] = ySize_[i] * size.height;
+		xSizes_[i] = xSize_[i] * size.width;
+		ySizes_[i] = ySize_[i] * size.height;
 
 		/*
 		 * To prevent unexpected behavior of the ISP, the sum of x_size_tbl and
@@ -151,25 +136,47 @@ void LensShadingCorrection::prepare(IPAContext &context, const uint32_t frame,
 		 * rounding-induced errors.
 		 */
 		if (i == RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE - 1) {
-			config.x_size_tbl[i] = size.width / 2 - totalSize.width;
-			config.y_size_tbl[i] = size.height / 2 - totalSize.height;
+			xSizes_[i] = size.width / 2 - totalSize.width;
+			ySizes_[i] = size.height / 2 - totalSize.height;
 		}
 
-		totalSize.width += config.x_size_tbl[i];
-		totalSize.height += config.y_size_tbl[i];
+		totalSize.width += xSizes_[i];
+		totalSize.height += ySizes_[i];
 
-		config.x_grad_tbl[i] = std::round(32768 / config.x_size_tbl[i]);
-		config.y_grad_tbl[i] = std::round(32768 / config.y_size_tbl[i]);
+		xGrad_[i] = std::round(32768 / xSizes_[i]);
+		yGrad_[i] = std::round(32768 / ySizes_[i]);
 	}
 
+	context.configuration.lsc.enabled = true;
+	return 0;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
+				    const uint32_t frame,
+				    [[maybe_unused]] IPAFrameContext &frameContext,
+				    rkisp1_params_cfg *params)
+{
+	if (frame > 0)
+		return;
+
+	struct rkisp1_cif_isp_lsc_config &config = params->others.lsc_config;
+
+	memcpy(config.x_grad_tbl, xGrad_, sizeof(config.x_grad_tbl));
+	memcpy(config.y_grad_tbl, yGrad_, sizeof(config.y_grad_tbl));
+	memcpy(config.x_size_tbl, xSizes_, sizeof(config.x_size_tbl));
+	memcpy(config.y_size_tbl, ySizes_, sizeof(config.y_size_tbl));
+
 	std::copy(rData_.begin(), rData_.end(),
-		  &params->others.lsc_config.r_data_tbl[0][0]);
+		  &config.r_data_tbl[0][0]);
 	std::copy(grData_.begin(), grData_.end(),
-		  &params->others.lsc_config.gr_data_tbl[0][0]);
+		  &config.gr_data_tbl[0][0]);
 	std::copy(gbData_.begin(), gbData_.end(),
-		  &params->others.lsc_config.gb_data_tbl[0][0]);
+		  &config.gb_data_tbl[0][0]);
 	std::copy(bData_.begin(), bData_.end(),
-		  &params->others.lsc_config.b_data_tbl[0][0]);
+		  &config.b_data_tbl[0][0]);
 
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_LSC;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_LSC;

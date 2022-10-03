@@ -676,7 +676,7 @@ PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
  * \return A shared pointer to a new instance of the PipelineHandler subclass
  * corresponding to the factory
  */
-std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *manager)
+std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *manager) const
 {
 	PipelineHandler *handler = createInstance(manager);
 	handler->name_ = name_.c_str();
@@ -719,7 +719,7 @@ std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
 }
 
 /**
- * \fn PipelineHandlerFactory::createInstance()
+ * \fn PipelineHandlerFactory::createInstance() const
  * \brief Create an instance of the PipelineHandler corresponding to the factory
  * \param[in] manager The camera manager
  *

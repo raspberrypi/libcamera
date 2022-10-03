@@ -104,7 +104,7 @@ public:
 	PipelineHandlerFactory(const char *name);
 	virtual ~PipelineHandlerFactory() = default;
 
-	std::shared_ptr<PipelineHandler> create(CameraManager *manager);
+	std::shared_ptr<PipelineHandler> create(CameraManager *manager) const;
 
 	const std::string &name() const { return name_; }
 
@@ -112,7 +112,7 @@ public:
 	static std::vector<PipelineHandlerFactory *> &factories();
 
 private:
-	virtual PipelineHandler *createInstance(CameraManager *manager) = 0;
+	virtual PipelineHandler *createInstance(CameraManager *manager) const = 0;
 
 	std::string name_;
 };
@@ -124,7 +124,7 @@ public:									\
 	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
 									\
 private:								\
-	PipelineHandler *createInstance(CameraManager *manager)		\
+	PipelineHandler *createInstance(CameraManager *manager) const	\
 	{								\
 		return new handler(manager);				\
 	}								\

@@ -67,7 +67,8 @@ class RkISP1Frames
 public:
 	RkISP1Frames(PipelineHandler *pipe);
 
-	RkISP1FrameInfo *create(const RkISP1CameraData *data, Request *request);
+	RkISP1FrameInfo *create(const RkISP1CameraData *data, Request *request,
+				bool isRaw);
 	int destroy(unsigned int frame);
 	void clear();
 
@@ -184,6 +185,7 @@ private:
 	std::unique_ptr<V4L2Subdevice> csi_;
 
 	bool hasSelfPath_;
+	bool isRaw_;
 
 	RkISP1MainPath mainPath_;
 	RkISP1SelfPath selfPath_;
@@ -203,27 +205,34 @@ RkISP1Frames::RkISP1Frames(PipelineHandler *pipe)
 {
 }
 
-RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *request)
+RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *request,
+				      bool isRaw)
 {
 	unsigned int frame = data->frame_;
 
-	if (pipe_->availableParamBuffers_.empty()) {
-		LOG(RkISP1, Error) << "Parameters buffer underrun";
-		return nullptr;
-	}
-	FrameBuffer *paramBuffer = pipe_->availableParamBuffers_.front();
+	FrameBuffer *paramBuffer = nullptr;
+	FrameBuffer *statBuffer = nullptr;
 
-	if (pipe_->availableStatBuffers_.empty()) {
-		LOG(RkISP1, Error) << "Statisitc buffer underrun";
-		return nullptr;
+	if (!isRaw) {
+		if (pipe_->availableParamBuffers_.empty()) {
+			LOG(RkISP1, Error) << "Parameters buffer underrun";
+			return nullptr;
+		}
+
+		if (pipe_->availableStatBuffers_.empty()) {
+			LOG(RkISP1, Error) << "Statisitc buffer underrun";
+			return nullptr;
+		}
+
+		paramBuffer = pipe_->availableParamBuffers_.front();
+		pipe_->availableParamBuffers_.pop();
+
+		statBuffer = pipe_->availableStatBuffers_.front();
+		pipe_->availableStatBuffers_.pop();
 	}
-	FrameBuffer *statBuffer = pipe_->availableStatBuffers_.front();
 
 	FrameBuffer *mainPathBuffer = request->findBuffer(&data->mainPathStream_);
 	FrameBuffer *selfPathBuffer = request->findBuffer(&data->selfPathStream_);
-
-	pipe_->availableParamBuffers_.pop();
-	pipe_->availableStatBuffers_.pop();
 
 	RkISP1FrameInfo *info = new RkISP1FrameInfo;
 
@@ -672,6 +681,8 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		<< "ISP input pad configured with " << format
 		<< " crop " << rect;
 
+	isRaw_ = false;
+
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
 	LOG(RkISP1, Debug)
@@ -764,13 +775,15 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 		data->selfPathStream_.configuration().bufferCount,
 	});
 
-	ret = param_->allocateBuffers(maxCount, &paramBuffers_);
-	if (ret < 0)
-		goto error;
+	if (!isRaw_) {
+		ret = param_->allocateBuffers(maxCount, &paramBuffers_);
+		if (ret < 0)
+			goto error;
 
-	ret = stat_->allocateBuffers(maxCount, &statBuffers_);
-	if (ret < 0)
-		goto error;
+		ret = stat_->allocateBuffers(maxCount, &statBuffers_);
+		if (ret < 0)
+			goto error;
+	}
 
 	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {
 		buffer->setCookie(ipaBufferId++);
@@ -846,23 +859,25 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 
 	data->frame_ = 0;
 
-	ret = param_->streamOn();
-	if (ret) {
-		data->ipa_->stop();
-		freeBuffers(camera);
-		LOG(RkISP1, Error)
-			<< "Failed to start parameters " << camera->id();
-		return ret;
-	}
+	if (!isRaw_) {
+		ret = param_->streamOn();
+		if (ret) {
+			data->ipa_->stop();
+			freeBuffers(camera);
+			LOG(RkISP1, Error)
+				<< "Failed to start parameters " << camera->id();
+			return ret;
+		}
 
-	ret = stat_->streamOn();
-	if (ret) {
-		param_->streamOff();
-		data->ipa_->stop();
-		freeBuffers(camera);
-		LOG(RkISP1, Error)
-			<< "Failed to start statistics " << camera->id();
-		return ret;
+		ret = stat_->streamOn();
+		if (ret) {
+			param_->streamOff();
+			data->ipa_->stop();
+			freeBuffers(camera);
+			LOG(RkISP1, Error)
+				<< "Failed to start statistics " << camera->id();
+			return ret;
+		}
 	}
 
 	if (data->mainPath_->isEnabled()) {
@@ -907,15 +922,17 @@ void PipelineHandlerRkISP1::stopDevice(Camera *camera)
 		selfPath_.stop();
 	mainPath_.stop();
 
-	ret = stat_->streamOff();
-	if (ret)
-		LOG(RkISP1, Warning)
-			<< "Failed to stop statistics for " << camera->id();
+	if (!isRaw_) {
+		ret = stat_->streamOff();
+		if (ret)
+			LOG(RkISP1, Warning)
+				<< "Failed to stop statistics for " << camera->id();
 
-	ret = param_->streamOff();
-	if (ret)
-		LOG(RkISP1, Warning)
-			<< "Failed to stop parameters for " << camera->id();
+		ret = param_->streamOff();
+		if (ret)
+			LOG(RkISP1, Warning)
+				<< "Failed to stop parameters for " << camera->id();
+	}
 
 	ASSERT(data->queuedRequests_.empty());
 	data->frameInfo_.clear();
@@ -929,12 +946,21 @@ int PipelineHandlerRkISP1::queueRequestDevice(Camera *camera, Request *request)
 {
 	RkISP1CameraData *data = cameraData(camera);
 
-	RkISP1FrameInfo *info = data->frameInfo_.create(data, request);
+	RkISP1FrameInfo *info = data->frameInfo_.create(data, request, isRaw_);
 	if (!info)
 		return -ENOENT;
 
 	data->ipa_->queueRequest(data->frame_, request->controls());
-	data->ipa_->fillParamsBuffer(data->frame_, info->paramBuffer->cookie());
+	if (isRaw_) {
+		if (info->mainPathBuffer)
+			data->mainPath_->queueBuffer(info->mainPathBuffer);
+
+		if (data->selfPath_ && info->selfPathBuffer)
+			data->selfPath_->queueBuffer(info->selfPathBuffer);
+	} else {
+		data->ipa_->fillParamsBuffer(data->frame_,
+					     info->paramBuffer->cookie());
+	}
 
 	data->frame_++;
 
@@ -1139,7 +1165,7 @@ void PipelineHandlerRkISP1::tryCompleteRequest(RkISP1FrameInfo *info)
 	if (!info->metadataProcessed)
 		return;
 
-	if (!info->paramDequeued)
+	if (!isRaw_ && !info->paramDequeued)
 		return;
 
 	data->frameInfo_.destroy(info->frame);
@@ -1156,16 +1182,28 @@ void PipelineHandlerRkISP1::bufferReady(FrameBuffer *buffer)
 	if (!info)
 		return;
 
+	const FrameMetadata &metadata = buffer->metadata();
 	Request *request = buffer->request();
 
-	/*
-	 * Record the sensor's timestamp in the request metadata.
-	 *
-	 * \todo The sensor timestamp should be better estimated by connecting
-	 * to the V4L2Device::frameStart signal.
-	 */
-	request->metadata().set(controls::SensorTimestamp,
-				buffer->metadata().timestamp);
+	if (metadata.status != FrameMetadata::FrameCancelled) {
+		/*
+		 * Record the sensor's timestamp in the request metadata.
+		 *
+		 * \todo The sensor timestamp should be better estimated by connecting
+		 * to the V4L2Device::frameStart signal.
+		 */
+		request->metadata().set(controls::SensorTimestamp,
+					metadata.timestamp);
+
+		if (isRaw_) {
+			const ControlList &ctrls =
+				data->delayedCtrls_->get(metadata.sequence);
+			data->ipa_->processStatsBuffer(info->frame, 0, ctrls);
+		}
+	} else {
+		if (isRaw_)
+			info->metadataProcessed = true;
+	}
 
 	completeBuffer(request, buffer);
 	tryCompleteRequest(info);

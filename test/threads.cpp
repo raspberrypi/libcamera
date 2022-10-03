@@ -8,7 +8,9 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <pthread.h>
 #include <thread>
+#include <time.h>
 
 #include <libcamera/base/thread.h>
 
@@ -33,6 +35,35 @@ protected:
 
 private:
 	chrono::steady_clock::duration duration_;
+};
+
+class CancelThread : public Thread
+{
+public:
+	CancelThread(bool &cancelled)
+		: cancelled_(cancelled)
+	{
+	}
+
+protected:
+	void run()
+	{
+		cancelled_ = true;
+
+		/*
+		 * Cancel the thread and call a guaranteed cancellation point
+		 * (nanosleep).
+		 */
+		pthread_cancel(pthread_self());
+
+		struct timespec req{ 0, 100*000*000 };
+		nanosleep(&req, nullptr);
+
+		cancelled_ = false;
+	}
+
+private:
+	bool &cancelled_;
 };
 
 class ThreadTest : public Test
@@ -115,6 +146,22 @@ protected:
 		timeout = !thread->wait();
 		if (timeout) {
 			cout << "Waiting for already stopped thread timed out" << endl;
+			return TestFail;
+		}
+
+		/* Test thread cleanup upon abnormal termination. */
+		bool cancelled = false;
+		bool finished = false;
+
+		thread = std::make_unique<CancelThread>(cancelled);
+		thread->finished.connect(this, [&finished]() { finished = true; });
+
+		thread->start();
+		thread->exit(0);
+		thread->wait(chrono::milliseconds(1000));
+
+		if (!cancelled || !finished) {
+			cout << "Cleanup failed upon abnormal termination" << endl;
 			return TestFail;
 		}
 

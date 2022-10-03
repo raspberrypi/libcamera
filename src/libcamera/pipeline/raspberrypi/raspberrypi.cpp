@@ -307,6 +307,11 @@ public:
 		uint64_t controlListId;
 	};
 	std::queue<SyncTableEntry> syncTable_;
+	struct ImmediateControlsEntry {
+		uint64_t controlListId;
+		ControlList controls;
+	};
+	std::queue<ImmediateControlsEntry> immediateControls_;
 
 private:
 	void checkRequestCompleted();
@@ -2176,6 +2181,14 @@ void RPiCameraData::fillRequestMetadata(const ControlList &bufferControls,
 	request->metadata().set(controls::ScalerCrop, scalerCrop_);
 }
 
+static bool isControlDelayed(unsigned int id)
+{
+	return id == controls::ExposureTime ||
+	       id == controls::AnalogueGain ||
+	       id == controls::FrameDurationLimits ||
+	       id == controls::AeEnable;
+}
+
 void RPiCameraData::tryRunPipeline()
 {
 	FrameBuffer *embeddedBuffer;
@@ -2216,6 +2229,27 @@ void RPiCameraData::tryRunPipeline()
 	while (syncTable_.front().ipaCookie != bayerFrame.ipaCookie)
 		syncTable_.pop();
 	currentRequest_->syncId = syncTable_.front().controlListId;
+
+	/*
+	 * Controls that take effect immediately (typically ISP controls) have to be
+	 * delayed so as to synchronise with those controls that do get delayed. So we
+	 * must remove them from the current request, and push them onto a queue so
+	 * that they can be used later.
+	 */
+	ControlList controls = std::move(currentRequest_->controls());
+	immediateControls_.push({ currentRequest_->controlListId, currentRequest_->controls() });
+	for (const auto &ctrl : controls) {
+		if (isControlDelayed(ctrl.first))
+			currentRequest_->controls().set(ctrl.first, ctrl.second);
+		else
+			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
+	}
+	/* "Immediate" controls that have become due are now merged back into this request. */
+	while (!immediateControls_.empty() &&
+	       immediateControls_.front().controlListId <= currentRequest_->syncId) {
+		currentRequest_->controls().merge(immediateControls_.front().controls, true);
+		immediateControls_.pop();
+	}
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we

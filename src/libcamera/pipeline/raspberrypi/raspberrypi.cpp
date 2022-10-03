@@ -2251,13 +2251,6 @@ void RPiCameraData::tryRunPipeline()
 		immediateControls_.pop();
 	}
 
-	/*
-	 * Process all the user controls by the IPA. Once this is complete, we
-	 * queue the ISP output buffer listed in the request to start the HW
-	 * pipeline.
-	 */
-	ipa_->signalQueueRequest(currentRequest_->controls());
-
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
@@ -2267,6 +2260,7 @@ void RPiCameraData::tryRunPipeline()
 			<< " Bayer buffer id: " << bayerId;
 
 	ipa::RPi::ISPConfig ispPrepare;
+	ispPrepare.requestControls = std::move(currentRequest_->controls());
 	ispPrepare.bayerBufferId = ipa::RPi::MaskBayerData | bayerId;
 	ispPrepare.controls = std::move(bayerFrame.controls);
 	ispPrepare.ipaCookie = ipaCookie_++;

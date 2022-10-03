@@ -38,6 +38,7 @@ struct ISPConfig {
 	libcamera.ControlList controls;
 	uint32 ipaCookie;
 	uint32 delayCookie;
+	libcamera.ControlList requestControls;
 };
 
 struct IPAConfig {
@@ -129,7 +130,6 @@ interface IPARPiInterface {
 	unmapBuffers(array<uint32> ids);
 
 	[async] signalStatReady(uint32 bufferId);
-	[async] signalQueueRequest(libcamera.ControlList controls);
 	[async] signalIspPrepare(ISPConfig data);
 };
 

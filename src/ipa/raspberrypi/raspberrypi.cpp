@@ -127,7 +127,6 @@ public:
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 	void signalStatReady(const uint32_t bufferId) override;
-	void signalQueueRequest(const ControlList &controls) override;
 	void signalIspPrepare(const ISPConfig &data) override;
 
 private:
@@ -520,13 +519,11 @@ void IPARPi::signalStatReady(uint32_t bufferId)
 	statsMetadataComplete.emit(bufferId & MaskID, libcameraMetadata_);
 }
 
-void IPARPi::signalQueueRequest(const ControlList &controls)
-{
-	queueRequest(controls);
-}
-
 void IPARPi::signalIspPrepare(const ISPConfig &data)
 {
+	/* First, handle any of the controls associated with the current request. */
+	queueRequest(data.requestControls);
+
 	/*
 	 * At start-up, or after a mode-switch, we may want to
 	 * avoid running the control algos for a few frames in case

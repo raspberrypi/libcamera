@@ -21,6 +21,39 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(RkISP1)
 
+namespace {
+
+/* Keep in sync with the supported raw formats in rkisp1.cpp. */
+const std::map<PixelFormat, uint32_t> formatToMediaBus = {
+	{ formats::UYVY, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::YUYV, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::NV12, MEDIA_BUS_FMT_YUYV8_1_5X8 },
+	{ formats::NV21, MEDIA_BUS_FMT_YUYV8_1_5X8 },
+	{ formats::NV16, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::NV61, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::YUV420, MEDIA_BUS_FMT_YUYV8_1_5X8 },
+	{ formats::YVU420, MEDIA_BUS_FMT_YUYV8_1_5X8 },
+	{ formats::YUV422, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::YVU422, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::R8, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::RGB565, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::XRGB8888, MEDIA_BUS_FMT_YUYV8_2X8 },
+	{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
+	{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
+	{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
+	{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
+	{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
+	{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
+	{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
+	{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
+	{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
+	{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
+	{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
+	{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
+};
+
+} /* namespace */
+
 RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		       const Size &minResolution, const Size &maxResolution)
 	: name_(name), running_(false), formats_(formats),
@@ -69,11 +102,18 @@ void RkISP1Path::populateFormats()
 	std::vector<PixelFormat> formats;
 	for (const auto &[format, sizes] : v4l2Formats) {
 		const PixelFormat pixelFormat = format.toPixelFormat();
-		const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
 
-		/* \todo Add support for RAW formats. */
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+		/*
+		 * As a defensive measure, skip any pixel format exposed by the
+		 * driver that we don't know about. This ensures that looking up
+		 * formats in formatToMediaBus using a key from streamFormats_
+		 * will never fail in any of the other functions.
+		 */
+		if (!formatToMediaBus.count(pixelFormat)) {
+			LOG(RkISP1, Warning)
+				<< "Unsupported pixel format " << pixelFormat;
 			continue;
+		}
 
 		streamFormats_.insert(pixelFormat);
 
@@ -86,21 +126,69 @@ void RkISP1Path::populateFormats()
 	}
 }
 
-StreamConfiguration RkISP1Path::generateConfiguration(const CameraSensor *sensor)
+StreamConfiguration
+RkISP1Path::generateConfiguration(const CameraSensor *sensor, StreamRole role)
 {
+	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
 	const Size &resolution = sensor->resolution();
 
 	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
 					   .boundedTo(resolution);
 	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
 
+	/* Create the list of supported stream formats. */
 	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-	for (const auto &format : streamFormats_)
-		streamFormats[format] = { { minResolution, maxResolution } };
+	unsigned int rawBitsPerPixel = 0;
+	PixelFormat rawFormat;
+
+	for (const auto &format : streamFormats_) {
+		const PixelFormatInfo &info = PixelFormatInfo::info(format);
+
+		if (info.colourEncoding != PixelFormatInfo::ColourEncodingRAW) {
+			streamFormats[format] = { { minResolution, maxResolution } };
+			continue;
+		}
+
+		/* Skip raw formats not supported by the sensor. */
+		uint32_t mbusCode = formatToMediaBus.at(format);
+		if (std::find(mbusCodes.begin(), mbusCodes.end(), mbusCode) ==
+		    mbusCodes.end())
+			continue;
+
+		streamFormats[format] = { { resolution, resolution } };
+
+		/*
+		 * Store the raw format with the highest bits per pixel for
+		 * later usage.
+		 */
+		if (info.bitsPerPixel > rawBitsPerPixel) {
+			rawBitsPerPixel = info.bitsPerPixel;
+			rawFormat = format;
+		}
+	}
+
+	/*
+	 * Pick a suitable pixel format for the role. Raw streams need to use a
+	 * raw format, processed streams use NV12 by default.
+	 */
+	PixelFormat format;
+
+	if (role == StreamRole::Raw) {
+		if (!rawFormat.isValid()) {
+			LOG(RkISP1, Error)
+				<< "Sensor " << sensor->model()
+				<< " doesn't support raw capture";
+			return {};
+		}
+
+		format = rawFormat;
+	} else {
+		format = formats::NV12;
+	}
 
 	StreamFormats formats(streamFormats);
 	StreamConfiguration cfg(formats);
-	cfg.pixelFormat = formats::NV12;
+	cfg.pixelFormat = format;
 	cfg.size = maxResolution;
 	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
@@ -110,26 +198,85 @@ StreamConfiguration RkISP1Path::generateConfiguration(const CameraSensor *sensor
 CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
 						 StreamConfiguration *cfg)
 {
+	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
 	const Size &resolution = sensor->resolution();
 
 	const StreamConfiguration reqCfg = *cfg;
 	CameraConfiguration::Status status = CameraConfiguration::Valid;
 
 	/*
-	 * Default to NV12 if the requested format is not supported. All
-	 * versions of the ISP are guaranteed to support NV12 on both the main
-	 * and self paths.
+	 * Validate the pixel format. If the requested format isn't supported,
+	 * default to either NV12 (all versions of the ISP are guaranteed to
+	 * support NV12 on both the main and self paths) if the requested format
+	 * is not a raw format, or to the supported raw format with the highest
+	 * bits per pixel otherwise.
 	 */
-	if (!streamFormats_.count(cfg->pixelFormat))
-		cfg->pixelFormat = formats::NV12;
+	unsigned int rawBitsPerPixel = 0;
+	PixelFormat rawFormat;
+	bool found = false;
+
+	for (const auto &format : streamFormats_) {
+		const PixelFormatInfo &info = PixelFormatInfo::info(format);
+
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW) {
+			/* Skip raw formats not supported by the sensor. */
+			uint32_t mbusCode = formatToMediaBus.at(format);
+			if (std::find(mbusCodes.begin(), mbusCodes.end(), mbusCode) ==
+			    mbusCodes.end())
+				continue;
+
+			/*
+			 * Store the raw format with the highest bits per pixel
+			 * for later usage.
+			 */
+			if (info.bitsPerPixel > rawBitsPerPixel) {
+				rawBitsPerPixel = info.bitsPerPixel;
+				rawFormat = format;
+			}
+		}
+
+		if (cfg->pixelFormat == format) {
+			found = true;
+			break;
+		}
+	}
+
+	bool isRaw = PixelFormatInfo::info(cfg->pixelFormat).colourEncoding ==
+		     PixelFormatInfo::ColourEncodingRAW;
 
 	/*
-	 * Adjust the size based on the sensor resolution and absolute limits
-	 * of the ISP.
+	 * If no raw format supported by the sensor has been found, use a
+	 * processed format.
 	 */
-	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
-					   .boundedTo(resolution);
-	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
+	if (!rawFormat.isValid())
+		isRaw = false;
+
+	if (!found)
+		cfg->pixelFormat = isRaw ? rawFormat : formats::NV12;
+
+	Size minResolution;
+	Size maxResolution;
+
+	if (isRaw) {
+		/*
+		 * Use the sensor output size closest to the requested stream
+		 * size.
+		 */
+		uint32_t mbusCode = formatToMediaBus.at(cfg->pixelFormat);
+		V4L2SubdeviceFormat sensorFormat =
+			sensor->getFormat({ mbusCode }, cfg->size);
+
+		minResolution = sensorFormat.size;
+		maxResolution = sensorFormat.size;
+	} else {
+		/*
+		 * Adjust the size based on the sensor resolution and absolute
+		 * limits of the ISP.
+		 */
+		minResolution = minResolution_.expandedToAspectRatio(resolution);
+		maxResolution = maxResolution_.boundedToAspectRatio(resolution)
+					      .boundedTo(resolution);
+	}
 
 	cfg->size.boundTo(maxResolution);
 	cfg->size.expandTo(minResolution);
@@ -182,15 +329,11 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 		<< "Configuring " << name_ << " resizer output pad with "
 		<< ispFormat;
 
-	switch (config.pixelFormat) {
-	case formats::NV12:
-	case formats::NV21:
-		ispFormat.mbus_code = MEDIA_BUS_FMT_YUYV8_1_5X8;
-		break;
-	default:
-		ispFormat.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
-		break;
-	}
+	/*
+	 * The configuration has been validated, the pixel format is guaranteed
+	 * to be supported and thus found in formatToMediaBus.
+	 */
+	ispFormat.mbus_code = formatToMediaBus.at(config.pixelFormat);
 
 	ret = resizer_->setFormat(1, &ispFormat);
 	if (ret < 0)
@@ -266,14 +409,25 @@ void RkISP1Path::stop()
 namespace {
 constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
 constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
-constexpr std::array<PixelFormat, 6> RKISP1_RSZ_MP_FORMATS{
+constexpr std::array<PixelFormat, 18> RKISP1_RSZ_MP_FORMATS{
 	formats::YUYV,
 	formats::NV16,
 	formats::NV61,
 	formats::NV21,
 	formats::NV12,
 	formats::R8,
-	/* \todo Add support for RAW formats. */
+	formats::SBGGR8,
+	formats::SGBRG8,
+	formats::SGRBG8,
+	formats::SRGGB8,
+	formats::SBGGR10,
+	formats::SGBRG10,
+	formats::SGRBG10,
+	formats::SRGGB10,
+	formats::SBGGR12,
+	formats::SGBRG12,
+	formats::SGRBG12,
+	formats::SRGGB12,
 };
 
 constexpr Size RKISP1_RSZ_SP_SRC_MIN{ 32, 16 };

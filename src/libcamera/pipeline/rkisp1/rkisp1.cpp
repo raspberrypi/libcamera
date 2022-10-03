@@ -410,6 +410,30 @@ void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &meta
 	pipe()->tryCompleteRequest(info);
 }
 
+/* -----------------------------------------------------------------------------
+ * Camera Configuration
+ */
+
+namespace {
+
+/* Keep in sync with the supported raw formats in rkisp1_path.cpp. */
+const std::map<PixelFormat, uint32_t> rawFormats = {
+	{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
+	{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
+	{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
+	{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
+	{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
+	{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
+	{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
+	{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
+	{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
+	{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
+	{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
+	{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
+};
+
+} /* namespace */
+
 RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 						     RkISP1CameraData *data)
 	: CameraConfiguration()
@@ -454,6 +478,21 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (config_.size() > pathCount) {
 		config_.resize(pathCount);
 		status = Adjusted;
+	}
+
+	/*
+	 * Simultaneous capture of raw and processed streams isn't possible. If
+	 * there is any raw stream, cap the number of streams to one.
+	 */
+	if (config_.size() > 1) {
+		for (const auto &cfg : config_) {
+			if (PixelFormatInfo::info(cfg.pixelFormat).colourEncoding ==
+			    PixelFormatInfo::ColourEncodingRAW) {
+				config_.resize(1);
+				status = Adjusted;
+				break;
+			}
+		}
 	}
 
 	/*
@@ -517,44 +556,50 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 			}
 		}
 
-		/* All paths rejected configuraiton. */
+		/* All paths rejected configuration. */
 		LOG(RkISP1, Debug) << "Camera configuration not supported "
 				   << cfg.toString();
 		return Invalid;
 	}
 
 	/* Select the sensor format. */
+	PixelFormat rawFormat;
 	Size maxSize;
-	for (const StreamConfiguration &cfg : config_)
-		maxSize = std::max(maxSize, cfg.size);
 
-	sensorFormat_ = sensor->getFormat({ MEDIA_BUS_FMT_SBGGR12_1X12,
-					    MEDIA_BUS_FMT_SGBRG12_1X12,
-					    MEDIA_BUS_FMT_SGRBG12_1X12,
-					    MEDIA_BUS_FMT_SRGGB12_1X12,
-					    MEDIA_BUS_FMT_SBGGR10_1X10,
-					    MEDIA_BUS_FMT_SGBRG10_1X10,
-					    MEDIA_BUS_FMT_SGRBG10_1X10,
-					    MEDIA_BUS_FMT_SRGGB10_1X10,
-					    MEDIA_BUS_FMT_SBGGR8_1X8,
-					    MEDIA_BUS_FMT_SGBRG8_1X8,
-					    MEDIA_BUS_FMT_SGRBG8_1X8,
-					    MEDIA_BUS_FMT_SRGGB8_1X8 },
-					  maxSize);
+	for (const StreamConfiguration &cfg : config_) {
+		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			rawFormat = cfg.pixelFormat;
+
+		maxSize = std::max(maxSize, cfg.size);
+	}
+
+	std::vector<unsigned int> mbusCodes;
+
+	if (rawFormat.isValid()) {
+		mbusCodes = { rawFormats.at(rawFormat) };
+	} else {
+		std::transform(rawFormats.begin(), rawFormats.end(),
+			       std::back_inserter(mbusCodes),
+			       [](const auto &value) { return value.second; });
+	}
+
+	sensorFormat_ = sensor->getFormat(mbusCodes, maxSize);
+
 	if (sensorFormat_.size.isNull())
 		sensorFormat_.size = sensor->resolution();
 
 	return status;
 }
 
+/* -----------------------------------------------------------------------------
+ * Pipeline Operations
+ */
+
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
 	: PipelineHandler(manager), hasSelfPath_(true)
 {
 }
-
-/* -----------------------------------------------------------------------------
- * Pipeline Operations
- */
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
@@ -611,22 +656,37 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 				colorSpace = ColorSpace::Rec709;
 			break;
 
+		case StreamRole::Raw:
+			if (roles.size() > 1) {
+				LOG(RkISP1, Error)
+					<< "Can't capture both raw and processed streams";
+				return nullptr;
+			}
+
+			useMainPath = true;
+			colorSpace = ColorSpace::Raw;
+			break;
+
 		default:
 			LOG(RkISP1, Warning)
 				<< "Requested stream role not supported: " << role;
 			return nullptr;
 		}
 
-		StreamConfiguration cfg;
+		RkISP1Path *path;
+
 		if (useMainPath) {
-			cfg = data->mainPath_->generateConfiguration(
-				data->sensor_.get());
+			path = data->mainPath_;
 			mainPathAvailable = false;
 		} else {
-			cfg = data->selfPath_->generateConfiguration(
-				data->sensor_.get());
+			path = data->selfPath_;
 			selfPathAvailable = false;
 		}
+
+		StreamConfiguration cfg =
+			path->generateConfiguration(data->sensor_.get(), role);
+		if (!cfg.pixelFormat.isValid())
+			return nullptr;
 
 		cfg.colorSpace = colorSpace;
 		config->addConfiguration(cfg);
@@ -681,10 +741,14 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		<< "ISP input pad configured with " << format
 		<< " crop " << rect;
 
-	isRaw_ = false;
+	const PixelFormat &streamFormat = config->at(0).pixelFormat;
+	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
+	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
-	format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
+	if (!isRaw_)
+		format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
+
 	LOG(RkISP1, Debug)
 		<< "Configuring ISP output pad with " << format
 		<< " crop " << rect;

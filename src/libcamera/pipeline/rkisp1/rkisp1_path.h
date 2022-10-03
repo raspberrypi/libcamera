@@ -40,7 +40,8 @@ public:
 	int setEnabled(bool enable) { return link_->setEnabled(enable); }
 	bool isEnabled() const { return link_->flags() & MEDIA_LNK_FL_ENABLED; }
 
-	StreamConfiguration generateConfiguration(const CameraSensor *sensor);
+	StreamConfiguration generateConfiguration(const CameraSensor *sensor,
+						  StreamRole role);
 	CameraConfiguration::Status validate(const CameraSensor *sensor,
 					     StreamConfiguration *cfg);
 

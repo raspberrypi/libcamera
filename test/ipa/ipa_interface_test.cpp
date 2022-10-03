@@ -52,9 +52,9 @@ protected:
 		ipaManager_ = make_unique<IPAManager>();
 
 		/* Create a pipeline handler for vimc. */
-		const std::vector<PipelineHandlerFactory *> &factories =
-			PipelineHandlerFactory::factories();
-		for (const PipelineHandlerFactory *factory : factories) {
+		const std::vector<PipelineHandlerFactoryBase *> &factories =
+			PipelineHandlerFactoryBase::factories();
+		for (const PipelineHandlerFactoryBase *factory : factories) {
 			if (factory->name() == "PipelineHandlerVimc") {
 				pipe_ = factory->create(nullptr);
 				break;

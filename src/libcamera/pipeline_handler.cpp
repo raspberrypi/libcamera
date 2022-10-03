@@ -64,8 +64,7 @@ LOG_DEFINE_CATEGORY(Pipeline)
  *
  * In order to honour the std::enable_shared_from_this<> contract,
  * PipelineHandler instances shall never be constructed manually, but always
- * through the PipelineHandlerFactory::create() function implemented by the
- * respective factories.
+ * through the PipelineHandlerFactoryBase::create() function.
  */
 PipelineHandler::PipelineHandler(CameraManager *manager)
 	: manager_(manager), useCount_(0)
@@ -643,27 +642,25 @@ void PipelineHandler::disconnect()
  */
 
 /**
- * \class PipelineHandlerFactory
- * \brief Registration of PipelineHandler classes and creation of instances
+ * \class PipelineHandlerFactoryBase
+ * \brief Base class for pipeline handler factories
  *
- * To facilitate discovery and instantiation of PipelineHandler classes, the
- * PipelineHandlerFactory class maintains a registry of pipeline handler
- * classes. Each PipelineHandler subclass shall register itself using the
- * REGISTER_PIPELINE_HANDLER() macro, which will create a corresponding
- * instance of a PipelineHandlerFactory subclass and register it with the
- * static list of factories.
+ * The PipelineHandlerFactoryBase class is the base of all specializations of
+ * the PipelineHandlerFactory class template. It implements the factory
+ * registration, maintains a registry of factories, and provides access to the
+ * registered factories.
  */
 
 /**
- * \brief Construct a pipeline handler factory
+ * \brief Construct a pipeline handler factory base
  * \param[in] name Name of the pipeline handler class
  *
- * Creating an instance of the factory registers is with the global list of
+ * Creating an instance of the factory base registers it with the global list of
  * factories, accessible through the factories() function.
  *
  * The factory \a name is used for debug purpose and shall be unique.
  */
-PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
+PipelineHandlerFactoryBase::PipelineHandlerFactoryBase(const char *name)
 	: name_(name)
 {
 	registerType(this);
@@ -676,7 +673,7 @@ PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
  * \return A shared pointer to a new instance of the PipelineHandler subclass
  * corresponding to the factory
  */
-std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *manager) const
+std::shared_ptr<PipelineHandler> PipelineHandlerFactoryBase::create(CameraManager *manager) const
 {
 	std::unique_ptr<PipelineHandler> handler = createInstance(manager);
 	handler->name_ = name_.c_str();
@@ -684,7 +681,7 @@ std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *m
 }
 
 /**
- * \fn PipelineHandlerFactory::name()
+ * \fn PipelineHandlerFactoryBase::name()
  * \brief Retrieve the factory name
  * \return The factory name
  */
@@ -696,9 +693,10 @@ std::shared_ptr<PipelineHandler> PipelineHandlerFactory::create(CameraManager *m
  * The caller is responsible to guarantee the uniqueness of the pipeline handler
  * name.
  */
-void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
+void PipelineHandlerFactoryBase::registerType(PipelineHandlerFactoryBase *factory)
 {
-	std::vector<PipelineHandlerFactory *> &factories = PipelineHandlerFactory::factories();
+	std::vector<PipelineHandlerFactoryBase *> &factories =
+		PipelineHandlerFactoryBase::factories();
 
 	factories.push_back(factory);
 }
@@ -707,26 +705,45 @@ void PipelineHandlerFactory::registerType(PipelineHandlerFactory *factory)
  * \brief Retrieve the list of all pipeline handler factories
  * \return the list of pipeline handler factories
  */
-std::vector<PipelineHandlerFactory *> &PipelineHandlerFactory::factories()
+std::vector<PipelineHandlerFactoryBase *> &PipelineHandlerFactoryBase::factories()
 {
 	/*
 	 * The static factories map is defined inside the function to ensure
 	 * it gets initialized on first use, without any dependency on
 	 * link order.
 	 */
-	static std::vector<PipelineHandlerFactory *> factories;
+	static std::vector<PipelineHandlerFactoryBase *> factories;
 	return factories;
 }
+
+/**
+ * \class PipelineHandlerFactory
+ * \brief Registration of PipelineHandler classes and creation of instances
+ * \tparam _PipelineHandler The pipeline handler class type for this factory
+ *
+ * To facilitate discovery and instantiation of PipelineHandler classes, the
+ * PipelineHandlerFactory class implements auto-registration of pipeline
+ * handlers. Each PipelineHandler subclass shall register itself using the
+ * REGISTER_PIPELINE_HANDLER() macro, which will create a corresponding
+ * instance of a PipelineHandlerFactory and register it with the static list of
+ * factories.
+ */
+
+/**
+ * \fn PipelineHandlerFactory::PipelineHandlerFactory(const char *name)
+ * \brief Construct a pipeline handler factory
+ * \param[in] name Name of the pipeline handler class
+ *
+ * Creating an instance of the factory registers it with the global list of
+ * factories, accessible through the factories() function.
+ *
+ * The factory \a name is used for debug purpose and shall be unique.
+ */
 
 /**
  * \fn PipelineHandlerFactory::createInstance() const
  * \brief Create an instance of the PipelineHandler corresponding to the factory
  * \param[in] manager The camera manager
- *
- * This virtual function is implemented by the REGISTER_PIPELINE_HANDLER()
- * macro. It creates a pipeline handler instance associated with the camera
- * \a manager.
- *
  * \return A unique pointer to a newly constructed instance of the
  * PipelineHandler subclass corresponding to the factory
  */

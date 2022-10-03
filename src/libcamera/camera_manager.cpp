@@ -142,10 +142,10 @@ void CameraManager::Private::createPipelineHandlers()
 	 * file and only fallback on all handlers if there is no
 	 * configuration file.
 	 */
-	const std::vector<PipelineHandlerFactory *> &factories =
-		PipelineHandlerFactory::factories();
+	const std::vector<PipelineHandlerFactoryBase *> &factories =
+		PipelineHandlerFactoryBase::factories();
 
-	for (const PipelineHandlerFactory *factory : factories) {
+	for (const PipelineHandlerFactoryBase *factory : factories) {
 		LOG(Camera, Debug)
 			<< "Found registered pipeline handler '"
 			<< factory->name() << "'";

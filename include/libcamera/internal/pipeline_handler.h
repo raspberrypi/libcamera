@@ -95,23 +95,23 @@ private:
 	Mutex lock_;
 	unsigned int useCount_ LIBCAMERA_TSA_GUARDED_BY(lock_);
 
-	friend class PipelineHandlerFactory;
+	friend class PipelineHandlerFactoryBase;
 };
 
-class PipelineHandlerFactory
+class PipelineHandlerFactoryBase
 {
 public:
-	PipelineHandlerFactory(const char *name);
-	virtual ~PipelineHandlerFactory() = default;
+	PipelineHandlerFactoryBase(const char *name);
+	virtual ~PipelineHandlerFactoryBase() = default;
 
 	std::shared_ptr<PipelineHandler> create(CameraManager *manager) const;
 
 	const std::string &name() const { return name_; }
 
-	static std::vector<PipelineHandlerFactory *> &factories();
+	static std::vector<PipelineHandlerFactoryBase *> &factories();
 
 private:
-	static void registerType(PipelineHandlerFactory *factory);
+	static void registerType(PipelineHandlerFactoryBase *factory);
 
 	virtual std::unique_ptr<PipelineHandler>
 	createInstance(CameraManager *manager) const = 0;
@@ -119,19 +119,23 @@ private:
 	std::string name_;
 };
 
-#define REGISTER_PIPELINE_HANDLER(handler)				\
-class handler##Factory final : public PipelineHandlerFactory		\
-{									\
-public:									\
-	handler##Factory() : PipelineHandlerFactory(#handler) {}	\
-									\
-private:								\
-	std::unique_ptr<PipelineHandler>				\
-	createInstance(CameraManager *manager) const			\
-	{								\
-		return std::make_unique<handler>(manager);		\
-	}								\
-};									\
-static handler##Factory global_##handler##Factory;
+template<typename _PipelineHandler>
+class PipelineHandlerFactory final : public PipelineHandlerFactoryBase
+{
+public:
+	PipelineHandlerFactory(const char *name)
+		: PipelineHandlerFactoryBase(name)
+	{
+	}
+
+	std::unique_ptr<PipelineHandler>
+	createInstance(CameraManager *manager) const override
+	{
+		return std::make_unique<_PipelineHandler>(manager);
+	}
+};
+
+#define REGISTER_PIPELINE_HANDLER(handler) \
+static PipelineHandlerFactory<handler> global_##handler##Factory(#handler);
 
 } /* namespace libcamera */

@@ -108,10 +108,11 @@ public:
 
 	const std::string &name() const { return name_; }
 
-	static void registerType(PipelineHandlerFactory *factory);
 	static std::vector<PipelineHandlerFactory *> &factories();
 
 private:
+	static void registerType(PipelineHandlerFactory *factory);
+
 	virtual PipelineHandler *createInstance(CameraManager *manager) const = 0;
 
 	std::string name_;

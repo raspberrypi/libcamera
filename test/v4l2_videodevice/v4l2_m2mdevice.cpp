@@ -95,6 +95,11 @@ protected:
 		V4L2VideoDevice *capture = vim2m_->capture();
 		V4L2VideoDevice *output = vim2m_->output();
 
+		if (capture->controls().empty() || output->controls().empty()) {
+			cerr << "VIM2M device has no control" << endl;
+			return TestFail;
+		}
+
 		V4L2DeviceFormat format = {};
 		if (capture->getFormat(&format)) {
 			cerr << "Failed to get capture format" << endl;

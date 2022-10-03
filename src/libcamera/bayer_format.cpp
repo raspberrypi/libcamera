@@ -191,6 +191,7 @@ const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
 	{ MEDIA_BUS_FMT_SRGGB16_1X16, { BayerFormat::RGGB, 16, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y8_1X8, { BayerFormat::MONO, 8, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y10_1X10, { BayerFormat::MONO, 10, BayerFormat::Packing::None } },
+	{ MEDIA_BUS_FMT_Y12_1X12, { BayerFormat::MONO, 12, BayerFormat::Packing::None } },
 };
 
 } /* namespace */

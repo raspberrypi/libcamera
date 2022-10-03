@@ -254,10 +254,10 @@ CameraSensorHelperFactory::CameraSensorHelperFactory(const std::string name)
  */
 std::unique_ptr<CameraSensorHelper> CameraSensorHelperFactory::create(const std::string &name)
 {
-	std::vector<CameraSensorHelperFactory *> &factories =
+	const std::vector<CameraSensorHelperFactory *> &factories =
 		CameraSensorHelperFactory::factories();
 
-	for (CameraSensorHelperFactory *factory : factories) {
+	for (const CameraSensorHelperFactory *factory : factories) {
 		if (name != factory->name_)
 			continue;
 
@@ -299,7 +299,7 @@ std::vector<CameraSensorHelperFactory *> &CameraSensorHelperFactory::factories()
 }
 
 /**
- * \fn CameraSensorHelperFactory::createInstance()
+ * \fn CameraSensorHelperFactory::createInstance() const
  * \brief Create an instance of the CameraSensorHelper corresponding to the
  * factory
  *

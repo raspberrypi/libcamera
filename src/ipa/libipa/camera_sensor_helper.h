@@ -70,7 +70,7 @@ public:
 	static std::vector<CameraSensorHelperFactory *> &factories();
 
 protected:
-	virtual CameraSensorHelper *createInstance() = 0;
+	virtual CameraSensorHelper *createInstance() const = 0;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactory)
@@ -85,7 +85,7 @@ public: 							\
 	helper##Factory() : CameraSensorHelperFactory(name) {}	\
 								\
 private:							\
-	CameraSensorHelper *createInstance()			\
+	CameraSensorHelper *createInstance() const		\
 	{							\
 		return new helper();				\
 	}							\

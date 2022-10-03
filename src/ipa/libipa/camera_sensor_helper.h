@@ -66,14 +66,14 @@ public:
 
 	static std::unique_ptr<CameraSensorHelper> create(const std::string &name);
 
-	static void registerType(CameraSensorHelperFactory *factory);
 	static std::vector<CameraSensorHelperFactory *> &factories();
-
-protected:
-	virtual CameraSensorHelper *createInstance() const = 0;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelperFactory)
+
+	static void registerType(CameraSensorHelperFactory *factory);
+
+	virtual CameraSensorHelper *createInstance() const = 0;
 
 	std::string name_;
 };

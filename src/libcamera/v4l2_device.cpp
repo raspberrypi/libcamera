@@ -97,8 +97,6 @@ int V4L2Device::open(unsigned int flags)
 
 	setFd(std::move(fd));
 
-	listControls();
-
 	return 0;
 }
 
@@ -128,6 +126,8 @@ int V4L2Device::setFd(UniqueFD fd)
 	fdEventNotifier_ = new EventNotifier(fd_.get(), EventNotifier::Exception);
 	fdEventNotifier_->activated.connect(this, &V4L2Device::eventAvailable);
 	fdEventNotifier_->setEnabled(false);
+
+	listControls();
 
 	return 0;
 }

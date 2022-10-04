@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <iterator>
 #include <ostream>
 #include <sstream>
@@ -397,6 +398,18 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 {
 	return static_cast<std::underlying_type_t<Enum>>(e);
 }
+
+class ScopeExitActions
+{
+public:
+	~ScopeExitActions();
+
+	void operator+=(std::function<void()> &&action);
+	void release();
+
+private:
+	std::vector<std::function<void()>> actions_;
+};
 
 } /* namespace utils */
 

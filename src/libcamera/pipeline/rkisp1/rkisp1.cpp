@@ -914,71 +914,62 @@ int PipelineHandlerRkISP1::freeBuffers(Camera *camera)
 int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
 {
 	RkISP1CameraData *data = cameraData(camera);
+	utils::ScopeExitActions actions;
 	int ret;
 
 	/* Allocate buffers for internal pipeline usage. */
 	ret = allocateBuffers(camera);
 	if (ret)
 		return ret;
+	actions += [&]() { freeBuffers(camera); };
 
 	ret = data->ipa_->start();
 	if (ret) {
-		freeBuffers(camera);
 		LOG(RkISP1, Error)
 			<< "Failed to start IPA " << camera->id();
 		return ret;
 	}
+	actions += [&]() { data->ipa_->stop(); };
 
 	data->frame_ = 0;
 
 	if (!isRaw_) {
 		ret = param_->streamOn();
 		if (ret) {
-			data->ipa_->stop();
-			freeBuffers(camera);
 			LOG(RkISP1, Error)
 				<< "Failed to start parameters " << camera->id();
 			return ret;
 		}
+		actions += [&]() { param_->streamOff(); };
 
 		ret = stat_->streamOn();
 		if (ret) {
-			param_->streamOff();
-			data->ipa_->stop();
-			freeBuffers(camera);
 			LOG(RkISP1, Error)
 				<< "Failed to start statistics " << camera->id();
 			return ret;
 		}
+		actions += [&]() { stat_->streamOff(); };
 	}
 
 	if (data->mainPath_->isEnabled()) {
 		ret = mainPath_.start();
-		if (ret) {
-			param_->streamOff();
-			stat_->streamOff();
-			data->ipa_->stop();
-			freeBuffers(camera);
+		if (ret)
 			return ret;
-		}
+		actions += [&]() { mainPath_.stop(); };
 	}
 
 	if (hasSelfPath_ && data->selfPath_->isEnabled()) {
 		ret = selfPath_.start();
-		if (ret) {
-			mainPath_.stop();
-			param_->streamOff();
-			stat_->streamOff();
-			data->ipa_->stop();
-			freeBuffers(camera);
+		if (ret)
 			return ret;
-		}
 	}
 
 	isp_->setFrameStartEnabled(true);
 
 	activeCamera_ = camera;
-	return ret;
+
+	actions.release();
+	return 0;
 }
 
 void PipelineHandlerRkISP1::stopDevice(Camera *camera)

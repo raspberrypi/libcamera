@@ -1623,6 +1623,11 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
 		const FrameMetadata &metadata = buffer->metadata();
 
+		for (const auto &plane : metadata.planes()) {
+			if (!plane.bytesused)
+				LOG(V4L2, Warning) << "byteused == 0 is deprecated";
+		}
+
 		if (numV4l2Planes != planes.size()) {
 			/*
 			 * If we have a multi-planar buffer with a V4L2

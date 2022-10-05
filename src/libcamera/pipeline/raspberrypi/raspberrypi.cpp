@@ -67,6 +67,14 @@ SensorFormats populateSensorFormats(std::unique_ptr<CameraSensor> &sensor)
 	return formats;
 }
 
+bool isMonoSensor(std::unique_ptr<CameraSensor> &sensor)
+{
+	unsigned int mbusCode = sensor->mbusCodes()[0];
+	const BayerFormat &bayer = BayerFormat::fromMbusCode(mbusCode);
+
+	return bayer.order == BayerFormat::Order::MONO;
+}
+
 PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
 				  BayerFormat::Packing packingReq)
 {
@@ -1541,10 +1549,14 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 	 */
 	std::string configurationFile;
 	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
-	if (!configFromEnv || *configFromEnv == '\0')
-		configurationFile = ipa_->configurationFile(sensor_->model() + ".json");
-	else
+	if (!configFromEnv || *configFromEnv == '\0') {
+		std::string model = sensor_->model();
+		if (isMonoSensor(sensor_))
+			model += "_mono";
+		configurationFile = ipa_->configurationFile(model + ".json");
+	} else {
 		configurationFile = std::string(configFromEnv);
+	}
 
 	IPASettings settings(configurationFile, sensor_->model());
 

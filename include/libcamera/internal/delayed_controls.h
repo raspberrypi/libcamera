@@ -74,7 +74,6 @@ private:
 	std::unordered_map<const ControlId *, ControlParams> controlParams_;
 	unsigned int maxDelay_;
 
-	uint32_t queueCount_;
 	uint32_t writeCount_;
 	/* \todo Evaluate if we should index on ControlId * or unsigned int */
 	std::unordered_map<const ControlId *, RingBuffer<Info>> values_;

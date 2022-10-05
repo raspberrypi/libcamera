@@ -116,7 +116,6 @@ DelayedControls::DelayedControls(V4L2Device *device,
  */
 void DelayedControls::reset(unsigned int cookie)
 {
-	queueCount_ = 1;
 	writeCount_ = 0;
 	cookies_[0] = cookie;
 
@@ -152,10 +151,12 @@ void DelayedControls::reset(unsigned int cookie)
  */
 bool DelayedControls::push(const ControlList &controls, const unsigned int cookie)
 {
+	LOG(DelayedControls, Debug) << "frame push started with write index " << writeCount_;
+
 	/* Copy state from previous frame. */
 	for (auto &ctrl : values_) {
-		Info &info = ctrl.second[queueCount_];
-		info = values_[ctrl.first][queueCount_ - 1];
+		Info &info = ctrl.second[writeCount_];
+		info = values_[ctrl.first][writeCount_ - 1];
 		info.updated = false;
 	}
 
@@ -174,18 +175,17 @@ bool DelayedControls::push(const ControlList &controls, const unsigned int cooki
 		if (controlParams_.find(id) == controlParams_.end())
 			return false;
 
-		Info &info = values_[id][queueCount_];
+		Info &info = values_[id][writeCount_];
 
 		info = Info(control.second);
 
 		LOG(DelayedControls, Debug)
 			<< "Queuing " << id->name()
 			<< " to " << info.toString()
-			<< " at index " << queueCount_;
+			<< " at index " << writeCount_;
 	}
 
-	cookies_[queueCount_] = cookie;
-	queueCount_++;
+	cookies_[writeCount_] = cookie;
 
 	return true;
 }
@@ -208,6 +208,8 @@ bool DelayedControls::push(const ControlList &controls, const unsigned int cooki
  */
 std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
 {
+	LOG(DelayedControls, Debug) << "frame get for " << sequence << " started with write index " << writeCount_;
+
 	unsigned int index = std::max<int>(0, sequence - maxDelay_);
 
 	ControlList out(device_->controls());
@@ -237,7 +239,7 @@ std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
  */
 void DelayedControls::applyControls(uint32_t sequence)
 {
-	LOG(DelayedControls, Debug) << "frame " << sequence << " started";
+	LOG(DelayedControls, Debug) << "frame apply for " << sequence << " started with write index " << writeCount_;
 
 	/*
 	 * Create control list peeking ahead in the value queue to ensure
@@ -277,12 +279,10 @@ void DelayedControls::applyControls(uint32_t sequence)
 		}
 	}
 
-	writeCount_ = sequence + 1;
-
-	while (writeCount_ > queueCount_) {
-		LOG(DelayedControls, Debug)
-			<< "Queue is empty, auto queue no-op.";
-		push({}, cookies_[queueCount_ - 1]);
+	while (writeCount_ < sequence + 1) {
+		writeCount_++;
+		LOG(DelayedControls, Debug) << "    pushing noop with write index " << writeCount_;
+		push({}, cookies_[writeCount_ - 1]);
 	}
 
 	device_->setControls(&out);

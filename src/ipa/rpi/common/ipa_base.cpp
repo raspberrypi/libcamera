@@ -447,7 +447,8 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (params.requestControls.empty() &&
+	    lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current

@@ -64,44 +64,44 @@ internal_non_parallel_tests = [
     ['mapped-buffer',                   'mapped-buffer.cpp'],
 ]
 
-foreach t : public_tests
+foreach test : public_tests
     deps = [libcamera_public]
-    if t.length() > 2
-        deps += t[2]
+    if test.length() > 2
+        deps += test[2]
     endif
 
-    exe = executable(t[0], t[1],
+    exe = executable(test[0], test[1],
                      dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_public)
 
-    test(t[0], exe)
+    test(test[0], exe)
 endforeach
 
-foreach t : internal_tests
+foreach test : internal_tests
     deps = [libcamera_private]
-    if t.length() > 2
-        deps += t[2]
+    if test.length() > 2
+        deps += test[2]
     endif
 
-    exe = executable(t[0], t[1],
+    exe = executable(test[0], test[1],
                      dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe)
+    test(test[0], exe)
 endforeach
 
-foreach t : internal_non_parallel_tests
+foreach test : internal_non_parallel_tests
     deps = [libcamera_private]
-    if t.length() > 2
-        deps += t[2]
+    if test.length() > 2
+        deps += test[2]
     endif
 
-    exe = executable(t[0], t[1],
+    exe = executable(test[0], test[1],
                      dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, is_parallel : false)
+    test(test[0], exe, is_parallel : false)
 endforeach

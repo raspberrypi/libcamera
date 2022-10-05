@@ -5,11 +5,11 @@ ipc_tests = [
     ['unixsocket',     'unixsocket.cpp'],
 ]
 
-foreach t : ipc_tests
-    exe = executable(t[0], t[1],
+foreach test : ipc_tests
+    exe = executable(test[0], test[1],
                      dependencies : libcamera_private,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite : 'ipc')
+    test(test[0], exe, suite : 'ipc')
 endforeach

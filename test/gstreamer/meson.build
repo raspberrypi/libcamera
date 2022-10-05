@@ -10,11 +10,11 @@ gstreamer_tests = [
 ]
 gstreamer_dep = dependency('gstreamer-1.0', required: true)
 
-foreach t : gstreamer_tests
-    exe = executable(t[0], t[1], 'gstreamer_test.cpp',
+foreach test : gstreamer_tests
+    exe = executable(test[0], test[1], 'gstreamer_test.cpp',
                      dependencies : [libcamera_private, gstreamer_dep],
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite : 'gstreamer', is_parallel : false)
+    test(test[0], exe, suite : 'gstreamer', is_parallel : false)
 endforeach

@@ -5,11 +5,11 @@ ipa_test = [
     ['ipa_interface_test',  'ipa_interface_test.cpp'],
 ]
 
-foreach t : ipa_test
-    exe = executable(t[0], [t[1], libcamera_generated_ipa_headers],
+foreach test : ipa_test
+    exe = executable(test[0], [test[1], libcamera_generated_ipa_headers],
                      dependencies : libcamera_private,
                      link_with : [libipa, test_libraries],
                      include_directories : [libipa_includes, test_includes_internal])
 
-    test(t[0], exe, suite : 'ipa')
+    test(test[0], exe, suite : 'ipa')
 endforeach

@@ -14,11 +14,11 @@ lib_mdev_test = static_library('lib_mdev_test', lib_mdev_test_sources,
                                dependencies : libcamera_private,
                                include_directories : test_includes_internal)
 
-foreach t : media_device_tests
-    exe = executable(t[0], t[1],
+foreach test : media_device_tests
+    exe = executable(test[0], test[1],
                      dependencies : libcamera_private,
                      link_with : [test_libraries, lib_mdev_test],
                      include_directories : test_includes_internal)
 
-    test(t[0], exe, suite : 'media_device', is_parallel : false)
+    test(test[0], exe, suite : 'media_device', is_parallel : false)
 endforeach

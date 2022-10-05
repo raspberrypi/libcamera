@@ -1046,7 +1046,8 @@ void IPARPi::prepareISP(const ISPConfig &data)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (data.requestControls.empty() &&
+	    lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
 	    delta < controllerMinFrameDuration * 0.9) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current

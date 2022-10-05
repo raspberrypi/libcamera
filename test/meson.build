@@ -51,7 +51,7 @@ internal_tests = [
     ['pixel-format',                    'pixel-format.cpp'],
     ['shared-fd',                       'shared-fd.cpp'],
     ['signal-threads',                  'signal-threads.cpp'],
-    ['threads',                         'threads.cpp'],
+    ['threads',                         'threads.cpp', [libthreads]],
     ['timer',                           'timer.cpp'],
     ['timer-thread',                    'timer-thread.cpp'],
     ['unique-fd',                       'unique-fd.cpp'],
@@ -65,8 +65,13 @@ internal_non_parallel_tests = [
 ]
 
 foreach t : public_tests
+    deps = [libcamera_public]
+    if t.length() > 2
+        deps += t[2]
+    endif
+
     exe = executable(t[0], t[1],
-                     dependencies : libcamera_public,
+                     dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_public)
 
@@ -74,8 +79,13 @@ foreach t : public_tests
 endforeach
 
 foreach t : internal_tests
+    deps = [libcamera_private]
+    if t.length() > 2
+        deps += t[2]
+    endif
+
     exe = executable(t[0], t[1],
-                     dependencies : libcamera_private,
+                     dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
@@ -83,8 +93,13 @@ foreach t : internal_tests
 endforeach
 
 foreach t : internal_non_parallel_tests
+    deps = [libcamera_private]
+    if t.length() > 2
+        deps += t[2]
+    endif
+
     exe = executable(t[0], t[1],
-                     dependencies : libcamera_private,
+                     dependencies : deps,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 

@@ -38,9 +38,9 @@ if libunwind.found()
 endif
 
 libcamera_base_deps = [
-    dependency('threads'),
     libatomic,
     libdw,
+    libthreads,
     libunwind,
 ]
 

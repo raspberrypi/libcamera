@@ -58,6 +58,7 @@ includes = [
 ]
 
 libatomic = cc.find_library('atomic', required : false)
+libthreads = dependency('threads')
 
 subdir('base')
 subdir('ipa')

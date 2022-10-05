@@ -5,9 +5,9 @@ lib_mdev_test_sources = files([
 ])
 
 media_device_tests = [
-    ['media_device_acquire',            'media_device_acquire.cpp'],
-    ['media_device_print_test',         'media_device_print_test.cpp'],
-    ['media_device_link_test',          'media_device_link_test.cpp'],
+    {'name': 'media_device_acquire', 'sources': ['media_device_acquire.cpp']},
+    {'name': 'media_device_print_test', 'sources': ['media_device_print_test.cpp']},
+    {'name': 'media_device_link_test', 'sources': ['media_device_link_test.cpp']},
 ]
 
 lib_mdev_test = static_library('lib_mdev_test', lib_mdev_test_sources,
@@ -15,10 +15,10 @@ lib_mdev_test = static_library('lib_mdev_test', lib_mdev_test_sources,
                                include_directories : test_includes_internal)
 
 foreach test : media_device_tests
-    exe = executable(test[0], test[1],
+    exe = executable(test['name'], test['sources'],
                      dependencies : libcamera_private,
                      link_with : [test_libraries, lib_mdev_test],
                      include_directories : test_includes_internal)
 
-    test(test[0], exe, suite : 'media_device', is_parallel : false)
+    test(test['name'], exe, suite : 'media_device', is_parallel : false)
 endforeach

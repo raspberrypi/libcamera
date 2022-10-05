@@ -3,18 +3,18 @@
 # Tests are listed in order of complexity.
 # They are not alphabetically sorted.
 camera_tests = [
-    ['configuration_default',   'configuration_default.cpp'],
-    ['configuration_set',       'configuration_set.cpp'],
-    ['buffer_import',           'buffer_import.cpp'],
-    ['statemachine',            'statemachine.cpp'],
-    ['capture',                 'capture.cpp'],
-    ['camera_reconfigure',      'camera_reconfigure.cpp'],
+    {'name': 'configuration_default', 'sources': ['configuration_default.cpp']},
+    {'name': 'configuration_set', 'sources': ['configuration_set.cpp']},
+    {'name': 'buffer_import', 'sources': ['buffer_import.cpp']},
+    {'name': 'statemachine', 'sources': ['statemachine.cpp']},
+    {'name': 'capture', 'sources': ['capture.cpp']},
+    {'name': 'camera_reconfigure', 'sources': ['camera_reconfigure.cpp']},
 ]
 
 foreach test : camera_tests
-    exe = executable(test[0], test[1],
+    exe = executable(test['name'], test['sources'],
                      dependencies : libcamera_private,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
-    test(test[0], exe, suite : 'camera', is_parallel : false)
+    test(test['name'], exe, suite : 'camera', is_parallel : false)
 endforeach

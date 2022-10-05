@@ -44,7 +44,8 @@ public:
 		     ipu3_uapi_params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     const ipu3_uapi_stats_3a *stats) override;
+		     const ipu3_uapi_stats_3a *stats,
+		     ControlList &metadata) override;
 
 private:
 	/* \todo Make these structs available to all the ISPs ? */

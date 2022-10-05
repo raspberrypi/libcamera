@@ -55,7 +55,8 @@ public:
 	virtual void process([[maybe_unused]] typename Module::Context &context,
 			     [[maybe_unused]] const uint32_t frame,
 			     [[maybe_unused]] typename Module::FrameContext &frameContext,
-			     [[maybe_unused]] const typename Module::Stats *stats)
+			     [[maybe_unused]] const typename Module::Stats *stats,
+			     [[maybe_unused]] ControlList &metadata)
 	{
 	}
 };

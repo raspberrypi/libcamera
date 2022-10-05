@@ -389,7 +389,8 @@ void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
  */
 void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  const ipu3_uapi_stats_3a *stats)
+		  const ipu3_uapi_stats_3a *stats,
+		  [[maybe_unused]] ControlList &metadata)
 {
 	calculateWBGains(stats);
 

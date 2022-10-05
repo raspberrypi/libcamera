@@ -79,13 +79,15 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
  * \param[in] frame The current frame sequence number
  * \param[in] frameContext The current frame context
  * \param[in] stats The IPU3 statistics and ISP results
+ * \param[out] metadata Metadata for the frame, to be filled by the algorithm
  *
  * The tone mapping look up table is generated as an inverse power curve from
  * our gamma setting.
  */
 void ToneMapping::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 			  [[maybe_unused]] IPAFrameContext &frameContext,
-			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats)
+			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats,
+			  [[maybe_unused]] ControlList &metadata)
 {
 	/*
 	 * Hardcode gamma to 1.1 as a default for now.

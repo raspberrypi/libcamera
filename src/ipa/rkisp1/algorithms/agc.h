@@ -31,7 +31,8 @@ public:
 		     rkisp1_params_cfg *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     const rkisp1_stat_buffer *stats) override;
+		     const rkisp1_stat_buffer *stats,
+		     ControlList &metadata) override;
 
 private:
 	void computeExposure(IPAContext &Context, IPAFrameContext &frameContext,

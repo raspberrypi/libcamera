@@ -283,12 +283,14 @@ double Agc::measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const
  * \param[in] frame The frame context sequence number
  * \param[in] frameContext The current frame context
  * \param[in] stats The RKISP1 statistics and ISP results
+ * \param[out] metadata Metadata for the frame, to be filled by the algorithm
  *
  * Identify the current image brightness, and use that to estimate the optimal
  * new exposure and gain for the scene.
  */
 void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
-		  IPAFrameContext &frameContext, const rkisp1_stat_buffer *stats)
+		  IPAFrameContext &frameContext, const rkisp1_stat_buffer *stats,
+		  [[maybe_unused]] ControlList &metadata)
 {
 	/*
 	 * \todo Verify that the exposure and gain applied by the sensor for

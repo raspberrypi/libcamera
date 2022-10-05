@@ -409,6 +409,7 @@ bool Af::afIsOutOfFocus(IPAContext &context)
  * \param[in] frame The frame context sequence number
  * \param[in] frameContext The current frame context
  * \param[in] stats The statistics buffer of IPU3
+ * \param[out] metadata Metadata for the frame, to be filled by the algorithm
  *
  * Ideally, a clear image also has a relatively higher contrast. So, every
  * image for each focus step should be tested to find an optimal focus step.
@@ -423,7 +424,8 @@ bool Af::afIsOutOfFocus(IPAContext &context)
  */
 void Af::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		 [[maybe_unused]] IPAFrameContext &frameContext,
-		 const ipu3_uapi_stats_3a *stats)
+		 const ipu3_uapi_stats_3a *stats,
+		 [[maybe_unused]] ControlList &metadata)
 {
 	/* Evaluate the AF buffer length */
 	uint32_t afRawBufferLen = context.configuration.af.afGrid.width *

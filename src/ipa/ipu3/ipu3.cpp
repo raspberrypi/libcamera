@@ -630,22 +630,22 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 
 	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
 	int32_t vBlank = context_.configuration.sensor.defVBlank;
-	ControlList ctrls(controls::controls);
+	ControlList metadata(controls::controls);
 
 	for (auto const &algo : algorithms())
-		algo->process(context_, frame, frameContext, stats);
+		algo->process(context_, frame, frameContext, stats, metadata);
 
 	setControls(frame);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
 	int64_t frameDuration = (vBlank + sensorInfo_.outputSize.height) * lineDuration;
-	ctrls.set(controls::FrameDuration, frameDuration);
+	metadata.set(controls::FrameDuration, frameDuration);
 
-	ctrls.set(controls::AnalogueGain, frameContext.sensor.gain);
+	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
 
-	ctrls.set(controls::ColourTemperature, context_.activeState.awb.temperatureK);
+	metadata.set(controls::ColourTemperature, context_.activeState.awb.temperatureK);
 
-	ctrls.set(controls::ExposureTime, frameContext.sensor.exposure * lineDuration);
+	metadata.set(controls::ExposureTime, frameContext.sensor.exposure * lineDuration);
 
 	/*
 	 * \todo The Metadata provides a path to getting extended data
@@ -655,7 +655,7 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	 * likely want to avoid putting platform specific metadata in.
 	 */
 
-	metadataReady.emit(frame, ctrls);
+	metadataReady.emit(frame, metadata);
 }
 
 /**

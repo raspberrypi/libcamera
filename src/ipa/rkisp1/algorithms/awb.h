@@ -27,8 +27,9 @@ public:
 			  IPAFrameContext &frameContext,
 			  const ControlList &controls) override;
 	void process(IPAContext &context, const uint32_t frame,
-		     IPAFrameContext &frameCtx,
-		     const rkisp1_stat_buffer *stats) override;
+		     IPAFrameContext &frameContext,
+		     const rkisp1_stat_buffer *stats,
+		     ControlList &metadata) override;
 
 private:
 	uint32_t estimateCCT(double red, double green, double blue);

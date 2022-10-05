@@ -30,7 +30,8 @@ public:
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     const ipu3_uapi_stats_3a *stats) override;
+		     const ipu3_uapi_stats_3a *stats,
+		     ControlList &metadata) override;
 
 private:
 	double measureBrightness(const ipu3_uapi_stats_3a *stats,

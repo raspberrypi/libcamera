@@ -69,7 +69,6 @@ protected:
 
 private:
 	void setControls(unsigned int frame);
-	void prepareMetadata(unsigned int frame, unsigned int aeState);
 
 	std::map<unsigned int, FrameBuffer> buffers_;
 	std::map<unsigned int, MappedFrameBuffer> mappedBuffers_;
@@ -338,14 +337,14 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 	frameContext.sensor.gain =
 		camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
-	unsigned int aeState = 0;
+	ControlList metadata(controls::controls);
 
 	for (auto const &algo : algorithms())
-		algo->process(context_, frame, frameContext, stats);
+		algo->process(context_, frame, frameContext, stats, metadata);
 
 	setControls(frame);
 
-	prepareMetadata(frame, aeState);
+	metadataReady.emit(frame, metadata);
 }
 
 void IPARkISP1::setControls(unsigned int frame)
@@ -364,16 +363,6 @@ void IPARkISP1::setControls(unsigned int frame)
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
 
 	setSensorControls.emit(frame, ctrls);
-}
-
-void IPARkISP1::prepareMetadata(unsigned int frame, unsigned int aeState)
-{
-	ControlList ctrls(controls::controls);
-
-	if (aeState)
-		ctrls.set(controls::AeLocked, aeState == 2);
-
-	metadataReady.emit(frame, ctrls);
 }
 
 } /* namespace ipa::rkisp1 */

@@ -208,7 +208,8 @@ void Awb::queueRequest(IPAContext &context,
 void Awb::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
-		  const rkisp1_stat_buffer *stats)
+		  const rkisp1_stat_buffer *stats,
+		  [[maybe_unused]] ControlList &metadata)
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;

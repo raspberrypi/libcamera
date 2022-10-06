@@ -315,7 +315,7 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 	}
 
 	startConfig->dropFrameCount = dropFrameCount_;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
 	startConfig->maxSensorFrameLengthMs = maxSensorFrameDuration.get<std::milli>();
 
 	firstStart_ = false;
@@ -462,7 +462,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	 */
 	ControlInfoMap::Map ctrlMap = ipaControls;
 	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.minLineLength;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
 	ctrlMap[&controls::FrameDurationLimits] =
 		ControlInfo(static_cast<int64_t>(minSensorFrameDuration.get<std::micro>()),
 			    static_cast<int64_t>(maxSensorFrameDuration.get<std::micro>()));
@@ -475,7 +475,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	 * will limit the maximum control value based on the current VBLANK value.
 	 */
 	Duration maxShutter = Duration::max();
-	helper_->getVBlanking(maxShutter, minSensorFrameDuration, maxSensorFrameDuration);
+	helper_->getBlanking(maxShutter, minSensorFrameDuration, maxSensorFrameDuration);
 	const uint32_t exposureMin = sensorCtrls_.at(V4L2_CID_EXPOSURE).min().get<int32_t>();
 
 	ctrlMap[&controls::ExposureTime] =
@@ -552,7 +552,7 @@ void IPARPi::reportMetadata()
 				       deviceStatus->shutterSpeed.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogueGain);
 		libcameraMetadata_.set(controls::FrameDuration,
-				       helper_->exposure(deviceStatus->frameLength, mode_.minLineLength).get<std::micro>());
+				       helper_->exposure(deviceStatus->frameLength, deviceStatus->lineLength).get<std::micro>());
 		if (deviceStatus->sensorTemperature)
 			libcameraMetadata_.set(controls::SensorTemperature, *deviceStatus->sensorTemperature);
 	}
@@ -1110,7 +1110,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 	int32_t hblank = sensorControls.get(V4L2_CID_HBLANK).get<int32_t>();
 
 	deviceStatus.lineLength = helper_->hblankToLineLength(hblank);
-	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, mode_.minLineLength);
+	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, deviceStatus.lineLength);
 	deviceStatus.analogueGain = helper_->gain(gainCode);
 	deviceStatus.frameLength = mode_.height + vblank;
 
@@ -1156,7 +1156,7 @@ void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
 {
 	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.minLineLength;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
 
 	/*
 	 * This will only be applied once AGC recalculations occur.
@@ -1177,11 +1177,11 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 
 	/*
 	 * Calculate the maximum exposure time possible for the AGC to use.
-	 * getVBlanking() will update maxShutter with the largest exposure
+	 * getBlanking() will update maxShutter with the largest exposure
 	 * value possible.
 	 */
 	Duration maxShutter = Duration::max();
-	helper_->getVBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
+	helper_->getBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
@@ -1199,10 +1199,11 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	 */
 	gainCode = std::min<int32_t>(gainCode, maxSensorGainCode_);
 
-	/* getVBlanking might clip exposure time to the fps limits. */
+	/* getBlanking might clip exposure time to the fps limits. */
 	Duration exposure = agcStatus->shutterTime;
-	int32_t vblanking = helper_->getVBlanking(exposure, minFrameDuration_, maxFrameDuration_);
-	int32_t exposureLines = helper_->exposureLines(exposure, mode_.minLineLength);
+	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_, maxFrameDuration_);
+	int32_t exposureLines = helper_->exposureLines(exposure,
+						       helper_->hblankToLineLength(hblank));
 
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
 			   << " (Shutter lines: " << exposureLines << ", AGC requested "
@@ -1210,14 +1211,22 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 			   << agcStatus->analogueGain << " (Gain Code: "
 			   << gainCode << ")";
 
-	/*
-	 * Due to the behavior of V4L2, the current value of VBLANK could clip the
-	 * exposure time without us knowing. The next time though this function should
-	 * clip exposure correctly.
-	 */
-	ctrls.set(V4L2_CID_VBLANK, vblanking);
+	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
 	ctrls.set(V4L2_CID_EXPOSURE, exposureLines);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
+
+	/*
+	 * At present, there is no way of knowing if a control is read-only.
+	 * As a workaround, assume that if the minimum and maximum values of
+	 * the V4L2_CID_HBLANK control are the same, it implies the control
+	 * is read-only. This seems to be the case for all the cameras our IPA
+	 * works with.
+	 *
+	 * \todo The control API ought to have a flag to specify if a control
+	 * is read-only which could be used below.
+	 */
+	if (mode_.minLineLength != mode_.maxLineLength)
+		ctrls.set(V4L2_CID_HBLANK, static_cast<int32_t>(hblank));
 }
 
 void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)

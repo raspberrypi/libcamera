@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
@@ -82,9 +83,9 @@ public:
 				       const libcamera::utils::Duration lineLength) const;
 	virtual libcamera::utils::Duration exposure(uint32_t exposureLines,
 						    const libcamera::utils::Duration lineLength) const;
-	virtual uint32_t getVBlanking(libcamera::utils::Duration &exposure,
-				      libcamera::utils::Duration minFrameDuration,
-				      libcamera::utils::Duration maxFrameDuration) const;
+	virtual std::pair<uint32_t, uint32_t> getBlanking(libcamera::utils::Duration &exposure,
+							  libcamera::utils::Duration minFrameDuration,
+							  libcamera::utils::Duration maxFrameDuration) const;
 	libcamera::utils::Duration hblankToLineLength(uint32_t hblank) const;
 	uint32_t lineLengthToHblank(const libcamera::utils::Duration &duration) const;
 	libcamera::utils::Duration lineLengthPckToDuration(uint32_t lineLengthPck) const;

@@ -46,8 +46,8 @@ public:
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
 	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
-	uint32_t getVBlanking(Duration &exposure, Duration minFrameDuration,
-			      Duration maxFrameDuration) const override;
+	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
+						  Duration maxFrameDuration) const override;
 	void getDelays(int &exposureDelay, int &gainDelay,
 		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
@@ -118,15 +118,19 @@ void CamHelperImx477::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 }
 
-uint32_t CamHelperImx477::getVBlanking(Duration &exposure,
-				       Duration minFrameDuration,
-				       Duration maxFrameDuration) const
+std::pair<uint32_t, uint32_t> CamHelperImx477::getBlanking(Duration &exposure,
+							   Duration minFrameDuration,
+							   Duration maxFrameDuration) const
 {
 	uint32_t frameLength, exposureLines;
 	unsigned int shift = 0;
 
-	frameLength = mode_.height + CamHelper::getVBlanking(exposure, minFrameDuration,
-							     maxFrameDuration);
+	auto [vblank, hblank] = CamHelper::getBlanking(exposure, minFrameDuration,
+						       maxFrameDuration);
+
+	frameLength = mode_.height + vblank;
+	Duration lineLength = hblankToLineLength(hblank);
+
 	/*
 	 * Check if the frame length calculated needs to be setup for long
 	 * exposure mode. This will require us to use a long exposure scale
@@ -144,12 +148,12 @@ uint32_t CamHelperImx477::getVBlanking(Duration &exposure,
 	if (shift) {
 		/* Account for any rounding in the scaled frame length value. */
 		frameLength <<= shift;
-		exposureLines = CamHelperImx477::exposureLines(exposure, mode_.minLineLength);
+		exposureLines = CamHelperImx477::exposureLines(exposure, lineLength);
 		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
-		exposure = CamHelperImx477::exposure(exposureLines, mode_.minLineLength);
+		exposure = CamHelperImx477::exposure(exposureLines, lineLength);
 	}
 
-	return frameLength - mode_.height;
+	return { frameLength - mode_.height, hblank };
 }
 
 void CamHelperImx477::getDelays(int &exposureDelay, int &gainDelay,

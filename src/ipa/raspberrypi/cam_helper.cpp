@@ -7,6 +7,7 @@
 
 #include <linux/videodev2.h>
 
+#include <limits>
 #include <map>
 #include <string.h>
 
@@ -70,31 +71,56 @@ Duration CamHelper::exposure(uint32_t exposureLines, const Duration lineLength) 
 	return exposureLines * lineLength;
 }
 
-uint32_t CamHelper::getVBlanking(Duration &exposure,
-				 Duration minFrameDuration,
-				 Duration maxFrameDuration) const
+std::pair<uint32_t, uint32_t> CamHelper::getBlanking(Duration &exposure,
+						     Duration minFrameDuration,
+						     Duration maxFrameDuration) const
 {
-	uint32_t frameLengthMin, frameLengthMax, vblank;
-	uint32_t exposureLines = CamHelper::exposureLines(exposure, mode_.minLineLength);
+	uint32_t frameLengthMin, frameLengthMax, vblank, hblank;
+	Duration lineLength = mode_.minLineLength;
 
 	/*
 	 * minFrameDuration and maxFrameDuration are clamped by the caller
 	 * based on the limits for the active sensor mode.
+	 *
+	 * frameLengthMax gets calculated on the smallest line length as we do
+	 * not want to extend that unless absolutely necessary.
 	 */
 	frameLengthMin = minFrameDuration / mode_.minLineLength;
 	frameLengthMax = maxFrameDuration / mode_.minLineLength;
 
 	/*
+	 * Watch out for (exposureLines + frameIntegrationDiff_) overflowing a
+	 * uint32_t in the std::clamp() below when the exposure time is
+	 * extremely (extremely!) long - as happens when the IPA calculates the
+	 * maximum possible exposure time.
+	 */
+	uint32_t exposureLines = std::min(CamHelper::exposureLines(exposure, lineLength),
+					  std::numeric_limits<uint32_t>::max() - frameIntegrationDiff_);
+	uint32_t frameLengthLines = std::clamp(exposureLines + frameIntegrationDiff_,
+					       frameLengthMin, frameLengthMax);
+
+	/*
+	 * If our frame length lines is above the maximum allowed, see if we can
+	 * extend the line length to accommodate the requested frame length.
+	 */
+	if (frameLengthLines > mode_.maxFrameLength) {
+		Duration lineLengthAdjusted = lineLength * frameLengthLines / mode_.maxFrameLength;
+		lineLength = std::min(mode_.maxLineLength, lineLengthAdjusted);
+		frameLengthLines = mode_.maxFrameLength;
+	}
+
+	hblank = lineLengthToHblank(lineLength);
+	vblank = frameLengthLines - mode_.height;
+
+	/*
 	 * Limit the exposure to the maximum frame duration requested, and
 	 * re-calculate if it has been clipped.
 	 */
-	exposureLines = std::min(frameLengthMax - frameIntegrationDiff_, exposureLines);
-	exposure = CamHelper::exposure(exposureLines, mode_.minLineLength);
+	exposureLines = std::min(frameLengthLines - frameIntegrationDiff_,
+				 CamHelper::exposureLines(exposure, lineLength));
+	exposure = CamHelper::exposure(exposureLines, lineLength);
 
-	/* Limit the vblank to the range allowed by the frame length limits. */
-	vblank = std::clamp(exposureLines + frameIntegrationDiff_,
-			    frameLengthMin, frameLengthMax) - mode_.height;
-	return vblank;
+	return { vblank, hblank };
 }
 
 Duration CamHelper::hblankToLineLength(uint32_t hblank) const

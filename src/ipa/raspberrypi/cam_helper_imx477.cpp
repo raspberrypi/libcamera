@@ -49,7 +49,7 @@ public:
 	uint32_t getVBlanking(Duration &exposure, Duration minFrameDuration,
 			      Duration maxFrameDuration) const override;
 	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay) const override;
+		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
 
 private:
@@ -153,11 +153,12 @@ uint32_t CamHelperImx477::getVBlanking(Duration &exposure,
 }
 
 void CamHelperImx477::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay) const
+				int &vblankDelay, int &hblankDelay) const
 {
 	exposureDelay = 2;
 	gainDelay = 2;
 	vblankDelay = 3;
+	hblankDelay = 3;
 }
 
 bool CamHelperImx477::sensorEmbeddedDataPresent() const

@@ -219,13 +219,14 @@ int IPARPi::init(const IPASettings &settings, IPAInitResult *result)
 	 * Pass out the sensor config to the pipeline handler in order
 	 * to setup the staggered writer class.
 	 */
-	int gainDelay, exposureDelay, vblankDelay, sensorMetadata;
-	helper_->getDelays(exposureDelay, gainDelay, vblankDelay);
+	int gainDelay, exposureDelay, vblankDelay, hblankDelay, sensorMetadata;
+	helper_->getDelays(exposureDelay, gainDelay, vblankDelay, hblankDelay);
 	sensorMetadata = helper_->sensorEmbeddedDataPresent();
 
 	result->sensorConfig.gainDelay = gainDelay;
 	result->sensorConfig.exposureDelay = exposureDelay;
 	result->sensorConfig.vblankDelay = vblankDelay;
+	result->sensorConfig.hblankDelay = hblankDelay;
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */
@@ -606,6 +607,7 @@ bool IPARPi::validateSensorControls()
 		V4L2_CID_ANALOGUE_GAIN,
 		V4L2_CID_EXPOSURE,
 		V4L2_CID_VBLANK,
+		V4L2_CID_HBLANK,
 	};
 
 	for (auto c : ctrls) {

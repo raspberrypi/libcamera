@@ -1297,6 +1297,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
 		{ V4L2_CID_ANALOGUE_GAIN, { result.sensorConfig.gainDelay, false } },
 		{ V4L2_CID_EXPOSURE, { result.sensorConfig.exposureDelay, false } },
+		{ V4L2_CID_HBLANK, { result.sensorConfig.hblankDelay, false } },
 		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);

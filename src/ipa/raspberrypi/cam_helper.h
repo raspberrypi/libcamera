@@ -88,7 +88,7 @@ public:
 	virtual uint32_t gainCode(double gain) const = 0;
 	virtual double gain(uint32_t gainCode) const = 0;
 	virtual void getDelays(int &exposureDelay, int &gainDelay,
-			       int &vblankDelay) const;
+			       int &vblankDelay, int &hblankDelay) const;
 	virtual bool sensorEmbeddedDataPresent() const;
 	virtual double getModeSensitivity(const CameraMode &mode) const;
 	virtual unsigned int hideFramesStartup() const;

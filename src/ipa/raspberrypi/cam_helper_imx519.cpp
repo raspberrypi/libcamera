@@ -144,9 +144,9 @@ uint32_t CamHelperImx519::getVBlanking(Duration &exposure,
 	if (shift) {
 		/* Account for any rounding in the scaled frame length value. */
 		frameLength <<= shift;
-		exposureLines = CamHelperImx519::exposureLines(exposure);
+		exposureLines = CamHelperImx519::exposureLines(exposure, mode_.minLineLength);
 		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
-		exposure = CamHelperImx519::exposure(exposureLines);
+		exposure = CamHelperImx519::exposure(exposureLines, mode_.minLineLength);
 	}
 
 	return frameLength - mode_.height;
@@ -170,7 +170,8 @@ void CamHelperImx519::populateMetadata(const MdParser::RegisterMap &registers,
 {
 	DeviceStatus deviceStatus;
 
-	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
+	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
+					     mode_.minLineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 

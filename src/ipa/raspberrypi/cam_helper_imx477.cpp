@@ -144,9 +144,9 @@ uint32_t CamHelperImx477::getVBlanking(Duration &exposure,
 	if (shift) {
 		/* Account for any rounding in the scaled frame length value. */
 		frameLength <<= shift;
-		exposureLines = CamHelperImx477::exposureLines(exposure);
+		exposureLines = CamHelperImx477::exposureLines(exposure, mode_.minLineLength);
 		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
-		exposure = CamHelperImx477::exposure(exposureLines);
+		exposure = CamHelperImx477::exposure(exposureLines, mode_.minLineLength);
 	}
 
 	return frameLength - mode_.height;
@@ -170,7 +170,8 @@ void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 {
 	DeviceStatus deviceStatus;
 
-	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg));
+	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
+					     mode_.minLineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 	deviceStatus.sensorTemperature = std::clamp<int8_t>(registers.at(temperatureReg), -20, 80);

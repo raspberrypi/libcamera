@@ -78,8 +78,10 @@ public:
 	virtual void prepare(libcamera::Span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
-	virtual uint32_t exposureLines(libcamera::utils::Duration exposure) const;
-	virtual libcamera::utils::Duration exposure(uint32_t exposureLines) const;
+	virtual uint32_t exposureLines(const libcamera::utils::Duration exposure,
+				       const libcamera::utils::Duration lineLength) const;
+	virtual libcamera::utils::Duration exposure(uint32_t exposureLines,
+						    const libcamera::utils::Duration lineLength) const;
 	virtual uint32_t getVBlanking(libcamera::utils::Duration &exposure,
 				      libcamera::utils::Duration minFrameDuration,
 				      libcamera::utils::Duration maxFrameDuration) const;

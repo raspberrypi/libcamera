@@ -61,16 +61,16 @@ void CamHelper::process([[maybe_unused]] StatisticsPtr &stats,
 {
 }
 
-uint32_t CamHelper::exposureLines(const Duration exposure) const
+uint32_t CamHelper::exposureLines(const Duration exposure, const Duration lineLength) const
 {
 	assert(initialized_);
-	return exposure / mode_.minLineLength;
+	return exposure / lineLength;
 }
 
-Duration CamHelper::exposure(uint32_t exposureLines) const
+Duration CamHelper::exposure(uint32_t exposureLines, const Duration lineLength) const
 {
 	assert(initialized_);
-	return exposureLines * mode_.minLineLength;
+	return exposureLines * lineLength;
 }
 
 uint32_t CamHelper::getVBlanking(Duration &exposure,
@@ -78,7 +78,7 @@ uint32_t CamHelper::getVBlanking(Duration &exposure,
 				 Duration maxFrameDuration) const
 {
 	uint32_t frameLengthMin, frameLengthMax, vblank;
-	uint32_t exposureLines = CamHelper::exposureLines(exposure);
+	uint32_t exposureLines = CamHelper::exposureLines(exposure, mode_.minLineLength);
 
 	assert(initialized_);
 
@@ -94,7 +94,7 @@ uint32_t CamHelper::getVBlanking(Duration &exposure,
 	 * re-calculate if it has been clipped.
 	 */
 	exposureLines = std::min(frameLengthMax - frameIntegrationDiff_, exposureLines);
-	exposure = CamHelper::exposure(exposureLines);
+	exposure = CamHelper::exposure(exposureLines, mode_.minLineLength);
 
 	/* Limit the vblank to the range allowed by the frame length limits. */
 	vblank = std::clamp(exposureLines + frameIntegrationDiff_,

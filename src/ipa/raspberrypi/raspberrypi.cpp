@@ -477,7 +477,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	const uint32_t exposureMin = sensorCtrls_.at(V4L2_CID_EXPOSURE).min().get<int32_t>();
 
 	ctrlMap[&controls::ExposureTime] =
-		ControlInfo(static_cast<int32_t>(helper_->exposure(exposureMin).get<std::micro>()),
+		ControlInfo(static_cast<int32_t>(helper_->exposure(exposureMin, mode_.minLineLength).get<std::micro>()),
 			    static_cast<int32_t>(maxShutter.get<std::micro>()));
 
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
@@ -550,7 +550,7 @@ void IPARPi::reportMetadata()
 				       deviceStatus->shutterSpeed.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogueGain);
 		libcameraMetadata_.set(controls::FrameDuration,
-				       helper_->exposure(deviceStatus->frameLength).get<std::micro>());
+				       helper_->exposure(deviceStatus->frameLength, mode_.minLineLength).get<std::micro>());
 		if (deviceStatus->sensorTemperature)
 			libcameraMetadata_.set(controls::SensorTemperature, *deviceStatus->sensorTemperature);
 	}
@@ -1105,7 +1105,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 	int32_t gainCode = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 	int32_t vblank = sensorControls.get(V4L2_CID_VBLANK).get<int32_t>();
 
-	deviceStatus.shutterSpeed = helper_->exposure(exposureLines);
+	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, mode_.minLineLength);
 	deviceStatus.analogueGain = helper_->gain(gainCode);
 	deviceStatus.frameLength = mode_.height + vblank;
 
@@ -1197,7 +1197,7 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	/* getVBlanking might clip exposure time to the fps limits. */
 	Duration exposure = agcStatus->shutterTime;
 	int32_t vblanking = helper_->getVBlanking(exposure, minFrameDuration_, maxFrameDuration_);
-	int32_t exposureLines = helper_->exposureLines(exposure);
+	int32_t exposureLines = helper_->exposureLines(exposure, mode_.minLineLength);
 
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
 			   << " (Shutter lines: " << exposureLines << ", AGC requested "

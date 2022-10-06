@@ -19,7 +19,7 @@
 struct DeviceStatus {
 	DeviceStatus()
 		: shutterSpeed(std::chrono::seconds(0)), frameLength(0),
-		  analogueGain(0.0)
+		  lineLength(std::chrono::seconds(0)), analogueGain(0.0)
 	{
 	}
 
@@ -29,6 +29,8 @@ struct DeviceStatus {
 	libcamera::utils::Duration shutterSpeed;
 	/* frame length given in number of lines */
 	uint32_t frameLength;
+	/* line length for the current frame */
+	libcamera::utils::Duration lineLength;
 	double analogueGain;
 	/* 1.0/distance-in-metres, or 0 if unknown */
 	std::optional<double> lensPosition;

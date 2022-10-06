@@ -12,6 +12,7 @@ std::ostream &operator<<(std::ostream &out, const DeviceStatus &d)
 {
 	out << "Exposure: " << d.shutterSpeed
 	    << " Frame length: " << d.frameLength
+	    << " Line length: " << d.lineLength
 	    << " Gain: " << d.analogueGain;
 
 	if (d.aperture)

@@ -222,7 +222,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	metadata.merge(parsedMetadata);
 
 	/*
-	 * Overwrite the exposure/gain, frame length and sensor temperature values
+	 * Overwrite the exposure/gain, line/frame length and sensor temperature values
 	 * in the existing DeviceStatus with values from the parsed embedded buffer.
 	 * Fetch it first in case any other fields were set meaningfully.
 	 */
@@ -236,6 +236,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	deviceStatus.shutterSpeed = parsedDeviceStatus.shutterSpeed;
 	deviceStatus.analogueGain = parsedDeviceStatus.analogueGain;
 	deviceStatus.frameLength = parsedDeviceStatus.frameLength;
+	deviceStatus.lineLength = parsedDeviceStatus.lineLength;
 	if (parsedDeviceStatus.sensorTemperature)
 		deviceStatus.sensorTemperature = parsedDeviceStatus.sensorTemperature;
 

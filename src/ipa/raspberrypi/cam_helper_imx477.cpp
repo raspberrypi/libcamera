@@ -35,9 +35,12 @@ constexpr uint32_t gainHiReg = 0x0204;
 constexpr uint32_t gainLoReg = 0x0205;
 constexpr uint32_t frameLengthHiReg = 0x0340;
 constexpr uint32_t frameLengthLoReg = 0x0341;
+constexpr uint32_t lineLengthHiReg = 0x0342;
+constexpr uint32_t lineLengthLoReg = 0x0343;
 constexpr uint32_t temperatureReg = 0x013a;
 constexpr std::initializer_list<uint32_t> registerList =
-	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg, temperatureReg  };
+	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg,
+	  lineLengthHiReg, lineLengthLoReg, temperatureReg };
 
 class CamHelperImx477 : public CamHelper
 {
@@ -175,8 +178,10 @@ void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 {
 	DeviceStatus deviceStatus;
 
+	deviceStatus.lineLength = lineLengthPckToDuration(registers.at(lineLengthHiReg) * 256 +
+							  registers.at(lineLengthLoReg));
 	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
-					     mode_.minLineLength);
+					     deviceStatus.lineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 	deviceStatus.sensorTemperature = std::clamp<int8_t>(registers.at(temperatureReg), -20, 80);

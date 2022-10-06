@@ -32,8 +32,11 @@ constexpr uint32_t expHiReg = 0x15a;
 constexpr uint32_t expLoReg = 0x15b;
 constexpr uint32_t frameLengthHiReg = 0x160;
 constexpr uint32_t frameLengthLoReg = 0x161;
+constexpr uint32_t lineLengthHiReg = 0x162;
+constexpr uint32_t lineLengthLoReg = 0x163;
 constexpr std::initializer_list<uint32_t> registerList [[maybe_unused]]
-	= { expHiReg, expLoReg, gainReg, frameLengthHiReg, frameLengthLoReg };
+	= { expHiReg, expLoReg, gainReg, frameLengthHiReg, frameLengthLoReg,
+	    lineLengthHiReg, lineLengthLoReg };
 
 class CamHelperImx219 : public CamHelper
 {
@@ -94,8 +97,10 @@ void CamHelperImx219::populateMetadata(const MdParser::RegisterMap &registers,
 {
 	DeviceStatus deviceStatus;
 
+	deviceStatus.lineLength = lineLengthPckToDuration(registers.at(lineLengthHiReg) * 256 +
+							  registers.at(lineLengthLoReg));
 	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
-					     mode_.minLineLength);
+					     deviceStatus.lineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);
 

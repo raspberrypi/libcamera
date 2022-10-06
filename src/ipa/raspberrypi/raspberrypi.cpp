@@ -314,7 +314,7 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 	}
 
 	startConfig->dropFrameCount = dropFrameCount_;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.lineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
 	startConfig->maxSensorFrameLengthMs = maxSensorFrameDuration.get<std::milli>();
 
 	firstStart_ = false;
@@ -356,7 +356,8 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	 * Calculate the line length as the ratio between the line length in
 	 * pixels and the pixel rate.
 	 */
-	mode_.lineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
+	mode_.minLineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
+	mode_.maxLineLength = sensorInfo.maxLineLength * (1.0s / sensorInfo.pixelRate);
 
 	/*
 	 * Set the frame length limits for the mode to ensure exposure and
@@ -458,8 +459,8 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
 	 * based on the current sensor mode.
 	 */
 	ControlInfoMap::Map ctrlMap = ipaControls;
-	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.lineLength;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.lineLength;
+	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.minLineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
 	ctrlMap[&controls::FrameDurationLimits] =
 		ControlInfo(static_cast<int64_t>(minSensorFrameDuration.get<std::micro>()),
 			    static_cast<int64_t>(maxSensorFrameDuration.get<std::micro>()));
@@ -1149,8 +1150,8 @@ void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 
 void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
 {
-	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.lineLength;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.lineLength;
+	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.minLineLength;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.minLineLength;
 
 	/*
 	 * This will only be applied once AGC recalculations occur.

@@ -20,23 +20,30 @@ struct CameraMode {
 	/* bit depth of the raw camera output */
 	uint32_t bitdepth;
 	/* size in pixels of frames in this mode */
-	uint16_t width, height;
+	uint16_t width;
+	uint16_t height;
 	/* size of full resolution uncropped frame ("sensor frame") */
-	uint16_t sensorWidth, sensorHeight;
+	uint16_t sensorWidth;
+	uint16_t sensorHeight;
 	/* binning factor (1 = no binning, 2 = 2-pixel binning etc.) */
-	uint8_t binX, binY;
+	uint8_t binX;
+	uint8_t binY;
 	/* location of top left pixel in the sensor frame */
-	uint16_t cropX, cropY;
+	uint16_t cropX;
+	uint16_t cropY;
 	/* scaling factor (so if uncropped, width*scaleX is sensorWidth) */
-	double scaleX, scaleY;
+	double scaleX;
+	double scaleY;
 	/* scaling of the noise compared to the native sensor mode */
 	double noiseFactor;
-	/* line time */
-	libcamera::utils::Duration lineLength;
+	/* minimum and maximum line time */
+	libcamera::utils::Duration minLineLength;
+	libcamera::utils::Duration maxLineLength;
 	/* any camera transform *not* reflected already in the camera tuning */
 	libcamera::Transform transform;
-	/* minimum and maximum fame lengths in units of lines */
-	uint32_t minFrameLength, maxFrameLength;
+	/* minimum and maximum frame lengths in units of lines */
+	uint32_t minFrameLength;
+	uint32_t maxFrameLength;
 	/* sensitivity of this mode */
 	double sensitivity;
 };

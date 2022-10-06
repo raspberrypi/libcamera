@@ -31,7 +31,7 @@ public:
 	void stop();
 
 	std::vector<std::shared_ptr<Camera>> cameras() const;
-	std::shared_ptr<Camera> get(const std::string &name);
+	std::shared_ptr<Camera> get(const std::string &id);
 	std::shared_ptr<Camera> get(dev_t devnum);
 
 	void addCamera(std::shared_ptr<Camera> camera,

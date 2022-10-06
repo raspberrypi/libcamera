@@ -85,6 +85,9 @@ public:
 	virtual uint32_t getVBlanking(libcamera::utils::Duration &exposure,
 				      libcamera::utils::Duration minFrameDuration,
 				      libcamera::utils::Duration maxFrameDuration) const;
+	libcamera::utils::Duration hblankToLineLength(uint32_t hblank) const;
+	uint32_t lineLengthToHblank(const libcamera::utils::Duration &duration) const;
+	libcamera::utils::Duration lineLengthPckToDuration(uint32_t lineLengthPck) const;
 	virtual uint32_t gainCode(double gain) const = 0;
 	virtual double gain(uint32_t gainCode) const = 0;
 	virtual void getDelays(int &exposureDelay, int &gainDelay,

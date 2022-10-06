@@ -27,19 +27,21 @@ protected:
 		ControlInfo brightness;
 
 		if (brightness.min().type() != ControlType::ControlTypeNone ||
-		    brightness.max().type() != ControlType::ControlTypeNone) {
+		    brightness.max().type() != ControlType::ControlTypeNone ||
+		    brightness.def().type() != ControlType::ControlTypeNone) {
 			cout << "Invalid control range for Brightness" << endl;
 			return TestFail;
 		}
 
 		/*
 		 * Test information retrieval from a control with a minimum and
-		 * a maximum value.
+		 * a maximum value, and an implicit default value.
 		 */
 		ControlInfo contrast(10, 200);
 
 		if (contrast.min().get<int32_t>() != 10 ||
-		    contrast.max().get<int32_t>() != 200) {
+		    contrast.max().get<int32_t>() != 200 ||
+		    !contrast.def().isNone()) {
 			cout << "Invalid control range for Contrast" << endl;
 			return TestFail;
 		}

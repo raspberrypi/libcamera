@@ -7,7 +7,6 @@
 
 #include <linux/videodev2.h>
 
-#include <assert.h>
 #include <map>
 #include <string.h>
 
@@ -41,8 +40,7 @@ CamHelper *CamHelper::create(std::string const &camName)
 }
 
 CamHelper::CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff)
-	: parser_(std::move(parser)), initialized_(false),
-	  frameIntegrationDiff_(frameIntegrationDiff)
+	: parser_(std::move(parser)), frameIntegrationDiff_(frameIntegrationDiff)
 {
 }
 
@@ -63,13 +61,11 @@ void CamHelper::process([[maybe_unused]] StatisticsPtr &stats,
 
 uint32_t CamHelper::exposureLines(const Duration exposure, const Duration lineLength) const
 {
-	assert(initialized_);
 	return exposure / lineLength;
 }
 
 Duration CamHelper::exposure(uint32_t exposureLines, const Duration lineLength) const
 {
-	assert(initialized_);
 	return exposureLines * lineLength;
 }
 
@@ -79,8 +75,6 @@ uint32_t CamHelper::getVBlanking(Duration &exposure,
 {
 	uint32_t frameLengthMin, frameLengthMax, vblank;
 	uint32_t exposureLines = CamHelper::exposureLines(exposure, mode_.minLineLength);
-
-	assert(initialized_);
 
 	/*
 	 * minFrameDuration and maxFrameDuration are clamped by the caller
@@ -110,7 +104,6 @@ void CamHelper::setCameraMode(const CameraMode &mode)
 		parser_->setBitsPerPixel(mode.bitdepth);
 		parser_->setLineLengthBytes(0); /* We use SetBufferSize. */
 	}
-	initialized_ = true;
 }
 
 void CamHelper::getDelays(int &exposureDelay, int &gainDelay,

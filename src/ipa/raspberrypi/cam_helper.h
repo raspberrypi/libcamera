@@ -106,7 +106,6 @@ protected:
 	CameraMode mode_;
 
 private:
-	bool initialized_;
 	/*
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.

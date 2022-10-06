@@ -331,6 +331,7 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensorHeight = sensorInfo.activeAreaSize.height;
 	mode_.cropX = sensorInfo.analogCrop.x;
 	mode_.cropY = sensorInfo.analogCrop.y;
+	mode_.pixelRate = sensorInfo.pixelRate;
 
 	/*
 	 * Calculate scaling parameters. The scale_[xy] factors are determined

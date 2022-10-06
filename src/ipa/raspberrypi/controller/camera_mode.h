@@ -46,4 +46,6 @@ struct CameraMode {
 	uint32_t maxFrameLength;
 	/* sensitivity of this mode */
 	double sensitivity;
+	/* pixel clock rate */
+	uint64_t pixelRate;
 };

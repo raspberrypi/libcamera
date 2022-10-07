@@ -134,6 +134,7 @@ public:
 
 	std::deque<Request *> requestQueue_;
 	Request *currentRequest_;
+	uint64_t previousControlListId_;
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;

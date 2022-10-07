@@ -987,6 +987,40 @@ static bool isControlDelayed(unsigned int id)
 	       id == controls::AeEnable;
 }
 
+static void jumpQueueBehaviour2(std::deque<Request *> &queue)
+{
+	auto r = queue.begin();
+	for (; r != queue.end() && (*r)->controls().empty(); r++)
+		;
+	if (r != queue.end() && r != queue.begin()) {
+		queue.front()->controls() = std::move((*r)->controls());
+		uint64_t controlListId = (*r)->controlListId;
+		for (r = r - 1;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
+static void androidQueueBehaviour2(std::deque<Request *> &queue, int delay)
+{
+	auto r = queue.begin() + 1;
+	for (; r != queue.end() && delay; r++, delay--) {
+		queue.front()->controls().merge((*r)->controls(), true);
+		(*r)->controls().clear();
+	}
+	r--;
+	if (r != queue.begin()) {
+		uint64_t controlListId = (*r)->controlListId;
+		for (;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
 void Vc4CameraData::tryRunPipeline()
 {
 	FrameBuffer *embeddedBuffer;
@@ -1002,9 +1036,16 @@ void Vc4CameraData::tryRunPipeline()
 
 	/* Take the first request from the queue and action the IPA. */
 	currentRequest_ = requestQueue_.front();
+
 	/* Do not pop this request if we're not going to return it to the user. */
-	if (!dropFrameCount_)
+	if (!dropFrameCount_) {
+		const int behaviour = 0;
+		if (behaviour == 1)
+			jumpQueueBehaviour2(requestQueue_);
+		else if (behaviour == 2)
+			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
 		requestQueue_.pop_front();
+	}
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(currentRequest_->controls());

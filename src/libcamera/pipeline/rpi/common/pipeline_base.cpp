@@ -702,6 +702,8 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	 */
 	data->syncTable_ = std::queue<RPi::CameraData::SyncTableEntry>();
 	data->syncTable_.emplace(RPi::CameraData::SyncTableEntry{ 0, 0 });
+	data->syncTable_.emplace(RPi::CameraData::SyncTableEntry{ 1, 0 });
+	data->previousControlListId_ = 0;
 
 	/* Enable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(true);
@@ -1295,8 +1297,13 @@ void CameraData::setDelayedControls(const ControlList &controls, uint32_t delayC
 	if (!delayedCtrls_->push(controls, delayContext))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 
-	/* Record which control list corresponds to this ipaCookie. */
-	syncTable_.emplace(SyncTableEntry{ delayContext, currentRequest_->controlListId });
+	/*
+	 * Record which control list corresponds to this delayContext. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ delayContext, previousControlListId_ });
+	previousControlListId_ = currentRequest_->controlListId;
 }
 
 void CameraData::setLensControls(const ControlList &controls)

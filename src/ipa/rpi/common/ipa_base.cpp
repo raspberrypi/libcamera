@@ -439,6 +439,18 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		hdrStatus_ = agcStatus.hdr;
 	}
 
+	unsigned int lastIpaContext = (ipaContext ? ipaContext : rpiMetadata_.size()) - 1;
+	RPiController::Metadata &lastMetadata = rpiMetadata_[lastIpaContext];
+
+	LOG(IPARPI, Info) << "Prepare ipa contex " << ipaContext << " last context " << lastIpaContext;
+
+	if (lastMetadata.get("agc.status", agcStatus) == 0) {
+		ControlList ctrls(sensorCtrls_);
+		applyAGC(&agcStatus, ctrls);
+		setDelayedControls.emit(ctrls, lastIpaContext);
+		setCameraTimeoutValue();
+	}
+
 	/*
 	 * This may overwrite the DeviceStatus using values from the sensor
 	 * metadata, and may also do additional custom processing.
@@ -456,8 +468,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
-		RPiController::Metadata &lastMetadata =
-			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
+
 		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 	} else {

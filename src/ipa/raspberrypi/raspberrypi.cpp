@@ -1030,7 +1030,7 @@ void IPARPi::prepareISP(const ISPConfig &data)
 	 * metadata.
 	 */
 	AgcStatus agcStatus;
-	RPiController::Metadata &delayedMetadata = rpiMetadata_[data.delayCookie];
+	RPiController::Metadata &delayedMetadata = rpiMetadata_[data.delayCookie % rpiMetadata_.size()];
 	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus))
 		rpiMetadata.set("agc.delayed_status", agcStatus);
 
@@ -1044,6 +1044,8 @@ void IPARPi::prepareISP(const ISPConfig &data)
 	if (data.embeddedBufferPresent)
 		returnEmbeddedBuffer(data.embeddedBufferId);
 
+	RPiController::Metadata &lastMetadata = rpiMetadata_[lastMetadataIdx_];
+
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
 	if (data.requestControls.empty() &&
@@ -1055,14 +1057,10 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
-		RPiController::Metadata &lastMetadata = rpiMetadata_[lastMetadataIdx_];
 		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 		return;
 	}
-
-	unsigned int lastMetadataIdx = metadataIdx_ == 0 ? rpiMetadata_.size() - 1 : metadataIdx_ - 1;
-	RPiController::Metadata &lastMetadata = rpiMetadata_[lastMetadataIdx];
 
 	/*
 	 * AGC's delayed controls are sent at the start of the next frame from the one
@@ -1071,7 +1069,7 @@ void IPARPi::prepareISP(const ISPConfig &data)
 	if (lastMetadata.get("agc.status", agcStatus) == 0) {
 		ControlList ctrls1(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls1);
-		setDelayedControls.emit(ctrls1, lastMetadataIdx);
+		setDelayedControls.emit(ctrls1, data.ipaCookie - 1);
 	}
 
 	lastRunTimestamp_ = frameTimestamp;

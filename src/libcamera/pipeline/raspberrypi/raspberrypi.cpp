@@ -1094,8 +1094,8 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	 * the first entry by hand.
 	 */
 	data->syncTable_ = std::queue<RPiCameraData::SyncTableEntry>();
-	data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie, 0 });
-	data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie + 1, 0 });
+	//data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie_, 0 });
+	//data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie_ + 1, 0 });
 	data->previousControlListId_ = 0;
 
 	/* Start all streams. */
@@ -1200,7 +1200,7 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 	/* Push the request to the back of the queue. */
 	data->requestQueue_.push_back(request);
 
-	const int behaviour = 2;
+	const int behaviour = 0;
 	if (behaviour == 1)
 		jumpQueueBehaviour(data->requestQueue_);
 	else if (behaviour == 2)
@@ -1851,15 +1851,11 @@ void RPiCameraData::setIspControls(const ControlList &controls)
 
 void RPiCameraData::setDelayedControls(const ControlList &controls, uint32_t delayCookie)
 {
+	//LOG(RPI, Error) << "setDelayedControls: cookie " << delayCookie;
+
 	if (!delayedCtrls_->push(controls, delayCookie))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
-	/*
-	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
-	 * now gets called by the IPA from the start of the following frame, we must record
-	 * the previous control list id.
-	 */
-	syncTable_.emplace(SyncTableEntry{ ipaCookie, previousControlListId_ });
-	previousControlListId_ = currentRequest_->controlListId;
+
 	handleState();
 }
 
@@ -1932,8 +1928,11 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
 		auto [ctrl, delayCookie] = delayedCtrls_->get(buffer->metadata().sequence);
+
+		//LOG(RPI, Error) << "unicamBufferDequeue delay cookie " << delayCookie;
+
 		/*
-		 * Add the frame timestamp to the ControlList for the IPA to use
+		 * Add the frame timestamp to the ControlList for the IPA to usesu
 		 * as it does not receive the FrameBuffer object.
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
@@ -2249,7 +2248,7 @@ void RPiCameraData::tryRunPipeline()
 	currentRequest_ = requestQueue_.front();
 	/* Do not pop this request if we're not going to return it to the user. */
 	if (!dropFrameCount_) {
-		const int behaviour = 0;
+		const int behaviour = 2;
 		if (behaviour == 1)
 			jumpQueueBehaviour2(requestQueue_);
 		else if (behaviour == 2)
@@ -2268,14 +2267,30 @@ void RPiCameraData::tryRunPipeline()
 	currentRequest_->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, currentRequest_);
 
+	//LOG(RPI, Error) << "tryRunPipeline: cookie " << ipaCookie_ << " bayerframe cookie " <<  bayerFrame.delayCookie << " sync table size " << syncTable_.size();
+	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ ipaCookie_, currentRequest_->controlListId });
+
 	/*
 	 * We know we that we added an entry for every ipaCookie, so we can
 	 * find the one for this Bayer frame, and this links us to the correct
 	 * control list. Anything ahead of "our" entry in the queue is old, so
 	 * can be dropped.
 	 */
-	while (syncTable_.front().ipaCookie != bayerFrame.ipaCookie)
+
+	while (!syncTable_.empty() &&
+	       syncTable_.front().ipaCookie != bayerFrame.delayCookie) {
+		//LOG(RPI, Error) << "tryRunPipeline: discard sync table entry " << syncTable_.front().ipaCookie;
 		syncTable_.pop();
+	}
+
+	if (syncTable_.empty())
+		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
+
 	currentRequest_->syncId = syncTable_.front().controlListId;
 
 	/*

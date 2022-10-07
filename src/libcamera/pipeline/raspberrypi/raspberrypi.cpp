@@ -272,6 +272,7 @@ public:
 	std::queue<FrameBuffer *> embeddedQueue_;
 	std::deque<Request *> requestQueue_;
 	Request *currentRequest_;
+	uint64_t previousControlListId_;
 
 	/*
 	 * Manage horizontal and vertical flips supported (or not) by the
@@ -1094,6 +1095,8 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	 */
 	data->syncTable_ = std::queue<RPiCameraData::SyncTableEntry>();
 	data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie, 0 });
+	data->syncTable_.emplace(RPiCameraData::SyncTableEntry{ data->ipaCookie + 1, 0 });
+	data->previousControlListId_ = 0;
 
 	/* Start all streams. */
 	for (auto const stream : data->streams_) {
@@ -1850,8 +1853,13 @@ void RPiCameraData::setDelayedControls(const ControlList &controls, uint32_t del
 {
 	if (!delayedCtrls_->push(controls, delayCookie))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
-	/* Record which control list corresponds to this ipaCookie. */
-	syncTable_.emplace(SyncTableEntry{ ipaCookie, currentRequest_->controlListId });
+	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ ipaCookie, previousControlListId_ });
+	previousControlListId_ = currentRequest_->controlListId;
 	handleState();
 }
 
@@ -2189,6 +2197,40 @@ static bool isControlDelayed(unsigned int id)
 	       id == controls::AeEnable;
 }
 
+static void jumpQueueBehaviour2(std::deque<Request *> &queue)
+{
+	auto r = queue.begin();
+	for (; r != queue.end() && (*r)->controls().empty(); r++)
+		;
+	if (r != queue.end() && r != queue.begin()) {
+		queue.front()->controls() = std::move((*r)->controls());
+		uint64_t controlListId = (*r)->controlListId;
+		for (r = r - 1;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
+static void androidQueueBehaviour2(std::deque<Request *> &queue, int delay)
+{
+	auto r = queue.begin() + 1;
+	for (; r != queue.end() && delay; r++, delay--) {
+		queue.front()->controls().merge((*r)->controls(), true);
+		(*r)->controls().clear();
+	}
+	r--;
+	if (r != queue.begin()) {
+		uint64_t controlListId = (*r)->controlListId;
+		for (;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
 void RPiCameraData::tryRunPipeline()
 {
 	FrameBuffer *embeddedBuffer;
@@ -2206,8 +2248,14 @@ void RPiCameraData::tryRunPipeline()
 
 	currentRequest_ = requestQueue_.front();
 	/* Do not pop this request if we're not going to return it to the user. */
-	if (!dropFrameCount_)
+	if (!dropFrameCount_) {
+		const int behaviour = 0;
+		if (behaviour == 1)
+			jumpQueueBehaviour2(requestQueue_);
+		else if (behaviour == 2)
+			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
 		requestQueue_.pop_front();
+	}
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(currentRequest_->controls());

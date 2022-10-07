@@ -1061,6 +1061,19 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		return;
 	}
 
+	unsigned int lastMetadataIdx = metadataIdx_ == 0 ? rpiMetadata_.size() - 1 : metadataIdx_ - 1;
+	RPiController::Metadata &lastMetadata = rpiMetadata_[lastMetadataIdx];
+
+	/*
+	 * AGC's delayed controls are sent at the start of the next frame from the one
+	 * for which they are calculated.
+	 */
+	if (lastMetadata.get("agc.status", agcStatus) == 0) {
+		ControlList ctrls1(sensorCtrls_);
+		applyAGC(&agcStatus, ctrls1);
+		setDelayedControls.emit(ctrls1, lastMetadataIdx);
+	}
+
 	lastRunTimestamp_ = frameTimestamp;
 	processPending_ = true;
 
@@ -1148,13 +1161,7 @@ void IPARPi::processStats(unsigned int bufferId)
 	helper_->process(statistics, rpiMetadata);
 	controller_.process(statistics, &rpiMetadata);
 
-	struct AgcStatus agcStatus;
-	if (rpiMetadata.get("agc.status", agcStatus) == 0) {
-		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
-
-		setDelayedControls.emit(ctrls, metadataIdx_);
-	}
+	/* We send AGC's delayed controls back on the start of the next frame. */
 }
 
 void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)

@@ -367,20 +367,6 @@ decltype(auto) abs_diff(const T &a, const T &b)
 		return a - b;
 }
 
-namespace details {
-
-struct defopt_t {
-	template<typename T>
-	operator T() const
-	{
-		return T{};
-	}
-};
-
-} /* namespace details */
-
-constexpr details::defopt_t defopt;
-
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

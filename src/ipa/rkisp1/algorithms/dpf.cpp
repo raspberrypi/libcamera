@@ -70,7 +70,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	 *    +---------|--------> X
 	 *     -4....-1 0 1 2 3 4
 	 */
-	values = dFObject["g"].getList<uint8_t>().value_or(utils::defopt);
+	values = dFObject["g"].getList<uint8_t>().value_or(std::vector<uint8_t>{});
 	if (values.size() != RKISP1_CIF_ISP_DPF_MAX_SPATIAL_COEFFS) {
 		LOG(RkISP1Dpf, Error)
 			<< "Invalid 'DomainFilter:g': expected "
@@ -106,7 +106,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	 * For a 9x9 kernel, columns -6 and 6 are dropped, so coefficient
 	 * number 6 is not used.
 	 */
-	values = dFObject["rb"].getList<uint8_t>().value_or(utils::defopt);
+	values = dFObject["rb"].getList<uint8_t>().value_or(std::vector<uint8_t>{});
 	if (values.size() != RKISP1_CIF_ISP_DPF_MAX_SPATIAL_COEFFS &&
 	    values.size() != RKISP1_CIF_ISP_DPF_MAX_SPATIAL_COEFFS - 1) {
 		LOG(RkISP1Dpf, Error)
@@ -135,7 +135,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	const YamlObject &rFObject = tuningData["NoiseLevelFunction"];
 
 	std::vector<uint16_t> nllValues;
-	nllValues = rFObject["coeff"].getList<uint16_t>().value_or(utils::defopt);
+	nllValues = rFObject["coeff"].getList<uint16_t>().value_or(std::vector<uint16_t>{});
 	if (nllValues.size() != RKISP1_CIF_ISP_DPF_MAX_NLF_COEFFS) {
 		LOG(RkISP1Dpf, Error)
 			<< "Invalid 'RangeFilter:coeff': expected "

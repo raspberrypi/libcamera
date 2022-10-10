@@ -67,6 +67,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 	{ MEDIA_BUS_FMT_RGB565_2X8_BE, { 16, "RGB565_2X8_BE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB565_2X8_LE, { 16, "RGB565_2X8_LE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB666_1X18, { 18, "RGB666_1X18", PixelFormatInfo::ColourEncodingRGB } },
+	{ MEDIA_BUS_FMT_BGR888_1X24, { 24, "BGR888_1X24", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB888_1X24, { 24, "RGB888_1X24", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB888_2X12_BE, { 24, "RGB888_2X12_BE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB888_2X12_LE, { 24, "RGB888_2X12_LE", PixelFormatInfo::ColourEncodingRGB } },
@@ -133,6 +134,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 	{ MEDIA_BUS_FMT_SRGGB12_1X12, { 12, "SRGGB12_1X12", PixelFormatInfo::ColourEncodingRAW } },
 	/* \todo Clarify colour encoding for HSV formats */
 	{ MEDIA_BUS_FMT_AHSV8888_1X32, { 32, "AHSV8888_1X32", PixelFormatInfo::ColourEncodingRGB } },
+	{ MEDIA_BUS_FMT_JPEG_1X8, { 8, "JPEG_1X8", PixelFormatInfo::ColourEncodingYUV } },
 };
 
 } /* namespace */

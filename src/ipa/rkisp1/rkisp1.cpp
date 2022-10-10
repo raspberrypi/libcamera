@@ -246,7 +246,7 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	context_.configuration.hw.revision = hwRevision_;
 
 	context_.configuration.sensor.size = info.outputSize;
-	context_.configuration.sensor.lineDuration = info.lineLength * 1.0s / info.pixelRate;
+	context_.configuration.sensor.lineDuration = info.minLineLength * 1.0s / info.pixelRate;
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs

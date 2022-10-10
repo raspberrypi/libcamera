@@ -356,7 +356,7 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	 * Calculate the line length as the ratio between the line length in
 	 * pixels and the pixel rate.
 	 */
-	mode_.lineLength = sensorInfo.lineLength * (1.0s / sensorInfo.pixelRate);
+	mode_.lineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
 
 	/*
 	 * Set the frame length limits for the mode to ensure exposure and

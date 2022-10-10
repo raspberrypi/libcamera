@@ -172,10 +172,17 @@ module libcamera;
  */
 
 /**
- * \var IPACameraSensorInfo::lineLength
- * \brief Total line length in pixels
+ * \var IPACameraSensorInfo::minLineLength
+ * \brief The minimum line length in pixels
  *
- * The total line length in pixel clock periods, including blanking.
+ * The minimum allowable line length in pixel clock periods, including blanking.
+ */
+
+/**
+ * \var IPACameraSensorInfo::maxLineLength
+ * \brief The maximum line length in pixels
+ *
+ * The maximum allowable line length in pixel clock periods, including blanking.
  */
 
 /**
@@ -189,7 +196,7 @@ module libcamera;
  * To obtain the minimum frame duration:
  *
  * \verbatim
-       frameDuration(s) = minFrameLength(lines) * lineLength(pixels) / pixelRate(pixels per second)
+       frameDuration(s) = minFrameLength(lines) * minLineLength(pixels) / pixelRate(pixels per second)
    \endverbatim
  */
 
@@ -204,7 +211,7 @@ module libcamera;
  * To obtain the maximum frame duration:
  *
  * \verbatim
-       frameDuration(s) = maxFrameLength(lines) * lineLength(pixels) / pixelRate(pixels per second)
+       frameDuration(s) = maxFrameLength(lines) * maxLineLength(pixels) / pixelRate(pixels per second)
    \endverbatim
  */
 struct IPACameraSensorInfo {
@@ -217,7 +224,9 @@ struct IPACameraSensorInfo {
 	Size outputSize;
 
 	uint64 pixelRate;
-	uint32 lineLength;
+
+	uint32 minLineLength;
+	uint32 maxLineLength;
 
 	uint32 minFrameLength;
 	uint32 maxFrameLength;

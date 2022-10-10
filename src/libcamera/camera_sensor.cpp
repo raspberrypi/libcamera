@@ -176,6 +176,32 @@ int CameraSensor::init()
 	if (ret)
 		return ret;
 
+	/*
+	 * Set HBLANK to the minimum to start with a well-defined line length,
+	 * allowing IPA modules that do not modify HBLANK to use the sensor
+	 * minimum line length in their calculations.
+	 *
+	 * At present, there is no way of knowing if a control is read-only.
+	 * As a workaround, assume that if the minimum and maximum values of
+	 * the V4L2_CID_HBLANK control are the same, it implies the control
+	 * is read-only.
+	 *
+	 * \todo The control API ought to have a flag to specify if a control
+	 * is read-only which could be used below.
+	 */
+	const ControlInfo hblank = ctrls.infoMap()->at(V4L2_CID_HBLANK);
+	const int32_t hblankMin = hblank.min().get<int32_t>();
+	const int32_t hblankMax = hblank.max().get<int32_t>();
+
+	if (hblankMin != hblankMax) {
+		ControlList ctrl(subdev_->controls());
+
+		ctrl.set(V4L2_CID_HBLANK, hblankMin);
+		ret = subdev_->setControls(&ctrl);
+		if (ret)
+			return ret;
+	}
+
 	return applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);
 }
 
@@ -883,9 +909,11 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 		return -EINVAL;
 	}
 
-	int32_t hblank = ctrls.get(V4L2_CID_HBLANK).get<int32_t>();
-	info->lineLength = info->outputSize.width + hblank;
 	info->pixelRate = ctrls.get(V4L2_CID_PIXEL_RATE).get<int64_t>();
+
+	const ControlInfo hblank = ctrls.infoMap()->at(V4L2_CID_HBLANK);
+	info->minLineLength = info->outputSize.width + hblank.min().get<int32_t>();
+	info->maxLineLength = info->outputSize.width + hblank.max().get<int32_t>();
 
 	const ControlInfo vblank = ctrls.infoMap()->at(V4L2_CID_VBLANK);
 	info->minFrameLength = info->outputSize.height + vblank.min().get<int32_t>();

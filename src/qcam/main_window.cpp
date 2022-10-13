@@ -26,10 +26,10 @@
 #include <QToolButton>
 #include <QtDebug>
 
+#include "../cam/dng_writer.h"
 #include "../cam/image.h"
 
 #include "cam_select_dialog.h"
-#include "dng_writer.h"
 #ifndef QT_NO_OPENGL
 #include "viewfinder_gl.h"
 #endif

@@ -49,7 +49,7 @@ if tiff_dep.found()
     qt5_cpp_args += ['-DHAVE_TIFF']
     qcam_deps += [tiff_dep]
     qcam_sources += files([
-        'dng_writer.cpp',
+        '../cam/dng_writer.cpp',
     ])
 endif
 

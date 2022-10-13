@@ -26,6 +26,7 @@ cam_cpp_args = []
 libdrm = dependency('libdrm', required : false)
 libjpeg = dependency('libjpeg', required : false)
 libsdl2 = dependency('SDL2', required : false)
+libtiff = dependency('libtiff-4', required : false)
 
 if libdrm.found()
     cam_cpp_args += [ '-DHAVE_KMS' ]

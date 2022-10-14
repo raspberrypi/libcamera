@@ -38,8 +38,10 @@ if libcamera_version != meson.project_version()
             },
             bool_yn : true, section : 'Versions')
 
-    libcamera_git_version = libcamera_git_version.replace(libcamera_version,
-                                                          meson.project_version())
+    # Replace the version components reported by git with the release version,
+    # but keep all trailing information supplied by git.
+    libcamera_git_version = (meson.project_version() +
+                             libcamera_git_version.strip(libcamera_version))
     libcamera_version = meson.project_version()
 
     # Append a marker to show we have modified this version string

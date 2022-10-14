@@ -75,7 +75,7 @@ public:
 	static CamHelper *create(std::string const &camName);
 	CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
-	void setCameraMode(const CameraMode &mode);
+	virtual void setCameraMode(const CameraMode &mode);
 	virtual void prepare(libcamera::Span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);

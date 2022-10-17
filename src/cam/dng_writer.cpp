@@ -126,6 +126,14 @@ struct Matrix3d {
 	float m[9];
 };
 
+void packScanlineSBGGR8(void *output, const void *input, unsigned int width)
+{
+	const uint8_t *in = static_cast<const uint8_t *>(input);
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	std::copy(in, in + width, out);
+}
+
 void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
@@ -274,6 +282,30 @@ void thumbScanlineIPU3([[maybe_unused]] const FormatInfo &info, void *output,
 }
 
 static const std::map<PixelFormat, FormatInfo> formatInfo = {
+	{ formats::SBGGR8, {
+		.bitsPerSample = 8,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineSBGGR8,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SGBRG8, {
+		.bitsPerSample = 8,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineSBGGR8,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SGRBG8, {
+		.bitsPerSample = 8,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineSBGGR8,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SRGGB8, {
+		.bitsPerSample = 8,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineSBGGR8,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
 	{ formats::SBGGR10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },

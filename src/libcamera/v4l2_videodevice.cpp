@@ -1817,7 +1817,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	 */
 	if (!firstFrame_) {
 		if (buf.sequence)
-			LOG(V4L2, Warning)
+			LOG(V4L2, Info)
 				<< "Zero sequence expected for first frame (got "
 				<< buf.sequence << ")";
 		firstFrame_ = buf.sequence;

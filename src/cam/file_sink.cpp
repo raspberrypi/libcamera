@@ -15,14 +15,16 @@
 
 #include <libcamera/camera.h>
 
+#include "dng_writer.h"
 #include "file_sink.h"
 #include "image.h"
 
 using namespace libcamera;
 
-FileSink::FileSink(const std::map<const libcamera::Stream *, std::string> &streamNames,
+FileSink::FileSink(const libcamera::Camera *camera,
+		   const std::map<const libcamera::Stream *, std::string> &streamNames,
 		   const std::string &pattern)
-	: streamNames_(streamNames), pattern_(pattern)
+	: camera_(camera), streamNames_(streamNames), pattern_(pattern)
 {
 }
 
@@ -51,12 +53,13 @@ void FileSink::mapBuffer(FrameBuffer *buffer)
 bool FileSink::processRequest(Request *request)
 {
 	for (auto [stream, buffer] : request->buffers())
-		writeBuffer(stream, buffer);
+		writeBuffer(stream, buffer, request->metadata());
 
 	return true;
 }
 
-void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
+void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer,
+			   [[maybe_unused]] const ControlList &metadata)
 {
 	std::string filename;
 	size_t pos;
@@ -64,6 +67,10 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 
 	if (!pattern_.empty())
 		filename = pattern_;
+
+#ifdef HAVE_TIFF
+	bool dng = filename.find(".dng", filename.size() - 4) != std::string::npos;
+#endif /* HAVE_TIFF */
 
 	if (filename.empty() || filename.back() == '/')
 		filename += "frame-#.bin";
@@ -76,6 +83,21 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 		filename.replace(pos, 1, ss.str());
 	}
 
+	Image *image = mappedBuffers_[buffer].get();
+
+#ifdef HAVE_TIFF
+	if (dng) {
+		ret = DNGWriter::write(filename.c_str(), camera_,
+				       stream->configuration(), metadata,
+				       buffer, image->data(0).data());
+		if (ret < 0)
+			std::cerr << "failed to write DNG file `" << filename
+				  << "'" << std::endl;
+
+		return;
+	}
+#endif /* HAVE_TIFF */
+
 	fd = open(filename.c_str(), O_CREAT | O_WRONLY |
 		  (pos == std::string::npos ? O_APPEND : O_TRUNC),
 		  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
@@ -85,8 +107,6 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer)
 			  << strerror(-ret) << std::endl;
 		return;
 	}
-
-	Image *image = mappedBuffers_[buffer].get();
 
 	for (unsigned int i = 0; i < buffer->planes().size(); ++i) {
 		const FrameMetadata::Plane &meta = buffer->metadata().planes()[i];

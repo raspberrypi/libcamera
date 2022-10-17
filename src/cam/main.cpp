@@ -144,6 +144,8 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "to write files, using the default file name. Otherwise it sets the\n"
 			 "full file path and name. The first '#' character in the file name\n"
 			 "is expanded to the camera index, stream name and frame sequence number.\n"
+			 "If the file name ends with '.dng', then the frame will be written to\n"
+			 "the output file(s) in DNG format.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename", false,
 			 OptCamera);

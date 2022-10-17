@@ -52,6 +52,13 @@ if libsdl2.found()
     endif
 endif
 
+if libtiff.found()
+    cam_cpp_args += ['-DHAVE_TIFF']
+    cam_sources += files([
+        'dng_writer.cpp',
+    ])
+endif
+
 cam  = executable('cam', cam_sources,
                   dependencies : [
                       libatomic,
@@ -60,6 +67,7 @@ cam  = executable('cam', cam_sources,
                       libevent,
                       libjpeg,
                       libsdl2,
+                      libtiff,
                       libyaml,
                   ],
                   cpp_args : cam_cpp_args,

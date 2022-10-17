@@ -20,7 +20,8 @@ class Image;
 class FileSink : public FrameSink
 {
 public:
-	FileSink(const std::map<const libcamera::Stream *, std::string> &streamNames,
+	FileSink(const libcamera::Camera *camera,
+		 const std::map<const libcamera::Stream *, std::string> &streamNames,
 		 const std::string &pattern = "");
 	~FileSink();
 
@@ -32,8 +33,10 @@ public:
 
 private:
 	void writeBuffer(const libcamera::Stream *stream,
-			 libcamera::FrameBuffer *buffer);
+			 libcamera::FrameBuffer *buffer,
+			 const libcamera::ControlList &metadata);
 
+	const libcamera::Camera *camera_;
 	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::string pattern_;
 	std::map<libcamera::FrameBuffer *, std::unique_ptr<Image>> mappedBuffers_;

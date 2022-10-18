@@ -244,6 +244,8 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	/* Set the hardware revision for the algorithms. */
 	context_.configuration.hw.revision = hwRevision_;
 
+	const ControlInfo vBlank = ctrls_.find(V4L2_CID_VBLANK)->second;
+	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();
 	context_.configuration.sensor.size = info.outputSize;
 	context_.configuration.sensor.lineDuration = info.minLineLength * 1.0s / info.pixelRate;
 

@@ -209,7 +209,7 @@ void Awb::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
 		  const rkisp1_stat_buffer *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  ControlList &metadata)
 {
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
@@ -306,6 +306,13 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.green = 1.0;
 
 	frameContext.awb.temperatureK = activeState.awb.temperatureK;
+
+	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
+	metadata.set(controls::ColourGains, {
+			static_cast<float>(frameContext.awb.gains.red),
+			static_cast<float>(frameContext.awb.gains.blue)
+		});
+	metadata.set(controls::ColourTemperature, frameContext.awb.temperatureK);
 
 	LOG(RkISP1Awb, Debug) << std::showpoint
 		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean

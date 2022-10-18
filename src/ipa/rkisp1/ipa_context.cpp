@@ -77,6 +77,9 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPASessionConfiguration::sensor
  * \brief Sensor-specific configuration of the IPA
  *
+ * \var IPASessionConfiguration::sensor.defVBlank
+ * \brief The default vblank value of the sensor
+ *
  * \var IPASessionConfiguration::sensor.lineDuration
  * \brief Line duration in microseconds
  *

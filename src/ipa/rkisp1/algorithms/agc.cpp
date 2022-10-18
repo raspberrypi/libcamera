@@ -14,6 +14,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libipa/histogram.h"
@@ -290,7 +291,7 @@ double Agc::measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const
  */
 void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext, const rkisp1_stat_buffer *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  ControlList &metadata)
 {
 	/*
 	 * \todo Verify that the exposure and gain applied by the sensor for
@@ -333,6 +334,18 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 
 	computeExposure(context, frameContext, yGain, iqMeanGain);
 	frameCount_++;
+
+	utils::Duration exposureTime = context.configuration.sensor.lineDuration
+				     * frameContext.sensor.exposure;
+	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
+	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
+
+	/* \todo Use VBlank value calculated from each frame exposure. */
+	uint32_t vTotal = context.configuration.sensor.size.height
+			+ context.configuration.sensor.defVBlank;
+	utils::Duration frameDuration = context.configuration.sensor.lineDuration
+				      * vTotal;
+	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
 }
 
 /**

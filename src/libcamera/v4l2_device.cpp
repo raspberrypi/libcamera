@@ -874,7 +874,11 @@ std::optional<ColorSpace> V4L2Device::toColorSpace(const T &v4l2Format,
 		 * the kernel for non-YUV formats as YCbCr encoding isn't
 		 * applicable in that case.
 		 */
-		if (colourEncoding != PixelFormatInfo::ColourEncodingYUV)
+		/*
+		 * Raspberry Pi: don't do this because it turns our nice standard
+		 * colour spaces into non-standard ones.
+		 */
+		if (0 && colourEncoding != PixelFormatInfo::ColourEncodingYUV)
 			colorSpace.ycbcrEncoding = ColorSpace::YcbcrEncoding::None;
 	}
 

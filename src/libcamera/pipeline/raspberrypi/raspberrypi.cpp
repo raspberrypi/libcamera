@@ -310,6 +310,7 @@ class RPiCameraConfiguration : public CameraConfiguration
 public:
 	RPiCameraConfiguration(const RPiCameraData *data);
 
+	CameraConfiguration::Status validateColorSpaces(ColorSpaceFlags flags);
 	Status validate() override;
 
 	/* Cache the combinedTransform_ that will be applied to the sensor */
@@ -355,6 +356,41 @@ private:
 RPiCameraConfiguration::RPiCameraConfiguration(const RPiCameraData *data)
 	: CameraConfiguration(), data_(data)
 {
+}
+
+CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces(ColorSpaceFlags flags)
+{
+	Status status = Valid;
+
+	/*
+	 * Set all raw streams to the Raw color space, and make a note of the largest
+	 * non-raw stream with a defined color space (if there is one).
+	 */
+	int index = -1;
+	for (auto [i, cfg] : utils::enumerate(config_)) {
+		if (isRaw(cfg.pixelFormat)) {
+			if (cfg.colorSpace != ColorSpace::Raw) {
+				cfg.colorSpace = ColorSpace::Raw;
+				status = Adjusted;
+			}
+		} else if (cfg.colorSpace && (index == -1 || cfg.size > config_[index].size)) {
+			index = i;
+		}
+	}
+
+	if (index < 0 || !(flags & ColorSpaceFlag::StreamsShareColorSpace))
+		return status;
+
+	/* Make all output color spaces the same, if requested. */
+	for (auto &cfg : config_) {
+		if (!isRaw(cfg.pixelFormat) &&
+		    cfg.colorSpace != config_[index].colorSpace) {
+			cfg.colorSpace = config_[index].colorSpace;
+			status = Adjusted;
+		}
+	}
+
+	return status;
 }
 
 CameraConfiguration::Status RPiCameraConfiguration::validate()

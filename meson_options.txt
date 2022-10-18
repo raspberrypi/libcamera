@@ -37,7 +37,7 @@ option('lc-compliance',
 
 option('pipelines',
         type : 'array',
-        choices : ['ipu3', 'raspberrypi', 'rkisp1', 'simple', 'uvcvideo', 'vimc'],
+        choices : ['imx8-isi', 'ipu3', 'raspberrypi', 'rkisp1', 'simple', 'uvcvideo', 'vimc'],
         description : 'Select which pipeline handlers to include')
 
 option('qcam',

@@ -111,6 +111,9 @@ namespace libcamera::ipa::ipu3 {
  *
  * \var IPASessionConfiguration::sensor.defVBlank
  * \brief The default vblank value of the sensor
+ *
+ * \var IPASessionConfiguration::sensor.size
+ * \brief Sensor output resolution
  */
 
 /**

@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 /**
  * \file awb.h
  */
@@ -403,6 +405,14 @@ void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	context.activeState.awb.gains.green = asyncResults_.greenGain;
 	context.activeState.awb.gains.red = asyncResults_.redGain;
 	context.activeState.awb.temperatureK = asyncResults_.temperatureK;
+
+	metadata.set(controls::AwbEnable, true);
+	metadata.set(controls::ColourGains, {
+			static_cast<float>(context.activeState.awb.gains.red),
+			static_cast<float>(context.activeState.awb.gains.blue)
+		});
+	metadata.set(controls::ColourTemperature,
+		     context.activeState.awb.temperatureK);
 }
 
 constexpr uint16_t Awb::threshold(float value)

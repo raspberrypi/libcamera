@@ -41,6 +41,7 @@ struct IPASessionConfiguration {
 	struct {
 		int32_t defVBlank;
 		utils::Duration lineDuration;
+		Size size;
 	} sensor;
 };
 

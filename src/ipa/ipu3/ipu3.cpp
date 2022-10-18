@@ -502,6 +502,7 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	/* Initialise the sensor configuration. */
 	context_.configuration.sensor.lineDuration = sensorInfo_.minLineLength
 						   * 1.0s / sensorInfo_.pixelRate;
+	context_.configuration.sensor.size = sensorInfo_.outputSize;
 
 	/*
 	 * Compute the sensor V4L2 controls to be used by the algorithms and
@@ -628,24 +629,12 @@ void IPAIPU3::processStatsBuffer(const uint32_t frame,
 	frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
 
-	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
-	int32_t vBlank = context_.configuration.sensor.defVBlank;
 	ControlList metadata(controls::controls);
 
 	for (auto const &algo : algorithms())
 		algo->process(context_, frame, frameContext, stats, metadata);
 
 	setControls(frame);
-
-	/* \todo Use VBlank value calculated from each frame exposure. */
-	int64_t frameDuration = (vBlank + sensorInfo_.outputSize.height) * lineDuration;
-	metadata.set(controls::FrameDuration, frameDuration);
-
-	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
-
-	metadata.set(controls::ColourTemperature, context_.activeState.awb.temperatureK);
-
-	metadata.set(controls::ExposureTime, frameContext.sensor.exposure * lineDuration);
 
 	/*
 	 * \todo The Metadata provides a path to getting extended data

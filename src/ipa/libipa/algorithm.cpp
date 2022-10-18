@@ -72,7 +72,7 @@ namespace ipa {
  * \param[in] context The shared IPA context
  * \param[in] frame The frame context sequence number
  * \param[in] frameContext The FrameContext for this frame
- * \param[out] params The ISP specific parameters.
+ * \param[out] params The ISP specific parameters
  *
  * This function is called for every frame when the camera is running before it
  * is processed by the ISP to prepare the ISP processing parameters for that

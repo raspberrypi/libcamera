@@ -267,9 +267,9 @@ void Af::afReset(IPAContext &context)
 }
 
 /**
- * \brief AF variance comparison.
+ * \brief AF variance comparison
  * \param[in] context The IPA context
- * \param[in] min_step The VCM movement step.
+ * \param[in] min_step The VCM movement step
  *
  * We always pick the largest variance to replace the previous one. The image
  * with a larger variance also indicates it is a clearer image than previous
@@ -322,7 +322,7 @@ bool Af::afScan(IPAContext &context, int min_step)
 }
 
 /**
- * \brief Determine the frame to be ignored.
+ * \brief Determine the frame to be ignored
  * \return Return True if the frame should be ignored, false otherwise
  */
 bool Af::afNeedIgnoreFrame()
@@ -335,7 +335,7 @@ bool Af::afNeedIgnoreFrame()
 }
 
 /**
- * \brief Reset frame ignore counter.
+ * \brief Reset frame ignore counter
  */
 void Af::afIgnoreFrameReset()
 {
@@ -377,8 +377,8 @@ double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
 }
 
 /**
- * \brief Determine out-of-focus situation.
- * \param[in] context The IPA context.
+ * \brief Determine out-of-focus situation
+ * \param[in] context The IPA context
  *
  * Out-of-focus means that the variance change rate for a focused and a new
  * variance is greater than a threshold.
@@ -404,11 +404,11 @@ bool Af::afIsOutOfFocus(IPAContext &context)
 }
 
 /**
- * \brief Determine the max contrast image and lens position.
- * \param[in] context The IPA context.
+ * \brief Determine the max contrast image and lens position
+ * \param[in] context The IPA context
  * \param[in] frame The frame context sequence number
  * \param[in] frameContext The current frame context
- * \param[in] stats The statistics buffer of IPU3.
+ * \param[in] stats The statistics buffer of IPU3
  *
  * Ideally, a clear image also has a relatively higher contrast. So, every
  * image for each focus step should be tested to find an optimal focus step.

@@ -68,7 +68,7 @@ namespace libcamera::ipa::ipu3 {
  * \brief AF grid configuration of the IPA
  *
  * \var IPASessionConfiguration::af.afGrid
- * \brief AF scene grid configuration.
+ * \brief AF scene grid configuration
  */
 
 /**
@@ -79,10 +79,10 @@ namespace libcamera::ipa::ipu3 {
  * \brief Current position of the lens
  *
  * \var IPAActiveState::af.maxVariance
- * \brief The maximum variance of the current image.
+ * \brief The maximum variance of the current image
  *
  * \var IPAActiveState::af.stable
- * \brief It is set to true, if the best focus is found.
+ * \brief It is set to true, if the best focus is found
  */
 
 /**

@@ -53,7 +53,7 @@ Histogram::Histogram(Span<const uint32_t> data)
  */
 
 /**
- * \brief Cumulative frequency up to a (fractional) point in a bin.
+ * \brief Cumulative frequency up to a (fractional) point in a bin
  * \param[in] bin The bin up to which to cumulate
  *
  * With F(p) the cumulative frequency of the histogram, the value is 0 at

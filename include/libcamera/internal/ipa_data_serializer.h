@@ -135,7 +135,7 @@ public:
 
 	static std::vector<V> deserialize(std::vector<uint8_t> &data, ControlSerializer *cs = nullptr)
 	{
-		return deserialize(data.cbegin(), data.end(), cs);
+		return deserialize(data.cbegin(), data.cend(), cs);
 	}
 
 	static std::vector<V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
@@ -143,13 +143,13 @@ public:
 					  ControlSerializer *cs = nullptr)
 	{
 		std::vector<SharedFD> fds;
-		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.end(), cs);
+		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.cend(), cs);
 	}
 
 	static std::vector<V> deserialize(std::vector<uint8_t> &data, std::vector<SharedFD> &fds,
 					  ControlSerializer *cs = nullptr)
 	{
-		return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end(), cs);
+		return deserialize(data.cbegin(), data.cend(), fds.cbegin(), fds.cend(), cs);
 	}
 
 	static std::vector<V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
@@ -241,7 +241,7 @@ public:
 
 	static std::map<K, V> deserialize(std::vector<uint8_t> &data, ControlSerializer *cs = nullptr)
 	{
-		return deserialize(data.cbegin(), data.end(), cs);
+		return deserialize(data.cbegin(), data.cend(), cs);
 	}
 
 	static std::map<K, V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,
@@ -249,13 +249,13 @@ public:
 					  ControlSerializer *cs = nullptr)
 	{
 		std::vector<SharedFD> fds;
-		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.end(), cs);
+		return deserialize(dataBegin, dataEnd, fds.cbegin(), fds.cend(), cs);
 	}
 
 	static std::map<K, V> deserialize(std::vector<uint8_t> &data, std::vector<SharedFD> &fds,
 					  ControlSerializer *cs = nullptr)
 	{
-		return deserialize(data.cbegin(), data.end(), fds.cbegin(), fds.end(), cs);
+		return deserialize(data.cbegin(), data.cend(), fds.cbegin(), fds.cend(), cs);
 	}
 
 	static std::map<K, V> deserialize(std::vector<uint8_t>::const_iterator dataBegin,

@@ -233,9 +233,9 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	int32_t minGain = itGain->second.min().get<int32_t>();
 	int32_t maxGain = itGain->second.max().get<int32_t>();
 
-	LOG(IPARkISP1, Info)
-		<< "Exposure: " << minExposure << "-" << maxExposure
-		<< " Gain: " << minGain << "-" << maxGain;
+	LOG(IPARkISP1, Debug)
+		<< "Exposure: [" << minExposure << ", " << maxExposure
+		<< "], gain: [" << minGain << ", " << maxGain << "]";
 
 	/* Clear the IPA context before the streaming session. */
 	context_.configuration = {};

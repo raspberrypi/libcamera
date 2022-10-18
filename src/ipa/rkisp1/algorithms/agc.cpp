@@ -74,9 +74,14 @@ Agc::Agc()
 int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 {
 	/* Configure the default exposure and gain. */
-	context.activeState.agc.gain = std::max(context.configuration.sensor.minAnalogueGain,
-						kMinAnalogueGain);
-	context.activeState.agc.exposure = 10ms / context.configuration.sensor.lineDuration;
+	context.activeState.agc.automatic.gain =
+		std::max(context.configuration.sensor.minAnalogueGain,
+			 kMinAnalogueGain);
+	context.activeState.agc.automatic.exposure =
+		10ms / context.configuration.sensor.lineDuration;
+	context.activeState.agc.manual.gain = context.activeState.agc.automatic.gain;
+	context.activeState.agc.manual.exposure = context.activeState.agc.automatic.exposure;
+	context.activeState.agc.autoEnabled = true;
 
 	/*
 	 * According to the RkISP1 documentation:
@@ -109,13 +114,57 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void Agc::queueRequest(IPAContext &context,
+		       [[maybe_unused]] const uint32_t frame,
+		       IPAFrameContext &frameContext,
+		       const ControlList &controls)
+{
+	auto &agc = context.activeState.agc;
+
+	const auto &agcEnable = controls.get(controls::AeEnable);
+	if (agcEnable && *agcEnable != agc.autoEnabled) {
+		agc.autoEnabled = *agcEnable;
+
+		LOG(RkISP1Agc, Debug)
+			<< (agc.autoEnabled ? "Enabling" : "Disabling") << " AGC";
+	}
+
+	const auto &exposure = controls.get(controls::ExposureTime);
+	if (exposure && !agc.autoEnabled) {
+		agc.manual.exposure = *exposure * 1.0us
+				    / context.configuration.sensor.lineDuration;
+
+		LOG(RkISP1Agc, Debug)
+			<< "Set exposure to " << agc.manual.exposure;
+	}
+
+	const auto &gain = controls.get(controls::AnalogueGain);
+	if (gain && !agc.autoEnabled) {
+		agc.manual.gain = *gain;
+
+		LOG(RkISP1Agc, Debug) << "Set gain to " << agc.manual.gain;
+	}
+
+	frameContext.agc.autoEnabled = agc.autoEnabled;
+
+	if (!frameContext.agc.autoEnabled) {
+		frameContext.agc.exposure = agc.manual.exposure;
+		frameContext.agc.gain = agc.manual.gain;
+	}
+}
+
+/**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Agc::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
 {
-	frameContext.agc.exposure = context.activeState.agc.exposure;
-	frameContext.agc.gain = context.activeState.agc.gain;
+	if (frameContext.agc.autoEnabled) {
+		frameContext.agc.exposure = context.activeState.agc.automatic.exposure;
+		frameContext.agc.gain = context.activeState.agc.automatic.gain;
+	}
 
 	if (frame > 0)
 		return;
@@ -263,8 +312,8 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 			      << stepGain;
 
 	/* Update the estimated exposure and gain. */
-	activeState.agc.exposure = shutterTime / configuration.sensor.lineDuration;
-	activeState.agc.gain = stepGain;
+	activeState.agc.automatic.exposure = shutterTime / configuration.sensor.lineDuration;
+	activeState.agc.automatic.gain = stepGain;
 }
 
 /**

@@ -157,6 +157,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 		return -ENODEV;
 	}
 
+	context_.configuration.sensor.lineDuration = sensorInfo.minLineLength
+						   * 1.0s / sensorInfo.pixelRate;
+
 	/* Load the tuning data file. */
 	File file(settings.configurationFile);
 	if (!file.open(File::OpenModeFlag::ReadOnly)) {
@@ -375,6 +378,28 @@ void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
 			       ControlInfoMap *ipaControls)
 {
 	ControlInfoMap::Map ctrlMap = rkisp1Controls;
+
+	/*
+	 * Compute exposure time limits from the V4L2_CID_EXPOSURE control
+	 * limits and the line duration.
+	 */
+	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
+	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
+	ctrlMap.emplace(std::piecewise_construct,
+			std::forward_as_tuple(&controls::ExposureTime),
+			std::forward_as_tuple(minExposure, maxExposure, defExposure));
+
+	/* Compute the analogue gain limits. */
+	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
+	float minGain = camHelper_->gain(v4l2Gain.min().get<int32_t>());
+	float maxGain = camHelper_->gain(v4l2Gain.max().get<int32_t>());
+	float defGain = camHelper_->gain(v4l2Gain.def().get<int32_t>());
+	ctrlMap.emplace(std::piecewise_construct,
+			std::forward_as_tuple(&controls::AnalogueGain),
+			std::forward_as_tuple(minGain, maxGain, defGain));
 
 	/*
 	 * Compute the frame duration limits.

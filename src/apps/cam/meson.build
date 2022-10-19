@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libevent = dependency('libevent_pthreads', required : get_option('cam'))
-
-if not libevent.found()
+if opt_cam.disabled() or not libevent.found()
     cam_enabled = false
     subdir_done()
 endif

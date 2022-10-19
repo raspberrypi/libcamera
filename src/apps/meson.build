@@ -10,6 +10,8 @@ if not libevent.found()
     libevent = dependency('libevent_pthreads', required : opt_lc_compliance)
 endif
 
+libtiff = dependency('libtiff-4', required : false)
+
 subdir('lc-compliance')
 
 subdir('cam')

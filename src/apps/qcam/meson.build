@@ -38,8 +38,7 @@ qcam_resources = files([
 
 qt5_cpp_args = ['-DQT_NO_KEYWORDS']
 
-tiff_dep = dependency('libtiff-4', required : false)
-if tiff_dep.found()
+if libtiff.found()
     qt5_cpp_args += ['-DHAVE_TIFF']
     qcam_sources += files([
         '../cam/dng_writer.cpp',
@@ -77,7 +76,7 @@ qcam  = executable('qcam', qcam_sources, resources,
                    dependencies : [
                        libatomic,
                        libcamera_public,
+                       libtiff,
                        qt5_dep,
-                       tiff_dep,
                    ],
                    cpp_args : qt5_cpp_args)

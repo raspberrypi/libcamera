@@ -11,7 +11,7 @@
 
 #include <libcamera/libcamera.h>
 
-#include "../cam/event_loop.h"
+#include "../common/event_loop.h"
 
 class SimpleCapture
 {

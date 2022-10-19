@@ -12,6 +12,8 @@ endif
 
 libtiff = dependency('libtiff-4', required : false)
 
+subdir('common')
+
 subdir('lc-compliance')
 
 subdir('cam')

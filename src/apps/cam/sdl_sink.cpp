@@ -19,8 +19,9 @@
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
 
-#include "event_loop.h"
-#include "image.h"
+#include "../common/event_loop.h"
+#include "../common/image.h"
+
 #ifdef HAVE_LIBJPEG
 #include "sdl_texture_mjpg.h"
 #endif

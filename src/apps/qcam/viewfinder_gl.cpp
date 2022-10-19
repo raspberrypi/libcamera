@@ -16,7 +16,7 @@
 
 #include <libcamera/formats.h>
 
-#include "../cam/image.h"
+#include "../common/image.h"
 
 static const QList<libcamera::PixelFormat> supportedFormats{
 	/* YUV - packed (single plane) */

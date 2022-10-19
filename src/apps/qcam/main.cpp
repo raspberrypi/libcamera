@@ -13,8 +13,9 @@
 
 #include <libcamera/camera_manager.h>
 
-#include "../cam/options.h"
-#include "../cam/stream_options.h"
+#include "../common/options.h"
+#include "../common/stream_options.h"
+
 #include "main_window.h"
 #include "message_handler.h"
 

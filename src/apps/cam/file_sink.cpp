@@ -15,9 +15,10 @@
 
 #include <libcamera/camera.h>
 
-#include "dng_writer.h"
+#include "../common/dng_writer.h"
+#include "../common/image.h"
+
 #include "file_sink.h"
-#include "image.h"
 
 using namespace libcamera;
 

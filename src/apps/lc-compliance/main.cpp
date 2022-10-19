@@ -14,8 +14,9 @@
 
 #include <libcamera/libcamera.h>
 
+#include "../common/options.h"
+
 #include "environment.h"
-#include "../cam/options.h"
 
 using namespace libcamera;
 

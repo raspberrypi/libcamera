@@ -20,7 +20,7 @@
 #include <QPainter>
 #include <QtDebug>
 
-#include "../cam/image.h"
+#include "../common/image.h"
 
 #include "format_converter.h"
 

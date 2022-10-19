@@ -14,7 +14,7 @@
 
 #include <libcamera/formats.h>
 
-#include "../cam/image.h"
+#include "../common/image.h"
 
 #define RGBSHIFT		8
 #ifndef MAX

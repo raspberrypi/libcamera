@@ -24,7 +24,7 @@
 
 #include <libdrm/drm_mode.h>
 
-#include "event_loop.h"
+#include "../common/event_loop.h"
 
 namespace DRM {
 

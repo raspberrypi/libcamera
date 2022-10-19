@@ -27,7 +27,7 @@
 #include <QQueue>
 #include <QTimer>
 
-#include "../cam/stream_options.h"
+#include "../common/stream_options.h"
 
 #include "viewfinder.h"
 

@@ -11,8 +11,6 @@ endif
 lc_compliance_enabled = true
 
 lc_compliance_sources = files([
-    '../cam/event_loop.cpp',
-    '../cam/options.cpp',
     'environment.cpp',
     'main.cpp',
     'simple_capture.cpp',
@@ -21,6 +19,7 @@ lc_compliance_sources = files([
 
 lc_compliance  = executable('lc-compliance', lc_compliance_sources,
                             cpp_args : [ '-fexceptions' ],
+                            link_with : apps_lib,
                             dependencies : [
                                 libatomic,
                                 libcamera_public,

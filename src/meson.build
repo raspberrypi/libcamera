@@ -32,10 +32,7 @@ subdir('libcamera')
 subdir('android')
 subdir('ipa')
 
-subdir('lc-compliance')
-
-subdir('cam')
-subdir('qcam')
+subdir('apps')
 
 subdir('gstreamer')
 subdir('py')

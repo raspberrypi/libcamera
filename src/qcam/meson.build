@@ -36,18 +36,11 @@ qcam_resources = files([
     'assets/feathericons/feathericons.qrc',
 ])
 
-qcam_deps = [
-    libatomic,
-    libcamera_public,
-    qt5_dep,
-]
-
 qt5_cpp_args = ['-DQT_NO_KEYWORDS']
 
 tiff_dep = dependency('libtiff-4', required : false)
 if tiff_dep.found()
     qt5_cpp_args += ['-DHAVE_TIFF']
-    qcam_deps += [tiff_dep]
     qcam_sources += files([
         '../cam/dng_writer.cpp',
     ])
@@ -81,5 +74,10 @@ resources = qt5.preprocess(moc_headers: qcam_moc_headers,
 
 qcam  = executable('qcam', qcam_sources, resources,
                    install : true,
-                   dependencies : qcam_deps,
+                   dependencies : [
+                       libatomic,
+                       libcamera_public,
+                       qt5_dep,
+                       tiff_dep,
+                   ],
                    cpp_args : qt5_cpp_args)

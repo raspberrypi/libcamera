@@ -28,21 +28,11 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *
- * \var IPASessionConfiguration::agc.minShutterSpeed
- * \brief Minimum shutter speed supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.maxShutterSpeed
- * \brief Maximum shutter speed supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.minAnalogueGain
- * \brief Minimum analogue gain supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.maxAnalogueGain
- * \brief Maximum analogue gain supported with the configured sensor
- *
  * \var IPASessionConfiguration::agc.measureWindow
  * \brief AGC measure window
- *
+ */
+
+/**
  * \var IPASessionConfiguration::hw
  * \brief RkISP1-specific hardware information
  *
@@ -76,6 +66,18 @@ namespace libcamera::ipa::rkisp1 {
 /**
  * \var IPASessionConfiguration::sensor
  * \brief Sensor-specific configuration of the IPA
+ *
+ * \var IPASessionConfiguration::sensor.minShutterSpeed
+ * \brief Minimum shutter speed supported with the sensor
+ *
+ * \var IPASessionConfiguration::sensor.maxShutterSpeed
+ * \brief Maximum shutter speed supported with the sensor
+ *
+ * \var IPASessionConfiguration::sensor.minAnalogueGain
+ * \brief Minimum analogue gain supported with the sensor
+ *
+ * \var IPASessionConfiguration::sensor.maxAnalogueGain
+ * \brief Maximum analogue gain supported with the sensor
  *
  * \var IPASessionConfiguration::sensor.defVBlank
  * \brief The default vblank value of the sensor

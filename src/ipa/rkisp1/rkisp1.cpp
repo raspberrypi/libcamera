@@ -256,10 +256,12 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	 *
 	 * \todo take VBLANK into account for maximum shutter speed
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
-	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
+	context_.configuration.sensor.minShutterSpeed =
+		minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.sensor.maxShutterSpeed =
+		maxExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.sensor.minAnalogueGain = camHelper_->gain(minGain);
+	context_.configuration.sensor.maxAnalogueGain = camHelper_->gain(maxGain);
 
 	for (auto const &algo : algorithms()) {
 		int ret = algo->configure(context_, info);

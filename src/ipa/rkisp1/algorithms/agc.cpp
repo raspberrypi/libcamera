@@ -74,7 +74,8 @@ Agc::Agc()
 int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 {
 	/* Configure the default exposure and gain. */
-	context.activeState.agc.gain = std::max(context.configuration.agc.minAnalogueGain, kMinAnalogueGain);
+	context.activeState.agc.gain = std::max(context.configuration.sensor.minAnalogueGain,
+						kMinAnalogueGain);
 	context.activeState.agc.exposure = 10ms / context.configuration.sensor.lineDuration;
 
 	/*
@@ -202,13 +203,13 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 	/* Use the highest of the two gain estimates. */
 	double evGain = std::max(yGain, iqMeanGain);
 
-	utils::Duration minShutterSpeed = configuration.agc.minShutterSpeed;
-	utils::Duration maxShutterSpeed = std::min(configuration.agc.maxShutterSpeed,
+	utils::Duration minShutterSpeed = configuration.sensor.minShutterSpeed;
+	utils::Duration maxShutterSpeed = std::min(configuration.sensor.maxShutterSpeed,
 						   kMaxShutterSpeed);
 
-	double minAnalogueGain = std::max(configuration.agc.minAnalogueGain,
+	double minAnalogueGain = std::max(configuration.sensor.minAnalogueGain,
 					  kMinAnalogueGain);
-	double maxAnalogueGain = std::min(configuration.agc.maxAnalogueGain,
+	double maxAnalogueGain = std::min(configuration.sensor.maxAnalogueGain,
 					  kMaxAnalogueGain);
 
 	/* Consider within 1% of the target as correctly exposed. */

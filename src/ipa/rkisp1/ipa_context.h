@@ -22,10 +22,6 @@ namespace ipa::rkisp1 {
 
 struct IPASessionConfiguration {
 	struct {
-		utils::Duration minShutterSpeed;
-		utils::Duration maxShutterSpeed;
-		double minAnalogueGain;
-		double maxAnalogueGain;
 		struct rkisp1_cif_isp_window measureWindow;
 	} agc;
 
@@ -39,6 +35,11 @@ struct IPASessionConfiguration {
 	} lsc;
 
 	struct {
+		utils::Duration minShutterSpeed;
+		utils::Duration maxShutterSpeed;
+		double minAnalogueGain;
+		double maxAnalogueGain;
+
 		int32_t defVBlank;
 		utils::Duration lineDuration;
 		Size size;

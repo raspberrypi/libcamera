@@ -114,22 +114,6 @@ Af::Af()
 }
 
 /**
- * \copydoc libcamera::ipa::Algorithm::prepare
- */
-void Af::prepare(IPAContext &context,
-		 [[maybe_unused]] const uint32_t frame,
-		 [[maybe_unused]] IPAFrameContext &frameContext,
-		 ipu3_uapi_params *params)
-{
-	const struct ipu3_uapi_grid_config &grid = context.configuration.af.afGrid;
-	params->acc_param.af.grid_cfg = grid;
-	params->acc_param.af.filter_config = afFilterConfigDefault;
-
-	/* Enable AF processing block */
-	params->use.acc_af = 1;
-}
-
-/**
  * \brief Configure the Af given a configInfo
  * \param[in] context The shared IPA context
  * \param[in] configInfo The IPA configuration data
@@ -195,6 +179,22 @@ int Af::configure(IPAContext &context, const IPAConfigInfo &configInfo)
 	context.activeState.af.stable = false;
 
 	return 0;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Af::prepare(IPAContext &context,
+		 [[maybe_unused]] const uint32_t frame,
+		 [[maybe_unused]] IPAFrameContext &frameContext,
+		 ipu3_uapi_params *params)
+{
+	const struct ipu3_uapi_grid_config &grid = context.configuration.af.afGrid;
+	params->acc_param.af.grid_cfg = grid;
+	params->acc_param.af.filter_config = afFilterConfigDefault;
+
+	/* Enable AF processing block */
+	params->use.acc_af = 1;
 }
 
 /**

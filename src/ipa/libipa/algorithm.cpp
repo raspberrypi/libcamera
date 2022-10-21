@@ -67,23 +67,6 @@ namespace ipa {
  */
 
 /**
- * \fn Algorithm::prepare()
- * \brief Fill the \a params buffer with ISP processing parameters for a frame
- * \param[in] context The shared IPA context
- * \param[in] frame The frame context sequence number
- * \param[in] frameContext The FrameContext for this frame
- * \param[out] params The ISP specific parameters
- *
- * This function is called for every frame when the camera is running before it
- * is processed by the ISP to prepare the ISP processing parameters for that
- * frame.
- *
- * Algorithms shall fill in the parameter structure fields appropriately to
- * configure the ISP processing blocks that they are responsible for. This
- * includes setting fields and flags that enable those processing blocks.
- */
-
-/**
  * \fn Algorithm::queueRequest()
  * \brief Provide control values to the algorithm
  * \param[in] context The shared IPA context
@@ -98,6 +81,23 @@ namespace ipa {
  *
  * Algorithms shall read the applicable controls and store their value for later
  * use during frame processing.
+ */
+
+/**
+ * \fn Algorithm::prepare()
+ * \brief Fill the \a params buffer with ISP processing parameters for a frame
+ * \param[in] context The shared IPA context
+ * \param[in] frame The frame context sequence number
+ * \param[in] frameContext The FrameContext for this frame
+ * \param[out] params The ISP specific parameters
+ *
+ * This function is called for every frame when the camera is running before it
+ * is processed by the ISP to prepare the ISP processing parameters for that
+ * frame.
+ *
+ * Algorithms shall fill in the parameter structure fields appropriately to
+ * configure the ISP processing blocks that they are responsible for. This
+ * includes setting fields and flags that enable those processing blocks.
  */
 
 /**

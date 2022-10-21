@@ -67,20 +67,41 @@ int Awb::configure(IPAContext &context,
 	return 0;
 }
 
-uint32_t Awb::estimateCCT(double red, double green, double blue)
+/**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void Awb::queueRequest(IPAContext &context,
+		       [[maybe_unused]] const uint32_t frame,
+		       IPAFrameContext &frameContext,
+		       const ControlList &controls)
 {
-	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
-	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
-	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
+	auto &awb = context.activeState.awb;
 
-	/* Calculate the normalized chromaticity values */
-	double x = X / (X + Y + Z);
-	double y = Y / (X + Y + Z);
+	const auto &awbEnable = controls.get(controls::AwbEnable);
+	if (awbEnable && *awbEnable != awb.autoEnabled) {
+		awb.autoEnabled = *awbEnable;
 
-	/* Calculate CCT */
-	double n = (x - 0.3320) / (0.1858 - y);
-	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
+		LOG(RkISP1Awb, Debug)
+			<< (*awbEnable ? "Enabling" : "Disabling") << " AWB";
+	}
+
+	const auto &colourGains = controls.get(controls::ColourGains);
+	if (colourGains && !awb.autoEnabled) {
+		awb.gains.manual.red = (*colourGains)[0];
+		awb.gains.manual.blue = (*colourGains)[1];
+
+		LOG(RkISP1Awb, Debug)
+			<< "Set colour gains to red: " << awb.gains.manual.red
+			<< ", blue: " << awb.gains.manual.blue;
+	}
+
+	frameContext.awb.autoEnabled = awb.autoEnabled;
+
+	if (!awb.autoEnabled) {
+		frameContext.awb.gains.red = awb.gains.manual.red;
+		frameContext.awb.gains.green = 1.0;
+		frameContext.awb.gains.blue = awb.gains.manual.blue;
+	}
 }
 
 /**
@@ -165,41 +186,20 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB;
 }
 
-/**
- * \copydoc libcamera::ipa::Algorithm::queueRequest
- */
-void Awb::queueRequest(IPAContext &context,
-		       [[maybe_unused]] const uint32_t frame,
-		       IPAFrameContext &frameContext,
-		       const ControlList &controls)
+uint32_t Awb::estimateCCT(double red, double green, double blue)
 {
-	auto &awb = context.activeState.awb;
+	/* Convert the RGB values to CIE tristimulus values (XYZ) */
+	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
+	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
+	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
 
-	const auto &awbEnable = controls.get(controls::AwbEnable);
-	if (awbEnable && *awbEnable != awb.autoEnabled) {
-		awb.autoEnabled = *awbEnable;
+	/* Calculate the normalized chromaticity values */
+	double x = X / (X + Y + Z);
+	double y = Y / (X + Y + Z);
 
-		LOG(RkISP1Awb, Debug)
-			<< (*awbEnable ? "Enabling" : "Disabling") << " AWB";
-	}
-
-	const auto &colourGains = controls.get(controls::ColourGains);
-	if (colourGains && !awb.autoEnabled) {
-		awb.gains.manual.red = (*colourGains)[0];
-		awb.gains.manual.blue = (*colourGains)[1];
-
-		LOG(RkISP1Awb, Debug)
-			<< "Set colour gains to red: " << awb.gains.manual.red
-			<< ", blue: " << awb.gains.manual.blue;
-	}
-
-	frameContext.awb.autoEnabled = awb.autoEnabled;
-
-	if (!awb.autoEnabled) {
-		frameContext.awb.gains.red = awb.gains.manual.red;
-		frameContext.awb.gains.green = 1.0;
-		frameContext.awb.gains.blue = awb.gains.manual.blue;
-	}
+	/* Calculate CCT */
+	double n = (x - 0.3320) / (0.1858 - y);
+	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
 }
 
 /**

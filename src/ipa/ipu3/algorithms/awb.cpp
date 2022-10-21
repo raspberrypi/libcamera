@@ -218,6 +218,89 @@ int Awb::configure(IPAContext &context,
 	return 0;
 }
 
+constexpr uint16_t Awb::threshold(float value)
+{
+	/* AWB thresholds are in the range [0, 8191] */
+	return value * 8191;
+}
+
+constexpr uint16_t Awb::gainValue(double gain)
+{
+	/*
+	 * The colour gains applied by the BNR for the four channels (Gr, R, B
+	 * and Gb) are expressed in the parameters structure as 16-bit integers
+	 * that store a fixed-point U3.13 value in the range [0, 8[.
+	 *
+	 * The real gain value is equal to the gain parameter plus one, i.e.
+	 *
+	 * Pout = Pin * (1 + gain / 8192)
+	 *
+	 * where 'Pin' is the input pixel value, 'Pout' the output pixel value,
+	 * and 'gain' the gain in the parameters structure as a 16-bit integer.
+	 */
+	return std::clamp((gain - 1.0) * 8192, 0.0, 65535.0);
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Awb::prepare(IPAContext &context,
+		  [[maybe_unused]] const uint32_t frame,
+		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  ipu3_uapi_params *params)
+{
+	/*
+	 * Green saturation thresholds are reduced because we are using the
+	 * green channel only in the exposure computation.
+	 */
+	params->acc_param.awb.config.rgbs_thr_r = threshold(1.0);
+	params->acc_param.awb.config.rgbs_thr_gr = threshold(0.9);
+	params->acc_param.awb.config.rgbs_thr_gb = threshold(0.9);
+	params->acc_param.awb.config.rgbs_thr_b = threshold(1.0);
+
+	/*
+	 * Enable saturation inclusion on thr_b for ImgU to update the
+	 * ipu3_uapi_awb_set_item->sat_ratio field.
+	 */
+	params->acc_param.awb.config.rgbs_thr_b |= IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT |
+						   IPU3_UAPI_AWB_RGBS_THR_B_EN;
+
+	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
+
+	params->acc_param.awb.config.grid = context.configuration.grid.bdsGrid;
+
+	/*
+	 * Optical center is column start (respectively row start) of the
+	 * cell of interest minus its X center (respectively Y center).
+	 *
+	 * For the moment use BDS as a first approximation, but it should
+	 * be calculated based on Shading (SHD) parameters.
+	 */
+	params->acc_param.bnr = imguCssBnrDefaults;
+	Size &bdsOutputSize = context.configuration.grid.bdsOutputSize;
+	params->acc_param.bnr.column_size = bdsOutputSize.width;
+	params->acc_param.bnr.opt_center.x_reset = grid.x_start - (bdsOutputSize.width / 2);
+	params->acc_param.bnr.opt_center.y_reset = grid.y_start - (bdsOutputSize.height / 2);
+	params->acc_param.bnr.opt_center_sqr.x_sqr_reset = params->acc_param.bnr.opt_center.x_reset
+							* params->acc_param.bnr.opt_center.x_reset;
+	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
+							* params->acc_param.bnr.opt_center.y_reset;
+
+	params->acc_param.bnr.wb_gains.gr = gainValue(context.activeState.awb.gains.green);
+	params->acc_param.bnr.wb_gains.r  = gainValue(context.activeState.awb.gains.red);
+	params->acc_param.bnr.wb_gains.b  = gainValue(context.activeState.awb.gains.blue);
+	params->acc_param.bnr.wb_gains.gb = gainValue(context.activeState.awb.gains.green);
+
+	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
+
+	/* The CCM matrix may change when color temperature will be used */
+	params->acc_param.ccm = imguCssCcmDefault;
+
+	params->use.acc_awb = 1;
+	params->use.acc_bnr = 1;
+	params->use.acc_ccm = 1;
+}
+
 /**
  * The function estimates the correlated color temperature using
  * from RGB color space input.
@@ -413,89 +496,6 @@ void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		});
 	metadata.set(controls::ColourTemperature,
 		     context.activeState.awb.temperatureK);
-}
-
-constexpr uint16_t Awb::threshold(float value)
-{
-	/* AWB thresholds are in the range [0, 8191] */
-	return value * 8191;
-}
-
-constexpr uint16_t Awb::gainValue(double gain)
-{
-	/*
-	 * The colour gains applied by the BNR for the four channels (Gr, R, B
-	 * and Gb) are expressed in the parameters structure as 16-bit integers
-	 * that store a fixed-point U3.13 value in the range [0, 8[.
-	 *
-	 * The real gain value is equal to the gain parameter plus one, i.e.
-	 *
-	 * Pout = Pin * (1 + gain / 8192)
-	 *
-	 * where 'Pin' is the input pixel value, 'Pout' the output pixel value,
-	 * and 'gain' the gain in the parameters structure as a 16-bit integer.
-	 */
-	return std::clamp((gain - 1.0) * 8192, 0.0, 65535.0);
-}
-
-/**
- * \copydoc libcamera::ipa::Algorithm::prepare
- */
-void Awb::prepare(IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  ipu3_uapi_params *params)
-{
-	/*
-	 * Green saturation thresholds are reduced because we are using the
-	 * green channel only in the exposure computation.
-	 */
-	params->acc_param.awb.config.rgbs_thr_r = threshold(1.0);
-	params->acc_param.awb.config.rgbs_thr_gr = threshold(0.9);
-	params->acc_param.awb.config.rgbs_thr_gb = threshold(0.9);
-	params->acc_param.awb.config.rgbs_thr_b = threshold(1.0);
-
-	/*
-	 * Enable saturation inclusion on thr_b for ImgU to update the
-	 * ipu3_uapi_awb_set_item->sat_ratio field.
-	 */
-	params->acc_param.awb.config.rgbs_thr_b |= IPU3_UAPI_AWB_RGBS_THR_B_INCL_SAT |
-						   IPU3_UAPI_AWB_RGBS_THR_B_EN;
-
-	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
-
-	params->acc_param.awb.config.grid = context.configuration.grid.bdsGrid;
-
-	/*
-	 * Optical center is column start (respectively row start) of the
-	 * cell of interest minus its X center (respectively Y center).
-	 *
-	 * For the moment use BDS as a first approximation, but it should
-	 * be calculated based on Shading (SHD) parameters.
-	 */
-	params->acc_param.bnr = imguCssBnrDefaults;
-	Size &bdsOutputSize = context.configuration.grid.bdsOutputSize;
-	params->acc_param.bnr.column_size = bdsOutputSize.width;
-	params->acc_param.bnr.opt_center.x_reset = grid.x_start - (bdsOutputSize.width / 2);
-	params->acc_param.bnr.opt_center.y_reset = grid.y_start - (bdsOutputSize.height / 2);
-	params->acc_param.bnr.opt_center_sqr.x_sqr_reset = params->acc_param.bnr.opt_center.x_reset
-							* params->acc_param.bnr.opt_center.x_reset;
-	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
-							* params->acc_param.bnr.opt_center.y_reset;
-
-	params->acc_param.bnr.wb_gains.gr = gainValue(context.activeState.awb.gains.green);
-	params->acc_param.bnr.wb_gains.r  = gainValue(context.activeState.awb.gains.red);
-	params->acc_param.bnr.wb_gains.b  = gainValue(context.activeState.awb.gains.blue);
-	params->acc_param.bnr.wb_gains.gb = gainValue(context.activeState.awb.gains.green);
-
-	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
-
-	/* The CCM matrix may change when color temperature will be used */
-	params->acc_param.ccm = imguCssCcmDefault;
-
-	params->use.acc_awb = 1;
-	params->use.acc_bnr = 1;
-	params->use.acc_ccm = 1;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

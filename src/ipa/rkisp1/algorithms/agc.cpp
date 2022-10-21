@@ -108,6 +108,46 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Agc::prepare(IPAContext &context, const uint32_t frame,
+		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
+{
+	frameContext.agc.exposure = context.activeState.agc.exposure;
+	frameContext.agc.gain = context.activeState.agc.gain;
+
+	if (frame > 0)
+		return;
+
+	/* Configure the measurement window. */
+	params->meas.aec_config.meas_window = context.configuration.agc.measureWindow;
+	/* Use a continuous method for measure. */
+	params->meas.aec_config.autostop = RKISP1_CIF_ISP_EXP_CTRL_AUTOSTOP_0;
+	/* Estimate Y as (R + G + B) x (85/256). */
+	params->meas.aec_config.mode = RKISP1_CIF_ISP_EXP_MEASURING_MODE_1;
+
+	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AEC;
+	params->module_ens |= RKISP1_CIF_ISP_MODULE_AEC;
+	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AEC;
+
+	/* Configure histogram. */
+	params->meas.hst_config.meas_window = context.configuration.agc.measureWindow;
+	/* Produce the luminance histogram. */
+	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+	/* Set an average weighted histogram. */
+	for (unsigned int histBin = 0; histBin < numHistBins_; histBin++)
+		params->meas.hst_config.hist_weight[histBin] = 1;
+	/* Step size can't be less than 3. */
+	params->meas.hst_config.histogram_predivider = 4;
+
+	/* Update the configuration for histogram. */
+	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_HST;
+	/* Enable the histogram measure unit. */
+	params->module_ens |= RKISP1_CIF_ISP_MODULE_HST;
+	params->module_en_update |= RKISP1_CIF_ISP_MODULE_HST;
+}
+
+/**
  * \brief Apply a filter on the exposure value to limit the speed of changes
  * \param[in] exposureValue The target exposure from the AGC algorithm
  *
@@ -346,46 +386,6 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	utils::Duration frameDuration = context.configuration.sensor.lineDuration
 				      * vTotal;
 	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
-}
-
-/**
- * \copydoc libcamera::ipa::Algorithm::prepare
- */
-void Agc::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
-{
-	frameContext.agc.exposure = context.activeState.agc.exposure;
-	frameContext.agc.gain = context.activeState.agc.gain;
-
-	if (frame > 0)
-		return;
-
-	/* Configure the measurement window. */
-	params->meas.aec_config.meas_window = context.configuration.agc.measureWindow;
-	/* Use a continuous method for measure. */
-	params->meas.aec_config.autostop = RKISP1_CIF_ISP_EXP_CTRL_AUTOSTOP_0;
-	/* Estimate Y as (R + G + B) x (85/256). */
-	params->meas.aec_config.mode = RKISP1_CIF_ISP_EXP_MEASURING_MODE_1;
-
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AEC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_AEC;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AEC;
-
-	/* Configure histogram. */
-	params->meas.hst_config.meas_window = context.configuration.agc.measureWindow;
-	/* Produce the luminance histogram. */
-	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
-	/* Set an average weighted histogram. */
-	for (unsigned int histBin = 0; histBin < numHistBins_; histBin++)
-		params->meas.hst_config.hist_weight[histBin] = 1;
-	/* Step size can't be less than 3. */
-	params->meas.hst_config.histogram_predivider = 4;
-
-	/* Update the configuration for histogram. */
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_HST;
-	/* Enable the histogram measure unit. */
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_HST;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_HST;
 }
 
 REGISTER_IPA_ALGORITHM(Agc, "Agc")

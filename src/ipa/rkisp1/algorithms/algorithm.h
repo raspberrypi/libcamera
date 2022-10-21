@@ -15,7 +15,17 @@ namespace libcamera {
 
 namespace ipa::rkisp1 {
 
-using Algorithm = libcamera::ipa::Algorithm<Module>;
+class Algorithm : public libcamera::ipa::Algorithm<Module>
+{
+public:
+	Algorithm()
+		: disabled_(false), supportsRaw_(false)
+	{
+	}
+
+	bool disabled_;
+	bool supportsRaw_;
+};
 
 } /* namespace ipa::rkisp1 */
 

@@ -90,6 +90,11 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPASessionConfiguration::raw
+ * \brief Indicates if the camera is configured to capture raw frames
+ */
+
+/**
  * \struct IPAActiveState
  * \brief Active state for algorithms
  *

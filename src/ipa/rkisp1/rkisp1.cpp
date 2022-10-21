@@ -24,6 +24,7 @@
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/request.h>
 
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/yaml_parser.h"
 
@@ -206,7 +207,7 @@ void IPARkISP1::stop()
 }
 
 int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
-			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
+			 const std::map<uint32_t, IPAStream> &streamConfig,
 			 ControlInfoMap *ipaControls)
 {
 	sensorControls_ = ipaConfig.sensorControls;
@@ -254,7 +255,21 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 	context_.configuration.sensor.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.sensor.maxAnalogueGain = camHelper_->gain(maxGain);
 
-	for (auto const &algo : algorithms()) {
+	context_.configuration.raw = std::any_of(streamConfig.begin(), streamConfig.end(),
+		[](auto &cfg) -> bool {
+			PixelFormat pixelFormat{ cfg.second.pixelFormat };
+			const PixelFormatInfo &format = PixelFormatInfo::info(pixelFormat);
+			return format.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+		});
+
+	for (auto const &a : algorithms()) {
+		Algorithm *algo = static_cast<Algorithm *>(a.get());
+
+		/* Disable algorithms that don't support raw formats. */
+		algo->disabled_ = context_.configuration.raw && !algo->supportsRaw_;
+		if (algo->disabled_)
+			continue;
+
 		int ret = algo->configure(context_, info);
 		if (ret)
 			return ret;
@@ -297,8 +312,12 @@ void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
 
-	for (auto const &algo : algorithms())
+	for (auto const &a : algorithms()) {
+		Algorithm *algo = static_cast<Algorithm *>(a.get());
+		if (algo->disabled_)
+			continue;
 		algo->queueRequest(context_, frame, frameContext, controls);
+	}
 }
 
 void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
@@ -323,8 +342,13 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
-	const rkisp1_stat_buffer *stats =
-		reinterpret_cast<rkisp1_stat_buffer *>(
+	/*
+	 * In raw capture mode, the ISP is bypassed and no statistics buffer is
+	 * provided.
+	 */
+	const rkisp1_stat_buffer *stats = nullptr;
+	if (!context_.configuration.raw)
+		stats = reinterpret_cast<rkisp1_stat_buffer *>(
 			mappedBuffers_.at(bufferId).planes()[0].data());
 
 	frameContext.sensor.exposure =
@@ -334,8 +358,12 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 	ControlList metadata(controls::controls);
 
-	for (auto const &algo : algorithms())
+	for (auto const &a : algorithms()) {
+		Algorithm *algo = static_cast<Algorithm *>(a.get());
+		if (algo->disabled_)
+			continue;
 		algo->process(context_, frame, frameContext, stats, metadata);
+	}
 
 	setControls(frame);
 

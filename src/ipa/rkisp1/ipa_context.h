@@ -48,6 +48,8 @@ struct IPASessionConfiguration {
 	struct {
 		rkisp1_cif_isp_version revision;
 	} hw;
+
+	bool raw;
 };
 
 struct IPAActiveState {

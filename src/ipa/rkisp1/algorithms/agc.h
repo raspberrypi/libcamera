@@ -44,6 +44,8 @@ private:
 	utils::Duration filterExposure(utils::Duration exposureValue);
 	double estimateLuminance(const rkisp1_cif_isp_ae_stat *ae, double gain);
 	double measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const;
+	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
+			  ControlList &metadata);
 
 	uint64_t frameCount_;
 

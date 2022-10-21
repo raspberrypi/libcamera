@@ -3,3 +3,4 @@
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 
 from libtuning.generators.raspberrypi_output import RaspberryPiOutput
+from libtuning.generators.yaml_output import YamlOutput

@@ -418,6 +418,25 @@ std::string StreamConfiguration::toString() const
  */
 
 /**
+ * \brief Insert a text representation of a StreamRole into an output stream
+ * \param[in] out The output stream
+ * \param[in] role The StreamRole
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, StreamRole role)
+{
+	static constexpr std::array<const char *, 4> names{
+		"Raw",
+		"StillCapture",
+		"VideoRecording",
+		"Viewfinder",
+	};
+
+	out << names[static_cast<std::underlying_type_t<StreamRole>>(role)];
+	return out;
+}
+
+/**
  * \typedef StreamRoles
  * \brief A vector of StreamRole
  */

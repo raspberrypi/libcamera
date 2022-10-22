@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -69,6 +70,8 @@ enum StreamRole {
 };
 
 using StreamRoles = std::vector<StreamRole>;
+
+std::ostream &operator<<(std::ostream &out, StreamRole role);
 
 class Stream
 {

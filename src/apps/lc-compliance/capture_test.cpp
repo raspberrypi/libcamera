@@ -16,7 +16,12 @@
 using namespace libcamera;
 
 const std::vector<int> NUMREQUESTS = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
-const std::vector<StreamRole> ROLES = { Raw, StillCapture, VideoRecording, Viewfinder };
+const std::vector<StreamRole> ROLES = {
+	StreamRole::Raw,
+	StreamRole::StillCapture,
+	StreamRole::VideoRecording,
+	StreamRole::Viewfinder
+};
 
 class SingleStream : public testing::TestWithParam<std::tuple<StreamRole, int>>
 {
@@ -54,10 +59,12 @@ void SingleStream::TearDown()
 
 std::string SingleStream::nameParameters(const testing::TestParamInfo<SingleStream::ParamType> &info)
 {
-	std::map<StreamRole, std::string> rolesMap = { { Raw, "Raw" },
-						       { StillCapture, "StillCapture" },
-						       { VideoRecording, "VideoRecording" },
-						       { Viewfinder, "Viewfinder" } };
+	std::map<StreamRole, std::string> rolesMap = {
+		{ StreamRole::Raw, "Raw" },
+		{ StreamRole::StillCapture, "StillCapture" },
+		{ StreamRole::VideoRecording, "VideoRecording" },
+		{ StreamRole::Viewfinder, "Viewfinder" }
+	};
 
 	std::string roleName = rolesMap[std::get<0>(info.param)];
 	std::string numRequestsName = std::to_string(std::get<1>(info.param));

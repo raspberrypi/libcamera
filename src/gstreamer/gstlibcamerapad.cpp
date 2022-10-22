@@ -54,7 +54,7 @@ gst_libcamera_pad_get_property(GObject *object, guint prop_id, GValue *value,
 
 	switch (prop_id) {
 	case PROP_STREAM_ROLE:
-		g_value_set_enum(value, self->role);
+		g_value_set_enum(value, static_cast<gint>(self->role));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -87,9 +87,19 @@ gst_libcamera_stream_role_get_type()
 {
 	static GType type = 0;
 	static const GEnumValue values[] = {
-		{ StillCapture, "libcamera::StillCapture", "still-capture" },
-		{ VideoRecording, "libcamera::VideoRecording", "video-recording" },
-		{ Viewfinder, "libcamera::Viewfinder", "view-finder" },
+		{
+			static_cast<gint>(StreamRole::StillCapture),
+			"libcamera::StillCapture",
+			"still-capture",
+		}, {
+			static_cast<gint>(StreamRole::VideoRecording),
+			"libcamera::VideoRecording",
+			"video-recording",
+		}, {
+			static_cast<gint>(StreamRole::Viewfinder),
+			"libcamera::Viewfinder",
+			"view-finder",
+		},
 		{ 0, NULL, NULL }
 	};
 
@@ -110,7 +120,7 @@ gst_libcamera_pad_class_init(GstLibcameraPadClass *klass)
 	auto *spec = g_param_spec_enum("stream-role", "Stream Role",
 				       "The selected stream role",
 				       gst_libcamera_stream_role_get_type(),
-				       VideoRecording,
+				       static_cast<gint>(StreamRole::VideoRecording),
 				       (GParamFlags)(GST_PARAM_MUTABLE_READY
 					             | G_PARAM_CONSTRUCT
 						     | G_PARAM_READWRITE

@@ -488,7 +488,7 @@ int CameraCapabilities::initializeStreamConfigurations()
 	 * \todo Get this from the camera properties once defined
 	 */
 	std::unique_ptr<CameraConfiguration> cameraConfig =
-		camera_->generateConfiguration({ StillCapture });
+		camera_->generateConfiguration({ StreamRole::StillCapture });
 	if (!cameraConfig) {
 		LOG(HAL, Error) << "Failed to get maximum resolution";
 		return -EINVAL;

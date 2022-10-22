@@ -62,7 +62,7 @@ private:
 	StreamFormats formats_;
 };
 
-enum StreamRole {
+enum class StreamRole {
 	Raw,
 	StillCapture,
 	VideoRecording,

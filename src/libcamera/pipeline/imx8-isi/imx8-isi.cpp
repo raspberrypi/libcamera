@@ -599,7 +599,7 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		Size size;
 
 		switch (role) {
-		case StillCapture:
+		case StreamRole::StillCapture:
 			/*
 			 * \todo Make sure the sensor can produce non-RAW formats
 			 * compatible with the ones supported by the pipeline.
@@ -608,8 +608,8 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 			pixelFormat = formats::YUYV;
 			break;
 
-		case Viewfinder:
-		case VideoRecording:
+		case StreamRole::Viewfinder:
+		case StreamRole::VideoRecording:
 			/*
 			 * \todo Make sure the sensor can produce non-RAW formats
 			 * compatible with the ones supported by the pipeline.
@@ -618,7 +618,7 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 			pixelFormat = formats::YUYV;
 			break;
 
-		case Raw: {
+		case StreamRole::Raw: {
 			/*
 			 * Make sure the sensor can generate a RAW format and
 			 * prefer the ones with a larger bitdepth.

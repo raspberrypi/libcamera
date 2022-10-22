@@ -233,8 +233,7 @@ void PipelineHandler::unlockMediaDevices()
  * handler.
  *
  * \return A valid CameraConfiguration if the requested roles can be satisfied,
- * or a null pointer otherwise. The ownership of the returned configuration is
- * passed to the caller.
+ * or a null pointer otherwise.
  */
 
 /**

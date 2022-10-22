@@ -323,7 +323,8 @@ class PipelineHandlerRPi : public PipelineHandler
 public:
 	PipelineHandlerRPi(CameraManager *manager);
 
-	CameraConfiguration *generateConfiguration(Camera *camera, const StreamRoles &roles) override;
+	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
+		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -561,11 +562,12 @@ PipelineHandlerRPi::PipelineHandlerRPi(CameraManager *manager)
 {
 }
 
-CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
-							       const StreamRoles &roles)
+std::unique_ptr<CameraConfiguration>
+PipelineHandlerRPi::generateConfiguration(Camera *camera, const StreamRoles &roles)
 {
 	RPiCameraData *data = cameraData(camera);
-	CameraConfiguration *config = new RPiCameraConfiguration(data);
+	std::unique_ptr<CameraConfiguration> config =
+		std::make_unique<RPiCameraConfiguration>(data);
 	V4L2SubdeviceFormat sensorFormat;
 	unsigned int bufferCount;
 	PixelFormat pixelFormat;
@@ -640,13 +642,11 @@ CameraConfiguration *PipelineHandlerRPi::generateConfiguration(Camera *camera,
 		default:
 			LOG(RPI, Error) << "Requested stream role not supported: "
 					<< role;
-			delete config;
 			return nullptr;
 		}
 
 		if (rawCount > 1 || outCount > 2) {
 			LOG(RPI, Error) << "Invalid stream roles requested";
-			delete config;
 			return nullptr;
 		}
 

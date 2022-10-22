@@ -84,7 +84,7 @@ class PipelineHandlerVimc : public PipelineHandler
 public:
 	PipelineHandlerVimc(CameraManager *manager);
 
-	CameraConfiguration *generateConfiguration(Camera *camera,
+	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
 		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
@@ -189,11 +189,13 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 {
 }
 
-CameraConfiguration *PipelineHandlerVimc::generateConfiguration(Camera *camera,
+std::unique_ptr<CameraConfiguration>
+PipelineHandlerVimc::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	VimcCameraData *data = cameraData(camera);
-	CameraConfiguration *config = new VimcCameraConfiguration(data);
+	std::unique_ptr<CameraConfiguration> config =
+		std::make_unique<VimcCameraConfiguration>(data);
 
 	if (roles.empty())
 		return config;

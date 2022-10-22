@@ -136,7 +136,7 @@ public:
 
 	PipelineHandlerIPU3(CameraManager *manager);
 
-	CameraConfiguration *generateConfiguration(Camera *camera,
+	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
 		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
@@ -424,11 +424,12 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 {
 }
 
-CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
-								const StreamRoles &roles)
+std::unique_ptr<CameraConfiguration>
+PipelineHandlerIPU3::generateConfiguration(Camera *camera, const StreamRoles &roles)
 {
 	IPU3CameraData *data = cameraData(camera);
-	IPU3CameraConfiguration *config = new IPU3CameraConfiguration(data);
+	std::unique_ptr<IPU3CameraConfiguration> config =
+		std::make_unique<IPU3CameraConfiguration>(data);
 
 	if (roles.empty())
 		return config;
@@ -494,7 +495,6 @@ CameraConfiguration *PipelineHandlerIPU3::generateConfiguration(Camera *camera,
 		default:
 			LOG(IPU3, Error)
 				<< "Requested stream role not supported: " << role;
-			delete config;
 			return nullptr;
 		}
 

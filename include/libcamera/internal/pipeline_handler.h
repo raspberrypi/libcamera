@@ -48,7 +48,7 @@ public:
 	bool acquire();
 	void release();
 
-	virtual CameraConfiguration *generateConfiguration(Camera *camera,
+	virtual std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;
 	virtual int configure(Camera *camera, CameraConfiguration *config) = 0;
 

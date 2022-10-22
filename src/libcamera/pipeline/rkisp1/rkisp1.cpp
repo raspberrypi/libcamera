@@ -142,7 +142,7 @@ class PipelineHandlerRkISP1 : public PipelineHandler
 public:
 	PipelineHandlerRkISP1(CameraManager *manager);
 
-	CameraConfiguration *generateConfiguration(Camera *camera,
+	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
 		const StreamRoles &roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
@@ -539,7 +539,8 @@ PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
  * Pipeline Operations
  */
 
-CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
+std::unique_ptr<CameraConfiguration>
+PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 	const StreamRoles &roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
@@ -550,7 +551,8 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 		return nullptr;
 	}
 
-	CameraConfiguration *config = new RkISP1CameraConfiguration(camera, data);
+	std::unique_ptr<CameraConfiguration> config =
+		std::make_unique<RkISP1CameraConfiguration>(camera, data);
 	if (roles.empty())
 		return config;
 
@@ -595,7 +597,6 @@ CameraConfiguration *PipelineHandlerRkISP1::generateConfiguration(Camera *camera
 		default:
 			LOG(RkISP1, Warning)
 				<< "Requested stream role not supported: " << role;
-			delete config;
 			return nullptr;
 		}
 

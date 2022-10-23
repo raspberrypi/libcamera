@@ -411,14 +411,15 @@ RkISP1CameraConfiguration::RkISP1CameraConfiguration(Camera *camera,
 
 bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 {
+	const CameraSensor *sensor = data_->sensor_.get();
 	StreamConfiguration config;
 
 	config = cfg;
-	if (data_->mainPath_->validate(&config) != Valid)
+	if (data_->mainPath_->validate(sensor, &config) != Valid)
 		return false;
 
 	config = cfg;
-	if (data_->selfPath_ && data_->selfPath_->validate(&config) != Valid)
+	if (data_->selfPath_ && data_->selfPath_->validate(sensor, &config) != Valid)
 		return false;
 
 	return true;
@@ -466,7 +467,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		/* Try to match stream without adjusting configuration. */
 		if (mainPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(&tryCfg) == Valid) {
+			if (data_->mainPath_->validate(sensor, &tryCfg) == Valid) {
 				mainPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
@@ -476,7 +477,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 		if (selfPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(&tryCfg) == Valid) {
+			if (data_->selfPath_->validate(sensor, &tryCfg) == Valid) {
 				selfPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
@@ -487,7 +488,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		/* Try to match stream allowing adjusting configuration. */
 		if (mainPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(&tryCfg) == Adjusted) {
+			if (data_->mainPath_->validate(sensor, &tryCfg) == Adjusted) {
 				mainPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
@@ -498,7 +499,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 		if (selfPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(&tryCfg) == Adjusted) {
+			if (data_->selfPath_->validate(sensor, &tryCfg) == Adjusted) {
 				selfPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
@@ -610,11 +611,11 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 		StreamConfiguration cfg;
 		if (useMainPath) {
 			cfg = data->mainPath_->generateConfiguration(
-				data->sensor_->resolution());
+				data->sensor_.get());
 			mainPathAvailable = false;
 		} else {
 			cfg = data->selfPath_->generateConfiguration(
-				data->sensor_->resolution());
+				data->sensor_.get());
 			selfPathAvailable = false;
 		}
 

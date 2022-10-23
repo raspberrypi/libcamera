@@ -23,6 +23,7 @@
 
 namespace libcamera {
 
+class CameraSensor;
 class MediaDevice;
 class V4L2Subdevice;
 struct StreamConfiguration;
@@ -39,8 +40,9 @@ public:
 	int setEnabled(bool enable) { return link_->setEnabled(enable); }
 	bool isEnabled() const { return link_->flags() & MEDIA_LNK_FL_ENABLED; }
 
-	StreamConfiguration generateConfiguration(const Size &resolution);
-	CameraConfiguration::Status validate(StreamConfiguration *cfg);
+	StreamConfiguration generateConfiguration(const CameraSensor *sensor);
+	CameraConfiguration::Status validate(const CameraSensor *sensor,
+					     StreamConfiguration *cfg);
 
 	int configure(const StreamConfiguration &config,
 		      const V4L2SubdeviceFormat &inputFormat);

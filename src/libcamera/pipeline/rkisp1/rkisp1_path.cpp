@@ -12,6 +12,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -85,8 +86,10 @@ void RkISP1Path::populateFormats()
 	}
 }
 
-StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
+StreamConfiguration RkISP1Path::generateConfiguration(const CameraSensor *sensor)
 {
+	const Size &resolution = sensor->resolution();
+
 	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
 					   .boundedTo(resolution);
 	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
@@ -104,8 +107,11 @@ StreamConfiguration RkISP1Path::generateConfiguration(const Size &resolution)
 	return cfg;
 }
 
-CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
+CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
+						 StreamConfiguration *cfg)
 {
+	const Size &resolution = sensor->resolution();
+
 	const StreamConfiguration reqCfg = *cfg;
 	CameraConfiguration::Status status = CameraConfiguration::Valid;
 
@@ -117,8 +123,16 @@ CameraConfiguration::Status RkISP1Path::validate(StreamConfiguration *cfg)
 	if (!streamFormats_.count(cfg->pixelFormat))
 		cfg->pixelFormat = formats::NV12;
 
-	cfg->size.boundTo(maxResolution_);
-	cfg->size.expandTo(minResolution_);
+	/*
+	 * Adjust the size based on the sensor resolution and absolute limits
+	 * of the ISP.
+	 */
+	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
+					   .boundedTo(resolution);
+	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
+
+	cfg->size.boundTo(maxResolution);
+	cfg->size.expandTo(minResolution);
 	cfg->bufferCount = RKISP1_BUFFER_COUNT;
 
 	V4L2DeviceFormat format;

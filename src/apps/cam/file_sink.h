@@ -36,7 +36,9 @@ private:
 			 libcamera::FrameBuffer *buffer,
 			 const libcamera::ControlList &metadata);
 
+#ifdef HAVE_TIFF
 	const libcamera::Camera *camera_;
+#endif
 	std::map<const libcamera::Stream *, std::string> streamNames_;
 	std::string pattern_;
 	std::map<libcamera::FrameBuffer *, std::unique_ptr<Image>> mappedBuffers_;

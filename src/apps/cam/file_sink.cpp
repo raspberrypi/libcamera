@@ -21,10 +21,14 @@
 
 using namespace libcamera;
 
-FileSink::FileSink(const libcamera::Camera *camera,
+FileSink::FileSink([[maybe_unused]] const libcamera::Camera *camera,
 		   const std::map<const libcamera::Stream *, std::string> &streamNames,
 		   const std::string &pattern)
-	: camera_(camera), streamNames_(streamNames), pattern_(pattern)
+	:
+#ifdef HAVE_TIFF
+	  camera_(camera),
+#endif
+	  streamNames_(streamNames), pattern_(pattern)
 {
 }
 

@@ -104,6 +104,9 @@ int AwbConfig::read(const libcamera::YamlObject &params)
 		ret = readCtCurve(ctR, ctB, params["ct_curve"]);
 		if (ret)
 			return ret;
+		/* We will want the inverse functions of these too. */
+		ctRInverse = ctR.inverse();
+		ctBInverse = ctB.inverse();
 	}
 
 	if (params.contains("priors")) {
@@ -174,7 +177,6 @@ Awb::Awb(Controller *controller)
 	asyncAbort_ = asyncStart_ = asyncStarted_ = asyncFinished_ = false;
 	mode_ = nullptr;
 	manualR_ = manualB_ = 0.0;
-	firstSwitchMode_ = true;
 	asyncThread_ = std::thread(std::bind(&Awb::asyncFunc, this));
 }
 
@@ -270,27 +272,21 @@ void Awb::setManualGains(double manualR, double manualB)
 		syncResults_.gainR = prevSyncResults_.gainR = manualR_;
 		syncResults_.gainG = prevSyncResults_.gainG = 1.0;
 		syncResults_.gainB = prevSyncResults_.gainB = manualB_;
+		if (config_.bayes) {
+			/* Also estimate the best corresponding colour temperature from the curves. */
+			double ctR = config_.ctRInverse.eval(config_.ctRInverse.domain().clip(1 / manualR_));
+			double ctB = config_.ctBInverse.eval(config_.ctBInverse.domain().clip(1 / manualB_));
+			prevSyncResults_.temperatureK = (ctR + ctB) / 2;
+			syncResults_.temperatureK = prevSyncResults_.temperatureK;
+		}
 	}
 }
 
 void Awb::switchMode([[maybe_unused]] CameraMode const &cameraMode,
 		     Metadata *metadata)
 {
-	/*
-	 * On the first mode switch we'll have no meaningful colour
-	 * temperature, so try to dead reckon one if in manual mode.
-	 */
-	if (!isAutoEnabled() && firstSwitchMode_ && config_.bayes) {
-		Pwl ctRInverse = config_.ctR.inverse();
-		Pwl ctBInverse = config_.ctB.inverse();
-		double ctR = ctRInverse.eval(ctRInverse.domain().clip(1 / manualR_));
-		double ctB = ctBInverse.eval(ctBInverse.domain().clip(1 / manualB_));
-		prevSyncResults_.temperatureK = (ctR + ctB) / 2;
-		syncResults_.temperatureK = prevSyncResults_.temperatureK;
-	}
 	/* Let other algorithms know the current white balance values. */
 	metadata->set("awb.status", prevSyncResults_);
-	firstSwitchMode_ = false;
 }
 
 bool Awb::isAutoEnabled() const

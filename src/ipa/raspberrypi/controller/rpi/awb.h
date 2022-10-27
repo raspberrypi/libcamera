@@ -42,6 +42,8 @@ struct AwbConfig {
 	bool fast; /* "fast" mode uses a 16x16 rather than 32x32 grid */
 	Pwl ctR; /* function maps CT to r (= R/G) */
 	Pwl ctB; /* function maps CT to b (= B/G) */
+	Pwl ctRInverse; /* inverse of ctR */
+	Pwl ctBInverse; /* inverse of ctB */
 	/* table of illuminant priors at different lux levels */
 	std::vector<AwbPrior> priors;
 	/* AWB "modes" (determines the search range) */
@@ -168,7 +170,6 @@ private:
 	double manualR_;
 	/* manual b setting */
 	double manualB_;
-	bool firstSwitchMode_; /* is this the first call to SwitchMode? */
 };
 
 static inline Awb::RGB operator+(Awb::RGB const &a, Awb::RGB const &b)

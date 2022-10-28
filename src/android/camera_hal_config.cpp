@@ -6,7 +6,6 @@
  */
 #include "camera_hal_config.h"
 
-#include <filesystem>
 #include <stdlib.h>
 #include <string>
 
@@ -160,15 +159,15 @@ CameraHalConfig::CameraHalConfig()
  */
 int CameraHalConfig::parseConfigurationFile()
 {
-	std::filesystem::path filePath = LIBCAMERA_SYSCONF_DIR;
-	filePath /= "camera_hal.yaml";
-	if (!std::filesystem::is_regular_file(filePath)) {
+	std::string filePath = LIBCAMERA_SYSCONF_DIR "/camera_hal.yaml";
+
+	File file(filePath);
+	if (!file.exists()) {
 		LOG(HALConfig, Debug)
 			<< "Configuration file: \"" << filePath << "\" not found";
 		return -ENOENT;
 	}
 
-	File file(filePath);
 	if (!file.open(File::OpenModeFlag::ReadOnly)) {
 		int ret = file.error();
 		LOG(HALConfig, Error) << "Failed to open configuration file "

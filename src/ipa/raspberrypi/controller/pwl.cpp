@@ -6,6 +6,7 @@
  */
 
 #include <cassert>
+#include <cmath>
 #include <stdexcept>
 
 #include "pwl.h"
@@ -168,7 +169,7 @@ Pwl Pwl::compose(Pwl const &other, const double eps) const
 	while (thisSpan != (int)points_.size() - 1) {
 		double dx = points_[thisSpan + 1].x - points_[thisSpan].x,
 		       dy = points_[thisSpan + 1].y - points_[thisSpan].y;
-		if (abs(dy) > eps &&
+		if (std::abs(dy) > eps &&
 		    otherSpan + 1 < (int)other.points_.size() &&
 		    points_[thisSpan + 1].y >=
 			    other.points_[otherSpan + 1].x + eps) {
@@ -181,7 +182,7 @@ Pwl Pwl::compose(Pwl const &other, const double eps) const
 				 points_[thisSpan].y) *
 					dx / dy;
 			thisY = other.points_[++otherSpan].x;
-		} else if (abs(dy) > eps && otherSpan > 0 &&
+		} else if (std::abs(dy) > eps && otherSpan > 0 &&
 			   points_[thisSpan + 1].y <=
 				   other.points_[otherSpan - 1].x - eps) {
 			/*

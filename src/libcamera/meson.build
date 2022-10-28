@@ -65,7 +65,12 @@ subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
 
-libdl = cc.find_library('dl')
+null_dep = dependency('', required : false)
+
+libdl = null_dep
+if not cc.has_function('dlopen')
+    libdl = cc.find_library('dl')
+endif
 libudev = dependency('libudev', required : false)
 libyaml = dependency('yaml-0.1', required : false)
 

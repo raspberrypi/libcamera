@@ -13,9 +13,11 @@
 #include <mutex>
 #include <string>
 
+#include <libcamera/base/thread_annotations.h>
+
 namespace RPiController {
 
-class Metadata
+class LIBCAMERA_TSA_CAPABILITY("mutex") Metadata
 {
 public:
 	Metadata() = default;
@@ -103,8 +105,8 @@ public:
 	 * locks with the standard lock classes.
 	 * e.g. std::lock_guard<RPiController::Metadata> lock(metadata)
 	 */
-	void lock() { mutex_.lock(); }
-	void unlock() { mutex_.unlock(); }
+	void lock() LIBCAMERA_TSA_ACQUIRE() { mutex_.lock(); }
+	void unlock() LIBCAMERA_TSA_RELEASE() { mutex_.unlock(); }
 
 private:
 	mutable std::mutex mutex_;

@@ -1533,6 +1533,9 @@ int V4L2VideoDevice::importBuffers(unsigned int count)
  */
 int V4L2VideoDevice::releaseBuffers()
 {
+	if (!cache_)
+		return 0;
+
 	LOG(V4L2, Debug) << "Releasing buffers";
 
 	delete cache_;

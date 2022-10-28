@@ -140,7 +140,8 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 	 */
 	if (!isCameraExternal && !halConfig_.exists()) {
 		LOG(HAL, Error)
-			<< "HAL configuration file is mandatory for internal cameras";
+			<< "HAL configuration file is mandatory for internal cameras."
+			<< " Camera " << cam->id() << "failed to load";
 		return;
 	}
 

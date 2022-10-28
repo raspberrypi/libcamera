@@ -374,14 +374,20 @@ void CameraCapabilities::computeHwLevel(
 	camera_metadata_enum_android_info_supported_hardware_level
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_FULL;
 
-	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR))
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR)) {
+		LOG(HAL, Info) << noFull << "missing manual sensor";
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+	}
 
-	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING))
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_MANUAL_POST_PROCESSING)) {
+		LOG(HAL, Info) << noFull << "missing manual post processing";
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+	}
 
-	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE))
+	if (!caps.count(ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BURST_CAPTURE)) {
+		LOG(HAL, Info) << noFull << "missing burst capture";
 		hwLevel = ANDROID_INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED;
+	}
 
 	found = staticMetadata_->getEntry(ANDROID_SYNC_MAX_LATENCY, &entry);
 	if (!found || *entry.data.i32 != 0) {

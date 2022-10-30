@@ -15,14 +15,16 @@ struct IPAConfigInfo {
 
 interface IPARkISP1Interface {
 	init(libcamera.IPASettings settings,
-	     uint32 hwRevision)
+	     uint32 hwRevision,
+	     libcamera.IPACameraSensorInfo sensorInfo,
+	     libcamera.ControlInfoMap sensorControls)
 		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 	start() => (int32 ret);
 	stop();
 
 	configure(IPAConfigInfo configInfo,
 		  map<uint32, libcamera.IPAStream> streamConfig)
-		=> (int32 ret);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 
 	mapBuffers(array<libcamera.IPABuffer> buffers);
 	unmapBuffers(array<uint32> ids);

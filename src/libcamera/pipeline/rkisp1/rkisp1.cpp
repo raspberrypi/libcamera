@@ -347,8 +347,15 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 		ipaTuningFile = std::string(configFromEnv);
 	}
 
-	int ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision,
-			     &controlInfo_);
+	IPACameraSensorInfo sensorInfo{};
+	int ret = sensor_->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(RkISP1, Error) << "Camera sensor information not available";
+		return ret;
+	}
+
+	ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision,
+			 sensorInfo, sensor_->controls(), &controlInfo_);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;
@@ -718,14 +725,12 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	ipa::rkisp1::IPAConfigInfo ipaConfig{};
 
 	ret = data->sensor_->sensorInfo(&ipaConfig.sensorInfo);
-	if (ret) {
-		LOG(RkISP1, Error) << "Camera sensor information not available";
+	if (ret)
 		return ret;
-	}
 
 	ipaConfig.sensorControls = data->sensor_->controls();
 
-	ret = data->ipa_->configure(ipaConfig, streamConfig);
+	ret = data->ipa_->configure(ipaConfig, streamConfig, &data->controlInfo_);
 	if (ret) {
 		LOG(RkISP1, Error) << "failed configuring IPA (" << ret << ")";
 		return ret;

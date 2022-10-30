@@ -49,12 +49,15 @@ public:
 	IPARkISP1();
 
 	int init(const IPASettings &settings, unsigned int hwRevision,
+		 const IPACameraSensorInfo &sensorInfo,
+		 const ControlInfoMap &sensorControls,
 		 ControlInfoMap *ipaControls) override;
 	int start() override;
 	void stop() override;
 
 	int configure(const IPAConfigInfo &ipaConfig,
-		      const std::map<uint32_t, IPAStream> &streamConfig) override;
+		      const std::map<uint32_t, IPAStream> &streamConfig,
+		      ControlInfoMap *ipaControls) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
@@ -67,6 +70,9 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	void updateControls(const IPACameraSensorInfo &sensorInfo,
+			    const ControlInfoMap &sensorControls,
+			    ControlInfoMap *ipaControls);
 	void setControls(unsigned int frame);
 
 	std::map<unsigned int, FrameBuffer> buffers_;
@@ -114,6 +120,8 @@ std::string IPARkISP1::logPrefix() const
 }
 
 int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+		    const IPACameraSensorInfo &sensorInfo,
+		    const ControlInfoMap &sensorControls,
 		    ControlInfoMap *ipaControls)
 {
 	/* \todo Add support for other revisions */
@@ -179,9 +187,8 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	if (ret)
 		return ret;
 
-	/* Return the controls handled by the IPA. */
-	ControlInfoMap::Map ctrlMap = rkisp1Controls;
-	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
+	/* Initialize controls. */
+	updateControls(sensorInfo, sensorControls, ipaControls);
 
 	return 0;
 }
@@ -199,7 +206,8 @@ void IPARkISP1::stop()
 }
 
 int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
-			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig)
+			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
+			 ControlInfoMap *ipaControls)
 {
 	sensorControls_ = ipaConfig.sensorControls;
 
@@ -228,6 +236,9 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();
 	context_.configuration.sensor.size = info.outputSize;
 	context_.configuration.sensor.lineDuration = info.minLineLength * 1.0s / info.pixelRate;
+
+	/* Update the camera controls using the new sensor settings. */
+	updateControls(info, sensorControls_, ipaControls);
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
@@ -329,6 +340,42 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 	setControls(frame);
 
 	metadataReady.emit(frame, metadata);
+}
+
+void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
+			       const ControlInfoMap &sensorControls,
+			       ControlInfoMap *ipaControls)
+{
+	ControlInfoMap::Map ctrlMap = rkisp1Controls;
+
+	/*
+	 * Compute the frame duration limits.
+	 *
+	 * The frame length is computed assuming a fixed line length combined
+	 * with the vertical frame sizes.
+	 */
+	const ControlInfo &v4l2HBlank = sensorControls.find(V4L2_CID_HBLANK)->second;
+	uint32_t hblank = v4l2HBlank.def().get<int32_t>();
+	uint32_t lineLength = sensorInfo.outputSize.width + hblank;
+
+	const ControlInfo &v4l2VBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
+	std::array<uint32_t, 3> frameHeights{
+		v4l2VBlank.min().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.max().get<int32_t>() + sensorInfo.outputSize.height,
+		v4l2VBlank.def().get<int32_t>() + sensorInfo.outputSize.height,
+	};
+
+	std::array<int64_t, 3> frameDurations;
+	for (unsigned int i = 0; i < frameHeights.size(); ++i) {
+		uint64_t frameSize = lineLength * frameHeights[i];
+		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
+	}
+
+	ctrlMap[&controls::FrameDurationLimits] = ControlInfo(frameDurations[0],
+							      frameDurations[1],
+							      frameDurations[2]);
+
+	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 
 void IPARkISP1::setControls(unsigned int frame)

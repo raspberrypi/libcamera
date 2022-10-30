@@ -69,6 +69,7 @@ subdir('proxy')
 
 null_dep = dependency('', required : false)
 
+# TODO: Use dependency('dl') when updating to meson 0.62.0 or newer.
 libdl = null_dep
 if not cc.has_function('dlopen')
     libdl = cc.find_library('dl')

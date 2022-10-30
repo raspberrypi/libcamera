@@ -516,6 +516,24 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5693", CameraSensorHelperOv5693)
 
+class CameraSensorHelperOv8858 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperOv8858()
+	{
+		gainType_ = AnalogueGainLinear;
+
+		/*
+		 * \todo Validate the selected 1/128 step value as it differs
+		 * from what the sensor manual describes.
+		 *
+		 * See: https://patchwork.linuxtv.org/project/linux-media/patch/20221106171129.166892-2-nicholas@rothemail.net/#142267
+		 */
+		gainConstants_.linear = { 1, 0, 0, 128 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("ov8858", CameraSensorHelperOv8858)
+
 class CameraSensorHelperOv8865 : public CameraSensorHelper
 {
 public:

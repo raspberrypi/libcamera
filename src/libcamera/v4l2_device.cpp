@@ -529,7 +529,7 @@ std::unique_ptr<ControlId> V4L2Device::v4l2ControlId(const v4l2_query_ext_ctrl &
  * \param[in] ctrl The v4l2_query_ext_ctrl that represents a V4L2 control
  * \return A ControlInfo that represents \a ctrl
  */
-ControlInfo V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
+std::optional<ControlInfo> V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
 {
 	switch (ctrl.type) {
 	case V4L2_CTRL_TYPE_U8:
@@ -566,14 +566,14 @@ ControlInfo V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl &ctrl)
  *
  * \return A ControlInfo that represents \a ctrl
  */
-ControlInfo V4L2Device::v4l2MenuControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
+std::optional<ControlInfo> V4L2Device::v4l2MenuControlInfo(const struct v4l2_query_ext_ctrl &ctrl)
 {
 	std::vector<ControlValue> indices;
 	struct v4l2_querymenu menu = {};
 	menu.id = ctrl.id;
 
 	if (ctrl.minimum < 0)
-		return ControlInfo();
+		return std::nullopt;
 
 	for (int32_t index = ctrl.minimum; index <= ctrl.maximum; ++index) {
 		menu.index = index;
@@ -582,6 +582,14 @@ ControlInfo V4L2Device::v4l2MenuControlInfo(const struct v4l2_query_ext_ctrl &ct
 
 		indices.push_back(index);
 	}
+
+	/*
+	 * Some faulty UVC devices are known to return an empty menu control.
+	 * Controls without a menu option can not be set, or read, so they are
+	 * not exposed.
+	 */
+	if (indices.size() == 0)
+		return std::nullopt;
 
 	return ControlInfo(indices,
 			   ControlValue(static_cast<int32_t>(ctrl.default_value)));
@@ -631,7 +639,17 @@ void V4L2Device::listControls()
 		controlIdMap_[ctrl.id] = controlIds_.back().get();
 		controlInfo_.emplace(ctrl.id, ctrl);
 
-		ctrls.emplace(controlIds_.back().get(), v4l2ControlInfo(ctrl));
+		std::optional<ControlInfo> info = v4l2ControlInfo(ctrl);
+
+		if (!info) {
+			LOG(V4L2, Error)
+				<< "Control " << ctrl.name
+				<< " cannot be registered";
+
+			continue;
+		}
+
+		ctrls.emplace(controlIds_.back().get(), *info);
 	}
 
 	controls_ = ControlInfoMap(std::move(ctrls), controlIdMap_);
@@ -670,7 +688,7 @@ void V4L2Device::updateControlInfo()
 			continue;
 		}
 
-		info = v4l2ControlInfo(ctrl);
+		info = *v4l2ControlInfo(ctrl);
 	}
 }
 

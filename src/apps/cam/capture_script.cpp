@@ -454,24 +454,9 @@ void CaptureScript::unpackFailure(const ControlId *id, const std::string &repr)
 		  << typeName << " control " << id->name() << std::endl;
 }
 
-ControlValue CaptureScript::unpackControl(const ControlId *id)
+ControlValue CaptureScript::parseScalarControl(const ControlId *id,
+					       const std::string repr)
 {
-	/* Parse complex types. */
-	switch (id->type()) {
-	case ControlTypeRectangle:
-		return parseRectangles();
-	case ControlTypeSize:
-		/* \todo Parse Sizes. */
-		return {};
-	default:
-		break;
-	}
-
-	/* Parse basic types represented by a single scalar. */
-	const std::string repr = parseScalar();
-	if (repr.empty())
-		return {};
-
 	ControlValue value{};
 
 	switch (id->type()) {
@@ -522,6 +507,145 @@ ControlValue CaptureScript::unpackControl(const ControlId *id)
 	}
 
 	return value;
+}
+
+ControlValue CaptureScript::parseArrayControl(const ControlId *id,
+					      const std::vector<std::string> &repr)
+{
+	ControlValue value{};
+
+	switch (id->type()) {
+	case ControlTypeNone:
+		break;
+	case ControlTypeBool: {
+		/*
+		 * This is unpleasant, but we cannot use an std::vector<> as its
+		 * boolean type overload does not allow to access the raw data,
+		 * as boolean values are stored in a bitmask for efficiency.
+		 *
+		 * As we need a contiguous memory region to wrap in a Span<>,
+		 * use an array instead but be strict about not overflowing it
+		 * by limiting the number of controls we can store.
+		 *
+		 * Be loud but do not fail, as the issue would present at
+		 * runtime and it's not fatal.
+		 */
+		static constexpr unsigned int kMaxNumBooleanControls = 1024;
+		std::array<bool, kMaxNumBooleanControls> values;
+		unsigned int idx = 0;
+
+		for (const std::string &s : repr) {
+			bool val;
+
+			if (s == "true") {
+				val = true;
+			} else if (s == "false") {
+				val = false;
+			} else {
+				unpackFailure(id, s);
+				return value;
+			}
+
+			if (idx == kMaxNumBooleanControls) {
+				std::cerr << "Cannot parse more than "
+					  << kMaxNumBooleanControls
+					  << " boolean controls" << std::endl;
+				break;
+			}
+
+			values[idx++] = val;
+		}
+
+		value = Span<bool>(values.data(), idx);
+		break;
+	}
+	case ControlTypeByte: {
+		std::vector<uint8_t> values;
+		for (const std::string &s : repr) {
+			uint8_t val = strtoll(s.c_str(), NULL, 10);
+			values.push_back(val);
+		}
+
+		value = Span<const uint8_t>(values.data(), values.size());
+		break;
+	}
+	case ControlTypeInteger32: {
+		std::vector<int32_t> values;
+		for (const std::string &s : repr) {
+			int32_t val = strtoll(s.c_str(), NULL, 10);
+			values.push_back(val);
+		}
+
+		value = Span<const int32_t>(values.data(), values.size());
+		break;
+	}
+	case ControlTypeInteger64: {
+		std::vector<int64_t> values;
+		for (const std::string &s : repr) {
+			int64_t val = strtoll(s.c_str(), NULL, 10);
+			values.push_back(val);
+		}
+
+		value = Span<const int64_t>(values.data(), values.size());
+		break;
+	}
+	case ControlTypeFloat: {
+		std::vector<float> values;
+		for (const std::string &s : repr)
+			values.push_back(strtof(s.c_str(), NULL));
+
+		value = Span<const float>(values.data(), values.size());
+		break;
+	}
+	case ControlTypeString: {
+		value = Span<const std::string>(repr.data(), repr.size());
+		break;
+	}
+	default:
+		std::cerr << "Unsupported control type" << std::endl;
+		break;
+	}
+
+	return value;
+}
+
+ControlValue CaptureScript::unpackControl(const ControlId *id)
+{
+	/* Parse complex types. */
+	switch (id->type()) {
+	case ControlTypeRectangle:
+		return parseRectangles();
+	case ControlTypeSize:
+		/* \todo Parse Sizes. */
+		return {};
+	default:
+		break;
+	}
+
+	/* Check if the control has a single scalar value or is an array. */
+	EventPtr event = nextEvent();
+	if (!event)
+		return {};
+
+	switch (event->type) {
+	case YAML_SCALAR_EVENT: {
+		const std::string repr = eventScalarValue(event);
+		if (repr.empty())
+			return {};
+
+		return parseScalarControl(id, repr);
+	}
+	case YAML_SEQUENCE_START_EVENT: {
+		std::vector<std::string> array = parseSingleArray();
+		if (array.empty())
+			return {};
+
+		return parseArrayControl(id, array);
+	}
+	default:
+		std::cerr << "Unexpected event type: " << event->type << std::endl;
+		return {};
+	}
 }
 
 libcamera::Rectangle CaptureScript::unpackRectangle(const std::vector<std::string> &strVec)

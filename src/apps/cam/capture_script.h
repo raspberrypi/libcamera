@@ -56,6 +56,11 @@ private:
 	int parseFrame(EventPtr event);
 	int parseControl(EventPtr event, libcamera::ControlList &controls);
 
+	libcamera::ControlValue parseScalarControl(const libcamera::ControlId *id,
+						   const std::string repr);
+	libcamera::ControlValue parseArrayControl(const libcamera::ControlId *id,
+						  const std::vector<std::string> &repr);
+
 	std::string parseScalar();
 	libcamera::ControlValue parseRectangles();
 	std::vector<std::vector<std::string>> parseArrays();

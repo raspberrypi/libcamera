@@ -151,7 +151,7 @@ private:
 	friend class ThreadMain;
 
 	Thread *thread_;
-	bool running_;
+	bool running_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	pid_t tid_;
 
 	Mutex mutex_;
@@ -422,11 +422,15 @@ bool Thread::wait(utils::duration duration)
 	{
 		MutexLocker locker(data_->mutex_);
 
+		auto isRunning = ([&]() LIBCAMERA_TSA_REQUIRES(data_->mutex_) {
+			return !data_->running_;
+		});
+
 		if (duration == utils::duration::max())
-			data_->cv_.wait(locker, [&]() { return !data_->running_; });
+			data_->cv_.wait(locker, isRunning);
 		else
 			hasFinished = data_->cv_.wait_for(locker, duration,
-							  [&]() { return !data_->running_; });
+							  isRunning);
 	}
 
 	if (thread_.joinable())

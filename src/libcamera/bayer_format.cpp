@@ -227,6 +227,18 @@ const BayerFormat &BayerFormat::fromMbusCode(unsigned int mbusCode)
 }
 
 /**
+ * \brief Retrieve the media bus code corresponding this this BayerFormat
+ * \param[out] valid Set to true if a matching media bus code was found, else false
+ */
+unsigned int BayerFormat::toMbusCode(bool &valid) const
+{
+	auto it = std::find_if(mbusCodeToBayer.begin(), mbusCodeToBayer.end(),
+			       [this](const auto &i) { return i.second == *this; });
+	valid = it != mbusCodeToBayer.end();
+	return valid ? it->first : 0;
+}
+
+/**
  * \fn BayerFormat::isValid()
  * \brief Return whether a BayerFormat is valid
  */

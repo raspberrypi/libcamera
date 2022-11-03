@@ -47,6 +47,7 @@ public:
 	}
 
 	static const BayerFormat &fromMbusCode(unsigned int mbusCode);
+	unsigned int toMbusCode(bool &valid) const;
 	bool isValid() const { return bitDepth != 0; }
 
 	std::string toString() const;

@@ -56,7 +56,9 @@ unsigned int Semaphore::available()
 void Semaphore::acquire(unsigned int n)
 {
 	MutexLocker locker(mutex_);
-	cv_.wait(locker, [&] { return available_ >= n; });
+	cv_.wait(locker, [&]() LIBCAMERA_TSA_REQUIRES(mutex_) {
+		return available_ >= n;
+	});
 	available_ -= n;
 }
 

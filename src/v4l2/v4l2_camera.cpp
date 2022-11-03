@@ -71,11 +71,10 @@ std::vector<V4L2Camera::Buffer> V4L2Camera::completedBuffers()
 {
 	std::vector<Buffer> v;
 
-	bufferLock_.lock();
+	MutexLocker lock(bufferLock_);
 	for (std::unique_ptr<Buffer> &metadata : completedBuffers_)
 		v.push_back(*metadata.get());
 	completedBuffers_.clear();
-	bufferLock_.unlock();
 
 	return v;
 }
@@ -278,7 +277,7 @@ int V4L2Camera::qbuf(unsigned int index)
 void V4L2Camera::waitForBufferAvailable()
 {
 	MutexLocker locker(bufferMutex_);
-	bufferCV_.wait(locker, [&] {
+	bufferCV_.wait(locker, [&]() LIBCAMERA_TSA_REQUIRES(bufferMutex_) {
 			       return bufferAvailableCount_ >= 1 || !isRunning_;
 		       });
 	if (isRunning_)

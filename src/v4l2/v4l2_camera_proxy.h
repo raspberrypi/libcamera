@@ -27,13 +27,15 @@ class V4L2CameraProxy
 public:
 	V4L2CameraProxy(unsigned int index, std::shared_ptr<libcamera::Camera> camera);
 
-	int open(V4L2CameraFile *file);
-	void close(V4L2CameraFile *file);
+	int open(V4L2CameraFile *file) LIBCAMERA_TSA_EXCLUDES(proxyMutex_);
+	void close(V4L2CameraFile *file) LIBCAMERA_TSA_EXCLUDES(proxyMutex_);
 	void *mmap(V4L2CameraFile *file, void *addr, size_t length, int prot,
-		   int flags, off64_t offset);
-	int munmap(V4L2CameraFile *file, void *addr, size_t length);
+		   int flags, off64_t offset) LIBCAMERA_TSA_EXCLUDES(proxyMutex_);
+	int munmap(V4L2CameraFile *file, void *addr, size_t length)
+		LIBCAMERA_TSA_EXCLUDES(proxyMutex_);
 
-	int ioctl(V4L2CameraFile *file, unsigned long request, void *arg);
+	int ioctl(V4L2CameraFile *file, unsigned long request, void *arg)
+		LIBCAMERA_TSA_EXCLUDES(proxyMutex_);
 
 private:
 	bool validateBufferType(uint32_t type);

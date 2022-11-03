@@ -42,8 +42,8 @@ public:
 
 	int start();
 	void addCamera(std::shared_ptr<Camera> camera,
-		       const std::vector<dev_t> &devnums);
-	void removeCamera(Camera *camera);
+		       const std::vector<dev_t> &devnums) LIBCAMERA_TSA_EXCLUDES(mutex_);
+	void removeCamera(Camera *camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
 
 	/*
 	 * This mutex protects
@@ -52,8 +52,8 @@ public:
 	 * - cameras_ and camerasByDevnum_ after initialization
 	 */
 	mutable Mutex mutex_;
-	std::vector<std::shared_ptr<Camera>> cameras_;
-	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_;
+	std::vector<std::shared_ptr<Camera>> cameras_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
+	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 
 protected:
 	void run() override;
@@ -61,11 +61,11 @@ protected:
 private:
 	int init();
 	void createPipelineHandlers();
-	void cleanup();
+	void cleanup() LIBCAMERA_TSA_EXCLUDES(mutex_);
 
 	ConditionVariable cv_;
-	bool initialized_;
-	int status_;
+	bool initialized_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
+	int status_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 
@@ -87,7 +87,9 @@ int CameraManager::Private::start()
 
 	{
 		MutexLocker locker(mutex_);
-		cv_.wait(locker, [&] { return initialized_; });
+		cv_.wait(locker, [&]() LIBCAMERA_TSA_REQUIRES(mutex_) {
+			return initialized_;
+		});
 		status = status_;
 	}
 
@@ -178,7 +180,11 @@ void CameraManager::Private::cleanup()
 	 * process deletion requests from the thread's message queue as the event
 	 * loop is not in action here.
 	 */
-	cameras_.clear();
+	{
+		MutexLocker locker(mutex_);
+		cameras_.clear();
+	}
+
 	dispatchMessages(Message::Type::DeferredDelete);
 
 	enumerator_.reset(nullptr);

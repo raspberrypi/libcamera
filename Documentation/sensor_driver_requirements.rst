@@ -24,15 +24,22 @@ The sensor driver is assumed to be fully compliant with the V4L2 specification.
 
 For RAW sensors, the sensor driver shall support the following V4L2 controls:
 
+* `V4L2_CID_ANALOGUE_GAIN`_
 * `V4L2_CID_EXPOSURE`_
 * `V4L2_CID_HBLANK`_
 * `V4L2_CID_PIXEL_RATE`_
 * `V4L2_CID_VBLANK`_
 
+.. _V4L2_CID_ANALOGUE_GAIN: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-source.html
 .. _V4L2_CID_EXPOSURE: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/control.html
 .. _V4L2_CID_HBLANK: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-source.html
 .. _V4L2_CID_PIXEL_RATE: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-process.html
 .. _V4L2_CID_VBLANK: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/ext-ctrls-image-source.html
+
+The ``ANALOGUE_GAIN`` control units are sensor-specific. libcamera requires
+a sensor-specific CameraSensorHelper implementation to translate between the
+sensor specific ``gain code`` and the analogue ``gain value`` expressed as an
+absolute number as defined by ``controls::AnalogueGain``.
 
 While V4L2 doesn't specify a unit for the ``EXPOSURE`` control, libcamera
 requires it to be expressed as a number of image lines. Camera sensor drivers

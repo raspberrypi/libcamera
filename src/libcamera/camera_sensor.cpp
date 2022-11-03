@@ -301,6 +301,7 @@ int CameraSensor::validateSensorDriver()
 	 * required by the CameraSensor class.
 	 */
 	static constexpr uint32_t mandatoryControls[] = {
+		V4L2_CID_ANALOGUE_GAIN,
 		V4L2_CID_EXPOSURE,
 		V4L2_CID_HBLANK,
 		V4L2_CID_PIXEL_RATE,

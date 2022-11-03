@@ -215,20 +215,10 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	ctrls_ = entityControls.at(0);
 
 	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
-	if (itExp == ctrls_.end()) {
-		LOG(IPARkISP1, Error) << "Can't find exposure control";
-		return -EINVAL;
-	}
-
-	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
-	if (itGain == ctrls_.end()) {
-		LOG(IPARkISP1, Error) << "Can't find gain control";
-		return -EINVAL;
-	}
-
 	int32_t minExposure = itExp->second.min().get<int32_t>();
 	int32_t maxExposure = itExp->second.max().get<int32_t>();
 
+	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
 	int32_t minGain = itGain->second.min().get<int32_t>();
 	int32_t maxGain = itGain->second.max().get<int32_t>();
 

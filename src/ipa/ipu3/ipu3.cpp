@@ -171,8 +171,6 @@ private:
 			    ControlInfoMap *ipaControls);
 	void updateSessionConfiguration(const ControlInfoMap &sensorControls);
 
-	bool validateSensorControls();
-
 	void setControls(unsigned int frame);
 	void calculateBdsGrid(const Size &bdsOutputSize);
 
@@ -290,28 +288,6 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 							       frameDurations[2]);
 
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
-}
-
-/**
- * \brief Validate that the sensor controls mandatory for the IPA exists
- */
-bool IPAIPU3::validateSensorControls()
-{
-	static const uint32_t ctrls[] = {
-		V4L2_CID_ANALOGUE_GAIN,
-		V4L2_CID_EXPOSURE,
-		V4L2_CID_VBLANK,
-	};
-
-	for (auto c : ctrls) {
-		if (sensorCtrls_.find(c) == sensorCtrls_.end()) {
-			LOG(IPAIPU3, Error) << "Unable to find sensor control "
-					    << utils::hex(c);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 /**
@@ -511,11 +487,6 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	sensorCtrls_ = configInfo.sensorControls;
 
 	calculateBdsGrid(configInfo.bdsOutputSize);
-
-	if (!validateSensorControls()) {
-		LOG(IPAIPU3, Error) << "Sensor control validation failed.";
-		return -EINVAL;
-	}
 
 	/* Update the camera controls using the new sensor settings. */
 	updateControls(sensorInfo_, sensorCtrls_, ipaControls);

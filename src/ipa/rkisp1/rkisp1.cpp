@@ -198,12 +198,6 @@ void IPARkISP1::stop()
 	context_.frameContexts.clear();
 }
 
-/**
- * \todo The RkISP1 pipeline currently provides an empty IPACameraSensorInfo
- * if the connected sensor does not provide enough information to properly
- * assemble one. Make sure the reported sensor information are relevant
- * before accessing them.
- */
 int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig)
 {

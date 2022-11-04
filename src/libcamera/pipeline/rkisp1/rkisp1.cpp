@@ -719,9 +719,8 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	ret = data->sensor_->sensorInfo(&ipaConfig.sensorInfo);
 	if (ret) {
-		/* \todo Turn this into a hard failure. */
-		LOG(RkISP1, Warning) << "Camera sensor information not available";
-		ipaConfig.sensorInfo = {};
+		LOG(RkISP1, Error) << "Camera sensor information not available";
+		return ret;
 	}
 
 	ipaConfig.sensorControls = data->sensor_->controls();

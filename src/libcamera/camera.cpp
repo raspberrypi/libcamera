@@ -501,7 +501,7 @@ static const char *const camera_state_names[] = {
 
 bool Camera::Private::isAcquired() const
 {
-	return state_.load(std::memory_order_acquire) == CameraRunning;
+	return state_.load(std::memory_order_acquire) != CameraAvailable;
 }
 
 bool Camera::Private::isRunning() const

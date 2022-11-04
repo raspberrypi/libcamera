@@ -715,18 +715,18 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Inform IPA of stream configuration and sensor controls. */
-	IPACameraSensorInfo sensorInfo = {};
-	ret = data->sensor_->sensorInfo(&sensorInfo);
+	ipa::rkisp1::IPAConfigInfo ipaConfig{};
+
+	ret = data->sensor_->sensorInfo(&ipaConfig.sensorInfo);
 	if (ret) {
 		/* \todo Turn this into a hard failure. */
 		LOG(RkISP1, Warning) << "Camera sensor information not available";
-		sensorInfo = {};
+		ipaConfig.sensorInfo = {};
 	}
 
-	std::map<uint32_t, ControlInfoMap> entityControls;
-	entityControls.emplace(0, data->sensor_->controls());
+	ipaConfig.sensorControls = data->sensor_->controls();
 
-	ret = data->ipa_->configure(sensorInfo, streamConfig, entityControls);
+	ret = data->ipa_->configure(ipaConfig, streamConfig);
 	if (ret) {
 		LOG(RkISP1, Error) << "failed configuring IPA (" << ret << ")";
 		return ret;

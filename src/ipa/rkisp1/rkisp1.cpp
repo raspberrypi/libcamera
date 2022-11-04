@@ -53,9 +53,8 @@ public:
 	int start() override;
 	void stop() override;
 
-	int configure(const IPACameraSensorInfo &info,
-		      const std::map<uint32_t, IPAStream> &streamConfig,
-		      const std::map<uint32_t, ControlInfoMap> &entityControls) override;
+	int configure(const IPAConfigInfo &ipaConfig,
+		      const std::map<uint32_t, IPAStream> &streamConfig) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
@@ -73,7 +72,7 @@ private:
 	std::map<unsigned int, FrameBuffer> buffers_;
 	std::map<unsigned int, MappedFrameBuffer> mappedBuffers_;
 
-	ControlInfoMap ctrls_;
+	ControlInfoMap sensorControls_;
 
 	/* revision-specific data */
 	rkisp1_cif_isp_version hwRevision_;
@@ -205,20 +204,16 @@ void IPARkISP1::stop()
  * assemble one. Make sure the reported sensor information are relevant
  * before accessing them.
  */
-int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
-			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig,
-			 const std::map<uint32_t, ControlInfoMap> &entityControls)
+int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
+			 [[maybe_unused]] const std::map<uint32_t, IPAStream> &streamConfig)
 {
-	if (entityControls.empty())
-		return -EINVAL;
+	sensorControls_ = ipaConfig.sensorControls;
 
-	ctrls_ = entityControls.at(0);
-
-	const auto itExp = ctrls_.find(V4L2_CID_EXPOSURE);
+	const auto itExp = sensorControls_.find(V4L2_CID_EXPOSURE);
 	int32_t minExposure = itExp->second.min().get<int32_t>();
 	int32_t maxExposure = itExp->second.max().get<int32_t>();
 
-	const auto itGain = ctrls_.find(V4L2_CID_ANALOGUE_GAIN);
+	const auto itGain = sensorControls_.find(V4L2_CID_ANALOGUE_GAIN);
 	int32_t minGain = itGain->second.min().get<int32_t>();
 	int32_t maxGain = itGain->second.max().get<int32_t>();
 
@@ -234,7 +229,8 @@ int IPARkISP1::configure([[maybe_unused]] const IPACameraSensorInfo &info,
 	/* Set the hardware revision for the algorithms. */
 	context_.configuration.hw.revision = hwRevision_;
 
-	const ControlInfo vBlank = ctrls_.find(V4L2_CID_VBLANK)->second;
+	const IPACameraSensorInfo &info = ipaConfig.sensorInfo;
+	const ControlInfo vBlank = sensorControls_.find(V4L2_CID_VBLANK)->second;
 	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();
 	context_.configuration.sensor.size = info.outputSize;
 	context_.configuration.sensor.lineDuration = info.minLineLength * 1.0s / info.pixelRate;
@@ -352,7 +348,7 @@ void IPARkISP1::setControls(unsigned int frame)
 	uint32_t exposure = frameContext.agc.exposure;
 	uint32_t gain = camHelper_->gainCode(frameContext.agc.gain);
 
-	ControlList ctrls(ctrls_);
+	ControlList ctrls(sensorControls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
 

@@ -8,6 +8,11 @@ module ipa.rkisp1;
 
 import "include/libcamera/ipa/core.mojom";
 
+struct IPAConfigInfo {
+	libcamera.IPACameraSensorInfo sensorInfo;
+	libcamera.ControlInfoMap sensorControls;
+};
+
 interface IPARkISP1Interface {
 	init(libcamera.IPASettings settings,
 	     uint32 hwRevision)
@@ -15,9 +20,8 @@ interface IPARkISP1Interface {
 	start() => (int32 ret);
 	stop();
 
-	configure(libcamera.IPACameraSensorInfo sensorInfo,
-		  map<uint32, libcamera.IPAStream> streamConfig,
-		  map<uint32, libcamera.ControlInfoMap> entityControls)
+	configure(IPAConfigInfo configInfo,
+		  map<uint32, libcamera.IPAStream> streamConfig)
 		=> (int32 ret);
 
 	mapBuffers(array<libcamera.IPABuffer> buffers);

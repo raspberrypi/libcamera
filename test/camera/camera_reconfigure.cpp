@@ -98,7 +98,7 @@ private:
 				return TestFail;
 			}
 
-			requests_.push_back(move(request));
+			requests_.push_back(std::move(request));
 		}
 
 		camera_->requestCompleted.connect(this, &CameraReconfigure::requestComplete);

@@ -1506,9 +1506,6 @@ void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffer
 
 void RPiCameraData::freeBuffers()
 {
-	if (!buffersAllocated_)
-		return;
-
 	if (ipa_) {
 		/*
 		 * Copy the buffer ids from the unordered_set to a vector to

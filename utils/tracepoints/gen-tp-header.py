@@ -8,22 +8,23 @@
 
 import datetime
 import jinja2
+import pathlib
 import os
 import sys
 
 def main(argv):
-    if len(argv) < 3:
-        print(f'Usage: {argv[0]} output template tp_files...')
+    if len(argv) < 4:
+        print(f'Usage: {argv[0]} include_build_dir output template tp_files...')
         return 1
 
-    output = argv[1]
-    template = argv[2]
+    output = argv[2]
+    template = argv[3]
 
     year = datetime.datetime.now().year
-    path = output.replace('include/', '', 1)
+    path = pathlib.Path(output).absolute().relative_to(argv[1])
 
     source = ''
-    for fname in argv[3:]:
+    for fname in argv[4:]:
         source += open(fname, 'r', encoding='utf-8').read() + '\n\n'
 
     template = jinja2.Template(open(template, 'r', encoding='utf-8').read())

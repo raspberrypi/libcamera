@@ -183,6 +183,7 @@ bool PipelineHandler::acquire()
 
 /**
  * \brief Release exclusive access to the pipeline handler
+ * \param[in] camera The camera for which to release data
  *
  * This function releases access to the pipeline handler previously acquired by
  * a call to acquire(). Every release() call shall match a previous successful
@@ -196,7 +197,7 @@ bool PipelineHandler::acquire()
  *
  * \sa acquire()
  */
-void PipelineHandler::release()
+void PipelineHandler::release(Camera *camera)
 {
 	MutexLocker locker(lock_);
 
@@ -204,7 +205,20 @@ void PipelineHandler::release()
 
 	unlockMediaDevices();
 
+	releaseDevice(camera);
+
 	--useCount_;
+}
+
+/**
+ * \brief Release resources associated with this camera
+ * \param[in] camera The camera for which to release resources
+ *
+ * Pipeline handlers may override this in order to perform cleanup operations
+ * when a camera is released, such as freeing memory.
+ */
+void PipelineHandler::releaseDevice([[maybe_unused]] Camera *camera)
+{
 }
 
 void PipelineHandler::unlockMediaDevices()

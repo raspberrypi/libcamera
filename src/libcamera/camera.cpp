@@ -870,7 +870,7 @@ int Camera::release()
 		return ret == -EACCES ? -EBUSY : ret;
 
 	if (d->isAcquired())
-		d->pipe_->release();
+		d->pipe_->release(this);
 
 	d->setState(Private::CameraAvailable);
 

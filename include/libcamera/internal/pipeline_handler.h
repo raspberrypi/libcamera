@@ -46,7 +46,7 @@ public:
 					const DeviceMatch &dm);
 
 	bool acquire();
-	void release();
+	void release(Camera *camera);
 
 	virtual std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
 		const StreamRoles &roles) = 0;
@@ -73,6 +73,8 @@ protected:
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
 	virtual void stopDevice(Camera *camera) = 0;
+
+	virtual void releaseDevice(Camera *camera);
 
 	CameraManager *manager_;
 

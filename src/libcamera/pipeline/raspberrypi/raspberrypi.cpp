@@ -337,6 +337,8 @@ public:
 
 	bool match(DeviceEnumerator *enumerator) override;
 
+	void releaseDevice(Camera *camera) override;
+
 private:
 	RPiCameraData *cameraData(Camera *camera)
 	{
@@ -1191,6 +1193,12 @@ bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 	}
 
 	return !!numCameras;
+}
+
+void PipelineHandlerRPi::releaseDevice(Camera *camera)
+{
+	RPiCameraData *data = cameraData(camera);
+	data->freeBuffers();
 }
 
 int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, MediaEntity *sensorEntity)

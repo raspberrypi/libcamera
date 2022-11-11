@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * raspberrypi.cpp - Pipeline handler for Raspberry Pi devices
+ * raspberrypi.cpp - Pipeline handler for VC4 based Raspberry Pi devices
  */
 #include <algorithm>
 #include <assert.h>

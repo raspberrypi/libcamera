@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_sources += files([
-    'delayed_controls.cpp',
+    '../common/delayed_controls.cpp',
+    '../common/rpi_stream.cpp',
     'dma_heaps.cpp',
     'raspberrypi.cpp',
-    'rpi_stream.cpp',
 ])
+
+includes += include_directories('../common/')
 
 subdir('data')

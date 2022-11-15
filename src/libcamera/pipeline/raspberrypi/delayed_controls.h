@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <unordered_map>
+#include <utility>
 
 #include <libcamera/controls.h>
 
@@ -31,10 +32,10 @@ public:
 	DelayedControls(V4L2Device *device,
 			const std::unordered_map<uint32_t, ControlParams> &controlParams);
 
-	void reset();
+	void reset(unsigned int cookie);
 
-	bool push(const ControlList &controls);
-	ControlList get(uint32_t sequence);
+	bool push(const ControlList &controls, unsigned int cookie);
+	std::pair<ControlList, unsigned int> get(uint32_t sequence);
 
 	void applyControls(uint32_t sequence);
 
@@ -78,6 +79,7 @@ private:
 	uint32_t queueCount_;
 	uint32_t writeCount_;
 	std::unordered_map<const ControlId *, RingBuffer<Info>> values_;
+	RingBuffer<unsigned int> cookies_;
 };
 
 } /* namespace RPi */

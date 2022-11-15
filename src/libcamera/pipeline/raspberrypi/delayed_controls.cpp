@@ -108,7 +108,7 @@ DelayedControls::DelayedControls(V4L2Device *device,
 		maxDelay_ = std::max(maxDelay_, controlParams_[id].delay);
 	}
 
-	reset();
+	reset(0);
 }
 
 /**
@@ -117,10 +117,11 @@ DelayedControls::DelayedControls(V4L2Device *device,
  * Resets the state machine to a starting position based on control values
  * retrieved from the device.
  */
-void DelayedControls::reset()
+void DelayedControls::reset(unsigned int cookie)
 {
 	queueCount_ = 1;
 	writeCount_ = 0;
+	cookies_[0] = cookie;
 
 	/* Retrieve control as reported by the device. */
 	std::vector<uint32_t> ids;
@@ -150,7 +151,7 @@ void DelayedControls::reset()
  *
  * \returns true if \a controls are accepted, or false otherwise
  */
-bool DelayedControls::push(const ControlList &controls)
+bool DelayedControls::push(const ControlList &controls, const unsigned int cookie)
 {
 	/* Copy state from previous frame. */
 	for (auto &ctrl : values_) {
@@ -184,6 +185,7 @@ bool DelayedControls::push(const ControlList &controls)
 			<< " at index " << queueCount_;
 	}
 
+	cookies_[queueCount_] = cookie;
 	queueCount_++;
 
 	return true;
@@ -204,7 +206,7 @@ bool DelayedControls::push(const ControlList &controls)
  *
  * \return The controls at \a sequence number
  */
-ControlList DelayedControls::get(uint32_t sequence)
+std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
 {
 	unsigned int index = std::max<int>(0, sequence - maxDelay_);
 
@@ -221,7 +223,7 @@ ControlList DelayedControls::get(uint32_t sequence)
 			<< " at index " << index;
 	}
 
-	return out;
+	return { out, cookies_[index] };
 }
 
 /**
@@ -280,7 +282,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 	while (writeCount_ > queueCount_) {
 		LOG(RPiDelayedControls, Debug)
 			<< "Queue is empty, auto queue no-op.";
-		push({});
+		push({}, cookies_[queueCount_ - 1]);
 	}
 
 	device_->setControls(&out);

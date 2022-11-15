@@ -1066,7 +1066,7 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	 * Reset the delayed controls with the gain and exposure values set by
 	 * the IPA.
 	 */
-	data->delayedCtrls_->reset();
+	data->delayedCtrls_->reset(0);
 
 	data->state_ = RPiCameraData::State::Idle;
 
@@ -1802,7 +1802,7 @@ void RPiCameraData::setIspControls(const ControlList &controls)
 
 void RPiCameraData::setDelayedControls(const ControlList &controls)
 {
-	if (!delayedCtrls_->push(controls))
+	if (!delayedCtrls_->push(controls, 0))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 	handleState();
 }
@@ -1875,7 +1875,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * Lookup the sensor controls used for this frame sequence from
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
-		ControlList ctrl = delayedCtrls_->get(buffer->metadata().sequence);
+		auto [ctrl, cookie] = delayedCtrls_->get(buffer->metadata().sequence);
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
 		 * as it does not receive the FrameBuffer object.

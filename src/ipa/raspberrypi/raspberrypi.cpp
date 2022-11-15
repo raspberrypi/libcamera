@@ -1031,6 +1031,17 @@ void IPARPi::prepareISP(const ISPConfig &data)
 	}
 
 	/*
+	 * AGC wants to know the algorithm status from the time it actioned the
+	 * sensor exposure/gain changes. So fetch it from the metadata list
+	 * indexed by the IPA cookie returned, and put it in the current frame
+	 * metadata.
+	 */
+	AgcStatus agcStatus;
+	RPiController::Metadata &delayedMetadata = rpiMetadata_[data.delayContext];
+	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus))
+		rpiMetadata.set("agc.delayed_status", agcStatus);
+
+	/*
 	 * This may overwrite the DeviceStatus using values from the sensor
 	 * metadata, and may also do additional custom processing.
 	 */

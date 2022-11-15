@@ -33,7 +33,6 @@
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
-#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
@@ -41,6 +40,7 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
+#include "delayed_controls.h"
 #include "dma_heaps.h"
 #include "rpi_stream.h"
 
@@ -243,7 +243,7 @@ public:
 	RPi::DmaHeap dmaHeap_;
 	SharedFD lsTable_;
 
-	std::unique_ptr<DelayedControls> delayedCtrls_;
+	std::unique_ptr<RPi::DelayedControls> delayedCtrls_;
 	bool sensorMetadata_;
 
 	/*
@@ -1302,13 +1302,13 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	 * Setup our delayed control writer with the sensor default
 	 * gain and exposure delays. Mark VBLANK for priority write.
 	 */
-	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+	std::unordered_map<uint32_t, RPi::DelayedControls::ControlParams> params = {
 		{ V4L2_CID_ANALOGUE_GAIN, { result.sensorConfig.gainDelay, false } },
 		{ V4L2_CID_EXPOSURE, { result.sensorConfig.exposureDelay, false } },
 		{ V4L2_CID_HBLANK, { result.sensorConfig.hblankDelay, false } },
 		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
 	};
-	data->delayedCtrls_ = std::make_unique<DelayedControls>(data->sensor_->device(), params);
+	data->delayedCtrls_ = std::make_unique<RPi::DelayedControls>(data->sensor_->device(), params);
 	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
 
 	/* Register initial controls that the Raspberry Pi IPA can handle. */

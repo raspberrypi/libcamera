@@ -56,17 +56,18 @@ private:
 	};
 
 	static constexpr int listSize = 16;
-	class ControlRingBuffer : public std::array<Info, listSize>
+	template<typename T>
+	class RingBuffer : public std::array<T, listSize>
 	{
 	public:
-		Info &operator[](unsigned int index)
+		T &operator[](unsigned int index)
 		{
-			return std::array<Info, listSize>::operator[](index % listSize);
+			return std::array<T, listSize>::operator[](index % listSize);
 		}
 
-		const Info &operator[](unsigned int index) const
+		const T &operator[](unsigned int index) const
 		{
-			return std::array<Info, listSize>::operator[](index % listSize);
+			return std::array<T, listSize>::operator[](index % listSize);
 		}
 	};
 
@@ -76,7 +77,7 @@ private:
 
 	uint32_t queueCount_;
 	uint32_t writeCount_;
-	std::unordered_map<const ControlId *, ControlRingBuffer> values_;
+	std::unordered_map<const ControlId *, RingBuffer<Info>> values_;
 };
 
 } /* namespace RPi */

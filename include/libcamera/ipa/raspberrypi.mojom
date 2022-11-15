@@ -29,6 +29,8 @@ struct ISPConfig {
 	uint32 bayerBufferId;
 	bool embeddedBufferPresent;
 	libcamera.ControlList controls;
+	uint32 ipaContext;
+	uint32 delayContext;
 };
 
 struct IPAConfig {
@@ -119,7 +121,7 @@ interface IPARPiInterface {
 	 */
 	unmapBuffers(array<uint32> ids);
 
-	[async] signalStatReady(uint32 bufferId);
+	[async] signalStatReady(uint32 bufferId, uint32 ipaContext);
 	[async] signalQueueRequest(libcamera.ControlList controls);
 	[async] signalIspPrepare(ISPConfig data);
 };
@@ -129,5 +131,5 @@ interface IPARPiEventInterface {
 	runIsp(uint32 bufferId);
 	embeddedComplete(uint32 bufferId);
 	setIspControls(libcamera.ControlList controls);
-	setDelayedControls(libcamera.ControlList controls);
+	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
 };

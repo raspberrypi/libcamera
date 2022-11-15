@@ -126,7 +126,7 @@ public:
 		      ControlList *controls, IPAConfigResult *result) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void signalStatReady(const uint32_t bufferId) override;
+	void signalStatReady(const uint32_t bufferId, uint32_t ipaContext) override;
 	void signalQueueRequest(const ControlList &controls) override;
 	void signalIspPrepare(const ISPConfig &data) override;
 
@@ -137,9 +137,9 @@ private:
 	void queueRequest(const ControlList &controls);
 	void returnEmbeddedBuffer(unsigned int bufferId);
 	void prepareISP(const ISPConfig &data);
-	void reportMetadata();
-	void fillDeviceStatus(const ControlList &sensorControls);
-	void processStats(unsigned int bufferId);
+	void reportMetadata(unsigned int ipaContext);
+	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
+	void processStats(unsigned int bufferId, unsigned int ipaContext);
 	void applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
@@ -509,14 +509,16 @@ void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARPi::signalStatReady(uint32_t bufferId)
+void IPARPi::signalStatReady(uint32_t bufferId, uint32_t ipaContext)
 {
+	unsigned int context = ipaContext % rpiMetadata_.size();
+
 	if (++checkCount_ != frameCount_) /* assert here? */
 		LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
 	if (processPending_ && frameCount_ > mistrustCount_)
-		processStats(bufferId);
+		processStats(bufferId, context);
 
-	reportMetadata();
+	reportMetadata(context);
 
 	statsMetadataComplete.emit(bufferId, libcameraMetadata_);
 }
@@ -540,9 +542,9 @@ void IPARPi::signalIspPrepare(const ISPConfig &data)
 	runIsp.emit(data.bayerBufferId);
 }
 
-void IPARPi::reportMetadata()
+void IPARPi::reportMetadata(unsigned int ipaContext)
 {
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[0];
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
 
 	/*
@@ -1011,12 +1013,12 @@ void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 void IPARPi::prepareISP(const ISPConfig &data)
 {
 	int64_t frameTimestamp = data.controls.get(controls::SensorTimestamp).value_or(0);
-	RPiController::Metadata lastMetadata;
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[0];
+	unsigned int ipaContext = data.ipaContext % rpiMetadata_.size();
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 	Span<uint8_t> embeddedBuffer;
 
-	lastMetadata = std::move(rpiMetadata);
-	fillDeviceStatus(data.controls);
+	rpiMetadata.clear();
+	fillDeviceStatus(data.controls, ipaContext);
 
 	if (data.embeddedBufferPresent) {
 		/*
@@ -1048,7 +1050,9 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
-		rpiMetadata.merge(lastMetadata);
+		RPiController::Metadata &lastMetadata =
+			rpiMetadata_[ipaContext ? ipaContext : rpiMetadata_.size()];
+		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 		return;
 	}
@@ -1107,7 +1111,7 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		setIspControls.emit(ctrls);
 }
 
-void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
+void IPARPi::fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext)
 {
 	DeviceStatus deviceStatus = {};
 
@@ -1123,12 +1127,12 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls)
 
 	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 
-	rpiMetadata_[0].set("device.status", deviceStatus);
+	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
 }
 
-void IPARPi::processStats(unsigned int bufferId)
+void IPARPi::processStats(unsigned int bufferId, unsigned int ipaContext)
 {
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[0];
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 
 	auto it = buffers_.find(bufferId);
 	if (it == buffers_.end()) {
@@ -1147,7 +1151,7 @@ void IPARPi::processStats(unsigned int bufferId)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 
-		setDelayedControls.emit(ctrls);
+		setDelayedControls.emit(ctrls, ipaContext);
 	}
 }
 

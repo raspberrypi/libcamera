@@ -452,6 +452,7 @@ extern "C" {
 #define DRM_FORMAT_MOD_VENDOR_ALLWINNER 0x09
 #define DRM_FORMAT_MOD_VENDOR_AMLOGIC 0x0a
 #define DRM_FORMAT_MOD_VENDOR_MIPI 0x0b
+#define DRM_FORMAT_MOD_VENDOR_RPI 0x0c
 
 /* add more to the end as needed */
 
@@ -1557,6 +1558,10 @@ drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier)
  *   pixel, in the same order.
  */
 #define MIPI_FORMAT_MOD_CSI2_PACKED fourcc_mod_code(MIPI, 1)
+
+#define PISP_FORMAT_MOD_COMPRESS_MODE1 fourcc_mod_code(RPI, 1)
+#define PISP_FORMAT_MOD_COMPRESS_MODE2 fourcc_mod_code(RPI, 2)
+#define PISP_FORMAT_MOD_VERIFICATION fourcc_mod_code(RPI, 3)
 
 #if defined(__cplusplus)
 }

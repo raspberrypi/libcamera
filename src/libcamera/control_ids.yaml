@@ -591,25 +591,27 @@ controls:
         AfModeManual, though the value is reported back unconditionally in all
         modes.
 
-        The units are a reciprocal distance scale like dioptres but normalised
-        for the hyperfocal distance. That is, for a lens with hyperfocal
-        distance H, and setting it to a focal distance D, the lens position LP,
-        which is generally a non-integer, is given by
+        This value, which is generally a non-integer, is the reciprocal of the
+        focal distance in metres, also known as dioptres. That is, to set a
+        focal distance D, the lens position LP is given by
 
-        \f$LP = \frac{H}{D}\f$
+        \f$LP = \frac{1\mathrm{m}}{D}\f$
 
         For example:
 
         0 moves the lens to infinity.
-        0.5 moves the lens to twice the hyperfocal distance.
-        1 moves the lens to the hyperfocal position.
-        And larger values will focus the lens ever closer.
+        0.5 moves the lens to focus on objects 2m away.
+        2 moves the lens to focus on objects 50cm away.
+        And larger values will focus the lens closer.
 
-        \todo Define a property to report the Hyperforcal distance of calibrated
+        The default value of the control should indicate a good general position
+        for the lens, often corresponding to the hyperfocal distance (the
+        closest position for which objects at infinity are still acceptably
+        sharp). The minimum will often be zero (meaning infinity), and the
+        maximum value defines the closest focus position.
+
+        \todo Define a property to report the Hyperfocal distance of calibrated
         lenses.
-
-        \todo Define a property to report the maximum and minimum positions of
-        this lens. The minimum value will often be zero (meaning infinity).
 
   - AfState:
       type: int32_t

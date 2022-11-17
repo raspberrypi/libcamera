@@ -201,6 +201,14 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 		{ formats::SGRBG16, "16-bit Bayer GRGR/BGBG" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16),
 		{ formats::SRGGB16, "16-bit Bayer RGRG/GBGB" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR),
+		{ formats::BGGR16_PISP_COMP1, "16-bit Bayer BGBG/GRGR PiSP Compress Mode 1" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG),
+		{ formats::GBRG16_PISP_COMP1, "16-bit Bayer GBGB/RGRG PiSP Compress Mode 1" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG),
+		{ formats::GRBG16_PISP_COMP1, "16-bit Bayer GRGR/BGBG PiSP Compress Mode 1" } },
+	{ V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB),
+		{ formats::RGGB16_PISP_COMP1, "16-bit Bayer RGRG/GBGB PiSP Compress Mode 1" } },
 
 	/* Compressed formats. */
 	{ V4L2PixelFormat(V4L2_PIX_FMT_MJPEG),

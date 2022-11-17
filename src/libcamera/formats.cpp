@@ -547,6 +547,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::MONO_PISP_COMP1, {
+		.name = "MONO_PISP_COMP1",
+		.format = formats::MONO_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* Bayer formats. */
 	{ formats::SBGGR8, {
@@ -910,7 +920,46 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 25,
 		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-
+	{ formats::BGGR16_PISP_COMP1, {
+		.name = "BGGR16_PISP_COMP1",
+		.format = formats::BGGR16_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::GBRG16_PISP_COMP1, {
+		.name = "GBRG16_PISP_COMP1",
+		.format = formats::GBRG16_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::GRBG16_PISP_COMP1, {
+		.name = "GRBG16_PISP_COMP1",
+		.format = formats::GRBG16_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::RGGB16_PISP_COMP1, {
+		.name = "RGGB16_PISP_COMP1",
+		.format = formats::RGGB16_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	/* Compressed formats. */
 	{ formats::MJPEG, {
 		.name = "MJPEG",

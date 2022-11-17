@@ -164,12 +164,22 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::SGRBG16, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16) } },
 	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::None },
 		{ formats::SRGGB16, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) } },
+	{ { BayerFormat::BGGR, 16, BayerFormat::Packing::PISP1 },
+		{ formats::BGGR16_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR) } },
+	{ { BayerFormat::GBRG, 16, BayerFormat::Packing::PISP1 },
+		{ formats::GBRG16_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG) } },
+	{ { BayerFormat::GRBG, 16, BayerFormat::Packing::PISP1 },
+		{ formats::GRBG16_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG) } },
+	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::PISP1 },
+		{ formats::RGGB16_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB) } },
 	{ { BayerFormat::MONO, 8, BayerFormat::Packing::None },
 		{ formats::R8, V4L2PixelFormat(V4L2_PIX_FMT_GREY) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::None },
 		{ formats::R10, V4L2PixelFormat(V4L2_PIX_FMT_Y10) } },
 	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None },
 		{ formats::R16, V4L2PixelFormat(V4L2_PIX_FMT_Y16) } },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::PISP1 },
+		{ formats::MONO_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::CSI2 },
 		{ formats::R10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) } },
 
@@ -208,6 +218,10 @@ const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
 	{ MEDIA_BUS_FMT_SGBRG16_1X16, { BayerFormat::GBRG, 16, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_SGRBG16_1X16, { BayerFormat::GRBG, 16, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_SRGGB16_1X16, { BayerFormat::RGGB, 16, BayerFormat::Packing::None } },
+	{ MEDIA_BUS_FMT_SBGGR16_1X16, { BayerFormat::BGGR, 16, BayerFormat::Packing::PISP1 } },
+	{ MEDIA_BUS_FMT_SGBRG16_1X16, { BayerFormat::GBRG, 16, BayerFormat::Packing::PISP1 } },
+	{ MEDIA_BUS_FMT_SGRBG16_1X16, { BayerFormat::GRBG, 16, BayerFormat::Packing::PISP1 } },
+	{ MEDIA_BUS_FMT_SRGGB16_1X16, { BayerFormat::RGGB, 16, BayerFormat::Packing::PISP1 } },
 	{ MEDIA_BUS_FMT_Y8_1X8, { BayerFormat::MONO, 8, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y10_1X10, { BayerFormat::MONO, 10, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y12_1X12, { BayerFormat::MONO, 12, BayerFormat::Packing::None } },
@@ -301,6 +315,10 @@ std::ostream &operator<<(std::ostream &out, const BayerFormat &f)
 		out << "-CSI2P";
 	else if (f.packing == BayerFormat::Packing::IPU3)
 		out << "-IPU3P";
+	else if (f.packing == BayerFormat::Packing::PISP1)
+		out << "-PISP1";
+	else if (f.packing == BayerFormat::Packing::PISP2)
+		out << "-PISP2";
 
 	return out;
 }

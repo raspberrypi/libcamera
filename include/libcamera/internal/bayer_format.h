@@ -34,6 +34,8 @@ public:
 		None = 0,
 		CSI2 = 1,
 		IPU3 = 2,
+		PISP1 = 3,
+		PISP2 = 4,
 	};
 
 	constexpr BayerFormat()

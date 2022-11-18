@@ -517,7 +517,7 @@ bool KMSSink::processRequest(libcamera::Request *camRequest)
 	return false;
 }
 
-void KMSSink::requestComplete(DRM::AtomicRequest *request)
+void KMSSink::requestComplete([[maybe_unused]] DRM::AtomicRequest *request)
 {
 	std::lock_guard<std::mutex> lock(lock_);
 

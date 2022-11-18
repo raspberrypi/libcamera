@@ -189,7 +189,47 @@ const ISICameraConfiguration::FormatMap ISICameraConfiguration::formatsMap_ = {
 		  MEDIA_BUS_FMT_UYVY8_1X16 },
 	},
 	{
+		formats::AVUY8888,
+		{ MEDIA_BUS_FMT_YUV8_1X24,
+		  MEDIA_BUS_FMT_UYVY8_1X16 },
+	},
+	{
+		formats::NV12,
+		{ MEDIA_BUS_FMT_YUV8_1X24,
+		  MEDIA_BUS_FMT_UYVY8_1X16 },
+	},
+	{
+		formats::NV16,
+		{ MEDIA_BUS_FMT_YUV8_1X24,
+		  MEDIA_BUS_FMT_UYVY8_1X16 },
+	},
+	{
+		formats::YUV444,
+		{ MEDIA_BUS_FMT_YUV8_1X24,
+		  MEDIA_BUS_FMT_UYVY8_1X16 },
+	},
+	{
 		formats::RGB565,
+		{ MEDIA_BUS_FMT_RGB888_1X24,
+		  MEDIA_BUS_FMT_RGB565_1X16 },
+	},
+	{
+		formats::BGR888,
+		{ MEDIA_BUS_FMT_RGB888_1X24,
+		  MEDIA_BUS_FMT_RGB565_1X16 },
+	},
+	{
+		formats::RGB888,
+		{ MEDIA_BUS_FMT_RGB888_1X24,
+		  MEDIA_BUS_FMT_RGB565_1X16 },
+	},
+	{
+		formats::XRGB8888,
+		{ MEDIA_BUS_FMT_RGB888_1X24,
+		  MEDIA_BUS_FMT_RGB565_1X16 },
+	},
+	{
+		formats::ABGR8888,
 		{ MEDIA_BUS_FMT_RGB888_1X24,
 		  MEDIA_BUS_FMT_RGB565_1X16 },
 	},
@@ -546,6 +586,7 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		return nullptr;
 	}
 
+	bool isRaw = false;
 	for (const auto &role : roles) {
 		/*
 		 * Prefer the following formats
@@ -553,6 +594,7 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		 * - ViewFinder/VideoRecording: 1080p YUYV
 		 * - RAW: sensor's native format and resolution
 		 */
+		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
 		PixelFormat pixelFormat;
 		Size size;
 
@@ -614,6 +656,9 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 			size = data->sensor_->resolution();
 			pixelFormat = rawPipeFormat->first;
 
+			streamFormats[pixelFormat] = { { kMinISISize, size } };
+			isRaw = true;
+
 			break;
 		}
 
@@ -622,9 +667,20 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 			return nullptr;
 		}
 
-		/* \todo Add all supported formats. */
-		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-		streamFormats[pixelFormat] = { { kMinISISize, size } };
+		/*
+		 * For non-RAW configurations the ISI can perform colorspace
+		 * conversion. List all the supported output formats here.
+		 */
+		if (!isRaw) {
+			for (const auto &[pixFmt, pipeFmt] : ISICameraConfiguration::formatsMap_) {
+				const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
+				if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+					continue;
+
+				streamFormats[pixFmt] = { { kMinISISize, size } };
+			}
+		}
+
 		StreamFormats formats(streamFormats);
 
 		StreamConfiguration cfg(formats);

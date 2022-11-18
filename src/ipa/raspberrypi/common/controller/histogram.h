@@ -38,6 +38,8 @@ public:
 	uint64_t total() const { return cumulative_[cumulative_.size() - 1]; }
 	/* Cumulative frequency up to a (fractional) point in a bin. */
 	uint64_t cumulativeFreq(double bin) const;
+	/* Return the mean value between two (fractional) bins. */
+	double interBinMean(double binLo, double binHi) const;
 	/*
 	 * Return the (fractional) bin of the point q (0 <= q <= 1) through the
 	 * histogram. Optionally provide limits to help.

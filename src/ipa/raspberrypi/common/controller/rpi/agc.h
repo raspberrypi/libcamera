@@ -13,6 +13,7 @@
 
 #include "../agc_algorithm.h"
 #include "../agc_status.h"
+#include "../awb_status.h"
 #include "../pwl.h"
 
 /* This is our implementation of AGC. */

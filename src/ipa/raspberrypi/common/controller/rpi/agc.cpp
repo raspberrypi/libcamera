@@ -5,6 +5,8 @@
  * agc.cpp - AGC/AEC control algorithm
  */
 
+#include "agc.h"
+
 #include <algorithm>
 #include <map>
 #include <tuple>
@@ -16,8 +18,6 @@
 #include "../histogram.h"
 #include "../lux_status.h"
 #include "../metadata.h"
-
-#include "agc.h"
 
 using namespace RPiController;
 using namespace libcamera;
@@ -584,6 +584,7 @@ void Agc::fetchCurrentExposure(Metadata *imageMetadata)
 		LOG(RPiAgc, Fatal) << "No device metadata";
 	current_.shutter = deviceStatus->shutterSpeed;
 	current_.analogueGain = deviceStatus->analogueGain;
+	LOG(RPiAgc, Debug) << "Shutter " << current_.shutter << " gain " << current_.analogueGain;
 	AgcStatus *agcStatus =
 		imageMetadata->getLocked<AgcStatus>("agc.status");
 	current_.totalExposure = agcStatus ? agcStatus->totalExposureValue : 0s;
@@ -604,6 +605,27 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 {
 	constexpr uint64_t maxVal = 1 << Statistics::NormalisationFactorPow2;
 
+	/*
+	 * If we have no AGC region stats, but do have a a Y histogram, use that
+	 * directly to caluclate the mean Y value of the image.
+	 */
+	if (!stats->agcRegions.numRegions() && stats->yHist.bins()) {
+		/*
+		 * When the gain is applied to the histogram, anything below minBin
+		 * will scale up directly with the gain, but anything above that
+		 * will saturate into the top bin.
+		 */
+		auto &hist = stats->yHist;
+		double minBin = std::min(1.0, 1.0 / gain) * hist.bins();
+		double binMean = hist.interBinMean(0.0, minBin);
+		double numUnsaturated = hist.cumulativeFreq(minBin);
+		/* This term is from all the pixels that won't saturate. */
+		double ySum = binMean * gain * numUnsaturated;
+		/* And add the ones that will saturate. */
+		ySum += (hist.total() - numUnsaturated) * hist.bins();
+		return ySum / hist.total() / hist.bins();
+	}
+
 	ASSERT(weights.size() == stats->agcRegions.numRegions());
 
 	/*
@@ -622,10 +644,17 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 		LOG(RPiAgc, Warning) << "computeInitialY: pixelSum is zero";
 		return 0;
 	}
-	double ySum = rSum * awb.gainR * .299 +
-		      gSum * awb.gainG * .587 +
-		      bSum * awb.gainB * .114;
-	return ySum / pixelSum / maxVal;
+
+	double ySum;
+	/* Factor in the AWB correction if needed. */
+	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb) {
+		ySum = rSum * awb.gainR * .299 +
+		       gSum * awb.gainG * .587 +
+		       gSum * awb.gainB * .114;
+	} else
+		ySum = rSum * .299 + gSum * .587 + gSum * .114;
+
+	return ySum / pixelSum / (1 << 16);
 }
 
 /*

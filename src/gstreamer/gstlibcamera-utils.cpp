@@ -436,7 +436,7 @@ void gst_libcamera_clamp_and_set_frameduration(ControlList &initCtrls,
 	if (!gst_structure_has_field_typed(element_caps, "framerate", GST_TYPE_FRACTION))
 		return;
 
-	auto iterFrameDuration = cam_ctrls.find(controls::FrameDurationLimits.id());
+	auto iterFrameDuration = cam_ctrls.find(&controls::FrameDurationLimits);
 	if (iterFrameDuration == cam_ctrls.end()) {
 		GST_WARNING("FrameDurationLimits not found in camera controls.");
 		return;

@@ -93,13 +93,11 @@ public:
 	char const *name() const override;
 	void initialise() override;
 	int read(const libcamera::YamlObject &params) override;
-	/* AWB handles "pausing" for itself. */
-	bool isPaused() const override;
-	void pause() override;
-	void resume() override;
 	unsigned int getConvergenceFrames() const override;
 	void setMode(std::string const &name) override;
 	void setManualGains(double manualR, double manualB) override;
+	void enableAuto() override;
+	void disableAuto() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;

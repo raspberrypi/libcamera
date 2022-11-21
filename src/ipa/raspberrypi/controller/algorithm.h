@@ -27,14 +27,11 @@ class Algorithm
 {
 public:
 	Algorithm(Controller *controller)
-		: controller_(controller), paused_(false)
+		: controller_(controller)
 	{
 	}
 	virtual ~Algorithm() = default;
 	virtual char const *name() const = 0;
-	virtual bool isPaused() const { return paused_; }
-	virtual void pause() { paused_ = true; }
-	virtual void resume() { paused_ = false; }
 	virtual int read(const libcamera::YamlObject &params);
 	virtual void initialise();
 	virtual void switchMode(CameraMode const &cameraMode, Metadata *metadata);
@@ -47,7 +44,6 @@ public:
 
 private:
 	Controller *controller_;
-	bool paused_;
 };
 
 /*

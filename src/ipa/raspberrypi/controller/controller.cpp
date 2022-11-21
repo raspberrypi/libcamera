@@ -108,16 +108,14 @@ void Controller::prepare(Metadata *imageMetadata)
 {
 	assert(switchModeCalled_);
 	for (auto &algo : algorithms_)
-		if (!algo->isPaused())
-			algo->prepare(imageMetadata);
+		algo->prepare(imageMetadata);
 }
 
 void Controller::process(StatisticsPtr stats, Metadata *imageMetadata)
 {
 	assert(switchModeCalled_);
 	for (auto &algo : algorithms_)
-		if (!algo->isPaused())
-			algo->process(stats, imageMetadata);
+		algo->process(stats, imageMetadata);
 }
 
 Metadata &Controller::getGlobalMetadata()

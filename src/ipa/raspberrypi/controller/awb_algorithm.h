@@ -18,6 +18,8 @@ public:
 	virtual unsigned int getConvergenceFrames() const = 0;
 	virtual void setMode(std::string const &modeName) = 0;
 	virtual void setManualGains(double manualR, double manualB) = 0;
+	virtual void enableAuto() = 0;
+	virtual void disableAuto() = 0;
 };
 
 } /* namespace RPiController */

@@ -270,18 +270,13 @@ int Agc::read(const libcamera::YamlObject &params)
 	return 0;
 }
 
-bool Agc::isPaused() const
-{
-	return false;
-}
-
-void Agc::pause()
+void Agc::disableAuto()
 {
 	fixedShutter_ = status_.shutterTime;
 	fixedAnalogueGain_ = status_.analogueGain;
 }
 
-void Agc::resume()
+void Agc::enableAuto()
 {
 	fixedShutter_ = 0s;
 	fixedAnalogueGain_ = 0;
@@ -317,14 +312,14 @@ void Agc::setMaxShutter(Duration maxShutter)
 void Agc::setFixedShutter(Duration fixedShutter)
 {
 	fixedShutter_ = fixedShutter;
-	/* Set this in case someone calls Pause() straight after. */
+	/* Set this in case someone calls disableAuto() straight after. */
 	status_.shutterTime = clipShutter(fixedShutter_);
 }
 
 void Agc::setFixedAnalogueGain(double fixedAnalogueGain)
 {
 	fixedAnalogueGain_ = fixedAnalogueGain;
-	/* Set this in case someone calls Pause() straight after. */
+	/* Set this in case someone calls disableAuto() straight after. */
 	status_.analogueGain = fixedAnalogueGain;
 }
 

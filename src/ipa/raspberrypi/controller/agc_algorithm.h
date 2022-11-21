@@ -26,6 +26,8 @@ public:
 	virtual void setMeteringMode(std::string const &meteringModeName) = 0;
 	virtual void setExposureMode(std::string const &exposureModeName) = 0;
 	virtual void setConstraintMode(std::string const &contraintModeName) = 0;
+	virtual void enableAuto() = 0;
+	virtual void disableAuto() = 0;
 };
 
 } /* namespace RPiController */

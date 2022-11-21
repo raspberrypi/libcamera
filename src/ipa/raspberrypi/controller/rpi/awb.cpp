@@ -222,21 +222,16 @@ void Awb::initialise()
 	asyncResults_ = syncResults_;
 }
 
-bool Awb::isPaused() const
+void Awb::disableAuto()
 {
-	return false;
-}
-
-void Awb::pause()
-{
-	/* "Pause" by fixing everything to the most recent values. */
+	/* Freeze the most recent values, and treat them as manual gains */
 	manualR_ = syncResults_.gainR = prevSyncResults_.gainR;
 	manualB_ = syncResults_.gainB = prevSyncResults_.gainB;
 	syncResults_.gainG = prevSyncResults_.gainG;
 	syncResults_.temperatureK = prevSyncResults_.temperatureK;
 }
 
-void Awb::resume()
+void Awb::enableAuto()
 {
 	manualR_ = 0.0;
 	manualB_ = 0.0;

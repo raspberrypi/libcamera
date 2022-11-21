@@ -75,10 +75,6 @@ public:
 	Agc(Controller *controller);
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
-	/* AGC handles "pausing" for itself. */
-	bool isPaused() const override;
-	void pause() override;
-	void resume() override;
 	unsigned int getConvergenceFrames() const override;
 	void setEv(double ev) override;
 	void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) override;
@@ -88,6 +84,8 @@ public:
 	void setMeteringMode(std::string const &meteringModeName) override;
 	void setExposureMode(std::string const &exposureModeName) override;
 	void setConstraintMode(std::string const &contraintModeName) override;
+	void enableAuto() override;
+	void disableAuto() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;

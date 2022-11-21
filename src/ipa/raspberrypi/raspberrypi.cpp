@@ -706,7 +706,8 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 		switch (ctrl.first) {
 		case controls::AE_ENABLE: {
-			RPiController::Algorithm *agc = controller_.getAlgorithm("agc");
+			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+				controller_.getAlgorithm("agc"));
 			if (!agc) {
 				LOG(IPARPI, Warning)
 					<< "Could not set AE_ENABLE - no AGC algorithm";
@@ -714,9 +715,9 @@ void IPARPi::queueRequest(const ControlList &controls)
 			}
 
 			if (ctrl.second.get<bool>() == false)
-				agc->pause();
+				agc->disableAuto();
 			else
-				agc->resume();
+				agc->enableAuto();
 
 			libcameraMetadata_.set(controls::AeEnable, ctrl.second.get<bool>());
 			break;
@@ -835,7 +836,8 @@ void IPARPi::queueRequest(const ControlList &controls)
 		}
 
 		case controls::AWB_ENABLE: {
-			RPiController::Algorithm *awb = controller_.getAlgorithm("awb");
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
 			if (!awb) {
 				LOG(IPARPI, Warning)
 					<< "Could not set AWB_ENABLE - no AWB algorithm";
@@ -843,9 +845,9 @@ void IPARPi::queueRequest(const ControlList &controls)
 			}
 
 			if (ctrl.second.get<bool>() == false)
-				awb->pause();
+				awb->disableAuto();
 			else
-				awb->resume();
+				awb->enableAuto();
 
 			libcameraMetadata_.set(controls::AwbEnable,
 					       ctrl.second.get<bool>());

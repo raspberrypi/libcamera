@@ -515,7 +515,7 @@ void IPARPi::signalStatReady(uint32_t bufferId)
 
 	reportMetadata();
 
-	statsMetadataComplete.emit(bufferId & MaskID, libcameraMetadata_);
+	statsMetadataComplete.emit(bufferId, libcameraMetadata_);
 }
 
 void IPARPi::signalQueueRequest(const ControlList &controls)
@@ -534,7 +534,7 @@ void IPARPi::signalIspPrepare(const ISPConfig &data)
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
-	runIsp.emit(data.bayerBufferId & MaskID);
+	runIsp.emit(data.bayerBufferId);
 }
 
 void IPARPi::reportMetadata()
@@ -1001,7 +1001,7 @@ void IPARPi::queueRequest(const ControlList &controls)
 
 void IPARPi::returnEmbeddedBuffer(unsigned int bufferId)
 {
-	embeddedComplete.emit(bufferId & MaskID);
+	embeddedComplete.emit(bufferId);
 }
 
 void IPARPi::prepareISP(const ISPConfig &data)

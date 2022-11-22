@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -23,6 +22,14 @@ namespace RPi {
 
 using BufferMap = std::unordered_map<unsigned int, FrameBuffer *>;
 
+enum BufferMask {
+	MaskID			= 0x00ffff,
+	MaskStats		= 0x010000,
+	MaskEmbeddedData	= 0x020000,
+	MaskBayerData		= 0x040000,
+	MaskExternalBuffer	= 0x100000,
+};
+
 /*
  * Device stream abstraction for either an internal or external stream.
  * Used for both Unicam and the ISP.
@@ -31,13 +38,13 @@ class Stream : public libcamera::Stream
 {
 public:
 	Stream()
-		: id_(ipa::RPi::MaskID)
+		: id_(BufferMask::MaskID)
 	{
 	}
 
 	Stream(const char *name, MediaEntity *dev, bool importOnly = false)
 		: external_(false), importOnly_(importOnly), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(ipa::RPi::MaskID)
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(BufferMask::MaskID)
 	{
 	}
 

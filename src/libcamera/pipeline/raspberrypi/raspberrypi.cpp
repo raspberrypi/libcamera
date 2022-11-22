@@ -1484,10 +1484,10 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 	 * Pass the stats and embedded data buffers to the IPA. No other
 	 * buffers need to be passed.
 	 */
-	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), ipa::RPi::MaskStats);
+	mapBuffers(camera, data->isp_[Isp::Stats].getBuffers(), RPi::MaskStats);
 	if (data->sensorMetadata_)
 		mapBuffers(camera, data->unicam_[Unicam::Embedded].getBuffers(),
-			   ipa::RPi::MaskEmbeddedData);
+			   RPi::MaskEmbeddedData);
 
 	return 0;
 }
@@ -1727,7 +1727,7 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId);
+	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId & RPi::MaskID);
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
 
@@ -1763,9 +1763,9 @@ void RPiCameraData::runIsp(uint32_t bufferId)
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId);
+	FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId & RPi::MaskID);
 
-	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << bufferId
+	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << (bufferId & RPi::MaskID)
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
@@ -1778,7 +1778,7 @@ void RPiCameraData::embeddedComplete(uint32_t bufferId)
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId);
+	FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId & RPi::MaskID);
 	handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
 	handleState();
 }
@@ -1931,7 +1931,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 * application until after the IPA signals so.
 	 */
 	if (stream == &isp_[Isp::Stats]) {
-		ipa_->signalStatReady(ipa::RPi::MaskStats | static_cast<unsigned int>(index));
+		ipa_->signalStatReady(RPi::MaskStats | static_cast<unsigned int>(index));
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
 		handleStreamBuffer(buffer, stream);
@@ -2006,7 +2006,7 @@ void RPiCameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *strea
 {
 	unsigned int id = stream->getBufferId(buffer);
 
-	if (!(id & ipa::RPi::MaskExternalBuffer))
+	if (!(id & RPi::MaskExternalBuffer))
 		return;
 
 	/* Stop the Stream object from tracking the buffer. */
@@ -2174,13 +2174,13 @@ void RPiCameraData::tryRunPipeline()
 			<< " Bayer buffer id: " << bayerId;
 
 	ipa::RPi::ISPConfig ispPrepare;
-	ispPrepare.bayerBufferId = ipa::RPi::MaskBayerData | bayerId;
+	ispPrepare.bayerBufferId = RPi::MaskBayerData | bayerId;
 	ispPrepare.controls = std::move(bayerFrame.controls);
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
-		ispPrepare.embeddedBufferId = ipa::RPi::MaskEmbeddedData | embeddedId;
+		ispPrepare.embeddedBufferId = RPi::MaskEmbeddedData | embeddedId;
 		ispPrepare.embeddedBufferPresent = true;
 
 		LOG(RPI, Debug) << "Signalling signalIspPrepare:"

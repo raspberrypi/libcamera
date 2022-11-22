@@ -8,14 +8,6 @@ module ipa.RPi;
 
 import "include/libcamera/ipa/core.mojom";
 
-enum BufferMask {
-	MaskID			= 0x00ffff,
-	MaskStats		= 0x010000,
-	MaskEmbeddedData	= 0x020000,
-	MaskBayerData		= 0x040000,
-	MaskExternalBuffer	= 0x100000,
-};
-
 /* Size of the LS grid allocation. */
 const uint32 MaxLsGridSize = 0x8000;
 

@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <vector>
 
 #include <linux/bcm2835-isp.h>
 
@@ -174,7 +175,7 @@ private:
 	void applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls);
 	void applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls);
 	void applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls);
-	void resampleTable(uint16_t dest[], double const src[12][16], int destW, int destH);
+	void resampleTable(uint16_t dest[], const std::vector<double> &src, int destW, int destH);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -1768,7 +1769,7 @@ void IPARPi::applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls)
  * Resamples a 16x12 table with central sampling to destW x destH with corner
  * sampling.
  */
-void IPARPi::resampleTable(uint16_t dest[], double const src[12][16],
+void IPARPi::resampleTable(uint16_t dest[], const std::vector<double> &src,
 			   int destW, int destH)
 {
 	/*
@@ -1793,8 +1794,8 @@ void IPARPi::resampleTable(uint16_t dest[], double const src[12][16],
 		double yf = y - yLo;
 		int yHi = yLo < 11 ? yLo + 1 : 11;
 		yLo = yLo > 0 ? yLo : 0;
-		double const *rowAbove = src[yLo];
-		double const *rowBelow = src[yHi];
+		double const *rowAbove = src.data() + yLo * 16;
+		double const *rowBelow = src.data() + yHi * 16;
 		for (int i = 0; i < destW; i++) {
 			double above = rowAbove[xLo[i]] * (1 - xf[i]) + rowAbove[xHi[i]] * xf[i];
 			double below = rowBelow[xLo[i]] * (1 - xf[i]) + rowBelow[xHi[i]] * xf[i];

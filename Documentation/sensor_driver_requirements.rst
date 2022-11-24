@@ -62,6 +62,18 @@ The sensor driver should support the following V4L2 controls:
 
 The controls are used to register the camera location and rotation.
 
+In order to support rotating the image the sensor driver should support
+
+* `V4L2_CID_HFLIP`_
+* `V4L2_CID_VFLIP`_
+
+.. _V4L2_CID_HFLIP: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/control.html
+.. _V4L2_CID_VFLIP: https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/control.html
+
+The controls must be writable from userspace. In case of a RAW Bayer sensors,
+drivers should correctly report if vertical/horizontal flips modify the Bayer
+pattern ordering by reporting the `V4L2_CTRL_FLAG_MODIFY_LAYOUT` control flag.
+
 The sensor driver should implement support for the V4L2 Selection API,
 specifically it should implement support for the
 `VIDIOC_SUBDEV_G_SELECTION`_ ioctl with support for the following selection

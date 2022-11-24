@@ -691,24 +691,12 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		}
 	}
 
-	/*
-	 * Configure the H/V flip controls based on the combination of
-	 * the sensor and user transform.
-	 */
-	if (data->supportsFlips_) {
-		const RPiCameraConfiguration *rpiConfig =
-			static_cast<const RPiCameraConfiguration *>(config);
-		ControlList controls;
-
-		controls.set(V4L2_CID_HFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::HFlip)));
-		controls.set(V4L2_CID_VFLIP,
-			     static_cast<int32_t>(!!(rpiConfig->combinedTransform_ & Transform::VFlip)));
-		data->setSensorControls(controls);
-	}
-
 	/* First calculate the best sensor mode we can use based on the user request. */
 	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_, rawStream ? sensorSize : maxSize, bitDepth);
+	/* Apply any cached transform. */
+	const RPiCameraConfiguration *rpiConfig = static_cast<const RPiCameraConfiguration *>(config);
+	sensorFormat.transform = rpiConfig->combinedTransform_;
+	/* Finally apply the format on the sensor. */
 	ret = data->sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;
@@ -1293,10 +1281,9 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	 * We cache three things about the sensor in relation to transforms
 	 * (meaning horizontal and vertical flips).
 	 *
-	 * Firstly, does it support them?
-	 * Secondly, if you use them does it affect the Bayer ordering?
-	 * Thirdly, what is the "native" Bayer order, when no transforms are
-	 * applied?
+	 * If flips are supported verify if they affect the Bayer ordering
+	 * and what the "native" Bayer order is, when no transforms are
+	 * applied.
 	 *
 	 * We note that the sensor's cached list of supported formats is
 	 * already in the "native" order, with any flips having been undone.

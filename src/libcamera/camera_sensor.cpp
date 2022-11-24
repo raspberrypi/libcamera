@@ -751,6 +751,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 		.mbus_code = bestCode,
 		.size = *bestSize,
 		.colorSpace = ColorSpace::Raw,
+		.transform = Transform::Identity,
 	};
 
 	return format;
@@ -760,12 +761,34 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
  * \brief Set the sensor output format
  * \param[in] format The desired sensor output format
  *
+ * If flips are writable they are configured according to the desired Transform.
+ * Transform::Identity always corresponds to H/V flip being disabled if the
+ * controls are writable. Flips are set before the new format is applied as
+ * they can effectively change the Bayer pattern ordering.
+ *
  * The ranges of any controls associated with the sensor are also updated.
  *
  * \return 0 on success or a negative error code otherwise
  */
 int CameraSensor::setFormat(V4L2SubdeviceFormat *format)
 {
+	/* Configure flips if the sensor supports that. */
+	if (supportFlips_) {
+		ControlList flipCtrls(subdev_->controls());
+
+		flipCtrls.set(V4L2_CID_HFLIP,
+			      static_cast<int32_t>(!!(format->transform &
+						      Transform::HFlip)));
+		flipCtrls.set(V4L2_CID_VFLIP,
+			      static_cast<int32_t>(!!(format->transform &
+						      Transform::VFlip)));
+
+		int ret = subdev_->setControls(&flipCtrls);
+		if (ret)
+			return ret;
+	}
+
+	/* Apply format on the subdev. */
 	int ret = subdev_->setFormat(pad_, format);
 	if (ret)
 		return ret;

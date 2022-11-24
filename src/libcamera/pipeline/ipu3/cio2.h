@@ -26,6 +26,7 @@ class Request;
 class Size;
 class SizeRange;
 struct StreamConfiguration;
+enum class Transform;
 
 class CIO2Device
 {
@@ -38,7 +39,8 @@ public:
 	std::vector<SizeRange> sizes(const PixelFormat &format) const;
 
 	int init(const MediaDevice *media, unsigned int index);
-	int configure(const Size &size, V4L2DeviceFormat *outputFormat);
+	int configure(const Size &size, const Transform &transform,
+		      V4L2DeviceFormat *outputFormat);
 
 	StreamConfiguration generateConfiguration(Size size) const;
 

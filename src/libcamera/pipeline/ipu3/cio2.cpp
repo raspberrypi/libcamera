@@ -15,6 +15,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/geometry.h>
 #include <libcamera/stream.h>
+#include <libcamera/transform.h>
 
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/framebuffer.h"
@@ -177,10 +178,12 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 /**
  * \brief Configure the CIO2 unit
  * \param[in] size The requested CIO2 output frame size
+ * \param[in] transform The transformation to be applied on the image sensor
  * \param[out] outputFormat The CIO2 unit output image format
  * \return 0 on success or a negative error code otherwise
  */
-int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
+int CIO2Device::configure(const Size &size, const Transform &transform,
+			  V4L2DeviceFormat *outputFormat)
 {
 	V4L2SubdeviceFormat sensorFormat;
 	int ret;
@@ -191,6 +194,7 @@ int CIO2Device::configure(const Size &size, V4L2DeviceFormat *outputFormat)
 	 */
 	std::vector<unsigned int> mbusCodes = utils::map_keys(mbusCodesToPixelFormat);
 	sensorFormat = getSensorFormat(mbusCodes, size);
+	sensorFormat.transform = transform;
 	ret = sensor_->setFormat(&sensorFormat);
 	if (ret)
 		return ret;

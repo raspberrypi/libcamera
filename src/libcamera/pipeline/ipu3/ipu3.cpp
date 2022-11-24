@@ -51,7 +51,7 @@ class IPU3CameraData : public Camera::Private
 {
 public:
 	IPU3CameraData(PipelineHandler *pipe)
-		: Camera::Private(pipe), supportsFlips_(false)
+		: Camera::Private(pipe)
 	{
 	}
 
@@ -73,7 +73,6 @@ public:
 	Stream rawStream_;
 
 	Rectangle cropRegion_;
-	bool supportsFlips_;
 	Transform rotationTransform_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
@@ -539,31 +538,13 @@ int PipelineHandlerIPU3::configure(Camera *camera, CameraConfiguration *c)
 	 */
 	const Size &sensorSize = config->cio2Format().size;
 	V4L2DeviceFormat cio2Format;
-	ret = cio2->configure(sensorSize, &cio2Format);
+	ret = cio2->configure(sensorSize, config->combinedTransform_, &cio2Format);
 	if (ret)
 		return ret;
 
 	IPACameraSensorInfo sensorInfo;
 	cio2->sensor()->sensorInfo(&sensorInfo);
 	data->cropRegion_ = sensorInfo.analogCrop;
-
-	/*
-	 * Configure the H/V flip controls based on the combination of
-	 * the sensor and user transform.
-	 */
-	if (data->supportsFlips_) {
-		ControlList sensorCtrls(cio2->sensor()->controls());
-		sensorCtrls.set(V4L2_CID_HFLIP,
-				static_cast<int32_t>(!!(config->combinedTransform_
-							& Transform::HFlip)));
-		sensorCtrls.set(V4L2_CID_VFLIP,
-				static_cast<int32_t>(!!(config->combinedTransform_
-						        & Transform::VFlip)));
-
-		ret = cio2->sensor()->setControls(&sensorCtrls);
-		if (ret)
-			return ret;
-	}
 
 	/*
 	 * If the ImgU gets configured, its driver seems to expect that
@@ -1126,11 +1107,6 @@ int PipelineHandlerIPU3::registerCameras()
 		if (!success)
 			LOG(IPU3, Warning) << "Invalid rotation of " << rotationValue
 					   << " degrees: ignoring";
-
-		ControlList ctrls = cio2->sensor()->getControls({ V4L2_CID_HFLIP });
-		if (!ctrls.empty())
-			/* We assume the sensor supports VFLIP too. */
-			data->supportsFlips_ = true;
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each

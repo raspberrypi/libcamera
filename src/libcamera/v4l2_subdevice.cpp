@@ -217,6 +217,13 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
  */
 
 /**
+ * \var V4L2SubdeviceFormat::transform
+ * \brief The transform (vertical/horizontal flips) to be applied on the subdev
+ *
+ * Default initialized to Identity (no transform).
+ */
+
+/**
  * \brief Assemble and return a string describing the format
  * \return A string describing the V4L2SubdeviceFormat
  */

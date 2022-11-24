@@ -101,6 +101,7 @@ private:
 	Size pixelArraySize_;
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
+	bool supportFlips_;
 
 	ControlList properties_;
 

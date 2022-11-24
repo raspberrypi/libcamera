@@ -55,7 +55,8 @@ LOG_DEFINE_CATEGORY(CameraSensor)
  */
 CameraSensor::CameraSensor(const MediaEntity *entity)
 	: entity_(entity), pad_(UINT_MAX), staticProps_(nullptr),
-	  bayerFormat_(nullptr), properties_(properties::properties)
+	  bayerFormat_(nullptr), supportFlips_(false),
+	  properties_(properties::properties)
 {
 }
 
@@ -246,6 +247,21 @@ int CameraSensor::validateSensorDriver()
 			err = -EINVAL;
 		}
 	}
+
+	/*
+	 * Verify if sensor supports horizontal/vertical flips
+	 *
+	 * \todo Handle horizontal and vertical flips independently.
+	 */
+	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
+	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
+	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
+	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY))
+		supportFlips_ = true;
+
+	if (!supportFlips_)
+		LOG(CameraSensor, Warning)
+			<< "Camera sensor does not support horizontal/vertical flip";
 
 	/*
 	 * Make sure the required selection targets are supported.

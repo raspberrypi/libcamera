@@ -23,11 +23,12 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/request.h>
+#include <libcamera/stream.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
 #include <libcamera/ipa/rkisp1_ipa_proxy.h>
-#include <libcamera/request.h>
-#include <libcamera/stream.h>
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"

@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <libcamera/property_ids.h>
+#include <libcamera/transform.h>
 
 #include <libcamera/base/utils.h>
 
@@ -961,6 +962,77 @@ void CameraSensor::updateControlInfo()
  * \return The focus lens controller. nullptr if no focus lens controller is
  * connected to the sensor
  */
+
+/**
+ * \brief Validate a transform request against the sensor capabilities
+ * \param[inout] transform The requested transformation, updated to match
+ * the sensor capabilities
+ *
+ * The input \a transform is the transform that the caller wants, and it is
+ * adjusted according to the capabilities of the sensor to represent the
+ * "nearest" transform that can actually be delivered.
+ *
+ * The returned Transform is the transform applied to the sensor in order to
+ * produce the input \a transform, It is also validated against the sensor's
+ * ability to perform horizontal and vertical flips.
+ *
+ * For example, if the requested \a transform is Transform::Identity and the
+ * sensor rotation is 180 degrees, the output transform will be
+ * Transform::Rot180 to correct the images so that they appear to have
+ * Transform::Identity, but only if the sensor can apply horizontal and vertical
+ * flips.
+ *
+ * \return A Transform instance that represents which transformation has been
+ * applied to the camera sensor
+ */
+Transform CameraSensor::validateTransform(Transform *transform) const
+{
+	/* Adjust the requested transform to compensate the sensor rotation. */
+	int32_t rotation = properties().get(properties::Rotation).value_or(0);
+	bool success;
+
+	Transform rotationTransform = transformFromRotation(rotation, &success);
+	if (!success)
+		LOG(CameraSensor, Warning) << "Invalid rotation of " << rotation
+					   << " degrees - ignoring";
+
+	Transform combined = *transform * rotationTransform;
+
+	/*
+	 * We combine the platform and user transform, but must "adjust away"
+	 * any combined result that includes a transform, as we can't do those.
+	 * In this case, flipping only the transpose bit is helpful to
+	 * applications - they either get the transform they requested, or have
+	 * to do a simple transpose themselves (they don't have to worry about
+	 * the other possible cases).
+	 */
+	if (!!(combined & Transform::Transpose)) {
+		/*
+		 * Flipping the transpose bit in "transform" flips it in the
+		 * combined result too (as it's the last thing that happens),
+		 * which is of course clearing it.
+		 */
+		*transform ^= Transform::Transpose;
+		combined &= ~Transform::Transpose;
+	}
+
+	/*
+	 * We also check if the sensor doesn't do h/vflips at all, in which
+	 * case we clear them, and the application will have to do everything.
+	 */
+	if (!supportFlips_ && !!combined) {
+		/*
+		 * If the sensor can do no transforms, then combined must be
+		 * changed to the identity. The only user transform that gives
+		 * rise to this is the inverse of the rotation. (Recall that
+		 * combined = transform * rotationTransform.)
+		 */
+		*transform = -rotationTransform;
+		combined = Transform::Identity;
+	}
+
+	return combined;
+}
 
 std::string CameraSensor::logPrefix() const
 {

@@ -367,59 +367,14 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	status = validateColorSpaces(ColorSpaceFlag::StreamsShareColorSpace);
 
 	/*
-	 * What if the platform has a non-90 degree rotation? We can't even
-	 * "adjust" the configuration and carry on. Alternatively, raising an
-	 * error means the platform can never run. Let's just print a warning
-	 * and continue regardless; the rotation is effectively set to zero.
+	 * Validate the requested transform against the sensor capabilities and
+	 * rotation and store the final combined transform that configure() will
+	 * need to apply to the sensor to save us working it out again.
 	 */
-	int32_t rotation = data_->sensor_->properties().get(properties::Rotation).value_or(0);
-	bool success;
-	Transform rotationTransform = transformFromRotation(rotation, &success);
-	if (!success)
-		LOG(RPI, Warning) << "Invalid rotation of " << rotation
-				  << " degrees - ignoring";
-	Transform combined = transform * rotationTransform;
-
-	/*
-	 * We combine the platform and user transform, but must "adjust away"
-	 * any combined result that includes a transform, as we can't do those.
-	 * In this case, flipping only the transpose bit is helpful to
-	 * applications - they either get the transform they requested, or have
-	 * to do a simple transpose themselves (they don't have to worry about
-	 * the other possible cases).
-	 */
-	if (!!(combined & Transform::Transpose)) {
-		/*
-		 * Flipping the transpose bit in "transform" flips it in the
-		 * combined result too (as it's the last thing that happens),
-		 * which is of course clearing it.
-		 */
-		transform ^= Transform::Transpose;
-		combined &= ~Transform::Transpose;
+	Transform requestedTransform = transform;
+	combinedTransform_ = data_->sensor_->validateTransform(&transform);
+	if (transform != requestedTransform)
 		status = Adjusted;
-	}
-
-	/*
-	 * We also check if the sensor doesn't do h/vflips at all, in which
-	 * case we clear them, and the application will have to do everything.
-	 */
-	if (!data_->supportsFlips_ && !!combined) {
-		/*
-		 * If the sensor can do no transforms, then combined must be
-		 * changed to the identity. The only user transform that gives
-		 * rise to this the inverse of the rotation. (Recall that
-		 * combined = transform * rotationTransform.)
-		 */
-		transform = -rotationTransform;
-		combined = Transform::Identity;
-		status = Adjusted;
-	}
-
-	/*
-	 * Store the final combined transform that configure() will need to
-	 * apply to the sensor to save us working it out again.
-	 */
-	combinedTransform_ = combined;
 
 	unsigned int rawCount = 0, outCount = 0, count = 0, maxIndex = 0;
 	std::pair<int, Size> outSize[2];
@@ -454,7 +409,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			if (data_->flipsAlterBayerOrder_) {
 				BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(fourcc);
 				bayer.order = data_->nativeBayerOrder_;
-				bayer = bayer.transform(combined);
+				bayer = bayer.transform(combinedTransform_);
 				fourcc = bayer.toV4L2PixelFormat();
 			}
 

@@ -184,48 +184,15 @@ CameraConfiguration::Status IPU3CameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
-	Transform combined = transform * data_->rotationTransform_;
-
 	/*
-	 * We combine the platform and user transform, but must "adjust away"
-	 * any combined result that includes a transposition, as we can't do
-	 * those. In this case, flipping only the transpose bit is helpful to
-	 * applications - they either get the transform they requested, or have
-	 * to do a simple transpose themselves (they don't have to worry about
-	 * the other possible cases).
+	 * Validate the requested transform against the sensor capabilities and
+	 * rotation and store the final combined transform that configure() will
+	 * need to apply to the sensor to save us working it out again.
 	 */
-	if (!!(combined & Transform::Transpose)) {
-		/*
-		 * Flipping the transpose bit in "transform" flips it in the
-		 * combined result too (as it's the last thing that happens),
-		 * which is of course clearing it.
-		 */
-		transform ^= Transform::Transpose;
-		combined &= ~Transform::Transpose;
+	Transform requestedTransform = transform;
+	combinedTransform_ = data_->cio2_.sensor()->validateTransform(&transform);
+	if (transform != requestedTransform)
 		status = Adjusted;
-	}
-
-	/*
-	 * We also check if the sensor doesn't do h/vflips at all, in which
-	 * case we clear them, and the application will have to do everything.
-	 */
-	if (!data_->supportsFlips_ && !!combined) {
-		/*
-		 * If the sensor can do no transforms, then combined must be
-		 * changed to the identity. The only user transform that gives
-		 * rise to this is the inverse of the rotation. (Recall that
-		 * combined = transform * rotationTransform.)
-		 */
-		transform = -data_->rotationTransform_;
-		combined = Transform::Identity;
-		status = Adjusted;
-	}
-
-	/*
-	 * Store the final combined transform that configure() will need to
-	 * apply to the sensor to save us working it out again.
-	 */
-	combinedTransform_ = combined;
 
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > kMaxStreams) {

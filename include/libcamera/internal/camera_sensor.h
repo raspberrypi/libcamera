@@ -29,6 +29,8 @@ class BayerFormat;
 class CameraLens;
 class MediaEntity;
 
+enum class Transform;
+
 struct CameraSensorProperties;
 
 class CameraSensor : protected Loggable
@@ -67,6 +69,8 @@ public:
 	void updateControlInfo();
 
 	CameraLens *focusLens() { return focusLens_.get(); }
+
+	Transform validateTransform(Transform *transform) const;
 
 protected:
 	std::string logPrefix() const override;

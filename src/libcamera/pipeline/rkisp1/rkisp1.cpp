@@ -25,6 +25,7 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
+#include <libcamera/transform.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
@@ -470,16 +471,16 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 	status = validateColorSpaces(ColorSpaceFlag::StreamsShareColorSpace);
 
-	if (transform != Transform::Identity) {
-		transform = Transform::Identity;
-		status = Adjusted;
-	}
-
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > pathCount) {
 		config_.resize(pathCount);
 		status = Adjusted;
 	}
+
+	Transform requestedTransform = transform;
+	Transform combined = sensor->validateTransform(&transform);
+	if (transform != requestedTransform)
+		status = Adjusted;
 
 	/*
 	 * Simultaneous capture of raw and processed streams isn't possible. If
@@ -589,6 +590,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 	if (sensorFormat_.size.isNull())
 		sensorFormat_.size = sensor->resolution();
+
+	sensorFormat_.transform = combined;
 
 	return status;
 }

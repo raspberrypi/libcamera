@@ -38,6 +38,7 @@ int Controller::read(char const *filename)
 
 	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
 	double version = (*root)["version"].get<double>(1.0);
+	target_ = (*root)["target"].get<std::string>("bcm2835");
 
 	if (version < 2.0) {
 		LOG(RPiController, Warning)
@@ -141,4 +142,9 @@ Algorithm *Controller::getAlgorithm(std::string const &name) const
 			return algo.get();
 	}
 	return nullptr;
+}
+
+const std::string &Controller::getTarget() const
+{
+	return target_;
 }

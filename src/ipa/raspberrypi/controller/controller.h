@@ -46,6 +46,7 @@ public:
 	void process(StatisticsPtr stats, Metadata *imageMetadata);
 	Metadata &getGlobalMetadata();
 	Algorithm *getAlgorithm(std::string const &name) const;
+	const std::string &getTarget() const;
 
 protected:
 	int createAlgorithm(const std::string &name, const libcamera::YamlObject &params);
@@ -53,6 +54,9 @@ protected:
 	Metadata globalMetadata_;
 	std::vector<AlgorithmPtr> algorithms_;
 	bool switchModeCalled_;
+
+private:
+	std::string target_;
 };
 
 } /* namespace RPiController */

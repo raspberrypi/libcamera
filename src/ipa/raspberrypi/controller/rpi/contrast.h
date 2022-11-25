@@ -46,7 +46,6 @@ private:
 	double brightness_;
 	double contrast_;
 	ContrastStatus status_;
-	std::mutex mutex_;
 };
 
 } /* namespace RPiController */

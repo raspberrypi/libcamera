@@ -6,20 +6,15 @@
  */
 #pragma once
 
+#include "pwl.h"
+
 /*
  * The "contrast" algorithm creates a gamma curve, optionally doing a little bit
  * of contrast stretching based on the AGC histogram.
  */
 
-constexpr unsigned int ContrastNumPoints = 33;
-
-struct ContrastPoint {
-	uint16_t x;
-	uint16_t y;
-};
-
 struct ContrastStatus {
-	struct ContrastPoint points[ContrastNumPoints];
+	RPiController::Pwl gammaCurve;
 	double brightness;
 	double contrast;
 };

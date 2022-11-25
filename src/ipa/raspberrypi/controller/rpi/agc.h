@@ -17,17 +17,10 @@
 
 /* This is our implementation of AGC. */
 
-/*
- * This is the number actually set up by the firmware, not the maximum possible
- * number (which is 16).
- */
-
-constexpr unsigned int AgcStatsSize = 15;
-
 namespace RPiController {
 
 struct AgcMeteringMode {
-	double weights[AgcStatsSize];
+	std::vector<double> weights;
 	int read(const libcamera::YamlObject &params);
 };
 

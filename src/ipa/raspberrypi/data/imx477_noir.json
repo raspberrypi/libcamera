@@ -424,9 +424,6 @@
         },
         {
             "rpi.sharpen": { }
-        },
-        {
-            "rpi.focus": { }
         }
     ]
 }

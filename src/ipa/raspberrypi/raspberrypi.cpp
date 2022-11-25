@@ -50,7 +50,6 @@
 #include "denoise_algorithm.h"
 #include "denoise_status.h"
 #include "dpc_status.h"
-#include "focus_status.h"
 #include "geq_status.h"
 #include "lux_status.h"
 #include "metadata.h"
@@ -640,14 +639,18 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 					 static_cast<int32_t>(blackLevelStatus->blackLevelG),
 					 static_cast<int32_t>(blackLevelStatus->blackLevelB) });
 
-	FocusStatus *focusStatus = rpiMetadata.getLocked<FocusStatus>("focus.status");
-	if (focusStatus && focusStatus->num == 12) {
+	RPiController::FocusRegions *focusStatus =
+		rpiMetadata.getLocked<RPiController::FocusRegions>("focus.status");
+	if (focusStatus) {
+		libcamera::Size size = focusStatus->size();
 		/*
 		 * We get a 4x3 grid of regions by default. Calculate the average
 		 * FoM over the central two positions to give an overall scene FoM.
 		 * This can change later if it is not deemed suitable.
 		 */
-		int32_t focusFoM = (focusStatus->focusMeasures[5] + focusStatus->focusMeasures[6]) / 2;
+		ASSERT(size == Size(4, 3));
+		int32_t focusFoM = (focusStatus->get({ 1, 1 }).val +
+				    focusStatus->get({ 2, 1 }).val) / 2;
 		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
 	}
 
@@ -1426,7 +1429,6 @@ RPiController::StatisticsPtr IPARPi::fillStatistics(bcm2835_isp_stats *stats) co
 		statistics->focusRegions.set(i, { stats->focus_stats[i].contrast_val[1][1] / 1000,
 						  stats->focus_stats[i].contrast_val_num[1][1],
 						  stats->focus_stats[i].contrast_val_num[1][0] });
-
 	return statistics;
 }
 
@@ -1443,6 +1445,10 @@ void IPARPi::processStats(unsigned int bufferId, unsigned int ipaContext)
 	Span<uint8_t> mem = it->second.planes()[0];
 	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
 	RPiController::StatisticsPtr statistics = fillStatistics(stats);
+
+	/* Save the focus stats in the metadata structure to report out later. */
+	rpiMetadata_[ipaContext].set("focus.status", statistics->focusRegions);
+
 	helper_->process(statistics, rpiMetadata);
 	controller_.process(statistics, &rpiMetadata);
 

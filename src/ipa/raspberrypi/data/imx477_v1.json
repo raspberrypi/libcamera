@@ -511,9 +511,6 @@
         },
         {
             "rpi.sharpen": { }
-        },
-        {
-            "rpi.focus": { }
         }
     ]
 }

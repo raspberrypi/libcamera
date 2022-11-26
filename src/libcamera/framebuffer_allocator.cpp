@@ -88,12 +88,14 @@ FrameBufferAllocator::~FrameBufferAllocator()
  */
 int FrameBufferAllocator::allocate(Stream *stream)
 {
-	if (buffers_.count(stream)) {
+	const auto &[it, inserted] = buffers_.try_emplace(stream);
+
+	if (!inserted) {
 		LOG(Allocator, Error) << "Buffers already allocated for stream";
 		return -EBUSY;
 	}
 
-	int ret = camera_->exportFrameBuffers(stream, &buffers_[stream]);
+	int ret = camera_->exportFrameBuffers(stream, &it->second);
 	if (ret == -EINVAL)
 		LOG(Allocator, Error)
 			<< "Stream is not part of " << camera_->id()

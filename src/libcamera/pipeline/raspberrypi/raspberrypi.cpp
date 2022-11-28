@@ -208,6 +208,7 @@ public:
 	void embeddedComplete(uint32_t bufferId);
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls, uint32_t delayContext);
+	void setLensControls(const ControlList &controls);
 	void setSensorControls(ControlList &controls);
 	void unicamTimeout();
 
@@ -1589,6 +1590,7 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 	ipa_->embeddedComplete.connect(this, &RPiCameraData::embeddedComplete);
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
+	ipa_->setLensControls.connect(this, &RPiCameraData::setLensControls);
 
 	/*
 	 * The configuration (tuning file) is made from the sensor name unless
@@ -1846,6 +1848,16 @@ void RPiCameraData::setDelayedControls(const ControlList &controls, uint32_t del
 	if (!delayedCtrls_->push(controls, delayContext))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 	handleState();
+}
+
+void RPiCameraData::setLensControls(const ControlList &controls)
+{
+	CameraLens *lens = sensor_->focusLens();
+
+	if (lens && controls.contains(V4L2_CID_FOCUS_ABSOLUTE)) {
+		ControlValue const &focusValue = controls.get(V4L2_CID_FOCUS_ABSOLUTE);
+		lens->setFocusPosition(focusValue.get<int32_t>());
+	}
 }
 
 void RPiCameraData::setSensorControls(ControlList &controls)

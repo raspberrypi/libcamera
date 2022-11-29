@@ -65,6 +65,7 @@ void SimpleCapture::stop()
 	camera_->requestCompleted.disconnect(this);
 
 	Stream *stream = config_->at(0).stream();
+	requests_.clear();
 	allocator_->free(stream);
 }
 
@@ -95,7 +96,6 @@ void SimpleCaptureBalanced::capture(unsigned int numRequests)
 	captureLimit_ = numRequests;
 
 	/* Queue the recommended number of reqeuests. */
-	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";
@@ -104,7 +104,7 @@ void SimpleCaptureBalanced::capture(unsigned int numRequests)
 
 		ASSERT_EQ(queueRequest(request.get()), 0) << "Failed to queue request";
 
-		requests.push_back(std::move(request));
+		requests_.push_back(std::move(request));
 	}
 
 	/* Run capture session. */
@@ -156,7 +156,6 @@ void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	captureLimit_ = numRequests;
 
 	/* Queue the recommended number of reqeuests. */
-	std::vector<std::unique_ptr<libcamera::Request>> requests;
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";
@@ -165,7 +164,7 @@ void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 
 		ASSERT_EQ(camera_->queueRequest(request.get()), 0) << "Failed to queue request";
 
-		requests.push_back(std::move(request));
+		requests_.push_back(std::move(request));
 	}
 
 	/* Run capture session. */

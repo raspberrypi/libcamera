@@ -1062,7 +1062,7 @@ void IPARPi::prepareISP(const ISPConfig &data)
 		 * in helper_->Prepare().
 		 */
 		RPiController::Metadata &lastMetadata =
-			rpiMetadata_[ipaContext ? ipaContext : rpiMetadata_.size()];
+			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
 		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 		return;

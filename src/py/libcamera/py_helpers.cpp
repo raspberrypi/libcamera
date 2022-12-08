@@ -46,10 +46,8 @@ py::object controlValueToPy(const ControlValue &cv)
 		return valueOrTuple<float>(cv);
 	case ControlTypeString:
 		return py::cast(cv.get<std::string>());
-	case ControlTypeRectangle: {
-		const Rectangle *v = reinterpret_cast<const Rectangle *>(cv.data().data());
-		return py::cast(v);
-	}
+	case ControlTypeRectangle:
+		return valueOrTuple<Rectangle>(cv);
 	case ControlTypeSize: {
 		const Size *v = reinterpret_cast<const Size *>(cv.data().data());
 		return py::cast(v);
@@ -88,7 +86,7 @@ ControlValue pyToControlValue(const py::object &ob, ControlType type)
 	case ControlTypeString:
 		return ControlValue(ob.cast<std::string>());
 	case ControlTypeRectangle:
-		return ControlValue(ob.cast<Rectangle>());
+		return controlValueMaybeArray<Rectangle>(ob);
 	case ControlTypeSize:
 		return ControlValue(ob.cast<Size>());
 	case ControlTypeNone:

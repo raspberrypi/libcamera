@@ -133,6 +133,18 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
+		{ "imx708_noir", {
+			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {},
+		} },
+		{ "imx708_wide", {
+			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {},
+		} },
+		{ "imx708_wide_noir", {
+			.unitCellSize = { 1400, 1400 },
+			.testPatternModes = {},
+		} },
 		{ "ov2740", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {

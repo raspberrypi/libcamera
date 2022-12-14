@@ -19,6 +19,7 @@ libcamera_internal_headers = files([
     'camera_sensor_properties.h',
     'control_serializer.h',
     'control_validator.h',
+    'converter.h',
     'delayed_controls.h',
     'device_enumerator.h',
     'device_enumerator_sysfs.h',

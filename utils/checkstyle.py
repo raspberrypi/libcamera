@@ -313,7 +313,7 @@ class HeaderAddChecker(CommitChecker):
     def check(cls, commit, top_level):
         issues = []
 
-        meson_files = [f for f in commit.files('M')
+        meson_files = [f for f in commit.files()
                        if os.path.basename(f) == 'meson.build']
 
         for filename in commit.files('AR'):

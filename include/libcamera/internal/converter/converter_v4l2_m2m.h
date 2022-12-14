@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2020, Laurent Pinchart
+ * Copyright 2022 NXP
  *
- * converter.h - Format converter for simple pipeline handler
+ * converter_v4l2_m2m.h - V4l2 M2M Format converter interface
  */
 
 #pragma once
@@ -14,10 +15,12 @@
 #include <tuple>
 #include <vector>
 
-#include <libcamera/pixel_format.h>
-
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
+
+#include <libcamera/pixel_format.h>
+
+#include "libcamera/internal/converter.h"
 
 namespace libcamera {
 
@@ -28,11 +31,12 @@ class SizeRange;
 struct StreamConfiguration;
 class V4L2M2MDevice;
 
-class SimpleConverter
+class V4L2M2MConverter : public Converter
 {
 public:
-	SimpleConverter(MediaDevice *media);
+	V4L2M2MConverter(MediaDevice *media);
 
+	int loadConfiguration([[maybe_unused]] const std::string &filename) { return 0; }
 	bool isValid() const { return m2m_ != nullptr; }
 
 	std::vector<PixelFormat> formats(PixelFormat input);
@@ -52,14 +56,11 @@ public:
 	int queueBuffers(FrameBuffer *input,
 			 const std::map<unsigned int, FrameBuffer *> &outputs);
 
-	Signal<FrameBuffer *> inputBufferReady;
-	Signal<FrameBuffer *> outputBufferReady;
-
 private:
 	class Stream : protected Loggable
 	{
 	public:
-		Stream(SimpleConverter *converter, unsigned int index);
+		Stream(V4L2M2MConverter *converter, unsigned int index);
 
 		bool isValid() const { return m2m_ != nullptr; }
 
@@ -80,7 +81,7 @@ private:
 		void captureBufferReady(FrameBuffer *buffer);
 		void outputBufferReady(FrameBuffer *buffer);
 
-		SimpleConverter *converter_;
+		V4L2M2MConverter *converter_;
 		unsigned int index_;
 		std::unique_ptr<V4L2M2MDevice> m2m_;
 
@@ -88,7 +89,6 @@ private:
 		unsigned int outputBufferCount_;
 	};
 
-	std::string deviceNode_;
 	std::unique_ptr<V4L2M2MDevice> m2m_;
 
 	std::vector<Stream> streams_;

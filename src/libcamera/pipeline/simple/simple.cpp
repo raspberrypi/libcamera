@@ -30,13 +30,13 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/converter.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
-#include "converter.h"
 
 namespace libcamera {
 
@@ -266,7 +266,7 @@ public:
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
 
-	std::unique_ptr<SimpleConverter> converter_;
+	std::unique_ptr<Converter> converter_;
 	std::vector<std::unique_ptr<FrameBuffer>> converterBuffers_;
 	bool useConverter_;
 	std::queue<std::map<unsigned int, FrameBuffer *>> converterQueue_;
@@ -492,7 +492,7 @@ int SimpleCameraData::init()
 	/* Open the converter, if any. */
 	MediaDevice *converter = pipe->converter();
 	if (converter) {
-		converter_ = std::make_unique<SimpleConverter>(converter);
+		converter_ = ConverterFactoryBase::create(converter);
 		if (!converter_->isValid()) {
 			LOG(SimplePipeline, Warning)
 				<< "Failed to create converter, disabling format conversion";

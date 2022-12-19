@@ -335,6 +335,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("status", &Request::status)
 		.def_property_readonly("buffers", &Request::buffers)
 		.def_property_readonly("cookie", &Request::cookie)
+		.def_property_readonly("sequence", &Request::sequence)
 		.def_property_readonly("has_pending_buffers", &Request::hasPendingBuffers)
 		.def("set_control", [](Request &self, const ControlId &id, py::object value) {
 			self.controls().set(id.id(), pyToControlValue(value, id.type()));

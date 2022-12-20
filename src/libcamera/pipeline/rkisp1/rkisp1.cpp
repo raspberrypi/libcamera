@@ -220,7 +220,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 		}
 
 		if (pipe_->availableStatBuffers_.empty()) {
-			LOG(RkISP1, Error) << "Statisitc buffer underrun";
+			LOG(RkISP1, Error) << "Statistic buffer underrun";
 			return nullptr;
 		}
 
@@ -340,7 +340,7 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 
 	/*
 	 * The API tuning file is made from the sensor name unless the
-	 * environment variable overrides it. If
+	 * environment variable overrides it.
 	 */
 	std::string ipaTuningFile;
 	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RKISP1_TUNING_FILE");

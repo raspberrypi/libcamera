@@ -31,6 +31,38 @@ namespace {
 /* Empty static YamlObject as a safe result for invalid operations */
 static const YamlObject empty;
 
+/*
+ * Construct a global RAII locale for use by all YAML parser instances to
+ * ensure consistency when parsing configuration files and types regardless of
+ * the system locale configuration.
+ *
+ * For more information see:
+ * - https://bugs.libcamera.org/show_bug.cgi?id=174
+ */
+class Locale
+{
+public:
+	Locale(const char *locale)
+	{
+		locale_ = newlocale(LC_ALL_MASK, locale, static_cast<locale_t>(0));
+		if (locale_ == static_cast<locale_t>(0))
+			LOG(YamlParser, Fatal)
+				<< "Failed to construct a locale";
+	}
+
+	~Locale()
+	{
+		freelocale(locale_);
+	}
+
+	locale_t locale() { return locale_; }
+
+private:
+	locale_t locale_;
+};
+
+Locale yamlLocale("C");
+
 } /* namespace */
 
 /**
@@ -283,7 +315,7 @@ std::optional<double> YamlObject::get() const
 	char *end;
 
 	errno = 0;
-	double value = std::strtod(value_.c_str(), &end);
+	double value = strtod_l(value_.c_str(), &end, yamlLocale.locale());
 
 	if ('\0' != *end || errno == ERANGE)
 		return std::nullopt;

@@ -352,6 +352,68 @@ class HeaderAddChecker(CommitChecker):
         return issues
 
 
+class TitleChecker(CommitChecker):
+    prefix_regex = re.compile(r'[0-9a-f]+ (([a-zA-Z0-9_.-]+: )+)')
+    release_regex = re.compile(r'libcamera v[0-9]+\.[0-9]+\.[0-9]+')
+
+    @classmethod
+    def check(cls, commit, top_level):
+        title = commit.title
+
+        # Ignore release commits, they don't need a prefix.
+        if TitleChecker.release_regex.fullmatch(title):
+            return []
+
+        prefix_pos = title.find(': ')
+        if prefix_pos != -1 and prefix_pos != len(title) - 2:
+            return []
+
+        # Find prefix candidates by searching the git history
+        msgs = subprocess.run(['git', 'log', '--no-decorate', '--oneline', '-n100', '--'] + commit.files(),
+                              stdout=subprocess.PIPE).stdout.decode('utf-8')
+        prefixes = {}
+        prefixes_count = 0
+        for msg in msgs.splitlines():
+            prefix = TitleChecker.prefix_regex.match(msg)
+            if not prefix:
+                continue
+
+            prefix = prefix.group(1)
+            if prefix in prefixes:
+                prefixes[prefix] += 1
+            else:
+                prefixes[prefix] = 1
+
+            prefixes_count += 1
+
+        if not prefixes:
+            return [CommitIssue('Commit title is missing prefix')]
+
+        # Sort the candidates by number of occurrences and pick the best ones.
+        # When multiple prefixes are possible without a clear winner, we want to
+        # display the most common options to the user, but without the most
+        # unlikely options to avoid too long messages. As a heuristic, select
+        # enough candidates to cover at least 2/3 of the possible prefixes, but
+        # never more than 4 candidates.
+        prefixes = list(prefixes.items())
+        prefixes.sort(key=lambda x: x[1], reverse=True)
+
+        candidates = []
+        candidates_count = 0
+        for prefix in prefixes:
+            candidates.append(f"`{prefix[0]}'")
+            candidates_count += prefix[1]
+            if candidates_count >= prefixes_count * 2 / 3 or \
+               len(candidates) == 4:
+                break
+
+        candidates = candidates[:-2] + [' or '.join(candidates[-2:])]
+        candidates = ', '.join(candidates)
+
+        return [CommitIssue('Commit title is missing prefix, '
+                            'possible candidates are ' + candidates)]
+
+
 # ------------------------------------------------------------------------------
 # Style Checkers
 #

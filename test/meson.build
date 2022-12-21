@@ -7,6 +7,22 @@ endif
 
 test_enabled = true
 
+# When ASan is enabled, find the path to the ASan runtime needed by multiple
+# tests. This currently works with gcc only, as clang uses different file names
+# depending on the compiler version and target architecture.
+asan_enabled = false
+asan_runtime_missing = false
+
+if get_option('b_sanitize').contains('address')
+    asan_enabled = true
+
+    if cc.get_id() == 'gcc'
+        asan_runtime = run_command(cc, '-print-file-name=libasan.so', check : true).stdout().strip()
+    else
+        asan_runtime_missing = true
+    endif
+endif
+
 subdir('libtest')
 
 subdir('camera')

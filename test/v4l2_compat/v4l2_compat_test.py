@@ -57,8 +57,8 @@ def extract_result(result):
     return ret
 
 
-def test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, base_driver):
-    ret, output = run_with_stdout(v4l2_compliance, '-s', '-d', device, env={'LD_PRELOAD': v4l2_compat})
+def test_v4l2_compliance(v4l2_compliance, ld_preload, device, base_driver):
+    ret, output = run_with_stdout(v4l2_compliance, '-s', '-d', device, env={'LD_PRELOAD': ld_preload})
     if ret < 0:
         output.append(f'Test for {device} terminated due to signal {signal.Signals(-ret).name}')
         return TestFail, output
@@ -82,13 +82,21 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--all', action='store_true',
                         help='Test all available cameras')
+    parser.add_argument('-s', '--sanitizer', type=str,
+                        help='Path to the address sanitizer (ASan) runtime')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Make the output verbose')
     parser.add_argument('v4l2_compat', type=str,
                         help='Path to v4l2-compat.so')
     args = parser.parse_args(argv[1:])
 
-    v4l2_compat = args.v4l2_compat
+    # Compute the LD_PRELOAD value by first loading ASan (if specified) and
+    # then the V4L2 compat layer.
+    ld_preload = []
+    if args.sanitizer:
+        ld_preload.append(args.sanitizer)
+    ld_preload.append(args.v4l2_compat)
+    ld_preload = ':'.join(ld_preload)
 
     v4l2_compliance = shutil.which('v4l2-compliance')
     if v4l2_compliance is None:
@@ -118,7 +126,7 @@ def main(argv):
     failed = []
     drivers_tested = {}
     for device in dev_nodes:
-        ret, out = run_with_stdout(v4l2_ctl, '-D', '-d', device, env={'LD_PRELOAD': v4l2_compat})
+        ret, out = run_with_stdout(v4l2_ctl, '-D', '-d', device, env={'LD_PRELOAD': ld_preload})
         if ret < 0:
             failed.append(device)
             print(f'v4l2-ctl failed on {device} with v4l2-compat')
@@ -144,7 +152,7 @@ def main(argv):
             continue
 
         print(f'Testing {device} with {driver} driver... ', end='')
-        ret, msg = test_v4l2_compliance(v4l2_compliance, v4l2_compat, device, driver)
+        ret, msg = test_v4l2_compliance(v4l2_compliance, ld_preload, device, driver)
         if ret == TestFail:
             failed.append(device)
             print('failed')

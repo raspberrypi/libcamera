@@ -288,12 +288,12 @@ int IPAModule::loadIPAModuleInfo()
 	}
 
 	Span<const uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
-	if (info.size() != sizeof(info_)) {
+	if (info.size() < sizeof(info_)) {
 		LOG(IPAModule, Error) << "IPA module has no valid info";
 		return -EINVAL;
 	}
 
-	memcpy(&info_, info.data(), info.size());
+	memcpy(&info_, info.data(), sizeof(info_));
 
 	if (info_.moduleAPIVersion != IPA_MODULE_API_VERSION) {
 		LOG(IPAModule, Error) << "IPA module API version mismatch";

@@ -161,7 +161,7 @@ G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
 			GST_DEBUG_CATEGORY_INIT(source_debug, "libcamerasrc", 0,
 						"libcamera Source"))
 
-#define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg")
+#define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg; video/x-bayer")
 
 /* For the simple case, we have a src pad that is always present. */
 GstStaticPadTemplate src_template = {

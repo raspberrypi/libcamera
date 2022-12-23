@@ -20,6 +20,12 @@ static struct {
 	/* Compressed */
 	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
 
+	/* Bayer formats, gstreamer only supports 8-bit */
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB8 },
+
 	/* RGB16 */
 	{ GST_VIDEO_FORMAT_RGB16, formats::RGB565 },
 
@@ -228,6 +234,22 @@ gst_format_to_pixel_format(GstVideoFormat gst_format)
 	return PixelFormat{};
 }
 
+static const gchar *
+bayer_format_to_string(int format)
+{
+	switch (format) {
+	case formats::SBGGR8:
+		return "bggr";
+	case formats::SGBRG8:
+		return "gbrg";
+	case formats::SGRBG8:
+		return "grbg";
+	case formats::SRGGB8:
+		return "rggb";
+	}
+	return NULL;
+}
+
 static GstStructure *
 bare_structure_from_format(const PixelFormat &format)
 {
@@ -243,6 +265,14 @@ bare_structure_from_format(const PixelFormat &format)
 	switch (format) {
 	case formats::MJPEG:
 		return gst_structure_new_empty("image/jpeg");
+
+	case formats::SBGGR8:
+	case formats::SGBRG8:
+	case formats::SGRBG8:
+	case formats::SRGGB8:
+		return gst_structure_new("video/x-bayer", "format", G_TYPE_STRING,
+					 bayer_format_to_string(format), nullptr);
+
 	default:
 		return nullptr;
 	}

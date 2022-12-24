@@ -164,6 +164,23 @@ liblttng = dependency('lttng-ust', required : get_option('tracing'))
 # are enabled.
 pipelines = get_option('pipelines')
 
+if pipelines.contains('auto')
+    host_cpu = host_machine.cpu_family()
+    pipelines = []
+    if host_cpu == 'x86' or host_cpu == 'x86_64'
+        pipelines += ['ipu3']
+    elif host_cpu == 'aarch64'
+        pipelines += ['imx8-isi', 'rkisp1']
+    endif
+
+    if host_cpu == 'arm' or host_cpu == 'aarch64'
+        pipelines += ['raspberrypi', 'simple']
+    endif
+
+    # Always include the uvcvideo pipeline handler.
+    pipelines += ['uvcvideo']
+endif
+
 if get_option('test') and 'vimc' not in pipelines
     message('Enabling vimc pipeline handler to support tests')
     pipelines += ['vimc']

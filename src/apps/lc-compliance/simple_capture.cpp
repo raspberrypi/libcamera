@@ -127,6 +127,9 @@ int SimpleCaptureBalanced::queueRequest(Request *request)
 
 void SimpleCaptureBalanced::requestComplete(Request *request)
 {
+	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
+		<< "Request didn't complete successfully";
+
 	captureCount_++;
 	if (captureCount_ >= captureLimit_) {
 		loop_->exit(0);
@@ -183,6 +186,9 @@ void SimpleCaptureUnbalanced::requestComplete(Request *request)
 		loop_->exit(0);
 		return;
 	}
+
+	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
+		<< "Request didn't complete successfully";
 
 	request->reuse(Request::ReuseBuffers);
 	if (camera_->queueRequest(request))

@@ -39,6 +39,7 @@ option('pipelines',
         type : 'array',
         value : ['auto'],
         choices : [
+            'all',
             'auto',
             'imx8-isi',
             'ipu3',
@@ -48,7 +49,7 @@ option('pipelines',
             'uvcvideo',
             'vimc'
         ],
-        description : 'Select which pipeline handlers to build. If this is set to auto, all the pipelines applicable to the target architecture will be built.')
+        description : 'Select which pipeline handlers to build. If this is set to "auto", all the pipelines applicable to the target architecture will be built. If this is set to "all", all the pipelines will be built. If both are selected then "all" will take precedence.')
 
 option('qcam',
         type : 'feature',

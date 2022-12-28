@@ -164,6 +164,18 @@ liblttng = dependency('lttng-ust', required : get_option('tracing'))
 # are enabled.
 pipelines = get_option('pipelines')
 
+if pipelines.contains('all')
+    pipelines = [
+        'imx8-isi',
+        'ipu3',
+        'raspberrypi',
+        'rkisp1',
+        'simple',
+        'uvcvideo',
+        'vimc',
+    ]
+endif
+
 if pipelines.contains('auto')
     host_cpu = host_machine.cpu_family()
     pipelines = []

@@ -48,7 +48,7 @@ option('pipelines',
             'uvcvideo',
             'vimc'
         ],
-        description : 'Select which pipeline handlers to build. If it this set to auto, all the pipelines applicable to the target architecture will be built.')
+        description : 'Select which pipeline handlers to build. If this is set to auto, all the pipelines applicable to the target architecture will be built.')
 
 option('qcam',
         type : 'feature',

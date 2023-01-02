@@ -5,7 +5,7 @@ PROJECT_NAME           = "libcamera"
 PROJECT_NUMBER         = "@VERSION@"
 PROJECT_BRIEF          = "Supporting cameras in Linux since 2019"
 
-OUTPUT_DIRECTORY       = Documentation
+OUTPUT_DIRECTORY       = "@OUTPUT_DIR@"
 
 STRIP_FROM_PATH        = "@TOP_SRCDIR@"
 

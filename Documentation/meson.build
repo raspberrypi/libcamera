@@ -14,6 +14,7 @@ if doxygen.found() and dot.found()
     cdata.set('VERSION', 'v@0@'.format(libcamera_git_version))
     cdata.set('TOP_SRCDIR', meson.project_source_root())
     cdata.set('TOP_BUILDDIR', meson.project_build_root())
+    cdata.set('OUTPUT_DIR', meson.current_build_dir())
 
     doxyfile = configure_file(input : 'Doxyfile.in',
                               output : 'Doxyfile',

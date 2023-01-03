@@ -41,6 +41,7 @@ rpi_ipa_sources = files([
     'controller/rpi/ccm.cpp',
     'controller/rpi/contrast.cpp',
     'controller/rpi/sdn.cpp',
+    'controller/rpi/af.cpp',
     'controller/pwl.cpp',
     'controller/device_status.cpp',
 ])

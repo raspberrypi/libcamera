@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <libcamera/base/span.h>
+
 #include "algorithm.h"
 
 namespace RPiController {

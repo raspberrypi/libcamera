@@ -154,7 +154,7 @@ colorspace_from_colorimetry(const GstVideoColorimetry &colorimetry)
 	case GST_VIDEO_TRANSFER_GAMMA22:
 	case GST_VIDEO_TRANSFER_GAMMA28:
 		GST_WARNING("GAMMA 18, 20, 22, 28 transfer functions not supported");
-	/* fallthrough */
+		[[fallthrough]];
 	case GST_VIDEO_TRANSFER_GAMMA10:
 		colorspace->transferFunction = ColorSpace::TransferFunction::Linear;
 		break;

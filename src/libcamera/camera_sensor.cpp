@@ -427,7 +427,7 @@ int CameraSensor::initProperties()
 			LOG(CameraSensor, Warning)
 				<< "Unsupported camera location "
 				<< v4l2Orientation << ", setting to External";
-			/* Fall-through */
+			[[fallthrough]];
 		case V4L2_CAMERA_ORIENTATION_EXTERNAL:
 			propertyValue = properties::CameraLocationExternal;
 			break;

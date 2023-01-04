@@ -50,7 +50,7 @@ struct StartConfig {
 };
 
 interface IPARPiInterface {
-	init(libcamera.IPASettings settings)
+	init(libcamera.IPASettings settings, bool lensPresent)
 		=> (int32 ret, IPAInitResult result);
 	start(libcamera.ControlList controls) => (StartConfig startConfig);
 	stop();

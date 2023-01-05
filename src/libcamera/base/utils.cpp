@@ -8,6 +8,7 @@
 #include <libcamera/base/utils.h>
 
 #include <iomanip>
+#include <locale.h>
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
@@ -462,6 +463,51 @@ std::string toAscii(const std::string &str)
  * \return The absolute value of the difference of the two parameters \a a and
  * \a b
  */
+
+namespace {
+
+/*
+ * RAII wrapper around locale_t instances, to support global locale instances
+ * without leaking memory.
+ */
+class Locale
+{
+public:
+	Locale(const char *locale)
+	{
+		locale_ = newlocale(LC_ALL_MASK, locale, static_cast<locale_t>(0));
+	}
+
+	~Locale()
+	{
+		freelocale(locale_);
+	}
+
+	locale_t locale() { return locale_; }
+
+private:
+	locale_t locale_;
+};
+
+Locale cLocale("C");
+
+} /* namespace */
+
+/**
+ * \brief Convert a string to a double independently of the current locale
+ * \param[in] nptr The string to convert
+ * \param[out] endptr Pointer to trailing portion of the string after conversion
+ *
+ * This function is a locale-independent version of the std::strtod() function.
+ * It behaves as the standard function, but uses the "C" locale instead of the
+ * current locale.
+ *
+ * \return The converted value, if any, or 0.0 if the conversion failed.
+ */
+double strtod(const char *__restrict nptr, char **__restrict endptr)
+{
+	return strtod_l(nptr, endptr, cLocale.locale());
+}
 
 } /* namespace utils */
 

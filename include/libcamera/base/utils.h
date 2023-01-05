@@ -367,6 +367,8 @@ decltype(auto) abs_diff(const T &a, const T &b)
 		return a - b;
 }
 
+double strtod(const char *__restrict nptr, char **__restrict endptr);
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

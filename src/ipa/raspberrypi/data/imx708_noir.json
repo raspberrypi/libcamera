@@ -510,12 +510,7 @@
             }
         },
         {
-            "rpi.sharpen":
-            {
-                "threshold": 0.5,
-                "strength": 2.0,
-                "limit": 2.0
-            }
+            "rpi.sharpen": { }
         },
         {
             "rpi.focus": { }

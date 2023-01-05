@@ -72,6 +72,10 @@ if cc.has_header_symbol('unistd.h', 'issetugid')
     config_h.set('HAVE_ISSETUGID', 1)
 endif
 
+if cc.has_header_symbol('locale.h', 'locale_t', prefix : '#define _GNU_SOURCE')
+    config_h.set('HAVE_LOCALE_T', 1)
+endif
+
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_SECURE_GETENV', 1)
 endif

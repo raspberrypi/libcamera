@@ -464,6 +464,8 @@ std::string toAscii(const std::string &str)
  * \a b
  */
 
+#if HAVE_LOCALE_T
+
 namespace {
 
 /*
@@ -493,6 +495,8 @@ Locale cLocale("C");
 
 } /* namespace */
 
+#endif /* HAVE_LOCALE_T */
+
 /**
  * \brief Convert a string to a double independently of the current locale
  * \param[in] nptr The string to convert
@@ -506,7 +510,15 @@ Locale cLocale("C");
  */
 double strtod(const char *__restrict nptr, char **__restrict endptr)
 {
+#if HAVE_LOCALE_T
 	return strtod_l(nptr, endptr, cLocale.locale());
+#else
+	/*
+	 * If the libc implementation doesn't provide locale object support,
+	 * assume that strtod() is locale-independent.
+	 */
+	return strtod(nptr, endptr);
+#endif
 }
 
 } /* namespace utils */

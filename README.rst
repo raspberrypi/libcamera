@@ -34,7 +34,7 @@ To fetch the sources, build and install:
 
   git clone https://git.libcamera.org/libcamera/libcamera.git
   cd libcamera
-  meson build
+  meson setup build
   ninja -C build install
 
 Dependencies

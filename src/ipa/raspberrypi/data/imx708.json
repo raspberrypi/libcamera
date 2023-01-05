@@ -130,8 +130,8 @@
                     5773.0, 0.4265, 0.6256,
                     7433.0, 0.3723, 0.6881
                 ],
-                "sensitivity_r": 1.0,
-                "sensitivity_b": 1.0,
+                "sensitivity_r": 1.05,
+                "sensitivity_b": 1.05,
                 "transverse_pos": 0.03148,
                 "transverse_neg": 0.03061
             }

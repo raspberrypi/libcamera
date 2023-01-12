@@ -164,42 +164,41 @@ liblttng = dependency('lttng-ust', required : get_option('tracing'))
 
 # Pipeline handlers
 #
-# Tests require the vimc pipeline handler, include it automatically when tests
-# are enabled.
 pipelines = get_option('pipelines')
 
-if pipelines.contains('all')
-    pipelines = [
-        'imx8-isi',
-        'ipu3',
-        'raspberrypi',
-        'rkisp1',
-        'simple',
-        'uvcvideo',
-        'vimc',
-    ]
-endif
+arch_arm = ['arm', 'aarch64']
+arch_x86 = ['x86', 'x86_64']
+pipelines_support = {
+    'imx8-isi':     arch_arm,
+    'ipu3':         arch_x86,
+    'raspberrypi':  arch_arm,
+    'rkisp1':       arch_arm,
+    'simple':       arch_arm,
+    'uvcvideo':     ['any'],
+    'vimc':         ['test'],
+}
 
-if pipelines.contains('auto')
+if pipelines.contains('all')
+    pipelines = pipelines_support.keys()
+elif pipelines.contains('auto')
     host_cpu = host_machine.cpu_family()
     pipelines = []
-    if host_cpu == 'x86' or host_cpu == 'x86_64'
-        pipelines += ['ipu3']
-    elif host_cpu == 'aarch64'
-        pipelines += ['imx8-isi', 'rkisp1']
-    endif
-
-    if host_cpu == 'arm' or host_cpu == 'aarch64'
-        pipelines += ['raspberrypi', 'simple']
-    endif
-
-    # Always include the uvcvideo pipeline handler.
-    pipelines += ['uvcvideo']
+    foreach pipeline, archs : pipelines_support
+        if host_cpu in archs or 'any' in archs
+            pipelines += pipeline
+        endif
+    endforeach
 endif
 
-if get_option('test') and 'vimc' not in pipelines
-    message('Enabling vimc pipeline handler to support tests')
-    pipelines += ['vimc']
+# Tests require the vimc pipeline handler, include it automatically when tests
+# are enabled.
+if get_option('test')
+    foreach pipeline, archs : pipelines_support
+        if 'test' in archs and pipeline not in pipelines
+            message('Enabling ' + pipeline + ' pipeline handler for tests')
+            pipelines += pipeline
+        endif
+    endforeach
 endif
 
 # Utilities are parsed first to provide support for other components.

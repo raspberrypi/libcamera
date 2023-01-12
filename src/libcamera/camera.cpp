@@ -361,6 +361,7 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
 	 * largest non-raw stream with a defined color space (if there is one).
 	 */
 	std::optional<ColorSpace> colorSpace;
+	Size size;
 
 	for (auto [i, cfg] : utils::enumerate(config_)) {
 		if (!cfg.colorSpace)
@@ -369,9 +370,10 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
 		if (cfg.colorSpace->adjust(cfg.pixelFormat))
 			status = Adjusted;
 
-		if (cfg.colorSpace != ColorSpace::Raw &&
-		    (!colorSpace || cfg.size > config_[i].size))
+		if (cfg.colorSpace != ColorSpace::Raw && cfg.size > size) {
 			colorSpace = cfg.colorSpace;
+			size = cfg.size;
+		}
 	}
 
 	if (!colorSpace || !(flags & ColorSpaceFlag::StreamsShareColorSpace))

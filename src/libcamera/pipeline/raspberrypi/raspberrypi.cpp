@@ -848,6 +848,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 	/* Adjust aspect ratio by providing crops on the input image. */
 	Size size = unicamFormat.size.boundedToAspectRatio(maxSize);
 	Rectangle crop = size.centeredTo(Rectangle(unicamFormat.size).center());
+	Rectangle defaultCrop = crop;
 	data->ispCrop_ = crop;
 
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
@@ -901,9 +902,9 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		ctrlMap.emplace(c.first, c.second);
 
 	/* Add the ScalerCrop control limits based on the current mode. */
-	Rectangle ispMinCrop(data->ispMinCropSize_);
-	ispMinCrop.scaleBy(data->sensorInfo_.analogCrop.size(), data->sensorInfo_.outputSize);
-	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, Rectangle(data->sensorInfo_.analogCrop.size()));
+	Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->ispMinCropSize_));
+	defaultCrop = data->scaleIspCrop(defaultCrop);
+	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop, defaultCrop);
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 

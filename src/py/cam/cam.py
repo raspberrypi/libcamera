@@ -266,6 +266,11 @@ class CaptureState:
         ctx.last = ts
         ctx.fps = fps
 
+        if ctx.opt_metadata:
+            reqmeta = req.metadata
+            for ctrl, val in reqmeta.items():
+                print(f'\t{ctrl} = {val}')
+
         for stream, fb in buffers.items():
             stream_name = ctx.stream_names[stream]
 
@@ -283,11 +288,6 @@ class CaptureState:
                           meta.sequence,
                           '/'.join([str(p.bytes_used) for p in meta.planes]),
                           crcs))
-
-            if ctx.opt_metadata:
-                reqmeta = req.metadata
-                for ctrl, val in reqmeta.items():
-                    print(f'\t{ctrl} = {val}')
 
             if ctx.opt_save_frames:
                 with libcamera.utils.MappedFrameBuffer(fb) as mfb:

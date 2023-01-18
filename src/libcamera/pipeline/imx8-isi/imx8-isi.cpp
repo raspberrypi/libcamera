@@ -145,6 +145,10 @@ private:
 
 	Pipe *pipeFromStream(Camera *camera, const Stream *stream);
 
+	StreamConfiguration generateYUVConfiguration(Camera *camera,
+						     const Size &size);
+	StreamConfiguration generateRawConfiguration(Camera *camera);
+
 	void bufferReady(FrameBuffer *buffer);
 
 	MediaDevice *isiDev_;
@@ -708,6 +712,131 @@ PipelineHandlerISI::PipelineHandlerISI(CameraManager *manager)
 {
 }
 
+/*
+ * Generate a StreamConfiguration for YUV/RGB use case.
+ *
+ * Verify it the sensor can produce a YUV/RGB media bus format and collect
+ * all the processed pixel formats the ISI can generate as supported stream
+ * configurations.
+ */
+StreamConfiguration PipelineHandlerISI::generateYUVConfiguration(Camera *camera,
+								 const Size &size)
+{
+	ISICameraData *data = cameraData(camera);
+	PixelFormat pixelFormat = formats::YUYV;
+	unsigned int mbusCode;
+
+	mbusCode = data->getYuvMediaBusFormat(pixelFormat);
+	if (!mbusCode)
+		return {};
+
+	/* Adjust the requested size to the sensor's capabilities. */
+	V4L2SubdeviceFormat sensorFmt;
+	sensorFmt.mbus_code = mbusCode;
+	sensorFmt.size = size;
+
+	int ret = data->sensor_->tryFormat(&sensorFmt);
+	if (ret) {
+		LOG(ISI, Error) << "Failed to try sensor format.";
+		return {};
+	}
+
+	Size sensorSize = sensorFmt.size;
+
+	/*
+	 * Populate the StreamConfiguration.
+	 *
+	 * As the sensor supports at least one YUV/RGB media bus format all the
+	 * processed ones in formatsMap_ can be generated from it.
+	 */
+	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+
+	for (const auto &[pixFmt, pipeFmt] : ISICameraConfiguration::formatsMap_) {
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
+			continue;
+
+		streamFormats[pixFmt] = { { kMinISISize, sensorSize } };
+	}
+
+	StreamFormats formats(streamFormats);
+
+	StreamConfiguration cfg(formats);
+	cfg.pixelFormat = pixelFormat;
+	cfg.size = sensorSize;
+	cfg.bufferCount = 4;
+
+	return cfg;
+}
+
+/*
+ * Generate a StreamConfiguration for Raw Bayer use case. Verify if the sensor
+ * can produce the requested RAW bayer format and eventually adjust it to
+ * the one with the largest bit-depth the sensor can produce.
+ */
+StreamConfiguration PipelineHandlerISI::generateRawConfiguration(Camera *camera)
+{
+	static const std::map<unsigned int, PixelFormat> rawFormats = {
+		{ MEDIA_BUS_FMT_SBGGR8_1X8, formats::SBGGR8 },
+		{ MEDIA_BUS_FMT_SGBRG8_1X8, formats::SGBRG8 },
+		{ MEDIA_BUS_FMT_SGRBG8_1X8, formats::SGRBG8 },
+		{ MEDIA_BUS_FMT_SRGGB8_1X8, formats::SRGGB8 },
+		{ MEDIA_BUS_FMT_SBGGR10_1X10, formats::SBGGR10 },
+		{ MEDIA_BUS_FMT_SGBRG10_1X10, formats::SGBRG10 },
+		{ MEDIA_BUS_FMT_SGRBG10_1X10, formats::SGRBG10 },
+		{ MEDIA_BUS_FMT_SRGGB10_1X10, formats::SRGGB10 },
+		{ MEDIA_BUS_FMT_SBGGR12_1X12, formats::SBGGR12 },
+		{ MEDIA_BUS_FMT_SGBRG12_1X12, formats::SGBRG12 },
+		{ MEDIA_BUS_FMT_SGRBG12_1X12, formats::SGRBG12 },
+		{ MEDIA_BUS_FMT_SRGGB12_1X12, formats::SRGGB12 },
+		{ MEDIA_BUS_FMT_SBGGR14_1X14, formats::SBGGR14 },
+		{ MEDIA_BUS_FMT_SGBRG14_1X14, formats::SGBRG14 },
+		{ MEDIA_BUS_FMT_SGRBG14_1X14, formats::SGRBG14 },
+		{ MEDIA_BUS_FMT_SRGGB14_1X14, formats::SRGGB14 },
+	};
+
+	ISICameraData *data = cameraData(camera);
+	PixelFormat pixelFormat = formats::SBGGR10;
+	unsigned int mbusCode;
+
+	/* pixelFormat will be adjusted, if the sensor can produce RAW. */
+	mbusCode = data->getRawMediaBusFormat(&pixelFormat);
+	if (!mbusCode)
+		return {};
+
+	/*
+	 * Populate the StreamConfiguration with all the supported Bayer
+	 * formats the sensor can produce.
+	 */
+	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
+	const CameraSensor *sensor = data->sensor_.get();
+
+	for (unsigned int code : sensor->mbusCodes()) {
+		/* Find a Bayer media bus code from the sensor. */
+		const BayerFormat &bayerFormat = BayerFormat::fromMbusCode(code);
+		if (!bayerFormat.isValid())
+			continue;
+
+		auto it = rawFormats.find(code);
+		if (it == rawFormats.end()) {
+			LOG(ISI, Warning) << bayerFormat
+					  << " not supported in ISI formats map.";
+			continue;
+		}
+
+		streamFormats[it->second] = { { sensor->resolution(), sensor->resolution() } };
+	}
+
+	StreamFormats formats(streamFormats);
+
+	StreamConfiguration cfg(formats);
+	cfg.size = sensor->resolution();
+	cfg.pixelFormat = pixelFormat;
+	cfg.bufferCount = 4;
+
+	return cfg;
+}
+
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerISI::generateConfiguration(Camera *camera,
 					  const StreamRoles &roles)
@@ -725,107 +854,51 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		return nullptr;
 	}
 
-	bool isRaw = false;
 	for (const auto &role : roles) {
 		/*
-		 * Prefer the following formats
+		 * Prefer the following formats:
 		 * - Still Capture: Full resolution YUYV
 		 * - ViewFinder/VideoRecording: 1080p YUYV
-		 * - RAW: sensor's native format and resolution
+		 * - RAW: Full resolution Bayer
 		 */
-		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-		PixelFormat pixelFormat;
-		Size size;
+		StreamConfiguration cfg;
 
-		switch (role) {
-		case StreamRole::StillCapture:
-			/*
-			 * \todo Make sure the sensor can produce non-RAW formats
-			 * compatible with the ones supported by the pipeline.
-			 */
-			size = data->sensor_->resolution();
-			pixelFormat = formats::YUYV;
-			break;
+                switch (role) {
+                case StreamRole::StillCapture:
+                case StreamRole::Viewfinder:
+                case StreamRole::VideoRecording: {
+                        Size size = role == StreamRole::StillCapture
+                                  ? data->sensor_->resolution()
+                                  : PipelineHandlerISI::kPreviewSize;
+                        cfg = generateYUVConfiguration(camera, size);
+                        if (cfg.pixelFormat.isValid())
+                                break;
 
-		case StreamRole::Viewfinder:
-		case StreamRole::VideoRecording:
-			/*
-			 * \todo Make sure the sensor can produce non-RAW formats
-			 * compatible with the ones supported by the pipeline.
-			 */
-			size = PipelineHandlerISI::kPreviewSize;
-			pixelFormat = formats::YUYV;
-			break;
 
-		case StreamRole::Raw: {
-			/*
-			 * Make sure the sensor can generate a RAW format and
-			 * prefer the ones with a larger bitdepth.
-			 */
-			const ISICameraConfiguration::FormatMap::value_type *rawPipeFormat = nullptr;
-			unsigned int maxDepth = 0;
+                        /*
+                         * Fallback to use a Bayer format if that's what the
+                         * sensor supports.
+                         */
+                        [[fallthrough]];
 
-			for (unsigned int code : data->sensor_->mbusCodes()) {
-				const BayerFormat &bayerFormat = BayerFormat::fromMbusCode(code);
-				if (!bayerFormat.isValid())
-					continue;
+		 }
 
-				/* Make sure the format is supported by the pipeline handler. */
-				auto it = std::find_if(ISICameraConfiguration::formatsMap_.begin(),
-						       ISICameraConfiguration::formatsMap_.end(),
-						       [code](auto &isiFormat) {
-							        auto &pipe = isiFormat.second;
-							        return pipe.sensorCode == code;
-						       });
-				if (it == ISICameraConfiguration::formatsMap_.end())
-					continue;
-
-				if (bayerFormat.bitDepth > maxDepth) {
-					maxDepth = bayerFormat.bitDepth;
-					rawPipeFormat = &(*it);
-				}
-			}
-
-			if (!rawPipeFormat) {
-				LOG(ISI, Error)
-					<< "Cannot generate a configuration for RAW stream";
-				return nullptr;
-			}
-
-			size = data->sensor_->resolution();
-			pixelFormat = rawPipeFormat->first;
-
-			streamFormats[pixelFormat] = { { kMinISISize, size } };
-			isRaw = true;
-
-			break;
-		}
+                case StreamRole::Raw: {
+                        cfg = generateRawConfiguration(camera);
+                        break;
+                }
 
 		default:
 			LOG(ISI, Error) << "Requested stream role not supported: " << role;
 			return nullptr;
 		}
 
-		/*
-		 * For non-RAW configurations the ISI can perform colorspace
-		 * conversion. List all the supported output formats here.
-		 */
-		if (!isRaw) {
-			for (const auto &[pixFmt, pipeFmt] : ISICameraConfiguration::formatsMap_) {
-				const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
-				if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-					continue;
-
-				streamFormats[pixFmt] = { { kMinISISize, size } };
-			}
+		if (!cfg.pixelFormat.isValid()) {
+			LOG(ISI, Error)
+				<< "Cannot generate configuration for role: " << role;
+			return nullptr;
 		}
 
-		StreamFormats formats(streamFormats);
-
-		StreamConfiguration cfg(formats);
-		cfg.pixelFormat = pixelFormat;
-		cfg.size = size;
-		cfg.bufferCount = 4;
 		config->addConfiguration(cfg);
 	}
 

@@ -59,6 +59,8 @@ public:
 		return stream - &*streams_.begin();
 	}
 
+	unsigned int getRawMediaBusFormat(PixelFormat *pixelFormat) const;
+
 	std::unique_ptr<CameraSensor> sensor_;
 	std::unique_ptr<V4L2Subdevice> csis_;
 
@@ -172,6 +174,89 @@ int ISICameraData::init()
 	properties_ = sensor_->properties();
 
 	return 0;
+}
+
+/*
+ * Get a RAW Bayer media bus format compatible with the requested pixelFormat.
+ *
+ * If the requested pixelFormat cannot be produced by the sensor adjust it to
+ * the one corresponding to the media bus format with the largest bit-depth.
+ */
+unsigned int ISICameraData::getRawMediaBusFormat(PixelFormat *pixelFormat) const
+{
+	std::vector<unsigned int> mbusCodes = sensor_->mbusCodes();
+
+	static const std::map<PixelFormat, unsigned int> rawFormats = {
+		{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
+		{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
+		{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
+		{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
+		{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
+		{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
+		{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
+		{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
+		{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
+		{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
+		{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
+		{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
+		{ formats::SBGGR14, MEDIA_BUS_FMT_SBGGR14_1X14 },
+		{ formats::SGBRG14, MEDIA_BUS_FMT_SGBRG14_1X14 },
+		{ formats::SGRBG14, MEDIA_BUS_FMT_SGRBG14_1X14 },
+		{ formats::SRGGB14, MEDIA_BUS_FMT_SRGGB14_1X14 },
+	};
+
+	/*
+	 * Make sure the requested PixelFormat is supported in the above
+	 * map and the sensor can produce the compatible mbus code.
+	 */
+	auto it = rawFormats.find(*pixelFormat);
+	if (it != rawFormats.end() &&
+	    std::count(mbusCodes.begin(), mbusCodes.end(), it->second))
+		return it->second;
+
+	if (it == rawFormats.end())
+		LOG(ISI, Warning) << pixelFormat
+				  << " not supported in ISI formats map.";
+
+	/*
+	 * The desired pixel format cannot be produced. Adjust it to the one
+	 * corresponding to the raw media bus format with the largest bit-depth
+	 * the sensor provides.
+	 */
+	unsigned int sensorCode = 0;
+	unsigned int maxDepth = 0;
+	*pixelFormat = {};
+
+	for (unsigned int code : mbusCodes) {
+		/* Make sure the media bus format is RAW Bayer. */
+		const BayerFormat &bayerFormat = BayerFormat::fromMbusCode(code);
+		if (!bayerFormat.isValid())
+			continue;
+
+		/* Make sure the media format is supported. */
+		it = std::find_if(rawFormats.begin(), rawFormats.end(),
+				  [code](auto &rawFormat) {
+					  return rawFormat.second == code;
+				  });
+
+		if (it == rawFormats.end()) {
+			LOG(ISI, Warning) << bayerFormat
+					  << " not supported in ISI formats map.";
+			continue;
+		}
+
+		/* Pick the one with the largest bit depth. */
+		if (bayerFormat.bitDepth > maxDepth) {
+			maxDepth = bayerFormat.bitDepth;
+			*pixelFormat = it->first;
+			sensorCode = code;
+		}
+	}
+
+	if (!pixelFormat->isValid())
+		LOG(ISI, Error) << "Cannot find a supported RAW format";
+
+	return sensorCode;
 }
 
 /* -----------------------------------------------------------------------------
@@ -311,50 +396,19 @@ ISICameraConfiguration::validateRaw(std::set<Stream *> &availableStreams,
 	 */
 	std::vector<unsigned int> mbusCodes = data_->sensor_->mbusCodes();
 	StreamConfiguration &rawConfig = config_[0];
+	PixelFormat rawFormat = rawConfig.pixelFormat;
 
-	bool supported = false;
-	auto it = formatsMap_.find(rawConfig.pixelFormat);
-	if (it != formatsMap_.end()) {
-		unsigned int mbusCode = it->second.sensorCode;
-
-		if (std::count(mbusCodes.begin(), mbusCodes.end(), mbusCode))
-			supported = true;
+	unsigned int sensorCode = data_->getRawMediaBusFormat(&rawFormat);
+	if (!sensorCode) {
+		LOG(ISI, Error) << "Cannot adjust RAW pixelformat "
+				<< rawConfig.pixelFormat;
+		return Invalid;
 	}
 
-	if (!supported) {
-		/*
-		 * Adjust to the first mbus code supported by both the
-		 * sensor and the pipeline.
-		 */
-		const FormatMap::value_type *pipeConfig = nullptr;
-		for (unsigned int code : mbusCodes) {
-			const BayerFormat &bayerFormat = BayerFormat::fromMbusCode(code);
-			if (!bayerFormat.isValid())
-				continue;
-
-			auto fmt = std::find_if(ISICameraConfiguration::formatsMap_.begin(),
-						ISICameraConfiguration::formatsMap_.end(),
-						[code](const auto &isiFormat) {
-							const auto &pipe = isiFormat.second;
-							return pipe.sensorCode == code;
-						});
-
-			if (fmt == ISICameraConfiguration::formatsMap_.end())
-				continue;
-
-			pipeConfig = &(*fmt);
-			break;
-		}
-
-		if (!pipeConfig) {
-			LOG(ISI, Error) << "Cannot adjust RAW format "
-					<< rawConfig.pixelFormat;
-			return Invalid;
-		}
-
-		rawConfig.pixelFormat = pipeConfig->first;
+	if (rawFormat != rawConfig.pixelFormat) {
 		LOG(ISI, Debug) << "RAW pixelformat adjusted to "
-				<< pipeConfig->first;
+				<< rawFormat;
+		rawConfig.pixelFormat = rawFormat;
 		status = Adjusted;
 	}
 

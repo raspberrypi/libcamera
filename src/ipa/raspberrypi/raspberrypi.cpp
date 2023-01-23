@@ -115,7 +115,7 @@ public:
 			munmap(lsTable_, MaxLsGridSize);
 	}
 
-	int init(const IPASettings &settings, IPAInitResult *result) override;
+	int init(const IPASettings &settings, bool lensPresent, IPAInitResult *result) override;
 	void start(const ControlList &controls, StartConfig *startConfig) override;
 	void stop() override {}
 
@@ -158,6 +158,7 @@ private:
 
 	ControlInfoMap sensorCtrls_;
 	ControlInfoMap ispCtrls_;
+	bool lensPresent_;
 	ControlList libcameraMetadata_;
 
 	/* Camera sensor params. */
@@ -204,7 +205,7 @@ private:
 	uint32_t maxSensorGainCode_;
 };
 
-int IPARPi::init(const IPASettings &settings, IPAInitResult *result)
+int IPARPi::init(const IPASettings &settings, bool lensPresent, IPAInitResult *result)
 {
 	/*
 	 * Load the "helper" for this sensor. This tells us all the device specific stuff
@@ -240,6 +241,8 @@ int IPARPi::init(const IPASettings &settings, IPAInitResult *result)
 			<< settings.configurationFile;
 		return ret;
 	}
+
+	lensPresent_ = lensPresent;
 
 	controller_.initialise();
 

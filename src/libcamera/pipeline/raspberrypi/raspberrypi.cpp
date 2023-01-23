@@ -32,6 +32,7 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera.h"
+#include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
@@ -1606,7 +1607,7 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 
 	IPASettings settings(configurationFile, sensor_->model());
 
-	return ipa_->init(settings, result);
+	return ipa_->init(settings, !!sensor_->focusLens(), result);
 }
 
 int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result)

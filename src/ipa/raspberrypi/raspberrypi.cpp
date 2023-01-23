@@ -97,6 +97,18 @@ static const ControlInfoMap::Map ipaControls{
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) }
 };
 
+/* IPA controls handled conditionally, if the lens has a focus control */
+static const ControlInfoMap::Map ipaAfControls{
+	{ &controls::AfMode, ControlInfo(controls::AfModeValues) },
+	{ &controls::AfRange, ControlInfo(controls::AfRangeValues) },
+	{ &controls::AfSpeed, ControlInfo(controls::AfSpeedValues) },
+	{ &controls::AfMetering, ControlInfo(controls::AfMeteringValues) },
+	{ &controls::AfWindows, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
+	{ &controls::AfTrigger, ControlInfo(controls::AfTriggerValues) },
+	{ &controls::AfPause, ControlInfo(controls::AfPauseValues) },
+	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }
+};
+
 LOG_DEFINE_CATEGORY(IPARPI)
 
 namespace ipa::RPi {
@@ -248,6 +260,8 @@ int IPARPi::init(const IPASettings &settings, bool lensPresent, IPAInitResult *r
 
 	/* Return the controls handled by the IPA */
 	ControlInfoMap::Map ctrlMap = ipaControls;
+	if (lensPresent_)
+		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
 	return 0;
@@ -488,6 +502,10 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const IPAConfig &ip
 	ctrlMap[&controls::ExposureTime] =
 		ControlInfo(static_cast<int32_t>(helper_->exposure(exposureMin, mode_.minLineLength).get<std::micro>()),
 			    static_cast<int32_t>(maxShutter.get<std::micro>()));
+
+	/* Declare Autofocus controls, only if we have a controllable lens */
+	if (lensPresent_)
+		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
 
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 	return 0;

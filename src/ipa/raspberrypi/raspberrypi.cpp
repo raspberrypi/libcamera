@@ -32,6 +32,7 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 
 #include "af_algorithm.h"
+#include "af_status.h"
 #include "agc_algorithm.h"
 #include "agc_status.h"
 #include "alsc_status.h"
@@ -164,6 +165,7 @@ private:
 	void applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls);
 	void applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls);
 	void applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls);
+	void applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls);
 	void resampleTable(uint16_t dest[], double const src[12][16], int destW, int destH);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
@@ -628,6 +630,36 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 		for (unsigned int i = 0; i < 9; i++)
 			m[i] = ccmStatus->matrix[i];
 		libcameraMetadata_.set(controls::ColourCorrectionMatrix, m);
+	}
+
+	const AfStatus *afStatus = rpiMetadata.getLocked<AfStatus>("af.status");
+	if (afStatus) {
+		int32_t s, p;
+		switch (afStatus->state) {
+		case AfState::Scanning:
+			s = controls::AfStateScanning;
+			break;
+		case AfState::Focused:
+			s = controls::AfStateFocused;
+			break;
+		case AfState::Failed:
+			s = controls::AfStateFailed;
+			break;
+		default:
+			s = controls::AfStateIdle;
+		}
+		switch (afStatus->pauseState) {
+		case AfPauseState::Pausing:
+			p = controls::AfPauseStatePausing;
+			break;
+		case AfPauseState::Paused:
+			p = controls::AfPauseStatePaused;
+			break;
+		default:
+			p = controls::AfPauseStateRunning;
+		}
+		libcameraMetadata_.set(controls::AfState, s);
+		libcameraMetadata_.set(controls::AfPauseState, p);
 	}
 }
 
@@ -1294,6 +1326,14 @@ void IPARPi::prepareISP(const ISPConfig &data)
 	if (dpcStatus)
 		applyDPC(dpcStatus, ctrls);
 
+	const AfStatus *afStatus = rpiMetadata.getLocked<AfStatus>("af.status");
+	if (afStatus) {
+		ControlList lensctrls(lensCtrls_);
+		applyAF(afStatus, lensctrls);
+		if (!lensctrls.empty())
+			setLensControls.emit(lensctrls);
+	}
+
 	if (!ctrls.empty())
 		setIspControls.emit(ctrls);
 }
@@ -1617,6 +1657,14 @@ void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ls),
 					    sizeof(ls) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING, c);
+}
+
+void IPARPi::applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls)
+{
+	if (afStatus->lensSetting) {
+		ControlValue v(afStatus->lensSetting.value());
+		lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE, v);
+	}
 }
 
 /*

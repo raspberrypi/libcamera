@@ -1522,8 +1522,11 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::IPAConfig ipaConfig;
 
+	/* \todo Move passing of ispControls and lensControls to ipa::init() */
 	ipaConfig.sensorControls = sensor_->controls();
 	ipaConfig.ispControls = isp_[Isp::Input].dev()->controls();
+	if (sensor_->focusLens())
+		ipaConfig.lensControls = sensor_->focusLens()->controls();
 
 	/* Always send the user transform to the IPA. */
 	ipaConfig.transform = static_cast<unsigned int>(config->transform);

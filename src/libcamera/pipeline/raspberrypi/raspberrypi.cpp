@@ -1612,19 +1612,8 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 
 int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result)
 {
-	std::map<unsigned int, IPAStream> streamConfig;
 	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::IPAConfig ipaConfig;
-
-	/* Inform IPA of stream configuration and sensor controls. */
-	unsigned int i = 0;
-	for (auto const &stream : isp_) {
-		if (stream.isExternal()) {
-			streamConfig[i++] = IPAStream(
-				stream.configuration().pixelFormat,
-				stream.configuration().size);
-		}
-	}
 
 	entityControls.emplace(0, sensor_->controls());
 	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
@@ -1655,7 +1644,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 
 	/* Ready the IPA - it must know about the sensor resolution. */
 	ControlList controls;
-	ret = ipa_->configure(sensorInfo_, streamConfig, entityControls, ipaConfig,
+	ret = ipa_->configure(sensorInfo_, entityControls, ipaConfig,
 			      &controls, result);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";

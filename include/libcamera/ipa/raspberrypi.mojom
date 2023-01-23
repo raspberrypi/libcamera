@@ -59,7 +59,6 @@ interface IPARPiInterface {
 	 * \fn configure()
 	 * \brief Configure the IPA stream and sensor settings
 	 * \param[in] sensorInfo Camera sensor information
-	 * \param[in] streamConfig Configuration of all active streams
 	 * \param[in] entityControls Controls provided by the pipeline entities
 	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
 	 * \param[out] controls Controls to apply by the pipeline entity
@@ -75,7 +74,6 @@ interface IPARPiInterface {
 	 * pipeline handler to the IPA and back.
 	 */
 	configure(libcamera.IPACameraSensorInfo sensorInfo,
-		  map<uint32, libcamera.IPAStream> streamConfig,
 		  map<uint32, libcamera.ControlInfoMap> entityControls,
 		  IPAConfig ipaConfig)
 		=> (int32 ret, libcamera.ControlList controls, IPAConfigResult result);

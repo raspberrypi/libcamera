@@ -36,9 +36,14 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Agc)
 
-/* Limits for analogue gain values */
+/*
+ * Limits for analogue gain values
+ *
+ * \todo Remove the hard-coded limits and let the sensor helper specify
+ * the minimum and maximum allowed gain values.
+ */
 static constexpr double kMinAnalogueGain = 1.0;
-static constexpr double kMaxAnalogueGain = 8.0;
+static constexpr double kMaxAnalogueGain = 16.0;
 
 /* \todo Honour the FrameDurationLimits control instead of hardcoding a limit */
 static constexpr utils::Duration kMaxShutterSpeed = 60ms;

@@ -131,6 +131,7 @@ private:
 	void setMode(const IPACameraSensorInfo &sensorInfo);
 	bool validateSensorControls();
 	bool validateIspControls();
+	bool validateLensControls();
 	void queueRequest(const ControlList &controls);
 	void returnEmbeddedBuffer(unsigned int bufferId);
 	void prepareISP(const ISPConfig &data);
@@ -155,6 +156,7 @@ private:
 
 	ControlInfoMap sensorCtrls_;
 	ControlInfoMap ispCtrls_;
+	ControlInfoMap lensCtrls_;
 	bool lensPresent_;
 	ControlList libcameraMetadata_;
 
@@ -392,6 +394,15 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const IPAConfig &ip
 	if (!validateIspControls()) {
 		LOG(IPARPI, Error) << "ISP control validation failed.";
 		return -1;
+	}
+
+	if (lensPresent_) {
+		lensCtrls_ = ipaConfig.lensControls;
+		if (!validateLensControls()) {
+			LOG(IPARPI, Warning) << "Lens validation failed, "
+					     << "no lens control will be available.";
+			lensPresent_ = false;
+		}
 	}
 
 	maxSensorGainCode_ = sensorCtrls_.at(V4L2_CID_ANALOGUE_GAIN).max().get<int32_t>();
@@ -643,6 +654,16 @@ bool IPARPi::validateIspControls()
 					   << utils::hex(c);
 			return false;
 		}
+	}
+
+	return true;
+}
+
+bool IPARPi::validateLensControls()
+{
+	if (lensCtrls_.find(V4L2_CID_FOCUS_ABSOLUTE) == lensCtrls_.end()) {
+		LOG(IPARPI, Error) << "Unable to find Lens control V4L2_CID_FOCUS_ABSOLUTE";
+		return false;
 	}
 
 	return true;

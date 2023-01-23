@@ -38,6 +38,7 @@ struct IPAConfig {
 	libcamera.SharedFD lsTableHandle;
 	libcamera.ControlInfoMap sensorControls;
 	libcamera.ControlInfoMap ispControls;
+	libcamera.ControlInfoMap lensControls;
 };
 
 struct IPAConfigResult {

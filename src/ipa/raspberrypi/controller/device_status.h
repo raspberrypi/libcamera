@@ -32,9 +32,9 @@ struct DeviceStatus {
 	/* line length for the current frame */
 	libcamera::utils::Duration lineLength;
 	double analogueGain;
-	/* 1.0/distance-in-metres, or 0 if unknown */
+	/* 1.0/distance-in-metres */
 	std::optional<double> lensPosition;
-	/* 1/f so that brightness quadruples when this doubles, or 0 if unknown */
+	/* 1/f so that brightness quadruples when this doubles */
 	std::optional<double> aperture;
 	/* proportional to brightness with 0 = no flash, 1 = maximum flash */
 	std::optional<double> flashIntensity;

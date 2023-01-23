@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: CC0-1.0
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - Agc:
+  - Awb:
+  - BlackLevelCorrection:
+      R:  66
+      Gr: 66
+      Gb: 66
+      B:  66
+...

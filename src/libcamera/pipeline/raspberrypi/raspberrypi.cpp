@@ -1522,8 +1522,8 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::IPAConfig ipaConfig;
 
-	entityControls.emplace(0, sensor_->controls());
-	entityControls.emplace(1, isp_[Isp::Input].dev()->controls());
+	ipaConfig.sensorControls = sensor_->controls();
+	ipaConfig.ispControls = isp_[Isp::Input].dev()->controls();
 
 	/* Always send the user transform to the IPA. */
 	ipaConfig.transform = static_cast<unsigned int>(config->transform);
@@ -1551,8 +1551,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 
 	/* Ready the IPA - it must know about the sensor resolution. */
 	ControlList controls;
-	ret = ipa_->configure(sensorInfo_, entityControls, ipaConfig,
-			      &controls, result);
+	ret = ipa_->configure(sensorInfo_, ipaConfig, &controls, result);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;

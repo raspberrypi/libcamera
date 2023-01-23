@@ -36,6 +36,8 @@ struct ISPConfig {
 struct IPAConfig {
 	uint32 transform;
 	libcamera.SharedFD lsTableHandle;
+	libcamera.ControlInfoMap sensorControls;
+	libcamera.ControlInfoMap ispControls;
 };
 
 struct IPAConfigResult {
@@ -59,7 +61,6 @@ interface IPARPiInterface {
 	 * \fn configure()
 	 * \brief Configure the IPA stream and sensor settings
 	 * \param[in] sensorInfo Camera sensor information
-	 * \param[in] entityControls Controls provided by the pipeline entities
 	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
 	 * \param[out] controls Controls to apply by the pipeline entity
 	 * \param[out] result Other results that the pipeline handler may require
@@ -74,7 +75,6 @@ interface IPARPiInterface {
 	 * pipeline handler to the IPA and back.
 	 */
 	configure(libcamera.IPACameraSensorInfo sensorInfo,
-		  map<uint32, libcamera.ControlInfoMap> entityControls,
 		  IPAConfig ipaConfig)
 		=> (int32 ret, libcamera.ControlList controls, IPAConfigResult result);
 

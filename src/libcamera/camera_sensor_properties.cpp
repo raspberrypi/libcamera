@@ -130,6 +130,19 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModeColorBars, 1},
 			},
 		} },
+		{ "ov4689", {
+			.unitCellSize = { 2000, 2000 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1},
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 2},
+				/*
+				 * No corresponding test patterns in
+				 * MIPI CCS specification for sensor's
+				 * colorBarType2 and colorBarType3.
+				 */
+			},
+		} },
 		{ "ov5640", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {

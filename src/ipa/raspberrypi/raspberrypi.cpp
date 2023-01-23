@@ -119,9 +119,7 @@ public:
 	void start(const ControlList &controls, StartConfig *startConfig) override;
 	void stop() override {}
 
-	int configure(const IPACameraSensorInfo &sensorInfo,
-		      const std::map<unsigned int, ControlInfoMap> &entityControls,
-		      const IPAConfig &data,
+	int configure(const IPACameraSensorInfo &sensorInfo, const IPAConfig &data,
 		      ControlList *controls, IPAConfigResult *result) override;
 	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
@@ -380,18 +378,11 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensitivity = helper_->getModeSensitivity(mode_);
 }
 
-int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
-		      const std::map<unsigned int, ControlInfoMap> &entityControls,
-		      const IPAConfig &ipaConfig,
+int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const IPAConfig &ipaConfig,
 		      ControlList *controls, IPAConfigResult *result)
 {
-	if (entityControls.size() != 2) {
-		LOG(IPARPI, Error) << "No ISP or sensor controls found.";
-		return -1;
-	}
-
-	sensorCtrls_ = entityControls.at(0);
-	ispCtrls_ = entityControls.at(1);
+	sensorCtrls_ = ipaConfig.sensorControls;
+	ispCtrls_ = ipaConfig.ispControls;
 
 	if (!validateSensorControls()) {
 		LOG(IPARPI, Error) << "Sensor control validation failed.";

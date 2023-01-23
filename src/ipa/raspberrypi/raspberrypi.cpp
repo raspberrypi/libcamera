@@ -120,7 +120,6 @@ public:
 	void stop() override {}
 
 	int configure(const IPACameraSensorInfo &sensorInfo,
-		      const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const IPAConfig &data,
 		      ControlList *controls, IPAConfigResult *result) override;
@@ -382,7 +381,6 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 }
 
 int IPARPi::configure(const IPACameraSensorInfo &sensorInfo,
-		      [[maybe_unused]] const std::map<unsigned int, IPAStream> &streamConfig,
 		      const std::map<unsigned int, ControlInfoMap> &entityControls,
 		      const IPAConfig &ipaConfig,
 		      ControlList *controls, IPAConfigResult *result)

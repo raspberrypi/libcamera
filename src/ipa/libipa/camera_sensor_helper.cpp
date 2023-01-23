@@ -461,6 +461,17 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov2740", CameraSensorHelperOv2740)
 
+class CameraSensorHelperOv4689 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperOv4689()
+	{
+		gainType_ = AnalogueGainLinear;
+		gainConstants_.linear = { 1, 0, 0, 128 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("ov4689", CameraSensorHelperOv4689)
+
 class CameraSensorHelperOv5640 : public CameraSensorHelper
 {
 public:

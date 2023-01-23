@@ -586,6 +586,8 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 				       helper_->exposure(deviceStatus->frameLength, deviceStatus->lineLength).get<std::micro>());
 		if (deviceStatus->sensorTemperature)
 			libcameraMetadata_.set(controls::SensorTemperature, *deviceStatus->sensorTemperature);
+		if (deviceStatus->lensPosition)
+			libcameraMetadata_.set(controls::LensPosition, *deviceStatus->lensPosition);
 	}
 
 	AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.status");
@@ -1351,6 +1353,11 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls, unsigned int ip
 	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, deviceStatus.lineLength);
 	deviceStatus.analogueGain = helper_->gain(gainCode);
 	deviceStatus.frameLength = mode_.height + vblank;
+
+	RPiController::AfAlgorithm *af = dynamic_cast<RPiController::AfAlgorithm *>(
+			controller_.getAlgorithm("af"));
+	if (af)
+		deviceStatus.lensPosition = af->getLensPosition();
 
 	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 

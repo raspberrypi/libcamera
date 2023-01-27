@@ -65,6 +65,9 @@ public:
 	bool completeBuffer(Request *request, FrameBuffer *buffer);
 	void completeRequest(Request *request);
 
+	std::string configurationFile(const std::string &subdir,
+				      const std::string &name) const;
+
 	const char *name() const { return name_; }
 
 protected:

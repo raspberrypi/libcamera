@@ -1101,21 +1101,6 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 	RPiCameraData *data = cameraData(camera);
 	int ret;
 
-	for (auto const stream : data->streams_)
-		stream->resetBuffers();
-
-	if (!data->buffersAllocated_) {
-		/* Allocate buffers for internal pipeline usage. */
-		ret = prepareBuffers(camera);
-		if (ret) {
-			LOG(RPI, Error) << "Failed to allocate buffers";
-			data->freeBuffers();
-			stop(camera);
-			return ret;
-		}
-		data->buffersAllocated_ = true;
-	}
-
 	/* Check if a ScalerCrop control was specified. */
 	if (controls)
 		data->applyScalerCrop(*controls);
@@ -1131,6 +1116,21 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 
 	/* Configure the number of dropped frames required on startup. */
 	data->dropFrameCount_ = startConfig.dropFrameCount;
+
+	for (auto const stream : data->streams_)
+		stream->resetBuffers();
+
+	if (!data->buffersAllocated_) {
+		/* Allocate buffers for internal pipeline usage. */
+		ret = prepareBuffers(camera);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to allocate buffers";
+			data->freeBuffers();
+			stop(camera);
+			return ret;
+		}
+		data->buffersAllocated_ = true;
+	}
 
 	/* We need to set the dropFrameCount_ before queueing buffers. */
 	ret = queueAllBuffers(camera);

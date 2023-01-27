@@ -6,3 +6,5 @@ libcamera_sources += files([
     'raspberrypi.cpp',
     'rpi_stream.cpp',
 ])
+
+subdir('data')

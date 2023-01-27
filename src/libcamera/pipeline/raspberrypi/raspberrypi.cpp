@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/shared_fd.h>
 #include <libcamera/base/utils.h>
 
@@ -40,6 +41,7 @@
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_videodevice.h"
+#include "libcamera/internal/yaml_parser.h"
 
 #include "delayed_controls.h"
 #include "dma_heaps.h"
@@ -1214,6 +1216,7 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 			 */
 			stream->setExternalBuffer(buffer);
 		}
+
 		/*
 		 * If no buffer is provided by the request for this stream, we
 		 * queue a nullptr to the stream to signify that it must use an
@@ -1717,6 +1720,48 @@ int RPiCameraData::loadPipelineConfiguration()
 		.minUnicamBuffers = 2,
 		.minTotalUnicamBuffers = 4,
 	};
+
+	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_CONFIG_FILE");
+	if (!configFromEnv || *configFromEnv == '\0')
+		return 0;
+
+	std::string filename = std::string(configFromEnv);
+	File file(filename);
+
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		LOG(RPI, Error) << "Failed to open configuration file '" << filename << "'";
+		return -EIO;
+	}
+
+	LOG(RPI, Info) << "Using configuration file '" << filename << "'";
+
+	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	if (!root) {
+		LOG(RPI, Warning) << "Failed to parse configuration file, using defaults";
+		return 0;
+	}
+
+	std::optional<double> ver = (*root)["version"].get<double>();
+	if (!ver || *ver != 1.0) {
+		LOG(RPI, Error) << "Unexpected configuration file version reported";
+		return -EINVAL;
+	}
+
+	const YamlObject &phConfig = (*root)["pipeline_handler"];
+	config_.minUnicamBuffers =
+		phConfig["min_unicam_buffers"].get<unsigned int>(config_.minUnicamBuffers);
+	config_.minTotalUnicamBuffers =
+		phConfig["min_total_unicam_buffers"].get<unsigned int>(config_.minTotalUnicamBuffers);
+
+	if (config_.minTotalUnicamBuffers < config_.minUnicamBuffers) {
+		LOG(RPI, Error) << "Invalid configuration: min_total_unicam_buffers must be >= min_unicam_buffers";
+		return -EINVAL;
+	}
+
+	if (config_.minTotalUnicamBuffers < 1) {
+		LOG(RPI, Error) << "Invalid configuration: min_total_unicam_buffers must be >= 1";
+		return -EINVAL;
+	}
 
 	return 0;
 }

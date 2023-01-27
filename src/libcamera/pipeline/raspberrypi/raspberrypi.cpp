@@ -315,6 +315,11 @@ public:
 		 * minTotalUnicamBuffers >= minUnicamBuffers
 		 */
 		unsigned int minTotalUnicamBuffers;
+		/*
+		 * Override any request from the IPA to drop a number of startup
+		 * frames.
+		 */
+		bool disableStartupFrameDrops;
 	};
 
 	Config config_;
@@ -1117,7 +1122,8 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		data->setSensorControls(startConfig.controls);
 
 	/* Configure the number of dropped frames required on startup. */
-	data->dropFrameCount_ = startConfig.dropFrameCount;
+	data->dropFrameCount_ = data->config_.disableStartupFrameDrops
+			      ? 0 : startConfig.dropFrameCount;
 
 	for (auto const stream : data->streams_)
 		stream->resetBuffers();
@@ -1719,6 +1725,7 @@ int RPiCameraData::loadPipelineConfiguration()
 	config_ = {
 		.minUnicamBuffers = 2,
 		.minTotalUnicamBuffers = 4,
+		.disableStartupFrameDrops = false,
 	};
 
 	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_CONFIG_FILE");
@@ -1752,6 +1759,8 @@ int RPiCameraData::loadPipelineConfiguration()
 		phConfig["min_unicam_buffers"].get<unsigned int>(config_.minUnicamBuffers);
 	config_.minTotalUnicamBuffers =
 		phConfig["min_total_unicam_buffers"].get<unsigned int>(config_.minTotalUnicamBuffers);
+	config_.disableStartupFrameDrops =
+		phConfig["disable_startup_frame_drops"].get<bool>(config_.disableStartupFrameDrops);
 
 	if (config_.minTotalUnicamBuffers < config_.minUnicamBuffers) {
 		LOG(RPI, Error) << "Invalid configuration: min_total_unicam_buffers must be >= min_unicam_buffers";

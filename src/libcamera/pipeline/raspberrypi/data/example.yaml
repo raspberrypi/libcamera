@@ -27,6 +27,11 @@
                 # internal buffer count = max(min_unicam_buffers,
                 #         min_total_unicam_buffers - external buffer count)
                 #
-                # "min_total_unicam_buffers": 4
+                # "min_total_unicam_buffers": 4,
+
+                # Override any request from the IPA to drop a number of startup
+                # frames.
+                #
+                # "disable_startup_frame_drops": false
         }
 }

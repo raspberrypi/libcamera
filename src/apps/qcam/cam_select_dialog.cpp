@@ -15,7 +15,9 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QLabel>
+#include <QScreen>
 #include <QString>
 
 CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManager,
@@ -53,6 +55,14 @@ CameraSelectorDialog::CameraSelectorDialog(libcamera::CameraManager *cameraManag
 	layout->addRow("Location:", cameraLocation_);
 	layout->addRow("Model:", cameraModel_);
 	layout->addWidget(buttonBox);
+
+	/*
+	 * Decrease the minimum width of dialog to fit on narrow screens, with a
+	 * 20 pixels margin.
+	 */
+	QRect screenGeometry = qGuiApp->primaryScreen()->availableGeometry();
+	if (screenGeometry.width() < minimumWidth())
+		setMinimumWidth(screenGeometry.width() - 20);
 }
 
 CameraSelectorDialog::~CameraSelectorDialog() = default;

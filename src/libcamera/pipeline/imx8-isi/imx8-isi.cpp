@@ -60,6 +60,7 @@ public:
 	}
 
 	unsigned int getRawMediaBusFormat(PixelFormat *pixelFormat) const;
+	unsigned int getYuvMediaBusFormat(const PixelFormat &pixelFormat) const;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	std::unique_ptr<V4L2Subdevice> csis_;
@@ -257,6 +258,64 @@ unsigned int ISICameraData::getRawMediaBusFormat(PixelFormat *pixelFormat) const
 		LOG(ISI, Error) << "Cannot find a supported RAW format";
 
 	return sensorCode;
+}
+
+/*
+ * Get a YUV/RGB media bus format from which the ISI can produce a processed
+ * stream, preferring codes with the same colour encoding as the requested
+ * pixelformat.
+ *
+ * If the sensor does not provide any YUV/RGB media bus format the ISI cannot
+ * generate any processed pixel format as it cannot debayer.
+ */
+unsigned int ISICameraData::getYuvMediaBusFormat(const PixelFormat &pixelFormat) const
+{
+	std::vector<unsigned int> mbusCodes = sensor_->mbusCodes();
+
+	/*
+	 * The ISI can produce YUV/RGB pixel formats from any non-RAW Bayer
+	 * media bus formats.
+	 *
+	 * Keep the list in sync with the mxc_isi_bus_formats[] array in
+	 * the ISI driver.
+	 */
+	std::vector<unsigned int> yuvCodes = {
+		MEDIA_BUS_FMT_UYVY8_1X16,
+		MEDIA_BUS_FMT_YUV8_1X24,
+		MEDIA_BUS_FMT_RGB565_1X16,
+		MEDIA_BUS_FMT_RGB888_1X24,
+	};
+
+	std::sort(mbusCodes.begin(), mbusCodes.end());
+	std::sort(yuvCodes.begin(), yuvCodes.end());
+
+	std::vector<unsigned int> supportedCodes;
+	std::set_intersection(mbusCodes.begin(), mbusCodes.end(),
+			      yuvCodes.begin(), yuvCodes.end(),
+			      std::back_inserter(supportedCodes));
+
+	if (supportedCodes.empty()) {
+		LOG(ISI, Warning) << "Cannot find a supported YUV/RGB format";
+
+		return 0;
+	}
+
+	/* Prefer codes with the same encoding as the requested pixel format. */
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+	for (unsigned int code : supportedCodes) {
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingYUV &&
+		    (code == MEDIA_BUS_FMT_UYVY8_1X16 ||
+		     code == MEDIA_BUS_FMT_YUV8_1X24))
+			return code;
+
+		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRGB &&
+		    (code == MEDIA_BUS_FMT_RGB565_1X16 ||
+		     code == MEDIA_BUS_FMT_RGB888_1X24))
+			return code;
+	}
+
+	/* Otherwise return the first found code. */
+	return supportedCodes[0];
 }
 
 /* -----------------------------------------------------------------------------
@@ -459,6 +518,22 @@ ISICameraConfiguration::validateYuv(std::set<Stream *> &availableStreams,
 {
 	CameraConfiguration::Status status = Valid;
 
+	StreamConfiguration &yuvConfig = config_[0];
+	PixelFormat yuvPixelFormat = yuvConfig.pixelFormat;
+
+	/*
+	 * Make sure the sensor can produce a compatible YUV/RGB media bus
+	 * format. If the sensor can only produce RAW Bayer we can only fail
+	 * here as we can't adjust to anything but RAW.
+	 */
+	unsigned int yuvMediaBusCode = data_->getYuvMediaBusFormat(yuvPixelFormat);
+	if (!yuvMediaBusCode) {
+		LOG(ISI, Error) << "Cannot adjust pixelformat "
+				<< yuvConfig.pixelFormat;
+		return Invalid;
+	}
+
+	/* Adjust all the other streams. */
 	for (const auto &[i, cfg] : utils::enumerate(config_)) {
 
 		LOG(ISI, Debug) << "Stream " << i << ": " << cfg.toString();

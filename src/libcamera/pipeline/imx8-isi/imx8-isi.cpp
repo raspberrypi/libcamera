@@ -61,6 +61,7 @@ public:
 
 	unsigned int getRawMediaBusFormat(PixelFormat *pixelFormat) const;
 	unsigned int getYuvMediaBusFormat(const PixelFormat &pixelFormat) const;
+	unsigned int getMediaBusFormat(PixelFormat *pixelFormat) const;
 
 	std::unique_ptr<CameraSensor> sensor_;
 	std::unique_ptr<V4L2Subdevice> csis_;
@@ -316,6 +317,15 @@ unsigned int ISICameraData::getYuvMediaBusFormat(const PixelFormat &pixelFormat)
 
 	/* Otherwise return the first found code. */
 	return supportedCodes[0];
+}
+
+unsigned int ISICameraData::getMediaBusFormat(PixelFormat *pixelFormat) const
+{
+	if (PixelFormatInfo::info(*pixelFormat).colourEncoding ==
+	    PixelFormatInfo::ColourEncodingRAW)
+		return getRawMediaBusFormat(pixelFormat);
+
+	return getYuvMediaBusFormat(*pixelFormat);
 }
 
 /* -----------------------------------------------------------------------------
@@ -631,16 +641,16 @@ CameraConfiguration::Status ISICameraConfiguration::validate()
 	 * image quality in exchange of a usually slower frame rate.
 	 * Usage of the STILL_CAPTURE role could be consider for this.
 	 */
-	const PipeFormat &pipeFmt = formatsMap_.at(config_[0].pixelFormat);
-
 	Size maxSize;
 	for (const auto &cfg : config_) {
 		if (cfg.size > maxSize)
 			maxSize = cfg.size;
 	}
 
+	PixelFormat pixelFormat = config_[0].pixelFormat;
+
 	V4L2SubdeviceFormat sensorFormat{};
-	sensorFormat.mbus_code = pipeFmt.sensorCode;
+	sensorFormat.mbus_code = data_->getMediaBusFormat(&pixelFormat);
 	sensorFormat.size = maxSize;
 
 	LOG(ISI, Debug) << "Computed sensor configuration: " << sensorFormat;

@@ -76,18 +76,6 @@ public:
 class ISICameraConfiguration : public CameraConfiguration
 {
 public:
-	/*
-	 * formatsMap_ records the association between an output pixel format
-	 * and the combination of V4L2 pixel format and media bus codes that have
-	 * to be applied to the pipeline.
-	 */
-	struct PipeFormat {
-		unsigned int isiCode;
-		unsigned int sensorCode;
-	};
-
-	using FormatMap = std::map<PixelFormat, PipeFormat>;
-
 	ISICameraConfiguration(ISICameraData *data)
 		: data_(data)
 	{
@@ -95,7 +83,7 @@ public:
 
 	Status validate() override;
 
-	static const FormatMap formatsMap_;
+	static const std::map<PixelFormat, unsigned int> formatsMap_;
 
 	V4L2SubdeviceFormat sensorFormat_;
 
@@ -336,121 +324,33 @@ unsigned int ISICameraData::getMediaBusFormat(PixelFormat *pixelFormat) const
  * Camera Configuration
  */
 
-/**
- * \todo Do not associate the sensor format to non-RAW pixelformats, as
- * the ISI can do colorspace conversion.
+/*
+ * ISICameraConfiguration::formatsMap_ records the association between an output
+ * pixel format and the ISI source pixel format to be applied to the pipeline.
  */
-const ISICameraConfiguration::FormatMap ISICameraConfiguration::formatsMap_ = {
-	{
-		formats::YUYV,
-		{ MEDIA_BUS_FMT_YUV8_1X24,
-		  MEDIA_BUS_FMT_UYVY8_1X16 },
-	},
-	{
-		formats::AVUY8888,
-		{ MEDIA_BUS_FMT_YUV8_1X24,
-		  MEDIA_BUS_FMT_UYVY8_1X16 },
-	},
-	{
-		formats::NV12,
-		{ MEDIA_BUS_FMT_YUV8_1X24,
-		  MEDIA_BUS_FMT_UYVY8_1X16 },
-	},
-	{
-		formats::NV16,
-		{ MEDIA_BUS_FMT_YUV8_1X24,
-		  MEDIA_BUS_FMT_UYVY8_1X16 },
-	},
-	{
-		formats::YUV444,
-		{ MEDIA_BUS_FMT_YUV8_1X24,
-		  MEDIA_BUS_FMT_UYVY8_1X16 },
-	},
-	{
-		formats::RGB565,
-		{ MEDIA_BUS_FMT_RGB888_1X24,
-		  MEDIA_BUS_FMT_RGB565_1X16 },
-	},
-	{
-		formats::BGR888,
-		{ MEDIA_BUS_FMT_RGB888_1X24,
-		  MEDIA_BUS_FMT_RGB565_1X16 },
-	},
-	{
-		formats::RGB888,
-		{ MEDIA_BUS_FMT_RGB888_1X24,
-		  MEDIA_BUS_FMT_RGB565_1X16 },
-	},
-	{
-		formats::XRGB8888,
-		{ MEDIA_BUS_FMT_RGB888_1X24,
-		  MEDIA_BUS_FMT_RGB565_1X16 },
-	},
-	{
-		formats::ABGR8888,
-		{ MEDIA_BUS_FMT_RGB888_1X24,
-		  MEDIA_BUS_FMT_RGB565_1X16 },
-	},
-	{
-		formats::SBGGR8,
-		{ MEDIA_BUS_FMT_SBGGR8_1X8,
-		  MEDIA_BUS_FMT_SBGGR8_1X8 },
-	},
-	{
-		formats::SGBRG8,
-		{ MEDIA_BUS_FMT_SGBRG8_1X8,
-		  MEDIA_BUS_FMT_SGBRG8_1X8 },
-	},
-	{
-		formats::SGRBG8,
-		{ MEDIA_BUS_FMT_SGRBG8_1X8,
-		  MEDIA_BUS_FMT_SGRBG8_1X8 },
-	},
-	{
-		formats::SRGGB8,
-		{ MEDIA_BUS_FMT_SRGGB8_1X8,
-		  MEDIA_BUS_FMT_SRGGB8_1X8 },
-	},
-	{
-		formats::SBGGR10,
-		{ MEDIA_BUS_FMT_SBGGR10_1X10,
-		  MEDIA_BUS_FMT_SBGGR10_1X10 },
-	},
-	{
-		formats::SGBRG10,
-		{ MEDIA_BUS_FMT_SGBRG10_1X10,
-		  MEDIA_BUS_FMT_SGBRG10_1X10 },
-	},
-	{
-		formats::SGRBG10,
-		{ MEDIA_BUS_FMT_SGRBG10_1X10,
-		  MEDIA_BUS_FMT_SGRBG10_1X10 },
-	},
-	{
-		formats::SRGGB10,
-		{ MEDIA_BUS_FMT_SRGGB10_1X10,
-		  MEDIA_BUS_FMT_SRGGB10_1X10 },
-	},
-	{
-		formats::SBGGR12,
-		{ MEDIA_BUS_FMT_SBGGR12_1X12,
-		  MEDIA_BUS_FMT_SBGGR12_1X12 },
-	},
-	{
-		formats::SGBRG12,
-		{ MEDIA_BUS_FMT_SGBRG12_1X12,
-		  MEDIA_BUS_FMT_SGBRG12_1X12 },
-	},
-	{
-		formats::SGRBG12,
-		{ MEDIA_BUS_FMT_SGRBG12_1X12,
-		  MEDIA_BUS_FMT_SGRBG12_1X12 },
-	},
-	{
-		formats::SRGGB12,
-		{ MEDIA_BUS_FMT_SRGGB12_1X12,
-		  MEDIA_BUS_FMT_SRGGB12_1X12 },
-	},
+const std::map<PixelFormat, unsigned int> ISICameraConfiguration::formatsMap_ = {
+	{ formats::YUYV, MEDIA_BUS_FMT_YUV8_1X24 },
+	{ formats::AVUY8888, MEDIA_BUS_FMT_YUV8_1X24 },
+	{ formats::NV12, MEDIA_BUS_FMT_YUV8_1X24 },
+	{ formats::NV16, MEDIA_BUS_FMT_YUV8_1X24 },
+	{ formats::YUV444, MEDIA_BUS_FMT_YUV8_1X24 },
+	{ formats::RGB565, MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::BGR888, MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::RGB888, MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::XRGB8888, MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::ABGR8888, MEDIA_BUS_FMT_RGB888_1X24 },
+	{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
+	{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
+	{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
+	{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
+	{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
+	{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
+	{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
+	{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
+	{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
+	{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
+	{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
+	{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
 };
 
 /*
@@ -988,11 +888,10 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 		 * size is taken from the sink's COMPOSE (or source's CROP,
 		 * if any) rectangles.
 		 */
-		const ISICameraConfiguration::PipeFormat &pipeFormat =
-			ISICameraConfiguration::formatsMap_.at(config.pixelFormat);
+		unsigned int isiCode = ISICameraConfiguration::formatsMap_.at(config.pixelFormat);
 
 		V4L2SubdeviceFormat isiFormat{};
-		isiFormat.mbus_code = pipeFormat.isiCode;
+		isiFormat.mbus_code = isiCode;
 		isiFormat.size = config.size;
 
 		ret = pipe->isi->setFormat(1, &isiFormat);

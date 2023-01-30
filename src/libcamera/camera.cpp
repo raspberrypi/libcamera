@@ -1126,6 +1126,11 @@ int Camera::queueRequest(Request *request)
 		return -EXDEV;
 	}
 
+	if (request->status() != Request::RequestPending) {
+		LOG(Camera, Error) << request->toString() << " is not valid";
+		return -EINVAL;
+	}
+
 	/*
 	 * The camera state may change until the end of the function. No locking
 	 * is however needed as PipelineHandler::queueRequest() will handle

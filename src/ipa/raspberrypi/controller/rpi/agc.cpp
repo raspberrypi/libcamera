@@ -28,8 +28,6 @@ LOG_DEFINE_CATEGORY(RPiAgc)
 
 #define NAME "rpi.agc"
 
-static constexpr unsigned int PipelineBits = 13; /* seems to be a 13-bit pipeline */
-
 int AgcMeteringMode::read(const libcamera::YamlObject &params)
 {
 	const YamlObject &yamlWeights = params["weights"];
@@ -586,6 +584,7 @@ void Agc::fetchAwbStatus(Metadata *imageMetadata)
 static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 			      double weights[], double gain)
 {
+	constexpr unsigned int maxVal = 1 << Statistics::NormalisationFactorPow2;
 	/*
 	 * Note how the calculation below means that equal weights give you
 	 * "average" metering (i.e. all pixels equally important).
@@ -593,9 +592,9 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	double rSum = 0, gSum = 0, bSum = 0, pixelSum = 0;
 	for (unsigned int i = 0; i < stats->agcRegions.numRegions(); i++) {
 		auto &region = stats->agcRegions.get(i);
-		double rAcc = std::min<double>(region.val.rSum * gain, ((1 << PipelineBits) - 1) * region.counted);
-		double gAcc = std::min<double>(region.val.gSum * gain, ((1 << PipelineBits) - 1) * region.counted);
-		double bAcc = std::min<double>(region.val.bSum * gain, ((1 << PipelineBits) - 1) * region.counted);
+		double rAcc = std::min<double>(region.val.rSum * gain, (maxVal - 1) * region.counted);
+		double gAcc = std::min<double>(region.val.gSum * gain, (maxVal - 1) * region.counted);
+		double bAcc = std::min<double>(region.val.bSum * gain, (maxVal - 1) * region.counted);
 		rSum += rAcc * weights[i];
 		gSum += gAcc * weights[i];
 		bSum += bAcc * weights[i];
@@ -608,7 +607,7 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	double ySum = rSum * awb.gainR * .299 +
 		      gSum * awb.gainG * .587 +
 		      bSum * awb.gainB * .114;
-	return ySum / pixelSum / (1 << PipelineBits);
+	return ySum / pixelSum / maxVal;
 }
 
 /*

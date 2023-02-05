@@ -187,8 +187,8 @@ class RPiCameraData : public Camera::Private
 public:
 	RPiCameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  supportsFlips_(false), flipsAlterBayerOrder_(false),
-		  dropFrameCount_(0), buffersAllocated_(false), ispOutputCount_(0)
+		  flipsAlterBayerOrder_(false), dropFrameCount_(0),
+		  buffersAllocated_(false), ispOutputCount_(0)
 	{
 	}
 
@@ -275,11 +275,9 @@ public:
 	std::deque<Request *> requestQueue_;
 
 	/*
-	 * Manage horizontal and vertical flips supported (or not) by the
-	 * sensor. Also store the "native" Bayer order (that is, with no
-	 * transforms applied).
+	 * Store the "native" Bayer order (that is, with no transforms
+	 * applied).
 	 */
-	bool supportsFlips_;
 	bool flipsAlterBayerOrder_;
 	BayerFormat::Order nativeBayerOrder_;
 
@@ -1424,12 +1422,10 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	data->properties_.set(properties::ScalerCropMaximum, Rectangle{});
 
 	/*
-	 * We cache three things about the sensor in relation to transforms
-	 * (meaning horizontal and vertical flips).
-	 *
-	 * If flips are supported verify if they affect the Bayer ordering
-	 * and what the "native" Bayer order is, when no transforms are
-	 * applied.
+	 * We cache two things about the sensor in relation to transforms
+	 * (meaning horizontal and vertical flips): if they affect the Bayer
+	 * ordering, and what the "native" Bayer order is, when no transforms
+	 * are applied.
 	 *
 	 * We note that the sensor's cached list of supported formats is
 	 * already in the "native" order, with any flips having been undone.
@@ -1438,7 +1434,6 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 	const struct v4l2_query_ext_ctrl *hflipCtrl = sensor->controlInfo(V4L2_CID_HFLIP);
 	if (hflipCtrl) {
 		/* We assume it will support vflips too... */
-		data->supportsFlips_ = true;
 		data->flipsAlterBayerOrder_ = hflipCtrl->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT;
 	}
 

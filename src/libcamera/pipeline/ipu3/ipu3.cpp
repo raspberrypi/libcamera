@@ -73,7 +73,6 @@ public:
 	Stream rawStream_;
 
 	Rectangle cropRegion_;
-	Transform rotationTransform_;
 
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 	IPU3Frames frameInfos_;
@@ -1100,13 +1099,6 @@ int PipelineHandlerIPU3::registerCameras()
 			LOG(IPU3, Warning) << "Rotation control not exposed by "
 					   << cio2->sensor()->id()
 					   << ". Assume rotation 0";
-
-		int32_t rotationValue = rotation.value_or(0);
-		bool success;
-		data->rotationTransform_ = transformFromRotation(rotationValue, &success);
-		if (!success)
-			LOG(IPU3, Warning) << "Invalid rotation of " << rotationValue
-					   << " degrees: ignoring";
 
 		/**
 		 * \todo Dynamically assign ImgU and output devices to each

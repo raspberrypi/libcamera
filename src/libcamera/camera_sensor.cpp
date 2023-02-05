@@ -261,7 +261,7 @@ int CameraSensor::validateSensorDriver()
 		supportFlips_ = true;
 
 	if (!supportFlips_)
-		LOG(CameraSensor, Warning)
+		LOG(CameraSensor, Debug)
 			<< "Camera sensor does not support horizontal/vertical flip";
 
 	/*

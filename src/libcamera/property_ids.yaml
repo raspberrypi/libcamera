@@ -690,6 +690,16 @@ controls:
         that is twice that of the full resolution mode. This value will be valid
         after the configure method has returned successfully.
 
+  - SystemDevices:
+      type: int64_t
+      size: [n]
+      description: |
+        A list of integer values of type dev_t denoting the major and minor
+        device numbers of the underlying devices used in the operation of this
+        camera.
+
+        Different cameras may report identical devices.
+
   # ----------------------------------------------------------------------------
   # Draft properties section
 

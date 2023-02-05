@@ -1023,8 +1023,8 @@ Transform CameraSensor::validateTransform(Transform *transform) const
 
 	/*
 	 * We combine the platform and user transform, but must "adjust away"
-	 * any combined result that includes a transform, as we can't do those.
-	 * In this case, flipping only the transpose bit is helpful to
+	 * any combined result that includes a transposition, as we can't do
+	 * those. In this case, flipping only the transpose bit is helpful to
 	 * applications - they either get the transform they requested, or have
 	 * to do a simple transpose themselves (they don't have to worry about
 	 * the other possible cases).

@@ -20,7 +20,6 @@
 
 #include <libcamera/color_space.h>
 #include <libcamera/geometry.h>
-#include <libcamera/transform.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/media_object.h"
@@ -45,7 +44,6 @@ struct V4L2SubdeviceFormat {
 	uint32_t mbus_code;
 	Size size;
 	std::optional<ColorSpace> colorSpace;
-	Transform transform = Transform::Identity;
 
 	const std::string toString() const;
 	uint8_t bitsPerPixel() const;

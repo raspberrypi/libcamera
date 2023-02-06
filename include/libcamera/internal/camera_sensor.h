@@ -17,6 +17,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+#include <libcamera/transform.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
@@ -28,8 +29,6 @@ namespace libcamera {
 class BayerFormat;
 class CameraLens;
 class MediaEntity;
-
-enum class Transform;
 
 struct CameraSensorProperties;
 
@@ -55,7 +54,8 @@ public:
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
-	int setFormat(V4L2SubdeviceFormat *format);
+	int setFormat(V4L2SubdeviceFormat *format,
+		      Transform transform = Transform::Identity);
 
 	const ControlInfoMap &controls() const;
 	ControlList getControls(const std::vector<uint32_t> &ids);

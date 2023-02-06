@@ -832,13 +832,14 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 		}
 	}
 
-	/* First calculate the best sensor mode we can use based on the user request. */
+	/*
+	 * Calculate the best sensor mode we can use based on the user's
+	 * request, and apply it to the sensor with the cached transform, if
+	 * any.
+	 */
 	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_, rawStream ? sensorSize : maxSize, bitDepth);
-	/* Apply any cached transform. */
 	const RPiCameraConfiguration *rpiConfig = static_cast<const RPiCameraConfiguration *>(config);
-	sensorFormat.transform = rpiConfig->combinedTransform_;
-	/* Finally apply the format on the sensor. */
-	ret = data->sensor_->setFormat(&sensorFormat);
+	ret = data->sensor_->setFormat(&sensorFormat, rpiConfig->combinedTransform_);
 	if (ret)
 		return ret;
 

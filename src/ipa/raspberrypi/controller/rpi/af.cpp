@@ -174,9 +174,8 @@ Af::Af(Controller *controller)
 	  statsRegion_(0, 0, 0, 0),
 	  windows_(),
 	  useWindows_(false),
-	  phaseWeights_{},
-	  contrastWeights_{},
-	  sumWeights_(0),
+	  phaseWeights_(),
+	  contrastWeights_(),
 	  scanState_(ScanState::Idle),
 	  initted_(false),
 	  ftarget_(-1.0),
@@ -190,7 +189,15 @@ Af::Af(Controller *controller)
 	  scanData_(),
 	  reportState_(AfState::Idle)
 {
-	scanData_.reserve(24);
+	/*
+	 * Reserve space for data, to reduce memory fragmentation. It's too early
+	 * to query the size of the PDAF (from camera) and Contrast (from ISP)
+	 * statistics, but these are plausible upper bounds.
+	 */
+	phaseWeights_.w.reserve(16 * 12);
+	contrastWeights_.w.reserve(getHardwareConfig().focusRegions.width *
+				   getHardwareConfig().focusRegions.height);
+	scanData_.reserve(32);
 }
 
 Af::~Af()
@@ -226,7 +233,7 @@ void Af::switchMode(CameraMode const &cameraMode, [[maybe_unused]] Metadata *met
 			  << statsRegion_.y << ','
 			  << statsRegion_.width << ','
 			  << statsRegion_.height;
-	computeWeights();
+	invalidateWeights();
 
 	if (scanState_ >= ScanState::Coarse && scanState_ < ScanState::Settle) {
 		/*
@@ -239,111 +246,99 @@ void Af::switchMode(CameraMode const &cameraMode, [[maybe_unused]] Metadata *met
 	skipCount_ = cfg_.skipFrames;
 }
 
-void Af::computeWeights()
+void Af::computeWeights(RegionWeights *wgts, unsigned rows, unsigned cols)
 {
-	constexpr int MaxCellWeight = 240 / (int)MaxWindows;
+	wgts->rows = rows;
+	wgts->cols = cols;
+	wgts->sum = 0;
+	wgts->w.resize(rows * cols);
+	std::fill(wgts->w.begin(), wgts->w.end(), 0);
 
-	sumWeights_ = 0;
-	for (int i = 0; i < PDAF_DATA_ROWS; ++i)
-		std::fill(phaseWeights_[i], phaseWeights_[i] + PDAF_DATA_COLS, 0);
-
-	if (useWindows_ &&
-	    statsRegion_.width >= PDAF_DATA_COLS && statsRegion_.height >= PDAF_DATA_ROWS) {
+	if (rows > 0 && cols > 0 && useWindows_ &&
+	    statsRegion_.height >= rows && statsRegion_.width >= cols) {
 		/*
 		 * Here we just merge all of the given windows, weighted by area.
 		 * \todo Perhaps a better approach might be to find the phase in each
 		 * window and choose either the closest or the highest-confidence one?
-		 *
-		 * Using mostly "int" arithmetic, because Rectangle has signed x, y
+		 * Ensure weights sum to less than (1<<16). 46080 is a "round number"
+		 * below 65536, for better rounding when window size is a simple
+		 * fraction of image dimensions.
 		 */
-		int cellH = (int)(statsRegion_.height / PDAF_DATA_ROWS);
-		int cellW = (int)(statsRegion_.width / PDAF_DATA_COLS);
-		int cellA = cellH * cellW;
+		const unsigned maxCellWeight = 46080u / (MaxWindows * rows * cols);
+		const unsigned cellH = statsRegion_.height / rows;
+		const unsigned cellW = statsRegion_.width / cols;
+		const unsigned cellA = cellH * cellW;
 
 		for (auto &w : windows_) {
-			for (int i = 0; i < PDAF_DATA_ROWS; ++i) {
-				int y0 = std::max(statsRegion_.y + cellH * i, w.y);
-				int y1 = std::min(statsRegion_.y + cellH * (i + 1), w.y + (int)(w.height));
+			for (unsigned r = 0; r < rows; ++r) {
+				int y0 = std::max(statsRegion_.y + (int)(cellH * r), w.y);
+				int y1 = std::min(statsRegion_.y + (int)(cellH * (r + 1)),
+						  w.y + (int)(w.height));
 				if (y0 >= y1)
 					continue;
 				y1 -= y0;
-				for (int j = 0; j < PDAF_DATA_COLS; ++j) {
-					int x0 = std::max(statsRegion_.x + cellW * j, w.x);
-					int x1 = std::min(statsRegion_.x + cellW * (j + 1), w.x + (int)(w.width));
+				for (unsigned c = 0; c < cols; ++c) {
+					int x0 = std::max(statsRegion_.x + (int)(cellW * c), w.x);
+					int x1 = std::min(statsRegion_.x + (int)(cellW * (c + 1)),
+							  w.x + (int)(w.width));
 					if (x0 >= x1)
 						continue;
-					int a = y1 * (x1 - x0);
-					a = (MaxCellWeight * a + cellA - 1) / cellA;
-					phaseWeights_[i][j] += a;
-					sumWeights_ += a;
+					unsigned a = y1 * (x1 - x0);
+					a = (maxCellWeight * a + cellA - 1) / cellA;
+					wgts->w[r * cols + c] += a;
+					wgts->sum += a;
 				}
 			}
 		}
 	}
 
-	if (sumWeights_ == 0) {
-		/*
-		 * Default AF window is the middle 1/2 width of the middle 1/3 height
-		 * since this maps nicely to both PDAF (16x12) and Focus (4x3) grids.
-		 */
-		for (int i = PDAF_DATA_ROWS / 3; i < 2 * PDAF_DATA_ROWS / 3; ++i) {
-			for (int j = PDAF_DATA_COLS / 4; j < 3 * PDAF_DATA_COLS / 4; ++j) {
-				phaseWeights_[i][j] = MaxCellWeight;
-				sumWeights_ += MaxCellWeight;
+	if (wgts->sum == 0) {
+		/* Default AF window is the middle 1/2 width of the middle 1/3 height */
+		for (unsigned r = rows / 3; r < rows - rows / 3; ++r) {
+			for (unsigned c = cols / 4; c < cols - cols / 4; ++c) {
+				wgts->w[r * cols + c] = 1;
+				wgts->sum += 1;
 			}
 		}
-	}
-
-	/* Scale from PDAF to Focus Statistics grid (which has fixed size 4x3) */
-	constexpr int FocusStatsRows = 3;
-	constexpr int FocusStatsCols = 4;
-	static_assert(FOCUS_REGIONS == FocusStatsRows * FocusStatsCols);
-	static_assert(PDAF_DATA_ROWS % FocusStatsRows == 0);
-	static_assert(PDAF_DATA_COLS % FocusStatsCols == 0);
-	constexpr int YFactor = PDAF_DATA_ROWS / FocusStatsRows;
-	constexpr int XFactor = PDAF_DATA_COLS / FocusStatsCols;
-
-	LOG(RPiAf, Debug) << "Recomputed weights:";
-	for (int i = 0; i < FocusStatsRows; ++i) {
-		for (int j = 0; j < FocusStatsCols; ++j) {
-			unsigned w = 0;
-			for (int y = 0; y < YFactor; ++y)
-				for (int x = 0; x < XFactor; ++x)
-					w += phaseWeights_[YFactor * i + y][XFactor * j + x];
-			contrastWeights_[FocusStatsCols * i + j] = w;
-		}
-		LOG(RPiAf, Debug) << "   "
-				  << contrastWeights_[FocusStatsCols * i + 0] << " "
-				  << contrastWeights_[FocusStatsCols * i + 1] << " "
-				  << contrastWeights_[FocusStatsCols * i + 2] << " "
-				  << contrastWeights_[FocusStatsCols * i + 3];
 	}
 }
 
-bool Af::getPhase(PdafData const &data, double &phase, double &conf) const
+void Af::invalidateWeights()
 {
+	phaseWeights_.sum = 0;
+	contrastWeights_.sum = 0;
+}
+
+bool Af::getPhase(PdafRegions const &regions, double &phase, double &conf)
+{
+	libcamera::Size size = regions.size();
+	if (size.height != phaseWeights_.rows || size.width != phaseWeights_.cols ||
+	    phaseWeights_.sum == 0) {
+		LOG(RPiAf, Debug) << "Recompute Phase weights " << size.width << 'x' << size.height;
+		computeWeights(&phaseWeights_, size.height, size.width);
+	}
+
 	uint32_t sumWc = 0;
 	int64_t sumWcp = 0;
-
-	for (unsigned i = 0; i < PDAF_DATA_ROWS; ++i) {
-		for (unsigned j = 0; j < PDAF_DATA_COLS; ++j) {
-			if (phaseWeights_[i][j]) {
-				uint32_t c = data.conf[i][j];
-				if (c >= cfg_.confThresh) {
-					if (c > cfg_.confClip)
-						c = cfg_.confClip;
-					c -= (cfg_.confThresh >> 2);
-					sumWc += phaseWeights_[i][j] * c;
-					c -= (cfg_.confThresh >> 2);
-					sumWcp += phaseWeights_[i][j] * data.phase[i][j] * (int64_t)c;
-				}
+	for (unsigned i = 0; i < regions.numRegions(); ++i) {
+		unsigned w = phaseWeights_.w[i];
+		if (w) {
+			const PdafData &data = regions.get(i).val;
+			unsigned c = data.conf;
+			if (c >= cfg_.confThresh) {
+				if (c > cfg_.confClip)
+					c = cfg_.confClip;
+				c -= (cfg_.confThresh >> 2);
+				sumWc += w * c;
+				c -= (cfg_.confThresh >> 2);
+				sumWcp += (int64_t)(w * c) * (int64_t)data.phase;
 			}
 		}
 	}
 
-	if (0 < sumWeights_ && sumWeights_ <= sumWc) {
+	if (0 < phaseWeights_.sum && phaseWeights_.sum <= sumWc) {
 		phase = (double)sumWcp / (double)sumWc;
-		conf = (double)sumWc / (double)sumWeights_;
+		conf = (double)sumWc / (double)phaseWeights_.sum;
 		return true;
 	} else {
 		phase = 0.0;
@@ -352,14 +347,21 @@ bool Af::getPhase(PdafData const &data, double &phase, double &conf) const
 	}
 }
 
-double Af::getContrast(const FocusRegions &focusStats) const
+double Af::getContrast(const FocusRegions &focusStats)
 {
-	uint32_t sumWc = 0;
+	libcamera::Size size = focusStats.size();
+	if (size.height != contrastWeights_.rows ||
+	    size.width != contrastWeights_.cols || contrastWeights_.sum == 0) {
+		LOG(RPiAf, Debug) << "Recompute Contrast weights "
+				  << size.width << 'x' << size.height;
+		computeWeights(&contrastWeights_, size.height, size.width);
+	}
 
+	uint64_t sumWc = 0;
 	for (unsigned i = 0; i < focusStats.numRegions(); ++i)
-		sumWc += contrastWeights_[i] * focusStats.get(i).val;
+		sumWc += contrastWeights_.w[i] * focusStats.get(i).val;
 
-	return (sumWeights_ == 0) ? 0.0 : (double)sumWc / (double)sumWeights_;
+	return (contrastWeights_.sum > 0) ? ((double)sumWc / (double)contrastWeights_.sum) : 0.0;
 }
 
 void Af::doPDAF(double phase, double conf)
@@ -623,14 +625,14 @@ void Af::prepare(Metadata *imageMetadata)
 
 	if (initted_) {
 		/* Get PDAF from the embedded metadata, and run AF algorithm core */
-		PdafData data;
+		PdafRegions regions;
 		double phase = 0.0, conf = 0.0;
 		double oldFt = ftarget_;
 		double oldFs = fsmooth_;
 		ScanState oldSs = scanState_;
 		uint32_t oldSt = stepCount_;
-		if (imageMetadata->get("pdaf.data", data) == 0)
-			getPhase(data, phase, conf);
+		if (imageMetadata->get("pdaf.regions", regions) == 0)
+			getPhase(regions, phase, conf);
 		doAF(prevContrast_, phase, conf);
 		updateLensPosition();
 		LOG(RPiAf, Debug) << std::fixed << std::setprecision(2)
@@ -691,7 +693,7 @@ void Af::setMetering(bool mode)
 {
 	if (useWindows_ != mode) {
 		useWindows_ = mode;
-		computeWeights();
+		invalidateWeights();
 	}
 }
 
@@ -708,7 +710,9 @@ void Af::setWindows(libcamera::Span<libcamera::Rectangle const> const &wins)
 		if (windows_.size() >= MaxWindows)
 			break;
 	}
-	computeWeights();
+
+	if (useWindows_)
+		invalidateWeights();
 }
 
 bool Af::setLensPosition(double dioptres, int *hwpos)

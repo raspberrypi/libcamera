@@ -29,6 +29,7 @@
 #include "camera_capabilities.h"
 #include "camera_metadata.h"
 #include "camera_stream.h"
+#include "hal_framebuffer.h"
 #include "jpeg/encoder.h"
 
 class Camera3RequestDescriptor;
@@ -83,7 +84,7 @@ private:
 
 	void stop() LIBCAMERA_TSA_EXCLUDES(stateMutex_);
 
-	std::unique_ptr<libcamera::FrameBuffer>
+	std::unique_ptr<HALFrameBuffer>
 	createFrameBuffer(const buffer_handle_t camera3buffer,
 			  libcamera::PixelFormat pixelFormat,
 			  const libcamera::Size &size);

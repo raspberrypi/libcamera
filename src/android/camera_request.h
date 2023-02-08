@@ -21,6 +21,7 @@
 #include <hardware/camera3.h>
 
 #include "camera_metadata.h"
+#include "hal_framebuffer.h"
 
 class CameraBuffer;
 class CameraStream;
@@ -44,7 +45,7 @@ public:
 
 		CameraStream *stream;
 		buffer_handle_t *camera3Buffer;
-		std::unique_ptr<libcamera::FrameBuffer> frameBuffer;
+		std::unique_ptr<HALFrameBuffer> frameBuffer;
 		libcamera::UniqueFD fence;
 		Status status = Status::Success;
 		libcamera::FrameBuffer *internalBuffer = nullptr;

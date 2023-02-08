@@ -30,6 +30,7 @@
 #include "camera_hal_config.h"
 #include "camera_ops.h"
 #include "camera_request.h"
+#include "hal_framebuffer.h"
 
 using namespace libcamera;
 
@@ -771,7 +772,7 @@ int CameraDevice::configureStreams(camera3_stream_configuration_t *stream_list)
 	return 0;
 }
 
-std::unique_ptr<FrameBuffer>
+std::unique_ptr<HALFrameBuffer>
 CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
 				PixelFormat pixelFormat, const Size &size)
 {
@@ -794,7 +795,7 @@ CameraDevice::createFrameBuffer(const buffer_handle_t camera3buffer,
 		planes[i].length = buf.size(i);
 	}
 
-	return std::make_unique<FrameBuffer>(planes);
+	return std::make_unique<HALFrameBuffer>(planes, camera3buffer);
 }
 
 int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)

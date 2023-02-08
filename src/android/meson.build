@@ -47,16 +47,13 @@ android_hal_sources = files([
     'camera_request.cpp',
     'camera_stream.cpp',
     'hal_framebuffer.cpp',
-    'jpeg/encoder_libjpeg.cpp',
-    'jpeg/exif.cpp',
-    'jpeg/post_processor_jpeg.cpp',
-    'jpeg/thumbnailer.cpp',
     'yuv/post_processor_yuv.cpp'
 ])
 
 android_cpp_args = []
 
 subdir('cros')
+subdir('jpeg')
 subdir('mm')
 
 android_camera_metadata_sources = files([

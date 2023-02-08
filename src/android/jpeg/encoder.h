@@ -12,14 +12,15 @@
 #include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
 
+#include "../camera_request.h"
+
 class Encoder
 {
 public:
 	virtual ~Encoder() = default;
 
 	virtual int configure(const libcamera::StreamConfiguration &cfg) = 0;
-	virtual int encode(const libcamera::FrameBuffer &source,
-			   libcamera::Span<uint8_t> destination,
+	virtual int encode(Camera3RequestDescriptor::StreamBuffer *buffer,
 			   libcamera::Span<const uint8_t> exifData,
 			   unsigned int quality) = 0;
 };

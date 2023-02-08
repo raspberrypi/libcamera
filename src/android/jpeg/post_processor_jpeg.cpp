@@ -194,8 +194,7 @@ void PostProcessorJpeg::process(Camera3RequestDescriptor::StreamBuffer *streamBu
 	const uint8_t quality = ret ? *entry.data.u8 : 95;
 	resultMetadata->addEntry(ANDROID_JPEG_QUALITY, quality);
 
-	int jpeg_size = encoder_->encode(source, destination->plane(0),
-					 exif.data(), quality);
+	int jpeg_size = encoder_->encode(streamBuffer, exif.data(), quality);
 	if (jpeg_size < 0) {
 		LOG(JPEG, Error) << "Failed to encode stream image";
 		processComplete.emit(streamBuffer, PostProcessor::Status::Error);

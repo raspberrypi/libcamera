@@ -12,7 +12,11 @@
 #include "../camera_device.h"
 #include "../camera_metadata.h"
 #include "../camera_request.h"
+#if defined(OS_CHROMEOS)
+#include "encoder_jea.h"
+#else /* !defined(OS_CHROMEOS) */
 #include "encoder_libjpeg.h"
+#endif
 #include "exif.h"
 
 #include <libcamera/base/log.h>
@@ -46,7 +50,11 @@ int PostProcessorJpeg::configure(const StreamConfiguration &inCfg,
 
 	thumbnailer_.configure(inCfg.size, inCfg.pixelFormat);
 
+#if defined(OS_CHROMEOS)
+	encoder_ = std::make_unique<EncoderJea>();
+#else /* !defined(OS_CHROMEOS) */
 	encoder_ = std::make_unique<EncoderLibJpeg>();
+#endif
 
 	return encoder_->configure(inCfg);
 }

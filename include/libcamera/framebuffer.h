@@ -46,7 +46,7 @@ private:
 	std::vector<Plane> planes_;
 };
 
-class FrameBuffer final : public Extensible
+class FrameBuffer : public Extensible
 {
 	LIBCAMERA_DECLARE_PRIVATE()
 
@@ -60,6 +60,7 @@ public:
 
 	FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie = 0);
 	FrameBuffer(std::unique_ptr<Private> d);
+	virtual ~FrameBuffer() {}
 
 	const std::vector<Plane> &planes() const;
 	Request *request() const;

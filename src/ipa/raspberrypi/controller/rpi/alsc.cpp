@@ -310,19 +310,21 @@ double getCt(Metadata *metadata, double defaultCt)
 	return awbStatus.temperatureK;
 }
 
-static void copyStats(bcm2835_isp_stats_region regions[XY], StatisticsPtr &stats,
+static void copyStats(RgbyRegions &regions, StatisticsPtr &stats,
 		      AlscStatus const &status)
 {
-	bcm2835_isp_stats_region *inputRegions = stats->awb_stats;
+	if (!regions.numRegions())
+		regions.init(stats->awbRegions.size());
+
 	double *rTable = (double *)status.r;
 	double *gTable = (double *)status.g;
 	double *bTable = (double *)status.b;
-	for (int i = 0; i < XY; i++) {
-		regions[i].r_sum = inputRegions[i].r_sum / rTable[i];
-		regions[i].g_sum = inputRegions[i].g_sum / gTable[i];
-		regions[i].b_sum = inputRegions[i].b_sum / bTable[i];
-		regions[i].counted = inputRegions[i].counted;
-		/* (don't care about the uncounted value) */
+	for (unsigned int i = 0; i < stats->awbRegions.numRegions(); i++) {
+		auto r = stats->awbRegions.get(i);
+		r.val.rSum = static_cast<uint64_t>(r.val.rSum / rTable[i]);
+		r.val.gSum = static_cast<uint64_t>(r.val.gSum / gTable[i]);
+		r.val.bSum = static_cast<uint64_t>(r.val.bSum / bTable[i]);
+		regions.set(i, r);
 	}
 }
 
@@ -512,19 +514,19 @@ void resampleCalTable(double const calTableIn[XY],
 }
 
 /* Calculate chrominance statistics (R/G and B/G) for each region. */
-static_assert(XY == AWB_REGIONS, "ALSC/AWB statistics region mismatch");
-static void calculateCrCb(bcm2835_isp_stats_region *awbRegion, double cr[XY],
+static void calculateCrCb(const RgbyRegions &awbRegion, double cr[XY],
 			  double cb[XY], uint32_t minCount, uint16_t minG)
 {
 	for (int i = 0; i < XY; i++) {
-		bcm2835_isp_stats_region &zone = awbRegion[i];
-		if (zone.counted <= minCount ||
-		    zone.g_sum / zone.counted <= minG) {
+		auto s = awbRegion.get(i);
+
+		if (s.counted <= minCount || s.val.gSum / s.counted <= minG) {
 			cr[i] = cb[i] = InsufficientData;
 			continue;
 		}
-		cr[i] = zone.r_sum / (double)zone.g_sum;
-		cb[i] = zone.b_sum / (double)zone.g_sum;
+
+		cr[i] = s.val.rSum / (double)s.val.gSum;
+		cb[i] = s.val.bSum / (double)s.val.gSum;
 	}
 }
 

@@ -352,14 +352,12 @@ bool Af::getPhase(PdafData const &data, double &phase, double &conf) const
 	}
 }
 
-double Af::getContrast(struct bcm2835_isp_stats_focus const focus_stats[FOCUS_REGIONS]) const
+double Af::getContrast(const FocusRegions &focusStats) const
 {
 	uint32_t sumWc = 0;
 
-	for (unsigned i = 0; i < FOCUS_REGIONS; ++i) {
-		unsigned w = contrastWeights_[i];
-		sumWc += w * (focus_stats[i].contrast_val[1][1] >> 10);
-	}
+	for (unsigned i = 0; i < focusStats.numRegions(); ++i)
+		sumWc += contrastWeights_[i] * focusStats.get(i).val;
 
 	return (sumWeights_ == 0) ? 0.0 : (double)sumWc / (double)sumWeights_;
 }
@@ -666,7 +664,7 @@ void Af::prepare(Metadata *imageMetadata)
 void Af::process(StatisticsPtr &stats, [[maybe_unused]] Metadata *imageMetadata)
 {
 	(void)imageMetadata;
-	prevContrast_ = getContrast(stats->focus_stats);
+	prevContrast_ = getContrast(stats->focusRegions);
 }
 
 /* Controls */

@@ -78,14 +78,14 @@ private:
 	bool parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp);
 	void putAGCStatistics(StatisticsPtr stats);
 
-	uint32_t aeHistLinear_[128];
+	Histogram aeHistLinear_;
 	uint32_t aeHistAverage_;
 	bool aeHistValid_;
 };
 
 CamHelperImx708::CamHelperImx708()
 	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff),
-	  aeHistLinear_{ 0 }, aeHistAverage_(0), aeHistValid_(false)
+	  aeHistLinear_{}, aeHistAverage_(0), aeHistValid_(false)
 {
 }
 
@@ -264,9 +264,11 @@ bool CamHelperImx708::parsePdafData(const uint8_t *ptr, size_t len,
 
 bool CamHelperImx708::parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp)
 {
-	static const uint32_t ISP_PIPELINE_BITS = 13;
+	static constexpr unsigned int PipelineBits = Statistics::NormalisationFactorPow2;
+
 	uint64_t count = 0, sum = 0;
 	size_t step = bpp >> 1; /* bytes per histogram bin */
+	uint32_t hist[128];
 
 	if (len < 144 * step)
 		return false;
@@ -280,12 +282,12 @@ bool CamHelperImx708::parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp)
 		if (ptr[3] != 0x55)
 			return false;
 		uint32_t c = (ptr[0] << 14) + (ptr[1] << 6) + (ptr[2] >> 2);
-		aeHistLinear_[i] = c >> 2; /* pixels to quads */
+		hist[i] = c >> 2; /* pixels to quads */
 		if (i != 0) {
 			count += c;
 			sum += c *
-			       (i * (1u << (ISP_PIPELINE_BITS - 7)) +
-				(1u << (ISP_PIPELINE_BITS - 8)));
+			       (i * (1u << (PipelineBits - 7)) +
+				(1u << (PipelineBits - 8)));
 		}
 		ptr += step;
 	}
@@ -301,15 +303,16 @@ bool CamHelperImx708::parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp)
 		uint32_t c = (ptr[0] << 14) + (ptr[1] << 6) + (ptr[2] >> 2);
 		count += c;
 		sum += c *
-		       ((3u << ISP_PIPELINE_BITS) >> (17 - i));
+		       ((3u << PipelineBits) >> (17 - i));
 		ptr += step;
 	}
 	if ((unsigned)((ptr[0] << 12) + (ptr[1] << 4) + (ptr[2] >> 4)) !=
-	    aeHistLinear_[1]) {
+	    hist[1]) {
 		LOG(IPARPI, Error) << "Lin/Log histogram mismatch";
 		return false;
 	}
 
+	aeHistLinear_ = Histogram(hist, 128);
 	aeHistAverage_ = count ? (sum / count) : 0;
 
 	return count != 0;
@@ -329,13 +332,12 @@ void CamHelperImx708::putAGCStatistics(StatisticsPtr stats)
 	 * scaled by a fiddle-factor so that a conventional (non-HDR) y_target
 	 * of e.g. 0.17 will map to a suitable level for HDR.
 	 */
-	memcpy(stats->hist[0].g_hist, aeHistLinear_, sizeof(stats->hist[0].g_hist));
+	stats->yHist = aeHistLinear_;
 
 	constexpr unsigned int HdrHeadroomFactor = 4;
 	uint64_t v = HdrHeadroomFactor * aeHistAverage_;
-	for (int i = 0; i < AGC_REGIONS; i++) {
-		struct bcm2835_isp_stats_region &r = stats->agc_stats[i];
-		r.r_sum = r.b_sum = r.g_sum = r.counted * v;
+	for (auto &region : stats->agcRegions) {
+		region.val.rSum = region.val.gSum = region.val.bSum = region.counted * v;
 	}
 }
 

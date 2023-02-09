@@ -106,7 +106,7 @@ Pwl computeStretchCurve(Histogram const &histogram,
 	 * bit.
 	 */
 	double histLo = histogram.quantile(config.loHistogram) *
-			(65536 / NUM_HISTOGRAM_BINS);
+			(65536 / histogram.bins());
 	double levelLo = config.loLevel * 65536;
 	LOG(RPiContrast, Debug)
 		<< "Move histogram point " << histLo << " to " << levelLo;
@@ -119,7 +119,7 @@ Pwl computeStretchCurve(Histogram const &histogram,
 	 * Keep the mid-point (median) in the same place, though, to limit the
 	 * apparent amount of global brightness shift.
 	 */
-	double mid = histogram.quantile(0.5) * (65536 / NUM_HISTOGRAM_BINS);
+	double mid = histogram.quantile(0.5) * (65536 / histogram.bins());
 	enhance.append(mid, mid);
 
 	/*
@@ -127,7 +127,7 @@ Pwl computeStretchCurve(Histogram const &histogram,
 	 * there up.
 	 */
 	double histHi = histogram.quantile(config.hiHistogram) *
-			(65536 / NUM_HISTOGRAM_BINS);
+			(65536 / histogram.bins());
 	double levelHi = config.hiLevel * 65536;
 	LOG(RPiContrast, Debug)
 		<< "Move histogram point " << histHi << " to " << levelHi;
@@ -158,7 +158,7 @@ Pwl applyManualContrast(Pwl const &gammaCurve, double brightness,
 void Contrast::process(StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *imageMetadata)
 {
-	Histogram histogram(stats->hist[0].g_hist, NUM_HISTOGRAM_BINS);
+	Histogram &histogram = stats->yHist;
 	/*
 	 * We look at the histogram and adjust the gamma curve in the following
 	 * ways: 1. Adjust the gamma curve so as to pull the start of the

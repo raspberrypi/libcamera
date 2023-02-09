@@ -13,6 +13,7 @@
 #include "../awb_algorithm.h"
 #include "../pwl.h"
 #include "../awb_status.h"
+#include "../statistics.h"
 
 namespace RPiController {
 

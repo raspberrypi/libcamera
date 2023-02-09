@@ -15,19 +15,17 @@
 #include <vector>
 #include <string>
 
-#include <linux/bcm2835-isp.h>
-
 #include "libcamera/internal/yaml_parser.h"
 
 #include "camera_mode.h"
 #include "device_status.h"
 #include "metadata.h"
+#include "statistics.h"
 
 namespace RPiController {
 
 class Algorithm;
 typedef std::unique_ptr<Algorithm> AlgorithmPtr;
-typedef std::shared_ptr<bcm2835_isp_stats> StatisticsPtr;
 
 /*
  * The Controller holds a pointer to some global_metadata, which is how

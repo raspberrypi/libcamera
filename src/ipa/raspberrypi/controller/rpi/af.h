@@ -12,6 +12,12 @@
 #include "../pwl.h"
 
 /*
+ * \todo FOCUS_REGIONS is taken from bcm2835-isp.h, but should be made as a
+ * generic RegionStats structure.
+ */
+#define FOCUS_REGIONS 12
+
+/*
  * This algorithm implements a hybrid of CDAF and PDAF, favouring PDAF.
  *
  * Whenever PDAF is available, it is used in a continuous feedback loop.
@@ -117,7 +123,7 @@ private:
 
 	void computeWeights();
 	bool getPhase(PdafData const &data, double &phase, double &conf) const;
-	double getContrast(struct bcm2835_isp_stats_focus const focus_stats[FOCUS_REGIONS]) const;
+	double getContrast(const FocusRegions &focusStats) const;
 	void doPDAF(double phase, double conf);
 	bool earlyTerminationByPhase(double phase);
 	double findPeak(unsigned index) const;

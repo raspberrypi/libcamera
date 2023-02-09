@@ -6,8 +6,6 @@
  */
 #include <math.h>
 
-#include <linux/bcm2835-isp.h>
-
 #include <libcamera/base/log.h>
 
 #include "../device_status.h"
@@ -83,20 +81,12 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	if (imageMetadata->get("device.status", deviceStatus) == 0) {
 		double currentGain = deviceStatus.analogueGain;
 		double currentAperture = deviceStatus.aperture.value_or(currentAperture_);
-		uint64_t sum = 0;
-		uint32_t num = 0;
-		uint32_t *bin = stats->hist[0].g_hist;
-		const int numBins = sizeof(stats->hist[0].g_hist) /
-				    sizeof(stats->hist[0].g_hist[0]);
-		for (int i = 0; i < numBins; i++)
-			sum += bin[i] * (uint64_t)i, num += bin[i];
-		/* add .5 to reflect the mid-points of bins */
-		double currentY = sum / (double)num + .5;
+		double currentY = stats->yHist.interQuantileMean(0, 1);
 		double gainRatio = referenceGain_ / currentGain;
 		double shutterSpeedRatio =
 			referenceShutterSpeed_ / deviceStatus.shutterSpeed;
 		double apertureRatio = referenceAperture_ / currentAperture;
-		double yRatio = currentY * (65536 / numBins) / referenceY_;
+		double yRatio = currentY * (65536 / stats->yHist.bins()) / referenceY_;
 		double estimatedLux = shutterSpeedRatio * gainRatio *
 				      apertureRatio * apertureRatio *
 				      yRatio * referenceLux_;

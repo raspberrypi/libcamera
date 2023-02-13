@@ -30,10 +30,8 @@ StreamKeyValueParser::StreamKeyValueParser()
 KeyValueParser::Options StreamKeyValueParser::parse(const char *arguments)
 {
 	KeyValueParser::Options options = KeyValueParser::parse(arguments);
-	StreamRole role;
 
-	if (options.valid() && options.isSet("role") &&
-	    !parseRole(&role, options)) {
+	if (options.valid() && options.isSet("role") && !parseRole(options)) {
 		std::cerr << "Unknown stream role "
 			  << options["role"].toString() << std::endl;
 		options.invalidate();
@@ -52,13 +50,8 @@ StreamRoles StreamKeyValueParser::roles(const OptionValue &values)
 
 	StreamRoles roles;
 	for (auto const &value : streamParameters) {
-		StreamRole role;
-
-		/* If role is invalid or not set default to viewfinder. */
-		if (!parseRole(&role, value.toKeyValues()))
-			role = StreamRole::Viewfinder;
-
-		roles.push_back(role);
+		/* If a role is invalid default it to viewfinder. */
+		roles.push_back(parseRole(value.toKeyValues()).value_or(StreamRole::Viewfinder));
 	}
 
 	return roles;
@@ -108,27 +101,21 @@ int StreamKeyValueParser::updateConfiguration(CameraConfiguration *config,
 	return 0;
 }
 
-bool StreamKeyValueParser::parseRole(StreamRole *role,
-				     const KeyValueParser::Options &options)
+std::optional<libcamera::StreamRole> StreamKeyValueParser::parseRole(const KeyValueParser::Options &options)
 {
 	if (!options.isSet("role"))
-		return false;
+		return {};
 
 	std::string name = options["role"].toString();
 
-	if (name == "viewfinder") {
-		*role = StreamRole::Viewfinder;
-		return true;
-	} else if (name == "video") {
-		*role = StreamRole::VideoRecording;
-		return true;
-	} else if (name == "still") {
-		*role = StreamRole::StillCapture;
-		return true;
-	} else if (name == "raw") {
-		*role = StreamRole::Raw;
-		return true;
-	}
+	if (name == "viewfinder")
+		return StreamRole::Viewfinder;
+	else if (name == "video")
+		return StreamRole::VideoRecording;
+	else if (name == "still")
+		return StreamRole::StillCapture;
+	else if (name == "raw")
+		return StreamRole::Raw;
 
-	return false;
+	return {};
 }

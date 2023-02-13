@@ -449,10 +449,9 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 		/* First fix up raw streams to have the "raw" colour space. */
 		if (isRaw(cfg.pixelFormat)) {
 			/* If there was no value here, that doesn't count as "adjusted". */
-			if (cfg.colorSpace && cfg.colorSpace != ColorSpace::Raw) {
+			if (cfg.colorSpace && cfg.colorSpace != ColorSpace::Raw)
 				status = Adjusted;
-				cfg.colorSpace = ColorSpace::Raw;
-			}
+			cfg.colorSpace = ColorSpace::Raw;
 			continue;
 		}
 

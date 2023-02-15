@@ -20,6 +20,25 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiController)
 
+static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap = {
+	{
+		"bcm2835",
+		{
+			/*
+			 * There are only ever 15 AGC regions computed by the firmware
+			 * due to zoning, but the HW defines AGC_REGIONS == 16!
+			 */
+			.agcRegions = { 15 , 1 },
+			.agcZoneWeights = { 15 , 1 },
+			.awbRegions = { 16, 12 },
+			.focusRegions = { 4, 3 },
+			.numHistogramBins = 128,
+			.numGammaPoints = 33,
+			.pipelineWidth = 13
+		}
+	},
+};
+
 Controller::Controller()
 	: switchModeCalled_(false)
 {
@@ -147,4 +166,16 @@ Algorithm *Controller::getAlgorithm(std::string const &name) const
 const std::string &Controller::getTarget() const
 {
 	return target_;
+}
+
+const Controller::HardwareConfig &Controller::getHardwareConfig() const
+{
+	auto cfg = HardwareConfigMap.find(getTarget());
+
+	/*
+	 * This really should not happen, the IPA ought to validate the target
+	 * on initialisation.
+	 */
+	ASSERT(cfg != HardwareConfigMap.end());
+	return cfg->second;
 }

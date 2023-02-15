@@ -45,6 +45,10 @@ public:
 	{
 		return controller_->getTarget();
 	}
+	const Controller::HardwareConfig &getHardwareConfig() const
+	{
+		return controller_->getHardwareConfig();
+	}
 
 private:
 	Controller *controller_;

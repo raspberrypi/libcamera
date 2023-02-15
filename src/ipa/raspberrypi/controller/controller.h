@@ -37,6 +37,16 @@ typedef std::unique_ptr<Algorithm> AlgorithmPtr;
 class Controller
 {
 public:
+	struct HardwareConfig {
+		libcamera::Size agcRegions;
+		libcamera::Size agcZoneWeights;
+		libcamera::Size awbRegions;
+		libcamera::Size focusRegions;
+		unsigned int numHistogramBins;
+		unsigned int numGammaPoints;
+		unsigned int pipelineWidth;
+	};
+
 	Controller();
 	~Controller();
 	int read(char const *filename);
@@ -47,6 +57,7 @@ public:
 	Metadata &getGlobalMetadata();
 	Algorithm *getAlgorithm(std::string const &name) const;
 	const std::string &getTarget() const;
+	const HardwareConfig &getHardwareConfig() const;
 
 protected:
 	int createAlgorithm(const std::string &name, const libcamera::YamlObject &params);

@@ -86,12 +86,12 @@ public:
 		return get_(index);
 	}
 
-	const T &get(const libcamera::Point &pos) const
+	const Region &get(const libcamera::Point &pos) const
 	{
 		return get(pos.y * size_.width + pos.x);
 	}
 
-	const T &getFloating(unsigned int index) const
+	const Region &getFloating(unsigned int index) const
 	{
 		if (index >= numFloatingRegions())
 			return default_;

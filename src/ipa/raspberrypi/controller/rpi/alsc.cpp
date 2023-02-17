@@ -607,7 +607,7 @@ static double computeWeight(double Ci, double Cj, double sigma)
 
 /* Compute all weights. */
 static void computeW(const Array2D<double> &C, double sigma,
-		     std::vector<std::array<double, 4>> &W)
+		     SparseArray<double> &W)
 {
 	size_t XY = C.size();
 	size_t X = C.dimensions().width;
@@ -623,8 +623,8 @@ static void computeW(const Array2D<double> &C, double sigma,
 
 /* Compute M, the large but sparse matrix such that M * lambdas = 0. */
 static void constructM(const Array2D<double> &C,
-		       const std::vector<std::array<double, 4>> &W,
-		       std::vector<std::array<double, 4>> &M)
+		       const SparseArray<double> &W,
+		       SparseArray<double> &M)
 {
 	size_t XY = C.size();
 	size_t X = C.dimensions().width;
@@ -651,37 +651,37 @@ static void constructM(const Array2D<double> &C,
  * left/right neighbours are zero down the left/right edges, so we don't need
  * need to test the i value to exclude them.
  */
-static double computeLambdaBottom(int i, const std::vector<std::array<double, 4>> &M,
+static double computeLambdaBottom(int i, const SparseArray<double> &M,
 				  Array2D<double> &lambda)
 {
 	return M[i][1] * lambda[i + 1] + M[i][2] * lambda[i + lambda.dimensions().width] +
 	       M[i][3] * lambda[i - 1];
 }
-static double computeLambdaBottomStart(int i, const std::vector<std::array<double, 4>> &M,
+static double computeLambdaBottomStart(int i, const SparseArray<double> &M,
 				       Array2D<double> &lambda)
 {
 	return M[i][1] * lambda[i + 1] + M[i][2] * lambda[i + lambda.dimensions().width];
 }
-static double computeLambdaInterior(int i, const std::vector<std::array<double, 4>> &M,
+static double computeLambdaInterior(int i, const SparseArray<double> &M,
 				    Array2D<double> &lambda)
 {
 	return M[i][0] * lambda[i - lambda.dimensions().width] + M[i][1] * lambda[i + 1] +
 	       M[i][2] * lambda[i + lambda.dimensions().width] + M[i][3] * lambda[i - 1];
 }
-static double computeLambdaTop(int i, const std::vector<std::array<double, 4>> &M,
+static double computeLambdaTop(int i, const SparseArray<double> &M,
 			       Array2D<double> &lambda)
 {
 	return M[i][0] * lambda[i - lambda.dimensions().width] + M[i][1] * lambda[i + 1] +
 	       M[i][3] * lambda[i - 1];
 }
-static double computeLambdaTopEnd(int i, const std::vector<std::array<double, 4>> &M,
+static double computeLambdaTopEnd(int i, const SparseArray<double> &M,
 				  Array2D<double> &lambda)
 {
 	return M[i][0] * lambda[i - lambda.dimensions().width] + M[i][3] * lambda[i - 1];
 }
 
 /* Gauss-Seidel iteration with over-relaxation. */
-static double gaussSeidel2Sor(const std::vector<std::array<double, 4>> &M, double omega,
+static double gaussSeidel2Sor(const SparseArray<double> &M, double omega,
 			      Array2D<double> &lambda, double lambdaBound)
 {
 	int XY = lambda.size();
@@ -753,8 +753,8 @@ static void reaverage(Array2D<double> &data)
 
 static void runMatrixIterations(const Array2D<double> &C,
 				Array2D<double> &lambda,
-				const std::vector<std::array<double, 4>> &W,
-				std::vector<std::array<double, 4>> &M, double omega,
+				const SparseArray<double> &W,
+				SparseArray<double> &M, double omega,
 				unsigned int nIter, double threshold, double lambdaBound)
 {
 	constructM(C, W, M);
@@ -813,7 +813,7 @@ void Alsc::doAlsc()
 {
 	Array2D<double> &cr = tmpC_[0], &cb = tmpC_[1], &calTableR = tmpC_[2],
 			&calTableB = tmpC_[3], &calTableTmp = tmpC_[4];
-	std::vector<std::array<double, 4>> &wr = tmpM_[0], &wb = tmpM_[1], &M = tmpM_[2];
+	SparseArray<double> &wr = tmpM_[0], &wb = tmpM_[1], &M = tmpM_[2];
 
 	/*
 	 * Calculate our R/B ("Cr"/"Cb") colour statistics, and assess which are

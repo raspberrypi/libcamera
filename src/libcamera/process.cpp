@@ -263,7 +263,9 @@ int Process::start(const std::string &path,
 
 		closeAllFdsExcept(fds);
 
-		unsetenv("LIBCAMERA_LOG_FILE");
+		const char *file = utils::secure_getenv("LIBCAMERA_LOG_FILE");
+		if (file && strcmp(file, "syslog"))
+			unsetenv("LIBCAMERA_LOG_FILE");
 
 		const char **argv = new const char *[args.size() + 2];
 		unsigned int len = args.size();

@@ -1244,41 +1244,54 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 
 bool PipelineHandlerRPi::match(DeviceEnumerator *enumerator)
 {
-	DeviceMatch unicam("unicam");
-	MediaDevice *unicamDevice = acquireMediaDevice(enumerator, unicam);
-
-	if (!unicamDevice) {
-		LOG(RPI, Debug) << "Unable to acquire a Unicam instance";
-		return false;
-	}
-
-	DeviceMatch isp("bcm2835-isp");
-	MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
-
-	if (!ispDevice) {
-		LOG(RPI, Debug) << "Unable to acquire ISP instance";
-		return false;
-	}
+	constexpr unsigned int numUnicamDevices = 2;
 
 	/*
-	 * The loop below is used to register multiple cameras behind one or more
-	 * video mux devices that are attached to a particular Unicam instance.
-	 * Obviously these cameras cannot be used simultaneously.
+	 * Loop over all Unicam instances, but return out once a match is found.
+	 * This is to ensure we correctly enumrate the camera when an instance
+	 * of Unicam has registered with media controller, but has not registered
+	 * device nodes due to a sensor subdevice failure.
 	 */
-	unsigned int numCameras = 0;
-	for (MediaEntity *entity : unicamDevice->entities()) {
-		if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
-			continue;
+	for (unsigned int i = 0; i < numUnicamDevices; i++) {
+		DeviceMatch unicam("unicam");
+		MediaDevice *unicamDevice = acquireMediaDevice(enumerator, unicam);
 
-		int ret = registerCamera(unicamDevice, ispDevice, entity);
-		if (ret)
-			LOG(RPI, Error) << "Failed to register camera "
-					<< entity->name() << ": " << ret;
-		else
-			numCameras++;
+		if (!unicamDevice) {
+			LOG(RPI, Debug) << "Unable to acquire a Unicam instance";
+			continue;
+		}
+
+		DeviceMatch isp("bcm2835-isp");
+		MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
+
+		if (!ispDevice) {
+			LOG(RPI, Debug) << "Unable to acquire ISP instance";
+			continue;
+		}
+
+		/*
+		 * The loop below is used to register multiple cameras behind one or more
+		 * video mux devices that are attached to a particular Unicam instance.
+		 * Obviously these cameras cannot be used simultaneously.
+		 */
+		unsigned int numCameras = 0;
+		for (MediaEntity *entity : unicamDevice->entities()) {
+			if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
+				continue;
+
+			int ret = registerCamera(unicamDevice, ispDevice, entity);
+			if (ret)
+				LOG(RPI, Error) << "Failed to register camera "
+						<< entity->name() << ": " << ret;
+			else
+				numCameras++;
+		}
+
+		if (numCameras)
+			return true;
 	}
 
-	return !!numCameras;
+	return false;
 }
 
 void PipelineHandlerRPi::releaseDevice(Camera *camera)

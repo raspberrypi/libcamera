@@ -360,6 +360,11 @@ class TitleChecker(CommitChecker):
     def check(cls, commit, top_level):
         title = commit.title
 
+        # Skip the check when validating staged changes (as done through a
+        # pre-commit hook) as there is no title to check in that case.
+        if isinstance(commit, StagedChanges):
+            return []
+
         # Ignore release commits, they don't need a prefix.
         if TitleChecker.release_regex.fullmatch(title):
             return []

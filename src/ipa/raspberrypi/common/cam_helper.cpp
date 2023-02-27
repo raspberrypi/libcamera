@@ -22,7 +22,7 @@ using libcamera::utils::Duration;
 using namespace std::literals::chrono_literals;
 
 namespace libcamera {
-LOG_DECLARE_CATEGORY(IPARPI)
+LOG_DEFINE_CATEGORY(RPiCamHelper)
 }
 
 namespace {
@@ -222,7 +222,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 		return;
 
 	if (parser_->parse(buffer, registers) != MdParser::Status::OK) {
-		LOG(IPARPI, Error) << "Embedded data buffer parsing failed";
+		LOG(RPiCamHelper, Error) << "Embedded data buffer parsing failed";
 		return;
 	}
 
@@ -237,7 +237,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	DeviceStatus deviceStatus, parsedDeviceStatus;
 	if (metadata.get("device.status", deviceStatus) ||
 	    parsedMetadata.get("device.status", parsedDeviceStatus)) {
-		LOG(IPARPI, Error) << "DeviceStatus not found";
+		LOG(RPiCamHelper, Error) << "DeviceStatus not found";
 		return;
 	}
 
@@ -248,7 +248,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	if (parsedDeviceStatus.sensorTemperature)
 		deviceStatus.sensorTemperature = parsedDeviceStatus.sensorTemperature;
 
-	LOG(IPARPI, Debug) << "Metadata updated - " << deviceStatus;
+	LOG(RPiCamHelper, Debug) << "Metadata updated - " << deviceStatus;
 
 	metadata.set("device.status", deviceStatus);
 }

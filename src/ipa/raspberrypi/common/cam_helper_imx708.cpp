@@ -22,7 +22,7 @@ using namespace libcamera;
 using libcamera::utils::Duration;
 
 namespace libcamera {
-LOG_DECLARE_CATEGORY(IPARPI)
+LOG_DECLARE_CATEGORY(RPiCamHelper)
 }
 
 /*
@@ -107,10 +107,10 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
 
-	LOG(IPARPI, Debug) << "Embedded buffer size: " << buffer.size();
+	LOG(RPiCamHelper, Debug) << "Embedded buffer size: " << buffer.size();
 
 	if (metadata.get("device.status", deviceStatus)) {
-		LOG(IPARPI, Error) << "DeviceStatus not found from DelayedControls";
+		LOG(RPiCamHelper, Error) << "DeviceStatus not found from DelayedControls";
 		return;
 	}
 
@@ -156,7 +156,7 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		parsedDeviceStatus.frameLength = deviceStatus.frameLength;
 		metadata.set("device.status", parsedDeviceStatus);
 
-		LOG(IPARPI, Debug) << "Metadata updated for long exposure: "
+		LOG(RPiCamHelper, Debug) << "Metadata updated for long exposure: "
 				   << parsedDeviceStatus;
 	}
 }
@@ -247,7 +247,7 @@ bool CamHelperImx708::parsePdafData(const uint8_t *ptr, size_t len,
 	size_t step = bpp >> 1; /* bytes per PDAF grid entry */
 
 	if (bpp < 10 || bpp > 12 || len < 194 * step || ptr[0] != 0 || ptr[1] >= 0x40) {
-		LOG(IPARPI, Error) << "PDAF data in unsupported format";
+		LOG(RPiCamHelper, Error) << "PDAF data in unsupported format";
 		return false;
 	}
 
@@ -315,7 +315,7 @@ bool CamHelperImx708::parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp)
 	}
 	if ((unsigned)((ptr[0] << 12) + (ptr[1] << 4) + (ptr[2] >> 4)) !=
 	    hist[1]) {
-		LOG(IPARPI, Error) << "Lin/Log histogram mismatch";
+		LOG(RPiCamHelper, Error) << "Lin/Log histogram mismatch";
 		return false;
 	}
 

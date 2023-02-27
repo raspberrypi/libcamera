@@ -133,6 +133,20 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
+		{ "ov2685", {
+			.unitCellSize = { 1750, 1750 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1},
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 2 },
+				/*
+				 * No corresponding test pattern mode for:
+				 * 3: "Random Data"
+				 * 4: "Black White Square"
+				 * 5: "Color Square"
+				 */
+			},
+		} },
 		{ "ov2740", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {

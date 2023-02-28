@@ -103,10 +103,12 @@ private:
 	void filterExposure(bool desaturate);
 	void divideUpExposure();
 	void writeAndFinish(Metadata *imageMetadata, bool desaturate);
-	libcamera::utils::Duration clipShutter(libcamera::utils::Duration shutter);
+	libcamera::utils::Duration limitShutter(libcamera::utils::Duration shutter);
+	double limitGain(double gain) const;
 	AgcMeteringMode *meteringMode_;
 	AgcExposureMode *exposureMode_;
 	AgcConstraintMode *constraintMode_;
+	CameraMode mode_;
 	uint64_t frameCount_;
 	AwbStatus awb_;
 	struct ExposureValues {
@@ -124,7 +126,6 @@ private:
 	int lockCount_;
 	DeviceStatus lastDeviceStatus_;
 	libcamera::utils::Duration lastTargetExposure_;
-	double lastSensitivity_; /* sensitivity of the previous camera mode */
 	/* Below here the "settings" that applications can change. */
 	std::string meteringModeName_;
 	std::string exposureModeName_;

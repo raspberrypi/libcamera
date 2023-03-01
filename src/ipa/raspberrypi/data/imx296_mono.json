@@ -222,7 +222,15 @@
             }
         },
         {
-            "rpi.sharpen": { }
+            "rpi.sharpen":
+            {
+                "threshold": 0.1,
+                "strength": 1.0,
+                "limit": 0.18
+            }
+        },
+        {
+            "rpi.focus": { }
         }
     ]
 }

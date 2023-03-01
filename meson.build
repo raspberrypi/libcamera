@@ -25,13 +25,14 @@ if libcamera_git_version == ''
 endif
 
 libcamera_version = libcamera_git_version.split('+')[0]
+project_version = meson.project_version().split('+')[0]
 
 # A shallow clone, or a clone without a reachable tag equivalent to the
 # meson.project_version() could leave the project in a mis-described state.
 # Produce a warning in this event, and fix to a best effort.
-if libcamera_version != meson.project_version()
+if libcamera_version != project_version
     warning('The sources disagree about the version: '
-            + libcamera_version + ' != ' + meson.project_version())
+            + libcamera_version + ' != ' + project_version)
 
     summary({'libcamera git version' : libcamera_git_version,
              'Source version match' : false,
@@ -40,9 +41,9 @@ if libcamera_version != meson.project_version()
 
     # Replace the version components reported by git with the release version,
     # but keep all trailing information supplied by git.
-    libcamera_git_version = (meson.project_version() +
+    libcamera_git_version = (project_version +
                              libcamera_git_version.strip(libcamera_version))
-    libcamera_version = meson.project_version()
+    libcamera_version = project_version
 
     # Append a marker to show we have modified this version string
     libcamera_git_version += '-nvm'

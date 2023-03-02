@@ -493,7 +493,7 @@ int SimpleCameraData::init()
 	MediaDevice *converter = pipe->converter();
 	if (converter) {
 		converter_ = ConverterFactoryBase::create(converter);
-		if (!converter_->isValid()) {
+		if (!converter_) {
 			LOG(SimplePipeline, Warning)
 				<< "Failed to create converter, disabling format conversion";
 			converter_.reset();

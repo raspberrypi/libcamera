@@ -227,7 +227,9 @@ std::unique_ptr<Converter> ConverterFactoryBase::create(MediaDevice *media)
 			<< factory->name_ << " factory with "
 			<< (it == compatibles.end() ? "no" : media->driver()) << " alias.";
 
-		return factory->createInstance(media);
+		std::unique_ptr<Converter> converter = factory->createInstance(media);
+		if (converter->isValid())
+			return converter;
 	}
 
 	return nullptr;

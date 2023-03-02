@@ -216,8 +216,8 @@ void LensShadingCorrection::interpolateTable(rkisp1_cif_isp_lsc_config &config,
 					     const Components &set1,
 					     const uint32_t ct)
 {
-	double coeff0 = (set1.ct - ct) / (set1.ct - set0.ct);
-	double coeff1 = (ct - set0.ct) / (set1.ct - set0.ct);
+	double coeff0 = (set1.ct - ct) / static_cast<double>(set1.ct - set0.ct);
+	double coeff1 = (ct - set0.ct) / static_cast<double>(set1.ct - set0.ct);
 
 	for (unsigned int i = 0; i < RKISP1_CIF_ISP_LSC_SAMPLES_MAX; ++i) {
 		for (unsigned int j = 0; j < RKISP1_CIF_ISP_LSC_SAMPLES_MAX; ++j) {

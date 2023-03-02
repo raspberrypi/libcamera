@@ -584,7 +584,7 @@ void Agc::fetchAwbStatus(Metadata *imageMetadata)
 static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 			      double weights[], double gain)
 {
-	constexpr unsigned int maxVal = 1 << Statistics::NormalisationFactorPow2;
+	constexpr uint64_t maxVal = 1 << Statistics::NormalisationFactorPow2;
 	/*
 	 * Note how the calculation below means that equal weights give you
 	 * "average" metering (i.e. all pixels equally important).

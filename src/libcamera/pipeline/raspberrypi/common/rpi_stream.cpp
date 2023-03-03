@@ -58,14 +58,14 @@ const BufferMap &Stream::getBuffers() const
 int Stream::getBufferId(FrameBuffer *buffer) const
 {
 	if (importOnly_)
-		return -1;
+		return 0;
 
 	/* Find the buffer in the map, and return the buffer id. */
 	auto it = std::find_if(bufferMap_.begin(), bufferMap_.end(),
 			       [&buffer](auto const &p) { return p.second == buffer; });
 
 	if (it == bufferMap_.end())
-		return -1;
+		return 0;
 
 	return it->first;
 }
@@ -80,7 +80,7 @@ void Stream::removeExternalBuffer(FrameBuffer *buffer)
 	int id = getBufferId(buffer);
 
 	/* Ensure we have this buffer in the stream, and it is marked external. */
-	ASSERT(id != -1 && (id & BufferMask::MaskExternalBuffer));
+	ASSERT(id && (id & BufferMask::MaskExternalBuffer));
 	bufferMap_.erase(id);
 }
 

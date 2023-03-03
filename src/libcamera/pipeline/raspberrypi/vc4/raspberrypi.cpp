@@ -1210,7 +1210,7 @@ int PipelineHandlerRPi::queueRequestDevice(Camera *camera, Request *request)
 			continue;
 
 		FrameBuffer *buffer = request->findBuffer(stream);
-		if (buffer && stream->getBufferId(buffer) == -1) {
+		if (buffer && !stream->getBufferId(buffer)) {
 			/*
 			 * This buffer is not recognised, so it must have been allocated
 			 * outside the v4l2 device. Store it in the stream buffer list
@@ -2042,7 +2042,7 @@ void RPiCameraData::unicamBufferDequeue(FrameBuffer *buffer)
 
 	for (RPi::Stream &s : unicam_) {
 		index = s.getBufferId(buffer);
-		if (index != -1) {
+		if (index) {
 			stream = &s;
 			break;
 		}
@@ -2098,7 +2098,7 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 
 	for (RPi::Stream &s : isp_) {
 		index = s.getBufferId(buffer);
-		if (index != -1) {
+		if (index) {
 			stream = &s;
 			break;
 		}

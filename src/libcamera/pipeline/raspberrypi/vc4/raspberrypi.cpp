@@ -200,15 +200,15 @@ public:
 	void freeBuffers();
 	void frameStarted(uint32_t sequence);
 
-	int loadIPA(ipa::RPi::IPAInitResult *result);
-	int configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result);
+	int loadIPA(ipa::RPi::InitResult *result);
+	int configureIPA(const CameraConfiguration *config, ipa::RPi::ConfigResult *result);
 	int loadPipelineConfiguration();
 
 	void enumerateVideoDevices(MediaLink *link);
 
-	void statsMetadataComplete(uint32_t bufferId, const ControlList &controls);
-	void runIsp(uint32_t bufferId);
-	void embeddedComplete(uint32_t bufferId);
+	void processStatsComplete(const ipa::RPi::BufferIds &buffers);
+	void metadataReady(const ControlList &metadata);
+	void prepareIspComplete(const ipa::RPi::BufferIds &buffers);
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls, uint32_t delayContext);
 	void setLensControls(const ControlList &controls);
@@ -238,7 +238,7 @@ public:
 	/* The vector below is just for convenience when iterating over all streams. */
 	std::vector<RPi::Stream *> streams_;
 	/* Stores the ids of the buffers mapped in the IPA. */
-	std::unordered_set<unsigned int> ipaBuffers_;
+	std::unordered_set<unsigned int> bufferIds_;
 	/*
 	 * Stores a cascade of Video Mux or Bridge devices between the sensor and
 	 * Unicam together with media link across the entities.
@@ -1000,7 +1000,7 @@ int PipelineHandlerRPi::configure(Camera *camera, CameraConfiguration *config)
 
 	data->isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 
-	ipa::RPi::IPAConfigResult result;
+	ipa::RPi::ConfigResult result;
 	ret = data->configureIPA(config, &result);
 	if (ret)
 		LOG(RPI, Error) << "Failed to configure the IPA: " << ret;
@@ -1117,17 +1117,17 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/* Start the IPA. */
-	ipa::RPi::StartConfig startConfig;
+	ipa::RPi::StartResult result;
 	data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
-			  &startConfig);
+			  &result);
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	if (!startConfig.controls.empty())
-		data->setSensorControls(startConfig.controls);
+	if (!result.controls.empty())
+		data->setSensorControls(result.controls);
 
 	/* Configure the number of dropped frames required on startup. */
 	data->dropFrameCount_ = data->config_.disableStartupFrameDrops
-			      ? 0 : startConfig.dropFrameCount;
+				? 0 : result.dropFrameCount;
 
 	for (auto const stream : data->streams_)
 		stream->resetBuffers();
@@ -1358,7 +1358,7 @@ int PipelineHandlerRPi::registerCamera(MediaDevice *unicam, MediaDevice *isp, Me
 
 	data->sensorFormats_ = populateSensorFormats(data->sensor_);
 
-	ipa::RPi::IPAInitResult result;
+	ipa::RPi::InitResult result;
 	if (data->loadIPA(&result)) {
 		LOG(RPI, Error) << "Failed to load a suitable IPA library";
 		return -EINVAL;
@@ -1599,7 +1599,7 @@ int PipelineHandlerRPi::prepareBuffers(Camera *camera)
 void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffers, unsigned int mask)
 {
 	RPiCameraData *data = cameraData(camera);
-	std::vector<IPABuffer> ipaBuffers;
+	std::vector<IPABuffer> bufferIds;
 	/*
 	 * Link the FrameBuffers with the id (key value) in the map stored in
 	 * the RPi stream object - along with an identifier mask.
@@ -1608,12 +1608,12 @@ void PipelineHandlerRPi::mapBuffers(Camera *camera, const RPi::BufferMap &buffer
 	 * handler and the IPA.
 	 */
 	for (auto const &it : buffers) {
-		ipaBuffers.push_back(IPABuffer(mask | it.first,
+		bufferIds.push_back(IPABuffer(mask | it.first,
 					       it.second->planes()));
-		data->ipaBuffers_.insert(mask | it.first);
+		data->bufferIds_.insert(mask | it.first);
 	}
 
-	data->ipa_->mapBuffers(ipaBuffers);
+	data->ipa_->mapBuffers(bufferIds);
 }
 
 void RPiCameraData::freeBuffers()
@@ -1623,10 +1623,10 @@ void RPiCameraData::freeBuffers()
 		 * Copy the buffer ids from the unordered_set to a vector to
 		 * pass to the IPA.
 		 */
-		std::vector<unsigned int> ipaBuffers(ipaBuffers_.begin(),
-						     ipaBuffers_.end());
-		ipa_->unmapBuffers(ipaBuffers);
-		ipaBuffers_.clear();
+		std::vector<unsigned int> bufferIds(bufferIds_.begin(),
+						    bufferIds_.end());
+		ipa_->unmapBuffers(bufferIds);
+		bufferIds_.clear();
 	}
 
 	for (auto const stream : streams_)
@@ -1643,16 +1643,16 @@ void RPiCameraData::frameStarted(uint32_t sequence)
 	delayedCtrls_->applyControls(sequence);
 }
 
-int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
+int RPiCameraData::loadIPA(ipa::RPi::InitResult *result)
 {
 	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
 
-	ipa_->statsMetadataComplete.connect(this, &RPiCameraData::statsMetadataComplete);
-	ipa_->runIsp.connect(this, &RPiCameraData::runIsp);
-	ipa_->embeddedComplete.connect(this, &RPiCameraData::embeddedComplete);
+	ipa_->processStatsComplete.connect(this, &RPiCameraData::processStatsComplete);
+	ipa_->prepareIspComplete.connect(this, &RPiCameraData::prepareIspComplete);
+	ipa_->metadataReady.connect(this, &RPiCameraData::metadataReady);
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 	ipa_->setLensControls.connect(this, &RPiCameraData::setLensControls);
@@ -1674,23 +1674,25 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 	}
 
 	IPASettings settings(configurationFile, sensor_->model());
+	ipa::RPi::InitParams params;
 
-	return ipa_->init(settings, !!sensor_->focusLens(), result);
+	params.lensPresent = !!sensor_->focusLens();
+	return ipa_->init(settings, params, result);
 }
 
-int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPAConfigResult *result)
+int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::ConfigResult *result)
 {
 	std::map<unsigned int, ControlInfoMap> entityControls;
-	ipa::RPi::IPAConfig ipaConfig;
+	ipa::RPi::ConfigParams params;
 
 	/* \todo Move passing of ispControls and lensControls to ipa::init() */
-	ipaConfig.sensorControls = sensor_->controls();
-	ipaConfig.ispControls = isp_[Isp::Input].dev()->controls();
+	params.sensorControls = sensor_->controls();
+	params.ispControls = isp_[Isp::Input].dev()->controls();
 	if (sensor_->focusLens())
-		ipaConfig.lensControls = sensor_->focusLens()->controls();
+		params.lensControls = sensor_->focusLens()->controls();
 
 	/* Always send the user transform to the IPA. */
-	ipaConfig.transform = static_cast<unsigned int>(config->transform);
+	params.transform = static_cast<unsigned int>(config->transform);
 
 	/* Allocate the lens shading table via dmaHeap and pass to the IPA. */
 	if (!lsTable_.isValid()) {
@@ -1703,7 +1705,7 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 		 * \todo Investigate if mapping the lens shading table buffer
 		 * could be handled with mapBuffers().
 		 */
-		ipaConfig.lsTableHandle = lsTable_;
+		params.lsTableHandle = lsTable_;
 	}
 
 	/* We store the IPACameraSensorInfo for digital zoom calculations. */
@@ -1714,15 +1716,14 @@ int RPiCameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::IPA
 	}
 
 	/* Ready the IPA - it must know about the sensor resolution. */
-	ControlList controls;
-	ret = ipa_->configure(sensorInfo_, ipaConfig, &controls, result);
+	ret = ipa_->configure(sensorInfo_, params, result);
 	if (ret < 0) {
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
 	}
 
-	if (!controls.empty())
-		setSensorControls(controls);
+	if (!result->controls.empty())
+		setSensorControls(result->controls);
 
 	return 0;
 }
@@ -1883,24 +1884,32 @@ void RPiCameraData::enumerateVideoDevices(MediaLink *link)
 	}
 }
 
-void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &controls)
+void RPiCameraData::processStatsComplete(const ipa::RPi::BufferIds &buffers)
 {
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(bufferId & RPi::MaskID);
+	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(buffers.stats & RPi::MaskID);
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
+	state_ = State::IpaComplete;
+	handleState();
+}
+
+void RPiCameraData::metadataReady(const ControlList &metadata)
+{
+	if (!isRunning())
+		return;
 
 	/* Add to the Request metadata buffer what the IPA has provided. */
 	Request *request = requestQueue_.front();
-	request->metadata().merge(controls);
+	request->metadata().merge(metadata);
 
 	/*
 	 * Inform the sensor of the latest colour gains if it has the
 	 * V4L2_CID_NOTIFY_GAINS control (which means notifyGainsUnity_ is set).
 	 */
-	const auto &colourGains = controls.get(libcamera::controls::ColourGains);
+	const auto &colourGains = metadata.get(libcamera::controls::ColourGains);
 	if (notifyGainsUnity_ && colourGains) {
 		/* The control wants linear gains in the order B, Gb, Gr, R. */
 		ControlList ctrls(sensor_->controls());
@@ -1914,33 +1923,29 @@ void RPiCameraData::statsMetadataComplete(uint32_t bufferId, const ControlList &
 
 		sensor_->setControls(&ctrls);
 	}
-
-	state_ = State::IpaComplete;
-	handleState();
 }
 
-void RPiCameraData::runIsp(uint32_t bufferId)
+void RPiCameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers)
 {
+	unsigned int embeddedId = buffers.embedded & RPi::MaskID;
+	unsigned int bayer = buffers.bayer & RPi::MaskID;
+	FrameBuffer *buffer;
+
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = unicam_[Unicam::Image].getBuffers().at(bufferId & RPi::MaskID);
-
-	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << (bufferId & RPi::MaskID)
+	buffer = unicam_[Unicam::Image].getBuffers().at(bayer & RPi::MaskID);
+	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << (bayer & RPi::MaskID)
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
 	ispOutputCount_ = 0;
-	handleState();
-}
 
-void RPiCameraData::embeddedComplete(uint32_t bufferId)
-{
-	if (!isRunning())
-		return;
+	if (sensorMetadata_ && embeddedId) {
+		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID);
+		handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
+	}
 
-	FrameBuffer *buffer = unicam_[Unicam::Embedded].getBuffers().at(bufferId & RPi::MaskID);
-	handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
 	handleState();
 }
 
@@ -2116,8 +2121,10 @@ void RPiCameraData::ispOutputDequeue(FrameBuffer *buffer)
 	 * application until after the IPA signals so.
 	 */
 	if (stream == &isp_[Isp::Stats]) {
-		ipa_->signalStatReady(RPi::MaskStats | static_cast<unsigned int>(index),
-				      requestQueue_.front()->sequence());
+		ipa::RPi::ProcessParams params;
+		params.buffers.stats = index | RPi::MaskStats;
+		params.ipaContext = requestQueue_.front()->sequence();
+		ipa_->signalProcessStats(params);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
 		handleStreamBuffer(buffer, stream);
@@ -2344,38 +2351,30 @@ void RPiCameraData::tryRunPipeline()
 	request->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, request);
 
-	/*
-	 * Process all the user controls by the IPA. Once this is complete, we
-	 * queue the ISP output buffer listed in the request to start the HW
-	 * pipeline.
-	 */
-	ipa_->signalQueueRequest(request->controls());
-
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
-	unsigned int bayerId = unicam_[Unicam::Image].getBufferId(bayerFrame.buffer);
+	unsigned int bayer = unicam_[Unicam::Image].getBufferId(bayerFrame.buffer);
 
 	LOG(RPI, Debug) << "Signalling signalIspPrepare:"
-			<< " Bayer buffer id: " << bayerId;
+			<< " Bayer buffer id: " << bayer;
 
-	ipa::RPi::ISPConfig ispPrepare;
-	ispPrepare.bayerBufferId = RPi::MaskBayerData | bayerId;
-	ispPrepare.controls = std::move(bayerFrame.controls);
-	ispPrepare.ipaContext = request->sequence();
-	ispPrepare.delayContext = bayerFrame.delayContext;
+	ipa::RPi::PrepareParams params;
+	params.buffers.bayer = RPi::MaskBayerData | bayer;
+	params.sensorControls = std::move(bayerFrame.controls);
+	params.requestControls = request->controls();
+	params.ipaContext = request->sequence();
+	params.delayContext = bayerFrame.delayContext;
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);
 
-		ispPrepare.embeddedBufferId = RPi::MaskEmbeddedData | embeddedId;
-		ispPrepare.embeddedBufferPresent = true;
-
-		LOG(RPI, Debug) << "Signalling signalIspPrepare:"
+		params.buffers.embedded = RPi::MaskEmbeddedData | embeddedId;
+		LOG(RPI, Debug) << "Signalling signalPrepareIsp:"
 				<< " Embedded buffer id: " << embeddedId;
 	}
 
-	ipa_->signalIspPrepare(ispPrepare);
+	ipa_->signalPrepareIsp(params);
 }
 
 bool RPiCameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&embeddedBuffer)

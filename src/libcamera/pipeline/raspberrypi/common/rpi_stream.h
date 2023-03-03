@@ -75,7 +75,7 @@ private:
 	{
 	public:
 		IdGenerator(int max)
-			: max_(max), id_(0)
+			: max_(max), id_(1)
 		{
 		}
 
@@ -99,7 +99,7 @@ private:
 
 		void reset()
 		{
-			id_ = 0;
+			id_ = 1;
 			recycle_ = {};
 		}
 

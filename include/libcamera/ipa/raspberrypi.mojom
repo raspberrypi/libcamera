@@ -8,7 +8,7 @@ module ipa.RPi;
 
 import "include/libcamera/ipa/core.mojom";
 
-/* Size of the LS grid allocation. */
+/* Size of the LS grid allocation on VC4. */
 const uint32 MaxLsGridSize = 0x8000;
 
 struct SensorConfig {
@@ -19,117 +19,82 @@ struct SensorConfig {
 	uint32 sensorMetadata;
 };
 
-struct IPAInitResult {
+struct InitParams {
+	bool lensPresent;
+	/* PiSP specific */
+	libcamera.SharedFD fe;
+	libcamera.SharedFD be;
+};
+
+struct InitResult {
 	SensorConfig sensorConfig;
 	libcamera.ControlInfoMap controlInfo;
 };
 
-struct ISPConfig {
-	uint32 embeddedBufferId;
-	uint32 bayerBufferId;
-	bool embeddedBufferPresent;
+struct BufferIds {
+	uint32 bayer;
+	uint32 embedded;
+	uint32 stats;
+};
+
+struct ConfigParams {
+	uint32 transform;
+	libcamera.ControlInfoMap sensorControls;
+	libcamera.ControlInfoMap ispControls;
+	libcamera.ControlInfoMap lensControls;
+        /* VC4 specifc */
+	libcamera.SharedFD lsTableHandle;
+};
+
+struct ConfigResult {
+	float modeSensitivity;
+	libcamera.ControlInfoMap controlInfo;
 	libcamera.ControlList controls;
+};
+
+struct StartResult {
+	libcamera.ControlList controls;
+	int32 dropFrameCount;
+	uint32 maxSensorFrameLengthMs;
+};
+
+struct PrepareParams {
+	BufferIds buffers;
+	libcamera.ControlList sensorControls;
+	libcamera.ControlList requestControls;
 	uint32 ipaContext;
 	uint32 delayContext;
 };
 
-struct IPAConfig {
-	uint32 transform;
-	libcamera.SharedFD lsTableHandle;
-	libcamera.ControlInfoMap sensorControls;
-	libcamera.ControlInfoMap ispControls;
-	libcamera.ControlInfoMap lensControls;
-};
-
-struct IPAConfigResult {
-       float modeSensitivity;
-       libcamera.ControlInfoMap controlInfo;
-};
-
-struct StartConfig {
-	libcamera.ControlList controls;
-	int32 dropFrameCount;
+struct ProcessParams {
+	BufferIds buffers;
+	uint32 ipaContext;
 };
 
 interface IPARPiInterface {
-	init(libcamera.IPASettings settings, bool lensPresent)
-		=> (int32 ret, IPAInitResult result);
-	start(libcamera.ControlList controls) => (StartConfig startConfig);
+	init(libcamera.IPASettings settings, InitParams params)
+		=> (int32 ret, InitResult result);
+
+	start(libcamera.ControlList controls) => (StartResult result);
 	stop();
 
-	/**
-	 * \fn configure()
-	 * \brief Configure the IPA stream and sensor settings
-	 * \param[in] sensorInfo Camera sensor information
-	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
-	 * \param[out] controls Controls to apply by the pipeline entity
-	 * \param[out] result Other results that the pipeline handler may require
-	 *
-	 * This function shall be called when the camera is configured to inform
-	 * the IPA of the camera's streams and the sensor settings.
-	 *
-	 * The \a sensorInfo conveys information about the camera sensor settings that
-	 * the pipeline handler has selected for the configuration.
-	 *
-	 * The \a ipaConfig and \a controls parameters carry data passed by the
-	 * pipeline handler to the IPA and back.
-	 */
-	configure(libcamera.IPACameraSensorInfo sensorInfo,
-		  IPAConfig ipaConfig)
-		=> (int32 ret, libcamera.ControlList controls, IPAConfigResult result);
+	configure(libcamera.IPACameraSensorInfo sensorInfo, ConfigParams params)
+		=> (int32 ret, ConfigResult result);
 
-	/**
-	 * \fn mapBuffers()
-	 * \brief Map buffers shared between the pipeline handler and the IPA
-	 * \param[in] buffers List of buffers to map
-	 *
-	 * This function informs the IPA module of memory buffers set up by the
-	 * pipeline handler that the IPA needs to access. It provides dmabuf
-	 * file handles for each buffer, and associates the buffers with unique
-	 * numerical IDs.
-	 *
-	 * IPAs shall map the dmabuf file handles to their address space and
-	 * keep a cache of the mappings, indexed by the buffer numerical IDs.
-	 * The IDs are used in all other IPA interface functions to refer to
-	 * buffers, including the unmapBuffers() function.
-	 *
-	 * All buffers that the pipeline handler wishes to share with an IPA
-	 * shall be mapped with this function. Buffers may be mapped all at once
-	 * with a single call, or mapped and unmapped dynamically at runtime,
-	 * depending on the IPA protocol. Regardless of the protocol, all
-	 * buffers mapped at a given time shall have unique numerical IDs.
-	 *
-	 * The numerical IDs have no meaning defined by the IPA interface, and 
-	 * should be treated as opaque handles by IPAs, with the only exception
-	 * that ID zero is invalid.
-	 *
-	 * \sa unmapBuffers()
-	 */
 	mapBuffers(array<libcamera.IPABuffer> buffers);
-
-	/**
-	 * \fn unmapBuffers()
-	 * \brief Unmap buffers shared by the pipeline to the IPA
-	 * \param[in] ids List of buffer IDs to unmap
-	 *
-	 * This function removes mappings set up with mapBuffers(). Numerical
-	 * IDs of unmapped buffers may be reused when mapping new buffers.
-	 *
-	 * \sa mapBuffers()
-	 */
 	unmapBuffers(array<uint32> ids);
 
-	[async] signalStatReady(uint32 bufferId, uint32 ipaContext);
-	[async] signalQueueRequest(libcamera.ControlList controls);
-	[async] signalIspPrepare(ISPConfig data);
+	[async] signalPrepareIsp(PrepareParams params);
+	[async] signalProcessStats(ProcessParams params);
 };
 
 interface IPARPiEventInterface {
-	statsMetadataComplete(uint32 bufferId, libcamera.ControlList controls);
-	runIsp(uint32 bufferId);
-	embeddedComplete(uint32 bufferId);
-	setIspControls(libcamera.ControlList controls);
-	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
-	setLensControls(libcamera.ControlList controls);
-	setCameraTimeout(uint32 maxFrameLengthMs);
+	[async] prepareIspComplete(BufferIds buffers);
+	[async] processStatsComplete(BufferIds buffers);
+	[async] metadataReady(libcamera.ControlList metadata);
+	[async] setIspControls(libcamera.ControlList controls);
+	[async] setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
+	[async] setLensControls(libcamera.ControlList controls);
+	[async] setCameraTimeout(uint32 maxFrameLengthMs);
 };
+ 

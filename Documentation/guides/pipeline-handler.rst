@@ -1409,7 +1409,7 @@ function to the V4L2 device buffer signal.
    video_->bufferReady.connect(this, &VividCameraData::bufferReady);
 
 Create the matching ``VividCameraData::bufferReady`` function after your
-VividCameradata::init() impelementation.
+VividCameradata::init() implementation.
 
 The ``bufferReady`` function obtains the request from the buffer using the
 ``request`` function, and notifies the ``Camera`` that the buffer and

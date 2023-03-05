@@ -131,6 +131,7 @@ int CameraManager::Private::init()
 		return -ENODEV;
 
 	createPipelineHandlers();
+	enumerator_->devicesAdded.connect(this, &Private::createPipelineHandlers);
 
 	return 0;
 }
@@ -165,8 +166,6 @@ void CameraManager::Private::createPipelineHandlers()
 				<< "\" matched";
 		}
 	}
-
-	enumerator_->devicesAdded.connect(this, &Private::createPipelineHandlers);
 }
 
 void CameraManager::Private::cleanup()

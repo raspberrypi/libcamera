@@ -319,6 +319,11 @@ public:
 		 * frames.
 		 */
 		bool disableStartupFrameDrops;
+		/*
+		 * Override the Unicam timeout value calculated by the IPA based
+		 * on frame durations.
+		 */
+		unsigned int unicamTimeoutValue;
 	};
 
 	Config config_;
@@ -1715,6 +1720,7 @@ int RPiCameraData::loadPipelineConfiguration()
 		.minUnicamBuffers = 2,
 		.minTotalUnicamBuffers = 4,
 		.disableStartupFrameDrops = false,
+		.unicamTimeoutValue = 0,
 	};
 
 	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_CONFIG_FILE");
@@ -1750,6 +1756,14 @@ int RPiCameraData::loadPipelineConfiguration()
 		phConfig["min_total_unicam_buffers"].get<unsigned int>(config_.minTotalUnicamBuffers);
 	config_.disableStartupFrameDrops =
 		phConfig["disable_startup_frame_drops"].get<bool>(config_.disableStartupFrameDrops);
+	config_.unicamTimeoutValue =
+		phConfig["unicam_timeout_value_ms"].get<unsigned int>(config_.unicamTimeoutValue);
+
+	if (config_.unicamTimeoutValue) {
+		/* Disable the IPA signal to control timeout and set the user requested value. */
+		ipa_->setCameraTimeout.disconnect();
+		unicam_[Unicam::Image].dev()->setDequeueTimeout(config_.unicamTimeoutValue * 1ms);
+	}
 
 	if (config_.minTotalUnicamBuffers < config_.minUnicamBuffers) {
 		LOG(RPI, Error) << "Invalid configuration: min_total_unicam_buffers must be >= min_unicam_buffers";

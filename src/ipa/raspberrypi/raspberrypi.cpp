@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <deque>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>
@@ -63,6 +64,9 @@ using utils::Duration;
 
 /* Number of metadata objects available in the context list. */
 constexpr unsigned int numMetadataContexts = 16;
+
+/* Number of frame length times to hold in the queue. */
+constexpr unsigned int FrameLengthsQueueSize = 10;
 
 /* Configure the sensor with these values initially. */
 constexpr double defaultAnalogueGain = 1.0;
@@ -121,7 +125,8 @@ class IPARPi : public IPARPiInterface
 public:
 	IPARPi()
 		: controller_(), frameCount_(0), checkCount_(0), mistrustCount_(0),
-		  lastRunTimestamp_(0), lsTable_(nullptr), firstStart_(true)
+		  lastRunTimestamp_(0), lsTable_(nullptr), firstStart_(true),
+		  lastTimeout_(0s)
 	{
 	}
 
@@ -155,6 +160,7 @@ private:
 	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
 	RPiController::StatisticsPtr fillStatistics(bcm2835_isp_stats *stats) const;
 	void processStats(unsigned int bufferId, unsigned int ipaContext);
+	void setCameraTimeoutValue();
 	void applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration);
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
@@ -220,6 +226,10 @@ private:
 
 	/* Maximum gain code for the sensor. */
 	uint32_t maxSensorGainCode_;
+
+	/* Track the frame length times over FrameLengthsQueueSize frames. */
+	std::deque<Duration> frameLengths_;
+	Duration lastTimeout_;
 };
 
 int IPARPi::init(const IPASettings &settings, bool lensPresent, IPAInitResult *result)
@@ -284,6 +294,11 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 
 	controller_.switchMode(mode_, &metadata);
 
+	/* Reset the frame lengths queue state. */
+	lastTimeout_ = 0s;
+	frameLengths_.clear();
+	frameLengths_.resize(FrameLengthsQueueSize, 0s);
+
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	AgcStatus agcStatus;
 	agcStatus.shutterTime = 0.0s;
@@ -294,6 +309,7 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		startConfig->controls = std::move(ctrls);
+		setCameraTimeoutValue();
 	}
 
 	/*
@@ -340,8 +356,6 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 	}
 
 	startConfig->dropFrameCount = dropFrameCount_;
-	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
-	setCameraTimeout.emit(maxSensorFrameDuration.get<std::milli>());
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
@@ -1434,6 +1448,22 @@ void IPARPi::processStats(unsigned int bufferId, unsigned int ipaContext)
 		applyAGC(&agcStatus, ctrls);
 
 		setDelayedControls.emit(ctrls, ipaContext);
+		setCameraTimeoutValue();
+	}
+}
+
+void IPARPi::setCameraTimeoutValue()
+{
+	/*
+	 * Take the maximum value of the exposure queue as the camera timeout
+	 * value to pass back to the pipeline handler. Only signal if it has changed
+	 * from the last set value.
+	 */
+	auto max = std::max_element(frameLengths_.begin(), frameLengths_.end());
+
+	if (*max != lastTimeout_) {
+		setCameraTimeout.emit(max->get<std::milli>());
+		lastTimeout_ = *max;
 	}
 }
 
@@ -1522,6 +1552,15 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	 */
 	if (mode_.minLineLength != mode_.maxLineLength)
 		ctrls.set(V4L2_CID_HBLANK, static_cast<int32_t>(hblank));
+
+	/*
+	 * Store the frame length times in a circular queue, up-to FrameLengthsQueueSize
+	 * elements. This will be used to advertise a camera timeout value to the
+	 * pipeline handler.
+	 */
+	frameLengths_.pop_front();
+	frameLengths_.push_back(helper_->exposure(vblank + mode_.height,
+						  helper_->hblankToLineLength(hblank)));
 }
 
 void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)

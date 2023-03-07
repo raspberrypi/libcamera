@@ -49,7 +49,6 @@ struct IPAConfigResult {
 struct StartConfig {
 	libcamera.ControlList controls;
 	int32 dropFrameCount;
-	uint32 maxSensorFrameLengthMs;
 };
 
 interface IPARPiInterface {
@@ -132,4 +131,5 @@ interface IPARPiEventInterface {
 	setIspControls(libcamera.ControlList controls);
 	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
 	setLensControls(libcamera.ControlList controls);
+	setCameraTimeout(uint32 maxFrameLengthMs);
 };

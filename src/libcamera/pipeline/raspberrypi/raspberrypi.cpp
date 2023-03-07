@@ -212,6 +212,7 @@ public:
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls, uint32_t delayContext);
 	void setLensControls(const ControlList &controls);
+	void setCameraTimeout(uint32_t maxExposureTimeMs);
 	void setSensorControls(ControlList &controls);
 	void unicamTimeout();
 
@@ -1166,14 +1167,6 @@ int PipelineHandlerRPi::start(Camera *camera, const ControlList *controls)
 		}
 	}
 
-	/*
-	 * Set the dequeue timeout to the larger of 2x the maximum possible
-	 * frame duration or 1 second.
-	 */
-	utils::Duration timeout =
-		std::max<utils::Duration>(1s, 2 * startConfig.maxSensorFrameLengthMs * 1ms);
-	data->unicam_[Unicam::Image].dev()->setDequeueTimeout(timeout);
-
 	return 0;
 }
 
@@ -1645,6 +1638,7 @@ int RPiCameraData::loadIPA(ipa::RPi::IPAInitResult *result)
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 	ipa_->setLensControls.connect(this, &RPiCameraData::setLensControls);
+	ipa_->setCameraTimeout.connect(this, &RPiCameraData::setCameraTimeout);
 
 	/*
 	 * The configuration (tuning file) is made from the sensor name unless
@@ -1955,6 +1949,20 @@ void RPiCameraData::setLensControls(const ControlList &controls)
 		ControlValue const &focusValue = controls.get(V4L2_CID_FOCUS_ABSOLUTE);
 		lens->setFocusPosition(focusValue.get<int32_t>());
 	}
+}
+
+void RPiCameraData::setCameraTimeout(uint32_t maxFrameLengthMs)
+{
+	/*
+	 * Set the dequeue timeout to the larger of 5x the maximum reported
+	 * frame length advertised by the IPA over a number of frames. Allow
+	 * a minimum timeout value of 1s.
+	 */
+	utils::Duration timeout =
+		std::max<utils::Duration>(1s, 5 * maxFrameLengthMs * 1ms);
+
+	LOG(RPI, Debug) << "Setting Unicam timeout to " << timeout;
+	unicam_[Unicam::Image].dev()->setDequeueTimeout(timeout);
 }
 
 void RPiCameraData::setSensorControls(ControlList &controls)

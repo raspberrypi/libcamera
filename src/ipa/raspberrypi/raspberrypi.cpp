@@ -341,7 +341,7 @@ void IPARPi::start(const ControlList &controls, StartConfig *startConfig)
 
 	startConfig->dropFrameCount = dropFrameCount_;
 	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
-	startConfig->maxSensorFrameLengthMs = maxSensorFrameDuration.get<std::milli>();
+	setCameraTimeout.emit(maxSensorFrameDuration.get<std::milli>());
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;

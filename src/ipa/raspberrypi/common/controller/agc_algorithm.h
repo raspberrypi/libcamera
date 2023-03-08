@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <vector>
+
 #include <libcamera/base/utils.h>
 
 #include "algorithm.h"
@@ -18,6 +20,7 @@ public:
 	AgcAlgorithm(Controller *controller) : Algorithm(controller) {}
 	/* An AGC algorithm must provide the following: */
 	virtual unsigned int getConvergenceFrames() const = 0;
+	virtual std::vector<double> const &getWeights() const = 0;
 	virtual void setEv(double ev) = 0;
 	virtual void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) = 0;
 	virtual void setFixedShutter(libcamera::utils::Duration fixedShutter) = 0;

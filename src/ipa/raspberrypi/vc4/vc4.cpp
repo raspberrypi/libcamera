@@ -218,13 +218,25 @@ RPiController::StatisticsPtr IpaVc4::processStats(Span<uint8_t> mem)
 						stats->awb_stats[i].counted,
 						stats->awb_stats[i].notcounted });
 
-	statistics->agcRegions.init(hw.agcRegions);
-	for (i = 0; i < statistics->agcRegions.numRegions(); i++)
-		statistics->agcRegions.set(i, { { stats->agc_stats[i].r_sum << scale,
-						  stats->agc_stats[i].g_sum << scale,
-						  stats->agc_stats[i].b_sum << scale },
-						stats->agc_stats[i].counted,
-						stats->awb_stats[i].notcounted });
+	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+		controller_.getAlgorithm("agc"));
+	if (!agc) {
+		LOG(IPARPI, Debug) << "No AGC algorithm - not copying statistics";
+		statistics->agcRegions.init(0);
+	} else {
+		statistics->agcRegions.init(hw.agcRegions);
+		const std::vector<double> &weights = agc->getWeights();
+		for (i = 0; i < statistics->agcRegions.numRegions(); i++) {
+			uint64_t rSum = (stats->agc_stats[i].r_sum << scale) * weights[i];
+			uint64_t gSum = (stats->agc_stats[i].g_sum << scale) * weights[i];
+			uint64_t bSum = (stats->agc_stats[i].b_sum << scale) * weights[i];
+			uint32_t counted = stats->agc_stats[i].counted * weights[i];
+			uint32_t notcounted = stats->agc_stats[i].notcounted * weights[i];
+			statistics->agcRegions.set(i, { { rSum, gSum, bSum },
+						        counted,
+							notcounted });
+		}
+	}
 
 	statistics->focusRegions.init(hw.focusRegions);
 	for (i = 0; i < statistics->focusRegions.numRegions(); i++)

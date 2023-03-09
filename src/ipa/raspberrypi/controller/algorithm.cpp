@@ -34,14 +34,19 @@ void Algorithm::process([[maybe_unused]] StatisticsPtr &stats,
 
 /* For registering algorithms with the system: */
 
-static std::map<std::string, AlgoCreateFunc> algorithms;
+static std::map<std::string, AlgoCreateFunc>& algorithms() {
+	static std::map<std::string, AlgoCreateFunc>* obj =
+		new std::map<std::string, AlgoCreateFunc>();
+	return *obj;
+}
+
 std::map<std::string, AlgoCreateFunc> const &RPiController::getAlgorithms()
 {
-	return algorithms;
+	return algorithms();
 }
 
 RegisterAlgorithm::RegisterAlgorithm(char const *name,
 				     AlgoCreateFunc createFunc)
 {
-	algorithms[std::string(name)] = createFunc;
+	algorithms()[std::string(name)] = createFunc;
 }

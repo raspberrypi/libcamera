@@ -41,8 +41,8 @@ if libcamera_version != project_version
 
     # Replace the version components reported by git with the release version,
     # but keep all trailing information supplied by git.
-    libcamera_git_version = (project_version +
-                             libcamera_git_version.strip(libcamera_version))
+    libcamera_git_version = (project_version + '+' +
+                             libcamera_git_version.split('+')[1])
     libcamera_version = project_version
 
     # Append a marker to show we have modified this version string

@@ -25,7 +25,15 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
 
-static std::map<std::string, CamHelperCreateFunc> camHelpers;
+namespace {
+
+std::map<std::string, CamHelperCreateFunc> &camHelpers()
+{
+	static std::map<std::string, CamHelperCreateFunc> helpers;
+	return helpers;
+}
+
+} /* namespace */
 
 CamHelper *CamHelper::create(std::string const &camName)
 {
@@ -33,7 +41,7 @@ CamHelper *CamHelper::create(std::string const &camName)
 	 * CamHelpers get registered by static RegisterCamHelper
 	 * initialisers.
 	 */
-	for (auto &p : camHelpers) {
+	for (auto &p : camHelpers()) {
 		if (camName.find(p.first) != std::string::npos)
 			return p.second();
 	}
@@ -253,5 +261,5 @@ void CamHelper::populateMetadata([[maybe_unused]] const MdParser::RegisterMap &r
 RegisterCamHelper::RegisterCamHelper(char const *camName,
 				     CamHelperCreateFunc createFunc)
 {
-	camHelpers[std::string(camName)] = createFunc;
+	camHelpers()[std::string(camName)] = createFunc;
 }

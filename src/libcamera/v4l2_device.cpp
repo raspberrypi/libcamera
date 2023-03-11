@@ -86,7 +86,8 @@ int V4L2Device::open(unsigned int flags)
 		return -EBUSY;
 	}
 
-	UniqueFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(), flags));
+	UniqueFD fd(syscall(SYS_openat, AT_FDCWD, deviceNode_.c_str(),
+			    flags | O_CLOEXEC));
 	if (!fd.isValid()) {
 		int ret = -errno;
 		LOG(V4L2, Error) << "Failed to open V4L2 device '"

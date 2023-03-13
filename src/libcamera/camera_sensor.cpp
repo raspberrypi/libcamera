@@ -796,6 +796,23 @@ int CameraSensor::setFormat(V4L2SubdeviceFormat *format, Transform transform)
 }
 
 /**
+ * \brief Try the sensor output format
+ * \param[in] format The desired sensor output format
+ *
+ * The ranges of any controls associated with the sensor are not updated.
+ *
+ * \todo Add support for Transform by changing the format's Bayer ordering
+ * before calling subdev_->setFormat().
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int CameraSensor::tryFormat(V4L2SubdeviceFormat *format) const
+{
+	return subdev_->setFormat(pad_, format,
+				  V4L2Subdevice::Whence::TryFormat);
+}
+
+/**
  * \brief Retrieve the supported V4L2 controls and their information
  *
  * Control information is updated automatically to reflect the current sensor

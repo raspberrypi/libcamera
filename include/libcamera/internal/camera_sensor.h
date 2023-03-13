@@ -56,6 +56,7 @@ public:
 				      const Size &size) const;
 	int setFormat(V4L2SubdeviceFormat *format,
 		      Transform transform = Transform::Identity);
+	int tryFormat(V4L2SubdeviceFormat *format) const;
 
 	const ControlInfoMap &controls() const;
 	ControlList getControls(const std::vector<uint32_t> &ids);

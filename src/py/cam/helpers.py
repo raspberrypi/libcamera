@@ -117,14 +117,12 @@ def to_rgb(fmt, size, data):
         bayer_pattern = fmt[1:5]
         bitspp = int(fmt[5:])
 
-        # \todo shifting leaves the lowest bits 0
         if bitspp == 8:
             data = data.reshape((h, w))
-            data = data.astype(np.uint16) << 8
+            data = data.astype(np.uint16)
         elif bitspp in [10, 12]:
             data = data.view(np.uint16)
             data = data.reshape((h, w))
-            data = data << (16 - bitspp)
         else:
             raise Exception('Bad bitspp:' + str(bitspp))
 
@@ -145,7 +143,7 @@ def to_rgb(fmt, size, data):
         b0 = (idx % 2, idx // 2)
 
         rgb = demosaic(data, r0, g0, g1, b0)
-        rgb = (rgb >> 8).astype(np.uint8)
+        rgb = (rgb >> (bitspp - 8)).astype(np.uint8)
 
     else:
         rgb = None

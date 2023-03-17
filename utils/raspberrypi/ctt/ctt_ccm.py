@@ -56,7 +56,7 @@ FInds colour correction matrices for list of images
 """
 
 
-def ccm(Cam, cal_cr_list, cal_cb_list):
+def ccm(Cam, cal_cr_list, cal_cb_list, grid_size):
     global matrix_selection_types, typenum
     imgs = Cam.imgs
     """
@@ -133,9 +133,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         Note: if alsc is disabled then colour_cals will be set to None and no
         the function will simply return the macbeth patches
         """
-        r, b, g = get_alsc_patches(Img, colour_cals, grey=False)
-        # 256 values for each patch of sRGB values
-
+        r, b, g = get_alsc_patches(Img, colour_cals, grey=False, grid_size=grid_size)
         """
         do awb
         Note: awb is done by measuring the macbeth chart in the image, rather

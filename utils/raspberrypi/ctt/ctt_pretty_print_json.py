@@ -19,6 +19,7 @@ class Encoder(json.JSONEncoder):
         self.indentation_level = 0
         self.hard_break = 120
         self.custom_elems = {
+            'weights': 15,
             'table': 16,
             'luminance_lut': 16,
             'ct_curve': 3,
@@ -87,7 +88,7 @@ class Encoder(json.JSONEncoder):
         return self.encode(o)
 
 
-def pretty_print(in_json: dict) -> str:
+def pretty_print(in_json: dict, custom_elems={}) -> str:
 
     if 'version' not in in_json or \
        'target' not in in_json or \
@@ -95,7 +96,9 @@ def pretty_print(in_json: dict) -> str:
        in_json['version'] < 2.0:
         raise RuntimeError('Incompatible JSON dictionary has been provided')
 
-    return json.dumps(in_json, cls=Encoder, indent=4, sort_keys=False)
+    encoder = Encoder(indent=4, sort_keys=False)
+    encoder.custom_elems |= custom_elems
+    return encoder.encode(in_json) #json.dumps(in_json, cls=Encoder, indent=4, sort_keys=False)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ from scipy.optimize import fmin
 """
 obtain piecewise linear approximation for colour curve
 """
-def awb(Cam, cal_cr_list, cal_cb_list, plot):
+def awb(Cam, cal_cr_list, cal_cb_list, plot, grid_size):
     imgs = Cam.imgs
     """
     condense alsc calibration tables into one dictionary
@@ -43,7 +43,7 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
         Note: if alsc is disabled then colour_cals will be set to None and the
         function will just return the greyscale patches
         """
-        r_patchs, b_patchs, g_patchs = get_alsc_patches(Img, colour_cals)
+        r_patchs, b_patchs, g_patchs = get_alsc_patches(Img, colour_cals, grid_size=grid_size)
         """
         calculate ratio of r, b to g
         """
@@ -293,12 +293,13 @@ def awb(Cam, cal_cr_list, cal_cb_list, plot):
 """
 obtain greyscale patches and perform alsc colour correction
 """
-def get_alsc_patches(Img, colour_cals, grey=True):
+def get_alsc_patches(Img, colour_cals, grey=True, grid_size=(16, 12)):
     """
     get patch centre coordinates, image colour and the actual
     patches for each channel, remembering to subtract blacklevel
     If grey then only greyscale patches considered
     """
+    grid_w, grid_h = grid_size
     if grey:
         cen_coords = Img.cen_coords[3::4]
         col = Img.col
@@ -345,12 +346,12 @@ def get_alsc_patches(Img, colour_cals, grey=True):
         bef_tabs = np.array(colour_cals[bef])
         aft_tabs = np.array(colour_cals[aft])
         col_tabs = (bef_tabs*db + aft_tabs*da)/(da+db)
-    col_tabs = np.reshape(col_tabs, (2, 12, 16))
+    col_tabs = np.reshape(col_tabs, (2, grid_h, grid_w))
     """
     calculate dx, dy used to calculate alsc table
     """
     w, h = Img.w/2, Img.h/2
-    dx, dy = int(-(-(w-1)//16)), int(-(-(h-1)//12))
+    dx, dy = int(-(-(w-1)//grid_w)), int(-(-(h-1)//grid_h))
     """
     make list of pairs of gains for each patch by selecting the correct value
     in alsc colour calibration table

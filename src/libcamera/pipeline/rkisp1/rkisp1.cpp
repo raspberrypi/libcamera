@@ -162,6 +162,8 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
+	static constexpr Size kRkISP1PreviewSize = { 1920, 1080 };
+
 	RkISP1CameraData *cameraData(Camera *camera)
 	{
 		return static_cast<RkISP1CameraData *>(camera->_d());
@@ -633,12 +635,15 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 	bool mainPathAvailable = true;
 
 	for (const StreamRole role : roles) {
+		Size size;
 
 		switch (role) {
 		case StreamRole::StillCapture:
 			/* JPEG encoders typically expect sYCC. */
 			if (!colorSpace)
 				colorSpace = ColorSpace::Sycc;
+
+			size = data->sensor_->resolution();
 			break;
 
 		case StreamRole::Viewfinder:
@@ -648,12 +653,16 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			 */
 			if (!colorSpace)
 				colorSpace = ColorSpace::Sycc;
+
+			size = kRkISP1PreviewSize;
 			break;
 
 		case StreamRole::VideoRecording:
 			/* Rec. 709 is a good default for HD video recording. */
 			if (!colorSpace)
 				colorSpace = ColorSpace::Rec709;
+
+			size = kRkISP1PreviewSize;
 			break;
 
 		case StreamRole::Raw:
@@ -664,6 +673,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			}
 
 			colorSpace = ColorSpace::Raw;
+			size = data->sensor_->resolution();
 			break;
 
 		default:
@@ -690,7 +700,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 		}
 
 		StreamConfiguration cfg =
-			path->generateConfiguration(data->sensor_.get(), role);
+			path->generateConfiguration(data->sensor_.get(), size, role);
 		if (!cfg.pixelFormat.isValid())
 			return nullptr;
 

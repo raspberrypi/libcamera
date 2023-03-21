@@ -127,14 +127,19 @@ void RkISP1Path::populateFormats()
 }
 
 StreamConfiguration
-RkISP1Path::generateConfiguration(const CameraSensor *sensor, StreamRole role)
+RkISP1Path::generateConfiguration(const CameraSensor *sensor, const Size &size,
+				  StreamRole role)
 {
 	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
 	const Size &resolution = sensor->resolution();
 
+	/* Min and max resolutions to populate the available stream formats. */
 	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
 					   .boundedTo(resolution);
 	Size minResolution = minResolution_.expandedToAspectRatio(resolution);
+
+	/* The desired stream size, bound to the max resolution. */
+	Size streamSize = size.boundedTo(maxResolution);
 
 	/* Create the list of supported stream formats. */
 	std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
@@ -189,7 +194,7 @@ RkISP1Path::generateConfiguration(const CameraSensor *sensor, StreamRole role)
 	StreamFormats formats(streamFormats);
 	StreamConfiguration cfg(formats);
 	cfg.pixelFormat = format;
-	cfg.size = maxResolution;
+	cfg.size = streamSize;
 	cfg.bufferCount = RKISP1_BUFFER_COUNT;
 
 	return cfg;

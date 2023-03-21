@@ -630,23 +630,18 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 	 * first stream and use it for all streams.
 	 */
 	std::optional<ColorSpace> colorSpace;
-
 	bool mainPathAvailable = true;
-	bool selfPathAvailable = data->selfPath_;
 
 	for (const StreamRole role : roles) {
-		bool useMainPath;
 
 		switch (role) {
 		case StreamRole::StillCapture:
-			useMainPath = mainPathAvailable;
 			/* JPEG encoders typically expect sYCC. */
 			if (!colorSpace)
 				colorSpace = ColorSpace::Sycc;
 			break;
 
 		case StreamRole::Viewfinder:
-			useMainPath = !selfPathAvailable;
 			/*
 			 * sYCC is the YCbCr encoding of sRGB, which is commonly
 			 * used by displays.
@@ -656,7 +651,6 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			break;
 
 		case StreamRole::VideoRecording:
-			useMainPath = !selfPathAvailable;
 			/* Rec. 709 is a good default for HD video recording. */
 			if (!colorSpace)
 				colorSpace = ColorSpace::Rec709;
@@ -669,7 +663,6 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 				return nullptr;
 			}
 
-			useMainPath = true;
 			colorSpace = ColorSpace::Raw;
 			break;
 
@@ -679,14 +672,21 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			return nullptr;
 		}
 
+		/*
+		 * Prefer the main path if available, as it supports higher
+		 * resolutions.
+		 *
+		 * \todo Using the main path unconditionally hides support for
+		 * RGB (only available on the self path) in the streams formats
+		 * exposed to applications. This likely calls for a better API
+		 * to expose streams capabilities.
+		 */
 		RkISP1Path *path;
-
-		if (useMainPath) {
+		if (mainPathAvailable) {
 			path = data->mainPath_;
 			mainPathAvailable = false;
 		} else {
 			path = data->selfPath_;
-			selfPathAvailable = false;
 		}
 
 		StreamConfiguration cfg =

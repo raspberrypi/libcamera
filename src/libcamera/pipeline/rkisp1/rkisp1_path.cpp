@@ -149,18 +149,34 @@ RkISP1Path::generateConfiguration(const CameraSensor *sensor, const Size &size,
 	for (const auto &format : streamFormats_) {
 		const PixelFormatInfo &info = PixelFormatInfo::info(format);
 
+		/* Populate stream formats for non-RAW configurations. */
 		if (info.colourEncoding != PixelFormatInfo::ColourEncodingRAW) {
+			if (role == StreamRole::Raw)
+				continue;
+
 			streamFormats[format] = { { minResolution, maxResolution } };
 			continue;
 		}
 
-		/* Skip raw formats not supported by the sensor. */
+		/* Skip RAW formats for non-raw roles. */
+		if (role != StreamRole::Raw)
+			continue;
+
+		/* Populate stream formats for RAW configurations. */
 		uint32_t mbusCode = formatToMediaBus.at(format);
 		if (std::find(mbusCodes.begin(), mbusCodes.end(), mbusCode) ==
 		    mbusCodes.end())
+			/* Skip formats not supported by sensor. */
 			continue;
 
-		streamFormats[format] = { { resolution, resolution } };
+		/* Add all the RAW sizes the sensor can produce for this code. */
+		for (const auto &rawSize : sensor->sizes(mbusCode)) {
+			if (rawSize.width > maxResolution_.width ||
+			    rawSize.height > maxResolution_.height)
+				continue;
+
+			streamFormats[format].push_back({ rawSize, rawSize });
+		}
 
 		/*
 		 * Store the raw format with the highest bits per pixel for

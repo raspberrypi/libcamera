@@ -314,7 +314,18 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	if (ret < 0)
 		return ret;
 
-	Rectangle rect(0, 0, ispFormat.size);
+	/*
+	 * Crop on the resizer input to maintain FOV before downscaling.
+	 *
+	 * \todo The alignment to a multiple of 2 pixels is required but may
+	 * change the aspect ratio very slightly. A more advanced algorithm to
+	 * compute the resizer input crop rectangle is needed, and it should
+	 * also take into account the need to crop away the edge pixels affected
+	 * by the ISP processing blocks.
+	 */
+	Size ispCrop = inputFormat.size.boundedToAspectRatio(config.size)
+				       .alignedUpTo(2, 2);
+	Rectangle rect = ispCrop.centeredTo(Rectangle(inputFormat.size).center());
 	ret = resizer_->setSelection(0, V4L2_SEL_TGT_CROP, &rect);
 	if (ret < 0)
 		return ret;

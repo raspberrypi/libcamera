@@ -5,6 +5,7 @@
 
 build_dir="$1"
 src_dir="$2"
+project_version="$3"
 
 # If .tarball-version exists, output the version string from the file and exit.
 # This file is auto-generated on a 'meson dist' command from the run-dist.sh
@@ -42,6 +43,13 @@ then
 	git update-index --refresh > /dev/null 2>&1
 fi
 git diff-index --quiet HEAD || version="$version-dirty ($(date --iso-8601=seconds))"
+
+# If a project version is provided, use it to replace the version number.
+if [ -n "$project_version" ]
+then
+	version=$(echo "$version" | sed -e 's/^[^-]*-//')
+	version="v$project_version-$version"
+fi
 
 # Replace first '-' with a '+' to denote build metadata, strip the 'g' in from
 # of the git SHA1 and remove the initial 'v'.

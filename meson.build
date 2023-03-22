@@ -11,15 +11,19 @@ project('libcamera', 'c', 'cpp',
     license : 'LGPL 2.1+')
 
 # Generate version information. The libcamera_git_version variable contains the
-# full version with git patch count and SHA1 (e.g. 1.2.3+211-c94a24f4), while
-# the libcamera_version variable contains the major.minor.patch (e.g. 1.2.3)
-# only. If the source tree isn't under git control, or if it matches the last
-# git version tag, the build metadata (e.g. +211-c94a24f4) is omitted from
-# libcamera_git_version.
+# full version with build metadata (patch count and SHA1, e.g.
+# 1.2.3+211-c94a24f4), while the libcamera_version variable contains the
+# major.minor.patch (e.g. 1.2.3) only.
+#
+# If the source tree matches the last git version tag, the build metadata
+# (e.g. +211-c94a24f4) is omitted from libcamera_git_version.
 libcamera_git_version = run_command('utils/gen-version.sh',
                                     meson.project_build_root(),
                                     meson.project_source_root(),
                                     check: false).stdout().strip()
+
+# If the source tree isn't under git control, set libcamera_git_version to the
+# meson project version.
 if libcamera_git_version == ''
     libcamera_git_version = meson.project_version()
 endif
@@ -31,7 +35,7 @@ project_version = meson.project_version().split('+')[0]
 # meson.project_version() could leave the project in a mis-described state.
 # Produce a warning in this event, and fix to a best effort.
 if libcamera_version != project_version
-    warning('The sources disagree about the version: '
+    warning('The sources and meson.build disagree about the version: '
             + libcamera_version + ' != ' + project_version)
 
     summary({'libcamera git version' : libcamera_git_version,
@@ -39,13 +43,16 @@ if libcamera_version != project_version
             },
             bool_yn : true, section : 'Versions')
 
-    # Replace the version components reported by git with the release version,
-    # but keep all trailing information supplied by git.
-    libcamera_git_version = (project_version + '+' +
-                             libcamera_git_version.split('+')[1])
+    # Re-run gen-version.sh to replace the git version (major.minor.patch) with
+    # the meson project version. The build metadata provided by git are kept.
+    libcamera_git_version = run_command('utils/gen-version.sh',
+                                        meson.project_build_root(),
+                                        meson.project_source_root(),
+                                        project_version,
+                                        check: false).stdout().strip()
     libcamera_version = project_version
 
-    # Append a marker to show we have modified this version string
+    # Append a marker to show we have modified this version string.
     libcamera_git_version += '-nvm'
 endif
 

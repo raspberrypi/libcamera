@@ -1486,8 +1486,8 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 	 * This will only be applied once AGC recalculations occur.
 	 * The values may be clamped based on the sensor mode capabilities as well.
 	 */
-	minFrameDuration_ = minFrameDuration ? minFrameDuration : defaultMaxFrameDuration;
-	maxFrameDuration_ = maxFrameDuration ? maxFrameDuration : defaultMinFrameDuration;
+	minFrameDuration_ = minFrameDuration ? minFrameDuration : defaultMinFrameDuration;
+	maxFrameDuration_ = maxFrameDuration ? maxFrameDuration : defaultMaxFrameDuration;
 	minFrameDuration_ = std::clamp(minFrameDuration_,
 				       mode_.minFrameDuration, mode_.maxFrameDuration);
 	maxFrameDuration_ = std::clamp(maxFrameDuration_,

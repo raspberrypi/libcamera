@@ -168,7 +168,7 @@ void IPAVimc::initTrace()
 	if (ret)
 		return;
 
-	ret = ::open(ipa::vimc::VimcIPAFIFOPath.c_str(), O_WRONLY);
+	ret = ::open(ipa::vimc::VimcIPAFIFOPath.c_str(), O_WRONLY | O_CLOEXEC);
 	if (ret < 0) {
 		ret = errno;
 		LOG(IPAVimc, Error) << "Failed to open vimc IPA test FIFO: "

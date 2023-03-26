@@ -163,6 +163,9 @@ bool File::exists() const
  * attempt to create the file with initial permissions set to 0666 (modified by
  * the process' umask).
  *
+ * The file is opened with the O_CLOEXEC flag, and will be closed automatically
+ * when a new binary is executed with one of the exec(3) functions.
+ *
  * The error() status is updated.
  *
  * \return True on success, false otherwise
@@ -178,7 +181,7 @@ bool File::open(File::OpenMode mode)
 	if (mode & OpenModeFlag::WriteOnly)
 		flags |= O_CREAT;
 
-	fd_ = UniqueFD(::open(name_.c_str(), flags, 0666));
+	fd_ = UniqueFD(::open(name_.c_str(), flags | O_CLOEXEC, 0666));
 	if (!fd_.isValid()) {
 		error_ = -errno;
 		return false;

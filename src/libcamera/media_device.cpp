@@ -477,7 +477,7 @@ int MediaDevice::open()
 		return -EBUSY;
 	}
 
-	fd_ = UniqueFD(::open(deviceNode_.c_str(), O_RDWR));
+	fd_ = UniqueFD(::open(deviceNode_.c_str(), O_RDWR | O_CLOEXEC));
 	if (!fd_.isValid()) {
 		int ret = -errno;
 		LOG(MediaDevice, Error)

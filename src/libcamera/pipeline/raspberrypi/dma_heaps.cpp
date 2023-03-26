@@ -37,7 +37,7 @@ namespace RPi {
 DmaHeap::DmaHeap()
 {
 	for (const char *name : heapNames) {
-		int ret = ::open(name, O_RDWR, 0);
+		int ret = ::open(name, O_RDWR | O_CLOEXEC, 0);
 		if (ret < 0) {
 			ret = errno;
 			LOG(RPI, Debug) << "Failed to open " << name << ": "

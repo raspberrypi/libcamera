@@ -1839,7 +1839,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
 	"PipelineHandlerRPi",
-	"raspberrypi",
+	"vc4",
 };
 
 IPAInterface *ipaCreate()

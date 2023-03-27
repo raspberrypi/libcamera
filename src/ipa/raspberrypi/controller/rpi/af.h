@@ -28,7 +28,6 @@
  * "nuisance" scans. During each interval where PDAF is not working, only
  * ONE scan will be performed; CAF cannot track objects using CDAF alone.
  *
- * This algorithm is unrelated to "rpi.focus" which merely reports CDAF FoM.
  */
 
 namespace RPiController {

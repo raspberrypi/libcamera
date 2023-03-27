@@ -22,9 +22,55 @@ namespace RPiController {
 
 /* Algorithm to generate automagic LSC (Lens Shading Correction) tables. */
 
+/*
+ * The Array2D class is a very thin wrapper round std::vector so that it can
+ * be used in exactly the same way in the code but carries its correct width
+ * and height ("dimensions") with it.
+ */
+
+template<typename T>
+class Array2D
+{
+public:
+	using Size = libcamera::Size;
+
+	const Size &dimensions() const { return dimensions_; }
+
+	size_t size() const { return data_.size(); }
+
+	const std::vector<T> &data() const { return data_; }
+
+	void resize(const Size &dims)
+	{
+		dimensions_ = dims;
+		data_.resize(dims.width * dims.height);
+	}
+
+	void resize(const Size &dims, const T &value)
+	{
+		resize(dims);
+		std::fill(data_.begin(), data_.end(), value);
+	}
+
+	T &operator[](int index) { return data_[index]; }
+
+	const T &operator[](int index) const { return data_[index]; }
+
+	T *ptr() { return data_.data(); }
+
+	const T *ptr() const { return data_.data(); }
+
+	auto begin() { return data_.begin(); }
+	auto end() { return data_.end(); }
+
+private:
+	Size dimensions_;
+	std::vector<T> data_;
+};
+
 struct AlscCalibration {
 	double ct;
-	std::vector<double> table;
+	Array2D<double> table;
 };
 
 struct AlscConfig {
@@ -40,7 +86,7 @@ struct AlscConfig {
 	uint16_t minG;
 	double omega;
 	uint32_t nIter;
-	std::vector<double> luminanceLut;
+	Array2D<double> luminanceLut;
 	double luminanceStrength;
 	std::vector<AlscCalibration> calibrationsCr;
 	std::vector<AlscCalibration> calibrationsCb;
@@ -67,7 +113,7 @@ private:
 	AlscConfig config_;
 	bool firstTime_;
 	CameraMode cameraMode_;
-	std::vector<double> luminanceTable_;
+	Array2D<double> luminanceTable_;
 	std::thread asyncThread_;
 	void asyncFunc(); /* asynchronous thread function */
 	std::mutex mutex_;
@@ -93,8 +139,8 @@ private:
 	int frameCount_;
 	/* counts up to startupFrames for Process function */
 	int frameCount2_;
-	std::array<std::vector<double>, 3> syncResults_;
-	std::array<std::vector<double>, 3> prevSyncResults_;
+	std::array<Array2D<double>, 3> syncResults_;
+	std::array<Array2D<double>, 3> prevSyncResults_;
 	void waitForAysncThread();
 	/*
 	 * The following are for the asynchronous thread to use, though the main
@@ -105,15 +151,15 @@ private:
 	void fetchAsyncResults();
 	double ct_;
 	RgbyRegions statistics_;
-	std::array<std::vector<double>, 3> asyncResults_;
-	std::vector<double> asyncLambdaR_;
-	std::vector<double> asyncLambdaB_;
+	std::array<Array2D<double>, 3> asyncResults_;
+	Array2D<double> asyncLambdaR_;
+	Array2D<double> asyncLambdaB_;
 	void doAlsc();
-	std::vector<double> lambdaR_;
-	std::vector<double> lambdaB_;
+	Array2D<double> lambdaR_;
+	Array2D<double> lambdaB_;
 
 	/* Temporaries for the computations */
-	std::array<std::vector<double>, 5> tmpC_;
+	std::array<Array2D<double>, 5> tmpC_;
 	std::array<std::vector<std::array<double, 4>>, 3> tmpM_;
 };
 

@@ -69,11 +69,14 @@ private:
 	/* Largest long exposure scale factor given as a left shift on the frame length. */
 	static constexpr int longExposureShiftMax = 7;
 
+	static constexpr int pdafStatsRows = 12;
+	static constexpr int pdafStatsCols = 16;
+
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
 
 	static bool parsePdafData(const uint8_t *ptr, size_t len, unsigned bpp,
-				  PdafData &pdaf);
+				  PdafRegions &pdaf);
 
 	bool parseAEHist(const uint8_t *ptr, size_t len, unsigned bpp);
 	void putAGCStatistics(StatisticsPtr stats);
@@ -120,11 +123,11 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
 
 	if (buffer.size() > 2 * bytesPerLine) {
-		PdafData pdaf;
+		PdafRegions pdaf;
 		if (parsePdafData(&buffer[2 * bytesPerLine],
 				  buffer.size() - 2 * bytesPerLine,
 				  mode_.bitdepth, pdaf))
-			metadata.set("pdaf.data", pdaf);
+			metadata.set("pdaf.regions", pdaf);
 	}
 
 	/* Parse AE-HIST data where present */
@@ -239,7 +242,7 @@ void CamHelperImx708::populateMetadata(const MdParser::RegisterMap &registers,
 }
 
 bool CamHelperImx708::parsePdafData(const uint8_t *ptr, size_t len,
-				    unsigned bpp, PdafData &pdaf)
+				    unsigned bpp, PdafRegions &pdaf)
 {
 	size_t step = bpp >> 1; /* bytes per PDAF grid entry */
 
@@ -248,13 +251,17 @@ bool CamHelperImx708::parsePdafData(const uint8_t *ptr, size_t len,
 		return false;
 	}
 
+	pdaf.init({ pdafStatsCols, pdafStatsRows });
+
 	ptr += 2 * step;
-	for (unsigned i = 0; i < PDAF_DATA_ROWS; ++i) {
-		for (unsigned j = 0; j < PDAF_DATA_COLS; ++j) {
+	for (unsigned i = 0; i < pdafStatsRows; ++i) {
+		for (unsigned j = 0; j < pdafStatsCols; ++j) {
 			unsigned c = (ptr[0] << 3) | (ptr[1] >> 5);
 			int p = (((ptr[1] & 0x0F) - (ptr[1] & 0x10)) << 6) | (ptr[2] >> 2);
-			pdaf.conf[i][j] = c;
-			pdaf.phase[i][j] = c ? p : 0;
+			PdafData pdafData;
+			pdafData.conf = c;
+			pdafData.phase = c ? p : 0;
+			pdaf.set(libcamera::Point(j, i), { pdafData, 1, 0 });
 			ptr += step;
 		}
 	}

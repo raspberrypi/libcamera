@@ -12,12 +12,6 @@
 #include "../pwl.h"
 
 /*
- * \todo FOCUS_REGIONS is taken from bcm2835-isp.h, but should be made as a
- * generic RegionStats structure.
- */
-#define FOCUS_REGIONS 12
-
-/*
  * This algorithm implements a hybrid of CDAF and PDAF, favouring PDAF.
  *
  * Whenever PDAF is available, it is used in a continuous feedback loop.
@@ -121,9 +115,20 @@ private:
 		double conf;
 	};
 
-	void computeWeights();
-	bool getPhase(PdafData const &data, double &phase, double &conf) const;
-	double getContrast(const FocusRegions &focusStats) const;
+	struct RegionWeights {
+		unsigned rows;
+		unsigned cols;
+		uint32_t sum;
+		std::vector<uint16_t> w;
+
+		RegionWeights()
+			: rows(0), cols(0), sum(0), w() {}
+	};
+
+	void computeWeights(RegionWeights *wgts, unsigned rows, unsigned cols);
+	void invalidateWeights();
+	bool getPhase(PdafRegions const &regions, double &phase, double &conf);
+	double getContrast(const FocusRegions &focusStats);
 	void doPDAF(double phase, double conf);
 	bool earlyTerminationByPhase(double phase);
 	double findPeak(unsigned index) const;
@@ -143,9 +148,8 @@ private:
 	libcamera::Rectangle statsRegion_;
 	std::vector<libcamera::Rectangle> windows_;
 	bool useWindows_;
-	uint8_t phaseWeights_[PDAF_DATA_ROWS][PDAF_DATA_COLS];
-	uint16_t contrastWeights_[FOCUS_REGIONS];
-	uint32_t sumWeights_;
+	RegionWeights phaseWeights_;
+	RegionWeights contrastWeights_;
 
 	/* Working state. */
 	ScanState scanState_;

@@ -60,13 +60,15 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
                       './' +'@INPUT@'
                   ])
 
-ipa_mojom_files = [
-    'ipu3.mojom',
-    'raspberrypi.mojom',
-    'rkisp1.mojom',
-    'vimc.mojom',
-]
+# Mapping from pipeline handler name to mojom file
+pipeline_ipa_mojom_mapping = {
+    'ipu3': 'ipu3.mojom',
+    'rkisp1': 'rkisp1.mojom',
+    'raspberrypi': 'raspberrypi.mojom',
+    'vimc': 'vimc.mojom',
+}
 
+ipa_mojom_files = []
 ipa_mojoms = []
 
 #
@@ -75,12 +77,15 @@ ipa_mojoms = []
 
 # TODO Define per-pipeline ControlInfoMap with yaml?
 
-foreach file : ipa_mojom_files
-    name = file.split('.')[0]
+foreach pipeline, file : pipeline_ipa_mojom_mapping
 
-    if name not in pipelines
+    ipa_mojom_files += file
+
+    if pipeline not in pipelines
         continue
     endif
+
+    name = file.split('.')[0]
 
     # {pipeline}.mojom-module
     mojom = custom_target(name + '_mojom_module',

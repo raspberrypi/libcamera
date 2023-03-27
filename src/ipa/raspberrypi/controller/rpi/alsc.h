@@ -68,6 +68,14 @@ private:
 	std::vector<T> data_;
 };
 
+/*
+ * We'll use the term SparseArray for the large sparse matrices that are
+ * XY tall but have only 4 non-zero elements on each row.
+ */
+
+template<typename T>
+using SparseArray = std::vector<std::array<T, 4>>;
+
 struct AlscCalibration {
 	double ct;
 	Array2D<double> table;
@@ -160,7 +168,7 @@ private:
 
 	/* Temporaries for the computations */
 	std::array<Array2D<double>, 5> tmpC_;
-	std::array<std::vector<std::array<double, 4>>, 3> tmpM_;
+	std::array<SparseArray<double>, 3> tmpM_;
 };
 
 } /* namespace RPiController */

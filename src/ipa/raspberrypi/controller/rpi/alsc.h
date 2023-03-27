@@ -6,9 +6,13 @@
  */
 #pragma once
 
+#include <array>
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <vector>
+
+#include <libcamera/geometry.h>
 
 #include "../algorithm.h"
 #include "../alsc_status.h"
@@ -20,7 +24,7 @@ namespace RPiController {
 
 struct AlscCalibration {
 	double ct;
-	double table[AlscCellsX * AlscCellsY];
+	std::vector<double> table;
 };
 
 struct AlscConfig {
@@ -36,13 +40,14 @@ struct AlscConfig {
 	uint16_t minG;
 	double omega;
 	uint32_t nIter;
-	double luminanceLut[AlscCellsX * AlscCellsY];
+	std::vector<double> luminanceLut;
 	double luminanceStrength;
 	std::vector<AlscCalibration> calibrationsCr;
 	std::vector<AlscCalibration> calibrationsCb;
 	double defaultCt; /* colour temperature if no metadata found */
 	double threshold; /* iteration termination threshold */
 	double lambdaBound; /* upper/lower bound for lambda from a value of 1 */
+	libcamera::Size tableSize;
 };
 
 class Alsc : public Algorithm
@@ -62,7 +67,7 @@ private:
 	AlscConfig config_;
 	bool firstTime_;
 	CameraMode cameraMode_;
-	double luminanceTable_[AlscCellsX * AlscCellsY];
+	std::vector<double> luminanceTable_;
 	std::thread asyncThread_;
 	void asyncFunc(); /* asynchronous thread function */
 	std::mutex mutex_;
@@ -88,8 +93,8 @@ private:
 	int frameCount_;
 	/* counts up to startupFrames for Process function */
 	int frameCount2_;
-	double syncResults_[3][AlscCellsY][AlscCellsX];
-	double prevSyncResults_[3][AlscCellsY][AlscCellsX];
+	std::array<std::vector<double>, 3> syncResults_;
+	std::array<std::vector<double>, 3> prevSyncResults_;
 	void waitForAysncThread();
 	/*
 	 * The following are for the asynchronous thread to use, though the main
@@ -100,12 +105,16 @@ private:
 	void fetchAsyncResults();
 	double ct_;
 	RgbyRegions statistics_;
-	double asyncResults_[3][AlscCellsY][AlscCellsX];
-	double asyncLambdaR_[AlscCellsX * AlscCellsY];
-	double asyncLambdaB_[AlscCellsX * AlscCellsY];
+	std::array<std::vector<double>, 3> asyncResults_;
+	std::vector<double> asyncLambdaR_;
+	std::vector<double> asyncLambdaB_;
 	void doAlsc();
-	double lambdaR_[AlscCellsX * AlscCellsY];
-	double lambdaB_[AlscCellsX * AlscCellsY];
+	std::vector<double> lambdaR_;
+	std::vector<double> lambdaB_;
+
+	/* Temporaries for the computations */
+	std::array<std::vector<double>, 5> tmpC_;
+	std::array<std::vector<std::array<double, 4>>, 3> tmpM_;
 };
 
 } /* namespace RPiController */

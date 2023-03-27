@@ -6,16 +6,17 @@
  */
 #pragma once
 
+#include <vector>
+
 /*
  * The ALSC algorithm should post the following structure into the image's
  * "alsc.status" metadata.
  */
 
-constexpr unsigned int AlscCellsX = 16;
-constexpr unsigned int AlscCellsY = 12;
-
 struct AlscStatus {
-	double r[AlscCellsY][AlscCellsX];
-	double g[AlscCellsY][AlscCellsX];
-	double b[AlscCellsY][AlscCellsX];
+	std::vector<double> r;
+	std::vector<double> g;
+	std::vector<double> b;
+	unsigned int rows;
+	unsigned int cols;
 };

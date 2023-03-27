@@ -266,6 +266,14 @@ int IPARPi::init(const IPASettings &settings, bool lensPresent, IPAInitResult *r
 		return ret;
 	}
 
+	const std::string &target = controller_.getTarget();
+	if (target != "bcm2835") {
+		LOG(IPARPI, Error)
+			<< "Tuning data file target returned \"" << target << "\""
+			<< ", expected \"bcm2835\"";
+		return -EINVAL;
+	}
+
 	lensPresent_ = lensPresent;
 
 	controller_.initialise();

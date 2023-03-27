@@ -41,6 +41,10 @@ public:
 	{
 		return controller_->getGlobalMetadata();
 	}
+	const std::string &getTarget() const
+	{
+		return controller_->getTarget();
+	}
 
 private:
 	Controller *controller_;

@@ -1593,13 +1593,20 @@ void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 
 void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls)
 {
+	const unsigned int numGammaPoints = controller_.getHardwareConfig().numGammaPoints;
 	struct bcm2835_isp_gamma gamma;
 
-	gamma.enabled = 1;
-	for (unsigned int i = 0; i < ContrastNumPoints; i++) {
-		gamma.x[i] = contrastStatus->points[i].x;
-		gamma.y[i] = contrastStatus->points[i].y;
+	for (unsigned int i = 0; i < numGammaPoints - 1; i++) {
+		int x = i < 16 ? i * 1024
+			       : (i < 24 ? (i - 16) * 2048 + 16384
+					 : (i - 24) * 4096 + 32768);
+		gamma.x[i] = x;
+		gamma.y[i] = std::min<uint16_t>(65535, contrastStatus->gammaCurve.eval(x));
 	}
+
+	gamma.x[numGammaPoints - 1] = 65535;
+	gamma.y[numGammaPoints - 1] = 65535;
+	gamma.enabled = 1;
 
 	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&gamma),
 					    sizeof(gamma) });

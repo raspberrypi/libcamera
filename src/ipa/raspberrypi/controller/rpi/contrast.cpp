@@ -65,34 +65,19 @@ void Contrast::setContrast(double contrast)
 	contrast_ = contrast;
 }
 
-static void fillInStatus(ContrastStatus &status, double brightness,
-			 double contrast, Pwl &gammaCurve)
-{
-	status.brightness = brightness;
-	status.contrast = contrast;
-	for (unsigned int i = 0; i < ContrastNumPoints - 1; i++) {
-		int x = i < 16 ? i * 1024
-			       : (i < 24 ? (i - 16) * 2048 + 16384
-					 : (i - 24) * 4096 + 32768);
-		status.points[i].x = x;
-		status.points[i].y = std::min(65535.0, gammaCurve.eval(x));
-	}
-	status.points[ContrastNumPoints - 1].x = 65535;
-	status.points[ContrastNumPoints - 1].y = 65535;
-}
-
 void Contrast::initialise()
 {
 	/*
 	 * Fill in some default values as Prepare will run before Process gets
 	 * called.
 	 */
-	fillInStatus(status_, brightness_, contrast_, config_.gammaCurve);
+	status_.brightness = brightness_;
+	status_.contrast = contrast_;
+	status_.gammaCurve = config_.gammaCurve;
 }
 
 void Contrast::prepare(Metadata *imageMetadata)
 {
-	std::unique_lock<std::mutex> lock(mutex_);
 	imageMetadata->set("contrast.status", status_);
 }
 
@@ -183,12 +168,9 @@ void Contrast::process(StatisticsPtr &stats,
 	 * And fill in the status for output. Use more points towards the bottom
 	 * of the curve.
 	 */
-	ContrastStatus status;
-	fillInStatus(status, brightness_, contrast_, gammaCurve);
-	{
-		std::unique_lock<std::mutex> lock(mutex_);
-		status_ = status;
-	}
+	status_.brightness = brightness_;
+	status_.contrast = contrast_;
+	status_.gammaCurve = std::move(gammaCurve);
 }
 
 /* Register algorithm with the system. */

@@ -36,9 +36,11 @@ struct CameraMode {
 	double scaleY;
 	/* scaling of the noise compared to the native sensor mode */
 	double noiseFactor;
-	/* minimum and maximum line time */
+	/* minimum and maximum line time and frame durations */
 	libcamera::utils::Duration minLineLength;
 	libcamera::utils::Duration maxLineLength;
+	libcamera::utils::Duration minFrameDuration;
+	libcamera::utils::Duration maxFrameDuration;
 	/* any camera transform *not* reflected already in the camera tuning */
 	libcamera::Transform transform;
 	/* minimum and maximum frame lengths in units of lines */
@@ -48,4 +50,10 @@ struct CameraMode {
 	double sensitivity;
 	/* pixel clock rate */
 	uint64_t pixelRate;
+	/* Mode specific shutter speed limits */
+	libcamera::utils::Duration minShutter;
+	libcamera::utils::Duration maxShutter;
+	/* Mode specific analogue gain limits */
+	double minAnalogueGain;
+	double maxAnalogueGain;
 };

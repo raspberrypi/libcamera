@@ -407,11 +407,27 @@ void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.minFrameLength = sensorInfo.minFrameLength;
 	mode_.maxFrameLength = sensorInfo.maxFrameLength;
 
+	/* Store these for convenience. */
+	mode_.minFrameDuration = mode_.minFrameLength * mode_.minLineLength;
+	mode_.maxFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
+
 	/*
 	 * Some sensors may have different sensitivities in different modes;
 	 * the CamHelper will know the correct value.
 	 */
 	mode_.sensitivity = helper_->getModeSensitivity(mode_);
+
+	const ControlInfo &gainCtrl = sensorCtrls_.at(V4L2_CID_ANALOGUE_GAIN);
+	const ControlInfo &shutterCtrl = sensorCtrls_.at(V4L2_CID_EXPOSURE);
+
+	mode_.minAnalogueGain = helper_->gain(gainCtrl.min().get<int32_t>());
+	mode_.maxAnalogueGain = helper_->gain(gainCtrl.max().get<int32_t>());
+
+	/* Shutter speed is calculated based on the limits of the frame durations. */
+	mode_.minShutter = helper_->exposure(shutterCtrl.min().get<int32_t>(), mode_.minLineLength);
+	mode_.maxShutter = Duration::max();
+	helper_->getBlanking(mode_.maxShutter,
+			     mode_.minFrameDuration, mode_.maxFrameDuration);
 }
 
 int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const IPAConfig &ipaConfig,

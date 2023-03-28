@@ -545,7 +545,7 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"PipelineHandlerRPi",
+	"PipelineHandlerVc4",
 	"vc4",
 };
 

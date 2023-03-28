@@ -85,12 +85,13 @@ interface IPARPiInterface {
 
 	[async] signalPrepareIsp(PrepareParams params);
 	[async] signalProcessStats(ProcessParams params);
+
+	reportMetadata(uint32 ipaContext) => (libcamera.ControlList controls);
 };
 
 interface IPARPiEventInterface {
 	[async] prepareIspComplete(BufferIds buffers);
 	[async] processStatsComplete(BufferIds buffers);
-	[async] metadataReady(libcamera.ControlList metadata);
 	[async] setIspControls(libcamera.ControlList controls);
 	[async] setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
 	[async] setLensControls(libcamera.ControlList controls);

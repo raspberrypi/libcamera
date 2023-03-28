@@ -154,7 +154,7 @@ private:
 	bool validateLensControls();
 	void applyControls(const ControlList &controls);
 	void prepareISP(const PrepareParams &params);
-	void reportMetadata(unsigned int ipaContext);
+	void reportMetadata(unsigned int ipaContext, ControlList *controls) override;
 	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
 	RPiController::StatisticsPtr fillStatistics(bcm2835_isp_stats *stats) const;
 	void processStats(unsigned int bufferId, unsigned int ipaContext);
@@ -565,7 +565,6 @@ void IPARPi::signalProcessStats(const ProcessParams &params)
 	if (processPending_ && frameCount_ > mistrustCount_)
 		processStats(params.buffers.stats, context);
 
-	reportMetadata(context);
 	processStatsComplete.emit(params.buffers);
 }
 
@@ -586,9 +585,9 @@ void IPARPi::signalPrepareIsp(const PrepareParams &params)
 	prepareIspComplete.emit(params.buffers);
 }
 
-void IPARPi::reportMetadata(unsigned int ipaContext)
+void IPARPi::reportMetadata(unsigned int ipaContext, ControlList *controls)
 {
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext % rpiMetadata_.size()];
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
 
 	/*
@@ -697,7 +696,7 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 		libcameraMetadata_.set(controls::AfPauseState, p);
 	}
 
-	metadataReady.emit(libcameraMetadata_);
+	*controls = std::move(libcameraMetadata_);
 }
 
 bool IPARPi::validateSensorControls()

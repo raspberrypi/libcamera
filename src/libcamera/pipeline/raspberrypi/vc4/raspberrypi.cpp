@@ -207,7 +207,6 @@ public:
 	void enumerateVideoDevices(MediaLink *link);
 
 	void processStatsComplete(const ipa::RPi::BufferIds &buffers);
-	void metadataReady(const ControlList &metadata);
 	void prepareIspComplete(const ipa::RPi::BufferIds &buffers);
 	void setIspControls(const ControlList &controls);
 	void setDelayedControls(const ControlList &controls, uint32_t delayContext);
@@ -1652,7 +1651,6 @@ int RPiCameraData::loadIPA(ipa::RPi::InitResult *result)
 
 	ipa_->processStatsComplete.connect(this, &RPiCameraData::processStatsComplete);
 	ipa_->prepareIspComplete.connect(this, &RPiCameraData::prepareIspComplete);
-	ipa_->metadataReady.connect(this, &RPiCameraData::metadataReady);
 	ipa_->setIspControls.connect(this, &RPiCameraData::setIspControls);
 	ipa_->setDelayedControls.connect(this, &RPiCameraData::setDelayedControls);
 	ipa_->setLensControls.connect(this, &RPiCameraData::setLensControls);
@@ -1892,17 +1890,12 @@ void RPiCameraData::processStatsComplete(const ipa::RPi::BufferIds &buffers)
 	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(buffers.stats & RPi::MaskID);
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
-	state_ = State::IpaComplete;
-	handleState();
-}
 
-void RPiCameraData::metadataReady(const ControlList &metadata)
-{
-	if (!isRunning())
-		return;
-
-	/* Add to the Request metadata buffer what the IPA has provided. */
+	/* Last thing to do is to fill up the request metadata. */
 	Request *request = requestQueue_.front();
+	ControlList metadata;
+
+	ipa_->reportMetadata(request->sequence(), &metadata);
 	request->metadata().merge(metadata);
 
 	/*
@@ -1923,6 +1916,9 @@ void RPiCameraData::metadataReady(const ControlList &metadata)
 
 		sensor_->setControls(&ctrls);
 	}
+
+	state_ = State::IpaComplete;
+	handleState();
 }
 
 void RPiCameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers)

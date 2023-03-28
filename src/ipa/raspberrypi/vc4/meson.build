@@ -13,7 +13,7 @@ vc4_ipa_includes = [
 ]
 
 vc4_ipa_sources = files([
-    'raspberrypi.cpp',
+    'vc4.cpp',
 ])
 
 rpi_ipa_common_sources = files([
@@ -26,6 +26,7 @@ rpi_ipa_common_sources = files([
     '../common/cam_helper_imx519.cpp',
     '../common/cam_helper_imx708.cpp',
     '../common/cam_helper_ov9281.cpp',
+    '../common/ipa_base.cpp',
     '../common/controller/controller.cpp',
     '../common/controller/histogram.cpp',
     '../common/controller/algorithm.cpp',

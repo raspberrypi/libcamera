@@ -2,43 +2,19 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * rpi.cpp - Raspberry Pi Image Processing Algorithms
+ * ipa_base.cpp - Raspberry Pi IPA base class
  */
 
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <deque>
-#include <fcntl.h>
-#include <math.h>
-#include <stdint.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <vector>
-
-#include <linux/bcm2835-isp.h>
+#include <cmath>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/span.h>
-
 #include <libcamera/control_ids.h>
-#include <libcamera/controls.h>
-#include <libcamera/framebuffer.h>
-#include <libcamera/request.h>
-
-#include <libcamera/ipa/ipa_interface.h>
-#include <libcamera/ipa/ipa_module_info.h>
-#include <libcamera/ipa/raspberrypi_ipa_interface.h>
-#include <libcamera/request.h>
-
-#include "libcamera/internal/mapped_framebuffer.h"
 
 #include "af_algorithm.h"
 #include "af_status.h"
 #include "agc_algorithm.h"
 #include "agc_status.h"
-#include "alsc_status.h"
 #include "awb_algorithm.h"
 #include "awb_status.h"
 #include "black_level_status.h"
@@ -46,16 +22,11 @@
 #include "ccm_algorithm.h"
 #include "ccm_status.h"
 #include "contrast_algorithm.h"
-#include "contrast_status.h"
 #include "controller.h"
 #include "denoise_algorithm.h"
-#include "denoise_status.h"
-#include "dpc_status.h"
-#include "geq_status.h"
+#include "ipa_base.h"
 #include "lux_status.h"
-#include "metadata.h"
 #include "sharpen_algorithm.h"
-#include "sharpen_status.h"
 #include "statistics.h"
 
 namespace libcamera {
@@ -63,11 +34,7 @@ namespace libcamera {
 using namespace std::literals::chrono_literals;
 using utils::Duration;
 
-/* Number of metadata objects available in the context list. */
-constexpr unsigned int numMetadataContexts = 16;
-
-/* Number of frame length times to hold in the queue. */
-constexpr unsigned int FrameLengthsQueueSize = 10;
+namespace {
 
 /* Configure the sensor with these values initially. */
 constexpr double defaultAnalogueGain = 1.0;
@@ -76,12 +43,12 @@ constexpr Duration defaultMinFrameDuration = 1.0s / 30.0;
 constexpr Duration defaultMaxFrameDuration = 250.0s;
 
 /*
- * Determine the minimum allowable inter-frame duration to run the controller
- * algorithms. If the pipeline handler provider frames at a rate higher than this,
- * we rate-limit the controller Prepare() and Process() calls to lower than or
- * equal to this rate.
- */
-constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
+* Determine the minimum allowable inter-frame duration to run the controller
+* algorithms. If the pipeline handler provider frames at a rate higher than this,
+* we rate-limit the controller Prepare() and Process() calls to lower than or
+* equal to this rate.
+*/
+static constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
 /* List of controls handled by the Raspberry Pi IPA */
 static const ControlInfoMap::Map ipaControls{
@@ -117,121 +84,23 @@ static const ControlInfoMap::Map ipaAfControls{
 	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }
 };
 
+} /* namespace */
+
 LOG_DEFINE_CATEGORY(IPARPI)
 
 namespace ipa::RPi {
 
-class IPARPi : public IPARPiInterface
+IpaBase::IpaBase()
+	: frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true),
+	  controller_()
 {
-public:
-	IPARPi()
-		: controller_(), frameCount_(0), checkCount_(0), mistrustCount_(0),
-		  lastRunTimestamp_(0), lsTable_(nullptr), firstStart_(true),
-		  lastTimeout_(0s)
-	{
-	}
+}
 
-	~IPARPi()
-	{
-		if (lsTable_)
-			munmap(lsTable_, MaxLsGridSize);
-	}
+IpaBase::~IpaBase()
+{
+}
 
-	int init(const IPASettings &settings, const InitParams &params, InitResult *result) override;
-	void start(const ControlList &controls, StartResult *result) override;
-	void stop() override {}
-
-	int configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams &params,
-		      ConfigResult *result) override;
-	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
-	void unmapBuffers(const std::vector<unsigned int> &ids) override;
-	void signalPrepareIsp(const PrepareParams &params) override;
-	void signalProcessStats(const ProcessParams &params) override;
-
-private:
-	void setMode(const IPACameraSensorInfo &sensorInfo);
-	bool validateSensorControls();
-	bool validateIspControls();
-	bool validateLensControls();
-	void applyControls(const ControlList &controls);
-	void prepareISP(const PrepareParams &params);
-	void reportMetadata(unsigned int ipaContext);
-	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
-	RPiController::StatisticsPtr fillStatistics(bcm2835_isp_stats *stats) const;
-	void processStats(unsigned int bufferId, unsigned int ipaContext);
-	void setCameraTimeoutValue();
-	void applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration);
-	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
-	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
-	void applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls);
-	void applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls);
-	void applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls);
-	void applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls);
-	void applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls);
-	void applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls);
-	void applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls);
-	void applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls);
-	void applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls);
-	void applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls);
-	void resampleTable(uint16_t dest[], const std::vector<double> &src, int destW, int destH);
-
-	std::map<unsigned int, MappedFrameBuffer> buffers_;
-
-	ControlInfoMap sensorCtrls_;
-	ControlInfoMap ispCtrls_;
-	ControlInfoMap lensCtrls_;
-	bool lensPresent_;
-	ControlList libcameraMetadata_;
-
-	/* Camera sensor params. */
-	CameraMode mode_;
-
-	/* Raspberry Pi controller specific defines. */
-	std::unique_ptr<RPiController::CamHelper> helper_;
-	RPiController::Controller controller_;
-	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
-
-	/*
-	 * We count frames to decide if the frame must be hidden (e.g. from
-	 * display) or mistrusted (i.e. not given to the control algos).
-	 */
-	uint64_t frameCount_;
-
-	/* For checking the sequencing of Prepare/Process calls. */
-	uint64_t checkCount_;
-
-	/* How many frames we should avoid running control algos on. */
-	unsigned int mistrustCount_;
-
-	/* Number of frames that need to be dropped on startup. */
-	unsigned int dropFrameCount_;
-
-	/* Frame timestamp for the last run of the controller. */
-	uint64_t lastRunTimestamp_;
-
-	/* Do we run a Controller::process() for this frame? */
-	bool processPending_;
-
-	/* LS table allocation passed in from the pipeline handler. */
-	SharedFD lsTableHandle_;
-	void *lsTable_;
-
-	/* Distinguish the first camera start from others. */
-	bool firstStart_;
-
-	/* Frame duration (1/fps) limits. */
-	Duration minFrameDuration_;
-	Duration maxFrameDuration_;
-
-	/* Maximum gain code for the sensor. */
-	uint32_t maxSensorGainCode_;
-
-	/* Track the frame length times over FrameLengthsQueueSize frames. */
-	std::deque<Duration> frameLengths_;
-	Duration lastTimeout_;
-};
-
-int IPARPi::init(const IPASettings &settings, const InitParams &params, InitResult *result)
+int IpaBase::init(const IPASettings &settings, const InitParams &params, InitResult *result)
 {
 	/*
 	 * Load the "helper" for this sensor. This tells us all the device specific stuff
@@ -268,14 +137,6 @@ int IPARPi::init(const IPASettings &settings, const InitParams &params, InitResu
 		return ret;
 	}
 
-	const std::string &target = controller_.getTarget();
-	if (target != "bcm2835") {
-		LOG(IPARPI, Error)
-			<< "Tuning data file target returned \"" << target << "\""
-			<< ", expected \"bcm2835\"";
-		return -EINVAL;
-	}
-
 	lensPresent_ = params.lensPresent;
 
 	controller_.initialise();
@@ -289,7 +150,7 @@ int IPARPi::init(const IPASettings &settings, const InitParams &params, InitResu
 	return 0;
 }
 
-void IPARPi::start(const ControlList &controls, StartResult *result)
+void IpaBase::start(const ControlList &controls, StartResult *result)
 {
 	RPiController::Metadata metadata;
 
@@ -299,11 +160,6 @@ void IPARPi::start(const ControlList &controls, StartResult *result)
 	}
 
 	controller_.switchMode(mode_, &metadata);
-
-	/* Reset the frame lengths queue state. */
-	lastTimeout_ = 0s;
-	frameLengths_.clear();
-	frameLengths_.resize(FrameLengthsQueueSize, 0s);
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	AgcStatus agcStatus;
@@ -315,7 +171,6 @@ void IPARPi::start(const ControlList &controls, StartResult *result)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		result->controls = std::move(ctrls);
-		setCameraTimeoutValue();
 	}
 
 	/*
@@ -324,7 +179,6 @@ void IPARPi::start(const ControlList &controls, StartResult *result)
 	 * or merely a mode switch in a running system.
 	 */
 	frameCount_ = 0;
-	checkCount_ = 0;
 	if (firstStart_) {
 		dropFrameCount_ = helper_->hideFramesStartup();
 		mistrustCount_ = helper_->mistrustFramesStartup();
@@ -362,77 +216,20 @@ void IPARPi::start(const ControlList &controls, StartResult *result)
 	}
 
 	result->dropFrameCount = dropFrameCount_;
+	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
+	result->maxSensorFrameLengthMs = maxSensorFrameDuration.get<std::milli>();
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
 }
 
-void IPARPi::setMode(const IPACameraSensorInfo &sensorInfo)
-{
-	mode_.bitdepth = sensorInfo.bitsPerPixel;
-	mode_.width = sensorInfo.outputSize.width;
-	mode_.height = sensorInfo.outputSize.height;
-	mode_.sensorWidth = sensorInfo.activeAreaSize.width;
-	mode_.sensorHeight = sensorInfo.activeAreaSize.height;
-	mode_.cropX = sensorInfo.analogCrop.x;
-	mode_.cropY = sensorInfo.analogCrop.y;
-	mode_.pixelRate = sensorInfo.pixelRate;
-
-	/*
-	 * Calculate scaling parameters. The scale_[xy] factors are determined
-	 * by the ratio between the crop rectangle size and the output size.
-	 */
-	mode_.scaleX = sensorInfo.analogCrop.width / sensorInfo.outputSize.width;
-	mode_.scaleY = sensorInfo.analogCrop.height / sensorInfo.outputSize.height;
-
-	/*
-	 * We're not told by the pipeline handler how scaling is split between
-	 * binning and digital scaling. For now, as a heuristic, assume that
-	 * downscaling up to 2 is achieved through binning, and that any
-	 * additional scaling is achieved through digital scaling.
-	 *
-	 * \todo Get the pipeline handle to provide the full data
-	 */
-	mode_.binX = std::min(2, static_cast<int>(mode_.scaleX));
-	mode_.binY = std::min(2, static_cast<int>(mode_.scaleY));
-
-	/* The noise factor is the square root of the total binning factor. */
-	mode_.noiseFactor = sqrt(mode_.binX * mode_.binY);
-
-	/*
-	 * Calculate the line length as the ratio between the line length in
-	 * pixels and the pixel rate.
-	 */
-	mode_.minLineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
-	mode_.maxLineLength = sensorInfo.maxLineLength * (1.0s / sensorInfo.pixelRate);
-
-	/*
-	 * Set the frame length limits for the mode to ensure exposure and
-	 * framerate calculations are clipped appropriately.
-	 */
-	mode_.minFrameLength = sensorInfo.minFrameLength;
-	mode_.maxFrameLength = sensorInfo.maxFrameLength;
-
-	/*
-	 * Some sensors may have different sensitivities in different modes;
-	 * the CamHelper will know the correct value.
-	 */
-	mode_.sensitivity = helper_->getModeSensitivity(mode_);
-}
-
-int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams &params,
-		      ConfigResult *result)
+int IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams &params,
+		       ConfigResult *result)
 {
 	sensorCtrls_ = params.sensorControls;
-	ispCtrls_ = params.ispControls;
 
 	if (!validateSensorControls()) {
 		LOG(IPARPI, Error) << "Sensor control validation failed.";
-		return -1;
-	}
-
-	if (!validateIspControls()) {
-		LOG(IPARPI, Error) << "ISP control validation failed.";
 		return -1;
 	}
 
@@ -454,27 +251,6 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams 
 	setMode(sensorInfo);
 
 	mode_.transform = static_cast<libcamera::Transform>(params.transform);
-
-	/* Store the lens shading table pointer and handle if available. */
-	if (params.lsTableHandle.isValid()) {
-		/* Remove any previous table, if there was one. */
-		if (lsTable_) {
-			munmap(lsTable_, MaxLsGridSize);
-			lsTable_ = nullptr;
-		}
-
-		/* Map the LS table buffer into user space. */
-		lsTableHandle_ = std::move(params.lsTableHandle);
-		if (lsTableHandle_.isValid()) {
-			lsTable_ = mmap(nullptr, MaxLsGridSize, PROT_READ | PROT_WRITE,
-					MAP_SHARED, lsTableHandle_.get(), 0);
-
-			if (lsTable_ == MAP_FAILED) {
-				LOG(IPARPI, Error) << "dmaHeap mmap failure for LS table.";
-				lsTable_ = nullptr;
-			}
-		}
-	}
 
 	/* Pass the camera mode to the CamHelper to setup algorithms. */
 	helper_->setCameraMode(mode_);
@@ -535,7 +311,7 @@ int IPARPi::configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams 
 	return 0;
 }
 
-void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
+void IpaBase::mapBuffers(const std::vector<IPABuffer> &buffers)
 {
 	for (const IPABuffer &buffer : buffers) {
 		const FrameBuffer fb(buffer.planes);
@@ -544,7 +320,7 @@ void IPARPi::mapBuffers(const std::vector<IPABuffer> &buffers)
 	}
 }
 
-void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
+void IpaBase::unmapBuffers(const std::vector<unsigned int> &ids)
 {
 	for (unsigned int id : ids) {
 		auto it = buffers_.find(id);
@@ -555,21 +331,7 @@ void IPARPi::unmapBuffers(const std::vector<unsigned int> &ids)
 	}
 }
 
-void IPARPi::signalProcessStats(const ProcessParams &params)
-{
-	unsigned int context = params.ipaContext % rpiMetadata_.size();
-
-	if (++checkCount_ != frameCount_) /* assert here? */
-		LOG(IPARPI, Error) << "WARNING: Prepare/Process mismatch!!!";
-	if (processPending_ && frameCount_ > mistrustCount_)
-		processStats(params.buffers.stats, context);
-
-	reportMetadata(context);
-	processStatsComplete.emit(params.buffers);
-}
-
-
-void IPARPi::signalPrepareIsp(const PrepareParams &params)
+void IpaBase::signalPrepareIsp(const PrepareParams &params)
 {
 	applyControls(params.requestControls);
 
@@ -578,16 +340,114 @@ void IPARPi::signalPrepareIsp(const PrepareParams &params)
 	 * avoid running the control algos for a few frames in case
 	 * they are "unreliable".
 	 */
-	prepareISP(params);
+	int64_t frameTimestamp = params.sensorControls.get(controls::SensorTimestamp).value_or(0);
+	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
+	Span<uint8_t> embeddedBuffer;
+
+	rpiMetadata.clear();
+	fillDeviceStatus(params.sensorControls, ipaContext);
+
+	if (params.buffers.embedded) {
+		/*
+		 * Pipeline handler has supplied us with an embedded data buffer,
+		 * we must pass it to the CamHelper for parsing.
+		 */
+		auto it = buffers_.find(params.buffers.embedded);
+		ASSERT(it != buffers_.end());
+		embeddedBuffer = it->second.planes()[0];
+	}
+
+	/*
+	 * AGC wants to know the algorithm status from the time it actioned the
+	 * sensor exposure/gain changes. So fetch it from the metadata list
+	 * indexed by the IPA cookie returned, and put it in the current frame
+	 * metadata.
+	 */
+	AgcStatus agcStatus;
+	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
+	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus))
+		rpiMetadata.set("agc.delayed_status", agcStatus);
+
+	/*
+	 * This may overwrite the DeviceStatus using values from the sensor
+	 * metadata, and may also do additional custom processing.
+	 */
+	helper_->prepare(embeddedBuffer, rpiMetadata);
+
+	/* Allow a 10% margin on the comparison below. */
+	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
+	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	    delta < controllerMinFrameDuration * 0.9) {
+		/*
+		 * Ensure we merge the previous frame's metadata with the current
+		 * frame. This will not overwrite exposure/gain values for the
+		 * current frame, or any other bits of metadata that were added
+		 * in helper_->Prepare().
+		 */
+		RPiController::Metadata &lastMetadata =
+			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
+		rpiMetadata.mergeCopy(lastMetadata);
+		processPending_ = false;
+	} else {
+		processPending_ = true;
+		lastRunTimestamp_ = frameTimestamp;
+	}
+
+	/*
+	 * If a statistics buffer has been passed in, call signalProcessStats
+	 * directly now before prepare() since the statistics are available in-line
+	 * with the Bayer frame.
+	 */
+	if (params.buffers.stats)
+		signalProcessStats({ params.buffers, params.ipaContext });
+
+	/* Do we need/want to call prepare? */
+	if (processPending_) {
+		controller_.prepare(&rpiMetadata);
+		/* Actually prepare the ISP parameters for the frame. */
+		prepareIsp(params, rpiMetadata);
+	}
+
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
 	prepareIspComplete.emit(params.buffers);
 }
 
-void IPARPi::reportMetadata(unsigned int ipaContext)
+void IpaBase::signalProcessStats(const ProcessParams &params)
 {
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
+	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
+
+	if (processPending_ && frameCount_ > mistrustCount_) {
+		RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
+
+		auto it = buffers_.find(params.buffers.stats);
+		if (it == buffers_.end()) {
+			LOG(IPARPI, Error) << "Could not find stats buffer!";
+			return;
+		}
+
+		RPiController::StatisticsPtr statistics = processStats(it->second.planes()[0]);
+
+		helper_->process(statistics, rpiMetadata);
+		controller_.process(statistics, &rpiMetadata);
+
+		struct AgcStatus agcStatus;
+		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
+			ControlList ctrls(sensorCtrls_);
+			applyAGC(&agcStatus, ctrls);
+
+			setDelayedControls.emit(ctrls, ipaContext);
+		}
+	}
+
+	processStatsComplete.emit(params.buffers);
+}
+
+void IpaBase::reportMetadata(unsigned int ipaContext, ControlList *controls)
+{
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext % rpiMetadata_.size()];
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
 
 	/*
@@ -636,15 +496,25 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 	RPiController::FocusRegions *focusStatus =
 		rpiMetadata.getLocked<RPiController::FocusRegions>("focus.status");
 	if (focusStatus) {
-		libcamera::Size size = focusStatus->size();
 		/*
 		 * We get a 4x3 grid of regions by default. Calculate the average
 		 * FoM over the central two positions to give an overall scene FoM.
 		 * This can change later if it is not deemed suitable.
 		 */
-		ASSERT(size == Size(4, 3));
-		int32_t focusFoM = (focusStatus->get({ 1, 1 }).val +
-				    focusStatus->get({ 2, 1 }).val) / 2;
+		libcamera::Size size = focusStatus->size();
+		unsigned rows = size.height;
+		unsigned cols = size.width;
+
+		uint64_t sum = 0;
+		unsigned int numRegions = 0;
+		for (unsigned r = rows / 3; r < rows - rows / 3; ++r) {
+			for (unsigned c = cols / 4; c < cols - cols / 4; ++c) {
+				sum += focusStatus->get({ (int)c, (int)r }).val;
+				numRegions++;
+			}
+		}
+
+		uint32_t focusFoM = (sum / numRegions) >> 16;
 		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
 	}
 
@@ -686,10 +556,63 @@ void IPARPi::reportMetadata(unsigned int ipaContext)
 		libcameraMetadata_.set(controls::AfPauseState, p);
 	}
 
-	metadataReady.emit(libcameraMetadata_);
+	*controls = std::move(libcameraMetadata_);
 }
 
-bool IPARPi::validateSensorControls()
+void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
+{
+	mode_.bitdepth = sensorInfo.bitsPerPixel;
+	mode_.width = sensorInfo.outputSize.width;
+	mode_.height = sensorInfo.outputSize.height;
+	mode_.sensorWidth = sensorInfo.activeAreaSize.width;
+	mode_.sensorHeight = sensorInfo.activeAreaSize.height;
+	mode_.cropX = sensorInfo.analogCrop.x;
+	mode_.cropY = sensorInfo.analogCrop.y;
+	mode_.pixelRate = sensorInfo.pixelRate;
+
+	/*
+	 * Calculate scaling parameters. The scale_[xy] factors are determined
+	 * by the ratio between the crop rectangle size and the output size.
+	 */
+	mode_.scaleX = sensorInfo.analogCrop.width / sensorInfo.outputSize.width;
+	mode_.scaleY = sensorInfo.analogCrop.height / sensorInfo.outputSize.height;
+
+	/*
+	 * We're not told by the pipeline handler how scaling is split between
+	 * binning and digital scaling. For now, as a heuristic, assume that
+	 * downscaling up to 2 is achieved through binning, and that any
+	 * additional scaling is achieved through digital scaling.
+	 *
+	 * \todo Get the pipeline handle to provide the full data
+	 */
+	mode_.binX = std::min(2, static_cast<int>(mode_.scaleX));
+	mode_.binY = std::min(2, static_cast<int>(mode_.scaleY));
+
+	/* The noise factor is the square root of the total binning factor. */
+	mode_.noiseFactor = std::sqrt(mode_.binX * mode_.binY);
+
+	/*
+	 * Calculate the line length as the ratio between the line length in
+	 * pixels and the pixel rate.
+	 */
+	mode_.minLineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
+	mode_.maxLineLength = sensorInfo.maxLineLength * (1.0s / sensorInfo.pixelRate);
+
+	/*
+	 * Set the frame length limits for the mode to ensure exposure and
+	 * framerate calculations are clipped appropriately.
+	 */
+	mode_.minFrameLength = sensorInfo.minFrameLength;
+	mode_.maxFrameLength = sensorInfo.maxFrameLength;
+
+	/*
+	 * Some sensors may have different sensitivities in different modes;
+	 * the CamHelper will know the correct value.
+	 */
+	mode_.sensitivity = helper_->getModeSensitivity(mode_);
+}
+
+bool IpaBase::validateSensorControls()
 {
 	static const uint32_t ctrls[] = {
 		V4L2_CID_ANALOGUE_GAIN,
@@ -709,35 +632,7 @@ bool IPARPi::validateSensorControls()
 	return true;
 }
 
-bool IPARPi::validateIspControls()
-{
-	static const uint32_t ctrls[] = {
-		V4L2_CID_RED_BALANCE,
-		V4L2_CID_BLUE_BALANCE,
-		V4L2_CID_DIGITAL_GAIN,
-		V4L2_CID_USER_BCM2835_ISP_CC_MATRIX,
-		V4L2_CID_USER_BCM2835_ISP_GAMMA,
-		V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL,
-		V4L2_CID_USER_BCM2835_ISP_GEQ,
-		V4L2_CID_USER_BCM2835_ISP_DENOISE,
-		V4L2_CID_USER_BCM2835_ISP_SHARPEN,
-		V4L2_CID_USER_BCM2835_ISP_DPC,
-		V4L2_CID_USER_BCM2835_ISP_LENS_SHADING,
-		V4L2_CID_USER_BCM2835_ISP_CDN,
-	};
-
-	for (auto c : ctrls) {
-		if (ispCtrls_.find(c) == ispCtrls_.end()) {
-			LOG(IPARPI, Error) << "Unable to find ISP control "
-					   << utils::hex(c);
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool IPARPi::validateLensControls()
+bool IpaBase::validateLensControls()
 {
 	if (lensCtrls_.find(V4L2_CID_FOCUS_ABSOLUTE) == lensCtrls_.end()) {
 		LOG(IPARPI, Error) << "Unable to find Lens control V4L2_CID_FOCUS_ABSOLUTE";
@@ -809,7 +704,7 @@ static const std::map<int32_t, RPiController::AfAlgorithm::AfPause> AfPauseTable
 	{ controls::AfPauseResume, RPiController::AfAlgorithm::AfPauseResume },
 };
 
-void IPARPi::applyControls(const ControlList &controls)
+void IpaBase::applyControls(const ControlList &controls)
 {
 	using RPiController::AfAlgorithm;
 
@@ -829,7 +724,7 @@ void IPARPi::applyControls(const ControlList &controls)
 		if (mode == AfModeTable.end()) {
 			LOG(IPARPI, Error) << "AF mode " << idx
 					   << " not recognised";
-		} else
+		} else if (af)
 			af->setMode(mode->second);
 	}
 
@@ -1101,6 +996,10 @@ void IPARPi::applyControls(const ControlList &controls)
 		case controls::NOISE_REDUCTION_MODE: {
 			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
 				controller_.getAlgorithm("SDN"));
+			/* Some platforms may have a combined "denoise" algorithm instead. */
+			if (!sdn)
+				sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
+				controller_.getAlgorithm("denoise"));
 			if (!sdn) {
 				LOG(IPARPI, Warning)
 					<< "Could not set NOISE_REDUCTION_MODE - no SDN algorithm";
@@ -1237,125 +1136,12 @@ void IPARPi::applyControls(const ControlList &controls)
 			break;
 		}
 	}
+
+	/* Give derived classes a chance to examine the new controls. */
+	handleControls(controls);
 }
 
-void IPARPi::prepareISP(const PrepareParams &params)
-{
-	int64_t frameTimestamp = params.sensorControls.get(controls::SensorTimestamp).value_or(0);
-	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
-	Span<uint8_t> embeddedBuffer;
-
-	rpiMetadata.clear();
-	fillDeviceStatus(params.sensorControls, ipaContext);
-
-	if (params.buffers.embedded) {
-		/*
-		 * Pipeline handler has supplied us with an embedded data buffer,
-		 * we must pass it to the CamHelper for parsing.
-		 */
-		auto it = buffers_.find(params.buffers.embedded);
-		ASSERT(it != buffers_.end());
-		embeddedBuffer = it->second.planes()[0];
-	}
-
-	/*
-	 * AGC wants to know the algorithm status from the time it actioned the
-	 * sensor exposure/gain changes. So fetch it from the metadata list
-	 * indexed by the IPA cookie returned, and put it in the current frame
-	 * metadata.
-	 */
-	AgcStatus agcStatus;
-	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
-	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus))
-		rpiMetadata.set("agc.delayed_status", agcStatus);
-
-	/*
-	 * This may overwrite the DeviceStatus using values from the sensor
-	 * metadata, and may also do additional custom processing.
-	 */
-	helper_->prepare(embeddedBuffer, rpiMetadata);
-
-	/* Allow a 10% margin on the comparison below. */
-	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
-	    delta < controllerMinFrameDuration * 0.9) {
-		/*
-		 * Ensure we merge the previous frame's metadata with the current
-		 * frame. This will not overwrite exposure/gain values for the
-		 * current frame, or any other bits of metadata that were added
-		 * in helper_->Prepare().
-		 */
-		RPiController::Metadata &lastMetadata =
-			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
-		rpiMetadata.mergeCopy(lastMetadata);
-		processPending_ = false;
-		return;
-	}
-
-	lastRunTimestamp_ = frameTimestamp;
-	processPending_ = true;
-
-	ControlList ctrls(ispCtrls_);
-
-	controller_.prepare(&rpiMetadata);
-
-	/* Lock the metadata buffer to avoid constant locks/unlocks. */
-	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
-
-	AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
-	if (awbStatus)
-		applyAWB(awbStatus, ctrls);
-
-	CcmStatus *ccmStatus = rpiMetadata.getLocked<CcmStatus>("ccm.status");
-	if (ccmStatus)
-		applyCCM(ccmStatus, ctrls);
-
-	AgcStatus *dgStatus = rpiMetadata.getLocked<AgcStatus>("agc.status");
-	if (dgStatus)
-		applyDG(dgStatus, ctrls);
-
-	AlscStatus *lsStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
-	if (lsStatus)
-		applyLS(lsStatus, ctrls);
-
-	ContrastStatus *contrastStatus = rpiMetadata.getLocked<ContrastStatus>("contrast.status");
-	if (contrastStatus)
-		applyGamma(contrastStatus, ctrls);
-
-	BlackLevelStatus *blackLevelStatus = rpiMetadata.getLocked<BlackLevelStatus>("black_level.status");
-	if (blackLevelStatus)
-		applyBlackLevel(blackLevelStatus, ctrls);
-
-	GeqStatus *geqStatus = rpiMetadata.getLocked<GeqStatus>("geq.status");
-	if (geqStatus)
-		applyGEQ(geqStatus, ctrls);
-
-	DenoiseStatus *denoiseStatus = rpiMetadata.getLocked<DenoiseStatus>("denoise.status");
-	if (denoiseStatus)
-		applyDenoise(denoiseStatus, ctrls);
-
-	SharpenStatus *sharpenStatus = rpiMetadata.getLocked<SharpenStatus>("sharpen.status");
-	if (sharpenStatus)
-		applySharpen(sharpenStatus, ctrls);
-
-	DpcStatus *dpcStatus = rpiMetadata.getLocked<DpcStatus>("dpc.status");
-	if (dpcStatus)
-		applyDPC(dpcStatus, ctrls);
-
-	const AfStatus *afStatus = rpiMetadata.getLocked<AfStatus>("af.status");
-	if (afStatus) {
-		ControlList lensctrls(lensCtrls_);
-		applyAF(afStatus, lensctrls);
-		if (!lensctrls.empty())
-			setLensControls.emit(lensctrls);
-	}
-
-	if (!ctrls.empty())
-		setIspControls.emit(ctrls);
-}
-
-void IPARPi::fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext)
+void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext)
 {
 	DeviceStatus deviceStatus = {};
 
@@ -1379,103 +1165,7 @@ void IPARPi::fillDeviceStatus(const ControlList &sensorControls, unsigned int ip
 	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
 }
 
-RPiController::StatisticsPtr IPARPi::fillStatistics(bcm2835_isp_stats *stats) const
-{
-	using namespace RPiController;
-
-	const Controller::HardwareConfig &hw = controller_.getHardwareConfig();
-	unsigned int i;
-	StatisticsPtr statistics =
-		std::make_unique<Statistics>(Statistics::AgcStatsPos::PreWb, Statistics::ColourStatsPos::PostLsc);
-
-	/* RGB histograms are not used, so do not populate them. */
-	statistics->yHist = RPiController::Histogram(stats->hist[0].g_hist,
-						     hw.numHistogramBins);
-
-	/* All region sums are based on a 16-bit normalised pipeline bit-depth. */
-	unsigned int scale = Statistics::NormalisationFactorPow2 - hw.pipelineWidth;
-
-	statistics->awbRegions.init(hw.awbRegions);
-	for (i = 0; i < statistics->awbRegions.numRegions(); i++)
-		statistics->awbRegions.set(i, { { stats->awb_stats[i].r_sum << scale,
-						  stats->awb_stats[i].g_sum << scale,
-						  stats->awb_stats[i].b_sum << scale },
-						stats->awb_stats[i].counted,
-						stats->awb_stats[i].notcounted });
-
-	statistics->agcRegions.init(hw.agcRegions);
-	for (i = 0; i < statistics->agcRegions.numRegions(); i++)
-		statistics->agcRegions.set(i, { { stats->agc_stats[i].r_sum << scale,
-						  stats->agc_stats[i].g_sum << scale,
-						  stats->agc_stats[i].b_sum << scale },
-						stats->agc_stats[i].counted,
-						stats->awb_stats[i].notcounted });
-
-	statistics->focusRegions.init(hw.focusRegions);
-	for (i = 0; i < statistics->focusRegions.numRegions(); i++)
-		statistics->focusRegions.set(i, { stats->focus_stats[i].contrast_val[1][1] / 1000,
-						  stats->focus_stats[i].contrast_val_num[1][1],
-						  stats->focus_stats[i].contrast_val_num[1][0] });
-	return statistics;
-}
-
-void IPARPi::processStats(unsigned int bufferId, unsigned int ipaContext)
-{
-	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
-
-	auto it = buffers_.find(bufferId);
-	if (it == buffers_.end()) {
-		LOG(IPARPI, Error) << "Could not find stats buffer!";
-		return;
-	}
-
-	Span<uint8_t> mem = it->second.planes()[0];
-	bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
-	RPiController::StatisticsPtr statistics = fillStatistics(stats);
-
-	/* Save the focus stats in the metadata structure to report out later. */
-	rpiMetadata_[ipaContext].set("focus.status", statistics->focusRegions);
-
-	helper_->process(statistics, rpiMetadata);
-	controller_.process(statistics, &rpiMetadata);
-
-	struct AgcStatus agcStatus;
-	if (rpiMetadata.get("agc.status", agcStatus) == 0) {
-		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
-
-		setDelayedControls.emit(ctrls, ipaContext);
-		setCameraTimeoutValue();
-	}
-}
-
-void IPARPi::setCameraTimeoutValue()
-{
-	/*
-	 * Take the maximum value of the exposure queue as the camera timeout
-	 * value to pass back to the pipeline handler. Only signal if it has changed
-	 * from the last set value.
-	 */
-	auto max = std::max_element(frameLengths_.begin(), frameLengths_.end());
-
-	if (*max != lastTimeout_) {
-		setCameraTimeout.emit(max->get<std::milli>());
-		lastTimeout_ = *max;
-	}
-}
-
-void IPARPi::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
-{
-	LOG(IPARPI, Debug) << "Applying WB R: " << awbStatus->gainR << " B: "
-			   << awbStatus->gainB;
-
-	ctrls.set(V4L2_CID_RED_BALANCE,
-		  static_cast<int32_t>(awbStatus->gainR * 1000));
-	ctrls.set(V4L2_CID_BLUE_BALANCE,
-		  static_cast<int32_t>(awbStatus->gainB * 1000));
-}
-
-void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
+void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDuration)
 {
 	const Duration minSensorFrameDuration = mode_.minFrameLength * mode_.minLineLength;
 	const Duration maxSensorFrameDuration = mode_.maxFrameLength * mode_.maxLineLength;
@@ -1510,7 +1200,7 @@ void IPARPi::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDur
 	agc->setMaxShutter(maxShutter);
 }
 
-void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	int32_t gainCode = helper_->gainCode(agcStatus->analogueGain);
 
@@ -1549,280 +1239,8 @@ void IPARPi::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	 */
 	if (mode_.minLineLength != mode_.maxLineLength)
 		ctrls.set(V4L2_CID_HBLANK, static_cast<int32_t>(hblank));
-
-	/*
-	 * Store the frame length times in a circular queue, up-to FrameLengthsQueueSize
-	 * elements. This will be used to advertise a camera timeout value to the
-	 * pipeline handler.
-	 */
-	frameLengths_.pop_front();
-	frameLengths_.push_back(helper_->exposure(vblank + mode_.height,
-						  helper_->hblankToLineLength(hblank)));
-}
-
-void IPARPi::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)
-{
-	ctrls.set(V4L2_CID_DIGITAL_GAIN,
-		  static_cast<int32_t>(dgStatus->digitalGain * 1000));
-}
-
-void IPARPi::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
-{
-	bcm2835_isp_custom_ccm ccm;
-
-	for (int i = 0; i < 9; i++) {
-		ccm.ccm.ccm[i / 3][i % 3].den = 1000;
-		ccm.ccm.ccm[i / 3][i % 3].num = 1000 * ccmStatus->matrix[i];
-	}
-
-	ccm.enabled = 1;
-	ccm.ccm.offsets[0] = ccm.ccm.offsets[1] = ccm.ccm.offsets[2] = 0;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ccm),
-					    sizeof(ccm) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CC_MATRIX, c);
-}
-
-void IPARPi::applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls)
-{
-	const unsigned int numGammaPoints = controller_.getHardwareConfig().numGammaPoints;
-	struct bcm2835_isp_gamma gamma;
-
-	for (unsigned int i = 0; i < numGammaPoints - 1; i++) {
-		int x = i < 16 ? i * 1024
-			       : (i < 24 ? (i - 16) * 2048 + 16384
-					 : (i - 24) * 4096 + 32768);
-		gamma.x[i] = x;
-		gamma.y[i] = std::min<uint16_t>(65535, contrastStatus->gammaCurve.eval(x));
-	}
-
-	gamma.x[numGammaPoints - 1] = 65535;
-	gamma.y[numGammaPoints - 1] = 65535;
-	gamma.enabled = 1;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&gamma),
-					    sizeof(gamma) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GAMMA, c);
-}
-
-void IPARPi::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls)
-{
-	bcm2835_isp_black_level blackLevel;
-
-	blackLevel.enabled = 1;
-	blackLevel.black_level_r = blackLevelStatus->blackLevelR;
-	blackLevel.black_level_g = blackLevelStatus->blackLevelG;
-	blackLevel.black_level_b = blackLevelStatus->blackLevelB;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&blackLevel),
-					    sizeof(blackLevel) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL, c);
-}
-
-void IPARPi::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
-{
-	bcm2835_isp_geq geq;
-
-	geq.enabled = 1;
-	geq.offset = geqStatus->offset;
-	geq.slope.den = 1000;
-	geq.slope.num = 1000 * geqStatus->slope;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&geq),
-					    sizeof(geq) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GEQ, c);
-}
-
-void IPARPi::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList &ctrls)
-{
-	using RPiController::DenoiseMode;
-
-	bcm2835_isp_denoise denoise;
-	DenoiseMode mode = static_cast<DenoiseMode>(denoiseStatus->mode);
-
-	denoise.enabled = mode != DenoiseMode::Off;
-	denoise.constant = denoiseStatus->noiseConstant;
-	denoise.slope.num = 1000 * denoiseStatus->noiseSlope;
-	denoise.slope.den = 1000;
-	denoise.strength.num = 1000 * denoiseStatus->strength;
-	denoise.strength.den = 1000;
-
-	/* Set the CDN mode to match the SDN operating mode. */
-	bcm2835_isp_cdn cdn;
-	switch (mode) {
-	case DenoiseMode::ColourFast:
-		cdn.enabled = 1;
-		cdn.mode = CDN_MODE_FAST;
-		break;
-	case DenoiseMode::ColourHighQuality:
-		cdn.enabled = 1;
-		cdn.mode = CDN_MODE_HIGH_QUALITY;
-		break;
-	default:
-		cdn.enabled = 0;
-	}
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&denoise),
-					    sizeof(denoise) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DENOISE, c);
-
-	c = ControlValue(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&cdn),
-					      sizeof(cdn) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CDN, c);
-}
-
-void IPARPi::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList &ctrls)
-{
-	bcm2835_isp_sharpen sharpen;
-
-	sharpen.enabled = 1;
-	sharpen.threshold.num = 1000 * sharpenStatus->threshold;
-	sharpen.threshold.den = 1000;
-	sharpen.strength.num = 1000 * sharpenStatus->strength;
-	sharpen.strength.den = 1000;
-	sharpen.limit.num = 1000 * sharpenStatus->limit;
-	sharpen.limit.den = 1000;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&sharpen),
-					    sizeof(sharpen) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_SHARPEN, c);
-}
-
-void IPARPi::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
-{
-	bcm2835_isp_dpc dpc;
-
-	dpc.enabled = 1;
-	dpc.strength = dpcStatus->strength;
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&dpc),
-					    sizeof(dpc) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DPC, c);
-}
-
-void IPARPi::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
-{
-	/*
-	 * Program lens shading tables into pipeline.
-	 * Choose smallest cell size that won't exceed 63x48 cells.
-	 */
-	const int cellSizes[] = { 16, 32, 64, 128, 256 };
-	unsigned int numCells = std::size(cellSizes);
-	unsigned int i, w, h, cellSize;
-	for (i = 0; i < numCells; i++) {
-		cellSize = cellSizes[i];
-		w = (mode_.width + cellSize - 1) / cellSize;
-		h = (mode_.height + cellSize - 1) / cellSize;
-		if (w < 64 && h <= 48)
-			break;
-	}
-
-	if (i == numCells) {
-		LOG(IPARPI, Error) << "Cannot find cell size";
-		return;
-	}
-
-	/* We're going to supply corner sampled tables, 16 bit samples. */
-	w++, h++;
-	bcm2835_isp_lens_shading ls = {
-		.enabled = 1,
-		.grid_cell_size = cellSize,
-		.grid_width = w,
-		.grid_stride = w,
-		.grid_height = h,
-		/* .dmabuf will be filled in by pipeline handler. */
-		.dmabuf = 0,
-		.ref_transform = 0,
-		.corner_sampled = 1,
-		.gain_format = GAIN_FORMAT_U4P10
-	};
-
-	if (!lsTable_ || w * h * 4 * sizeof(uint16_t) > MaxLsGridSize) {
-		LOG(IPARPI, Error) << "Do not have a correctly allocate lens shading table!";
-		return;
-	}
-
-	if (lsStatus) {
-		/* Format will be u4.10 */
-		uint16_t *grid = static_cast<uint16_t *>(lsTable_);
-
-		resampleTable(grid, lsStatus->r, w, h);
-		resampleTable(grid + w * h, lsStatus->g, w, h);
-		std::memcpy(grid + 2 * w * h, grid + w * h, w * h * sizeof(uint16_t));
-		resampleTable(grid + 3 * w * h, lsStatus->b, w, h);
-	}
-
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ls),
-					    sizeof(ls) });
-	ctrls.set(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING, c);
-}
-
-void IPARPi::applyAF(const struct AfStatus *afStatus, ControlList &lensCtrls)
-{
-	if (afStatus->lensSetting) {
-		ControlValue v(afStatus->lensSetting.value());
-		lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE, v);
-	}
-}
-
-/*
- * Resamples a 16x12 table with central sampling to destW x destH with corner
- * sampling.
- */
-void IPARPi::resampleTable(uint16_t dest[], const std::vector<double> &src,
-			   int destW, int destH)
-{
-	/*
-	 * Precalculate and cache the x sampling locations and phases to
-	 * save recomputing them on every row.
-	 */
-	assert(destW > 1 && destH > 1 && destW <= 64);
-	int xLo[64], xHi[64];
-	double xf[64];
-	double x = -0.5, xInc = 16.0 / (destW - 1);
-	for (int i = 0; i < destW; i++, x += xInc) {
-		xLo[i] = floor(x);
-		xf[i] = x - xLo[i];
-		xHi[i] = xLo[i] < 15 ? xLo[i] + 1 : 15;
-		xLo[i] = xLo[i] > 0 ? xLo[i] : 0;
-	}
-
-	/* Now march over the output table generating the new values. */
-	double y = -0.5, yInc = 12.0 / (destH - 1);
-	for (int j = 0; j < destH; j++, y += yInc) {
-		int yLo = floor(y);
-		double yf = y - yLo;
-		int yHi = yLo < 11 ? yLo + 1 : 11;
-		yLo = yLo > 0 ? yLo : 0;
-		double const *rowAbove = src.data() + yLo * 16;
-		double const *rowBelow = src.data() + yHi * 16;
-		for (int i = 0; i < destW; i++) {
-			double above = rowAbove[xLo[i]] * (1 - xf[i]) + rowAbove[xHi[i]] * xf[i];
-			double below = rowBelow[xLo[i]] * (1 - xf[i]) + rowBelow[xHi[i]] * xf[i];
-			int result = floor(1024 * (above * (1 - yf) + below * yf) + .5);
-			*(dest++) = result > 16383 ? 16383 : result; /* want u4.10 */
-		}
-	}
 }
 
 } /* namespace ipa::RPi */
-
-/*
- * External IPA module interface
- */
-extern "C" {
-const struct IPAModuleInfo ipaModuleInfo = {
-	IPA_MODULE_API_VERSION,
-	1,
-	"PipelineHandlerRPi",
-	"vc4",
-};
-
-IPAInterface *ipaCreate()
-{
-	return new ipa::RPi::IPARPi();
-}
-
-} /* extern "C" */
 
 } /* namespace libcamera */

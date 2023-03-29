@@ -1,0 +1,4 @@
+[wrap-git]
+url = git@github.com:raspberrypi/libpisp.git
+revision = main
+depth = 1

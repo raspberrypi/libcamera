@@ -37,6 +37,18 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.pipelineWidth = 13
 		}
 	},
+	{
+		"pisp",
+		{
+			.agcRegions = { 0, 0 },
+			.agcZoneWeights = { 15, 15 },
+			.awbRegions = { 32, 32 },
+			.focusRegions = { 8, 8 },
+			.numHistogramBins = 1024,
+			.numGammaPoints = 64,
+			.pipelineWidth = 16
+		}
+	},
 };
 
 Controller::Controller()
@@ -177,5 +189,6 @@ const Controller::HardwareConfig &Controller::getHardwareConfig() const
 	 * on initialisation.
 	 */
 	ASSERT(cfg != HardwareConfigMap.end());
+
 	return cfg->second;
 }

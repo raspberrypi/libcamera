@@ -95,6 +95,7 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 	} else if (pix == formats::BGR888) {
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL;
 	} else {
+		LOG(RPI, Error) << "Pixel format " << pix << " unsupported";
 		ASSERT(0);
 	}
 
@@ -119,6 +120,53 @@ bool calculateCscConfiguration(const PixelFormat &format, pisp_be_ccm_config &cs
 	}
 
 	return false;
+}
+
+void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsigned int stride)
+{
+	/*
+	 * The arm64 version is actually not that much quicker because the
+	 * vast bulk of the time is spent waiting for memory.
+	 */
+#if __aarch64__
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+		unsigned int count = (width + 15) / 16;
+		uint8_t *dest = ptr + count * 64;
+		uint8_t *src = ptr + count * 48;
+
+		// Pre-decrement would have been nice.
+		asm volatile("movi v3.16b, #255 \n"
+				"1: \n"
+				"sub %[src], %[src], #48 \n"
+				"sub %[dest], %[dest], #64 \n"
+				"subs %[count], %[count], #1 \n"
+				"ld3 {v0.16b, v1.16b, v2.16b}, [%[src]] \n"
+				"st4 {v0.16b, v1.16b, v2.16b, v3.16b}, [%[dest]] \n"
+				"b.gt 1b \n"
+				: [count]"+r" (count)
+				: [src]"r" (src), [dest]"r" (dest)
+				: "cc", "v1", "v2", "v3", "v4", "memory"
+				);
+	}
+#else
+	std::vector<uint8_t> cache(4 * width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+		memcpy(cache.data(), ptr, 3 * width);
+
+		uint8_t *ptr3 = cache.data() + width * 3;
+		uint8_t *ptr4 = cache.data() + width * 4;
+		for (unsigned int i = 0; i < width; i++) {
+			*(--ptr4) = 255;
+			*(--ptr4) = *(--ptr3);
+			*(--ptr4) = *(--ptr3);
+			*(--ptr4) = *(--ptr3);
+		}
+
+		memcpy(ptr, cache.data(), 4 * width);
+	}
+#endif
 }
 
 } /* namespace */
@@ -206,6 +254,8 @@ public:
 
 	Config config_;
 
+	bool adjustDeviceFormat(V4L2DeviceFormat &format) const override;
+
 private:
 	int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			      std::optional<BayerFormat::Packing> packing,
@@ -254,9 +304,6 @@ private:
 	};
 
 	std::queue<CfeJob> cfeJobQueue_;
-
-	bool needs32BitConversionOutupt0;
-	bool needs32BitConversionOutupt1;
 
 	/* Offset for all compressed buffers; mode for TDN and Stitch. */
 	static constexpr unsigned int DefaultCompressionOffset = 2048;
@@ -622,6 +669,27 @@ int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> 
 	return 0;
 }
 
+std::unordered_map<uint32_t, uint32_t> deviceAdjustTable = {
+	{ V4L2_PIX_FMT_RGBX32, V4L2_PIX_FMT_RGB24 },
+	{ V4L2_PIX_FMT_XBGR32, V4L2_PIX_FMT_BGR24 }
+};
+
+bool PiSPCameraData::adjustDeviceFormat(V4L2DeviceFormat &format) const
+{
+	auto it = deviceAdjustTable.find(format.fourcc.fourcc());
+
+	if (it != deviceAdjustTable.end()) {
+		LOG(RPI, Debug) << "Swapping 32-bit for 24-bit format";
+		format.fourcc = V4L2PixelFormat(it->second);
+		format.planes[0].bpl = 4 * format.size.width;
+		format.planes[0].size = format.planes[0].bpl * format.size.height;
+		format.planesCount = 1;
+		return true;
+	}
+
+	return false;
+}
+
 int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				      std::optional<BayerFormat::Packing> packing,
 				      std::vector<StreamParams> &rawStreams,
@@ -697,10 +765,14 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		}
 
 		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg->pixelFormat);
+		bool needs32BitConversion = false;
 
 		format.size = cfg->size;
 		format.fourcc = fourcc;
 		format.colorSpace = cfg->colorSpace;
+		format.planesCount = 0;
+		needs32BitConversion = adjustDeviceFormat(format);
+		fourcc = format.fourcc;
 
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
 				<< format;
@@ -720,8 +792,14 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			<< "Stream " << stream->name() << " has color space "
 			<< ColorSpace::toString(cfg->colorSpace);
 
+		unsigned int flags = StreamFlags::External;
+
+		stream->clearFlags(StreamFlags::Needs32bitConv);
+		if (needs32BitConversion)
+			flags |= StreamFlags::Needs32bitConv | StreamFlags::RequiresMmap;
+
 		cfg->setStream(stream);
-		stream->setFlags(StreamFlags::External);
+		stream->setFlags(flags);
 		streams_.push_back(stream);
 	}
 
@@ -905,6 +983,19 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer complete"
 			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
+
+	/* Convert 24bpp outputs to 32bpp outputs where necessary. */
+	if (stream->getFlags() & StreamFlags::Needs32bitConv) {
+		unsigned int stride = stream->configuration().stride;
+		unsigned int width = stream->configuration().size.width;
+		unsigned int height = stream->configuration().size.height;
+
+		const RPi::BufferObject &b = stream->getBuffer(index);
+
+		ASSERT(b.mapped);
+		void *mem = b.mapped->planes()[0].data();
+		do32BitConversion(mem, width, height, stride);
+	}
 
 	handleStreamBuffer(buffer, stream);
 

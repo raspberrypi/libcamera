@@ -184,6 +184,8 @@ public:
 
 	Config config_;
 
+	virtual bool adjustDeviceFormat(V4L2DeviceFormat &format) const;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);

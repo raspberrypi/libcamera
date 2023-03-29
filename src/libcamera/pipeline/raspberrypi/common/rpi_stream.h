@@ -63,6 +63,7 @@ public:
 		External	= (1 << 1),
 		RequiresMmap	= (1 << 2),
 		Config		= (1 << 3),
+		Needs32bitConv	= (1 << 4),
 	};
 
 	Stream()

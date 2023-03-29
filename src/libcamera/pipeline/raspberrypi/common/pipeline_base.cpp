@@ -334,6 +334,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		format.size = cfg.size;
 		/* We want to send the associated YCbCr info through to the driver. */
 		format.colorSpace = yuvColorSpace_;
+		data_->adjustDeviceFormat(format);
 
 		LOG(RPI, Debug)
 			<< "Try color space " << ColorSpace::toString(cfg.colorSpace);
@@ -962,6 +963,11 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	}
 
 	return 0;
+}
+
+bool CameraData::adjustDeviceFormat([[maybe_unused]] V4L2DeviceFormat &format) const
+{
+	return false;
 }
 
 void CameraData::freeBuffers()

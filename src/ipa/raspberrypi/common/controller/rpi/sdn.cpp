@@ -36,6 +36,8 @@ char const *Sdn::name() const
 
 int Sdn::read(const libcamera::YamlObject &params)
 {
+	LOG(RPiSdn, Warning)
+		<< "Using legacy SDN tuning - please consider moving SDN inside rpi.denoise";
 	deviation_ = params["deviation"].get<double>(3.2);
 	strength_ = params["strength"].get<double>(0.75);
 	return 0;

@@ -39,7 +39,7 @@ void Sharpen::switchMode(CameraMode const &cameraMode,
 
 int Sharpen::read(const libcamera::YamlObject &params)
 {
-	threshold_ = params["threshold"].get<double>(1.0);
+	threshold_ = params["threshold"].get<double>(0.25);
 	strength_ = params["strength"].get<double>(1.0);
 	limit_ = params["limit"].get<double>(1.0);
 	LOG(RPiSharpen, Debug)

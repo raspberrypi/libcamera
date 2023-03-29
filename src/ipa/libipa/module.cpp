@@ -17,7 +17,7 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(IPAModuleAlgo)
 
 /**
- * \brief The IPA namespace
+ * \brief The IPA (Image Processing Algorithm) namespace
  *
  * The IPA namespace groups all types specific to IPA modules. It serves as the
  * top-level namespace for the IPA library libipa, and also contains

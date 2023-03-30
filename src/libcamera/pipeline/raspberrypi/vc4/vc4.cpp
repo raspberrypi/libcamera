@@ -23,6 +23,8 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(RPI)
 
+using StreamFlags = RPi::Stream::Flags;
+
 namespace {
 
 enum class Unicam : unsigned int { Image, Embedded };
@@ -319,7 +321,7 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, true);
+	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, StreamFlags::ImportOnly);
 	data->isp_[Isp::Output0] = RPi::Stream("ISP Output0", ispCapture1);
 	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", ispCapture2);
 	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", ispCapture3);
@@ -501,7 +503,7 @@ int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	 */
 	if (!rawStreams.empty()) {
 		rawStreams[0].cfg->setStream(&unicam_[Unicam::Image]);
-		unicam_[Unicam::Image].setExternal(true);
+		unicam_[Unicam::Image].setFlags(StreamFlags::External);
 	}
 
 	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
@@ -546,7 +548,7 @@ int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			<< ColorSpace::toString(cfg->colorSpace);
 
 		cfg->setStream(stream);
-		stream->setExternal(true);
+		stream->setFlags(StreamFlags::External);
 	}
 
 	ispOutputTotal_ = outStreams.size();
@@ -803,7 +805,7 @@ void Vc4CameraData::processStatsComplete(const ipa::RPi::BufferIds &buffers)
 	if (!isRunning())
 		return;
 
-	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(buffers.stats & RPi::MaskID);
+	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(buffers.stats & RPi::MaskID).buffer;
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
 
@@ -846,7 +848,7 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers)
 	if (!isRunning())
 		return;
 
-	buffer = unicam_[Unicam::Image].getBuffers().at(bayer & RPi::MaskID);
+	buffer = unicam_[Unicam::Image].getBuffers().at(bayer & RPi::MaskID).buffer;
 	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << (bayer & RPi::MaskID)
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
@@ -854,7 +856,7 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers)
 	ispOutputCount_ = 0;
 
 	if (sensorMetadata_ && embeddedId) {
-		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID);
+		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID).buffer;
 		handleStreamBuffer(buffer, &unicam_[Unicam::Embedded]);
 	}
 

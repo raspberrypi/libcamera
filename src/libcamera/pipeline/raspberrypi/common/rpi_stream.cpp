@@ -4,6 +4,9 @@
  *
  * rpi_stream.cpp - Raspberry Pi device stream abstraction class.
  */
+
+#include <algorithm>
+
 #include "rpi_stream.h"
 
 #include <libcamera/base/log.h>
@@ -13,6 +16,47 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(RPISTREAM)
 
 namespace RPi {
+
+void Stream::setFlags(unsigned int flags)
+{
+	/*
+	 * Map the buffers if we have been passed in a RequiresMmap flag and
+	 * have not already done so.
+	 */
+	if (!(flags_ & Flags::RequiresMmap) && (flags_ & Flags::RequiresMmap))
+		std::for_each(bufferMap_.begin(), bufferMap_.end(),
+				[] (auto &kv) {
+					BufferObject &obj = kv.second;
+					obj.mapped = MappedFrameBuffer(obj.buffer,
+							MappedFrameBuffer::MapFlag::ReadWrite);
+				});
+		
+	flags_ |= flags;
+
+	/* Import streams cannot be external. */
+	ASSERT(!(flags_ & Flags::External) || !(flags_ & Flags::ImportOnly));
+}
+
+void Stream::clearFlags(unsigned int flags)
+{
+	/*
+	 * Unmap the buffers if we are clearing the RequiresMmap flag and have
+	 * have buffers already mapped.
+	 */
+	if ((flags_ & Flags::RequiresMmap) && (flags & Flags::RequiresMmap))
+		std::for_each(bufferMap_.begin(), bufferMap_.end(),
+				[] (auto &kv) {
+					BufferObject &obj = kv.second;
+					obj.mapped = std::nullopt;
+				});
+
+	flags_ &= ~flags;
+}
+
+unsigned int Stream::getFlags() const
+{
+	return flags_;
+}
 
 V4L2VideoDevice *Stream::dev() const
 {
@@ -32,22 +76,10 @@ void Stream::resetBuffers()
 		availableBuffers_.push(buffer.get());
 }
 
-void Stream::setExternal(bool external)
-{
-	/* Import streams cannot be external. */
-	ASSERT(!external || !importOnly_);
-	external_ = external;
-}
-
-bool Stream::isExternal() const
-{
-	return external_;
-}
-
 void Stream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	for (auto const &buffer : *buffers)
-		bufferMap_.emplace(id_.get(), buffer.get());
+		bufferEmplace(id_.get(), buffer.get());
 }
 
 const BufferMap &Stream::getBuffers() const
@@ -57,12 +89,12 @@ const BufferMap &Stream::getBuffers() const
 
 int Stream::getBufferId(FrameBuffer *buffer) const
 {
-	if (importOnly_)
+	if (flags_ & Flags::ImportOnly)
 		return 0;
 
 	/* Find the buffer in the map, and return the buffer id. */
 	auto it = std::find_if(bufferMap_.begin(), bufferMap_.end(),
-			       [&buffer](auto const &p) { return p.second == buffer; });
+			       [&buffer](auto const &p) { return p.second.buffer == buffer; });
 
 	if (it == bufferMap_.end())
 		return 0;
@@ -72,7 +104,7 @@ int Stream::getBufferId(FrameBuffer *buffer) const
 
 void Stream::setExternalBuffer(FrameBuffer *buffer)
 {
-	bufferMap_.emplace(BufferMask::MaskExternalBuffer | id_.get(), buffer);
+	bufferEmplace(BufferMask::MaskExternalBuffer | id_.get(), buffer);
 }
 
 void Stream::removeExternalBuffer(FrameBuffer *buffer)
@@ -88,7 +120,7 @@ int Stream::prepareBuffers(unsigned int count)
 {
 	int ret;
 
-	if (!importOnly_) {
+	if (!(flags_ & Flags::ImportOnly)) {
 		if (count) {
 			/* Export some frame buffers for internal use. */
 			ret = dev_->exportBuffers(count, &internalBuffers_);
@@ -113,7 +145,7 @@ int Stream::prepareBuffers(unsigned int count)
 	 * \todo Find a better heuristic, or, even better, an exact solution to
 	 * this issue.
 	 */
-	if (isExternal() || importOnly_)
+	if ((flags_ & Flags::External) || (flags_ & Flags::ImportOnly))
 		count = count * 2;
 
 	return dev_->importBuffers(count);
@@ -160,7 +192,7 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 
 void Stream::returnBuffer(FrameBuffer *buffer)
 {
-	if (!external_) {
+	if (!(flags_ & Flags::External)) {
 		/* For internal buffers, simply requeue back to the device. */
 		queueToDevice(buffer);
 		return;
@@ -200,11 +232,32 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 	}
 }
 
+const BufferObject &Stream::getBuffer(int id)
+{
+	static const BufferObject error{ nullptr };
+
+	if (!id) {
+		/* No id provided, so pick up the next available buffer if possible. */
+		if (availableBuffers_.empty())
+			return error;
+
+		id = getBufferId(availableBuffers_.front());
+		availableBuffers_.pop();
+	}
+
+	auto const &it = bufferMap_.find(id);
+
+	if (it == bufferMap_.end())
+		return error;
+
+	return it->second;
+}
+
 int Stream::queueAllBuffers()
 {
 	int ret;
 
-	if (external_)
+	if (flags_ & Flags::External)
 		return 0;
 
 	while (!availableBuffers_.empty()) {
@@ -222,6 +275,18 @@ void Stream::releaseBuffers()
 {
 	dev_->releaseBuffers();
 	clearBuffers();
+}
+
+void Stream::bufferEmplace(unsigned int id, FrameBuffer *buffer)
+{
+	if (flags_ & Flags::RequiresMmap) {
+		bufferMap_.emplace(std::piecewise_construct, std::forward_as_tuple(id),
+				   std::forward_as_tuple(
+				   	BufferObject{ buffer, MappedFrameBuffer::MapFlag::ReadWrite }));
+	} else {
+		bufferMap_.emplace(std::piecewise_construct, std::forward_as_tuple(id),
+				   std::forward_as_tuple(buffer));
+	}
 }
 
 void Stream::clearBuffers()

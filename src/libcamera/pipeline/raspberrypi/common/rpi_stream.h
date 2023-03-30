@@ -7,20 +7,23 @@
 
 #pragma once
 
+#include <optional>
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
+
+#include <libcamera/base/flags.h>
 
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 
 namespace RPi {
-
-using BufferMap = std::unordered_map<unsigned int, FrameBuffer *>;
 
 enum BufferMask {
 	MaskID			= 0x00ffff,
@@ -30,6 +33,23 @@ enum BufferMask {
 	MaskExternalBuffer	= 0x100000,
 };
 
+struct BufferObject {
+	BufferObject(FrameBuffer *b)
+		: buffer(b), mapped(std::nullopt)
+	{
+	}
+
+	BufferObject(FrameBuffer *b, libcamera::MappedFrameBuffer::MapFlags f)
+		: buffer(b), mapped(std::make_optional<libcamera::MappedFrameBuffer>(b, f))
+	{
+	}
+
+	FrameBuffer *buffer;
+	std::optional<libcamera::MappedFrameBuffer> mapped;
+};
+
+using BufferMap = std::unordered_map<unsigned int, BufferObject>;
+
 /*
  * Device stream abstraction for either an internal or external stream.
  * Used for both Unicam and the ISP.
@@ -37,24 +57,31 @@ enum BufferMask {
 class Stream : public libcamera::Stream
 {
 public:
+	enum Flags {
+		None		= 0,
+		ImportOnly	= (1 << 0),
+		External	= (1 << 1),
+		RequiresMmap	= (1 << 2),
+	};
+
 	Stream()
-		: id_(BufferMask::MaskID)
+		: flags_(Flags::None), id_(BufferMask::MaskID)
 	{
 	}
 
-	Stream(const char *name, MediaEntity *dev, bool importOnly = false)
-		: external_(false), importOnly_(importOnly), name_(name),
+	Stream(const char *name, MediaEntity *dev, unsigned int flags = Flags::None)
+		: flags_(flags), name_(name),
 		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(BufferMask::MaskID)
 	{
 	}
 
+	void setFlags(unsigned int flags);
+	void clearFlags(unsigned int flags);
+	unsigned int getFlags() const;
+
 	V4L2VideoDevice *dev() const;
 	const std::string &name() const;
-	bool isImporter() const;
 	void resetBuffers();
-
-	void setExternal(bool external);
-	bool isExternal() const;
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const BufferMap &getBuffers() const;
@@ -66,6 +93,8 @@ public:
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
 	void returnBuffer(FrameBuffer *buffer);
+
+	const BufferObject &getBuffer(int id);
 
 	int queueAllBuffers();
 	void releaseBuffers();
@@ -109,17 +138,11 @@ private:
 		std::queue<int> recycle_;
 	};
 
+	void bufferEmplace(unsigned int id, FrameBuffer *buffer);
 	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 
-	/*
-	 * Indicates that this stream is active externally, i.e. the buffers
-	 * might be provided by (and returned to) the application.
-	 */
-	bool external_;
-
-	/* Indicates that this stream only imports buffers, e.g. ISP input. */
-	bool importOnly_;
+	unsigned int flags_;
 
 	/* Stream name identifier. */
 	std::string name_;

@@ -62,6 +62,7 @@ public:
 		ImportOnly	= (1 << 0),
 		External	= (1 << 1),
 		RequiresMmap	= (1 << 2),
+		Config		= (1 << 3),
 	};
 
 	Stream()

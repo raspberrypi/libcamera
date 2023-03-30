@@ -715,7 +715,9 @@ int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> 
 
 std::unordered_map<uint32_t, uint32_t> deviceAdjustTable = {
 	{ V4L2_PIX_FMT_RGBX32, V4L2_PIX_FMT_RGB24 },
-	{ V4L2_PIX_FMT_XBGR32, V4L2_PIX_FMT_BGR24 }
+	{ V4L2_PIX_FMT_XBGR32, V4L2_PIX_FMT_BGR24 },
+	{ V4L2_PIX_FMT_RGBA32, V4L2_PIX_FMT_RGB24 },
+	{ V4L2_PIX_FMT_ABGR32, V4L2_PIX_FMT_BGR24 }
 };
 
 bool PiSPCameraData::adjustDeviceFormat(V4L2DeviceFormat &format) const
@@ -816,12 +818,23 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		format.fourcc = fourcc;
 		format.colorSpace = cfg->colorSpace;
 		format.planesCount = 0;
-		needs32BitConversion = adjustDeviceFormat(format);
-		fourcc = format.fourcc;
+		if (!fourcc.isValid()) {
+			const std::vector<V4L2PixelFormat> &v4l2PixelFormats =
+				V4L2PixelFormat::fromPixelFormat(cfg->pixelFormat);
+			for (V4L2PixelFormat f : v4l2PixelFormats) {
+				format.fourcc = f;
+				if (adjustDeviceFormat(format)) {
+					/* Assume that the adjusted format is supported! */
+					needs32BitConversion = true;
+					break;
+				}
+			}
+		}
 
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
 				<< format;
 
+		fourcc = format.fourcc;
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
 			return -EINVAL;

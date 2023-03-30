@@ -323,22 +323,33 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	/* Further fixups on the ISP output streams. */
 	for (auto &out : outStreams) {
 		StreamConfiguration &cfg = config_.at(out.index);
-		PixelFormat &cfgPixFmt = cfg.pixelFormat;
-		V4L2VideoDevice::Formats fmts = out.dev->formats();
+		V4L2DeviceFormat format;
 
-		if (fmts.find(out.dev->toV4L2PixelFormat(cfgPixFmt)) == fmts.end()) {
-			/* If we cannot find a native format, use a default one. */
-			cfgPixFmt = formats::NV12;
+		format.size = cfg.size;
+		format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
+		if (!format.fourcc.isValid()) {
+			/* Format not supported natively; see if we can work around. */
+			const std::vector<V4L2PixelFormat> &v4l2PixelFormats =
+				V4L2PixelFormat::fromPixelFormat(cfg.pixelFormat);
+
+			for (V4L2PixelFormat f : v4l2PixelFormats) {
+				format.fourcc = f;
+				if (data_->adjustDeviceFormat(format)) {
+					/* Assume that the adjusted format is supported! */
+					LOG(RPI, Debug) << "Format fixed up to " << format.fourcc;
+					goto got_v4l2_format;
+				}
+			}
+			/* If that failed, switch to a default pixel format. */
+			LOG(RPI, Debug) << "Format not supported: " << cfg.pixelFormat;
+			cfg.pixelFormat = formats::NV12;
+			format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
 			status = Adjusted;
 		}
+	got_v4l2_format:
 
-		V4L2DeviceFormat format;
-		format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
-		format.size = cfg.size;
 		/* We want to send the associated YCbCr info through to the driver. */
 		format.colorSpace = yuvColorSpace_;
-		data_->adjustDeviceFormat(format);
-
 		LOG(RPI, Debug)
 			<< "Try color space " << ColorSpace::toString(cfg.colorSpace);
 

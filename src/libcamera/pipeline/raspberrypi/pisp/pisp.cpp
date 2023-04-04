@@ -102,24 +102,67 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 	return image;
 }
 
-bool calculateCscConfiguration(const PixelFormat &format, pisp_be_ccm_config &csc)
+bool calculateCscConfiguration(const V4L2DeviceFormat &v4l2Format, pisp_be_ccm_config &csc)
 {
-	const PixelFormatInfo &info = PixelFormatInfo::info(format);
+	const PixelFormat &pixFormat = v4l2Format.fourcc.toPixelFormat();
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
 	memset(&csc, 0, sizeof(csc));
 
 	if (info.colourEncoding == PixelFormatInfo::ColourEncodingYUV) {
-		/* \todo - look up the correct matrix from the user's requested colour space. */
-		PiSP::initialise_ycbcr(csc, "jpeg");
+		/* Look up the correct YCbCr conversion matrix for this colour space. */
+		if (v4l2Format.colorSpace == ColorSpace::Sycc)
+			PiSP::initialise_ycbcr(csc, "jpeg");
+		else if (v4l2Format.colorSpace == ColorSpace::Smpte170m)
+			PiSP::initialise_ycbcr(csc, "smpte170m");
+		else if (v4l2Format.colorSpace == ColorSpace::Rec709)
+			PiSP::initialise_ycbcr(csc, "rec709");
+		else {
+			LOG(RPI, Warning)
+				<< "Unrecognised colour space " << ColorSpace::toString(v4l2Format.colorSpace)
+				<< ", defaulting to sYCC";
+			PiSP::initialise_ycbcr(csc, "jpeg");
+		}
 		return true;
 	}
 	/* There will be more formats to check for in due course. */
-	else if (format == formats::RGB888) {
+	else if (pixFormat == formats::RGB888) {
 		/* Identity matrix but with RB colour swap. */
 		csc.coeffs[2] = csc.coeffs[4] = csc.coeffs[6] = 1 << 10;
 		return true;
 	}
 
 	return false;
+}
+
+void setupOutputClipping(const V4L2DeviceFormat &v4l2Format, pisp_be_output_format_config &outputFormat)
+{
+	const PixelFormat &pixFormat = v4l2Format.fourcc.toPixelFormat();
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
+
+	if (info.colourEncoding == PixelFormatInfo::ColourEncodingYUV) {
+		if (v4l2Format.colorSpace == ColorSpace::Sycc) {
+			outputFormat.lo = 0;
+			outputFormat.hi = 65535;
+			outputFormat.lo2 = 0;
+			outputFormat.hi2 = 65535;
+		}
+		else if (v4l2Format.colorSpace == ColorSpace::Smpte170m ||
+			 v4l2Format.colorSpace == ColorSpace::Rec709) {
+			outputFormat.lo = 16 << 8;
+			outputFormat.hi = 235 << 8;
+			outputFormat.lo2 = 16 << 8;
+			outputFormat.hi2 = 240 << 8;
+		}
+		else {
+			LOG(RPI, Warning)
+				<< "Unrecognised colour space " << ColorSpace::toString(v4l2Format.colorSpace)
+				<< ", using full range";
+			outputFormat.lo = 0;
+			outputFormat.hi = 65535;
+			outputFormat.lo2 = 0;
+			outputFormat.hi2 = 65535;
+		}
+	}
 }
 
 void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsigned int stride)
@@ -259,6 +302,7 @@ public:
 private:
 	int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			      std::optional<BayerFormat::Packing> packing,
+			      const std::optional<ColorSpace> &yuvColorSpace,
 			      std::vector<StreamParams> &rawStreams,
 			      std::vector<StreamParams> &outStreams) override;
 
@@ -271,7 +315,7 @@ private:
 
 	int configureEntities(V4L2SubdeviceFormat &sensorFormat);
 	int configureCfe();
-	int configureBe();
+	int configureBe(const std::optional<ColorSpace> &yuvColorSpace);
 
 	void platformIspCrop() override;
 
@@ -692,6 +736,7 @@ bool PiSPCameraData::adjustDeviceFormat(V4L2DeviceFormat &format) const
 
 int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				      std::optional<BayerFormat::Packing> packing,
+				      const std::optional<ColorSpace> &yuvColorSpace,
 				      std::vector<StreamParams> &rawStreams,
 				      std::vector<StreamParams> &outStreams)
 {
@@ -867,7 +912,7 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	sensorFormatMod.mbus_code = sensorFormat.mbus_code;
 	configureEntities(sensorFormatMod);
 	configureCfe();
-	configureBe();
+	configureBe(yuvColorSpace);
 
 	platformIspCrop();
 
@@ -1094,7 +1139,7 @@ int PiSPCameraData::configureCfe()
 	return 0;
 }
 
-int PiSPCameraData::configureBe()
+int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 {
 	std::scoped_lock<BackEnd> l(*be_);
 	pisp_image_format_config inputFormat;
@@ -1132,7 +1177,7 @@ int PiSPCameraData::configureBe()
 	}
 
 	pisp_be_ccm_config csc;
-	if (calculateCscConfiguration(ispFormat0.fourcc.toPixelFormat(), csc)) {
+	if (calculateCscConfiguration(ispFormat0, csc)) {
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC0;
 		be_->SetCsc(0, csc);
 	}
@@ -1142,6 +1187,9 @@ int PiSPCameraData::configureBe()
 		resize.width = ispFormat0.size.width;
 		resize.height = ispFormat0.size.height;
 		be_->SetSmartResize(0, resize);
+
+		setupOutputClipping(ispFormat0, outputFormat0);
+
 		ispOutputTotal_++;
 	}
 
@@ -1149,7 +1197,7 @@ int PiSPCameraData::configureBe()
 		isp_[Isp::Output1].dev()->getFormat(&ispFormat1);
 		outputFormat1.image = toPiSPImageFormat(ispFormat1);
 
-		if (calculateCscConfiguration(ispFormat1.fourcc.toPixelFormat(), csc)) {
+		if (calculateCscConfiguration(ispFormat1, csc)) {
 			global.rgb_enables |= PISP_BE_RGB_ENABLE_CSC1;
 			be_->SetCsc(1, csc);
 		}
@@ -1158,6 +1206,9 @@ int PiSPCameraData::configureBe()
 		resize.width = ispFormat1.size.width;
 		resize.height = ispFormat1.size.height;
 		be_->SetSmartResize(1, resize);
+
+		setupOutputClipping(ispFormat1, outputFormat1);
+
 		ispOutputTotal_++;
 	}
 
@@ -1195,6 +1246,42 @@ int PiSPCameraData::configureBe()
 		be_->SetStitchDecompress(stitchDecompress);
 		be_->SetStitchCompress(stitchCompress);
 		global.bayer_enables |= PISP_BE_BAYER_ENABLE_STITCH_DECOMPRESS + PISP_BE_BAYER_ENABLE_STITCH_COMPRESS;
+	}
+
+	/*
+	 * For the bit of the pipeline where we go temporarily into YCbCr, we'll use the
+	 * same flavour of YCbCr as dictated by the headline colour space. But there's
+	 * no benefit from compressing and shifting the range, so we'll stick with the
+	 * full range version of whatever that colour space is.
+	 */
+	if (yuvColorSpace) {
+		pisp_be_ccm_config ccm;
+		if (yuvColorSpace == ColorSpace::Sycc) {
+			PiSP::initialise_ycbcr(ccm, "jpeg");
+			be_->SetYcbcr(ccm);
+			PiSP::initialise_ycbcr_inverse(ccm, "jpeg");
+			be_->SetYcbcrInverse(ccm);
+		} else if (yuvColorSpace == ColorSpace::Smpte170m) {
+			/* We want the full range version of smpte170m, aka. jpeg */
+			PiSP::initialise_ycbcr(ccm, "jpeg");
+			be_->SetYcbcr(ccm);
+			PiSP::initialise_ycbcr_inverse(ccm, "jpeg");
+			be_->SetYcbcrInverse(ccm);
+		} else if (yuvColorSpace == ColorSpace::Rec709) {
+			PiSP::initialise_ycbcr(ccm, "rec709_full");
+			be_->SetYcbcr(ccm);
+			PiSP::initialise_ycbcr_inverse(ccm, "rec709_full");
+			be_->SetYcbcrInverse(ccm);
+		} else {
+			/* Validation should have ensured this can't happen. */
+			LOG(RPI, Error)
+				<< "Invalid colour space " << ColorSpace::toString(yuvColorSpace);
+			ASSERT(0);
+		}
+	} else {
+		/* Again, validation should have prevented this. */
+		LOG(RPI, Error) << "No YUV colour space";
+		ASSERT(0);
 	}
 
 	be_->SetGlobal(global);

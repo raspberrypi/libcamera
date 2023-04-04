@@ -233,6 +233,9 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 		}
 	}
 
+	LOG(RPI, Debug)
+		<< "RGB colour space " << ColorSpace::toString(rgbColorSpace_)
+		<< " YUV colour space " << ColorSpace::toString(yuvColorSpace_);
 	return status;
 }
 
@@ -561,7 +564,8 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
 	 */
-	ret = data->platformConfigure(sensorFormat, packing, rawStreams, ispStreams);
+	ret = data->platformConfigure(sensorFormat, packing, rpiConfig->yuvColorSpace(),
+				      rawStreams, ispStreams);
 	if (ret)
 		return ret;
 

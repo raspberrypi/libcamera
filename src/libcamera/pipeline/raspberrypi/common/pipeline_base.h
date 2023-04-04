@@ -78,6 +78,7 @@ public:
 							     std::vector<StreamParams> &outStreams) const = 0;
 	virtual int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				      std::optional<BayerFormat::Packing> packing,
+				      const std::optional<ColorSpace> &yuvColorSpace,
 				      std::vector<StreamParams> &rawStreams,
 				      std::vector<StreamParams> &outStreams) = 0;
 	virtual void platformStart() = 0;
@@ -265,6 +266,7 @@ public:
 	/* Cache the combinedTransform_ that will be applied to the sensor */
 	Transform combinedTransform_;
 
+	const std::optional<ColorSpace> &yuvColorSpace() const { return yuvColorSpace_; }
 private:
 	const CameraData *data_;
 

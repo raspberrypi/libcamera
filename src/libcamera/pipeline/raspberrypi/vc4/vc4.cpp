@@ -116,6 +116,7 @@ private:
 
 	int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			      std::optional<BayerFormat::Packing> packing,
+			      const std::optional<ColorSpace> &yuvColorSpace,
 			      std::vector<StreamParams> &rawStreams,
 			      std::vector<StreamParams> &outStreams) override;
 	int platformConfigureIpa(ipa::RPi::ConfigParams &params) override;
@@ -482,6 +483,7 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 
 int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				     std::optional<BayerFormat::Packing> packing,
+				     [[maybe_unused]] const std::optional<ColorSpace> yuvColorSpace,
 				     std::vector<StreamParams> &rawStreams,
 				     std::vector<StreamParams> &outStreams)
 {

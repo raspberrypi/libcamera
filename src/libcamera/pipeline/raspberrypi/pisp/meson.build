@@ -9,7 +9,7 @@ pisp_sources = files([
 
 includes += include_directories('../common/')
 
-librt = cc.find_library('librt', required : true)
+librt = cc.find_library('rt', required : true)
 libpisp_dep = dependency('libpisp', fallback : ['libpisp', 'libpisp_dep'])
 
 libcamera_sources += pisp_sources

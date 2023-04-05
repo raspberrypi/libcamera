@@ -233,9 +233,6 @@ private:
 	FrontEnd *fe_;
 	BackEnd *be_;
 
-	/* Initial sharpen config that gets modified at runtime. */
-	pisp_be_sharpen_config defaultSharpen_;
-
 	/* TDN/HDR runtime need the following state. */
 	bool tdnReset_;
 	bool hdrReset_;
@@ -677,8 +674,10 @@ void IpaPiSP::applySaturation(const SaturationStatus *saturationStatus, pisp_be_
 
 void IpaPiSP::applySharpen(const SharpenStatus *sharpenStatus, pisp_be_global_config &global)
 {
-	pisp_be_sharpen_config sharpen = defaultSharpen_;
+	pisp_be_sh_fc_combine_config shfc;
+	pisp_be_sharpen_config sharpen;
 
+	PiSP::initialise_sharpen(sharpen, shfc);
 	sharpen.threshold_offset0 = clampField(sharpen.threshold_offset0 * sharpenStatus->threshold, 16);
 	sharpen.threshold_offset1 = clampField(sharpen.threshold_offset1 * sharpenStatus->threshold, 16);
 	sharpen.threshold_offset2 = clampField(sharpen.threshold_offset2 * sharpenStatus->threshold, 16);
@@ -777,11 +776,7 @@ void IpaPiSP::setDefaultConfig()
 	be_->GetGlobal(beGlobal);
 	beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 	beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
-
 	be_->SetGlobal(beGlobal);
-	be_->SetDemosaic({ 8, 1, /* pad */ 0 });
-	be_->SetFalseColour({ 2, /* pad */ 0, 0, 0 });
-	be_->GetSharpen(defaultSharpen_);
 
 	pisp_fe_global_config feGlobal;
 	fe_->GetGlobal(feGlobal);

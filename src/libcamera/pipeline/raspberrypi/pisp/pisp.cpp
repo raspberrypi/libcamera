@@ -675,10 +675,10 @@ CameraConfiguration::Status PiSPCameraData::platformValidate(std::vector<StreamP
 		}
 
 		/*
-		 * Output 1 must be for the largest resolution. We will
+		 * Output 1 must be for the smallest resolution. We will
 		 * have that fixed up in the code above.
 		 */
-		outStreams[i].dev = isp_[i == 0 && outStreams.size() > 1 ? Isp::Output1 : Isp::Output0].dev();
+		outStreams[i].dev = isp_[i == 1 || outStreams.size() == 1 ? Isp::Output1 : Isp::Output0].dev();
 	}
 
 	return status;
@@ -812,11 +812,11 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		StreamConfiguration *cfg = outStreams[i].cfg;
 
 		/*
-		 * Output 1 must be for the largest resolution. We will
+		 * Output 1 must be for the smallest resolution. We will
 		 * have that fixed up in the code above.
 		 */
 		RPi::Stream *stream;
-		if (i == 0 && outStreams.size() > 1) {
+		if (i == 1 || outStreams.size() == 1) {
 			stream = &isp_[Isp::Output1];
 			beEnables |= PISP_BE_RGB_ENABLE_OUTPUT1;
 		} else {

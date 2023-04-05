@@ -75,6 +75,13 @@ protected:
 			return TestFail;
 		}
 
+		/* Test looking up a control on a default-constructed infoMap */
+		const ControlInfoMap emptyInfoMap;
+		if (emptyInfoMap.find(12345) != emptyInfoMap.end()) {
+			cerr << "find() on empty ControlInfoMap failed" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

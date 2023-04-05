@@ -385,41 +385,54 @@ private:
 
 bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 {
-	DeviceMatch cfe("rp1-cfe");
-	MediaDevice *cfeDevice = acquireMediaDevice(enumerator, cfe);
-
-	if (!cfeDevice) {
-		LOG(RPI, Debug) << "Unable to acquire a CFE instance";
-		return false;
-	}
-
-	DeviceMatch isp("pispbe");
-	MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
-
-	if (!ispDevice) {
-		LOG(RPI, Debug) << "Unable to acquire ISP instance";
-		return false;
-	}
+	constexpr unsigned int numCfeDevices = 2;
 
 	/*
-	 * The loop below is used to register multiple cameras behind one or more
-	 * video mux devices that are attached to a particular CFE instance.
-	 * Obviously these cameras cannot be used simultaneously.
+	 * Loop over all CFE instances, but return out once a match is found.
+	 * This is to ensure we correctly enumrate the camera when an instance
+	 * of Unicam has registered with media controller, but has not registered
+	 * device nodes due to a sensor subdevice failure.
 	 */
-	unsigned int numCameras = 0;
-	for (MediaEntity *entity : cfeDevice->entities()) {
-		if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
-			continue;
+	for (unsigned int i = 0; i < numCfeDevices; i++) {
+		DeviceMatch cfe("rp1-cfe");
+		MediaDevice *cfeDevice = acquireMediaDevice(enumerator, cfe);
 
-		int ret = RPi::PipelineHandlerBase::registerCamera(cfeDevice, "csi2", ispDevice, entity);
-		if (ret)
-			LOG(RPI, Error) << "Failed to register camera "
-					<< entity->name() << ": " << ret;
-		else
-			numCameras++;
+		if (!cfeDevice) {
+			LOG(RPI, Debug) << "Unable to acquire a CFE instance";
+			break;
+		}
+
+		DeviceMatch isp("pispbe");
+		MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
+
+		if (!ispDevice) {
+			LOG(RPI, Debug) << "Unable to acquire ISP instance";
+			break;
+		}
+
+		/*
+		* The loop below is used to register multiple cameras behind one or more
+		* video mux devices that are attached to a particular CFE instance.
+		* Obviously these cameras cannot be used simultaneously.
+		*/
+		unsigned int numCameras = 0;
+		for (MediaEntity *entity : cfeDevice->entities()) {
+			if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
+				continue;
+
+			int ret = RPi::PipelineHandlerBase::registerCamera(cfeDevice, "csi2", ispDevice, entity);
+			if (ret)
+				LOG(RPI, Error) << "Failed to register camera "
+						<< entity->name() << ": " << ret;
+			else
+				numCameras++;
+		}
+
+		if (numCameras)
+			return true;
 	}
 
-	return !!numCameras;
+	return false;
 }
 
 int PipelineHandlerPiSP::prepareBuffers(Camera *camera)

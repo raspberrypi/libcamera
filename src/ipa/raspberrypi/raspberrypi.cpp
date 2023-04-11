@@ -778,6 +778,7 @@ static const std::map<int32_t, std::string> MeteringModeTable = {
 static const std::map<int32_t, std::string> ConstraintModeTable = {
 	{ controls::ConstraintNormal, "normal" },
 	{ controls::ConstraintHighlight, "highlight" },
+	{ controls::ConstraintShadows, "shadows" },
 	{ controls::ConstraintCustom, "custom" },
 };
 

@@ -217,7 +217,6 @@ public:
 	static V4L2DeviceFormat toV4L2DeviceFormat(const V4L2VideoDevice *dev,
 						   const V4L2SubdeviceFormat &format,
 						   BayerFormat::Packing packingReq);
-	//virtual unsigned int platformValidateMbusCode(unsigned int mbusCode) const = 0;
 
 	std::unique_ptr<CameraConfiguration>
 	generateConfiguration(Camera *camera, const StreamRoles &roles);

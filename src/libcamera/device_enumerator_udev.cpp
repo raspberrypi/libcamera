@@ -315,6 +315,7 @@ int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 	 * enumerator.
 	 */
 	deps->deps_.erase(devnum);
+	devMap_.erase(it);
 
 	if (deps->deps_.empty()) {
 		LOG(DeviceEnumerator, Debug)

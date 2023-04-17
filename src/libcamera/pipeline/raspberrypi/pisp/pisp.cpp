@@ -549,16 +549,6 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	data->isp_[Isp::Tdn] = RPi::Stream("ISP TDN", ispTdn);
 	data->isp_[Isp::Stitch] = RPi::Stream("ISP Stitch", ispStitch);
 
-	/* Wire up all the buffer connections. */
-	data->cfe_[Cfe::Output0].dev()->bufferReady.connect(data, &PiSPCameraData::cfeBufferDequeue);
-	data->cfe_[Cfe::Stats].dev()->bufferReady.connect(data, &PiSPCameraData::cfeBufferDequeue);
-	data->cfe_[Cfe::Config].dev()->bufferReady.connect(data, &PiSPCameraData::cfeBufferDequeue);
-
-	data->isp_[Isp::Input].dev()->bufferReady.connect(data, &PiSPCameraData::beInputDequeue);
-	data->isp_[Isp::Config].dev()->bufferReady.connect(data, &PiSPCameraData::beOutputDequeue);
-	data->isp_[Isp::Output0].dev()->bufferReady.connect(data, &PiSPCameraData::beOutputDequeue);
-	data->isp_[Isp::Output1].dev()->bufferReady.connect(data, &PiSPCameraData::beOutputDequeue);
-
 	if (data->sensorMetadata_ ^ !!data->cfe_[Cfe::Embedded].dev()) {
 		LOG(RPI, Warning) << "Mismatch between CFE and CamHelper for embedded data usage!";
 		data->sensorMetadata_ = false;
@@ -600,9 +590,7 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	data->isp_[Isp::Tdn].dev()->open();
 	data->isp_[Isp::Stitch].dev()->open();
 
-	/* Write up all the IPA connections. */
-	data->ipa_->prepareIspComplete.connect(data, &PiSPCameraData::prepareIspComplete);
-	data->ipa_->processStatsComplete.connect(data, &PiSPCameraData::processStatsComplete);
+	/* Wire up the default IPA connections. The others get connected on start() */
 	data->ipa_->setDelayedControls.connect((RPi::CameraData *)data, &RPi::CameraData::setDelayedControls);
 	data->ipa_->setLensControls.connect((RPi::CameraData *)data, &RPi::CameraData::setLensControls);
 
@@ -947,11 +935,33 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 
 void PiSPCameraData::platformStart()
 {
+	cfe_[Cfe::Output0].dev()->bufferReady.connect(this, &PiSPCameraData::cfeBufferDequeue);
+	cfe_[Cfe::Stats].dev()->bufferReady.connect(this, &PiSPCameraData::cfeBufferDequeue);
+	cfe_[Cfe::Config].dev()->bufferReady.connect(this, &PiSPCameraData::cfeBufferDequeue);
+
+	isp_[Isp::Input].dev()->bufferReady.connect(this, &PiSPCameraData::beInputDequeue);
+	isp_[Isp::Config].dev()->bufferReady.connect(this, &PiSPCameraData::beOutputDequeue);
+	isp_[Isp::Output0].dev()->bufferReady.connect(this, &PiSPCameraData::beOutputDequeue);
+	isp_[Isp::Output1].dev()->bufferReady.connect(this, &PiSPCameraData::beOutputDequeue);
+	ipa_->prepareIspComplete.connect(this, &PiSPCameraData::prepareIspComplete);
+	ipa_->processStatsComplete.connect(this, &PiSPCameraData::processStatsComplete);
+
 	prepareCfe();
 }
 
 void PiSPCameraData::platformStop()
 {
+	cfe_[Cfe::Output0].dev()->bufferReady.disconnect();
+	cfe_[Cfe::Stats].dev()->bufferReady.disconnect();
+	cfe_[Cfe::Config].dev()->bufferReady.disconnect();
+
+	isp_[Isp::Input].dev()->bufferReady.disconnect();
+	isp_[Isp::Config].dev()->bufferReady.disconnect();
+	isp_[Isp::Output0].dev()->bufferReady.disconnect();
+	isp_[Isp::Output1].dev()->bufferReady.disconnect();
+	ipa_->prepareIspComplete.disconnect();
+	ipa_->processStatsComplete.disconnect();
+
 	cfeJobQueue_ = {};
 }
 
@@ -970,9 +980,6 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
 	int index;
-
-	if (!isRunning())
-		return;
 
 	for (RPi::Stream &s : cfe_) {
 		index = s.getBufferId(buffer);
@@ -1020,9 +1027,6 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 
 void PiSPCameraData::beInputDequeue(FrameBuffer *buffer)
 {
-	if (!isRunning())
-		return;
-
 	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
 			<< ", buffer id " << cfe_[Cfe::Output0].getBufferId(buffer)
 			<< ", timestamp: " << buffer->metadata().timestamp;
@@ -1036,9 +1040,6 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
 	int index;
-
-	if (!isRunning())
-		return;
 
 	for (RPi::Stream &s : isp_) {
 		index = s.getBufferId(buffer);
@@ -1416,9 +1417,6 @@ void PiSPCameraData::prepareCfe()
 
 void PiSPCameraData::runBackend(uint32_t bufferId)
 {
-	if (!isRunning())
-		return;
-
 	ispOutputCount_ = 0;
 
 	FrameBuffer *buffer = cfe_[Cfe::Output0].getBuffers().at(bufferId).buffer;

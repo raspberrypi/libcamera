@@ -5,6 +5,8 @@
  * pisp.cpp - Pipeline handler for PiSP based Raspberry Pi devices
  */
 
+#include <unordered_map>
+
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
 
@@ -325,29 +327,22 @@ private:
 	void tryRunPipeline() override;
 
 	struct CfeJob {
-		CfeJob(bool embeddedData)
-			: bayerBuffer(nullptr), embeddedBuffer(nullptr),
-			  statsBuffer(nullptr), sensorControls(),
-			  embeddedData_(embeddedData)
-		{
-		}
-
-		bool isComplete()
-		{
-			return bayerBuffer && statsBuffer && (!embeddedData_ || embeddedBuffer);
-		}
-
-		FrameBuffer *bayerBuffer;
-		FrameBuffer *embeddedBuffer;
-		FrameBuffer *statsBuffer;
 		ControlList sensorControls;
 		unsigned int delayContext;
-
-	private:
-		bool embeddedData_;
+		std::unordered_map<const RPi::Stream *, FrameBuffer *> buffers;
 	};
 
 	std::queue<CfeJob> cfeJobQueue_;
+
+	bool cfeJobComplete() const
+	{
+		if (cfeJobQueue_.empty())
+			return false;
+
+		const CfeJob &job = cfeJobQueue_.back();
+		return job.buffers.count(&cfe_[Cfe::Output0]) && job.buffers.count(&cfe_[Cfe::Stats]) &&
+		       (!sensorMetadata_ || job.buffers.count(&cfe_[Cfe::Embedded]));
+	}
 
 	/* Offset for all compressed buffers; mode for TDN and Stitch. */
 	static constexpr unsigned int DefaultCompressionOffset = 2048;
@@ -946,6 +941,7 @@ void PiSPCameraData::platformStart()
 	ipa_->prepareIspComplete.connect(this, &PiSPCameraData::prepareIspComplete);
 	ipa_->processStatsComplete.connect(this, &PiSPCameraData::processStatsComplete);
 
+	cfeJobQueue_ = {};
 	prepareCfe();
 }
 
@@ -959,16 +955,16 @@ void PiSPCameraData::platformStop()
 	isp_[Isp::Config].dev()->bufferReady.disconnect();
 	isp_[Isp::Output0].dev()->bufferReady.disconnect();
 	isp_[Isp::Output1].dev()->bufferReady.disconnect();
+
 	ipa_->prepareIspComplete.disconnect();
 	ipa_->processStatsComplete.disconnect();
-
-	cfeJobQueue_ = {};
 }
 
 void PiSPCameraData::platformFreeBuffers()
 {
 	tdnBuffers_.clear();
 	stitchBuffers_.clear();
+	cfeJobQueue_ = {};
 
 	if (buffersAllocated_) {
 		isp_[Isp::Tdn].releaseBuffers();
@@ -989,8 +985,11 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		}
 	}
 
-	if (cfeJobQueue_.empty() || cfeJobQueue_.back().isComplete())
-		cfeJobQueue_.push({ sensorMetadata_ });
+	/* If the last CFE job has completed, we need a new job entry in the queue. */
+	if (cfeJobQueue_.empty() || cfeJobComplete())
+		cfeJobQueue_.push({});
+
+	CfeJob &job = cfeJobQueue_.back();
 
 	/* The buffer must belong to one of our streams. */
 	ASSERT(stream);
@@ -998,6 +997,8 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer dequeue"
 			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
+
+	job.buffers[stream] = buffer;
 
 	if (stream == &cfe_[Cfe::Output0]) {
 		/*
@@ -1010,16 +1011,12 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 * as it does not receive the FrameBuffer object.
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
-		cfeJobQueue_.back().bayerBuffer = buffer;
-		cfeJobQueue_.back().sensorControls = std::move(ctrl);
-		cfeJobQueue_.back().delayContext = delayContext;
-	} else if (stream == &cfe_[Cfe::Stats]) {
-		cfeJobQueue_.back().statsBuffer = buffer;
+		job.sensorControls = std::move(ctrl);
+		job.delayContext = delayContext;
 	} else if (stream == &cfe_[Cfe::Config]) {
+		/* The config buffer can be re-queued back straight away. */
 		handleStreamBuffer(buffer, &cfe_[Cfe::Config]);
 		prepareCfe();
-	} else {
-		cfeJobQueue_.back().embeddedBuffer = buffer;
 	}
 
 	handleState();
@@ -1441,9 +1438,10 @@ void PiSPCameraData::runBackend(uint32_t bufferId)
 void PiSPCameraData::tryRunPipeline()
 {
 	/* If any of our request or buffer queues are empty, we cannot proceed. */
-	if (state_ != State::Idle || requestQueue_.empty() ||
-	    cfeJobQueue_.empty() || !cfeJobQueue_.front().isComplete())
+	if (state_ != State::Idle || requestQueue_.empty() || !cfeJobComplete())
 		return;
+
+	CfeJob &job = cfeJobQueue_.front();
 
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
@@ -1457,7 +1455,7 @@ void PiSPCameraData::tryRunPipeline()
 	 * may have been populated if we have dropped the previous frame.
 	 */
 	request->metadata().clear();
-	fillRequestMetadata(cfeJobQueue_.front().sensorControls, request);
+	fillRequestMetadata(job.sensorControls, request);
 
 	/*
 	 * Process all the user controls by the IPA. Once this is complete, we
@@ -1469,8 +1467,8 @@ void PiSPCameraData::tryRunPipeline()
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
-	unsigned int bayerId = cfe_[Cfe::Output0].getBufferId(cfeJobQueue_.front().bayerBuffer);
-	unsigned int statsId = cfe_[Cfe::Stats].getBufferId(cfeJobQueue_.front().statsBuffer);
+	unsigned int bayerId = cfe_[Cfe::Output0].getBufferId(job.buffers[&cfe_[Cfe::Output0]]);
+	unsigned int statsId = cfe_[Cfe::Stats].getBufferId(job.buffers[&cfe_[Cfe::Stats]]);
 	ASSERT(bayerId && statsId);
 
 	std::stringstream ss;
@@ -1478,18 +1476,16 @@ void PiSPCameraData::tryRunPipeline()
 	   << " Bayer buffer id: " << bayerId
 	   << " Stats buffer id: " << statsId;
 
-	ipa::RPi::ProcessParams process;
 	ipa::RPi::PrepareParams prepare;
-
 	prepare.buffers.bayer = RPi::MaskBayerData | bayerId;
 	prepare.buffers.stats = RPi::MaskStats | statsId;
 	prepare.ipaContext = requestQueue_.front()->sequence();
-	prepare.delayContext = cfeJobQueue_.front().delayContext;
-	prepare.sensorControls = std::move(cfeJobQueue_.front().sensorControls);
+	prepare.delayContext = job.delayContext;
+	prepare.sensorControls = std::move(job.sensorControls);
 	prepare.requestControls = request->controls();
 
 	if (sensorMetadata_) {
-		unsigned int embeddedId = cfe_[Cfe::Embedded].getBufferId(cfeJobQueue_.front().embeddedBuffer);
+		unsigned int embeddedId = cfe_[Cfe::Embedded].getBufferId(job.buffers[&cfe_[Cfe::Embedded]]);
 
 		ASSERT(embeddedId);
 		prepare.buffers.embedded = RPi::MaskEmbeddedData | embeddedId;

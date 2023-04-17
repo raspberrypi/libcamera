@@ -327,13 +327,6 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", ispCapture2);
 	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", ispCapture3);
 
-	/* Wire up all the buffer connections. */
-	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data, &Vc4CameraData::unicamBufferDequeue);
-	data->isp_[Isp::Input].dev()->bufferReady.connect(data, &Vc4CameraData::ispInputDequeue);
-	data->isp_[Isp::Output0].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
-	data->isp_[Isp::Output1].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
-	data->isp_[Isp::Stats].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
-
 	if (data->sensorMetadata_ ^ !!data->unicam_[Unicam::Embedded].dev()) {
 		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
 		data->sensorMetadata_ = false;
@@ -367,9 +360,7 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 		return -EINVAL;
 	}
 
-	/* Write up all the IPA connections. */
-	data->ipa_->processStatsComplete.connect(data, &Vc4CameraData::processStatsComplete);
-	data->ipa_->prepareIspComplete.connect(data, &Vc4CameraData::prepareIspComplete);
+	/* Wire up the default IPA connections. The others get connected on start() */
 	data->ipa_->setIspControls.connect(data, &Vc4CameraData::setIspControls);
 	data->ipa_->setCameraTimeout.connect(data, &Vc4CameraData::setCameraTimeout);
 
@@ -692,10 +683,25 @@ int Vc4CameraData::platformConfigureIpa(ipa::RPi::ConfigParams &params)
 
 void Vc4CameraData::platformStart()
 {
+	unicam_[Unicam::Image].dev()->bufferReady.connect(this, &Vc4CameraData::unicamBufferDequeue);
+	isp_[Isp::Input].dev()->bufferReady.connect(this, &Vc4CameraData::ispInputDequeue);
+	isp_[Isp::Output0].dev()->bufferReady.connect(this, &Vc4CameraData::ispOutputDequeue);
+	isp_[Isp::Output1].dev()->bufferReady.connect(this, &Vc4CameraData::ispOutputDequeue);
+	isp_[Isp::Stats].dev()->bufferReady.connect(this, &Vc4CameraData::ispOutputDequeue);
+	ipa_->processStatsComplete.connect(this, &Vc4CameraData::processStatsComplete);
+	ipa_->prepareIspComplete.connect(this, &Vc4CameraData::prepareIspComplete);
 }
 
 void Vc4CameraData::platformStop()
 {
+	unicam_[Unicam::Image].dev()->bufferReady.disconnect();
+	isp_[Isp::Input].dev()->bufferReady.disconnect();
+	isp_[Isp::Output0].dev()->bufferReady.disconnect();
+	isp_[Isp::Output1].dev()->bufferReady.disconnect();
+	isp_[Isp::Stats].dev()->bufferReady.disconnect();
+	ipa_->processStatsComplete.disconnect();
+	ipa_->prepareIspComplete.disconnect();
+
 	bayerQueue_ = {};
 	embeddedQueue_ = {};
 }
@@ -704,9 +710,6 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
 	int index;
-
-	if (!isRunning())
-		return;
 
 	for (RPi::Stream &s : unicam_) {
 		index = s.getBufferId(buffer);
@@ -744,9 +747,6 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 
 void Vc4CameraData::ispInputDequeue(FrameBuffer *buffer)
 {
-	if (!isRunning())
-		return;
-
 	LOG(RPI, Debug) << "Stream ISP Input buffer complete"
 			<< ", buffer id " << unicam_[Unicam::Image].getBufferId(buffer)
 			<< ", timestamp: " << buffer->metadata().timestamp;
@@ -760,9 +760,6 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
 	int index;
-
-	if (!isRunning())
-		return;
 
 	for (RPi::Stream &s : isp_) {
 		index = s.getBufferId(buffer);
@@ -804,9 +801,6 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 
 void Vc4CameraData::processStatsComplete(const ipa::RPi::BufferIds &buffers)
 {
-	if (!isRunning())
-		return;
-
 	FrameBuffer *buffer = isp_[Isp::Stats].getBuffers().at(buffers.stats & RPi::MaskID).buffer;
 
 	handleStreamBuffer(buffer, &isp_[Isp::Stats]);
@@ -846,9 +840,6 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers)
 	unsigned int embeddedId = buffers.embedded & RPi::MaskID;
 	unsigned int bayer = buffers.bayer & RPi::MaskID;
 	FrameBuffer *buffer;
-
-	if (!isRunning())
-		return;
 
 	buffer = unicam_[Unicam::Image].getBuffers().at(bayer & RPi::MaskID).buffer;
 	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << (bayer & RPi::MaskID)

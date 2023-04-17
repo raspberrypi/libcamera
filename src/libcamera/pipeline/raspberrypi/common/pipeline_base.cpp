@@ -747,11 +747,12 @@ void PipelineHandlerBase::stopDevice(Camera *camera)
 	for (auto const stream : data->streams_)
 		stream->dev()->streamOff();
 
+	data->platformStop();
+
 	/* Disable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(false);
 
 	data->clearIncompleteRequests();
-	data->platformStop();
 
 	/* Stop the IPA. */
 	data->ipa_->stop();

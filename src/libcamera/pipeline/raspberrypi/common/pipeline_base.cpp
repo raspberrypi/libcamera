@@ -743,11 +743,10 @@ void PipelineHandlerBase::stopDevice(Camera *camera)
 	CameraData *data = cameraData(camera);
 
 	data->state_ = CameraData::State::Stopped;
+	data->platformStop();
 
 	for (auto const stream : data->streams_)
 		stream->dev()->streamOff();
-
-	data->platformStop();
 
 	/* Disable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(false);

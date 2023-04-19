@@ -17,6 +17,7 @@
 
 #include "libpisp/backend/backend.hpp"
 #include "libpisp/common/pisp_logging.hpp"
+#include "libpisp/common/pisp_utils.hpp"
 #include "libpisp/frontend/frontend.hpp"
 #include "libpisp/variants/pisp_variant.hpp"
 
@@ -102,6 +103,27 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 	}
 
 	return image;
+}
+
+void computeOptimalStride(V4L2DeviceFormat &format)
+{
+	pisp_image_format_config fmt = toPiSPImageFormat(format);
+
+	libpisp::compute_optimal_stride(fmt);
+
+	uint32_t fourcc = format.fourcc.fourcc();
+
+	/*
+	 * For YUV420/422 non-multiplanar formats, double the U/V stride for the
+	 * Y-plane to ensure we get the optimal alignment on all three planes.
+	 */
+	if (fourcc == V4L2_PIX_FMT_YUV420 || fourcc == V4L2_PIX_FMT_YUV422P ||
+	    fourcc == V4L2_PIX_FMT_YVU420)
+		fmt.stride = fmt.stride2 * 2;
+
+	format.planes[0].bpl = fmt.stride;
+	format.planes[1].bpl = fmt.stride2;
+	format.planes[2].bpl = fmt.stride2;
 }
 
 bool calculateCscConfiguration(const V4L2DeviceFormat &v4l2Format, pisp_be_ccm_config &csc)
@@ -753,6 +775,9 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	V4L2VideoDevice *cfe = cfe_[Cfe::Output0].dev();
 	V4L2DeviceFormat cfeFormat = RPi::PipelineHandlerBase::toV4L2DeviceFormat(cfe, sensorFormatMod, *packing);
 
+	/* Compute the optimal stride for the FE output / BE input buffers. */
+	computeOptimalStride(cfeFormat);
+
 	ret = cfe->setFormat(&cfeFormat);
 	if (ret)
 		return ret;
@@ -810,6 +835,7 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg->pixelFormat);
 		bool needs32BitConversion = false;
 
+		format = {};
 		format.size = cfg->size;
 		format.fourcc = fourcc;
 		format.colorSpace = cfg->colorSpace;
@@ -826,6 +852,9 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				}
 			}
 		}
+
+		/* Compute the optimal stride for the BE output buffers. */
+		computeOptimalStride(format);
 
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
 				<< format;

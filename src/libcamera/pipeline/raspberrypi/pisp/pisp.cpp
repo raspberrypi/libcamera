@@ -113,16 +113,16 @@ bool calculateCscConfiguration(const V4L2DeviceFormat &v4l2Format, pisp_be_ccm_c
 	if (info.colourEncoding == PixelFormatInfo::ColourEncodingYUV) {
 		/* Look up the correct YCbCr conversion matrix for this colour space. */
 		if (v4l2Format.colorSpace == ColorSpace::Sycc)
-			PiSP::initialise_ycbcr(csc, "jpeg");
+			libpisp::initialise_ycbcr(csc, "jpeg");
 		else if (v4l2Format.colorSpace == ColorSpace::Smpte170m)
-			PiSP::initialise_ycbcr(csc, "smpte170m");
+			libpisp::initialise_ycbcr(csc, "smpte170m");
 		else if (v4l2Format.colorSpace == ColorSpace::Rec709)
-			PiSP::initialise_ycbcr(csc, "rec709");
+			libpisp::initialise_ycbcr(csc, "rec709");
 		else {
 			LOG(RPI, Warning)
 				<< "Unrecognised colour space " << ColorSpace::toString(v4l2Format.colorSpace)
 				<< ", defaulting to sYCC";
-			PiSP::initialise_ycbcr(csc, "jpeg");
+			libpisp::initialise_ycbcr(csc, "jpeg");
 		}
 		return true;
 	}
@@ -216,9 +216,9 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsig
 
 } /* namespace */
 
-using ::PiSP::BackEnd;
-using ::PiSP::BCM2712_HW;
-using ::PiSP::FrontEnd;
+using ::libpisp::BackEnd;
+using ::libpisp::BCM2712_HW;
+using ::libpisp::FrontEnd;
 
 class PiSPCameraData final : public RPi::CameraData
 {
@@ -227,7 +227,7 @@ public:
 		: RPi::CameraData(pipe), fe_("pisp_frontend"), be_("pisp_backend")
 	{
 		/* Initialise internal libpisp logging. */
-		::PiSP::logging_init();
+		::libpisp::logging_init();
 	}
 
 	~PiSPCameraData()
@@ -1281,20 +1281,20 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	if (yuvColorSpace) {
 		pisp_be_ccm_config ccm;
 		if (yuvColorSpace == ColorSpace::Sycc) {
-			PiSP::initialise_ycbcr(ccm, "jpeg");
+			libpisp::initialise_ycbcr(ccm, "jpeg");
 			be_->SetYcbcr(ccm);
-			PiSP::initialise_ycbcr_inverse(ccm, "jpeg");
+			libpisp::initialise_ycbcr_inverse(ccm, "jpeg");
 			be_->SetYcbcrInverse(ccm);
 		} else if (yuvColorSpace == ColorSpace::Smpte170m) {
 			/* We want the full range version of smpte170m, aka. jpeg */
-			PiSP::initialise_ycbcr(ccm, "jpeg");
+			libpisp::initialise_ycbcr(ccm, "jpeg");
 			be_->SetYcbcr(ccm);
-			PiSP::initialise_ycbcr_inverse(ccm, "jpeg");
+			libpisp::initialise_ycbcr_inverse(ccm, "jpeg");
 			be_->SetYcbcrInverse(ccm);
 		} else if (yuvColorSpace == ColorSpace::Rec709) {
-			PiSP::initialise_ycbcr(ccm, "rec709_full");
+			libpisp::initialise_ycbcr(ccm, "rec709_full");
 			be_->SetYcbcr(ccm);
-			PiSP::initialise_ycbcr_inverse(ccm, "rec709_full");
+			libpisp::initialise_ycbcr_inverse(ccm, "rec709_full");
 			be_->SetYcbcrInverse(ccm);
 		} else {
 			/* Validation should have ensured this can't happen. */

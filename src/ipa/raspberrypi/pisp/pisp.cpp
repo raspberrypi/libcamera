@@ -178,8 +178,8 @@ void resampleTable(double *dest, int destW, int destH, double const *src, int sr
 
 } /* namespace */
 
-using ::PiSP::BackEnd;
-using ::PiSP::FrontEnd;
+using ::libpisp::BackEnd;
+using ::libpisp::FrontEnd;
 
 namespace ipa::RPi {
 
@@ -677,7 +677,7 @@ void IpaPiSP::applySharpen(const SharpenStatus *sharpenStatus, pisp_be_global_co
 	pisp_be_sh_fc_combine_config shfc;
 	pisp_be_sharpen_config sharpen;
 
-	PiSP::initialise_sharpen(sharpen, shfc);
+	libpisp::initialise_sharpen(sharpen, shfc);
 	sharpen.threshold_offset0 = clampField(sharpen.threshold_offset0 * sharpenStatus->threshold, 16);
 	sharpen.threshold_offset1 = clampField(sharpen.threshold_offset1 * sharpenStatus->threshold, 16);
 	sharpen.threshold_offset2 = clampField(sharpen.threshold_offset2 * sharpenStatus->threshold, 16);

@@ -592,6 +592,58 @@
                 "limit": 1.0,
                 "strength": 1.0
             }
+        },
+        {
+            "rpi.af":
+            {
+                "ranges":
+                {
+                    "normal":
+                    {
+                        "min": 0.0,
+                        "max": 12.0,
+                        "default": 1.0
+                    },
+                    "macro":
+                    {
+                        "min": 4.0,
+                        "max": 32.0,
+                        "default": 6.0
+                    }
+                },
+                "speeds":
+                {
+                    "normal":
+                    {
+                        "step_coarse": 2.0,
+                        "step_fine": 0.5,
+                        "contrast_ratio": 0.75,
+                        "pdaf_gain": -0.03,
+                        "pdaf_squelch": 0.2,
+                        "max_slew": 4.0,
+                        "pdaf_frames": 20,
+                        "dropout_frames": 6,
+                        "step_frames": 4
+                    },
+                    "fast":
+                    {
+                        "step_coarse": 2.0,
+                        "step_fine": 0.5,
+                        "contrast_ratio": 0.75,
+                        "pdaf_gain": -0.05,
+                        "pdaf_squelch": 0.2,
+                        "max_slew": 5.0,
+                        "pdaf_frames": 16,
+                        "dropout_frames": 6,
+                        "step_frames": 4
+                    }
+                },
+                "conf_epsilon": 8,
+                "conf_thresh": 12,
+                "conf_clip": 512,
+                "skip_frames": 5,
+                "map": [ 0.0, 420, 35.0, 920 ]
+            }
         }
     ]
 }

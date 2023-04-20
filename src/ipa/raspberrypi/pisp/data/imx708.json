@@ -583,6 +583,46 @@
                 "limit": 1.0,
                 "strength": 1.0
             }
+        },
+        {
+            "rpi.af":
+            {
+                "ranges":
+                {
+                    "normal":
+                    {
+                        "min": 0.0,
+                        "max": 12.0,
+                        "default": 1.0
+                    },
+                    "macro":
+                    {
+                        "min": 3.0,
+                        "max": 15.0,
+                        "default": 4.0
+                    }
+                },
+                "speeds":
+                {
+                    "normal":
+                    {
+                        "step_coarse": 1.0,
+                        "step_fine": 0.25,
+                        "contrast_ratio": 0.75,
+                        "pdaf_gain": -0.02,
+                        "pdaf_squelch": 0.125,
+                        "max_slew": 2.0,
+                        "pdaf_frames": 20,
+                        "dropout_frames": 6,
+                        "step_frames": 4
+                    }
+                },
+                "conf_epsilon": 8,
+                "conf_thresh": 16,
+                "conf_clip": 512,
+                "skip_frames": 5,
+                "map": [ 0.0, 445, 15.0, 925 ]
+            }
         }
     ]
 }

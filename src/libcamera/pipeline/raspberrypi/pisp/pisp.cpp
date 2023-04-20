@@ -217,21 +217,25 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsig
 				);
 	}
 #else
-	std::vector<uint8_t> cache(4 * width);
+	std::vector<uint8_t> incache(3 * width);
+	std::vector<uint8_t> outcache(4 * width);
+
+	memcpy(incache.data(), mem, 3 * width);
 	for (unsigned int j = 0; j < height; j++) {
 		uint8_t *ptr = (uint8_t *)mem + j * stride;
-		memcpy(cache.data(), ptr, 3 * width);
 
-		uint8_t *ptr3 = cache.data() + width * 3;
-		uint8_t *ptr4 = cache.data() + width * 4;
+		uint8_t *ptr3 = incache.data();
+		uint8_t *ptr4 = outcache.data();
 		for (unsigned int i = 0; i < width; i++) {
-			*(--ptr4) = 255;
-			*(--ptr4) = *(--ptr3);
-			*(--ptr4) = *(--ptr3);
-			*(--ptr4) = *(--ptr3);
+			*(ptr4++) = *(ptr3++);
+			*(ptr4++) = *(ptr3++);
+			*(ptr4++) = *(ptr3++);
+			*(ptr4++) = 255;
 		}
 
-		memcpy(ptr, cache.data(), 4 * width);
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 3 * width);
+		memcpy(ptr, outcache.data(), 4 * width);
 	}
 #endif
 }

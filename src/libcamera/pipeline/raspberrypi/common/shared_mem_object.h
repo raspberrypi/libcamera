@@ -24,9 +24,28 @@ class SharedMemObject
 public:
 	static constexpr std::size_t SIZE = sizeof(T);
 
-	SharedMemObject(const std::string &name)
-		: name_(name), fd_(), obj_(nullptr)
+	template<class... Args>
+	SharedMemObject(const std::string &name, Args &&...args)
+		: name_(name), obj_(nullptr)
 	{
+		void *mem;
+		int ret;
+
+		ret = memfd_create(name_.c_str(), MFD_CLOEXEC);
+		if (ret < 0)
+			return;
+
+		fd_ = SharedFD(ret);
+		if (!fd_.isValid())
+			return;
+
+		ftruncate(fd_.get(), SIZE);
+		mem = mmap(nullptr, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+			   fd_.get(), 0);
+		if (mem == MAP_FAILED)
+			return;
+
+		obj_ = new (mem) T(std::forward<Args>(args)...);
 	}
 
 	~SharedMemObject()
@@ -35,30 +54,6 @@ public:
 			obj_->~T();
 			munmap(obj_, SIZE);
 		}
-	}
-
-	template<class... Args>
-	int allocate(Args &&...args)
-	{
-		void *mem;
-		int ret;
-
-		ret = memfd_create(name_.c_str(), MFD_CLOEXEC);
-		if (ret < 0)
-			return -ENOMEM;
-
-		fd_ = SharedFD(ret);
-		if (!fd_.isValid())
-			return -EINVAL;
-
-		ftruncate(fd_.get(), SIZE);
-		mem = mmap(nullptr, SIZE, PROT_READ | PROT_WRITE,
-			   MAP_SHARED, fd_.get(), 0);
-		if (mem == MAP_FAILED)
-			return -ENOMEM;
-
-		obj_ = new (mem) T(std::forward<Args>(args)...);
-		return 0;
 	}
 
 	T *operator->()

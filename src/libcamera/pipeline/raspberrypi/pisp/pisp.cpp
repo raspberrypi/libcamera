@@ -246,8 +246,11 @@ class PiSPCameraData final : public RPi::CameraData
 {
 public:
 	PiSPCameraData(PipelineHandler *pipe)
-		: RPi::CameraData(pipe), fe_("pisp_frontend"), be_("pisp_backend")
+		: RPi::CameraData(pipe),
+		  fe_("pisp_frontend", true, BCM2712_HW),
+		  be_("pisp_backend", BackEnd::Config({}), BCM2712_HW)
 	{
+		ASSERT(fe_ && be_);
 		/* Initialise internal libpisp logging. */
 		::libpisp::logging_init();
 	}
@@ -1360,24 +1363,8 @@ void PiSPCameraData::platformIspCrop()
 
 int PiSPCameraData::platformInitIpa(ipa::RPi::InitParams &params)
 {
-	int ret;
-
-	/* Allocate the Frontend and Backend shared objects */
-	ret = fe_.allocate(true, BCM2712_HW);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to allocate FE shared object: " << ret;
-		return ret;
-	}
-
-	be_.allocate(BackEnd::Config(0, 0, BackEnd::Config::Flags::NONE), BCM2712_HW);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to allocate BE shared object: " << ret;
-		return ret;
-	}
-
 	params.fe = fe_.getFD();
 	params.be = be_.getFD();
-
 	return 0;
 }
 

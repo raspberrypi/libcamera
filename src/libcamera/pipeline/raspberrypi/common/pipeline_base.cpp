@@ -266,6 +266,13 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 			outStreams.emplace_back(index, &cfg);
 	}
 
+	/* Sort the streams so the highest resolution is first. */
+	std::sort(rawStreams.begin(), rawStreams.end(),
+		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
+
+	std::sort(outStreams.begin(), outStreams.end(),
+		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
+
 	/* Do any platform specific fixups. */
 	status = data_->platformValidate(rawStreams, outStreams);
 	if (status == Invalid)
@@ -273,24 +280,16 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	/* Further fixups on the RAW streams. */
 	for (auto &raw : rawStreams) {
-		/* Calculate the best sensor mode we can use based on the user request */
-		const PixelFormatInfo &info = PixelFormatInfo::info(raw.cfg->pixelFormat);
+		StreamConfiguration &cfg = config_.at(raw.index);
+		V4L2DeviceFormat rawFormat;
+
+		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 		unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
-		V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, raw.cfg->size, bitDepth);
-		/*
-		 * Apply any mubs code changes done in platformValidate(). This requires
-		 * us to "undo" the requested packing to allow a lookup on the mbus
-		 * code, then re-apply the packing when converting to a V4L2DeviceFormat.
-		 */
-		BayerFormat bayerFormat = BayerFormat::fromPixelFormat(raw.cfg->pixelFormat);
-		BayerFormat::Packing packing = bayerFormat.packing;
-		bool valid;
+		V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
 
-		bayerFormat.packing = BayerFormat::Packing::None;
-		sensorFormat.mbus_code = bayerFormat.toMbusCode(valid);
-		ASSERT(valid);
+		rawFormat.size = sensorFormat.size;
+		rawFormat.fourcc = raw.dev->toV4L2PixelFormat(cfg.pixelFormat);
 
-		V4L2DeviceFormat rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat, packing);
 		int ret = raw.dev->tryFormat(&rawFormat);
 		if (ret)
 			return Invalid;

@@ -36,6 +36,8 @@ namespace {
 enum class Cfe : unsigned int { Output0, Embedded, Stats, Config };
 enum class Isp : unsigned int { Input, Output0, Output1, Tdn, Stitch, Config };
 
+constexpr unsigned int PISP_BE_VERSION_2712C0 = 0x02252700;
+
 uint32_t mbusCodeUnpacked16(unsigned int mbus_code)
 {
 	BayerFormat bayer = BayerFormat::fromMbusCode(mbus_code);
@@ -93,10 +95,12 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
 			       PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
 		image.stride2 = image.stride / 2;
-	} else if (pix == formats::RGB888) {
+	} else if (pix == formats::RGB888 || pix == formats::BGR888) {
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL;
-	} else if (pix == formats::BGR888) {
-		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL;
+	} else if (pix == formats::XRGB8888 || pix == formats::XBGR8888) {
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL | PISP_IMAGE_FORMAT_BPP_32;
+	} else if (pix == formats::RGBX8888 || pix == formats::BGRX8888) {
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL | PISP_IMAGE_FORMAT_BPP_32 | PISP_IMAGE_FORMAT_ORDER_SWAPPED;
 	} else {
 		LOG(RPI, Error) << "Pixel format " << pix << " unsupported";
 		ASSERT(0);
@@ -124,6 +128,10 @@ void computeOptimalStride(V4L2DeviceFormat &format)
 	format.planes[0].bpl = fmt.stride;
 	format.planes[1].bpl = fmt.stride2;
 	format.planes[2].bpl = fmt.stride2;
+
+	const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
+	format.planesCount = info.numPlanes();
 }
 
 bool calculateCscConfiguration(const V4L2DeviceFormat &v4l2Format, pisp_be_ccm_config &csc)
@@ -298,6 +306,8 @@ public:
 	/* Array of CFE and ISP device streams and associated buffers/streams. */
 	RPi::Device<Cfe, 4> cfe_;
 	RPi::Device<Isp, 6> isp_;
+
+	unsigned int hwRevision_;
 
 	/* Frontend/Backend objects shared with the IPA. */
 	RPi::SharedMemObject<FrontEnd> fe_;
@@ -538,6 +548,8 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	PiSPCameraData *data = static_cast<PiSPCameraData *>(cameraData.get());
 	int ret;
 
+	data->hwRevision_ = isp->hwRevision();
+
 	MediaEntity *cfeImage = cfe->getEntityByName("rp1-cfe-fe_image0");
 	MediaEntity *cfeStats = cfe->getEntityByName("rp1-cfe-fe_stats");
 	MediaEntity *cfeConfig = cfe->getEntityByName("rp1-cfe-fe_config");
@@ -740,21 +752,19 @@ int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> 
 
 std::unordered_map<uint32_t, uint32_t> deviceAdjustTable = {
 	{ V4L2_PIX_FMT_RGBX32, V4L2_PIX_FMT_RGB24 },
-	{ V4L2_PIX_FMT_XBGR32, V4L2_PIX_FMT_BGR24 },
-	{ V4L2_PIX_FMT_RGBA32, V4L2_PIX_FMT_RGB24 },
-	{ V4L2_PIX_FMT_ABGR32, V4L2_PIX_FMT_BGR24 }
+	{ V4L2_PIX_FMT_XBGR32, V4L2_PIX_FMT_BGR24 }
 };
 
 bool PiSPCameraData::adjustDeviceFormat(V4L2DeviceFormat &format) const
 {
 	auto it = deviceAdjustTable.find(format.fourcc.fourcc());
 
+	if (hwRevision_ != PISP_BE_VERSION_2712C0)
+		return false;
+
 	if (it != deviceAdjustTable.end()) {
 		LOG(RPI, Debug) << "Swapping 32-bit for 24-bit format";
 		format.fourcc = V4L2PixelFormat(it->second);
-		format.planes[0].bpl = 4 * format.size.width;
-		format.planes[0].size = format.planes[0].bpl * format.size.height;
-		format.planesCount = 1;
 		return true;
 	}
 
@@ -847,26 +857,16 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		format.fourcc = fourcc;
 		format.colorSpace = cfg->colorSpace;
 		format.planesCount = 0;
-		if (!fourcc.isValid()) {
-			const std::vector<V4L2PixelFormat> &v4l2PixelFormats =
-				V4L2PixelFormat::fromPixelFormat(cfg->pixelFormat);
-			for (V4L2PixelFormat f : v4l2PixelFormats) {
-				format.fourcc = f;
-				if (adjustDeviceFormat(format)) {
-					/* Assume that the adjusted format is supported! */
-					needs32BitConversion = true;
-					break;
-				}
-			}
-		}
 
 		/* Compute the optimal stride for the BE output buffers. */
 		computeOptimalStride(format);
 
+		needs32BitConversion = adjustDeviceFormat(format);
+		fourcc = format.fourcc;
+
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
 				<< format;
 
-		fourcc = format.fourcc;
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
 			return -EINVAL;

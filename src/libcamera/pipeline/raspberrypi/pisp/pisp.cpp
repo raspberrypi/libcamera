@@ -129,6 +129,10 @@ void computeOptimalStride(V4L2DeviceFormat &format)
 	format.planes[1].bpl = fmt.stride2;
 	format.planes[2].bpl = fmt.stride2;
 
+	/*
+	 * Need to set planesCount correctly so that V4L2VideoDevice::trySetFormatMultiplane()
+	 * copies the bpl fields correctly.
+	 */
 	const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
 	const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
 	format.planesCount = info.numPlanes();
@@ -703,6 +707,18 @@ CameraConfiguration::Status PiSPCameraData::platformValidate(std::vector<StreamP
 		 * have that fixed up in the code above.
 		 */
 		outStreams[i].dev = isp_[i == 1 || outStreams.size() == 1 ? Isp::Output1 : Isp::Output0].dev();
+
+		V4L2DeviceFormat format;
+		format.size = outStreams[i].cfg->size;
+		format.fourcc = outStreams[i].dev->toV4L2PixelFormat(outStreams[i].cfg->pixelFormat);
+
+		/* Compute the optimal stride for the BE output buffers. */
+		computeOptimalStride(format);
+
+		if (outStreams[0].cfg->stride != format.planes[0].bpl) {
+			outStreams[0].cfg->stride = format.planes[0].bpl;
+			status = CameraConfiguration::Status::Adjusted;
+		}
 	}
 
 	return status;

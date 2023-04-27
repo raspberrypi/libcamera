@@ -68,6 +68,16 @@ const std::string &Stream::name() const
 	return name_;
 }
 
+unsigned int Stream::swDownscale() const
+{
+	return swDownscale_;
+}
+
+void Stream::setSwDownscale(unsigned int swDownscale)
+{
+	swDownscale_ = swDownscale;
+}
+
 void Stream::resetBuffers()
 {
 	/* Add all internal buffers to the queue of usable buffers. */

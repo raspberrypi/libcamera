@@ -30,6 +30,7 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(RPI)
 
 using StreamFlags = RPi::Stream::Flags;
+using StreamParams = RPi::CameraData::StreamParams;
 
 namespace {
 
@@ -304,6 +305,288 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsig
 #endif
 }
 
+void downscaleInterleaved3(void *mem, unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(3 * src_width);
+	unsigned int dst_width = src_width / 2;
+	std::vector<uint8_t> outcache(3 * dst_width);
+
+	memcpy(incache.data(), mem, 3 * src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 6, dst += 3) {
+			dst[0] = ((int)src[0] + (int)src[3] + 1) >> 1;
+			dst[1] = ((int)src[1] + (int)src[4] + 1) >> 1;
+			dst[2] = ((int)src[2] + (int)src[5] + 1) >> 1;
+		}
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 3 * src_width);
+		memcpy(ptr, outcache.data(), 3 * dst_width);
+	}
+}
+
+void downscaleInterleaved4(void *mem, unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(4 * src_width);
+	unsigned int dst_width = src_width / 2;
+	std::vector<uint8_t> outcache(4 * dst_width);
+
+	memcpy(incache.data(), mem, 4 * src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 8, dst += 4) {
+			dst[0] = ((int)src[0] + (int)src[4] + 1) >> 1;
+			dst[1] = ((int)src[1] + (int)src[5] + 1) >> 1;
+			dst[2] = ((int)src[2] + (int)src[6] + 1) >> 1;
+			dst[3] = ((int)src[3] + (int)src[7] + 1) >> 1;
+		}
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 4 * src_width);
+		memcpy(ptr, outcache.data(), 4 * dst_width);
+	}
+}
+
+void downscalePlaneInternal(void *mem, unsigned int height, unsigned int src_width, unsigned int stride,
+			    std::vector<uint8_t> &incache, std::vector<uint8_t> &outcache)
+{
+	unsigned int dst_width = src_width / 2;
+	memcpy(incache.data(), mem, src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 2, dst++)
+			*dst = ((int)src[0] + (int)src[1] + 1) >> 1;
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, src_width);
+		memcpy(ptr, outcache.data(), dst_width);
+	}
+}
+
+void downscalePlanar420(void *memY, void *memU, void *memV,
+			unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(src_width);
+	std::vector<uint8_t > outcache(src_width / 2);
+
+	downscalePlaneInternal(memY, height, src_width, stride, incache, outcache);
+	downscalePlaneInternal(memU, height / 2, src_width / 2, stride / 2, incache, outcache);
+	downscalePlaneInternal(memV, height / 2, src_width / 2, stride / 2, incache, outcache);
+}
+
+void downscalePlanar422(void *memY, void *memU, void *memV,
+			unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(src_width);
+	std::vector<uint8_t > outcache(src_width / 2);
+
+	downscalePlaneInternal(memY, height, src_width, stride, incache, outcache);
+	downscalePlaneInternal(memU, height, src_width / 2, stride / 2, incache, outcache);
+	downscalePlaneInternal(memV, height, src_width / 2, stride / 2, incache, outcache);
+}
+
+void downscaleInterleavedYuyv(void *mem, unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(2 * src_width);
+	unsigned int dst_width = src_width / 2;
+	std::vector<uint8_t> outcache(2 * dst_width);
+
+	memcpy(incache.data(), mem, 2 * src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 8, dst += 4) {
+			dst[0] = ((int)src[0] + (int)src[2] + 1) >> 1;
+			dst[1] = ((int)src[1] + (int)src[5] + 1) >> 1;
+			dst[2] = ((int)src[4] + (int)src[6] + 1) >> 1;
+			dst[3] = ((int)src[3] + (int)src[7] + 1) >> 1;
+		}
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 4 * src_width);
+		memcpy(ptr, outcache.data(), 2 * dst_width);
+	}
+}
+
+void downscaleInterleavedUyvy(void *mem, unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(2 * src_width);
+	unsigned int dst_width = src_width / 2;
+	std::vector<uint8_t> outcache(2 * dst_width);
+
+	memcpy(incache.data(), mem, 2 * src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 8, dst += 4) {
+			dst[0] = ((int)src[0] + (int)src[4] + 1) >> 1;
+			dst[1] = ((int)src[1] + (int)src[3] + 1) >> 1;
+			dst[2] = ((int)src[2] + (int)src[6] + 1) >> 1;
+			dst[3] = ((int)src[5] + (int)src[7] + 1) >> 1;
+		}
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 4 * src_width);
+		memcpy(ptr, outcache.data(), 2 * dst_width);
+	}
+}
+
+void downscaleInterleaved2Internal(void *mem, unsigned int height, unsigned int src_width, unsigned int stride,
+				   std::vector<uint8_t> &incache, std::vector<uint8_t> &outcache)
+{
+	unsigned int dst_width = src_width / 2;
+	memcpy(incache.data(), mem, 2 * src_width);
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+
+		uint8_t *src = incache.data(), *dst = outcache.data();
+		for (unsigned int i = 0; i < dst_width; i++, src += 4, dst += 2) {
+			dst[0] = ((int)src[0] + (int)src[2] + 1) >> 1;
+			dst[1] = ((int)src[1] + (int)src[3] + 1) >> 1;
+		}
+
+		if (j < height - 1)
+			memcpy(incache.data(), ptr + stride, 2 * src_width);
+		memcpy(ptr, outcache.data(), 2 * dst_width);
+	}
+}
+
+void downscaleSemiPlanar420(void *memY, void *memUV, unsigned int height, unsigned int src_width, unsigned int stride)
+{
+	std::vector<uint8_t> incache(src_width);
+	std::vector<uint8_t> outcache(src_width / 2);
+
+	downscalePlaneInternal(memY, height, src_width, stride, incache, outcache);
+	downscaleInterleaved2Internal(memUV, height / 2, src_width / 2, stride, incache, outcache);
+}
+
+void downscaleStreamBuffer(RPi::Stream *stream, int index)
+{
+	unsigned int downscale = stream->swDownscale();
+	/* Must be a power of 2. */
+	ASSERT((downscale & (downscale - 1)) == 0);
+
+	unsigned int stride = stream->configuration().stride;
+	unsigned int dst_width = stream->configuration().size.width;
+	unsigned int height = stream->configuration().size.height;
+	const PixelFormat &pixFormat = stream->configuration().pixelFormat;
+	const RPi::BufferObject &b = stream->getBuffer(index);
+	void *mem = b.mapped->planes()[0].data();
+	ASSERT(b.mapped);
+
+	/* Do repeated downscale-by-2 in place until we're done. */
+	for (; downscale > 1; downscale >>= 1) {
+		unsigned int src_width = downscale * dst_width;
+
+		if (pixFormat == formats::RGB888 || pixFormat == formats::BGR888) {
+			downscaleInterleaved3(mem, height, src_width, stride);
+		}
+		else if (pixFormat == formats::XRGB8888 || pixFormat == formats::XBGR8888) {
+			/* On some devices these may actually be 24bpp at this point. */
+			if (stream->getFlags() & StreamFlags::Needs32bitConv)
+				downscaleInterleaved3(mem, height, src_width, stride);
+			else
+				downscaleInterleaved4(mem, height, src_width, stride);
+		}
+		else if (pixFormat == formats::YUV420 || pixFormat == formats::YVU420) {
+			/*
+			 * These look "multiplanar" even when they're a single allocation,
+			 * so the following should work for everyone.
+			 */
+			void *mem1 = b.mapped->planes()[1].data();
+			void *mem2 = b.mapped->planes()[2].data();
+			downscalePlanar420(mem, mem1, mem2, height, src_width, stride);
+		}
+		else if (pixFormat == formats::YUV422 || pixFormat == formats::YVU422) {
+			/*
+			 * These look "multiplanar" even when they're a single allocation,
+			 * so the following should work for everyone.
+			 */
+			void *mem1 = b.mapped->planes()[1].data();
+			void *mem2 = b.mapped->planes()[2].data();
+			downscalePlanar422(mem, mem1, mem2, height, src_width, stride);
+		}
+		else if (pixFormat == formats::YUYV || pixFormat == formats::YVYU) {
+			downscaleInterleavedYuyv(mem, height, src_width, stride);
+		}
+		else if (pixFormat == formats::UYVY || pixFormat == formats::VYUY) {
+			downscaleInterleavedUyvy(mem, height, src_width, stride);
+		}
+		else if (pixFormat == formats::NV12 || pixFormat == formats::NV21) {
+			/*
+			 * These look "multiplanar" even when they're a single allocation,
+			 * so the following should work for everyone.
+			 */
+			void *mem1 = b.mapped->planes()[1].data();
+			downscaleSemiPlanar420(mem, mem1, height, src_width, stride);
+		}
+		else {
+			LOG(RPI, Error) << "Sw downscale unsupported for " << pixFormat;
+			ASSERT(0);
+		}
+	}
+}
+
+/* Highest common factor */
+unsigned int hcf(unsigned int a, unsigned int b)
+{
+	int tmp;
+	while (b)
+		tmp = a % b, a = b, b = tmp;
+	return a;
+}
+
+/* Return largest width of any of these streams (or of the camera input). */
+unsigned int getLargestWidth(const V4L2SubdeviceFormat &sensorFormat, std::vector<StreamParams> &outStreams)
+{
+	unsigned int largestWidth = sensorFormat.size.width;
+
+	for (const auto &stream: outStreams)
+		largestWidth = std::max(largestWidth, stream.cfg->size.width);
+
+	return largestWidth;
+}
+
+/* Return the minimum number of pixels required to write out multiples of 16 bytes. */
+unsigned int getFormatAlignment(const V4L2PixelFormat &fourcc)
+{
+	const PixelFormatInfo &info = PixelFormatInfo::info(fourcc);
+	unsigned int formatAlignment = 0;
+	for (const auto &plane: info.planes) {
+		if (plane.bytesPerGroup) {
+			/* How many pixels we need in this plane for a multiple of 16 bytes (??). */
+			unsigned int align = 16 * info.pixelsPerGroup / hcf(16, plane.bytesPerGroup);
+			formatAlignment = std::max(formatAlignment, align);
+		}
+	}
+
+	return formatAlignment;
+}
+
+/* Calculate the amount of software downscale required (which is a power of 2). */
+unsigned int calculateSwDownscale(const V4L2DeviceFormat &format, unsigned int largestWidth,
+				  unsigned int platformMaxDownscale)
+{
+	unsigned int formatAlignment = getFormatAlignment(format.fourcc);
+	unsigned int maxDownscale = platformMaxDownscale * 16 / formatAlignment;
+	unsigned int limitWidth = largestWidth / maxDownscale;
+
+	unsigned int hwWidth = format.size.width;
+	unsigned int swDownscale = 1;
+	for ( ; hwWidth < limitWidth; hwWidth *= 2, swDownscale *= 2);
+
+	return swDownscale;
+}
+
 } /* namespace */
 
 using ::libpisp::BackEnd;
@@ -339,7 +622,8 @@ public:
 		return cfe_[Cfe::Output0].dev();
 	}
 
-	CameraConfiguration::Status platformValidate(std::vector<StreamParams> &rawStreams,
+	CameraConfiguration::Status platformValidate(const V4L2SubdeviceFormat &sensorFormat,
+						     std::vector<StreamParams> &rawStreams,
 						     std::vector<StreamParams> &outStreams) const override;
 
 	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
@@ -713,7 +997,8 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	return 0;
 }
 
-CameraConfiguration::Status PiSPCameraData::platformValidate(std::vector<StreamParams> &rawStreams,
+CameraConfiguration::Status PiSPCameraData::platformValidate(const V4L2SubdeviceFormat &sensorFormat,
+							     std::vector<StreamParams> &rawStreams,
 							     std::vector<StreamParams> &outStreams) const
 {
 	CameraConfiguration::Status status = CameraConfiguration::Status::Valid;
@@ -745,6 +1030,8 @@ CameraConfiguration::Status PiSPCameraData::platformValidate(std::vector<StreamP
 	 *
 	 * Index 0 contains the largest requested resolution.
 	 */
+	unsigned int largestWidth = getLargestWidth(sensorFormat, outStreams);
+
 	for (unsigned int i = 0; i < outStreams.size(); i++) {
 		Size size;
 
@@ -771,8 +1058,25 @@ CameraConfiguration::Status PiSPCameraData::platformValidate(std::vector<StreamP
 		/* Compute the optimal stride for the BE output buffers. */
 		computeOptimalStride(format);
 
-		if (outStreams[0].cfg->stride != format.planes[0].bpl) {
-			outStreams[0].cfg->stride = format.planes[0].bpl;
+		/*
+		 * We need to check for software downscaling. This must happen after adjusting the device format so that
+		 * we can choose the largest stride - which might have been the original unadjusted format, or the
+		 * adjusted one (if software downscaling means it's larger).
+		 */
+		V4L2DeviceFormat adjustedFormat = format;
+		adjustDeviceFormat(adjustedFormat);
+
+		unsigned int swDownscale = calculateSwDownscale(adjustedFormat, largestWidth, be_->GetMaxDownscale());
+		LOG(RPI, Debug) << "For stream " << adjustedFormat << " swDownscale is " << swDownscale;
+		if (swDownscale > 1) {
+			adjustedFormat.size.width *= swDownscale;
+			computeOptimalStride(adjustedFormat);
+			for (unsigned int p = 0; p < format.planesCount; p++)
+				format.planes[p].bpl = std::max(format.planes[p].bpl, adjustedFormat.planes[p].bpl);
+		}
+
+		if (outStreams[i].cfg->stride != format.planes[0].bpl) {
+			outStreams[i].cfg->stride = format.planes[0].bpl;
 			status = CameraConfiguration::Status::Adjusted;
 		}
 	}
@@ -854,6 +1158,9 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	if (!packing)
 		packing = BayerFormat::Packing::PISP1;
 
+	/* Find the largest width of any stream; we'll use it later to check for excessive downscaling. */
+	unsigned int largestWidth = getLargestWidth(sensorFormat, outStreams);
+
 	/*
 	 * The CFE Frontend output will always be 16-bits unpacked, so adjust the
 	 * mbus code right at the start.
@@ -928,22 +1235,31 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		format.size = cfg->size;
 		format.fourcc = fourcc;
 		format.colorSpace = cfg->colorSpace;
-		format.planesCount = 0;
 
-		/* Compute the optimal stride for the BE output buffers. */
-		computeOptimalStride(format);
+		/* Use the stride we've been given, which validate() will have calculated. */
+		const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
+		format.planesCount = info.numPlanes();
+		format.planes[0].bpl = cfg->stride;
 
 		needs32BitConversion = adjustDeviceFormat(format);
 		fourcc = format.fourcc;
 
+		/* If there's excessive downscaling we'll do some of it in software. */
+		unsigned int swDownscale = calculateSwDownscale(format, largestWidth, be_->GetMaxDownscale());
+		unsigned int hwWidth = format.size.width * swDownscale;
+		format.size.width = hwWidth;
+
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
-				<< format;
+				<< format << " (sw downscale " << swDownscale << ")";
 
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
 			return -EINVAL;
+		LOG(RPI, Debug) << "After setFormat, stride " << format.planes[0].bpl;
 
-		if (format.size != cfg->size || format.fourcc != fourcc) {
+		if (format.size.height != cfg->size.height || format.size.width != hwWidth ||
+		    format.fourcc != fourcc) {
 			LOG(RPI, Error)
 				<< "Failed to set requested format on " << stream->name()
 				<< ", returned " << format;
@@ -959,9 +1275,12 @@ int PiSPCameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 		stream->clearFlags(StreamFlags::Needs32bitConv);
 		if (needs32BitConversion)
 			flags |= StreamFlags::Needs32bitConv | StreamFlags::RequiresMmap;
+		if (swDownscale > 1)
+			flags |= StreamFlags::RequiresMmap;
 
 		cfg->setStream(stream);
 		stream->setFlags(flags);
+		stream->setSwDownscale(swDownscale);
 		streams_.push_back(stream);
 	}
 
@@ -1160,6 +1479,11 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer complete"
 			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
+
+	if (stream->swDownscale() > 1) {
+		/* Further software downscaling must be applied. */
+		downscaleStreamBuffer(stream, index);
+	}
 
 	/* Convert 24bpp outputs to 32bpp outputs where necessary. */
 	if (stream->getFlags() & StreamFlags::Needs32bitConv) {

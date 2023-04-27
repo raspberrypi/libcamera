@@ -273,8 +273,23 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	std::sort(outStreams.begin(), outStreams.end(),
 		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
 
-	/* Do any platform specific fixups. */
-	status = data_->platformValidate(rawStreams, outStreams);
+	/*
+	 * Do any platform specific fixups.
+	 * platformValidate() needs to know the size of the ISP input, which is currently
+	 * the sensor output size.
+	 */
+	unsigned int bitDepth = defaultRawBitDepth;
+	if (!rawStreams.empty()) {
+		BayerFormat bayerFormat = BayerFormat::fromPixelFormat(rawStreams[0].cfg->pixelFormat);
+		bitDepth = bayerFormat.bitDepth;
+	}
+
+	V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_,
+							  rawStreams.empty() ? outStreams[0].cfg->size
+									     : rawStreams[0].cfg->size,
+							  bitDepth);
+
+	status = data_->platformValidate(sensorFormat, rawStreams, outStreams);
 	if (status == Invalid)
 		return Invalid;
 
@@ -284,8 +299,8 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		V4L2DeviceFormat rawFormat;
 
 		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
-		V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
+		bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
+		sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
 
 		rawFormat.size = sensorFormat.size;
 		rawFormat.fourcc = raw.dev->toV4L2PixelFormat(cfg.pixelFormat);
@@ -334,6 +349,16 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		V4L2DeviceFormat format;
 		format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
+
+		/*
+		 * platformValidate may have worked out the correct stride so we must pass it in. This
+		 * also needs the planesCount to be set correctly or the stride will be ignored.
+		 */
+		const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
+		format.planesCount = info.numPlanes();
+		format.planes[0].bpl = cfg.stride;
+
 		/* We want to send the associated YCbCr info through to the driver. */
 		format.colorSpace = yuvColorSpace_;
 

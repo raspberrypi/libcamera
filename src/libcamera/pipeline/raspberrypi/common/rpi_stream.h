@@ -67,13 +67,14 @@ public:
 	};
 
 	Stream()
-		: flags_(Flags::None), id_(BufferMask::MaskID)
+		: flags_(Flags::None), id_(BufferMask::MaskID), swDownscale_(0)
 	{
 	}
 
 	Stream(const char *name, MediaEntity *dev, unsigned int flags = Flags::None)
 		: flags_(flags), name_(name),
-		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(BufferMask::MaskID)
+		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(BufferMask::MaskID),
+		  swDownscale_(0)
 	{
 	}
 
@@ -84,6 +85,9 @@ public:
 	V4L2VideoDevice *dev() const;
 	const std::string &name() const;
 	void resetBuffers();
+
+	unsigned int swDownscale() const;
+	void setSwDownscale(unsigned int swDownscale);
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const BufferMap &getBuffers() const;
@@ -154,6 +158,9 @@ private:
 
 	/* Tracks a unique id key for the bufferMap_ */
 	IdGenerator id_;
+
+	/* Power of 2 greater than one if software downscaling will be required. */
+	unsigned int swDownscale_;
 
 	/* All frame buffers associated with this device stream. */
 	BufferMap bufferMap_;

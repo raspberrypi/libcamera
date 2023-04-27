@@ -64,7 +64,8 @@ public:
 	{
 	}
 
-	CameraConfiguration::Status platformValidate(std::vector<StreamParams> &rawStreams,
+	CameraConfiguration::Status platformValidate(const V4L2SubdeviceFormat &sensorFormat,
+						     std::vector<StreamParams> &rawStreams,
 						     std::vector<StreamParams> &outStreams) const override;
 
 	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
@@ -387,7 +388,8 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	return 0;
 }
 
-CameraConfiguration::Status Vc4CameraData::platformValidate(std::vector<StreamParams> &rawStreams,
+CameraConfiguration::Status Vc4CameraData::platformValidate([[maybe_unused]] const V4L2SubdeviceFormat &sensorFormat,
+							    std::vector<StreamParams> &rawStreams,
 							    std::vector<StreamParams> &outStreams) const
 {
 	CameraConfiguration::Status status = CameraConfiguration::Status::Valid;

@@ -91,17 +91,60 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 		default:
 			ASSERT(0);
 		}
-	} else if (pix == formats::YUV420) {
+		return image;
+	}
+
+	switch (pix) {
+	case formats::YUV420:
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
 			       PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_PLANAR;
 		image.stride2 = image.stride / 2;
-	} else if (pix == formats::RGB888 || pix == formats::BGR888) {
+		break;
+	case formats::NV12:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR;
+		image.stride2 = image.stride;
+		break;
+	case formats::NV21:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_420 + PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR +
+			       PISP_IMAGE_FORMAT_ORDER_SWAPPED;
+		image.stride2 = image.stride;
+		break;
+	case formats::YUYV:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_422 + PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED;
+		break;
+	case formats::UYVY:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_422 + PISP_IMAGE_FORMAT_PLANARITY_INTERLEAVED +
+			       PISP_IMAGE_FORMAT_ORDER_SWAPPED;
+		break;
+	case formats::NV16:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_422 + PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR;
+		image.stride2 = image.stride;
+		break;
+	case formats::NV61:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_8 +
+			       PISP_IMAGE_FORMAT_SAMPLING_422 + PISP_IMAGE_FORMAT_PLANARITY_SEMI_PLANAR +
+			       PISP_IMAGE_FORMAT_ORDER_SWAPPED;
+		image.stride2 = image.stride;
+		break;
+	case formats::RGB888:
+	case formats::BGR888:
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL;
-	} else if (pix == formats::XRGB8888 || pix == formats::XBGR8888) {
-		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL | PISP_IMAGE_FORMAT_BPP_32;
-	} else if (pix == formats::RGBX8888 || pix == formats::BGRX8888) {
-		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL | PISP_IMAGE_FORMAT_BPP_32 | PISP_IMAGE_FORMAT_ORDER_SWAPPED;
-	} else {
+		break;
+	case formats::XRGB8888:
+	case formats::XBGR8888:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPP_32;
+		break;
+	case formats::RGBX8888:
+	case formats::BGRX8888:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPP_32 +
+			       PISP_IMAGE_FORMAT_ORDER_SWAPPED;
+		break;
+	default:
 		LOG(RPI, Error) << "Pixel format " << pix << " unsupported";
 		ASSERT(0);
 	}

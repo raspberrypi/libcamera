@@ -56,15 +56,13 @@ if libcamera_version != project_version
     libcamera_git_version += '-nvm'
 endif
 
-# Until we make ABI compatible releases, the full libcamera version is used as
-# the soname. No ABI/API compatibility is guaranteed between releases (x.y.z).
-#
-# When automatic ABI based detection is used to increment the version, this
-# will bump the minor number (x.y).
+# The major and minor libcamera version components are used as the soname.
+# No ABI/API compatibility is guaranteed between releases (x.y).
 #
 # When we declare a stable ABI/API we will provide a 1.0 release and the
 # soversion at that point will be the 'major' release value (x).
-libcamera_soversion = libcamera_version
+semver = libcamera_version.split('.')
+libcamera_soversion = semver[0] + '.' + semver[1]
 
 summary({ 'Sources': libcamera_git_version, }, section : 'Versions')
 

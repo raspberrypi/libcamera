@@ -136,6 +136,21 @@ if cc.get_id() == 'gcc'
         ]
     endif
 
+    # gcc 13 implements the C++23 version of automatic move from local
+    # variables in return statements (see
+    # https://en.cppreference.com/w/cpp/language/return). As a result, some
+    # previously required explicit std::move() in return statements generate
+    # warnings. Those moves can't be removed as older compiler versions could
+    # use copy constructors instead of move constructors. The easiest fix is to
+    # disable the warning. With -Wpessimizing-move enabled, the compiler will
+    # still warn of pessimizing moves, only the redundant but not pessimizing
+    # moves will be ignored.
+    if cc.version().version_compare('>=13')
+        cpp_arguments += [
+            '-Wno-redundant-move',
+        ]
+    endif
+
     # gcc 7.1 introduced processor-specific ABI breakages related to parameter
     # passing on ARM platforms. This generates a large number of messages
     # during compilation. Silence them.

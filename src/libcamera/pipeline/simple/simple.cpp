@@ -190,6 +190,7 @@ struct SimplePipelineInfo {
 namespace {
 
 static const SimplePipelineInfo supportedDevices[] = {
+	{ "dcmipp", {} },
 	{ "imx7-csi", { { "pxp", 1 } } },
 	{ "mxc-isi", {} },
 	{ "qcom-camss", {} },

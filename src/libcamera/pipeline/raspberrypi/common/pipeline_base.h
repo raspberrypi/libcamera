@@ -232,12 +232,12 @@ public:
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
 protected:
-	int registerCamera(MediaDevice *frontent, const std::string &frontendName,
+	int registerCamera(std::unique_ptr<CameraData> &cameraData,
+			   MediaDevice *frontent, const std::string &frontendName,
 			   MediaDevice *backend, MediaEntity *sensorEntity);
 
 	void mapBuffers(Camera *camera, const BufferMap &buffers, unsigned int mask);
 
-	virtual std::unique_ptr<CameraData> allocateCameraData() = 0;
 	virtual int platformRegister(std::unique_ptr<CameraData> &cameraData,
 				     MediaDevice *unicam, MediaDevice *isp) = 0;
 

@@ -36,7 +36,16 @@ namespace {
 enum class Cfe : unsigned int { Output0, Embedded, Stats, Config };
 enum class Isp : unsigned int { Input, Output0, Output1, Tdn, Stitch, Config };
 
-constexpr unsigned int PISP_BE_VERSION_2712C0 = 0x02252700;
+const ::libpisp::PiSPVariant &getHw(unsigned int hwVersion)
+{
+	static const std::vector<::libpisp::PiSPVariant> variants{ ::libpisp::BCM2712_C0, ::libpisp::BCM2712_D0 };
+
+	auto it = std::find_if(variants.begin(), variants.end(),
+			       [hwVersion](const auto &hw) { return hw.version() == hwVersion; });
+
+	ASSERT(it != variants.end());
+	return *it;
+}
 
 uint32_t mbusCodeUnpacked16(unsigned int mbus_code)
 {
@@ -298,18 +307,14 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height, unsig
 } /* namespace */
 
 using ::libpisp::BackEnd;
-using ::libpisp::BCM2712_HW;
 using ::libpisp::FrontEnd;
 
 class PiSPCameraData final : public RPi::CameraData
 {
 public:
 	PiSPCameraData(PipelineHandler *pipe)
-		: RPi::CameraData(pipe),
-		  fe_("pisp_frontend", true, BCM2712_HW),
-		  be_("pisp_backend", BackEnd::Config({}), BCM2712_HW)
+		: RPi::CameraData(pipe)
 	{
-		ASSERT(fe_ && be_);
 		/* Initialise internal libpisp logging. */
 		::libpisp::logging_init();
 	}
@@ -455,11 +460,6 @@ private:
 		return static_cast<PiSPCameraData *>(camera->_d());
 	}
 
-	std::unique_ptr<RPi::CameraData> allocateCameraData()
-	{
-		return std::make_unique<PiSPCameraData>(this);
-	}
-
 	int prepareBuffers(Camera *camera) override;
 	int platformRegister(std::unique_ptr<RPi::CameraData> &cameraData, MediaDevice *cfe, MediaDevice *isp);
 };
@@ -501,7 +501,22 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 			if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
 				continue;
 
-			int ret = RPi::PipelineHandlerBase::registerCamera(cfeDevice, "csi2", ispDevice, entity);
+			std::unique_ptr<RPi::CameraData> cameraData = std::make_unique<PiSPCameraData>(this);
+			PiSPCameraData *pisp = static_cast<PiSPCameraData *>(cameraData.get());
+
+			pisp->hwRevision_ = ispDevice->hwRevision();
+			const libpisp::PiSPVariant &hw = getHw(pisp->hwRevision_);
+
+			pisp->fe_ = RPi::SharedMemObject<FrontEnd>("pisp_frontend", true, hw);
+			pisp->be_ = RPi::SharedMemObject<BackEnd>("pisp_backend", BackEnd::Config({}), hw);
+
+			if (!pisp->fe_.getFD().isValid() || !pisp->be_.getFD().isValid()) {
+				LOG(RPI, Error) << "Failed to create ISP shared objects";
+				break;
+			}
+
+			int ret = RPi::PipelineHandlerBase::registerCamera(cameraData,
+									   cfeDevice, "csi2", ispDevice, entity);
 			if (ret)
 				LOG(RPI, Error) << "Failed to register camera "
 						<< entity->name() << ": " << ret;
@@ -594,8 +609,6 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 {
 	PiSPCameraData *data = static_cast<PiSPCameraData *>(cameraData.get());
 	int ret;
-
-	data->hwRevision_ = isp->hwRevision();
 
 	MediaEntity *cfeImage = cfe->getEntityByName("rp1-cfe-fe_image0");
 	MediaEntity *cfeStats = cfe->getEntityByName("rp1-cfe-fe_stats");
@@ -818,7 +831,7 @@ bool PiSPCameraData::adjustDeviceFormat(V4L2DeviceFormat &format) const
 {
 	auto it = deviceAdjustTable.find(format.fourcc.fourcc());
 
-	if (hwRevision_ != PISP_BE_VERSION_2712C0)
+	if (getHw(hwRevision_).version() != libpisp::BCM2712_C0.version())
 		return false;
 
 	if (it != deviceAdjustTable.end()) {

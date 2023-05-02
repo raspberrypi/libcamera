@@ -24,6 +24,11 @@ class SharedMemObject
 public:
 	static constexpr std::size_t SIZE = sizeof(T);
 
+	SharedMemObject()
+		: obj_(nullptr)
+	{
+	}
+
 	template<class... Args>
 	SharedMemObject(const std::string &name, Args &&...args)
 		: name_(name), obj_(nullptr)
@@ -54,6 +59,19 @@ public:
 			obj_->~T();
 			munmap(obj_, SIZE);
 		}
+	}
+
+	/* SharedMemObject is non-copyable because of the mmap in the constructor */
+	SharedMemObject(const SharedMemObject<T> &) = delete;
+	SharedMemObject<T> &operator=(const SharedMemObject<T> &) = delete;
+
+	SharedMemObject<T> &operator=(SharedMemObject<T> &&rhs)
+	{
+		this->name_ = std::move(rhs.name_);
+		this->fd_ = std::move(rhs.fd_);
+		this->obj_ = rhs.obj_;
+		rhs.obj_ = nullptr;
+		return *this;
 	}
 
 	T *operator->()

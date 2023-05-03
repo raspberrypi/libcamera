@@ -29,3 +29,5 @@ if ipa_sign_module
                   install : false,
                   build_by_default : true)
 endif
+
+ipa_names += ipa_name

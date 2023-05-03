@@ -21,3 +21,5 @@ if ipa_sign_module
 endif
 
 subdir('data')
+
+ipa_names += ipa_name

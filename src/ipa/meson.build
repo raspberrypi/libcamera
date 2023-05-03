@@ -36,16 +36,31 @@ if get_option('test') and 'vimc' not in ipa_modules
 endif
 
 enabled_ipa_modules = []
+enabled_ipa_names = []
+ipa_names = []
 
-# The ipa-sign-install.sh script which uses the ipa_names variable will itself
-# prepend MESON_INSTALL_DESTDIR_PREFIX to each ipa module name, therefore we
-# must not include the prefix string here.
+subdirs = []
 foreach pipeline : pipelines
-    if ipa_modules.contains(pipeline)
-        subdir(pipeline)
-        ipa_names += ipa_install_dir / ipa_name + '.so'
-        enabled_ipa_modules += pipeline
+    if not ipa_modules.contains(pipeline)
+        continue
     endif
+    enabled_ipa_names += pipeline
+
+    # Allow multi-level directory structuring for the IPAs if needed.
+    pipeline = pipeline.split('/')[0]
+    if pipeline in subdirs
+        continue
+    endif
+
+    subdir(pipeline)
+    subdirs += pipeline
+endforeach
+
+# The ipa-sign-install.sh script which uses the enabled_ipa_modules variable
+# will itself prepend MESON_INSTALL_DESTDIR_PREFIX to each ipa module name,
+# therefore we must not include the prefix string here.
+foreach ipa_name : ipa_names
+    enabled_ipa_modules += ipa_install_dir / ipa_name + '.so'
 endforeach
 
 if ipa_sign_module
@@ -54,5 +69,5 @@ if ipa_sign_module
     # install time, which invalidates the signatures.
     meson.add_install_script('ipa-sign-install.sh',
                              ipa_priv_key.full_path(),
-                             ipa_names)
+                             enabled_ipa_modules)
 endif

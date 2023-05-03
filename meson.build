@@ -262,7 +262,7 @@ py_mod.find_installation('python3', modules: py_modules)
 ## Summarise Configurations
 summary({
             'Enabled pipelines': pipelines,
-            'Enabled IPA modules': enabled_ipa_modules,
+            'Enabled IPA modules': enabled_ipa_names,
             'Tracing support': tracing_enabled,
             'Android support': android_enabled,
             'GStreamer support': gst_enabled,

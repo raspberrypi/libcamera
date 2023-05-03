@@ -225,9 +225,9 @@ Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
  * \brief The name of the IPA module
  *
  * The name may be used to build file system paths to IPA-specific resources.
- * It shall only contain printable characters, and may not contain '/', '*',
- * '?' or '\'. For IPA modules included in libcamera, it shall match the
- * directory of the IPA module in the source tree.
+ * It shall only contain printable characters, and may not contain '*', '?' or
+ * '\'. For IPA modules included in libcamera, it shall match the directory of
+ * the IPA module in the source tree.
  *
  * \todo Allow user to choose to isolate open source IPAs
  */
@@ -300,13 +300,18 @@ int IPAModule::loadIPAModuleInfo()
 		return -EINVAL;
 	}
 
-	/* Validate the IPA module name. */
+	/*
+	 * Validate the IPA module name.
+	 *
+	 * \todo Consider module naming restrictions to avoid escaping from a
+	 * base directory. Forbidding ".." may be enough, but this may be best
+	 * implemented in a different layer.
+	 */
 	std::string ipaName = info_.name;
 	auto iter = std::find_if_not(ipaName.begin(), ipaName.end(),
 				     [](unsigned char c) -> bool {
-					     return isprint(c) && c != '/' &&
-						    c != '?' && c != '*' &&
-						    c != '\\';
+					     return isprint(c) && c != '?' &&
+						    c != '*' && c != '\\';
 				     });
 	if (iter != ipaName.end()) {
 		LOG(IPAModule, Error)

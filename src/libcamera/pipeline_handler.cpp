@@ -17,6 +17,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/property_ids.h>
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_manager.h"
@@ -612,7 +613,7 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 	 * Walk the entity list and map the devnums of all capture video nodes
 	 * to the camera.
 	 */
-	std::vector<dev_t> devnums;
+	std::vector<int64_t> devnums;
 	for (const std::shared_ptr<MediaDevice> &media : mediaDevices_) {
 		for (const MediaEntity *entity : media->entities()) {
 			if (entity->pads().size() == 1 &&
@@ -624,7 +625,14 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 		}
 	}
 
-	manager_->_d()->addCamera(std::move(camera), devnums);
+	/*
+	 * Store the associated devices as a property of the camera to allow
+	 * systems to identify which devices are managed by libcamera.
+	 */
+	Camera::Private *data = camera->_d();
+	data->properties_.set(properties::SystemDevices, devnums);
+
+	manager_->_d()->addCamera(std::move(camera));
 }
 
 /**

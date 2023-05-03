@@ -11,7 +11,9 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/property_ids.h>
 
+#include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/pipeline_handler.h"
 
@@ -151,19 +153,17 @@ void CameraManager::Private::cleanup()
 /**
  * \brief Add a camera to the camera manager
  * \param[in] camera The camera to be added
- * \param[in] devnums The device numbers to associate with \a camera
  *
  * This function is called by pipeline handlers to register the cameras they
  * handle with the camera manager. Registered cameras are immediately made
  * available to the system.
  *
- * \a devnums are used by the V4L2 compatibility layer to map V4L2 device nodes
- * to Camera instances.
+ * Device numbers from the SystemDevices property are used by the V4L2
+ * compatibility layer to map V4L2 device nodes to Camera instances.
  *
  * \context This function shall be called from the CameraManager thread.
  */
-void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
-				       const std::vector<dev_t> &devnums)
+void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera)
 {
 	ASSERT(Thread::current() == this);
 
@@ -177,6 +177,10 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 			return;
 		}
 	}
+
+	auto devnums = camera->properties()
+			       .get(properties::SystemDevices)
+			       .value_or(Span<int64_t>{});
 
 	cameras_.push_back(std::move(camera));
 

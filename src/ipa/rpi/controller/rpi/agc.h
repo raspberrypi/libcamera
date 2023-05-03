@@ -69,6 +69,7 @@ public:
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
 	unsigned int getConvergenceFrames() const override;
+	std::vector<double> const &getWeights() const override;
 	void setEv(double ev) override;
 	void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) override;
 	void setMaxShutter(libcamera::utils::Duration maxShutter) override;

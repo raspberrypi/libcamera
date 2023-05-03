@@ -292,6 +292,18 @@ unsigned int Agc::getConvergenceFrames() const
 		return config_.convergenceFrames;
 }
 
+std::vector<double> const &Agc::getWeights() const
+{
+	/*
+	 * In case someone calls setMeteringMode and then this before the
+	 * algorithm has run and updated the meteringMode_ pointer.
+	 */
+	auto it = config_.meteringModes.find(meteringModeName_);
+	if (it == config_.meteringModes.end())
+		return meteringMode_->weights;
+	return it->second.weights;
+}
+
 void Agc::setEv(double ev)
 {
 	ev_ = ev;
@@ -595,19 +607,16 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	ASSERT(weights.size() == stats->agcRegions.numRegions());
 
 	/*
-	 * Note how the calculation below means that equal weights give you
-	 * "average" metering (i.e. all pixels equally important).
+	 * Note that the weights are applied by the IPA to the statistics directly,
+	 * before they are given to us here.
 	 */
 	double rSum = 0, gSum = 0, bSum = 0, pixelSum = 0;
 	for (unsigned int i = 0; i < stats->agcRegions.numRegions(); i++) {
 		auto &region = stats->agcRegions.get(i);
-		double rAcc = std::min<double>(region.val.rSum * gain, (maxVal - 1) * region.counted);
-		double gAcc = std::min<double>(region.val.gSum * gain, (maxVal - 1) * region.counted);
-		double bAcc = std::min<double>(region.val.bSum * gain, (maxVal - 1) * region.counted);
-		rSum += rAcc * weights[i];
-		gSum += gAcc * weights[i];
-		bSum += bAcc * weights[i];
-		pixelSum += region.counted * weights[i];
+		rSum += std::min<double>(region.val.rSum * gain, (maxVal - 1) * region.counted);
+		gSum += std::min<double>(region.val.gSum * gain, (maxVal - 1) * region.counted);
+		bSum += std::min<double>(region.val.bSum * gain, (maxVal - 1) * region.counted);
+		pixelSum += region.counted;
 	}
 	if (pixelSum == 0.0) {
 		LOG(RPiAgc, Warning) << "computeInitialY: pixelSum is zero";

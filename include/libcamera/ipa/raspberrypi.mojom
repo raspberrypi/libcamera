@@ -8,7 +8,7 @@ module ipa.RPi;
 
 import "include/libcamera/ipa/core.mojom";
 
-/* Size of the LS grid allocation. */
+/* Size of the LS grid allocation on VC4. */
 const uint32 MaxLsGridSize = 0x8000;
 
 struct SensorConfig {
@@ -19,64 +19,123 @@ struct SensorConfig {
 	uint32 sensorMetadata;
 };
 
-struct IPAInitResult {
+struct InitParams {
+	bool lensPresent;
+};
+
+struct InitResult {
 	SensorConfig sensorConfig;
 	libcamera.ControlInfoMap controlInfo;
 };
 
-struct ISPConfig {
-	uint32 embeddedBufferId;
-	uint32 bayerBufferId;
-	bool embeddedBufferPresent;
-	libcamera.ControlList controls;
-	uint32 ipaContext;
-	uint32 delayContext;
+struct BufferIds {
+	uint32 bayer;
+	uint32 embedded;
+	uint32 stats;
 };
 
-struct IPAConfig {
+struct ConfigParams {
 	uint32 transform;
-	libcamera.SharedFD lsTableHandle;
 	libcamera.ControlInfoMap sensorControls;
 	libcamera.ControlInfoMap ispControls;
 	libcamera.ControlInfoMap lensControls;
+        /* VC4 specific */
+	libcamera.SharedFD lsTableHandle;
 };
 
-struct IPAConfigResult {
-       float modeSensitivity;
-       libcamera.ControlInfoMap controlInfo;
+struct ConfigResult {
+	float modeSensitivity;
+	libcamera.ControlInfoMap controlInfo;
+	libcamera.ControlList controls;
 };
 
-struct StartConfig {
+struct StartResult {
 	libcamera.ControlList controls;
 	int32 dropFrameCount;
 };
 
+struct PrepareParams {
+	BufferIds buffers;
+	libcamera.ControlList sensorControls;
+	libcamera.ControlList requestControls;
+	uint32 ipaContext;
+	uint32 delayContext;
+};
+
+struct ProcessParams {
+	BufferIds buffers;
+	uint32 ipaContext;
+};
+
 interface IPARPiInterface {
-	init(libcamera.IPASettings settings, bool lensPresent)
-		=> (int32 ret, IPAInitResult result);
-	start(libcamera.ControlList controls) => (StartConfig startConfig);
+	/**
+	 * \fn init()
+	 * \brief Initialise the IPA
+	 * \param[in] settings Camera sensor information and configuration file
+	 * \param[in] params Platform specific initialisation parameters
+	 * \param[out] ret 0 on success or a negative error code otherwise
+	 * \param[out] result Static sensor configuration and controls available
+	 *
+	 * This function initialises the IPA for a particular sensor from the
+	 * pipeline handler.
+	 *
+	 * The \a settings conveys information about the camera sensor and
+	 * configuration file requested by the pipeline handler.
+	 *
+	 * The \a result parameter returns the sensor delay for the given camera
+	 * as well as a ControlInfoMap of available controls that can be handled
+	 * by the IPA.
+	 */
+	init(libcamera.IPASettings settings, InitParams params)
+		=> (int32 ret, InitResult result);
+
+	/**
+	 * \fn start()
+	 * \brief Start the IPA
+	 * \param[in] controls List of control to handle
+	 * \param[out] result Controls to apply and number of dropped frames
+	 *
+	 * This function sets the IPA to a started state.
+	 *
+	 * The \a controls provide a list of controls to handle immediately. The
+	 * actual controls to apply on the sensor and ISP in the pipeline
+	 * handler are returned in \a result.
+	 *
+	 * The number of convergence frames to be dropped is also returned in
+	 * \a result.
+	 */
+	start(libcamera.ControlList controls) => (StartResult result);
+
+	/**
+	 * \fn start()
+	 * \brief Stop the IPA
+	 *
+	 * This function sets the IPA to a stopped state.
+	 */
 	stop();
 
 	/**
 	 * \fn configure()
-	 * \brief Configure the IPA stream and sensor settings
-	 * \param[in] sensorInfo Camera sensor information
-	 * \param[in] ipaConfig Pipeline-handler-specific configuration data
-	 * \param[out] controls Controls to apply by the pipeline entity
-	 * \param[out] result Other results that the pipeline handler may require
+	 * \brief Configure the IPA
+	 * \param[in] sensorInfo Sensor mode configuration
+	 * \param[in] params Platform configuration parameters
+	 * \param[out] ret 0 on success or a negative error code otherwise
+	 * \param[out] result Results of the configuration operation
 	 *
-	 * This function shall be called when the camera is configured to inform
-	 * the IPA of the camera's streams and the sensor settings.
+	 * This function configures the IPA for a particular camera
+	 * configuration
 	 *
-	 * The \a sensorInfo conveys information about the camera sensor settings that
-	 * the pipeline handler has selected for the configuration.
+	 * The \a params parameter provides a list of available controls for the
+	 * ISP, sensor and lens devices, and the user requested transform
+	 * operation. It can also provide platform specific configuration
+	 * parameters, e.g. the lens shading table memory handle for VC4.
 	 *
-	 * The \a ipaConfig and \a controls parameters carry data passed by the
-	 * pipeline handler to the IPA and back.
+	 * The \a result parameter returns the available controls for the given
+	 * camera mode, a list of controls to apply to the sensor device, and
+	 * the requested mode's sensitivity characteristics.
 	 */
-	configure(libcamera.IPACameraSensorInfo sensorInfo,
-		  IPAConfig ipaConfig)
-		=> (int32 ret, libcamera.ControlList controls, IPAConfigResult result);
+	configure(libcamera.IPACameraSensorInfo sensorInfo, ConfigParams params)
+		=> (int32 ret, ConfigResult result);
 
 	/**
 	 * \fn mapBuffers()
@@ -99,7 +158,7 @@ interface IPARPiInterface {
 	 * depending on the IPA protocol. Regardless of the protocol, all
 	 * buffers mapped at a given time shall have unique numerical IDs.
 	 *
-	 * The numerical IDs have no meaning defined by the IPA interface, and 
+	 * The numerical IDs have no meaning defined by the IPA interface, and
 	 * should be treated as opaque handles by IPAs, with the only exception
 	 * that ID zero is invalid.
 	 *
@@ -119,17 +178,118 @@ interface IPARPiInterface {
 	 */
 	unmapBuffers(array<uint32> ids);
 
-	[async] signalStatReady(uint32 bufferId, uint32 ipaContext);
-	[async] signalQueueRequest(libcamera.ControlList controls);
-	[async] signalIspPrepare(ISPConfig data);
+	/**
+	 * \fn prepareIsp()
+	 * \brief Prepare the ISP configuration for a frame
+	 * \param[in] params Parameter set for the frame to process
+	 *
+	 * This function call into all the algorithms in preparation for the
+	 * frame to be processed by the ISP.
+	 *
+	 * The \a params parameter lists the buffer IDs for the Bayer and
+	 * embedded data buffers, a ControlList of sensor frame params, and
+	 * a ControlList of request controls for the current frame.
+	 *
+	 * Additionally, \a params also contains the IPA context (ipaContext) to
+	 * use as an index location to store control algorithm results, and a
+	 * historical IPA context (delayContext) that was active when the sensor
+	 * settings were requested by the IPA.
+	 */
+	[async] prepareIsp(PrepareParams params);
+
+	/**
+	 * \fn processStats()
+	 * \brief Process the statistics provided by the ISP
+	 * \param[in] params Parameter set for the statistics to process
+	 *
+	 * This function call into all the algorithms to provide the statistics
+	 * generated by the ISP for the processed frame.
+	 *
+	 * The \a params parameter lists the buffer ID for the statistics buffer
+	 * and an IPA context (ipaContext) to use as an index location to store
+	 * algorithm results.
+	 */
+	[async] processStats(ProcessParams params);
 };
 
 interface IPARPiEventInterface {
-	statsMetadataComplete(uint32 bufferId, libcamera.ControlList controls);
-	runIsp(uint32 bufferId);
-	embeddedComplete(uint32 bufferId);
+	/**
+	 * \fn prepareIspComplete()
+	 * \brief Signal completion of \a prepareIsp
+	 * \param[in] buffers Bayer and embedded buffers actioned.
+	 *
+	 * This asynchronous event is signalled to the pipeline handler once
+	 * the \a prepareIsp signal has completed, and the ISP is ready to start
+	 * processing the frame. The embedded data buffer may be recycled after
+	 * this event.
+	 */
+	prepareIspComplete(BufferIds buffers);
+
+	/**
+	 * \fn processStatsComplete()
+	 * \brief Signal completion of \a processStats
+	 * \param[in] buffers Statistics buffers actioned.
+	 *
+	 * This asynchronous event is signalled to the pipeline handler once
+	 * the \a processStats signal has completed. The statistics buffer may
+	 * be recycled after this event.
+	 */
+	processStatsComplete(BufferIds buffers);
+
+	/**
+	 * \fn metadataReady()
+	 * \brief Signal request metadata is to be merged
+	 * \param[in] metadata Control list of metadata to be merged
+	 *
+	 * This asynchronous event is signalled to the pipeline handler once
+	 * all the frame metadata has been gathered. The pipeline handler will
+	 * copy or merge this metadata into the \a Request returned back to the
+	 * application.
+	 */
+	metadataReady(libcamera.ControlList metadata);
+
+	/**
+	 * \fn setIspControls()
+	 * \brief Signal ISP controls to be applied.
+	 * \param[in] controls List of controls to be applied.
+	 *
+	 * This asynchronous event is signalled to the pipeline handler during
+	 * the \a prepareISP signal after all algorithms have been run and the
+	 * IPA requires ISP controls to be applied for the frame.
+	 */
 	setIspControls(libcamera.ControlList controls);
+
+	/**
+	 * \fn setDelayedControls()
+	 * \brief Signal Sensor controls to be applied.
+	 * \param[in] controls List of controls to be applied.
+	 * \param[in] delayContext IPA context index used for this request
+	 *
+	 * This asynchronous event is signalled to the pipeline handler when
+	 * the IPA requires sensor specific controls (e.g. shutter speed, gain,
+	 * blanking) to be applied.
+	 */
 	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);
+
+	/**
+	 * \fn setLensControls()
+	 * \brief Signal lens controls to be applied.
+	 * \param[in] controls List of controls to be applied.
+	 *
+	 * This asynchronous event is signalled to the pipeline handler when
+	 * the IPA requires a lens movement control to be applied.
+	 */
 	setLensControls(libcamera.ControlList controls);
+
+	/**
+	 * \fn setCameraTimeout()
+	 * \brief Request a watchdog timeout value to use
+	 * \param[in] maxFrameLengthMs Timeout value in ms
+	 *
+	 * This asynchronous event is used by the IPA to inform the pipeline
+	 * handler of an acceptable watchdog timer value to use for the sensor
+	 * stream. This value is based on the history of frame lengths requested
+	 * by the IPA.
+	 */
 	setCameraTimeout(uint32 maxFrameLengthMs);
 };

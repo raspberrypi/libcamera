@@ -60,13 +60,15 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
                       './' +'@INPUT@'
                   ])
 
-ipa_mojom_files = [
-    'ipu3.mojom',
-    'raspberrypi.mojom',
-    'rkisp1.mojom',
-    'vimc.mojom',
-]
+# Mapping from pipeline handler name to mojom file
+pipeline_ipa_mojom_mapping = {
+    'ipu3': 'ipu3.mojom',
+    'rkisp1': 'rkisp1.mojom',
+    'raspberrypi': 'raspberrypi.mojom',
+    'vimc': 'vimc.mojom',
+}
 
+ipa_mojom_files = []
 ipa_mojoms = []
 
 #
@@ -75,14 +77,21 @@ ipa_mojoms = []
 
 # TODO Define per-pipeline ControlInfoMap with yaml?
 
-foreach file : ipa_mojom_files
+foreach pipeline, file : pipeline_ipa_mojom_mapping
     name = file.split('.')[0]
 
-    if name not in pipelines
+    # Ensure we do not build duplicate mojom modules
+    if file in ipa_mojom_files
         continue
     endif
 
-    # {pipeline}.mojom-module
+    ipa_mojom_files += file
+
+    if pipeline not in pipelines
+        continue
+    endif
+
+    # {interface}.mojom-module
     mojom = custom_target(name + '_mojom_module',
                           input : file,
                           output : file + '-module',
@@ -94,7 +103,7 @@ foreach file : ipa_mojom_files
                               '--mojoms', '@INPUT@'
                           ])
 
-    # {pipeline}_ipa_interface.h
+    # {interface}_ipa_interface.h
     header = custom_target(name + '_ipa_interface_h',
                            input : mojom,
                            output : name + '_ipa_interface.h',
@@ -110,7 +119,7 @@ foreach file : ipa_mojom_files
                                './' +'@INPUT@'
                            ])
 
-    # {pipeline}_ipa_serializer.h
+    # {interface}_ipa_serializer.h
     serializer = custom_target(name + '_ipa_serializer_h',
                                input : mojom,
                                output : name + '_ipa_serializer.h',
@@ -124,7 +133,7 @@ foreach file : ipa_mojom_files
                                    './' +'@INPUT@'
                                ])
 
-    # {pipeline}_ipa_proxy.h
+    # {interface}_ipa_proxy.h
     proxy_header = custom_target(name + '_proxy_h',
                                  input : mojom,
                                  output : name + '_ipa_proxy.h',

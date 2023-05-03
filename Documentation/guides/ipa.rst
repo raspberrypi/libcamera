@@ -19,6 +19,16 @@ connect to, in order to receive data from the IPA asynchronously. In addition,
 it contains any custom data structures that the pipeline handler and IPA may
 pass to each other.
 
+It is possible to use the same IPA interface with multiple pipeline handlers
+on different hardware platforms. Generally in such cases, these platforms would
+have a common hardware ISP pipeline. For instance, the rkisp1 pipeline handler
+supports both the RK3399 and the i.MX8MP as they integrate the same ISP.
+However, the i.MX8MP has a more complex camera pipeline, which may call for a
+dedicated pipeline handler in the future. As the ISP is the same as for RK3399,
+the same IPA interface could be used for both pipeline handlers. The build files
+provide a mapping from pipeline handler to the IPA interface name as detailed in
+:ref:`compiling-section`.
+
 The IPA protocol refers to the agreement between the pipeline handler and the
 IPA regarding the expected response(s) from the IPA for given calls to the IPA.
 This protocol doesn't need to be declared anywhere in code, but it shall be
@@ -43,7 +53,7 @@ interface definition is thus written by the pipeline handler author, based on
 how they design the interactions between the pipeline handler and the IPA.
 
 The entire IPA interface, including the functions, signals, and any custom
-structs shall be defined in a file named {pipeline_name}.mojom under
+structs shall be defined in a file named {interface_name}.mojom under
 include/libcamera/ipa/.
 
 .. _mojo Interface Definition Language: https://chromium.googlesource.com/chromium/src.git/+/master/mojo/public/tools/bindings/README.md
@@ -150,7 +160,7 @@ and the Event IPA interface, which describes the signals received by the
 pipeline handler that the IPA can emit. Both must be defined. This section
 focuses on the Main IPA interface.
 
-The main interface must be named as IPA{pipeline_name}Interface.
+The main interface must be named as IPA{interface_name}Interface.
 
 The functions that the pipeline handler can call from the IPA may be
 synchronous or asynchronous. Synchronous functions do not return until the IPA
@@ -243,7 +253,7 @@ then it may be empty. These emissions are meant to notify the pipeline handler
 of some event, such as request data is ready, and *must not* be used to drive
 the camera pipeline from the IPA.
 
-The event interface must be named as IPA{pipeline_name}EventInterface.
+The event interface must be named as IPA{interface_name}EventInterface.
 
 Functions defined in the event interface are implicitly asynchronous.
 Thus they cannot return any value. Specifying the [async] tag is not
@@ -266,38 +276,42 @@ The following is an example of an event interface definition:
                 setStaggered(libcamera.ControlList controls);
         };
 
+.. _compiling-section:
+
 Compiling the IPA interface
 ---------------------------
 
-After the IPA interface is defined in include/libcamera/ipa/{pipeline_name}.mojom,
+After the IPA interface is defined in include/libcamera/ipa/{interface_name}.mojom,
 an entry for it must be added in meson so that it can be compiled. The filename
-must be added to the ipa_mojom_files object in include/libcamera/ipa/meson.build.
+must be added to the pipeline_ipa_mojom_mapping variable in
+include/libcamera/ipa/meson.build. This variable maps the pipeline handler name
+to its IPA interface file.
 
 For example, adding the raspberrypi.mojom file to meson:
 
 .. code-block:: none
 
-        ipa_mojom_files = [
-            'raspberrypi.mojom',
+        pipeline_ipa_mojom_mapping = [
+            'rpi/vc4': 'raspberrypi.mojom',
         ]
 
 This will cause the mojo data definition file to be compiled. Specifically, it
 generates five files:
 
 - a header describing the custom data structures, and the complete IPA
-  interface (at {$build_dir}/include/libcamera/ipa/{pipeline}_ipa_interface.h)
+  interface (at {$build_dir}/include/libcamera/ipa/{interface}_ipa_interface.h)
 
 - a serializer implementing de/serialization for the custom data structures (at
-  {$build_dir}/include/libcamera/ipa/{pipeline}_ipa_serializer.h)
+  {$build_dir}/include/libcamera/ipa/{interface}_ipa_serializer.h)
 
 - a proxy header describing a specialized IPA proxy (at
-  {$build_dir}/include/libcamera/ipa/{pipeline}_ipa_proxy.h)
+  {$build_dir}/include/libcamera/ipa/{interface}_ipa_proxy.h)
 
 - a proxy source implementing the IPA proxy (at
-  {$build_dir}/src/libcamera/proxy/{pipeline}_ipa_proxy.cpp)
+  {$build_dir}/src/libcamera/proxy/{interface}_ipa_proxy.cpp)
 
 - a proxy worker source implementing the other end of the IPA proxy (at
-  {$build_dir}/src/libcamera/proxy/worker/{pipeline}_ipa_proxy_worker.cpp)
+  {$build_dir}/src/libcamera/proxy/worker/{interface}_ipa_proxy_worker.cpp)
 
 The IPA proxy serves as the layer between the pipeline handler and the IPA, and
 handles threading vs isolation transparently. The pipeline handler and the IPA
@@ -312,7 +326,7 @@ file, the following header must be included:
 
 .. code-block:: C++
 
-   #include <libcamera/ipa/{pipeline_name}_ipa_interface.h>
+   #include <libcamera/ipa/{interface_name}_ipa_interface.h>
 
 The POD types of the structs simply become their C++ counterparts, eg. uint32
 in mojo will become uint32_t in C++. mojo map becomes C++ std::map, and mojo

@@ -58,7 +58,7 @@ public:
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const BufferMap &getBuffers() const;
-	int getBufferId(FrameBuffer *buffer) const;
+	unsigned int getBufferId(FrameBuffer *buffer) const;
 
 	void setExternalBuffer(FrameBuffer *buffer);
 	void removeExternalBuffer(FrameBuffer *buffer);
@@ -74,25 +74,25 @@ private:
 	class IdGenerator
 	{
 	public:
-		IdGenerator(int max)
+		IdGenerator(unsigned int max)
 			: max_(max), id_(0)
 		{
 		}
 
-		int get()
+		unsigned int get()
 		{
-			int id;
+			unsigned int id;
 			if (!recycle_.empty()) {
 				id = recycle_.front();
 				recycle_.pop();
 			} else {
-				id = id_++;
+				id = ++id_;
 				ASSERT(id_ <= max_);
 			}
 			return id;
 		}
 
-		void release(int id)
+		void release(unsigned int id)
 		{
 			recycle_.push(id);
 		}
@@ -104,9 +104,9 @@ private:
 		}
 
 	private:
-		int max_;
-		int id_;
-		std::queue<int> recycle_;
+		unsigned int max_;
+		unsigned int id_;
+		std::queue<unsigned int> recycle_;
 	};
 
 	void clearBuffers();

@@ -24,6 +24,8 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(RPI)
 
+using StreamFlag = RPi::Stream::StreamFlag;
+
 namespace {
 
 enum class Unicam : unsigned int { Image, Embedded };
@@ -318,7 +320,7 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	}
 
 	/* Tag the ISP input stream as an import stream. */
-	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, true);
+	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, StreamFlag::ImportOnly);
 	data->isp_[Isp::Output0] = RPi::Stream("ISP Output0", ispCapture1);
 	data->isp_[Isp::Output1] = RPi::Stream("ISP Output1", ispCapture2);
 	data->isp_[Isp::Stats] = RPi::Stream("ISP Stats", ispCapture3);
@@ -500,7 +502,7 @@ int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	 */
 	if (!rawStreams.empty()) {
 		rawStreams[0].cfg->setStream(&unicam_[Unicam::Image]);
-		unicam_[Unicam::Image].setExternal(true);
+		unicam_[Unicam::Image].setFlags(StreamFlag::External);
 	}
 
 	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
@@ -545,7 +547,7 @@ int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			<< ColorSpace::toString(cfg->colorSpace);
 
 		cfg->setStream(stream);
-		stream->setExternal(true);
+		stream->setFlags(StreamFlag::External);
 	}
 
 	ispOutputTotal_ = outStreams.size();

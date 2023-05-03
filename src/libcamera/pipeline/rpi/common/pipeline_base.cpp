@@ -31,6 +31,8 @@ using namespace RPi;
 
 LOG_DEFINE_CATEGORY(RPI)
 
+using StreamFlag = RPi::Stream::StreamFlag;
+
 namespace {
 
 constexpr unsigned int defaultRawBitDepth = 12;
@@ -504,7 +506,7 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	/* Start by freeing all buffers and reset the stream states. */
 	data->freeBuffers();
 	for (auto const stream : data->streams_)
-		stream->setExternal(false);
+		stream->clearFlags(StreamFlag::External);
 
 	std::vector<CameraData::StreamParams> rawStreams, ispStreams;
 	std::optional<BayerFormat::Packing> packing;
@@ -752,7 +754,7 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 
 	/* Push all buffers supplied in the Request to the respective streams. */
 	for (auto stream : data->streams_) {
-		if (!stream->isExternal())
+		if (!(stream->getFlags() & StreamFlag::External))
 			continue;
 
 		FrameBuffer *buffer = request->findBuffer(stream);
@@ -932,7 +934,7 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	int ret;
 
 	for (auto const stream : data->streams_) {
-		if (!stream->isExternal()) {
+		if (!(stream->getFlags() & StreamFlag::External)) {
 			ret = stream->queueAllBuffers();
 			if (ret < 0)
 				return ret;

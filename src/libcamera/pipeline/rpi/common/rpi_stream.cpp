@@ -14,6 +14,24 @@ LOG_DEFINE_CATEGORY(RPISTREAM)
 
 namespace RPi {
 
+void Stream::setFlags(StreamFlags flags)
+{
+	flags_ |= flags;
+
+	/* Import streams cannot be external. */
+	ASSERT(!(flags_ & StreamFlag::External) || !(flags_ & StreamFlag::ImportOnly));
+}
+
+void Stream::clearFlags(StreamFlags flags)
+{
+	flags_ &= ~flags;
+}
+
+RPi::Stream::StreamFlags Stream::getFlags() const
+{
+	return flags_;
+}
+
 V4L2VideoDevice *Stream::dev() const
 {
 	return dev_.get();
@@ -32,18 +50,6 @@ void Stream::resetBuffers()
 		availableBuffers_.push(buffer.get());
 }
 
-void Stream::setExternal(bool external)
-{
-	/* Import streams cannot be external. */
-	ASSERT(!external || !importOnly_);
-	external_ = external;
-}
-
-bool Stream::isExternal() const
-{
-	return external_;
-}
-
 void Stream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	for (auto const &buffer : *buffers)
@@ -57,7 +63,7 @@ const BufferMap &Stream::getBuffers() const
 
 unsigned int Stream::getBufferId(FrameBuffer *buffer) const
 {
-	if (importOnly_)
+	if (flags_ & StreamFlag::ImportOnly)
 		return 0;
 
 	/* Find the buffer in the map, and return the buffer id. */
@@ -88,7 +94,7 @@ int Stream::prepareBuffers(unsigned int count)
 {
 	int ret;
 
-	if (!importOnly_) {
+	if (!(flags_ & StreamFlag::ImportOnly)) {
 		if (count) {
 			/* Export some frame buffers for internal use. */
 			ret = dev_->exportBuffers(count, &internalBuffers_);
@@ -113,7 +119,7 @@ int Stream::prepareBuffers(unsigned int count)
 	 * \todo Find a better heuristic, or, even better, an exact solution to
 	 * this issue.
 	 */
-	if (isExternal() || importOnly_)
+	if ((flags_ & StreamFlag::External) || (flags_ & StreamFlag::ImportOnly))
 		count = count * 2;
 
 	return dev_->importBuffers(count);
@@ -160,7 +166,7 @@ int Stream::queueBuffer(FrameBuffer *buffer)
 
 void Stream::returnBuffer(FrameBuffer *buffer)
 {
-	if (!external_) {
+	if (!(flags_ & StreamFlag::External)) {
 		/* For internal buffers, simply requeue back to the device. */
 		queueToDevice(buffer);
 		return;
@@ -204,7 +210,7 @@ int Stream::queueAllBuffers()
 {
 	int ret;
 
-	if (external_)
+	if (flags_ & StreamFlag::External)
 		return 0;
 
 	while (!availableBuffers_.empty()) {

@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <libcamera/base/flags.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -37,24 +38,40 @@ enum BufferMask {
 class Stream : public libcamera::Stream
 {
 public:
+	enum class StreamFlag {
+		None		= 0,
+		/*
+		 * Indicates that this stream only imports buffers, e.g. the ISP
+		 * input stream.
+		 */
+		ImportOnly	= (1 << 0),
+		/*
+		 * Indicates that this stream is active externally, i.e. the
+		 * buffers might be provided by (and returned to) the application.
+		 */
+		External	= (1 << 1),
+	};
+
+	using StreamFlags = Flags<StreamFlag>;
+
 	Stream()
-		: id_(BufferMask::MaskID)
+		: flags_(StreamFlag::None), id_(BufferMask::MaskID)
 	{
 	}
 
-	Stream(const char *name, MediaEntity *dev, bool importOnly = false)
-		: external_(false), importOnly_(importOnly), name_(name),
+	Stream(const char *name, MediaEntity *dev, StreamFlags flags = StreamFlag::None)
+		: flags_(flags), name_(name),
 		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(BufferMask::MaskID)
 	{
 	}
 
+	void setFlags(StreamFlags flags);
+	void clearFlags(StreamFlags flags);
+	StreamFlags getFlags() const;
+
 	V4L2VideoDevice *dev() const;
 	const std::string &name() const;
-	bool isImporter() const;
 	void resetBuffers();
-
-	void setExternal(bool external);
-	bool isExternal() const;
 
 	void setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 	const BufferMap &getBuffers() const;
@@ -112,14 +129,7 @@ private:
 	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 
-	/*
-	 * Indicates that this stream is active externally, i.e. the buffers
-	 * might be provided by (and returned to) the application.
-	 */
-	bool external_;
-
-	/* Indicates that this stream only imports buffers, e.g. ISP input. */
-	bool importOnly_;
+	StreamFlags flags_;
 
 	/* Stream name identifier. */
 	std::string name_;
@@ -181,5 +191,7 @@ public:
 };
 
 } /* namespace RPi */
+
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(RPi::Stream::StreamFlag)
 
 } /* namespace libcamera */

@@ -34,13 +34,13 @@
                 #
                 # "disable_startup_frame_drops": false,
 
-                # Custom timeout value (in ms) for Unicam to use. This overrides
+                # Custom timeout value (in ms) for camera to use. This overrides
                 # the value computed by the pipeline handler based on frame
                 # durations.
                 #
                 # Set this value to 0 to use the pipeline handler computed
                 # timeout value.
                 #
-                # "unicam_timeout_value_ms": 0,
+                # "camera_timeout_value_ms": 0,
         }
 }

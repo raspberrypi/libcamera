@@ -2,7 +2,7 @@
 
 libcamera_sources += files([
     'dma_heaps.cpp',
-    'raspberrypi.cpp',
+    'vc4.cpp',
 ])
 
 subdir('data')

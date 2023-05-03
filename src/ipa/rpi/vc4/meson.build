@@ -9,6 +9,7 @@ vc4_ipa_deps = [
 
 vc4_ipa_libs = [
     rpi_ipa_cam_helper_lib,
+    rpi_ipa_common_lib,
     rpi_ipa_controller_lib
 ]
 
@@ -18,7 +19,7 @@ vc4_ipa_includes = [
 ]
 
 vc4_ipa_sources = files([
-    'raspberrypi.cpp',
+    'vc4.cpp',
 ])
 
 vc4_ipa_includes += include_directories('..')

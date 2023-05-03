@@ -27,7 +27,7 @@ option('gstreamer',
 
 option('ipas',
         type : 'array',
-        choices : ['ipu3', 'raspberrypi', 'rkisp1', 'vimc'],
+        choices : ['ipu3', 'rkisp1', 'rpi/vc4', 'vimc'],
         description : 'Select which IPA modules to build')
 
 option('lc-compliance',
@@ -43,8 +43,8 @@ option('pipelines',
             'auto',
             'imx8-isi',
             'ipu3',
-            'raspberrypi',
             'rkisp1',
+            'rpi/vc4',
             'simple',
             'uvcvideo',
             'vimc'

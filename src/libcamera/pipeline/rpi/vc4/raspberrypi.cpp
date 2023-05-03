@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * raspberrypi.cpp - Pipeline handler for Raspberry Pi devices
+ * raspberrypi.cpp - Pipeline handler for VC4-based Raspberry Pi devices
  */
 #include <algorithm>
 #include <assert.h>
@@ -43,9 +43,9 @@
 #include "libcamera/internal/v4l2_videodevice.h"
 #include "libcamera/internal/yaml_parser.h"
 
-#include "delayed_controls.h"
+#include "../common/delayed_controls.h"
+#include "../common/rpi_stream.h"
 #include "dma_heaps.h"
-#include "rpi_stream.h"
 
 using namespace std::chrono_literals;
 

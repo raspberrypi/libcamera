@@ -288,7 +288,7 @@ with dedicated pipeline handlers:
 
    -  Intel IPU3 (ipu3)
    -  Rockchip RK3399 (rkisp1)
-   -  RaspberryPi 3 and 4 (raspberrypi)
+   -  RaspberryPi 3 and 4 (rpi/vc4)
 
 Furthermore, generic platform support is provided for the following:
 

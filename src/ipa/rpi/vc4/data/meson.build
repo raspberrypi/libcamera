@@ -23,4 +23,4 @@ conf_files = files([
 ])
 
 install_data(conf_files,
-             install_dir : ipa_data_dir / 'raspberrypi')
+             install_dir : ipa_data_dir / 'rpi' / 'vc4')

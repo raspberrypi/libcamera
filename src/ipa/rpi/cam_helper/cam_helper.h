@@ -13,7 +13,7 @@
 #include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
-#include "camera_mode.h"
+#include "controller/camera_mode.h"
 #include "controller/controller.h"
 #include "controller/metadata.h"
 #include "md_parser.h"

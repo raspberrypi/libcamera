@@ -33,29 +33,29 @@
 
 #include "libcamera/internal/mapped_framebuffer.h"
 
-#include "af_algorithm.h"
-#include "af_status.h"
-#include "agc_algorithm.h"
-#include "agc_status.h"
-#include "alsc_status.h"
-#include "awb_algorithm.h"
-#include "awb_status.h"
-#include "black_level_status.h"
-#include "cam_helper.h"
-#include "ccm_algorithm.h"
-#include "ccm_status.h"
-#include "contrast_algorithm.h"
-#include "contrast_status.h"
-#include "controller.h"
-#include "denoise_algorithm.h"
-#include "denoise_status.h"
-#include "dpc_status.h"
-#include "geq_status.h"
-#include "lux_status.h"
-#include "metadata.h"
-#include "sharpen_algorithm.h"
-#include "sharpen_status.h"
-#include "statistics.h"
+#include "cam_helper/cam_helper.h"
+#include "controller/af_algorithm.h"
+#include "controller/af_status.h"
+#include "controller/agc_algorithm.h"
+#include "controller/agc_status.h"
+#include "controller/alsc_status.h"
+#include "controller/awb_algorithm.h"
+#include "controller/awb_status.h"
+#include "controller/black_level_status.h"
+#include "controller/ccm_algorithm.h"
+#include "controller/ccm_status.h"
+#include "controller/contrast_algorithm.h"
+#include "controller/contrast_status.h"
+#include "controller/controller.h"
+#include "controller/denoise_algorithm.h"
+#include "controller/denoise_status.h"
+#include "controller/dpc_status.h"
+#include "controller/geq_status.h"
+#include "controller/lux_status.h"
+#include "controller/metadata.h"
+#include "controller/sharpen_algorithm.h"
+#include "controller/sharpen_status.h"
+#include "controller/statistics.h"
 
 namespace libcamera {
 
@@ -1840,7 +1840,7 @@ const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
 	"PipelineHandlerRPi",
-	"raspberrypi",
+	"rpi/vc4",
 };
 
 IPAInterface *ipaCreate()

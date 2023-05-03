@@ -49,7 +49,7 @@ public:
 	}
 
 	V4L2VideoDevice *dev() const;
-	std::string name() const;
+	const std::string &name() const;
 	bool isImporter() const;
 	void resetBuffers();
 

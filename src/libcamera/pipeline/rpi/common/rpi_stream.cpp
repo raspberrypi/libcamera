@@ -19,7 +19,7 @@ V4L2VideoDevice *Stream::dev() const
 	return dev_.get();
 }
 
-std::string Stream::name() const
+const std::string &Stream::name() const
 {
 	return name_;
 }

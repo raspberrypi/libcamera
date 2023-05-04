@@ -7,21 +7,22 @@
 
 #pragma once
 
+#include <optional>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <libcamera/base/flags.h>
+
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 namespace libcamera {
 
 namespace RPi {
-
-using BufferMap = std::unordered_map<unsigned int, FrameBuffer *>;
 
 enum BufferMask {
 	MaskID			= 0x00ffff,
@@ -29,6 +30,21 @@ enum BufferMask {
 	MaskEmbeddedData	= 0x020000,
 	MaskBayerData		= 0x040000,
 };
+
+struct BufferObject {
+	BufferObject(FrameBuffer *b, bool requiresMmap)
+		: buffer(b), mapped(std::nullopt)
+	{
+		if (requiresMmap)
+			mapped = std::make_optional<MappedFrameBuffer>
+					(b, MappedFrameBuffer::MapFlag::ReadWrite);
+	}
+
+	FrameBuffer *buffer;
+	std::optional<MappedFrameBuffer> mapped;
+};
+
+using BufferMap = std::unordered_map<unsigned int, BufferObject>;
 
 /*
  * Device stream abstraction for either an internal or external stream.
@@ -49,6 +65,11 @@ public:
 		 * buffers might be provided by (and returned to) the application.
 		 */
 		External	= (1 << 1),
+		/*
+		 * Indicates that the stream buffers need to be mmaped and returned
+		 * to the pipeline handler when requested.
+		 */
+		RequiresMmap	= (1 << 2),
 	};
 
 	using StreamFlags = Flags<StreamFlag>;
@@ -82,10 +103,17 @@ public:
 	int queueBuffer(FrameBuffer *buffer);
 	void returnBuffer(FrameBuffer *buffer);
 
+	const BufferObject &getBuffer(unsigned int id);
+	const BufferObject &acquireBuffer();
+
 	int queueAllBuffers();
 	void releaseBuffers();
 
+	/* For error handling. */
+	static const BufferObject errorBufferObject;
+
 private:
+	void bufferEmplace(unsigned int id, FrameBuffer *buffer);
 	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 

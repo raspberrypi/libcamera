@@ -116,6 +116,7 @@ public:
 	 * e.g. std::lock_guard<RPiController::Metadata> lock(metadata)
 	 */
 	void lock() LIBCAMERA_TSA_ACQUIRE() { mutex_.lock(); }
+	auto try_lock() LIBCAMERA_TSA_ACQUIRE() { return mutex_.try_lock(); }
 	void unlock() LIBCAMERA_TSA_RELEASE() { mutex_.unlock(); }
 
 private:

@@ -888,7 +888,7 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 */
 	for (auto const &it : buffers) {
 		bufferIds.push_back(IPABuffer(mask | it.first,
-					      it.second->planes()));
+					      it.second.buffer->planes()));
 		data->bufferIds_.insert(mask | it.first);
 	}
 

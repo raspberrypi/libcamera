@@ -3,6 +3,7 @@
 # Cache system paths
 libcamera_datadir = get_option('datadir') / 'libcamera'
 libcamera_libdir = get_option('libdir') / 'libcamera'
+libcamera_libexecdir = get_option('libexecdir') / 'libcamera'
 libcamera_sysconfdir = get_option('sysconfdir') / 'libcamera'
 
 config_h.set('LIBCAMERA_DATA_DIR', '"' + get_option('prefix') / libcamera_datadir + '"')

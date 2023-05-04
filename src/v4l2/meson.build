@@ -31,6 +31,7 @@ v4l2_compat = shared_library('v4l2-compat',
                              v4l2_compat_sources,
                              name_prefix : '',
                              install : true,
+                             install_dir : libcamera_libexecdir,
                              dependencies : [libcamera_private, libdl],
                              cpp_args : v4l2_compat_cpp_args)
 
@@ -38,7 +39,7 @@ v4l2_compat = shared_library('v4l2-compat',
 # adaptation layer.
 
 cdata = configuration_data()
-cdata.set('LIBCAMERA_V4L2_SO', get_option('prefix') / get_option('libdir') / 'v4l2-compat.so')
+cdata.set('LIBCAMERA_V4L2_SO', get_option('prefix') / libcamera_libexecdir / 'v4l2-compat.so')
 
 configure_file(input : 'libcamerify.in',
                output : 'libcamerify',

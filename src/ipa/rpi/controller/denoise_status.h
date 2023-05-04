@@ -14,3 +14,22 @@ struct DenoiseStatus {
 	double strength;
 	unsigned int mode;
 };
+
+struct SdnStatus {
+	double noiseConstant;
+	double noiseSlope;
+	double noiseConstant2;
+	double noiseSlope2;
+	double strength;
+};
+
+struct CdnStatus {
+	double strength;
+	double threshold;
+};
+
+struct TdnStatus {
+	double noiseConstant;
+	double noiseSlope;
+	double threshold;
+};

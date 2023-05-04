@@ -446,7 +446,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	frameCount_++;
 
 	/* Ready to push the input buffer into the ISP. */
-	prepareIspComplete.emit(params.buffers);
+	prepareIspComplete.emit(params.buffers, false);
 }
 
 void IpaBase::processStats(const ProcessParams &params)

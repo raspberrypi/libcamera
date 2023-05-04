@@ -26,4 +26,15 @@ controls:
 
         \sa StatsOutputEnable
 
+  - PispStatsOutput:
+      type: uint8_t
+      size: [n]
+      description: |
+        Span of the PiSP Frontend ISP generated statistics for the current
+        frame. This is sent in the Request metadata if the StatsOutputEnable is
+        set to true. The statistics struct definition can be found in
+        https://github.com/raspberrypi/libpisp/blob/main/src/libpisp/frontend/pisp_statistics.h
+
+        \sa StatsOutputEnable
+
 ...

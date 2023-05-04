@@ -429,11 +429,10 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	}
 
 	/*
-	 * If a statistics buffer has been passed in, call processStats
-	 * directly now before prepare() since the statistics are available in-line
-	 * with the Bayer frame.
+	 * If the statistics are inline (i.e. already available with the Bayer
+	 * frame), call processStats() now before prepare().
 	 */
-	if (params.buffers.stats)
+	if (controller_.getHardwareConfig().statsInline)
 		processStats({ params.buffers, params.ipaContext });
 
 	/* Do we need/want to call prepare? */
@@ -444,6 +443,10 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	}
 
 	frameCount_++;
+
+	/* If the statistics are inline the metadata can be returned early. */
+	if (controller_.getHardwareConfig().statsInline)
+		reportMetadata(ipaContext);
 
 	/* Ready to push the input buffer into the ISP. */
 	prepareIspComplete.emit(params.buffers, false);
@@ -479,7 +482,13 @@ void IpaBase::processStats(const ProcessParams &params)
 		}
 	}
 
-	reportMetadata(ipaContext);
+	/*
+	 * If the statistics are not inline the metadata must be returned now,
+	 * before the processStatsComplete signal.
+	 */
+	if (!controller_.getHardwareConfig().statsInline)
+		reportMetadata(ipaContext);
+
 	processStatsComplete.emit(params.buffers);
 }
 

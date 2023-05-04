@@ -22,6 +22,9 @@ struct SensorConfig {
 struct InitParams {
 	bool lensPresent;
 	libcamera.IPACameraSensorInfo sensorInfo;
+	/* PISP specific */
+	libcamera.SharedFD fe;
+	libcamera.SharedFD be;
 };
 
 struct InitResult {

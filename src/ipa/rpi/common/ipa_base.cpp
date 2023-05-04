@@ -341,6 +341,8 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
+
+	platformStart(controls, result);
 }
 
 void IpaBase::mapBuffers(const std::vector<IPABuffer> &buffers)

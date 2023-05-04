@@ -51,6 +51,7 @@ public:
 
 private:
 	int32_t platformInit(const InitParams &params, InitResult *result) override;
+	int32_t platformStart(const ControlList &controls, StartResult *result) override;
 	int32_t platformConfigure(const ConfigParams &params, ConfigResult *result) override;
 
 	void platformPrepareIsp(const PrepareParams &params, RPiController::Metadata &rpiMetadata) override;
@@ -91,6 +92,12 @@ int32_t IpaVc4::platformInit([[maybe_unused]] const InitParams &params, [[maybe_
 		return -EINVAL;
 	}
 
+	return 0;
+}
+
+int32_t IpaVc4::platformStart([[maybe_unused]] const ControlList &controls,
+			      [[maybe_unused]] StartResult *result)
+{
 	return 0;
 }
 

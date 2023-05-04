@@ -45,6 +45,7 @@ public:
 		unsigned int numHistogramBins;
 		unsigned int numGammaPoints;
 		unsigned int pipelineWidth;
+		bool statsInline;
 	};
 
 	Controller();

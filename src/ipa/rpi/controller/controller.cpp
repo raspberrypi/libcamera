@@ -34,7 +34,8 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.focusRegions = { 4, 3 },
 			.numHistogramBins = 128,
 			.numGammaPoints = 33,
-			.pipelineWidth = 13
+			.pipelineWidth = 13,
+			.statsInline = false,
 		}
 	},
 };

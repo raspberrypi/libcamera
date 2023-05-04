@@ -31,11 +31,26 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.agcRegions = { 15 , 1 },
 			.agcZoneWeights = { 15 , 1 },
 			.awbRegions = { 16, 12 },
+			.cacRegions = { 0, 0 },
 			.focusRegions = { 4, 3 },
 			.numHistogramBins = 128,
 			.numGammaPoints = 33,
 			.pipelineWidth = 13,
 			.statsInline = false,
+		}
+	},
+	{
+		"pisp",
+		{
+			.agcRegions = { 0, 0 },
+			.agcZoneWeights = { 15, 15 },
+			.awbRegions = { 32, 32 },
+			.cacRegions = { 8, 8 },
+			.focusRegions = { 8, 8 },
+			.numHistogramBins = 1024,
+			.numGammaPoints = 64,
+			.pipelineWidth = 16,
+			.statsInline = true,
 		}
 	},
 };

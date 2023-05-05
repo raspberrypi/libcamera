@@ -1471,7 +1471,7 @@ UniqueFD V4L2VideoDevice::exportDmabufFd(unsigned int index,
 	expbuf.type = bufferType_;
 	expbuf.index = index;
 	expbuf.plane = plane;
-	expbuf.flags = O_RDWR;
+	expbuf.flags = O_CLOEXEC | O_RDWR;
 
 	ret = ioctl(VIDIOC_EXPBUF, &expbuf);
 	if (ret < 0) {

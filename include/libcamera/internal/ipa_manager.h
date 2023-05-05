@@ -47,6 +47,13 @@ public:
 		return proxy;
 	}
 
+#if HAVE_IPA_PUBKEY
+	static const PubKey &pubKey()
+	{
+		return pubKey_;
+	}
+#endif
+
 private:
 	static IPAManager *self_;
 

@@ -279,6 +279,19 @@ IPAModule *IPAManager::module(PipelineHandler *pipe, uint32_t minVersion,
  * found or if the IPA proxy fails to initialize
  */
 
+#if HAVE_IPA_PUBKEY
+/**
+ * \fn IPAManager::pubKey()
+ * \brief Retrieve the IPA module signing public key
+ *
+ * IPA module signature verification is normally handled internally by the
+ * IPAManager class. This function is meant to be used by utilities that need to
+ * verify signatures externally.
+ *
+ * \return The IPA module signing public key
+ */
+#endif
+
 bool IPAManager::isSignatureValid([[maybe_unused]] IPAModule *ipa) const
 {
 #if HAVE_IPA_PUBKEY

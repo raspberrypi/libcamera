@@ -80,6 +80,7 @@ INCLUDE_FILE_PATTERNS  = *.h
 
 PREDEFINED             = __DOXYGEN__ \
                          __cplusplus \
-                         __attribute__(x)=
+                         __attribute__(x)= \
+			 @PREDEFINED@
 
 HAVE_DOT               = YES

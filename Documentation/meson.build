@@ -16,6 +16,13 @@ if doxygen.found() and dot.found()
     cdata.set('TOP_BUILDDIR', meson.project_build_root())
     cdata.set('OUTPUT_DIR', meson.current_build_dir())
 
+    doxygen_predefined = []
+    foreach key : config_h.keys()
+        doxygen_predefined += '@0@=@1@'.format(key, config_h.get(key))
+    endforeach
+
+    cdata.set('PREDEFINED', ' \\\n\t\t\t '.join(doxygen_predefined))
+
     doxyfile = configure_file(input : 'Doxyfile.in',
                               output : 'Doxyfile',
                               configuration : cdata)

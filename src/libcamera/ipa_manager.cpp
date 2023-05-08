@@ -138,7 +138,7 @@ IPAManager::IPAManager()
 	std::string root = utils::libcameraBuildPath();
 	if (!root.empty()) {
 		std::string ipaBuildPath = root + "src/ipa";
-		constexpr int maxDepth = 1;
+		constexpr int maxDepth = 2;
 
 		LOG(IPAManager, Info)
 			<< "libcamera is not installed. Adding '"

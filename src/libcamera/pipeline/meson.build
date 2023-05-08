@@ -12,6 +12,9 @@ foreach pipeline : pipelines
         continue
     endif
 
-    subdir(pipeline)
     subdirs += pipeline
+    subdir(pipeline)
+
+    # Don't reuse the pipeline variable below, the subdirectory may have
+    # overwritten it.
 endforeach

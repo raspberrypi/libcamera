@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <memory>
 #include <set>
 #include <stdint.h>
@@ -105,7 +106,16 @@ public:
 	const ControlList &properties() const;
 
 	const std::set<Stream *> &streams() const;
-	std::unique_ptr<CameraConfiguration> generateConfiguration(const StreamRoles &roles = {});
+
+	std::unique_ptr<CameraConfiguration>
+	generateConfiguration(Span<const StreamRole> roles = {});
+
+	std::unique_ptr<CameraConfiguration>
+	generateConfiguration(std::initializer_list<StreamRole> roles)
+	{
+		return generateConfiguration(Span(roles.begin(), roles.end()));
+	}
+
 	int configure(CameraConfiguration *config);
 
 	std::unique_ptr<Request> createRequest(uint64_t cookie = 0);

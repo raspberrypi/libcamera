@@ -135,7 +135,7 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-		const StreamRoles &roles) override;
+								   Span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -390,7 +390,7 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 }
 
 std::unique_ptr<CameraConfiguration>
-PipelineHandlerIPU3::generateConfiguration(Camera *camera, const StreamRoles &roles)
+PipelineHandlerIPU3::generateConfiguration(Camera *camera, Span<const StreamRole> roles)
 {
 	IPU3CameraData *data = cameraData(camera);
 	std::unique_ptr<IPU3CameraConfiguration> config =

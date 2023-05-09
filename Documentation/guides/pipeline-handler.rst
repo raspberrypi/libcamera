@@ -203,7 +203,7 @@ implementations for the overridden class members.
           PipelineHandlerVivid(CameraManager *manager);
 
           CameraConfiguration *generateConfiguration(Camera *camera,
-          const StreamRoles &roles) override;
+          Span<const StreamRole> roles) override;
           int configure(Camera *camera, CameraConfiguration *config) override;
 
           int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -223,7 +223,7 @@ implementations for the overridden class members.
    }
 
    CameraConfiguration *PipelineHandlerVivid::generateConfiguration(Camera *camera,
-                                                                    const StreamRoles &roles)
+                                                                    Span<const StreamRole> roles)
    {
           return nullptr;
    }

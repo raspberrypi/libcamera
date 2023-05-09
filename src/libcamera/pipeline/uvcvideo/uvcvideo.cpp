@@ -75,7 +75,7 @@ public:
 	PipelineHandlerUVC(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-		const StreamRoles &roles) override;
+								   Span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -180,7 +180,7 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerUVC::generateConfiguration(Camera *camera,
-	const StreamRoles &roles)
+					  Span<const StreamRole> roles)
 {
 	UVCCameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =

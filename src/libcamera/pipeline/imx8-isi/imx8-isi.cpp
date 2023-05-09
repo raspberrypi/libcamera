@@ -104,7 +104,7 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 	std::unique_ptr<CameraConfiguration>
-	generateConfiguration(Camera *camera, const StreamRoles &roles) override;
+	generateConfiguration(Camera *camera, Span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -739,7 +739,7 @@ StreamConfiguration PipelineHandlerISI::generateRawConfiguration(Camera *camera)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerISI::generateConfiguration(Camera *camera,
-					  const StreamRoles &roles)
+					  Span<const StreamRole> roles)
 {
 	ISICameraData *data = cameraData(camera);
 	std::unique_ptr<ISICameraConfiguration> config =

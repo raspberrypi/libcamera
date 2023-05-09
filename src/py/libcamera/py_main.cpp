@@ -208,7 +208,10 @@ PYBIND11_MODULE(_libcamera, m)
 		})
 
 		/* Keep the camera alive, as StreamConfiguration contains a Stream* */
-		.def("generate_configuration", &Camera::generateConfiguration, py::keep_alive<0, 1>())
+		.def("generate_configuration", [](Camera &self, const std::vector<StreamRole> &roles) {
+			return self.generateConfiguration(roles);
+		}, py::keep_alive<0, 1>())
+
 		.def("configure", [](Camera &self, CameraConfiguration *config) {
 			int ret = self.configure(config);
 			if (ret)

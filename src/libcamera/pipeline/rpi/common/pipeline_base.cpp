@@ -381,7 +381,7 @@ V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *
 }
 
 std::unique_ptr<CameraConfiguration>
-PipelineHandlerBase::generateConfiguration(Camera *camera, const StreamRoles &roles)
+PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole> roles)
 {
 	CameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =

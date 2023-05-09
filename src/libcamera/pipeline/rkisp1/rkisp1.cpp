@@ -148,7 +148,7 @@ public:
 	PipelineHandlerRkISP1(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-		const StreamRoles &roles) override;
+								   Span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -611,7 +611,7 @@ PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
-	const StreamRoles &roles)
+					     Span<const StreamRole> roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
 

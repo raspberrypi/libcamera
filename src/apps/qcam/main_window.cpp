@@ -362,7 +362,7 @@ void MainWindow::toggleCapture(bool start)
  */
 int MainWindow::startCapture()
 {
-	StreamRoles roles = StreamKeyValueParser::roles(options_[OptStream]);
+	std::vector<StreamRole> roles = StreamKeyValueParser::roles(options_[OptStream]);
 	int ret;
 
 	/* Verify roles are supported. */

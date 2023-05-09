@@ -6,6 +6,8 @@
  * gstlibcameraprovider.c - GStreamer Device Provider
  */
 
+#include <array>
+
 #include "gstlibcameraprovider.h"
 
 #include <libcamera/camera.h>
@@ -141,11 +143,10 @@ gst_libcamera_device_class_init(GstLibcameraDeviceClass *klass)
 static GstDevice *
 gst_libcamera_device_new(const std::shared_ptr<Camera> &camera)
 {
+	static const std::array roles{ StreamRole::VideoRecording };
 	g_autoptr(GstCaps) caps = gst_caps_new_empty();
 	const gchar *name = camera->id().c_str();
-	StreamRoles roles;
 
-	roles.push_back(StreamRole::VideoRecording);
 	std::unique_ptr<CameraConfiguration> config = camera->generateConfiguration(roles);
 	if (!config || config->size() != roles.size()) {
 		GST_ERROR("Failed to generate a default configuration for %s", name);

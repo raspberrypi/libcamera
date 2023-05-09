@@ -437,11 +437,6 @@ std::ostream &operator<<(std::ostream &out, StreamRole role)
 }
 
 /**
- * \typedef StreamRoles
- * \brief A vector of StreamRole
- */
-
-/**
  * \class Stream
  * \brief Video stream for a camera
  *

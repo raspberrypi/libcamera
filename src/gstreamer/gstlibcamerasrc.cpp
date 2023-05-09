@@ -466,7 +466,7 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	GST_DEBUG_OBJECT(self, "Streaming thread has started");
 
 	gint stream_id_num = 0;
-	StreamRoles roles;
+	std::vector<StreamRole> roles;
 	for (GstPad *srcpad : state->srcpads_) {
 		/* Create stream-id and push stream-start. */
 		g_autofree gchar *stream_id_intermediate = g_strdup_printf("%i%i", state->group_id_, stream_id_num++);

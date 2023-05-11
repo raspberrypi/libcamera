@@ -8,6 +8,29 @@ Python Bindings for libcamera
 .. warning::
     The bindings are under work, and the API will change.
 
+Setup for building Python Bindings
+-------------------------------------------------
+
+Before building the Python Bindings,libcamera must be installed and built.
+Follow Instructions provided in the README.rst to do the same.
+
+1.Install Python Development headers using
+
+``sudo apt-get install python3-dev pybind11-dev libjpeg-dev libpng-dev``
+
+``pip install numpy opencv-python``
+
+2.Building Python Bindings
+
+-Navigate to the 'src/py' directory
+``cd libcamera/src/py``
+
+-Build Bindings 
+``python3 setup.py build``
+
+-Install Bindings
+``sudo python3 setup.py install``
+
 Differences to the C++ API
 --------------------------
 

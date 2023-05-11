@@ -16,10 +16,10 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
-#include <libcamera/camera_manager.h>
 #include <libcamera/framebuffer.h>
 
 #include "libcamera/internal/camera.h"
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
@@ -624,7 +624,7 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 		}
 	}
 
-	manager_->addCamera(std::move(camera), devnums);
+	manager_->_d()->addCamera(std::move(camera), devnums);
 }
 
 /**
@@ -691,7 +691,7 @@ void PipelineHandler::disconnect()
 			continue;
 
 		camera->disconnect();
-		manager_->removeCamera(camera);
+		manager_->_d()->removeCamera(camera);
 	}
 }
 

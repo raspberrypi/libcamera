@@ -34,10 +34,6 @@ public:
 	std::shared_ptr<Camera> get(const std::string &id);
 	std::shared_ptr<Camera> get(dev_t devnum);
 
-	void addCamera(std::shared_ptr<Camera> camera,
-		       const std::vector<dev_t> &devnums);
-	void removeCamera(std::shared_ptr<Camera> camera);
-
 	static const std::string &version() { return version_; }
 
 	Signal<std::shared_ptr<Camera>> cameraAdded;

@@ -148,9 +148,25 @@ void CameraManager::Private::cleanup()
 	enumerator_.reset(nullptr);
 }
 
+/**
+ * \brief Add a camera to the camera manager
+ * \param[in] camera The camera to be added
+ * \param[in] devnums The device numbers to associate with \a camera
+ *
+ * This function is called by pipeline handlers to register the cameras they
+ * handle with the camera manager. Registered cameras are immediately made
+ * available to the system.
+ *
+ * \a devnums are used by the V4L2 compatibility layer to map V4L2 device nodes
+ * to Camera instances.
+ *
+ * \context This function shall be called from the CameraManager thread.
+ */
 void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 				       const std::vector<dev_t> &devnums)
 {
+	ASSERT(Thread::current() == this);
+
 	MutexLocker locker(mutex_);
 
 	for (const std::shared_ptr<Camera> &c : cameras_) {
@@ -167,15 +183,31 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera,
 	unsigned int index = cameras_.size() - 1;
 	for (dev_t devnum : devnums)
 		camerasByDevnum_[devnum] = cameras_[index];
+
+	/* Report the addition to the public signal */
+	CameraManager *const o = LIBCAMERA_O_PTR();
+	o->cameraAdded.emit(cameras_[index]);
 }
 
-void CameraManager::Private::removeCamera(Camera *camera)
+/**
+ * \brief Remove a camera from the camera manager
+ * \param[in] camera The camera to be removed
+ *
+ * This function is called by pipeline handlers to unregister cameras from the
+ * camera manager. Unregistered cameras won't be reported anymore by the
+ * cameras() and get() calls, but references may still exist in applications.
+ *
+ * \context This function shall be called from the CameraManager thread.
+ */
+void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 {
+	ASSERT(Thread::current() == this);
+
 	MutexLocker locker(mutex_);
 
 	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
 				 [camera](std::shared_ptr<Camera> &c) {
-					 return c.get() == camera;
+					 return c.get() == camera.get();
 				 });
 	if (iter == cameras_.end())
 		return;
@@ -185,12 +217,16 @@ void CameraManager::Private::removeCamera(Camera *camera)
 
 	auto iter_d = std::find_if(camerasByDevnum_.begin(), camerasByDevnum_.end(),
 				   [camera](const std::pair<dev_t, std::weak_ptr<Camera>> &p) {
-					   return p.second.lock().get() == camera;
+					   return p.second.lock().get() == camera.get();
 				   });
 	if (iter_d != camerasByDevnum_.end())
 		camerasByDevnum_.erase(iter_d);
 
 	cameras_.erase(iter);
+
+	/* Report the removal to the public signal */
+	CameraManager *const o = LIBCAMERA_O_PTR();
+	o->cameraRemoved.emit(camera);
 }
 
 /**
@@ -382,51 +418,6 @@ std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
  * minimize the time spent in the signal handler and shall in particular not
  * perform any blocking operation.
  */
-
-/**
- * \brief Add a camera to the camera manager
- * \param[in] camera The camera to be added
- * \param[in] devnums The device numbers to associate with \a camera
- *
- * This function is called by pipeline handlers to register the cameras they
- * handle with the camera manager. Registered cameras are immediately made
- * available to the system.
- *
- * \a devnums are used by the V4L2 compatibility layer to map V4L2 device nodes
- * to Camera instances.
- *
- * \context This function shall be called from the CameraManager thread.
- */
-void CameraManager::addCamera(std::shared_ptr<Camera> camera,
-			      const std::vector<dev_t> &devnums)
-{
-	Private *const d = _d();
-
-	ASSERT(Thread::current() == d);
-
-	d->addCamera(camera, devnums);
-	cameraAdded.emit(camera);
-}
-
-/**
- * \brief Remove a camera from the camera manager
- * \param[in] camera The camera to be removed
- *
- * This function is called by pipeline handlers to unregister cameras from the
- * camera manager. Unregistered cameras won't be reported anymore by the
- * cameras() and get() calls, but references may still exist in applications.
- *
- * \context This function shall be called from the CameraManager thread.
- */
-void CameraManager::removeCamera(std::shared_ptr<Camera> camera)
-{
-	Private *const d = _d();
-
-	ASSERT(Thread::current() == d);
-
-	d->removeCamera(camera.get());
-	cameraRemoved.emit(camera);
-}
 
 /**
  * \fn const std::string &CameraManager::version()

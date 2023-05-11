@@ -37,7 +37,7 @@ public:
 	int start();
 	void addCamera(std::shared_ptr<Camera> camera,
 		       const std::vector<dev_t> &devnums) LIBCAMERA_TSA_EXCLUDES(mutex_);
-	void removeCamera(Camera *camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
+	void removeCamera(std::shared_ptr<Camera> camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
 
 protected:
 	void run() override;

@@ -5,25 +5,24 @@
  * camera_manager.h - Camera management
  */
 
-#include <libcamera/camera_manager.h>
+#include "libcamera/internal/camera_manager.h"
 
-#include <map>
+#include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
 
-#include <libcamera/base/log.h>
-#include <libcamera/base/mutex.h>
-#include <libcamera/base/thread.h>
-#include <libcamera/base/utils.h>
-
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/process.h"
 
 /**
- * \file camera_manager.h
+ * \file libcamera/camera_manager.h
  * \brief The camera manager
+ */
+
+/**
+ * \file libcamera/internal/camera_manager.h
+ * \brief Internal camera manager support
  */
 
 /**
@@ -32,46 +31,6 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
-
-class CameraManager::Private : public Extensible::Private, public Thread
-{
-	LIBCAMERA_DECLARE_PUBLIC(CameraManager)
-
-public:
-	Private();
-
-	int start();
-	void addCamera(std::shared_ptr<Camera> camera,
-		       const std::vector<dev_t> &devnums) LIBCAMERA_TSA_EXCLUDES(mutex_);
-	void removeCamera(Camera *camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
-
-	/*
-	 * This mutex protects
-	 *
-	 * - initialized_ and status_ during initialization
-	 * - cameras_ and camerasByDevnum_ after initialization
-	 */
-	mutable Mutex mutex_;
-	std::vector<std::shared_ptr<Camera>> cameras_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
-	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
-
-protected:
-	void run() override;
-
-private:
-	int init();
-	void createPipelineHandlers();
-	void cleanup() LIBCAMERA_TSA_EXCLUDES(mutex_);
-
-	ConditionVariable cv_;
-	bool initialized_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
-	int status_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
-
-	std::unique_ptr<DeviceEnumerator> enumerator_;
-
-	IPAManager ipaManager_;
-	ProcessManager processManager_;
-};
 
 CameraManager::Private::Private()
 	: initialized_(false)

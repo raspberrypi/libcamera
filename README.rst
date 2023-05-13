@@ -104,6 +104,9 @@ for android: [optional]
 for lc-compliance: [optional]
         libevent-dev
 
+for abi-compat.sh: [optional]
+        abi-compliance-checker
+
 Basic testing with cam utility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

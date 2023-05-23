@@ -1,0 +1,45 @@
+{
+        "version": 1.0,
+        "target": "bcm2835",
+
+        "pipeline_handler":
+        {
+                # The minimum number of internal buffers to be allocated for
+                # Unicam. This value must be greater than 0, but less than or
+                # equal to min_total_unicam_buffers.
+                #
+                # A larger number of internal buffers can reduce the occurrence
+                # of frame drops during high CPU loads, but might also cause
+                # additional latency in the system.
+                #
+                # Note that the pipeline handler might override this value and
+                # not allocate any internal buffers if it knows they will never
+                # be used. For example if the RAW stream is marked as mandatory
+                # and there are no dropped frames signalled for algorithm
+                # convergence.
+                #
+                "min_unicam_buffers": 2,
+
+                # The minimum total (internal + external) buffer count used for
+                # Unicam. The number of internal buffers allocated for Unicam is
+                # given by:
+                #
+                # internal buffer count = max(min_unicam_buffers,
+                #         min_total_unicam_buffers - external buffer count)
+                #
+                "min_total_unicam_buffers": 4,
+
+                # Override any request from the IPA to drop a number of startup
+                # frames.
+                #
+                # "disable_startup_frame_drops": false,
+
+                # The application will always provide a request buffer for the
+                # RAW stream, if it has been configured.
+                "raw_mandatory_stream": true,
+
+                # The application will always provide a request buffer for the
+                # Output 0 stream, if it has been configured.
+                "output0_mandatory_stream": true,
+        }
+}

@@ -888,15 +888,15 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	}
 	data->nativeBayerOrder_ = bayerFormat.order;
 
+	ret = platformRegister(cameraData, frontend, backend);
+	if (ret)
+		return ret;
+
 	ret = data->loadPipelineConfiguration();
 	if (ret) {
 		LOG(RPI, Error) << "Unable to load pipeline configuration";
 		return ret;
 	}
-
-	ret = platformRegister(cameraData, frontend, backend);
-	if (ret)
-		return ret;
 
 	/* Setup the general IPA signal handlers. */
 	data->frontendDevice()->dequeueTimeout.connect(data, &RPi::CameraData::cameraTimeout);

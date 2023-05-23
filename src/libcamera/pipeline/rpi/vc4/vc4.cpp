@@ -104,6 +104,16 @@ public:
 		 * minTotalUnicamBuffers >= minUnicamBuffers
 		 */
 		unsigned int minTotalUnicamBuffers;
+		/*
+		 * The application will always provide a request buffer for the
+		 * RAW stream, if it has been configured.
+		 */
+		bool rawMandatoryStream;
+		/*
+		 * The application will always provide a request buffer for the
+		 * Output 0 stream, if it has been configured.
+		 */
+		bool output0MandatoryStream;
 	};
 
 	Config config_;
@@ -218,14 +228,45 @@ bool PipelineHandlerVc4::match(DeviceEnumerator *enumerator)
 int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 {
 	Vc4CameraData *data = cameraData(camera);
-	unsigned int numRawBuffers = 0;
+	unsigned int minUnicamBuffers = data->config_.minUnicamBuffers;
+	unsigned int minTotalUnicamBuffers = data->config_.minTotalUnicamBuffers;
+	unsigned int numRawBuffers = 0, minIspBuffers = 1;
 	int ret;
 
-	for (Stream *s : camera->streams()) {
-		if (BayerFormat::fromPixelFormat(s->configuration().pixelFormat).isValid()) {
-			numRawBuffers = s->configuration().bufferCount;
-			break;
+	if (data->unicam_[Unicam::Image].getFlags() & StreamFlag::External) {
+		numRawBuffers = data->unicam_[Unicam::Image].getBuffers().size();
+		/*
+		 * If the application provides a guarantees that Unicam
+		 * image buffers will always be provided for the RAW stream
+		 * in a Request, we need:
+		 * - at least 1 internal Unicam buffer to handle startup frame drops,
+		 * - no internal Unicam buffers if there are no startup frame drops.
+		 */
+		if (data->config_.rawMandatoryStream) {
+			if (data->dropFrameCount_) {
+				minUnicamBuffers = 2;
+				minTotalUnicamBuffers = 2;
+			} else {
+				minUnicamBuffers = 0;
+				minTotalUnicamBuffers = 0;
+			}
 		}
+	}
+
+	if (data->isp_[Isp::Output0].getFlags() & StreamFlag::External) {
+		/*
+		 * Since the ISP runs synchronous with the IPA and requests,
+		 * we only ever need a maximum of one internal buffer. Any
+		 * buffers the application wants to hold onto will already
+		 * be exported through PipelineHandlerRPi::exportFrameBuffers().
+		 *
+		 * However, as above, if the application provides a guarantee
+		 * that the buffer will always be provided for the ISP Output0
+		 * stream in a Request, we don't need any internal buffers
+		 * allocated.
+		 */
+		if (!data->dropFrameCount_ && data->config_.output0MandatoryStream)
+			minIspBuffers = 0;
 	}
 
 	/* Decide how many internal buffers to allocate. */
@@ -235,7 +276,6 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 		 * For Unicam, allocate a minimum number of buffers for internal
 		 * use as we want to avoid any frame drops.
 		 */
-		const unsigned int minBuffers = data->config_.minTotalUnicamBuffers;
 		if (stream == &data->unicam_[Unicam::Image]) {
 			/*
 			 * If an application has configured a RAW stream, allocate
@@ -243,8 +283,9 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			 * we have at least minUnicamBuffers of internal buffers
 			 * to use to minimise frame drops.
 			 */
-			numBuffers = std::max<int>(data->config_.minUnicamBuffers,
-						   minBuffers - numRawBuffers);
+			numBuffers = std::max<int>(minUnicamBuffers,
+						   minTotalUnicamBuffers - numRawBuffers);
+			LOG(RPI, Debug) << "Unicam::Image numBuffers " << numBuffers;
 		} else if (stream == &data->isp_[Isp::Input]) {
 			/*
 			 * ISP input buffers are imported from Unicam, so follow
@@ -252,8 +293,9 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			 * available.
 			 */
 			numBuffers = numRawBuffers +
-				     std::max<int>(data->config_.minUnicamBuffers,
-						   minBuffers - numRawBuffers);
+				     std::max<int>(minUnicamBuffers,
+						   minTotalUnicamBuffers - numRawBuffers);
+			LOG(RPI, Debug) << "Isp::Input numBuffers " << numBuffers;
 
 		} else if (stream == &data->unicam_[Unicam::Embedded]) {
 			/*
@@ -272,14 +314,18 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			 * buffers, as these will be recycled quicker.
 			 */
 			numBuffers = 12;
+		} else if (stream == &data->isp_[Isp::Output0]) {
+			/* Buffer count for this is handled in the earlier loop above. */
+			numBuffers = minIspBuffers;
+			LOG(RPI, Debug) << "Isp::Output0 numBuffers " << numBuffers;
 		} else {
 			/*
-			 * Since the ISP runs synchronous with the IPA and requests,
-			 * we only ever need one set of internal buffers. Any buffers
-			 * the application wants to hold onto will already be exported
-			 * through PipelineHandlerRPi::exportFrameBuffers().
+			 * Same reasoning as for ISP Output 0, we only ever need
+			 * a maximum of one internal buffer for Output1 (required
+			 * for colour denoise) and ISP statistics.
 			 */
 			numBuffers = 1;
+			LOG(RPI, Debug) << "Other numBuffers " << numBuffers;
 		}
 
 		LOG(RPI, Debug) << "Preparing " << numBuffers
@@ -497,6 +543,8 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 	config_ = {
 		.minUnicamBuffers = 2,
 		.minTotalUnicamBuffers = 4,
+		.rawMandatoryStream = false,
+		.output0MandatoryStream = false,
 	};
 
 	if (!root)
@@ -520,6 +568,10 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 		phConfig["min_unicam_buffers"].get<unsigned int>(config_.minUnicamBuffers);
 	config_.minTotalUnicamBuffers =
 		phConfig["min_total_unicam_buffers"].get<unsigned int>(config_.minTotalUnicamBuffers);
+	config_.rawMandatoryStream =
+		phConfig["raw_mandatory_stream"].get<bool>(config_.rawMandatoryStream);
+	config_.output0MandatoryStream =
+		phConfig["output0_mandatory_stream"].get<bool>(config_.output0MandatoryStream);
 
 	if (config_.minTotalUnicamBuffers < config_.minUnicamBuffers) {
 		LOG(RPI, Error) << "Invalid configuration: min_total_unicam_buffers must be >= min_unicam_buffers";

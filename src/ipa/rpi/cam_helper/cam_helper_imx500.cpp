@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * cam_helper_imx477.cpp - camera helper for imx477 sensor
+ * cam_helper_imx500.cpp - camera helper for imx500 sensor
  */
 
 #include <algorithm>
@@ -27,7 +27,7 @@ LOG_DECLARE_CATEGORY(IPARPI)
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
- * I2C addresses from the Sony IMX477 datasheet:
+ * I2C addresses from the Sony IMX500 datasheet:
  */
 constexpr uint32_t expHiReg = 0x0202;
 constexpr uint32_t expLoReg = 0x0203;
@@ -42,10 +42,10 @@ constexpr std::initializer_list<uint32_t> registerList =
 	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg,
 	  lineLengthHiReg, lineLengthLoReg, temperatureReg };
 
-class CamHelperImx477 : public CamHelper
+class CamHelperImx500 : public CamHelper
 {
 public:
-	CamHelperImx477();
+	CamHelperImx500();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
 	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
@@ -70,22 +70,22 @@ private:
 			      Metadata &metadata) const override;
 };
 
-CamHelperImx477::CamHelperImx477()
+CamHelperImx500::CamHelperImx500()
 	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff)
 {
 }
 
-uint32_t CamHelperImx477::gainCode(double gain) const
+uint32_t CamHelperImx500::gainCode(double gain) const
 {
 	return static_cast<uint32_t>(1024 - 1024 / gain);
 }
 
-double CamHelperImx477::gain(uint32_t gainCode) const
+double CamHelperImx500::gain(uint32_t gainCode) const
 {
 	return 1024.0 / (1024 - gainCode);
 }
 
-void CamHelperImx477::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
+void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -121,7 +121,7 @@ void CamHelperImx477::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 }
 
-std::pair<uint32_t, uint32_t> CamHelperImx477::getBlanking(Duration &exposure,
+std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,
 							   Duration minFrameDuration,
 							   Duration maxFrameDuration) const
 {
@@ -151,15 +151,15 @@ std::pair<uint32_t, uint32_t> CamHelperImx477::getBlanking(Duration &exposure,
 	if (shift) {
 		/* Account for any rounding in the scaled frame length value. */
 		frameLength <<= shift;
-		exposureLines = CamHelperImx477::exposureLines(exposure, lineLength);
+		exposureLines = CamHelperImx500::exposureLines(exposure, lineLength);
 		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
-		exposure = CamHelperImx477::exposure(exposureLines, lineLength);
+		exposure = CamHelperImx500::exposure(exposureLines, lineLength);
 	}
 
 	return { frameLength - mode_.height, hblank };
 }
 
-void CamHelperImx477::getDelays(int &exposureDelay, int &gainDelay,
+void CamHelperImx500::getDelays(int &exposureDelay, int &gainDelay,
 				int &vblankDelay, int &hblankDelay) const
 {
 	exposureDelay = 2;
@@ -168,12 +168,12 @@ void CamHelperImx477::getDelays(int &exposureDelay, int &gainDelay,
 	hblankDelay = 3;
 }
 
-bool CamHelperImx477::sensorEmbeddedDataPresent() const
+bool CamHelperImx500::sensorEmbeddedDataPresent() const
 {
 	return true;
 }
 
-void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
+void CamHelperImx500::populateMetadata(const MdParser::RegisterMap &registers,
 				       Metadata &metadata) const
 {
 	DeviceStatus deviceStatus;
@@ -191,8 +191,7 @@ void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 
 static CamHelper *create()
 {
-	return new CamHelperImx477();
+	return new CamHelperImx500();
 }
 
-static RegisterCamHelper reg_imx477("imx477", &create);
-
+static RegisterCamHelper reg_imx500("imx500", &create);

@@ -36,6 +36,9 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Agc)
 
+/* Minimum limit for analogue gain value */
+static constexpr double kMinAnalogueGain = 1.0;
+
 /* \todo Honour the FrameDurationLimits control instead of hardcoding a limit */
 static constexpr utils::Duration kMaxShutterSpeed = 60ms;
 
@@ -254,7 +257,8 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 	utils::Duration maxShutterSpeed = std::min(configuration.sensor.maxShutterSpeed,
 						   kMaxShutterSpeed);
 
-	double minAnalogueGain = configuration.sensor.minAnalogueGain;
+	double minAnalogueGain = std::max(configuration.sensor.minAnalogueGain,
+					  kMinAnalogueGain);
 	double maxAnalogueGain = configuration.sensor.maxAnalogueGain;
 
 	/* Consider within 1% of the target as correctly exposed. */

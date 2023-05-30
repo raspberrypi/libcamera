@@ -42,31 +42,26 @@ class SimpleTestMethods(BaseTestCase):
         cam = cm.get('platform/vimc.0 Sensor B')
         self.assertIsNotNone(cam)
 
-        ret = cam.acquire()
-        self.assertZero(ret)
+        cam.acquire()
 
-        ret = cam.release()
-        self.assertZero(ret)
+        cam.release()
 
     def test_double_acquire(self):
         cm = libcam.CameraManager.singleton()
         cam = cm.get('platform/vimc.0 Sensor B')
         self.assertIsNotNone(cam)
 
-        ret = cam.acquire()
-        self.assertZero(ret)
+        cam.acquire()
 
         libcam.log_set_level('Camera', 'FATAL')
-        ret = cam.acquire()
-        self.assertEqual(ret, -errno.EBUSY)
+        with self.assertRaises(RuntimeError):
+            cam.acquire()
         libcam.log_set_level('Camera', 'ERROR')
 
-        ret = cam.release()
-        self.assertZero(ret)
+        cam.release()
 
-        ret = cam.release()
-        # I expected EBUSY, but looks like double release works fine
-        self.assertZero(ret)
+        # I expected exception here, but looks like double release works fine
+        cam.release()
 
     def test_version(self):
         cm = libcam.CameraManager.singleton()
@@ -84,11 +79,7 @@ class CameraTesterBase(BaseTestCase):
             self.cm = None
             self.skipTest('No vimc found')
 
-        ret = self.cam.acquire()
-        if ret != 0:
-            self.cam = None
-            self.cm = None
-            raise Exception('Failed to acquire camera')
+        self.cam.acquire()
 
         self.wr_cam = weakref.ref(self.cam)
         self.wr_cm = weakref.ref(self.cm)
@@ -97,9 +88,7 @@ class CameraTesterBase(BaseTestCase):
         # If a test fails, the camera may be in running state. So always stop.
         self.cam.stop()
 
-        ret = self.cam.release()
-        if ret != 0:
-            raise Exception('Failed to release camera')
+        self.cam.release()
 
         self.cam = None
         self.cm = None
@@ -119,8 +108,7 @@ class AllocatorTestMethods(CameraTesterBase):
         streamconfig = camconfig.at(0)
         wr_streamconfig = weakref.ref(streamconfig)
 
-        ret = cam.configure(camconfig)
-        self.assertZero(ret)
+        cam.configure(camconfig)
 
         stream = streamconfig.stream
         wr_stream = weakref.ref(stream)
@@ -133,8 +121,8 @@ class AllocatorTestMethods(CameraTesterBase):
         self.assertIsNotNone(wr_streamconfig())
 
         allocator = libcam.FrameBufferAllocator(cam)
-        ret = allocator.allocate(stream)
-        self.assertTrue(ret > 0)
+        num_bufs = allocator.allocate(stream)
+        self.assertTrue(num_bufs > 0)
         wr_allocator = weakref.ref(allocator)
 
         buffers = allocator.buffers(stream)
@@ -177,14 +165,13 @@ class SimpleCaptureMethods(CameraTesterBase):
         self.assertIsNotNone(fmts)
         fmts = None
 
-        ret = cam.configure(camconfig)
-        self.assertZero(ret)
+        cam.configure(camconfig)
 
         stream = streamconfig.stream
 
         allocator = libcam.FrameBufferAllocator(cam)
-        ret = allocator.allocate(stream)
-        self.assertTrue(ret > 0)
+        num_bufs = allocator.allocate(stream)
+        self.assertTrue(num_bufs > 0)
 
         num_bufs = len(allocator.buffers(stream))
 
@@ -194,19 +181,16 @@ class SimpleCaptureMethods(CameraTesterBase):
             self.assertIsNotNone(req)
 
             buffer = allocator.buffers(stream)[i]
-            ret = req.add_buffer(stream, buffer)
-            self.assertZero(ret)
+            req.add_buffer(stream, buffer)
 
             reqs.append(req)
 
         buffer = None
 
-        ret = cam.start()
-        self.assertZero(ret)
+        cam.start()
 
         for req in reqs:
-            ret = cam.queue_request(req)
-            self.assertZero(ret)
+            cam.queue_request(req)
 
         reqs = None
         gc.collect()
@@ -234,8 +218,7 @@ class SimpleCaptureMethods(CameraTesterBase):
         reqs = None
         gc.collect()
 
-        ret = cam.stop()
-        self.assertZero(ret)
+        cam.stop()
 
     def test_select(self):
         cm = self.cm
@@ -249,14 +232,13 @@ class SimpleCaptureMethods(CameraTesterBase):
         self.assertIsNotNone(fmts)
         fmts = None
 
-        ret = cam.configure(camconfig)
-        self.assertZero(ret)
+        cam.configure(camconfig)
 
         stream = streamconfig.stream
 
         allocator = libcam.FrameBufferAllocator(cam)
-        ret = allocator.allocate(stream)
-        self.assertTrue(ret > 0)
+        num_bufs = allocator.allocate(stream)
+        self.assertTrue(num_bufs > 0)
 
         num_bufs = len(allocator.buffers(stream))
 
@@ -266,19 +248,16 @@ class SimpleCaptureMethods(CameraTesterBase):
             self.assertIsNotNone(req)
 
             buffer = allocator.buffers(stream)[i]
-            ret = req.add_buffer(stream, buffer)
-            self.assertZero(ret)
+            req.add_buffer(stream, buffer)
 
             reqs.append(req)
 
         buffer = None
 
-        ret = cam.start()
-        self.assertZero(ret)
+        cam.start()
 
         for req in reqs:
-            ret = cam.queue_request(req)
-            self.assertZero(ret)
+            cam.queue_request(req)
 
         reqs = None
         gc.collect()
@@ -307,8 +286,7 @@ class SimpleCaptureMethods(CameraTesterBase):
         reqs = None
         gc.collect()
 
-        ret = cam.stop()
-        self.assertZero(ret)
+        cam.stop()
 
 
 # Recursively expand slist's objects into olist, using seen to track already

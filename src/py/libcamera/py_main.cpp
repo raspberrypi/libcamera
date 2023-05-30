@@ -112,8 +112,18 @@ PYBIND11_MODULE(_libcamera, m)
 
 	pyCamera
 		.def_property_readonly("id", &Camera::id)
-		.def("acquire", &Camera::acquire)
-		.def("release", &Camera::release)
+		.def("acquire", [](Camera &self) {
+			int ret = self.acquire();
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to acquire camera");
+		})
+		.def("release", [](Camera &self) {
+			int ret = self.release();
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to release camera");
+		})
 		.def("start", [](Camera &self,
 		                 const std::unordered_map<const ControlId *, py::object> &controls) {
 			/* \todo What happens if someone calls start() multiple times? */
@@ -133,20 +143,19 @@ PYBIND11_MODULE(_libcamera, m)
 			int ret = self.start(&controlList);
 			if (ret) {
 				self.requestCompleted.disconnect();
-				return ret;
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to start camera");
 			}
-
-			return 0;
 		}, py::arg("controls") = std::unordered_map<const ControlId *, py::object>())
 
 		.def("stop", [](Camera &self) {
 			int ret = self.stop();
-			if (ret)
-				return ret;
 
 			self.requestCompleted.disconnect();
 
-			return 0;
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to stop camera");
 		})
 
 		.def("__str__", [](Camera &self) {
@@ -155,9 +164,20 @@ PYBIND11_MODULE(_libcamera, m)
 
 		/* Keep the camera alive, as StreamConfiguration contains a Stream* */
 		.def("generate_configuration", &Camera::generateConfiguration, py::keep_alive<0, 1>())
-		.def("configure", &Camera::configure)
+		.def("configure", [](Camera &self, CameraConfiguration *config) {
+			int ret = self.configure(config);
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to configure camera");
+		})
 
-		.def("create_request", &Camera::createRequest, py::arg("cookie") = 0)
+		.def("create_request", [](Camera &self, uint64_t cookie) {
+			std::unique_ptr<Request> req = self.createRequest(cookie);
+			if (!req)
+				throw std::system_error(ENOMEM, std::generic_category(),
+							"Failed to create request");
+			return req;
+		}, py::arg("cookie") = 0)
 
 		.def("queue_request", [](Camera &self, Request *req) {
 			py::object py_req = py::cast(req);
@@ -170,10 +190,11 @@ PYBIND11_MODULE(_libcamera, m)
 			py_req.inc_ref();
 
 			int ret = self.queueRequest(req);
-			if (ret)
+			if (ret) {
 				py_req.dec_ref();
-
-			return ret;
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to queue request");
+			}
 		})
 
 		.def_property_readonly("streams", [](Camera &self) {
@@ -251,7 +272,13 @@ PYBIND11_MODULE(_libcamera, m)
 
 	pyFrameBufferAllocator
 		.def(py::init<std::shared_ptr<Camera>>(), py::keep_alive<1, 2>())
-		.def("allocate", &FrameBufferAllocator::allocate)
+		.def("allocate", [](FrameBufferAllocator &self, Stream *stream) {
+			int ret = self.allocate(stream);
+			if (ret < 0)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to allocate buffers");
+			return ret;
+		})
 		.def_property_readonly("allocated", &FrameBufferAllocator::allocated)
 		/* Create a list of FrameBuffers, where each FrameBuffer has a keep-alive to FrameBufferAllocator */
 		.def("buffers", [](FrameBufferAllocator &self, Stream *stream) {
@@ -328,7 +355,10 @@ PYBIND11_MODULE(_libcamera, m)
 	pyRequest
 		/* \todo Fence is not supported, so we cannot expose addBuffer() directly */
 		.def("add_buffer", [](Request &self, const Stream *stream, FrameBuffer *buffer) {
-			return self.addBuffer(stream, buffer);
+			int ret = self.addBuffer(stream, buffer);
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to add buffer");
 		}, py::keep_alive<1, 3>()) /* Request keeps Framebuffer alive */
 		.def_property_readonly("status", &Request::status)
 		.def_property_readonly("buffers", &Request::buffers)

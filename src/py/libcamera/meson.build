@@ -14,10 +14,12 @@ pybind11_dep = pybind11_proj.get_variable('pybind11_dep')
 
 pycamera_sources = files([
     'py_camera_manager.cpp',
+    'py_color_space.cpp',
     'py_enums.cpp',
     'py_geometry.cpp',
     'py_helpers.cpp',
     'py_main.cpp',
+    'py_transform.cpp',
 ])
 
 # Generate controls

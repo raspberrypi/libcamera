@@ -40,11 +40,13 @@ LOG_DEFINE_CATEGORY(Python)
  */
 static std::weak_ptr<PyCameraManager> gCameraManager;
 
-void init_py_enums(py::module &m);
+void init_py_color_space(py::module &m);
 void init_py_controls_generated(py::module &m);
+void init_py_enums(py::module &m);
 void init_py_formats_generated(py::module &m);
 void init_py_geometry(py::module &m);
 void init_py_properties_generated(py::module &m);
+void init_py_transform(py::module &m);
 
 PYBIND11_MODULE(_libcamera, m)
 {
@@ -52,6 +54,8 @@ PYBIND11_MODULE(_libcamera, m)
 	init_py_controls_generated(m);
 	init_py_geometry(m);
 	init_py_properties_generated(m);
+	init_py_color_space(m);
+	init_py_transform(m);
 
 	/* Forward declarations */
 
@@ -79,12 +83,6 @@ PYBIND11_MODULE(_libcamera, m)
 	auto pyFrameMetadata = py::class_<FrameMetadata>(m, "FrameMetadata");
 	auto pyFrameMetadataStatus = py::enum_<FrameMetadata::Status>(pyFrameMetadata, "Status");
 	auto pyFrameMetadataPlane = py::class_<FrameMetadata::Plane>(pyFrameMetadata, "Plane");
-	auto pyTransform = py::class_<Transform>(m, "Transform");
-	auto pyColorSpace = py::class_<ColorSpace>(m, "ColorSpace");
-	auto pyColorSpacePrimaries = py::enum_<ColorSpace::Primaries>(pyColorSpace, "Primaries");
-	auto pyColorSpaceTransferFunction = py::enum_<ColorSpace::TransferFunction>(pyColorSpace, "TransferFunction");
-	auto pyColorSpaceYcbcrEncoding = py::enum_<ColorSpace::YcbcrEncoding>(pyColorSpace, "YcbcrEncoding");
-	auto pyColorSpaceRange = py::enum_<ColorSpace::Range>(pyColorSpace, "Range");
 	auto pyPixelFormat = py::class_<PixelFormat>(m, "PixelFormat");
 
 	init_py_formats_generated(m);
@@ -387,109 +385,6 @@ PYBIND11_MODULE(_libcamera, m)
 
 	pyFrameMetadataPlane
 		.def_readwrite("bytes_used", &FrameMetadata::Plane::bytesused);
-
-	pyTransform
-		.def(py::init([](int rotation, bool hflip, bool vflip, bool transpose) {
-			bool ok;
-
-			Transform t = transformFromRotation(rotation, &ok);
-			if (!ok)
-				throw std::invalid_argument("Invalid rotation");
-
-			if (hflip)
-				t ^= Transform::HFlip;
-			if (vflip)
-				t ^= Transform::VFlip;
-			if (transpose)
-				t ^= Transform::Transpose;
-			return t;
-		}), py::arg("rotation") = 0, py::arg("hflip") = false,
-		    py::arg("vflip") = false, py::arg("transpose") = false)
-		.def(py::init([](Transform &other) { return other; }))
-		.def("__str__", [](Transform &self) {
-			return "<libcamera.Transform '" + std::string(transformToString(self)) + "'>";
-		})
-		.def_property("hflip",
-			      [](Transform &self) {
-				      return !!(self & Transform::HFlip);
-			      },
-			      [](Transform &self, bool hflip) {
-				      if (hflip)
-					      self |= Transform::HFlip;
-				      else
-					      self &= ~Transform::HFlip;
-			      })
-		.def_property("vflip",
-			      [](Transform &self) {
-				      return !!(self & Transform::VFlip);
-			      },
-			      [](Transform &self, bool vflip) {
-				      if (vflip)
-					      self |= Transform::VFlip;
-				      else
-					      self &= ~Transform::VFlip;
-			      })
-		.def_property("transpose",
-			      [](Transform &self) {
-				      return !!(self & Transform::Transpose);
-			      },
-			      [](Transform &self, bool transpose) {
-				      if (transpose)
-					      self |= Transform::Transpose;
-				      else
-					      self &= ~Transform::Transpose;
-			      })
-		.def("inverse", [](Transform &self) { return -self; })
-		.def("invert", [](Transform &self) {
-			self = -self;
-		})
-		.def("compose", [](Transform &self, Transform &other) {
-			self = self * other;
-		});
-
-	pyColorSpace
-		.def(py::init([](ColorSpace::Primaries primaries,
-				 ColorSpace::TransferFunction transferFunction,
-				 ColorSpace::YcbcrEncoding ycbcrEncoding,
-				 ColorSpace::Range range) {
-			return ColorSpace(primaries, transferFunction, ycbcrEncoding, range);
-		}), py::arg("primaries"), py::arg("transferFunction"),
-		    py::arg("ycbcrEncoding"), py::arg("range"))
-		.def(py::init([](ColorSpace &other) { return other; }))
-		.def("__str__", [](ColorSpace &self) {
-			return "<libcamera.ColorSpace '" + self.toString() + "'>";
-		})
-		.def_readwrite("primaries", &ColorSpace::primaries)
-		.def_readwrite("transferFunction", &ColorSpace::transferFunction)
-		.def_readwrite("ycbcrEncoding", &ColorSpace::ycbcrEncoding)
-		.def_readwrite("range", &ColorSpace::range)
-		.def_static("Raw", []() { return ColorSpace::Raw; })
-		.def_static("Srgb", []() { return ColorSpace::Srgb; })
-		.def_static("Sycc", []() { return ColorSpace::Sycc; })
-		.def_static("Smpte170m", []() { return ColorSpace::Smpte170m; })
-		.def_static("Rec709", []() { return ColorSpace::Rec709; })
-		.def_static("Rec2020", []() { return ColorSpace::Rec2020; });
-
-	pyColorSpacePrimaries
-		.value("Raw", ColorSpace::Primaries::Raw)
-		.value("Smpte170m", ColorSpace::Primaries::Smpte170m)
-		.value("Rec709", ColorSpace::Primaries::Rec709)
-		.value("Rec2020", ColorSpace::Primaries::Rec2020);
-
-	pyColorSpaceTransferFunction
-		.value("Linear", ColorSpace::TransferFunction::Linear)
-		.value("Srgb", ColorSpace::TransferFunction::Srgb)
-		.value("Rec709", ColorSpace::TransferFunction::Rec709);
-
-	pyColorSpaceYcbcrEncoding
-		.value("Null", ColorSpace::YcbcrEncoding::None)
-		.value("Rec601", ColorSpace::YcbcrEncoding::Rec601)
-		.value("Rec709", ColorSpace::YcbcrEncoding::Rec709)
-		.value("Rec2020", ColorSpace::YcbcrEncoding::Rec2020);
-
-	pyColorSpaceRange
-		.value("Full", ColorSpace::Range::Full)
-		.value("Limited", ColorSpace::Range::Limited);
 
 	pyPixelFormat
 		.def(py::init<>())

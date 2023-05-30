@@ -18,6 +18,18 @@ class BaseTestCase(unittest.TestCase):
     def assertZero(self, a, msg=None):
         self.assertEqual(a, 0, msg)
 
+    def assertIsAlive(self, wr, msg='object not alive'):
+        self.assertIsNotNone(wr(), msg)
+
+    def assertIsDead(self, wr, msg='object not dead'):
+        self.assertIsNone(wr(), msg)
+
+    def assertIsAllAlive(self, wr_list, msg='object not alive'):
+        self.assertTrue(all([wr() for wr in wr_list]), msg)
+
+    def assertIsAllDead(self, wr_list, msg='object not dead'):
+        self.assertTrue(all([not wr() for wr in wr_list]), msg)
+
 
 class SimpleTestMethods(BaseTestCase):
     def test_get_ref(self):
@@ -28,14 +40,14 @@ class SimpleTestMethods(BaseTestCase):
         self.assertIsNotNone(cam)
         wr_cam = weakref.ref(cam)
 
-        cm = None
+        del cm
         gc.collect()
-        self.assertIsNotNone(wr_cm())
+        self.assertIsAlive(wr_cm)
 
-        cam = None
+        del cam
         gc.collect()
-        self.assertIsNone(wr_cm())
-        self.assertIsNone(wr_cam())
+        self.assertIsDead(wr_cm)
+        self.assertIsDead(wr_cam)
 
     def test_acquire_release(self):
         cm = libcam.CameraManager.singleton()
@@ -93,8 +105,8 @@ class CameraTesterBase(BaseTestCase):
         self.cam = None
         self.cm = None
 
-        self.assertIsNone(self.wr_cm())
-        self.assertIsNone(self.wr_cam())
+        self.assertIsDead(self.wr_cm)
+        self.assertIsDead(self.wr_cam)
 
 
 class AllocatorTestMethods(CameraTesterBase):
@@ -114,11 +126,11 @@ class AllocatorTestMethods(CameraTesterBase):
         wr_stream = weakref.ref(stream)
 
         # stream should keep streamconfig and camconfig alive
-        streamconfig = None
-        camconfig = None
+        del streamconfig
+        del camconfig
         gc.collect()
-        self.assertIsNotNone(wr_camconfig())
-        self.assertIsNotNone(wr_streamconfig())
+        self.assertIsAlive(wr_camconfig)
+        self.assertIsAlive(wr_streamconfig)
 
         allocator = libcam.FrameBufferAllocator(cam)
         num_bufs = allocator.allocate(stream)
@@ -127,29 +139,29 @@ class AllocatorTestMethods(CameraTesterBase):
 
         buffers = allocator.buffers(stream)
         self.assertIsNotNone(buffers)
-        buffers = None
+        del buffers
 
         buffer = allocator.buffers(stream)[0]
         self.assertIsNotNone(buffer)
         wr_buffer = weakref.ref(buffer)
 
-        allocator = None
+        del allocator
         gc.collect()
-        self.assertIsNotNone(wr_buffer())
-        self.assertIsNotNone(wr_allocator())
-        self.assertIsNotNone(wr_stream())
+        self.assertIsAlive(wr_buffer)
+        self.assertIsAlive(wr_allocator)
+        self.assertIsAlive(wr_stream)
 
-        buffer = None
+        del buffer
         gc.collect()
-        self.assertIsNone(wr_buffer())
-        self.assertIsNone(wr_allocator())
-        self.assertIsNotNone(wr_stream())
+        self.assertIsDead(wr_buffer)
+        self.assertIsDead(wr_allocator)
+        self.assertIsAlive(wr_stream)
 
-        stream = None
+        del stream
         gc.collect()
-        self.assertIsNone(wr_stream())
-        self.assertIsNone(wr_camconfig())
-        self.assertIsNone(wr_streamconfig())
+        self.assertIsDead(wr_stream)
+        self.assertIsDead(wr_camconfig)
+        self.assertIsDead(wr_streamconfig)
 
 
 class SimpleCaptureMethods(CameraTesterBase):

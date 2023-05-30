@@ -68,6 +68,10 @@ class SimpleTestMethods(BaseTestCase):
         # I expected EBUSY, but looks like double release works fine
         self.assertZero(ret)
 
+    def test_version(self):
+        cm = libcam.CameraManager.singleton()
+        self.assertIsInstance(cm.version, str)
+
 
 class CameraTesterBase(BaseTestCase):
     cm: typing.Any

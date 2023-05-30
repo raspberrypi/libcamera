@@ -105,7 +105,7 @@ PYBIND11_MODULE(_libcamera, m)
 			return cm;
 		})
 
-		.def_property_readonly("version", &PyCameraManager::version)
+		.def_property_readonly_static("version", [](py::object /* self */) { return PyCameraManager::version(); })
 		.def("get", &PyCameraManager::get, py::keep_alive<0, 1>())
 		.def_property_readonly("cameras", &PyCameraManager::cameras)
 

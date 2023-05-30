@@ -4,4 +4,4 @@
 /libyaml
 /libyuv
 /packagecache
-/pybind11
+/pybind11-*

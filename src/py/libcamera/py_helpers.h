@@ -7,7 +7,7 @@
 
 #include <libcamera/libcamera.h>
 
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 
 pybind11::object controlValueToPy(const libcamera::ControlValue &cv);
 libcamera::ControlValue pyToControlValue(const pybind11::object &ob, libcamera::ControlType type);

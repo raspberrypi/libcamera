@@ -17,7 +17,7 @@
 #include <libcamera/libcamera.h>
 
 #include <pybind11/functional.h>
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
@@ -33,6 +33,51 @@ namespace libcamera {
 LOG_DEFINE_CATEGORY(Python)
 
 }
+
+/*
+ * This is a holder class used only for the Camera class, for the sole purpose
+ * of avoiding the compilation issue with Camera's private destructor.
+ *
+ * pybind11 requires a public destructor for classes held with shared_ptrs, even
+ * in cases where the public destructor is not strictly needed. The current
+ * understanding is that there are the following options to solve the problem:
+ *
+ * - Use pybind11 'smart_holder' branch. The downside is that 'smart_holder'
+ *   is not the mainline branch, and not available in distributions.
+ * - https://github.com/pybind/pybind11/pull/2067
+ * - Make the Camera destructor public
+ * - Something like the PyCameraSmartPtr here, which adds a layer, hiding the
+ *   issue.
+ */
+template<typename T>
+class PyCameraSmartPtr
+{
+public:
+	using element_type = T;
+
+	PyCameraSmartPtr()
+	{
+	}
+
+	explicit PyCameraSmartPtr(T *)
+	{
+		throw std::runtime_error("invalid SmartPtr constructor call");
+	}
+
+	explicit PyCameraSmartPtr(std::shared_ptr<T> p)
+		: ptr_(p)
+	{
+	}
+
+	T *get() const { return ptr_.get(); }
+
+	operator std::shared_ptr<T>() const { return ptr_; }
+
+private:
+	std::shared_ptr<T> ptr_;
+};
+
+PYBIND11_DECLARE_HOLDER_TYPE(T, PyCameraSmartPtr<T>)
 
 /*
  * Note: global C++ destructors can be ran on this before the py module is
@@ -65,8 +110,8 @@ PYBIND11_MODULE(_libcamera, m)
 	 * https://pybind11.readthedocs.io/en/latest/advanced/misc.html#avoiding-c-types-in-docstrings
 	 */
 
-	auto pyCameraManager = py::class_<PyCameraManager>(m, "CameraManager");
-	auto pyCamera = py::class_<Camera>(m, "Camera");
+	auto pyCameraManager = py::class_<PyCameraManager, std::shared_ptr<PyCameraManager>>(m, "CameraManager");
+	auto pyCamera = py::class_<Camera, PyCameraSmartPtr<Camera>>(m, "Camera");
 	auto pyCameraConfiguration = py::class_<CameraConfiguration>(m, "CameraConfiguration");
 	auto pyCameraConfigurationStatus = py::enum_<CameraConfiguration::Status>(pyCameraConfiguration, "Status");
 	auto pyStreamConfiguration = py::class_<StreamConfiguration>(m, "StreamConfiguration");
@@ -271,7 +316,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def("range", &StreamFormats::range);
 
 	pyFrameBufferAllocator
-		.def(py::init<std::shared_ptr<Camera>>(), py::keep_alive<1, 2>())
+		.def(py::init<PyCameraSmartPtr<Camera>>(), py::keep_alive<1, 2>())
 		.def("allocate", [](FrameBufferAllocator &self, Stream *stream) {
 			int ret = self.allocate(stream);
 			if (ret < 0)

@@ -7,10 +7,14 @@ if not py3_dep.found()
     subdir_done()
 endif
 
-pycamera_enabled = true
+pybind11_dep = dependency('pybind11', required : get_option('pycamera'))
 
-pybind11_proj = subproject('pybind11')
-pybind11_dep = pybind11_proj.get_variable('pybind11_dep')
+if not pybind11_dep.found()
+    pycamera_enabled = false
+    subdir_done()
+endif
+
+pycamera_enabled = true
 
 pycamera_sources = files([
     'py_camera_manager.cpp',

@@ -7,7 +7,7 @@
 
 #include <libcamera/libcamera.h>
 
-#include <pybind11/smart_holder.h>
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 

@@ -14,25 +14,18 @@
         {
             "rpi.lux":
             {
-                "reference_shutter_speed": 19184,
+                "reference_shutter_speed": 9998,
                 "reference_gain": 1.0,
                 "reference_aperture": 1.0,
-                "reference_lux": 432,
-                "reference_Y": 13773
+                "reference_lux": 823,
+                "reference_Y": 12396
             }
         },
         {
             "rpi.noise":
             {
                 "reference_constant": 0,
-                "reference_slope": 2.957
-            }
-        },
-        {
-            "rpi.geq":
-            {
-                "offset": 185,
-                "slope": 0.0105
+                "reference_slope": 2.753
             }
         },
         {

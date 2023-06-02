@@ -275,12 +275,12 @@ controls:
       type: int32_t
       description: |
         Reports a Figure of Merit (FoM) to indicate how in-focus the frame is.
-        A larger FocusFoM value indicates a more in-focus frame. This control
-        depends on the IPA to gather ISP statistics from the defined focus
-        region, and combine them in a suitable way to generate a FocusFoM value.
-        In this respect, it is not necessarily aimed at providing a way to
-        implement a focus algorithm by the application, rather an indication of
-        how in-focus a frame is.
+        A larger FocusFoM value indicates a more in-focus frame. This singular
+        value may be based on a combination of statistics gathered from
+        multiple focus regions within an image. The number of focus regions and
+        method of combination is platform dependent. In this respect, it is not
+        necessarily aimed at providing a way to implement a focus algorithm by
+        the application, rather an indication of how in-focus a frame is.
 
   - ColourCorrectionMatrix:
       type: float
@@ -333,8 +333,8 @@ controls:
   - FrameDurationLimits:
       type: int64_t
       description: |
-        The minimum and maximum (in that order) frame duration,
-        expressed in microseconds.
+        The minimum and maximum (in that order) frame duration, expressed in
+        microseconds.
 
         When provided by applications, the control specifies the sensor frame
         duration interval the pipeline has to use. This limits the largest
@@ -343,7 +343,7 @@ controls:
         the sensor will not be able to raise the exposure time above 33ms.
         A fixed frame duration is achieved by setting the minimum and maximum
         values to be the same. Setting both values to 0 reverts to using the
-        IPA provided defaults.
+        camera defaults.
 
         The maximum frame duration provides the absolute limit to the shutter
         speed computed by the AE algorithm and it overrides any exposure mode

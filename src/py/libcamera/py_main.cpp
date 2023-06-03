@@ -180,7 +180,7 @@ PYBIND11_MODULE(_libcamera, m)
 
 			ControlList controlList(self.controls());
 
-			for (const auto& [id, obj]: controls) {
+			for (const auto &[id, obj] : controls) {
 				auto val = pyToControlValue(obj, id->type());
 				controlList.set(id->id(), val);
 			}

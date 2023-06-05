@@ -210,7 +210,7 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		applyAGC(&agcStatus, ctrls);
 	}
 
-	result->controls = std::move(ctrls);
+	result->sensorControls = std::move(ctrls);
 
 	/*
 	 * Apply the correct limits to the exposure, gain and frame duration controls

@@ -1200,8 +1200,10 @@ int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::Config
 		return -EPIPE;
 	}
 
-	if (!result->controls.empty())
-		setSensorControls(result->controls);
+	if (!result->sensorControls.empty())
+		setSensorControls(result->sensorControls);
+	if (!result->lensControls.empty())
+		setLensControls(result->lensControls);
 
 	return 0;
 }

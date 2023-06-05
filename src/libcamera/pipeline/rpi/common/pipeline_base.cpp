@@ -1130,6 +1130,8 @@ int CameraData::loadPipelineConfiguration()
 
 int CameraData::loadIPA(ipa::RPi::InitResult *result)
 {
+	int ret;
+
 	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
 
 	if (!ipa_)
@@ -1153,8 +1155,14 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 	IPASettings settings(configurationFile, sensor_->model());
 	ipa::RPi::InitParams params;
 
+	ret = sensor_->sensorInfo(&params.sensorInfo);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
+		return ret;
+	}
+
 	params.lensPresent = !!sensor_->focusLens();
-	int ret = platformInitIpa(params);
+	ret = platformInitIpa(params);
 	if (ret)
 		return ret;
 

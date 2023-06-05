@@ -87,6 +87,7 @@ private:
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
 	bool lensPresent_;
+	bool monoSensor_;
 	ControlList libcameraMetadata_;
 
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;

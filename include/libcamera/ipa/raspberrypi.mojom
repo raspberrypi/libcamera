@@ -21,6 +21,7 @@ struct SensorConfig {
 
 struct InitParams {
 	bool lensPresent;
+	libcamera.IPACameraSensorInfo sensorInfo;
 };
 
 struct InitResult {

@@ -956,6 +956,9 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 	info->bitsPerPixel = format.bitsPerPixel();
 	info->outputSize = format.size;
 
+	std::optional<int32_t> cfa = properties_.get(properties::draft::ColorFilterArrangement);
+	info->cfaPattern = cfa ? *cfa : properties::draft::RGB;
+
 	/*
 	 * Retrieve the pixel rate, line length and minimum/maximum frame
 	 * duration through V4L2 controls. Support for the V4L2_CID_PIXEL_RATE,

@@ -141,6 +141,18 @@ module libcamera;
  */
 
 /**
+ * \var IPACameraSensorInfo::cfaPattern
+ * \brief The arrangement of colour filters on the image sensor
+ *
+ * This takes a value defined by properties::draft::ColorFilterArrangementEnum.
+ * For non-Bayer colour sensors, the cfaPattern will be set to
+ * properties::draft::ColorFilterArrangementEnum::RGB.
+ *
+ * \todo Make this variable optional once mojom supports it, instead of using
+ * RGB for sensors that don't have a CFA.
+ */
+
+/**
  * \var IPACameraSensorInfo::activeAreaSize
  * \brief The size of the pixel array active area of the sensor
  */
@@ -229,6 +241,7 @@ struct IPACameraSensorInfo {
 	string model;
 
 	uint32 bitsPerPixel;
+	uint32 cfaPattern;
 
 	Size activeAreaSize;
 	Rectangle analogCrop;

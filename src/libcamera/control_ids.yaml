@@ -408,6 +408,13 @@ controls:
             LensPosition control.
 
             In this mode the AfState will always report AfStateIdle.
+
+            If the camera is started in AfModeManual, it will move the focus
+            lens to the position specified by the LensPosition control.
+
+            This mode is the recommended default value for the AfMode control.
+            External cameras (as reported by the Location property set to
+            CameraLocationExternal) may use a different default value.
         - name: AfModeAuto
           value: 1
           description: |

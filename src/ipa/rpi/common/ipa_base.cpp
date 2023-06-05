@@ -208,6 +208,26 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		agcStatus.shutterTime = defaultExposureTime;
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
+
+		/*
+		 * Set the lens to the default (typically hyperfocal) position
+		 * on first start.
+		 */
+		if (lensPresent_) {
+			RPiController::AfAlgorithm *af =
+				dynamic_cast<RPiController::AfAlgorithm *>(controller_.getAlgorithm("af"));
+
+			if (af) {
+				float defaultPos =
+					ipaAfControls.at(&controls::LensPosition).def().get<float>();
+				ControlList lensCtrl(lensCtrls_);
+				int32_t hwpos;
+
+				af->setLensPosition(defaultPos, &hwpos);
+				lensCtrl.set(V4L2_CID_FOCUS_ABSOLUTE, hwpos);
+				result->lensControls = std::move(lensCtrl);
+			}
+		}
 	}
 
 	result->sensorControls = std::move(ctrls);

@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <string>
+
 #include <libcamera/base/utils.h>
 
 /*
@@ -24,9 +26,9 @@ struct AgcStatus {
 	libcamera::utils::Duration targetExposureValue; /* (unfiltered) target total exposure AGC is aiming for */
 	libcamera::utils::Duration shutterTime;
 	double analogueGain;
-	char exposureMode[32];
-	char constraintMode[32];
-	char meteringMode[32];
+	std::string exposureMode;
+	std::string constraintMode;
+	std::string meteringMode;
 	double ev;
 	libcamera::utils::Duration flickerPeriod;
 	int floatingRegionEnable;

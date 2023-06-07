@@ -226,7 +226,7 @@ Agc::Agc(Controller *controller)
 	 * Setting status_.totalExposureValue_ to zero initially tells us
 	 * it's not been calculated yet (i.e. Process hasn't yet run).
 	 */
-	memset(&status_, 0, sizeof(status_));
+	status_ = {};
 	status_.ev = ev_;
 }
 
@@ -524,12 +524,6 @@ void Agc::updateLockStatus(DeviceStatus const &deviceStatus)
 	status_.locked = lockCount_ == maxLockCount;
 }
 
-static void copyString(std::string const &s, char *d, size_t size)
-{
-	size_t length = s.copy(d, size - 1);
-	d[length] = '\0';
-}
-
 void Agc::housekeepConfig()
 {
 	/* First fetch all the up-to-date settings, so no one else has to do it. */
@@ -544,30 +538,27 @@ void Agc::housekeepConfig()
 	 * Make sure the "mode" pointers point to the up-to-date things, if
 	 * they've changed.
 	 */
-	if (strcmp(meteringModeName_.c_str(), status_.meteringMode)) {
+	if (meteringModeName_ != status_.meteringMode) {
 		auto it = config_.meteringModes.find(meteringModeName_);
 		if (it == config_.meteringModes.end())
 			LOG(RPiAgc, Fatal) << "No metering mode " << meteringModeName_;
 		meteringMode_ = &it->second;
-		copyString(meteringModeName_, status_.meteringMode,
-			   sizeof(status_.meteringMode));
+		status_.meteringMode = meteringModeName_;
 	}
-	if (strcmp(exposureModeName_.c_str(), status_.exposureMode)) {
+	if (exposureModeName_ != status_.exposureMode) {
 		auto it = config_.exposureModes.find(exposureModeName_);
 		if (it == config_.exposureModes.end())
 			LOG(RPiAgc, Fatal) << "No exposure profile " << exposureModeName_;
 		exposureMode_ = &it->second;
-		copyString(exposureModeName_, status_.exposureMode,
-			   sizeof(status_.exposureMode));
+		status_.exposureMode = exposureModeName_;
 	}
-	if (strcmp(constraintModeName_.c_str(), status_.constraintMode)) {
+	if (constraintModeName_ != status_.constraintMode) {
 		auto it =
 			config_.constraintModes.find(constraintModeName_);
 		if (it == config_.constraintModes.end())
 			LOG(RPiAgc, Fatal) << "No constraint list " << constraintModeName_;
 		constraintMode_ = &it->second;
-		copyString(constraintModeName_, status_.constraintMode,
-			   sizeof(status_.constraintMode));
+		status_.constraintMode = constraintModeName_;
 	}
 	LOG(RPiAgc, Debug) << "exposureMode "
 			   << exposureModeName_ << " constraintMode "

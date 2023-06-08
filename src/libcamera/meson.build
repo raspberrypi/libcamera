@@ -58,6 +58,8 @@ includes = [
     libcamera_includes,
 ]
 
+libcamera_deps = []
+
 libatomic = cc.find_library('atomic', required : false)
 libthreads = dependency('threads')
 
@@ -154,7 +156,7 @@ if ipa_sign_module
     libcamera_sources += ipa_pub_key_cpp
 endif
 
-libcamera_deps = [
+libcamera_deps += [
     libatomic,
     libcamera_base,
     libcamera_base_private,

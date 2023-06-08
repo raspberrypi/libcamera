@@ -894,7 +894,7 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 	if (stream == &isp_[Isp::Stats]) {
 		ipa::RPi::ProcessParams params;
 		params.buffers.stats = index | RPi::MaskStats;
-		params.ipaContext = requestQueue_.front()->sequence();
+		params.ipaContext = currentRequest_->sequence();
 		ipa_->processStats(params);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
@@ -1039,7 +1039,7 @@ void Vc4CameraData::tryRunPipeline()
 
 	/* Do not pop this request if we're not going to return it to the user. */
 	if (!dropFrameCount_) {
-		const int behaviour = 0;
+		const int behaviour = 2;
 		if (behaviour == 1)
 			jumpQueueBehaviour2(requestQueue_);
 		else if (behaviour == 2)
@@ -1059,13 +1059,27 @@ void Vc4CameraData::tryRunPipeline()
 	fillRequestMetadata(bayerFrame.controls, currentRequest_);
 
 	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ currentRequest_->sequence(), currentRequest_->controlListId });
+
+	/*
 	 * We know we that we added an entry for every delayContext, so we can
 	 * find the one for this Bayer frame, and this links us to the correct
 	 * control list. Anything ahead of "our" entry in the queue is old, so
 	 * can be dropped.
 	 */
-	while (syncTable_.front().ipaCookie != bayerFrame.delayContext)
+	while (!syncTable_.empty() &&
+	       syncTable_.front().ipaCookie != bayerFrame.delayContext) {
+		//LOG(RPI, Error) << "tryRunPipeline: discard sync table entry " << syncTable_.front().ipaCookie;
 		syncTable_.pop();
+	}
+
+	if (syncTable_.empty())
+		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
+
 	currentRequest_->syncId = syncTable_.front().controlListId;
 
 	/*

@@ -701,8 +701,6 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	 * the first entry by hand.
 	 */
 	data->syncTable_ = std::queue<RPi::CameraData::SyncTableEntry>();
-	data->syncTable_.emplace(RPi::CameraData::SyncTableEntry{ 0, 0 });
-	data->syncTable_.emplace(RPi::CameraData::SyncTableEntry{ 1, 0 });
 	data->previousControlListId_ = 0;
 
 	/* Enable SOF event generation. */
@@ -811,7 +809,7 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 	/* Push the request to the back of the queue. */
 	data->requestQueue_.push_back(request);
 
-	const int behaviour = 2;
+	const int behaviour = 0;
 	if (behaviour == 1)
 		jumpQueueBehaviour(data->requestQueue_);
 	else if (behaviour == 2)

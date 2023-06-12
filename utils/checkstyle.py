@@ -210,12 +210,12 @@ class Commit:
 
     def _parse(self):
         # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--pretty=oneline', '--name-status',
+        ret = subprocess.run(['git', 'show', '--format=%s', '--name-status',
                               self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        files = ret.splitlines()
-        self._files = [CommitFile(f) for f in files[1:]]
-        self._title = files[0]
+        lines = ret.splitlines()
+        self._files = [CommitFile(f) for f in lines[1:] if f]
+        self._title = lines[0]
 
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
@@ -358,7 +358,7 @@ class HeaderAddChecker(CommitChecker):
 
 
 class TitleChecker(CommitChecker):
-    prefix_regex = re.compile(r'[0-9a-f]+ (([a-zA-Z0-9_.-]+: )+)')
+    prefix_regex = re.compile(r'^([a-zA-Z0-9_.-]+: )+')
     release_regex = re.compile(r'libcamera v[0-9]+\.[0-9]+\.[0-9]+')
 
     @classmethod
@@ -388,7 +388,7 @@ class TitleChecker(CommitChecker):
             if not prefix:
                 continue
 
-            prefix = prefix.group(1)
+            prefix = prefix.group(0)
             if prefix in prefixes:
                 prefixes[prefix] += 1
             else:
@@ -846,9 +846,10 @@ def check_file(top_level, commit, filename, checkers):
 
 
 def check_style(top_level, commit, checkers):
-    separator = '-' * len(commit.title)
+    title = commit.commit + ' ' + commit.title
+    separator = '-' * len(title)
     print(separator)
-    print(commit.title)
+    print(title)
     print(separator)
 
     issues = 0

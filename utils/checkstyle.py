@@ -301,8 +301,10 @@ class CommitChecker(metaclass=ClassRegistry):
     # Class methods
     #
     @classmethod
-    def checkers(cls):
+    def checkers(cls, names):
         for checker in cls.subclasses:
+            if names and checker.__name__ not in names:
+                continue
             yield checker
 
 
@@ -436,8 +438,10 @@ class StyleChecker(metaclass=ClassRegistry):
     # Class methods
     #
     @classmethod
-    def checkers(cls, filename):
+    def checkers(cls, filename, names):
         for checker in cls.subclasses:
+            if names and checker.__name__ not in names:
+                continue
             if checker.supports(filename):
                 yield checker
 
@@ -617,8 +621,10 @@ class Formatter(metaclass=ClassRegistry):
     # Class methods
     #
     @classmethod
-    def formatters(cls, filename):
+    def formatters(cls, filename, names):
         for formatter in cls.subclasses:
+            if names and formatter.__name__ not in names:
+                continue
             if formatter.supports(filename):
                 yield formatter
 
@@ -780,7 +786,7 @@ class StripTrailingSpaceFormatter(Formatter):
 # Style checking
 #
 
-def check_file(top_level, commit, filename):
+def check_file(top_level, commit, filename, checkers):
     # Extract the line numbers touched by the commit.
     commit_diff = commit.get_diff(top_level, filename)
 
@@ -797,7 +803,7 @@ def check_file(top_level, commit, filename):
     after = commit.get_file(filename)
 
     formatted = after
-    for formatter in Formatter.formatters(filename):
+    for formatter in Formatter.formatters(filename, checkers):
         formatted = formatter.format(filename, formatted)
 
     after = after.splitlines(True)
@@ -811,7 +817,7 @@ def check_file(top_level, commit, filename):
 
     # Check for code issues not related to formatting.
     issues = []
-    for checker in StyleChecker.checkers(filename):
+    for checker in StyleChecker.checkers(filename, checkers):
         checker = checker(after)
         for hunk in commit_diff:
             issues += checker.check(hunk.side('to').touched)
@@ -839,7 +845,7 @@ def check_file(top_level, commit, filename):
     return len(formatted_diff) + len(issues)
 
 
-def check_style(top_level, commit):
+def check_style(top_level, commit, checkers):
     separator = '-' * len(commit.title)
     print(separator)
     print(commit.title)
@@ -848,7 +854,7 @@ def check_style(top_level, commit):
     issues = 0
 
     # Apply the commit checkers first.
-    for checker in CommitChecker.checkers():
+    for checker in CommitChecker.checkers(checkers):
         for issue in checker.check(commit, top_level):
             print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
             issues += 1
@@ -860,7 +866,7 @@ def check_style(top_level, commit):
     files = [f for f in commit.files() if len([p for p in patterns if fnmatch.fnmatch(os.path.basename(f), p)])]
 
     for f in files:
-        issues += check_file(top_level, commit, f)
+        issues += check_file(top_level, commit, f, checkers)
 
     if issues == 0:
         print('No issue detected')
@@ -910,6 +916,8 @@ def main(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
+    parser.add_argument('--checkers', '-c', type=str,
+                        help='Specify which checkers to run as a comma-separated list. Defaults to all checkers')
     parser.add_argument('--staged', '-s', action='store_true',
                         help='Include the changes in the index. Defaults to False')
     parser.add_argument('--amend', '-a', action='store_true',
@@ -917,6 +925,9 @@ def main(argv):
     parser.add_argument('revision_range', type=str, default=None, nargs='?',
                         help='Revision range (as defined by git rev-parse). Defaults to HEAD if not specified.')
     args = parser.parse_args(argv[1:])
+
+    if args.checkers:
+        args.checkers = args.checkers.split(',')
 
     # Check for required dependencies.
     for command, mandatory in dependencies.items():
@@ -951,7 +962,7 @@ def main(argv):
 
     issues = 0
     for commit in commits:
-        issues += check_style(top_level, commit)
+        issues += check_style(top_level, commit, args.checkers)
         print('')
 
     if issues:

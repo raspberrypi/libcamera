@@ -191,6 +191,9 @@ class CommitFile:
         else:
             self.__filename = info[1]
 
+    def __repr__(self):
+        return f'{self.__status} {self.__filename}'
+
     @property
     def filename(self):
         return self.__filename

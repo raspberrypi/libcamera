@@ -210,12 +210,22 @@ class Commit:
 
     def _parse(self):
         # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--format=%s', '--name-status',
+        ret = subprocess.run(['git', 'show', '--format=%s%n%(trailers:only,unfold)', '--name-status',
                               self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         lines = ret.splitlines()
-        self._files = [CommitFile(f) for f in lines[1:] if f]
+
         self._title = lines[0]
+
+        self._trailers = []
+        for index in range(1, len(lines)):
+            line = lines[index]
+            if not line:
+                break
+
+            self._trailers.append(line)
+
+        self._files = [CommitFile(f) for f in lines[index:] if f]
 
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
@@ -223,6 +233,10 @@ class Commit:
     @property
     def title(self):
         return self._title
+
+    @property
+    def trailers(self):
+        return self._trailers
 
     def get_diff(self, top_level, filename):
         diff = subprocess.run(['git', 'diff', '%s~..%s' % (self.commit, self.commit),
@@ -422,6 +436,68 @@ class TitleChecker(CommitChecker):
 
         return [CommitIssue('Commit title is missing prefix, '
                             'possible candidates are ' + candidates)]
+
+
+class TrailersChecker(CommitChecker):
+    commit_regex = re.compile(r'[0-9a-f]{12}[0-9a-f]* \(".*"\)')
+
+    coverity_regex = re.compile(r'Coverity CID=.*')
+
+    # Simple e-mail address validator regex, with an additional trailing
+    # comment. The complexity of a full RFC6531 validator isn't worth the
+    # additional invalid addresses it would reject.
+    email_regex = re.compile(r'[^<]+ <[^@>]+@[^>]+>( # .*)?')
+
+    link_regex = re.compile(r'https?://.*')
+
+    @staticmethod
+    def validate_reported_by(value):
+        if TrailersChecker.email_regex.fullmatch(value):
+            return True
+        if TrailersChecker.coverity_regex.fullmatch(value):
+            return True
+        return False
+
+    known_trailers = {
+        'Acked-by': email_regex,
+        'Bug': link_regex,
+        'Fixes': commit_regex,
+        'Link': link_regex,
+        'Reported-by': validate_reported_by,
+        'Reviewed-by': email_regex,
+        'Signed-off-by': email_regex,
+        'Suggested-by': email_regex,
+        'Tested-by': email_regex,
+    }
+
+    trailer_regex = re.compile(r'([A-Z][a-zA-Z-]*)\s*:\s*(.*)')
+
+    @classmethod
+    def check(cls, commit, top_level):
+        issues = []
+
+        for trailer in commit.trailers:
+            match = TrailersChecker.trailer_regex.fullmatch(trailer)
+            if not match:
+                raise RuntimeError(f"Malformed commit trailer '{trailer}'")
+
+            key, value = match.groups()
+
+            validator = TrailersChecker.known_trailers.get(key)
+            if not validator:
+                issues.append(CommitIssue(f"Invalid commit trailer key '{key}'"))
+                continue
+
+            if isinstance(validator, re.Pattern):
+                valid = bool(validator.fullmatch(value))
+            else:
+                valid = validator(value)
+
+            if not valid:
+                issues.append(CommitIssue(f"Malformed value '{value}' for commit trailer '{key}'"))
+                continue
+
+        return issues
 
 
 # ------------------------------------------------------------------------------

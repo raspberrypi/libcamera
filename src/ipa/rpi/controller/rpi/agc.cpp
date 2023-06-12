@@ -541,39 +541,32 @@ void Agc::housekeepConfig()
 	if (meteringModeName_ != status_.meteringMode) {
 		auto it = config_.meteringModes.find(meteringModeName_);
 		if (it == config_.meteringModes.end()) {
-			LOG(RPiAgc, Warning) << "No metering mode " << meteringModeName_
-					     << ", defaulting to " << config_.defaultMeteringMode;
-			meteringModeName_ = config_.defaultMeteringMode;
-			meteringMode_ = &config_.meteringModes[meteringModeName_];
+			LOG(RPiAgc, Warning) << "No metering mode " << meteringModeName_;
+			meteringModeName_ = status_.meteringMode;
 		} else {
 			meteringMode_ = &it->second;
+			status_.meteringMode = meteringModeName_;
 		}
-		status_.meteringMode = meteringModeName_;
 	}
 	if (exposureModeName_ != status_.exposureMode) {
 		auto it = config_.exposureModes.find(exposureModeName_);
 		if (it == config_.exposureModes.end()) {
-			LOG(RPiAgc, Warning) << "No exposure profile " << exposureModeName_
-					     << ", defaulting to " << config_.defaultExposureMode;
-			exposureModeName_ = config_.defaultExposureMode;
-			exposureMode_ = &config_.exposureModes[exposureModeName_];
+			LOG(RPiAgc, Warning) << "No exposure profile " << exposureModeName_;
+			exposureModeName_ = status_.exposureMode;
 		} else {
 			exposureMode_ = &it->second;
+			status_.exposureMode = exposureModeName_;
 		}
-		status_.exposureMode = exposureModeName_;
 	}
 	if (constraintModeName_ != status_.constraintMode) {
-		auto it =
-			config_.constraintModes.find(constraintModeName_);
+		auto it = config_.constraintModes.find(constraintModeName_);
 		if (it == config_.constraintModes.end()) {
-			LOG(RPiAgc, Warning) << "No constraint list " << constraintModeName_
-					     << ", defaulting to " << config_.defaultConstraintMode;
-			constraintModeName_ = config_.defaultConstraintMode;
-			constraintMode_ = &config_.constraintModes[constraintModeName_];
+			LOG(RPiAgc, Warning) << "No constraint list " << constraintModeName_;
+			constraintModeName_ = status_.constraintMode;
 		} else {
 			constraintMode_ = &it->second;
+			status_.constraintMode = constraintModeName_;
 		}
-		status_.constraintMode = constraintModeName_;
 	}
 	LOG(RPiAgc, Debug) << "exposureMode "
 			   << exposureModeName_ << " constraintMode "

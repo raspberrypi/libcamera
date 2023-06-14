@@ -412,6 +412,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	fillDeviceStatus(params.sensorControls, ipaContext);
 	fillSyncParams(params, ipaContext);
 
+	if (!params.requestControls.empty())
+		rpiMetadata.set("ipa.request_controls", true);
+
 	if (params.buffers.embedded) {
 		/*
 		 * Pipeline handler has supplied us with an embedded data buffer,
@@ -439,27 +442,18 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		hdrStatus_ = agcStatus.hdr;
 	}
 
-	unsigned int lastIpaContext = (ipaContext ? ipaContext : rpiMetadata_.size()) - 1;
-	RPiController::Metadata &lastMetadata = rpiMetadata_[lastIpaContext];
-
-	LOG(IPARPI, Info) << "Prepare ipa contex " << ipaContext << " last context " << lastIpaContext;
-
-	if (lastMetadata.get("agc.status", agcStatus) == 0) {
-		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
-		setDelayedControls.emit(ctrls, lastIpaContext);
-		setCameraTimeoutValue();
-	}
-
 	/*
 	 * This may overwrite the DeviceStatus using values from the sensor
 	 * metadata, and may also do additional custom processing.
 	 */
 	helper_->prepare(embeddedBuffer, rpiMetadata);
 
+	bool delayedRequestControls = false;
+	delayedMetadata.get<bool>("ipa.controls", delayedRequestControls);
+
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (params.requestControls.empty() &&
+	if (!delayedRequestControls && params.requestControls.empty() &&
 	    lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
@@ -468,6 +462,8 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
+		unsigned int lastIpaContext = (ipaContext ? ipaContext : rpiMetadata_.size()) - 1;
+		RPiController::Metadata &lastMetadata = rpiMetadata_[lastIpaContext];
 
 		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;

@@ -397,8 +397,7 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
  *
  * The transform is a user-specified 2D plane transform that will be applied
  * to the camera images by the processing pipeline before being handed to
- * the application. This is subsequent to any transform that is already
- * required to fix up any platform-defined rotation.
+ * the application.
  *
  * The usual 2D plane transforms are allowed here (horizontal/vertical
  * flips, multiple of 90-degree rotations etc.), but the validate() function

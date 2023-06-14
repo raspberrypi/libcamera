@@ -449,7 +449,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	helper_->prepare(embeddedBuffer, rpiMetadata);
 
 	bool delayedRequestControls = false;
-	delayedMetadata.get<bool>("ipa.controls", delayedRequestControls);
+	delayedMetadata.get<bool>("ipa.request_controls", delayedRequestControls);
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;

@@ -1093,8 +1093,9 @@ int CameraData::loadPipelineConfiguration()
 	File file(filename);
 
 	if (!file.open(File::OpenModeFlag::ReadOnly)) {
-		LOG(RPI, Error) << "Failed to open configuration file '" << filename << "'";
-		return -EIO;
+		LOG(RPI, Warning) << "Failed to open configuration file '" << filename << "'"
+				  << ", using defaults";
+		return 0;
 	}
 
 	LOG(RPI, Info) << "Using configuration file '" << filename << "'";
@@ -1107,8 +1108,9 @@ int CameraData::loadPipelineConfiguration()
 
 	std::optional<double> ver = (*root)["version"].get<double>();
 	if (!ver || *ver != 1.0) {
-		LOG(RPI, Error) << "Unexpected configuration file version reported";
-		return -EINVAL;
+		LOG(RPI, Warning) << "Unexpected configuration file version reported: "
+				  << *ver;
+		return 0;
 	}
 
 	const YamlObject &phConfig = (*root)["pipeline_handler"];

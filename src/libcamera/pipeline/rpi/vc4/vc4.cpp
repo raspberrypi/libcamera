@@ -1039,7 +1039,7 @@ void Vc4CameraData::tryRunPipeline()
 
 	/* Do not pop this request if we're not going to return it to the user. */
 	if (!dropFrameCount_) {
-		const int behaviour = 2;
+		const int behaviour = 1;
 		if (behaviour == 1)
 			jumpQueueBehaviour2(requestQueue_);
 		else if (behaviour == 2)

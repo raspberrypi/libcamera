@@ -1295,13 +1295,6 @@ void CameraData::setDelayedControls(const ControlList &controls, uint32_t delayC
 	if (!delayedCtrls_->push(controls, delayContext))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
 
-	/*
-	 * Record which control list corresponds to this delayContext. Because setDelayedControls
-	 * now gets called by the IPA from the start of the following frame, we must record
-	 * the previous control list id.
-	 */
-	syncTable_.emplace(SyncTableEntry{ delayContext, previousControlListId_ });
-	previousControlListId_ = currentRequest_->controlListId;
 }
 
 void CameraData::setLensControls(const ControlList &controls)

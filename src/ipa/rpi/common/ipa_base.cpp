@@ -435,7 +435,8 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	 */
 	AgcStatus agcStatus;
 	bool hdrChange = false;
-	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
+	//RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
+	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext % rpiMetadata_.size()];
 	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus)) {
 		rpiMetadata.set("agc.delayed_status", agcStatus);
 		hdrChange = agcStatus.hdr.mode != hdrStatus_.mode;
@@ -534,8 +535,13 @@ void IpaBase::processStats(const ProcessParams &params)
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
 			ControlList ctrls(sensorCtrls_);
+<<<<<<< HEAD
 			applyAGC(&agcStatus, ctrls, offset);
 			setDelayedControls.emit(ctrls, ipaContext);
+=======
+			applyAGC(&agcStatus, ctrls);
+			setDelayedControls.emit(ctrls, params.ipaContext);
+>>>>>>> 4c7bd08f6bcc (Don't pass modulo ipa context values)
 			setCameraTimeoutValue();
 		}
 	}

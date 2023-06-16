@@ -146,6 +146,7 @@ struct _GstLibcameraSrc {
 	GstTask *task;
 
 	gchar *camera_name;
+	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
 
 	GstLibcameraSrcState *state;
 	GstLibcameraAllocator *allocator;
@@ -154,7 +155,8 @@ struct _GstLibcameraSrc {
 
 enum {
 	PROP_0,
-	PROP_CAMERA_NAME
+	PROP_CAMERA_NAME,
+	PROP_AUTO_FOCUS_MODE,
 };
 
 G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
@@ -577,6 +579,18 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		gst_flow_combiner_add_pad(self->flow_combiner, srcpad);
 	}
 
+	if (self->auto_focus_mode != controls::AfModeManual) {
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::AfMode) != infoMap.end()) {
+			state->initControls_.set(controls::AfMode, self->auto_focus_mode);
+		} else {
+			GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+					  ("Failed to enable auto focus"),
+					  ("AfMode not supported by this camera, "
+					   "please retry with 'auto-focus-mode=AfModeManual'"));
+		}
+	}
+
 	ret = state->cam_->start(&state->initControls_);
 	if (ret) {
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
@@ -659,6 +673,9 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 		g_free(self->camera_name);
 		self->camera_name = g_value_dup_string(value);
 		break;
+	case PROP_AUTO_FOCUS_MODE:
+		self->auto_focus_mode = static_cast<controls::AfModeEnum>(g_value_get_enum(value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -675,6 +692,9 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 	switch (prop_id) {
 	case PROP_CAMERA_NAME:
 		g_value_set_string(value, self->camera_name);
+		break;
+	case PROP_AUTO_FOCUS_MODE:
+		g_value_set_enum(value, static_cast<gint>(self->auto_focus_mode));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -844,4 +864,13 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 							     | G_PARAM_READWRITE
 							     | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_CAMERA_NAME, spec);
+
+	spec = g_param_spec_enum("auto-focus-mode",
+				 "Set auto-focus mode",
+				 "Available options: AfModeManual, "
+				 "AfModeAuto or AfModeContinuous.",
+				 gst_libcamera_auto_focus_get_type(),
+				 static_cast<gint>(controls::AfModeManual),
+				 G_PARAM_WRITABLE);
+	g_object_class_install_property(object_class, PROP_AUTO_FOCUS_MODE, spec);
 }
